@@ -36971,6 +36971,7 @@ function CpuPane({ cores }) {
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
+    gap: 1,
     children: [
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         gap: 2,
@@ -36995,11 +36996,14 @@ function CpuPane({ cores }) {
           })
         ]
       }),
-      cores.map((core, i) => /* @__PURE__ */ jsx_runtime53.jsx(CpuCore, {
-        index: i,
-        core,
-        barWidth
-      }, i))
+      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+        flexDirection: "column",
+        children: cores.map((core, i) => /* @__PURE__ */ jsx_runtime53.jsx(CpuCore, {
+          index: i,
+          core,
+          barWidth
+        }, i))
+      })
     ]
   });
 }
@@ -37034,14 +37038,14 @@ function MemoryPane({ memory }) {
         flexDirection: "column",
         children: [
           /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-            gap: 1,
+            gap: 2,
             wrap: "truncate",
             children: [
               /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
                 color: severityColor(usedPct),
                 children: [
                   "█",
-                  "Used ",
+                  " Used ",
                   memory.used.toFixed(1),
                   "G"
                 ]
@@ -37050,7 +37054,7 @@ function MemoryPane({ memory }) {
                 color: "$info",
                 children: [
                   "█",
-                  "Cache ",
+                  " Cache ",
                   memory.cached.toFixed(1),
                   "G"
                 ]
@@ -37059,7 +37063,7 @@ function MemoryPane({ memory }) {
                 color: "$primary",
                 children: [
                   "█",
-                  "Buf ",
+                  " Buf ",
                   memory.buffers.toFixed(1),
                   "G"
                 ]
@@ -37067,7 +37071,7 @@ function MemoryPane({ memory }) {
               /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
                 children: [
                   "░",
-                  "Free ",
+                  " Free ",
                   memory.free.toFixed(1),
                   "G"
                 ]
@@ -37077,7 +37081,7 @@ function MemoryPane({ memory }) {
           /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
             value: usedPct / 100,
             color: severityColor(usedPct),
-            showPercentage: false
+            showPercentage: true
           })
         ]
       }),
@@ -37316,6 +37320,7 @@ function ProcessPane({ processes }) {
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
+    gap: 1,
     children: [
       /* @__PURE__ */ jsx_runtime53.jsx(SectionHeader, {
         children: "Processes"
@@ -39549,4 +39554,4 @@ if (!ShowcaseComponent) {
   }
 }
 
-//# debugId=4C41164BD1F8722564756E2164756E21
+//# debugId=F8EEAC443F92907864756E2164756E21

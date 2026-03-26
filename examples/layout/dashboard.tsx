@@ -235,16 +235,18 @@ function CpuPane({ cores }: { cores: CoreMetrics[] }) {
   const load15 = ((avgCpu / 100) * 8 * 0.6 + Math.random() * 0.2).toFixed(2)
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1} gap={1}>
       <Box gap={2} wrap="truncate">
         <SectionHeader>CPU</SectionHeader>
         <LabelValue label="Avg:" value={`${Math.round(avgCpu)}%`} color={severityColor(avgCpu)} />
         <LabelValue label="Max:" value={`${Math.round(maxCpu)}%`} color={severityColor(maxCpu)} />
         <LabelValue label="Load:" value={`${load1} ${load5} ${load15}`} />
       </Box>
-      {cores.map((core, i) => (
-        <CpuCore key={i} index={i} core={core} barWidth={barWidth} />
-      ))}
+      <Box flexDirection="column">
+        {cores.map((core, i) => (
+          <CpuCore key={i} index={i} core={core} barWidth={barWidth} />
+        ))}
+      </Box>
     </Box>
   )
 }
@@ -264,21 +266,21 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
         <LabelValue label="Used:" value={`${memory.used.toFixed(1)} GB`} color={severityColor(usedPct)} />
       </Box>
       <Box flexDirection="column">
-        <Box gap={1} wrap="truncate">
+        <Box gap={2} wrap="truncate">
           <Text color={severityColor(usedPct)}>
-            {"█"}Used {memory.used.toFixed(1)}G
+            {"█"} Used {memory.used.toFixed(1)}G
           </Text>
           <Text color="$info">
-            {"█"}Cache {memory.cached.toFixed(1)}G
+            {"█"} Cache {memory.cached.toFixed(1)}G
           </Text>
           <Text color="$primary">
-            {"█"}Buf {memory.buffers.toFixed(1)}G
+            {"█"} Buf {memory.buffers.toFixed(1)}G
           </Text>
           <Muted>
-            {"░"}Free {memory.free.toFixed(1)}G
+            {"░"} Free {memory.free.toFixed(1)}G
           </Muted>
         </Box>
-        <ProgressBar value={usedPct / 100} color={severityColor(usedPct)} showPercentage={false} />
+        <ProgressBar value={usedPct / 100} color={severityColor(usedPct)} showPercentage />
       </Box>
       <Box flexDirection="column">
         <Muted>
@@ -399,7 +401,7 @@ function ProcessPane({ processes }: { processes: ProcessInfo[] }) {
   const sorted = [...processes].sort((a, b) => b.cpu - a.cpu)
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1} gap={1}>
       <SectionHeader>Processes</SectionHeader>
       <Box flexDirection="column">
         <Box gap={1} wrap="truncate">

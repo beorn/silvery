@@ -36971,6 +36971,7 @@ function CpuPane({ cores }) {
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
+    gap: 1,
     children: [
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         gap: 2,
@@ -36995,11 +36996,14 @@ function CpuPane({ cores }) {
           })
         ]
       }),
-      cores.map((core, i) => /* @__PURE__ */ jsx_runtime53.jsx(CpuCore, {
-        index: i,
-        core,
-        barWidth
-      }, i))
+      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+        flexDirection: "column",
+        children: cores.map((core, i) => /* @__PURE__ */ jsx_runtime53.jsx(CpuCore, {
+          index: i,
+          core,
+          barWidth
+        }, i))
+      })
     ]
   });
 }
@@ -37034,14 +37038,14 @@ function MemoryPane({ memory }) {
         flexDirection: "column",
         children: [
           /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-            gap: 1,
+            gap: 2,
             wrap: "truncate",
             children: [
               /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
                 color: severityColor(usedPct),
                 children: [
                   "█",
-                  "Used ",
+                  " Used ",
                   memory.used.toFixed(1),
                   "G"
                 ]
@@ -37050,7 +37054,7 @@ function MemoryPane({ memory }) {
                 color: "$info",
                 children: [
                   "█",
-                  "Cache ",
+                  " Cache ",
                   memory.cached.toFixed(1),
                   "G"
                 ]
@@ -37059,7 +37063,7 @@ function MemoryPane({ memory }) {
                 color: "$primary",
                 children: [
                   "█",
-                  "Buf ",
+                  " Buf ",
                   memory.buffers.toFixed(1),
                   "G"
                 ]
@@ -37067,7 +37071,7 @@ function MemoryPane({ memory }) {
               /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
                 children: [
                   "░",
-                  "Free ",
+                  " Free ",
                   memory.free.toFixed(1),
                   "G"
                 ]
@@ -37077,7 +37081,7 @@ function MemoryPane({ memory }) {
           /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
             value: usedPct / 100,
             color: severityColor(usedPct),
-            showPercentage: false
+            showPercentage: true
           })
         ]
       }),
@@ -37316,6 +37320,7 @@ function ProcessPane({ processes }) {
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
+    gap: 1,
     children: [
       /* @__PURE__ */ jsx_runtime53.jsx(SectionHeader, {
         children: "Processes"
@@ -39714,16 +39719,18 @@ function CpuPane({ cores }: { cores: CoreMetrics[] }) {
   const load15 = ((avgCpu / 100) * 8 * 0.6 + Math.random() * 0.2).toFixed(2)
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1} gap={1}>
       <Box gap={2} wrap="truncate">
         <SectionHeader>CPU</SectionHeader>
         <LabelValue label="Avg:" value={\`\${Math.round(avgCpu)}%\`} color={severityColor(avgCpu)} />
         <LabelValue label="Max:" value={\`\${Math.round(maxCpu)}%\`} color={severityColor(maxCpu)} />
         <LabelValue label="Load:" value={\`\${load1} \${load5} \${load15}\`} />
       </Box>
-      {cores.map((core, i) => (
-        <CpuCore key={i} index={i} core={core} barWidth={barWidth} />
-      ))}
+      <Box flexDirection="column">
+        {cores.map((core, i) => (
+          <CpuCore key={i} index={i} core={core} barWidth={barWidth} />
+        ))}
+      </Box>
     </Box>
   )
 }
@@ -39743,21 +39750,21 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
         <LabelValue label="Used:" value={\`\${memory.used.toFixed(1)} GB\`} color={severityColor(usedPct)} />
       </Box>
       <Box flexDirection="column">
-        <Box gap={1} wrap="truncate">
+        <Box gap={2} wrap="truncate">
           <Text color={severityColor(usedPct)}>
-            {"█"}Used {memory.used.toFixed(1)}G
+            {"█"} Used {memory.used.toFixed(1)}G
           </Text>
           <Text color="$info">
-            {"█"}Cache {memory.cached.toFixed(1)}G
+            {"█"} Cache {memory.cached.toFixed(1)}G
           </Text>
           <Text color="$primary">
-            {"█"}Buf {memory.buffers.toFixed(1)}G
+            {"█"} Buf {memory.buffers.toFixed(1)}G
           </Text>
           <Muted>
-            {"░"}Free {memory.free.toFixed(1)}G
+            {"░"} Free {memory.free.toFixed(1)}G
           </Muted>
         </Box>
-        <ProgressBar value={usedPct / 100} color={severityColor(usedPct)} showPercentage={false} />
+        <ProgressBar value={usedPct / 100} color={severityColor(usedPct)} showPercentage />
       </Box>
       <Box flexDirection="column">
         <Muted>
@@ -39878,7 +39885,7 @@ function ProcessPane({ processes }: { processes: ProcessInfo[] }) {
   const sorted = [...processes].sort((a, b) => b.cpu - a.cpu)
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1} gap={1}>
       <SectionHeader>Processes</SectionHeader>
       <Box flexDirection="column">
         <Box gap={1} wrap="truncate">
@@ -41841,16 +41848,18 @@ function CpuPane({ cores }: { cores: CoreMetrics[] }) {
   const load15 = ((avgCpu / 100) * 8 * 0.6 + Math.random() * 0.2).toFixed(2)
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1} gap={1}>
       <Box gap={2} wrap="truncate">
         <SectionHeader>CPU</SectionHeader>
         <LabelValue label="Avg:" value={\`\${Math.round(avgCpu)}%\`} color={severityColor(avgCpu)} />
         <LabelValue label="Max:" value={\`\${Math.round(maxCpu)}%\`} color={severityColor(maxCpu)} />
         <LabelValue label="Load:" value={\`\${load1} \${load5} \${load15}\`} />
       </Box>
-      {cores.map((core, i) => (
-        <CpuCore key={i} index={i} core={core} barWidth={barWidth} />
-      ))}
+      <Box flexDirection="column">
+        {cores.map((core, i) => (
+          <CpuCore key={i} index={i} core={core} barWidth={barWidth} />
+        ))}
+      </Box>
     </Box>
   )
 }
@@ -41870,21 +41879,21 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
         <LabelValue label="Used:" value={\`\${memory.used.toFixed(1)} GB\`} color={severityColor(usedPct)} />
       </Box>
       <Box flexDirection="column">
-        <Box gap={1} wrap="truncate">
+        <Box gap={2} wrap="truncate">
           <Text color={severityColor(usedPct)}>
-            {"█"}Used {memory.used.toFixed(1)}G
+            {"█"} Used {memory.used.toFixed(1)}G
           </Text>
           <Text color="$info">
-            {"█"}Cache {memory.cached.toFixed(1)}G
+            {"█"} Cache {memory.cached.toFixed(1)}G
           </Text>
           <Text color="$primary">
-            {"█"}Buf {memory.buffers.toFixed(1)}G
+            {"█"} Buf {memory.buffers.toFixed(1)}G
           </Text>
           <Muted>
-            {"░"}Free {memory.free.toFixed(1)}G
+            {"░"} Free {memory.free.toFixed(1)}G
           </Muted>
         </Box>
-        <ProgressBar value={usedPct / 100} color={severityColor(usedPct)} showPercentage={false} />
+        <ProgressBar value={usedPct / 100} color={severityColor(usedPct)} showPercentage />
       </Box>
       <Box flexDirection="column">
         <Muted>
@@ -42005,7 +42014,7 @@ function ProcessPane({ processes }: { processes: ProcessInfo[] }) {
   const sorted = [...processes].sort((a, b) => b.cpu - a.cpu)
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1} gap={1}>
       <SectionHeader>Processes</SectionHeader>
       <Box flexDirection="column">
         <Box gap={1} wrap="truncate">
@@ -51830,4 +51839,4 @@ if (root) {
   createViewerApp(root);
 }
 
-//# debugId=23CD5387C2BB9A8A64756E2164756E21
+//# debugId=2F9DE925F5488E7864756E2164756E21
