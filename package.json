@@ -1,7 +1,7 @@
 {
   "name": "silvery",
-  "version": "0.5.0",
-  "description": "React terminal UI renderer for complex interactive apps — layout-aware rendering, flexbox, scrolling, and incremental updates",
+  "version": "0.6.0",
+  "description": "React terminal UI renderer for complex interactive apps \u2014 layout-aware rendering, flexbox, scrolling, and incremental updates",
   "keywords": [
     "ansi",
     "chalk",
@@ -25,7 +25,7 @@
     "url": "https://github.com/beorn/silvery/issues"
   },
   "license": "MIT",
-  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "author": "Bj\u00f8rn Stabell <bjorn@stabell.org>",
   "repository": {
     "type": "git",
     "url": "https://github.com/beorn/silvery.git"
