@@ -38933,99 +38933,100 @@ function DisplayTab({ scrollOffset }) {
                   children: "Border & Color Styles"
                 })
               }),
-              /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                flexDirection: "column",
-                gap: 0,
-                children: borderStyles.map((style, i) => /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                  borderStyle: style,
-                  borderColor: i === selectedBorder ? "$primary" : "$border",
-                  borderLeft: true,
-                  borderRight: true,
-                  borderTop: i === 0,
-                  borderBottom: true,
-                  paddingX: 1,
-                  children: /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                    bold: i === selectedBorder,
-                    children: [
-                      i === selectedBorder ? "▸ " : "  ",
-                      style
-                    ]
-                  })
-                }, style))
-              }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                flexDirection: "column",
+                flexDirection: "row",
+                gap: 2,
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    wrap: "truncate",
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$success",
+                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                    flexDirection: "column",
+                    gap: 0,
+                    children: borderStyles.map((style, i) => /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                      borderStyle: style,
+                      borderColor: i === selectedBorder ? "$primary" : "$border",
+                      borderLeft: true,
+                      borderRight: true,
+                      borderTop: i === 0,
+                      borderBottom: true,
+                      paddingX: 1,
+                      children: /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                        bold: i === selectedBorder,
                         children: [
-                          "●",
-                          " success"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$warning",
-                        children: [
-                          "●",
-                          " warning"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$error",
-                        children: [
-                          "●",
-                          " error"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$info",
-                        children: [
-                          "●",
-                          " info"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$primary",
-                        children: [
-                          "●",
-                          " primary"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Muted, {
-                        children: [
-                          "●",
-                          " muted"
+                          i === selectedBorder ? "▸ " : "  ",
+                          style
                         ]
                       })
-                    ]
+                    }, style))
                   }),
                   /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    flexDirection: "column",
+                    flexGrow: 1,
                     gap: 1,
-                    wrap: "truncate",
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        backgroundColor: "$primary",
-                        color: "$primary-fg",
-                        children: " primary "
+                      /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                        flexDirection: "column",
+                        children: [
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$success",
+                            children: [
+                              "●",
+                              " success"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$warning",
+                            children: [
+                              "●",
+                              " warning"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$error",
+                            children: [
+                              "●",
+                              " error"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$info",
+                            children: [
+                              "●",
+                              " info"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$primary",
+                            children: [
+                              "●",
+                              " primary"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Muted, {
+                            children: [
+                              "●",
+                              " muted"
+                            ]
+                          })
+                        ]
                       }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        backgroundColor: "$success-bg",
-                        color: "$success",
-                        children: " success "
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        backgroundColor: "$error-bg",
-                        color: "$error",
-                        children: " error "
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        backgroundColor: "$muted-bg",
-                        color: "$fg",
-                        children: " surface "
+                      /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                        flexDirection: "column",
+                        children: [
+                          /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                            backgroundColor: "$primary",
+                            color: "$primary-fg",
+                            children: " selected "
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                            backgroundColor: "$fg",
+                            color: "$bg",
+                            children: " inverse "
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                            backgroundColor: "$muted-bg",
+                            color: "$fg",
+                            children: " surface "
+                          })
+                        ]
                       })
                     ]
                   })
@@ -40777,47 +40778,46 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
           <Text color="$primary">
             <Strong>Border & Color Styles</Strong>
           </Text>
-          <Box flexDirection="column" gap={0}>
-            {borderStyles.map((style, i) => (
-              <Box
-                key={style}
-                borderStyle={style as any}
-                borderColor={i === selectedBorder ? "$primary" : "$border"}
-                borderLeft={true}
-                borderRight={true}
-                borderTop={i === 0}
-                borderBottom={true}
-                paddingX={1}
-              >
-                <Text bold={i === selectedBorder}>
-                  {i === selectedBorder ? "▸ " : "  "}
-                  {style}
+          <Box flexDirection="row" gap={2}>
+            <Box flexDirection="column" gap={0}>
+              {borderStyles.map((style, i) => (
+                <Box
+                  key={style}
+                  borderStyle={style as any}
+                  borderColor={i === selectedBorder ? "$primary" : "$border"}
+                  borderLeft={true}
+                  borderRight={true}
+                  borderTop={i === 0}
+                  borderBottom={true}
+                  paddingX={1}
+                >
+                  <Text bold={i === selectedBorder}>
+                    {i === selectedBorder ? "▸ " : "  "}
+                    {style}
+                  </Text>
+                </Box>
+              ))}
+            </Box>
+            <Box flexDirection="column" flexGrow={1} gap={1}>
+              <Box flexDirection="column">
+                <Text color="$success">{"●"} success</Text>
+                <Text color="$warning">{"●"} warning</Text>
+                <Text color="$error">{"●"} error</Text>
+                <Text color="$info">{"●"} info</Text>
+                <Text color="$primary">{"●"} primary</Text>
+                <Muted>{"●"} muted</Muted>
+              </Box>
+              <Box flexDirection="column">
+                <Text backgroundColor="$primary" color="$primary-fg">
+                  {" selected "}
+                </Text>
+                <Text backgroundColor="$fg" color="$bg">
+                  {" inverse "}
+                </Text>
+                <Text backgroundColor="$muted-bg" color="$fg">
+                  {" surface "}
                 </Text>
               </Box>
-            ))}
-          </Box>
-          <Box flexDirection="column">
-            <Box gap={1} wrap="truncate">
-              <Text color="$success">{"●"} success</Text>
-              <Text color="$warning">{"●"} warning</Text>
-              <Text color="$error">{"●"} error</Text>
-              <Text color="$info">{"●"} info</Text>
-              <Text color="$primary">{"●"} primary</Text>
-              <Muted>{"●"} muted</Muted>
-            </Box>
-            <Box gap={1} wrap="truncate">
-              <Text backgroundColor="$primary" color="$primary-fg">
-                {" primary "}
-              </Text>
-              <Text backgroundColor="$success-bg" color="$success">
-                {" success "}
-              </Text>
-              <Text backgroundColor="$error-bg" color="$error">
-                {" error "}
-              </Text>
-              <Text backgroundColor="$muted-bg" color="$fg">
-                {" surface "}
-              </Text>
             </Box>
           </Box>
         </Box>
@@ -43756,47 +43756,46 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
           <Text color="$primary">
             <Strong>Border & Color Styles</Strong>
           </Text>
-          <Box flexDirection="column" gap={0}>
-            {borderStyles.map((style, i) => (
-              <Box
-                key={style}
-                borderStyle={style as any}
-                borderColor={i === selectedBorder ? "$primary" : "$border"}
-                borderLeft={true}
-                borderRight={true}
-                borderTop={i === 0}
-                borderBottom={true}
-                paddingX={1}
-              >
-                <Text bold={i === selectedBorder}>
-                  {i === selectedBorder ? "▸ " : "  "}
-                  {style}
+          <Box flexDirection="row" gap={2}>
+            <Box flexDirection="column" gap={0}>
+              {borderStyles.map((style, i) => (
+                <Box
+                  key={style}
+                  borderStyle={style as any}
+                  borderColor={i === selectedBorder ? "$primary" : "$border"}
+                  borderLeft={true}
+                  borderRight={true}
+                  borderTop={i === 0}
+                  borderBottom={true}
+                  paddingX={1}
+                >
+                  <Text bold={i === selectedBorder}>
+                    {i === selectedBorder ? "▸ " : "  "}
+                    {style}
+                  </Text>
+                </Box>
+              ))}
+            </Box>
+            <Box flexDirection="column" flexGrow={1} gap={1}>
+              <Box flexDirection="column">
+                <Text color="$success">{"●"} success</Text>
+                <Text color="$warning">{"●"} warning</Text>
+                <Text color="$error">{"●"} error</Text>
+                <Text color="$info">{"●"} info</Text>
+                <Text color="$primary">{"●"} primary</Text>
+                <Muted>{"●"} muted</Muted>
+              </Box>
+              <Box flexDirection="column">
+                <Text backgroundColor="$primary" color="$primary-fg">
+                  {" selected "}
+                </Text>
+                <Text backgroundColor="$fg" color="$bg">
+                  {" inverse "}
+                </Text>
+                <Text backgroundColor="$muted-bg" color="$fg">
+                  {" surface "}
                 </Text>
               </Box>
-            ))}
-          </Box>
-          <Box flexDirection="column">
-            <Box gap={1} wrap="truncate">
-              <Text color="$success">{"●"} success</Text>
-              <Text color="$warning">{"●"} warning</Text>
-              <Text color="$error">{"●"} error</Text>
-              <Text color="$info">{"●"} info</Text>
-              <Text color="$primary">{"●"} primary</Text>
-              <Muted>{"●"} muted</Muted>
-            </Box>
-            <Box gap={1} wrap="truncate">
-              <Text backgroundColor="$primary" color="$primary-fg">
-                {" primary "}
-              </Text>
-              <Text backgroundColor="$success-bg" color="$success">
-                {" success "}
-              </Text>
-              <Text backgroundColor="$error-bg" color="$error">
-                {" error "}
-              </Text>
-              <Text backgroundColor="$muted-bg" color="$fg">
-                {" surface "}
-              </Text>
             </Box>
           </Box>
         </Box>
@@ -51795,4 +51794,4 @@ if (root) {
   createViewerApp(root);
 }
 
-//# debugId=19F25FF2C57809CC64756E2164756E21
+//# debugId=8BE76FFE72AAD94B64756E2164756E21

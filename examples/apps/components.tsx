@@ -441,47 +441,46 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
           <Text color="$primary">
             <Strong>Border & Color Styles</Strong>
           </Text>
-          <Box flexDirection="column" gap={0}>
-            {borderStyles.map((style, i) => (
-              <Box
-                key={style}
-                borderStyle={style as any}
-                borderColor={i === selectedBorder ? "$primary" : "$border"}
-                borderLeft={true}
-                borderRight={true}
-                borderTop={i === 0}
-                borderBottom={true}
-                paddingX={1}
-              >
-                <Text bold={i === selectedBorder}>
-                  {i === selectedBorder ? "▸ " : "  "}
-                  {style}
+          <Box flexDirection="row" gap={2}>
+            <Box flexDirection="column" gap={0}>
+              {borderStyles.map((style, i) => (
+                <Box
+                  key={style}
+                  borderStyle={style as any}
+                  borderColor={i === selectedBorder ? "$primary" : "$border"}
+                  borderLeft={true}
+                  borderRight={true}
+                  borderTop={i === 0}
+                  borderBottom={true}
+                  paddingX={1}
+                >
+                  <Text bold={i === selectedBorder}>
+                    {i === selectedBorder ? "▸ " : "  "}
+                    {style}
+                  </Text>
+                </Box>
+              ))}
+            </Box>
+            <Box flexDirection="column" flexGrow={1} gap={1}>
+              <Box flexDirection="column">
+                <Text color="$success">{"●"} success</Text>
+                <Text color="$warning">{"●"} warning</Text>
+                <Text color="$error">{"●"} error</Text>
+                <Text color="$info">{"●"} info</Text>
+                <Text color="$primary">{"●"} primary</Text>
+                <Muted>{"●"} muted</Muted>
+              </Box>
+              <Box flexDirection="column">
+                <Text backgroundColor="$primary" color="$primary-fg">
+                  {" selected "}
+                </Text>
+                <Text backgroundColor="$fg" color="$bg">
+                  {" inverse "}
+                </Text>
+                <Text backgroundColor="$muted-bg" color="$fg">
+                  {" surface "}
                 </Text>
               </Box>
-            ))}
-          </Box>
-          <Box flexDirection="column">
-            <Box gap={1} wrap="truncate">
-              <Text color="$success">{"●"} success</Text>
-              <Text color="$warning">{"●"} warning</Text>
-              <Text color="$error">{"●"} error</Text>
-              <Text color="$info">{"●"} info</Text>
-              <Text color="$primary">{"●"} primary</Text>
-              <Muted>{"●"} muted</Muted>
-            </Box>
-            <Box gap={1} wrap="truncate">
-              <Text backgroundColor="$primary" color="$primary-fg">
-                {" primary "}
-              </Text>
-              <Text backgroundColor="$success-bg" color="$success">
-                {" success "}
-              </Text>
-              <Text backgroundColor="$error-bg" color="$error">
-                {" error "}
-              </Text>
-              <Text backgroundColor="$muted-bg" color="$fg">
-                {" surface "}
-              </Text>
             </Box>
           </Box>
         </Box>

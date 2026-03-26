@@ -38933,99 +38933,100 @@ function DisplayTab({ scrollOffset }) {
                   children: "Border & Color Styles"
                 })
               }),
-              /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                flexDirection: "column",
-                gap: 0,
-                children: borderStyles.map((style, i) => /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                  borderStyle: style,
-                  borderColor: i === selectedBorder ? "$primary" : "$border",
-                  borderLeft: true,
-                  borderRight: true,
-                  borderTop: i === 0,
-                  borderBottom: true,
-                  paddingX: 1,
-                  children: /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                    bold: i === selectedBorder,
-                    children: [
-                      i === selectedBorder ? "▸ " : "  ",
-                      style
-                    ]
-                  })
-                }, style))
-              }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                flexDirection: "column",
+                flexDirection: "row",
+                gap: 2,
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    wrap: "truncate",
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$success",
+                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                    flexDirection: "column",
+                    gap: 0,
+                    children: borderStyles.map((style, i) => /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                      borderStyle: style,
+                      borderColor: i === selectedBorder ? "$primary" : "$border",
+                      borderLeft: true,
+                      borderRight: true,
+                      borderTop: i === 0,
+                      borderBottom: true,
+                      paddingX: 1,
+                      children: /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                        bold: i === selectedBorder,
                         children: [
-                          "●",
-                          " success"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$warning",
-                        children: [
-                          "●",
-                          " warning"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$error",
-                        children: [
-                          "●",
-                          " error"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$info",
-                        children: [
-                          "●",
-                          " info"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$primary",
-                        children: [
-                          "●",
-                          " primary"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Muted, {
-                        children: [
-                          "●",
-                          " muted"
+                          i === selectedBorder ? "▸ " : "  ",
+                          style
                         ]
                       })
-                    ]
+                    }, style))
                   }),
                   /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    flexDirection: "column",
+                    flexGrow: 1,
                     gap: 1,
-                    wrap: "truncate",
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        backgroundColor: "$primary",
-                        color: "$primary-fg",
-                        children: " primary "
+                      /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                        flexDirection: "column",
+                        children: [
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$success",
+                            children: [
+                              "●",
+                              " success"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$warning",
+                            children: [
+                              "●",
+                              " warning"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$error",
+                            children: [
+                              "●",
+                              " error"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$info",
+                            children: [
+                              "●",
+                              " info"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                            color: "$primary",
+                            children: [
+                              "●",
+                              " primary"
+                            ]
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsxs(Muted, {
+                            children: [
+                              "●",
+                              " muted"
+                            ]
+                          })
+                        ]
                       }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        backgroundColor: "$success-bg",
-                        color: "$success",
-                        children: " success "
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        backgroundColor: "$error-bg",
-                        color: "$error",
-                        children: " error "
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        backgroundColor: "$muted-bg",
-                        color: "$fg",
-                        children: " surface "
+                      /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                        flexDirection: "column",
+                        children: [
+                          /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                            backgroundColor: "$primary",
+                            color: "$primary-fg",
+                            children: " selected "
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                            backgroundColor: "$fg",
+                            color: "$bg",
+                            children: " inverse "
+                          }),
+                          /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                            backgroundColor: "$muted-bg",
+                            color: "$fg",
+                            children: " surface "
+                          })
+                        ]
                       })
                     ]
                   })
@@ -39526,4 +39527,4 @@ if (!ShowcaseComponent) {
   }
 }
 
-//# debugId=11ACE0848E9FC52A64756E2164756E21
+//# debugId=4D01EDCD12871C5E64756E2164756E21
