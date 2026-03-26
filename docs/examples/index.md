@@ -1,6 +1,6 @@
 # Examples
 
-Explore Silvery's features through focused examples. Each page teaches a specific differentiator — click a demo to load it, keyboard input works inside the terminal.
+Explore Silvery's features through interactive examples: `bunx silvery examples`
 
 ## By Feature
 

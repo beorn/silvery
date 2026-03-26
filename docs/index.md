@@ -49,6 +49,8 @@ features:
 
 ## Build Any Terminal App
 
+Try the interactive examples: `bunx silvery examples`
+
 <div class="use-cases">
 
 - **[Components](/examples/components)** -- 30+ ready-made widgets: SelectList, Tabs, ProgressBar, Spinner, and more
