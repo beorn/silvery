@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 import { createStyle } from "../src/index.ts"
-import type { ThemeLike } from "../src/types.ts"
 
 const ESC = "\x1b["
 
@@ -168,7 +167,7 @@ describe("createStyle", () => {
   })
 
   describe("theme tokens", () => {
-    const theme: ThemeLike = {
+    const theme = {
       primary: "#818cf8",
       secondary: "#a78bfa",
       accent: "#f472b6",
@@ -245,21 +244,21 @@ describe("createStyle", () => {
 
   describe("resolve()", () => {
     it("resolves theme tokens", () => {
-      const theme: ThemeLike = { primary: "#818cf8" }
+      const theme = { primary: "#818cf8" }
       const s = createStyle({ level: "truecolor", theme })
       expect(s.resolve("primary")).toBe("#818cf8")
       expect(s.resolve("$primary")).toBe("#818cf8")
     })
 
     it("resolves palette colors", () => {
-      const theme: ThemeLike = { palette: ["#000000", "#ff0000"] }
+      const theme = { palette: ["#000000", "#ff0000"] }
       const s = createStyle({ level: "truecolor", theme })
       expect(s.resolve("$color0")).toBe("#000000")
       expect(s.resolve("$color1")).toBe("#ff0000")
     })
 
     it("resolves hyphenated tokens", () => {
-      const theme: ThemeLike = { surfacebg: "#1e1e2e" }
+      const theme = { surfacebg: "#1e1e2e" }
       const s = createStyle({ level: "truecolor", theme })
       expect(s.resolve("$surface-bg")).toBe("#1e1e2e")
     })

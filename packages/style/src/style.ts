@@ -35,9 +35,22 @@ interface ChainState {
 // =============================================================================
 
 /**
- * Resolve a theme token name to its hex color value.
- * Supports $-prefixed tokens and bare names.
+ * Resolve a color value against a theme — the canonical token resolver.
+ *
+ * If the color starts with `$`, looks up the token in the theme.
+ * Supports `$primary`, `$surface-bg` (hyphens stripped), `$color0`–`$color15` (palette).
+ * Non-`$` strings pass through unchanged. Returns undefined if no theme or unknown token.
+ *
+ * Compatible with @silvery/theme's Theme type (or any object with string properties).
  */
+export function resolveThemeColor(name: string | undefined, theme: object | undefined): string | undefined {
+  if (!name) return undefined
+  if (!theme) return name.startsWith("$") ? undefined : name
+  if (!name.startsWith("$")) return name
+  return resolveToken(name, theme as ThemeLike)
+}
+
+/** Internal: resolve a token name (with or without $ prefix) against a theme. */
 function resolveToken(name: string, theme: ThemeLike | undefined): string | undefined {
   if (!theme) return undefined
   const token = name.startsWith("$") ? name.slice(1) : name
@@ -50,7 +63,7 @@ function resolveToken(name: string, theme: ThemeLike | undefined): string | unde
   }
   // Strip hyphens for lookup ($surface-bg → surfacebg)
   const key = token.replace(/-/g, "")
-  const val = theme[key]
+  const val = (theme as Record<string, unknown>)[key]
   return typeof val === "string" ? val : undefined
 }
 

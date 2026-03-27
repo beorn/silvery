@@ -34,5 +34,7 @@
       "import": "./src/*.ts"
     }
   },
-  "dependencies": {}
+  "dependencies": {
+    "@silvery/style": "workspace:*"
+  }
 }

@@ -9,15 +9,18 @@ export interface StyleOptions {
   /** Color level override. Auto-detected from terminal if omitted. */
   level?: ColorLevel | null
   /** Theme object for $token resolution. Any object with string-valued properties works. */
-  theme?: ThemeLike
+  theme?: ThemeLike | object
 }
 
 /**
- * Minimal theme interface — any object with string properties.
- * Compatible with @silvery/theme's Theme type without depending on it.
+ * Minimal theme interface for token resolution. Two forms:
+ * - Concrete types (Theme from @silvery/theme) — no index signature needed
+ * - Inline objects in tests/config — use `as ThemeLike` or `satisfies ThemeLike`
+ *
+ * The `resolveThemeColor` function accepts `object` to avoid the TS index
+ * signature constraint. Internal code casts to Record<string, unknown>.
  */
 export interface ThemeLike {
-  [key: string]: string | string[] | undefined
   palette?: string[]
 }
 
