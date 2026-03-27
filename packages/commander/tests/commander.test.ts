@@ -1,6 +1,6 @@
-import { Command } from "commander"
+import { Command as BaseCommand } from "commander"
 import { describe, expect, it } from "vitest"
-import { colorizeHelp } from "../src/index.ts"
+import { Command, colorizeHelp } from "../src/index.ts"
 import { createStyle } from "@silvery/ansi"
 
 // ANSI escape code constants matching @silvery/ansi output.
@@ -24,8 +24,8 @@ const FG_OFF = `${ESC}39m`
 // heading → bold
 // brackets → accent → magenta (35)
 
-function createTestProgram(): InstanceType<typeof Command> {
-  return new Command("myapp")
+function createTestProgram(): InstanceType<typeof BaseCommand> {
+  return new BaseCommand("myapp")
     .description("A test CLI application")
     .version("1.0.0")
     .option("-v, --verbose", "Enable verbose output")
@@ -155,7 +155,7 @@ describe("colorizeHelp", () => {
   })
 
   it("should handle program with no options or subcommands", () => {
-    const program = new Command("bare").description("Minimal program")
+    const program = new BaseCommand("bare").description("Minimal program")
     colorizeHelp(program)
     const help = program.helpInformation()
     expect(help).toContain(`${BOLD}Usage:${BOLD_OFF}`)
@@ -171,5 +171,91 @@ describe("colorizeHelp", () => {
     const buildCmd = program.commands.find((c) => c.name() === "build")!
     const buildHelp = buildCmd.helpInformation()
     expect(buildHelp).toContain(`${RED}-w, --watch${FG_OFF}`)
+  })
+})
+
+describe("addHelpSection", () => {
+  it("should add a section with rows after commands", () => {
+    const program = new Command("myapp").description("Test app")
+    colorizeHelp(program)
+    program.addHelpSection("Examples:", [
+      ["myapp init", "Initialize project"],
+      ["myapp serve", "Start server"],
+    ])
+    const help = program.helpInformation()
+    expect(help).toContain(`${BOLD}Examples:${BOLD_OFF}`)
+    expect(help).toContain("myapp init")
+    expect(help).toContain("Initialize project")
+  })
+
+  it("should add a section with free-form text", () => {
+    const program = new Command("myapp")
+    colorizeHelp(program)
+    program.addHelpSection("Note:", "Requires Node.js 23+")
+    const help = program.helpInformation()
+    expect(help).toContain(`${BOLD}Note:${BOLD_OFF}`)
+    expect(help).toContain("Requires Node.js 23+")
+  })
+
+  it("should style option-like terms with secondary color", () => {
+    const program = new Command("myapp")
+    colorizeHelp(program)
+    program.addHelpSection("Verbosity:", [
+      ["-v, --verbose", "More output"],
+    ])
+    const help = program.helpInformation()
+    // Option-like terms (-v) get secondary/option color (cyan), not primary (yellow)
+    expect(help).toContain(`${CYAN}-v, --verbose${FG_OFF}`)
+  })
+
+  it("should style command-like terms with primary color", () => {
+    const program = new Command("myapp")
+    colorizeHelp(program)
+    program.addHelpSection("Examples:", [
+      ["myapp build", "Build the project"],
+    ])
+    const help = program.helpInformation()
+    expect(help).toContain(`${YELLOW}myapp build${FG_OFF}`)
+  })
+
+  it("should align with Commander's built-in sections", () => {
+    const program = new Command("myapp")
+      .option("-p, --port <number>", "Port number")
+    colorizeHelp(program)
+    program.addHelpSection("Examples:", [
+      ["myapp --port 3000", "Start on port 3000"],
+    ])
+    const help = program.helpInformation()
+    // Both the option and the section row should be present with descriptions
+    expect(help).toContain("Port number")
+    expect(help).toContain("Start on port 3000")
+  })
+
+  it("should support explicit position", () => {
+    const program = new Command("myapp")
+    colorizeHelp(program)
+    program.addHelpSection("after", "After:", [["cmd", "desc"]])
+    program.addHelpSection("before", "Before:", [["cmd2", "desc2"]])
+    const help = program.helpInformation()
+    // Both sections should appear
+    expect(help).toContain("After:")
+    expect(help).toContain("Before:")
+    // "before" should come before "after" in the output
+    const beforeIdx = help.indexOf("Before:")
+    const afterIdx = help.indexOf("After:")
+    expect(beforeIdx).toBeLessThan(afterIdx)
+  })
+
+  it("should support multiple sections", () => {
+    const program = new Command("myapp")
+    colorizeHelp(program)
+    program
+      .addHelpSection("Section A:", [["a", "first"]])
+      .addHelpSection("Section B:", [["b", "second"]])
+    const help = program.helpInformation()
+    expect(help).toContain("Section A:")
+    expect(help).toContain("Section B:")
+    expect(help).toContain("first")
+    expect(help).toContain("second")
   })
 })
