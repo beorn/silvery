@@ -24,6 +24,8 @@ program.parse()
 const { env, port, retries, tags, force } = program.opts()
 ```
 
+[Zod](https://github.com/colinhacks/zod) is entirely optional — `z` is tree-shaken from your bundle if you don't import it. Without Zod, use the built-in types (`port`, `int`, `csv`) or plain Commander.
+
 <pre><code>$ deploy --help
 
 <b>Usage:</b> <span style="color:#5bc0de">deploy</span> <span style="color:#5cb85c">[options]</span>
