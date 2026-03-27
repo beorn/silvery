@@ -49,7 +49,7 @@ features:
 
 ## Build Any Terminal App
 
-Try the interactive examples: `bunx silvery examples`
+Try the interactive examples: `npx silvery examples`
 
 <div class="use-cases">
 

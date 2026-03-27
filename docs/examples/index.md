@@ -1,6 +1,6 @@
 # Examples
 
-Explore Silvery's features through interactive examples: `bunx silvery examples`
+Explore Silvery's features through interactive examples: `npx silvery examples`
 
 ## By Feature
 
