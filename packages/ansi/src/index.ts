@@ -2,7 +2,9 @@
  * @silvery/ansi — Terminal ANSI utilities.
  *
  * Color detection, SGR codes, NO_COLOR/FORCE_COLOR support,
- * terminal capability detection, and ANSI string helpers.
+ * terminal capability detection, ANSI string helpers,
+ * color maps, quantization, terminal control sequences,
+ * extended underlines, and hyperlinks.
  *
  * @module
  */
@@ -53,3 +55,67 @@ export { fgColorCode, bgColorCode } from "./sgr-codes"
 // =============================================================================
 
 export { ANSI_REGEX, stripAnsi, displayLength } from "./utils"
+
+// =============================================================================
+// Color Maps & Quantization
+// =============================================================================
+
+export {
+  MODIFIERS,
+  FG_COLORS,
+  BG_COLORS,
+  ANSI_16_COLORS,
+  nearestAnsi16,
+  rgbToAnsi256,
+  fgFromRgb,
+  bgFromRgb,
+} from "./color-maps"
+
+// =============================================================================
+// Terminal Control Sequences
+// =============================================================================
+
+export {
+  enterAltScreen,
+  leaveAltScreen,
+  clearScreen,
+  clearLine,
+  cursorTo,
+  cursorHome,
+  cursorHide,
+  cursorShow,
+  cursorStyle,
+  setTitle,
+  enableMouse,
+  disableMouse,
+  enableBracketedPaste,
+  disableBracketedPaste,
+  enableSyncUpdate,
+  disableSyncUpdate,
+  setScrollRegion,
+  resetScrollRegion,
+  scrollUp,
+  scrollDown,
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+} from "./terminal-control"
+
+// =============================================================================
+// Extended Underline Functions
+// =============================================================================
+
+export {
+  underline,
+  curlyUnderline,
+  dottedUnderline,
+  dashedUnderline,
+  doubleUnderline,
+  underlineColor,
+  styledUnderline,
+} from "./underline-ext"
+
+// =============================================================================
+// Hyperlink Functions
+// =============================================================================
+
+export { hyperlink } from "./hyperlink"
