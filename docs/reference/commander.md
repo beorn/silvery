@@ -107,31 +107,72 @@ The `z` export is tree-shakeable -- if you don't import it, Zod won't be in your
 
 Available `z` CLI types: `z.port`, `z.int`, `z.uint`, `z.float`, `z.csv`, `z.url`, `z.path`, `z.email`, `z.date`, `z.json`, `z.bool`, `z.intRange(min, max)`.
 
-## Built-in Type Reference
+## Complete Type Reference
 
-Each type implements [Standard Schema v1](https://github.com/standard-schema/standard-schema) and works with Commander's `.option()` or standalone.
+### Built-in types (zero dependencies)
 
-| Type    | Output     | Validation                               |
-| ------- | ---------- | ---------------------------------------- |
-| `int`   | `number`   | Integer (coerced from string)            |
-| `uint`  | `number`   | Unsigned integer (>= 0)                  |
-| `float` | `number`   | Any finite number (rejects NaN)          |
-| `port`  | `number`   | Integer 1-65535                          |
-| `url`   | `string`   | Valid URL (via `URL` constructor)        |
-| `path`  | `string`   | Non-empty string                         |
-| `csv`   | `string[]` | Comma-separated, trimmed, empty filtered |
-| `json`  | `unknown`  | Parsed JSON                              |
-| `bool`  | `boolean`  | true/false/yes/no/1/0 (case-insensitive) |
-| `date`  | `Date`     | Valid date string                        |
-| `email` | `string`   | Basic email validation (has @ and .)     |
-| `regex` | `RegExp`   | Valid regex pattern                      |
+Import from `@silvery/commander` or `@silvery/commander/parse`. Each implements [Standard Schema v1](https://github.com/standard-schema/standard-schema) with `.parse()` and `.safeParse()`.
 
-### Factory Type
+| Type | Output | Validation | Example input |
+|------|--------|------------|---------------|
+| `int` | `number` | Integer (coerced from string) | `"42"` → `42` |
+| `uint` | `number` | Unsigned integer (>= 0) | `"0"` → `0` |
+| `float` | `number` | Any finite number (rejects NaN) | `"3.14"` → `3.14` |
+| `port` | `number` | Integer 1–65535 | `"3000"` → `3000` |
+| `url` | `string` | Valid URL | `"https://example.com"` |
+| `path` | `string` | Non-empty string | `"./output"` |
+| `csv` | `string[]` | Comma-separated, trimmed | `"a, b, c"` → `["a","b","c"]` |
+| `json` | `unknown` | Parsed JSON | `'{"a":1}'` → `{a: 1}` |
+| `bool` | `boolean` | true/false/yes/no/1/0 | `"yes"` → `true` |
+| `date` | `Date` | Valid date string | `"2026-03-26"` → `Date` |
+| `email` | `string` | Basic email format | `"a@b.com"` |
+| `regex` | `RegExp` | Valid regex pattern | `"\\d+"` → `/\d+/` |
+| `intRange(min, max)` | `number` | Integer within bounds | `intRange(1, 100)` |
+| `["a", "b", "c"]` | `"a" \| "b" \| "c"` | Exact string match | Array passed to `.option()` |
+
+### Zod types (requires `zod` peer dep)
+
+Import `z` from `@silvery/commander` — it's [Zod](https://github.com/colinhacks/zod) extended with CLI-specific schemas. Tree-shakeable — Zod only loads if you import `z`.
+
+| Type | Zod equivalent | Example |
+|------|---------------|---------|
+| `z.port` | `z.coerce.number().int().min(1).max(65535)` | Port number |
+| `z.int` | `z.coerce.number().int()` | Integer |
+| `z.uint` | `z.coerce.number().int().min(0)` | Unsigned integer |
+| `z.float` | `z.coerce.number()` | Float |
+| `z.csv` | `z.string().transform(v => v.split(","))` | Comma-separated |
+| `z.url` | `z.string().url()` | URL |
+| `z.path` | `z.string().min(1)` | File path |
+| `z.email` | `z.string().email()` | Email |
+| `z.date` | `z.coerce.date()` | Date |
+| `z.json` | `z.string().transform(JSON.parse)` | JSON |
+| `z.bool` | `z.enum([...]).transform(...)` | Boolean string |
+| `z.intRange(min, max)` | `z.coerce.number().int().min(min).max(max)` | Bounded integer |
+
+Plus the full Zod API — `z.string()`, `z.number()`, `z.enum()`, `z.object()`, `.refine()`, `.transform()`, `.pipe()`, etc.
+
+### Standard Schema (any schema library)
+
+Any [Standard Schema v1](https://github.com/standard-schema/standard-schema) object works as an option type — [Zod](https://github.com/colinhacks/zod) (>=3.24), [Valibot](https://github.com/fabian-hiller/valibot) (>=1.0), [ArkType](https://github.com/arktypeio/arktype) (>=2.0):
 
 ```typescript
-import { intRange } from "@silvery/commander"
+// Valibot
+import * as v from "valibot"
+.option("-p, --port <n>", "Port", v.pipe(v.string(), v.transform(Number), v.minValue(1)))
 
-intRange(1, 100) // CLIType<number> -- integer within bounds
+// ArkType
+import { type } from "arktype"
+.option("-p, --port <n>", "Port", type("1 <= integer <= 65535"))
+```
+
+### Function parsers (Commander built-in)
+
+[Commander's](https://github.com/tj/commander.js) standard parser function pattern:
+
+```typescript
+.option("-p, --port <n>", "Port", parseInt)              // number
+.option("--tags <t>", "Tags", v => v.split(","))          // string[]
+.option("-p, --port <n>", "Port", parseInt, 8080)         // number with default
 ```
 
 ### Array Choices
