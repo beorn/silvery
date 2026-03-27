@@ -88,6 +88,23 @@ interface StoredSection {
   content: HelpSectionContent
 }
 
+/**
+ * Style a section term using Commander's style hooks.
+ * Splits the term into segments: option-like (-f), argument brackets (<arg>, [opt]),
+ * and command words — each styled with the appropriate hook.
+ */
+function styleSectionTerm(term: string, helper: any): string {
+  // Option-like terms: entire term styled as option
+  if (/^\s*-/.test(term)) return helper.styleOptionText(term)
+
+  // Mixed terms: style <arg>, [opt], and "quoted" segments as arguments, rest as commands
+  return term.replace(/(<[^>]+>|\[[^\]]+\]|"[^"]*")|([^<["[\]]+)/g, (_match, arg: string, text: string) => {
+    if (arg) return helper.styleArgumentText(arg)
+    if (text) return helper.styleCommandText(text)
+    return ""
+  })
+}
+
 export class Command extends BaseCommand {
   private _helpSectionList: StoredSection[] = []
   private _helpSectionsInstalled = false
@@ -229,8 +246,7 @@ export class Command extends BaseCommand {
         }
       } else {
         for (const [term, desc] of section.content) {
-          // Auto-detect term style: option-like terms (-f, --flag) use option styling
-          const styleTerm = /^\s*-/.test(term) ? helper.styleOptionText(term) : helper.styleCommandText(term)
+          const styleTerm = styleSectionTerm(term, helper)
           lines.push(helper.formatItem(styleTerm, termWidth, helper.styleDescriptionText(desc), helper))
         }
       }

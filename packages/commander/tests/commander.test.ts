@@ -246,6 +246,17 @@ describe("addHelpSection", () => {
     expect(beforeIdx).toBeLessThan(afterIdx)
   })
 
+  it("should style <arg> brackets within command terms", () => {
+    const program = new Command("myapp")
+    colorizeHelp(program)
+    program.addHelpSection("Examples:", [
+      ["myapp add <id>", "Add by ID"],
+    ])
+    const help = program.helpInformation()
+    // <id> gets accent color (magenta), rest gets primary (yellow)
+    expect(help).toContain(`${YELLOW}myapp add ${FG_OFF}${MAGENTA}<id>${FG_OFF}`)
+  })
+
   it("should support multiple sections", () => {
     const program = new Command("myapp")
     colorizeHelp(program)
