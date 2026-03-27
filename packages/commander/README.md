@@ -33,21 +33,22 @@ With plain Commander, `opts()` returns `Record<string, any>` — every value is 
 
 [Zod](https://github.com/colinhacks/zod) is entirely optional — `z` is tree-shaken from your bundle if you don't import it. Without Zod, use the built-in types (`port`, `int`, `csv`) or plain Commander.
 
-<pre><code>$ deploy --help
+```ansi
+$ deploy --help
 
-<b>Usage:</b> <span style="color:#5bc0de">deploy</span> <span style="color:#5cb85c">[options]</span>
+[1mUsage:[0m [36mdeploy[0m [32m[options][0m
 
 Deploy to an environment
 
-<b>Options:</b>
-  <span style="color:#5cb85c">-V, --version</span>      <span style="color:#999">output the version number</span>
-  <span style="color:#5cb85c">-e, --env &lt;env&gt;</span>    <span style="color:#999">Target environment</span>
-  <span style="color:#5cb85c">-p, --port &lt;n&gt;</span>     <span style="color:#999">Port number</span>
-  <span style="color:#5cb85c">-r, --retries &lt;n&gt;</span>  <span style="color:#999">Retry count</span>
-  <span style="color:#5cb85c">--tags &lt;t&gt;</span>         <span style="color:#999">Labels</span>
-  <span style="color:#5cb85c">-f, --force</span>        <span style="color:#999">Skip confirmation</span>
-  <span style="color:#5cb85c">-h, --help</span>         <span style="color:#999">display help for command</span>
-</code></pre>
+[1mOptions:[0m
+  [32m-V, --version[0m      [2moutput the version number[0m
+  [32m-e, --env <env>[0m    [2mTarget environment[0m
+  [32m-p, --port <n>[0m     [2mPort number[0m
+  [32m-r, --retries <n>[0m  [2mRetry count[0m
+  [32m--tags <t>[0m         [2mLabels[0m
+  [32m-f, --force[0m        [2mSkip confirmation[0m
+  [32m-h, --help[0m         [2mdisplay help for command[0m
+```
 
 Help is auto-colorized — bold headings, green flags, cyan commands, dim descriptions. Options with [Zod](https://github.com/colinhacks/zod) schemas or built-in types are validated at parse time with clear error messages.
 
