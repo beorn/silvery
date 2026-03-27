@@ -1,5 +1,5 @@
 /**
- * Commander.js help colorization using @silvery/style.
+ * Commander.js help colorization using @silvery/ansi.
  *
  * Uses Commander's built-in style hooks (styleTitle, styleOptionText, etc.)
  * rather than regex post-processing.
@@ -14,7 +14,7 @@
  * ```
  */
 
-import { createStyle } from "@silvery/style"
+import { createStyle } from "@silvery/ansi"
 
 // Auto-detect terminal color level. The Style instance handles the full
 // degradation chain: truecolor → 256 → basic (ANSI 16) → null (no color).
@@ -23,7 +23,7 @@ const s = createStyle()
 
 /**
  * Check if color output should be enabled.
- * Delegates to @silvery/style's auto-detection (NO_COLOR, FORCE_COLOR, TERM).
+ * Delegates to @silvery/ansi's auto-detection (NO_COLOR, FORCE_COLOR, TERM).
  */
 export function shouldColorize(): boolean {
   return s.level > 0

@@ -11,7 +11,7 @@ import type { Style } from "./types.ts"
 const STYLE_METHODS = new Set(["hex", "bgHex", "rgb", "bgRgb", "ansi256", "bgAnsi256"])
 
 /**
- * Create a proxy that wraps a @silvery/style instance with additional properties.
+ * Create a proxy that wraps a style instance with additional properties.
  *
  * The proxy makes the result:
  * - Callable: result('text') applies current styles
@@ -30,7 +30,6 @@ export function createMixedStyle<T extends object>(style: Style, extra: T): Styl
 function createChainProxy<T extends object>(currentStyle: Style, extra: T): Style & T {
   const handler: ProxyHandler<(...args: unknown[]) => string> = {
     apply(_target, _thisArg, args) {
-      // Call the Style proxy — it handles string and template literal args
       if (args.length === 1 && typeof args[0] === "string") {
         return (currentStyle as unknown as (s: string) => string)(args[0])
       }
@@ -44,14 +43,12 @@ function createChainProxy<T extends object>(currentStyle: Style, extra: T): Styl
     },
 
     get(_target, prop) {
-      // Check extra first for extra-specific methods/properties
       if (prop in extra) {
         const value = (extra as Record<string | symbol, unknown>)[prop]
         if (typeof value === "function") return value
         return value
       }
 
-      // Handle symbol properties
       if (typeof prop === "symbol") {
         if (prop === Symbol.dispose) {
           return (extra as Record<symbol, unknown>)[Symbol.dispose]
@@ -59,7 +56,6 @@ function createChainProxy<T extends object>(currentStyle: Style, extra: T): Styl
         return undefined
       }
 
-      // Style methods that take arguments — wrap result in new chain proxy
       if (STYLE_METHODS.has(prop)) {
         const method = currentStyle[prop as keyof Style]
         if (typeof method === "function") {
@@ -70,10 +66,8 @@ function createChainProxy<T extends object>(currentStyle: Style, extra: T): Styl
         }
       }
 
-      // Style properties (bold, red, etc.) — return new chain proxy
       const styleProp = currentStyle[prop as keyof Style]
       if (styleProp !== undefined) {
-        // If it's a Style chain (callable object), wrap in proxy
         if (typeof styleProp === "function" || typeof styleProp === "object") {
           return createChainProxy(styleProp as Style, extra)
         }

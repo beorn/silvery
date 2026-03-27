@@ -15,7 +15,7 @@
  * ```
  */
 
-import { detectColor } from "@silvery/ansi"
+import { detectColor } from "../detection.ts"
 
 import { BG_COLORS, FG_COLORS, MODIFIERS, THEME_TOKEN_DEFAULTS, bgFromRgb, fgFromRgb, hexToRgb } from "./colors.ts"
 import type { Style, StyleOptions, ThemeLike } from "./types.ts"
@@ -91,6 +91,22 @@ const THEME_TOKENS = new Set([
 // Public API
 // =============================================================================
 
+/** Convert chalk numeric level (0-3) to ColorLevel. */
+function fromChalkLevel(n: number): import("../types.ts").ColorLevel | null {
+  if (n <= 0) return null
+  if (n === 1) return "basic"
+  if (n === 2) return "256"
+  return "truecolor"
+}
+
+/** Convert ColorLevel to chalk numeric level (0-3). */
+function toChalkLevel(cl: import("../types.ts").ColorLevel | null): number {
+  if (cl === null) return 0
+  if (cl === "basic") return 1
+  if (cl === "256") return 2
+  return 3
+}
+
 /**
  * Create a style object for terminal output.
  *
@@ -99,7 +115,7 @@ const THEME_TOKENS = new Set([
  *
  * @example
  * ```ts
- * import { createStyle } from "@silvery/style"
+ * import { createStyle } from "@silvery/ansi"
  *
  * const s = createStyle()
  * console.log(s.bold.red("Error!"))
@@ -111,26 +127,10 @@ const THEME_TOKENS = new Set([
  * console.log(s.success("Done"))
  * ```
  */
-/** Convert chalk numeric level (0-3) to ColorLevel. */
-function fromChalkLevel(n: number): import("@silvery/ansi").ColorLevel | null {
-  if (n <= 0) return null
-  if (n === 1) return "basic"
-  if (n === 2) return "256"
-  return "truecolor"
-}
-
-/** Convert ColorLevel to chalk numeric level (0-3). */
-function toChalkLevel(cl: import("@silvery/ansi").ColorLevel | null): number {
-  if (cl === null) return 0
-  if (cl === "basic") return 1
-  if (cl === "256") return 2
-  return 3
-}
-
 export function createStyle(options?: StyleOptions): Style {
   // Mutable level ref — shared across all chains from this instance
   const ref = {
-    level: null as import("@silvery/ansi").ColorLevel | null,
+    level: null as import("../types.ts").ColorLevel | null,
     theme: options?.theme as ThemeLike | undefined,
   }
 
@@ -150,12 +150,29 @@ export function createStyle(options?: StyleOptions): Style {
 }
 
 /**
+ * Create a plain style object — no theme, just color level.
+ * Equivalent to `createStyle()` without a theme.
+ *
+ * @param level - Color level override. Auto-detected if omitted.
+ */
+export function createPlainStyle(level?: import("../types.ts").ColorLevel | null): Style {
+  return createStyle({ level })
+}
+
+/**
+ * Pre-configured global style instance.
+ * Auto-detects color level from the terminal.
+ * No theme by default — use `createStyle({ theme })` for themed output.
+ */
+export const style: Style = createStyle()
+
+/**
  * Create a chain that reads level from a mutable ref.
  * This allows `style.level = 3` to affect all subsequent calls.
  */
 function createChainWithRef(
   state: ChainState,
-  ref: { level: import("@silvery/ansi").ColorLevel | null; theme: ThemeLike | undefined },
+  ref: { level: import("../types.ts").ColorLevel | null; theme: ThemeLike | undefined },
 ): Style {
   const handler: ProxyHandler<(...args: unknown[]) => string> = {
     apply(_target, _thisArg, args) {

@@ -1,5 +1,5 @@
 /**
- * silvery/chalk — Drop-in chalk replacement powered by @silvery/style.
+ * silvery/chalk — Drop-in chalk replacement powered by @silvery/ansi.
  *
  * ```ts
  * // Before:
@@ -10,12 +10,12 @@
  * ```
  *
  * The default export is a chainable styling function with chalk-compatible API.
- * Under the hood it uses @silvery/style — no chalk dependency.
+ * Under the hood it uses @silvery/ansi — no chalk dependency.
  *
  * @packageDocumentation
  */
 
-import { createStyle, type Style } from "@silvery/style"
+import { createStyle, type Style } from "@silvery/ansi"
 import { detectColor } from "@silvery/ag-term/ansi/detection"
 import type { ColorLevel } from "@silvery/ag-term/ansi/types"
 

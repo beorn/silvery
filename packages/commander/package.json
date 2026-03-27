@@ -29,7 +29,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@silvery/style": ">=0.1.0",
+    "@silvery/ansi": ">=1.0.0",
     "commander": ">=12.0.0"
   },
   "peerDependencies": {

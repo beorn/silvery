@@ -37,6 +37,6 @@
   "dependencies": {
     "@silvery/ag-react": "workspace:*",
     "@silvery/ag-term": "workspace:*",
-    "@silvery/style": "workspace:*"
+    "@silvery/ansi": "workspace:*"
   }
 }

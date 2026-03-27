@@ -1,8 +1,8 @@
 /**
- * Type definitions for @silvery/style.
+ * Type definitions for the style system.
  */
 
-import type { ColorLevel } from "@silvery/ansi"
+import type { ColorLevel } from "../types.ts"
 
 /** Options for createStyle(). */
 export interface StyleOptions {

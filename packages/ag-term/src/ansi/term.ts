@@ -21,7 +21,7 @@
  * ```
  */
 
-import { createMixedStyle, createStyle, type Style } from "@silvery/style"
+import { createMixedStyle, createStyle, type Style } from "@silvery/ansi"
 import type {
   ColorLevel,
   CreateTermOptions,

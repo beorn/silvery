@@ -1,9 +1,9 @@
 import { Command } from "commander"
 import { describe, expect, it } from "vitest"
 import { colorizeHelp } from "../src/index.ts"
-import { createStyle } from "@silvery/style"
+import { createStyle } from "@silvery/ansi"
 
-// ANSI escape code constants matching @silvery/style output.
+// ANSI escape code constants matching @silvery/ansi output.
 // Style uses per-attribute close codes (not full reset \x1b[0m).
 const ESC = "\x1b["
 const BOLD = `${ESC}1m`

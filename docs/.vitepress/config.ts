@@ -41,13 +41,17 @@ export default defineConfig({
     ["meta", { property: "og:site_name", content: "Silvery" }],
     ["meta", { property: "og:image", content: "https://silvery.dev/og-image.png" }],
     ["meta", { name: "twitter:card", content: "summary" }],
-    ["script", { type: "application/ld+json" }, JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Silvery",
-      "url": "https://silvery.dev",
-      "description": "React TUI framework for modern terminal apps",
-    })],
+    [
+      "script",
+      { type: "application/ld+json" },
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: "Silvery",
+        url: "https://silvery.dev",
+        description: "React TUI framework for modern terminal apps",
+      }),
+    ],
   ],
 
   transformPageData(pageData) {
@@ -63,16 +67,15 @@ export default defineConfig({
     )
 
     // JSON-LD BreadcrumbList
-    const segments = cleanPath.replace(/\.html$/, "").split("/").filter(Boolean)
+    const segments = cleanPath
+      .replace(/\.html$/, "")
+      .split("/")
+      .filter(Boolean)
     if (segments.length > 0) {
-      const breadcrumbItems = [
-        { "@type": "ListItem", position: 1, name: "Home", item: "https://silvery.dev/" },
-      ]
+      const breadcrumbItems = [{ "@type": "ListItem", position: 1, name: "Home", item: "https://silvery.dev/" }]
       for (let i = 0; i < segments.length; i++) {
         const path = segments.slice(0, i + 1).join("/")
-        const name = segments[i]
-          .replace(/-/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase())
+        const name = segments[i].replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
         breadcrumbItems.push({
           "@type": "ListItem",
           position: i + 2,
@@ -215,7 +218,6 @@ export default defineConfig({
           { text: "@silvery/commander", link: "/reference/commander" },
           { text: "@silvery/ansi", link: "/reference/ansi" },
           { text: "@silvery/theme", link: "/reference/theme" },
-          { text: "@silvery/style", link: "/reference/style" },
         ],
       },
       {

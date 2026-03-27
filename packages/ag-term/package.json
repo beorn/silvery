@@ -47,7 +47,6 @@
     "@silvery/ag-react": "workspace:*",
     "@silvery/ansi": "workspace:*",
     "@silvery/create": "workspace:*",
-    "@silvery/style": "workspace:*",
     "@silvery/test": "workspace:*",
     "@silvery/theme": "workspace:*",
     "flexily": "github:beorn/flexily"

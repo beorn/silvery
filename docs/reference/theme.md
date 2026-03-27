@@ -559,12 +559,12 @@ Use the `theme` prop on `Box` to override token resolution for a subtree:
 
 See the [Theming guide](/reference/theming) for more detail on `$token` shorthand, special values (`inherit`, `mix()`, `$default`), and backward-compatible aliases.
 
-## Usage in CLI (@silvery/style)
+## Usage in CLI (@silvery/ansi)
 
-For non-React CLI output, use [`@silvery/style`](/reference/style) which provides the same theme token resolution without React:
+For non-React CLI output, use [`@silvery/ansi`](/reference/style) which provides the same theme token resolution without React:
 
 ```typescript
-import { createStyle } from "@silvery/style"
+import { createStyle } from "@silvery/ansi"
 
 const s = createStyle({ theme })
 s.primary("deploy") // resolves theme.primary -> hex -> ANSI

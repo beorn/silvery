@@ -1,10 +1,26 @@
 /**
- * @silvery/ansi — Terminal ANSI utilities.
+ * @silvery/ansi — Everything terminal.
  *
- * Color detection, SGR codes, NO_COLOR/FORCE_COLOR support,
- * terminal capability detection, ANSI string helpers,
- * color maps, quantization, terminal control sequences,
- * extended underlines, and hyperlinks.
+ * Unified package for terminal styling, ANSI primitives, color detection,
+ * theme derivation, and terminal control sequences.
+ *
+ * @example
+ * ```ts
+ * // Pre-configured global — zero config
+ * import { style } from "@silvery/ansi"
+ * style.bold.red("error")
+ * style.primary("deploy")
+ *
+ * // Create your own
+ * import { createStyle, createPlainStyle } from "@silvery/ansi"
+ * const s = createStyle({ theme })
+ *
+ * // Terminal control
+ * import { enterAltScreen, cursorTo, enableMouse } from "@silvery/ansi"
+ *
+ * // Theme derivation
+ * import { deriveTheme, detectTheme } from "@silvery/ansi"
+ * ```
  *
  * @module
  */
@@ -119,3 +135,49 @@ export {
 // =============================================================================
 
 export { hyperlink } from "./hyperlink"
+
+// =============================================================================
+// Style — Theme-aware chalk replacement
+// =============================================================================
+
+export { createStyle, createPlainStyle, style, resolveThemeColor } from "./style/style"
+export { createMixedStyle } from "./style/mixed-proxy"
+export { THEME_TOKEN_DEFAULTS } from "./style/colors"
+export type { Style, StyleOptions, ThemeLike } from "./style/types"
+
+// =============================================================================
+// Theme Derivation
+// =============================================================================
+
+export { deriveTheme } from "./theme/derive"
+export type { ThemeAdjustment } from "./theme/derive"
+export { ansi16DarkTheme, ansi16LightTheme, defaultDarkPalette, defaultLightPalette } from "./theme/default-palettes"
+export type { ColorPalette, Theme, AnsiPrimary, HueName } from "./theme/types"
+export type { AnsiColorName as PaletteColorName } from "./theme/types"
+export { COLOR_PALETTE_FIELDS } from "./theme/types"
+
+// =============================================================================
+// Theme Detection (async, OSC-based)
+// =============================================================================
+
+export { detectTerminalPalette, detectTheme } from "./theme/detect"
+export type { DetectedPalette, DetectThemeOptions } from "./theme/detect"
+
+// =============================================================================
+// OSC Protocol — Terminal color queries
+// =============================================================================
+
+export { queryPaletteColor, queryMultiplePaletteColors, setPaletteColor, parsePaletteResponse } from "./osc-palette"
+
+export {
+  queryForegroundColor,
+  queryBackgroundColor,
+  queryCursorColor,
+  setForegroundColor,
+  setBackgroundColor,
+  setCursorColor,
+  resetForegroundColor,
+  resetBackgroundColor,
+  resetCursorColor,
+  detectColorScheme,
+} from "./osc-colors"

@@ -1,35 +1,32 @@
-# @silvery/style
+# Terminal Styling
 
-Theme-aware terminal styling with a chalk-compatible chainable API. Use `@silvery/style` for CLI output that respects terminal color capabilities and resolves semantic theme tokens.
+Theme-aware terminal styling with a chalk-compatible chainable API. Part of `@silvery/ansi` — use it for CLI output that respects terminal color capabilities and resolves semantic theme tokens.
 
-## Installation
+## Quick Start
 
-::: code-group
+```typescript
+import { style, createStyle } from "@silvery/ansi"
 
-```bash [npm]
-npm install @silvery/style
+// Global pre-configured instance
+style.bold.red("Error!")
+style.primary("Deploy")
+
+// Create your own
+const s = createStyle()
+s.hex("#818cf8")("Indigo")
+s.bgYellow.black("Warning")
+
+// With theme
+const themed = createStyle({ theme })
+themed.primary("Deploy") // resolves $primary from theme
 ```
-
-```bash [bun]
-bun add @silvery/style
-```
-
-```bash [pnpm]
-pnpm add @silvery/style
-```
-
-```bash [yarn]
-yarn add @silvery/style
-```
-
-:::
 
 ## createStyle()
 
-The primary entry point. Returns a chainable, callable style object.
+Returns a chainable, callable style object.
 
 ```typescript
-import { createStyle } from "@silvery/style"
+import { createStyle } from "@silvery/ansi"
 
 const s = createStyle()
 s.bold.red("Error!") // bold red text
@@ -53,7 +50,30 @@ interface StyleOptions {
 | `level` | `"truecolor" \| "256" \| "basic" \| null` | auto-detected | Color support level. `null` disables all color. |
 | `theme` | `ThemeLike`                               | `undefined`   | Theme object for token resolution               |
 
-When `level` is omitted, `createStyle()` auto-detects from `process.stdout` using `@silvery/ansi`'s `detectColor()`, respecting `NO_COLOR` and `FORCE_COLOR` environment variables.
+When `level` is omitted, `createStyle()` auto-detects from `process.stdout`, respecting `NO_COLOR` and `FORCE_COLOR` environment variables.
+
+## createPlainStyle()
+
+Creates a style object without a theme. Equivalent to `createStyle()` without a theme option.
+
+```typescript
+import { createPlainStyle } from "@silvery/ansi"
+
+const s = createPlainStyle() // auto-detect color level
+const s = createPlainStyle("basic") // force ANSI 16
+```
+
+## Global `style`
+
+A pre-configured singleton with auto-detected color level and no theme. Available immediately:
+
+```typescript
+import { style } from "@silvery/ansi"
+
+style.bold("Important")
+style.red("Error")
+style.primary("Deploy") // falls back to yellow (no theme)
+```
 
 ## Chainable API
 
@@ -151,7 +171,7 @@ s.bgAnsi256(17)("Navy bg")
 When a `theme` is provided to `createStyle()`, semantic token names resolve to their theme colors:
 
 ```typescript
-import { createStyle } from "@silvery/style"
+import { createStyle } from "@silvery/ansi"
 import { defaultDarkTheme } from "silvery/theme"
 
 const s = createStyle({ theme: defaultDarkTheme })
@@ -223,13 +243,26 @@ const s = createStyle({ level: null })
 const s = createStyle({ level: "basic" })
 ```
 
+### Chalk-compatible `level` Property
+
+The `level` property on Style instances is mutable and uses chalk's numeric convention:
+
+```typescript
+const s = createStyle()
+s.level // 0=none, 1=basic, 2=256, 3=truecolor
+
+s.level = 0 // disable color
+s.level = 3 // force truecolor
+```
+
+Setting level affects all chains derived from the same `createStyle()` call.
+
 ## ThemeLike Interface
 
-The `theme` option accepts any object with string-valued properties. It does not require the full `@silvery/theme` `Theme` type:
+The `theme` option accepts any object with string-valued properties. It does not require the full `Theme` type:
 
 ```typescript
 interface ThemeLike {
-  [key: string]: string | string[] | undefined
   palette?: string[]
 }
 ```
@@ -264,21 +297,19 @@ s.red`Error: ${code}` // red text with interpolation
 ### CLI Progress Output
 
 ```typescript
-import { createStyle } from "@silvery/style"
+import { style } from "@silvery/ansi"
 
-const s = createStyle()
-
-console.log(s.bold("Building..."))
-console.log(s.green("  ✓ Compiled 42 files"))
-console.log(s.yellow("  ⚠ 3 warnings"))
-console.log(s.red("  ✗ 1 error"))
-console.log(s.dim("  Duration: 1.2s"))
+console.log(style.bold("Building..."))
+console.log(style.green("  ✓ Compiled 42 files"))
+console.log(style.yellow("  ⚠ 3 warnings"))
+console.log(style.red("  ✗ 1 error"))
+console.log(style.dim("  Duration: 1.2s"))
 ```
 
 ### Theme-aware Status Bar
 
 ```typescript
-import { createStyle } from "@silvery/style"
+import { createStyle } from "@silvery/ansi"
 import { defaultDarkTheme } from "silvery/theme"
 
 const s = createStyle({ theme: defaultDarkTheme })
@@ -295,7 +326,7 @@ function statusLine(branch: string, files: number, errors: number) {
 
 ### Migrating from Chalk
 
-`@silvery/style` is a drop-in replacement for most chalk usage:
+`@silvery/ansi` is a drop-in replacement for most chalk usage:
 
 ```typescript
 // Before (chalk)
@@ -304,14 +335,14 @@ chalk.bold.red("Error!")
 chalk.hex("#818cf8")("Indigo")
 chalk.rgb(255, 99, 71)("Tomato")
 
-// After (@silvery/style)
-import { createStyle } from "@silvery/style"
+// After (@silvery/ansi)
+import { createStyle } from "@silvery/ansi"
 const s = createStyle()
 s.bold.red("Error!")
 s.hex("#818cf8")("Indigo")
 s.rgb(255, 99, 71)("Tomato")
 ```
 
-The main difference: `createStyle()` returns a new instance each time (no global state), and theme tokens are available as chainable properties.
+The main difference: `createStyle()` returns a new instance each time (no global state), and theme tokens are available as chainable properties. Or use the global `style` singleton for zero-config usage.
 
 See the [Migrate from Chalk](/getting-started/migrate-from-chalk) guide for a detailed migration walkthrough.

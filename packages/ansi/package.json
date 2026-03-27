@@ -1,14 +1,17 @@
 {
   "name": "@silvery/ansi",
-  "version": "0.1.1",
-  "description": "Terminal ANSI utilities — color detection, SGR codes, NO_COLOR support. Zero dependencies.",
+  "version": "1.0.0",
+  "description": "Everything terminal — styling, ANSI primitives, color detection, theme derivation, terminal control",
   "keywords": [
     "ansi",
+    "chalk",
     "color",
     "detection",
     "no-color",
     "sgr",
-    "terminal"
+    "style",
+    "terminal",
+    "theme"
   ],
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",

@@ -1,18 +1,16 @@
 /**
- * Color utilities — hex parsing, named color map, color quantization.
+ * Color utilities — ANSI color maps, quantization, and theme token defaults.
  *
- * ANSI-specific maps and quantization functions live in @silvery/ansi
- * and are re-exported here for backwards compatibility.
+ * Re-exports from sibling modules (since we're inside @silvery/ansi now).
  */
 
-import type { ColorLevel } from "@silvery/ansi"
+import type { ColorLevel } from "../types.ts"
 import { hexToRgb } from "@silvery/color"
 
-// Re-export so existing consumers (style barrel, ag-term, etc.) keep working.
 export { hexToRgb }
 
-// Re-export ANSI primitives from @silvery/ansi (canonical location)
-export { MODIFIERS, FG_COLORS, BG_COLORS, fgFromRgb, bgFromRgb } from "@silvery/ansi"
+// Re-export ANSI primitives from sibling module
+export { MODIFIERS, FG_COLORS, BG_COLORS, fgFromRgb, bgFromRgb } from "../color-maps.ts"
 export type { ColorLevel }
 
 // =============================================================================

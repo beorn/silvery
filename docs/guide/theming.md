@@ -282,10 +282,10 @@ See the [ColorPalette type definition](/reference/theme#colorpalette-22-colors) 
 
 ## CLI Usage
 
-For non-React CLI output (spinners, log messages, progress lines), use `@silvery/style` instead of chalk. It resolves the same `$tokens` without React:
+For non-React CLI output (spinners, log messages, progress lines), use `@silvery/ansi` instead of chalk. It resolves the same `$tokens` without React:
 
 ```typescript
-import { createStyle } from "@silvery/style"
+import { createStyle } from "@silvery/ansi"
 import { presetTheme } from "silvery/theme"
 
 const theme = presetTheme("nord")
@@ -307,7 +307,7 @@ s.success("text") // green (ANSI 32)
 s.bold.red("text") // standard chalk-style chaining still works
 ```
 
-This means CLI tools get reasonable colors even without configuring a theme. See the [@silvery/style reference](/reference/style) for the full chainable API.
+This means CLI tools get reasonable colors even without configuring a theme. See the [@silvery/ansi reference](/reference/style) for the full chainable API.
 
 ## Color Level Degradation
 
@@ -353,7 +353,7 @@ const basic = deriveTheme(nord, "ansi16")
 For most apps, you never deal with this — Silvery picks the right mode. If you need to force it:
 
 ```typescript
-import { createStyle } from "@silvery/style"
+import { createStyle } from "@silvery/ansi"
 
 // Force basic color for CI output
 const s = createStyle({ level: "basic" })
@@ -413,5 +413,5 @@ This is useful for understanding why a token looks different from the raw palett
 - [@silvery/theme reference](/reference/theme) — full type definitions, derivation rules, built-in palettes
 - [Theming reference](/reference/theming) — `$token` shorthand, special values, `ThemeProvider` API
 - [Styling guide](/guide/styling) — when to use tokens vs letting components handle it
-- [@silvery/style reference](/reference/style) — CLI styling API
+- [@silvery/ansi reference](/reference/style) — CLI styling API
 - [Theme Explorer](/themes) — browse all 38 palettes interactively
