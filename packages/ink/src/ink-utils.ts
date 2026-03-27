@@ -4,7 +4,7 @@
  */
 
 import React from "react"
-import chalk from "chalk"
+import chalk from "@silvery/ink/chalk"
 import { isTextPresentationEmoji } from "@silvery/ag-term/unicode"
 
 // =============================================================================

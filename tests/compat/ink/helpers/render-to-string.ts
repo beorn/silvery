@@ -11,7 +11,7 @@ import { createTerm } from "../../../../packages/ag-term/src/ansi"
 import { TermContext } from "../../../../packages/ag-react/src/context"
 import { currentChalkLevel, restoreColonFormatSGR } from "../../../../packages/ink/src/ink"
 import { stripAnsi } from "../../../../packages/ag-term/src/unicode"
-import chalk, { supportsColor } from "chalk"
+import chalk, { supportsColor } from "/ink/chalk"
 
 type RenderToStringOptions = {
   columns?: number

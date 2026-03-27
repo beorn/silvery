@@ -111,22 +111,22 @@ Available `z` CLI types: `z.port`, `z.int`, `z.uint`, `z.float`, `z.csv`, `z.url
 
 Every type listed below works as the third argument to `.option()`. Each validates at parse time and provides clear error messages for invalid input.
 
-| Type | Output | Validation | Built-in | Zod (`z.`) |
-|------|--------|------------|:--------:|:----------:|
-| `int` | `number` | Integer | `int` | `z.int` |
-| `uint` | `number` | Unsigned integer (>= 0) | `uint` | `z.uint` |
-| `float` | `number` | Finite number | `float` | `z.float` |
-| `port` | `number` | Integer 1–65535 | `port` | `z.port` |
-| `url` | `string` | Valid URL | `url` | `z.url` |
-| `path` | `string` | Non-empty string | `path` | `z.path` |
-| `csv` | `string[]` | Comma-separated | `csv` | `z.csv` |
-| `json` | `unknown` | Parsed JSON | `json` | `z.json` |
-| `bool` | `boolean` | true/false/yes/no/1/0 | `bool` | `z.bool` |
-| `date` | `Date` | Valid date string | `date` | `z.date` |
-| `email` | `string` | Email format | `email` | `z.email` |
-| `regex` | `RegExp` | Valid regex pattern | `regex` | — |
-| `intRange(min, max)` | `number` | Bounded integer | `intRange(1, 100)` | `z.intRange(1, 100)` |
-| `["a", "b"]` | `"a" \| "b"` | Exact match | array literal | `z.enum(["a", "b"])` |
+| Type                 | Output       | Validation              |      Built-in      |      Zod (`z.`)      |
+| -------------------- | ------------ | ----------------------- | :----------------: | :------------------: |
+| `int`                | `number`     | Integer                 |       `int`        |       `z.int`        |
+| `uint`               | `number`     | Unsigned integer (>= 0) |       `uint`       |       `z.uint`       |
+| `float`              | `number`     | Finite number           |      `float`       |      `z.float`       |
+| `port`               | `number`     | Integer 1–65535         |       `port`       |       `z.port`       |
+| `url`                | `string`     | Valid URL               |       `url`        |       `z.url`        |
+| `path`               | `string`     | Non-empty string        |       `path`       |       `z.path`       |
+| `csv`                | `string[]`   | Comma-separated         |       `csv`        |       `z.csv`        |
+| `json`               | `unknown`    | Parsed JSON             |       `json`       |       `z.json`       |
+| `bool`               | `boolean`    | true/false/yes/no/1/0   |       `bool`       |       `z.bool`       |
+| `date`               | `Date`       | Valid date string       |       `date`       |       `z.date`       |
+| `email`              | `string`     | Email format            |      `email`       |      `z.email`       |
+| `regex`              | `RegExp`     | Valid regex pattern     |      `regex`       |          —           |
+| `intRange(min, max)` | `number`     | Bounded integer         | `intRange(1, 100)` | `z.intRange(1, 100)` |
+| `["a", "b"]`         | `"a" \| "b"` | Exact match             |   array literal    | `z.enum(["a", "b"])` |
 
 **Built-in types** have zero dependencies — import from `@silvery/commander` or `@silvery/commander/parse`. Each implements [Standard Schema v1](https://github.com/standard-schema/standard-schema) with `.parse()` and `.safeParse()` for standalone use.
 

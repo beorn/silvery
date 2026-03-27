@@ -2,7 +2,7 @@
  * withTextInput - CLI wrapper for text input prompts
  */
 
-import chalk from "chalk"
+import chalk from "@silvery/ink/chalk"
 import type { TextInputOptions } from "../types.js"
 import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY } from "../cli/ansi"
 

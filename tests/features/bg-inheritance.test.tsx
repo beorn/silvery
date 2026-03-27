@@ -10,7 +10,7 @@ import React from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
-import chalk from "chalk"
+import chalk from "/ink/chalk"
 import { Box as InkBox, Text as InkText } from "../../packages/ink/src/ink"
 import { renderToString, initLayoutEngine } from "../compat/ink/helpers/render-to-string"
 

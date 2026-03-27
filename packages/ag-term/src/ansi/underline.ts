@@ -5,7 +5,6 @@
  * with graceful fallback to standard underline on unsupported terminals.
  */
 
-import chalk from "chalk"
 import {
   UNDERLINE_CODES,
   UNDERLINE_COLOR_RESET,
@@ -15,6 +14,10 @@ import {
 } from "./constants"
 import { detectExtendedUnderline } from "./detection"
 import type { UnderlineStyle, RGB } from "./types"
+
+// Standard underline ANSI codes (replaces chalk.underline)
+const UNDERLINE_OPEN = "\x1b[4m"
+const UNDERLINE_CLOSE = "\x1b[24m"
 
 // =============================================================================
 // Extended Underline Functions
@@ -30,7 +33,7 @@ import type { UnderlineStyle, RGB } from "./types"
  */
 export function underline(text: string, style: UnderlineStyle = "single"): string {
   if (!detectExtendedUnderline() || style === "single") {
-    return chalk.underline(text)
+    return `${UNDERLINE_OPEN}${text}${UNDERLINE_CLOSE}`
   }
 
   return `${UNDERLINE_CODES[style]}${text}${UNDERLINE_CODES.reset}`
@@ -46,10 +49,9 @@ export function underline(text: string, style: UnderlineStyle = "single"): strin
  *
  * @example
  * ```ts
- * import { curlyUnderline, chalk } from '@silvery/ansi';
+ * import { curlyUnderline } from '@silvery/ansi';
  *
  * console.log(curlyUnderline('misspelled'));
- * console.log(chalk.red(curlyUnderline('error')));
  * ```
  */
 export function curlyUnderline(text: string): string {
@@ -105,19 +107,16 @@ export function doubleUnderline(text: string): string {
  *
  * @example
  * ```ts
- * import { underlineColor, chalk } from '@silvery/ansi';
+ * import { underlineColor } from '@silvery/ansi';
  *
  * // Red underline (text color unchanged)
  * console.log(underlineColor(255, 0, 0, 'warning'));
- *
- * // Red underline with blue text
- * console.log(chalk.blue(underlineColor(255, 0, 0, 'blue text, red underline')));
  * ```
  */
 export function underlineColor(r: number, g: number, b: number, text: string): string {
   if (!detectExtendedUnderline()) {
     // Fallback: just apply regular underline, ignore color
-    return chalk.underline(text)
+    return `${UNDERLINE_OPEN}${text}${UNDERLINE_CLOSE}`
   }
 
   const colorCode = buildUnderlineColorCode(r, g, b)
@@ -134,18 +133,15 @@ export function underlineColor(r: number, g: number, b: number, text: string): s
  *
  * @example
  * ```ts
- * import { styledUnderline, chalk } from '@silvery/ansi';
+ * import { styledUnderline } from '@silvery/ansi';
  *
  * // Red curly underline (spell-check style)
  * console.log(styledUnderline('curly', [255, 0, 0], 'misspelled'));
- *
- * // Orange dashed underline with yellow text
- * console.log(chalk.yellow(styledUnderline('dashed', [255, 165, 0], 'warning')));
  * ```
  */
 export function styledUnderline(style: UnderlineStyle, rgb: RGB, text: string): string {
   if (!detectExtendedUnderline()) {
-    return chalk.underline(text)
+    return `${UNDERLINE_OPEN}${text}${UNDERLINE_CLOSE}`
   }
 
   const [r, g, b] = rgb

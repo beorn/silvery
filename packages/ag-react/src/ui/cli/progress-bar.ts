@@ -2,7 +2,7 @@
  * CLI ProgressBar - Determinate progress indicator with ETA
  */
 
-import chalk from "chalk"
+import chalk from "@silvery/ink/chalk"
 import type { ProgressBarOptions } from "../types.js"
 import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY, getTerminalWidth } from "./ansi"
 import { calculateETA, formatETA, DEFAULT_ETA_BUFFER_SIZE, type ETASample } from "../utils/eta"

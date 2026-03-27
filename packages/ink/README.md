@@ -10,5 +10,5 @@ $ npm install silvery
 
 ```tsx
 import { render, Box, Text } from "silvery/ink"
-import chalk from "silvery/chalk"
+import chalk from "@silvery/ink/chalk"
 ```

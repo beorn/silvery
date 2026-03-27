@@ -21,7 +21,7 @@
  * ```
  */
 
-import { Chalk, type ChalkInstance } from "chalk"
+import { createStyle, type Style } from "@silvery/style"
 import type {
   ColorLevel,
   CreateTermOptions,
@@ -450,9 +450,8 @@ function createNodeTerm(options: CreateTermOptions): Term {
       ? detectTerminalCaps()
       : undefined
 
-  // Create chalk instance with appropriate color level
-  const chalkLevel = cachedColor === null ? 0 : cachedColor === "basic" ? 1 : cachedColor === "256" ? 2 : 3
-  const chalkInstance = new Chalk({ level: chalkLevel })
+  // Create style instance with appropriate color level
+  const styleInstance = createStyle({ level: cachedColor })
 
   // Lazy Provider — only created when getState/subscribe/events is called.
   // This avoids adding a resize listener for styling-only usage.
@@ -517,8 +516,8 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // Frame getter — last painted TextFrame
   Object.defineProperty(termBase, "frame", { get: () => _frame, enumerable: true })
 
-  // Create proxy that wraps chalk for styling
-  const term = createStyleProxy(chalkInstance, termBase)
+  // Create proxy that wraps style for chaining + term methods
+  const term = createStyleProxy(styleInstance, termBase)
 
   // Add dynamic dimension getters
   Object.defineProperty(term, "cols", {
@@ -542,7 +541,7 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
   let disposed = false
   const controller = new AbortController()
 
-  const chalkInstance = new Chalk({ level: 0 })
+  const styleInstance = createStyle({ level: null })
 
   // Paint state — TextFrame snapshot of last painted buffer
   let _frame: TextFrame | undefined
@@ -583,7 +582,7 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
   // Frame getter — last painted TextFrame
   Object.defineProperty(termBase, "frame", { get: () => _frame, enumerable: true })
 
-  const term = createStyleProxy(chalkInstance, termBase)
+  const term = createStyleProxy(styleInstance, termBase)
 
   Object.defineProperty(term, "cols", { get: () => dims.cols, enumerable: true })
   Object.defineProperty(term, "rows", { get: () => dims.rows, enumerable: true })
@@ -598,7 +597,7 @@ function createBackendTerm(emulator: TermEmulator): Term {
   let disposed = false
   const controller = new AbortController()
 
-  const chalkInstance = new Chalk({ level: 3 }) // Emulators support truecolor
+  const styleInstance = createStyle({ level: "truecolor" }) // Emulators support truecolor
 
   // Subscriber support for resize notifications
   const listeners = new Set<(state: TermState) => void>()
@@ -720,7 +719,7 @@ function createBackendTerm(emulator: TermEmulator): Term {
     enumerable: true,
   })
 
-  const term = createStyleProxy(chalkInstance, termBase)
+  const term = createStyleProxy(styleInstance, termBase)
 
   return term as Term
 }
@@ -730,43 +729,33 @@ function createBackendTerm(emulator: TermEmulator): Term {
 // =============================================================================
 
 /**
- * Create a proxy that combines term methods with chalk styling.
+ * Create a proxy that combines term methods with @silvery/style styling.
  *
  * The proxy makes the term object:
  * - Callable: term('text') applies current styles
  * - Chainable: term.bold.red('text') chains styles
  */
-function createStyleProxy(chalkInstance: ChalkInstance, termBase: object): Term {
-  return createChainProxy(chalkInstance, termBase)
+function createStyleProxy(style: Style, termBase: object): Term {
+  return createChainProxy(style, termBase)
 }
 
+/** Methods on Style that take arguments and return a new Style chain. */
+const STYLE_METHODS = new Set(["hex", "bgHex", "rgb", "bgRgb", "ansi256", "bgAnsi256"])
+
 /**
- * Create a chainable proxy that wraps a chalk instance.
+ * Create a chainable proxy that wraps a @silvery/style instance with term methods.
  */
-function createChainProxy(currentChalk: ChalkInstance, termBase: object): Term {
-  const handler: ProxyHandler<ChalkInstance> = {
-    // Make the proxy callable
+function createChainProxy(currentStyle: Style, termBase: object): Term {
+  const handler: ProxyHandler<(...args: unknown[]) => string> = {
     apply(_target, _thisArg, args) {
-      // Handle both regular calls and template literals
-      if (args.length === 1 && typeof args[0] === "string") {
-        return currentChalk(args[0])
-      }
-      // Template literal call
-      if (args.length > 0 && Array.isArray(args[0]) && "raw" in args[0]) {
-        return currentChalk(args[0] as TemplateStringsArray, ...args.slice(1))
-      }
-      return currentChalk(String(args[0] ?? ""))
+      return (currentStyle as Function).apply(undefined, args)
     },
 
-    // Handle property access for chaining
-    get(target, prop, receiver) {
+    get(_target, prop) {
       // Check termBase first for term-specific methods/properties
       if (prop in termBase) {
         const value = (termBase as Record<string | symbol, unknown>)[prop]
-        // Return methods bound to termBase, or values directly
-        if (typeof value === "function") {
-          return value
-        }
+        if (typeof value === "function") return value
         return value
       }
 
@@ -775,53 +764,40 @@ function createChainProxy(currentChalk: ChalkInstance, termBase: object): Term {
         if (prop === Symbol.dispose) {
           return (termBase as Record<symbol, unknown>)[Symbol.dispose]
         }
-        return Reflect.get(target, prop, receiver)
+        return undefined
       }
 
-      // Handle chalk methods that take arguments and return a new chain
-      if (prop === "rgb" || prop === "bgRgb") {
-        return (r: number, g: number, b: number) => {
-          const newChalk = currentChalk[prop](r, g, b) as ChalkInstance
-          return createChainProxy(newChalk, termBase)
+      // Style methods that take arguments — wrap result in new chain proxy
+      if (STYLE_METHODS.has(prop)) {
+        const method = currentStyle[prop as keyof Style]
+        if (typeof method === "function") {
+          return (...args: unknown[]) => {
+            const newStyle = (method as Function).apply(currentStyle, args) as Style
+            return createChainProxy(newStyle, termBase)
+          }
         }
       }
 
-      if (prop === "hex" || prop === "bgHex") {
-        return (color: string) => {
-          const newChalk = currentChalk[prop](color) as ChalkInstance
-          return createChainProxy(newChalk, termBase)
+      // Style properties (bold, red, etc.) — return new chain proxy
+      const styleProp = currentStyle[prop as keyof Style]
+      if (styleProp !== undefined) {
+        // If it's a Style chain (callable object), wrap in term proxy
+        if (typeof styleProp === "function" || typeof styleProp === "object") {
+          return createChainProxy(styleProp as Style, termBase)
         }
-      }
-
-      if (prop === "ansi256" || prop === "bgAnsi256") {
-        return (code: number) => {
-          const newChalk = currentChalk[prop](code) as ChalkInstance
-          return createChainProxy(newChalk, termBase)
-        }
-      }
-
-      // Handle style properties (bold, red, etc.) - return new chain
-      const chalkProp = currentChalk[prop as keyof ChalkInstance]
-      if (chalkProp !== undefined) {
-        // If it's a chalk chain property, wrap it in a new proxy
-        if (typeof chalkProp === "function" || typeof chalkProp === "object") {
-          return createChainProxy(chalkProp as ChalkInstance, termBase)
-        }
-        return chalkProp
+        return styleProp
       }
 
       return undefined
     },
 
-    // Report that we have term properties
     has(_target, prop) {
       if (prop in termBase) return true
-      if (typeof prop === "string" && prop in currentChalk) return true
+      if (typeof prop === "string" && prop in currentStyle) return true
       return false
     },
   }
 
-  // Use a function as the proxy target so it's callable
-  const proxyTarget = Object.assign(function () {}, currentChalk)
+  const proxyTarget = function () {} as unknown as (...args: unknown[]) => string
   return new Proxy(proxyTarget, handler) as unknown as Term
 }

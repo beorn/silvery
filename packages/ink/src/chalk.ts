@@ -1,5 +1,5 @@
 /**
- * silvery/chalk — Drop-in chalk replacement.
+ * silvery/chalk — Drop-in chalk replacement powered by @silvery/style.
  *
  * ```ts
  * // Before:
@@ -10,7 +10,7 @@
  * ```
  *
  * The default export is a chainable styling function identical to chalk's API.
- * Under the hood it uses @silvery/ansi's Term (which itself wraps chalk).
+ * Under the hood it uses @silvery/style (which uses @silvery/ansi for detection).
  *
  * For silvery-native features (detection, hyperlinks, extended underlines),
  * use `@silvery/ansi` directly.
@@ -18,7 +18,7 @@
  * @packageDocumentation
  */
 
-import { Chalk, type ChalkInstance } from "chalk"
+import { createStyle, type Style } from "@silvery/style"
 import { detectColor } from "@silvery/ag-term/ansi/detection"
 import type { ColorLevel } from "@silvery/ag-term/ansi/types"
 
@@ -43,27 +43,56 @@ function fromChalkLevel(level: ChalkLevel): ColorLevel | null {
 }
 
 // =============================================================================
-// Default chalk instance (auto-detected)
+// Default style instance (auto-detected)
 // =============================================================================
 
-const detectedLevel = toChalkLevel(
+const detectedColor =
   // eslint-disable-next-line @typescript-eslint/prefer-optional-chain -- typeof guard prevents ReferenceError in environments without process global
-  typeof process !== "undefined" && process.stdout ? detectColor(process.stdout) : null,
-)
+  typeof process !== "undefined" && process.stdout ? detectColor(process.stdout) : null
+
+const detectedLevel = toChalkLevel(detectedColor)
 
 /**
  * Default chalk instance — drop-in replacement for `import chalk from 'chalk'`.
  *
  * Supports the full chainable API: `chalk.bold.red('error')`, `chalk.hex('#ff0')('hi')`, etc.
  */
-const chalk = new Chalk({ level: detectedLevel })
+const chalk: Style = createStyle({ level: detectedColor })
 export default chalk
 
 // =============================================================================
 // Named exports (chalk 5.x compatibility)
 // =============================================================================
 
-export { Chalk, type ChalkInstance }
+/**
+ * Chalk constructor replacement — creates a style with a specific level.
+ */
+export class Chalk {
+  private style: Style
+  level: ChalkLevel
+
+  constructor(options?: { level?: ChalkLevel }) {
+    this.level = options?.level ?? detectedLevel
+    this.style = createStyle({ level: fromChalkLevel(this.level) })
+  }
+
+  // Proxy to the underlying style instance
+  bold = (text: string) => this.style.bold(text)
+  dim = (text: string) => this.style.dim(text)
+  italic = (text: string) => this.style.italic(text)
+  underline = (text: string) => this.style.underline(text)
+  red = (text: string) => this.style.red(text)
+  green = (text: string) => this.style.green(text)
+  yellow = (text: string) => this.style.yellow(text)
+  blue = (text: string) => this.style.blue(text)
+  magenta = (text: string) => this.style.magenta(text)
+  cyan = (text: string) => this.style.cyan(text)
+  white = (text: string) => this.style.white(text)
+  gray = (text: string) => this.style.gray(text)
+  grey = (text: string) => this.style.grey(text)
+}
+
+export type ChalkInstance = Style
 
 /**
  * Color support detection for stdout.
@@ -75,7 +104,7 @@ export const supportsColor: false | { level: ChalkLevel } = detectedLevel === 0 
  * Color support detection for stderr.
  */
 export const supportsColorStderr: false | { level: ChalkLevel } = (() => {
-  if (process?.stderr) return false
+  if (!process?.stderr) return false
   const level = toChalkLevel(detectColor(process.stderr))
   return level === 0 ? false : { level }
 })()

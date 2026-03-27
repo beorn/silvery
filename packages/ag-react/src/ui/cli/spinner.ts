@@ -2,7 +2,7 @@
  * CLI Spinner - Animated indeterminate progress indicator
  */
 
-import chalk from "chalk"
+import chalk from "@silvery/ink/chalk"
 import type { SpinnerOptions, SpinnerStyle } from "../types.js"
 import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY } from "./ansi"
 
