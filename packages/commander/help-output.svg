@@ -17,15 +17,15 @@
   <text y="78" x="18">Deploy services to an environment</text>
 
   <text y="108" x="18" class="b">Options:</text>
-  <text y="128" x="30" class="g">-V, --version</text>      <text y="128" x="220" class="d">output the version number</text>
+  <text y="128" x="30" class="g">-V, --version</text>      <text y="128" x="220" class="d">Output the version number</text>
   <text y="146" x="30" class="g">-e, --env &lt;env&gt;</text>  <text y="146" x="220" class="d">Target environment</text>
   <text y="164" x="30" class="g">-f, --force</text>        <text y="164" x="220" class="d">Skip confirmation</text>
   <text y="182" x="30" class="g">-v, --verbose</text>      <text y="182" x="220" class="d">Verbose output</text>
-  <text y="200" x="30" class="g">-h, --help</text>         <text y="200" x="220" class="d">display help for command</text>
+  <text y="200" x="30" class="g">-h, --help</text>         <text y="200" x="220" class="d">Display help for command</text>
 
   <text y="230" x="18" class="b">Commands:</text>
   <text y="250" x="30" class="c">start</text>  <text y="250" x="75" class="g">&lt;service&gt;</text>   <text y="250" x="220" class="d">Start a service</text>
   <text y="268" x="30" class="c">stop</text>   <text y="268" x="67" class="g">&lt;service&gt;</text>    <text y="268" x="220" class="d">Stop a running service</text>
   <text y="286" x="30" class="c">status</text>                                          <text y="286" x="220" class="d">Show service status</text>
-  <text y="304" x="30" class="c">help</text>   <text y="304" x="67" class="g">[command]</text>   <text y="304" x="220" class="d">display help for command</text>
+  <text y="304" x="30" class="c">help</text>   <text y="304" x="67" class="g">[command]</text>   <text y="304" x="220" class="d">Display help for command</text>
 </svg>
