@@ -1,0 +1,36 @@
+{
+  "name": "@silvery/ansi",
+  "version": "0.1.0",
+  "description": "Terminal ANSI utilities — color detection, SGR codes, NO_COLOR support. Zero dependencies.",
+  "keywords": [
+    "ansi",
+    "color",
+    "detection",
+    "no-color",
+    "sgr",
+    "terminal"
+  ],
+  "license": "MIT",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/silvery.git",
+    "directory": "packages/ansi"
+  },
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "string-width": "^8.2.0"
+  },
+  "engines": {
+    "node": ">=23.6.0"
+  }
+}

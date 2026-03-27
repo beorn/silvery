@@ -1,7 +1,8 @@
 /**
  * ANSI primitives — Term factory, styling, detection, underlines, hyperlinks.
  *
- * Merged from the former `@silvery/ansi` package into `@silvery/ag-term`.
+ * Pure ANSI utilities (detection, SGR codes, constants, types) live in
+ * `@silvery/ansi` and are re-exported here for backwards compatibility.
  *
  * ```ts
  * import { createTerm, patchConsole } from '@silvery/ag-term'
