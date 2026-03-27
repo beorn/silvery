@@ -22,7 +22,23 @@
  * ```
  */
 
-import type { StandardSchemaV1 } from "./typed.ts"
+/**
+ * Standard Schema v1 interface — the universal schema interop protocol.
+ * Supports any schema library that implements Standard Schema (Zod >=3.24,
+ * Valibot >=1.0, ArkType >=2.0, etc.).
+ *
+ * Inlined to avoid any dependency on @standard-schema/spec.
+ * See: https://github.com/standard-schema/standard-schema
+ */
+export interface StandardSchemaV1<T = unknown> {
+  readonly "~standard": {
+    readonly version: 1
+    readonly vendor: string
+    readonly validate: (
+      value: unknown,
+    ) => { value: T } | { issues: ReadonlyArray<{ message: string; path?: ReadonlyArray<unknown> }> }
+  }
+}
 
 /** A Standard Schema v1 preset with standalone parse/safeParse methods. */
 export interface Preset<T> extends StandardSchemaV1<T> {
@@ -165,8 +181,7 @@ export const regex = createPreset<RegExp>(VENDOR, (v) => {
 export function intRange(min: number, max: number): Preset<number> {
   return createPreset<number>(VENDOR, (v) => {
     const n = Number(v)
-    if (!Number.isInteger(n) || n < min || n > max)
-      throw new Error(`Expected integer ${min}-${max}, got "${v}"`)
+    if (!Number.isInteger(n) || n < min || n > max) throw new Error(`Expected integer ${min}-${max}, got "${v}"`)
     return n
   })
 }

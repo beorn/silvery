@@ -1,6 +1,6 @@
 import { describe, it, expect, expectTypeOf } from "vitest"
 import {
-  createCLI,
+  Command,
   int,
   uint,
   float,
@@ -470,67 +470,67 @@ describe("oneOf", () => {
 
 describe("commander integration", () => {
   it("uses int preset for option parsing", () => {
-    const cli = createCLI("test").option("-r, --retries <n>", "Retries", int)
+    const cli = new Command("test").option("-r, --retries <n>", "Retries", int)
     cli.parse(["node", "test", "--retries", "3"], { from: "node" })
     expect(cli.opts().retries).toBe(3)
   })
 
   it("uses port preset for option parsing", () => {
-    const cli = createCLI("test").option("-p, --port <n>", "Port", port)
+    const cli = new Command("test").option("-p, --port <n>", "Port", port)
     cli.parse(["node", "test", "--port", "8080"], { from: "node" })
     expect(cli.opts().port).toBe(8080)
   })
 
   it("port preset rejects invalid port via Commander", () => {
-    const cli = createCLI("test").option("-p, --port <n>", "Port", port)
-    cli._cmd.exitOverride()
-    cli._cmd.configureOutput({ writeErr: () => {} })
+    const cli = new Command("test").option("-p, --port <n>", "Port", port)
+    cli.exitOverride()
+    cli.configureOutput({ writeErr: () => {} })
     expect(() => {
       cli.parse(["node", "test", "--port", "99999"], { from: "node" })
     }).toThrow()
   })
 
   it("uses csv preset for option parsing", () => {
-    const cli = createCLI("test").option("--tags <t>", "Tags", csv)
+    const cli = new Command("test").option("--tags <t>", "Tags", csv)
     cli.parse(["node", "test", "--tags", "a,b,c"], { from: "node" })
     expect(cli.opts().tags).toEqual(["a", "b", "c"])
   })
 
   it("uses url preset for option parsing", () => {
-    const cli = createCLI("test").option("--callback <url>", "Callback", url)
+    const cli = new Command("test").option("--callback <url>", "Callback", url)
     cli.parse(["node", "test", "--callback", "https://example.com/hook"], { from: "node" })
     expect(cli.opts().callback).toBe("https://example.com/hook")
   })
 
   it("uses oneOf preset for option parsing", () => {
-    const cli = createCLI("test").option("-e, --env <e>", "Env", oneOf(["dev", "staging", "prod"] as const))
+    const cli = new Command("test").option("-e, --env <e>", "Env", oneOf(["dev", "staging", "prod"] as const))
     cli.parse(["node", "test", "--env", "dev"], { from: "node" })
     expect(cli.opts().env).toBe("dev")
   })
 
   it("oneOf preset rejects invalid values via Commander", () => {
-    const cli = createCLI("test").option("-e, --env <e>", "Env", oneOf(["dev", "staging", "prod"]))
-    cli._cmd.exitOverride()
-    cli._cmd.configureOutput({ writeErr: () => {} })
+    const cli = new Command("test").option("-e, --env <e>", "Env", oneOf(["dev", "staging", "prod"]))
+    cli.exitOverride()
+    cli.configureOutput({ writeErr: () => {} })
     expect(() => {
       cli.parse(["node", "test", "--env", "invalid"], { from: "node" })
     }).toThrow()
   })
 
   it("uses bool preset for option parsing", () => {
-    const cli = createCLI("test").option("--flag <v>", "Flag", bool)
+    const cli = new Command("test").option("--flag <v>", "Flag", bool)
     cli.parse(["node", "test", "--flag", "yes"], { from: "node" })
     expect(cli.opts().flag).toBe(true)
   })
 
   it("uses json preset for option parsing", () => {
-    const cli = createCLI("test").option("--config <json>", "Config", json)
+    const cli = new Command("test").option("--config <json>", "Config", json)
     cli.parse(["node", "test", "--config", '{"key":"value"}'], { from: "node" })
     expect(cli.opts().config).toEqual({ key: "value" })
   })
 
   it("accumulates presets with regular options", () => {
-    const cli = createCLI("test")
+    const cli = new Command("test")
       .option("-v, --verbose", "Verbose")
       .option("-p, --port <n>", "Port", port)
       .option("--tags <t>", "Tags", csv)
@@ -541,65 +541,5 @@ describe("commander integration", () => {
     expect(opts.port).toBe(3000)
     expect(opts.tags).toEqual(["a", "b"])
     expect(opts.env).toBe("dev")
-  })
-})
-
-// ---------------------------------------------------------------------------
-// Type inference for presets used as Commander options
-// ---------------------------------------------------------------------------
-
-describe("type inference with presets", () => {
-  it("infers number from int preset", () => {
-    const cli = createCLI("test").option("-n, --count <n>", "Count", int)
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["count"]>().toEqualTypeOf<number>()
-  })
-
-  it("infers number from port preset", () => {
-    const cli = createCLI("test").option("-p, --port <n>", "Port", port)
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["port"]>().toEqualTypeOf<number>()
-  })
-
-  it("infers string[] from csv preset", () => {
-    const cli = createCLI("test").option("--tags <t>", "Tags", csv)
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["tags"]>().toEqualTypeOf<string[]>()
-  })
-
-  it("infers string from url preset", () => {
-    const cli = createCLI("test").option("--callback <url>", "Callback", url)
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["callback"]>().toEqualTypeOf<string>()
-  })
-
-  it("infers boolean from bool preset", () => {
-    const cli = createCLI("test").option("--flag <v>", "Flag", bool)
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["flag"]>().toEqualTypeOf<boolean>()
-  })
-
-  it("infers unknown from json preset", () => {
-    const cli = createCLI("test").option("--config <json>", "Config", json)
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["config"]>().toEqualTypeOf<unknown>()
-  })
-
-  it("infers Date from date preset", () => {
-    const cli = createCLI("test").option("--since <d>", "Since", date)
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["since"]>().toEqualTypeOf<Date>()
-  })
-
-  it("infers number from intRange factory", () => {
-    const cli = createCLI("test").option("-n, --count <n>", "Count", intRange(1, 100))
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["count"]>().toEqualTypeOf<number>()
-  })
-
-  it("infers union from oneOf factory", () => {
-    const cli = createCLI("test").option("-e, --env <e>", "Env", oneOf(["dev", "staging", "prod"] as const))
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["env"]>().toEqualTypeOf<"dev" | "staging" | "prod">()
   })
 })

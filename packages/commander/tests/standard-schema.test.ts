@@ -1,6 +1,6 @@
-import { describe, it, expect, expectTypeOf } from "vitest"
+import { describe, it, expect } from "vitest"
 import { z } from "zod"
-import { createCLI } from "../src/index.ts"
+import { Command } from "../src/index.ts"
 import type { StandardSchemaV1 } from "../src/index.ts"
 
 describe("Standard Schema detection", () => {
@@ -15,41 +15,29 @@ describe("Standard Schema detection", () => {
   })
 
   it("uses Standard Schema path for modern Zod", () => {
-    const cli = createCLI("test").option("-p, --port <n>", "Port", z.coerce.number())
-    cli.parse(["node", "test", "--port", "3000"], { from: "node" })
-    expect(cli.opts().port).toBe(3000)
-    expect(typeof cli.opts().port).toBe("number")
+    const cmd = new Command("test").option("-p, --port <n>", "Port", z.coerce.number())
+    cmd.parse(["node", "test", "--port", "3000"], { from: "node" })
+    expect(cmd.opts().port).toBe(3000)
+    expect(typeof cmd.opts().port).toBe("number")
   })
 
   it("validates via Standard Schema and throws on error", () => {
-    const cli = createCLI("test").option("-p, --port <n>", "Port", z.coerce.number().min(1).max(65535))
-    cli._cmd.exitOverride()
-    cli._cmd.configureOutput({ writeErr: () => {} })
+    const cmd = new Command("test").option("-p, --port <n>", "Port", z.coerce.number().min(1).max(65535))
+    cmd.exitOverride()
+    cmd.configureOutput({ writeErr: () => {} })
     expect(() => {
-      cli.parse(["node", "test", "--port", "99999"], { from: "node" })
+      cmd.parse(["node", "test", "--port", "99999"], { from: "node" })
     }).toThrow()
   })
 
-  it("infers type from Zod via Standard Schema", () => {
-    const cli = createCLI("test").option("-p, --port <n>", "Port", z.coerce.number())
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["port"]>().toEqualTypeOf<number>()
-  })
-
-  it("infers enum union from Zod via Standard Schema", () => {
-    const cli = createCLI("test").option("-e, --env <env>", "Env", z.enum(["dev", "staging", "prod"]))
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["env"]>().toEqualTypeOf<"dev" | "staging" | "prod">()
-  })
-
   it("transforms via Standard Schema validate path", () => {
-    const cli = createCLI("test").option(
+    const cmd = new Command("test").option(
       "--tags <t>",
       "Tags",
       z.string().transform((v) => v.split(",")),
     )
-    cli.parse(["node", "test", "--tags", "a,b,c"], { from: "node" })
-    expect(cli.opts().tags).toEqual(["a", "b", "c"])
+    cmd.parse(["node", "test", "--tags", "a,b,c"], { from: "node" })
+    expect(cmd.opts().tags).toEqual(["a", "b", "c"])
   })
 })
 
@@ -67,9 +55,9 @@ describe("custom Standard Schema objects", () => {
       },
     }
 
-    const cli = createCLI("test").option("-n, --count <n>", "Count", positiveNumber)
-    cli.parse(["node", "test", "--count", "42"], { from: "node" })
-    expect(cli.opts().count).toBe(42)
+    const cmd = new Command("test").option("-n, --count <n>", "Count", positiveNumber)
+    cmd.parse(["node", "test", "--count", "42"], { from: "node" })
+    expect(cmd.opts().count).toBe(42)
   })
 
   it("rejects invalid values from hand-rolled schema", () => {
@@ -85,26 +73,12 @@ describe("custom Standard Schema objects", () => {
       },
     }
 
-    const cli = createCLI("test").option("-n, --count <n>", "Count", positiveNumber)
-    cli._cmd.exitOverride()
-    cli._cmd.configureOutput({ writeErr: () => {} })
+    const cmd = new Command("test").option("-n, --count <n>", "Count", positiveNumber)
+    cmd.exitOverride()
+    cmd.configureOutput({ writeErr: () => {} })
     expect(() => {
-      cli.parse(["node", "test", "--count", "-5"], { from: "node" })
+      cmd.parse(["node", "test", "--count", "-5"], { from: "node" })
     }).toThrow()
-  })
-
-  it("infers type from hand-rolled Standard Schema", () => {
-    const stringArray: StandardSchemaV1<string[]> = {
-      "~standard": {
-        version: 1,
-        vendor: "test",
-        validate: (value) => ({ value: String(value).split(",") }),
-      },
-    }
-
-    const cli = createCLI("test").option("--items <s>", "Items", stringArray)
-    type Opts = ReturnType<typeof cli.opts>
-    expectTypeOf<Opts["items"]>().toEqualTypeOf<string[]>()
   })
 })
 
@@ -120,9 +94,9 @@ describe("legacy Zod fallback", () => {
       },
     }
 
-    const cli = createCLI("test").option("-n, --count <n>", "Count", legacySchema)
-    cli.parse(["node", "test", "--count", "42"], { from: "node" })
-    expect(cli.opts().count).toBe(42)
+    const cmd = new Command("test").option("-n, --count <n>", "Count", legacySchema)
+    cmd.parse(["node", "test", "--count", "42"], { from: "node" })
+    expect(cmd.opts().count).toBe(42)
   })
 
   it("throws on legacy Zod validation failure", () => {
@@ -139,11 +113,11 @@ describe("legacy Zod fallback", () => {
       },
     }
 
-    const cli = createCLI("test").option("-n, --count <n>", "Count", legacySchema)
-    cli._cmd.exitOverride()
-    cli._cmd.configureOutput({ writeErr: () => {} })
+    const cmd = new Command("test").option("-n, --count <n>", "Count", legacySchema)
+    cmd.exitOverride()
+    cmd.configureOutput({ writeErr: () => {} })
     expect(() => {
-      cli.parse(["node", "test", "--count", "abc"], { from: "node" })
+      cmd.parse(["node", "test", "--count", "abc"], { from: "node" })
     }).toThrow()
   })
 })
