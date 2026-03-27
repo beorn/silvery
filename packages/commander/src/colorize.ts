@@ -16,21 +16,17 @@
 
 import { createStyle } from "@silvery/style"
 
-// Style instance for generating help text ANSI codes.
-// Uses "basic" level (16 colors) — help text should work on any terminal.
-// Commander's configureOutput({ getOutHasColors }) controls whether the
-// ANSI codes are actually emitted to the user. The style layer just
-// generates them; Commander decides whether to strip them.
-const s = createStyle({ level: "basic" })
+// Auto-detect terminal color level. The Style instance handles the full
+// degradation chain: truecolor → 256 → basic (ANSI 16) → null (no color).
+// When level is null (NO_COLOR), style methods return plain text.
+const s = createStyle()
 
 /**
  * Check if color output should be enabled.
- * Uses @silvery/style's auto-detection (via @silvery/ansi).
+ * Delegates to @silvery/style's auto-detection (NO_COLOR, FORCE_COLOR, TERM).
  */
 export function shouldColorize(): boolean {
-  // Create a separate detection instance — the shared `s` is always "basic"
-  // for code generation, but shouldColorize checks the actual terminal.
-  return createStyle().level > 0
+  return s.level > 0
 }
 
 /**
@@ -71,6 +67,12 @@ export interface ColorizeHelpOptions {
  * @param options - Override default style functions for each element
  */
 export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions): void {
+  // Ensure style generates codes — at minimum basic (ANSI 16).
+  // Auto-detected level may be higher (256/truecolor) for richer output.
+  // May be 0 if NO_COLOR is set; in that case, force basic since Commander
+  // handles the final strip via configureOutput.
+  if (s.level === 0) s.level = 1
+
   const cmds = options?.commands ?? ((t: string) => s.cyan(t))
   const flags = options?.flags ?? ((t: string) => s.green(t))
   const desc = options?.description ?? ((t: string) => s.dim(t))
