@@ -53,7 +53,7 @@ Help is auto-colorized — bold headings, green flags, cyan commands, dim descri
 
 ## What's included
 
-- **Colorized help** — automatic, respects [`NO_COLOR`](https://no-color.org)/`FORCE_COLOR` via [`@silvery/ansi`](https://github.com/beorn/silvery/tree/main/packages/ansi) (optional)
+- **Colorized help** — automatic, with terminal theme support and [`NO_COLOR`](https://no-color.org)/`FORCE_COLOR` detection via [`@silvery/ansi`](https://github.com/beorn/silvery/tree/main/packages/ansi) (optional)
 - **Typed `.option()` parsing** — pass a type as the third argument:
   - 14 built-in types — `port`, `int`, `csv`, `url`, `email`, `date`, [more](https://silvery.dev/reference/commander)
   - Array choices — `["dev", "staging", "prod"]`
