@@ -43,7 +43,7 @@ export default defineConfig({
       {
         text: "Examples",
         items: [
-          { text: "Live Demo", link: "/examples/live-demo" },
+
           { text: "Components", link: "/examples/components" },
           { text: "Layout", link: "/examples/layout" },
           { text: "Forms & Input", link: "/examples/forms" },
@@ -55,7 +55,6 @@ export default defineConfig({
         ],
       },
       { text: "Themes", link: "/themes" },
-      { text: "Blog", link: "/blog/" },
       {
         text: "Links",
         items: [
@@ -179,7 +178,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: "Overview", link: "/examples/" },
-          { text: "Live Demo", link: "/examples/live-demo" },
+
           { text: "Components", link: "/examples/components" },
           { text: "Layout", link: "/examples/layout" },
           { text: "Forms & Input", link: "/examples/forms" },
@@ -196,7 +195,6 @@ export default defineConfig({
         items: [
           { text: "Contributing", link: "/contributing" },
           { text: "Roadmap", link: "/roadmap" },
-          { text: "Blog", link: "/blog/" },
         ],
       },
     ],
