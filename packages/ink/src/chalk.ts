@@ -15,9 +15,7 @@
  * @packageDocumentation
  */
 
-import { createStyle, type Style } from "@silvery/ansi"
-import { detectColor } from "@silvery/ag-term/ansi/detection"
-import type { ColorLevel } from "@silvery/ag-term/ansi/types"
+import { createStyle, detectColor, type Style, type ColorLevel } from "@silvery/ansi"
 
 // =============================================================================
 // Color level conversion (chalk uses 0-3, silvery uses string|null)

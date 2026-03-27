@@ -27,6 +27,7 @@ export interface ThemeLike {
 /** A callable style chain — call with a string to apply styles, access properties to chain. */
 export interface Style {
   (text: string): string
+  (...args: unknown[]): string
   (strings: TemplateStringsArray, ...values: unknown[]): string
 
   // Modifiers
