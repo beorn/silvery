@@ -317,7 +317,8 @@ Returns `ansi16DarkTheme` when no `ThemeProvider` is present.
 For advanced use cases, resolve tokens programmatically:
 
 ```tsx
-import { resolveThemeColor, useTheme } from "@silvery/ag-term"
+import { resolveThemeColor } from "@silvery/ansi"
+import { useTheme } from "silvery/theme"
 
 function CustomComponent({ highlight }: { highlight?: string }) {
   const theme = useTheme()

@@ -1,6 +1,8 @@
 # @silvery/ansi
 
-Standalone ANSI terminal utilities -- color detection, SGR codes, NO_COLOR/FORCE_COLOR support, terminal capability profiling, and string helpers. Used internally by Silvery but works independently in any Node.js or Bun project.
+Everything terminal -- styling (chalk replacement), color detection, theme derivation, SGR codes, NO_COLOR/FORCE_COLOR support, terminal capability profiling, OSC queries, and string helpers. Used internally by Silvery but works independently in any Node.js or Bun project.
+
+See also: [Terminal Styling](/reference/style) for the chainable `createStyle()` API and theme tokens.
 
 ## Installation
 
