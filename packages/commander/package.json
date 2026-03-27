@@ -1,6 +1,6 @@
 {
   "name": "@silvery/commander",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Colorized Commander.js help output using ANSI escape codes",
   "keywords": [
     "ansi",

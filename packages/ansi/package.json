@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ansi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Terminal ANSI utilities — color detection, SGR codes, NO_COLOR support. Zero dependencies.",
   "keywords": [
     "ansi",

@@ -1,6 +1,6 @@
 {
   "name": "@silvery/style",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Theme-aware terminal styling — chalk replacement with color detection, ANSI 16 fallback, and semantic tokens.",
   "keywords": [
     "ansi",
