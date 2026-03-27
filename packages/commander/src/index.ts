@@ -33,6 +33,34 @@ const CYAN = "\x1b[36m"
 const GREEN = "\x1b[32m"
 const YELLOW = "\x1b[33m"
 
+/**
+ * Check if color output should be enabled.
+ * Uses @silvery/ansi detectColor() if available, falls back to basic
+ * NO_COLOR/FORCE_COLOR/isTTY checks.
+ */
+let _shouldColorize: boolean | undefined
+
+export function shouldColorize(): boolean {
+  if (_shouldColorize !== undefined) return _shouldColorize
+
+  // Try @silvery/ansi for full detection (respects NO_COLOR, FORCE_COLOR, TERM, etc.)
+  try {
+    const { detectColor } = require("@silvery/ansi") as { detectColor: (stdout: NodeJS.WriteStream) => string | null }
+    _shouldColorize = detectColor(process.stdout) !== null
+  } catch {
+    // Fallback: basic NO_COLOR / FORCE_COLOR / isTTY checks
+    if (process.env.NO_COLOR !== undefined) {
+      _shouldColorize = false
+    } else if (process.env.FORCE_COLOR !== undefined) {
+      _shouldColorize = true
+    } else {
+      _shouldColorize = process.stdout?.isTTY ?? true
+    }
+  }
+
+  return _shouldColorize
+}
+
 /** Wrap a string with ANSI codes, handling nested resets. */
 function ansi(text: string, code: string): string {
   return `${code}${text}${RESET}`
@@ -128,6 +156,9 @@ export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions
   // Tell Commander that color output is supported, even when stdout is not
   // a TTY (e.g., piped output, CI, tests). Without this, Commander strips
   // all ANSI codes from helpInformation() output.
+  //
+  // Callers who want to respect NO_COLOR/FORCE_COLOR should check
+  // shouldColorize() before calling colorizeHelp().
   program.configureOutput({
     getOutHasColors: () => true,
     getErrHasColors: () => true,

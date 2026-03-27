@@ -5,7 +5,7 @@
  * to infer option types from .option() calls. Inspired by
  * @commander-js/extra-typings, which achieves similar results with a
  * 1536-line .d.ts using recursive generic accumulation. This
- * implementation achieves the same inference in ~60 lines of type-level
+ * implementation achieves the same inference in ~100 lines of type-level
  * code by leveraging modern TS features (const type params, template
  * literal types, conditional mapped types).
  *
@@ -16,13 +16,13 @@
  * const cli = createCLI("myapp")
  *   .description("My app")
  *   .option("-v, --verbose", "Increase verbosity")
- *   .option("-p, --port <number>", "Port to listen on")
+ *   .option("-p, --port <number>", "Port to listen on", parseInt)
  *   .option("-o, --output [path]", "Output path")
  *   .option("--no-color", "Disable color output")
  *
  * cli.parse()
  * const opts = cli.opts()
- * //    ^? { verbose: boolean, port: string, output: string | true, color: boolean }
+ * //    ^? { verbose: boolean, port: number, output: string | true, color: boolean }
  * ```
  */
 
@@ -41,7 +41,7 @@ import { colorizeHelp } from "./index.ts"
 // Negated flags (--no-X) are detected and produce a `X: boolean` key.
 
 /** Flatten intersection types for clean hover output */
-type Prettify<T> = { [K in keyof T]: T[K] } & {}
+export type Prettify<T> = { [K in keyof T]: T[K] } & {}
 
 /** Check if a flags string is a negated flag like "--no-color" */
 type IsNegated<S extends string> = S extends `${string}--no-${string}` ? true : false
@@ -72,27 +72,85 @@ type CamelCase<S extends string> = S extends `${infer A}-${infer B}${infer Rest}
   : S
 
 /** Determine the value type from a flags string */
-type FlagValueType<S extends string> = IsNegated<S> extends true
-  ? boolean // negated flags are always boolean
-  : S extends `${string}<${string}>`
-    ? string // required arg → string
-    : S extends `${string}[${string}]`
-      ? string | true // optional arg → string | true
-      : boolean // no arg → boolean
+type FlagValueType<S extends string> =
+  IsNegated<S> extends true
+    ? boolean // negated flags are always boolean
+    : S extends `${string}<${string}>`
+      ? string // required arg → string
+      : S extends `${string}[${string}]`
+        ? string | true // optional arg → string | true
+        : boolean // no arg → boolean
 
 /** Add a flag to an options record */
 type AddOption<Opts, Flags extends string, Default = undefined> = Opts & {
   [K in ExtractLongName<Flags>]: Default extends undefined ? FlagValueType<Flags> | undefined : FlagValueType<Flags>
 }
 
+// --- Type-level argument parsing ---
+
+/** Extract whether an argument is required (<name>) or optional ([name]) */
+type ArgType<S extends string> = S extends `<${string}>`
+  ? string
+  : S extends `[${string}]`
+    ? string | undefined
+    : string
+
+// --- Typed opts helper (resolves accumulated Opts for action handlers) ---
+/** Resolve accumulated option types for use in action handler signatures */
+export type TypedOpts<Opts> = Prettify<Opts>
+
+// --- Zod schema support (duck-typed, no import) ---
+
+/**
+ * Duck-type interface for Zod-like schemas.
+ * Avoids importing zod — it's an optional peer dependency.
+ * Any object with `parse(value: string) => T` and `_def` qualifies.
+ */
+interface ZodLike<T = any> {
+  parse(value: unknown): T
+  _def: unknown
+}
+
+/** Type-level extraction: if Z is a Zod schema, infer its output type */
+type InferZodOutput<Z> = Z extends { parse(value: unknown): infer T; _def: unknown } ? T : never
+
+/** Runtime check: is this value a Zod-like schema? */
+function isZodSchema(value: unknown): value is ZodLike {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as any).parse === "function" &&
+    "_def" in (value as any)
+  )
+}
+
+/** Wrap a Zod schema as a Commander parser function */
+function zodParser<T>(schema: ZodLike<T>): (value: string) => T {
+  return (value: string) => {
+    try {
+      return schema.parse(value)
+    } catch (err: any) {
+      // Format Zod errors as Commander-style messages
+      if (err?.issues) {
+        const messages = err.issues.map((i: any) => i.message).join(", ")
+        throw new Error(messages)
+      }
+      throw err
+    }
+  }
+}
+
 // --- Typed Command ---
 
 /**
- * A Commander Command with inferred option types.
+ * A Commander Command with inferred option and argument types.
  * Wraps Commander's Command and tracks option types at the type level.
  * Help is automatically colorized.
+ *
+ * @typeParam Opts - Accumulated option types from .option() calls
+ * @typeParam Args - Accumulated argument types from .argument() calls (tuple)
  */
-export class TypedCommand<Opts = {}> {
+export class TypedCommand<Opts = {}, Args extends any[] = []> {
   readonly _cmd: BaseCommand
 
   constructor(name?: string) {
@@ -112,14 +170,43 @@ export class TypedCommand<Opts = {}> {
     return this
   }
 
-  /** Add an option with type inference */
+  /**
+   * Add an option with type inference.
+   *
+   * Supports four overload patterns:
+   * 1. `.option(flags, description?)` — type inferred from flags syntax
+   * 2. `.option(flags, description, defaultValue)` — removes `undefined` from type
+   * 3. `.option(flags, description, parser, defaultValue?)` — type inferred from parser return type
+   * 4. `.option(flags, description, zodSchema)` — type inferred from Zod schema output
+   */
+  option<const F extends string, Z extends ZodLike>(
+    flags: F,
+    description: string,
+    schema: Z,
+  ): TypedCommand<Opts & { [K in ExtractLongName<F>]: InferZodOutput<Z> }, Args>
+
+  option<const F extends string, P extends (value: string, previous: any) => any>(
+    flags: F,
+    description: string,
+    parseArg: P,
+    defaultValue?: ReturnType<P>,
+  ): TypedCommand<Opts & { [K in ExtractLongName<F>]: ReturnType<P> }, Args>
+
   option<const F extends string, D = undefined>(
     flags: F,
     description?: string,
     defaultValue?: D,
-  ): TypedCommand<AddOption<Opts, F, D>> {
-    ;(this._cmd as any).option(flags, description ?? "", defaultValue)
-    return this as any
+  ): TypedCommand<AddOption<Opts, F, D>, Args>
+
+  option(flags: string, description?: string, parseArgOrDefault?: any, defaultValue?: any): any {
+    if (isZodSchema(parseArgOrDefault)) {
+      ;(this._cmd as any).option(flags, description ?? "", zodParser(parseArgOrDefault))
+    } else if (typeof parseArgOrDefault === "function") {
+      ;(this._cmd as any).option(flags, description ?? "", parseArgOrDefault, defaultValue)
+    } else {
+      ;(this._cmd as any).option(flags, description ?? "", parseArgOrDefault)
+    }
+    return this
   }
 
   /** Add a required option */
@@ -127,8 +214,28 @@ export class TypedCommand<Opts = {}> {
     flags: F,
     description?: string,
     defaultValue?: string,
-  ): TypedCommand<Opts & { [K in ExtractLongName<F>]: FlagValueType<F> }> {
+  ): TypedCommand<Opts & { [K in ExtractLongName<F>]: FlagValueType<F> }, Args> {
     ;(this._cmd as any).requiredOption(flags, description ?? "", defaultValue)
+    return this as any
+  }
+
+  /**
+   * Add an option with a fixed set of allowed values (choices).
+   * The option type is narrowed to a union of the provided values.
+   *
+   * @example
+   * ```ts
+   * .optionWithChoices("-e, --env <env>", "Environment", ["dev", "staging", "prod"] as const)
+   * // → env: "dev" | "staging" | "prod" | undefined
+   * ```
+   */
+  optionWithChoices<const F extends string, const C extends readonly string[]>(
+    flags: F,
+    description: string,
+    choices: C,
+  ): TypedCommand<Opts & { [K in ExtractLongName<F>]: C[number] | undefined }, Args> {
+    const option = new Option(flags, description).choices(choices as unknown as string[])
+    ;(this._cmd as any).addOption(option)
     return this as any
   }
 
@@ -142,14 +249,24 @@ export class TypedCommand<Opts = {}> {
     return typed
   }
 
-  /** Add an argument */
-  argument(name: string, description?: string, defaultValue?: unknown): this {
+  /**
+   * Add an argument with type tracking.
+   * `<name>` = required (string), `[name]` = optional (string | undefined).
+   */
+  argument<const N extends string>(
+    name: N,
+    description?: string,
+    defaultValue?: unknown,
+  ): TypedCommand<Opts, [...Args, ArgType<N>]> {
     this._cmd.argument(name, description ?? "", defaultValue)
-    return this
+    return this as any
   }
 
-  /** Set action handler */
-  action(fn: (this: TypedCommand<Opts>, ...args: any[]) => void | Promise<void>): this {
+  /**
+   * Set action handler with typed parameters.
+   * Callback receives: ...arguments, opts, command.
+   */
+  action(fn: (...args: [...Args, Prettify<Opts>, TypedCommand<Opts, Args>]) => void | Promise<void>): this {
     this._cmd.action(fn as any)
     return this
   }
@@ -263,6 +380,17 @@ export class TypedCommand<Opts = {}> {
     this._cmd.showSuggestionAfterError(displaySuggestion)
     return this
   }
+
+  /** Set environment variable for the last added option (passthrough) */
+  env(name: string): this {
+    // Commander's .env() is on Option, not Command. We apply it to the last option.
+    const opts = (this._cmd as any).options as any[]
+    if (opts.length > 0) {
+      opts[opts.length - 1].envVar = name
+      opts[opts.length - 1].envVarRequired = false
+    }
+    return this
+  }
 }
 
 /**
@@ -276,11 +404,11 @@ export class TypedCommand<Opts = {}> {
  *   .description("My tool")
  *   .version("1.0.0")
  *   .option("-v, --verbose", "Verbose output")
- *   .option("-p, --port <number>", "Port")
+ *   .option("-p, --port <number>", "Port", parseInt)
  *
  * program.parse()
  * const { verbose, port } = program.opts()
- * //      ^boolean   ^string | undefined
+ * //      ^boolean   ^number | undefined
  * ```
  */
 export function createCLI(name?: string): TypedCommand<{}> {
