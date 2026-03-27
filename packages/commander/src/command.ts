@@ -19,7 +19,7 @@
  * ```
  */
 
-import { Command as BaseCommand, Option } from "commander"
+import { Command as BaseCommand, Help, Option } from "commander"
 import { colorizeHelp } from "./colorize.ts"
 import type { StandardSchemaV1 } from "./presets.ts"
 
@@ -44,16 +44,11 @@ function standardSchemaParser<T>(schema: StandardSchemaV1<T>): (value: string) =
 
 // --- Legacy Zod support (pre-3.24, no ~standard) ---
 
-/**
- * Duck-type interface for older Zod schemas that don't implement Standard Schema.
- * Any object with `parse(value: string) => T` and `_def` qualifies.
- */
 interface ZodLike<T = any> {
   parse(value: unknown): T
   _def: unknown
 }
 
-/** Runtime check: is this value a legacy Zod-like schema (without Standard Schema)? */
 function isLegacyZodSchema(value: unknown): value is ZodLike {
   return (
     typeof value === "object" &&
@@ -64,13 +59,11 @@ function isLegacyZodSchema(value: unknown): value is ZodLike {
   )
 }
 
-/** Wrap a legacy Zod schema as a Commander parser function */
 function legacyZodParser<T>(schema: ZodLike<T>): (value: string) => T {
   return (value: string) => {
     try {
       return schema.parse(value)
     } catch (err: any) {
-      // Format Zod errors as Commander-style messages
       if (err?.issues) {
         const messages = err.issues.map((i: any) => i.message).join(", ")
         throw new Error(messages)
@@ -80,19 +73,24 @@ function legacyZodParser<T>(schema: ZodLike<T>): (value: string) => T {
   }
 }
 
-/** A styled help section: title + rows of [term, description] pairs, or just text. */
-export interface HelpSection {
-  /** Section heading (e.g., "Getting Started:") */
+// --- Help Section Types ---
+
+/** Position for help sections — mirrors Commander's addHelpText positions. */
+export type HelpSectionPosition = "beforeAll" | "before" | "after" | "afterAll"
+
+/** Content for a help section: rows of [term, description] pairs, or free-form text. */
+export type HelpSectionContent = [string, string][] | string
+
+// Internal storage
+interface StoredSection {
+  position: HelpSectionPosition
   title: string
-  /** Rows as [term, description] pairs — formatted like Commander's option/command lists */
-  rows?: [string, string][]
-  /** Free-form body text (used if rows is not provided) */
-  body?: string
+  content: HelpSectionContent
 }
 
 export class Command extends BaseCommand {
-  private _helpSections: HelpSection[] = []
-  private _sectionsRegistered = false
+  private _helpSectionList: StoredSection[] = []
+  private _helpSectionsInstalled = false
 
   constructor(name?: string) {
     super(name)
@@ -129,23 +127,51 @@ export class Command extends BaseCommand {
   }
 
   /**
-   * Add a styled help section that appears after the standard help output.
-   * Sections are formatted with the same alignment as Commander's built-in lists.
+   * Add a styled help section — like Commander's `addHelpText` but with
+   * structured content that participates in global column alignment.
    *
    * @example
    * ```ts
-   * program.addSection({
-   *   title: "Getting Started:",
-   *   rows: [
-   *     ["myapp init", "Initialize a new project"],
-   *     ["myapp serve", "Start the dev server"],
-   *   ],
-   * })
+   * // Rows with aligned descriptions (default position: "after")
+   * program.addHelpSection("Getting Started:", [
+   *   ["myapp init", "Initialize a new project"],
+   *   ["myapp serve", "Start the dev server"],
+   * ])
+   *
+   * // Free-form text
+   * program.addHelpSection("Note:", "Requires Node.js 23+")
+   *
+   * // Explicit position
+   * program.addHelpSection("before", "Prerequisites:", [
+   *   ["node >= 23", "Required runtime"],
+   * ])
    * ```
    */
-  addSection(section: HelpSection): this {
-    this._helpSections.push(section)
-    this._installSectionHooks()
+  addHelpSection(title: string, content: HelpSectionContent): this
+  addHelpSection(position: HelpSectionPosition, title: string, content: HelpSectionContent): this
+  addHelpSection(
+    positionOrTitle: HelpSectionPosition | string,
+    titleOrContent: string | HelpSectionContent,
+    content?: HelpSectionContent,
+  ): this {
+    let position: HelpSectionPosition
+    let title: string
+    let body: HelpSectionContent
+
+    if (content !== undefined) {
+      // 3-arg: addHelpSection(position, title, content)
+      position = positionOrTitle as HelpSectionPosition
+      title = titleOrContent as string
+      body = content
+    } else {
+      // 2-arg: addHelpSection(title, content) — defaults to "after"
+      position = "after"
+      title = positionOrTitle
+      body = titleOrContent as HelpSectionContent
+    }
+
+    this._helpSectionList.push({ position, title, content: body })
+    this._installHelpSectionHooks()
     return this
   }
 
@@ -157,19 +183,14 @@ export class Command extends BaseCommand {
   /**
    * Auto-detect capitalization from user-provided descriptions and match it
    * for built-in options (-V/--version, -h/--help).
-   *
-   * If most user descriptions start with uppercase, capitalize the built-in ones too.
-   * If most start with lowercase, leave them as-is.
    */
   private _capitalizeBuiltinDescriptions(): void {
     const origHelp = this.helpInformation.bind(this)
     this.helpInformation = () => {
-      // Check user-provided descriptions (skip built-in -V and -h)
       const builtinFlags = new Set(["-V, --version", "-h, --help"])
       const userDescs = this.options
         .filter((opt) => !builtinFlags.has(opt.flags) && opt.description && /^[a-zA-Z]/.test(opt.description))
         .map((opt) => opt.description!)
-      // Also check subcommand descriptions
       for (const cmd of this.commands) {
         if (cmd.description() && /^[a-zA-Z]/.test(cmd.description())) {
           userDescs.push(cmd.description())
@@ -178,13 +199,11 @@ export class Command extends BaseCommand {
       if (userDescs.length > 0) {
         const capitalCount = userDescs.filter((d) => /^[A-Z]/.test(d)).length
         if (capitalCount > userDescs.length / 2) {
-          // Majority capitalized — capitalize built-in descriptions too
           for (const opt of this.options) {
             if (builtinFlags.has(opt.flags) && opt.description && /^[a-z]/.test(opt.description)) {
               opt.description = opt.description[0]!.toUpperCase() + opt.description.slice(1)
             }
           }
-          // Also capitalize the help option (stored separately by Commander)
           const helpOpt = (this as any)._helpOption
           if (helpOpt?.description && /^[a-z]/.test(helpOpt.description)) {
             helpOpt.description = helpOpt.description[0]!.toUpperCase() + helpOpt.description.slice(1)
@@ -195,69 +214,88 @@ export class Command extends BaseCommand {
     }
   }
 
-  /**
-   * Hook into Commander's configureHelp to render sections as part of formatHelp,
-   * participating in global padWidth alignment.
-   */
-  private _installSectionHooks(): void {
-    if (this._sectionsRegistered) return
-    this._sectionsRegistered = true
+  /** Render sections for a given position using the help formatter. */
+  private _renderSections(position: HelpSectionPosition, helper: any, termWidth: number): string {
+    const sections = this._helpSectionList.filter((s) => s.position === position)
+    if (sections.length === 0) return ""
 
-    const sections = this._helpSections
-    // Merge with existing help config (don't replace — colorizeHelp already set style hooks)
+    const lines: string[] = []
+    for (const section of sections) {
+      lines.push("")
+      lines.push(helper.styleTitle(section.title))
+      if (typeof section.content === "string") {
+        for (const line of section.content.split("\n")) {
+          lines.push(`  ${line}`)
+        }
+      } else {
+        for (const [term, desc] of section.content) {
+          // Auto-detect term style: option-like terms (-f, --flag) use option styling
+          const styleTerm = /^\s*-/.test(term) ? helper.styleOptionText(term) : helper.styleCommandText(term)
+          lines.push(helper.formatItem(styleTerm, termWidth, helper.styleDescriptionText(desc), helper))
+        }
+      }
+    }
+    lines.push("")
+    return lines.join("\n")
+  }
+
+  /** Install hooks once — merges with existing configureHelp, adds addHelpText for before/afterAll. */
+  private _installHelpSectionHooks(): void {
+    if (this._helpSectionsInstalled) return
+    this._helpSectionsInstalled = true
+
+    const self = this
     const existing = (this as any)._helpConfiguration ?? {}
     const origPadWidth = existing.padWidth
     const origFormatHelp = existing.formatHelp
-
-    // Capture Help.prototype.formatHelp as the base fallback
-    const { Help } = require("commander") as { Help: any }
     const protoFormatHelp = Help.prototype.formatHelp
 
     this.configureHelp({
       ...existing,
-      padWidth: (cmd: any, helper: any) => {
-        const base = origPadWidth ? origPadWidth(cmd, helper) : Math.max(
-          helper.longestOptionTermLength(cmd, helper),
-          helper.longestGlobalOptionTermLength?.(cmd, helper) ?? 0,
-          helper.longestSubcommandTermLength(cmd, helper),
-          helper.longestArgumentTermLength(cmd, helper),
-        )
+      // Include section term widths in global column alignment
+      padWidth(cmd: any, helper: any) {
+        const base = origPadWidth
+          ? origPadWidth(cmd, helper)
+          : Math.max(
+              helper.longestOptionTermLength(cmd, helper),
+              helper.longestGlobalOptionTermLength?.(cmd, helper) ?? 0,
+              helper.longestSubcommandTermLength(cmd, helper),
+              helper.longestArgumentTermLength(cmd, helper),
+            )
         let sectionMax = 0
-        for (const section of sections) {
-          if (section.rows) {
-            for (const [term] of section.rows) {
+        for (const section of self._helpSectionList) {
+          if (typeof section.content !== "string") {
+            for (const [term] of section.content) {
               if (term.length > sectionMax) sectionMax = term.length
             }
           }
         }
         return Math.max(base, sectionMax)
       },
-      formatHelp: (cmd: any, helper: any) => {
-        const baseHelp = origFormatHelp
-          ? origFormatHelp(cmd, helper)
-          : protoFormatHelp.call(helper, cmd, helper)
-        if (sections.length === 0) return baseHelp
-
+      // Render "before" and "after" sections inside formatHelp
+      formatHelp(cmd: any, helper: any) {
+        const baseHelp = origFormatHelp ? origFormatHelp(cmd, helper) : protoFormatHelp.call(helper, cmd, helper)
         const termWidth = helper.padWidth(cmd, helper)
-        const lines: string[] = []
-        for (const section of sections) {
-          lines.push("")
-          lines.push(helper.styleTitle(section.title))
-          if (section.rows) {
-            for (const [term, desc] of section.rows) {
-              lines.push(
-                helper.formatItem(helper.styleCommandText(term), termWidth, helper.styleDescriptionText(desc), helper),
-              )
-            }
-          } else if (section.body) {
-            for (const line of section.body.split("\n")) {
-              lines.push(`  ${line}`)
-            }
-          }
-        }
-        lines.push("")
-        return baseHelp + lines.join("\n")
+        const before = self._renderSections("before", helper, termWidth)
+        const after = self._renderSections("after", helper, termWidth)
+
+        // "before" goes after the Usage+Description but before Options.
+        // Since we can't inject mid-formatHelp easily, prepend before baseHelp.
+        // "after" appends at the end.
+        return (before ? before + "\n" : "") + baseHelp + after
       },
+    })
+
+    // "beforeAll" and "afterAll" use Commander's addHelpText (propagates to subcommands)
+    this.addHelpText("beforeAll", () => {
+      const helper = this.createHelp()
+      const termWidth = helper.padWidth(this, helper)
+      return this._renderSections("beforeAll", helper, termWidth)
+    })
+    this.addHelpText("afterAll", () => {
+      const helper = this.createHelp()
+      const termWidth = helper.padWidth(this, helper)
+      return this._renderSections("afterAll", helper, termWidth)
     })
   }
 }

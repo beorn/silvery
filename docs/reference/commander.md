@@ -60,6 +60,36 @@ const opts = program.opts()
 
 Help output is automatically colorized using semantic design tokens -- headings bold, commands primary, flags secondary, descriptions muted, arguments accent. With a theme, these resolve to theme colors; without a theme, they fall back to yellow/cyan/dim/magenta.
 
+## `addHelpSection()`
+
+Add styled help sections that integrate with Commander's built-in formatting — same column alignment, same color scheme, proper description wrapping.
+
+```typescript
+// Rows with aligned descriptions (default position: "after")
+program.addHelpSection("Getting Started:", [
+  ["myapp init", "Initialize a new project"],
+  ["myapp serve", "Start the dev server"],
+])
+
+// Free-form text section
+program.addHelpSection("Note:", "Requires Node.js 23+")
+
+// Explicit position (before/after/beforeAll/afterAll)
+program.addHelpSection("before", "Prerequisites:", [
+  ["node >= 23", "Required runtime"],
+  ["-p, --port", "Must be available"], // option-like terms auto-styled
+])
+```
+
+Terms starting with `-` are automatically styled as options (secondary color). Other terms use command styling (primary color). Descriptions use muted styling. Section headings are bold — matching Commander's built-in Options/Commands headings.
+
+Positions mirror Commander's `addHelpText`:
+
+- `"before"` — before Options/Commands (inside `formatHelp`)
+- `"after"` — after Commands (inside `formatHelp`) — **default**
+- `"beforeAll"` — before everything, propagates to subcommands
+- `"afterAll"` — after everything, propagates to subcommands
+
 ## `colorizeHelp()`
 
 Apply colorized help to a plain Commander `Command`:

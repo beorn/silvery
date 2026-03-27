@@ -1,5 +1,5 @@
 // Enhanced Commander
-export { Command, type HelpSection } from "./command.ts"
+export { Command, type HelpSectionPosition, type HelpSectionContent } from "./command.ts"
 export { colorizeHelp, shouldColorize, type ColorizeHelpOptions, type CommandLike } from "./colorize.ts"
 
 // Re-export Commander's other classes
