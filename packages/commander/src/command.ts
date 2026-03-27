@@ -145,7 +145,7 @@ export class Command extends BaseCommand {
    */
   addSection(section: HelpSection): this {
     this._helpSections.push(section)
-    this._updateHelpSections()
+    this._installSectionHooks()
     return this
   }
 
@@ -195,35 +195,69 @@ export class Command extends BaseCommand {
     }
   }
 
-  /** Register the help callback once, render all accumulated sections. */
-  private _updateHelpSections(): void {
+  /**
+   * Hook into Commander's configureHelp to render sections as part of formatHelp,
+   * participating in global padWidth alignment.
+   */
+  private _installSectionHooks(): void {
     if (this._sectionsRegistered) return
     this._sectionsRegistered = true
 
-    // Register once — the callback reads _helpSections at render time
-    this.addHelpText("afterAll", () => {
-      const helpConfig = (this as any)._helpConfiguration ?? {}
-      const styleTitle = helpConfig.styleTitle ?? ((s: string) => s)
-      const styleCmd = helpConfig.styleCommandText ?? ((s: string) => s)
-      const styleDesc = helpConfig.styleDescriptionText ?? ((s: string) => s)
+    const sections = this._helpSections
+    // Merge with existing help config (don't replace — colorizeHelp already set style hooks)
+    const existing = (this as any)._helpConfiguration ?? {}
+    const origPadWidth = existing.padWidth
+    const origFormatHelp = existing.formatHelp
 
-      const lines: string[] = []
-      for (const section of this._helpSections) {
-        lines.push("")
-        lines.push(styleTitle(section.title))
-        if (section.rows) {
-          const maxTerm = Math.max(...section.rows.map(([t]) => t.length), 0)
-          const pad = maxTerm + 2
-          for (const [term, desc] of section.rows) {
-            lines.push(`  ${styleCmd(term)}${" ".repeat(Math.max(1, pad - term.length))}${styleDesc(desc)}`)
-          }
-        } else if (section.body) {
-          for (const line of section.body.split("\n")) {
-            lines.push(`  ${line}`)
+    // Capture Help.prototype.formatHelp as the base fallback
+    const { Help } = require("commander") as { Help: any }
+    const protoFormatHelp = Help.prototype.formatHelp
+
+    this.configureHelp({
+      ...existing,
+      padWidth: (cmd: any, helper: any) => {
+        const base = origPadWidth ? origPadWidth(cmd, helper) : Math.max(
+          helper.longestOptionTermLength(cmd, helper),
+          helper.longestGlobalOptionTermLength?.(cmd, helper) ?? 0,
+          helper.longestSubcommandTermLength(cmd, helper),
+          helper.longestArgumentTermLength(cmd, helper),
+        )
+        let sectionMax = 0
+        for (const section of sections) {
+          if (section.rows) {
+            for (const [term] of section.rows) {
+              if (term.length > sectionMax) sectionMax = term.length
+            }
           }
         }
-      }
-      return lines.join("\n")
+        return Math.max(base, sectionMax)
+      },
+      formatHelp: (cmd: any, helper: any) => {
+        const baseHelp = origFormatHelp
+          ? origFormatHelp(cmd, helper)
+          : protoFormatHelp.call(helper, cmd, helper)
+        if (sections.length === 0) return baseHelp
+
+        const termWidth = helper.padWidth(cmd, helper)
+        const lines: string[] = []
+        for (const section of sections) {
+          lines.push("")
+          lines.push(helper.styleTitle(section.title))
+          if (section.rows) {
+            for (const [term, desc] of section.rows) {
+              lines.push(
+                helper.formatItem(helper.styleCommandText(term), termWidth, helper.styleDescriptionText(desc), helper),
+              )
+            }
+          } else if (section.body) {
+            for (const line of section.body.split("\n")) {
+              lines.push(`  ${line}`)
+            }
+          }
+        }
+        lines.push("")
+        return baseHelp + lines.join("\n")
+      },
     })
   }
 }
