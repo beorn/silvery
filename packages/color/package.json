@@ -1,21 +1,21 @@
 {
-  "name": "@silvery/ansi",
+  "name": "@silvery/color",
   "version": "0.1.0",
-  "description": "Terminal ANSI utilities — color detection, SGR codes, NO_COLOR support. Zero dependencies.",
+  "description": "Pure color math utilities — hex/RGB/HSL conversion, blending, contrast checking. Zero dependencies.",
   "keywords": [
-    "ansi",
     "color",
-    "detection",
-    "no-color",
-    "sgr",
-    "terminal"
+    "contrast",
+    "hex",
+    "hsl",
+    "rgb",
+    "wcag"
   ],
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
     "type": "git",
     "url": "https://github.com/beorn/silvery.git",
-    "directory": "packages/ansi"
+    "directory": "packages/color"
   },
   "files": [
     "src"
@@ -26,10 +26,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "@silvery/color": ">=0.1.0",
-    "string-width": "^8.2.0"
   },
   "engines": {
     "node": ">=23.6.0"

@@ -35,6 +35,7 @@
     }
   },
   "dependencies": {
+    "@silvery/color": "workspace:*",
     "@silvery/style": "workspace:*"
   }
 }

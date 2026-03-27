@@ -6,23 +6,10 @@
  */
 
 import type { ColorLevel } from "@silvery/ansi"
+import { hexToRgb } from "@silvery/color"
 
-// =============================================================================
-// Hex ↔ RGB
-// =============================================================================
-
-/** Parse #rrggbb or #rgb to [r, g, b]. Returns null for invalid input. */
-export function hexToRgb(hex: string): [number, number, number] | null {
-  if (hex[0] !== "#") return null
-  const h = hex.slice(1)
-  if (h.length === 3) {
-    return [parseInt(h[0]! + h[0]!, 16), parseInt(h[1]! + h[1]!, 16), parseInt(h[2]! + h[2]!, 16)]
-  }
-  if (h.length === 6) {
-    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
-  }
-  return null
-}
+// Re-export so existing consumers (style barrel, ag-term, etc.) keep working.
+export { hexToRgb }
 
 // =============================================================================
 // SGR Code Constants

@@ -30,7 +30,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@silvery/ansi": ">=0.1.0"
+    "@silvery/ansi": ">=0.1.0",
+    "@silvery/color": ">=0.1.0"
   },
   "engines": {
     "node": ">=23.6.0"
