@@ -1,38 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 600 270">
-  <style>
-    .bg { fill: #1e1e2e; rx: 8; }
-    text { font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 13px; }
-    .prompt { fill: #cdd6f4; }
-    .bold { fill: #cdd6f4; font-weight: bold; }
-    .cyan { fill: #89b4fa; }
-    .green { fill: #a6e3a1; }
-    .dim { fill: #6c7086; }
-    .text { fill: #cdd6f4; }
-  </style>
-  <rect class="bg" width="600" height="270" rx="8"/>
-  <text y="30" x="20">
-    <tspan class="prompt">$</tspan>
-    <tspan class="text"> deploy --help</tspan>
-  </text>
-  <text y="60" x="20">
-    <tspan class="bold">Usage:</tspan>
-    <tspan class="cyan"> deploy</tspan>
-    <tspan class="green"> [options]</tspan>
-  </text>
-  <text y="84" x="20" class="text">Deploy to an environment</text>
-  <text y="114" x="20" class="bold">Options:</text>
-  <text y="138" x="36" class="green">-V, --version</text>
-  <text y="138" x="220" class="dim">output the version number</text>
-  <text y="156" x="36" class="green">-e, --env &lt;env&gt;</text>
-  <text y="156" x="220" class="dim">Target environment</text>
-  <text y="174" x="36" class="green">-p, --port &lt;n&gt;</text>
-  <text y="174" x="220" class="dim">Port number</text>
-  <text y="192" x="36" class="green">-r, --retries &lt;n&gt;</text>
-  <text y="192" x="220" class="dim">Retry count</text>
-  <text y="210" x="36" class="green">--tags &lt;t&gt;</text>
-  <text y="210" x="220" class="dim">Labels</text>
-  <text y="228" x="36" class="green">-f, --force</text>
-  <text y="228" x="220" class="dim">Skip confirmation</text>
-  <text y="246" x="36" class="green">-h, --help</text>
-  <text y="246" x="220" class="dim">display help for command</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 620 280">
+  <rect width="620" height="280" rx="8" fill="#1e1e2e"/>
+  <foreignObject x="0" y="0" width="620" height="280">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 16px 20px;
+      color: #cdd6f4;
+    ">
+      <div>$ deploy --help</div>
+      <br/>
+      <div><b>Usage:</b> <span style="color:#89b4fa">deploy</span> <span style="color:#a6e3a1">[options]</span></div>
+      <br/>
+      <div>Deploy to an environment</div>
+      <br/>
+      <div><b>Options:</b></div>
+      <table style="border-collapse:collapse; margin-left:8px">
+        <tr><td style="padding:1px 16px 1px 0; color:#a6e3a1; white-space:nowrap">-V, --version</td><td style="color:#6c7086">output the version number</td></tr>
+        <tr><td style="padding:1px 16px 1px 0; color:#a6e3a1; white-space:nowrap">-e, --env &lt;env&gt;</td><td style="color:#6c7086">Target environment</td></tr>
+        <tr><td style="padding:1px 16px 1px 0; color:#a6e3a1; white-space:nowrap">-p, --port &lt;n&gt;</td><td style="color:#6c7086">Port number</td></tr>
+        <tr><td style="padding:1px 16px 1px 0; color:#a6e3a1; white-space:nowrap">-r, --retries &lt;n&gt;</td><td style="color:#6c7086">Retry count</td></tr>
+        <tr><td style="padding:1px 16px 1px 0; color:#a6e3a1; white-space:nowrap">--tags &lt;t&gt;</td><td style="color:#6c7086">Labels</td></tr>
+        <tr><td style="padding:1px 16px 1px 0; color:#a6e3a1; white-space:nowrap">-f, --force</td><td style="color:#6c7086">Skip confirmation</td></tr>
+        <tr><td style="padding:1px 16px 1px 0; color:#a6e3a1; white-space:nowrap">-h, --help</td><td style="color:#6c7086">display help for command</td></tr>
+      </table>
+    </div>
+  </foreignObject>
 </svg>
