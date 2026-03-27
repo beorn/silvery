@@ -46,10 +46,7 @@ Help is auto-colorized — bold headings, green flags, cyan commands, dim descri
 ## What's included
 
 - **Colorized help** — automatic, no config needed
-- **14 built-in types** — `port`, `int`, `csv`, `url`, `email`, `date`, and [more](https://silvery.dev/reference/commander)
-- **[Standard Schema](https://github.com/standard-schema/standard-schema) validation** — [Zod](https://github.com/colinhacks/zod), [Valibot](https://github.com/fabian-hiller/valibot), [ArkType](https://github.com/arktypeio/arktype)
-- **Zod CLI extensions** — `z.port`, `z.int`, `z.csv`, `z.url` (tree-shakeable — Zod not loaded if `z` isn't imported)
-- **Array choices** — `.option("-e, --env <e>", "Env", ["dev", "staging", "prod"])`
+- **Typed `.option()` parsing** — 14 built-in types (`port`, `int`, `csv`, `url`, `email`, `date`, [more](https://silvery.dev/reference/commander)), array choices (`["dev", "staging", "prod"]`), [Zod](https://github.com/colinhacks/zod) schemas (`z.port`, `z.int`, `z.csv`), or any [Standard Schema](https://github.com/standard-schema/standard-schema) library
 - **Standalone validators** — `import { port } from "@silvery/commander/parse"` with `.parse()`/`.safeParse()`
 - **NO_COLOR support** via [`@silvery/ansi`](https://github.com/beorn/silvery/tree/main/packages/ansi) (optional)
 
