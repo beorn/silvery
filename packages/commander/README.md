@@ -24,24 +24,23 @@ program.parse()
 const { env, port, retries, tags, force } = program.opts()
 ```
 
-```
-$ deploy --help
+<pre><code>$ deploy --help
 
-Usage: deploy [options]
+<b>Usage:</b> <span style="color:#5bc0de">deploy</span> <span style="color:#5cb85c">[options]</span>
 
 Deploy to an environment
 
-Options:
-  -V, --version      output the version number
-  -e, --env <env>    Target environment (choices: "dev", "staging", "prod")
-  -p, --port <n>     Port number
-  -r, --retries <n>  Retry count
-  --tags <t>         Labels
-  -f, --force        Skip confirmation
-  -h, --help         display help for command
-```
+<b>Options:</b>
+  <span style="color:#5cb85c">-V, --version</span>      <span style="color:#999">output the version number</span>
+  <span style="color:#5cb85c">-e, --env &lt;env&gt;</span>    <span style="color:#999">Target environment</span>
+  <span style="color:#5cb85c">-p, --port &lt;n&gt;</span>     <span style="color:#999">Port number</span>
+  <span style="color:#5cb85c">-r, --retries &lt;n&gt;</span>  <span style="color:#999">Retry count</span>
+  <span style="color:#5cb85c">--tags &lt;t&gt;</span>         <span style="color:#999">Labels</span>
+  <span style="color:#5cb85c">-f, --force</span>        <span style="color:#999">Skip confirmation</span>
+  <span style="color:#5cb85c">-h, --help</span>         <span style="color:#999">display help for command</span>
+</code></pre>
 
-Help is auto-colorized — bold headings, green flags, cyan commands, dim descriptions. Every option with a [Zod](https://github.com/colinhacks/zod) schema or built-in type is validated at parse time with clear error messages.
+Help is auto-colorized — bold headings, green flags, cyan commands, dim descriptions. Options with [Zod](https://github.com/colinhacks/zod) schemas or built-in types are validated at parse time with clear error messages.
 
 ## What's included
 
