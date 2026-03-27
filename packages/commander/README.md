@@ -33,7 +33,7 @@ With plain Commander, `opts()` returns `Record<string, any>` — every value is 
 
 [Zod](https://github.com/colinhacks/zod) is entirely optional — `z` is tree-shaken from your bundle if you don't import it. Without Zod, use the built-in types (`port`, `int`, `csv`) or plain Commander.
 
-<p align="center"><img src="help-output.svg" alt="Colorized help output" width="520" /></p>
+<img src="help-output.svg" alt="Colorized help output" />
 
 Help is auto-colorized — bold headings, green flags, cyan commands, dim descriptions. Options with [Zod](https://github.com/colinhacks/zod) schemas or built-in types are validated at parse time with clear error messages.
 
