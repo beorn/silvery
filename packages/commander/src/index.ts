@@ -1,6 +1,9 @@
+// Re-export Commander classes (drop-in replacement for @commander-js/extra-typings)
+export { Command, Option, Argument, CommanderError, InvalidArgumentError, Help } from "commander"
+export type { OptionValues } from "commander"
+
 // Re-export typed CLI
 export { TypedCommand, createCLI } from "./typed.ts"
-export type { } from "./typed.ts"
 
 /**
  * Commander.js help colorization using ANSI escape codes.
