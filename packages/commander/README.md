@@ -32,6 +32,66 @@ const program = new Command("myapp").description("My CLI tool")
 colorizeHelp(program) // applies recursively to all subcommands
 ```
 
+## Presets
+
+Pre-built validators for common CLI argument patterns. Each preset implements [Standard Schema v1](https://github.com/standard-schema/standard-schema) and works with Commander's `.option()` or standalone.
+
+```typescript
+import { createCLI, port, csv, int, url, oneOf } from "@silvery/commander"
+
+const cli = createCLI("deploy")
+  .option("-p, --port <n>", "Port", port)           // number (1-65535, validated)
+  .option("-r, --retries <n>", "Retries", int)      // number (integer)
+  .option("--tags <t>", "Tags", csv)                // string[]
+  .option("--callback <url>", "Callback", url)      // string (validated URL)
+  .option("-e, --env <e>", "Env", oneOf(["dev", "staging", "prod"]))  // "dev" | "staging" | "prod"
+```
+
+### Standalone usage
+
+Presets also work outside Commander for validating env vars, config files, etc. Import from the `@silvery/commander/parse` subpath for tree-shaking:
+
+```typescript
+import { port, csv, oneOf } from "@silvery/commander/parse"
+
+// .parse() — returns value or throws
+const dbPort = port.parse(process.env.DB_PORT ?? "5432")  // 3000
+
+// .safeParse() — returns result object, never throws
+const result = port.safeParse("abc")
+// { success: false, issues: [{ message: 'Expected port (1-65535), got "abc"' }] }
+
+// Standard Schema ~standard.validate() also available
+const validated = port["~standard"].validate("8080")
+// { value: 8080 }
+```
+
+### Available presets
+
+| Preset | Type | Validation |
+| ------ | ---- | ---------- |
+| `int` | `number` | Integer (coerced from string) |
+| `uint` | `number` | Unsigned integer (>= 0) |
+| `float` | `number` | Any finite number (rejects NaN) |
+| `port` | `number` | Integer 1-65535 |
+| `url` | `string` | Valid URL (via `URL` constructor) |
+| `path` | `string` | Non-empty string |
+| `csv` | `string[]` | Comma-separated, trimmed, empty filtered |
+| `json` | `unknown` | Parsed JSON |
+| `bool` | `boolean` | true/false/yes/no/1/0 (case-insensitive) |
+| `date` | `Date` | Valid date string |
+| `email` | `string` | Basic email validation (has @ and .) |
+| `regex` | `RegExp` | Valid regex pattern |
+
+### Factory presets
+
+```typescript
+import { intRange, oneOf } from "@silvery/commander"
+
+intRange(1, 100)       // Preset<number> — integer within bounds
+oneOf(["a", "b", "c"]) // Preset<"a" | "b" | "c"> — enum from values
+```
+
 ## Custom parser type inference
 
 When `.option()` is called with a parser function as the third argument, the return type is inferred:
@@ -49,9 +109,9 @@ Default values can be passed as the fourth argument:
 .option("-p, --port <n>", "Port", parseInt, 8080) // → port: number (defaults to 8080)
 ```
 
-## Zod schema validation
+## Standard Schema validation
 
-Pass a [Zod](https://zod.dev) schema as the third argument for combined parsing, validation, and type inference:
+Pass any [Standard Schema v1](https://github.com/standard-schema/standard-schema) compatible schema as the third argument for combined parsing, validation, and type inference. This works with Zod (>=3.24), Valibot (>=1.0), ArkType (>=2.0), and any other library implementing the standard:
 
 ```typescript
 import { z } from "zod"
@@ -71,7 +131,7 @@ const cli = createCLI("deploy")
 // → tags: string[] (transformed)
 ```
 
-Zod is an optional peer dependency -- duck-typed at runtime, never imported at the top level. If Zod validation fails, the error is formatted as a Commander-style error message.
+Schema libraries are optional peer dependencies -- detected at runtime via the Standard Schema `~standard` interface, never imported at the top level. A legacy fallback supports older Zod versions (pre-3.24) that don't implement Standard Schema yet.
 
 ## Typed action handlers
 
@@ -117,11 +177,12 @@ Chain `.env()` to set an environment variable fallback for the last-added option
 | ---------------------- | --------------------------------------------------- | --------------------------------------------------------------- |
 | Type inference         | 1536-line .d.ts with recursive generic accumulation | ~120 lines using TS 5.4+ const type params + template literals  |
 | Custom parser types    | Yes (.option with parseFloat -> number)             | Yes (parser return type inference)                              |
-| Zod schema support     | No                                                  | Yes (parse + validate + infer from Zod schemas)                 |
+| Standard Schema        | No                                                  | Yes (Zod, Valibot, ArkType, or any Standard Schema v1 library) |
+| Built-in presets       | No                                                  | Yes (port, int, csv, url, oneOf, etc.)                          |
 | Typed action handlers  | Yes (full signature inference)                      | Yes (arguments + options)                                       |
 | Choices narrowing      | Via .addOption()                                    | Via .optionWithChoices()                                        |
 | Colorized help         | Not included                                        | Built-in via Commander's native style hooks                     |
-| Package size           | Types only (25 lines runtime)                       | Types + colorizer + Zod bridge (~300 lines, zero required deps) |
+| Package size           | Types only (25 lines runtime)                       | Types + colorizer + schemas (~500 lines, zero required deps)    |
 | Installation           | Separate package alongside commander                | Single package, re-exports Commander                            |
 | Negated flags (--no-X) | Partial                                             | Key extraction + boolean type inference                         |
 
@@ -129,6 +190,7 @@ Chain `.env()` to set an environment variable fallback for the last-added option
 
 - [Commander.js](https://github.com/tj/commander.js) by TJ Holowaychuk and contributors -- the underlying CLI framework
 - [@commander-js/extra-typings](https://github.com/commander-js/extra-typings) -- inspired the type inference approach; our implementation uses modern TypeScript features (const type parameters, template literal types) to achieve similar results in fewer lines
+- [Standard Schema](https://github.com/standard-schema/standard-schema) -- universal schema interop protocol for type-safe validation
 - [@silvery/ansi](https://github.com/beorn/silvery/tree/main/packages/ansi) -- optional ANSI color detection for respecting NO_COLOR/FORCE_COLOR/terminal capabilities
 - Uses Commander's built-in `configureHelp()` style hooks (added in Commander 12) for colorization
 

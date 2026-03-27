@@ -4,6 +4,11 @@ export type { OptionValues } from "commander"
 
 // Re-export typed CLI
 export { TypedCommand, createCLI } from "./typed.ts"
+export type { StandardSchemaV1 } from "./typed.ts"
+
+// Re-export presets
+export { int, uint, float, port, url, path, csv, json, bool, date, email, regex, intRange, oneOf } from "./presets.ts"
+export type { Preset } from "./presets.ts"
 
 /**
  * Commander.js help colorization using ANSI escape codes.

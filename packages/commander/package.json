@@ -21,7 +21,8 @@
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./parse": "./src/presets.ts"
   },
   "publishConfig": {
     "access": "public"
@@ -30,7 +31,9 @@
     "@commander-js/extra-typings": ">=12.0.0",
     "@silvery/ansi": ">=0.1.0",
     "commander": ">=12.0.0",
-    "zod": ">=3.0.0"
+    "zod": ">=3.0.0",
+    "valibot": ">=1.0.0",
+    "arktype": ">=2.0.0"
   },
   "peerDependenciesMeta": {
     "commander": {
@@ -43,6 +46,12 @@
       "optional": true
     },
     "zod": {
+      "optional": true
+    },
+    "valibot": {
+      "optional": true
+    },
+    "arktype": {
       "optional": true
     }
   },

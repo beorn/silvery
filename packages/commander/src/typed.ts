@@ -99,11 +99,50 @@ type ArgType<S extends string> = S extends `<${string}>`
 /** Resolve accumulated option types for use in action handler signatures */
 export type TypedOpts<Opts> = Prettify<Opts>
 
-// --- Zod schema support (duck-typed, no import) ---
+// --- Standard Schema support (v1) ---
 
 /**
- * Duck-type interface for Zod-like schemas.
- * Avoids importing zod — it's an optional peer dependency.
+ * Standard Schema v1 interface — the universal schema interop protocol.
+ * Supports any schema library that implements Standard Schema (Zod >=3.24,
+ * Valibot >=1.0, ArkType >=2.0, etc.).
+ *
+ * Inlined to avoid any dependency on @standard-schema/spec.
+ * See: https://github.com/standard-schema/standard-schema
+ */
+export interface StandardSchemaV1<T = unknown> {
+  readonly "~standard": {
+    readonly version: 1
+    readonly vendor: string
+    readonly validate: (
+      value: unknown,
+    ) => { value: T } | { issues: ReadonlyArray<{ message: string; path?: ReadonlyArray<unknown> }> }
+  }
+}
+
+/** Type-level extraction: infer the output type from a Standard Schema */
+type InferStandardSchema<S> = S extends StandardSchemaV1<infer T> ? T : never
+
+/** Runtime check: is this value a Standard Schema v1 object? */
+function isStandardSchema(value: unknown): value is StandardSchemaV1 {
+  return typeof value === "object" && value !== null && "~standard" in (value as any)
+}
+
+/** Wrap a Standard Schema as a Commander parser function */
+function standardSchemaParser<T>(schema: StandardSchemaV1<T>): (value: string) => T {
+  return (value: string) => {
+    const result = schema["~standard"].validate(value)
+    if ("issues" in result) {
+      const msg = result.issues.map((i) => i.message).join(", ")
+      throw new Error(msg)
+    }
+    return result.value
+  }
+}
+
+// --- Legacy Zod support (pre-3.24, no ~standard) ---
+
+/**
+ * Duck-type interface for older Zod schemas that don't implement Standard Schema.
  * Any object with `parse(value: string) => T` and `_def` qualifies.
  */
 interface ZodLike<T = any> {
@@ -114,18 +153,19 @@ interface ZodLike<T = any> {
 /** Type-level extraction: if Z is a Zod schema, infer its output type */
 type InferZodOutput<Z> = Z extends { parse(value: unknown): infer T; _def: unknown } ? T : never
 
-/** Runtime check: is this value a Zod-like schema? */
-function isZodSchema(value: unknown): value is ZodLike {
+/** Runtime check: is this value a legacy Zod-like schema (without Standard Schema)? */
+function isLegacyZodSchema(value: unknown): value is ZodLike {
   return (
     typeof value === "object" &&
     value !== null &&
     typeof (value as any).parse === "function" &&
-    "_def" in (value as any)
+    "_def" in (value as any) &&
+    !("~standard" in (value as any))
   )
 }
 
-/** Wrap a Zod schema as a Commander parser function */
-function zodParser<T>(schema: ZodLike<T>): (value: string) => T {
+/** Wrap a legacy Zod schema as a Commander parser function */
+function legacyZodParser<T>(schema: ZodLike<T>): (value: string) => T {
   return (value: string) => {
     try {
       return schema.parse(value)
@@ -173,12 +213,19 @@ export class TypedCommand<Opts = {}, Args extends any[] = []> {
   /**
    * Add an option with type inference.
    *
-   * Supports four overload patterns:
+   * Supports five overload patterns:
    * 1. `.option(flags, description?)` — type inferred from flags syntax
    * 2. `.option(flags, description, defaultValue)` — removes `undefined` from type
    * 3. `.option(flags, description, parser, defaultValue?)` — type inferred from parser return type
-   * 4. `.option(flags, description, zodSchema)` — type inferred from Zod schema output
+   * 4. `.option(flags, description, standardSchema)` — type inferred from Standard Schema output
+   * 5. `.option(flags, description, zodSchema)` — type inferred from Zod schema output (legacy, pre-3.24)
    */
+  option<const F extends string, S extends StandardSchemaV1>(
+    flags: F,
+    description: string,
+    schema: S,
+  ): TypedCommand<Opts & { [K in ExtractLongName<F>]: InferStandardSchema<S> }, Args>
+
   option<const F extends string, Z extends ZodLike>(
     flags: F,
     description: string,
@@ -199,8 +246,10 @@ export class TypedCommand<Opts = {}, Args extends any[] = []> {
   ): TypedCommand<AddOption<Opts, F, D>, Args>
 
   option(flags: string, description?: string, parseArgOrDefault?: any, defaultValue?: any): any {
-    if (isZodSchema(parseArgOrDefault)) {
-      ;(this._cmd as any).option(flags, description ?? "", zodParser(parseArgOrDefault))
+    if (isStandardSchema(parseArgOrDefault)) {
+      ;(this._cmd as any).option(flags, description ?? "", standardSchemaParser(parseArgOrDefault))
+    } else if (isLegacyZodSchema(parseArgOrDefault)) {
+      ;(this._cmd as any).option(flags, description ?? "", legacyZodParser(parseArgOrDefault))
     } else if (typeof parseArgOrDefault === "function") {
       ;(this._cmd as any).option(flags, description ?? "", parseArgOrDefault, defaultValue)
     } else {
