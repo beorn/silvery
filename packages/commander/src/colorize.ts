@@ -45,15 +45,15 @@ export interface CommandLike {
 
 /** Color scheme for help output. Each value is a styling function (text → styled text). */
 export interface ColorizeHelpOptions {
-  /** Style for command/subcommand names. Default: cyan */
+  /** Style for command/subcommand names. Default: primary (yellow without theme) */
   commands?: (text: string) => string
-  /** Style for --flags and -short options. Default: green */
+  /** Style for --flags and -short options. Default: secondary (cyan without theme) */
   flags?: (text: string) => string
-  /** Style for description text. Default: dim */
+  /** Style for description text. Default: muted (dim without theme) */
   description?: (text: string) => string
   /** Style for section headings (Usage:, Options:, etc.). Default: bold */
   heading?: (text: string) => string
-  /** Style for <required> and [optional] argument brackets. Default: yellow */
+  /** Style for <required> and [optional] argument brackets. Default: accent (magenta without theme) */
   brackets?: (text: string) => string
 }
 
@@ -73,11 +73,12 @@ export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions
   // handles the final strip via configureOutput.
   if (s.level === 0) s.level = 1
 
-  const cmds = options?.commands ?? ((t: string) => s.cyan(t))
-  const flags = options?.flags ?? ((t: string) => s.green(t))
-  const desc = options?.description ?? ((t: string) => s.dim(t))
+  // Semantic token fallback: theme token → named color
+  const cmds = options?.commands ?? ((t: string) => s.primary(t))
+  const flags = options?.flags ?? ((t: string) => s.secondary(t))
+  const desc = options?.description ?? ((t: string) => s.muted(t))
   const heading = options?.heading ?? ((t: string) => s.bold(t))
-  const brackets = options?.brackets ?? ((t: string) => s.yellow(t))
+  const brackets = options?.brackets ?? ((t: string) => s.accent(t))
 
   const helpConfig: Record<string, unknown> = {
     styleTitle: (str: string) => heading(str),

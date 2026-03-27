@@ -23,6 +23,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./plain": "./src/plain.ts",
     "./parse": "./src/presets.ts"
   },
   "publishConfig": {

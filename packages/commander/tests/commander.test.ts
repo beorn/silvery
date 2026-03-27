@@ -13,8 +13,16 @@ const DIM_OFF = `${ESC}22m`
 const CYAN = `${ESC}36m`
 const GREEN = `${ESC}32m`
 const YELLOW = `${ESC}33m`
+const MAGENTA = `${ESC}35m`
 const RED = `${ESC}31m`
 const FG_OFF = `${ESC}39m`
+
+// Default semantic token fallbacks (no theme):
+// commands → primary → yellow (33)
+// flags → secondary → cyan (36)
+// description → muted → dim (2)
+// heading → bold
+// brackets → accent → magenta (35)
 
 function createTestProgram(): InstanceType<typeof Command> {
   return new Command("myapp")
@@ -59,26 +67,24 @@ describe("colorizeHelp", () => {
     expect(help).toContain(`${BOLD}Arguments:${BOLD_OFF}`)
   })
 
-  it("should colorize the command name with cyan", () => {
+  it("should colorize command name with primary (yellow)", () => {
     const program = createTestProgram()
     colorizeHelp(program)
     const help = program.helpInformation()
-    expect(help).toContain(`${CYAN}myapp${FG_OFF}`)
+    expect(help).toContain(`${YELLOW}myapp${FG_OFF}`)
   })
 
-  it("should colorize option flags with green", () => {
+  it("should colorize option flags with secondary (cyan)", () => {
     const program = createTestProgram()
     colorizeHelp(program)
     const help = program.helpInformation()
-    // Option terms are wrapped in green via styleOptionText
-    expect(help).toContain(`${GREEN}-v, --verbose${FG_OFF}`)
-    expect(help).toContain(`${GREEN}-V, --version${FG_OFF}`)
-    expect(help).toContain(`${GREEN}-h, --help${FG_OFF}`)
-    // Options with arguments include the arg in the green wrapping
-    expect(help).toContain(`${GREEN}-o, --output <path>${FG_OFF}`)
+    expect(help).toContain(`${CYAN}-v, --verbose${FG_OFF}`)
+    expect(help).toContain(`${CYAN}-V, --version${FG_OFF}`)
+    expect(help).toContain(`${CYAN}-h, --help${FG_OFF}`)
+    expect(help).toContain(`${CYAN}-o, --output <path>${FG_OFF}`)
   })
 
-  it("should colorize descriptions with dim", () => {
+  it("should colorize descriptions with muted (dim)", () => {
     const program = createTestProgram()
     colorizeHelp(program)
     const help = program.helpInformation()
@@ -87,29 +93,25 @@ describe("colorizeHelp", () => {
     expect(help).toContain(`${DIM}Config file${DIM_OFF}`)
   })
 
-  it("should colorize argument terms with yellow via styleArgumentText", () => {
+  it("should colorize argument terms with accent (magenta)", () => {
     const program = createTestProgram()
     colorizeHelp(program)
     const help = program.helpInformation()
-    // <input> in the usage line is colorized as an argument
-    expect(help).toContain(`${YELLOW}<input>${FG_OFF}`)
-    // The argument term "input" in the Arguments section
-    expect(help).toContain(`${YELLOW}input${FG_OFF}`)
+    expect(help).toContain(`${MAGENTA}<input>${FG_OFF}`)
+    expect(help).toContain(`${MAGENTA}input${FG_OFF}`)
   })
 
-  it("should colorize [options] in usage line with green (option text)", () => {
+  it("should colorize [options] in usage line with secondary (cyan)", () => {
     const program = createTestProgram()
     colorizeHelp(program)
     const help = program.helpInformation()
-    // Commander's default styleUsage delegates [options] to styleOptionText
-    expect(help).toContain(`${GREEN}[options]${FG_OFF}`)
+    expect(help).toContain(`${CYAN}[options]${FG_OFF}`)
   })
 
   it("should keep command description unstyled", () => {
     const program = createTestProgram()
     colorizeHelp(program)
     const help = program.helpInformation()
-    // The program description should appear but NOT be wrapped in DIM
     expect(help).toContain("A test CLI application")
     expect(help).not.toContain(`${DIM}A test CLI application${DIM_OFF}`)
   })
@@ -119,17 +121,15 @@ describe("colorizeHelp", () => {
     addSubcommands(program)
     colorizeHelp(program)
 
-    // Parent help has colorized subcommand list
     const parentHelp = program.helpInformation()
     expect(parentHelp).toContain(`${BOLD}Commands:${BOLD_OFF}`)
-    expect(parentHelp).toContain(CYAN) // subcommand names in cyan
+    expect(parentHelp).toContain(YELLOW) // subcommand names in primary (yellow)
 
-    // Subcommand help is also colorized
     const buildCmd = program.commands.find((c) => c.name() === "build")!
     const buildHelp = buildCmd.helpInformation()
     expect(buildHelp).toContain(`${BOLD}Usage:${BOLD_OFF}`)
     expect(buildHelp).toContain(`${BOLD}Options:${BOLD_OFF}`)
-    expect(buildHelp).toContain(`${GREEN}-w, --watch${FG_OFF}`)
+    expect(buildHelp).toContain(`${CYAN}-w, --watch${FG_OFF}`)
     expect(buildHelp).toContain(`${DIM}Watch mode${DIM_OFF}`)
     expect(buildHelp).toContain(`${DIM}Target platform${DIM_OFF}`)
   })
@@ -146,20 +146,11 @@ describe("colorizeHelp", () => {
     })
     const help = program.helpInformation()
 
-    // Headings use custom dim instead of default bold
     expect(help).toContain(`${DIM}Usage:${DIM_OFF}`)
     expect(help).toContain(`${DIM}Options:${DIM_OFF}`)
-
-    // Command name uses red instead of default cyan
     expect(help).toContain(`${RED}myapp${FG_OFF}`)
-
-    // Descriptions use cyan instead of default dim
     expect(help).toContain(`${CYAN}Enable verbose output${FG_OFF}`)
-
-    // Arguments use green instead of default yellow
     expect(help).toContain(`${GREEN}<input>${FG_OFF}`)
-
-    // Flags use yellow instead of default green
     expect(help).toContain(`${YELLOW}-v, --verbose${FG_OFF}`)
   })
 
@@ -168,7 +159,7 @@ describe("colorizeHelp", () => {
     colorizeHelp(program)
     const help = program.helpInformation()
     expect(help).toContain(`${BOLD}Usage:${BOLD_OFF}`)
-    expect(help).toContain(`${CYAN}bare${FG_OFF}`)
+    expect(help).toContain(`${YELLOW}bare${FG_OFF}`)
   })
 
   it("should propagate custom colors to subcommands", () => {
@@ -179,7 +170,6 @@ describe("colorizeHelp", () => {
 
     const buildCmd = program.commands.find((c) => c.name() === "build")!
     const buildHelp = buildCmd.helpInformation()
-    // Subcommand options use the custom RED for flags
     expect(buildHelp).toContain(`${RED}-w, --watch${FG_OFF}`)
   })
 })
