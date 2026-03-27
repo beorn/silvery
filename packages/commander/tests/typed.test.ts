@@ -10,9 +10,7 @@ describe("createCLI", () => {
   })
 
   it("returns typed opts for boolean flags", () => {
-    const cli = createCLI("test")
-      .option("-v, --verbose", "Verbose output")
-      .option("-d, --debug", "Debug mode")
+    const cli = createCLI("test").option("-v, --verbose", "Verbose output").option("-d, --debug", "Debug mode")
 
     cli.parse(["node", "test", "--verbose"], { from: "node" })
     const opts = cli.opts()
@@ -26,9 +24,7 @@ describe("createCLI", () => {
   })
 
   it("returns typed opts for string value flags", () => {
-    const cli = createCLI("test")
-      .option("-p, --port <number>", "Port")
-      .option("-h, --host <addr>", "Host address")
+    const cli = createCLI("test").option("-p, --port <number>", "Port").option("-h, --host <addr>", "Host address")
 
     cli.parse(["node", "test", "--port", "3000", "--host", "localhost"], { from: "node" })
     const opts = cli.opts()

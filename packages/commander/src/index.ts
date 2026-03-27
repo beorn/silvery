@@ -1,4 +1,4 @@
-// Re-export Commander classes (drop-in replacement for @commander-js/extra-typings)
+// Re-export Commander classes (drop-in replacement for @silvery/commander)
 export { Command, Option, Argument, CommanderError, InvalidArgumentError, Help } from "commander"
 export type { OptionValues } from "commander"
 
@@ -9,7 +9,7 @@ export { TypedCommand, createCLI } from "./typed.ts"
  * Commander.js help colorization using ANSI escape codes.
  *
  * Uses Commander's built-in style hooks (styleTitle, styleOptionText, etc.)
- * rather than regex post-processing. Works with @commander-js/extra-typings
+ * rather than regex post-processing. Works with @silvery/commander
  * or plain commander — accepts a minimal CommandLike interface so Commander
  * is a peer dependency, not a hard one.
  *
@@ -17,7 +17,7 @@ export { TypedCommand, createCLI } from "./typed.ts"
  *
  * @example
  * ```ts
- * import { Command } from "@commander-js/extra-typings"
+ * import { Command } from "@silvery/commander"
  * import { colorizeHelp } from "@silvery/commander"
  *
  * const program = new Command("myapp").description("My CLI tool")
@@ -41,7 +41,7 @@ function ansi(text: string, code: string): string {
 /**
  * Minimal interface for Commander's Command — avoids requiring Commander
  * as a direct dependency. Works with both `commander` and
- * `@commander-js/extra-typings`.
+ * `@silvery/commander`.
  *
  * Uses permissive types to ensure structural compatibility with all
  * Commander versions, overloads, and generic instantiations.

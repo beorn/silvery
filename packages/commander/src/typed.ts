@@ -1,8 +1,13 @@
 /**
- * Type-safe Commander.js wrapper — replaces @silvery/commander.
+ * Type-safe Commander.js wrapper — replaces @commander-js/extra-typings.
  *
- * Uses TypeScript 5.4+ const type parameters to infer option types from
- * .option() calls without the 1536-line generic accumulation hack.
+ * Uses TypeScript 5.4+ const type parameters and template literal types
+ * to infer option types from .option() calls. Inspired by
+ * @commander-js/extra-typings, which achieves similar results with a
+ * 1536-line .d.ts using recursive generic accumulation. This
+ * implementation achieves the same inference in ~60 lines of type-level
+ * code by leveraging modern TS features (const type params, template
+ * literal types, conditional mapped types).
  *
  * @example
  * ```ts
@@ -13,10 +18,11 @@
  *   .option("-v, --verbose", "Increase verbosity")
  *   .option("-p, --port <number>", "Port to listen on")
  *   .option("-o, --output [path]", "Output path")
+ *   .option("--no-color", "Disable color output")
  *
  * cli.parse()
  * const opts = cli.opts()
- * //    ^? { verbose: boolean, port: string, output: string | true }
+ * //    ^? { verbose: boolean, port: string, output: string | true, color: boolean }
  * ```
  */
 
@@ -24,41 +30,60 @@ import { Command as BaseCommand, Option, Argument } from "commander"
 import { colorizeHelp } from "./index.ts"
 
 // --- Type-level option parsing ---
+//
+// Approach: Each .option() call captures the flags string as a const
+// type parameter. Template literal types extract the flag name and
+// determine the value type (boolean for bare flags, string for <value>,
+// string | true for [value]). The result accumulates via intersection
+// types across chained calls. Prettify<T> flattens the intersections
+// for clean hover output.
+//
+// Negated flags (--no-X) are detected and produce a `X: boolean` key.
 
-/** Extract the long flag name from a flags string like "-p, --port <value>" */
-type ExtractLongName<S extends string> = S extends `${string}--${infer Rest}`
+/** Flatten intersection types for clean hover output */
+type Prettify<T> = { [K in keyof T]: T[K] } & {}
+
+/** Check if a flags string is a negated flag like "--no-color" */
+type IsNegated<S extends string> = S extends `${string}--no-${string}` ? true : false
+
+/**
+ * Extract the option key name from a flags string like "-p, --port <value>".
+ *
+ * Priority: long flag > short flag. Handles negated flags (--no-X → X),
+ * kebab-case conversion (--dry-run → dryRun), and short-only flags (-v → v).
+ */
+type ExtractLongName<S extends string> = S extends `${string}--no-${infer Rest}`
   ? Rest extends `${infer Name} ${string}`
     ? CamelCase<Name>
     : CamelCase<Rest>
-  : S extends `-${infer Short}`
-    ? Short extends `${infer C} ${string}`
-      ? C
-      : Short
-    : never
+  : S extends `${string}--${infer Rest}`
+    ? Rest extends `${infer Name} ${string}`
+      ? CamelCase<Name>
+      : CamelCase<Rest>
+    : S extends `-${infer Short}`
+      ? Short extends `${infer C} ${string}`
+        ? C
+        : Short
+      : never
 
 /** Convert kebab-case to camelCase: "dry-run" → "dryRun" */
 type CamelCase<S extends string> = S extends `${infer A}-${infer B}${infer Rest}`
   ? `${A}${Uppercase<B>}${CamelCase<Rest>}`
-  : S extends `no-${infer Name}`
-    ? CamelCase<Name>
-    : S
+  : S
 
 /** Determine the value type from a flags string */
-type FlagValueType<S extends string> = S extends `${string}<${string}>`
-  ? string // required arg → string
-  : S extends `${string}[${string}]`
-    ? string | true // optional arg → string | true
-    : boolean // no arg → boolean
+type FlagValueType<S extends string> = IsNegated<S> extends true
+  ? boolean // negated flags are always boolean
+  : S extends `${string}<${string}>`
+    ? string // required arg → string
+    : S extends `${string}[${string}]`
+      ? string | true // optional arg → string | true
+      : boolean // no arg → boolean
 
 /** Add a flag to an options record */
 type AddOption<Opts, Flags extends string, Default = undefined> = Opts & {
-  [K in ExtractLongName<Flags>]: Default extends undefined
-    ? FlagValueType<Flags> | undefined
-    : FlagValueType<Flags>
+  [K in ExtractLongName<Flags>]: Default extends undefined ? FlagValueType<Flags> | undefined : FlagValueType<Flags>
 }
-
-/** Typed option record — accumulates from .option() calls */
-type TypedOpts<T> = { [K in keyof T]: T[K] }
 
 // --- Typed Command ---
 
@@ -130,7 +155,7 @@ export class TypedCommand<Opts = {}> {
   }
 
   /** Get typed parsed options */
-  opts(): TypedOpts<Opts> {
+  opts(): Prettify<Opts> {
     return this._cmd.opts() as any
   }
 
@@ -141,10 +166,7 @@ export class TypedCommand<Opts = {}> {
   }
 
   /** Parse argv async */
-  async parseAsync(
-    argv?: readonly string[],
-    options?: { from?: "node" | "electron" | "user" },
-  ): Promise<this> {
+  async parseAsync(argv?: readonly string[], options?: { from?: "node" | "electron" | "user" }): Promise<this> {
     await this._cmd.parseAsync(argv as any, options as any)
     return this
   }
