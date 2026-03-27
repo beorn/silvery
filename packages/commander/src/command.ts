@@ -97,9 +97,10 @@ function styleSectionTerm(term: string, helper: any): string {
   // Option-like terms: entire term styled as option
   if (/^\s*-/.test(term)) return helper.styleOptionText(term)
 
-  // Mixed terms: style <arg>, [opt], and "quoted" segments as arguments, rest as commands
-  return term.replace(/(<[^>]+>|\[[^\]]+\]|"[^"]*")|([^<["[\]]+)/g, (_match, arg: string, text: string) => {
-    if (arg) return helper.styleArgumentText(arg)
+  // Mixed terms: style <arg>/[opt] as arguments, "quoted" as literal values, rest as commands
+  return term.replace(/(<[^>]+>|\[[^\]]+\])|("[^"]*")|([^<["[\]]+)/g, (_match, bracket: string, quoted: string, text: string) => {
+    if (bracket) return helper.styleArgumentText(bracket)
+    if (quoted) return quoted // literal values — default foreground (quotes distinguish them)
     if (text) return helper.styleCommandText(text)
     return ""
   })

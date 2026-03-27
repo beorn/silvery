@@ -49,7 +49,7 @@ export interface ColorizeHelpOptions {
   commands?: (text: string) => string
   /** Style for --flags and -short options. Default: secondary (cyan without theme) */
   flags?: (text: string) => string
-  /** Style for description text. Default: muted (dim without theme) */
+  /** Style for description text. Default: unstyled (normal foreground) */
   description?: (text: string) => string
   /** Style for section headings (Usage:, Options:, etc.). Default: bold */
   heading?: (text: string) => string
@@ -76,7 +76,7 @@ export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions
   // Semantic token fallback: theme token → named color
   const cmds = options?.commands ?? ((t: string) => s.primary(t))
   const flags = options?.flags ?? ((t: string) => s.secondary(t))
-  const desc = options?.description ?? ((t: string) => s.muted(t))
+  const desc = options?.description ?? ((t: string) => t)
   const heading = options?.heading ?? ((t: string) => s.bold(t))
   const brackets = options?.brackets ?? ((t: string) => s.accent(t))
 
@@ -87,7 +87,7 @@ export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions
     styleSubcommandText: (str: string) => cmds(str),
     styleArgumentText: (str: string) => brackets(str),
     styleDescriptionText: (str: string) => desc(str),
-    styleCommandDescription: (str: string) => str,
+    styleCommandDescription: (str: string) => s.bold.primary(str),
   }
 
   program.configureHelp(helpConfig)

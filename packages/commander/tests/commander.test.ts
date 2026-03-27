@@ -84,13 +84,13 @@ describe("colorizeHelp", () => {
     expect(help).toContain(`${CYAN}-o, --output <path>${FG_OFF}`)
   })
 
-  it("should colorize descriptions with muted (dim)", () => {
+  it("should leave descriptions unstyled (normal foreground)", () => {
     const program = createTestProgram()
     colorizeHelp(program)
     const help = program.helpInformation()
-    expect(help).toContain(`${DIM}Enable verbose output${DIM_OFF}`)
-    expect(help).toContain(`${DIM}Output file path${DIM_OFF}`)
-    expect(help).toContain(`${DIM}Config file${DIM_OFF}`)
+    // Descriptions should appear without DIM wrapping
+    expect(help).toContain("Enable verbose output")
+    expect(help).not.toContain(`${DIM}Enable verbose output${DIM_OFF}`)
   })
 
   it("should colorize argument terms with accent (magenta)", () => {
@@ -108,12 +108,12 @@ describe("colorizeHelp", () => {
     expect(help).toContain(`${CYAN}[options]${FG_OFF}`)
   })
 
-  it("should keep command description unstyled", () => {
+  it("should style command description with bold + primary", () => {
     const program = createTestProgram()
     colorizeHelp(program)
     const help = program.helpInformation()
-    expect(help).toContain("A test CLI application")
-    expect(help).not.toContain(`${DIM}A test CLI application${DIM_OFF}`)
+    // bold.primary produces combined SGR: \x1b[1;33m...\x1b[22;39m
+    expect(help).toContain(`${ESC}1;33mA test CLI application${ESC}22;39m`)
   })
 
   it("should apply recursively to subcommands", () => {
@@ -130,8 +130,8 @@ describe("colorizeHelp", () => {
     expect(buildHelp).toContain(`${BOLD}Usage:${BOLD_OFF}`)
     expect(buildHelp).toContain(`${BOLD}Options:${BOLD_OFF}`)
     expect(buildHelp).toContain(`${CYAN}-w, --watch${FG_OFF}`)
-    expect(buildHelp).toContain(`${DIM}Watch mode${DIM_OFF}`)
-    expect(buildHelp).toContain(`${DIM}Target platform${DIM_OFF}`)
+    expect(buildHelp).toContain("Watch mode")
+    expect(buildHelp).toContain("Target platform")
   })
 
   it("should accept custom color options", () => {
