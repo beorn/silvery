@@ -1,5 +1,5 @@
 /**
- * Type-safe Commander.js wrapper — replaces @commander-js/extra-typings.
+ * Type-safe Commander.js wrapper — replaces @silvery/commander.
  *
  * Uses TypeScript 5.4+ const type parameters to infer option types from
  * .option() calls without the 1536-line generic accumulation hack.
@@ -77,7 +77,7 @@ export class TypedCommand<Opts = {}> {
 
   /** Set program description */
   description(str: string, argsDescription?: Record<string, string>): this {
-    this._cmd.description(str, argsDescription)
+    this._cmd.description(str, argsDescription as any)
     return this
   }
 
@@ -93,7 +93,7 @@ export class TypedCommand<Opts = {}> {
     description?: string,
     defaultValue?: D,
   ): TypedCommand<AddOption<Opts, F, D>> {
-    this._cmd.option(flags, description ?? "", defaultValue)
+    ;(this._cmd as any).option(flags, description ?? "", defaultValue)
     return this as any
   }
 
@@ -103,13 +103,13 @@ export class TypedCommand<Opts = {}> {
     description?: string,
     defaultValue?: string,
   ): TypedCommand<Opts & { [K in ExtractLongName<F>]: FlagValueType<F> }> {
-    this._cmd.requiredOption(flags, description ?? "", defaultValue)
+    ;(this._cmd as any).requiredOption(flags, description ?? "", defaultValue)
     return this as any
   }
 
   /** Add a subcommand */
   command(nameAndArgs: string, description?: string): TypedCommand<{}> {
-    const sub = this._cmd.command(nameAndArgs, description)
+    const sub = (this._cmd as any).command(nameAndArgs, description)
     colorizeHelp(sub as any)
     const typed = new TypedCommand<{}>()
     // Replace the internal command with the one Commander created
@@ -136,7 +136,7 @@ export class TypedCommand<Opts = {}> {
 
   /** Parse argv */
   parse(argv?: readonly string[], options?: { from?: "node" | "electron" | "user" }): this {
-    this._cmd.parse(argv, options)
+    this._cmd.parse(argv as any, options as any)
     return this
   }
 
@@ -145,7 +145,7 @@ export class TypedCommand<Opts = {}> {
     argv?: readonly string[],
     options?: { from?: "node" | "electron" | "user" },
   ): Promise<this> {
-    await this._cmd.parseAsync(argv, options)
+    await this._cmd.parseAsync(argv as any, options as any)
     return this
   }
 
@@ -221,7 +221,7 @@ export class TypedCommand<Opts = {}> {
 
   /** Show help */
   help(context?: { error?: boolean }): never {
-    return this._cmd.help(context) as never
+    return (this._cmd as any).help(context) as never
   }
 
   /** Add help text */
