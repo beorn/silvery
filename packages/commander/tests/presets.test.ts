@@ -85,7 +85,7 @@ describe("parse / safeParse", () => {
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.issues).toHaveLength(1)
-      expect(result.issues[0].message).toContain("Expected port")
+      expect(result.issues![0]!.message).toContain("Expected port")
     }
   })
 

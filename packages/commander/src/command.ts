@@ -96,9 +96,9 @@ export class Command extends BaseCommand {
    * 4. **Function** -- passed through as Commander's parser function
    * 5. **Anything else** -- passed through as a default value
    */
-  option(flags: string, description?: string, parseArgOrDefault?: any, defaultValue?: any): this {
+  override option(flags: string, description?: string, parseArgOrDefault?: any, defaultValue?: any): this {
     if (Array.isArray(parseArgOrDefault)) {
-      const opt = new Option(flags, description ?? "").choices(parseArgOrDefault)
+      const opt = new Option(flags, description ?? "").choices(parseArgOrDefault as string[])
       this.addOption(opt)
       return this
     }
@@ -115,7 +115,7 @@ export class Command extends BaseCommand {
   }
 
   // Subcommands also get colorized help, Standard Schema, and array choices
-  createCommand(name?: string): Command {
+  override createCommand(name?: string): Command {
     return new Command(name)
   }
 }

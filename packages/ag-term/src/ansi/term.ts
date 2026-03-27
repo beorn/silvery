@@ -748,7 +748,17 @@ const STYLE_METHODS = new Set(["hex", "bgHex", "rgb", "bgRgb", "ansi256", "bgAns
 function createChainProxy(currentStyle: Style, termBase: object): Term {
   const handler: ProxyHandler<(...args: unknown[]) => string> = {
     apply(_target, _thisArg, args) {
-      return (currentStyle as Function).apply(undefined, args)
+      // Call the Style proxy — it handles string and template literal args
+      if (args.length === 1 && typeof args[0] === "string") {
+        return (currentStyle as unknown as (s: string) => string)(args[0])
+      }
+      if (args.length > 0 && Array.isArray(args[0]) && "raw" in args[0]) {
+        return (currentStyle as unknown as (s: TemplateStringsArray, ...v: unknown[]) => string)(
+          args[0] as TemplateStringsArray,
+          ...args.slice(1),
+        )
+      }
+      return (currentStyle as unknown as (s: string) => string)(String(args[0] ?? ""))
     },
 
     get(_target, prop) {

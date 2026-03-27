@@ -11,7 +11,7 @@
  */
 import React from "react"
 import { describe, test, expect } from "vitest"
-import chalk from "/ink/chalk"
+import chalk from "@silvery/ink/chalk"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
 import { stripAnsi } from "@silvery/ag-term/ansi"
