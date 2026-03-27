@@ -58,7 +58,7 @@ program.parse()
 const opts = program.opts()
 ```
 
-Help output is automatically colorized using semantic design tokens -- headings bold, commands primary, flags secondary, descriptions muted, arguments accent. With a theme, these resolve to theme colors; without a theme, they fall back to yellow/cyan/dim/magenta.
+Help output is automatically colorized using semantic design tokens -- bold program description, bold headings, primary commands, secondary flags, accent arguments, unstyled descriptions. With a theme, tokens resolve to theme colors; without a theme, they fall back to yellow/cyan/magenta.
 
 ## `addHelpSection()`
 
@@ -229,7 +229,7 @@ Default values can be passed as the fourth argument:
 
 Built on the shoulders of [@commander-js/extra-typings](https://github.com/commander-js/extra-typings). We add:
 
-- **Auto-colorized help** -- semantic design tokens (primary commands, secondary flags, muted descriptions)
+- **Auto-colorized help** -- semantic design tokens (primary commands, secondary flags, accent arguments)
 - **Built-in validation** via [Standard Schema](https://github.com/standard-schema/standard-schema) -- works with [Zod](https://github.com/colinhacks/zod), [Valibot](https://github.com/fabian-hiller/valibot), [ArkType](https://github.com/arktypeio/arktype)
 - **14 CLI types** -- `port`, `csv`, `int`, `url`, `email` and more, usable standalone via `.parse()`/`.safeParse()`
 - **NO_COLOR support** via [`@silvery/ansi`](https://github.com/beorn/silvery/tree/main/packages/ansi) (optional)
