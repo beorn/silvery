@@ -27,7 +27,11 @@ export interface KittyManager {
 export interface KittyManagerOptions {
   /** Detection mode: "enabled" activates immediately, "auto" probes the terminal, "disabled" does nothing. */
   mode?: "auto" | "enabled" | "disabled"
-  /** Bitmask of KittyFlags to enable. Defaults to DISAMBIGUATE | REPORT_EVENTS | REPORT_ALL_KEYS (11). */
+  /** Bitmask of KittyFlags to enable.
+   *  Default: DISAMBIGUATE | REPORT_EVENTS | REPORT_ALL_KEYS (11).
+   *  REPORT_ALL_KEYS provides shifted_codepoint for correct shifted punctuation
+   *  (e.g., Shift+1 → '!' on US layout). Without it, key.text for shifted keys
+   *  is the base character ('1'), which breaks hotkey matching and text input. */
   flags?: number
 }
 
@@ -54,10 +58,12 @@ export function createKittyManager(
 
   if (opts) {
     const mode = opts.mode ?? "auto"
-    // Default: DISAMBIGUATE only — safe for all terminals.
-    // For modifier tracking (useModifierKeys), apps should pass
-    // kitty: KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
-    const flagBitmask = opts.flags ?? KittyFlags.DISAMBIGUATE
+    // Default: DISAMBIGUATE | REPORT_EVENTS | REPORT_ALL_KEYS (11).
+    // REPORT_ALL_KEYS provides shifted_codepoint so shifted punctuation
+    // (Shift+1 → '!') produces correct key.text and matchHotkey results.
+    // All Kitty-supporting terminals handle these flags (Ghostty, WezTerm,
+    // iTerm2, Alacritty, Kitty, VS Code, Warp — see terminfo.dev).
+    const flagBitmask = opts.flags ?? KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
     const isTTY = (stdin as any)?.isTTY && (stdout as any)?.isTTY
 
     if (isTTY) {

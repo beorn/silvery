@@ -6,8 +6,8 @@
  *
  * Ported from Ink's kitty-keyboard.tsx test suite.
  */
-import { describe, expect, test } from "vitest"
-import { parseKeypress } from "@silvery/ag/keys"
+import { describe, expect, test, vi } from "vitest"
+import { parseKeypress, _resetShiftWarning } from "@silvery/ag/keys"
 
 // Helper to create kitty protocol CSI u sequences
 // Full format: CSI codepoint[:shifted[:base]][;modifiers[:event_type][;text]] u
@@ -727,12 +727,17 @@ describe("kitty protocol - shifted punctuation", () => {
     expect(result.associatedText).toBe("!")
   })
 
-  test("shift without shifted_codepoint leaves text as base character", () => {
-    // Some terminals may not provide shifted_codepoint
+  test("shift without shifted_codepoint leaves text as base character and warns", () => {
+    // Some terminals may not provide shifted_codepoint (DISAMBIGUATE-only).
+    // This logs a one-time warning.
+    _resetShiftWarning()
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
     const result = parseKeypress(kittyKey(49, 2))
     expect(result.shift).toBe(true)
     expect(result.shiftedKey).toBeUndefined()
     expect(result.text).toBe("1")
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("REPORT_ALL_KEYS"))
+    warnSpy.mockRestore()
   })
 
   test("matchHotkey('!') matches Shift+1 with shifted_codepoint", async () => {

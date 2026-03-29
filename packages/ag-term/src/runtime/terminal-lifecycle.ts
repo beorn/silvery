@@ -81,7 +81,7 @@ export function captureTerminalState(opts: {
     cursorHidden: opts.cursorHidden ?? true,
     mouseEnabled: opts.mouse ?? false,
     kittyEnabled: opts.kitty ?? false,
-    kittyFlags: opts.kittyFlags ?? 1,
+    kittyFlags: opts.kittyFlags ?? 11, // DISAMBIGUATE(1) | REPORT_EVENTS(2) | REPORT_ALL_KEYS(8)
     bracketedPaste: opts.bracketedPaste ?? false,
     focusReporting: opts.focusReporting ?? false,
   }
