@@ -870,12 +870,51 @@ function ProcessPanel({ state }: { state: DashboardState }) {
 // Layouts
 // ============================================================================
 
-const pane = {
-  borderStyle: "round" as const,
-  borderColor: "$primary",
-  paddingX: 1,
-  paddingY: 0,
-  flexDirection: "column" as const,
+/** Titled top border row: ╭ Title ────── subtitle ╮ */
+function PanelHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  const { width } = useContentRect()
+  const titlePart = ` ${title} `
+  const subtitlePart = subtitle ? ` ${subtitle} ` : ""
+  const dashCount = Math.max(1, width - 2 - titlePart.length - subtitlePart.length)
+
+  return (
+    <Text color="$primary" wrap="truncate">
+      ╭<Text bold>{titlePart}</Text>
+      <Text dimColor>{"─".repeat(dashCount)}</Text>
+      {subtitle && <Muted>{subtitlePart}</Muted>}╮
+    </Text>
+  )
+}
+
+/** Panel with titled top border: ╭ Title ────── subtitle ╮ */
+function Panel({
+  title,
+  subtitle,
+  children,
+  flexGrow,
+  flexBasis,
+}: {
+  title: string
+  subtitle?: string
+  children: React.ReactNode
+  flexGrow?: number
+  flexBasis?: number
+}) {
+  return (
+    <Box flexDirection="column" flexGrow={flexGrow} flexBasis={flexBasis}>
+      <PanelHeader title={title} subtitle={subtitle} />
+      <Box
+        borderStyle="round"
+        borderColor="$primary"
+        borderTop={false}
+        paddingX={1}
+        flexDirection="column"
+        flexGrow={1}
+      >
+        {children}
+      </Box>
+    </Box>
+  )
 }
 
 function WideLayout({ state }: { state: DashboardState }) {
@@ -883,22 +922,22 @@ function WideLayout({ state }: { state: DashboardState }) {
     <Box flexDirection="column" flexGrow={1}>
       {/* Top row: CPU (left ~60%) | Memory + Network stacked (right ~40%) */}
       <Box flexDirection="row" gap={1}>
-        <Box {...pane} flexGrow={3} flexBasis={0}>
+        <Panel title="CPU / Compute" subtitle="10 logical" flexGrow={3} flexBasis={0}>
           <CpuPanel state={state} />
-        </Box>
+        </Panel>
         <Box flexDirection="column" flexGrow={2} flexBasis={0}>
-          <Box {...pane} flexGrow={1}>
+          <Panel title="Memory" subtitle={`${state.memory.ramTotal.toFixed(0)} GiB`}>
             <MemoryPanel memory={state.memory} />
-          </Box>
-          <Box {...pane} flexGrow={1}>
+          </Panel>
+          <Panel title="Network" subtitle="en0 • wifi6">
             <NetworkPanel network={state.network} />
-          </Box>
+          </Panel>
         </Box>
       </Box>
       {/* Bottom: Process table (full width) */}
-      <Box {...pane} flexGrow={1}>
+      <Panel title="Processes" subtitle="sorted by CPU%">
         <ProcessPanel state={state} />
-      </Box>
+      </Panel>
     </Box>
   )
 }
@@ -917,24 +956,24 @@ function NarrowLayout({ state }: { state: DashboardState }) {
         </Box>
 
         <TabPanel value="cpu">
-          <Box {...pane} paddingY={1} flexGrow={1}>
+          <Panel title="CPU / Compute" subtitle="10 logical">
             <CpuPanel state={state} />
-          </Box>
+          </Panel>
         </TabPanel>
         <TabPanel value="memory">
-          <Box {...pane} paddingY={1} flexGrow={1}>
+          <Panel title="Memory" subtitle={`${state.memory.ramTotal.toFixed(0)} GiB`}>
             <MemoryPanel memory={state.memory} />
-          </Box>
+          </Panel>
         </TabPanel>
         <TabPanel value="network">
-          <Box {...pane} paddingY={1} flexGrow={1}>
+          <Panel title="Network" subtitle="en0 • wifi6">
             <NetworkPanel network={state.network} />
-          </Box>
+          </Panel>
         </TabPanel>
         <TabPanel value="processes">
-          <Box {...pane} paddingY={1} flexGrow={1}>
+          <Panel title="Processes" subtitle="sorted by CPU%">
             <ProcessPanel state={state} />
-          </Box>
+          </Panel>
         </TabPanel>
       </Tabs>
     </Box>
