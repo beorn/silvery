@@ -917,15 +917,13 @@ function NarrowLayout({ state }: { state: DashboardState }) {
 // Dashboard
 // ============================================================================
 
-export function Dashboard() {
+export function Dashboard({ static: isStatic }: { static?: boolean } = {}) {
   const { exit } = useApp()
   const { width } = useContentRect()
   const [state, setState] = useState(createInitialState)
   const isNarrow = width > 0 && width < 100
 
-  useInterval(() => {
-    setState((prev) => tickState(prev))
-  }, 500)
+  useInterval(() => setState((prev) => tickState(prev)), 500, !isStatic)
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) exit()
