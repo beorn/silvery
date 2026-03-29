@@ -67,11 +67,9 @@ export interface ColorizeHelpOptions {
  * @param options - Override default style functions for each element
  */
 export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions): void {
-  // Ensure style generates codes — at minimum basic (ANSI 16).
-  // Auto-detected level may be higher (256/truecolor) for richer output.
-  // May be 0 if NO_COLOR is set; in that case, force basic since Commander
-  // handles the final strip via configureOutput.
-  if (s.level === 0) s.level = 1
+  // Respect NO_COLOR — if the auto-detected level is 0, skip colorization entirely.
+  // The style instance already handles NO_COLOR/FORCE_COLOR/TERM detection.
+  if (s.level === 0) return
 
   // Semantic token fallback: theme token → named color
   const cmds = options?.commands ?? ((t: string) => s.primary(t))
