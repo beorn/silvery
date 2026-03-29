@@ -200,9 +200,7 @@ describe("addHelpSection", () => {
   it("should style option-like terms with secondary color", () => {
     const program = new Command("myapp")
     colorizeHelp(program)
-    program.addHelpSection("Verbosity:", [
-      ["-v, --verbose", "More output"],
-    ])
+    program.addHelpSection("Verbosity:", [["-v, --verbose", "More output"]])
     const help = program.helpInformation()
     // Option-like terms (-v) get secondary/option color (cyan), not primary (yellow)
     expect(help).toContain(`${CYAN}-v, --verbose${FG_OFF}`)
@@ -211,20 +209,15 @@ describe("addHelpSection", () => {
   it("should style command-like terms with primary color", () => {
     const program = new Command("myapp")
     colorizeHelp(program)
-    program.addHelpSection("Examples:", [
-      ["myapp build", "Build the project"],
-    ])
+    program.addHelpSection("Examples:", [["myapp build", "Build the project"]])
     const help = program.helpInformation()
     expect(help).toContain(`${YELLOW}myapp build${FG_OFF}`)
   })
 
   it("should align with Commander's built-in sections", () => {
-    const program = new Command("myapp")
-      .option("-p, --port <number>", "Port number")
+    const program = new Command("myapp").option("-p, --port <number>", "Port number")
     colorizeHelp(program)
-    program.addHelpSection("Examples:", [
-      ["myapp --port 3000", "Start on port 3000"],
-    ])
+    program.addHelpSection("Examples:", [["myapp --port 3000", "Start on port 3000"]])
     const help = program.helpInformation()
     // Both the option and the section row should be present with descriptions
     expect(help).toContain("Port number")
@@ -249,9 +242,7 @@ describe("addHelpSection", () => {
   it("should style <arg> brackets within command terms", () => {
     const program = new Command("myapp")
     colorizeHelp(program)
-    program.addHelpSection("Examples:", [
-      ["myapp add <id>", "Add by ID"],
-    ])
+    program.addHelpSection("Examples:", [["myapp add <id>", "Add by ID"]])
     const help = program.helpInformation()
     // <id> gets accent color (magenta), rest gets primary (yellow)
     expect(help).toContain(`${YELLOW}myapp add ${FG_OFF}${MAGENTA}<id>${FG_OFF}`)
@@ -260,9 +251,7 @@ describe("addHelpSection", () => {
   it("should support multiple sections", () => {
     const program = new Command("myapp")
     colorizeHelp(program)
-    program
-      .addHelpSection("Section A:", [["a", "first"]])
-      .addHelpSection("Section B:", [["b", "second"]])
+    program.addHelpSection("Section A:", [["a", "first"]]).addHelpSection("Section B:", [["b", "second"]])
     const help = program.helpInformation()
     expect(help).toContain("Section A:")
     expect(help).toContain("Section B:")

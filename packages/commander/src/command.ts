@@ -98,12 +98,15 @@ function styleSectionTerm(term: string, helper: any): string {
   if (/^\s*-/.test(term)) return helper.styleOptionText(term)
 
   // Mixed terms: style <arg>/[opt] as arguments, "quoted" as literal values, rest as commands
-  return term.replace(/(<[^>]+>|\[[^\]]+\])|("[^"]*")|([^<["[\]]+)/g, (_match, bracket: string, quoted: string, text: string) => {
-    if (bracket) return helper.styleArgumentText(bracket)
-    if (quoted) return quoted // literal values — default foreground (quotes distinguish them)
-    if (text) return helper.styleCommandText(text)
-    return ""
-  })
+  return term.replace(
+    /(<[^>]+>|\[[^\]]+\])|("[^"]*")|([^<["[\]]+)/g,
+    (_match, bracket: string, quoted: string, text: string) => {
+      if (bracket) return helper.styleArgumentText(bracket)
+      if (quoted) return quoted // literal values — default foreground (quotes distinguish them)
+      if (text) return helper.styleCommandText(text)
+      return ""
+    },
+  )
 }
 
 export class Command extends BaseCommand {
