@@ -54,11 +54,10 @@ export function createKittyManager(
 
   if (opts) {
     const mode = opts.mode ?? "auto"
-    // Default: DISAMBIGUATE + REPORT_EVENTS + REPORT_ALL_KEYS
-    // This enables useModifierKeys() to track Cmd/Super held state,
-    // which is needed for Cmd+hover, Cmd+click, and modifier-aware mouse events.
-    // REPORT_EVENTS reports key press/release; REPORT_ALL_KEYS reports modifier-only keys.
-    const flagBitmask = opts.flags ?? (KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS)
+    // Default: DISAMBIGUATE only — safe for all terminals.
+    // For modifier tracking (useModifierKeys), apps should pass
+    // kitty: KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
+    const flagBitmask = opts.flags ?? KittyFlags.DISAMBIGUATE
     const isTTY = (stdin as any)?.isTTY && (stdout as any)?.isTTY
 
     if (isTTY) {
