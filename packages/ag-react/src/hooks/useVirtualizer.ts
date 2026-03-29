@@ -4,6 +4,12 @@
  * Count-based API inspired by TanStack Virtual. Computes the visible range,
  * placeholder sizes, and scroll offsets for any scrollable view.
  *
+ * Supports variable item heights via dynamic measurement: after each render,
+ * consumers report actual item heights. The virtualizer uses measured heights
+ * when available and falls back to `estimateHeight` for unmeasured items.
+ * This eliminates the fixed-itemHeight problem where a single constant can't
+ * accurately represent variable-height items (e.g., cards with 3-6 row heights).
+ *
  * Two components consume this hook:
  * - VirtualView: items mount/unmount based on scroll position (in-tree)
  * - ScrollbackView: items transition through Live → Virtualized → Static (scrollback)
@@ -21,7 +27,8 @@ import { calcEdgeBasedScrollOffset } from "@silvery/ag-term/scroll-utils"
 export interface VirtualizerConfig {
   /** Total number of items */
   count: number
-  /** Estimated height of each item in rows (fixed number or per-index function) */
+  /** Estimated height of each item in rows (fixed number or per-index function).
+   * Used as fallback for items that haven't been measured yet. */
   estimateHeight: number | ((index: number) => number)
   /** Viewport height in rows */
   viewportHeight: number
@@ -60,6 +67,11 @@ export interface VirtualizerResult {
   scrollToItem: (index: number) => void
   /** Get the key for an item at index */
   getKey: (index: number) => string | number
+  /** Report a measured height for an item. Call after layout with actual height.
+   * Returns true if the measurement changed (consumers can use this to trigger re-render). */
+  measureItem: (key: string | number, height: number) => boolean
+  /** Read-only access to the measured heights cache */
+  measuredHeights: ReadonlyMap<string | number, number>
 }
 
 // =============================================================================
@@ -74,22 +86,74 @@ const DEFAULT_MAX_RENDERED = 100
 // Helpers
 // =============================================================================
 
-/** Get item height for a specific index. */
-function getHeight(index: number, estimateHeight: number | ((index: number) => number)): number {
+/** Get item height for a specific index, checking measured cache first. */
+function getHeight(
+  index: number,
+  estimateHeight: number | ((index: number) => number),
+  measuredHeights?: ReadonlyMap<string | number, number>,
+  getItemKey?: (index: number) => string | number,
+): number {
+  if (measuredHeights && measuredHeights.size > 0) {
+    const key = getItemKey ? getItemKey(index) : index
+    const measured = measuredHeights.get(key)
+    if (measured !== undefined) return measured
+  }
   return typeof estimateHeight === "function" ? estimateHeight(index) : estimateHeight
 }
 
-/** Calculate average item height by sampling. */
-function calcAverageHeight(count: number, estimateHeight: number | ((index: number) => number)): number {
+/** Calculate average item height using measurements when available, sampling estimates otherwise. */
+function calcAverageHeight(
+  count: number,
+  estimateHeight: number | ((index: number) => number),
+  measuredHeights?: ReadonlyMap<string | number, number>,
+): number {
   if (count === 0) return 1
+
+  // If we have measurements, compute average from them (more accurate)
+  if (measuredHeights && measuredHeights.size > 0) {
+    let total = 0
+    for (const h of measuredHeights.values()) {
+      total += h
+    }
+    return total / measuredHeights.size
+  }
+
   if (typeof estimateHeight === "number") return estimateHeight
 
   const sampleSize = Math.min(count, 10)
   let total = 0
   for (let i = 0; i < sampleSize; i++) {
-    total += getHeight(i, estimateHeight)
+    total += typeof estimateHeight === "function" ? estimateHeight(i) : estimateHeight
   }
   return total / sampleSize
+}
+
+/** Sum heights for a range of items, using measurements when available.
+ * Optimized: when no measurements exist, uses multiplication instead of iteration. */
+function sumHeights(
+  startIndex: number,
+  endIndex: number,
+  estimateHeight: number | ((index: number) => number),
+  gap: number,
+  measuredHeights?: ReadonlyMap<string | number, number>,
+  getItemKey?: (index: number) => string | number,
+): number {
+  const itemCount = endIndex - startIndex
+  if (itemCount <= 0) return 0
+
+  const gapTotal = (itemCount - 1) * gap
+
+  // Fast path: no measurements and fixed estimate — use multiplication
+  if ((!measuredHeights || measuredHeights.size === 0) && typeof estimateHeight === "number") {
+    return itemCount * estimateHeight + gapTotal
+  }
+
+  // Slow path: per-item lookup (checks measurement cache, falls back to estimate)
+  let total = 0
+  for (let i = startIndex; i < endIndex; i++) {
+    total += getHeight(i, estimateHeight, measuredHeights, getItemKey)
+  }
+  return total + gapTotal
 }
 
 // =============================================================================
@@ -102,6 +166,11 @@ function calcAverageHeight(count: number, estimateHeight: number | ((index: numb
  * Computes which items should be visible given a viewport size and scroll
  * position. The scroll offset is computed synchronously during render
  * (not in useEffect) to avoid one-frame delays.
+ *
+ * Supports dynamic height measurement: after render, consumers call
+ * `measureItem(key, height)` with actual heights. The virtualizer uses
+ * measured heights for accurate placeholder sizes and visible count estimation,
+ * falling back to `estimateHeight` for unmeasured items.
  *
  * When scrollTo is undefined, scroll state freezes at the last known position.
  * This is critical for multi-column layouts where only one column is active.
@@ -119,8 +188,30 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     getItemKey,
   } = config
 
-  // Calculate average item height for estimating visible count
-  const avgHeight = calcAverageHeight(count, estimateHeight)
+  // ── Measurement cache ─────────────────────────────────────────────
+  // Stores actual rendered heights keyed by item key. Survives re-renders
+  // and accumulates as the user scrolls through the list.
+  const measuredHeightsRef = useRef<Map<string | number, number>>(new Map())
+  // Counter to trigger re-computation when measurements change
+  const [measurementVersion, setMeasurementVersion] = useState(0)
+
+  const measureItem = useCallback((key: string | number, height: number): boolean => {
+    const cache = measuredHeightsRef.current
+    const existing = cache.get(key)
+    if (existing === height) return false
+    cache.set(key, height)
+    // Schedule a re-render so placeholder sizes update with new measurements.
+    // This is batched by React — multiple measureItem calls in the same
+    // layout effect produce a single re-render.
+    setMeasurementVersion((v) => v + 1)
+    return true
+  }, [])
+
+  const measuredHeights = measuredHeightsRef.current
+
+  // Calculate average item height for estimating visible count.
+  // Uses measured heights when available for more accurate estimation.
+  const avgHeight = calcAverageHeight(count, estimateHeight, measuredHeights)
   // Use ceil to match rendering behavior: items that partially overflow
   // the viewport are still rendered (clipped by overflow="hidden").
   const estimatedVisibleCount = Math.max(1, Math.ceil(viewportHeight / (avgHeight + gap)))
@@ -187,7 +278,8 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     [getItemKey],
   )
 
-  // Calculate virtualization window
+  // Calculate virtualization window.
+  // Depends on measurementVersion to recompute placeholders when measurements arrive.
   const windowCalc = useMemo(() => {
     if (count === 0) {
       return {
@@ -223,10 +315,10 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       start = Math.max(0, end - renderCount)
     }
 
-    // Calculate placeholder sizes
-    const fixedHeight = typeof estimateHeight === "number" ? estimateHeight : avgHeight
-    const leadingSize = start * (fixedHeight + gap)
-    const trailingSize = (count - end) * (fixedHeight + gap)
+    // Calculate placeholder sizes using measured heights when available.
+    // sumHeights checks the measurement cache per-item and falls back to estimates.
+    const leadingSize = sumHeights(0, start, estimateHeight, gap, measuredHeights, getItemKey)
+    const trailingSize = sumHeights(end, count, estimateHeight, gap, measuredHeights, getItemKey)
 
     return {
       startIndex: start,
@@ -234,7 +326,18 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       leadingHeight: leadingSize,
       trailingHeight: trailingSize,
     }
-  }, [count, effectiveScrollOffset, maxRendered, overscan, estimateHeight, avgHeight, gap])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- measuredHeights is a stable ref; measurementVersion triggers recomputation
+  }, [
+    count,
+    effectiveScrollOffset,
+    maxRendered,
+    overscan,
+    estimateHeight,
+    avgHeight,
+    gap,
+    measurementVersion,
+    getItemKey,
+  ])
 
   // ── onEndReached ─────────────────────────────────────────────────────
   // Fire once when the visible window reaches near the end. Resets when
@@ -263,5 +366,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     scrollOffset: effectiveScrollOffset,
     scrollToItem,
     getKey,
+    measureItem,
+    measuredHeights,
   }
 }

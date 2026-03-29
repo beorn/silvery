@@ -173,6 +173,48 @@ const DEFAULT_SCROLL_PADDING = 2
 const WHEEL_STEP = 3
 
 // =============================================================================
+// Measurement
+// =============================================================================
+
+/**
+ * Wrapper that measures its child's rendered height after layout.
+ * Reports the measurement to the virtualizer via measureItem callback.
+ * Uses Box's onLayout prop to get the actual rendered height.
+ * Does NOT add any layout of its own — the child determines the height.
+ */
+function MeasuredItem({
+  itemKey,
+  measureItem,
+  children,
+}: {
+  itemKey: string | number
+  measureItem: (key: string | number, height: number) => boolean
+  children: React.ReactNode
+}): React.ReactElement {
+  // Use a ref to always have the latest key/measureItem without re-subscribing.
+  // This avoids creating a new onLayout callback on every render.
+  const keyRef = useRef(itemKey)
+  keyRef.current = itemKey
+  const measureRef = useRef(measureItem)
+  measureRef.current = measureItem
+
+  const handleLayout = useCallback((rect: { height: number }) => {
+    if (rect.height > 0) {
+      measureRef.current(keyRef.current, rect.height)
+    }
+  }, [])
+
+  // Render children inside a transparent wrapper Box with onLayout.
+  // The Box inherits the parent's column layout direction and doesn't
+  // constrain the child — it simply provides a node for measurement.
+  return (
+    <Box flexDirection="column" flexShrink={0} onLayout={handleLayout}>
+      {children}
+    </Box>
+  )
+}
+
+// =============================================================================
 // Component
 // =============================================================================
 
@@ -311,19 +353,20 @@ function ListViewInner<T>(
     return (index: number) => getKey(activeItems[index]!, index + virtualizedCount)
   }, [getKey, activeItems, virtualizedCount])
 
-  const { range, leadingHeight, trailingHeight, scrollOffset, scrollToItem } = useVirtualizer({
-    count: activeItems.length,
-    estimateHeight: adjustedEstimateHeight,
-    viewportHeight: height,
-    scrollTo: adjustedScrollTo,
-    scrollPadding,
-    overscan,
-    maxRendered,
-    gap,
-    getItemKey: wrappedGetKey,
-    onEndReached,
-    onEndReachedThreshold,
-  })
+  const { range, leadingHeight, trailingHeight, scrollOffset, scrollToItem, measureItem, measuredHeights } =
+    useVirtualizer({
+      count: activeItems.length,
+      estimateHeight: adjustedEstimateHeight,
+      viewportHeight: height,
+      scrollTo: adjustedScrollTo,
+      scrollPadding,
+      overscan,
+      maxRendered,
+      gap,
+      getItemKey: wrappedGetKey,
+      onEndReached,
+      onEndReachedThreshold,
+    })
 
   // ── Surface registration ─────────────────────────────────────────
   const textSurfaceRef = useRef<TextSurface | null>(null)
@@ -469,16 +512,20 @@ function ListViewInner<T>(
       {/* Leading placeholder for virtual height */}
       {leadingHeight > 0 && <Box height={leadingHeight} flexShrink={0} />}
 
-      {/* Render visible items */}
+      {/* Render visible items with height measurement */}
       {visibleItems.map((item, i) => {
         const originalIndex = startIndex + i + virtualizedCount
         const key = getKey ? getKey(item, originalIndex) : startIndex + i
         const isLast = i === visibleItems.length - 1
         const meta: ListItemMeta = { isCursor: originalIndex === activeCursor }
+        // Use wrappedGetKey (index within activeItems) for measurement cache
+        const measureKey = wrappedGetKey ? wrappedGetKey(startIndex + i) : startIndex + i
 
         return (
           <React.Fragment key={key}>
-            {renderItem(item, originalIndex, meta)}
+            <MeasuredItem itemKey={measureKey} measureItem={measureItem}>
+              {renderItem(item, originalIndex, meta)}
+            </MeasuredItem>
             {!isLast && renderSeparator && renderSeparator()}
             {!isLast && gap > 0 && !renderSeparator && <Box height={gap} flexShrink={0} />}
           </React.Fragment>
