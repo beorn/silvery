@@ -15,7 +15,7 @@ import { ListView } from "silvery"
 | `items`                 | `T[]`                                                       | **required** | Array of items to render                                        |
 | `height`                | `number`                                                    | **required** | Height of the viewport in rows                                  |
 | `renderItem`            | `(item: T, index: number, meta: ListItemMeta) => ReactNode` | **required** | Render function for each item                                   |
-| `estimateHeight`        | `number \| ((index: number) => number)`                     | `1`          | Estimated height of each item in rows                           |
+| `estimateHeight`        | `number \| ((index: number) => number)`                     | `1`          | Estimated height per item (fallback before measurement)         |
 | `scrollTo`              | `number`                                                    | --           | Index to scroll to (declarative). Ignored when `navigable=true` |
 | `overscan`              | `number`                                                    | `5`          | Extra items to render beyond viewport                           |
 | `maxRendered`           | `number`                                                    | `100`        | Maximum items to render at once                                 |
@@ -89,6 +89,12 @@ interface ListViewHandle {
   onSelect={(index) => openItem(items[index])}
 />
 ```
+
+## Dynamic Height Measurement
+
+ListView automatically measures each rendered item's actual height after layout and uses those measurements for accurate scroll calculations. The `estimateHeight` prop is used as a fallback for items that haven't been rendered yet (above or below the viewport). As the user scrolls, measurements accumulate and scroll accuracy improves.
+
+This means variable-height items (e.g., cards with 3-6 rows depending on title length and children) work correctly without manual height calculation. Set `estimateHeight` to the most common item height for a smooth initial render.
 
 ## See Also
 

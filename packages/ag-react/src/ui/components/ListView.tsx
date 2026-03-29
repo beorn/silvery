@@ -218,6 +218,7 @@ function MeasuredItem({
 // Component
 // =============================================================================
 
+// oxlint-disable-next-line complexity/complexity -- React component — JSX ternaries inflate score
 function ListViewInner<T>(
   {
     items,

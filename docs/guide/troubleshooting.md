@@ -74,7 +74,7 @@ If focus isn't moving where expected:
 
 VirtualList shows blank rows when:
 
-- **`itemHeight` is wrong**: VirtualList requires a fixed `itemHeight`. If the actual rendered height differs, items misalign and blank gaps appear. Measure a single item first.
+- **`estimateHeight` is far off**: ListView/VirtualList measures actual rendered heights after layout and uses them for scroll math. However, a very inaccurate `estimateHeight` can cause jumpiness on the first render before measurements stabilize. Set it to the most common item height.
 - **`data` array changes identity on every render**: Wrap with `useMemo` or hoist the array. Identity changes cause VirtualList to recalculate offsets.
 - **Container has no height**: VirtualList needs a parent with a known height (explicit `height` prop or flex layout). Without it, the visible window is zero and nothing renders.
 - **`scrollTo` is out of range**: A `scrollTo` value past the last item shows blank space. Clamp to `Math.max(0, data.length - visibleCount)`.
