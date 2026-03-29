@@ -849,15 +849,20 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
           // Silvery defaults to this (flag 11 = DISAMBIGUATE|REPORT_EVENTS|REPORT_ALL_KEYS).
           // If you see this warning, your app or framework is overriding the default flags.
           //
-          // See: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
-          //      https://terminfo.dev/extensions/kitty-keyboard
-          if (typeof console !== "undefined" && !_shiftWarningEmitted && typeof process !== "undefined" && !process.env.VITEST) {
+          // See: https://terminfo.dev/extensions/kitty-keyboard-report-all-keys
+          //      https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
+          if (
+            typeof console !== "undefined" &&
+            !_shiftWarningEmitted &&
+            typeof process !== "undefined" &&
+            !process.env.VITEST
+          ) {
             _shiftWarningEmitted = true
             console.warn(
               "[silvery] Kitty keyboard protocol: Shift+key received without shifted_codepoint. " +
                 "Shifted punctuation will produce wrong characters (e.g., '1' instead of '!'). " +
                 "Enable REPORT_ALL_KEYS (flag 8) when requesting the Kitty keyboard protocol. " +
-                "See: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement",
+                "See: https://terminfo.dev/extensions/kitty-keyboard-report-all-keys",
             )
           }
           key.text = safeFromCodePoint(codepoint)
