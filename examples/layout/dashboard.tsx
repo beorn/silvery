@@ -19,7 +19,6 @@ import {
   TabList,
   Tab,
   TabPanel,
-  ProgressBar,
   useContentRect,
   useInput,
   useApp,
@@ -439,7 +438,11 @@ function tickState(prev: DashboardState): DashboardState {
 // ============================================================================
 
 function Sep() {
-  return <Muted>{"┄".repeat(50)}</Muted>
+  return (
+    <Text wrap="clip" dimColor>
+      {"┄".repeat(200)}
+    </Text>
+  )
 }
 
 function LR({ children }: { children: React.ReactNode }) {
@@ -471,9 +474,7 @@ function CpuSummary({ state }: { state: DashboardState }) {
         <Box gap={1} wrap="truncate">
           <Muted>Total</Muted>
           <Text color={severityColor(state.totalCpu)}>{`${state.totalCpu}%`}</Text>
-          <Box flexGrow={1}>
-            <ProgressBar value={state.totalCpu / 100} color={severityColor(state.totalCpu)} showPercentage={false} />
-          </Box>
+          <Text color={severityColor(state.totalCpu)}>{miniBar(state.totalCpu, 24)}</Text>
         </Box>
         <Box gap={2} wrap="truncate">
           <LV label="Load" value={`${state.load[0].toFixed(2)} ${state.load[1].toFixed(2)} ${state.load[2].toFixed(2)}`} />
@@ -503,9 +504,7 @@ function CpuCore({ core }: { core: CoreRow }) {
       <Box gap={1} wrap="truncate">
         <Muted>{core.label}</Muted>
         <Text color={severityColor(core.pct)}>{`${core.pct}%`.padStart(4)}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={core.pct / 100} color={severityColor(core.pct)} showPercentage={false} />
-        </Box>
+        <Text color={severityColor(core.pct)}>{miniBar(core.pct, 24)}</Text>
         <Muted>{`${core.freq}GHz`}</Muted>
       </Box>
       <Box gap={2} wrap="truncate">
@@ -526,9 +525,7 @@ function CpuFooter({ state }: { state: DashboardState }) {
         <Box gap={1} wrap="truncate">
           <Muted>Pkg</Muted>
           <Text color={severityColor(state.pkgPct)}>{`${state.pkgPct}%`}</Text>
-          <Box flexGrow={1}>
-            <ProgressBar value={state.pkgPct / 100} color={severityColor(state.pkgPct)} showPercentage={false} />
-          </Box>
+          <Text color={severityColor(state.pkgPct)}>{miniBar(state.pkgPct, 24)}</Text>
         </Box>
         <Box gap={2} wrap="truncate">
           <LV label="Power" value={`${state.power}W`} />
