@@ -817,7 +817,7 @@ function Panel({
     <Box
       borderStyle="round"
       borderColor="$primary"
-      paddingX={0}
+      paddingX={1}
       flexDirection="column"
       flexGrow={flexGrow}
       flexBasis={flexBasis}

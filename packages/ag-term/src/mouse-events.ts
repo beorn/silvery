@@ -11,7 +11,7 @@
 
 import { createLogger } from "loggily"
 import type { FocusManager } from "@silvery/ag/focus-manager"
-import { findFocusableAncestor } from "@silvery/create/focus-queries"
+import { findFocusableAncestor } from "@silvery/ag/focus-queries"
 import type { ParsedMouse } from "./mouse"
 import { getAncestorPath, pointInRect } from "@silvery/ag/tree-utils"
 import type { AgNode } from "@silvery/ag/types"

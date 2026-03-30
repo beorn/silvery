@@ -37,6 +37,10 @@
       "types": "./src/focus-events.ts",
       "import": "./src/focus-events.ts"
     },
+    "./focus-queries": {
+      "types": "./src/focus-queries.ts",
+      "import": "./src/focus-queries.ts"
+    },
     "./tree-utils": {
       "types": "./src/tree-utils.ts",
       "import": "./src/tree-utils.ts"
@@ -44,6 +48,7 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
+    "@silvery/ansi": "workspace:*",
     "@silvery/ag-term": "workspace:*",
     "@silvery/create": "workspace:*"
   }

@@ -14,7 +14,7 @@ import {
   getTabOrder,
   findSpatialTarget,
   getExplicitFocusLink,
-} from "@silvery/create/focus-queries"
+} from "./focus-queries"
 
 // ============================================================================
 // Types
