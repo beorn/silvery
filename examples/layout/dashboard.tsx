@@ -438,11 +438,7 @@ function tickState(prev: DashboardState): DashboardState {
 // ============================================================================
 
 function Sep() {
-  return (
-    <Text wrap="clip" dimColor>
-      {"┄".repeat(200)}
-    </Text>
-  )
+  return <Muted>{"┄".repeat(50)}</Muted>
 }
 
 function LR({ children }: { children: React.ReactNode }) {
@@ -477,7 +473,10 @@ function CpuSummary({ state }: { state: DashboardState }) {
           <Text color={severityColor(state.totalCpu)}>{miniBar(state.totalCpu, 24)}</Text>
         </Box>
         <Box gap={2} wrap="truncate">
-          <LV label="Load" value={`${state.load[0].toFixed(2)} ${state.load[1].toFixed(2)} ${state.load[2].toFixed(2)}`} />
+          <LV
+            label="Load"
+            value={`${state.load[0].toFixed(2)} ${state.load[1].toFixed(2)} ${state.load[2].toFixed(2)}`}
+          />
           <LV label="Temp" value={`${state.avgTemp}\u00B0C`} color={heatColor(state.avgTemp)} />
           <LV label="Tasks" value={state.tasks} />
         </Box>
@@ -722,7 +721,7 @@ function statusColor(status: ProcessInfo["status"]): string | undefined {
 
 function ProcessHeader() {
   return (
-    <Box wrap="truncate">
+    <Box wrap="clip">
       <Muted>{`${"PID".padStart(COL.pid)} `}</Muted>
       <Muted>{`${"NAME".padEnd(COL.name)} `}</Muted>
       <Text bold color="$primary">{`${"CPU%\u2193".padStart(COL.cpu)} `}</Text>
@@ -741,7 +740,7 @@ function ProcessRow({ proc, isTop }: { proc: ProcessInfo; isTop: boolean }) {
   const ioColor = proc.io === "0" ? "$muted" : "$primary"
 
   return (
-    <Box wrap="truncate">
+    <Box wrap="clip">
       <Text>{`${String(proc.pid).padStart(COL.pid)} `}</Text>
       <Text bold={isTop}>{`${proc.name.padEnd(COL.name).slice(0, COL.name)} `}</Text>
       <Text bold={isTop} color={cpuColor}>{`${proc.cpu.toFixed(1).padStart(5)}% `}</Text>
@@ -800,23 +799,7 @@ function ProcessPanel({ state }: { state: DashboardState }) {
 // Layouts
 // ============================================================================
 
-/** Titled top border row: ╭ Title ────── subtitle ╮ */
-function PanelHeader({ title, subtitle }: { title: string; subtitle?: string }) {
-  const { width } = useContentRect()
-  const titlePart = ` ${title} `
-  const subtitlePart = subtitle ? ` ${subtitle} ` : ""
-  const dashCount = Math.max(1, width - 2 - titlePart.length - subtitlePart.length)
-
-  return (
-    <Text color="$primary" wrap="truncate">
-      ╭<Text bold>{titlePart}</Text>
-      <Text dimColor>{"─".repeat(dashCount)}</Text>
-      {subtitle && <Muted>{subtitlePart}</Muted>}╮
-    </Text>
-  )
-}
-
-/** Panel with titled top border: ╭ Title ────── subtitle ╮ */
+/** Panel with titled first row inside standard border */
 function Panel({
   title,
   subtitle,
@@ -831,18 +814,21 @@ function Panel({
   flexBasis?: number
 }) {
   return (
-    <Box flexDirection="column" flexGrow={flexGrow} flexBasis={flexBasis}>
-      <PanelHeader title={title} subtitle={subtitle} />
-      <Box
-        borderStyle="round"
-        borderColor="$primary"
-        borderTop={false}
-        paddingX={0}
-        flexDirection="column"
-        flexGrow={1}
-      >
-        {children}
-      </Box>
+    <Box
+      borderStyle="round"
+      borderColor="$primary"
+      paddingX={0}
+      flexDirection="column"
+      flexGrow={flexGrow}
+      flexBasis={flexBasis}
+    >
+      <LR>
+        <Text bold color="$primary">
+          {` ${title} `}
+        </Text>
+        {subtitle && <Muted>{` ${subtitle} `}</Muted>}
+      </LR>
+      {children}
     </Box>
   )
 }
@@ -918,7 +904,8 @@ export function Dashboard({ static: isStatic }: { static?: boolean } = {}) {
   const { exit } = useApp()
   const { width } = useContentRect()
   const [state, setState] = useState(createInitialState)
-  const isNarrow = width > 0 && width < 100
+  // Process table needs ~135 cols; below that switch to tabbed layout
+  const isNarrow = width > 0 && width < 130
 
   useInterval(() => setState((prev) => tickState(prev)), 500, !isStatic)
 

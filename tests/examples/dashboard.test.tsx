@@ -27,11 +27,11 @@ describe("dashboard snapshot", () => {
 
   test("full render at 137x40 matches snapshot", async () => {
     // 137x40 = mockup dimensions (no ExampleBanner overhead)
-    using term = createTermless({ cols: 137, rows: 40 })
+    using term = createTermless({ cols: 137, rows: 43 })
     handle = await run(<Dashboard static />, term)
 
     // Wait for layout to stabilize (useContentRect needs one cycle)
-    await new Promise((r) => setTimeout(r, 200))
+    await new Promise((r) => setTimeout(r, 400))
 
     const lines = term.screen!.getLines()
     const output = lines.join("\n")
@@ -43,7 +43,7 @@ describe("dashboard snapshot", () => {
   test("narrow layout at 80x40 matches snapshot", async () => {
     using term = createTermless({ cols: 80, rows: 40 })
     handle = await run(<Dashboard static />, term)
-    await new Promise((r) => setTimeout(r, 200))
+    await new Promise((r) => setTimeout(r, 400))
 
     const lines = term.screen!.getLines()
     const output = lines.join("\n")
@@ -56,9 +56,9 @@ describe("dashboard snapshot", () => {
   // ==========================================================================
 
   test("all four panel titles present", async () => {
-    using term = createTermless({ cols: 137, rows: 40 })
+    using term = createTermless({ cols: 137, rows: 43 })
     handle = await run(<Dashboard static />, term)
-    await new Promise((r) => setTimeout(r, 200))
+    await new Promise((r) => setTimeout(r, 400))
 
     expect(term.screen).toContainText("CPU / Compute")
     expect(term.screen).toContainText("Memory")
@@ -67,9 +67,9 @@ describe("dashboard snapshot", () => {
   })
 
   test("border integrity — no overlapping top borders", async () => {
-    using term = createTermless({ cols: 137, rows: 40 })
+    using term = createTermless({ cols: 137, rows: 43 })
     handle = await run(<Dashboard static />, term)
-    await new Promise((r) => setTimeout(r, 200))
+    await new Promise((r) => setTimeout(r, 400))
 
     const lines = term.screen!.getLines()
     let lastTopRow = -10
