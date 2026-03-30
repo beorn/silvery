@@ -86,23 +86,33 @@ const DEFAULT_MAX_RENDERED = 100
 // Helpers
 // =============================================================================
 
-/** Get item height for a specific index, checking measured cache first. */
-function getHeight(
+/** Get item height for a specific index, checking measured cache first.
+ *
+ * When measurements exist but this specific item hasn't been measured,
+ * falls back to the average measured height (if provided) rather than
+ * the original estimate. This prevents leading/trailing placeholders
+ * from overshooting when estimateHeight diverges from actual heights.
+ */
+export function getHeight(
   index: number,
   estimateHeight: number | ((index: number) => number),
   measuredHeights?: ReadonlyMap<string | number, number>,
   getItemKey?: (index: number) => string | number,
+  avgMeasuredHeight?: number,
 ): number {
   if (measuredHeights && measuredHeights.size > 0) {
     const key = getItemKey ? getItemKey(index) : index
     const measured = measuredHeights.get(key)
     if (measured !== undefined) return measured
+    // Use average measured height for unmeasured items — more accurate
+    // than the original estimate which may diverge from actual heights.
+    if (avgMeasuredHeight !== undefined) return avgMeasuredHeight
   }
   return typeof estimateHeight === "function" ? estimateHeight(index) : estimateHeight
 }
 
 /** Calculate average item height using measurements when available, sampling estimates otherwise. */
-function calcAverageHeight(
+export function calcAverageHeight(
   count: number,
   estimateHeight: number | ((index: number) => number),
   measuredHeights?: ReadonlyMap<string | number, number>,
@@ -129,8 +139,14 @@ function calcAverageHeight(
 }
 
 /** Sum heights for a range of items, using measurements when available.
- * Optimized: when no measurements exist, uses multiplication instead of iteration. */
-function sumHeights(
+ * Optimized: when no measurements exist, uses multiplication instead of iteration.
+ *
+ * When measurements exist, unmeasured items in the range use the average
+ * measured height as fallback (not the original estimate). This prevents
+ * leading/trailing placeholders from overshooting when estimateHeight
+ * diverges from actual heights — the root cause of blank rows at the top
+ * (Bug 1) and inability to scroll to the bottom (Bug 2). */
+export function sumHeights(
   startIndex: number,
   endIndex: number,
   estimateHeight: number | ((index: number) => number),
@@ -148,10 +164,21 @@ function sumHeights(
     return itemCount * estimateHeight + gapTotal
   }
 
-  // Slow path: per-item lookup (checks measurement cache, falls back to estimate)
+  // Compute average measured height once for use as fallback for unmeasured items.
+  // This is more accurate than the original estimate for items outside the render window.
+  let avgMeasured: number | undefined
+  if (measuredHeights && measuredHeights.size > 0) {
+    let measuredTotal = 0
+    for (const h of measuredHeights.values()) {
+      measuredTotal += h
+    }
+    avgMeasured = measuredTotal / measuredHeights.size
+  }
+
+  // Slow path: per-item lookup (checks measurement cache, falls back to avg measured or estimate)
   let total = 0
   for (let i = startIndex; i < endIndex; i++) {
-    total += getHeight(i, estimateHeight, measuredHeights, getItemKey)
+    total += getHeight(i, estimateHeight, measuredHeights, getItemKey, avgMeasured)
   }
   return total + gapTotal
 }
