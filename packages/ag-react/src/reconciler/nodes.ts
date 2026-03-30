@@ -9,7 +9,7 @@ import type { LayoutNode } from "@silvery/ag/layout-types"
 import { getConstants, getLayoutEngine } from "@silvery/ag-term/layout-engine"
 import { collectPlainTextSkipHidden as collectNodeTextContent } from "@silvery/ag-term/pipeline/collect-text"
 import { type BoxProps, type AgNode, type AgNodeType, type TextProps, rectEqual } from "@silvery/ag/types"
-import { type Measurer, displayWidth, wrapText } from "@silvery/ag-term/unicode"
+import { type Measurer, displayWidth, wrapText, getActiveLineHeight } from "@silvery/ag-term/unicode"
 
 const measureLog = createLogger("silvery:measure")
 
@@ -140,17 +140,17 @@ export function createNode(
       const dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth
       const wt = measurer ? measurer.wrapText.bind(measurer) : wrapText
 
+      const lh = getActiveLineHeight() // 1 in cell mode, lineHeightPx in pixel mode
+
       for (const line of lines) {
         measureStats.displayWidthCalls++
         const lineWidth = dw(line)
         if (isTruncate || lineWidth <= maxWidth) {
-          // Truncated text always takes 1 line per source line
-          totalHeight += 1
+          totalHeight += lh
           actualWidth = Math.max(actualWidth, isTruncate ? Math.min(lineWidth, maxWidth) : lineWidth)
         } else {
-          // Use same word-aware wrapping as render phase for accurate height
           const wrapped = wt(line, maxWidth, false, true)
-          totalHeight += wrapped.length
+          totalHeight += wrapped.length * lh
           for (const wl of wrapped) {
             actualWidth = Math.max(actualWidth, dw(wl))
           }
@@ -161,7 +161,7 @@ export function createNode(
       // When heightMode is "at-most", the text should not exceed the available height.
       // When heightMode is "exactly", the text should be exactly that height.
       // This prevents text from overflowing into parent border rows.
-      let resultHeight = Math.max(1, totalHeight)
+      let resultHeight = Math.max(lh, totalHeight)
       if (heightMode === "exactly" && Number.isFinite(height)) {
         resultHeight = height
       } else if (heightMode === "at-most" && Number.isFinite(height)) {
