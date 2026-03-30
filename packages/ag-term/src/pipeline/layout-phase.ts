@@ -124,7 +124,7 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number): void {
   // STRICT invariant: if layoutChangedThisFrame is true, prevLayout must differ from contentRect.
   // This validates that the flag is consistent with the actual rect comparison. A violation
   // would mean the flag is set spuriously, causing unnecessary re-renders and cascade propagation.
-  if (typeof process !== "undefined" && process.env.SILVERY_STRICT && node.layoutChangedThisFrame) {
+  if (process?.env?.SILVERY_STRICT && node.layoutChangedThisFrame) {
     if (rectEqual(node.prevLayout, node.contentRect)) {
       const props = node.props as BoxProps
       throw new Error(

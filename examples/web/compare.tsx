@@ -52,7 +52,7 @@ const messages: Message[] = [
 // DOM renderer
 // ============================================================================
 
-function renderDom(container: HTMLElement) {
+function renderDom(container: HTMLElement, width: number) {
   container.innerHTML = ""
 
   // Title bar
@@ -69,6 +69,7 @@ function renderDom(container: HTMLElement) {
 
     const bubble = document.createElement("div")
     bubble.className = `dom-bubble ${isUser ? "user" : "bot"}`
+    bubble.style.maxWidth = `${Math.round(width * 0.72)}px`
     bubble.textContent = msg.text
 
     const meta = document.createElement("div")
@@ -91,7 +92,7 @@ function renderDom(container: HTMLElement) {
 // Canvas (Silvery) renderer
 // ============================================================================
 
-function ChatBubble({ text, isUser, name, time }: { text: string; isUser: boolean; name: string; time: string }) {
+function ChatBubble({ text, isUser, name, time, maxBubbleWidth }: { text: string; isUser: boolean; name: string; time: string; maxBubbleWidth: number }) {
   return (
     <Box flexDirection="column" alignItems={isUser ? "flex-end" : "flex-start"} marginTop={12}>
       <Box
@@ -100,35 +101,40 @@ function ChatBubble({ text, isUser, name, time }: { text: string; isUser: boolea
         borderColor={isUser ? "#1f6feb" : "#30363d"}
         paddingX={12}
         paddingY={8}
-        maxWidth={300}
+        maxWidth={maxBubbleWidth}
       >
         <Text color={isUser ? "#ffffff" : "#e6edf3"} wrap="wrap">
           {text}
         </Text>
       </Box>
       <Text color="#484f58" marginTop={4}>
-        {name} {" \u00b7 "} {time}
+        {`${name} \u00b7 ${time}`}
       </Text>
     </Box>
   )
 }
 
-function ChatApp() {
+function ChatApp({ width }: { width: number }) {
+  const maxBubbleWidth = Math.round(width * 0.72)
   return (
-    <Box flexDirection="column" paddingX={16} paddingY={12}>
+    <Box flexDirection="column">
+      {/* Title bar — flush with edges (no outer padding) */}
       <Box backgroundColor="#161b22" paddingX={12} paddingY={8} justifyContent="space-between">
         <Text bold color="#e6edf3">
           Shrinkwrap Chat
         </Text>
         <Text color="#484f58">Canvas</Text>
       </Box>
-      {messages.map((msg, i) => (
-        <ChatBubble key={i} isUser={msg.role === "user"} name={msg.name} time={msg.time} text={msg.text} />
-      ))}
-      <Box marginTop={16} backgroundColor="#1f6feb22" paddingX={10} paddingY={8}>
-        <Text color="#58a6ff" wrap="wrap">
-          Every bubble wraps proportional text. CSS can't shrinkwrap like this.
-        </Text>
+      {/* Chat area with padding */}
+      <Box flexDirection="column" paddingX={16} paddingTop={4} paddingBottom={12}>
+        {messages.map((msg, i) => (
+          <ChatBubble key={i} isUser={msg.role === "user"} name={msg.name} time={msg.time} text={msg.text} maxBubbleWidth={maxBubbleWidth} />
+        ))}
+        <Box marginTop={16} backgroundColor="#1f6feb22" paddingX={10} paddingY={8}>
+          <Text color="#58a6ff" wrap="wrap">
+            Every bubble wraps proportional text. CSS can't shrinkwrap like this.
+          </Text>
+        </Box>
       </Box>
     </Box>
   )
@@ -163,12 +169,12 @@ function mount(width: number) {
   canvasPanel.style.flex = "none"
 
   // DOM side
-  renderDom(domChat)
+  renderDom(domChat, width)
 
   // Canvas side — unmount previous, render fresh
   if (instance) instance.unmount()
 
-  instance = renderToCanvas(<ChatApp />, canvas, { ...canvasOpts, width, height: 800 })
+  instance = renderToCanvas(<ChatApp width={width} />, canvas, { ...canvasOpts, width, height: 800 })
 
   // Auto-size canvas height to content
   const dpr = window.devicePixelRatio || 1

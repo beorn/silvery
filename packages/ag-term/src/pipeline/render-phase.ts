@@ -993,7 +993,7 @@ function renderScrollContainerChildren(
   }
 
   // STRICT invariant: Tier 1 (buffer shift) must never be used with sticky children.
-  if (typeof process !== "undefined" && process.env.SILVERY_STRICT && tier === "shift" && hasStickyChildren) {
+  if (process?.env?.SILVERY_STRICT && tier === "shift" && hasStickyChildren) {
     throw new Error(
       `[SILVERY_STRICT] Scroll Tier 1 (buffer shift) activated with sticky children ` +
         `(node: ${(props.id as string | undefined) ?? node.type}, ` +

@@ -105,6 +105,7 @@ import { createSelectionState, selectionUpdate, extractText } from "@silvery/ag-
 import { renderSelectionOverlay } from "@silvery/ag-term/selection-renderer"
 import { createVirtualScrollback } from "@silvery/ag-term/virtual-scrollback"
 import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "@silvery/ag-term/search-overlay"
+import { createOutputGuard, type OutputGuard } from "@silvery/ag-term/ansi/output-guard"
 import { createLogger } from "loggily"
 
 const log = createLogger("silvery:app")
@@ -285,6 +286,18 @@ export interface AppRunOptions {
    * (scoped width measurer + output phase). Typically from term.caps.
    */
   caps?: import("@silvery/ag-term/terminal-caps").TerminalCaps
+  /**
+   * Guard stdout/stderr in alt screen mode. When true (the default for
+   * alternateScreen), intercepts process.stdout.write and process.stderr.write
+   * so that only silvery's render pipeline can write to stdout. Non-silvery
+   * stderr writes are redirected to DEBUG_LOG if set, otherwise suppressed.
+   * This prevents display corruption from libraries that write directly to
+   * process.stdout/stderr (e.g., loggily, debug).
+   *
+   * - `true`: enable output guard (default when alternateScreen is true)
+   * - `false`: disable output guard
+   */
+  guardOutput?: boolean
   /**
    * Root component that wraps the element tree with additional providers.
    * Set by plugins (e.g., withInk) via the `app.Root` pattern.
@@ -519,6 +532,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     focusReporting: focusReportingOption = false,
     selection: selectionOption,
     caps: capsOption,
+    guardOutput: guardOutputOption,
     Root: RootComponent,
     writable: explicitWritable,
     onResize: explicitOnResize,
@@ -533,6 +547,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   const cols = explicitCols ?? process.stdout.columns ?? 80
   const rows = explicitRows ?? process.stdout.rows ?? 24
   const stdout = explicitStdout ?? process.stdout
+
+  // Output guard: created after protocol setup (see below)
+  const shouldGuardOutput = guardOutputOption ?? (alternateScreen && !headless)
+  let outputGuard: OutputGuard | null = null
 
   // Initialize layout engine
   await ensureLayoutEngine()
@@ -758,7 +776,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               `TARGET.write: ${frame.length} bytes (paused=${renderPaused})\n`,
             )
           }
-          if (!renderPaused) stdout.write(frame)
+          if (!renderPaused) {
+            if (outputGuard) {
+              outputGuard.writeStdout(frame)
+            } else {
+              stdout.write(frame)
+            }
+          }
         },
         getDims(): Dims {
           return currentDims
@@ -895,6 +919,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         // Ignore
       }
     })
+
+    // Dispose output guard BEFORE terminal protocol cleanup — restores original
+    // stdout/stderr write methods so the cleanup sequences go through unimpeded.
+    if (outputGuard) {
+      outputGuard.dispose()
+      outputGuard = null
+    }
 
     // Disable terminal protocols BEFORE provider cleanup (which disables raw mode).
     // If raw mode is disabled first, the shell takes over stdin while mouse tracking
@@ -1374,6 +1405,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       "/tmp/silvery-perf.log",
       `STARTUP: initial render done (render #${_renderCount}, incremental=${!_noIncremental})\n`,
     )
+  }
+
+  // Activate output guard after protocol setup and initial render are done.
+  // This intercepts process.stdout/stderr writes so that only silvery's
+  // render pipeline can write to stdout — all other writes are suppressed
+  // (stdout) or redirected to DEBUG_LOG (stderr).
+  if (shouldGuardOutput) {
+    outputGuard = createOutputGuard()
   }
 
   // Assign pause/resume now that doRender and runtime are available.
@@ -2074,7 +2113,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           })
 
         const probeResult = await detectTextSizingSupport(
-          (data) => stdout.write(data),
+          (data) => (outputGuard ? outputGuard.writeStdout(data) : stdout.write(data)),
           probeRead,
           500, // Short timeout — probe should be fast
         )
@@ -2123,7 +2162,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Must be deferred from the init phase because the terminal's immediate
     // CSI I/O response would leak before the input parser was ready.
     if (focusReportingOption && !focusReportingEnabled) {
-      enableFocusReporting((s) => stdout.write(s))
+      enableFocusReporting((s) => (outputGuard ? outputGuard.writeStdout(s) : stdout.write(s)))
       focusReportingEnabled = true
     }
 

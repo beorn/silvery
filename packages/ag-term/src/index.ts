@@ -424,6 +424,10 @@ export type { Term, StyleChain, TermEmulatorBackend } from "./ansi/index"
 export { patchConsole } from "./ansi/index"
 export type { PatchedConsole, PatchConsoleOptions, ConsoleStats } from "./ansi/index"
 
+// Output guard (alt screen protection)
+export { createOutputGuard } from "./ansi/index"
+export type { OutputGuard, OutputGuardOptions } from "./ansi/index"
+
 // Types
 export type {
   UnderlineStyle,

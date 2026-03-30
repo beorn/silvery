@@ -347,11 +347,6 @@ export class CanvasRenderBuffer implements RenderBuffer {
   drawText(x: number, y: number, text: string, style: RenderStyle): void {
     // Convert cell coordinates to pixel coordinates
     const px = x * this.charWidth
-    // In pixel mode (cellHeight=1), add half-leading so text centers vertically
-    // within its line box (matching CSS line-height behavior).
-    const lineHeightPx = this.config.monospace ? 0 : Math.ceil(this.config.fontSize * this.config.lineHeight)
-    const halfLeading = this.config.monospace ? 0 : (lineHeightPx - this.config.fontSize) / 2
-    const py = y * this.cellHeight + halfLeading
 
     const attrs = style.attrs ?? {}
 
@@ -359,6 +354,8 @@ export class CanvasRenderBuffer implements RenderBuffer {
     const weight = attrs.bold ? "bold" : "normal"
     const fontStyle = attrs.italic ? "italic" : "normal"
     this.ctx.font = `${fontStyle} ${weight} ${this.config.fontSize}px ${this.config.fontFamily}`
+
+    const py = y * this.cellHeight
 
     // Set colors
     this.ctx.fillStyle = resolveColor(style.fg, this.config.foregroundColor)

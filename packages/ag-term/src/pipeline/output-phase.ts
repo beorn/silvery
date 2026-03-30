@@ -332,7 +332,7 @@ function isStrictAccumulate(): boolean {
  * `xterm` and `ghostty` use persistent terminal emulators (stateful).
  */
 function strictTerminalBackends(): Array<"vt100" | "xterm" | "ghostty"> {
-  const val = (typeof process !== "undefined" ? process.env.SILVERY_STRICT_TERMINAL ?? "" : "").toLowerCase().trim()
+  const val = (typeof process !== "undefined" ? (process.env.SILVERY_STRICT_TERMINAL ?? "") : "").toLowerCase().trim()
   if (!val) return []
   if (val === "all") return ["vt100", "xterm", "ghostty"]
   // Comma-separated list

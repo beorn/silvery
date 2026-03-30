@@ -60,6 +60,9 @@ export const term: Term = new Proxy({} as Term, {
 export { patchConsole } from "./patch-console"
 export type { PatchedConsole, PatchConsoleOptions, ConsoleStats } from "./patch-console"
 
+export { createOutputGuard } from "./output-guard"
+export type { OutputGuard, OutputGuardOptions } from "./output-guard"
+
 // =============================================================================
 // Types
 // =============================================================================

@@ -22,15 +22,15 @@ const items = [
 
 ## Props
 
-| Prop               | Type                                            | Default       | Description                               |
-| ------------------ | ----------------------------------------------- | ------------- | ----------------------------------------- |
-| `items`            | `SelectOption[]`                                | _required_    | List of options to display                |
-| `highlightedIndex` | `number`                                        | —             | Controlled: current highlighted index     |
-| `onHighlight`      | `(index: number) => void`                       | —             | Called when highlight changes             |
-| `onSelect`         | `(option: SelectOption, index: number) => void` | —             | Called when Enter is pressed on an item   |
-| `initialIndex`     | `number`                                        | first enabled | Starting index for uncontrolled mode      |
-| `maxVisible`       | `number`                                        | —             | Max visible items before scrolling        |
-| `isActive`         | `boolean`                                       | `true`        | Whether this list captures keyboard input |
+| Prop               | Type                                            | Default       | Description                                                                                  |
+| ------------------ | ----------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------- |
+| `items`            | `SelectOption[]`                                | _required_    | List of options to display                                                                   |
+| `highlightedIndex` | `number`                                        | —             | Controlled: current highlighted index                                                        |
+| `onHighlight`      | `(index: number) => void`                       | —             | Called when highlight changes                                                                |
+| `onSelect`         | `(option: SelectOption, index: number) => void` | —             | Called when Enter is pressed on an item                                                      |
+| `initialIndex`     | `number`                                        | first enabled | Starting index for uncontrolled mode                                                         |
+| `maxVisible`       | `number`                                        | —             | Max visible items before scrolling                                                           |
+| `isActive`         | `boolean`                                       | `true`        | Whether this list captures keyboard input                                                    |
 | `indicator`        | `string`                                        | `"▸ "`        | Selection indicator prefix. Non-highlighted items get equal-width spaces. Pass `""` to hide. |
 
 ### SelectOption
