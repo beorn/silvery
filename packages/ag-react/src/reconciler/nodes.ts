@@ -456,7 +456,10 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
     if (effectiveOverflow === "hidden") {
       layoutNode.setOverflow(c.OVERFLOW_HIDDEN)
     } else if (effectiveOverflow === "scroll") {
-      layoutNode.setOverflow(c.OVERFLOW_SCROLL)
+      // Use OVERFLOW_HIDDEN for layout so children are constrained to parent width
+      // (text wraps instead of overflowing). The render phase reads props.overflow
+      // to enable vertical scroll behavior independently of the layout constraint.
+      layoutNode.setOverflow(c.OVERFLOW_HIDDEN)
     } else {
       layoutNode.setOverflow(c.OVERFLOW_VISIBLE)
     }
