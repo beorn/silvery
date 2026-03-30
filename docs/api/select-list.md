@@ -31,6 +31,7 @@ const items = [
 | `initialIndex`     | `number`                                        | first enabled | Starting index for uncontrolled mode      |
 | `maxVisible`       | `number`                                        | —             | Max visible items before scrolling        |
 | `isActive`         | `boolean`                                       | `true`        | Whether this list captures keyboard input |
+| `indicator`        | `string`                                        | `"▸ "`        | Selection indicator prefix. Non-highlighted items get equal-width spaces. Pass `""` to hide. |
 
 ### SelectOption
 

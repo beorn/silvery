@@ -19,6 +19,7 @@ import { SelectList } from "silvery"
 | `initialIndex`     | `number`                                        | first enabled | Initial index for uncontrolled mode         |
 | `maxVisible`       | `number`                                        | --            | Max visible items (rest scrolled)           |
 | `isActive`         | `boolean`                                       | `true`        | Whether this list captures input            |
+| `indicator`        | `string`                                        | `"▸ "`        | Selection indicator prefix (`""` to hide)   |
 
 ### SelectOption
 
