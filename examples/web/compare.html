@@ -6,7 +6,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
     <style>
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         background: #0d1117;
@@ -18,7 +20,7 @@
 
       /* Slider bar */
       .controls {
-        max-width: 1200px;
+        max-width: 400px;
         margin: 0 auto 16px;
         background: #161b22;
         padding: 10px 20px;
@@ -28,20 +30,30 @@
         gap: 12px;
         border: 1px solid #21262d;
       }
-      .controls label { color: #8b949e; font-size: 13px; white-space: nowrap; }
-      .controls input[type="range"] { flex: 1; accent-color: #1f6feb; height: 4px; }
+      .controls label {
+        color: #8b949e;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      .controls input[type="range"] {
+        flex: 1;
+        accent-color: #1f6feb;
+        height: 4px;
+      }
       .controls .value {
-        color: #e6edf3; font-size: 13px; font-variant-numeric: tabular-nums;
-        min-width: 44px; text-align: right;
+        color: #e6edf3;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+        min-width: 44px;
+        text-align: right;
       }
 
       /* Side-by-side layout */
       .comparison {
-        max-width: 1200px;
-        margin: 0 auto;
         display: flex;
         gap: 20px;
         align-items: flex-start;
+        justify-content: center;
       }
       .panel {
         flex: 1;
@@ -59,10 +71,21 @@
         align-items: center;
         border-bottom: 1px solid #21262d;
       }
-      .panel-header .label { color: #e6edf3; font-size: 13px; font-weight: 600; }
-      .panel-header .tech { color: #484f58; font-size: 11px; }
-      .panel-content { background: #0d1117; }
-      canvas { display: block; }
+      .panel-header .label {
+        color: #e6edf3;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .panel-header .tech {
+        color: #484f58;
+        font-size: 11px;
+      }
+      .panel-content {
+        background: #0d1117;
+      }
+      canvas {
+        display: block;
+      }
 
       /* DOM chat styles */
       .dom-chat {
@@ -78,15 +101,25 @@
         justify-content: space-between;
         margin: -16px -16px 0 -16px;
       }
-      .dom-title-bar .title { font-weight: 600; color: #e6edf3; }
-      .dom-title-bar .subtitle { color: #484f58; font-size: 14px; }
+      .dom-title-bar .title {
+        font-weight: 600;
+        color: #e6edf3;
+      }
+      .dom-title-bar .subtitle {
+        color: #484f58;
+        font-size: 14px;
+      }
       .dom-bubble-group {
         display: flex;
         flex-direction: column;
         margin-top: 12px;
       }
-      .dom-bubble-group.user { align-items: flex-end; }
-      .dom-bubble-group.bot { align-items: flex-start; }
+      .dom-bubble-group.user {
+        align-items: flex-end;
+      }
+      .dom-bubble-group.bot {
+        align-items: flex-start;
+      }
       .dom-bubble {
         max-width: 300px;
         padding: 8px 12px;
@@ -106,7 +139,7 @@
       }
       .dom-meta {
         color: #484f58;
-        font-size: 12px;
+        font-size: 14px;
         margin-top: 4px;
         line-height: 1.4;
       }
@@ -120,7 +153,6 @@
       }
 
       .footer {
-        max-width: 1200px;
         margin: 16px auto 0;
         color: #484f58;
         font-size: 12px;
@@ -160,7 +192,8 @@
     </div>
 
     <div class="footer">
-      Same chat data, same font, same max-width. DOM uses CSS flexbox. Canvas uses Silvery's React reconciler + Flexily layout + Pretext text measurement.
+      Same chat data, same font, same max-width. DOM uses CSS flexbox. Canvas uses Silvery's React reconciler + Flexily
+      layout + Pretext text measurement.
     </div>
 
     <script type="module" src="./compare.tsx"></script>

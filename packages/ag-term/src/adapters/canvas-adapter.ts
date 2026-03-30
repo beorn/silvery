@@ -36,6 +36,8 @@ export interface CanvasAdapterConfig {
   foregroundColor?: string
   /** Monospace mode (default: true). When false, uses proportional font measurement. */
   monospace?: boolean
+  /** Device pixel ratio for sharp rendering on HiDPI displays (default: 1) */
+  dpr?: number
 }
 
 const DEFAULT_CONFIG: Required<CanvasAdapterConfig> = {
@@ -45,6 +47,7 @@ const DEFAULT_CONFIG: Required<CanvasAdapterConfig> = {
   backgroundColor: "#1e1e1e",
   foregroundColor: "#d4d4d4",
   monospace: true,
+  dpr: 1,
 }
 
 // ============================================================================
@@ -91,7 +94,10 @@ const BORDER_CHARS: Record<string, BorderChars> = {
 // ============================================================================
 
 /** Create a scratch canvas 2D context for text measurement. */
-function createMeasureContext(fontSize: number, fontFamily: string): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
+function createMeasureContext(
+  fontSize: number,
+  fontFamily: string,
+): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
   // Prefer document.createElement("canvas") over OffscreenCanvas for measurement —
   // OffscreenCanvas may not have access to web fonts loaded via <link> or @font-face.
   // A regular canvas element shares the document's font loading state.
@@ -193,14 +199,24 @@ export function createCanvasPixelMeasurer(config: CanvasPixelMeasurerConfig): Me
     textEmojiWide: false,
     textSizingEnabled: false,
     lineHeight: lineHeightPx,
-    displayWidth(text: string): number { return pixelWidth(stripAnsi(text)) },
-    displayWidthAnsi(text: string): number { return pixelWidth(stripAnsi(text)) },
-    graphemeWidth(grapheme: string): number { return pixelWidth(grapheme) },
+    displayWidth(text: string): number {
+      return pixelWidth(stripAnsi(text))
+    },
+    displayWidthAnsi(text: string): number {
+      return pixelWidth(stripAnsi(text))
+    },
+    graphemeWidth(grapheme: string): number {
+      return pixelWidth(grapheme)
+    },
     wrapText(text: string, width: number, trim?: boolean, hard?: boolean): string[] {
       return wrapTextWithMeasurer(text, width, measurer, trim ?? false, hard ?? false)
     },
-    sliceByWidth(text: string, maxWidth: number): string { return sliceGraphemes(text, maxWidth, false) },
-    sliceByWidthFromEnd(text: string, maxWidth: number): string { return sliceGraphemes(text, maxWidth, true) },
+    sliceByWidth(text: string, maxWidth: number): string {
+      return sliceGraphemes(text, maxWidth, false)
+    },
+    sliceByWidthFromEnd(text: string, maxWidth: number): string {
+      return sliceGraphemes(text, maxWidth, true)
+    },
   }
 
   return measurer
@@ -268,30 +284,36 @@ export class CanvasRenderBuffer implements RenderBuffer {
     this.height = height
     this.config = config
 
-    let pixelWidth: number
-    let pixelHeight: number
+    const dpr = config.dpr
+
+    let cssWidth: number
+    let cssHeight: number
 
     if (config.monospace) {
       // Monospace: layout in cell units, convert to pixels at draw time
       this.charWidth = config.fontSize * 0.6
       this.cellHeight = config.fontSize * config.lineHeight
-      pixelWidth = width * this.charWidth
-      pixelHeight = height * this.cellHeight
+      cssWidth = width * this.charWidth
+      cssHeight = height * this.cellHeight
     } else {
       // Proportional: layout already in pixels, no conversion needed
       this.charWidth = 1
       this.cellHeight = 1
-      pixelWidth = width
-      pixelHeight = height
+      cssWidth = width
+      cssHeight = height
     }
 
-    // Use OffscreenCanvas for double buffering
+    // Create canvas at native resolution (CSS pixels * DPR) for sharp HiDPI rendering.
+    // The context transform scales all drawing by DPR, so coordinates stay in CSS pixels.
+    const nativeWidth = Math.ceil(cssWidth * dpr)
+    const nativeHeight = Math.ceil(cssHeight * dpr)
+
     if (typeof OffscreenCanvas !== "undefined") {
-      this.canvas = new OffscreenCanvas(pixelWidth, pixelHeight)
+      this.canvas = new OffscreenCanvas(nativeWidth, nativeHeight)
     } else if (typeof document !== "undefined") {
       this.canvas = document.createElement("canvas")
-      this.canvas.width = pixelWidth
-      this.canvas.height = pixelHeight
+      this.canvas.width = nativeWidth
+      this.canvas.height = nativeHeight
     } else {
       throw new Error("Canvas not available")
     }
@@ -300,9 +322,14 @@ export class CanvasRenderBuffer implements RenderBuffer {
     if (!ctx) throw new Error("Could not get 2d context")
     this.ctx = ctx as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
 
+    // Scale context so all drawing uses CSS pixel coordinates
+    if (dpr !== 1) {
+      ;(this.ctx as CanvasRenderingContext2D).setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
     // Initialize with background
     this.ctx.fillStyle = config.backgroundColor
-    this.ctx.fillRect(0, 0, pixelWidth, pixelHeight)
+    this.ctx.fillRect(0, 0, cssWidth, cssHeight)
   }
 
   fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void {
@@ -438,8 +465,14 @@ export class CanvasRenderBuffer implements RenderBuffer {
   }
 
   fillRoundedRect(
-    x: number, y: number, width: number, height: number,
-    radius: number, fill: string | undefined, stroke: string | undefined, lineWidth = 1,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+    fill: string | undefined,
+    stroke: string | undefined,
+    lineWidth = 1,
   ): void {
     const px = x * this.charWidth
     const py = y * this.cellHeight

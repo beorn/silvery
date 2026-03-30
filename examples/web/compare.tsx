@@ -107,7 +107,7 @@ function ChatBubble({ text, isUser, name, time }: { text: string; isUser: boolea
         </Text>
       </Box>
       <Box marginTop={4}>
-        <Text color="#484f58">
+        <Text color="#484f58" wrap="truncate">
           {name} {"\u00b7"} {time}
         </Text>
       </Box>
@@ -169,17 +169,16 @@ function mount(width: number) {
 
   // Canvas side — unmount previous, render fresh
   if (instance) instance.unmount()
-  canvas.width = width
-  canvas.height = 800
 
-  instance = renderToCanvas(<ChatApp />, canvas, { ...canvasOpts, width })
+  instance = renderToCanvas(<ChatApp />, canvas, { ...canvasOpts, width, height: 800 })
 
   // Auto-size canvas height to content
+  const dpr = window.devicePixelRatio || 1
   const buf = instance.getBuffer() as CanvasRenderBuffer | null
   if (buf?.canvas) {
-    canvas.height = buf.canvas.height
-    canvas.style.height = `${buf.canvas.height}px`
-    instance.resize(width, buf.canvas.height)
+    // Buffer canvas is at native resolution — convert back to CSS pixels
+    const contentHeight = buf.canvas.height / dpr
+    instance.resize(width, contentHeight)
   }
 }
 

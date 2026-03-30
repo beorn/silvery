@@ -130,7 +130,11 @@ function computeDimensions(pixelWidth: number, pixelHeight: number, options: Can
   const cols = isProportional ? pixelWidth : Math.floor(pixelWidth / charWidth)
   const rows = isProportional ? pixelHeight : Math.floor(pixelHeight / lineHeight)
   const measurer: Measurer | undefined = isProportional
-    ? createPretextMeasurer({ fontSize, fontFamily: options.fontFamily ?? "monospace", lineHeight: lineHeightMultiplier })
+    ? createPretextMeasurer({
+        fontSize,
+        fontFamily: options.fontFamily ?? "monospace",
+        lineHeight: lineHeightMultiplier,
+      })
     : undefined
   return { fontSize, lineHeightMultiplier, isProportional, charWidth, lineHeight, cols, rows, measurer }
 }
@@ -188,7 +192,11 @@ export function renderToCanvas(
   canvas: HTMLCanvasElement,
   options: CanvasRenderOptions = {},
 ): CanvasInstance {
-  initCanvasRenderer(options)
+  // Auto-detect DPR for sharp HiDPI rendering
+  const dpr = options.dpr ?? (typeof window !== "undefined" ? window.devicePixelRatio : 1)
+  const optionsWithDpr = { ...options, dpr }
+
+  initCanvasRenderer(optionsWithDpr)
 
   const theme = options.theme ?? getDefaultTheme()
   setActiveTheme(theme)
@@ -196,11 +204,13 @@ export function renderToCanvas(
   let pixelWidth = options.width ?? canvas.width
   let pixelHeight = options.height ?? canvas.height
 
-  // Ensure canvas dimensions match
-  if (canvas.width !== pixelWidth) canvas.width = pixelWidth
-  if (canvas.height !== pixelHeight) canvas.height = pixelHeight
+  // Set canvas: internal size at native resolution, CSS display size at logical pixels
+  canvas.width = Math.ceil(pixelWidth * dpr)
+  canvas.height = Math.ceil(pixelHeight * dpr)
+  canvas.style.width = `${pixelWidth}px`
+  canvas.style.height = `${pixelHeight}px`
 
-  let dims = computeDimensions(pixelWidth, pixelHeight, options)
+  let dims = computeDimensions(pixelWidth, pixelHeight, optionsWithDpr)
   let { cols, rows } = dims
   const { charWidth, lineHeight, isProportional, measurer: pixelMeasurer } = dims
 
@@ -376,17 +386,20 @@ export function renderToCanvas(
     const result = pixelMeasurer ? runWithMeasurer(pixelMeasurer, execute) : execute()
     currentBuffer = result.buffer
 
-    // Copy rendered buffer to visible canvas
+    // Copy rendered buffer (at native DPR resolution) to visible canvas
     const ctx = canvas.getContext("2d")
     if (ctx && currentBuffer instanceof CanvasRenderBuffer) {
+      // Reset transform — buffer is already at native resolution, copy 1:1
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.drawImage(currentBuffer.canvas, 0, 0)
 
       // Render cursor on canvas (inverse block at cursor position)
       const cursor = cursorStore.accessors.getCursorState()
       if (cursor?.visible) {
+        // Cursor coordinates are in CSS pixels — scale by DPR for native canvas
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
         const cx = cursor.x * charWidth
         const cy = cursor.y * lineHeight
-        // Draw inverse cursor block
         ctx.save()
         ctx.globalCompositeOperation = "difference"
         ctx.fillStyle = "#ffffff"
@@ -436,9 +449,11 @@ export function renderToCanvas(
     resize(newPixelWidth: number, newPixelHeight: number): void {
       pixelWidth = newPixelWidth
       pixelHeight = newPixelHeight
-      canvas.width = pixelWidth
-      canvas.height = pixelHeight
-      dims = computeDimensions(pixelWidth, pixelHeight, options)
+      canvas.width = Math.ceil(pixelWidth * dpr)
+      canvas.height = Math.ceil(pixelHeight * dpr)
+      canvas.style.width = `${pixelWidth}px`
+      canvas.style.height = `${pixelHeight}px`
+      dims = computeDimensions(pixelWidth, pixelHeight, optionsWithDpr)
       cols = dims.cols
       rows = dims.rows
       // Clear buffer for full repaint at new size

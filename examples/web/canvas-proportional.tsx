@@ -7,7 +7,7 @@
 
 import React from "react"
 import { renderToCanvas, Box, Text, type CanvasRenderOptions } from "../../packages/ag-react/src/ui/canvas/index.js"
-import type { CanvasInstance } from "../../packages/ag-react/src/ui/canvas/index.js"
+import type { CanvasInstance, CanvasRenderBuffer } from "../../packages/ag-react/src/ui/canvas/index.js"
 
 function ChatBubble({ text, isUser, name, time }: { text: string; isUser: boolean; name: string; time: string }) {
   return (
@@ -25,7 +25,9 @@ function ChatBubble({ text, isUser, name, time }: { text: string; isUser: boolea
         </Text>
       </Box>
       <Box marginTop={4}>
-        <Text color="#484f58">{name} · {time}</Text>
+        <Text color="#484f58" wrap="truncate">
+          {name} · {time}
+        </Text>
       </Box>
     </Box>
   )
@@ -36,28 +38,20 @@ function ChatApp() {
     <Box flexDirection="column" paddingX={16} paddingY={12}>
       {/* Title bar */}
       <Box backgroundColor="#161b22" paddingX={12} paddingY={8} justifyContent="space-between">
-        <Text bold color="#e6edf3">Shrinkwrap Chat</Text>
+        <Text bold color="#e6edf3">
+          Shrinkwrap Chat
+        </Text>
         <Text color="#484f58">ag-canvas</Text>
       </Box>
 
-      <ChatBubble
-        isUser
-        name="You"
-        time="2:41 PM"
-        text="How does shrinkwrap sizing work? CSS can't do it, right?"
-      />
+      <ChatBubble isUser name="You" time="2:41 PM" text="How does shrinkwrap sizing work? CSS can't do it, right?" />
       <ChatBubble
         isUser={false}
         name="Claude"
         time="2:41 PM"
         text="Right! CSS has no way to size a container to the tightest width of wrapped text. Pretext measures the actual rendered width of each line. Flexily uses this for layout."
       />
-      <ChatBubble
-        isUser
-        name="You"
-        time="2:42 PM"
-        text="And this is all on canvas? No DOM layout?"
-      />
+      <ChatBubble isUser name="You" time="2:42 PM" text="And this is all on canvas? No DOM layout?" />
       <ChatBubble
         isUser={false}
         name="Claude"
@@ -75,7 +69,9 @@ function ChatApp() {
 
       {/* Callout */}
       <Box marginTop={16} backgroundColor="#1f6feb22" paddingX={10} paddingY={8}>
-        <Text color="#58a6ff" wrap="wrap">Every bubble wraps proportional text. CSS can't shrinkwrap like this.</Text>
+        <Text color="#58a6ff" wrap="wrap">
+          Every bubble wraps proportional text. CSS can't shrinkwrap like this.
+        </Text>
       </Box>
     </Box>
   )
@@ -103,22 +99,17 @@ function mount(width: number) {
   // Unmount previous
   if (instance) instance.unmount()
 
-  // Resize canvas
-  canvas.width = width
-  canvas.height = 800
-
   const wrapper = document.getElementById("wrapper")!
   wrapper.style.width = `${width}px`
 
-  instance = renderToCanvas(<ChatApp />, canvas, { ...renderOpts, width })
+  instance = renderToCanvas(<ChatApp />, canvas, { ...renderOpts, width, height: 800 })
 
   // Auto-size canvas height to content
-  const buf = instance.getBuffer() as any
+  const dpr = window.devicePixelRatio || 1
+  const buf = instance.getBuffer() as CanvasRenderBuffer | null
   if (buf?.canvas) {
-    canvas.height = buf.canvas.height
-    canvas.style.height = `${buf.canvas.height}px`
-    // Re-render at correct height
-    instance.resize(width, buf.canvas.height)
+    const contentHeight = buf.canvas.height / dpr
+    instance.resize(width, contentHeight)
   }
 }
 
