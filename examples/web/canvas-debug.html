@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Canvas vs DOM — Diagnostic Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #0d1117;
+        color: #e6edf3;
+        font-family: "Inter", system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.4;
+        padding: 16px;
+      }
+      .controls {
+        max-width: 500px;
+        margin: 0 auto 12px;
+        background: #161b22;
+        padding: 8px 16px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid #21262d;
+      }
+      .controls label { color: #8b949e; font-size: 12px; white-space: nowrap; }
+      .controls input[type="range"] { flex: 1; accent-color: #1f6feb; }
+      .controls .value { color: #e6edf3; font-size: 12px; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
+      .controls button {
+        background: #21262d; color: #e6edf3; border: 1px solid #30363d;
+        padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer;
+      }
+      .controls button:hover { background: #30363d; }
+      .controls button.active { background: #1f6feb; border-color: #1f6feb; }
+
+      .viewport {
+        position: relative;
+        margin: 0 auto;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      canvas { display: block; }
+
+      /* Hidden DOM reference — same styles as Canvas component */
+      #dom-ref {
+        position: absolute;
+        top: 0; left: 0;
+        pointer-events: none;
+        font-family: "Inter", "SF Pro Text", system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.4;
+        color: transparent; /* invisible text — we only read rects */
+      }
+      #dom-ref.visible {
+        color: rgba(255, 0, 0, 0.5);
+        z-index: 10;
+      }
+      #dom-ref .chat-outer {
+        display: flex;
+        flex-direction: column;
+      }
+      #dom-ref .chat-padded {
+        padding: 4px 16px 12px;
+      }
+      #dom-ref .title-bar {
+        background: transparent;
+        padding: 8px 12px;
+        display: flex;
+        justify-content: space-between;
+      }
+      #dom-ref .title-bar .title { font-weight: 600; }
+      #dom-ref .bubble-group {
+        display: flex;
+        flex-direction: column;
+        margin-top: 12px;
+      }
+      #dom-ref .bubble-group.user { align-items: flex-end; }
+      #dom-ref .bubble-group.bot { align-items: flex-start; }
+      #dom-ref .bubble {
+        padding: 8px 12px;
+        border-radius: 14px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+      }
+      #dom-ref .meta {
+        margin-top: 4px;
+      }
+      #dom-ref .callout {
+        margin-top: 16px;
+        padding: 8px 10px;
+      }
+
+      /* Overlay canvas for drawing red outlines */
+      #overlay {
+        position: absolute;
+        top: 0; left: 0;
+        pointer-events: none;
+      }
+
+      /* Diff table */
+      #diff-table {
+        max-width: 900px;
+        margin: 16px auto 0;
+        border-collapse: collapse;
+        font-size: 11px;
+        font-family: monospace;
+      }
+      #diff-table th {
+        background: #161b22;
+        color: #8b949e;
+        padding: 4px 8px;
+        text-align: left;
+        border: 1px solid #21262d;
+      }
+      #diff-table td {
+        padding: 4px 8px;
+        border: 1px solid #21262d;
+      }
+      #diff-table tr.mismatch td { background: #3b1219; }
+      #diff-table tr.ok td { background: #0d1117; }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <label>Width</label>
+      <input type="range" id="width-slider" min="280" max="600" value="420" step="1" />
+      <span class="value" id="width-value">420px</span>
+      <button id="btn-overlay" class="active">Overlay</button>
+      <button id="btn-dom">DOM text</button>
+    </div>
+
+    <div class="viewport" id="viewport">
+      <canvas id="canvas" width="420" height="800"></canvas>
+      <div id="dom-ref"></div>
+      <canvas id="overlay" width="420" height="800"></canvas>
+    </div>
+
+    <table id="diff-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Text</th>
+          <th>DOM w</th>
+          <th>Canvas w</th>
+          <th>&Delta;w</th>
+          <th>DOM h</th>
+          <th>Canvas h</th>
+          <th>&Delta;h</th>
+          <th>DOM y</th>
+          <th>Canvas y</th>
+          <th>&Delta;y</th>
+          <th>DOM lines</th>
+          <th>Canvas lines</th>
+        </tr>
+      </thead>
+      <tbody id="diff-body"></tbody>
+    </table>
+
+    <script type="module" src="./canvas-debug.tsx"></script>
+  </body>
+</html>
