@@ -77,6 +77,21 @@ export interface RenderBuffer {
    * Check if coordinates are within bounds.
    */
   inBounds(x: number, y: number): boolean
+
+  /**
+   * Draw a filled rounded rectangle with optional border stroke.
+   * Canvas-only — terminal adapters don't implement this.
+   */
+  fillRoundedRect?(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+    fill: string | undefined,
+    stroke: string | undefined,
+    lineWidth?: number,
+  ): void
 }
 
 // ============================================================================

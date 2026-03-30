@@ -1,8 +1,7 @@
 import React from "react"
 import { Box, Text } from "@silvery/ag-react"
 import { createTerm } from "@silvery/ag-term"
-import { run } from "silvery/runtime"
-import { useInput } from "silvery/runtime"
+import { run, useInput } from "silvery/runtime"
 
 function App() {
   useInput((_input, key) => {
@@ -12,29 +11,21 @@ function App() {
     <Box flexDirection="column">
       <Box flexDirection="row">
         <Box flexGrow={1} borderStyle="single">
-          <Text>Two flexGrow=1 panels</Text>
+          <Text>Row1-A</Text>
         </Box>
         <Box flexGrow={1} borderStyle="single">
-          <Text>Right</Text>
+          <Text>Row1-B</Text>
+        </Box>
+        <Box flexGrow={1} borderStyle="single">
+          <Text>Row1-C</Text>
         </Box>
       </Box>
       <Box flexDirection="row">
         <Box flexGrow={1} borderStyle="single">
-          <Text>Three flexGrow=1</Text>
+          <Text>Row2-A</Text>
         </Box>
         <Box flexGrow={1} borderStyle="single">
-          <Text>Middle</Text>
-        </Box>
-        <Box flexGrow={1} borderStyle="single">
-          <Text>Right</Text>
-        </Box>
-      </Box>
-      <Box flexDirection="row">
-        <Box width={30} borderStyle="single">
-          <Text>Fixed 30</Text>
-        </Box>
-        <Box flexGrow={1} borderStyle="single">
-          <Text>flexGrow=1 fills rest</Text>
+          <Text>Row2-B</Text>
         </Box>
       </Box>
     </Box>

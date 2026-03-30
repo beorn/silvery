@@ -1518,15 +1518,18 @@ function bufferToAnsi(buffer: TerminalBuffer, ctx: OutputContext = defaultContex
       currentHyperlink = undefined
     }
 
-    // Reset style before clear-to-end and newline to prevent background
-    // color from filling the right margin or bleeding into the next line.
-    // \x1b[K] uses current SGR attributes for the erased area.
+    // Reset style before newline to prevent background color from
+    // bleeding into the next line via the terminal's right margin fill.
     if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
       output += "\x1b[0m"
       currentStyle = null
     }
-    // Clear to end of line (removes any leftover content from previous render)
-    output += "\x1b[K"
+    // Note: \x1b[K (Erase to End of Line) is intentionally omitted.
+    // bufferToAnsi writes every cell in the row (buffer.width == terminal cols),
+    // so there is nothing beyond the cursor to erase. More importantly, after
+    // writing the last column the cursor enters pending-wrap state, and EL
+    // behavior in pending-wrap is terminal-dependent — some terminals resolve
+    // the wrap first, causing the next line's content to shift down by one row.
 
     // Move to next line (except for last line)
     if (y < maxLine) {

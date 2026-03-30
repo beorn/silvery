@@ -433,6 +433,39 @@ export class CanvasRenderBuffer implements RenderBuffer {
   inBounds(x: number, y: number): boolean {
     return x >= 0 && x < this.width && y >= 0 && y < this.height
   }
+
+  fillRoundedRect(
+    x: number, y: number, width: number, height: number,
+    radius: number, fill: string | undefined, stroke: string | undefined, lineWidth = 1,
+  ): void {
+    const px = x * this.charWidth
+    const py = y * this.cellHeight
+    const pw = width * this.charWidth
+    const ph = height * this.cellHeight
+    const r = Math.min(radius, pw / 2, ph / 2)
+
+    this.ctx.beginPath()
+    this.ctx.moveTo(px + r, py)
+    this.ctx.lineTo(px + pw - r, py)
+    this.ctx.quadraticCurveTo(px + pw, py, px + pw, py + r)
+    this.ctx.lineTo(px + pw, py + ph - r)
+    this.ctx.quadraticCurveTo(px + pw, py + ph, px + pw - r, py + ph)
+    this.ctx.lineTo(px + r, py + ph)
+    this.ctx.quadraticCurveTo(px, py + ph, px, py + ph - r)
+    this.ctx.lineTo(px, py + r)
+    this.ctx.quadraticCurveTo(px, py, px + r, py)
+    this.ctx.closePath()
+
+    if (fill) {
+      this.ctx.fillStyle = fill
+      this.ctx.fill()
+    }
+    if (stroke) {
+      this.ctx.strokeStyle = stroke
+      this.ctx.lineWidth = lineWidth
+      this.ctx.stroke()
+    }
+  }
 }
 
 // ============================================================================

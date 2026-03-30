@@ -14,6 +14,8 @@ function ChatBubble({ text, isUser, name, time }: { text: string; isUser: boolea
     <Box flexDirection="column" alignItems={isUser ? "flex-end" : "flex-start"} marginTop={12}>
       <Box
         backgroundColor={isUser ? "#1f6feb" : "#161b22"}
+        borderStyle="round"
+        borderColor={isUser ? "#1f6feb" : "#30363d"}
         paddingX={12}
         paddingY={8}
         maxWidth={340}
