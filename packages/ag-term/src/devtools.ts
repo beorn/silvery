@@ -16,6 +16,9 @@
  */
 
 import { reconciler } from "@silvery/ag-react/reconciler"
+import { createLogger } from "loggily"
+
+const log = createLogger("silvery:devtools")
 
 let connected = false
 
@@ -47,10 +50,7 @@ export async function connectDevTools(): Promise<boolean> {
         globalThis.WebSocket = ws.default ?? ws
       } catch {
         // ws not available -- devtools won't be able to connect
-        console.warn(
-          "silvery devtools: WebSocket polyfill (ws) not available. " +
-            "Install ws for DevTools support: bun add -d ws",
-        )
+        log.warn("WebSocket polyfill (ws) not available. " + "Install ws for DevTools support: bun add -d ws")
         return false
       }
     }
@@ -86,8 +86,8 @@ export async function connectDevTools(): Promise<boolean> {
     return true
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
-    console.warn(
-      `silvery devtools: Failed to connect to React DevTools. ` +
+    log.warn(
+      `Failed to connect to React DevTools. ` +
         `Install react-devtools-core: bun add -d react-devtools-core\n` +
         `  Error: ${message}`,
     )

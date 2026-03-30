@@ -26,6 +26,10 @@
  * ```
  */
 
+import { createLogger } from "loggily"
+
+const log = createLogger("silvery:keys")
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -376,6 +380,37 @@ const CTRL_CODES = new Set(["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "
 
 const META_KEY_CODE_RE = /^(?:\x1b)([a-zA-Z0-9])$/
 const FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/
+
+/**
+ * US QWERTY shifted punctuation → base key map.
+ *
+ * Legacy terminals send the result character (e.g. `?`) without a shift modifier flag.
+ * Kitty protocol sends the base codepoint + shift modifier. This map lets us normalize
+ * legacy input so that keybindings like `shift-/` match on both protocols.
+ */
+const SHIFTED_PUNCT_MAP: Record<string, string> = {
+  "!": "1",
+  "@": "2",
+  "#": "3",
+  $: "4",
+  "%": "5",
+  "^": "6",
+  "&": "7",
+  "*": "8",
+  "(": "9",
+  ")": "0",
+  _: "-",
+  "+": "=",
+  "~": "`",
+  "{": "[",
+  "}": "]",
+  "|": "\\",
+  ":": ";",
+  '"': "'",
+  "<": ",",
+  ">": ".",
+  "?": "/",
+}
 
 // ============================================================================
 // Kitty Keyboard Protocol
@@ -854,10 +889,10 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
           //
           // See: https://terminfo.dev/extensions/kitty-keyboard-report-all-keys
           //      https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
-          if (typeof console !== "undefined" && !_shiftWarningEmitted) {
+          if (!_shiftWarningEmitted) {
             _shiftWarningEmitted = true
-            console.warn(
-              "[silvery] Kitty keyboard protocol: Shift+key received without shifted_codepoint. " +
+            log.warn(
+              "Kitty keyboard protocol: Shift+key received without shifted_codepoint. " +
                 "Shifted punctuation will produce wrong characters (e.g., '1' instead of '!'). " +
                 "Enable REPORT_ALL_KEYS (flag 8) when requesting the Kitty keyboard protocol. " +
                 "See: https://terminfo.dev/extensions/kitty-keyboard-report-all-keys",
@@ -980,6 +1015,16 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
       } else {
         input = ""
       }
+    }
+  }
+
+  // Legacy terminals: normalize shifted punctuation → base key + shift
+  // Kitty protocol already provides base codepoint + shift modifier
+  if (!keypress.isKittyProtocol && input.length === 1 && !key.shift) {
+    const base = SHIFTED_PUNCT_MAP[input]
+    if (base) {
+      input = base
+      key.shift = true
     }
   }
 

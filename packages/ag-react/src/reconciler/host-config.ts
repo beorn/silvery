@@ -11,6 +11,9 @@ import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "re
 import type { BoxProps, AgNode, AgNodeType, TextProps } from "@silvery/ag/types"
 import { contentPropsChanged, layoutPropsChanged, propsEqual } from "./helpers"
 import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes"
+import { createLogger } from "loggily"
+
+const log = createLogger("silvery:reconciler")
 
 /**
  * Normalize Ink intrinsic element types to Silvery equivalents.
@@ -214,7 +217,7 @@ export const hostConfig = {
       }
       if (process.env.NODE_ENV !== "production" && !hasWarnedBoxInsideText) {
         hasWarnedBoxInsideText = true
-        console.warn("Warning: <Box> cannot be nested inside <Text>. This produces undefined layout behavior.")
+        log.warn("<Box> cannot be nested inside <Text>. This produces undefined layout behavior.")
       }
     }
 

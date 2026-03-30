@@ -45,6 +45,9 @@ import { parseBracketedPaste } from "./bracketed-paste"
 import { IncrementalRenderMismatchError } from "./scheduler.js"
 import type { RenderPhaseStats } from "./pipeline/types"
 import { debugTree } from "@silvery/test/debug"
+import { createLogger } from "loggily"
+
+const log = createLogger("silvery:render")
 
 // ============================================================================
 // Defensive Guards
@@ -612,8 +615,8 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
 
       if (hadReactCommit && singlePassCount >= MAX_SINGLE_PASS_ITERATIONS) {
         if (process.env.SILVERY_STRICT) {
-          console.warn(
-            `[SILVERY] singlePassLayout exhausted ${MAX_SINGLE_PASS_ITERATIONS} iterations ` +
+          log.warn(
+            `singlePassLayout exhausted ${MAX_SINGLE_PASS_ITERATIONS} iterations ` +
               `with pending React commit — output may be stale`,
           )
         }
@@ -686,8 +689,8 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
 
       if (hadReactCommit && iterationCount >= MAX_LAYOUT_ITERATIONS) {
         if (process.env.SILVERY_STRICT) {
-          console.warn(
-            `[SILVERY] classic layout loop exhausted ${MAX_LAYOUT_ITERATIONS} iterations ` +
+          log.warn(
+            `classic layout loop exhausted ${MAX_LAYOUT_ITERATIONS} iterations ` +
               `with pending React commit — output may be stale`,
           )
         }

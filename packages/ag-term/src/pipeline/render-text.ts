@@ -32,6 +32,9 @@ import {
 import { collectPlainText } from "./collect-text"
 import { getTextStyle, getTextWidth, parseColor } from "./render-helpers"
 import type { BgConflictMode, NodeRenderState, PipelineContext } from "./types"
+import { createLogger } from "loggily"
+
+const log = createLogger("silvery:content")
 
 // ============================================================================
 // Background Conflict Detection
@@ -939,7 +942,7 @@ function renderAnsiTextLineReturn(
         const key = `${JSON.stringify(existingBufBg)}-${segment.bg}-${preview}`
         if (!effectiveWarnedBgConflicts.has(key)) {
           effectiveWarnedBgConflicts.add(key)
-          console.warn(msg)
+          log.warn(msg)
         }
       }
     }

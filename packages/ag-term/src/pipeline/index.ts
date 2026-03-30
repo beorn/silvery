@@ -180,8 +180,8 @@ function executeRenderCore(
   } = opts
   // Dev warning: prevBuffer null after first render means incremental is disabled.
   if (process?.env?.SILVERY_DEV && prevBuffer === null && root.prevLayout !== null && !skipLayoutNotifications) {
-    console.warn(
-      "[silvery] executeRender called with prevBuffer=null on frame 2+ — " +
+    log.warn(
+      "executeRender called with prevBuffer=null on frame 2+ — " +
         "incremental content rendering is disabled (full render every frame). " +
         "Track the returned buffer and pass it as prevBuffer on subsequent renders.",
     )

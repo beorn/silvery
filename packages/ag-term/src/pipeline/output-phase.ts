@@ -23,6 +23,9 @@ import { IncrementalRenderMismatchError } from "../errors"
 import { textSized } from "../text-sizing"
 import { graphemeWidth, isTextSizingEnabled } from "../unicode"
 import type { CellChange } from "./types"
+import { createLogger } from "loggily"
+
+const log = createLogger("silvery:output")
 
 const DEBUG_OUTPUT = !!process.env.SILVERY_DEBUG_OUTPUT
 const FULL_RENDER = !!process.env.SILVERY_FULL_RENDER
@@ -339,8 +342,7 @@ function strictTerminalBackends(): Array<"vt100" | "xterm" | "ghostty"> {
   const valid = new Set(["vt100", "xterm", "ghostty"])
   for (const b of backends) {
     if (!valid.has(b)) {
-      // eslint-disable-next-line no-console
-      console.warn(`SILVERY_STRICT_TERMINAL: unknown backend '${b}', ignoring`)
+      log.warn(`SILVERY_STRICT_TERMINAL: unknown backend '${b}', ignoring`)
     }
   }
   return backends.filter((b) => valid.has(b)) as Array<"vt100" | "xterm" | "ghostty">
@@ -874,19 +876,16 @@ export function outputPhase(
   }
 
   if (DEBUG_OUTPUT) {
-    // eslint-disable-next-line no-console
-    console.error(
-      `[SILVERY_DEBUG_OUTPUT] diffBuffers: ${count} changes${rawCount !== count ? ` (${rawCount - count} clamped beyond termRows)` : ""}`,
+    log.error(
+      `diffBuffers: ${count} changes${rawCount !== count ? ` (${rawCount - count} clamped beyond termRows)` : ""}`,
     )
     const debugLimit = Math.min(count, 10)
     for (let i = 0; i < debugLimit; i++) {
       const change = pool[i]!
-      // eslint-disable-next-line no-console
-      console.error(`  (${change.x},${change.y}): "${change.cell.char}"`)
+      log.error(`  (${change.x},${change.y}): "${change.cell.char}"`)
     }
     if (count > 10) {
-      // eslint-disable-next-line no-console
-      console.error(`  ... and ${count - 10} more`)
+      log.error(`  ... and ${count - 10} more`)
     }
   }
 
@@ -2446,20 +2445,15 @@ function verifyOutputEquivalence(
   const compareHeight = next.height
   // DEBUG: log buffer dimensions
   if (process.env.SILVERY_DEBUG_OUTPUT) {
-    // eslint-disable-next-line no-console
-    console.error(
-      `[VERIFY] prev=${prev.width}x${prev.height} next=${next.width}x${next.height} vtSize=${w}x${vtHeight}`,
-    )
+    log.error(`[VERIFY] prev=${prev.width}x${prev.height} next=${next.width}x${next.height} vtSize=${w}x${vtHeight}`)
   }
   // Replay: fresh prev render + incremental diff applied on top
   const freshPrev = bufferToAnsi(prev, ctx)
   if (process.env.SILVERY_DEBUG_OUTPUT) {
-    // eslint-disable-next-line no-console
-    console.error(`[VERIFY] freshPrev len=${freshPrev.length} incrOutput len=${incrOutput.length}`)
+    log.error(`[VERIFY] freshPrev len=${freshPrev.length} incrOutput len=${incrOutput.length}`)
     // Show incrOutput as escaped string
     const escaped = incrOutput.replace(/\x1b/g, "\\e").replace(/\r/g, "\\r").replace(/\n/g, "\\n")
-    // eslint-disable-next-line no-console
-    console.error(`[VERIFY] incrOutput: ${escaped.slice(0, 500)}`)
+    log.error(`[VERIFY] incrOutput: ${escaped.slice(0, 500)}`)
   }
   const screenIncr = replayAnsiWithStyles(w, vtHeight, freshPrev + incrOutput, ctx)
   // Replay: fresh render of next buffer
@@ -2543,8 +2537,7 @@ function verifyOutputEquivalence(
           ctx,
         })
         const fullMsg = `${msg}\n  Artifacts: ${artifactDir}`
-        // eslint-disable-next-line no-console
-        console.error(fullMsg)
+        log.error(fullMsg)
         throw new IncrementalRenderMismatchError(fullMsg)
       }
 
@@ -2618,8 +2611,7 @@ function verifyAccumulatedOutput(
           ctx,
           frameCount: accState.accumulateFrameCount,
         })
-        // eslint-disable-next-line no-console
-        console.error(`${msg}\n  Artifacts: ${dir}`)
+        log.error(`${msg}\n  Artifacts: ${dir}`)
         throw new IncrementalRenderMismatchError(`${msg}\n  Artifacts: ${dir}`)
       }
 
@@ -2646,8 +2638,7 @@ function verifyAccumulatedOutput(
           ctx,
           frameCount: accState.accumulateFrameCount,
         })
-        // eslint-disable-next-line no-console
-        console.error(`${msg}\n  Artifacts: ${dir2}`)
+        log.error(`${msg}\n  Artifacts: ${dir2}`)
         throw new IncrementalRenderMismatchError(`${msg}\n  Artifacts: ${dir2}`)
       }
     }
@@ -2838,8 +2829,7 @@ function compareTerminals(
           `incremental='${incrChar}' fresh='${freshChar}'\n` +
           `  incr row: ${incrRow.trimEnd()}\n` +
           `  fresh row: ${freshRow.trimEnd()}`
-        // eslint-disable-next-line no-console
-        console.error(msg)
+        log.error(msg)
         throw new IncrementalRenderMismatchError(msg)
       }
 
@@ -2847,8 +2837,7 @@ function compareTerminals(
         const msg =
           `${prefix} fg color mismatch at (${x},${y}) char='${incrChar}' frame ${state.frameCount}: ` +
           `incremental=${formatRgb(incrCell.fg)} fresh=${formatRgb(freshCell.fg)}`
-        // eslint-disable-next-line no-console
-        console.error(msg)
+        log.error(msg)
         throw new IncrementalRenderMismatchError(msg)
       }
 
@@ -2856,8 +2845,7 @@ function compareTerminals(
         const msg =
           `${prefix} bg color mismatch at (${x},${y}) char='${incrChar}' frame ${state.frameCount}: ` +
           `incremental=${formatRgb(incrCell.bg)} fresh=${formatRgb(freshCell.bg)}`
-        // eslint-disable-next-line no-console
-        console.error(msg)
+        log.error(msg)
         throw new IncrementalRenderMismatchError(msg)
       }
 
@@ -2872,8 +2860,7 @@ function compareTerminals(
       if (attrDiffs.length > 0) {
         const msg =
           `${prefix} attr mismatch at (${x},${y}) char='${incrChar}' frame ${state.frameCount}: ` + attrDiffs.join(", ")
-        // eslint-disable-next-line no-console
-        console.error(msg)
+        log.error(msg)
         throw new IncrementalRenderMismatchError(msg)
       }
     }

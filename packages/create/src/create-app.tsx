@@ -105,6 +105,9 @@ import { createSelectionState, selectionUpdate, extractText } from "@silvery/ag-
 import { renderSelectionOverlay } from "@silvery/ag-term/selection-renderer"
 import { createVirtualScrollback } from "@silvery/ag-term/virtual-scrollback"
 import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "@silvery/ag-term/search-overlay"
+import { createLogger } from "loggily"
+
+const log = createLogger("silvery:app")
 
 // ============================================================================
 // Types
@@ -2114,7 +2117,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Start pump in background — this synchronously runs the term-provider
     // generator body, which attaches the stdin data listener. After this call,
     // stdin is being consumed, so terminal responses won't leak as raw text.
-    pumpEvents().catch(console.error)
+    pumpEvents().catch((err: unknown) => log.error("pumpEvents failed:", err))
 
     // Enable focus reporting NOW — after stdin listener is attached.
     // Must be deferred from the init phase because the terminal's immediate
@@ -2163,7 +2166,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   // Start loop in background
-  eventLoop().catch(console.error)
+  eventLoop().catch((err: unknown) => log.error("eventLoop failed:", err))
 
   // Return handle with async iteration
   const handle: AppHandle<S & I> = {
