@@ -5,7 +5,7 @@
  */
 
 import type { BoxProps, AgNode, TextProps } from "@silvery/ag/types"
-import { displayWidthAnsi, wrapText } from "../unicode"
+import { displayWidthAnsi, wrapText, getActiveLineHeight } from "../unicode"
 import { collectPlainText as collectTextContent } from "./collect-text"
 import { getBorderSize, getPadding } from "./helpers"
 import type { PipelineContext } from "./types"
@@ -97,7 +97,7 @@ function measureIntrinsicSize(
     const width = Math.max(...lines.map((line) => getTextWidth(line, ctx)))
     return {
       width,
-      height: lines.length,
+      height: lines.length * getActiveLineHeight(),
     }
   }
 

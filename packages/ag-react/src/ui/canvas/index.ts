@@ -23,7 +23,9 @@ import {
   type CanvasAdapterConfig,
   CanvasRenderBuffer,
   createCanvasAdapter,
+  createCanvasPixelMeasurer,
 } from "@silvery/ag-term/adapters/canvas-adapter"
+import { runWithMeasurer, type Measurer } from "@silvery/ag-term/unicode"
 import { createFlexilyZeroEngine } from "@silvery/ag-term/adapters/flexily-zero-adapter"
 import { setLayoutEngine } from "@silvery/ag-term/layout-engine"
 import { executeRenderAdapter } from "@silvery/ag-term/pipeline"
@@ -120,14 +122,18 @@ export interface CanvasInstance {
 
 let initialized = false
 let currentAdapter: RenderAdapter | null = null
+let lastMonospace: boolean | undefined
 
 function initCanvasRenderer(config: CanvasAdapterConfig): void {
-  if (initialized) return
+  const monospace = config.monospace ?? true
+  // Re-init if monospace mode changed (adapter + measurer need to match)
+  if (initialized && lastMonospace === monospace) return
 
   setLayoutEngine(createFlexilyZeroEngine())
   currentAdapter = createCanvasAdapter(config)
   setRenderAdapter(currentAdapter)
 
+  lastMonospace = monospace
   initialized = true
 }
 
@@ -175,14 +181,27 @@ export function renderToCanvas(
   if (canvas.width !== pixelWidth) canvas.width = pixelWidth
   if (canvas.height !== pixelHeight) canvas.height = pixelHeight
 
-  // Convert pixel dimensions to cell dimensions for the layout engine.
   const fontSize = options.fontSize ?? 14
   const lineHeightMultiplier = options.lineHeight ?? 1.2
+  const isProportional = options.monospace === false
   const charWidth = fontSize * 0.6
   const lineHeight = fontSize * lineHeightMultiplier
 
-  let cols = Math.floor(pixelWidth / charWidth)
-  let rows = Math.floor(pixelHeight / lineHeight)
+  // Proportional: pipeline works in pixels. Monospace: pipeline works in cells.
+  let cols = isProportional ? pixelWidth : Math.floor(pixelWidth / charWidth)
+  let rows = isProportional ? pixelHeight : Math.floor(pixelHeight / lineHeight)
+
+  // Pipeline measurer for proportional mode (scoped via runWithMeasurer)
+  const pixelMeasurer: Measurer | undefined = isProportional
+    ? createCanvasPixelMeasurer({
+        fontSize,
+        fontFamily: options.fontFamily ?? "monospace",
+        lineHeight: lineHeightMultiplier,
+        backgroundColor: options.backgroundColor ?? "#1e1e1e",
+        foregroundColor: options.foregroundColor ?? "#d4d4d4",
+        monospace: false,
+      })
+    : undefined
 
   // Cursor store for cursor position tracking
   const cursorStore = createCursorStore()
@@ -352,7 +371,8 @@ export function renderToCanvas(
     reconciler.flushSyncWork()
 
     const prevBuffer = currentBuffer
-    const result = executeRenderAdapter(root, cols, rows, prevBuffer)
+    const execute = () => executeRenderAdapter(root, cols, rows, prevBuffer)
+    const result = pixelMeasurer ? runWithMeasurer(pixelMeasurer, execute) : execute()
     currentBuffer = result.buffer
 
     // Copy rendered buffer to visible canvas
@@ -417,8 +437,8 @@ export function renderToCanvas(
       pixelHeight = newPixelHeight
       canvas.width = pixelWidth
       canvas.height = pixelHeight
-      cols = Math.floor(pixelWidth / charWidth)
-      rows = Math.floor(pixelHeight / lineHeight)
+      cols = isProportional ? pixelWidth : Math.floor(pixelWidth / charWidth)
+      rows = isProportional ? pixelHeight : Math.floor(pixelHeight / lineHeight)
       // Clear buffer for full repaint at new size
       currentBuffer = null
       // Two passes for layout feedback
@@ -443,10 +463,22 @@ export function renderCanvasOnce(
 
   const fontSize = options.fontSize ?? 14
   const lineHeightMultiplier = options.lineHeight ?? 1.2
+  const isProportional = options.monospace === false
   const charWidth = fontSize * 0.6
   const lineHeight = fontSize * lineHeightMultiplier
-  const cols = Math.floor(width / charWidth)
-  const rows = Math.floor(height / lineHeight)
+  const cols = isProportional ? width : Math.floor(width / charWidth)
+  const rows = isProportional ? height : Math.floor(height / lineHeight)
+
+  const onceMeasurer: Measurer | undefined = isProportional
+    ? createCanvasPixelMeasurer({
+        fontSize,
+        fontFamily: options.fontFamily ?? "monospace",
+        lineHeight: lineHeightMultiplier,
+        backgroundColor: options.backgroundColor ?? "#1e1e1e",
+        foregroundColor: options.foregroundColor ?? "#d4d4d4",
+        monospace: false,
+      })
+    : undefined
 
   const container = createContainer(() => {})
   const root = getContainerRoot(container)
@@ -455,7 +487,8 @@ export function renderCanvasOnce(
   reconciler.updateContainerSync(element, fiberRoot, null, null)
   reconciler.flushSyncWork()
 
-  const { buffer } = executeRenderAdapter(root, cols, rows, null)
+  const execute = () => executeRenderAdapter(root, cols, rows, null)
+  const { buffer } = onceMeasurer ? runWithMeasurer(onceMeasurer, execute) : execute()
 
   reconciler.updateContainer(null, fiberRoot, null, () => {})
 

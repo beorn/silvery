@@ -154,6 +154,8 @@ export function isTextSizingEnabled(): boolean {
 export interface Measurer {
   readonly textEmojiWide: boolean
   readonly textSizingEnabled: boolean
+  /** Height of one line in measurement units. Terminal: 1 (one cell row). Canvas pixel: e.g. 20. */
+  readonly lineHeight: number
   displayWidth(text: string): number
   displayWidthAnsi(text: string): number
   graphemeWidth(grapheme: string): number
@@ -261,6 +263,7 @@ export function createWidthMeasurer(caps: { textEmojiWide?: boolean; textSizingE
   const measurer: Measurer = {
     textEmojiWide,
     textSizingEnabled,
+    lineHeight: 1,
     displayWidth: measuredDisplayWidth,
     displayWidthAnsi: measuredDisplayWidthAnsi,
     graphemeWidth: measuredGraphemeWidth,
@@ -775,11 +778,16 @@ export function wrapText(text: string, width: number, preserveNewlines = true, t
   return wrapTextWithMeasurer(text, width, _scopedMeasurer ?? undefined, trim, false, preserveNewlines)
 }
 
+/** Get the active line height (from scoped measurer if set, else 1). */
+export function getActiveLineHeight(): number {
+  return _scopedMeasurer?.lineHeight ?? 1
+}
+
 /**
- * Internal: wrap text using an explicit measurer for grapheme width calculations.
+ * Wrap text using an explicit measurer for grapheme width calculations.
  * When measurer is undefined, falls back to the module-level graphemeWidth.
  */
-function wrapTextWithMeasurer(
+export function wrapTextWithMeasurer(
   text: string,
   width: number,
   measurer: Measurer | undefined,

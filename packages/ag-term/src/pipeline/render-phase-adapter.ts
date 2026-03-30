@@ -52,7 +52,7 @@
 import { type RenderBuffer, type RenderStyle, getRenderAdapter, hasRenderAdapter } from "../render-adapter"
 import type { BoxProps, AgNode, Rect, TextProps } from "@silvery/ag/types"
 import { getBorderSize, getPadding } from "./helpers"
-import { displayWidth } from "../unicode"
+import { displayWidth, getActiveLineHeight } from "../unicode"
 import { formatTextLines } from "./render-text"
 
 // ============================================================================
@@ -638,8 +638,9 @@ function renderText(
   // If all segments have the same style (common case), use fast path
   if (segments.length <= 1) {
     const style = segments.length === 1 ? segments[0]!.style : contextToRenderStyle(rootContext, inheritedBg)
+    const lh = getActiveLineHeight()
     for (let i = 0; i < lines.length; i++) {
-      const lineY = y + i
+      const lineY = y + i * lh
       if (clipBounds && (lineY < clipBounds.top || lineY >= clipBounds.bottom)) continue
       if (!buffer.inBounds(0, lineY)) continue
       const truncated = truncateToWidth(lines[i]!, availableWidth)
@@ -664,8 +665,9 @@ function renderText(
   // Track how far we've consumed in the flat text across lines
   let flatOffset = 0
 
+  const lhMulti = getActiveLineHeight()
   for (let i = 0; i < lines.length; i++) {
-    const lineY = y + i
+    const lineY = y + i * lhMulti
     if (clipBounds && (lineY < clipBounds.top || lineY >= clipBounds.bottom)) {
       // Still advance flatOffset past this line
       flatOffset = advanceFlatOffset(text, flatOffset, lines[i]!)

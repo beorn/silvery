@@ -1,10 +1,10 @@
 /**
  * Canvas Render Adapter
  *
- * Implements the RenderAdapter interface for HTML5 Canvas output.
- * The layout engine operates in cell units (columns x rows). This adapter
- * converts cell coordinates to pixel coordinates when drawing to the canvas,
- * using charWidth (fontSize * 0.6) and cellHeight (fontSize * lineHeight).
+ * Two modes:
+ * - **monospace** (default): Layout in cell units (cols x rows), convert to pixels at draw time.
+ * - **proportional** (monospace: false): Layout in pixel units, draw at pixel coordinates directly.
+ *   Uses canvas measureText() for real font metrics. Enables proportional fonts (Inter, SF Pro, etc.)
  */
 
 import type {
@@ -16,6 +16,8 @@ import type {
   TextMeasureStyle,
   TextMeasurer,
 } from "../render-adapter"
+import type { Measurer } from "../unicode"
+import { wrapTextWithMeasurer, stripAnsi } from "../unicode"
 
 // ============================================================================
 // Configuration
@@ -32,6 +34,8 @@ export interface CanvasAdapterConfig {
   backgroundColor?: string
   /** Default foreground color (default: '#d4d4d4') */
   foregroundColor?: string
+  /** Monospace mode (default: true). When false, uses proportional font measurement. */
+  monospace?: boolean
 }
 
 const DEFAULT_CONFIG: Required<CanvasAdapterConfig> = {
@@ -40,6 +44,7 @@ const DEFAULT_CONFIG: Required<CanvasAdapterConfig> = {
   lineHeight: 1.2,
   backgroundColor: "#1e1e1e",
   foregroundColor: "#d4d4d4",
+  monospace: true,
 }
 
 // ============================================================================
@@ -85,23 +90,128 @@ const BORDER_CHARS: Record<string, BorderChars> = {
 // Canvas Measurer
 // ============================================================================
 
-function createCanvasMeasurer(_config: Required<CanvasAdapterConfig>): TextMeasurer {
-  // The layout engine operates in cell units (columns x rows), matching the
-  // terminal convention. For monospace fonts, text width = character count
-  // and line height = 1 row.
+function createCanvasMeasurer(config: Required<CanvasAdapterConfig>): TextMeasurer {
+  if (config.monospace) {
+    // Monospace: cell units (1 char = 1 cell, 1 line = 1 row)
+    return {
+      measureText(text: string, _style?: TextMeasureStyle): TextMeasureResult {
+        return { width: text.length, height: 1 }
+      },
+      getLineHeight(_style?: TextMeasureStyle): number {
+        return 1
+      },
+    }
+  }
+
+  // Proportional: pixel units via canvas measureText()
+  const lineHeightPx = Math.ceil(config.fontSize * config.lineHeight)
+  const measureCanvas =
+    typeof OffscreenCanvas !== "undefined"
+      ? new OffscreenCanvas(1, 1)
+      : typeof document !== "undefined"
+        ? document.createElement("canvas")
+        : null
+  if (!measureCanvas) throw new Error("Canvas not available for text measurement")
+  const ctx = measureCanvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
+  if (!ctx) throw new Error("Could not get 2d context for measurement")
+  ctx.font = `${config.fontSize}px ${config.fontFamily}`
+
   return {
     measureText(text: string, _style?: TextMeasureStyle): TextMeasureResult {
-      // For monospace fonts, width is simply the character count (one cell per char)
-      return {
-        width: text.length,
-        height: 1,
-      }
+      return { width: ctx.measureText(text).width, height: lineHeightPx }
     },
-
     getLineHeight(_style?: TextMeasureStyle): number {
-      return 1
+      return lineHeightPx
     },
   }
+}
+
+// ============================================================================
+// Proportional (Pixel) Measurer
+// ============================================================================
+
+/**
+ * Create a pipeline Measurer that uses canvas font metrics for pixel-accurate widths.
+ * All measurements return pixel values. The wrapping algorithm is reused from unicode.ts.
+ */
+export function createCanvasPixelMeasurer(config: Required<CanvasAdapterConfig>): Measurer {
+  // Scratch canvas for text measurement
+  const measureCanvas =
+    typeof OffscreenCanvas !== "undefined"
+      ? new OffscreenCanvas(1, 1)
+      : (typeof document !== "undefined" ? document.createElement("canvas") : null)
+  if (!measureCanvas) throw new Error("Canvas not available for text measurement")
+
+  const ctx = measureCanvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
+  if (!ctx) throw new Error("Could not get 2d context for measurement")
+
+  const font = `${config.fontSize}px ${config.fontFamily}`
+  ctx.font = font
+
+  const lineHeightPx = Math.ceil(config.fontSize * config.lineHeight)
+  const cache = new Map<string, number>()
+
+  function pixelWidth(text: string): number {
+    if (text.length === 0) return 0
+    const cached = cache.get(text)
+    if (cached !== undefined) return cached
+    const w = ctx.measureText(text).width
+    cache.set(text, w)
+    return w
+  }
+
+  function measuredDisplayWidth(text: string): number {
+    return pixelWidth(stripAnsi(text))
+  }
+
+  function measuredGraphemeWidth(grapheme: string): number {
+    return pixelWidth(grapheme)
+  }
+
+  function measuredSliceByWidth(text: string, maxWidth: number): string {
+    const stripped = stripAnsi(text)
+    if (pixelWidth(stripped) <= maxWidth) return text
+    // Walk graphemes, summing widths
+    let width = 0
+    let result = ""
+    for (const char of stripped) {
+      const cw = pixelWidth(char)
+      if (width + cw > maxWidth) break
+      result += char
+      width += cw
+    }
+    return result
+  }
+
+  function measuredSliceByWidthFromEnd(text: string, maxWidth: number): string {
+    const stripped = stripAnsi(text)
+    if (pixelWidth(stripped) <= maxWidth) return text
+    let width = 0
+    let startIdx = stripped.length
+    for (let i = stripped.length - 1; i >= 0; i--) {
+      const cw = pixelWidth(stripped[i]!)
+      if (width + cw > maxWidth) break
+      width += cw
+      startIdx = i
+    }
+    return stripped.slice(startIdx)
+  }
+
+  const measurer: Measurer = {
+    textEmojiWide: false,
+    textSizingEnabled: false,
+    lineHeight: lineHeightPx,
+    displayWidth: measuredDisplayWidth,
+    displayWidthAnsi: measuredDisplayWidth,
+    graphemeWidth: measuredGraphemeWidth,
+    wrapText(text: string, width: number, trim?: boolean, hard?: boolean): string[] {
+      return wrapTextWithMeasurer(text, width, measurer, trim ?? false, hard ?? false)
+    },
+    sliceByWidth: measuredSliceByWidth,
+    sliceByWidthFromEnd: measuredSliceByWidthFromEnd,
+  }
+
+  return measurer
 }
 
 // ============================================================================
@@ -166,14 +276,22 @@ export class CanvasRenderBuffer implements RenderBuffer {
     this.height = height
     this.config = config
 
-    // Compute cell dimensions for coordinate conversion.
-    // Width/height are in cell units (cols/rows); drawing converts to pixels.
-    this.charWidth = config.fontSize * 0.6
-    this.cellHeight = config.fontSize * config.lineHeight
+    let pixelWidth: number
+    let pixelHeight: number
 
-    // Canvas pixel dimensions (convert cell units to pixels)
-    const pixelWidth = width * this.charWidth
-    const pixelHeight = height * this.cellHeight
+    if (config.monospace) {
+      // Monospace: layout in cell units, convert to pixels at draw time
+      this.charWidth = config.fontSize * 0.6
+      this.cellHeight = config.fontSize * config.lineHeight
+      pixelWidth = width * this.charWidth
+      pixelHeight = height * this.cellHeight
+    } else {
+      // Proportional: layout already in pixels, no conversion needed
+      this.charWidth = 1
+      this.cellHeight = 1
+      pixelWidth = width
+      pixelHeight = height
+    }
 
     // Use OffscreenCanvas for double buffering
     if (typeof OffscreenCanvas !== "undefined") {
