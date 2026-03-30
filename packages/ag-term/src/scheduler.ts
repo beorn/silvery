@@ -525,7 +525,7 @@ export class RenderScheduler {
             `stdout.write: ${bytes} bytes (${transformedOutput.length} chars output + ${cursorSuffix.length} chars cursor)`,
           )
           if (bytes > 16384) {
-            log.warn?.(
+            log.debug?.(
               `large output: ${bytes} bytes may exceed pipe buffer (16KB on macOS), risk of mid-sequence split`,
             )
           }
@@ -625,7 +625,7 @@ export class RenderScheduler {
       // First render is always slow (initialization); use 5x threshold for it
       const threshold = this.stats.renderCount <= 1 ? this.slowFrameThreshold * 5 : this.slowFrameThreshold
       if (threshold > 0 && renderTime > threshold) {
-        log.warn?.(
+        log.debug?.(
           `slow frame: render #${this.stats.renderCount} took ${renderTime}ms (threshold: ${this.slowFrameThreshold}ms, bytes: ${transformedOutput.length})`,
         )
       }
@@ -675,22 +675,20 @@ export class RenderScheduler {
   }
 
   /**
-   * Log debug message.
+   * Log debug message (via loggily, not stderr — stderr corrupts alt screen).
    */
   private logDebug(message: string): void {
-    // Write to stderr to avoid corrupting terminal output
-    process.stderr.write(`[Silvery Debug] ${message}\n`)
+    log.debug?.(message)
   }
 
   /**
-   * Log error message.
+   * Log error message (via loggily, not stderr — stderr corrupts alt screen).
    */
   private logError(message: string, error: unknown): void {
-    process.stderr.write(`[Silvery Error] ${message}\n`)
     if (error instanceof Error) {
-      process.stderr.write(`${error.stack ?? error.message}\n`)
+      log.error?.(`${message} ${error.stack ?? error.message}`)
     } else {
-      process.stderr.write(`${String(error)}\n`)
+      log.error?.(`${message} ${String(error)}`)
     }
   }
 }
