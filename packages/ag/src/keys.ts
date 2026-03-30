@@ -464,11 +464,14 @@ function safeFromCodePoint(cp: number): string {
 /** Maps Kitty codepoints to key names for non-printable/functional keys */
 const KITTY_CODEPOINT_MAP: Record<number, string> = {
   // Standard control keys
+  // Note: Kitty protocol sends Backspace as codepoint 127 (CSI 127 u).
+  // Codepoint 8 (BS) is kept as a fallback. Delete uses legacy CSI 3 ~ format
+  // (handled by KITTY_SPECIAL_NUMBER_KEYS), not the CSI u format.
   8: "backspace",
   9: "tab",
   13: "return",
   27: "escape",
-  127: "delete",
+  127: "backspace",
   // Function keys F13-F35 (F1-F12 use legacy CSI sequences in Kitty mode)
   57376: "f13",
   57377: "f14",

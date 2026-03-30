@@ -192,14 +192,24 @@ describe("kitty protocol - special keys", () => {
     expect(result.isKittyProtocol).toBe(true)
   })
 
-  test("backspace key", () => {
+  test("backspace key (codepoint 127)", () => {
+    // Kitty protocol spec: Backspace = codepoint 127 (CSI 127 u)
+    // This is what Ghostty, Kitty, WezTerm etc. send for the Backspace key
+    const result = parseKeypress(kittyKey(127))
+    expect(result.name).toBe("backspace")
+    expect(result.isKittyProtocol).toBe(true)
+  })
+
+  test("backspace key (codepoint 8 fallback)", () => {
+    // Codepoint 8 (BS) is a legacy fallback for backspace
     const result = parseKeypress(kittyKey(8))
     expect(result.name).toBe("backspace")
     expect(result.isKittyProtocol).toBe(true)
   })
 
-  test("delete key", () => {
-    const result = parseKeypress(kittyKey(127))
+  test("delete key via legacy enhanced format", () => {
+    // Delete uses legacy CSI 3 ~ format (not CSI u), even in Kitty mode
+    const result = parseKeypress("\x1b[3;1:1~")
     expect(result.name).toBe("delete")
     expect(result.isKittyProtocol).toBe(true)
   })
@@ -423,7 +433,11 @@ describe("kitty protocol - isPrintable", () => {
     expect(parseKeypress(kittyKey(32)).isPrintable).toBe(true)
   })
 
-  test("false for backspace", () => {
+  test("false for backspace (codepoint 127)", () => {
+    expect(parseKeypress(kittyKey(127)).isPrintable).toBe(false)
+  })
+
+  test("false for backspace (codepoint 8 fallback)", () => {
     expect(parseKeypress(kittyKey(8)).isPrintable).toBe(false)
   })
 
