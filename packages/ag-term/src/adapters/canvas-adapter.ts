@@ -90,9 +90,23 @@ const BORDER_CHARS: Record<string, BorderChars> = {
 // Canvas Measurer
 // ============================================================================
 
+/** Create a scratch canvas 2D context for text measurement. */
+function createMeasureContext(fontSize: number, fontFamily: string): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
+  const canvas =
+    typeof OffscreenCanvas !== "undefined"
+      ? new OffscreenCanvas(1, 1)
+      : typeof document !== "undefined"
+        ? document.createElement("canvas")
+        : null
+  if (!canvas) throw new Error("Canvas not available for text measurement")
+  const ctx = canvas.getContext("2d")
+  if (!ctx) throw new Error("Could not get 2d context for measurement")
+  ;(ctx as CanvasRenderingContext2D).font = `${fontSize}px ${fontFamily}`
+  return ctx as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
+}
+
 function createCanvasMeasurer(config: Required<CanvasAdapterConfig>): TextMeasurer {
   if (config.monospace) {
-    // Monospace: cell units (1 char = 1 cell, 1 line = 1 row)
     return {
       measureText(text: string, _style?: TextMeasureStyle): TextMeasureResult {
         return { width: text.length, height: 1 }
@@ -103,18 +117,8 @@ function createCanvasMeasurer(config: Required<CanvasAdapterConfig>): TextMeasur
     }
   }
 
-  // Proportional: pixel units via canvas measureText()
   const lineHeightPx = Math.ceil(config.fontSize * config.lineHeight)
-  const measureCanvas =
-    typeof OffscreenCanvas !== "undefined"
-      ? new OffscreenCanvas(1, 1)
-      : typeof document !== "undefined"
-        ? document.createElement("canvas")
-        : null
-  if (!measureCanvas) throw new Error("Canvas not available for text measurement")
-  const ctx = measureCanvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
-  if (!ctx) throw new Error("Could not get 2d context for measurement")
-  ctx.font = `${config.fontSize}px ${config.fontFamily}`
+  const ctx = createMeasureContext(config.fontSize, config.fontFamily)
 
   return {
     measureText(text: string, _style?: TextMeasureStyle): TextMeasureResult {
@@ -130,85 +134,70 @@ function createCanvasMeasurer(config: Required<CanvasAdapterConfig>): TextMeasur
 // Proportional (Pixel) Measurer
 // ============================================================================
 
+/** Font config for pixel measurement — only what's needed. */
+export interface CanvasPixelMeasurerConfig {
+  fontSize: number
+  fontFamily: string
+  lineHeight: number
+}
+
 /**
  * Create a pipeline Measurer that uses canvas font metrics for pixel-accurate widths.
- * All measurements return pixel values. The wrapping algorithm is reused from unicode.ts.
+ * All measurements return pixel values. Wrapping reuses silvery's wrapTextWithMeasurer.
  */
-export function createCanvasPixelMeasurer(config: Required<CanvasAdapterConfig>): Measurer {
-  // Scratch canvas for text measurement
-  const measureCanvas =
-    typeof OffscreenCanvas !== "undefined"
-      ? new OffscreenCanvas(1, 1)
-      : (typeof document !== "undefined" ? document.createElement("canvas") : null)
-  if (!measureCanvas) throw new Error("Canvas not available for text measurement")
-
-  const ctx = measureCanvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
-  if (!ctx) throw new Error("Could not get 2d context for measurement")
-
-  const font = `${config.fontSize}px ${config.fontFamily}`
-  ctx.font = font
-
+export function createCanvasPixelMeasurer(config: CanvasPixelMeasurerConfig): Measurer {
+  const ctx = createMeasureContext(config.fontSize, config.fontFamily)
   const lineHeightPx = Math.ceil(config.fontSize * config.lineHeight)
+
+  // Simple cache with full eviction at capacity (5000 entries, mostly single graphemes)
   const cache = new Map<string, number>()
 
   function pixelWidth(text: string): number {
     if (text.length === 0) return 0
     const cached = cache.get(text)
     if (cached !== undefined) return cached
+    if (cache.size >= 5000) cache.clear()
     const w = ctx.measureText(text).width
     cache.set(text, w)
     return w
   }
 
-  function measuredDisplayWidth(text: string): number {
-    return pixelWidth(stripAnsi(text))
-  }
+  // Use Intl.Segmenter for proper grapheme iteration (emoji, CJK, combining marks)
+  const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
 
-  function measuredGraphemeWidth(grapheme: string): number {
-    return pixelWidth(grapheme)
-  }
-
-  function measuredSliceByWidth(text: string, maxWidth: number): string {
+  function sliceGraphemes(text: string, maxWidth: number, fromEnd: boolean): string {
     const stripped = stripAnsi(text)
     if (pixelWidth(stripped) <= maxWidth) return text
-    // Walk graphemes, summing widths
+    const graphemes = [...segmenter.segment(stripped)].map((s) => s.segment)
     let width = 0
-    let result = ""
-    for (const char of stripped) {
-      const cw = pixelWidth(char)
-      if (width + cw > maxWidth) break
-      result += char
-      width += cw
+    if (fromEnd) {
+      for (let i = graphemes.length - 1; i >= 0; i--) {
+        const gw = pixelWidth(graphemes[i]!)
+        if (width + gw > maxWidth) return graphemes.slice(i + 1).join("")
+        width += gw
+      }
+      return stripped
     }
-    return result
-  }
-
-  function measuredSliceByWidthFromEnd(text: string, maxWidth: number): string {
-    const stripped = stripAnsi(text)
-    if (pixelWidth(stripped) <= maxWidth) return text
-    let width = 0
-    let startIdx = stripped.length
-    for (let i = stripped.length - 1; i >= 0; i--) {
-      const cw = pixelWidth(stripped[i]!)
-      if (width + cw > maxWidth) break
-      width += cw
-      startIdx = i
+    for (let i = 0; i < graphemes.length; i++) {
+      const gw = pixelWidth(graphemes[i]!)
+      if (width + gw > maxWidth) return graphemes.slice(0, i).join("")
+      width += gw
     }
-    return stripped.slice(startIdx)
+    return stripped
   }
 
   const measurer: Measurer = {
     textEmojiWide: false,
     textSizingEnabled: false,
     lineHeight: lineHeightPx,
-    displayWidth: measuredDisplayWidth,
-    displayWidthAnsi: measuredDisplayWidth,
-    graphemeWidth: measuredGraphemeWidth,
+    displayWidth(text: string): number { return pixelWidth(stripAnsi(text)) },
+    displayWidthAnsi(text: string): number { return pixelWidth(stripAnsi(text)) },
+    graphemeWidth(grapheme: string): number { return pixelWidth(grapheme) },
     wrapText(text: string, width: number, trim?: boolean, hard?: boolean): string[] {
       return wrapTextWithMeasurer(text, width, measurer, trim ?? false, hard ?? false)
     },
-    sliceByWidth: measuredSliceByWidth,
-    sliceByWidthFromEnd: measuredSliceByWidthFromEnd,
+    sliceByWidth(text: string, maxWidth: number): string { return sliceGraphemes(text, maxWidth, false) },
+    sliceByWidthFromEnd(text: string, maxWidth: number): string { return sliceGraphemes(text, maxWidth, true) },
   }
 
   return measurer
