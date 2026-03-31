@@ -274,8 +274,8 @@ export default defineConfig({
     },
 
     footer: {
-      message: "Released under the MIT License.",
-      copyright: "Copyright © 2024-present",
+      message: 'Layout by <a href="https://beorn.codes/flexily">Flexily</a> · Tested with <a href="https://termless.dev">Termless</a> · Compatibility at <a href="https://terminfo.dev">terminfo.dev</a>',
+      copyright: 'Built by <a href="https://beorn.codes">Bjorn Stabell</a>'
     },
   },
 })
