@@ -226,13 +226,12 @@ export function createCanvasInput(config: CanvasInputConfig): CanvasInputInstanc
     if (!disposed) textarea.focus()
   }
 
-  // Mouse handlers
+  // Mouse handlers — emit CanvasMouseEvent (not SGR sequences, which would
+  // get fed into the keyboard pipeline and cause garbage input)
   function onMouseDown(e: MouseEvent): void {
     if (disposed) return
     mouseDown = true
     const { col, row } = pixelToCell(e.clientX, e.clientY)
-    // Emit SGR mouse down: \x1b[<button;col+1;row+1M (1-indexed)
-    onData(`\x1b[<${e.button};${col + 1};${row + 1}M`)
     onMouse?.({ type: "mousedown", col, row, button: e.button })
   }
 
@@ -240,29 +239,22 @@ export function createCanvasInput(config: CanvasInputConfig): CanvasInputInstanc
     if (disposed) return
     mouseDown = false
     const { col, row } = pixelToCell(e.clientX, e.clientY)
-    // Emit SGR mouse up: \x1b[<button;col+1;row+1m (lowercase m = release)
-    onData(`\x1b[<${e.button};${col + 1};${row + 1}m`)
     onMouse?.({ type: "mouseup", col, row, button: e.button })
-    // Also emit click
     onMouse?.({ type: "click", col, row, button: e.button })
   }
 
   function onMouseMove(e: MouseEvent): void {
     if (disposed || !mouseDown) return
     const { col, row } = pixelToCell(e.clientX, e.clientY)
-    // SGR motion: button+32
-    onData(`\x1b[<${e.button + 32};${col + 1};${row + 1}M`)
     onMouse?.({ type: "mousemove", col, row, button: e.button })
   }
 
   function onWheel(e: WheelEvent): void {
     if (disposed) return
-    e.preventDefault()
+    // Don't preventDefault — let native CSS scroll handle the wheel event.
+    // Only emit the mouse event for apps that want to handle it themselves.
     const { col, row } = pixelToCell(e.clientX, e.clientY)
     const delta = e.deltaY > 0 ? 1 : -1
-    // SGR wheel: 64=scroll-up, 65=scroll-down
-    const button = delta < 0 ? 64 : 65
-    onData(`\x1b[<${button};${col + 1};${row + 1}M`)
     onMouse?.({ type: "wheel", col, row, button: 0, delta })
   }
 
@@ -275,7 +267,7 @@ export function createCanvasInput(config: CanvasInputConfig): CanvasInputInstanc
   container.addEventListener("mousedown", onMouseDown)
   container.addEventListener("mouseup", onMouseUp)
   container.addEventListener("mousemove", onMouseMove)
-  container.addEventListener("wheel", onWheel, { passive: false })
+  container.addEventListener("wheel", onWheel)
 
   return {
     focus(): void {
