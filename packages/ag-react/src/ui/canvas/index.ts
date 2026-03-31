@@ -65,7 +65,13 @@ export {
 } from "@silvery/ag-term/adapters/canvas-adapter"
 
 // Re-export input handler
-export { keyboardEventToSequence, createCanvasInput, type CanvasInputConfig, type CanvasInputInstance } from "./input"
+export {
+  keyboardEventToSequence,
+  createCanvasInput,
+  type CanvasInputConfig,
+  type CanvasInputInstance,
+  type CanvasMouseEvent,
+} from "./input"
 
 // ============================================================================
 // Types
@@ -106,6 +112,8 @@ export interface CanvasRenderOptions extends CanvasAdapterConfig {
   exitOnCtrlC?: boolean
   /** Handle Tab/Shift+Tab/Escape focus cycling (default: true when input is enabled) */
   handleFocusCycling?: boolean
+  /** Mouse event callback (click, wheel, drag) */
+  onMouse?: (event: import("./input").CanvasMouseEvent) => void
 }
 
 export interface CanvasInstance {
@@ -288,7 +296,11 @@ export function renderToCanvas(
       onFocusChange(focused: boolean) {
         inputCallbacks.onFocus?.(focused)
       },
+      onMouse: options.onMouse,
     })
+
+    // Set dimensions for mouse coordinate conversion
+    canvasInput.updateDimensions(charWidth, lineHeight)
 
     function processKey(rawKey: string): void {
       // Handle Ctrl+C

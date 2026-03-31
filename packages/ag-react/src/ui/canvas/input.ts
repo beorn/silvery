@@ -99,6 +99,19 @@ export function keyboardEventToSequence(e: KeyboardEvent): string | null {
   return null
 }
 
+/** Mouse event from canvas input */
+export interface CanvasMouseEvent {
+  type: "click" | "mousedown" | "mouseup" | "wheel" | "mousemove"
+  /** 0-indexed terminal column */
+  col: number
+  /** 0-indexed terminal row */
+  row: number
+  /** 0=left, 1=middle, 2=right */
+  button: number
+  /** Wheel: -1=up, +1=down */
+  delta?: number
+}
+
 export interface CanvasInputConfig {
   /** Container element to attach the hidden textarea to and listen for events on */
   container: HTMLElement
@@ -106,6 +119,8 @@ export interface CanvasInputConfig {
   onData: (data: string) => void
   /** Called when focus changes */
   onFocusChange?: (focused: boolean) => void
+  /** Called with mouse events (click, wheel). Coordinates in terminal cells. */
+  onMouse?: (event: CanvasMouseEvent) => void
 }
 
 export interface CanvasInputInstance {
@@ -128,9 +143,23 @@ export interface CanvasInputInstance {
  * Listens for keyboard events and converts them to terminal escape sequences.
  */
 export function createCanvasInput(config: CanvasInputConfig): CanvasInputInstance {
-  const { container, onData, onFocusChange } = config
+  const { container, onData, onFocusChange, onMouse } = config
   let disposed = false
   let isFocused = false
+  let charWidth = 8
+  let lineHeight = 18
+  let mouseDown = false
+
+  /** Convert pixel coordinates to terminal cell coordinates */
+  function pixelToCell(clientX: number, clientY: number): { col: number; row: number } {
+    const rect = container.getBoundingClientRect()
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+    return {
+      col: Math.max(0, Math.floor(x / charWidth)),
+      row: Math.max(0, Math.floor(y / lineHeight)),
+    }
+  }
 
   // Create hidden textarea for keyboard capture
   // This is the standard technique -- xterm.js, VS Code terminal, etc. all do this.
@@ -197,12 +226,56 @@ export function createCanvasInput(config: CanvasInputConfig): CanvasInputInstanc
     if (!disposed) textarea.focus()
   }
 
+  // Mouse handlers
+  function onMouseDown(e: MouseEvent): void {
+    if (disposed) return
+    mouseDown = true
+    const { col, row } = pixelToCell(e.clientX, e.clientY)
+    // Emit SGR mouse down: \x1b[<button;col+1;row+1M (1-indexed)
+    onData(`\x1b[<${e.button};${col + 1};${row + 1}M`)
+    onMouse?.({ type: "mousedown", col, row, button: e.button })
+  }
+
+  function onMouseUp(e: MouseEvent): void {
+    if (disposed) return
+    mouseDown = false
+    const { col, row } = pixelToCell(e.clientX, e.clientY)
+    // Emit SGR mouse up: \x1b[<button;col+1;row+1m (lowercase m = release)
+    onData(`\x1b[<${e.button};${col + 1};${row + 1}m`)
+    onMouse?.({ type: "mouseup", col, row, button: e.button })
+    // Also emit click
+    onMouse?.({ type: "click", col, row, button: e.button })
+  }
+
+  function onMouseMove(e: MouseEvent): void {
+    if (disposed || !mouseDown) return
+    const { col, row } = pixelToCell(e.clientX, e.clientY)
+    // SGR motion: button+32
+    onData(`\x1b[<${e.button + 32};${col + 1};${row + 1}M`)
+    onMouse?.({ type: "mousemove", col, row, button: e.button })
+  }
+
+  function onWheel(e: WheelEvent): void {
+    if (disposed) return
+    e.preventDefault()
+    const { col, row } = pixelToCell(e.clientX, e.clientY)
+    const delta = e.deltaY > 0 ? 1 : -1
+    // SGR wheel: 64=scroll-up, 65=scroll-down
+    const button = delta < 0 ? 64 : 65
+    onData(`\x1b[<${button};${col + 1};${row + 1}M`)
+    onMouse?.({ type: "wheel", col, row, button: 0, delta })
+  }
+
   // Wire up events
   textarea.addEventListener("keydown", onKeyDown)
   textarea.addEventListener("paste", onPaste)
   textarea.addEventListener("focus", onFocus)
   textarea.addEventListener("blur", onBlur)
   container.addEventListener("click", onContainerClick)
+  container.addEventListener("mousedown", onMouseDown)
+  container.addEventListener("mouseup", onMouseUp)
+  container.addEventListener("mousemove", onMouseMove)
+  container.addEventListener("wheel", onWheel, { passive: false })
 
   return {
     focus(): void {
@@ -217,8 +290,9 @@ export function createCanvasInput(config: CanvasInputConfig): CanvasInputInstanc
       return isFocused
     },
 
-    updateDimensions(_charWidth: number, _lineHeight: number): void {
-      // Reserved for future mouse coordinate conversion
+    updateDimensions(cw: number, lh: number): void {
+      charWidth = cw
+      lineHeight = lh
     },
 
     dispose(): void {
@@ -229,6 +303,10 @@ export function createCanvasInput(config: CanvasInputConfig): CanvasInputInstanc
       textarea.removeEventListener("focus", onFocus)
       textarea.removeEventListener("blur", onBlur)
       container.removeEventListener("click", onContainerClick)
+      container.removeEventListener("mousedown", onMouseDown)
+      container.removeEventListener("mouseup", onMouseUp)
+      container.removeEventListener("mousemove", onMouseMove)
+      container.removeEventListener("wheel", onWheel)
       container.removeChild(textarea)
     },
   }
