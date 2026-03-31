@@ -106,6 +106,10 @@ export interface CanvasMouseEvent {
   col: number
   /** 0-indexed terminal row */
   row: number
+  /** CSS pixel X relative to container (for proportional mode hit testing) */
+  pixelX: number
+  /** CSS pixel Y relative to container (for proportional mode hit testing) */
+  pixelY: number
   /** 0=left, 1=middle, 2=right */
   button: number
   /** Wheel: -1=up, +1=down */
@@ -228,34 +232,41 @@ export function createCanvasInput(config: CanvasInputConfig): CanvasInputInstanc
 
   // Mouse handlers — emit CanvasMouseEvent (not SGR sequences, which would
   // get fed into the keyboard pipeline and cause garbage input)
+  function pixelRelative(e: MouseEvent): { pixelX: number; pixelY: number } {
+    const rect = container.getBoundingClientRect()
+    return { pixelX: e.clientX - rect.left, pixelY: e.clientY - rect.top }
+  }
+
   function onMouseDown(e: MouseEvent): void {
     if (disposed) return
     mouseDown = true
     const { col, row } = pixelToCell(e.clientX, e.clientY)
-    onMouse?.({ type: "mousedown", col, row, button: e.button })
+    const { pixelX, pixelY } = pixelRelative(e)
+    onMouse?.({ type: "mousedown", col, row, pixelX, pixelY, button: e.button })
   }
 
   function onMouseUp(e: MouseEvent): void {
     if (disposed) return
     mouseDown = false
     const { col, row } = pixelToCell(e.clientX, e.clientY)
-    onMouse?.({ type: "mouseup", col, row, button: e.button })
-    onMouse?.({ type: "click", col, row, button: e.button })
+    const { pixelX, pixelY } = pixelRelative(e)
+    onMouse?.({ type: "mouseup", col, row, pixelX, pixelY, button: e.button })
+    onMouse?.({ type: "click", col, row, pixelX, pixelY, button: e.button })
   }
 
   function onMouseMove(e: MouseEvent): void {
     if (disposed || !mouseDown) return
     const { col, row } = pixelToCell(e.clientX, e.clientY)
-    onMouse?.({ type: "mousemove", col, row, button: e.button })
+    const { pixelX, pixelY } = pixelRelative(e)
+    onMouse?.({ type: "mousemove", col, row, pixelX, pixelY, button: e.button })
   }
 
   function onWheel(e: WheelEvent): void {
     if (disposed) return
-    // Don't preventDefault — let native CSS scroll handle the wheel event.
-    // Only emit the mouse event for apps that want to handle it themselves.
     const { col, row } = pixelToCell(e.clientX, e.clientY)
+    const { pixelX, pixelY } = pixelRelative(e)
     const delta = e.deltaY > 0 ? 1 : -1
-    onMouse?.({ type: "wheel", col, row, button: 0, delta })
+    onMouse?.({ type: "wheel", col, row, pixelX, pixelY, button: 0, delta })
   }
 
   // Wire up events
