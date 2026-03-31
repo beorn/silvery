@@ -218,8 +218,8 @@ export type { ProgressBarProps } from "@silvery/ag-react/ui/components"
 export { SelectList } from "@silvery/ag-react/ui/components"
 export type { SelectListProps, SelectOption } from "@silvery/ag-react/ui/components"
 
-export { Table } from "@silvery/ag-react/ui/components"
-export type { TableProps, TableColumn } from "@silvery/ag-react/ui/components"
+export { Table } from "./components/Table"
+export type { TableProps, Column, Column as TableColumn } from "./components/Table"
 
 export { Badge } from "@silvery/ag-react/ui/components"
 export type { BadgeProps } from "@silvery/ag-react/ui/components"

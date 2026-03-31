@@ -116,8 +116,8 @@ export type { ProgressBarProps } from "./components/ProgressBar"
 export { SelectList } from "./components/SelectList"
 export type { SelectListProps, SelectOption } from "./components/SelectList"
 
-export { Table } from "./components/Table"
-export type { TableProps, TableColumn } from "./components/Table"
+export { Table } from "@silvery/ag-react/components/Table"
+export type { TableProps, Column as TableColumn } from "@silvery/ag-react/components/Table"
 
 export { Badge } from "./components/Badge"
 export type { BadgeProps } from "./components/Badge"
