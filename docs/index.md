@@ -150,15 +150,17 @@ await render(<Counter />).run()
 
 Silvery is part of a family of terminal-focused libraries:
 
-- **[Termless](https://termless.dev)** -- Headless terminal testing, like Playwright for terminal apps
-- **[Flexily](https://beorn.github.io/flexily)** -- Pure JS flexbox layout engine (Yoga-compatible, 2.5x faster, zero WASM)
-- **[Loggily](https://beorn.github.io/loggily)** -- Debug + structured logging + tracing in one library
+- **[terminfo.dev](https://terminfo.dev)** — terminal feature compatibility database (161 features, 19 terminals)
+- **[Termless](https://termless.dev)** — headless terminal testing, like Playwright for terminal apps
+- **[Flexily](https://beorn.codes/flexily)** — pure JS flexbox layout engine (Yoga-compatible, 2.5x faster, zero WASM)
+- **[Loggily](https://beorn.codes/loggily)** — debug + structured logging + tracing in one library
 
 ## Coming
 
-- **Renderers** -- Canvas 2D, Web DOM (experimental today, production later)
-- **Frameworks** -- Svelte, Solid.js, Vue adapters
-- **@silvery/create** -- Structured state management with commands, keybindings, effects-as-data
+- **Pretext** — rich text layout with word-wrap, hyphenation, and proportional fonts (via Flexily integration)
+- **Renderers** — Canvas 2D, Web DOM (experimental today, production later)
+- **Frameworks** — Svelte, Solid.js, Vue adapters
+- **@silvery/create** — structured state management with commands, keybindings, effects-as-data
 
 <style>
 .use-cases {
