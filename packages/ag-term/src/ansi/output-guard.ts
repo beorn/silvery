@@ -14,12 +14,19 @@
  */
 
 import { openSync, writeSync, closeSync } from "node:fs"
+import { createLogger } from "loggily"
+
+const log = createLogger("silvery:guard")
 
 export interface OutputGuard extends Disposable {
   /** Allow a write through stdout (called by silvery's render pipeline) */
   writeStdout(data: string | Uint8Array): boolean
   /** Whether the guard is currently active */
   readonly active: boolean
+  /** Number of stdout writes suppressed since activation */
+  readonly suppressedCount: number
+  /** Number of stderr writes redirected since activation */
+  readonly redirectedCount: number
   dispose(): void
   [Symbol.dispose](): void
 }
@@ -42,6 +49,8 @@ export function createOutputGuard(options?: OutputGuardOptions): OutputGuard {
   // Track whether silvery is currently writing (to allow its output through)
   let silveryWriting = false
   let disposed = false
+  let suppressedCount = 0
+  let redirectedCount = 0
 
   // Stderr buffer or file
   const stderrLog = options?.stderrLog ?? process.env.DEBUG_LOG
@@ -56,18 +65,24 @@ export function createOutputGuard(options?: OutputGuardOptions): OutputGuard {
     }
   }
 
+  log?.info?.("activated" + (stderrLog ? ` (stderr -> ${stderrLog})` : " (stderr suppressed)"))
+
   // Intercept stdout -- only allow silvery's own writes
   process.stdout.write = function (chunk: any, ...args: any[]): boolean {
     if (silveryWriting) {
       return origStdoutWrite(chunk, ...args)
     }
     // Non-silvery stdout write -- suppress in alt screen
+    suppressedCount++
+    const preview = typeof chunk === "string" ? chunk.slice(0, 60) : "<binary>"
+    log?.debug?.(`suppressed stdout write (${suppressedCount}): ${JSON.stringify(preview)}`)
     return true
   } as any
 
   // Intercept stderr -- redirect to file or buffer
   process.stderr.write = function (chunk: any, ..._args: any[]): boolean {
     const str = typeof chunk === "string" ? chunk : chunk.toString()
+    redirectedCount++
     if (stderrFd !== null) {
       try {
         writeSync(stderrFd, str)
@@ -90,6 +105,8 @@ export function createOutputGuard(options?: OutputGuardOptions): OutputGuard {
 
     process.stdout.write = savedStdoutWrite
     process.stderr.write = savedStderrWrite
+
+    log?.info?.(`deactivated (suppressed ${suppressedCount} stdout, redirected ${redirectedCount} stderr)`)
 
     // Flush buffered stderr
     for (const line of stderrBuffer) {
@@ -118,6 +135,12 @@ export function createOutputGuard(options?: OutputGuardOptions): OutputGuard {
     },
     get active() {
       return !disposed
+    },
+    get suppressedCount() {
+      return suppressedCount
+    },
+    get redirectedCount() {
+      return redirectedCount
     },
     dispose,
     [Symbol.dispose]: dispose,

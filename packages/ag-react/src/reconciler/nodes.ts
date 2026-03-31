@@ -120,7 +120,6 @@ export function createNode(
       // Treat NaN width the same as unconstrained (can happen with auto-sized parents)
       const maxWidth = widthMode === "undefined" || Number.isNaN(width) ? Number.POSITIVE_INFINITY : width
 
-
       // Check if text will be truncated (not wrapped) — affects height calculation
       const { wrap } = node.props as TextProps
       const isTruncate =

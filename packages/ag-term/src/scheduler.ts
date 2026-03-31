@@ -95,6 +95,12 @@ export interface SchedulerOptions {
   pipelineConfig?: PipelineConfig
   /** Per-instance cursor accessors. Falls back to module-level globals if not provided. */
   cursorAccessors?: CursorAccessors
+  /**
+   * Custom output writer. When provided, all render output is routed through
+   * this function instead of stdout.write(). Used by the output guard to
+   * ensure only silvery's render pipeline writes to stdout in alt screen mode.
+   */
+  writeOutput?: (data: string) => boolean
 }
 
 export interface RenderStats {
@@ -144,6 +150,7 @@ export class RenderScheduler {
   private getCursorState: () => import("@silvery/ag-react/hooks/useCursor").CursorState | null
   private nonTTYMode: ResolvedMode
   private outputTransformer: (content: string, prevLineCount: number) => string
+  private writeOutput: (data: string) => boolean
   private log: Logger
 
   /** Previous buffer for diffing */
@@ -200,6 +207,7 @@ export class RenderScheduler {
     this.mode = options.mode ?? "fullscreen"
     this.pipelineConfig = options.pipelineConfig
     this.getCursorState = options.cursorAccessors?.getCursorState ?? globalGetCursorState
+    this.writeOutput = options.writeOutput ?? ((data: string) => options.stdout.write(data))
     this.log = createLogger("silvery:scheduler") as unknown as Logger
 
     // Resolve non-TTY mode based on environment
@@ -320,7 +328,9 @@ export class RenderScheduler {
    */
   notify(message: string, opts?: { title?: string }): void {
     if (this.disposed) return
-    notifyTerminal(this.stdout, message, opts)
+    // Route through writeOutput so the output guard allows it through
+    const writable = { write: (data: string) => this.writeOutput(data) } as NodeJS.WriteStream
+    notifyTerminal(writable, message, opts)
   }
 
   /**
@@ -329,7 +339,9 @@ export class RenderScheduler {
    */
   copyToClipboard(text: string): void {
     if (this.disposed) return
-    copyToClipboardImpl(this.stdout, text)
+    // Route through writeOutput so the output guard allows it through
+    const writable = { write: (data: string) => this.writeOutput(data) } as NodeJS.WriteStream
+    copyToClipboardImpl(writable, text)
   }
 
   /**
@@ -377,7 +389,7 @@ export class RenderScheduler {
     if (this.disposed) return
 
     // Clear screen and keep cursor hidden
-    this.stdout.write("\x1b[2J\x1b[H\x1b[?25l")
+    this.writeOutput("\x1b[2J\x1b[H\x1b[?25l")
 
     // Reset buffer so next render outputs everything
     this.prevBuffer = null
@@ -413,8 +425,8 @@ export class RenderScheduler {
 
     // In static mode, output the final frame on dispose
     if (this.nonTTYMode === "static" && this.staticOutput) {
-      this.stdout.write(this.staticOutput)
-      this.stdout.write("\n")
+      this.writeOutput(this.staticOutput)
+      this.writeOutput("\n")
     }
   }
 
@@ -543,7 +555,7 @@ export class RenderScheduler {
           fs.appendFileSync(captureFile, "\n")
         }
 
-        this.stdout.write(fullOutput)
+        this.writeOutput(fullOutput)
       }
 
       // Save buffer for next diff

@@ -258,4 +258,46 @@ describe("createOutputGuard", () => {
     guard = null
     process.stdout.write = setupWrite
   })
+
+  test("suppressedCount tracks suppressed stdout writes", () => {
+    guard = createOutputGuard()
+
+    expect(guard.suppressedCount).toBe(0)
+
+    process.stdout.write("rogue 1")
+    expect(guard.suppressedCount).toBe(1)
+
+    process.stdout.write("rogue 2")
+    process.stdout.write("rogue 3")
+    expect(guard.suppressedCount).toBe(3)
+
+    // writeStdout does not increment suppressed count
+    guard.writeStdout("\x1b[H")
+    expect(guard.suppressedCount).toBe(3)
+  })
+
+  test("redirectedCount tracks redirected stderr writes", () => {
+    // Save original env
+    const origDebugLog = process.env.DEBUG_LOG
+    delete process.env.DEBUG_LOG
+
+    guard = createOutputGuard()
+
+    expect(guard.redirectedCount).toBe(0)
+
+    process.stderr.write("stderr 1\n")
+    expect(guard.redirectedCount).toBe(1)
+
+    process.stderr.write("stderr 2\n")
+    process.stderr.write("stderr 3\n")
+    expect(guard.redirectedCount).toBe(3)
+
+    guard.dispose()
+    guard = null
+
+    // Restore env
+    if (origDebugLog !== undefined) {
+      process.env.DEBUG_LOG = origDebugLog
+    }
+  })
 })

@@ -48,6 +48,7 @@ import {
 } from "./reconciler"
 import { renderStringSync } from "./render-string"
 import { RenderScheduler } from "@silvery/ag-term/scheduler"
+import { createOutputGuard, type OutputGuard } from "@silvery/ag-term/ansi/output-guard"
 import {
   type ResolvedTermDef,
   type TermDef,
@@ -500,6 +501,7 @@ class SilveryInstance {
 
   private resizeCleanup: (() => void) | null = null
   private signalCleanup: (() => void) | null = null
+  private outputGuard: OutputGuard | null = null
 
   constructor(options: Required<Omit<RenderOptions, "patchConsole" | "layoutEngine">>) {
     log.debug?.("SilveryInstance constructor start")
@@ -537,6 +539,18 @@ class SilveryInstance {
     // Per-instance cursor state (replaces module-level globals)
     this.cursorStore = createCursorStore()
 
+    // Activate output guard after protocol setup so that terminal escape
+    // sequences (alt screen, kitty keyboard, etc.) go through raw stdout.
+    // The guard intercepts process.stdout/stderr writes so only silvery's
+    // render pipeline can write to stdout — all other writes are suppressed
+    // (stdout) or redirected to DEBUG_LOG (stderr).
+    // Only activate when writing to the real process.stdout — mock streams
+    // in tests don't need guarding and intercepting process.stdout would
+    // break the test infrastructure.
+    if (this.alternateScreen && this.stdout === process.stdout) {
+      this.outputGuard = createOutputGuard()
+    }
+
     // Set up container
     this.container = createContainer(() => {
       this.scheduler?.scheduleRender()
@@ -545,7 +559,7 @@ class SilveryInstance {
     // Create the React fiber root
     this.fiberRoot = createFiberRoot(this.container)
 
-    // Set up scheduler
+    // Set up scheduler — route render output through the guard when active
     this.scheduler = new RenderScheduler({
       stdout: this.stdout,
       root: getContainerRoot(this.container),
@@ -553,6 +567,7 @@ class SilveryInstance {
       mode: this.mode,
       nonTTYMode: this.nonTTYMode,
       cursorAccessors: this.cursorStore.accessors,
+      writeOutput: this.outputGuard ? (data: string) => this.outputGuard!.writeStdout(data) : undefined,
     })
 
     // Set up resize listener
@@ -580,7 +595,11 @@ class SilveryInstance {
           onInputSubscribe={this.subscribeToInput}
           exitOnCtrlC={this.exitOnCtrlC}
           stdoutWrite={(data: string) => {
-            this.stdout.write(data)
+            if (this.outputGuard) {
+              this.outputGuard.writeStdout(data)
+            } else {
+              this.stdout.write(data)
+            }
           }}
           stdout={this.stdout}
           onExit={this.handleExit}
@@ -647,6 +666,13 @@ class SilveryInstance {
     // Clean up resources
     this.resizeCleanup?.()
     this.signalCleanup?.()
+
+    // Dispose output guard BEFORE terminal protocol cleanup — restores original
+    // stdout/stderr write methods so the cleanup sequences go through unimpeded.
+    if (this.outputGuard) {
+      this.outputGuard.dispose()
+      this.outputGuard = null
+    }
 
     // Disable Kitty keyboard protocol and bracketed paste before leaving
     if (this.stdout.isTTY) {
