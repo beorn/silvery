@@ -225,6 +225,16 @@ export function keyToAnsi(key: string): string {
     return "\x1b[Z"
   }
 
+  // Shift+key for legacy ANSI encoding (no CSI sequence available)
+  // Legacy terminals send the shifted character directly: Shift+a → 'A', Shift+/ → '?'
+  if (modifiers.length === 1 && modifiers[0] === "Shift" && mainKey.length === 1) {
+    // Shift+letter → uppercase
+    if (mainKey >= "a" && mainKey <= "z") return mainKey.toUpperCase()
+    // Shift+punct → shifted character (US QWERTY)
+    const shifted = BASE_TO_SHIFTED_PUNCT[mainKey]
+    if (shifted) return shifted
+  }
+
   // Modified arrow/function keys -> xterm-style CSI 1;modifier sequences
   // E.g. Shift+ArrowUp -> \x1b[1;2A, Ctrl+ArrowDown -> \x1b[1;5B
   const ARROW_SUFFIX: Record<string, string> = {
@@ -411,6 +421,11 @@ const SHIFTED_PUNCT_MAP: Record<string, string> = {
   ">": ".",
   "?": "/",
 }
+
+/** Reverse of SHIFTED_PUNCT_MAP: base key → shifted character (US QWERTY) */
+const BASE_TO_SHIFTED_PUNCT: Record<string, string> = Object.fromEntries(
+  Object.entries(SHIFTED_PUNCT_MAP).map(([shifted, base]) => [base, shifted]),
+)
 
 // ============================================================================
 // Kitty Keyboard Protocol
