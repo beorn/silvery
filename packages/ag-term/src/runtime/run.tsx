@@ -241,7 +241,7 @@ export async function run(
     const term = optionsOrTerm as Term
     const emulator = (term as unknown as Record<string, unknown>)._emulator as { feed(data: string): void } | undefined
 
-    // Emulator-backed term: headless mode with writable routing to emulator.
+    // Emulator-backed term: non-headless mode with stdout routing to emulator.
     // Create a mock stdin that forwards sendInput() data to the term provider's
     // input parser, so events flow through the full createApp pipeline.
     if (emulator) {

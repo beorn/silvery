@@ -381,7 +381,11 @@ function createEventQueue(controller: AbortController) {
 
   function push(...events: ProviderEvent<TermEvents>[]) {
     queue.push(...events)
-    if (resolve) { const r = resolve; resolve = null; r() }
+    if (resolve) {
+      const r = resolve
+      resolve = null
+      r()
+    }
   }
 
   async function* events(): AsyncIterable<ProviderEvent<TermEvents>> {
@@ -401,7 +405,9 @@ function createEventQueue(controller: AbortController) {
   return {
     push,
     events,
-    dispose() { disposed = true },
+    dispose() {
+      disposed = true
+    },
   }
 }
 
@@ -413,8 +419,12 @@ function createEmulatorStdout(feed: (data: string) => void, cols: number, rows: 
       feed(typeof data === "string" ? data : new TextDecoder().decode(data))
       return true
     },
-    on: (event: string, handler: () => void) => { if (event === "resize") resizeListeners.add(handler) },
-    off: (event: string, handler: () => void) => { if (event === "resize") resizeListeners.delete(handler) },
+    on: (event: string, handler: () => void) => {
+      if (event === "resize") resizeListeners.add(handler)
+    },
+    off: (event: string, handler: () => void) => {
+      if (event === "resize") resizeListeners.delete(handler)
+    },
     isTTY: true,
     columns: cols,
     rows: rows,
@@ -422,7 +432,10 @@ function createEmulatorStdout(feed: (data: string) => void, cols: number, rows: 
   return {
     stdout: stdout as unknown as NodeJS.WriteStream,
     resizeListeners,
-    updateDims(c: number, r: number) { stdout.columns = c; stdout.rows = r },
+    updateDims(c: number, r: number) {
+      stdout.columns = c
+      stdout.rows = r
+    },
   }
 }
 
@@ -445,9 +458,12 @@ function finalizeTerm(
     for (const key of Object.keys(opts.delegateFrom)) {
       if (key in termBase) continue
       const val = (opts.delegateFrom as any)[key]
-      Object.defineProperty(termBase, key, typeof val === "function"
-        ? { value: (...args: unknown[]) => (opts.delegateFrom as any)[key](...args) }
-        : { get: () => (opts.delegateFrom as any)[key] },
+      Object.defineProperty(
+        termBase,
+        key,
+        typeof val === "function"
+          ? { value: (...args: unknown[]) => (opts.delegateFrom as any)[key](...args) }
+          : { get: () => (opts.delegateFrom as any)[key] },
       )
     }
   }
@@ -579,12 +595,19 @@ function createNodeTerm(options: CreateTermOptions): Term {
   let _frame: TextFrame | undefined
 
   const termBase = {
-    hasCursor: () => cachedCursor, hasInput: () => cachedInput,
-    hasColor: () => cachedColor, hasUnicode: () => cachedUnicode,
+    hasCursor: () => cachedCursor,
+    hasInput: () => cachedInput,
+    hasColor: () => cachedColor,
+    hasUnicode: () => cachedUnicode,
     caps: detectedCaps,
-    stdout, stdin,
-    write: (str: string) => { stdout.write(str) },
-    writeLine: (str: string) => { stdout.write(str + "\n") },
+    stdout,
+    stdin,
+    write: (str: string) => {
+      stdout.write(str)
+    },
+    writeLine: (str: string) => {
+      stdout.write(str + "\n")
+    },
     getState: (): TermState => getProvider().getState(),
     subscribe: (listener: (state: TermState) => void): (() => void) => getProvider().subscribe(listener),
     events: (): AsyncIterable<ProviderEvent<TermEvents>> => getProvider().events(),
@@ -594,15 +617,22 @@ function createNodeTerm(options: CreateTermOptions): Term {
       _frame = createTextFrame(buffer)
       return output
     },
-    [Symbol.dispose]: () => { if (provider) provider[Symbol.dispose]() },
+    [Symbol.dispose]: () => {
+      if (provider) provider[Symbol.dispose]()
+    },
   }
 
-  return finalizeTerm(styleInstance, termBase, { get: () => _frame }, {
-    defineProperties: {
-      cols: { get: () => (stdout.isTTY ? stdout.columns : undefined), enumerable: true },
-      rows: { get: () => (stdout.isTTY ? stdout.rows : undefined), enumerable: true },
+  return finalizeTerm(
+    styleInstance,
+    termBase,
+    { get: () => _frame },
+    {
+      defineProperties: {
+        cols: { get: () => (stdout.isTTY ? stdout.columns : undefined), enumerable: true },
+        rows: { get: () => (stdout.isTTY ? stdout.rows : undefined), enumerable: true },
+      },
     },
-  })
+  )
 }
 
 /** Create a headless terminal for testing — no I/O, fixed dimensions. */
@@ -612,11 +642,15 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
   let _frame: TextFrame | undefined
 
   const termBase = {
-    hasCursor: () => false, hasInput: () => false,
-    hasColor: () => null as ColorLevel | null, hasUnicode: () => false,
+    hasCursor: () => false,
+    hasInput: () => false,
+    hasColor: () => null as ColorLevel | null,
+    hasUnicode: () => false,
     caps: undefined as TerminalCaps | undefined,
-    stdout: process.stdout, stdin: process.stdin,
-    write: () => {}, writeLine: () => {},
+    stdout: process.stdout,
+    stdin: process.stdin,
+    write: () => {},
+    writeLine: () => {},
     getState: (): TermState => dims,
     subscribe: (): (() => void) => () => {},
     async *events(): AsyncIterable<ProviderEvent<TermEvents>> {
@@ -624,16 +658,28 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
       await new Promise<void>((r) => controller.signal.addEventListener("abort", () => r(), { once: true }))
     },
     stripAnsi,
-    paint: (_buffer: TerminalBuffer, _prev: TerminalBuffer | null): string => { _frame = createTextFrame(_buffer); return "" },
-    [Symbol.dispose]: () => { if (disposed) return; disposed = true; controller.abort() },
+    paint: (_buffer: TerminalBuffer, _prev: TerminalBuffer | null): string => {
+      _frame = createTextFrame(_buffer)
+      return ""
+    },
+    [Symbol.dispose]: () => {
+      if (disposed) return
+      disposed = true
+      controller.abort()
+    },
   }
 
-  return finalizeTerm(createStyle({ level: null }), termBase, { get: () => _frame }, {
-    defineProperties: {
-      cols: { get: () => dims.cols, enumerable: true },
-      rows: { get: () => dims.rows, enumerable: true },
+  return finalizeTerm(
+    createStyle({ level: null }),
+    termBase,
+    { get: () => _frame },
+    {
+      defineProperties: {
+        cols: { get: () => dims.cols, enumerable: true },
+        rows: { get: () => dims.rows, enumerable: true },
+      },
     },
-  })
+  )
 }
 
 /** Create a terminal backed by a termless emulator — real ANSI processing, screen/scrollback. */
@@ -641,16 +687,21 @@ function createBackendTerm(emulator: TermEmulator): Term {
   const controller = new AbortController()
   const eq = createEventQueue(controller)
   const { stdout, resizeListeners, updateDims } = createEmulatorStdout(
-    (s) => emulator.feed(s), emulator.cols, emulator.rows,
+    (s) => emulator.feed(s),
+    emulator.cols,
+    emulator.rows,
   )
   const subscribers = new Set<(state: TermState) => void>()
   let _frame: TextFrame | undefined
 
   const termBase = {
-    hasCursor: () => true, hasInput: () => true,
-    hasColor: () => "truecolor" as ColorLevel | null, hasUnicode: () => true,
+    hasCursor: () => true,
+    hasInput: () => true,
+    hasColor: () => "truecolor" as ColorLevel | null,
+    hasUnicode: () => true,
     caps: undefined as TerminalCaps | undefined,
-    stdout, stdin: process.stdin,
+    stdout,
+    stdin: process.stdin,
     write: (str: string) => emulator.feed(str),
     writeLine: (str: string) => emulator.feed(str + "\n"),
     getState: (): TermState => ({ cols: emulator.cols, rows: emulator.rows }),
@@ -683,13 +734,18 @@ function createBackendTerm(emulator: TermEmulator): Term {
     },
   }
 
-  return finalizeTerm(createStyle({ level: "truecolor" }), termBase, { get: () => _frame }, {
-    defineProperties: {
-      cols: { get: () => emulator.cols, enumerable: true },
-      rows: { get: () => emulator.rows, enumerable: true },
-      screen: { get: () => emulator.screen, enumerable: true },
-      scrollback: { get: () => emulator.scrollback, enumerable: true },
+  return finalizeTerm(
+    createStyle({ level: "truecolor" }),
+    termBase,
+    { get: () => _frame },
+    {
+      defineProperties: {
+        cols: { get: () => emulator.cols, enumerable: true },
+        rows: { get: () => emulator.rows, enumerable: true },
+        screen: { get: () => emulator.screen, enumerable: true },
+        scrollback: { get: () => emulator.scrollback, enumerable: true },
+      },
+      delegateFrom: emulator,
     },
-    delegateFrom: emulator,
-  })
+  )
 }

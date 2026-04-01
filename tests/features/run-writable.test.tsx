@@ -121,18 +121,22 @@ function ConsoleToggleApp() {
   useEffect(() => {
     if (!consoleOpen) return
     runtime?.pause?.()
-    return () => { runtime?.resume?.() }
+    return () => {
+      runtime?.resume?.()
+    }
   }, [consoleOpen])
 
   return (
-    <Box><Text>{consoleOpen ? "CONSOLE MODE" : "BOARD VIEW"}</Text></Box>
+    <Box>
+      <Text>{consoleOpen ? "CONSOLE MODE" : "BOARD VIEW"}</Text>
+    </Box>
   )
 }
 
 describe("run() terminal protocol setup", () => {
   test("alternateScreen enters alt screen", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
-    const handle = await run(<Counter />, term, { alternateScreen: true })
+    const handle = await run(<Counter />, term)
 
     expect(term).toBeInMode("altScreen")
     expect(term.screen).toContainText("Counter")
@@ -151,7 +155,7 @@ describe("run() terminal protocol setup", () => {
 
   test("bracketedPaste enabled by default", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
-    const handle = await run(<Counter />, term, { alternateScreen: true })
+    const handle = await run(<Counter />, term)
 
     expect(term).toBeInMode("bracketedPaste")
 
@@ -162,11 +166,13 @@ describe("run() terminal protocol setup", () => {
 describe("run() pause/resume alt screen", () => {
   let handle: RunHandle
 
-  afterEach(() => { handle?.unmount() })
+  afterEach(() => {
+    handle?.unmount()
+  })
 
   test("initial: board on alt screen", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
-    handle = await run(<ConsoleToggleApp />, term, { alternateScreen: true })
+    handle = await run(<ConsoleToggleApp />, term)
 
     expect(term.screen).toContainText("BOARD VIEW")
     expect(term).toBeInMode("altScreen")
@@ -174,7 +180,7 @@ describe("run() pause/resume alt screen", () => {
 
   test("pause leaves alt screen, resume re-enters", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
-    handle = await run(<ConsoleToggleApp />, term, { alternateScreen: true })
+    handle = await run(<ConsoleToggleApp />, term)
 
     await handle.press("`") // open → pause
     expect(term).not.toBeInMode("altScreen")
