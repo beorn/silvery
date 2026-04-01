@@ -609,42 +609,28 @@ function createBackendTerm(emulator: TermEmulator): Term {
   // Paint state — TextFrame snapshot of last painted buffer
   let _frame: TextFrame | undefined
 
+  // Mock stdout feeds emulator instead of real process.stdout.
+  // createApp writes protocol escapes via stdout.write() and listens via stdout.on("resize").
+  const stdoutResizeListeners = new Set<() => void>()
+  const mockStdout = {
+    write: (data: string | Uint8Array) => {
+      emulator.feed(typeof data === "string" ? data : new TextDecoder().decode(data))
+      return true
+    },
+    on: (event: string, handler: () => void) => { if (event === "resize") stdoutResizeListeners.add(handler) },
+    off: (event: string, handler: () => void) => { if (event === "resize") stdoutResizeListeners.delete(handler) },
+    isTTY: true,
+    columns: emulator.cols,
+    rows: emulator.rows,
+  } as unknown as NodeJS.WriteStream
+
   const termBase = {
     hasCursor: () => true,
-    hasInput: () => true, // sendInput() makes this term capable of receiving input
+    hasInput: () => true,
     hasColor: () => "truecolor" as ColorLevel | null,
     hasUnicode: () => true,
     caps: undefined as TerminalCaps | undefined,
-    // Mock stdout that feeds the emulator — not real process.stdout.
-    // createApp writes protocol escapes (alt screen, cursor, etc.) via stdout.write(),
-    // and listens for resize via stdout.on("resize", ...).
-    stdout: (() => {
-      const resizeListeners = new Set<() => void>()
-      const mockStdout = {
-        write: (data: string | Uint8Array) => {
-          emulator.feed(typeof data === "string" ? data : new TextDecoder().decode(data))
-          return true
-        },
-        on(event: string, handler: () => void) {
-          if (event === "resize") resizeListeners.add(handler)
-          return mockStdout
-        },
-        off(event: string, handler: () => void) {
-          if (event === "resize") resizeListeners.delete(handler)
-          return mockStdout
-        },
-        removeListener(event: string, handler: () => void) {
-          if (event === "resize") resizeListeners.delete(handler)
-          return mockStdout
-        },
-        fd: 1,
-        isTTY: true,
-        columns: emulator.cols,
-        rows: emulator.rows,
-        _resizeListeners: resizeListeners,
-      }
-      return mockStdout
-    })() as unknown as NodeJS.WriteStream,
+    stdout: mockStdout,
     stdin: process.stdin,
     write: (str: string) => emulator.feed(str),
     writeLine: (str: string) => emulator.feed(str + "\n"),
@@ -679,12 +665,10 @@ function createBackendTerm(emulator: TermEmulator): Term {
         eventResolve = null
         resolve()
       }
-      // Update mock stdout dimensions and fire resize listeners
-      // (createApp in non-headless mode listens via stdout.on("resize", ...))
-      const mockStdout = termBase.stdout as unknown as { columns: number; rows: number; _resizeListeners: Set<() => void> }
-      mockStdout.columns = cols
-      mockStdout.rows = rows
-      mockStdout._resizeListeners?.forEach((l) => l())
+      // Update mock stdout dimensions and fire resize listeners for createApp
+      ;(mockStdout as any).columns = cols
+      ;(mockStdout as any).rows = rows
+      stdoutResizeListeners.forEach((l) => l())
     },
     /** Inject raw terminal input as if the user typed it.
      *  Parsed and pushed into the event queue, flowing through the full
@@ -743,45 +727,26 @@ function createBackendTerm(emulator: TermEmulator): Term {
     },
   }
 
-  // Add getters on termBase — Proxy intercepts all property access through termBase first,
-  // so Object.defineProperty on the Proxy result won't work for these.
-  Object.defineProperty(termBase, "cols", { get: () => emulator.cols, enumerable: true })
-  Object.defineProperty(termBase, "rows", { get: () => emulator.rows, enumerable: true })
-  Object.defineProperty(termBase, "screen", { get: () => emulator.screen, enumerable: true })
-  Object.defineProperty(termBase, "frame", { get: () => _frame, enumerable: true })
-  Object.defineProperty(termBase, "scrollback", {
-    get: () => emulator.scrollback,
-    enumerable: true,
+  // Delegate emulator getters — must be on termBase (not Proxy) so the
+  // mixed-style Proxy's has/get traps see them.
+  Object.defineProperties(termBase, {
+    cols: { get: () => emulator.cols, enumerable: true },
+    rows: { get: () => emulator.rows, enumerable: true },
+    screen: { get: () => emulator.screen, enumerable: true },
+    scrollback: { get: () => emulator.scrollback, enumerable: true },
+    frame: { get: () => _frame, enumerable: true },
   })
 
-  // Delegate ALL methods/properties from the emulator to Term so that
-  // termless matchers work directly: expect(term).toBeInMode("altScreen").
-  // Term is a strict superset of the underlying terminal — no cherry-picking.
-  for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(emulator))) {
-    if (key === "constructor" || key in termBase) continue
-    const desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(emulator), key)
-    if (desc && typeof desc.value === "function") {
-      Object.defineProperty(termBase, key, {
-        value: (...args: unknown[]) => (emulator as any)[key](...args),
-        enumerable: false,
-      })
-    }
-  }
-  // Also delegate own properties (not just prototype methods)
+  // Delegate all remaining emulator methods/properties to Term so termless
+  // matchers work: expect(term).toBeInMode("altScreen"). Emulator is a plain
+  // object (factory pattern), so Object.keys() catches everything.
   for (const key of Object.keys(emulator)) {
     if (key in termBase) continue
     const val = (emulator as any)[key]
-    if (typeof val === "function") {
-      Object.defineProperty(termBase, key, {
-        value: (...args: unknown[]) => (emulator as any)[key](...args),
-        enumerable: false,
-      })
-    } else {
-      Object.defineProperty(termBase, key, {
-        get: () => (emulator as any)[key],
-        enumerable: false,
-      })
-    }
+    Object.defineProperty(termBase, key, typeof val === "function"
+      ? { value: (...args: unknown[]) => (emulator as any)[key](...args) }
+      : { get: () => (emulator as any)[key] },
+    )
   }
 
   const term = createMixedStyle(styleInstance, termBase) as unknown as Term
