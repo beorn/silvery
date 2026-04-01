@@ -305,12 +305,10 @@ export async function run(
         alternateScreen: true,
         ...termOptions,
         stdin: mockStdin,
-        stdout: term.stdout, // Feeds emulator — protocol escapes (alt screen, cursor) reach the emulator
-        guardOutput: false, // Don't monkeypatch process.stdout — we're in a test/emulator context
+        stdout: term.stdout, // Feeds emulator — protocol escapes reach the emulator
+        guardOutput: false, // Don't monkeypatch process.stdout in test/emulator context
         cols: term.cols ?? 80,
         rows: term.rows ?? 24,
-        // Wire resize: term.subscribe() fires when term.resize() is called
-        onResize: (handler) => term.subscribe((state) => handler(state)),
       })
       return wrapHandle(handle)
     }

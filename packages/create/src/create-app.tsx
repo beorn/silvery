@@ -95,6 +95,8 @@ import {
   KittyFlags,
   enableMouse,
   disableMouse,
+  enterAlternateScreen,
+  leaveAlternateScreen,
 } from "@silvery/ag-term/output"
 import { enableFocusReporting, disableFocusReporting } from "@silvery/ag-term/focus-reporting"
 import { detectKittyFromStdio } from "@silvery/ag-term/kitty-detect"
@@ -1426,16 +1428,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         outputGuard.dispose()
         outputGuard = null
       }
-      // Leave alt screen + show cursor so the normal scrollback is visible
-      if (alternateScreen) {
-        stdout.write("\x1b[?25h\x1b[?1049l")
-      }
+      if (alternateScreen) stdout.write(leaveAlternateScreen())
     }
     runtimeContextValue.resume = () => {
-      // Re-enter alt screen + clear + hide cursor
-      if (alternateScreen) {
-        stdout.write("\x1b[?1049h\x1b[2J\x1b[H\x1b[?25l")
-      }
+      if (alternateScreen) stdout.write(enterAlternateScreen())
       renderPaused = false
       // Re-create the output guard (disposed during pause)
       if (shouldGuardOutput && !outputGuard) {

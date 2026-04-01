@@ -612,7 +612,7 @@ function createBackendTerm(emulator: TermEmulator): Term {
   // Mock stdout feeds emulator instead of real process.stdout.
   // createApp writes protocol escapes via stdout.write() and listens via stdout.on("resize").
   const stdoutResizeListeners = new Set<() => void>()
-  const mockStdout = {
+  const mockStdout: { columns: number; rows: number } & Record<string, unknown> = {
     write: (data: string | Uint8Array) => {
       emulator.feed(typeof data === "string" ? data : new TextDecoder().decode(data))
       return true
@@ -622,7 +622,7 @@ function createBackendTerm(emulator: TermEmulator): Term {
     isTTY: true,
     columns: emulator.cols,
     rows: emulator.rows,
-  } as unknown as NodeJS.WriteStream
+  }
 
   const termBase = {
     hasCursor: () => true,
@@ -630,7 +630,7 @@ function createBackendTerm(emulator: TermEmulator): Term {
     hasColor: () => "truecolor" as ColorLevel | null,
     hasUnicode: () => true,
     caps: undefined as TerminalCaps | undefined,
-    stdout: mockStdout,
+    stdout: mockStdout as unknown as NodeJS.WriteStream,
     stdin: process.stdin,
     write: (str: string) => emulator.feed(str),
     writeLine: (str: string) => emulator.feed(str + "\n"),
@@ -666,8 +666,8 @@ function createBackendTerm(emulator: TermEmulator): Term {
         resolve()
       }
       // Update mock stdout dimensions and fire resize listeners for createApp
-      ;(mockStdout as any).columns = cols
-      ;(mockStdout as any).rows = rows
+      mockStdout.columns = cols
+      mockStdout.rows = rows
       stdoutResizeListeners.forEach((l) => l())
     },
     /** Inject raw terminal input as if the user typed it.
