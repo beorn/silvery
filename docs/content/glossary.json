@@ -397,6 +397,18 @@
     "external": true
   },
   {
+    "term": "ED2",
+    "tooltip": "Erase entire screen — CSI 2 J clears all visible cells without affecting scrollback",
+    "href": "https://terminfo.dev/erase/ed-2-erase-screen",
+    "external": true
+  },
+  {
+    "term": "ED3",
+    "tooltip": "Erase screen + scrollback — CSI 3 J clears visible screen and the entire scrollback buffer",
+    "href": "https://terminfo.dev/erase/ed-3-erase-scrollback",
+    "external": true
+  },
+  {
     "term": "Kitty keyboard protocol",
     "href": "/guide/kitty-protocol",
     "tooltip": "Modern keyboard input protocol with key release events, modifiers, and full Unicode support"
