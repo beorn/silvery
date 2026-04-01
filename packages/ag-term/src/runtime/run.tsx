@@ -302,9 +302,11 @@ export async function run(
 
       const app = createApp(() => () => ({}))
       const handle = await app.run(element, {
+        alternateScreen: true,
         ...termOptions,
         stdin: mockStdin,
-        writable: { write: (s: string) => emulator.feed(s) },
+        stdout: term.stdout, // Feeds emulator — protocol escapes (alt screen, cursor) reach the emulator
+        guardOutput: false, // Don't monkeypatch process.stdout — we're in a test/emulator context
         cols: term.cols ?? 80,
         rows: term.rows ?? 24,
         // Wire resize: term.subscribe() fires when term.resize() is called

@@ -615,7 +615,36 @@ function createBackendTerm(emulator: TermEmulator): Term {
     hasColor: () => "truecolor" as ColorLevel | null,
     hasUnicode: () => true,
     caps: undefined as TerminalCaps | undefined,
-    stdout: process.stdout,
+    // Mock stdout that feeds the emulator — not real process.stdout.
+    // createApp writes protocol escapes (alt screen, cursor, etc.) via stdout.write(),
+    // and listens for resize via stdout.on("resize", ...).
+    stdout: (() => {
+      const resizeListeners = new Set<() => void>()
+      const mockStdout = {
+        write: (data: string | Uint8Array) => {
+          emulator.feed(typeof data === "string" ? data : new TextDecoder().decode(data))
+          return true
+        },
+        on(event: string, handler: () => void) {
+          if (event === "resize") resizeListeners.add(handler)
+          return mockStdout
+        },
+        off(event: string, handler: () => void) {
+          if (event === "resize") resizeListeners.delete(handler)
+          return mockStdout
+        },
+        removeListener(event: string, handler: () => void) {
+          if (event === "resize") resizeListeners.delete(handler)
+          return mockStdout
+        },
+        fd: 1,
+        isTTY: true,
+        columns: emulator.cols,
+        rows: emulator.rows,
+        _resizeListeners: resizeListeners,
+      }
+      return mockStdout
+    })() as unknown as NodeJS.WriteStream,
     stdin: process.stdin,
     write: (str: string) => emulator.feed(str),
     writeLine: (str: string) => emulator.feed(str + "\n"),
@@ -650,6 +679,12 @@ function createBackendTerm(emulator: TermEmulator): Term {
         eventResolve = null
         resolve()
       }
+      // Update mock stdout dimensions and fire resize listeners
+      // (createApp in non-headless mode listens via stdout.on("resize", ...))
+      const mockStdout = termBase.stdout as unknown as { columns: number; rows: number; _resizeListeners: Set<() => void> }
+      mockStdout.columns = cols
+      mockStdout.rows = rows
+      mockStdout._resizeListeners?.forEach((l) => l())
     },
     /** Inject raw terminal input as if the user typed it.
      *  Parsed and pushed into the event queue, flowing through the full

@@ -1421,13 +1421,21 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     runtimeContextValue.pause = () => {
       renderPaused = true
       // Temporarily dispose the output guard so console-mode writes
-      // (e.g., alt screen exit, log dump) reach the terminal directly.
+      // (e.g., log dump) reach the terminal directly.
       if (outputGuard) {
         outputGuard.dispose()
         outputGuard = null
       }
+      // Leave alt screen + show cursor so the normal scrollback is visible
+      if (alternateScreen) {
+        stdout.write("\x1b[?25h\x1b[?1049l")
+      }
     }
     runtimeContextValue.resume = () => {
+      // Re-enter alt screen + clear + hide cursor
+      if (alternateScreen) {
+        stdout.write("\x1b[?1049h\x1b[2J\x1b[H\x1b[?25l")
+      }
       renderPaused = false
       // Re-create the output guard (disposed during pause)
       if (shouldGuardOutput && !outputGuard) {
