@@ -1,6 +1,6 @@
 # Layout Engine
 
-Silvery uses a pluggable layout engine architecture. It supports [Flexily](https://beorn.github.io/flexily) (pure JavaScript, recommended) and [Yoga](https://yogalayout.dev/) (Facebook's WASM-based flexbox implementation).
+Silvery uses a pluggable layout engine architecture. It supports [Flexily](https://beorn.codes/flexily) (pure JavaScript, recommended) and [Yoga](https://yogalayout.dev/) (Facebook's WASM-based flexbox implementation).
 
 ## Quick Start
 
@@ -19,7 +19,7 @@ await render(<App />, term)
 Flexily is a pure JavaScript layout engine with a Yoga-compatible API. It's the recommended choice because:
 
 - **No WASM** - Works everywhere, no binary dependencies
-- **Smaller bundle** - ~30KB vs ~170KB for Yoga
+- **Smaller bundle** — ~19 KB gzipped vs ~53 KB for Yoga
 - **Synchronous initialization** - No async dance needed
 - **Better for testing** - Deterministic, no platform-specific WASM behavior
 
@@ -135,7 +135,7 @@ if (!isLayoutEngineInitialized()) {
 | ------------------- | ------------------------ | --------------------- |
 | Initialization      | Async (WASM loading)     | Sync                  |
 | Performance         | Faster for large trees   | Good for small-medium |
-| Bundle size         | ~170KB (WASM)            | ~30KB                 |
+| Bundle size (gzip)  | ~53 KB                   | ~19 KB                |
 | Environment support | Needs WASM runtime       | Works everywhere      |
 | Spec compliance     | Reference implementation | Yoga-compatible       |
 
@@ -150,7 +150,7 @@ if (!isLayoutEngineInitialized()) {
 - **Quick prototypes** - No async initialization dance
 - **Simple layouts** - Performance difference is negligible
 - **WASM-restricted environments** - Some serverless/edge runtimes
-- **Bundle size concerns** - Flexily is significantly smaller
+- **Bundle size concerns** — Flexily is ~3x smaller
 
 ## Performance Characteristics
 

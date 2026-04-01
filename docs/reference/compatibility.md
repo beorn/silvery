@@ -78,7 +78,7 @@ await app.run()
 | `overflow` values       | `visible`, `hidden` | `visible`, `hidden`, `scroll` | Scrolling support              |
 | Internal APIs           | Exposed             | Hidden                        | Not public API                 |
 
-> **Layout engine note**: Silvery defaults to [Flexily](https://beorn.github.io/flexily), which follows the W3C CSS spec where Yoga diverges. For exact Ink layout parity (e.g., `flexWrap`, `alignContent`, percentage `flexBasis`), use Yoga as the layout engine. See [Flexily vs Yoga Philosophy](/guide/silvery-vs-ink#flexily-vs-yoga-philosophy).
+> **Layout engine note**: Silvery defaults to [Flexily](https://beorn.codes/flexily), which follows the W3C CSS spec where Yoga diverges. For exact Ink layout parity (e.g., `flexWrap`, `alignContent`, percentage `flexBasis`), use Yoga as the layout engine. See [Flexily vs Yoga Philosophy](/guide/silvery-vs-ink#flexily-vs-yoga-philosophy).
 
 ### Flexbox Props
 

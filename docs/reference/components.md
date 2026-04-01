@@ -298,7 +298,7 @@ const { range, scrollToItem, getKey } = useVirtualizer({
 Captures `console.log` / `console.error` output and renders it as a component.
 
 ```tsx
-import { render, Console, patchConsole } from "@silvery/ag-term"
+import { render, Console, patchConsole } from "silvery"
 
 function App({ console: patched }) {
   return (
@@ -318,7 +318,7 @@ await render(<App console={patched} />, term)
 Basic text input with onChange/onSubmit:
 
 ```tsx
-import { TextInput } from "@silvery/ag-term"
+import { TextInput } from "silvery"
 
 function Search() {
   return (
@@ -337,7 +337,7 @@ function Search() {
 Multi-line text input with word wrapping, scrolling, and cursor movement.
 
 ```tsx
-import { TextArea } from "@silvery/ag-term"
+import { TextArea } from "silvery"
 
 const [value, setValue] = useState("")
 <TextArea
@@ -374,7 +374,7 @@ Keyboard shortcuts: Arrow keys, Home/End, Ctrl+Home/End (document start/end), Ct
 Renders a terminal hyperlink using OSC 8 escape sequences. In supporting terminals (iTerm2, Ghostty, Kitty, etc.), the text is clickable. Also registers an `onClick` handler for mouse-driven interaction within Silvery.
 
 ```tsx
-import { Link } from "@silvery/ag-term"
+import { Link } from "silvery"
 
 <Link href="https://example.com">Visit Example</Link>
 <Link href="https://example.com" color="green">Green Link</Link>
@@ -396,7 +396,7 @@ import { Link } from "@silvery/ag-term"
 Applies a string transformation to each line of rendered text output. Compatible with Ink's Transform component.
 
 ```tsx
-import { Transform, Text } from "@silvery/ag-term"
+import { Transform, Text } from "silvery"
 
 // Uppercase all text
 <Transform transform={output => output.toUpperCase()}>
@@ -421,7 +421,7 @@ The transform should not change the dimensions of the output (e.g., adding chara
 Renders a bitmap image in the terminal using Kitty graphics or Sixel protocol, with automatic protocol detection and text fallback.
 
 ```tsx
-import { Image } from "@silvery/ag-term"
+import { Image } from "silvery"
 
 // From a PNG buffer
 <Image src={pngBuffer} width={40} height={15} />
@@ -446,7 +446,7 @@ The component operates in two phases: during layout it renders a Box that reserv
 **Protocol detection helpers:**
 
 ```tsx
-import { isKittyGraphicsSupported, isSixelSupported } from "@silvery/ag-term"
+import { isKittyGraphicsSupported, isSixelSupported } from "silvery"
 
 if (isKittyGraphicsSupported()) {
   /* Kitty graphics available */
@@ -459,8 +459,8 @@ if (isSixelSupported()) {
 **Low-level encoding functions:**
 
 ```tsx
-import { encodeKittyImage, deleteKittyImage } from "@silvery/ag-term"
-import { encodeSixel } from "@silvery/ag-term"
+import { encodeKittyImage, deleteKittyImage } from "silvery"
+import { encodeSixel } from "silvery"
 
 const kittySeq = encodeKittyImage(pngBuffer, { id: 1, cols: 40, rows: 15 })
 const deleteSeq = deleteKittyImage(1)
@@ -472,7 +472,7 @@ const sixelSeq = encodeSixel({ pixels, width: 320, height: 240 })
 An animated loading spinner with multiple built-in styles.
 
 ```tsx
-import { Spinner } from "@silvery/ag-term"
+import { Spinner } from "silvery"
 
 <Spinner />
 <Spinner type="arc" label="Loading..." />
@@ -490,7 +490,7 @@ import { Spinner } from "@silvery/ag-term"
 A terminal progress bar with determinate and indeterminate modes.
 
 ```tsx
-import { ProgressBar } from "@silvery/ag-term"
+import { ProgressBar } from "silvery"
 
 <ProgressBar value={0.5} />
 <ProgressBar value={0.75} color="green" label="Downloading..." />
@@ -512,7 +512,7 @@ import { ProgressBar } from "@silvery/ag-term"
 A keyboard-navigable single-select list with controlled and uncontrolled modes.
 
 ```tsx
-import { SelectList } from "@silvery/ag-term"
+import { SelectList } from "silvery"
 
 const items = [
   { label: "Apple", value: "apple" },
@@ -540,7 +540,7 @@ Keyboard: `j`/`Down` to move down, `k`/`Up` to move up, `Enter` to select, `Ctrl
 A data table with headers, column alignment, and auto-sized columns.
 
 ```tsx
-import { Table } from "@silvery/ag-term"
+import { Table } from "silvery"
 
 function Users() {
   return (
@@ -573,7 +573,7 @@ Column `align` supports `"left"` (default), `"right"`, and `"center"`. Columns a
 A small inline label for status display.
 
 ```tsx
-import { Badge } from "@silvery/ag-term"
+import { Badge } from "silvery"
 
 <Badge label="Active" variant="success" />
 <Badge label="Warning" variant="warning" />
@@ -591,7 +591,7 @@ import { Badge } from "@silvery/ag-term"
 A horizontal separator line with optional centered title.
 
 ```tsx
-import { Divider } from "@silvery/ag-term"
+import { Divider } from "silvery"
 
 <Divider />
 <Divider title="Section" />

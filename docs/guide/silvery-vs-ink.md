@@ -76,7 +76,7 @@ Both are React renderers at the core. The rendering architecture is the primary 
 | **Dynamic scrollback**    | `useScrollback` -- items graduate from interactive area to terminal history (like Claude Code needs)   | None -- all items must stay in the render tree                                                                                                   |
 | **Text truncation**       | Automatic, ANSI-aware; text clips at Box boundaries                                                    | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                                    |
 | **CSS/W3C alignment**     | Flexbox defaults match W3C spec (`flexDirection: row`); `outlineStyle` (CSS outline, no layout impact) | Non-standard defaults (`flexDirection: column`); no outline                                                                                      |
-| **Layout engines**        | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga WASM -- pluggable                   | Yoga WASM only (`yoga-layout` v3)                                                                                                                |
+| **Layout engines**        | [Flexily](https://beorn.codes/flexily) (19 KB gzip, pure JS) or Yoga WASM — pluggable              | Yoga WASM only (`yoga-layout` v3)                                                                                                                |
 | **Render targets**        | Terminal, Canvas 2D, DOM (experimental)                                                                | Terminal only                                                                                                                                    |
 | **Native dependencies**   | None -- pure TypeScript                                                                                | Yoga WASM binary blob (no native compilation, but not pure JS)                                                                                   |
 | **Memory profile**        | Constant -- Flexily uses normal JS GC                                                                  | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953))       |
@@ -260,7 +260,7 @@ Silvery supports pluggable layout engines with the same flexbox API:
 
 |                    | Flexily (default) | Yoga (WASM) |
 | ------------------ | ----------------- | ----------- |
-| Size (gzip)        | 7 KB              | 38 KB       |
+| Size (gzip)        | 19 KB             | 53 KB       |
 | Language           | Pure JS           | C++ -> WASM |
 | Initialization     | Synchronous       | Async       |
 | 100-node layout    | 85 us             | 88 us       |
@@ -268,7 +268,7 @@ Silvery supports pluggable layout engines with the same flexbox API:
 | RTL direction      | Supported         | Supported   |
 | Baseline alignment | Not supported     | Supported   |
 
-Both are fast enough for 60fps terminal UIs. Flexily is 5x smaller with comparable performance. See the [Flexily docs](https://beorn.github.io/flexily) for details.
+Both are fast enough for 60fps terminal UIs. Flexily is ~3x smaller with comparable performance. See the [Flexily docs](https://beorn.codes/flexily) for details.
 
 ### Flexily vs Yoga Philosophy
 

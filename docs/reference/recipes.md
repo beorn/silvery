@@ -5,7 +5,7 @@ Common patterns for building Silvery apps.
 ## Modal Dialog
 
 ```tsx
-import { Box, Text, useInputLayer } from "@silvery/ag-term"
+import { Box, Text, useInputLayer } from "silvery"
 
 function ConfirmDialog({ message, onConfirm, onCancel }) {
   useInputLayer("confirm-dialog", (input, key) => {
@@ -52,7 +52,7 @@ function App() {
 ## Search-Filter List
 
 ```tsx
-import { Box, Text, TextInput, useContentRect } from "@silvery/ag-term"
+import { Box, Text, TextInput, useContentRect } from "silvery"
 
 function FilterList({ items }) {
   const [query, setQuery] = useState("")
@@ -88,7 +88,7 @@ function FilterList({ items }) {
 ## Master-Detail Layout
 
 ```tsx
-import { Box, Text, useContentRect } from "@silvery/ag-term"
+import { Box, Text, useContentRect } from "silvery"
 
 function MasterDetail({ items, selectedIndex }) {
   const selected = items[selectedIndex]
@@ -117,7 +117,7 @@ function MasterDetail({ items, selectedIndex }) {
 ## Streaming Output (AI/LLM)
 
 ```tsx
-import { Box, Text, Static } from "@silvery/ag-term"
+import { Box, Text, Static } from "silvery"
 
 function StreamingChat({ messages, streamingText }) {
   return (
@@ -152,7 +152,7 @@ function StreamingChat({ messages, streamingText }) {
 Pin a footer or status bar to the bottom of a container using `stickyBottom`:
 
 ```tsx
-import { Box, Text } from "@silvery/ag-term"
+import { Box, Text } from "silvery"
 
 function Layout({ children }) {
   return (
@@ -173,7 +173,7 @@ grows to fill the container, the footer moves to its natural position
 ## Progress Tracking
 
 ```tsx
-import { Box, Text, ProgressBar, Spinner } from "@silvery/ag-term"
+import { Box, Text, ProgressBar, Spinner } from "silvery"
 
 function TaskProgress({ tasks }) {
   const done = tasks.filter((t) => t.status === "done").length
