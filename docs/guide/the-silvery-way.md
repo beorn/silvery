@@ -8,7 +8,7 @@ Each principle is something people get wrong. If you're coming from Ink, Blessed
 
 ## 1. Use the Built-in Components
 
-[`silvery/ui`](/reference/packages) ships 30+ components. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
+Silvery ships 36 components — all available from `import { ... } from "silvery"`. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
 
 ::: tip ✨ Shiny
 
@@ -470,7 +470,7 @@ Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If y
 
 ## The Silvery Way, at a Glance
 
-1. **Use the built-in components** — don't reimplement what [`silvery/ui`](/reference/packages) already handles
+1. **Use the built-in components** — don't reimplement what silvery already ships
 2. **Think in flexbox** — let the layout engine do the math
 3. **Let the framework scroll** — `overflow="scroll"`, not manual slicing
 4. **Control focus** — use the focus tree, not guard clauses
