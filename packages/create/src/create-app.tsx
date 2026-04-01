@@ -1420,9 +1420,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   if (!headless) {
     runtimeContextValue.pause = () => {
       renderPaused = true
+      // Temporarily dispose the output guard so console-mode writes
+      // (e.g., alt screen exit, log dump) reach the terminal directly.
+      if (outputGuard) {
+        outputGuard.dispose()
+        outputGuard = null
+      }
     }
     runtimeContextValue.resume = () => {
       renderPaused = false
+      // Re-create the output guard (disposed during pause)
+      if (shouldGuardOutput && !outputGuard) {
+        outputGuard = createOutputGuard()
+      }
       // Reset diff state so next render outputs a full frame.
       // The screen was cleared when entering console mode, so
       // incremental diffing would produce an incomplete frame.
