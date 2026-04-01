@@ -345,6 +345,112 @@ export interface Term extends Disposable, StyleChain {
 }
 
 // =============================================================================
+// Shared Helpers
+// =============================================================================
+
+/** Parse raw terminal input into typed events (key, mouse, paste, focus). */
+function parseInputEvents(data: string): ProviderEvent<TermEvents>[] {
+  const events: ProviderEvent<TermEvents>[] = []
+  const pasteResult = parseBracketedPaste(data)
+  if (pasteResult) {
+    events.push({ type: "paste", data: { text: pasteResult.content } })
+  } else {
+    for (const raw of splitRawInput(data)) {
+      const focusEvent = parseFocusEvent(raw)
+      if (focusEvent) {
+        events.push({ type: "focus", data: { focused: focusEvent.type === "focus-in" } })
+        continue
+      }
+      if (isMouseSequence(raw)) {
+        const parsed = parseMouseSequence(raw)
+        if (parsed) events.push({ type: "mouse", data: parsed })
+        continue
+      }
+      const [input, key] = parseKey(raw)
+      events.push({ type: "key", data: { input, key } })
+    }
+  }
+  return events
+}
+
+/** Event queue with async generator for term providers. */
+function createEventQueue(controller: AbortController) {
+  const queue: ProviderEvent<TermEvents>[] = []
+  let resolve: (() => void) | null = null
+  let disposed = false
+
+  function push(...events: ProviderEvent<TermEvents>[]) {
+    queue.push(...events)
+    if (resolve) { const r = resolve; resolve = null; r() }
+  }
+
+  async function* events(): AsyncIterable<ProviderEvent<TermEvents>> {
+    if (disposed) return
+    while (!disposed && !controller.signal.aborted) {
+      if (queue.length === 0) {
+        await new Promise<void>((r) => {
+          resolve = r
+          controller.signal.addEventListener("abort", () => r(), { once: true })
+        })
+      }
+      if (disposed || controller.signal.aborted) break
+      while (queue.length > 0) yield queue.shift()!
+    }
+  }
+
+  return {
+    push,
+    events,
+    dispose() { disposed = true },
+  }
+}
+
+/** Mock stdout that feeds a terminal emulator and supports resize events. */
+function createEmulatorStdout(feed: (data: string) => void, cols: number, rows: number) {
+  const resizeListeners = new Set<() => void>()
+  const stdout: { columns: number; rows: number } & Record<string, unknown> = {
+    write: (data: string | Uint8Array) => {
+      feed(typeof data === "string" ? data : new TextDecoder().decode(data))
+      return true
+    },
+    on: (event: string, handler: () => void) => { if (event === "resize") resizeListeners.add(handler) },
+    off: (event: string, handler: () => void) => { if (event === "resize") resizeListeners.delete(handler) },
+    isTTY: true,
+    columns: cols,
+    rows: rows,
+  }
+  return { stdout: stdout as unknown as NodeJS.WriteStream, resizeListeners }
+}
+
+/**
+ * Finalize termBase into a Term: add frame getter, delegate emulator properties,
+ * wrap with style chain Proxy.
+ */
+function finalizeTerm(
+  style: Style,
+  termBase: Record<string, unknown>,
+  frame: { get: () => TextFrame | undefined },
+  opts?: {
+    defineProperties?: Record<string, PropertyDescriptor>
+    delegateFrom?: object
+  },
+): Term {
+  Object.defineProperty(termBase, "frame", { get: frame.get, enumerable: true })
+  if (opts?.defineProperties) Object.defineProperties(termBase, opts.defineProperties)
+  if (opts?.delegateFrom) {
+    for (const key of Object.keys(opts.delegateFrom)) {
+      if (key in termBase) continue
+      const val = (opts.delegateFrom as any)[key]
+      Object.defineProperty(termBase, key, typeof val === "function"
+        ? { value: (...args: unknown[]) => (opts.delegateFrom as any)[key](...args) }
+        : { get: () => (opts.delegateFrom as any)[key] },
+      )
+    }
+  }
+  return createMixedStyle(style, termBase) as unknown as Term
+}
+
+// =============================================================================
 // createTerm Factory
 // =============================================================================
 
@@ -466,290 +572,121 @@ function createNodeTerm(options: CreateTermOptions): Term {
     return provider
   }
 
-  // Paint state — TextFrame snapshot of last painted buffer
   let _frame: TextFrame | undefined
 
-  // Base term object with methods
   const termBase = {
-    // Detection methods
-    hasCursor: () => cachedCursor,
-    hasInput: () => cachedInput,
-    hasColor: () => cachedColor,
-    hasUnicode: () => cachedUnicode,
-
-    // Terminal capabilities
+    hasCursor: () => cachedCursor, hasInput: () => cachedInput,
+    hasColor: () => cachedColor, hasUnicode: () => cachedUnicode,
     caps: detectedCaps,
-
-    // Streams
-    stdout,
-    stdin,
-
-    // I/O methods
-    write: (str: string) => {
-      stdout.write(str)
-    },
-    writeLine: (str: string) => {
-      stdout.write(str + "\n")
-    },
-
-    // Provider methods (lazy — Provider created on first access)
+    stdout, stdin,
+    write: (str: string) => { stdout.write(str) },
+    writeLine: (str: string) => { stdout.write(str + "\n") },
     getState: (): TermState => getProvider().getState(),
     subscribe: (listener: (state: TermState) => void): (() => void) => getProvider().subscribe(listener),
     events: (): AsyncIterable<ProviderEvent<TermEvents>> => getProvider().events(),
-
-    // Utilities
     stripAnsi,
-
-    // Paint — diff buffer → ANSI string, update frame
     paint: (buffer: TerminalBuffer, prev: TerminalBuffer | null): string => {
       const output = outputPhase(prev, buffer)
       _frame = createTextFrame(buffer)
       return output
     },
-
-    // Disposable — also disposes the Provider if created
-    [Symbol.dispose]: () => {
-      if (provider) provider[Symbol.dispose]()
-    },
+    [Symbol.dispose]: () => { if (provider) provider[Symbol.dispose]() },
   }
 
-  // Frame getter — last painted TextFrame
-  Object.defineProperty(termBase, "frame", { get: () => _frame, enumerable: true })
-
-  // Create proxy that wraps style for chaining + term methods
-  const term = createMixedStyle(styleInstance, termBase) as unknown as Term
-
-  // Add dynamic dimension getters
-  Object.defineProperty(term, "cols", {
-    get: () => (stdout.isTTY ? stdout.columns : undefined),
-    enumerable: true,
+  return finalizeTerm(styleInstance, termBase, { get: () => _frame }, {
+    defineProperties: {
+      cols: { get: () => (stdout.isTTY ? stdout.columns : undefined), enumerable: true },
+      rows: { get: () => (stdout.isTTY ? stdout.rows : undefined), enumerable: true },
+    },
   })
-
-  Object.defineProperty(term, "rows", {
-    get: () => (stdout.isTTY ? stdout.rows : undefined),
-    enumerable: true,
-  })
-
-  return term as Term
 }
 
-/**
- * Create a headless terminal for testing — no I/O, fixed dimensions.
- */
+/** Create a headless terminal for testing — no I/O, fixed dimensions. */
 function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
-  const state: TermState = { cols: dims.cols, rows: dims.rows }
   let disposed = false
   const controller = new AbortController()
-
-  const styleInstance = createStyle({ level: null })
-
-  // Paint state — TextFrame snapshot of last painted buffer
   let _frame: TextFrame | undefined
 
   const termBase = {
-    hasCursor: () => false,
-    hasInput: () => false,
-    hasColor: () => null as ColorLevel | null,
-    hasUnicode: () => false,
+    hasCursor: () => false, hasInput: () => false,
+    hasColor: () => null as ColorLevel | null, hasUnicode: () => false,
     caps: undefined as TerminalCaps | undefined,
-    stdout: process.stdout,
-    stdin: process.stdin,
-    write: () => {},
-    writeLine: () => {},
-    getState: (): TermState => state,
+    stdout: process.stdout, stdin: process.stdin,
+    write: () => {}, writeLine: () => {},
+    getState: (): TermState => dims,
     subscribe: (): (() => void) => () => {},
     async *events(): AsyncIterable<ProviderEvent<TermEvents>> {
       if (disposed) return
-      await new Promise<void>((resolve) => {
-        controller.signal.addEventListener("abort", () => resolve(), { once: true })
-      })
+      await new Promise<void>((r) => controller.signal.addEventListener("abort", () => r(), { once: true }))
     },
     stripAnsi,
-
-    // Paint — headless: store frame, no output
-    paint: (buffer: TerminalBuffer, prev: TerminalBuffer | null): string => {
-      _frame = createTextFrame(buffer)
-      return ""
-    },
-
-    [Symbol.dispose]: () => {
-      if (disposed) return
-      disposed = true
-      controller.abort()
-    },
+    paint: (_buffer: TerminalBuffer, _prev: TerminalBuffer | null): string => { _frame = createTextFrame(_buffer); return "" },
+    [Symbol.dispose]: () => { if (disposed) return; disposed = true; controller.abort() },
   }
 
-  // Frame getter — last painted TextFrame
-  Object.defineProperty(termBase, "frame", { get: () => _frame, enumerable: true })
-
-  const term = createMixedStyle(styleInstance, termBase) as unknown as Term
-
-  Object.defineProperty(term, "cols", { get: () => dims.cols, enumerable: true })
-  Object.defineProperty(term, "rows", { get: () => dims.rows, enumerable: true })
-
-  return term as Term
+  return finalizeTerm(createStyle({ level: null }), termBase, { get: () => _frame }, {
+    defineProperties: {
+      cols: { get: () => dims.cols, enumerable: true },
+      rows: { get: () => dims.rows, enumerable: true },
+    },
+  })
 }
 
-/**
- * Create a terminal backed by a termless emulator — real ANSI processing, screen/scrollback.
- */
+/** Create a terminal backed by a termless emulator — real ANSI processing, screen/scrollback. */
 function createBackendTerm(emulator: TermEmulator): Term {
-  let disposed = false
   const controller = new AbortController()
-
-  const styleInstance = createStyle({ level: "truecolor" }) // Emulators support truecolor
-
-  // Subscriber support for resize notifications
-  const listeners = new Set<(state: TermState) => void>()
-
-  // Event queue for resize events (consumed by events() async generator)
-  const eventQueue: ProviderEvent<TermEvents>[] = []
-  let eventResolve: (() => void) | null = null
-
-  // Paint state — TextFrame snapshot of last painted buffer
+  const eq = createEventQueue(controller)
+  const { stdout, resizeListeners } = createEmulatorStdout(
+    (s) => emulator.feed(s), emulator.cols, emulator.rows,
+  )
+  const subscribers = new Set<(state: TermState) => void>()
   let _frame: TextFrame | undefined
 
-  // Mock stdout feeds emulator instead of real process.stdout.
-  // createApp writes protocol escapes via stdout.write() and listens via stdout.on("resize").
-  const stdoutResizeListeners = new Set<() => void>()
-  const mockStdout: { columns: number; rows: number } & Record<string, unknown> = {
-    write: (data: string | Uint8Array) => {
-      emulator.feed(typeof data === "string" ? data : new TextDecoder().decode(data))
-      return true
-    },
-    on: (event: string, handler: () => void) => { if (event === "resize") stdoutResizeListeners.add(handler) },
-    off: (event: string, handler: () => void) => { if (event === "resize") stdoutResizeListeners.delete(handler) },
-    isTTY: true,
-    columns: emulator.cols,
-    rows: emulator.rows,
-  }
-
   const termBase = {
-    hasCursor: () => true,
-    hasInput: () => true,
-    hasColor: () => "truecolor" as ColorLevel | null,
-    hasUnicode: () => true,
+    hasCursor: () => true, hasInput: () => true,
+    hasColor: () => "truecolor" as ColorLevel | null, hasUnicode: () => true,
     caps: undefined as TerminalCaps | undefined,
-    stdout: mockStdout as unknown as NodeJS.WriteStream,
-    stdin: process.stdin,
+    stdout, stdin: process.stdin,
     write: (str: string) => emulator.feed(str),
     writeLine: (str: string) => emulator.feed(str + "\n"),
     getState: (): TermState => ({ cols: emulator.cols, rows: emulator.rows }),
     subscribe: (listener: (state: TermState) => void): (() => void) => {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
+      subscribers.add(listener)
+      return () => subscribers.delete(listener)
     },
-    async *events(): AsyncIterable<ProviderEvent<TermEvents>> {
-      if (disposed) return
-      while (!disposed && !controller.signal.aborted) {
-        if (eventQueue.length === 0) {
-          await new Promise<void>((resolve) => {
-            eventResolve = resolve
-            controller.signal.addEventListener("abort", () => resolve(), { once: true })
-          })
-        }
-        if (disposed || controller.signal.aborted) break
-        while (eventQueue.length > 0) {
-          yield eventQueue.shift()!
-        }
-      }
-    },
-    /** Resize the emulator and notify listeners/events */
+    events: () => eq.events(),
     resize: (cols: number, rows: number) => {
       emulator.resize(cols, rows)
-      const state: TermState = { cols, rows }
-      listeners.forEach((l) => l(state))
-      eventQueue.push({ type: "resize", data: { cols, rows } })
-      if (eventResolve) {
-        const resolve = eventResolve
-        eventResolve = null
-        resolve()
-      }
-      // Update mock stdout dimensions and fire resize listeners for createApp
-      mockStdout.columns = cols
-      mockStdout.rows = rows
-      stdoutResizeListeners.forEach((l) => l())
+      subscribers.forEach((l) => l({ cols, rows }))
+      eq.push({ type: "resize", data: { cols, rows } })
+      ;(stdout as any).columns = cols
+      ;(stdout as any).rows = rows
+      resizeListeners.forEach((l) => l())
     },
-    /** Inject raw terminal input as if the user typed it.
-     *  Parsed and pushed into the event queue, flowing through the full
-     *  createApp/run() event pipeline (termProvider → processEventBatch). */
-    sendInput: (data: string) => {
-      // Check for bracketed paste first
-      const pasteResult = parseBracketedPaste(data)
-      if (pasteResult) {
-        eventQueue.push({ type: "paste", data: { text: pasteResult.content } })
-      } else {
-        for (const raw of splitRawInput(data)) {
-          // Focus events: CSI I (focus-in) / CSI O (focus-out)
-          const focusEvent = parseFocusEvent(raw)
-          if (focusEvent) {
-            eventQueue.push({ type: "focus", data: { focused: focusEvent.type === "focus-in" } })
-            continue
-          }
-          // Mouse events
-          if (isMouseSequence(raw)) {
-            const parsed = parseMouseSequence(raw)
-            if (parsed) {
-              eventQueue.push({ type: "mouse", data: parsed })
-            }
-            continue
-          }
-          // Key events
-          const [input, key] = parseKey(raw)
-          eventQueue.push({ type: "key", data: { input, key } })
-        }
-      }
-      // Wake the events() generator
-      if (eventResolve) {
-        const resolve = eventResolve
-        eventResolve = null
-        resolve()
-      }
-    },
+    sendInput: (data: string) => eq.push(...parseInputEvents(data)),
     stripAnsi,
-
-    // Paint — diff buffer → ANSI string, feed emulator, update frame
     paint: (buffer: TerminalBuffer, prev: TerminalBuffer | null): string => {
       const output = outputPhase(prev, buffer)
       if (output) emulator.feed(output)
       _frame = createTextFrame(buffer)
       return output
     },
-
-    // Store emulator for run() to detect and auto-wire writable
     _emulator: emulator,
     [Symbol.dispose]: () => {
-      if (disposed) return
-      disposed = true
+      eq.dispose()
       controller.abort()
-      listeners.clear()
+      subscribers.clear()
       emulator.close().catch(() => {})
     },
   }
 
-  // Delegate emulator getters — must be on termBase (not Proxy) so the
-  // mixed-style Proxy's has/get traps see them.
-  Object.defineProperties(termBase, {
-    cols: { get: () => emulator.cols, enumerable: true },
-    rows: { get: () => emulator.rows, enumerable: true },
-    screen: { get: () => emulator.screen, enumerable: true },
-    scrollback: { get: () => emulator.scrollback, enumerable: true },
-    frame: { get: () => _frame, enumerable: true },
+  return finalizeTerm(createStyle({ level: "truecolor" }), termBase, { get: () => _frame }, {
+    defineProperties: {
+      cols: { get: () => emulator.cols, enumerable: true },
+      rows: { get: () => emulator.rows, enumerable: true },
+      screen: { get: () => emulator.screen, enumerable: true },
+      scrollback: { get: () => emulator.scrollback, enumerable: true },
+    },
+    delegateFrom: emulator,
   })
-
-  // Delegate all remaining emulator methods/properties to Term so termless
-  // matchers work: expect(term).toBeInMode("altScreen"). Emulator is a plain
-  // object (factory pattern), so Object.keys() catches everything.
-  for (const key of Object.keys(emulator)) {
-    if (key in termBase) continue
-    const val = (emulator as any)[key]
-    Object.defineProperty(termBase, key, typeof val === "function"
-      ? { value: (...args: unknown[]) => (emulator as any)[key](...args) }
-      : { get: () => (emulator as any)[key] },
-    )
-  }
-
-  const term = createMixedStyle(styleInstance, termBase) as unknown as Term
-
-  return term as Term
 }
