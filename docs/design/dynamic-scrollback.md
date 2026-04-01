@@ -179,11 +179,7 @@ Items that scroll off the visible screen are automatically virtualized. The app 
 
 ```tsx
 // Items virtualize as they scroll off-screen.
-<ScrollbackView
-  items={messages}
-  keyExtractor={(m) => m.id}
-  footer={<StatusBar />}
->
+<ScrollbackView items={messages} keyExtractor={(m) => m.id} footer={<StatusBar />}>
   {(m) => <Message data={m} />}
 </ScrollbackView>
 ```
@@ -275,15 +271,15 @@ interface ScrollbackViewProps<T> {
 
 ## Architecture Summary
 
-| Aspect                    | Behavior                                                       |
-| ------------------------- | -------------------------------------------------------------- |
-| Zones                     | 3 (live screen, dynamic scrollback, static scrollback)         |
-| Virtualize semantics      | Reversible (pre-render cache, data retained)                   |
-| Resize                    | ED3 + re-emit dynamic zone only (static items dropped)         |
-| Viewport                  | = maxHistory + screen height                                   |
-| Auto-virtualize           | Scroll off screen = auto-virtualize                            |
-| Virtualization resistance | `isFrozen` + `maxDeferLines` for actively-changing items       |
-| Data lifetime             | Retained until crossing the static boundary (`maxHistory`)     |
+| Aspect                    | Behavior                                                   |
+| ------------------------- | ---------------------------------------------------------- |
+| Zones                     | 3 (live screen, dynamic scrollback, static scrollback)     |
+| Virtualize semantics      | Reversible (pre-render cache, data retained)               |
+| Resize                    | ED3 + re-emit dynamic zone only (static items dropped)     |
+| Viewport                  | = maxHistory + screen height                               |
+| Auto-virtualize           | Scroll off screen = auto-virtualize                        |
+| Virtualization resistance | `isFrozen` + `maxDeferLines` for actively-changing items   |
+| Data lifetime             | Retained until crossing the static boundary (`maxHistory`) |
 
 ## DECSTBM: Why Not
 

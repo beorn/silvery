@@ -16,24 +16,24 @@ This page gives an honest comparison so you can pick the right tool for your pro
 
 ## At a Glance
 
-| Aspect | Bubble Tea | Silvery |
-| --- | --- | --- |
-| **Language** | Go | TypeScript |
-| **Layout** | Manual string joining (Lip Gloss) | CSS flexbox (Flexily engine) |
-| **Architecture** | Pure TEA (Model/Update/View) | React components + optional TEA (`@silvery/create`) |
-| **Styling** | Lip Gloss (chainable style functions) | `@silvery/theme` (38 palettes, semantic tokens) |
-| **Components** | Bubbles: ~12 (spinner, textinput, textarea, viewport, table, list, filepicker, paginator, progress, help, timer, stopwatch) | 30+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Image, SplitView, etc.) |
-| **Testing** | `teatest` (Go testing, golden files) | `@silvery/test` (headless renderer, Playwright-style locators) + Termless (terminal emulator) |
-| **Mouse support** | SGR mouse (v2) | SGR mouse with DOM-style events (`onClick`, `onWheel`, `onMouseDown`) |
-| **Keyboard** | Kitty keyboard protocol (v2) | Kitty keyboard, all 5 flags |
-| **Focus system** | Manual (manage in model state) | Tree-based with scopes, spatial navigation, click-to-focus |
-| **Scrolling** | Viewport bubble (manual sizing) | `overflow="scroll"` (native, layout-integrated) |
-| **Clipboard** | OSC 52 (v2) | OSC 52 `copyToClipboard`/`requestClipboard` |
-| **Image rendering** | None (community libraries) | Built-in Kitty graphics + Sixel with auto-detect |
-| **Native deps** | None (compiled Go binary) | None (pure TypeScript) |
-| **Binary size** | Single static binary | Requires Node.js/Bun runtime |
-| **Startup time** | ~1 ms (compiled) | ~50-150 ms (JS runtime init) |
-| **Community** | Large (Go TUI standard) | New |
+| Aspect              | Bubble Tea                                                                                                                  | Silvery                                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Language**        | Go                                                                                                                          | TypeScript                                                                                                                          |
+| **Layout**          | Manual string joining (Lip Gloss)                                                                                           | CSS flexbox (Flexily engine)                                                                                                        |
+| **Architecture**    | Pure TEA (Model/Update/View)                                                                                                | React components + optional TEA (`@silvery/create`)                                                                                 |
+| **Styling**         | Lip Gloss (chainable style functions)                                                                                       | `@silvery/theme` (38 palettes, semantic tokens)                                                                                     |
+| **Components**      | Bubbles: ~12 (spinner, textinput, textarea, viewport, table, list, filepicker, paginator, progress, help, timer, stopwatch) | 30+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Image, SplitView, etc.) |
+| **Testing**         | `teatest` (Go testing, golden files)                                                                                        | `@silvery/test` (headless renderer, Playwright-style locators) + Termless (terminal emulator)                                       |
+| **Mouse support**   | SGR mouse (v2)                                                                                                              | SGR mouse with DOM-style events (`onClick`, `onWheel`, `onMouseDown`)                                                               |
+| **Keyboard**        | Kitty keyboard protocol (v2)                                                                                                | Kitty keyboard, all 5 flags                                                                                                         |
+| **Focus system**    | Manual (manage in model state)                                                                                              | Tree-based with scopes, spatial navigation, click-to-focus                                                                          |
+| **Scrolling**       | Viewport bubble (manual sizing)                                                                                             | `overflow="scroll"` (native, layout-integrated)                                                                                     |
+| **Clipboard**       | OSC 52 (v2)                                                                                                                 | OSC 52 `copyToClipboard`/`requestClipboard`                                                                                         |
+| **Image rendering** | None (community libraries)                                                                                                  | Built-in Kitty graphics + Sixel with auto-detect                                                                                    |
+| **Native deps**     | None (compiled Go binary)                                                                                                   | None (pure TypeScript)                                                                                                              |
+| **Binary size**     | Single static binary                                                                                                        | Requires Node.js/Bun runtime                                                                                                        |
+| **Startup time**    | ~1 ms (compiled)                                                                                                            | ~50-150 ms (JS runtime init)                                                                                                        |
+| **Community**       | Large (Go TUI standard)                                                                                                     | New                                                                                                                                 |
 
 ## Layout
 
@@ -234,7 +234,7 @@ const handle = await run(<App />, term)
 expect(term.screen).toContainText("Dashboard")
 expect(term.cell(0, 10)).toBeBold()
 expect(term.row(0)).toHaveFg({ r: 255, g: 255, b: 255 })
-await handle.press("j")  // Navigate down
+await handle.press("j") // Navigate down
 expect(term.scrollback).toContainText("Previous item")
 ```
 
@@ -252,25 +252,25 @@ For CLIs that start, do one thing, and exit, Go's startup advantage is real. For
 
 The Charm ecosystem is cohesive and well-designed:
 
-| Package | What |
-| --- | --- |
-| [Bubble Tea](https://github.com/charmbracelet/bubbletea) | Core framework |
-| [Bubbles](https://github.com/charmbracelet/bubbles) | Components (spinner, textinput, textarea, viewport, table, list, filepicker, paginator, progress, help, timer, stopwatch) |
-| [Lip Gloss](https://github.com/charmbracelet/lipgloss) | Styling and layout |
-| [Huh](https://github.com/charmbracelet/huh) | Forms and prompts |
-| [Wish](https://github.com/charmbracelet/wish) | SSH server for TUI apps |
-| [Log](https://github.com/charmbracelet/log) | Styled logging |
+| Package                                                  | What                                                                                                                      |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| [Bubble Tea](https://github.com/charmbracelet/bubbletea) | Core framework                                                                                                            |
+| [Bubbles](https://github.com/charmbracelet/bubbles)      | Components (spinner, textinput, textarea, viewport, table, list, filepicker, paginator, progress, help, timer, stopwatch) |
+| [Lip Gloss](https://github.com/charmbracelet/lipgloss)   | Styling and layout                                                                                                        |
+| [Huh](https://github.com/charmbracelet/huh)              | Forms and prompts                                                                                                         |
+| [Wish](https://github.com/charmbracelet/wish)            | SSH server for TUI apps                                                                                                   |
+| [Log](https://github.com/charmbracelet/log)              | Styled logging                                                                                                            |
 
 Silvery's ecosystem is smaller but more integrated:
 
-| Package | What |
-| --- | --- |
-| `silvery` | Core renderer + 30+ components |
-| `@silvery/create` | TEA state machines |
-| `@silvery/test` | Testing (headless + Termless emulator) |
-| `@silvery/theme` | 38 palettes, semantic tokens |
-| `@silvery/commands` | Command system with keybindings |
-| `@silvery/ansi` | Terminal primitives, styling, detection |
+| Package             | What                                    |
+| ------------------- | --------------------------------------- |
+| `silvery`           | Core renderer + 30+ components          |
+| `@silvery/create`   | TEA state machines                      |
+| `@silvery/test`     | Testing (headless + Termless emulator)  |
+| `@silvery/theme`    | 38 palettes, semantic tokens            |
+| `@silvery/commands` | Command system with keybindings         |
+| `@silvery/ansi`     | Terminal primitives, styling, detection |
 
 Bubble Tea benefits from the broader Go ecosystem -- any Go library works alongside it. Silvery benefits from the React/npm ecosystem -- any React pattern (hooks, context, suspense) works inside it.
 

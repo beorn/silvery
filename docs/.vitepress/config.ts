@@ -1,6 +1,12 @@
 import { defineConfig } from "vitepress"
 import llmstxt from "vitepress-plugin-llms"
-import { glossaryPlugin, seoHead, seoTransformPageData, validateGlossary, loadTerminalGlossary } from "@bearly/vitepress-enrich"
+import {
+  glossaryPlugin,
+  seoHead,
+  seoTransformPageData,
+  validateGlossary,
+  loadTerminalGlossary,
+} from "@bearly/vitepress-enrich"
 import siteGlossary from "../content/glossary.json"
 
 // Site-specific terms + shared terminal vocabulary from terminfo.dev
@@ -288,9 +294,7 @@ export default defineConfig({
       {
         text: "Project",
         collapsed: true,
-        items: [
-          { text: "Contributing", link: "/contributing" },
-        ],
+        items: [{ text: "Contributing", link: "/contributing" }],
       },
     ],
 

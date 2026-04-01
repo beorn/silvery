@@ -16,24 +16,24 @@ This page compares them honestly so you can pick the right one.
 
 ## At a Glance
 
-| Aspect | Textual | Silvery |
-| --- | --- | --- |
-| **Language** | Python | TypeScript |
-| **Architecture** | Widget tree + TCSS + reactive attributes | React component tree + CSS flexbox |
-| **Styling** | TCSS (CSS subset in `.tcss` files) | Semantic theme tokens + inline props |
-| **Layout** | Dock, grid, horizontal, vertical | CSS flexbox (Flexily engine) |
-| **Components** | 40+ built-in (DataTable, Input, Button, Select, Tree, TextArea, Markdown, RichLog, Sparkline, Tabs, OptionList, etc.) | 30+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Image, SplitView, etc.) |
-| **Testing** | Pilot mode (async, simulated events) | `@silvery/test` (headless renderer, locators) + Termless (terminal emulator) |
-| **Mouse support** | Full (click, scroll, hover) | SGR protocol with DOM-style events |
-| **Keyboard** | Standard terminal input | Kitty keyboard protocol (all 5 flags) |
-| **Focus system** | Tab-based with focusable widgets | Tree-based with scopes, spatial navigation |
-| **Scrolling** | Built-in per-widget, ScrollableContainer | `overflow="scroll"`, VirtualList |
-| **Clipboard** | Python-level (`pyperclip` etc.) | OSC 52 (works over SSH) |
-| **Image rendering** | None built-in | Kitty graphics + Sixel with auto-detect |
-| **Web target** | Textual Web (serve TUI in browser) | Experimental (Canvas 2D, DOM) |
-| **Runtime** | CPython / PyPy | Node.js / Bun / Deno |
-| **Native deps** | None | None |
-| **Community** | Large (Python TUI standard) | New |
+| Aspect              | Textual                                                                                                               | Silvery                                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Language**        | Python                                                                                                                | TypeScript                                                                                                                          |
+| **Architecture**    | Widget tree + TCSS + reactive attributes                                                                              | React component tree + CSS flexbox                                                                                                  |
+| **Styling**         | TCSS (CSS subset in `.tcss` files)                                                                                    | Semantic theme tokens + inline props                                                                                                |
+| **Layout**          | Dock, grid, horizontal, vertical                                                                                      | CSS flexbox (Flexily engine)                                                                                                        |
+| **Components**      | 40+ built-in (DataTable, Input, Button, Select, Tree, TextArea, Markdown, RichLog, Sparkline, Tabs, OptionList, etc.) | 30+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Image, SplitView, etc.) |
+| **Testing**         | Pilot mode (async, simulated events)                                                                                  | `@silvery/test` (headless renderer, locators) + Termless (terminal emulator)                                                        |
+| **Mouse support**   | Full (click, scroll, hover)                                                                                           | SGR protocol with DOM-style events                                                                                                  |
+| **Keyboard**        | Standard terminal input                                                                                               | Kitty keyboard protocol (all 5 flags)                                                                                               |
+| **Focus system**    | Tab-based with focusable widgets                                                                                      | Tree-based with scopes, spatial navigation                                                                                          |
+| **Scrolling**       | Built-in per-widget, ScrollableContainer                                                                              | `overflow="scroll"`, VirtualList                                                                                                    |
+| **Clipboard**       | Python-level (`pyperclip` etc.)                                                                                       | OSC 52 (works over SSH)                                                                                                             |
+| **Image rendering** | None built-in                                                                                                         | Kitty graphics + Sixel with auto-detect                                                                                             |
+| **Web target**      | Textual Web (serve TUI in browser)                                                                                    | Experimental (Canvas 2D, DOM)                                                                                                       |
+| **Runtime**         | CPython / PyPy                                                                                                        | Node.js / Bun / Deno                                                                                                                |
+| **Native deps**     | None                                                                                                                  | None                                                                                                                                |
+| **Community**       | Large (Python TUI standard)                                                                                           | New                                                                                                                                 |
 
 ## CSS: TCSS vs Flexbox Props
 
@@ -159,45 +159,45 @@ Both frameworks have substantial widget libraries.
 
 Textual ships 40+ widgets. A representative sample:
 
-| Widget | What |
-| --- | --- |
-| `Button` | Clickable button with variants |
-| `Input` | Single-line text input |
-| `TextArea` | Multi-line text editor with syntax highlighting |
-| `DataTable` | Sortable, scrollable data grid |
-| `Tree` | Expandable tree view |
-| `Select` / `SelectionList` | Dropdown and multi-select |
-| `Markdown` / `MarkdownViewer` | Markdown rendering |
-| `RichLog` | Scrollable log output with Rich formatting |
-| `Tabs` / `TabbedContent` | Tabbed container |
-| `Sparkline` | Inline data visualization |
-| `ProgressBar` / `LoadingIndicator` | Progress feedback |
-| `Header` / `Footer` | App chrome |
-| `ListView` / `OptionList` | Scrollable item lists |
-| `DirectoryTree` | File browser |
-| `Switch` / `Checkbox` / `RadioButton` | Toggle controls |
+| Widget                                | What                                            |
+| ------------------------------------- | ----------------------------------------------- |
+| `Button`                              | Clickable button with variants                  |
+| `Input`                               | Single-line text input                          |
+| `TextArea`                            | Multi-line text editor with syntax highlighting |
+| `DataTable`                           | Sortable, scrollable data grid                  |
+| `Tree`                                | Expandable tree view                            |
+| `Select` / `SelectionList`            | Dropdown and multi-select                       |
+| `Markdown` / `MarkdownViewer`         | Markdown rendering                              |
+| `RichLog`                             | Scrollable log output with Rich formatting      |
+| `Tabs` / `TabbedContent`              | Tabbed container                                |
+| `Sparkline`                           | Inline data visualization                       |
+| `ProgressBar` / `LoadingIndicator`    | Progress feedback                               |
+| `Header` / `Footer`                   | App chrome                                      |
+| `ListView` / `OptionList`             | Scrollable item lists                           |
+| `DirectoryTree`                       | File browser                                    |
+| `Switch` / `Checkbox` / `RadioButton` | Toggle controls                                 |
 
 ### Silvery Components
 
 Silvery ships 30+ components:
 
-| Component | What |
-| --- | --- |
-| `TextInput` | Single-line with readline (Ctrl+A/E/K/U, Alt+B/F) |
-| `TextArea` | Multi-line with word wrap, scroll, undo/redo |
-| `SelectList` | Interactive list with j/k navigation |
-| `VirtualList` | Virtualized scrolling for large datasets |
-| `Table` | Tabular data display |
-| `TreeView` | Expandable tree |
-| `Tabs` | Tabbed navigation |
-| `CommandPalette` | Fuzzy command search (VS Code-style) |
-| `ModalDialog` | Modal with focus trapping |
-| `Toast` | Notification popups |
-| `Spinner` / `ProgressBar` | Progress feedback |
-| `Image` | Kitty graphics / Sixel with auto-detect |
-| `SplitView` | Resizable split panes |
-| `Console` | Composable console output |
-| `Link` | OSC 8 clickable hyperlinks |
+| Component                 | What                                              |
+| ------------------------- | ------------------------------------------------- |
+| `TextInput`               | Single-line with readline (Ctrl+A/E/K/U, Alt+B/F) |
+| `TextArea`                | Multi-line with word wrap, scroll, undo/redo      |
+| `SelectList`              | Interactive list with j/k navigation              |
+| `VirtualList`             | Virtualized scrolling for large datasets          |
+| `Table`                   | Tabular data display                              |
+| `TreeView`                | Expandable tree                                   |
+| `Tabs`                    | Tabbed navigation                                 |
+| `CommandPalette`          | Fuzzy command search (VS Code-style)              |
+| `ModalDialog`             | Modal with focus trapping                         |
+| `Toast`                   | Notification popups                               |
+| `Spinner` / `ProgressBar` | Progress feedback                                 |
+| `Image`                   | Kitty graphics / Sixel with auto-detect           |
+| `SplitView`               | Resizable split panes                             |
+| `Console`                 | Composable console output                         |
+| `Link`                    | OSC 8 clickable hyperlinks                        |
 
 Textual's widget library is larger and more mature. Silvery's is smaller but includes some unique components (CommandPalette, Image, SplitView) and all components integrate with the framework's focus system and input layering.
 
@@ -230,7 +230,7 @@ function Counter() {
   return (
     <Box>
       <Text>{count}</Text>
-      <Button onPress={() => setCount(c => c + 1)}>+1</Button>
+      <Button onPress={() => setCount((c) => c + 1)}>+1</Button>
     </Box>
   )
 }
@@ -281,7 +281,7 @@ const handle = await run(<App />, term)
 expect(term.screen).toContainText("Dashboard")
 expect(term.cell(0, 10)).toBeBold()
 expect(term.row(0)).toHaveFg({ r: 255, g: 255, b: 255 })
-await handle.press("j")  // Navigate down
+await handle.press("j") // Navigate down
 expect(term.scrollback).toContainText("Previous item")
 ```
 
@@ -291,24 +291,24 @@ Termless runs a real terminal emulator in-process, so you can verify resolved RG
 
 This is where the frameworks diverge significantly.
 
-| Feature | Textual | Silvery |
-| --- | --- | --- |
-| **True color** | Yes | Yes |
-| **256 color** | Yes | Yes |
-| **Color downsampling** | Yes (automatic) | Yes (via `@silvery/ansi`) |
-| **Mouse support** | Yes (click, scroll, hover) | Yes (SGR protocol, DOM-style events, drag) |
-| **Kitty keyboard** | No | All 5 flags (disambiguate, events, alternate, all keys, text) |
-| **Key event types** | Press | Press, repeat, release |
-| **Synchronized output** | No | DEC mode 2026 (flicker-free in tmux/Zellij) |
-| **Extended underlines** | Curly, dotted, dashed | Full ISO 8613-6 (single, double, curly, dotted, dashed + color) |
-| **Clipboard** | Via system clipboard | OSC 52 (works over SSH) |
-| **Hyperlinks** | Yes (Rich links) | OSC 8 with `<Link>` component |
-| **Images** | No | Kitty graphics + Sixel with auto-detect |
-| **Window title** | Yes | OSC 0/2 |
-| **Terminal queries** | Limited | DA1/DA2/DA3, XTVERSION, CPR, pixel dimensions |
-| **Bracketed paste** | Yes | Yes (`usePaste` hook) |
-| **Scroll regions** | No | DECSTBM |
-| **Cursor styles** | Limited | Full DECSCUSR (block, underline, bar, blinking) |
+| Feature                 | Textual                    | Silvery                                                         |
+| ----------------------- | -------------------------- | --------------------------------------------------------------- |
+| **True color**          | Yes                        | Yes                                                             |
+| **256 color**           | Yes                        | Yes                                                             |
+| **Color downsampling**  | Yes (automatic)            | Yes (via `@silvery/ansi`)                                       |
+| **Mouse support**       | Yes (click, scroll, hover) | Yes (SGR protocol, DOM-style events, drag)                      |
+| **Kitty keyboard**      | No                         | All 5 flags (disambiguate, events, alternate, all keys, text)   |
+| **Key event types**     | Press                      | Press, repeat, release                                          |
+| **Synchronized output** | No                         | DEC mode 2026 (flicker-free in tmux/Zellij)                     |
+| **Extended underlines** | Curly, dotted, dashed      | Full ISO 8613-6 (single, double, curly, dotted, dashed + color) |
+| **Clipboard**           | Via system clipboard       | OSC 52 (works over SSH)                                         |
+| **Hyperlinks**          | Yes (Rich links)           | OSC 8 with `<Link>` component                                   |
+| **Images**              | No                         | Kitty graphics + Sixel with auto-detect                         |
+| **Window title**        | Yes                        | OSC 0/2                                                         |
+| **Terminal queries**    | Limited                    | DA1/DA2/DA3, XTVERSION, CPR, pixel dimensions                   |
+| **Bracketed paste**     | Yes                        | Yes (`usePaste` hook)                                           |
+| **Scroll regions**      | No                         | DECSTBM                                                         |
+| **Cursor styles**       | Limited                    | Full DECSCUSR (block, underline, bar, blinking)                 |
 
 Silvery's terminal protocol coverage is broader, particularly for Kitty keyboard (important for distinguishing Ctrl+I from Tab, Ctrl+M from Enter), synchronized output (eliminates flicker in terminal multiplexers), and image rendering.
 

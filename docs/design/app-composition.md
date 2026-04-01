@@ -25,14 +25,14 @@ term.screen.text                                           // TextFrame everywhe
 await app.run()                                            // event loop (if term has events)
 ```
 
-| Concern                  | Solution                                                 |
-| ------------------------ | -------------------------------------------------------- |
-| Styled text output       | **TextFrame** everywhere                                 |
-| App entry point          | **One app** from `render()`, capabilities depend on term |
-| Testing                  | **`render(element, term)`** — one function, term varies  |
-| Separation of concerns   | **ag** (tree), **term** (I/O), **TextFrame** (output)    |
-| Pipeline phases          | **layout → render → paint** — three independent phases   |
-| Shared type              | silvery + termless both produce **TextFrame**            |
+| Concern                | Solution                                                 |
+| ---------------------- | -------------------------------------------------------- |
+| Styled text output     | **TextFrame** everywhere                                 |
+| App entry point        | **One app** from `render()`, capabilities depend on term |
+| Testing                | **`render(element, term)`** — one function, term varies  |
+| Separation of concerns | **ag** (tree), **term** (I/O), **TextFrame** (output)    |
+| Pipeline phases        | **layout → render → paint** — three independent phases   |
+| Shared type            | silvery + termless both produce **TextFrame**            |
 
 ## Render Configurations
 

@@ -16,25 +16,25 @@ This page compares the two so you can make an informed decision -- particularly 
 
 ## At a Glance
 
-| Aspect | Blessed | Silvery |
-| --- | --- | --- |
-| **Status** | Unmaintained (last release 2015) | Active development |
-| **Language** | JavaScript (CommonJS) | TypeScript (ESM) |
-| **Architecture** | Curses-style (Screen → Widget tree) | React declarative (JSX component tree) |
-| **API style** | Imperative (create, set, append, render) | Declarative (JSX, props, hooks) |
-| **Layout** | Manual positioning (top/left/width/height, percentages) | CSS flexbox (Flexily engine) |
-| **Rendering** | Full screen redraw | Per-node incremental with cell-level diff |
-| **Terminal parsing** | Built-in terminfo/termcap parser | Built-in ANSI parser + capability detection |
-| **Components** | ~40 widgets (list, table, form, textbox, etc.) | 30+ components (VirtualList, TextArea, SelectList, Table, CommandPalette, etc.) |
-| **Mouse support** | X10 protocol (basic) | SGR protocol with DOM-style events |
-| **Keyboard** | Traditional terminal input | Kitty keyboard protocol (all 5 flags) |
-| **Unicode/emoji** | Limited (width calculation issues) | Full support (grapheme splitting, display width, CJK, emoji ZWJ) |
-| **True color** | Partial (256 color default) | Full (16/256/truecolor, automatic downsampling) |
-| **Testing** | None built-in | `@silvery/test` + Termless (terminal emulator) |
-| **Theme system** | Manual styling | 38 palettes, semantic tokens, auto-detection |
-| **Native deps** | None | None |
-| **Node.js version** | 0.10+ (era-appropriate) | 18+ (modern ESM) |
-| **npm downloads** | ~1.6M/week (legacy installs) | New |
+| Aspect               | Blessed                                                 | Silvery                                                                         |
+| -------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **Status**           | Unmaintained (last release 2015)                        | Active development                                                              |
+| **Language**         | JavaScript (CommonJS)                                   | TypeScript (ESM)                                                                |
+| **Architecture**     | Curses-style (Screen → Widget tree)                     | React declarative (JSX component tree)                                          |
+| **API style**        | Imperative (create, set, append, render)                | Declarative (JSX, props, hooks)                                                 |
+| **Layout**           | Manual positioning (top/left/width/height, percentages) | CSS flexbox (Flexily engine)                                                    |
+| **Rendering**        | Full screen redraw                                      | Per-node incremental with cell-level diff                                       |
+| **Terminal parsing** | Built-in terminfo/termcap parser                        | Built-in ANSI parser + capability detection                                     |
+| **Components**       | ~40 widgets (list, table, form, textbox, etc.)          | 30+ components (VirtualList, TextArea, SelectList, Table, CommandPalette, etc.) |
+| **Mouse support**    | X10 protocol (basic)                                    | SGR protocol with DOM-style events                                              |
+| **Keyboard**         | Traditional terminal input                              | Kitty keyboard protocol (all 5 flags)                                           |
+| **Unicode/emoji**    | Limited (width calculation issues)                      | Full support (grapheme splitting, display width, CJK, emoji ZWJ)                |
+| **True color**       | Partial (256 color default)                             | Full (16/256/truecolor, automatic downsampling)                                 |
+| **Testing**          | None built-in                                           | `@silvery/test` + Termless (terminal emulator)                                  |
+| **Theme system**     | Manual styling                                          | 38 palettes, semantic tokens, auto-detection                                    |
+| **Native deps**      | None                                                    | None                                                                            |
+| **Node.js version**  | 0.10+ (era-appropriate)                                 | 18+ (modern ESM)                                                                |
+| **npm downloads**    | ~1.6M/week (legacy installs)                            | New                                                                             |
 
 ## Architecture: Imperative vs Declarative
 
@@ -43,31 +43,31 @@ This is the fundamental difference. Blessed uses an imperative, curses-style API
 ### Blessed: Imperative Widgets
 
 ```javascript
-const blessed = require('blessed')
+const blessed = require("blessed")
 
 const screen = blessed.screen({ smartCSR: true })
 
 const box = blessed.box({
-  top: 'center',
-  left: 'center',
-  width: '50%',
-  height: '50%',
-  content: 'Hello {bold}world{/bold}!',
+  top: "center",
+  left: "center",
+  width: "50%",
+  height: "50%",
+  content: "Hello {bold}world{/bold}!",
   tags: true,
-  border: { type: 'line' },
+  border: { type: "line" },
   style: {
-    fg: 'white',
-    bg: 'magenta',
-    border: { fg: '#f0f0f0' },
-    hover: { bg: 'green' }
-  }
+    fg: "white",
+    bg: "magenta",
+    border: { fg: "#f0f0f0" },
+    hover: { bg: "green" },
+  },
 })
 
 screen.append(box)
 box.focus()
 screen.render()
 
-screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
+screen.key(["escape", "q", "C-c"], () => process.exit(0))
 ```
 
 You create widget objects, set properties, append them to a screen, and call `render()`. State changes mean mutating widget properties and calling `render()` again.
@@ -77,19 +77,8 @@ You create widget objects, set properties, append them to a screen, and call `re
 ```tsx
 function App() {
   return (
-    <Box
-      alignItems="center"
-      justifyContent="center"
-      width="100%"
-      height="100%"
-    >
-      <Box
-        borderStyle="single"
-        borderColor="$border"
-        padding={1}
-        width="50%"
-        height="50%"
-      >
+    <Box alignItems="center" justifyContent="center" width="100%" height="100%">
+      <Box borderStyle="single" borderColor="$border" padding={1} width="50%" height="50%">
         <Text bold>Hello world!</Text>
       </Box>
     </Box>
@@ -113,22 +102,22 @@ Blessed uses absolute and percentage-based positioning:
 const sidebar = blessed.box({
   top: 0,
   left: 0,
-  width: '30%',
-  height: '100%'
+  width: "30%",
+  height: "100%",
 })
 
 const content = blessed.box({
   top: 0,
-  left: '30%',
-  width: '70%',
-  height: '100%-2'  // Leave room for status bar
+  left: "30%",
+  width: "70%",
+  height: "100%-2", // Leave room for status bar
 })
 
 const statusBar = blessed.box({
   bottom: 0,
   left: 0,
-  width: '100%',
-  height: 2
+  width: "100%",
+  height: 2,
 })
 ```
 
@@ -179,21 +168,21 @@ This matters more than it might seem -- any app displaying user-generated conten
 
 Blessed was state-of-the-art for 2013. The terminal landscape has changed substantially since then.
 
-| Feature | Blessed | Silvery |
-| --- | --- | --- |
-| **Color** | 16/256 (truecolor partial) | 16/256/truecolor with automatic downsampling |
-| **Mouse** | X10 protocol (basic click) | SGR 1006 (large coordinates, precise tracking, drag) |
-| **Keyboard** | Traditional input parsing | Kitty keyboard protocol (disambiguate Ctrl+I/Tab, press/repeat/release) |
-| **Underline styles** | Single only | ISO 8613-6 (single, double, curly, dotted, dashed + color) |
-| **Clipboard** | Via external tools (`pbcopy`, `xclip`) | OSC 52 (works over SSH, no external tools) |
-| **Hyperlinks** | None | OSC 8 clickable URLs |
-| **Images** | None | Kitty graphics + Sixel with auto-detect |
-| **Synchronized output** | None | DEC mode 2026 (flicker-free in tmux/Zellij) |
-| **Bracketed paste** | None | `usePaste` hook with automatic mode toggling |
-| **Focus events** | None | DEC mode 1004 (focus in/out reporting) |
-| **Window title** | Via `screen.title` | OSC 0/2 |
-| **Terminal detection** | terminfo/termcap parsing | DA1/DA2/DA3, XTVERSION + terminfo queries |
-| **Cursor styles** | Limited | Full DECSCUSR (block, underline, bar, blinking) |
+| Feature                 | Blessed                                | Silvery                                                                 |
+| ----------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
+| **Color**               | 16/256 (truecolor partial)             | 16/256/truecolor with automatic downsampling                            |
+| **Mouse**               | X10 protocol (basic click)             | SGR 1006 (large coordinates, precise tracking, drag)                    |
+| **Keyboard**            | Traditional input parsing              | Kitty keyboard protocol (disambiguate Ctrl+I/Tab, press/repeat/release) |
+| **Underline styles**    | Single only                            | ISO 8613-6 (single, double, curly, dotted, dashed + color)              |
+| **Clipboard**           | Via external tools (`pbcopy`, `xclip`) | OSC 52 (works over SSH, no external tools)                              |
+| **Hyperlinks**          | None                                   | OSC 8 clickable URLs                                                    |
+| **Images**              | None                                   | Kitty graphics + Sixel with auto-detect                                 |
+| **Synchronized output** | None                                   | DEC mode 2026 (flicker-free in tmux/Zellij)                             |
+| **Bracketed paste**     | None                                   | `usePaste` hook with automatic mode toggling                            |
+| **Focus events**        | None                                   | DEC mode 1004 (focus in/out reporting)                                  |
+| **Window title**        | Via `screen.title`                     | OSC 0/2                                                                 |
+| **Terminal detection**  | terminfo/termcap parsing               | DA1/DA2/DA3, XTVERSION + terminfo queries                               |
+| **Cursor styles**       | Limited                                | Full DECSCUSR (block, underline, bar, blinking)                         |
 
 Modern terminals (Kitty, Ghostty, WezTerm, iTerm2, Windows Terminal) support protocols that didn't exist when Blessed was written. Applications built with Blessed cannot take advantage of these without significant patching.
 
@@ -224,15 +213,15 @@ A typical interactive update (cursor move) touches a few nodes and takes ~169 us
 Blessed uses Node.js EventEmitter-style events:
 
 ```javascript
-box.on('click', function(mouse) {
+box.on("click", function (mouse) {
   // Handle click
 })
 
-screen.key(['q', 'C-c'], function() {
+screen.key(["q", "C-c"], function () {
   process.exit(0)
 })
 
-box.key('enter', function() {
+box.key("enter", function () {
   // Handle enter on this widget
 })
 ```
@@ -250,9 +239,7 @@ Silvery uses DOM-style event handling with input layering:
   </Box>
 
   {isDialogOpen && (
-    <ModalDialog onClose={() => setDialogOpen(false)}>
-      {/* Dialog consumes input, parent never sees it */}
-    </ModalDialog>
+    <ModalDialog onClose={() => setDialogOpen(false)}>{/* Dialog consumes input, parent never sees it */}</ModalDialog>
   )}
 </InputLayerProvider>
 ```
@@ -284,7 +271,7 @@ const handle = await run(<App />, term)
 expect(term.screen).toContainText("Dashboard")
 expect(term.cell(0, 10)).toBeBold()
 expect(term.row(0)).toHaveFg({ r: 255, g: 255, b: 255 })
-await handle.press("j")  // Navigate down
+await handle.press("j") // Navigate down
 expect(term.scrollback).toContainText("Previous item")
 ```
 
