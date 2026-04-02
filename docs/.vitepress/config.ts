@@ -138,6 +138,7 @@ export default defineConfig({
           { text: "Testing", link: "/guide/testing" },
           { text: "Debugging", link: "/guide/debugging" },
           { text: "Why Silvery?", link: "/guide/why-silvery" },
+          { text: "FAQ", link: "/guide/faq" },
           {
             text: "Comparisons",
             collapsed: true,
