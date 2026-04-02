@@ -10,7 +10,7 @@ import { describe, test, expect, vi } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Box, Text } from "../../src/index.js"
 import { SearchBar } from "../../packages/ag-react/src/ui/components/SearchBar"
-import { SurfaceRegistryProvider, useSurfaceRegistry } from "../../packages/ag-react/src/providers/SurfaceRegistry"
+// SurfaceRegistry deleted — SearchProvider has an internal stub
 import { SearchProvider, useSearch } from "../../packages/ag-react/src/providers/SearchProvider"
 import type { TextSurface } from "../../packages/ag-term/src/text-surface"
 import type { SearchMatch } from "../../packages/ag-term/src/search-overlay"
@@ -23,14 +23,14 @@ describe("SearchBar", () => {
   test("renders nothing when search is inactive", () => {
     const r = createRenderer({ cols: 40, rows: 5 })
     const app = r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <Box flexDirection="column">
             <Text>App content</Text>
             <SearchBar />
           </Box>
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     const text = stripAnsi(app.text)
@@ -55,11 +55,11 @@ describe("SearchBar", () => {
 
     const r = createRenderer({ cols: 40, rows: 5 })
     const app = r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <TestApp />
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     // After effect runs and re-render, the search bar should show the "/" prefix
@@ -94,10 +94,8 @@ describe("SearchBar", () => {
 
     function TestApp() {
       const search = useSearch()
-      const registry = useSurfaceRegistry()
+      // SurfaceRegistry deleted — search registration will be via search-machine (future)
       useEffect(() => {
-        registry.register(surface)
-        registry.setFocused("test")
         search.open()
         search.input("t")
       }, [])
@@ -111,11 +109,11 @@ describe("SearchBar", () => {
 
     const r = createRenderer({ cols: 60, rows: 5 })
     const app = r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <TestApp />
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     // The match count should show after the useEffect state update

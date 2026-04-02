@@ -17,8 +17,8 @@ export type {
   ListViewProps,
   ListViewHandle,
   ListItemMeta,
-  ListViewHistoryConfig,
-  ListTextAdapter,
+  ListViewCacheConfig,
+  ListViewSearchConfig,
 } from "./components/ListView"
 
 export { VirtualList } from "./components/VirtualList"
@@ -52,16 +52,9 @@ export type { ErrorBoundaryProps } from "./components/ErrorBoundary"
 
 export { Console } from "./components/Console"
 
-export { ScrollbackList } from "./components/ScrollbackList"
-export type { ScrollbackListProps } from "./components/ScrollbackList"
-
 // Viewport Architecture (Phase 2)
 export { Screen } from "./components/Screen"
 export type { ScreenProps } from "./components/Screen"
-export { ScrollbackView } from "./components/ScrollbackView"
-export type { ScrollbackViewProps } from "./components/ScrollbackView"
-export { VirtualView } from "./components/VirtualView"
-export type { VirtualViewProps, VirtualViewHandle } from "./components/VirtualView"
 
 // =============================================================================
 // Input Components
@@ -124,8 +117,6 @@ export type { BadgeProps } from "./components/Badge"
 
 export { Divider } from "./components/Divider"
 export type { DividerProps } from "./components/Divider"
-
-export { SearchBar } from "./components/SearchBar"
 
 // Typography Presets
 export {

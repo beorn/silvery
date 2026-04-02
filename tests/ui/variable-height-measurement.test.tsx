@@ -69,7 +69,7 @@ describe("VirtualList — variable-height measurement", () => {
         itemHeight={2}
         scrollTo={0}
         renderItem={renderVariableItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -92,7 +92,7 @@ describe("VirtualList — variable-height measurement", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderVariableItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -115,7 +115,7 @@ describe("VirtualList — variable-height measurement", () => {
         scrollTo={10}
         overflowIndicator
         renderItem={renderVariableItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -134,7 +134,7 @@ describe("VirtualList — variable-height measurement", () => {
         itemHeight={(item: Item) => item.height}
         scrollTo={0}
         renderItem={renderVariableItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -155,7 +155,7 @@ describe("VirtualList — variable-height measurement", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderVariableItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -176,7 +176,7 @@ describe("VirtualList — variable-height measurement", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderVariableItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -200,7 +200,7 @@ describe("VirtualList — variable-height measurement", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderVariableItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)

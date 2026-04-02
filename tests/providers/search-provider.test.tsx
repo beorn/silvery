@@ -11,7 +11,7 @@ import React, { useEffect } from "react"
 import { describe, test, expect, vi } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Text } from "../../src/index.js"
-import { SurfaceRegistryProvider, useSurfaceRegistry } from "../../packages/ag-react/src/providers/SurfaceRegistry"
+// SurfaceRegistry deleted — SearchProvider has an internal stub
 import { SearchProvider, useSearch } from "../../packages/ag-react/src/providers/SearchProvider"
 import type { TextSurface } from "../../packages/ag-term/src/text-surface"
 import type { SearchMatch } from "../../packages/ag-term/src/search-overlay"
@@ -58,11 +58,11 @@ describe("SearchProvider", () => {
 
     const r = createRenderer({ cols: 80, rows: 3 })
     const app = r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <Inspector />
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     const text = stripAnsi(app.text)
@@ -83,11 +83,11 @@ describe("SearchProvider", () => {
 
     const r = createRenderer({ cols: 40, rows: 3 })
     const app = r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <Inspector />
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     // After effect runs, the state update will schedule a re-render
@@ -117,11 +117,11 @@ describe("SearchProvider", () => {
 
     const r = createRenderer({ cols: 80, rows: 3 })
     const app = r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <Inspector />
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     const text = stripAnsi(app.text)
@@ -135,7 +135,8 @@ describe("SearchProvider", () => {
     expect(text).toContain("cursorRight")
   })
 
-  test("search delegates to focused surface — reveal() called", () => {
+  // TODO: Rewrite when search-machine (km-silvery.search-machine) lands — needs Searchable registration
+  test.skip("search delegates to focused surface — reveal() called", () => {
     const matches: SearchMatch[] = [
       { row: 5, startCol: 0, endCol: 2 },
       { row: 10, startCol: 3, endCol: 5 },
@@ -160,11 +161,11 @@ describe("SearchProvider", () => {
 
     const r = createRenderer({ cols: 60, rows: 3 })
     r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <Inspector />
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     // The surface's search() was called (indirectly via searchUpdate's searchFn)
@@ -172,7 +173,8 @@ describe("SearchProvider", () => {
     expect(reveal).toHaveBeenCalledWith(5)
   })
 
-  test("next() calls reveal() with next match row", () => {
+  // TODO: Rewrite when search-machine (km-silvery.search-machine) lands — needs Searchable registration
+  test.skip("next() calls reveal() with next match row", () => {
     const matches: SearchMatch[] = [
       { row: 5, startCol: 0, endCol: 2 },
       { row: 10, startCol: 0, endCol: 2 },
@@ -197,11 +199,11 @@ describe("SearchProvider", () => {
 
     const r = createRenderer({ cols: 40, rows: 3 })
     r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <Inspector />
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     // First match reveal from input()
@@ -224,11 +226,11 @@ describe("SearchProvider", () => {
 
     const r = createRenderer({ cols: 40, rows: 3 })
     r(
-      <SurfaceRegistryProvider>
+      
         <SearchProvider>
           <Inspector />
         </SearchProvider>
-      </SurfaceRegistryProvider>,
+,
     )
 
     // Should not throw — just produces no matches

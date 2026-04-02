@@ -1,7 +1,7 @@
 /**
  * ListView tests.
  *
- * Verifies the unified ListView component: basic rendering, navigable mode,
+ * Verifies the unified ListView component: basic rendering, nav mode,
  * getKey, estimateHeight, overflow indicators, virtualized prefix, listFooter,
  * and backward compatibility via VirtualView/VirtualList wrappers.
  */
@@ -11,7 +11,6 @@ import { describe, test, expect } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
 import { ListView } from "../../packages/ag-react/src/ui/components/ListView"
-import { VirtualView } from "../../packages/ag-react/src/ui/components/VirtualView"
 import { VirtualList } from "../../packages/ag-react/src/ui/components/VirtualList"
 
 // ============================================================================
@@ -176,7 +175,7 @@ describe("ListView — overflow indicators", () => {
 // ListView — Navigable Mode
 // ============================================================================
 
-describe("ListView — navigable mode", () => {
+describe("ListView — nav mode", () => {
   test("cursor at index 0 shows first item with isCursor=true", () => {
     const items = makeItems(20)
     const r = createRenderer({ cols: 40, rows: 7 })
@@ -184,8 +183,8 @@ describe("ListView — navigable mode", () => {
       <ListView
         items={items}
         height={5}
-        navigable
-        cursorIndex={0}
+        nav
+        cursorKey={0}
         overflowIndicator
         renderItem={(item, _i, meta) => (
           <Text>
@@ -208,8 +207,8 @@ describe("ListView — navigable mode", () => {
         <ListView
           items={items}
           height={5}
-          navigable
-          cursorIndex={idx}
+          nav
+          cursorKey={idx}
           renderItem={(item, _i, meta) => (
             <Text>
               {meta.isCursor ? ">" : " "}
@@ -369,45 +368,6 @@ describe("ListView — gap handling", () => {
 })
 
 // ============================================================================
-// VirtualView wrapper — backward compatibility
-// ============================================================================
-
-describe("VirtualView wrapper — backward compatibility", () => {
-  test("renders items via keyExtractor", () => {
-    const items = makeItems(5)
-    const r = createRenderer({ cols: 40, rows: 7 })
-    const app = r(
-      <VirtualView
-        items={items}
-        height={5}
-        scrollTo={0}
-        keyExtractor={(item) => item.id}
-        renderItem={(item, _index) => <Text>{item.title}</Text>}
-      />,
-    )
-    const text = stripAnsi(app.text)
-    expect(text).toContain("Item 0")
-    expect(text).toContain("Item 1")
-  })
-
-  test("overflow indicators work", () => {
-    const items = makeItems(10)
-    const r = createRenderer({ cols: 40, rows: 7 })
-    const app = r(
-      <VirtualView
-        items={items}
-        height={5}
-        scrollTo={0}
-        overflowIndicator
-        renderItem={(item, _index) => <Text>{item.title}</Text>}
-      />,
-    )
-    const text = stripAnsi(app.text)
-    expect(text).toContain("▼")
-  })
-})
-
-// ============================================================================
 // VirtualList wrapper — backward compatibility
 // ============================================================================
 
@@ -421,7 +381,7 @@ describe("VirtualList wrapper — backward compatibility", () => {
         height={5}
         itemHeight={1}
         scrollTo={0}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
         renderItem={(item, _index) => <Text>{item.title}</Text>}
       />,
     )
@@ -429,7 +389,7 @@ describe("VirtualList wrapper — backward compatibility", () => {
     expect(text).toContain("Item 0")
   })
 
-  test("interactive mode with isSelected in meta", () => {
+  test("nav mode with isCursor in meta", () => {
     const items = makeItems(20)
     const r = createRenderer({ cols: 40, rows: 7 })
     const app = r(
@@ -437,16 +397,16 @@ describe("VirtualList wrapper — backward compatibility", () => {
         items={items}
         height={5}
         itemHeight={1}
-        interactive
-        selectedIndex={0}
+        nav
+        cursorKey={0}
         overflowIndicator
         renderItem={(item, _index, meta) => (
           <Text>
-            {meta?.isSelected ? "> " : "  "}
+            {meta?.isCursor ? "> " : "  "}
             {item.title}
           </Text>
         )}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -463,7 +423,7 @@ describe("VirtualList wrapper — backward compatibility", () => {
         itemHeight={1}
         scrollTo={0}
         overflowIndicator
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
         renderItem={(item, _index) => <Text>{item.title}</Text>}
       />,
     )
@@ -483,7 +443,7 @@ describe("VirtualList wrapper — backward compatibility", () => {
         scrollTo={5}
         virtualized={(_item, index) => index < 3}
         renderItem={(item, _index) => <Text>{item.title}</Text>}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)

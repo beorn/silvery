@@ -41,7 +41,7 @@ function NavigableList({
       <ListView
         items={items}
         height={height}
-        navigable
+        nav
         onSelect={(i) => {
           setSelected(i)
           onSelect?.(i)

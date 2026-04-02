@@ -1,13 +1,13 @@
 /**
- * ListView virtual history mode tests.
+ * ListView virtual cache mode tests.
  *
  * Verifies:
- * - Items freeze when freezeWhen returns true (contiguous prefix)
+ * - Items freeze when isCacheable returns true (contiguous prefix)
  * - Frozen items leave the React tree
  * - HistoryBuffer accumulates frozen items
  * - Scroll anchor: stays at tail by default, preserves position when scrolled up
- * - getItemText provides semantic search text
- * - Basic rendering without history (mode="none")
+ * - getText provides semantic search text
+ * - Basic rendering without cache (mode="none")
  */
 
 import React from "react"
@@ -35,9 +35,9 @@ function MessageItem({ msg, isCursor }: { msg: Message; isCursor?: boolean }) {
 // ============================================================================
 
 describe("ListView", () => {
-  // ── Basic rendering (no history) ────────────────────────────────
+  // ── Basic rendering (no cache) ────────────────────────────────
 
-  test("renders all items with no history mode", () => {
+  test("renders all items with no cache mode", () => {
     const items: Message[] = [
       { id: "1", body: "Hello", delivered: false },
       { id: "2", body: "World", delivered: false },
@@ -53,9 +53,9 @@ describe("ListView", () => {
     expect(text).toContain("World")
   })
 
-  // ── Virtual history: freezeWhen ─────────────────────────────────
+  // ── Virtual cache: isCacheable ─────────────────────────────────
 
-  test("freezeWhen removes frozen items from live render", () => {
+  test("isCacheable removes frozen items from live render", () => {
     const items: Message[] = [
       { id: "1", body: "Delivered msg", delivered: true },
       { id: "2", body: "Also delivered", delivered: true },
@@ -68,9 +68,9 @@ describe("ListView", () => {
         items={items}
         getKey={(m) => m.id}
         height={10}
-        history={{
+        cache={{
           mode: "virtual",
-          freezeWhen: (m) => (m as Message).delivered,
+          isCacheable: (m) => (m as Message).delivered,
         }}
         renderItem={(msg) => <Text>{msg.body}</Text>}
       />,
@@ -97,9 +97,9 @@ describe("ListView", () => {
         items={items}
         getKey={(m) => m.id}
         height={10}
-        history={{
+        cache={{
           mode: "virtual",
-          freezeWhen: (m) => (m as Message).delivered,
+          isCacheable: (m) => (m as Message).delivered,
         }}
         renderItem={(msg) => <Text>{msg.body}</Text>}
       />,
@@ -111,7 +111,7 @@ describe("ListView", () => {
     expect(text).toContain("Done 2") // not frozen (gap breaks prefix)
   })
 
-  // ── History buffer accumulation ─────────────────────────────────
+  // ── Cache buffer accumulation ─────────────────────────────────
 
   test("frozen items accumulate in history buffer", () => {
     const listRef = React.createRef<ListViewHandle>()
@@ -128,12 +128,12 @@ describe("ListView", () => {
         items={items}
         getKey={(m) => m.id}
         height={10}
-        history={{
+        cache={{
           mode: "virtual",
-          freezeWhen: (m) => (m as Message).delivered,
+          isCacheable: (m) => (m as Message).delivered,
         }}
-        textAdapter={{
-          getItemText: (m) => (m as Message).body,
+        search={{
+          getText: (m) => (m as Message).body,
         }}
         renderItem={(msg) => <Text>{msg.body}</Text>}
       />,
@@ -162,12 +162,12 @@ describe("ListView", () => {
         items={items}
         getKey={(m) => m.id}
         height={10}
-        history={{
+        cache={{
           mode: "virtual",
-          freezeWhen: (m) => (m as Message).delivered,
+          isCacheable: (m) => (m as Message).delivered,
         }}
-        textAdapter={{
-          getItemText: (m) => (m as Message).body,
+        search={{
+          getText: (m) => (m as Message).body,
         }}
         renderItem={(msg) => <Text>{msg.body}</Text>}
       />,
@@ -196,12 +196,12 @@ describe("ListView", () => {
         items={items}
         getKey={(m) => m.id}
         height={10}
-        history={{
+        cache={{
           mode: "virtual",
-          freezeWhen: (m) => (m as Message).delivered,
+          isCacheable: (m) => (m as Message).delivered,
         }}
-        textAdapter={{
-          getItemText: (m) => (m as Message).body,
+        search={{
+          getText: (m) => (m as Message).body,
         }}
         renderItem={(msg) => <Text>{msg.body}</Text>}
       />,

@@ -73,8 +73,8 @@ export type {
   ListViewProps,
   ListViewHandle,
   ListItemMeta,
-  ListViewHistoryConfig,
-  ListTextAdapter,
+  ListViewCacheConfig,
+  ListViewSearchConfig,
 } from "@silvery/ag-react/ui/components"
 export { VirtualList } from "@silvery/ag-react/ui/components"
 export type { VirtualListProps, VirtualListHandle, ItemMeta } from "@silvery/ag-react/ui/components"
@@ -118,16 +118,9 @@ export type { FillProps } from "./components/Fill"
 export { Newline } from "./components/Newline"
 export { Spacer } from "./components/Spacer"
 export { Static } from "./components/Static"
-export { ScrollbackList } from "@silvery/ag-react/ui/components"
-export type { ScrollbackListProps } from "@silvery/ag-react/ui/components"
-
 // Viewport Architecture (Phase 2)
 export { Screen } from "@silvery/ag-react/ui/components"
 export type { ScreenProps } from "@silvery/ag-react/ui/components"
-export { ScrollbackView } from "@silvery/ag-react/ui/components"
-export type { ScrollbackViewProps } from "@silvery/ag-react/ui/components"
-export { VirtualView } from "@silvery/ag-react/ui/components"
-export type { VirtualViewProps, VirtualViewHandle } from "@silvery/ag-react/ui/components"
 
 /**
  * Re-export ErrorBoundary component - catches render errors in children.
@@ -384,19 +377,13 @@ export {
 export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor"
 export { useSelection, useSelectionContext, SelectionProvider } from "./hooks/useSelection"
 export type { UseSelectionResult } from "./hooks/useSelection"
-export { useScrollback } from "./hooks/useScrollback"
-export type { UseScrollbackOptions, ScrollbackMarkerCallbacks } from "./hooks/useScrollback"
 export { useVirtualizer } from "./hooks/useVirtualizer"
 export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer"
-export { useScrollbackItem } from "./hooks/useScrollbackItem"
-export type { ScrollbackItemContext } from "./hooks/useScrollbackItem"
 export { useListItem } from "./hooks/useListItem"
 export type { ListItemContext } from "./hooks/useListItem"
 
 // App-level Providers (Phase 4)
-export { SurfaceRegistryProvider, useSurfaceRegistry, useSurfaceRegistryOptional } from "./providers/SurfaceRegistry"
 export { SearchProvider, useSearch } from "./providers/SearchProvider"
-export { SearchBar } from "@silvery/ag-react/ui/components"
 
 /**
  * Re-export React concurrent features for TUI responsiveness.

@@ -60,7 +60,7 @@ describe("HorizontalVirtualList — visible count", () => {
         overflowIndicator
         overflowIndicatorWidth={1}
         renderItem={renderColumn}
-        keyExtractor={(col) => col.id}
+        getKey={(col) => col.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -89,7 +89,7 @@ describe("HorizontalVirtualList — visible count", () => {
         overflowIndicator
         overflowIndicatorWidth={1}
         renderItem={renderColumn}
-        keyExtractor={(col) => col.id}
+        getKey={(col) => col.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -115,7 +115,7 @@ describe("HorizontalVirtualList — visible count", () => {
         overflowIndicator
         overflowIndicatorWidth={1}
         renderItem={renderColumn}
-        keyExtractor={(col) => col.id}
+        getKey={(col) => col.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -144,7 +144,7 @@ describe("HorizontalVirtualList — overflow indicators", () => {
         overflowIndicator
         overflowIndicatorWidth={1}
         renderItem={renderColumn}
-        keyExtractor={(col) => col.id}
+        getKey={(col) => col.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -166,7 +166,7 @@ describe("HorizontalVirtualList — overflow indicators", () => {
         overflowIndicator
         overflowIndicatorWidth={1}
         renderItem={renderColumn}
-        keyExtractor={(col) => col.id}
+        getKey={(col) => col.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -197,7 +197,7 @@ describe("HorizontalVirtualList — overflow indicators", () => {
         }}
         overflowIndicatorWidth={1}
         renderItem={renderColumn}
-        keyExtractor={(col) => col.id}
+        getKey={(col) => col.id}
       />,
     )
     expect(capturedCount).toBe(5)
@@ -232,7 +232,7 @@ describe("HorizontalVirtualList — variable widths", () => {
             <Text>{item.id}</Text>
           </Box>
         )}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -267,7 +267,7 @@ describe("HorizontalVirtualList — gap handling", () => {
             <Text>{col.title}</Text>
           </Box>
         )}
-        keyExtractor={(col) => col.id}
+        getKey={(col) => col.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -318,7 +318,7 @@ describe("HorizontalVirtualList — boundary widths", () => {
         overflowIndicator
         overflowIndicatorWidth={INDICATOR_WIDTH}
         renderItem={renderColumn}
-        keyExtractor={(col) => col.id}
+        getKey={(col) => col.id}
       />,
     )
     const text = stripAnsi(app.text)

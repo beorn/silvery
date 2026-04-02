@@ -6,19 +6,16 @@
  *
  * Usage:
  * ```tsx
- * <SurfaceRegistryProvider>
- *   <SearchProvider>
- *     <App />
- *     <SearchBar />
- *   </SearchProvider>
- * </SurfaceRegistryProvider>
+ * <SearchProvider>
+ *   <App />
+ *   <SearchBar />
+ * </SearchProvider>
  * ```
  */
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react"
 import { type SearchState, type SearchMatch, createSearchState, searchUpdate } from "@silvery/ag-term/search-overlay"
 import { useInput } from "../hooks/useInput"
-import { useSurfaceRegistry } from "./SurfaceRegistry"
 import type { ReactNode, ReactElement } from "react"
 
 // ============================================================================
@@ -67,7 +64,8 @@ const SearchContext = createContext<SearchContextValue | null>(null)
 export function SearchProvider({ children }: { children: ReactNode }): ReactElement {
   const [state, setState] = useState<SearchState>(createSearchState)
   const [activeSurfaceId, setActiveSurfaceId] = useState<string | null>(null)
-  const registry = useSurfaceRegistry()
+  // TODO: Replace with search-machine registration (km-silvery.search-machine)
+  const registry = { getSurface: () => null, getFocusedSurface: () => null } as any
 
   const getSearchFn = useCallback(() => {
     const surface = activeSurfaceId ? registry.getSurface(activeSurfaceId) : registry.getFocusedSurface()

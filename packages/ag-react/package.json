@@ -133,14 +133,6 @@
       "types": "./src/hooks/usePositionRegistry.tsx",
       "import": "./src/hooks/usePositionRegistry.tsx"
     },
-    "./hooks/useScrollback": {
-      "types": "./src/hooks/useScrollback.ts",
-      "import": "./src/hooks/useScrollback.ts"
-    },
-    "./hooks/useScrollbackItem": {
-      "types": "./src/hooks/useScrollbackItem.tsx",
-      "import": "./src/hooks/useScrollbackItem.tsx"
-    },
     "./hooks/useStderr": {
       "types": "./src/hooks/useStderr.ts",
       "import": "./src/hooks/useStderr.ts"
@@ -164,10 +156,6 @@
     "./providers/SearchProvider": {
       "types": "./src/providers/SearchProvider.tsx",
       "import": "./src/providers/SearchProvider.tsx"
-    },
-    "./providers/SurfaceRegistry": {
-      "types": "./src/providers/SurfaceRegistry.tsx",
-      "import": "./src/providers/SurfaceRegistry.tsx"
     },
     "./reconciler/helpers": {
       "types": "./src/reconciler/helpers.ts",

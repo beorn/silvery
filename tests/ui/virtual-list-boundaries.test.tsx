@@ -90,7 +90,7 @@ describe("VirtualList — visible count at boundary heights", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -114,7 +114,7 @@ describe("VirtualList — visible count at boundary heights", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -140,7 +140,7 @@ describe("VirtualList — visible count at boundary heights", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -161,7 +161,7 @@ describe("VirtualList — visible count at boundary heights", () => {
         itemHeight={1}
         scrollTo={0}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -178,7 +178,7 @@ describe("VirtualList — visible count at boundary heights", () => {
         itemHeight={1}
         scrollTo={0}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -202,7 +202,7 @@ describe("VirtualList — overflow indicators", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -221,7 +221,7 @@ describe("VirtualList — overflow indicators", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -240,7 +240,7 @@ describe("VirtualList — overflow indicators", () => {
         scrollTo={5}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -259,7 +259,7 @@ describe("VirtualList — overflow indicators", () => {
         scrollTo={10}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -286,7 +286,7 @@ describe("VirtualList — gap handling", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -306,7 +306,7 @@ describe("VirtualList — gap handling", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const visibleNoGap = countVisibleItems(stripAnsi(app2.text), "Item", 10)
@@ -341,7 +341,7 @@ describe("VirtualList — multi-row items at boundaries", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderFixedHeightItem(3)}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -363,7 +363,7 @@ describe("VirtualList — multi-row items at boundaries", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderFixedHeightItem(3)}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -383,7 +383,7 @@ describe("VirtualList — multi-row items at boundaries", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderFixedHeightItem(3)}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -404,7 +404,7 @@ describe("VirtualList — multi-row items at boundaries", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderFixedHeightItem(2)}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -448,7 +448,7 @@ describe("VirtualList — boundary heights (parametric)", () => {
           scrollTo={0}
           overflowIndicator
           renderItem={renderFixedHeightItem(itemHeight)}
-          keyExtractor={(item) => item.id}
+          getKey={(item) => item.id}
         />,
       )
       const text = stripAnsi(app.text)
@@ -475,8 +475,8 @@ describe("VirtualList — boundary heights (parametric)", () => {
 // VirtualList — Interactive Mode Boundary Tests
 // ============================================================================
 
-describe("VirtualList — interactive mode boundaries", () => {
-  test("interactive: selection at index 0 shows first item selected", () => {
+describe("VirtualList — nav mode boundaries", () => {
+  test("nav: selection at index 0 shows first item selected", () => {
     const items = makeItems(20)
     const r = createRenderer({ cols: 40, rows: 7 })
     const app = r(
@@ -484,23 +484,23 @@ describe("VirtualList — interactive mode boundaries", () => {
         items={items}
         height={5}
         itemHeight={1}
-        interactive
-        selectedIndex={0}
+        nav
+        cursorKey={0}
         overflowIndicator
         renderItem={(item, _index, meta) => (
           <Text>
-            {meta?.isSelected ? "> " : "  "}
+            {meta?.isCursor ? "> " : "  "}
             {item.title}
           </Text>
         )}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
     expect(text).toContain("> Item 0")
   })
 
-  test("interactive: selected item is always visible", () => {
+  test("nav: selected item is always visible", () => {
     // Test that the selected item is visible at various positions
     const items = makeItems(20)
     for (const selectedIdx of [0, 5, 10, 15, 19]) {
@@ -510,15 +510,15 @@ describe("VirtualList — interactive mode boundaries", () => {
           items={items}
           height={5}
           itemHeight={1}
-          interactive
-          selectedIndex={selectedIdx}
+          nav
+          cursorKey={selectedIdx}
           renderItem={(item, _index, meta) => (
             <Text>
-              {meta?.isSelected ? ">" : " "}
+              {meta?.isCursor ? ">" : " "}
               {item.title}
             </Text>
           )}
-          keyExtractor={(item) => item.id}
+          getKey={(item) => item.id}
         />,
       )
       const text = stripAnsi(app.text)
@@ -551,7 +551,7 @@ describe("VirtualList — scroll offset at boundaries", () => {
         scrollTo={15}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -573,7 +573,7 @@ describe("VirtualList — scroll offset at boundaries", () => {
         scrollTo={29}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)
@@ -595,7 +595,7 @@ describe("VirtualList — scroll offset at boundaries", () => {
         scrollTo={0}
         overflowIndicator
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        getKey={(item) => item.id}
       />,
     )
     const text = stripAnsi(app.text)

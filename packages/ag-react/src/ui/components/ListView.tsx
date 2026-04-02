@@ -19,7 +19,7 @@
  * <ListView
  *   items={items}
  *   height={20}
- *   navigable
+ *   nav
  *   renderItem={(item, i, meta) => (
  *     <Text>{meta.isCursor ? '> ' : '  '}{item.name}</Text>
  *   )}
@@ -41,7 +41,8 @@ import type { TextSurface } from "@silvery/ag-term/text-surface"
 import { composeViewport } from "@silvery/ag-term/viewport-compositor"
 import type { ComposedViewport } from "@silvery/ag-term/viewport-compositor"
 import { stripAnsi } from "@silvery/ag-term/unicode"
-import { useSurfaceRegistryOptional } from "@silvery/ag-react/providers/SurfaceRegistry"
+// TODO: Replace with search-machine registration (km-silvery.search-machine)
+const useSurfaceRegistryOptional = (): any => null
 
 // =============================================================================
 // Types
@@ -49,22 +50,23 @@ import { useSurfaceRegistryOptional } from "@silvery/ag-react/providers/SurfaceR
 
 /** Metadata passed to renderItem in the third argument */
 export interface ListItemMeta {
-  /** Whether this item is at the cursor position (navigable mode only) */
+  /** Whether this item is at the cursor position (nav mode only) */
   isCursor: boolean
 }
 
-/** History configuration for ListView */
-export interface ListViewHistoryConfig<T> {
+/** Cache configuration for ListView */
+export interface ListViewCacheConfig<T> {
   mode: "none" | "virtual"
-  /** Data-driven freeze predicate — items matching this are frozen to history */
-  freezeWhen?: (item: T, index: number) => boolean
-  /** Maximum rows in history buffer. Default: 10_000 */
-  maxRows?: number
+  /** Predicate for items that can be cached (removed from React tree). */
+  isCacheable?: (item: T, index: number) => boolean
+  /** Maximum rows in cache buffer. Default: 10_000 */
+  capacity?: number
 }
 
-/** Text extraction adapter for search/history */
-export interface ListTextAdapter<T> {
-  getItemText: (item: T) => string
+/** Search configuration for ListView */
+export interface ListViewSearchConfig<T> {
+  /** Extract searchable text from an item. When omitted, auto-extracts from rendered content. */
+  getText?: (item: T) => string
 }
 
 export interface ListViewProps<T> {
@@ -80,7 +82,7 @@ export interface ListViewProps<T> {
   /** Render function for each item. Third arg provides cursor metadata. */
   renderItem: (item: T, index: number, meta: ListItemMeta) => React.ReactNode
 
-  /** Index to scroll to (declarative). When undefined, scroll state freezes. Ignored when navigable=true. */
+  /** Index to scroll to (declarative). When undefined, scroll state freezes. Ignored when nav=true. */
   scrollTo?: number
 
   /** Extra items to render beyond viewport for smooth scrolling. Default: 5 */
@@ -107,7 +109,7 @@ export interface ListViewProps<T> {
   /** Render separator between items (alternative to gap) */
   renderSeparator?: () => React.ReactNode
 
-  /** Mouse wheel handler for scrolling (passive mode only, navigable handles its own) */
+  /** Mouse wheel handler for scrolling (passive mode only, nav handles its own) */
   onWheel?: (event: { deltaY: number }) => void
 
   /** Called when the visible range reaches near the end of the list (infinite scroll). */
@@ -125,13 +127,13 @@ export interface ListViewProps<T> {
   // ── Navigable mode ──────────────────────────────────────────────
 
   /** Enable built-in keyboard (j/k, arrows, PgUp/PgDn, Home/End, G) and mouse wheel */
-  navigable?: boolean
+  nav?: boolean
 
-  /** Currently focused cursor index (controlled). Managed internally when not provided. */
-  cursorIndex?: number
+  /** Currently focused cursor key (controlled). Managed internally when not provided. */
+  cursorKey?: number
 
   /** Called when cursor position changes (keyboard or mouse wheel navigation) */
-  onCursorIndexChange?: (index: number) => void
+  onCursor?: (index: number) => void
 
   /** Called when Enter is pressed on the cursor item */
   onSelect?: (index: number) => void
@@ -145,11 +147,11 @@ export interface ListViewProps<T> {
   /** Surface identity for search/selection routing */
   surfaceId?: string
 
-  /** Text extraction for search/history */
-  textAdapter?: ListTextAdapter<T>
+  /** Search configuration (true = auto-extract text from rendered content) */
+  search?: boolean | ListViewSearchConfig<T>
 
-  /** History configuration */
-  history?: ListViewHistoryConfig<T>
+  /** Cache configuration (true = auto-cache items above viewport) */
+  cache?: boolean | ListViewCacheConfig<T>
 }
 
 export interface ListViewHandle {
@@ -239,35 +241,35 @@ function ListViewInner<T>(
     onEndReachedThreshold,
     listFooter,
     virtualized,
-    navigable,
-    cursorIndex: cursorIndexProp,
-    onCursorIndexChange,
+    nav,
+    cursorKey: cursorKeyProp,
+    onCursor,
     onSelect,
     active,
     surfaceId,
-    textAdapter,
-    history,
+    search: searchProp,
+    cache: cacheProp,
   }: ListViewProps<T>,
   ref: React.ForwardedRef<ListViewHandle>,
 ): React.ReactElement {
-  // ── Navigable mode: controlled/uncontrolled cursor ─────────
-  const isControlled = cursorIndexProp !== undefined
+  // ── Nav mode: controlled/uncontrolled cursor ─────────
+  const isControlled = cursorKeyProp !== undefined
   const [uncontrolledCursor, setUncontrolledCursor] = useState(0)
-  const activeCursor = navigable ? (isControlled ? cursorIndexProp! : uncontrolledCursor) : -1
+  const activeCursor = nav ? (isControlled ? cursorKeyProp! : uncontrolledCursor) : -1
 
   const moveTo = useCallback(
     (next: number) => {
       const clamped = Math.max(0, Math.min(next, items.length - 1))
       if (!isControlled) setUncontrolledCursor(clamped)
-      onCursorIndexChange?.(clamped)
+      onCursor?.(clamped)
     },
-    [isControlled, items.length, onCursorIndexChange],
+    [isControlled, items.length, onCursor],
   )
 
-  // Keyboard input for navigable mode
+  // Keyboard input for nav mode
   useInput(
     (input, key) => {
-      if (!navigable) return
+      if (!nav) return
       const cur = activeCursor
       if (input === "j" || key.downArrow) moveTo(cur + 1)
       else if (input === "k" || key.upArrow) moveTo(cur - 1)
@@ -277,36 +279,41 @@ function ListViewInner<T>(
       else if (key.pageUp || (input === "u" && key.ctrl)) moveTo(cur - Math.floor(height / 2))
       else if (key.return) onSelect?.(cur)
     },
-    { isActive: navigable && active !== false },
+    { isActive: nav && active !== false },
   )
 
-  // In navigable mode, scrollTo is derived from cursor
-  const scrollTo = navigable ? activeCursor : scrollToProp
+  // In nav mode, scrollTo is derived from cursor
+  const scrollTo = nav ? activeCursor : scrollToProp
 
-  // ── History buffer (virtual mode) ─────────────────────────────────
-  const historyMode = history?.mode ?? "none"
-  const historyBufferRef = useRef<HistoryBuffer | null>(null)
-  if (historyMode === "virtual" && !historyBufferRef.current) {
-    historyBufferRef.current = createHistoryBuffer(history?.maxRows ?? 10_000)
+  // ── Resolve cache config ─────────────────────────────────────────
+  const cacheConfig = typeof cacheProp === "object" ? cacheProp : cacheProp ? { mode: "virtual" as const } : undefined
+  const cacheMode = cacheConfig?.mode ?? "none"
+  const cacheBufferRef = useRef<HistoryBuffer | null>(null)
+  if (cacheMode === "virtual" && !cacheBufferRef.current) {
+    cacheBufferRef.current = createHistoryBuffer(cacheConfig?.capacity ?? 10_000)
   }
-  const historyBuffer = historyBufferRef.current
+  const cacheBuffer = cacheBufferRef.current
 
-  // Compute frozen prefix from freezeWhen
+  // ── Resolve search config ─────────────────────────────────────────
+  const searchConfig = typeof searchProp === "object" ? searchProp : searchProp ? {} : undefined
+  const textAdapter = searchConfig ? { getItemText: searchConfig.getText ?? ((item: T) => String(item)) } : undefined
+
+  // Compute cached prefix from isCacheable
   let frozenCount = 0
-  if (historyMode === "virtual" && history?.freezeWhen) {
+  if (cacheMode === "virtual" && cacheConfig?.isCacheable) {
     for (let i = 0; i < items.length; i++) {
-      if (!history.freezeWhen(items[i]!, i)) break
+      if (!cacheConfig.isCacheable(items[i]!, i)) break
       frozenCount++
     }
   }
 
-  // Push newly frozen items to history buffer
+  // Push newly cached items to buffer
   const prevFrozenRef = useRef(0)
-  if (frozenCount > prevFrozenRef.current && historyBuffer) {
+  if (frozenCount > prevFrozenRef.current && cacheBuffer) {
     for (let i = prevFrozenRef.current; i < frozenCount; i++) {
       const item = items[i]!
       const text = textAdapter?.getItemText?.(item) ?? String(item)
-      historyBuffer.push(createHistoryItem(getKey?.(item, i) ?? i, text, 80))
+      cacheBuffer.push(createHistoryItem(getKey?.(item, i) ?? i, text, 80))
     }
     prevFrozenRef.current = frozenCount
   }
@@ -380,13 +387,13 @@ function ListViewInner<T>(
   const virtualizedCountRef = useRef(virtualizedCount)
   virtualizedCountRef.current = virtualizedCount
   const textAdapterRef = useRef(textAdapter)
-  textAdapterRef.current = textAdapter
+  if (textAdapter) textAdapterRef.current = textAdapter
   const getKeyRef = useRef(getKey)
   getKeyRef.current = getKey
 
   // Create and maintain ListDocument + TextSurface when surfaceId is set
   useEffect(() => {
-    if (!surfaceId || historyMode !== "virtual" || !historyBuffer) return
+    if (!surfaceId || cacheMode !== "virtual" || !cacheBuffer) return
 
     const getLiveItems = (): LiveItemBlock[] => {
       const currentItems = itemsRef.current
@@ -409,11 +416,11 @@ function ListViewInner<T>(
       return live
     }
 
-    const document = createListDocument(historyBuffer, getLiveItems)
+    const document = createListDocument(cacheBuffer, getLiveItems)
     const surface = createTextSurface({
       id: surfaceId,
       document,
-      viewportToDocument: (viewportRow: number) => viewportRow + historyBuffer.totalRows,
+      viewportToDocument: (viewportRow: number) => viewportRow + cacheBuffer.totalRows,
       onReveal: () => {
         // Could be extended later for scroll-to-row
       },
@@ -438,12 +445,12 @@ function ListViewInner<T>(
         registry.unregister(surfaceId)
       }
     }
-  }, [surfaceId, historyMode, historyBuffer, registry])
+  }, [surfaceId, cacheMode, cacheBuffer, registry])
 
   // Compute composed viewport when history is active
-  if (historyMode === "virtual" && historyBuffer) {
+  if (cacheMode === "virtual" && cacheBuffer) {
     composedViewportRef.current = composeViewport({
-      history: historyBuffer,
+      history: cacheBuffer,
       viewportHeight: height,
       scrollOffset: 0, // At tail by default; scroll offset would come from external state
     })
@@ -458,7 +465,7 @@ function ListViewInner<T>(
         scrollToItem(Math.max(0, index - virtualizedCount))
       },
       getHistoryBuffer(): HistoryBuffer | null {
-        return historyBufferRef.current
+        return cacheBufferRef.current
       },
       getComposedViewport(): ComposedViewport | null {
         return composedViewportRef.current
@@ -469,14 +476,14 @@ function ListViewInner<T>(
 
   // ── Mouse wheel handler ─────────────────────────────────────────
   const onWheel = useMemo(() => {
-    if (navigable && active !== false) {
+    if (nav && active !== false) {
       return (e: { deltaY: number }) => {
         const delta = e.deltaY > 0 ? WHEEL_STEP : -WHEEL_STEP
         moveTo(activeCursor + delta)
       }
     }
     return onWheelProp
-  }, [navigable, active, activeCursor, moveTo, onWheelProp])
+  }, [nav, active, activeCursor, moveTo, onWheelProp])
 
   // ── Empty state ─────────────────────────────────────────────────
   if (activeItems.length === 0) {

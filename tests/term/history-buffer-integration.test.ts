@@ -155,7 +155,7 @@ describe("HistoryBuffer + ListDocument: freeze lifecycle", () => {
 // ============================================================================
 
 describe("HistoryBuffer: eviction under load", () => {
-  test("old items evicted when maxRows exceeded", () => {
+  test("old items evicted when capacity exceeded", () => {
     const history = createHistoryBuffer(5)
 
     // Push items that total more than 5 rows

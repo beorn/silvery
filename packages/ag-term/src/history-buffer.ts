@@ -3,7 +3,7 @@
  *
  * Each item represents a rendered list entry (card, row, etc.) with its
  * ANSI snapshot, split rows, and plain-text rows for searching.
- * When total rows exceed maxRows, the oldest items are evicted.
+ * When total rows exceed capacity, the oldest items are evicted.
  */
 
 import { stripAnsi } from "./unicode"
@@ -25,7 +25,7 @@ export interface HistoryBuffer {
   search(query: string): number[]
   getItemAtRow(row: number): { item: HistoryItem; localRow: number } | null
   clear(): void
-  readonly maxRows: number
+  readonly capacity: number
 }
 
 export function createHistoryItem(key: string | number, ansi: string, width: number): HistoryItem {
@@ -34,13 +34,13 @@ export function createHistoryItem(key: string | number, ansi: string, width: num
   return { key, ansi, rows, plainTextRows, width }
 }
 
-export function createHistoryBuffer(maxRows = 10_000): HistoryBuffer {
+export function createHistoryBuffer(capacity = 10_000): HistoryBuffer {
   // Store items in insertion order; evict from front when over budget.
   let items: HistoryItem[] = []
   let _totalRows = 0
 
   function evict(): void {
-    while (_totalRows > maxRows && items.length > 0) {
+    while (_totalRows > capacity && items.length > 0) {
       const removed = items.shift()!
       _totalRows -= removed.rows.length
     }
@@ -75,8 +75,8 @@ export function createHistoryBuffer(maxRows = 10_000): HistoryBuffer {
       return items.length
     },
 
-    get maxRows(): number {
-      return maxRows
+    get capacity(): number {
+      return capacity
     },
 
     getRows(startRow: number, count: number): string[] {

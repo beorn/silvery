@@ -10,7 +10,7 @@ describe("HistoryBuffer", () => {
     const buf = createHistoryBuffer()
     expect(buf.totalRows).toBe(0)
     expect(buf.itemCount).toBe(0)
-    expect(buf.maxRows).toBe(10_000)
+    expect(buf.capacity).toBe(10_000)
   })
 
   it("push increases totalRows and itemCount", () => {
@@ -47,7 +47,7 @@ describe("HistoryBuffer", () => {
     expect(buf.getPlainTextRows(0, 2)).toEqual(["plain one", "plain two"])
   })
 
-  it("evicts oldest items when exceeding maxRows", () => {
+  it("evicts oldest items when exceeding capacity", () => {
     const buf = createHistoryBuffer(5)
     buf.push(item("a", ["1", "2", "3"])) // 3 rows
     buf.push(item("b", ["4", "5", "6"])) // 6 total → evict "a" → 3 rows
@@ -56,7 +56,7 @@ describe("HistoryBuffer", () => {
     expect(buf.getRows(0, 3)).toEqual(["4", "5", "6"])
   })
 
-  it("evicts multiple items to fit under maxRows", () => {
+  it("evicts multiple items to fit under capacity", () => {
     const buf = createHistoryBuffer(4)
     buf.push(item("a", ["1"]))
     buf.push(item("b", ["2"]))

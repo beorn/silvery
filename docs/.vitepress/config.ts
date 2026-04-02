@@ -347,7 +347,12 @@ export default withMermaid(
 
       socialLinks: [
         { icon: "github", link: "https://github.com/beorn/silvery" },
-        { icon: { svg: '<svg viewBox="0 0 780 250"><path fill="currentColor" d="M240 250h100v-50h100V0H240v250zm-30-250H70C31.4 0 0 31.4 0 70v110c0 38.6 31.4 70 70 70h140v-50H70c-11 0-20-9-20-20V70c0-11 9-20 20-20h140V0zm390 0H390v250h100V150h110c38.6 0 70-31.4 70-70V70c0-38.6-31.4-70-70-70zm-30 100H490V50h110c11 0 20 9 20 20s-9 20-20 20z"/></svg>' }, link: "https://www.npmjs.com/package/silvery" },
+        {
+          icon: {
+            svg: '<svg viewBox="0 0 780 250"><path fill="currentColor" d="M240 250h100v-50h100V0H240v250zm-30-250H70C31.4 0 0 31.4 0 70v110c0 38.6 31.4 70 70 70h140v-50H70c-11 0-20-9-20-20V70c0-11 9-20 20-20h140V0zm390 0H390v250h100V150h110c38.6 0 70-31.4 70-70V70c0-38.6-31.4-70-70-70zm-30 100H490V50h110c11 0 20 9 20 20s-9 20-20 20z"/></svg>',
+          },
+          link: "https://www.npmjs.com/package/silvery",
+        },
       ],
 
       outline: { level: [2, 3] },

@@ -91,7 +91,7 @@ function FreezePromoteApp({ initialItems }: { initialItems: FreezeItem[] }) {
   return (
     <ScrollbackList
       items={items}
-      keyExtractor={(it) => it.id}
+      getKey={(it) => it.id}
       isFrozen={(it) => it.frozen}
       footer={
         <Box borderStyle="round" borderColor="$primary" paddingX={1}>

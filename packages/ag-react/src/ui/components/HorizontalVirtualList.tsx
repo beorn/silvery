@@ -63,7 +63,7 @@ export interface HorizontalVirtualListProps<T> {
   overflowIndicatorWidth?: number
 
   /** Optional key extractor (defaults to index) */
-  keyExtractor?: (item: T, index: number) => string | number
+  getKey?: (item: T, index: number) => string | number
 
   /** Height of the list (optional, uses parent height if not specified) */
   height?: number
@@ -209,7 +209,7 @@ function HorizontalVirtualListInner<T>(
     overflowIndicator,
     renderOverflowIndicator,
     overflowIndicatorWidth = 0,
-    keyExtractor,
+    getKey,
     height,
     gap = 0,
     renderSeparator,
@@ -335,7 +335,7 @@ function HorizontalVirtualListInner<T>(
             overscan items; they render at full size and get clipped by overflow="hidden" */}
         {visibleItems.map((item, i) => {
           const actualIndex = vpStart + i
-          const key = keyExtractor ? keyExtractor(item, actualIndex) : actualIndex
+          const key = getKey ? getKey(item, actualIndex) : actualIndex
           const isLast = i === visibleItems.length - 1
 
           return (

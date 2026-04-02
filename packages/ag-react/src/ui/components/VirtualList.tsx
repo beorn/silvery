@@ -6,13 +6,9 @@
  * React-level virtualization for long lists. Only renders items within the
  * visible viewport plus overscan, using placeholder boxes for virtual height.
  *
- * Thin wrapper around ListView that maps old prop names to new ones:
- * - `interactive` → `navigable`
- * - `selectedIndex` → `cursorIndex`
- * - `onSelectionChange` → `onCursorIndexChange`
- * - `keyExtractor` → `getKey`
+ * Thin wrapper around ListView that maps VirtualList-specific props:
  * - `itemHeight` → `estimateHeight`
- * - `isSelected` in ItemMeta → `isCursor` in ListItemMeta
+ * - `ItemMeta` → `ListItemMeta` (same fields now — both use `isCursor`)
  *
  * @example
  * ```tsx
@@ -50,8 +46,8 @@ import type { ListViewHandle, ListItemMeta } from "./ListView"
 
 /** Metadata passed to renderItem in the third argument */
 export interface ItemMeta {
-  /** Whether this item is the currently selected item (interactive mode only) */
-  isSelected: boolean
+  /** Whether this item is at the cursor position (nav mode only) */
+  isCursor: boolean
 }
 
 export interface VirtualListProps<T> {
@@ -79,8 +75,8 @@ export interface VirtualListProps<T> {
   /** Show overflow indicators (▲N/▼N) */
   overflowIndicator?: boolean
 
-  /** Optional key extractor (defaults to index) */
-  keyExtractor?: (item: T, index: number) => string | number
+  /** Key extractor (defaults to index) */
+  getKey?: (item: T, index: number) => string | number
 
   /** Width of the list (optional, uses parent width if not specified) */
   width?: number
@@ -97,18 +93,18 @@ export interface VirtualListProps<T> {
    * useScrollback to push them to terminal scrollback separately. */
   virtualized?: (item: T, index: number) => boolean
 
-  // ── Interactive mode ──────────────────────────────────────────────
+  // ── Nav mode ──────────────────────────────────────────────
 
   /** Enable built-in keyboard (j/k, arrows, PgUp/PgDn, Home/End, G) and mouse wheel */
-  interactive?: boolean
+  nav?: boolean
 
-  /** Currently selected index (controlled). Managed internally when not provided. */
-  selectedIndex?: number
+  /** Currently focused cursor index (controlled). Managed internally when not provided. */
+  cursorKey?: number
 
-  /** Called when selection changes (keyboard or mouse wheel navigation) */
-  onSelectionChange?: (index: number) => void
+  /** Called when cursor position changes */
+  onCursor?: (index: number) => void
 
-  /** Called when Enter is pressed on the selected item */
+  /** Called when Enter is pressed on the cursor item */
   onSelect?: (index: number) => void
 
   /** Called when the visible range reaches near the end of the list (infinite scroll). */
@@ -145,14 +141,14 @@ function VirtualListInner<T>(
     maxRendered,
     renderItem,
     overflowIndicator,
-    keyExtractor,
+    getKey,
     width,
     gap,
     renderSeparator,
     virtualized,
-    interactive,
-    selectedIndex,
-    onSelectionChange,
+    nav,
+    cursorKey,
+    onCursor,
     onSelect,
     onEndReached,
     onEndReachedThreshold,
@@ -169,8 +165,8 @@ function VirtualListInner<T>(
   // Wrap renderItem to map ListItemMeta → ItemMeta
   const wrappedRenderItem = useCallback(
     (item: T, index: number, meta: ListItemMeta): React.ReactNode => {
-      const oldMeta: ItemMeta = { isSelected: meta.isCursor }
-      return renderItem(item, index, oldMeta)
+      const itemMeta: ItemMeta = { isCursor: meta.isCursor }
+      return renderItem(item, index, itemMeta)
     },
     [renderItem],
   )
@@ -186,14 +182,14 @@ function VirtualListInner<T>(
       overscan={overscan}
       maxRendered={maxRendered}
       overflowIndicator={overflowIndicator}
-      getKey={keyExtractor}
+      getKey={getKey}
       width={width}
       gap={gap}
       renderSeparator={renderSeparator}
       virtualized={virtualized}
-      navigable={interactive}
-      cursorIndex={selectedIndex}
-      onCursorIndexChange={onSelectionChange}
+      nav={nav}
+      cursorKey={cursorKey}
+      onCursor={onCursor}
       onSelect={onSelect}
       onEndReached={onEndReached}
       onEndReachedThreshold={onEndReachedThreshold}

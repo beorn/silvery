@@ -20,8 +20,13 @@
 
 import { useContext, useRef, type JSX, type ReactNode } from "react"
 import { StdoutContext, TermContext } from "../context"
-import { useScrollback } from "../hooks/useScrollback"
 import { renderStringSync } from "../render-string"
+
+// TODO: useScrollback was removed — inline scrollback promotion needs reimplementation
+// Stub returns 0 (no items promoted) so fullscreen/test mode still works
+function useScrollback(_items: unknown[], _opts: unknown): number {
+  return 0
+}
 
 export interface StaticProps<T> {
   /** Items to render */
