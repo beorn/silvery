@@ -102,7 +102,8 @@ export default defineConfig({
       },
       { text: "Themes", link: "/themes" },
       { text: "About", link: "/about" },
-      { text: "Blog", link: "/blog/" },
+      // Blog hidden until we have 5+ articles — see km-market.blog-content
+      // { text: "Blog", link: "/blog/" },
       {
         text: "Links",
         items: [
