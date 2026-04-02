@@ -62,4 +62,4 @@ Silvery is a good fit for interactive, keyboard-heavy terminal apps with large o
 
 ## Author
 
-I'm [Bjørn Stabell](https://beorn.codes), based in Oslo. I've been building developer tools for about twenty years — distributed systems, infrastructure, and more recently terminal and AI tooling. Silvery started because I needed it for my own work and couldn't find anything that did what I needed. The ecosystem around it ([Flexily](https://beorn.codes/flexily), [Termless](https://termless.dev), [terminfo.dev](https://terminfo.dev)) grew out of the same need.
+I'm [Bjørn Stabell](https://beorn.codes), based in Palo Alto, CA. I've been building developer tools for about twenty years — distributed systems, infrastructure, and more recently terminal and AI tooling. Silvery started because I needed it for my own work and couldn't find anything that did what I needed. The ecosystem around it ([Flexily](https://beorn.codes/flexily), [Termless](https://termless.dev), [terminfo.dev](https://terminfo.dev)) grew out of the same need.
