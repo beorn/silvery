@@ -49,6 +49,7 @@ import { type StateCreator, type StoreApi, createStore } from "zustand"
 
 import { createTerm } from "@silvery/ag-term/ansi"
 import {
+  CacheBackendContext,
   FocusManagerContext,
   RuntimeContext,
   type RuntimeContextValue,
@@ -1075,38 +1076,41 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // If a Root component is provided (e.g., from withInk), wrap the element with it
   // inside silvery's contexts so it can access Term, Stdout, FocusManager, Runtime.
   const Root = RootComponent ?? React.Fragment
+  const cacheBackend = alternateScreen ? "virtual" : "terminal"
   const wrappedElement = (
     <SilveryErrorBoundary>
       <CursorProvider store={cursorStore}>
-        <TermContext.Provider value={mockTerm}>
-          <StdoutContext.Provider
-            value={{
-              stdout: mockStdout,
-              write: () => {},
-              notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
-              promoteScrollback: (content: string, lines: number) => runtime.promoteScrollback(content, lines),
-              resetInlineCursor: () => runtime.resetInlineCursor(),
-              getInlineCursorRow: () => runtime.getInlineCursorRow(),
-            }}
-          >
-            <StderrContext.Provider
+        <CacheBackendContext.Provider value={cacheBackend}>
+          <TermContext.Provider value={mockTerm}>
+            <StdoutContext.Provider
               value={{
-                stderr: process.stderr,
-                write: (data: string) => {
-                  process.stderr.write(data)
-                },
+                stdout: mockStdout,
+                write: () => {},
+                notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
+                promoteScrollback: (content: string, lines: number) => runtime.promoteScrollback(content, lines),
+                resetInlineCursor: () => runtime.resetInlineCursor(),
+                getInlineCursorRow: () => runtime.getInlineCursorRow(),
               }}
             >
-              <FocusManagerContext.Provider value={focusManager}>
-                <RuntimeContext.Provider value={runtimeContextValue}>
-                  <Root>
-                    <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
-                  </Root>
-                </RuntimeContext.Provider>
-              </FocusManagerContext.Provider>
-            </StderrContext.Provider>
-          </StdoutContext.Provider>
-        </TermContext.Provider>
+              <StderrContext.Provider
+                value={{
+                  stderr: process.stderr,
+                  write: (data: string) => {
+                    process.stderr.write(data)
+                  },
+                }}
+              >
+                <FocusManagerContext.Provider value={focusManager}>
+                  <RuntimeContext.Provider value={runtimeContextValue}>
+                    <Root>
+                      <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
+                    </Root>
+                  </RuntimeContext.Provider>
+                </FocusManagerContext.Provider>
+              </StderrContext.Provider>
+            </StdoutContext.Provider>
+          </TermContext.Provider>
+        </CacheBackendContext.Provider>
       </CursorProvider>
     </SilveryErrorBoundary>
   )

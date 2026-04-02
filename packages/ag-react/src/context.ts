@@ -160,6 +160,27 @@ export interface RuntimeContextValue<E extends BaseRuntimeEvents = BaseRuntimeEv
 export const RuntimeContext = createContext<RuntimeContextValue | null>(null)
 
 // ============================================================================
+// Cache Backend Context (mode-agnostic cache selection)
+// ============================================================================
+
+/**
+ * Cache backend type — determines where ListView stores cached items.
+ * - "terminal": Write to stdout as native scrollback (inline mode)
+ * - "virtual": In-memory HistoryBuffer ring buffer (fullscreen/panes)
+ */
+export type CacheBackend = "terminal" | "virtual"
+
+/**
+ * Context that provides the cache backend to ListView.
+ * Set by the runtime based on rendering mode:
+ * - alternateScreen: false (inline) → "terminal"
+ * - alternateScreen: true (fullscreen) → "virtual"
+ *
+ * Default: "virtual" (safe fallback when no provider)
+ */
+export const CacheBackendContext = createContext<CacheBackend>("virtual")
+
+// ============================================================================
 // Focus Manager Context (tree-based focus system)
 // ============================================================================
 

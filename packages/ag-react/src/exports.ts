@@ -416,8 +416,8 @@ export { useTransition, useDeferredValue, useId } from "react"
 export { useRuntime } from "./hooks/useRuntime"
 
 // Contexts for advanced usage (usually hooks are preferred)
-export { TermContext, FocusManagerContext, RuntimeContext, StderrContext } from "./context"
-export type { RuntimeContextValue, BaseRuntimeEvents } from "./context"
+export { CacheBackendContext, TermContext, FocusManagerContext, RuntimeContext, StderrContext } from "./context"
+export type { CacheBackend, RuntimeContextValue, BaseRuntimeEvents } from "./context"
 
 // Theming
 export { ThemeProvider } from "./ThemeProvider"

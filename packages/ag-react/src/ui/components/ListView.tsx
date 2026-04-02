@@ -41,7 +41,7 @@ import React, {
 import { useVirtualizer } from "@silvery/ag-react/hooks/useVirtualizer"
 import { useInput } from "@silvery/ag-react/hooks/useInput"
 import { Box } from "@silvery/ag-react/components/Box"
-import { TermContext } from "@silvery/ag-react/context"
+import { CacheBackendContext, StdoutContext, TermContext } from "@silvery/ag-react/context"
 import { renderStringSync } from "@silvery/ag-react/render-string"
 import { createHistoryBuffer, createHistoryItem } from "@silvery/ag-term/history-buffer"
 import type { HistoryBuffer } from "@silvery/ag-term/history-buffer"
@@ -68,7 +68,14 @@ export interface ListItemMeta {
 
 /** Cache configuration for ListView */
 export interface ListViewCacheConfig<T> {
-  mode: "none" | "virtual"
+  /**
+   * Cache backend mode:
+   * - "none": No caching
+   * - "virtual": In-memory HistoryBuffer ring buffer (fullscreen/panes)
+   * - "terminal": Write to stdout as native scrollback via promoteScrollback (inline mode)
+   * - "auto": Auto-select based on CacheBackendContext (set by runtime from rendering mode)
+   */
+  mode: "none" | "virtual" | "terminal" | "auto"
   /** Predicate for items that can be cached (removed from React tree). */
   isCacheable?: (item: T, index: number) => boolean
   /** Maximum rows in cache buffer. Default: 10_000 */
@@ -267,6 +274,10 @@ function ListViewInner<T>(
   // ── Term context for cache capture width ─────────────────────────
   const term = useContext(TermContext)
 
+  // ── Cache backend context (set by runtime from rendering mode) ───
+  const cacheBackendFromContext = useContext(CacheBackendContext)
+  const stdoutCtx = useContext(StdoutContext)
+
   // ── Nav mode: controlled/uncontrolled cursor ─────────
   const isControlled = cursorKeyProp !== undefined
   const [uncontrolledCursor, setUncontrolledCursor] = useState(0)
@@ -301,8 +312,13 @@ function ListViewInner<T>(
   const scrollTo = nav ? activeCursor : scrollToProp
 
   // ── Resolve cache config ─────────────────────────────────────────
-  const cacheConfig = typeof cacheProp === "object" ? cacheProp : cacheProp ? { mode: "virtual" as const } : undefined
-  const cacheMode = cacheConfig?.mode ?? "none"
+  // When cache=true, use "auto" mode which reads CacheBackendContext.
+  // When cache={ mode: "auto" }, also reads context. Otherwise use the explicit mode.
+  const cacheConfig = typeof cacheProp === "object" ? cacheProp : cacheProp ? { mode: "auto" as const } : undefined
+  const rawCacheMode = cacheConfig?.mode ?? "none"
+  // Resolve "auto" → context-driven backend selection
+  const cacheMode =
+    rawCacheMode === "auto" ? (cacheBackendFromContext === "terminal" ? "terminal" : "virtual") : rawCacheMode
   const cacheBufferRef = useRef<HistoryBuffer | null>(null)
   if (cacheMode === "virtual" && !cacheBufferRef.current) {
     cacheBufferRef.current = createHistoryBuffer(cacheConfig?.capacity ?? 10_000)
@@ -315,16 +331,16 @@ function ListViewInner<T>(
 
   // Compute cached prefix from isCacheable
   let cachedCount = 0
-  if (cacheMode === "virtual" && cacheConfig?.isCacheable) {
+  if ((cacheMode === "virtual" || cacheMode === "terminal") && cacheConfig?.isCacheable) {
     for (let i = 0; i < items.length; i++) {
       if (!cacheConfig.isCacheable(items[i]!, i)) break
       cachedCount++
     }
   }
 
-  // Push newly cached items to buffer — capture real rendered ANSI
+  // Push newly cached items to buffer or terminal scrollback
   const prevCachedRef = useRef(0)
-  if (cachedCount > prevCachedRef.current && cacheBuffer) {
+  if (cachedCount > prevCachedRef.current && (cacheMode === "virtual" || cacheMode === "terminal")) {
     const captureWidth = width ?? term?.cols ?? 80
     const canCapture = isLayoutEngineInitialized()
     for (let i = prevCachedRef.current; i < cachedCount; i++) {
@@ -350,7 +366,16 @@ function ListViewInner<T>(
         // Layout engine not ready — fallback to plain text
         ansi = getText?.(item) ?? String(item)
       }
-      cacheBuffer.push(createHistoryItem(key, ansi, captureWidth))
+
+      if (cacheMode === "terminal") {
+        // Terminal mode: write to stdout as native scrollback via promoteScrollback.
+        // The terminal IS the buffer — no need to store in HistoryBuffer.
+        const lineCount = ansi.split("\n").length
+        stdoutCtx?.promoteScrollback?.(`${ansi}\x1b[K\r\n`, lineCount)
+      } else if (cacheBuffer) {
+        // Virtual mode: store in HistoryBuffer ring buffer
+        cacheBuffer.push(createHistoryItem(key, ansi, captureWidth))
+      }
     }
     prevCachedRef.current = cachedCount
   }
