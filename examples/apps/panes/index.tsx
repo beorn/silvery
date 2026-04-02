@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { Box, Text, ListView } from "silvery"
-import { SurfaceRegistryProvider, SearchProvider, SearchBar, useSearch } from "@silvery/ag-react"
+import { SearchProvider, SearchBar, useSearch } from "@silvery/ag-react"
 import { run, useInput, type Key } from "@silvery/ag-term/runtime"
 import type { ExampleMeta } from "../../_banner.js"
 import { SCRIPT } from "../aichat/script.js"
@@ -190,11 +190,9 @@ export async function main() {
   const rows = process.stdout.rows ?? 40
 
   using handle = await run(
-    <SurfaceRegistryProvider>
-      <SearchProvider>
-        <PanesApp fastMode={fastMode} rows={rows} />
-      </SearchProvider>
-    </SurfaceRegistryProvider>,
+    <SearchProvider>
+      <PanesApp fastMode={fastMode} rows={rows} />
+    </SearchProvider>,
     { mode: "fullscreen", kitty: false, textSizing: false },
   )
   await handle.waitUntilExit()
