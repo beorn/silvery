@@ -4,7 +4,7 @@
  * A process explorer with a searchable, scrollable table demonstrating:
  * - Table-like display with responsive column widths via useContentRect()
  * - TextInput for live search/filter with useDeferredValue
- * - VirtualList for smooth scrolling through 500+ rows
+ * - ListView for smooth scrolling through 500+ rows
  * - Keyboard navigation with j/k and vim-style jumps
  * - Color-coded status indicators
  *
@@ -24,7 +24,7 @@ import {
   render,
   Box,
   Text,
-  VirtualList,
+  ListView,
   TextInput,
   Divider,
   useContentRect,
@@ -40,7 +40,7 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Data Explorer",
-  description: "Process explorer table with search, VirtualList, and responsive column widths",
+  description: "Process explorer table with search, ListView, and responsive column widths",
   features: ["useContentRect()", "TextInput", "useInput()", "responsive layout", "useDeferredValue"],
 }
 
@@ -303,10 +303,10 @@ function ProcessListArea({ processes, cursor, width }: { processes: ProcessInfo[
   const { height } = useContentRect()
 
   return (
-    <VirtualList
+    <ListView
       items={processes}
       height={height}
-      itemHeight={1}
+      estimateHeight={1}
       scrollTo={cursor}
       overscan={5}
       renderItem={(proc, index) => (

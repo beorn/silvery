@@ -296,8 +296,8 @@ function VirtualBenchmark() {
   const listHeight = Math.max(5, height - 5)
   const halfPage = Math.max(1, Math.floor(listHeight / 2))
 
-  const itemHeight = useCallback(
-    (_item: Item, index: number) => {
+  const estimateHeight = useCallback(
+    (index: number) => {
       if (showDetail && index === cursor) return 2
       return 1
     },
@@ -356,10 +356,10 @@ function VirtualBenchmark() {
 
       {/* Virtual list */}
       <Box flexGrow={1}>
-        <VirtualList
+        <ListView
           items={ALL_ITEMS}
           height={listHeight}
-          itemHeight={itemHeight}
+          estimateHeight={estimateHeight}
           scrollTo={cursor}
           overscan={5}
           renderItem={(item, index) => (

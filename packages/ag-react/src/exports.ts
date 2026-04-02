@@ -384,6 +384,7 @@ export type { ListItemContext } from "./hooks/useListItem"
 
 // App-level Providers (Phase 4)
 export { SearchProvider, useSearch } from "./providers/SearchProvider"
+export { SearchBar } from "@silvery/ag-react/ui/components"
 
 /**
  * Re-export React concurrent features for TUI responsiveness.

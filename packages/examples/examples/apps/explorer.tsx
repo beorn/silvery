@@ -5,7 +5,7 @@
  * - Streaming log viewer with ~2000 lines, severity-level coloring, and level toggles
  * - Sortable process table with ~50 processes, live CPU/MEM jitter, and responsive columns
  * - Shared TextInput search bar with useDeferredValue for non-blocking filtering
- * - VirtualList with interactive scrolling for both tabs
+ * - ListView with interactive scrolling for both tabs
  *
  * Usage: bun vendor/silvery/examples/apps/explorer.tsx
  *
@@ -26,7 +26,7 @@ import {
   render,
   Box,
   Text,
-  VirtualList,
+  ListView,
   TextInput,
   Tabs,
   TabList,
@@ -44,9 +44,9 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Explorer",
-  description: "Log viewer and process explorer with VirtualList search",
+  description: "Log viewer and process explorer with ListView search",
   demo: true,
-  features: ["VirtualList", "TextInput", "useContentRect()", "useDeferredValue", "2000+ rows"],
+  features: ["ListView", "TextInput", "useContentRect()", "useDeferredValue", "2000+ rows"],
 }
 
 // ============================================================================
@@ -300,10 +300,10 @@ function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number 
   const { height } = useContentRect()
 
   return (
-    <VirtualList
+    <ListView
       items={entries}
       height={height}
-      itemHeight={1}
+      estimateHeight={1}
       scrollTo={cursor}
       overscan={5}
       renderItem={(entry, index) => <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />}

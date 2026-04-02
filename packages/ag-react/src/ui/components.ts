@@ -100,6 +100,7 @@ export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "./com
 // Widget Components
 // =============================================================================
 
+export { SearchBar } from "./components/SearchBar"
 export { Spinner } from "./components/Spinner"
 export type { SpinnerProps } from "./components/Spinner"
 
