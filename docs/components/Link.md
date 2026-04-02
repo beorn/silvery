@@ -30,7 +30,7 @@ All `TextProps` style props (bold, italic, etc.) are also accepted.
 <Link href="https://example.com" variant="arm-on-hover">Always Clickable</Link>
 
 // Internal link with custom handler
-<Link href="km://node/abc123" onClick={(e) => navigate(e)}>Internal Link</Link>
+<Link href="app://node/abc123" onClick={(e) => navigate(e)}>Internal Link</Link>
 ```
 
 ## Behavior

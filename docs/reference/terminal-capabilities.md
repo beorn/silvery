@@ -370,7 +370,7 @@ Terminals that don't support it **safely ignore** the sequences — they pass th
 Sync update is enabled by default. To disable:
 
 ```bash
-SILVERY_SYNC_UPDATE=0 bun km view /path
+SILVERY_SYNC_UPDATE=0 bun run app
 ```
 
 Only applies in TTY mode. Non-TTY modes (line-by-line, static, plain) skip sync wrapping.

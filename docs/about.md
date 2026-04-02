@@ -13,11 +13,11 @@ Silvery works with Bun, Node.js (23.6+), and Deno. It uses pure TypeScript with 
 
 ## Origin Story
 
-Silvery grew out of building [km](https://github.com/beorn/km) (Knowledge Machine), an agentic workspace for knowledge workers that unifies notes, tasks, and calendar in a terminal UI. The project started with Ink, which pioneered React in the terminal and remains a solid choice for simpler CLIs.
+Silvery grew out of building a complex interactive terminal application -- a multi-pane workspace with responsive layouts, thousands of nodes, and rich keyboard-driven interactions. The project started with Ink, which pioneered React in the terminal and remains a solid choice for simpler CLIs.
 
-But km hit architectural limits that couldn't be worked around. The core problem: in Ink, React renders components first, then Yoga calculates layout. By the time layout runs, rendering is already done. Components that need to adapt to their available space -- truncating text, choosing between compact and full layouts, fitting content into responsive columns -- have to use post-render effects or prop drilling. This has been a [known limitation](https://github.com/vadimdemedes/ink/issues/5) since 2016.
+But the application hit architectural limits that couldn't be worked around. The core problem: in Ink, React renders components first, then Yoga calculates layout. By the time layout runs, rendering is already done. Components that need to adapt to their available space -- truncating text, choosing between compact and full layouts, fitting content into responsive columns -- have to use post-render effects or prop drilling. This has been a [known limitation](https://github.com/vadimdemedes/ink/issues/5) since 2016.
 
-km needed layout-first rendering for responsive column layouts (a kanban board where columns adapt to terminal width) and per-node dirty tracking for sub-millisecond interactive updates in large trees (thousands of notes and tasks). Rather than work around these limits with increasingly complex hacks, a new renderer was built from scratch -- one where layout runs before rendering, and only changed nodes are updated.
+The application needed layout-first rendering for responsive column layouts (a kanban board where columns adapt to terminal width) and per-node dirty tracking for sub-millisecond interactive updates in large trees (thousands of nodes). Rather than work around these limits with increasingly complex hacks, a new renderer was built from scratch -- one where layout runs before rendering, and only changed nodes are updated.
 
 That renderer became Silvery.
 

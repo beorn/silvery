@@ -23,7 +23,7 @@ faq:
   - q: "How does theming work in Silvery?"
     a: "Silvery ships 23 color palettes with semantic tokens ($primary, $success, $muted, $danger, etc.). Themes auto-detect the terminal's background color and adjust for WCAG-compliant contrast. Use ThemeProvider to set a palette, then reference tokens in your components. See the styling guide and theme explorer for details."
   - q: "Is Silvery production-ready?"
-    a: "Silvery is actively developed and used in production by km (Knowledge Machine), a complex TUI application with thousands of nodes, multiple views, and rich interactions. The API surface is stabilizing but may have breaking changes before 1.0. It ships with comprehensive tests, including property-invariant fuzz tests for the rendering pipeline."
+    a: "Silvery is actively developed and used in production by a complex TUI application with thousands of nodes, multiple views, and rich interactions. The API surface is stabilizing but may have breaking changes before 1.0. It ships with comprehensive tests, including property-invariant fuzz tests for the rendering pipeline."
   - q: "Does Silvery have TypeScript support?"
     a: "Silvery is written entirely in TypeScript with strict mode enabled. All components, hooks, and APIs are fully typed. The package ships TypeScript source directly (no compiled JavaScript), which works with Bun natively and Node.js 23.6+ with type stripping."
   - q: "How does the layout engine work?"
@@ -75,12 +75,12 @@ For new code, use Silvery's native APIs to take advantage of responsive layout a
 
 For the scenario that matters most -- a user pressing a key in a running application -- Silvery is over 100x faster:
 
-| Scenario | Silvery | Ink |
-| --- | --- | --- |
-| **Typical interactive update** | **169 us** | **20.7 ms** |
-| Cold render (1 component) | 165 us | 271 us |
-| Layout (50-node kanban) | 57 us | 88 us |
-| Full tree re-render (1000 nodes) | 630 ms | 20.7 ms |
+| Scenario                         | Silvery    | Ink         |
+| -------------------------------- | ---------- | ----------- |
+| **Typical interactive update**   | **169 us** | **20.7 ms** |
+| Cold render (1 component)        | 165 us     | 271 us      |
+| Layout (50-node kanban)          | 57 us      | 88 us       |
+| Full tree re-render (1000 nodes) | 630 ms     | 20.7 ms     |
 
 _Apple M1 Max, 64 GB RAM, Bun 1.3.9, Feb 2026. Reproduce: `bun run bench:compare`_
 
@@ -174,7 +174,7 @@ See the [styling guide](/guide/styling) for token reference and the [theme explo
 
 ## Is Silvery production-ready?
 
-Silvery is actively developed and used in production by [km](https://github.com/beorn/km) (Knowledge Machine), a complex TUI application with thousands of nodes, multiple views, and rich interactions. The rendering pipeline is exercised by property-invariant fuzz tests that verify idempotence, no-op stability, inverse operations, and viewport clipping.
+Silvery is actively developed and used in production by a complex TUI application with thousands of nodes, multiple views, and rich interactions. The rendering pipeline is exercised by property-invariant fuzz tests that verify idempotence, no-op stability, inverse operations, and viewport clipping.
 
 The API surface is stabilizing but may have breaking changes before 1.0. If you're building something that needs long-term API stability, pin your version and watch the changelog.
 

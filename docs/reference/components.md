@@ -378,7 +378,7 @@ import { Link } from "silvery"
 
 <Link href="https://example.com">Visit Example</Link>
 <Link href="https://example.com" color="green">Green Link</Link>
-<Link href="km://node/abc123" onClick={(e) => navigate(e)}>Internal Link</Link>
+<Link href="app://node/abc123" onClick={(e) => navigate(e)}>Internal Link</Link>
 ```
 
 | Prop        | Type                                   | Description                                                                                   |

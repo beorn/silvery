@@ -11,7 +11,7 @@ Terminals disagree on character widths, escape sequence interpretation, style re
 ## Architecture
 
 ```
-Layer 4: Application (km, silvery components, pipeline)
+Layer 4: Application (app code, silvery components, pipeline)
          ← never sees terminal differences
 ─────────────────────────────────────────────────────
 Layer 3: STRICT Invariants (detect & crash)
