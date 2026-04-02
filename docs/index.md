@@ -74,6 +74,15 @@ features:
     linkText: See comparison
 ---
 
+<div class="badges">
+
+[![npm version](https://img.shields.io/npm/v/silvery?style=flat-square&label=npm)](https://www.npmjs.com/package/silvery)
+[![npm downloads](https://img.shields.io/npm/dm/silvery?style=flat-square&label=downloads)](https://www.npmjs.com/package/silvery)
+[![GitHub stars](https://img.shields.io/github/stars/beorn/silvery?style=flat-square)](https://github.com/beorn/silvery)
+[![license](https://img.shields.io/github/license/beorn/silvery?style=flat-square)](https://github.com/beorn/silvery/blob/main/LICENSE)
+
+</div>
+
 ## Build Any Terminal App
 
 Try the interactive examples:
@@ -190,6 +199,14 @@ Silvery is part of a family of terminal-focused libraries:
 - **@silvery/create** — structured state management with commands, keybindings, effects-as-data
 
 <style>
+.badges {
+  text-align: center;
+  margin: -1rem 0 2rem;
+}
+.badges a {
+  display: inline-block;
+  margin: 0 0.25rem;
+}
 .use-cases {
   margin: 0.5rem 0 1.5rem;
 }
