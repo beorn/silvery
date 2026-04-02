@@ -28,6 +28,10 @@ export type SearchAction =
   | { type: "prevMatch" } // Shift+Enter
   | { type: "cursorLeft" }
   | { type: "cursorRight" }
+  | { type: "cursorToStart" } // Ctrl+A / Home
+  | { type: "cursorToEnd" } // Ctrl+E / End
+  | { type: "deleteWordBack" } // Ctrl+W / Alt+Backspace
+  | { type: "deleteToStart" } // Ctrl+U
 
 export type SearchEffect = { type: "scrollTo"; row: number } | { type: "render" }
 
@@ -109,6 +113,44 @@ export function searchUpdate(
     case "cursorRight":
       if (state.cursorPosition >= state.query.length) return [state, []]
       return [{ ...state, cursorPosition: state.cursorPosition + 1 }, []]
+
+    case "cursorToStart":
+      if (state.cursorPosition === 0) return [state, []]
+      return [{ ...state, cursorPosition: 0 }, []]
+
+    case "cursorToEnd":
+      if (state.cursorPosition >= state.query.length) return [state, []]
+      return [{ ...state, cursorPosition: state.query.length }, []]
+
+    case "deleteWordBack": {
+      if (state.cursorPosition === 0) return [state, []]
+      // Find the start of the previous word (skip trailing whitespace, then non-whitespace)
+      let pos = state.cursorPosition
+      while (pos > 0 && /\s/.test(state.query[pos - 1] ?? "")) pos--
+      while (pos > 0 && !/\s/.test(state.query[pos - 1] ?? "")) pos--
+      const query = state.query.slice(0, pos) + state.query.slice(state.cursorPosition)
+      const cursorPosition = pos
+      const matches = searchFn ? searchFn(query) : []
+      const currentMatch = matches.length > 0 ? 0 : -1
+      const effects: SearchEffect[] = [{ type: "render" }]
+      if (currentMatch >= 0) {
+        effects.push({ type: "scrollTo", row: matches[0]!.row })
+      }
+      return [{ ...state, query, cursorPosition, matches, currentMatch }, effects]
+    }
+
+    case "deleteToStart": {
+      if (state.cursorPosition === 0) return [state, []]
+      const query = state.query.slice(state.cursorPosition)
+      const cursorPosition = 0
+      const matches = searchFn ? searchFn(query) : []
+      const currentMatch = matches.length > 0 ? 0 : -1
+      const effects: SearchEffect[] = [{ type: "render" }]
+      if (currentMatch >= 0) {
+        effects.push({ type: "scrollTo", row: matches[0]!.row })
+      }
+      return [{ ...state, query, cursorPosition, matches, currentMatch }, effects]
+    }
   }
 }
 

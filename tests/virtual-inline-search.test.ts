@@ -114,6 +114,117 @@ describe("searchUpdate", () => {
     // Can't go past query length
     expect(right.cursorPosition).toBe(2)
   })
+
+  test("cursorToStart jumps to position 0", () => {
+    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    ;[state] = searchUpdate({ type: "input", char: "h" }, state)
+    ;[state] = searchUpdate({ type: "input", char: "e" }, state)
+    ;[state] = searchUpdate({ type: "input", char: "l" }, state)
+    expect(state.cursorPosition).toBe(3)
+
+    const [next] = searchUpdate({ type: "cursorToStart" }, state)
+    expect(next.cursorPosition).toBe(0)
+    expect(next.query).toBe("hel")
+  })
+
+  test("cursorToStart at position 0 is no-op", () => {
+    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    ;[state] = searchUpdate({ type: "input", char: "a" }, state)
+    ;[state] = searchUpdate({ type: "cursorLeft" }, state)
+    expect(state.cursorPosition).toBe(0)
+
+    const [next] = searchUpdate({ type: "cursorToStart" }, state)
+    expect(next).toBe(state) // Same reference — no-op
+  })
+
+  test("cursorToEnd jumps to end of query", () => {
+    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    ;[state] = searchUpdate({ type: "input", char: "a" }, state)
+    ;[state] = searchUpdate({ type: "input", char: "b" }, state)
+    ;[state] = searchUpdate({ type: "cursorLeft" }, state)
+    ;[state] = searchUpdate({ type: "cursorLeft" }, state)
+    expect(state.cursorPosition).toBe(0)
+
+    const [next] = searchUpdate({ type: "cursorToEnd" }, state)
+    expect(next.cursorPosition).toBe(2)
+    expect(next.query).toBe("ab")
+  })
+
+  test("cursorToEnd at end is no-op", () => {
+    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    ;[state] = searchUpdate({ type: "input", char: "a" }, state)
+    expect(state.cursorPosition).toBe(1)
+
+    const [next] = searchUpdate({ type: "cursorToEnd" }, state)
+    expect(next).toBe(state) // Same reference — no-op
+  })
+
+  test("deleteWordBack removes word before cursor", () => {
+    const mockSearch = (): SearchMatch[] => []
+    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    ;[state] = searchUpdate({ type: "input", char: "h" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "e" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "l" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "l" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "o" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: " " }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "w" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "o" }, state, mockSearch)
+    expect(state.query).toBe("hello wo")
+    expect(state.cursorPosition).toBe(8)
+
+    const [next] = searchUpdate({ type: "deleteWordBack" }, state, mockSearch)
+    expect(next.query).toBe("hello ")
+    expect(next.cursorPosition).toBe(6)
+  })
+
+  test("deleteWordBack at position 0 is no-op", () => {
+    const [state] = searchUpdate({ type: "open" }, createSearchState())
+    const [next, effects] = searchUpdate({ type: "deleteWordBack" }, state)
+    expect(next).toBe(state)
+    expect(effects).toEqual([])
+  })
+
+  test("deleteToStart removes everything before cursor", () => {
+    const mockSearch = (): SearchMatch[] => []
+    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    ;[state] = searchUpdate({ type: "input", char: "a" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "b" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "c" }, state, mockSearch)
+    ;[state] = searchUpdate({ type: "input", char: "d" }, state, mockSearch)
+    // Move cursor to position 2 (after "ab")
+    ;[state] = searchUpdate({ type: "cursorLeft" }, state)
+    ;[state] = searchUpdate({ type: "cursorLeft" }, state)
+    expect(state.cursorPosition).toBe(2)
+
+    const [next] = searchUpdate({ type: "deleteToStart" }, state, mockSearch)
+    expect(next.query).toBe("cd")
+    expect(next.cursorPosition).toBe(0)
+  })
+
+  test("deleteToStart at position 0 is no-op", () => {
+    const [state] = searchUpdate({ type: "open" }, createSearchState())
+    const [next, effects] = searchUpdate({ type: "deleteToStart" }, state)
+    expect(next).toBe(state)
+    expect(effects).toEqual([])
+  })
+
+  test("deleteWordBack re-searches with updated query", () => {
+    const mockSearch = (query: string): SearchMatch[] => {
+      if (query === "hello") return [{ row: 3, startCol: 0, endCol: 5 }]
+      return []
+    }
+    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    for (const ch of "hello world") {
+      ;[state] = searchUpdate({ type: "input", char: ch }, state, mockSearch)
+    }
+    expect(state.query).toBe("hello world")
+
+    const [next, effects] = searchUpdate({ type: "deleteWordBack" }, state, mockSearch)
+    expect(next.query).toBe("hello ")
+    // "hello " doesn't match "hello" exactly, so no matches from our mock
+    expect(next.matches).toEqual([])
+  })
 })
 
 // ============================================================================

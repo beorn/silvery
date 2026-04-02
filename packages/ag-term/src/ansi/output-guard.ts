@@ -1,16 +1,16 @@
 /**
- * Output guard -- intercepts process.stdout/stderr writes in alt screen mode.
+ * Output guard -- intercepts process.stdout/stderr writes AND console methods
+ * in alt screen mode.
  *
  * When active:
  * - stdout: only allows writes from silvery's render pipeline (via writeStdout).
  *   All other stdout writes are suppressed.
  * - stderr: redirected to DEBUG_LOG file if set, otherwise suppressed.
- * - Restores original write methods on dispose.
+ * - console.log/info/warn/error/debug: redirected same as stderr.
+ * - Restores all original methods on dispose.
  *
- * This solves the problem where ANY write to process.stdout or process.stderr
- * outside silvery's render pipeline corrupts the alt screen display. patchConsole
- * only catches console.* methods -- libraries like loggily write to
- * process.stderr.write() directly.
+ * This solves the problem where ANY write to process.stdout, process.stderr,
+ * or console.* outside silvery's render pipeline corrupts the alt screen display.
  */
 
 import { openSync, writeSync, closeSync } from "node:fs"
@@ -65,8 +65,6 @@ export function createOutputGuard(options?: OutputGuardOptions): OutputGuard {
     }
   }
 
-  log?.info?.("activated" + (stderrLog ? ` (stderr -> ${stderrLog})` : " (stderr suppressed)"))
-
   // Intercept stdout -- only allow silvery's own writes
   process.stdout.write = function (chunk: any, ...args: any[]): boolean {
     if (silveryWriting) {
@@ -99,12 +97,52 @@ export function createOutputGuard(options?: OutputGuardOptions): OutputGuard {
     return true
   } as any
 
+  // Intercept console methods — they write to stderr in Bun/Node and bypass
+  // the process.stderr.write patch (they use internal C++ bindings).
+  const savedConsoleLog = console.log
+  const savedConsoleInfo = console.info
+  const savedConsoleWarn = console.warn
+  const savedConsoleError = console.error
+  const savedConsoleDebug = console.debug
+
+  function redirectConsole(...args: unknown[]): void {
+    const str = args.map((a) => (typeof a === "string" ? a : String(a))).join(" ") + "\n"
+    redirectedCount++
+    if (stderrFd !== null) {
+      try {
+        writeSync(stderrFd, str)
+      } catch {
+        // File may have been closed
+      }
+      return
+    }
+    if (options?.bufferStderr) {
+      stderrBuffer.push(str)
+      return
+    }
+    // Suppress
+  }
+
+  console.log = redirectConsole as typeof console.log
+  console.info = redirectConsole as typeof console.info
+  console.warn = redirectConsole as typeof console.warn
+  console.error = redirectConsole as typeof console.error
+  console.debug = redirectConsole as typeof console.debug
+
+  // Log after all intercepts installed so the message goes through the guard
+  log?.info?.("activated" + (stderrLog ? ` (stderr -> ${stderrLog})` : " (stderr suppressed)"))
+
   function dispose() {
     if (disposed) return
     disposed = true
 
     process.stdout.write = savedStdoutWrite
     process.stderr.write = savedStderrWrite
+    console.log = savedConsoleLog
+    console.info = savedConsoleInfo
+    console.warn = savedConsoleWarn
+    console.error = savedConsoleError
+    console.debug = savedConsoleDebug
 
     log?.info?.(`deactivated (suppressed ${suppressedCount} stdout, redirected ${redirectedCount} stderr)`)
 

@@ -67,6 +67,14 @@ export interface SearchContextValue {
   cursorLeft(): void
   /** Move the query cursor right */
   cursorRight(): void
+  /** Move the query cursor to the start */
+  cursorToStart(): void
+  /** Move the query cursor to the end */
+  cursorToEnd(): void
+  /** Delete the word before the cursor (Ctrl+W) */
+  deleteWordBack(): void
+  /** Delete everything before the cursor (Ctrl+U) */
+  deleteToStart(): void
   /** Register a searchable component. Returns unregister function. */
   registerSearchable(id: string, searchable: Searchable): () => void
   /** Set which searchable is focused (for multi-pane routing). */
@@ -203,6 +211,28 @@ export function SearchProvider({ children }: { children: ReactNode }): ReactElem
     })
   }, [])
 
+  const cursorToStart = useCallback(() => {
+    setState((prev) => {
+      const [next] = searchUpdate({ type: "cursorToStart" }, prev)
+      return next
+    })
+  }, [])
+
+  const cursorToEnd = useCallback(() => {
+    setState((prev) => {
+      const [next] = searchUpdate({ type: "cursorToEnd" }, prev)
+      return next
+    })
+  }, [])
+
+  const deleteWordBack = useCallback(() => {
+    dispatch({ type: "deleteWordBack" })
+  }, [dispatch])
+
+  const deleteToStart = useCallback(() => {
+    dispatch({ type: "deleteToStart" })
+  }, [dispatch])
+
   const value = useMemo<SearchContextValue>(
     () => ({
       isActive: state.active,
@@ -218,10 +248,30 @@ export function SearchProvider({ children }: { children: ReactNode }): ReactElem
       backspace,
       cursorLeft,
       cursorRight,
+      cursorToStart,
+      cursorToEnd,
+      deleteWordBack,
+      deleteToStart,
       registerSearchable,
       setFocused,
     }),
-    [state, open, close, next, prev, input, backspace, cursorLeft, cursorRight, registerSearchable, setFocused],
+    [
+      state,
+      open,
+      close,
+      next,
+      prev,
+      input,
+      backspace,
+      cursorLeft,
+      cursorRight,
+      cursorToStart,
+      cursorToEnd,
+      deleteWordBack,
+      deleteToStart,
+      registerSearchable,
+      setFocused,
+    ],
   )
 
   return React.createElement(
@@ -258,8 +308,43 @@ function SearchBindings({ ctx }: { ctx: SearchContextValue }) {
         ctx.prev()
         return
       }
+      if (key.backspace && key.meta) {
+        // Alt+Backspace — delete word backward
+        ctx.deleteWordBack()
+        return
+      }
       if (key.backspace) {
         ctx.backspace()
+        return
+      }
+      // Ctrl+W — delete word backward
+      if (key.ctrl && input === "w") {
+        ctx.deleteWordBack()
+        return
+      }
+      // Ctrl+U — delete to start of line
+      if (key.ctrl && input === "u") {
+        ctx.deleteToStart()
+        return
+      }
+      // Ctrl+A — cursor to start
+      if (key.ctrl && input === "a") {
+        ctx.cursorToStart()
+        return
+      }
+      // Ctrl+E — cursor to end
+      if (key.ctrl && input === "e") {
+        ctx.cursorToEnd()
+        return
+      }
+      // Home — cursor to start
+      if (key.home) {
+        ctx.cursorToStart()
+        return
+      }
+      // End — cursor to end
+      if (key.end) {
+        ctx.cursorToEnd()
         return
       }
       if (key.leftArrow) {
