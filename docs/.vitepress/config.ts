@@ -16,7 +16,7 @@ const seoOptions = {
   hostname: "https://silvery.dev",
   siteName: "Silvery",
   description: "React TUI framework for modern terminal apps",
-  ogImage: "https://silvery.dev/og-image.svg",
+  ogImage: "https://silvery.dev/og-image.png",
   author: {
     name: "Bjørn Stabell",
     url: "https://beorn.codes",
