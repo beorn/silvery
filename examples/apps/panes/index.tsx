@@ -85,11 +85,11 @@ function ChatPane({
       scrollTo={exchanges.length - 1}
       active={active}
       surfaceId={surfaceId}
-      history={{
+      cache={{
         mode: "virtual",
-        freezeWhen: (_ex: Exchange, idx: number) => idx < exchanges.length - 1,
+        isCacheable: (_ex: Exchange, idx: number) => idx < exchanges.length - 1,
       }}
-      textAdapter={{ getItemText: (ex: Exchange) => ex.content }}
+      search={{ getText: (ex: Exchange) => ex.content }}
       renderItem={(exchange: Exchange, _index: number, _meta: ListItemMeta) => (
         <ExchangeItem
           exchange={exchange}
