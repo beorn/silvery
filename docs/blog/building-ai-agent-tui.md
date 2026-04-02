@@ -1,267 +1,161 @@
 ---
-title: "Building an AI Coding Agent TUI"
-description: "How to build a terminal-based AI coding agent with streaming responses, tool call rendering, and scrollable output using Silvery."
+title: "Building an AI Coding Agent in the Terminal"
+description: "The hard parts of building a terminal-based AI agent — streaming, scrollback, tool calls, and input handling."
 date: 2026-04-02
 ---
 
-# Building an AI Coding Agent TUI
+# Building an AI Coding Agent in the Terminal
 
-AI coding agents like Claude Code, Aider, and Goose all run in the terminal. They share a common set of UI challenges: streaming text that grows unpredictably, tool call results that need structured display, conversation histories that can grow to thousands of lines, and input handling that needs to coexist with multi-line paste.
+Claude Code, Aider, Goose, Codex CLI -- AI coding agents are converging on the terminal as their primary interface. After building agent UIs in Silvery, I've found that the hard parts aren't the basic chat loop (that's 40 lines of code). The hard parts are streaming token rendering, the scrollback decision, tool call display, and input handling.
 
-I built an AI chat interface with Silvery to see how its primitives map to these requirements. This isn't a toy demo -- it covers the patterns you'd actually need for a production agent TUI.
+## The Streaming Problem
 
-## The Minimal Chat
-
-Start with the basics: a scrollable message area and a text input.
+The naive approach to streaming tokens is to update state on every token:
 
 ```tsx
-import { Box, Text, TextInput } from "silvery"
-import { run } from "silvery/runtime"
-import { useState } from "react"
+// Don't do this
+for await (const token of stream) {
+  setMessages((prev) => prev.map((m) => (m.id === activeId ? { ...m, content: m.content + token } : m)))
+}
+```
 
-interface Message {
-  role: "user" | "assistant"
-  content: string
+This works at low token rates, but modern LLMs emit 50-150 tokens per second. Each `setMessages` triggers a React reconciliation pass. Even with Silvery's incremental renderer (which updates only the changed text node in ~169 microseconds), the overhead of scheduling 100+ React updates per second adds up. React batches state updates within the same synchronous tick, but async iteration creates a new tick per token.
+
+The fix is to batch tokens on a timer:
+
+```tsx
+const pending = { current: "" }
+const BATCH_MS = 16 // one frame at 60fps
+
+function startBatching(messageId: number) {
+  const interval = setInterval(() => {
+    if (pending.current) {
+      const chunk = pending.current
+      pending.current = ""
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, content: m.content + chunk } : m)))
+    }
+  }, BATCH_MS)
+  return () => clearInterval(interval)
 }
 
-function Chat() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
+// In the streaming loop:
+for await (const token of stream) {
+  pending.current += token
+}
+```
 
-  async function send(text: string) {
-    if (!text.trim()) return
-    setInput("")
-    setMessages((prev) => [...prev, { role: "user", content: text }])
+At 16ms intervals, you get at most 62 renders per second regardless of token rate. Each render handles whatever tokens accumulated since the last batch. The visual result is indistinguishable from per-token updates -- humans can't perceive text changes faster than about 15 updates per second anyway.
 
-    // Replace with your LLM call
-    const reply = `Echo: ${text}`
-    setMessages((prev) => [...prev, { role: "assistant", content: reply }])
-  }
+There's a subtlety here: you also need to flush the buffer when the stream ends, or the last batch of tokens might sit in the pending buffer until the next interval fires.
 
+## The Scrollback Decision
+
+Every TUI framework faces a choice: alternate screen or native scrollback?
+
+**Alternate screen** (`\x1b[?1049h`) is what vim, htop, and most fullscreen TUIs use. The terminal switches to a separate buffer, your app draws everything, and when the app exits, the original terminal content is restored. The advantage: you control every pixel on screen. The disadvantage: the user loses access to their terminal's native scrolling, text selection, and search (Cmd+F).
+
+**Native scrollback** means the app writes to the normal terminal buffer. Content scrolls up naturally. The user can scroll back with their mouse wheel, select text normally, and search with Cmd+F. The disadvantage: the app can't redraw content that has scrolled off screen. Once it's in scrollback, it belongs to the terminal.
+
+For an AI agent, the choice matters more than for most applications. Agent conversations get long -- hundreds of messages, tool call outputs, code blocks. Users frequently need to scroll back to reference earlier output, copy code snippets, or search for something the agent said ten minutes ago.
+
+Claude Code uses native scrollback (inline mode). Completed exchanges scroll up into the terminal's history. You can scroll back to the beginning of the conversation with your terminal's native scroll mechanism. This feels natural, but it means Claude Code can't go back and update earlier output -- no collapsing tool call results after the fact, no updating a progress bar in a previous message.
+
+The approach I've landed on in Silvery is a three-zone model:
+
+1. **Live screen**: The bottom of the terminal. React components render here normally. This is where the current streaming response and input prompt live.
+2. **Dynamic scrollback**: Content above the screen that the app still tracks. Pre-rendered as strings, cheaply re-emittable. The app can update this zone by clearing and rewriting it.
+3. **Static scrollback**: Content the app has released. The terminal owns it. The user can scroll to it, but the app can't modify it.
+
+```tsx
+import { ScrollbackView } from "silvery"
+
+interface Exchange {
+  id: string
+  messages: Message[]
+  status: "streaming" | "done"
+}
+
+function AgentUI({ exchanges }: { exchanges: Exchange[] }) {
   return (
-    <Box flexDirection="column" width="100%" height="100%">
-      <Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={messages.length - 1} paddingX={1}>
-        {messages.map((msg, i) => (
-          <Text key={i} color={msg.role === "user" ? "$primary" : "$fg"}>
-            {msg.role === "user" ? "> " : "  "}
-            {msg.content}
-          </Text>
-        ))}
-      </Box>
-      <Box borderStyle="round" borderColor="$muted" paddingX={1}>
-        <TextInput value={input} onChange={setInput} onSubmit={send} placeholder="Ask anything..." prompt="you: " />
-      </Box>
-    </Box>
+    <ScrollbackView
+      items={exchanges}
+      keyExtractor={(e) => e.id}
+      isFrozen={(e) => e.status === "done"}
+      footer={<InputPrompt />}
+    >
+      {(exchange) => <ExchangeView exchange={exchange} />}
+    </ScrollbackView>
   )
 }
-
-await run(<Chat />)
 ```
 
-The key parts:
+When an exchange finishes (`isFrozen` returns true), its React component unmounts and the rendered output becomes a static string in scrollback. The user scrolls through it with their terminal's native mechanism. Active exchanges stay mounted as live React components.
 
-- **`overflow="scroll"`** on the message area makes it scrollable. Silvery measures the children and renders only the visible ones.
-- **`scrollTo={messages.length - 1}`** auto-scrolls to the latest message.
-- **`TextInput`** gives you readline shortcuts out of the box: Ctrl+A/E for start/end, Ctrl+K to kill to end of line, Ctrl+U to kill to start, Alt+B/F for word movement, Ctrl+Y to yank.
-- **`flexGrow={1}`** makes the message area fill all available height. The input box takes its natural height.
+The tradeoff is real: rewriting dynamic scrollback requires clearing the terminal's scrollback buffer (`\x1b[3J`) and re-emitting everything the app still tracks. If you do this on every token while streaming, the user's scroll position jumps. In practice, batching these redraws to happen only when items transition (new exchange starts, tool call completes) avoids the problem.
 
-That's about 40 lines for a working chat interface with scroll handling, keyboard shortcuts, and proper layout.
+## Tool Call Rendering
 
-## Adding Streaming
-
-The interesting part of an AI chat is streaming. Tokens arrive one at a time, and you want to display them as they arrive. Here's the pattern:
+An AI agent's tool calls present a UI challenge: they start as a name and input, transition through a running state with potentially large output, and end with a result. Each phase needs different display treatment.
 
 ```tsx
-interface Message {
-  id: number
-  role: "user" | "assistant"
-  content: string
-  streaming?: boolean
-}
+import { Box, Text, Spinner, Badge, useContentRect } from "silvery"
 
-let nextId = 0
-
-function Chat() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const [busy, setBusy] = useState(false)
-
-  async function send(text: string) {
-    if (!text.trim() || busy) return
-    setInput("")
-    setBusy(true)
-
-    const userId = nextId++
-    const assistantId = nextId++
-
-    setMessages((prev) => [
-      ...prev,
-      { id: userId, role: "user", content: text },
-      { id: assistantId, role: "assistant", content: "", streaming: true },
-    ])
-
-    // Simulate streaming (replace with real API call)
-    const response = "This is a streamed response from the AI assistant."
-    for (const char of response) {
-      await new Promise((r) => setTimeout(r, 20))
-      setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + char } : m)))
-    }
-
-    setMessages((prev) => prev.map((m) => (m.id === assistantId ? { ...m, streaming: false } : m)))
-    setBusy(false)
-  }
-
-  // ... render (same as above, plus streaming indicator)
-}
-```
-
-Each token update triggers a re-render of only the streaming message's text node. Silvery's incremental renderer sees that one text node changed and updates just that cell range -- about 169 microseconds per token. At 50 tokens per second, that's 8.5ms total rendering time, leaving the event loop free for everything else.
-
-## Rendering Tool Calls
-
-AI agents don't just chat -- they run tools. File edits, shell commands, search results. Each tool call type needs different rendering:
-
-```tsx
 interface ToolCall {
-  type: "file_edit" | "shell" | "search"
   name: string
   input: Record<string, unknown>
-  output?: string
+  output: string
   status: "running" | "done" | "error"
 }
 
 function ToolCallView({ tool }: { tool: ToolCall }) {
   const { width } = useContentRect()
+  const maxOutputLines = 10
+  const outputLines = tool.output.split("\n")
+  const truncated = outputLines.length > maxOutputLines
+  const displayed = truncated ? outputLines.slice(-maxOutputLines).join("\n") : tool.output
 
   return (
     <Box flexDirection="column" borderStyle="single" borderColor="$muted" paddingX={1}>
-      <Box justifyContent="space-between">
+      <Box>
         <Text bold color="$accent">
           {tool.name}
         </Text>
-        <ToolStatus status={tool.status} />
+        <Text> </Text>
+        {tool.status === "running" && <Spinner />}
+        {tool.status === "done" && <Text color="$success">done</Text>}
+        {tool.status === "error" && <Text color="$error">error</Text>}
       </Box>
 
-      {tool.type === "file_edit" && tool.input.path && <Text color="$muted">{String(tool.input.path)}</Text>}
+      {tool.input.command && <Text color="$muted">$ {String(tool.input.command)}</Text>}
 
-      {tool.type === "shell" && tool.input.command && <Text color="$muted">$ {String(tool.input.command)}</Text>}
-
-      {tool.output && (
-        <Box overflow="scroll" maxHeight={10}>
-          <Text wrap="wrap">{truncateOutput(tool.output, width - 4)}</Text>
+      {displayed && (
+        <Box flexDirection="column">
+          {truncated && <Text color="$muted">... {outputLines.length - maxOutputLines} lines above</Text>}
+          <Text wrap="wrap">{displayed}</Text>
         </Box>
       )}
     </Box>
   )
 }
-
-function ToolStatus({ status }: { status: string }) {
-  if (status === "running") return <Spinner label="running" />
-  if (status === "done") return <Badge variant="success">done</Badge>
-  return <Badge variant="error">error</Badge>
-}
 ```
 
-A few things to note:
+The key decisions:
 
-- **`useContentRect()`** lets the tool call view know its width, so it can truncate output intelligently.
-- **`overflow="scroll"` with `maxHeight`** caps the output display at 10 rows. Long command outputs get a scrollable region instead of blowing up the layout.
-- **`Spinner`** shows an animated indicator while a tool is running. No manual animation code needed.
-- **`Badge`** renders a styled status label that automatically picks the right color from the theme.
+**Capping visible output.** Shell commands can produce megabytes of output. Showing the last N lines with a "lines above" indicator keeps the layout manageable. The full output is in the data model; only the display is truncated.
 
-## A Message Component with Mixed Content
+**Streaming output into a bounded region.** While a tool is running, its output grows. Keeping the display region bounded (last 10 lines) means the layout stays stable. The user sees a tail-like view of the running command. Once the tool completes and the exchange freezes into scrollback, the full output is preserved in the terminal's history.
 
-Real agent conversations interleave text and tool calls. Here's a message component that handles both:
+**Status transitions.** A spinner while running, a status label when done. The Spinner component handles animation internally -- no manual frame counting or interval management.
 
-```tsx
-import { Box, Text, Spinner, Badge, useContentRect } from "silvery"
+## Multi-line Input and Paste
 
-type ContentBlock = { type: "text"; text: string } | { type: "tool_use"; tool: ToolCall }
+Most agent UIs need to handle pasted code blocks. The user copies a function from their editor and pastes it into the agent. Without proper handling, each line of the paste looks like a separate command.
 
-interface Message {
-  id: number
-  role: "user" | "assistant"
-  content: ContentBlock[]
-  streaming?: boolean
-}
-
-function MessageView({ message }: { message: Message }) {
-  return (
-    <Box flexDirection="column" paddingY={message.role === "assistant" ? 0 : 0}>
-      <Text bold color={message.role === "user" ? "$primary" : "$accent"}>
-        {message.role === "user" ? "You" : "Assistant"}
-        {message.streaming && " ..."}
-      </Text>
-      {message.content.map((block, i) => {
-        if (block.type === "text") {
-          return (
-            <Text key={i} wrap="wrap">
-              {block.text}
-            </Text>
-          )
-        }
-        return <ToolCallView key={i} tool={block.tool} />
-      })}
-    </Box>
-  )
-}
-```
-
-## Handling Long Conversations
-
-For conversations with hundreds of messages, `overflow="scroll"` works up to a point. Beyond a few hundred items, you want virtualization. `VirtualList` renders only the visible items:
+Modern terminals solve this with bracketed paste mode (`\x1b[?2004h`). When active, pasted text is wrapped in special escape sequences that tell the application "this is a paste, not individual keystrokes." Silvery's `TextArea` handles this automatically:
 
 ```tsx
-import { VirtualList } from "silvery"
-
-function ConversationView({ messages }: { messages: Message[] }) {
-  const { height } = useContentRect()
-
-  return (
-    <VirtualList
-      items={messages}
-      height={height}
-      itemHeight={(msg) => estimateHeight(msg)}
-      scrollTo={messages.length - 1}
-      overscan={3}
-      renderItem={(msg) => <MessageView message={msg} />}
-    />
-  )
-}
-
-function estimateHeight(msg: Message): number {
-  // Rough estimate: 2 lines for header, plus lines per content block
-  let lines = 2
-  for (const block of msg.content) {
-    if (block.type === "text") {
-      lines += Math.ceil(block.text.length / 80) || 1
-    } else {
-      lines += 5 // tool call box
-    }
-  }
-  return lines
-}
-```
-
-`VirtualList` handles the viewport calculation. Only visible items plus a few overscan items above and below are in the React tree. Scrolling is keyboard-driven (j/k, Page Up/Down, Home/End) when `interactive` mode is enabled.
-
-For the most native experience, `ScrollbackView` pushes completed messages into the terminal's scrollback buffer:
-
-```tsx
-import { ScrollbackView } from "silvery"
-;<ScrollbackView items={messages} keyExtractor={(m) => m.id} isFrozen={(m) => !m.streaming} footer={<InputBar />}>
-  {(msg) => <MessageView message={msg} />}
-</ScrollbackView>
-```
-
-Once a message is frozen (no longer streaming), it graduates to the terminal's native scrollback. The user scrolls with their terminal's native mechanism -- mouse wheel, scrollbar, Shift+PageUp. Text selection works. The content becomes part of the terminal's permanent history.
-
-## Multi-line Input with Paste Support
-
-AI coding agents need to handle pasted code blocks. The `usePaste` hook receives pasted text as a single event:
-
-```tsx
-import { TextArea } from "silvery"
+import { useState } from "react"
+import { Box, TextArea } from "silvery"
 
 function InputArea({ onSubmit }: { onSubmit: (text: string) => void }) {
   const [value, setValue] = useState("")
@@ -272,8 +166,10 @@ function InputArea({ onSubmit }: { onSubmit: (text: string) => void }) {
         value={value}
         onChange={setValue}
         onSubmit={() => {
-          onSubmit(value)
-          setValue("")
+          if (value.trim()) {
+            onSubmit(value)
+            setValue("")
+          }
         }}
         placeholder="Type a message... (Ctrl+Enter to send)"
         height={3}
@@ -283,33 +179,20 @@ function InputArea({ onSubmit }: { onSubmit: (text: string) => void }) {
 }
 ```
 
-`TextArea` gives you multi-line editing with word wrap, cursor movement, undo/redo, and selection. Bracketed paste mode is handled automatically -- pasted multi-line text arrives as a single event instead of being interpreted as individual keystrokes.
+The submit keybinding is a design choice: Enter-to-submit (Claude Code's approach) works well when most input is short natural language, while Ctrl+Enter-to-submit is more ergonomic when users frequently type multi-line code.
 
-## Putting It Together
+## Backpressure
 
-The full architecture looks like this:
+This is the problem that doesn't show up in demos. A tool emits 50,000 lines of output. A recursive file search returns 10,000 results.
 
-```
-ScrollbackView (or VirtualList)
-  MessageView (text + tool calls)
-    Text blocks with streaming updates
-    ToolCallView with status, output, scroll
-  MessageView
-    ...
-InputBar
-  TextArea (multi-line) or TextInput (single-line)
-```
+Three rules: don't block the event loop (chunk processing with `setTimeout` yields), don't allocate unboundedly (cap the buffer, drop old lines), and don't re-render on every line (batch updates on a timer, same as streaming tokens).
 
-The framework handles scrolling, viewport management, incremental updates for streaming tokens, and text input with readline shortcuts. What's left for you is the LLM integration, the tool execution logic, and the conversation state management -- the parts that are actually specific to your agent.
+## What's Still Hard
 
-## Performance Notes
+**Knowing when the user has scrolled up.** No terminal protocol tells the application "the user is reading earlier output." The app can't pause auto-scroll or show a "new content below" indicator.
 
-The numbers that matter for an AI chat:
+**Rich content in scrollback.** Once content enters terminal scrollback, it's plain text with ANSI codes. No collapsible sections, no expandable code blocks. OSC 8 hyperlinks work, but that's about it.
 
-- **Streaming token update**: ~169us per token. At 100 tokens/second, that's 16.9ms total rendering -- well within a 60fps budget.
-- **Scroll to latest message**: ~200us. Effectively instant.
-- **Tool call output append**: ~180us per update. Even rapid shell output doesn't cause visible lag.
+**Copy-paste fidelity.** Copying a code block from an agent response includes box-drawing characters and indentation whitespace. The terminal has no concept of "this region is a code block."
 
-These are incremental update times. Silvery's dirty tracking means only the changed nodes re-render. For a streaming token, that's a single text node update -- not a full-tree re-render.
-
-For comparison, a full-tree re-render on a conversation with 50 messages takes about 15ms. That's still fast enough, but the incremental path means you don't pay that cost on every keystroke or token.
+These are terminal-level constraints, not framework-level ones -- things to design around rather than problems to solve.

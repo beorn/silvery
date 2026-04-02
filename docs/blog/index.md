@@ -1,20 +1,20 @@
 ---
 title: "Blog"
-description: "Articles about building terminal applications with Silvery — tutorials, architecture decisions, benchmarks, and migration guides."
+description: "Articles about building terminal applications — architecture decisions, protocol support, and practical patterns."
 ---
 
 # Blog
 
-Articles about building terminal applications with Silvery.
+Articles about building terminal applications.
 
 ## Articles
 
-- [Build a CLI Dashboard in 50 Lines](/blog/build-cli-dashboard) — Step-by-step tutorial building a real-time system dashboard with responsive layout, live data, and theming.
+- [The Best macOS Terminal Emulators in 2026](/blog/best-macos-terminals-2026) — Data-driven comparison of Ghostty, Kitty, WezTerm, iTerm2, and Terminal.app using terminfo.dev probe data.
 
-- [Silvery vs Ink: An Honest Benchmark](/blog/silvery-vs-ink-benchmarks) — Head-to-head performance comparison with methodology, numbers, and honest analysis of where each framework wins.
+- [Building an AI Coding Agent in the Terminal](/blog/building-ai-agent-tui) — The hard parts of building a terminal-based AI agent — streaming, scrollback, tool calls, and input handling.
 
-- [Migrating from Ink to Silvery: A Practical Guide](/blog/migrating-from-ink) — Step-by-step migration guide with real code examples showing the compatibility layer and native API adoption.
+- [Dynamic Scrollback: Why Your TUI Should Use the Terminal's Native History](/blog/dynamic-scrollback) — Most TUI frameworks trap everything in the alternate screen. Here's what you lose and how dynamic scrollback gives it back.
 
-- [Layout-First Rendering: Why Terminal Components Need Their Width](/blog/layout-first-rendering) — The architectural decision behind Silvery's rendering pipeline — what problem it solves and how it works.
+- [Terminal Protocols You Should Know in 2026](/blog/terminal-protocols-2026) — The modern terminal feature landscape — Kitty keyboard, synchronized output, OSC 52 clipboard, graphics protocols, and which terminals support them.
 
-- [Building an AI Coding Agent TUI](/blog/building-ai-agent-tui) — How to build a terminal-based AI coding agent with streaming responses, tool call rendering, and scrollable output.
+- [Layout-First Rendering: Why Terminal Components Need Their Width](/blog/layout-first-rendering) — The architectural decision behind Silvery's rendering pipeline — what problem it solves, how it actually works, and what it costs.
