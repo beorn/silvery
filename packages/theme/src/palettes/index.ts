@@ -3,7 +3,7 @@
  *
  * Exports:
  * - Pre-derived Theme objects (ansi16Dark, ansi16Light, defaultDark, defaultLight)
- * - ColorPalette definitions from popular theme systems (45 palettes)
+ * - ColorPalette definitions from popular theme systems (70+ palettes)
  * - Registry functions (getThemeByName, getPaletteByName)
  */
 
@@ -11,7 +11,12 @@ import { deriveTheme } from "../derive"
 import type { Theme, ColorPalette } from "../types"
 
 // ── Re-export all palette definitions ──────────────────────────────
-export { catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte } from "./catppuccin"
+export {
+  catppuccinMocha,
+  catppuccinFrappe,
+  catppuccinMacchiato,
+  catppuccinLatte,
+} from "./catppuccin"
 export { nord } from "./nord"
 export { dracula } from "./dracula"
 export { solarizedDark, solarizedLight } from "./solarized"
@@ -34,9 +39,40 @@ export { oxocarbonDark, oxocarbonLight } from "./oxocarbon"
 export { sonokai } from "./sonokai"
 export { edgeDark, edgeLight } from "./edge"
 export { modusVivendi, modusOperandi } from "./modus"
+// New palettes
+export { githubDark, githubLight } from "./github"
+export { cobalt2 } from "./cobalt2"
+export { synthwave, synthwave84 } from "./synthwave"
+export { tomorrowNight, tomorrowNightBlue, tomorrowNightEighties } from "./tomorrow-night"
+export { zenburn } from "./zenburn"
+export { ubuntu } from "./ubuntu"
+export { tangoDark, tangoLight } from "./tango"
+export { cyberpunk } from "./cyberpunk"
+export { vscodeDark } from "./vscode"
+export { oneLight, oneHalfDark, oneHalfLight } from "./one-light"
+export { nightOwlLight } from "./night-owl"
+export { shadesOfPurple } from "./shades-of-purple"
+export { homebrew } from "./homebrew"
+export { neon } from "./neon"
+export { challengerDeep } from "./challenger-deep"
+export { doomOne } from "./doom-one"
+export { mariana } from "./mariana"
+export { darcula } from "./darcula"
+export { espresso } from "./espresso"
+export { icebergDark, icebergLight } from "./iceberg"
+export { serendipityMidnight, serendipityMorning } from "./serendipity"
+export { twilight } from "./twilight"
+export { breeze } from "./breeze"
+export { andromeda } from "./andromeda"
+export { relaxed } from "./relaxed"
 
 // ── Import for registry ────────────────────────────────────────────
-import { catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte } from "./catppuccin"
+import {
+  catppuccinMocha,
+  catppuccinFrappe,
+  catppuccinMacchiato,
+  catppuccinLatte,
+} from "./catppuccin"
 import { nord } from "./nord"
 import { dracula } from "./dracula"
 import { solarizedDark, solarizedLight } from "./solarized"
@@ -59,6 +95,32 @@ import { oxocarbonDark, oxocarbonLight } from "./oxocarbon"
 import { sonokai } from "./sonokai"
 import { edgeDark, edgeLight } from "./edge"
 import { modusVivendi, modusOperandi } from "./modus"
+// New palettes
+import { githubDark, githubLight } from "./github"
+import { cobalt2 } from "./cobalt2"
+import { synthwave, synthwave84 } from "./synthwave"
+import { tomorrowNight, tomorrowNightBlue, tomorrowNightEighties } from "./tomorrow-night"
+import { zenburn } from "./zenburn"
+import { ubuntu } from "./ubuntu"
+import { tangoDark, tangoLight } from "./tango"
+import { cyberpunk } from "./cyberpunk"
+import { vscodeDark } from "./vscode"
+import { oneLight, oneHalfDark, oneHalfLight } from "./one-light"
+import { nightOwlLight } from "./night-owl"
+import { shadesOfPurple } from "./shades-of-purple"
+import { homebrew } from "./homebrew"
+import { neon } from "./neon"
+import { challengerDeep } from "./challenger-deep"
+import { doomOne } from "./doom-one"
+import { mariana } from "./mariana"
+import { darcula } from "./darcula"
+import { espresso } from "./espresso"
+import { icebergDark, icebergLight } from "./iceberg"
+import { serendipityMidnight, serendipityMorning } from "./serendipity"
+import { twilight } from "./twilight"
+import { breeze } from "./breeze"
+import { andromeda } from "./andromeda"
+import { relaxed } from "./relaxed"
 
 // ============================================================================
 // ANSI 16 Themes (no palette required — hardcoded for any terminal)
@@ -190,7 +252,7 @@ export const defaultLightTheme: Theme = deriveTheme(catppuccinLatte)
 // Registry
 // ============================================================================
 
-/** All built-in ColorPalette definitions (45 palettes). */
+/** All built-in ColorPalette definitions (70+ palettes). */
 export const builtinPalettes: Record<string, ColorPalette> = {
   // Catppuccin
   "catppuccin-mocha": catppuccinMocha,
@@ -258,6 +320,65 @@ export const builtinPalettes: Record<string, ColorPalette> = {
   // Modus
   "modus-vivendi": modusVivendi,
   "modus-operandi": modusOperandi,
+  // GitHub
+  "github-dark": githubDark,
+  "github-light": githubLight,
+  // Cobalt2
+  cobalt2: cobalt2,
+  // Synthwave
+  synthwave: synthwave,
+  "synthwave-84": synthwave84,
+  // Tomorrow Night
+  "tomorrow-night": tomorrowNight,
+  "tomorrow-night-blue": tomorrowNightBlue,
+  "tomorrow-night-eighties": tomorrowNightEighties,
+  // Zenburn
+  zenburn: zenburn,
+  // Ubuntu
+  ubuntu: ubuntu,
+  // Tango
+  "tango-dark": tangoDark,
+  "tango-light": tangoLight,
+  // Cyberpunk
+  cyberpunk: cyberpunk,
+  // VS Code
+  "vscode-dark": vscodeDark,
+  // One Light / One Half
+  "one-light": oneLight,
+  "one-half-dark": oneHalfDark,
+  "one-half-light": oneHalfLight,
+  // Night Owl
+  "night-owl-light": nightOwlLight,
+  // Shades of Purple
+  "shades-of-purple": shadesOfPurple,
+  // Homebrew
+  homebrew: homebrew,
+  // Neon
+  neon: neon,
+  // Challenger Deep
+  "challenger-deep": challengerDeep,
+  // Doom One
+  "doom-one": doomOne,
+  // Mariana
+  mariana: mariana,
+  // Darcula (JetBrains)
+  darcula: darcula,
+  // Espresso
+  espresso: espresso,
+  // Iceberg
+  "iceberg-dark": icebergDark,
+  "iceberg-light": icebergLight,
+  // Serendipity
+  "serendipity-midnight": serendipityMidnight,
+  "serendipity-morning": serendipityMorning,
+  // Twilight
+  twilight: twilight,
+  // Breeze (KDE)
+  breeze: breeze,
+  // Andromeda
+  andromeda: andromeda,
+  // Relaxed
+  relaxed: relaxed,
 }
 
 /** All built-in themes, indexed by name (includes backward-compat aliases). */
