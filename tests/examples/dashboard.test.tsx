@@ -8,7 +8,7 @@
  * To update the snapshot after an intentional change:
  *   bun vitest run --project vendor --update vendor/silvery/tests/examples/dashboard.test.tsx
  *
- * Approved mockup: vendor/silvery-internal/design/mockups/dashboard-mockup.ansi
+ * Approved mockup: vendor/internal/silvery/design/mockups/dashboard-mockup.ansi
  */
 
 import React from "react"
