@@ -14,8 +14,15 @@
  * ```
  */
 
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react"
-import { type SearchState, type SearchMatch, createSearchState, searchUpdate } from "@silvery/ag-term/search-overlay"
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import {
+  type SearchState,
+  type SearchMatch,
+  type SearchEffect,
+  type SearchAction,
+  createSearchState,
+  searchUpdate,
+} from "@silvery/ag-term/search-overlay"
 import { useInput } from "../hooks/useInput"
 import type { ReactNode, ReactElement } from "react"
 
@@ -99,17 +106,46 @@ export function SearchProvider({ children }: { children: ReactNode }): ReactElem
     return (query: string) => searchable.search(query)
   }, [getActiveSearchable])
 
-  const handleEffects = useCallback(
-    (effects: Array<{ type: string; row?: number; startCol?: number; endCol?: number }>) => {
-      const searchable = getActiveSearchable()
-      if (!searchable) return
-      for (const eff of effects) {
-        if (eff.type === "scrollTo" && eff.row !== undefined) {
-          searchable.reveal({ row: eff.row, startCol: eff.startCol ?? 0, endCol: eff.endCol ?? 0 })
+  // ── Deferred effect processing ────────────────────────────────────
+  // Effects from searchUpdate (like scrollTo) are collected during setState
+  // updaters and processed in a useEffect after React completes the render.
+  // This avoids "Cannot update a component while rendering another" warnings
+  // that would occur if reveal() (which may trigger setState in other
+  // components like ListView) was called inside a setState updater.
+  const pendingEffectsRef = useRef<{ effects: SearchEffect[]; state: SearchState } | null>(null)
+
+  // Process pending effects after state changes complete
+  useEffect(() => {
+    const pending = pendingEffectsRef.current
+    if (!pending) return
+    pendingEffectsRef.current = null
+
+    const searchable = getActiveSearchable()
+    if (!searchable) return
+    for (const eff of pending.effects) {
+      if (eff.type === "scrollTo") {
+        const match = pending.state.currentMatch >= 0 ? pending.state.matches[pending.state.currentMatch] : undefined
+        if (match) {
+          searchable.reveal(match)
         }
       }
+    }
+  })
+
+  /** Dispatch a search action via the TEA state machine. */
+  const dispatch = useCallback(
+    (action: SearchAction) => {
+      setState((prev) => {
+        const searchFn = getSearchFn()
+        const [next, effects] = searchUpdate(action, prev, searchFn)
+        // Collect effects for deferred processing in useEffect
+        if (effects.length > 0) {
+          pendingEffectsRef.current = { effects, state: next }
+        }
+        return next
+      })
     },
-    [getActiveSearchable],
+    [getSearchFn],
   )
 
   const registerSearchable = useCallback((id: string, searchable: Searchable): (() => void) => {
@@ -126,58 +162,32 @@ export function SearchProvider({ children }: { children: ReactNode }): ReactElem
   const open = useCallback(() => {
     // Lock to current focused searchable when opening
     setActiveId(focusedId)
-    setState((prev) => {
-      const [next] = searchUpdate({ type: "open" }, prev)
-      return next
-    })
-  }, [focusedId])
+    dispatch({ type: "open" })
+  }, [focusedId, dispatch])
 
   const close = useCallback(() => {
     setActiveId(null)
-    setState((prev) => {
-      const [next] = searchUpdate({ type: "close" }, prev)
-      return next
-    })
-  }, [])
+    dispatch({ type: "close" })
+  }, [dispatch])
 
   const next = useCallback(() => {
-    setState((prev) => {
-      const searchFn = getSearchFn()
-      const [next, effects] = searchUpdate({ type: "nextMatch" }, prev, searchFn)
-      handleEffects(effects)
-      return next
-    })
-  }, [getSearchFn, handleEffects])
+    dispatch({ type: "nextMatch" })
+  }, [dispatch])
 
   const prev = useCallback(() => {
-    setState((prev) => {
-      const searchFn = getSearchFn()
-      const [next, effects] = searchUpdate({ type: "prevMatch" }, prev, searchFn)
-      handleEffects(effects)
-      return next
-    })
-  }, [getSearchFn, handleEffects])
+    dispatch({ type: "prevMatch" })
+  }, [dispatch])
 
   const input = useCallback(
     (char: string) => {
-      setState((prev) => {
-        const searchFn = getSearchFn()
-        const [next, effects] = searchUpdate({ type: "input", char }, prev, searchFn)
-        handleEffects(effects)
-        return next
-      })
+      dispatch({ type: "input", char })
     },
-    [getSearchFn, handleEffects],
+    [dispatch],
   )
 
   const backspace = useCallback(() => {
-    setState((prev) => {
-      const searchFn = getSearchFn()
-      const [next, effects] = searchUpdate({ type: "backspace" }, prev, searchFn)
-      handleEffects(effects)
-      return next
-    })
-  }, [getSearchFn, handleEffects])
+    dispatch({ type: "backspace" })
+  }, [dispatch])
 
   const cursorLeft = useCallback(() => {
     setState((prev) => {
@@ -280,4 +290,9 @@ export function useSearch(): SearchContextValue {
     throw new Error("useSearch must be used within a SearchProvider")
   }
   return ctx
+}
+
+/** Optional variant — returns null when no SearchProvider is in the tree. */
+export function useSearchOptional(): SearchContextValue | null {
+  return useContext(SearchContext)
 }

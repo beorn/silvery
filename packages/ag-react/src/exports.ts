@@ -381,7 +381,7 @@ export { useListItem } from "./hooks/useListItem"
 export type { ListItemContext } from "./hooks/useListItem"
 
 // App-level Providers (Phase 4)
-export { SearchProvider, useSearch } from "./providers/SearchProvider"
+export { SearchProvider, useSearch, useSearchOptional } from "./providers/SearchProvider"
 export type { Searchable, SearchContextValue } from "./providers/SearchProvider"
 export { SearchBar } from "@silvery/ag-react/ui/components"
 
