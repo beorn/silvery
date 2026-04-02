@@ -127,7 +127,7 @@ function styleSectionTerm(term: string, helper: any): string {
         }
         if (/^["']/.test(token)) {
           doneWithCommand = true
-          return token
+          return shouldColorize() ? `\x1b[2m${token}\x1b[22m` : token
         }
         // First word = program name (always command)
         // Second word = subcommand IF it looks like a bare word (no dots/slashes/extensions)
