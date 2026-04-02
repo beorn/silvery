@@ -282,6 +282,7 @@ export class Command extends BaseCommand {
               helper.longestSubcommandTermLength(cmd, helper),
               helper.longestArgumentTermLength(cmd, helper),
             )
+        if (cmd !== self) return base
         let sectionMax = 0
         for (const section of self._helpSectionList) {
           if (typeof section.content !== "string") {
@@ -295,6 +296,10 @@ export class Command extends BaseCommand {
       // Render "before" and "after" sections inside formatHelp
       formatHelp(cmd: any, helper: any) {
         const baseHelp = origFormatHelp ? origFormatHelp(cmd, helper) : protoFormatHelp.call(helper, cmd, helper)
+        // Only render THIS command's sections. configureHelp is inherited by
+        // subcommands, so without this guard parent sections leak into subcommand help.
+        // Subcommands with their own sections install their own hooks.
+        if (cmd !== self) return baseHelp
         const termWidth = helper.padWidth(cmd, helper)
         const before = self._renderSections("before", helper, termWidth)
         const after = self._renderSections("after", helper, termWidth)
