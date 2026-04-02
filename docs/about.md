@@ -5,7 +5,7 @@ description: "About Silvery — a React TUI framework for modern terminal applic
 
 # About Silvery
 
-Silvery is a React framework for building terminal UIs. 45+ components, incremental rendering, full modern terminal protocol support. Pure TypeScript, no WASM. Works with Bun, Node.js (23.6+), and Deno.
+Silvery is a React framework for building terminal UIs. 45+ components, incremental rendering, broad terminal protocol support. Pure TypeScript, no WASM. Runs on Bun, Node.js (23.6+), and Deno.
 
 ## How It Started
 
@@ -21,9 +21,20 @@ I needed layout to run *before* rendering (so components could access their dime
 
 ## How It Works
 
-**Layout first, then render.** Silvery inverts the pipeline: [Flexily](https://beorn.codes/flexily) (a Yoga-compatible layout engine) calculates positions and sizes, then React renders components with actual dimensions available via `useContentRect()`. No prop drilling, no `width: 0` on first paint. This also makes `overflow="scroll"` and automatic text truncation possible — both depend on knowing "how much space do I have?"
+**Layout first, then render.** Silvery inverts the pipeline: [Flexily](https://beorn.codes/flexily) (a Yoga-compatible layout engine) calculates positions and sizes, then React renders components with their actual content box available via `useContentRect()`:
 
-**Incremental rendering.** Each node tracks 7 independent dirty flags. A typical interactive update — cursor move in a 1000-node tree — takes 169 microseconds. The [benchmark comparison](/guide/silvery-vs-ink#performance) has the full numbers and methodology.
+```tsx
+function IssueCard({ issue }: { issue: Issue }) {
+  const { width } = useContentRect()
+  return width >= 32
+    ? <FullCard issue={issue} />
+    : <CompactCard issue={issue} />
+}
+```
+
+Because width is known during render, this works on the first paint — no prop drilling, no measurement pass, no `width: 0` flash. The same mechanism makes `overflow="scroll"` and automatic text truncation possible.
+
+**Incremental rendering.** Each node tracks dirty state independently. A typical interactive update — cursor move in a 1000-node tree — takes 169 microseconds. The [benchmark comparison](/guide/silvery-vs-ink#performance) has the full numbers and methodology.
 
 **Pure TypeScript.** The entire stack, including the layout engine, is TypeScript with no native dependencies. No WASM heap to manage, no platform-specific binaries, no C++ build step.
 
@@ -42,8 +53,10 @@ These are all MIT-licensed and part of the same development effort:
 
 - 45+ components — Box, Text, SelectList, VirtualList, CommandPalette, TreeView, Table, Form, and more
 - 23 color palettes with semantic tokens and WCAG-aware contrast
-- 98.9% of Ink's test suite passes via the compatibility layer
+- [98.9% of Ink's test suite](/guide/silvery-vs-ink#ink-test-suite-compatibility) passes via the compatibility layer
 - Runs on Bun, Node.js 23.6+, and Deno
+
+Silvery is a good fit for interactive, keyboard-heavy terminal apps with large or responsive UIs. For simpler CLIs, output-only tools, or apps that rebuild the full screen on every update, [Ink](https://github.com/vadimdemedes/ink) is a solid choice with a bigger ecosystem. If you don't want React or TypeScript, frameworks in Go, Python, and Rust may be a better fit.
 
 ## Author
 
