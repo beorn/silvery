@@ -25,7 +25,7 @@ This page compares the two so you can make an informed decision -- particularly 
 | **Layout**           | Manual positioning (top/left/width/height, percentages) | CSS flexbox (Flexily engine)                                                    |
 | **Rendering**        | Full screen redraw                                      | Per-node incremental with cell-level diff                                       |
 | **Terminal parsing** | Built-in terminfo/termcap parser                        | Built-in ANSI parser + capability detection                                     |
-| **Components**       | ~40 widgets (list, table, form, textbox, etc.)          | 30+ components (VirtualList, TextArea, SelectList, Table, CommandPalette, etc.) |
+| **Components**       | ~40 widgets (list, table, form, textbox, etc.)          | 45+ components (VirtualList, TextArea, SelectList, Table, CommandPalette, etc.) |
 | **Mouse support**    | X10 protocol (basic)                                    | SGR protocol with DOM-style events                                              |
 | **Keyboard**         | Traditional terminal input                              | Kitty keyboard protocol (all 5 flags)                                           |
 | **Unicode/emoji**    | Limited (width calculation issues)                      | Full support (grapheme splitting, display width, CJK, emoji ZWJ)                |

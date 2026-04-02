@@ -11,7 +11,7 @@ next:
 
 # Components
 
-Silvery ships 30+ components out of the box — from basic building blocks (Box, Text) to complex interactive widgets (SelectList, CommandPalette, ModalDialog). This example shows them composed together in a single dashboard.
+Silvery ships 45+ components out of the box — from basic building blocks (Box, Text) to complex interactive widgets (SelectList, CommandPalette, ModalDialog). This example shows them composed together in a single dashboard.
 
 ::: code-group
 

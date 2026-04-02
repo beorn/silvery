@@ -17,7 +17,11 @@ const seoOptions = {
   siteName: "Silvery",
   description: "React TUI framework for modern terminal apps",
   ogImage: "https://silvery.dev/og-image.svg",
-  author: "Bjørn Stabell",
+  author: {
+    name: "Bjørn Stabell",
+    url: "https://beorn.codes",
+    sameAs: ["https://github.com/beorn"],
+  },
   codeRepository: "https://github.com/beorn/silvery",
 }
 

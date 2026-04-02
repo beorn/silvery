@@ -209,7 +209,7 @@ These features have no Ink/Chalk equivalent:
 | Command system        | `withCommands()`                      |
 | Theme tokens          | `color="$primary"`                    |
 | TextArea              | Built-in multi-line editing           |
-| 30+ components        | VirtualList, Table, ModalDialog, etc. |
+| 45+ components        | VirtualList, Table, ModalDialog, etc. |
 
 ## See Also
 

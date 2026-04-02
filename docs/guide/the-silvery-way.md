@@ -8,7 +8,7 @@ Each principle is something people get wrong. If you're coming from Ink, Blessed
 
 ## 1. Use the Built-in Components
 
-Silvery ships 36 components — all available from `import { ... } from "silvery"`. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
+Silvery ships 45+ components — all available from `import { ... } from "silvery"`. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
 
 ::: tip ✨ Shiny
 

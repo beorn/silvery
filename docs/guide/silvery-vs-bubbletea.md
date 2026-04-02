@@ -265,7 +265,7 @@ Silvery's ecosystem is smaller but more integrated:
 
 | Package             | What                                    |
 | ------------------- | --------------------------------------- |
-| `silvery`           | Core renderer + 30+ components          |
+| `silvery`           | Core renderer + 45+ components          |
 | `@silvery/create`   | TEA state machines                      |
 | `@silvery/test`     | Testing (headless + Termless emulator)  |
 | `@silvery/theme`    | 38 palettes, semantic tokens            |
@@ -289,7 +289,7 @@ Bubble Tea benefits from the broader Go ecosystem -- any Go library works alongs
 - **Your project is in TypeScript/JavaScript** -- using a Go framework from a Node.js project means running a subprocess or rewriting in Go
 - **Complex layouts** -- CSS flexbox handles multi-pane, responsive UIs that would require substantial manual calculation in Bubble Tea
 - **React ecosystem** -- hooks, context, component composition, third-party React libraries all work directly
-- **Rich built-in components** -- 30+ components (VirtualList, TextArea, Table, CommandPalette, ModalDialog) without assembling individual packages
+- **Rich built-in components** -- 45+ components (VirtualList, TextArea, Table, CommandPalette, ModalDialog) without assembling individual packages
 - **Mouse interaction** -- DOM-style event handling (`onClick`, `onWheel`, drag) with hit testing
 - **Terminal protocol depth** -- image rendering, extended underlines, OSC sequences, terminal capability detection via [terminfo.dev](https://terminfo.dev)
 - **Testing terminal output** -- Termless gives you a real terminal emulator in-process for verifying ANSI output, not just string snapshots

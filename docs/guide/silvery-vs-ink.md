@@ -8,13 +8,13 @@ Ink is excellent for simpler, text-first terminal apps and has years of maturity
 
 In Ink, React renders first, then Yoga calculates layout. Components that need to adapt to their available space (truncate text, choose compact vs full layout, fit columns to width) must use post-render effects or prop drilling. This is a known limitation ([Ink #5](https://github.com/vadimdemedes/ink/issues/5), open since 2016). It works fine for many apps, but it becomes a constraint when building complex interactive UIs like kanban boards, text editors, or multi-pane dashboards.
 
-Addressing it required a different rendering pipeline -- layout first, then render -- which meant building a new renderer. On top of that core, optional framework layers provide input management, commands, mouse support, 30+ components, theming, and TEA state machines.
+Addressing it required a different rendering pipeline -- layout first, then render -- which meant building a new renderer. On top of that core, optional framework layers provide input management, commands, mouse support, 45+ components, theming, and TEA state machines.
 
 ## The Two Projects
 
 [Ink](https://github.com/vadimdemedes/ink) (2017) brought React to the terminal. ~1.3M npm weekly downloads, 50+ community components, used by Gatsby, Prisma, Terraform CDK, Shopify CLI, Claude Code, and many more. Mature, stable, actively maintained, and battle-tested across thousands of production CLIs. Ink is a focused, reliable React renderer.
 
-[Silvery](https://github.com/beorn/silvery) (2025) is a ground-up reimplementation with a different rendering architecture. At its core, it's a renderer — `Box`, `Text`, `useInput`, `render()` work the same as Ink. It ships 36 components, state machines (`@silvery/create`), and theming — all available from a single `import from "silvery"`. Silvery is newer and has a smaller community.
+[Silvery](https://github.com/beorn/silvery) (2025) is a ground-up reimplementation with a different rendering architecture. At its core, it's a renderer — `Box`, `Text`, `useInput`, `render()` work the same as Ink. It ships 45+ components, state machines (`@silvery/create`), and theming — all available from a single `import from "silvery"`. Silvery is newer and has a smaller community.
 
 > Silvery also compares favorably to terminal UI frameworks beyond Ink (BubbleTea, Textual, Notcurses, FTXUI, blessed) — the renderer architecture, React ecosystem access, and TypeScript-first design are unique advantages.
 
@@ -76,7 +76,7 @@ Both are React renderers at the core. The rendering architecture is the primary 
 | **Dynamic scrollback**    | `useScrollback` -- items graduate from interactive area to terminal history (like Claude Code needs)   | None -- all items must stay in the render tree                                                                                                   |
 | **Text truncation**       | Automatic, ANSI-aware; text clips at Box boundaries                                                    | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                                    |
 | **CSS/W3C alignment**     | Flexbox defaults match W3C spec (`flexDirection: row`); `outlineStyle` (CSS outline, no layout impact) | Non-standard defaults (`flexDirection: column`); no outline                                                                                      |
-| **Layout engines**        | [Flexily](https://beorn.codes/flexily) (19 KB gzip, pure JS) or Yoga WASM — pluggable              | Yoga WASM only (`yoga-layout` v3)                                                                                                                |
+| **Layout engines**        | [Flexily](https://beorn.codes/flexily) (19 KB gzip, pure JS) or Yoga WASM — pluggable                  | Yoga WASM only (`yoga-layout` v3)                                                                                                                |
 | **Render targets**        | Terminal, Canvas 2D, DOM (experimental)                                                                | Terminal only                                                                                                                                    |
 | **Native dependencies**   | None -- pure TypeScript                                                                                | Yoga WASM binary blob (no native compilation, but not pure JS)                                                                                   |
 | **Memory profile**        | Constant -- Flexily uses normal JS GC                                                                  | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953))       |
@@ -387,7 +387,7 @@ Both are good tools. The right choice depends on what you're building.
 - **Mouse support and spatial focus**: Click-to-focus, arrow-key navigation between components, drag support
 - **Command system**: Named commands with keybindings, help text, and runtime introspection
 - **Interactive update performance**: Per-node dirty tracking for sub-millisecond updates in large trees
-- **Built-in component library**: 30+ components without assembling third-party packages
+- **Built-in component library**: 45+ components without assembling third-party packages
 - **Multi-target rendering**: Terminal today, Canvas 2D and DOM in the future
 
 ## Real-World Scenarios

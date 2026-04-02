@@ -19,7 +19,7 @@ These are implementation details — you'll only need them for advanced use case
 | ---------------------- | ---------------------- | ----------------------------------------------------------- |
 | `@silvery/ag-react`    | `@silvery/ag-react`    | React reconciler, components, and hooks                     |
 | `@silvery/ag-term`     | `@silvery/ag-term`     | Terminal runtime, ANSI output, rendering pipeline           |
-| `@silvery/ag-react/ui` | `@silvery/ag-react/ui` | Component library (30+ components) + CLI progress utilities |
+| `@silvery/ag-react/ui` | `@silvery/ag-react/ui` | Component library (45+ components) + CLI progress utilities |
 | `@silvery/theme`       | `@silvery/theme`       | Theme tokens, 38 palettes, theme CLI                        |
 | `@silvery/ink`         | `@silvery/ink`         | Legacy Ink/Chalk compatibility                              |
 
@@ -92,7 +92,7 @@ React reconciler adapted for terminal rendering. Provides the component model, h
 
 ## `@silvery/ag-react/ui`
 
-Component library with 30+ components plus CLI progress utilities.
+Component library with 45+ components plus CLI progress utilities.
 
 **CLI mode** (no React needed):
 

@@ -179,7 +179,7 @@ Textual ships 40+ widgets. A representative sample:
 
 ### Silvery Components
 
-Silvery ships 30+ components:
+Silvery ships 45+ components:
 
 | Component                 | What                                              |
 | ------------------------- | ------------------------------------------------- |

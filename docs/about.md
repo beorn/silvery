@@ -6,7 +6,7 @@ title: About Silvery
 
 ## What
 
-Silvery is a React-based TUI (Terminal User Interface) framework for building polished terminal applications. It provides 30+ components, incremental rendering with per-node dirty tracking, and full support for modern terminal capabilities.
+Silvery is a React-based TUI (Terminal User Interface) framework for building polished terminal applications. It provides 45+ components, incremental rendering with per-node dirty tracking, and full support for modern terminal capabilities.
 
 ## Why
 
@@ -15,7 +15,7 @@ Ink pioneered React in the terminal, but its full-screen redraw model hits a wal
 ## How It's Different
 
 - **100x faster updates** — incremental rendering, not full redraws. [Benchmarks](/guide/silvery-vs-ink)
-- **30+ components** — TextInput, SelectList, VirtualList, Table, ProgressBar, and more. [Components](/guides/components)
+- **45+ components** — TextInput, SelectList, VirtualList, Table, ProgressBar, and more. [Components](/guides/components)
 - **Modern terminal support** — Kitty keyboard, truecolor, mouse SGR, synchronized output. [Compatibility at terminfo.dev](https://terminfo.dev)
 - **The Silvery Way** — 10 design principles for building great TUIs. [Read the guide](/guide/the-silvery-way)
 

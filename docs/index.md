@@ -1,10 +1,37 @@
 ---
 layout: home
+head:
+  - - script
+    - type: application/ld+json
+    - |
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Silvery",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Cross-platform",
+        "programmingLanguage": "TypeScript",
+        "url": "https://silvery.dev",
+        "downloadUrl": "https://www.npmjs.com/package/silvery",
+        "codeRepository": "https://github.com/beorn/silvery",
+        "license": "https://opensource.org/licenses/MIT",
+        "author": {
+          "@type": "Person",
+          "name": "Bjørn Stabell",
+          "url": "https://beorn.codes",
+          "sameAs": ["https://github.com/beorn"]
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
 
 hero:
   name: "Silvery"
   text: "Polished Terminal UIs in React"
-  tagline: "Responsive layouts, scrollable containers, 100x+ faster incremental updates, and full support for modern terminal capabilities. 30+ components from TextInput to VirtualList. Pure TypeScript, no WASM."
+  tagline: "Responsive layouts, scrollable containers, 100x+ faster incremental updates, and full support for modern terminal capabilities. 45+ components from TextInput to VirtualList. Pure TypeScript, no WASM."
   actions:
     - theme: brand
       text: Get Started
@@ -29,7 +56,7 @@ features:
     linkText: See benchmarks
   - title: Responsive Layout
     details: 'Container queries for terminals — components know their own size at render time via useContentRect(). No prop drilling, no measure-then-rerender flicker. Full CSS Flexbox via Flexily (pure JS, Yoga-compatible). Native scrollable containers with overflow="scroll".'
-  - title: 30+ Components
+  - title: 45+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
     linkText: Browse components
@@ -73,7 +100,7 @@ vp silvery examples
 
 <div class="use-cases">
 
-- **[Components](/examples/components)** -- 30+ ready-made widgets: SelectList, Tabs, ProgressBar, Spinner, and more
+- **[Components](/examples/components)** -- 45+ ready-made widgets: SelectList, Tabs, ProgressBar, Spinner, and more
 - **[Layout](/examples/layout)** -- CSS flexbox for terminals: responsive sizing, gap, scroll containers
 - **[Forms & Input](/examples/forms)** -- Multi-step wizards, SelectList, TextInput with readline
 - **[Tables & Data](/examples/tables)** -- Table component, VirtualList, responsive columns, search/filter
