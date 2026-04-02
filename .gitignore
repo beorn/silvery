@@ -13,3 +13,4 @@ docs/public/examples/dist/
 !docs/**/*.png
 !docs/**/*.yaml
 *.tgz
+.claude/
