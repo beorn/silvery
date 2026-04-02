@@ -8,15 +8,11 @@ import {
   validateGlossary,
   loadTerminalGlossary,
   loadEcosystemGlossary,
-} from "@bearly/vitepress-enrich"
+} from "vitepress-enrich"
 import siteGlossary from "../content/glossary.json"
 
 // Site-specific terms + shared terminal vocabulary + ecosystem cross-links
-const glossary = [
-  ...siteGlossary,
-  ...loadTerminalGlossary(),
-  ...loadEcosystemGlossary({ exclude: ["silvery.dev"] }),
-]
+const glossary = [...siteGlossary, ...loadTerminalGlossary(), ...loadEcosystemGlossary({ exclude: ["silvery.dev"] })]
 
 const seoOptions = {
   hostname: "https://silvery.dev",
@@ -50,7 +46,7 @@ export default withMermaid(
         },
       },
       ssr: {
-        noExternal: ["@bearly/vitepress-enrich"],
+        noExternal: ["vitepress-enrich"],
         external: ["@termless/core", "@termless/xtermjs", "@termless/ghostty"],
       },
     },
