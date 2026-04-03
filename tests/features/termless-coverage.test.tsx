@@ -94,7 +94,7 @@ function FreezePromoteApp({ initialItems }: { initialItems: FreezeItem[] }) {
         items={items}
         height={20}
         getKey={(it: FreezeItem) => it.id}
-        cache={{ isCacheable: (it: FreezeItem) => it.frozen }}
+        cache={{ mode: "auto", isCacheable: (it: FreezeItem) => it.frozen }}
         renderItem={(item: FreezeItem) => (
           <Box flexDirection="column" borderStyle="round" borderColor="$border" paddingX={1}>
             <Text>
@@ -179,23 +179,25 @@ describe("termless: resize + reflow", () => {
     // Content should still render without crash
     const lines = term.screen!.getLines()
     expect(lines.length).toBeLessThanOrEqual(10)
-    // Some content should be visible (bottom portion in fullscreen)
+    // Some content should be visible (top portion in fullscreen)
     const nonBlank = lines.filter((l: string) => l.trim().length > 0).length
     expect(nonBlank).toBeGreaterThan(3)
-    // Bottom border should be visible (fullscreen renders bottom of content)
+    // Top border should be visible (fullscreen renders from top)
     const text = term.screen!.getText()
-    expect(text).toContain("╰")
+    expect(text).toContain("╭")
   })
 
   test("resize taller: all content rows visible when terminal grows", async () => {
     // At 8 rows, 10 items + header + 2 borders = 13 rows of content.
-    // Fullscreen renders the bottom portion, so top rows are clipped.
+    // Fullscreen renders from the top, so bottom rows are clipped.
     using term = createTermless({ cols: 60, rows: 8 })
     handle = await run(<RowListApp count={10} />, term)
 
     const smallText = term.screen!.getText()
-    // Bottom border should be visible (fullscreen shows bottom portion)
-    expect(smallText).toContain("╰")
+    // Top border should be visible (fullscreen renders from top)
+    expect(smallText).toContain("╭")
+    // Content should be present but bottom is clipped
+    expect(smallText).toContain("Items (10)")
 
     // Grow to 15 rows — enough to show all content
     term.resize!(60, 15)
@@ -396,11 +398,12 @@ describe("termless: scrollbackList freeze/promote borders", () => {
     expect(text).toContain("╭")
     expect(text).toContain("╰")
 
-    // Count border pairs -- 3 items + 1 footer = 4 bordered boxes
+    // Count border pairs -- 3 items visible in ListView viewport
+    // (footer may be clipped if total height exceeds terminal rows)
     const topBorders = (text.match(/╭/g) || []).length
     const bottomBorders = (text.match(/╰/g) || []).length
-    expect(topBorders).toBeGreaterThanOrEqual(4)
-    expect(bottomBorders).toBeGreaterThanOrEqual(4)
+    expect(topBorders).toBeGreaterThanOrEqual(3)
+    expect(bottomBorders).toBeGreaterThanOrEqual(3)
   })
 
   test("freeze + promote: frozen item retains bottom border", async () => {

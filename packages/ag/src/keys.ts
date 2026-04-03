@@ -1021,6 +1021,10 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
     if (keypress.isPrintable) {
       if (keypress.shift && keypress.name.length === 1 && keypress.name >= "a" && keypress.name <= "z") {
         input = keypress.name.toUpperCase()
+      } else if (keypress.name === "space") {
+        input = " "
+      } else if (keypress.name === "return") {
+        input = "\r"
       } else {
         input = keypress.name
       }

@@ -28,6 +28,7 @@ import type { Style, StyleOptions, ThemeLike } from "./types.ts"
 interface ChainState {
   opens: string[] // SGR open codes (e.g., "1", "31", "38;2;255;0;0")
   closes: string[] // SGR close codes (e.g., "22", "39")
+  visible?: boolean // chalk's `visible` modifier — suppresses output when level === 0
 }
 
 // =============================================================================
@@ -174,13 +175,20 @@ function createChainWithRef(
   state: ChainState,
   ref: { level: import("../types.ts").ColorLevel | null; theme: ThemeLike | undefined },
 ): Style {
+  // proxyRef lets the handler reference its own proxy (needed for Function.prototype methods)
+  const proxyRef: { proxy: Style | null } = { proxy: null }
   const handler: ProxyHandler<(...args: unknown[]) => string> = {
     apply(_target, _thisArg, args) {
       const level = ref.level
 
+      // chalk compat: visible modifier suppresses output when level === 0
+      if (state.visible && level === null) return ""
+
       // Resolve text from args — supports: string, multiple args (chalk compat), template literals
       let text: string
-      if (Array.isArray(args[0]) && "raw" in args[0]) {
+      if (args.length === 0) {
+        text = ""
+      } else if (Array.isArray(args[0]) && "raw" in args[0]) {
         text = String.raw(args[0] as TemplateStringsArray, ...args.slice(1))
       } else if (args.length > 1) {
         text = args.map((a) => String(a ?? "")).join(" ")
@@ -188,10 +196,32 @@ function createChainWithRef(
         text = String(args[0] ?? "")
       }
 
+      // chalk compat: don't output escape codes if the input is empty
+      if (text === "") return ""
+
       if (level === null || state.opens.length === 0) return text
 
       const open = `${ESC}${state.opens.join(";")}m`
       const close = `${ESC}${state.closes.join(";")}m`
+
+      // chalk compat: replace inner close codes with close+reopen to restore parent styles.
+      // When nesting like chalk.red("a" + chalk.green("c") + "b"), the inner chalk.green("c")
+      // produces \x1b[32mc\x1b[39m. The \x1b[39m would reset fg to default, losing the red.
+      // Chalk replaces inner close codes with close+open to restore the parent color.
+      // This must happen BEFORE line-break splitting to avoid double-replacement.
+      for (const closeCode of state.closes) {
+        const closeSeq = `${ESC}${closeCode}m`
+        const parts = text.split(closeSeq)
+        if (parts.length > 1) {
+          text = parts.join(`${closeSeq}${open}`)
+        }
+      }
+
+      // chalk compat: split on line breaks — close before \n, reopen after
+      if (text.includes("\n")) {
+        text = text.replace(/\r?\n/g, `${close}$&${open}`)
+      }
+
       return `${open}${text}${close}`
     },
 
@@ -204,6 +234,17 @@ function createChainWithRef(
       // resolve() method
       if (prop === "resolve") {
         return (token: string): string | undefined => resolveToken(token, ref.theme)
+      }
+
+      // chalk compat: visible modifier — pass-through when level > 0, suppress when level === 0
+      if (prop === "visible") {
+        return createChainWithRef({ ...state, visible: true }, ref)
+      }
+
+      // Function.prototype methods — chalk compat (call, apply, bind)
+      // Return the method bound to the proxy so the apply trap fires
+      if (prop === "call" || prop === "apply" || prop === "bind") {
+        return Function.prototype[prop as "call" | "apply" | "bind"].bind(proxyRef.proxy!)
       }
 
       const level = ref.level
@@ -331,5 +372,7 @@ function createChainWithRef(
   }
 
   const target = function () {} as unknown as (...args: unknown[]) => string
-  return new Proxy(target, handler) as unknown as Style
+  const proxy = new Proxy(target, handler) as unknown as Style
+  proxyRef.proxy = proxy
+  return proxy
 }

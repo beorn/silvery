@@ -2,7 +2,8 @@
  * Table Component
  *
  * A generic data table with auto-sizing columns, custom renderers, and alignment.
- * Uses flexbox layout for proper terminal rendering.
+ * Thin composition over ListView — each data row is a ListView item, column headers
+ * are rendered above. Gets nav/cache/search from ListView for free.
  *
  * @example
  * ```tsx
@@ -19,9 +20,10 @@
  * />
  * ```
  */
-import React from "react"
+import React, { useMemo } from "react"
 import { Box } from "./Box"
 import { Text } from "./Text"
+import { ListView } from "../ui/components/ListView"
 
 // =============================================================================
 // Types
@@ -56,18 +58,11 @@ export type TableProps<T> = {
 }
 
 // =============================================================================
-// Component
+// Helpers
 // =============================================================================
 
-export function Table<T>({
-  data,
-  columns,
-  headerColor = "$primary",
-  showHeader = true,
-  padding = 2,
-}: TableProps<T>): React.ReactElement {
-  // Compute auto widths
-  const widths = columns.map((col) => {
+function computeWidths<T>(columns: Column<T>[], data: T[], padding: number): number[] {
+  return columns.map((col) => {
     if (col.width) return col.width
     if (col.grow) return 0 // will use flexGrow
     const cellValues = data.map((item, i) => {
@@ -80,6 +75,20 @@ export function Table<T>({
     })
     return Math.max(col.header.length, ...cellValues.map((v) => v.length)) + padding
   })
+}
+
+// =============================================================================
+// Component
+// =============================================================================
+
+export function Table<T>({
+  data,
+  columns,
+  headerColor = "$primary",
+  showHeader = true,
+  padding = 2,
+}: TableProps<T>): React.ReactElement {
+  const widths = useMemo(() => computeWidths(columns, data, padding), [columns, data, padding])
 
   const renderCell = (col: Column<T>, item: T, index: number, width: number) => {
     const rendered = col.render ? col.render(item, index) : null
@@ -105,6 +114,14 @@ export function Table<T>({
     )
   }
 
+  const renderRow = (item: T, index: number) => (
+    <Box>{columns.map((col, colIndex) => renderCell(col, item, index, widths[colIndex]!))}</Box>
+  )
+
+  // Viewport height = number of data rows (show all, no scrolling)
+  // Minimum 1 to avoid zero-height viewport when data is empty
+  const viewportHeight = Math.max(data.length, 1)
+
   return (
     <Box flexDirection="column">
       {showHeader && (
@@ -126,9 +143,7 @@ export function Table<T>({
           )}
         </Box>
       )}
-      {data.map((item, rowIndex) => (
-        <Box key={rowIndex}>{columns.map((col, colIndex) => renderCell(col, item, rowIndex, widths[colIndex]!))}</Box>
-      ))}
+      {data.length > 0 && <ListView items={data} height={viewportHeight} estimateHeight={1} renderItem={renderRow} />}
     </Box>
   )
 }

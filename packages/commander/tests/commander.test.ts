@@ -34,7 +34,7 @@ function createTestProgram(): InstanceType<typeof BaseCommand> {
     .argument("<input>", "Input file to process")
 }
 
-function addSubcommands(program: InstanceType<typeof Command>): void {
+function addSubcommands(program: InstanceType<typeof BaseCommand>): void {
   program
     .command("build")
     .description("Build the project")

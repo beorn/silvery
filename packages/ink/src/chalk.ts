@@ -66,8 +66,17 @@ export default chalk
  * instance.level = 0 // disable colors
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface Chalk extends Style {}
 export class Chalk {
   constructor(options?: { level?: ChalkLevel }) {
+    // chalk compat: validate level is 0-3
+    if (options?.level !== undefined) {
+      const lvl = options.level
+      if (typeof lvl !== "number" || !Number.isInteger(lvl) || lvl < 0 || lvl > 3) {
+        throw new Error("The `level` option should be an integer from 0 to 3")
+      }
+    }
     // Returning an object from a constructor overrides `this` — chalk compat pattern
     return createStyle({
       level: fromChalkLevel(options?.level ?? toChalkLevel(detectedColor)),

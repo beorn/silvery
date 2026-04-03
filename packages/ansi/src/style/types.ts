@@ -26,18 +26,22 @@ export interface ThemeLike {
 
 /** A callable style chain — call with a string to apply styles, access properties to chain. */
 export interface Style {
+  (): string
   (text: string): string
   (...args: unknown[]): string
   (strings: TemplateStringsArray, ...values: unknown[]): string
 
   // Modifiers
+  readonly reset: Style
   readonly bold: Style
   readonly dim: Style
   readonly italic: Style
   readonly underline: Style
+  readonly overline: Style
   readonly inverse: Style
   readonly hidden: Style
   readonly strikethrough: Style
+  readonly visible: Style
 
   // Foreground colors
   readonly black: Style

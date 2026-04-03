@@ -24,9 +24,11 @@ function ChatBubble({ text, isUser, name, time }: { text: string; isUser: boolea
           {text}
         </Text>
       </Box>
-      <Text color="#484f58" marginTop={4}>
-        {name} · {time}
-      </Text>
+      <Box marginTop={4}>
+        <Text color="#484f58">
+          {name} · {time}
+        </Text>
+      </Box>
     </Box>
   )
 }

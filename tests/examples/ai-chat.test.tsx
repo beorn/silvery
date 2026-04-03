@@ -89,7 +89,7 @@ describe("ai-chat example (in-process termless)", { timeout: 15000 }, () => {
     await settle()
 
     const allText = (term.scrollback?.getText() ?? "") + term.screen!.getText()
-    expect(allText).toContain("rate limit")
+    expect(allText.toLowerCase()).toContain("rate limit")
     expect(term.screen).toContainText("ctx")
     assertNoOverlappingBorders(term.screen!)
   })

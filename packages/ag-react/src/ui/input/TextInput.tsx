@@ -215,6 +215,7 @@ interface InputKey {
   ctrl?: boolean
   meta?: boolean
   shift?: boolean
+  text?: string
 }
 
 /**

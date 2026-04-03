@@ -12,6 +12,7 @@ import { TermContext } from "../../../../packages/ag-react/src/context"
 import { currentChalkLevel, restoreColonFormatSGR } from "../../../../packages/ink/src/ink"
 import { stripAnsi } from "../../../../packages/ag-term/src/unicode"
 import chalk, { supportsColor } from "@silvery/ink/chalk"
+import npmChalk from "chalk"
 
 type RenderToStringOptions = {
   columns?: number
@@ -103,9 +104,14 @@ export const initLayoutEngine = ensureEngine
 
 /**
  * Force chalk to output colors even in non-TTY environments for testing.
+ *
+ * Syncs BOTH silvery's chalk and npm chalk so that:
+ * - silvery's renderer produces ANSI codes (via currentChalkLevel())
+ * - npm chalk in test assertions produces matching ANSI codes
  */
 export function enableTestColors(): void {
   chalk.level = 3
+  npmChalk.level = 3
 }
 
 /**
@@ -113,4 +119,5 @@ export function enableTestColors(): void {
  */
 export function disableTestColors(): void {
   chalk.level = supportsColor ? supportsColor.level : 0
+  npmChalk.level = supportsColor ? supportsColor.level : 0
 }

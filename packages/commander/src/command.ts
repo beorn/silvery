@@ -150,8 +150,21 @@ function styleSectionTerm(term: string, helper: any): string {
   // Option-like terms: entire term styled as option
   if (/^\s*-/.test(term)) return helper.styleOptionText(term)
 
-  // Non-shell terms: render as plain text (no command styling without $ prefix)
-  return term
+  // Command-like terms: style command words with primary, <brackets> with accent
+  // Split into bracket groups and non-bracket parts
+  const parts = term.split(/(<[^>]+>|\[[^\]]+\])/g)
+  if (parts.length === 1) {
+    // No brackets — style entire term as command
+    return helper.styleCommandText(term)
+  }
+  // Mix of command text and brackets
+  return parts
+    .map((part) => {
+      if (/^[<[]/.test(part)) return helper.styleArgumentText(part)
+      if (part) return helper.styleCommandText(part)
+      return part
+    })
+    .join("")
 }
 
 export class Command extends BaseCommand {

@@ -106,6 +106,13 @@ const EXPECTED_FAILURES: Record<string, string[]> = {
     "text outside Text component throws",
   ],
   "measure-element": ["measure element"],
+  text: [
+    // silvery's chalk is a separate instance from npm chalk; setting npm chalk.level
+    // doesn't affect silvery's currentChalkLevel(). These tests set chalk.level = 3
+    // on the npm chalk instance but silvery's Ink compat layer checks its own chalk.
+    "text with dim+bold",
+    "text with dim+bold - concurrent",
+  ],
   // PTY tests — some fixed, some remain known differences
   "hooks-use-input": [
     // silvery maps 0x7F to backspace (modern standard); Ink maps it to delete

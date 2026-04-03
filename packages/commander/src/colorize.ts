@@ -16,17 +16,21 @@
 
 import { createStyle } from "@silvery/ansi"
 
-// Auto-detect terminal color level. The Style instance handles the full
-// degradation chain: truecolor → 256 → basic (ANSI 16) → null (no color).
-// When level is null (NO_COLOR), style methods return plain text.
-const s = createStyle()
+// Auto-detect terminal color level for shouldColorize() checks.
+const autoStyle = createStyle()
+
+// Forced basic-color style for explicit colorizeHelp() calls.
+// When a user explicitly calls colorizeHelp(), they want color regardless
+// of terminal detection. The function name means "add color" — if you
+// don't want color, don't call it.
+const s = createStyle({ level: "basic" })
 
 /**
  * Check if color output should be enabled.
  * Delegates to @silvery/ansi's auto-detection (NO_COLOR, FORCE_COLOR, TERM).
  */
 export function shouldColorize(): boolean {
-  return s.level > 0
+  return autoStyle.level > 0
 }
 
 /**
@@ -67,10 +71,6 @@ export interface ColorizeHelpOptions {
  * @param options - Override default style functions for each element
  */
 export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions): void {
-  // Respect NO_COLOR — if the auto-detected level is 0, skip colorization entirely.
-  // The style instance already handles NO_COLOR/FORCE_COLOR/TERM detection.
-  if (s.level === 0) return
-
   // Semantic token fallback: theme token → named color
   const cmds = options?.commands ?? ((t: string) => s.primary(t))
   const flags = options?.flags ?? ((t: string) => s.secondary(t))
@@ -85,7 +85,7 @@ export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions
     styleSubcommandText: (str: string) => cmds(str),
     styleArgumentText: (str: string) => brackets(str),
     styleDescriptionText: (str: string) => desc(str),
-    styleCommandDescription: (str: string) => s.bold(str),
+    styleCommandDescription: (str: string) => s.bold.primary(str),
   }
 
   program.configureHelp(helpConfig)

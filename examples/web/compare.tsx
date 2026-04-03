@@ -124,9 +124,11 @@ function ChatBubble({
           {text}
         </Text>
       </Box>
-      <Text color="#484f58" marginTop={4}>
-        {`${name} \u00b7 ${time}`}
-      </Text>
+      <Box marginTop={4}>
+        <Text color="#484f58">
+          {`${name} \u00b7 ${time}`}
+        </Text>
+      </Box>
     </Box>
   )
 }

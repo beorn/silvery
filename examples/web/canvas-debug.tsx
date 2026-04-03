@@ -115,7 +115,7 @@ function buildDomRef(container: HTMLElement, width: number) {
 function readDomRects(container: HTMLElement): Map<string, DOMRect> {
   const rects = new Map<string, DOMRect>()
   const containerRect = container.getBoundingClientRect()
-  for (const el of container.querySelectorAll("[data-label]")) {
+  for (const el of Array.from(container.querySelectorAll("[data-label]"))) {
     const label = (el as HTMLElement).dataset.label!
     const r = el.getBoundingClientRect()
     // Relative to container
@@ -160,9 +160,11 @@ function ChatBubble({
           {text}
         </Text>
       </Box>
-      <Text color="#484f58" marginTop={4}>
-        {`${name} \u00b7 ${time}`}
-      </Text>
+      <Box marginTop={4}>
+        <Text color="#484f58">
+          {`${name} \u00b7 ${time}`}
+        </Text>
+      </Box>
     </Box>
   )
 }

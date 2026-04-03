@@ -942,7 +942,7 @@ function renderAnsiTextLineReturn(
         const key = `${JSON.stringify(existingBufBg)}-${segment.bg}-${preview}`
         if (!effectiveWarnedBgConflicts.has(key)) {
           effectiveWarnedBgConflicts.add(key)
-          log.warn(msg)
+          log.warn?.(msg)
         }
       }
     }

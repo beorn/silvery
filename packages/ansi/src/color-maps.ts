@@ -15,6 +15,7 @@ import type { ColorLevel } from "./types"
 
 /** Modifier SGR codes: open -> close */
 export const MODIFIERS: Record<string, [number, number]> = {
+  reset: [0, 0],
   bold: [1, 22],
   dim: [2, 22],
   italic: [3, 23],
@@ -22,6 +23,7 @@ export const MODIFIERS: Record<string, [number, number]> = {
   inverse: [7, 27],
   hidden: [8, 28],
   strikethrough: [9, 29],
+  overline: [53, 55],
 }
 
 /** Foreground color name -> ANSI SGR code */
@@ -72,23 +74,24 @@ export const BG_COLORS: Record<string, number> = {
 // Color Quantization (truecolor -> 256 -> 16)
 // =============================================================================
 
-/** Standard ANSI 16 color RGB values for nearest-color matching. */
+/** Standard ANSI 16 color RGB values for nearest-color matching.
+ * Uses xterm-256 standard values for consistent mapping (matches chalk/ansi-styles). */
 export const ANSI_16_COLORS: Array<[number, number, number]> = [
   [0, 0, 0], // 0: black
-  [170, 0, 0], // 1: red
-  [0, 170, 0], // 2: green
-  [170, 85, 0], // 3: yellow/brown
-  [0, 0, 170], // 4: blue
-  [170, 0, 170], // 5: magenta
-  [0, 170, 170], // 6: cyan
-  [170, 170, 170], // 7: white
-  [85, 85, 85], // 8: bright black (gray)
-  [255, 85, 85], // 9: bright red
-  [85, 255, 85], // 10: bright green
-  [255, 255, 85], // 11: bright yellow
-  [85, 85, 255], // 12: bright blue
-  [255, 85, 255], // 13: bright magenta
-  [85, 255, 255], // 14: bright cyan
+  [128, 0, 0], // 1: red
+  [0, 128, 0], // 2: green
+  [128, 128, 0], // 3: yellow/brown
+  [0, 0, 128], // 4: blue
+  [128, 0, 128], // 5: magenta
+  [0, 128, 128], // 6: cyan
+  [192, 192, 192], // 7: white
+  [128, 128, 128], // 8: bright black (gray)
+  [255, 0, 0], // 9: bright red
+  [0, 255, 0], // 10: bright green
+  [255, 255, 0], // 11: bright yellow
+  [0, 0, 255], // 12: bright blue
+  [255, 0, 255], // 13: bright magenta
+  [0, 255, 255], // 14: bright cyan
   [255, 255, 255], // 15: bright white
 ]
 

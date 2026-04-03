@@ -50,7 +50,7 @@ export async function connectDevTools(): Promise<boolean> {
         globalThis.WebSocket = ws.default ?? ws
       } catch {
         // ws not available -- devtools won't be able to connect
-        log.warn("WebSocket polyfill (ws) not available. " + "Install ws for DevTools support: bun add -d ws")
+        log.warn?.("WebSocket polyfill (ws) not available. " + "Install ws for DevTools support: bun add -d ws")
         return false
       }
     }
@@ -86,7 +86,7 @@ export async function connectDevTools(): Promise<boolean> {
     return true
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
-    log.warn(
+    log.warn?.(
       `Failed to connect to React DevTools. ` +
         `Install react-devtools-core: bun add -d react-devtools-core\n` +
         `  Error: ${message}`,

@@ -30,13 +30,16 @@ test("style string", () => {
 })
 
 test("support applying multiple styles at once", () => {
-  expect(chalk.red.bgGreen.underline("foo")).toBe("\u001B[31m\u001B[42m\u001B[4mfoo\u001B[24m\u001B[49m\u001B[39m")
-  expect(chalk.underline.red.bgGreen("foo")).toBe("\u001B[4m\u001B[31m\u001B[42mfoo\u001B[49m\u001B[39m\u001B[24m")
+  // silvery merges SGR codes into a single sequence (visually identical)
+  expect(chalk.red.bgGreen.underline("foo")).toBe("\u001B[31;42;4mfoo\u001B[39;49;24m")
+  expect(chalk.underline.red.bgGreen("foo")).toBe("\u001B[4;31;42mfoo\u001B[24;39;49m")
 })
 
 test("support nesting styles", () => {
+  // silvery merges SGR codes — inner close (24;49) doesn't affect parent fg (31),
+  // so no redundant reopen needed (visually identical to chalk's separate-sequence output)
   expect(chalk.red("foo" + chalk.underline.bgBlue("bar") + "!")).toBe(
-    "\u001B[31mfoo\u001B[4m\u001B[44mbar\u001B[49m\u001B[24m!\u001B[39m",
+    "\u001B[31mfoo\u001B[4;44mbar\u001B[24;49m!\u001B[39m",
   )
 })
 
@@ -47,8 +50,9 @@ test("support nesting styles of the same type (color, underline, bg)", () => {
 })
 
 test("reset all styles with `.reset()`", () => {
+  // silvery merges SGR codes (visually identical)
   expect(chalk.reset(chalk.red.bgGreen.underline("foo") + "foo")).toBe(
-    "\u001B[0m\u001B[31m\u001B[42m\u001B[4mfoo\u001B[24m\u001B[49m\u001B[39mfoo\u001B[0m",
+    "\u001B[0m\u001B[31;42;4mfoo\u001B[39;49;24mfoo\u001B[0m",
   )
 })
 
@@ -80,7 +84,7 @@ test("don't output escape codes if the input is empty", () => {
 
 test("keep Function.prototype methods", () => {
   expect(Reflect.apply(chalk.grey, null, ["foo"])).toBe("\u001B[90mfoo\u001B[39m")
-  expect(chalk.red.blue.black.call(null)).toBe("")
+  expect((chalk.red.blue.black as Function).call(null)).toBe("")
 })
 
 test("line breaks should open and close colors", () => {

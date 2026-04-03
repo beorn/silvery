@@ -47,7 +47,10 @@ exports[`dashboard snapshot > full render at 137x40 matches snapshot > dashboard
 `;
 
 exports[`dashboard snapshot > narrow layout at 80x40 matches snapshot > dashboard-80x40 1`] = `
-"
+"Silvery TUI system monitor showcase devbox-01┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄14:27 UTC [h]hel
+
+
+
 
 
 ╭─────────────────────────────────────────────╮ ╭──────────────────────────────╮
@@ -83,143 +86,5 @@ exports[`dashboard snapshot > narrow layout at 80x40 matches snapshot > dashboar
 │   2241 docker-desktop                                                   8.9%
 │   1542 redis-server *:6379                                              6.7%
 │    612 tailscaled --tun=userspace-networking                            5.4%
-│  33210 bun test --watch                                                 4.2%
-│   1804 nginx: worker process                                            3.7%
-│   2877 Chrome Helper (GPU)                                              3.2%
-│    451 kernel_task                                                      2.8%"
-`;
-
-exports[`dashboard snapshot > narrow layout at 80x40 matches snapshot > dashboard-137x40 1`] = `
-"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"
-`;
-
-exports[`dashboard snapshot full render at 137x40 matches snapshot: dashboard-137x40 1`] = `
-"Silvery TUI system monitor showcase devbox-01┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄14:27 UTC [h]help [1]cpu [2]mem [3]net [p]proc [/]filter [q]quit
-╭────────────────────────────────────────────────────────────────────────────────╮ ╭────────────────────────────────────────────────────╮
-│  CPU / Compute                                                     10 logical  │ │  Memory                                    32 GiB  │
-│ Total 67% ████████████████░░░░░░░░   Load 4.21 3.88 3.11  Temp 71°C  Tasks 287 │ │ RAM 23.7 / 32.0 GiB 74% █████████░░░    avail 8.3G │
-│ User 38%  Sys 12%  Wait 14%            Avg 4.31GHz  Ctx/s 128k  Uptime 12d 06h │ │ Used 23.7G  Cache 5.9G        Free 2.4G  Slab 1.1G │
-│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄                             │ │ Swap 2.1 / 8.0 GiB 26% ███░░░░░░░░░       zram off │
-│ cpu00  12% ███░░░░░░░░░░░░░░░░░░░░░ 3.62GHz                    temp 39°C  idle │ │ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │
-│ cpu01  28% ███████░░░░░░░░░░░░░░░░░ 3.79GHz                temp 42°C  balanced │ │ Apps 17.4G  Wired 1.8G                Buffers 612M │
-│ cpu02  44% ███████████░░░░░░░░░░░░░ 4.02GHz                  temp 47°C  steady │ │ Dirty 212M  Shared 1.3G               Reclaim 0.8G │
-│ cpu03  57% ██████████████░░░░░░░░░░ 4.18GHz                  temp 53°C  steady │ │ Trend ▅▅▆▆▅▆▇▆▆▇▇▆▇▇█▇▇▆▇▇▆▆▇▆                 30m │
-│ cpu04  63% ███████████████░░░░░░░░░ 4.31GHz                    temp 61°C  warm │ ╰────────────────────────────────────────────────────╯
-│ cpu05  71% █████████████████░░░░░░░ 4.47GHz                   temp 68°C  boost │ ╭────────────────────────────────────────────────────╮
-│ cpu06  79% ███████████████████░░░░░ 4.62GHz                   temp 72°C  boost │ │  Network                              en0 • wifi6  │
-│ cpu07  83% ████████████████████░░░░ 4.84GHz                   temp 75°C  boost │ │ DL 428 Mb/s 68% ████████░░░░              peak 612 │
-│ cpu08  88% █████████████████████░░░ 5.02GHz                   temp 77°C  turbo │ │ UL 86 Mb/s 22% ███░░░░░░░░░               peak 143 │
-│ cpu09  94% ███████████████████████░ 5.21GHz                   temp 81°C  turbo │ │ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │
-│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄                             │ │ Conn 184 est  Listen 23             SYN 2  Drops 0 │
-│ Pkg 67% ████████████████░░░░░░░░              Power 84W  Fan 1460RPM  Boost on │ │ Rx 61.2kpps  Tx 19.4kpps   Retrans 0.08%  RTT 18ms │
-│ History ▂▃▃▄▃▅▆▅▇▆▅▇█▇▆▇█▇▆▅▆▇▆█▇▆▇██▇▆▅▆▇▆▅                               60s │ │ DL ▂▃▄▆▅▇▆█▇▅▄▆▇█▆▅▇█▇▆▅▇▆▅                    60s │
-│                                                                                │ │ UL ▁▂▂▃▃▄▃▅▄▃▂▃▄▅▄▃▂▃▄▃▃▄▃▂                    60s │
-╰────────────────────────────────────────────────────────────────────────────────╯ ╰────────────────────────────────────────────────────╯
-╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│  Processes                                                                                                            sorted by CPU%  │
-│    PID NAME                                                            CPU%↓   MEM%       MEM STATUS           TIME          IO   THR │
-│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄                                                                                    │
-│  31842 bun dev --hot src/server.ts                                     94.2%   3.8%     1.22G Running      01:42:17       24M/s    18 │
-│  27114 node /usr/bin/vite --host                                       71.4%   2.2%      716M Running      00:18:09       12M/s    26 │
-│    918 postgres: checkpointer                                          12.8%   1.4%      448M Sleep        19:22:41      3.1M/s    27 │
-│   1023 Code Helper (Renderer)                                           9.6%   4.8%     1.53G Sleep        07:13:51      1.2M/s    44 │
-│   2241 docker-desktop                                                   8.9%   6.3%     2.01G Running      11:08:04      9.4M/s    61 │
-│   1542 redis-server *:6379                                              6.7%   0.9%      289M Sleep        02:51:17      642K/s     8 │
-│    612 tailscaled --tun=userspace-networking                            5.4%   0.4%      132M Sleep        05:44:22      218K/s    19 │
-│  33210 bun test --watch                                                 4.2%   1.1%      356M Running      00:06:38      4.6M/s    12 │
-│   1804 nginx: worker process                                            3.7%   0.2%       72M Sleep        03:17:09      118K/s     5 │
-│   2877 Chrome Helper (GPU)                                              3.2%   2.7%      864M Sleep        06:29:33      2.3M/s    23 │
-│    451 kernel_task                                                      2.8%   0.1%       42M Running      22:54:48           0   179 │
-│   1942 syncthing serve --no-browser                                     2.1%   0.8%      258M Sleep        14:05:14      884K/s    16 │
-│   7621 python scripts/indexer.py --incremental                          1.9%   1.9%      604M I/O wait     00:43:58       14M/s     9 │
-│    266 systemd-journald                                                 1.2%   0.1%       38M Sleep        09:12:44       96K/s     3 │
-│     74 zsh - bun gen-mockup.ts                                          0.2%   0.0%        6M Running      00:00:03           0     1 │
-│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄                                                                                    │
-│ 184 processes  6 running  177 sleeping  1 iowait                                           Threads 1,942  CPU 67%  MEM 74%  428↓  86↑ │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
-`;
-
-exports[`dashboard snapshot narrow layout at 80x40 matches snapshot: dashboard-80x40 1`] = `
-"
-
-
-╭─────────────────────────────────────────────╮ ╭──────────────────────────────╮
-│  CPU / Compute                  10 logical  │ │  Memory             32 GiB   │
-│ Total 67% ████████████████░░░░░░░░Load 4.21 3.│8RAM 23.7 / 32.0 GiB 74% ██████
-│ User 38%  Sys 12%  Wait 14%Avg 4.31GHz  Ctx/s │2UsedU23.7G 1Cacheh5.9GFree 2.4
-│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │ │ Swap 2.1 / 8.0 GiB 26% ███░░░░
-│ ┄┄┄┄┄┄┄                                     │ │ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  │
-│ cpu00  12% ███░░░░░░░░░░░░░░░░░░░░░ 3.62GHztem│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄      │
-│ cpu01  28% ███████░░░░░░░░░░░░░░░░░ 3.79GHztem│ Apps 17.4GncWired 1.8GBuffers│
-│ cpu02  44% ███████████░░░░░░░░░░░░░ 4.02GHztem│ Dirty 212MdyShared 1.3GReclaim
-│ cpu03  57% ██████████████░░░░░░░░░░ 4.18GHztem│ Trend ▅▅▆▆▅▆▇▆▆▇▇▆▇▇█▇▇▆▇▇▆▆▇▆
-│ cpu04  63% ███████████████░░░░░░░░░ 4.31GHztem╰──────────────────────────────╯
-│ cpu05  71% █████████████████░░░░░░░ 4.47GHztem╭──────────────────────────────╮
-│ cpu06  79% ███████████████████░░░░░ 4.62GHztem│  Network st    en0 • wifi6   │
-│ cpu07  83% ████████████████████░░░░ 4.84GHztem│ DL 428 Mb/s 68% ████████░░░░pe
-│ cpu08  88% █████████████████████░░░ 5.02GHztem│ UL 86 Mb/s 22% ███░░░░░░░░░pea
-│ cpu09  94% ███████████████████████░ 5.21GHztem│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  │
-│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ │ │ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄      │
-│ ┄┄┄┄┄┄┄                                     │ │ Conn 184 est  Listen 23SYN 2 │
-│ Pkg 67% ████████████████░░░░░░░░Power 84W  Fan│1Rx061.2kppsstTxn19.4kppsRetran
-│ History ▂▃▃▄▃▅▆▅▇▆▅▇█▇▆▇█▇▆▅▆▇▆█▇▆▇██▇▆▅▆▇▆▅60│ DL ▂▃▄▆▅▇▆█▇▅▄▆▇█▆▅▇█▇▆▅▇▆▅60s
-│                                             │ │                              │
-╰─────────────────────────────────────────────╯ ╰──────────────────────────────╯
-╭──────────────────────────────────────────────────────────────────────────────╮
-│  Processes                                                   sorted by CPU%  │
-│    PID NAME                                                            CPU%↓
-│ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄                           │
-│  31842 bun dev --hot src/server.ts                                     94.2%
-│  27114 node /usr/bin/vite --host                                       71.4%
-│    918 postgres: checkpointer                                          12.8%
-│   1023 Code Helper (Renderer)                                           9.6%
-│   2241 docker-desktop                                                   8.9%
-│   1542 redis-server *:6379                                              6.7%
-│    612 tailscaled --tun=userspace-networking                            5.4%
-│  33210 bun test --watch                                                 4.2%
-│   1804 nginx: worker process                                            3.7%
-│   2877 Chrome Helper (GPU)                                              3.2%
-│    451 kernel_task                                                      2.8%"
+│  33210 bun test --watch                                                 4.2%"
 `;

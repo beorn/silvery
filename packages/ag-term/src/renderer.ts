@@ -615,7 +615,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
 
       if (hadReactCommit && singlePassCount >= MAX_SINGLE_PASS_ITERATIONS) {
         if (process.env.SILVERY_STRICT) {
-          log.warn(
+          log.warn?.(
             `singlePassLayout exhausted ${MAX_SINGLE_PASS_ITERATIONS} iterations ` +
               `with pending React commit — output may be stale`,
           )
@@ -689,7 +689,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
 
       if (hadReactCommit && iterationCount >= MAX_LAYOUT_ITERATIONS) {
         if (process.env.SILVERY_STRICT) {
-          log.warn(
+          log.warn?.(
             `classic layout loop exhausted ${MAX_LAYOUT_ITERATIONS} iterations ` +
               `with pending React commit — output may be stale`,
           )

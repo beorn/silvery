@@ -217,7 +217,7 @@ export const hostConfig = {
       }
       if (process.env.NODE_ENV !== "production" && !hasWarnedBoxInsideText) {
         hasWarnedBoxInsideText = true
-        log.warn("<Box> cannot be nested inside <Text>. This produces undefined layout behavior.")
+        log.warn?.("<Box> cannot be nested inside <Text>. This produces undefined layout behavior.")
       }
     }
 
