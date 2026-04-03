@@ -101,6 +101,15 @@ export function captureTerminalState(opts: {
  * alternate screen, then disable raw mode.
  */
 export function restoreTerminalState(stdout: NodeJS.WriteStream, stdin: NodeJS.ReadStream): void {
+  // Step 1: Stop consuming stdin — prevent processing of in-flight events
+  try {
+    stdin.removeAllListeners("data")
+    stdin.pause()
+  } catch {
+    // Ignore — stdin may be closed
+  }
+
+  // Step 2: Send all protocol disable sequences
   const sequences = [
     "\x1b[0m", // Reset SGR attributes
     "\x1b[?1004l", // Disable focus reporting
@@ -132,7 +141,20 @@ export function restoreTerminalState(stdout: NodeJS.WriteStream, stdin: NodeJS.R
     }
   }
 
-  // Disable raw mode on stdin
+  // Step 3: Drain in-flight stdin bytes — the terminal may have queued events
+  // (Kitty key release, SGR mouse) before processing our disable sequences.
+  // Discard them so they don't leak to the shell prompt.
+  try {
+    stdin.resume()
+    while (stdin.read() !== null) {
+      // discard buffered data
+    }
+    stdin.pause()
+  } catch {
+    // Ignore — best-effort drain
+  }
+
+  // Step 4: Disable raw mode on stdin
   if (stdin.isTTY && stdin.isRaw) {
     try {
       stdin.setRawMode(false)

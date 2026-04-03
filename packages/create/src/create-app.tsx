@@ -96,10 +96,11 @@ import {
   KittyFlags,
   enableMouse,
   disableMouse,
+  resetCursorStyle,
   enterAlternateScreen,
   leaveAlternateScreen,
 } from "@silvery/ag-term/output"
-import { enableFocusReporting, disableFocusReporting } from "@silvery/ag-term/focus-reporting"
+import { enableFocusReporting } from "@silvery/ag-term/focus-reporting"
 import { detectKittyFromStdio } from "@silvery/ag-term/kitty-detect"
 import { captureTerminalState, performSuspend } from "@silvery/ag-term/runtime/terminal-lifecycle"
 import { type TermProvider, createTermProvider } from "@silvery/ag-term/runtime/term-provider"
@@ -934,22 +935,40 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       outputGuard = null
     }
 
-    // Disable terminal protocols BEFORE provider cleanup (which disables raw mode).
-    // If raw mode is disabled first, the shell takes over stdin while mouse tracking
-    // is still active — pending mouse events appear as garbled text on the prompt.
-    if (!headless) {
+    // === Terminal protocol cleanup ===
+    //
+    // Order is critical to avoid escape sequence leaks on exit:
+    //
+    // 1. Stop consuming stdin — remove data listeners so no more events process
+    // 2. Send all protocol disable sequences via writeSync (synchronous, reliable)
+    // 3. Drain any in-flight stdin bytes (terminal may have queued events before
+    //    processing our disable sequences — especially Kitty key release events)
+    // 4. Disable raw mode and pause stdin
+    //
+    // Without the drain, Kitty release events (e.g., CSI 113;1:3u for 'q' release)
+    // and SGR mouse events appear as garbled text on the shell prompt after exit.
+
+    if (!headless && stdin.isTTY) {
+      // Step 1: Stop consuming stdin — prevent any more event processing
+      stdin.removeAllListeners("data")
+      stdin.pause()
+
+      // Step 2: Send ALL protocol disable sequences unconditionally.
+      // Sending a disable for an inactive protocol is harmless, and unconditional
+      // cleanup is more robust than tracking enable/disable state.
       const sequences = [
-        focusReportingEnabled ? "\x1b[?1004l" : "",
-        mouseEnabled ? disableMouse() : "",
-        kittyEnabled ? disableKittyKeyboard() : "",
+        "\x1b[?1004l", // Disable focus reporting
+        disableMouse(), // Disable SGR mouse tracking (modes 1003, 1006)
+        disableKittyKeyboard(), // Pop Kitty keyboard protocol
+        "\x1b[?2004l", // Disable bracketed paste
+        "\x1b[0m", // Reset SGR attributes
+        resetCursorStyle(), // Reset cursor shape to terminal default (DECSCUSR 0)
         "\x1b[?25h", // Show cursor
-        "\x1b[0m", // Reset SGR
-        "\n",
-        alternateScreen ? "\x1b[?1049l" : "",
+        alternateScreen ? "\x1b[?1049l" : "", // Exit alternate screen
       ].join("")
-      // Use writeSync for reliability during real TTY shutdown (async write may
-      // not flush in time). For mock/test stdouts, writeSync(fd) bypasses the
-      // mock and writes directly to the OS fd — fall back to stdout.write().
+
+      // Use writeSync for reliability — async write may not flush before exit.
+      // For mock/test stdouts, writeSync(fd) bypasses the mock, so fall back.
       const isRealStdout = stdout === process.stdout
       if (isRealStdout) {
         try {
@@ -961,6 +980,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             /* terminal may be gone */
           }
         }
+
+        // Step 3: Drain in-flight stdin bytes. The terminal may have already
+        // queued events (Kitty release, mouse moves) before processing our
+        // disable sequences. Read and discard them so they don't leak to shell.
+        try {
+          stdin.resume()
+          while (stdin.read() !== null) {
+            // discard buffered data
+          }
+          stdin.pause()
+        } catch {
+          // Drain failed — best-effort, continue cleanup
+        }
       } else {
         try {
           stdout.write(sequences)
@@ -968,9 +1000,34 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           /* terminal may be gone */
         }
       }
+
+      // Step 4: Disable raw mode
+      try {
+        stdin.setRawMode(false)
+      } catch {
+        // Ignore — stdin may be closed
+      }
+    } else if (!headless) {
+      // Non-TTY cleanup: just send disable sequences
+      const sequences = [
+        "\x1b[?1004l",
+        disableMouse(),
+        disableKittyKeyboard(),
+        "\x1b[?2004l",
+        "\x1b[0m",
+        resetCursorStyle(),
+        "\x1b[?25h",
+        alternateScreen ? "\x1b[?1049l" : "",
+      ].join("")
+      try {
+        stdout.write(sequences)
+      } catch {
+        /* terminal may be gone */
+      }
     }
 
-    // Cleanup providers (including termProvider — disables raw mode on stdin)
+    // Cleanup providers — stdin is already cleaned up above for TTY,
+    // but provider cleanup handles other resources (resize listeners, etc.)
     providerCleanups.forEach((fn) => {
       try {
         fn()
