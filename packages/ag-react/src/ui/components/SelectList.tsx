@@ -1,7 +1,11 @@
 /**
  * SelectList Component
  *
- * A keyboard-navigable single-select list. Supports controlled and uncontrolled modes.
+ * A keyboard-navigable single-select list. Thin composition over ListView
+ * that adds disabled-item skipping, indicator styling, and onChange shorthand.
+ *
+ * Inherits from ListView: keyboard nav (j/k, arrows, PgUp/PgDn, Home/End, G),
+ * mouse wheel, virtualised scrolling, cache, and search.
  *
  * Usage:
  * ```tsx
@@ -15,9 +19,8 @@
  * ```
  */
 import React, { useCallback, useState } from "react"
-import { useInput } from "@silvery/ag-react/hooks/useInput"
-import { Box } from "@silvery/ag-react/components/Box"
 import { Text } from "@silvery/ag-react/components/Text"
+import { ListView } from "./ListView"
 
 // =============================================================================
 // Types
@@ -34,7 +37,7 @@ export interface SelectListProps {
   items: SelectOption[]
   /** Controlled: current highlighted index */
   highlightedIndex?: number
-  /** Called when highlight changes (controlled mode) */
+  /** Called when highlight changes */
   onHighlight?: (index: number) => void
   /** Called when user confirms selection (Enter) */
   onSelect?: (option: SelectOption, index: number) => void
@@ -64,19 +67,11 @@ function findNextEnabled(items: SelectOption[], current: number, direction: 1 | 
     next += direction
   }
 
-  // All items disabled; stay put
   return current
 }
 
 function findFirstEnabled(items: SelectOption[]): number {
   for (let i = 0; i < items.length; i++) {
-    if (!items[i]!.disabled) return i
-  }
-  return 0
-}
-
-function findLastEnabled(items: SelectOption[]): number {
-  for (let i = items.length - 1; i >= 0; i--) {
     if (!items[i]!.disabled) return i
   }
   return 0
@@ -96,84 +91,68 @@ export function SelectList({
   isActive = true,
   indicator = "▸ ",
 }: SelectListProps): React.ReactElement {
+  // SelectList always controls ListView's cursor (for disabled-item skipping).
+  // In uncontrolled mode, internal state tracks the cursor; in controlled mode,
+  // the parent's highlightedIndex is the source of truth.
   const isControlled = controlledIndex !== undefined
-
   const [uncontrolledIndex, setUncontrolledIndex] = useState(initialIndex ?? findFirstEnabled(items))
-
   const currentIndex = isControlled ? controlledIndex : uncontrolledIndex
 
   const setIndex = useCallback(
     (index: number) => {
-      if (!isControlled) {
-        setUncontrolledIndex(index)
-      }
+      if (!isControlled) setUncontrolledIndex(index)
       onHighlight?.(index)
     },
     [isControlled, onHighlight],
   )
 
-  useInput(
-    (input, key) => {
-      if (items.length === 0) return
-
-      if (key.upArrow || input === "k") {
-        setIndex(findNextEnabled(items, currentIndex, -1))
-        return
-      }
-
-      if (key.downArrow || input === "j") {
-        setIndex(findNextEnabled(items, currentIndex, 1))
-        return
-      }
-
-      if (key.return) {
-        const item = items[currentIndex]
-        if (item && !item.disabled) {
-          onSelect?.(item, currentIndex)
-        }
-        return
-      }
-
-      // Home: Ctrl+A
-      if (key.ctrl && input === "a") {
-        setIndex(findFirstEnabled(items))
-        return
-      }
-
-      // End: Ctrl+E
-      if (key.ctrl && input === "e") {
-        setIndex(findLastEnabled(items))
-        return
+  // Intercept cursor moves to skip disabled items
+  const handleCursor = useCallback(
+    (nextIndex: number) => {
+      const item = items[nextIndex]
+      if (item?.disabled) {
+        const direction = nextIndex >= currentIndex ? 1 : -1
+        setIndex(findNextEnabled(items, currentIndex, direction as 1 | -1))
+      } else {
+        setIndex(nextIndex)
       }
     },
-    { isActive },
+    [items, currentIndex, setIndex],
   )
 
-  // Compute visible window
-  const showAll = !maxVisible || items.length <= maxVisible
-  let startIdx = 0
-  let visibleItems = items
+  // Intercept Enter to block selection of disabled items
+  const handleSelect = useCallback(
+    (index: number) => {
+      const item = items[index]
+      if (item && !item.disabled) {
+        onSelect?.(item, index)
+      }
+    },
+    [items, onSelect],
+  )
 
-  if (!showAll) {
-    // Center the highlighted item in the visible window
-    const half = Math.floor(maxVisible / 2)
-    startIdx = Math.max(0, Math.min(currentIndex - half, items.length - maxVisible))
-    visibleItems = items.slice(startIdx, startIdx + maxVisible)
-  }
+  const renderItem = useCallback(
+    (item: SelectOption, _index: number, meta: { isCursor: boolean }) => (
+      <Text key={item.value} inverse={meta.isCursor} dimColor={item.disabled}>
+        {indicator ? (meta.isCursor ? indicator : " ".repeat(indicator.length)) : ""}
+        {item.label}
+      </Text>
+    ),
+    [indicator],
+  )
 
   return (
-    <Box flexDirection="column">
-      {visibleItems.map((item, i) => {
-        const actualIndex = showAll ? i : startIdx + i
-        const isHighlighted = actualIndex === currentIndex
-
-        return (
-          <Text key={item.value} inverse={isHighlighted} dimColor={item.disabled}>
-            {indicator ? (isHighlighted ? indicator : " ".repeat(indicator.length)) : ""}
-            {item.label}
-          </Text>
-        )
-      })}
-    </Box>
+    <ListView
+      items={items}
+      height={maxVisible ?? items.length}
+      estimateHeight={1}
+      nav
+      cursorKey={currentIndex}
+      onCursor={handleCursor}
+      onSelect={handleSelect}
+      active={isActive}
+      getKey={(item) => item.value}
+      renderItem={renderItem}
+    />
   )
 }

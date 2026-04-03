@@ -18,7 +18,7 @@
  * - Overflow indicators (▲N/▼N) are rendered by the Box based on actual
  *   hidden child counts, consuming 1 row each from the viewport
  *
- * SelectList uses simple array slicing via maxVisible — no virtualization.
+ * SelectList is a thin composition over ListView — delegates scrolling to ListView.
  */
 
 import React from "react"
@@ -655,21 +655,19 @@ describe("SelectList — maxVisible windowing", () => {
     expect(visible).toBe(1)
   })
 
-  test("maxVisible window centers on highlighted item", () => {
+  test("maxVisible window scrolls to show highlighted item with context", () => {
     const options = makeSelectOptions(10)
     const r = createRenderer({ cols: 40, rows: 7 })
     const app = r(<SelectList items={options} maxVisible={5} highlightedIndex={5} />)
     const text = stripAnsi(app.text)
 
-    // Highlighted item should be visible
+    // Highlighted item must be visible
     expect(text).toContain("Option 5")
-    // Window centered: half = floor(5/2) = 2
-    // startIdx = max(0, min(5-2, 10-5)) = 3
-    // visible: 3,4,5,6,7
-    expect(text).toContain("Option 3")
-    expect(text).toContain("Option 4")
-    expect(text).toContain("Option 6")
-    expect(text).toContain("Option 7")
+    // ListView uses edge-based scrolling (not centering): it scrolls just enough
+    // to keep the cursor visible with scrollPadding context. The exact window
+    // depends on ListView's scroll algorithm, but 5 items should be visible.
+    const visible = countVisibleItems(text, "Option", 10)
+    expect(visible).toBe(5)
   })
 
   test("maxVisible window clamps at start", () => {
