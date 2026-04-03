@@ -133,7 +133,7 @@ export function AIChat({
 export async function main() {
   const args = process.argv.slice(2)
   const script = args.includes("--stress") ? generateStressScript() : SCRIPT
-  const mode = args.includes("--fullscreen") ? "fullscreen" : "inline"
+  const mode = args.includes("--inline") ? "inline" : "fullscreen"
 
   using handle = await run(
     <AIChat
