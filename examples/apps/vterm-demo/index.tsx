@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from "react"
-import { Box, Text, ListView } from "silvery"
+import { Box, Text, ListView, useWindowSize } from "silvery"
 import { SearchProvider, SearchBar } from "@silvery/ag-react"
 import { run, useInput, type Key } from "@silvery/ag-term/runtime"
 import type { ExampleMeta } from "../../_banner.js"
@@ -88,7 +88,12 @@ function ChatApp({
         <Box paddingX={1}>
           <Text>
             {meta.isCursor ? ">" : " "}{" "}
-            <Text color={ex.role === "user" ? "$primary" : ex.role === "agent" ? "$success" : "$warning"} bold>
+            <Text
+              color={
+                ex.role === "user" ? "$primary" : ex.role === "agent" ? "$success" : "$warning"
+              }
+              bold
+            >
               {ex.role}
             </Text>
             : {ex.content.slice(0, 70)}
@@ -117,8 +122,9 @@ function StatusBar({ mode, count }: { mode: string; count: number }) {
 // Fullscreen / Inline layout
 // ============================================================================
 
-function SingleApp({ mode, fast, rows }: { mode: string; fast: boolean; rows: number }) {
+function SingleApp({ mode, fast }: { mode: string; fast: boolean }) {
   const exchanges = useAutoContent(SCRIPT, fast)
+  const { rows } = useWindowSize()
 
   useInput((_input: string, key: Key) => {
     if (key.escape || _input === "q") return "exit"
@@ -139,9 +145,10 @@ function SingleApp({ mode, fast, rows }: { mode: string; fast: boolean; rows: nu
 // Panes layout
 // ============================================================================
 
-function PanesApp({ fast, rows }: { fast: boolean; rows: number }) {
+function PanesApp({ fast }: { fast: boolean }) {
   const [focus, setFocus] = useState<"left" | "right">("left")
   const exchanges = useAutoContent(SCRIPT, fast)
+  const { rows } = useWindowSize()
 
   useInput((_input: string, key: Key) => {
     if (key.escape || _input === "q") return "exit"
@@ -197,11 +204,9 @@ export async function main() {
   const fast = args.includes("--fast")
   const modeArg = args.find((a) => a.startsWith("--mode="))?.split("=")[1] ?? "fullscreen"
   const mode = modeArg as "inline" | "fullscreen" | "panes"
-  const rows = process.stdout.rows ?? 40
 
   const runtimeMode = mode === "panes" ? "fullscreen" : mode
-  const app =
-    mode === "panes" ? <PanesApp fast={fast} rows={rows} /> : <SingleApp mode={mode} fast={fast} rows={rows} />
+  const app = mode === "panes" ? <PanesApp fast={fast} /> : <SingleApp mode={mode} fast={fast} />
 
   using handle = await run(<SearchProvider>{app}</SearchProvider>, {
     mode: runtimeMode,

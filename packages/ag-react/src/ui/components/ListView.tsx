@@ -314,11 +314,16 @@ function ListViewInner<T>(
   // ── Resolve cache config ─────────────────────────────────────────
   // When cache=true, use "auto" mode which reads CacheBackendContext.
   // When cache={ mode: "auto" }, also reads context. Otherwise use the explicit mode.
-  const cacheConfig = typeof cacheProp === "object" ? cacheProp : cacheProp ? { mode: "auto" as const } : undefined
+  const cacheConfig =
+    typeof cacheProp === "object" ? cacheProp : cacheProp ? { mode: "auto" as const } : undefined
   const rawCacheMode = cacheConfig?.mode ?? "none"
   // Resolve "auto" → context-driven backend selection
   const cacheMode =
-    rawCacheMode === "auto" ? (cacheBackendFromContext === "terminal" ? "terminal" : "virtual") : rawCacheMode
+    rawCacheMode === "auto"
+      ? cacheBackendFromContext === "terminal"
+        ? "terminal"
+        : "virtual"
+      : rawCacheMode
   const cacheBufferRef = useRef<HistoryBuffer | null>(null)
   if (cacheMode === "virtual" && !cacheBufferRef.current) {
     cacheBufferRef.current = createHistoryBuffer(cacheConfig?.capacity ?? 10_000)
@@ -340,7 +345,10 @@ function ListViewInner<T>(
 
   // Push newly cached items to buffer or terminal scrollback
   const prevCachedRef = useRef(0)
-  if (cachedCount > prevCachedRef.current && (cacheMode === "virtual" || cacheMode === "terminal")) {
+  if (
+    cachedCount > prevCachedRef.current &&
+    (cacheMode === "virtual" || cacheMode === "terminal")
+  ) {
     const captureWidth = width ?? term?.cols ?? 80
     const canCapture = isLayoutEngineInitialized()
     for (let i = prevCachedRef.current; i < cachedCount; i++) {
@@ -380,9 +388,15 @@ function ListViewInner<T>(
     prevCachedRef.current = cachedCount
   }
 
-  // Merge cached prefix with external unmounted prop
+  // Merge cached prefix with external unmounted prop.
+  // Only unmount cached items when the cache backend can display them:
+  // - "terminal": items promoted to real terminal scrollback (inline mode)
+  // - "virtual": items stored in HistoryBuffer for virtual scrollback viewer
+  // - "retain": items cached but kept in the render tree (plain fullscreen
+  //   without virtual scrollback — unmounting would make items invisible)
+  const shouldUnmountCached = cacheBackendFromContext !== "retain" && cachedCount > 0
   const effectiveUnmounted = useMemo(() => {
-    if (cachedCount === 0) return unmounted
+    if (!shouldUnmountCached) return unmounted
     if (!unmounted) {
       return (_item: T, index: number) => index < cachedCount
     }
@@ -390,7 +404,7 @@ function ListViewInner<T>(
       if (index < cachedCount) return true
       return unmounted(item, index)
     }
-  }, [cachedCount, unmounted])
+  }, [shouldUnmountCached, cachedCount, unmounted])
 
   // ── Virtual prefix computation ──────────────────────────────────────
   let unmountedCount = 0
@@ -405,7 +419,8 @@ function ListViewInner<T>(
   const activeItems = unmountedCount > 0 ? items.slice(unmountedCount) : items
 
   // Adjust scrollTo to account for virtual items
-  const adjustedScrollTo = scrollTo !== undefined ? Math.max(0, scrollTo - unmountedCount) : undefined
+  const adjustedScrollTo =
+    scrollTo !== undefined ? Math.max(0, scrollTo - unmountedCount) : undefined
 
   // ── Adapt estimateHeight for unmounted offset ──────────────────
   const adjustedEstimateHeight = useMemo(() => {
@@ -423,20 +438,27 @@ function ListViewInner<T>(
     return (index: number) => getKey(activeItems[index]!, index + unmountedCount)
   }, [getKey, activeItems, unmountedCount])
 
-  const { range, leadingHeight, trailingHeight, scrollOffset, scrollToItem, measureItem, measuredHeights } =
-    useVirtualizer({
-      count: activeItems.length,
-      estimateHeight: adjustedEstimateHeight,
-      viewportHeight: height,
-      scrollTo: adjustedScrollTo,
-      scrollPadding,
-      overscan,
-      maxRendered,
-      gap,
-      getItemKey: wrappedGetKey,
-      onEndReached,
-      onEndReachedThreshold,
-    })
+  const {
+    range,
+    leadingHeight,
+    trailingHeight,
+    scrollOffset,
+    scrollToItem,
+    measureItem,
+    measuredHeights,
+  } = useVirtualizer({
+    count: activeItems.length,
+    estimateHeight: adjustedEstimateHeight,
+    viewportHeight: height,
+    scrollTo: adjustedScrollTo,
+    scrollPadding,
+    overscan,
+    maxRendered,
+    gap,
+    getItemKey: wrappedGetKey,
+    onEndReached,
+    onEndReachedThreshold,
+  })
 
   // ── Surface / search registration ────────────────────────────────
   const textSurfaceRef = useRef<TextSurface | null>(null)
@@ -615,7 +637,9 @@ function ListViewInner<T>(
   // Calculate scrollTo index for silvery Box overflow="scroll"
   const hasTopPlaceholder = leadingHeight > 0
   const currentScrollTarget =
-    adjustedScrollTo !== undefined ? Math.max(0, Math.min(adjustedScrollTo, activeItems.length - 1)) : scrollOffset
+    adjustedScrollTo !== undefined
+      ? Math.max(0, Math.min(adjustedScrollTo, activeItems.length - 1))
+      : scrollOffset
   const selectedIndexInSlice = currentScrollTarget - startIndex
   const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length
   const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice

@@ -229,7 +229,11 @@ export function usePaste(handler: PasteHandler): void {
  * Internally delegates to createApp() with an empty store.
  * For stores and providers, use createApp() directly.
  */
-export async function run(element: ReactElement, term: Term, termOptions?: Partial<RunOptions>): Promise<RunHandle>
+export async function run(
+  element: ReactElement,
+  term: Term,
+  termOptions?: Partial<RunOptions>,
+): Promise<RunHandle>
 export async function run(element: ReactElement, options?: RunOptions): Promise<RunHandle>
 export async function run(
   element: ReactElement,
@@ -239,7 +243,9 @@ export async function run(
   // Term path: pass Term as provider + its streams, auto-enable from Term caps
   if (isTerm(optionsOrTerm)) {
     const term = optionsOrTerm as Term
-    const emulator = (term as unknown as Record<string, unknown>)._emulator as { feed(data: string): void } | undefined
+    const emulator = (term as unknown as Record<string, unknown>)._emulator as
+      | { feed(data: string): void }
+      | undefined
 
     // Emulator-backed term: non-headless mode with stdout routing to emulator.
     // Create a mock stdin that forwards sendInput() data to the term provider's
@@ -286,9 +292,15 @@ export async function run(
         }
       }
 
+      // Resolve alternateScreen from termOptions.mode (if provided).
+      // The mode prop is consumed at the run() level for the options path,
+      // but in the Term path it needs explicit conversion.
+      const termMode = termOptions?.mode
+      const altScreen = termMode === "inline" ? false : true
+
       const app = createApp(() => () => ({}))
       const handle = await app.run(element, {
-        alternateScreen: true,
+        alternateScreen: altScreen,
         ...termOptions,
         stdin: mockStdin,
         stdout: term.stdout, // Feeds emulator — protocol escapes reach the emulator

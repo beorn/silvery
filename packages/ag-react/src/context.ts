@@ -137,7 +137,10 @@ type EventHandler<Args extends unknown[]> = (...args: Args) => void
  */
 export interface RuntimeContextValue<E extends BaseRuntimeEvents = BaseRuntimeEvents> {
   /** Subscribe to a typed event. Returns cleanup function. */
-  on<K extends string & keyof E>(event: K, handler: EventHandler<E[K] extends unknown[] ? E[K] : never>): () => void
+  on<K extends string & keyof E>(
+    event: K,
+    handler: EventHandler<E[K] extends unknown[] ? E[K] : never>,
+  ): () => void
   /** Emit a typed event (view → runtime). */
   emit<K extends string & keyof E>(event: K, ...args: E[K] extends unknown[] ? E[K] : never): void
   /** Exit the application with optional error. */
@@ -166,17 +169,20 @@ export const RuntimeContext = createContext<RuntimeContextValue | null>(null)
 /**
  * Cache backend type — determines where ListView stores cached items.
  * - "terminal": Write to stdout as native scrollback (inline mode)
- * - "virtual": In-memory HistoryBuffer ring buffer (fullscreen/panes)
+ * - "virtual": In-memory HistoryBuffer ring buffer (fullscreen + virtualInline)
+ * - "retain": Cache items but keep them in the render tree (plain fullscreen
+ *   without virtual scrollback — the virtualizer handles windowing)
  */
-export type CacheBackend = "terminal" | "virtual"
+export type CacheBackend = "terminal" | "virtual" | "retain"
 
 /**
  * Context that provides the cache backend to ListView.
  * Set by the runtime based on rendering mode:
  * - alternateScreen: false (inline) → "terminal"
- * - alternateScreen: true (fullscreen) → "virtual"
+ * - alternateScreen: true + virtualInline → "virtual"
+ * - alternateScreen: true (plain fullscreen) → "retain"
  *
- * Default: "virtual" (safe fallback when no provider)
+ * Default: "virtual" (safe fallback for test renderers — items unmount as expected)
  */
 export const CacheBackendContext = createContext<CacheBackend>("virtual")
 

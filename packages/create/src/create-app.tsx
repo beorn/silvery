@@ -108,7 +108,12 @@ import type { Buffer, Dims, Provider, RenderTarget } from "@silvery/ag-term/runt
 import { createSelectionState, selectionUpdate, extractText } from "@silvery/ag-term/selection"
 import { renderSelectionOverlay } from "@silvery/ag-term/selection-renderer"
 import { createVirtualScrollback } from "@silvery/ag-term/virtual-scrollback"
-import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "@silvery/ag-term/search-overlay"
+import {
+  createSearchState,
+  searchUpdate,
+  renderSearchBar,
+  type SearchMatch,
+} from "@silvery/ag-term/search-overlay"
 import { createOutputGuard, type OutputGuard } from "@silvery/ag-term/ansi/output-guard"
 import { createLogger } from "loggily"
 
@@ -547,7 +552,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // auto-enable when kitty protocol is active (so press() encodes modifier keys correctly)
   const useKittyMode = explicitKittyMode ?? !!kittyOption
 
-  const headless = (explicitCols != null && explicitRows != null && !explicitStdout) || explicitWritable != null
+  const headless =
+    (explicitCols != null && explicitRows != null && !explicitStdout) || explicitWritable != null
   const cols = explicitCols ?? process.stdout.columns ?? 80
   const rows = explicitRows ?? process.stdout.rows ?? 24
   const stdout = explicitStdout ?? process.stdout
@@ -752,7 +758,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       const decoded = symbolize(str)
       // Truncate for readability but keep enough to identify content
       const preview =
-        decoded.length > 400 ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100) : decoded
+        decoded.length > 400
+          ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100)
+          : decoded
       fs.appendFileSync(
         "/tmp/silvery-trace.log",
         `[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}\n`,
@@ -813,7 +821,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // For "probe": start disabled, probe async to determine
   // For true/false: use directly
   const heuristicSupported = capsOption?.textSizingSupported ?? isTextSizingLikelySupported()
-  const shouldProbe = textSizingOption === "probe" || (textSizingOption === "auto" && heuristicSupported)
+  const shouldProbe =
+    textSizingOption === "probe" || (textSizingOption === "auto" && heuristicSupported)
   // If we have a cached probe result, use it immediately instead of probing again
   const cachedProbe = shouldProbe ? getCachedProbeResult() : undefined
   let textSizingEnabled: boolean
@@ -858,7 +867,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let storeUnsubscribeFn: (() => void) | null = null
   // Track protocol state for cleanup and suspend/resume
   let kittyEnabled = false
-  const defaultKittyFlags = KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
+  const defaultKittyFlags =
+    KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
   let kittyFlags: number = defaultKittyFlags
   let mouseEnabled = false
   let focusReportingEnabled = false
@@ -1092,8 +1102,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     addListener: () => mockStdout,
   } as unknown as NodeJS.WriteStream
 
-  // Create mock term
-  const mockTerm = createTerm({ color: "truecolor" })
+  // Create mock term — override getState to return the app's actual dimensions
+  // rather than process.stdout dimensions (which may differ in test/emulator contexts).
+  const baseMockTerm = createTerm({ color: "truecolor" })
+  const mockTerm = Object.create(baseMockTerm, {
+    getState: { value: (): { cols: number; rows: number } => currentDims },
+  }) as typeof baseMockTerm
 
   // RuntimeContext input listeners — allows components using hooks/useInput
   // (TextInput, TextArea, SelectList etc.) to work inside createApp apps.
@@ -1133,7 +1147,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // If a Root component is provided (e.g., from withInk), wrap the element with it
   // inside silvery's contexts so it can access Term, Stdout, FocusManager, Runtime.
   const Root = RootComponent ?? React.Fragment
-  const cacheBackend = alternateScreen ? "virtual" : "terminal"
+  // Cache backend selection:
+  // - inline: "terminal" — items promoted to real terminal scrollback
+  // - fullscreen + virtualInline: "virtual" — items stored in HistoryBuffer,
+  //   viewable via virtual scroll overlay
+  // - plain fullscreen: "retain" — items cached but kept in the render tree
+  //   (no scrollback to display unmounted items, virtualizer handles windowing)
+  const cacheBackend = !alternateScreen ? "terminal" : virtualInlineOption ? "virtual" : "retain"
   const wrappedElement = (
     <SilveryErrorBoundary>
       <CursorProvider store={cursorStore}>
@@ -1144,7 +1164,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 stdout: mockStdout,
                 write: () => {},
                 notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
-                promoteScrollback: (content: string, lines: number) => runtime.promoteScrollback(content, lines),
+                promoteScrollback: (content: string, lines: number) =>
+                  runtime.promoteScrollback(content, lines),
                 resetInlineCursor: () => runtime.resetInlineCursor(),
                 getInlineCursorRow: () => runtime.getInlineCursorRow(),
               }}
@@ -1160,7 +1181,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 <FocusManagerContext.Provider value={focusManager}>
                   <RuntimeContext.Provider value={runtimeContextValue}>
                     <Root>
-                      <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
+                      <StoreContext.Provider value={store as StoreApi<unknown>}>
+                        {element}
+                      </StoreContext.Provider>
                     </Root>
                   </RuntimeContext.Provider>
                 </FocusManagerContext.Provider>
@@ -1232,7 +1255,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Set SILVERY_CELL_DEBUG=x,y to trace which nodes cover a specific cell.
     // The log is captured during the render and included in any mismatch error.
     ;(globalThis as any).__silvery_cell_debug = undefined
-    const _cellDebugVal = typeof process !== "undefined" ? process.env?.SILVERY_CELL_DEBUG : undefined
+    const _cellDebugVal =
+      typeof process !== "undefined" ? process.env?.SILVERY_CELL_DEBUG : undefined
     if (_cellDebugVal?.includes(",")) {
       const [cx, cy] = _cellDebugVal.split(",").map(Number)
       if (Number.isFinite(cx) && Number.isFinite(cy)) {
@@ -1301,7 +1325,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const savedCellDbg = (globalThis as any).__silvery_cell_debug as
               | { x: number; y: number; log: string[] }
               | undefined
-            if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y && savedCellDbg.log.length > 0) {
+            if (
+              savedCellDbg &&
+              savedCellDbg.x === x &&
+              savedCellDbg.y === y &&
+              savedCellDbg.log.length > 0
+            ) {
               cellDebugInfo = `\nCELL DEBUG (${savedCellDbg.log.length} entries for (${x},${y})):\n${savedCellDbg.log.join("\n")}\n`
             } else if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y) {
               cellDebugInfo = `\nCELL DEBUG: No nodes cover (${x},${y}) during incremental render\n`
@@ -1473,7 +1502,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
   if (_ansiTrace) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("node:fs").appendFileSync("/tmp/silvery-trace.log", "=== RUNTIME.RENDER (initial) ===\n")
+    require("node:fs").appendFileSync(
+      "/tmp/silvery-trace.log",
+      "=== RUNTIME.RENDER (initial) ===\n",
+    )
   }
   runtime.render(currentBuffer)
   if (_perfLog) {
@@ -1779,7 +1811,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         searchState = next
         for (const eff of effects) {
           if (eff.type === "scrollTo") {
-            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+            virtualScrollOffset = Math.max(
+              0,
+              scrollback.totalLines - eff.row - target.getDims().rows,
+            )
           }
         }
         return true
@@ -1789,7 +1824,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         searchState = next
         for (const eff of effects) {
           if (eff.type === "scrollTo") {
-            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+            virtualScrollOffset = Math.max(
+              0,
+              scrollback.totalLines - eff.row - target.getDims().rows,
+            )
           }
         }
         return true
@@ -1799,7 +1837,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         searchState = next
         for (const eff of effects) {
           if (eff.type === "scrollTo") {
-            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+            virtualScrollOffset = Math.max(
+              0,
+              scrollback.totalLines - eff.row - target.getDims().rows,
+            )
           }
         }
         return true
@@ -1815,11 +1856,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         return true
       }
       if (data.input && !data.key.ctrl && !data.key.meta) {
-        const [next, effects] = searchUpdate({ type: "input", char: data.input }, searchState, searchScrollback)
+        const [next, effects] = searchUpdate(
+          { type: "input", char: data.input },
+          searchState,
+          searchScrollback,
+        )
         searchState = next
         for (const eff of effects) {
           if (eff.type === "scrollTo") {
-            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+            virtualScrollOffset = Math.max(
+              0,
+              scrollback.totalLines - eff.row - target.getDims().rows,
+            )
           }
         }
         return true
@@ -1873,11 +1921,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Left button (button 0) drag for selection
       if (mouseData.button === 0) {
         if (mouseData.action === "down") {
-          const [next] = selectionUpdate({ type: "start", col: mouseData.x, row: mouseData.y }, selectionState)
+          const [next] = selectionUpdate(
+            { type: "start", col: mouseData.x, row: mouseData.y },
+            selectionState,
+          )
           selectionState = next
           // Don't consume — let the component tree also handle mousedown (for click-to-focus etc.)
         } else if (mouseData.action === "move" && selectionState.selecting) {
-          const [next] = selectionUpdate({ type: "extend", col: mouseData.x, row: mouseData.y }, selectionState)
+          const [next] = selectionUpdate(
+            { type: "extend", col: mouseData.x, row: mouseData.y },
+            selectionState,
+          )
           selectionState = next
           // Consume move events during selection — don't dispatch to component tree
           return true
