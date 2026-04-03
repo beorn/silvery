@@ -48,6 +48,7 @@ export { ErrorBoundary } from "./components/ErrorBoundary"
 export type { ErrorBoundaryProps } from "./components/ErrorBoundary"
 
 export { Console } from "./components/Console"
+export type { ConsoleProps } from "./components/Console"
 
 // Viewport Architecture (Phase 2)
 export { Screen } from "./components/Screen"

@@ -1,15 +1,27 @@
 import type { ConsoleEntry, PatchedConsole } from "@silvery/ag-term/ansi"
 import type { ReactElement, ReactNode } from "react"
 import { useConsole } from "@silvery/ag-react/hooks/useConsole"
-import { Box } from "@silvery/ag-react/components/Box"
 import { Text } from "@silvery/ag-react/components/Text"
+import { ListView } from "./ListView"
 
-interface ConsoleProps {
+export interface ConsoleProps {
   /** The patched console to render entries from */
   console: PatchedConsole
 
   /** Optional render function for custom entry rendering */
   children?: (entry: ConsoleEntry, index: number) => ReactNode
+
+  /** Viewport height in rows. Default: 20 */
+  height?: number
+
+  /** Enable caching of entries scrolled out of view. Default: true */
+  cache?: boolean
+
+  /** Enable search (registers with SearchProvider). Default: true */
+  search?: boolean
+
+  /** Surface identity for search/selection routing */
+  surfaceId?: string
 }
 
 /**
@@ -37,8 +49,8 @@ function formatArgs(args: unknown[]): string {
 /**
  * Renders captured console output from a PatchedConsole.
  *
- * Uses useConsole hook to subscribe to entries and re-renders when new
- * entries arrive. Supports custom rendering via children render prop.
+ * Thin composition over ListView — gets caching, search, and virtualization
+ * for free. Follows output by default (scrollTo = last item).
  *
  * @example Default rendering
  * ```tsx
@@ -46,12 +58,12 @@ function formatArgs(args: unknown[]): string {
  * import { patchConsole } from '@silvery/chalk'
  *
  * using patched = patchConsole(console)
- * <Console console={patched} />
+ * <Console console={patched} height={20} />
  * ```
  *
  * @example Custom rendering
  * ```tsx
- * <Console console={patched}>
+ * <Console console={patched} height={20}>
  *   {(entry, i) => (
  *     <Text key={i} color={entry.stream === 'stderr' ? 'yellow' : 'green'}>
  *       [{entry.method}] {entry.args.join(' ')}
@@ -60,20 +72,33 @@ function formatArgs(args: unknown[]): string {
  * </Console>
  * ```
  */
-export function Console({ console: patched, children }: ConsoleProps): ReactElement {
+export function Console({
+  console: patched,
+  children,
+  height = 20,
+  cache = true,
+  search = true,
+  surfaceId,
+}: ConsoleProps): ReactElement {
   const entries = useConsole(patched)
 
   return (
-    <Box flexDirection="column">
-      {entries.map((entry, i) =>
+    <ListView<ConsoleEntry>
+      items={entries as ConsoleEntry[]}
+      height={height}
+      scrollTo={entries.length - 1}
+      cache={cache}
+      search={search ? { getText: (entry) => formatArgs(entry.args) } : false}
+      surfaceId={surfaceId}
+      renderItem={(entry, index) =>
         children ? (
-          children(entry, i)
+          children(entry, index)
         ) : (
-          <Text key={i} color={entry.stream === "stderr" ? "red" : undefined}>
+          <Text key={index} color={entry.stream === "stderr" ? "red" : undefined}>
             {formatArgs(entry.args)}
           </Text>
-        ),
-      )}
-    </Box>
+        )
+      }
+    />
   )
 }
