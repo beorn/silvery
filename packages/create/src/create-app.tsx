@@ -1557,12 +1557,49 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   })
 
   // Now define exit function (needs exitResolve and cleanup)
+  //
+  // When called from within the event pump (key handler returns "exit"),
+  // we send protocol disable sequences immediately but defer the full
+  // cleanup (drain + raw mode) to the pump's finally block. This gives
+  // the event loop time to receive late-arriving bytes (e.g., Kitty
+  // keyboard release events) before we hand stdin back to the shell.
+  //
+  // When called from outside the pump (signal handler, direct call),
+  // we do sync cleanup immediately (best-effort).
   exit = () => {
     if (shouldExit) return // Already exiting
     shouldExit = true
+
+    // Immediately disable protocols that generate async responses.
+    // This is the earliest possible moment — before the terminal
+    // sends any more events in response to the exit key.
+    if (!headless && stdout.isTTY) {
+      const earlyDisable = [
+        disableKittyKeyboard(), // Stop Kitty release events
+        disableMouse(), // Stop mouse events
+        "\x1b[?1004l", // Stop focus reporting
+      ].join("")
+      try {
+        writeSync((stdout as unknown as { fd: number }).fd, earlyDisable)
+      } catch {
+        try {
+          stdout.write(earlyDisable)
+        } catch {
+          /* terminal may be gone */
+        }
+      }
+    }
+
     controller.abort()
-    cleanup()
-    exitResolve()
+
+    // If we're inside the event pump, defer cleanup — the pump's
+    // finally block will call cleanupAfterDrain() with an async drain.
+    // If we're outside (signal handler, etc.), do sync cleanup now.
+    if (!inEventHandler) {
+      cleanup()
+      exitResolve()
+    }
+    // else: pump's finally block handles cleanup + exitResolve
   }
   runtimeContextValue.exit = exit
 
@@ -2302,6 +2339,28 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         // Signal completion — resolve with a sentinel that next() will detect
         resolve(null as unknown as Buffer)
       }
+
+      // Async drain: give the event loop 1 tick + 15ms to receive any
+      // late-arriving bytes (Kitty release events, mouse events) that were
+      // in the kernel TTY buffer when we sent the disable sequences.
+      // This is the async path — signal handlers use the sync fallback in exit().
+      if (shouldExit && !cleanedUp && !headless && stdin.isTTY) {
+        try {
+          // Remove data listener but keep raw mode on — we're still consuming
+          stdin.removeAllListeners("data")
+          stdin.resume()
+          // Let the event loop tick to deliver kernel-buffered bytes
+          await new Promise((resolve) => setTimeout(resolve, 15))
+          // Drain whatever arrived
+          while (stdin.read() !== null) {
+            /* discard late arrivals */
+          }
+          stdin.pause()
+        } catch {
+          // Best-effort — continue to cleanup
+        }
+      }
+
       // Cleanup and resolve exit promise
       cleanup()
       exitResolve()
