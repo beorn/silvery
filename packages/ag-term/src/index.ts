@@ -485,11 +485,11 @@ export { BG_OVERRIDE_CODE, bgOverride } from "./ansi/index"
 // =============================================================================
 
 export {
-  selectionUpdate,
-  createSelectionState,
+  terminalSelectionUpdate,
+  createTerminalSelectionState,
   normalizeRange,
   extractText,
-  type SelectionState,
+  type TerminalSelectionState,
   type SelectionRange,
   type SelectionPosition,
   type SelectionAction,

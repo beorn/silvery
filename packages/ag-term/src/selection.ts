@@ -21,7 +21,7 @@ export interface SelectionRange {
   head: SelectionPosition
 }
 
-export interface SelectionState {
+export interface TerminalSelectionState {
   range: SelectionRange | null
   /** True while mouse button is held */
   selecting: boolean
@@ -39,7 +39,7 @@ export type SelectionEffect = { type: "copy"; text: string } | { type: "render" 
 // State
 // ============================================================================
 
-export function createSelectionState(): SelectionState {
+export function createTerminalSelectionState(): TerminalSelectionState {
   return { range: null, selecting: false }
 }
 
@@ -47,7 +47,7 @@ export function createSelectionState(): SelectionState {
 // Update
 // ============================================================================
 
-export function selectionUpdate(action: SelectionAction, state: SelectionState): [SelectionState, SelectionEffect[]] {
+export function terminalSelectionUpdate(action: SelectionAction, state: TerminalSelectionState): [TerminalSelectionState, SelectionEffect[]] {
   switch (action.type) {
     case "start": {
       const pos: SelectionPosition = { col: action.col, row: action.row }
@@ -67,7 +67,7 @@ export function selectionUpdate(action: SelectionAction, state: SelectionState):
 
     case "clear": {
       const hadRange = state.range !== null
-      return [createSelectionState(), hadRange ? [{ type: "render" }] : []]
+      return [createTerminalSelectionState(), hadRange ? [{ type: "render" }] : []]
     }
   }
 }

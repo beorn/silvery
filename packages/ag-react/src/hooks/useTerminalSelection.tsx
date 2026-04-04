@@ -1,5 +1,5 @@
 /**
- * useSelection — React hook for buffer-level text selection.
+ * useTerminalSelection — React hook for buffer-level text selection.
  *
  * Manages selection state via the TEA state machine from @silvery/ag-term.
  * Provides mouse handlers for create-app.tsx to wire into mouse interception.
@@ -7,10 +7,10 @@
 
 import React, { createContext, useCallback, useContext, useState, type ReactNode } from "react"
 import {
-  type SelectionState,
+  type TerminalSelectionState,
   type SelectionRange,
-  createSelectionState,
-  selectionUpdate,
+  createTerminalSelectionState,
+  terminalSelectionUpdate,
   extractText,
 } from "@silvery/ag-term/selection"
 import type { TerminalBuffer } from "@silvery/ag-term/buffer"
@@ -20,7 +20,7 @@ import { copyToClipboard } from "@silvery/ag-term/clipboard"
 // Types
 // ============================================================================
 
-export interface UseSelectionResult {
+export interface UseTerminalSelectionResult {
   /** Current selection range, or null if nothing is selected */
   selection: SelectionRange | null
   /** True while mouse button is held and selection is in progress */
@@ -39,26 +39,26 @@ export interface UseSelectionResult {
 // Context
 // ============================================================================
 
-const SelectionCtx = createContext<UseSelectionResult | null>(null)
+const TerminalSelectionCtx = createContext<UseTerminalSelectionResult | null>(null)
 
 /**
- * Provider that gives its subtree access to selection state.
+ * Provider that gives its subtree access to terminal text selection state.
  * Wrap your silvery app root in this.
  */
-export function SelectionProvider({ children }: { children?: ReactNode }) {
-  const [state, setState] = useState<SelectionState>(createSelectionState)
+export function TerminalSelectionProvider({ children }: { children?: ReactNode }) {
+  const [state, setState] = useState<TerminalSelectionState>(createTerminalSelectionState)
 
   const handleMouseDown = useCallback((col: number, row: number) => {
-    setState((prev) => selectionUpdate({ type: "start", col, row }, prev)[0])
+    setState((prev) => terminalSelectionUpdate({ type: "start", col, row }, prev)[0])
   }, [])
 
   const handleMouseMove = useCallback((col: number, row: number) => {
-    setState((prev) => selectionUpdate({ type: "extend", col, row }, prev)[0])
+    setState((prev) => terminalSelectionUpdate({ type: "extend", col, row }, prev)[0])
   }, [])
 
   const handleMouseUp = useCallback((col: number, row: number, buffer: TerminalBuffer, stdout: NodeJS.WriteStream) => {
     setState((prev) => {
-      const [next] = selectionUpdate({ type: "finish" }, prev)
+      const [next] = terminalSelectionUpdate({ type: "finish" }, prev)
 
       if (next.range) {
         const text = extractText(buffer, next.range)
@@ -72,10 +72,10 @@ export function SelectionProvider({ children }: { children?: ReactNode }) {
   }, [])
 
   const clearSelection = useCallback(() => {
-    setState((prev) => selectionUpdate({ type: "clear" }, prev)[0])
+    setState((prev) => terminalSelectionUpdate({ type: "clear" }, prev)[0])
   }, [])
 
-  const value: UseSelectionResult = {
+  const value: UseTerminalSelectionResult = {
     selection: state.range,
     isSelecting: state.selecting,
     handleMouseDown,
@@ -84,17 +84,17 @@ export function SelectionProvider({ children }: { children?: ReactNode }) {
     clearSelection,
   }
 
-  return React.createElement(SelectionCtx.Provider, { value }, children)
+  return React.createElement(TerminalSelectionCtx.Provider, { value }, children)
 }
 
 /**
- * Access selection state from context.
- * Must be used within a SelectionProvider.
+ * Access terminal text selection state from context.
+ * Must be used within a TerminalSelectionProvider.
  */
-export function useSelectionContext(): UseSelectionResult {
-  const ctx = useContext(SelectionCtx)
+export function useTerminalSelectionContext(): UseTerminalSelectionResult {
+  const ctx = useContext(TerminalSelectionCtx)
   if (!ctx) {
-    throw new Error("useSelectionContext must be used within a SelectionProvider")
+    throw new Error("useTerminalSelectionContext must be used within a TerminalSelectionProvider")
   }
   return ctx
 }
@@ -105,6 +105,6 @@ export function useSelectionContext(): UseSelectionResult {
  * Returns selection state and mouse handlers. On mouseUp, extracts text
  * from the terminal buffer and copies to clipboard via OSC 52.
  *
- * Must be used within a SelectionProvider.
+ * Must be used within a TerminalSelectionProvider.
  */
-export const useSelection = useSelectionContext
+export const useTerminalSelection = useTerminalSelectionContext

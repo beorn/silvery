@@ -2,17 +2,17 @@
  * Tests for selection state machine and text extraction.
  */
 import { describe, test, expect } from "vitest"
-import { createSelectionState, selectionUpdate, normalizeRange, extractText } from "@silvery/ag-term/selection"
+import { createTerminalSelectionState, terminalSelectionUpdate, normalizeRange, extractText } from "@silvery/ag-term/selection"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
 
 // ============================================================================
 // State Machine
 // ============================================================================
 
-describe("selectionUpdate", () => {
+describe("terminalSelectionUpdate", () => {
   test("start sets anchor and head, marks selecting", () => {
-    const state = createSelectionState()
-    const [next, effects] = selectionUpdate({ type: "start", col: 5, row: 3 }, state)
+    const state = createTerminalSelectionState()
+    const [next, effects] = terminalSelectionUpdate({ type: "start", col: 5, row: 3 }, state)
 
     expect(next.selecting).toBe(true)
     expect(next.range).toEqual({
@@ -23,8 +23,8 @@ describe("selectionUpdate", () => {
   })
 
   test("extend updates head while selecting", () => {
-    const [state] = selectionUpdate({ type: "start", col: 0, row: 0 }, createSelectionState())
-    const [next, effects] = selectionUpdate({ type: "extend", col: 10, row: 2 }, state)
+    const [state] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, createTerminalSelectionState())
+    const [next, effects] = terminalSelectionUpdate({ type: "extend", col: 10, row: 2 }, state)
 
     expect(next.range!.anchor).toEqual({ col: 0, row: 0 })
     expect(next.range!.head).toEqual({ col: 10, row: 2 })
@@ -33,17 +33,17 @@ describe("selectionUpdate", () => {
   })
 
   test("extend is a no-op when not selecting", () => {
-    const state = createSelectionState()
-    const [next, effects] = selectionUpdate({ type: "extend", col: 5, row: 5 }, state)
+    const state = createTerminalSelectionState()
+    const [next, effects] = terminalSelectionUpdate({ type: "extend", col: 5, row: 5 }, state)
 
     expect(next).toBe(state)
     expect(effects).toEqual([])
   })
 
   test("finish sets selecting=false, emits no effects", () => {
-    let [state] = selectionUpdate({ type: "start", col: 0, row: 0 }, createSelectionState())
-    ;[state] = selectionUpdate({ type: "extend", col: 10, row: 2 }, state)
-    const [next, effects] = selectionUpdate({ type: "finish" }, state)
+    let [state] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, createTerminalSelectionState())
+    ;[state] = terminalSelectionUpdate({ type: "extend", col: 10, row: 2 }, state)
+    const [next, effects] = terminalSelectionUpdate({ type: "finish" }, state)
 
     expect(next.selecting).toBe(false)
     expect(next.range).toBeDefined()
@@ -51,8 +51,8 @@ describe("selectionUpdate", () => {
   })
 
   test("finish with no range", () => {
-    const state = createSelectionState()
-    const [next, effects] = selectionUpdate({ type: "finish" }, state)
+    const state = createTerminalSelectionState()
+    const [next, effects] = terminalSelectionUpdate({ type: "finish" }, state)
 
     expect(next.selecting).toBe(false)
     expect(next.range).toBeNull()
@@ -60,8 +60,8 @@ describe("selectionUpdate", () => {
   })
 
   test("clear resets to initial state, emits render if had range", () => {
-    const [state] = selectionUpdate({ type: "start", col: 0, row: 0 }, createSelectionState())
-    const [next, effects] = selectionUpdate({ type: "clear" }, state)
+    const [state] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, createTerminalSelectionState())
+    const [next, effects] = terminalSelectionUpdate({ type: "clear" }, state)
 
     expect(next.range).toBeNull()
     expect(next.selecting).toBe(false)
@@ -69,18 +69,18 @@ describe("selectionUpdate", () => {
   })
 
   test("clear with no range emits no effects", () => {
-    const state = createSelectionState()
-    const [next, effects] = selectionUpdate({ type: "clear" }, state)
+    const state = createTerminalSelectionState()
+    const [next, effects] = terminalSelectionUpdate({ type: "clear" }, state)
 
     expect(next.range).toBeNull()
     expect(effects).toEqual([])
   })
 
   test("multiple start/extend cycles", () => {
-    let [state] = selectionUpdate({ type: "start", col: 0, row: 0 }, createSelectionState())
-    ;[state] = selectionUpdate({ type: "extend", col: 5, row: 0 }, state)
-    ;[state] = selectionUpdate({ type: "extend", col: 10, row: 1 }, state)
-    ;[state] = selectionUpdate({ type: "extend", col: 3, row: 2 }, state)
+    let [state] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, createTerminalSelectionState())
+    ;[state] = terminalSelectionUpdate({ type: "extend", col: 5, row: 0 }, state)
+    ;[state] = terminalSelectionUpdate({ type: "extend", col: 10, row: 1 }, state)
+    ;[state] = terminalSelectionUpdate({ type: "extend", col: 3, row: 2 }, state)
 
     expect(state.range!.anchor).toEqual({ col: 0, row: 0 })
     expect(state.range!.head).toEqual({ col: 3, row: 2 })

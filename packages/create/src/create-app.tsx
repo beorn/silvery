@@ -105,7 +105,7 @@ import { detectKittyFromStdio } from "@silvery/ag-term/kitty-detect"
 import { captureTerminalState, performSuspend } from "@silvery/ag-term/runtime/terminal-lifecycle"
 import { type TermProvider, createTermProvider } from "@silvery/ag-term/runtime/term-provider"
 import type { Buffer, Dims, Provider, RenderTarget } from "@silvery/ag-term/runtime/types"
-import { createSelectionState, selectionUpdate, extractText } from "@silvery/ag-term/selection"
+import { createTerminalSelectionState, terminalSelectionUpdate, extractText } from "@silvery/ag-term/selection"
 import { renderSelectionOverlay } from "@silvery/ag-term/selection-renderer"
 import { createVirtualScrollback } from "@silvery/ag-term/virtual-scrollback"
 import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "@silvery/ag-term/search-overlay"
@@ -864,7 +864,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let focusReportingEnabled = false
   // Selection requires explicit opt-in — don't hijack mouse clicks by default
   const selectionEnabled = selectionOption ?? false
-  let selectionState = createSelectionState()
+  let selectionState = createTerminalSelectionState()
 
   // Virtual inline mode state
   const scrollback = virtualInlineOption ? createVirtualScrollback() : null
@@ -1925,16 +1925,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Left button (button 0) drag for selection
       if (mouseData.button === 0) {
         if (mouseData.action === "down") {
-          const [next] = selectionUpdate({ type: "start", col: mouseData.x, row: mouseData.y }, selectionState)
+          const [next] = terminalSelectionUpdate({ type: "start", col: mouseData.x, row: mouseData.y }, selectionState)
           selectionState = next
           // Don't consume — let the component tree also handle mousedown (for click-to-focus etc.)
         } else if (mouseData.action === "move" && selectionState.selecting) {
-          const [next] = selectionUpdate({ type: "extend", col: mouseData.x, row: mouseData.y }, selectionState)
+          const [next] = terminalSelectionUpdate({ type: "extend", col: mouseData.x, row: mouseData.y }, selectionState)
           selectionState = next
           // Consume move events during selection — don't dispatch to component tree
           return true
         } else if (mouseData.action === "up" && selectionState.selecting) {
-          const [next] = selectionUpdate({ type: "finish" }, selectionState)
+          const [next] = terminalSelectionUpdate({ type: "finish" }, selectionState)
           selectionState = next
 
           // Copy selected text via OSC 52
@@ -1952,7 +1952,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Selection: clear on any keypress
     if (selectionEnabled && event.type === "term:key" && selectionState.range) {
-      const [next] = selectionUpdate({ type: "clear" }, selectionState)
+      const [next] = terminalSelectionUpdate({ type: "clear" }, selectionState)
       selectionState = next
     }
 

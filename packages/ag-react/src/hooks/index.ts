@@ -42,9 +42,9 @@ export { useTerminalFocused } from "./useTerminalFocused"
 export { useScrollRegion } from "./useScrollRegion"
 export type { UseScrollRegionOptions, UseScrollRegionResult } from "./useScrollRegion"
 
-// Selection
-export { useSelection, useSelectionContext, SelectionProvider } from "./useSelection"
-export type { UseSelectionResult } from "./useSelection"
+// Terminal Selection (buffer-level text copy/paste)
+export { useTerminalSelection, useTerminalSelectionContext, TerminalSelectionProvider } from "./useTerminalSelection"
+export type { UseTerminalSelectionResult } from "./useTerminalSelection"
 
 // List Item
 export { useListItem } from "./useListItem"
