@@ -81,8 +81,7 @@
     "loggily": "github:beorn/loggily",
     "react-reconciler": "^0.33.0",
     "slice-ansi": "^8.0.0",
-    "string-width": "^8.2.0",
-    "zustand": "^5.0.11"
+    "string-width": "^8.2.0"
   },
   "devDependencies": {
     "@types/bun": "^1.1.0",
