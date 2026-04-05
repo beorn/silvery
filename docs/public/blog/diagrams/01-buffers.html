@@ -69,7 +69,7 @@
     border-bottom: 1px dotted rgba(255, 255, 255, 0.15);
     border-radius: 8px 8px 0 0;
     margin: 0 6px;
-    padding: 14px 18px;
+    padding: 6px 8px;
     position: relative;
     overflow: hidden;
   }
@@ -142,17 +142,16 @@
   }
   .diagram-01-buffers .terminal-body {
     background: #191922;
-    padding: 14px 18px;
+    padding: 8px 8px;
   }
 
   /* Terminal text */
   .diagram-01-buffers .term-text {
-    font-family:
-      "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
     font-size: 11.5px;
     line-height: 1.85;
     color: #d4d8e0;
-    white-space: pre;
+    white-space: pre-wrap;
   }
   .diagram-01-buffers .prompt {
     color: #85d6a0;
@@ -211,20 +210,20 @@
     color: #a8c8f0;
     font-family: "SF Mono", monospace;
     font-size: 10px;
-    padding: 3px 12px;
+    padding: 3px 10px;
     display: flex;
     justify-content: space-between;
   }
   .diagram-01-buffers .alt-content {
     flex: 1;
-    padding: 10px 14px;
+    padding: 8px 8px;
   }
   .diagram-01-buffers .alt-footer {
     background: #2d4a7a;
     color: #a8c8f0;
     font-family: "SF Mono", monospace;
     font-size: 10px;
-    padding: 3px 12px;
+    padding: 3px 10px;
     display: flex;
     justify-content: space-between;
   }
@@ -286,6 +285,12 @@
     font-weight: 500;
     color: #475569;
     line-height: 1.8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .diagram-01-buffers .pros-cons-inner {
+    text-align: left;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -347,9 +352,11 @@
         </div>
 
         <div class="pros-cons">
-          <span class="pro-tag">+</span> Cmd+F, text selection, history persists
-          <br />
-          <span class="con-tag">&minus;</span> Can't update scrolled content
+          <div class="pros-cons-inner">
+            <span class="pro-tag">+</span> Cmd+F, text selection, history persists
+            <br />
+            <span class="con-tag">&minus;</span> Can't update scrolled content
+          </div>
         </div>
       </div>
 
@@ -373,21 +380,14 @@
             <div class="alt-content">
               <div class="term-text">
                 <span class="line-num"> 1 </span><span class="keyword">import</span> express
-                <span class="keyword">from</span> <span class="string">'express'</span>
-                <span class="line-num"> 2 </span>
-                <span class="line-num"> 3 </span><span class="keyword">const</span> app =
-                <span class="func">express</span>() <span class="line-num"> 4 </span>app.<span
-                  class="func"
-                  >use</span
-                >(express.<span class="func">json</span>())
-                <span class="line-num"> 5 </span>
-                <span class="line-num"> 6 </span>app.<span class="func">get</span>(<span
-                  class="string"
-                  >'/users'</span
-                >, ...)
-                <span class="line-num"> 7 </span>
-                <span class="line-num"> 8 </span><span class="dimmed">~</span>
-                <span class="line-num"> 9 </span><span class="dimmed">~</span>
+                <span class="line-num"> 2 </span><span class="keyword">from</span> <span class="string">'express'</span>
+                <span class="line-num"> 3 </span>
+                <span class="line-num"> 4 </span><span class="keyword">const</span> app =
+                <span class="line-num"> 5 </span> <span class="func">express</span>()
+                <span class="line-num"> 6 </span>
+                <span class="line-num"> 7 </span>app.<span class="func">get</span>(<span class="string">'/'</span>, ...)
+                <span class="line-num"> 8 </span><span class="dimmed">~</span> <span class="line-num"> 9 </span
+                ><span class="dimmed">~</span>
               </div>
             </div>
             <div class="alt-footer">
@@ -398,9 +398,11 @@
         </div>
 
         <div class="pros-cons">
-          <span class="pro-tag">+</span> Full cell control, no flicker
-          <br />
-          <span class="con-tag">&minus;</span> No scrollback, discarded on exit
+          <div class="pros-cons-inner">
+            <span class="pro-tag">+</span> Full cell control, no flicker
+            <br />
+            <span class="con-tag">&minus;</span> No scrollback, discarded on exit
+          </div>
         </div>
       </div>
     </div>

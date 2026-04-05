@@ -1,11 +1,21 @@
 <script setup lang="ts">
-defineProps<{
+import { onMounted, ref } from "vue"
+
+const props = defineProps<{
   html: string
 }>()
+
+const hostRef = ref<HTMLElement>()
+
+onMounted(() => {
+  if (!hostRef.value) return
+  const shadow = hostRef.value.attachShadow({ mode: "open" })
+  shadow.innerHTML = props.html
+})
 </script>
 
 <template>
-  <div class="html-diagram" v-html="html" />
+  <div ref="hostRef" class="html-diagram" />
 </template>
 
 <style>
@@ -13,11 +23,5 @@ defineProps<{
   margin: 16px 0;
   border-radius: 12px;
   overflow: hidden;
-}
-
-/* Override diagram body styles when embedded inline */
-.html-diagram body {
-  min-height: unset;
-  padding: 0;
 }
 </style>

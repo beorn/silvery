@@ -52,13 +52,12 @@
     flex-direction: column;
     align-items: center;
     gap: 5px;
-    flex-shrink: 0;
   }
 
   .diagram-05-termless .stage-box {
-    padding: 10px 14px;
+    padding: 8px 10px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     text-align: center;
     white-space: nowrap;
@@ -82,8 +81,7 @@
     background: #191922;
     border: 2px solid rgba(255, 255, 255, 0.12);
     color: #d4d8e0;
-    font-family:
-      "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
     font-size: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
@@ -91,9 +89,8 @@
     background: #191922;
     border: 2px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
-    padding: 6px 8px;
-    font-family:
-      "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+    padding: 4px 6px;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
     font-size: 8px;
     line-height: 1.5;
     white-space: pre;
@@ -105,8 +102,7 @@
   .diagram-05-termless .arrow {
     display: flex;
     align-items: center;
-    padding: 0 4px;
-    flex-shrink: 0;
+    padding: 0 2px;
   }
   .diagram-05-termless .arrow svg {
     display: block;
@@ -126,14 +122,12 @@
     display: flex;
     align-items: center;
     gap: 0;
-    flex-shrink: 0;
   }
 
   .diagram-05-termless .backends-stack {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    flex-shrink: 0;
   }
 
   .diagram-05-termless .backend-row {
@@ -143,16 +137,15 @@
   }
 
   .diagram-05-termless .backend-line {
-    width: 20px;
+    width: 6px;
     height: 1.5px;
     background: rgba(100, 116, 160, 0.4);
-    flex-shrink: 0;
   }
 
   .diagram-05-termless .backend-chip {
-    padding: 4px 8px;
+    padding: 3px 6px;
     border-radius: 5px;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     white-space: nowrap;
     background: white;
@@ -160,6 +153,7 @@
     color: #334155;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     position: relative;
+    flex-shrink: 1;
   }
 
   .diagram-05-termless .backend-chip.highlight {
@@ -172,7 +166,6 @@
   .diagram-05-termless .buffer-terminal {
     display: flex;
     flex-direction: column;
-    flex-shrink: 0;
     border-radius: 8px;
     overflow: hidden;
     box-shadow:
@@ -207,14 +200,13 @@
   }
   .diagram-05-termless .buffer-body {
     background: #191922;
-    padding: 8px 10px;
-    font-family:
-      "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+    padding: 6px 8px;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
     font-size: 9px;
     line-height: 1.4;
     color: #94a3b8;
     white-space: pre;
-    width: 110px;
+    width: 70px;
   }
   .diagram-05-termless .buffer-body .cell-match {
     color: #009e73;
@@ -222,13 +214,13 @@
   .diagram-05-termless .buffer-scrollback {
     background: rgba(20, 20, 32, 0.35);
     border-radius: 6px 6px 0 0;
-    padding: 4px 10px;
+    padding: 3px 6px;
     font-family: "SF Mono", monospace;
-    font-size: 8px;
+    font-size: 7px;
     line-height: 1.4;
     color: #6b7585;
     white-space: pre;
-    width: 110px;
+    width: 70px;
     opacity: 0.6;
   }
   .diagram-05-termless .buffer-title {
@@ -246,16 +238,14 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    flex-shrink: 0;
   }
   .diagram-05-termless .assert-code {
     background: #191922;
     border-radius: 6px;
-    padding: 7px 9px;
+    padding: 5px 7px;
     border: 1.5px solid rgba(0, 158, 115, 0.25);
-    font-family:
-      "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
-    font-size: 9.5px;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 9px;
     line-height: 1.6;
     color: #d4d8e0;
     white-space: pre;
@@ -360,8 +350,6 @@
           <span style="color: #6b7585">\e[32m</span><span style="color: #85d6a0">Header</span
           ><span style="color: #6b7585">\e[0m</span> <span style="color: #6b7585">\e[36m</span
           ><span style="color: #6ccad4">Sidebar</span><span style="color: #6b7585">\e[0m</span>
-          <span style="color: #6b7585">\e[1;37m</span><span style="color: #eff0f3">Card</span
-          ><span style="color: #6b7585">\e[0m</span>
         </div>
         <div class="stage-sub">ANSI sequences</div>
       </div>
@@ -394,17 +382,7 @@
           </div>
           <div class="backend-row">
             <div class="backend-line"></div>
-            <div class="backend-chip">Alacritty</div>
-            <div class="backend-line"></div>
-          </div>
-          <div class="backend-row">
-            <div class="backend-line"></div>
             <div class="backend-chip">WezTerm</div>
-            <div class="backend-line"></div>
-          </div>
-          <div class="backend-row">
-            <div class="backend-line"></div>
-            <div class="backend-chip">Kitty</div>
             <div class="backend-line"></div>
           </div>
           <div class="backend-row">
@@ -429,7 +407,7 @@
       </div>
 
       <!-- Screen Buffer as terminal mockup with scrollback -->
-      <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0">
+      <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 1">
         <div class="buffer-scrollback">
           <span style="color: #6b7585">Done: task 1</span>
           <span style="color: #6b7585">Done: task 2</span>
@@ -441,9 +419,11 @@
             <div class="buffer-dot maximize"></div>
           </div>
           <div class="buffer-body">
-            <span class="cell-match">Header</span> <span class="cell-match">Sidebar</span> │ Card
-            menu │ Card item │ ...
-            <span class="cell-match">Footer</span>
+
+<span class="cell-match">Header</span>
+<span class="cell-match">Sidebar</span>
+Card item
+<span class="cell-match">Footer</span>
           </div>
         </div>
         <div class="buffer-title">Screen + Scrollback</div>
@@ -465,26 +445,15 @@
       <!-- Assertions -->
       <div class="assert-detail">
         <div class="assert-code">
-          <span class="assert-fn">expect</span>(screen) .<span class="assert-fn">toBe</span>(<span
-            class="assert-str"
-            >"Header"</span
-          >) <span class="assert-fn">expect</span>(scrollback) .<span class="assert-fn"
-            >toContain</span
-          >(<span class="assert-str">"Done"</span>)
+
+<span class="assert-fn">expect</span>(screen)
+ .<span class="assert-fn">toBe</span>(<span class="assert-str">"Hdr"</span>)
         </div>
         <div style="display: flex; gap: 5px">
           <span class="assert-result result-pass">&#10003; pass</span>
           <span class="assert-result result-fail">&#10007; fail</span>
         </div>
-        <div
-          style="
-            font-size: 10px;
-            color: #64748b;
-            font-weight: 600;
-            text-align: center;
-            margin-top: 6px;
-          "
-        >
+        <div style="font-size: 10px; color: #64748b; font-weight: 600; text-align: center; margin-top: 6px">
           Termless tests
         </div>
       </div>
