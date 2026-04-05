@@ -47,51 +47,51 @@
 
   /* === LEFT ARROWS === */
   .diagram-04-zones .arrows-col {
-    width: 44px;
+    width: 38px;
     flex-shrink: 0;
-    position: relative;
-  }
-
-  .diagram-04-zones .arrow-item {
-    position: absolute;
-    left: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    height: 40px;
   }
-  /* Position arrows at zone boundaries */
-  .diagram-04-zones .arrow-upper {
-    top: calc(25% - 20px);
+  /* Spacers mirror the terminal zones — flex values match approximate zone heights */
+  .diagram-04-zones .arrow-spacer { flex: 1; }
+
+  .diagram-04-zones .arrow-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    flex-shrink: 0;
   }
-  .diagram-04-zones .arrow-lower {
-    top: calc(50% - 20px);
+  .diagram-04-zones .arrow-shaft-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
   }
   .diagram-04-zones .arrow-shaft {
-    width: 2.5px;
+    width: 2px;
     flex: 1;
-    background: linear-gradient(to top, #6474a0, #7b8bba);
-    border-radius: 2px;
+    background: #6474a0;
+    border-radius: 1px;
   }
   .diagram-04-zones .arrow-tip {
     width: 0;
     height: 0;
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-bottom: 9px solid #6474a0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 7px solid #6474a0;
   }
   .diagram-04-zones .arrow-text {
-    position: absolute;
-    left: 12px;
-    top: 50%;
     font-size: 9px;
     font-weight: 700;
     color: #5a6a90;
     white-space: nowrap;
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    transform: rotate(180deg) translateY(50%);
-    letter-spacing: 0.03em;
+    transform: rotate(180deg);
+    letter-spacing: 0.02em;
   }
 
   /* === TERMINAL COLUMN === */
@@ -114,7 +114,7 @@
   /* Zone 1: Terminal Scrollback — most ghosted */
   .diagram-04-zones .zone-native {
     background: #1e1e2a;
-    border: 2px solid rgba(220, 60, 60, 0.35);
+    border: 3px solid rgba(220, 60, 60, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px 8px 0 0;
     margin: 0 8px;
@@ -126,7 +126,7 @@
   /* Zone 2: App Scrollback — medium ghosted */
   .diagram-04-zones .zone-tracked {
     background: #1e1e2a;
-    border: 2px solid rgba(34, 197, 94, 0.4);
+    border: 3px solid rgba(34, 197, 94, 0.35);
     border-top: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0;
@@ -272,6 +272,7 @@
     flex-direction: column;
     justify-content: space-around;
     padding-left: 0;
+    gap: 6px;
   }
   .diagram-04-zones .annotation {
     display: flex;
@@ -297,9 +298,9 @@
 
   .diagram-04-zones .annotation-card {
     background: white;
-    border-radius: 10px;
-    padding: 10px 10px 12px;
-    width: 180px;
+    border-radius: 8px;
+    padding: 7px 8px 8px;
+    width: 170px;
     flex-shrink: 0;
   }
 
@@ -317,10 +318,10 @@
   }
 
   .diagram-04-zones .annotation-title {
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -351,10 +352,10 @@
   }
 
   .diagram-04-zones .annotation-details {
-    font-size: 10px;
+    font-size: 9px;
     color: #475569;
     font-weight: 500;
-    line-height: 1.7;
+    line-height: 1.5;
     list-style: none;
     padding: 0;
     margin: 0;
@@ -419,18 +420,19 @@
 <div class="diagram-04-zones">
   <div class="page">
     <div class="diagram">
-      <!-- Left arrows -->
+      <!-- Left arrows — spacers mirror zone heights so arrows sit at boundaries -->
       <div class="arrows-col">
-        <div class="arrow-item arrow-upper">
-          <div class="arrow-tip"></div>
-          <div class="arrow-shaft"></div>
+        <div class="arrow-spacer"></div>
+        <div class="arrow-item">
+          <div class="arrow-shaft-group"><div class="arrow-tip"></div><div class="arrow-shaft"></div></div>
           <div class="arrow-text">released</div>
         </div>
-        <div class="arrow-item arrow-lower">
-          <div class="arrow-tip"></div>
-          <div class="arrow-shaft"></div>
+        <div class="arrow-spacer"></div>
+        <div class="arrow-item">
+          <div class="arrow-shaft-group"><div class="arrow-tip"></div><div class="arrow-shaft"></div></div>
           <div class="arrow-text">virtualized</div>
         </div>
+        <div class="arrow-spacer" style="flex: 2"></div>
       </div>
 
       <!-- Terminal -->

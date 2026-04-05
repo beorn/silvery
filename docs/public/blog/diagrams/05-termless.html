@@ -41,10 +41,20 @@
     max-width: 660px;
     width: 100%;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0;
     z-index: 1;
-    padding-top: 16px; /* space for labels that extend above */
+    padding-top: 14px; /* space for phase headings */
+  }
+
+  /* === PHASE HEADINGS === */
+  .diagram-05-termless .phase-heading {
+    font-size: 9px;
+    font-weight: 700;
+    color: #475569;
+    text-align: center;
+    margin-bottom: 4px;
+    line-height: 1;
   }
 
   /* === STAGE BOXES === */
@@ -54,14 +64,13 @@
     align-items: center;
     gap: 3px;
   }
-  /* Label above the box */
+  /* Label below the box */
   .diagram-05-termless .stage-sub {
     font-size: 9px;
     font-weight: 600;
     color: rgba(100, 116, 160, 0.7);
     line-height: 1;
-    order: -1;
-    margin-bottom: 3px;
+    margin-top: 3px;
   }
 
   .diagram-05-termless .stage-box {
@@ -107,6 +116,7 @@
     display: flex;
     align-items: center;
     padding: 0 2px;
+    margin-top: 22px; /* align with box content below phase headings */
   }
   .diagram-05-termless .arrow svg {
     display: block;
@@ -147,7 +157,7 @@
   }
 
   .diagram-05-termless .backend-chip {
-    padding: 3px 6px;
+    padding: 2px 5px;
     border-radius: 5px;
     font-size: 9px;
     font-weight: 600;
@@ -216,9 +226,10 @@
     color: #009e73;
   }
   .diagram-05-termless .buffer-scrollback {
-    background: rgba(20, 20, 32, 0.35);
+    background: #1e1e2a;
     border-radius: 6px 6px 0 0;
     padding: 3px 6px;
+    margin: 0 4px;
     font-family: "SF Mono", monospace;
     font-size: 7px;
     line-height: 1.4;
@@ -233,9 +244,8 @@
     font-weight: 600;
     color: rgba(100, 116, 160, 0.7);
     text-align: center;
-    margin-bottom: 3px;
+    margin-top: 3px;
     line-height: 1;
-    order: -1;
   }
 
   /* === ASSERT DETAIL === */
@@ -333,6 +343,7 @@
     <div class="diagram">
       <!-- TUI App -->
       <div class="stage stage-app">
+        <div class="phase-heading">App</div>
         <div class="stage-box">TUI App</div>
         <div class="stage-sub">React components</div>
       </div>
@@ -352,6 +363,7 @@
 
       <!-- ANSI Output -->
       <div class="stage stage-ansi">
+        <div class="phase-heading">Output</div>
         <div class="ansi-preview"><span style="color: #6b7585">\e[32m</span><span style="color: #85d6a0">Header</span><span style="color: #6b7585">\e[0m</span>
 <span style="color: #6b7585">\e[36m</span><span style="color: #6ccad4">Sidebar</span><span style="color: #6b7585">\e[0m</span>
 <span style="color: #6b7585">\e[37m</span><span style="color: #eff0f3">Footer</span><span style="color: #6b7585">\e[0m</span></div>
@@ -372,8 +384,10 @@
       </div>
 
       <!-- Fan-out to backends -->
-      <div class="fanout-zone">
-        <div class="backends-stack">
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <div class="phase-heading">Terminals</div>
+        <div class="fanout-zone">
+          <div class="backends-stack">
           <div class="backend-row">
             <div class="backend-line"></div>
             <div class="backend-chip highlight">xterm.js</div>
@@ -386,7 +400,7 @@
           </div>
           <div class="backend-row">
             <div class="backend-line"></div>
-            <div class="backend-chip">WezTerm</div>
+            <div class="backend-chip">Kitty</div>
             <div class="backend-line"></div>
           </div>
           <div class="backend-row">
@@ -394,6 +408,7 @@
             <div class="backend-chip" style="opacity: 0.5; border-style: dashed">...</div>
             <div class="backend-line" style="opacity: 0.4"></div>
           </div>
+        </div>
         </div>
       </div>
 
@@ -412,6 +427,7 @@
 
       <!-- Screen Buffer as terminal mockup with scrollback -->
       <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 1">
+        <div class="phase-heading">Screen</div>
         <div class="buffer-scrollback"><span style="color: #6b7585">Done: task 1</span>
 <span style="color: #6b7585">Done: task 2</span></div>
         <div class="buffer-terminal">
@@ -443,13 +459,15 @@ Card item
 
       <!-- Assertions -->
       <div class="assert-detail">
-        <div class="assert-code"><span class="assert-fn">expect</span>(screen) .<span class="assert-fn">toBe</span>(<span class="assert-str">"Hdr"</span>)</div>
+        <div class="phase-heading">Tests</div>
+        <div style="font-size: 9px; color: rgba(100, 116, 160, 0.7); font-weight: 600; text-align: center; line-height: 1.2; display: block; margin-bottom: 3px">
+          Termless<br>tests
+        </div>
+        <div class="assert-code"><span class="assert-fn">expect</span>(screen)
+ .<span class="assert-fn">toBe</span>(<span class="assert-str">"Hdr"</span>)</div>
         <div style="display: flex; gap: 5px">
           <span class="assert-result result-pass">&#10003; pass</span>
           <span class="assert-result result-fail">&#10007; fail</span>
-        </div>
-        <div style="font-size: 9px; color: rgba(100, 116, 160, 0.7); font-weight: 600; text-align: center; order: -1; line-height: 1.2">
-          Termless tests
         </div>
       </div>
     </div>
