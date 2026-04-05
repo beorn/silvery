@@ -287,18 +287,20 @@ export default withMermaid(
             { text: "Testing", link: "/examples/testing" },
           ],
         },
-        {
-          text: "Blog",
-          collapsed: true,
-          items: [
-            { text: "All Posts", link: "/blog/" },
-            { text: "Build a CLI Dashboard in 50 Lines", link: "/blog/build-cli-dashboard" },
-            { text: "Silvery vs Ink: Benchmarks", link: "/blog/silvery-vs-ink-benchmarks" },
-            { text: "Migrating from Ink", link: "/blog/migrating-from-ink" },
-            { text: "Layout-First Rendering", link: "/blog/layout-first-rendering" },
-            { text: "Building an AI Agent TUI", link: "/blog/building-ai-agent-tui" },
-          ],
-        },
+        // Blog hidden until we have 5+ polished articles — see km-market.blog-content
+        // {
+        //   text: "Blog",
+        //   collapsed: true,
+        //   items: [
+        //     { text: "All Posts", link: "/blog/" },
+        //     { text: "Why Claude Code Flickers", link: "/blog/claude-code-rendering-dilemma" },
+        //     { text: "Build a CLI Dashboard in 50 Lines", link: "/blog/build-cli-dashboard" },
+        //     { text: "Silvery vs Ink: Benchmarks", link: "/blog/silvery-vs-ink-benchmarks" },
+        //     { text: "Migrating from Ink", link: "/blog/migrating-from-ink" },
+        //     { text: "Layout-First Rendering", link: "/blog/layout-first-rendering" },
+        //     { text: "Building an AI Agent TUI", link: "/blog/building-ai-agent-tui" },
+        //   ],
+        // },
         {
           text: "Components Library",
           collapsed: true,

@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Terminal Scrollback Zones</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #f0f0f3;
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 40px 20px;
+      }
+
+      .page {
+        width: 920px;
+        position: relative;
+      }
+      .page::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 230px;
+        width: 520px;
+        height: 450px;
+        transform: translateY(-50%);
+        background: radial-gradient(ellipse at center, rgba(88, 101, 242, 0.05) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .diagram {
+        position: relative;
+        width: 920px;
+        display: flex;
+        gap: 0;
+        z-index: 1;
+      }
+
+      /* === LEFT ARROWS === */
+      .arrows-col {
+        width: 58px;
+        flex-shrink: 0;
+        position: relative;
+      }
+      .arrow-item {
+        position: absolute;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .arrow-shaft {
+        width: 2.5px;
+        flex: 1;
+        background: linear-gradient(to top, #6474a0, #7b8bba);
+        border-radius: 2px;
+      }
+      .arrow-tip {
+        width: 0;
+        height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-bottom: 9px solid #6474a0;
+      }
+      .arrow-text {
+        position: absolute;
+        left: 22px;
+        top: 50%;
+        font-size: 11px;
+        font-weight: 600;
+        color: #4a5a80;
+        white-space: nowrap;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg) translateY(50%);
+        letter-spacing: 0.04em;
+      }
+
+      /* === TERMINAL COLUMN === */
+      .terminal-col {
+        width: 530px;
+        flex-shrink: 0;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .zone {
+        border-radius: 10px;
+        padding: 22px 24px;
+        position: relative;
+        overflow: hidden;
+      }
+      .boundary-label {
+        font-family: "Inter", sans-serif;
+        font-size: 9.5px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.35);
+        text-align: right;
+        padding: 2px 12px;
+        letter-spacing: 0.03em;
+      }
+      .footer-bar {
+        background: rgba(255, 255, 255, 0.04);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 6px 24px;
+        font-family: "SF Mono", "Menlo", monospace;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* Zone 1: Native — most ghosted */
+      .zone-native {
+        background: rgba(20, 20, 32, 0.4);
+        border: none;
+        border-top: 1.5px dotted rgba(220, 60, 60, 0.45);
+        border-left: 1.5px dotted rgba(220, 60, 60, 0.45);
+        border-right: 1.5px dotted rgba(220, 60, 60, 0.45);
+        border-bottom: 1px dotted rgba(255, 255, 255, 0.15);
+        border-radius: 8px 8px 0 0;
+        margin: 0 8px;
+      }
+      .zone-native .term-text {
+        opacity: 0.35;
+      }
+      .zone-native::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(to bottom, rgba(20, 20, 32, 0.6), transparent);
+        pointer-events: none;
+      }
+
+      /* Zone 2: Tracked — medium ghosted */
+      .zone-tracked {
+        background: rgba(20, 20, 32, 0.4);
+        border: none;
+        border-left: 1.5px dotted rgba(34, 197, 94, 0.5);
+        border-right: 1.5px dotted rgba(34, 197, 94, 0.5);
+        border-bottom: 1px dotted rgba(255, 255, 255, 0.15);
+        border-radius: 0;
+        margin: 0 8px;
+      }
+      .zone-tracked .term-text {
+        opacity: 0.5;
+      }
+
+      /* Zone 3: Live group — blue (focus) */
+      .live-group {
+        display: flex;
+        flex-direction: column;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 3px solid rgba(59, 130, 246, 0.5);
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.12),
+          0 8px 28px rgba(0, 0, 0, 0.22),
+          0 24px 64px rgba(0, 0, 0, 0.3),
+          0 0 0 1px rgba(0, 0, 0, 0.06),
+          0 0 80px -20px rgba(59, 130, 246, 0.15);
+      }
+      .window-chrome {
+        background: linear-gradient(to bottom, #3c3c48, #2e2e3a);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid rgba(60, 60, 70, 0.5);
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .dot.close {
+        background: #ff5f57;
+        border: 1px solid #e0443e;
+      }
+      .dot.minimize {
+        background: #febc2e;
+        border: 1px solid #dea123;
+      }
+      .dot.maximize {
+        background: #28c840;
+        border: 1px solid #1aab29;
+      }
+      .window-title {
+        flex: 1;
+        text-align: center;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.45);
+        font-weight: 500;
+        margin-right: 52px;
+        letter-spacing: 0.02em;
+      }
+      .zone-live {
+        background: #191922;
+        padding: 22px 24px 18px;
+        position: relative;
+        flex: 1;
+      }
+      .zone-live::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.22), transparent);
+        pointer-events: none;
+      }
+
+      /* Terminal text */
+      .term-text {
+        font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+        font-size: 13px;
+        line-height: 1.85;
+        color: #d4d8e0;
+        white-space: pre;
+      }
+      .prompt {
+        color: #85d6a0;
+      }
+      .cmd {
+        color: #eff0f3;
+      }
+      .hash {
+        color: #e8b4b0;
+      }
+      .comment {
+        color: #6b7585;
+      }
+      .success {
+        color: #a5d6a7;
+      }
+      .keyword {
+        color: #d2a0f0;
+      }
+      .func {
+        color: #79c0ff;
+      }
+      .string {
+        color: #f0d080;
+      }
+      .bullet {
+        color: #6ccad4;
+      }
+      .dimmed {
+        color: #555d6e;
+      }
+      .input-divider {
+        display: block;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 3px 0;
+        line-height: 0;
+        font-size: 0;
+      }
+      .cursor-block {
+        display: inline-block;
+        color: #3cda5c;
+        animation: blink-green 1s step-end infinite;
+        font-size: 16px;
+        line-height: 1;
+        vertical-align: text-bottom;
+      }
+      @keyframes blink-green {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      }
+
+      /* === RIGHT ANNOTATIONS === */
+      .annotations-col {
+        flex: 1;
+        position: relative;
+        padding-left: 10px;
+      }
+      .annotation {
+        position: absolute;
+        display: flex;
+        align-items: flex-start;
+        gap: 0;
+        left: 0;
+      }
+
+      .connector-line {
+        flex-shrink: 0;
+        position: relative;
+        margin-top: 13px;
+        height: 2px;
+        width: 28px;
+      }
+      .ann-native .connector-line {
+        background: rgba(220, 60, 60, 0.6);
+      }
+      .ann-tracked .connector-line {
+        background: rgba(34, 197, 94, 0.6);
+      }
+      .ann-live .connector-line {
+        background: rgba(59, 130, 246, 0.6);
+      }
+
+      .annotation-card {
+        background: white;
+        border-radius: 10px;
+        padding: 10px 10px 12px;
+        width: 200px;
+        flex-shrink: 0;
+        transition:
+          box-shadow 0.2s ease,
+          transform 0.2s ease;
+      }
+      .annotation:hover .annotation-card {
+        transform: translateX(2px);
+      }
+
+      .ann-native .annotation-card {
+        border: 2px solid rgba(220, 60, 60, 0.25);
+        box-shadow:
+          0 1px 3px rgba(220, 60, 60, 0.06),
+          0 3px 10px rgba(0, 0, 0, 0.03);
+      }
+      .ann-native:hover .annotation-card {
+        box-shadow:
+          0 2px 8px rgba(220, 60, 60, 0.14),
+          0 6px 18px rgba(0, 0, 0, 0.05);
+      }
+      .ann-tracked .annotation-card {
+        border: 2px solid rgba(34, 197, 94, 0.25);
+        box-shadow:
+          0 1px 3px rgba(34, 197, 94, 0.06),
+          0 3px 10px rgba(0, 0, 0, 0.03);
+      }
+      .ann-tracked:hover .annotation-card {
+        box-shadow:
+          0 2px 8px rgba(34, 197, 94, 0.14),
+          0 6px 18px rgba(0, 0, 0, 0.05);
+      }
+      .ann-live .annotation-card {
+        border: 2px solid rgba(59, 130, 246, 0.32);
+        box-shadow:
+          0 1px 3px rgba(59, 130, 246, 0.06),
+          0 3px 10px rgba(0, 0, 0, 0.03);
+      }
+      .ann-live:hover .annotation-card {
+        box-shadow:
+          0 2px 8px rgba(59, 130, 246, 0.14),
+          0 6px 18px rgba(0, 0, 0, 0.05);
+      }
+
+      .annotation-title {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: -0.01em;
+      }
+      .zone-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .zone-badge.z1 {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+      .zone-badge.z2 {
+        background: #dcfce7;
+        color: #15803d;
+      }
+      .zone-badge.z3 {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      .annotation-details {
+        font-size: 11px;
+        color: #475569;
+        font-weight: 500;
+        line-height: 1.7;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .annotation-details li {
+        position: relative;
+        padding-left: 0;
+      }
+      .annotation-details li::before {
+        content: "\2022";
+        margin-right: 5px;
+        font-size: 10px;
+      }
+      .ann-native .annotation-details li::before {
+        color: rgba(220, 60, 60, 0.5);
+      }
+      .ann-tracked .annotation-details li::before {
+        color: rgba(34, 197, 94, 0.55);
+      }
+      .ann-live .annotation-details li::before {
+        color: rgba(59, 130, 246, 0.55);
+      }
+
+      /* === DARK MODE === */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #1a1a2e;
+        }
+        .annotation-card {
+          background: #2a2a3a;
+        }
+        .annotation-title {
+          color: #e2e8f0;
+        }
+        .annotation-details {
+          color: #94a3b8;
+        }
+        .ann-native .annotation-card {
+          border-color: rgba(220, 60, 60, 0.35);
+        }
+        .ann-tracked .annotation-card {
+          border-color: rgba(34, 197, 94, 0.35);
+        }
+        .ann-live .annotation-card {
+          border-color: rgba(59, 130, 246, 0.4);
+        }
+        .zone-badge.z1 {
+          background: #5c1a1a;
+          color: #fca5a5;
+        }
+        .zone-badge.z2 {
+          background: #14532d;
+          color: #86efac;
+        }
+        .zone-badge.z3 {
+          background: #1e3a5f;
+          color: #93c5fd;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="diagram">
+        <!-- Left arrows (positioned by JS) -->
+        <div class="arrows-col" id="arrowsCol">
+          <div class="arrow-item" id="arrowUpper">
+            <div class="arrow-tip"></div>
+            <div class="arrow-shaft"></div>
+            <div class="arrow-text">gone (data dropped)</div>
+          </div>
+          <div class="arrow-item" id="arrowLower">
+            <div class="arrow-tip"></div>
+            <div class="arrow-shaft"></div>
+            <div class="arrow-text">virtualized (unmount)</div>
+          </div>
+        </div>
+
+        <!-- Terminal -->
+        <div class="terminal-col" id="terminalCol">
+          <div class="zone zone-native" id="zoneNative">
+            <div class="term-text">
+              <span class="bullet">&gt;</span> List all files in src/auth/
+              <span class="comment">Found 3 files: middleware.ts, session.ts, types.ts</span>
+              <span class="bullet">&gt;</span> What does middleware.ts do?
+              <span class="comment">It validates JWT tokens and attaches the</span>
+              <span class="comment">decoded user to the request context...</span>
+            </div>
+          </div>
+
+          <div class="boundary-label">← maxHistory boundary</div>
+          <div class="zone zone-tracked" id="zoneTracked">
+            <div class="term-text">
+              <span class="bullet">&gt;</span> Run the tests <span class="success">✓ 47 tests passed</span>
+              <span class="comment">(3 files)</span> <span class="bullet">&gt;</span> Show recent commits
+              <span class="string">ab3f1e2</span> fix: resolve flicker on resize
+              <span class="string">7c9d4a1</span> feat: add streaming support
+            </div>
+          </div>
+
+          <div class="boundary-label">← screen top</div>
+          <div class="live-group" id="liveGroup">
+            <div class="window-chrome">
+              <div class="dot close"></div>
+              <div class="dot minimize"></div>
+              <div class="dot maximize"></div>
+              <div class="window-title">Terminal — zsh</div>
+            </div>
+            <div class="zone-live" id="zoneLive">
+              <div class="term-text">
+                <span class="bullet">&gt;</span> Help me refactor the auth module <span class="bullet">●</span> Reading
+                src/auth/middleware.ts... <span class="bullet">●</span> Found 3 issues. Streaming fix...
+                <span class="keyword">export</span> <span class="keyword">function</span>
+                <span class="func">validateToken</span>( token: <span class="string">string</span>, secret:
+                <span class="string">string</span> <span class="dimmed">)</span>
+                <span class="dimmed">{</span>
+                <span class="input-divider" style="margin-top: 8px"></span><span class="prompt">&gt; </span
+                ><span class="cursor-block">▌</span><span class="input-divider"></span>
+              </div>
+            </div>
+            <div class="footer-bar">Footer (pinned via flex, not DECSTBM)</div>
+          </div>
+        </div>
+
+        <!-- Right annotations -->
+        <div class="annotations-col" id="annotationsCol">
+          <div class="annotation ann-native" id="annNative">
+            <div class="connector-line"></div>
+            <div class="annotation-card">
+              <div class="annotation-title"><span class="zone-badge z1">1</span> Terminal Scrollback</div>
+
+              <ul class="annotation-details">
+                <li>State: <b>gone</b></li>
+                <li>Data dropped by Silvery</li>
+                <li>Destroyed on next ED3</li>
+                <li>Cmd+F and selection work</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="annotation ann-tracked" id="annTracked">
+            <div class="connector-line"></div>
+            <div class="annotation-card">
+              <div class="annotation-title"><span class="zone-badge z2">2</span> App Scrollback</div>
+              <ul class="annotation-details">
+                <li>State: <b>virtualized</b></li>
+                <li>Data retained, component unmounted</li>
+                <li>ED3 + re-emit on change/resize</li>
+                <li>Bounded by <code>maxHistory</code></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="annotation ann-live" id="annLive">
+            <div class="connector-line"></div>
+            <div class="annotation-card">
+              <div class="annotation-title"><span class="zone-badge z3">3</span> Live Screen</div>
+              <ul class="annotation-details">
+                <li>State: <b>mounted</b></li>
+                <li>React tree + hooks + layout</li>
+                <li>Incremental diff output</li>
+                <li>Footer pinned via flex</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function positionElements() {
+        const diagramRect = document.querySelector(".diagram").getBoundingClientRect()
+
+        function relTop(el) {
+          return el.getBoundingClientRect().top - diagramRect.top
+        }
+        function relBot(el) {
+          return el.getBoundingClientRect().bottom - diagramRect.top
+        }
+        function relMid(el) {
+          const r = el.getBoundingClientRect()
+          return (r.top + r.bottom) / 2 - diagramRect.top
+        }
+
+        const zoneNative = document.getElementById("zoneNative")
+        const zoneTracked = document.getElementById("zoneTracked")
+        const liveGroup = document.getElementById("liveGroup")
+
+        const annNative = document.getElementById("annNative")
+        const annTracked = document.getElementById("annTracked")
+        const annLive = document.getElementById("annLive")
+
+        // Distribute annotations evenly across the total height
+        const totalTop = relTop(zoneNative)
+        const totalBot = relBot(liveGroup)
+        const totalH = totalBot - totalTop
+
+        const hN = annNative.offsetHeight
+        const hT = annTracked.offsetHeight
+        const hL = annLive.offsetHeight
+        const totalCards = hN + hT + hL
+        const gap = (totalH - totalCards) / 4
+
+        annNative.style.top = totalTop + gap + "px"
+        annTracked.style.top = totalTop + gap + hN + gap + "px"
+        annLive.style.top = totalTop + gap + hN + gap + hT + gap + "px"
+
+        // Extend connector lines with negative margin to reach zone edges
+        function setConnectorWidth(ann, zone) {
+          const line = ann.querySelector(".connector-line")
+          const zoneRight = zone.getBoundingClientRect().right
+          const lineLeft = line.getBoundingClientRect().left
+          const extend = lineLeft - zoneRight
+          if (extend > 0) {
+            line.style.marginLeft = -extend + "px"
+            line.style.width = 28 + extend + "px"
+          }
+        }
+        setConnectorWidth(annNative, zoneNative)
+        setConnectorWidth(annTracked, zoneTracked)
+        setConnectorWidth(annLive, liveGroup)
+
+        // Arrows: span from bottom of one zone to top of the next,
+        // tightly hugging the gap
+        const arrowUpper = document.getElementById("arrowUpper")
+        const arrowLower = document.getElementById("arrowLower")
+
+        const nativeBot = relBot(zoneNative)
+        const trackedTop = relTop(zoneTracked)
+        const trackedBot = relBot(zoneTracked)
+        const liveTop = relTop(liveGroup)
+
+        // Center arrows on zone boundaries with fixed height
+        const arrowH = 50
+        arrowUpper.style.top = nativeBot - arrowH / 2 + "px"
+        arrowUpper.style.height = arrowH + "px"
+
+        arrowLower.style.top = trackedBot - arrowH / 2 + "px"
+        arrowLower.style.height = arrowH + "px"
+      }
+
+      window.addEventListener("load", positionElements)
+      window.addEventListener("resize", positionElements)
+    </script>
+  </body>
+</html>

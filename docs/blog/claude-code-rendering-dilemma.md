@@ -25,12 +25,13 @@ But the constraints are solvable. This post walks through why the problem is so 
 
 ## Two bugs hiding under "flicker"
 
-Claude Code's public saga actually contains two different classes of bug:
+Claude Code's public saga contains three different classes of bug:
 
-1. **Inline flicker** — mutable content crosses into terminal-owned scrollback, forcing expensive clear-and-redraw cycles on every token. This is the original flickering that drove 700+ upvotes.
-2. **Fullscreen corruption** — even after switching to the alternate buffer, the diff renderer gets out of sync, producing blank areas, overlapping text, and stale content. This is the residual bug that persists today.
+1. **Clear-and-redraw flicker** — mutable content crosses into terminal-owned scrollback, forcing a full redraw on every token. This is the original flickering that drove 700+ upvotes.
+2. **Layout feedback loop** — a component renders, measures its size, the size changed, it re-renders, the new size is different, it re-renders again. This oscillation causes visible jumping between two layout states.
+3. **Fullscreen corruption** — even after switching to the alternate buffer, the diff renderer gets out of sync, producing blank areas, overlapping text, and stale content. This is the residual bug that persists today.
 
-These are related — both stem from how the rendering pipeline manages state — but they have different root causes and different solutions.
+These stem from different parts of the rendering pipeline — output strategy, layout architecture, and state management — and require different solutions.
 
 ## The timeline
 
@@ -72,11 +73,24 @@ And there's one more problem: **auto-scroll behavior.** Behavior varies a lot by
 
 This is why teams eventually give up and switch to the alternate buffer. It's not that they don't want scrollback. It's that live, mutable UI and native scrollback don't coexist well in the same buffer.
 
+## Problem 2: The layout feedback loop
+
+There's a second, subtler source of flicker that affects both inline and fullscreen modes. It happens when layout depends on render output:
+
+1. Component renders → text wraps to 3 lines → height is 3
+2. Container adjusts to height 3 → text reflows → now 2 lines → height is 2
+3. Container adjusts to height 2 → text reflows → now 3 lines → height is 3
+4. Repeat forever
+
+This oscillation is visible as the UI jumping between two states every frame. Ink had this problem because `measureElement()` returns dimensions _after_ render, triggering a state update, which triggers another render. The render→measure→render cycle runs in separate event loop turns, so each intermediate state flashes on screen.
+
+Silvery avoids this by doing layout _before_ render. The layout engine ([Flexily](https://github.com/beorn/flexily)) measures text and computes positions in one pass — components know their available width before they render, so they never need to re-render because they "discovered" their size changed. There's no feedback loop because there's no feedback.
+
 ## The dilemma
 
 Claude Code tried inline mode first and hit all of these problems — flickering, performance issues (4,000+ scroll events/sec in tmux), even VS Code crashes. They switched to the alternate buffer, which solved flicker but required rebuilding search (`Ctrl+O` then `/`), text selection, scrolling, clipboard handling (OSC 52 for SSH/tmux), and history review. That `Ctrl+O` → `[` escape hatch — dumping the conversation back to native scrollback — shows the team knows users want scrollback. They just can't provide it in fullscreen mode.
 
-## Problem 2: Why fullscreen mode still breaks
+## Problem 3: Why fullscreen mode still breaks
 
 Here's the part that surprised me. Even after switching to the alternate buffer — the approach that gives the app total control over every cell — users still see **garbled output**: blank areas where content should be, overlapping text, wrong colors, stale content that should have been cleared. It's non-deterministic — sometimes the screen renders correctly, sometimes huge sections are empty. Switch away and back, and the problem may appear or disappear.
 
