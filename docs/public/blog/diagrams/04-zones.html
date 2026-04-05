@@ -49,28 +49,23 @@
   .diagram-04-zones .arrows-col {
     width: 50px;
     flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 0;
-  }
-  /* Spacers push arrows to zone boundaries */
-  .diagram-04-zones .arrow-spacer-top {
-    flex: 1;
-  }
-  .diagram-04-zones .arrow-spacer-mid {
-    flex: 1;
-  }
-  .diagram-04-zones .arrow-spacer-bot {
-    flex: 1;
+    position: relative;
   }
 
   .diagram-04-zones .arrow-item {
+    position: absolute;
+    left: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     height: 50px;
-    position: relative;
+  }
+  /* Position arrows at zone boundaries (native≈25%, tracked≈50%) */
+  .diagram-04-zones .arrow-upper {
+    top: calc(25% - 25px);
+  }
+  .diagram-04-zones .arrow-lower {
+    top: calc(50% - 25px);
   }
   .diagram-04-zones .arrow-shaft {
     width: 2.5px;
@@ -467,19 +462,16 @@
     <div class="diagram">
       <!-- Left arrows -->
       <div class="arrows-col">
-        <div class="arrow-spacer-top"></div>
-        <div class="arrow-item">
+        <div class="arrow-item arrow-upper">
           <div class="arrow-tip"></div>
           <div class="arrow-shaft"></div>
           <div class="arrow-text">released</div>
         </div>
-        <div class="arrow-spacer-mid"></div>
-        <div class="arrow-item">
+        <div class="arrow-item arrow-lower">
           <div class="arrow-tip"></div>
           <div class="arrow-shaft"></div>
           <div class="arrow-text">virtualized</div>
         </div>
-        <div class="arrow-spacer-bot"></div>
       </div>
 
       <!-- Terminal -->
