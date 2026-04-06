@@ -1951,12 +1951,27 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Left button (button 0) drag for selection
       if (mouseData.button === 0) {
         if (mouseData.action === "down") {
+          // Clear any existing selection first, then start new
+          if (selectionState.range) {
+            const [cleared] = terminalSelectionUpdate({ type: "clear" }, selectionState)
+            selectionState = cleared
+          }
           const [next] = terminalSelectionUpdate({ type: "start", col: mouseData.x, row: mouseData.y }, selectionState)
           selectionState = next
+          // Re-render to clear old overlay
+          if (currentBuffer) {
+            runtime.render(currentBuffer)
+            writeSelectionOverlay()
+          }
           // Don't consume — let the component tree also handle mousedown (for click-to-focus etc.)
         } else if (mouseData.action === "move" && selectionState.selecting) {
           const [next] = terminalSelectionUpdate({ type: "extend", col: mouseData.x, row: mouseData.y }, selectionState)
           selectionState = next
+          // Re-render overlay to show updated selection
+          if (currentBuffer) {
+            runtime.render(currentBuffer)
+            writeSelectionOverlay()
+          }
           // Consume move events during selection — don't dispatch to component tree
           return true
         } else if (mouseData.action === "up" && selectionState.selecting) {
@@ -1971,6 +1986,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               target.write(`\x1b]52;c;${base64}\x07`)
             }
           }
+          // Re-render overlay with final selection
+          if (currentBuffer) {
+            runtime.render(currentBuffer)
+            writeSelectionOverlay()
+          }
           // Don't consume — let click handler run
         }
       }
@@ -1980,6 +2000,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (selectionEnabled && event.type === "term:key" && selectionState.range) {
       const [next] = terminalSelectionUpdate({ type: "clear" }, selectionState)
       selectionState = next
+      // Re-render to remove overlay
+      if (currentBuffer) {
+        runtime.render(currentBuffer)
+      }
     }
 
     // When scrolled up in virtual inline mode, don't dispatch events to component tree
