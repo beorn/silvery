@@ -228,6 +228,31 @@ export {
 } from "./terminal-colors"
 
 // =============================================================================
+// Color Scheme Detection (Mode 2031) — re-exported from @silvery/ansi
+// =============================================================================
+
+export {
+  createColorSchemeDetector,
+  parseColorSchemeResponse,
+  ENABLE_COLOR_SCHEME_REPORTING,
+  DISABLE_COLOR_SCHEME_REPORTING,
+  type ColorSchemeDetector,
+  type ColorSchemeDetectorOptions,
+} from "@silvery/ansi"
+
+// =============================================================================
+// Width Detection (DEC 1020-1023)
+// =============================================================================
+
+export {
+  createWidthDetector,
+  applyWidthConfig,
+  DEFAULT_WIDTH_CONFIG,
+  type WidthDetector,
+  type TerminalWidthConfig,
+} from "./ansi/width-detection"
+
+// =============================================================================
 // DA1/DA2/DA3 + XTVERSION Device Attribute Queries
 // =============================================================================
 
