@@ -49,11 +49,12 @@
   }
 
   .diagram-01-buffers .panel-label {
-    font-size: var(--d-fs-xl);
+    font-size: var(--d-fs-lg);
     font-weight: var(--d-fw-bold);
     color: var(--d-annotation-title);
     text-align: center;
-    margin-bottom: 12px;
+    margin-top: 12px;
+    margin-bottom: 4px;
   }
 
   /* === SCROLLBACK ZONE (above terminal, faded) === */
@@ -285,8 +286,6 @@
     <div class="diagram">
       <!-- LEFT: Main Buffer -->
       <div class="terminal-panel ann-main">
-        <div class="panel-label">Main Screen Buffer</div>
-
         <!-- Scrollback: faded zone ABOVE terminal -->
         <div class="scrollback-zone">
           <div class="scrollback-label">scrollback</div>
@@ -312,6 +311,7 @@
           </div>
         </div>
 
+        <div class="panel-label">Main Screen Buffer</div>
         <div class="pros-cons">
           <div class="pros-cons-inner">
             <span class="pro-tag">+</span> Searchable, selectable, persists after exit
@@ -323,7 +323,6 @@
 
       <!-- RIGHT: Alternate Buffer -->
       <div class="terminal-panel ann-alt">
-        <div class="panel-label">Alternate Screen Buffer</div>
 
         <!-- Full terminal (no scrollback zone) -->
         <div class="terminal-frame">
@@ -355,6 +354,7 @@
           </div>
         </div>
 
+        <div class="panel-label">Alternate Screen Buffer</div>
         <div class="pros-cons">
           <div class="pros-cons-inner">
             <span class="pro-tag">+</span> App controls every visible cell
