@@ -16,6 +16,7 @@ import type { ParsedMouse } from "./mouse"
 import { getAncestorPath, pointInRect } from "@silvery/ag/tree-utils"
 import type { AgNode, Rect, UserSelect } from "@silvery/ag/types"
 import type { SelectionScope } from "./selection"
+import { setHovered, setArmed } from "./interactive-signals"
 
 // Re-export canonical types from ag (avoid duplicate type definitions)
 export type { SilveryMouseEvent, SilveryWheelEvent } from "@silvery/ag/mouse-event-types"
@@ -563,12 +564,14 @@ export function processMouseEvent(state: MouseEventProcessorState, parsed: Parse
 
     // Fire mouseleave on nodes that were left (reverse order = deepest first)
     for (const node of left) {
+      setHovered(node, false)
       const leaveEvent = createMouseEvent("mouseleave", x, y, node, parsed, state.keyboardModifiers)
       dispatchMouseEvent(leaveEvent)
     }
 
     // Fire mouseenter on newly entered nodes (forward order = shallowest first)
     for (const node of entered.reverse()) {
+      setHovered(node, true)
       const enterEvent = createMouseEvent("mouseenter", x, y, node, parsed, state.keyboardModifiers)
       dispatchMouseEvent(enterEvent)
     }
