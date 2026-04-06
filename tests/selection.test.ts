@@ -94,10 +94,7 @@ describe("terminalSelectionUpdate", () => {
   test("start initializes source, granularity, scope", () => {
     const state = createTerminalSelectionState()
     const scope: SelectionScope = { top: 2, bottom: 10, left: 5, right: 30 }
-    const [next] = terminalSelectionUpdate(
-      { type: "start", col: 7, row: 3, source: "keyboard", scope },
-      state,
-    )
+    const [next] = terminalSelectionUpdate({ type: "start", col: 7, row: 3, source: "keyboard", scope }, state)
 
     expect(next.source).toBe("keyboard")
     expect(next.granularity).toBe("character") // default granularity on start
