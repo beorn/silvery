@@ -520,6 +520,9 @@ export function processMouseEvent(state: MouseEventProcessorState, parsed: Parse
   if (action === "down") {
     state.mouseDownTarget = target
 
+    // Set armed state on the target node
+    setArmed(target, true)
+
     // Click-to-focus: find nearest focusable ancestor and focus it
     if (state.focusManager) {
       const focusable = findFocusableAncestor(target)
@@ -532,6 +535,11 @@ export function processMouseEvent(state: MouseEventProcessorState, parsed: Parse
     dispatchMouseEvent(event)
     if (event.defaultPrevented) defaultPrevented = true
   } else if (action === "up") {
+    // Clear armed state on the mousedown target
+    if (state.mouseDownTarget) {
+      setArmed(state.mouseDownTarget, false)
+    }
+
     const event = createMouseEvent("mouseup", x, y, target, parsed, state.keyboardModifiers)
     dispatchMouseEvent(event)
 
