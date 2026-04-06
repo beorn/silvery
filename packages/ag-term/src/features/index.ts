@@ -12,6 +12,10 @@
 export { createSelectionFeature } from "./selection"
 export type { SelectionFeature, SelectionFeatureOptions } from "./selection"
 
+// Drag
+export { createDragFeature } from "./drag"
+export type { DragFeature, DragFeatureOptions } from "./drag"
+
 // Clipboard
 export { createOSC52Clipboard, wrapClipboardBackend } from "./clipboard-capability"
 export type { ClipboardCapability } from "./clipboard-capability"

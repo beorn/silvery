@@ -13,5 +13,8 @@ export const SELECTION_CAPABILITY = Symbol("silvery.selection")
 /** Clipboard feature: copy/paste via OSC 52 or other backends. */
 export const CLIPBOARD_CAPABILITY = Symbol("silvery.clipboard")
 
+/** Drag feature: drag-and-drop state + mouse handling. */
+export const DRAG_CAPABILITY = Symbol("silvery.drag")
+
 /** Input router: priority-based event dispatch for interaction features. */
 export const INPUT_ROUTER = Symbol("silvery.input-router")
