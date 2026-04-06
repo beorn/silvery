@@ -380,6 +380,8 @@ export {
 } from "./hooks/useTerminalSelection"
 export type { UseTerminalSelectionResult } from "./hooks/useTerminalSelection"
 export { CopyProvider, useCopyProvider } from "./hooks/useCopyProvider"
+export { PasteProvider, usePaste } from "./hooks/usePaste"
+export type { PasteHandler } from "./hooks/usePaste"
 export { useVirtualizer } from "./hooks/useVirtualizer"
 export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer"
 export { useListItem } from "./hooks/useListItem"

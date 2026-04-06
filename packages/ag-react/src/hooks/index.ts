@@ -57,6 +57,10 @@ export type { UseCopyModeResult, UseCopyModeOptions } from "./useCopyMode"
 // Semantic Copy Provider
 export { CopyProvider, useCopyProvider } from "./useCopyProvider"
 
+// Paste Handler
+export { PasteProvider, usePaste } from "./usePaste"
+export type { PasteHandler } from "./usePaste"
+
 // List Item
 export { useListItem } from "./useListItem"
 export type { ListItemContext } from "./useListItem"
