@@ -141,7 +141,6 @@ export function TerminalSelectionProvider({
       row,
       scope,
       source: "mouse",
-      granularity: "char",
     }, prev)[0])
   }, [])
 

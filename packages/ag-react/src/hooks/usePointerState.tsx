@@ -103,7 +103,9 @@ export function usePointerState(options: UsePointerStateOptions = {}): UsePointe
       for (const effect of effects) {
         switch (effect.type) {
           case "startSelection":
-            selectionCtx?.handleMouseDown(effect.anchor.x, effect.anchor.y)
+            if (root) {
+              selectionCtx?.handleMouseDown(effect.anchor.x, effect.anchor.y, root)
+            }
             break
           case "extendSelection":
             selectionCtx?.handleMouseMove(effect.head.x, effect.head.y)
@@ -132,7 +134,7 @@ export function usePointerState(options: UsePointerStateOptions = {}): UsePointe
         }
       }
     },
-    [selectionCtx, buffer, stdout],
+    [selectionCtx, root, buffer, stdout],
   )
 
   const handleMouseDown = useCallback(
