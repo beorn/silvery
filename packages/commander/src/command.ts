@@ -1,26 +1,34 @@
 /**
  * Enhanced Commander Command with auto-colorized help, Standard Schema support,
- * array-as-choices detection, and **type-safe option inference**.
+ * array-as-choices detection, and **type-safe option + argument inference**.
  *
  * Subclasses Commander's Command so `new Command("app")` just works --
  * it's Commander with auto-colorized help, automatic Standard Schema /
- * legacy Zod detection, and array choices in `.option()`.
+ * legacy Zod detection, and array choices in `.option()` and `.argument()`.
  *
  * Each `.option()` call narrows the return type so that `.action()` and
  * `.opts()` know exactly which options exist and what types they have.
+ * Each `.argument()` call adds to both a positional tuple (for Commander-
+ * compatible actions) and a named record (for merged-form actions).
+ *
+ * Two `.action()` calling conventions (auto-detected via `fn.length`):
+ * - Merged: `.action(({ service, env, verbose }) => { ... })`
+ * - Commander-compatible: `.action((service, env, opts) => { ... })`
  *
  * @example
  * ```ts
  * import { Command, port, csv } from "@silvery/commander"
  *
  * new Command("deploy")
+ *   .argument("<service>", "Service to deploy")
+ *   .argument("[env]", "Environment", ["dev", "staging", "prod"])
  *   .option("-p, --port <n>", "Port", port)
- *   .option("--tags <t>", "Tags", csv)
- *   .option("-e, --env <e>", "Env", ["dev", "staging", "prod"])
- *   .action((opts) => {
- *     opts.port   // number | undefined
- *     opts.tags   // string[] | undefined
- *     opts.env    // "dev" | "staging" | "prod" | undefined
+ *   .option("--verbose", "Verbose output")
+ *   .action(({ service, env, port, verbose }) => {
+ *     service  // string
+ *     env      // "dev" | "staging" | "prod" | undefined
+ *     port     // number | undefined
+ *     verbose  // boolean | undefined
  *   })
  *
  * program.parse()
@@ -465,11 +473,13 @@ class _CommandBase extends BaseCommand {
   }
 
   /**
-   * Register an action callback that receives a single merged opts object.
+   * Register an action callback with auto-detected calling convention.
    *
-   * When typed `.argument()` calls have been made, Commander's positional args
-   * are merged into the opts object by their camelCase names. The callback
-   * always receives `(opts)` — one parameter containing both options and arguments.
+   * Supports two forms (detected via `fn.length`):
+   * - **Merged** (`fn.length <= 1`): `(params) => { params.service }` — args and opts in one object
+   * - **Commander-compatible** (`fn.length > 1`): `(service, env, opts) => {}` — positional args then opts
+   *
+   * When no typed `.argument()` calls have been made, passes through to Commander directly.
    */
   override action(fn: (...args: any[]) => any): this {
     const argNames = this._typedArgNames
@@ -477,7 +487,12 @@ class _CommandBase extends BaseCommand {
       // No typed arguments — use Commander's default behavior
       return super.action(fn)
     }
-    // Wrap: merge positional args into the opts object
+    if (fn.length > 1) {
+      // Commander-compatible: pass positional args then opts
+      // Commander already does this natively, so just pass through
+      return super.action(fn)
+    }
+    // Merged form: merge positional args into the opts object
     return super.action((...args: any[]) => {
       // Commander passes: (arg1, arg2, ..., opts, command)
       const opts = args[args.length - 2] ?? {}
@@ -670,31 +685,40 @@ class _CommandBase extends BaseCommand {
 // ────────────────────────────────────────────────────────────────
 // Type-safe option inference layer
 //
-// The `Command` type wraps `_CommandBase` with a generic `Opts` parameter.
-// Each `.option()` overload returns a narrowed `Command<Opts & ...>`.
+// The `Command` type wraps `_CommandBase` with three generic parameters:
+//   - `Opts`       — accumulated options (from `.option()`)
+//   - `Args`       — tuple of positional arg types (from `.argument()`)
+//   - `ArgsRecord` — record mapping arg names to types (for merged form)
+//
+// Each `.option()` overload narrows `Opts`.
+// Each `.argument()` overload appends to both `Args` and `ArgsRecord`.
 // The runtime class is `_CommandBase` — `Command` is just a type alias
 // with a constructor wrapper.
 // ────────────────────────────────────────────────────────────────
 
 // ────────────────────────────────────────────────────────────────
-// Public type: Command<Opts>
+// Public type: Command<Opts, Args, ArgsRecord>
 //
-// Interface merging adds typed `.option()` and `.opts()` overloads
-// on top of `_CommandBase`. The `@ts-expect-error` suppresses the
-// `opts()` return type conflict (we intentionally narrow it from
-// Commander's generic `<T>() => T` to a concrete `() => Opts`).
+// Interface merging adds typed `.option()`, `.argument()`, `.opts()`,
+// and `.action()` overloads on top of `_CommandBase`. The `@ts-expect-error`
+// suppresses the `opts()` return type conflict (we intentionally narrow it
+// from Commander's generic `<T>() => T` to a concrete `() => Opts`).
 // ────────────────────────────────────────────────────────────────
 
 // @ts-expect-error — opts() intentionally narrows from base <T>() => T to () => Opts
-export interface Command<Opts extends Record<string, unknown> = {}> extends _CommandBase {
+export interface Command<
+  Opts extends Record<string, unknown> = {},
+  Args extends any[] = [],
+  ArgsRecord extends Record<string, unknown> = {},
+> extends _CommandBase {
   /** Return option values with full type inference. */
   opts(): Opts
 
   /** Accept any `Command<...>` variant as a subcommand. */
-  addCommand(cmd: Command<any>, opts?: { isDefault?: boolean; hidden?: boolean; noHelp?: boolean }): this
+  addCommand(cmd: Command<any, any, any>, opts?: { isDefault?: boolean; hidden?: boolean; noHelp?: boolean }): this
 
   /** Factory for subcommands — returns a fresh `Command<{}>`. */
-  createCommand(name?: string): Command<{}>
+  createCommand(name?: string): Command<{}, [], {}>
 
   // -- Typed option overloads --
 
@@ -703,7 +727,7 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
     flags: F,
     description: string,
     choices: C,
-  ): Command<Opts & Record<FlagKey<F>, C[number] | undefined>>
+  ): Command<Opts & Record<FlagKey<F>, C[number] | undefined>, Args, ArgsRecord>
 
   /** Add an option with a CLIType preset (port, csv, uint, etc.) */
   option<F extends string, T>(
@@ -711,7 +735,7 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
     description: string,
     schema: CLIType<T>,
     defaultValue?: T,
-  ): Command<Opts & Record<FlagKey<F>, T | undefined>>
+  ): Command<Opts & Record<FlagKey<F>, T | undefined>, Args, ArgsRecord>
 
   /** Add an option with a Standard Schema v1 validator (Zod, Valibot, ArkType) */
   option<F extends string, S extends AnyStandardSchema>(
@@ -719,7 +743,7 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
     description: string,
     schema: S,
     defaultValue?: SchemaOutput<S>,
-  ): Command<Opts & Record<FlagKey<F>, SchemaOutput<S> | undefined>>
+  ): Command<Opts & Record<FlagKey<F>, SchemaOutput<S> | undefined>, Args, ArgsRecord>
 
   /** Add an option with a parser function */
   option<F extends string, T>(
@@ -727,23 +751,28 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
     description: string,
     parseArg: (value: string, previous: T) => T,
     defaultValue?: T,
-  ): Command<Opts & Record<FlagKey<F>, T | undefined>>
+  ): Command<Opts & Record<FlagKey<F>, T | undefined>, Args, ArgsRecord>
 
   /** Add a boolean flag or string-value option (no parser) */
   option<F extends string>(
     flags: F,
     description?: string,
     defaultValue?: string | boolean,
-  ): Command<Opts & Record<FlagKey<F>, InferOptionType<F>>>
+  ): Command<Opts & Record<FlagKey<F>, InferOptionType<F>>, Args, ArgsRecord>
 
   /**
    * Fallback: accepts any third argument (legacy Zod, unknown schemas, etc.)
    * that doesn't match the more specific overloads above.
    */
-  option<F extends string>(flags: F, description: string, parseArgOrDefault: any, defaultValue?: any): Command<Opts>
+  option<F extends string>(
+    flags: F,
+    description: string,
+    parseArgOrDefault: any,
+    defaultValue?: any,
+  ): Command<Opts, Args, ArgsRecord>
 
   // -- Typed argument overloads --
-  // Arguments merge into the same Opts bag as options.
+  // Arguments append to the Args tuple AND the ArgsRecord, and also merge into Opts.
 
   /** Add a choices argument: `<env>`, `["dev", "staging", "prod"]` */
   argument<F extends string, const C extends readonly string[]>(
@@ -752,6 +781,15 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
     choices: C,
   ): Command<
     Opts &
+      Record<
+        ArgKey<F>,
+        IsArgVariadic<F> extends true ? C[number][] : IsArgRequired<F> extends true ? C[number] : C[number] | undefined
+      >,
+    [
+      ...Args,
+      IsArgVariadic<F> extends true ? C[number][] : IsArgRequired<F> extends true ? C[number] : C[number] | undefined,
+    ],
+    ArgsRecord &
       Record<
         ArgKey<F>,
         IsArgVariadic<F> extends true ? C[number][] : IsArgRequired<F> extends true ? C[number] : C[number] | undefined
@@ -764,7 +802,11 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
     description: string,
     schema: CLIType<T>,
     defaultValue?: T,
-  ): Command<Opts & Record<ArgKey<F>, InferArgType<F, CLIType<T>>>>
+  ): Command<
+    Opts & Record<ArgKey<F>, InferArgType<F, CLIType<T>>>,
+    [...Args, InferArgType<F, CLIType<T>>],
+    ArgsRecord & Record<ArgKey<F>, InferArgType<F, CLIType<T>>>
+  >
 
   /** Add an argument with a Standard Schema v1 validator (Zod, Valibot, ArkType) */
   argument<F extends string, S extends AnyStandardSchema>(
@@ -772,7 +814,11 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
     description: string,
     schema: S,
     defaultValue?: SchemaOutput<S>,
-  ): Command<Opts & Record<ArgKey<F>, InferArgType<F, StandardSchemaV1<SchemaOutput<S>>>>>
+  ): Command<
+    Opts & Record<ArgKey<F>, InferArgType<F, StandardSchemaV1<SchemaOutput<S>>>>,
+    [...Args, InferArgType<F, StandardSchemaV1<SchemaOutput<S>>>],
+    ArgsRecord & Record<ArgKey<F>, InferArgType<F, StandardSchemaV1<SchemaOutput<S>>>>
+  >
 
   /** Add an argument with a parser function */
   argument<F extends string, T>(
@@ -780,23 +826,39 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
     description: string,
     parseArg: (value: string, previous: T) => T,
     defaultValue?: T,
-  ): Command<Opts & Record<ArgKey<F>, InferArgType<F, (value: string, previous: T) => T>>>
+  ): Command<
+    Opts & Record<ArgKey<F>, InferArgType<F, (value: string, previous: T) => T>>,
+    [...Args, InferArgType<F, (value: string, previous: T) => T>],
+    ArgsRecord & Record<ArgKey<F>, InferArgType<F, (value: string, previous: T) => T>>
+  >
 
   /** Add a string argument (no parser) — required, optional, or variadic */
   argument<F extends string>(
     flags: F,
     description?: string,
     defaultValue?: string,
-  ): Command<Opts & Record<ArgKey<F>, InferArgType<F>>>
+  ): Command<
+    Opts & Record<ArgKey<F>, InferArgType<F>>,
+    [...Args, InferArgType<F>],
+    ArgsRecord & Record<ArgKey<F>, InferArgType<F>>
+  >
 
   /** Fallback: accepts any third argument */
-  argument<F extends string>(flags: F, description: string, parseArgOrDefault: any, defaultValue?: any): Command<Opts>
+  argument<F extends string>(
+    flags: F,
+    description: string,
+    parseArgOrDefault: any,
+    defaultValue?: any,
+  ): Command<Opts, Args, ArgsRecord>
 
-  // -- Typed action overload --
-  // When typed arguments are registered, action receives (opts) — one merged object.
+  // -- Typed action overloads --
+  // Two calling conventions detected at runtime via fn.length:
 
-  /** Action callback receiving the merged opts (options + arguments). */
-  action(fn: (opts: Opts) => void | Promise<void>): this
+  /** Merged form — args and options in one named object. */
+  action(fn: (params: Opts & ArgsRecord) => void | Promise<void>): this
+
+  /** Commander-compatible form — positional args then opts. */
+  action(fn: (...args: [...Args, Opts]) => void | Promise<void>): this
 
   // -- Typed command overload --
 
@@ -809,7 +871,7 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
   command<S extends string>(
     nameAndArgs: RejectArgSyntax<S>,
     opts?: { isDefault?: boolean; hidden?: boolean; noHelp?: boolean },
-  ): Command<{}>
+  ): Command<{}, [], {}>
 
   /** Overload for command with description (attached-action subcommand, returns parent). */
   command<S extends string>(
@@ -823,16 +885,20 @@ export interface Command<Opts extends Record<string, unknown> = {}> extends _Com
  * Type-safe Commander Command with auto-colorized help, Standard Schema support,
  * array-as-choices detection, and inferred option types.
  *
+ * Two `.action()` calling conventions (auto-detected via `fn.length`):
+ * - **Merged** (`fn.length <= 1`): `({ service, env, verbose }) => {}` — all in one object
+ * - **Commander-compatible** (`fn.length > 1`): `(service, env, opts) => {}` — positional then opts
+ *
  * @example
  * ```ts
- * const cmd = new Command("deploy")
- *   .option("-p, --port <n>", "Port", port)
+ * new Command("deploy")
+ *   .argument("<service>", "Service to deploy")
+ *   .argument("[env]", "Environment", ["dev", "staging", "prod"] as const)
  *   .option("--verbose", "Verbose output")
- *
- * cmd.opts().port     // number | undefined
- * cmd.opts().verbose  // boolean | undefined
+ *   .action(({ service, env, verbose }) => { ... })
+ *   // or: .action((service, env, opts) => { ... })
  * ```
  */
 export const Command = _CommandBase as unknown as {
-  new (name?: string): Command<{}>
+  new (name?: string): Command<{}, [], {}>
 }

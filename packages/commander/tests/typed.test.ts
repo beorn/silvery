@@ -273,6 +273,89 @@ describe("typed arguments", () => {
   })
 })
 
+describe("Commander-compatible positional args", () => {
+  it("receives positional args then opts (fn.length > 1)", () => {
+    let receivedEnv: any
+    let receivedTag: any
+    const cmd = new Command("test")
+      .argument("<env>", "Environment")
+      .argument("[tag]", "Optional tag")
+      .action((env, tag, _opts) => {
+        receivedEnv = env
+        receivedTag = tag
+      })
+    cmd.parse(["node", "test", "production", "v1.0"], { from: "node" })
+    expect(receivedEnv).toBe("production")
+    expect(receivedTag).toBe("v1.0")
+  })
+
+  it("positional args with options", () => {
+    let receivedService: any
+    let receivedOpts: any
+    const cmd = new Command("test")
+      .argument("<service>", "Service")
+      .option("-f, --force", "Force")
+      .action((service, opts) => {
+        receivedService = service
+        receivedOpts = opts
+      })
+    cmd.parse(["node", "test", "api", "--force"], { from: "node" })
+    expect(receivedService).toBe("api")
+    expect(receivedOpts.force).toBe(true)
+  })
+
+  it("variadic positional arg", () => {
+    let receivedFiles: any
+    const cmd = new Command("test").argument("<files...>", "Files to process").action((files, _opts) => {
+      receivedFiles = files
+    })
+    cmd.parse(["node", "test", "a.txt", "b.txt", "c.txt"], { from: "node" })
+    expect(receivedFiles).toEqual(["a.txt", "b.txt", "c.txt"])
+  })
+
+  it("multiple args + options Commander-style", () => {
+    let receivedService: any
+    let receivedEnv: any
+    let receivedOpts: any
+    const cmd = new Command("test")
+      .argument("<service>", "Service")
+      .argument("[env]", "Env")
+      .option("-p, --port <n>", "Port", parseInt)
+      .option("-v, --verbose", "Verbose")
+      .action((service, env, opts) => {
+        receivedService = service
+        receivedEnv = env
+        receivedOpts = opts
+      })
+    cmd.parse(["node", "test", "api", "prod", "--port", "3000", "--verbose"], { from: "node" })
+    expect(receivedService).toBe("api")
+    expect(receivedEnv).toBe("prod")
+    expect(receivedOpts.port).toBe(3000)
+    expect(receivedOpts.verbose).toBe(true)
+  })
+
+  it("argument with choices Commander-style", () => {
+    let receivedEnv: any
+    const cmd = new Command("test")
+      .argument("<env>", "Environment", ["dev", "staging", "prod"])
+      .action((env, _opts) => {
+        receivedEnv = env
+      })
+    cmd.parse(["node", "test", "dev"], { from: "node" })
+    expect(receivedEnv).toBe("dev")
+  })
+
+  it("argument with parser Commander-style", () => {
+    let receivedPort: any
+    const cmd = new Command("test").argument("<port>", "Port", parseInt).action((port, _opts) => {
+      receivedPort = port
+    })
+    cmd.parse(["node", "test", "3000"], { from: "node" })
+    expect(receivedPort).toBe(3000)
+    expect(typeof receivedPort).toBe("number")
+  })
+})
+
 describe("zod schema via Standard Schema", () => {
   it("validates and coerces with z.coerce.number()", () => {
     const cmd = new Command("test").option("-p, --port <n>", "Port", z.coerce.number())

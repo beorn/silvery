@@ -75,22 +75,43 @@ Options with [Zod](https://github.com/colinhacks/zod) schemas or built-in types 
 
 Full reference, type table, and API details at **[silvery.dev/reference/commander](https://silvery.dev/reference/commander)**.
 
-## Note on `.action()` callback signature
+## Typed `.action()` — two calling conventions
 
-When using typed `.argument()`, positional args are merged into the opts object
-alongside options. The `.action()` callback receives a single typed parameter:
+Both forms are fully typed. The convention is auto-detected at runtime via `fn.length`.
+
+### Recommended: named parameters
+
+For maximum type safety, define arguments with `.argument()` and destructure:
 
 ```ts
 new Command("deploy")
   .argument("<service>", "Service to deploy")
   .argument("[env]", "Environment", ["dev", "staging", "prod"] as const)
-  .option("--verbose", "Verbose")
-  .action((opts) => {
-    opts.service // string
-    opts.env // "dev" | "staging" | "prod" | undefined
-    opts.verbose // boolean | undefined
+  .option("--verbose", "Verbose output")
+  .action(({ service, env, verbose }) => {
+    service // string
+    env // "dev" | "staging" | "prod" | undefined
+    verbose // boolean | undefined
   })
 ```
+
+Why this is safer:
+
+- **Named access** — `service` can't be accidentally swapped with `env`
+- **Typed arguments** — choices, parsers, and schemas infer the correct type
+- **Self-documenting** — each `.argument()` has a description that appears in `--help`
+
+### Also supported: Commander-compatible positional form
+
+```ts
+.action((service, env, opts) => {
+  service  // string
+  env      // "dev" | "staging" | "prod" | undefined
+  opts     // { verbose: boolean | undefined }
+})
+```
+
+The positional form matches Commander.js convention — positional args first, then the options object. Useful for migration from plain Commander or familiarity. Both forms are fully typed.
 
 If you define args in the `.command()` string instead (e.g. `.command("deploy <service>")`),
 Commander's default behavior applies (separate positional parameters, untyped).

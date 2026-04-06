@@ -449,6 +449,62 @@ describe("accessing undefined argument is a type error", () => {
   })
 })
 
+// ────────────────────────────────────────────────────────────────
+// Commander-compatible positional action typing
+// ────────────────────────────────────────────────────────────────
+
+describe("Commander-compatible action typing", () => {
+  it("action(service, env, opts) receives correct types", () => {
+    new Command("test")
+      .argument("<service>", "Service")
+      .argument("[env]", "Environment", ["dev", "staging", "prod"] as const)
+      .option("--verbose", "Verbose")
+      .action((service, env, opts) => {
+        expectTypeOf(service).toEqualTypeOf<string>()
+        expectTypeOf(env).toEqualTypeOf<"dev" | "staging" | "prod" | undefined>()
+        expectTypeOf(opts).toEqualTypeOf<{ verbose: boolean | undefined }>()
+      })
+  })
+
+  it("0-arg command: action(opts)", () => {
+    new Command("test").option("--verbose", "Verbose").action((opts) => {
+      expectTypeOf(opts).toEqualTypeOf<{ verbose: boolean | undefined }>()
+    })
+  })
+
+  it("variadic: action(files, opts)", () => {
+    new Command("test")
+      .argument("<files...>", "Files")
+      .option("--verbose", "Verbose")
+      .action((files, opts) => {
+        expectTypeOf(files).toEqualTypeOf<string[]>()
+        expectTypeOf(opts).toEqualTypeOf<{ verbose: boolean | undefined }>()
+      })
+  })
+
+  it("single required arg: action(service, opts)", () => {
+    new Command("test")
+      .argument("<service>", "Service")
+      .option("-p, --port <n>", "Port", port)
+      .action((service, opts) => {
+        expectTypeOf(service).toEqualTypeOf<string>()
+        expectTypeOf(opts).toEqualTypeOf<{ port: number | undefined }>()
+      })
+  })
+
+  it("merged form still works: action(params)", () => {
+    new Command("test")
+      .argument("<service>", "Service")
+      .argument("[env]", "Environment", ["dev", "staging", "prod"] as const)
+      .option("--verbose", "Verbose")
+      .action((params) => {
+        expectTypeOf(params.service).toEqualTypeOf<string>()
+        expectTypeOf(params.env).toEqualTypeOf<"dev" | "staging" | "prod" | undefined>()
+        expectTypeOf(params.verbose).toEqualTypeOf<boolean | undefined>()
+      })
+  })
+})
+
 describe("command() rejects arg syntax in name", () => {
   it("command('deploy') is valid", () => {
     const cmd = new Command("app")
