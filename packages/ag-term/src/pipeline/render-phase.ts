@@ -72,6 +72,10 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
   const buffer = hasPrevBuffer ? prevBuffer.clone() : new TerminalBuffer(layout.width, layout.height)
   const tClone = instrumentEnabled ? performance.now() - t0 : 0
 
+  // Default: root is selectable (userSelect defaults to "text").
+  // renderNodeToBuffer will override per-node as it traverses.
+  buffer.setSelectableMode(true)
+
   const t1 = instrumentEnabled ? performance.now() : 0
   renderNodeToBuffer(
     root,
@@ -261,10 +265,22 @@ function renderNodeToBuffer(
 
   const props = node.props as BoxProps & TextProps
 
+  // Resolve userSelect for SELECTABLE_FLAG stamping.
+  // Set buffer selectable mode before any cell writes. Restore on exit.
+  const prevSelectableMode = buffer.getSelectableMode()
+  const userSelect = props.userSelect
+  if (userSelect === "none") {
+    buffer.setSelectableMode(false)
+  } else if (userSelect === "text" || userSelect === "contain") {
+    buffer.setSelectableMode(true)
+  }
+  // "auto" or undefined: inherit parent's mode (already set on buffer)
+
   // Skip display="none" nodes - they have 0x0 dimensions and shouldn't render
   // Also skip their children since the entire subtree is hidden
   if (props.display === "none") {
     clearDirtyFlags(node)
+    buffer.setSelectableMode(prevSelectableMode)
     return
   }
 
@@ -289,6 +305,7 @@ function renderNodeToBuffer(
   // reconciliation/layout, and not clearing here preserves that signal.
   const screenY = layout.y - scrollOffset
   if (screenY >= buffer.height || screenY + layout.height <= 0) {
+    buffer.setSelectableMode(prevSelectableMode)
     return
   }
 
@@ -393,6 +410,7 @@ function renderNodeToBuffer(
       }
     }
     clearDirtyFlags(node)
+    buffer.setSelectableMode(prevSelectableMode)
     return
   }
   if (instrumentEnabled) {
@@ -531,6 +549,8 @@ function renderNodeToBuffer(
   } finally {
     // Pop per-subtree theme override (after ALL child passes including absolute/sticky)
     if (nodeTheme) popContextTheme()
+    // Restore parent's selectable mode
+    buffer.setSelectableMode(prevSelectableMode)
   }
 }
 

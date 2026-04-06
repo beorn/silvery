@@ -440,6 +440,12 @@ export class TerminalBuffer {
    * Set by the render phase, read by extractText.
    */
   private _rowMetadata: RowMetadata[]
+  /**
+   * When true, setCell and fill automatically stamp SELECTABLE_FLAG on written cells.
+   * Set/cleared by the render phase as it traverses nodes with different userSelect values.
+   * This avoids modifying every individual setCell call — zero overhead (single OR per cell).
+   */
+  private _selectableMode = false
 
   readonly width: number
   readonly height: number
@@ -630,6 +636,26 @@ export class TerminalBuffer {
     return this._rowMetadata
   }
 
+  // --------------------------------------------------------------------------
+  // Selectable Mode (for render-phase SELECTABLE_FLAG stamping)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Enable/disable automatic SELECTABLE_FLAG stamping on cell writes.
+   * When true, all setCell/fill calls stamp SELECTABLE_FLAG on the packed metadata.
+   * Zero overhead: a single OR per cell when enabled.
+   */
+  setSelectableMode(selectable: boolean): void {
+    this._selectableMode = selectable
+  }
+
+  /**
+   * Get the current selectable mode.
+   */
+  getSelectableMode(): boolean {
+    return this._selectableMode
+  }
+
   /**
    * Read cell data into a caller-provided Cell object (zero-allocation).
    * For hot loops that need the full Cell, reuse a single object:
@@ -802,6 +828,7 @@ export class TerminalBuffer {
     if (continuation) packed |= CONTINUATION_FLAG
     if (isTrueColor(fg)) packed |= TRUE_COLOR_FG_FLAG
     if (isTrueColor(bg)) packed |= TRUE_COLOR_BG_FLAG
+    if (this._selectableMode) packed = (packed | SELECTABLE_FLAG) >>> 0
     this.cells[idx] = packed
   }
 
@@ -838,7 +865,8 @@ export class TerminalBuffer {
       wide,
       continuation,
     }
-    const packed = packCell(fullCell)
+    let packed = packCell(fullCell)
+    if (this._selectableMode) packed = (packed | SELECTABLE_FLAG) >>> 0
 
     // Determine true color values once
     const hasTrueColorFg = isTrueColor(fg)
@@ -1167,8 +1195,10 @@ export class TerminalBuffer {
     const idx = this.index(x, y)
     const otherIdx = other.index(x, y)
 
-    // Quick check: packed metadata must match
-    if (this.cells[idx] !== other.cells[otherIdx]) {
+    // Quick check: packed metadata must match (mask out SELECTABLE_FLAG — it's
+    // selection metadata, not visual output, and must not trigger output diffs)
+    const mask = ~SELECTABLE_FLAG
+    if ((this.cells[idx]! & mask) !== (other.cells[otherIdx]! & mask)) {
       return false
     }
 
@@ -1215,8 +1245,10 @@ export class TerminalBuffer {
     const start = y * this.width
     const otherStart = y * other.width
     const w = Math.min(this.width, other.width)
+    // Mask out SELECTABLE_FLAG — it's selection metadata, not visual output
+    const mask = ~SELECTABLE_FLAG
     for (let i = 0; i < w; i++) {
-      if (this.cells[start + i] !== other.cells[otherStart + i]) return false
+      if ((this.cells[start + i]! & mask) !== (other.cells[otherStart + i]! & mask)) return false
     }
     return true
   }
