@@ -50,6 +50,7 @@ import { type StateCreator, type StoreApi, createStore } from "./signal-store.ts
 import { createTerm } from "@silvery/ag-term/ansi"
 import {
   CacheBackendContext,
+  CapabilityRegistryContext,
   FocusManagerContext,
   RuntimeContext,
   type RuntimeContextValue,
@@ -308,6 +309,12 @@ export interface AppRunOptions {
    * The Root component receives children and wraps them with providers.
    */
   Root?: React.ComponentType<{ children: React.ReactNode }>
+  /**
+   * Capability registry from the composition layer (e.g., withDomEvents, withTerminal).
+   * When provided, exposed to React components via CapabilityRegistryContext so
+   * hooks like useSelection() can discover interaction features.
+   */
+  capabilityRegistry?: import("@silvery/ag-react/context").CapabilityLookup
   /** Providers and plain values to inject */
   [key: string]: unknown
 }
@@ -538,6 +545,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     caps: capsOption,
     guardOutput: guardOutputOption,
     Root: RootComponent,
+    capabilityRegistry: capabilityRegistryOption,
     writable: explicitWritable,
     onResize: explicitOnResize,
     ...injectValues
@@ -1174,9 +1182,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               >
                 <FocusManagerContext.Provider value={focusManager}>
                   <RuntimeContext.Provider value={runtimeContextValue}>
-                    <Root>
-                      <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
-                    </Root>
+                    <CapabilityRegistryContext.Provider value={capabilityRegistryOption ?? null}>
+                      <Root>
+                        <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
+                      </Root>
+                    </CapabilityRegistryContext.Provider>
                   </RuntimeContext.Provider>
                 </FocusManagerContext.Provider>
               </StderrContext.Provider>

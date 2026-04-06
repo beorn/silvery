@@ -77,6 +77,60 @@ console.log(isTextSizingEnabled()) // false (default)
 
 Use `isTextSizingLikelySupported()` for a fast synchronous env-var check, or `detectTextSizingSupport()` for definitive cursor-position-based detection.
 
+## Font Scale (OSC 66 s= parameter)
+
+Beyond cell-width control, OSC 66 also supports **font size scaling** via the `s=` parameter. This lets you render headings at 2x, annotations at 0.5x, and body text at 1x — all in one terminal session.
+
+### `textScaled(scale: number): string`
+
+Generate an OSC 66 escape sequence to set the text scale (font size multiplier). The scale applies to all subsequent text until reset or changed.
+
+```typescript
+import { textScaled, resetTextScale } from "@silvery/ag-term"
+
+// Set 2x size for a heading
+process.stdout.write(textScaled(2) + "Big Heading" + resetTextScale())
+
+// Set 0.5x for annotations
+process.stdout.write(textScaled(0.5) + "fine print" + resetTextScale())
+```
+
+Scale values:
+- `3.0` — triple size (display titles)
+- `2.0` — double size (headings)
+- `1.5` — large (subheadings)
+- `1.0` — normal (body text, default)
+- `0.75` — slightly smaller
+- `0.5` — half size (annotations, captions)
+- `0.25` — quarter size (fine print)
+
+### `resetTextScale(): string`
+
+Generate an OSC 66 escape sequence to reset text scale to default (1.0). Equivalent to `textScaled(1)`.
+
+### `textSize` prop
+
+The `textSize` style prop is available on `Box` and `Text` components. It declares the desired OSC 66 font scale for the node's content. Currently a hint for terminal-aware renderers — the standard terminal pipeline emits the escape sequences around the node's rendered content on terminals that support OSC 66.
+
+```tsx
+<Text textSize={2} bold color="$primary">
+  Large Heading
+</Text>
+<Text textSize={0.5} color="$muted">
+  Fine print annotation
+</Text>
+```
+
+### Demo
+
+Run the interactive text sizing demo:
+
+```bash
+bun vendor/silvery/examples/kitty/text-sizing-demo.tsx
+```
+
+Shows headings, body text, annotations, code with inline comments, and a scale comparison — all at different font sizes. Requires Kitty v0.40+ for visible scaling; other terminals show normal-sized text.
+
 ## API Reference
 
 ### `textSized(text: string, width: number): string`

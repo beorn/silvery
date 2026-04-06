@@ -228,6 +228,7 @@ export function withTerminal<T extends RunnableApp>(
           onSuspend: termConfig.onSuspend,
           onResume: termConfig.onResume,
           onInterrupt: termConfig.onInterrupt,
+          capabilityRegistry: registry,
         })
 
         // Replace options in args

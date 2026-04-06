@@ -76,6 +76,9 @@ export { usePasteEvents } from "./usePasteEvents"
 export { usePointerState, resolveUserSelect, resolveNodeDraggable } from "./usePointerState"
 export type { UsePointerStateOptions, UsePointerStateResult } from "./usePointerState"
 
+// Selection (capability-based — reads from CapabilityRegistry)
+export { useSelection } from "./useSelection"
+
 // Interactive State
 export { useInteractiveState } from "./useInteractiveState"
 

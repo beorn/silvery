@@ -192,3 +192,26 @@ export const CacheBackendContext = createContext<CacheBackend>("virtual")
  * Provides the FocusManager instance to useFocusable(), useFocusWithin(), and useFocusManager() hooks.
  */
 export const FocusManagerContext = createContext<FocusManager | null>(null)
+
+// ============================================================================
+// Capability Registry Context
+// ============================================================================
+
+/**
+ * Minimal capability lookup interface — matches CapabilityRegistry.get().
+ * Defined here to avoid a dependency from ag-react → @silvery/create internals.
+ */
+export interface CapabilityLookup {
+  get<T>(key: symbol): T | undefined
+}
+
+/**
+ * Context for the capability registry (from @silvery/create composition).
+ *
+ * Provided by createApp() when a capabilityRegistry exists on the app object.
+ * Hooks like useSelection() use this to discover interaction features
+ * (e.g., SelectionFeature) without coupling to the composition layer.
+ *
+ * Returns null in simple `run()` or `render()` apps that don't use pipe() composition.
+ */
+export const CapabilityRegistryContext = createContext<CapabilityLookup | null>(null)

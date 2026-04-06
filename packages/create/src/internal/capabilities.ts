@@ -8,19 +8,19 @@
  */
 
 /** Selection feature: text selection state + mouse handling. */
-export const SELECTION_CAPABILITY = Symbol("silvery.selection")
+export const SELECTION_CAPABILITY = Symbol.for("silvery.selection")
 
 /** Clipboard feature: copy/paste via OSC 52 or other backends. */
-export const CLIPBOARD_CAPABILITY = Symbol("silvery.clipboard")
+export const CLIPBOARD_CAPABILITY = Symbol.for("silvery.clipboard")
 
 /** Copy-mode feature: keyboard-driven selection (Esc+v). */
-export const COPY_MODE_CAPABILITY = Symbol("silvery.copy-mode")
+export const COPY_MODE_CAPABILITY = Symbol.for("silvery.copy-mode")
 
 /** Find feature: text search (Ctrl+F). */
-export const FIND_CAPABILITY = Symbol("silvery.find")
+export const FIND_CAPABILITY = Symbol.for("silvery.find")
 
 /** Drag feature: drag-and-drop state + mouse handling. */
-export const DRAG_CAPABILITY = Symbol("silvery.drag")
+export const DRAG_CAPABILITY = Symbol.for("silvery.drag")
 
 /** Input router: priority-based event dispatch for interaction features. */
-export const INPUT_ROUTER = Symbol("silvery.input-router")
+export const INPUT_ROUTER = Symbol.for("silvery.input-router")

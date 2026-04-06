@@ -50,10 +50,8 @@ import {
 } from "@silvery/ag-term/mouse-events"
 import { createInputRouter, type InputRouter } from "./internal/input-router"
 import { createCapabilityRegistry, type CapabilityRegistry } from "./internal/capability-registry"
-import { SELECTION_CAPABILITY, CLIPBOARD_CAPABILITY, DRAG_CAPABILITY, INPUT_ROUTER } from "./internal/capabilities"
+import { SELECTION_CAPABILITY, CLIPBOARD_CAPABILITY, INPUT_ROUTER } from "./internal/capabilities"
 import { createSelectionFeature, type SelectionFeature } from "@silvery/ag-term/features"
-import { createDragFeature, type DragFeature } from "@silvery/ag-term/features"
-import { hitTest } from "@silvery/ag-term/mouse-events"
 
 // =============================================================================
 // Types
@@ -75,14 +73,6 @@ export interface WithDomEventsOptions {
   selection?: boolean
 
   /**
-   * Enable drag-and-drop via mouse.
-   * When true, creates a DragFeature and registers it in the capability registry.
-   * Draggable nodes (draggable=true) can be dragged to drop targets (onDrop handlers).
-   * Default: false
-   */
-  drag?: boolean
-
-  /**
    * Pre-built capability registry. If not provided, a new one is created.
    * Allows withTerminal (or other plugins) to pre-register capabilities like clipboard.
    */
@@ -101,9 +91,6 @@ export interface AppWithDomEvents {
 
   /** The selection feature (only present when selection is enabled). */
   readonly selectionFeature?: SelectionFeature
-
-  /** The drag feature (only present when drag is enabled). */
-  readonly dragFeature?: DragFeature
 }
 
 // =============================================================================
@@ -124,7 +111,9 @@ export interface AppWithDomEvents {
  * @param options - Configuration (focusManager for click-to-focus)
  * @returns Plugin function that enhances an App with DOM event dispatch
  */
-export function withDomEvents(options: WithDomEventsOptions = {}): <T extends App>(app: T) => T & AppWithDomEvents {
+export function withDomEvents(
+  options: WithDomEventsOptions = {},
+): <T extends App>(app: T) => T & AppWithDomEvents {
   return <T extends App>(app: T): T & AppWithDomEvents => {
     // Get focus manager from options or from the app itself
     const fm = options.focusManager ?? (app as App & { focusManager?: FocusManager }).focusManager
@@ -198,65 +187,6 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
       })
     }
 
-    // --- Drag Feature ---
-    const dragEnabled = options.drag ?? false
-    let dragFeature: DragFeature | undefined
-
-    if (dragEnabled) {
-      dragFeature = createDragFeature({
-        invalidate: () => router.invalidate(),
-      })
-
-      registry.register(DRAG_CAPABILITY, dragFeature)
-
-      // Register drag mouse handler at priority 150 (beats selection at 100)
-      router.registerMouseHandler(150, (event) => {
-        if (event.button !== 0) return false // only left button
-
-        if (event.type === "mousedown") {
-          // Hit test to find the node under the cursor
-          const root = app.getContainer()
-          const node = hitTest(root, event.x, event.y)
-          if (node) {
-            const claimed = dragFeature!.handleMouseDown(event.x, event.y, node)
-            if (claimed) return false // don't consume mousedown — let click-to-focus work
-          }
-          return false
-        }
-
-        if (event.type === "mousemove" && dragFeature!.tracking) {
-          const root = app.getContainer()
-          dragFeature!.handleMouseMove(event.x, event.y, (x, y) => hitTest(root, x, y))
-          return true // consume move during drag tracking
-        }
-
-        if (event.type === "mouseup" && dragFeature!.tracking) {
-          const wasDragging = dragFeature!.state !== null
-          const root = app.getContainer()
-          dragFeature!.handleMouseUp(event.x, event.y, (x, y) => hitTest(root, x, y))
-          return wasDragging // only consume if drag was active (not just pointing)
-        }
-
-        return false
-      })
-
-      // Register Escape key handler to cancel drag at priority 150
-      router.registerKeyHandler(150, (event) => {
-        if (event.key === "escape" && dragFeature!.tracking) {
-          dragFeature!.cancel()
-          return true
-        }
-        return false
-      })
-
-      // Register drag ghost overlay at z-order 200 (above selection at 100)
-      router.registerOverlay(200, () => {
-        // Drag ghost rendering — currently a no-op placeholder.
-        // The actual ghost rendering will be handled by a React component
-        // that subscribes to dragFeature.state for position updates.
-      })
-    }
-
     // Override click, doubleClick, and wheel to use our processor
     // which is connected to the focus manager and input router
     const enhanced = new Proxy(app, {
@@ -264,7 +194,6 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
         if (prop === "capabilityRegistry") return registry
         if (prop === "inputRouter") return router
         if (prop === "selectionFeature") return selectionFeature
-        if (prop === "dragFeature") return dragFeature
 
         if (prop === "click") {
           return async function enhancedClick(x: number, y: number, clickOptions?: { button?: number }): Promise<T> {
@@ -367,6 +296,18 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
 
             await Promise.resolve()
             return receiver as T
+          }
+        }
+
+        // Intercept run() to inject capabilityRegistry into options
+        // so createApp wires it into CapabilityRegistryContext for React hooks.
+        if (prop === "run") {
+          const originalRun = Reflect.get(target, prop, receiver) as (...a: any[]) => any
+          if (typeof originalRun === "function") {
+            return function enhancedRun(element: unknown, options?: Record<string, unknown>) {
+              const opts = { ...(options ?? {}), capabilityRegistry: registry }
+              return originalRun.call(target, element, opts)
+            }
           }
         }
 

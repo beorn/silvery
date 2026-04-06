@@ -393,6 +393,7 @@ export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualize
 export { useListItem } from "./hooks/useListItem"
 export type { ListItemContext } from "./hooks/useListItem"
 export { useInteractiveState } from "./hooks/useInteractiveState"
+export { useSelection } from "./hooks/useSelection"
 
 // App-level Providers (Phase 4)
 export { SearchProvider, useSearch, useSearchOptional } from "./providers/SearchProvider"
@@ -430,8 +431,8 @@ export { useTransition, useDeferredValue, useId } from "react"
 export { useRuntime } from "./hooks/useRuntime"
 
 // Contexts for advanced usage (usually hooks are preferred)
-export { CacheBackendContext, TermContext, FocusManagerContext, RuntimeContext, StderrContext } from "./context"
-export type { CacheBackend, RuntimeContextValue, BaseRuntimeEvents } from "./context"
+export { CacheBackendContext, TermContext, FocusManagerContext, RuntimeContext, StderrContext, CapabilityRegistryContext } from "./context"
+export type { CacheBackend, RuntimeContextValue, BaseRuntimeEvents, CapabilityLookup } from "./context"
 
 // Theming
 export { ThemeProvider } from "./ThemeProvider"
@@ -604,11 +605,9 @@ export { type PipelineConfig, type PipelineContext } from "@silvery/ag-term/pipe
 // withRender plugin
 export { withRender, type RenderTerm } from "@silvery/create/with-render"
 
-// Text sizing protocol (OSC 66) — PUA character width + font scale
+// Text sizing protocol (OSC 66) — PUA character width control
 export {
   textSized,
-  textScaled,
-  resetTextScale,
   isPrivateUseArea,
   isTextSizingLikelySupported,
   detectTextSizingSupport,
