@@ -12,6 +12,23 @@ import type { MouseEventProps } from "./mouse-event-types"
 // Layout Types
 // ============================================================================
 
+// ============================================================================
+// Selection Types
+// ============================================================================
+
+/**
+ * CSS user-select equivalent for controlling text selectability.
+ * - "auto": inherit from parent (root resolves to "text")
+ * - "none": not selectable
+ * - "text": force selectable (overrides parent "none")
+ * - "contain": selectable, but selection cannot escape this node's bounds
+ */
+export type UserSelect = "auto" | "none" | "text" | "contain"
+
+// ============================================================================
+// Layout Types
+// ============================================================================
+
 /**
  * A rectangle with position and size.
  * All values are in terminal columns/rows (integers).
@@ -217,6 +234,15 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
 
   /** CSS pointer-events equivalent. "none" makes this node and its subtree invisible to hit testing. */
   pointerEvents?: "auto" | "none"
+
+  /**
+   * CSS user-select equivalent. Controls whether text in this node is selectable.
+   * - "auto" (default): inherit from parent. Root resolves to "text".
+   * - "none": not selectable. Mouse-drag on this node does not start text selection.
+   * - "text": force selectable, even if parent is "none".
+   * - "contain": selectable, but selection range cannot escape this node's bounds.
+   */
+  userSelect?: UserSelect
 
   onLayout?: (layout: Rect) => void
 
