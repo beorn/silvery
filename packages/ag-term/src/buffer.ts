@@ -142,7 +142,35 @@ const WIDE_FLAG = 1 << 27
 const CONTINUATION_FLAG = 1 << 28
 const TRUE_COLOR_FG_FLAG = 1 << 29
 const TRUE_COLOR_BG_FLAG = 1 << 30
-// bit 31 spare
+/**
+ * Selection mask flag — bit 31 in the packed cell metadata.
+ * Set during render phase based on resolved `userSelect` prop.
+ * Read during selection to determine which cells participate.
+ *
+ * Uses `>>> 0` to avoid JS signed 32-bit integer issues.
+ */
+export const SELECTABLE_FLAG = 0x80000000 >>> 0
+
+/**
+ * Check if a cell is selectable (SELECTABLE_FLAG is set in packed metadata).
+ */
+export function isCellSelectable(packed: number): boolean {
+  return ((packed >>> 0) & SELECTABLE_FLAG) !== 0
+}
+
+/**
+ * Set the SELECTABLE_FLAG on a packed cell value.
+ */
+export function setSelectableFlag(packed: number): number {
+  return (packed | SELECTABLE_FLAG) >>> 0
+}
+
+/**
+ * Clear the SELECTABLE_FLAG on a packed cell value.
+ */
+export function clearSelectableFlag(packed: number): number {
+  return (packed & ~SELECTABLE_FLAG) >>> 0
+}
 
 /**
  * Packed attribute bits that make a space character visually meaningful.
@@ -166,6 +194,21 @@ const EMPTY_CELL: Cell = {
 
 /** Frozen empty attrs object, shared across zero-allocation reads for OOB cells */
 const EMPTY_ATTRS: CellAttrs = Object.freeze({})
+
+// ============================================================================
+// Row Metadata
+// ============================================================================
+
+/**
+ * Per-row metadata for text extraction correctness.
+ * Maintained by the render phase during text rendering.
+ */
+export interface RowMetadata {
+  /** True if this row continues on the next row (soft wrap, not hard break) */
+  softWrapped: boolean
+  /** Rightmost column with non-space content (for trailing space trimming) */
+  lastContentCol: number
+}
 
 // ============================================================================
 // Packing/Unpacking Helpers
@@ -392,6 +435,11 @@ export class TerminalBuffer {
   private _minDirtyRow: number
   /** Bounding box: last dirty row (inclusive). -1 when no rows are dirty. */
   private _maxDirtyRow: number
+  /**
+   * Per-row metadata for text extraction (soft wrap, last content column).
+   * Set by the render phase, read by extractText.
+   */
+  private _rowMetadata: RowMetadata[]
 
   readonly width: number
   readonly height: number
@@ -410,6 +458,8 @@ export class TerminalBuffer {
     this._dirtyRows = new Uint8Array(height).fill(1)
     this._minDirtyRow = 0
     this._maxDirtyRow = height - 1
+    // Row metadata: default to not soft-wrapped, no content
+    this._rowMetadata = Array.from({ length: height }, () => ({ softWrapped: false, lastContentCol: -1 }))
   }
 
   /**
@@ -539,6 +589,45 @@ export class TerminalBuffer {
   isCellContinuation(x: number, y: number): boolean {
     if (!this.inBounds(x, y)) return false
     return unpackContinuation(this.cells[this.index(x, y)]!)
+  }
+
+  /**
+   * Check if a cell is selectable (SELECTABLE_FLAG is set, no object allocation).
+   * Returns false for out-of-bounds positions.
+   */
+  isCellSelectable(x: number, y: number): boolean {
+    if (!this.inBounds(x, y)) return false
+    return ((this.cells[this.index(x, y)]! >>> 0) & SELECTABLE_FLAG) !== 0
+  }
+
+  // --------------------------------------------------------------------------
+  // Row Metadata (for text extraction)
+  // --------------------------------------------------------------------------
+
+  /**
+   * Set metadata for a row (soft wrap, last content column).
+   * Called by the render phase during text rendering.
+   */
+  setRowMeta(row: number, meta: Partial<RowMetadata>): void {
+    if (row < 0 || row >= this.height) return
+    const existing = this._rowMetadata[row]!
+    if (meta.softWrapped !== undefined) existing.softWrapped = meta.softWrapped
+    if (meta.lastContentCol !== undefined) existing.lastContentCol = meta.lastContentCol
+  }
+
+  /**
+   * Get metadata for a row. Returns default values for out-of-bounds rows.
+   */
+  getRowMeta(row: number): RowMetadata {
+    if (row < 0 || row >= this.height) return { softWrapped: false, lastContentCol: -1 }
+    return this._rowMetadata[row]!
+  }
+
+  /**
+   * Get the full row metadata array (for bulk access during text extraction).
+   */
+  getRowMetadataArray(): readonly RowMetadata[] {
+    return this._rowMetadata
   }
 
   /**
@@ -1020,6 +1109,8 @@ export class TerminalBuffer {
     copy._dirtyRows.fill(0)
     copy._minDirtyRow = -1
     copy._maxDirtyRow = -1
+    // Deep-copy row metadata
+    copy._rowMetadata = this._rowMetadata.map((m) => ({ ...m }))
     return copy
   }
 
