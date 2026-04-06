@@ -52,7 +52,5 @@ export function useCopyModeState() {
     return feature?.state
   }, [feature])
 
-  return useSyncExternalStore(subscribe, getSnapshot) as
-    | import("@silvery/headless/copy-mode").CopyModeState
-    | undefined
+  return useSyncExternalStore(subscribe, getSnapshot) as import("@silvery/headless/copy-mode").CopyModeState | undefined
 }

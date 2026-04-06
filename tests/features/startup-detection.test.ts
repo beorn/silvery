@@ -5,11 +5,7 @@
 
 import { describe, it, expect, vi } from "vitest"
 import { pipe, withTerminal, type AppWithTerminal, type ProcessLike } from "@silvery/create"
-import {
-  ENABLE_COLOR_SCHEME_REPORTING,
-  DISABLE_COLOR_SCHEME_REPORTING,
-  WidthMode,
-} from "@silvery/ag-term"
+import { ENABLE_COLOR_SCHEME_REPORTING, DISABLE_COLOR_SCHEME_REPORTING, WidthMode } from "@silvery/ag-term"
 
 // =============================================================================
 // Helpers
@@ -79,38 +75,26 @@ function createBaseApp() {
 describe("withTerminal startup detection", () => {
   it("creates colorSchemeDetector when autoDetect is enabled and stdin is TTY", () => {
     const { proc } = createMockProcess()
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc, { autoDetect: true }),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: true }))
     expect(app.colorSchemeDetector).toBeDefined()
   })
 
   it("creates widthDetector when autoDetect is enabled and stdin is TTY", () => {
     const { proc } = createMockProcess()
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc, { autoDetect: true }),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: true }))
     expect(app.widthDetector).toBeDefined()
   })
 
   it("does not create detectors when autoDetect is false", () => {
     const { proc } = createMockProcess()
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc, { autoDetect: false }),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: false }))
     expect(app.colorSchemeDetector).toBeUndefined()
     expect(app.widthDetector).toBeUndefined()
   })
 
   it("does not create detectors when stdin is not a TTY", () => {
     const { proc } = createMockProcess({ isTTY: false })
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc, { autoDetect: true }),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: true }))
     expect(app.colorSchemeDetector).toBeUndefined()
     expect(app.widthDetector).toBeUndefined()
   })
@@ -127,19 +111,13 @@ describe("withTerminal startup detection", () => {
 
   it("sends Mode 2031 enable on creation", () => {
     const { proc, written } = createMockProcess()
-    pipe(
-      createBaseApp(),
-      withTerminal(proc),
-    )
+    pipe(createBaseApp(), withTerminal(proc))
     expect(written).toContain(ENABLE_COLOR_SCHEME_REPORTING)
   })
 
   it("sends DECRQM queries for width modes", () => {
     const { proc, written } = createMockProcess()
-    pipe(
-      createBaseApp(),
-      withTerminal(proc),
-    )
+    pipe(createBaseApp(), withTerminal(proc))
     // Width detector sends queries when detect() is called, which happens immediately
     // The queries should appear in written output
     expect(written.some((s) => s.includes(`\x1b[?${WidthMode.UTF8}$p`))).toBe(true)
@@ -147,10 +125,7 @@ describe("withTerminal startup detection", () => {
 
   it("color scheme detector detects dark mode from Mode 2031 response", () => {
     const { proc, send } = createMockProcess()
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc))
 
     // Simulate terminal responding with dark mode
     send("\x1b[?2031;1n")
@@ -159,10 +134,7 @@ describe("withTerminal startup detection", () => {
 
   it("color scheme detector detects light mode from Mode 2031 response", () => {
     const { proc, send } = createMockProcess()
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc))
 
     send("\x1b[?2031;2n")
     expect(app.colorSchemeDetector!.scheme).toBe("light")
@@ -174,8 +146,8 @@ describe("withTerminal startup detection", () => {
 
     // Auto-respond to DECRQM queries with controlled responses
     const widthResponses = new Map([
-      [WidthMode.UTF8, 1],        // set
-      [WidthMode.CJK_WIDTH, 1],   // set (wide=2)
+      [WidthMode.UTF8, 1], // set
+      [WidthMode.CJK_WIDTH, 1], // set (wide=2)
       [WidthMode.EMOJI_WIDTH, 2], // reset (narrow=1)
       [WidthMode.PRIVATE_USE_WIDTH, 1], // set (wide=2)
     ])
@@ -218,10 +190,7 @@ describe("withTerminal startup detection", () => {
 
     const proc = { stdin, stdout } as ProcessLike
 
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc, { autoDetectTimeoutMs: 500 }),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetectTimeoutMs: 500 }))
 
     await app.detectionReady
 
@@ -234,10 +203,7 @@ describe("withTerminal startup detection", () => {
 
   it("detectionReady resolves even when detection times out", async () => {
     const { proc } = createMockProcess()
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc, { autoDetectTimeoutMs: 30 }),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetectTimeoutMs: 30 }))
 
     // Don't send any responses — detection should time out
     await app.detectionReady
@@ -247,10 +213,7 @@ describe("withTerminal startup detection", () => {
 
   it("detectionReady is immediately resolved when autoDetect is disabled", async () => {
     const { proc } = createMockProcess()
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc, { autoDetect: false }),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: false }))
 
     await app.detectionReady
     expect(true).toBe(true)
@@ -266,10 +229,7 @@ describe("withTerminal startup detection", () => {
       },
     }
 
-    const app = pipe(
-      baseApp,
-      withTerminal(proc),
-    )
+    const app = pipe(baseApp, withTerminal(proc))
 
     // run() should work immediately even though detection is still in-flight
     const result = app.run({ test: true })
@@ -279,10 +239,7 @@ describe("withTerminal startup detection", () => {
 
   it("uses custom timeout from autoDetectTimeoutMs option", () => {
     const { proc } = createMockProcess()
-    const app = pipe(
-      createBaseApp(),
-      withTerminal(proc, { autoDetectTimeoutMs: 50 }),
-    )
+    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetectTimeoutMs: 50 }))
 
     // Detectors should be created with the custom timeout
     expect(app.widthDetector).toBeDefined()
@@ -291,10 +248,7 @@ describe("withTerminal startup detection", () => {
 
   it("runs color scheme and width detection in parallel", () => {
     const { proc, written } = createMockProcess()
-    pipe(
-      createBaseApp(),
-      withTerminal(proc),
-    )
+    pipe(createBaseApp(), withTerminal(proc))
 
     // Both Mode 2031 enable AND the first DECRQM query should appear
     // without waiting for either to respond first

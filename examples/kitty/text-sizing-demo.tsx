@@ -83,7 +83,7 @@ function headingShowcase(): string {
   lines.push(`  ${styled("h5", GRAY, DIM)} ${atScale(0.9, styled("Minor Heading", BOLD))}`)
   lines.push(`  ${styled("h6", GRAY, DIM)} ${atScale(0.8, styled("Smallest Heading", BOLD, GRAY))}`)
   lines.push("")
-  lines.push(`  ${styled("Usage:", DIM)} ${styled('<Heading level={2}>Sub Heading</Heading>', CYAN)}`)
+  lines.push(`  ${styled("Usage:", DIM)} ${styled("<Heading level={2}>Sub Heading</Heading>", CYAN)}`)
   lines.push("")
 
   return lines.join("\n")

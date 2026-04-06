@@ -23,10 +23,14 @@ function createMockDragFeature(initialState: unknown = null) {
   let state = initialState
   const listeners = new Set<() => void>()
   return {
-    get state() { return state },
+    get state() {
+      return state
+    },
     subscribe(listener: () => void) {
       listeners.add(listener)
-      return () => { listeners.delete(listener) }
+      return () => {
+        listeners.delete(listener)
+      }
     },
     setState(newState: unknown) {
       state = newState

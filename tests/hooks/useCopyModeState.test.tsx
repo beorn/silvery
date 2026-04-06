@@ -16,22 +16,28 @@ import type { CapabilityLookup } from "@silvery/ag-react/context"
 const COPY_MODE_CAPABILITY = Symbol.for("silvery.copy-mode")
 
 /** Create a minimal mock CopyModeFeature for testing. */
-function createMockCopyModeFeature(initialState = {
-  active: false,
-  cursor: { col: 0, row: 0 },
-  visual: false,
-  visualLine: false,
-  anchor: null as { col: number; row: number } | null,
-  bufferWidth: 80,
-  bufferHeight: 24,
-}) {
+function createMockCopyModeFeature(
+  initialState = {
+    active: false,
+    cursor: { col: 0, row: 0 },
+    visual: false,
+    visualLine: false,
+    anchor: null as { col: number; row: number } | null,
+    bufferWidth: 80,
+    bufferHeight: 24,
+  },
+) {
   let state = initialState
   const listeners = new Set<() => void>()
   return {
-    get state() { return state },
+    get state() {
+      return state
+    },
     subscribe(listener: () => void) {
       listeners.add(listener)
-      return () => { listeners.delete(listener) }
+      return () => {
+        listeners.delete(listener)
+      }
     },
     setState(newState: typeof state) {
       state = newState

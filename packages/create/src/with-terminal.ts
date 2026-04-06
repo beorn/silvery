@@ -245,13 +245,17 @@ export function withTerminal<T extends RunnableApp>(
 
     if (autoDetect && proc.stdin.isTTY) {
       // I/O adapters for the detectors: write to stdout, subscribe to stdin
-      const write = (data: string) => { proc.stdout.write(data) }
+      const write = (data: string) => {
+        proc.stdout.write(data)
+      }
       const onData = (handler: (data: string) => void): (() => void) => {
         const bufferHandler = (chunk: Buffer | string) => {
           handler(typeof chunk === "string" ? chunk : chunk.toString())
         }
         proc.stdin.on("data", bufferHandler)
-        return () => { proc.stdin.removeListener("data", bufferHandler) }
+        return () => {
+          proc.stdin.removeListener("data", bufferHandler)
+        }
       }
 
       // Color scheme detector (Mode 2031)
@@ -272,16 +276,19 @@ export function withTerminal<T extends RunnableApp>(
       // Run width detection in the background — don't block rendering.
       // Both queries are in-flight in parallel (color scheme uses start(),
       // width uses detect()). Results update caps when they arrive.
-      detectionReady = widthDetector.detect().then((config: TerminalWidthConfig) => {
-        // Apply detected width config to the app's terminal caps
-        const appAny = enhanced as any
-        if (appAny.terminalOptions?.proc) {
-          // Update caps on the run options that will be passed to createApp/run
-          enhanced._detectedWidthConfig = config
-        }
-      }).catch(() => {
-        // Detection failed — use defaults, don't break the app
-      })
+      detectionReady = widthDetector
+        .detect()
+        .then((config: TerminalWidthConfig) => {
+          // Apply detected width config to the app's terminal caps
+          const appAny = enhanced as any
+          if (appAny.terminalOptions?.proc) {
+            // Update caps on the run options that will be passed to createApp/run
+            enhanced._detectedWidthConfig = config
+          }
+        })
+        .catch(() => {
+          // Detection failed — use defaults, don't break the app
+        })
     } else {
       detectionReady = Promise.resolve()
     }

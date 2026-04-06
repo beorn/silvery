@@ -16,21 +16,27 @@ import type { CapabilityLookup } from "@silvery/ag-react/context"
 const FIND_CAPABILITY = Symbol.for("silvery.find")
 
 /** Create a minimal mock FindFeature for testing. */
-function createMockFindFeature(initialState = {
-  query: null as string | null,
-  matches: [] as unknown[],
-  currentIndex: -1,
-  active: false,
-  providerResults: [] as unknown[],
-  providerSearching: false,
-}) {
+function createMockFindFeature(
+  initialState = {
+    query: null as string | null,
+    matches: [] as unknown[],
+    currentIndex: -1,
+    active: false,
+    providerResults: [] as unknown[],
+    providerSearching: false,
+  },
+) {
   let state = initialState
   const listeners = new Set<() => void>()
   return {
-    get state() { return state },
+    get state() {
+      return state
+    },
     subscribe(listener: () => void) {
       listeners.add(listener)
-      return () => { listeners.delete(listener) }
+      return () => {
+        listeners.delete(listener)
+      }
     },
     setState(newState: typeof state) {
       state = newState
