@@ -1,11 +1,5 @@
 <style>
   .diagram-06-clear-reprint {
-    font-family:
-      "Inter",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -41,7 +35,7 @@
   }
 
   .diagram-06-clear-reprint .terminal-frame {
-    border-radius: 12px;
+    border-radius: var(--d-radius-xl);
     overflow: hidden;
     box-shadow:
       0 2px 8px rgba(0, 0, 0, 0.12),
@@ -51,12 +45,12 @@
   }
 
   .diagram-06-clear-reprint .window-chrome {
-    background: linear-gradient(to bottom, #3c3c48, #2e2e3a);
+    background: var(--d-terminal-chrome);
     padding: 6px 10px;
     display: flex;
     align-items: center;
     gap: 6px;
-    border-bottom: 1px solid rgba(60, 60, 70, 0.5);
+    border-bottom: 1px solid var(--d-terminal-chrome-border);
   }
   .diagram-06-clear-reprint .dot {
     width: 8px;
@@ -64,29 +58,29 @@
     border-radius: 50%;
   }
   .diagram-06-clear-reprint .dot.close {
-    background: #ff5f57;
-    border: 1px solid #e0443e;
+    background: var(--d-dot-close);
+    border: 1px solid var(--d-dot-close-border);
   }
   .diagram-06-clear-reprint .dot.minimize {
-    background: #febc2e;
-    border: 1px solid #dea123;
+    background: var(--d-dot-min);
+    border: 1px solid var(--d-dot-min-border);
   }
   .diagram-06-clear-reprint .dot.maximize {
-    background: #28c840;
-    border: 1px solid #1aab29;
+    background: var(--d-dot-max);
+    border: 1px solid var(--d-dot-max-border);
   }
   .diagram-06-clear-reprint .window-title {
     flex: 1;
     text-align: center;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.55);
-    font-weight: 600;
+    font-size: var(--d-fs-md);
+    color: var(--d-terminal-title);
+    font-weight: var(--d-fw-medium);
     margin-right: 52px;
     letter-spacing: 0.02em;
   }
 
   .diagram-06-clear-reprint .terminal-body {
-    background: #191922;
+    background: var(--d-terminal-bg);
     padding: 0;
   }
 
@@ -114,39 +108,41 @@
   }
 
   .diagram-06-clear-reprint .term-text {
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
-    font-size: 11px;
+    font-family: var(--d-font-mono);
+    font-size: var(--d-fs-base);
     line-height: 1.5;
-    color: #d4d8e0;
+    color: var(--d-terminal-text);
     white-space: pre;
+    margin: 0;
+    padding: 0;
   }
   .diagram-06-clear-reprint .prompt {
-    color: #85d6a0;
+    color: var(--d-term-prompt);
   }
   .diagram-06-clear-reprint .success {
-    color: #a5d6a7;
+    color: var(--d-term-success);
   }
   .diagram-06-clear-reprint .comment {
-    color: #6b7585;
+    color: var(--d-term-comment);
   }
   .diagram-06-clear-reprint .dimmed {
-    color: #555d6e;
+    color: var(--d-term-dimmed);
   }
   .diagram-06-clear-reprint .bullet {
-    color: #6ccad4;
+    color: var(--d-term-bullet);
   }
   .diagram-06-clear-reprint .func {
-    color: #79c0ff;
+    color: var(--d-term-func);
   }
   .diagram-06-clear-reprint .string {
-    color: #f0d080;
+    color: var(--d-term-string);
   }
   .diagram-06-clear-reprint .keyword {
-    color: #d2a0f0;
+    color: var(--d-term-keyword);
   }
   .diagram-06-clear-reprint .cursor-block {
     display: inline-block;
-    color: #3cda5c;
+    color: var(--d-term-cursor);
     animation: diagram-06-blink-green 1s step-end infinite;
     font-size: 15px;
     line-height: 1;
@@ -188,7 +184,7 @@
   }
 
   .diagram-06-clear-reprint .annotation-card {
-    background: white;
+    background: var(--d-annotation-bg);
     border-radius: 10px;
     padding: 8px 10px 10px;
     flex: 1;
@@ -205,8 +201,8 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: var(--d-fs-base);
+    font-weight: var(--d-fw-bold);
     background: rgba(86, 180, 233, 0.15);
     color: #1e5f8a;
     margin-right: 6px;
@@ -214,9 +210,9 @@
   }
 
   .diagram-06-clear-reprint .step-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: #1e293b;
+    font-size: var(--d-fs-base);
+    font-weight: var(--d-fw-bold);
+    color: var(--d-annotation-title);
     display: flex;
     align-items: center;
     margin-bottom: 4px;
@@ -224,9 +220,9 @@
   }
 
   .diagram-06-clear-reprint .step-desc {
-    font-size: 10px;
-    color: #475569;
-    font-weight: 500;
+    font-size: var(--d-fs-sm);
+    color: var(--d-annotation-body);
+    font-weight: var(--d-fw-regular);
     line-height: 1.6;
   }
 
@@ -237,8 +233,8 @@
     background: rgba(86, 180, 233, 0.08);
     border: 1.5px solid rgba(86, 180, 233, 0.2);
     border-radius: 10px;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--d-fs-md);
+    font-weight: var(--d-fw-medium);
     color: #1e5f8a;
     text-align: center;
     line-height: 1.5;
@@ -253,9 +249,9 @@
     padding: 4px 10px;
     background: rgba(86, 180, 233, 0.08);
     border: 1.5px solid rgba(86, 180, 233, 0.2);
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
+    border-radius: var(--d-radius-md);
+    font-size: var(--d-fs-base);
+    font-weight: var(--d-fw-medium);
     color: #1e5f8a;
   }
   .diagram-06-clear-reprint .trigger-icon {
@@ -264,7 +260,7 @@
 
   /* New token highlight */
   .diagram-06-clear-reprint .new-token {
-    color: #f0d080;
+    color: var(--d-term-string);
     background: rgba(240, 208, 128, 0.15);
     padding: 0 2px;
     border-radius: 2px;
@@ -276,40 +272,6 @@
   }
   .diagram-06-clear-reprint .step-card-emphasis .step-title {
     color: #92400e;
-  }
-
-  /* === DARK MODE === */
-  @media (prefers-color-scheme: dark) {
-    .diagram-06-clear-reprint .annotation-card {
-      background: #2a2a3a;
-      border-color: rgba(86, 180, 233, 0.35);
-    }
-    .diagram-06-clear-reprint .step-title {
-      color: #e2e8f0;
-    }
-    .diagram-06-clear-reprint .step-desc {
-      color: #94a3b8;
-    }
-    .diagram-06-clear-reprint .step-num {
-      background: rgba(86, 180, 233, 0.2);
-      color: #93c5fd;
-    }
-    .diagram-06-clear-reprint .caption {
-      background: rgba(86, 180, 233, 0.1);
-      border-color: rgba(86, 180, 233, 0.25);
-      color: #93c5fd;
-    }
-    .diagram-06-clear-reprint .trigger-badge {
-      background: rgba(86, 180, 233, 0.1);
-      border-color: rgba(86, 180, 233, 0.25);
-      color: #93c5fd;
-    }
-    .diagram-06-clear-reprint .step-card-emphasis .annotation-card {
-      border-color: rgba(230, 159, 0, 0.4);
-    }
-    .diagram-06-clear-reprint .step-card-emphasis .step-title {
-      color: #e69f00;
-    }
   }
 </style>
 
@@ -330,19 +292,19 @@
             <!-- Wasted redraws zone -->
             <div class="wasted-zone">
               <div class="exchange-row done">
-                <div class="term-text">
-                  <span class="bullet">&gt;</span> <span class="comment">List files in src/</span>
-                  <span class="success">&#10003;</span>
-                </div>
+                <pre
+                  class="term-text"
+                ><span class="bullet">&gt;</span> <span class="comment">List files in src/</span> <span class="success">&#10003;</span></pre>
               </div>
               <div class="exchange-row ellipsis">
-                <div class="term-text"><span class="dimmed">... 48 more exchanges ...</span></div>
+                <pre
+                  class="term-text"
+                ><span class="dimmed">... 48 more exchanges ...</span></pre>
               </div>
               <div class="exchange-row done">
-                <div class="term-text">
-                  <span class="bullet">&gt;</span> <span class="comment">Fix the CORS headers</span>
-                  <span class="success">&#10003;</span>
-                </div>
+                <pre
+                  class="term-text"
+                ><span class="bullet">&gt;</span> <span class="comment">Fix the CORS headers</span> <span class="success">&#10003;</span></pre>
               </div>
               <div class="waste-bracket"></div>
             </div>
@@ -350,18 +312,22 @@
             <!-- Active streaming exchange -->
             <div
               class="exchange-row streaming"
-              style="padding: 3px 8px; border-top: 1px solid rgba(86, 180, 233, 0.15)"
+              style="
+                padding: 3px 8px;
+                border-top: 1px solid rgba(86, 180, 233, 0.15);
+              "
             >
-              <div class="term-text">
-                <span class="bullet">&gt;</span> Refactor the auth module <span class="bullet">&#9679;</span>
-                <span class="keyword">streaming...</span> <span class="dimmed">export function</span>
-                <span class="new-token">validate</span><span class="cursor-block">&#9612;</span>
-              </div>
+              <pre
+                class="term-text"
+              ><span class="bullet">&gt;</span> Refactor the auth module <span class="bullet">&#9679;</span> <span class="keyword">streaming...</span> <span class="dimmed">export function</span> <span class="new-token">validate</span><span class="cursor-block">&#9612;</span></pre>
             </div>
           </div>
         </div>
 
-        <div class="caption">One new token &rarr; entire screen erased and redrawn. That's the flicker.</div>
+        <div class="caption">
+          One new token &rarr; entire screen erased and redrawn. That's the
+          flicker.
+        </div>
       </div>
 
       <!-- Right: step annotations -->
@@ -373,27 +339,36 @@
 
         <div class="step-card">
           <div class="annotation-card">
-            <div class="step-title"><span class="step-num">1</span> Clear entire region</div>
+            <div class="step-title">
+              <span class="step-num">1</span> Clear entire region
+            </div>
             <div class="step-desc">
-              Erase everything from the first exchange to the cursor. The terminal goes blank momentarily.
+              Erase everything from the first exchange to the cursor. The
+              terminal goes blank momentarily.
             </div>
           </div>
         </div>
 
         <div class="step-card">
           <div class="annotation-card">
-            <div class="step-title"><span class="step-num">2</span> Redraw 49 unchanged exchanges</div>
+            <div class="step-title">
+              <span class="step-num">2</span> Redraw 49 unchanged exchanges
+            </div>
             <div class="step-desc">
-              Every completed exchange is re-serialized and re-written to the terminal. None of them changed.
+              Every completed exchange is re-serialized and re-written to the
+              terminal. None of them changed.
             </div>
           </div>
         </div>
 
         <div class="step-card">
           <div class="annotation-card">
-            <div class="step-title"><span class="step-num">3</span> Redraw Exchange 50 + new token</div>
+            <div class="step-title">
+              <span class="step-num">3</span> Redraw Exchange 50 + new token
+            </div>
             <div class="step-desc">
-              Finally, the one exchange that actually changed gets redrawn with the new token appended.
+              Finally, the one exchange that actually changed gets redrawn with
+              the new token appended.
             </div>
           </div>
         </div>
@@ -402,8 +377,8 @@
           <div class="annotation-card">
             <div class="step-title">Repeat for every token</div>
             <div class="step-desc">
-              At 50 tokens/sec, this cycle runs 50 times per second. Each time, 99% of the bytes written are unchanged
-              content.
+              At 50 tokens/sec, this cycle runs 50 times per second. Each time,
+              99% of the bytes written are unchanged content.
             </div>
           </div>
         </div>

@@ -1,11 +1,5 @@
 <style>
   .diagram-07-dirty-tracking {
-    font-family:
-      "Inter",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -47,15 +41,15 @@
     gap: 8px;
   }
   .diagram-07-dirty-tracking .panel-title {
-    font-size: 14px;
-    font-weight: 700;
+    font-size: var(--d-fs-lg);
+    font-weight: var(--d-fw-bold);
     letter-spacing: -0.01em;
   }
   .diagram-07-dirty-tracking .panel-badge {
-    font-size: 9px;
-    font-weight: 700;
+    font-size: var(--d-fs-xs);
+    font-weight: var(--d-fw-bold);
     padding: 2px 7px;
-    border-radius: 4px;
+    border-radius: var(--d-radius-sm);
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
@@ -91,11 +85,16 @@
   .diagram-07-dirty-tracking .vs-line-v {
     flex: 1;
     width: 1px;
-    background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.1), transparent);
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(0, 0, 0, 0.1),
+      transparent
+    );
   }
   .diagram-07-dirty-tracking .vs-text {
-    font-size: 10px;
-    font-weight: 700;
+    font-size: var(--d-fs-sm);
+    font-weight: var(--d-fw-bold);
     color: rgba(100, 116, 160, 0.6);
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -104,7 +103,7 @@
 
   /* === SCREEN GRID === */
   .diagram-07-dirty-tracking .screen-grid {
-    background: #191922;
+    background: var(--d-terminal-bg);
     border-radius: 10px;
     padding: 16px;
     display: flex;
@@ -125,9 +124,9 @@
     width: 22px;
     height: 20px;
     border-radius: 3px;
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-family: var(--d-font-mono);
     font-size: 8px;
-    font-weight: 600;
+    font-weight: var(--d-fw-medium);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -166,9 +165,9 @@
 
   /* Grid labels */
   .diagram-07-dirty-tracking .grid-label {
-    font-family: "Inter", sans-serif;
-    font-size: 9px;
-    font-weight: 600;
+    font-family: var(--d-font-ui);
+    font-size: var(--d-fs-xs);
+    font-weight: var(--d-fw-medium);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 8px;
@@ -193,8 +192,8 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 10px;
-    font-weight: 500;
+    font-size: var(--d-fs-sm);
+    font-weight: var(--d-fw-regular);
     color: #64748b;
   }
   .diagram-07-dirty-tracking .legend-swatch {
@@ -207,9 +206,9 @@
   .diagram-07-dirty-tracking .result-summary {
     text-align: center;
     padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
+    border-radius: var(--d-radius-lg);
+    font-size: var(--d-fs-md);
+    font-weight: var(--d-fw-medium);
     line-height: 1.5;
   }
   .diagram-07-dirty-tracking .result-warning {
@@ -227,46 +226,6 @@
     font-weight: 800;
     display: block;
     margin-bottom: 2px;
-  }
-
-  /* === DARK MODE === */
-  @media (prefers-color-scheme: dark) {
-    .diagram-07-dirty-tracking .side-warning .panel-title {
-      color: #e69f00;
-    }
-    .diagram-07-dirty-tracking .side-warning .panel-badge {
-      background: rgba(230, 159, 0, 0.15);
-      color: #e69f00;
-    }
-    .diagram-07-dirty-tracking .side-success .panel-title {
-      color: #4ade80;
-    }
-    .diagram-07-dirty-tracking .side-success .panel-badge {
-      background: rgba(0, 158, 115, 0.15);
-      color: #4ade80;
-    }
-
-    .diagram-07-dirty-tracking .vs-line-v {
-      background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.08), transparent);
-    }
-    .diagram-07-dirty-tracking .vs-text {
-      color: #64748b;
-    }
-
-    .diagram-07-dirty-tracking .legend-item {
-      color: #94a3b8;
-    }
-
-    .diagram-07-dirty-tracking .result-warning {
-      background: rgba(230, 159, 0, 0.1);
-      border-color: rgba(230, 159, 0, 0.25);
-      color: #fbbf24;
-    }
-    .diagram-07-dirty-tracking .result-success {
-      background: rgba(0, 158, 115, 0.1);
-      border-color: rgba(0, 158, 115, 0.25);
-      color: #86efac;
-    }
   }
 </style>
 
@@ -354,7 +313,10 @@
           <div class="legend-item">
             <div
               class="legend-swatch"
-              style="background: rgba(230, 159, 0, 0.2); border: 1px solid rgba(230, 159, 0, 0.35)"
+              style="
+                background: rgba(230, 159, 0, 0.2);
+                border: 1px solid rgba(230, 159, 0, 0.35);
+              "
             ></div>
             compared
           </div>
@@ -454,14 +416,20 @@
           <div class="legend-item">
             <div
               class="legend-swatch"
-              style="background: rgba(0, 158, 115, 0.25); border: 1px solid rgba(0, 158, 115, 0.45)"
+              style="
+                background: rgba(0, 158, 115, 0.25);
+                border: 1px solid rgba(0, 158, 115, 0.45);
+              "
             ></div>
             dirty (re-render)
           </div>
           <div class="legend-item">
             <div
               class="legend-swatch"
-              style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08)"
+              style="
+                background: rgba(255, 255, 255, 0.02);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+              "
             ></div>
             clean (skip)
           </div>

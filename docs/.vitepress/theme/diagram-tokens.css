@@ -20,13 +20,13 @@
   --d-font-mono: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
 
   /* Font sizes (use these — don't hardcode px) */
-  --d-fs-xs: 9px;     /* tags, badges, micro labels */
-  --d-fs-sm: 10px;    /* stage labels, annotation details */
-  --d-fs-base: 11px;  /* default body text, phase headings */
-  --d-fs-md: 12px;    /* emphasized body, window titles */
-  --d-fs-lg: 14px;    /* section headings, panel titles */
-  --d-fs-xl: 18px;    /* big stats, emphasis numbers */
-  --d-fs-2xl: 24px;   /* huge emphasis (rare) */
+  --d-fs-xs: 9px; /* tags, badges, micro labels */
+  --d-fs-sm: 10px; /* stage labels, annotation details */
+  --d-fs-base: 11px; /* default body text, phase headings */
+  --d-fs-md: 12px; /* emphasized body, window titles */
+  --d-fs-lg: 14px; /* section headings, panel titles */
+  --d-fs-xl: 18px; /* big stats, emphasis numbers */
+  --d-fs-2xl: 24px; /* huge emphasis (rare) */
 
   /* Font weights */
   --d-fw-regular: 500;
@@ -34,8 +34,8 @@
   --d-fw-bold: 700;
 
   /* Line heights */
-  --d-lh-tight: 1.2;   /* labels, headings */
-  --d-lh-normal: 1.5;  /* body text */
+  --d-lh-tight: 1.2; /* labels, headings */
+  --d-lh-normal: 1.5; /* body text */
   --d-lh-relaxed: 1.85; /* terminal content with breathing room */
 
   /* Letter spacing */
@@ -91,8 +91,8 @@
    * ═══════════════════════════════════════════ */
 
   --d-terminal-bg: #191922;
-  --d-terminal-bg-alt: #1e1e2a;    /* recent scrollback — slightly lighter */
-  --d-terminal-bg-faded: #252535;  /* older scrollback — lighter still */
+  --d-terminal-bg-alt: #1e1e2a; /* recent scrollback — slightly lighter */
+  --d-terminal-bg-faded: #252535; /* older scrollback — lighter still */
   --d-terminal-text: #d4d8e0;
   --d-terminal-chrome: linear-gradient(to bottom, #3c3c48, #2e2e3a);
   --d-terminal-chrome-border: rgba(60, 60, 70, 0.5);
@@ -123,15 +123,15 @@
    * ═══════════════════════════════════════════ */
 
   /* Semantic zones — use these for architectural diagrams */
-  --d-zone-primary: #56b4e9;   /* sky blue — active/focus/live */
-  --d-zone-success: #009e73;   /* bluish green — app-managed */
-  --d-zone-warning: #e69f00;   /* orange */
-  --d-zone-danger: #d55e00;    /* vermillion */
+  --d-zone-primary: #56b4e9; /* sky blue — active/focus/live */
+  --d-zone-success: #009e73; /* bluish green — app-managed */
+  --d-zone-warning: #e69f00; /* orange */
+  --d-zone-danger: #d55e00; /* vermillion */
 
   /* Strong variants (for scrollback zones) */
-  --d-zone-red: #dc3c3c;       /* terminal-owned scrollback */
-  --d-zone-green: #22c55e;     /* app-managed scrollback */
-  --d-zone-blue: #3b82f6;      /* live screen */
+  --d-zone-red: #dc3c3c; /* terminal-owned scrollback */
+  --d-zone-green: #22c55e; /* app-managed scrollback */
+  --d-zone-blue: #3b82f6; /* live screen */
 
   /* ═══════════════════════════════════════════
    * ANNOTATION CARDS

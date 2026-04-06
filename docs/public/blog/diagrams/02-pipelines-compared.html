@@ -1,10 +1,5 @@
 <style>
   .diagram-02-pipelines-compared {
-    font-family:
-      "Inter",
-      -apple-system,
-      BlinkMacSystemFont,
-      sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -25,7 +20,7 @@
   /* Explanation text */
   .diagram-02-pipelines-compared .explain {
     font-size: 13px;
-    font-weight: 500;
+    font-weight: var(--d-fw-regular);
     line-height: 1.55;
     margin-bottom: 12px;
     margin-left: 76px;
@@ -50,8 +45,8 @@
   .diagram-02-pipelines-compared .row-label {
     width: 70px;
     flex-shrink: 0;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: var(--d-fs-lg);
+    font-weight: var(--d-fw-bold);
   }
   .diagram-02-pipelines-compared .row-label-typical {
     color: #92400e;
@@ -77,9 +72,9 @@
   .diagram-02-pipelines-compared .stage {
     flex: 1;
     padding: 10px 6px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
+    border-radius: var(--d-radius-lg);
+    font-size: var(--d-fs-md);
+    font-weight: var(--d-fw-medium);
     text-align: center;
     line-height: 1.4;
     min-height: 52px;
@@ -89,8 +84,8 @@
     justify-content: center;
   }
   .diagram-02-pipelines-compared .stage-sub {
-    font-size: 10px;
-    font-weight: 500;
+    font-size: var(--d-fs-sm);
+    font-weight: var(--d-fw-regular);
     opacity: 0.7;
     margin-top: 2px;
   }
@@ -107,7 +102,7 @@
 
   .diagram-02-pipelines-compared .arrow-icon {
     color: #94a3b8;
-    font-size: 12px;
+    font-size: var(--d-fs-md);
     flex-shrink: 0;
   }
 
@@ -121,8 +116,8 @@
     align-self: stretch;
   }
   .diagram-02-pipelines-compared .gap-label {
-    font-size: 11px;
-    font-weight: 700;
+    font-size: var(--d-fs-base);
+    font-weight: var(--d-fw-bold);
     color: #d55e00;
     writing-mode: vertical-rl;
     text-orientation: mixed;
@@ -165,8 +160,8 @@
     border-radius: 0 0 3px 3px;
   }
   .diagram-02-pipelines-compared .bracket-text {
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--d-fs-base);
+    font-weight: var(--d-fw-medium);
     color: #1e5f8a;
     margin-top: 3px;
   }
@@ -174,48 +169,6 @@
   /* Spacer */
   .diagram-02-pipelines-compared .row-spacer {
     height: 24px;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    .diagram-02-pipelines-compared .row-label-typical {
-      color: #fbbf24;
-    }
-    .diagram-02-pipelines-compared .row-label-silvery {
-      color: #93c5fd;
-    }
-    .diagram-02-pipelines-compared .stage-typical {
-      background: rgba(230, 159, 0, 0.12);
-      border-color: rgba(230, 159, 0, 0.35);
-      color: #fbbf24;
-    }
-    .diagram-02-pipelines-compared .stage-silvery {
-      background: rgba(86, 180, 233, 0.12);
-      border-color: rgba(86, 180, 233, 0.35);
-      color: #93c5fd;
-    }
-    .diagram-02-pipelines-compared .gap-badge {
-      color: #fb923c;
-      background: #1a1a2e;
-      border-color: rgba(213, 94, 0, 0.5);
-    }
-    .diagram-02-pipelines-compared .bracket-end {
-      background: rgba(86, 180, 233, 0.6);
-    }
-    .diagram-02-pipelines-compared .bracket-mid {
-      border-color: rgba(86, 180, 233, 0.6);
-    }
-    .diagram-02-pipelines-compared .bracket-text {
-      color: #93c5fd;
-    }
-    .diagram-02-pipelines-compared .explain-warning {
-      color: #fbbf24;
-    }
-    .diagram-02-pipelines-compared .explain-success {
-      color: #93c5fd;
-    }
-    .diagram-02-pipelines-compared .gap-badge {
-      background: rgba(213, 94, 0, 0.15);
-    }
   }
 </style>
 
@@ -225,8 +178,9 @@
     <div class="explain explain-warning">
       <span class="explain-icon">⚠</span>
       In Ink / Claude Code's pipeline, there's an
-      <span style="color: #d55e00; font-weight: 700">async gap</span> between reconciliation and layout. If React
-      updates mid-layout, the renderer sees stale geometry — ghost cells, overlapping text, blank regions.
+      <span style="color: #d55e00; font-weight: 700">async gap</span> between
+      reconciliation and layout. If React updates mid-layout, the renderer sees
+      stale geometry — ghost cells, overlapping text, blank regions.
     </div>
 
     <!-- Typical pipeline -->
@@ -305,8 +259,8 @@
     <!-- Silvery explanation -->
     <div class="explain explain-success">
       <span class="explain-icon">✓</span>
-      Every stage sees exactly the same state. No async gaps means no timing bugs — tree, layout, and rendered cells are
-      always consistent.
+      Every stage sees exactly the same state. No async gaps means no timing
+      bugs — tree, layout, and rendered cells are always consistent.
     </div>
   </div>
 </div>

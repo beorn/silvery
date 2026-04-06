@@ -1,11 +1,5 @@
 <style>
   .diagram-05-termless {
-    font-family:
-      "Inter",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,8 +31,8 @@
 
   /* === PHASE HEADINGS === */
   .diagram-05-termless .phase-heading {
-    font-size: 10px;
-    font-weight: 700;
+    font-size: var(--d-fs-sm);
+    font-weight: var(--d-fw-bold);
     color: #334155;
     text-align: center;
     margin-bottom: 4px;
@@ -54,9 +48,9 @@
   }
   .diagram-05-termless .stage-box {
     padding: 8px 10px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 600;
+    border-radius: var(--d-radius-lg);
+    font-size: var(--d-fs-base);
+    font-weight: var(--d-fw-medium);
     text-align: center;
     white-space: nowrap;
     position: relative;
@@ -70,24 +64,25 @@
   }
 
   .diagram-05-termless .stage-ansi .stage-box {
-    background: #191922;
+    background: var(--d-terminal-bg);
     border: 2px solid rgba(255, 255, 255, 0.12);
-    color: #d4d8e0;
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
-    font-size: 10px;
+    color: var(--d-terminal-text);
+    font-family: var(--d-font-mono);
+    font-size: var(--d-fs-sm);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
   .diagram-05-termless .ansi-preview {
-    background: #191922;
+    background: var(--d-terminal-bg);
     border: 2px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
+    border-radius: var(--d-radius-lg);
     padding: 5px 6px;
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
-    font-size: 9px;
+    font-family: var(--d-font-mono);
+    font-size: var(--d-fs-xs);
     line-height: 1.4;
     white-space: pre;
-    color: #d4d8e0;
+    color: var(--d-terminal-text);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    margin: 0;
   }
 
   /* === ARROWS === */
@@ -138,12 +133,12 @@
   .diagram-05-termless .backend-chip {
     padding: 2px 5px;
     border-radius: 5px;
-    font-size: 9px;
-    font-weight: 600;
+    font-size: var(--d-fs-xs);
+    font-weight: var(--d-fw-medium);
     white-space: nowrap;
     min-width: 60px;
     text-align: center;
-    background: white;
+    background: var(--d-annotation-bg);
     border: 1.5px solid rgba(0, 0, 0, 0.08);
     color: #334155;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -161,7 +156,7 @@
   .diagram-05-termless .buffer-terminal {
     display: flex;
     flex-direction: column;
-    border-radius: 8px;
+    border-radius: var(--d-radius-lg);
     overflow: hidden;
     box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.12),
@@ -169,12 +164,12 @@
       0 0 0 1px rgba(0, 0, 0, 0.06);
   }
   .diagram-05-termless .buffer-chrome {
-    background: linear-gradient(to bottom, #3c3c48, #2e2e3a);
+    background: var(--d-terminal-chrome);
     padding: 6px 10px;
     display: flex;
     align-items: center;
     gap: 5px;
-    border-bottom: 1px solid rgba(60, 60, 70, 0.5);
+    border-bottom: 1px solid var(--d-terminal-chrome-border);
   }
   .diagram-05-termless .buffer-dot {
     width: 8px;
@@ -182,39 +177,40 @@
     border-radius: 50%;
   }
   .diagram-05-termless .buffer-dot.close {
-    background: #ff5f57;
-    border: 1px solid #e0443e;
+    background: var(--d-dot-close);
+    border: 1px solid var(--d-dot-close-border);
   }
   .diagram-05-termless .buffer-dot.minimize {
-    background: #febc2e;
-    border: 1px solid #dea123;
+    background: var(--d-dot-min);
+    border: 1px solid var(--d-dot-min-border);
   }
   .diagram-05-termless .buffer-dot.maximize {
-    background: #28c840;
-    border: 1px solid #1aab29;
+    background: var(--d-dot-max);
+    border: 1px solid var(--d-dot-max-border);
   }
   .diagram-05-termless .buffer-body {
-    background: #191922;
+    background: var(--d-terminal-bg);
     padding: 4px 6px;
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
-    font-size: 9px;
+    font-family: var(--d-font-mono);
+    font-size: var(--d-fs-xs);
     line-height: 1.3;
     color: #94a3b8;
     white-space: pre;
     width: 70px;
+    margin: 0;
   }
   .diagram-05-termless .buffer-body .cell-match {
     color: #009e73;
   }
   .diagram-05-termless .buffer-scrollback {
-    background: #252535;
-    border-radius: 6px 6px 0 0;
+    background: var(--d-terminal-bg-faded);
+    border-radius: var(--d-radius-md) var(--d-radius-md) 0 0;
     padding: 3px 6px;
     margin: 0 4px;
-    font-family: "SF Mono", monospace;
+    font-family: var(--d-font-mono);
     font-size: 7px;
     line-height: 1.4;
-    color: #6b7585;
+    color: var(--d-term-comment);
     white-space: pre;
     width: 70px;
     opacity: 0.8;
@@ -227,27 +223,28 @@
     gap: 4px;
   }
   .diagram-05-termless .assert-code {
-    background: #191922;
-    border-radius: 6px;
+    background: var(--d-terminal-bg);
+    border-radius: var(--d-radius-md);
     padding: 5px 7px;
     border: 1.5px solid rgba(0, 158, 115, 0.25);
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
-    font-size: 9px;
+    font-family: var(--d-font-mono);
+    font-size: var(--d-fs-xs);
     line-height: 1.6;
-    color: #d4d8e0;
+    color: var(--d-terminal-text);
     white-space: pre;
+    margin: 0;
   }
   .diagram-05-termless .assert-fn {
-    color: #79c0ff;
+    color: var(--d-term-func);
   }
   .diagram-05-termless .assert-str {
-    color: #a5d6a7;
+    color: var(--d-term-success);
   }
   .diagram-05-termless .assert-result {
-    font-size: 9px;
-    font-weight: 700;
+    font-size: var(--d-fs-xs);
+    font-weight: var(--d-fw-bold);
     padding: 1px 6px;
-    border-radius: 4px;
+    border-radius: var(--d-radius-sm);
   }
   .diagram-05-termless .result-pass {
     background: rgba(0, 158, 115, 0.15);
@@ -256,48 +253,6 @@
   .diagram-05-termless .result-fail {
     background: rgba(213, 94, 0, 0.15);
     color: #d55e00;
-  }
-
-  /* === DARK MODE === */
-  @media (prefers-color-scheme: dark) {
-    .diagram-05-termless .stage-app .stage-box {
-      background: rgba(86, 180, 233, 0.12);
-      border-color: rgba(86, 180, 233, 0.4);
-      color: #93c5fd;
-    }
-    .diagram-05-termless .backend-chip {
-      background: #2a2a3a;
-      border-color: rgba(255, 255, 255, 0.1);
-      color: #e2e8f0;
-    }
-    .diagram-05-termless .backend-chip.highlight {
-      background: rgba(86, 180, 233, 0.12);
-      border-color: rgba(86, 180, 233, 0.4);
-      color: #93c5fd;
-    }
-
-    .diagram-05-termless .backend-line {
-      background: #4a5568;
-    }
-    .diagram-05-termless .arrow-gray svg {
-      color: #4a5568;
-    }
-
-    .diagram-05-termless .buffer-body {
-      border-color: rgba(0, 158, 115, 0.35);
-    }
-    .diagram-05-termless .assert-code {
-      border-color: rgba(0, 158, 115, 0.35);
-    }
-
-    .diagram-05-termless .result-pass {
-      background: rgba(0, 158, 115, 0.2);
-      color: #86efac;
-    }
-    .diagram-05-termless .result-fail {
-      background: rgba(213, 94, 0, 0.2);
-      color: #fca5a5;
-    }
   }
 </style>
 
@@ -326,13 +281,10 @@
       <!-- ANSI Output -->
       <div class="stage stage-ansi">
         <div class="phase-heading">Output</div>
-        <div class="ansi-preview">
-          <span style="color: #6b7585">\e[32m</span><span style="color: #85d6a0">Header</span
-          ><span style="color: #6b7585">\e[0m</span> <span style="color: #6b7585">\e[36m</span
-          ><span style="color: #6ccad4">Sidebar</span><span style="color: #6b7585">\e[0m</span>
-          <span style="color: #6b7585">\e[37m</span><span style="color: #eff0f3">Footer</span
-          ><span style="color: #6b7585">\e[0m</span>
-        </div>
+        <pre
+          class="ansi-preview"
+        ><span style="color: #6b7585">\e[32m</span><span style="color: #85d6a0">Header</span><span style="color: #6b7585">\e[0m</span> <span style="color: #6b7585">\e[36m</span><span style="color: #6ccad4">Sidebar</span><span style="color: #6b7585">\e[0m</span>
+<span style="color: #6b7585">\e[37m</span><span style="color: #eff0f3">Footer</span><span style="color: #6b7585">\e[0m</span></pre>
       </div>
 
       <div class="arrow arrow-gray">
@@ -370,7 +322,12 @@
             </div>
             <div class="backend-row">
               <div class="backend-line" style="opacity: 0.4"></div>
-              <div class="backend-chip" style="opacity: 0.5; border-style: dashed">...</div>
+              <div
+                class="backend-chip"
+                style="opacity: 0.5; border-style: dashed"
+              >
+                ...
+              </div>
               <div class="backend-line" style="opacity: 0.4"></div>
             </div>
           </div>
@@ -391,23 +348,28 @@
       </div>
 
       <!-- Screen Buffer as terminal mockup with scrollback -->
-      <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 1">
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex-shrink: 1;
+        "
+      >
         <div class="phase-heading">Screen</div>
-        <div class="buffer-scrollback">
-          <span style="color: #6b7585">Done: task 1</span> <span style="color: #6b7585">Done: task 2</span>
-        </div>
+        <pre
+          class="buffer-scrollback"
+        ><span style="color: #6b7585">Done: task 1</span> <span style="color: #6b7585">Done: task 2</span></pre>
         <div class="buffer-terminal">
           <div class="buffer-chrome">
             <div class="buffer-dot close"></div>
             <div class="buffer-dot minimize"></div>
             <div class="buffer-dot maximize"></div>
           </div>
-          <div class="buffer-body">
-            <span class="cell-match">Header</span>
-            <span class="cell-match">Sidebar</span>
-            Card item
-            <span class="cell-match">Footer</span>
-          </div>
+          <pre class="buffer-body"><span class="cell-match">Header</span>
+<span class="cell-match">Sidebar</span>
+Card item
+<span class="cell-match">Footer</span></pre>
         </div>
       </div>
 
@@ -427,11 +389,9 @@
       <!-- Assertions -->
       <div class="assert-detail">
         <div class="phase-heading">Tests</div>
-        <div class="assert-code">
-          <span class="assert-fn">expect</span>(screen) .<span class="assert-fn">toBe</span>(<span class="assert-str"
-            >"Hdr"</span
-          >)
-        </div>
+        <pre
+          class="assert-code"
+        ><span class="assert-fn">expect</span>(screen) .<span class="assert-fn">toBe</span>(<span class="assert-str">"Hdr"</span>)</pre>
         <div style="display: flex; gap: 5px">
           <span class="assert-result result-pass">&#10003; pass</span>
           <span class="assert-result result-fail">&#10007; fail</span>

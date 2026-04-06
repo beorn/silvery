@@ -1,11 +1,5 @@
 <style>
   .diagram-04-zones {
-    font-family:
-      "Inter",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -74,8 +68,8 @@
     border-bottom: 7px solid #6474a0;
   }
   .diagram-04-zones .arrow-text {
-    font-size: 9px;
-    font-weight: 700;
+    font-size: var(--d-fs-xs);
+    font-weight: var(--d-fw-bold);
     color: #5a6a90;
     white-space: nowrap;
     writing-mode: vertical-rl;
@@ -106,7 +100,7 @@
     background: #2a2a3a;
     border: 3px solid rgba(220, 60, 60, 0.5);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px 8px 0 0;
+    border-radius: var(--d-radius-lg) var(--d-radius-lg) 0 0;
     margin: 0 8px;
   }
   .diagram-04-zones .zone-native .term-text {
@@ -130,7 +124,7 @@
   .diagram-04-zones .live-group {
     display: flex;
     flex-direction: column;
-    border-radius: 12px;
+    border-radius: var(--d-radius-xl);
     overflow: hidden;
     border: 3px solid rgba(59, 130, 246, 0.5);
     box-shadow:
@@ -141,12 +135,12 @@
       0 0 80px -20px rgba(59, 130, 246, 0.15);
   }
   .diagram-04-zones .window-chrome {
-    background: linear-gradient(to bottom, #3c3c48, #2e2e3a);
+    background: var(--d-terminal-chrome);
     padding: 6px 10px;
     display: flex;
     align-items: center;
     gap: 6px;
-    border-bottom: 1px solid rgba(60, 60, 70, 0.5);
+    border-bottom: 1px solid var(--d-terminal-chrome-border);
   }
   .diagram-04-zones .dot {
     width: 8px;
@@ -154,28 +148,28 @@
     border-radius: 50%;
   }
   .diagram-04-zones .dot.close {
-    background: #ff5f57;
-    border: 1px solid #e0443e;
+    background: var(--d-dot-close);
+    border: 1px solid var(--d-dot-close-border);
   }
   .diagram-04-zones .dot.minimize {
-    background: #febc2e;
-    border: 1px solid #dea123;
+    background: var(--d-dot-min);
+    border: 1px solid var(--d-dot-min-border);
   }
   .diagram-04-zones .dot.maximize {
-    background: #28c840;
-    border: 1px solid #1aab29;
+    background: var(--d-dot-max);
+    border: 1px solid var(--d-dot-max-border);
   }
   .diagram-04-zones .window-title {
     flex: 1;
     text-align: center;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.55);
-    font-weight: 600;
+    font-size: var(--d-fs-md);
+    color: var(--d-terminal-title);
+    font-weight: var(--d-fw-medium);
     margin-right: 52px;
     letter-spacing: 0.02em;
   }
   .diagram-04-zones .zone-live {
-    background: #191922;
+    background: var(--d-terminal-bg);
     padding: 10px 8px 8px;
     position: relative;
     flex: 1;
@@ -187,47 +181,54 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.22), transparent);
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(59, 130, 246, 0.22),
+      transparent
+    );
     pointer-events: none;
   }
 
   /* Terminal text */
   .diagram-04-zones .term-text {
-    font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
-    font-size: 11px;
+    font-family: var(--d-font-mono);
+    font-size: var(--d-fs-base);
     line-height: 1.85;
-    color: #d4d8e0;
+    color: var(--d-terminal-text);
     white-space: pre;
+    margin: 0;
+    padding: 0;
   }
   .diagram-04-zones .prompt {
-    color: #85d6a0;
+    color: var(--d-term-prompt);
   }
   .diagram-04-zones .cmd {
-    color: #eff0f3;
+    color: var(--d-term-cmd);
   }
   .diagram-04-zones .hash {
     color: #e8b4b0;
   }
   .diagram-04-zones .comment {
-    color: #6b7585;
+    color: var(--d-term-comment);
   }
   .diagram-04-zones .success {
-    color: #a5d6a7;
+    color: var(--d-term-success);
   }
   .diagram-04-zones .keyword {
-    color: #d2a0f0;
+    color: var(--d-term-keyword);
   }
   .diagram-04-zones .func {
-    color: #79c0ff;
+    color: var(--d-term-func);
   }
   .diagram-04-zones .string {
-    color: #f0d080;
+    color: var(--d-term-string);
   }
   .diagram-04-zones .bullet {
-    color: #6ccad4;
+    color: var(--d-term-bullet);
   }
   .diagram-04-zones .dimmed {
-    color: #555d6e;
+    color: var(--d-term-dimmed);
   }
   .diagram-04-zones .input-divider {
     display: block;
@@ -239,7 +240,7 @@
   }
   .diagram-04-zones .cursor-block {
     display: inline-block;
-    color: #3cda5c;
+    color: var(--d-term-cursor);
     animation: diagram-04-blink-green 1s step-end infinite;
     font-size: 16px;
     line-height: 1;
@@ -287,8 +288,8 @@
   }
 
   .diagram-04-zones .annotation-card {
-    background: white;
-    border-radius: 8px;
+    background: var(--d-annotation-bg);
+    border-radius: var(--d-radius-lg);
     padding: 7px 8px 8px;
     width: 170px;
     flex-shrink: 0;
@@ -308,9 +309,9 @@
   }
 
   .diagram-04-zones .annotation-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: #1e293b;
+    font-size: var(--d-fs-base);
+    font-weight: var(--d-fw-bold);
+    color: var(--d-annotation-title);
     margin-bottom: 3px;
     display: flex;
     align-items: center;
@@ -324,8 +325,8 @@
     width: 18px;
     height: 18px;
     border-radius: 5px;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: var(--d-fs-sm);
+    font-weight: var(--d-fw-bold);
     flex-shrink: 0;
   }
   .diagram-04-zones .zone-badge.z1 {
@@ -342,9 +343,9 @@
   }
 
   .diagram-04-zones .annotation-details {
-    font-size: 9px;
-    color: #475569;
-    font-weight: 500;
+    font-size: var(--d-fs-xs);
+    color: var(--d-annotation-body);
+    font-weight: var(--d-fw-regular);
     line-height: 1.5;
     list-style: none;
     padding: 0;
@@ -357,7 +358,7 @@
   .diagram-04-zones .annotation-details li::before {
     content: "\2022";
     margin-right: 5px;
-    font-size: 10px;
+    font-size: var(--d-fs-sm);
   }
   .diagram-04-zones .ann-native .annotation-details li::before {
     color: rgba(220, 60, 60, 0.5);
@@ -367,40 +368,6 @@
   }
   .diagram-04-zones .ann-live .annotation-details li::before {
     color: rgba(59, 130, 246, 0.5);
-  }
-
-  /* === DARK MODE === */
-  @media (prefers-color-scheme: dark) {
-    .diagram-04-zones .annotation-card {
-      background: #2a2a3a;
-    }
-    .diagram-04-zones .annotation-title {
-      color: #e2e8f0;
-    }
-    .diagram-04-zones .annotation-details {
-      color: #94a3b8;
-    }
-    .diagram-04-zones .ann-native .annotation-card {
-      border-color: rgba(220, 60, 60, 0.35);
-    }
-    .diagram-04-zones .ann-tracked .annotation-card {
-      border-color: rgba(34, 197, 94, 0.35);
-    }
-    .diagram-04-zones .ann-live .annotation-card {
-      border-color: rgba(59, 130, 246, 0.4);
-    }
-    .diagram-04-zones .zone-badge.z1 {
-      background: #5c1a1a;
-      color: #fca5a5;
-    }
-    .diagram-04-zones .zone-badge.z2 {
-      background: #14532d;
-      color: #86efac;
-    }
-    .diagram-04-zones .zone-badge.z3 {
-      background: #1e3a5f;
-      color: #93c5fd;
-    }
   }
 </style>
 
@@ -431,18 +398,18 @@
       <!-- Terminal -->
       <div class="terminal-col">
         <div class="zone zone-native">
-          <div class="term-text">
-            <span class="bullet">&gt;</span> List files in src/auth/
-            <span class="comment">Found 3 files</span>
-            <span class="dimmed"> ...</span>
-          </div>
+          <pre
+            class="term-text"
+          ><span class="bullet">&gt;</span> List files in src/auth/
+<span class="comment">Found 3 files</span>
+<span class="dimmed"> ...</span></pre>
         </div>
 
         <div class="zone zone-tracked">
-          <div class="term-text">
-            <span class="bullet">&gt;</span> Run the tests <span class="success">&#10003; 47 passed</span>
-            <span class="bullet">&gt;</span> Show commits <span class="dimmed"> ...</span>
-          </div>
+          <pre
+            class="term-text"
+          ><span class="bullet">&gt;</span> Run the tests <span class="success">&#10003; 47 passed</span>
+<span class="bullet">&gt;</span> Show commits <span class="dimmed"> ...</span></pre>
         </div>
 
         <div class="live-group">
@@ -453,11 +420,9 @@
             <div class="window-title">Terminal &mdash; zsh</div>
           </div>
           <div class="zone-live">
-            <div class="term-text">
-              <span class="bullet">&gt;</span> Refactor the auth module <span class="bullet">&#9679;</span> Reading
-              middleware.ts... <span class="input-divider" style="margin-top: 4px"></span
-              ><span class="prompt">&gt; </span><span class="cursor-block">&#9612;</span>
-            </div>
+            <pre
+              class="term-text"
+            ><span class="bullet">&gt;</span> Refactor the auth module <span class="bullet">&#9679;</span> Reading middleware.ts... <span class="input-divider" style="margin-top: 4px"></span><span class="prompt">&gt; </span><span class="cursor-block">&#9612;</span></pre>
           </div>
         </div>
       </div>
@@ -467,7 +432,9 @@
         <div class="annotation ann-native">
           <div class="connector-line"></div>
           <div class="annotation-card">
-            <div class="annotation-title"><span class="zone-badge z1">1</span> Terminal Scrollback</div>
+            <div class="annotation-title">
+              <span class="zone-badge z1">1</span> Terminal Scrollback
+            </div>
             <ul class="annotation-details">
               <li>Owned by the terminal</li>
               <li>Cmd+F and selection work</li>
@@ -479,7 +446,9 @@
         <div class="annotation ann-tracked">
           <div class="connector-line"></div>
           <div class="annotation-card">
-            <div class="annotation-title"><span class="zone-badge z2">2</span> App Scrollback</div>
+            <div class="annotation-title">
+              <span class="zone-badge z2">2</span> App Scrollback
+            </div>
             <ul class="annotation-details">
               <li>Managed by the app</li>
               <li>Redraws on resize</li>
@@ -491,7 +460,9 @@
         <div class="annotation ann-live">
           <div class="connector-line"></div>
           <div class="annotation-card">
-            <div class="annotation-title"><span class="zone-badge z3">3</span> Live Screen</div>
+            <div class="annotation-title">
+              <span class="zone-badge z3">3</span> Live Screen
+            </div>
             <ul class="annotation-details">
               <li>React components</li>
               <li>Updates in &lt;1ms</li>
