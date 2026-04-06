@@ -4,6 +4,11 @@
  * Manages selection state via the TEA state machine from @silvery/ag-term.
  * Provides mouse handlers for create-app.tsx to wire into mouse interception.
  * Uses selectionHitTest (separate from pointer hitTest) for userSelect awareness.
+ *
+ * When copy is triggered, consults the nearest ancestor CopyProvider for
+ * semantic enrichment. Plain text always goes to the system clipboard
+ * immediately via OSC 52; rich data is stored in an internal clipboard
+ * for paste enrichment.
  */
 
 import React, { createContext, useCallback, useContext, useState, useRef, type ReactNode } from "react"
@@ -19,6 +24,8 @@ import type { TerminalBuffer } from "@silvery/ag-term/buffer"
 import { copyToClipboard } from "@silvery/ag-term/clipboard"
 import { selectionHitTest, findContainBoundary, resolveUserSelect } from "@silvery/ag-term/mouse-events"
 import type { AgNode } from "@silvery/ag/types"
+import type { CopyEvent, ClipboardData } from "@silvery/ag-term/semantic-copy"
+import { useCopyProvider } from "./useCopyProvider"
 
 // ============================================================================
 // Types
@@ -46,6 +53,8 @@ export interface UseTerminalSelectionResult {
   clearSelection(): void
   /** Explicitly copy the current selection to clipboard */
   copySelection(buffer: TerminalBuffer, stdout: NodeJS.WriteStream): void
+  /** Last internally copied ClipboardData for paste enrichment */
+  lastCopy: ClipboardData | null
 }
 
 // ============================================================================
@@ -63,6 +72,28 @@ const DRAG_THRESHOLD_TIME = 100
 
 const TerminalSelectionCtx = createContext<UseTerminalSelectionResult | null>(null)
 
+// ============================================================================
+// Internal clipboard store
+// ============================================================================
+
+/**
+ * Shared internal clipboard — stores the last copy's rich data so paste
+ * events can detect internal copies and include structured data.
+ */
+let internalClipboard: ClipboardData | null = null
+
+/**
+ * Get the current internal clipboard data.
+ * Used by paste event handling to detect internal copies.
+ */
+export function getInternalClipboard(): ClipboardData | null {
+  return internalClipboard
+}
+
+// ============================================================================
+// Provider
+// ============================================================================
+
 /**
  * Provider that gives its subtree access to terminal text selection state.
  * Wrap your silvery app root in this.
@@ -72,6 +103,12 @@ export function TerminalSelectionProvider({
   copyOnSelect = false,
 }: { children?: ReactNode } & TerminalSelectionOptions) {
   const [state, setState] = useState<TerminalSelectionState>(createTerminalSelectionState)
+  const [lastCopy, setLastCopy] = useState<ClipboardData | null>(null)
+  const copyProvider = useCopyProvider()
+
+  // Use ref to avoid stale closure over copyProvider
+  const copyProviderRef = useRef(copyProvider)
+  copyProviderRef.current = copyProvider
 
   // Drag threshold tracking
   const dragStart = useRef<{ col: number; row: number; time: number } | null>(null)
@@ -138,7 +175,42 @@ export function TerminalSelectionProvider({
           rowMetadata: buffer.getRowMetadataArray(),
         })
         if (text.length > 0) {
+          // Always write plain text immediately — never block on async
           copyToClipboard(stdout, text)
+
+          // Store minimal clipboard data immediately
+          const baseData: ClipboardData = { text }
+          internalClipboard = baseData
+          setLastCopy(baseData)
+
+          // Consult CopyProvider for semantic enrichment (best-effort)
+          const provider = copyProviderRef.current
+          if (provider) {
+            const copyEvent: CopyEvent = { text, range: next.range }
+            try {
+              const result = provider.enrichCopy(copyEvent)
+              if (result && typeof (result as Promise<ClipboardData>).then === "function") {
+                // Async enrichment — update internal clipboard when resolved
+                ;(result as Promise<ClipboardData>).then(
+                  (data) => {
+                    if (data) {
+                      internalClipboard = data
+                      setLastCopy(data)
+                    }
+                  },
+                  () => {
+                    // Enrichment failed — plain text is already in clipboard
+                  },
+                )
+              } else if (result) {
+                // Sync enrichment — update immediately
+                internalClipboard = result as ClipboardData
+                setLastCopy(result as ClipboardData)
+              }
+            } catch {
+              // Enrichment failed — plain text is already in clipboard
+            }
+          }
         }
       }
 
@@ -178,6 +250,7 @@ export function TerminalSelectionProvider({
     handleMouseUp,
     clearSelection,
     copySelection,
+    lastCopy,
   }
 
   return React.createElement(TerminalSelectionCtx.Provider, { value }, children)
@@ -201,6 +274,9 @@ export function useTerminalSelectionContext(): UseTerminalSelectionResult {
  * Returns selection state and mouse handlers. Wire handleMouseDown/Move/Up
  * into the mouse event processor. handleMouseDown uses selectionHitTest
  * (respects userSelect, ignores pointerEvents) for proper selection targeting.
+ * On mouseUp, extracts text from the terminal buffer and copies to clipboard
+ * via OSC 52. If a CopyProvider is in the ancestor tree, enriches with
+ * structured data.
  *
  * Must be used within a TerminalSelectionProvider.
  */

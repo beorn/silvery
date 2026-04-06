@@ -43,7 +43,12 @@ export { useScrollRegion } from "./useScrollRegion"
 export type { UseScrollRegionOptions, UseScrollRegionResult } from "./useScrollRegion"
 
 // Terminal Selection (buffer-level text copy/paste)
-export { useTerminalSelection, useTerminalSelectionContext, TerminalSelectionProvider } from "./useTerminalSelection"
+export {
+  useTerminalSelection,
+  useTerminalSelectionContext,
+  TerminalSelectionProvider,
+  getInternalClipboard,
+} from "./useTerminalSelection"
 export type { UseTerminalSelectionResult } from "./useTerminalSelection"
 
 // Find (visible-buffer text search)

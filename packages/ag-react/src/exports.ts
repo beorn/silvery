@@ -377,6 +377,7 @@ export {
   useTerminalSelection,
   useTerminalSelectionContext,
   TerminalSelectionProvider,
+  getInternalClipboard,
 } from "./hooks/useTerminalSelection"
 export type { UseTerminalSelectionResult } from "./hooks/useTerminalSelection"
 export { CopyProvider, useCopyProvider } from "./hooks/useCopyProvider"
