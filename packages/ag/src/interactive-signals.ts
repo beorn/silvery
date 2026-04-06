@@ -12,7 +12,7 @@
  * allocating on nodes that never receive interactive events.
  */
 
-import type { AgNode, InteractiveState } from "@silvery/ag/types"
+import type { AgNode, InteractiveState } from "./types"
 
 // ============================================================================
 // Lazy Initialization

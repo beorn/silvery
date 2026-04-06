@@ -16,7 +16,7 @@ import type { ParsedMouse } from "./mouse"
 import { getAncestorPath, pointInRect } from "@silvery/ag/tree-utils"
 import type { AgNode, Rect, UserSelect } from "@silvery/ag/types"
 import type { SelectionScope } from "./selection"
-import { setHovered, setArmed } from "./interactive-signals"
+import { setHovered, setArmed } from "@silvery/ag/interactive-signals"
 
 // Re-export canonical types from ag (avoid duplicate type definitions)
 export type { SilveryMouseEvent, SilveryWheelEvent } from "@silvery/ag/mouse-event-types"

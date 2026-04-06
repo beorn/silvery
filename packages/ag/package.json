@@ -45,6 +45,10 @@
       "types": "./src/tree-utils.ts",
       "import": "./src/tree-utils.ts"
     },
+    "./interactive-signals": {
+      "types": "./src/interactive-signals.ts",
+      "import": "./src/interactive-signals.ts"
+    },
     "./*": "./src/*.ts"
   },
   "dependencies": {}

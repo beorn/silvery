@@ -15,6 +15,7 @@ import {
   findSpatialTarget,
   getExplicitFocusLink,
 } from "./focus-queries"
+import { setFocused } from "./interactive-signals"
 
 // ============================================================================
 // Types
@@ -168,6 +169,10 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     activeId = getTestID(node)
     focusOrigin = origin
 
+    // Update interactive state on affected nodes
+    if (oldElement) setFocused(oldElement, false)
+    setFocused(node, true)
+
     // Remember this focus in the current scope
     if (activeId && scopeStack.length > 0) {
       scopeMemory[scopeStack[scopeStack.length - 1]!] = activeId
@@ -198,6 +203,10 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     activeElement = null
     activeId = id
     focusOrigin = origin
+
+    // Update interactive state — old element loses focus, no new node to set
+    if (oldElement) setFocused(oldElement, false)
+
     notify()
 
     // Fire focus change callback (old element blurs, no new node for virtual focus)
@@ -213,6 +222,9 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     activeElement = null
     activeId = null
     focusOrigin = null
+
+    // Update interactive state — old element loses focus
+    if (oldElement) setFocused(oldElement, false)
 
     notify()
 
@@ -243,6 +255,8 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
 
     if (activeElement && subtreeContains(removedRoot, activeElement)) {
       const oldElement = activeElement
+      // Clear interactive focus state before removing reference
+      setFocused(oldElement, false)
       previousElement = activeElement
       previousId = activeId
       activeElement = null

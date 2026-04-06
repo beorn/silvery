@@ -73,5 +73,16 @@ export type { DragEventPayload, DragEventProps } from "./drag-event-types"
 // TextFrame
 export type { TextFrame, FrameCell, RGB } from "./text-frame"
 
+// Interactive Signals
+export {
+  ensureInteractiveState,
+  setHovered,
+  setArmed,
+  setSelected,
+  setFocused,
+  setDropTarget,
+  clearInteractiveState,
+} from "./interactive-signals"
+
 // Tree Utilities
 export { getAncestorPath, pointInRect } from "./tree-utils"

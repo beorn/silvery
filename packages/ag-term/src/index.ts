@@ -490,7 +490,7 @@ export {
 export { BG_OVERRIDE_CODE, bgOverride } from "./ansi/index"
 
 // =============================================================================
-// Interactive Signals
+// Interactive Signals (re-exported from @silvery/ag)
 // =============================================================================
 
 export {
@@ -501,7 +501,7 @@ export {
   setFocused,
   setDropTarget,
   clearInteractiveState,
-} from "./interactive-signals"
+} from "@silvery/ag/interactive-signals"
 
 // =============================================================================
 // Selection
