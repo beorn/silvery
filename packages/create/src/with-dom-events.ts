@@ -302,9 +302,28 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
         if (prop === "run") {
           const originalRun = Reflect.get(target, prop, receiver) as (...a: any[]) => any
           if (typeof originalRun === "function") {
-            return function enhancedRun(element: unknown, options?: Record<string, unknown>) {
-              const opts = { ...options, capabilityRegistry: registry }
-              return originalRun.call(target, element, opts)
+            return function enhancedRun(...args: unknown[]) {
+              // Inject capabilityRegistry into the options argument.
+              // run() can be called as run(), run(element), or run(element, options).
+              // We need to find or create the options object and add our registry.
+              if (args.length === 0) {
+                // run() — no args, pass registry as options
+                return originalRun.call(target, { capabilityRegistry: registry })
+              } else if (args.length === 1) {
+                // Could be run(element) or run(options)
+                const arg = args[0]
+                if (arg && typeof arg === "object" && "type" in (arg as object)) {
+                  // It's a React element: run(element) → run(element, { registry })
+                  return originalRun.call(target, arg, { capabilityRegistry: registry })
+                } else {
+                  // It's options: run(options) → run({ ...options, registry })
+                  return originalRun.call(target, { ...(arg as object), capabilityRegistry: registry })
+                }
+              } else {
+                // run(element, options)
+                const opts = { ...(args[1] as object), capabilityRegistry: registry }
+                return originalRun.call(target, args[0], opts)
+              }
             }
           }
         }
