@@ -88,7 +88,7 @@
 
   /* Zone 1: Terminal Scrollback — muted slate (immutable, in the past) */
   .diagram-04-zones .zone-native {
-    background: #2a2a3a;
+    background: #3a3a4a;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   }
   .diagram-04-zones .zone-native .term-text {
@@ -122,7 +122,7 @@
     position: relative;
   }
   .diagram-04-zones .zone-separator.sep-1-2 {
-    background: linear-gradient(to bottom, #2a2a3a, #222230);
+    background: linear-gradient(to bottom, #3a3a4a, #222230);
   }
   .diagram-04-zones .zone-separator.sep-2-3 {
     background: linear-gradient(to bottom, #222230, var(--d-terminal-bg));
@@ -131,7 +131,7 @@
     font-family: var(--d-font-ui);
     font-size: var(--d-fs-xs);
     font-weight: var(--d-fw-medium);
-    letter-spacing: var(--d-ls-wide);
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     padding: 1px 8px;
     border-radius: var(--d-radius-sm);
@@ -236,7 +236,7 @@
     top: 0;
     left: 0;
     bottom: 0;
-    width: 3px;
+    width: 4px;
     pointer-events: none;
   }
   .diagram-04-zones .zone-native::before {
@@ -338,7 +338,7 @@
           <pre class="term-text"><span class="bullet">&gt;</span> List files in src/auth/
 <span class="comment">Found 3 files</span>
 <span class="dimmed"> ...</span></pre>
-          <div class="zone-label z1" style="top: auto; bottom: 6px; right: 6px;">
+          <div class="zone-label z1" style="top: auto; bottom: 6px; right: 6px">
             <span class="zone-label-detail">Terminal-owned &middot; Cmd+F works &middot; Persists</span>
           </div>
         </div>
@@ -358,7 +358,7 @@
             class="term-text"
           ><span class="bullet">&gt;</span> Run the tests <span class="success">&#10003; 47 passed</span>
 <span class="bullet">&gt;</span> Show commits <span class="dimmed"> ...</span></pre>
-          <div class="zone-label z2" style="top: auto; bottom: 6px; right: 6px;">
+          <div class="zone-label z2" style="top: auto; bottom: 6px; right: 6px">
             <span class="zone-label-detail">App-managed &middot; Redraws on resize</span>
           </div>
         </div>
@@ -377,7 +377,7 @@
           <pre
             class="term-text"
           ><span class="bullet">&gt;</span> Refactor the auth module <span class="bullet">&#9679;</span> Reading middleware.ts... <span class="input-divider" style="margin-top: 4px"></span><span class="prompt">&gt; </span><span class="cursor-block">&#9612;</span></pre>
-          <div class="zone-label z3" style="top: auto; bottom: 6px; right: 6px;">
+          <div class="zone-label z3" style="top: auto; bottom: 6px; right: 6px">
             <span class="zone-label-detail">React components &middot; Incremental updates</span>
           </div>
         </div>

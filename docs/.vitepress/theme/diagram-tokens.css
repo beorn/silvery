@@ -191,7 +191,7 @@
 .diagram-card {
   background: var(--d-bg);
   border-radius: var(--d-radius-xl);
-  padding: var(--d-space-4);
+  padding: var(--d-space-6);
   border: var(--d-border-1) solid var(--d-border);
   font-family: var(--d-font-ui);
   font-size: var(--d-fs-base);

@@ -22,7 +22,8 @@
   .diagram-06-clear-reprint .storyboard {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    gap: 16px;
+    padding: 12px;
     width: 100%;
   }
 
@@ -115,8 +116,13 @@
     vertical-align: text-bottom;
   }
   @keyframes diagram-06-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
   }
 
   /* New token highlight */
@@ -190,7 +196,6 @@
 <div class="diagram-06-clear-reprint">
   <div class="page">
     <div class="storyboard">
-
       <!-- Frame 1: Before -->
       <div class="frame">
         <div class="frame-badge">1</div>
@@ -243,7 +248,6 @@
   <span class="dimmed">export function</span> <span class="new-token">validate</span><span class="cursor-block">&#9612;</span></pre>
         </div>
       </div>
-
     </div>
 
     <div class="storyboard-caption">
