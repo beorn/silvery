@@ -1472,8 +1472,9 @@ export function bufferToText(
  */
 function getContentEdge(buffer: TerminalBuffer, y: number): number {
   // Mask out structural flags (wide, continuation) that don't indicate actual content.
+  // Also mask SELECTABLE_FLAG (bit 31) — it's selection metadata, not styling.
   // True-color flags DO indicate styled content (they mean fg/bg is set in Maps).
-  const FLAG_MASK = ~(WIDE_FLAG | CONTINUATION_FLAG)
+  const FLAG_MASK = ~(WIDE_FLAG | CONTINUATION_FLAG | SELECTABLE_FLAG)
   for (let x = buffer.width - 1; x >= 0; x--) {
     // Skip continuation cells (trailing half of wide chars) — the main cell covers them
     if (buffer.isCellContinuation(x, y)) continue
