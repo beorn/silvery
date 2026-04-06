@@ -536,6 +536,10 @@ export {
   type FindEffect,
 } from "@silvery/headless/find"
 
+// FindFeature service
+export { createFindFeature } from "./find-feature"
+export type { FindFeature, FindFeatureOptions } from "./find-feature"
+
 // =============================================================================
 // Copy Mode (re-exported from @silvery/headless)
 // =============================================================================

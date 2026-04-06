@@ -16,6 +16,9 @@ export const CLIPBOARD_CAPABILITY = Symbol("silvery.clipboard")
 /** Copy-mode feature: keyboard-driven selection (Esc+v). */
 export const COPY_MODE_CAPABILITY = Symbol("silvery.copy-mode")
 
+/** Find feature: text search (Ctrl+F). */
+export const FIND_CAPABILITY = Symbol("silvery.find")
+
 /** Drag feature: drag-and-drop state + mouse handling. */
 export const DRAG_CAPABILITY = Symbol("silvery.drag")
 

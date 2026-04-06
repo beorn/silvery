@@ -35,7 +35,8 @@ import { createSelectionFeature, type SelectionFeature } from "@silvery/ag-term/
 import { createCopyModeFeature, type CopyModeFeature } from "@silvery/ag-term/features/copy-mode"
 import type { CapabilityRegistry } from "./internal/capability-registry"
 import type { InputRouter } from "./internal/input-router"
-import { SELECTION_CAPABILITY, COPY_MODE_CAPABILITY } from "./internal/capabilities"
+import { SELECTION_CAPABILITY, COPY_MODE_CAPABILITY, FIND_CAPABILITY } from "./internal/capabilities"
+import { createFindFeature, type FindFeature, type FindFeatureOptions } from "@silvery/ag-term/find-feature"
 
 // =============================================================================
 // Types
