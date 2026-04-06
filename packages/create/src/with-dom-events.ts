@@ -306,22 +306,21 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
               // Inject capabilityRegistry into the options argument.
               // run() can be called as run(), run(element), or run(element, options).
               // We need to find or create the options object and add our registry.
+              // Inject both capabilityRegistry AND selection: true into run options.
+              // create-app.tsx has built-in selection handling gated by selection option.
+              const inject = { capabilityRegistry: registry, selection: selectionEnabled }
+
               if (args.length === 0) {
-                // run() — no args, pass registry as options
-                return originalRun.call(target, { capabilityRegistry: registry })
+                return originalRun.call(target, inject)
               } else if (args.length === 1) {
-                // Could be run(element) or run(options)
                 const arg = args[0]
                 if (arg && typeof arg === "object" && "type" in (arg as object)) {
-                  // It's a React element: run(element) → run(element, { registry })
-                  return originalRun.call(target, arg, { capabilityRegistry: registry })
+                  return originalRun.call(target, arg, inject)
                 } else {
-                  // It's options: run(options) → run({ ...options, registry })
-                  return originalRun.call(target, { ...(arg as object), capabilityRegistry: registry })
+                  return originalRun.call(target, { ...(arg as object), ...inject })
                 }
               } else {
-                // run(element, options)
-                const opts = { ...(args[1] as object), capabilityRegistry: registry }
+                const opts = { ...(args[1] as object), ...inject }
                 return originalRun.call(target, args[0], opts)
               }
             }
