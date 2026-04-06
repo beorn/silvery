@@ -198,7 +198,8 @@ export function withFocus(options: WithFocusOptions = {}): (app: App) => AppWith
     }
 
     // Wrap press() to intercept focus navigation keys
-    const originalPress = app.press.bind(app)
+    // NOTE: app.press may not exist at composition time (only on run() handle).
+    // Use lazy binding — resolve press at call time, not composition time.
 
     const enhancedApp = new Proxy(app, {
       get(target, prop, receiver) {
@@ -274,8 +275,10 @@ export function withFocus(options: WithFocusOptions = {}): (app: App) => AppWith
               }
             }
 
-            // Pass through to original press handler
-            await originalPress(keyStr)
+            // Pass through to original press handler (resolved lazily — may not exist at composition time)
+            if (typeof target.press === "function") {
+              await target.press(keyStr)
+            }
             return enhancedApp
           }
         }

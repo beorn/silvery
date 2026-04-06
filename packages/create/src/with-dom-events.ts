@@ -137,7 +137,7 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
     registry.register(INPUT_ROUTER, router)
 
     // --- Selection Feature ---
-    const selectionEnabled = options.selection ?? false
+    const selectionEnabled = options.selection ?? true
     let selectionFeature: SelectionFeature | undefined
 
     if (selectionEnabled) {

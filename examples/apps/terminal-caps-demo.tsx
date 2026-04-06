@@ -23,7 +23,7 @@
  */
 
 import React, { useState, useEffect } from "react"
-import { Box, Text, H3, Muted, Kbd, render, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import { Box, Text, H3, Muted, Kbd, render, useInput, useApp, type Key } from "../../src/index.js"
 import {
   detectTerminalCaps,
   type TerminalCaps,
@@ -186,14 +186,18 @@ function TerminalCapsApp() {
         setWidthConfig({ ...DEFAULT_WIDTH_CONFIG })
       })
 
-    // Kitty keyboard detection
-    detectKittyFromStdio(process.stdout, process.stdin, 500)
-      .then((result) => {
-        setKittyDetected(result.supported)
-      })
-      .catch(() => {
-        setKittyDetected(false)
-      })
+    // Kitty keyboard detection (requires TTY stdin)
+    if (process.stdin.isTTY) {
+      detectKittyFromStdio(process.stdout, process.stdin, 500)
+        .then((result) => {
+          setKittyDetected(result.supported)
+        })
+        .catch(() => {
+          setKittyDetected(false)
+        })
+    } else {
+      setKittyDetected(false)
+    }
 
     return () => {
       detector.stop()
@@ -318,13 +322,10 @@ function TerminalCapsApp() {
 // ============================================================================
 
 async function main() {
-  using term = createTerm()
-
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="q/Esc quit">
       <TerminalCapsApp />
     </ExampleBanner>,
-    term,
   )
 
   await waitUntilExit()
