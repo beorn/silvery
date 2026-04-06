@@ -1,7 +1,7 @@
 /**
  * useFind — React hook for find with optional FindProvider support.
  *
- * Manages find state via the TEA state machine from @silvery/ag-term/find.
+ * Manages find state via the TEA state machine from @silvery/headless/find.
  * When a FindProvider is present in the React context, delegates search
  * to the provider (model-level search for virtual lists). Otherwise,
  * falls back to visible-buffer search.

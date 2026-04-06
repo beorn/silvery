@@ -1,7 +1,7 @@
 /**
  * useTerminalSelection — React hook for buffer-level text selection.
  *
- * Manages selection state via the TEA state machine from @silvery/ag-term.
+ * Manages selection state via the TEA state machine from @silvery/headless.
  * Provides mouse handlers for create-app.tsx to wire into mouse interception.
  * Uses selectionHitTest (separate from pointer hitTest) for userSelect awareness.
  *

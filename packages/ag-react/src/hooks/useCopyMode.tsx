@@ -1,7 +1,7 @@
 /**
  * useCopyMode — React hook for keyboard-driven copy-mode.
  *
- * Manages copy-mode state via the TEA state machine from @silvery/ag-term/copy-mode.
+ * Manages copy-mode state via the TEA state machine from @silvery/headless/copy-mode.
  * When active, captures h/j/k/l for navigation, v/V for visual mode, y for yank.
  */
 
