@@ -127,6 +127,16 @@ export interface WithTerminalOptions {
   textSizing?: boolean | "auto"
 
   /**
+   * Enable DEC width mode detection (modes 1020-1023).
+   * Queries the terminal for emoji/CJK/PUA width settings at startup.
+   * - `true`: always run width detection probe
+   * - `"auto"`: run probe when caps are provided (default)
+   * - `false`: disabled
+   * Default: "auto"
+   */
+  widthDetection?: boolean | "auto"
+
+  /**
    * Enable terminal focus reporting.
    * Default: false
    */
@@ -326,6 +336,7 @@ export function withTerminal<T extends RunnableApp>(
           suspendOnCtrlZ: termConfig.suspendOnCtrlZ,
           exitOnCtrlC: termConfig.exitOnCtrlC,
           textSizing: termConfig.textSizing,
+          widthDetection: termConfig.widthDetection ?? "auto",
           focusReporting: termConfig.focusReporting,
           onSuspend: termConfig.onSuspend,
           onResume: termConfig.onResume,

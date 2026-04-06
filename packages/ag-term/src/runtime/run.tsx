@@ -106,6 +106,15 @@ export interface RunOptions {
    */
   textSizing?: boolean | "auto" | "probe"
   /**
+   * Enable DEC width mode detection (modes 1020-1023).
+   * Queries the terminal for emoji/CJK/PUA width settings at startup.
+   * - `true`: always run width detection probe
+   * - `"auto"`: run probe when caps are provided (default)
+   * - `false`: disabled
+   * Default: "auto"
+   */
+  widthDetection?: boolean | "auto"
+  /**
    * Enable terminal focus reporting (CSI ?1004h).
    * Dispatches 'term:focus' events with `{ focused: boolean }`.
    * Default: true
@@ -323,6 +332,7 @@ export async function run(
       mouse: true,
       focusReporting: true,
       textSizing: "auto",
+      widthDetection: "auto",
     })
     return wrapHandle(handle)
   }
@@ -345,6 +355,7 @@ export async function run(
     mouse: rest.mouse ?? mode !== "inline",
     focusReporting: rest.focusReporting ?? mode !== "inline",
     textSizing: rest.textSizing ?? "auto",
+    widthDetection: rest.widthDetection ?? "auto",
   })
   return wrapHandle(handle)
 }

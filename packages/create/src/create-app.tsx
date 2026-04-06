@@ -69,6 +69,7 @@ import {
   detectTextSizingSupport,
   getCachedProbeResult,
 } from "@silvery/ag-term/text-sizing"
+import { createWidthDetector, applyWidthConfig } from "@silvery/ag-term"
 import { IncrementalRenderMismatchError } from "@silvery/ag-term/scheduler"
 import {
   createContainer,
@@ -271,6 +272,15 @@ export interface AppRunOptions {
    * - `false`/undefined: disabled (default)
    */
   textSizing?: boolean | "auto" | "probe"
+  /**
+   * Enable DEC width mode detection (modes 1020-1023).
+   * Queries the terminal for its actual character width settings (emoji,
+   * CJK, private-use area) and updates the measurer accordingly.
+   * - `true`: always run width detection probe
+   * - `"auto"`: run probe when caps are provided (default for real terminals)
+   * - `false`/undefined: disabled (default)
+   */
+  widthDetection?: boolean | "auto"
   /**
    * Enable terminal focus reporting (CSI ?1004h).
    * When enabled, the terminal sends focus-in/focus-out events that are
@@ -540,6 +550,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     onResume: onResumeHook,
     onInterrupt: onInterruptHook,
     textSizing: textSizingOption,
+    widthDetection: widthDetectionOption,
     focusReporting: focusReportingOption = false,
     selection: selectionOption,
     caps: capsOption,
@@ -845,10 +856,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Whether we still need to run the async probe (no cache hit)
   const needsProbe = shouldProbe && cachedProbe === undefined && !headless
 
+  // Resolve width detection: "auto" enables when caps are provided and not headless
+  const needsWidthDetection =
+    !headless && (widthDetectionOption === true || (widthDetectionOption === "auto" && capsOption != null))
+
+  // Track effective caps — may be updated by width detection and text sizing probes
+  let effectiveCaps = capsOption
+    ? { ...capsOption, textSizingSupported: textSizingEnabled }
+    : undefined
+
   // Create pipeline config from caps (scoped width measurer + output phase)
   // Use `let` because the pipeline may be recreated after a probe changes textSizing
-  let pipelineConfig = capsOption
-    ? createPipeline({ caps: { ...capsOption, textSizingSupported: textSizingEnabled } })
+  let pipelineConfig = effectiveCaps
+    ? createPipeline({ caps: effectiveCaps })
     : undefined
 
   // Create runtime (pass scoped output phase to ensure measurer/caps are threaded)
@@ -2272,10 +2292,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         // If probe result differs from initial heuristic, recreate pipeline
         if (probeResult.supported !== textSizingEnabled) {
           textSizingEnabled = probeResult.supported
-          if (capsOption) {
-            pipelineConfig = createPipeline({
-              caps: { ...capsOption, textSizingSupported: textSizingEnabled },
-            })
+          if (effectiveCaps) {
+            effectiveCaps = { ...effectiveCaps, textSizingSupported: textSizingEnabled }
+            pipelineConfig = createPipeline({ caps: effectiveCaps })
             // Update runtime's output phase to use the new measurer
             runtime.setOutputPhaseFn(pipelineConfig.outputPhaseFn)
           }
@@ -2301,6 +2320,73 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         }
       } catch {
         // Probe failed — keep current textSizing setting (safe fallback)
+      }
+    }
+
+    // Run DEC width detection probe BEFORE stdin is consumed by the input parser.
+    // Queries DEC modes 1020-1023 for emoji/CJK/PUA width settings.
+    // Must happen before pumpEvents() for the same reason as text-sizing probe.
+    if (needsWidthDetection) {
+      try {
+        const wasRaw = stdin.isRaw
+        if (stdin.isTTY && !wasRaw) {
+          stdin.setRawMode(true)
+          stdin.resume()
+          stdin.setEncoding("utf8")
+        }
+
+        const stdinHandlers: Array<(data: string) => void> = []
+        const stdinListener = (data: string) => {
+          for (const handler of stdinHandlers) handler(data)
+        }
+        stdin.on("data", stdinListener)
+
+        const detector = createWidthDetector({
+          write: (data) => (outputGuard ? outputGuard.writeStdout(data) : stdout.write(data)),
+          onData: (handler) => {
+            stdinHandlers.push(handler)
+            return () => {
+              const idx = stdinHandlers.indexOf(handler)
+              if (idx >= 0) stdinHandlers.splice(idx, 1)
+            }
+          },
+          timeoutMs: 200,
+        })
+
+        const widthConfig = await detector.detect()
+        detector.dispose()
+        stdin.off("data", stdinListener)
+
+        // Apply detected width config to caps and recreate pipeline if changed
+        if (effectiveCaps) {
+          const updatedCaps = applyWidthConfig(effectiveCaps, widthConfig)
+          const capsChanged =
+            updatedCaps.textEmojiWide !== effectiveCaps.textEmojiWide ||
+            updatedCaps.textSizingSupported !== effectiveCaps.textSizingSupported
+          if (capsChanged) {
+            effectiveCaps = updatedCaps
+            pipelineConfig = createPipeline({ caps: effectiveCaps })
+            runtime.setOutputPhaseFn(pipelineConfig.outputPhaseFn)
+            _prevTermBuffer = null
+            runtime.invalidate()
+            if (!isRendering) {
+              isRendering = true
+              try {
+                currentBuffer = doRender()
+                runtime.render(currentBuffer)
+              } finally {
+                isRendering = false
+              }
+            }
+          }
+        }
+
+        if (stdin.isTTY && !wasRaw) {
+          stdin.setRawMode(false)
+          stdin.pause()
+        }
+      } catch {
+        // Width detection failed — keep default caps (safe fallback)
       }
     }
 
