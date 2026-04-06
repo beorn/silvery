@@ -277,12 +277,9 @@ export { enableFocusReporting, disableFocusReporting, parseFocusEvent } from "./
 
 export { queryMode, queryModes, DecMode } from "./mode-query"
 
-// =============================================================================
-// DEC Width Mode Detection (1020-1023)
-// =============================================================================
-
-export { createWidthDetector, DEFAULT_WIDTH_CONFIG, WidthMode, applyWidthConfig } from "./ansi/width-detection"
-export type { TerminalWidthConfig, WidthDetector, WidthDetectorOptions } from "./ansi/width-detection"
+// DEC Width Mode Detection additional exports (WidthMode, WidthDetectorOptions)
+export { WidthMode } from "./ansi/width-detection"
+export type { WidthDetectorOptions } from "./ansi/width-detection"
 
 // =============================================================================
 // CSI 14t/18t Pixel and Text Area Size
