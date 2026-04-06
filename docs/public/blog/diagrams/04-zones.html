@@ -23,13 +23,11 @@
     max-width: 660px;
     width: 100%;
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 0;
     z-index: 1;
   }
 
-  /* === LAYOUT: terminal + connectors + annotations === */
+  /* === TERMINAL FRAME === */
   .diagram-04-zones .terminal-col {
     width: 340px;
     flex-shrink: 0;
@@ -37,19 +35,12 @@
     display: flex;
     flex-direction: column;
     border-radius: var(--d-radius-xl);
-    overflow: hidden;
     box-shadow:
       0 2px 8px rgba(0, 0, 0, 0.12),
       0 8px 28px rgba(0, 0, 0, 0.22),
       0 24px 64px rgba(0, 0, 0, 0.3),
       0 0 0 1px rgba(0, 0, 0, 0.06);
-  }
-
-  .diagram-04-zones .annotation-col {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex-shrink: 0;
+    /* No overflow:hidden — annotations extend outside */
   }
 
   /* === WINDOW CHROME === */
@@ -60,6 +51,7 @@
     align-items: center;
     gap: 6px;
     border-bottom: 1px solid var(--d-terminal-chrome-border);
+    border-radius: var(--d-radius-xl) var(--d-radius-xl) 0 0;
   }
   .diagram-04-zones .dot {
     width: 8px;
@@ -92,12 +84,12 @@
   .diagram-04-zones .zone {
     padding: 10px 8px;
     position: relative;
-    overflow: hidden;
   }
 
   /* Zone 1: Terminal Scrollback — muted slate */
   .diagram-04-zones .zone-native {
     background: #3a3a4a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
   .diagram-04-zones .zone-native .term-text {
     opacity: 0.75;
@@ -106,6 +98,7 @@
   /* Zone 2: App Scrollback — green */
   .diagram-04-zones .zone-tracked {
     background: #222230;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
   .diagram-04-zones .zone-tracked .term-text {
     opacity: 0.9;
@@ -117,14 +110,7 @@
     padding: 10px 8px 8px;
     position: relative;
     flex: 1;
-  }
-
-  /* === ZONE BORDERS (simple 1px separators) === */
-  .diagram-04-zones .zone-native {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-  .diagram-04-zones .zone-tracked {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0 0 var(--d-radius-xl) var(--d-radius-xl);
   }
 
   /* === LEFT ACCENT STRIPS === */
@@ -138,6 +124,7 @@
     bottom: 0;
     width: 4px;
     pointer-events: none;
+    z-index: 1;
   }
   .diagram-04-zones .zone-native::before {
     background: rgba(148, 163, 184, 0.4);
@@ -147,13 +134,21 @@
   }
   .diagram-04-zones .zone-live::before {
     background: rgba(86, 180, 233, 0.5);
+    border-radius: 0 0 0 var(--d-radius-xl);
   }
 
-  /* === CONNECTOR LINES === */
-  .diagram-04-zones .connector-row {
+  /* === ANNOTATION CALLOUTS (positioned from each zone) === */
+  .diagram-04-zones .annotation-callout {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     align-items: center;
+    z-index: 2;
   }
+
+  /* Connector lines */
   .diagram-04-zones .connector-line {
     width: 16px;
     height: 2px;
@@ -169,7 +164,7 @@
     background: rgba(86, 180, 233, 0.5);
   }
 
-  /* === ANNOTATION CARDS === */
+  /* Annotation cards */
   .diagram-04-zones .annotation-card {
     background: var(--d-annotation-bg);
     border-radius: var(--d-radius-lg);
@@ -326,55 +321,46 @@
           <pre class="term-text"><span class="bullet">&gt;</span> List files in src/auth/
 <span class="comment">Found 3 files</span>
 <span class="dimmed"> ...</span></pre>
+          <div class="annotation-callout">
+            <div class="connector-line z1"></div>
+            <div class="annotation-card z1">
+              <div class="annotation-header">
+                <span class="zone-badge z1">1</span>
+                <span class="annotation-title">Terminal Scrollback</span>
+              </div>
+              <div class="annotation-detail">Terminal-owned &middot; Cmd+F works</div>
+            </div>
+          </div>
         </div>
 
         <!-- Zone 2: App Scrollback -->
         <div class="zone zone-tracked">
           <pre class="term-text"><span class="bullet">&gt;</span> Run the tests <span class="success">&#10003; 47 passed</span>
 <span class="bullet">&gt;</span> Show commits <span class="dimmed"> ...</span></pre>
+          <div class="annotation-callout">
+            <div class="connector-line z2"></div>
+            <div class="annotation-card z2">
+              <div class="annotation-header">
+                <span class="zone-badge z2">2</span>
+                <span class="annotation-title">App Scrollback</span>
+              </div>
+              <div class="annotation-detail">App-managed &middot; Redraws on resize</div>
+            </div>
+          </div>
         </div>
 
         <!-- Zone 3: Live Screen -->
         <div class="zone zone-live">
           <pre class="term-text"><span class="bullet">&gt;</span> Refactor the auth module <span class="bullet">&#9679;</span> Reading middleware.ts... <span class="input-divider" style="margin-top: 4px"></span><span class="prompt">&gt; </span><span class="cursor-block">&#9612;</span></pre>
-        </div>
-      </div>
-
-      <!-- Connector + Annotation column -->
-      <div class="annotation-col">
-        <!-- Zone 1 annotation -->
-        <div class="connector-row">
-          <div class="connector-line z1"></div>
-          <div class="annotation-card z1">
-            <div class="annotation-header">
-              <span class="zone-badge z1">1</span>
-              <span class="annotation-title">Terminal Scrollback</span>
+          <div class="annotation-callout">
+            <div class="connector-line z3"></div>
+            <div class="annotation-card z3">
+              <div class="annotation-header">
+                <span class="zone-badge z3">3</span>
+                <span class="annotation-title">Live Screen</span>
+              </div>
+              <div class="annotation-detail">React components &middot; Incremental updates</div>
             </div>
-            <div class="annotation-detail">Terminal-owned &middot; Cmd+F works</div>
-          </div>
-        </div>
-
-        <!-- Zone 2 annotation -->
-        <div class="connector-row">
-          <div class="connector-line z2"></div>
-          <div class="annotation-card z2">
-            <div class="annotation-header">
-              <span class="zone-badge z2">2</span>
-              <span class="annotation-title">App Scrollback</span>
-            </div>
-            <div class="annotation-detail">App-managed &middot; Redraws on resize</div>
-          </div>
-        </div>
-
-        <!-- Zone 3 annotation -->
-        <div class="connector-row">
-          <div class="connector-line z3"></div>
-          <div class="annotation-card z3">
-            <div class="annotation-header">
-              <span class="zone-badge z3">3</span>
-              <span class="annotation-title">Live Screen</span>
-            </div>
-            <div class="annotation-detail">React components &middot; Incremental updates</div>
           </div>
         </div>
       </div>

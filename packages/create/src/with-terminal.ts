@@ -45,6 +45,13 @@ import { createCapabilityRegistry, type CapabilityRegistry } from "./internal/ca
 import { CLIPBOARD_CAPABILITY } from "./internal/capabilities"
 import { createOSC52Clipboard, createRichClipboard, type ClipboardCapability } from "@silvery/ag-term/features"
 import { createAdvancedClipboard } from "@silvery/ag-term/ansi"
+import {
+  createColorSchemeDetector,
+  type ColorSchemeDetector,
+  createWidthDetector,
+  type WidthDetector,
+  type TerminalWidthConfig,
+} from "@silvery/ag-term"
 
 // =============================================================================
 // Types
@@ -126,9 +133,22 @@ export interface WithTerminalOptions {
   focusReporting?: boolean
 
   /**
+   * Auto-detect terminal capabilities at startup.
+   * Runs Mode 2031 color scheme + DEC 1020-1023 width detection
+   * in parallel. Does not block app rendering.
+   * Default: true
+   */
+  autoDetect?: boolean
+
+  /**
+   * Timeout in milliseconds for auto-detection queries.
+   * Default: 200
+   */
+  autoDetectTimeoutMs?: number
+
+  /**
    * Enable OSC 5522 advanced clipboard (rich copy with MIME types).
    * When true, clipboard copies include both text/plain and text/html.
-   * When false or unset, uses OSC 52 (plain text only).
    * Default: false
    */
   advancedClipboard?: boolean
@@ -146,6 +166,15 @@ export interface AppWithTerminal {
 
   /** Clipboard capability for copy operations (OSC 52). */
   readonly clipboardCapability: ClipboardCapability
+
+  /** Color scheme detector (Mode 2031). Subscribe for reactive theme updates. */
+  readonly colorSchemeDetector: ColorSchemeDetector | undefined
+
+  /** Width detector (DEC 1020-1023). Results applied to term.caps. */
+  readonly widthDetector: WidthDetector | undefined
+
+  /** Promise that resolves when startup detection completes (or times out). */
+  readonly detectionReady: Promise<void>
 }
 
 /**
@@ -198,34 +227,73 @@ export function withTerminal<T extends RunnableApp>(
     const existingRegistry = (app as any).capabilityRegistry as CapabilityRegistry | undefined
     const registry = existingRegistry ?? createCapabilityRegistry()
 
-    // Create clipboard capability.
-    // When advancedClipboard is enabled, use OSC 5522 for rich copy (text/plain + text/html).
-    // Otherwise fall back to OSC 52 (plain text only).
-    const clipboard: ClipboardCapability = termConfig.advancedClipboard
-      ? createRichClipboard(
-          createAdvancedClipboard({
-            write: (data: string) => {
-              proc.stdout.write(data)
-            },
-            onData: (handler: (data: string) => void) => {
-              const listener = (buf: Buffer) => handler(buf.toString())
-              proc.stdin.on("data", listener)
-              return () => {
-                proc.stdin.removeListener("data", listener)
-              }
-            },
-            supported: true,
-          }),
-        )
-      : createOSC52Clipboard((data: string) => {
-          proc.stdout.write(data)
-        })
+    // Create OSC 52 clipboard using stdout.write
+    const clipboard = createOSC52Clipboard((data: string) => {
+      proc.stdout.write(data)
+    })
     registry.register(CLIPBOARD_CAPABILITY, clipboard)
 
-    return Object.assign(Object.create(app), {
+    // -------------------------------------------------------------------------
+    // Startup detection: Mode 2031 color scheme + DEC 1020-1023 width
+    // -------------------------------------------------------------------------
+    const autoDetect = termConfig.autoDetect ?? true
+    const timeoutMs = termConfig.autoDetectTimeoutMs ?? 200
+
+    let colorSchemeDetector: ColorSchemeDetector | undefined
+    let widthDetector: WidthDetector | undefined
+    let detectionReady: Promise<void>
+
+    if (autoDetect && proc.stdin.isTTY) {
+      // I/O adapters for the detectors: write to stdout, subscribe to stdin
+      const write = (data: string) => { proc.stdout.write(data) }
+      const onData = (handler: (data: string) => void): (() => void) => {
+        const bufferHandler = (chunk: Buffer | string) => {
+          handler(typeof chunk === "string" ? chunk : chunk.toString())
+        }
+        proc.stdin.on("data", bufferHandler)
+        return () => { proc.stdin.removeListener("data", bufferHandler) }
+      }
+
+      // Color scheme detector (Mode 2031)
+      colorSchemeDetector = createColorSchemeDetector({
+        write,
+        onData,
+        timeoutMs,
+      })
+      colorSchemeDetector.start()
+
+      // Width detector (DEC 1020-1023)
+      widthDetector = createWidthDetector({
+        write,
+        onData,
+        timeoutMs,
+      })
+
+      // Run width detection in the background — don't block rendering.
+      // Both queries are in-flight in parallel (color scheme uses start(),
+      // width uses detect()). Results update caps when they arrive.
+      detectionReady = widthDetector.detect().then((config: TerminalWidthConfig) => {
+        // Apply detected width config to the app's terminal caps
+        const appAny = enhanced as any
+        if (appAny.terminalOptions?.proc) {
+          // Update caps on the run options that will be passed to createApp/run
+          enhanced._detectedWidthConfig = config
+        }
+      }).catch(() => {
+        // Detection failed — use defaults, don't break the app
+      })
+    } else {
+      detectionReady = Promise.resolve()
+    }
+
+    const enhanced = Object.assign(Object.create(app), {
       terminalOptions: termConfig,
       capabilityRegistry: registry,
       clipboardCapability: clipboard,
+      colorSchemeDetector,
+      widthDetector,
+      detectionReady,
+      _detectedWidthConfig: null as TerminalWidthConfig | null,
       run(...args: unknown[]) {
         // Inject terminal options into the run call
         // The first arg after element is typically options
@@ -266,6 +334,8 @@ export function withTerminal<T extends RunnableApp>(
         }
         return originalRun.call(app, ...args, runOptions)
       },
-    }) as T & AppWithTerminal
+    }) as T & AppWithTerminal & { _detectedWidthConfig: TerminalWidthConfig | null }
+
+    return enhanced as T & AppWithTerminal
   }
 }
