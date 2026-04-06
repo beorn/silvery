@@ -101,6 +101,8 @@
     "vimonkey": "^0.2.0",
     "vitepress": "^1.5.0",
     "vitepress-enrich": "^0.4.0",
+    "vitepress-plugin-d2": "^1.1.0",
+    "vitepress-plugin-diagrams": "^1.2.2",
     "vitepress-plugin-llms": "^1.0.0",
     "vitepress-plugin-mermaid": "^2.0.17",
     "vitest": "^4.0.18",

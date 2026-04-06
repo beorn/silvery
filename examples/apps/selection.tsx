@@ -35,8 +35,7 @@ const S = {
   ids: (sel: Selection): ReadonlySet<ID> => new Set(sel.nodes),
   includes: (sel: Selection, id: ID): boolean => sel.nodes.includes(id),
   isEditing: (sel: Selection): boolean => !!sel.text,
-  inputMode: (sel: Selection | undefined): "board" | "node" | "text" =>
-    !sel ? "board" : sel.text ? "text" : "node",
+  inputMode: (sel: Selection | undefined): "board" | "node" | "text" => (!sel ? "board" : sel.text ? "text" : "node"),
 
   // Node mutations (clear text)
   select: (id: ID): Selection => ({ nodes: [id] }),
@@ -57,8 +56,7 @@ const S = {
     const hi = Math.max(anchorIdx, targetIdx)
     const range = allIds.slice(lo, hi + 1)
     // cursor first, anchor last
-    const nodes =
-      targetIdx <= anchorIdx ? (range as [ID, ...ID[]]) : ([...range].reverse() as [ID, ...ID[]])
+    const nodes = targetIdx <= anchorIdx ? (range as [ID, ...ID[]]) : ([...range].reverse() as [ID, ...ID[]])
     return { nodes }
   },
 
@@ -202,16 +200,13 @@ function SelectionDemo() {
 
   const cursorIndex = sel ? ALL_IDS.indexOf(S.cursor(sel)) : -1
 
-  const handleSelect = useCallback(
-    (id: ID, meta: boolean, shift: boolean) => {
-      setSel((prev) => {
-        if (meta && prev) return S.toggle(prev, id)
-        if (shift && prev) return S.extend(prev, id, ALL_IDS)
-        return S.select(id)
-      })
-    },
-    [],
-  )
+  const handleSelect = useCallback((id: ID, meta: boolean, shift: boolean) => {
+    setSel((prev) => {
+      if (meta && prev) return S.toggle(prev, id)
+      if (shift && prev) return S.extend(prev, id, ALL_IDS)
+      return S.select(id)
+    })
+  }, [])
 
   useInput((input: string, key: Key) => {
     if (input === "q" || (key.escape && !sel)) return "exit"

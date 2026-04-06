@@ -54,10 +54,7 @@ export function AIChat({
 }) {
   const exit = useExit()
   const { rows: termRows } = useWindowSize()
-  const update = useMemo(
-    () => createDemoUpdate(script, fastMode, autoStart),
-    [script, fastMode, autoStart],
-  )
+  const update = useMemo(() => createDemoUpdate(script, fastMode, autoStart), [script, fastMode, autoStart])
   const [state, send] = useTea(INIT_STATE, update)
   const footerControlRef = useRef<FooterControl>({ submit: () => {} })
 
@@ -82,8 +79,7 @@ export function AIChat({
             isLatest={isLatest}
             isFirstInGroup={exchange.role !== (index > 0 ? state.exchanges[index - 1]!.role : null)}
             isLastInGroup={
-              exchange.role !==
-              (index < state.exchanges.length - 1 ? state.exchanges[index + 1]!.role : null)
+              exchange.role !== (index < state.exchanges.length - 1 ? state.exchanges[index + 1]!.role : null)
             }
           />
         </Box>
@@ -116,9 +112,7 @@ export function AIChat({
             contextBaseline={state.contextBaseline}
             ctrlDPending={state.ctrlDPending}
             nextMessage={getNextMessage(state, script, autoStart)}
-            autoTypingText={
-              state.autoTyping ? state.autoTyping.full.slice(0, state.autoTyping.revealed) : null
-            }
+            autoTypingText={state.autoTyping ? state.autoTyping.full.slice(0, state.autoTyping.revealed) : null}
           />
         }
       />
@@ -136,11 +130,7 @@ export async function main() {
   const mode = args.includes("--inline") ? "inline" : "fullscreen"
 
   using handle = await run(
-    <AIChat
-      script={script}
-      autoStart={args.includes("--auto")}
-      fastMode={args.includes("--fast")}
-    />,
+    <AIChat script={script} autoStart={args.includes("--auto")} fastMode={args.includes("--fast")} />,
     { mode: mode as "inline" | "fullscreen", focusReporting: true },
   )
   await handle.waitUntilExit()
@@ -208,13 +198,7 @@ function useKeyBindings(
 
 function CompactingOverlay() {
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="$warning"
-      paddingX={1}
-      overflow="hidden"
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor="$warning" paddingX={1} overflow="hidden">
       <Text color="$warning" bold>
         <Spinner type="arc" /> Compacting context
       </Text>
@@ -230,9 +214,7 @@ function SessionComplete() {
       <Text color="$success" bold>
         {"✓"} Session complete
       </Text>
-      <Text color="$muted">
-        Scroll up to review — colors, borders, and hyperlinks preserved in scrollback.
-      </Text>
+      <Text color="$muted">Scroll up to review — colors, borders, and hyperlinks preserved in scrollback.</Text>
     </Box>
   )
 }

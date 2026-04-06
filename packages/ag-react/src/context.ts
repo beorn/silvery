@@ -137,10 +137,7 @@ type EventHandler<Args extends unknown[]> = (...args: Args) => void
  */
 export interface RuntimeContextValue<E extends BaseRuntimeEvents = BaseRuntimeEvents> {
   /** Subscribe to a typed event. Returns cleanup function. */
-  on<K extends string & keyof E>(
-    event: K,
-    handler: EventHandler<E[K] extends unknown[] ? E[K] : never>,
-  ): () => void
+  on<K extends string & keyof E>(event: K, handler: EventHandler<E[K] extends unknown[] ? E[K] : never>): () => void
   /** Emit a typed event (view → runtime). */
   emit<K extends string & keyof E>(event: K, ...args: E[K] extends unknown[] ? E[K] : never): void
   /** Exit the application with optional error. */

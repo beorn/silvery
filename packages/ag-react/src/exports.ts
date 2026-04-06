@@ -373,7 +373,11 @@ export {
   CursorProvider,
 } from "./hooks/useCursor"
 export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor"
-export { useTerminalSelection, useTerminalSelectionContext, TerminalSelectionProvider } from "./hooks/useTerminalSelection"
+export {
+  useTerminalSelection,
+  useTerminalSelectionContext,
+  TerminalSelectionProvider,
+} from "./hooks/useTerminalSelection"
 export type { UseTerminalSelectionResult } from "./hooks/useTerminalSelection"
 export { useVirtualizer } from "./hooks/useVirtualizer"
 export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer"
