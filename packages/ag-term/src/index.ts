@@ -490,6 +490,20 @@ export {
 export { BG_OVERRIDE_CODE, bgOverride } from "./ansi/index"
 
 // =============================================================================
+// Interactive Signals
+// =============================================================================
+
+export {
+  ensureInteractiveState,
+  setHovered,
+  setArmed,
+  setSelected,
+  setFocused,
+  setDropTarget,
+  clearInteractiveState,
+} from "./interactive-signals"
+
+// =============================================================================
 // Selection
 // =============================================================================
 
