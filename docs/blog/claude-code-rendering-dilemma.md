@@ -1,7 +1,7 @@
 ---
 title: "Why Claude Code Flickers"
 subtitle: "And What It Would Take to Fix It"
-description: "Claude Code's most-upvoted bug (694 votes), their NO_FLICKER rewrite, and why fullscreen mode still shows blank areas. Why this class of terminal rendering bug is so persistent — and the pipeline architecture that prevents it."
+description: "Claude Code's most-upvoted bug (~700 votes as of April 2026), their NO_FLICKER rewrite, and why fullscreen mode still shows blank areas. Why this class of terminal rendering bug is so persistent — and the pipeline architecture that prevents it."
 date: 2026-04-04
 ---
 
@@ -17,7 +17,7 @@ import zonesDiagram from '../public/blog/diagrams/04-zones.html?raw'
 # Why Claude Code Flickers
 <p style="font-size: 1.2em; color: var(--vp-c-text-2); margin-top: -8px; font-weight: 400">And What It Would Take to Fix It</p>
 
-Claude Code has spent months rewriting its renderer. They've [shipped a NO_FLICKER mode](https://x.com/bcherny/status/2039421575422980329), moved to the alternate screen buffer, built a [differential renderer with TypedArray double-buffering](https://news.ycombinator.com/item?id=46701013) — and users are still reporting blank areas and visual glitches across [60+ GitHub issues](https://github.com/anthropics/claude-code/issues/42670) spanning inline flicker, fullscreen corruption, and scrollback destruction. That strongly suggests the problem isn't only a bad diff. At least part of it is architectural.
+Claude Code has spent months rewriting its renderer. They've [shipped a NO_FLICKER mode](https://x.com/bcherny/status/2039421575422980329), moved to the alternate screen buffer, built a [differential renderer with TypedArray double-buffering](https://news.ycombinator.com/item?id=46701013) — and users are still reporting blank areas and visual glitches across [dozens of GitHub issues](https://github.com/anthropics/claude-code/issues/42670) spanning inline flicker, fullscreen corruption, and scrollback destruction. That strongly suggests the problem isn't only a bad diff. At least part of it is architectural.
 
 I don't have Claude Code's internal code — the discussion below is based on public comments, GitHub issues, and observed behavior. The team is clearly talented, and they're solving this under production constraints across xterm.js, VS Code, tmux, SSH, Windows, and native terminals. Anthropic may well fix today's fullscreen glitches with targeted patches. My claim is narrower: the recurring tradeoff between stable streaming updates, native scrollback, and robust recovery is architectural.
 
@@ -43,7 +43,7 @@ Now the AI sends the next token. You need to update the live content, but some o
 
 <HtmlDiagram :html="clearRedrawDiagram" />
 
-If your app has 50 completed exchanges above the live one, you're redrawing all of them — not because they changed, but because the clear is all-or-nothing. The more history, the more wasted bytes. In one public tmux report, Claude Code's inline mode produced [4,000–6,700 scroll events per second](https://github.com/anthropics/claude-code/issues/9935) — 423K scroll events in 106 seconds, with 189KB/s of ANSI overhead. Users correlated this with severe [VS Code instability and crashes](https://github.com/anthropics/claude-code/issues/10794).
+If your app has 50 completed exchanges above the live one, you're redrawing all of them — not because they changed, but because the clear is all-or-nothing. The more history, the more wasted bytes. In one public tmux report, Claude Code's inline mode produced [4,000–6,700 scroll events per second](https://github.com/anthropics/claude-code/issues/9935) — ~400K scroll events in under two minutes. Users correlated this with severe [VS Code instability and crashes](https://github.com/anthropics/claude-code/issues/10794).
 
 ## Flicker reason 2: Non-authoritative frame renders
 
