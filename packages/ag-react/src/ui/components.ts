@@ -139,6 +139,10 @@ export {
 } from "./components/Typography"
 export type { TypographyProps } from "./components/Typography"
 
+// Heading (OSC 66 text sizing)
+export { Heading } from "./components/Heading"
+export type { HeadingProps, HeadingLevel } from "./components/Heading"
+
 // Form Components
 export { Form, FormField } from "./components/Form"
 export type { FormProps, FormFieldProps } from "./components/Form"

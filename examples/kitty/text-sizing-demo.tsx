@@ -70,14 +70,20 @@ function banner(): string {
 function headingShowcase(): string {
   const lines: string[] = []
 
-  lines.push(styled("  HEADINGS", BOLD, YELLOW))
+  // Heading component scale mapping:
+  //   <Heading level={1}> → 2.0x   <Heading level={2}> → 1.5x
+  //   <Heading level={3}> → 1.25x  <Heading level={4}> → 1.0x (bold only)
+  //   <Heading level={5}> → 0.9x   <Heading level={6}> → 0.8x
+  lines.push(styled("  HEADINGS (Heading component scales)", BOLD, YELLOW))
   lines.push("")
-  lines.push(`  ${atScale(3, styled("Giant Title", BOLD, CYAN))}`)
-  lines.push(`  ${atScale(2, styled("Main Heading", BOLD, WHITE))}`)
-  lines.push(`  ${atScale(1.5, styled("Sub Heading", BOLD, GREEN))}`)
-  lines.push(`  ${styled("Normal body text for comparison", WHITE)}`)
-  lines.push(`  ${atScale(0.75, styled("Smaller text", DIM))}`)
-  lines.push(`  ${atScale(0.5, styled("Fine print and annotations", DIM, GRAY))}`)
+  lines.push(`  ${styled("h1", GRAY, DIM)} ${atScale(2, styled("Main Heading", BOLD, CYAN))}`)
+  lines.push(`  ${styled("h2", GRAY, DIM)} ${atScale(1.5, styled("Sub Heading", BOLD, GREEN))}`)
+  lines.push(`  ${styled("h3", GRAY, DIM)} ${atScale(1.25, styled("Group Heading", BOLD, CYAN))}`)
+  lines.push(`  ${styled("h4", GRAY, DIM)} ${styled("Body Heading (bold only)", BOLD, WHITE)}`)
+  lines.push(`  ${styled("h5", GRAY, DIM)} ${atScale(0.9, styled("Minor Heading", BOLD))}`)
+  lines.push(`  ${styled("h6", GRAY, DIM)} ${atScale(0.8, styled("Smallest Heading", BOLD, GRAY))}`)
+  lines.push("")
+  lines.push(`  ${styled("Usage:", DIM)} ${styled('<Heading level={2}>Sub Heading</Heading>', CYAN)}`)
   lines.push("")
 
   return lines.join("\n")

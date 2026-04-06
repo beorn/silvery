@@ -188,6 +188,10 @@ export {
 } from "@silvery/ag-react/ui/components"
 export type { TypographyProps } from "@silvery/ag-react/ui/components"
 
+// Heading (OSC 66 text sizing)
+export { Heading } from "@silvery/ag-react/ui/components"
+export type { HeadingProps, HeadingLevel } from "@silvery/ag-react/ui/components"
+
 // Focusable Controls
 export { Toggle } from "@silvery/ag-react/ui/components"
 export type { ToggleProps } from "@silvery/ag-react/ui/components"

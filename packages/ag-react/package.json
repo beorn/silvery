@@ -329,6 +329,10 @@
       "types": "./src/ui/components/Typography.tsx",
       "import": "./src/ui/components/Typography.tsx"
     },
+    "./ui/components/Heading": {
+      "types": "./src/ui/components/Heading.tsx",
+      "import": "./src/ui/components/Heading.tsx"
+    },
     "./ui/*": {
       "types": "./src/ui/*.ts",
       "import": "./src/ui/*.ts"
