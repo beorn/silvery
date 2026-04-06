@@ -138,6 +138,7 @@ Users install and import from these packages:
 | `@silvery/model`     | Optional DI model factories                                                 |
 | `@silvery/commander` | Type-safe Commander.js with colorized help, Standard Schema                 |
 | `@silvery/ansi`      | Everything terminal — styling, ANSI primitives, detection, theme derivation |
+| `@silvery/color`     | Color math — blend, brighten, darken, hexToRgb, contrast (re-exported by @silvery/theme) |
 
 Subpath imports available from `silvery`:
 
@@ -255,6 +256,23 @@ Three kinds of Term:
 - `createTermless({ cols, rows })` — Terminal emulator (real ANSI processing, screen/scrollback)
 
 Use `@silvery/test` + `createRenderer()` for fast stripped-text tests; use `createTermless()` when you need to verify ANSI output, box drawing, colors, scrollback, or cursor positioning. App has `cell(col, row)` for `FrameCell` access with resolved RGB colors — useful for asserting styling without parsing ANSI.
+
+## Common Tasks
+
+**Need to...** → **Use this:**
+
+| Task | Import | Example |
+|------|--------|---------|
+| Blend/mix colors | `import { blend } from "@silvery/theme"` | `blend("#000", "#fff", 0.5)` |
+| Brighten/darken | `import { brighten, darken } from "@silvery/theme"` | `brighten("#333", 0.2)` |
+| Check contrast | `import { checkContrast } from "@silvery/theme"` | `checkContrast(fg, bg)` |
+| Hex↔RGB↔HSL | `import { hexToRgb, rgbToHex, hexToHsl } from "@silvery/theme"` | |
+| Cell-level color assertions | `app.cell(col, row)` or `term.cell(row, col)` | `expect(cell.fg).toBe(...)` |
+| Frame-by-frame testing | `handle.frames` (ANSI strings per render) | Iterate all render frames |
+| Cell grid per frame | termless `TapeFrame[]` via tape executor | `frame.cell(r, c)` |
+| Verify incremental = fresh | `SILVERY_STRICT=1` env var | Auto-diffs every render |
+| Replay all frames | `SILVERY_STRICT_ACCUMULATE=1` env var | O(N²) full replay |
+| Terminal emulator in tests | `createTermless({ cols, rows })` from `@silvery/test` | Real ANSI processing |
 
 ## Debugging
 
