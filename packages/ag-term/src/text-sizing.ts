@@ -26,6 +26,34 @@ export function textSized(text: string, width: number): string {
   return `${OSC}66;w=${width};${text}${ST}`
 }
 
+// ============================================================================
+// Text Scale (font size multiplier) — OSC 66 s= parameter
+// ============================================================================
+
+/**
+ * Generate an OSC 66 escape sequence to set the text scale (font size).
+ *
+ * The scale is a floating-point multiplier:
+ * - 2.0 = double size (headings)
+ * - 1.0 = normal
+ * - 0.5 = half size (small print, annotations)
+ *
+ * The scale applies to all subsequent text until reset or changed.
+ * Only supported in Kitty v0.40+.
+ *
+ * @param scale - Font size multiplier (e.g. 2.0 for double, 0.5 for half)
+ */
+export function textScaled(scale: number): string {
+  return `${OSC}66;s=${scale}${ST}`
+}
+
+/**
+ * Generate an OSC 66 escape sequence to reset text scale to default (1.0).
+ */
+export function resetTextScale(): string {
+  return `${OSC}66;s=1${ST}`
+}
+
 /**
  * Check if a code point is in the Private Use Area (PUA).
  * Covers BMP PUA (U+E000-U+F8FF) and Supplementary PUA-A/B.

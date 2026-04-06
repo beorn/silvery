@@ -181,3 +181,15 @@ export {
   resetCursorColor,
   detectColorScheme,
 } from "./osc-colors"
+
+// =============================================================================
+// Color Scheme Detection (Mode 2031)
+// =============================================================================
+
+export {
+  createColorSchemeDetector,
+  parseColorSchemeResponse,
+  ENABLE_COLOR_SCHEME_REPORTING,
+  DISABLE_COLOR_SCHEME_REPORTING,
+} from "./color-scheme"
+export type { ColorSchemeDetector, ColorSchemeDetectorOptions, ColorScheme } from "./color-scheme"

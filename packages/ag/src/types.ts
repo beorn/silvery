@@ -215,6 +215,16 @@ export interface StyleProps {
   underlineColor?: string
   strikethrough?: boolean
   inverse?: boolean
+
+  /**
+   * Text size scale factor via OSC 66 (Kitty v0.40+).
+   *
+   * Float multiplier: 2.0 = double (headings), 1.0 = normal, 0.5 = half (small print).
+   * The terminal renders subsequent text at this scale until reset.
+   * Requires a terminal that supports the kitty text sizing protocol.
+   * Terminals without support silently ignore the escape sequence.
+   */
+  textSize?: number
 }
 
 /**

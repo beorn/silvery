@@ -94,8 +94,12 @@ export {
   detectExtendedUnderline,
   detectTerminalCaps,
   defaultCaps,
+  createColorSchemeDetector,
+  parseColorSchemeResponse,
+  ENABLE_COLOR_SCHEME_REPORTING,
+  DISABLE_COLOR_SCHEME_REPORTING,
 } from "./detection"
-export type { TerminalCaps } from "./detection"
+export type { TerminalCaps, ColorSchemeDetector, ColorSchemeDetectorOptions, ColorScheme } from "./detection"
 
 // =============================================================================
 // Utilities

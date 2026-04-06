@@ -387,6 +387,43 @@ const theme = await detectTheme({
 
 Supported terminals: Ghostty, Kitty, WezTerm, iTerm2, foot, Alacritty, xterm. Falls back gracefully in tmux, CI, and pipe environments.
 
+## Color Scheme Detection (Mode 2031)
+
+Silvery can detect whether the terminal is in dark or light mode using Mode 2031 — a terminal protocol where the terminal self-reports its color scheme. This works cross-platform (Linux, Windows Terminal, SSH sessions), unlike the macOS-only `AppleInterfaceStyle` approach.
+
+```typescript
+import { createColorSchemeDetector } from "@silvery/ansi"
+
+using detector = createColorSchemeDetector({
+  write: (data) => process.stdout.write(data),
+  onData: (handler) => {
+    process.stdin.on("data", handler)
+    return () => process.stdin.off("data", handler)
+  },
+  fallback: () => "dark", // macOS or other fallback
+})
+
+detector.start()
+// detector.scheme is "dark", "light", or "unknown"
+
+// React to scheme changes (e.g., user toggles system dark mode)
+detector.subscribe((scheme) => {
+  console.log("Color scheme changed:", scheme)
+})
+```
+
+**How it works:**
+
+1. Sends `\x1b[?2031h` to enable color scheme reporting
+2. Parses the terminal's response within a timeout (default 200ms)
+3. If the terminal supports Mode 2031: uses the response and listens for live changes
+4. If no response: falls back to the provided `fallback` function (e.g., macOS `AppleInterfaceStyle`)
+5. On dispose: sends `\x1b[?2031l` to disable reporting
+
+**Supported terminals:** Contour, foot, WezTerm (1.0+), and growing. Terminals that don't support Mode 2031 are handled gracefully via the timeout + fallback mechanism.
+
+The `darkBackground` field in `detectTerminalCaps()` still uses synchronous environment-variable heuristics and the macOS `defaults` command. The Mode 2031 detector is async and designed for apps that can wait for terminal responses at startup.
+
 ## Debugging Themes
 
 Pass an `adjustments` array to `deriveTheme()` to see every contrast adjustment it makes:

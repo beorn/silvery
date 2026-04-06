@@ -604,9 +604,11 @@ export { type PipelineConfig, type PipelineContext } from "@silvery/ag-term/pipe
 // withRender plugin
 export { withRender, type RenderTerm } from "@silvery/create/with-render"
 
-// Text sizing protocol (OSC 66) — PUA character width control
+// Text sizing protocol (OSC 66) — PUA character width + font scale
 export {
   textSized,
+  textScaled,
+  resetTextScale,
   isPrivateUseArea,
   isTextSizingLikelySupported,
   detectTextSizingSupport,

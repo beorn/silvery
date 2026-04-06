@@ -182,7 +182,14 @@ export { runTermtest, TERMTEST_SECTIONS, type TermtestSection, type TermtestOpti
 // Text Sizing (OSC 66)
 // =============================================================================
 
-export { textSized, isPrivateUseArea, isTextSizingLikelySupported, detectTextSizingSupport } from "./text-sizing"
+export {
+  textSized,
+  textScaled,
+  resetTextScale,
+  isPrivateUseArea,
+  isTextSizingLikelySupported,
+  detectTextSizingSupport,
+} from "./text-sizing"
 
 // =============================================================================
 // CSI 6n Cursor Position Query
