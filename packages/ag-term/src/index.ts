@@ -537,6 +537,23 @@ export {
 } from "./copy-mode"
 
 // =============================================================================
+// Pointer State Machine
+// =============================================================================
+
+export {
+  pointerStateUpdate,
+  createPointerState,
+  createPointerDoubleClickState,
+  checkPointerDoubleClick,
+  DRAG_THRESHOLD,
+  type PointerState,
+  type PointerAction,
+  type PointerEffect,
+  type Position as PointerPosition,
+  type PointerDoubleClickState,
+} from "./pointer-state"
+
+// =============================================================================
 // Virtual Scrollback
 // =============================================================================
 
