@@ -384,6 +384,10 @@ export { CopyProvider, useCopyProvider } from "./hooks/useCopyProvider"
 export { PasteProvider, usePaste } from "./hooks/usePaste"
 export type { PasteHandler } from "./hooks/usePaste"
 export { usePasteEvents } from "./hooks/usePasteEvents"
+
+// Re-export semantic copy types from ag-term for convenience
+export type { CopyEvent, SemanticCopyProvider, ClipboardData, PasteEvent } from "@silvery/ag-term/semantic-copy"
+export { createPasteEvent, createCopyProvider } from "@silvery/ag-term/semantic-copy"
 export { useVirtualizer } from "./hooks/useVirtualizer"
 export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer"
 export { useListItem } from "./hooks/useListItem"
