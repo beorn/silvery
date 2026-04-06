@@ -15,17 +15,14 @@ import zonesDiagram from '../public/blog/diagrams/04-zones.html?raw'
 </script>
 
 # Why Claude Code Flickers
+
 <p style="font-size: 1.2em; color: var(--vp-c-text-2); margin-top: -8px; font-weight: 400">And What It Would Take to Fix It</p>
 
-I use Claude Code every day. I also build terminal apps — specifically, a task board that runs entirely in the terminal, with React components, streaming AI responses, and keyboard-driven navigation.
+I've used Claude Code since it came out, and I've been building some bigger terminal apps — a task board with React components, streaming AI responses, and keyboard-driven navigation. So I've experienced terminal rendering problems from both sides: as a user hitting [~700-upvote flickering bugs](https://github.com/anthropics/claude-code/issues/3648), and as a developer debugging the same class of bugs in my own code.
 
-So when Claude Code's flickering problem hit [~700 upvotes](https://github.com/anthropics/claude-code/issues/3648) and Anthropic [rewrote their renderer from scratch](https://news.ycombinator.com/item?id=46701013), I watched with more than casual interest. I recognized every symptom they described — the full-screen redraws, the blank areas after switching windows, the layout jumping between two states — because I'd spent months debugging the same class of bugs in my own app.
+Anthropic has thrown serious engineering at this. They [rewrote their renderer](https://news.ycombinator.com/item?id=46701013) with TypedArray double-buffering, [shipped NO_FLICKER mode](https://x.com/bcherny/status/2039421575422980329), moved to the alternate screen buffer. And users still report [blank regions, stale rows, and scrollback breakage](https://github.com/anthropics/claude-code/issues/42670) across dozens of GitHub issues. I recognized every symptom — the full-screen redraws, the blank areas after switching windows, the layout jumping between two states — because I'd been debugging the same things.
 
-Then they [shipped NO_FLICKER mode](https://x.com/bcherny/status/2039421575422980329), moved to the alternate screen buffer, built a differential renderer with TypedArray double-buffering. And users still report [blank regions, stale rows, and scrollback breakage](https://github.com/anthropics/claude-code/issues/42670) across dozens of GitHub issues.
-
-I don't have their internal code — everything below is based on public comments, GitHub issues, and observed behavior. The team is clearly talented, and they're solving this under production constraints across xterm.js, VS Code, tmux, SSH, Windows, and native terminals. Anthropic may well fix today's glitches with targeted patches. But from having lived through the same problems from the builder side, I think the recurring tradeoff — stable streaming updates vs. native scrollback vs. robust recovery — is architectural.
-
-This post is what I learned from both sides.
+I don't have their internal code — everything below is based on public comments, GitHub issues, and observed behavior. Anthropic may well fix today's glitches with targeted patches. But from having lived through the same problems, I think the recurring tradeoff — stable streaming updates vs. native scrollback vs. robust recovery — is architectural.
 
 ## The terminal UI dilemma
 
@@ -140,15 +137,15 @@ Same components in both modes. Fullscreen gets atomic frame generation, an autho
 
 ### How the approaches compare
 
-|  | CC inline (observed, pre-NO_FLICKER) | CC fullscreen (observed, NO_FLICKER) | Silvery fullscreen | Silvery inline |
-| --- | --- | --- | --- | --- |
-| **Scrollback** | Native (but redraws disrupt it) | None while active (`Ctrl+O [` dumps transcript) | None while active | Graduated: app scrollback → terminal scrollback |
-| **Cmd+F** | Native | Reimplemented (`Ctrl+O /`) | In-app | Native for graduated + in-app |
-| **Incremental rendering** | Observed: frequent large-region redraws | Yes (cell-level buffer diff) | Yes (per-node dirty flags) | Yes (dirty flags + ED3 on structural events) |
-| **Pipeline** | Appears multi-turn / non-atomic | Appears multi-turn / non-atomic | Synchronous transaction | Synchronous transaction |
-| **Layout** | Appears measure-after-render | Appears measure-after-render | Layout-before-render | Layout-before-render |
-| **Desync recovery** | No public evidence of recovery | No public evidence of recovery | Full repaint from model | Full repaint from model |
-| **History while streaming** | Users report being pulled back to bottom | `Ctrl+O [` to browse | Scroll within app | Scroll naturally |
+|                             | CC inline (observed, pre-NO_FLICKER)     | CC fullscreen (observed, NO_FLICKER)            | Silvery fullscreen         | Silvery inline                                  |
+| --------------------------- | ---------------------------------------- | ----------------------------------------------- | -------------------------- | ----------------------------------------------- |
+| **Scrollback**              | Native (but redraws disrupt it)          | None while active (`Ctrl+O [` dumps transcript) | None while active          | Graduated: app scrollback → terminal scrollback |
+| **Cmd+F**                   | Native                                   | Reimplemented (`Ctrl+O /`)                      | In-app                     | Native for graduated + in-app                   |
+| **Incremental rendering**   | Observed: frequent large-region redraws  | Yes (cell-level buffer diff)                    | Yes (per-node dirty flags) | Yes (dirty flags + ED3 on structural events)    |
+| **Pipeline**                | Appears multi-turn / non-atomic          | Appears multi-turn / non-atomic                 | Synchronous transaction    | Synchronous transaction                         |
+| **Layout**                  | Appears measure-after-render             | Appears measure-after-render                    | Layout-before-render       | Layout-before-render                            |
+| **Desync recovery**         | No public evidence of recovery           | No public evidence of recovery                  | Full repaint from model    | Full repaint from model                         |
+| **History while streaming** | Users report being pulled back to bottom | `Ctrl+O [` to browse                            | Scroll within app          | Scroll naturally                                |
 
 > **Note:** Claude Code cells are based on public comments, issue reports, and observed behavior — not internal source code.
 

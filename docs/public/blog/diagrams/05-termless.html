@@ -37,9 +37,9 @@
 
   /* === PHASE HEADINGS === */
   .diagram-05-termless .phase-heading {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
-    color: #475569;
+    color: #334155;
     text-align: center;
     margin-bottom: 4px;
     line-height: 1;
@@ -52,15 +52,6 @@
     align-items: center;
     gap: 3px;
   }
-  /* Label below the box */
-  .diagram-05-termless .stage-sub {
-    font-size: 9px;
-    font-weight: 600;
-    color: rgba(100, 116, 160, 0.7);
-    line-height: 1;
-    margin-top: 3px;
-  }
-
   .diagram-05-termless .stage-box {
     padding: 8px 10px;
     border-radius: 8px;
@@ -150,6 +141,8 @@
     font-size: 9px;
     font-weight: 600;
     white-space: nowrap;
+    min-width: 60px;
+    text-align: center;
     background: white;
     border: 1.5px solid rgba(0, 0, 0, 0.08);
     color: #334155;
@@ -226,16 +219,6 @@
     width: 70px;
     opacity: 0.8;
   }
-  .diagram-05-termless .buffer-title {
-    font-family: "Inter", sans-serif;
-    font-size: 9px;
-    font-weight: 600;
-    color: rgba(100, 116, 160, 0.7);
-    text-align: center;
-    margin-top: 3px;
-    line-height: 1;
-  }
-
   /* === ASSERT DETAIL === */
   .diagram-05-termless .assert-detail {
     display: flex;
@@ -261,9 +244,9 @@
     color: #a5d6a7;
   }
   .diagram-05-termless .assert-result {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 1px 6px;
     border-radius: 4px;
   }
   .diagram-05-termless .result-pass {
@@ -282,10 +265,6 @@
       border-color: rgba(86, 180, 233, 0.4);
       color: #93c5fd;
     }
-    .diagram-05-termless .stage-sub {
-      color: #64748b;
-    }
-
     .diagram-05-termless .backend-chip {
       background: #2a2a3a;
       border-color: rgba(255, 255, 255, 0.1);
@@ -329,7 +308,6 @@
       <div class="stage stage-app">
         <div class="phase-heading">App</div>
         <div class="stage-box">TUI App</div>
-        <div class="stage-sub">React components</div>
       </div>
 
       <div class="arrow arrow-blue">
@@ -348,9 +326,9 @@
       <!-- ANSI Output -->
       <div class="stage stage-ansi">
         <div class="phase-heading">Output</div>
-        <div class="ansi-preview"><span style="color: #6b7585">\e[32m</span><span style="color: #85d6a0">Header</span><span style="color: #6b7585">\e[0m</span> <span style="color: #6b7585">\e[36m</span><span style="color: #6ccad4">Sidebar</span><span style="color: #6b7585">\e[0m</span>
+        <div class="ansi-preview"><span style="color: #6b7585">\e[32m</span><span style="color: #85d6a0">Header</span><span style="color: #6b7585">\e[0m</span>
+<span style="color: #6b7585">\e[36m</span><span style="color: #6ccad4">Sidebar</span><span style="color: #6b7585">\e[0m</span>
 <span style="color: #6b7585">\e[37m</span><span style="color: #eff0f3">Footer</span><span style="color: #6b7585">\e[0m</span></div>
-        <div class="stage-sub">ANSI sequences</div>
       </div>
 
       <div class="arrow arrow-gray">
@@ -424,7 +402,6 @@
 Card item
 <span class="cell-match">Footer</span></div>
         </div>
-        <div class="buffer-title">Screen + Scrollback</div>
       </div>
 
       <div class="arrow arrow-green" style="padding: 0 3px">
@@ -443,19 +420,6 @@ Card item
       <!-- Assertions -->
       <div class="assert-detail">
         <div class="phase-heading">Tests</div>
-        <div
-          style="
-            font-size: 9px;
-            color: rgba(100, 116, 160, 0.7);
-            font-weight: 600;
-            text-align: center;
-            line-height: 1.2;
-            display: block;
-            margin-bottom: 3px;
-          "
-        >
-          Termless<br />tests
-        </div>
         <div class="assert-code"><span class="assert-fn">expect</span>(screen)
 .<span class="assert-fn">toBe</span>(<span class="assert-str">"Hdr"</span>)</div>
         <div style="display: flex; gap: 5px">
