@@ -49,7 +49,7 @@ const { env, force, verbose } = program.opts()
 //      └──────────────── "dev" | "staging" | "prod"
 ```
 
-With plain Commander, `opts()` returns `Record<string, any>` — every value is untyped. With `@silvery/commander`, each option's type is inferred from its schema: `z.port` produces `number`, `z.enum(...)` produces a union, `z.csv` produces `string[]`. Invalid values are rejected at parse time with clear error messages — not silently passed through as strings.
+With plain Commander, `opts()` returns `Record<string, any>` — every value is untyped. With `@silvery/commander`, each `.option()` call narrows the return type of `.opts()` — no manual interfaces needed. Types are inferred from flag syntax (`--verbose` → `boolean`, `--port <n>` → `string`), parser functions (`port` → `number`, `csv` → `string[]`), schemas (`z.enum(...)` → union), and choices arrays. Accessing a nonexistent option is a compile error. Invalid values are rejected at parse time with clear error messages.
 
 [Zod](https://github.com/colinhacks/zod) is entirely optional — `z` is tree-shaken from your bundle if you don't import it. Without Zod, use the built-in types (`port`, `int`, `csv`) or plain Commander.
 
