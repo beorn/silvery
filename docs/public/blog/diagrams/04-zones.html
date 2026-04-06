@@ -23,18 +23,6 @@
     width: 100%;
     position: relative;
   }
-  .diagram-04-zones .page::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50px;
-    width: 370px;
-    height: 450px;
-    transform: translateY(-50%);
-    background: radial-gradient(ellipse at center, rgba(88, 101, 242, 0.05) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
 
   .diagram-04-zones .diagram {
     position: relative;
@@ -113,8 +101,8 @@
 
   /* Zone 1: Terminal Scrollback — most ghosted */
   .diagram-04-zones .zone-native {
-    background: #1e1e2a;
-    border: 3px solid rgba(220, 60, 60, 0.3);
+    background: #2a2a3a;
+    border: 3px solid rgba(220, 60, 60, 0.5);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px 8px 0 0;
     margin: 0 8px;
@@ -125,8 +113,8 @@
 
   /* Zone 2: App Scrollback — medium ghosted */
   .diagram-04-zones .zone-tracked {
-    background: #1e1e2a;
-    border: 3px solid rgba(34, 197, 94, 0.35);
+    background: #232333;
+    border: 3px solid rgba(34, 197, 94, 0.55);
     border-top: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 0;
@@ -287,13 +275,13 @@
     width: 18px;
   }
   .diagram-04-zones .ann-native .connector-line {
-    background: rgba(220, 60, 60, 0.6);
+    background: rgba(220, 60, 60, 0.5);
   }
   .diagram-04-zones .ann-tracked .connector-line {
-    background: rgba(34, 197, 94, 0.6);
+    background: rgba(34, 197, 94, 0.5);
   }
   .diagram-04-zones .ann-live .connector-line {
-    background: rgba(59, 130, 246, 0.6);
+    background: rgba(59, 130, 246, 0.5);
   }
 
   .diagram-04-zones .annotation-card {
@@ -305,15 +293,15 @@
   }
 
   .diagram-04-zones .ann-native .annotation-card {
-    border: 2px solid rgba(220, 60, 60, 0.25);
+    border: 2px solid rgba(220, 60, 60, 0.3);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
   .diagram-04-zones .ann-tracked .annotation-card {
-    border: 2px solid rgba(34, 197, 94, 0.25);
+    border: 2px solid rgba(34, 197, 94, 0.3);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
   .diagram-04-zones .ann-live .annotation-card {
-    border: 2px solid rgba(59, 130, 246, 0.32);
+    border: 2px solid rgba(59, 130, 246, 0.3);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
 
@@ -373,10 +361,10 @@
     color: rgba(220, 60, 60, 0.5);
   }
   .diagram-04-zones .ann-tracked .annotation-details li::before {
-    color: rgba(34, 197, 94, 0.55);
+    color: rgba(34, 197, 94, 0.5);
   }
   .diagram-04-zones .ann-live .annotation-details li::before {
-    color: rgba(59, 130, 246, 0.55);
+    color: rgba(59, 130, 246, 0.5);
   }
 
   /* === DARK MODE === */

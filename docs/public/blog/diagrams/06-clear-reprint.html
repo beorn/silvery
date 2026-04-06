@@ -23,18 +23,6 @@
     width: 100%;
     position: relative;
   }
-  .diagram-06-clear-reprint .page::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 500px;
-    height: 500px;
-    transform: translate(-50%, -50%);
-    background: radial-gradient(ellipse at center, rgba(86, 180, 233, 0.04) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
 
   .diagram-06-clear-reprint .diagram {
     position: relative;
@@ -121,25 +109,8 @@
     padding: 1px 8px;
   }
 
-  /* Wasted work overlay */
   .diagram-06-clear-reprint .wasted-zone {
     position: relative;
-  }
-  .diagram-06-clear-reprint .wasted-zone::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 4px,
-      rgba(86, 180, 233, 0.04) 4px,
-      rgba(86, 180, 233, 0.04) 8px
-    );
-    pointer-events: none;
   }
 
   .diagram-06-clear-reprint .term-text {

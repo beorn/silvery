@@ -31,7 +31,7 @@ Terminal apps with rich, mutable streaming output usually face a forced choice. 
 
 **[Alternate buffer](https://terminfo.dev/feature/screen.alternate-screen)** (also called altscreen or fullscreen mode) is what vim, htop, and other fullscreen apps use — a separate canvas with full cell-level control, but no scrollback. When the app exits, the alternate buffer is discarded and the original main buffer is restored, as if the app was never there.
 
-Append-only logs don't have this problem — output scrolls up and stays. The hard case is output that keeps changing after earlier lines have already scrolled away. That's what every AI agent, streaming test runner, and deployment dashboard needs — and it doesn't fit neatly into either buffer.
+Append-only logs don't have this problem — output scrolls up and stays. The hard case is output that keeps changing after earlier lines have already scrolled away. That's what every AI agent, streaming test runner, and deployment dashboard needs — and it doesn't fit neatly into either buffer. From here, the failure modes split cleanly: in the main buffer, flicker comes from redrawing content you no longer own; in fullscreen, it comes from emitting frames you can't generate and recover authoritatively.
 
 ## Flicker reason 1: Inline redraws
 
@@ -43,7 +43,7 @@ Now the AI sends the next token. You need to update the live content, but some o
 
 If your app has 50 completed exchanges above the live one, you're redrawing all of them — not because they changed, but because the clear is all-or-nothing. The more history, the more wasted bytes. In one public tmux report, Claude Code's inline mode produced [4,000–6,700 scroll events per second](https://news.ycombinator.com/item?id=46699072), which users correlated with severe [VS Code instability and crashes](https://github.com/anthropics/claude-code/issues/10794).
 
-## Flicker reason 2: Non-atomic frame renders
+## Flicker reason 2: Non-authoritative frame renders
 
 There's a deeper source of visual instability that follows you to fullscreen mode. It happens when the rendering pipeline isn't fused — when reconciliation, layout, rendering, and output happen in separate event loop turns with gaps between them.
 
@@ -53,13 +53,13 @@ Two forms of this:
 
 **Layout feedback loops.** A component renders, then measures its size, discovers it changed, and re-renders. Text wraps to 3 lines, container adjusts, text reflows to 2 lines, container adjusts, text wraps to 3 lines — visible oscillation between two states. Ink has hit this class of problem with `measureElement()`, which returns dimensions _after_ render, triggering a state update, triggering another render. Each intermediate pass flashes on screen.
 
-Claude Code's move to the [alternate screen](https://terminfo.dev/feature/screen.alternate-screen) appears to have eliminated the worst scrollback-driven flicker (reason 1). But they had to rebuild everything the main buffer gives you for free: search (`Ctrl+O` then `/` instead of Cmd+F), text selection (custom click-and-drag handler), scrolling (PgUp/PgDn/mouse wheel capture), clipboard ([OSC 52](https://terminfo.dev/feature/osc.clipboard) for SSH/tmux), and history review. That `Ctrl+O` → `[` escape hatch — dumping the conversation back to native scrollback — shows the team knows users want scrollback.
+Claude Code's move to the [alternate screen](https://terminfo.dev/feature/screen.alternate-screen) appears to have reduced the worst scrollback-driven flicker (reason 1). But they had to rebuild everything the main buffer gives you for free: search (`Ctrl+O` then `/` instead of Cmd+F), text selection (custom click-and-drag handler), scrolling (PgUp/PgDn/mouse wheel capture), clipboard ([OSC 52](https://terminfo.dev/feature/osc.clipboard) for SSH/tmux), and history review. That `Ctrl+O` → `[` escape hatch — dumping the conversation back to native scrollback — shows the team knows users want scrollback.
 
 But even with total cell-level control, users still see **garbled output**: blank areas, overlapping text, stale content. It's non-deterministic — sometimes the screen renders correctly, sometimes entire sections are empty.
 
 In one [public reverse-engineering thread](https://github.com/anthropics/claude-code/issues/42010), contributors proposed several plausible failure modes: previous-frame corruption during [DECSTBM](https://terminfo.dev/feature/scroll.scroll-region) scroll optimization, a style-cache edge case, and missing full-repaint recovery after terminal state disturbances (focus change, multiplexer reattach). The exact bugs may differ, but the failure shape is the same: the renderer emits a frame based on an incorrect belief about what the screen currently shows, and then lacks a reliable way to recover.
 
-Better diffing alone won't fix this.
+If the failure includes state incoherence or desync, better diffing alone won't fix it.
 
 ## The missing invariants
 
@@ -81,7 +81,9 @@ Here's the contrast between a pipeline where phases happen in separate event loo
 
 [Silvery](https://silvery.dev) uses a custom React reconciler that enforces all three invariants. After React produces a new tree, the entire layout → render → output pipeline runs as a single synchronous transaction. The reconciler APIs — Suspense, `useTransition`, `useDeferredValue` — remain available, though concurrent rendering semantics matter less in a renderer that flushes synchronously. The tradeoff is reduced interruptibility — but in the workloads I've measured, a typical Silvery frame is about [169 microseconds](https://silvery.dev/guide/silvery-vs-ink#performance). The practical cost has been small.
 
-## The architecture that prevents it
+## An architecture built to avoid it
+
+Silvery is one implementation of this pattern; the broader point is the invariants, not any specific library.
 
 ### App-managed scrollback
 
