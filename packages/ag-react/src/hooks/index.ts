@@ -76,6 +76,9 @@ export { usePasteEvents } from "./usePasteEvents"
 export { usePointerState, resolveUserSelect, resolveNodeDraggable } from "./usePointerState"
 export type { UsePointerStateOptions, UsePointerStateResult } from "./usePointerState"
 
+// Interactive State
+export { useInteractiveState } from "./useInteractiveState"
+
 // List Item
 export { useListItem } from "./useListItem"
 export type { ListItemContext } from "./useListItem"

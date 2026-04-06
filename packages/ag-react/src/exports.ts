@@ -392,6 +392,7 @@ export { useVirtualizer } from "./hooks/useVirtualizer"
 export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer"
 export { useListItem } from "./hooks/useListItem"
 export type { ListItemContext } from "./hooks/useListItem"
+export { useInteractiveState } from "./hooks/useInteractiveState"
 
 // App-level Providers (Phase 4)
 export { SearchProvider, useSearch, useSearchOptional } from "./providers/SearchProvider"
