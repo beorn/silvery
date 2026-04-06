@@ -79,6 +79,15 @@ export type { UsePointerStateOptions, UsePointerStateResult } from "./usePointer
 // Selection (capability-based — reads from CapabilityRegistry)
 export { useSelection } from "./useSelection"
 
+// Find State (capability-based — reads from CapabilityRegistry)
+export { useFindState } from "./useFindState"
+
+// Copy Mode State (capability-based — reads from CapabilityRegistry)
+export { useCopyModeState } from "./useCopyModeState"
+
+// Drag State (capability-based — reads from CapabilityRegistry)
+export { useDragState } from "./useDragState"
+
 // Interactive State
 export { useInteractiveState } from "./useInteractiveState"
 

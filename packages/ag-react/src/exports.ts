@@ -394,6 +394,9 @@ export { useListItem } from "./hooks/useListItem"
 export type { ListItemContext } from "./hooks/useListItem"
 export { useInteractiveState } from "./hooks/useInteractiveState"
 export { useSelection } from "./hooks/useSelection"
+export { useFindState } from "./hooks/useFindState"
+export { useCopyModeState } from "./hooks/useCopyModeState"
+export { useDragState } from "./hooks/useDragState"
 
 // App-level Providers (Phase 4)
 export { SearchProvider, useSearch, useSearchOptional } from "./providers/SearchProvider"
