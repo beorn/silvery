@@ -157,6 +157,10 @@
       "types": "./src/hooks/useVirtualization.ts",
       "import": "./src/hooks/useVirtualization.ts"
     },
+    "./hooks/usePointerState": {
+      "types": "./src/hooks/usePointerState.tsx",
+      "import": "./src/hooks/usePointerState.tsx"
+    },
     "./hooks/useVirtualizer": {
       "types": "./src/hooks/useVirtualizer.ts",
       "import": "./src/hooks/useVirtualizer.ts"

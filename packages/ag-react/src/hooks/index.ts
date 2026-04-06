@@ -69,6 +69,10 @@ export type { PasteHandler } from "./usePaste"
 // Paste Event Bridge (runtime → PasteHandler context)
 export { usePasteEvents } from "./usePasteEvents"
 
+// Pointer State Machine (gesture disambiguation)
+export { usePointerState, resolveUserSelect, resolveNodeDraggable } from "./usePointerState"
+export type { UsePointerStateOptions, UsePointerStateResult } from "./usePointerState"
+
 // List Item
 export { useListItem } from "./useListItem"
 export type { ListItemContext } from "./useListItem"
