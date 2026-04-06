@@ -56,6 +56,7 @@ export type PointerEffect =
   | { type: "clearSelection" }
   | { type: "startDrag"; target: AgNode }
   | { type: "updateDrag"; pos: Position }
+  | { type: "finishDrag"; target: AgNode; pos: Position }
   | { type: "cancelDrag" }
   | { type: "click"; target: AgNode; x: number; y: number }
   | { type: "doubleClick"; target: AgNode; x: number; y: number }
@@ -327,8 +328,11 @@ function handlePointerUp(
     }
 
     case "dragging-node": {
-      // End the node drag (future: emit drop effect)
-      return [{ type: "idle" }, [{ type: "cancelDrag" }]]
+      // End the node drag — emit finishDrag so integration layer can dispatch onDrop
+      return [
+        { type: "idle" },
+        [{ type: "finishDrag", target: state.target, pos: { x: action.x, y: action.y } }],
+      ]
     }
 
     case "dragging-area": {
