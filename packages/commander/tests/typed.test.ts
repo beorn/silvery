@@ -288,6 +288,102 @@ describe("actionMerged — merged named-object form", () => {
   })
 })
 
+describe("inline command-string arguments", () => {
+  it("`command('deploy <service>')` passes the positional arg to action", () => {
+    let received: any
+    const program = new Command("app")
+    program.command("deploy <service>").action((service: string) => {
+      received = service
+    })
+    program.parse(["node", "app", "deploy", "api"], { from: "node" })
+    expect(received).toBe("api")
+  })
+
+  it("`command('deploy [env]')` makes the arg optional", () => {
+    let received: any
+    const program = new Command("app")
+    program.command("deploy [env]").action((env: string | undefined) => {
+      received = env
+    })
+    program.parse(["node", "app", "deploy"], { from: "node" })
+    expect(received).toBeUndefined()
+  })
+
+  it("`command('deploy <service> [env]')` parses both args in order", () => {
+    let receivedService: any
+    let receivedEnv: any
+    const program = new Command("app")
+    program.command("deploy <service> [env]").action((service: string, env: string | undefined) => {
+      receivedService = service
+      receivedEnv = env
+    })
+    program.parse(["node", "app", "deploy", "api", "prod"], { from: "node" })
+    expect(receivedService).toBe("api")
+    expect(receivedEnv).toBe("prod")
+  })
+
+  it("`command('run <files...>')` collects variadic args", () => {
+    let received: any
+    const program = new Command("app")
+    program.command("run <files...>").action((files: string[]) => {
+      received = files
+    })
+    program.parse(["node", "app", "run", "a.txt", "b.txt", "c.txt"], { from: "node" })
+    expect(received).toEqual(["a.txt", "b.txt", "c.txt"])
+  })
+
+  it("`actionMerged` works on inline-arg commands (names mirrored from string)", () => {
+    let received: any
+    const program = new Command("app")
+    program.command("deploy <service> [env]").actionMerged((params) => {
+      received = params
+    })
+    program.parse(["node", "app", "deploy", "api", "prod"], { from: "node" })
+    expect(received.service).toBe("api")
+    expect(received.env).toBe("prod")
+  })
+
+  it("kebab-case inline arg name is camelCased in actionMerged params", () => {
+    let received: any
+    const program = new Command("app")
+    program.command("deploy <service-name>").actionMerged((params) => {
+      received = params
+    })
+    program.parse(["node", "app", "deploy", "my-api"], { from: "node" })
+    expect(received.serviceName).toBe("my-api")
+  })
+
+  it("inline arg + .option() composes correctly with actionMerged", () => {
+    let received: any
+    const program = new Command("app")
+    program
+      .command("deploy <service>")
+      .option("-f, --force", "Force")
+      .actionMerged((params) => {
+        received = params
+      })
+    program.parse(["node", "app", "deploy", "api", "--force"], { from: "node" })
+    expect(received.service).toBe("api")
+    expect(received.force).toBe(true)
+  })
+
+  it("mixing inline args with .argument() chains them in order", () => {
+    let receivedService: any
+    let receivedEnv: any
+    const program = new Command("app")
+    program
+      .command("deploy <service>")
+      .argument("[env]", "Environment")
+      .action((service: string, env: string | undefined) => {
+        receivedService = service
+        receivedEnv = env
+      })
+    program.parse(["node", "app", "deploy", "api", "prod"], { from: "node" })
+    expect(receivedService).toBe("api")
+    expect(receivedEnv).toBe("prod")
+  })
+})
+
 describe("action — Commander-native passes through", () => {
   it("passes opts to handler when there are no typed args", () => {
     let receivedOpts: any

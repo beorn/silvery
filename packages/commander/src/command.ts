@@ -140,11 +140,59 @@ type IsArgVariadic<S extends string> = S extends `${string}...${string}` ? true 
 type ArgKey<S extends string> = CamelCase<ExtractArgName<S>>
 
 /**
- * Reject command name strings that contain argument syntax.
- * `"deploy <service>"` → never (forces use of `.argument()` instead).
- * `"deploy"` → `"deploy"` (passes through).
+ * Parse positional arguments embedded in a command name string.
+ *
+ * Commander.js accepts argument syntax inline with command names:
+ *   `"deploy <service>"`            → 1 required arg
+ *   `"deploy <service> [env]"`      → 1 required + 1 optional
+ *   `"deploy <files...>"`           → 1 required variadic
+ *
+ * `ParseCommandString<S>` returns `[Args tuple, ArgsRecord]` so the typed
+ * `command<S>()` overload can produce a `Command<{}, Args, ArgsRecord>` with
+ * the same type information you'd get from chaining `.argument()` calls.
+ *
+ * Limitations: only plain string types — `<svc>` is `string`, `[env]` is
+ * `string | undefined`, `<files...>` is `string[]`. Parsers, schemas, and
+ * choices still require `.argument()` because the inline string syntax can't
+ * express them. Mixing inline args with `.argument()` calls is allowed:
+ * the inline ones come first in the tuple, the `.argument()` ones append.
  */
-type RejectArgSyntax<S extends string> = S extends `${string}<${string}` | `${string}[${string}]` ? never : S
+
+/** Split a command name string at the first space. `"deploy <service>"` → `["deploy", "<service>"]` */
+type SplitCommandHead<S extends string> = S extends `${infer Name} ${infer Rest}` ? [Name, Rest] : [S, ""]
+
+/** Walk the tail tokens after the command name and build [Args tuple, ArgsRecord]. */
+type ParseInlineArgs<S extends string, Tuple extends any[] = [], Rec = {}> =
+  S extends ""
+    ? [Tuple, Rec]
+    : S extends `${infer Tok} ${infer Rest}`
+      ? Tok extends `<${infer Name}...>`
+        ? ParseInlineArgs<Rest, [...Tuple, string[]], Rec & Record<CamelCase<Name>, string[]>>
+        : Tok extends `<${infer Name}>`
+          ? ParseInlineArgs<Rest, [...Tuple, string], Rec & Record<CamelCase<Name>, string>>
+          : Tok extends `[${infer Name}...]`
+            ? ParseInlineArgs<Rest, [...Tuple, string[]], Rec & Record<CamelCase<Name>, string[]>>
+            : Tok extends `[${infer Name}]`
+              ? ParseInlineArgs<Rest, [...Tuple, string | undefined], Rec & Record<CamelCase<Name>, string | undefined>>
+              : ParseInlineArgs<Rest, Tuple, Rec> // skip non-arg tokens
+      : // Last token (no trailing space)
+        S extends `<${infer Name}...>`
+        ? [[...Tuple, string[]], Rec & Record<CamelCase<Name>, string[]>]
+        : S extends `<${infer Name}>`
+          ? [[...Tuple, string], Rec & Record<CamelCase<Name>, string>]
+          : S extends `[${infer Name}...]`
+            ? [[...Tuple, string[]], Rec & Record<CamelCase<Name>, string[]>]
+            : S extends `[${infer Name}]`
+              ? [[...Tuple, string | undefined], Rec & Record<CamelCase<Name>, string | undefined>]
+              : [Tuple, Rec]
+
+/** Top-level: parse a `command(name)` string into [Args tuple, ArgsRecord]. */
+type ParseCommandString<S extends string> =
+  SplitCommandHead<S> extends [infer _Name, infer Tail extends string]
+    ? Tail extends ""
+      ? [[], {}]
+      : ParseInlineArgs<Tail>
+    : [[], {}]
 
 /**
  * Infer the value type for an argument based on its flags string and
@@ -577,6 +625,37 @@ class _CommandBase extends BaseCommand {
   }
 
   /**
+   * Override Commander's `command()` to mirror inline-arg names (from
+   * `command("deploy <service>")`) into our `_typedArgNames`. This keeps
+   * `.actionMerged()` working on subcommands declared with the inline form,
+   * since the merged dispatch reads from `_typedArgNames` to know which
+   * positional indices map to which key.
+   *
+   * Both forms now coexist:
+   *   .command("deploy <service>")               // inline — names from string
+   *   .command("deploy").argument("<service>")   // explicit — names from .argument()
+   * Both produce equivalent runtime + type behavior.
+   */
+  override command(...args: any[]): any {
+    // biome-ignore lint: variadic forwarding
+    const result = (super.command as any).apply(this, args)
+    // The newly-created subcommand is always the last entry in this.commands
+    // (Commander appends after createCommand). Its _args field has been populated
+    // by Commander's own parsing of the name string.
+    const sub = this.commands[this.commands.length - 1] as _CommandBase | undefined
+    if (sub && Array.isArray((sub as any)._args)) {
+      for (const arg of (sub as any)._args as Array<{ name(): string }>) {
+        const argName = arg.name()
+        const camel = argName.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())
+        if (!sub._typedArgNames.includes(camel)) {
+          sub._typedArgNames.push(camel)
+        }
+      }
+    }
+    return result
+  }
+
+  /**
    * Auto-detect capitalization from user-provided descriptions and match it
    * for built-in options (-V/--version, -h/--help).
    */
@@ -904,19 +983,27 @@ export interface Command<
   // -- Typed command overload --
 
   /**
-   * Create a subcommand. Returns a fresh `Command<{}>`.
+   * Create a subcommand. Returns a fresh `Command<{}, ParsedArgs, ParsedArgsRecord>`.
    *
-   * **Do not define arguments in the command name string** (e.g. `"deploy <service>"`).
-   * Use `.argument()` on the returned command for typed positional arguments.
+   * Positional arguments embedded in the command name string (`"deploy <service>"`)
+   * are parsed at the type level and contribute to the returned `Args` tuple and
+   * `ArgsRecord`. The same shape as if you'd chained `.argument("<service>")`.
+   *
+   * For typed parsers, schemas, or choices, use `.argument()` on the returned
+   * command — the inline string syntax can only express plain string args.
+   * Mixing both forms is allowed: inline args come first in the tuple, then
+   * `.argument()` calls append.
    */
   command<S extends string>(
-    nameAndArgs: RejectArgSyntax<S>,
+    nameAndArgs: S,
     opts?: { isDefault?: boolean; hidden?: boolean; noHelp?: boolean },
-  ): Command<{}, [], {}>
+  ): ParseCommandString<S> extends [infer A extends any[], infer R extends Record<string, unknown>]
+    ? Command<{}, A, R>
+    : Command<{}, [], {}>
 
   /** Overload for command with description (attached-action subcommand, returns parent). */
   command<S extends string>(
-    nameAndArgs: RejectArgSyntax<S>,
+    nameAndArgs: S,
     description: string,
     opts?: { isDefault?: boolean; hidden?: boolean; noHelp?: boolean; executableFile?: string },
   ): this

@@ -541,33 +541,87 @@ describe("actionMerged() typing — merged named-object form", () => {
   })
 })
 
-describe("command() rejects arg syntax in name", () => {
-  it("command('deploy') is valid", () => {
+describe("command() with inline args (Commander-native string form)", () => {
+  it("command('deploy') is valid (no args)", () => {
     const cmd = new Command("app")
     const sub = cmd.command("deploy")
     expectTypeOf(sub).toMatchTypeOf<InstanceType<typeof Command>>()
   })
 
-  it("subcommand starts with fresh opts and has its own args", () => {
+  it(".argument() chain on a subcommand still works", () => {
     const parent = new Command("app").option("--verbose", "Verbose")
     parent.command("deploy")
       .argument("<service>", "Service")
       .actionMerged((params) => {
-        // Subcommand's args are visible via actionMerged params.
         expectTypeOf(params.service).toEqualTypeOf<string>()
       })
-    // Parent opts should not leak into subcommand — verified by the types above.
   })
 
-  it("command('deploy <service>') is a compile error", () => {
-    const cmd = new Command("app")
-    // @ts-expect-error -- arg syntax in command name is rejected
-    cmd.command("deploy <service>")
+  it("command('deploy <service>') types service: string", () => {
+    new Command("app")
+      .command("deploy <service>")
+      .action((service, _opts) => {
+        expectTypeOf(service).toEqualTypeOf<string>()
+      })
   })
 
-  it("command('deploy [env]') is a compile error", () => {
-    const cmd = new Command("app")
-    // @ts-expect-error -- arg syntax in command name is rejected
-    cmd.command("deploy [env]")
+  it("command('deploy [env]') types env: string | undefined", () => {
+    new Command("app")
+      .command("deploy [env]")
+      .action((env, _opts) => {
+        expectTypeOf(env).toEqualTypeOf<string | undefined>()
+      })
+  })
+
+  it("command('deploy <service> [env]') types both args in order", () => {
+    new Command("app")
+      .command("deploy <service> [env]")
+      .action((service, env, _opts) => {
+        expectTypeOf(service).toEqualTypeOf<string>()
+        expectTypeOf(env).toEqualTypeOf<string | undefined>()
+      })
+  })
+
+  it("command('run <files...>') types files: string[]", () => {
+    new Command("app")
+      .command("run <files...>")
+      .action((files, _opts) => {
+        expectTypeOf(files).toEqualTypeOf<string[]>()
+      })
+  })
+
+  it("command('cleanup [extras...]') types extras: string[]", () => {
+    new Command("app")
+      .command("cleanup [extras...]")
+      .action((extras, _opts) => {
+        expectTypeOf(extras).toEqualTypeOf<string[]>()
+      })
+  })
+
+  it("inline args + actionMerged: params has typed keys", () => {
+    new Command("app")
+      .command("deploy <service> [env]")
+      .actionMerged((params) => {
+        expectTypeOf(params.service).toEqualTypeOf<string>()
+        expectTypeOf(params.env).toEqualTypeOf<string | undefined>()
+      })
+  })
+
+  it("kebab-case inline arg name is camelCased in actionMerged params", () => {
+    new Command("app")
+      .command("deploy <service-name>")
+      .actionMerged((params) => {
+        expectTypeOf(params.serviceName).toEqualTypeOf<string>()
+      })
+  })
+
+  it("inline args compose with .option()", () => {
+    new Command("app")
+      .command("deploy <service>")
+      .option("-f, --force", "Force")
+      .action((service, opts) => {
+        expectTypeOf(service).toEqualTypeOf<string>()
+        expectTypeOf(opts).toEqualTypeOf<{ force: boolean | undefined }>()
+      })
   })
 })
