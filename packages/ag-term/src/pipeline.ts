@@ -26,4 +26,9 @@ export {
   executeRender,
   executeRenderAdapter,
   type PipelineContext,
+  // Bench instrumentation
+  silveryBenchStart,
+  silveryBenchStop,
+  silveryBenchReset,
+  type SilveryBenchPhases,
 } from "./pipeline/index"

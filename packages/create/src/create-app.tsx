@@ -1246,6 +1246,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     reconciler.flushSyncWork()
     const reconcileMs = performance.now() - renderStart
 
+    // Bench instrumentation: accumulate reconcile time. The pipeline accumulator
+    // (set by silveryBenchStart) catches measure/layout/content/output; reconcile
+    // lives outside pipeline/index.ts so we add it here.
+    {
+      const acc = (globalThis as any).__silvery_bench_phases
+      if (acc) acc.reconcile += reconcileMs
+    }
+
     // Phase B: Render pipeline (incremental when prevBuffer available)
     const pipelineStart = performance.now()
     const rootNode = getContainerRoot(container)

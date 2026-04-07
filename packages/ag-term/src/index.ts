@@ -34,7 +34,15 @@ export { colorEquals, DEFAULT_BG, isDefaultBg, createTextFrame } from "./buffer"
 // Pipeline
 // =============================================================================
 
-export { executeRender, type PipelineConfig, type ExecuteRenderOptions } from "./pipeline"
+export {
+  executeRender,
+  silveryBenchStart,
+  silveryBenchStop,
+  silveryBenchReset,
+  type PipelineConfig,
+  type ExecuteRenderOptions,
+  type SilveryBenchPhases,
+} from "./pipeline"
 export {
   outputPhase,
   setOutputCaps,

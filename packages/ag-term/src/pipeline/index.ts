@@ -224,11 +224,130 @@ function executeRenderCore(
     incremental: prevBuffer !== null,
   }
   ;(globalThis as any).__silvery_render_count = ((globalThis as any).__silvery_render_count ?? 0) + 1
+
+  // Bench instrumentation: accumulate output-phase timing.
+  // ag.ts handles measure/layout/content accumulation; we add output + total here
+  // since the output phase lives outside createAg.
+  const acc = (globalThis as any).__silvery_bench_phases
+  if (acc) {
+    acc.output += tOutput
+    acc.total += total
+    acc.pipelineCalls += 1
+  }
+
   log.debug?.(
     `pipeline: layout+render=${tLayout.toFixed(1)}ms output=${tOutput.toFixed(1)}ms total=${total.toFixed(1)}ms`,
   )
 
   return { output, buffer }
+}
+
+// ============================================================================
+// Bench Instrumentation — per-phase timing accumulator
+// ============================================================================
+
+/**
+ * Per-phase timing accumulator for benchmarking.
+ *
+ * Silvery's render pipeline is usually timed as a single `total` number. When
+ * a bench harness wants to understand where time is going, it needs per-phase
+ * breakdowns: measure, layout, content (render), output, plus the total.
+ *
+ * Phases map to the pipeline stages documented in `pipeline/index.ts` and
+ * `pipeline/CLAUDE.md`. `reconcile` is NOT tracked here because it happens in
+ * `create-app.tsx` outside this module — harnesses in that layer can add their
+ * own reconcile timing to the same accumulator.
+ */
+export interface SilveryBenchPhases {
+  /** Phase 1 — measure pass for fit-content nodes */
+  measure: number
+  /** Phase 2 — flexbox layout calculation */
+  layout: number
+  /** Phase 2.5 — scroll offset calculation */
+  scroll: number
+  /** Phase 2.6 — screen-rect propagation */
+  screenRect: number
+  /** Phase 2.7 — layout subscriber notifications */
+  notify: number
+  /** Sum of all layout-side phases (measure + layout + scroll + screenRect + notify) */
+  layoutTotal: number
+  /** Phase 3 — content render (tree → buffer) */
+  content: number
+  /** Phase 4 — buffer diff → ANSI output */
+  output: number
+  /** Total from executeRender start to output end (layout + content + output) */
+  total: number
+  /** Reconcile time — filled in by create-app.tsx, not pipeline/index.ts */
+  reconcile: number
+  /** Number of times executeRender ran during the measurement window */
+  pipelineCalls: number
+  /** Number of times ag.render() ran (matches pipelineCalls in normal use) */
+  renderCalls: number
+}
+
+/**
+ * Start accumulating per-phase pipeline timings. Subsequent calls to
+ * `executeRender()` and `ag.render()` will add their phase timings to the
+ * returned accumulator (same object as `globalThis.__silvery_bench_phases`).
+ *
+ * Not thread-safe — bench harnesses that run benches in parallel must not
+ * share an accumulator. Vitest bench runs sequentially inside a worker so this
+ * is fine for our use case.
+ *
+ * @example
+ * ```ts
+ * const phases = silveryBenchStart()
+ * for (let i = 0; i < 20; i++) board.command("cursor_down")
+ * silveryBenchStop()
+ * console.log(`content: ${phases.content.toFixed(1)}ms`)
+ * ```
+ */
+export function silveryBenchStart(): SilveryBenchPhases {
+  const phases: SilveryBenchPhases = {
+    measure: 0,
+    layout: 0,
+    scroll: 0,
+    screenRect: 0,
+    notify: 0,
+    layoutTotal: 0,
+    content: 0,
+    output: 0,
+    total: 0,
+    reconcile: 0,
+    pipelineCalls: 0,
+    renderCalls: 0,
+  }
+  ;(globalThis as any).__silvery_bench_phases = phases
+  return phases
+}
+
+/**
+ * Stop accumulating per-phase timings. Detaches the accumulator from the
+ * global so subsequent renders don't mutate it. The returned object is the
+ * same reference returned from the matching `silveryBenchStart()` call.
+ */
+export function silveryBenchStop(): SilveryBenchPhases | null {
+  const phases = (globalThis as any).__silvery_bench_phases as SilveryBenchPhases | undefined
+  ;(globalThis as any).__silvery_bench_phases = undefined
+  return phases ?? null
+}
+
+/** Reset an existing accumulator to zero (keeps it attached). */
+export function silveryBenchReset(): void {
+  const phases = (globalThis as any).__silvery_bench_phases as SilveryBenchPhases | undefined
+  if (!phases) return
+  phases.measure = 0
+  phases.layout = 0
+  phases.scroll = 0
+  phases.screenRect = 0
+  phases.notify = 0
+  phases.layoutTotal = 0
+  phases.content = 0
+  phases.output = 0
+  phases.total = 0
+  phases.reconcile = 0
+  phases.pipelineCalls = 0
+  phases.renderCalls = 0
 }
 
 // ============================================================================

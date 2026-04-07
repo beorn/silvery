@@ -173,6 +173,19 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       tNotify = performance.now() - t
     }
 
+    // Bench instrumentation: accumulate per-phase timings in a global counter
+    // that a harness can read + reset between iterations. Cheap: five `+=` ops.
+    // See __silvery_bench_accumulate / __silvery_bench_reset helpers below.
+    const acc = (globalThis as any).__silvery_bench_phases
+    if (acc) {
+      acc.measure += tMeasure
+      acc.layout += tLayout
+      acc.scroll += tScroll
+      acc.screenRect += tScreenRect
+      acc.notify += tNotify
+      acc.layoutTotal += tMeasure + tLayout + tScroll + tScreenRect + tNotify
+    }
+
     return { tMeasure, tLayout, tScroll, tScreenRect, tNotify }
   }
 
@@ -192,6 +205,13 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     // Only save for incremental — fresh renders (STRICT comparison) don't update state
     if (!opts?.fresh) {
       _prevBuffer = buffer
+    }
+
+    // Bench instrumentation: accumulate content-phase timing.
+    const acc = (globalThis as any).__silvery_bench_phases
+    if (acc) {
+      acc.content += tContent
+      acc.renderCalls += 1
     }
 
     const frame = createTextFrame(buffer)
