@@ -323,6 +323,13 @@ export interface ExtractTextOptions {
   respectSelectableFlag?: boolean
   /** Row metadata for soft-wrap handling and precise trailing space trimming */
   rowMetadata?: readonly RowMetadata[]
+  /**
+   * Contain scope. When set, every row's col range is clamped to
+   * `[scope.left, scope.right]` so the extracted text cannot include cells
+   * outside the `userSelect="contain"` ancestor's rect — even across the
+   * interior rows of a multi-row selection.
+   */
+  scope?: SelectionScope | null
 }
 
 /**
@@ -334,17 +341,36 @@ export interface ExtractTextOptions {
  * - Blank line preservation within selection
  * - Wide-char continuation cell skipping
  * - SELECTABLE_FLAG filtering (when respectSelectableFlag is true)
+ * - Contain-scope clipping (when options.scope is set)
  */
 export function extractText(buffer: TerminalBuffer, range: SelectionRange, options?: ExtractTextOptions): string {
   const { startRow, startCol, endRow, endCol } = normalizeRange(range)
   const respectSelectable = options?.respectSelectableFlag ?? false
   const rowMeta = options?.rowMetadata
+  const scope = options?.scope
 
   const parts: string[] = []
 
   for (let row = startRow; row <= endRow; row++) {
-    const colStart = row === startRow ? startCol : 0
-    const colEnd = row === endRow ? endCol : buffer.width - 1
+    let colStart = row === startRow ? startCol : 0
+    let colEnd = row === endRow ? endCol : buffer.width - 1
+    // Clip to contain scope on every row, not just the anchor/head rows.
+    // Without this, multi-row selections inside a contain ancestor would
+    // still grab full-width cells on interior rows.
+    if (scope) {
+      colStart = Math.max(colStart, scope.left)
+      colEnd = Math.min(colEnd, scope.right)
+      if (colStart > colEnd) {
+        // This row is entirely outside the scope — emit an empty line to
+        // preserve row counts, then continue.
+        const meta = rowMeta?.[row]
+        if (!(meta?.softWrapped && row < endRow)) {
+          parts.push("")
+          if (row < endRow) parts.push("\n")
+        }
+        continue
+      }
+    }
 
     let line = ""
     for (let col = colStart; col <= colEnd; col++) {

@@ -10,7 +10,7 @@
  */
 
 import type { Color, TerminalBuffer } from "./buffer"
-import { type SelectionRange, normalizeRange } from "@silvery/headless/selection"
+import { type SelectionRange, type SelectionScope, normalizeRange } from "@silvery/headless/selection"
 
 // ============================================================================
 // Types
@@ -61,6 +61,7 @@ export function composeSelectionCells(
   selection: SelectionRange | null,
   theme?: SelectionTheme,
   respectSelectableFlag = false,
+  scope?: SelectionScope | null,
 ): SelectionCellChange[] {
   if (!selection) return []
 
@@ -68,8 +69,15 @@ export function composeSelectionCells(
   const changes: SelectionCellChange[] = []
 
   for (let row = startRow; row <= endRow; row++) {
-    const colStart = row === startRow ? startCol : 0
-    const colEnd = row === endRow ? endCol : buffer.width - 1
+    let colStart = row === startRow ? startCol : 0
+    let colEnd = row === endRow ? endCol : buffer.width - 1
+    // Clip to contain scope on every row so selection highlight never paints
+    // outside a `userSelect="contain"` ancestor, even on interior rows.
+    if (scope) {
+      colStart = Math.max(colStart, scope.left)
+      colEnd = Math.min(colEnd, scope.right)
+      if (colStart > colEnd) continue
+    }
 
     for (let col = colStart; col <= colEnd; col++) {
       // Skip continuation cells (second half of wide chars)
@@ -138,6 +146,7 @@ export function renderSelectionOverlay(
   selection: SelectionRange | null,
   buffer: TerminalBuffer,
   mode: "fullscreen" | "inline" = "fullscreen",
+  scope?: SelectionScope | null,
 ): string {
   if (!selection) return ""
 
@@ -145,8 +154,13 @@ export function renderSelectionOverlay(
   let out = ""
 
   for (let row = startRow; row <= endRow; row++) {
-    const colStart = row === startRow ? startCol : 0
-    const colEnd = row === endRow ? endCol : buffer.width - 1
+    let colStart = row === startRow ? startCol : 0
+    let colEnd = row === endRow ? endCol : buffer.width - 1
+    // Clip to contain scope on every row (see composeSelectionCells above).
+    if (scope) {
+      colStart = Math.max(colStart, scope.left)
+      colEnd = Math.min(colEnd, scope.right)
+    }
 
     if (colStart > colEnd) continue
 

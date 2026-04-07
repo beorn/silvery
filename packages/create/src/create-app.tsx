@@ -91,7 +91,12 @@ import {
 import { keyToAnsi, keyToKittyAnsi } from "@silvery/ag/keys"
 import { parseKey, type Key } from "@silvery/ag-term/runtime/keys"
 import { ensureLayoutEngine } from "@silvery/ag-term/runtime/layout"
-import { createMouseEventProcessor, updateKeyboardModifiers } from "@silvery/ag-term/mouse-events"
+import {
+  createMouseEventProcessor,
+  updateKeyboardModifiers,
+  findContainBoundary,
+  selectionHitTest,
+} from "@silvery/ag-term/mouse-events"
 import {
   enableKittyKeyboard,
   disableKittyKeyboard,
@@ -1730,7 +1735,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   function writeSelectionOverlay(): void {
     if (!selectionEnabled || !selectionState.range || !currentBuffer) return
     const mode = alternateScreen ? "fullscreen" : "inline"
-    const overlay = renderSelectionOverlay(selectionState.range, currentBuffer._buffer, mode)
+    const overlay = renderSelectionOverlay(
+      selectionState.range,
+      currentBuffer._buffer,
+      mode,
+      selectionState.scope,
+    )
     if (overlay) target.write(overlay)
   }
 
@@ -1956,7 +1966,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const [cleared] = terminalSelectionUpdate({ type: "clear" }, selectionState)
             selectionState = cleared
           }
-          const [next] = terminalSelectionUpdate({ type: "start", col: mouseData.x, row: mouseData.y }, selectionState)
+          // Resolve contain boundary from the node under the cursor.
+          // If the click lands inside a `userSelect="contain"` subtree, the selection
+          // range is clamped to that ancestor's screenRect so drags can't leak into
+          // adjacent siblings. selectionHitTest uses the selection-aware walk
+          // (respects userSelect="none" subtrees) rather than pointer hit test.
+          const agRoot = getContainerRoot(container)
+          const hit = agRoot ? selectionHitTest(agRoot, mouseData.x, mouseData.y) : null
+          const scope = hit ? findContainBoundary(hit) : null
+          const [next] = terminalSelectionUpdate(
+            { type: "start", col: mouseData.x, row: mouseData.y, scope },
+            selectionState,
+          )
           selectionState = next
           // Force full re-render to clear old overlay (incremental render won't
           // overwrite the inverse-video ANSI the overlay wrote directly to stdout)
@@ -1983,7 +2004,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
           // Copy selected text via OSC 52
           if (next.range && currentBuffer) {
-            const text = extractText(currentBuffer._buffer, next.range)
+            const text = extractText(currentBuffer._buffer, next.range, { scope: next.scope })
             if (text.length > 0) {
               const base64 = globalThis.Buffer.from(text).toString("base64")
               target.write(`\x1b]52;c;${base64}\x07`)
