@@ -2462,11 +2462,53 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         if (shouldExit || signal.aborted) break
         if (eventQueue.length === 0) continue
 
-        // Yield to microtask queue so the pump can push any additional
-        // pending events before we drain. Without this, the first event
-        // after idle always processes solo (1-event batch), even when
-        // auto-repeat has queued multiple events in the term provider.
-        await Promise.resolve()
+        // Drain-then-render: yield to the event loop repeatedly so the pump
+        // (async-iterator chain: term-provider → merge → map → takeUntil →
+        // pumpEvents) can push ALL pending events into eventQueue before we
+        // process the batch. Each hop through the async iterator pipeline
+        // costs several microtask ticks per event, so a single
+        // `Promise.resolve()` yield is not enough to drain a burst of 10+
+        // events from the term-provider's internal queue. We use
+        // `setImmediate` (which runs after ALL pending microtasks) so that a
+        // full async-iterator round-trip has time to complete. Then we loop
+        // until the queue is stable across two consecutive yields, meaning
+        // the pipeline has delivered everything it had ready.
+        //
+        // This ensures rapid keypresses (e.g., jumping from fold level 1 to
+        // 10, or OS auto-repeat buffering "jjjjj...") coalesce into ONE
+        // render cycle instead of N.
+        //
+        // Safety: bounded by maxDrainSpins to prevent pathological stalls
+        // if an event source is producing faster than we can drain. Under
+        // realistic auto-repeat (30-60 keys/sec), events arrive in a short
+        // burst then go quiet — maxDrainSpins=32 is plenty of headroom.
+        const maxDrainSpins = 32
+        let drainSpins = 0
+        const yieldToEventLoop = () => new Promise<void>((resolve) => setImmediate(resolve))
+        // First mandatory yield — lets events already in-flight land.
+        await yieldToEventLoop()
+        let prevLen = eventQueue.length
+        while (drainSpins < maxDrainSpins) {
+          // eslint-disable-next-line no-await-in-loop -- intentional: sequential yields drain the async iterator pipeline
+          await yieldToEventLoop()
+          const curLen = eventQueue.length
+          if (curLen === prevLen) break
+          prevLen = curLen
+          drainSpins++
+        }
+        if (_perfLog) {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          require("node:fs").appendFileSync(
+            "/tmp/silvery-perf.log",
+            `DRAIN: spins=${drainSpins}, batch=${eventQueue.length}\n`,
+          )
+        }
+        // Expose diagnostic counters on globalThis for test assertions.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const _g = globalThis as any
+        _g.__silvery_last_drain_spins = drainSpins
+        _g.__silvery_last_batch_size = eventQueue.length
+        _g.__silvery_batch_count = (_g.__silvery_batch_count ?? 0) + 1
 
         // Process all pending events — run handlers without rendering
         const buf = await processEventBatch(eventQueue.splice(0))
