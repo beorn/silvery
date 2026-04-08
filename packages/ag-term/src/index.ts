@@ -39,12 +39,14 @@ export {
   silveryBenchStart,
   silveryBenchStop,
   silveryBenchReset,
-  silveryBenchOutputDetail,
   type PipelineConfig,
   type ExecuteRenderOptions,
   type SilveryBenchPhases,
-  type SilveryBenchOutputDetail,
 } from "./pipeline"
+// silveryBenchOutputDetail and SilveryBenchOutputDetail are available from
+// "@silvery/ag-term/pipeline" subpath import. Re-exporting here triggers a
+// Bun 1.3.x static analysis bug where the barrel fails to load entirely.
+export type { SilveryBenchOutputDetail } from "./pipeline"
 export {
   outputPhase,
   setOutputCaps,
