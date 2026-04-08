@@ -312,7 +312,7 @@ SILVERY_STRICT_TERMINAL=all bun km view /path             # All backends
 DEBUG=silvery:* DEBUG_LOG=/tmp/silvery.log bun km view /path  # All silvery diagnostic output
 DEBUG=silvery:content DEBUG_LOG=/tmp/silvery.log bun km view /path  # Render phase stats
 DEBUG=silvery:content:cell SILVERY_CELL_DEBUG=77,85 DEBUG_LOG=/tmp/silvery.log bun km view /path  # Per-cell trace
-TRACE=silvery:pipeline DEBUG_LOG=/tmp/silvery.log bun km view /path  # Pipeline phase timing
+TRACE=silvery:render DEBUG_LOG=/tmp/silvery.log bun km view /path  # Pipeline phase timing
 SILVERY_INSTRUMENT=1 bun km view /path                    # Enable stats collection
 ```
 

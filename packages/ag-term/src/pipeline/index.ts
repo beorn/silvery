@@ -35,7 +35,7 @@ import type { OutputPhaseFn } from "./output-phase"
 import type { PipelineContext } from "./types"
 import { createAg } from "../ag"
 
-const log = createLogger("silvery:pipeline")
+const log = createLogger("silvery:render")
 const baseLog = createLogger("@silvery/ag-react")
 
 // Re-export types

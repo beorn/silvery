@@ -53,7 +53,7 @@ DEBUG=silvery:content:trace DEBUG_LOG=/tmp/silvery.log bun run app
 SILVERY_CELL_DEBUG=77,85 DEBUG=silvery:content:cell DEBUG_LOG=/tmp/silvery.log bun run app
 
 # Pipeline phase timing spans
-TRACE=silvery:pipeline DEBUG_LOG=/tmp/silvery.log bun run app
+TRACE=silvery:render DEBUG_LOG=/tmp/silvery.log bun run app
 
 # Measure phase debug (text measurement calls)
 DEBUG=silvery:measure DEBUG_LOG=/tmp/silvery.log bun run app
@@ -66,7 +66,7 @@ SILVERY_INSTRUMENT=1 bun run app
 
 | Namespace               | What                                              |
 | ----------------------- | ------------------------------------------------- |
-| `silvery:pipeline`      | Frame-level spans with per-phase timing           |
+| `silvery:render`      | Frame-level spans with per-phase timing           |
 | `silvery:content`       | Render phase stats per frame (render/skip counts) |
 | `silvery:content:trace` | Per-node trace entries (skip/render decisions)    |
 | `silvery:content:cell`  | Per-cell debug (node coverage at target coords)   |

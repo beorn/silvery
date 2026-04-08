@@ -33,7 +33,7 @@ import {
 import { renderPhase, clearBgConflictWarnings } from "./pipeline/render-phase"
 import type { PipelineContext } from "./pipeline/types"
 
-const log = createLogger("silvery:pipeline")
+const log = createLogger("silvery:render")
 const baseLog = createLogger("@silvery/ag-react")
 
 // =============================================================================
