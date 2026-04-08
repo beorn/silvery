@@ -133,6 +133,13 @@ export interface NodeRenderState {
    * hasPrevBuffer cascade handles most cases, but this adds a direct safety
    * net in the skip condition itself. */
   ancestorLayoutChanged?: boolean
+  /** Inherited background from nearest ancestor with backgroundColor or theme.
+   * Threaded top-down to avoid O(depth) parent chain walks per node.
+   * Contains the parsed color and the ancestor's rect for clipping. */
+  inheritedBg?: { color: import("../buffer").Color; ancestorRect: { x: number; y: number; width: number; height: number } | null }
+  /** Inherited foreground from nearest ancestor with color or theme.
+   * Threaded top-down to avoid O(depth) parent chain walks per node. */
+  inheritedFg?: import("../buffer").Color
 }
 
 /**

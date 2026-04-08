@@ -492,6 +492,7 @@ function renderNodeToBuffer(
       descendantOverflowChanged,
       instrumentEnabled,
       stats,
+      nodeState.inheritedBg,
     )
 
     // Determine if this node's own content (border, bg, text) needs repainting.
@@ -511,14 +512,29 @@ function renderNodeToBuffer(
     // Compute boxInheritedBg even when skipping own repaint — it's needed by
     // outline rendering (after children) and may be needed by child rendering.
     const boxInheritedBg =
-      node.type === "silvery-box" && !getEffectiveBg(props) ? findInheritedBg(node).color : undefined
+      node.type === "silvery-box" && !getEffectiveBg(props) ? (nodeState.inheritedBg?.color ?? findInheritedBg(node).color) : undefined
     if (needsOwnRepaint) {
       renderOwnContent(node, buffer, layout, props, nodeState, skipBgFill, instrumentEnabled, stats, ctx)
     }
 
-    // Render children
+    // Compute inherited bg/fg for children. If this node sets backgroundColor,
+    // color, or theme, children inherit from this node. Otherwise, inherit from parent.
+    const effectiveBg = getEffectiveBg(props)
+    const childInheritedBg = effectiveBg
+      ? { color: parseColor(effectiveBg), ancestorRect: node.contentRect }
+      : nodeTheme
+        ? { color: parseColor(nodeTheme.bg), ancestorRect: node.contentRect }
+        : nodeState.inheritedBg
+    const childInheritedFg = props.color
+      ? parseColor(props.color)
+      : nodeTheme
+        ? parseColor(nodeTheme.fg)
+        : nodeState.inheritedFg
+
+    // Render children — pass inherited bg/fg so children don't walk the parent chain
+    const childState: NodeRenderState = { ...nodeState, inheritedBg: childInheritedBg, inheritedFg: childInheritedFg }
     if (isScrollContainer) {
-      renderScrollContainerChildren(node, buffer, props, nodeState, contentRegionCleared, childrenNeedFreshRender, ctx)
+      renderScrollContainerChildren(node, buffer, props, childState, contentRegionCleared, childrenNeedFreshRender, ctx)
 
       // Render overflow indicators AFTER children so they survive viewport clear.
       // renderScrollContainerChildren may clear the viewport (Tier 2) which would
@@ -529,7 +545,7 @@ function renderNodeToBuffer(
         node,
         buffer,
         props,
-        nodeState,
+        childState,
         childPositionChanged,
         contentRegionCleared,
         childrenNeedFreshRender,
@@ -736,10 +752,11 @@ function executeRegionClearing(
   descendantOverflowChanged: boolean,
   instrumentEnabled: boolean,
   stats: RenderPhaseStats,
+  threadedInheritedBg?: NodeRenderState["inheritedBg"],
 ): void {
   if (contentRegionCleared) {
     if (instrumentEnabled) stats.clearOps++
-    clearNodeRegion(node, buffer, layout, scrollOffset, clipBounds, layoutChanged)
+    clearNodeRegion(node, buffer, layout, scrollOffset, clipBounds, layoutChanged, threadedInheritedBg)
   } else if (bufferIsCloned && layoutChanged && node.prevLayout) {
     // Even when contentRegionCleared is false, a shrinking node needs its excess
     // area cleared. Key scenario: absolute-positioned overlays (e.g., search dialog)
@@ -753,7 +770,7 @@ function executeRegionClearing(
     // dimensions changed between passes), there are no stale pixels to clear.
     // Without this guard, clearExcessArea writes inherited bg into cells that
     // doFreshRender leaves as default, causing STRICT mismatches.
-    clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged)
+    clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged, threadedInheritedBg)
   }
 
   // Clear descendant overflow regions: areas where descendants' previous layouts
@@ -762,7 +779,7 @@ function executeRegionClearing(
   // because overflow is OUTSIDE the rect -- it needs clearing even for nodes with
   // backgroundColor (whose interior is handled by renderBox's bg fill).
   if (descendantOverflowChanged) {
-    clearDescendantOverflowRegions(node, buffer, layout, scrollOffset, clipBounds)
+    clearDescendantOverflowRegions(node, buffer, layout, scrollOffset, clipBounds, threadedInheritedBg)
   }
 }
 
@@ -789,9 +806,12 @@ function renderOwnContent(
   stats: RenderPhaseStats,
   ctx?: PipelineContext,
 ): Color | undefined {
-  // Compute inherited bg once for boxes -- used by border and outline rendering
-  // to preserve parent backgrounds on border cells (prevents transparent holes).
-  const boxInheritedBg = node.type === "silvery-box" && !getEffectiveBg(props) ? findInheritedBg(node).color : undefined
+  // Use threaded inherited bg from nodeState — avoids O(depth) parent chain walk.
+  // Falls back to findInheritedBg() only when nodeState doesn't carry inherited values
+  // (e.g., root node or external callers).
+  const boxInheritedBg = node.type === "silvery-box" && !getEffectiveBg(props)
+    ? (nodeState.inheritedBg?.color ?? findInheritedBg(node).color)
+    : undefined
 
   if (node.type === "silvery-box") {
     if (instrumentEnabled) stats.boxNodes++
@@ -803,8 +823,8 @@ function renderOwnContent(
     // for incremental rendering: the cloned buffer may have stale bg at positions
     // outside the parent's bg-filled region (e.g., overflow text, moved nodes).
     // Foreground inheritance matches CSS semantics: Box color cascades to Text children.
-    const textInheritedBg = findInheritedBg(node).color
-    const textInheritedFg = findInheritedFg(node)
+    const textInheritedBg = nodeState.inheritedBg?.color ?? findInheritedBg(node).color
+    const textInheritedFg = nodeState.inheritedFg ?? findInheritedFg(node)
     renderText(node, buffer, layout, props, nodeState, textInheritedBg, textInheritedFg, ctx)
   }
 
@@ -941,7 +961,7 @@ function renderScrollContainerChildren(
   childrenNeedFreshRender = false,
   ctx?: PipelineContext,
 ): void {
-  const { clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged } = nodeState
+  const { clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged, inheritedBg, inheritedFg } = nodeState
   // Resolve instrumentation from ctx or module globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
   const stats = ctx?.stats ?? _renderPhaseStats
@@ -980,7 +1000,7 @@ function renderScrollContainerChildren(
     scrollOffsetChanged || node.childrenDirty || childrenNeedFreshRender || visibleRangeChanged
       ? getEffectiveBg(props)
         ? parseColor(getEffectiveBg(props)!)
-        : findInheritedBg(node).color
+        : (inheritedBg?.color ?? findInheritedBg(node).color)
       : null
 
   // Plan the scroll tier strategy (pure decision, no side effects)
@@ -1112,6 +1132,8 @@ function renderScrollContainerChildren(
         ancestorCleared: thisChildAncestorCleared,
         bufferIsCloned,
         ancestorLayoutChanged: childAncestorLayoutChanged,
+        inheritedBg,
+        inheritedFg,
       },
       ctx,
     )
@@ -1152,6 +1174,8 @@ function renderScrollContainerChildren(
           ancestorCleared: false,
           bufferIsCloned,
           ancestorLayoutChanged: childAncestorLayoutChanged,
+          inheritedBg,
+          inheritedFg,
         },
         ctx,
       )
@@ -1172,7 +1196,7 @@ function renderNormalChildren(
   childrenNeedFreshRender = false,
   ctx?: PipelineContext,
 ): void {
-  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged } = nodeState
+  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged, inheritedBg, inheritedFg } = nodeState
   // Resolve instrumentation from ctx or module globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
   const stats = ctx?.stats ?? _renderPhaseStats
@@ -1301,6 +1325,8 @@ function renderNormalChildren(
         ancestorCleared: childAncestorCleared,
         bufferIsCloned,
         ancestorLayoutChanged: childAncestorLayoutChanged,
+        inheritedBg,
+        inheritedFg,
       },
       ctx,
     )
@@ -1337,6 +1363,8 @@ function renderNormalChildren(
           ancestorCleared: false,
           bufferIsCloned,
           ancestorLayoutChanged: childAncestorLayoutChanged,
+          inheritedBg,
+          inheritedFg,
         },
         ctx,
       )
@@ -1372,6 +1400,8 @@ function renderNormalChildren(
           ancestorCleared: false,
           bufferIsCloned,
           ancestorLayoutChanged: childAncestorLayoutChanged,
+          inheritedBg,
+          inheritedFg,
         },
         ctx,
       )
@@ -1629,8 +1659,9 @@ function clearDescendantOverflowRegions(
   layout: NonNullable<AgNode["contentRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
+  threadedInheritedBg?: NodeRenderState["inheritedBg"],
 ): void {
-  const inherited = findInheritedBg(node)
+  const inherited = threadedInheritedBg ?? findInheritedBg(node)
   const clearBg = inherited.color
   const nodeRight = layout.x + layout.width
   const nodeBottom = layout.y - scrollOffset + layout.height
@@ -1752,8 +1783,9 @@ function clearNodeRegion(
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
   layoutChanged: boolean,
+  threadedInheritedBg?: NodeRenderState["inheritedBg"],
 ): void {
-  const inherited = findInheritedBg(node)
+  const inherited = threadedInheritedBg ?? findInheritedBg(node)
   const clearBg = inherited.color
   const screenY = layout.y - scrollOffset
 
