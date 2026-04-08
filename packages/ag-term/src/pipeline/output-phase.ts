@@ -763,6 +763,12 @@ export function outputPhase(
 
   // First render: output entire buffer
   if (!prev) {
+    // Accumulate timing for full-render path
+    const fullRenderAcc = (globalThis as any).__silvery_bench_output_detail
+    if (fullRenderAcc) {
+      fullRenderAcc.fullRenderCalls = (fullRenderAcc.fullRenderCalls ?? 0) + 1
+      fullRenderAcc.fullRenderCells = (fullRenderAcc.fullRenderCells ?? 0) + (next.width * next.height)
+    }
     // Inline mode resize optimization: if the runtime invalidated prevBuffer (resize)
     // but we have a stored buffer with matching dimensions, use incremental rendering
     // instead of clear+full render. This avoids wiping content when the buffer is unchanged
@@ -780,7 +786,13 @@ export function outputPhase(
     // In inline mode: prevents scrollback corruption (cursor-up clamped at row 0).
     // In fullscreen mode: prevents terminal scroll that desynchronizes prevBuffer
     // from actual terminal state, causing ghost pixels on subsequent incremental renders.
+    const tFullStart = performance.now()
     const firstOutput = bufferToAnsi(next, ctx, termRows)
+    const tFullEnd = performance.now()
+    if (fullRenderAcc) {
+      fullRenderAcc.fullRenderMs = (fullRenderAcc.fullRenderMs ?? 0) + (tFullEnd - tFullStart)
+      fullRenderAcc.fullRenderBytes = (fullRenderAcc.fullRenderBytes ?? 0) + firstOutput.length
+    }
     // For inline first render, append cursor positioning and initialize tracking
     if (mode === "inline") {
       const firstContentLines = findLastContentLine(next) + 1
@@ -861,7 +873,9 @@ export function outputPhase(
   }
 
   // Fullscreen mode: diff and emit only changes
+  const tDiff0 = performance.now()
   const { pool, count: rawCount } = diffBuffers(prev, next)
+  const tDiff1 = performance.now()
 
   // Filter out changes beyond terminal height to prevent CUP targeting rows
   // past the terminal, which causes scrolling and prevBuffer desync.
@@ -891,6 +905,12 @@ export function outputPhase(
   }
 
   if (count === 0) {
+    // Accumulate timing even for zero-change frames
+    const acc = (globalThis as any).__silvery_bench_output_detail
+    if (acc) {
+      acc.diffMs += tDiff1 - tDiff0
+      acc.calls += 1
+    }
     return "" // No changes
   }
 
@@ -899,7 +919,29 @@ export function outputPhase(
   // - Continuation cells are skipped (handled with their main cell)
   // - Orphaned continuation cells (main cell unchanged) trigger a
   //   re-emit of the main cell from the buffer
+  const tAnsi0 = performance.now()
   const incrOutput = changesToAnsi(pool, count, ctx, next).output
+  const tAnsi1 = performance.now()
+
+  // Accumulate output-phase sub-timing for benchmarks
+  const outputDetailAcc = (globalThis as any).__silvery_bench_output_detail
+  if (outputDetailAcc) {
+    outputDetailAcc.diffMs += tDiff1 - tDiff0
+    outputDetailAcc.ansiMs += tAnsi1 - tAnsi0
+    outputDetailAcc.calls += 1
+    outputDetailAcc.totalChanges += count
+    // Count dirty rows
+    let dirtyRowCount = 0
+    const minRow = next.minDirtyRow
+    const maxRow = next.maxDirtyRow
+    if (minRow >= 0) {
+      for (let r = minRow; r <= maxRow; r++) {
+        if (next.isRowDirty(r)) dirtyRowCount++
+      }
+    }
+    outputDetailAcc.dirtyRows += dirtyRowCount
+    outputDetailAcc.outputBytes += incrOutput.length
+  }
 
   // Log output sizes when debug or strict-accumulate is enabled
   if (DEBUG_OUTPUT || isStrictAccumulate()) {

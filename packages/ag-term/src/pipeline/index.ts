@@ -318,6 +318,15 @@ export function silveryBenchStart(): SilveryBenchPhases {
     renderCalls: 0,
   }
   ;(globalThis as any).__silvery_bench_phases = phases
+  // Also start output-phase sub-timing accumulator
+  ;(globalThis as any).__silvery_bench_output_detail = {
+    diffMs: 0,
+    ansiMs: 0,
+    calls: 0,
+    totalChanges: 0,
+    dirtyRows: 0,
+    outputBytes: 0,
+  }
   return phases
 }
 
@@ -329,7 +338,29 @@ export function silveryBenchStart(): SilveryBenchPhases {
 export function silveryBenchStop(): SilveryBenchPhases | null {
   const phases = (globalThis as any).__silvery_bench_phases as SilveryBenchPhases | undefined
   ;(globalThis as any).__silvery_bench_phases = undefined
+  ;(globalThis as any).__silvery_bench_output_detail = undefined
   return phases ?? null
+}
+
+/** Output-phase sub-timing detail (populated alongside SilveryBenchPhases). */
+export interface SilveryBenchOutputDetail {
+  /** Time spent in diffBuffers (cell comparison) */
+  diffMs: number
+  /** Time spent in changesToAnsi (sorting, style transitions, string building) */
+  ansiMs: number
+  /** Number of output phase calls */
+  calls: number
+  /** Total changed cells across all calls */
+  totalChanges: number
+  /** Total dirty rows across all calls */
+  dirtyRows: number
+  /** Total ANSI output bytes across all calls */
+  outputBytes: number
+}
+
+/** Get the current output detail accumulator (null if not started). */
+export function silveryBenchOutputDetail(): SilveryBenchOutputDetail | null {
+  return (globalThis as any).__silvery_bench_output_detail ?? null
 }
 
 /** Reset an existing accumulator to zero (keeps it attached). */
@@ -348,6 +379,16 @@ export function silveryBenchReset(): void {
   phases.reconcile = 0
   phases.pipelineCalls = 0
   phases.renderCalls = 0
+  // Reset output detail accumulator too
+  const detail = (globalThis as any).__silvery_bench_output_detail
+  if (detail) {
+    detail.diffMs = 0
+    detail.ansiMs = 0
+    detail.calls = 0
+    detail.totalChanges = 0
+    detail.dirtyRows = 0
+    detail.outputBytes = 0
+  }
 }
 
 // ============================================================================

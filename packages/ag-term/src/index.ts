@@ -39,9 +39,11 @@ export {
   silveryBenchStart,
   silveryBenchStop,
   silveryBenchReset,
+  silveryBenchOutputDetail,
   type PipelineConfig,
   type ExecuteRenderOptions,
   type SilveryBenchPhases,
+  type SilveryBenchOutputDetail,
 } from "./pipeline"
 export {
   outputPhase,
