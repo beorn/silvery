@@ -1114,11 +1114,26 @@ export interface PerRenderOptions {
  * This matches production behavior (live scheduler uses incremental)
  * and enables withDiagnostics to catch incremental vs fresh mismatches.
  *
+ * **Instance reuse:** When the same renderer is called repeatedly with a
+ * compatible element (no overrides that would require fresh state), the
+ * returned function calls `current.rerender(element)` instead of
+ * unmount+remount. This avoids paying the full React reconciler init +
+ * fiberRoot creation cost on each iteration — which otherwise dominates
+ * cold-render microbenchmarks. See bead `km-silvery.renderer-reuse`.
+ *
+ * Reuse is skipped (forcing fresh mount) when:
+ * - The previous instance has been unmounted (rerender would throw)
+ * - Per-render overrides are supplied that conflict with baseOpts
+ *   (e.g., flipping `incremental`, `singlePassLayout`, or `kittyMode`)
+ * - The base options are a Store (store-mode renders manage their own
+ *   lifecycle and we conservatively force a fresh mount)
+ *
  * @example
  * ```tsx
  * const render = createRenderer({ cols: 80, rows: 24 })
- * const app1 = render(<Foo />)  // incremental: true by default
- * const app2 = render(<Bar />)  // unmounts app1
+ * const app1 = render(<Foo />)  // fresh mount
+ * const app2 = render(<Bar />)  // reuses app1 via rerender()
+ * // app1 === app2 when reuse kicks in
  *
  * // Explicitly disable incremental if needed
  * const render2 = createRenderer({ cols: 80, rows: 24, incremental: false })
@@ -1128,15 +1143,43 @@ export function createRenderer(
   optsOrStore: RenderOptions | Store = {},
 ): (el: ReactElement, overrides?: PerRenderOptions) => App {
   let current: App | null = null
+  // Tracks whether `current` is reusable via rerender(). Set to false when
+  // the instance is unmounted (either via an exception path below or if the
+  // caller called unmount() directly — in which case rerender() will throw
+  // and we fall back to a fresh mount).
+  let currentReusable = false
 
   // Default to incremental: true for test renders (matches production behavior)
   // User can explicitly pass incremental: false to disable
-  // Note: When passed a Store-like object (cols/rows only), convert to RenderOptions with incremental
+  // Note: When passed a Store-like object (cols/rows only), convert to RenderOptions with incremental.
+  // The converted baseOpts always has `incremental`, so isStore(baseOpts) === false.
   const baseOpts = isStore(optsOrStore)
     ? { incremental: true, cols: optsOrStore.cols, rows: optsOrStore.rows }
     : { incremental: true, ...optsOrStore }
 
   return (element: ReactElement, overrides?: PerRenderOptions): App => {
+    // Fast path: reuse the existing instance via rerender() when safe.
+    // This skips unmount + full React reconciler re-init on every call,
+    // which dominates cold-render microbenchmarks against Ink.
+    //
+    // We reuse when:
+    //   1. We have a live previous instance.
+    //   2. No overrides that conflict with the base config (dimensions are
+    //      always identical since they come from the fixed baseOpts).
+    //
+    // On any rerender() exception (e.g., the caller unmounted `current`
+    // manually), we fall through to the legacy unmount+render path.
+    if (current && currentReusable && canReuseInstance(overrides, baseOpts)) {
+      try {
+        current.rerender(element)
+        return current
+      } catch {
+        // Fall through to unmount+remount path. The instance may have been
+        // unmounted by the caller or torn down by an error.
+        currentReusable = false
+      }
+    }
+
     if (current) {
       try {
         current.unmount()
@@ -1149,8 +1192,33 @@ export function createRenderer(
       opts = { ...opts, ...overrides }
     }
     current = render(element, opts)
+    currentReusable = true
     return current
   }
+}
+
+/**
+ * Can we reuse the current App instance for this call? Overrides that would
+ * change reconciler/layout semantics force a fresh mount.
+ */
+function canReuseInstance(
+  overrides: PerRenderOptions | undefined,
+  baseOpts: { incremental?: boolean; singlePassLayout?: boolean; kittyMode?: boolean },
+): boolean {
+  if (!overrides) return true
+  if (overrides.incremental !== undefined && overrides.incremental !== (baseOpts.incremental ?? true)) {
+    return false
+  }
+  if (
+    overrides.singlePassLayout !== undefined &&
+    overrides.singlePassLayout !== (baseOpts.singlePassLayout ?? false)
+  ) {
+    return false
+  }
+  if (overrides.kittyMode !== undefined && overrides.kittyMode !== (baseOpts.kittyMode ?? false)) {
+    return false
+  }
+  return true
 }
 
 // ============================================================================

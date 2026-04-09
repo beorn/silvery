@@ -218,7 +218,7 @@ describe("stability: mixed operations", () => {
     expect(app.text).toContain("Final")
   })
 
-  test("unmount during active input does not crash", async () => {
+  test("rerender via createRenderer reuses instance", async () => {
     const r = createRenderer({ cols: 80, rows: 24 })
     const app = r(React.createElement(Counter))
 
@@ -226,12 +226,16 @@ describe("stability: mixed operations", () => {
     await app.press("j")
     await app.press("j")
 
-    // Render a new component (auto-unmounts previous)
+    // Render a new component — createRenderer reuses the existing instance
+    // via rerender() when dimensions and config are unchanged.
     const app2 = r(React.createElement(SimpleBox, { label: "New" }))
     expect(app2.text).toContain("New")
 
-    // The old app should throw if we try to interact
-    await expect(() => app.press("j")).rejects.toThrow()
+    // app and app2 are the same instance (reuse path)
+    expect(app).toBe(app2)
+
+    // The reused app still works
+    await app.press("j")
   })
 
   test("deeply nested flex under sustained re-renders", () => {
