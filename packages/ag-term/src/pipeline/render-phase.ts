@@ -158,9 +158,14 @@ function syncPrevLayout(root: AgNode): void {
   }
 }
 
+/** Check if an env var is truthy (treats "0" and "false" as disabled). */
+function envTruthy(val: string | undefined): boolean {
+  return !!val && val !== "0" && val !== "false"
+}
+
 /** Instrumentation enabled when SILVERY_STRICT or SILVERY_INSTRUMENT is set */
 const _instrumentEnabled =
-  typeof process !== "undefined" && !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_INSTRUMENT)
+  typeof process !== "undefined" && (envTruthy(process.env?.SILVERY_STRICT) || envTruthy(process.env?.SILVERY_INSTRUMENT))
 
 /** Mutable stats counters — reset after each renderPhase call */
 const _renderPhaseStats: RenderPhaseStats = {
@@ -199,7 +204,7 @@ let _renderPhaseCallCount = 0
 
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
 const _nodeTrace: NodeTraceEntry[] = []
-const _nodeTraceEnabled = typeof process !== "undefined" && !!process.env?.SILVERY_STRICT
+const _nodeTraceEnabled = typeof process !== "undefined" && envTruthy(process.env?.SILVERY_STRICT)
 
 /** DIAG: compute node depth in tree */
 function _getNodeDepth(node: AgNode): number {

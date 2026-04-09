@@ -317,11 +317,16 @@ function handleScrollbackPromotion(
 // These use getters so they can be set after module load (e.g., in test files).
 // SILVERY_STRICT enables buffer + output checks (per-frame), including vt100 output verification.
 // SILVERY_STRICT_ACCUMULATE is separate — it replays ALL frames (O(N²)) and is opt-in only.
+// Note: "0" and "false" are treated as disabled, consistent with renderer.ts strictMode check.
 function isStrictOutput(): boolean {
-  return typeof process !== "undefined" && !!process.env.SILVERY_STRICT
+  if (typeof process === "undefined") return false
+  const val = process.env.SILVERY_STRICT
+  return !!val && val !== "0" && val !== "false"
 }
 function isStrictAccumulate(): boolean {
-  return typeof process !== "undefined" && !!process.env.SILVERY_STRICT_ACCUMULATE
+  if (typeof process === "undefined") return false
+  const val = process.env.SILVERY_STRICT_ACCUMULATE
+  return !!val && val !== "0" && val !== "false"
 }
 /** Parse SILVERY_STRICT_TERMINAL into a list of backends.
  *
