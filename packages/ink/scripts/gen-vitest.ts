@@ -118,6 +118,11 @@ const EXPECTED_FAILURES: Record<string, string[]> = {
     // silvery maps 0x7F to backspace (modern standard); Ink maps it to delete
     "useInput - handle delete",
   ],
+  "use-animation": [
+    // Concurrent mode (React 18+ concurrent rendering) — separate from maxFps shim.
+    // Tracked in km-silvery.positioning.
+    "concurrent aborted renders do not suppress interval reset",
+  ],
   exit: [
     // Fixtures with 500ms setTimeout-based exit/unmount — timing-dependent behavior
     "exit when app finishes execution",
@@ -293,7 +298,7 @@ function transform(code: string, fileName: string): string {
   // 3. Replace ink source imports with compat layer
   out = replaceImportsBySource(out, {
     "../src/index":
-      'import { Box, Text, Newline, Spacer, Static, Transform, render, measureElement, useApp, useInput, useStdin, useFocus, useFocusManager, useCursor } from "../../../../packages/ink/src/ink"',
+      'import { Box, Text, Newline, Spacer, Static, Transform, render, measureElement, useApp, useInput, useStdin, useFocus, useFocusManager, useCursor, useAnimation, useStdout, useStderr } from "../../../../packages/ink/src/ink"',
     "../../src/index": 'import { Box, Text, render } from "../../../../packages/ink/src/ink"',
   })
 
@@ -307,6 +312,7 @@ function transform(code: string, fileName: string): string {
     "./helpers/run": null, // PTY — not available
     "./helpers/term": null, // PTY — not available
     "./helpers/force-colors": 'import { enableTestColors, disableTestColors } from "../helpers/render-to-string"',
+    "./helpers/mock-timer-calls": 'import mockTimerCalls from "../helpers/mock-timer-calls"',
   })
 
   // 5. Replace third-party imports
@@ -347,8 +353,12 @@ function transform(code: string, fileName: string): string {
     'const indentString = (s: string, n: number) => s.split("\\n").map((l: string) => " ".repeat(n) + l).join("\\n")\n',
   )
 
-  // Handle @sinonjs/fake-timers
-  out = out.replace(/import\s+FakeTimers.*from\s*['"]@sinonjs\/fake-timers['"];?\n?/g, "")
+  // Handle @sinonjs/fake-timers — replace with a vitest-backed shim that
+  // exposes the install/uninstall + tickAsync API used by ink's tests.
+  out = out.replace(
+    /import\s+FakeTimers.*from\s*['"]@sinonjs\/fake-timers['"];?\n?/g,
+    'import { vi as __vi_fake_timers } from "vitest"\nconst FakeTimers = { install: () => { __vi_fake_timers.useFakeTimers(); return { tickAsync: async (ms: number) => __vi_fake_timers.advanceTimersByTimeAsync(ms), tick: (ms: number) => __vi_fake_timers.advanceTimersByTime(ms), uninstall: () => __vi_fake_timers.useRealTimers(), runAllAsync: async () => __vi_fake_timers.runAllTimersAsync(), runAll: () => __vi_fake_timers.runAllTimers() }; } }\n',
+  )
 
   // Rewrite measure-text import to compat layer
   out = out.replace(

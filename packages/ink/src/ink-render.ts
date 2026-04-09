@@ -46,6 +46,30 @@ import { InkAnimationProvider } from "./ink-animation"
 export type { RenderOptions, Instance } from "@silvery/ag-react/render"
 export type { MeasureElementOutput } from "@silvery/ag-react/measureElement"
 
+// =============================================================================
+// Helpers
+// =============================================================================
+
+/**
+ * Convert Ink's `maxFps` option to a render-throttle interval in milliseconds.
+ *
+ * Mirrors Ink 7.0's behaviour:
+ * - `debug` and screen-reader modes disable throttling entirely (returns 0).
+ * - `maxFps` defaults to 30 when omitted.
+ * - Non-positive `maxFps` is treated as "no throttle" (matches Ink's internal
+ *   fallback path so callers using `maxFps: 0` get unthrottled animations).
+ * - Otherwise, throttle = `ceil(1000 / maxFps)` clamped to a minimum of 1ms.
+ */
+function resolveRenderThrottleMs(options: Record<string, unknown> | undefined): number {
+  const debug = (options?.debug as boolean) === true
+  const isScreenReaderEnabled = (options?.isScreenReaderEnabled as boolean) === true
+  if (debug || isScreenReaderEnabled) return 0
+  const rawMaxFps = options?.maxFps
+  const maxFps = typeof rawMaxFps === "number" ? rawMaxFps : 30
+  if (!(maxFps > 0)) return 0
+  return Math.max(1, Math.ceil(1000 / maxFps))
+}
+
 /**
  * Ink-compatible Instance type with additional Ink-specific methods.
  */
@@ -162,6 +186,7 @@ function renderTestMode(
 
   const stderr = options?.stderr as NodeJS.WriteStream | undefined
   const debug = (options?.debug as boolean) ?? false
+  const renderThrottleMs = resolveRenderThrottleMs(options)
 
   // Per-instance stdin state for raw mode tracking and paste event bridging
   const stdinState = createInkStdinState((stdin ?? process.stdin) as NodeJS.ReadStream, stdout)
@@ -274,6 +299,12 @@ function renderTestMode(
       } else {
         const stderrTarget = stderr ?? process.stderr
         stderrTarget.write(data)
+        try {
+          const wfn: any = (stderrTarget as any).write
+          const sout: any = stdout
+          require("node:fs").appendFileSync("/tmp/ink-flush.log",
+            `wrote stderr data=${JSON.stringify(data)} callCount=${wfn?.callCount} writes=${JSON.stringify((stderrTarget as any).getWrites?.() ?? null)} stdoutCalls=${(sout.write as any)?.callCount}\n`)
+        } catch (e) { try { require("node:fs").appendFileSync("/tmp/ink-flush.log", `err=${(e as Error).message}\n`) } catch {} }
         stdout.write(frameWithNewline)
         hadStdoutWrites = true
       }
@@ -369,7 +400,7 @@ function renderTestMode(
                       { value: stderrCtxValue },
                       React.createElement(
                         InkAnimationProvider,
-                        null,
+                        { renderThrottleMs },
                         React.createElement(InkFocusProvider, null, React.createElement(InkFocusBridge, null, el)),
                       ),
                     ),
@@ -571,7 +602,13 @@ function renderInteractiveMode(
   )
 
   // Wrap element with InkStdinCtx.Provider so usePaste can access setBracketedPasteMode
-  const wrappedElement = React.createElement(InkStdinCtx.Provider, { value: interactiveStdinState }, element)
+  // and InkAnimationProvider so useAnimation honours the configured maxFps throttle.
+  const renderThrottleMs = resolveRenderThrottleMs(options)
+  const wrappedElement = React.createElement(
+    InkAnimationProvider,
+    { renderThrottleMs },
+    React.createElement(InkStdinCtx.Provider, { value: interactiveStdinState }, element),
+  )
 
   const silveryInstance = renderSync(wrappedElement as any, termDef as any, inkOptions as any)
 

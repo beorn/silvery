@@ -80,7 +80,7 @@ export function InkAnimationProvider({
   children,
 }: {
   renderThrottleMs?: number
-  children: React.ReactNode
+  children?: React.ReactNode
 }) {
   const subscribersRef = useRef<Map<(t: number) => void, AnimationSubscriber>>(new Map())
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -141,10 +141,7 @@ export function InkAnimationProvider({
     [scheduleTick, clearTimer],
   )
 
-  const value = useMemo(
-    () => ({ renderThrottleMs, subscribe }),
-    [renderThrottleMs, subscribe],
-  )
+  const value = useMemo(() => ({ renderThrottleMs, subscribe }), [renderThrottleMs, subscribe])
 
   return React.createElement(InkAnimationContext.Provider, { value }, children)
 }

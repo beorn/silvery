@@ -68,10 +68,7 @@ async function addFailingMarks(filePath: string, testNames: string[]) {
     //   test('name' -> test.failing('name'
     //   test.serial('name' -> test.serial.failing('name'
     //   test.serial(\n\t'name' -> test.serial.failing(\n\t'name'
-    const regex = new RegExp(
-      `(test(?:\\.serial)?)\\((\\s*)(["'])${escaped}\\3`,
-      "g",
-    )
+    const regex = new RegExp(`(test(?:\\.serial)?)\\((\\s*)(["'])${escaped}\\3`, "g")
     content = content.replace(regex, "$1.failing($2$3" + name + "$3")
   }
   await Bun.write(filePath, content)
@@ -250,21 +247,18 @@ await initInkCompat();
     "package.json export paths resolve to existing files",
     "build/index.js and build/index.d.ts exist",
   ])
-  // Ink 7.0 useAnimation: maxFps/renderThrottleMs tests require Ink's render
-  // throttling, which silvery's compat test renderer doesn't implement.
-  // Also: concurrent mode aborted render test requires React concurrent mode.
+  // Ink 7.0 useAnimation: maxFps/renderThrottleMs are now shimmed via
+  // InkAnimationProvider — `low maxFps caps animation rerenders` and
+  // `delta accounts for throttled ticks` pass under silvery's compat layer.
+  // Concurrent mode aborted render test still requires React concurrent mode.
   await addFailingMarks(join(INK_DIR, "test/use-animation.tsx"), [
-    "low maxFps caps animation rerenders",
-    "delta accounts for throttled ticks",
     "concurrent aborted renders do not suppress interval reset",
   ])
-  // Ink 7.0 kitty-keyboard: tests that interact with stdin/stdout protocol
-  // negotiation directly, which the compat layer handles differently.
-  await addFailingMarks(join(INK_DIR, "test/kitty-keyboard.tsx"), [
-    "kitty protocol - writes enable sequence on init when mode is enabled",
-    "kitty protocol - auto detection handles synchronous query response",
-    "kitty protocol - auto detection handles Uint8Array query response",
-  ])
+  // Ink 7.0 kitty-keyboard: the 3 stdin/stdout protocol negotiation tests
+  // (writes enable sequence, auto detection sync/Uint8Array response) now
+  // pass — silvery's Ink compat layer emits `\u001B[>1u` matching Ink's
+  // default flag of `['disambiguateEscapeCodes']`. See
+  // resolveKittyManagerOptions() in packages/ink/src/ink-hooks.ts.
   // Ink 7.0 text-width: CJK overlay clearing differences — silvery's buffer
   // handles wide character overlay differently at cell boundaries.
   await addFailingMarks(join(INK_DIR, "test/text-width.tsx"), [
@@ -273,10 +267,7 @@ await initInkCompat();
   ])
   // Ink 7.0 text dim+bold rendering: Ink outputs combined SGR codes, silvery
   // emits separate sequences.
-  await addFailingMarks(join(INK_DIR, "test/text.tsx"), [
-    "text with dim+bold",
-    "text with dim+bold - concurrent",
-  ])
+  await addFailingMarks(join(INK_DIR, "test/text.tsx"), ["text with dim+bold", "text with dim+bold - concurrent"])
   // Ink 7.0 cursor: debug mode interaction with cursor visibility.
   // Some cursor tests use dynamic test names from a loop (testCase.testName),
   // so addFailingMarks can't match them. Mark the loop's test.serial as failing.
@@ -285,11 +276,13 @@ await initInkCompat();
     "debug mode: useStderr().write() replays rerendered frame",
   ])
   // Mark the dynamic hookWriteCases loop as failing (cursor remains visible tests)
-  await patchDynamicTestLoop(join(INK_DIR, "test/cursor.tsx"), "test.serial(testCase.testName,", "test.serial.failing(testCase.testName,")
+  await patchDynamicTestLoop(
+    join(INK_DIR, "test/cursor.tsx"),
+    "test.serial(testCase.testName,",
+    "test.serial.failing(testCase.testName,",
+  )
   // Ink 7.0 components: hard wrap text rendering difference.
-  await addFailingMarks(join(INK_DIR, "test/components.tsx"), [
-    "hard wrap text",
-  ])
+  await addFailingMarks(join(INK_DIR, "test/components.tsx"), ["hard wrap text"])
   console.log("  Marked known silvery/Flexily differences as expected failures")
 
   // Run ava
