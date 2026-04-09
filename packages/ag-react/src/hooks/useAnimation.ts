@@ -1,45 +1,40 @@
 /**
- * useAnimation — Ink-compatible frame counter hook.
+ * useAnimation — Ink-compatible animation frame counter (Phase 1).
  *
- * Phase 1 of the animation system: matches Ink 7.0's shared-scheduler
- * `useAnimation` API. All components using useAnimation share ONE timer
- * (module-level scheduler), preventing multiple setIntervals from fighting
- * over tick intervals.
+ * Shared-scheduler architecture: all components using useAnimation at the same
+ * interval share ONE setInterval timer. Callbacks are registered on mount and
+ * unregistered on unmount. When the last callback for an interval is removed,
+ * the timer is cleared.
  *
- * Additions over Ink: `pause()`, `resume()`, `reset()`.
- *
- * Phases 2-5 (springs, timing, presence, imperative) are deferred.
+ * Matches Ink 7.0's `useAnimation(options?)` API with silvery extensions
+ * (pause/resume).
  *
  * @example Spinner
  * ```tsx
- * import { Text, useAnimation } from "silvery"
- *
- * const chars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
- *
  * function Spinner() {
  *   const { frame } = useAnimation({ interval: 80 })
+ *   const chars = ['\u280b', '\u2819', '\u2839', '\u2838', '\u283c', '\u2834', '\u2826', '\u2827', '\u2807', '\u280f']
  *   return <Text>{chars[frame % chars.length]}</Text>
  * }
  * ```
  *
- * @example Elapsed time display
+ * @example Conditional animation
  * ```tsx
- * function Timer() {
- *   const { time, pause, resume, reset } = useAnimation({ interval: 1000 })
- *   return <Text>{Math.floor(time / 1000)}s elapsed</Text>
+ * function Progress({ active }: { active: boolean }) {
+ *   const { frame, time } = useAnimation({ interval: 100, isActive: active })
+ *   return <Text>Frame {frame}, elapsed {time}ms</Text>
  * }
  * ```
+ *
+ * Bead: km-silvery.animation
  */
 
-import { useCallback, useEffect, useReducer, useRef } from "react"
+import { useEffect, useReducer, useRef } from "react"
 
 // ============================================================================
 // Types
 // ============================================================================
 
-/**
- * Options for useAnimation. Matches Ink 7.0's signature.
- */
 export interface UseAnimationOptions {
   /** Tick interval in milliseconds. Default: 100. */
   interval?: number
@@ -47,208 +42,170 @@ export interface UseAnimationOptions {
   isActive?: boolean
 }
 
-/**
- * Return type for useAnimation. Extends Ink 7.0's shape with pause/resume.
- */
 export interface UseAnimationResult {
-  /** Tick counter (increments by 1 each interval). */
+  /** Number of ticks since start (or last reset). */
   frame: number
-  /** Milliseconds since the animation started. */
+  /** Milliseconds elapsed since start (or last reset). */
   time: number
-  /** Milliseconds since the last tick. */
+  /** Milliseconds since the previous tick. */
   delta: number
   /** Reset frame counter and time to zero. */
   reset: () => void
-  /** Pause the animation (stops incrementing). */
+  /** Pause the animation (component stays registered but stops receiving ticks). */
   pause: () => void
-  /** Resume the animation after pause. */
+  /** Resume a paused animation. */
   resume: () => void
 }
 
 // ============================================================================
-// Shared Scheduler
+// Shared Scheduler (module-level singleton)
 // ============================================================================
 
-type SchedulerCallback = () => void
+interface TimerEntry {
+  /** The setInterval handle. */
+  handle: ReturnType<typeof setInterval>
+  /** All registered callbacks for this interval. */
+  callbacks: Set<() => void>
+}
 
 /**
- * Module-level shared scheduler. All useAnimation instances register their
- * tick callbacks here. When the first component mounts, the timer starts.
- * When the last unmounts, the timer stops. Only ONE setInterval runs at
- * any time, regardless of how many components use useAnimation.
+ * Module-level shared scheduler. Groups callbacks by interval so that
+ * multiple components using the same interval share ONE timer.
+ *
+ * The `_scheduler` export is for test introspection only.
  */
-const scheduler = {
-  /** Registered callbacks, keyed by interval (ms). */
-  buckets: new Map<number, Set<SchedulerCallback>>(),
-  /** Active timers, keyed by interval. */
-  timers: new Map<number, ReturnType<typeof setInterval>>(),
+function createScheduler() {
+  const timers = new Map<number, TimerEntry>()
 
-  register(interval: number, callback: SchedulerCallback): void {
-    let bucket = this.buckets.get(interval)
-    if (!bucket) {
-      bucket = new Set()
-      this.buckets.set(interval, bucket)
-    }
-    bucket.add(callback)
-
-    // Start timer for this interval if not already running
-    if (!this.timers.has(interval)) {
-      const timer = setInterval(() => {
-        const callbacks = this.buckets.get(interval)
-        if (callbacks) {
-          for (const cb of callbacks) {
+  function register(interval: number, callback: () => void): void {
+    let entry = timers.get(interval)
+    if (!entry) {
+      const handle = setInterval(() => {
+        // Snapshot callbacks to avoid mutation during iteration
+        const cbs = timers.get(interval)?.callbacks
+        if (cbs) {
+          for (const cb of cbs) {
             cb()
           }
         }
       }, interval)
-      this.timers.set(interval, timer)
+      entry = { handle, callbacks: new Set() }
+      timers.set(interval, entry)
     }
-  },
+    entry.callbacks.add(callback)
+  }
 
-  unregister(interval: number, callback: SchedulerCallback): void {
-    const bucket = this.buckets.get(interval)
-    if (!bucket) return
-    bucket.delete(callback)
-
-    // Clean up timer when no more callbacks at this interval
-    if (bucket.size === 0) {
-      this.buckets.delete(interval)
-      const timer = this.timers.get(interval)
-      if (timer) {
-        clearInterval(timer)
-        this.timers.delete(interval)
-      }
+  function unregister(interval: number, callback: () => void): void {
+    const entry = timers.get(interval)
+    if (!entry) return
+    entry.callbacks.delete(callback)
+    if (entry.callbacks.size === 0) {
+      clearInterval(entry.handle)
+      timers.delete(interval)
     }
-  },
+  }
 
-  /** Number of active timers (for testing). */
-  get activeTimerCount(): number {
-    return this.timers.size
-  },
-
-  /** Total registered callbacks across all intervals (for testing). */
-  get totalCallbackCount(): number {
-    let count = 0
-    for (const bucket of this.buckets.values()) {
-      count += bucket.size
-    }
-    return count
-  },
-}
-
-// Export for testing
-export { scheduler as _scheduler }
-
-// ============================================================================
-// Hook
-// ============================================================================
-
-interface AnimationState {
-  frame: number
-  time: number
-  delta: number
-  startTime: number
-  lastTickTime: number
-  paused: boolean
-}
-
-const INITIAL_STATE: AnimationState = {
-  frame: 0,
-  time: 0,
-  delta: 0,
-  startTime: 0,
-  lastTickTime: 0,
-  paused: false,
-}
-
-type AnimationAction =
-  | { type: "tick"; now: number }
-  | { type: "reset"; now: number }
-  | { type: "pause" }
-  | { type: "resume"; now: number }
-
-function animationReducer(state: AnimationState, action: AnimationAction): AnimationState {
-  switch (action.type) {
-    case "tick": {
-      if (state.paused) return state
-      const time = action.now - state.startTime
-      const delta = state.lastTickTime > 0 ? action.now - state.lastTickTime : 0
-      return {
-        ...state,
-        frame: state.frame + 1,
-        time,
-        delta,
-        lastTickTime: action.now,
+  return {
+    register,
+    unregister,
+    /** Number of active setInterval timers (test introspection). */
+    get activeTimerCount() {
+      return timers.size
+    },
+    /** Total registered callbacks across all timers (test introspection). */
+    get totalCallbackCount() {
+      let count = 0
+      for (const entry of timers.values()) {
+        count += entry.callbacks.size
       }
-    }
-    case "reset":
-      return {
-        ...INITIAL_STATE,
-        startTime: action.now,
-        lastTickTime: action.now,
-      }
-    case "pause":
-      return { ...state, paused: true }
-    case "resume":
-      return {
-        ...state,
-        paused: false,
-        // Adjust startTime so elapsed time doesn't include pause duration
-        startTime: action.now - state.time,
-        lastTickTime: action.now,
-      }
+      return count
+    },
   }
 }
 
+/** Shared scheduler singleton — exported for test introspection only. */
+export const _scheduler = createScheduler()
+
+// ============================================================================
+// Hook Implementation
+// ============================================================================
+
 /**
- * Returns animation frame state that increments at a regular interval.
+ * Ink-compatible animation hook. Returns a frame counter that increments
+ * at the specified interval, with elapsed time tracking.
  *
- * All components sharing the same interval use a single shared timer.
- * The scheduler starts when the first consumer mounts and stops when
- * the last unmounts.
+ * All components using the same interval share a single setInterval timer.
+ * When the last component unmounts, the timer is cleared.
+ *
+ * @param options - Animation options (all optional).
  */
 export function useAnimation(options: UseAnimationOptions = {}): UseAnimationResult {
   const { interval = 100, isActive = true } = options
 
-  const [state, dispatch] = useReducer(animationReducer, INITIAL_STATE, (init) => ({
-    ...init,
-    startTime: Date.now(),
-    lastTickTime: Date.now(),
-  }))
+  // Use a reducer to force re-renders on tick
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
 
-  // Ref to hold the tick callback (avoids re-registering on every render)
-  const tickRef = useRef<SchedulerCallback>(() => {})
-  tickRef.current = () => {
-    if (isActive && !state.paused) {
-      dispatch({ type: "tick", now: Date.now() })
-    }
+  // Mutable state stored in refs to avoid stale closure issues
+  const stateRef = useRef({
+    frame: 0,
+    time: 0,
+    delta: 0,
+    startTime: 0,
+    lastTickTime: 0,
+    paused: false,
+  })
+
+  // Initialize start time on first render
+  if (stateRef.current.startTime === 0) {
+    stateRef.current.startTime = Date.now()
+    stateRef.current.lastTickTime = stateRef.current.startTime
   }
 
-  // Register/unregister with the shared scheduler
+  // Register/unregister with shared scheduler
   useEffect(() => {
     if (!isActive) return
 
-    const callback: SchedulerCallback = () => tickRef.current()
-    scheduler.register(interval, callback)
-    return () => scheduler.unregister(interval, callback)
+    const state = stateRef.current
+
+    const tick = () => {
+      if (state.paused) return
+      const now = Date.now()
+      state.frame++
+      state.delta = now - state.lastTickTime
+      state.time = now - state.startTime
+      state.lastTickTime = now
+      forceUpdate()
+    }
+
+    _scheduler.register(interval, tick)
+    return () => {
+      _scheduler.unregister(interval, tick)
+    }
   }, [interval, isActive])
 
-  const reset = useCallback(() => {
-    dispatch({ type: "reset", now: Date.now() })
-  }, [])
+  const reset = () => {
+    const now = Date.now()
+    stateRef.current.frame = 0
+    stateRef.current.time = 0
+    stateRef.current.delta = 0
+    stateRef.current.startTime = now
+    stateRef.current.lastTickTime = now
+    forceUpdate()
+  }
 
-  const pause = useCallback(() => {
-    dispatch({ type: "pause" })
-  }, [])
+  const pause = () => {
+    stateRef.current.paused = true
+  }
 
-  const resume = useCallback(() => {
-    dispatch({ type: "resume", now: Date.now() })
-  }, [])
+  const resume = () => {
+    stateRef.current.paused = false
+    stateRef.current.lastTickTime = Date.now()
+  }
 
   return {
-    frame: state.frame,
-    time: state.time,
-    delta: state.delta,
+    frame: stateRef.current.frame,
+    time: stateRef.current.time,
+    delta: stateRef.current.delta,
     reset,
     pause,
     resume,
