@@ -11,8 +11,15 @@ import {
 } from "vitepress-enrich"
 import siteGlossary from "../content/glossary.json"
 
-// Site-specific terms + shared terminal vocabulary + ecosystem cross-links
-const glossary = [...siteGlossary, ...loadTerminalGlossary(), ...loadEcosystemGlossary({ exclude: ["silvery.dev"] })]
+// Load terminal glossary — loadTerminalGlossary() uses import.meta.dirname + readFileSync
+// which can fail silently in vitepress's Node.js SSR build. Log count to catch silent failures.
+const termGlossary = loadTerminalGlossary()
+const ecoGlossary = loadEcosystemGlossary({ exclude: ["silvery.dev"] })
+if (termGlossary.length === 0) {
+  console.warn("[glossary] WARNING: terminal glossary loaded 0 entries — autolinks for terminal terms (tmux, Kitty, SGR, etc.) will be missing")
+}
+console.log(`[glossary] Loaded: ${siteGlossary.length} site + ${termGlossary.length} terminal + ${ecoGlossary.length} ecosystem = ${siteGlossary.length + termGlossary.length + ecoGlossary.length} total`)
+const glossary = [...siteGlossary, ...termGlossary, ...ecoGlossary]
 
 const seoOptions = {
   hostname: "https://silvery.dev",
