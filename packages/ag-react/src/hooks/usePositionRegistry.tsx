@@ -2,7 +2,7 @@
  * Position Registry — 2D grid position tracking with auto-cleanup.
  *
  * Tracks screen positions of items in a 2D grid (sections × items).
- * Items auto-register on mount via useScrollRectCallback and auto-unregister
+ * Items auto-register on mount via useScrollRect and auto-unregister
  * on unmount via useEffect cleanup. Eliminates stale-entry bugs.
  *
  * @example
@@ -39,7 +39,7 @@ export interface ScrollRect {
  * Position registry for 2D grid layouts.
  *
  * Items are keyed by (sectionIndex, itemIndex). Positions are screen-relative
- * (accounting for scroll offsets) via useScrollRectCallback.
+ * (accounting for scroll offsets) via useScrollRect.
  */
 export interface PositionRegistry {
   // === Registration ===

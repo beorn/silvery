@@ -53,7 +53,7 @@ export function layoutPhase(root: AgNode, width: number, height: number): void {
 
   // NOTE: Subscribers are NOT notified here anymore.
   // They are notified in executeRender AFTER scrollrectPhase completes,
-  // so useScrollRectCallback can read the correct screen positions.
+  // so useScrollRect can read the correct screen positions.
 }
 
 /**
@@ -166,11 +166,11 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number): void {
  * Notify all layout subscribers of dimension changes.
  *
  * Called from executeRender AFTER scrollrectPhase completes,
- * so useScrollRectCallback can read correct screen positions.
+ * so useScrollRect can read correct screen positions.
  *
  * Notifies when EITHER boxRect, scrollRect, or screenRect changed.
  * scrollRect can change from scroll offset changes even when
- * boxRect stays the same — subscribers (like useScrollRectCallback)
+ * boxRect stays the same — subscribers (like useScrollRect)
  * need notification in both cases. screenRect can change from sticky
  * offset changes even when scrollRect stays the same.
  */

@@ -31,7 +31,7 @@ import { GridCell } from "silvery"
 
 ## Behavior
 
-Renders a transparent Box (no visual impact) around children. Position tracking uses `useScrollRectCallback` (zero re-renders). Requires a `PositionRegistryProvider` ancestor.
+Renders a transparent Box (no visual impact) around children. Position tracking uses `useScrollRect` (zero re-renders). Requires a `PositionRegistryProvider` ancestor.
 
 ## See Also
 

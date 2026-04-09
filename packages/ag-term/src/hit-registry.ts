@@ -114,13 +114,13 @@ export function useHitRegion(target: HitTarget, rect: Rect | null, zIndex = 0, e
 /**
  * Hook to register a hit region using a callback for screen position.
  *
- * Similar to useHitRegion but works with useScrollRectCallback for
+ * Similar to useHitRegion but works with useScrollRect for
  * better performance in large lists (avoids re-renders).
  *
  * @param target - The target to return when this region is clicked
  * @param zIndex - Z-index for layering (default: 0)
  * @param enabled - Whether the region is active (default: true)
- * @returns A callback to pass to useScrollRectCallback
+ * @returns A callback to pass to useScrollRect
  *
  * @example
  * ```tsx
@@ -130,7 +130,7 @@ export function useHitRegion(target: HitTarget, rect: Rect | null, zIndex = 0, e
  *     10 // z-index
  *   );
  *
- *   useScrollRectCallback(onLayout);
+ *   useScrollRect(onLayout);
  *
  *   return <Box>...</Box>;
  * }

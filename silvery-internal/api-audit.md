@@ -109,7 +109,7 @@ This is the largest entry point (~1057 lines). Re-exports from `@silvery/ag-reac
 
 **Hooks** (30+):
 
-- Layout: `useboxRect`, `useboxRectCallback`, `useScrollRect`, `useScrollRectCallback`
+- Layout: `useBoxRect`, `useScrollRect`, `useScreenRect` (each has reactive and callback signatures via overload)
 - Input: `useInput`, `useInputLayer`, `useInputLayerContext`, `useReadline`
 - App: `useApp`, `useStdout`, `useRuntime`, `useTerm`, `useConsole`
 - Focus: `useFocusable`, `useFocusWithin`, `useFocusManager`, `useFocus`, `useInkFocusManager`
@@ -137,7 +137,7 @@ This is the largest entry point (~1057 lines). Re-exports from `@silvery/ag-reac
 
 Subset focused on hooks only:
 
-- `useboxRect`, `useboxRectCallback`, `useScrollRect`
+- `useboxRect`, `useBoxRect`, `useScrollRect`
 - `useInput`, `useRuntime`, `useApp`, `useStdout`
 - `useFocusable`, `useFocusWithin`, `useFocusManager`
 - `useInputLayer`, `useInputLayerContext`

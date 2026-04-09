@@ -34,7 +34,7 @@ export interface GridCellProps {
  * A thin wrapper that auto-registers its screen position in the PositionRegistry.
  *
  * Renders a transparent Box (no visual impact) around children.
- * Position tracking uses useScrollRectCallback (zero re-renders).
+ * Position tracking uses useScrollRect (zero re-renders).
  */
 export function GridCell({ sectionIndex, itemIndex, children }: GridCellProps) {
   useGridPosition(sectionIndex, itemIndex)

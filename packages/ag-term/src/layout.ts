@@ -17,10 +17,5 @@
  * @packageDocumentation
  */
 
-export {
-  useBoxRect,
-  useBoxRectCallback,
-  useScrollRect,
-  useScrollRectCallback,
-} from "@silvery/ag-react/hooks/useLayout"
+export { useBoxRect, useScrollRect, useScreenRect } from "@silvery/ag-react/hooks/useLayout"
 export type { Rect } from "@silvery/ag/types"
