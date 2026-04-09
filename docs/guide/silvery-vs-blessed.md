@@ -1,40 +1,35 @@
 # Silvery vs Blessed
 
-_Information about Blessed as of March 2026._
+_External project claims last verified: 2026-04. Blessed version: 0.1.81 (last release 2015)._
 
-## Why This Page Exists
+[Blessed](https://github.com/chjj/blessed) (2013) pioneered rich terminal UIs in Node.js by reimplementing ncurses entirely in JavaScript (~16,000 lines). Its curses-like API — screens, boxes, lists, forms, tables, and a terminal-within-terminal widget — was state-of-the-art for its era. The last tagged release (v0.1.81) was 2015; the last commit to the main repository was 2017. Community forks ([neo-blessed](https://github.com/embarklabs/neo-blessed), [blessed-ng](https://github.com/nicholasgasior/blessed-ng)) apply maintenance patches but haven't substantially changed the architecture. Despite being unmaintained, Blessed still sees ~1.6M npm weekly downloads — a testament to how many production CLIs depend on it.
 
-If you're building a terminal UI in JavaScript, you've probably encountered Blessed. For years it was the only serious option for curses-style TUI development in Node.js. But Blessed has been unmaintained since 2015, and the ecosystem has moved on.
+Silvery (2025) is a ground-up reimplementation with a React component model, CSS flexbox layout, and an incremental rendering pipeline. Different era, different architecture, different trade-offs.
 
-This page compares the two so you can make an informed decision -- particularly if you're maintaining a Blessed-based app and considering what comes next.
+## Highlights
 
-## The Two Projects
+The biggest differences at a glance:
 
-[Blessed](https://github.com/chjj/blessed) (2013) is a curses-like terminal interface library for Node.js. It reimplements ncurses entirely in JavaScript (~16,000 lines), providing a widget system with screens, boxes, lists, forms, tables, and more. The last tagged release (v0.1.81) was in 2015. The last commit to the main repository was in 2017. There are community forks ([neo-blessed](https://github.com/embarklabs/neo-blessed), [blessed-ng](https://github.com/nicholasgasior/blessed-ng)) that apply maintenance patches, but none have substantially evolved the architecture.
+- **React declarative vs curses imperative** — Silvery uses JSX, hooks, and React's component model. Blessed uses `create → set → append → render()` with manual state mutation. The declarative approach eliminates a class of bugs: forgotten `render()` calls, out-of-order widget mutations, orphaned event listeners.
+- **CSS flexbox layout** — `flexGrow`, `flexWrap`, `gap`, `alignItems`, `justifyContent` via the Flexily engine. Blessed uses manual absolute/percentage positioning with coordinate math.
+- **Layout-first rendering** — components know their size _during_ render via `useBoxRect()`, not after. Blessed has no equivalent.
+- **Cell-level incremental rendering** — per-node dirty tracking (7 flags/node), cell-level buffer diff, minimal ANSI output. Blessed redraws the full screen on each `render()` call.
+- **Modern terminal protocols** — Kitty keyboard (all 5 flags), SGR mouse, OSC 52 clipboard, Kitty graphics + Sixel, synchronized output (DEC 2026), extended underlines. Blessed was built for the 2013 terminal landscape.
+- **45+ built-in components** — VirtualList, Table, TreeView, CommandPalette, Toast, Tabs, SplitView, TextArea, ModalDialog, and more.
+- **Multi-backend test matrix** — [Termless](https://termless.dev) runs tests across 10+ real terminal parsers (xterm.js, vt100, Ghostty, Kitty, Alacritty, ...). Blessed has no built-in testing support.
+- **Dynamic scrollback** — items graduate to terminal history automatically; inline/fullscreen hybrid modes blur the boundary. Blessed has neither.
+- **3–5× faster on mounted workloads** — cell-level diff + incremental rendering vs full screen redraw. Output efficiency is 28–192× less ANSI emitted per update.
+- **38 palettes, semantic tokens** — theme system with `$primary`, `$muted`, auto-detection. Blessed uses manual styling.
 
-[Silvery](https://github.com/beorn/silvery) (2025) is a React-based terminal UI framework for TypeScript. Modern rendering pipeline, CSS flexbox layout, incremental rendering, comprehensive terminal protocol support. Actively developed.
+**Where Blessed is stronger:**
 
-## At a Glance
+- **Familiar to systems programmers** — Blessed's curses-like API (`screen.key(...)`, `box.on('click', ...)`, `screen.render()`) maps directly to ncurses concepts. If you're coming from C/Python curses, Blessed feels natural.
+- **Extensive widget set for its era** — form controls, a built-in terminal emulator widget, video player widget, IRC client widgets — specialized components that Silvery doesn't replicate.
+- **Direct screen buffer manipulation** — Blessed exposes low-level screen buffer access for custom rendering. Silvery abstracts through a pipeline.
+- **Still works in production** — despite being unmaintained, Blessed runs in thousands of deployed CLIs. The API is frozen, which means stability for apps that don't need new features.
+- **Zero-config terminal compatibility** — Blessed's terminfo/termcap parser handles obscure terminals. Silvery targets modern terminals (Kitty, Ghostty, WezTerm, iTerm2, Windows Terminal).
 
-| Aspect               | Blessed                                                 | Silvery                                                                         |
-| -------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| **Status**           | Unmaintained (last release 2015)                        | Active development                                                              |
-| **Language**         | JavaScript (CommonJS)                                   | TypeScript (ESM)                                                                |
-| **Architecture**     | Curses-style (Screen → Widget tree)                     | React declarative (JSX component tree)                                          |
-| **API style**        | Imperative (create, set, append, render)                | Declarative (JSX, props, hooks)                                                 |
-| **Layout**           | Manual positioning (top/left/width/height, percentages) | CSS flexbox (Flexily engine)                                                    |
-| **Rendering**        | Full screen redraw                                      | Per-node incremental with cell-level diff                                       |
-| **Terminal parsing** | Built-in terminfo/termcap parser                        | Built-in ANSI parser + capability detection                                     |
-| **Components**       | ~40 widgets (list, table, form, textbox, etc.)          | 45+ components (VirtualList, TextArea, SelectList, Table, CommandPalette, etc.) |
-| **Mouse support**    | X10 protocol (basic)                                    | SGR protocol with DOM-style events                                              |
-| **Keyboard**         | Traditional terminal input                              | Kitty keyboard protocol (all 5 flags)                                           |
-| **Unicode/emoji**    | Limited (width calculation issues)                      | Full support (grapheme splitting, display width, CJK, emoji ZWJ)                |
-| **True color**       | Partial (256 color default)                             | Full (16/256/truecolor, automatic downsampling)                                 |
-| **Testing**          | None built-in                                           | `@silvery/test` + Termless (terminal emulator)                                  |
-| **Theme system**     | Manual styling                                          | 38 palettes, semantic tokens, auto-detection                                    |
-| **Native deps**      | None                                                    | None                                                                            |
-| **Node.js version**  | 0.10+ (era-appropriate)                                 | 18+ (modern ESM)                                                                |
-| **npm downloads**    | ~1.6M/week (legacy installs)                            | New                                                                             |
+**What's the same:** both are pure JavaScript/TypeScript with no native dependencies. Both abstract over raw terminal I/O. Both provide a widget/component tree model. Both handle padding, margin, and borders. Both work with Node.js.
 
 ## Architecture: Imperative vs Declarative
 
@@ -92,6 +87,98 @@ You describe what the UI should look like. React handles diffing and updates. St
 
 The declarative approach eliminates an entire class of bugs -- forgetting to call `render()`, mutating widgets in the wrong order, orphaned event listeners, manual DOM-like manipulation that gets out of sync with state.
 
+## Feature Matrix
+
+Blessed first, Silvery second. Features marked "core" are built into the framework.
+
+### Layout
+
+| Feature | Blessed | Silvery |
+|---|---|---|
+| **Positioning model** | Manual absolute/percentage (`top`, `left`, `width`, `height`) | CSS flexbox (Flexily engine) |
+| **Flex layout** | None — manual coordinate math | `flexGrow`, `flexShrink`, `flexWrap`, `gap`, `alignItems`, `justifyContent` |
+| **Responsive layout** | Manual resize handling | `useBoxRect()` — dimensions available _during_ render, first pass |
+| **Scrollable containers** | Built-in scroll on widgets (`.scrollTo()`, `.scroll()`) | `overflow="scroll"` + `scrollTo` — framework-level, handles clipping |
+| **Sticky headers** | None | `position="sticky"` in scroll containers |
+| **Nested layouts** | Careful coordinate math for each level | Nested flex containers — automatic |
+
+### Rendering
+
+| Feature | Blessed | Silvery |
+|---|---|---|
+| **Rendering model** | Full screen redraw per `render()` call; `smartCSR` optimizes scroll regions | 5-phase pipeline: measure → layout → content → output → flush |
+| **Incremental rendering** | Region-level via `smartCSR` / `fastCSR` | Cell-level dirty tracking (7 flags/node), cell-level buffer diff |
+| **Output efficiency** | Full screen write | **28–192× less output** — cell-level diff + relative cursor addressing |
+| **Inline mode** | None — always fullscreen | Cell-level incremental with native scrollback preserved |
+| **Dynamic scrollback** | None | Items graduate to terminal history; Cmd+F works |
+| **Fullscreen-like inline** | N/A | Inline mode with fullscreen performance — cell-level incremental + scrollback graduation |
+| **Synchronized output** | None | DEC mode 2026 — flicker-free in tmux/Zellij |
+
+### Interaction
+
+| Feature | Blessed | Silvery |
+|---|---|---|
+| **Mouse** | X10 protocol (basic click) | SGR 1006 (large coordinates, precise tracking, drag, wheel) |
+| **Event model** | Flat EventEmitter — no bubbling, no capturing | DOM-style bubbling, `stopPropagation`, input layering |
+| **Input isolation** | Manual state checking in every handler | `InputLayerProvider` — modal dialogs consume input automatically |
+| **Focus system** | Widget-level `.focus()` | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin` |
+| **Text selection + find** | None | Mouse drag, `Ctrl+F` search, `Esc,v` keyboard selection |
+| **Command system** | None | Named commands, context-aware keys, `parseHotkey("⌘K")` |
+| **Clipboard** | Via external tools (`pbcopy`, `xclip`) | OSC 52 — works over SSH, no external tools |
+
+### Terminal Protocol Support
+
+Blessed was state-of-the-art for 2013. The terminal landscape has changed substantially since then.
+
+| Feature | Blessed | Silvery |
+|---|---|---|
+| **Color** | 16/256 (truecolor partial) | 16/256/truecolor with automatic downsampling |
+| **Keyboard** | Traditional input parsing | Kitty keyboard protocol (all 5 flags: disambiguate, events, alternate, all keys, text) |
+| **Underline styles** | Single only | ISO 8613-6 (single, double, curly, dotted, dashed + color) |
+| **Hyperlinks** | None | OSC 8 clickable URLs |
+| **Images** | None | Kitty graphics + Sixel with auto-detect and text fallback |
+| **Bracketed paste** | None | `usePaste` hook with automatic mode toggling |
+| **Focus events** | None | DEC mode 1004 (focus in/out reporting) |
+| **Window title** | Via `screen.title` | OSC 0/2 |
+| **Terminal detection** | terminfo/termcap parsing | DA1/DA2/DA3, XTVERSION + terminfo queries |
+| **Cursor styles** | Limited | Full DECSCUSR (block, underline, bar, blinking) |
+| **Synchronized output** | None | DEC mode 2026 (flicker-free in tmux/Zellij) |
+
+Modern terminals (Kitty, Ghostty, WezTerm, iTerm2, Windows Terminal) support protocols that didn't exist when Blessed was written. Applications built with Blessed cannot take advantage of these without significant patching.
+
+For compatibility data across terminals, see [terminfo.dev](https://terminfo.dev).
+
+### Components & Framework
+
+| Feature | Blessed | Silvery |
+|---|---|---|
+| **Built-in widgets/components** | ~40 widgets (list, table, form, textbox, terminal, etc.) | **45+** components (VirtualList, Table, CommandPalette, TreeView, Toast, Tabs, SplitView, ...) |
+| **Specialized widgets** | Terminal emulator, video player, IRC widgets | None — focused on general-purpose UI components |
+| **Theme system** | Manual styling | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect |
+| **Plugin composition** | None | `withCommands` / `withKeybindings` / `withDomEvents` / `withFocus` |
+| **TEA state machines** | None | `@silvery/create`: `(action, state) → [state, effects]`, replay, undo |
+| **Animation** | None built-in | `useAnimation` + easing functions + `useAnimatedTransition` |
+| **Resource cleanup** | Manual | `using` / Disposable — automatic teardown |
+
+### Unicode & Emoji
+
+| Feature | Blessed | Silvery |
+|---|---|---|
+| **CJK characters** | Width calculation issues — double-width characters often misalign | Full support (East Asian Width, proper display width) |
+| **Emoji** | Limited — ZWJ sequences and modifiers break layout | Full support (ZWJ sequences, modifier sequences, grapheme splitting) |
+| **Combining characters** | Limited | UAX #29 grapheme cluster splitting |
+| **ANSI-aware text ops** | Basic | 28+ built-in functions (truncation, wrapping, slicing, width calculation) |
+
+### Testing
+
+| Feature | Blessed | Silvery |
+|---|---|---|
+| **Test library** | None built-in | Built-in `@silvery/test` with Playwright-style locators, `press()`, buffer assertions |
+| **Headless rendering** | None | `createTerm({ cols, rows })` — no terminal needed |
+| **Terminal emulator in tests** | None | `createTermless()` via [Termless](https://termless.dev) — in-process terminal emulation with 10+ backends: xterm.js, vt100, libvterm, Ghostty, Kitty, Alacritty, WezTerm, and more |
+| **Render invariant checks** | None | `SILVERY_STRICT=1` verifies incremental = fresh on every frame |
+| **Visual snapshots** | None | `bufferToHTML()`, Playwright capture, and Termless `.tape` recordings → animated GIF, PNG, SVG with 77 themes |
+
 ## Layout
 
 ### Blessed: Manual Positioning
@@ -144,67 +231,6 @@ Layout is manual arithmetic -- you calculate positions and sizes yourself. Perce
 The Flexily layout engine handles flexbox automatically -- `flexGrow`, `flexShrink`, `flexWrap`, `gap`, `alignItems`, `justifyContent`, `padding`, `margin`, and `border`. Components can read their computed dimensions during render via `useBoxRect()`.
 
 For anything beyond trivial layouts, the difference is substantial. A three-column kanban board with variable-height cards in Blessed requires tracking positions for every element. In Silvery, it's nested flex containers.
-
-## Unicode and Emoji
-
-Blessed was built in the era of ASCII terminals. Its character width calculation has known issues with:
-
-- **CJK characters** -- double-width characters often misalign subsequent content
-- **Emoji** -- particularly ZWJ (zero-width joiner) sequences and modifier sequences
-- **Combining characters** -- diacritical marks and other combining marks
-- **Grapheme clusters** -- characters that span multiple Unicode code points
-
-Silvery handles all of these natively with 28+ built-in Unicode utility functions:
-
-- Grapheme cluster splitting (UAX #29)
-- East Asian Width for display width calculation
-- CJK detection
-- ANSI-aware text truncation, wrapping, and slicing
-- Emoji ZWJ sequence handling
-
-This matters more than it might seem -- any app displaying user-generated content, filenames, or international text will hit these issues in Blessed.
-
-## Terminal Protocol Support
-
-Blessed was state-of-the-art for 2013. The terminal landscape has changed substantially since then.
-
-| Feature                 | Blessed                                | Silvery                                                                 |
-| ----------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| **Color**               | 16/256 (truecolor partial)             | 16/256/truecolor with automatic downsampling                            |
-| **Mouse**               | X10 protocol (basic click)             | SGR 1006 (large coordinates, precise tracking, drag)                    |
-| **Keyboard**            | Traditional input parsing              | Kitty keyboard protocol (disambiguate Ctrl+I/Tab, press/repeat/release) |
-| **Underline styles**    | Single only                            | ISO 8613-6 (single, double, curly, dotted, dashed + color)              |
-| **Clipboard**           | Via external tools (`pbcopy`, `xclip`) | OSC 52 (works over SSH, no external tools)                              |
-| **Hyperlinks**          | None                                   | OSC 8 clickable URLs                                                    |
-| **Images**              | None                                   | Kitty graphics + Sixel with auto-detect                                 |
-| **Synchronized output** | None                                   | DEC mode 2026 (flicker-free in tmux/Zellij)                             |
-| **Bracketed paste**     | None                                   | `usePaste` hook with automatic mode toggling                            |
-| **Focus events**        | None                                   | DEC mode 1004 (focus in/out reporting)                                  |
-| **Window title**        | Via `screen.title`                     | OSC 0/2                                                                 |
-| **Terminal detection**  | terminfo/termcap parsing               | DA1/DA2/DA3, XTVERSION + terminfo queries                               |
-| **Cursor styles**       | Limited                                | Full DECSCUSR (block, underline, bar, blinking)                         |
-
-Modern terminals (Kitty, Ghostty, WezTerm, iTerm2, Windows Terminal) support protocols that didn't exist when Blessed was written. Applications built with Blessed cannot take advantage of these without significant patching.
-
-For compatibility data across terminals, see [terminfo.dev](https://terminfo.dev).
-
-## Rendering
-
-### Blessed
-
-Blessed renders by writing the full screen content on each `render()` call, with some optimization via `smartCSR` (scroll region detection) and `fastCSR`. The rendering is direct string output -- no intermediate buffer, no cell-level diffing.
-
-### Silvery
-
-Silvery uses a 5-phase pipeline:
-
-1. **Measure** -- calculate content sizes
-2. **Layout** -- flexbox via Flexily, with caching for unchanged subtrees
-3. **Content** -- render only dirty nodes (7 independent dirty flags per node)
-4. **Output** -- cell-level buffer diff, emit minimal ANSI
-5. **Flush** -- synchronized output (DEC 2026) for flicker-free display
-
-A typical interactive update (cursor move) touches a few nodes and takes ~169 us in a 1000-node tree. Blessed re-renders the entire screen.
 
 ## Event Handling
 
@@ -306,19 +332,23 @@ If you're maintaining a Blessed app and considering a move, here's what to expec
 
 - CSS flexbox layout, eliminating manual coordinate math
 - React's component model (hooks, context, composition, third-party libraries)
-- Incremental rendering (orders of magnitude faster updates for large trees)
+- Incremental rendering (28–192× less output per update)
 - Modern terminal protocols (Kitty keyboard, SGR mouse, images, clipboard)
 - Full Unicode/emoji support
-- Built-in testing with Termless
+- Built-in testing with Termless (10+ terminal backends)
+- 38 theme palettes with semantic tokens
 - Active maintenance and development
 
-## When to Choose
+## When to Choose What
+
+Both tools serve different needs. The right choice depends on your situation.
 
 ### Keep Blessed when:
 
 - **Legacy maintenance** -- an existing Blessed app is stable and only needs minor fixes
 - **No resources to migrate** -- the migration effort is not justified for an app that is working and not actively developed
 - **Specific Blessed widgets** -- you depend on Blessed-specific widgets (terminal emulator, video player, IRC client widgets) that have no Silvery equivalent
+- **Obscure terminal support** -- you target terminals that only work with terminfo/termcap and don't support modern protocols
 
 ### Choose Silvery when:
 
@@ -327,5 +357,6 @@ If you're maintaining a Blessed app and considering a move, here's what to expec
 - **Complex UIs** -- multi-pane layouts, scrollable containers, and responsive design are dramatically easier with flexbox
 - **Modern terminals** -- if your users have Kitty, Ghostty, WezTerm, or iTerm2, Silvery can take advantage of their capabilities
 - **Unicode content** -- international text, emoji, CJK characters work correctly out of the box
-- **Testing** -- Termless provides test coverage for terminal rendering that Blessed cannot match
+- **Testing** -- Termless provides test coverage across 10+ terminal backends that Blessed cannot match
 - **TypeScript** -- type safety, editor support, and modern JavaScript patterns
+- **Performance** -- 3–5× faster mounted updates and 28–192× less terminal output per change
