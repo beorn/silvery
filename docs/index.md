@@ -31,7 +31,7 @@ head:
 hero:
   name: "Silvery"
   text: "React for modern terminal apps"
-  tagline: "Responsive layouts, native scrollback, incremental rendering, 45+ components. 99% Ink-compatible. Pure TypeScript, no WASM."
+  tagline: "Responsive layouts, incremental rendering, 45+ components. Ink-compatible. Pure TypeScript, no WASM."
   actions:
     - theme: brand
       text: Get Started
@@ -50,14 +50,14 @@ features:
     linkText: Ink compatibility guide
   - title: Pure TypeScript
     details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. Instant startup, stable memory."
-  - title: Incremental Rendering
-    details: "Per-node dirty tracking with 7 independent flags. Only changed cells emit to the terminal. Layout runs before render, so every frame commits atomically — no flicker, no stutter."
+  - title: Fast Incremental Rendering
+    details: "3–5× faster than Ink 7.0 on mounted workloads. Cell-level dirty tracking — only changed cells emit to the terminal. Works in inline mode with native scrollback, not just fullscreen."
     link: /guide/silvery-vs-ink#performance
     linkText: See benchmarks
-  - title: Responsive Layout & Scrolling
-    details: "Components know their size during render via useBoxRect(). Native scroll containers with overflow=scroll. No prop drilling, no post-render measurement, no manual virtualization."
-    link: /guide/silvery-vs-ink#the-atomicity-story
-    linkText: How atomic rendering works
+  - title: Advanced Layout
+    details: "One-phase responsive layouts — useBoxRect() returns real dimensions during render. overflow=scroll with scrollTo. position=sticky headers. ANSI-aware compositing with color blending."
+    link: /guide/silvery-vs-ink
+    linkText: Architecture deep dive
   - title: 45+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
@@ -109,19 +109,6 @@ vp silvery examples
 - **[Scrollback](/examples/scrollback)** -- Dynamic inline mode: freeze-and-scroll, natural history (unique)
 - **[AI Coding Agent](/examples/ai-chat)** -- Streaming output, tool calls, command introspection for agents
 - **[Testing](/examples/testing)** -- Headless renderer, Playwright-style locators, press() simulation
-
-</div>
-
-## The Renderer
-
-<div class="features-list">
-
-- **Atomic layout-first pipeline** -- Layout runs before content render. `useBoxRect()` returns real dimensions on the first pass. No two-pass flash, no components rendering at `width: 0`, no flicker cascade.
-- **Cell-level buffer + diff** -- 2D grid representation, per-cell dirty tracking, relative cursor addressing. Typical interactive updates emit 28-192× less output than full redraw.
-- **Synchronized frame output** -- Every frame wrapped in DEC mode 2026 bracketing. Terminal either sees old frame or new frame, never a half-drawn mixture. No tearing, no stutter.
-- **Scrollable containers** -- `overflow="scroll"` with `scrollTo` works natively. No manual virtualization.
-- **Dynamic inline scrollback** -- Live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F works natively. The thing Claude Code spent six months trying to retrofit into Ink.
-- **Pure TypeScript** -- No WASM, no C++, no native dependencies. Runtime bundle is 114.9 KB gzipped — **parity with Ink+Yoga (116.6 KB)**. Runs on Node, Bun, and Deno.
 
 </div>
 

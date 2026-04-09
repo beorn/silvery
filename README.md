@@ -2,7 +2,7 @@
 
 **React for modern terminal apps.**
 
-Ink-compatible React renderer with an atomic rendering pipeline. Same `Box`, `Text`, `useInput` API you know. 99% Ink 7.0 compatible, 2.5–5.2× faster on mounted workloads, bundle-parity with Ink+Yoga. Plus everything you wish Ink had.
+Ink-compatible React renderer for interactive terminal apps. Same `Box`, `Text`, `useInput` API you know. 3–5× faster than Ink 7.0 on mounted workloads. Plus everything you wish Ink had.
 
 > **Work in progress.** APIs may change. Feedback welcome.
 
@@ -37,13 +37,11 @@ await render(<Counter />).run()
 
 ### Better
 
-- **Atomic rendering pipeline** — layout runs before render (no two-pass flash), cell-level buffer diff (no line redraws), synchronized frame output via DEC mode 2026 (no tearing). A class of rendering bugs architecturally impossible: no flicker, no component dropout on scroll, no half-updated frames
-- **2.5–5.2× faster than Ink 7.0 on mounted workloads** — wins all 16 benchmark scenarios. Only changed cells emit to the terminal; incremental output is 28–192× smaller than full redraw. Run `bun run bench` in the repo to reproduce
-- **Bundle parity with Ink+Yoga** — 114.9 KB gzipped runtime vs Ink+Yoga's 116.6 KB (0.99× tied). Pure TypeScript, no WASM, zero native deps — works on Alpine, CI, Docker, everywhere
-- **Responsive layout** — `useBoxRect()` returns actual dimensions synchronously during render
-- **Dynamic scrollback** — live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F works natively. The thing Claude Code spent six months trying to retrofit into Ink
-- **Scrollable containers** — `overflow="scroll"` with automatic measurement and clipping
-- **99% Ink 7.0 compatible** — 918+/931 Ink tests pass on silvery's compat layer. Drop-in migration via `@silvery/ink`
+- **3–5× faster than Ink 7.0** — cell-level dirty tracking, only changed cells emit to the terminal. Works in inline mode with native scrollback, not just fullscreen. Run `bun run bench` to reproduce
+- **Layout-first rendering** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables `overflow="scroll"`, `position="sticky"`, and ANSI-aware compositing with color blending
+- **Dynamic scrollback** — live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F and text selection work natively
+- **Pure TypeScript, zero native deps** — no WASM, no build steps. Works on Alpine, CI, Docker, everywhere
+- **Ink-compatible** — 918+/931 Ink 7.0 tests pass on silvery's compat layer. Drop-in migration via `@silvery/ink`
 - **Theme system** — 38 palettes, semantic design/color tokens (`$primary`, `$error`), auto-detects terminal colors
 - **30+ components** — TextInput, TextArea, SelectList, ListView, Table, TreeView, Console, Tabs, CommandPalette, ModalDialog, Toast, and more
 - **Focus system** — scoped focus, arrow-key directional nav, click-to-focus
