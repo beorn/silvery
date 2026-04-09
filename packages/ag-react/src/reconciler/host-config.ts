@@ -9,7 +9,7 @@
 import { createContext } from "react"
 import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
 import type { BoxProps, AgNode, AgNodeType, TextProps } from "@silvery/ag/types"
-import { contentPropsChanged, layoutPropsChanged, propsEqual } from "./helpers"
+import { classifyPropChanges } from "./helpers"
 import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes"
 import { createLogger } from "loggily"
 
@@ -420,7 +420,7 @@ export const hostConfig = {
     newProps: BoxProps | TextProps,
   ): boolean | null {
     // Return true if we need to update
-    return !propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
+    return classifyPropChanges(oldProps as Record<string, unknown>, newProps as Record<string, unknown>).anyChanged
   },
 
   // Note: react-reconciler 0.33+ changed the signature from
@@ -440,25 +440,28 @@ export const hostConfig = {
     if ("style" in newProps && newProps.style && typeof newProps.style === "object") {
       newProps = { ...newProps.style, ...newProps } as BoxProps | TextProps
     }
+
+    // Single-pass prop classification — replaces 3 separate iterations
+    // (propsEqual + layoutPropsChanged + contentPropsChanged)
+    const { anyChanged, layoutChanged, contentChanged } = classifyPropChanges(
+      oldProps as Record<string, unknown>,
+      newProps as Record<string, unknown>,
+    )
+
     // Early exit if props are equal (React may call commitUpdate even when nothing changed)
-    if (propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
+    if (!anyChanged) {
       instance.props = newProps
       return
     }
 
-    // Check if layout-affecting props changed
-    if (layoutPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
+    // Apply layout-affecting prop changes
+    if (layoutChanged) {
       if (instance.layoutNode) {
         applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)
         instance.layoutNode.markDirty()
       }
       instance.layoutDirty = true
     }
-
-    // Check if content changed (text children, style props like backgroundColor)
-    // Returns "text" for text content changes (affect layout) or "style" for
-    // style-only changes (borderColor, color, etc. — don't affect layout).
-    const contentChanged = contentPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
     if (contentChanged) {
       // stylePropsDirty: always set for any visual change. Render phase uses this
       // to know the node needs re-rendering (border, text style, bg, etc.).
