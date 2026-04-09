@@ -1,43 +1,33 @@
 /**
  * useBoxMetrics — Ink-compatible box metrics hook.
  *
- * Returns layout metrics ({ width, height, left, top, hasMeasured }) for the
- * nearest silvery Box. Matches Ink 7.0's `useBoxMetrics(ref)` signature for
- * drop-in compatibility, while also supporting silvery's NodeContext idiom
- * when called without a ref.
+ * Returns `{ width, height, left, top, hasMeasured }` for the nearest Box,
+ * with parent-relative positioning (matching Ink 7.0 semantics).
  *
- * Semantics:
- * - `left` / `top` are **parent-relative** (contentRect.x − parent.contentRect.x)
- *   to match Ink's `getComputedLayout()` semantics.
- * - `hasMeasured` is `false` before layout runs and `true` after — useful for
- *   rendering loading states on first frame.
- * - Pre-measure: returns zeros (all fields 0, `hasMeasured: false`).
+ * Two usage modes:
+ * - **Without ref** (silvery idiom): reads from NodeContext — works for any
+ *   component rendered inside a `<Box>`.
+ * - **With ref** (Ink idiom): reads from a BoxHandle ref attached to a `<Box>`.
  *
- * @example Ink-compatible (ref-based)
+ * @example Context-based (silvery idiom)
  * ```tsx
- * import { useRef } from "react"
- * import { Box, Text, useBoxMetrics } from "silvery"
- *
- * function MyBox() {
- *   const ref = useRef(null)
- *   const { width, height, hasMeasured } = useBoxMetrics(ref)
- *   return (
- *     <Box ref={ref}>
- *       <Text>{hasMeasured ? `${width}x${height}` : "measuring..."}</Text>
- *     </Box>
- *   )
+ * function Inner() {
+ *   const { width, height, hasMeasured } = useBoxMetrics()
+ *   if (!hasMeasured) return <Text>Measuring...</Text>
+ *   return <Text>Size: {width}x{height}</Text>
  * }
  * ```
  *
- * @example Silvery idiom (context-based, no ref)
+ * @example Ref-based (Ink idiom)
  * ```tsx
- * import { Box, Text, useBoxMetrics } from "silvery"
- *
- * function Header() {
- *   const { width } = useBoxMetrics()
- *   return <Text>{"=".repeat(width)}</Text>
+ * function Outer() {
+ *   const ref = useRef<BoxHandle>(null)
+ *   const { width, height } = useBoxMetrics(ref)
+ *   return <Box ref={ref}><Text>{width}x{height}</Text></Box>
  * }
  * ```
+ *
+ * Bead: km-silvery.boxmetrics-parity
  */
 
 import { useContext, useLayoutEffect, useReducer, type RefObject } from "react"
@@ -48,24 +38,16 @@ import type { AgNode } from "@silvery/ag/types"
 // Types
 // ============================================================================
 
-/**
- * Box layout metrics. Matches Ink 7.0's `BoxMetrics` shape.
- */
 export interface BoxMetrics {
-  /** Width of the box's content rect */
   readonly width: number
-  /** Height of the box's content rect */
   readonly height: number
-  /** Parent-relative X offset (left) */
   readonly left: number
-  /** Parent-relative Y offset (top) */
   readonly top: number
-  /** `false` before first layout, `true` once measured */
   readonly hasMeasured: boolean
 }
 
 // ============================================================================
-// Internals
+// Constants
 // ============================================================================
 
 const EMPTY_METRICS: BoxMetrics = {
@@ -76,62 +58,39 @@ const EMPTY_METRICS: BoxMetrics = {
   hasMeasured: false,
 }
 
+// ============================================================================
+// Helpers
+// ============================================================================
+
 /**
- * Extract an AgNode from a ref value that may be either a `BoxHandle`
- * (from `Box`'s `forwardRef`) or a direct `AgNode`.
+ * Extract the AgNode from a ref that may point to a BoxHandle or an AgNode.
+ * Box's forwardRef exposes a BoxHandle via useImperativeHandle with getNode().
  */
 function resolveNode(refValue: unknown): AgNode | null {
-  if (!refValue || typeof refValue !== "object") return null
+  if (!refValue) return null
   const obj = refValue as Record<string, unknown>
-  // BoxHandle (has getNode() method)
+  // BoxHandle from silvery's Box component
   if (typeof obj.getNode === "function") {
-    const node = (obj.getNode as () => AgNode | null)()
-    return node ?? null
+    return (obj.getNode as () => AgNode | null)()
   }
-  // Direct AgNode (has layoutSubscribers)
-  if ("layoutSubscribers" in obj) {
+  // Direct AgNode (has contentRect property)
+  if (obj.contentRect !== undefined) {
     return refValue as AgNode
   }
   return null
 }
 
-// ============================================================================
-// Hook
-// ============================================================================
-
 /**
- * Returns the layout metrics for a silvery Box.
- *
- * With a ref: metrics for the referenced Box (Ink-compatible path).
- * Without a ref: metrics for the nearest enclosing Box via NodeContext
- * (silvery idiom — no ref plumbing required).
- *
- * Re-renders when the box's contentRect changes (subscribes via
- * `node.layoutSubscribers`). Cleans up on unmount or when the target node
- * changes.
+ * Compute parent-relative BoxMetrics from a node's contentRect.
+ * Position is relative to the parent's contentRect origin, matching
+ * Ink's getComputedLayout semantics.
  */
-export function useBoxMetrics(ref?: RefObject<unknown>): BoxMetrics {
-  const contextNode = useContext(NodeContext)
-  const resolved = ref ? resolveNode(ref.current) : contextNode
-  const node: AgNode | null = resolved ?? null
-
-  // Force-update on layout change — we read values from the node directly
-  // in the render body so no React state is needed for the values themselves.
-  const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
-
-  useLayoutEffect(() => {
-    if (!node) return
-    const onLayout = () => forceUpdate()
-    node.layoutSubscribers.add(onLayout)
-    return () => {
-      node.layoutSubscribers.delete(onLayout)
-    }
-  }, [node])
-
-  if (!node || !node.contentRect) return EMPTY_METRICS
-
+function computeMetrics(node: AgNode): BoxMetrics {
   const rect = node.contentRect
-  const parentRect = node.parent?.contentRect ?? null
+  if (!rect) return EMPTY_METRICS
+
+  // Parent-relative position (matches Ink semantics)
+  const parentRect = node.parent?.contentRect
   return {
     width: rect.width,
     height: rect.height,
@@ -139,4 +98,37 @@ export function useBoxMetrics(ref?: RefObject<unknown>): BoxMetrics {
     top: parentRect ? rect.y - parentRect.y : rect.y,
     hasMeasured: true,
   }
+}
+
+// ============================================================================
+// Hook Implementation
+// ============================================================================
+
+/**
+ * Returns box metrics for the nearest Box ancestor (context-based) or a
+ * specific Box via ref (Ink-compatible).
+ *
+ * Subscribes to layout changes on the target node's layoutSubscribers set.
+ * On first render before layout completes, returns zeros with hasMeasured=false.
+ *
+ * @param ref - Optional ref to a Box (BoxHandle). When omitted, reads from NodeContext.
+ */
+export function useBoxMetrics(ref?: RefObject<unknown>): BoxMetrics {
+  const contextNode = useContext(NodeContext)
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
+
+  // Resolve the target node: ref-based or context-based
+  const node = ref ? resolveNode(ref.current) : contextNode
+
+  useLayoutEffect(() => {
+    if (!node) return
+
+    node.layoutSubscribers.add(forceUpdate)
+    return () => {
+      node.layoutSubscribers.delete(forceUpdate)
+    }
+  }, [node])
+
+  if (!node) return EMPTY_METRICS
+  return computeMetrics(node)
 }
