@@ -1,18 +1,30 @@
 /**
- * Silvery useFocus Hook — Ink-compatible flat-list focus registration.
+ * useFocus — Ink-compatible focus hook.
  *
- * A thin wrapper over the native silvery FocusManager that matches Ink 7.0's
- * `useFocus(options)` signature. Components registered via this hook form a
- * flat tab cycle managed by the FocusManager, alongside (and after) any
- * tree-based focusables declared via `<Box focusable>`.
+ * Matches Ink 7.0's `useFocus(options?)` signature exactly:
+ * - Options: `{ isActive?: boolean, autoFocus?: boolean, id?: string }`
+ * - Returns: `{ isFocused: boolean, focus: (id: string) => void }`
  *
- * For silvery-native components that want scope-aware behavior, spatial
- * navigation, or focus origin tracking, prefer `useFocusable` — it is richer,
- * prop-based, and tree-aware. `useFocus` exists to make dropping in Ink
- * migrations effortless while keeping a single unified focus system.
+ * Reuses silvery's tree-based FocusManager — does NOT duplicate focus
+ * infrastructure. For silvery's richer API (focus origin, blur, scope-aware),
+ * use `useFocusable()` instead.
+ *
+ * @example
+ * ```tsx
+ * function Panel() {
+ *   const { isFocused, focus } = useFocus({ id: "panel", autoFocus: true })
+ *   return (
+ *     <Box focusable testID="panel">
+ *       <Text>{isFocused ? "Focused!" : "Not focused"}</Text>
+ *     </Box>
+ *   )
+ * }
+ * ```
+ *
+ * Bead: km-silvery.focus-parity
  */
 
-import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react"
+import { useCallback, useContext, useSyncExternalStore } from "react"
 import { FocusManagerContext, NodeContext } from "../context"
 import type { FocusSnapshot } from "@silvery/ag/focus-manager"
 import type { AgNode } from "@silvery/ag/types"
@@ -22,18 +34,18 @@ import type { AgNode } from "@silvery/ag/types"
 // ============================================================================
 
 export interface UseFocusOptions {
-  /** Temporarily disable focus without losing tab position. Default: true. */
+  /** Whether this component participates in focus. Default: true. */
   isActive?: boolean
-  /** Focus this component on mount. Default: false. */
+  /** Whether to auto-focus on mount. Default: false. */
   autoFocus?: boolean
-  /** Stable focus ID. If omitted, a stable random id is generated per mount. */
+  /** Focus ID. When provided, overrides the node's testID for focus matching. */
   id?: string
 }
 
 export interface UseFocusResult {
   /** Whether this component is currently focused. */
   isFocused: boolean
-  /** Focus a hook-registered component by id (matches Ink's signature). */
+  /** Focus a specific component by ID. */
   focus: (id: string) => void
 }
 
@@ -42,86 +54,66 @@ export interface UseFocusResult {
 // ============================================================================
 
 /**
- * Ink-compatible `useFocus` hook (matches Ink 7.0's signature).
+ * Ink-compatible focus hook. Reads focus state from the tree-based FocusManager
+ * and returns `{ isFocused, focus }`.
  *
- * Registers the component as a hook-based focusable in the native
- * FocusManager, tracking the snapshot via `useSyncExternalStore` for
- * tear-free reads. Participates in the unified Tab/Shift+Tab cycle.
+ * The `id` option overrides testID for focus identity matching. When `isActive`
+ * is false, `isFocused` is always false regardless of actual focus state.
  *
- * When `isActive` is `false`, the id remains registered but is skipped
- * in tab order and never reports as focused. This matches Ink's semantics.
- *
- * @example
- * ```tsx
- * function MyInput() {
- *   const { isFocused } = useFocus({ id: "my-input", autoFocus: true })
- *   return <Box borderColor={isFocused ? "cyan" : "gray"}>...</Box>
- * }
- * ```
+ * @param options - Focus options (all optional).
  */
 export function useFocus(options: UseFocusOptions = {}): UseFocusResult {
+  const { isActive = true, id } = options
   const fm = useContext(FocusManagerContext)
   const node = useContext(NodeContext)
-  const { isActive = true, autoFocus = false, id: customId } = options
 
-  // Stable id across renders: use customId if provided, otherwise generate
-  // a random id once at mount time (matches Ink's behaviour).
-  const generatedIdRef = useRef<string | null>(null)
-  if (customId === undefined && generatedIdRef.current === null) {
-    generatedIdRef.current = `ink-focus-${Math.random().toString(36).slice(2, 9)}`
-  }
-  const focusId = customId ?? (generatedIdRef.current as string)
+  // Determine the focus ID: explicit id > node's testID > null
+  const testID = node
+    ? (((node.props as Record<string, unknown>).testID as string | undefined) ?? null)
+    : null
+  const focusId = id ?? testID
 
-  // Register with FocusManager on mount; re-register when id changes.
-  // autoFocus only applies to the initial registration — matches Ink.
-  useEffect(() => {
-    if (!fm) return
-    const unregister = fm.registerHookFocusable(focusId, {
-      isActive,
-      autoFocus,
-    })
-    return unregister
-    // isActive intentionally excluded — handled by the separate effect below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fm, focusId, autoFocus])
+  // Subscribe to FocusManager state via useSyncExternalStore
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      if (!fm) return () => {}
+      return fm.subscribe(listener)
+    },
+    [fm],
+  )
 
-  // Update active state when isActive toggles.
-  useEffect(() => {
-    if (!fm) return
-    fm.setHookFocusableActive(focusId, isActive)
-  }, [fm, focusId, isActive])
+  const getSnapshot = useCallback(() => {
+    if (!fm) return null
+    return fm.getSnapshot()
+  }, [fm])
 
-  // Subscribe to FocusManager snapshot via useSyncExternalStore.
-  const subscribe = useCallback((listener: () => void) => fm?.subscribe(listener) ?? (() => {}), [fm])
-  const getSnapshot = useCallback(() => fm?.getSnapshot() ?? null, [fm])
   const snapshot: FocusSnapshot | null = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
-  // Derive focused state — gated by isActive to match Ink's semantics.
-  const isFocused = isActive && snapshot?.activeId === focusId
+  // isFocused: true only when isActive AND this component's focusId matches activeId
+  const isFocused =
+    isActive && focusId !== null && snapshot !== null && snapshot.activeId === focusId
 
-  // Helper to walk up to the tree root for focusById.
+  // Helper: get the render tree root from the current node
   const getRoot = useCallback((): AgNode | null => {
     if (!node) return null
-    let root: AgNode | null = node
-    while (root && root.parent) root = root.parent
+    let root = node
+    while (root.parent) {
+      root = root.parent
+    }
     return root
   }, [node])
 
-  // Focus a hook-registered id by name (Ink API signature).
-  const focus = useMemo(() => {
-    return (targetId: string) => {
+  // focus(id) — programmatically focus a component by ID (Ink signature)
+  const focus = useCallback(
+    (targetId: string) => {
       if (!fm) return
-      // Prefer direct virtual focus — no tree lookup needed for hook ids.
-      // If the target happens to be a tree testID, users can use
-      // `useFocusable` or `useFocusManager().focus(node)` instead.
       const root = getRoot()
       if (root) {
         fm.focusById(targetId, root, "programmatic")
-      } else {
-        fm.focusVirtualId(targetId, "programmatic")
       }
-    }
-  }, [fm, getRoot])
+    },
+    [fm, getRoot],
+  )
 
   return { isFocused, focus }
 }

@@ -299,6 +299,28 @@ export {
 } from "./hooks/useLayout"
 
 /**
+ * Ink-compatible box metrics hook.
+ *
+ * Returns `{ width, height, left, top, hasMeasured }` for the nearest silvery
+ * Box. With a ref, mirrors Ink 7.0's `useBoxMetrics(ref)`. Without a ref,
+ * uses NodeContext (silvery idiom). `left` / `top` are parent-relative.
+ *
+ * @example Ink-compatible
+ * ```tsx
+ * const ref = useRef(null)
+ * const { width, height, hasMeasured } = useBoxMetrics(ref)
+ * return <Box ref={ref}>...</Box>
+ * ```
+ *
+ * @example Silvery idiom
+ * ```tsx
+ * const { width } = useBoxMetrics()
+ * ```
+ */
+export { useBoxMetrics } from "./hooks/useBoxMetrics"
+export type { BoxMetrics } from "./hooks/useBoxMetrics"
+
+/**
  * Keyboard input hook.
  *
  * @example
@@ -333,6 +355,21 @@ export { useStderr } from "./hooks/useStderr"
 export { useFocusManager } from "./hooks/useFocusManager"
 
 // Focus system (tree-based)
+/**
+ * Ink-compatible focus hook.
+ *
+ * Returns `{ isFocused, focus }`. Options: `{ isActive, autoFocus, id }`.
+ * Uses silvery's FocusManager under the hood. For the richer silvery-specific
+ * API (focus origin, blur, scope-aware), use `useFocusable()`.
+ *
+ * @example
+ * ```tsx
+ * const { isFocused, focus } = useFocus({ id: "panel", autoFocus: true })
+ * ```
+ */
+export { useFocus } from "./hooks/useFocus"
+export type { UseFocusOptions, UseFocusResult } from "./hooks/useFocus"
+
 export { createFocusManager } from "@silvery/ag/focus-manager"
 export type {
   FocusManager,
