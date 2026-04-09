@@ -17,6 +17,7 @@ import {
   childrenContainAnsi,
 } from "./ink-utils"
 import { sanitizeChildren } from "./ink-sanitize"
+import { backgroundContext } from "./bg-context"
 
 // =============================================================================
 // Box
@@ -45,18 +46,28 @@ export const Box = React.forwardRef<BoxHandle, BoxProps>(function InkBox(props, 
   // Ink uses chalk internally for border/background colors, so chalk.level=0 means
   // no styles are applied. But embedded ANSI in text content is still preserved.
   const hasColors = currentChalkLevel() > 0
-  return React.createElement(SilveryBox, {
+  const effectiveBg = hasColors ? ((props as any).backgroundColor as string | undefined) : undefined
+  const boxElement = React.createElement(SilveryBox, {
     flexDirection: "row",
     flexGrow: 0,
     flexShrink: 1,
     ...props,
     color: hasColors ? (props as any).color : undefined,
-    backgroundColor: hasColors ? (props as any).backgroundColor : undefined,
+    backgroundColor: effectiveBg,
     borderColor: hasColors ? (props as any).borderColor : undefined,
     // borderDimColor is an Ink-specific prop not in silvery's BoxProps
     borderDimColor: hasColors ? (props as any).borderDimColor : undefined,
     ref,
   } as any)
+  // Mirror Ink 7.0: when this Box has a background color, provide it to children
+  // via React context so descendant <Text> can inherit it. Silvery already does
+  // paint-time bg inheritance via findInheritedBg(), but providing the context
+  // matches Ink's exact API surface so consumers that import `backgroundContext`
+  // (and the upstream compat test suite) work without changes.
+  if (effectiveBg) {
+    return React.createElement(backgroundContext.Provider, { value: effectiveBg }, boxElement)
+  }
+  return boxElement
 })
 
 // =============================================================================
@@ -93,12 +104,19 @@ export const Text = React.forwardRef<SilveryTextHandle, SilveryTextProps>(functi
   // When chalk has no colors, processBuffer handles ANSI stripping.
   const hasColors = currentChalkLevel() > 0
   const forceStyles = React.useContext(ForceStylesCtx)
+  // Mirror Ink 7.0 Text: read inherited background from context, fall back to
+  // explicit prop. Ink's logic is `effectiveBg = props.backgroundColor ?? inherited`,
+  // and an empty string in `props.backgroundColor` means "explicitly opt out of
+  // inheritance" — so we respect the explicit prop when it's defined (including "").
+  const inheritedBg = React.useContext(backgroundContext)
+  const explicitBg = (props as any).backgroundColor as string | undefined
+  const effectiveBg = explicitBg !== undefined ? explicitBg : inheritedBg
   const passProps =
     hasColors || forceStyles
       ? {
           ...props,
           color: props.color,
-          backgroundColor: props.backgroundColor,
+          backgroundColor: effectiveBg,
           ref,
           children: sanitizedChildren,
         }

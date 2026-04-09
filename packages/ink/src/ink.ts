@@ -43,6 +43,13 @@ export { Box, Text, Static, Newline, Spacer, Transform } from "./ink-components"
 export type { BoxProps, BoxHandle, TextProps, TextHandle, TransformProps } from "./ink-components"
 
 // =============================================================================
+// Background context (Ink 7.0 API)
+// =============================================================================
+
+export { backgroundContext } from "./bg-context"
+export type { BackgroundColor } from "./bg-context"
+
+// =============================================================================
 // Hooks
 // =============================================================================
 
