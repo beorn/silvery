@@ -955,5 +955,9 @@ export function withDiagnostics<T extends FullAppWithCommands>(app: T, options: 
     },
   })
 
-  return { ...app, cmd: wrappedCmd as Cmd } as T
+  // IMPORTANT: Use Object.assign instead of spread to preserve getters.
+  // Spread `{ ...app }` snapshots getters (text, ansi, lastBuffer) as static
+  // values from the initial render. Object.assign mutates the original object,
+  // preserving its getters so they return current buffer state.
+  return Object.assign(app, { cmd: wrappedCmd as Cmd }) as T
 }
