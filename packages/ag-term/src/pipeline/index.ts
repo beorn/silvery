@@ -57,7 +57,7 @@ export {
   rectEqual,
   scrollPhase,
   stickyPhase,
-  screenRectPhase,
+  scrollrectPhase,
   notifyLayoutSubscribers,
 } from "./layout-phase"
 export { renderPhase, clearBgConflictWarnings, setBgConflictMode } from "./render-phase"
@@ -66,7 +66,7 @@ export { outputPhase } from "./output-phase"
 
 import { renderPhaseAdapter } from "./render-phase-adapter"
 import { clearBgConflictWarnings, renderPhase } from "./render-phase"
-import { layoutPhase, notifyLayoutSubscribers, screenRectPhase, scrollPhase, stickyPhase } from "./layout-phase"
+import { layoutPhase, notifyLayoutSubscribers, scrollrectPhase, scrollPhase, stickyPhase } from "./layout-phase"
 // Import for orchestration
 import { measurePhase } from "./measure-phase"
 import { outputPhase } from "./output-phase"
@@ -266,10 +266,10 @@ export interface SilveryBenchPhases {
   /** Phase 2.5 — scroll offset calculation */
   scroll: number
   /** Phase 2.6 — screen-rect propagation */
-  screenRect: number
+  scrollRect: number
   /** Phase 2.7 — layout subscriber notifications */
   notify: number
-  /** Sum of all layout-side phases (measure + layout + scroll + screenRect + notify) */
+  /** Sum of all layout-side phases (measure + layout + scroll + scrollRect + notify) */
   layoutTotal: number
   /** Phase 3 — content render (tree → buffer) */
   content: number
@@ -307,7 +307,7 @@ export function silveryBenchStart(): SilveryBenchPhases {
     measure: 0,
     layout: 0,
     scroll: 0,
-    screenRect: 0,
+    scrollRect: 0,
     notify: 0,
     layoutTotal: 0,
     content: 0,
@@ -370,7 +370,7 @@ export function silveryBenchReset(): void {
   phases.measure = 0
   phases.layout = 0
   phases.scroll = 0
-  phases.screenRect = 0
+  phases.scrollRect = 0
   phases.notify = 0
   phases.layoutTotal = 0
   phases.content = 0
@@ -462,8 +462,8 @@ export function executeRenderAdapter(
 
   // Phase 2.6: Screen rect calculation
   {
-    using _screenRect = render.span("screenRect")
-    screenRectPhase(root)
+    using _scrollrect = render.span("scrollRect")
+    scrollrectPhase(root)
   }
 
   // Phase 2.7: Notify layout subscribers

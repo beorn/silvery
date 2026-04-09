@@ -31,7 +31,7 @@ function createMockApp(buffer?: TerminalBuffer) {
     type: "box",
     testID: "root",
     children: [],
-    screenRect: { x: 0, y: 0, width: 40, height: 10 },
+    scrollRect: { x: 0, y: 0, width: 40, height: 10 },
     props: {},
   }
 

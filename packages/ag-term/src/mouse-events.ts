@@ -3,7 +3,7 @@
  *
  * Provides React DOM-compatible mouse event infrastructure:
  * - SilveryMouseEvent / SilveryWheelEvent synthetic event objects
- * - Tree-based hit testing using screenRect (replaces manual HitRegistry)
+ * - Tree-based hit testing using scrollRect (replaces manual HitRegistry)
  * - Event dispatch with bubbling (target → root, stopPropagation support)
  * - Double-click detection (300ms / 2-cell threshold)
  * - mouseenter/mouseleave tracking (no bubble, like DOM spec)
@@ -106,12 +106,12 @@ export function createWheelEvent(
 // ============================================================================
 
 /**
- * Tree-based hit test: find the deepest node whose screenRect contains (x, y).
+ * Tree-based hit test: find the deepest node whose scrollRect contains (x, y).
  * Uses reverse child order (last sibling wins = highest z-order, like DOM).
  * Respects overflow:hidden clipping.
  */
 export function hitTest(node: AgNode, x: number, y: number): AgNode | null {
-  const rect = node.screenRect
+  const rect = node.scrollRect
   if (!rect) return null
 
   // Check if point is within this node's bounds
@@ -128,9 +128,9 @@ export function hitTest(node: AgNode, x: number, y: number): AgNode | null {
   // DFS: check children in reverse order (last child = top z-order, like DOM)
   for (let i = node.children.length - 1; i >= 0; i--) {
     const child = node.children[i]!
-    // If parent clips, skip children whose screenRect doesn't overlap parent
+    // If parent clips, skip children whose scrollRect doesn't overlap parent
     if (clips) {
-      const childRect = child.screenRect
+      const childRect = child.scrollRect
       if (childRect && !pointInRect(x, y, rect)) {
         continue
       }
@@ -140,7 +140,7 @@ export function hitTest(node: AgNode, x: number, y: number): AgNode | null {
   }
 
   // Check virtual text children with inlineRects (nested Text inside Text).
-  // These don't have screenRect/layoutNode, so standard DFS misses them.
+  // These don't have scrollRect/layoutNode, so standard DFS misses them.
   if (node.type === "silvery-text") {
     for (let i = node.children.length - 1; i >= 0; i--) {
       const child = node.children[i]!
@@ -152,7 +152,7 @@ export function hitTest(node: AgNode, x: number, y: number): AgNode | null {
     }
   }
 
-  // No child matched — this node is the target (if it has a screenRect)
+  // No child matched — this node is the target (if it has a scrollRect)
   return node
 }
 
@@ -185,7 +185,7 @@ export function resolveUserSelect(node: AgNode): "none" | "text" | "contain" {
  * - Respects userSelect (a node with userSelect="none" is not a selection target)
  */
 export function selectionHitTest(node: AgNode, x: number, y: number): AgNode | null {
-  const rect = node.screenRect
+  const rect = node.scrollRect
   if (!rect) return null
 
   if (!pointInRect(x, y, rect)) return null
@@ -203,7 +203,7 @@ export function selectionHitTest(node: AgNode, x: number, y: number): AgNode | n
   for (let i = node.children.length - 1; i >= 0; i--) {
     const child = node.children[i]!
     if (clips) {
-      const childRect = child.screenRect
+      const childRect = child.scrollRect
       if (childRect && !pointInRect(x, y, rect)) {
         continue
       }
@@ -229,7 +229,7 @@ export function selectionHitTest(node: AgNode, x: number, y: number): AgNode | n
 
 /**
  * Find the contain boundary for a node.
- * Walks up to the nearest `userSelect="contain"` ancestor and returns its screenRect
+ * Walks up to the nearest `userSelect="contain"` ancestor and returns its scrollRect
  * as a SelectionScope. Returns null if no contain boundary exists.
  */
 export function findContainBoundary(node: AgNode): SelectionScope | null {
@@ -237,7 +237,7 @@ export function findContainBoundary(node: AgNode): SelectionScope | null {
   while (current) {
     const props = current.props as { userSelect?: UserSelect }
     if (props.userSelect === "contain") {
-      const rect = current.screenRect
+      const rect = current.scrollRect
       if (rect) {
         return {
           top: rect.y,

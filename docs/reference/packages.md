@@ -76,7 +76,7 @@ Re-exports everything from `@silvery/ag-react`. This is the primary import for m
 
 **Components**: Box, Text, Newline, Spacer, Static, Transform, TextInput, TextArea, SelectList, Toggle, Button, Spinner, ProgressBar, Table, Badge, Divider, VirtualList, VirtualView, Console, Image, Link, Form, FormField, Toast, CommandPalette, TreeView, Breadcrumb, Tabs, TabList, Tab, TabPanel, Tooltip, Skeleton, ErrorBoundary, ModalDialog, PickerDialog, PickerList, SplitView, ThemeProvider.
 
-**Hooks**: useContentRect, useScreenRect, useInput, useApp, useStdout, useFocus, useFocusManager, useFocusWithin, usePaste, useCursor, useAnimation, useAnimatedTransition, useScrollback, useToast.
+**Hooks**: useContentRect, useScrollRect, useInput, useApp, useStdout, useFocus, useFocusManager, useFocusWithin, usePaste, useCursor, useAnimation, useAnimatedTransition, useScrollback, useToast.
 
 **Functions**: render, renderSync, renderToString, createTerm.
 

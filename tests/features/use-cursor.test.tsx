@@ -3,11 +3,11 @@ import { createRenderer } from "@silvery/test"
 import { Box, Text, useCursor } from "silvery"
 
 describe("useCursor", () => {
-  test("sets cursor position relative to parent Box screenRect", () => {
+  test("sets cursor position relative to parent Box scrollRect", () => {
     const render = createRenderer({ cols: 40, rows: 10 })
 
     // useCursor reads NodeContext from the nearest ancestor Box.
-    // The cursor is positioned at parent.screenRect + (col, row).
+    // The cursor is positioned at parent.scrollRect + (col, row).
     function CursorText() {
       useCursor({ col: 3, row: 0 })
       return (

@@ -6,7 +6,7 @@
  *
  * Bug: km-silvery.textarea-cursor
  * The cursor was rendered ON the last typed character instead of AFTER it
- * because useCursor used the parent Box's screenRect (which doesn't include
+ * because useCursor used the parent Box's scrollRect (which doesn't include
  * border/padding offset) instead of the content area position.
  */
 
@@ -123,7 +123,7 @@ describe("TextArea cursor position", () => {
     // (1,5) └──────────────────────────────────────┘  border
     //
     // TextArea is inside <Box paddingX={1}>. useCursor reads that Box's
-    // screenRect (border box) and adds its paddingX=1 as content offset.
+    // scrollRect (border box) and adds its paddingX=1 as content offset.
     // Parent Box is at x=2 (root padding=1 + border=1).
     // Content inside paddingX=1 starts at x=3.
     // Cursor after "X" = x=3 + 1 = 4.

@@ -68,8 +68,8 @@ export function debugTree(node: AgNode, options: DebugTreeOptions = {}): string 
 
     // Build rect string
     let rect = ""
-    if (showRects && n.screenRect) {
-      const { x, y, width, height } = n.screenRect
+    if (showRects && n.scrollRect) {
+      const { x, y, width, height } = n.scrollRect
       rect = ` [${x},${y} ${width}×${height}]`
     }
 

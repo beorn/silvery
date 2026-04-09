@@ -5,11 +5,11 @@
  * own size during render, not after.
  *
  * ```tsx
- * import { useContentRect, useScreenRect } from '@silvery/ag-react/layout'
+ * import { useContentRect, useScrollRect } from '@silvery/ag-react/layout'
  *
  * function ResponsiveCard() {
  *   const { width, height } = useContentRect()
- *   const { x, y } = useScreenRect()
+ *   const { x, y } = useScrollRect()
  *   return <Text>{`${width}x${height} at (${x},${y})`}</Text>
  * }
  * ```
@@ -20,7 +20,7 @@
 export {
   useContentRect,
   useContentRectCallback,
-  useScreenRect,
-  useScreenRectCallback,
+  useScrollRect,
+  useScrollRectCallback,
 } from "@silvery/ag-react/hooks/useLayout"
 export type { Rect } from "@silvery/ag/types"

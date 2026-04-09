@@ -16,11 +16,11 @@ import React from "react"
 import { Box, Text } from "silvery"
 import type { AgNode, Rect } from "@silvery/ag"
 
-/** Walk the ag tree and collect all nodes with their screenRects. */
+/** Walk the ag tree and collect all nodes with their scrollrects. */
 function collectRects(node: AgNode, acc: { type: string; rect: Rect | null; text?: string }[] = []) {
   acc.push({
     type: node.type,
-    rect: node.screenRect ?? node.contentRect,
+    rect: node.scrollRect ?? node.contentRect,
     text: node.textContent,
   })
   for (const child of node.children) {
@@ -61,7 +61,7 @@ describe("canvas rendering pipeline", () => {
       expect(textNode!.textContent).toBe("Hello World")
     })
 
-    test("nested boxes have screenRects", () => {
+    test("nested boxes have scrollrects", () => {
       const render = createRenderer({ cols: 80, rows: 24 })
       const app = render(
         <Box flexDirection="column">
@@ -80,8 +80,8 @@ describe("canvas rendering pipeline", () => {
       expect(bottomText).not.toBeNull()
 
       // Top box should be at y=0, bottom box below it
-      const topRect = topText!.parent?.screenRect
-      const bottomRect = bottomText!.parent?.screenRect
+      const topRect = topText!.parent?.scrollRect
+      const bottomRect = bottomText!.parent?.scrollRect
       expect(topRect).toBeDefined()
       expect(bottomRect).toBeDefined()
       expect(topRect!.y).toBe(0)
@@ -97,7 +97,7 @@ describe("canvas rendering pipeline", () => {
       )
       const textNode = findText(app.getContainer(), "Padded")
       expect(textNode).not.toBeNull()
-      const rect = textNode!.screenRect ?? textNode!.contentRect
+      const rect = textNode!.scrollRect ?? textNode!.contentRect
       expect(rect).toBeDefined()
       // Text should be offset by padding
       expect(rect!.x).toBe(4)
@@ -113,7 +113,7 @@ describe("canvas rendering pipeline", () => {
       )
       const textNode = findText(app.getContainer(), "Bordered")
       expect(textNode).not.toBeNull()
-      const rect = textNode!.screenRect ?? textNode!.contentRect
+      const rect = textNode!.scrollRect ?? textNode!.contentRect
       expect(rect).toBeDefined()
       // Border takes 1 cell on each side
       expect(rect!.x).toBe(1)
@@ -146,8 +146,8 @@ describe("canvas rendering pipeline", () => {
       const a = findText(app.getContainer(), "Line A")
       const b = findText(app.getContainer(), "Line B")
       const c = findText(app.getContainer(), "Line C")
-      expect(a?.screenRect?.y).toBeLessThan(b?.screenRect?.y ?? 0)
-      expect(b?.screenRect?.y).toBeLessThan(c?.screenRect?.y ?? 0)
+      expect(a?.scrollRect?.y).toBeLessThan(b?.scrollRect?.y ?? 0)
+      expect(b?.scrollRect?.y).toBeLessThan(c?.scrollRect?.y ?? 0)
     })
 
     test("maxWidth constrains box width", () => {

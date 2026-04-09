@@ -8,7 +8,7 @@
 export {
   useContentRect,
   useContentRectCallback,
-  useScreenRect,
+  useScrollRect,
   useRenderRect,
   useRenderRectCallback,
   type Rect,

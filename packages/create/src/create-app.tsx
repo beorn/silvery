@@ -2108,7 +2108,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           }
           // Resolve contain boundary from the node under the cursor.
           // If the click lands inside a `userSelect="contain"` subtree, the selection
-          // range is clamped to that ancestor's screenRect so drags can't leak into
+          // range is clamped to that ancestor's scrollRect so drags can't leak into
           // adjacent siblings. selectionHitTest uses the selection-aware walk
           // (respects userSelect="none" subtrees) rather than pointer hit test.
           const agRoot = getContainerRoot(container)

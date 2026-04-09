@@ -15,15 +15,15 @@ function ResponsiveCard() {
 
 Components know their size _during_ render, not after — no post-layout effects or prop drilling needed.
 
-## useScreenRect
+## useScrollRect
 
 Returns the absolute screen position and dimensions.
 
 ```tsx
-import { useScreenRect } from "@silvery/ag-term"
+import { useScrollRect } from "@silvery/ag-term"
 
 function Tooltip() {
-  const { x, y, width, height } = useScreenRect()
+  const { x, y, width, height } = useScrollRect()
   // Position tooltip relative to screen coordinates
 }
 ```

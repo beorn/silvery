@@ -29,7 +29,7 @@ function makeNode(overrides: Partial<AgNode> = {}): AgNode {
     children: [],
     parent: null,
     layoutNode: null as any,
-    screenRect: { x: 0, y: 0, width: 80, height: 24 },
+    scrollRect: { x: 0, y: 0, width: 80, height: 24 },
     inlineRects: null,
     contentLines: null,
     textContent: undefined,
@@ -150,7 +150,7 @@ describe("pointer state machine: text selection", () => {
     ])
 
     expect(state.type).toBe("dragging-text")
-    expect(effects).toContainEqual({ type: "startSelection", anchor: { x: 10, y: 5 }, scope: textNode.screenRect })
+    expect(effects).toContainEqual({ type: "startSelection", anchor: { x: 10, y: 5 }, scope: textNode.scrollRect })
     expect(effects).toContainEqual({ type: "extendSelection", head: { x: 10 + DRAG_THRESHOLD + 1, y: 5 } })
   })
 
@@ -316,7 +316,7 @@ describe("pointer state machine: alt key override", () => {
     expect(effects).toContainEqual({
       type: "startSelection",
       anchor: { x: 10, y: 5 },
-      scope: nonSelectableNode.screenRect,
+      scope: nonSelectableNode.scrollRect,
     })
   })
 })
@@ -512,8 +512,8 @@ describe("pointer state machine: edge cases", () => {
     expect(state.type).toBe("pointing-text")
   })
 
-  test("scope captures target screenRect", () => {
-    const nodeWithRect = makeNode({ screenRect: { x: 5, y: 3, width: 20, height: 10 } })
+  test("scope captures target scrollRect", () => {
+    const nodeWithRect = makeNode({ scrollRect: { x: 5, y: 3, width: 20, height: 10 } })
     const [state] = pointerStateUpdate(down(10, 5, { target: nodeWithRect, userSelect: "text" }), createPointerState())
 
     expect(state.type).toBe("pointing-text")
@@ -522,8 +522,8 @@ describe("pointer state machine: edge cases", () => {
     }
   })
 
-  test("target with no screenRect -> scope is null", () => {
-    const nodeNoRect = makeNode({ screenRect: null })
+  test("target with no scrollRect -> scope is null", () => {
+    const nodeNoRect = makeNode({ scrollRect: null })
     const [state] = pointerStateUpdate(down(10, 5, { target: nodeNoRect, userSelect: "text" }), createPointerState())
 
     expect(state.type).toBe("pointing-text")

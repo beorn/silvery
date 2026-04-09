@@ -27,7 +27,7 @@ import {
   layoutPhase,
   scrollPhase,
   stickyPhase,
-  screenRectPhase,
+  scrollrectPhase,
   notifyLayoutSubscribers,
 } from "./pipeline/layout-phase"
 import { renderPhase, clearBgConflictWarnings } from "./pipeline/render-phase"
@@ -71,7 +71,7 @@ export interface Ag {
   // -------------------------------------------------------------------------
 
   /**
-   * Run layout phases: measure → flexbox → scroll → sticky → screenRect → notify.
+   * Run layout phases: measure → flexbox → scroll → sticky → scrollRect → notify.
    * Mutates layout nodes in place.
    */
   layout(dims: { cols: number; rows: number }, options?: AgLayoutOptions): void
@@ -127,7 +127,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     cols: number,
     rows: number,
     opts?: AgLayoutOptions,
-  ): { tMeasure: number; tLayout: number; tScroll: number; tScreenRect: number; tNotify: number } {
+  ): { tMeasure: number; tLayout: number; tScroll: number; tScrollRect: number; tNotify: number } {
     using render = baseLog.span("pipeline", { width: cols, height: rows })
 
     let tMeasure: number
@@ -158,12 +158,12 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
 
     stickyPhase(root)
 
-    let tScreenRect: number
+    let tScrollRect: number
     {
-      using _r = render.span("screenRect")
+      using _r = render.span("scrollRect")
       const t = performance.now()
-      screenRectPhase(root)
-      tScreenRect = performance.now() - t
+      scrollrectPhase(root)
+      tScrollRect = performance.now() - t
     }
 
     let tNotify = 0
@@ -182,12 +182,12 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       acc.measure += tMeasure
       acc.layout += tLayout
       acc.scroll += tScroll
-      acc.screenRect += tScreenRect
+      acc.scrollRect += tScrollRect
       acc.notify += tNotify
-      acc.layoutTotal += tMeasure + tLayout + tScroll + tScreenRect + tNotify
+      acc.layoutTotal += tMeasure + tLayout + tScroll + tScrollRect + tNotify
     }
 
-    return { tMeasure, tLayout, tScroll, tScreenRect, tNotify }
+    return { tMeasure, tLayout, tScroll, tScrollRect, tNotify }
   }
 
   function doRender(opts?: AgRenderOptions): AgRenderResult & { tContent: number } {
@@ -238,10 +238,10 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       parent: null,
       layoutNode,
       contentRect: null,
-      screenRect: null,
+      scrollRect: null,
       renderRect: null,
       prevLayout: null,
-      prevScreenRect: null,
+      prevScrollRect: null,
       prevRenderRect: null,
       layoutChangedThisFrame: false,
       layoutDirty: true,

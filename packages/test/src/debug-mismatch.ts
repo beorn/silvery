@@ -39,7 +39,7 @@ export interface NodeDebugInfo {
   layout: {
     prevLayout: Rect | null
     contentRect: Rect | null
-    screenRect: Rect | null
+    scrollRect: Rect | null
     layoutChanged: boolean
   }
   /** Scroll context (if this is a scroll container or inside one) */
@@ -77,7 +77,7 @@ export interface MismatchDebugContext {
   node: NodeDebugInfo | null
   /** Scroll container ancestry (if any) */
   scrollAncestors: NodeDebugInfo[]
-  /** All nodes whose screenRect contains this position */
+  /** All nodes whose scrollRect contains this position */
   containingNodes: NodeDebugInfo[]
   /** Fast-path analysis - why the node was likely skipped */
   fastPathAnalysis: string[]
@@ -94,10 +94,10 @@ export function findNodeAtPosition(root: AgNode, x: number, y: number): AgNode |
   let result: AgNode | null = null
 
   function visit(node: AgNode): void {
-    const rect = node.screenRect
+    const rect = node.scrollRect
     if (!rect) return
 
-    // Check if position is within this node's screenRect
+    // Check if position is within this node's scrollRect
     if (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height) {
       result = node // This node contains the position
 
@@ -113,14 +113,14 @@ export function findNodeAtPosition(root: AgNode, x: number, y: number): AgNode |
 }
 
 /**
- * Find all nodes whose screenRect contains the given position.
+ * Find all nodes whose scrollRect contains the given position.
  * Returns nodes from root to innermost (outermost first).
  */
 export function findAllContainingNodes(root: AgNode, x: number, y: number): AgNode[] {
   const result: AgNode[] = []
 
   function visit(node: AgNode): void {
-    const rect = node.screenRect
+    const rect = node.scrollRect
     if (!rect) return
 
     if (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height) {
@@ -194,7 +194,7 @@ export function getNodeDebugInfo(node: AgNode): NodeDebugInfo {
     layout: {
       prevLayout: node.prevLayout,
       contentRect: node.contentRect,
-      screenRect: node.screenRect,
+      scrollRect: node.scrollRect,
       layoutChanged: rectChanged(node.prevLayout, node.contentRect),
     },
     scroll: node.scrollState
@@ -408,7 +408,7 @@ export function formatMismatchContext(ctx: MismatchDebugContext, renderPhaseStat
     } else {
       lines.push(`  contentRect: ${formatRect(layout.contentRect)}`)
     }
-    lines.push(`  screenRect: ${formatRect(layout.screenRect)}`)
+    lines.push(`  scrollRect: ${formatRect(layout.scrollRect)}`)
     lines.push("")
 
     // Scroll context

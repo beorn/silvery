@@ -2,7 +2,7 @@
  * withDomEvents() — Plugin for DOM-style event dispatch
  *
  * Wires mouse event dispatch through the render tree:
- * - Hit testing via screenRect (tree-based, not manual registry)
+ * - Hit testing via scrollRect (tree-based, not manual registry)
  * - Bubbling from target → root with stopPropagation() support
  * - mouseenter/mouseleave tracking (no bubble, per DOM spec)
  * - Double-click detection (300ms / 2-cell threshold)

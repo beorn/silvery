@@ -2,7 +2,7 @@
  * Position Registry — 2D grid position tracking with auto-cleanup.
  *
  * Tracks screen positions of items in a 2D grid (sections × items).
- * Items auto-register on mount via useScreenRectCallback and auto-unregister
+ * Items auto-register on mount via useScrollRectCallback and auto-unregister
  * on unmount via useEffect cleanup. Eliminates stale-entry bugs.
  *
  * @example
@@ -28,7 +28,7 @@ const log = createLogger("silvery:position-registry")
 // Types
 // =============================================================================
 
-export interface ScreenRect {
+export interface ScrollRect {
   x: number
   y: number
   width: number
@@ -39,13 +39,13 @@ export interface ScreenRect {
  * Position registry for 2D grid layouts.
  *
  * Items are keyed by (sectionIndex, itemIndex). Positions are screen-relative
- * (accounting for scroll offsets) via useScreenRectCallback.
+ * (accounting for scroll offsets) via useScrollRectCallback.
  */
 export interface PositionRegistry {
   // === Registration ===
 
   /** Register an item's screen position. Called automatically by GridCell/useGridPosition. */
-  register(sectionIndex: number, itemIndex: number, rect: ScreenRect): void
+  register(sectionIndex: number, itemIndex: number, rect: ScrollRect): void
 
   /** Remove an item's entry. Called automatically on unmount. */
   unregister(sectionIndex: number, itemIndex: number): void
@@ -53,7 +53,7 @@ export interface PositionRegistry {
   // === Queries ===
 
   /** Get an item's screen position, or undefined if not registered. */
-  getPosition(sectionIndex: number, itemIndex: number): ScreenRect | undefined
+  getPosition(sectionIndex: number, itemIndex: number): ScrollRect | undefined
 
   /** Check if a section has any registered items. */
   hasSection(sectionIndex: number): boolean
@@ -93,13 +93,13 @@ export interface PositionRegistry {
 // =============================================================================
 
 function createPositionRegistry(): PositionRegistry {
-  // Map: sectionIndex -> Map<itemIndex, { rect: ScreenRect }>
-  const sections = new Map<number, Map<number, { rect: ScreenRect }>>()
+  // Map: sectionIndex -> Map<itemIndex, { rect: ScrollRect }>
+  const sections = new Map<number, Map<number, { rect: ScrollRect }>>()
 
   const registry: PositionRegistry = {
     // === Registration ===
 
-    register(sectionIndex: number, itemIndex: number, rect: ScreenRect): void {
+    register(sectionIndex: number, itemIndex: number, rect: ScrollRect): void {
       let sectionMap = sections.get(sectionIndex)
       if (!sectionMap) {
         sectionMap = new Map()
@@ -124,7 +124,7 @@ function createPositionRegistry(): PositionRegistry {
 
     // === Queries ===
 
-    getPosition(sectionIndex: number, itemIndex: number): ScreenRect | undefined {
+    getPosition(sectionIndex: number, itemIndex: number): ScrollRect | undefined {
       return sections.get(sectionIndex)?.get(itemIndex)?.rect
     },
 

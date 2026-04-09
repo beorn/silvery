@@ -52,8 +52,8 @@ export function layoutPhase(root: AgNode, width: number, height: number): void {
   propagateLayout(root, 0, 0)
 
   // NOTE: Subscribers are NOT notified here anymore.
-  // They are notified in executeRender AFTER screenRectPhase completes,
-  // so useScreenRectCallback can read the correct screen positions.
+  // They are notified in executeRender AFTER scrollrectPhase completes,
+  // so useScrollRectCallback can read the correct screen positions.
 }
 
 /**
@@ -165,19 +165,19 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number): void {
 /**
  * Notify all layout subscribers of dimension changes.
  *
- * Called from executeRender AFTER screenRectPhase completes,
- * so useScreenRectCallback can read correct screen positions.
+ * Called from executeRender AFTER scrollrectPhase completes,
+ * so useScrollRectCallback can read correct screen positions.
  *
- * Notifies when EITHER contentRect, screenRect, or renderRect changed.
- * screenRect can change from scroll offset changes even when
- * contentRect stays the same — subscribers (like useScreenRectCallback)
+ * Notifies when EITHER contentRect, scrollRect, or renderRect changed.
+ * scrollRect can change from scroll offset changes even when
+ * contentRect stays the same — subscribers (like useScrollRectCallback)
  * need notification in both cases. renderRect can change from sticky
- * offset changes even when screenRect stays the same.
+ * offset changes even when scrollRect stays the same.
  */
 export function notifyLayoutSubscribers(node: AgNode): void {
   // Notify if content rect, screen rect, or render rect changed
   const contentChanged = !rectEqual(node.prevLayout, node.contentRect)
-  const screenChanged = !rectEqual(node.prevScreenRect, node.screenRect)
+  const screenChanged = !rectEqual(node.prevScrollRect, node.scrollRect)
   const renderChanged = !rectEqual(node.prevRenderRect, node.renderRect)
   if (contentChanged || screenChanged || renderChanged) {
     for (const subscriber of node.layoutSubscribers) {
@@ -600,13 +600,13 @@ function traverseTree(node: AgNode, callback: (node: AgNode) => void): void {
  * appears on the terminal screen, accounting for all ancestor scroll offsets.
  *
  * Also computes `renderRect` which accounts for sticky render offsets.
- * For non-sticky nodes, renderRect === screenRect. For sticky nodes,
+ * For non-sticky nodes, renderRect === scrollRect. For sticky nodes,
  * renderRect reflects the actual pixel position where the node is painted.
  *
  * Screen position = content position - sum of ancestor scroll offsets
  */
-export function screenRectPhase(root: AgNode): void {
-  propagateScreenRect(root, 0)
+export function scrollrectPhase(root: AgNode): void {
+  propagateScrollRect(root, 0)
 }
 
 /**
@@ -615,31 +615,31 @@ export function screenRectPhase(root: AgNode): void {
  * @param node The node to process
  * @param ancestorScrollOffset Sum of all ancestor scroll offsets
  */
-function propagateScreenRect(node: AgNode, ancestorScrollOffset: number): void {
+function propagateScrollRect(node: AgNode, ancestorScrollOffset: number): void {
   // Save previous rects for change detection in notifyLayoutSubscribers
-  node.prevScreenRect = node.screenRect
+  node.prevScrollRect = node.scrollRect
   node.prevRenderRect = node.renderRect
 
   const content = node.contentRect
   if (!content) {
-    node.screenRect = null
+    node.scrollRect = null
     node.renderRect = null
     for (const child of node.children) {
-      propagateScreenRect(child, ancestorScrollOffset)
+      propagateScrollRect(child, ancestorScrollOffset)
     }
     return
   }
 
   // Compute screen position by subtracting ancestor scroll offsets
-  node.screenRect = {
+  node.scrollRect = {
     x: content.x,
     y: content.y - ancestorScrollOffset,
     width: content.width,
     height: content.height,
   }
 
-  // Default: renderRect equals screenRect (overridden below for sticky nodes)
-  node.renderRect = node.screenRect
+  // Default: renderRect equals scrollRect (overridden below for sticky nodes)
+  node.renderRect = node.scrollRect
 
   // If this node is a scroll container, add its offset for children
   const scrollOffset = node.scrollState?.offset ?? 0
@@ -653,7 +653,7 @@ function propagateScreenRect(node: AgNode, ancestorScrollOffset: number): void {
 
   // Recurse to children
   for (const child of node.children) {
-    propagateScreenRect(child, childScrollOffset)
+    propagateScrollRect(child, childScrollOffset)
   }
 }
 
@@ -661,7 +661,7 @@ function propagateScreenRect(node: AgNode, ancestorScrollOffset: number): void {
  * Compute renderRect for sticky children of a node.
  *
  * For sticky children, the actual render position differs from the layout
- * position (screenRect). The renderOffset from the scroll/sticky phase
+ * position (scrollRect). The renderOffset from the scroll/sticky phase
  * determines where pixels are actually painted. This function sets
  * renderRect on those children to reflect the true screen position.
  *
@@ -673,25 +673,25 @@ function computeStickyRenderRects(parent: AgNode): void {
   if (!stickyList || stickyList.length === 0) return
 
   // Calculate the parent's content area origin on screen (inside border/padding)
-  const parentScreenRect = parent.screenRect
-  if (!parentScreenRect) return
+  const parentScrollRect = parent.scrollRect
+  if (!parentScrollRect) return
 
   const props = parent.props as BoxProps
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
-  const contentOriginY = parentScreenRect.y + border.top + padding.top
+  const contentOriginY = parentScrollRect.y + border.top + padding.top
 
   for (const sticky of stickyList) {
     const child = parent.children[sticky.index]
-    if (!child?.screenRect) continue
+    if (!child?.scrollRect) continue
 
-    // renderRect has the same x, width, height as screenRect,
+    // renderRect has the same x, width, height as scrollRect,
     // but Y is adjusted to the sticky render position
     child.renderRect = {
-      x: child.screenRect.x,
+      x: child.scrollRect.x,
       y: contentOriginY + sticky.renderOffset,
-      width: child.screenRect.width,
-      height: child.screenRect.height,
+      width: child.scrollRect.width,
+      height: child.scrollRect.height,
     }
   }
 }

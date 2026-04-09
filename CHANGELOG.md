@@ -137,7 +137,7 @@ The inkx era. Initial development as a high-performance Ink alternative with inc
 ### Added — Layout
 
 - **Pluggable layout engine**: Yoga and Flexily adapters with zero-allocation option.
-- `useContentRect()` / `useScreenRect()` hooks for synchronous layout feedback (no useEffect, no layout thrashing).
+- `useContentRect()` / `useScrollRect()` hooks for synchronous layout feedback (no useEffect, no layout thrashing).
 - `overflow="scroll"` containers with `scrollTo` (edge-based) and `scrollOffset` (explicit) control.
 - `position="sticky"` with `stickyTop` / `stickyBottom` offsets.
 - `position="absolute"` with three-pass paint-order rendering (normal flow, sticky, absolute).
@@ -165,7 +165,7 @@ The inkx era. Initial development as a high-performance Ink alternative with inc
 - Input: `TextInput`, `TextArea` (with selection and DECSCUSR cursor styles), `EditContext` (unified text editing with invertible ops), `InputBoundary`.
 - UI: `SelectList`, `Table`, `Spinner`, `ProgressBar`, `Image`, `Link`, `Tabs`, `Toast`, `ModalDialog`, `CommandPalette`, `ErrorBoundary` (with resetKeys).
 - Focus: DOM-native focus system with spatial navigation, peer scope system (`activateScope`), `useFocusable`, `useFocusWithin`.
-- Hooks: `useInput`, `useApp`, `useContentRect`, `useScreenRect`, `useCursor`, `useScrollback`, `useTerm`, `useConsole`.
+- Hooks: `useInput`, `useApp`, `useContentRect`, `useScrollRect`, `useCursor`, `useScrollback`, `useTerm`, `useConsole`.
 - Runtime: `render()`, `run()`, `createApp()`, `createStore()`, `createTerm()`.
 - Testing: `createRenderer()` with auto-refreshing locators, `withDiagnostics()`, `debugTree()`.
 

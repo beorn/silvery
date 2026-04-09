@@ -176,7 +176,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   const handleMouseDown = useCallback(
     (e: SilveryMouseEvent) => {
       if (e.button !== 0) return
-      const rect = e.currentTarget.screenRect
+      const rect = e.currentTarget.scrollRect
       if (!rect) return
 
       const lines = wrappedLinesRef.current
@@ -211,7 +211,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     : {}
 
   // Compute border+padding offset for cursor positioning.
-  // useCursor reads screenRect from the parent's NodeContext, but the text
+  // useCursor reads scrollRect from the parent's NodeContext, but the text
   // content is rendered inside this component's Box (which may have border
   // and padding). We must add those offsets so the terminal cursor aligns
   // with the text content area.

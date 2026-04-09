@@ -2,7 +2,7 @@
  * Silvery - Next-gen Terminal UI Renderer with Layout Feedback
  *
  * React-based terminal UI framework. Ink-compatible API with components
- * that know their size via useContentRect/useScreenRect hooks.
+ * that know their size via useContentRect/useScrollRect hooks.
  *
  * ## Import Syntax
  *
@@ -292,8 +292,8 @@ export type { SixelImageData } from "@silvery/ag-react/ui/image"
 export {
   useContentRect,
   useContentRectCallback,
-  useScreenRect,
-  useScreenRectCallback,
+  useScrollRect,
+  useScrollRectCallback,
   useRenderRect,
   useRenderRectCallback,
 } from "./hooks/useLayout"
@@ -1121,7 +1121,7 @@ export type { InputBoundaryProps } from "./contexts/InputBoundary"
  * ```
  */
 export { PositionRegistryProvider, usePositionRegistry, createPositionRegistry } from "./hooks/usePositionRegistry"
-export type { PositionRegistry, ScreenRect } from "./hooks/usePositionRegistry"
+export type { PositionRegistry, ScrollRect } from "./hooks/usePositionRegistry"
 export { useGridPosition } from "./hooks/useGridPosition"
 export { GridCell } from "@silvery/ag-react/ui/components"
 export type { GridCellProps } from "@silvery/ag-react/ui/components"

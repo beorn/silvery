@@ -54,11 +54,11 @@ Compute sticky render offsets for non-scroll parents with `position="sticky"` ch
 
 #### Phase 2.6: Screen Rect (`layout-phase.ts`)
 
-Compute screen-relative positions for each node (content position minus ancestor scroll offsets). Used by `useScreenRect()`.
+Compute screen-relative positions for each node (content position minus ancestor scroll offsets). Used by `useScrollRect()`.
 
 #### Phase 2.7: Notify (`layout-phase.ts`)
 
-Fire `useContentRect()` and `useScreenRect()` subscriber callbacks. Skipped for STRICT comparison renders to avoid side effects.
+Fire `useContentRect()` and `useScrollRect()` subscriber callbacks. Skipped for STRICT comparison renders to avoid side effects.
 
 #### Phase 3: Content (`render-phase.ts`)
 

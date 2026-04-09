@@ -614,7 +614,7 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
 
     // Fall back to spatial navigation
     const candidates = getTabOrder(root)
-    const resolvedLayoutFn = layoutFn ?? ((node: AgNode) => node.screenRect)
+    const resolvedLayoutFn = layoutFn ?? ((node: AgNode) => node.scrollRect)
     const target = findSpatialTarget(activeElement, direction, candidates, resolvedLayoutFn)
     if (target) {
       focus(target, "keyboard")

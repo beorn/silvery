@@ -8,7 +8,7 @@
  * Box renders to an 'silvery-box' host element that the reconciler converts to an
  * SilveryNode with an associated Yoga layout node.
  *
- * Box provides NodeContext to its children, enabling useContentRect/useScreenRect hooks.
+ * Box provides NodeContext to its children, enabling useContentRect/useScrollRect hooks.
  * It also supports forwardRef for imperative access and onLayout for layout callbacks.
  */
 
@@ -43,7 +43,7 @@ export interface BoxHandle {
   /** Get the current content-relative layout rect */
   getContentRect(): Rect | null
   /** Get the current screen-relative layout rect */
-  getScreenRect(): Rect | null
+  getScrollRect(): Rect | null
 }
 
 // ============================================================================
@@ -53,7 +53,7 @@ export interface BoxHandle {
 /**
  * Flexbox container component for terminal UIs.
  *
- * Provides NodeContext to children, enabling useContentRect/useScreenRect hooks.
+ * Provides NodeContext to children, enabling useContentRect/useScrollRect hooks.
  * Supports forwardRef for imperative access and onLayout for layout callbacks.
  *
  * @example
@@ -144,7 +144,7 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
     () => ({
       getNode: () => nodeRef.current,
       getContentRect: () => nodeRef.current?.contentRect ?? null,
-      getScreenRect: () => nodeRef.current?.screenRect ?? null,
+      getScrollRect: () => nodeRef.current?.scrollRect ?? null,
     }),
     [],
   )

@@ -15,7 +15,7 @@ React tree → AgNode tree → Measure → Layout → Render → ANSI output
 
 **Measure** — React reconciler produces an `AgNode` tree. Each node's box props (width, height, flex, padding, etc.) become Flexily layout constraints.
 
-**Layout** — Flexily (pure JS flexbox, Yoga-compatible) calculates positions and sizes. Results land on `AgNode.layout` as `Rect { x, y, width, height }`. Also computes scroll offsets, sticky positions, and screen-relative rects. Components receive layout via `useContentRect()` / `useScreenRect()`.
+**Layout** — Flexily (pure JS flexbox, Yoga-compatible) calculates positions and sizes. Results land on `AgNode.layout` as `Rect { x, y, width, height }`. Also computes scroll offsets, sticky positions, and screen-relative rects. Components receive layout via `useContentRect()` / `useScrollRect()`.
 
 **Render** — Incremental content render to `TerminalBuffer`. Dirty flags (`contentDirty`, `stylePropsDirty`, `bgDirty`, `subtreeDirty`, `layoutDirty`) control which nodes re-render. Previous frame buffer is cloned; only dirty subtrees are re-rendered. Output phase diffs current vs previous buffer to produce minimal ANSI escape sequences.
 
@@ -75,7 +75,7 @@ Public packages (users install directly):
 
 - `useInput(handler)` — Keyboard/mouse input
 - `useLayout()` — Current node's layout rect
-- `useContentRect()` / `useScreenRect()` — Content and screen-relative rects
+- `useContentRect()` / `useScrollRect()` — Content and screen-relative rects
 - `useFocusable()` / `useFocusManager()` — Focus management
 - `useVirtualization()` — Virtual scrolling state
 - `useScrollRegion()` — Scroll containers

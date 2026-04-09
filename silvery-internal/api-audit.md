@@ -109,7 +109,7 @@ This is the largest entry point (~1057 lines). Re-exports from `@silvery/ag-reac
 
 **Hooks** (30+):
 
-- Layout: `useContentRect`, `useContentRectCallback`, `useScreenRect`, `useScreenRectCallback`
+- Layout: `useContentRect`, `useContentRectCallback`, `useScrollRect`, `useScrollRectCallback`
 - Input: `useInput`, `useInputLayer`, `useInputLayerContext`, `useReadline`
 - App: `useApp`, `useStdout`, `useRuntime`, `useTerm`, `useConsole`
 - Focus: `useFocusable`, `useFocusWithin`, `useFocusManager`, `useFocus`, `useInkFocusManager`
@@ -137,7 +137,7 @@ This is the largest entry point (~1057 lines). Re-exports from `@silvery/ag-reac
 
 Subset focused on hooks only:
 
-- `useContentRect`, `useContentRectCallback`, `useScreenRect`
+- `useContentRect`, `useContentRectCallback`, `useScrollRect`
 - `useInput`, `useRuntime`, `useApp`, `useStdout`
 - `useFocusable`, `useFocusWithin`, `useFocusManager`
 - `useInputLayer`, `useInputLayerContext`
@@ -265,7 +265,7 @@ Diagnostic utilities: `withDiagnostics`, `checkLayoutInvariants`, `VirtualTermin
 
 ### `@silvery/ag-term/pipeline`
 
-Render pipeline internals: `executeRender`, `executeRenderAdapter`, phase functions (`measurePhase`, `layoutPhase`, `renderPhase`, `outputPhase`, `scrollPhase`, `stickyPhase`, `screenRectPhase`, `renderPhaseAdapter`).
+Render pipeline internals: `executeRender`, `executeRenderAdapter`, phase functions (`measurePhase`, `layoutPhase`, `renderPhase`, `outputPhase`, `scrollPhase`, `stickyPhase`, `scrollrectPhase`, `renderPhaseAdapter`).
 
 ### `@silvery/ag-term/ansi`
 

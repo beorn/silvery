@@ -60,7 +60,7 @@ export function CursorLine({
   const handleMouseDown = useCallback(
     (e: SilveryMouseEvent) => {
       if (!onCursorClick || e.button !== 0) return
-      const rect = e.currentTarget.screenRect
+      const rect = e.currentTarget.scrollRect
       if (!rect) return
       const relativeX = e.clientX - rect.x
       const offset = Math.min(Math.max(0, relativeX), totalLength)

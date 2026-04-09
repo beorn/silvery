@@ -368,14 +368,14 @@ export interface AgNode {
    * adjusted for scroll offsets, NOT the actual render position. Use
    * `renderRect` for the actual pixel position on screen.
    */
-  screenRect: Rect | null
+  scrollRect: Rect | null
 
   /** Previous screen rect (for change detection in notifyLayoutSubscribers) */
-  prevScreenRect: Rect | null
+  prevScrollRect: Rect | null
 
   /**
    * Actual render position on the terminal screen.
-   * For non-sticky nodes, this equals `screenRect`.
+   * For non-sticky nodes, this equals `scrollRect`.
    * For sticky nodes (position="sticky"), this accounts for sticky render
    * offsets — the position where pixels are actually painted.
    *

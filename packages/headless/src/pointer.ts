@@ -178,14 +178,14 @@ function handlePointerDown(
     // If we had a previous text selection context, this would extend it.
     // For now, go to pointing-text which will produce extendSelection on threshold.
     if (action.target) {
-      const scope = action.target.screenRect ?? null
+      const scope = action.target.scrollRect ?? null
       return [{ type: "pointing-text", anchor: pos, scope, target: action.target }, []]
     }
   }
 
   // 1. altKey? -> always text selection (override)
   if (action.altKey && action.target) {
-    const scope = action.target.screenRect ?? null
+    const scope = action.target.scrollRect ?? null
     return [{ type: "pointing-text", anchor: pos, scope, target: action.target }, []]
   }
 
@@ -201,7 +201,7 @@ function handlePointerDown(
 
   // 4. targetUserSelect === "text" | "auto"? -> pointing-text
   if (action.targetUserSelect === "text" || action.targetUserSelect === "auto") {
-    const scope = action.target.screenRect ?? null
+    const scope = action.target.scrollRect ?? null
     return [{ type: "pointing-text", anchor: pos, scope, target: action.target }, []]
   }
 

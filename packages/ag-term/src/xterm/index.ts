@@ -74,7 +74,7 @@ export { Text, type TextProps } from "@silvery/ag-react/components/Text"
 export { Divider, type DividerProps } from "@silvery/ag-react/ui/components/Divider"
 export { TextInput, type TextInputProps, type TextInputHandle } from "@silvery/ag-react/ui/components/TextInput"
 export { Spinner, type SpinnerProps } from "@silvery/ag-react/ui/components/Spinner"
-export { useContentRect, useScreenRect } from "@silvery/ag-react/hooks/useLayout"
+export { useContentRect, useScrollRect } from "@silvery/ag-react/hooks/useLayout"
 export { useApp } from "@silvery/ag-react/hooks/useApp"
 export { useInput, type Key, type InputHandler, type UseInputOptions } from "@silvery/ag-react/hooks/useInput"
 

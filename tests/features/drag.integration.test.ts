@@ -28,7 +28,7 @@ function createMockNode(props: Record<string, unknown> = {}, extra: Record<strin
     props,
     children: [],
     parent: null,
-    screenRect: { x: 0, y: 0, width: 40, height: 10 },
+    scrollRect: { x: 0, y: 0, width: 40, height: 10 },
     ...extra,
   } as unknown as AgNode
 }

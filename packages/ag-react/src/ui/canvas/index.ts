@@ -56,7 +56,7 @@ export { Box, type BoxProps } from "@silvery/ag-react/components/Box"
 export { Text, type TextProps } from "@silvery/ag-react/components/Text"
 
 // Re-export hooks
-export { useContentRect, useScreenRect, useScreenRectCallback } from "@silvery/ag-react/hooks/useLayout"
+export { useContentRect, useScrollRect, useScrollRectCallback } from "@silvery/ag-react/hooks/useLayout"
 export { useApp } from "@silvery/ag-react/hooks/useApp"
 export { useFocusable } from "@silvery/ag-react/hooks/useFocusable"
 export { useFocusManager } from "@silvery/ag-react/hooks/useFocusManager"

@@ -80,7 +80,7 @@ This is a quick-reference index of all Silvery components and hooks. For detaile
 | Hook                                    | Description                                      | API  |
 | --------------------------------------- | ------------------------------------------------ | ---- |
 | [useContentRect](/api/use-content-rect) | Component's content dimensions (synchronous)     | Core |
-| useScreenRect                           | Component's screen-space position and dimensions | Core |
+| useScrollRect                           | Component's screen-space position and dimensions | Core |
 
 ### Input & Interaction
 

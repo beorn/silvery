@@ -228,7 +228,7 @@ class AutoLocatorImpl implements AutoLocator {
   boundingBox(): Rect | null {
     const node = this.resolve()
     if (!node) return null
-    return node.screenRect ?? null
+    return node.scrollRect ?? null
   }
 
   isVisible(): boolean {

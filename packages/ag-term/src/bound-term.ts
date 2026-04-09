@@ -75,7 +75,7 @@ export function createBoundTerm(buffer: TerminalBuffer, getRoot: () => AgNode, g
  * Find the deepest node at the given screen coordinates
  */
 function findNodeAtScreenPosition(node: AgNode, x: number, y: number): AgNode | null {
-  const rect = node.screenRect
+  const rect = node.scrollRect
   if (!rect) return null
 
   // Check if point is within this node's bounds
@@ -90,7 +90,7 @@ function findNodeAtScreenPosition(node: AgNode, x: number, y: number): AgNode | 
   }
 
   // Check virtual text children with inlineRects (nested Text inside Text).
-  // These don't have screenRect/layoutNode, so standard DFS misses them.
+  // These don't have scrollRect/layoutNode, so standard DFS misses them.
   if (node.type === "silvery-text") {
     for (let i = node.children.length - 1; i >= 0; i--) {
       const child = node.children[i]!

@@ -55,14 +55,14 @@ export function useHitRegistry(): HitRegistry | null {
  * and unregisters on unmount.
  *
  * @param target - The target to return when this region is clicked
- * @param rect - The screen rectangle (from useScreenRect or similar)
+ * @param rect - The screen rectangle (from useScrollRect or similar)
  * @param zIndex - Z-index for layering (default: 0)
  * @param enabled - Whether the region is active (default: true)
  *
  * @example
  * ```tsx
  * function Card({ nodeId }: { nodeId: string }) {
- *   const rect = useScreenRect();
+ *   const rect = useScrollRect();
  *
  *   useHitRegion(
  *     { type: 'node', nodeId },
@@ -114,13 +114,13 @@ export function useHitRegion(target: HitTarget, rect: Rect | null, zIndex = 0, e
 /**
  * Hook to register a hit region using a callback for screen position.
  *
- * Similar to useHitRegion but works with useScreenRectCallback for
+ * Similar to useHitRegion but works with useScrollRectCallback for
  * better performance in large lists (avoids re-renders).
  *
  * @param target - The target to return when this region is clicked
  * @param zIndex - Z-index for layering (default: 0)
  * @param enabled - Whether the region is active (default: true)
- * @returns A callback to pass to useScreenRectCallback
+ * @returns A callback to pass to useScrollRectCallback
  *
  * @example
  * ```tsx
@@ -130,7 +130,7 @@ export function useHitRegion(target: HitTarget, rect: Rect | null, zIndex = 0, e
  *     10 // z-index
  *   );
  *
- *   useScreenRectCallback(onLayout);
+ *   useScrollRectCallback(onLayout);
  *
  *   return <Box>...</Box>;
  * }

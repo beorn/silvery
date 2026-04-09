@@ -186,7 +186,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     cursorStyle === "underline" ? <Text underline>{displayAtCursor}</Text> : <Text inverse>{displayAtCursor}</Text>
 
   // Compute border+padding offset for cursor positioning.
-  // useCursor reads screenRect from the parent's NodeContext, but the text
+  // useCursor reads scrollRect from the parent's NodeContext, but the text
   // content is rendered inside this component's Box (which may have border
   // and padding). We must add those offsets so the terminal cursor aligns
   // with the text content area.
@@ -203,7 +203,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   const handleMouseDown = useCallback(
     (e: SilveryMouseEvent) => {
       if (e.button !== 0) return
-      const rect = e.currentTarget.screenRect
+      const rect = e.currentTarget.scrollRect
       if (!rect) return
       const relativeX = e.clientX - rect.x - prompt.length
       const newCursor = Math.max(0, Math.min(relativeX, value.length))

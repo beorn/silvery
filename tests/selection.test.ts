@@ -460,8 +460,8 @@ describe("resolveUserSelect", () => {
       layoutNode: null,
       prevLayout: null,
       contentRect: { x: 0, y: 0, width: 10, height: 5 },
-      screenRect: { x: 0, y: 0, width: 10, height: 5 },
-      prevScreenRect: null,
+      scrollRect: { x: 0, y: 0, width: 10, height: 5 },
+      prevScrollRect: null,
       renderRect: { x: 0, y: 0, width: 10, height: 5 },
       prevRenderRect: null,
       layoutChangedThisFrame: false,
@@ -529,8 +529,8 @@ describe("selectionHitTest", () => {
       layoutNode: {} as any,
       prevLayout: null,
       contentRect: { x: 0, y: 0, width: 40, height: 20 },
-      screenRect: { x: 0, y: 0, width: 40, height: 20 },
-      prevScreenRect: null,
+      scrollRect: { x: 0, y: 0, width: 40, height: 20 },
+      prevScrollRect: null,
       renderRect: { x: 0, y: 0, width: 40, height: 20 },
       prevRenderRect: null,
       layoutChangedThisFrame: false,
@@ -552,8 +552,8 @@ describe("selectionHitTest", () => {
       layoutNode: {} as any,
       prevLayout: null,
       contentRect: { x: 0, y: 0, width: 10, height: 5 },
-      screenRect: { x: 0, y: 0, width: 10, height: 5 },
-      prevScreenRect: null,
+      scrollRect: { x: 0, y: 0, width: 10, height: 5 },
+      prevScrollRect: null,
       renderRect: { x: 0, y: 0, width: 10, height: 5 },
       prevRenderRect: null,
       layoutChangedThisFrame: false,
@@ -575,8 +575,8 @@ describe("selectionHitTest", () => {
       layoutNode: {} as any,
       prevLayout: null,
       contentRect: { x: 10, y: 0, width: 10, height: 5 },
-      screenRect: { x: 10, y: 0, width: 10, height: 5 },
-      prevScreenRect: null,
+      scrollRect: { x: 10, y: 0, width: 10, height: 5 },
+      prevScrollRect: null,
       renderRect: { x: 10, y: 0, width: 10, height: 5 },
       prevRenderRect: null,
       layoutChangedThisFrame: false,
@@ -598,8 +598,8 @@ describe("selectionHitTest", () => {
       layoutNode: {} as any,
       prevLayout: null,
       contentRect: { x: 20, y: 0, width: 10, height: 5 },
-      screenRect: { x: 20, y: 0, width: 10, height: 5 },
-      prevScreenRect: null,
+      scrollRect: { x: 20, y: 0, width: 10, height: 5 },
+      prevScrollRect: null,
       renderRect: { x: 20, y: 0, width: 10, height: 5 },
       prevRenderRect: null,
       layoutChangedThisFrame: false,
@@ -649,7 +649,7 @@ describe("findContainBoundary", () => {
       children: [],
       parent: null,
       layoutNode: {} as any,
-      screenRect: { x: 0, y: 0, width: 80, height: 24 },
+      scrollRect: { x: 0, y: 0, width: 80, height: 24 },
     } as unknown as AgNode
 
     const inner: AgNode = {
@@ -658,7 +658,7 @@ describe("findContainBoundary", () => {
       children: [],
       parent: root,
       layoutNode: {} as any,
-      screenRect: { x: 5, y: 2, width: 30, height: 10 },
+      scrollRect: { x: 5, y: 2, width: 30, height: 10 },
     } as unknown as AgNode
 
     const leaf: AgNode = {
@@ -667,7 +667,7 @@ describe("findContainBoundary", () => {
       children: [],
       parent: inner,
       layoutNode: {} as any,
-      screenRect: { x: 6, y: 3, width: 20, height: 5 },
+      scrollRect: { x: 6, y: 3, width: 20, height: 5 },
     } as unknown as AgNode
 
     root.children = [inner]
@@ -694,7 +694,7 @@ describe("findContainBoundary", () => {
       children: [],
       parent: null,
       layoutNode: {} as any,
-      screenRect: { x: 0, y: 0, width: 10, height: 5 },
+      scrollRect: { x: 0, y: 0, width: 10, height: 5 },
     } as unknown as AgNode
 
     expect(findContainBoundary(node)).toBeNull()

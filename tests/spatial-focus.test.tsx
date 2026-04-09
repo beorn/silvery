@@ -30,10 +30,10 @@ function stubNode(testID: string, rect: Rect, opts?: { focusable?: boolean; chil
     parent: null,
     layoutNode: {} as any,
     contentRect: null,
-    screenRect: rect,
+    scrollRect: rect,
     renderRect: null,
     prevLayout: null,
-    prevScreenRect: null,
+    prevScrollRect: null,
     prevRenderRect: null,
     layoutChangedThisFrame: false,
     layoutDirty: false,
@@ -76,9 +76,9 @@ function buildGrid3x2() {
   return { root, a1, a2, a3, b1, b2 }
 }
 
-/** Layout function that reads screenRect from the node. */
+/** Layout function that reads scrollRect from the node. */
 function layoutFn(node: AgNode): Rect | null {
-  return node.screenRect
+  return node.scrollRect
 }
 
 // ============================================================================

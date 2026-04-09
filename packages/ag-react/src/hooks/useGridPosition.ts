@@ -1,7 +1,7 @@
 /**
  * useGridPosition — auto-register an item's screen position in the PositionRegistry.
  *
- * Uses useScreenRectCallback for zero-rerender position tracking.
+ * Uses useScrollRectCallback for zero-rerender position tracking.
  * Automatically unregisters on unmount (prevents stale entries).
  *
  * @example
@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useRef } from "react"
-import { useScreenRectCallback } from "./useLayout"
+import { useScrollRectCallback } from "./useLayout"
 import { usePositionRegistry } from "./usePositionRegistry"
 
 /**
@@ -33,7 +33,7 @@ export function useGridPosition(sectionIndex: number, itemIndex: number): void {
   itemRef.current = itemIndex
 
   // Register position on every layout update (no re-renders)
-  useScreenRectCallback((rect) => {
+  useScrollRectCallback((rect) => {
     registry?.register(sectionRef.current, itemRef.current, rect)
   })
 

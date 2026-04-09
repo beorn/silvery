@@ -2,7 +2,7 @@
  * useCursor - Show and position the terminal's blinking cursor.
  *
  * Maps component-relative (col, row) to absolute terminal coordinates
- * using useScreenRectCallback. Per-instance last-writer-wins: only one cursor
+ * using useScrollRectCallback. Per-instance last-writer-wins: only one cursor
  * can be active at a time per silvery instance (the terminal has one hardware cursor).
  *
  * Cursor state is isolated per silvery instance via CursorContext. Each runtime
@@ -25,7 +25,7 @@ import React, {
 import type { CursorShape } from "@silvery/ag-term/output"
 import type { BoxProps } from "@silvery/ag/types"
 import { NodeContext } from "@silvery/ag-react/context"
-import { useScreenRectCallback, type Rect } from "./useLayout"
+import { useScrollRectCallback, type Rect } from "./useLayout"
 
 // ============================================================================
 // Types
@@ -169,7 +169,7 @@ export function useCursor(position: CursorPosition): void {
   const get = store ? store.accessors.getCursorState : globalGetCursorState
 
   // Compute content area offset from the parent node's border + padding.
-  // useScreenRectCallback provides the node's border-box rect, but cursor
+  // useScrollRectCallback provides the node's border-box rect, but cursor
   // col/row are relative to the content area (inside border + padding).
   const props = node?.props as BoxProps | undefined
   const padLeft = props?.paddingLeft ?? props?.paddingX ?? props?.padding ?? 0
@@ -200,7 +200,7 @@ export function useCursor(position: CursorPosition): void {
 
   // Called synchronously during layout (useLayoutEffect) whenever
   // the component's screen position changes.
-  useScreenRectCallback(
+  useScrollRectCallback(
     useCallback((rect) => {
       lastRectRef.current = rect
       if (!visibleRef.current) {

@@ -154,25 +154,25 @@ export function useContentRectCallback(callback: (rect: Rect) => void): void {
  * @example
  * ```tsx
  * function Card({ id }) {
- *   const { y } = useScreenRect();
+ *   const { y } = useScrollRect();
  *   // y is the actual screen row, accounting for scroll
  *   return <Box>Card at screen row {y}</Box>;
  * }
  * ```
  */
-export function useScreenRect(): Rect {
+export function useScrollRect(): Rect {
   const node = useContext(NodeContext)
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
-  const prevScreenRectRef = useRef<Rect | null>(null)
+  const prevScrollRectRef = useRef<Rect | null>(null)
 
   useLayoutEffect(() => {
     if (!node) return
 
     const handleLayoutComplete = () => {
-      // Re-render when screenRect changes (can happen from scroll offset changes
+      // Re-render when scrollRect changes (can happen from scroll offset changes
       // even when contentRect stays the same)
-      if (!rectEqual(prevScreenRectRef.current, node.screenRect)) {
-        prevScreenRectRef.current = node.screenRect
+      if (!rectEqual(prevScrollRectRef.current, node.scrollRect)) {
+        prevScrollRectRef.current = node.scrollRect
         forceUpdate()
       }
     }
@@ -183,7 +183,7 @@ export function useScreenRect(): Rect {
     }
   }, [node])
 
-  return node?.screenRect ?? { x: 0, y: 0, width: 0, height: 0 }
+  return node?.scrollRect ?? { x: 0, y: 0, width: 0, height: 0 }
 }
 
 /**
@@ -197,7 +197,7 @@ export function useScreenRect(): Rect {
  * @example
  * ```tsx
  * function Card({ id, onLayout }) {
- *   useScreenRectCallback((rect) => {
+ *   useScrollRectCallback((rect) => {
  *     // rect.y is screen position, accounting for scroll
  *     onLayout(id, rect.y);
  *   });
@@ -205,7 +205,7 @@ export function useScreenRect(): Rect {
  * }
  * ```
  */
-export function useScreenRectCallback(callback: (rect: Rect) => void): void {
+export function useScrollRectCallback(callback: (rect: Rect) => void): void {
   const node = useContext(NodeContext)
 
   // Use ref to always have current callback without re-subscribing
@@ -216,16 +216,16 @@ export function useScreenRectCallback(callback: (rect: Rect) => void): void {
     if (!node) return
 
     const handleLayoutComplete = () => {
-      if (node.screenRect) {
-        callbackRef.current(node.screenRect)
+      if (node.scrollRect) {
+        callbackRef.current(node.scrollRect)
       }
     }
 
     node.layoutSubscribers.add(handleLayoutComplete)
 
     // Also call immediately if screen rect already computed
-    if (node.screenRect) {
-      callbackRef.current(node.screenRect)
+    if (node.scrollRect) {
+      callbackRef.current(node.scrollRect)
     }
 
     return () => {
@@ -240,7 +240,7 @@ export function useScreenRectCallback(callback: (rect: Rect) => void): void {
 
 /**
  * Returns the actual render position for the current component.
- * For non-sticky nodes, this equals `useScreenRect()`.
+ * For non-sticky nodes, this equals `useScrollRect()`.
  * For sticky nodes (position="sticky"), this accounts for sticky render
  * offsets — the position where pixels are actually painted on screen.
  *
@@ -269,7 +269,7 @@ export function useRenderRect(): Rect {
 
     const handleLayoutComplete = () => {
       // Re-render when renderRect changes (can happen from sticky offset
-      // changes even when screenRect stays the same)
+      // changes even when scrollRect stays the same)
       if (!rectEqual(prevRenderRectRef.current, node.renderRect)) {
         prevRenderRectRef.current = node.renderRect
         forceUpdate()
@@ -289,7 +289,7 @@ export function useRenderRect(): Rect {
  * Callback invoked with actual render position after render.
  * Does NOT cause re-renders - use for position registration in large lists.
  *
- * For non-sticky nodes, the rect equals screenRect. For sticky nodes,
+ * For non-sticky nodes, the rect equals scrollRect. For sticky nodes,
  * it reflects the actual render position accounting for sticky offsets.
  *
  * @example

@@ -36,7 +36,7 @@ function makeNode(overrides: Partial<AgNode> & { props?: Record<string, unknown>
     children: [],
     parent: null,
     layoutNode: null as any,
-    screenRect: { x: 0, y: 0, width: 80, height: 24 },
+    scrollRect: { x: 0, y: 0, width: 80, height: 24 },
     inlineRects: null,
     contentLines: null,
     textContent: undefined,

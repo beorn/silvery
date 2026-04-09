@@ -10,7 +10,7 @@ Read this before modifying render-phase.ts, render-text.ts, render-box.ts, or la
 The render pipeline runs on every frame. Phases execute in strict order:
 
 ```
-measure -> layout -> scroll -> sticky -> screenRect -> [notify] -> content -> output
+measure -> layout -> scroll -> sticky -> scrollRect -> [notify] -> content -> output
 ```
 
 | Phase       | File                | What it does                                                                               |
@@ -19,8 +19,8 @@ measure -> layout -> scroll -> sticky -> screenRect -> [notify] -> content -> ou
 | layout      | layout-phase.ts     | Run `calculateLayout()`, propagate rects, set `prevLayout` and `subtreeDirty`              |
 | scroll      | layout-phase.ts     | Calculate scroll offset, visible children, sticky positions for overflow=scroll containers |
 | sticky      | layout-phase.ts     | Calculate sticky render offsets for non-scroll parents with sticky children                |
-| screenRect  | layout-phase.ts     | Compute screen-relative positions (content position minus ancestor scroll offsets)         |
-| notify      | layout-phase.ts     | Fire `layoutSubscribers` callbacks (drives `useContentRect`/`useScreenRect`)               |
+| scrollRect  | layout-phase.ts     | Compute screen-relative positions (content position minus ancestor scroll offsets)         |
+| notify      | layout-phase.ts     | Fire `layoutSubscribers` callbacks (drives `useContentRect`/`useScrollRect`)               |
 | **content** | **render-phase.ts** | **Render nodes to a TerminalBuffer (this is the complex part)**                            |
 | output      | output-phase.ts     | Diff current buffer against previous, emit minimal ANSI escape sequences                   |
 

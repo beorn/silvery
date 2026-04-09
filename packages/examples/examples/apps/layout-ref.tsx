@@ -13,7 +13,7 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Layout Ref",
-  description: "useContentRect + useScreenRect for imperative layout measurement",
+  description: "useContentRect + useScrollRect for imperative layout measurement",
   features: ["forwardRef", "BoxHandle", "onLayout", "getContentRect()"],
 }
 
@@ -65,7 +65,7 @@ function ImperativeAccessDemo() {
     }
 
     const content = boxRef.current.getContentRect()
-    const screen = boxRef.current.getScreenRect()
+    const screen = boxRef.current.getScrollRect()
     const node = boxRef.current.getNode()
 
     setInfo(

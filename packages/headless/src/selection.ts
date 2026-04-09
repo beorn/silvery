@@ -28,7 +28,7 @@ export interface SelectionRange {
 
 /**
  * Rectangular boundary for contain-scoped selection.
- * Derived from the nearest `userSelect="contain"` ancestor's screenRect.
+ * Derived from the nearest `userSelect="contain"` ancestor's scrollRect.
  */
 export interface SelectionScope {
   top: number

@@ -191,7 +191,7 @@ export {
   usePositionRegistry,
   createPositionRegistry,
 } from "@silvery/ag-react/hooks/usePositionRegistry"
-export type { PositionRegistry, ScreenRect } from "@silvery/ag-react/hooks/usePositionRegistry"
+export type { PositionRegistry, ScrollRect } from "@silvery/ag-react/hooks/usePositionRegistry"
 export { useGridPosition } from "@silvery/ag-react/hooks/useGridPosition"
 export { GridCell } from "./components/GridCell"
 export type { GridCellProps } from "./components/GridCell"

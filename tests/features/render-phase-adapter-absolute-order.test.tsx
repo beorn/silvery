@@ -27,7 +27,7 @@ import {
   layoutPhase,
   scrollPhase,
   stickyPhase,
-  screenRectPhase,
+  scrollrectPhase,
   notifyLayoutSubscribers,
 } from "@silvery/ag-term/pipeline"
 
@@ -54,7 +54,7 @@ function renderViaAdapter(element: React.ReactElement, cols: number, rows: numbe
   layoutPhase(root, cols, rows)
   scrollPhase(root)
   stickyPhase(root)
-  screenRectPhase(root)
+  scrollrectPhase(root)
   notifyLayoutSubscribers(root)
 
   // Second pass for layout feedback
@@ -63,7 +63,7 @@ function renderViaAdapter(element: React.ReactElement, cols: number, rows: numbe
   layoutPhase(root, cols, rows)
   scrollPhase(root)
   stickyPhase(root)
-  screenRectPhase(root)
+  scrollrectPhase(root)
   notifyLayoutSubscribers(root)
 
   return renderPhaseAdapter(root) as TerminalRenderBuffer

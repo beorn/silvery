@@ -23,7 +23,7 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 `withDomEvents()` overrides `app.update` to intercept events before the base handler:
 
 - **Keyboard events**: dispatched through the focus tree (capture phase → target → bubble phase). Components with `onKeyDown` or `onKeyDownCapture` receive a `KeyEvent` with `stopPropagation()` and `preventDefault()`.
-- **Mouse events**: hit-tested against the render tree using `screenRect`. The deepest node at `(x, y)` receives the event, which bubbles up through ancestors.
+- **Mouse events**: hit-tested against the render tree using `scrollRect`. The deepest node at `(x, y)` receives the event, which bubbles up through ancestors.
 
 ```tsx
 <Box

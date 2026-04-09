@@ -16,7 +16,7 @@ export {
   layoutPhase,
   rectEqual,
   scrollPhase,
-  screenRectPhase,
+  scrollrectPhase,
   renderPhase,
   outputPhase,
   // Utilities

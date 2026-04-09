@@ -37,7 +37,7 @@ Internally, `withTerminal` composes the lower-level concerns (input parsing, out
 | Plugin               | Role             | What it does                                                                                                                                                                                                   |
 | -------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `withFocus()`        | Processing       | Focus manager: Tab/Shift+Tab navigation, Enter to enter scope, Escape to exit. Dispatches `onKeyDown`/`onKeyDownCapture` through focus tree (capture → target → bubble).                                       |
-| `withDomEvents()`    | Processing       | DOM-like event dispatch for mouse: hit testing via `screenRect`, bubbling through ancestors. `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseMove`, `onMouseEnter`, `onMouseLeave`, `onWheel`. |
+| `withDomEvents()`    | Processing       | DOM-like event dispatch for mouse: hit testing via `scrollRect`, bubbling through ancestors. `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseMove`, `onMouseEnter`, `onMouseLeave`, `onWheel`. |
 | `withCommands(opts)` | Processing + API | Resolves key and mouse events to named commands via a binding table. Adds `.cmd` proxy for programmatic invocation. Adds `.getState()` for introspection.                                                      |
 
 ### Testing / Automation

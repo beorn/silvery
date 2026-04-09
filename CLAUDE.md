@@ -71,7 +71,7 @@ ag.resetBuffer() // clear prev (on resize)
 ag.render({ fresh: true }) // force non-incremental render
 ```
 
-- `ag.layout(dims, opts?)` — measure, layout, scroll, sticky, screenRect, notify
+- `ag.layout(dims, opts?)` — measure, layout, scroll, sticky, scrollRect, notify
 - `ag.render(opts?)` — incremental content render → TextFrame + TerminalBuffer
 - Internal prevBuffer management — no caller tracking needed
 - `executeRender()` delegates to `createAg` internally
