@@ -97,10 +97,10 @@
     <div class="info">
       <h3>Code</h3>
       <pre><code>import { Terminal } from "@xterm/xterm";
-import { renderToXterm, Box, Text, useContentRect } from '@silvery/term/xterm';
+import { renderToXterm, Box, Text, useBoxRect } from '@silvery/term/xterm';
 
 function App() {
-  const { width, height } = useContentRect();
+  const { width, height } = useBoxRect();
   return (
     &lt;Box borderStyle="single"&gt;
       &lt;Text&gt;Size: {width} cols x {height} rows&lt;/Text&gt;

@@ -296,7 +296,7 @@
           <p>
             silvery is a React renderer that computes layout
             <strong>before</strong> content rendering. Components know their size during render via
-            <code>useContentRect()</code>, not after.
+            <code>useBoxRect()</code>, not after.
           </p>
           <ul class="feature-list">
             <li>React reconciler builds an <code>InkxNode</code> tree</li>
@@ -312,13 +312,13 @@
           <div class="code-block">
             <span class="keyword">import</span> { <span class="component">renderToCanvas</span>,
             <span class="component">Box</span>, <span class="component">Text</span>,
-            <span class="component">useContentRect</span> }
+            <span class="component">useBoxRect</span> }
             <span class="keyword">from</span>
             <span class="string">'silvery/canvas'</span>;
 
             <span class="keyword">function</span>
             <span class="component">App</span>() { <span class="keyword">const</span> { width, height } =
-            <span class="component">useContentRect</span>(); <span class="keyword">return</span> ( &lt;<span
+            <span class="component">useBoxRect</span>(); <span class="keyword">return</span> ( &lt;<span
               class="component"
               >Box</span
             >
