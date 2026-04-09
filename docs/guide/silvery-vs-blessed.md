@@ -2,7 +2,7 @@
 
 _External project claims last verified: 2026-04. Blessed version: 0.1.81 (last release 2015)._
 
-[Blessed](https://github.com/chjj/blessed) (2013) pioneered rich terminal UIs in Node.js by reimplementing ncurses entirely in JavaScript (~16,000 lines). Its curses-like API — screens, boxes, lists, forms, tables, and a terminal-within-terminal widget — was state-of-the-art for its era. The last tagged release (v0.1.81) was 2015; the last commit to the main repository was 2017. Community forks ([neo-blessed](https://github.com/embarklabs/neo-blessed), [blessed-ng](https://github.com/nicholasgasior/blessed-ng)) apply maintenance patches but haven't substantially changed the architecture. Despite being unmaintained, Blessed still sees ~1.6M npm weekly downloads — a testament to how many production CLIs depend on it.
+[Blessed](https://github.com/chjj/blessed) (2013) pioneered rich terminal UIs in Node.js by reimplementing ncurses entirely in JavaScript (~16,000 lines). Its curses-like API — screens, boxes, lists, forms, tables, and a terminal-within-terminal widget — was state-of-the-art for its era. The last tagged release (v0.1.81) was 2015; the last commit to the main repository was January 2016. Community forks ([neo-blessed](https://github.com/embarklabs/neo-blessed), [blessed-ng](https://github.com/nicholasgasior/blessed-ng)) apply maintenance patches but haven't substantially changed the architecture. Despite being unmaintained, Blessed still sees ~1M+ npm weekly downloads — a testament to how many production CLIs depend on it.
 
 Silvery (2025) is a ground-up reimplementation with a React component model, CSS flexbox layout, and an incremental rendering pipeline. Different era, different architecture, different trade-offs.
 
@@ -13,12 +13,12 @@ The biggest differences at a glance:
 - **React declarative vs curses imperative** — Silvery uses JSX, hooks, and React's component model. Blessed uses `create → set → append → render()` with manual state mutation. The declarative approach eliminates a class of bugs: forgotten `render()` calls, out-of-order widget mutations, orphaned event listeners.
 - **CSS flexbox layout** — `flexGrow`, `flexWrap`, `gap`, `alignItems`, `justifyContent` via the Flexily engine. Blessed uses manual absolute/percentage positioning with coordinate math.
 - **Layout-first rendering** — components know their size _during_ render via `useBoxRect()`, not after. Blessed has no equivalent.
-- **Cell-level incremental rendering** — per-node dirty tracking (7 flags/node), cell-level buffer diff, minimal ANSI output. Blessed redraws the full screen on each `render()` call.
+- **Cell-level incremental rendering** — per-node dirty tracking (7 flags/node), cell-level buffer diff, minimal ANSI output. Blessed uses a screen damage buffer with region-level diffing; Silvery's cell-level tracking is more granular.
 - **Modern terminal protocols** — Kitty keyboard (all 5 flags), SGR mouse, OSC 52 clipboard, Kitty graphics + Sixel, synchronized output (DEC 2026), extended underlines. Blessed was built for the 2013 terminal landscape.
 - **45+ built-in components** — VirtualList, Table, TreeView, CommandPalette, Toast, Tabs, SplitView, TextArea, ModalDialog, and more.
 - **Multi-backend test matrix** — [Termless](https://termless.dev) runs tests across 10+ real terminal parsers (xterm.js, vt100, Ghostty, Kitty, Alacritty, ...). Blessed has no built-in testing support.
 - **Dynamic scrollback** — items graduate to terminal history automatically; inline/fullscreen hybrid modes blur the boundary. Blessed has neither.
-- **3–5× faster on mounted workloads** — cell-level diff + incremental rendering vs full screen redraw. Output efficiency is 28–192× less ANSI emitted per update.
+- **3–5× faster on mounted workloads** — cell-level diff + incremental rendering vs region-level damage buffer. Output efficiency is 28–192× less ANSI emitted per update.
 - **38 palettes, semantic tokens** — theme system with `$primary`, `$muted`, auto-detection. Blessed uses manual styling.
 
 **Where Blessed is stronger:**
@@ -93,56 +93,56 @@ Blessed first, Silvery second. Features marked "core" are built into the framewo
 
 ### Layout
 
-| Feature | Blessed | Silvery |
-|---|---|---|
-| **Positioning model** | Manual absolute/percentage (`top`, `left`, `width`, `height`) | CSS flexbox (Flexily engine) |
-| **Flex layout** | None — manual coordinate math | `flexGrow`, `flexShrink`, `flexWrap`, `gap`, `alignItems`, `justifyContent` |
-| **Responsive layout** | Manual resize handling | `useBoxRect()` — dimensions available _during_ render, first pass |
-| **Scrollable containers** | Built-in scroll on widgets (`.scrollTo()`, `.scroll()`) | `overflow="scroll"` + `scrollTo` — framework-level, handles clipping |
-| **Sticky headers** | None | `position="sticky"` in scroll containers |
-| **Nested layouts** | Careful coordinate math for each level | Nested flex containers — automatic |
+| Feature                   | Blessed                                                       | Silvery                                                                     |
+| ------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **Positioning model**     | Manual absolute/percentage (`top`, `left`, `width`, `height`) | CSS flexbox (Flexily engine)                                                |
+| **Flex layout**           | Experimental Layout element (inline/grid); no flexbox         | `flexGrow`, `flexShrink`, `flexWrap`, `gap`, `alignItems`, `justifyContent` |
+| **Responsive layout**     | Manual resize handling                                        | `useBoxRect()` — dimensions available _during_ render, first pass           |
+| **Scrollable containers** | Built-in scroll on widgets (`.scrollTo()`, `.scroll()`)       | `overflow="scroll"` + `scrollTo` — framework-level, handles clipping        |
+| **Sticky headers**        | Not supported                                                 | `position="sticky"` in scroll containers                                    |
+| **Nested layouts**        | Careful coordinate math for each level                        | Nested flex containers — automatic                                          |
 
 ### Rendering
 
-| Feature | Blessed | Silvery |
-|---|---|---|
-| **Rendering model** | Full screen redraw per `render()` call; `smartCSR` optimizes scroll regions | 5-phase pipeline: measure → layout → content → output → flush |
-| **Incremental rendering** | Region-level via `smartCSR` / `fastCSR` | Cell-level dirty tracking (7 flags/node), cell-level buffer diff |
-| **Output efficiency** | Full screen write | **28–192× less output** — cell-level diff + relative cursor addressing |
-| **Inline mode** | None — always fullscreen | Cell-level incremental with native scrollback preserved |
-| **Dynamic scrollback** | None | Items graduate to terminal history; Cmd+F works |
-| **Fullscreen-like inline** | N/A | Inline mode with fullscreen performance — cell-level incremental + scrollback graduation |
-| **Synchronized output** | None | DEC mode 2026 — flicker-free in tmux/Zellij |
+| Feature                    | Blessed                                                                     | Silvery                                                                                  |
+| -------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Rendering model**        | Screen damage buffer with two buffers — only draws changes (CSR/BCE); `smartCSR`/`fastCSR` optimize scroll regions | 5-phase pipeline: measure → layout → content → output → flush                            |
+| **Incremental rendering**  | Region-level via `smartCSR` / `fastCSR`                                     | Cell-level dirty tracking (7 flags/node), cell-level buffer diff                         |
+| **Output efficiency**      | Region-level diff via damage buffer                                         | **28–192× less output** — cell-level diff + relative cursor addressing                   |
+| **Inline mode**            | Not supported — always fullscreen                                           | Cell-level incremental with native scrollback preserved                                  |
+| **Dynamic scrollback**     | Not supported                                                               | Items graduate to terminal history; Cmd+F works                                          |
+| **Fullscreen-like inline** | Not supported                                                               | Inline mode with fullscreen performance — cell-level incremental + scrollback graduation |
+| **Synchronized output**    | Not supported                                                               | DEC mode 2026 — flicker-free in tmux/Zellij                                              |
 
 ### Interaction
 
-| Feature | Blessed | Silvery |
-|---|---|---|
-| **Mouse** | X10 protocol (basic click) | SGR 1006 (large coordinates, precise tracking, drag, wheel) |
-| **Event model** | Flat EventEmitter — no bubbling, no capturing | DOM-style bubbling, `stopPropagation`, input layering |
-| **Input isolation** | Manual state checking in every handler | `InputLayerProvider` — modal dialogs consume input automatically |
-| **Focus system** | Widget-level `.focus()` | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin` |
-| **Text selection + find** | None | Mouse drag, `Ctrl+F` search, `Esc,v` keyboard selection |
-| **Command system** | None | Named commands, context-aware keys, `parseHotkey("⌘K")` |
-| **Clipboard** | Via external tools (`pbcopy`, `xclip`) | OSC 52 — works over SSH, no external tools |
+| Feature                   | Blessed                                       | Silvery                                                                        |
+| ------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Mouse**                 | SGR (?1006), URxvt (?1015), and X10 protocols | SGR 1006 (large coordinates, precise tracking, drag, wheel)                    |
+| **Event model**           | EventEmitter with bubbling (cancel via `return false`) | DOM-style bubbling, `stopPropagation`, input layering                          |
+| **Input isolation**       | Manual state checking in every handler        | `InputLayerProvider` — modal dialogs consume input automatically               |
+| **Focus system**          | Widget-level `.focus()`                       | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin` |
+| **Text selection + find** | Not in core                                   | Mouse drag, `Ctrl+F` search, `Esc,v` keyboard selection                        |
+| **Command system**        | Not in core                                   | Named commands, context-aware keys, `parseHotkey("⌘K")`                        |
+| **Clipboard**             | Built-in `copyToClipboard()` via iTerm2 sequence (limited) | OSC 52 — works over SSH, no external tools                                     |
 
 ### Terminal Protocol Support
 
 Blessed was state-of-the-art for 2013. The terminal landscape has changed substantially since then.
 
-| Feature | Blessed | Silvery |
-|---|---|---|
-| **Color** | 16/256 (truecolor partial) | 16/256/truecolor with automatic downsampling |
-| **Keyboard** | Traditional input parsing | Kitty keyboard protocol (all 5 flags: disambiguate, events, alternate, all keys, text) |
-| **Underline styles** | Single only | ISO 8613-6 (single, double, curly, dotted, dashed + color) |
-| **Hyperlinks** | None | OSC 8 clickable URLs |
-| **Images** | None | Kitty graphics + Sixel with auto-detect and text fallback |
-| **Bracketed paste** | None | `usePaste` hook with automatic mode toggling |
-| **Focus events** | None | DEC mode 1004 (focus in/out reporting) |
-| **Window title** | Via `screen.title` | OSC 0/2 |
-| **Terminal detection** | terminfo/termcap parsing | DA1/DA2/DA3, XTVERSION + terminfo queries |
-| **Cursor styles** | Limited | Full DECSCUSR (block, underline, bar, blinking) |
-| **Synchronized output** | None | DEC mode 2026 (flicker-free in tmux/Zellij) |
+| Feature                 | Blessed                    | Silvery                                                                                |
+| ----------------------- | -------------------------- | -------------------------------------------------------------------------------------- |
+| **Color**               | 16/256 (truecolor partial) | 16/256/truecolor with automatic downsampling                                           |
+| **Keyboard**            | Traditional input parsing  | Kitty keyboard protocol (all 5 flags: disambiguate, events, alternate, all keys, text) |
+| **Underline styles**    | Single only                | ISO 8613-6 (single, double, curly, dotted, dashed + color)                             |
+| **Hyperlinks**          | Not supported              | OSC 8 clickable URLs                                                                   |
+| **Images**              | Not supported              | Kitty graphics + Sixel with auto-detect and text fallback                              |
+| **Bracketed paste**     | Not supported              | `usePaste` hook with automatic mode toggling                                           |
+| **Focus events**        | Supported (focus/blur)     | DEC mode 1004 (focus in/out reporting)                                                 |
+| **Window title**        | Via `screen.title`         | OSC 0/2                                                                                |
+| **Terminal detection**  | terminfo/termcap parsing   | DA1/DA2/DA3, XTVERSION + terminfo queries                                              |
+| **Cursor styles**       | Limited                    | Full DECSCUSR (block, underline, bar, blinking)                                        |
+| **Synchronized output** | Not supported              | DEC mode 2026 (flicker-free in tmux/Zellij)                                            |
 
 Modern terminals (Kitty, Ghostty, WezTerm, iTerm2, Windows Terminal) support protocols that didn't exist when Blessed was written. Applications built with Blessed cannot take advantage of these without significant patching.
 
@@ -150,34 +150,34 @@ For compatibility data across terminals, see [terminfo.dev](https://terminfo.dev
 
 ### Components & Framework
 
-| Feature | Blessed | Silvery |
-|---|---|---|
+| Feature                         | Blessed                                                  | Silvery                                                                                        |
+| ------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | **Built-in widgets/components** | ~40 widgets (list, table, form, textbox, terminal, etc.) | **45+** components (VirtualList, Table, CommandPalette, TreeView, Toast, Tabs, SplitView, ...) |
-| **Specialized widgets** | Terminal emulator, video player, IRC widgets | None — focused on general-purpose UI components |
-| **Theme system** | Manual styling | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect |
-| **Plugin composition** | None | `withCommands` / `withKeybindings` / `withDomEvents` / `withFocus` |
-| **TEA state machines** | None | `@silvery/create`: `(action, state) → [state, effects]`, replay, undo |
-| **Animation** | None built-in | `useAnimation` + easing functions + `useAnimatedTransition` |
-| **Resource cleanup** | Manual | `using` / Disposable — automatic teardown |
+| **Specialized widgets**         | Terminal emulator, video player, IRC widgets             | None — focused on general-purpose UI components                                                |
+| **Theme system**                | Manual styling                                           | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect                               |
+| **Plugin composition**          | Not in core                                              | `withCommands` / `withKeybindings` / `withDomEvents` / `withFocus`                             |
+| **TEA state machines**          | Not in core                                              | `@silvery/create`: `(action, state) → [state, effects]`, replay, undo                          |
+| **Animation**                   | Not built-in                                             | `useAnimation` + easing functions + `useAnimatedTransition`                                    |
+| **Resource cleanup**            | Manual                                                   | `using` / Disposable — automatic teardown                                                      |
 
 ### Unicode & Emoji
 
-| Feature | Blessed | Silvery |
-|---|---|---|
-| **CJK characters** | Width calculation issues — double-width characters often misalign | Full support (East Asian Width, proper display width) |
-| **Emoji** | Limited — ZWJ sequences and modifiers break layout | Full support (ZWJ sequences, modifier sequences, grapheme splitting) |
-| **Combining characters** | Limited | UAX #29 grapheme cluster splitting |
-| **ANSI-aware text ops** | Basic | 28+ built-in functions (truncation, wrapping, slicing, width calculation) |
+| Feature                  | Blessed                                                           | Silvery                                                                   |
+| ------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **CJK characters**       | `fullUnicode` mode for double-width chars and surrogate pairs     | Full support (East Asian Width, proper display width)                     |
+| **Emoji**                | Partial — `fullUnicode` handles basics; ZWJ sequences still break | Full support (ZWJ sequences, modifier sequences, grapheme splitting)      |
+| **Combining characters** | `fullUnicode` mode handles combining chars                        | UAX #29 grapheme cluster splitting                                        |
+| **ANSI-aware text ops**  | Basic                                                             | 28+ built-in functions (truncation, wrapping, slicing, width calculation) |
 
 ### Testing
 
-| Feature | Blessed | Silvery |
-|---|---|---|
-| **Test library** | None built-in | Built-in `@silvery/test` with Playwright-style locators, `press()`, buffer assertions |
-| **Headless rendering** | None | `createTerm({ cols, rows })` — no terminal needed |
-| **Terminal emulator in tests** | None | `createTermless()` via [Termless](https://termless.dev) — in-process terminal emulation with 10+ backends: xterm.js, vt100, libvterm, Ghostty, Kitty, Alacritty, WezTerm, and more |
-| **Render invariant checks** | None | `SILVERY_STRICT=1` verifies incremental = fresh on every frame |
-| **Visual snapshots** | None | `bufferToHTML()`, Playwright capture, and Termless `.tape` recordings → animated GIF, PNG, SVG with 77 themes |
+| Feature                        | Blessed       | Silvery                                                                                                                                                                            |
+| ------------------------------ | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Test library**               | Not built-in  | Built-in `@silvery/test` with Playwright-style locators, `press()`, buffer assertions                                                                                              |
+| **Headless rendering**         | Not supported | `createTerm({ cols, rows })` — no terminal needed                                                                                                                                  |
+| **Terminal emulator in tests** | Not supported | `createTermless()` via [Termless](https://termless.dev) — in-process terminal emulation with 10+ backends: xterm.js, vt100, libvterm, Ghostty, Kitty, Alacritty, WezTerm, and more |
+| **Render invariant checks**    | Not supported | `SILVERY_STRICT=1` verifies incremental = fresh on every frame                                                                                                                     |
+| **Visual snapshots**           | Not supported | `bufferToHTML()`, Playwright capture, and Termless `.tape` recordings → animated GIF, PNG, SVG with 77 themes                                                                      |
 
 ## Layout
 
@@ -252,7 +252,7 @@ box.key("enter", function () {
 })
 ```
 
-Events are flat -- there is no bubbling, no capturing, no `stopPropagation`. Key handlers on the screen receive all input. Managing focus and input isolation requires manual state tracking.
+Events bubble from child to parent; propagation can be cancelled by returning `false`. There is no capturing phase or `stopPropagation`. Key handlers on the screen receive all input. Managing focus and input isolation requires manual state tracking.
 
 ### Silvery
 
@@ -352,7 +352,7 @@ Both tools serve different needs. The right choice depends on your situation.
 
 ### Choose Silvery when:
 
-- **New project** -- there is no reason to start a new project with an unmaintained framework
+- **New project** -- Blessed was excellent for its era; Silvery targets a newer terminal baseline with active maintenance
 - **Active development** -- if you're building features, not just maintaining, the modern tooling pays for itself
 - **Complex UIs** -- multi-pane layouts, scrollable containers, and responsive design are dramatically easier with flexbox
 - **Modern terminals** -- if your users have Kitty, Ghostty, WezTerm, or iTerm2, Silvery can take advantage of their capabilities
