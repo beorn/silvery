@@ -54,7 +54,7 @@ Ink first, Silvery second. Features marked "core" are built into the framework; 
 | Feature | Ink 7.0 | Silvery |
 |---|---|---|
 | **Built-in components** | 6 core (Box, Text, Static, Newline, Spacer, Transform) | **45+** core (VirtualList, Table, CommandPalette, TreeView, Toast, Tabs, SplitView, ...) |
-| **Official component library** | [`@inkjs/ui`](https://github.com/vadimdemedes/ink-ui): TextInput, Select, MultiSelect, Spinner, ProgressBar, etc. | Built into core — no separate install needed |
+| **Official component library** | [`@inkjs/ui`](https://github.com/vadimdemedes/ink-ui): 13 input-focused components (TextInput, Select, MultiSelect, Spinner, ProgressBar, ConfirmInput, EmailInput, PasswordInput, Badge, Alert, StatusMessage, lists) | 45+ components built into core — includes advanced widgets (Table, TreeView, CommandPalette, Toast, SplitView, ModalDialog, Tabs, TextArea, VirtualList) |
 | **Third-party ecosystem** | 50+ community packages ([ecosystem list](https://github.com/vadimdemedes/ink#community)) | Newer, smaller community |
 | **Theme system** | Manual chalk styling | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect |
 | **Accessibility** | `aria-role`, `aria-label`, `aria-state`, `useIsScreenReaderEnabled` | Basic support |
