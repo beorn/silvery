@@ -1,8 +1,8 @@
 # Silvery vs Textual
 
-_External project claims last verified: 2026-04. Textual version: 3.x._
+_External project claims last verified: 2026-04. Textual version: 8.2.3._
 
-[Textual](https://github.com/Textualize/textual) (2021, [Textualize](https://www.textualize.io)) is the leading TUI framework for Python. Created by Will McGugan — author of [Rich](https://github.com/Textualize/rich), the library that made beautiful terminal output mainstream — Textual brings CSS-like styling (TCSS), a reactive widget tree, and asyncio event handling to Python. Large widget library (40+), active development, strong documentation, and a genuine web deployment story via [Textual Web](https://textual.textualize.io). Excellent engineering from a team that deeply understands terminal rendering.
+[Textual](https://github.com/Textualize/textual) (2021, [Textualize](https://www.textualize.io)) is the leading TUI framework for Python. Created by Will McGugan — author of [Rich](https://github.com/Textualize/rich), the library that made beautiful terminal output mainstream — Textual brings CSS-like styling (TCSS), a reactive widget tree, and asyncio event handling to Python. Large widget library (dozens of built-in widgets), active development, strong documentation, and a genuine web deployment story via [Textual Web](https://textual.textualize.io). Excellent engineering from a team that deeply understands terminal rendering.
 
 Silvery (2025) is a React-based terminal UI framework for TypeScript. Same broad goal — bring web-style development patterns to the terminal — but different language, different rendering architecture, and different trade-offs.
 
@@ -14,7 +14,7 @@ The biggest differences at a glance:
 - **Layout-first rendering** — components know their size _during_ render via `useBoxRect()`. Textual widgets query `self.size` after layout, similar to web components.
 - **Cell-level incremental rendering** — per-node dirty tracking (7 flags/node), cell-level buffer diff. Textual uses Rich's rendering pipeline with careful caching.
 - **Multi-target** — terminal, Canvas 2D, DOM (experimental). Textual has a mature web target via Textual Web (serve TUI in browser).
-- **3–5× faster on mounted workloads** — wins all 16 scenarios in our [benchmarks](/guide/silvery-vs-ink#performance--size). Though in practice, both frameworks are fast enough for most TUI apps.
+- **3–5× faster than Ink on mounted workloads** — wins all 16 scenarios in our [Ink benchmarks](/guide/silvery-vs-ink#performance--size). No direct Textual benchmarks yet; in practice, all three frameworks are fast enough for most TUI apps.
 - **Termless testing** — [Termless](https://termless.dev) runs tests across 10+ real terminal parsers (xterm.js, vt100, Ghostty, Kitty, Alacritty, ...). Verify resolved RGB colors per cell, not just widget state.
 - **Ink compatibility layer** — 99% of Ink's tests pass on silvery's compat layer. If you're in the JS ecosystem and have Ink code, it migrates easily.
 - **Blurred inline/fullscreen boundary** — inline mode gets cell-level incremental rendering and dynamic scrollback graduation; fullscreen mode gets app-managed scrollback history.
@@ -27,7 +27,7 @@ The biggest differences at a glance:
 - **Grid layout** — TCSS supports CSS Grid-style layouts alongside flexbox and dock. Silvery is flexbox-only.
 - **Documentation** — Textual's docs site is comprehensive and well-organized. Silvery's docs are growing.
 - **Hot reload** — CSS changes apply instantly during development without restarting.
-- **Mature widget library** — 40+ widgets with consistent styling, including DataTable, Markdown viewer, DirectoryTree, Sparkline, and RichLog.
+- **Mature widget library** — dozens of built-in widgets with consistent styling, including DataTable, Markdown viewer, DirectoryTree, Sparkline, and RichLog.
 
 **What's the same:** component trees, flexbox-capable layout, mouse support, scrollable containers, focus system, rich text styling, reactive state management, headless testing, clipboard, hyperlinks, pure interpreted language (no native deps). Both aim to make terminal UIs feel like web development.
 
@@ -39,13 +39,13 @@ The biggest differences at a glance:
 | **Architecture**    | Widget tree + TCSS + reactive attributes                                                                              | React component tree + CSS flexbox                                                                                                  |
 | **Styling**         | TCSS (CSS subset in `.tcss` files)                                                                                    | Semantic theme tokens + inline props                                                                                                |
 | **Layout**          | Dock, grid, horizontal, vertical                                                                                      | CSS flexbox (Flexily engine)                                                                                                        |
-| **Components**      | 40+ built-in (DataTable, Input, Button, Select, Tree, TextArea, Markdown, RichLog, Sparkline, Tabs, OptionList, etc.) | 45+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Image, SplitView, etc.) |
+| **Components**      | Dozens of built-in widgets (DataTable, Input, Button, Select, Tree, TextArea, Markdown, RichLog, Sparkline, Tabs, CommandPalette, etc.) | 45+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Image, SplitView, etc.) |
 | **Testing**         | Pilot mode (async, simulated events)                                                                                  | `@silvery/test` (headless renderer, locators) + Termless (10+ terminal backends)                                                    |
 | **Mouse support**   | Full (click, scroll, hover)                                                                                           | SGR protocol with DOM-style events                                                                                                  |
 | **Keyboard**        | Standard terminal input                                                                                               | Kitty keyboard protocol (all 5 flags)                                                                                               |
 | **Focus system**    | Tab-based with focusable widgets                                                                                      | Tree-based with scopes, spatial navigation                                                                                          |
 | **Scrolling**       | Built-in per-widget, ScrollableContainer                                                                              | `overflow="scroll"`, VirtualList                                                                                                    |
-| **Clipboard**       | Python-level (`pyperclip` etc.)                                                                                       | OSC 52 (works over SSH)                                                                                                             |
+| **Clipboard**       | Built-in `App.copy_to_clipboard()` API                                                                                | OSC 52 (works over SSH)                                                                                                             |
 | **Image rendering** | None built-in                                                                                                         | Kitty graphics + Sixel with auto-detect                                                                                             |
 | **Web target**      | Textual Web (serve TUI in browser)                                                                                    | Experimental (Canvas 2D, DOM)                                                                                                       |
 | **Theme system**    | TCSS variables + built-in themes                                                                                      | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect                                                                    |
@@ -175,7 +175,7 @@ Both frameworks have substantial widget libraries.
 
 ### Textual Widgets
 
-Textual ships 40+ widgets. A representative sample:
+Textual ships dozens of built-in widgets. A representative sample:
 
 | Widget                                | What                                            |
 | ------------------------------------- | ----------------------------------------------- |
@@ -194,6 +194,8 @@ Textual ships 40+ widgets. A representative sample:
 | `ListView` / `OptionList`             | Scrollable item lists                           |
 | `DirectoryTree`                       | File browser                                    |
 | `Switch` / `Checkbox` / `RadioButton` | Toggle controls                                 |
+| `CommandPalette`                       | Built-in fuzzy command search (Ctrl+P)          |
+| `Toast` / notifications               | Built-in `notify()` API                         |
 
 ### Silvery Components
 
@@ -217,7 +219,7 @@ Silvery ships 45+ components:
 | `Console`                 | Composable console output                         |
 | `Link`                    | OSC 8 clickable hyperlinks                        |
 
-Textual's widget library is more mature, with some unique components (DataTable with sorting, Markdown viewer, DirectoryTree, Sparkline, RichLog). Silvery has some unique ones of its own (CommandPalette, Image, SplitView) and all components integrate with the framework's focus system and input layering.
+Textual's widget library is more mature, with some unique components (DataTable with sorting, Markdown viewer, DirectoryTree, Sparkline, RichLog). Both frameworks have a built-in command palette and toast/notification system. Silvery has some unique components of its own (Image, SplitView) and all components integrate with the framework's focus system and input layering.
 
 ## Reactive State
 
@@ -319,8 +321,8 @@ This is where the frameworks diverge significantly.
 | **Key event types**     | Press                      | Press, repeat, release                                          |
 | **Synchronized output** | No                         | DEC mode 2026 (flicker-free in tmux/Zellij)                     |
 | **Extended underlines** | Curly, dotted, dashed      | Full ISO 8613-6 (single, double, curly, dotted, dashed + color) |
-| **Clipboard**           | Via system clipboard       | OSC 52 (works over SSH)                                         |
-| **Hyperlinks**          | Yes (Rich links)           | OSC 8 with `<Link>` component                                   |
+| **Clipboard**           | Built-in `App.copy_to_clipboard()` | OSC 52 (works over SSH)                                         |
+| **Hyperlinks**          | Dedicated `Link` widget    | OSC 8 with `<Link>` component                                   |
 | **Images**              | No                         | Kitty graphics + Sixel with auto-detect                         |
 | **Window title**        | Yes                        | OSC 0/2                                                         |
 | **Terminal queries**    | Limited                    | DA1/DA2/DA3, XTVERSION, CPR, pixel dimensions                   |
@@ -338,7 +340,7 @@ Python and TypeScript are both interpreted languages, so neither has Go or Rust-
 
 **Textual** uses asyncio and careful caching. Widget rendering is optimized with Rich's rendering pipeline. Large DataTables use virtual scrolling for 1000+ rows.
 
-**Silvery** uses incremental rendering with per-node dirty tracking. Cell-level buffer diff means only changed characters generate output. On mounted workloads (the fair comparison — both frameworks keep a mounted app and update it), Silvery is 3–5× faster across all 16 benchmark scenarios. See the [Ink comparison benchmarks](/guide/silvery-vs-ink#performance--size) for methodology and numbers.
+**Silvery** uses incremental rendering with per-node dirty tracking. Cell-level buffer diff means only changed characters generate output. On mounted workloads, Silvery is 3–5× faster than Ink across all 16 benchmark scenarios — see the [Ink comparison benchmarks](/guide/silvery-vs-ink#performance--size) for methodology and numbers. We have not directly benchmarked against Textual (different language runtimes make apples-to-apples comparison difficult).
 
 For most applications, both are fast enough. If you're building an app with thousands of rapidly updating nodes, Silvery's incremental approach has an advantage. If you're building a data dashboard that updates every few seconds, both handle it comfortably.
 
@@ -361,7 +363,7 @@ Both are good tools. The right choice depends primarily on your language ecosyst
 - **Your project is in Python** -- Textual integrates naturally with Python data science, web, and automation ecosystems
 - **You want CSS-like styling** -- separate stylesheet files with selectors, pseudo-classes, and hot-reload during development
 - **Web deployment matters** -- Textual Web serves TUI apps in the browser with no client installation
-- **Rich widget library** -- 40+ built-in widgets with consistent styling and behavior
+- **Rich widget library** -- dozens of built-in widgets with consistent styling and behavior
 - **Data-oriented apps** -- DataTable, Sparkline, RichLog, and Rich formatting are well-suited for dashboards and data tools
 - **Grid layout** -- TCSS supports CSS Grid-style layouts alongside flexbox and dock
 
