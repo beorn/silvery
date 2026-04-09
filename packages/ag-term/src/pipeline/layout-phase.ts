@@ -7,6 +7,7 @@
 import { createLogger } from "loggily"
 import { measureStats } from "./measure-stats"
 import { type BoxProps, type AgNode, type Rect, rectEqual } from "@silvery/ag/types"
+import { hasLayoutDirty, clearLayoutDirtyTracking } from "@silvery/ag/dirty-tracking"
 import { getBorderSize, getPadding } from "./helpers"
 
 const log = createLogger("silvery:layout")
@@ -23,10 +24,17 @@ export function layoutPhase(root: AgNode, width: number, height: number): void {
   const prevLayout = root.contentRect
   const dimensionsChanged = prevLayout && (prevLayout.width !== width || prevLayout.height !== height)
 
-  // Only recalculate if something changed (dirty nodes or dimensions)
-  if (!dimensionsChanged && !hasLayoutDirtyNodes(root)) {
+  // Only recalculate if something changed (dirty nodes or dimensions).
+  // hasLayoutDirty() is O(1) via the module-level dirty set, replacing
+  // the previous O(N) hasLayoutDirtyNodes() tree walk.
+  if (!dimensionsChanged && !hasLayoutDirty()) {
     return
   }
+
+  // Clear layout dirty tracking now that we've committed to running layout.
+  // This prevents stale entries from persisting if layout runs but the
+  // reconciler doesn't set new flags before the next frame.
+  clearLayoutDirtyTracking()
 
   // Run layout calculation (root always has a layoutNode)
   if (root.layoutNode) {
@@ -61,6 +69,8 @@ function countNodes(node: AgNode): number {
 
 /**
  * Check if any node in the tree has layoutDirty flag set.
+ * @deprecated Replaced by hasLayoutDirty() from @silvery/ag/dirty-tracking for O(1) checks.
+ *   Kept for debugging — walks the full tree and logs dirty nodes.
  */
 function hasLayoutDirtyNodes(node: AgNode, path = "root"): boolean {
   if (node.layoutDirty) {

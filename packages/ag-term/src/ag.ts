@@ -31,6 +31,7 @@ import {
   notifyLayoutSubscribers,
 } from "./pipeline/layout-phase"
 import { renderPhase, clearBgConflictWarnings } from "./pipeline/render-phase"
+import { clearDirtyTracking } from "@silvery/ag/dirty-tracking"
 import type { PipelineContext } from "./pipeline/types"
 
 const log = createLogger("silvery:render")
@@ -206,6 +207,11 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     if (!opts?.fresh) {
       _prevBuffer = buffer
     }
+
+    // Clear the module-level dirty tracking after each render pass.
+    // Content dirty nodes were processed by renderPhase; layout dirty was
+    // already cleared by layoutPhase (clearLayoutDirtyTracking).
+    clearDirtyTracking()
 
     // Bench instrumentation: accumulate content-phase timing.
     const acc = (globalThis as any).__silvery_bench_phases

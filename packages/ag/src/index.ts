@@ -86,3 +86,15 @@ export {
 
 // Tree Utilities
 export { getAncestorPath, pointInRect } from "./tree-utils"
+
+// Dirty Tracking
+export {
+  trackLayoutDirty,
+  trackContentDirty,
+  hasLayoutDirty,
+  hasContentDirty,
+  getLayoutDirtyNodes,
+  getContentDirtyNodes,
+  clearDirtyTracking,
+  clearLayoutDirtyTracking,
+} from "./dirty-tracking"

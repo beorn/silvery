@@ -9,6 +9,7 @@
 import { createContext } from "react"
 import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
 import type { BoxProps, AgNode, AgNodeType, TextProps } from "@silvery/ag/types"
+import { trackLayoutDirty, trackContentDirty } from "@silvery/ag/dirty-tracking"
 import { classifyPropChanges } from "./helpers"
 import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes"
 import { createLogger } from "loggily"
@@ -81,6 +82,8 @@ function markLayoutAncestorDirty(node: AgNode): void {
     ancestor.stylePropsDirty = true
     ancestor.layoutDirty = true
     ancestor.layoutNode.markDirty()
+    trackLayoutDirty(ancestor)
+    trackContentDirty(ancestor)
   }
 }
 
@@ -284,6 +287,8 @@ export const hostConfig = {
     parentInstance.contentDirty = true // Text measure cache must re-collect children
     parentInstance.layoutDirty = true
     parentInstance.layoutNode?.markDirty()
+    trackLayoutDirty(parentInstance)
+    trackContentDirty(parentInstance)
     markLayoutAncestorDirty(parentInstance)
     markSubtreeDirty(parentInstance)
   },
@@ -317,6 +322,8 @@ export const hostConfig = {
     container.root.contentDirty = true // Text measure cache must re-collect children
     container.root.layoutDirty = true
     container.root.layoutNode?.markDirty()
+    trackLayoutDirty(container.root)
+    trackContentDirty(container.root)
     markSubtreeDirty(container.root)
   },
 
@@ -335,6 +342,8 @@ export const hostConfig = {
       parentInstance.contentDirty = true // Text measure cache must re-collect children
       parentInstance.layoutDirty = true
       parentInstance.layoutNode?.markDirty()
+      trackLayoutDirty(parentInstance)
+      trackContentDirty(parentInstance)
       markLayoutAncestorDirty(parentInstance)
       markSubtreeDirty(parentInstance)
     }
@@ -355,6 +364,8 @@ export const hostConfig = {
       container.root.contentDirty = true // Text measure cache must re-collect children
       container.root.layoutDirty = true
       container.root.layoutNode?.markDirty()
+      trackLayoutDirty(container.root)
+      trackContentDirty(container.root)
       markSubtreeDirty(container.root)
     }
   },
@@ -382,6 +393,8 @@ export const hostConfig = {
       parentInstance.contentDirty = true // Text measure cache must re-collect children
       parentInstance.layoutDirty = true
       parentInstance.layoutNode?.markDirty()
+      trackLayoutDirty(parentInstance)
+      trackContentDirty(parentInstance)
       markLayoutAncestorDirty(parentInstance)
       markSubtreeDirty(parentInstance)
     }
@@ -408,6 +421,8 @@ export const hostConfig = {
       container.root.contentDirty = true // Text measure cache must re-collect children
       container.root.layoutDirty = true
       container.root.layoutNode?.markDirty()
+      trackLayoutDirty(container.root)
+      trackContentDirty(container.root)
       markSubtreeDirty(container.root)
     }
   },
@@ -461,6 +476,7 @@ export const hostConfig = {
         instance.layoutNode.markDirty()
       }
       instance.layoutDirty = true
+      trackLayoutDirty(instance)
     }
     if (contentChanged) {
       // stylePropsDirty: always set for any visual change. Render phase uses this
@@ -504,6 +520,11 @@ export const hostConfig = {
       }
     }
 
+    // Track dirty node in module-level set for O(1) pipeline phase checks
+    if (contentChanged) {
+      trackContentDirty(instance)
+    }
+
     instance.props = newProps
 
     // Only mark subtree/ancestor dirty when visual changes were detected.
@@ -531,6 +552,7 @@ export const hostConfig = {
     textInstance.props = { children: newText } as TextProps
     textInstance.contentDirty = true
     textInstance.stylePropsDirty = true
+    trackContentDirty(textInstance)
     // Text content change affects layout (measure function will return different size)
     // Walk up to the nearest layout ancestor so its measure cache is invalidated
     markLayoutAncestorDirty(textInstance)
@@ -579,6 +601,8 @@ export const hostConfig = {
     container.root.contentDirty = true
     container.root.layoutDirty = true
     container.root.layoutNode?.markDirty()
+    trackLayoutDirty(container.root)
+    trackContentDirty(container.root)
     markSubtreeDirty(container.root)
   },
 
@@ -701,9 +725,12 @@ export const hostConfig = {
     if (instance.layoutNode) {
       instance.layoutNode.markDirty()
     }
+    trackLayoutDirty(instance)
+    trackContentDirty(instance)
     // Mark parent dirty to trigger re-render
     if (instance.parent) {
       instance.parent.contentDirty = true
+      trackContentDirty(instance.parent)
     }
     markLayoutAncestorDirty(instance)
     markSubtreeDirty(instance)
@@ -724,9 +751,12 @@ export const hostConfig = {
     if (instance.layoutNode) {
       instance.layoutNode.markDirty()
     }
+    trackLayoutDirty(instance)
+    trackContentDirty(instance)
     // Mark parent dirty to trigger re-render
     if (instance.parent) {
       instance.parent.contentDirty = true
+      trackContentDirty(instance.parent)
     }
     markLayoutAncestorDirty(instance)
     markSubtreeDirty(instance)
@@ -743,8 +773,10 @@ export const hostConfig = {
     textInstance.hidden = true
     textInstance.contentDirty = true
     textInstance.stylePropsDirty = true
+    trackContentDirty(textInstance)
     if (textInstance.parent) {
       textInstance.parent.contentDirty = true
+      trackContentDirty(textInstance.parent)
     }
     markLayoutAncestorDirty(textInstance)
     markSubtreeDirty(textInstance)
@@ -760,8 +792,10 @@ export const hostConfig = {
     textInstance.hidden = false
     textInstance.contentDirty = true
     textInstance.stylePropsDirty = true
+    trackContentDirty(textInstance)
     if (textInstance.parent) {
       textInstance.parent.contentDirty = true
+      trackContentDirty(textInstance.parent)
     }
     markLayoutAncestorDirty(textInstance)
     markSubtreeDirty(textInstance)
