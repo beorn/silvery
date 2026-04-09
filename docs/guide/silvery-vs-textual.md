@@ -1,18 +1,35 @@
 # Silvery vs Textual
 
-_Information about Textual as of March 2026._
+_External project claims last verified: 2026-04. Textual version: 3.x._
 
-## Why This Page Exists
+[Textual](https://github.com/Textualize/textual) (2021, [Textualize](https://www.textualize.io)) is the leading TUI framework for Python. Created by Will McGugan — author of [Rich](https://github.com/Textualize/rich), the library that made beautiful terminal output mainstream — Textual brings CSS-like styling (TCSS), a reactive widget tree, and asyncio event handling to Python. Large widget library (40+), active development, strong documentation, and a genuine web deployment story via [Textual Web](https://textual.textualize.io). Excellent engineering from a team that deeply understands terminal rendering.
 
-Textual is the leading TUI framework for Python, built by the creator of Rich. Both Textual and Silvery aim to bring web-style development patterns to the terminal -- CSS-like styling, component trees, reactive state. They arrive at similar goals from different languages and different architectures.
+Silvery (2025) is a React-based terminal UI framework for TypeScript. Same broad goal — bring web-style development patterns to the terminal — but different language, different rendering architecture, and different trade-offs.
 
-This page compares them honestly so you can pick the right one.
+## Highlights
 
-## The Two Projects
+The biggest differences at a glance:
 
-[Textual](https://github.com/Textualize/textual) (2021, [Textualize](https://www.textualize.io)) is a Python framework for building terminal UIs. Created by Will McGuigan (author of Rich), it uses a widget tree with CSS-like styling (TCSS), reactive attributes, and asyncio for event handling. Large widget library, active development, and a growing community. Apps can run in both terminal and web browser via [Textual Web](https://textual.textualize.io). See the [documentation](https://textual.textualize.io) for the full API reference.
+- **React ecosystem** — JavaScript/TypeScript, npm, hooks, context, Suspense, concurrent mode. Textual is Python with its own widget lifecycle and reactive attributes.
+- **Layout-first rendering** — components know their size _during_ render via `useBoxRect()`. Textual widgets query `self.size` after layout, similar to web components.
+- **Cell-level incremental rendering** — per-node dirty tracking (7 flags/node), cell-level buffer diff. Textual uses Rich's rendering pipeline with careful caching.
+- **Multi-target** — terminal, Canvas 2D, DOM (experimental). Textual has a mature web target via Textual Web (serve TUI in browser).
+- **3–5× faster on mounted workloads** — wins all 16 scenarios in our [benchmarks](/guide/silvery-vs-ink#performance--size). Though in practice, both frameworks are fast enough for most TUI apps.
+- **Termless testing** — [Termless](https://termless.dev) runs tests across 10+ real terminal parsers (xterm.js, vt100, Ghostty, Kitty, Alacritty, ...). Verify resolved RGB colors per cell, not just widget state.
+- **Ink compatibility layer** — 99% of Ink's tests pass on silvery's compat layer. If you're in the JS ecosystem and have Ink code, it migrates easily.
+- **Blurred inline/fullscreen boundary** — inline mode gets cell-level incremental rendering and dynamic scrollback graduation; fullscreen mode gets app-managed scrollback history.
 
-[Silvery](https://github.com/beorn/silvery) (2025) is a React-based terminal UI framework for TypeScript. It uses React's component model with CSS flexbox layout (via Flexily), incremental rendering, and comprehensive terminal protocol support. Newer and smaller community, but more built-in terminal features.
+**Where Textual is stronger:**
+
+- **Python ecosystem** — huge community, data science libraries, automation tools. If your project is Python, Textual is the natural choice.
+- **CSS-like styling** — TCSS (a CSS subset) with selectors, pseudo-classes (`:focus`, `:hover`, `:disabled`), hot-reload during development, and separation of concerns. Silvery uses inline props.
+- **Web deployment** — `textual serve myapp.py` serves any Textual app in a browser with no client installation. Silvery's multi-target rendering is experimental.
+- **Grid layout** — TCSS supports CSS Grid-style layouts alongside flexbox and dock. Silvery is flexbox-only.
+- **Documentation** — Textual's docs site is comprehensive and well-organized. Silvery's docs are growing.
+- **Hot reload** — CSS changes apply instantly during development without restarting.
+- **Mature widget library** — 40+ widgets with consistent styling, including DataTable, Markdown viewer, DirectoryTree, Sparkline, and RichLog.
+
+**What's the same:** component trees, flexbox-capable layout, mouse support, scrollable containers, focus system, rich text styling, reactive state management, headless testing, clipboard, hyperlinks, pure interpreted language (no native deps). Both aim to make terminal UIs feel like web development.
 
 ## At a Glance
 
@@ -23,7 +40,7 @@ This page compares them honestly so you can pick the right one.
 | **Styling**         | TCSS (CSS subset in `.tcss` files)                                                                                    | Semantic theme tokens + inline props                                                                                                |
 | **Layout**          | Dock, grid, horizontal, vertical                                                                                      | CSS flexbox (Flexily engine)                                                                                                        |
 | **Components**      | 40+ built-in (DataTable, Input, Button, Select, Tree, TextArea, Markdown, RichLog, Sparkline, Tabs, OptionList, etc.) | 45+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Image, SplitView, etc.) |
-| **Testing**         | Pilot mode (async, simulated events)                                                                                  | `@silvery/test` (headless renderer, locators) + Termless (terminal emulator)                                                        |
+| **Testing**         | Pilot mode (async, simulated events)                                                                                  | `@silvery/test` (headless renderer, locators) + Termless (10+ terminal backends)                                                    |
 | **Mouse support**   | Full (click, scroll, hover)                                                                                           | SGR protocol with DOM-style events                                                                                                  |
 | **Keyboard**        | Standard terminal input                                                                                               | Kitty keyboard protocol (all 5 flags)                                                                                               |
 | **Focus system**    | Tab-based with focusable widgets                                                                                      | Tree-based with scopes, spatial navigation                                                                                          |
@@ -31,9 +48,10 @@ This page compares them honestly so you can pick the right one.
 | **Clipboard**       | Python-level (`pyperclip` etc.)                                                                                       | OSC 52 (works over SSH)                                                                                                             |
 | **Image rendering** | None built-in                                                                                                         | Kitty graphics + Sixel with auto-detect                                                                                             |
 | **Web target**      | Textual Web (serve TUI in browser)                                                                                    | Experimental (Canvas 2D, DOM)                                                                                                       |
+| **Theme system**    | TCSS variables + built-in themes                                                                                      | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect                                                                    |
 | **Runtime**         | CPython / PyPy                                                                                                        | Node.js / Bun / Deno                                                                                                                |
 | **Native deps**     | None                                                                                                                  | None                                                                                                                                |
-| **Community**       | Large (Python TUI standard)                                                                                           | New                                                                                                                                 |
+| **Community**       | Large (Python TUI standard)                                                                                           | Newer, smaller community                                                                                                            |
 
 ## CSS: TCSS vs Flexbox Props
 
@@ -199,7 +217,7 @@ Silvery ships 45+ components:
 | `Console`                 | Composable console output                         |
 | `Link`                    | OSC 8 clickable hyperlinks                        |
 
-Textual's widget library is larger and more mature. Silvery's is smaller but includes some unique components (CommandPalette, Image, SplitView) and all components integrate with the framework's focus system and input layering.
+Textual's widget library is more mature, with some unique components (DataTable with sorting, Markdown viewer, DirectoryTree, Sparkline, RichLog). Silvery has some unique ones of its own (CommandPalette, Image, SplitView) and all components integrate with the framework's focus system and input layering.
 
 ## Reactive State
 
@@ -271,7 +289,7 @@ expect(app).toContainText("Count: 1")
 ```
 
 ```tsx
-// Full: Termless (in-process terminal emulator)
+// Full: Termless — in-process terminal emulator with 10+ backends
 import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 
@@ -285,7 +303,7 @@ await handle.press("j") // Navigate down
 expect(term.scrollback).toContainText("Previous item")
 ```
 
-Termless runs a real terminal emulator in-process, so you can verify resolved RGB colors per cell, bold/italic/underline attributes, cursor position, and scrollback content -- not just widget state. This is unique to Silvery and matters when testing terminal protocol correctness.
+[Termless](https://termless.dev) runs a real terminal emulator in-process — xterm.js, vt100, libvterm, Ghostty, Kitty, Alacritty, WezTerm, and more. Matrix-test across real parsers to verify resolved RGB colors per cell, bold/italic/underline attributes, cursor position, and scrollback content — not just widget state. `SILVERY_STRICT=1` verifies incremental rendering matches fresh rendering on every frame.
 
 ## Terminal Protocol Support
 
@@ -320,7 +338,7 @@ Python and TypeScript are both interpreted languages, so neither has Go or Rust-
 
 **Textual** uses asyncio and careful caching. Widget rendering is optimized with Rich's rendering pipeline. Large DataTables use virtual scrolling for 1000+ rows.
 
-**Silvery** uses incremental rendering with per-node dirty tracking. A typical interactive update (cursor move in a 1000-node tree) takes ~169 us because unchanged nodes are skipped entirely. The cell-level buffer diff means only changed characters generate output.
+**Silvery** uses incremental rendering with per-node dirty tracking. Cell-level buffer diff means only changed characters generate output. On mounted workloads (the fair comparison — both frameworks keep a mounted app and update it), Silvery is 3–5× faster across all 16 benchmark scenarios. See the [Ink comparison benchmarks](/guide/silvery-vs-ink#performance--size) for methodology and numbers.
 
 For most applications, both are fast enough. If you're building an app with thousands of rapidly updating nodes, Silvery's incremental approach has an advantage. If you're building a data dashboard that updates every few seconds, both handle it comfortably.
 
@@ -334,12 +352,14 @@ textual serve myapp.py
 
 **Silvery** has experimental Canvas 2D and DOM render targets. These are not production-ready but are on the roadmap. The architecture supports multi-target rendering because the layout and rendering pipeline is decoupled from terminal output.
 
-## When to Choose
+## When to Choose What
+
+Both are good tools. The right choice depends primarily on your language ecosystem.
 
 ### Choose Textual when:
 
 - **Your project is in Python** -- Textual integrates naturally with Python data science, web, and automation ecosystems
-- **You want TCSS styling** -- separate stylesheet files with selectors, pseudo-classes, and hot-reload during development
+- **You want CSS-like styling** -- separate stylesheet files with selectors, pseudo-classes, and hot-reload during development
 - **Web deployment matters** -- Textual Web serves TUI apps in the browser with no client installation
 - **Rich widget library** -- 40+ built-in widgets with consistent styling and behavior
 - **Data-oriented apps** -- DataTable, Sparkline, RichLog, and Rich formatting are well-suited for dashboards and data tools
@@ -349,8 +369,9 @@ textual serve myapp.py
 
 - **Your project is in TypeScript/JavaScript** -- React components, npm packages, TypeScript type safety
 - **Complex interactive UIs** -- kanban boards, text editors, multi-pane dashboards where layout-aware rendering matters
-- **React ecosystem** -- hooks, context, component composition, suspense, and the full React mental model
-- **Terminal protocol depth** -- Kitty keyboard, synchronized output, image rendering, clipboard over SSH, terminal capability detection via [terminfo.dev](https://terminfo.dev)
-- **Testing terminal output** -- Termless verifies actual ANSI sequences and resolved colors, not just widget state
+- **React ecosystem** -- hooks, context, component composition, Suspense, and the full React mental model
+- **Terminal protocol depth** -- Kitty keyboard, synchronized output, image rendering, clipboard over SSH, terminal capability detection
+- **Testing terminal output** -- Termless verifies actual ANSI sequences and resolved colors across 10+ real terminal parsers, not just widget state
 - **TEA state machines** -- `@silvery/create` provides pure `(action, state) -> [state, effects]` reducers alongside React
 - **Input isolation** -- InputLayerProvider with DOM-style bubbling and `stopPropagation` for modal dialogs and layered UIs
+- **Dynamic scrollback** -- inline mode with cell-level incremental rendering and scrollback graduation; fullscreen mode with app-managed history
