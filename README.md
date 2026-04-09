@@ -33,7 +33,7 @@ await render(<Counter />).run()
 
 - **React 18 + 19** — hooks, refs, effects, suspense — all works
 - **Flexbox layout** — `Box` with `flexDirection`, `padding`, `gap`, `flexGrow`, just like Ink
-- **Ink/Chalk compatible** — same component model, [`@silvery/ink`](https://github.com/beorn/silvery/tree/main/packages/ink) compatibility layer for migrating existing Ink applications. See the [full feature comparison](https://silvery.dev/guide/silvery-vs-ink)
+- **Ink/Chalk compatible** — [`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink) and `@silvery/chalk` drop-in compat layers. 99% of Ink's + 100% of Chalk's test suites pass. See the [full feature comparison](https://silvery.dev/guide/silvery-vs-ink)
 
 ### Better
 

@@ -45,7 +45,7 @@ hero:
 
 features:
   - title: Familiar React API
-    details: "Same Box/Text/useInput patterns you already know. If you've used Ink, most code works with just an import change. @silvery/ink compat layer passes 99% of Ink 7.0's test suite."
+    details: "Same Box/Text/useInput patterns you already know. If you've used Ink, most code works with just an import change. @silvery/ink and @silvery/chalk compat layers pass 99% of Ink's and 100% of Chalk's test suites."
     link: /guide/silvery-vs-ink
     linkText: Full feature comparison
   - title: Pure TypeScript
