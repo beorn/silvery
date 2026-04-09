@@ -7,17 +7,54 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-09
+
 ### Added
 
+- **Ink 7.0 compat — BackgroundContext shim** — exposes Ink 7.0's context-based background inheritance API via `packages/ink/src/bg-context.ts`. Makes +27 Ink 7.0 tests pass on the compat layer.
+- **Ink 7.0 compat — maxFps render throttle** — `maxFps` option in the compat renderer throttles render rate to match Ink 7.0's behavior.
+- **Ink 7.0 compat — debug cursor API shim** — Ink-compatible cursor debug API for visibility/position interaction tests.
+- **Ink 7.0 compat — `wrap="hard"`** — character-level text truncation for Ink 7.0 parity (vs word-boundary wrapping).
+- **Ink 7.0 compat — per-side `borderBackgroundColor`** — `borderTopBackgroundColor`, `borderRightBackgroundColor`, etc., matching Ink 7.0's per-side border background prop API.
+- **Text — CJK wide-character overlay clearing** — when overwriting a continuation cell, the owning wide-char cell is cleared to a space. Fixes rendering when CJK cells are partially occluded.
+- **Flexily — overflow clipping at edges** — left/right overflow clipping works cleanly with borders and margins via `minCol` parameter in text render.
+- **Pre-built `dist/` via tsup** — silvery now ships both raw TypeScript source (for Bun consumers, `src/`) and pre-built `.js` + `.d.ts` (for npm consumers, `dist/`) via conditional exports. Zero build step for Bun users; instant imports for everyone else.
+- **Long-lived `Ag` renderer in `createApp`** — reuse Ag instance across frames instead of creating per-render. Combined with dirty node SET optimization for O(1) layout-dirty checks.
+- **Dirty node SET + propsEqual collapse** — per-node dirty tracking with independent flags, 3-pass prop comparison collapsed into 1 pass. Yields measurable perf win on kanban and memo'd workloads.
+- **Atomicity framing in docs + blog** — docs now explain the three axes of atomicity (time, space, content) that the layout-first pipeline + cell-level diff + DEC mode 2026 enable. See the updated homepage, `silvery-vs-ink.md`, and the forthcoming blog post on Claude Code's rendering dilemma.
 - **Interactions runtime** — selection, find, copy-mode, and drag as composable runtime features (`SelectionFeature`, `FindFeature`, `CopyModeFeature`, `DragFeature`) in `@silvery/ag-term/features/`. Each feature is wired automatically by its provider (`withDomEvents` for selection and drag, `withFocus` for find and copy-mode).
 - **InputRouter** — centralized input routing in `@silvery/create/internal/` dispatches keyboard and mouse events to registered feature handlers with priority ordering.
 - **CapabilityRegistry** — runtime capability discovery in `@silvery/create/internal/`. Features register themselves; React components access them via `CapabilityRegistryContext`.
 - **`useSelection` hook** — reads selection state from the CapabilityRegistry. Replaces the old `useTerminalSelection` + `TerminalSelectionProvider` pattern.
 - **Composition docs** — new guide pages: [Providers and Plugins](docs/guide/providers.md) and [Headless Machines](docs/guide/headless-machines.md).
-- **`@silvery/commander`: typed inline arg syntax** — `command("deploy <service> [env]")` now parses positional arguments embedded in the command name string and contributes them to the typed `Args` tuple and `ArgsRecord`. Both forms (inline string and chained `.argument()`) coexist, are fully typed, and produce equivalent runtime behavior. Mixing them in one command is supported — inline args come first, `.argument()` calls append.
-- **`@silvery/commander`: `.actionMerged()`** — explicit opt-in for the merged named-object form. Receives `(params, cmd)` where `params` contains all positional args (camelCased) merged with options. `.action()` itself is now a pure Commander-native passthrough — `(...args, opts, cmd)` — with no auto-detection. Replaces the previous `fn.length` heuristic that silently miscompiled handlers when an underscore-prefixed parameter was added or removed.
-- **`@silvery/commander`: multi-line console blocks in help sections** — `addHelpSection` row terms can now contain `\n`-separated lines. Each line renders as a separate row, the description appears only on the first line, and column padding is computed from the longest line across the multi-line term. Useful for setup sequences and recipes where several commands share one description.
-- **`@silvery/commander`: shell prompt detection across all sections** — lines starting with `$ `, `# `, `> `, or `❯ ` get console-block styling (dim prompt, primary program/subcommand, secondary flags, accent brackets, dim quoted strings) in any `addHelpSection`, not just `Examples:`.
+- **`@silvery/commander`: typed inline arg syntax** — `command("deploy <service> [env]")` now parses positional arguments embedded in the command name string and contributes them to the typed `Args` tuple and `ArgsRecord`.
+- **`@silvery/commander`: `.actionMerged()`** — explicit opt-in for the merged named-object form. Receives `(params, cmd)` where `params` contains all positional args (camelCased) merged with options.
+- **`@silvery/commander`: multi-line console blocks in help sections** — `addHelpSection` row terms can now contain `\n`-separated lines.
+- **`@silvery/commander`: shell prompt detection across all sections** — lines starting with `$ `, `# `, `> `, or `❯ ` get console-block styling in any `addHelpSection`.
+- **Rect hook rename** — `contentRect` → `boxRect`, `renderRect` → `screenRect`, `screenRect` → `scrollRect`. Six hooks consolidated into three via overloads. Migration guide in docs.
+
+### Fixed
+
+- **STRICT env bug** — `isStrictOutput()` treated the string `"0"` as truthy, so `SILVERY_STRICT=0` didn't actually disable STRICT mode. Bench runs before the fix paid full O(cells) verification overhead every iteration; post-fix numbers are 2.5-5.2× faster than Ink 7.0 on mounted workloads (all 16 scenarios).
+- **Render phase typo** — `AgNode["boxRectt"]` → `AgNode["boxRect"]` in render-phase.ts.
+- **Output phase — text clipping at left edge** — text in `overflow="hidden"` containers now clips correctly at the left edge via `minCol` parameter.
+- **Ink compat — kitty keyboard default flags** — matches Ink's byte-wise compat for disambiguate escape codes.
+- **Ink compat — stderr replay frame in debug mode** — emits replay frame for stderr writes during debug mode capture.
+- **`useCallbackRect` subscription stability** — `getRect` was captured per-render, invalidating subscriptions on every re-render. Wrapped in a ref for stability, matching the `callbackRef` pattern.
+- **Contentprops dead code** — removed deprecated `propsEqual` / `layoutPropsChanged` / `contentPropsChanged` with zero callers.
+
+### Performance
+
+- **Output phase — combined SGR codes** — combine consecutive SGR codes into a single escape sequence where possible.
+- **2.5-5.2× faster than Ink 7.0** on mounted workloads (cursor move, kanban card edit, memo'd list toggles). Wins all 16 benchmark scenarios. Run `bun run bench` to reproduce.
+- **28-192× less output** than full redraw on incremental updates — cell-level buffer diff + relative cursor addressing.
+- **Bundle parity with Ink+Yoga** — `silvery/runtime` is 114.9 KB gzipped vs Ink+Yoga's 116.6 KB (0.99×). `silvery/ink` compat layer is 119.2 KB (+2.2 KB over Ink baseline).
+
+### Documentation
+
+- **Homepage** — "React for modern terminal apps" hero. Merged Responsive Layout and Atomic Rendering cards (same architectural root). Replaced "100x" claim with 2.5-5.2× honest numbers. Bulleted rendering mode list (inline incremental / fullscreen / static / virtual).
+- **silvery-vs-ink.md** — added "The atomicity story" section covering time/space/content atomicity. Replaced cold-init perf table with canonical mounted benchmarks. Updated compat stats to 918+/931 (~98.6%) against Ink 7.0.
+- **why-silvery.md, faq.md, README.md, about.md, compatibility.md** — uniform update to new framing and numbers.
 
 ### Breaking Changes
 
@@ -25,6 +62,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Text selection** now activates automatically via `withDomEvents()` — no explicit hook setup required.
 - **Find** now activates automatically via `withFocus()` with `Ctrl+F` — no explicit `useFind` setup required.
 - **Copy-mode** now activates automatically via `withFocus()` with `Esc, v` — no explicit `useCopyMode` setup required.
+- **Rect hook rename** (see Added): if you use `contentRect` / `renderRect` / `screenRect` names, they've been renamed. See the Layout Coordinates guide for the migration.
 
 ## [0.9.0] - 2026-03-29
 
