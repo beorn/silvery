@@ -246,10 +246,10 @@ export const hostConfig = {
       layoutNode: null, // No layout node for raw text
       contentRect: null,
       scrollRect: null,
-      renderRect: null,
+      screenRect: null,
       prevLayout: null,
       prevScrollRect: null,
-      prevRenderRect: null,
+      prevScreenRect: null,
       layoutChangedThisFrame: false,
       layoutDirty: false,
       contentDirty: true,

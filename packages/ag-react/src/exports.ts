@@ -294,8 +294,8 @@ export {
   useContentRectCallback,
   useScrollRect,
   useScrollRectCallback,
-  useRenderRect,
-  useRenderRectCallback,
+  useScreenRect,
+  useScreenRectCallback,
 } from "./hooks/useLayout"
 
 /**

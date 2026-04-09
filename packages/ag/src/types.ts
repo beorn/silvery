@@ -366,7 +366,7 @@ export interface AgNode {
    *
    * Note: For sticky children, this reflects the node's layout position
    * adjusted for scroll offsets, NOT the actual render position. Use
-   * `renderRect` for the actual pixel position on screen.
+   * `screenRect` for the actual pixel position on screen.
    */
   scrollRect: Rect | null
 
@@ -383,10 +383,10 @@ export interface AgNode {
    * needs to know where a node visually appears on screen.
    * Set after screen rect phase.
    */
-  renderRect: Rect | null
+  screenRect: Rect | null
 
   /** Previous render rect (for change detection) */
-  prevRenderRect: Rect | null
+  prevScreenRect: Rect | null
 
   /** True if layout changed THIS frame (position or size).
    *  Set by propagateLayout in layout phase. Cleared by render phase.

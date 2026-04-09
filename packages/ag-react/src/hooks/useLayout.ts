@@ -253,25 +253,25 @@ export function useScrollRectCallback(callback: (rect: Rect) => void): void {
  * @example
  * ```tsx
  * function StickyHeader() {
- *   const { y } = useRenderRect();
+ *   const { y } = useScreenRect();
  *   // y is the actual render row, accounting for sticky offset
  *   return <Box position="sticky" stickyTop={0}>Header at row {y}</Box>;
  * }
  * ```
  */
-export function useRenderRect(): Rect {
+export function useScreenRect(): Rect {
   const node = useContext(NodeContext)
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
-  const prevRenderRectRef = useRef<Rect | null>(null)
+  const prevScreenRectRef = useRef<Rect | null>(null)
 
   useLayoutEffect(() => {
     if (!node) return
 
     const handleLayoutComplete = () => {
-      // Re-render when renderRect changes (can happen from sticky offset
+      // Re-render when screenRect changes (can happen from sticky offset
       // changes even when scrollRect stays the same)
-      if (!rectEqual(prevRenderRectRef.current, node.renderRect)) {
-        prevRenderRectRef.current = node.renderRect
+      if (!rectEqual(prevScreenRectRef.current, node.screenRect)) {
+        prevScreenRectRef.current = node.screenRect
         forceUpdate()
       }
     }
@@ -282,7 +282,7 @@ export function useRenderRect(): Rect {
     }
   }, [node])
 
-  return node?.renderRect ?? { x: 0, y: 0, width: 0, height: 0 }
+  return node?.screenRect ?? { x: 0, y: 0, width: 0, height: 0 }
 }
 
 /**
@@ -295,7 +295,7 @@ export function useRenderRect(): Rect {
  * @example
  * ```tsx
  * function Card({ id, onLayout }) {
- *   useRenderRectCallback((rect) => {
+ *   useScreenRectCallback((rect) => {
  *     // rect.y is actual render row, accounting for sticky
  *     onLayout(id, rect.y);
  *   });
@@ -303,7 +303,7 @@ export function useRenderRect(): Rect {
  * }
  * ```
  */
-export function useRenderRectCallback(callback: (rect: Rect) => void): void {
+export function useScreenRectCallback(callback: (rect: Rect) => void): void {
   const node = useContext(NodeContext)
 
   // Use ref to always have current callback without re-subscribing
@@ -314,16 +314,16 @@ export function useRenderRectCallback(callback: (rect: Rect) => void): void {
     if (!node) return
 
     const handleLayoutComplete = () => {
-      if (node.renderRect) {
-        callbackRef.current(node.renderRect)
+      if (node.screenRect) {
+        callbackRef.current(node.screenRect)
       }
     }
 
     node.layoutSubscribers.add(handleLayoutComplete)
 
     // Also call immediately if render rect already computed
-    if (node.renderRect) {
-      callbackRef.current(node.renderRect)
+    if (node.screenRect) {
+      callbackRef.current(node.screenRect)
     }
 
     return () => {

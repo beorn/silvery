@@ -168,17 +168,17 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number): void {
  * Called from executeRender AFTER scrollrectPhase completes,
  * so useScrollRectCallback can read correct screen positions.
  *
- * Notifies when EITHER contentRect, scrollRect, or renderRect changed.
+ * Notifies when EITHER contentRect, scrollRect, or screenRect changed.
  * scrollRect can change from scroll offset changes even when
  * contentRect stays the same — subscribers (like useScrollRectCallback)
- * need notification in both cases. renderRect can change from sticky
+ * need notification in both cases. screenRect can change from sticky
  * offset changes even when scrollRect stays the same.
  */
 export function notifyLayoutSubscribers(node: AgNode): void {
   // Notify if content rect, screen rect, or render rect changed
   const contentChanged = !rectEqual(node.prevLayout, node.contentRect)
   const screenChanged = !rectEqual(node.prevScrollRect, node.scrollRect)
-  const renderChanged = !rectEqual(node.prevRenderRect, node.renderRect)
+  const renderChanged = !rectEqual(node.prevScreenRect, node.screenRect)
   if (contentChanged || screenChanged || renderChanged) {
     for (const subscriber of node.layoutSubscribers) {
       subscriber()
@@ -599,9 +599,9 @@ function traverseTree(node: AgNode, callback: (node: AgNode) => void): void {
  * This phase runs after scroll phase to compute where each node actually
  * appears on the terminal screen, accounting for all ancestor scroll offsets.
  *
- * Also computes `renderRect` which accounts for sticky render offsets.
- * For non-sticky nodes, renderRect === scrollRect. For sticky nodes,
- * renderRect reflects the actual pixel position where the node is painted.
+ * Also computes `screenRect` which accounts for sticky render offsets.
+ * For non-sticky nodes, screenRect === scrollRect. For sticky nodes,
+ * screenRect reflects the actual pixel position where the node is painted.
  *
  * Screen position = content position - sum of ancestor scroll offsets
  */
@@ -618,12 +618,12 @@ export function scrollrectPhase(root: AgNode): void {
 function propagateScrollRect(node: AgNode, ancestorScrollOffset: number): void {
   // Save previous rects for change detection in notifyLayoutSubscribers
   node.prevScrollRect = node.scrollRect
-  node.prevRenderRect = node.renderRect
+  node.prevScreenRect = node.screenRect
 
   const content = node.contentRect
   if (!content) {
     node.scrollRect = null
-    node.renderRect = null
+    node.screenRect = null
     for (const child of node.children) {
       propagateScrollRect(child, ancestorScrollOffset)
     }
@@ -638,18 +638,18 @@ function propagateScrollRect(node: AgNode, ancestorScrollOffset: number): void {
     height: content.height,
   }
 
-  // Default: renderRect equals scrollRect (overridden below for sticky nodes)
-  node.renderRect = node.scrollRect
+  // Default: screenRect equals scrollRect (overridden below for sticky nodes)
+  node.screenRect = node.scrollRect
 
   // If this node is a scroll container, add its offset for children
   const scrollOffset = node.scrollState?.offset ?? 0
   const childScrollOffset = ancestorScrollOffset + scrollOffset
 
-  // Compute renderRect for sticky children.
+  // Compute screenRect for sticky children.
   // Sticky nodes render at a computed offset instead of their layout position.
   // The offset data lives on the parent (this node) in either scrollState.stickyChildren
   // (for scroll containers) or node.stickyChildren (for non-scroll parents).
-  computeStickyRenderRects(node)
+  computeStickyScreenRects(node)
 
   // Recurse to children
   for (const child of node.children) {
@@ -658,16 +658,16 @@ function propagateScrollRect(node: AgNode, ancestorScrollOffset: number): void {
 }
 
 /**
- * Compute renderRect for sticky children of a node.
+ * Compute screenRect for sticky children of a node.
  *
  * For sticky children, the actual render position differs from the layout
  * position (scrollRect). The renderOffset from the scroll/sticky phase
  * determines where pixels are actually painted. This function sets
- * renderRect on those children to reflect the true screen position.
+ * screenRect on those children to reflect the true screen position.
  *
- * @param parent The parent node whose sticky children need renderRect computation
+ * @param parent The parent node whose sticky children need screenRect computation
  */
-function computeStickyRenderRects(parent: AgNode): void {
+function computeStickyScreenRects(parent: AgNode): void {
   // Determine which sticky children list to use
   const stickyList = parent.scrollState?.stickyChildren ?? parent.stickyChildren
   if (!stickyList || stickyList.length === 0) return
@@ -685,9 +685,9 @@ function computeStickyRenderRects(parent: AgNode): void {
     const child = parent.children[sticky.index]
     if (!child?.scrollRect) continue
 
-    // renderRect has the same x, width, height as scrollRect,
+    // screenRect has the same x, width, height as scrollRect,
     // but Y is adjusted to the sticky render position
-    child.renderRect = {
+    child.screenRect = {
       x: child.scrollRect.x,
       y: contentOriginY + sticky.renderOffset,
       width: child.scrollRect.width,

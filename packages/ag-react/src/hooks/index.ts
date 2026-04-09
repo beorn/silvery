@@ -9,8 +9,8 @@ export {
   useContentRect,
   useContentRectCallback,
   useScrollRect,
-  useRenderRect,
-  useRenderRectCallback,
+  useScreenRect,
+  useScreenRectCallback,
   type Rect,
 } from "./useLayout"
 
