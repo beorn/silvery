@@ -123,8 +123,9 @@ Flag emoji are regional indicator sequences (U+1F1E6..U+1F1FF pairs). Some termi
 **Symptom**: After detail pane open/close, `mcp__tty__text` showed displaced borders, content fragments, garbled patterns.
 
 **Investigation** (8+ TTY sessions, multiple fix attempts at render-phase, output-phase, create-app levels):
+
 - Buffer: STRICT passes (incremental = fresh) ✓
-- ANSI: STRICT_TERMINAL passes ✓  
+- ANSI: STRICT_TERMINAL passes ✓
 - Visual: **Screenshots showed clean rendering** ✓
 
 **Root cause**: TTY MCP text extraction artifact. Unicode characters (📁, ✅, ▸) have width disagreements between silvery and xterm.js headless. `mcp__tty__text` extracts text based on xterm.js cell positions, which diverge from silvery's after emoji/wide chars. The visual rendering is correct.
