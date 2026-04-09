@@ -63,6 +63,7 @@ import { createFocusManager } from "@silvery/ag/focus-manager"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 import { createFocusEvent, dispatchFocusEvent } from "@silvery/ag/focus-events"
 import { executeRender } from "@silvery/ag-term/pipeline"
+import { createAg, type Ag } from "@silvery/ag-term/ag"
 import { createPipeline } from "@silvery/ag-term/measurer"
 import {
   isTextSizingLikelySupported,
@@ -1324,12 +1325,20 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let _eventStart = 0
   const _perfLog = typeof process !== "undefined" && process.env?.DEBUG?.includes("silvery:perf")
 
-  // Incremental rendering — store previous pipeline buffer for diffing.
-  // Without this, every render walks the entire node tree from scratch.
+  // Incremental rendering via long-lived Ag instance.
+  // The Ag manages its own prevBuffer for incremental rendering.
   // Set SILVERY_NO_INCREMENTAL=1 to disable (for debugging blank screen issues).
   // _noIncremental aliases the module-level NO_INCREMENTAL constant for readability.
   const _noIncremental = NO_INCREMENTAL
-  let _prevTermBuffer: import("@silvery/ag-term/buffer").TerminalBuffer | null = null
+
+  // Long-lived Ag instance — created lazily on first doRender() after reconciler
+  // produces the root node. Reused across all subsequent frames, avoiding per-frame
+  // pipeline state allocation. The Ag manages its own prevBuffer for incremental
+  // content rendering.
+  let _ag: Ag | null = null
+  // Track the last TerminalBuffer for dimension-change detection (the Ag manages
+  // prevBuffer internally, but we need the dimensions for resize detection).
+  let _lastTermBuffer: import("@silvery/ag-term/buffer").TerminalBuffer | null = null
 
   // Helper to render and get text
   function doRender(): Buffer {
@@ -1338,7 +1347,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("node:fs").appendFileSync(
         "/tmp/silvery-trace.log",
-        `--- doRender #${_renderCount} (prev=${_prevTermBuffer ? "yes" : "null"}, incremental=${!_noIncremental && !!_prevTermBuffer}) ---\n`,
+        `--- doRender #${_renderCount} (ag=${_ag ? "reuse" : "create"}, incremental=${!_noIncremental}) ---\n`,
       )
     }
     const renderStart = performance.now()
@@ -1363,8 +1372,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     const isInline = !alternateScreen
 
+    // Create or reuse long-lived Ag instance. Created lazily because the root
+    // AgNode is produced by the React reconciler in Phase A above.
+    if (!_ag) {
+      _ag = createAg(rootNode, { measurer: pipelineConfig?.measurer })
+    }
+
     // Invalidate prevBuffer on dimension change (resize).
-    // Both pipeline-level (_prevTermBuffer) and runtime-level (runtime.invalidate())
+    // Both Ag-level (ag.resetBuffer()) and runtime-level (runtime.invalidate())
     // must be cleared — otherwise the ANSI diff compares different-sized buffers.
     //
     // In inline mode, only WIDTH changes trigger invalidation. Height changes are
@@ -1372,12 +1387,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // incrementally by the output phase. Invalidating on height causes the runtime's
     // prevBuffer to be null, which triggers the first-render clear path with \x1b[J
     // — wiping the entire visible screen including shell prompt content above the app.
-    if (_prevTermBuffer) {
-      const widthChanged = dims.cols !== _prevTermBuffer.width
-      const heightChanged = !isInline && dims.rows !== _prevTermBuffer.height
-      if (widthChanged || heightChanged) {
-        _prevTermBuffer = null
-        runtime.invalidate()
+    if (_ag && _renderCount > 1) {
+      // Check dimension changes. On first render there's no prevBuffer to compare.
+      const lastBuffer = _lastTermBuffer
+      if (lastBuffer) {
+        const widthChanged = dims.cols !== lastBuffer.width
+        const heightChanged = !isInline && dims.rows !== lastBuffer.height
+        if (widthChanged || heightChanged) {
+          _ag.resetBuffer()
+          runtime.invalidate()
+        }
       }
     }
 
@@ -1396,7 +1415,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     }
 
     // Early return: if reconciliation produced no dirty flags on the tree,
-    // skip the pipeline entirely. This avoids cloning _prevTermBuffer (which
+    // skip the pipeline entirely. This avoids cloning prevBuffer (which
     // resets dirty rows to 0), preserving the row-level dirty markers that
     // the runtime diff needs to detect actual changes.
     const rootHasDirty =
@@ -1406,26 +1425,43 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       rootNode.bgDirty ||
       rootNode.subtreeDirty ||
       rootNode.childrenDirty
-    if (!rootHasDirty && _prevTermBuffer && currentBuffer) {
+    if (!rootHasDirty && _lastTermBuffer && currentBuffer) {
       return currentBuffer
     }
 
-    const wasIncremental = !_noIncremental && _prevTermBuffer !== null
-    const { buffer: termBuffer } = executeRender(
-      rootNode,
-      dims.cols,
-      dims.rows,
-      wasIncremental ? _prevTermBuffer : null,
-      // Always use fullscreen mode here — the pipeline's output is discarded.
-      // The runtime's render() handles inline mode output separately.
-      // Using inline mode here would modify the shared inline cursor state
-      // (prevCursorRow, prevBuffer) before runtime.render() gets a chance,
-      // causing the runtime to produce 0-byte output.
-      undefined,
-      pipelineConfig,
-    )
-    if (!_noIncremental) _prevTermBuffer = termBuffer
+    // When SILVERY_NO_INCREMENTAL is set, force fresh render every frame
+    if (_noIncremental) {
+      _ag.resetBuffer()
+    }
+
+    // Run layout + content render via the long-lived Ag instance.
+    // The Ag manages prevBuffer internally for incremental rendering.
+    // Output phase is NOT run here — the runtime handles it separately.
+    _ag.layout(dims)
+    const { buffer: termBuffer, prevBuffer: agPrevBuffer } = _ag.render()
+    _lastTermBuffer = termBuffer
+    const wasIncremental = !_noIncremental && agPrevBuffer !== null
     const pipelineMs = performance.now() - pipelineStart
+
+    // Expose timing for diagnostics (previously done by executeRenderCore).
+    // Output timing is 0 here — the runtime handles the output phase separately.
+    ;(globalThis as any).__silvery_last_pipeline = {
+      layout: pipelineMs,
+      output: 0,
+      total: pipelineMs,
+      incremental: wasIncremental,
+    }
+    ;(globalThis as any).__silvery_render_count = ((globalThis as any).__silvery_render_count ?? 0) + 1
+
+    // Bench instrumentation: accumulate pipeline-level timing.
+    // ag.ts handles measure/layout/content accumulation; we add total here.
+    {
+      const acc = (globalThis as any).__silvery_bench_phases
+      if (acc) {
+        acc.total += pipelineMs
+        acc.pipelineCalls += 1
+      }
+    }
 
     // SILVERY_STRICT: compare incremental render against fresh render.
     // createApp bypasses Scheduler/Renderer which have this check built-in,
@@ -1671,7 +1707,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // The screen was cleared when entering console mode, so
       // incremental diffing would produce an incomplete frame.
       runtime.invalidate()
-      _prevTermBuffer = null
+      _ag?.resetBuffer()
       // Force full re-render to restore display, but only if we're not
       // already inside a doRender() call (e.g. when resume() is called
       // from a React effect cleanup during reconciliation).
@@ -2305,10 +2341,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // refs set up before the next event handler runs.
       //
       // IMPORTANT: runtime.render() must be called here to keep the runtime's
-      // prevBuffer in sync with _prevTermBuffer. Without this, the post-batch
-      // doRender's dirty-row tracking (relative to _prevTermBuffer) would be
-      // stale relative to runtime.prevBuffer, causing diffBuffers() to skip
-      // all rows and produce an empty diff (0 bytes output).
+      // prevBuffer in sync with the Ag's internal prevBuffer. Without this,
+      // the post-batch doRender's dirty-row tracking would be stale relative
+      // to runtime.prevBuffer, causing diffBuffers() to skip all rows and
+      // produce an empty diff (0 bytes output).
       if (result === "flush") {
         pendingRerender = false
         currentBuffer = doRender()
@@ -2355,11 +2391,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       flushCount++
     }
 
-    // The render phase's dirty rows are relative to _prevTermBuffer (pipeline's
-    // prev buffer). But runtime.render() diffs against its own prevBuffer, which
-    // may differ when: (a) multiple doRender calls shifted _prevTermBuffer ahead,
-    // or (b) the Z chord timeout causes the zoom render to arrive as a deferred
-    // event where intermediate renders have updated _prevTermBuffer.
+    // The render phase's dirty rows are relative to the Ag's internal prevBuffer.
+    // But runtime.render() diffs against its own prevBuffer, which may differ
+    // when: (a) multiple doRender calls shifted the Ag's prevBuffer ahead, or
+    // (b) the Z chord timeout causes the zoom render to arrive as a deferred
+    // event where intermediate renders have updated the Ag's prevBuffer.
     // Always mark all rows dirty to ensure runtime.render() does a full diff.
     // The cost is negligible (diffBuffers still skips identical rows via
     // rowMetadataEquals/rowCharsEquals pre-check), but correctness is guaranteed.
@@ -2473,8 +2509,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             // Update runtime's output phase to use the new measurer
             runtime.setOutputPhaseFn(pipelineConfig.outputPhaseFn)
           }
-          // Invalidate pipeline and runtime diff state for full redraw
-          _prevTermBuffer = null
+          // Invalidate pipeline and runtime diff state for full redraw.
+          // Recreate Ag with updated measurer (text sizing support changed).
+          _ag = null
           runtime.invalidate()
           // Force full re-render with updated measurer
           if (!isRendering) {
@@ -2542,7 +2579,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             effectiveCaps = updatedCaps
             pipelineConfig = createPipeline({ caps: effectiveCaps })
             runtime.setOutputPhaseFn(pipelineConfig.outputPhaseFn)
-            _prevTermBuffer = null
+            // Recreate Ag with updated measurer (caps changed text sizing/emoji width)
+            _ag = null
             runtime.invalidate()
             if (!isRendering) {
               isRendering = true
