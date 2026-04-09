@@ -31,7 +31,7 @@ head:
 hero:
   name: "Silvery"
   text: "React for modern terminal apps"
-  tagline: "Atomic rendering pipeline: no flicker, no component dropout, no two-pass flash. 2.5–5.2× faster than Ink 7.0 on mounted workloads. 99% Ink-compatible. Bundle parity with Ink+Yoga. Pure TypeScript, no WASM."
+  tagline: "Responsive layouts, native scrollback, incremental rendering, 45+ components. 99% Ink-compatible. Pure TypeScript, no WASM."
   actions:
     - theme: brand
       text: Get Started
@@ -49,13 +49,13 @@ features:
     link: /guide/silvery-vs-ink
     linkText: Ink compatibility guide
   - title: Pure TypeScript
-    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. 114.9 KB gzipped — parity with Ink+Yoga at 116.6 KB."
-  - title: 2.5–5.2× Faster Updates
-    details: "Wins all 16 benchmark scenarios vs Ink 7.0 on mounted workloads. Per-node dirty tracking with 7 independent flags. Only changed cells emit to the terminal. Incremental output is 28-192× smaller than full redraw."
+    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. Instant startup, stable memory."
+  - title: Incremental Rendering
+    details: "Per-node dirty tracking with 7 independent flags. Only changed cells emit to the terminal. Layout runs before render, so every frame commits atomically — no flicker, no stutter."
     link: /guide/silvery-vs-ink#performance
     linkText: See benchmarks
-  - title: Responsive Layout &amp; Scrolling
-    details: "Layout runs before render, so components know their size on first pass via useBoxRect(). That powers native scroll containers (overflow=scroll, no manual virtualization) AND atomic rendering — no two-pass flash, no flicker, no component dropout on scroll. Frames wrapped in DEC 2026 synchronized output."
+  - title: Responsive Layout & Scrolling
+    details: "Components know their size during render via useBoxRect(). Native scroll containers with overflow=scroll. No prop drilling, no post-render measurement, no manual virtualization."
     link: /guide/silvery-vs-ink#the-atomicity-story
     linkText: How atomic rendering works
   - title: 45+ Components
@@ -67,13 +67,7 @@ features:
     link: /guide/testing
     linkText: Testing guide
   - title: Inline, Fullscreen, or Static
-    details: |
-      Pick the rendering mode that fits your app. Same components, one-line switch:
-
-      - **Inline incremental** — live React zone at the bottom, completed items graduate to native scrollback (Cmd+F works)
-      - **Fullscreen (alt-screen)** — vim-style full control, cell-level updates, incremental diff
-      - **Static output** — render once to string, pipe to files or CI logs
-      - **Virtual lists** — windowed rendering for huge datasets, built into VirtualList
+    details: "Same components, one-line switch. Inline mode with native scrollback and Cmd+F. Fullscreen for dashboards. Static for CI logs. VirtualList for huge datasets."
     link: /guide/runtime-layers
     linkText: Runtime layers
   - title: Terminal Protocol Support
