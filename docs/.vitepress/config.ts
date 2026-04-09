@@ -55,7 +55,7 @@ export default withMermaid(
 
     title: "Silvery",
     description:
-      "Silvery — A React renderer for terminal UIs with responsive layouts, scrollable containers, and 100x+ faster interactive updates.",
+      "Silvery — React for modern terminal apps. Responsive layouts, incremental rendering, 45+ components. Ink-compatible. Pure TypeScript, no WASM.",
     base: "/",
 
     markdown: {
@@ -100,6 +100,9 @@ export default withMermaid(
         {
           text: "Guides",
           items: [
+            { text: "Why Silvery?", link: "/guide/why-silvery" },
+            { text: "Silvery vs Ink", link: "/guide/silvery-vs-ink" },
+            { text: "FAQ", link: "/guide/faq" },
             { text: "Components", link: "/guides/components" },
             { text: "Building an App", link: "/guides/terminal-apps" },
             { text: "State Management", link: "/guides/state-management" },
