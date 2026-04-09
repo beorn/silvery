@@ -1,0 +1,16 @@
+{
+  "name": "silvery-benchmarks",
+  "private": true,
+  "description": "Head-to-head benchmarks: Silvery vs Ink 7.0",
+  "scripts": {
+    "bench": "SILVERY_STRICT=0 bunx --bun vitest bench",
+    "bench:compare": "SILVERY_STRICT=0 bunx --bun vitest bench --reporter=verbose"
+  },
+  "dependencies": {
+    "silvery": "0.11.0",
+    "@silvery/test": "0.11.0",
+    "ink": "7.0.0",
+    "react": "^19.0.0",
+    "vitest": "^4.0.18"
+  }
+}
