@@ -71,7 +71,7 @@ Ink first, Silvery second. Features marked "core" are built into the framework; 
 |---|---|---|
 | **Test library** | [`ink-testing-library`](https://github.com/vadimdemedes/ink-testing-library) (official) | Built-in `@silvery/test` with Playwright-style locators, `press()`, buffer assertions |
 | **Headless rendering** | None (always renders to stdout) | `createTerm({ cols, rows })` — no terminal needed |
-| **Terminal emulator in tests** | None | `createTermless()` — real xterm.js emulator in-process |
+| **Terminal emulator in tests** | None | `createTermless()` via [Termless](https://termless.dev) — real xterm.js emulator in-process, multi-backend matrix testing (vt100, xterm, Ghostty) |
 | **Render invariant checks** | None | `SILVERY_STRICT=1` verifies incremental = fresh on every frame |
 | **Multi-backend verification** | None | STRICT checks against vt100, xterm.js, and Ghostty backends |
 | **Visual snapshots** | None | `bufferToHTML()` + Playwright programmatic capture |
