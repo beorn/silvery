@@ -53,7 +53,7 @@ These are all MIT-licensed and part of the same development effort:
 
 - 45+ components — Box, Text, SelectList, VirtualList, CommandPalette, TreeView, Table, Form, and more
 - 23 color palettes with semantic tokens and WCAG-aware contrast
-- [98.9% of Ink's test suite](/guide/silvery-vs-ink#ink-test-suite-compatibility) passes via the compatibility layer
+- [~99% of Ink 7.0's test suite (918+/931)](/guide/silvery-vs-ink#compatibility-at-a-glance) passes via the compatibility layer
 - Runs on Bun, Node.js 23.6+, and Deno
 
 Silvery is a good fit for interactive, keyboard-heavy terminal apps with large or responsive UIs. For simpler CLIs, output-only tools, or apps that rebuild the full screen on every update, [Ink](https://github.com/vadimdemedes/ink) is a solid choice with a bigger ecosystem. If you don't want React or TypeScript, frameworks in Go, Python, and Rust may be a better fit.

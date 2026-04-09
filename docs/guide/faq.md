@@ -5,11 +5,11 @@ faq:
   - q: "What is Silvery?"
     a: "Silvery is a React-based framework for building terminal user interfaces (TUIs). It provides 45+ components, incremental rendering with per-node dirty tracking, responsive layout via useBoxRect(), and full support for modern terminal protocols. It works with Bun, Node.js (23.6+), and Deno."
   - q: "How does Silvery compare to Ink?"
-    a: "Both use React for terminal UIs. Silvery's key differences are layout-first rendering (components know their size during render), incremental updates (100x faster for typical interactions), a larger component library (45+ vs ~10), and comprehensive terminal protocol support (Kitty keyboard, SGR mouse, graphics, synchronized output). Ink has a larger ecosystem and is faster for full tree re-renders."
+    a: "Both use React for terminal UIs. Silvery's key differences are atomic layout-first rendering (components know their size during render, no two-pass flash), 2.5-5.2x faster updates on mounted workloads, bundle-parity with Ink+Yoga (114.9 KB vs 116.6 KB gzipped), a larger component library (45+ vs ~10), and comprehensive terminal protocol support (Kitty keyboard, SGR mouse, graphics, synchronized output). Ink has a larger ecosystem and is the established standard."
   - q: "Is Silvery compatible with existing Ink code?"
-    a: "Yes. Silvery provides a compatibility layer via silvery/ink and silvery/chalk that passes 98.9% of Ink's test suite. Most Ink code works with import path changes. See the migration guide for details."
+    a: "Yes. Silvery provides a compatibility layer via silvery/ink and silvery/chalk that passes ~99% of Ink 7.0's test suite (918+/931 tests). Most Ink code works with import path changes. See the migration guide for details."
   - q: "How fast is Silvery compared to Ink?"
-    a: "For typical interactive updates (cursor move in a 1000-node tree), Silvery takes 169 microseconds vs Ink's 20.7 milliseconds — over 100x faster. Full tree re-renders are 30x slower because Silvery's 5-phase pipeline has overhead, but this scenario rarely occurs in interactive apps. Benchmarked on Apple M1 Max, Bun 1.3.9."
+    a: "Silvery wins all 16 benchmark scenarios vs Ink 7.0 on mounted workloads. The canonical numbers: mounted cursor move 2.56x, mounted kanban single change 3.36x, memo'd 100-item toggle 4.59x, memo'd 500-item toggle 5.15x, memo'd kanban card edit 3.75x. The cell-level output phase also emits 28-192x less output than full redraw on incremental updates. Reproduce with bun run bench."
   - q: "What components does Silvery include?"
     a: "45+ components across layout (Box, SplitView, Divider), input (TextInput, TextArea, SelectList, CommandPalette, Form), display (Text, Badge, Spinner, ProgressBar, Table, Tabs, Toast), navigation (TreeView, ListView, VirtualList, Breadcrumb), and containers (Screen, ModalDialog, ScrollbackView). See the component catalog for the full list."
   - q: "Does Silvery work with Node.js, Bun, and Deno?"
@@ -48,16 +48,18 @@ If you know React, you know Silvery -- the core API (`Box`, `Text`, `useInput`, 
 
 Both use React for terminal UIs. Silvery differs in several key ways:
 
-- **Layout-first rendering** -- components know their size during render via `useBoxRect()`, enabling responsive layouts without prop drilling or post-render effects
-- **Incremental updates** -- per-node dirty tracking makes typical interactive updates 100x faster (169 us vs 20.7 ms for a cursor move in 1000 nodes)
-- **Larger component library** -- 45+ components (vs ~10 in Ink), including VirtualList, CommandPalette, TreeView, SplitView, Table, and Form
-- **Terminal protocol support** -- Kitty keyboard, SGR mouse, synchronized output, Sixel/Kitty graphics, clipboard, and more
+- **Atomic layout-first rendering** — layout runs before content render, so components know their size during render via `useBoxRect()`. No two-pass flash, no components rendering at `width: 0`, no flicker cascade. This is the single most important architectural difference — see [Silvery vs Ink](/guide/silvery-vs-ink#the-atomicity-story).
+- **2.5–5.2× faster on mounted workloads** — wins all 16 benchmark scenarios vs Ink 7.0. Cell-level output phase emits 28–192× less output than full redraw on incremental updates.
+- **Bundle parity with Ink+Yoga** — 114.9 KB gzipped runtime vs Ink+Yoga's 116.6 KB. Pure TypeScript, zero WASM, zero native dependencies.
+- **Larger component library** — 45+ components (vs ~10 in Ink), including VirtualList, CommandPalette, TreeView, SplitView, Table, and Form
+- **Terminal protocol support** — Kitty keyboard, SGR mouse, synchronized output (DEC 2026), Sixel/Kitty graphics, clipboard, and more
+- **Dynamic inline scrollback** — live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F works natively.
 
-Ink has a larger ecosystem (~1.3M weekly downloads, 50+ community components) and is faster for full tree re-renders. For a detailed breakdown, see [Silvery vs Ink](/guide/silvery-vs-ink).
+Ink has a larger ecosystem (~1.3M weekly downloads, 50+ community components) and is the established standard. For a detailed breakdown, see [Silvery vs Ink](/guide/silvery-vs-ink).
 
 ## Is Silvery compatible with existing Ink code?
 
-Yes. Silvery provides compatibility layers via `silvery/ink` and `silvery/chalk` that pass 98.9% of Ink's test suite. Most Ink code works by changing import paths:
+Yes. Silvery provides compatibility layers via `silvery/ink` and `silvery/chalk` that pass ~99% of Ink 7.0's test suite (918+/931 tests). Most Ink code works by changing import paths:
 
 ```ts
 // Before
@@ -73,18 +75,19 @@ For new code, use Silvery's native APIs to take advantage of responsive layout a
 
 ## How fast is Silvery compared to Ink?
 
-For the scenario that matters most -- a user pressing a key in a running application -- Silvery is over 100x faster:
+Silvery wins all 16 benchmark scenarios vs Ink 7.0 on mounted workloads — the scenarios that matter for interactive apps. Both frameworks keep a mounted app and call `rerender()`.
 
-| Scenario                         | Silvery    | Ink         |
-| -------------------------------- | ---------- | ----------- |
-| **Typical interactive update**   | **169 us** | **20.7 ms** |
-| Cold render (1 component)        | 165 us     | 271 us      |
-| Layout (50-node kanban)          | 57 us      | 88 us       |
-| Full tree re-render (1000 nodes) | 630 ms     | 20.7 ms     |
+| Scenario                            | Silvery advantage |
+| ----------------------------------- | ----------------- |
+| Mounted cursor move 100-item        | **2.56×**         |
+| Mounted kanban single text change   | **3.36×**         |
+| Memo'd 100-item single toggle       | **4.59×**         |
+| Memo'd 500-item single toggle       | **5.15×**         |
+| Memo'd kanban 5×20 single card edit | **3.75×**         |
 
-_Apple M1 Max, 64 GB RAM, Bun 1.3.9, Feb 2026. Reproduce: `bun run bench:compare`_
+Beyond CPU time, Silvery's cell-level output phase emits **28–192× less output** to the terminal than a full redraw on incremental updates. This is a raw bytes-to-terminal measurement, not a CPU benchmark — tmux, SSH, screen recorders, and tiling window managers all benefit directly.
 
-Full tree re-renders are slower in Silvery because its 5-phase pipeline (measure, layout, content, diff, output) has overhead. But this scenario -- replacing the entire root element -- rarely occurs in interactive apps. See the [benchmark methodology](/guide/silvery-vs-ink#benchmark-methodology) for details.
+Reproduce with `bun run bench`. See the [benchmark methodology](/guide/silvery-vs-ink#benchmark-methodology) for details.
 
 ## What components does Silvery include?
 
@@ -207,7 +210,7 @@ Both modes use incremental rendering for efficient updates. The mode is set at s
 Three steps:
 
 1. **Swap imports** -- replace `ink` with `silvery/ink` and `chalk` with `silvery/chalk`
-2. **Run your tests** -- 98.9% of Ink's test suite passes with the compatibility layer
+2. **Run your tests** — ~99% of Ink 7.0's test suite (918+/931) passes with the compatibility layer
 3. **Adopt native APIs gradually** -- use `useBoxRect()` for responsive layouts, replace manual key handlers with `SelectList`, add themes with semantic tokens
 
 The compatibility layer is a bridge, not a destination. New code should use Silvery's native APIs to get the full benefit of layout-first rendering and the component library.

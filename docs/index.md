@@ -30,8 +30,8 @@ head:
 
 hero:
   name: "Silvery"
-  text: "Polished Terminal UIs in React"
-  tagline: "Responsive layouts, scrollable containers, 100x+ faster incremental updates, and full support for modern terminal capabilities. 45+ components from TextInput to VirtualList. Pure TypeScript, no WASM."
+  text: "React for modern terminal apps"
+  tagline: "Atomic rendering pipeline: no flicker, no component dropout, no two-pass flash. 2.5–5.2× faster than Ink 7.0 on mounted workloads. 99% Ink-compatible. Bundle parity with Ink+Yoga. Pure TypeScript, no WASM."
   actions:
     - theme: brand
       text: Get Started
@@ -49,13 +49,15 @@ features:
     link: /guide/silvery-vs-ink
     linkText: Ink compatibility guide
   - title: Pure TypeScript
-    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. No memory leaks in long-running sessions."
-  - title: 100x+ Faster Updates
-    details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. Typical interactive updates in ~169us for 1000 nodes."
+    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. 114.9 KB gzipped — parity with Ink+Yoga at 116.6 KB."
+  - title: 2.5–5.2× Faster Updates
+    details: "Wins all 16 benchmark scenarios vs Ink 7.0 on mounted workloads. Per-node dirty tracking with 7 independent flags. Only changed cells emit to the terminal. Incremental output is 28-192× smaller than full redraw."
     link: /guide/silvery-vs-ink#performance
     linkText: See benchmarks
-  - title: Responsive Layout
-    details: 'Container queries for terminals — components know their own size at render time via useBoxRect(). No prop drilling, no measure-then-rerender flicker. Full CSS Flexbox via Flexily (pure JS, Yoga-compatible). Native scrollable containers with overflow="scroll".'
+  - title: Atomic Rendering
+    details: "Layout runs before render, so components know their own dimensions on first pass via useBoxRect() — no two-pass flash. Frame emission wrapped in synchronized output (DEC 2026). No flicker, no component dropout on scroll, no half-updated frames."
+    link: /guide/silvery-vs-ink
+    linkText: Architecture
   - title: 45+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
@@ -114,10 +116,12 @@ vp silvery examples
 
 <div class="features-list">
 
-- **Responsive layout** -- `useBoxRect()` returns actual dimensions during render. No prop drilling, no post-render effects.
-- **Scrollable containers** -- `overflow="scroll"` with `scrollTo` just works. No manual virtualization.
-- **Incremental rendering** -- Per-node dirty tracking. Only changed nodes re-render. Cell-level ANSI-aware compositing.
-- **Pure TypeScript** -- No WASM, no C++, no native dependencies. ~177 KB gzipped all-in. Runs on Node, Bun, and Deno.
+- **Atomic layout-first pipeline** -- Layout runs before content render. `useBoxRect()` returns real dimensions on the first pass. No two-pass flash, no components rendering at `width: 0`, no flicker cascade.
+- **Cell-level buffer + diff** -- 2D grid representation, per-cell dirty tracking, relative cursor addressing. Typical interactive updates emit 28-192× less output than full redraw.
+- **Synchronized frame output** -- Every frame wrapped in DEC mode 2026 bracketing. Terminal either sees old frame or new frame, never a half-drawn mixture. No tearing, no stutter.
+- **Scrollable containers** -- `overflow="scroll"` with `scrollTo` works natively. No manual virtualization.
+- **Dynamic inline scrollback** -- Live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F works natively. The thing Claude Code spent six months trying to retrofit into Ink.
+- **Pure TypeScript** -- No WASM, no C++, no native dependencies. Runtime bundle is 114.9 KB gzipped — **parity with Ink+Yoga (116.6 KB)**. Runs on Node, Bun, and Deno.
 
 </div>
 

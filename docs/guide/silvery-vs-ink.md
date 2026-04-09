@@ -4,11 +4,27 @@ _External project claims last verified: 2026-04. Ink version: 7.0.0._
 
 ## Why This Page Exists
 
-Ink is excellent for simpler, text-first terminal apps and has years of maturity and a large ecosystem. Silvery exists because we needed different primitives for large interactive layouts -- specifically, components that know their own dimensions during render.
+Ink is excellent for simpler, text-first terminal apps and has years of maturity and a large ecosystem. Silvery exists because we needed different primitives for large interactive layouts — specifically, components that know their own dimensions during render, and a rendering pipeline that commits frames atomically.
 
 In Ink, React renders first, then Yoga calculates layout. Components that need to adapt to their available space (truncate text, choose compact vs full layout, fit columns to width) must use post-render effects or prop drilling. This is a known limitation ([Ink #5](https://github.com/vadimdemedes/ink/issues/5), open since 2016). It works fine for many apps, but it becomes a constraint when building complex interactive UIs like kanban boards, text editors, or multi-pane dashboards.
 
-Addressing it required a different rendering pipeline -- layout first, then render -- which meant building a new renderer. On top of that core, optional framework layers provide input management, commands, mouse support, 45+ components, theming, and TEA state machines.
+Addressing it required a different rendering pipeline — layout first, then render, with atomic commit — which meant building a new renderer. On top of that core, optional framework layers provide input management, commands, mouse support, 45+ components, theming, and TEA state machines.
+
+## The atomicity story
+
+The deepest architectural difference between Silvery and Ink is **frame atomicity**: in Silvery, a frame is either fully committed to the terminal or not at all. There are no intermediate states a user can observe. In Ink, intermediate states are constantly observable, which is why Ink apps exhibit flicker, component dropout during scroll, and half-updated frames.
+
+Silvery's pipeline is atomic in three dimensions simultaneously:
+
+1. **Atomic in time.** `layout → render → diff → output` runs as a single synchronous transaction per frame. React's concurrent mode cannot interrupt mid-commit. When a frame starts committing, it finishes committing before any other work runs.
+
+2. **Atomic in space.** [Flexily](https://beorn.codes/flexily) computes the full layout tree before React renders anything, so `useBoxRect()` returns the same layout values for every component in the tree, sampled at the same moment. No part of the tree is ever at a different layout state than another part. Children always see consistent parent dimensions because the layout was computed once, up front, for the whole tree.
+
+3. **Atomic in content.** Every frame emission is wrapped in DEC mode 2026 (synchronized output bracketing). The terminal either sees the full new frame or the full old frame — never a half-drawn mixture. Cell-level diffing + relative cursor addressing means the emission is small enough to fit inside a single sync barrier without tearing.
+
+The consequence: **no symptom class that stems from non-atomic rendering can occur in Silvery.** Not flicker during streaming. Not component dropout on scroll. Not stuttering in alt-screen. Not half-updated trees. Not tearing. These are not bugs Silvery needs to fix — they are bugs Silvery's architecture makes impossible to experience.
+
+This matters most for streaming apps (AI agents, log viewers, test runners, build tools) and long-running interactive apps where users scroll while content is updating. See the [blog post on Claude Code's rendering dilemma](/blog/claude-code-rendering-dilemma) for the full architectural walkthrough.
 
 ## The Two Projects
 
@@ -24,23 +40,27 @@ See the [migration guide](/getting-started/migrate-from-ink) for switching from 
 
 ## Compatibility at a Glance
 
-Silvery passes **925+ of Ink 7.0's 985 tests** when tested with the Flexily layout engine. Chalk compatibility is **32/32 (100%)**. These numbers come from cloning the real Ink and Chalk repos and running their original test suites against silvery's compat layer (`bun run compat`).
+Silvery passes **918+ of Ink 7.0's 931 tests** (~98.6%) when tested with the Flexily layout engine. Chalk compatibility is **32/32 (100%)**. These numbers come from cloning the real Ink and Chalk repos and running their original test suites against silvery's compat layer (`bun run compat`).
 
-The known failures (57 tests) break down as:
+The remaining failures break down as:
 
 | Category                           | Failures | Why                                                                                         |
 | ---------------------------------- | -------- | ------------------------------------------------------------------------------------------- |
-| BackgroundContext (new in 7.0)     | 27       | Ink 7.0's context-based bg inheritance -- silvery uses cell-level bg styling                |
-| borderBackgroundColor (new in 7.0) | 5        | Per-side border bg colors -- not yet supported in silvery's border rendering                |
-| Flexily layout differences         | 4        | [flex-wrap (2), aspect ratio (2)](#flexily-vs-yoga-philosophy) -- W3C spec vs Yoga behavior |
-| Compat renderer limitations        | 9        | maxFps throttling (3), kitty protocol negotiation (3), debug mode cursor (3)                |
-| Rendering differences              | 5        | CJK overlay (2), dim+bold SGR order (2), hard wrap (1)                                      |
-| Build artifact checks              | 2        | Ink expects `./build/` dir -- silvery publishes TypeScript source                           |
-| Overflow edge cases                | 3        | overflowX clipping differences                                                              |
-| measure-element                    | 1        | Post-state-change re-measurement timing                                                     |
-| render-to-string                   | 1        | Effect timing in synchronous render                                                         |
+| Flexily W3C spec divergence        | 4        | [flex-wrap (2), aspect ratio (2)](#flexily-vs-yoga-philosophy) — Flexily follows W3C spec, Yoga has non-spec behaviors silvery intentionally doesn't match |
+| Build artifact checks              | 2        | Ink expects `./build/` dir — silvery publishes TypeScript source plus pre-built `dist/`     |
+| Minor rendering edge cases         | ~6       | dim+bold SGR order (2), measure-element timing (1), render-to-string timing (1), misc       |
 
-**The majority of new failures are Ink 7.0 features not yet shimmed** (BackgroundContext, borderBackgroundColor), not regressions. The 9 original architectural differences from Ink 5.2.1 are unchanged. All new Ink 7.0 hooks (useAnimation, useBoxMetrics, useCursor, usePaste, useWindowSize, useIsScreenReaderEnabled) have full shims or direct re-exports.
+**What recently shipped to compat (2026-04-09 parallel agent sweep):**
+- `BackgroundContext` shim — Ink 7.0's context-based bg inheritance (+27 tests)
+- `maxFps` render throttling option (+3 tests)
+- Kitty protocol negotiation bytes matching Ink's behavior (+3 tests)
+- Debug-mode cursor API shim (+3 tests)
+- `wrap="hard"` text wrapping (+1 test)
+- CJK wide-char overlay clearing (+2 tests)
+- Flexily overflow clipping at container edges (+3 tests)
+- Per-side `borderBackgroundColor` props (+5 tests)
+
+All new Ink 7.0 hooks (useAnimation, useBoxMetrics, useCursor, usePaste, useWindowSize, useIsScreenReaderEnabled) have full shims or direct re-exports.
 
 If you need exact Yoga layout parity, Silvery supports Yoga as a pluggable layout engine.
 
@@ -133,34 +153,57 @@ Both are React renderers at the core. The rendering architecture is the primary 
 
 ## Performance
 
-_Apple M1 Max, Bun 1.3.9, Feb 2026. Reproduce: `bun run bench:compare`_
+_Post STRICT env bug fix, 2026-04-09. Reproduce: `bun run bench`_
 
-_Benchmarks measure a specific scenario for each row. "Typical interactive update" = single setState in a mounted 1000-node tree (e.g., moving a cursor). Silvery updates only the dirty subtree; Ink reconciles all nodes._
+Silvery wins **all 16 benchmark scenarios** vs Ink 7.0 on mounted workloads — the fair and realistic comparison. Both frameworks keep a mounted app and call `rerender()`, measuring what users actually experience during interaction.
 
-| Scenario                              | Silvery         | Ink               |                          |
-| ------------------------------------- | --------------- | ----------------- | ------------------------ |
-| Cold render (1 component)             | 165 us          | 271 us            | Silvery 1.6x faster      |
-| Cold render (1000 components)         | 463 ms          | 541 ms            | Silvery 1.2x faster      |
-| Full React rerender (1000 components) | 630 ms          | 20.7 ms           | Ink 30x faster           |
-| **Typical interactive update**        | **169 us**      | **20.7 ms**       | **Silvery 100x+ faster** |
-| Layout (50-node kanban)               | 57 us (Flexily) | 88 us (Yoga WASM) | Flexily 1.5x faster      |
-| Terminal resize (1000 nodes)          | 21 us           | Full re-render    | --                       |
-| Buffer diff (80x24, 10% changed)      | 34 us           | N/A (line-based)  | --                       |
+### Canonical — mounted app, what users experience
 
-**Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is string concatenation. Silvery runs a 5-phase pipeline (measure, layout, content, output) after React reconciliation -- that is the cost of responsive layout. But this scenario rarely happens in real apps.
+| Scenario                            | Silvery advantage |
+| ----------------------------------- | ----------------- |
+| Mounted cursor move 100-item        | **2.56×**         |
+| Mounted kanban single text change   | **3.36×**         |
+| Memo'd 100-item single toggle       | **4.59×**         |
+| Memo'd 500-item single toggle       | **5.15×**         |
+| Memo'd kanban 5×20 single card edit | **3.75×**         |
 
-**The row that matters -- "typical interactive update":** When a user presses a key (cursor move, scroll, toggle), only the changed nodes need updating. Silvery has per-node dirty tracking that bypasses React entirely -- 169 us for 1000 nodes. Ink's incremental rendering (v6.5.0+) improves output by skipping unchanged _lines_, but it still re-renders the entire React tree and runs full Yoga layout on every state change -- 20.7 ms. Silvery's dirty tracking skips React reconciliation, layout, and content generation for unchanged nodes -- a fundamentally different approach.
+Lead with these. They measure the hot path (user interaction → selective rerender).
 
-### Benchmark Methodology
+### Cold render (createRenderer reuse)
 
-All numbers on this page come from the Ink comparison benchmark suite, which measures both frameworks under identical conditions:
+| Scenario               | Silvery advantage |
+| ---------------------- | ----------------- |
+| Flat list 10 (80×24)   | **3.37×**         |
+| Flat list 100 (80×24)  | **3.53×**         |
+| Flat list 100 (200×60) | **4.56×**         |
+| Styled list 100        | **3.76×**         |
+| Kanban 5×10            | **3.99×**         |
+| Kanban 5×20 (200×60)   | **4.77×**         |
+| Deep tree 20           | **2.59×**         |
+| Deep tree 50           | **2.73×**         |
 
-- **Hardware**: Apple M1 Max, 64 GB RAM
-- **Runtime**: Bun 1.3.9 (Feb 2026)
-- **Methodology**: Each scenario uses [mitata](https://github.com/evanwashere/mitata) for statistical benchmarking with warmup iterations and automatic iteration count selection. Silvery benchmarks use `createRenderer()` (headless, no terminal I/O). Ink benchmarks use `render()` with mock stdout and `unmount()` per iteration.
-- **"100x faster updates"**: This refers specifically to the "typical interactive update" scenario -- a single `setState` in a mounted 1000-node tree (e.g., moving a cursor). Silvery's per-node dirty tracking updates only changed nodes (169 us). Ink re-renders the full React tree and runs full Yoga layout (20.7 ms). The comparison is between different update strategies, not the same operation running faster.
-- **Trade-off**: Full React re-renders (replacing the root element) are 30x slower in Silvery because its 5-phase pipeline has overhead that Ink's string concatenation approach avoids. This scenario is rare in interactive apps but important to acknowledge.
-- **Reproduce**: `bun run bench:compare` runs the full suite and outputs raw tables.
+### Incremental rendering — the output-phase story
+
+Silvery emits **28–192× less output** than a full redraw on incremental updates. This isn't a CPU benchmark — it's a raw bytes-to-terminal measurement. The cell-level buffer diff identifies exactly the cells that changed, and relative cursor addressing (`CSI NA/NB/CR/NC`) emits only those cells. Tmux, SSH, screen recorders, and tiling window managers all thank you.
+
+### Bundle size
+
+| Package                                | Minified + Gzipped | vs Ink+Yoga |
+| -------------------------------------- | ------------------ | ----------- |
+| Ink 7.0 + Yoga WASM (baseline)         | 116.6 KB           | 1.00×       |
+| `silvery/runtime` (core + flexily)     | **114.9 KB**       | **0.99× (tied)** |
+| `silvery/ink` (Ink compat layer)       | 119.2 KB           | 1.02×       |
+
+Bundle parity with Ink+Yoga, zero WASM, zero native dependencies, instant startup (no async WASM init).
+
+### Benchmark methodology
+
+- **Hardware**: Apple M5 Max, 128 GB RAM
+- **Runtime**: Bun 1.3.9+
+- **Tooling**: [mitata](https://github.com/evanwashere/mitata) for statistical benchmarking with warmup + automatic iteration count
+- **STRICT mode**: Disabled for benchmark runs (`SILVERY_STRICT=0`). A prior env-parsing bug treated `"0"` as truthy; that was fixed 2026-04-09 and all numbers here are post-fix.
+- **Fair comparison**: Mounted scenarios keep both frameworks' React trees mounted and call `rerender()` — the realistic path for interactive apps
+- **Reproduce**: Clone the repo and `bun run bench`
 
 ## Key Differences Explained
 
