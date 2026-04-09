@@ -1,6 +1,6 @@
 # Ink Compat Layer Audit
 
-> **Note**: This audit was performed when compat was at an earlier stage. Current status: 98.9% (804/813). See ANALYSIS.md for the up-to-date analysis and RESULTS.md for current numbers.
+> **Note**: This audit was performed when compat was at an earlier stage. Current status: Ink 7.0.0 (925+/985, 57 known failures). See ANALYSIS.md for the up-to-date analysis and RESULTS.md for current numbers.
 
 ## Executive Summary
 
