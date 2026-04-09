@@ -1,6 +1,6 @@
 # Silvery vs Ink
 
-_External project claims last verified: 2026-03._
+_External project claims last verified: 2026-04. Ink version: 7.0.0._
 
 ## Why This Page Exists
 
@@ -24,18 +24,25 @@ See the [migration guide](/getting-started/migrate-from-ink) for switching from 
 
 ## Compatibility at a Glance
 
-Silvery passes **804/813 of Ink's own test suite (98.9%)** when tested with the Flexily layout engine. Chalk compatibility is **32/32 (100%)**. These numbers come from cloning the real Ink and Chalk repos and running their original test suites against silvery's compat layer (`bun run compat`).
+Silvery passes **925+ of Ink 7.0's 985 tests** when tested with the Flexily layout engine. Chalk compatibility is **32/32 (100%)**. These numbers come from cloning the real Ink and Chalk repos and running their original test suites against silvery's compat layer (`bun run compat`).
 
-The 9 remaining Ink test failures break down as:
+The known failures (57 tests) break down as:
 
-| Category                   | Failures | Why                                                                                        |
-| -------------------------- | -------- | ------------------------------------------------------------------------------------------ |
-| Flexily layout differences | 4        | [flex-wrap (2), aspect ratio (2)](#flexily-vs-yoga-philosophy) — W3C spec vs Yoga behavior |
-| Overflow edge cases        | 3        | overflowX clipping differences                                                             |
-| measure-element            | 1        | Post-state-change re-measurement timing                                                    |
-| render-to-string           | 1        | Effect timing in synchronous render                                                        |
+| Category                           | Failures | Why                                                                                        |
+| ---------------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| BackgroundContext (new in 7.0)     | 27       | Ink 7.0's context-based bg inheritance -- silvery uses cell-level bg styling               |
+| borderBackgroundColor (new in 7.0) | 5        | Per-side border bg colors -- not yet supported in silvery's border rendering               |
+| Flexily layout differences         | 4        | [flex-wrap (2), aspect ratio (2)](#flexily-vs-yoga-philosophy) -- W3C spec vs Yoga behavior|
+| Compat renderer limitations        | 9        | maxFps throttling (3), kitty protocol negotiation (3), debug mode cursor (3)               |
+| Rendering differences              | 5        | CJK overlay (2), dim+bold SGR order (2), hard wrap (1)                                     |
+| Build artifact checks              | 2        | Ink expects `./build/` dir -- silvery publishes TypeScript source                          |
+| Overflow edge cases                | 3        | overflowX clipping differences                                                             |
+| measure-element                    | 1        | Post-state-change re-measurement timing                                                    |
+| render-to-string                   | 1        | Effect timing in synchronous render                                                        |
 
-**These are edge cases, not migration blockers.** The layout differences come from Flexily following the W3C CSS spec where Yoga diverges — if you prefer browser-standard behavior, these are features, not bugs. If you need exact Yoga layout parity, Silvery supports Yoga as a pluggable layout engine.
+**The majority of new failures are Ink 7.0 features not yet shimmed** (BackgroundContext, borderBackgroundColor), not regressions. The 9 original architectural differences from Ink 5.2.1 are unchanged. All new Ink 7.0 hooks (useAnimation, useBoxMetrics, useCursor, usePaste, useWindowSize, useIsScreenReaderEnabled) have full shims or direct re-exports.
+
+If you need exact Yoga layout parity, Silvery supports Yoga as a pluggable layout engine.
 
 The compat layer is built as thin adapters (~50 lines each) that bridge Ink's APIs to silvery-native systems. `withInk()` composes `withInkCursor()` + `withInkFocus()` — you can use them individually or drop them as you adopt silvery-native APIs. See [compatibility reference](/reference/compatibility) for the full API mapping and [compat layer architecture](/reference/compatibility#compat-layer-architecture) for how the bridge works.
 
@@ -56,6 +63,9 @@ Silvery and Ink share the same core ideas -- the migration path is intentionally
 - **Kitty keyboard protocol** -- Both support extended modifiers and key event types
 - **`renderToString`** -- Both support synchronous string rendering without terminal setup
 - **Cursor positioning** -- Both provide `useCursor()` for IME support
+- **Animation** -- Both provide `useAnimation()` for frame-based animations (Ink 7.0+)
+- **Paste events** -- Both provide `usePaste()` with bracketed paste mode (Ink 7.0+)
+- **Window size** -- Both provide `useWindowSize()` for reactive terminal dimensions (Ink 7.0+)
 - **Screen reader support** -- Ink has ARIA roles/states; Silvery has basic support
 - **Node.js streams** -- Both render to stdout, read from stdin
 
@@ -69,8 +79,8 @@ Both are React renderers at the core. The rendering architecture is the primary 
 
 | Feature                   | Silvery                                                                                                | Ink                                                                                                                                              |
 | ------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Responsive layout**     | `useContentRect()` / `useScreenRect()` -- synchronous, available during render                         | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure (added on master, post-v6.8.0; not yet released as of 2026-03) |
-| **Incremental rendering** | Per-node dirty tracking with 7 independent flags; cell-level buffer diff                               | Line-based diff (opt-in since v6.5.0); unchanged lines skipped, but any change rewrites entire line                                              |
+| **Responsive layout**     | `useContentRect()` / `useScreenRect()` -- synchronous, available during render                         | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure (released in v7.0.0)                                           |
+| **Incremental rendering** | Per-node dirty tracking with 7 independent flags; cell-level buffer diff                               | Line-based diff (opt-in `incrementalRendering` option in v7.0.0); unchanged lines skipped, but any change rewrites entire line                    |
 | **ANSI compositing**      | Cell-level buffer with proper style stacking; ANSI sequences composed, not passed through              | String concatenation; ANSI sequences emitted inline, no compositing layer                                                                        |
 | **Scrollable containers** | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping                      | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                                        |
 | **Dynamic scrollback**    | `useScrollback` -- items graduate from interactive area to terminal history (like Claude Code needs)   | None -- all items must stay in the render tree                                                                                                   |
@@ -82,7 +92,7 @@ Both are React renderers at the core. The rendering architecture is the primary 
 | **Memory profile**        | Constant -- Flexily uses normal JS GC                                                                  | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953))       |
 | **Layout caching**        | Flexily fingerprints + caches unchanged subtrees                                                       | Full tree recomputation on every layout pass                                                                                                     |
 | **Synchronized output**   | DEC synchronized output (mode 2026) for flicker-free rendering in tmux/Zellij                          | None                                                                                                                                             |
-| **Bracketed paste**       | `usePaste` hook with automatic mode toggling                                                           | `usePaste` hook (added on master, post-v6.8.0, as of 2026-03)                                                                                    |
+| **Bracketed paste**       | `usePaste` hook with automatic mode toggling                                                           | `usePaste` hook (released in v7.0.0)                                                                                                              |
 | **Initialization**        | Synchronous -- pure TypeScript import                                                                  | Async WASM loading                                                                                                                               |
 
 ### Interaction Model
@@ -116,7 +126,7 @@ Both are React renderers at the core. The rendering architecture is the primary 
 | **Console capture**     | Built-in `<Console />` component (composable, embeddable)                                                                                                 | `patchConsole()` (intercept-only)                                                 |
 | **Resource cleanup**    | `using` / Disposable -- automatic teardown                                                                                                                | Manual `unmount()`                                                                |
 | **Stream helpers**      | AsyncIterable: merge, map, filter, throttle, debounce                                                                                                     | None                                                                              |
-| **Animation**           | `useAnimation`, easing functions, `useAnimatedTransition`                                                                                                 | None (manual `setInterval`)                                                       |
+| **Animation**           | `useAnimation`, easing functions, `useAnimatedTransition`                                                                                                 | `useAnimation` with frame/time/delta (v7.0.0) -- no easing or transitions         |
 | **Non-TTY detection**   | `isTTY()`, `resolveNonTTYMode()`, `renderString()` fallback                                                                                               | Terminal size detection for piped processes (v6.7.0)                              |
 | **Terminal inspection** | `SILVERY_DEV=1` inspector with tree visualization, dirty flags, focus path                                                                                | React DevTools integration                                                        |
 | **Community**           | New                                                                                                                                                       | Mature ecosystem, ~1.3M npm weekly downloads                                      |

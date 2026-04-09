@@ -56,13 +56,32 @@ async function patchFailingMarks(filePath: string, testNames: string[]) {
 async function addFailingMarks(filePath: string, testNames: string[]) {
   let content = await Bun.file(filePath).text()
   for (const name of testNames) {
-    // Match: test('name' or test("name" — but NOT test.failing('name' (already marked)
-    const patternSQ = `test('${name}'`
-    const patternDQ = `test("${name}"`
-    if (content.includes(`test.failing('${name}'`) || content.includes(`test.failing("${name}"`)) continue
-    content = content.replace(patternSQ, `test.failing('${name}'`)
-    content = content.replace(patternDQ, `test.failing("${name}"`)
+    // Skip if already marked as failing (any variant)
+    if (content.includes(`.failing('${name}'`) || content.includes(`.failing("${name}"`)) continue
+
+    // Escape special regex characters in the test name
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+    // Match test('name', test("name", test.serial('name', test.serial("name",
+    // and multi-line variants where test.serial(\n\t'name' or test(\n\t'name'
+    // Inserts .failing before the opening paren:
+    //   test('name' -> test.failing('name'
+    //   test.serial('name' -> test.serial.failing('name'
+    //   test.serial(\n\t'name' -> test.serial.failing(\n\t'name'
+    const regex = new RegExp(
+      `(test(?:\\.serial)?)\\((\\s*)(["'])${escaped}\\3`,
+      "g",
+    )
+    content = content.replace(regex, "$1.failing($2$3" + name + "$3")
   }
+  await Bun.write(filePath, content)
+}
+
+/** Replace a literal string in a file (for dynamic test declarations that can't use addFailingMarks). */
+async function patchDynamicTestLoop(filePath: string, find: string, replace: string) {
+  let content = await Bun.file(filePath).text()
+  if (!content.includes(find)) return
+  content = content.replace(find, replace)
   await Bun.write(filePath, content)
 }
 
@@ -259,11 +278,14 @@ await initInkCompat();
     "text with dim+bold - concurrent",
   ])
   // Ink 7.0 cursor: debug mode interaction with cursor visibility.
+  // Some cursor tests use dynamic test names from a loop (testCase.testName),
+  // so addFailingMarks can't match them. Mark the loop's test.serial as failing.
   await addFailingMarks(join(INK_DIR, "test/cursor.tsx"), [
-    "cursor remains visible after useStdout().write()",
     "debug mode: useStderr().write() replays latest frame without empty writes",
     "debug mode: useStderr().write() replays rerendered frame",
   ])
+  // Mark the dynamic hookWriteCases loop as failing (cursor remains visible tests)
+  await patchDynamicTestLoop(join(INK_DIR, "test/cursor.tsx"), "test.serial(testCase.testName,", "test.serial.failing(testCase.testName,")
   // Ink 7.0 components: hard wrap text rendering difference.
   await addFailingMarks(join(INK_DIR, "test/components.tsx"), [
     "hard wrap text",
