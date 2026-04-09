@@ -21,6 +21,12 @@ The biggest differences at a glance:
 - **Multi-backend test matrix** — [Termless](https://termless.dev) runs tests across 10+ real terminal parsers (xterm.js, vt100, Ghostty, Kitty, Alacritty, ...). Ink has no equivalent.
 - **Pure TypeScript, no WASM** — synchronous import, normal GC, zero native dependencies.
 
+**Where Ink is stronger:**
+
+- **Community** — ~1.3M npm weekly downloads, 50+ third-party packages, used in production since 2017. Silvery is newer and has a smaller community.
+- **Accessibility** — Ink has `aria-role`, `aria-label`, `aria-state`, and `useIsScreenReaderEnabled`. Silvery has basic support.
+- **Documentation** — Ink's README and community examples are extensive. Silvery's docs site is growing.
+
 **What's the same:** React 19, `Box`/`Text`/`useInput`, flexbox layout, `Static`, `useFocus`, `usePaste`, `useAnimation`, `useWindowSize`, Kitty keyboard, synchronized output (DEC 2026), alternate screen, concurrent mode, Suspense. Most Ink code works with an import change.
 
 ## Feature Matrix
