@@ -305,21 +305,29 @@ function SpatialFocusBoard() {
   useInput((input: string, key: Key) => {
     if (input === "q") return "exit"
 
-    if (key.upArrow || input === "k") {
-      setFocusedId((id) => navigate(id, "up", index))
-      return
-    }
-    if (key.downArrow || input === "j") {
-      setFocusedId((id) => navigate(id, "down", index))
-      return
-    }
-    if (key.leftArrow || input === "h") {
-      setFocusedId((id) => navigate(id, "left", index))
-      return
-    }
-    if (key.rightArrow || input === "l") {
-      setFocusedId((id) => navigate(id, "right", index))
-      return
+    // Use arrow keys OR hjkl — but not both for the same direction.
+    // Arrow keys take priority (key.upArrow etc. are set by the parser).
+    const hasArrow = key.upArrow || key.downArrow || key.leftArrow || key.rightArrow
+    const dir = key.upArrow
+      ? "up"
+      : key.downArrow
+        ? "down"
+        : key.leftArrow
+          ? "left"
+          : key.rightArrow
+            ? "right"
+            : !hasArrow && input === "k"
+              ? "up"
+              : !hasArrow && input === "j"
+                ? "down"
+                : !hasArrow && input === "h"
+                  ? "left"
+                  : !hasArrow && input === "l"
+                    ? "right"
+                    : null
+
+    if (dir) {
+      setFocusedId((id) => navigate(id, dir, index))
     }
   })
 
