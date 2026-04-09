@@ -80,6 +80,6 @@ See also: [Silvery vs Ink](/guide/silvery-vs-ink), [Silvery vs BubbleTea](/guide
 
 [Bjørn Stabell](https://beorn.codes) — entrepreneur and technologist based in the SF Bay Area. Building companies and developer tools since 2000.
 
-Currently building open-source infrastructure for the terminal ecosystem: [Silvery](https://silvery.dev), [terminfo.dev](https://terminfo.dev), [Termless](https://termless.dev), [Flexily](https://beorn.codes/flexily), and [Loggily](https://beorn.codes/loggily).
+Currently building AI products and open-source infrastructure for the terminal ecosystem: [Silvery](https://silvery.dev), [terminfo.dev](https://terminfo.dev), [Termless](https://termless.dev), [Flexily](https://beorn.codes/flexily), and [Loggily](https://beorn.codes/loggily).
 
 [beorn.codes](https://beorn.codes) · [GitHub](https://github.com/beorn) · [LinkedIn](https://linkedin.com/in/beorn) · [X](https://x.com/beorn)
