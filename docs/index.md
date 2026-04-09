@@ -56,8 +56,8 @@ features:
     linkText: See benchmarks
   - title: Responsive Layout &amp; Scrolling
     details: "Layout runs before render, so components know their size on first pass via useBoxRect(). That powers native scroll containers (overflow=scroll, no manual virtualization) AND atomic rendering — no two-pass flash, no flicker, no component dropout on scroll. Frames wrapped in DEC 2026 synchronized output."
-    link: /blog/claude-code-rendering-dilemma
-    linkText: Why atomic rendering matters
+    link: /guide/silvery-vs-ink#the-atomicity-story
+    linkText: How atomic rendering works
   - title: 45+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components

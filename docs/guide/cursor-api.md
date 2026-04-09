@@ -654,7 +654,7 @@ interface UseCursorOptions {
 
 ## Related Documentation
 
-- [useBoxRect](/api/use-content-rect) - Get component dimensions and position
+- [useBoxRect](/api/use-box-rect) - Get component dimensions and position
 - [Focus Hooks](/api/use-focus) - Manage focus state
 - [useInput](/api/use-input) - Handle keyboard input
 - [Input Limitations](/guide/input-limitations) - Terminal input constraints

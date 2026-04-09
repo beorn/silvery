@@ -24,7 +24,7 @@ Silvery's pipeline is atomic in three dimensions simultaneously:
 
 The consequence: **no symptom class that stems from non-atomic rendering can occur in Silvery.** Not flicker during streaming. Not component dropout on scroll. Not stuttering in alt-screen. Not half-updated trees. Not tearing. These are not bugs Silvery needs to fix — they are bugs Silvery's architecture makes impossible to experience.
 
-This matters most for streaming apps (AI agents, log viewers, test runners, build tools) and long-running interactive apps where users scroll while content is updating. See the [blog post on Claude Code's rendering dilemma](/blog/claude-code-rendering-dilemma) for the full architectural walkthrough.
+This matters most for streaming apps (AI agents, log viewers, test runners, build tools) and long-running interactive apps where users scroll while content is updating. The atomicity property is what eliminates flicker, component dropout, and tearing during scroll — symptoms that other React-for-terminal frameworks exhibit because their render pipelines violate one or more of the three atomicity dimensions.
 
 ## The Two Projects
 

@@ -93,7 +93,7 @@ function Panel() {
 If you're doing arithmetic with widths, you're fighting the layout engine instead of using it.
 :::
 
-→ [Layout engine](/guide/layout-engine) · [useBoxRect](/api/use-content-rect) · [Box](/api/box) · [Layout examples](/examples/layout)
+→ [Layout engine](/guide/layout-engine) · [useBoxRect](/api/use-box-rect) · [Box](/api/box) · [Layout examples](/examples/layout)
 
 ## 3. Let the Framework Scroll
 
