@@ -280,36 +280,49 @@ function renderTestMode(
   }
 
   /**
-   * Flush any deferred debug writes (queued before the first frame was ready).
-   * Called from writeFrame once lastOutput is available.
-   * @returns true if stdout writes were flushed (frame already included in output)
+   * Flush deferred debug writes that were queued before lastOutput was available.
+   *
+   * In Ink debug mode, useStdout().write() and useStderr().write() are called from
+   * effects which fire after the first render commits. Since we can't intercept the
+   * order, we queue these writes and flush them when the first frame is ready.
+   *
+   * For each pending write:
+   *   - stdout: emits a single write of `data + frame` (Ink's debug-mode writeToStdout
+   *     pattern: clear frame, write data, replay frame).
+   *   - stderr: emits `data` to stderr and `frame` to stdout as a separate replay
+   *     write (Ink's debug-mode writeToStderr pattern).
+   *
+   * Returns true if stdout writes were emitted so the caller can decide whether to
+   * still emit a baseline frame write. Stdout-target flushes already include the
+   * frame, so we suppress the baseline. Stderr-target flushes still need the
+   * baseline frame as a separate stdout write to match Ink's "render frame +
+   * replay-after-write" sequence.
    */
-  function flushPendingDebugWrites(): boolean {
-    if (pendingDebugWrites.length === 0) return false
+  function flushPendingDebugWrites(): { suppressFrame: boolean } {
+    if (pendingDebugWrites.length === 0) return { suppressFrame: false }
     const pending = pendingDebugWrites
     pendingDebugWrites = []
-    let hadStdoutWrites = false
+    let suppressFrame = false
     for (const { target, data } of pending) {
       // Append \n after lastOutput to match PTY behavior (frame always ends with newline).
       // processBuffer strips trailing newlines, but the real PTY/Ink output has them.
       const frameWithNewline = lastOutput.endsWith("\n") ? lastOutput : lastOutput + "\n"
       if (target === "stdout") {
+        // Ink writeToStdout(debug) writes `data + lastOutput` as a single chunk.
+        // The "render frame" emission is implicit in this concatenation, so we
+        // don't need to emit a separate frame write — suppress the baseline.
         stdout.write(data + frameWithNewline)
-        hadStdoutWrites = true
+        suppressFrame = true
       } else {
+        // Ink writeToStderr(debug) writes data to stderr, then writes lastOutput
+        // to stdout as a separate replay. We do not suppress the baseline frame
+        // — the test expects a render frame AND a replay frame on stdout.
         const stderrTarget = stderr ?? process.stderr
         stderrTarget.write(data)
-        try {
-          const wfn: any = (stderrTarget as any).write
-          const sout: any = stdout
-          require("node:fs").appendFileSync("/tmp/ink-flush.log",
-            `wrote stderr data=${JSON.stringify(data)} callCount=${wfn?.callCount} writes=${JSON.stringify((stderrTarget as any).getWrites?.() ?? null)} stdoutCalls=${(sout.write as any)?.callCount}\n`)
-        } catch (e) { try { require("node:fs").appendFileSync("/tmp/ink-flush.log", `err=${(e as Error).message}\n`) } catch {} }
         stdout.write(frameWithNewline)
-        hadStdoutWrites = true
       }
     }
-    return hadStdoutWrites
+    return { suppressFrame }
   }
 
   // Bridge component: uses silvery's useInput to forward Tab/Shift+Tab/Escape
@@ -445,13 +458,15 @@ function renderTestMode(
     }
 
     // Update lastOutput and flush deferred debug writes.
-    // When deferred writes were flushed, the frame is already included in the
-    // flush output (data + lastOutput), so skip the normal frame write to avoid
-    // duplicating it. This matches Ink's behavior where writeToStdout() clears
-    // the previous frame, writes data, then restores the frame.
+    // For stdout-target deferred writes, the flush emits `data + frame` as a
+    // single chunk so we suppress the baseline frame to avoid duplicating it.
+    // For stderr-target deferred writes, the flush emits data to stderr and a
+    // replay frame to stdout — but we still emit the baseline frame so stdout
+    // gets both a render-frame write and the replay write (matching Ink's
+    // debug-mode emission pattern).
     lastOutput = result
-    const hadDeferredFlush = flushPendingDebugWrites()
-    if (hadDeferredFlush) return
+    const { suppressFrame } = flushPendingDebugWrites()
+    if (suppressFrame) return
 
     // Cursor: only emit sequences when useCursor() is actively used.
     // Ink hides the cursor once at startup via cli-cursor, not per-frame.
