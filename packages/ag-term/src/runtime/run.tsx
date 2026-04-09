@@ -147,6 +147,10 @@ export interface RunOptions {
 export interface RunHandle {
   /** Current rendered text (no ANSI) */
   readonly text: string
+  /** Live reconciler root node (for locator queries) */
+  readonly root: import("@silvery/ag/types").AgNode
+  /** Current terminal buffer (cell-level access) */
+  readonly buffer: import("@silvery/ag-term/buffer").TerminalBuffer | null
   /** Wait until the app exits */
   waitUntilExit(): Promise<void>
   /** Unmount and cleanup */
@@ -372,6 +376,8 @@ function isTerm(obj: unknown): obj is Term {
 /** Wrap AppHandle as RunHandle (subset of the full handle). */
 function wrapHandle(handle: {
   readonly text: string
+  readonly root: import("@silvery/ag/types").AgNode
+  readonly buffer: import("@silvery/ag-term/buffer").TerminalBuffer | null
   waitUntilExit(): Promise<void>
   unmount(): void
   [Symbol.dispose](): void
@@ -380,6 +386,12 @@ function wrapHandle(handle: {
   return {
     get text() {
       return handle.text
+    },
+    get root() {
+      return handle.root
+    },
+    get buffer() {
+      return handle.buffer
     },
     waitUntilExit: () => handle.waitUntilExit(),
     unmount: () => handle.unmount(),

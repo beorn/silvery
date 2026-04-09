@@ -351,6 +351,10 @@ export interface AppRunOptions {
 export interface AppHandle<S> {
   /** Current rendered text (no ANSI) */
   readonly text: string
+  /** Live reconciler root node (for locator queries) */
+  readonly root: import("@silvery/ag/types").AgNode
+  /** Current terminal buffer (cell-level access) */
+  readonly buffer: import("@silvery/ag-term/buffer").TerminalBuffer | null
   /** Access to the Zustand store */
   readonly store: StoreApi<S>
   /** Wait until the app exits */
@@ -923,7 +927,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       getState: () => selectionState,
       subscribe: (listener) => {
         selectionListeners.add(listener)
-        return () => { selectionListeners.delete(listener) }
+        return () => {
+          selectionListeners.delete(listener)
+        }
       },
       setRange: (range) => {
         if (range === null) {
@@ -935,10 +941,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             { type: "start", col: range.anchor.col, row: range.anchor.row, source: "keyboard" },
             selectionState,
           )
-          const [s2] = terminalSelectionUpdate(
-            { type: "extend", col: range.head.col, row: range.head.row },
-            s1,
-          )
+          const [s2] = terminalSelectionUpdate({ type: "extend", col: range.head.col, row: range.head.row }, s1)
           const [s3] = terminalSelectionUpdate({ type: "finish" }, s2)
           selectionState = s3
         }
@@ -2654,6 +2657,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   const handle: AppHandle<S & I> = {
     get text() {
       return currentBuffer.text
+    },
+    get root() {
+      return getContainerRoot(container)
+    },
+    get buffer() {
+      return currentBuffer?._buffer ?? null
     },
     get store() {
       return store
