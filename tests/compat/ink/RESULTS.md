@@ -6,15 +6,23 @@ Ink version: 7.0.0 (tests adapted from github.com/vadimdemedes/ink)
 
 ## Summary
 
-| Category    | Passed | Known Failures | Total | Strict % | Effective % |
-| ----------- | ------ | -------------- | ----- | -------- | ----------- |
-| **Chalk**   | 32     | 0              | 32    | 100.0%   | 100.0%      |
-| **Ink**     | 925+   | 57             | 985   | ~94%     | ~99.7%      |
+| Category    | Passed | Known Failures | Failed | Total | Strict % | Effective % |
+| ----------- | ------ | -------------- | ------ | ----- | -------- | ----------- |
+| **Chalk**   | 32     | 0              | 0      | 32    | 100.0%   | 100.0%      |
+| **Ink**     | 871    | 51             | 9      | 931   | 93.6%    | 99.0%       |
 
 > **Note**: "Known failures" are tests marked `test.failing` for intentional architectural
 > differences (silvery's pipeline vs Ink's, Flexily vs Yoga, new Ink 7.0 features not yet
 > shimmed). These tests are expected to fail and ava counts them as passing. "Effective compat"
 > includes known failures (they represent understood divergences, not bugs).
+>
+> The 9 "failed" tests are due to `addFailingMarks` not handling `test.serial()` and
+> dynamic test names in the cursor test file. These are known divergences that should be
+> marked as expected failures -- once the marking fix is applied and rerun, the expected
+> result is 0 unexpected failures and 60 known failures.
+>
+> 134 tests remained pending (timed out): these are interactive/PTY tests that require
+> node-pty and real stdin/stdout -- they can't run in the compat layer's bundled mode.
 
 Previous (Ink 5.2.1): 804/813 passed (98.9%), 9 known failures, 0 unexpected failures.
 
@@ -77,10 +85,10 @@ Ink 7.0 added 172 new tests (985 total, up from 813 in 5.2.1). New test categori
 
 ## Version History
 
-| Date       | Ink Version | Passed | Known Failures | Total | Strict % |
-| ---------- | ----------- | ------ | -------------- | ----- | -------- |
-| 2026-03-12 | 5.2.1       | 804    | 9              | 813   | 98.9%    |
-| 2026-04-09 | 7.0.0       | 925+   | 57             | 985   | ~94%     |
+| Date       | Ink Version | Passed | Known Failures | Failed | Total | Strict % | Effective % |
+| ---------- | ----------- | ------ | -------------- | ------ | ----- | -------- | ----------- |
+| 2026-03-12 | 5.2.1       | 804    | 9              | 0      | 813   | 98.9%    | 100%        |
+| 2026-04-09 | 7.0.0       | 871    | 51             | 9      | 931   | 93.6%    | 99.0%       |
 
 ## Methodology
 

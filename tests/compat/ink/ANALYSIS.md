@@ -8,10 +8,10 @@ Ink test suite: vadimdemedes/ink v7.0.0
 
 | Metric          | Ink 5.2.1 (prior) | Ink 7.0.0 (current) |
 | --------------- | ------------------ | -------------------- |
-| Total Ink tests | 813                | 985                  |
-| Passed          | 804                | 925+                 |
-| Known failures  | 9                  | 57                   |
-| Unexpected fail | 0                  | 0                    |
+| Total Ink tests | 813                | 931 (134 timed out)  |
+| Passed          | 804                | 871                  |
+| Known failures  | 9                  | 51                   |
+| Unexpected fail | 0                  | 9 (marking bug)      |
 | Chalk tests     | 32/32 (100%)       | 32/32 (100%)         |
 
 ## Test Infrastructure
@@ -129,6 +129,6 @@ Two-layer testing approach:
 | 1     | 2026-03-09 | 5.2.1  | 662  | 183  | 72%   | Initial compat layer                   |
 | 2     | 2026-03-10 | 5.2.1  | 710  | 103  | 92.5% | Refactored to 16 modules               |
 | 3     | 2026-03-12 | 5.2.1  | 804  | 9    | 98.9% | Auto-generated vitest, PTY codemod     |
-| 4     | 2026-04-09 | 7.0.0  | 925+ | 57   | ~94%  | Ink 7.0 upgrade, new hook shims        |
+| 4     | 2026-04-09 | 7.0.0  | 871  | 9    | 93.6% | Ink 7.0 upgrade, new hook shims        |
 
 Major improvements in phase 4: useAnimation shared-timer architecture, useIsScreenReaderEnabled shim, expected failure marks for Ink 7.0 BackgroundContext, border backgrounds, build output, CJK text width, and concurrent mode tests.

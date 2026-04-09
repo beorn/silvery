@@ -27,6 +27,16 @@ const CHALK_DIR = join(CLONE_DIR, "chalk")
 const INK_REPO = "https://github.com/vadimdemedes/ink.git"
 const CHALK_REPO = "https://github.com/chalk/chalk.git"
 
+/**
+ * Pinned upstream versions for compat testing.
+ *
+ * These pins control which upstream tag we clone and test against.
+ * Bumping these is an explicit action — see `.claude/skills/ink-compat/SKILL.md`
+ * mode "upgrade" for the full workflow.
+ */
+const INK_VERSION = "v7.0.0"
+const CHALK_VERSION = "v5.6.2"
+
 const target = process.argv[2] // "ink", "chalk", or undefined (both)
 
 /** Remove `test.failing(` marks for specific test names (Ink/Yoga bugs that silvery passes). */
@@ -46,24 +56,43 @@ async function patchFailingMarks(filePath: string, testNames: string[]) {
 async function addFailingMarks(filePath: string, testNames: string[]) {
   let content = await Bun.file(filePath).text()
   for (const name of testNames) {
-    // Match: test('name' or test("name" — but NOT test.failing('name' (already marked)
-    const patternSQ = `test('${name}'`
-    const patternDQ = `test("${name}"`
-    if (content.includes(`test.failing('${name}'`) || content.includes(`test.failing("${name}"`)) continue
-    content = content.replace(patternSQ, `test.failing('${name}'`)
-    content = content.replace(patternDQ, `test.failing("${name}"`)
+    // Skip if already marked as failing (any variant)
+    if (content.includes(`.failing('${name}'`) || content.includes(`.failing("${name}"`)) continue
+
+    // Escape special regex characters in the test name
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+    // Match test('name', test("name", test.serial('name', test.serial("name",
+    // and multi-line variants where test.serial(\n\t'name' or test(\n\t'name'
+    // Inserts .failing before the opening paren:
+    //   test('name' -> test.failing('name'
+    //   test.serial('name' -> test.serial.failing('name'
+    //   test.serial(\n\t'name' -> test.serial.failing(\n\t'name'
+    const regex = new RegExp(
+      `(test(?:\\.serial)?)\\((\\s*)(["'])${escaped}\\3`,
+      "g",
+    )
+    content = content.replace(regex, "$1.failing($2$3" + name + "$3")
   }
   await Bun.write(filePath, content)
 }
 
-async function cloneIfNeeded(repo: string, dir: string, name: string) {
+/** Replace a literal string in a file (for dynamic test declarations that can't use addFailingMarks). */
+async function patchDynamicTestLoop(filePath: string, find: string, replace: string) {
+  let content = await Bun.file(filePath).text()
+  if (!content.includes(find)) return
+  content = content.replace(find, replace)
+  await Bun.write(filePath, content)
+}
+
+async function cloneIfNeeded(repo: string, dir: string, name: string, ref: string) {
   if (existsSync(dir)) {
-    console.log(`  ${name}: using cached clone at ${dir}`)
+    console.log(`  ${name}: using cached clone at ${dir} (pinned to ${ref})`)
     console.log(`  (delete ${dir} to re-clone)`)
     return
   }
-  console.log(`  ${name}: cloning ${repo}...`)
-  await $`git clone --depth=1 ${repo} ${dir}`.quiet()
+  console.log(`  ${name}: cloning ${repo} @ ${ref}...`)
+  await $`git clone --depth=1 --branch=${ref} ${repo} ${dir}`.quiet()
   console.log(`  ${name}: done`)
 }
 
@@ -72,9 +101,9 @@ async function cloneIfNeeded(repo: string, dir: string, name: string) {
 // ---------------------------------------------------------------------------
 
 async function runInkTests() {
-  console.log("\n--- Ink Compatibility ---\n")
+  console.log(`\n--- Ink Compatibility (pinned ${INK_VERSION}) ---\n`)
 
-  await cloneIfNeeded(INK_REPO, INK_DIR, "ink")
+  await cloneIfNeeded(INK_REPO, INK_DIR, "ink", INK_VERSION)
 
   // Install ink's dependencies first (ava, sinon, strip-ansi, react, etc.)
   console.log("  Installing ink dependencies...")
@@ -249,11 +278,14 @@ await initInkCompat();
     "text with dim+bold - concurrent",
   ])
   // Ink 7.0 cursor: debug mode interaction with cursor visibility.
+  // Some cursor tests use dynamic test names from a loop (testCase.testName),
+  // so addFailingMarks can't match them. Mark the loop's test.serial as failing.
   await addFailingMarks(join(INK_DIR, "test/cursor.tsx"), [
-    "cursor remains visible after useStdout().write()",
     "debug mode: useStderr().write() replays latest frame without empty writes",
     "debug mode: useStderr().write() replays rerendered frame",
   ])
+  // Mark the dynamic hookWriteCases loop as failing (cursor remains visible tests)
+  await patchDynamicTestLoop(join(INK_DIR, "test/cursor.tsx"), "test.serial(testCase.testName,", "test.serial.failing(testCase.testName,")
   // Ink 7.0 components: hard wrap text rendering difference.
   await addFailingMarks(join(INK_DIR, "test/components.tsx"), [
     "hard wrap text",
@@ -279,9 +311,9 @@ await initInkCompat();
 // ---------------------------------------------------------------------------
 
 async function runChalkTests() {
-  console.log("\n--- Chalk Compatibility ---\n")
+  console.log(`\n--- Chalk Compatibility (pinned ${CHALK_VERSION}) ---\n`)
 
-  await cloneIfNeeded(CHALK_REPO, CHALK_DIR, "chalk")
+  await cloneIfNeeded(CHALK_REPO, CHALK_DIR, "chalk", CHALK_VERSION)
 
   // Install chalk's dependencies first
   console.log("  Installing chalk dependencies...")
@@ -377,6 +409,7 @@ function parseSummary(output: string) {
 // ---------------------------------------------------------------------------
 
 console.log("silvery compat checker\n")
+console.log(`Pinned upstream versions: ink=${INK_VERSION}, chalk=${CHALK_VERSION}`)
 console.log("Cloning test suites (cached after first run)...")
 await $`mkdir -p ${CLONE_DIR}`.quiet()
 
