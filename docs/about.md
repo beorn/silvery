@@ -78,8 +78,8 @@ See also: [Silvery vs Ink](/guide/silvery-vs-ink), [Silvery vs BubbleTea](/guide
 
 ## Author
 
-[Bjørn Stabell](https://beorn.codes) — serial entrepreneur and technologist. Co-founded [App Annie / data.ai](https://www.data.ai/) (app market intelligence), [Happylatte](https://beorn.codes/#happylatte) (mobile games), and [Exoweb](https://beorn.codes/#exoweb) (agile dev services). Running companies since 2000 across Beijing, Vancouver, and now Palo Alto. Co-created [XPilot](https://en.wikipedia.org/wiki/XPilot) (1991).
+[Bjørn Stabell](https://beorn.codes) — entrepreneur and technologist based in Palo Alto. Building companies and developer tools since 2000.
 
-Currently building AI products and open-source infrastructure for the terminal ecosystem: [Silvery](https://silvery.dev) (this project), [terminfo.dev](https://terminfo.dev) (terminal compatibility database), [Termless](https://termless.dev) (headless terminal testing), [Flexily](https://beorn.codes/flexily) (flexbox layout engine), and [Loggily](https://beorn.codes/loggily) (structured logging).
+Currently building open-source infrastructure for the terminal ecosystem: [Silvery](https://silvery.dev), [terminfo.dev](https://terminfo.dev), [Termless](https://termless.dev), [Flexily](https://beorn.codes/flexily), and [Loggily](https://beorn.codes/loggily).
 
-[GitHub](https://github.com/beorn) · [LinkedIn](https://linkedin.com/in/beorn) · [X](https://x.com/beorn)
+[beorn.codes](https://beorn.codes) · [GitHub](https://github.com/beorn) · [LinkedIn](https://linkedin.com/in/beorn) · [X](https://x.com/beorn)
