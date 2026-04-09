@@ -137,7 +137,7 @@ This is the largest entry point (~1057 lines). Re-exports from `@silvery/ag-reac
 
 Subset focused on hooks only:
 
-- `useboxRect`, `useBoxRect`, `useScrollRect`
+- `useBoxRect`, `useBoxRect`, `useScrollRect`
 - `useInput`, `useRuntime`, `useApp`, `useStdout`
 - `useFocusable`, `useFocusWithin`, `useFocusManager`
 - `useInputLayer`, `useInputLayerContext`

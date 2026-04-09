@@ -21,7 +21,7 @@ The playground includes seven preset examples accessible via buttons or number k
 
 | #   | Preset     | Demonstrates                                              |
 | --- | ---------- | --------------------------------------------------------- |
-| 1   | Hello      | Basic Box + Text, `useboxRect()` size display         |
+| 1   | Hello      | Basic Box + Text, `useBoxRect()` size display         |
 | 2   | Text       | Bold, italic, underline styles (single/double/curly/etc.) |
 | 3   | Colors     | Named ANSI colors, hex, RGB, background fills             |
 | 4   | Flexbox    | Row/column layouts, `flexGrow`, `gap`, nested panels      |

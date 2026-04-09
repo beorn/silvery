@@ -92,4 +92,4 @@ return {
 
 - [Building an App](../guides/terminal-apps.md) — the guide that introduces shared stores at Level 2
 - [State Management](../guides/state-management.md) — createApp, createSlice API reference
-- [Hooks Reference](hooks.md) — useApp, useboxRect
+- [Hooks Reference](hooks.md) — useApp, useBoxRect

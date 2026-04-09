@@ -3,7 +3,7 @@ title: FAQ
 description: "Frequently asked questions about Silvery — installation, Ink compatibility, performance, components, testing, and terminal support."
 faq:
   - q: "What is Silvery?"
-    a: "Silvery is a React-based framework for building terminal user interfaces (TUIs). It provides 45+ components, incremental rendering with per-node dirty tracking, responsive layout via useboxRect(), and full support for modern terminal protocols. It works with Bun, Node.js (23.6+), and Deno."
+    a: "Silvery is a React-based framework for building terminal user interfaces (TUIs). It provides 45+ components, incremental rendering with per-node dirty tracking, responsive layout via useBoxRect(), and full support for modern terminal protocols. It works with Bun, Node.js (23.6+), and Deno."
   - q: "How does Silvery compare to Ink?"
     a: "Both use React for terminal UIs. Silvery's key differences are layout-first rendering (components know their size during render), incremental updates (100x faster for typical interactions), a larger component library (45+ vs ~10), and comprehensive terminal protocol support (Kitty keyboard, SGR mouse, graphics, synchronized output). Ink has a larger ecosystem and is faster for full tree re-renders."
   - q: "Is Silvery compatible with existing Ink code?"
@@ -27,11 +27,11 @@ faq:
   - q: "Does Silvery have TypeScript support?"
     a: "Silvery is written entirely in TypeScript with strict mode enabled. All components, hooks, and APIs are fully typed. The package ships TypeScript source directly (no compiled JavaScript), which works with Bun natively and Node.js 23.6+ with type stripping."
   - q: "How does the layout engine work?"
-    a: "Silvery uses Flexily, a Yoga-compatible flexbox layout engine written in pure TypeScript. Layout runs before rendering, so components can access their dimensions via useboxRect(). This enables responsive layouts, native scrollable containers, and automatic text truncation without post-render measurement."
+    a: "Silvery uses Flexily, a Yoga-compatible flexbox layout engine written in pure TypeScript. Layout runs before rendering, so components can access their dimensions via useBoxRect(). This enables responsive layouts, native scrollable containers, and automatic text truncation without post-render measurement."
   - q: "Can I use Silvery for fullscreen terminal apps?"
     a: "Yes. Silvery supports both fullscreen mode (alternate screen buffer, absolute positioning, incremental diff) and inline mode (normal scrollback, relative positioning). Fullscreen is the default. Both modes use incremental rendering for efficient updates."
   - q: "How do I migrate from Ink to Silvery?"
-    a: "Most Ink code works with minimal changes. Replace ink imports with silvery/ink, chalk with silvery/chalk, and you're running. For new code, use Silvery's native APIs (useboxRect, SelectList, VirtualList) to take advantage of responsive layout and the full component library. See the migration guide for step-by-step instructions."
+    a: "Most Ink code works with minimal changes. Replace ink imports with silvery/ink, chalk with silvery/chalk, and you're running. For new code, use Silvery's native APIs (useBoxRect, SelectList, VirtualList) to take advantage of responsive layout and the full component library. See the migration guide for step-by-step instructions."
 ---
 
 # FAQ
@@ -40,7 +40,7 @@ Frequently asked questions about Silvery.
 
 ## What is Silvery?
 
-Silvery is a React-based framework for building terminal user interfaces (TUIs). It provides 45+ components, incremental rendering with per-node dirty tracking, responsive layout via `useboxRect()`, and full support for modern terminal protocols. It works with Bun, Node.js (23.6+), and Deno.
+Silvery is a React-based framework for building terminal user interfaces (TUIs). It provides 45+ components, incremental rendering with per-node dirty tracking, responsive layout via `useBoxRect()`, and full support for modern terminal protocols. It works with Bun, Node.js (23.6+), and Deno.
 
 If you know React, you know Silvery -- the core API (`Box`, `Text`, `useInput`, `render`) is familiar. What's different is the rendering pipeline: layout runs first, so components know their size during render, and only changed nodes are re-rendered.
 
@@ -48,7 +48,7 @@ If you know React, you know Silvery -- the core API (`Box`, `Text`, `useInput`, 
 
 Both use React for terminal UIs. Silvery differs in several key ways:
 
-- **Layout-first rendering** -- components know their size during render via `useboxRect()`, enabling responsive layouts without prop drilling or post-render effects
+- **Layout-first rendering** -- components know their size during render via `useBoxRect()`, enabling responsive layouts without prop drilling or post-render effects
 - **Incremental updates** -- per-node dirty tracking makes typical interactive updates 100x faster (169 us vs 20.7 ms for a cursor move in 1000 nodes)
 - **Larger component library** -- 45+ components (vs ~10 in Ink), including VirtualList, CommandPalette, TreeView, SplitView, Table, and Form
 - **Terminal protocol support** -- Kitty keyboard, SGR mouse, synchronized output, Sixel/Kitty graphics, clipboard, and more
@@ -187,7 +187,7 @@ Silvery is written entirely in TypeScript with strict mode enabled. All componen
 Silvery uses [Flexily](https://beorn.codes/flexily), a Yoga-compatible flexbox layout engine written in pure TypeScript. The key difference from other terminal frameworks:
 
 1. **Layout runs first** -- Flexily calculates positions and sizes before React renders components
-2. **Components access dimensions** -- `useboxRect()` provides width, height, x, y during render
+2. **Components access dimensions** -- `useBoxRect()` provides width, height, x, y during render
 3. **Flexbox model** -- standard CSS flexbox properties (`flexDirection`, `justifyContent`, `alignItems`, `flexGrow`, `flexShrink`, `gap`, etc.)
 4. **No WASM** -- pure TypeScript, roughly 1.5x faster than Yoga WASM for typical terminal layouts
 
@@ -208,7 +208,7 @@ Three steps:
 
 1. **Swap imports** -- replace `ink` with `silvery/ink` and `chalk` with `silvery/chalk`
 2. **Run your tests** -- 98.9% of Ink's test suite passes with the compatibility layer
-3. **Adopt native APIs gradually** -- use `useboxRect()` for responsive layouts, replace manual key handlers with `SelectList`, add themes with semantic tokens
+3. **Adopt native APIs gradually** -- use `useBoxRect()` for responsive layouts, replace manual key handlers with `SelectList`, add themes with semantic tokens
 
 The compatibility layer is a bridge, not a destination. New code should use Silvery's native APIs to get the full benefit of layout-first rendering and the component library.
 

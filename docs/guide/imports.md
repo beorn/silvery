@@ -11,7 +11,7 @@ Silvery is organized as a monorepo of focused packages. Most apps only need the 
 The `silvery` umbrella re-exports everything from `@silvery/ag-react`, which in turn re-exports the most-used APIs from all other packages:
 
 ```tsx
-import { render, Box, Text, useInput, useApp, useboxRect, createTerm } from "silvery"
+import { render, Box, Text, useInput, useApp, useBoxRect, createTerm } from "silvery"
 
 function App() {
   const { exit } = useApp()
@@ -51,7 +51,7 @@ The main package. Contains the React reconciler, all built-in components, hooks,
 
 ```tsx
 import { Box, Text, render, renderSync, renderStatic } from "@silvery/ag-react"
-import { useInput, useApp, useboxRect, useFocusable } from "@silvery/ag-react"
+import { useInput, useApp, useBoxRect, useFocusable } from "@silvery/ag-react"
 import { TextInput, TextArea, ModalDialog, SelectList } from "@silvery/ag-react"
 import { VirtualList, ScrollbackView, SplitView, Table } from "@silvery/ag-react"
 import { ThemeProvider, useTheme, defaultDarkTheme } from "@silvery/ag-react"
@@ -62,7 +62,7 @@ import { createTermEditContext, useEditContext } from "@silvery/ag-react"
 Deep imports for subsets:
 
 ```ts
-import { useboxRect, useFocusable } from "@silvery/ag-react/hooks"
+import { useBoxRect, useFocusable } from "@silvery/ag-react/hooks"
 import { createReconciler } from "@silvery/ag-react/reconciler"
 ```
 

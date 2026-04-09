@@ -30,7 +30,7 @@ These are implementation details — you'll only need them for advanced use case
 Most apps import everything from `silvery`:
 
 ```tsx
-import { Box, Text, render, useboxRect, useInput, createTerm } from "silvery"
+import { Box, Text, render, useBoxRect, useInput, createTerm } from "silvery"
 ```
 
 ### Layered Imports
@@ -42,7 +42,7 @@ For fine-grained control, import from scoped packages:
 import { createTerm, Pipeline } from "@silvery/ag-term"
 
 // React reconciler and hooks
-import { Box, Text, useboxRect } from "@silvery/ag-react"
+import { Box, Text, useBoxRect } from "@silvery/ag-react"
 
 // TEA state management
 import { createSlice, createStore } from "@silvery/create"
@@ -76,7 +76,7 @@ Re-exports everything from `@silvery/ag-react`. This is the primary import for m
 
 **Components**: Box, Text, Newline, Spacer, Static, Transform, TextInput, TextArea, SelectList, Toggle, Button, Spinner, ProgressBar, Table, Badge, Divider, VirtualList, VirtualView, Console, Image, Link, Form, FormField, Toast, CommandPalette, TreeView, Breadcrumb, Tabs, TabList, Tab, TabPanel, Tooltip, Skeleton, ErrorBoundary, ModalDialog, PickerDialog, PickerList, SplitView, ThemeProvider.
 
-**Hooks**: useboxRect, useScrollRect, useInput, useApp, useStdout, useFocus, useFocusManager, useFocusWithin, usePaste, useCursor, useAnimation, useAnimatedTransition, useScrollback, useToast.
+**Hooks**: useBoxRect, useScrollRect, useInput, useApp, useStdout, useFocus, useFocusManager, useFocusWithin, usePaste, useCursor, useAnimation, useAnimatedTransition, useScrollback, useToast.
 
 **Functions**: render, renderSync, renderToString, createTerm.
 

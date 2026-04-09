@@ -135,10 +135,10 @@ useInput(handleInput)
 Components can know their size during render:
 
 ```typescript
-import { useboxRect } from '@silvery/ag-term'
+import { useBoxRect } from '@silvery/ag-term'
 
 function ResponsivePanel() {
-  const { width, height } = useboxRect()
+  const { width, height } = useBoxRect()
 
   return (
     <Box flexDirection="column">
@@ -174,13 +174,13 @@ Putting hooks together into a real app:
 
 ```typescript
 import { run, useInput, useExit, type Key } from '@silvery/ag-term/runtime'
-import { Box, Text, useboxRect } from '@silvery/ag-term'
+import { Box, Text, useBoxRect } from '@silvery/ag-term'
 import { useState, useCallback } from 'react'
 
 function App() {
   const [items, setItems] = useState(['Apple', 'Banana', 'Cherry'])
   const [cursor, setCursor] = useState(0)
-  const { width } = useboxRect()
+  const { width } = useBoxRect()
 
   const handleInput = useCallback((input: string, key: Key) => {
     if (input === 'j' || key.downArrow) setCursor(c => Math.min(c + 1, items.length - 1))
@@ -266,11 +266,11 @@ See [Input Features](../reference/input-features.md) for the full reference.
 For browser rendering via [xterm.js](https://xtermjs.org/), use `renderToXterm()` from `@silvery/ag-term/xterm`:
 
 ```tsx
-import { renderToXterm, Box, Text, useboxRect } from "@silvery/ag-term/xterm"
+import { renderToXterm, Box, Text, useBoxRect } from "@silvery/ag-term/xterm"
 import { Terminal } from "@xterm/xterm"
 
 function App() {
-  const { width, height } = useboxRect()
+  const { width, height } = useBoxRect()
   return (
     <Box flexDirection="column" padding={1}>
       <Text bold>Browser App</Text>

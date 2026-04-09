@@ -32,7 +32,7 @@ Single-line input is sufficient for simple prompts, but many applications need:
 - **Note taking** - Free-form text entry
 - **Configuration editors** - Multi-line config values
 
-Ink users have requested this ([#676](https://github.com/vadimdemedes/ink/issues/676)) but Ink's architecture makes it difficult. Silvery's `useboxRect()` provides the dimension awareness needed to implement TextArea properly.
+Ink users have requested this ([#676](https://github.com/vadimdemedes/ink/issues/676)) but Ink's architecture makes it difficult. Silvery's `useBoxRect()` provides the dimension awareness needed to implement TextArea properly.
 
 ### Challenges in Terminal
 
@@ -640,13 +640,13 @@ function useTextArea(options: UseTextAreaOptions): UseTextAreaReturn
 
 This allows building custom TextArea variants while reusing the core logic.
 
-## Integration with useboxRect
+## Integration with useBoxRect
 
-TextArea benefits from Silvery's `useboxRect()`:
+TextArea benefits from Silvery's `useBoxRect()`:
 
 ```tsx
 function TextArea({ value, onChange, height = 3 }: TextAreaProps) {
-  const { width } = useboxRect()
+  const { width } = useBoxRect()
 
   // Calculate visible lines based on actual width
   const visualLines = useMemo(() => wrapText(value, width), [value, width])
@@ -661,7 +661,7 @@ function TextArea({ value, onChange, height = 3 }: TextAreaProps) {
 }
 ```
 
-Without `useboxRect()`, we'd need to thread width props down, complicating the API.
+Without `useBoxRect()`, we'd need to thread width props down, complicating the API.
 
 ## Rendering Pipeline
 

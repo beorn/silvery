@@ -28,9 +28,9 @@
 
 ### Layout oscillation / infinite loops
 
-- Silvery has built-in containment for `useboxRect` that detects and breaks oscillation loops.
-- If you see oscillation, check for circular dependencies in layout — e.g., a component that changes its size based on `useboxRect` in a way that triggers another layout.
-- Avoid setting `width` or `height` dynamically based on `useboxRect` of the same Box.
+- Silvery has built-in containment for `useBoxRect` that detects and breaks oscillation loops.
+- If you see oscillation, check for circular dependencies in layout — e.g., a component that changes its size based on `useBoxRect` in a way that triggers another layout.
+- Avoid setting `width` or `height` dynamically based on `useBoxRect` of the same Box.
 
 ### Flickering in tmux / Zellij
 
@@ -79,14 +79,14 @@ VirtualList shows blank rows when:
 - **Container has no height**: VirtualList needs a parent with a known height (explicit `height` prop or flex layout). Without it, the visible window is zero and nothing renders.
 - **`scrollTo` is out of range**: A `scrollTo` value past the last item shows blank space. Clamp to `Math.max(0, data.length - visibleCount)`.
 
-### useboxRect returning zeros
+### useBoxRect returning zeros
 
-`useboxRect()` returns `{ width: 0, height: 0 }` on the first render because layout hasn't run yet. This is by design.
+`useBoxRect()` returns `{ width: 0, height: 0 }` on the first render because layout hasn't run yet. This is by design.
 
 - **Normal case**: The component re-renders once layout completes (usually the same frame). Your UI should handle `width === 0` gracefully (return `null` or a placeholder).
 - **Not updating at all**: Ensure the component's parent has a concrete size. A chain of `flexGrow={1}` without a root-level size means layout can't resolve.
 - **In tests**: Call `app.debug()` after render — if the layout is correct in the debug output, the hook is working. If `width` stays 0, check that `createRenderer` has `cols` and `rows` set.
-- **Oscillation**: If the component changes its own size based on `useboxRect`, it can loop. Silvery's built-in containment detects this and breaks the cycle automatically.
+- **Oscillation**: If the component changes its own size based on `useBoxRect`, it can loop. Silvery's built-in containment detects this and breaks the cycle automatically.
 
 ## Debugging
 

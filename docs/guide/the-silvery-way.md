@@ -50,7 +50,7 @@ You'll spend a week reimplementing what [`SelectList`](/guides/components#select
 
 ## 2. Think in Flexbox
 
-Silvery uses CSS flexbox via [Flexily](/guide/layout-engine) — same mental model as web development. Let the layout engine compute positions and sizes. Components know their own size via `useboxRect()` — synchronous, during render, no effects, no 0×0 flash.
+Silvery uses CSS flexbox via [Flexily](/guide/layout-engine) — same mental model as web development. Let the layout engine compute positions and sizes. Components know their own size via `useBoxRect()` — synchronous, during render, no effects, no 0×0 flash.
 
 ::: tip ✨ Shiny
 
@@ -67,12 +67,12 @@ Silvery uses CSS flexbox via [Flexily](/guide/layout-engine) — same mental mod
 
 // Responsive layout — adapt to available space
 function Panel() {
-  const rect = useboxRect()
+  const rect = useBoxRect()
   return rect.width < 40 ? <Compact /> : <Full />
 }
 ```
 
-`flexGrow` fills space. `padding`/`paddingX` for internal spacing. `gap` between children. `justifyContent="flex-end"` pins to bottom. `useboxRect()` for responsive adaptation.
+`flexGrow` fills space. `padding`/`paddingX` for internal spacing. `gap` between children. `justifyContent="flex-end"` pins to bottom. `useBoxRect()` for responsive adaptation.
 :::
 
 ::: danger 🩶 Tarnished
@@ -93,7 +93,7 @@ function Panel() {
 If you're doing arithmetic with widths, you're fighting the layout engine instead of using it.
 :::
 
-→ [Layout engine](/guide/layout-engine) · [useboxRect](/api/use-content-rect) · [Box](/api/box) · [Layout examples](/examples/layout)
+→ [Layout engine](/guide/layout-engine) · [useBoxRect](/api/use-content-rect) · [Box](/api/box) · [Layout examples](/examples/layout)
 
 ## 3. Let the Framework Scroll
 

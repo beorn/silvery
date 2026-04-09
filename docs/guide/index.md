@@ -13,7 +13,7 @@ In-depth guides for building terminal applications with Silvery -- from first pr
 - [Styling](/guide/styling) -- Semantic colors and typography
 - [Theming](/guide/theming) -- 23 built-in palettes and custom themes
 - [Scrolling](/guide/scrolling) -- Scroll containers and virtualization
-- [Hooks](/guide/hooks) -- useboxRect, useInput, useApp, and more
+- [Hooks](/guide/hooks) -- useBoxRect, useInput, useApp, and more
 
 ## Runtime
 

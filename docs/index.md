@@ -55,7 +55,7 @@ features:
     link: /guide/silvery-vs-ink#performance
     linkText: See benchmarks
   - title: Responsive Layout
-    details: 'Container queries for terminals — components know their own size at render time via useboxRect(). No prop drilling, no measure-then-rerender flicker. Full CSS Flexbox via Flexily (pure JS, Yoga-compatible). Native scrollable containers with overflow="scroll".'
+    details: 'Container queries for terminals — components know their own size at render time via useBoxRect(). No prop drilling, no measure-then-rerender flicker. Full CSS Flexbox via Flexily (pure JS, Yoga-compatible). Native scrollable containers with overflow="scroll".'
   - title: 45+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
@@ -114,7 +114,7 @@ vp silvery examples
 
 <div class="features-list">
 
-- **Responsive layout** -- `useboxRect()` returns actual dimensions during render. No prop drilling, no post-render effects.
+- **Responsive layout** -- `useBoxRect()` returns actual dimensions during render. No prop drilling, no post-render effects.
 - **Scrollable containers** -- `overflow="scroll"` with `scrollTo` just works. No manual virtualization.
 - **Incremental rendering** -- Per-node dirty tracking. Only changed nodes re-render. Cell-level ANSI-aware compositing.
 - **Pure TypeScript** -- No WASM, no C++, no native dependencies. ~177 KB gzipped all-in. Runs on Node, Bun, and Deno.

@@ -149,7 +149,7 @@ Silvery uses CSS flexbox exclusively:
 
 No grid layout, no dock. Everything is flexbox. This is limiting compared to Textual's layout variety, but flexbox handles most TUI layouts well -- and if you know CSS flexbox from web development, there is nothing new to learn.
 
-Silvery's key layout advantage is `useboxRect()` -- components know their dimensions during render, not after. Textual widgets can query their size via `self.size` but this is set during the layout phase, similar to how web components work.
+Silvery's key layout advantage is `useBoxRect()` -- components know their dimensions during render, not after. Textual widgets can query their size via `self.size` but this is set during the layout phase, similar to how web components work.
 
 ## Widget Libraries
 

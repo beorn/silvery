@@ -141,7 +141,7 @@ Layout is manual arithmetic -- you calculate positions and sizes yourself. Perce
 </Box>
 ```
 
-The Flexily layout engine handles flexbox automatically -- `flexGrow`, `flexShrink`, `flexWrap`, `gap`, `alignItems`, `justifyContent`, `padding`, `margin`, and `border`. Components can read their computed dimensions during render via `useboxRect()`.
+The Flexily layout engine handles flexbox automatically -- `flexGrow`, `flexShrink`, `flexWrap`, `gap`, `alignItems`, `justifyContent`, `padding`, `margin`, and `border`. Components can read their computed dimensions during render via `useBoxRect()`.
 
 For anything beyond trivial layouts, the difference is substantial. A three-column kanban board with variable-height cards in Blessed requires tracking positions for every element. In Silvery, it's nested flex containers.
 

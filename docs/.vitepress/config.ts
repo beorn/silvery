@@ -218,7 +218,7 @@ export default withMermaid(
               text: "Hooks",
               collapsed: false,
               items: [
-                { text: "useContentRect", link: "/api/use-content-rect" },
+                { text: "useBoxRect", link: "/api/use-box-rect" },
                 { text: "useInput", link: "/api/use-input" },
                 { text: "useApp", link: "/api/use-app" },
                 { text: "useStdout", link: "/api/use-stdout" },
@@ -269,6 +269,7 @@ export default withMermaid(
             { text: "TextArea Design", link: "/guide/textarea-design" },
             { text: "Kitty Protocol", link: "/guide/kitty-protocol" },
             { text: "Layout Engine", link: "/guide/layout-engine" },
+            { text: "Layout Coordinates", link: "/guide/layout-coordinates" },
             { text: "CSS Alignment", link: "/guide/css-alignment" },
             { text: "ANSI Layering", link: "/guide/ansi-layering" },
             { text: "Runtime Layers", link: "/guide/runtime-layers" },

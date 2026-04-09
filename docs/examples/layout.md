@@ -11,7 +11,7 @@ next:
 
 # Layout
 
-Silvery brings CSS-like flexbox to the terminal. Proportional sizing, gap spacing, `justifyContent`, `alignItems`, responsive breakpoints via `useboxRect()` — the same layout model you know from the web, working in every terminal.
+Silvery brings CSS-like flexbox to the terminal. Proportional sizing, gap spacing, `justifyContent`, `alignItems`, responsive breakpoints via `useBoxRect()` — the same layout model you know from the web, working in every terminal.
 
 ::: code-group
 
@@ -39,7 +39,7 @@ vp silvery examples dashboard
 - **Tab navigation** — left/right arrows switch between panels
 - **Progress bars** — `flexGrow` sized proportionally to values (no manual width math)
 - **Scrollable list** — `overflow="scroll"` with `scrollTo` for keyboard navigation
-- **Responsive sizing** — `useboxRect()` provides dimensions at render time
+- **Responsive sizing** — `useBoxRect()` provides dimensions at render time
 
 ## Source Code
 
@@ -140,13 +140,13 @@ Instead of calculating bar widths manually, use `flexGrow` proportionally. The t
 </Box>
 ```
 
-### Responsive Layout with `useboxRect()`
+### Responsive Layout with `useBoxRect()`
 
 Components query their computed dimensions at render time. No prop drilling, no `useEffect`:
 
 ```tsx
 function ResponsivePanel() {
-  const { width } = useboxRect()
+  const { width } = useBoxRect()
   const columns = width > 100 ? 3 : width > 60 ? 2 : 1
   return <Grid columns={columns}>...</Grid>
 }
@@ -202,12 +202,12 @@ Equal-width columns via `flexGrow`. Each column scrolls independently:
 | `gap`               | Consistent spacing between items            |
 | `overflow="scroll"` | Scrollable containers with auto-indicators  |
 | `scrollTo={index}`  | Keep selected item visible                  |
-| `useboxRect()`  | Responsive layout feedback at render time   |
+| `useBoxRect()`  | Responsive layout feedback at render time   |
 | `useInput()`        | Tab switching and list navigation           |
 
 ## Exercises
 
-1. **Responsive tabs** — Stack tabs vertically on narrow terminals using `useboxRect()`
+1. **Responsive tabs** — Stack tabs vertically on narrow terminals using `useBoxRect()`
 2. **Multi-pane dashboard** — Use `flexGrow` ratios (2:1) for main/sidebar panels
 3. **Nested scroll** — Put a scrollable list inside a scrollable panel
 4. **Live updates** — Use `useEffect` + `setInterval` to animate stat values

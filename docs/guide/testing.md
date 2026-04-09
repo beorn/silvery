@@ -18,7 +18,7 @@ The test suite is organized by domain:
 | `buffer.test.ts`                | 38    | Terminal buffer operations, cell packing                              |
 | `pipeline.test.ts`              | 36    | Render pipeline: measure, layout, content, output phases              |
 | `ansi-parsing.test.ts`          | 29    | ANSI escape sequence parsing                                          |
-| `hooks.test.tsx`                | 28    | useboxRect, useFocusable, useFocusManager, useStdout              |
+| `hooks.test.tsx`                | 28    | useBoxRect, useFocusable, useFocusManager, useStdout              |
 | `layout-equivalence.test.tsx`   | 26    | Yoga vs Flexily layout engine parity                                  |
 | `render.test.ts`                | 24    | Core render API                                                       |
 | `memory.test.tsx`               | 20    | Memory leak detection, listener cleanup                               |
@@ -256,10 +256,10 @@ test("focus navigation", async () => {
 ### Testing Layout Dimensions
 
 ```tsx
-import { useboxRect, NodeContext } from "silvery"
+import { useBoxRect, NodeContext } from "silvery"
 
 function LayoutCapture({ onLayout }: { onLayout: (l: any) => void }) {
-  const layout = useboxRect()
+  const layout = useBoxRect()
   React.useEffect(() => onLayout(layout), [layout])
   return <Text>Content</Text>
 }

@@ -52,7 +52,7 @@ A text editor where the cursor can be anywhere in a document:
 
 ```tsx
 function Editor({ lines }: { lines: string[] }) {
-  const { x, y } = useboxRect()
+  const { x, y } = useBoxRect()
   const { cursor, moveTo } = useCursor()
   const [cursorPos, setCursorPos] = useState({ line: 0, col: 0 })
 
@@ -164,11 +164,11 @@ function useCursor(options?: UseCursorOptions): UseCursorResult
 
 ## Integration with Layout
 
-The key insight is that `useboxRect()` provides _absolute_ terminal coordinates via `x` and `y`. This allows cursor positioning relative to a component:
+The key insight is that `useBoxRect()` provides _absolute_ terminal coordinates via `x` and `y`. This allows cursor positioning relative to a component:
 
 ```tsx
 function PositionedInput() {
-  const { x, y, width } = useboxRect()
+  const { x, y, width } = useBoxRect()
   const { moveTo } = useCursor()
   const [text, setText] = useState("")
   const [cursorCol, setCursorCol] = useState(0)
@@ -274,7 +274,7 @@ Use **rendered cursor** for visual feedback (the character at cursor position st
 ```tsx
 function TextInput({ value }: { value: string }) {
   const { focused } = useFocusable()
-  const { x, y } = useboxRect()
+  const { x, y } = useBoxRect()
   const { moveTo, show, hide } = useCursor()
   const [cursorCol, setCursorCol] = useState(value.length)
 
@@ -524,7 +524,7 @@ useEffect(() => {
 
 ```tsx
 import { useState, useEffect, useMemo } from "react"
-import { Box, Text, useFocusable, useCursor, useInput, useboxRect } from "silvery"
+import { Box, Text, useFocusable, useCursor, useInput, useBoxRect } from "silvery"
 
 interface TextInputProps {
   value: string
@@ -534,7 +534,7 @@ interface TextInputProps {
 
 export function TextInput({ value, onChange, placeholder = "" }: TextInputProps) {
   const { focused } = useFocusable()
-  const { x, y } = useboxRect()
+  const { x, y } = useBoxRect()
   const { show, hide, moveTo } = useCursor({ style: "bar" })
   const [cursorPos, setCursorPos] = useState(value.length)
 
@@ -654,7 +654,7 @@ interface UseCursorOptions {
 
 ## Related Documentation
 
-- [useboxRect](/api/use-content-rect) - Get component dimensions and position
+- [useBoxRect](/api/use-content-rect) - Get component dimensions and position
 - [Focus Hooks](/api/use-focus) - Manage focus state
 - [useInput](/api/use-input) - Handle keyboard input
 - [Input Limitations](/guide/input-limitations) - Terminal input constraints

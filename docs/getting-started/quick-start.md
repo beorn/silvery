@@ -60,10 +60,10 @@ You should see a rounded box with "Hello from Silvery!" inside.
 Components can query their own dimensions during render — no prop drilling needed:
 
 ```tsx
-import { render, Box, Text, useboxRect } from "silvery"
+import { render, Box, Text, useBoxRect } from "silvery"
 
 function SizedBox() {
-  const { width, height } = useboxRect()
+  const { width, height } = useBoxRect()
   return (
     <Box borderStyle="single" flexGrow={1}>
       <Text>

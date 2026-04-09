@@ -1,6 +1,6 @@
 # Fill
 
-Repeats its children's text content to fill the parent's allocated width. Uses single-pass rendering -- generates a long repeated string that gets hard-clipped by wrap="clip". No `useboxRect`, no layout re-render cycle.
+Repeats its children's text content to fill the parent's allocated width. Uses single-pass rendering -- generates a long repeated string that gets hard-clipped by wrap="clip". No `useBoxRect`, no layout re-render cycle.
 
 ## Import
 

@@ -183,7 +183,7 @@ const streamTokens = async (messageId: number, generator: AsyncGenerator<string>
 
 ## What Silvery Adds
 
-Most TUI frameworks leave you to build chat infrastructure from scratch. Silvery provides the primitives: scroll containers handle variable-length LLM output, responsive layout via `useboxRect()` sizes message bubbles, and the command system gives AI agents a programmatic API.
+Most TUI frameworks leave you to build chat infrastructure from scratch. Silvery provides the primitives: scroll containers handle variable-length LLM output, responsive layout via `useBoxRect()` sizes message bubbles, and the command system gives AI agents a programmatic API.
 
 ## Exercises
 

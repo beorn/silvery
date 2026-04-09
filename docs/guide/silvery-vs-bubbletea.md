@@ -64,7 +64,7 @@ You must calculate widths and heights yourself, pass them down to child models w
 </Box>
 ```
 
-Components can read their computed dimensions during render via `useboxRect()`. No manual size threading, no resize handlers calculating widths. The layout engine handles flex-grow, flex-shrink, wrapping, padding, margin, borders, gap, and alignment automatically.
+Components can read their computed dimensions during render via `useBoxRect()`. No manual size threading, no resize handlers calculating widths. The layout engine handles flex-grow, flex-shrink, wrapping, padding, margin, borders, gap, and alignment automatically.
 
 For simple UIs (a list, a form, a spinner), this difference barely matters. For complex UIs (multi-pane dashboards, kanban boards, text editors with sidebars), it's substantial.
 
@@ -107,7 +107,7 @@ Silvery uses React for the component tree and rendering, with TEA available as a
 ```tsx
 // Silvery: React components, optional TEA for state
 function App() {
-  const { width } = useboxRect()
+  const { width } = useBoxRect()
   const [items] = useState(loadItems)
 
   return (

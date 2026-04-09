@@ -58,7 +58,7 @@ Compute screen-relative positions for each node (content position minus ancestor
 
 #### Phase 2.7: Notify (`layout-phase.ts`)
 
-Fire `useboxRect()` and `useScrollRect()` subscriber callbacks. Skipped for STRICT comparison renders to avoid side effects.
+Fire `useBoxRect()` and `useScrollRect()` subscriber callbacks. Skipped for STRICT comparison renders to avoid side effects.
 
 #### Phase 3: Content (`render-phase.ts`)
 

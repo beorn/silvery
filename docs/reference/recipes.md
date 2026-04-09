@@ -52,7 +52,7 @@ function App() {
 ## Search-Filter List
 
 ```tsx
-import { Box, Text, TextInput, useboxRect } from "silvery"
+import { Box, Text, TextInput, useBoxRect } from "silvery"
 
 function FilterList({ items }) {
   const [query, setQuery] = useState("")
@@ -88,7 +88,7 @@ function FilterList({ items }) {
 ## Master-Detail Layout
 
 ```tsx
-import { Box, Text, useboxRect } from "silvery"
+import { Box, Text, useBoxRect } from "silvery"
 
 function MasterDetail({ items, selectedIndex }) {
   const selected = items[selectedIndex]

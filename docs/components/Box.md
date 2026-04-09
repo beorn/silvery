@@ -1,6 +1,6 @@
 # Box
 
-Flexbox container component -- the primary layout primitive. Supports all standard flexbox properties, dimensions, spacing, borders, outlines, and theming. Provides `NodeContext` to children, enabling `useboxRect`/`useScrollRect` hooks.
+Flexbox container component -- the primary layout primitive. Supports all standard flexbox properties, dimensions, spacing, borders, outlines, and theming. Provides `NodeContext` to children, enabling `useBoxRect`/`useScrollRect` hooks.
 
 ## Import
 

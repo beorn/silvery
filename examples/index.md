@@ -88,7 +88,7 @@ Full interactive applications demonstrating real-world patterns.
 | Example     | File                     | Description                                   |
 | ----------- | ------------------------ | --------------------------------------------- |
 | Dashboard   | `layout/dashboard.tsx`   | Multi-pane dashboard with keyboard navigation |
-| Live Resize | `layout/live-resize.tsx` | Responsive columns via `useboxRect()`     |
+| Live Resize | `layout/live-resize.tsx` | Responsive columns via `useBoxRect()`     |
 | Overflow    | `layout/overflow.tsx`    | `overflow="hidden"` content clipping          |
 
 ## Kitty Protocol

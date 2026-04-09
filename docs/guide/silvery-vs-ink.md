@@ -59,7 +59,7 @@ Silvery and Ink share the same core ideas -- the migration path is intentionally
 - **`Spacer` / `Newline` / `Transform`** -- Same utility components
 - **Border styles** -- `single`, `double`, `round`, `bold`, `classic`, etc.
 - **`measureElement`** -- Both offer ways to measure rendered elements
-- **Layout metrics** -- Both provide hooks for element dimensions (`useboxRect` / `useBoxMetrics`)
+- **Layout metrics** -- Both provide hooks for element dimensions (`useBoxRect` / `useBoxMetrics`)
 - **Kitty keyboard protocol** -- Both support extended modifiers and key event types
 - **`renderToString`** -- Both support synchronous string rendering without terminal setup
 - **Cursor positioning** -- Both provide `useCursor()` for IME support
@@ -79,7 +79,7 @@ Both are React renderers at the core. The rendering architecture is the primary 
 
 | Feature                   | Silvery                                                                                                | Ink                                                                                                                                              |
 | ------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Responsive layout**     | `useboxRect()` / `useScrollRect()` -- synchronous, available during render                         | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure (released in v7.0.0)                                           |
+| **Responsive layout**     | `useBoxRect()` / `useScrollRect()` -- synchronous, available during render                         | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure (released in v7.0.0)                                           |
 | **Incremental rendering** | Per-node dirty tracking with 7 independent flags; cell-level buffer diff                               | Line-based diff (opt-in `incrementalRendering` option in v7.0.0); unchanged lines skipped, but any change rewrites entire line                    |
 | **ANSI compositing**      | Cell-level buffer with proper style stacking; ANSI sequences composed, not passed through              | String concatenation; ANSI sequences emitted inline, no compositing layer                                                                        |
 | **Scrollable containers** | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping                      | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                                        |
@@ -168,7 +168,7 @@ All numbers on this page come from the Ink comparison benchmark suite, which mea
 
 The core architectural difference — think [CSS container queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries) for terminals. On the web, container queries were the #1 requested feature for a decade because the alternatives (media queries + ResizeObserver) meant rendering first, measuring after, then re-rendering with correct values. Terminal UIs hit the same wall.
 
-Ink renders components, then runs Yoga layout. `useBoxMetrics()` provides dimensions _after_ layout via `useEffect`, meaning the first render always sees `{width: 0, height: 0}`. With nested responsive components (board → column → card), each level needs its own measure→rerender cycle — N nesting levels, N visible flickers. Silvery runs layout first, then renders all components with actual dimensions via `useboxRect()` in one batch.
+Ink renders components, then runs Yoga layout. `useBoxMetrics()` provides dimensions _after_ layout via `useEffect`, meaning the first render always sees `{width: 0, height: 0}`. With nested responsive components (board → column → card), each level needs its own measure→rerender cycle — N nesting levels, N visible flickers. Silvery runs layout first, then renders all components with actual dimensions via `useBoxRect()` in one batch.
 
 ```tsx
 // Ink: useBoxMetrics returns 0x0 on first render, updates via effect
@@ -188,9 +188,9 @@ function Card() {
   )
 }
 
-// Silvery: useboxRect returns actual dimensions immediately
+// Silvery: useBoxRect returns actual dimensions immediately
 function Card() {
-  const { width } = useboxRect()
+  const { width } = useBoxRect()
   return <Text>{truncate(title, width)}</Text>
 }
 ```
@@ -407,7 +407,7 @@ Both are good tools. The right choice depends on what you're building.
 Components need to know their dimensions to render content appropriately (charts, tables, wrapped text).
 
 - **Ink**: Use `useBoxMetrics` (post-layout, starts at 0x0). Re-render entire tree on resize.
-- **Silvery**: Each pane reads `useboxRect()` and adapts immediately. Resize triggers layout-only pass (21 us for 1000 nodes).
+- **Silvery**: Each pane reads `useBoxRect()` and adapts immediately. Resize triggers layout-only pass (21 us for 1000 nodes).
 
 ### Scrollable Task List
 
@@ -428,7 +428,7 @@ A list of 500+ items where the user navigates with j/k.
 Type-ahead search with debounced results rendering.
 
 - **Ink**: `useInput` for text capture, manual list rendering. No input isolation between search box and results.
-- **Silvery**: `InputLayerProvider` for text input isolation, `useboxRect` for result count fitting, `useDeferredValue` for responsive filtering.
+- **Silvery**: `InputLayerProvider` for text input isolation, `useBoxRect` for result count fitting, `useDeferredValue` for responsive filtering.
 
 ### Simple CLI Prompt
 

@@ -31,7 +31,7 @@ vp silvery examples data-explorer
 
 :::
 
-Terminal data explorers need to handle thousands of rows, resize gracefully across terminal widths, and respond instantly to search queries. Silvery provides the primitives: a `Table` component with column alignment, `VirtualList` for constant-memory rendering of massive datasets, `useboxRect()` for responsive column sizing, and `TextInput` for real-time filtering.
+Terminal data explorers need to handle thousands of rows, resize gracefully across terminal widths, and respond instantly to search queries. Silvery provides the primitives: a `Table` component with column alignment, `VirtualList` for constant-memory rendering of massive datasets, `useBoxRect()` for responsive column sizing, and `TextInput` for real-time filtering.
 
 ## Key Benefits
 
@@ -39,7 +39,7 @@ Terminal data explorers need to handle thousands of rows, resize gracefully acro
 
 - **VirtualList for massive datasets** — Render millions of rows with constant memory. Only items within the visible viewport (plus configurable overscan) are mounted. Supports fixed and variable-height items, gap/separator rendering, and imperative `scrollToItem()`.
 
-- **Responsive with `useboxRect()`** — Components query their computed dimensions at render time. Columns auto-size to the terminal width. No width prop drilling.
+- **Responsive with `useBoxRect()`** — Components query their computed dimensions at render time. Columns auto-size to the terminal width. No width prop drilling.
 
 - **TextInput for search** — Combine `TextInput` with `useDeferredValue` from React 19 to build responsive filter interfaces. The input stays snappy while expensive filtering runs at lower priority.
 
@@ -53,7 +53,7 @@ A process explorer with search filtering, a sortable table, and responsive colum
 
 ```tsx [explorer.tsx]
 import { useState, useDeferredValue } from "react"
-import { Box, Text, Table, TextInput, VirtualList, useboxRect, render, useApp, createTerm } from "silvery"
+import { Box, Text, Table, TextInput, VirtualList, useBoxRect, render, useApp, createTerm } from "silvery"
 
 // Sample data — replace with your own data source
 const processes = Array.from({ length: 500 }, (_, i) => ({
@@ -66,7 +66,7 @@ const processes = Array.from({ length: 500 }, (_, i) => ({
 
 function App() {
   const { exit } = useApp()
-  const { width, height } = useboxRect()
+  const { width, height } = useBoxRect()
   const [query, setQuery] = useState("")
   const deferredQuery = useDeferredValue(query)
 
@@ -118,10 +118,10 @@ await render(<App />, term)
 
 ### Responsive Column Widths
 
-`useboxRect()` gives the terminal width at render time. Columns scale proportionally:
+`useBoxRect()` gives the terminal width at render time. Columns scale proportionally:
 
 ```tsx
-const { width } = useboxRect()
+const { width } = useBoxRect()
 const nameWidth = Math.max(8, Math.floor(width * 0.3))
 const statusWidth = Math.max(8, Math.floor(width * 0.2))
 ```
@@ -172,7 +172,7 @@ The Table component handles header alignment and separators:
 | ------------------ | ------------------------------------------- |
 | `Table`            | Column alignment and headers                |
 | `VirtualList`      | Constant-memory rendering of large datasets |
-| `useboxRect()` | Responsive column widths                    |
+| `useBoxRect()` | Responsive column widths                    |
 | `TextInput`        | Real-time search filter                     |
 | `useDeferredValue` | Non-blocking filter during typing           |
 | `useInput()`       | Keyboard navigation                         |

@@ -1,6 +1,6 @@
 # TextArea
 
-Multi-line text input with word wrapping, scrolling, selection, and cursor movement. Uses `useboxRect` for width-aware word wrapping and scroll tracking to keep the cursor visible. Built on the `useTextArea` hook.
+Multi-line text input with word wrapping, scrolling, selection, and cursor movement. Uses `useBoxRect` for width-aware word wrapping and scroll tracking to keep the cursor visible. Built on the `useTextArea` hook.
 
 ## Import
 

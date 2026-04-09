@@ -204,7 +204,7 @@ bun my-app.tsx | head    # Clean text, no escape sequences
 The combination of three features makes this work:
 
 1. **Inline mode** — renders into normal scrollback, not the alternate screen
-2. **Layout-first rendering** — components know their width via `useboxRect()`, so layout decisions happen correctly on the first paint without a measure-then-rerender cycle
+2. **Layout-first rendering** — components know their width via `useBoxRect()`, so layout decisions happen correctly on the first paint without a measure-then-rerender cycle
 3. **Incremental rendering** — only changed cells are rewritten, so live updates don't cause the flickering you'd get from redrawing everything
 
 Without all three, inline rendering either loses interactivity (raw stdout), loses history (alternate screen), or flickers on every update (naive redraws).

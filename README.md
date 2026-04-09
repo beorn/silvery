@@ -40,7 +40,7 @@ await render(<Counter />).run()
 - **Smaller install** — <500 KB gzipped (Ink 6 pulls 16MB into node_modules)
 - **Pure TypeScript, zero native deps** — no WASM, no build steps — works on Alpine, CI, Docker, everywhere
 - **Incremental rendering** — per-node dirty tracking, [~100x faster interactive updates](tests/perf/render.bench.ts)
-- **Responsive layout** — `useboxRect()` returns actual dimensions synchronously during render
+- **Responsive layout** — `useBoxRect()` returns actual dimensions synchronously during render
 - **Dynamic scrollback** — renders (and re-renders!) into the terminal's scroll history, not just alternate screen
 - **Scrollable containers** — `overflow="scroll"` with automatic measurement and clipping
 - **Theme system** — 38 palettes, semantic design/color tokens (`$primary`, `$error`), auto-detects terminal colors

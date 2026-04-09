@@ -130,7 +130,7 @@ All core Ink APIs used by Gatsby CLI are covered. The only dependency needing at
 | `ink-table`                 | 3.1.0   | Tabular output     | `@silvery/ag-react/ui` `<Table>`      |
 | `ink-spinner`               | 4.0.3   | Loading indicators | `@silvery/ag-react/ui` `<Spinner>`    |
 | `ink-testing-library`       | 2.1.0   | Test utilities     | `@silvery/test` `createRenderer`      |
-| `ink-use-stdout-dimensions` | 1.0.5   | Terminal size      | `useStdout()` or `useboxRect()`   |
+| `ink-use-stdout-dimensions` | 1.0.5   | Terminal size      | `useStdout()` or `useBoxRect()`   |
 
 ### Key Patterns
 
@@ -190,7 +190,7 @@ These Ink 6 APIs exist but none of the 3 apps use them:
 - `useStderr` — Silvery supports via `useStdout` pattern
 - `usePaste` — Silvery has `usePaste` hook
 - `useCursor` — Silvery has `useCursor` hook
-- `useBoxMetrics` / `useWindowSize` — Ink 6 additions, Silvery has `useboxRect`
+- `useBoxMetrics` / `useWindowSize` — Ink 6 additions, Silvery has `useBoxRect`
 - `useIsScreenReaderEnabled` — Ink 6 accessibility
 - `Newline`, `Spacer`, `Transform` — simple components, all covered by silvery/ink
 - `renderToString` — Silvery has `renderStringSync`
@@ -221,7 +221,7 @@ Silvery's `@silvery/ag-react/ui` package includes 23+ components that cover most
 
 3. **`measureElement()` works** — Shopify uses it; Silvery exports it from `silvery/ink`.
 
-4. **`useboxRect()` as upgrade path** — Shopify's `measureElement` + manual re-render pattern could be simplified to `useboxRect()`.
+4. **`useBoxRect()` as upgrade path** — Shopify's `measureElement` + manual re-render pattern could be simplified to `useBoxRect()`.
 
 5. **Text wraps by default** — Gatsby already uses `wrap="truncate"`, so the default change has no impact. Shopify and CDKTF would need testing for unintended wrapping.
 

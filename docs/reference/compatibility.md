@@ -49,7 +49,7 @@ import { Box, Text, render } from "silvery/ink"
 | `useStdout()`       | Supported | Supported | Same API                             |
 | `useFocus()`        | Supported | Supported | Enhanced with spatial navigation     |
 | `useFocusManager()` | Supported | Supported | Same API                             |
-| `measureElement()`  | Supported | Supported | Works, but prefer `useboxRect()` |
+| `measureElement()`  | Supported | Supported | Works, but prefer `useBoxRect()` |
 | `useBoxMetrics()`   | --        | New       | Post-layout dimensions               |
 
 ### render() Differences
@@ -201,7 +201,7 @@ These features have no Ink/Chalk equivalent:
 
 | Feature               | API                                   |
 | --------------------- | ------------------------------------- |
-| Layout feedback       | `useboxRect()`                    |
+| Layout feedback       | `useBoxRect()`                    |
 | Scrollable containers | `overflow="scroll"` + `scrollTo`      |
 | Input layer isolation | `<InputLayerProvider>`                |
 | Spatial focus         | `<FocusScope>` with arrow keys        |
