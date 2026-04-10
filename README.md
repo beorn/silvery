@@ -107,7 +107,7 @@ Standalone projects Silvery builds on — each stands on its own:
 - **Frameworks** — Svelte, Solid.js, Vue adapters
 - **@silvery/create** — Structured state management with commands, keybindings, effects-as-data
 
-**Runtimes:** Bun >= 1.0 and Node.js >= 18. CLI (`silvery` command) requires Bun.
+**Runtimes:** Bun >= 1.0 and Node.js >= 23.6. CLI (`silvery` command) requires Bun.
 
 ## Inspirations
 
