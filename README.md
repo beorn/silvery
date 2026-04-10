@@ -39,19 +39,20 @@ await render(<Counter />).run()
 
 - **[3–6× faster in mounted rerender benchmarks](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — cell-level dirty tracking, only changed cells emit to the terminal. Per-node skip for unchanged subtrees. Works in inline mode with native scrollback, not just fullscreen
 - **Pure TypeScript, zero native deps** — no WASM, no build steps. Layout via [Flexily](https://beorn.codes/flexily) (or Yoga). Works on Alpine, CI, Docker, everywhere
-- **[Layout-first rendering](https://silvery.dev/guide/silvery-vs-ink#responsive-layout)** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle
-  - `overflow="scroll"` — native scroll containers with virtualization
-  - `position="sticky"` — sticky headers and footers within scroll containers
-  - ANSI-aware compositing — color blending with alpha across overlapping layers
+- **[Layout-first rendering](https://silvery.dev/guide/silvery-vs-ink#responsive-layout)** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables:
+  - [Scroll containers](https://silvery.dev/guide/scrolling) — `overflow="scroll"` with virtualization
+  - [Sticky positioning](https://silvery.dev/guide/layout-coordinates) — `position="sticky"` for headers and footers
+  - [ANSI-aware compositing](https://silvery.dev/guide/ansi-layering) — color blending with alpha across overlapping layers
 - **[Dynamic scrollback](https://silvery.dev/examples/scrollback)** — live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F and text selection work natively. Inline mode gets fullscreen-level performance; fullscreen mode gets inline-level UX (app-managed scrollback). No hard split between the two
 - **[Theme system](https://silvery.dev/guide/styling)** — 38 palettes, semantic design/color tokens (`$primary`, `$error`), auto-detects terminal colors
 - **[45+ components](https://silvery.dev/guides/components)** — TextInput, TextArea, SelectList, ListView, Table, TreeView, Console, Tabs, CommandPalette, ModalDialog, Toast, and more
 - **[Focus system](https://silvery.dev/guide/silvery-vs-ink#focus-system)** — scoped focus, arrow-key directional nav, click-to-focus
-- **Text selection** — mouse drag, word/line selection, `userSelect` boundaries, Alt+drag override. Works out of the box with `withDomEvents()`
-- **Find** — `Ctrl+F` buffer search with match highlighting and `n`/`N` navigation. Works out of the box with `withFocus()`
-- **Copy-mode** — `Esc, v` for vim-style keyboard-driven text selection and yanking
-- **Drag-and-drop** — mouse drag with hit testing, automatic via `withDomEvents()`
-- **Extremely composable** — use as just a renderer (`render`), add a runtime (`run`), or build full apps with any React state library (useState, Zustand, Jotai, Redux). Swap terminal backends (real TTY, headless, xterm.js emulator) for [testing](https://silvery.dev/guide/testing). Embed silvery components in existing CLIs. Use the layout engine standalone. Render to terminal, or (experimental) Canvas, or DOM
+- **[Text selection](https://silvery.dev/guide/text-selection)** — mouse drag, word/line selection, `userSelect` boundaries, Alt+drag override. Works out of the box with `withDomEvents()`
+- **[Find](https://silvery.dev/guide/find)** — `Ctrl+F` buffer search with match highlighting and `n`/`N` navigation. Works out of the box with `withFocus()`
+- **[Copy-mode](https://silvery.dev/guide/clipboard)** — `Esc, v` for vim-style keyboard-driven text selection and yanking
+- **[Drag-and-drop](https://silvery.dev/guide/event-handling)** — mouse drag with hit testing, automatic via `withDomEvents()`
+- **[Playwright-style testing](https://silvery.dev/guide/testing)** — `createRenderer` for fast unit tests, `createTermless` for full ANSI fidelity. CSS selector locators, cell-level color assertions, frame-by-frame inspection
+- **[Composable architecture](https://silvery.dev/guide/providers)** — use as just a renderer (`render`), add a runtime (`run`), or build full apps with any React state library (useState, Zustand, Jotai, Redux). Swap terminal backends (real TTY, headless, xterm.js emulator) for [testing](https://silvery.dev/guide/testing). Embed silvery components in existing CLIs. Use the layout engine standalone. Render to terminal, or (experimental) Canvas, or DOM
 - **[Terminal protocol support](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)** — 100+ escape sequences, all auto-negotiated: 12 OSC (hyperlinks, clipboard, palette, text sizing, semantic prompts, notifications), 35+ CSI (cursor, mouse modes, paste, focus, sync output, device queries), 50+ SGR (6 underline styles, underline colors, truecolor, 256-color), full Kitty keyboard (5 flags), full SGR mouse (any-event, drag, wheel)
 
 ### Why Silvery?
