@@ -31,7 +31,7 @@ head:
 hero:
   name: "Silvery"
   text: "React for modern terminal apps"
-  tagline: "Responsive layouts, incremental rendering, 45+ components. Ink-compatible. Pure TypeScript, no WASM."
+  tagline: "Powerful apps. Polished UIs. Proudly terminal."
   actions:
     - theme: brand
       text: Get Started
@@ -76,6 +76,14 @@ features:
     linkText: See comparison
 ---
 
+## Why Silvery?
+
+Silvery grew out of building a complex terminal app — a multi-pane workspace with thousands of nodes. Components needed to know their size during render. Updates needed to be fast. Scroll containers, mouse events, focus scopes, and Playwright-style testing needed to just work. What started as a renderer grew into a layout engine, then 45+ components, theming, testing infrastructure, and eventually a framework.
+
+Along the way, three principles emerged. Take the best from the web, stay true to the terminal, and raise the bar for developer ergonomics, architecture composability, and performance.
+
+→ [The Silvery Way](/guide/the-silvery-way) · [Silvery vs Ink](/guide/silvery-vs-ink) · [About](/about)
+
 ## Build Any Terminal App
 
 Try the interactive examples:
@@ -114,14 +122,16 @@ vp silvery examples
 
 ## Packages
 
-| Package              | Description                                                                                      |
-| -------------------- | ------------------------------------------------------------------------------------------------ |
-| `silvery`            | Components, hooks, renderer -- the one package you need                                          |
-| `@silvery/test`      | [Testing](/examples/testing) utilities and Playwright-style locators                             |
-| `@silvery/ink`       | [Ink compatibility](/guide/silvery-vs-ink) layer for migration                                   |
-| `@silvery/create`    | App composition and state management _(coming soon)_                                             |
-| `@silvery/commander` | [Enhanced Commander.js](/reference/commander) with colorized help and Standard Schema validation |
-| `@silvery/ansi`      | [ANSI utilities](/reference/ansi) -- color detection, SGR codes, NO_COLOR support                |
+| Package                           | Description                                                                               |
+| --------------------------------- | ----------------------------------------------------------------------------------------- |
+| `silvery`                         | Components, hooks, renderer — the one package you need                                    |
+| `@silvery/ink` / `@silvery/chalk` | [Ink compatibility](/guide/silvery-vs-ink) — 99% of Ink 7.0 tests, 100% of Chalk tests    |
+| `@silvery/test`                   | [Playwright-style testing](/examples/testing) — locators, `press()`, buffer assertions    |
+| `@silvery/create`                 | Composable app builder — `pipe()` providers _(under active development)_                  |
+| `@silvery/theme`                  | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect                          |
+| `@silvery/commander`              | **[Beautiful CLIs for free](/reference/commander)** — help renders through Silvery itself |
+| `@silvery/headless`               | Pure state machines — portable, embeddable, no React                                      |
+| `@silvery/ansi`                   | [Terminal primitives](/reference/ansi) — styling, SGR, truecolor, detection               |
 
 ## Quick Start
 
@@ -166,12 +176,12 @@ await render(<Counter />).run()
 
 ## Ecosystem
 
-Silvery is part of a family of terminal-focused libraries:
+Standalone projects Silvery builds on — each stands on its own:
 
-- **[terminfo.dev](https://terminfo.dev)** — terminal feature compatibility database (161 features, 19 terminals)
+- **[Flexily](https://beorn.codes/flexily)** — pure JS flexbox layout engine (Yoga-compatible, 2.5× faster, zero WASM)
 - **[Termless](https://termless.dev)** — headless terminal testing, like Playwright for terminal apps
-- **[Flexily](https://beorn.codes/flexily)** — pure JS flexbox layout engine (Yoga-compatible, 2.5x faster, zero WASM)
-- **[Loggily](https://beorn.codes/loggily)** — debug + structured logging + tracing in one library
+- **[terminfo.dev](https://terminfo.dev)** — terminal feature compatibility database (161 features, 19 terminals)
+- **[Loggily](https://beorn.codes/loggily)** — structured logging + tracing + metrics in one library
 
 ## Coming
 

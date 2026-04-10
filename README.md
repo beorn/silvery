@@ -2,6 +2,8 @@
 
 **React for modern terminal apps.**
 
+Powerful apps. Polished UIs. Proudly terminal.
+
 Ink-compatible React renderer for interactive terminal apps. Same `Box`, `Text`, `useInput` API you know. 3–5× faster than Ink 7.0 on mounted workloads.
 
 > **Work in progress.** APIs may change. Feedback welcome.
@@ -35,7 +37,7 @@ await render(<Counter />).run()
 - **Flexbox layout** — `Box` with `flexDirection`, `padding`, `gap`, `flexGrow`, just like Ink
 - **Ink/Chalk compatible** — [`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink) and `@silvery/chalk` drop-in compat layers. 99% of Ink's + 100% of Chalk's test suites pass. See the [full feature comparison](https://silvery.dev/guide/silvery-vs-ink)
 
-### Better
+### Shiny new stuff
 
 - **3–5× faster than Ink 7.0** — cell-level dirty tracking, only changed cells emit to the terminal. Works in inline mode with native scrollback, not just fullscreen. Run `bun run bench` to reproduce
 - **Layout-first rendering** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables `overflow="scroll"`, `position="sticky"`, and ANSI-aware compositing with color blending
@@ -52,22 +54,37 @@ await render(<Counter />).run()
 - **Extremely composable** — use as just a renderer (`render`), add a runtime (`run`), or build full apps with any React state library (useState, Zustand, Jotai, Redux). Swap terminal backends (real TTY, headless, xterm.js emulator) for testing. Embed silvery components in existing CLIs. Use the layout engine standalone. Render to terminal, or (experimental) Canvas, or DOM
 - **Most complete terminal protocol support** — 100+ escape sequences, all auto-negotiated: 12 OSC (hyperlinks, clipboard, palette, text sizing, semantic prompts, notifications), 35+ CSI (cursor, mouse modes, paste, focus, sync output, device queries), 50+ SGR (6 underline styles, underline colors, truecolor, 256-color), full Kitty keyboard (5 flags), full SGR mouse (any-event, drag, wheel)
 
+### Why Silvery?
+
+Silvery grew out of building a complex terminal app — a multi-pane workspace with thousands of nodes. Components needed to know their size during render. Updates needed to be fast. Scroll containers, mouse events, focus scopes, and Playwright-style testing needed to just work. What started as a renderer grew into a layout engine, then 45+ components, theming, testing infrastructure, and eventually a framework.
+
+Along the way, three principles emerged. Take the best from the web, stay true to the terminal, and raise the bar for developer ergonomics, architecture composability, and performance.
+
+[The Silvery Way](https://silvery.dev/guide/the-silvery-way) · [Silvery vs Ink](https://silvery.dev/guide/silvery-vs-ink) · [About](https://silvery.dev/about)
+
 ## Packages
 
-| Package                                                                     | Description                                                              |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [`silvery`](https://github.com/beorn/silvery)                               | Components, hooks, renderer — the one package you need                   |
-| [`@silvery/test`](https://github.com/beorn/silvery/tree/main/packages/test) | Testing utilities and locators                                           |
-| [`@silvery/ink`](https://github.com/beorn/silvery/tree/main/packages/ink)   | Ink compatibility layer — migrate existing Ink apps with minimal changes |
+| Package                           | Description                                                       |
+| --------------------------------- | ----------------------------------------------------------------- |
+| `silvery`                         | Components, hooks, renderer — the one package you need            |
+| `@silvery/ink` / `@silvery/chalk` | Ink compatibility — 918/931 Ink 7.0 tests, 32/32 Chalk tests      |
+| `@silvery/test`                   | Playwright-style testing — locators, `press()`, buffer assertions |
+| `@silvery/create`                 | Composable app builder — `pipe()` providers                       |
+| `@silvery/theme`                  | 38 palettes, semantic tokens, auto-detect                         |
+| `@silvery/commander`              | **Beautiful CLIs for free** — help renders through Silvery itself |
+| `@silvery/headless`               | Pure state machines — portable, no React                          |
+| `@silvery/ansi`                   | Terminal primitives — styling, SGR, detection                     |
 
 ## Ecosystem
 
-| Project                                    | What                                                          |
-| ------------------------------------------ | ------------------------------------------------------------- |
-| [Termless](https://termless.dev)           | Headless terminal testing — like Playwright for terminal apps |
-| [Flexily](https://beorn.github.io/flexily) | Pure JS flexbox layout engine (Yoga-compatible, zero WASM)    |
-| [Loggily](https://beorn.github.io/loggily) | Debug + structured logging + tracing                          |
-| [terminfo.dev](https://terminfo.dev)       | Terminal feature support database, powered by Termless        |
+Standalone projects Silvery builds on — each stands on its own:
+
+| Project                                | What                                                                    |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| [Flexily](https://beorn.codes/flexily) | Pure JS flexbox layout engine (Yoga-compatible, 2.5× faster, zero WASM) |
+| [Termless](https://termless.dev)       | Headless terminal testing — like Playwright for terminal apps           |
+| [terminfo.dev](https://terminfo.dev)   | Terminal feature compatibility database (161 features, 19 terminals)    |
+| [Loggily](https://beorn.codes/loggily) | Structured logging + tracing + metrics                                  |
 
 ## Coming
 
