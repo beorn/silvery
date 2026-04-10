@@ -363,17 +363,21 @@ function Card({ item }) {
 
 CSS gives you `fit-content` (widest wrapped line) and greedy word-wrap. There's no way to say _"find the narrowest width that still produces exactly 3 lines"_ or _"break lines to minimize raggedness across the whole paragraph."_
 
+::: tip Interactive Demo
+Run `bun examples/pretext-demo.tsx` for a side-by-side visual comparison of snug-content bubbles, even wrapping, and the combined effect. See [examples/pretext-demo.tsx](/examples/pretext-demo).
+:::
+
 Silvery adds these capabilities, inspired by [Pretext](https://chenglou.me/pretext/) (`@chenglou/pretext`).
 
 ### Width Sizing
 
 `width` controls how a Box sizes itself:
 
-| Value | What it does |
-|---|---|
-| `width={60}` | Fixed at 60 columns |
-| `width="fit-content"` | Shrink to widest wrapped line (CSS `fit-content`) |
-| `width="snug-content"` | Tightest width that keeps the same line count |
+| Value                  | What it does                                      |
+| ---------------------- | ------------------------------------------------- |
+| `width={60}`           | Fixed at 60 columns                               |
+| `width="fit-content"`  | Shrink to widest wrapped line (CSS `fit-content`) |
+| `width="snug-content"` | Tightest width that keeps the same line count     |
 
 #### `fit-content` vs `snug-content`
 
@@ -411,15 +415,15 @@ Best for: chat bubbles, tooltips, badges, cards with final content.
 
 `wrap` controls how text breaks when it exceeds the container width:
 
-| Mode | What it does |
-|---|---|
-| `wrap="wrap"` | Word-aware wrapping — each line as full as possible (default) |
-| `wrap="even"` | Minimize total raggedness — [minimum-raggedness](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap#Minimum_raggedness) paragraph layout |
-| `wrap="hard"` | Character-level wrapping — break anywhere |
-| `wrap={false}` | Truncate with ellipsis |
-| `wrap="clip"` | Hard cut at width, no ellipsis |
-| `wrap="truncate-start"` | Ellipsis at start: `…end of text` |
-| `wrap="truncate-middle"` | Ellipsis in middle: `start…end` |
+| Mode                     | What it does                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrap="wrap"`            | Word-aware wrapping — each line as full as possible (default)                                                                               |
+| `wrap="even"`            | Minimize total raggedness — [minimum-raggedness](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap#Minimum_raggedness) paragraph layout |
+| `wrap="hard"`            | Character-level wrapping — break anywhere                                                                                                   |
+| `wrap={false}`           | Truncate with ellipsis                                                                                                                      |
+| `wrap="clip"`            | Hard cut at width, no ellipsis                                                                                                              |
+| `wrap="truncate-start"`  | Ellipsis at start: `…end of text`                                                                                                           |
+| `wrap="truncate-middle"` | Ellipsis in middle: `start…end`                                                                                                             |
 
 #### Greedy vs Even
 
@@ -435,8 +439,7 @@ lazy dog sat on the mat.
 ```tsx
 <Box width={60}>
   <Text wrap="even">
-    Long paragraph that benefits from globally-even line breaks
-    rather than greedy per-line decisions.
+    Long paragraph that benefits from globally-even line breaks rather than greedy per-line decisions.
   </Text>
 </Box>
 ```
@@ -445,13 +448,13 @@ Both modes have the same rendering performance (~25 microseconds for typical ter
 
 #### Pretext API Mapping
 
-| Silvery | Pretext equivalent | Notes |
-|---|---|---|
-| `buildTextAnalysis()` | [`prepare()`](https://github.com/chenglou/pretext) | One-time text analysis |
-| `countLinesAtWidth()` | [`measureLineStats()`](https://github.com/chenglou/pretext) | Line count at given width |
-| `shrinkwrapWidth()` | [`walkLineRanges()`](https://github.com/chenglou/pretext) + binary search | Tightest width for N lines |
-| `wrap="even"` | Justification demo | Minimum-raggedness DP |
-| — | [`layoutNextLineRange()`](https://github.com/chenglou/pretext) | Variable-width layout (planned) |
+| Silvery               | Pretext equivalent                                                        | Notes                           |
+| --------------------- | ------------------------------------------------------------------------- | ------------------------------- |
+| `buildTextAnalysis()` | [`prepare()`](https://github.com/chenglou/pretext)                        | One-time text analysis          |
+| `countLinesAtWidth()` | [`measureLineStats()`](https://github.com/chenglou/pretext)               | Line count at given width       |
+| `shrinkwrapWidth()`   | [`walkLineRanges()`](https://github.com/chenglou/pretext) + binary search | Tightest width for N lines      |
+| `wrap="even"`         | Justification demo                                                        | Minimum-raggedness DP           |
+| —                     | [`layoutNextLineRange()`](https://github.com/chenglou/pretext)            | Variable-width layout (planned) |
 
 Pretext uses canvas-based font measurement for sub-pixel web layouts. Silvery adapts the same algorithms for terminal integer-width character cells. A future [pluggable measurement API](https://github.com/chenglou/pretext) could unify both backends.
 
@@ -460,13 +463,17 @@ Pretext uses canvas-based font measurement for sub-pixel web layouts. Silvery ad
 Width and wrap are orthogonal — they compose naturally:
 
 ```tsx
-{/* Tightest bubble, even lines — prettiest for chat */}
-<Box width="snug-content" borderStyle="round" padding={1}>
+{
+  /* Tightest bubble, even lines — prettiest for chat */
+}
+;<Box width="snug-content" borderStyle="round" padding={1}>
   <Text wrap="even">Hello world, this is a message</Text>
 </Box>
 
-{/* Fixed width, even paragraph breaking */}
-<Box width={60}>
+{
+  /* Fixed width, even paragraph breaking */
+}
+;<Box width={60}>
   <Text wrap="even">{longParagraph}</Text>
 </Box>
 ```
@@ -477,11 +484,11 @@ Width and wrap are orthogonal — they compose naturally:
 
 Silvery's built-in floating components default to `snug-content`:
 
-| Component | Default width | Why |
-|---|---|---|
-| `ModalDialog` | `snug-content` | Dialogs hug their content |
-| `ToastItem` | `snug-content` | Notifications are self-contained |
-| `Tooltip` | `snug-content` | Tooltip text is static |
+| Component     | Default width  | Why                              |
+| ------------- | -------------- | -------------------------------- |
+| `ModalDialog` | `snug-content` | Dialogs hug their content        |
+| `ToastItem`   | `snug-content` | Notifications are self-contained |
+| `Tooltip`     | `snug-content` | Tooltip text is static           |
 
 Flow components (SelectList, TextInput, list items) use `auto` — they fill their parent's available width.
 
