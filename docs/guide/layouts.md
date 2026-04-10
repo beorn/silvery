@@ -363,7 +363,7 @@ function Card({ item }) {
 
 CSS gives you `fit-content` (widest wrapped line) and greedy word-wrap. There's no way to say _"find the narrowest width that still produces exactly 3 lines"_ or _"break lines to minimize raggedness across the whole paragraph."_
 
-Silvery adds these capabilities, inspired by [Pretext](https://chenglou.me/pretext/).
+Silvery adds these capabilities, inspired by [Pretext](https://chenglou.me/pretext/) (`@chenglou/pretext`).
 
 ### Width Sizing
 
@@ -386,7 +386,7 @@ Silvery adds these capabilities, inspired by [Pretext](https://chenglou.me/prete
 └──────────────────┘
 ```
 
-`snug-content` finds the _narrowest_ width that still produces the same number of lines — what [Pretext calls "shrinkwrap"](https://chenglou.me/pretext/bubbles/). It binary-searches over widths, comparing line counts, without any DOM or layout reflows:
+`snug-content` finds the _narrowest_ width that still produces the same number of lines. Pretext calls this ["shrinkwrap"](https://chenglou.me/pretext/bubbles/) — it uses [`walkLineRanges()`](https://github.com/chenglou/pretext) to binary-search over widths, comparing line counts at each candidate. Silvery uses the same algorithm adapted for terminal character-cell grids:
 
 ```
 ┌───────────────┐
@@ -424,21 +424,21 @@ Best for: chat bubbles, tooltips, badges, cards with final content.
 
 #### Greedy vs Balanced vs Optimal
 
-**Greedy** (`wrap="wrap"`) fills each line as much as possible, left to right. Simple and predictable:
+**Greedy** (`wrap="wrap"`) fills each line as much as possible, left to right. This is Pretext's default behavior via [`layoutWithLines()`](https://github.com/chenglou/pretext). Simple and predictable:
 
 ```
 The quick brown fox jumps over the
 lazy dog sat on the mat.
 ```
 
-**Balanced** (`wrap="balanced"`) reduces raggedness by equalizing line widths:
+**Balanced** (`wrap="balanced"`) reduces raggedness by equalizing line widths. This is a Silvery addition — Pretext doesn't have a balanced mode. It works by computing the ideal width per line (`totalWidth / lineCount`) and then shrinkwrapping to that:
 
 ```
 The quick brown fox jumps
 over the lazy dog sat on the mat.
 ```
 
-**Optimal** (`wrap="optimal"`) minimizes the _total_ wasted space across all lines using dynamic programming. This is what professional typesetting software uses ([Knuth-Plass paragraph layout](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap#Minimum_raggedness)):
+**Optimal** (`wrap="optimal"`) minimizes the _total_ wasted space across all lines using [minimum-raggedness dynamic programming](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap#Minimum_raggedness). Pretext demonstrates this as ["Knuth-Plass paragraph layout"](https://chenglou.me/pretext/) in their justification comparison demo:
 
 ```tsx
 <Box width={60}>
@@ -449,7 +449,20 @@ over the lazy dog sat on the mat.
 </Box>
 ```
 
-All three modes have the same rendering performance (~25 microseconds for typical terminal text). The analysis is cached per text node — repeated renders at the same width are free.
+All three modes have the same rendering performance (~25 microseconds for typical terminal text). The text analysis is cached per node ([PreparedText](/guide/performance)) — repeated renders at the same width are free.
+
+#### Pretext API Mapping
+
+| Silvery | Pretext equivalent | Notes |
+|---|---|---|
+| `buildTextAnalysis()` | [`prepare()`](https://github.com/chenglou/pretext) | One-time text analysis |
+| `countLinesAtWidth()` | [`measureLineStats()`](https://github.com/chenglou/pretext) | Line count at given width |
+| `shrinkwrapWidth()` | [`walkLineRanges()`](https://github.com/chenglou/pretext) + binary search | Tightest width for N lines |
+| `wrap="balanced"` | — | Silvery addition |
+| `wrap="optimal"` | Justification demo | Minimum-raggedness DP |
+| — | [`layoutNextLineRange()`](https://github.com/chenglou/pretext) | Variable-width layout (planned) |
+
+Pretext uses canvas-based font measurement for sub-pixel web layouts. Silvery adapts the same algorithms for terminal integer-width character cells. A future [pluggable measurement API](https://github.com/chenglou/pretext) could unify both backends.
 
 ### Width × Wrap Interaction
 
