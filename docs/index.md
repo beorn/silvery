@@ -44,21 +44,21 @@ hero:
       link: https://github.com/beorn/silvery
 features:
   - title: Familiar React API
-    details: 'Same Box/Text/useInput you already know. React 18 + 19 — hooks, refs, effects, suspense. Flexbox layout.<br><a href="/guide/silvery-vs-ink#compatibility">918/931 Ink 7.0 tests pass</a> on <a href="/guide/silvery-vs-ink">@silvery/ink</a>.'
+    details: 'Same Box/Text/useInput you already know. React 18 + 19 — hooks, refs, effects, suspense. Flexbox layout.<br><a href="/guide/silvery-vs-ink#compatibility">918/931 Ink 7.0 tests pass</a> on <a href="/guide/silvery-vs-ink">@silvery/ink</a>.<a class="feature-link" href="/guide/silvery-vs-ink">Full comparison →</a>'
   - title: Best-in-Class Performance
-    details: '<a href="/guide/silvery-vs-ink#performance">3–6× faster</a> than Ink in mounted rerenders. <a href="/guide/silvery-vs-ink#output-efficiency">10–20× less terminal output</a>.<br>Pure TypeScript, zero native deps. Layout via <a href="https://beorn.codes/flexily">Flexily</a> (or Yoga). Runs on Bun and Node.js.'
+    details: '<a href="/guide/silvery-vs-ink#performance">3–6× faster</a> than Ink in mounted rerenders. <a href="/guide/silvery-vs-ink#output-efficiency">10–20× less terminal output</a>.<br>Pure TypeScript, zero native deps. Layout via <a href="https://beorn.codes/flexily">Flexily</a> (or Yoga). Runs on Bun and Node.js.<a class="feature-link" href="/guide/silvery-vs-ink#performance">Benchmarks →</a>'
   - title: Web-like Responsive Layout
-    details: '<a href="/guide/hooks">useBoxRect()</a> returns real dimensions during render.<br><a href="/guide/scrolling">Scroll containers</a> with virtualization. <a href="/guide/layout-coordinates">Sticky positioning</a>.<br><a href="/guide/ansi-layering">ANSI-aware compositing</a> — color blending with alpha.'
+    details: '<a href="/guide/hooks">useBoxRect()</a> returns real dimensions during render.<br><a href="/guide/scrolling">Scroll containers</a> with virtualization. <a href="/guide/layout-coordinates">Sticky positioning</a>.<br><a href="/guide/ansi-layering">ANSI-aware compositing</a> — color blending with alpha.<a class="feature-link" href="/guide/layouts">Layout guide →</a>'
   - title: Inline, Fullscreen, or Both
-    details: 'Same components, one-line switch.<br>Fullscreen — alt screen, traditional TUI.<br><a href="/examples/scrollback">Inline</a> — dynamic scrollback, native Cmd+F.<br><a href="/design/dynamic-scrollback">Virtual inline</a> — alt screen + app-managed scrollback.'
+    details: 'Same components, one-line switch.<br>Fullscreen — alt screen, traditional TUI.<br><a href="/examples/scrollback">Inline</a> — dynamic scrollback, native Cmd+F.<br><a href="/design/dynamic-scrollback">Virtual inline</a> — alt screen + app-managed scrollback.<a class="feature-link" href="/guide/runtime-layers">Runtime layers →</a>'
   - title: Web-like Interaction
-    details: 'Full keyboard and mouse events that just work. <a href="/guide/silvery-vs-ink#terminal-protocol-coverage">100+ auto-negotiated protocols</a>.<br><a href="/guide/silvery-vs-ink#focus-system">Focus scopes</a> — spatial nav, Tab, click-to-focus.<br><a href="/guide/text-selection">Text selection</a>. <a href="/guide/find">Find</a>. <a href="/guide/clipboard">Copy-mode</a>. <a href="/guide/event-handling">Drag-and-drop</a>.'
+    details: 'Full keyboard and mouse events that just work. <a href="/guide/silvery-vs-ink#terminal-protocol-coverage">100+ auto-negotiated protocols</a>.<br><a href="/guide/silvery-vs-ink#focus-system">Focus scopes</a> — spatial nav, Tab, click-to-focus.<br><a href="/guide/text-selection">Text selection</a>. <a href="/guide/find">Find</a>. <a href="/guide/clipboard">Copy-mode</a>. <a href="/guide/event-handling">Drag-and-drop</a>.<a class="feature-link" href="/guide/event-handling">Interaction guide →</a>'
   - title: Rich Component Library
-    details: '<a href="/guides/components">45+ components</a>: TextInput, SelectList, Table, TreeView, CommandPalette, ModalDialog, Tabs, Toast, and more. Built-in focus, mouse, and native keybindings.<br><a href="/guide/styling">38 theme palettes</a> with semantic tokens and auto-detected terminal colors.'
+    details: '<a href="/guides/components">45+ components</a>: TextInput, SelectList, Table, TreeView, CommandPalette, ModalDialog, Tabs, Toast, and more. Built-in focus, mouse, and native keybindings.<br><a href="/guide/styling">38 theme palettes</a> with semantic tokens and auto-detected terminal colors.<a class="feature-link" href="/guides/components">Browse components →</a>'
   - title: Playwright-Style Testing
-    details: '3,000+ tests with full access to terminal internals.<br>Auto-refreshing CSS locators, cell-level color assertions, press() input.<br><a href="https://termless.dev">Termless</a> — full ANSI fidelity with <a href="https://termless.dev/guide/backends">10 swappable backends</a> (xterm.js, Ghostty, Alacritty, WezTerm, Kitty).'
+    details: '3,000+ tests with full access to terminal internals.<br>Auto-refreshing CSS locators, cell-level color assertions, press() input.<br><a href="https://termless.dev">Termless</a> — full ANSI fidelity with <a href="https://termless.dev/guide/backends">10 swappable backends</a> (xterm.js, Ghostty, Alacritty, WezTerm, Kitty).<a class="feature-link" href="/guide/testing">Testing guide →</a>'
   - title: Composable Architecture
-    details: 'Every layer is independently swappable. <a href="/guide/providers">DI</a> via pipe() providers.<br><a href="/guide/layout-engine">Layout</a> — Flexily or Yoga.<br><a href="/guide/runtime-layers">State</a> — BYO.<br><a href="/guide/runtime-layers">Term</a> — real, headless, emulator.<br><a href="/guide/runtime-layers">App</a> — from stringify to rich app (withFocus, withDomEvents, withCommands).'
+    details: 'Every layer is independently swappable. <a href="/guide/providers">DI</a> via pipe() providers.<br><a href="/guide/layout-engine">Layout</a> — Flexily or Yoga.<br><a href="/guide/runtime-layers">State</a> — BYO.<br><a href="/guide/runtime-layers">Term</a> — real, headless, emulator.<br><a href="/guide/runtime-layers">App</a> — from stringify to rich app (withFocus, withDomEvents, withCommands).<a class="feature-link" href="/guide/providers">Providers guide →</a>'
 ---
 
 ## Why Silvery?
@@ -199,6 +199,17 @@ Standalone projects Silvery builds on — each stands on its own:
   display: block;
   content: "";
   margin-top: 0.4em;
+}
+.VPFeature .feature-link {
+  display: block;
+  margin-top: 0.5em;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--vp-c-brand-1) !important;
+  text-decoration: none !important;
+}
+.VPFeature .feature-link:hover {
+  text-decoration: underline !important;
 }
 .use-cases {
   margin: 0.5rem 0 1.5rem;
