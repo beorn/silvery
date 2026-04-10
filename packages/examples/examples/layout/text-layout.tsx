@@ -15,9 +15,9 @@
  */
 
 import React, { useState, useCallback } from "react"
-import { Box, Text, H2, Muted, Small, Kbd, Divider } from "../src/index.js"
-import { run, useInput, type Key } from "@silvery/ag-term/runtime"
-import { ExampleBanner, type ExampleMeta } from "./_banner.js"
+import { Box, Text, H2, Muted, Small, Kbd, Divider } from "silvery"
+import { run, useInput, type Key } from "silvery/runtime"
+import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "text layout",
