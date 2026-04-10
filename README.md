@@ -35,7 +35,7 @@ await render(<Counter />).run()
 
 ### Shiny new stuff
 
-- **[3–6× faster in mounted rerender benchmarks](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — cell-level dirty tracking, only changed cells emit to the terminal. Per-node skip for unchanged subtrees. Works in inline mode with native scrollback, not just fullscreen
+- **[Best-in-class performance](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — 3–6× faster than Ink in mounted rerender benchmarks. Cell-level dirty tracking, only changed cells emit to the terminal. Per-node skip for unchanged subtrees. Works in inline mode with native scrollback, not just fullscreen
 - **Pure TypeScript, zero native deps** — no WASM, no build steps. [Layout via Flexily](https://silvery.dev/guide/layout-engine) (or Yoga). Works on Alpine, CI, Docker, everywhere
 - **[Web-like responsive layout](https://silvery.dev/guide/silvery-vs-ink#responsive-layout)** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables:
   - [Scroll containers](https://silvery.dev/guide/scrolling) — `overflow="scroll"` with virtualization

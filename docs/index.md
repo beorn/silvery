@@ -62,8 +62,8 @@ features:
     details: "3,000+ tests. Headless rendering, auto-refreshing CSS locators, cell-level color assertions, and press() input. Termless provides full ANSI fidelity with 10 swappable backends (xterm.js, Ghostty, Alacritty, WezTerm, Kitty)."
     link: /guide/testing
     linkText: Testing guide
-  - title: 3–6× Faster
-    details: "Cell-level dirty tracking — only changed cells emit to the terminal. Per-node skip for unchanged subtrees. Works in inline mode with native scrollback, not just fullscreen."
+  - title: Best-in-Class Performance
+    details: "3–6× faster than Ink in mounted rerender benchmarks. Cell-level dirty tracking — only changed cells emit to the terminal. Per-node skip for unchanged subtrees."
     link: /guide/silvery-vs-ink#performance
     linkText: Benchmark details
   - title: Inline, Fullscreen, or Both
