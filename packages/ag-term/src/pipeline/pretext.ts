@@ -1,21 +1,13 @@
 /**
- * Pretext: Grapheme-indexed text analysis for O(log n) layout queries.
+ * Pretext: Grapheme-indexed text analysis for layout queries.
  *
  * Inspired by https://chenglou.me/pretext/ — prepare text once, measure at
  * any width cheaply. Enables layout algorithms CSS can't express:
  *
  * - **Shrinkwrap**: find the narrowest width that keeps the same line count
- *   (tighter than CSS fit-content, eliminates dead space in bubbles/cards)
- * - **Balanced**: equalize line widths (reduce raggedness without Knuth-Plass)
+ * - **Balanced**: equalize line widths (reduce raggedness)
  * - **Knuth-Plass**: optimal paragraph breaking (minimize total raggedness)
  * - **Height prediction**: exact line count at any width without full wrapping
- *
- * All algorithms operate on the same TextAnalysis data structure, which is
- * built once from ANSI-aware graphemes and cached per text node via PreparedText.
- *
- * Terminal widths are integers, so binary search for shrinkwrap does at most
- * log2(120) ≈ 7 iterations. Each iteration is O(graphemes). Total: O(7 × N)
- * where N is grapheme count — microseconds for typical terminal text.
  */
 
 import {
@@ -23,6 +15,7 @@ import {
   splitGraphemesAnsiAware,
   isWordBoundary,
   canBreakAnywhere,
+  wrapText,
 } from "../unicode"
 
 // ============================================================================
@@ -39,16 +32,16 @@ export interface TextAnalysis {
   cumWidths: number[]
   /** Total display width of all graphemes. */
   totalWidth: number
-  /** Width of the widest unbreakable word segment. Lower bound for shrinkwrap. */
+  /** Width of the widest unbreakable word segment. */
   maxWordWidth: number
+  /** Width of the widest single grapheme. */
+  maxGraphemeWidth: number
   /** Grapheme indices where newlines occur. */
   newlineIndices: number[]
-  /**
-   * Grapheme indices where word breaks are legal.
-   * After spaces/hyphens (index = char after boundary).
-   * Before CJK chars (index = the CJK char itself).
-   */
+  /** Grapheme indices where word breaks are legal. */
   breakIndices: number[]
+  /** Original text (for delegating to wrapText). */
+  text: string
 }
 
 // ============================================================================
@@ -59,7 +52,10 @@ export interface TextAnalysis {
  * Build text analysis from an ANSI-embedded text string.
  * O(N) where N is grapheme count. Call once per text change (cached by PreparedText).
  */
-export function buildTextAnalysis(text: string, gWidthFn: (g: string) => number = defaultGraphemeWidth): TextAnalysis {
+export function buildTextAnalysis(
+  text: string,
+  gWidthFn: (g: string) => number = defaultGraphemeWidth,
+): TextAnalysis {
   const graphemes = splitGraphemesAnsiAware(text)
   const len = graphemes.length
   const widths = new Array<number>(len)
@@ -69,6 +65,7 @@ export function buildTextAnalysis(text: string, gWidthFn: (g: string) => number 
 
   cumWidths[0] = 0
   let maxWordWidth = 0
+  let maxGraphemeWidth = 0
   let currentWordWidth = 0
 
   for (let i = 0; i < len; i++) {
@@ -76,18 +73,17 @@ export function buildTextAnalysis(text: string, gWidthFn: (g: string) => number 
     const w = gWidthFn(g)
     widths[i] = w
     cumWidths[i + 1] = cumWidths[i]! + w
+    if (w > maxGraphemeWidth) maxGraphemeWidth = w
 
     if (g === "\n") {
       newlineIndices.push(i)
       maxWordWidth = Math.max(maxWordWidth, currentWordWidth)
       currentWordWidth = 0
     } else if (isWordBoundary(g)) {
-      // Break AFTER space/hyphen: next grapheme starts a new word
       breakIndices.push(i + 1)
       maxWordWidth = Math.max(maxWordWidth, currentWordWidth)
       currentWordWidth = 0
     } else if (canBreakAnywhere(g)) {
-      // Break BEFORE CJK: this char can start a new line
       breakIndices.push(i)
       maxWordWidth = Math.max(maxWordWidth, currentWordWidth)
       currentWordWidth = w
@@ -103,72 +99,31 @@ export function buildTextAnalysis(text: string, gWidthFn: (g: string) => number 
     cumWidths,
     totalWidth: cumWidths[len]!,
     maxWordWidth,
+    maxGraphemeWidth,
     newlineIndices,
     breakIndices,
+    text,
   }
 }
 
 // ============================================================================
-// Line counting (fast, no string allocation)
+// Line counting
 // ============================================================================
 
 /**
  * Count how many lines text would occupy at a given width.
- * Uses greedy word-wrap algorithm matching wrapTextWithMeasurer behavior.
- * O(graphemes) per call — no string allocation.
+ *
+ * Delegates to wrapText for correctness — the greedy wrapping algorithm has
+ * subtle boundary-char handling (spaces consumed on overflow, leading space
+ * trimming on continuation lines) that's error-prone to reimplement.
+ *
+ * For terminal text (20-200 chars), wrapText is ~5-12µs per call.
+ * Shrinkwrap does ~7-9 calls (log2(width)), so total is ~50-100µs.
  */
 export function countLinesAtWidth(analysis: TextAnalysis, width: number): number {
   if (width <= 0) return Infinity
-  const { widths, totalWidth, newlineIndices } = analysis
-  if (totalWidth <= width && newlineIndices.length === 0) return 1
-
-  let lines = 1
-  let currentWidth = 0
-  let lastBreakWidth = -1 // width at last break opportunity
-  let hasBreak = false
-
-  // Build a set for O(1) newline lookup
-  const newlineSet = newlineIndices.length > 0 ? new Set(newlineIndices) : null
-  // Build a set for O(1) break lookup
-  const breakSet = analysis.breakIndices.length > 0 ? new Set(analysis.breakIndices) : null
-
-  for (let i = 0; i < widths.length; i++) {
-    // Newline forces a line break (check before width skip — newlines have width 0)
-    if (newlineSet?.has(i)) {
-      lines++
-      currentWidth = 0
-      hasBreak = false
-      lastBreakWidth = -1
-      continue
-    }
-
-    const w = widths[i]!
-    if (w === 0) continue // ANSI token
-
-    // Track break opportunities
-    if (breakSet?.has(i)) {
-      lastBreakWidth = currentWidth
-      hasBreak = true
-    }
-
-    // Would this grapheme overflow?
-    if (currentWidth + w > width) {
-      lines++
-      if (hasBreak && lastBreakWidth >= 0) {
-        // Rewind to last break: the remaining width from break to current
-        currentWidth = currentWidth - lastBreakWidth + w
-      } else {
-        // Character wrap
-        currentWidth = w
-      }
-      hasBreak = false
-      lastBreakWidth = -1
-    } else {
-      currentWidth += w
-    }
-  }
-
-  return lines
+  if (analysis.totalWidth <= width && analysis.newlineIndices.length === 0) return 1
+  return wrapText(analysis.text, width, true, true).length
 }
 
 // ============================================================================
@@ -182,20 +137,22 @@ export function countLinesAtWidth(analysis: TextAnalysis, width: number): number
  * last line is short. Shrinkwrap binary-searches for the tightest width that
  * keeps the same number of lines, eliminating wasted area in bubbles/cards.
  *
- * O(log(maxWidth) × graphemes) — ~7 iterations × N for terminal widths.
+ * O(log(maxWidth) × wrapText) — ~7-9 iterations for terminal widths.
  */
 export function shrinkwrapWidth(analysis: TextAnalysis, maxWidth: number): number {
   if (maxWidth <= 0) return 0
   const targetLineCount = countLinesAtWidth(analysis, maxWidth)
   if (targetLineCount <= 1) {
-    // Single line — tightest width is the total text width (or maxWidth if smaller)
     return Math.min(Math.ceil(analysis.totalWidth), maxWidth)
   }
 
-  // Binary search: find narrowest width where lineCount <= targetLineCount
-  // Lower bound: widest unbreakable word (can't go narrower without adding lines)
-  let lo = Math.max(1, analysis.maxWordWidth)
+  // Lower bound: max grapheme width (character wrap allows widths below maxWordWidth)
+  // Upper bound: maxWidth (can't return wider than the container)
+  let lo = Math.max(1, analysis.maxGraphemeWidth)
   let hi = maxWidth
+
+  // Guard: if lo >= hi, nothing to search
+  if (lo >= hi) return Math.min(hi, maxWidth)
 
   while (lo < hi) {
     const mid = (lo + hi) >> 1
@@ -206,7 +163,8 @@ export function shrinkwrapWidth(analysis: TextAnalysis, maxWidth: number): numbe
     }
   }
 
-  return lo
+  // Clamp to maxWidth (safety)
+  return Math.min(lo, maxWidth)
 }
 
 // ============================================================================
@@ -216,9 +174,8 @@ export function shrinkwrapWidth(analysis: TextAnalysis, maxWidth: number): numbe
 /**
  * Find a width that produces lines of approximately equal length.
  *
- * Strategy: compute total width, divide by target line count, then
- * find the narrowest width at that line count via shrinkwrap.
- * Falls back to maxWidth if balanced width would increase line count.
+ * Strategy: compute total width / line count as the ideal per-line width,
+ * then find the narrowest width at that line count via shrinkwrap.
  */
 export function balancedWidth(analysis: TextAnalysis, maxWidth: number): number {
   if (maxWidth <= 0) return 0
@@ -228,12 +185,11 @@ export function balancedWidth(analysis: TextAnalysis, maxWidth: number): number 
   // Ideal balanced width: total / lines, rounded up
   const idealWidth = Math.ceil(analysis.totalWidth / lineCount)
 
-  // Clamp to [maxWordWidth, maxWidth]
-  const candidateWidth = Math.max(analysis.maxWordWidth, Math.min(idealWidth, maxWidth))
+  // Clamp to [maxGraphemeWidth, maxWidth]
+  const candidateWidth = Math.max(analysis.maxGraphemeWidth, Math.min(idealWidth, maxWidth))
 
   // Verify this doesn't increase line count
   if (countLinesAtWidth(analysis, candidateWidth) > lineCount) {
-    // Balanced width would add lines — use shrinkwrap instead
     return shrinkwrapWidth(analysis, maxWidth)
   }
 
@@ -248,78 +204,86 @@ export function balancedWidth(analysis: TextAnalysis, maxWidth: number): number 
 /**
  * Find optimal line breaks that minimize total raggedness.
  *
- * The Knuth-Plass algorithm uses dynamic programming over break points to
- * find the set of line breaks that minimizes the sum of squared leftover space
- * across all lines. This produces more visually pleasing paragraphs than
- * greedy wrapping, which only optimizes each line independently.
+ * Runs per-paragraph (split by newlines) to avoid penalty interactions
+ * around forced breaks. Falls back to greedy wrapping for paragraphs
+ * where the DP finds no feasible solution (overlong words).
  *
- * Returns an array of grapheme indices where line breaks should occur.
- * The caller wraps text at these indices instead of using greedy wrapping.
- *
- * Complexity: O(breakpoints²) worst case, typically much less with pruning.
- * For terminal text (20-200 chars, ~5-30 breakpoints), this is microseconds.
+ * O(breakpoints²) per paragraph, typically much less with pruning.
  */
 export function knuthPlassBreaks(analysis: TextAnalysis, width: number): number[] {
   if (width <= 0) return []
   if (analysis.totalWidth <= width && analysis.newlineIndices.length === 0) return []
 
-  const { cumWidths, breakIndices, newlineIndices, graphemes, widths } = analysis
+  // Split into paragraphs at newlines and process each independently
+  const { newlineIndices, graphemes } = analysis
+  const allBreaks: number[] = []
 
-  // Build combined break candidates: start of text + breakIndices + newlines + end of text
-  // Each candidate is a grapheme index where a line can start
-  const candidates: number[] = [0]
-  const newlineSet = new Set(newlineIndices)
-
-  // Merge breakIndices and newline positions (as forced breaks)
-  const allBreaks = new Set(breakIndices)
+  const paragraphStarts = [0]
   for (const nl of newlineIndices) {
-    allBreaks.add(nl + 1) // line starts after newline
+    paragraphStarts.push(nl + 1)
   }
-  const sortedBreaks = Array.from(allBreaks).sort((a, b) => a - b)
-  for (const bp of sortedBreaks) {
-    if (bp > 0 && bp <= graphemes.length) candidates.push(bp)
+
+  for (let p = 0; p < paragraphStarts.length; p++) {
+    const pStart = paragraphStarts[p]!
+    const pEnd = p + 1 < paragraphStarts.length ? paragraphStarts[p + 1]! - 1 : graphemes.length // -1 to exclude newline
+
+    if (pStart >= pEnd) continue // empty paragraph
+
+    const breaks = knuthPlassForParagraph(analysis, pStart, pEnd, width)
+    allBreaks.push(...breaks)
+
+    // Add newline break if not the last paragraph
+    if (p < paragraphStarts.length - 1 && pEnd < graphemes.length) {
+      allBreaks.push(pEnd + 1) // after the newline
+    }
   }
-  candidates.push(graphemes.length) // end sentinel
+
+  return allBreaks
+}
+
+/** DP for a single paragraph (no newlines). */
+function knuthPlassForParagraph(
+  analysis: TextAnalysis,
+  pStart: number,
+  pEnd: number,
+  width: number,
+): number[] {
+  const { cumWidths, breakIndices, widths, graphemes } = analysis
+
+  // Build candidates for this paragraph
+  const candidates: number[] = [pStart]
+  for (const bp of breakIndices) {
+    if (bp > pStart && bp <= pEnd) candidates.push(bp)
+  }
+  candidates.push(pEnd)
 
   const n = candidates.length
+  if (n <= 2) return [] // single segment, no breaks needed
 
-  // DP: cost[i] = minimum total cost to break text from candidate[i] to end
-  // break[i] = next candidate index (where the next line starts)
   const cost = new Array<number>(n).fill(Infinity)
   const next = new Array<number>(n).fill(-1)
-  cost[n - 1] = 0 // end sentinel has zero cost
+  cost[n - 1] = 0
 
-  // Process candidates from right to left
   for (let i = n - 2; i >= 0; i--) {
     const lineStart = candidates[i]!
     const lineStartCum = cumWidths[lineStart]!
 
     for (let j = i + 1; j < n; j++) {
       const lineEnd = candidates[j]!
-      let lineWidth = cumWidths[lineEnd]! - lineStartCum
 
-      // Trim trailing spaces from line width
+      // Compute line width, trimming trailing whitespace
       let trimEnd = lineEnd
-      while (trimEnd > lineStart && widths[trimEnd - 1] === 0) trimEnd--
-      if (trimEnd > lineStart) {
-        const lastChar = graphemes[trimEnd - 1]
-        if (lastChar === " " || lastChar === "\t") {
-          lineWidth = cumWidths[trimEnd - 1]! - lineStartCum
-        }
+      while (trimEnd > lineStart) {
+        const prevG = graphemes[trimEnd - 1]
+        const prevW = widths[trimEnd - 1]
+        if (prevW === 0) { trimEnd--; continue } // skip ANSI
+        if (prevG === " " || prevG === "\t") { trimEnd--; continue }
+        break
       }
+      const lineWidth = cumWidths[trimEnd]! - lineStartCum
 
-      // Check for forced newline in this range
-      let forcedBreak = false
-      for (const nl of newlineIndices) {
-        if (nl >= lineStart && nl < lineEnd) {
-          forcedBreak = true
-          break
-        }
-      }
+      if (lineWidth > width) break // too wide, skip wider candidates
 
-      if (lineWidth > width && !forcedBreak) break // no point trying wider lines
-
-      // Cost: squared leftover space (last line is free — no penalty)
       const leftover = width - lineWidth
       const lineCost = j === n - 1 ? 0 : leftover * leftover
       const totalCost = lineCost + cost[j]!
@@ -328,12 +292,13 @@ export function knuthPlassBreaks(analysis: TextAnalysis, width: number): number[
         cost[i] = totalCost
         next[i] = j
       }
-
-      if (forcedBreak) break // forced break — can't extend past newline
     }
   }
 
-  // Trace back to get break positions
+  // If DP failed (no feasible path), return empty (caller falls back to greedy)
+  if (cost[0] === Infinity) return []
+
+  // Trace back
   const breaks: number[] = []
   let idx = 0
   while (idx < n - 1 && next[idx]! >= 0) {
@@ -348,28 +313,39 @@ export function knuthPlassBreaks(analysis: TextAnalysis, width: number): number[
 
 /**
  * Wrap text using Knuth-Plass optimal breaks.
- * Returns line strings (with ANSI preserved) — drop-in replacement for greedy wrap.
+ * Returns line strings — drop-in replacement for greedy wrap.
+ * Falls back to greedy wrapText when DP finds no feasible solution.
  */
 export function optimalWrap(text: string, analysis: TextAnalysis, width: number): string[] {
   const breaks = knuthPlassBreaks(analysis, width)
-  if (breaks.length === 0) return [text]
+  if (breaks.length === 0) {
+    // No breaks found — either single line or DP infeasible → fall back to greedy
+    if (analysis.totalWidth <= width && analysis.newlineIndices.length === 0) return [text]
+    return wrapText(text, width, true, true)
+  }
 
-  const { graphemes } = analysis
+  const { graphemes, widths } = analysis
   const lines: string[] = []
   let lineStart = 0
 
   for (const bp of breaks) {
-    // Collect graphemes from lineStart to bp, trimming trailing spaces
+    // Trim trailing whitespace (skip zero-width ANSI tokens)
     let lineEnd = bp
-    while (lineEnd > lineStart && (graphemes[lineEnd - 1] === " " || graphemes[lineEnd - 1] === "\t")) {
-      lineEnd--
+    while (lineEnd > lineStart) {
+      const w = widths[lineEnd - 1]!
+      if (w === 0) { lineEnd--; continue } // ANSI token
+      const g = graphemes[lineEnd - 1]!
+      if (g === " " || g === "\t" || g === "\n") { lineEnd--; continue }
+      break
     }
     lines.push(graphemes.slice(lineStart, lineEnd).join(""))
 
-    // Skip leading spaces on next line
+    // Skip leading whitespace on next line (skip ANSI tokens)
     lineStart = bp
-    while (lineStart < graphemes.length && (graphemes[lineStart] === " " || graphemes[lineStart] === "\t")) {
-      lineStart++
+    while (lineStart < graphemes.length) {
+      const g = graphemes[lineStart]!
+      if (g === " " || g === "\t") { lineStart++; continue }
+      break
     }
   }
 

@@ -239,13 +239,19 @@ export function setCachedFormat(
 // ============================================================================
 
 /**
- * Get cached text analysis. Invalidated when collected text changes.
- * Build via buildTextAnalysis() from pretext.ts on cache miss.
+ * Get cached text analysis. Invalidated when content changes.
+ * Uses PLAIN_TEXT_DIRTY (not COLLECTED_TEXT_DIRTY) because analysis
+ * is built from plain text in measure phase, not styled text.
  */
 export function getCachedAnalysis(node: AgNode): TextAnalysis | null {
   if (_cacheDisabled) return null
   const entry = textCaches.get(node)
-  return entry?.analysis ?? null
+  if (!entry?.analysis) return null
+  if (isDirty(node.dirtyBits, node.dirtyEpoch, PLAIN_TEXT_DIRTY)) {
+    entry.analysis = null
+    return null
+  }
+  return entry.analysis
 }
 
 /** Store text analysis in cache. */
