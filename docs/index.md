@@ -205,9 +205,10 @@ Standalone projects Silvery builds on — each stands on its own:
 }
 .VPFeature .feature-link {
   display: block;
-  margin-top: 0.5em;
+  margin-top: 0.75em;
   font-size: 12px;
   font-weight: 500;
+  text-align: right;
   color: var(--vp-c-brand-1) !important;
   text-decoration: none !important;
 }
