@@ -128,14 +128,14 @@ Silvery is **3–6× faster** than Ink 7.0 in our mounted rerender benchmarks �
 
 | Scenario                                          | Silvery advantage |
 | ------------------------------------------------- | ----------------- |
-| Cursor move 20-item (all visible)                 | **TBD**           |
-| Cursor move 100-item                              | **3.2×**          |
-| Kanban move editing marker                        | **3.2×**          |
-| Memo'd cursor highlight 100 (inverse)             | **5.6×**          |
-| Memo'd cursor highlight 1000 (inverse)            | **6.0×**          |
-| Memo'd 100-item single toggle                     | **5.4×**          |
-| Memo'd 500-item single toggle                     | **6.3×**          |
-| Memo'd kanban 5×20 move editing marker            | **4.9×**          |
+| Cursor move 20-item (all visible)                 | **2.7×**          |
+| Cursor move 100-item                              | **3.1×**          |
+| Kanban move editing marker                        | **3.3×**          |
+| Memo'd cursor highlight 100 (inverse)             | **5.3×**          |
+| Memo'd cursor highlight 1000 (inverse)            | **6.1×**          |
+| Memo'd 100-item single toggle                     | **5.1×**          |
+| Memo'd 500-item single toggle                     | **5.7×**          |
+| Memo'd kanban 5×20 move editing marker            | **4.3×**          |
 
 ### Output efficiency
 

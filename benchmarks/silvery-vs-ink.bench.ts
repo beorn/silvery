@@ -454,7 +454,7 @@ describe("Mounted rerender — cursor move in 100-item list", () => {
   })
 
   let iCursor = 0
-  bench("Ink (mounted, incrementalRendering)", () => {
+  bench("Ink (mounted, synchronous rerender)", () => {
     iCursor = (iCursor + 1) % 100
     inkInstance.rerender(
       React.createElement(
@@ -589,7 +589,7 @@ describe("Mounted memo'd cursor highlight (inverse) — 100 items", () => {
   })
 
   let iCursor = 0
-  bench("Ink (memo + incrementalRendering)", () => {
+  bench("Ink (memo + synchronous rerender)", () => {
     iCursor = (iCursor + 1) % 100
     inkInstance.rerender(
       React.createElement(
@@ -642,7 +642,7 @@ describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
   })
 
   let iCursor = 0
-  bench("Ink (memo + incrementalRendering)", () => {
+  bench("Ink (memo + synchronous rerender)", () => {
     iCursor = (iCursor + 1) % 1000
     inkInstance.rerender(
       React.createElement(
@@ -675,7 +675,7 @@ describe("Mounted rerender — move editing marker in kanban 5×20", () => {
   })
 
   let iEdit = 0
-  bench("Ink (mounted, incrementalRendering)", () => {
+  bench("Ink (mounted, synchronous rerender)", () => {
     iEdit = (iEdit + 1) % 20
     inkInstance.rerender(inkKanbanEdit(5, 20, 2, iEdit))
   })
@@ -748,7 +748,7 @@ describe("useState pattern — memo'd 100-item list, single active toggle", () =
   })
 
   let iActive = 0
-  bench("Ink (memo + incrementalRendering)", () => {
+  bench("Ink (memo + synchronous rerender)", () => {
     iActive = (iActive + 1) % 100
     inkInstance.rerender(inkMemoList(100, iActive))
   })
@@ -773,7 +773,7 @@ describe("useState pattern — memo'd 500-item list, single active toggle", () =
   })
 
   let iActive = 0
-  bench("Ink (memo + incrementalRendering)", () => {
+  bench("Ink (memo + synchronous rerender)", () => {
     iActive = (iActive + 1) % 500
     inkInstance.rerender(inkMemoList(500, iActive))
   })
@@ -847,7 +847,7 @@ describe("useState pattern — memo'd kanban 5×20, move editing marker", () => 
   })
 
   let iCard = 0
-  bench("Ink (memo + incrementalRendering)", () => {
+  bench("Ink (memo + synchronous rerender)", () => {
     iCard = (iCard + 1) % 20
     inkInstance.rerender(inkMemoKanban(5, 20, 2, iCard))
   })
