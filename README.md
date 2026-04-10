@@ -4,8 +4,6 @@
 
 Ink-compatible React renderer for interactive terminal apps. Same `Box`, `Text`, `useInput` API you know. 3–6× faster in mounted rerender benchmarks.
 
-> **Work in progress.** APIs may change. Feedback welcome.
-
 ```console
 $ npm install silvery react
 ```
@@ -43,22 +41,27 @@ await render(<Counter />).run()
   - [Scroll containers](https://silvery.dev/guide/scrolling) — `overflow="scroll"` with virtualization
   - [Sticky positioning](https://silvery.dev/guide/layout-coordinates) — `position="sticky"` for headers and footers
   - [ANSI-aware compositing](https://silvery.dev/guide/ansi-layering) — color blending with alpha across overlapping layers
-- **[Smart rendering modes](https://silvery.dev/examples/scrollback)** — three modes, all with incremental rendering:
+- **[Inline, fullscreen, or both](https://silvery.dev/guide/runtime-layers)** — same components, one-line switch. All with incremental rendering:
   - [Fullscreen](https://silvery.dev/guide/runtime-getting-started) — alt screen, traditional TUI
   - [Inline with dynamic scrollback](https://silvery.dev/examples/scrollback) — live React zone at bottom, completed items graduate to terminal-owned scrollback. Native Cmd+F and text selection
   - [Virtual inline](https://silvery.dev/design/dynamic-scrollback) — alt screen + app-managed scrollback history, scrollable and searchable
-- **[45+ components](https://silvery.dev/guides/components)** — TextInput, SelectList, ListView, Table, TreeView, Tabs, CommandPalette, ModalDialog, Toast, and more. All support focus (Tab/spatial arrow nav), mouse (click-to-focus, scroll), and native keybindings (readline Ctrl+A/E/K/U, vim j/k navigation). [38 theme palettes](https://silvery.dev/guide/styling) with semantic tokens (`$primary`, `$error`) and auto-detected terminal colors
-- **[Web-like interaction](https://silvery.dev/guide/event-handling)** — [focus scopes](https://silvery.dev/guide/silvery-vs-ink#focus-system) with spatial arrow-key nav, click-to-focus. Enables:
+- **[Batteries-included component library](https://silvery.dev/guides/components)** — 45+ components: TextInput, SelectList, ListView, Table, TreeView, Tabs, CommandPalette, ModalDialog, Toast, and more. Built-in focus, mouse, and native keybindings (readline, vim). [38 theme palettes](https://silvery.dev/guide/styling) with semantic tokens (`$primary`, `$error`) and auto-detected terminal colors
+- **[Web-like interaction](https://silvery.dev/guide/event-handling)** — [focus scopes](https://silvery.dev/guide/silvery-vs-ink#focus-system) with spatial arrow-key nav and click-to-focus. Built on top of the component system:
   - [Text selection](https://silvery.dev/guide/text-selection) — mouse drag, word/line, `userSelect` boundaries, Alt+drag override
   - [Find](https://silvery.dev/guide/find) — `Ctrl+F` with match highlighting and `n`/`N` navigation
   - [Copy-mode](https://silvery.dev/guide/clipboard) — `Esc, v` for vim-style keyboard selection and yanking
   - [Drag-and-drop](https://silvery.dev/guide/event-handling) — mouse drag with hit testing
-- **[Web-like testing](https://silvery.dev/guide/testing)** — 3,000+ tests. Playwright-style API with full access to terminal internals (scrollback buffer, cursor position, cell styles, window dimensions):
+- **[Playwright-style testing](https://silvery.dev/guide/testing)** — 3,000+ tests. Full access to terminal internals (scrollback buffer, cursor position, cell styles, window dimensions):
   - `createRenderer` — fast unit tests with CSS selector locators, cell-level color assertions, frame-by-frame inspection
-  - [Termless](https://termless.dev) — like Playwright for terminals. Full ANSI fidelity through real terminal emulation with [10 swappable backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty, and more)
-  - [`SILVERY_STRICT`](https://silvery.dev/guide/debugging) — multi-level verification: buffer-level (incremental vs fresh), ANSI-level (internal parser), terminal-level (xterm.js, Ghostty cross-backend), and accumulated replay across all frames
-- **[Composable architecture](https://silvery.dev/guide/providers)** — use as just a renderer (`render`), add a runtime (`run`), or build full apps with any React state library (useState, Zustand, Jotai, Redux). Swap terminal backends (real TTY, headless, xterm.js emulator) for [testing](https://silvery.dev/guide/testing). Embed silvery components in existing CLIs. Use the layout engine standalone. Render to terminal, or (experimental) Canvas, or DOM
-- **[Terminal protocol support](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)** — 100+ escape sequences, all auto-negotiated: 12 OSC (hyperlinks, clipboard, palette, text sizing, semantic prompts, notifications), 35+ CSI (cursor, mouse modes, paste, focus, sync output, device queries), 50+ SGR (6 underline styles, underline colors, truecolor, 256-color), full Kitty keyboard (5 flags), full SGR mouse (any-event, drag, wheel)
+  - [Termless](https://termless.dev) — like Playwright for terminals. Full ANSI fidelity with [10 swappable backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty, and more)
+  - [`SILVERY_STRICT`](https://silvery.dev/guide/debugging) — multi-level verification: buffer (incremental vs fresh), ANSI (internal parser), terminal (cross-backend), and accumulated replay
+- **[Composable architecture](https://silvery.dev/guide/providers)** — every layer is independently usable and swappable:
+  - [Layout engine](https://silvery.dev/guide/layout-engine) — Flexily (default) or Yoga, usable standalone
+  - [Terminal backends](https://silvery.dev/guide/testing) — real TTY, headless, or xterm.js emulator
+  - [State management](https://silvery.dev/guide/providers) — useState, Zustand, Jotai, Redux — your choice
+  - [Render targets](https://silvery.dev/guide/providers) — terminal, Canvas, or DOM (experimental)
+  - [Runtime layers](https://silvery.dev/guide/runtime-layers) — just a renderer (`render`), add a runtime (`run`), or full app with `pipe()` providers
+- **[All modern terminal protocols](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)** — 100+ escape sequences, all auto-negotiated. [Kitty keyboard](https://terminfo.dev), [SGR mouse](https://terminfo.dev), [OSC 8 hyperlinks](https://terminfo.dev), [OSC 52 clipboard](https://terminfo.dev), bracketed paste, focus reporting, synchronized output, truecolor, underline styles, and [more](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)
 
 ### Why Silvery?
 
@@ -67,6 +70,12 @@ Silvery grew out of building a complex terminal app — a multi-pane workspace w
 Along the way, three principles emerged. Take the best from the web, stay true to the terminal, and raise the bar for developer ergonomics, architecture composability, and performance.
 
 [The Silvery Way](https://silvery.dev/guide/the-silvery-way) · [Silvery vs Ink](https://silvery.dev/guide/silvery-vs-ink) · [About](https://silvery.dev/about)
+
+### Next steps
+
+- [Quick start](https://silvery.dev/getting-started/quick-start) — install, first app, deploy
+- [Interactive examples](https://silvery.dev/examples) — `npx silvery examples` to try them locally
+- [Silvery vs Ink](https://silvery.dev/guide/silvery-vs-ink) — feature comparison and migration guide
 
 ## Packages
 
@@ -102,7 +111,7 @@ Standalone projects Silvery builds on — each stands on its own:
 
 ## Inspirations
 
-Silvery builds on ideas from [Ink](https://github.com/vadimdemedes/ink) (React for terminals), [Ratatui](https://ratatui.rs/) (cell-level buffer model), [SlateJS](https://www.slatejs.org/) (plugin composition, operations-as-data), [The Elm Architecture](https://guide.elm-lang.org/architecture/) / [BubbleTea](https://github.com/charmbracelet/bubbletea) (TEA state machines), the CSS/Web platform (flexbox, container queries, DOM events, focus scopes), [VS Code](https://code.visualstudio.com/) (command palette, keybindings), [Playwright](https://playwright.dev/) (locator-based testing), [ProseMirror](https://prosemirror.net/) (selection model), [Blessed](https://github.com/chjj/blessed) (rich terminal UIs in JS), and [Textual](https://textual.textualize.io/) (CSS-like terminal theming).
+Silvery builds on ideas from [Ink](https://github.com/vadimdemedes/ink) (React for terminals), [Ratatui](https://ratatui.rs/) (cell-level buffer model), [shadcn/ui](https://ui.shadcn.com/) (polished defaults, semantic theming), [SlateJS](https://www.slatejs.org/) (plugin composition, operations-as-data), [The Elm Architecture](https://guide.elm-lang.org/architecture/) / [BubbleTea](https://github.com/charmbracelet/bubbletea) (TEA state machines), the CSS/Web platform (flexbox, container queries, DOM events, focus scopes), [VS Code](https://code.visualstudio.com/) (command palette, keybindings), [Playwright](https://playwright.dev/) (locator-based testing), [ProseMirror](https://prosemirror.net/) (selection model), [Blessed](https://github.com/chjj/blessed) (rich terminal UIs in JS), and [Textual](https://textual.textualize.io/) (CSS-like terminal theming).
 
 ## License
 
