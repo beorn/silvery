@@ -12,7 +12,7 @@ import React from "react"
 import { bench, describe } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
-import { buildTextAnalysis, shrinkwrapWidth, balancedWidth, knuthPlassBreaks } from "@silvery/ag-term/pipeline/pretext"
+import { buildTextAnalysis, shrinkwrapWidth, knuthPlassBreaks } from "@silvery/ag-term/pipeline/pretext"
 import { graphemeWidth } from "@silvery/ag-term/unicode"
 
 // ============================================================================
@@ -306,7 +306,7 @@ describe("Scroll container — 1000 items, 20 visible (80x24)", () => {
 //
 // Measures the cost of text analysis and layout algorithms independently
 // from the rendering pipeline. Useful for understanding the overhead of
-// snug-content, balanced, and Knuth-Plass on various text sizes.
+// snug-content (shrinkwrap) and Knuth-Plass (even wrap) on various text sizes.
 // ============================================================================
 
 const SHORT_TEXT = "The quick brown fox jumps over the lazy dog"
@@ -341,21 +341,6 @@ describe("Pretext — shrinkwrapWidth", () => {
   })
   bench("long at width=80", () => {
     shrinkwrapWidth(longA, 80)
-  })
-})
-
-describe("Pretext — balancedWidth", () => {
-  const shortA = buildTextAnalysis(SHORT_TEXT, graphemeWidth)
-  const mediumA = buildTextAnalysis(MEDIUM_TEXT, graphemeWidth)
-  const longA = buildTextAnalysis(LONG_TEXT, graphemeWidth)
-  bench("short at width=20", () => {
-    balancedWidth(shortA, 20)
-  })
-  bench("medium at width=40", () => {
-    balancedWidth(mediumA, 40)
-  })
-  bench("long at width=80", () => {
-    balancedWidth(longA, 80)
   })
 })
 
