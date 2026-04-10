@@ -7,6 +7,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-04-10
+
+### Added
+
+- **Pretext-inspired text layout** — `width="snug-content"` finds the tightest box width that keeps the same line count ([Pretext: "shrinkwrap"](https://chenglou.me/pretext/bubbles/)). `wrap="even"` uses minimum-raggedness dynamic programming for globally-optimal line breaks. See [Text Layout guide](/guide/layouts#text-layout).
+- **PreparedText cache** — three-level per-node text analysis cache (plain text, collected styled text, formatted lines per width). 27-49% faster on resize workloads, zero regression on cursor move.
+- **Floating component defaults** — ModalDialog, Toast, Tooltip default to `width="snug-content"` (tightest fit around content). All accept spread BoxProps for overriding.
+- **Pretext demo** — `examples/pretext-demo.tsx` with interactive chat bubbles, even wrapping, and combined showcase.
+- **Node.js 23.6+ CLI** — `bunx silvery examples` works on both Bun and Node.
+- **Benchmarks** — resize/fold, scroll container, large terminal (400×200), Pretext algorithms, reconciliation profiling.
+
+### Fixed
+
+- **Wide char STRICT** — grapheme cluster handling (CJK, emoji, ZWJ sequences) in STRICT output verification parser.
+- **VT100 pending wrap** — STRICT_OUTPUT false positives on fold/collapse operations.
+- **Pretext correctness** — 5 bugs fixed after GPT 5.4 Pro review: shrinkwrap lower bound, newline handling in Knuth-Plass DP, ANSI-aware trimming, L3 cache invalidation.
+
+### Changed
+
+- **Reactive cascade is production path** — alien-signals computeds drive rendering by default. Imperative oracle runs only under `SILVERY_STRICT=1`.
+- **Bit-packed dirty flags** — 7 epoch fields (56 bytes) → dirtyBits + dirtyEpoch (16 bytes per node).
+- **Pipeline simplification** — -1,111 LOC (STRICT extraction to output-verify.ts, instrumentation consolidation, cascade dedup).
+
+### Performance
+
+- Massive performance improvements across the rendering pipeline: reactive cascade, bit-packed dirty flags, PreparedText cache (27-49% faster resize), layout-on-demand gate, container-level layout skip, dirty-set rendering.
+
 ## [0.11.0] - 2026-04-09
 
 ### Added
