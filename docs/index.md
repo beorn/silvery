@@ -42,74 +42,40 @@ hero:
     - theme: alt
       text: View on GitHub
       link: https://github.com/beorn/silvery
+features:
+  - title: Familiar React API
+    details: 'Same Box/Text/useInput patterns you already know. If you''ve used Ink, most code works with just an import change. <a href="/guide/silvery-vs-ink#compatibility">918/931 Ink 7.0 tests pass</a> on the <a href="/guide/silvery-vs-ink">@silvery/ink</a> compat layer.'
+    link: /guide/silvery-vs-ink
+    linkText: Full feature comparison
+  - title: Best-in-Class Performance
+    details: '<a href="/guide/silvery-vs-ink#performance">3–6× faster</a> than Ink, <a href="/guide/silvery-vs-ink#output-efficiency">10–20× less terminal output</a>. Pure TypeScript, zero native deps. Layout via <a href="https://beorn.codes/flexily">Flexily</a> (or Yoga). Runs on Bun and Node.js.'
+    link: /guide/silvery-vs-ink#performance
+    linkText: Benchmark details
+  - title: Web-like Responsive Layout
+    details: 'One-phase responsive layouts — <a href="/guide/hooks">useBoxRect()</a> returns real dimensions during render. <a href="/guide/scrolling">overflow="scroll"</a> with virtualization. <a href="/guide/layout-coordinates">position="sticky"</a> headers. <a href="/guide/ansi-layering">ANSI-aware compositing</a> with color blending.'
+    link: /guide/layouts
+    linkText: Layout guide
+  - title: Rich Component Library
+    details: '<a href="/guides/components">45+ components</a>: TextInput, SelectList, ListView, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Spinner, and more. Built-in focus, mouse, and native keybindings. <a href="/guide/styling">38 theme palettes</a> with auto-detected terminal colors.'
+    link: /guides/components
+    linkText: Browse components
+  - title: Inline, Fullscreen, or Both
+    details: 'Same components, one-line switch. <a href="/examples/scrollback">Inline mode</a> gets fullscreen-level performance with native scrollback and Cmd+F. Fullscreen mode gets inline-level UX (<a href="/design/dynamic-scrollback">app-managed scrollback</a>). <a href="/design/dynamic-scrollback">Virtual inline</a> combines both.'
+    link: /guide/runtime-layers
+    linkText: Runtime layers
+  - title: Web-like Interaction
+    details: '<a href="/guide/silvery-vs-ink#focus-system">Focus scopes</a> with spatial arrow-key nav, click-to-focus, <a href="/guide/text-selection">text selection</a>, <a href="/guide/find">Ctrl+F find</a>, <a href="/guide/clipboard">vim copy-mode</a>, and <a href="/guide/event-handling">drag-and-drop</a>. Powered by <a href="/guide/silvery-vs-ink#terminal-protocol-coverage">100+ auto-negotiated terminal protocols</a>.'
+    link: /guide/event-handling
+    linkText: Interaction guide
+  - title: Playwright-Style Testing
+    details: '3,000+ tests. Auto-refreshing CSS locators, cell-level color assertions, and press() input. <a href="https://termless.dev">Termless</a> provides full ANSI fidelity with <a href="https://termless.dev/guide/backends">10 swappable backends</a> (xterm.js, Ghostty, Alacritty, WezTerm, Kitty).'
+    link: /guide/testing
+    linkText: Testing guide
+  - title: Composable Architecture
+    details: 'Every layer is independently swappable: <a href="/guide/layout-engine">layout engine</a> (Flexily or Yoga), terminal backends, state management (useState, Zustand, Jotai), <a href="/guide/providers">render targets</a> (terminal, Canvas, DOM), and <a href="/guide/runtime-layers">runtime layers</a> via pipe().'
+    link: /guide/providers
+    linkText: Providers guide
 ---
-
-<div class="features-grid">
-<div class="feature">
-
-### Familiar React API
-
-Same Box/Text/useInput patterns you already know. If you've used Ink, most code works with just an import change. [918/931 Ink 7.0 tests pass](/guide/silvery-vs-ink#compatibility) on the [@silvery/ink](/guide/silvery-vs-ink) compat layer.
-
-<div class="feature-link"><a href="/guide/silvery-vs-ink">Full feature comparison →</a></div>
-</div>
-<div class="feature">
-
-### Best-in-Class Performance
-
-[3–6× faster](/guide/silvery-vs-ink#performance) than Ink, [10–20× less terminal output](/guide/silvery-vs-ink#output-efficiency). Pure TypeScript, zero native deps. Layout via [Flexily](https://beorn.codes/flexily) (or Yoga). Runs on Bun and Node.js.
-
-<div class="feature-link"><a href="/guide/silvery-vs-ink#performance">Benchmark details →</a></div>
-</div>
-<div class="feature">
-
-### Web-like Responsive Layout
-
-One-phase responsive layouts — [`useBoxRect()`](/guide/hooks) returns real dimensions during render. [`overflow="scroll"`](/guide/scrolling) with virtualization. [`position="sticky"`](/guide/layout-coordinates) headers. [ANSI-aware compositing](/guide/ansi-layering) with color blending.
-
-<div class="feature-link"><a href="/guide/layouts">Layout guide →</a></div>
-</div>
-<div class="feature">
-
-### Rich Component Library
-
-[45+ components](/guides/components): TextInput, SelectList, ListView, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Spinner, and more. Built-in focus, mouse, and native keybindings. [38 theme palettes](/guide/styling) with auto-detected terminal colors.
-
-<div class="feature-link"><a href="/guides/components">Browse components →</a></div>
-</div>
-<div class="feature">
-
-### Inline, Fullscreen, or Both
-
-Same components, one-line switch. [Inline mode](/examples/scrollback) gets fullscreen-level performance with native scrollback and Cmd+F. Fullscreen mode gets inline-level UX ([app-managed scrollback](/design/dynamic-scrollback)). [Virtual inline](/design/dynamic-scrollback) combines both.
-
-<div class="feature-link"><a href="/guide/runtime-layers">Runtime layers →</a></div>
-</div>
-<div class="feature">
-
-### Web-like Interaction
-
-[Focus scopes](/guide/silvery-vs-ink#focus-system) with spatial arrow-key nav, click-to-focus, [text selection](/guide/text-selection), [Ctrl+F find](/guide/find), [vim copy-mode](/guide/clipboard), and [drag-and-drop](/guide/event-handling). Powered by [100+ auto-negotiated terminal protocols](/guide/silvery-vs-ink#terminal-protocol-coverage): Kitty keyboard, SGR mouse, hyperlinks, clipboard, and more.
-
-<div class="feature-link"><a href="/guide/event-handling">Interaction guide →</a></div>
-</div>
-<div class="feature">
-
-### Playwright-Style Testing
-
-3,000+ tests. Auto-refreshing CSS locators, cell-level color assertions, and `press()` input. [Termless](https://termless.dev) provides full ANSI fidelity with [10 swappable backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty).
-
-<div class="feature-link"><a href="/guide/testing">Testing guide →</a></div>
-</div>
-<div class="feature">
-
-### Composable Architecture
-
-Every layer is independently swappable: [layout engine](/guide/layout-engine) (Flexily or Yoga), terminal backends, state management (useState, Zustand, Jotai), [render targets](/guide/providers) (terminal, Canvas, DOM), and [runtime layers](/guide/runtime-layers) via `pipe()`.
-
-<div class="feature-link"><a href="/guide/providers">Providers guide →</a></div>
-</div>
-</div>
 
 ## Why Silvery?
 
@@ -226,73 +192,17 @@ Standalone projects Silvery builds on — each stands on its own:
 - **@silvery/create** — structured state management with commands, keybindings, effects-as-data
 
 <style>
-.vp-doc.container {
-  max-width: 1152px !important;
-}
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-  margin: 0 0 1rem;
-  padding: 0;
-}
-@media (max-width: 960px) {
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 480px) {
-  .features-grid {
-    grid-template-columns: 1fr;
-  }
-}
-.feature {
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 12px;
-  padding: 0.5rem 0.75rem;
-  background: var(--vp-c-bg-soft);
-  transition: border-color 0.25s, box-shadow 0.25s;
-}
-.feature:hover {
-  border-color: var(--vp-c-brand-1);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-}
-.feature h3 {
-  margin: 0 0 0.15rem;
-  padding: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--vp-c-text-1);
-  border: none;
-}
-.feature p a {
+/* Autolink style for inline links within VitePress feature cards */
+.VPFeatures .details a {
   color: var(--vp-c-text-2);
   text-decoration: underline;
   text-decoration-color: var(--vp-c-divider);
   text-underline-offset: 2px;
   transition: color 0.2s, text-decoration-color 0.2s;
 }
-.feature p a:hover {
+.VPFeatures .details a:hover {
   color: var(--vp-c-brand-1);
   text-decoration-color: var(--vp-c-brand-1);
-}
-.feature-link {
-  margin-top: 0.35rem;
-}
-.feature-link a {
-  color: var(--vp-c-brand-1) !important;
-  text-decoration: none !important;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-.feature-link a:hover {
-  text-decoration: underline !important;
-}
-.feature p {
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.6;
-  color: var(--vp-c-text-2);
 }
 .use-cases {
   margin: 0.5rem 0 1.5rem;
