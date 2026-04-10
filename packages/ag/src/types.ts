@@ -236,8 +236,7 @@ export interface BoxProps
   wrap?:
     | "wrap"
     | "hard"
-    | "balanced"
-    | "optimal"
+    | "even"
     | "truncate"
     | "truncate-start"
     | "truncate-middle"
@@ -332,8 +331,7 @@ export interface TextProps extends StyleProps, TestProps, MouseEventProps {
   wrap?:
     | "wrap"
     | "hard"
-    | "balanced"
-    | "optimal"
+    | "even"
     | "truncate"
     | "truncate-start"
     | "truncate-middle"

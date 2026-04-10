@@ -758,23 +758,18 @@ export function formatTextLines(
 
   // Optimal wrapping (Knuth-Plass): minimize total raggedness across all lines.
   // Uses dynamic programming over breakpoints for globally optimal line breaks.
-  if (wrap === "optimal") {
+  if (wrap === "even") {
     const gWidthFn = ctx?.measurer?.graphemeWidth?.bind(ctx.measurer) ?? graphemeWidth
     const analysis = buildTextAnalysis(normalizedText, gWidthFn)
     return optimalWrap(normalizedText, analysis, width)
   }
 
-  // Balanced wrapping: equalize line widths by tightening to balanced width.
-  // Uses Pretext analysis to find the width that distributes text most evenly.
-  if (wrap === "balanced") {
-    const gWidthFn = ctx?.measurer?.graphemeWidth?.bind(ctx.measurer) ?? graphemeWidth
-    const analysis = buildTextAnalysis(normalizedText, gWidthFn)
-    const bWidth = computeBalancedWidth(analysis, width)
-    if (ctx) return ctx.measurer.wrapText(normalizedText, bWidth, true, trim)
-    return wrapText(normalizedText, bWidth, true, trim)
-  }
+  // Balanced wrapping: disabled — the heuristic (totalWidth / lineCount) doesn't
+  // reliably produce better results than optimal. It narrows the width (changing
+  // line count) rather than optimizing break placement. Keep the algorithm in
+  // pretext.ts for potential future use; just treat "balanced" as greedy here.
 
-  // wrap === true or wrap === 'wrap' - word-aware wrapping
+  // wrap === true or wrap === 'wrap' or wrap === 'balanced' - word-aware wrapping
   // Uses wrapText from unicode.ts with trim for rendering
   // (when trim=true, trims trailing spaces on broken lines, skips leading spaces
   // on continuation lines; when trim=false, preserves spaces for bg-colored text)

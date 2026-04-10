@@ -170,7 +170,13 @@ function measureIntrinsicSize(
  * Check if text wrapping is enabled for a text node.
  */
 function isWrapEnabled(wrap: TextProps["wrap"]): boolean {
-  return wrap === "wrap" || wrap === "hard" || wrap === "balanced" || wrap === "optimal" || wrap === true || wrap === undefined
+  return (
+    wrap === "wrap" ||
+    wrap === "hard" ||
+    wrap === "even" ||
+    wrap === true ||
+    wrap === undefined
+  )
 }
 
 /**

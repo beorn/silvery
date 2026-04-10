@@ -52,10 +52,7 @@ export interface TextAnalysis {
  * Build text analysis from an ANSI-embedded text string.
  * O(N) where N is grapheme count. Call once per text change (cached by PreparedText).
  */
-export function buildTextAnalysis(
-  text: string,
-  gWidthFn: (g: string) => number = defaultGraphemeWidth,
-): TextAnalysis {
+export function buildTextAnalysis(text: string, gWidthFn: (g: string) => number = defaultGraphemeWidth): TextAnalysis {
   const graphemes = splitGraphemesAnsiAware(text)
   const len = graphemes.length
   const widths = new Array<number>(len)
@@ -242,12 +239,7 @@ export function knuthPlassBreaks(analysis: TextAnalysis, width: number): number[
 }
 
 /** DP for a single paragraph (no newlines). */
-function knuthPlassForParagraph(
-  analysis: TextAnalysis,
-  pStart: number,
-  pEnd: number,
-  width: number,
-): number[] {
+function knuthPlassForParagraph(analysis: TextAnalysis, pStart: number, pEnd: number, width: number): number[] {
   const { cumWidths, breakIndices, widths, graphemes } = analysis
 
   // Build candidates for this paragraph
@@ -276,8 +268,14 @@ function knuthPlassForParagraph(
       while (trimEnd > lineStart) {
         const prevG = graphemes[trimEnd - 1]
         const prevW = widths[trimEnd - 1]
-        if (prevW === 0) { trimEnd--; continue } // skip ANSI
-        if (prevG === " " || prevG === "\t") { trimEnd--; continue }
+        if (prevW === 0) {
+          trimEnd--
+          continue
+        } // skip ANSI
+        if (prevG === " " || prevG === "\t") {
+          trimEnd--
+          continue
+        }
         break
       }
       const lineWidth = cumWidths[trimEnd]! - lineStartCum
@@ -333,9 +331,15 @@ export function optimalWrap(text: string, analysis: TextAnalysis, width: number)
     let lineEnd = bp
     while (lineEnd > lineStart) {
       const w = widths[lineEnd - 1]!
-      if (w === 0) { lineEnd--; continue } // ANSI token
+      if (w === 0) {
+        lineEnd--
+        continue
+      } // ANSI token
       const g = graphemes[lineEnd - 1]!
-      if (g === " " || g === "\t" || g === "\n") { lineEnd--; continue }
+      if (g === " " || g === "\t" || g === "\n") {
+        lineEnd--
+        continue
+      }
       break
     }
     lines.push(graphemes.slice(lineStart, lineEnd).join(""))
@@ -344,7 +348,10 @@ export function optimalWrap(text: string, analysis: TextAnalysis, width: number)
     lineStart = bp
     while (lineStart < graphemes.length) {
       const g = graphemes[lineStart]!
-      if (g === " " || g === "\t") { lineStart++; continue }
+      if (g === " " || g === "\t") {
+        lineStart++
+        continue
+      }
       break
     }
   }

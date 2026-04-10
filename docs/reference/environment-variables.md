@@ -15,10 +15,10 @@ These variables enable automatic correctness checking. They add overhead and are
 
 Buffer-level verification that incremental rendering matches a fresh render.
 
-| | |
-|---|---|
-| **Values** | `1`, `true` to enable; `0`, `false`, or unset to disable |
-| **Default** | Disabled |
+|             |                                                          |
+| ----------- | -------------------------------------------------------- |
+| **Values**  | `1`, `true` to enable; `0`, `false`, or unset to disable |
+| **Default** | Disabled                                                 |
 
 After every frame, re-renders the entire tree from scratch and compares cell-by-cell against the incremental result. Throws `IncrementalRenderMismatchError` on any difference. This is the primary invariant check for the render pipeline.
 
@@ -30,10 +30,10 @@ SILVERY_STRICT=1 bun run app
 
 ANSI-level verification via terminal emulator backends. Replays the ANSI output through one or more terminal emulators and compares the resulting screen against the buffer.
 
-| | |
-|---|---|
-| **Values** | `vt100`, `xterm`, `ghostty`, `all`, or a comma-separated list (e.g. `vt100,xterm`) |
-| **Default** | Disabled (empty string) |
+|             |                                                                                    |
+| ----------- | ---------------------------------------------------------------------------------- |
+| **Values**  | `vt100`, `xterm`, `ghostty`, `all`, or a comma-separated list (e.g. `vt100,xterm`) |
+| **Default** | Disabled (empty string)                                                            |
 
 - `vt100` — fast internal parser (stateless)
 - `xterm` — xterm.js emulator (stateful, higher fidelity)
@@ -49,10 +49,10 @@ SILVERY_STRICT_TERMINAL=all bun run app
 
 Replays ALL frames from the start on every render to catch compounding errors. O(N^2) cost.
 
-| | |
-|---|---|
-| **Values** | `1`, `true` to enable; `0`, `false`, or unset to disable |
-| **Default** | Disabled |
+|             |                                                          |
+| ----------- | -------------------------------------------------------- |
+| **Values**  | `1`, `true` to enable; `0`, `false`, or unset to disable |
+| **Default** | Disabled                                                 |
 
 Separate from `SILVERY_STRICT` — opt-in only because of the quadratic cost. Catches errors that only manifest after many incremental renders accumulate small drifts.
 
@@ -64,10 +64,10 @@ SILVERY_STRICT_ACCUMULATE=1 bun run app
 
 Skip specific lines during stability checks in `withDiagnostics()`. Useful when certain lines contain non-deterministic content (timestamps, spinners).
 
-| | |
-|---|---|
-| **Values** | Comma-separated line numbers (0-indexed), e.g. `0,5,12` |
-| **Default** | None |
+|             |                                                         |
+| ----------- | ------------------------------------------------------- |
+| **Values**  | Comma-separated line numbers (0-indexed), e.g. `0,5,12` |
+| **Default** | None                                                    |
 
 ```bash
 SILVERY_STABILITY_SKIP_LINES=0,23 bun run test
@@ -81,10 +81,10 @@ These variables produce diagnostic output to help trace rendering issues.
 
 Enable stats collection for the render pipeline. Exposes skip/render counts, cascade depth, and scroll tier decisions.
 
-| | |
-|---|---|
-| **Values** | `1`, `true` to enable |
-| **Default** | Disabled |
+|             |                       |
+| ----------- | --------------------- |
+| **Values**  | `1`, `true` to enable |
+| **Default** | Disabled              |
 
 Stats are available via `DEBUG=silvery:content` log output and programmatically on `globalThis.__silvery_content_detail`. Automatically enabled when `SILVERY_STRICT` is active.
 
@@ -96,10 +96,10 @@ SILVERY_INSTRUMENT=1 DEBUG=silvery:content DEBUG_LOG=/tmp/silvery.log bun run ap
 
 Trace which nodes cover a specific cell position. Produces per-cell diagnostic output showing the render cascade for that coordinate.
 
-| | |
-|---|---|
-| **Values** | `col,row` (e.g. `77,85`) |
-| **Default** | Disabled |
+|             |                          |
+| ----------- | ------------------------ |
+| **Values**  | `col,row` (e.g. `77,85`) |
+| **Default** | Disabled                 |
 
 Requires `DEBUG=silvery:content:cell` and `DEBUG_LOG` to see output.
 
@@ -111,10 +111,10 @@ SILVERY_CELL_DEBUG=77,85 DEBUG=silvery:content:cell DEBUG_LOG=/tmp/silvery.log b
 
 Capture the ANSI output written to the terminal after each frame. Appends frame-delimited output to the specified file path.
 
-| | |
-|---|---|
-| **Values** | File path (e.g. `/tmp/silvery-output.ansi`) |
-| **Default** | Disabled |
+|             |                                             |
+| ----------- | ------------------------------------------- |
+| **Values**  | File path (e.g. `/tmp/silvery-output.ansi`) |
+| **Default** | Disabled                                    |
 
 Each frame is prefixed with a header showing the frame number and byte count.
 
@@ -126,10 +126,10 @@ SILVERY_CAPTURE_OUTPUT=/tmp/silvery-output.ansi bun run app
 
 Capture raw ANSI output from the runtime diff phase to a fixed file path (`/tmp/silvery-runtime-raw.ansi`).
 
-| | |
-|---|---|
-| **Values** | Any truthy value (e.g. `1`) |
-| **Default** | Disabled |
+|             |                             |
+| ----------- | --------------------------- |
+| **Values**  | Any truthy value (e.g. `1`) |
+| **Default** | Disabled                    |
 
 Unlike `SILVERY_CAPTURE_OUTPUT` (which captures scheduler output with frame headers), this captures the raw diff patches from the runtime layer.
 
@@ -141,10 +141,10 @@ SILVERY_CAPTURE_RAW=1 bun run app
 
 Enable the dev inspector for live tree inspection and diagnostics.
 
-| | |
-|---|---|
-| **Values** | `1`, `true` to enable |
-| **Default** | Disabled |
+|             |                       |
+| ----------- | --------------------- |
+| **Values**  | `1`, `true` to enable |
+| **Default** | Disabled              |
 
 ```bash
 SILVERY_DEV=1 bun run app
@@ -154,10 +154,10 @@ SILVERY_DEV=1 bun run app
 
 Set the log file path for the dev inspector. Only meaningful when `SILVERY_DEV` is enabled.
 
-| | |
-|---|---|
-| **Values** | File path (e.g. `/tmp/silvery-dev.log`) |
-| **Default** | None (logs to default output) |
+|             |                                         |
+| ----------- | --------------------------------------- |
+| **Values**  | File path (e.g. `/tmp/silvery-dev.log`) |
+| **Default** | None (logs to default output)           |
 
 ```bash
 SILVERY_DEV=1 SILVERY_DEV_LOG=/tmp/silvery-dev.log bun run app
@@ -171,10 +171,10 @@ These variables change runtime behavior.
 
 Select the layout engine. Silvery ships with two layout backends.
 
-| | |
-|---|---|
-| **Values** | `flexily` (default), `yoga` |
-| **Default** | `flexily` |
+|             |                             |
+| ----------- | --------------------------- |
+| **Values**  | `flexily` (default), `yoga` |
+| **Default** | `flexily`                   |
 
 Flexily is a zero-allocation Yoga-compatible flexbox engine written in TypeScript. Yoga is the original C++ engine via WASM. Both produce identical layouts for supported properties.
 
@@ -186,10 +186,10 @@ SILVERY_ENGINE=yoga bun run app
 
 Force synchronous terminal output updates by wrapping output in DCS synchronized update sequences.
 
-| | |
-|---|---|
-| **Values** | `1`, `true` to enable |
-| **Default** | Disabled |
+|             |                       |
+| ----------- | --------------------- |
+| **Values**  | `1`, `true` to enable |
+| **Default** | Disabled              |
 
 Prevents tearing on terminals that support synchronized output. Currently disabled by default due to a Ghostty rendering bug with incremental diff output.
 
@@ -201,10 +201,10 @@ SILVERY_SYNC_UPDATE=1 bun run app
 
 Control how background color conflicts are handled when a Text node has both an explicit background and an inherited background from an ancestor Box.
 
-| | |
-|---|---|
-| **Values** | `throw` (default), `warn`, `ignore` |
-| **Default** | `throw` |
+|             |                                     |
+| ----------- | ----------------------------------- |
+| **Values**  | `throw` (default), `warn`, `ignore` |
+| **Default** | `throw`                             |
 
 - `throw` — fail fast on programming errors (recommended)
 - `warn` — log a warning but continue
@@ -218,9 +218,9 @@ SILVERY_BG_CONFLICT=warn bun run app
 
 Disable incremental rendering entirely. Every frame performs a full fresh render.
 
-| | |
-|---|---|
-| **Values** | `1` to disable incremental rendering |
+|             |                                        |
+| ----------- | -------------------------------------- |
+| **Values**  | `1` to disable incremental rendering   |
 | **Default** | Disabled (incremental rendering is on) |
 
 Useful for isolating whether a bug is in the incremental rendering logic or in the base pipeline.
@@ -233,10 +233,10 @@ SILVERY_NO_INCREMENTAL=1 bun run app
 
 Disable the text measurement cache. Forces re-measurement of every text node on every render.
 
-| | |
-|---|---|
-| **Values** | Any truthy value (e.g. `1`) |
-| **Default** | Disabled (cache is on) |
+|             |                             |
+| ----------- | --------------------------- |
+| **Values**  | Any truthy value (e.g. `1`) |
+| **Default** | Disabled (cache is on)      |
 
 Useful for benchmarking the cache's performance impact or debugging stale measurement issues.
 
@@ -248,10 +248,10 @@ SILVERY_NO_TEXT_CACHE=1 bun run app
 
 Override the non-TTY rendering mode. Used in examples to test non-interactive output modes.
 
-| | |
-|---|---|
-| **Values** | `auto`, `tty`, `line-by-line`, `static`, `plain` |
-| **Default** | `auto` |
+|             |                                                  |
+| ----------- | ------------------------------------------------ |
+| **Values**  | `auto`, `tty`, `line-by-line`, `static`, `plain` |
+| **Default** | `auto`                                           |
 
 ```bash
 SILVERY_NONTTY=plain bun run examples/inline/inline-nontty.tsx
@@ -261,10 +261,10 @@ SILVERY_NONTTY=plain bun run examples/inline/inline-nontty.tsx
 
 Override the color theme by name. Used by the examples viewer to switch palettes.
 
-| | |
-|---|---|
-| **Values** | Any built-in palette name (e.g. `catppuccin-mocha`, `dracula`, `tokyo-night`) |
-| **Default** | Auto-detected from terminal |
+|             |                                                                               |
+| ----------- | ----------------------------------------------------------------------------- |
+| **Values**  | Any built-in palette name (e.g. `catppuccin-mocha`, `dracula`, `tokyo-night`) |
+| **Default** | Auto-detected from terminal                                                   |
 
 ```bash
 SILVERY_THEME=catppuccin-mocha bun run examples/banner.tsx
@@ -272,22 +272,22 @@ SILVERY_THEME=catppuccin-mocha bun run examples/banner.tsx
 
 ## Quick Reference
 
-| Variable | Purpose | Category |
-|---|---|---|
-| `SILVERY_STRICT` | Incremental vs fresh render check | Verification |
-| `SILVERY_STRICT_TERMINAL` | ANSI output via terminal emulators | Verification |
-| `SILVERY_STRICT_ACCUMULATE` | Replay all frames (O(N^2)) | Verification |
-| `SILVERY_STABILITY_SKIP_LINES` | Skip lines in stability checks | Verification |
-| `SILVERY_INSTRUMENT` | Render pipeline stats | Debugging |
-| `SILVERY_CELL_DEBUG` | Per-cell render trace | Debugging |
-| `SILVERY_CAPTURE_OUTPUT` | Capture ANSI frames to file | Debugging |
-| `SILVERY_CAPTURE_RAW` | Capture raw diff patches to file | Debugging |
-| `SILVERY_DEV` | Dev inspector | Debugging |
-| `SILVERY_DEV_LOG` | Dev inspector log file | Debugging |
-| `SILVERY_ENGINE` | Layout engine selection | Configuration |
-| `SILVERY_SYNC_UPDATE` | Synchronized terminal output | Configuration |
-| `SILVERY_BG_CONFLICT` | Background conflict handling | Configuration |
-| `SILVERY_NO_INCREMENTAL` | Disable incremental rendering | Configuration |
-| `SILVERY_NO_TEXT_CACHE` | Disable text measurement cache | Configuration |
-| `SILVERY_NONTTY` | Non-TTY rendering mode | Configuration |
-| `SILVERY_THEME` | Theme override | Configuration |
+| Variable                       | Purpose                            | Category      |
+| ------------------------------ | ---------------------------------- | ------------- |
+| `SILVERY_STRICT`               | Incremental vs fresh render check  | Verification  |
+| `SILVERY_STRICT_TERMINAL`      | ANSI output via terminal emulators | Verification  |
+| `SILVERY_STRICT_ACCUMULATE`    | Replay all frames (O(N^2))         | Verification  |
+| `SILVERY_STABILITY_SKIP_LINES` | Skip lines in stability checks     | Verification  |
+| `SILVERY_INSTRUMENT`           | Render pipeline stats              | Debugging     |
+| `SILVERY_CELL_DEBUG`           | Per-cell render trace              | Debugging     |
+| `SILVERY_CAPTURE_OUTPUT`       | Capture ANSI frames to file        | Debugging     |
+| `SILVERY_CAPTURE_RAW`          | Capture raw diff patches to file   | Debugging     |
+| `SILVERY_DEV`                  | Dev inspector                      | Debugging     |
+| `SILVERY_DEV_LOG`              | Dev inspector log file             | Debugging     |
+| `SILVERY_ENGINE`               | Layout engine selection            | Configuration |
+| `SILVERY_SYNC_UPDATE`          | Synchronized terminal output       | Configuration |
+| `SILVERY_BG_CONFLICT`          | Background conflict handling       | Configuration |
+| `SILVERY_NO_INCREMENTAL`       | Disable incremental rendering      | Configuration |
+| `SILVERY_NO_TEXT_CACHE`        | Disable text measurement cache     | Configuration |
+| `SILVERY_NONTTY`               | Non-TTY rendering mode             | Configuration |
+| `SILVERY_THEME`                | Theme override                     | Configuration |

@@ -310,7 +310,8 @@ describe("Scroll container — 1000 items, 20 visible (80x24)", () => {
 // ============================================================================
 
 const SHORT_TEXT = "The quick brown fox jumps over the lazy dog"
-const MEDIUM_TEXT = "The quick brown fox jumps over the lazy dog. " +
+const MEDIUM_TEXT =
+  "The quick brown fox jumps over the lazy dog. " +
   "Pack my box with five dozen liquor jugs. " +
   "How vexingly quick daft zebras jump. " +
   "The five boxing wizards jump quickly."
@@ -374,7 +375,7 @@ describe("Pretext — knuthPlassBreaks", () => {
 })
 
 // ============================================================================
-// Pretext wrap modes — end-to-end rendering with wrap="balanced" and wrap="optimal"
+// Pretext wrap modes — end-to-end rendering with wrap="even"
 // ============================================================================
 
 function wrappedParagraph(text: string, wrap: string, width: number) {
@@ -387,14 +388,11 @@ function wrappedParagraph(text: string, wrap: string, width: number) {
 
 describe("Wrap mode comparison — medium text (width=40)", () => {
   const render = createRenderer({ cols: 80, rows: 24 })
-  bench("wrap=\"wrap\" (greedy)", () => {
+  bench('wrap="wrap" (greedy)', () => {
     render(wrappedParagraph(MEDIUM_TEXT, "wrap", 40))
   })
-  bench("wrap=\"balanced\"", () => {
-    render(wrappedParagraph(MEDIUM_TEXT, "balanced", 40))
-  })
-  bench("wrap=\"optimal\" (Knuth-Plass)", () => {
-    render(wrappedParagraph(MEDIUM_TEXT, "optimal", 40))
+  bench('wrap="even" (min-raggedness)', () => {
+    render(wrappedParagraph(MEDIUM_TEXT, "even", 40))
   })
 })
 

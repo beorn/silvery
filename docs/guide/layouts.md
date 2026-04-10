@@ -414,15 +414,14 @@ Best for: chat bubbles, tooltips, badges, cards with final content.
 | Mode | What it does |
 |---|---|
 | `wrap="wrap"` | Word-aware wrapping — each line as full as possible (default) |
-| `wrap="balanced"` | Equalize line widths — less ragged right edge |
-| `wrap="optimal"` | Minimize total raggedness — [Knuth-Plass style](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap#Minimum_raggedness) paragraph layout |
+| `wrap="even"` | Minimize total raggedness — [minimum-raggedness](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap#Minimum_raggedness) paragraph layout |
 | `wrap="hard"` | Character-level wrapping — break anywhere |
 | `wrap={false}` | Truncate with ellipsis |
 | `wrap="clip"` | Hard cut at width, no ellipsis |
 | `wrap="truncate-start"` | Ellipsis at start: `…end of text` |
 | `wrap="truncate-middle"` | Ellipsis in middle: `start…end` |
 
-#### Greedy vs Balanced vs Optimal
+#### Greedy vs Even
 
 **Greedy** (`wrap="wrap"`) fills each line as much as possible, left to right. This is Pretext's default behavior via [`layoutWithLines()`](https://github.com/chenglou/pretext). Simple and predictable:
 
@@ -431,25 +430,18 @@ The quick brown fox jumps over the
 lazy dog sat on the mat.
 ```
 
-**Balanced** (`wrap="balanced"`) reduces raggedness by equalizing line widths. This is a Silvery addition — Pretext doesn't have a balanced mode. It works by computing the ideal width per line (`totalWidth / lineCount`) and then shrinkwrapping to that:
-
-```
-The quick brown fox jumps
-over the lazy dog sat on the mat.
-```
-
-**Optimal** (`wrap="optimal"`) minimizes the _total_ wasted space across all lines using [minimum-raggedness dynamic programming](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap#Minimum_raggedness). Pretext demonstrates this as ["Knuth-Plass paragraph layout"](https://chenglou.me/pretext/) in their justification comparison demo:
+**Even** (`wrap="even"`) minimizes the _total_ wasted space across all lines using [minimum-raggedness dynamic programming](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap#Minimum_raggedness). Pretext demonstrates this as ["Knuth-Plass paragraph layout"](https://chenglou.me/pretext/) in their justification comparison demo. Greedy optimizes each line independently; even considers all possible break combinations globally:
 
 ```tsx
 <Box width={60}>
-  <Text wrap="optimal">
-    Long paragraph that benefits from globally-optimal line breaks
+  <Text wrap="even">
+    Long paragraph that benefits from globally-even line breaks
     rather than greedy per-line decisions.
   </Text>
 </Box>
 ```
 
-All three modes have the same rendering performance (~25 microseconds for typical terminal text). The text analysis is cached per node (PreparedText) — repeated renders at the same width are free.
+Both modes have the same rendering performance (~25 microseconds for typical terminal text). The text analysis is cached per node (PreparedText) — repeated renders at the same width are free.
 
 #### Pretext API Mapping
 
@@ -458,8 +450,7 @@ All three modes have the same rendering performance (~25 microseconds for typica
 | `buildTextAnalysis()` | [`prepare()`](https://github.com/chenglou/pretext) | One-time text analysis |
 | `countLinesAtWidth()` | [`measureLineStats()`](https://github.com/chenglou/pretext) | Line count at given width |
 | `shrinkwrapWidth()` | [`walkLineRanges()`](https://github.com/chenglou/pretext) + binary search | Tightest width for N lines |
-| `wrap="balanced"` | — | Silvery addition |
-| `wrap="optimal"` | Justification demo | Minimum-raggedness DP |
+| `wrap="even"` | Justification demo | Minimum-raggedness DP |
 | — | [`layoutNextLineRange()`](https://github.com/chenglou/pretext) | Variable-width layout (planned) |
 
 Pretext uses canvas-based font measurement for sub-pixel web layouts. Silvery adapts the same algorithms for terminal integer-width character cells. A future [pluggable measurement API](https://github.com/chenglou/pretext) could unify both backends.
@@ -469,19 +460,14 @@ Pretext uses canvas-based font measurement for sub-pixel web layouts. Silvery ad
 Width and wrap are orthogonal — they compose naturally:
 
 ```tsx
-{/* Tightest bubble, balanced lines — prettiest for chat */}
+{/* Tightest bubble, even lines — prettiest for chat */}
 <Box width="snug-content" borderStyle="round" padding={1}>
-  <Text wrap="balanced">Hello world, this is a message</Text>
+  <Text wrap="even">Hello world, this is a message</Text>
 </Box>
 
-{/* Fixed width, optimal paragraph breaking */}
+{/* Fixed width, even paragraph breaking */}
 <Box width={60}>
-  <Text wrap="optimal">{longParagraph}</Text>
-</Box>
-
-{/* Fit-content with balanced — normal box, even lines */}
-<Box width="fit-content">
-  <Text wrap="balanced">{description}</Text>
+  <Text wrap="even">{longParagraph}</Text>
 </Box>
 ```
 

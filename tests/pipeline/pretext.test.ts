@@ -2,7 +2,14 @@
  * Tests for Pretext text analysis algorithms.
  */
 import { describe, test, expect } from "vitest"
-import { buildTextAnalysis, countLinesAtWidth, shrinkwrapWidth, balancedWidth, knuthPlassBreaks, optimalWrap } from "@silvery/ag-term/pipeline/pretext"
+import {
+  buildTextAnalysis,
+  countLinesAtWidth,
+  shrinkwrapWidth,
+  balancedWidth,
+  knuthPlassBreaks,
+  optimalWrap,
+} from "@silvery/ag-term/pipeline/pretext"
 import { graphemeWidth } from "@silvery/ag-term/unicode"
 
 describe("buildTextAnalysis", () => {
