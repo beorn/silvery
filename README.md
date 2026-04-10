@@ -56,12 +56,11 @@ await render(<Counter />).run()
   - `createRenderer` — fast unit tests with auto-refreshing CSS locators, cell-level color assertions, frame-by-frame inspection
   - [Termless](https://termless.dev) — like Playwright for terminals. Full ANSI fidelity with [10 swappable backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty, and more)
   - [`SILVERY_STRICT`](https://silvery.dev/guide/debugging) — multi-level verification: buffer (incremental vs fresh), ANSI (internal parser), terminal (cross-backend), and accumulated replay
-- **[Composable architecture](https://silvery.dev/guide/providers)** — every layer is independently usable and swappable:
-  - [Layout engine](https://silvery.dev/guide/layout-engine) — Flexily (default) or Yoga, usable standalone
-  - [Terminal backends](https://silvery.dev/guide/testing) — real TTY, headless, or xterm.js emulator
-  - [State management](https://silvery.dev/guide/providers) — useState, Zustand, Jotai, Redux — your choice
-  - [Render targets](https://silvery.dev/guide/providers) — terminal, Canvas, or DOM (experimental)
-  - [Runtime layers](https://silvery.dev/guide/runtime-layers) — just a renderer (`render`), add a runtime (`run`), or full app with `pipe()` providers
+- **[Composable architecture](https://silvery.dev/guide/providers)** — every layer is independently swappable. [DI](https://silvery.dev/guide/providers) via `pipe()` providers:
+  - [Layout](https://silvery.dev/guide/layout-engine) — Flexily or Yoga
+  - State — BYO (useState, Zustand, Jotai, Redux)
+  - Term — real, headless, emulator
+  - [App](https://silvery.dev/guide/runtime-layers) — from stringify to rich app (withFocus, withDomEvents, withCommands). Render to terminal, Canvas, or DOM
 - **[All modern terminal protocols](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)** — [60 years of terminal protocols](https://terminfo.dev/about), unified into clean APIs. 100+ escape sequences you'll never have to write — auto-negotiated and gracefully degraded: [Kitty keyboard](https://terminfo.dev) + [SGR mouse](https://terminfo.dev) become rich events with modifiers; [hyperlinks](https://terminfo.dev) are just props; [clipboard](https://terminfo.dev) is a function call. Truecolor, underline styles, synchronized output, bracketed paste, focus reporting, resize detection, inline images, and [more](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)
 
 ### Why Silvery?
