@@ -9,10 +9,7 @@
 import { describe, test, expect } from "vitest"
 import { computeCascade } from "@silvery/ag-term/pipeline/cascade-predicates"
 import type { CascadeInputs, CascadeOutputs } from "@silvery/ag-term/pipeline/cascade-predicates"
-import {
-  createReactiveNodeState,
-  assertReactiveMatchesOracle,
-} from "@silvery/ag-term/pipeline/reactive-node"
+import { createReactiveNodeState, assertReactiveMatchesOracle } from "@silvery/ag-term/pipeline/reactive-node"
 
 /** Input field names in the order they map to bit positions */
 const INPUT_FIELDS: (keyof CascadeInputs)[] = [
@@ -51,10 +48,7 @@ function formatInputs(inputs: CascadeInputs): string {
  * Sync CascadeInputs into a ReactiveNodeState (without needing an AgNode).
  * Writes each signal directly from the boolean inputs.
  */
-function syncInputsToState(
-  state: ReturnType<typeof createReactiveNodeState>,
-  inputs: CascadeInputs,
-): void {
+function syncInputsToState(state: ReturnType<typeof createReactiveNodeState>, inputs: CascadeInputs): void {
   state.contentDirty(inputs.contentDirty)
   state.stylePropsDirty(inputs.stylePropsDirty)
   state.bgDirty(inputs.bgDirty)
@@ -183,9 +177,7 @@ describe("reactive cascade — assertReactiveMatchesOracle", () => {
       contentAreaAffected: false, // deliberately wrong
     }
 
-    expect(() => assertReactiveMatchesOracle(state, fakeOracle, "test-node")).toThrow(
-      /ReactiveNodeState mismatch/,
-    )
+    expect(() => assertReactiveMatchesOracle(state, fakeOracle, "test-node")).toThrow(/ReactiveNodeState mismatch/)
   })
 })
 

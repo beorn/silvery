@@ -213,6 +213,94 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number, increme
   for (const child of node.children) {
     propagateLayout(child, rect.x, rect.y, incrementalSkip)
   }
+
+  // Cache cascade inputs that render-phase would otherwise compute via tree walks.
+  // Both checks require children to have finalized layoutChangedThisFrame, boxRect,
+  // prevLayout, childrenDirtyEpoch, and subtreeDirtyEpoch — all set above.
+  // Guard: only compute when subtreeDirty (matches buildCascadeInputs guard).
+  if (isCurrentEpoch(node.subtreeDirtyEpoch) && node.children.length > 0) {
+    const epoch = getRenderEpoch()
+
+    // absoluteChildMutated: check direct children for absolute-positioned nodes
+    // that had structural changes (children mount/unmount/reorder, layout change,
+    // child position shift).
+    node.absoluteChildMutatedEpoch = _hasAbsoluteChildMutated(node.children) ? epoch : INITIAL_EPOCH
+
+    // descendantOverflowChanged: recursive check for descendants whose prevLayout
+    // extended beyond THIS node's rect and had layoutChangedThisFrame.
+    node.descendantOverflowChangedEpoch = _hasDescendantOverflowChanged(node, rect) ? epoch : INITIAL_EPOCH
+  } else {
+    node.absoluteChildMutatedEpoch = INITIAL_EPOCH
+    node.descendantOverflowChangedEpoch = INITIAL_EPOCH
+  }
+}
+
+/**
+ * Check if any direct child is position="absolute" and had structural changes.
+ */
+function _hasAbsoluteChildMutated(children: readonly AgNode[]): boolean {
+  for (const child of children) {
+    const cp = child.props as BoxProps
+    if (
+      cp.position === "absolute" &&
+      (isCurrentEpoch(child.childrenDirtyEpoch) ||
+        isCurrentEpoch(child.layoutChangedThisFrame) ||
+        _hasChildPositionChanged(child))
+    ) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Check if any child's position changed (boxRect vs prevLayout).
+ */
+function _hasChildPositionChanged(node: AgNode): boolean {
+  for (const child of node.children) {
+    if (child.boxRect && child.prevLayout) {
+      if (child.boxRect.x !== child.prevLayout.x || child.boxRect.y !== child.prevLayout.y) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * Check if any descendant was overflowing THIS node's rect and had its layout change.
+ * Recursive: follows subtreeDirty paths for efficiency.
+ */
+function _hasDescendantOverflowChanged(node: AgNode, rect: Rect): boolean {
+  return _checkDescendantOverflow(node.children, rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
+}
+
+function _checkDescendantOverflow(
+  children: readonly AgNode[],
+  nodeLeft: number,
+  nodeTop: number,
+  nodeRight: number,
+  nodeBottom: number,
+): boolean {
+  for (const child of children) {
+    if (child.prevLayout && isCurrentEpoch(child.layoutChangedThisFrame)) {
+      const prev = child.prevLayout
+      if (
+        prev.x + prev.width > nodeRight ||
+        prev.y + prev.height > nodeBottom ||
+        prev.x < nodeLeft ||
+        prev.y < nodeTop
+      ) {
+        return true
+      }
+    }
+    if (isCurrentEpoch(child.subtreeDirtyEpoch) && child.children !== undefined) {
+      if (_checkDescendantOverflow(child.children, nodeLeft, nodeTop, nodeRight, nodeBottom)) {
+        return true
+      }
+    }
+  }
+  return false
 }
 
 /**

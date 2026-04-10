@@ -232,7 +232,6 @@ export function syncToSignals(
 export function readReactiveCascade(state: ReactiveNodeState): CascadeOutputs {
   return {
     canSkipEntireSubtree: state.canSkipEntireSubtree(),
-    textPaintDirty: state.textPaintDirty(),
     contentAreaAffected: state.contentAreaAffected(),
     bgRefillNeeded: state.bgRefillNeeded(),
     contentRegionCleared: state.contentRegionCleared(),

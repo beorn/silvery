@@ -435,6 +435,18 @@ export interface AgNode {
    *  Value: renderEpoch when dirty, INITIAL_EPOCH (-1) when clean. */
   childrenDirtyEpoch: number
 
+  /** Epoch when an absolute-positioned direct child had structural changes
+   *  (children mount/unmount/reorder, layout change, child position shift).
+   *  Cached by layout phase to avoid per-node child walks in render phase.
+   *  Value: renderEpoch when dirty, INITIAL_EPOCH (-1) when clean. */
+  absoluteChildMutatedEpoch: number
+
+  /** Epoch when a descendant was overflowing THIS node's rect (prevLayout
+   *  extends beyond bounds) and had its layout change this frame.
+   *  Cached by layout phase to avoid per-node recursive subtree walks.
+   *  Value: renderEpoch when dirty, INITIAL_EPOCH (-1) when clean. */
+  descendantOverflowChangedEpoch: number
+
   /** Callbacks subscribed to layout changes (used by useBoxRect) */
   layoutSubscribers: Set<() => void>
 

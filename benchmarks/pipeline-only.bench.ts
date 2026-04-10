@@ -58,7 +58,11 @@ function kanban(cols: number, cards: number, editCol: number, editCard: number) 
         React.createElement(Box, { borderStyle: "single" }, React.createElement(Text, { bold: true }, `Col ${col}`)),
         ...Array.from({ length: cards }, (_, card) => {
           const text = col === editCol && card === editCard ? `Card ${col}-${card} [EDITING]` : `Card ${col}-${card}`
-          return React.createElement(Box, { key: card, paddingLeft: 1, borderStyle: "round" }, React.createElement(Text, null, text))
+          return React.createElement(
+            Box,
+            { key: card, paddingLeft: 1, borderStyle: "round" },
+            React.createElement(Text, null, text),
+          )
         }),
       ),
     ),

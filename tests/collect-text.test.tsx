@@ -62,6 +62,8 @@ function textNode(text: string, props: TextProps = {}): AgNode {
     bgDirtyEpoch: INITIAL_EPOCH,
     subtreeDirtyEpoch: INITIAL_EPOCH,
     childrenDirtyEpoch: INITIAL_EPOCH,
+    absoluteChildMutatedEpoch: INITIAL_EPOCH,
+    descendantOverflowChangedEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
     textContent: text,
     isRawText: true,
@@ -89,6 +91,8 @@ function virtualTextNode(props: TextProps, ...children: AgNode[]): AgNode {
     bgDirtyEpoch: INITIAL_EPOCH,
     subtreeDirtyEpoch: INITIAL_EPOCH,
     childrenDirtyEpoch: INITIAL_EPOCH,
+    absoluteChildMutatedEpoch: INITIAL_EPOCH,
+    descendantOverflowChangedEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
     isRawText: false,
   }
@@ -128,6 +132,8 @@ function boxNode(props: BoxProps, ...children: AgNode[]): AgNode {
     bgDirtyEpoch: INITIAL_EPOCH,
     subtreeDirtyEpoch: INITIAL_EPOCH,
     childrenDirtyEpoch: INITIAL_EPOCH,
+    absoluteChildMutatedEpoch: INITIAL_EPOCH,
+    descendantOverflowChangedEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
   }
   for (const child of children) {

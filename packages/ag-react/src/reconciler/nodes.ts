@@ -53,6 +53,8 @@ export function createNode(
     bgDirtyEpoch: epoch,
     subtreeDirtyEpoch: epoch,
     childrenDirtyEpoch: epoch,
+    absoluteChildMutatedEpoch: INITIAL_EPOCH,
+    descendantOverflowChangedEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
   }
 
@@ -239,6 +241,8 @@ export function createVirtualTextNode(props: TextProps): AgNode {
     bgDirtyEpoch: epoch,
     subtreeDirtyEpoch: epoch,
     childrenDirtyEpoch: INITIAL_EPOCH,
+    absoluteChildMutatedEpoch: INITIAL_EPOCH,
+    descendantOverflowChangedEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
     isRawText: false, // Not raw text, but virtual (nested) text
     inlineRects: null,

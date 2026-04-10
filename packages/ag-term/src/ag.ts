@@ -290,6 +290,8 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       bgDirtyEpoch: getRenderEpoch(),
       subtreeDirtyEpoch: getRenderEpoch(),
       childrenDirtyEpoch: getRenderEpoch(),
+      absoluteChildMutatedEpoch: INITIAL_EPOCH,
+      descendantOverflowChangedEpoch: INITIAL_EPOCH,
       layoutSubscribers: new Set(),
     }
   }

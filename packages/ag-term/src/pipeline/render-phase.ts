@@ -226,8 +226,7 @@ const _nodeTraceEnabled = typeof process !== "undefined" && envTruthy(process.en
  * When reactive is ON + STRICT is ON: oracle runs in parallel and asserts equivalence.
  * When reactive is ON + STRICT is OFF: pure reactive, no oracle overhead (production/bench).
  */
-let _reactiveEnabled =
-  typeof process === "undefined" || process.env?.SILVERY_REACTIVE !== "0"
+let _reactiveEnabled = typeof process === "undefined" || process.env?.SILVERY_REACTIVE !== "0"
 let _reactiveVerifyEnabled =
   _reactiveEnabled && typeof process !== "undefined" && envTruthy(process.env?.SILVERY_STRICT)
 
@@ -711,25 +710,12 @@ function buildCascadeInputs(
     return { absoluteChildMutated: false, descendantOverflowChanged: false }
   }
 
-  // absoluteChildMutated: an absolute child had structural changes (children
-  // mount/unmount/reorder, layout change, child position shift). Forces parent
-  // to clear stale overlay pixels in gap areas.
-  const absoluteChildMutated = node.children.some((child) => {
-    const cp = child.props as BoxProps
-    return (
-      cp.position === "absolute" &&
-      (isCurrentEpoch(child.childrenDirtyEpoch) ||
-        isCurrentEpoch(child.layoutChangedThisFrame) ||
-        hasChildPositionChanged(child))
-    )
-  })
-
-  // descendantOverflowChanged: a descendant was overflowing THIS node's rect
-  // in the previous frame and its layout changed. Must be detected recursively
-  // at THIS level so borders are properly restored.
-  const descendantOverflowChanged = hasDescendantOverflowChanged(node)
-
-  return { absoluteChildMutated, descendantOverflowChanged }
+  // Phase 3b: Read cached epoch values computed during layout phase
+  // (propagateLayout), avoiding per-node tree walks in the render phase.
+  return {
+    absoluteChildMutated: isCurrentEpoch(node.absoluteChildMutatedEpoch),
+    descendantOverflowChanged: isCurrentEpoch(node.descendantOverflowChangedEpoch),
+  }
 }
 
 // ============================================================================
@@ -1647,53 +1633,8 @@ function hasChildPositionChanged(node: AgNode): boolean {
   return false
 }
 
-/**
- * Check if any descendant was overflowing THIS node's rect and had its layout change.
- * Recursive: a grandchild overflowing a child AND this node is detected here.
- *
- * When a descendant overflows (prevLayout extends beyond this node's rect) and then
- * shrinks, clearExcessArea on the descendant clips to its immediate parent's content
- * area, leaving stale pixels in this node's border/padding area and beyond this node's
- * rect. By detecting at THIS level, the node clears its region (restoring borders)
- * and handles overflow beyond its rect via clearDescendantOverflowRegions.
- *
- * Only follows subtreeDirty paths for efficiency — layoutChangedThisFrame on a
- * descendant implies subtreeDirty on all its ancestors.
- */
-function hasDescendantOverflowChanged(node: AgNode): boolean {
-  const rect = node.boxRect!
-  return _checkDescendantOverflow(node.children, rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
-}
-
-function _checkDescendantOverflow(
-  children: readonly AgNode[],
-  nodeLeft: number,
-  nodeTop: number,
-  nodeRight: number,
-  nodeBottom: number,
-): boolean {
-  for (const child of children) {
-    // Check this child's previous layout against the ancestor's rect
-    if (child.prevLayout && isCurrentEpoch(child.layoutChangedThisFrame)) {
-      const prev = child.prevLayout
-      if (
-        prev.x + prev.width > nodeRight ||
-        prev.y + prev.height > nodeBottom ||
-        prev.x < nodeLeft ||
-        prev.y < nodeTop
-      ) {
-        return true
-      }
-    }
-    // Recurse into subtree-dirty children to find deeper overflows
-    if (isCurrentEpoch(child.subtreeDirtyEpoch) && child.children !== undefined) {
-      if (_checkDescendantOverflow(child.children, nodeLeft, nodeTop, nodeRight, nodeBottom)) {
-        return true
-      }
-    }
-  }
-  return false
-}
+// hasDescendantOverflowChanged and _checkDescendantOverflow removed in Phase 3b:
+// Now cached as descendantOverflowChangedEpoch on AgNode, computed during layout phase.
 
 /**
  * Check if any descendant has an explicit backgroundColor.

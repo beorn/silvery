@@ -21,10 +21,14 @@ import { setReactiveEnabled } from "@silvery/ag-term/pipeline/render-phase"
 
 function createMockStdout(cols: number, rows: number) {
   const stream = new Writable({
-    write(_chunk, _encoding, cb) { cb() },
+    write(_chunk, _encoding, cb) {
+      cb()
+    },
   })
   Object.assign(stream, {
-    columns: cols, rows, isTTY: true,
+    columns: cols,
+    rows,
+    isTTY: true,
     getWindowSize: () => [cols, rows],
   })
   return stream as unknown as NodeJS.WriteStream
@@ -48,7 +52,8 @@ const IItem = React.memo(
 
 function silveryList(count: number, cursor: number) {
   return React.createElement(
-    SBox, { flexDirection: "column" },
+    SBox,
+    { flexDirection: "column" },
     ...Array.from({ length: count }, (_, i) =>
       React.createElement(SItem, { key: i, index: i, selected: i === cursor }),
     ),
@@ -57,7 +62,8 @@ function silveryList(count: number, cursor: number) {
 
 function inkList(count: number, cursor: number) {
   return React.createElement(
-    IBox, { flexDirection: "column" },
+    IBox,
+    { flexDirection: "column" },
     ...Array.from({ length: count }, (_, i) =>
       React.createElement(IItem, { key: i, index: i, selected: i === cursor }),
     ),
@@ -82,11 +88,16 @@ describe("Three-way — cursor move 100 items (80x24)", () => {
   // Ink app
   const inkStdout = createMockStdout(80, 24)
   const inkApp = inkRender(inkList(100, 0), {
-    stdout: inkStdout, debug: true, patchConsole: false,
-    incrementalRendering: true, maxFps: 10000,
+    stdout: inkStdout,
+    debug: true,
+    patchConsole: false,
+    incrementalRendering: true,
+    maxFps: 10000,
   })
 
-  let c1 = 0, c2 = 0, c3 = 0
+  let c1 = 0,
+    c2 = 0,
+    c3 = 0
 
   bench("Silvery (reactive)", () => {
     setReactiveEnabled(true)
@@ -121,11 +132,16 @@ describe("Three-way — cursor move 1000 items (80x24)", () => {
 
   const inkStdout = createMockStdout(80, 24)
   const inkApp = inkRender(inkList(1000, 0), {
-    stdout: inkStdout, debug: true, patchConsole: false,
-    incrementalRendering: true, maxFps: 10000,
+    stdout: inkStdout,
+    debug: true,
+    patchConsole: false,
+    incrementalRendering: true,
+    maxFps: 10000,
   })
 
-  let c1 = 0, c2 = 0, c3 = 0
+  let c1 = 0,
+    c2 = 0,
+    c3 = 0
 
   bench("Silvery (reactive)", () => {
     setReactiveEnabled(true)

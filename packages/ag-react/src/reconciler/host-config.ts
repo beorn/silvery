@@ -261,6 +261,8 @@ export const hostConfig = {
       bgDirtyEpoch: epoch,
       subtreeDirtyEpoch: epoch,
       childrenDirtyEpoch: INITIAL_EPOCH,
+      absoluteChildMutatedEpoch: INITIAL_EPOCH,
+      descendantOverflowChangedEpoch: INITIAL_EPOCH,
       layoutSubscribers: new Set(),
       textContent: text,
       isRawText: true,

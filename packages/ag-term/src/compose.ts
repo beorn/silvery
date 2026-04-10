@@ -177,6 +177,8 @@ export function withAg(options?: { root?: AgNode; measurer?: import("./unicode")
         bgDirtyEpoch: getRenderEpoch(),
         subtreeDirtyEpoch: getRenderEpoch(),
         childrenDirtyEpoch: getRenderEpoch(),
+        absoluteChildMutatedEpoch: INITIAL_EPOCH,
+        descendantOverflowChangedEpoch: INITIAL_EPOCH,
         layoutSubscribers: new Set(),
       } satisfies AgNode)
 

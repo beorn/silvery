@@ -43,6 +43,8 @@ function stubNode(testID: string, rect: Rect, opts?: { focusable?: boolean; chil
     bgDirtyEpoch: INITIAL_EPOCH,
     subtreeDirtyEpoch: INITIAL_EPOCH,
     childrenDirtyEpoch: INITIAL_EPOCH,
+    absoluteChildMutatedEpoch: INITIAL_EPOCH,
+    descendantOverflowChangedEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
   }
   for (const child of children) {
