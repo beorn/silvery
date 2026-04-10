@@ -13,6 +13,10 @@
     "terminal",
     "theme"
   ],
+  "homepage": "https://silvery.dev",
+  "bugs": {
+    "url": "https://github.com/beorn/silvery/issues"
+  },
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
