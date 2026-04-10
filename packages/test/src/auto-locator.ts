@@ -72,8 +72,8 @@ type NodePredicate = (node: AgNode) => boolean
  * Create an AutoLocator from a container getter function.
  * The getter is called fresh on each resolution.
  */
-export function createAutoLocator(getContainer: () => AgNode): AutoLocator {
-  return new AutoLocatorImpl(getContainer, [])
+export function createAutoLocator(getContainer: () => AgNode, opts?: { strict?: boolean }): AutoLocator {
+  return new AutoLocatorImpl(getContainer, [], undefined, opts?.strict ?? false)
 }
 
 /**
@@ -84,6 +84,7 @@ class AutoLocatorImpl implements AutoLocator {
     private getContainer: () => AgNode,
     private predicates: NodePredicate[],
     private indexSelector?: { type: "first" | "last" | "nth"; index?: number },
+    private strict: boolean = false,
   ) {}
 
   getByText(text: string | RegExp): AutoLocator {
@@ -106,14 +107,14 @@ class AutoLocatorImpl implements AutoLocator {
       }
       return text.test(content)
     }
-    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate])
+    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate], undefined, this.strict)
   }
 
   getByTestId(id: string): AutoLocator {
     const predicate: NodePredicate = (node) => {
       return getNodeProp(node, "testID") === id
     }
-    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate])
+    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate], undefined, this.strict)
   }
 
   locator(selector: string): AutoLocator {
@@ -124,7 +125,7 @@ class AutoLocatorImpl implements AutoLocator {
         return false // Invalid selector → match nothing
       }
     }
-    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate])
+    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate], undefined, this.strict)
   }
 
   filter(optionsOrPredicate: FilterOptions | ((node: AgNode) => boolean)): AutoLocator {
@@ -158,26 +159,41 @@ class AutoLocatorImpl implements AutoLocator {
       }
     }
 
-    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate])
+    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate], undefined, this.strict)
   }
 
   first(): AutoLocator {
-    return new AutoLocatorImpl(this.getContainer, this.predicates, {
-      type: "first",
-    })
+    return new AutoLocatorImpl(
+      this.getContainer,
+      this.predicates,
+      {
+        type: "first",
+      },
+      this.strict,
+    )
   }
 
   last(): AutoLocator {
-    return new AutoLocatorImpl(this.getContainer, this.predicates, {
-      type: "last",
-    })
+    return new AutoLocatorImpl(
+      this.getContainer,
+      this.predicates,
+      {
+        type: "last",
+      },
+      this.strict,
+    )
   }
 
   nth(index: number): AutoLocator {
-    return new AutoLocatorImpl(this.getContainer, this.predicates, {
-      type: "nth",
-      index,
-    })
+    return new AutoLocatorImpl(
+      this.getContainer,
+      this.predicates,
+      {
+        type: "nth",
+        index,
+      },
+      this.strict,
+    )
   }
 
   resolve(): AgNode | null {
@@ -191,6 +207,15 @@ class AutoLocatorImpl implements AutoLocator {
         case "nth":
           return nodes[this.indexSelector.index ?? 0] ?? null
       }
+    }
+    if (this.strict && nodes.length > 1) {
+      throw new Error(
+        `Locator resolved to ${nodes.length} elements. Use .first(), .nth(n), or a more specific selector. ` +
+          `Matched types: ${nodes
+            .slice(0, 3)
+            .map((n) => n.type)
+            .join(", ")}${nodes.length > 3 ? "..." : ""}`,
+      )
     }
     return nodes[0] ?? null
   }

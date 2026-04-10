@@ -72,13 +72,7 @@ function Bubble({
   return (
     <Box flexDirection="column" alignItems={align ?? "flex-start"}>
       <Small> {sender}</Small>
-      <Box
-        width={width}
-        borderStyle="round"
-        borderColor="$border"
-        paddingX={1}
-        maxWidth={48}
-      >
+      <Box width={width} borderStyle="round" borderColor="$border" paddingX={1} maxWidth={48}>
         <Text wrap={wrap ?? "wrap"}>{text}</Text>
       </Box>
     </Box>
@@ -121,15 +115,7 @@ function BubbleColumn({
 }
 
 /** Side-by-side paragraph comparison. */
-function ParagraphComparison({
-  label,
-  sublabel,
-  wrap,
-}: {
-  label: string
-  sublabel: string
-  wrap: "wrap" | "even"
-}) {
+function ParagraphComparison({ label, sublabel, wrap }: { label: string; sublabel: string; wrap: "wrap" | "even" }) {
   return (
     <Box flexDirection="column" flexGrow={1} flexBasis={0}>
       <Text bold color="$accent">
@@ -152,24 +138,12 @@ function Demo1Bubbles() {
   return (
     <Box flexDirection="column">
       <H2>Chat Bubbles: fit-content vs snug-content</H2>
-      <Muted>
-        {"  "}fit-content sizes to the widest wrapped line (dead space on short lines).
-      </Muted>
-      <Muted>
-        {"  "}snug-content binary-searches for the tightest width with the same line count.
-      </Muted>
+      <Muted>{"  "}fit-content sizes to the widest wrapped line (dead space on short lines).</Muted>
+      <Muted>{"  "}snug-content binary-searches for the tightest width with the same line count.</Muted>
       <Text> </Text>
       <Box flexDirection="row" gap={3} paddingX={1}>
-        <BubbleColumn
-          label='width="fit-content"'
-          sublabel="CSS default — dead space"
-          width="fit-content"
-        />
-        <BubbleColumn
-          label='width="snug-content"'
-          sublabel="Pretext shrinkwrap — tight"
-          width="snug-content"
-        />
+        <BubbleColumn label='width="fit-content"' sublabel="CSS default — dead space" width="fit-content" />
+        <BubbleColumn label='width="snug-content"' sublabel="Pretext shrinkwrap — tight" width="snug-content" />
       </Box>
     </Box>
   )
@@ -179,24 +153,12 @@ function Demo2EvenWrap() {
   return (
     <Box flexDirection="column">
       <H2>Paragraph Layout: greedy vs even wrapping</H2>
-      <Muted>
-        {"  "}Greedy fills each line left-to-right, leaving a ragged right edge.
-      </Muted>
-      <Muted>
-        {"  "}Even uses minimum-raggedness DP to distribute words across all lines.
-      </Muted>
+      <Muted>{"  "}Greedy fills each line left-to-right, leaving a ragged right edge.</Muted>
+      <Muted>{"  "}Even uses minimum-raggedness DP to distribute words across all lines.</Muted>
       <Text> </Text>
       <Box flexDirection="row" gap={3} paddingX={1}>
-        <ParagraphComparison
-          label='wrap="wrap"'
-          sublabel="Greedy — ragged right edge"
-          wrap="wrap"
-        />
-        <ParagraphComparison
-          label='wrap="even"'
-          sublabel="Min-raggedness — balanced lines"
-          wrap="even"
-        />
+        <ParagraphComparison label='wrap="wrap"' sublabel="Greedy — ragged right edge" wrap="wrap" />
+        <ParagraphComparison label='wrap="even"' sublabel="Min-raggedness — balanced lines" wrap="even" />
       </Box>
     </Box>
   )
@@ -206,9 +168,7 @@ function Demo3Combined() {
   return (
     <Box flexDirection="column">
       <H2>Combined: snug-content + even wrapping</H2>
-      <Muted>
-        {"  "}The tightest, most beautiful text layout — both features together.
-      </Muted>
+      <Muted>{"  "}The tightest, most beautiful text layout — both features together.</Muted>
       <Text> </Text>
       <Box flexDirection="row" gap={3} paddingX={1}>
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
@@ -218,27 +178,14 @@ function Demo3Combined() {
           <Muted>Widest line sets width, lines fill greedily</Muted>
           <Text> </Text>
           <Box flexDirection="column" gap={1}>
-            <Box
-              width="fit-content"
-              borderStyle="round"
-              borderColor="$border"
-              paddingX={1}
-              maxWidth={48}
-            >
+            <Box width="fit-content" borderStyle="round" borderColor="$border" paddingX={1} maxWidth={48}>
               <Text wrap="wrap">
-                Typography in terminal applications has always been limited by the character grid, but modern algorithms change that.
+                Typography in terminal applications has always been limited by the character grid, but modern algorithms
+                change that.
               </Text>
             </Box>
-            <Box
-              width="fit-content"
-              borderStyle="round"
-              borderColor="$border"
-              paddingX={1}
-              maxWidth={48}
-            >
-              <Text wrap="wrap">
-                Silvery brings Pretext-inspired layout to the terminal with two simple props.
-              </Text>
+            <Box width="fit-content" borderStyle="round" borderColor="$border" paddingX={1} maxWidth={48}>
+              <Text wrap="wrap">Silvery brings Pretext-inspired layout to the terminal with two simple props.</Text>
             </Box>
           </Box>
         </Box>
@@ -249,27 +196,14 @@ function Demo3Combined() {
           <Muted>Tightest width, balanced line lengths</Muted>
           <Text> </Text>
           <Box flexDirection="column" gap={1}>
-            <Box
-              width="snug-content"
-              borderStyle="round"
-              borderColor="$primary"
-              paddingX={1}
-              maxWidth={48}
-            >
+            <Box width="snug-content" borderStyle="round" borderColor="$primary" paddingX={1} maxWidth={48}>
               <Text wrap="even">
-                Typography in terminal applications has always been limited by the character grid, but modern algorithms change that.
+                Typography in terminal applications has always been limited by the character grid, but modern algorithms
+                change that.
               </Text>
             </Box>
-            <Box
-              width="snug-content"
-              borderStyle="round"
-              borderColor="$primary"
-              paddingX={1}
-              maxWidth={48}
-            >
-              <Text wrap="even">
-                Silvery brings Pretext-inspired layout to the terminal with two simple props.
-              </Text>
+            <Box width="snug-content" borderStyle="round" borderColor="$primary" paddingX={1} maxWidth={48}>
+              <Text wrap="even">Silvery brings Pretext-inspired layout to the terminal with two simple props.</Text>
             </Box>
           </Box>
         </Box>
@@ -289,21 +223,18 @@ function PretextDemo() {
   const [demoIndex, setDemoIndex] = useState(0)
 
   useInput(
-    useCallback(
-      (input: string, key: Key) => {
-        if (input === "q" || key.escape) return "exit"
-        if (input === "j" || key.downArrow || key.rightArrow) {
-          setDemoIndex((i) => Math.min(i + 1, DEMOS.length - 1))
-        }
-        if (input === "k" || key.upArrow || key.leftArrow) {
-          setDemoIndex((i) => Math.max(i - 1, 0))
-        }
-        if (input === "1") setDemoIndex(0)
-        if (input === "2") setDemoIndex(1)
-        if (input === "3") setDemoIndex(2)
-      },
-      [],
-    ),
+    useCallback((input: string, key: Key) => {
+      if (input === "q" || key.escape) return "exit"
+      if (input === "j" || key.downArrow || key.rightArrow) {
+        setDemoIndex((i) => Math.min(i + 1, DEMOS.length - 1))
+      }
+      if (input === "k" || key.upArrow || key.leftArrow) {
+        setDemoIndex((i) => Math.max(i - 1, 0))
+      }
+      if (input === "1") setDemoIndex(0)
+      if (input === "2") setDemoIndex(1)
+      if (input === "3") setDemoIndex(2)
+    }, []),
   )
 
   const Demo = DEMOS[demoIndex]!
