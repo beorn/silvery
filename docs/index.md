@@ -72,7 +72,7 @@ features:
     link: /guide/testing
     linkText: Testing guide
   - title: Composable Architecture
-    details: '<p>Every layer is independently swappable. DI via <a href="/guide/providers">pipe() providers</a>.</p><p><a href="/guide/layout-engine">Layout</a> — Flexily or Yoga.</p><p>State — BYO.</p><p>Term — real, headless, emulator.</p><p><a href="/guide/runtime-layers">App</a> — from stringify to full app.</p><p>Providers — withFocus, withDomEvents, withCommands, and more.</p>'
+    details: '<p>Every layer is independently swappable. <a href="/guide/providers">DI</a> via pipe() providers.</p><p><a href="/guide/layout-engine">Layout</a> — Flexily or Yoga.</p><p>State — BYO.</p><p>Term — real, headless, emulator.</p><p><a href="/guide/runtime-layers">App</a> — from stringify to rich app (withFocus, withDomEvents, withCommands).</p>'
     link: /guide/providers
     linkText: Providers guide
 ---
