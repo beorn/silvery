@@ -53,10 +53,10 @@ await render(<Counter />).run()
   - [Find](https://silvery.dev/guide/find) — `Ctrl+F` with match highlighting and `n`/`N` navigation
   - [Copy-mode](https://silvery.dev/guide/clipboard) — `Esc, v` for vim-style keyboard selection and yanking
   - [Drag-and-drop](https://silvery.dev/guide/event-handling) — mouse drag with hit testing
-- **[Web-like testing](https://silvery.dev/guide/testing)** — Playwright-style testing at multiple fidelity levels:
-  - `createRenderer` — fast unit tests with CSS selector locators, cell-level color assertions
-  - [Termless](https://termless.dev) — full ANSI fidelity through real terminal emulation, test against multiple terminals
-  - [`SILVERY_STRICT`](https://silvery.dev/guide/debugging) — built-in verification that incremental rendering matches fresh on every frame
+- **[Web-like testing](https://silvery.dev/guide/testing)** — Playwright-style testing with full access to terminal internals (scrollback buffer, cursor position, cell styles, window dimensions):
+  - `createRenderer` — fast unit tests with CSS selector locators, cell-level color assertions, frame-by-frame inspection
+  - [Termless](https://termless.dev) — full ANSI fidelity through real terminal emulation. Test against [10 backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty, and more)
+  - [`SILVERY_STRICT`](https://silvery.dev/guide/debugging) — multi-level verification: buffer-level (incremental vs fresh), ANSI-level (internal parser), terminal-level (xterm.js, Ghostty cross-backend), and accumulated replay across all frames
 - **[Composable architecture](https://silvery.dev/guide/providers)** — use as just a renderer (`render`), add a runtime (`run`), or build full apps with any React state library (useState, Zustand, Jotai, Redux). Swap terminal backends (real TTY, headless, xterm.js emulator) for [testing](https://silvery.dev/guide/testing). Embed silvery components in existing CLIs. Use the layout engine standalone. Render to terminal, or (experimental) Canvas, or DOM
 - **[Terminal protocol support](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)** — 100+ escape sequences, all auto-negotiated: 12 OSC (hyperlinks, clipboard, palette, text sizing, semantic prompts, notifications), 35+ CSI (cursor, mouse modes, paste, focus, sync output, device queries), 50+ SGR (6 underline styles, underline colors, truecolor, 256-color), full Kitty keyboard (5 flags), full SGR mouse (any-event, drag, wheel)
 
