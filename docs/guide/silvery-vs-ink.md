@@ -6,6 +6,8 @@ _External project claims last verified: 2026-04. Ink version: 7.0.0._
 
 Silvery is a ground-up reimplementation with a different rendering architecture. Same `Box`, `Text`, `useInput` API — <a href="#compatibility" title="918/931 Ink 7.0 tests pass. 13 intentional differences: Flexily follows W3C spec where Yoga doesn't (4), build artifact format (2), minor edge cases (~7). Silvery supports Yoga as a pluggable engine for exact parity.">99% of Ink's tests pass</a> on silvery's compat layer. [Migration guide →](/getting-started/migrate-from-ink)
 
+Silvery grew out of building a complex terminal app where components needed to know their size during render, updates needed to be fast, and scroll containers, mouse events, focus scopes, and Playwright-style testing needed to just work. Three principles emerged: take the best from the web, stay true to the terminal, and raise the bar for developer ergonomics, architecture composability, and performance. The feature matrix below is what those principles look like in practice.
+
 ## Highlights
 
 The biggest differences at a glance:
@@ -39,7 +41,7 @@ Ink first, Silvery second. Features marked "core" are built into the framework; 
 | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | **ANSI compositing**                    | String concatenation; no compositing layer                                                                                                                                          | Cell-level buffer with style stacking + color blending                                                        |
 | **Incremental rendering (fullscreen)**  | Line-level diff; any change rewrites entire line                                                                                                                                    | Cell-level dirty tracking (7 flags/node), cell-level buffer diff                                              |
-| **Incremental rendering (inline mode)** | Full redraw every frame by default (`incrementalRendering` option for line-level diff)                                                                                               | Cell-level diff works in inline mode with native scrollback                                                   |
+| **Incremental rendering (inline mode)** | Full redraw every frame by default (`incrementalRendering` option for line-level diff)                                                                                              | Cell-level diff works in inline mode with native scrollback                                                   |
 | **Responsive layout**                   | `useBoxMetrics()` — post-layout via `useEffect`, returns 0×0 first                                                                                                                  | `useBoxRect()` — dimensions available _during_ render, first pass                                             |
 | **Scrollable containers**               | `visible`/`hidden` only; ecosystem packages available ([#222](https://github.com/vadimdemedes/ink/issues/222), [ink-scroll-view](https://github.com/grahammendick/ink-scroll-view)) | `overflow="scroll"` + `scrollTo` — core framework, handles clipping                                           |
 | **Sticky headers**                      | None                                                                                                                                                                                | `position="sticky"` in scroll containers                                                                      |
@@ -356,17 +358,17 @@ Silvery implements a comprehensive set of terminal protocols. This matters for c
 
 ### DEC Private Modes
 
-| Mode         | What                                        | Silvery | Ink                         |
-| ------------ | ------------------------------------------- | ------- | --------------------------- |
-| 25 (DECTCEM) | Cursor visibility                           | Yes     | Yes                         |
-| 1000 (X10)   | Basic mouse tracking                        | Yes     | No                          |
-| 1002         | Button event tracking (press + drag)        | Yes     | No                          |
-| 1004         | Focus in/out reporting                      | Yes     | No                          |
-| 1006 (SGR)   | Extended mouse protocol (large coordinates) | Yes     | No                          |
-| 1049         | Alternate screen buffer                     | Yes     | Yes                         |
-| 2004         | Bracketed paste mode                        | Yes     | Yes (v7.0.0)                |
-| 2026         | Synchronized output (flicker-free)          | Yes     | Yes (v7.0.0)                |
-| DECRPM       | Mode query (`CSI ? mode $ p`)               | Yes     | No                          |
+| Mode         | What                                        | Silvery | Ink          |
+| ------------ | ------------------------------------------- | ------- | ------------ |
+| 25 (DECTCEM) | Cursor visibility                           | Yes     | Yes          |
+| 1000 (X10)   | Basic mouse tracking                        | Yes     | No           |
+| 1002         | Button event tracking (press + drag)        | Yes     | No           |
+| 1004         | Focus in/out reporting                      | Yes     | No           |
+| 1006 (SGR)   | Extended mouse protocol (large coordinates) | Yes     | No           |
+| 1049         | Alternate screen buffer                     | Yes     | Yes          |
+| 2004         | Bracketed paste mode                        | Yes     | Yes (v7.0.0) |
+| 2026         | Synchronized output (flicker-free)          | Yes     | Yes (v7.0.0) |
+| DECRPM       | Mode query (`CSI ? mode $ p`)               | Yes     | No           |
 
 ### OSC Sequences
 
@@ -385,13 +387,13 @@ Silvery implements a comprehensive set of terminal protocols. This matters for c
 
 ### Keyboard & Input
 
-| Protocol           | What                                                          | Silvery | Ink                                          |
-| ------------------ | ------------------------------------------------------------- | ------- | -------------------------------------------- |
-| Kitty keyboard     | All 5 flags (disambiguate, events, alternate, all keys, text) | Full    | Full (v7.0.0)                                 |
-| Modifier detection | Shift, Alt, Ctrl, Super/Cmd, Hyper, CapsLock, NumLock         | Full    | Basic                                        |
-| Key event types    | Press, repeat, release                                        | Full    | Press only                                   |
-| Bracketed paste    | `usePaste` hook with auto-enable                              | Full    | `usePaste` hook (v7.0.0)                      |
-| Focus reporting    | Focus in/out events                                           | Full    | None                                         |
+| Protocol           | What                                                          | Silvery | Ink                      |
+| ------------------ | ------------------------------------------------------------- | ------- | ------------------------ |
+| Kitty keyboard     | All 5 flags (disambiguate, events, alternate, all keys, text) | Full    | Full (v7.0.0)            |
+| Modifier detection | Shift, Alt, Ctrl, Super/Cmd, Hyper, CapsLock, NumLock         | Full    | Basic                    |
+| Key event types    | Press, repeat, release                                        | Full    | Press only               |
+| Bracketed paste    | `usePaste` hook with auto-enable                              | Full    | `usePaste` hook (v7.0.0) |
+| Focus reporting    | Focus in/out events                                           | Full    | None                     |
 
 ### Graphics
 

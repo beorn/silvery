@@ -6,6 +6,16 @@ Silver tarnishes when you don't take care of it. So does your code. These are th
 
 Each principle is something people get wrong. If you're coming from Ink, Blessed, or raw ANSI — we've all been there. These patterns are natural starting points, but Silvery gives you better tools. If you're already doing the shiny thing, skip ahead.
 
+## Three foundations
+
+The ten principles below all flow from three broader convictions:
+
+1. **Take the best from the web.** Flexbox, scroll containers, DOM-style events, focus scopes, Playwright-style testing, design tokens — thirty years of web UI produced ideas worth keeping. If you'd reach for it on the web, reach for it in Silvery.
+
+2. **Stay true to the terminal.** Cells, screens, buffers, ANSI, scrollback. The terminal is the medium, and Silvery embraces it. When a feature maps onto a terminal protocol — Kitty keyboard, OSC 52 clipboard, DEC mode 2026 — we expose it honestly, not as a polyfill.
+
+3. **Raise the bar.** For developer ergonomics, architecture composability, and performance. The ten principles below are what this looks like in practice — each one exists because a shiny path is worth building and maintaining.
+
 ## 1. Use the Built-in Components
 
 Silvery ships 45+ components — all available from `import { ... } from "silvery"`. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
