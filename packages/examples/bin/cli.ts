@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * silvery CLI
  *
@@ -66,20 +66,20 @@ const CATEGORY_COLOR: Record<string, string> = {
 }
 
 async function discoverExamples(): Promise<Example[]> {
-  const { resolve } = await import("node:path")
-  const examplesDir = resolve(new URL(".", import.meta.url).pathname, "../examples")
+  const { resolve, dirname } = await import("node:path")
+  const { fileURLToPath } = await import("node:url")
+  const { readdirSync } = await import("node:fs")
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+  const examplesDir = resolve(__dirname, "../examples")
   const results: Example[] = []
 
   for (const dir of CATEGORY_DIRS) {
     const category = CATEGORY_DISPLAY[dir] ?? dir.charAt(0).toUpperCase() + dir.slice(1)
-    const glob = new Bun.Glob("*.tsx")
     const dirPath = resolve(examplesDir, dir)
 
     try {
-      for (const file of glob.scanSync({ cwd: dirPath })) {
-        if (file.startsWith("_")) continue
-
-        // Try to get meta from export, fall back to filename
+      const files = readdirSync(dirPath).filter((f: string) => f.endsWith(".tsx") && !f.startsWith("_"))
+      for (const file of files) {
         const name = file.replace(/\.tsx$/, "").replace(/-/g, " ")
         results.push({
           name,
@@ -213,40 +213,38 @@ async function exampleCommand(args: string[]): Promise<void> {
 
   console.log(`${DIM}Running ${BOLD}${match.name}${RESET}${DIM}...${RESET}\n`)
 
-  const proc = Bun.spawn(["bun", "run", match.file], {
-    stdio: ["inherit", "inherit", "inherit"],
-  })
-  const exitCode = await proc.exited
-  process.exit(exitCode)
+  const { spawn } = await import("node:child_process")
+  const runtime = typeof globalThis.Bun !== "undefined" ? "bun" : "node"
+  const proc = spawn(runtime, ["run", match.file], { stdio: "inherit" })
+  proc.on("exit", (code) => process.exit(code ?? 1))
 }
 
 async function doctorCommand(): Promise<void> {
-  // Try to resolve termtest from @silvery/ag-term (installed as dependency of silvery)
-  const { resolve } = await import("node:path")
+  const { resolve, dirname } = await import("node:path")
+  const { fileURLToPath } = await import("node:url")
+  const __dirname = dirname(fileURLToPath(import.meta.url))
 
-  // In monorepo: ../../ag-term/src/termtest.ts
-  // In npm install: node_modules/@silvery/ag-term/src/termtest.ts
   const candidates = [
-    resolve(new URL(".", import.meta.url).pathname, "../../ag-term/src/termtest.ts"),
-    resolve(new URL(".", import.meta.url).pathname, "../node_modules/@silvery/ag-term/src/termtest.ts"),
+    resolve(__dirname, "../../ag-term/src/termtest.ts"),
+    resolve(__dirname, "../node_modules/@silvery/ag-term/src/termtest.ts"),
   ]
 
   for (const termtestPath of candidates) {
     try {
       const { stat } = await import("node:fs/promises")
       await stat(termtestPath)
-      const proc = Bun.spawn(["bun", "run", termtestPath], {
-        stdio: ["inherit", "inherit", "inherit"],
-      })
-      const exitCode = await proc.exited
-      process.exit(exitCode)
+      const { spawn } = await import("node:child_process")
+      const runtime = typeof globalThis.Bun !== "undefined" ? "bun" : "node"
+      const proc = spawn(runtime, ["run", termtestPath], { stdio: "inherit" })
+      proc.on("exit", (code) => process.exit(code ?? 1))
+      return
     } catch {
       continue
     }
   }
 
   console.error(`${RED}Error:${RESET} Could not find terminal diagnostics.`)
-  console.error(`${DIM}Make sure silvery is installed: bun add silvery${RESET}`)
+  console.error(`${DIM}Make sure silvery is installed: npm install silvery${RESET}`)
   process.exit(1)
 }
 
@@ -272,9 +270,12 @@ async function main(): Promise<void> {
 
   if (args.includes("--version") || args.includes("-v")) {
     try {
-      const { resolve } = await import("node:path")
-      const pkgPath = resolve(new URL(".", import.meta.url).pathname, "../package.json")
-      const pkg = await Bun.file(pkgPath).json()
+      const { resolve, dirname } = await import("node:path")
+      const { fileURLToPath } = await import("node:url")
+      const { readFileSync } = await import("node:fs")
+      const __dirname = dirname(fileURLToPath(import.meta.url))
+      const pkgPath = resolve(__dirname, "../package.json")
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
       console.log(`@silvery/examples ${pkg.version}`)
     } catch {
       console.log("@silvery/examples (version unknown)")
