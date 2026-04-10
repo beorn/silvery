@@ -39,13 +39,16 @@ await render(<Counter />).run()
 
 - **[3–6× faster in mounted rerender benchmarks](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — cell-level dirty tracking, only changed cells emit to the terminal. Per-node skip for unchanged subtrees. Works in inline mode with native scrollback, not just fullscreen
 - **Pure TypeScript, zero native deps** — no WASM, no build steps. [Layout via Flexily](https://silvery.dev/guide/layout-engine) (or Yoga). Works on Alpine, CI, Docker, everywhere
-- **[Layout-first rendering](https://silvery.dev/guide/silvery-vs-ink#responsive-layout)** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables:
+- **[Web-like layout](https://silvery.dev/guide/silvery-vs-ink#responsive-layout)** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables:
   - [Scroll containers](https://silvery.dev/guide/scrolling) — `overflow="scroll"` with virtualization
   - [Sticky positioning](https://silvery.dev/guide/layout-coordinates) — `position="sticky"` for headers and footers
   - [ANSI-aware compositing](https://silvery.dev/guide/ansi-layering) — color blending with alpha across overlapping layers
-- **[Dynamic scrollback](https://silvery.dev/examples/scrollback)** — live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F and text selection work natively. Inline mode gets fullscreen-level performance; fullscreen mode gets inline-level UX (app-managed scrollback). No hard split between the two
+- **[Smart rendering modes](https://silvery.dev/examples/scrollback)** — three modes, all with incremental rendering:
+  - Fullscreen — alt screen, traditional TUI
+  - Inline with [dynamic scrollback](https://silvery.dev/examples/scrollback) — live React zone at bottom, completed items graduate to terminal-owned scrollback. Native Cmd+F and text selection
+  - Virtual inline — alt screen + app-managed scrollback history, scrollable and searchable
 - **[45+ components](https://silvery.dev/guides/components)** — TextInput, TextArea, SelectList, ListView, Table, TreeView, Console, Tabs, CommandPalette, ModalDialog, Toast, and more. [38 theme palettes](https://silvery.dev/guide/styling) with semantic tokens (`$primary`, `$error`) and auto-detected terminal colors
-- **[Web-grade interaction](https://silvery.dev/guide/event-handling)** — [focus scopes](https://silvery.dev/guide/silvery-vs-ink#focus-system) with spatial arrow-key nav, click-to-focus. Enables:
+- **[Web-like interaction](https://silvery.dev/guide/event-handling)** — [focus scopes](https://silvery.dev/guide/silvery-vs-ink#focus-system) with spatial arrow-key nav, click-to-focus. Enables:
   - [Text selection](https://silvery.dev/guide/text-selection) — mouse drag, word/line, `userSelect` boundaries, Alt+drag override
   - [Find](https://silvery.dev/guide/find) — `Ctrl+F` with match highlighting and `n`/`N` navigation
   - [Copy-mode](https://silvery.dev/guide/clipboard) — `Esc, v` for vim-style keyboard selection and yanking
