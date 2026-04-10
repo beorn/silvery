@@ -1,0 +1,38 @@
+{
+  "name": "@silvery/examples",
+  "version": "0.5.2",
+  "description": "Example apps and component demos for silvery — bunx @silvery/examples <name>",
+  "license": "MIT",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/silvery.git",
+    "directory": "examples"
+  },
+  "bin": {
+    "silvery-examples": "./bin/cli.ts"
+  },
+  "files": [
+    "bin",
+    "components",
+    "apps",
+    "layout",
+    "runtime",
+    "inline",
+    "kitty",
+    "_banner.tsx"
+  ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@silvery/ag-term": "0.5.0",
+    "@silvery/create": "0.5.0",
+    "silvery": "0.15.0"
+  },
+  "engines": {
+    "bun": ">=1.0",
+    "node": ">=23.6.0"
+  }
+}
