@@ -88,6 +88,7 @@ export interface RenderPhaseStats {
   cascadeMinDepth: number
   cascadeNodes: string
   // Top-level prevBuffer diagnostics
+  _noopSkip: number
   _prevBufferNull: number
   _prevBufferDimMismatch: number
   _hasPrevBuffer: number

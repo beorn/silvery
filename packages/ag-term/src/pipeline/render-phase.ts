@@ -32,6 +32,7 @@ import { computeCascade } from "./cascade-predicates"
 import { isStyleOnlyDirty } from "@silvery/ag/dirty-tracking"
 import {
   isCurrentEpoch,
+  isAnyDirty,
   INITIAL_EPOCH,
   advanceRenderEpoch,
   isDirty,
@@ -68,6 +69,12 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
 
   // Clone prevBuffer if same dimensions, else create fresh
   const hasPrevBuffer = prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
+
+  // Note: no-op frame skip was attempted here but doesn't fire in practice.
+  // React.createElement returns new objects → reconciler calls commitUpdate
+  // on root with CHILDREN_BIT even when all children bail out via React.memo.
+  // The right fix is scheduler-level: don't call renderPhase when React has
+  // no pending work. Tracked in km-silvery.noop-frame-skip.
 
   if (instr.enabled) {
     instr.stats._prevBufferNull = prevBuffer == null ? 1 : 0
@@ -197,6 +204,7 @@ const _renderPhaseStats: RenderPhaseStats = {
   normalRepaintReason: "",
   cascadeMinDepth: 999,
   cascadeNodes: "",
+  _noopSkip: 0,
   _prevBufferNull: 0,
   _prevBufferDimMismatch: 0,
   _hasPrevBuffer: 0,
