@@ -41,9 +41,9 @@ _Reproduce: `bun run bench`. Silvery wins all 16 benchmark scenarios. Full resul
 
 ### Bundle size — parity with Ink+Yoga
 
-| Package                            | Minified + Gzipped |
-| ---------------------------------- | ------------------ |
-| Ink 7.0 + Yoga WASM (baseline)     | 116.6 KB           |
+| Package                            | Minified + Gzipped  |
+| ---------------------------------- | ------------------- |
+| Ink 7.0 + Yoga WASM (baseline)     | 116.6 KB            |
 | `silvery/runtime` (core + flexily) | **114.9 KB (tied)** |
 
 Pure TypeScript, zero WASM, zero native dependencies, instant startup (no async WASM init).
@@ -98,7 +98,7 @@ Beyond responsive layout, the renderer provides:
 - **ANSI-aware cell compositing** — proper style stacking, not just string concatenation
 - **Pure TypeScript** — no WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno
 - **Stable memory** — normal JavaScript garbage collection, no WASM heap growth
-- **~99% Ink 7.0 test compatibility** — 918+/931 tests pass. Existing Ink code works with minimal changes via the `silvery/ink` compatibility layer
+- **~99% Ink 7.0 test compatibility** — 918/931 tests pass. Existing Ink code works with minimal changes via the `silvery/ink` compatibility layer
 
 Optional packages extend the renderer into a full framework:
 

@@ -104,26 +104,26 @@ Blessed first, Silvery second. Features marked "core" are built into the framewo
 
 ### Rendering
 
-| Feature                    | Blessed                                                                     | Silvery                                                                                  |
-| -------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Feature                    | Blessed                                                                                                            | Silvery                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
 | **Rendering model**        | Screen damage buffer with two buffers — only draws changes (CSR/BCE); `smartCSR`/`fastCSR` optimize scroll regions | 5-phase pipeline: measure → layout → content → output → flush                            |
-| **Incremental rendering**  | Region-level via `smartCSR` / `fastCSR`                                     | Cell-level dirty tracking (7 flags/node), cell-level buffer diff                         |
-| **Output efficiency**      | Region-level diff via damage buffer                                         | **28–192× less output** — cell-level diff + relative cursor addressing                   |
-| **Inline mode**            | Not supported — always fullscreen                                           | Cell-level incremental with native scrollback preserved                                  |
-| **Dynamic scrollback**     | Not supported                                                               | Items graduate to terminal history; Cmd+F works                                          |
-| **Fullscreen-like inline** | Not supported                                                               | Inline mode with fullscreen performance — cell-level incremental + scrollback graduation |
-| **Synchronized output**    | Not supported                                                               | DEC mode 2026 — flicker-free in tmux/Zellij                                              |
+| **Incremental rendering**  | Region-level via `smartCSR` / `fastCSR`                                                                            | Cell-level dirty tracking (7 flags/node), cell-level buffer diff                         |
+| **Output efficiency**      | Region-level diff via damage buffer                                                                                | **28–192× less output** — cell-level diff + relative cursor addressing                   |
+| **Inline mode**            | Not supported — always fullscreen                                                                                  | Cell-level incremental with native scrollback preserved                                  |
+| **Dynamic scrollback**     | Not supported                                                                                                      | Items graduate to terminal history; Cmd+F works                                          |
+| **Fullscreen-like inline** | Not supported                                                                                                      | Inline mode with fullscreen performance — cell-level incremental + scrollback graduation |
+| **Synchronized output**    | Not supported                                                                                                      | DEC mode 2026 — flicker-free in tmux/Zellij                                              |
 
 ### Interaction
 
-| Feature                   | Blessed                                       | Silvery                                                                        |
-| ------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------ |
-| **Mouse**                 | SGR (?1006), URxvt (?1015), and X10 protocols | SGR 1006 (large coordinates, precise tracking, drag, wheel)                    |
-| **Event model**           | EventEmitter with bubbling (cancel via `return false`) | DOM-style bubbling, `stopPropagation`, input layering                          |
-| **Input isolation**       | Manual state checking in every handler        | `InputLayerProvider` — modal dialogs consume input automatically               |
-| **Focus system**          | Widget-level `.focus()`                       | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin` |
-| **Text selection + find** | Not in core                                   | Mouse drag, `Ctrl+F` search, `Esc,v` keyboard selection                        |
-| **Command system**        | Not in core                                   | Named commands, context-aware keys, `parseHotkey("⌘K")`                        |
+| Feature                   | Blessed                                                    | Silvery                                                                        |
+| ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Mouse**                 | SGR (?1006), URxvt (?1015), and X10 protocols              | SGR 1006 (large coordinates, precise tracking, drag, wheel)                    |
+| **Event model**           | EventEmitter with bubbling (cancel via `return false`)     | DOM-style bubbling, `stopPropagation`, input layering                          |
+| **Input isolation**       | Manual state checking in every handler                     | `InputLayerProvider` — modal dialogs consume input automatically               |
+| **Focus system**          | Widget-level `.focus()`                                    | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin` |
+| **Text selection + find** | Not in core                                                | Mouse drag, `Ctrl+F` search, `Esc,v` keyboard selection                        |
+| **Command system**        | Not in core                                                | Named commands, context-aware keys, `parseHotkey("⌘K")`                        |
 | **Clipboard**             | Built-in `copyToClipboard()` via iTerm2 sequence (limited) | OSC 52 — works over SSH, no external tools                                     |
 
 ### Terminal Protocol Support

@@ -175,7 +175,9 @@ export function computeCascade(inputs: CascadeInputs): CascadeOutputs {
   // backgroundColor that would be incorrectly overwritten by fillBg. The
   // render phase checks this condition (hasDescendantWithBg) and falls back
   // to the full path when descendants have their own bg.
-  const bgOnlyChange = hasPrevBuffer && bgOnlyAffected && hasBgColor && !ancestorLayoutChanged && !ancestorCleared
+  // DISABLED: bgOnlyChange fast path causes incremental rendering mismatches
+  // (fg colors lost on child nodes). Needs investigation before re-enabling.
+  const bgOnlyChange = false
 
   // Descendant changed inside a bg-bearing Box (forces bg refill).
   const bgRefillNeeded = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor

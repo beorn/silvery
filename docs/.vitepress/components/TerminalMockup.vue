@@ -1,7 +1,7 @@
 <script setup>
 defineProps({
-  title: { type: String, default: 'terminal' },
-  width: { type: String, default: '100%' },
+  title: { type: String, default: "terminal" },
+  width: { type: String, default: "100%" },
   side: { type: Boolean, default: false },
 })
 </script>
@@ -42,9 +42,15 @@ defineProps({
   border-radius: 50%;
   display: inline-block;
 }
-.terminal-dot.red { background: #ff5f56; }
-.terminal-dot.yellow { background: #ffbd2e; }
-.terminal-dot.green { background: #27c93f; }
+.terminal-dot.red {
+  background: #ff5f56;
+}
+.terminal-dot.yellow {
+  background: #ffbd2e;
+}
+.terminal-dot.green {
+  background: #27c93f;
+}
 .terminal-title {
   color: #999;
   font-size: 12px;
@@ -54,25 +60,55 @@ defineProps({
 .terminal-body {
   background: #1a1a2e;
   color: #c9d1d9;
-  font-family: 'SF Mono', 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-family: "SF Mono", "Menlo", "Consolas", "Monaco", monospace;
   font-size: 13px;
   line-height: 1.5;
   padding: 12px 16px;
   white-space: pre;
   overflow-x: auto;
 }
-.terminal-body :deep(.dim) { color: #6e7681; }
-.terminal-body :deep(.green) { color: #3fb950; }
-.terminal-body :deep(.red) { color: #f85149; }
-.terminal-body :deep(.yellow) { color: #d29922; }
-.terminal-body :deep(.blue) { color: #58a6ff; }
-.terminal-body :deep(.cyan) { color: #39c5cf; }
-.terminal-body :deep(.bold) { font-weight: 700; }
-.terminal-body :deep(.underline) { text-decoration: underline; }
-.terminal-body :deep(.inverse) { background: #c9d1d9; color: #1a1a2e; padding: 0 2px; }
-.terminal-body :deep(.separator) { color: #30363d; }
-.terminal-body :deep(.cursor) { background: #c9d1d9; color: #1a1a2e; animation: blink 1s step-end infinite; }
-@keyframes blink { 50% { opacity: 0; } }
+.terminal-body :deep(.dim) {
+  color: #6e7681;
+}
+.terminal-body :deep(.green) {
+  color: #3fb950;
+}
+.terminal-body :deep(.red) {
+  color: #f85149;
+}
+.terminal-body :deep(.yellow) {
+  color: #d29922;
+}
+.terminal-body :deep(.blue) {
+  color: #58a6ff;
+}
+.terminal-body :deep(.cyan) {
+  color: #39c5cf;
+}
+.terminal-body :deep(.bold) {
+  font-weight: 700;
+}
+.terminal-body :deep(.underline) {
+  text-decoration: underline;
+}
+.terminal-body :deep(.inverse) {
+  background: #c9d1d9;
+  color: #1a1a2e;
+  padding: 0 2px;
+}
+.terminal-body :deep(.separator) {
+  color: #30363d;
+}
+.terminal-body :deep(.cursor) {
+  background: #c9d1d9;
+  color: #1a1a2e;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
 
 /* Scrollback divider */
 .terminal-body :deep(.scrollback-line) {
@@ -81,4 +117,3 @@ defineProps({
   display: block;
 }
 </style>
-</template>

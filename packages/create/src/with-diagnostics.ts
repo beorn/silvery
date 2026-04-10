@@ -204,6 +204,26 @@ export class VirtualTerminal {
         }
       }
 
+      // OSC sequences: \x1b] ... (ST or BEL)
+      // e.g. OSC 8 hyperlinks: \x1b]8;;url\x1b\\ or \x1b]8;;url\x07
+      if (ansi[i] === "\x1b" && ansi[i + 1] === "]") {
+        // Find terminator: ST (\x1b\\) or BEL (\x07)
+        let j = i + 2
+        while (j < ansi.length) {
+          if (ansi[j] === "\x07") {
+            j++
+            break
+          }
+          if (ansi[j] === "\x1b" && ansi[j + 1] === "\\") {
+            j += 2
+            break
+          }
+          j++
+        }
+        i = j
+        continue
+      }
+
       if (ansi[i] === "\r") {
         this.cursorX = 0
         i++

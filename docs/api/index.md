@@ -47,13 +47,13 @@ Everything you need to build terminal UIs with Silvery.
 
 ## Hooks
 
-| Hook                                | Description                                                                                                                                             |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Hook                            | Description                                                                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [useBoxRect](/api/use-box-rect) | Get component dimensions during render ([container queries for terminals](/getting-started/migrate-from-ink#_1-components-know-their-size-the-big-win)) |
-| [useInput](/api/use-input)          | Handle keyboard and mouse input                                                                                                                         |
-| [useApp](/api/use-app)              | Access the app instance (exit, rerender)                                                                                                                |
-| [useStdout](/api/use-stdout)        | Access stdout for raw writes                                                                                                                            |
-| [Focus Hooks](/api/use-focus)       | Focus management (useFocusable, useFocusScope)                                                                                                          |
+| [useInput](/api/use-input)      | Handle keyboard and mouse input                                                                                                                         |
+| [useApp](/api/use-app)          | Access the app instance (exit, rerender)                                                                                                                |
+| [useStdout](/api/use-stdout)    | Access stdout for raw writes                                                                                                                            |
+| [Focus Hooks](/api/use-focus)   | Focus management (useFocusable, useFocusScope)                                                                                                          |
 
 ## Quick Import
 

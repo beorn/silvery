@@ -7,7 +7,7 @@ faq:
   - q: "How does Silvery compare to Ink?"
     a: "Both use React for terminal UIs. Silvery's key differences are atomic layout-first rendering (components know their size during render, no two-pass flash), 2.5-5.2x faster updates on mounted workloads, bundle-parity with Ink+Yoga (114.9 KB vs 116.6 KB gzipped), a larger component library (45+ vs ~10), and comprehensive terminal protocol support (Kitty keyboard, SGR mouse, graphics, synchronized output). Ink has a larger ecosystem and is the established standard."
   - q: "Is Silvery compatible with existing Ink code?"
-    a: "Yes. Silvery provides a compatibility layer via silvery/ink and silvery/chalk that passes ~99% of Ink 7.0's test suite (918+/931 tests). Most Ink code works with import path changes. See the migration guide for details."
+    a: "Yes. Silvery provides a compatibility layer via silvery/ink and silvery/chalk that passes ~99% of Ink 7.0's test suite (918/931 tests). Most Ink code works with import path changes. See the migration guide for details."
   - q: "How fast is Silvery compared to Ink?"
     a: "Silvery wins all 16 benchmark scenarios vs Ink 7.0 on mounted workloads. The canonical numbers: mounted cursor move 2.56x, mounted kanban single change 3.36x, memo'd 100-item toggle 4.59x, memo'd 500-item toggle 5.15x, memo'd kanban card edit 3.75x. The cell-level output phase also emits 28-192x less output than full redraw on incremental updates. Reproduce with bun run bench."
   - q: "What components does Silvery include?"
@@ -59,7 +59,7 @@ Ink has a larger ecosystem (~1.3M weekly downloads, 50+ community components) an
 
 ## Is Silvery compatible with existing Ink code?
 
-Yes. Silvery provides compatibility layers via `silvery/ink` and `silvery/chalk` that pass ~99% of Ink 7.0's test suite (918+/931 tests). Most Ink code works by changing import paths:
+Yes. Silvery provides compatibility layers via `silvery/ink` and `silvery/chalk` that pass ~99% of Ink 7.0's test suite (918/931 tests). Most Ink code works by changing import paths:
 
 ```ts
 // Before
@@ -210,7 +210,7 @@ Both modes use incremental rendering for efficient updates. The mode is set at s
 Three steps:
 
 1. **Swap imports** -- replace `ink` with `silvery/ink` and `chalk` with `silvery/chalk`
-2. **Run your tests** — ~99% of Ink 7.0's test suite (918+/931) passes with the compatibility layer
+2. **Run your tests** — ~99% of Ink 7.0's test suite (918/931) passes with the compatibility layer
 3. **Adopt native APIs gradually** -- use `useBoxRect()` for responsive layouts, replace manual key handlers with `SelectList`, add themes with semantic tokens
 
 The compatibility layer is a bridge, not a destination. New code should use Silvery's native APIs to get the full benefit of layout-first rendering and the component library.

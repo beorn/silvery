@@ -531,7 +531,13 @@ export const hostConfig = {
     // have contentDirty or childrenDirty (which may have been set by
     // commitTextUpdate on a child BEFORE this commitUpdate runs — React
     // processes children before parents in the commit phase).
-    if (contentChanged === "style" && !layoutChanged && !instance.bgDirty && !instance.contentDirty && !instance.childrenDirty) {
+    if (
+      contentChanged === "style" &&
+      !layoutChanged &&
+      !instance.bgDirty &&
+      !instance.contentDirty &&
+      !instance.childrenDirty
+    ) {
       trackStyleOnlyDirty(instance)
     }
 

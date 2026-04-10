@@ -33,25 +33,25 @@ The biggest differences at a glance:
 
 ## At a Glance
 
-| Aspect              | Textual                                                                                                               | Silvery                                                                                                                             |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Language**        | Python                                                                                                                | TypeScript                                                                                                                          |
-| **Architecture**    | Widget tree + TCSS + reactive attributes                                                                              | React component tree + CSS flexbox                                                                                                  |
-| **Styling**         | TCSS (CSS subset in `.tcss` files)                                                                                    | Semantic theme tokens + inline props                                                                                                |
-| **Layout**          | Dock, grid, horizontal, vertical                                                                                      | CSS flexbox (Flexily engine)                                                                                                        |
+| Aspect              | Textual                                                                                                                                 | Silvery                                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Language**        | Python                                                                                                                                  | TypeScript                                                                                                                          |
+| **Architecture**    | Widget tree + TCSS + reactive attributes                                                                                                | React component tree + CSS flexbox                                                                                                  |
+| **Styling**         | TCSS (CSS subset in `.tcss` files)                                                                                                      | Semantic theme tokens + inline props                                                                                                |
+| **Layout**          | Dock, grid, horizontal, vertical                                                                                                        | CSS flexbox (Flexily engine)                                                                                                        |
 | **Components**      | Dozens of built-in widgets (DataTable, Input, Button, Select, Tree, TextArea, Markdown, RichLog, Sparkline, Tabs, CommandPalette, etc.) | 45+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Image, SplitView, etc.) |
-| **Testing**         | Pilot mode (async, simulated events)                                                                                  | `@silvery/test` (headless renderer, locators) + Termless (10+ terminal backends)                                                    |
-| **Mouse support**   | Full (click, scroll, hover)                                                                                           | SGR protocol with DOM-style events                                                                                                  |
-| **Keyboard**        | Standard terminal input                                                                                               | Kitty keyboard protocol (all 5 flags)                                                                                               |
-| **Focus system**    | Tab-based with focusable widgets                                                                                      | Tree-based with scopes, spatial navigation                                                                                          |
-| **Scrolling**       | Built-in per-widget, ScrollableContainer                                                                              | `overflow="scroll"`, VirtualList                                                                                                    |
-| **Clipboard**       | Built-in `App.copy_to_clipboard()` API                                                                                | OSC 52 (works over SSH)                                                                                                             |
-| **Image rendering** | None built-in                                                                                                         | Kitty graphics + Sixel with auto-detect                                                                                             |
-| **Web target**      | Textual Web (serve TUI in browser)                                                                                    | Experimental (Canvas 2D, DOM)                                                                                                       |
-| **Theme system**    | TCSS variables + built-in themes                                                                                      | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect                                                                    |
-| **Runtime**         | CPython / PyPy                                                                                                        | Node.js / Bun / Deno                                                                                                                |
-| **Native deps**     | None                                                                                                                  | None                                                                                                                                |
-| **Community**       | Large (Python TUI standard)                                                                                           | Newer, smaller community                                                                                                            |
+| **Testing**         | Pilot mode (async, simulated events)                                                                                                    | `@silvery/test` (headless renderer, locators) + Termless (10+ terminal backends)                                                    |
+| **Mouse support**   | Full (click, scroll, hover)                                                                                                             | SGR protocol with DOM-style events                                                                                                  |
+| **Keyboard**        | Standard terminal input                                                                                                                 | Kitty keyboard protocol (all 5 flags)                                                                                               |
+| **Focus system**    | Tab-based with focusable widgets                                                                                                        | Tree-based with scopes, spatial navigation                                                                                          |
+| **Scrolling**       | Built-in per-widget, ScrollableContainer                                                                                                | `overflow="scroll"`, VirtualList                                                                                                    |
+| **Clipboard**       | Built-in `App.copy_to_clipboard()` API                                                                                                  | OSC 52 (works over SSH)                                                                                                             |
+| **Image rendering** | None built-in                                                                                                                           | Kitty graphics + Sixel with auto-detect                                                                                             |
+| **Web target**      | Textual Web (serve TUI in browser)                                                                                                      | Experimental (Canvas 2D, DOM)                                                                                                       |
+| **Theme system**    | TCSS variables + built-in themes                                                                                                        | 38 palettes, semantic tokens (`$primary`, `$muted`), auto-detect                                                                    |
+| **Runtime**         | CPython / PyPy                                                                                                                          | Node.js / Bun / Deno                                                                                                                |
+| **Native deps**     | None                                                                                                                                    | None                                                                                                                                |
+| **Community**       | Large (Python TUI standard)                                                                                                             | Newer, smaller community                                                                                                            |
 
 ## CSS: TCSS vs Flexbox Props
 
@@ -194,7 +194,7 @@ Textual ships dozens of built-in widgets. A representative sample:
 | `ListView` / `OptionList`             | Scrollable item lists                           |
 | `DirectoryTree`                       | File browser                                    |
 | `Switch` / `Checkbox` / `RadioButton` | Toggle controls                                 |
-| `CommandPalette`                       | Built-in fuzzy command search (Ctrl+P)          |
+| `CommandPalette`                      | Built-in fuzzy command search (Ctrl+P)          |
 | `Toast` / notifications               | Built-in `notify()` API                         |
 
 ### Silvery Components
@@ -311,24 +311,24 @@ expect(term.scrollback).toContainText("Previous item")
 
 This is where the frameworks diverge significantly.
 
-| Feature                 | Textual                    | Silvery                                                         |
-| ----------------------- | -------------------------- | --------------------------------------------------------------- |
-| **True color**          | Yes                        | Yes                                                             |
-| **256 color**           | Yes                        | Yes                                                             |
-| **Color downsampling**  | Yes (automatic)            | Yes (via `@silvery/ansi`)                                       |
-| **Mouse support**       | Yes (click, scroll, hover) | Yes (SGR protocol, DOM-style events, drag)                      |
-| **Kitty keyboard**      | No                         | All 5 flags (disambiguate, events, alternate, all keys, text)   |
-| **Key event types**     | Press                      | Press, repeat, release                                          |
-| **Synchronized output** | No                         | DEC mode 2026 (flicker-free in tmux/Zellij)                     |
-| **Extended underlines** | Curly, dotted, dashed      | Full ISO 8613-6 (single, double, curly, dotted, dashed + color) |
+| Feature                 | Textual                            | Silvery                                                         |
+| ----------------------- | ---------------------------------- | --------------------------------------------------------------- |
+| **True color**          | Yes                                | Yes                                                             |
+| **256 color**           | Yes                                | Yes                                                             |
+| **Color downsampling**  | Yes (automatic)                    | Yes (via `@silvery/ansi`)                                       |
+| **Mouse support**       | Yes (click, scroll, hover)         | Yes (SGR protocol, DOM-style events, drag)                      |
+| **Kitty keyboard**      | No                                 | All 5 flags (disambiguate, events, alternate, all keys, text)   |
+| **Key event types**     | Press                              | Press, repeat, release                                          |
+| **Synchronized output** | No                                 | DEC mode 2026 (flicker-free in tmux/Zellij)                     |
+| **Extended underlines** | Curly, dotted, dashed              | Full ISO 8613-6 (single, double, curly, dotted, dashed + color) |
 | **Clipboard**           | Built-in `App.copy_to_clipboard()` | OSC 52 (works over SSH)                                         |
-| **Hyperlinks**          | Dedicated `Link` widget    | OSC 8 with `<Link>` component                                   |
-| **Images**              | No                         | Kitty graphics + Sixel with auto-detect                         |
-| **Window title**        | Yes                        | OSC 0/2                                                         |
-| **Terminal queries**    | Limited                    | DA1/DA2/DA3, XTVERSION, CPR, pixel dimensions                   |
-| **Bracketed paste**     | Yes                        | Yes (`usePaste` hook)                                           |
-| **Scroll regions**      | No                         | DECSTBM                                                         |
-| **Cursor styles**       | Limited                    | Full DECSCUSR (block, underline, bar, blinking)                 |
+| **Hyperlinks**          | Dedicated `Link` widget            | OSC 8 with `<Link>` component                                   |
+| **Images**              | No                                 | Kitty graphics + Sixel with auto-detect                         |
+| **Window title**        | Yes                                | OSC 0/2                                                         |
+| **Terminal queries**    | Limited                            | DA1/DA2/DA3, XTVERSION, CPR, pixel dimensions                   |
+| **Bracketed paste**     | Yes                                | Yes (`usePaste` hook)                                           |
+| **Scroll regions**      | No                                 | DECSTBM                                                         |
+| **Cursor styles**       | Limited                            | Full DECSCUSR (block, underline, bar, blinking)                 |
 
 Silvery's terminal protocol coverage is broader, particularly for Kitty keyboard (important for distinguishing Ctrl+I from Tab, Ctrl+M from Enter), synchronized output (eliminates flicker in terminal multiplexers), and image rendering.
 

@@ -51,15 +51,15 @@ Bubble Tea first, Silvery second. Features marked "core" are built into the fram
 
 ### Interaction
 
-| Feature                   | Bubble Tea v2                                    | Silvery                                                                                 |
-| ------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| Feature                   | Bubble Tea v2                                                                                            | Silvery                                                                                 |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | **Mouse support**         | SGR mouse — typed `MouseClickMsg`, `MouseReleaseMsg`, `MouseMotionMsg`, `MouseWheelMsg` through `Update` | SGR mouse with DOM-style events: `onClick`, `onWheel`, `onMouseDown`, hit testing, drag |
-| **Input handling**        | All messages go through single `Update` function | DOM-style bubbling, modal isolation, `stopPropagation`, input layers                    |
-| **Focus system**          | Manual — manage focused component in model state | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin`          |
-| **Text selection + find** | Not in core                                      | Mouse drag, `Ctrl+F` search, `Esc,v` keyboard selection                                 |
-| **Command system**        | Not in core                                      | Named commands, context-aware keys, `parseHotkey("⌘K")`                                 |
-| **Clipboard**             | OSC 52 (v2)                                      | OSC 52 `copyToClipboard`/`requestClipboard`                                             |
-| **Image rendering**       | Not in core (ecosystem libraries available)      | Core: `<Image>` — Kitty graphics + Sixel + text fallback                                |
+| **Input handling**        | All messages go through single `Update` function                                                         | DOM-style bubbling, modal isolation, `stopPropagation`, input layers                    |
+| **Focus system**          | Manual — manage focused component in model state                                                         | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin`          |
+| **Text selection + find** | Not in core                                                                                              | Mouse drag, `Ctrl+F` search, `Esc,v` keyboard selection                                 |
+| **Command system**        | Not in core                                                                                              | Named commands, context-aware keys, `parseHotkey("⌘K")`                                 |
+| **Clipboard**             | OSC 52 (v2)                                                                                              | OSC 52 `copyToClipboard`/`requestClipboard`                                             |
+| **Image rendering**       | Not in core (ecosystem libraries available)                                                              | Core: `<Image>` — Kitty graphics + Sixel + text fallback                                |
 
 ### Components & Framework
 
@@ -87,16 +87,16 @@ Bubble Tea first, Silvery second. Features marked "core" are built into the fram
 
 ### Performance & Distribution
 
-| Aspect                       | Bubble Tea v2                                                     | Silvery                                                                       |
-| ---------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| **Language**                 | Compiled Go                                                       | TypeScript (Bun or Node.js)                                                   |
-| **Startup time**             | ~1 ms (compiled binary)                                           | ~50–150 ms (JS runtime initialization)                                        |
-| **Distribution**             | Single static binary — `go build`, cross-compile, no dependencies | Requires Node.js/Bun runtime; bundle with `bun build` or ship as npm package  |
+| Aspect                       | Bubble Tea v2                                                     | Silvery                                                                                                                      |
+| ---------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Language**                 | Compiled Go                                                       | TypeScript (Bun or Node.js)                                                                                                  |
+| **Startup time**             | ~1 ms (compiled binary)                                           | ~50–150 ms (JS runtime initialization)                                                                                       |
+| **Distribution**             | Single static binary — `go build`, cross-compile, no dependencies | Requires Node.js/Bun runtime; bundle with `bun build` or ship as npm package                                                 |
 | **Interactive update speed** | Fast (compiled Go, cell diff)                                     | **3–5× faster than Ink 7.0** — cell-level dirty tracking skips unchanged subtrees entirely (no direct Bubble Tea benchmarks) |
-| **Output efficiency**        | Cell-based diff (v2)                                              | **28–192× less output** — cell-level diff + relative cursor addressing        |
-| **Memory**                   | Go GC with low pause times                                        | Normal JS GC; graduated scrollback frees React tree                           |
-| **Native dependencies**      | None (compiled Go)                                                | None (pure TypeScript)                                                        |
-| **Type safety**              | Go's type system (interfaces, generics since 1.18)                | TypeScript strict mode (generics, discriminated unions, branded types)        |
+| **Output efficiency**        | Cell-based diff (v2)                                              | **28–192× less output** — cell-level diff + relative cursor addressing                                                       |
+| **Memory**                   | Go GC with low pause times                                        | Normal JS GC; graduated scrollback frees React tree                                                                          |
+| **Native dependencies**      | None (compiled Go)                                                | None (pure TypeScript)                                                                                                       |
+| **Type safety**              | Go's type system (interfaces, generics since 1.18)                | TypeScript strict mode (generics, discriminated unions, branded types)                                                       |
 
 ## Key Differences Explained
 

@@ -512,16 +512,9 @@ function renderNodeToBuffer(
     // isStyleOnlyDirty. The reconciler may set isStyleOnlyDirty in commitUpdate
     // (based on prop changes alone), then commitTextUpdate on a child sets
     // contentDirty on the layout ancestor. Both flags can be true simultaneously.
-    const useTextStyleFastPath =
-      node.type === "silvery-text" &&
-      hasPrevBuffer &&
-      isStyleOnlyDirty(node) &&
-      !node.contentDirty &&
-      !node.childrenDirty &&
-      !node.bgDirty &&
-      !ancestorCleared &&
-      !ancestorLayoutChanged &&
-      !hasChildWithBg(node)
+    // DISABLED: text style-only fast path causes incremental rendering mismatches
+    // (fg colors lost). Needs investigation before re-enabling.
+    const useTextStyleFastPath = false
 
     // Clear stale regions in the cloned buffer before rendering content.
     // Suppress clearing when using the text style-only fast path — chars are

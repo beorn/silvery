@@ -76,7 +76,8 @@ function expectedOutputs(i: CascadeInputs): CascadeOutputs {
     !textPaintDirty &&
     !i.absoluteChildMutated &&
     !i.descendantOverflowChanged
-  const bgOnlyChange = i.hasPrevBuffer && bgOnlyAffected && i.hasBgColor && !i.ancestorLayoutChanged && !i.ancestorCleared
+  const bgOnlyChange =
+    i.hasPrevBuffer && bgOnlyAffected && i.hasBgColor && !i.ancestorLayoutChanged && !i.ancestorCleared
 
   const bgRefillNeeded = i.hasPrevBuffer && !contentAreaAffected && i.subtreeDirty && i.hasBgColor
 

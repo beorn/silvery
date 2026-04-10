@@ -124,13 +124,6 @@ export interface UseInputOptions {
 export function useInput(inputHandler: InputHandler, options: UseInputOptions = {}): void {
   const rt = useContext(RuntimeContext)
 
-  if (!rt) {
-    throw new Error(
-      "useInput requires a runtime (run/render/createApp/test renderer). " +
-        "Use useRuntime() for components that work in both static and interactive modes.",
-    )
-  }
-
   const { isActive = true, onPaste, onRelease } = options
 
   // Stable ref for the handler — avoids tearing down/recreating the
@@ -146,8 +139,10 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
   onReleaseRef.current = onRelease
 
   // Subscribe to input events via RuntimeContext
+  // In static mode (no runtime), this is a no-op — components render
+  // without input handling, which is correct for createRenderer() tests.
   useEffect(() => {
-    if (!isActive) return
+    if (!isActive || !rt) return
 
     return rt.on("input", (input: string, key: Key) => {
       // Skip modifier-only keys (Cmd, Shift, Ctrl, Alt pressed alone).
@@ -165,7 +160,7 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
 
   // Subscribe to paste events via RuntimeContext
   useEffect(() => {
-    if (!isActive) return
+    if (!isActive || !rt) return
 
     return rt.on("paste", (text: string) => {
       onPasteRef.current?.(text)

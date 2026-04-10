@@ -77,10 +77,10 @@ This is a quick-reference index of all Silvery components and hooks. For detaile
 
 ### Layout & Measurement
 
-| Hook                                | Description                                      | API  |
-| ----------------------------------- | ------------------------------------------------ | ---- |
+| Hook                            | Description                                      | API  |
+| ------------------------------- | ------------------------------------------------ | ---- |
 | [useBoxRect](/api/use-box-rect) | Component's content dimensions (synchronous)     | Core |
-| useScrollRect                       | Component's screen-space position and dimensions | Core |
+| useScrollRect                   | Component's screen-space position and dimensions | Core |
 
 ### Input & Interaction
 
