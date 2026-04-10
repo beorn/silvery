@@ -277,7 +277,7 @@ async function main(): Promise<void> {
       const { readFileSync } = await import("node:fs")
       const __dirname = dirname(fileURLToPath(import.meta.url))
       const pkgPath = resolve(__dirname, "../package.json")
-      const pkg = JSON.parse(readFileSync(pkgPath, "utf8"))
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as { version?: string }
       console.log(`@silvery/examples ${pkg.version}`)
     } catch {
       console.log("@silvery/examples (version unknown)")

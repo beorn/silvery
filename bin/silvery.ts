@@ -18,7 +18,7 @@ function findPackageRoot(startDir: string): string {
     const pkg = join(dir, "package.json")
     if (existsSync(pkg)) {
       try {
-        const json = JSON.parse(readFileSync(pkg, "utf8"))
+        const json = JSON.parse(readFileSync(pkg, "utf8")) as { name?: string }
         if (json.name === "silvery") return dir
       } catch {}
     }
@@ -37,7 +37,7 @@ const args = process.argv.slice(2)
 const examplesCli = resolve(root, "packages/examples/bin/cli.ts")
 
 if (args.includes("--version") || args.includes("-v")) {
-  const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"))
+  const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")) as { version?: string }
   console.log(`silvery ${pkg.version}`)
   process.exit(0)
 }
