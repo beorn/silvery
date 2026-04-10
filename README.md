@@ -2,7 +2,7 @@
 
 **Powerful apps. Polished UIs. Proudly terminal.**
 
-Ink-compatible React renderer for interactive terminal apps. Same `Box`, `Text`, `useInput` API you know. 3–6× faster in mounted rerender benchmarks.
+Ink-compatible React renderer for interactive terminal apps. Same `Box`, `Text`, `useInput` API you know. up to 20× faster in mounted rerender benchmarks.
 
 ```console
 $ npm install silvery react
@@ -35,7 +35,7 @@ await render(<Counter />).run()
 
 ### Shiny new stuff
 
-- **[Best-in-class performance](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — 3–6× faster than Ink in mounted rerender benchmarks, 10–20× less terminal output. Cell-level dirty tracking, only changed cells emit. Per-node skip for unchanged subtrees. Works in inline mode with native scrollback, not just fullscreen
+- **[Best-in-class performance](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — up to 20× faster than Ink in mounted rerender benchmarks, 10–20× less terminal output. Cell-level dirty tracking, only changed cells emit. Per-node skip for unchanged subtrees. Works in inline mode with native scrollback, not just fullscreen
 - **Pure TypeScript, zero native deps** — no WASM, no build steps. [Layout via Flexily](https://silvery.dev/guide/layout-engine) (or Yoga). Works on Alpine, CI, Docker, everywhere
 - **[Web-like responsive layout](https://silvery.dev/guide/silvery-vs-ink#responsive-layout)** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables:
   - [Scroll containers](https://silvery.dev/guide/scrolling) — `overflow="scroll"` with virtualization

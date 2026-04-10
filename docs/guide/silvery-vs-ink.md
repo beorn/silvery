@@ -16,7 +16,7 @@ The biggest differences at a glance:
 - **Cell-level ANSI compositing** — proper style stacking and color blending. Ink concatenates strings.
 - **Incremental rendering in inline mode** — only changed cells emit; native scrollback preserved. Ink does a full redraw every frame by default (has an `incrementalRendering` option for line-level diff).
 - **Blurred inline/fullscreen boundary** — inline mode gets fullscreen-level performance (cell-level incremental, no flicker, dynamic scrollback graduation). Fullscreen mode gets inline-level UX (app-managed scrollback, history access). Ink has a hard split between the two.
-- **3–6× faster in mounted rerender benchmarks** — cell-level dirty tracking with [detailed benchmarks below](/guide/silvery-vs-ink#performance--size). Bundle parity with Ink+Yoga.
+- **up to 20× faster in mounted rerender benchmarks** — cell-level dirty tracking with [detailed benchmarks below](/guide/silvery-vs-ink#performance--size). Bundle parity with Ink+Yoga.
 - **Native scroll containers** — `overflow="scroll"` + `position="sticky"`. Ink's core has `visible`/`hidden` only ([#222](https://github.com/vadimdemedes/ink/issues/222), open since 2019).
 - **Mouse, drag, selection, find, clipboard** — SGR mouse protocol, `onClick`/`onWheel`, text selection, `Ctrl+F` search, OSC 52 clipboard. Ink has none of these.
 - **45+ built-in components** — vs Ink's 6 core + [@inkjs/ui](https://github.com/vadimdemedes/ink-ui)'s 13.
@@ -54,7 +54,7 @@ Ink first, Silvery second. Features marked "core" are built into the framework; 
 
 | Metric                       | Ink 7.0                             | Silvery                                                                           |
 | ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------------- |
-| **Speed (mounted rerender)** | Baseline                            | **3–6× faster** in our benchmarks ([details below](#performance--size))           |
+| **Speed (mounted rerender)** | Baseline                            | **up to 20× faster** in our benchmarks ([details below](#performance--size))           |
 | **Output efficiency**        | Line-level diff per change          | **10–20× less output** — cell-level diff + relative cursor addressing             |
 | **Bundle size (gzipped)**    | 116.6 KB (Ink + Yoga WASM)          | 114.9 KB (runtime + Flexily) — parity                                             |
 | **Layout engine**            | Yoga WASM only (~45 KB, async init) | [Flexily](https://beorn.codes/flexily) (pure JS, ~2 KB, sync) or Yoga — pluggable |
@@ -122,7 +122,7 @@ React 19, Box/Text, flexbox, `useInput`, `useApp`/exit, `Static`, `Transform`, b
 
 _Reproduce: `bun run bench`_
 
-Silvery is **3–6× faster** than Ink 7.0 in our mounted rerender benchmarks — synchronous rerender throughput where both frameworks keep a mounted app and call `rerender()`.
+Silvery is **up to 20× faster** than Ink 7.0 in our mounted rerender benchmarks — synchronous rerender throughput where both frameworks keep a mounted app and call `rerender()`.
 
 ### Mounted rerender throughput
 

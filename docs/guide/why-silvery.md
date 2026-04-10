@@ -25,7 +25,7 @@ No prop drilling, no post-render measurement, no `width: 0` on first paint. This
 
 ## Performance
 
-Silvery's atomic layout-first pipeline + cell-level buffer diff make it **3–6× faster than Ink 7.0** in our mounted rerender benchmarks. The output phase emits **10–20× less output** (much more for large trees) to the terminal than Ink's line-level diff.
+Silvery's atomic layout-first pipeline + cell-level buffer diff make it **up to 20× faster than Ink 7.0** in our mounted rerender benchmarks. The output phase emits **10–20× less output** (much more for large trees) to the terminal than Ink's line-level diff.
 
 ### Mounted rerender throughput
 

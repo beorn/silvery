@@ -70,11 +70,23 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
   // Clone prevBuffer if same dimensions, else create fresh
   const hasPrevBuffer = prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
 
-  // Note: no-op frame skip was attempted here but doesn't fire in practice.
-  // React.createElement returns new objects → reconciler calls commitUpdate
-  // on root with CHILDREN_BIT even when all children bail out via React.memo.
-  // The right fix is scheduler-level: don't call renderPhase when React has
-  // no pending work. Tracked in km-silvery.noop-frame-skip.
+  // No-op frame skip: if nothing changed since last render and we have a valid
+  // prev buffer, return it unchanged. Saves buffer clone + tree walk + epoch advance.
+  //
+  // Currently doesn't fire with React (createElement always produces new children
+  // array → commitUpdate sets CHILDREN_BIT on root). Will fire with:
+  // - Signal-driven updates (v1.5) that bypass React
+  // - Timer-driven re-renders where nothing changed
+  // - Scheduler polling without React pending work
+  if (
+    hasPrevBuffer &&
+    !isAnyDirty(root.dirtyBits, root.dirtyEpoch) &&
+    !isCurrentEpoch(root.layoutChangedThisFrame)
+  ) {
+    if (instr.enabled) instr.stats._noopSkip = 1
+    advanceRenderEpoch()
+    return prevBuffer
+  }
 
   if (instr.enabled) {
     instr.stats._prevBufferNull = prevBuffer == null ? 1 : 0

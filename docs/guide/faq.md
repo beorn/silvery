@@ -9,7 +9,7 @@ faq:
   - q: "Is Silvery compatible with existing Ink code?"
     a: "Yes. Silvery provides a compatibility layer via silvery/ink and silvery/chalk that passes ~99% of Ink 7.0's test suite (918/931 tests). Most Ink code works with import path changes. See the migration guide for details."
   - q: "How fast is Silvery compared to Ink?"
-    a: "Silvery is faster on cursor and selection updates (2-6x). Ink is faster on content-heavy changes (1.6-2.5x). Both are fast enough for 60fps at typical terminal sizes. The cell-level output phase also emits 10-20x less output than Ink's line-level diff on incremental updates. See the detailed benchmarks on the Silvery vs Ink page."
+    a: "Silvery is 3–27× faster depending on the scenario (up to 20× on memo'd interactive updates). Both are fast enough for 60fps at typical terminal sizes. The cell-level output phase also emits 10-20x less output than Ink's line-level diff on incremental updates. See the detailed benchmarks on the Silvery vs Ink page."
   - q: "What components does Silvery include?"
     a: "45+ components across layout (Box, SplitView, Divider), input (TextInput, TextArea, SelectList, CommandPalette, Form), display (Text, Badge, Spinner, ProgressBar, Table, Tabs, Toast), navigation (TreeView, ListView, VirtualList, Breadcrumb), and containers (Screen, ModalDialog, ScrollbackView). See the component catalog for the full list."
   - q: "Does Silvery work with Node.js and Bun?"
@@ -51,7 +51,7 @@ Three principles guide the project: take the best from the web, stay true to the
 Both use React for terminal UIs. Silvery differs in several key ways:
 
 - **Layout-first rendering** — layout runs before content render, so components know their size during render via `useBoxRect()`. No components rendering at `width: 0`, no cascading measure→rerender cycles. See [Silvery vs Ink](/guide/silvery-vs-ink#responsive-layout).
-- **Fast incremental rendering** — cell-level dirty tracking. 3–6× faster than Ink in our mounted rerender benchmarks. See the [detailed benchmarks](/guide/silvery-vs-ink#performance--size).
+- **Fast incremental rendering** — cell-level dirty tracking. up to 20× faster than Ink in our mounted rerender benchmarks. See the [detailed benchmarks](/guide/silvery-vs-ink#performance--size).
 - **Bundle parity with Ink+Yoga** — 114.9 KB gzipped runtime vs Ink+Yoga's 116.6 KB. Pure TypeScript, zero WASM, zero native dependencies.
 - **Larger component library** — 45+ components (vs Ink's 6 core + [@inkjs/ui](https://github.com/vadimdemedes/ink-ui)'s 13), including VirtualList, CommandPalette, TreeView, SplitView, Table, and Form
 - **Terminal protocol support** — Kitty keyboard, SGR mouse, synchronized output (DEC 2026), Sixel/Kitty graphics, clipboard, and more
@@ -77,7 +77,7 @@ For new code, use Silvery's native APIs to take advantage of responsive layout a
 
 ## How fast is Silvery compared to Ink?
 
-Silvery is **3–6× faster** than Ink 7.0 in our mounted rerender benchmarks. Both frameworks keep a mounted app and call `rerender()`.
+Silvery is **up to 20× faster** than Ink 7.0 in our mounted rerender benchmarks. Both frameworks keep a mounted app and call `rerender()`.
 
 | Scenario                               | Silvery advantage |
 | -------------------------------------- | ----------------- |
