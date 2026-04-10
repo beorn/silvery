@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Silvery! This guide covers everyt
 ### Prerequisites
 
 - [Bun](https://bun.sh/) v1.0 or later
-- Node.js 18+ (for compatibility testing)
+- Node.js 23.6+ (for compatibility testing)
 
 ### Getting Started
 

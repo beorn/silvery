@@ -1,6 +1,6 @@
 # Silvery
 
-React framework for modern terminal UIs. Layout feedback, incremental rendering, multi-target (terminal, canvas, DOM). Library works with Bun and Node.js >= 18; CLI (`bin/silvery.ts`) requires Bun.
+React framework for modern terminal UIs. Layout feedback, incremental rendering, multi-target (terminal, canvas, DOM). Library works with Bun and Node.js >= 23.6; CLI (`bin/silvery.ts`) requires Bun.
 
 **[The Silvery Way](docs/guide/the-silvery-way.md)** — 10 principles for building canonical Silvery apps. Read it before building with Silvery.
 
