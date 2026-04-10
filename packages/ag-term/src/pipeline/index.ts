@@ -437,7 +437,7 @@ export function executeRenderAdapter(
   const start = Date.now()
   const adapter = getRenderAdapter()
 
-  using render = baseLog.span("pipeline-adapter", {
+  using render = baseLog.span?.("pipeline-adapter", {
     width,
     height,
     adapter: adapter.name,
@@ -448,23 +448,21 @@ export function executeRenderAdapter(
 
   // Phase 1: Measure
   {
-    using _measure = render.span("measure")
-    const t1 = Date.now()
+    using _measure = render?.span("measure")
     measurePhase(root)
-    log.debug?.(`measure: ${Date.now() - t1}ms`)
+    log.debug?.(`measure phase complete`)
   }
 
   // Phase 2: Layout
   {
-    using _layout = render.span("layout")
-    const t2 = Date.now()
+    using _layout = render?.span("layout")
     layoutPhase(root, width, height)
-    log.debug?.(`layout: ${Date.now() - t2}ms`)
+    log.debug?.(`layout phase complete`)
   }
 
   // Phase 2.5: Scroll calculation
   {
-    using _scroll = render.span("scroll")
+    using _scroll = render?.span("scroll")
     scrollPhase(root)
   }
 
@@ -473,35 +471,33 @@ export function executeRenderAdapter(
 
   // Phase 2.6: Screen rect calculation
   {
-    using _scrollrect = render.span("scrollRect")
+    using _scrollrect = render?.span("scrollRect")
     scrollrectPhase(root)
   }
 
   // Phase 2.7: Notify layout subscribers
   if (!skipLayoutNotifications) {
-    using _notify = render.span("notify")
+    using _notify = render?.span("notify")
     notifyLayoutSubscribers(root)
   }
 
   // Phase 3: Content render (adapter-aware)
   let buffer: RenderBuffer
   {
-    using _content = render.span("content")
-    const t3 = Date.now()
+    using _content = render?.span("content")
     buffer = renderPhaseAdapter(root)
-    log.debug?.(`content: ${Date.now() - t3}ms`)
+    log.debug?.(`content phase complete`)
   }
 
   // Phase 4: Flush via adapter
   let output: string | void
   {
-    using outputSpan = render.span("output")
-    const t4 = Date.now()
+    using outputSpan = render?.span("output")
     output = adapter.flush(buffer, prevBuffer)
-    if (typeof output === "string") {
+    if (typeof output === "string" && outputSpan) {
       outputSpan.spanData.bytes = output.length
     }
-    log.debug?.(`output: ${Date.now() - t4}ms`)
+    log.debug?.(`output phase complete`)
   }
 
   log.debug?.(`total pipeline: ${Date.now() - start}ms`)
