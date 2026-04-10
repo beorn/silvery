@@ -62,7 +62,7 @@ await render(<Counter />).run()
   - [State management](https://silvery.dev/guide/providers) — useState, Zustand, Jotai, Redux — your choice
   - [Render targets](https://silvery.dev/guide/providers) — terminal, Canvas, or DOM (experimental)
   - [Runtime layers](https://silvery.dev/guide/runtime-layers) — just a renderer (`render`), add a runtime (`run`), or full app with `pipe()` providers
-- **[All modern terminal protocols](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)** — 60 years of terminal protocols, unified into clean APIs. 100+ escape sequences you'll never have to write — auto-negotiated and gracefully degraded: [Kitty keyboard](https://terminfo.dev) + [SGR mouse](https://terminfo.dev) become rich events with modifiers; [hyperlinks](https://terminfo.dev) are just props; [clipboard](https://terminfo.dev) is a function call. Truecolor, underline styles, synchronized output, bracketed paste, focus reporting, and [more](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)
+- **[All modern terminal protocols](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)** — [60 years of terminal protocols](https://terminfo.dev/about), unified into clean APIs. 100+ escape sequences you'll never have to write — auto-negotiated and gracefully degraded: [Kitty keyboard](https://terminfo.dev) + [SGR mouse](https://terminfo.dev) become rich events with modifiers; [hyperlinks](https://terminfo.dev) are just props; [clipboard](https://terminfo.dev) is a function call. Truecolor, underline styles, synchronized output, bracketed paste, focus reporting, and [more](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)
 
 ### Why Silvery?
 
