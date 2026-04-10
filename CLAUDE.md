@@ -260,14 +260,14 @@ app.locator("#my-component").resolve()
 // Attribute selectors (presence, value, prefix, suffix, substring)
 app.locator("[data-cursor]").resolve()
 app.locator("[data-testid='panel']").resolve()
-app.locator("[id^='task-']").resolveAll()  // starts with
+app.locator("[id^='task-']").resolveAll() // starts with
 
 // Combinators — all CSS3 combinators work
-app.locator("#parent > #child").resolveAll()       // direct child
-app.locator("#item1 + #item2").resolve()            // adjacent sibling
-app.locator("#item1 ~ #item3").resolve()            // general sibling
-app.locator("#container #nested-item").resolve()    // descendant
-app.locator("#a > #b > #c").resolve()               // multi-level chains
+app.locator("#parent > #child").resolveAll() // direct child
+app.locator("#item1 + #item2").resolve() // adjacent sibling
+app.locator("#item1 ~ #item3").resolve() // general sibling
+app.locator("#container #nested-item").resolve() // descendant
+app.locator("#a > #b > #c").resolve() // multi-level chains
 
 // Pseudo-classes — :first-child, :last-child, :nth-child, :not, :has, :empty, etc.
 app.locator("#list > :first-child").resolve()

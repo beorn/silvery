@@ -9,7 +9,7 @@
 import { createContext } from "react"
 import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
 import type { BoxProps, AgNode, AgNodeType, TextProps } from "@silvery/ag/types"
-import { trackLayoutDirty, trackContentDirty, trackStyleOnlyDirty } from "@silvery/ag/dirty-tracking"
+import { trackLayoutDirty, trackContentDirty, trackStyleOnlyDirty, trackScrollDirty } from "@silvery/ag/dirty-tracking"
 import { classifyPropChanges } from "./helpers"
 import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes"
 import { createLogger } from "loggily"
@@ -557,6 +557,9 @@ export const hostConfig = {
       (oldProps as Record<string, unknown>).scrollTo !== (newProps as Record<string, unknown>).scrollTo
     const scrollOffsetChanged =
       (oldProps as Record<string, unknown>).scrollOffset !== (newProps as Record<string, unknown>).scrollOffset
+    if (scrollToChanged || scrollOffsetChanged) {
+      trackScrollDirty(instance)
+    }
     if (instance.layoutDirty || contentChanged || scrollToChanged || scrollOffsetChanged) {
       markLayoutAncestorDirty(instance)
       markSubtreeDirty(instance)

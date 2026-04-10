@@ -39,6 +39,17 @@ const contentDirtyNodes: Set<AgNode> = new Set()
  */
 const styleOnlyDirtyNodes: Set<AgNode> = new Set()
 
+/**
+ * Nodes where scrollTo/scrollOffset changed. These don't set layoutDirty
+ * (scroll offset doesn't affect Yoga layout dimensions), but the scroll,
+ * sticky, scrollRect, and notify phases must still run to update visible
+ * children positions.
+ *
+ * Written by reconciler (host-config.ts commitUpdate), read by ag.ts
+ * layout-on-demand gate.
+ */
+const scrollDirtyNodes: Set<AgNode> = new Set()
+
 // ---------------------------------------------------------------------------
 // Write API (reconciler)
 // ---------------------------------------------------------------------------
@@ -63,6 +74,11 @@ export function trackStyleOnlyDirty(node: AgNode): void {
   styleOnlyDirtyNodes.add(node)
 }
 
+/** Mark a node as scroll-dirty. Called when scrollTo/scrollOffset props change. */
+export function trackScrollDirty(node: AgNode): void {
+  scrollDirtyNodes.add(node)
+}
+
 // ---------------------------------------------------------------------------
 // Read API (pipeline phases)
 // ---------------------------------------------------------------------------
@@ -75,6 +91,11 @@ export function hasLayoutDirty(): boolean {
 /** O(1) check: are there any content-dirty nodes? */
 export function hasContentDirty(): boolean {
   return contentDirtyNodes.size > 0
+}
+
+/** O(1) check: are there any scroll-dirty nodes? */
+export function hasScrollDirty(): boolean {
+  return scrollDirtyNodes.size > 0
 }
 
 /** O(1) check: is this node style-only dirty (eligible for fast path)? */
@@ -101,6 +122,7 @@ export function clearDirtyTracking(): void {
   layoutDirtyNodes.clear()
   contentDirtyNodes.clear()
   styleOnlyDirtyNodes.clear()
+  scrollDirtyNodes.clear()
 }
 
 /** Clear only layout-dirty tracking. Called after layout phase. */
