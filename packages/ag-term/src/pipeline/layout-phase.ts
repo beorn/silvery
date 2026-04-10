@@ -147,11 +147,16 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number, increme
   // prevLayout, boxRect, layoutDirty (false), and layoutChangedThisFrame
   // (stale epoch) from the previous frame.
   //
-  // This check is O(1) per node (4 number comparisons) and prunes entire
-  // subtrees, converting propagateLayout from O(N) to O(changed).
+  // This check is O(1) per node (4 number comparisons + 1 epoch check) and
+  // prunes entire subtrees, converting propagateLayout from O(N) to O(changed).
   // Note: prevLayout is already synced to boxRect by syncPrevLayout() at
   // the end of the previous render pass, so skipping is safe.
-  if (incrementalSkip && node.boxRect && !node.layoutDirty) {
+  //
+  // subtreeDirtyEpoch guard: even when this node's rect is unchanged, a
+  // descendant may have layoutDirty (e.g., new child mounted via appendChild).
+  // The reconciler's markSubtreeDirty propagates the current epoch upward,
+  // so checking subtreeDirtyEpoch ensures we don't skip over dirty descendants.
+  if (incrementalSkip && node.boxRect && !node.layoutDirty && !isCurrentEpoch(node.subtreeDirtyEpoch)) {
     if (
       rect.x === node.boxRect.x &&
       rect.y === node.boxRect.y &&
