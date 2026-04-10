@@ -52,6 +52,7 @@
     "@silvery/ansi": "0.3.1",
     "@silvery/create": "0.5.0",
     "@silvery/headless": "0.5.0",
+    "@silvery/signals": "0.5.0",
     "@silvery/test": "0.5.0",
     "@silvery/theme": "0.5.0",
     "flexily": "github:beorn/flexily"

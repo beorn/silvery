@@ -31,6 +31,7 @@ import { isStyleOnlyDirty } from "@silvery/ag/dirty-tracking"
 import { isCurrentEpoch, INITIAL_EPOCH, advanceRenderEpoch } from "@silvery/ag/epoch"
 import type { CascadeOutputs } from "./cascade-predicates"
 import type { ClipBounds, RenderPhaseStats, NodeRenderState, NodeTraceEntry, PipelineContext } from "./types"
+import { getReactiveState, syncToSignals, assertReactiveMatchesOracle } from "./reactive-node"
 
 const contentLog = createLogger("silvery:content")
 const traceLog = createLogger("silvery:content:trace")
@@ -215,6 +216,9 @@ let _renderPhaseCallCount = 0
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
 const _nodeTrace: NodeTraceEntry[] = []
 const _nodeTraceEnabled = typeof process !== "undefined" && envTruthy(process.env?.SILVERY_STRICT)
+
+/** E+ Phase 2: verify reactive cascade computeds match oracle in STRICT mode */
+const _reactiveVerifyEnabled = typeof process !== "undefined" && envTruthy(process.env?.SILVERY_STRICT)
 
 /** DIAG: compute node depth in tree */
 function _getNodeDepth(node: AgNode): number {
@@ -468,6 +472,25 @@ function renderNodeToBuffer(
       absoluteChildMutated,
       descendantOverflowChanged,
     })
+
+    // E+ Phase 2: Verify reactive computeds match oracle (STRICT mode only).
+    // This syncs epoch flags → signals, reads computeds, and asserts equivalence.
+    // Zero cost in production (gated on module-level const).
+    if (_reactiveVerifyEnabled) {
+      const reactiveState = getReactiveState(node)
+      syncToSignals(reactiveState, node, {
+        hasPrevBuffer,
+        layoutChanged,
+        childPositionChanged,
+        ancestorLayoutChanged,
+        ancestorCleared,
+        absoluteChildMutated,
+        descendantOverflowChanged,
+        hasBgColor: !!getEffectiveBg(props),
+      })
+      assertReactiveMatchesOracle(reactiveState, cascade, (props.id as string) ?? node.type)
+    }
+
     // bgOnlyChange safety check: fillBg updates ALL cells in the region, which
     // would incorrectly overwrite children with their own explicit backgroundColor.
     // Fall back to the full path when any descendant has its own bg.
