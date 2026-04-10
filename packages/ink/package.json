@@ -1,7 +1,6 @@
 {
   "name": "@silvery/ink",
   "version": "0.5.0",
-  "publishConfig": { "access": "public" },
   "description": "Ink and Chalk API compatibility layer (not published separately)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -33,6 +32,9 @@
       "types": "./src/with-ink-focus.ts",
       "import": "./src/with-ink-focus.ts"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@silvery/ag-react": "0.5.0",

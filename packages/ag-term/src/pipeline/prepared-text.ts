@@ -235,7 +235,7 @@ export function setCachedFormat(
 }
 
 // ============================================================================
-// Level 3: Pretext analysis (cumWidths, breakpoints — for fit-snug/balanced)
+// Level 3: Pretext analysis (cumWidths, breakpoints — for snug-content/balanced)
 // ============================================================================
 
 /**

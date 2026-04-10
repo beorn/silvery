@@ -2,7 +2,7 @@
  * Tests for Pretext text analysis algorithms.
  */
 import { describe, test, expect } from "vitest"
-import { buildTextAnalysis, countLinesAtWidth, shrinkwrapWidth as fitSnugWidth, balancedWidth, knuthPlassBreaks, optimalWrap } from "@silvery/ag-term/pipeline/pretext"
+import { buildTextAnalysis, countLinesAtWidth, shrinkwrapWidth, balancedWidth, knuthPlassBreaks, optimalWrap } from "@silvery/ag-term/pipeline/pretext"
 import { graphemeWidth } from "@silvery/ag-term/unicode"
 
 describe("buildTextAnalysis", () => {
@@ -57,25 +57,25 @@ describe("countLinesAtWidth", () => {
   })
 })
 
-describe("fitSnugWidth", () => {
+describe("shrinkwrapWidth", () => {
   test("returns totalWidth for single-line text", () => {
     const analysis = buildTextAnalysis("hello", graphemeWidth)
-    expect(fitSnugWidth(analysis, 20)).toBe(5)
+    expect(shrinkwrapWidth(analysis, 20)).toBe(5)
   })
 
   test("tightens multi-line text", () => {
-    // "hello world" at width=20 is 1 line, fit-snug returns 11
+    // "hello world" at width=20 is 1 line, snug-content returns 11
     const analysis = buildTextAnalysis("hello world", graphemeWidth)
-    expect(fitSnugWidth(analysis, 20)).toBe(11)
+    expect(shrinkwrapWidth(analysis, 20)).toBe(11)
   })
 
-  test("fit-snug is tighter than fit-content for ragged text", () => {
+  test("snug-content is tighter than fit-content for ragged text", () => {
     // "the quick brown fox" at width=12:
     // fit-content: "the quick " (10 wide) + "brown fox" (9 wide) → widest = 10
-    // fit-snug should find width ≤ 10 that still gives 2 lines
+    // snug-content should find width ≤ 10 that still gives 2 lines
     const analysis = buildTextAnalysis("the quick brown fox", graphemeWidth)
     const fitContent = 12 // container width
-    const shrunk = fitSnugWidth(analysis, fitContent)
+    const shrunk = shrinkwrapWidth(analysis, fitContent)
     expect(shrunk).toBeLessThanOrEqual(fitContent)
     // Verify same line count
     expect(countLinesAtWidth(analysis, shrunk)).toBe(countLinesAtWidth(analysis, fitContent))
@@ -83,7 +83,7 @@ describe("fitSnugWidth", () => {
 
   test("never goes below maxWordWidth", () => {
     const analysis = buildTextAnalysis("supercalifragilistic is a word", graphemeWidth)
-    const shrunk = fitSnugWidth(analysis, 40)
+    const shrunk = shrinkwrapWidth(analysis, 40)
     expect(shrunk).toBeGreaterThanOrEqual(analysis.maxWordWidth)
   })
 })

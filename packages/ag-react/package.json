@@ -1,7 +1,6 @@
 {
   "name": "@silvery/ag-react",
   "version": "0.5.0",
-  "publishConfig": { "access": "public" },
   "description": "Core React reconciler and runtime for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -341,6 +340,9 @@
       "types": "./src/*",
       "import": "./src/*"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@silvery/ag": "0.5.0",

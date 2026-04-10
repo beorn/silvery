@@ -239,13 +239,7 @@ function getCellDebug(): CellDebug | undefined {
 }
 
 /** Check if a rect covers the cell debug target point. */
-function cellCoversPoint(
-  cellDbg: CellDebug,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-): boolean {
+function cellCoversPoint(cellDbg: CellDebug, x: number, y: number, width: number, height: number): boolean {
   return x <= cellDbg.x && x + width > cellDbg.x && y <= cellDbg.y && y + height > cellDbg.y
 }
 

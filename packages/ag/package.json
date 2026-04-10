@@ -1,7 +1,6 @@
 {
   "name": "@silvery/ag",
   "version": "0.5.0",
-  "publishConfig": { "access": "public" },
   "description": "Core types and infrastructure for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -50,6 +49,9 @@
       "import": "./src/interactive-signals.ts"
     },
     "./*": "./src/*.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {}
 }
