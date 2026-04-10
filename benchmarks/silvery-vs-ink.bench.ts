@@ -2,16 +2,20 @@
  * Silvery vs Ink — Head-to-Head Render Benchmark
  *
  * Same React tree structures rendered by both frameworks.
- * Measures: initial render, re-render (state change), and scaling.
  *
- * Run: bun vitest bench vendor/internal/silvery/benchmarks/silvery-vs-ink.bench.ts
+ * Categories:
+ * 1. Render-to-string: Silvery createRenderer (reused) vs Ink renderToString (one-shot)
+ * 2. Mounted incremental: Both frameworks mounted with rerender(), Ink incrementalRendering ON
+ * 3. Memo'd selective update: React.memo skips unchanged children, tests pipeline efficiency
  *
  * Fair comparison notes:
  * - Both use their native Box/Text components (no compat layer)
- * - Silvery uses createRenderer (synchronous render-to-string)
- * - Ink uses renderToString (synchronous render-to-string)
- * - Same terminal dimensions (80x24 and 200x60)
+ * - Mounted tests use the same prop changes on both sides
+ * - Ink uses debug: false and incrementalRendering: true
+ * - Same terminal dimensions
  * - Ink's Yoga WASM init happens once at import (not measured per-render)
+ *
+ * Run: SILVERY_STRICT=0 bun vitest bench vendor/silvery/benchmarks/silvery-vs-ink.bench.ts
  */
 
 import React from "react"
@@ -137,6 +141,50 @@ function inkKanban(cols: number, cards: number) {
   )
 }
 
+function silveryKanbanEdit(cols: number, cards: number, editCol: number, editCard: number) {
+  return React.createElement(
+    SBox,
+    { flexDirection: "row", gap: 1 },
+    ...Array.from({ length: cols }, (_, col) =>
+      React.createElement(
+        SBox,
+        { key: col, flexDirection: "column", flexGrow: 1 },
+        React.createElement(SBox, { borderStyle: "single" }, React.createElement(SText, { bold: true }, `Col ${col}`)),
+        ...Array.from({ length: cards }, (_, card) => {
+          const text = col === editCol && card === editCard ? `Card ${col}-${card} [EDITING]` : `Card ${col}-${card}`
+          return React.createElement(
+            SBox,
+            { key: card, paddingLeft: 1, borderStyle: "round" },
+            React.createElement(SText, null, text),
+          )
+        }),
+      ),
+    ),
+  )
+}
+
+function inkKanbanEdit(cols: number, cards: number, editCol: number, editCard: number) {
+  return React.createElement(
+    IBox,
+    { flexDirection: "row", gap: 1 },
+    ...Array.from({ length: cols }, (_, col) =>
+      React.createElement(
+        IBox,
+        { key: col, flexDirection: "column", flexGrow: 1 },
+        React.createElement(IBox, { borderStyle: "single" }, React.createElement(IText, { bold: true }, `Col ${col}`)),
+        ...Array.from({ length: cards }, (_, card) => {
+          const text = col === editCol && card === editCard ? `Card ${col}-${card} [EDITING]` : `Card ${col}-${card}`
+          return React.createElement(
+            IBox,
+            { key: card, paddingLeft: 1, borderStyle: "round" },
+            React.createElement(IText, null, text),
+          )
+        }),
+      ),
+    ),
+  )
+}
+
 function silveryDeepTree(depth: number): React.ReactElement {
   if (depth === 0) return React.createElement(SText, null, "Leaf")
   return React.createElement(SBox, { paddingLeft: 1 }, silveryDeepTree(depth - 1))
@@ -227,8 +275,9 @@ describe("Deep tree — 50 levels", () => {
 })
 
 // ============================================================================
-// Incremental Re-render — silvery's dirty tracking vs Ink's full repaint
-// This is silvery's key advantage: only changed nodes re-render.
+// Render-to-string (reused renderer vs one-shot)
+// Silvery reuses createRenderer (amortizes buffer allocation), Ink uses
+// one-shot renderToString. This measures render throughput, not cold-start cost.
 // ============================================================================
 
 // Silvery: warm app with rerender() — dirty tracking kicks in
@@ -254,7 +303,7 @@ const warmApp1000 = warmRender1000(
   ),
 )
 
-describe("Incremental re-render — cursor move in 100-item list", () => {
+describe("Reused renderer rerender vs one-shot — cursor move in 100-item list", () => {
   let sCursor = 0
   bench("Silvery (dirty tracking)", () => {
     sCursor = (sCursor + 1) % 100
@@ -273,7 +322,9 @@ describe("Incremental re-render — cursor move in 100-item list", () => {
     )
   })
 
-  bench("Ink (full repaint)", () => {
+  let iCursor = 0
+  bench("Ink (one-shot renderToString)", () => {
+    iCursor = (iCursor + 1) % 100
     inkRenderToString(
       React.createElement(
         IBox,
@@ -282,7 +333,7 @@ describe("Incremental re-render — cursor move in 100-item list", () => {
           React.createElement(
             IBox,
             { key: i },
-            React.createElement(IText, { inverse: i === 0, bold: i === 0 }, `Item ${i}`),
+            React.createElement(IText, { inverse: i === iCursor, bold: i === iCursor }, `Item ${i}`),
           ),
         ),
       ),
@@ -290,7 +341,7 @@ describe("Incremental re-render — cursor move in 100-item list", () => {
   })
 })
 
-describe("Incremental re-render — cursor move in 1000-item list", () => {
+describe("Reused renderer rerender vs one-shot — cursor move in 1000-item list", () => {
   let sCursor = 0
   bench("Silvery (dirty tracking)", () => {
     sCursor = (sCursor + 1) % 1000
@@ -309,7 +360,9 @@ describe("Incremental re-render — cursor move in 1000-item list", () => {
     )
   })
 
-  bench("Ink (full repaint)", () => {
+  let iCursor = 0
+  bench("Ink (one-shot renderToString)", () => {
+    iCursor = (iCursor + 1) % 1000
     inkRenderToString(
       React.createElement(
         IBox,
@@ -318,7 +371,7 @@ describe("Incremental re-render — cursor move in 1000-item list", () => {
           React.createElement(
             IBox,
             { key: i },
-            React.createElement(IText, { inverse: i === 0, bold: i === 0 }, `Item ${i}`),
+            React.createElement(IText, { inverse: i === iCursor, bold: i === iCursor }, `Item ${i}`),
           ),
         ),
       ),
@@ -326,17 +379,20 @@ describe("Incremental re-render — cursor move in 1000-item list", () => {
   })
 })
 
-describe("Incremental re-render — single text change in kanban 5×20", () => {
+describe("Reused renderer rerender vs one-shot — single text change in kanban 5×20", () => {
   const warmKanban = createRenderer({ cols: 200, rows: 60 })
-  const kanbanApp = warmKanban(silveryKanban(5, 20))
+  const kanbanApp = warmKanban(silveryKanbanEdit(5, 20, 2, 0))
 
+  let sEdit = 0
   bench("Silvery (dirty tracking)", () => {
-    // Rerender with one card text changed — dirty tracking skips 99% of nodes
-    kanbanApp.rerender(silveryKanban(5, 20))
+    sEdit = (sEdit + 1) % 20
+    kanbanApp.rerender(silveryKanbanEdit(5, 20, 2, sEdit))
   })
 
-  bench("Ink (renderToString full repaint)", () => {
-    inkRenderToString(inkKanban(5, 20), { columns: 200 })
+  let iEdit = 0
+  bench("Ink (one-shot renderToString)", () => {
+    iEdit = (iEdit + 1) % 20
+    inkRenderToString(inkKanbanEdit(5, 20, 2, iEdit), { columns: 200 })
   })
 })
 
@@ -369,7 +425,7 @@ describe("Mounted incremental re-render — cursor move in 100-item list", () =>
         React.createElement(IBox, { key: i }, React.createElement(IText, null, `Item ${i}`)),
       ),
     ),
-    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true },
+    { stdout: inkStdout, debug: false, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
   )
 
   let sCursor = 0
@@ -409,13 +465,14 @@ describe("Mounted incremental re-render — cursor move in 100-item list", () =>
   })
 })
 
-// Memo'd item for style-only benchmarks — React skips children, only Box bg changes
+// Memo'd item for cursor highlight benchmarks — React skips unchanged children,
+// only 2 items change per cycle (old cursor + new cursor). Both use `inverse`.
 const SStyleItem = React.memo(
   ({ index, selected }: { index: number; selected: boolean }) =>
     React.createElement(
       SBox,
-      { key: index, backgroundColor: selected ? "#334155" : undefined },
-      React.createElement(SText, null, `Item ${index}`),
+      { key: index },
+      React.createElement(SText, { inverse: selected }, `Item ${index}`),
     ),
   (prev, next) => prev.index === next.index && prev.selected === next.selected,
 )
@@ -424,15 +481,14 @@ const IStyleItem = React.memo(
   ({ index, selected }: { index: number; selected: boolean }) =>
     React.createElement(
       IBox,
-      { key: index, ...(selected ? { borderColor: "blue" } : {}) },
-      React.createElement(IText, null, `Item ${index}`),
+      { key: index },
+      React.createElement(IText, { inverse: selected }, `Item ${index}`),
     ),
   (prev, next) => prev.index === next.index && prev.selected === next.selected,
 )
 
-describe("Mounted style-only — memo'd 100-item cursor highlight (backgroundColor)", () => {
+describe("Mounted memo'd cursor highlight (inverse) — 100 items", () => {
   // The realistic pattern: memo'd children, only 2 items change (old cursor + new cursor).
-  // Silvery's style-only fast path skips child cascade for bg-only changes.
   const sRender = createRenderer({ cols: 80, rows: 24 })
   const sApp = sRender(
     React.createElement(
@@ -453,11 +509,11 @@ describe("Mounted style-only — memo'd 100-item cursor highlight (backgroundCol
         React.createElement(IStyleItem, { key: i, index: i, selected: i === 0 }),
       ),
     ),
-    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true },
+    { stdout: inkStdout, debug: false, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
   )
 
   let sCursor = 0
-  bench("Silvery (memo + style-only fast path)", () => {
+  bench("Silvery (memo + dirty tracking)", () => {
     sCursor = (sCursor + 1) % 100
     sApp.rerender(
       React.createElement(
@@ -485,7 +541,7 @@ describe("Mounted style-only — memo'd 100-item cursor highlight (backgroundCol
   })
 })
 
-describe("Mounted style-only — memo'd 1000-item cursor highlight (backgroundColor)", () => {
+describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
   const sRender = createRenderer({ cols: 80, rows: 24 })
   const sApp = sRender(
     React.createElement(
@@ -506,11 +562,11 @@ describe("Mounted style-only — memo'd 1000-item cursor highlight (backgroundCo
         React.createElement(IStyleItem, { key: i, index: i, selected: i === 0 }),
       ),
     ),
-    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true },
+    { stdout: inkStdout, debug: false, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
   )
 
   let sCursor = 0
-  bench("Silvery (memo + style-only fast path)", () => {
+  bench("Silvery (memo + dirty tracking)", () => {
     sCursor = (sCursor + 1) % 1000
     sApp.rerender(
       React.createElement(
@@ -540,22 +596,26 @@ describe("Mounted style-only — memo'd 1000-item cursor highlight (backgroundCo
 
 describe("Mounted incremental re-render — single text change in kanban 5×20", () => {
   const sRender = createRenderer({ cols: 200, rows: 60 })
-  const sApp = sRender(silveryKanban(5, 20))
+  const sApp = sRender(silveryKanbanEdit(5, 20, 2, 0))
 
   const inkStdout = createMockStdout(200, 60)
-  const inkInstance = inkRender(inkKanban(5, 20), {
+  const inkInstance = inkRender(inkKanbanEdit(5, 20, 2, 0), {
     stdout: inkStdout,
-    debug: true,
+    debug: false,
     patchConsole: false,
     incrementalRendering: true,
   })
 
+  let sEdit = 0
   bench("Silvery (mounted, dirty tracking)", () => {
-    sApp.rerender(silveryKanban(5, 20))
+    sEdit = (sEdit + 1) % 20
+    sApp.rerender(silveryKanbanEdit(5, 20, 2, sEdit))
   })
 
+  let iEdit = 0
   bench("Ink (mounted, incrementalRendering)", () => {
-    inkInstance.rerender(inkKanban(5, 20))
+    iEdit = (iEdit + 1) % 20
+    inkInstance.rerender(inkKanbanEdit(5, 20, 2, iEdit))
   })
 })
 
@@ -614,7 +674,7 @@ describe("useState pattern — memo'd 100-item list, single active toggle", () =
   const inkStdout = createMockStdout(80, 24)
   const inkInstance = inkRender(inkMemoList(100, 0), {
     stdout: inkStdout,
-    debug: true,
+    debug: false,
     patchConsole: false,
     incrementalRendering: true,
   })
@@ -639,7 +699,7 @@ describe("useState pattern — memo'd 500-item list, single active toggle", () =
   const inkStdout = createMockStdout(120, 40)
   const inkInstance = inkRender(inkMemoList(500, 0), {
     stdout: inkStdout,
-    debug: true,
+    debug: false,
     patchConsole: false,
     incrementalRendering: true,
   })
@@ -713,7 +773,7 @@ describe("useState pattern — memo'd kanban 5×20, single card edit", () => {
   const inkStdout = createMockStdout(200, 60)
   const inkInstance = inkRender(inkMemoKanban(5, 20, 0, 0), {
     stdout: inkStdout,
-    debug: true,
+    debug: false,
     patchConsole: false,
     incrementalRendering: true,
   })
