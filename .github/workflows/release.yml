@@ -19,23 +19,56 @@ jobs:
       - run: bun install
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "23"
           registry-url: "https://registry.npmjs.org"
 
-      # Publish root silvery package
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # Publish all scoped sub-packages
-      - name: Publish @silvery/* packages
+      # Publish packages in dependency order
+      # Skip if version already published (idempotent)
+      - name: Publish packages
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          for pkg in packages/react packages/term packages/ui packages/tea packages/test packages/theme; do
-            echo "Publishing $pkg..."
-            (cd $pkg && npm publish --access public)
-          done
+          publish() {
+            local dir=$1
+            local name=$(node -e "console.log(require('./$dir/package.json').name)")
+            local version=$(node -e "console.log(require('./$dir/package.json').version)")
+            local published=$(npm view "$name@$version" version 2>/dev/null || echo "")
+            if [ "$published" = "$version" ]; then
+              echo "⏭ $name@$version already published"
+            else
+              echo "📦 Publishing $name@$version..."
+              (cd $dir && npm publish --access public)
+            fi
+          }
+
+          # Layer 1: Core types (no internal deps)
+          publish packages/ag
+
+          # Layer 2: Depends on ag
+          publish packages/ag-react
+          publish packages/scope
+          publish packages/signals
+          publish packages/model
+          publish packages/color
+          publish packages/headless
+
+          # Layer 3: Depends on ag + ag-react
+          publish packages/theme
+          publish packages/ag-term
+          publish packages/ansi
+          publish packages/commands
+
+          # Layer 4: Depends on ag-term
+          publish packages/ink
+          publish packages/create
+          publish packages/test
+          publish packages/commander
+
+          # Layer 5: Root barrel (depends on everything)
+          publish .
+
+          # Layer 6: Examples (depends on silvery)
+          publish packages/examples
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
