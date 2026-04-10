@@ -251,24 +251,28 @@ expect(cell.fg).toBe("#e0def4") // resolved RGB
 
 ### AutoLocator CSS Selectors
 
-`app.locator(selector)` returns a self-refreshing AutoLocator that re-evaluates against the current tree on every access. Supports CSS-style combinators:
+`app.locator(selector)` returns a self-refreshing AutoLocator that re-evaluates against the current tree on every access. Powered by **css-select** (full CSS3 engine) with a custom AgNode adapter — supports the entire CSS selector spec.
 
 ```tsx
 // ID selector
 app.locator("#my-component").resolve()
 
-// Attribute selector (presence or value)
+// Attribute selectors (presence, value, prefix, suffix, substring)
 app.locator("[data-cursor]").resolve()
 app.locator("[data-testid='panel']").resolve()
+app.locator("[id^='task-']").resolveAll()  // starts with
 
-// Child combinator (>) -- direct parent-child
-app.locator("#parent > #child").resolveAll()
+// Combinators — all CSS3 combinators work
+app.locator("#parent > #child").resolveAll()       // direct child
+app.locator("#item1 + #item2").resolve()            // adjacent sibling
+app.locator("#item1 ~ #item3").resolve()            // general sibling
+app.locator("#container #nested-item").resolve()    // descendant
+app.locator("#a > #b > #c").resolve()               // multi-level chains
 
-// Adjacent sibling (+) -- immediately preceding sibling
-app.locator("#item1 + #item2").resolve()
-
-// Descendant (space) -- anywhere in subtree
-app.locator("#container #nested-item").resolve()
+// Pseudo-classes — :first-child, :last-child, :nth-child, :not, :has, :empty, etc.
+app.locator("#list > :first-child").resolve()
+app.locator(":not(#excluded)").resolveAll()
+app.locator("#col > :nth-child(2)").resolve()
 
 // Narrowing
 app.locator("#list").getByText("Hello").first()

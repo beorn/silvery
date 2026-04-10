@@ -21,8 +21,7 @@
  */
 
 import type { AgNode, Rect } from "@silvery/ag/types"
-import { is as cssIs } from "css-select"
-import type { Adapter } from "css-select"
+import { is as cssIs, type Options } from "css-select"
 
 /**
  * Filter options for locator narrowing
@@ -287,24 +286,24 @@ function getNodeProp(node: AgNode, name: string): string | undefined {
  * attribute selectors ([attr], [attr=val], [attr^=val], [attr$=val], [attr*=val]),
  * and more — all handled by the battle-tested css-select engine.
  */
-const agNodeAdapter: Adapter<AgNode, AgNode> = {
-  isTag: (node): node is AgNode => !node.isRawText,
+const agNodeAdapter = {
+  isTag: (node: AgNode): node is AgNode => !node.isRawText,
 
-  getAttributeValue: (element, name) => getNodeProp(element, name),
+  getAttributeValue: (element: AgNode, name: string): string | undefined => getNodeProp(element, name),
 
-  getChildren: (node) => [...node.children],
+  getChildren: (node: AgNode): AgNode[] => [...node.children],
 
-  getName: (element) => element.type ?? "unknown",
+  getName: (element: AgNode): string => element.type ?? "unknown",
 
-  getParent: (node) => node.parent,
+  getParent: (node: AgNode): AgNode | null => node.parent,
 
-  getSiblings: (node) => (node.parent ? [...node.parent.children] : [node]),
+  getSiblings: (node: AgNode): AgNode[] => (node.parent ? [...node.parent.children] : [node]),
 
-  getText: (node) => getNodeTextContent(node),
+  getText: (node: AgNode): string => getNodeTextContent(node),
 
-  hasAttrib: (element, name) => getNodeProp(element, name) !== undefined,
+  hasAttrib: (element: AgNode, name: string): boolean => getNodeProp(element, name) !== undefined,
 
-  removeSubsets: (nodes) => {
+  removeSubsets: (nodes: AgNode[]): AgNode[] => {
     return nodes.filter((node, i) => {
       for (let j = 0; j < nodes.length; j++) {
         if (i !== j) {
@@ -319,7 +318,7 @@ const agNodeAdapter: Adapter<AgNode, AgNode> = {
     })
   },
 
-  prevElementSibling: (node) => {
+  prevElementSibling: (node: AgNode): AgNode | null => {
     if (!node.parent) return null
     const siblings = node.parent.children
     const index = siblings.indexOf(node)
@@ -331,4 +330,4 @@ const agNodeAdapter: Adapter<AgNode, AgNode> = {
 }
 
 /** Shared css-select options — case-sensitive tags, no caching (tree changes between queries) */
-const cssSelectOptions = { adapter: agNodeAdapter, xmlMode: true, cacheResults: false } as const
+const cssSelectOptions: Options<AgNode, AgNode> = { adapter: agNodeAdapter, xmlMode: true, cacheResults: false }
