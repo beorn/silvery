@@ -216,7 +216,7 @@ Standalone projects Silvery builds on — each stands on its own:
   line-height: 1.5 !important;
 }
 .VPFeatures .details p {
-  margin: 0.2em 0 0;
+  margin: 0.4em 0 0;
 }
 .VPFeatures .details p:first-child {
   margin-top: 0;
