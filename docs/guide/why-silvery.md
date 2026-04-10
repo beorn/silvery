@@ -37,7 +37,7 @@ Silvery's atomic layout-first pipeline + cell-level buffer diff make it **2.5–
 | Memo'd 500-item single toggle       | **5.15×**         |
 | Memo'd kanban 5×20 single card edit | **3.75×**         |
 
-_Reproduce: `bun run bench`. Silvery wins all 16 benchmark scenarios. Full results in [Silvery vs Ink Performance](/guide/silvery-vs-ink#performance)._
+_Reproduce: `bun run bench`. See [detailed benchmarks](/guide/silvery-vs-ink#performance-size) for the full comparison._
 
 ### Bundle size — parity with Ink+Yoga
 

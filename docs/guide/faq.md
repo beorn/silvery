@@ -5,11 +5,11 @@ faq:
   - q: "What is Silvery?"
     a: "Polished terminal apps in React. Silvery provides 45+ components, layout-first rendering with per-node dirty tracking, responsive layout via useBoxRect(), and full support for modern terminal protocols. Three principles guide the project: take the best from the web, stay true to the terminal, and raise the bar for developer ergonomics, architecture composability, and performance. It works with Bun and Node.js (23.6+)."
   - q: "How does Silvery compare to Ink?"
-    a: "Both use React for terminal UIs. Silvery's key differences are layout-first rendering (components know their size during render via useBoxRect()), 3-6x faster on mounted workloads, bundle-parity with Ink+Yoga (114.9 KB vs 116.6 KB gzipped), a larger component library (45+ vs Ink's 6 core + @inkjs/ui's 13), and comprehensive terminal protocol support (Kitty keyboard, SGR mouse, graphics, synchronized output). Ink has a larger ecosystem and is the established standard."
+    a: "Both use React for terminal UIs. Silvery's key differences are layout-first rendering (components know their size during render via useBoxRect()), comparable performance with different strengths (Silvery faster on cursor/selection, Ink faster on content updates), bundle-parity with Ink+Yoga (114.9 KB vs 116.6 KB gzipped), a larger component library (45+ vs Ink's 6 core + @inkjs/ui's 13), and comprehensive terminal protocol support (Kitty keyboard, SGR mouse, graphics, synchronized output). Ink has a larger ecosystem and is the established standard."
   - q: "Is Silvery compatible with existing Ink code?"
     a: "Yes. Silvery provides a compatibility layer via silvery/ink and silvery/chalk that passes ~99% of Ink 7.0's test suite (918/931 tests). Most Ink code works with import path changes. See the migration guide for details."
   - q: "How fast is Silvery compared to Ink?"
-    a: "Silvery is faster in all 17 benchmark scenarios vs Ink 7.0 on mounted workloads. The canonical numbers: mounted cursor move 3.15x, mounted kanban single change 4.73x, memo'd 100-item toggle 5.42x, memo'd 500-item toggle 6.14x, memo'd kanban card edit 4.50x, memo'd style-only cursor highlight 5.69x. The cell-level output phase also emits 10-20x less output than Ink's line-level diff on incremental updates. Reproduce with bun run bench."
+    a: "Silvery is faster on cursor and selection updates (2-6x). Ink is faster on content-heavy changes (1.6-2.5x). Both are fast enough for 60fps at typical terminal sizes. The cell-level output phase also emits 10-20x less output than Ink's line-level diff on incremental updates. See the detailed benchmarks on the Silvery vs Ink page."
   - q: "What components does Silvery include?"
     a: "45+ components across layout (Box, SplitView, Divider), input (TextInput, TextArea, SelectList, CommandPalette, Form), display (Text, Badge, Spinner, ProgressBar, Table, Tabs, Toast), navigation (TreeView, ListView, VirtualList, Breadcrumb), and containers (Screen, ModalDialog, ScrollbackView). See the component catalog for the full list."
   - q: "Does Silvery work with Node.js and Bun?"
@@ -51,7 +51,7 @@ Three principles guide the project: take the best from the web, stay true to the
 Both use React for terminal UIs. Silvery differs in several key ways:
 
 - **Layout-first rendering** — layout runs before content render, so components know their size during render via `useBoxRect()`. No components rendering at `width: 0`, no cascading measure→rerender cycles. See [Silvery vs Ink](/guide/silvery-vs-ink#responsive-layout).
-- **3–6× faster on mounted workloads** — faster in all 17 benchmark scenarios vs Ink 7.0. Cell-level output phase emits 10–20× less output than Ink's line-level diff on incremental updates.
+- **Fast incremental rendering** — cell-level dirty tracking. Silvery is faster on cursor/selection updates (2-6x); Ink is faster on content-heavy changes (1.6-2.5x). See the [detailed benchmarks](/guide/silvery-vs-ink#performance--size).
 - **Bundle parity with Ink+Yoga** — 114.9 KB gzipped runtime vs Ink+Yoga's 116.6 KB. Pure TypeScript, zero WASM, zero native dependencies.
 - **Larger component library** — 45+ components (vs Ink's 6 core + [@inkjs/ui](https://github.com/vadimdemedes/ink-ui)'s 13), including VirtualList, CommandPalette, TreeView, SplitView, Table, and Form
 - **Terminal protocol support** — Kitty keyboard, SGR mouse, synchronized output (DEC 2026), Sixel/Kitty graphics, clipboard, and more
@@ -77,20 +77,23 @@ For new code, use Silvery's native APIs to take advantage of responsive layout a
 
 ## How fast is Silvery compared to Ink?
 
-Silvery is faster in all 17 benchmark scenarios vs Ink 7.0 on mounted workloads — the scenarios that matter for interactive apps. Both frameworks keep a mounted app and call `rerender()`.
+Silvery and Ink have different performance strengths on mounted workloads. Both frameworks keep a mounted app and call `rerender()`.
 
-| Scenario                                | Silvery advantage |
-| --------------------------------------- | ----------------- |
-| Mounted cursor move 100-item            | **3.15×**         |
-| Mounted kanban single text change       | **4.73×**         |
-| Memo'd 100-item single toggle           | **5.42×**         |
-| Memo'd 500-item single toggle           | **6.14×**         |
-| Memo'd kanban 5×20 single card edit     | **4.50×**         |
-| Memo'd style-only cursor highlight (bg) | **5.69×**         |
+| Scenario                                  | Advantage          |
+| ----------------------------------------- | ------------------ |
+| Mounted cursor move 100-item              | **Silvery 2.3×**   |
+| Memo'd cursor highlight 100 (inverse)     | **Silvery 4.1×**   |
+| Memo'd cursor highlight 1000 (inverse)    | **Silvery 6.0×**   |
+| Mounted kanban text change                | **Ink 2.5×**       |
+| Memo'd 100-item toggle                    | **Ink 2.4×**       |
+| Memo'd 500-item toggle                    | **Ink 1.6×**       |
+| Memo'd kanban card edit                   | **Ink 1.7×**       |
 
-Beyond CPU time, Silvery's cell-level output phase emits **10–20× less output** (much more for large trees) to the terminal than Ink's line-level diff on incremental updates. This is a raw bytes-to-terminal measurement, not a CPU benchmark — tmux, SSH, screen recorders, and tiling window managers all benefit directly.
+Both are fast enough for 60fps at typical terminal sizes. Silvery's cell-level dirty tracking gives it an advantage on cursor and selection updates (the most common interactive operation). Ink is faster on content-heavy changes where more of the tree updates at once.
 
-Reproduce with `bun run bench`. See the [benchmark methodology](/guide/silvery-vs-ink#benchmark-methodology) for details.
+Beyond CPU time, Silvery's cell-level output phase emits **10–20× less output** to the terminal than Ink's line-level diff on incremental updates.
+
+Methodology: `debug: false`, `maxFps: 10000`, `incrementalRendering: true`. See the [full benchmarks](/guide/silvery-vs-ink#performance--size) for details.
 
 ## What components does Silvery include?
 

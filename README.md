@@ -2,7 +2,7 @@
 
 **Powerful apps. Polished UIs. Proudly terminal.**
 
-Ink-compatible React renderer for interactive terminal apps. Same `Box`, `Text`, `useInput` API you know. 3–6× faster than Ink 7.0 on mounted workloads.
+Ink-compatible React renderer for interactive terminal apps. Same `Box`, `Text`, `useInput` API you know.
 
 > **Work in progress.** APIs may change. Feedback welcome.
 
@@ -37,7 +37,7 @@ await render(<Counter />).run()
 
 ### Shiny new stuff
 
-- **[3–6× faster than Ink 7.0](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — cell-level dirty tracking, only changed cells emit to the terminal. Works in inline mode with native scrollback, not just fullscreen. Run `bun run bench` to reproduce
+- **[Fast incremental rendering](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — cell-level dirty tracking, only changed cells emit to the terminal. Works in inline mode with native scrollback, not just fullscreen. [Benchmark details](https://silvery.dev/guide/silvery-vs-ink#performance-size)
 - **[Layout-first rendering](https://silvery.dev/guide/silvery-vs-ink#responsive-layout)** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables `overflow="scroll"`, `position="sticky"`, and ANSI-aware compositing with color blending
 - **[Dynamic scrollback](https://silvery.dev/examples/scrollback)** — live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F and text selection work natively. Inline mode gets fullscreen-level performance; fullscreen mode gets inline-level UX (app-managed scrollback). No hard split between the two
 - **Pure TypeScript, zero native deps** — no WASM, no build steps. Works on Alpine, CI, Docker, everywhere

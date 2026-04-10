@@ -16,7 +16,7 @@ The biggest differences at a glance:
 - **Cell-level ANSI compositing** — proper style stacking and color blending. Ink concatenates strings.
 - **Incremental rendering in inline mode** — only changed cells emit; native scrollback preserved. Ink does a full redraw every frame by default (has an `incrementalRendering` option for line-level diff).
 - **Blurred inline/fullscreen boundary** — inline mode gets fullscreen-level performance (cell-level incremental, no flicker, dynamic scrollback graduation). Fullscreen mode gets inline-level UX (app-managed scrollback, history access). Ink has a hard split between the two.
-- **3–6× faster on mounted workloads** — faster in all 17 scenarios in our [benchmarks](/guide/silvery-vs-ink#performance--size). Bundle parity with Ink+Yoga.
+- **Fast incremental rendering** — cell-level dirty tracking with [detailed benchmarks below](/guide/silvery-vs-ink#performance--size). Bundle parity with Ink+Yoga.
 - **Native scroll containers** — `overflow="scroll"` + `position="sticky"`. Ink's core has `visible`/`hidden` only ([#222](https://github.com/vadimdemedes/ink/issues/222), open since 2019).
 - **Mouse, drag, selection, find, clipboard** — SGR mouse protocol, `onClick`/`onWheel`, text selection, `Ctrl+F` search, OSC 52 clipboard. Ink has none of these.
 - **45+ built-in components** — vs Ink's 6 core + [@inkjs/ui](https://github.com/vadimdemedes/ink-ui)'s 13.
@@ -54,7 +54,7 @@ Ink first, Silvery second. Features marked "core" are built into the framework; 
 
 | Metric                        | Ink 7.0                             | Silvery                                                                                                |
 | ----------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Speed (mounted workloads)** | Baseline                            | **3–6× faster** in our benchmarks ([reproduce](https://github.com/beorn/silvery/tree/main/benchmarks)) |
+| **Speed (mounted workloads)** | Baseline                            | Comparable; Silvery faster on cursor/selection, Ink faster on content updates. [Details below](#performance--size) |
 | **Output efficiency**         | Line-level diff per change          | **10–20× less output** — cell-level diff + relative cursor addressing                                  |
 | **Bundle size (gzipped)**     | 116.6 KB (Ink + Yoga WASM)          | 114.9 KB (runtime + Flexily) — parity                                                                  |
 | **Layout engine**             | Yoga WASM only (~45 KB, async init) | [Flexily](https://beorn.codes/flexily) (pure JS, ~2 KB, sync) or Yoga — pluggable                      |
@@ -122,31 +122,26 @@ React 19, Box/Text, flexbox, `useInput`, `useApp`/exit, `Static`, `Transform`, b
 
 _Reproduce: `bun run bench`_
 
-Silvery wins **all 17 benchmark scenarios** vs Ink 7.0 on mounted workloads — the fair comparison (both frameworks keep a mounted app and call `rerender()`).
+Silvery and Ink have different performance characteristics on mounted workloads. Silvery is faster on cursor/selection updates; Ink is faster on content-heavy changes.
 
-### Canonical — mounted app, what users experience
+### Where Silvery wins — cursor and selection updates
 
-| Scenario                                | Silvery advantage |
-| --------------------------------------- | ----------------- |
-| Mounted cursor move 100-item            | **3.15×**         |
-| Mounted kanban single text change       | **4.73×**         |
-| Memo'd 100-item single toggle           | **5.42×**         |
-| Memo'd 500-item single toggle           | **6.14×**         |
-| Memo'd kanban 5×20 single card edit     | **4.50×**         |
-| Memo'd style-only cursor highlight (bg) | **5.69×**         |
+| Scenario                                  | Advantage          |
+| ----------------------------------------- | ------------------ |
+| Mounted cursor move 100-item              | **Silvery 2.3×**   |
+| Memo'd cursor highlight 100 (inverse)     | **Silvery 4.1×**   |
+| Memo'd cursor highlight 1000 (inverse)    | **Silvery 6.0×**   |
 
-### Cold render (createRenderer reuse)
+### Where Ink wins — content-heavy changes
 
-| Scenario               | Silvery advantage |
-| ---------------------- | ----------------- |
-| Flat list 10 (80×24)   | **3.78×**         |
-| Flat list 100 (80×24)  | **4.35×**         |
-| Flat list 100 (200×60) | **4.77×**         |
-| Styled list 100        | **4.93×**         |
-| Kanban 5×10            | **5.38×**         |
-| Kanban 5×20 (200×60)   | **5.55×**         |
-| Deep tree 20           | **3.05×**         |
-| Deep tree 50           | **3.30×**         |
+| Scenario                                  | Advantage          |
+| ----------------------------------------- | ------------------ |
+| Mounted kanban text change                | **Ink 2.5×**       |
+| Memo'd 100-item toggle                    | **Ink 2.4×**       |
+| Memo'd 500-item toggle                    | **Ink 1.6×**       |
+| Memo'd kanban card edit                   | **Ink 1.7×**       |
+
+Methodology: `debug: false`, `maxFps: 10000`, `incrementalRendering: true`. Both frameworks mounted with `rerender()`.
 
 ### Output efficiency
 
