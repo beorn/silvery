@@ -41,7 +41,7 @@ import {
   getCachedAnalysis,
   setCachedAnalysis,
 } from "./prepared-text"
-import { buildTextAnalysis, balancedWidth as computeBalancedWidth } from "./pretext"
+import { buildTextAnalysis, balancedWidth as computeBalancedWidth, optimalWrap } from "./pretext"
 import type { BgConflictMode, NodeRenderState, PipelineContext } from "./types"
 import { createLogger } from "loggily"
 
@@ -754,6 +754,14 @@ export function formatTextLines(
 
   if (wrap === "truncate-middle") {
     return lines.map((line) => truncateText(line, width, "middle", ctx))
+  }
+
+  // Optimal wrapping (Knuth-Plass): minimize total raggedness across all lines.
+  // Uses dynamic programming over breakpoints for globally optimal line breaks.
+  if (wrap === "optimal") {
+    const gWidthFn = ctx?.measurer?.graphemeWidth?.bind(ctx.measurer) ?? graphemeWidth
+    const analysis = buildTextAnalysis(normalizedText, gWidthFn)
+    return optimalWrap(normalizedText, analysis, width)
   }
 
   // Balanced wrapping: equalize line widths by tightening to balanced width.

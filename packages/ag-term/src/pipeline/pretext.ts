@@ -240,3 +240,143 @@ export function balancedWidth(analysis: TextAnalysis, maxWidth: number): number 
   // Further tighten via shrinkwrap at the balanced line count
   return shrinkwrapWidth(analysis, candidateWidth)
 }
+
+// ============================================================================
+// Knuth-Plass optimal paragraph breaking
+// ============================================================================
+
+/**
+ * Find optimal line breaks that minimize total raggedness.
+ *
+ * The Knuth-Plass algorithm uses dynamic programming over break points to
+ * find the set of line breaks that minimizes the sum of squared leftover space
+ * across all lines. This produces more visually pleasing paragraphs than
+ * greedy wrapping, which only optimizes each line independently.
+ *
+ * Returns an array of grapheme indices where line breaks should occur.
+ * The caller wraps text at these indices instead of using greedy wrapping.
+ *
+ * Complexity: O(breakpoints²) worst case, typically much less with pruning.
+ * For terminal text (20-200 chars, ~5-30 breakpoints), this is microseconds.
+ */
+export function knuthPlassBreaks(analysis: TextAnalysis, width: number): number[] {
+  if (width <= 0) return []
+  if (analysis.totalWidth <= width && analysis.newlineIndices.length === 0) return []
+
+  const { cumWidths, breakIndices, newlineIndices, graphemes, widths } = analysis
+
+  // Build combined break candidates: start of text + breakIndices + newlines + end of text
+  // Each candidate is a grapheme index where a line can start
+  const candidates: number[] = [0]
+  const newlineSet = new Set(newlineIndices)
+
+  // Merge breakIndices and newline positions (as forced breaks)
+  const allBreaks = new Set(breakIndices)
+  for (const nl of newlineIndices) {
+    allBreaks.add(nl + 1) // line starts after newline
+  }
+  const sortedBreaks = Array.from(allBreaks).sort((a, b) => a - b)
+  for (const bp of sortedBreaks) {
+    if (bp > 0 && bp <= graphemes.length) candidates.push(bp)
+  }
+  candidates.push(graphemes.length) // end sentinel
+
+  const n = candidates.length
+
+  // DP: cost[i] = minimum total cost to break text from candidate[i] to end
+  // break[i] = next candidate index (where the next line starts)
+  const cost = new Array<number>(n).fill(Infinity)
+  const next = new Array<number>(n).fill(-1)
+  cost[n - 1] = 0 // end sentinel has zero cost
+
+  // Process candidates from right to left
+  for (let i = n - 2; i >= 0; i--) {
+    const lineStart = candidates[i]!
+    const lineStartCum = cumWidths[lineStart]!
+
+    for (let j = i + 1; j < n; j++) {
+      const lineEnd = candidates[j]!
+      let lineWidth = cumWidths[lineEnd]! - lineStartCum
+
+      // Trim trailing spaces from line width
+      let trimEnd = lineEnd
+      while (trimEnd > lineStart && widths[trimEnd - 1] === 0) trimEnd--
+      if (trimEnd > lineStart) {
+        const lastChar = graphemes[trimEnd - 1]
+        if (lastChar === " " || lastChar === "\t") {
+          lineWidth = cumWidths[trimEnd - 1]! - lineStartCum
+        }
+      }
+
+      // Check for forced newline in this range
+      let forcedBreak = false
+      for (const nl of newlineIndices) {
+        if (nl >= lineStart && nl < lineEnd) {
+          forcedBreak = true
+          break
+        }
+      }
+
+      if (lineWidth > width && !forcedBreak) break // no point trying wider lines
+
+      // Cost: squared leftover space (last line is free — no penalty)
+      const leftover = width - lineWidth
+      const lineCost = j === n - 1 ? 0 : leftover * leftover
+      const totalCost = lineCost + cost[j]!
+
+      if (totalCost < cost[i]!) {
+        cost[i] = totalCost
+        next[i] = j
+      }
+
+      if (forcedBreak) break // forced break — can't extend past newline
+    }
+  }
+
+  // Trace back to get break positions
+  const breaks: number[] = []
+  let idx = 0
+  while (idx < n - 1 && next[idx]! >= 0) {
+    idx = next[idx]!
+    if (idx < n - 1) {
+      breaks.push(candidates[idx]!)
+    }
+  }
+
+  return breaks
+}
+
+/**
+ * Wrap text using Knuth-Plass optimal breaks.
+ * Returns line strings (with ANSI preserved) — drop-in replacement for greedy wrap.
+ */
+export function optimalWrap(text: string, analysis: TextAnalysis, width: number): string[] {
+  const breaks = knuthPlassBreaks(analysis, width)
+  if (breaks.length === 0) return [text]
+
+  const { graphemes } = analysis
+  const lines: string[] = []
+  let lineStart = 0
+
+  for (const bp of breaks) {
+    // Collect graphemes from lineStart to bp, trimming trailing spaces
+    let lineEnd = bp
+    while (lineEnd > lineStart && (graphemes[lineEnd - 1] === " " || graphemes[lineEnd - 1] === "\t")) {
+      lineEnd--
+    }
+    lines.push(graphemes.slice(lineStart, lineEnd).join(""))
+
+    // Skip leading spaces on next line
+    lineStart = bp
+    while (lineStart < graphemes.length && (graphemes[lineStart] === " " || graphemes[lineStart] === "\t")) {
+      lineStart++
+    }
+  }
+
+  // Last line
+  if (lineStart < graphemes.length) {
+    lines.push(graphemes.slice(lineStart).join(""))
+  }
+
+  return lines
+}

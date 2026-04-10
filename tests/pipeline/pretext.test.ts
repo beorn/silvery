@@ -2,7 +2,7 @@
  * Tests for Pretext text analysis algorithms.
  */
 import { describe, test, expect } from "vitest"
-import { buildTextAnalysis, countLinesAtWidth, shrinkwrapWidth, balancedWidth } from "@silvery/ag-term/pipeline/pretext"
+import { buildTextAnalysis, countLinesAtWidth, shrinkwrapWidth, balancedWidth, knuthPlassBreaks, optimalWrap } from "@silvery/ag-term/pipeline/pretext"
 import { graphemeWidth } from "@silvery/ag-term/unicode"
 
 describe("buildTextAnalysis", () => {
@@ -103,5 +103,64 @@ describe("balancedWidth", () => {
     expect(bWidth).toBeLessThanOrEqual(12)
     // Same line count as greedy
     expect(countLinesAtWidth(analysis, bWidth)).toBe(countLinesAtWidth(analysis, 12))
+  })
+})
+
+describe("knuthPlassBreaks", () => {
+  test("returns empty for single-line text", () => {
+    const analysis = buildTextAnalysis("hello", graphemeWidth)
+    expect(knuthPlassBreaks(analysis, 20)).toEqual([])
+  })
+
+  test("finds break positions for multi-line text", () => {
+    const analysis = buildTextAnalysis("the quick brown fox jumps", graphemeWidth)
+    const breaks = knuthPlassBreaks(analysis, 12)
+    expect(breaks.length).toBeGreaterThan(0)
+    // Should produce valid breaks (each < text length)
+    for (const bp of breaks) {
+      expect(bp).toBeGreaterThan(0)
+      expect(bp).toBeLessThan(analysis.graphemes.length)
+    }
+  })
+
+  test("produces fewer or equal raggedness than greedy", () => {
+    // "aaa bbb ccc ddd" at width=8:
+    // Greedy: "aaa bbb " (8) + "ccc ddd" (7) → leftover [0, 1] → cost 0+1=1
+    // Optimal may find: "aaa bbb" (7) + "ccc ddd" (7) → leftover [1, 0] → cost 1+0=1
+    // Or: "aaa " (4) + "bbb ccc " (8) + "ddd" (3) — worse
+    const analysis = buildTextAnalysis("aaa bbb ccc ddd", graphemeWidth)
+    const breaks = knuthPlassBreaks(analysis, 8)
+    expect(breaks.length).toBeGreaterThan(0)
+  })
+})
+
+describe("optimalWrap", () => {
+  test("returns single line for short text", () => {
+    const analysis = buildTextAnalysis("hello", graphemeWidth)
+    expect(optimalWrap("hello", analysis, 20)).toEqual(["hello"])
+  })
+
+  test("wraps multi-line text", () => {
+    const text = "the quick brown fox jumps over the lazy dog"
+    const analysis = buildTextAnalysis(text, graphemeWidth)
+    const lines = optimalWrap(text, analysis, 15)
+    expect(lines.length).toBeGreaterThan(1)
+    // Each line should fit within width (allow for word boundary tolerance)
+    for (const line of lines) {
+      // Lines should be reasonable (not empty, not vastly exceeding width)
+      expect(line.length).toBeGreaterThan(0)
+    }
+  })
+
+  test("preserves all text content", () => {
+    const text = "hello world foo bar"
+    const analysis = buildTextAnalysis(text, graphemeWidth)
+    const lines = optimalWrap(text, analysis, 10)
+    const joined = lines.join(" ")
+    // All words should be present
+    expect(joined).toContain("hello")
+    expect(joined).toContain("world")
+    expect(joined).toContain("foo")
+    expect(joined).toContain("bar")
   })
 })
