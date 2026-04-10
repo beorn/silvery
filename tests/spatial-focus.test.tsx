@@ -15,6 +15,7 @@ import { describe, test, expect } from "vitest"
 import { createFocusManager } from "@silvery/create"
 import { findSpatialTarget } from "@silvery/ag/focus-queries"
 import type { AgNode, BoxProps, Rect } from "@silvery/ag/types"
+import { INITIAL_EPOCH } from "@silvery/ag/epoch"
 
 // ============================================================================
 // Helpers
@@ -35,13 +36,13 @@ function stubNode(testID: string, rect: Rect, opts?: { focusable?: boolean; chil
     prevLayout: null,
     prevScrollRect: null,
     prevScreenRect: null,
-    layoutChangedThisFrame: false,
+    layoutChangedThisFrame: INITIAL_EPOCH,
     layoutDirty: false,
-    contentDirty: false,
-    stylePropsDirty: false,
-    bgDirty: false,
-    subtreeDirty: false,
-    childrenDirty: false,
+    contentDirtyEpoch: INITIAL_EPOCH,
+    stylePropsDirtyEpoch: INITIAL_EPOCH,
+    bgDirtyEpoch: INITIAL_EPOCH,
+    subtreeDirtyEpoch: INITIAL_EPOCH,
+    childrenDirtyEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
   }
   for (const child of children) {

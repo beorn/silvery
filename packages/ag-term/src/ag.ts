@@ -18,7 +18,7 @@
 
 import { createLogger } from "loggily"
 import type { AgNode, AgNodeType } from "@silvery/ag/types"
-import { getRenderEpoch } from "@silvery/ag/epoch"
+import { getRenderEpoch, INITIAL_EPOCH } from "@silvery/ag/epoch"
 import { getLayoutEngine } from "./layout-engine"
 import type { TextFrame } from "@silvery/ag/text-frame"
 import { type TerminalBuffer, createTextFrame } from "./buffer"
@@ -283,13 +283,13 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       prevLayout: null,
       prevScrollRect: null,
       prevScreenRect: null,
-      layoutChangedThisFrame: false,
+      layoutChangedThisFrame: INITIAL_EPOCH,
       layoutDirty: true,
-      contentDirty: true,
-      stylePropsDirty: true,
-      bgDirty: true,
-      subtreeDirty: true,
-      childrenDirty: true,
+      contentDirtyEpoch: getRenderEpoch(),
+      stylePropsDirtyEpoch: getRenderEpoch(),
+      bgDirtyEpoch: getRenderEpoch(),
+      subtreeDirtyEpoch: getRenderEpoch(),
+      childrenDirtyEpoch: getRenderEpoch(),
       layoutSubscribers: new Set(),
     }
   }

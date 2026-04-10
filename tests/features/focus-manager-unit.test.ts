@@ -11,6 +11,7 @@
 import { describe, test, expect, vi } from "vitest"
 import { createFocusManager, getTabOrder } from "@silvery/create"
 import type { AgNode, BoxProps } from "@silvery/ag/types"
+import { INITIAL_EPOCH } from "@silvery/ag/epoch"
 
 // ============================================================================
 // Helpers
@@ -31,13 +32,13 @@ function stubNode(testID: string, opts?: { focusable?: boolean; children?: AgNod
     prevLayout: null,
     prevScrollRect: null,
     prevScreenRect: null,
-    layoutChangedThisFrame: false,
+    layoutChangedThisFrame: INITIAL_EPOCH,
     layoutDirty: false,
-    contentDirty: false,
-    stylePropsDirty: false,
-    bgDirty: false,
-    subtreeDirty: false,
-    childrenDirty: false,
+    contentDirtyEpoch: INITIAL_EPOCH,
+    stylePropsDirtyEpoch: INITIAL_EPOCH,
+    bgDirtyEpoch: INITIAL_EPOCH,
+    subtreeDirtyEpoch: INITIAL_EPOCH,
+    childrenDirtyEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
   }
   for (const child of children) {

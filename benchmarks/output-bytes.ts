@@ -89,8 +89,8 @@ function measureSilvery(cols: number, rows: number, items: number) {
   const frames = (app as any).frames as string[] | undefined
   if (frames && frames.length >= 2) {
     return {
-      initialBytes: Buffer.byteLength(frames[0]),
-      updateBytes: Buffer.byteLength(frames[frames.length - 1]),
+      initialBytes: Buffer.byteLength(frames[0]!),
+      updateBytes: Buffer.byteLength(frames[frames.length - 1]!),
       frameCount: frames.length,
     }
   }

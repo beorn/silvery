@@ -27,6 +27,7 @@
 
 import { describe, test, expect } from "vitest"
 import type { AgNode, TextProps, BoxProps } from "@silvery/ag/types"
+import { INITIAL_EPOCH } from "@silvery/ag/epoch"
 import { collectPlainText, collectPlainTextSkipHidden } from "@silvery/ag-term/pipeline/collect-text"
 import { collectTextContent as collectTextContentForRender } from "@silvery/ag-term/pipeline/render-text"
 import { createRenderer } from "@silvery/test"
@@ -54,13 +55,13 @@ function textNode(text: string, props: TextProps = {}): AgNode {
     prevLayout: null,
     prevScrollRect: null,
     prevScreenRect: null,
-    layoutChangedThisFrame: false,
+    layoutChangedThisFrame: INITIAL_EPOCH,
     layoutDirty: false,
-    contentDirty: false,
-    stylePropsDirty: false,
-    bgDirty: false,
-    subtreeDirty: false,
-    childrenDirty: false,
+    contentDirtyEpoch: INITIAL_EPOCH,
+    stylePropsDirtyEpoch: INITIAL_EPOCH,
+    bgDirtyEpoch: INITIAL_EPOCH,
+    subtreeDirtyEpoch: INITIAL_EPOCH,
+    childrenDirtyEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
     textContent: text,
     isRawText: true,
@@ -81,13 +82,13 @@ function virtualTextNode(props: TextProps, ...children: AgNode[]): AgNode {
     prevLayout: null,
     prevScrollRect: null,
     prevScreenRect: null,
-    layoutChangedThisFrame: false,
+    layoutChangedThisFrame: INITIAL_EPOCH,
     layoutDirty: false,
-    contentDirty: false,
-    stylePropsDirty: false,
-    bgDirty: false,
-    subtreeDirty: false,
-    childrenDirty: false,
+    contentDirtyEpoch: INITIAL_EPOCH,
+    stylePropsDirtyEpoch: INITIAL_EPOCH,
+    bgDirtyEpoch: INITIAL_EPOCH,
+    subtreeDirtyEpoch: INITIAL_EPOCH,
+    childrenDirtyEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
     isRawText: false,
   }
@@ -120,13 +121,13 @@ function boxNode(props: BoxProps, ...children: AgNode[]): AgNode {
     prevLayout: null,
     prevScrollRect: null,
     prevScreenRect: null,
-    layoutChangedThisFrame: false,
+    layoutChangedThisFrame: INITIAL_EPOCH,
     layoutDirty: false,
-    contentDirty: false,
-    stylePropsDirty: false,
-    bgDirty: false,
-    subtreeDirty: false,
-    childrenDirty: false,
+    contentDirtyEpoch: INITIAL_EPOCH,
+    stylePropsDirtyEpoch: INITIAL_EPOCH,
+    bgDirtyEpoch: INITIAL_EPOCH,
+    subtreeDirtyEpoch: INITIAL_EPOCH,
+    childrenDirtyEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
   }
   for (const child of children) {

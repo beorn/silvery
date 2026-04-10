@@ -12,6 +12,7 @@
 
 import { describe, test, expect } from "vitest"
 import type { AgNode, BoxProps } from "../../packages/ag/src/types"
+import { INITIAL_EPOCH } from "../../packages/ag/src/epoch"
 import {
   ensureInteractiveState,
   setHovered,
@@ -48,13 +49,13 @@ function stubNode(
     prevLayout: null,
     prevScrollRect: null,
     prevScreenRect: null,
-    layoutChangedThisFrame: false,
+    layoutChangedThisFrame: INITIAL_EPOCH,
     layoutDirty: false,
-    contentDirty: false,
-    stylePropsDirty: false,
-    bgDirty: false,
-    subtreeDirty: false,
-    childrenDirty: false,
+    contentDirtyEpoch: INITIAL_EPOCH,
+    stylePropsDirtyEpoch: INITIAL_EPOCH,
+    bgDirtyEpoch: INITIAL_EPOCH,
+    subtreeDirtyEpoch: INITIAL_EPOCH,
+    childrenDirtyEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
   }
   for (const child of children) {

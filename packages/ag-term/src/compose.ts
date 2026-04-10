@@ -20,6 +20,7 @@
  */
 
 import type { AgNode } from "@silvery/ag/types"
+import { getRenderEpoch, INITIAL_EPOCH } from "@silvery/ag/epoch"
 import type { TextFrame } from "@silvery/ag/text-frame"
 import type { TerminalBuffer } from "./buffer"
 import type { Ag } from "./ag"
@@ -169,13 +170,13 @@ export function withAg(options?: { root?: AgNode; measurer?: import("./unicode")
         prevLayout: null,
         prevScrollRect: null,
         prevScreenRect: null,
-        layoutChangedThisFrame: false,
+        layoutChangedThisFrame: INITIAL_EPOCH,
         layoutDirty: true,
-        contentDirty: true,
-        stylePropsDirty: true,
-        bgDirty: true,
-        subtreeDirty: true,
-        childrenDirty: true,
+        contentDirtyEpoch: getRenderEpoch(),
+        stylePropsDirtyEpoch: getRenderEpoch(),
+        bgDirtyEpoch: getRenderEpoch(),
+        subtreeDirtyEpoch: getRenderEpoch(),
+        childrenDirtyEpoch: getRenderEpoch(),
         layoutSubscribers: new Set(),
       } satisfies AgNode)
 

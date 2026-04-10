@@ -12,6 +12,7 @@ import { createRenderer } from "@silvery/test"
 import React from "react"
 import { Box, Text } from "silvery"
 import type { AgNode } from "@silvery/ag/types"
+import { INITIAL_EPOCH } from "@silvery/ag/epoch"
 
 /** Minimal AgNode for feature detection tests (no layout engine needed). */
 function makeNode(type: string, props: Record<string, unknown>, children: AgNode[]): AgNode {
@@ -27,13 +28,13 @@ function makeNode(type: string, props: Record<string, unknown>, children: AgNode
     prevLayout: null,
     prevScrollRect: null,
     prevScreenRect: null,
-    layoutChangedThisFrame: false,
+    layoutChangedThisFrame: INITIAL_EPOCH,
     layoutDirty: false,
-    contentDirty: false,
-    stylePropsDirty: false,
-    bgDirty: false,
-    subtreeDirty: false,
-    childrenDirty: false,
+    contentDirtyEpoch: INITIAL_EPOCH,
+    stylePropsDirtyEpoch: INITIAL_EPOCH,
+    bgDirtyEpoch: INITIAL_EPOCH,
+    subtreeDirtyEpoch: INITIAL_EPOCH,
+    childrenDirtyEpoch: INITIAL_EPOCH,
     layoutSubscribers: new Set(),
   }
 }
