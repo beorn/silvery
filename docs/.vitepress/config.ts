@@ -28,7 +28,7 @@ const glossary = [...siteGlossary, ...termGlossary, ...ecoGlossary]
 const seoOptions = {
   hostname: "https://silvery.dev",
   siteName: "Silvery",
-  description: "React TUI framework for modern terminal apps",
+  description: "React for modern terminal apps — powerful apps, polished UIs, proudly terminal",
   ogImage: "https://silvery.dev/og-image.png",
   author: {
     name: "Bjørn Stabell",
