@@ -7,7 +7,7 @@
  * and delegating to specialized rendering functions for boxes and text.
  *
  * Layout (top-down):
- *   renderPhase → renderNodeToBuffer → buildCascadeInputs + computeCascade
+ *   renderPhase → renderNodeToBuffer → buildCascadeInputs + computeCascade (oracle)
  *                                     → traceRenderDecision (diagnostics)
  *                                     → executeRegionClearing
  *                                     → renderOwnContent
@@ -26,6 +26,9 @@ import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
 import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
 import type { Theme } from "@silvery/theme/types"
+// cascade-predicates is the test/STRICT-only oracle — only used when
+// _reactiveVerifyEnabled (SILVERY_REACTIVE_VERIFY=1) or !_reactiveEnabled
+// (SILVERY_REACTIVE=0 fallback). Tree-shaken in production builds.
 import { computeCascade } from "./cascade-predicates"
 import { isStyleOnlyDirty } from "@silvery/ag/dirty-tracking"
 import { isCurrentEpoch, INITIAL_EPOCH, advanceRenderEpoch } from "@silvery/ag/epoch"
