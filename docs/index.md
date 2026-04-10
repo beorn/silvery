@@ -52,7 +52,7 @@ features:
     link: /guide/silvery-vs-ink#performance
     linkText: Benchmark details
   - title: Web-like Responsive Layout
-    details: '<p><a href="/guide/hooks">useBoxRect()</a> returns real dimensions during render. No two-pass layout.</p><p><a href="/guide/scrolling">Scroll containers</a> — overflow="scroll" with virtualization.</p><p><a href="/guide/layout-coordinates">Sticky positioning</a> — position="sticky" for headers.</p><p><a href="/guide/ansi-layering">ANSI-aware compositing</a> — color blending with alpha.</p>'
+    details: '<p><a href="/guide/hooks">useBoxRect()</a> returns real dimensions during render.</p><p><a href="/guide/scrolling">Scroll containers</a> with virtualization. <a href="/guide/layout-coordinates">Sticky positioning</a>.</p><p><a href="/guide/ansi-layering">ANSI-aware compositing</a> — color blending with alpha.</p>'
     link: /guide/layouts
     linkText: Layout guide
   - title: Rich Component Library
@@ -64,7 +64,7 @@ features:
     link: /guide/runtime-layers
     linkText: Runtime layers
   - title: Web-like Interaction
-    details: '<p>Full keyboard and mouse events that just work. <a href="/guide/silvery-vs-ink#terminal-protocol-coverage">100+ auto-negotiated protocols</a>.</p><p><a href="/guide/silvery-vs-ink#focus-system">Focus scopes</a> — spatial arrow nav, Tab/Escape, click-to-focus.</p><p><a href="/guide/text-selection">Text selection</a> — mouse drag, word/line, userSelect.</p><p><a href="/guide/find">Find</a> — Ctrl+F with highlighting. <a href="/guide/clipboard">Copy-mode</a>. <a href="/guide/event-handling">Drag-and-drop</a>.</p>'
+    details: '<p>Full keyboard and mouse events that just work. <a href="/guide/silvery-vs-ink#terminal-protocol-coverage">100+ auto-negotiated protocols</a>.</p><p><a href="/guide/silvery-vs-ink#focus-system">Focus scopes</a> — spatial nav, Tab, click-to-focus.</p><p><a href="/guide/text-selection">Text selection</a>. <a href="/guide/find">Find</a>. <a href="/guide/clipboard">Copy-mode</a>. <a href="/guide/event-handling">Drag-and-drop</a>.</p>'
     link: /guide/event-handling
     linkText: Interaction guide
   - title: Playwright-Style Testing
@@ -72,7 +72,7 @@ features:
     link: /guide/testing
     linkText: Testing guide
   - title: Composable Architecture
-    details: '<p>Every layer is independently swappable.</p><p><a href="/guide/layout-engine">Layout engine</a> — Flexily or Yoga, usable standalone.</p><p>State — useState, Zustand, Jotai, Redux.</p><p><a href="/guide/providers">Render targets</a> — terminal, Canvas, DOM.</p><p><a href="/guide/runtime-layers">Runtime layers</a> — renderer, runtime, or full app via pipe().</p>'
+    details: '<p>Every layer is independently swappable.</p><p><a href="/guide/layout-engine">Layout</a> — Flexily or Yoga.</p><p>State — BYO (useState, Zustand, Jotai).</p><p><a href="/guide/providers">Targets</a> — terminal, Canvas, DOM.</p><p><a href="/guide/runtime-layers">Depth</a> — just render, add runtime, or full app.</p>'
     link: /guide/providers
     linkText: Providers guide
 ---
@@ -216,7 +216,7 @@ Standalone projects Silvery builds on — each stands on its own:
   line-height: 1.5 !important;
 }
 .VPFeatures .details p {
-  margin: 0.4em 0 0;
+  margin: 0.55em 0 0;
 }
 .VPFeatures .details p:first-child {
   margin-top: 0;
