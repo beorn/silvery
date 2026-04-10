@@ -7,6 +7,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-04-10
+
+### Performance
+
+- **Lazy TextFrame** — defer buffer snapshot clone + 80K Cell object creation to first access. Eliminates the #1 per-frame cost that was misattributed to React reconciliation. **15–20× faster than Ink** (was 3–6×).
+- **Skip syncPrevLayout** — O(N) tree walk skipped on cursor move when no layout changed.
+- **No-op frame skip** — return prev buffer unchanged when no dirty flags set.
+
+### Added
+
+- **Text layout: `width="snug-content"`** — tightest box width for same line count. Inspired by [Pretext shrinkwrap](https://chenglou.me/pretext/bubbles/).
+- **Text layout: `wrap="even"`** — minimum-raggedness line breaking via dynamic programming. [Pretext Knuth-Plass](https://chenglou.me/pretext/).
+- **Floating component defaults** — ModalDialog, Toast, Tooltip default to `snug-content`. All accept spread BoxProps.
+- **Text layout demo** — `bunx @silvery/examples text layout`.
+- **Benchmarks** — resize, scroll, large terminal (400×200), Pretext algorithms, reconciliation profiling.
+
+### Fixed
+
+- **Wide char STRICT** — grapheme cluster handling in STRICT output verification parser.
+- **Pretext correctness** — 5 bugs from GPT 5.4 Pro review.
+
 ## [0.12.0] - 2026-04-10
 
 ### Added
