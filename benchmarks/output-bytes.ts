@@ -31,8 +31,12 @@ function createCountingStdout(cols: number, rows: number) {
   })
   return {
     stream: stream as unknown as NodeJS.WriteStream,
-    get bytes() { return totalBytes },
-    reset() { totalBytes = 0 },
+    get bytes() {
+      return totalBytes
+    },
+    reset() {
+      totalBytes = 0
+    },
   }
 }
 
@@ -51,20 +55,30 @@ function measureSilvery(cols: number, rows: number, items: number) {
   // Initial render with cursor at 0
   const app = render(
     React.createElement(
-      SBox, { flexDirection: "column" },
+      SBox,
+      { flexDirection: "column" },
       ...Array.from({ length: items }, (_, i) =>
-        React.createElement(SBox, { key: i, backgroundColor: i === 0 ? "#334155" : undefined },
-          React.createElement(SText, null, `Item ${i}: Some content here for a realistic line`))),
+        React.createElement(
+          SBox,
+          { key: i, backgroundColor: i === 0 ? "#334155" : undefined },
+          React.createElement(SText, null, `Item ${i}: Some content here for a realistic line`),
+        ),
+      ),
     ),
   )
 
   // Move cursor: change bg on item 0 -> item 1
   app.rerender(
     React.createElement(
-      SBox, { flexDirection: "column" },
+      SBox,
+      { flexDirection: "column" },
       ...Array.from({ length: items }, (_, i) =>
-        React.createElement(SBox, { key: i, backgroundColor: i === 1 ? "#334155" : undefined },
-          React.createElement(SText, null, `Item ${i}: Some content here for a realistic line`))),
+        React.createElement(
+          SBox,
+          { key: i, backgroundColor: i === 1 ? "#334155" : undefined },
+          React.createElement(SText, null, `Item ${i}: Some content here for a realistic line`),
+        ),
+      ),
     ),
   )
 
@@ -93,10 +107,15 @@ function measureInk(cols: number, rows: number, items: number) {
 
   const instance = inkRender(
     React.createElement(
-      IBox, { flexDirection: "column" },
+      IBox,
+      { flexDirection: "column" },
       ...Array.from({ length: items }, (_, i) =>
-        React.createElement(IBox, { key: i },
-          React.createElement(IText, { inverse: i === 0 }, `Item ${i}: Some content here for a realistic line`))),
+        React.createElement(
+          IBox,
+          { key: i },
+          React.createElement(IText, { inverse: i === 0 }, `Item ${i}: Some content here for a realistic line`),
+        ),
+      ),
     ),
     { stdout: stdout.stream, debug: true, patchConsole: false, incrementalRendering: true },
   )
@@ -106,10 +125,15 @@ function measureInk(cols: number, rows: number, items: number) {
   // Move cursor
   instance.rerender(
     React.createElement(
-      IBox, { flexDirection: "column" },
+      IBox,
+      { flexDirection: "column" },
       ...Array.from({ length: items }, (_, i) =>
-        React.createElement(IBox, { key: i },
-          React.createElement(IText, { inverse: i === 1 }, `Item ${i}: Some content here for a realistic line`))),
+        React.createElement(
+          IBox,
+          { key: i },
+          React.createElement(IText, { inverse: i === 1 }, `Item ${i}: Some content here for a realistic line`),
+        ),
+      ),
     ),
   )
   const updateBytes = stdout.bytes
@@ -136,8 +160,8 @@ for (const [label, cols, rows, items] of [
   const ink = measureInk(cols, rows, items)
 
   const ratio = ink.updateBytes / s.updateBytes
-  const sMs100k = (s.updateBytes * 8 / 100_000 * 1000).toFixed(1) // ms at 100 Kbps
-  const iMs100k = (ink.updateBytes * 8 / 100_000 * 1000).toFixed(1)
+  const sMs100k = (((s.updateBytes * 8) / 100_000) * 1000).toFixed(1) // ms at 100 Kbps
+  const iMs100k = (((ink.updateBytes * 8) / 100_000) * 1000).toFixed(1)
 
   console.log(
     `${label.padEnd(28)}| ${String(s.updateBytes).padEnd(9)}| ${String(ink.updateBytes).padEnd(9)}| ${ratio.toFixed(1).padEnd(9)}| ${(sMs100k + "ms").padEnd(19)}| ${iMs100k}ms`,
