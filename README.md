@@ -37,6 +37,7 @@ await render(<Counter />).run()
 
 ### Shiny new stuff
 
+- **[3–6× faster incremental rendering](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — cell-level dirty tracking, only changed cells emit to the terminal. Per-node skip for unchanged subtrees. Works in inline mode with native scrollback, not just fullscreen
 - **[Layout-first rendering](https://silvery.dev/guide/silvery-vs-ink#responsive-layout)** — `useBoxRect()` returns actual dimensions during render. No post-render measurement, no two-pass layout cycle. Enables `overflow="scroll"`, `position="sticky"`, and ANSI-aware compositing with color blending
 - **[Dynamic scrollback](https://silvery.dev/examples/scrollback)** — live React zone at the bottom, completed items graduate to terminal-owned scrollback. Cmd+F and text selection work natively. Inline mode gets fullscreen-level performance; fullscreen mode gets inline-level UX (app-managed scrollback). No hard split between the two
 - **Pure TypeScript, zero native deps** — no WASM, no build steps. Works on Alpine, CI, Docker, everywhere
@@ -50,7 +51,6 @@ await render(<Counter />).run()
 - **Drag-and-drop** — mouse drag with hit testing, automatic via `withDomEvents()`
 - **Extremely composable** — use as just a renderer (`render`), add a runtime (`run`), or build full apps with any React state library (useState, Zustand, Jotai, Redux). Swap terminal backends (real TTY, headless, xterm.js emulator) for [testing](https://silvery.dev/guide/testing). Embed silvery components in existing CLIs. Use the layout engine standalone. Render to terminal, or (experimental) Canvas, or DOM
 - **[Terminal protocol support](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage)** — 100+ escape sequences, all auto-negotiated: 12 OSC (hyperlinks, clipboard, palette, text sizing, semantic prompts, notifications), 35+ CSI (cursor, mouse modes, paste, focus, sync output, device queries), 50+ SGR (6 underline styles, underline colors, truecolor, 256-color), full Kitty keyboard (5 flags), full SGR mouse (any-event, drag, wheel)
-- **[Incremental rendering](https://silvery.dev/guide/silvery-vs-ink#performance-size)** — cell-level dirty tracking, only changed cells emit to the terminal. Works in inline mode with native scrollback, not just fullscreen
 
 ### Why Silvery?
 
