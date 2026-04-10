@@ -46,7 +46,8 @@ await render(<Counter />).run()
   - [Inline with dynamic scrollback](https://silvery.dev/examples/scrollback) — live React zone at bottom, completed items graduate to terminal-owned scrollback. Native Cmd+F and text selection
   - [Virtual inline](https://silvery.dev/design/dynamic-scrollback) — alt screen + app-managed scrollback history, scrollable and searchable
 - **[Rich component library](https://silvery.dev/guides/components)** — 45+ components: TextInput, SelectList, ListView, Table, TreeView, Tabs, CommandPalette, ModalDialog, Toast, and more. Built-in focus, mouse, and native keybindings (readline, vim). [38 theme palettes](https://silvery.dev/guide/styling) with semantic tokens (`$primary`, `$error`) and auto-detected terminal colors
-- **[Web-like interaction](https://silvery.dev/guide/event-handling)** — [focus scopes](https://silvery.dev/guide/silvery-vs-ink#focus-system) with spatial arrow-key nav and click-to-focus. Built on top of the component system:
+- **[Web-like interaction](https://silvery.dev/guide/event-handling)** — powered by [100+ auto-negotiated terminal protocols](https://silvery.dev/guide/silvery-vs-ink#terminal-protocol-coverage). Enables:
+  - [Focus scopes](https://silvery.dev/guide/silvery-vs-ink#focus-system) — spatial arrow-key nav, Tab/Escape, click-to-focus
   - [Text selection](https://silvery.dev/guide/text-selection) — mouse drag, word/line, `userSelect` boundaries, Alt+drag override
   - [Find](https://silvery.dev/guide/find) — `Ctrl+F` with match highlighting and `n`/`N` navigation
   - [Copy-mode](https://silvery.dev/guide/clipboard) — `Esc, v` for vim-style keyboard selection and yanking
