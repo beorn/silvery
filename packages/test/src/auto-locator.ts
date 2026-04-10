@@ -273,37 +273,246 @@ function getNodeProp(node: AgNode, name: string): string | undefined {
 }
 
 // ============================================================================
-// Selector Parsing (from locator.ts)
+// Selector Parsing
 // ============================================================================
 
 /**
- * Parse CSS-like selector into predicate
+ * Combinator types used in CSS selector chains
  */
-function parseSelector(selector: string): NodePredicate | null {
-  const trimmed = selector.trim()
+type CombinatorType = ">" | "+" | "~" | " "
 
-  // Check for combinators
-  if (trimmed.includes(">")) {
-    return parseChildCombinator(trimmed)
-  }
-  if (trimmed.includes("+")) {
-    return parseAdjacentSiblingCombinator(trimmed)
-  }
-  if (trimmed.includes(" ") && !trimmed.startsWith("[")) {
-    return parseDescendantCombinator(trimmed)
-  }
-
-  return parseSingleSelector(trimmed)
+/**
+ * A token in a parsed selector chain: a simple selector string paired with
+ * the combinator that connects it to the next token.
+ */
+interface SelectorToken {
+  selector: string
+  combinator: CombinatorType | null // null for the last token
 }
 
 /**
- * Parse a single selector (no combinators)
+ * Tokenize a CSS selector into segments separated by combinators.
+ *
+ * Splits on `>`, `+`, `~`, and whitespace (descendant combinator) while
+ * preserving which combinator separates each pair. Attribute selectors
+ * containing spaces (e.g. `[data-x="a b"]`) are kept intact.
+ */
+function tokenizeSelector(selector: string): SelectorToken[] {
+  const tokens: SelectorToken[] = []
+  const trimmed = selector.trim()
+  let i = 0
+  let current = ""
+
+  // Track whether we're inside brackets (attribute selectors can contain spaces)
+  let bracketDepth = 0
+  // Track whether we're inside quotes within brackets
+  let inQuote: string | null = null
+
+  while (i < trimmed.length) {
+    const ch = trimmed[i]!
+
+    // Handle quotes inside brackets
+    if (bracketDepth > 0 && (ch === '"' || ch === "'")) {
+      if (inQuote === ch) {
+        inQuote = null
+      } else if (inQuote === null) {
+        inQuote = ch
+      }
+      current += ch
+      i++
+      continue
+    }
+
+    // Don't parse combinators inside brackets/quotes
+    if (ch === "[") {
+      bracketDepth++
+      current += ch
+      i++
+      continue
+    }
+    if (ch === "]") {
+      bracketDepth--
+      current += ch
+      i++
+      continue
+    }
+
+    if (bracketDepth > 0 || inQuote !== null) {
+      current += ch
+      i++
+      continue
+    }
+
+    // Check for explicit combinators: >, +, ~
+    if (ch === ">" || ch === "+" || ch === "~") {
+      if (current.trim()) {
+        tokens.push({ selector: current.trim(), combinator: ch })
+      }
+      current = ""
+      i++
+      // Skip whitespace after combinator
+      while (i < trimmed.length && trimmed[i] === " ") i++
+      continue
+    }
+
+    // Whitespace = descendant combinator (only if not adjacent to an explicit combinator)
+    if (ch === " ") {
+      // Skip all whitespace
+      let j = i
+      while (j < trimmed.length && trimmed[j] === " ") j++
+
+      // Check if the whitespace is followed by an explicit combinator
+      if (j < trimmed.length && (trimmed[j] === ">" || trimmed[j] === "+" || trimmed[j] === "~")) {
+        // The explicit combinator handler will pick this up
+        i = j
+        continue
+      }
+
+      // It's a descendant combinator (space)
+      if (current.trim()) {
+        tokens.push({ selector: current.trim(), combinator: " " })
+      }
+      current = ""
+      i = j
+      continue
+    }
+
+    current += ch
+    i++
+  }
+
+  // Push the final selector (no combinator after it)
+  if (current.trim()) {
+    tokens.push({ selector: current.trim(), combinator: null })
+  }
+
+  return tokens
+}
+
+/**
+ * Parse CSS-like selector into predicate.
+ *
+ * Supports multi-level combinator chains (e.g. `#a > #b > #c`),
+ * mixed combinators (`#a > #b #c`), and all combinator types:
+ *   - `>` (child), `+` (adjacent sibling), `~` (general sibling), ` ` (descendant)
+ */
+function parseSelector(selector: string): NodePredicate | null {
+  const tokens = tokenizeSelector(selector.trim())
+  if (tokens.length === 0) return null
+  if (tokens.length === 1) return parseSingleSelector(tokens[0]!.selector)
+
+  // Build predicate chain right-to-left.
+  // The rightmost token is the node being matched. Each preceding token
+  // constrains a relationship (parent, ancestor, sibling) that must hold.
+  return buildPredicateChain(tokens)
+}
+
+/**
+ * Build a predicate from a chain of selector tokens.
+ *
+ * The rightmost token matches the candidate node. Each preceding token
+ * constrains a relationship (parent, ancestor, sibling) via its combinator.
+ *
+ * For ancestor/parent combinators (>, space), we walk up the tree to find
+ * a node matching the left selector, then continue the chain from that node.
+ *
+ * For sibling combinators (+, ~), we check siblings of the same node.
+ */
+function buildPredicateChain(tokens: SelectorToken[]): NodePredicate | null {
+  // Parse all single-selector predicates up front
+  const preds: (NodePredicate | null)[] = tokens.map((t) => parseSingleSelector(t.selector))
+  if (preds.some((p) => p === null)) return null
+
+  const validPreds = preds as NodePredicate[]
+
+  return (node: AgNode) => {
+    // The rightmost selector must match the candidate node
+    if (!validPreds[validPreds.length - 1]!(node)) return false
+
+    // Walk the chain right-to-left, tracking the "current context node"
+    // that each subsequent combinator operates relative to.
+    let contextNode: AgNode = node
+
+    for (let i = tokens.length - 2; i >= 0; i--) {
+      const leftPred = validPreds[i]!
+      const combinator = tokens[i]!.combinator!
+      const found = findCombinatorMatch(contextNode, combinator, leftPred)
+      if (!found) return false
+      contextNode = found
+    }
+
+    return true
+  }
+}
+
+/**
+ * Given a context node and a combinator, find a node matching `leftPred`
+ * that satisfies the combinator relationship relative to `contextNode`.
+ *
+ * Returns the matching node (so the chain can continue from it) or null.
+ */
+function findCombinatorMatch(
+  contextNode: AgNode,
+  combinator: CombinatorType,
+  leftPred: NodePredicate,
+): AgNode | null {
+  switch (combinator) {
+    case ">": {
+      // Direct parent must match
+      if (contextNode.parent && leftPred(contextNode.parent)) {
+        return contextNode.parent
+      }
+      return null
+    }
+
+    case " ": {
+      // Any ancestor must match
+      let current = contextNode.parent
+      while (current) {
+        if (leftPred(current)) return current
+        current = current.parent
+      }
+      return null
+    }
+
+    case "+": {
+      // Immediately preceding sibling must match
+      if (!contextNode.parent) return null
+      const siblings = contextNode.parent.children
+      const index = siblings.indexOf(contextNode)
+      if (index <= 0) return null
+      const prevSibling = siblings[index - 1]!
+      return leftPred(prevSibling) ? prevSibling : null
+    }
+
+    case "~": {
+      // Any earlier sibling must match
+      if (!contextNode.parent) return null
+      const siblings = contextNode.parent.children
+      const index = siblings.indexOf(contextNode)
+      if (index <= 0) return null
+      for (let j = 0; j < index; j++) {
+        if (leftPred(siblings[j]!)) return siblings[j]!
+      }
+      return null
+    }
+  }
+}
+
+/**
+ * Parse a single selector segment (no combinators).
+ *
+ * Supports:
+ *   - `*` (universal)
+ *   - `#id` (ID selector)
+ *   - `[attr]`, `[attr=val]`, `[attr^=val]`, `[attr$=val]`, `[attr*=val]`
+ *   - `:first-child`, `:last-child`, `:nth-child(n)`, `:empty`
  */
 function parseSingleSelector(selector: string): NodePredicate | null {
   const parts: NodePredicate[] = []
   let remaining = selector
 
-  // Universal selector - matches all nodes
+  // Universal selector — matches all nodes
   if (remaining === "*") {
     return () => true
   }
@@ -319,7 +528,7 @@ function parseSingleSelector(selector: string): NodePredicate | null {
   // Extract all attribute selectors
   const attrRegex = /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g
   for (const match of remaining.matchAll(attrRegex)) {
-    const [, attr, op, value] = match
+    const [fullMatch, attr, op, value] = match
     if (!attr) continue
 
     if (value === undefined) {
@@ -342,79 +551,40 @@ function parseSingleSelector(selector: string): NodePredicate | null {
         }
       })
     }
+
+    // Remove matched attribute selector from remaining for pseudo parsing
+    remaining = remaining.replace(fullMatch!, "")
+  }
+
+  // Extract pseudo-selectors
+  const pseudoRegex = /:(first-child|last-child|nth-child\((\d+)\)|empty)/g
+  for (const match of remaining.matchAll(pseudoRegex)) {
+    const pseudo = match[1]!
+
+    if (pseudo === "first-child") {
+      parts.push((node: AgNode) => {
+        if (!node.parent) return false
+        return node.parent.children[0] === node
+      })
+    } else if (pseudo === "last-child") {
+      parts.push((node: AgNode) => {
+        if (!node.parent) return false
+        const children = node.parent.children
+        return children[children.length - 1] === node
+      })
+    } else if (pseudo.startsWith("nth-child")) {
+      const n = Number.parseInt(match[2]!, 10)
+      parts.push((node: AgNode) => {
+        if (!node.parent) return false
+        const index = node.parent.children.indexOf(node)
+        return index === n - 1 // CSS nth-child is 1-indexed
+      })
+    } else if (pseudo === "empty") {
+      parts.push((node: AgNode) => node.children.length === 0)
+    }
   }
 
   if (parts.length === 0) return null
 
   return (node: AgNode) => parts.every((pred) => pred(node))
-}
-
-/**
- * Parse child combinator: A > B
- */
-function parseChildCombinator(selector: string): NodePredicate | null {
-  const parts = selector.split(">").map((s) => s.trim())
-  if (parts.length !== 2) return null
-
-  const [parentSel, childSel] = parts
-  const parentPred = parseSingleSelector(parentSel!)
-  const childPred = parseSingleSelector(childSel!)
-
-  if (!parentPred || !childPred) return null
-
-  return (node: AgNode) => {
-    if (!childPred(node)) return false
-    return node.parent !== null && parentPred(node.parent)
-  }
-}
-
-/**
- * Parse adjacent sibling combinator: A + B
- */
-function parseAdjacentSiblingCombinator(selector: string): NodePredicate | null {
-  const parts = selector.split("+").map((s) => s.trim())
-  if (parts.length !== 2) return null
-
-  const [prevSel, nextSel] = parts
-  const prevPred = parseSingleSelector(prevSel!)
-  const nextPred = parseSingleSelector(nextSel!)
-
-  if (!prevPred || !nextPred) return null
-
-  return (node: AgNode) => {
-    if (!nextPred(node)) return false
-    if (!node.parent) return false
-
-    const siblings = node.parent.children
-    const index = siblings.indexOf(node)
-    if (index <= 0) return false
-
-    const prevSibling = siblings[index - 1]
-    return prevSibling !== undefined && prevPred(prevSibling)
-  }
-}
-
-/**
- * Parse descendant combinator: A B
- */
-function parseDescendantCombinator(selector: string): NodePredicate | null {
-  const parts = selector.split(/\s+/).filter((s) => s.length > 0)
-  if (parts.length !== 2) return null
-
-  const [ancestorSel, descendantSel] = parts
-  const ancestorPred = parseSingleSelector(ancestorSel!)
-  const descendantPred = parseSingleSelector(descendantSel!)
-
-  if (!ancestorPred || !descendantPred) return null
-
-  return (node: AgNode) => {
-    if (!descendantPred(node)) return false
-
-    let current = node.parent
-    while (current) {
-      if (ancestorPred(current)) return true
-      current = current.parent
-    }
-    return false
-  }
 }
