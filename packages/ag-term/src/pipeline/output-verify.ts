@@ -12,6 +12,7 @@
 
 import type { TerminalBuffer } from "../buffer"
 import { IncrementalRenderMismatchError } from "../errors"
+import { graphemeWidth } from "../unicode"
 import { createLogger } from "loggily"
 import type { OutputContext } from "./output-phase"
 
@@ -477,7 +478,104 @@ export function replayAnsiWithStyles(
       continue
     }
 
-    // Regular character
+    // Regular character — collect full grapheme cluster.
+    //
+    // A grapheme cluster may span multiple UTF-16 code units:
+    // - Surrogate pairs for astral codepoints (e.g., emoji U+1F600)
+    // - ZWJ sequences (e.g., 🏃‍♂️ = U+1F3C3 U+200D U+2642 U+FE0F)
+    // - Variation selectors (U+FE0E text, U+FE0F emoji presentation)
+    // - Combining marks, skin tone modifiers, regional indicators
+    //
+    // Strategy: extract the first codepoint (handling surrogates), then
+    // greedily absorb subsequent zero-width joiners, variation selectors,
+    // combining marks, and their targets into a single grapheme string.
+    // This matches terminal behavior where the entire cluster occupies
+    // the column count of the base character.
+    let grapheme = ""
+    let advance = 0
+
+    // Extract the initial codepoint
+    const code0 = ansi.charCodeAt(i)
+    if (code0 >= 0xd800 && code0 <= 0xdbff && i + 1 < ansi.length) {
+      const low = ansi.charCodeAt(i + 1)
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        grapheme = ansi[i]! + ansi[i + 1]!
+        advance = 2
+      } else {
+        grapheme = ansi[i]!
+        advance = 1
+      }
+    } else {
+      grapheme = ansi[i]!
+      advance = 1
+    }
+
+    // Absorb combining/extending codepoints that follow:
+    // ZWJ (U+200D), variation selectors (U+FE0E-FE0F), combining marks
+    // (U+0300-036F, U+20D0-20FF, U+1AB0-1AFF, U+FE20-FE2F), skin tone
+    // modifiers (U+1F3FB-1F3FF), regional indicators (U+1F1E6-1F1FF),
+    // enclosing keycap (U+20E3), and tag sequences (U+E0020-E007F).
+    {
+      let j = i + advance
+      while (j < ansi.length) {
+        const c = ansi.charCodeAt(j)
+        // Decode the codepoint at j (handle surrogates)
+        let cp: number
+        let cpLen: number
+        if (c >= 0xd800 && c <= 0xdbff && j + 1 < ansi.length) {
+          const lo = ansi.charCodeAt(j + 1)
+          if (lo >= 0xdc00 && lo <= 0xdfff) {
+            cp = ((c - 0xd800) << 10) + (lo - 0xdc00) + 0x10000
+            cpLen = 2
+          } else {
+            break
+          }
+        } else {
+          cp = c
+          cpLen = 1
+        }
+
+        if (
+          cp === 0x200d || // ZWJ
+          cp === 0xfe0e ||
+          cp === 0xfe0f || // Variation selectors
+          (cp >= 0x0300 && cp <= 0x036f) || // Combining diacritical marks
+          (cp >= 0x20d0 && cp <= 0x20ff) || // Combining marks for symbols
+          (cp >= 0x1ab0 && cp <= 0x1aff) || // Combining diacritical extended
+          (cp >= 0xfe20 && cp <= 0xfe2f) || // Combining half marks
+          cp === 0x20e3 || // Combining enclosing keycap
+          (cp >= 0x1f3fb && cp <= 0x1f3ff) || // Skin tone modifiers
+          (cp >= 0x1f1e6 && cp <= 0x1f1ff) || // Regional indicator symbols
+          (cp >= 0xe0020 && cp <= 0xe007f) || // Tags
+          cp === 0xe0001 // Language tag begin
+        ) {
+          grapheme += ansi.slice(j, j + cpLen)
+          advance += cpLen
+          j += cpLen
+          continue
+        }
+
+        // After ZWJ, absorb the next codepoint (the ZWJ target)
+        const prevCp =
+          grapheme.length >= 2
+            ? grapheme.charCodeAt(grapheme.length - 2) === 0x200d
+              ? 0x200d
+              : grapheme.charCodeAt(grapheme.length - 1)
+            : grapheme.charCodeAt(grapheme.length - 1)
+        if (prevCp === 0x200d && cp > 0x20) {
+          // ZWJ target: absorb any codepoint after ZWJ
+          grapheme += ansi.slice(j, j + cpLen)
+          advance += cpLen
+          j += cpLen
+          continue
+        }
+
+        break
+      }
+    }
+
+    const charWidth = graphemeWidth(grapheme)
+
     if (cy < height && cx < width) {
       // Resolve pending wrap before writing
       if (pendingWrap) {
@@ -506,7 +604,7 @@ export function replayAnsiWithStyles(
       }
       if (cy < height && cx < width) {
         const cell = screen[cy]![cx]!
-        cell.char = ansi[i]!
+        cell.char = grapheme
         cell.fg = sgr.fg
         cell.bg = sgr.bg
         cell.bold = sgr.bold
@@ -517,7 +615,25 @@ export function replayAnsiWithStyles(
         cell.inverse = sgr.inverse
         cell.hidden = sgr.hidden
         cell.strikethrough = sgr.strikethrough
-        cx++
+
+        // Wide character: clear the continuation cell at cx+1 (terminals
+        // implicitly overwrite the second column when writing a wide char)
+        if (charWidth === 2 && cx + 1 < width) {
+          const cont = screen[cy]![cx + 1]!
+          cont.char = " "
+          cont.fg = sgr.fg
+          cont.bg = sgr.bg
+          cont.bold = sgr.bold
+          cont.dim = sgr.dim
+          cont.italic = sgr.italic
+          cont.underline = sgr.underline
+          cont.blink = sgr.blink
+          cont.inverse = sgr.inverse
+          cont.hidden = sgr.hidden
+          cont.strikethrough = sgr.strikethrough
+        }
+
+        cx += charWidth
         if (cx >= width) {
           // Enter pending wrap state — cursor stays at last column
           cx = width - 1
@@ -525,7 +641,7 @@ export function replayAnsiWithStyles(
         }
       }
     }
-    i++
+    i += advance
   }
   return screen
 }
