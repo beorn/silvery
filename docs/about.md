@@ -102,7 +102,7 @@ Silvery stands on the shoulders of many great projects:
 - **[VS Code](https://code.visualstudio.com/)** — command palette, keybinding system with when-predicates.
 - **[Playwright](https://playwright.dev/)** — locator-based testing API (`getByText`, `press()`).
 - **[ProseMirror](https://prosemirror.net/)** — selection model and state machine approach to editing.
-- **[Pretext](https://chenglou.me/pretext/)** — text layout beyond CSS. Inspired Silvery's text layout algorithms (snug-content, balanced, optimal wrapping).
+- **[Pretext](https://chenglou.me/pretext/)** — text layout beyond CSS. Inspired Silvery's [text layout](/guide/layouts#text-layout) algorithms.
 - **[Blessed](https://github.com/chjj/blessed)** — proved rich terminal UIs are possible in JavaScript.
 - **[Textual](https://textual.textualize.io/)** — CSS-like theming and widget library for terminals.
 

@@ -358,3 +358,49 @@ function Card({ item }) {
 | Adaptive content     | `useBoxRect()` + truncation / hide at breakpoints |
 | Filled background    | `backgroundColor="color"` on Box                  |
 | Centered content     | `justifyContent="center"` + `alignItems="center"` |
+
+## Text Layout {#text-layout}
+
+Beyond flexbox, Silvery provides text layout algorithms inspired by [Pretext](https://chenglou.me/pretext/) — enabling tighter containers, balanced paragraphs, and optimal line breaking.
+
+### Width Sizing
+
+| Value | Description | CSS Equivalent |
+|---|---|---|
+| `width={number}` | Fixed width | `width: Npx` |
+| `width="fit-content"` | Shrink to widest wrapped line | `width: fit-content` |
+| `width="snug-content"` | Tightest width for same line count | No CSS equivalent |
+
+`fit-content` sizes a container to its widest wrapped line — leaving dead space when the last line is short. `snug-content` (called "shrinkwrap" in [Pretext](https://chenglou.me/pretext/bubbles/)) binary-searches for the tightest width that keeps the same line count. Use it for chat bubbles, cards, and tooltips.
+
+```tsx
+<Box width="snug-content" borderStyle="round">
+  <Text>The quick brown fox jumps over the lazy dog</Text>
+</Box>
+```
+
+::: warning
+`snug-content` can cause width jitter on dynamic text. Use `fit-content` for live-editing; `snug-content` for static content.
+:::
+
+### Wrap Modes
+
+| Mode | Description | Algorithm |
+|---|---|---|
+| `wrap="wrap"` | Word-aware wrapping (default) | Greedy |
+| `wrap="hard"` | Character-level wrapping | Break anywhere |
+| `wrap="balanced"` | Equalized line widths | Shrinkwrap at ideal width |
+| `wrap="optimal"` | Minimum-raggedness breaking | Knuth-Plass style DP |
+| `wrap={false}` | Truncate with ellipsis | — |
+| `wrap="clip"` | Hard truncate | — |
+
+**Greedy** fills each line fully. **Balanced** equalizes line widths for a less ragged right edge. **Optimal** minimizes total wasted space across all lines using dynamic programming.
+
+```tsx
+{/* Tightest bubble with balanced lines */}
+<Box width="snug-content" borderStyle="round" padding={1}>
+  <Text wrap="balanced">Long text that wraps beautifully</Text>
+</Box>
+```
+
+All three wrapping modes have the same performance (~25 microseconds for typical terminal text). Choose based on aesthetics.
