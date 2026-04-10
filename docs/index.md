@@ -50,57 +50,65 @@ hero:
 
 ### Familiar React API
 
-Same Box/Text/useInput patterns you already know. If you've used Ink, most code works with just an import change. [918/931 Ink 7.0 tests pass](/guide/silvery-vs-ink#compatibility) on the [@silvery/ink](/guide/silvery-vs-ink) compat layer. → [Full feature comparison](/guide/silvery-vs-ink)
+Same Box/Text/useInput patterns you already know. If you've used Ink, most code works with just an import change. [918/931 Ink 7.0 tests pass](/guide/silvery-vs-ink#compatibility) on the [@silvery/ink](/guide/silvery-vs-ink) compat layer.
 
+<div class="feature-link"><a href="/guide/silvery-vs-ink">Full feature comparison →</a></div>
 </div>
 <div class="feature">
 
 ### Best-in-Class Performance
 
-[3–6× faster](/guide/silvery-vs-ink#performance) than Ink, [10–20× less terminal output](/guide/silvery-vs-ink#output-efficiency). Pure TypeScript, zero native deps. Layout via [Flexily](https://beorn.codes/flexily) (or Yoga). Runs on Bun and Node.js. → [Benchmark details](/guide/silvery-vs-ink#performance)
+[3–6× faster](/guide/silvery-vs-ink#performance) than Ink, [10–20× less terminal output](/guide/silvery-vs-ink#output-efficiency). Pure TypeScript, zero native deps. Layout via [Flexily](https://beorn.codes/flexily) (or Yoga). Runs on Bun and Node.js.
 
+<div class="feature-link"><a href="/guide/silvery-vs-ink#performance">Benchmark details →</a></div>
 </div>
 <div class="feature">
 
 ### Web-like Responsive Layout
 
-One-phase responsive layouts — [`useBoxRect()`](/guide/hooks) returns real dimensions during render. [`overflow="scroll"`](/guide/scrolling) with virtualization. [`position="sticky"`](/guide/layout-coordinates) headers. [ANSI-aware compositing](/guide/ansi-layering) with color blending. → [Layout guide](/guide/layouts)
+One-phase responsive layouts — [`useBoxRect()`](/guide/hooks) returns real dimensions during render. [`overflow="scroll"`](/guide/scrolling) with virtualization. [`position="sticky"`](/guide/layout-coordinates) headers. [ANSI-aware compositing](/guide/ansi-layering) with color blending.
 
+<div class="feature-link"><a href="/guide/layouts">Layout guide →</a></div>
 </div>
 <div class="feature">
 
 ### Rich Component Library
 
-[45+ components](/guides/components): TextInput, SelectList, ListView, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Spinner, and more. Built-in focus, mouse, and native keybindings. [38 theme palettes](/guide/styling) with auto-detected terminal colors. → [Browse components](/guides/components)
+[45+ components](/guides/components): TextInput, SelectList, ListView, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Spinner, and more. Built-in focus, mouse, and native keybindings. [38 theme palettes](/guide/styling) with auto-detected terminal colors.
 
+<div class="feature-link"><a href="/guides/components">Browse components →</a></div>
 </div>
 <div class="feature">
 
 ### Inline, Fullscreen, or Both
 
-Same components, one-line switch. [Inline mode](/examples/scrollback) gets fullscreen-level performance with native scrollback and Cmd+F. Fullscreen mode gets inline-level UX ([app-managed scrollback](/design/dynamic-scrollback)). [Virtual inline](/design/dynamic-scrollback) combines both. → [Runtime layers](/guide/runtime-layers)
+Same components, one-line switch. [Inline mode](/examples/scrollback) gets fullscreen-level performance with native scrollback and Cmd+F. Fullscreen mode gets inline-level UX ([app-managed scrollback](/design/dynamic-scrollback)). [Virtual inline](/design/dynamic-scrollback) combines both.
 
+<div class="feature-link"><a href="/guide/runtime-layers">Runtime layers →</a></div>
 </div>
 <div class="feature">
 
 ### Web-like Interaction
 
-[Focus scopes](/guide/silvery-vs-ink#focus-system) with spatial arrow-key nav, click-to-focus, [text selection](/guide/text-selection), [Ctrl+F find](/guide/find), [vim copy-mode](/guide/clipboard), and [drag-and-drop](/guide/event-handling). Powered by [100+ auto-negotiated terminal protocols](/guide/silvery-vs-ink#terminal-protocol-coverage): Kitty keyboard, SGR mouse, hyperlinks, clipboard, and more. → [Interaction guide](/guide/event-handling)
+[Focus scopes](/guide/silvery-vs-ink#focus-system) with spatial arrow-key nav, click-to-focus, [text selection](/guide/text-selection), [Ctrl+F find](/guide/find), [vim copy-mode](/guide/clipboard), and [drag-and-drop](/guide/event-handling). Powered by [100+ auto-negotiated terminal protocols](/guide/silvery-vs-ink#terminal-protocol-coverage): Kitty keyboard, SGR mouse, hyperlinks, clipboard, and more.
 
+<div class="feature-link"><a href="/guide/event-handling">Interaction guide →</a></div>
 </div>
 <div class="feature">
 
 ### Playwright-Style Testing
 
-3,000+ tests. Auto-refreshing CSS locators, cell-level color assertions, and `press()` input. [Termless](https://termless.dev) provides full ANSI fidelity with [10 swappable backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty). → [Testing guide](/guide/testing)
+3,000+ tests. Auto-refreshing CSS locators, cell-level color assertions, and `press()` input. [Termless](https://termless.dev) provides full ANSI fidelity with [10 swappable backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty).
 
+<div class="feature-link"><a href="/guide/testing">Testing guide →</a></div>
 </div>
 <div class="feature">
 
 ### Composable Architecture
 
-Every layer is independently swappable: [layout engine](/guide/layout-engine) (Flexily or Yoga), terminal backends, state management (useState, Zustand, Jotai), [render targets](/guide/providers) (terminal, Canvas, DOM), and [runtime layers](/guide/runtime-layers) via `pipe()`. → [Providers guide](/guide/providers)
+Every layer is independently swappable: [layout engine](/guide/layout-engine) (Flexily or Yoga), terminal backends, state management (useState, Zustand, Jotai), [render targets](/guide/providers) (terminal, Canvas, DOM), and [runtime layers](/guide/runtime-layers) via `pipe()`.
 
+<div class="feature-link"><a href="/guide/providers">Providers guide →</a></div>
 </div>
 </div>
 
@@ -222,8 +230,8 @@ Standalone projects Silvery builds on — each stands on its own:
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
   max-width: 1152px;
   margin-left: auto;
   margin-right: auto;
@@ -245,6 +253,29 @@ Standalone projects Silvery builds on — each stands on its own:
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--vp-c-text-1);
+}
+.feature p a {
+  color: var(--vp-c-text-2);
+  text-decoration: underline;
+  text-decoration-color: var(--vp-c-divider);
+  text-underline-offset: 2px;
+  transition: color 0.2s, text-decoration-color 0.2s;
+}
+.feature p a:hover {
+  color: var(--vp-c-brand-1);
+  text-decoration-color: var(--vp-c-brand-1);
+}
+.feature-link {
+  margin-top: 0.5rem;
+}
+.feature-link a {
+  color: var(--vp-c-brand-1) !important;
+  text-decoration: none !important;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.feature-link a:hover {
+  text-decoration: underline !important;
 }
 .feature p {
   margin: 0;
