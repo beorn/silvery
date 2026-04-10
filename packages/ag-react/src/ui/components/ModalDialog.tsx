@@ -18,14 +18,14 @@
  * ```
  */
 import React from "react"
-import { Box } from "@silvery/ag-react/components/Box"
+import { Box, type BoxProps } from "@silvery/ag-react/components/Box"
 import { Text } from "@silvery/ag-react/components/Text"
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export interface ModalDialogProps {
+export interface ModalDialogProps extends Omit<BoxProps, "children" | "flexDirection"> {
   /** Border color (default: $border). Cyan is reserved for text input focus rings. */
   borderColor?: string
   /** Dialog title (rendered bold in titleColor or borderColor) */
@@ -132,6 +132,7 @@ export function ModalDialog({
   onClose: _onClose,
   focusScope: _focusScope = true,
   children,
+  ...boxProps
 }: ModalDialogProps): React.ReactElement {
   const effectiveTitleColor = titleColor ?? "$primary"
   // When titleRight is provided, use space-between layout for the title bar
@@ -148,6 +149,7 @@ export function ModalDialog({
       paddingX={2}
       paddingY={1}
       userSelect="contain"
+      {...boxProps}
     >
       {title && (
         <Box flexShrink={0} flexDirection="column">

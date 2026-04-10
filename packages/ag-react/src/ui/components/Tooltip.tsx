@@ -18,14 +18,14 @@
  * ```
  */
 import React from "react"
-import { Box } from "@silvery/ag-react/components/Box"
+import { Box, type BoxProps } from "@silvery/ag-react/components/Box"
 import { Text } from "@silvery/ag-react/components/Text"
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export interface TooltipProps {
+export interface TooltipProps extends Omit<BoxProps, "children"> {
   /** Tooltip text content */
   content: string
   /** Whether the tooltip is visible (default: false) */
@@ -44,9 +44,9 @@ export interface TooltipProps {
  * Renders inline below the target element when `show` is true.
  * Tooltip text is rendered in `$muted` with dimColor for subtlety.
  */
-export function Tooltip({ content, show = false, children }: TooltipProps): React.ReactElement {
+export function Tooltip({ content, show = false, children, ...boxProps }: TooltipProps): React.ReactElement {
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...boxProps}>
       {children}
       {show && (
         <Box width="snug-content">

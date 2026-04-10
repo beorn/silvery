@@ -22,7 +22,7 @@
  * ```
  */
 import React, { useCallback, useEffect, useRef, useState } from "react"
-import { Box } from "@silvery/ag-react/components/Box"
+import { Box, type BoxProps } from "@silvery/ag-react/components/Box"
 import { Text } from "@silvery/ag-react/components/Text"
 
 // =============================================================================
@@ -66,14 +66,14 @@ export interface UseToastResult {
   dismissAll: () => void
 }
 
-export interface ToastContainerProps {
+export interface ToastContainerProps extends Omit<BoxProps, "children"> {
   /** Toasts to render */
   toasts: ToastData[]
   /** Maximum visible toasts (default: 5) */
   maxVisible?: number
 }
 
-export interface ToastItemProps {
+export interface ToastItemProps extends Omit<BoxProps, "children"> {
   /** Toast data to render */
   toast: ToastData
 }
@@ -183,12 +183,12 @@ export function useToast(): UseToastResult {
  * Renders a bordered box with variant-colored icon, title, and optional
  * description text.
  */
-export function ToastItem({ toast }: ToastItemProps): React.ReactElement {
+export function ToastItem({ toast, ...boxProps }: ToastItemProps): React.ReactElement {
   const color = VARIANT_COLORS[toast.variant]
   const icon = VARIANT_ICONS[toast.variant]
 
   return (
-    <Box borderStyle="single" borderColor="$border" paddingX={1} backgroundColor="$popover-bg" width="snug-content">
+    <Box borderStyle="single" borderColor="$border" paddingX={1} backgroundColor="$popover-bg" width="snug-content" {...boxProps}>
       <Text color={color} bold>
         [{icon}]
       </Text>
@@ -203,11 +203,11 @@ export function ToastItem({ toast }: ToastItemProps): React.ReactElement {
  *
  * Place at the bottom of your layout to show toasts as they appear.
  */
-export function ToastContainer({ toasts, maxVisible = 5 }: ToastContainerProps): React.ReactElement {
+export function ToastContainer({ toasts, maxVisible = 5, ...boxProps }: ToastContainerProps): React.ReactElement {
   const visible = toasts.slice(-maxVisible)
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" {...boxProps}>
       {visible.map((t) => (
         <ToastItem key={t.id} toast={t} />
       ))}
