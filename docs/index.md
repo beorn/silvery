@@ -208,13 +208,27 @@ Standalone projects Silvery builds on — each stands on its own:
   text-decoration-color: var(--vp-c-brand-1);
 }
 .VPFeatures .details ul {
-  margin: 0.25rem 0 0;
-  padding-left: 1.1rem;
-  list-style: disc;
+  margin: 0.15rem 0 0;
+  padding-left: 0;
+  list-style: none;
 }
 .VPFeatures .details li {
-  margin: 0.1rem 0;
-  line-height: 1.5;
+  margin: 0.05rem 0;
+  line-height: 1.4;
+  padding-left: 0.75rem;
+  text-indent: -0.75rem;
+}
+.VPFeatures .details li::before {
+  content: "·  ";
+  color: var(--vp-c-text-3);
+}
+/* Tighter card padding */
+.VPFeatures .VPFeature .box {
+  padding: 16px 20px !important;
+}
+.VPFeatures .details {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
 }
 .use-cases {
   margin: 0.5rem 0 1.5rem;
