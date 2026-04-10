@@ -114,20 +114,20 @@ The scheduler auto-enables instrumentation for the STRICT comparison render. No 
 
 5. **Check the five critical formulas**: `layoutChanged`, `contentAreaAffected`, `contentRegionCleared`, `skipBgFill`, `childrenNeedFreshRender` in `renderNodeToBuffer` (render-phase.ts). If any is wrong, the cascade propagates errors to the entire subtree.
 
-6. **Text bg inheritance**: Text nodes inherit bg via `inheritedBg` (from `findInheritedBg`), not buffer reads. Viewport clears and region clears still affect buffer state, which matters for the `getCellBg` legacy fallback (used by scroll indicators). If your fix clears a region, verify it clears to the correct bg (usually `null` to match fresh render state).
+6. **Text bg inheritance**: Text nodes inherit bg via `nodeState.inheritedBg` (threaded top-down, O(1) per node), not buffer reads. Viewport clears and region clears still affect buffer state, which matters for the `getCellBg` legacy fallback (used by scroll indicators). If your fix clears a region, verify it clears to the correct bg (usually `null` to match fresh render state).
 
 ## Symptom → Check Cross-Reference
 
 | Symptom                                                    | Check First                                                                                                                    |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Stale background color persists                            | `bgDirty` flag; `inheritedBg` from `findInheritedBg`; is region being cleared?                                                 |
+| Stale background color persists                            | `bgDirty` flag; `nodeState.inheritedBg` (threaded top-down); is region being cleared?                                          |
 | Border artifacts after color change                        | `stylePropsDirty` vs `contentAreaAffected` distinction; border-only change should NOT cascade                                  |
 | Scroll glitch (content jumps/disappears)                   | Scroll tier selection; Tier 1 unsafe with sticky; Tier 3 needs `stickyForceRefresh`                                            |
 | Children blank after parent changes                        | `childrenNeedFreshRender` → `childHasPrev=false`; is viewport clear setting `childHasPrev` correctly?                          |
 | Absolute child disappears                                  | Two-pass rendering order; absolute children need `ancestorCleared=false` in second pass                                        |
 | Content correct initially, wrong after navigation          | Incremental rendering bug; `SILVERY_STRICT=1` will catch it                                                                    |
 | Colors wrong but characters correct (garble)               | Output phase: `diffBuffers` row pre-check skipping true-color Map diffs; check `rowExtrasEquals`                               |
-| Text bg different from parent Box bg                       | `inheritedBg` from `findInheritedBg`; check if ancestor Box has `backgroundColor`; check region clearing                       |
+| Text bg different from parent Box bg                       | `nodeState.inheritedBg`; check if ancestor Box has `backgroundColor`; check region clearing                                    |
 | Flickering on every render                                 | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of render phase                                       |
 | Stale overlay pixels after shrink (black area)             | `clearExcessArea` not called; check `contentRegionCleared` + `forceRepaint` interaction                                        |
 | CJK/wide char garble, text shifts right                    | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `SILVERY_STRICT_TERMINAL=xterm`                      |

@@ -62,7 +62,7 @@ Foreground and background are separate cell properties that compose independentl
 </Box>
 ```
 
-Background inheritance uses `findInheritedBg()` to walk the render tree, not buffer reads. This means backgrounds are deterministic regardless of render order or incremental rendering state.
+Background inheritance uses `nodeState.inheritedBg` (threaded top-down through the render tree, O(1) per node), not buffer reads. This means backgrounds are deterministic regardless of render order or incremental rendering state.
 
 ### 3. Overlapping Elements
 

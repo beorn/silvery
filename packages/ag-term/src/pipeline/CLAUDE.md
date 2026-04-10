@@ -268,13 +268,22 @@ Sticky children use `ancestorCleared=false` to match fresh render semantics. On 
 
 ## Text Background Inheritance (inheritedBg)
 
-Text nodes with no explicit background inherit bg from their nearest ancestor Box with `backgroundColor`. This is now done via explicit `inheritedBg` parameter passed through the render tree, computed by `findInheritedBg()` in render-phase.ts.
+Text nodes with no explicit background inherit bg from their nearest ancestor Box with `backgroundColor`. This is done via `inheritedBg` on `NodeRenderState`, threaded top-down from root through every child. Each node computes its children's inherited bg/fg in O(1) — no parent chain walks.
 
 ```typescript
-// render-phase.ts: compute and pass inherited bg
-const textInheritedBg = findInheritedBg(node).color
-const textInheritedFg = findInheritedFg(node)
-renderText(node, buffer, layout, props, nodeState, textInheritedBg, textInheritedFg, ctx)
+// Root initializes with no inheritance:
+{ inheritedBg: { color: null, ancestorRect: null }, inheritedFg: null }
+
+// Each node computes children's inherited values:
+const childInheritedBg = effectiveBg
+  ? { color: parseColor(effectiveBg), ancestorRect: node.boxRect }
+  : nodeTheme
+    ? { color: parseColor(nodeTheme.bg), ancestorRect: node.boxRect }
+    : nodeState.inheritedBg  // pass through from parent
+
+// Text nodes read O(1):
+const textInheritedBg = nodeState.inheritedBg.color
+const textInheritedFg = nodeState.inheritedFg
 
 // render-text.ts → renderGraphemes: priority chain for bg
 // 1) Text's own bg  2) inheritedBg from ancestor Box  3) getCellBg buffer read (legacy fallback)
@@ -303,7 +312,7 @@ Without two-pass, an absolute child rendered before a dirty normal-flow sibling 
 
 ## Region Clearing
 
-When a node's content area changed but it has no `backgroundColor`, stale pixels from the clone remain visible. `clearNodeRegion` fills the node's rect with inherited bg (found by walking up ancestors via `findInheritedBg`).
+When a node's content area changed but it has no `backgroundColor`, stale pixels from the clone remain visible. `clearNodeRegion` fills the node's rect with inherited bg (from `nodeState.inheritedBg`, threaded top-down — O(1) per node).
 
 When a node shrinks, the excess area (old bounds minus new bounds) is also cleared via `clearExcessArea()`. This excess clearing clips to the colored ancestor's bounds to prevent inherited bg from bleeding into sibling areas.
 
@@ -353,7 +362,7 @@ When a child overflows its parent (e.g., text content extending beyond the paren
 
 6. **skipBgFill is critical for subtreeDirty.** When only a descendant changed, the parent's bg fill must be skipped. Re-filling destroys child pixels that won't be repainted (they're clean and will be fast-path skipped).
 
-7. **getCellBg coupling (mostly resolved).** Text bg inheritance now uses explicit `inheritedBg` from `findInheritedBg()` instead of reading the buffer via `getCellBg()`. This decouples text rendering from buffer state, fixing mismatches where overflow text read stale bg from the cloned buffer. The `getCellBg` fallback is still used by external callers of `renderTextLine` that don't pass `inheritedBg` (e.g., scroll indicators in render-box.ts).
+7. **getCellBg coupling (mostly resolved).** Text bg inheritance uses `nodeState.inheritedBg` (threaded top-down, O(1) per node) instead of reading the buffer via `getCellBg()`. This decouples text rendering from buffer state, fixing mismatches where overflow text read stale bg from the cloned buffer. The `getCellBg` fallback is still used by external callers of `renderTextLine` that don't pass `inheritedBg` (e.g., scroll indicators in render-box.ts).
 
 8. **Descendant overflow must be detected recursively.** When a child overflows its parent and shrinks, `clearExcessArea` clips to the immediate parent's content area. If the overflow extends into a grandparent's border/padding, the grandparent must detect and handle it — otherwise a child-level clear overwrites the grandparent's border (parent-first render order). Use `hasDescendantOverflowChanged()` which follows `subtreeDirty` paths.
 

@@ -8,7 +8,7 @@
  * and uses the inherited value when no explicit `backgroundColor` prop is set.
  *
  * Silvery already implements background inheritance at paint-time via
- * `findInheritedBg()` in the render phase, so the observable rendered output
+ * `nodeState.inheritedBg` in the render phase, so the observable rendered output
  * is identical without this context. However, the upstream Ink test suite
  * (Layer 1 compat) and any third-party Ink consumers that import
  * `backgroundContext` directly need this export to exist with the same shape.

@@ -18,7 +18,7 @@ Postmortems and strategies from past debugging sessions. Read [CLAUDE.md](CLAUDE
 
 10/10 fuzz failures in `render-fuzz.fuzz.ts` after sticky children support was added. Three complementary fixes were needed:
 
-1. **Tier 2 viewport clear uses inherited bg; Tier 3 stickyForceRefresh uses `bg: null`** — Originally Tier 2 cleared to `null`, but this was later changed: Tier 2 (`needsViewportClear`) now clears to `scrollBg` (the node's own `backgroundColor` or `findInheritedBg()`), which is correct because children render fresh on top. The separate `stickyForceRefresh` clear (Tier 3 with sticky children) still uses `bg: null` because it must match fresh render state before the sticky second pass. Text bg inheritance uses explicit `inheritedBg` parameter (not `getCellBg` buffer reads), so the viewport bg doesn't affect text rendering — it only matters for cells not covered by any child.
+1. **Tier 2 viewport clear uses inherited bg; Tier 3 stickyForceRefresh uses `bg: null`** — Originally Tier 2 cleared to `null`, but this was later changed: Tier 2 (`needsViewportClear`) now clears to `scrollBg` (the node's own `backgroundColor` or `nodeState.inheritedBg`), which is correct because children render fresh on top. The separate `stickyForceRefresh` clear (Tier 3 with sticky children) still uses `bg: null` because it must match fresh render state before the sticky second pass. Text bg inheritance uses `nodeState.inheritedBg` (threaded top-down, not `getCellBg` buffer reads), so the viewport bg doesn't affect text rendering — it only matters for cells not covered by any child.
 
 2. **`stickyForceRefresh` in Tier 3** — When sticky children exist and only `subtreeDirty` is set (Tier 3), the cloned buffer has stale content from previous frames' sticky positions. All first-pass items must re-render before the sticky second pass overwrites. Without this, stale content from old sticky positions persists.
 
@@ -114,7 +114,7 @@ Flag emoji are regional indicator sequences (U+1F1E6..U+1F1FF pairs). Some termi
 
 5. **Check the five critical formulas** — `layoutChanged`, `contentAreaAffected`, `contentRegionCleared`, `skipBgFill`, `childrenNeedFreshRender` in `renderNodeToBuffer`. If any is wrong, the cascade propagates errors to the entire subtree.
 
-6. **Text bg inheritance awareness** — Text nodes inherit bg via `inheritedBg` (from `findInheritedBg`), not buffer reads. However, viewport clears and region clears still affect buffer state, which matters for the `getCellBg` legacy fallback (used by scroll indicators). If your fix clears a region, verify it clears to the correct bg (usually `null` to match fresh render state).
+6. **Text bg inheritance awareness** — Text nodes inherit bg via `nodeState.inheritedBg` (threaded top-down, O(1)), not buffer reads. However, viewport clears and region clears still affect buffer state, which matters for the `getCellBg` legacy fallback (used by scroll indicators). If your fix clears a region, verify it clears to the correct bg (usually `null` to match fresh render state).
 
 7. **Parallel hypothesis testing** — When multiple hypotheses exist (dirty flag issue vs scroll tier issue vs bg inheritance issue), launch parallel sub-agents to test each with a targeted test.
 

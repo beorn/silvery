@@ -13,7 +13,7 @@
  *                                     → renderOwnContent
  *                                     → renderScrollContainerChildren / renderNormalChildren
  *   Helpers: clearDirtyFlags, hasChildPositionChanged, computeChildClipBounds
- *   Region clearing: findInheritedBg, clearNodeRegion, clearExcessArea, clippedFill
+ *   Region clearing: clearNodeRegion, clearExcessArea, clippedFill
  */
 
 import { createLogger } from "loggily"
@@ -89,6 +89,8 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
       ancestorCleared: false,
       bufferIsCloned: !!hasPrevBuffer,
       ancestorLayoutChanged: false,
+      inheritedBg: { color: null, ancestorRect: null },
+      inheritedFg: null,
     },
     ctx,
   )
@@ -557,9 +559,7 @@ function renderNodeToBuffer(
     // Compute boxInheritedBg even when skipping own repaint — it's needed by
     // outline rendering (after children) and may be needed by child rendering.
     const boxInheritedBg =
-      node.type === "silvery-box" && !getEffectiveBg(props)
-        ? (nodeState.inheritedBg?.color ?? findInheritedBg(node).color)
-        : undefined
+      node.type === "silvery-box" && !getEffectiveBg(props) ? nodeState.inheritedBg.color : undefined
     if (needsOwnRepaint) {
       renderOwnContent(
         node,
@@ -655,7 +655,9 @@ function buildCascadeInputs(
     const cp = child.props as BoxProps
     return (
       cp.position === "absolute" &&
-      (isCurrentEpoch(child.childrenDirtyEpoch) || isCurrentEpoch(child.layoutChangedThisFrame) || hasChildPositionChanged(child))
+      (isCurrentEpoch(child.childrenDirtyEpoch) ||
+        isCurrentEpoch(child.layoutChangedThisFrame) ||
+        hasChildPositionChanged(child))
     )
   })
 
@@ -712,7 +714,8 @@ function traceRenderDecision(
       ]
         .filter(Boolean)
         .join(",")
-      const childrenNeedRepaint_ = isCurrentEpoch(node.childrenDirtyEpoch) || childPositionChanged || childrenNeedFreshRender
+      const childrenNeedRepaint_ =
+        isCurrentEpoch(node.childrenDirtyEpoch) || childPositionChanged || childrenNeedFreshRender
       const childHasPrev_ = childrenNeedRepaint_ ? false : hasPrevBuffer
       const childAncestorCleared_ = contentRegionCleared || (ancestorCleared && !getEffectiveBg(props))
       nodeTrace.push({
@@ -811,7 +814,7 @@ function executeRegionClearing(
   descendantOverflowChanged: boolean,
   instrumentEnabled: boolean,
   stats: RenderPhaseStats,
-  threadedInheritedBg?: NodeRenderState["inheritedBg"],
+  threadedInheritedBg: NodeRenderState["inheritedBg"],
 ): void {
   if (contentRegionCleared) {
     if (instrumentEnabled) stats.clearOps++
@@ -867,26 +870,21 @@ function renderOwnContent(
   bgOnlyChange = false,
   useTextStyleFastPath = false,
 ): Color | undefined {
-  // Use threaded inherited bg from nodeState — avoids O(depth) parent chain walk.
-  // Falls back to findInheritedBg() only when nodeState doesn't carry inherited values
-  // (e.g., root node or external callers).
-  const boxInheritedBg =
-    node.type === "silvery-box" && !getEffectiveBg(props)
-      ? (nodeState.inheritedBg?.color ?? findInheritedBg(node).color)
-      : undefined
+  // O(1) inherited bg/fg from nodeState — threaded top-down, no parent chain walks.
+  const boxInheritedBg = node.type === "silvery-box" && !getEffectiveBg(props) ? nodeState.inheritedBg.color : undefined
 
   if (node.type === "silvery-box") {
     if (instrumentEnabled) stats.boxNodes++
     renderBox(node, buffer, layout, props, nodeState, skipBgFill, boxInheritedBg, bgOnlyChange)
   } else if (node.type === "silvery-text") {
     if (instrumentEnabled) stats.textNodes++
-    // Pass inherited bg/fg from nearest ancestor with backgroundColor/color.
+    // O(1) inherited bg/fg — threaded top-down through nodeState.
     // inheritedBg decouples text rendering from buffer state, which is critical
     // for incremental rendering: the cloned buffer may have stale bg at positions
     // outside the parent's bg-filled region (e.g., overflow text, moved nodes).
     // Foreground inheritance matches CSS semantics: Box color cascades to Text children.
-    const textInheritedBg = nodeState.inheritedBg?.color ?? findInheritedBg(node).color
-    const textInheritedFg = nodeState.inheritedFg ?? findInheritedFg(node)
+    const textInheritedBg = nodeState.inheritedBg.color
+    const textInheritedFg = nodeState.inheritedFg
 
     // Style-only fast path for text nodes: when only visual style props changed
     // (color, bold, dim, inverse, etc.) but text content is identical, skip the
@@ -1100,7 +1098,7 @@ function renderScrollContainerChildren(
     scrollOffsetChanged || isCurrentEpoch(node.childrenDirtyEpoch) || childrenNeedFreshRender || visibleRangeChanged
       ? getEffectiveBg(props)
         ? parseColor(getEffectiveBg(props)!)
-        : (inheritedBg?.color ?? findInheritedBg(node).color)
+        : inheritedBg.color
       : null
 
   // Plan the scroll tier strategy (pure decision, no side effects)
@@ -1723,74 +1721,6 @@ function computeChildClipBounds(
 // ============================================================================
 
 /**
- * Result of finding inherited background - includes both color and ancestor bounds.
- */
-interface InheritedBgResult {
-  color: Color
-  /** The rect of the ancestor that has the background color (for clipping) */
-  ancestorRect: { x: number; y: number; width: number; height: number } | null
-}
-
-/**
- * Find the nearest ancestor with a backgroundColor and return the parsed color
- * along with the ancestor's rect for proper clipping.
- *
- * When clearing excess area after a node shrinks, we need to clip to the colored
- * ancestor's bounds - not just the immediate parent. Otherwise the inherited
- * color can bleed into sibling areas that should have different backgrounds.
- */
-function findInheritedBg(node: AgNode): InheritedBgResult {
-  let current = node.parent
-  while (current) {
-    const props = current.props as BoxProps
-    if (props.backgroundColor) {
-      return {
-        color: parseColor(props.backgroundColor),
-        ancestorRect: current.boxRect,
-      }
-    }
-    // Box with theme prop: resolve $bg directly from the theme object
-    // (avoids context stack dependency — see findInheritedFg comment)
-    if (props.theme) {
-      const theme = props.theme as Theme
-      return {
-        color: parseColor(theme.bg),
-        ancestorRect: current.boxRect,
-      }
-    }
-    current = current.parent
-  }
-  return { color: null, ancestorRect: null }
-}
-
-/**
- * Find the nearest ancestor Box with a `color` prop and return the parsed color.
- * Implements CSS-style foreground color inheritance: Text children without an
- * explicit `color` prop inherit from the nearest Box ancestor that sets one.
- *
- * Also resolves `$fg` from the nearest ancestor Box with a `theme` prop,
- * reading the hex value directly from the Theme object to avoid context stack
- * dependency (parseColor("$fg") is stateful and depends on render-order
- * context stack position, but this function walks UP the tree).
- *
- * Returns null when no ancestor sets a color — text uses the terminal default.
- */
-function findInheritedFg(node: AgNode): Color {
-  let current = node.parent
-  while (current) {
-    const props = current.props as BoxProps
-    if (props.color) return parseColor(props.color)
-    // Box with theme prop: resolve $fg directly from the theme object
-    if (props.theme) {
-      const theme = props.theme as Theme
-      return parseColor(theme.fg)
-    }
-    current = current.parent
-  }
-  return null
-}
-
-/**
  * Clear overflow regions: areas where children's prevLayouts extended beyond
  * this node's rect. Called when childOverflowChanged detected stale overflow.
  *
@@ -1812,10 +1742,9 @@ function clearDescendantOverflowRegions(
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
-  threadedInheritedBg?: NodeRenderState["inheritedBg"],
+  threadedInheritedBg: NodeRenderState["inheritedBg"],
 ): void {
-  const inherited = threadedInheritedBg ?? findInheritedBg(node)
-  const clearBg = inherited.color
+  const clearBg = threadedInheritedBg.color
   const nodeRight = layout.x + layout.width
   const nodeBottom = layout.y - scrollOffset + layout.height
   const nodeLeft = layout.x
@@ -1936,9 +1865,9 @@ function clearNodeRegion(
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
   layoutChanged: boolean,
-  threadedInheritedBg?: NodeRenderState["inheritedBg"],
+  threadedInheritedBg: NodeRenderState["inheritedBg"],
 ): void {
-  const inherited = threadedInheritedBg ?? findInheritedBg(node)
+  const inherited = threadedInheritedBg
   const clearBg = inherited.color
   const screenY = layout.y - scrollOffset
 
@@ -2029,7 +1958,7 @@ function clearExcessArea(
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
   layoutChanged: boolean,
-  inherited?: InheritedBgResult,
+  inherited: NodeRenderState["inheritedBg"],
 ): void {
   if (!layoutChanged || !node.prevLayout) return
   const prev = node.prevLayout
@@ -2078,7 +2007,6 @@ function clearExcessArea(
     return
   }
 
-  if (!inherited) inherited = findInheritedBg(node)
   const clearBg = inherited.color
   const screenY = layout.y - scrollOffset
   const prevScreenY = prev.y - scrollOffset

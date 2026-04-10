@@ -767,7 +767,8 @@ function needsLayoutRecalculation(node: any): boolean {
   // Walk up from node to root checking dirty flags
   let current = node
   while (current) {
-    if (current.layoutDirty || isCurrentEpoch(current.subtreeDirtyEpoch) || isCurrentEpoch(current.childrenDirtyEpoch)) return true
+    if (current.layoutDirty || isCurrentEpoch(current.subtreeDirtyEpoch) || isCurrentEpoch(current.childrenDirtyEpoch))
+      return true
     current = current.parent
   }
   return false

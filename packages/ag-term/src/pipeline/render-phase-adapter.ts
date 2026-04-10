@@ -9,7 +9,7 @@
  * Relationship to render-phase.ts:
  *   render-phase.ts is the primary renderer for terminal output. It has
  *   incremental rendering (dirty flags, buffer cloning, fast-path skips),
- *   bg inheritance via findInheritedBg(), ANSI-aware text rendering, theme
+ *   bg inheritance via nodeState.inheritedBg (threaded top-down), ANSI-aware text rendering, theme
  *   context propagation, region clearing, excess area cleanup, descendant
  *   overflow detection, and extensive instrumentation/STRICT mode support.
  *
@@ -28,7 +28,7 @@
  * Known divergences from render-phase.ts:
  *   - No incremental rendering: full re-render every frame (no dirty flag
  *     evaluation, no buffer cloning, no fast-path skips)
- *   - No bg inheritance via findInheritedBg() for text -- uses a simpler
+ *   - No bg inheritance via nodeState.inheritedBg for text -- uses a simpler
  *     ancestor walk (findAncestorBg) that doesn't handle all edge cases
  *   - No theme context propagation (pushContextTheme/popContextTheme)
  *   - No region clearing or excess area cleanup (not needed without
@@ -436,7 +436,7 @@ function renderOutlineAdapter(
 
 /**
  * Walk the parent chain to find the nearest ancestor Box with backgroundColor.
- * Mirrors findInheritedBg() in render-phase.ts.
+ * Simplified ancestor walk for bg inheritance (render-phase.ts uses nodeState.inheritedBg instead).
  */
 function findAncestorBg(node: AgNode): string | undefined {
   let current = node.parent

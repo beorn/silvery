@@ -61,7 +61,7 @@ export const Box = React.forwardRef<BoxHandle, BoxProps>(function InkBox(props, 
   } as any)
   // Mirror Ink 7.0: when this Box has a background color, provide it to children
   // via React context so descendant <Text> can inherit it. Silvery already does
-  // paint-time bg inheritance via findInheritedBg(), but providing the context
+  // paint-time bg inheritance via nodeState.inheritedBg, but providing the context
   // matches Ink's exact API surface so consumers that import `backgroundContext`
   // (and the upstream compat test suite) work without changes.
   if (effectiveBg) {

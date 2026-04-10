@@ -247,7 +247,11 @@ function analyzeFastPath(node: AgNode | null, scrollAncestors: AgNode[]): string
 
   const flags = node
   const allClean =
-    !isCurrentEpoch(flags.contentDirtyEpoch) && !isCurrentEpoch(flags.stylePropsDirtyEpoch) && !isCurrentEpoch(flags.subtreeDirtyEpoch) && !isCurrentEpoch(flags.childrenDirtyEpoch) && !flags.layoutDirty
+    !isCurrentEpoch(flags.contentDirtyEpoch) &&
+    !isCurrentEpoch(flags.stylePropsDirtyEpoch) &&
+    !isCurrentEpoch(flags.subtreeDirtyEpoch) &&
+    !isCurrentEpoch(flags.childrenDirtyEpoch) &&
+    !flags.layoutDirty
 
   if (allClean) {
     analysis.push("⚠ ALL DIRTY FLAGS FALSE - fast-path likely skipped this node")
