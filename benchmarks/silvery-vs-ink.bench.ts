@@ -11,7 +11,7 @@
  * Fair comparison notes:
  * - Both use their native Box/Text components (no compat layer)
  * - Mounted tests use the same prop changes on both sides
- * - Ink uses debug: false and incrementalRendering: true
+ * - Ink uses debug: true and incrementalRendering: true
  * - Same terminal dimensions
  * - Ink's Yoga WASM init happens once at import (not measured per-render)
  *
@@ -425,7 +425,7 @@ describe("Mounted incremental re-render — cursor move in 100-item list", () =>
         React.createElement(IBox, { key: i }, React.createElement(IText, null, `Item ${i}`)),
       ),
     ),
-    { stdout: inkStdout, debug: false, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
+    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
   )
 
   let sCursor = 0
@@ -509,7 +509,7 @@ describe("Mounted memo'd cursor highlight (inverse) — 100 items", () => {
         React.createElement(IStyleItem, { key: i, index: i, selected: i === 0 }),
       ),
     ),
-    { stdout: inkStdout, debug: false, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
+    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
   )
 
   let sCursor = 0
@@ -562,7 +562,7 @@ describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
         React.createElement(IStyleItem, { key: i, index: i, selected: i === 0 }),
       ),
     ),
-    { stdout: inkStdout, debug: false, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
+    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
   )
 
   let sCursor = 0
@@ -601,7 +601,7 @@ describe("Mounted incremental re-render — single text change in kanban 5×20",
   const inkStdout = createMockStdout(200, 60)
   const inkInstance = inkRender(inkKanbanEdit(5, 20, 2, 0), {
     stdout: inkStdout,
-    debug: false,
+    debug: true,
     patchConsole: false,
     incrementalRendering: true,
   })
@@ -674,7 +674,7 @@ describe("useState pattern — memo'd 100-item list, single active toggle", () =
   const inkStdout = createMockStdout(80, 24)
   const inkInstance = inkRender(inkMemoList(100, 0), {
     stdout: inkStdout,
-    debug: false,
+    debug: true,
     patchConsole: false,
     incrementalRendering: true,
   })
@@ -699,7 +699,7 @@ describe("useState pattern — memo'd 500-item list, single active toggle", () =
   const inkStdout = createMockStdout(120, 40)
   const inkInstance = inkRender(inkMemoList(500, 0), {
     stdout: inkStdout,
-    debug: false,
+    debug: true,
     patchConsole: false,
     incrementalRendering: true,
   })
@@ -773,7 +773,7 @@ describe("useState pattern — memo'd kanban 5×20, single card edit", () => {
   const inkStdout = createMockStdout(200, 60)
   const inkInstance = inkRender(inkMemoKanban(5, 20, 0, 0), {
     stdout: inkStdout,
-    debug: false,
+    debug: true,
     patchConsole: false,
     incrementalRendering: true,
   })
