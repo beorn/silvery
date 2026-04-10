@@ -180,7 +180,7 @@ export function createFocusEvent(
  * For release events:
  *   1. Target phase: target's onKeyUp
  *   2. Bubble phase: target parent → root (onKeyUp props)
- *   (No capture phase for keyUp — matches React DOM behavior)
+ *   (No capture phase for keyUp — deliberate simplification; React DOM has onKeyUpCapture)
  *
  * stopPropagation() halts traversal at any phase.
  */
@@ -188,7 +188,7 @@ export function dispatchKeyEvent(event: SilveryKeyEvent, dispatch?: (msg: unknow
   const path = getAncestorPath(event.target)
   const mutableEvent = event as { currentTarget: AgNode }
 
-  // Release events → onKeyUp (no capture phase, matching React DOM)
+  // Release events → onKeyUp (no capture phase — deliberate simplification; React DOM has onKeyUpCapture)
   const isRelease = event.eventType === "release"
   const handlerProp = isRelease ? "onKeyUp" : "onKeyDown"
 

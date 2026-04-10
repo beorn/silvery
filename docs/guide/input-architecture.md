@@ -143,10 +143,9 @@ Any handler can call `event.stopPropagation()` to halt traversal, or `event.prev
 
 ### Release events
 
-Two phases only (no capture phase, matching React DOM `keyup`):
+Release events are currently filtered at Stage 3 (processEventBatch) before reaching focus dispatch. The `dispatchKeyEvent()` function supports `onKeyUp` routing (target + bubble, no capture phase), but processEventBatch skips release events so they never reach Stage 4. Release events are consumed by `useModifierKeys()` and `useInput({onRelease})` via RuntimeContext listeners, which are bridged before the Stage 3 filter.
 
-1. **Target phase**: calls the focused node's `onKeyUp`
-2. **Bubble phase**: walks ancestors calling `onKeyUp` handlers
+> **Note:** React DOM does have both `onKeyUp` and `onKeyUpCapture`. Silvery's choice to skip the capture phase for release is a deliberate simplification, not matching React DOM.
 
 ### Focus navigation defaults
 

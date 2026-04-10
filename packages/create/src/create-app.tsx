@@ -2296,17 +2296,51 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     isRendering = true
 
     // Input pipeline Stage 3: Event Loop — see docs/guide/input-architecture.md
-    // Bridge ALL key events to RuntimeContext listeners first (useModifierKeys
-    // needs modifier-only and release events). Then filter events for app handlers.
-    // Also update keyboard modifier state for mouse event enrichment.
+    //
+    // Event precedence (plugin-centric model):
+    //   1. Raw: modifier tracking + keyboard state (always fires)
+    //   2. Focused: focus tree dispatch via handleFocusNavigation (consumes if handled)
+    //   3. Fallback: RuntimeContext listeners (useInput — only unhandled events)
+    //   4. App handler (TEA update / commands)
+    //
+    // This ensures focused components (modals, TextInput) get events BEFORE global
+    // hooks (useInput). A modal's onKeyDown for Escape fires before useInput's quit.
     for (const event of events) {
       if (event.type === "term:key") {
         const { input, key: parsedKey } = event.data as { input: string; key: Key }
-        // Track keyboard modifier state (Super/Cmd, Hyper) for mouse events.
-        // SGR mouse protocol can't report these — Kitty keyboard events fill the gap.
+
+        // Raw lane: Always update keyboard modifier state (Super/Cmd, Hyper) for
+        // mouse events. SGR mouse protocol can't report these — Kitty fills the gap.
         updateKeyboardModifiers(mouseEventState, parsedKey)
-        for (const listener of runtimeInputListeners) {
-          listener(input, parsedKey)
+
+        // Release and modifier-only events: bridge to RuntimeContext (useModifierKeys
+        // needs them) but skip focus dispatch and app handlers.
+        if (parsedKey.eventType === "release" || isModifierOnlyEvent(input, parsedKey)) {
+          for (const listener of runtimeInputListeners) {
+            listener(input, parsedKey)
+          }
+          if (shouldExit) {
+            inEventHandler = false
+            return null
+          }
+          continue
+        }
+
+        // Focused lane: dispatch through focus tree BEFORE useInput.
+        // If a focused component handles the event (stopPropagation/preventDefault),
+        // useInput never sees it — focused components have priority.
+        let focusConsumed = false
+        if (focusManager.activeElement) {
+          const focusResult = handleFocusNavigation(input, parsedKey, focusManager, container)
+          focusConsumed = focusResult === "consumed"
+        }
+
+        // Fallback lane: bridge to RuntimeContext listeners (useInput) only if
+        // the focus tree didn't consume the event.
+        if (!focusConsumed) {
+          for (const listener of runtimeInputListeners) {
+            listener(input, parsedKey)
+          }
         }
       } else if (event.type === "term:paste") {
         const { text } = event.data as { text: string }
@@ -2327,9 +2361,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         return null
       }
 
-      // Skip modifier-only and release key events for app handlers.
-      // These are already bridged to RuntimeContext listeners above (useModifierKeys).
-      // App handlers (e.g., board-app handleKey) expect press-only, non-modifier semantics.
+      // Skip key events already handled: release/modifier-only were continued above,
+      // focus-consumed events still reach the app handler for render barriers.
       if (event.type === "term:key") {
         const { input, key: k } = event.data as { input: string; key: Key }
         if (k.eventType === "release") continue
@@ -2834,6 +2867,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           isRendering = false
         }
         flushCount++
+      }
+      // Mark all rows dirty — same safety net as processEventBatch (line 2443).
+      // When the effect flush loop ran additional doRender calls, the final buffer's
+      // dirty rows are relative to the Ag's internal prevBuffer (which advanced),
+      // not the runtime's prevBuffer (which is from the last runtime.render()).
+      // Without this, diffBuffers skips rows that changed relative to runtime's
+      // prevBuffer but aren't marked dirty → garbled output.
+      if (flushCount > 0) {
+        currentBuffer._buffer.markAllRowsDirty()
       }
       inEventHandler = false
       runtime.render(currentBuffer)

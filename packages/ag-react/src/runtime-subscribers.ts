@@ -15,9 +15,6 @@ export type InputCallback = (input: string, key: Key) => void
 /** Internal callback type for RuntimeContext "paste" event subscribers. */
 export type PasteCallback = (text: string) => void
 
-/** Internal callback type for RuntimeContext "focus" event subscribers. */
-export type FocusCallback = (focused: boolean) => void
-
 export interface SubscriberList {
   input: Set<InputCallback>
   paste: Set<PasteCallback>

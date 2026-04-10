@@ -148,6 +148,12 @@ Full styling reference: [Styling Guide](docs/guide/styling.md)
 
 > **Full architecture**: [docs/guide/input-architecture.md](docs/guide/input-architecture.md) — 5-stage pipeline from stdin to hooks.
 > Read that doc before debugging input issues. It covers filtering, Kitty protocol, focus dispatch, and the hook hierarchy.
+>
+> **Plugin-centric design**: Events are ops that flow through the plugin `apply` chain.
+> Plugins own event routing — React hooks are thin store readers. See the
+> [era2 architecture](silvery-internal/archive/era2-drafts/00-architecture.md) for the
+> dispatch/apply pipeline model. **Any work on events, input handling, or focus dispatch
+> must follow the era2 plugin composition pattern.**
 
 ### Single useInput — two import paths, one implementation
 

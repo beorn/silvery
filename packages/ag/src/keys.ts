@@ -98,6 +98,9 @@ export interface Key {
   /** The actual text character typed (pre-normalization). For text insertion,
    *  use this instead of the normalized `input` which maps shifted chars to base keys. */
   text?: string
+  /** True when the key is a modifier pressed alone (Shift, Ctrl, Alt, Super, Hyper, Meta).
+   *  Set during parsing for Kitty protocol modifier-only events. */
+  isModifierOnly?: boolean
 }
 
 /**
@@ -111,27 +114,11 @@ export type InputHandler = (input: string, key: Key) => void | "exit"
  * With Kitty REPORT_ALL_KEYS, these fire as key events with empty input
  * and no actionable key flags — only modifier flags are set.
  *
+ * The flag is set during parsing by `parseKey()`. This function checks it.
  * Shared by useInput (filters these out) and create-app (filters for app handlers).
  */
-export function isModifierOnlyEvent(input: string, key: Key): boolean {
-  if (input !== "") return false
-  if (
-    key.upArrow ||
-    key.downArrow ||
-    key.leftArrow ||
-    key.rightArrow ||
-    key.pageDown ||
-    key.pageUp ||
-    key.home ||
-    key.end ||
-    key.return ||
-    key.escape ||
-    key.tab ||
-    key.backspace ||
-    key.delete
-  )
-    return false
-  return true
+export function isModifierOnlyEvent(_input: string, key: Key): boolean {
+  return key.isModifierOnly === true
 }
 
 /**
@@ -660,6 +647,24 @@ const KITTY_CODEPOINT_MAP: Record<number, string> = {
   57454: "isoLevel5Shift",
 }
 
+/** Key names that represent modifier-only events (Kitty codepoints 57441–57454). */
+const MODIFIER_ONLY_NAMES = new Set([
+  "leftshift",
+  "leftcontrol",
+  "leftalt",
+  "leftsuper",
+  "lefthyper",
+  "leftmeta",
+  "rightshift",
+  "rightcontrol",
+  "rightalt",
+  "rightsuper",
+  "righthyper",
+  "rightmeta",
+  "isoLevel3Shift",
+  "isoLevel5Shift",
+])
+
 /** Lookup a Kitty codepoint to a key name */
 function kittyCodepointToName(cp: number): string | undefined {
   return KITTY_CODEPOINT_MAP[cp]
@@ -1111,6 +1116,11 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
   // Detect shift for uppercase letters
   if (input.length === 1 && typeof input[0] === "string" && /[A-Z]/.test(input[0])) {
     key.shift = true
+  }
+
+  // Flag modifier-only events (Kitty protocol sends Shift/Ctrl/Alt/Super/Hyper/Meta as keys)
+  if (input === "" && MODIFIER_ONLY_NAMES.has(keypress.name)) {
+    key.isModifierOnly = true
   }
 
   return [input, key]

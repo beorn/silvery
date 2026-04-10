@@ -4,26 +4,22 @@
  * Handles keyboard input via the unified RuntimeContext.
  * Compatible with Ink's useInput API.
  *
- * Throws if called outside a runtime (run(), render(), createApp(), test renderer).
- * Use useRuntime() for components that need to work in both static and interactive modes.
+ * No-ops when called outside a runtime (e.g., in createRenderer() tests where
+ * RuntimeContext is absent). Components render without input handling, which
+ * is correct for static rendering.
+ * Use useRuntime() for components that need to detect interactive vs static mode.
  */
 
 import { useContext, useEffect, useRef } from "react"
 import { RuntimeContext } from "../context"
-import { isModifierOnlyEvent, type Key } from "@silvery/ag/keys"
+import { isModifierOnlyEvent, type InputHandler, type Key } from "@silvery/ag/keys"
 
 // ============================================================================
 // Types
 // ============================================================================
 
-// Re-export Key for consumers that import from useInput
-export type { Key } from "@silvery/ag/keys"
-
-/**
- * Input handler callback type.
- * Return "exit" to quit the app (calls rt.exit()).
- */
-export type InputHandler = (input: string, key: Key) => void | "exit"
+// Re-export Key and InputHandler for consumers that import from useInput
+export type { Key, InputHandler } from "@silvery/ag/keys"
 
 /**
  * Options for useInput hook.
@@ -70,8 +66,9 @@ export interface UseInputOptions {
 /**
  * Hook for handling user input.
  *
- * Throws if RuntimeContext is not provided (i.e., outside a runtime).
- * Use useRuntime() for components that work in both interactive and static modes.
+ * No-ops if RuntimeContext is not provided (i.e., outside a runtime).
+ * Components render normally without input handling in static mode.
+ * Use useRuntime() for components that need to detect interactive vs static mode.
  *
  * @example
  * ```tsx
