@@ -45,36 +45,20 @@ hero:
 features:
   - title: Familiar React API
     details: '<p>Same Box/Text/useInput you already know. React 18 + 19 — hooks, refs, effects, suspense. Flexbox layout.</p><p><a href="/guide/silvery-vs-ink#compatibility">918/931 Ink 7.0 tests pass</a> on <a href="/guide/silvery-vs-ink">@silvery/ink</a>.</p>'
-    link: /guide/silvery-vs-ink
-    linkText: Full feature comparison
   - title: Best-in-Class Performance
     details: '<p><a href="/guide/silvery-vs-ink#performance">3–6× faster</a> than Ink in mounted rerenders. <a href="/guide/silvery-vs-ink#output-efficiency">10–20× less terminal output</a>.</p><p>Pure TypeScript, zero native deps. Layout via <a href="https://beorn.codes/flexily">Flexily</a> (or Yoga). Runs on Bun and Node.js.</p>'
-    link: /guide/silvery-vs-ink#performance
-    linkText: Benchmark details
   - title: Web-like Responsive Layout
     details: '<p><a href="/guide/hooks">useBoxRect()</a> returns real dimensions during render.</p><p><a href="/guide/scrolling">Scroll containers</a> with virtualization. <a href="/guide/layout-coordinates">Sticky positioning</a>.</p><p><a href="/guide/ansi-layering">ANSI-aware compositing</a> — color blending with alpha.</p>'
-    link: /guide/layouts
-    linkText: Layout guide
   - title: Inline, Fullscreen, or Both
     details: '<p>Same components, one-line switch.</p><p>Fullscreen — alt screen, traditional TUI.</p><p><a href="/examples/scrollback">Inline</a> — dynamic scrollback, native Cmd+F.</p><p><a href="/design/dynamic-scrollback">Virtual inline</a> — alt screen + app-managed scrollback.</p>'
-    link: /guide/runtime-layers
-    linkText: Runtime layers
   - title: Web-like Interaction
     details: '<p>Full keyboard and mouse events that just work. <a href="/guide/silvery-vs-ink#terminal-protocol-coverage">100+ auto-negotiated protocols</a>.</p><p><a href="/guide/silvery-vs-ink#focus-system">Focus scopes</a> — spatial nav, Tab, click-to-focus.</p><p><a href="/guide/text-selection">Text selection</a>. <a href="/guide/find">Find</a>. <a href="/guide/clipboard">Copy-mode</a>. <a href="/guide/event-handling">Drag-and-drop</a>.</p>'
-    link: /guide/event-handling
-    linkText: Interaction guide
   - title: Rich Component Library
     details: '<p><a href="/guides/components">45+ components</a>: TextInput, SelectList, Table, TreeView, CommandPalette, ModalDialog, Tabs, Toast, and more. Built-in focus, mouse, and native keybindings.</p><p><a href="/guide/styling">38 theme palettes</a> with semantic tokens and auto-detected terminal colors.</p>'
-    link: /guides/components
-    linkText: Browse components
   - title: Playwright-Style Testing
     details: '<p>3,000+ tests with full access to terminal internals.</p><p>Auto-refreshing CSS locators, cell-level color assertions, press() input.</p><p><a href="https://termless.dev">Termless</a> — full ANSI fidelity with <a href="https://termless.dev/guide/backends">10 swappable backends</a> (xterm.js, Ghostty, Alacritty, WezTerm, Kitty).</p>'
-    link: /guide/testing
-    linkText: Testing guide
   - title: Composable Architecture
     details: '<p>Every layer is independently swappable. <a href="/guide/providers">DI</a> via pipe() providers.</p><p><a href="/guide/layout-engine">Layout</a> — Flexily or Yoga.</p><p><a href="/guide/runtime-layers">State</a> — BYO.</p><p><a href="/guide/runtime-layers">Term</a> — real, headless, emulator.</p><p><a href="/guide/runtime-layers">App</a> — from stringify to rich app (withFocus, withDomEvents, withCommands).</p>'
-    link: /guide/providers
-    linkText: Providers guide
 ---
 
 ## Why Silvery?
@@ -206,12 +190,6 @@ Standalone projects Silvery builds on — each stands on its own:
   color: var(--vp-c-brand-1) !important;
   text-decoration-style: solid !important;
   text-decoration-color: var(--vp-c-brand-1) !important;
-}
-/* Don't style the card's own link-text */
-.VPFeature .link-text a,
-.VPFeature .link-text-value {
-  color: var(--vp-c-brand-1) !important;
-  text-decoration: none !important;
 }
 /* Tighter card padding */
 .VPFeature .box {
