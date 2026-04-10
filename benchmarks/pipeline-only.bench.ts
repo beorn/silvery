@@ -397,3 +397,48 @@ describe("Wrap mode comparison — medium text (width=40)", () => {
     render(wrappedParagraph(MEDIUM_TEXT, "optimal", 40))
   })
 })
+
+// ============================================================================
+// Large terminal (400x200 — realistic for ultrawide / tiling WM users)
+//
+// At 400×200, the buffer has 80,000 cells. Clone cost: 320KB Uint32Array +
+// sparse Maps. This tests whether the pipeline scales to large viewports.
+// ============================================================================
+
+describe("Large terminal — cursor move 100 items (400x200)", () => {
+  const render = createRenderer({ cols: 400, rows: 200 })
+  const app = render(memoList(100, 0))
+  let cursor = 0
+  bench("memo'd rerender", () => {
+    cursor = (cursor + 1) % 100
+    app.rerender(memoList(100, cursor))
+  })
+})
+
+describe("Large terminal — cursor move 1000 items (400x200)", () => {
+  const render = createRenderer({ cols: 400, rows: 200 })
+  const app = render(memoList(1000, 0))
+  let cursor = 0
+  bench("memo'd rerender", () => {
+    cursor = (cursor + 1) % 1000
+    app.rerender(memoList(1000, cursor))
+  })
+})
+
+describe("Large terminal — resize 1000 items (400→300 cols)", () => {
+  const render = createRenderer({ cols: 400, rows: 200 })
+  const app = render(flatList(1000, 5))
+  bench("resize to 300 cols", () => {
+    app.resize(300, 200)
+  })
+})
+
+describe("Large terminal — kanban 5x50 (400x200)", () => {
+  const render = createRenderer({ cols: 400, rows: 200 })
+  const app = render(kanban(5, 50, 2, 10))
+  let card = 10
+  bench("move editing marker", () => {
+    card = (card + 1) % 50
+    app.rerender(kanban(5, 50, 2, card))
+  })
+})
