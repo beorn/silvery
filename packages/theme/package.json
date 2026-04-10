@@ -35,7 +35,7 @@
     }
   },
   "dependencies": {
-    "@silvery/ansi": "workspace:*",
-    "@silvery/color": "workspace:*"
+    "@silvery/ansi": "0.3.1",
+    "@silvery/color": "0.1.0"
   }
 }

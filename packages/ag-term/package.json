@@ -47,13 +47,13 @@
     }
   },
   "dependencies": {
-    "@silvery/ag": "workspace:*",
-    "@silvery/ag-react": "workspace:*",
-    "@silvery/ansi": "workspace:*",
-    "@silvery/create": "workspace:*",
-    "@silvery/headless": "workspace:*",
-    "@silvery/test": "workspace:*",
-    "@silvery/theme": "workspace:*",
+    "@silvery/ag": "0.5.0",
+    "@silvery/ag-react": "0.5.0",
+    "@silvery/ansi": "0.3.1",
+    "@silvery/create": "0.5.0",
+    "@silvery/headless": "0.5.0",
+    "@silvery/test": "0.5.0",
+    "@silvery/theme": "0.5.0",
     "flexily": "github:beorn/flexily"
   }
 }

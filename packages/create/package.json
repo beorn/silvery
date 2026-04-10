@@ -50,13 +50,13 @@
     "access": "public"
   },
   "dependencies": {
-    "@silvery/ag": "workspace:*",
-    "@silvery/ag-react": "workspace:*",
-    "@silvery/ag-term": "workspace:*",
-    "@silvery/commands": "workspace:*",
-    "@silvery/headless": "workspace:*",
-    "@silvery/ink": "workspace:*",
-    "@silvery/test": "workspace:*",
+    "@silvery/ag": "0.5.0",
+    "@silvery/ag-react": "0.5.0",
+    "@silvery/ag-term": "0.5.0",
+    "@silvery/commands": "0.5.0",
+    "@silvery/headless": "0.5.0",
+    "@silvery/ink": "0.5.0",
+    "@silvery/test": "0.5.0",
     "alien-signals": "^3.1.2"
   }
 }

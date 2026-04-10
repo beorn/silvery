@@ -21,8 +21,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@silvery/ag-term": "workspace:*",
-    "@silvery/create": "workspace:*",
-    "silvery": "workspace:*"
+    "@silvery/ag-term": "0.5.0",
+    "@silvery/create": "0.5.0",
+    "silvery": "0.11.0"
   }
 }

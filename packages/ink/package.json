@@ -35,8 +35,8 @@
     }
   },
   "dependencies": {
-    "@silvery/ag-react": "workspace:*",
-    "@silvery/ag-term": "workspace:*",
-    "@silvery/ansi": "workspace:*"
+    "@silvery/ag-react": "0.5.0",
+    "@silvery/ag-term": "0.5.0",
+    "@silvery/ansi": "0.3.1"
   }
 }

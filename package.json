@@ -155,7 +155,7 @@
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.3",
-    "@silvery/commander": "workspace:*",
+    "@silvery/commander": "0.8.1",
     "loggily": "github:beorn/loggily",
     "react-reconciler": "^0.33.0",
     "slice-ansi": "^8.0.0",
