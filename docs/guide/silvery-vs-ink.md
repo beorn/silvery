@@ -16,7 +16,7 @@ The biggest differences at a glance:
 - **Cell-level ANSI compositing** — proper style stacking and color blending. Ink concatenates strings.
 - **Incremental rendering in inline mode** — only changed cells emit; native scrollback preserved. Ink does a full redraw every frame by default (has an `incrementalRendering` option for line-level diff).
 - **Blurred inline/fullscreen boundary** — inline mode gets fullscreen-level performance (cell-level incremental, no flicker, dynamic scrollback graduation). Fullscreen mode gets inline-level UX (app-managed scrollback, history access). Ink has a hard split between the two.
-- **up to 20× faster in mounted rerender benchmarks** — cell-level dirty tracking with [detailed benchmarks below](/guide/silvery-vs-ink#performance--size). Bundle parity with Ink+Yoga.
+- **3–27× faster (typically 15–20×) in mounted rerender benchmarks** — cell-level dirty tracking with [detailed benchmarks below](/guide/silvery-vs-ink#performance--size). Bundle parity with Ink+Yoga.
 - **Native scroll containers** — `overflow="scroll"` + `position="sticky"`. Ink's core has `visible`/`hidden` only ([#222](https://github.com/vadimdemedes/ink/issues/222), open since 2019).
 - **Mouse, drag, selection, find, clipboard** — SGR mouse protocol, `onClick`/`onWheel`, text selection, `Ctrl+F` search, OSC 52 clipboard. Ink has none of these.
 - **45+ built-in components** — vs Ink's 6 core + [@inkjs/ui](https://github.com/vadimdemedes/ink-ui)'s 13.
@@ -54,7 +54,7 @@ Ink first, Silvery second. Features marked "core" are built into the framework; 
 
 | Metric                       | Ink 7.0                             | Silvery                                                                           |
 | ---------------------------- | ----------------------------------- | --------------------------------------------------------------------------------- |
-| **Speed (mounted rerender)** | Baseline                            | **up to 20× faster** in our benchmarks ([details below](#performance--size))           |
+| **Speed (mounted rerender)** | Baseline                            | **3–27× faster (typically 15–20×)** in our benchmarks ([details below](#performance--size))           |
 | **Output efficiency**        | Line-level diff per change          | **10–20× less output** — cell-level diff + relative cursor addressing             |
 | **Bundle size (gzipped)**    | 116.6 KB (Ink + Yoga WASM)          | 114.9 KB (runtime + Flexily) — parity                                             |
 | **Layout engine**            | Yoga WASM only (~45 KB, async init) | [Flexily](https://beorn.codes/flexily) (pure JS, ~2 KB, sync) or Yoga — pluggable |
@@ -122,20 +122,21 @@ React 19, Box/Text, flexbox, `useInput`, `useApp`/exit, `Static`, `Transform`, b
 
 _Reproduce: `bun run bench`_
 
-Silvery is **up to 20× faster** than Ink 7.0 in our mounted rerender benchmarks — synchronous rerender throughput where both frameworks keep a mounted app and call `rerender()`.
+Silvery is **3–27× faster (typically 15–20×)** than Ink 7.0 in our mounted rerender benchmarks — synchronous rerender throughput where both frameworks keep a mounted app and call `rerender()`.
 
 ### Mounted rerender throughput
 
+The 15–20× advantage comes from Silvery's pipeline making full use of `React.memo` — when components bail out, Silvery's dirty-tracking pipeline skips those nodes entirely (no buffer writes, no text processing). Ink re-renders and re-diffs the full tree regardless of memo bail-outs.
+
 | Scenario                               | Silvery advantage |
 | -------------------------------------- | ----------------- |
-| Cursor move 20-item (all visible)      | **2.7×**          |
-| Cursor move 100-item                   | **3.1×**          |
-| Kanban move editing marker             | **3.3×**          |
-| Memo'd cursor highlight 100 (inverse)  | **5.3×**          |
-| Memo'd cursor highlight 1000 (inverse) | **6.1×**          |
-| Memo'd 100-item single toggle          | **5.1×**          |
-| Memo'd 500-item single toggle          | **5.7×**          |
-| Memo'd kanban 5×20 move editing marker | **4.3×**          |
+| Mounted cursor 100-item                | **5.2×**          |
+| Mounted cursor 200×60                  | **6.5×**          |
+| Mounted kanban 5×20                    | **7.6×**          |
+| Memo'd cursor 100 (inverse)            | **15.8×**         |
+| Memo'd cursor 1000 (inverse)           | **19.1×**         |
+| Memo'd kanban 5×20                     | **17.0×**         |
+| Memo'd kanban 5×50                     | **26.7×**         |
 
 ### Output efficiency
 
