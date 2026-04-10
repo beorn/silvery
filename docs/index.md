@@ -195,10 +195,13 @@ Standalone projects Silvery builds on — each stands on its own:
 .VPFeature .box {
   padding: 16px 20px !important;
 }
+.VPFeature .details {
+  line-height: 1.35 !important;
+}
 .VPFeature br {
   display: block;
   content: "";
-  margin-top: 0.4em;
+  margin-top: 0.5em;
 }
 .VPFeature .feature-link {
   display: block;
