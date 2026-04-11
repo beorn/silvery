@@ -214,9 +214,7 @@ async function exampleCommand(args: string[]): Promise<void> {
   console.log(`${DIM}Running ${BOLD}${match.name}${RESET}${DIM}...${RESET}\n`)
 
   const { spawn } = await import("node:child_process")
-  const runtime = typeof globalThis.Bun !== "undefined" ? "bun" : "node"
-  const runArgs = runtime === "bun" ? ["run", match.file] : ["--experimental-strip-types", "--no-warnings", match.file]
-  const proc = spawn(runtime, runArgs, { stdio: "inherit" })
+  const proc = spawn(process.execPath, ["--experimental-transform-types", "--no-warnings", match.file], { stdio: "inherit" })
   proc.on("exit", (code) => process.exit(code ?? 1))
 }
 
@@ -235,9 +233,7 @@ async function doctorCommand(): Promise<void> {
       const { stat } = await import("node:fs/promises")
       await stat(termtestPath)
       const { spawn } = await import("node:child_process")
-      const runtime = typeof globalThis.Bun !== "undefined" ? "bun" : "node"
-      const runArgs = runtime === "bun" ? ["run", termtestPath] : ["--experimental-strip-types", "--no-warnings", termtestPath]
-      const proc = spawn(runtime, runArgs, { stdio: "inherit" })
+      const proc = spawn(process.execPath, ["--experimental-transform-types", "--no-warnings", termtestPath], { stdio: "inherit" })
       proc.on("exit", (code) => process.exit(code ?? 1))
       return
     } catch {
