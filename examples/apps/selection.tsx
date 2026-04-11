@@ -336,7 +336,11 @@ export const meta = {
   features: ["Selection model", "mode ladder", "multi-select", "text editing"],
 }
 
-if (import.meta.main) {
+export async function main() {
   using handle = await run(<SelectionDemo />, { mode: "fullscreen" })
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

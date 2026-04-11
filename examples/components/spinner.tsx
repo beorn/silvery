@@ -34,7 +34,11 @@ export const meta = {
   description: "Four animated loading spinner styles",
 }
 
-if (import.meta.main) {
+export async function main() {
   const handle = await run(<SpinnerDemo />)
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

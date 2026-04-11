@@ -483,7 +483,7 @@ export function ThemeExplorer({ entries }: { entries: ThemeEntry[] }) {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   // Detect terminal theme BEFORE entering alternate screen
   const detectedTheme = await detectTheme()
 
@@ -511,5 +511,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

@@ -213,9 +213,13 @@ async function exampleCommand(args: string[]): Promise<void> {
 
   console.log(`${DIM}Running ${BOLD}${match.name}${RESET}${DIM}...${RESET}\n`)
 
-  const { spawn } = await import("node:child_process")
-  const proc = spawn(process.execPath, ["--experimental-transform-types", "--no-warnings", match.file], { stdio: "inherit" })
-  proc.on("exit", (code) => process.exit(code ?? 1))
+  const mod = await import(match.file)
+  if (typeof mod.main === "function") {
+    await mod.main()
+  } else {
+    console.error(`${RED}Error:${RESET} Example does not export a main() function`)
+    process.exit(1)
+  }
 }
 
 async function doctorCommand(): Promise<void> {
@@ -232,9 +236,12 @@ async function doctorCommand(): Promise<void> {
     try {
       const { stat } = await import("node:fs/promises")
       await stat(termtestPath)
-      const { spawn } = await import("node:child_process")
-      const proc = spawn(process.execPath, ["--experimental-transform-types", "--no-warnings", termtestPath], { stdio: "inherit" })
-      proc.on("exit", (code) => process.exit(code ?? 1))
+      const mod = await import(termtestPath)
+      if (typeof mod.main === "function") {
+        await mod.main()
+      } else {
+        // Fallback: module runs on import (legacy pattern)
+      }
       return
     } catch {
       continue

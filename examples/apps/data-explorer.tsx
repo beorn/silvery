@@ -474,7 +474,7 @@ export function DataExplorer() {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit">
@@ -486,5 +486,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

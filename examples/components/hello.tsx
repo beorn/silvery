@@ -28,7 +28,11 @@ export const meta = {
   description: "The simplest silvery app — styled text, exit on keypress",
 }
 
-if (import.meta.main) {
+export async function main() {
   const handle = await run(<Hello />)
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

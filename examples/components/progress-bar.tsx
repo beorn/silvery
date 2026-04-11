@@ -42,7 +42,11 @@ export const meta = {
   description: "Determinate and indeterminate progress bars",
 }
 
-if (import.meta.main) {
+export async function main() {
   const handle = await run(<ProgressBarDemo />)
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

@@ -391,7 +391,7 @@ function VirtualBenchmark() {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   const handle = await run(
     <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit">
       <VirtualBenchmark />
@@ -401,5 +401,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

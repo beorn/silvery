@@ -111,7 +111,7 @@ function printComparison(full: BenchResult, incr: BenchResult): void {
   )
 }
 
-async function main() {
+export async function main() {
   console.log(`\n═══ Inline Output Phase: Full vs Incremental (${RUNS} runs) ═══\n`)
 
   const configs = [
@@ -134,5 +134,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

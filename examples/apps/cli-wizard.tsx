@@ -316,7 +316,7 @@ export function CliWizard() {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="j/k navigate  Enter select  q/Esc quit">
@@ -328,5 +328,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

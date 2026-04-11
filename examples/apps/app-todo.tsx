@@ -187,7 +187,7 @@ const app = pipe(
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   // 3. run() needs no arguments — element and terminal are already bound
   const handle = (await app.run()) as AppHandle<State>
 
@@ -197,5 +197,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

@@ -173,7 +173,7 @@ function TextSelectionDemo(): React.ReactElement {
 // Main
 // ============================================================================
 
-if (import.meta.main) {
+export async function main() {
   const app = pipe(
     createApp(() => () => ({})) as any,
     withReact(
@@ -186,4 +186,8 @@ if (import.meta.main) {
   )
   using handle = await app.run()
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

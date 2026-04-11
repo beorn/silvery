@@ -213,7 +213,7 @@ export function TransformDemo() {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="j/k select transform  Esc/q quit">
@@ -225,5 +225,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

@@ -65,8 +65,7 @@ export function ScrollExample() {
   )
 }
 
-// Run the app
-if (import.meta.main) {
+export async function main() {
   using term = createTerm()
   await render(
     <ExampleBanner meta={meta} controls="j/k navigate  Esc/q quit">
@@ -74,4 +73,8 @@ if (import.meta.main) {
     </ExampleBanner>,
     term,
   )
+}
+
+if (import.meta.main) {
+  await main()
 }

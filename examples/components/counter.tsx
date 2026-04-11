@@ -39,7 +39,11 @@ export const meta = {
   description: "Interactive counter with useState + useInput",
 }
 
-if (import.meta.main) {
+export async function main() {
   const handle = await run(<Counter />)
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

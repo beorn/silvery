@@ -362,7 +362,11 @@ export const meta = {
   features: ["spatial navigation", "kanban layout", "varied card heights", "column focus tracking"],
 }
 
-if (import.meta.main) {
+export async function main() {
   using handle = await run(<SpatialFocusBoard />, { mode: "fullscreen" })
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

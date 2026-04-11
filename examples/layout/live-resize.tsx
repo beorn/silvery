@@ -268,7 +268,7 @@ function LiveResize() {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   const handle = await run(
     <ExampleBanner meta={meta} controls="Resize terminal to see reflow  Esc/q quit">
       <LiveResize />
@@ -278,5 +278,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

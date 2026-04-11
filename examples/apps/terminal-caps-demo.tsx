@@ -251,7 +251,7 @@ function TerminalCapsApp({
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   // Probe BEFORE render() starts — avoids stdin conflict with useInput.
   // Once render() owns stdin, protocol responses leak as visible text.
   let probeResults: {
@@ -312,23 +312,6 @@ async function main() {
   await waitUntilExit()
 }
 
-export { main }
-
 if (import.meta.main) {
-  main().catch((err) => {
-    // Ensure terminal is restored on error
-    const stdout = process.stdout
-    stdout.write("\x1b[?25h") // show cursor
-    stdout.write("\x1b[?1049l") // leave alt screen
-    stdout.write("\x1b[0m") // reset styles
-    if (process.stdin.isTTY && process.stdin.isRaw) {
-      try {
-        process.stdin.setRawMode(false)
-      } catch {
-        /* noop */
-      }
-    }
-    console.error(err)
-    process.exit(1)
-  })
+  await main()
 }

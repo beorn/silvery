@@ -649,5 +649,5 @@ export async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

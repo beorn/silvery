@@ -46,7 +46,11 @@ export const meta = {
   description: "Efficient scrollable list with 200 virtualized items",
 }
 
-if (import.meta.main) {
+export async function main() {
   const handle = await run(<ListViewDemo />)
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

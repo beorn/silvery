@@ -741,7 +741,7 @@ export function TerminalDemo({ kittySupported }: { kittySupported: boolean }) {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   // Detect Kitty support before starting the app
   const kittyResult = await detectKittyFromStdio(process.stdout, process.stdin)
 
@@ -779,22 +779,6 @@ async function main() {
   }
 }
 
-export { main }
-
 if (import.meta.main) {
-  main().catch((err) => {
-    const stdout = process.stdout
-    stdout.write(disableMouse())
-    disableFocusReporting((s) => stdout.write(s))
-    stdout.write("\x1b[?25h")
-    stdout.write("\x1b[?1049l")
-    stdout.write("\x1b[0m")
-    if (process.stdin.isTTY && process.stdin.isRaw) {
-      try {
-        process.stdin.setRawMode(false)
-      } catch {}
-    }
-    console.error(err)
-    process.exit(1)
-  })
+  await main()
 }

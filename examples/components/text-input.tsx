@@ -51,7 +51,11 @@ export const meta = {
   description: "Single-line text entry with readline keybindings",
 }
 
-if (import.meta.main) {
+export async function main() {
   const handle = await run(<TextInputDemo />)
   await handle.waitUntilExit()
+}
+
+if (import.meta.main) {
+  await main()
 }

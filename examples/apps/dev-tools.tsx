@@ -379,7 +379,7 @@ export function DevTools() {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit">
@@ -391,5 +391,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }

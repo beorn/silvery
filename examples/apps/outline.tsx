@@ -144,7 +144,7 @@ export function OutlineDemo() {
 // Main
 // ============================================================================
 
-async function main() {
+export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="Tab toggle  h/l style  Esc/q quit">
@@ -156,5 +156,5 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  await main()
 }
