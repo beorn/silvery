@@ -28,13 +28,13 @@
     }
   },
   "dependencies": {
-    "@silvery/ag": "0.5.1",
+    "@silvery/ag": "0.5.2",
     "@silvery/ag-react": "0.5.2",
-    "@silvery/ansi": "0.3.3",
-    "@silvery/create": "0.5.2",
+    "@silvery/ansi": "0.3.4",
+    "@silvery/create": "0.5.3",
     "@silvery/headless": "0.5.1",
     "@silvery/signals": "0.5.1",
-    "@silvery/test": "0.5.2",
+    "@silvery/test": "0.5.3",
     "@silvery/theme": "0.5.1",
     "flexily": "github:beorn/flexily"
   },

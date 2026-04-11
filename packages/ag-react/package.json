@@ -28,7 +28,7 @@
     }
   },
   "dependencies": {
-    "@silvery/ag": "0.5.1",
+    "@silvery/ag": "0.5.2",
     "@silvery/headless": "0.5.1",
     "@silvery/theme": "0.5.1"
   },
