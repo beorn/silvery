@@ -1,6 +1,6 @@
 {
   "name": "silvery",
-  "version": "0.16.2",
+  "version": "0.16.3",
   "description": "React for modern terminal apps \u2014 powerful apps, polished UIs, proudly terminal",
   "keywords": [
     "ansi",
@@ -49,72 +49,58 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
       "bun": "./src/index.ts",
       "import": "./dist/index.js"
     },
     "./runtime": {
-      "types": "./src/runtime.ts",
       "bun": "./src/runtime.ts",
       "import": "./dist/runtime.js"
     },
     "./theme": {
-      "types": "./src/theme.ts",
       "bun": "./src/theme.ts",
       "import": "./dist/theme.js"
     },
     "./ui": {
-      "types": "./src/ui.ts",
       "bun": "./src/ui.ts",
       "import": "./dist/ui.js"
     },
     "./ui/cli": {
-      "types": "./src/ui/cli.ts",
       "bun": "./src/ui/cli.ts",
       "import": "./dist/ui/cli.js"
     },
     "./ui/react": {
-      "types": "./src/ui/react.ts",
       "bun": "./src/ui/react.ts",
       "import": "./dist/ui/react.js"
     },
     "./ui/progress": {
-      "types": "./src/ui/progress.ts",
       "bun": "./src/ui/progress.ts",
       "import": "./dist/ui/progress.js"
     },
     "./ui/wrappers": {
-      "types": "./src/ui/wrappers.ts",
       "bun": "./src/ui/wrappers.ts",
       "import": "./dist/ui/wrappers.js"
     },
     "./ui/ansi": {
-      "types": "./src/ui/ansi.ts",
       "bun": "./src/ui/ansi.ts",
       "import": "./dist/ui/ansi.js"
     },
     "./ui/display": {
-      "types": "./src/ui/display.ts",
       "bun": "./src/ui/display.ts",
       "import": "./dist/ui/display.js"
     },
     "./ui/input": {
-      "types": "./src/ui/input.ts",
       "bun": "./src/ui/input.ts",
       "import": "./dist/ui/input.js"
     },
     "./ui/animation": {
-      "types": "./src/ui/animation.ts",
       "bun": "./src/ui/animation.ts",
       "import": "./dist/ui/animation.js"
     },
     "./ui/image": {
-      "types": "./src/ui/image.ts",
       "bun": "./src/ui/image.ts",
       "import": "./dist/ui/image.js"
     },
     "./ui/utils": {
-      "types": "./src/ui/utils.ts",
       "bun": "./src/ui/utils.ts",
       "import": "./dist/ui/utils.js"
     },
