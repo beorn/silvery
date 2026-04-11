@@ -218,6 +218,12 @@ const targets: BuildTarget[] = [
     entrypoint: "packages/test/src/index.tsx",
     outfile: "packages/test/dist/index.js",
   },
+  // CLI bin entry — must be .js for Node.js (no type stripping in node_modules)
+  {
+    name: "silvery (bin)",
+    entrypoint: "bin/silvery.ts",
+    outfile: "bin/silvery.js",
+  },
 ]
 
 async function clean() {
