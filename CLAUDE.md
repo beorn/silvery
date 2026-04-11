@@ -416,7 +416,9 @@ ag.render({ fresh: true }) // force non-incremental render
 
 Silvery apps are assembled via `pipe()` — each **provider** (`with-*` function) adds one capability to the app object. Providers live in `@silvery/create`. Pure state machines live in `@silvery/headless`.
 
-**Authoritative design:** [App Composition](docs/design/app-composition.md) — `create()` + `pipe()` + plugins (`withAg`, `withTerm`, `withReact`). Events flow through `dispatch → apply → handlers`. Plugins wrap `apply()` to add behavior. V1r prototype: `silvery-internal/design/v15-tea/plugin-system-v1r.ts`.
+**Public docs** describe the system as-is: [App Composition](docs/design/app-composition.md) — `createApp`, `pipe()`, `with*` plugins, event flow.
+
+**Internal design** (target architecture): `silvery-internal/design/v10-terminal/app-composition.md` — `create()` + `pipe()` + plugins wrapping `apply()`. V1r prototype: `silvery-internal/design/v15-tea/plugin-system-v1r.ts`. Tracking bead: `km-silvery.tea`.
 
 - **[Providers and Plugins](docs/guide/providers.md)** — `pipe()` composition, `AppPlugin` type, all built-in providers, how to write custom providers
 - **[Headless Machines](docs/guide/headless-machines.md)** — `createMachine()`, pure update functions (readline, select-list), naming conventions, React hooks

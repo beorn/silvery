@@ -2,353 +2,96 @@
 
 How silvery apps are built, piece by piece.
 
-## Design Goals
+## Simple Apps
 
-Silvery's composition model addresses several architectural requirements:
+```tsx
+import { run, useInput } from "silvery/runtime"
+import { Box, Text } from "silvery"
 
-- **Unified output type** — `TextFrame` everywhere, whether using `render()`, `createTermless()`, or `createApp()`.
-- **Multi-target** — the same ag tree renders to terminal, canvas, or DOM.
-- **Framework independence** — ag does not know about React. Svelte/Solid adapters are first-class.
-- **Testability** — layout without rendering, rendering without paint, input without an event loop.
-- **Debuggability** — dispatch/apply are wrappable functions. Pipeline phases are separate inspectable calls.
-- **Composable app building** — `pipe()` + plugins compose independently testable layers.
-
-### Usage
-
-```ts
-// Unified API — render() includes withTest() for convenience
-const app = render(<Counter />, { cols: 80, rows: 24 })   // headless
-const app = render(<Counter />, term)                      // live or emulator
-app.press("j")                                             // → dispatch(press("j"))
-app.text                                                    // → term.screen.text
-term.screen.text                                           // TextFrame everywhere
-await app.run()                                            // event loop (if term has events)
-```
-
-| Concern                | Solution                                                 |
-| ---------------------- | -------------------------------------------------------- |
-| Styled text output     | **TextFrame** everywhere                                 |
-| App entry point        | **One app** from `render()`, capabilities depend on term |
-| Testing                | **`render(element, term)`** — one function, term varies  |
-| Separation of concerns | **ag** (tree), **term** (I/O), **TextFrame** (output)    |
-| Pipeline phases        | **layout → render → paint** — three independent phases   |
-| Shared type            | silvery + termless both produce **TextFrame**            |
-
-## Render Configurations
-
-```
-silvery
-├── ag                              tree only, toString
-│   ├── ag term (headless)          + layout engine → TextFrame
-│   ├── ag term (interactive)       + I/O (terminal, termless, canvas)
-│   └── ag dom                      tree → DOM nodes (future)
-├── react dom                       React's own reconciler, no ag
-└── svelte dom                      Svelte's own runtime, no ag
-```
-
-The ag tree exists for cell-based rendering. All ag targets are term-like — a headless term is just a term without I/O. The framework adapter (React, Svelte, manual) is orthogonal.
-
-## Core Objects
-
-Three objects. **ag** (the retained cell tree — silvery's equivalent of the DOM) produces TextFrames, **term** consumes them.
-
-```ts
-// Ag — tree + layout engine + renderer
-const ag = createAg()                      // flexily (default)
-const ag = createAg({ engine: "yoga" })    // yoga
-ag.root              // AgNode tree root
-ag.engine            // LayoutEngine (bound at creation, all nodes use it)
-ag.layout(dims)      // flexbox → positions/sizes (mutates layout nodes in place)
-ag.render()          // positioned tree → cell grid → TextFrame
-ag.toString()        // structural text (no layout — NOT render().text)
-
-// Term — output target (dims + optional capabilities)
-// { cols: number; rows: number } accepted structurally anywhere a Term is needed
-term.dims            // { cols, rows } — always present
-term.screen?         // TextFrame — last painted frame
-term.scrollback?     // TextFrame — scroll history (emulator only)
-term.paint?(frame, prev?)   // present TextFrame to output
-term.events?()              // AsyncIterable<Event> — input stream
-term.caps?           // { truecolor, hyperlinks, kittyKeyboard, ... }
-term.cursor?         // { col, row, visible }
-term.write?(data)    // raw escape sequences (setup/teardown only)
-term.cols            // convenience → term.dims.cols
-term.rows            // convenience → term.dims.rows
-term.style           // convenience → derived from term.caps
-
-// TextFrame — rendered cell grid (immutable, backend-neutral)
-interface TextFrame {
-  readonly text: string              // plain text
-  readonly lines: string[]           // per-line plain text
-  readonly width: number
-  readonly height: number
-  cell(col: number, row: number): FrameCell
-  containsText(text: string): boolean
-}
-toAnsi(frame, caps?)               // TextFrame → ANSI string
-toAnsi(frame, prev, caps?)         // TextFrame × prev → diff ANSI
-
-// Backends — each provides what it can
-createTerm({ cols: 80, rows: 24 })      // headless (just dims)
-createTerm(process)                      // real terminal
-createTermless(dims, backend?)           // emulator (+ screen/scrollback)
-createCanvas(canvasEl)                   // browser canvas
-```
-
-## Rendering Pipeline
-
-Three phases, each independently useful:
-
-```ts
-ag.layout(term.dims) // 1. flexbox → positions/sizes
-const frame = ag.render() // 2. positioned tree → TextFrame
-term.paint(frame) // 3. TextFrame → output
-```
-
-Use any phase alone: layout without render (inspect sizes), render without paint (headless testing), paint without the others (re-present a saved frame).
-
-`ag.render()` requires a prior `ag.layout()`. On resize, discard the previous frame (paint diffing assumes same dimensions). `toFrame(ag, dims)` combines 1+2 as convenience.
-
-**Invariants:**
-
-- `ag.render()` requires prior `ag.layout()` — calling render without layout is an error
-- Mounting triggers one immediate render (withReact calls `app.render()` on first commit)
-- **Resize always causes a render** — even without React state change (layout depends on dims)
-- `term.screen` is populated after first render, undefined before
-- `term.screen` is an immutable snapshot — detached from mutable internal buffers
-- `app.run()` only exists when the term has events
-- Resize resets paint diffing (`prev = undefined`) and updates `term.dims`
-- `toAnsi(frame, prev)` requires same dimensions — mismatched dims triggers full repaint
-- Cursor state lives on `term.cursor`, not in TextFrame
-- `dispatch()` is synchronous. `press()` (withTest) is synchronous.
-- Input handler traversal: depth-first through ag tree, focused/deepest nodes first
-
-## Framework Adapters
-
-Adapters populate the ag tree. External to ag — keeps the tree framework-agnostic.
-
-```ts
-const react = mountReact(ag, <Counter />)    // mount into ag.root
-react.unmount()
-mountSvelte(ag, Counter, { props })          // same pattern
-```
-
-Adapters use ag's tree mutation API — never touch layout nodes directly. Ag keeps tree and layout nodes in sync internally:
-
-```ts
-ag.createNode(kind, props) // create AgNode + LayoutNode together
-ag.insertChild(parent, child, index) // insert in both trees
-ag.removeChild(parent, child) // remove from both trees
-ag.updateNode(node, props) // update props, mark dirty
-ag.setText(node, text) // update text content
-```
-
-The adapter owns both directions:
-
-- **Rendering**: reconciler populates ag nodes from component state
-- **Input**: `useInput` registers handlers on ag nodes, events reach them via the apply chain
-
-## Input Pipeline
-
-Input flows opposite to rendering: source → dispatch → apply → handlers → state change → re-render.
-
-```ts
-// Sources — anything that calls dispatch
-term.events(signal?)                               // terminal: parsed keys, mouse, resize
-app.dispatch({ type: "input:key", key: "j" })      // manual: testing, scripting
-
-// Dispatch → Apply
-// dispatch: public entry (reentry guard). apply: internal chain (plugins wrap it).
-app.dispatch(op) → app.apply(op) → useInput handlers
-//                   ↑ plugins wrap here (keymap, logging, commands)
-
-// Handlers — registered by components via useInput
-function Counter() {
-  useInput((op) => {
-    if (op.key === "j") setCount(c => c + 1)
-    return true  // handled — stop propagation
+function App() {
+  useInput((input, key) => {
+    if (key.escape) return "exit"
   })
+  return <Box><Text>Hello</Text></Box>
 }
-// Depth-first through ag tree — focused/deepest nodes get first chance.
 
-// Debugging — wrap dispatch/apply (plain functions, no special mode)
-const { dispatch } = app
-app.dispatch = (op) => { console.log(op.type, op); return dispatch(op) }
-for (const e of savedEvents) app.dispatch(e)  // replay
+await run(<App />)
 ```
 
-## Plugin Composition
+`run()` handles terminal setup, alternate screen, raw mode, and cleanup.
 
-Plugins wire the primitives together via `pipe()`. Each adds capabilities by wrapping `dispatch`, `apply`, or `run`.
+## Complex Apps
 
-### withTerm and withReact
+For apps with structured state, commands, and focus management, use `createApp` with a Zustand-compatible store and event handlers:
 
-```ts
-function withTerm(term) {
-  // Normalizes bare { cols, rows } → full Term shape (dims, screen, etc.)
-  return (app) => {
-    let prev: TextFrame | undefined
-    app.render = () => {
-      app.ag.layout(term.dims) // 1. positions/sizes
-      const frame = app.ag.render() // 2. tree → TextFrame
-      term.paint?.(frame, prev) // 3. TextFrame → output
-      prev = frame
-      term.screen = frame // always set after render
-    }
-    if (term.events) {
-      const { run } = app
-      app.run = async () => {
-        app.render() // initial render
-        for await (const event of term.events(app.scope?.signal)) {
-          if (event.type === "resize") {
-            prev = undefined // reset diffing
-            term.dims = event.dims // update dimensions
-          }
-          app.dispatch(event)
-          if (event.type === "resize") {
-            app.render() // resize always re-renders
-          }
-          // For non-resize: React commit calls app.render() if state changed
-        }
-        await run?.() // inner plugins (teardown)
-      }
-    }
-    // Terminal cleanup: createTerm registers process exit hooks
-    // (SIGINT/SIGTERM/exit) that restore terminal state.
-    return app
-  }
-}
+```tsx
+import { createApp } from "@silvery/create/create-app"
+import { pipe, withCommands } from "@silvery/create/plugins"
 
-function withReact({ view }) {
-  return (app) => {
-    app.render ??= () => {}
-    const reconciler = createReconciler(app.ag.root, app.render)
-    reconciler.render(view) // mount immediately — stays alive until dispose
-    app.defer(reconciler.unmount)
-    return app
-  }
-}
-```
-
-**Key decisions:**
-
-- **withReact mounts immediately** — headless testing works without `run()`.
-- **No double-render** — event loop only dispatches; rendering happens via reconciler commit.
-- **Scope integration** — `term.events(app.scope?.signal)` terminates on scope cancel.
-- **Structural term acceptance** — `withTerm` accepts a full Term or a bare `{ cols, rows }` (no separate TermDef type). A bare dims object works immediately (headless); a full Term adds paint/events/screen.
-- **Resize triggers render unconditionally** — layout depends on dims, not just React state.
-- **`run()` wrapper semantics** — inner `run` is called after the event loop exits (teardown). Plugins that need setup-before-loop do it in the plugin body, not in `run()`.
-- **Terminal lifetime** — you dispose what you create. Pre-created Term: caller disposes. Process exit hooks are the safety net.
-- **Plugin ordering** — `withAg` → `withTerm` → `withReact`. Validated at compose time.
-
-### App shape after each plugin
-
-```ts
-// create()
-app = {
-  dispatch(op),              // public entry (reentry guard)
-  apply(op),                 // plugin chain
-  defer(fn),                 // register cleanup (TC39 DisposableStack)
-  [Symbol.dispose](),        // deferred cleanups in reverse order
-  run: undefined,
-}
-
-// + withAg()
-app = { ...app,
-  ag,                        // { root, engine, layout(dims), render(), toString() }
-}
-
-// + withTerm(term)
-app = { ...app,
-  term,                      // Term (or resolved from bare { cols, rows })
-  render(),                  // layout → TextFrame → paint → term.screen
-  run(),                     // event loop (if term has events)
-}
-
-// + withReact({ view })  — reconciler mounted, calls app.render() on commit
-// + withTest()           — press(), text, ansi, screen, getByText(), locator()
-```
-
-**What gets wired depends on the term:**
-
-```
-{ cols, rows } (dims)    → app.render (layout → TextFrame, no paint)
-Term with paint          → app.render (layout → TextFrame → paint)
-Term with paint + events → app.render + app.run (event loop)
-```
-
-### Examples
-
-```ts
-// Interactive
-const app = pipe(
-  create(), withAg(),
-  withTerm(createTerm(process)),
-  withReact({ view: <Counter /> }),
+const app = createApp(
+  () => (set, get) => ({
+    count: 0,
+    increment: () => set(s => ({ count: s.count + 1 })),
+  }),
+  {
+    "term:key": ({ input }, { set }) => {
+      if (input === "j") set(s => ({ count: s.count + 1 }))
+      if (input === "q") return "exit"
+    },
+  },
 )
-await app.run()
 
-// Headless testing — no run() needed
-const app = pipe(
-  create(), withAg(),
-  withTerm({ cols: 80, rows: 24 }),
-  withReact({ view: <Counter /> }),
-)
-app.dispatch({ type: "input:key", key: "j" })
-app.term.screen.text
-
-// Emulator testing
-const term = createTermless({ cols: 80, rows: 24 })
-const app = pipe(
-  create(), withAg(), withTerm(term),
-  withReact({ view: <Counter /> }),
-)
-app.dispatch({ type: "input:key", key: "j" })
-term.screen.text
+await app.run(<Counter />, { stdin, stdout, mouse: true })
 ```
 
-## Entry Points and Testing
+### Plugin Composition
 
-`render()` is sugar that includes `withTest()` for convenience:
+Plugins add capabilities via `pipe()`:
 
-```ts
-// render() = pipe(create(), withAg(), withTerm(term), withReact({ view }), withTest())
-const app = render(<Counter />, { cols: 80, rows: 24 })   // headless
+```tsx
+import { pipe, withFocus, withDomEvents, withTerminal } from "@silvery/create/plugins"
+
+const fullApp = pipe(
+  app,
+  withTerminal(process, { mouse: true, kitty: true }),
+  withFocus({ copyMode: true, find: true }),
+  withDomEvents({ dragThreshold: 3 }),
+)
+await fullApp.run(<Board />)
+```
+
+Each `with*` plugin configures one concern. See [Providers and Plugins](../guide/providers.md) for the full list.
+
+### Event Flow
+
+Terminal events flow through a multi-stage pipeline:
+
+1. **Raw** — modifier tracking (always runs)
+2. **Focused** — dispatch to focused component's `onKeyDown` (consumes if handled)
+3. **Fallback** — `useInput` handlers (only if focus didn't consume)
+4. **App handler** — the event handler map passed to `createApp`
+
+Focused components always get events before `useInput` hooks.
+
+## Testing
+
+Three levels, from fast to full-fidelity:
+
+```tsx
+// Headless — fast, stripped text (~5ms/op)
+const app = render(<MyComponent />, { cols: 80, rows: 24 })
 app.press("j")
-app.text                                                    // "Count: 1"
+expect(app.text).toContain("Count: 1")
 
-using term = createTerm(process)                            // live
-const app = render(<Counter />, term)
-await app.run()
+// Emulator — full ANSI through xterm.js (~50ms/op)
+using term = createTermless({ cols: 80, rows: 24 })
+const handle = await run(<App />, term)
+expect(term.screen).toContainText("Hello")
 
-using term = createTermless({ cols: 80, rows: 24 })        // emulator
-const app = render(<Counter />, term)
-app.press("j")
-term.screen.text
+// Live terminal — real I/O
+await run(<App />)
 ```
 
-**withTest()** adds convenience accessors (press, click, text, ansi, screen, cols/rows) and locators (getByText, locator — self-refreshing ag tree queries). Live apps via `pipe()` don't get withTest unless explicitly added.
+## Plugin Internals
 
-**Locators** query the ag tree (structural). **TextFrame assertions** query rendered output (visual):
-
-```ts
-app.getByText("Task 1").textContent() // ag tree query
-expect(term.screen).toContainText("Hello") // TextFrame assertion (vitest matcher)
-```
-
-## Internal Decomposition
-
-`RenderAdapter` is decomposed across `ag` and `term`:
-
-```
-RenderAdapter.measurer              → ag.engine
-RenderAdapter.createBuffer()        → internal to ag.render()
-RenderAdapter.flush(buffer, prev)   → term.paint(frame, prev)
-RenderAdapter.getBorderChars()      → ag (glyph profile)
-RenderBuffer (write API)            → internal cell grid
-TextFrame (read API)                → public output of ag.render()
-```
-
-## App Architecture (Silvertea)
-
-> **Future**: Silvertea extends this foundation for complex apps that outgrow React `useState` — commands, keymaps, signals, domain plugins — building on the `create()` + `dispatch/apply` pipeline.
+The internal plugin composition model (how `createApp` routes events, how `with*` plugins interact) is under active development. The consumer API (`run()`, `createApp()`, `useInput`, `pipe()`) is stable.
