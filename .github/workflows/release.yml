@@ -70,6 +70,19 @@ jobs:
           # Layer 6: Examples (depends on silvery)
           publish packages/examples
 
+      # Smoke test: verify published packages resolve correctly
+      - name: Smoke test
+        run: |
+          dir=$(mktemp -d)
+          cd "$dir"
+          npm init -y --silent
+          echo "Installing silvery from npm..."
+          npm install silvery 2>&1
+          echo "Verifying import..."
+          node --experimental-strip-types -e "import 'silvery'" 2>&1
+          echo "✅ Smoke test passed"
+          rm -rf "$dir"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
