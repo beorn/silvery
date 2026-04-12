@@ -264,7 +264,7 @@ export function fitContentCorrectionPass(root: AgNode, ctx?: PipelineContext): b
     }
     if (parentInner < 1) parentInner = 1
 
-    if (node.boxRect.width > parentInner + 0.5) {
+    if (node.boxRect.width > parentInner) {
       // Node overflows parent — clamp and re-measure
       const padding = getPadding(props)
       let contentWidth = parentInner - padding.left - padding.right
