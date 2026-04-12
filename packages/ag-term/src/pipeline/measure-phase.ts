@@ -25,27 +25,22 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
 
     const props = node.props as BoxProps
 
-    const isFitContent = props.width === "fit-content" || props.height === "fit-content"
+    // width="fit-content" is now handled natively by Flexily (UNIT_FIT_CONTENT).
+    // The reconciler calls setWidthFitContent() directly.
+    // width="snug-content" uses Flexily's UNIT_SNUG_CONTENT for basic sizing,
+    // but still needs the binary-search tightening pass here.
+    // height="fit-content" still needs the pre-layout polyfill.
     const isSnugContent = props.width === "snug-content"
+    const isHeightFitContent = props.height === "fit-content"
 
-    if (isFitContent || isSnugContent) {
+    if (isSnugContent || isHeightFitContent) {
       // Pass an available-width constraint to child measurement whenever a
       // definite upper bound exists — either a fixed width (height="fit-content"
-      // + width:number case) or a maxWidth cap on the fit-content/snug-content
-      // box itself. Without this, text nodes measure their full intrinsic
-      // unwrapped width, which:
-      //   - inflates fit-content boxes beyond maxWidth (measure phase then
-      //     uses intrinsic instead of maxWidth as the content bound)
-      //   - defeats snug-content's binary search (it starts from an unclamped
-      //     upper bound where everything fits on one line, so shrunk ≈ intrinsic)
+      // + width:number case) or a maxWidth cap on the snug-content box itself.
       let availableWidth: number | undefined
       const widthIsFixed = typeof props.width === "number"
-      // Find a definite upper bound for child measurement:
-      //   1. Fixed width on this node (height="fit-content" case)
-      //   2. Explicit maxWidth on this node
-      //   3. Nearest ancestor with a definite width (walk up the tree)
       let definiteUpperWidth: number | undefined =
-        widthIsFixed && props.height === "fit-content"
+        widthIsFixed && isHeightFitContent
           ? (props.width as number)
           : typeof props.maxWidth === "number"
             ? (props.maxWidth as number)
@@ -63,24 +58,17 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
         if (availableWidth < 1) availableWidth = 1
       }
 
-      const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth)
-
       if (isSnugContent) {
+        const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth)
         // Fit-snug: find the narrowest width that keeps the same line count.
-        // First get the text for analysis, then binary search for tightest width.
+        // Binary search for tightest width on top of Flexily's native fit-content.
         const shrunkWidth = computeSnugContentWidth(node, intrinsicSize.width, ctx)
-        // Use setMaxWidth (not setWidth) so the box can shrink below its
-        // intrinsic via flex cross-axis stretch or parent constraints.
-        // CSS fit-content = min(max-content, available) — setMaxWidth provides
-        // the max-content ceiling while leaving width=auto for flex resolution.
+        // setMaxWidth caps the snug-content box at the binary-searched width.
+        // Flexily's UNIT_SNUG_CONTENT handles the shrink-wrap + available clamping.
         node.layoutNode.setMaxWidth(shrunkWidth)
-      } else if (props.width === "fit-content") {
-        // CSS fit-content = min(max-content, max(min-content, available)).
-        // setMaxWidth caps at intrinsic (max-content), leaving width=auto
-        // so flex stretch/shrink can clamp it to the parent's available width.
-        node.layoutNode.setMaxWidth(intrinsicSize.width)
       }
-      if (props.height === "fit-content") {
+      if (isHeightFitContent) {
+        const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth)
         node.layoutNode.setHeight(intrinsicSize.height)
       }
     }
@@ -239,53 +227,17 @@ function computeSnugContentWidth(node: AgNode, fitContentWidth: number, ctx?: Pi
 }
 
 /**
- * Post-layout correction for fit-content/snug-content nodes that overflow
- * their parent's computed width. After layout resolves flex sizing, some
- * fit-content boxes may exceed the parent's actual content area (because
- * the parent's width was only determined by flex — no definite width existed
- * at measure time). This pass detects overflow, clamps maxWidth to the
- * parent's computed inner width, and returns true if any correction was made
- * (caller should re-run layout).
+ * Post-layout correction pass — no longer needed.
+ *
+ * With Flexily native fit-content (UNIT_FIT_CONTENT/UNIT_SNUG_CONTENT),
+ * the layout engine handles available-width clamping during the flex pass.
+ * The old polyfill needed this because measure-phase ran BEFORE layout
+ * and didn't know the parent's computed width.
+ *
+ * Kept as a no-op for API compatibility (called from pipeline/index.ts).
  */
-export function fitContentCorrectionPass(root: AgNode, ctx?: PipelineContext): boolean {
-  let corrected = false
-  traverseTree(root, (node) => {
-    if (!node.layoutNode || !node.parent?.boxRect || !node.boxRect) return
-    const props = node.props as BoxProps
-    if (props.width !== "fit-content" && props.width !== "snug-content") return
-
-    const parentProps = node.parent.props as BoxProps
-    let parentInner = node.parent.boxRect.width
-    const parentPadding = getPadding(parentProps)
-    parentInner -= parentPadding.left + parentPadding.right
-    if (parentProps.borderStyle) {
-      const parentBorder = getBorderSize(parentProps)
-      parentInner -= parentBorder.left + parentBorder.right
-    }
-    if (parentInner < 1) parentInner = 1
-
-    if (node.boxRect.width > parentInner) {
-      // Node overflows parent — clamp and re-measure
-      const padding = getPadding(props)
-      let contentWidth = parentInner - padding.left - padding.right
-      if (props.borderStyle) {
-        const border = getBorderSize(props)
-        contentWidth -= border.left + border.right
-      }
-      if (contentWidth < 1) contentWidth = 1
-
-      const intrinsicSize = measureIntrinsicSize(node, ctx, contentWidth)
-      if (props.width === "snug-content") {
-        const shrunkWidth = computeSnugContentWidth(node, intrinsicSize.width, ctx)
-        node.layoutNode.setMaxWidth(shrunkWidth)
-      } else {
-        node.layoutNode.setMaxWidth(intrinsicSize.width)
-      }
-      node.layoutNode.markDirty()
-      corrected = true
-    }
-  })
-  return corrected
+export function fitContentCorrectionPass(_root: AgNode, _ctx?: PipelineContext): boolean {
+  return false
 }
 
 /**

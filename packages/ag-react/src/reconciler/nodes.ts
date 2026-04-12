@@ -274,6 +274,10 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
       layoutNode.setWidth(props.width)
     } else if (props.width === "auto") {
       layoutNode.setWidthAuto()
+    } else if (props.width === "fit-content") {
+      layoutNode.setWidthFitContent()
+    } else if (props.width === "snug-content") {
+      layoutNode.setWidthSnugContent()
     }
   } else if (wasRemoved("width")) {
     layoutNode.setWidthAuto()
