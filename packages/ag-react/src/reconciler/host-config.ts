@@ -10,6 +10,7 @@ import { createContext } from "react"
 import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
 import type { BoxProps, AgNode, AgNodeType, TextProps } from "@silvery/ag/types"
 import { trackContentDirty, trackStyleOnlyDirty, trackScrollDirty } from "@silvery/ag/dirty-tracking"
+import { syncTextContentSignal } from "@silvery/ag/node-signals"
 import {
   getRenderEpoch,
   INITIAL_EPOCH,
@@ -599,6 +600,7 @@ export const hostConfig = {
 
   commitTextUpdate(textInstance: AgNode, _oldText: string, newText: string) {
     textInstance.textContent = newText
+    syncTextContentSignal(textInstance)
     textInstance.props = { children: newText } as TextProps
     const epoch = getRenderEpoch()
     const bits = CONTENT_BIT | STYLE_PROPS_BIT

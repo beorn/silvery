@@ -16,6 +16,7 @@ import {
   getExplicitFocusLink,
 } from "./focus-queries"
 import { setFocused } from "./interactive-signals"
+import { syncFocusedSignal } from "./node-signals"
 
 // ============================================================================
 // Types
@@ -231,8 +232,12 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     focusOrigin = origin
 
     // Update interactive state on affected nodes
-    if (oldElement) setFocused(oldElement, false)
+    if (oldElement) {
+      setFocused(oldElement, false)
+      syncFocusedSignal(oldElement, false)
+    }
     setFocused(node, true)
+    syncFocusedSignal(node, true)
 
     // Remember this focus in the current scope
     if (activeId && scopeStack.length > 0) {
@@ -271,7 +276,10 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     focusOrigin = origin
 
     // Update interactive state — old element loses focus, no new node to set
-    if (oldElement) setFocused(oldElement, false)
+    if (oldElement) {
+      setFocused(oldElement, false)
+      syncFocusedSignal(oldElement, false)
+    }
 
     notify()
 
@@ -290,7 +298,10 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     focusOrigin = null
 
     // Update interactive state — old element loses focus
-    if (oldElement) setFocused(oldElement, false)
+    if (oldElement) {
+      setFocused(oldElement, false)
+      syncFocusedSignal(oldElement, false)
+    }
 
     notify()
 
@@ -319,7 +330,10 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     activeId = id
     focusOrigin = origin
 
-    if (oldElement) setFocused(oldElement, false)
+    if (oldElement) {
+      setFocused(oldElement, false)
+      syncFocusedSignal(oldElement, false)
+    }
 
     notify()
 
@@ -414,6 +428,7 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
       const oldElement = activeElement
       // Clear interactive focus state before removing reference
       setFocused(oldElement, false)
+      syncFocusedSignal(oldElement, false)
       previousElement = activeElement
       previousId = activeId
       activeElement = null
