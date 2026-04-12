@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ansi",
-  "version": "0.3.4",
+  "version": "0.17.3",
   "description": "Everything terminal — styling, ANSI primitives, color detection, theme derivation, terminal control",
   "keywords": [
     "ansi",
@@ -41,7 +41,7 @@
     }
   },
   "dependencies": {
-    "@silvery/color": "0.1.2",
+    "@silvery/color": "0.17.3",
     "string-width": "^8.2.0"
   },
   "engines": {

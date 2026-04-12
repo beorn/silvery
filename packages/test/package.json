@@ -1,6 +1,6 @@
 {
   "name": "@silvery/test",
-  "version": "0.5.3",
+  "version": "0.17.3",
   "description": "Testing utilities for silvery — virtual renderer, locators, assertions",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -28,10 +28,10 @@
     }
   },
   "dependencies": {
-    "@silvery/ag": "0.5.2",
-    "@silvery/ag-react": "0.5.2",
-    "@silvery/ag-term": "0.5.2",
-    "@silvery/create": "0.5.3"
+    "@silvery/ag": "0.17.3",
+    "@silvery/ag-react": "0.17.3",
+    "@silvery/ag-term": "0.17.3",
+    "@silvery/create": "0.17.3"
   },
   "engines": {
     "bun": ">=1.0",

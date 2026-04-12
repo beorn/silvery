@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ag",
-  "version": "0.5.2",
+  "version": "0.17.3",
   "description": "Core types and infrastructure for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",

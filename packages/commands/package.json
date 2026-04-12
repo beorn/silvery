@@ -1,6 +1,6 @@
 {
   "name": "@silvery/commands",
-  "version": "0.5.2",
+  "version": "0.17.3",
   "description": "Command registry, keymaps, and invocation for silvery apps",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",

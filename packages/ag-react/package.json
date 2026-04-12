@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ag-react",
-  "version": "0.5.2",
+  "version": "0.17.3",
   "description": "Core React reconciler and runtime for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -28,9 +28,9 @@
     }
   },
   "dependencies": {
-    "@silvery/ag": "0.5.2",
-    "@silvery/headless": "0.5.1",
-    "@silvery/theme": "0.5.1"
+    "@silvery/ag": "0.17.3",
+    "@silvery/headless": "0.17.3",
+    "@silvery/theme": "0.17.3"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"

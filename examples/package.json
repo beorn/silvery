@@ -1,6 +1,6 @@
 {
   "name": "@silvery/examples",
-  "version": "0.5.6",
+  "version": "0.17.3",
   "description": "Example apps and component demos for silvery — npx @silvery/examples <name>",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -45,7 +45,7 @@
     "clean": true
   },
   "dependencies": {
-    "silvery": "0.17.2"
+    "silvery": "0.17.3"
   },
   "engines": {
     "bun": ">=1.0",

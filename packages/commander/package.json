@@ -1,6 +1,6 @@
 {
   "name": "@silvery/commander",
-  "version": "0.8.2",
+  "version": "0.17.3",
   "description": "Colorized Commander.js help output using ANSI escape codes",
   "keywords": [
     "ansi",
@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@silvery/ansi": "0.3.4",
+    "@silvery/ansi": "0.17.3",
     "commander": ">=13.0.0"
   },
   "peerDependencies": {

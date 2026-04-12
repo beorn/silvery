@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ink",
-  "version": "0.5.1",
+  "version": "0.17.3",
   "description": "Ink and Chalk API compatibility layer (not published separately)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -20,9 +20,9 @@
     }
   },
   "dependencies": {
-    "@silvery/ag-react": "0.5.2",
-    "@silvery/ag-term": "0.5.2",
-    "@silvery/ansi": "0.3.4"
+    "@silvery/ag-react": "0.17.3",
+    "@silvery/ag-term": "0.17.3",
+    "@silvery/ansi": "0.17.3"
   },
   "tsdown": {
     "entry": "src/index.ts",

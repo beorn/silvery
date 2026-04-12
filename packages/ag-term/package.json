@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ag-term",
-  "version": "0.5.2",
+  "version": "0.17.3",
   "description": "Terminal rendering target for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -28,14 +28,14 @@
     }
   },
   "dependencies": {
-    "@silvery/ag": "0.5.2",
-    "@silvery/ag-react": "0.5.2",
-    "@silvery/ansi": "0.3.4",
-    "@silvery/create": "0.5.3",
-    "@silvery/headless": "0.5.1",
-    "@silvery/signals": "0.5.1",
-    "@silvery/test": "0.5.3",
-    "@silvery/theme": "0.5.1",
+    "@silvery/ag": "0.17.3",
+    "@silvery/ag-react": "0.17.3",
+    "@silvery/ansi": "0.17.3",
+    "@silvery/create": "0.17.3",
+    "@silvery/headless": "0.17.3",
+    "@silvery/signals": "0.17.3",
+    "@silvery/test": "0.17.3",
+    "@silvery/theme": "0.17.3",
     "flexily": "0.5.2"
   },
   "tsdown": {
