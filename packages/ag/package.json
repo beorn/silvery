@@ -2,9 +2,9 @@
   "name": "@silvery/ag",
   "version": "0.17.3",
   "private": true,
-  "description": "Core types and infrastructure for silvery (internal \u2014 use silvery instead)",
+  "description": "Core types and infrastructure for silvery (internal — use silvery instead)",
   "license": "MIT",
-  "author": "Bj\u00f8rn Stabell <bjorn@stabell.org>",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
     "type": "git",
     "url": "https://github.com/beorn/silvery.git",
@@ -75,6 +75,14 @@
         "types": "./dist/tree-utils.d.mts",
         "import": "./dist/tree-utils.mjs"
       },
+      "./rect-signals": {
+        "types": "./dist/rect-signals.d.mts",
+        "import": "./dist/rect-signals.mjs"
+      },
+      "./node-signals": {
+        "types": "./dist/node-signals.d.mts",
+        "import": "./dist/node-signals.mjs"
+      },
       "./types": {
         "types": "./dist/types.d.mts",
         "import": "./dist/types.mjs"
@@ -84,7 +92,9 @@
   "scripts": {
     "build": "tsdown"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@silvery/signals": "0.17.3"
+  },
   "tsdown": {
     "clean": true,
     "dts": true,
@@ -102,6 +112,8 @@
       "src/mouse-event-types.ts",
       "src/text-frame.ts",
       "src/tree-utils.ts",
+      "src/rect-signals.ts",
+      "src/node-signals.ts",
       "src/types.ts"
     ],
     "format": "esm"

@@ -28,7 +28,7 @@ import { useContext, useLayoutEffect, useReducer, useRef } from "react"
 import { effect } from "@silvery/signals"
 import { NodeContext } from "../context"
 import { type AgNode, type BoxProps, type Rect, rectEqual } from "@silvery/ag/types"
-import { getRectSignals, type RectSignals } from "@silvery/ag-term/pipeline/rect-signals"
+import { getRectSignals, type RectSignals } from "@silvery/ag/rect-signals"
 
 export type { Rect }
 
@@ -88,10 +88,7 @@ type RectSignalKey = keyof RectSignals
  * syncRectSignals writes a new value, the effect re-runs, compares via
  * rectEqual, and triggers forceUpdate only when the derived rect changed.
  */
-function useReactiveRect(
-  getRect: (node: AgNode) => Rect | null | undefined,
-  signalKey: RectSignalKey,
-): Rect {
+function useReactiveRect(getRect: (node: AgNode) => Rect | null | undefined, signalKey: RectSignalKey): Rect {
   const node = useContext(NodeContext)
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
   const prevRef = useRef<Rect | null>(null)

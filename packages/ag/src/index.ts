@@ -133,3 +133,15 @@ export {
   getContentDirtyNodes,
   clearDirtyTracking,
 } from "./dirty-tracking"
+
+// Rect Signals
+export { getRectSignals, hasRectSignals, syncRectSignals, type RectSignals } from "./rect-signals"
+
+// Node Signals (textContent, focused)
+export {
+  getNodeSignals,
+  hasNodeSignals,
+  syncTextContentSignal,
+  syncFocusedSignal,
+  type NodeSignals,
+} from "./node-signals"

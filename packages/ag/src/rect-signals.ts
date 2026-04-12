@@ -56,6 +56,16 @@ export interface RectSignals {
 const rectSignalMap = new WeakMap<AgNode, RectSignals>()
 
 /**
+ * Check whether a node has rect signals allocated (without creating them).
+ *
+ * Used by tests to verify lazy allocation — signals are only created when
+ * a hook (useAgNode, useBoxRect, etc.) first accesses them.
+ */
+export function hasRectSignals(node: AgNode): boolean {
+  return rectSignalMap.has(node)
+}
+
+/**
  * Get or create the rect signals for a node.
  *
  * Initializes signals with the node's current rect values so the first
