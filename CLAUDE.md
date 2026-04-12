@@ -484,7 +484,7 @@ These are workspace packages for development. Users do not import from them dire
 
 | Package             | What                                       |
 | ------------------- | ------------------------------------------ |
-| `@silvery/ag`       | Core types, rect-signals, node-signals (framework-agnostic reactive layer) |
+| `@silvery/ag`       | Core types, layout-signals (framework-agnostic reactive layer) |
 | `@silvery/ag-react` | React reconciler, hooks (useSignal, useAgNode, useBoxRect), UI components |
 | `@silvery/ag-term`  | Terminal runtime, ANSI output, pipeline, syncRectSignals bridge |
 | `@silvery/theme`    | Theme tokens, 38 palettes, theme CLI       |
@@ -505,8 +505,7 @@ These are workspace packages for development. Users do not import from them dire
 
 | File                                            | What                                                 |
 | ----------------------------------------------- | ---------------------------------------------------- |
-| `packages/ag/src/rect-signals.ts`               | Layout rect signals (boxRect, scrollRect, screenRect) — Layer 1 |
-| `packages/ag/src/node-signals.ts`               | Node state signals (textContent, focused) — Layer 1  |
+| `packages/ag/src/layout-signals.ts`             | All node signals (rects + textContent + focused) — Layer 1 |
 | `packages/ag-react/src/hooks/useSignal.ts`      | alien-signals → React bridge — Layer 2               |
 | `packages/ag-react/src/hooks/useLayout.ts`      | useBoxRect, useScrollRect, useScreenRect — Layer 3   |
 | `packages/ag-react/src/hooks/useAgNode.ts`      | Raw AgNode + signals access for components           |

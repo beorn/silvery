@@ -33,7 +33,7 @@ Layout and reactivity are handled by two separate systems with a one-way sync br
 
 ```
 Layer 0: alien-signals (signal, computed, effect)       — pure reactive primitives
-Layer 1: getRectSignals, getNodeSignals                 — @silvery/ag, framework-agnostic
+Layer 1: getLayoutSignals                               — @silvery/ag, framework-agnostic
 Layer 2: useSignal(signal)                              — @silvery/ag-react, React bridge
 Layer 3: useBoxRect, useScreenRect, useAgNode           — semantic convenience hooks
 ```
