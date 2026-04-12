@@ -315,6 +315,21 @@ export { useAgNode } from "./hooks/useAgNode"
 export type { AgNodeHandle } from "./hooks/useAgNode"
 
 /**
+ * Bridge alien-signals to React re-renders.
+ *
+ * Reads a signal value and re-renders the component when it changes.
+ * Layer 2 of the reactive stack — used by advanced consumers who want
+ * direct signal access, or as the foundation for Layer 3 hooks.
+ *
+ * @example
+ * ```tsx
+ * const ag = useAgNode()
+ * const rect = useSignal(ag?.signals.boxRect ?? null)
+ * ```
+ */
+export { useSignal } from "./hooks/useSignal"
+
+/**
  * Ink-compatible box metrics hook.
  *
  * Returns `{ width, height, left, top, hasMeasured }` for the nearest silvery
