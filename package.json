@@ -1,6 +1,6 @@
 {
   "name": "silvery",
-  "version": "0.17.3",
+  "version": "0.17.4",
   "description": "React for modern terminal apps — powerful apps, polished UIs, proudly terminal",
   "keywords": [
     "ansi",
@@ -70,9 +70,7 @@
       "./ui/*": {
         "types": "./dist/ui/*.d.mts",
         "import": "./dist/ui/*.mjs"
-      },
-      "./ink": "@silvery/ink",
-      "./chalk": "@silvery/ink/chalk"
+      }
     }
   },
   "tsdown": {

@@ -39,5 +39,6 @@
   },
   "scripts": {
     "build": "tsdown"
-  }
+  },
+  "private": true
 }
