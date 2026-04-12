@@ -5,6 +5,7 @@
  */
 
 import type { BoxProps, AgNode, TextProps } from "@silvery/ag/types"
+import { trackLayoutDirty } from "@silvery/ag/dirty-tracking"
 import { displayWidthAnsi, graphemeWidth, wrapText, getActiveLineHeight } from "../unicode"
 import { collectPlainText as collectTextContent } from "./collect-text"
 import { getCachedPlainText, setCachedPlainText, getCachedAnalysis, setCachedAnalysis } from "./prepared-text"
@@ -282,6 +283,8 @@ export function fitContentCorrectionPass(root: AgNode, ctx?: PipelineContext): b
         node.layoutNode.setMaxWidth(intrinsicSize.width)
       }
       node.layoutNode.markDirty()
+      node.layoutDirty = true
+      trackLayoutDirty(node)
       corrected = true
     }
   })
