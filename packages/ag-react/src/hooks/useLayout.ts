@@ -28,7 +28,7 @@ import { useContext, useLayoutEffect, useReducer, useRef } from "react"
 import { effect } from "@silvery/signals"
 import { NodeContext } from "../context"
 import { type AgNode, type BoxProps, type Rect, rectEqual } from "@silvery/ag/types"
-import { getRectSignals, type RectSignals } from "@silvery/ag/rect-signals"
+import { getLayoutSignals } from "@silvery/ag/layout-signals"
 
 export type { Rect }
 
@@ -74,7 +74,7 @@ function getInnerRect(node: AgNode): Rect {
 type RectCallback = (rect: Rect) => void
 
 /** Selector that picks which rect signal to subscribe to. */
-type RectSignalKey = keyof RectSignals
+type RectSignalKey = "boxRect" | "scrollRect" | "screenRect"
 
 /**
  * Reactive rect hook: subscribes to a rect signal via alien-signals effect()
@@ -96,7 +96,7 @@ function useReactiveRect(getRect: (node: AgNode) => Rect | null | undefined, sig
   useLayoutEffect(() => {
     if (!node) return
 
-    const signals = getRectSignals(node)
+    const signals = getLayoutSignals(node)
     const rectSignal = signals[signalKey]
 
     // effect() subscribes to the signal — re-runs when the signal value changes.
@@ -145,7 +145,7 @@ function useCallbackRect(
   useLayoutEffect(() => {
     if (!node) return
 
-    const signals = getRectSignals(node)
+    const signals = getLayoutSignals(node)
     const rectSignal = signals[signalKey]
 
     // effect() subscribes to the signal — re-runs when the signal value changes.

@@ -16,7 +16,7 @@ import {
   getExplicitFocusLink,
 } from "./focus-queries"
 import { setFocused } from "./interactive-signals"
-import { syncFocusedSignal } from "./node-signals"
+import { syncFocusedSignal } from "./layout-signals"
 
 // ============================================================================
 // Types

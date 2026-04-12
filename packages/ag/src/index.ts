@@ -134,14 +134,12 @@ export {
   clearDirtyTracking,
 } from "./dirty-tracking"
 
-// Rect Signals
-export { getRectSignals, hasRectSignals, syncRectSignals, type RectSignals } from "./rect-signals"
-
-// Node Signals (textContent, focused)
+// Layout Signals (rects + textContent + focused — unified module)
 export {
-  getNodeSignals,
-  hasNodeSignals,
+  getLayoutSignals,
+  hasLayoutSignals,
+  syncRectSignals,
   syncTextContentSignal,
   syncFocusedSignal,
-  type NodeSignals,
-} from "./node-signals"
+  type LayoutSignals,
+} from "./layout-signals"

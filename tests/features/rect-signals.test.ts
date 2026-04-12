@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { getRectSignals, hasRectSignals, syncRectSignals, type RectSignals } from "@silvery/ag/rect-signals"
+import { getLayoutSignals, hasLayoutSignals, syncRectSignals, type LayoutSignals } from "@silvery/ag/layout-signals"
 import type { AgNode, Rect } from "@silvery/ag/types"
 
 /** Minimal AgNode stub with rect fields for testing. */
@@ -22,22 +22,22 @@ function createStubNode(overrides?: Partial<AgNode>): AgNode {
 }
 
 describe("rect-signals (@silvery/ag)", () => {
-  test("signals are created lazily on first getRectSignals call", () => {
+  test("signals are created lazily on first getLayoutSignals call", () => {
     const node = createStubNode()
 
     // Before first access, no signals should exist
-    expect(hasRectSignals(node)).toBe(false)
+    expect(hasLayoutSignals(node)).toBe(false)
 
     // First access creates signals
-    const signals = getRectSignals(node)
+    const signals = getLayoutSignals(node)
     expect(signals).toBeDefined()
-    expect(hasRectSignals(node)).toBe(true)
+    expect(hasLayoutSignals(node)).toBe(true)
   })
 
-  test("getRectSignals returns same instance on repeated calls", () => {
+  test("getLayoutSignals returns same instance on repeated calls", () => {
     const node = createStubNode()
-    const a = getRectSignals(node)
-    const b = getRectSignals(node)
+    const a = getLayoutSignals(node)
+    const b = getLayoutSignals(node)
     expect(a).toBe(b)
   })
 
@@ -49,7 +49,7 @@ describe("rect-signals (@silvery/ag)", () => {
       screenRect: rect,
     })
 
-    const signals = getRectSignals(node)
+    const signals = getLayoutSignals(node)
     expect(signals.boxRect()).toBe(rect)
     expect(signals.scrollRect()).toBe(rect)
     expect(signals.screenRect()).toBe(rect)
@@ -65,7 +65,7 @@ describe("rect-signals (@silvery/ag)", () => {
     })
 
     // Create signals (initializes from node)
-    const signals = getRectSignals(node)
+    const signals = getLayoutSignals(node)
     expect(signals.boxRect()).toBe(initialRect)
 
     // Simulate layout phase updating node rects
@@ -86,15 +86,15 @@ describe("rect-signals (@silvery/ag)", () => {
 
     // Should not throw or create signals
     syncRectSignals(node)
-    expect(hasRectSignals(node)).toBe(false)
+    expect(hasLayoutSignals(node)).toBe(false)
   })
 
   test("different nodes get independent signal instances", () => {
     const node1 = createStubNode({ id: "node-1" })
     const node2 = createStubNode({ id: "node-2" })
 
-    const signals1 = getRectSignals(node1)
-    const signals2 = getRectSignals(node2)
+    const signals1 = getLayoutSignals(node1)
+    const signals2 = getLayoutSignals(node2)
 
     expect(signals1).not.toBe(signals2)
 
@@ -107,11 +107,11 @@ describe("rect-signals (@silvery/ag)", () => {
     expect(signals2.boxRect()).not.toBe(newRect)
   })
 
-  test("exports are available from @silvery/ag/rect-signals (no ag-term needed)", () => {
+  test("exports are available from @silvery/ag/layout-signals (no ag-term needed)", () => {
     // This test verifies the import path works — if it compiles and runs,
     // the move to @silvery/ag was successful.
-    expect(typeof getRectSignals).toBe("function")
-    expect(typeof hasRectSignals).toBe("function")
+    expect(typeof getLayoutSignals).toBe("function")
+    expect(typeof hasLayoutSignals).toBe("function")
     expect(typeof syncRectSignals).toBe("function")
   })
 })

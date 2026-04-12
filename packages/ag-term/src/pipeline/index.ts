@@ -58,7 +58,9 @@ export {
 export { renderPhase, clearBgConflictWarnings, setBgConflictMode } from "./render-phase"
 export { renderPhaseAdapter } from "./render-phase-adapter"
 export { outputPhase } from "./output-phase"
-export { getRectSignals, hasRectSignals, syncRectSignals, type RectSignals } from "@silvery/ag/rect-signals"
+// Layout signals — unified module (backward compat re-exports)
+export { getLayoutSignals, hasLayoutSignals, syncRectSignals, type LayoutSignals } from "@silvery/ag/layout-signals"
+export { getLayoutSignals as getRectSignals } from "@silvery/ag/layout-signals"
 
 // ============================================================================
 // Render Options & Pipeline Config (types only — functions deleted in Phase 2)

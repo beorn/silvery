@@ -31,7 +31,7 @@ const measureLog = createLogger("silvery:measure")
 import { measureStats } from "@silvery/ag-term/pipeline/measure-stats"
 export { measureStats }
 
-import { syncRectSignals } from "@silvery/ag/rect-signals"
+import { syncRectSignals } from "@silvery/ag/layout-signals"
 
 // ============================================================================
 // Node Creation

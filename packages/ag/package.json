@@ -75,13 +75,9 @@
         "types": "./dist/tree-utils.d.mts",
         "import": "./dist/tree-utils.mjs"
       },
-      "./rect-signals": {
-        "types": "./dist/rect-signals.d.mts",
-        "import": "./dist/rect-signals.mjs"
-      },
-      "./node-signals": {
-        "types": "./dist/node-signals.d.mts",
-        "import": "./dist/node-signals.mjs"
+      "./layout-signals": {
+        "types": "./dist/layout-signals.d.mts",
+        "import": "./dist/layout-signals.mjs"
       },
       "./types": {
         "types": "./dist/types.d.mts",
@@ -112,8 +108,7 @@
       "src/mouse-event-types.ts",
       "src/text-frame.ts",
       "src/tree-utils.ts",
-      "src/rect-signals.ts",
-      "src/node-signals.ts",
+      "src/layout-signals.ts",
       "src/types.ts"
     ],
     "format": "esm"

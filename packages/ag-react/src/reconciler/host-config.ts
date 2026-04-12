@@ -10,7 +10,7 @@ import { createContext } from "react"
 import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
 import type { BoxProps, AgNode, AgNodeType, TextProps } from "@silvery/ag/types"
 import { trackContentDirty, trackStyleOnlyDirty, trackScrollDirty } from "@silvery/ag/dirty-tracking"
-import { syncTextContentSignal } from "@silvery/ag/node-signals"
+import { syncTextContentSignal } from "@silvery/ag/layout-signals"
 import {
   getRenderEpoch,
   INITIAL_EPOCH,

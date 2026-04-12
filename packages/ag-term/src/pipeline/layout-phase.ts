@@ -20,7 +20,7 @@ import {
   DESC_OVERFLOW_BIT,
 } from "@silvery/ag/epoch"
 import { getBorderSize, getPadding } from "./helpers"
-import { syncRectSignals } from "@silvery/ag/rect-signals"
+import { syncRectSignals } from "@silvery/ag/layout-signals"
 
 const log = createLogger("silvery:layout")
 

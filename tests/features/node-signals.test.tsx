@@ -4,7 +4,7 @@
  * Verifies that:
  * - textContent signal updates via syncTextContentSignal
  * - focused signal updates via syncFocusedSignal
- * - Signals are lazy — only allocated when getNodeSignals() is called
+ * - Signals are lazy — only allocated when getLayoutSignals() is called
  * - Signal values track node state correctly through multiple updates
  * - Integration with FocusManager for focus signal wiring
  */
@@ -13,11 +13,11 @@ import { effect } from "@silvery/signals"
 import type { AgNode, BoxProps, TextProps } from "../../packages/ag/src/types"
 import { INITIAL_EPOCH } from "../../packages/ag/src/epoch"
 import {
-  getNodeSignals,
-  hasNodeSignals,
+  getLayoutSignals,
+  hasLayoutSignals,
   syncTextContentSignal,
   syncFocusedSignal,
-} from "../../packages/ag/src/node-signals"
+} from "../../packages/ag/src/layout-signals"
 import { createFocusManager } from "../../packages/ag/src/focus-manager"
 
 // ============================================================================
@@ -68,13 +68,13 @@ describe("G8: node signals", () => {
   describe("textContent signal", () => {
     test("textContent signal reflects initial text", () => {
       const node = stubNode("t1", { textContent: "Hello", isRawText: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       expect(signals.textContent()).toBe("Hello")
     })
 
     test("textContent signal updates via syncTextContentSignal", () => {
       const node = stubNode("t1", { textContent: "First", isRawText: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       expect(signals.textContent()).toBe("First")
 
       // Simulate what commitTextUpdate does
@@ -85,7 +85,7 @@ describe("G8: node signals", () => {
 
     test("textContent signal triggers effect on change", () => {
       const node = stubNode("t1", { textContent: "Alpha", isRawText: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       const observed: (string | undefined)[] = []
 
       const dispose = effect(() => {
@@ -108,26 +108,26 @@ describe("G8: node signals", () => {
     test("textContent signal is lazy — only allocated when requested", () => {
       const node = stubNode("t1", { textContent: "Lazy check", isRawText: true })
 
-      // Before calling getNodeSignals, no signals should exist
-      expect(hasNodeSignals(node)).toBe(false)
+      // Before calling getLayoutSignals, no signals should exist
+      expect(hasLayoutSignals(node)).toBe(false)
 
-      // After calling getNodeSignals, signals should exist
-      getNodeSignals(node)
-      expect(hasNodeSignals(node)).toBe(true)
+      // After calling getLayoutSignals, signals should exist
+      getLayoutSignals(node)
+      expect(hasLayoutSignals(node)).toBe(true)
     })
 
     test("syncTextContentSignal is no-op when signals not allocated", () => {
       const node = stubNode("t1", { textContent: "No signal", isRawText: true })
-      expect(hasNodeSignals(node)).toBe(false)
+      expect(hasLayoutSignals(node)).toBe(false)
 
       // Should not throw — just a no-op
       syncTextContentSignal(node)
-      expect(hasNodeSignals(node)).toBe(false)
+      expect(hasLayoutSignals(node)).toBe(false)
     })
 
     test("textContent signal does not trigger effect when value unchanged", () => {
       const node = stubNode("t1", { textContent: "Stable", isRawText: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       let effectCount = 0
 
       const dispose = effect(() => {
@@ -146,7 +146,7 @@ describe("G8: node signals", () => {
 
     test("textContent signal handles undefined initial value", () => {
       const node = stubNode("t1") // no textContent set
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       expect(signals.textContent()).toBeUndefined()
 
       node.textContent = "Now set"
@@ -158,13 +158,13 @@ describe("G8: node signals", () => {
   describe("focused signal", () => {
     test("focused signal reflects initial state (unfocused)", () => {
       const node = stubNode("f1", { focusable: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       expect(signals.focused()).toBe(false)
     })
 
     test("syncFocusedSignal updates signal when focus changes", () => {
       const node = stubNode("f1", { focusable: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       expect(signals.focused()).toBe(false)
 
       // Simulate focus gain
@@ -178,7 +178,7 @@ describe("G8: node signals", () => {
 
     test("focused signal triggers effect on focus change", () => {
       const node = stubNode("f1", { focusable: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       const observed: boolean[] = []
 
       const dispose = effect(() => {
@@ -198,16 +198,16 @@ describe("G8: node signals", () => {
 
     test("syncFocusedSignal is no-op when signals not allocated", () => {
       const node = stubNode("f1", { focusable: true })
-      expect(hasNodeSignals(node)).toBe(false)
+      expect(hasLayoutSignals(node)).toBe(false)
 
       // Should not throw — just a no-op
       syncFocusedSignal(node, true)
-      expect(hasNodeSignals(node)).toBe(false)
+      expect(hasLayoutSignals(node)).toBe(false)
     })
 
     test("focused signal does not trigger effect when value unchanged", () => {
       const node = stubNode("f1", { focusable: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
       let effectCount = 0
 
       const dispose = effect(() => {
@@ -232,8 +232,8 @@ describe("G8: node signals", () => {
       const fm = createFocusManager()
 
       // Allocate signals before focus changes
-      const sigA = getNodeSignals(nodeA)
-      const sigB = getNodeSignals(nodeB)
+      const sigA = getLayoutSignals(nodeA)
+      const sigB = getLayoutSignals(nodeB)
 
       expect(sigA.focused()).toBe(false)
       expect(sigB.focused()).toBe(false)
@@ -260,8 +260,8 @@ describe("G8: node signals", () => {
       const nodeA = stubNode("a", { textContent: "NodeA", isRawText: true })
       const nodeB = stubNode("b", { textContent: "NodeB", isRawText: true })
 
-      const sigA = getNodeSignals(nodeA)
-      const sigB = getNodeSignals(nodeB)
+      const sigA = getLayoutSignals(nodeA)
+      const sigB = getLayoutSignals(nodeB)
 
       expect(sigA.textContent()).toBe("NodeA")
       expect(sigB.textContent()).toBe("NodeB")
@@ -275,7 +275,7 @@ describe("G8: node signals", () => {
 
     test("textContent and focused signals are independent on same node", () => {
       const node = stubNode("both", { textContent: "Hello", isRawText: true })
-      const signals = getNodeSignals(node)
+      const signals = getLayoutSignals(node)
 
       let textEffectCount = 0
       let focusEffectCount = 0

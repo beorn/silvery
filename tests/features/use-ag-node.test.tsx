@@ -10,7 +10,7 @@ import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text, useAgNode } from "silvery"
 import type { AgNodeHandle } from "silvery"
-import { hasRectSignals } from "@silvery/ag/rect-signals"
+import { hasLayoutSignals } from "@silvery/ag/layout-signals"
 
 describe("useAgNode", () => {
   test("returns null outside component tree", () => {
@@ -139,7 +139,7 @@ describe("useAgNode", () => {
 
     // The node with the hook should have signals allocated
     expect(parentNode).not.toBeNull()
-    expect(hasRectSignals(parentNode!.node)).toBe(true)
+    expect(hasLayoutSignals(parentNode!.node)).toBe(true)
 
     // Find the "plain" node via locator — it should NOT have signals
     const plainLocator = app.locator("#plain")

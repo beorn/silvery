@@ -6,7 +6,7 @@
  *
  * This is the Layer 2 bridge in the reactive stack:
  *   Layer 0: alien-signals (signal, computed, effect)
- *   Layer 1: getRectSignals, getNodeSignals (framework-agnostic)
+ *   Layer 1: getLayoutSignals (framework-agnostic)
  *   Layer 2: useSignal (React bridge) ← this hook
  *   Layer 3: useBoxRect, useScreenRect (semantic convenience)
  *

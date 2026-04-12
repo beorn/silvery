@@ -10,19 +10,19 @@
 
 import { useContext } from "react"
 import { NodeContext } from "../context"
-import { getRectSignals, type RectSignals } from "@silvery/ag/rect-signals"
+import { getLayoutSignals, type LayoutSignals } from "@silvery/ag/layout-signals"
 import type { AgNode } from "@silvery/ag/types"
 
 export interface AgNodeHandle {
   /** The underlying AgNode */
   readonly node: AgNode
-  /** Reactive rect signals — call signal() to read current value */
-  readonly signals: RectSignals
+  /** Reactive layout signals — rects + textContent + focused */
+  readonly signals: LayoutSignals
 }
 
 export function useAgNode(): AgNodeHandle | null {
   const node = useContext(NodeContext)
   if (!node) return null
-  const signals = getRectSignals(node)
+  const signals = getLayoutSignals(node)
   return { node, signals }
 }
