@@ -35,7 +35,6 @@ export { colorEquals, DEFAULT_BG, isDefaultBg, createTextFrame } from "./buffer"
 // =============================================================================
 
 export {
-  executeRender,
   silveryBenchStart,
   silveryBenchStop,
   silveryBenchReset,

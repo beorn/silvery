@@ -73,7 +73,7 @@ export function isInspectorEnabled(): boolean {
 /**
  * Log render stats after each frame.
  *
- * Called by the scheduler after executeRender completes. When the inspector
+ * Called by the scheduler after doRender completes. When the inspector
  * is disabled this is a no-op (zero overhead).
  */
 export function inspectFrame(stats: RenderStats): void {

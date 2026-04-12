@@ -27,7 +27,7 @@ Reconciler calls `scheduler.scheduleRender()`.
 ### 2. Scheduler Batching
 
 ```
-scheduleRender() → queueMicrotask → frame rate check → executeRender()
+scheduleRender() → queueMicrotask → frame rate check → doRender()
 ```
 
 - Coalesces synchronous updates via queueMicrotask

@@ -97,7 +97,7 @@ const DEFAULT_TEXT_SIZING_ENABLED = false
 
 /**
  * Active measurer for the current pipeline execution.
- * Set by runWithMeasurer() during executeRender, restored after.
+ * Set by runWithMeasurer() during pipeline execution, restored after.
  * When null, module-level functions use the lazy default measurer.
  */
 let _scopedMeasurer: WidthMeasurer | null = null

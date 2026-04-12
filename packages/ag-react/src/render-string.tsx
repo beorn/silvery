@@ -31,7 +31,9 @@ import { createTerm } from "@silvery/ag-term/ansi"
 import { bufferToStyledText, bufferToText, type TerminalBuffer } from "@silvery/ag-term/buffer"
 import { StdoutContext, StderrContext, TermContext } from "./context"
 import { isLayoutEngineInitialized } from "@silvery/ag-term/layout-engine"
-import { executeRender, type PipelineConfig } from "@silvery/ag-term/pipeline"
+import type { PipelineConfig } from "@silvery/ag-term/pipeline"
+import { createAg } from "@silvery/ag-term/ag"
+import { runWithMeasurer } from "@silvery/ag-term/unicode"
 import { createContainer, getContainerRoot } from "./reconciler"
 import { stringReconciler } from "./reconciler/string-reconciler"
 
@@ -280,7 +282,13 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
       act(() => {
         const root = getContainerRoot(container)
         rootNode = root
-        const result = executeRender(root, width, height, null, undefined, pipelineConfig)
+        const measurer = pipelineConfig?.measurer
+        const doRender = () => {
+          const ag = createAg(root, { measurer })
+          ag.layout({ cols: width, rows: height })
+          return ag.render()
+        }
+        const result = measurer ? runWithMeasurer(measurer, doRender) : doRender()
         buffer = result.buffer
       })
       if (!hadReactCommit) {

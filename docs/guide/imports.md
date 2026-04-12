@@ -71,7 +71,7 @@ import { createReconciler } from "@silvery/ag-react/reconciler"
 Low-level terminal primitives: buffer management, render pipeline, ANSI escape sequences, input parsing, unicode text utilities, and render adapters (terminal, canvas, DOM).
 
 ```ts
-import { executeRender, outputPhase, createOutputPhase } from "@silvery/ag-term"
+import { createAg, outputPhase, createOutputPhase } from "@silvery/ag-term"
 import { displayWidth, wrapText, truncateText, splitGraphemes } from "@silvery/ag-term"
 import { ANSI, enableMouse, setCursorStyle, detectTerminalCaps } from "@silvery/ag-term"
 import { createTerm, term, patchConsole } from "@silvery/ag-term"
@@ -86,7 +86,8 @@ Deep imports for specific subsystems:
 import { createTerm, hyperlink, curlyUnderline } from "@silvery/ag-term/ansi"
 
 // Render pipeline internals
-import { executeRender, type PipelineConfig } from "@silvery/ag-term/pipeline"
+import { createAg } from "@silvery/ag-term/ag"
+import { outputPhase, type PipelineConfig } from "@silvery/ag-term/pipeline"
 import { outputPhase, createOutputPhase } from "@silvery/ag-term/pipeline"
 
 // Diagnostic toolbelt (withDiagnostics, VirtualTerminal, buffer comparison)

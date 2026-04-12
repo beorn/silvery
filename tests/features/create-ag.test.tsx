@@ -1,8 +1,8 @@
 /**
  * Tests for createAg() — era2a Phase 3.
  *
- * createAg is validated through 4636+ existing tests via executeRender
- * delegation. These tests verify the direct API + integration contract.
+ * createAg is the sole pipeline entry point, validated through 4636+ existing tests.
+ * These tests verify the direct API + integration contract.
  */
 
 import { describe, test, expect } from "vitest"
@@ -37,7 +37,7 @@ function makeNode(type: string, props: Record<string, unknown>, children: AgNode
 }
 
 describe("createAg", () => {
-  describe("executeRender delegation (integration)", () => {
+  describe("pipeline integration", () => {
     test("simple text renders correctly", () => {
       const render = createRenderer({ cols: 40, rows: 10 })
       const app = render(<Text>Hello World</Text>)

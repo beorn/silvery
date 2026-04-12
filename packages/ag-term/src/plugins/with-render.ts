@@ -14,7 +14,10 @@ import type { Term } from "../ansi"
 import type { ReactElement } from "react"
 import type { TerminalBuffer } from "../buffer"
 import { createPipeline, type MeasuredTerm } from "../measurer"
-import { executeRender, type ExecuteRenderOptions, type PipelineConfig } from "../pipeline"
+import type { PipelineConfig, ExecuteRenderOptions } from "../pipeline"
+import { outputPhase } from "../pipeline/output-phase"
+import { createAg } from "../ag"
+import { runWithMeasurer } from "../unicode"
 import type { AgNode } from "@silvery/create/types"
 
 /**
@@ -62,7 +65,28 @@ export function withRender(term: Term): RenderTerm {
     prevBuffer: TerminalBuffer | null,
     options?: ExecuteRenderOptions | "fullscreen" | "inline",
   ): { output: string; buffer: TerminalBuffer } {
-    return executeRender(root, width, height, prevBuffer, options, pipelineConfig)
+    const opts: ExecuteRenderOptions = typeof options === "string" ? { mode: options } : (options ?? {})
+    const {
+      mode = "fullscreen",
+      skipLayoutNotifications = false,
+      skipScrollStateUpdates = false,
+      scrollbackOffset = 0,
+      termRows,
+      cursorPos,
+    } = opts
+
+    const doRender = () => {
+      const ag = createAg(root, { measurer })
+      ag.layout({ cols: width, rows: height }, { skipLayoutNotifications, skipScrollStateUpdates })
+      const { buffer } = ag.render({ prevBuffer })
+
+      const outputFn = pipelineConfig.outputPhaseFn ?? outputPhase
+      const output = outputFn(prevBuffer, buffer, mode, scrollbackOffset, termRows, cursorPos)
+
+      return { output, buffer }
+    }
+
+    return measurer ? runWithMeasurer(measurer, doRender) : doRender()
   }
 
   async function renderStaticFn(

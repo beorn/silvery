@@ -26,7 +26,10 @@ import {
 import { getCursorState as globalGetCursorState, type CursorAccessors } from "@silvery/ag-react/hooks/useCursor"
 import { copyToClipboard as copyToClipboardImpl } from "./clipboard"
 import { ANSI, notify as notifyTerminal, setCursorStyle, resetCursorStyle } from "./output"
-import { executeRender, type PipelineConfig } from "./pipeline"
+import type { PipelineConfig } from "./pipeline"
+import { outputPhase } from "./pipeline/output-phase"
+import { createAg } from "./ag"
+import { runWithMeasurer } from "./unicode"
 import type { RenderPhaseStats } from "./pipeline/types"
 import type { AgNode } from "@silvery/ag/types"
 
@@ -274,7 +277,7 @@ export class RenderScheduler {
         log.debug?.(`frame limited, delay: ${this.minFrameTime - timeSinceLastRender}ms`)
         this.scheduleNextFrame(this.minFrameTime - timeSinceLastRender)
       } else {
-        this.executeRender()
+        this.doRender()
       }
     })
   }
@@ -297,7 +300,7 @@ export class RenderScheduler {
       this.frameTimeout = null
     }
 
-    this.executeRender()
+    this.doRender()
   }
 
   /**
@@ -371,7 +374,7 @@ export class RenderScheduler {
     // If anything was deferred, render now
     if (this.pendingWhilePaused) {
       this.pendingWhilePaused = false
-      this.executeRender()
+      this.doRender()
     }
   }
 
@@ -451,7 +454,7 @@ export class RenderScheduler {
     this.frameTimeout = setTimeout(() => {
       this.frameTimeout = null
       if (!this.disposed) {
-        this.executeRender()
+        this.doRender()
       }
     }, delay)
   }
@@ -459,7 +462,7 @@ export class RenderScheduler {
   /**
    * Execute the actual render.
    */
-  private executeRender(): void {
+  private doRender(): void {
     using render = this.log.span("render")
     const startTime = Date.now()
 
@@ -478,19 +481,36 @@ export class RenderScheduler {
       // For inline mode, pass cursor state into the pipeline so the output
       // phase can position the real terminal cursor at the useCursor() location.
       const inlineCursor = this.mode === "inline" ? this.getCursorState() : undefined
-      const { output, buffer } = executeRender(
-        this.root,
-        width,
-        height,
-        this.prevBuffer,
-        {
-          mode: this.mode,
-          scrollbackOffset,
-          termRows: this.mode === "inline" ? (this.stdout.rows ?? 24) : undefined,
-          cursorPos: inlineCursor,
-        },
-        this.pipelineConfig,
-      )
+      const measurer = this.pipelineConfig?.measurer
+      const doRender = () => {
+        const ag = createAg(this.root, { measurer })
+        ag.layout({ cols: width, rows: height })
+        const { buffer } = ag.render({ prevBuffer: this.prevBuffer })
+
+        const start = performance.now()
+        const outputFn = this.pipelineConfig?.outputPhaseFn ?? outputPhase
+        let ansiOutput: string
+        try {
+          ansiOutput = outputFn(this.prevBuffer, buffer, this.mode, scrollbackOffset,
+            this.mode === "inline" ? (this.stdout.rows ?? 24) : undefined, inlineCursor)
+        } catch (e) {
+          if (e instanceof Error) {
+            ;(e as any).__silvery_buffer = buffer
+          }
+          throw e
+        }
+        const tOutput = performance.now() - start
+
+        // Bench instrumentation: accumulate output-phase timing
+        const acc = (globalThis as any).__silvery_bench_phases
+        if (acc) {
+          acc.output += tOutput
+          acc.pipelineCalls += 1
+        }
+
+        return { output: ansiOutput, buffer }
+      }
+      const { output, buffer } = measurer ? runWithMeasurer(measurer, doRender) : doRender()
 
       // Transform output based on non-TTY mode
       let transformedOutput: string
@@ -566,17 +586,12 @@ export class RenderScheduler {
       const strictMode = strictEnv && strictEnv !== "0" && strictEnv !== "false"
       if (strictMode && this.stats.renderCount > 0) {
         const renderNum = this.stats.renderCount + 1
-        const { buffer: freshBuffer } = executeRender(
-          this.root,
-          width,
-          height,
-          null,
-          {
-            mode: this.mode === "fullscreen" ? "fullscreen" : "inline",
-            skipLayoutNotifications: true,
-          },
-          this.pipelineConfig,
-        )
+        const doFreshRender = () => {
+          const freshAg = createAg(this.root, { measurer })
+          freshAg.layout({ cols: width, rows: height }, { skipLayoutNotifications: true })
+          return freshAg.render()
+        }
+        const { buffer: freshBuffer } = measurer ? runWithMeasurer(measurer, doFreshRender) : doFreshRender()
         let found = false
         for (let y = 0; y < buffer.height && !found; y++) {
           for (let x = 0; x < buffer.width && !found; x++) {
@@ -729,6 +744,8 @@ export function createScheduler(options: SchedulerOptions): RenderScheduler {
  * Does not batch or diff - just runs the pipeline and returns ANSI output.
  */
 export function renderToString(root: AgNode, width: number, height: number): string {
-  const { output } = executeRender(root, width, height, null)
-  return output
+  const ag = createAg(root)
+  ag.layout({ cols: width, rows: height })
+  const { buffer } = ag.render()
+  return outputPhase(null, buffer, "fullscreen")
 }

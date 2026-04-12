@@ -62,8 +62,8 @@ import { SilveryErrorBoundary } from "@silvery/ag-react/error-boundary"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 import { createFocusEvent, dispatchFocusEvent } from "@silvery/ag/focus-events"
-import { executeRender } from "../pipeline"
 import { createAg, type Ag } from "../ag"
+import { runWithMeasurer } from "../unicode"
 import { createPipeline } from "../measurer"
 import { isTextSizingLikelySupported, detectTextSizingSupport, getCachedProbeResult } from "../text-sizing"
 import { createWidthDetector, applyWidthConfig } from "../ansi/width-detection"
@@ -1469,7 +1469,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     const wasIncremental = !_noIncremental && agPrevBuffer !== null
     const pipelineMs = performance.now() - pipelineStart
 
-    // Expose timing for diagnostics (previously done by executeRenderCore).
+    // Expose timing for diagnostics.
     // Output timing is 0 here — the runtime handles the output phase separately.
     ;(globalThis as any).__silvery_last_pipeline = {
       layout: pipelineMs,
@@ -1494,17 +1494,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // so we add it here to catch incremental rendering bugs at runtime.
     // STRICT_MODE is hoisted to module scope — the env var is read once at load.
     if (STRICT_MODE && wasIncremental) {
-      const { buffer: freshBuffer } = executeRender(
-        rootNode,
-        dims.cols,
-        dims.rows,
-        null,
-        {
-          skipLayoutNotifications: true,
-          skipScrollStateUpdates: true,
-        },
-        pipelineConfig,
-      )
+      const doFreshRender = () => {
+        const freshAg = createAg(rootNode, { measurer: pipelineConfig?.measurer })
+        freshAg.layout({ cols: dims.cols, rows: dims.rows }, { skipLayoutNotifications: true, skipScrollStateUpdates: true })
+        return freshAg.render()
+      }
+      const measurer = pipelineConfig?.measurer
+      const { buffer: freshBuffer } = measurer ? runWithMeasurer(measurer, doFreshRender) : doFreshRender()
       const { cellEquals, bufferToText } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require("../buffer") as typeof import("../buffer")
@@ -1531,17 +1527,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const trap = { x, y, log: [] as string[] }
             ;(globalThis as any).__silvery_write_trap = trap
             try {
-              executeRender(
-                rootNode,
-                dims.cols,
-                dims.rows,
-                null,
-                {
-                  skipLayoutNotifications: true,
-                  skipScrollStateUpdates: true,
-                },
-                pipelineConfig,
-              )
+              if (measurer) {
+                runWithMeasurer(measurer, doFreshRender)
+              } else {
+                doFreshRender()
+              }
             } catch {
               // ignore
             }

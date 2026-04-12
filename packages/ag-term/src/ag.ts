@@ -1,7 +1,7 @@
 /**
  * Ag — tree + layout engine + renderer.
  *
- * Decomposes the opaque executeRender() into two independent phases:
+ * The sole pipeline entry point. Two independent phases:
  * - ag.layout(dims) — measure + flexbox → positions/sizes
  * - ag.render() — positioned tree → cell grid → TextFrame
  *

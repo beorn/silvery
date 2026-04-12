@@ -27,7 +27,8 @@ import {
   isLayoutEngineInitialized,
   setLayoutEngine,
 } from "./layout-engine.js"
-import { executeRender } from "./pipeline.js"
+import { createAg } from "./ag.js"
+import { outputPhase } from "./pipeline/output-phase.js"
 import {
   createContainer,
   createFiberRoot,
@@ -120,10 +121,10 @@ export interface RenderOptions {
    * Use production-like single-pass layout in doRender().
    *
    * When false (default), doRender() runs a synchronous layout stabilization
-   * loop (up to 5 iterations) that re-runs executeRender whenever React
+   * loop (up to 5 iterations) that re-runs runPipeline whenever React
    * commits new work from layout notifications (useBoxRect, etc.).
    *
-   * When true, doRender() does a single executeRender call (matching
+   * When true, doRender() does a single runPipeline call (matching
    * production's create-app.tsx behavior). Layout feedback effects are
    * flushed via a separate act()/flushSyncWork() loop after doRender(),
    * mimicking production's processEventBatch flush pattern.
@@ -153,7 +154,7 @@ export interface RenderOptions {
   /**
    * Callback fired after each pipeline execution, before React effects flush.
    *
-   * Called inside act() after executeRender produces the buffer but before
+   * Called inside act() after runPipeline produces the buffer but before
    * useLayoutEffect/useEffect callbacks run. Use this to make pipeline output
    * available to effects (e.g., Ink compat debug mode where useStdout().write()
    * needs to replay the latest frame).
@@ -516,16 +517,16 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   //
   // Two modes:
   // 1. Multi-pass (default): Layout stabilization loop (up to 5 iterations).
-  //    After executeRender fires notifyLayoutSubscribers (Phase 2.7), hooks
+  //    After runPipeline fires notifyLayoutSubscribers (Phase 2.7), hooks
   //    like useBoxRect call forceUpdate(). These React updates are flushed
   //    and the pipeline re-run until stable.
   //
   // 2. Single-pass (singlePassLayout=true): Matches production create-app.tsx.
-  //    Single executeRender call per doRender(), with a separate effect flush
+  //    Single runPipeline call per doRender(), with a separate effect flush
   //    loop afterward (like production's processEventBatch). This ensures tests
   //    exercise the same rendering pipeline as production.
   //
-  // Key insight: executeRender must run inside act() so that forceUpdate/setState
+  // Key insight: runPipeline must run inside act() so that forceUpdate/setState
   // calls from layout notifications are properly captured by React's scheduler.
   // With IS_REACT_ACT_ENVIRONMENT=true (set by silvery/testing), state updates
   // outside act() boundaries may be dropped.
@@ -534,25 +535,40 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // feedback stabilization). Matches classic path's cap of 5.
   const MAX_SINGLE_PASS_ITERATIONS = 5
 
+  /** Run the full pipeline: layout + render + output phase. */
+  function runPipeline(
+    root: ReturnType<typeof getContainerRoot>,
+    cols: number,
+    rows: number,
+    prevBuffer: TerminalBuffer | null,
+    opts?: { skipLayoutNotifications?: boolean; skipScrollStateUpdates?: boolean },
+  ): { output: string; buffer: TerminalBuffer } {
+    const ag = createAg(root)
+    ag.layout({ cols, rows }, opts)
+    const { buffer } = ag.render({ prevBuffer })
+    const output = outputPhase(prevBuffer, buffer, "fullscreen")
+    return { output, buffer }
+  }
+
   function doRender(): string {
     let output: string
     let buffer!: TerminalBuffer
 
     if (instance.singlePassLayout) {
-      // Production-matching single-pass: one executeRender, no stabilization
+      // Production-matching single-pass: one runPipeline, no stabilization
       // loop. This matches create-app.tsx doRender() which does a single
       // reconcile + pipeline pass. Layout feedback effects (useBoxRect
       // etc.) are NOT re-run within this doRender — they're flushed by the
       // caller (sendInput) in a separate loop, matching production's
       // processEventBatch flush pattern.
       //
-      // IMPORTANT: Do NOT flush sync work here. executeRender fires
+      // IMPORTANT: Do NOT flush sync work here. runPipeline fires
       // notifyLayoutSubscribers (Phase 2.7) which may call forceUpdate().
       // If we flushed that commit here, the pipeline output would still
       // reflect the pre-forceUpdate state. Instead, let the sendInput
       // flush loop detect the pending commit and call doRender() again
       // with the updated React tree.
-      // Single-pass: run executeRender once, then flush any pending React
+      // Single-pass: run runPipeline once, then flush any pending React
       // work from layout notifications. If React committed new work, run
       // additional passes to stabilize. Normally 1-2 passes suffice, but
       // resize can need 3 (pass 0 with stale zustand, pass 1 with updated
@@ -566,7 +582,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           act(() => {
             const root = getContainerRoot(instance.container)
             try {
-              const result = executeRender(
+              const result = runPipeline(
                 root,
                 instance.columns,
                 instance.rows,
@@ -577,8 +593,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             } catch (e) {
               // STRICT output verification may throw from the output phase.
               // The render phase buffer is still valid and attached to the
-              // error by executeRenderCore — extract it so lastBuffer()
-              // returns the correct frame, not a stale one.
+              // error — extract it so lastBuffer() returns the correct frame.
               renderError = e as Error
               const attachedBuffer = (e as any)?.__silvery_buffer
               if (attachedBuffer) {
@@ -644,7 +659,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           act(() => {
             const root = getContainerRoot(instance.container)
             try {
-              const result = executeRender(
+              const result = runPipeline(
                 root,
                 instance.columns,
                 instance.rows,
@@ -665,7 +680,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             instance.renderCount++
             onBufferReady?.(output, buffer, getRootContentHeight())
           })
-          // Flush any React work scheduled during executeRender (e.g. from
+          // Flush any React work scheduled during runPipeline (e.g. from
           // useSyncExternalStore updates triggered by Phase 2.7 callbacks).
           // Without this, external store changes from layout notification callbacks
           // (Phase 2.7) won't be committed until after doRender returns, causing
@@ -761,7 +776,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // Fresh render: renders from scratch without updating incremental state
   function doFreshRender(): TerminalBuffer {
     const root = getContainerRoot(instance.container)
-    const { buffer } = executeRender(root, instance.columns, instance.rows, null, {
+    const { buffer } = runPipeline(root, instance.columns, instance.rows, null, {
       skipLayoutNotifications: true,
       skipScrollStateUpdates: true,
     })

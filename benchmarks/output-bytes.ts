@@ -47,7 +47,6 @@ function createCountingStdout(cols: number, rows: number) {
 //
 // Use term.paint() to get the actual diff output.
 import { createTerm } from "@silvery/ag-term"
-import { executeRender } from "@silvery/ag-term"
 
 function measureSilvery(cols: number, rows: number, items: number) {
   const render = createRenderer({ cols, rows })

@@ -13,7 +13,7 @@
  * ## What This Tests
  *
  * The render phase incremental path:
- *   executeRender(root, cols, rows, prevBuffer) vs executeRender(root, cols, rows, null)
+ *   ag.render({ prevBuffer }) vs ag.render() (incremental vs fresh)
  *
  * Bugs targeted:
  *   - Ghost pixels from stale buffer regions not overwritten

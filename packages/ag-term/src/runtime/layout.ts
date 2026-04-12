@@ -10,7 +10,7 @@ import React, { type ReactElement } from "react"
 import { bufferToStyledText, bufferToText } from "../buffer"
 import { StdoutContext, StderrContext, TermContext } from "@silvery/ag-react/context"
 import { ensureDefaultLayoutEngine, isLayoutEngineInitialized } from "../layout-engine"
-import { executeRender } from "../pipeline"
+import { createAg } from "../ag"
 import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/ag-react/reconciler"
 import type { Buffer, Dims } from "./types"
 
@@ -119,9 +119,9 @@ export function layout(element: ReactElement, dims: Dims, options: LayoutOptions
 
   // Execute render pipeline (skip layout notifications for static renders)
   const root = getContainerRoot(container)
-  const { buffer: termBuffer } = executeRender(root, width, height, null, {
-    skipLayoutNotifications,
-  })
+  const ag = createAg(root)
+  ag.layout({ cols: width, rows: height }, { skipLayoutNotifications })
+  const { buffer: termBuffer } = ag.render()
 
   // Get text representations
   const text = bufferToText(termBuffer)
