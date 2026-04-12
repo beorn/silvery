@@ -22,7 +22,9 @@ import {
   useRef,
   useState,
 } from "react"
+import { effect as signalEffect } from "@silvery/signals"
 import { NodeContext } from "../context"
+import { getLayoutSignals } from "@silvery/ag/layout-signals"
 import type { BoxProps as BoxPropsType, AgNode, Rect } from "@silvery/ag/types"
 
 // ============================================================================
@@ -102,13 +104,16 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
     }
   }, [])
 
-  // Wire up onLayout callback - subscribe to layout changes
+  // Wire up onLayout callback - subscribe via layout signals
   useLayoutEffect(() => {
     if (!onLayout || !node) return
 
-    // Create subscriber callback
-    const handleLayoutChange = () => {
-      const layout = node.boxRect
+    const signals = getLayoutSignals(node)
+    const onLayoutRef = { current: onLayout }
+    onLayoutRef.current = onLayout
+
+    const dispose = signalEffect(() => {
+      const layout = signals.boxRect()
       if (!layout) return
 
       // Only call onLayout if layout actually changed
@@ -121,21 +126,11 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
         last.height !== layout.height
       ) {
         lastReportedLayout.current = layout
-        onLayout(layout)
+        onLayoutRef.current(layout)
       }
-    }
+    })
 
-    // Subscribe to layout changes
-    node.layoutSubscribers.add(handleLayoutChange)
-
-    // Call immediately if we already have layout
-    if (node.boxRect) {
-      handleLayoutChange()
-    }
-
-    return () => {
-      node.layoutSubscribers.delete(handleLayoutChange)
-    }
+    return dispose
   }, [node, onLayout])
 
   // Expose imperative methods via ref

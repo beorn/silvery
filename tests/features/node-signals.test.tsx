@@ -50,7 +50,6 @@ function stubNode(
     layoutChangedThisFrame: INITIAL_EPOCH,
     dirtyBits: 0,
     dirtyEpoch: INITIAL_EPOCH,
-    layoutSubscribers: new Set(),
     textContent: opts?.textContent,
     isRawText: opts?.isRawText,
   }

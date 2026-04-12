@@ -31,7 +31,9 @@
  */
 
 import { useContext, useLayoutEffect, useReducer, type RefObject } from "react"
+import { effect as signalEffect } from "@silvery/signals"
 import { NodeContext } from "../context"
+import { getLayoutSignals } from "@silvery/ag/layout-signals"
 import type { AgNode } from "@silvery/ag/types"
 
 // ============================================================================
@@ -116,7 +118,7 @@ function computeMetrics(node: AgNode): BoxMetrics {
  * Returns box metrics for the nearest Box ancestor (context-based) or a
  * specific Box via ref (Ink-compatible).
  *
- * Subscribes to layout changes on the target node's layoutSubscribers set.
+ * Subscribes to layout changes via the boxRect signal from layout-signals.
  * On first render before layout completes, returns zeros with hasMeasured=false.
  *
  * @param ref - Optional ref to a Box (BoxHandle). When omitted, reads from NodeContext.
@@ -131,10 +133,12 @@ export function useBoxMetrics(ref?: RefObject<unknown>): BoxMetrics {
   useLayoutEffect(() => {
     if (!node) return
 
-    node.layoutSubscribers.add(forceUpdate)
-    return () => {
-      node.layoutSubscribers.delete(forceUpdate)
-    }
+    const signals = getLayoutSignals(node)
+    const dispose = signalEffect(() => {
+      signals.boxRect() // read to establish dependency
+      forceUpdate()
+    })
+    return dispose
   }, [node])
 
   if (!node) return EMPTY_METRICS

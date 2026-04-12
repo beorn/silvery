@@ -276,7 +276,6 @@ export const hostConfig = {
       layoutChangedThisFrame: INITIAL_EPOCH,
       dirtyBits: CONTENT_BIT | STYLE_PROPS_BIT | BG_BIT | SUBTREE_BIT,
       dirtyEpoch: epoch,
-      layoutSubscribers: new Set(),
       textContent: text,
       isRawText: true,
     }

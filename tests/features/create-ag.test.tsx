@@ -31,7 +31,6 @@ function makeNode(type: string, props: Record<string, unknown>, children: AgNode
     layoutChangedThisFrame: INITIAL_EPOCH,
     dirtyBits: 0,
     dirtyEpoch: INITIAL_EPOCH,
-    layoutSubscribers: new Set(),
   }
 }
 

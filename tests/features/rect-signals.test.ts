@@ -10,7 +10,7 @@ import { getLayoutSignals, hasLayoutSignals, syncRectSignals, type LayoutSignals
 import type { AgNode, Rect } from "@silvery/ag/types"
 
 /** Minimal AgNode stub with rect fields for testing. */
-function createStubNode(overrides?: Partial<AgNode>): AgNode {
+function createStubNode(overrides?: Partial<AgNode> & { id?: string }): AgNode {
   return {
     type: "silvery-box",
     id: "test-node",

@@ -52,7 +52,6 @@ function stubNode(
     layoutChangedThisFrame: INITIAL_EPOCH,
     dirtyBits: 0,
     dirtyEpoch: INITIAL_EPOCH,
-    layoutSubscribers: new Set(),
   }
   for (const child of children) {
     child.parent = node

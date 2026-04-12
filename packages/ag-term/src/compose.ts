@@ -173,7 +173,6 @@ export function withAg(options?: { root?: AgNode; measurer?: import("./unicode")
         layoutChangedThisFrame: INITIAL_EPOCH,
         dirtyBits: ALL_RECONCILER_BITS,
         dirtyEpoch: getRenderEpoch(),
-        layoutSubscribers: new Set(),
       } satisfies AgNode)
 
     const ag = createAg(root, { measurer: options?.measurer })

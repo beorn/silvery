@@ -244,7 +244,6 @@ function createMockApp(onPress?: (key: string) => void) {
       bgDirty: true,
       subtreeDirty: true,
       childrenDirty: true,
-      layoutSubscribers: new Set(),
     }),
     focusManager: {
       activeElement: null,

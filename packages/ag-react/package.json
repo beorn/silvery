@@ -18,6 +18,7 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./reconciler": "./src/reconciler/index.ts",
     "./*": "./src/*.ts",
     "./*.tsx": "./src/*.tsx"
   },

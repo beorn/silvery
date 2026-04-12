@@ -4,6 +4,8 @@
  */
 
 import { useContext, useEffect, useLayoutEffect, useCallback, useState, useMemo, useRef } from "react"
+import { effect as signalEffect } from "@silvery/signals"
+import { getLayoutSignals } from "@silvery/ag/layout-signals"
 import { StdoutContext } from "@silvery/ag-react/context"
 import { RuntimeContext } from "@silvery/ag-react/context"
 import { InkCursorStoreCtx } from "./with-ink-cursor"
@@ -377,7 +379,7 @@ function metricsEqual(a: BoxMetrics, b: BoxMetrics): boolean {
  * Returns layout metrics for a tracked box element.
  *
  * Wires into silvery's layout system by subscribing to layout changes
- * on the referenced AgNode's layoutSubscribers.
+ * via the AgNode's layout signals.
  */
 export function useBoxMetrics(ref: import("react").RefObject<any>) {
   const [metrics, setMetrics] = useState<BoxMetrics>(ZERO_METRICS)
@@ -413,8 +415,10 @@ export function useBoxMetrics(ref: import("react").RefObject<any>) {
 
     if (!node) return
 
-    const onLayoutChange = () => {
-      const rect = node.boxRect
+    // Subscribe via layout signals
+    const signals = getLayoutSignals(node)
+    const dispose = signalEffect(() => {
+      const rect = signals.boxRect()
       if (rect) {
         updateMetrics({
           width: rect.width,
@@ -424,19 +428,9 @@ export function useBoxMetrics(ref: import("react").RefObject<any>) {
           hasMeasured: true,
         })
       }
-    }
+    })
 
-    // Read current layout if already computed
-    if (node.boxRect) {
-      onLayoutChange()
-    }
-
-    // Subscribe to future layout changes
-    node.layoutSubscribers.add(onLayoutChange)
-
-    return () => {
-      node.layoutSubscribers.delete(onLayoutChange)
-    }
+    return dispose
   })
 
   // Listen for resize events on stdout to trigger re-measurement

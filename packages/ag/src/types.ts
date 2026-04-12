@@ -442,9 +442,6 @@ export interface AgNode {
    */
   dirtyEpoch: number
 
-  /** Callbacks subscribed to layout changes (used by useBoxRect) */
-  layoutSubscribers: Set<() => void>
-
   /** Text content for text nodes */
   textContent?: string
 

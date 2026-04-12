@@ -326,12 +326,6 @@ export function notifyLayoutSubscribers(node: AgNode): void {
   const contentChanged = !rectEqual(node.prevLayout, node.boxRect)
   const screenChanged = !rectEqual(node.prevScrollRect, node.scrollRect)
   const renderChanged = !rectEqual(node.prevScreenRect, node.screenRect)
-  if (contentChanged || screenChanged || renderChanged) {
-    for (const subscriber of node.layoutSubscribers) {
-      subscriber()
-    }
-  }
-
   // Sync rect values into alien-signals (for signal-based hooks).
   // Always sync — even when no rect changed — because the signal may
   // have been created after the last sync (lazy initialization).

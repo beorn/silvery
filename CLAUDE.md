@@ -482,13 +482,13 @@ Subpath imports available from `silvery`:
 
 These are workspace packages for development. Users do not import from them directly — the `silvery` barrel re-exports their public APIs. All marked `"private": true`.
 
-| Package             | What                                       |
-| ------------------- | ------------------------------------------ |
-| `@silvery/ag`       | Core types, layout-signals (framework-agnostic reactive layer) |
+| Package             | What                                                                      |
+| ------------------- | ------------------------------------------------------------------------- |
+| `@silvery/ag`       | Core types, layout-signals (framework-agnostic reactive layer)            |
 | `@silvery/ag-react` | React reconciler, hooks (useSignal, useAgNode, useBoxRect), UI components |
-| `@silvery/ag-term`  | Terminal runtime, ANSI output, pipeline, syncRectSignals bridge |
-| `@silvery/theme`    | Theme tokens, 38 palettes, theme CLI       |
-| `@silvery/ink`      | Ink/Chalk compatibility layers             |
+| `@silvery/ag-term`  | Terminal runtime, ANSI output, pipeline, syncRectSignals bridge           |
+| `@silvery/theme`    | Theme tokens, 38 palettes, theme CLI                                      |
+| `@silvery/ink`      | Ink/Chalk compatibility layers                                            |
 
 ## Structure
 
@@ -503,22 +503,22 @@ These are workspace packages for development. Users do not import from them dire
 
 ## Key Internals
 
-| File                                            | What                                                 |
-| ----------------------------------------------- | ---------------------------------------------------- |
+| File                                            | What                                                       |
+| ----------------------------------------------- | ---------------------------------------------------------- |
 | `packages/ag/src/layout-signals.ts`             | All node signals (rects + textContent + focused) — Layer 1 |
-| `packages/ag-react/src/hooks/useSignal.ts`      | alien-signals → React bridge — Layer 2               |
-| `packages/ag-react/src/hooks/useLayout.ts`      | useBoxRect, useScrollRect, useScreenRect — Layer 3   |
-| `packages/ag-react/src/hooks/useAgNode.ts`      | Raw AgNode + signals access for components           |
-| `packages/ag/src/text-frame.ts`                 | TextFrame + FrameCell type definitions               |
-| `packages/ag-term/src/ansi/term.ts`             | Term type and createTerm() — the central abstraction |
-| `packages/ag-term/src/runtime/term-provider.ts` | Terminal as Provider (state, events, input parsing)  |
-| `packages/ag-term/src/runtime/run.tsx`          | Layer 2 entry point — run(<App />, term)             |
-| `packages/ag-term/src/runtime/create-app.tsx`   | Layer 3 — multi-provider apps with zustand store     |
-| `packages/ag-term/src/pipeline/render-phase.ts` | Incremental rendering (most complex)                 |
-| `packages/ag-term/src/buffer.ts`                | TerminalBuffer + createTextFrame() snapshot factory  |
-| `packages/ag-term/src/pipeline/output-phase.ts` | Buffer diff, ANSI output generation                  |
-| `packages/ag-term/src/pipeline/layout-phase.ts` | Layout, scroll, sticky, screen rects                 |
-| `packages/ag-term/src/pipeline/CLAUDE.md`       | Pipeline internals docs (read before editing)        |
+| `packages/ag-react/src/hooks/useSignal.ts`      | alien-signals → React bridge — Layer 2                     |
+| `packages/ag-react/src/hooks/useLayout.ts`      | useBoxRect, useScrollRect, useScreenRect — Layer 3         |
+| `packages/ag-react/src/hooks/useAgNode.ts`      | Raw AgNode + signals access for components                 |
+| `packages/ag/src/text-frame.ts`                 | TextFrame + FrameCell type definitions                     |
+| `packages/ag-term/src/ansi/term.ts`             | Term type and createTerm() — the central abstraction       |
+| `packages/ag-term/src/runtime/term-provider.ts` | Terminal as Provider (state, events, input parsing)        |
+| `packages/ag-term/src/runtime/run.tsx`          | Layer 2 entry point — run(<App />, term)                   |
+| `packages/ag-term/src/runtime/create-app.tsx`   | Layer 3 — multi-provider apps with zustand store           |
+| `packages/ag-term/src/pipeline/render-phase.ts` | Incremental rendering (most complex)                       |
+| `packages/ag-term/src/buffer.ts`                | TerminalBuffer + createTextFrame() snapshot factory        |
+| `packages/ag-term/src/pipeline/output-phase.ts` | Buffer diff, ANSI output generation                        |
+| `packages/ag-term/src/pipeline/layout-phase.ts` | Layout, scroll, sticky, screen rects                       |
+| `packages/ag-term/src/pipeline/CLAUDE.md`       | Pipeline internals docs (read before editing)              |
 
 ## Documentation Site
 

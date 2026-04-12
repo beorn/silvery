@@ -38,7 +38,7 @@ Layer 2: useSignal(signal)                              — @silvery/ag-react, R
 Layer 3: useBoxRect, useScreenRect, useAgNode           — semantic convenience hooks
 ```
 
-The boundary is intentional: Flexily's `isDirty()` propagation is reliable and fast. Wrapping it in signals would create a parallel dirty-tracking system — signals are for *consumers* of layout, not for the layout engine itself. This also keeps Flexily portable: signals in `@silvery/ag` work for React, Solid, canvas, DOM, or any future adapter.
+The boundary is intentional: Flexily's `isDirty()` propagation is reliable and fast. Wrapping it in signals would create a parallel dirty-tracking system — signals are for _consumers_ of layout, not for the layout engine itself. This also keeps Flexily portable: signals in `@silvery/ag` work for React, Solid, canvas, DOM, or any future adapter.
 
 ## Key Abstractions
 

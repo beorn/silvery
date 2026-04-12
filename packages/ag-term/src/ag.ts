@@ -291,7 +291,6 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       layoutChangedThisFrame: INITIAL_EPOCH,
       dirtyBits: ALL_RECONCILER_BITS,
       dirtyEpoch: getRenderEpoch(),
-      layoutSubscribers: new Set(),
     }
   }
 

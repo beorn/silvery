@@ -39,7 +39,6 @@ function stubNode(testID: string, rect: Rect, opts?: { focusable?: boolean; chil
     layoutChangedThisFrame: INITIAL_EPOCH,
     dirtyBits: 0,
     dirtyEpoch: INITIAL_EPOCH,
-    layoutSubscribers: new Set(),
   }
   for (const child of children) {
     child.parent = node

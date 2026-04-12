@@ -63,7 +63,6 @@ export function createNode(
     layoutChangedThisFrame: epoch,
     dirtyBits: ALL_RECONCILER_BITS,
     dirtyEpoch: epoch,
-    layoutSubscribers: new Set(),
   }
 
   // Apply initial flexbox props to layout node
@@ -245,7 +244,6 @@ export function createVirtualTextNode(props: TextProps): AgNode {
     layoutChangedThisFrame: INITIAL_EPOCH,
     dirtyBits: CONTENT_BIT | STYLE_PROPS_BIT | BG_BIT | SUBTREE_BIT,
     dirtyEpoch: epoch,
-    layoutSubscribers: new Set(),
     isRawText: false, // Not raw text, but virtual (nested) text
     inlineRects: null,
   }
@@ -664,15 +662,9 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number): void {
 }
 
 /**
- * Notify all layout subscribers of layout changes.
+ * Sync layout signals for nodes whose rects changed.
  */
 function notifyLayoutSubscribers(node: AgNode): void {
-  if (!rectEqual(node.prevLayout, node.boxRect)) {
-    for (const subscriber of node.layoutSubscribers) {
-      subscriber()
-    }
-  }
-
   // Sync rect values into alien-signals (for signal-based hooks)
   syncRectSignals(node)
 

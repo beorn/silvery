@@ -58,7 +58,7 @@ function textNode(text: string, props: TextProps = {}): AgNode {
     layoutChangedThisFrame: INITIAL_EPOCH,
     dirtyBits: 0,
     dirtyEpoch: INITIAL_EPOCH,
-    layoutSubscribers: new Set(),
+
     textContent: text,
     isRawText: true,
   }
@@ -81,7 +81,7 @@ function virtualTextNode(props: TextProps, ...children: AgNode[]): AgNode {
     layoutChangedThisFrame: INITIAL_EPOCH,
     dirtyBits: 0,
     dirtyEpoch: INITIAL_EPOCH,
-    layoutSubscribers: new Set(),
+
     isRawText: false,
   }
   for (const child of children) {
@@ -116,7 +116,7 @@ function boxNode(props: BoxProps, ...children: AgNode[]): AgNode {
     layoutChangedThisFrame: INITIAL_EPOCH,
     dirtyBits: 0,
     dirtyEpoch: INITIAL_EPOCH,
-    layoutSubscribers: new Set(),
+
   }
   for (const child of children) {
     child.parent = node
