@@ -45,11 +45,14 @@ export interface LayoutNode {
 
   // Dirty tracking
   markDirty(): void
+  isDirty(): boolean
 
   // Dimension setters
   setWidth(value: number): void
   setWidthPercent(value: number): void
   setWidthAuto(): void
+  setWidthFitContent(): void
+  setWidthSnugContent(): void
   setHeight(value: number): void
   setHeightPercent(value: number): void
   setHeightAuto(): void

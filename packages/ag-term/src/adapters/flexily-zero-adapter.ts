@@ -119,6 +119,9 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   markDirty(): void {
     this.node.markDirty()
   }
+  isDirty(): boolean {
+    return this.node.isDirty()
+  }
 
   private measureModeToString(mode: number): MeasureMode {
     if (mode === MEASURE_MODE_EXACTLY) return "exactly"
@@ -135,6 +138,12 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   }
   setWidthAuto(): void {
     this.node.setWidthAuto()
+  }
+  setWidthFitContent(): void {
+    this.node.setWidthFitContent()
+  }
+  setWidthSnugContent(): void {
+    this.node.setWidthSnugContent()
   }
   setHeight(value: number): void {
     this.node.setHeight(value)

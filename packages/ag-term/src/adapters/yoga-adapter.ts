@@ -89,6 +89,9 @@ class YogaNodeAdapter implements LayoutNode {
       this.node.markDirty()
     }
   }
+  isDirty(): boolean {
+    return this.node.isDirty()
+  }
 
   private measureModeToString(mode: number): MeasureMode {
     if (mode === this.yoga.MEASURE_MODE_EXACTLY) return "exactly"
@@ -104,6 +107,14 @@ class YogaNodeAdapter implements LayoutNode {
     this.node.setWidthPercent(value)
   }
   setWidthAuto(): void {
+    this.node.setWidthAuto()
+  }
+  setWidthFitContent(): void {
+    // Yoga doesn't support fit-content natively — fall back to auto
+    this.node.setWidthAuto()
+  }
+  setWidthSnugContent(): void {
+    // Yoga doesn't support snug-content natively — fall back to auto
     this.node.setWidthAuto()
   }
   setHeight(value: number): void {
