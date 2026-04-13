@@ -201,7 +201,7 @@
   },
   {
     "term": "useBoxRect",
-    "href": "/api/use-content-rect",
+    "href": "/api/use-box-rect",
     "tooltip": "Hook that reports a component's measured content rectangle (width, height)"
   },
   {
@@ -487,12 +487,12 @@
   },
   {
     "term": "synchronized output",
-    "href": "/reference/terminal-protocols",
+    "href": "/reference/terminal-capabilities",
     "tooltip": "DEC mode 2026 — wraps frame emission so the terminal paints atomically. Prevents tearing in tmux, Zellij, and other multiplexers."
   },
   {
     "term": "DEC mode 2026",
-    "href": "/reference/terminal-protocols",
+    "href": "/reference/terminal-capabilities",
     "tooltip": "Synchronized output — terminal renders a frame atomically, preventing mid-frame tearing."
   },
   {
@@ -502,12 +502,12 @@
   },
   {
     "term": "Kitty keyboard",
-    "href": "/reference/terminal-protocols",
+    "href": "/reference/terminal-capabilities",
     "tooltip": "Extended keyboard protocol with 5 flags — disambiguate, event types, alternate keys, all keys, associated text. Enables modifier detection and key release events."
   },
   {
     "term": "OSC 8",
-    "href": "/reference/terminal-protocols",
+    "href": "/reference/terminal-capabilities",
     "tooltip": "Hyperlink escape sequence — makes text clickable in supporting terminals."
   },
   {
