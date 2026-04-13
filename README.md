@@ -25,7 +25,7 @@ function Counter() {
 await render(<Counter />).run()
 ```
 
-React 18 + 19 with concurrent mode, Suspense, and flexbox layout. [Drop-in Ink compatible](https://silvery.dev/guide/silvery-vs-ink#compatibility) — same `Box`, `Text`, `useInput` API with 918/931 Ink 7.0 tests passing. Migrate with a single import change via [`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink).
+React 18 + 19 with concurrent mode, Suspense, and flexbox layout. [Drop-in Ink compatible](https://silvery.dev/guide/silvery-vs-ink#compatibility) ([`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink)) — same `Box`, `Text`, `useInput` API with 918/931 Ink 7.0 tests passing.
 
 ### Shiny new stuff
 
