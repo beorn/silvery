@@ -25,7 +25,7 @@ function Counter() {
 await render(<Counter />).run()
 ```
 
-[Ink-compatible](https://silvery.dev/guide/silvery-vs-ink#compatibility) — same `Box`, `Text`, `useInput` API you know. Most code works with just an import change. 918/931 Ink 7.0 tests pass. React 18 + 19, flexbox layout, drop-in migration via [`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink).
+React 18 + 19 with flexbox layout. [Drop-in Ink compatible](https://silvery.dev/guide/silvery-vs-ink#compatibility) — same `Box`, `Text`, `useInput` API with 918/931 Ink 7.0 tests passing. Migrate with a single import change via [`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink).
 
 ### Shiny new stuff
 
