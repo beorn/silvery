@@ -2,7 +2,10 @@
 
 **Powerful apps. Polished UIs. Proudly terminal.**
 
-Ink-compatible React renderer for interactive terminal apps. Same `Box`, `Text`, `useInput` API you know. 3–27× faster (typically 15–20×) in mounted rerender benchmarks.
+- **[Ink-compatible](https://silvery.dev/guide/silvery-vs-ink#compatibility)** — same `Box`, `Text`, `useInput` API. Most code works with just an import change. 918/931 Ink 7.0 tests pass. Drop-in migration via [`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink)
+- **React 18 + 19** — hooks, refs, effects, suspense — all works
+- **Flexbox layout** — `Box` with `flexDirection`, `padding`, `gap`, `flexGrow`, just like Ink
+- **3–27× faster** (typically 15–20×) than Ink in mounted rerender benchmarks
 
 ```console
 $ npm install silvery react
@@ -26,12 +29,6 @@ function Counter() {
 
 await render(<Counter />).run()
 ```
-
-### Familiar
-
-- **React 18 + 19** — hooks, refs, effects, suspense — all works
-- **Flexbox layout** — `Box` with `flexDirection`, `padding`, `gap`, `flexGrow`, just like Ink
-- **[Ink-compatible](https://silvery.dev/guide/silvery-vs-ink#compatibility)** — most code works with just an import change. 918/931 Ink 7.0 tests pass on silvery's compat layer. Drop-in migration via [`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink). See the [full feature comparison](https://silvery.dev/guide/silvery-vs-ink)
 
 ### Shiny new stuff
 

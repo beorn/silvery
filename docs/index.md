@@ -69,6 +69,47 @@ Along the way, three principles emerged. Take the best from the web, stay true t
 
 → [The Silvery Way](/guide/the-silvery-way) · [Silvery vs Ink](/guide/silvery-vs-ink) · [About](/about)
 
+## Quick Start
+
+::: code-group
+
+```bash [npm]
+npm install silvery react
+```
+
+```bash [bun]
+bun add silvery react
+```
+
+```bash [pnpm]
+pnpm add silvery react
+```
+
+```bash [yarn]
+yarn add silvery react
+```
+
+:::
+
+```tsx
+import { useState } from "react"
+import { render, Box, Text, useInput } from "silvery"
+
+function Counter() {
+  const [count, setCount] = useState(0)
+  useInput((input) => {
+    if (input === "j") setCount((c) => c + 1)
+  })
+  return (
+    <Box borderStyle="round" padding={1}>
+      <Text>Count: {count}</Text>
+    </Box>
+  )
+}
+
+await render(<Counter />).run()
+```
+
 ## Build Any Terminal App
 
 Try the interactive examples:
@@ -118,47 +159,6 @@ vp @silvery/examples
 | `@silvery/headless`               | Pure state machines — portable, embeddable, no React                                      |
 | `@silvery/ansi`                   | [Terminal primitives](/reference/ansi) — styling, SGR, truecolor, detection               |
 
-## Quick Start
-
-::: code-group
-
-```bash [npm]
-npm install silvery react
-```
-
-```bash [bun]
-bun add silvery react
-```
-
-```bash [pnpm]
-pnpm add silvery react
-```
-
-```bash [yarn]
-yarn add silvery react
-```
-
-:::
-
-```tsx
-import { useState } from "react"
-import { render, Box, Text, useInput } from "silvery"
-
-function Counter() {
-  const [count, setCount] = useState(0)
-  useInput((input) => {
-    if (input === "j") setCount((c) => c + 1)
-  })
-  return (
-    <Box borderStyle="round" padding={1}>
-      <Text>Count: {count}</Text>
-    </Box>
-  )
-}
-
-await render(<Counter />).run()
-```
-
 ## Ecosystem
 
 Standalone projects Silvery builds on — each stands on its own:
@@ -207,6 +207,7 @@ Standalone projects Silvery builds on — each stands on its own:
 }
 .VPFeature .details {
   line-height: 1.35 !important;
+  padding-bottom: 1.75em !important;
 }
 .VPFeature .line {
   display: block;
@@ -215,15 +216,19 @@ Standalone projects Silvery builds on — each stands on its own:
 .VPFeature .line:first-child {
   margin-top: 0;
 }
-/* Main card link — own line at bottom, not absolute positioned */
-.VPFeature .feature-link {
-  display: block;
-  margin-top: 0.75em;
+/* Main card link — bottom-right aligned, consistent across all cards */
+/* .feature-link.hover-link needs higher specificity to beat the glossary plugin */
+.VPFeature a.feature-link {
+  position: absolute;
+  bottom: 16px;
+  right: 20px;
+  display: inline-block;
+  font-size: 0.85em;
   font-weight: 500;
   color: var(--vp-c-brand-1) !important;
   text-decoration: none !important;
 }
-.VPFeature .feature-link:hover {
+.VPFeature a.feature-link:hover {
   text-decoration: underline !important;
 }
 .use-cases {
