@@ -237,4 +237,10 @@ Standalone projects Silvery builds on — each stands on its own:
 .use-cases li {
   margin: 0.25rem 0;
 }
+/* Tighter vertical spacing between sections */
+.vp-doc h2 {
+  margin-top: 2rem !important;
+  padding-top: 1rem !important;
+  border-top: none !important;
+}
 </style>
