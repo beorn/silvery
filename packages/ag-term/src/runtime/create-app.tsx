@@ -939,6 +939,20 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Cleanup state
   let cleanedUp = false
   let storeUnsubscribeFn: (() => void) | null = null
+
+  // Errors caught by SilveryErrorBoundary — flushed to stderr on cleanup so
+  // the user sees them after the alt screen exits. Also dumped to a temp file
+  // (path included in the stderr message) for full stack/component trace.
+  const caughtErrors: Array<{ error: Error; dumpPath?: string }> = []
+  function recordBoundaryError(error: Error) {
+    let dumpPath: string | undefined
+    try {
+      dumpPath = `${tmpdir()}/silvery-render-error-${Date.now()}.txt`
+      writeFileSync(dumpPath, `${error.message}\n\n${error.stack ?? "(no stack)"}\n`)
+    } catch {}
+    caughtErrors.push({ error, dumpPath })
+    log.error?.(`React render error caught by SilveryErrorBoundary: ${error.message}${dumpPath ? ` (dump: ${dumpPath})` : ""}`)
+  }
   // Track protocol state for cleanup and suspend/resume
   let kittyEnabled = false
   const defaultKittyFlags = KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
@@ -1189,6 +1203,27 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Dispose runtime
     runtime[Symbol.dispose]()
+
+    // Flush any React render errors caught by SilveryErrorBoundary to stderr.
+    // The boundary renders them inside the alt screen — once we leave alt
+    // screen the message is gone. Print here so the user actually sees what
+    // crashed, with a path to the full dump for stack/component info.
+    if (caughtErrors.length > 0) {
+      try {
+        const lines: string[] = []
+        lines.push("")
+        lines.push(
+          `silvery: ${caughtErrors.length} React render error${caughtErrors.length === 1 ? "" : "s"} caught during this session:`,
+        )
+        for (const { error, dumpPath } of caughtErrors) {
+          lines.push(`  - ${error.message}${dumpPath ? ` (dump: ${dumpPath})` : ""}`)
+        }
+        lines.push("")
+        process.stderr.write(lines.join("\n"))
+      } catch {
+        // Best-effort — stderr may already be torn down
+      }
+    }
   }
 
   let exit: () => void // eslint-disable-line prefer-const -- forward declaration, assigned once at L1403
@@ -1311,7 +1346,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   //   (no scrollback to display unmounted items, virtualizer handles windowing)
   const cacheBackend = !alternateScreen ? "terminal" : virtualInlineOption ? "virtual" : "retain"
   const wrappedElement = (
-    <SilveryErrorBoundary>
+    <SilveryErrorBoundary onError={recordBoundaryError}>
       <CursorProvider store={cursorStore}>
         <CacheBackendContext.Provider value={cacheBackend}>
           <TermContext.Provider value={mockTerm}>
