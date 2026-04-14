@@ -148,6 +148,11 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     const dimensionsChanged = prevRootLayout && (prevRootLayout.width !== cols || prevRootLayout.height !== rows)
     if (!dimensionsChanged && !root.layoutNode?.isDirty() && !hasScrollDirty()) {
       log.debug?.("layout: skipped (Flexily clean, no scrollDirty, dimensions unchanged)")
+      // Even when the full layout phase is skipped, style-only changes
+      // (outline add/remove, absolute child structural changes) need cascade
+      // input bits computed for the render phase. Without this, the render
+      // phase can't detect outline mutations and stale outline pixels persist.
+      layoutPhase(root, cols, rows)
       return { tMeasure: 0, tLayout: 0, tScroll: 0, tScrollRect: 0, tNotify: 0 }
     }
 

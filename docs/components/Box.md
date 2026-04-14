@@ -89,7 +89,7 @@ import { Box } from "silvery"
 | `borderBottom`    | `boolean`                                                                                    | --      | Show bottom border               |
 | `borderLeft`      | `boolean`                                                                                    | --      | Show left border                 |
 | `borderRight`     | `boolean`                                                                                    | --      | Show right border                |
-| `outlineStyle`    | `"single" \| "double" \| "round" \| "bold" \| "singleDouble" \| "doubleSingle" \| "classic"` | --      | Outline style (no layout impact) |
+| `outlineStyle`    | `"single" \| "double" \| "round" \| "bold" \| "singleDouble" \| "doubleSingle" \| "classic"` | --      | Outline style (draws outside the box, no layout impact) |
 | `outlineColor`    | `string`                                                                                     | --      | Outline color                    |
 | `outlineDimColor` | `boolean`                                                                                    | --      | Dim outline                      |
 | `outlineTop`      | `boolean`                                                                                    | `true`  | Show top outline                 |
@@ -137,9 +137,15 @@ interface BoxHandle {
   <Box width={10}><Text>Right</Text></Box>
 </Box>
 
-// With border
+// With border (inside the box, eats layout space)
 <Box borderStyle="single" borderColor="green" padding={1}>
   <Text>Boxed content</Text>
+</Box>
+
+// With outline (outside the box, no layout impact — draws in the gap between siblings)
+// Use for focus rings, hover highlights, selection indicators
+<Box outlineStyle="round" outlineColor="$primary">
+  <Text>Content unchanged — outline draws in surrounding space</Text>
 </Box>
 
 // With ref and onLayout

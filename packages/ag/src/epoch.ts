@@ -25,6 +25,10 @@
  *   bit 5: absoluteChildMutated   (absolute child had structural changes)
  *   bit 6: descendantOverflow     (descendant overflow changed)
  *
+ * Note: outlines do NOT get a dirty bit — they're handled by the separate
+ * decoration phase (see pipeline/decoration-phase.ts) which redraws them
+ * every frame using per-cell snapshots.
+ *
  * Combined with `dirtyEpoch`, this reduces per-node memory from 56 bytes
  * (7 separate epoch fields × 8 bytes) to 16 bytes (2 fields × 8 bytes).
  */

@@ -42,7 +42,8 @@
  * ```
  */
 
-import { writeSync } from "node:fs"
+import { writeSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import process from "node:process"
 import React, { createContext, useContext, useEffect, useRef, type ReactElement } from "react"
 import { type StateCreator, type StoreApi, createStore } from "@silvery/create/signal-store"
@@ -1592,10 +1593,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               cellDebugInfo +
               trapInfo +
               `\n--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            require("node:fs").appendFileSync("/tmp/silvery-perf.log", msg + "\n")
-            // Also throw to make it visible
-            throw new IncrementalRenderMismatchError(msg)
+            // Dump full diagnostics to temp file — alt screen hides stderr
+            let dumpPath: string | undefined
+            try {
+              dumpPath = `${tmpdir()}/silvery-strict-failure-${Date.now()}.txt`
+              writeFileSync(dumpPath, msg)
+            } catch {}
+            throw new IncrementalRenderMismatchError(
+              dumpPath ? `${msg.split("\n")[0]}\n  dump: ${dumpPath}` : msg,
+            )
           }
         }
       }
@@ -2755,7 +2761,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   // Start loop in background
-  eventLoop().catch((err: unknown) => log.error?.(`eventLoop failed: ${err}`))
+  eventLoop().catch((err: unknown) => {
+    cleanup() // exit alt screen so error is visible in normal terminal
+    const msg = err instanceof Error ? err.message : String(err)
+    // Show first 2 lines (summary + dump path), not the full buffer dump
+    const summary = msg.split("\n").slice(0, 2).join("\n")
+    log.error?.(`eventLoop failed: ${summary}`)
+    process.stderr.write(`\n${summary}\n`)
+    process.exitCode = 1
+  })
 
   // Return handle with async iteration
   const handle: AppHandle<S & I> = {

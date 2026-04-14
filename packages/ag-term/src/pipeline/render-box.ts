@@ -209,8 +209,11 @@ export function renderBorder(
  * Render an outline around a box.
  *
  * Unlike borders, outlines do NOT affect layout dimensions. They draw border
- * characters that OVERLAP the content area at the node's screen rect edges.
- * This is the CSS `outline` equivalent for terminal UI.
+ * characters OUTSIDE the box — one cell beyond each edge, in the gap/margin
+ * space between siblings. This matches CSS `outline` semantics.
+ *
+ * The outline occupies cells at (x-1, y-1) through (x+width, y+height) —
+ * entirely outside the box's own rect. Content is never overlapped.
  */
 export function renderOutline(
   buffer: TerminalBuffer,
@@ -226,6 +229,12 @@ export function renderOutline(
   const color = props.outlineColor ? parseColor(props.outlineColor) : null
   const bg = props.backgroundColor ? parseColor(props.backgroundColor) : (inheritedBg ?? null)
   const attrs = props.outlineDimColor ? { dim: true } : {}
+
+  // Outline draws OUTSIDE the box: one cell beyond each edge
+  const ox = x - 1 // outline left column
+  const oy = y - 1 // outline top row
+  const ow = width + 2 // outline total width
+  const oh = height + 2 // outline total height
 
   // Helper to check if a row is visible within clip bounds
   const isRowVisible = (row: number): boolean => {
@@ -244,41 +253,41 @@ export function renderOutline(
   const showLeft = props.outlineLeft !== false
   const showRight = props.outlineRight !== false
 
-  // Top border
-  if (showTop && isRowVisible(y)) {
-    if (showLeft && isColVisible(x)) buffer.setCell(x, y, { char: chars.topLeft, fg: color, bg, attrs })
-    for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
-      if (isColVisible(col)) buffer.setCell(col, y, { char: chars.horizontal, fg: color, bg, attrs })
+  // Top border (one row above the box)
+  if (showTop && isRowVisible(oy)) {
+    if (showLeft && isColVisible(ox)) buffer.setCell(ox, oy, { char: chars.topLeft, fg: color, bg, attrs })
+    for (let col = ox + 1; col < ox + ow - 1 && col < buffer.width; col++) {
+      if (isColVisible(col)) buffer.setCell(col, oy, { char: chars.horizontal, fg: color, bg, attrs })
     }
-    if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
-      buffer.setCell(x + width - 1, y, { char: chars.topRight, fg: color, bg, attrs })
+    if (showRight && ox + ow - 1 < buffer.width && isColVisible(ox + ow - 1)) {
+      buffer.setCell(ox + ow - 1, oy, { char: chars.topRight, fg: color, bg, attrs })
     }
   }
 
-  // Side borders — extend range when top/bottom are hidden
+  // Side borders — run along the box's own height (y to y+height-1)
   const outlineRightVertical = chars.rightVertical ?? chars.vertical
-  const sideStart = showTop ? y + 1 : y
-  const sideEnd = showBottom ? y + height - 1 : y + height
+  const sideStart = showTop ? oy + 1 : oy
+  const sideEnd = showBottom ? oy + oh - 1 : oy + oh
   for (let row = sideStart; row < sideEnd; row++) {
     if (!isRowVisible(row)) continue
-    if (showLeft && isColVisible(x)) buffer.setCell(x, row, { char: chars.vertical, fg: color, bg, attrs })
-    if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
-      buffer.setCell(x + width - 1, row, { char: outlineRightVertical, fg: color, bg, attrs })
+    if (showLeft && isColVisible(ox)) buffer.setCell(ox, row, { char: chars.vertical, fg: color, bg, attrs })
+    if (showRight && ox + ow - 1 < buffer.width && isColVisible(ox + ow - 1)) {
+      buffer.setCell(ox + ow - 1, row, { char: outlineRightVertical, fg: color, bg, attrs })
     }
   }
 
-  // Bottom border
+  // Bottom border (one row below the box)
   const outlineBottomHorizontal = chars.bottomHorizontal ?? chars.horizontal
-  const bottomY = y + height - 1
+  const bottomY = oy + oh - 1
   if (showBottom && isRowVisible(bottomY)) {
-    if (showLeft && isColVisible(x)) {
-      buffer.setCell(x, bottomY, { char: chars.bottomLeft, fg: color, bg, attrs })
+    if (showLeft && isColVisible(ox)) {
+      buffer.setCell(ox, bottomY, { char: chars.bottomLeft, fg: color, bg, attrs })
     }
-    for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
+    for (let col = ox + 1; col < ox + ow - 1 && col < buffer.width; col++) {
       if (isColVisible(col)) buffer.setCell(col, bottomY, { char: outlineBottomHorizontal, fg: color, bg, attrs })
     }
-    if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
-      buffer.setCell(x + width - 1, bottomY, {
+    if (showRight && ox + ow - 1 < buffer.width && isColVisible(ox + ow - 1)) {
+      buffer.setCell(ox + ow - 1, bottomY, {
         char: chars.bottomRight,
         fg: color,
         bg,

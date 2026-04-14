@@ -6,6 +6,14 @@ React framework for modern terminal UIs. Layout feedback, incremental rendering,
 
 **[Styling Guide](docs/guide/styling.md)** — Semantic colors, typography presets, and component defaults. Read it before styling anything.
 
+## Mandatory: New Props Require Tests
+
+**Every new prop in `packages/ag/src/types.ts` (BoxProps, TextProps, etc.) MUST have at least one test in `tests/` that exercises it through the render pipeline at SILVERY_STRICT=2.**
+
+Tests must use realistic-scale fixtures (50+ nodes), not 2-3 node toy components. Many pipeline bugs only compound at scale — false-positive cascades, stack overflows from recursive walks, cumulative paint errors. Synthetic micro-tests pass while real apps crash.
+
+**Why:** `outlineStyle` was added speculatively without a test. When km finally used it, the entire feature broke (incremental cascade false positives, stack overflow, stale pixels). Hours of debugging. Speculative completeness is the norm in silvery — that's fine, but every speculatively-added prop must have a regression test from day one. See `tests/features/outline-incremental.test.tsx` for the canonical pattern.
+
 ## Quick Start
 
 The simplest Silvery app — styled text that exits on any keypress:

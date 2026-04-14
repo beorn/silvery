@@ -349,7 +349,8 @@ function renderSideBorders(
  * Render an outline around a box (adapter version).
  *
  * Unlike borders, outlines do NOT affect layout dimensions. They draw border
- * characters that OVERLAP the content area at the node's screen rect edges.
+ * characters OUTSIDE the box — one cell beyond each edge, in the gap/margin
+ * space between siblings.
  */
 function renderOutlineAdapter(
   buffer: RenderBuffer,

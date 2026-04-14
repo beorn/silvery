@@ -261,14 +261,16 @@ export interface BoxProps
   borderRight?: boolean
 
   /**
-   * Outline style — renders border characters at the box edges without affecting layout.
+   * Outline style — renders border characters OUTSIDE the box without affecting layout.
    *
-   * Unlike `borderStyle` which adds border dimensions to the layout (making the content
-   * area smaller), `outlineStyle` draws border characters that OVERLAP the content area.
-   * The layout engine sees no border at all — outline is purely visual.
+   * Unlike `borderStyle` which adds border dimensions inside the box (shrinking the
+   * content area), `outlineStyle` draws one cell beyond each edge — in the gap/margin
+   * space between siblings. The layout engine sees no border at all.
    *
-   * Use cases: selection indicators, hover highlights, focus rings — anything that
-   * should visually frame a box without shifting content.
+   * This matches CSS `outline` semantics: outside the border box, no layout impact.
+   *
+   * Use cases: focus rings, hover highlights, selection indicators, edit bounds —
+   * anything that should visually frame a box without affecting layout or content.
    */
   outlineStyle?: "single" | "double" | "round" | "bold" | "singleDouble" | "doubleSingle" | "classic"
   /** Foreground color for the outline */
@@ -425,6 +427,9 @@ export interface AgNode {
    *   bit 4 (SUBTREE_BIT):        this node or any descendant has dirty content/layout
    *   bit 5 (ABS_CHILD_BIT):      absolute child had structural changes
    *   bit 6 (DESC_OVERFLOW_BIT):  descendant overflow changed
+   *
+   * Outlines do NOT get a dirty bit — the decoration phase redraws them
+   * every frame with per-cell snapshots (see pipeline/decoration-phase.ts).
    *
    * Check: `isDirty(node.dirtyBits, node.dirtyEpoch, BIT)`
    * Set:   `node.dirtyBits = setDirtyBit(node.dirtyBits, node.dirtyEpoch, BIT); node.dirtyEpoch = getRenderEpoch()`

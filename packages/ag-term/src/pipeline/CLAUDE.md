@@ -5,24 +5,41 @@
 
 Read this before modifying render-phase.ts, render-text.ts, render-box.ts, or layout-phase.ts. These files implement incremental rendering -- the most complex and bug-prone part of Silvery.
 
+## Mandatory: Test Before Change
+
+**Every pipeline change MUST have a SILVERY_STRICT test that exercises the new behavior before the change is committed.** Write the test first, verify the mismatch, then fix. Pipeline bugs are invisible without STRICT — they produce correct first renders but wrong incremental renders.
+
+**Tests MUST use realistic-scale fixtures (50+ nodes), not 2-3 node toy components.** Many pipeline bugs only compound at scale — false-positive dirty cascades, stack overflows from recursive walks, cumulative paint errors. Synthetic micro-tests pass while real apps crash. See `tests/features/outline-realistic-scale.test.tsx` for the canonical pattern.
+
+**Verification has two layers:**
+1. STRICT vendor tests pass (including the realistic-scale fixture)
+2. `SILVERY_STRICT=2 bun apps/km-cli/src/index.ts view` runs without crashes for 5+ seconds
+
+Skipping layer 2 ships bugs that synthetic tests miss. Both layers are required.
+
+**Agent escalation:** If you are a non-silvery agent editing pipeline files, spawn `Agent(subagent_type: "silvery")` instead. The silvery expert reads this doc + RENDERING.md + LESSONS.md first. Direct pipeline edits without this context cause incremental cascade bugs.
+
 ## Pipeline Overview
 
 The render pipeline runs on every frame. Phases execute in strict order:
 
 ```
-measure -> layout -> scroll -> sticky -> scrollRect -> [notify] -> content -> output
+measure -> layout -> scroll -> sticky -> scrollRect -> [notify] -> content -> decoration -> output
 ```
 
-| Phase       | File                | What it does                                                                               |
-| ----------- | ------------------- | ------------------------------------------------------------------------------------------ |
-| measure     | measure-phase.ts    | Set Yoga constraints for fit-content nodes                                                 |
-| layout      | layout-phase.ts     | Run `calculateLayout()`, propagate rects, set `prevLayout` and `subtreeDirty`              |
-| scroll      | layout-phase.ts     | Calculate scroll offset, visible children, sticky positions for overflow=scroll containers |
-| sticky      | layout-phase.ts     | Calculate sticky render offsets for non-scroll parents with sticky children                |
-| scrollRect  | layout-phase.ts     | Compute screen-relative positions (content position minus ancestor scroll offsets)         |
-| notify      | layout-phase.ts     | Sync rect signals via `syncRectSignals()` (drives `useBoxRect`/`useScrollRect`)            |
-| **content** | **render-phase.ts** | **Render nodes to a TerminalBuffer (this is the complex part)**                            |
-| output      | output-phase.ts     | Diff current buffer against previous, emit minimal ANSI escape sequences                   |
+| Phase          | File                    | What it does                                                                               |
+| -------------- | ----------------------- | ------------------------------------------------------------------------------------------ |
+| measure        | measure-phase.ts        | Set Yoga constraints for fit-content nodes                                                 |
+| layout         | layout-phase.ts         | Run `calculateLayout()`, propagate rects, set `prevLayout` and `subtreeDirty`              |
+| scroll         | layout-phase.ts         | Calculate scroll offset, visible children, sticky positions for overflow=scroll containers |
+| sticky         | layout-phase.ts         | Calculate sticky render offsets for non-scroll parents with sticky children                |
+| scrollRect     | layout-phase.ts         | Compute screen-relative positions (content position minus ancestor scroll offsets)         |
+| notify         | layout-phase.ts         | Sync rect signals via `syncRectSignals()` (drives `useBoxRect`/`useScrollRect`)            |
+| **content**    | **render-phase.ts**     | **Render nodes to a TerminalBuffer (this is the complex part)**                            |
+| **decoration** | **decoration-phase.ts** | **Draw outlines (outside-node overlays) and snapshot under-cells for next-frame restore**  |
+| output         | output-phase.ts         | Diff current buffer against previous, emit minimal ANSI escape sequences                   |
+
+The **decoration phase** is separate from content so overlays that draw OUTSIDE their owning node's rect (currently: outlines) don't have to participate in the per-node incremental cascade. Before the content phase runs, `clearPreviousOutlines` restores cells under last frame's outlines from snapshots carried in via the cloned prev buffer. After content, `renderDecorationPass` walks the tree, draws outlines, and captures fresh snapshots. This makes outline removal "just work" — the decoration pass redraws every frame, so there's no false-positive cascade to debug.
 
 > **Note:** TerminalBuffer is the internal mutable representation. The public read API is `TextFrame` (created via `createTextFrame(buffer)` in `buffer.ts`), which provides an immutable snapshot with resolved RGB colors. App structurally implements TextFrame. `Term.paint(buffer, prev)` wraps the output phase and stores a TextFrame as `term.frame`. `RenderAdapter` is internal — use `term.paint()` for the public paint API.
 
@@ -124,6 +141,9 @@ layoutChanged = node.layoutChangedThisFrame
 //   or child position shift. Forces parent to clear (removes stale overlay pixels in gap areas).
 // descendantOverflowChanged: a descendant's prevLayout extended beyond THIS node's rect
 //   and its layout changed. Recursive check (follows subtreeDirty paths).
+// NOTE: outlines are NOT in contentAreaAffected — they're handled by the
+// decoration phase (see decoration-phase.ts) which redraws outlines every
+// frame and uses per-cell snapshots to clear previous positions.
 textPaintDirty = node.type === "silvery-text" && node.stylePropsDirty
 
 contentAreaAffected =

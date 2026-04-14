@@ -521,4 +521,8 @@ describe("cascade predicates — named scenarios", () => {
     expect(out.contentAreaAffected).toBe(true)
     expect(out.childrenNeedFreshRender).toBe(true)
   })
+
+  // NOTE: there is no `outlineChildMutated` cascade input — outlines are
+  // handled by the separate decoration phase (see decoration-phase.ts) and
+  // do NOT feed into the per-node content cascade.
 })

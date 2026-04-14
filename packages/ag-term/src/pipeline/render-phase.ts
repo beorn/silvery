@@ -21,7 +21,8 @@ import type { Color } from "../buffer"
 import { TerminalBuffer } from "../buffer"
 import type { BoxProps, AgNode, TextProps } from "@silvery/ag/types"
 import { getBorderSize, getPadding } from "./helpers"
-import { renderBox, renderOutline, renderScrollIndicators, getEffectiveBg } from "./render-box"
+import { renderBox, renderScrollIndicators, getEffectiveBg } from "./render-box"
+import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
 import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
@@ -102,6 +103,15 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
   // renderNodeToBuffer will override per-node as it traverses.
   buffer.setSelectableMode(true)
 
+  // Restore cells under previous-frame outlines BEFORE content rendering.
+  // Outlines draw OUTSIDE their owning node into the parent's pixel space,
+  // so they don't fit the per-node cascade. We treat them as a separate
+  // decoration pass: clear prev positions here, redraw new positions after
+  // the content phase below. The snapshots were captured when we drew the
+  // previous frame and travel with the cloned buffer. No-op for fresh
+  // buffers (no snapshots on a newly constructed TerminalBuffer).
+  clearPreviousOutlines(buffer)
+
   const t1 = instr.enabled ? performance.now() : 0
   renderNodeToBuffer(
     root,
@@ -119,6 +129,12 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
     ctx,
   )
   const tRender = instr.enabled ? performance.now() - t1 : 0
+
+  // Decoration phase: draw outlines AFTER content rendering. Walks the full
+  // tree (O(N)) independent of dirty flags — outlines are idempotent per
+  // frame and cheap to redraw (~5000 cells at worst). Populates fresh
+  // snapshots on the buffer for the next frame's `clearPreviousOutlines`.
+  renderDecorationPass(buffer, root)
 
   if (instr.enabled) {
     emitRenderPhaseStats(instr.stats, instr.nodeTrace, instr.nodeTraceEnabled, tClone, tRender)
@@ -661,12 +677,10 @@ function renderNodeToBuffer(
       )
     }
 
-    // Render outline AFTER children — outline overlaps content at edges
-    if (node.type === "silvery-box" && props.outlineStyle) {
-      const { x, width, height } = layout
-      const y = layout.y - scrollOffset
-      renderOutline(buffer, x, y, width, height, props, clipBounds, boxInheritedBg)
-    }
+    // Outlines are NOT rendered here — the decoration phase (post-content)
+    // walks the tree independently and draws outlines for every node with
+    // outlineStyle, using per-cell snapshots to clear prev positions next
+    // frame. See decoration-phase.ts.
 
     // Clear dirty flags (current node only — children clear their own when rendered)
     clearNodeDirtyFlags(node)
@@ -879,6 +893,10 @@ function executeRegionClearing(
   if (descendantOverflowChanged) {
     clearDescendantOverflowRegions(node, buffer, layout, scrollOffset, clipBounds, threadedInheritedBg)
   }
+
+  // Outline cleanup is handled entirely by the decoration phase (outlines
+  // are treated as a separate pass that snapshots under-cells and restores
+  // them next frame). No outline-aware work needed here.
 }
 
 // ============================================================================

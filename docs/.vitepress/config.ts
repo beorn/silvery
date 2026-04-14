@@ -80,6 +80,10 @@ export default withMermaid(
     // Blog excluded by default (not ready for public). Use INCLUDE_BLOG=1 for local preview.
     srcExclude: process.env.INCLUDE_BLOG ? [] : ["blog/**"],
     vite: {
+      optimizeDeps: {
+        // dayjs is CJS; Vite needs to pre-bundle it for mermaid's ESM import
+        include: ["dayjs"],
+      },
       plugins: [
         llmstxt({
           // Auto-generates llms.txt (index) and llms-full.txt (complete docs)

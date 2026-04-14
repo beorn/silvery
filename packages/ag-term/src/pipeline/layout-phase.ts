@@ -40,9 +40,16 @@ export function layoutPhase(root: AgNode, width: number, height: number): void {
   // Flexily's root isDirty() propagates from any markDirty() call —
   // no silvery-side tracking needed.
   if (!dimensionsChanged && !root.layoutNode?.isDirty()) {
+    // Even when layout is clean, style-only changes (outline add/remove,
+    // absolute child structural changes) need cascade input caching.
+    // These checks run in propagateLayout normally, but when the layout
+    // phase skips, they're never computed. Run a lightweight traversal
+    // that follows only subtreeDirty paths to cache these inputs.
+    if (isDirty(root.dirtyBits, root.dirtyEpoch, SUBTREE_BIT)) {
+      propagateCascadeInputs(root)
+    }
     return
   }
-
   // Run layout calculation (root always has a layoutNode)
   if (root.layoutNode) {
     const nodeCount = countNodes(root)
@@ -239,6 +246,44 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number, increme
       node.dirtyBits &= ~(ABS_CHILD_BIT | DESC_OVERFLOW_BIT)
     }
   }
+}
+
+/**
+ * Lightweight cascade input caching when the layout phase skips.
+ *
+ * When no layout nodes are dirty and dimensions haven't changed,
+ * `layoutPhase` returns early and `propagateLayout` never runs.
+ * But structural changes (absolute child mount/unmount, descendant overflow)
+ * still need cascade input bits (ABS_CHILD_BIT, DESC_OVERFLOW_BIT) to be
+ * computed for the render phase.
+ *
+ * This traversal follows only subtreeDirty paths (O(changed) not O(N))
+ * and computes the same cascade inputs as propagateLayout's caching block.
+ * No layout changes, no prevLayout updates, no layoutChangedThisFrame.
+ */
+function propagateCascadeInputs(node: AgNode): void {
+  if (!isDirty(node.dirtyBits, node.dirtyEpoch, SUBTREE_BIT)) return
+  if (!node.children || node.children.length === 0) return
+
+  // Recurse into dirty children first (they need their own cascade inputs)
+  for (const child of node.children) {
+    if (isDirty(child.dirtyBits, child.dirtyEpoch, SUBTREE_BIT)) {
+      propagateCascadeInputs(child)
+    }
+  }
+
+  // Compute cascade inputs for this node (same logic as in propagateLayout)
+  const epoch = getRenderEpoch()
+  const absChild = _hasAbsoluteChildMutated(node.children)
+  const descOverflow = node.boxRect ? _hasDescendantOverflowChanged(node, node.boxRect) : false
+
+  let bits = node.dirtyBits
+  if (absChild) bits |= ABS_CHILD_BIT
+  else bits &= ~ABS_CHILD_BIT
+  if (descOverflow) bits |= DESC_OVERFLOW_BIT
+  else bits &= ~DESC_OVERFLOW_BIT
+  node.dirtyBits = bits
+  node.dirtyEpoch = epoch
 }
 
 /**

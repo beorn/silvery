@@ -537,10 +537,9 @@ export const hostConfig = {
       if ((oldProps as Record<string, unknown>).borderStyle && !(newProps as Record<string, unknown>).borderStyle) {
         bits |= BG_BIT
       }
-      // Outline removal: same issue — stale outline characters persist in the clone.
-      if ((oldProps as Record<string, unknown>).outlineStyle && !(newProps as Record<string, unknown>).outlineStyle) {
-        bits |= BG_BIT
-      }
+      // NOTE: outline removal does NOT need a dirty bit here — the decoration
+      // phase walks every frame and clears previous outline cells from
+      // per-cell snapshots. See pipeline/decoration-phase.ts.
       // Theme change: all descendants need re-rendering with new token values.
       // bgDirty makes contentAreaAffected=true, cascading childrenNeedFreshRender
       // to force children to re-render with the new theme context.

@@ -446,6 +446,19 @@ export class TerminalBuffer {
    * This avoids modifying every individual setCell call — zero overhead (single OR per cell).
    */
   private _selectableMode = false
+  /**
+   * Snapshots of cells underlying outlines drawn on this buffer.
+   *
+   * The decoration phase (outlines draw OUTSIDE owning nodes into parent
+   * pixel space) uses these to restore pre-outline state before the next
+   * frame's content render. Travels with the buffer via clone() so the
+   * prev-buffer cascade naturally carries them forward.
+   *
+   * Written by `renderDecorationPass`, read/cleared by `clearPreviousOutlines`.
+   * Uses `any[]` here to avoid circular typing — see `decoration-phase.ts`
+   * for the `OutlineCellSnapshot` shape.
+   */
+  outlineSnapshots: Array<{ x: number; y: number; cell: Cell }> = []
 
   readonly width: number
   readonly height: number
@@ -1288,6 +1301,10 @@ export class TerminalBuffer {
     copy._maxDirtyRow = -1
     // Deep-copy row metadata
     copy._rowMetadata = this._rowMetadata.map((m) => ({ ...m }))
+    // Carry outline snapshots forward so the decoration phase can restore
+    // previous outline positions before drawing new ones on the next frame.
+    // Shallow copy is fine — snapshot entries are immutable once captured.
+    copy.outlineSnapshots = [...this.outlineSnapshots]
     return copy
   }
 

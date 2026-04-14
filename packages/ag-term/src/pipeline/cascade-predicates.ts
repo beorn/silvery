@@ -35,7 +35,8 @@
  * │     || childrenDirty || bgDirty || textPaintDirty                          │
  * │     || absoluteChildMutated || descendantOverflowChanged                   │
  * │   True when anything changed that affects the node's content area.         │
- * │   Excludes border-only paint changes for BOX nodes.                        │
+ * │   Excludes border-only paint changes for BOX nodes. Outlines are NOT       │
+ * │   tracked here — they're handled by a separate decoration pass.            │
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │ bgRefillNeeded                                                         │
  * │   = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor    │

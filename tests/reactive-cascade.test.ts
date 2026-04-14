@@ -29,7 +29,7 @@ const INPUT_FIELDS: (keyof CascadeInputs)[] = [
   "descendantOverflowChanged",
 ]
 
-/** Convert a bitmask (0..16383) to CascadeInputs */
+/** Convert a bitmask to CascadeInputs */
 function bitsToInputs(bits: number): CascadeInputs {
   const inputs: Record<string, boolean> = {}
   for (let i = 0; i < INPUT_FIELDS.length; i++) {
