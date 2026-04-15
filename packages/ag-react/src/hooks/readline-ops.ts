@@ -239,6 +239,15 @@ export function handleReadlineKey(
   // Regular Character Input
   // =========================================================================
 
+  // Cmd/Super-modified keystrokes (Cmd+K, Cmd+Shift+K, etc.) are almost always
+  // app-level shortcuts owned by the host (command palette, save, quit, etc.).
+  // Never treat them as text insertion — drop them here so the parent useInput
+  // listeners further up the tree can handle them. Bare keys and Shift-only
+  // keys still insert normally (shifted punctuation, uppercase, etc.).
+  if (key.super) {
+    return null
+  }
+
   // Use the actual typed character (key.text) when available, not the normalized
   // keybinding key. E.g., Shift+3 sends '#' but input is normalized to '3'.
   const char = key.text ?? input
