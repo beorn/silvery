@@ -110,6 +110,8 @@ function Counter() {
 await render(<Counter />).run()
 ```
 
+→ Continue with the [Getting Started guide](/getting-started/quick-start)
+
 ## Build Any Terminal App
 
 Try the interactive examples:
