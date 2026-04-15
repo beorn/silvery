@@ -291,6 +291,60 @@ describe("TextInput controlled mode", () => {
     await app.press("X")
     expect(app.text).toContain("val:helXworld")
   })
+
+  test("parent onChange override replaces keystroke (sigil-rule pattern)", async () => {
+    // Regression test for km-tui.omnibox-use-silvery — the omnibox wraps
+    // onChange to apply a slippery-sigil rule: ":cr" + typing "@" → "@cr"
+    // (not ":cr@"). Before this fix, TextInput's internal change detection
+    // silently dropped parent-driven transformations because it couldn't
+    // tell "echo of my edit" from "parent overrode my edit".
+    //
+    // Rule under test: whenever the typed char would produce a value that
+    // differs from what the parent writes back, readline must sync to the
+    // parent's value. Without the fix, the editor shows ":cr@" while the
+    // parent store holds "@cr".
+    function SigilInput() {
+      const [value, setValue] = useState(":")
+      return (
+        <Box flexDirection="column">
+          <TextInput
+            value={value}
+            onChange={(next) => {
+              // Slippery sigil rule: if buffer starts with ":" and user types
+              // another sigil char, replace the leading ":" with the new sigil.
+              const prev = value
+              if (prev.length > 0 && prev[0] === ":" && next.length === prev.length + 1) {
+                const typed = next[next.length - 1]
+                if (typed && "@#+/".includes(typed)) {
+                  setValue(typed + prev.slice(1))
+                  return
+                }
+              }
+              setValue(next)
+            }}
+          />
+          <Text>val:{value}</Text>
+        </Box>
+      )
+    }
+    const render = createRenderer({ cols: 40, rows: 5 })
+    const app = render(<SigilInput />)
+    expect(app.text).toContain("val::")
+
+    // Type "c" and "r" — buffer becomes ":cr"
+    await app.press("c")
+    await app.press("r")
+    expect(app.text).toContain("val::cr")
+
+    // Type "@" — the slippery rule fires: buffer becomes "@cr" not ":cr@".
+    // This fails pre-fix: the editor shows ":cr@" on screen (diverged from state).
+    await app.press("@")
+    expect(app.text).toContain("val:@cr")
+    // The visible editor line must also reflect the override, not the raw
+    // keystroke. We render without a prompt, so the first line starts with
+    // the buffer contents. Check by scanning for ":cr@" — it must be absent.
+    expect(app.text).not.toContain(":cr@")
+  })
 })
 
 // ============================================================================

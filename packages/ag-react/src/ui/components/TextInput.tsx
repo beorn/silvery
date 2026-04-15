@@ -126,9 +126,15 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   const isControlled = controlledValue !== undefined
 
   // Track value changes that originated from internal editing (keystroke → onChange).
-  // When the parent feeds back the same value via controlledValue, we skip
+  // When the parent feeds back the SAME value via controlledValue, we skip
   // readline.setValue() since readline already has the correct cursor position.
+  // When the parent feeds back a DIFFERENT value (i.e. it transformed or replaced
+  // the value inside onChange — e.g. a sigil-replacement rule), we treat that as
+  // an external override and sync readline. Without this, parent-driven overrides
+  // would silently drop because we'd match "internal" and skip the sync. See
+  // km-tui.omnibox-use-silvery for the motivating use case (slippery sigil rule).
   const internalChangeRef = useRef(false)
+  const lastEmittedValueRef = useRef<string | null>(null)
 
   // Use readline hook
   const readline = useReadline({
@@ -136,6 +142,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     onChange: useCallback(
       (newValue: string) => {
         internalChangeRef.current = true
+        lastEmittedValueRef.current = newValue
         onChange?.(newValue)
       },
       [onChange],
@@ -146,17 +153,22 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     onEOF,
   })
 
-  // Sync controlled value to readline — only for external changes.
-  // Internal changes (from editing) already have correct cursor position.
+  // Sync controlled value to readline — only for external changes or parent overrides.
+  // Internal changes (from editing) already have correct cursor position, UNLESS the
+  // parent's onChange handler transformed the value into something different — in
+  // that case we treat it as external and sync the new value into readline.
   const [lastControlledValue, setLastControlledValue] = useState(controlledValue)
   useEffect(() => {
     if (isControlled && controlledValue !== lastControlledValue) {
-      if (internalChangeRef.current) {
-        // Change originated from our own editing — readline already has correct state
+      const isEchoOfInternalEdit =
+        internalChangeRef.current && controlledValue === lastEmittedValueRef.current
+      if (isEchoOfInternalEdit) {
+        // Parent echoed back exactly what we emitted — readline already has correct state.
         internalChangeRef.current = false
       } else {
-        // External change — sync readline (cursor goes to end)
+        // External change OR parent override — sync readline (cursor goes to end).
         readline.setValue(controlledValue ?? "")
+        internalChangeRef.current = false
       }
       setLastControlledValue(controlledValue)
     }
