@@ -73,7 +73,7 @@ const app = createApp(
 )
 ```
 
-The double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](https://zustand.docs.pmnd.rs/docs/guides/updating-state) pattern — `set` merges new state, `get` reads current state.
+The double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](https://github.com/pmndrs/zustand#updating-state) pattern — `set` merges new state, `get` reads current state.
 
 ### `useApp(selector)`
 

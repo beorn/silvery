@@ -65,7 +65,7 @@ The counter grows into a todo list. You add a sidebar that shows how many items 
 
 The standard solution is a shared store. [Zustand](https://github.com/pmndrs/zustand) is a great fit — lightweight, hook-based, no boilerplate. You put state and actions in one object, and components subscribe to only the slices they care about.
 
-The double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](https://zustand.docs.pmnd.rs/docs/guides/updating-state) pattern — `set` merges new state, `get` reads current state:
+The double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](https://github.com/pmndrs/zustand#updating-state) pattern — `set` merges new state, `get` reads current state:
 
 ```tsx
 import { createApp, useApp } from "@silvery/ag-term/runtime"
