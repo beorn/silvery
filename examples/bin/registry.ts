@@ -24,6 +24,7 @@ import { main as cliWizard } from "../apps/cli-wizard.tsx"
 import { main as clipboard } from "../apps/clipboard.tsx"
 import { main as components } from "../apps/components.tsx"
 import { main as dataExplorer } from "../apps/data-explorer.tsx"
+import { main as design } from "../apps/design.tsx"
 import { main as devTools } from "../apps/dev-tools.tsx"
 import { main as explorer } from "../apps/explorer.tsx"
 import { main as gallery } from "../apps/gallery.tsx"
@@ -77,6 +78,7 @@ export const REGISTRY: RegistryEntry[] = [
   { name: "clipboard", main: clipboard, category: "Apps" },
   { name: "components", main: components, category: "Apps" },
   { name: "data explorer", main: dataExplorer, category: "Apps" },
+  { name: "design", main: design, category: "Apps", description: "Design system workbench — formula + tokens + components" },
   { name: "dev tools", main: devTools, category: "Apps" },
   { name: "explorer", main: explorer, category: "Apps" },
   { name: "gallery", main: gallery, category: "Apps" },
