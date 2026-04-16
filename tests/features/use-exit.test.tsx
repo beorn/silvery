@@ -22,7 +22,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer, waitFor } from "@silvery/test"
-import { Box, Text } from "silvery"
+import { Text } from "silvery"
 import { useExit } from "../../packages/ag-react/src/hooks/useExit"
 import { useInput } from "../../packages/ag-react/src/hooks/useInput"
 

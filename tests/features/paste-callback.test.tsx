@@ -15,8 +15,8 @@
 
 import React, { useState, useEffect } from "react"
 import { describe, test, expect, vi } from "vitest"
-import { createRenderer, waitFor } from "@silvery/test"
-import { Text, Box } from "../../src/index.js"
+import { createRenderer } from "@silvery/test"
+import { Text } from "../../src/index.js"
 import { usePasteCallback } from "../../packages/ag-react/src/hooks/usePasteCallback"
 import { usePasteEvents } from "../../packages/ag-react/src/hooks/usePasteEvents"
 import { useInput } from "../../packages/ag-react/src/hooks/useInput"
