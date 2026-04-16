@@ -104,7 +104,9 @@ function StateBeforeExitApp() {
 
 /** Calls exit(error) to pass an error through. */
 function ExitWithErrorApp() {
-  const exit = useExit()
+  // rt.exit accepts (error?: Error) but useExit() narrows to () => void.
+  // Cast to access the error parameter (matches runtime behavior).
+  const exit = useExit() as (error?: Error) => void
 
   useInput((input) => {
     if (input === "e") exit(new Error("something broke"))

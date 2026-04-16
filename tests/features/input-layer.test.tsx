@@ -20,6 +20,7 @@ import {
   InputLayerProvider,
   useInputLayer,
   useInputLayerContext,
+  type InputLayerHandler,
 } from "../../packages/ag-react/src/contexts/InputLayerContext"
 
 // ============================================================================
@@ -82,10 +83,8 @@ describe("useInputLayer — basic layering", () => {
 
     await app.press("a")
     expect(handler).toHaveBeenCalledTimes(1)
-    // First argument is the input string
-    expect(handler.mock.calls[0]![0]).toBe("a")
-    // Second argument is the key object
-    const key = handler.mock.calls[0]![1]
+    const [input, key] = handler.mock.calls[0] as unknown as Parameters<InputLayerHandler>
+    expect(input).toBe("a")
     expect(key).toBeDefined()
     expect(key.ctrl).toBe(false)
     expect(key.shift).toBe(false)
@@ -639,7 +638,7 @@ describe("useInputLayer — key object integration", () => {
     await app.press("Escape")
 
     expect(handler).toHaveBeenCalledTimes(1)
-    const key = handler.mock.calls[0]![1]
+    const [, key] = handler.mock.calls[0] as unknown as Parameters<InputLayerHandler>
     expect(key.escape).toBe(true)
   })
 
@@ -660,7 +659,7 @@ describe("useInputLayer — key object integration", () => {
     await app.press("Enter")
 
     expect(handler).toHaveBeenCalledTimes(1)
-    const key = handler.mock.calls[0]![1]
+    const [, key] = handler.mock.calls[0] as unknown as Parameters<InputLayerHandler>
     expect(key.return).toBe(true)
   })
 
@@ -778,7 +777,7 @@ describe("useInputLayer — key object integration", () => {
     await app.press("Ctrl+s")
 
     expect(handler).toHaveBeenCalledTimes(1)
-    const key = handler.mock.calls[0]![1]
+    const [, key] = handler.mock.calls[0] as unknown as Parameters<InputLayerHandler>
     expect(key.ctrl).toBe(true)
   })
 })
