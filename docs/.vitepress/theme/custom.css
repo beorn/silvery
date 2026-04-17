@@ -1,3 +1,154 @@
+/* ============================================================
+ * silvery.dev design tokens
+ *
+ * Source of truth: hub/silvery/design/silvery-dev-design-system.md
+ * Architecture: stock VitePress default theme, override via
+ * CSS custom properties. No layout customizations.
+ * ============================================================ */
+
+/* Brand fonts — three-family system */
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* ---- Brand palette ---- */
+:root {
+  /* Silver + charcoal — the anchor colors */
+  --silvery-silver: #c0c0c0;
+  --silvery-silver-dark: #6a7080;
+  --silvery-charcoal: #2d2d2d;
+
+  /* Cold silver-blue accent (primary brand color for CTAs, links) */
+  --silvery-accent: #5a6a85;
+  --silvery-accent-light: #7a8aa5;
+  --silvery-accent-dark: #3a4a65;
+
+  /* TS-blue reserved for TypeScript-specific refs */
+  --silvery-ts-blue: #3178c6;
+
+  /* Metallurgic semantic tones */
+  --silvery-success: #6a9b7a;
+  --silvery-warning: #b89058;
+  --silvery-danger: #b4614a;
+
+  /* Font families */
+  --silvery-font-display: "Rubik", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --silvery-font-body: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --silvery-font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Monaco, Consolas, monospace;
+}
+
+/* ---- VitePress brand variable overrides (light mode defaults) ---- */
+:root {
+  /* Brand color scale — cold silver-blue family */
+  --vp-c-brand-1: var(--silvery-accent);
+  --vp-c-brand-2: var(--silvery-accent-dark);
+  --vp-c-brand-3: var(--silvery-accent-dark);
+  --vp-c-brand-soft: rgba(90, 106, 133, 0.12);
+
+  /* Button colors */
+  --vp-button-brand-border: var(--silvery-accent);
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-bg: var(--silvery-accent);
+  --vp-button-brand-hover-border: var(--silvery-accent-dark);
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: var(--silvery-accent-dark);
+  --vp-button-brand-active-border: var(--silvery-accent-dark);
+  --vp-button-brand-active-text: #ffffff;
+  --vp-button-brand-active-bg: var(--silvery-accent-dark);
+
+  /* Typography */
+  --vp-font-family-base: var(--silvery-font-body);
+  --vp-font-family-mono: var(--silvery-font-mono);
+
+  /* Home hero name gradient — solid silver-blue, no rainbow */
+  --vp-home-hero-name-color: var(--silvery-accent);
+  --vp-home-hero-name-background: transparent;
+
+  /* Image slot for hero — no tiny blob */
+  --vp-home-hero-image-background-image: none;
+  --vp-home-hero-image-filter: none;
+}
+
+.dark {
+  /* Adjust brand for dark mode — brighter silver-blue */
+  --vp-c-brand-1: var(--silvery-accent-light);
+  --vp-c-brand-2: var(--silvery-accent);
+  --vp-c-brand-3: var(--silvery-accent);
+  --vp-c-brand-soft: rgba(122, 138, 165, 0.16);
+
+  --vp-button-brand-border: var(--silvery-accent-light);
+  --vp-button-brand-bg: var(--silvery-accent);
+  --vp-button-brand-hover-border: var(--silvery-accent-light);
+  --vp-button-brand-hover-bg: var(--silvery-accent-light);
+
+  --vp-home-hero-name-color: var(--silvery-accent-light);
+}
+
+/* ---- Display typography — Rubik for brand voice ---- */
+.VPHero .name,
+.VPHero .text,
+.VPHomeHero .name,
+.VPHomeHero .text,
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--silvery-font-display);
+}
+
+/* Hero name — slightly tighter tracking (Rubik responds well) */
+.VPHero .name,
+.VPHomeHero .name {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.VPHero .text,
+.VPHomeHero .text {
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+/* Hero tagline — mono (JetBrains Mono), terminal-native */
+.VPHero .tagline,
+.VPHomeHero .tagline {
+  font-family: var(--silvery-font-mono);
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Blinking cursor at end of tagline */
+.VPHero .tagline::after,
+.VPHomeHero .tagline::after {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  background-color: currentColor;
+  vertical-align: text-bottom;
+  margin-left: 0.1em;
+  animation: silvery-cursor-blink 1s steps(1) infinite;
+}
+
+@keyframes silvery-cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Feature card titles — Rubik Medium */
+.VPFeature .title,
+.VPFeatures .title {
+  font-family: var(--silvery-font-display);
+  font-weight: 500;
+}
+
+/* ---- Preserve existing fixes ---- */
+
 /* Fix glossary tooltips being clipped by table scroll containers */
 .vp-doc .table-wrapper {
   overflow: visible;

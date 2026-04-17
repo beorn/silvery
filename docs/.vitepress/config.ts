@@ -147,7 +147,7 @@ export default withMermaid(
 
     themeConfig: {
       logo: "/logo.svg",
-      siteTitle: "Silvery",
+      siteTitle: "silvery",
 
       nav: [
         {
