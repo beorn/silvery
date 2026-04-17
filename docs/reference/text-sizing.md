@@ -122,16 +122,6 @@ The `textSize` style prop is available on `Box` and `Text` components. It declar
 </Text>
 ```
 
-### Demo
-
-Run the interactive text sizing demo:
-
-```bash
-bun vendor/silvery/examples/kitty/text-sizing-demo.tsx
-```
-
-Shows headings, body text, annotations, code with inline comments, and a scale comparison — all at different font sizes. Requires Kitty v0.40+ for visible scaling; other terminals show normal-sized text.
-
 ## API Reference
 
 ### `textSized(text: string, width: number): string`

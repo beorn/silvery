@@ -141,16 +141,6 @@ const result = await detectKittyFromStdio(process.stdout, process.stdin, 200)
 // result.supported: boolean, result.flags: number
 ```
 
-## Generating the Matrix
-
-The compatibility matrix can also be auto-generated from the detection code:
-
-```bash
-bun vendor/silvery/tests/terminal-compat/compat-matrix.ts
-```
-
-This runs `detectTerminalCaps()` with mocked env vars for each terminal profile and outputs a markdown table.
-
 ## References
 
 - [ECMA-48 / ISO 6429](https://www.ecma-international.org/publications-and-standards/standards/ecma-48/) -- CSI/OSC standard
