@@ -18,6 +18,10 @@
   --silvery-accent-light: #7a8aa5;
   --silvery-accent-dark: #3a4a65;
 
+  /* Wordmark rest color (what the gleam settles to) */
+  --silvery-wordmark-rest: #1a1a1a;
+  --silvery-wordmark-highlight: #d6d9e0;
+
   /* TS-blue reserved for TypeScript-specific refs */
   --silvery-ts-blue: #3178c6;
 
@@ -52,39 +56,40 @@
 }
 
 .dark {
-  /* Adjust brand for dark mode — brighter silver-blue */
   --vp-c-brand-1: var(--silvery-accent-light);
   --vp-c-brand-2: var(--silvery-accent);
   --vp-c-brand-3: var(--silvery-accent);
-  --vp-c-brand-soft: rgba(122, 138, 165, 0.16);
+  --vp-c-brand-soft: rgba(122, 138, 165, 0.18);
 
   --vp-button-brand-border: var(--silvery-accent-light);
   --vp-button-brand-bg: var(--silvery-accent);
   --vp-button-brand-hover-border: var(--silvery-accent-light);
   --vp-button-brand-hover-bg: var(--silvery-accent-light);
+
+  --silvery-wordmark-rest: #e6e6e6;
+  --silvery-wordmark-highlight: #ffffff;
 }
 
 /* ============================================================
- * Chrome gleam on "Silvery" wordmarks
+ * Chrome gleam on "Silvery" wordmark
  *
- * Applied to the nav site title AND the hero `.name` — the two
- * places where "Silvery" appears as a brand wordmark. Gleam is a
- * linear gradient fill clipped to text, animated on page load +
- * every 25s of idle (per design doc: silver surfaces catch one
- * moving light source).
+ * Gradient has solid dark endpoints → mid-highlight → solid dark.
+ * Background-position drifts from right to left once per 18s.
+ * Since both endpoints are the rest color, the cycle restart is
+ * invisible: the wordmark sits at rest color 90% of the time,
+ * then a smooth highlight passes through.
  * ============================================================ */
 
 .VPNavBarTitle .title,
 .VPHome .name,
 .VPHero .name {
-  /* Light-mode silver gradient (charcoal → silver highlight → charcoal) */
   background: linear-gradient(
     110deg,
-    #4a4f5a 0%,
-    #4a4f5a 35%,
-    #d6d9e0 50%,
-    #4a4f5a 65%,
-    #4a4f5a 100%
+    var(--silvery-wordmark-rest) 0%,
+    var(--silvery-wordmark-rest) 42%,
+    var(--silvery-wordmark-highlight) 50%,
+    var(--silvery-wordmark-rest) 58%,
+    var(--silvery-wordmark-rest) 100%
   );
   background-size: 300% 100%;
   background-position: 100% 0;
@@ -93,37 +98,26 @@
   color: transparent;
   -webkit-text-fill-color: transparent;
 
-  animation: silvery-wordmark-gleam 25s ease-in-out infinite;
+  animation: silvery-wordmark-gleam 18s ease-in-out infinite;
 }
 
-.dark .VPNavBarTitle .title,
+/* Hero wordmark also gets a subtle outline */
+.VPHome .name,
+.VPHero .name {
+  -webkit-text-stroke: 0.5px rgba(90, 106, 133, 0.35);
+}
+
 .dark .VPHome .name,
 .dark .VPHero .name {
-  /* Dark-mode silver gradient (brighter mid-tone on darker rail) */
-  background: linear-gradient(
-    110deg,
-    #8a90a0 0%,
-    #8a90a0 35%,
-    #f5f7fc 50%,
-    #8a90a0 65%,
-    #8a90a0 100%
-  );
-  background-size: 300% 100%;
-  background-position: 100% 0;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  animation: silvery-wordmark-gleam 25s ease-in-out infinite;
+  -webkit-text-stroke: 0.5px rgba(230, 230, 230, 0.2);
 }
 
 @keyframes silvery-wordmark-gleam {
-  /* Sweep the highlight from right to left once, then sit for the rest of the 25s */
   0% {
     background-position: 100% 0;
   }
-  6% {
-    background-position: -100% 0; /* fast sweep over ~1.5s */
+  10% {
+    background-position: -100% 0;
   }
   100% {
     background-position: -100% 0;
@@ -131,32 +125,138 @@
 }
 
 /* ============================================================
- * Blinking cursor at end of hero tagline
- * Single source of animated activity on the page
+ * Hover states — noticeably stronger than defaults
  * ============================================================ */
 
-.VPHero .tagline::after,
-.VPHomeHero .tagline::after {
-  content: "";
-  display: inline-block;
-  width: 0.55em;
-  height: 1em;
-  background-color: currentColor;
-  vertical-align: text-bottom;
-  margin-left: 0.15em;
-  animation: silvery-cursor-blink 1s steps(1) infinite;
+/* Feature cards — lift + accent border + shadow on hover */
+.VPFeature {
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease !important;
+}
+.VPFeature:hover {
+  border-color: var(--silvery-accent) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(90, 106, 133, 0.18);
+  background-color: var(--vp-c-bg-soft);
+}
+.dark .VPFeature:hover {
+  border-color: var(--silvery-accent-light) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
 
-@keyframes silvery-cursor-blink {
-  0%,
-  50% {
-    opacity: 1;
-  }
-  50.01%,
-  100% {
-    opacity: 0;
-  }
+/* Feature card title gets accent color on hover */
+.VPFeature .title {
+  transition: color 0.18s ease;
 }
+.VPFeature:hover .title {
+  color: var(--silvery-accent);
+}
+.dark .VPFeature:hover .title {
+  color: var(--silvery-accent-light);
+}
+
+/* ============================================================
+ * Feature card key-term highlighting
+ *
+ * Inline links inside feature cards (e.g. "React 18 + 19",
+ * "3-27× faster", "useBoxRect()") are treated as highlighted
+ * chips — accent color, weight 500, subtle underline. They
+ * become filled chips on hover.
+ *
+ * The trailing "Feature link →" arrow at the end of each card
+ * (.feature-link) is styled separately as a subtle bottom link.
+ * ============================================================ */
+
+/* Inline prose links in feature cards — chip-style highlighting */
+.VPFeature a:not(.feature-link) {
+  color: var(--silvery-accent);
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1.5px solid var(--silvery-accent);
+  padding: 0 1px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.VPFeature a:not(.feature-link):hover {
+  color: #ffffff;
+  background-color: var(--silvery-accent);
+  border-bottom-color: transparent;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin: 0 -3px;
+}
+.dark .VPFeature a:not(.feature-link) {
+  color: var(--silvery-accent-light);
+  border-bottom-color: var(--silvery-accent-light);
+}
+.dark .VPFeature a:not(.feature-link):hover {
+  color: #ffffff;
+  background-color: var(--silvery-accent-light);
+}
+
+/* Prose links (docs pages) — accent underline, visible hover */
+.vp-doc a {
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: var(--silvery-accent);
+  text-underline-offset: 2px;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease,
+    text-decoration-thickness 0.15s ease;
+}
+.vp-doc a:hover {
+  color: var(--silvery-accent);
+  background-color: var(--vp-c-brand-soft);
+  text-decoration-thickness: 2px;
+  border-radius: 3px;
+  padding: 0 2px;
+  margin: 0 -2px;
+}
+.dark .vp-doc a:hover {
+  color: var(--silvery-accent-light);
+}
+
+/* "Feature link →" arrows at the bottom of each feature card
+   — subtle baseline link, ghost on hover */
+.feature-link {
+  display: inline-block;
+  margin-top: 0.5em;
+  font-weight: 500;
+  color: var(--silvery-accent) !important;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    color 0.15s ease;
+}
+.feature-link:hover {
+  color: var(--silvery-accent-dark) !important;
+  transform: translateX(3px);
+}
+.dark .feature-link {
+  color: var(--silvery-accent-light) !important;
+}
+.dark .feature-link:hover {
+  color: #ffffff !important;
+}
+
+/* Nav links — accent underline on hover */
+.VPNavBarMenu .VPNavBarMenuLink {
+  transition:
+    color 0.15s ease,
+    border-bottom-color 0.15s ease !important;
+}
+
+/* ============================================================
+ * Note: the blinking cursor at the end of the tagline was
+ * removed per user feedback — it competed with the wordmark
+ * gleam and felt distracting. Single source of animated
+ * activity on the page is now the wordmark gleam sweep.
+ * ============================================================ */
 
 /* ---- Preserve existing fixes ---- */
 
