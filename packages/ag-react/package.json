@@ -34,6 +34,7 @@
     "./ui/components/Divider": "./src/ui/components/Divider.tsx",
     "./ui/components/Spinner": "./src/ui/components/Spinner.tsx",
     "./ui/components/TextInput": "./src/ui/components/TextInput.tsx",
+    "./ui/wrappers": "./src/ui/wrappers/index.ts",
     "./*": "./src/*.ts"
   },
   "publishConfig": {
