@@ -45,49 +45,10 @@
 </template>
 
 <style scoped>
-/* ----- Chrome bezel wrapper — synced to page-wide gleam -----
- * Uses `background-attachment: fixed` + viewport-relative size so
- * the highlight passes through the chrome at the same moment it
- * passes through the wordmark and HERO-TEXT. One light source. */
-.silvery-terminal-wrap {
-  padding: 5px;
-  border-radius: 14px;
-  margin: 1.5em auto 0;
-  max-width: 760px;
-  overflow: hidden;
-
-  background-image: linear-gradient(
-    110deg,
-    #9aa1b0 0%,
-    #9aa1b0 42%,
-    #f0f3f8 50%,
-    #9aa1b0 58%,
-    #9aa1b0 100%
-  );
-  background-size: 200vw 100vh;
-  background-attachment: fixed;
-  background-position: -100vw 0;
-  animation: silvery-page-gleam 9s linear infinite;
-
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-}
-
-:global(.dark) .silvery-terminal-wrap {
-  background-image: linear-gradient(
-    110deg,
-    #b0b6c4 0%,
-    #b0b6c4 42%,
-    #ffffff 50%,
-    #b0b6c4 58%,
-    #b0b6c4 100%
-  );
-  background-size: 200vw 100vh;
-  background-attachment: fixed;
-  background-position: -100vw 0;
-  animation: silvery-page-gleam 9s linear infinite;
-}
-
-/* silvery-page-gleam keyframes are defined in custom.css globally */
+/* Chrome bezel wrapper styling lives in custom.css (global) so the
+ * page-wide `silvery-page-gleam` animation and the `.dark .silvery-
+ * terminal-wrap` dark-mode selector work without scoped-CSS quirks.
+ * Scoped styles below are for the terminal interior only. */
 
 /* ----- Inner terminal ----- */
 .silvery-terminal {
