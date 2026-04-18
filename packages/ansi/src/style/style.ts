@@ -51,6 +51,41 @@ export function resolveThemeColor(name: string | undefined, theme: object | unde
   return resolveToken(name, theme as ThemeLike)
 }
 
+/**
+ * Primer-style alias table. Maps new compound names (hyphens stripped) to the
+ * existing Theme keys. Lets `$fg-muted` / `$bg-surface` / `$border-focus` / etc.
+ * work alongside the legacy Ink-style names like `$muted` / `$surfacebg` /
+ * `$focusborder`. Enables the Primer-style token rename (theme-system-v2) to
+ * roll out gradually without breaking existing consumers.
+ */
+const PRIMER_ALIASES: Record<string, string> = {
+  // Text slots — "fg-<role>"
+  fgmuted: "muted",
+  fgdisabled: "disabledfg",
+  fgcursor: "cursor", // fg-cursor = text on cursor bg
+  fgselected: "selection",
+  fginverse: "inverse",
+  fgonsurface: "surface",
+  fgonpopover: "popover",
+  fgonprimary: "primaryfg",
+  fgonsecondary: "secondaryfg",
+  fgonaccent: "accentfg",
+  fgonerror: "errorfg",
+  fgonwarning: "warningfg",
+  fgonsuccess: "successfg",
+  fgoninfo: "infofg",
+  // Background slots — "bg-<role>"
+  bgmuted: "mutedbg",
+  bgsurface: "surfacebg",
+  bgpopover: "popoverbg",
+  bginverse: "inversebg",
+  bgselected: "selectionbg",
+  bgcursor: "cursorbg",
+  // Border slots — "border-<role>"
+  borderfocus: "focusborder",
+  borderinput: "inputborder",
+}
+
 /** Internal: resolve a token name (with or without $ prefix) against a theme. */
 function resolveToken(name: string, theme: ThemeLike | undefined): string | undefined {
   if (!theme) return undefined
@@ -64,8 +99,17 @@ function resolveToken(name: string, theme: ThemeLike | undefined): string | unde
   }
   // Strip hyphens for lookup ($surface-bg → surfacebg)
   const key = token.replace(/-/g, "")
-  const val = (theme as Record<string, unknown>)[key]
-  return typeof val === "string" ? val : undefined
+  const themeObj = theme as Record<string, unknown>
+  // Try direct key first (legacy names: muted, surfacebg, focusborder, …)
+  const direct = themeObj[key]
+  if (typeof direct === "string") return direct
+  // Try Primer-style alias (new names: fgmuted, bgsurface, borderfocus, …)
+  const aliased = PRIMER_ALIASES[key]
+  if (aliased) {
+    const val = themeObj[aliased]
+    if (typeof val === "string") return val
+  }
+  return undefined
 }
 
 // =============================================================================

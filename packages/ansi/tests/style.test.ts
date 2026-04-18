@@ -177,6 +177,73 @@ describe("resolveThemeColor", () => {
   it("strips hyphens for lookup", () => {
     expect(resolveThemeColor("$surface-bg", { surfacebg: "#1e1e2e" })).toBe("#1e1e2e")
   })
+
+  // Primer-style aliases (theme-system-v2 token rename) — new names resolve to
+  // existing Theme keys so apps can migrate gradually.
+  describe("Primer-style aliases", () => {
+    const legacyTheme = {
+      muted: "#8b8da2",
+      mutedbg: "#2a2a40",
+      surfacebg: "#1e1e2e",
+      popoverbg: "#262637",
+      inversebg: "#c0c0c0",
+      selectionbg: "#6272a4",
+      cursorbg: "#f1fa8c",
+      cursor: "#282a36",
+      selection: "#f8f8f2",
+      inverse: "#1a1a1a",
+      surface: "#f8f8f2",
+      popover: "#f8f8f2",
+      primaryfg: "#000000",
+      disabledfg: "#4a4a5f",
+      focusborder: "#bd93f9",
+      inputborder: "#44475a",
+    }
+    it("$fg-muted → muted", () => {
+      expect(resolveThemeColor("$fg-muted", legacyTheme)).toBe("#8b8da2")
+    })
+    it("$bg-muted → mutedbg", () => {
+      expect(resolveThemeColor("$bg-muted", legacyTheme)).toBe("#2a2a40")
+    })
+    it("$bg-surface → surfacebg", () => {
+      expect(resolveThemeColor("$bg-surface", legacyTheme)).toBe("#1e1e2e")
+    })
+    it("$bg-popover → popoverbg", () => {
+      expect(resolveThemeColor("$bg-popover", legacyTheme)).toBe("#262637")
+    })
+    it("$bg-inverse → inversebg", () => {
+      expect(resolveThemeColor("$bg-inverse", legacyTheme)).toBe("#c0c0c0")
+    })
+    it("$bg-selected → selectionbg", () => {
+      expect(resolveThemeColor("$bg-selected", legacyTheme)).toBe("#6272a4")
+    })
+    it("$bg-cursor → cursorbg", () => {
+      expect(resolveThemeColor("$bg-cursor", legacyTheme)).toBe("#f1fa8c")
+    })
+    it("$fg-cursor → cursor", () => {
+      expect(resolveThemeColor("$fg-cursor", legacyTheme)).toBe("#282a36")
+    })
+    it("$fg-selected → selection", () => {
+      expect(resolveThemeColor("$fg-selected", legacyTheme)).toBe("#f8f8f2")
+    })
+    it("$fg-disabled → disabledfg", () => {
+      expect(resolveThemeColor("$fg-disabled", legacyTheme)).toBe("#4a4a5f")
+    })
+    it("$border-focus → focusborder", () => {
+      expect(resolveThemeColor("$border-focus", legacyTheme)).toBe("#bd93f9")
+    })
+    it("$border-input → inputborder", () => {
+      expect(resolveThemeColor("$border-input", legacyTheme)).toBe("#44475a")
+    })
+    it("$fg-on-primary → primaryfg", () => {
+      expect(resolveThemeColor("$fg-on-primary", legacyTheme)).toBe("#000000")
+    })
+    it("legacy names still resolve (backwards compat)", () => {
+      expect(resolveThemeColor("$muted", legacyTheme)).toBe("#8b8da2")
+      expect(resolveThemeColor("$focusborder", legacyTheme)).toBe("#bd93f9")
+      expect(resolveThemeColor("$disabledfg", legacyTheme)).toBe("#4a4a5f")
+    })
+  })
 })
 
 describe("global style", () => {
