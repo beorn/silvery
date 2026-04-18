@@ -63,7 +63,9 @@ describe("withFocusChain", () => {
       withFocusChain({ dispatchKey, hasActiveFocus: () => true }),
     )
     const seen: string[] = []
-    app.input.register(() => seen.push("useInput ran"))
+    app.input.register(() => {
+      seen.push("useInput ran")
+    })
     pressKey(app, "a")
     expect(seen).toEqual([]) // critical: the whole point of the precedence
     expect(dispatchKey).toHaveBeenCalledTimes(1)
@@ -113,7 +115,9 @@ describe("withFocusChain", () => {
     const origError = console.error
     console.error = () => {}
     const seen: string[] = []
-    app.input.register((input) => seen.push(input))
+    app.input.register((input) => {
+      seen.push(input)
+    })
     try {
       pressKey(app, "x")
     } finally {

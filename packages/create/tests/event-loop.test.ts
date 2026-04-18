@@ -20,22 +20,17 @@ import {
 import { withFocusChain } from "../src/runtime/with-focus-chain"
 import { withInputChain } from "../src/runtime/with-input-chain"
 import { withPasteChain } from "../src/runtime/with-paste-chain"
-import { withTerminalChain } from "../src/runtime/with-terminal-chain"
+import { withTerminalChain, type KeyShape } from "../src/runtime/with-terminal-chain"
 
-function mkApp(opts?: { focus?: { dispatchKey: (i: string, k: unknown) => boolean; active: boolean } }) {
+function mkApp(opts?: { focus?: { dispatchKey: (input: string, key: KeyShape) => boolean; active: boolean } }) {
+  const base = pipe(createBaseApp(), withTerminalChain(), withPasteChain(), withInputChain)
+  if (!opts?.focus) return base
   return pipe(
-    createBaseApp(),
-    withTerminalChain(),
-    withPasteChain(),
-    withInputChain,
-    ...(opts?.focus
-      ? [
-          withFocusChain({
-            dispatchKey: opts.focus.dispatchKey,
-            hasActiveFocus: () => opts.focus!.active,
-          }),
-        ]
-      : []),
+    base,
+    withFocusChain({
+      dispatchKey: opts.focus.dispatchKey,
+      hasActiveFocus: () => opts.focus!.active,
+    }),
   )
 }
 
@@ -165,7 +160,9 @@ describe("runEventBatch — per-event effects", () => {
     const dispatchKey = vi.fn(() => true)
     const app = mkApp({ focus: { dispatchKey, active: true } })
     const seen: string[] = []
-    app.input.register((input) => seen.push(input))
+    app.input.register((input) => {
+      seen.push(input)
+    })
     await runEventBatch(app, [{ type: "term:key", input: "a", key: { eventType: "press" } }], {
       onRender: () => {},
     })
@@ -177,7 +174,9 @@ describe("runEventBatch — per-event effects", () => {
     const dispatchKey = vi.fn(() => false)
     const app = mkApp({ focus: { dispatchKey, active: true } })
     const seen: string[] = []
-    app.input.register((input) => seen.push(input))
+    app.input.register((input) => {
+      seen.push(input)
+    })
     await runEventBatch(app, [{ type: "term:key", input: "k", key: { eventType: "press" } }], {
       onRender: () => {},
     })
@@ -187,7 +186,9 @@ describe("runEventBatch — per-event effects", () => {
   test("paste event invokes onRender via withPasteChain", async () => {
     const app = mkApp()
     const got: string[] = []
-    app.paste.register((text) => got.push(text))
+    app.paste.register((text) => {
+      got.push(text)
+    })
     const onRender = vi.fn()
     await runEventBatch(app, [{ type: "term:paste", text: "pasted-body" }], { onRender })
     expect(got).toEqual(["pasted-body"])
