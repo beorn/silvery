@@ -608,18 +608,18 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
     codes.push(na.blink ? "5" : "25")
   }
 
-  // Foreground color
+  // Foreground color — stripped at monochrome tier (hierarchy via attrs)
   if (!colorEquals(oldStyle.fg, newStyle.fg)) {
-    if (newStyle.fg === null) {
+    if (newStyle.fg === null || ctx.caps.colorLevel === "none") {
       codes.push("39")
     } else {
       codes.push(fgColorCode(newStyle.fg))
     }
   }
 
-  // Background color
+  // Background color — stripped at monochrome tier (hierarchy via attrs)
   if (!colorEquals(oldStyle.bg, newStyle.bg)) {
-    if (newStyle.bg === null) {
+    if (newStyle.bg === null || ctx.caps.colorLevel === "none") {
       codes.push("49")
     } else {
       codes.push(bgColorCode(newStyle.bg))
@@ -2013,18 +2013,19 @@ function changesToAnsi(
 function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string {
   const fg = style.fg
   const bg = style.bg
+  const monoTier = ctx.caps.colorLevel === "none"
 
   // Collect all SGR codes into one combined sequence: \x1b[code1;code2;...m
   // This is more spec-compliant and produces fewer bytes than separate sequences.
   const codes: string[] = []
 
-  // Foreground color
-  if (fg !== null) {
+  // Foreground color — stripped at monochrome tier (hierarchy via attrs)
+  if (fg !== null && !monoTier) {
     codes.push(fgColorCode(fg))
   }
 
-  // Background color (DEFAULT_BG sentinel = terminal default, skip)
-  if (bg !== null && !isDefaultBg(bg)) {
+  // Background color (DEFAULT_BG sentinel = terminal default, skip) — stripped at mono tier
+  if (bg !== null && !isDefaultBg(bg) && !monoTier) {
     codes.push(bgColorCode(bg))
   }
 

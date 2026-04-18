@@ -59,7 +59,15 @@ export { createTheme, quickTheme, presetTheme } from "./builder"
 export { fromBase16, fromColors, fromPreset } from "./generators"
 
 // Active theme state (side-effectful)
-export { setActiveTheme, getActiveTheme, pushContextTheme, popContextTheme } from "./state"
+export {
+  setActiveTheme,
+  getActiveTheme,
+  pushContextTheme,
+  popContextTheme,
+  setActiveColorLevel,
+  getActiveColorLevel,
+} from "./state"
+export type { ActiveColorLevel } from "./state"
 
 // Validation
 export { validateColorScheme } from "./validate"

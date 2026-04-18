@@ -8,6 +8,7 @@
 import type { Term, TerminalCaps } from "./ansi/index"
 import { createWidthMeasurer, type Measurer } from "./unicode"
 import { createOutputPhase } from "./pipeline/output-phase"
+import { setActiveColorLevel } from "@silvery/theme/state"
 import type { PipelineConfig } from "./pipeline"
 
 export type { Measurer } from "./unicode"
@@ -70,5 +71,12 @@ export function createPipeline(
       : {},
     measurer,
   )
+  // Mirror colorLevel into module-scoped theme state so render-helpers
+  // (parseColor, getTextStyle) can dispatch on tier without access to
+  // OutputContext. At mono tier ("none"), $tokens resolve to null fg/bg and
+  // getTextStyle injects per-token SGR attrs from DEFAULT_MONO_ATTRS so apps
+  // keep hierarchy (bold / dim / italic / underline / inverse) when color is
+  // unavailable. See hub/silvery/design/v10-terminal/theme-system-v2-plan.md#p4.
+  if (caps?.colorLevel) setActiveColorLevel(caps.colorLevel)
   return { measurer, outputPhaseFn }
 }

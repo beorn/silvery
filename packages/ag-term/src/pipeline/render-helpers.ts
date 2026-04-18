@@ -12,8 +12,9 @@
  */
 
 import { DEFAULT_BG, type Color, type Style, type UnderlineStyle } from "../buffer"
-import { getActiveTheme } from "@silvery/theme/state"
+import { getActiveColorLevel, getActiveTheme } from "@silvery/theme/state"
 import { resolveThemeColor } from "@silvery/theme/resolve"
+import { monoAttrsForColorString, type MonoAttr } from "@silvery/ansi"
 import type { BoxProps, TextProps } from "@silvery/ag/types"
 import { displayWidthAnsi } from "../unicode"
 import type { BorderChars, PipelineContext } from "./types"
@@ -69,8 +70,11 @@ function blendColors(
  * Supports: mix(c1,c2,amount), $token (theme), named colors, hex (#rgb, #rrggbb), rgb(r,g,b)
  */
 export function parseColor(color: string): Color {
-  // Inherit: no color — parent's color flows through (like CSS color: inherit)
-  if (color === "inherit") return null
+  // Inherit: no color — parent's color flows through (like CSS color: inherit).
+  // "currentColor" is a CSS synonym — both keywords resolve identically here.
+  // For child-cascade purposes, render-phase detects these keywords directly
+  // (before parseColor) so the parent's inheritedFg is preserved in children.
+  if (color === "inherit" || color === "currentColor") return null
 
   // Special token: terminal's default background (SGR 49)
   if (color === "$default") return DEFAULT_BG
@@ -121,6 +125,11 @@ export function parseColor(color: string): Color {
 
   // Resolve $token colors against the active theme
   if (color.startsWith("$")) {
+    // At monochrome tier, strip all token-resolved colors. Hierarchy is carried
+    // by per-token SGR attrs (see getTextStyle → monoAttrsForColorString). The
+    // output phase sees `null` and emits SGR 39/49 (terminal default), never
+    // an RGB sequence.
+    if (getActiveColorLevel() === "none") return null
     const resolved = resolveThemeColor(color, getActiveTheme())
     if (resolved && resolved !== color) return parseColor(resolved)
     return null
@@ -262,6 +271,24 @@ export function getBorderChars(style: BoxProps["borderStyle"]): BorderChars {
 // ============================================================================
 
 /**
+ * Collect monochrome attrs from a color string (`"$primary"` → `["bold"]`).
+ *
+ * At mono tier, `parseColor` strips the color (returns `null`). The hierarchy
+ * signal lives in the attrs bag. This helper merges the mapped attrs from
+ * `DEFAULT_MONO_ATTRS` into a mutable accumulator. Called per color-carrying
+ * prop in `getTextStyle`.
+ *
+ * No-op when the color is not a `$token` — non-token hex / named colors
+ * pass through with no attrs (spec: "apps that hardcoded #FF0000 get nothing").
+ */
+function collectMonoAttrs(color: string | undefined, into: Set<MonoAttr>): void {
+  if (!color) return
+  const attrs = monoAttrsForColorString(color, getActiveTheme())
+  if (!attrs) return
+  for (const a of attrs) into.add(a)
+}
+
+/**
  * Get text style from props.
  */
 export function getTextStyle(props: TextProps): Style {
@@ -273,18 +300,45 @@ export function getTextStyle(props: TextProps): Style {
     underlineStyle = "single"
   }
 
+  // Start with the user-specified attrs.
+  let bold = props.bold
+  let dim = props.dim || props.dimColor // dimColor is Ink compatibility alias
+  let italic = props.italic
+  let underline = props.underline || !!underlineStyle
+  let strikethrough = props.strikethrough
+  let inverse = props.inverse
+
+  // Monochrome tier: inject per-token SGR attrs from DEFAULT_MONO_ATTRS. Colors
+  // are stripped by parseColor (returns null for $tokens at mono tier). The
+  // attrs carry the hierarchy: $primary → bold, $muted → dim, $error →
+  // bold+inverse, $link → underline, etc. User-supplied attrs always OR-in.
+  if (getActiveColorLevel() === "none") {
+    const monoAttrs = new Set<MonoAttr>()
+    collectMonoAttrs(props.color, monoAttrs)
+    collectMonoAttrs(props.backgroundColor, monoAttrs)
+    if (monoAttrs.has("bold")) bold = true
+    if (monoAttrs.has("dim")) dim = true
+    if (monoAttrs.has("italic")) italic = true
+    if (monoAttrs.has("underline")) {
+      underline = true
+      if (!underlineStyle) underlineStyle = "single"
+    }
+    if (monoAttrs.has("strikethrough")) strikethrough = true
+    if (monoAttrs.has("inverse")) inverse = true
+  }
+
   return {
     fg: props.color ? parseColor(props.color) : null,
     bg: props.backgroundColor ? parseColor(props.backgroundColor) : null,
     underlineColor: props.underlineColor ? parseColor(props.underlineColor) : null,
     attrs: {
-      bold: props.bold,
-      dim: props.dim || props.dimColor, // dimColor is Ink compatibility alias
-      italic: props.italic,
-      underline: props.underline || !!underlineStyle,
+      bold,
+      dim,
+      italic,
+      underline,
       underlineStyle,
-      strikethrough: props.strikethrough,
-      inverse: props.inverse,
+      strikethrough,
+      inverse,
     },
   }
 }

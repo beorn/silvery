@@ -109,3 +109,68 @@ export function monoAttrsFor(theme: Theme, token: keyof Theme): readonly MonoAtt
   const attrs = deriveMonochromeTheme(theme)
   return attrs[token] ?? []
 }
+
+/**
+ * Primer-style alias table for mono-attr resolution. Mirrors the alias table
+ * in `style/style.ts:PRIMER_ALIASES` — kept local to avoid a cross-package
+ * import cycle.
+ *
+ * Maps the Primer-style compound token names (hyphens stripped) to the
+ * canonical Theme keys that `DEFAULT_MONO_ATTRS` is keyed by. This lets
+ * `$fg-muted`, `$bg-selected`, `$border-focus`, etc. resolve to the same attrs
+ * set as their legacy counterparts.
+ */
+const PRIMER_ALIASES_FOR_MONO: Record<string, keyof Theme> = {
+  fgmuted: "muted",
+  fgdisabled: "disabledfg",
+  fgcursor: "cursor",
+  fgselected: "selection",
+  fginverse: "inverse",
+  fgonsurface: "surface",
+  fgonpopover: "popover",
+  fgonprimary: "primaryfg",
+  fgonsecondary: "secondaryfg",
+  fgonaccent: "accentfg",
+  fgonerror: "errorfg",
+  fgonwarning: "warningfg",
+  fgonsuccess: "successfg",
+  fgoninfo: "infofg",
+  bgmuted: "mutedbg",
+  bgsurface: "surfacebg",
+  bgpopover: "popoverbg",
+  bginverse: "inversebg",
+  bgselected: "selectionbg",
+  bgcursor: "cursorbg",
+  borderfocus: "focusborder",
+  borderinput: "inputborder",
+}
+
+/**
+ * Resolve mono-attrs from a color *string* — the high-level entry point
+ * consumed by the render pipeline.
+ *
+ * Accepts strings like `"$primary"`, `"$fg-muted"`, `"$border-focus"`. Strips
+ * the `$` prefix and hyphens, tries direct Theme key lookup, then falls back
+ * to the Primer alias table. Returns `undefined` for non-token strings (hex,
+ * rgb(), named ANSI colors) — callers should treat this as "no attrs".
+ *
+ * @param color    The color string (e.g. `"$primary"`, `"#ff0000"`, `"red"`)
+ * @param theme    Active theme (reserved for per-theme overrides)
+ * @returns        Array of mono-attrs for the token, or `undefined` if not a
+ *                 recognized token.
+ */
+export function monoAttrsForColorString(color: string, theme: Theme): readonly MonoAttr[] | undefined {
+  if (!color.startsWith("$")) return undefined
+  const raw = color.slice(1).replace(/-/g, "")
+  const attrs = deriveMonochromeTheme(theme)
+  // Direct key (legacy names: muted, surfacebg, focusborder, primary, …)
+  const direct = attrs[raw as keyof Theme]
+  if (direct !== undefined) return direct
+  // Primer aliases (fg-muted, bg-surface, border-focus, …)
+  const aliased = PRIMER_ALIASES_FOR_MONO[raw]
+  if (aliased) {
+    const v = attrs[aliased]
+    if (v !== undefined) return v
+  }
+  return undefined
+}
