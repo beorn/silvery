@@ -108,9 +108,9 @@
   background-image: linear-gradient(
     110deg,
     transparent 0%,
-    transparent 30%,
+    transparent 46%,
     var(--silvery-wordmark-highlight) 50%,
-    transparent 70%,
+    transparent 54%,
     transparent 100%
   );
   background-size: 100vw 100vh;
@@ -131,9 +131,9 @@
   background-image: linear-gradient(
     110deg,
     transparent 0%,
-    transparent 30%,
+    transparent 46%,
     var(--silvery-hero-highlight) 50%,
-    transparent 70%,
+    transparent 54%,
     transparent 100%
   );
   background-size: 100vw 100vh;
@@ -154,9 +154,9 @@
   background-image: linear-gradient(
     110deg,
     transparent 0%,
-    transparent 30%,
+    transparent 46%,
     #d6e0f0 50%,
-    transparent 70%,
+    transparent 54%,
     transparent 100%
   );
   background-size: 100vw 100vh;
@@ -176,9 +176,9 @@
   background-image: linear-gradient(
     110deg,
     transparent 0%,
-    transparent 30%,
+    transparent 46%,
     #ffffff 50%,
-    transparent 70%,
+    transparent 54%,
     transparent 100%
   );
   background-size: 100vw 100vh;
@@ -200,9 +200,9 @@
   background-image: linear-gradient(
     110deg,
     transparent 0%,
-    transparent 30%,
+    transparent 46%,
     #d6e0f0 50%,
-    transparent 70%,
+    transparent 54%,
     transparent 100%
   ) !important;
   background-size: 100vw 100vh !important;
@@ -332,11 +332,11 @@
 
   background-image: linear-gradient(
     110deg,
-    #9aa1b0 0%,
-    #9aa1b0 30%,
+    transparent 0%,
+    transparent 46%,
     #ffffff 50%,
-    #9aa1b0 70%,
-    #9aa1b0 100%
+    transparent 54%,
+    transparent 100%
   );
   background-size: 100vw 100vh;
   background-attachment: fixed;
@@ -350,11 +350,11 @@
 .dark .silvery-terminal-wrap {
   background-image: linear-gradient(
     110deg,
-    #b0b6c4 0%,
-    #b0b6c4 30%,
+    transparent 0%,
+    transparent 46%,
     #ffffff 50%,
-    #b0b6c4 70%,
-    #b0b6c4 100%
+    transparent 54%,
+    transparent 100%
   );
   background-size: 100vw 100vh;
   background-attachment: fixed;
