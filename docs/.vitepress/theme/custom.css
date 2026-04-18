@@ -75,72 +75,134 @@
 }
 
 /* ============================================================
- * Page-wide spotlight sweep
+ * Page-wide gleam, clipped to branded elements
  *
- * A single fixed overlay element translates across the viewport,
- * carrying a narrow bright band that brightens everything beneath
- * it via mix-blend-mode. One physical spotlight, moving diagonally
- * from top-left to bottom-right, hits each branded element in
- * spatial order because there IS only one light source — no math,
- * no coincidence, no invisible-text edge cases.
+ * background-attachment: fixed anchors every gleam target's
+ * gradient to the SAME viewport coordinate system. A single
+ * narrow bright band exists at one viewport-x at a time and
+ * only paints where it overlaps a gleam target's bounds. Body
+ * text, icons, and unrelated elements stay untouched.
  *
- * Silvery-branded elements are styled with solid rest colors
- * (dark base, transparent terminal chrome). The overlay sweep
- * brightens them momentarily as it passes.
+ * Each target has a solid background-color rest state so it
+ * remains visible when the bright band is off-viewport (the
+ * no-repeat gradient paints transparent pixels elsewhere, and
+ * bg-color shows through via bg-clip: text).
  * ============================================================ */
 
-.silvery-page-gleam {
-  position: fixed;
-  top: -30vh;
-  left: 0;
-  width: 25vw;
-  height: 160vh;
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-30vw, 0) rotate(20deg);
-  transform-origin: top left;
-  background: linear-gradient(
-    to right,
+@keyframes silvery-page-gleam {
+  0%   { background-position: -100vw 0; }  /* pulse starts: off-left */
+  50%  { background-position: 100vw 0; }   /* pulse done: off-right */
+  100% { background-position: 100vw 0; }   /* hold */
+}
+
+/* Nav wordmark */
+.VPNavBarTitle .title {
+  background-color: var(--silvery-wordmark-rest);
+  background-image: linear-gradient(
+    110deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.55) 50%,
+    transparent 47%,
+    var(--silvery-wordmark-highlight) 50%,
+    transparent 53%,
     transparent 100%
   );
-  mix-blend-mode: screen;
-  will-change: transform;
-  animation: silvery-page-sweep 5s linear infinite;
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: 100vw 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: silvery-page-gleam 5s linear infinite;
 }
 
-@keyframes silvery-page-sweep {
-  0%   { transform: translate(-30vw, 0) rotate(20deg); }      /* off-left */
-  50%  { transform: translate(130vw, 0) rotate(20deg); }      /* off-right */
-  100% { transform: translate(130vw, 0) rotate(20deg); }      /* hold */
-}
-
-/* Silvery-branded element rest states (static — overlay does the sweep) */
-
-.VPNavBarTitle .title {
-  color: var(--silvery-wordmark-rest);
-}
-
+/* Hero wordmark */
 .VPHome .name,
 .VPHero .name {
-  color: var(--silvery-hero-rest);
+  background-color: var(--silvery-hero-rest);
+  background-image: linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 47%,
+    var(--silvery-hero-highlight) 50%,
+    transparent 53%,
+    transparent 100%
+  );
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: 100vw 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: silvery-page-gleam 5s linear infinite;
 }
 
+/* Hero tagline */
 .VPHome .text,
 .VPHero .text {
-  color: var(--silvery-accent);
+  background-color: var(--silvery-accent);
+  background-image: linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 47%,
+    #d6e0f0 50%,
+    transparent 53%,
+    transparent 100%
+  );
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: 100vw 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: silvery-page-gleam 5s linear infinite;
 }
 
 .dark .VPHome .text,
 .dark .VPHero .text {
-  color: var(--silvery-accent-light);
+  background-color: var(--silvery-accent-light);
+  background-image: linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 47%,
+    #ffffff 50%,
+    transparent 53%,
+    transparent 100%
+  );
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: 100vw 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: silvery-page-gleam 5s linear infinite;
 }
 
+/* Get Started button */
 .VPButton.brand,
 .VPHome .VPButton.brand,
 .VPHero .VPButton.brand {
-  background: var(--silvery-accent) !important;
+  background-color: var(--silvery-accent) !important;
+  background-image: linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 47%,
+    #d6e0f0 50%,
+    transparent 53%,
+    transparent 100%
+  ) !important;
+  background-size: 100vw 100vh !important;
+  background-attachment: fixed !important;
+  background-repeat: no-repeat !important;
+  background-position: 100vw 0;
+  animation: silvery-page-gleam 5s linear infinite;
   border-color: var(--silvery-accent) !important;
   color: #ffffff !important;
 }
@@ -254,15 +316,27 @@
   max-width: 760px;
   overflow: hidden;
 
-  /* Dim rest — almost invisible. The page-wide spotlight overlay
-   * brightens it to chrome as it sweeps across. */
-  background: #2a3040;
+  /* Dim rest + chrome peak when the page-wide sweep passes. */
+  background-color: #2a3040;
+  background-image: linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 47%,
+    #ffffff 50%,
+    transparent 53%,
+    transparent 100%
+  );
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: 100vw 0;
+  animation: silvery-page-gleam 5s linear infinite;
 
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 .dark .silvery-terminal-wrap {
-  background: #3a4252;
+  background-color: #3a4252;
 }
 
 @media (max-width: 820px) {
