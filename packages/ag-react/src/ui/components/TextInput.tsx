@@ -51,6 +51,8 @@ export interface TextInputProps {
   onEOF?: () => void
   /** Placeholder text when empty */
   placeholder?: string
+  /** Placeholder color (default: "$disabledfg") */
+  placeholderColor?: string
   /** Whether input is focused/active (overrides focus system) */
   isActive?: boolean
   /** Prompt prefix (e.g., "$ " or "> ") */
@@ -100,6 +102,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     onSubmit,
     onEOF,
     placeholder = "",
+    placeholderColor = "$disabledfg",
     isActive: isActiveProp,
     prompt = "",
     promptColor = "$control",
@@ -228,17 +231,24 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     <Text color={color}>
       {prompt && <Text color={promptColor}>{prompt}</Text>}
       {showPlaceholder ? (
+        // Placeholder uses the semantic $disabledfg token (overridable via
+        // `placeholderColor`) rather than raw `dimColor`. SGR 2 has uneven
+        // terminal support (e.g. Ghostty ignores it on some foregrounds), so
+        // the semantic token — which resolves to a pre-dimmed truecolor hex —
+        // produces a reliably muted appearance. See silvery styling guide §2
+        // ("dim is a rendering detail, not a design primitive") and the
+        // decision flowchart entry for placeholder text.
         <>
           {cursorStyle === "underline" ? (
-            <Text underline color="$muted">
+            <Text underline color={placeholderColor}>
               {placeholder[0]}
             </Text>
           ) : (
-            <Text inverse color="$muted">
+            <Text inverse color={placeholderColor}>
               {placeholder[0]}
             </Text>
           )}
-          <Text color="$muted">{placeholder.slice(1)}</Text>
+          <Text color={placeholderColor}>{placeholder.slice(1)}</Text>
         </>
       ) : (
         <>
