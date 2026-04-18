@@ -10,6 +10,24 @@ npm install @silvery/theme-detect
 
 Terminal emulators expose up to 22 colors via OSC escape queries: 16 ANSI slots + foreground, background, cursor, selection. `@silvery/theme-detect` probes the terminal, matches the result against a catalog of known schemes, and returns a fully-resolved theme with WCAG + visibility invariants.
 
+### One-call boot
+
+```ts
+import { detectScheme } from "@silvery/theme-detect"
+import { builtinPalettes } from "@silvery/theme/schemes"
+
+const { theme, scheme, source, matchedName, confidence } = await detectScheme({
+  catalog: Object.values(builtinPalettes),
+})
+
+console.log(`Terminal: ${matchedName ?? source} (${(confidence * 100).toFixed(0)}%)`)
+// → "Terminal: dracula (98%)" or "Terminal: probed (50%)" or "Terminal: fallback (0%)"
+```
+
+`detectScheme()` runs the full 4-layer cascade: explicit override → OSC probe → fingerprint match against catalog → fallback. Returns provenance metadata so you can log how the theme was determined.
+
+### Theme-only shortcut
+
 ```ts
 import { detectTheme } from "@silvery/theme-detect"
 

@@ -516,7 +516,7 @@ export type { CacheBackend, RuntimeContextValue, BaseRuntimeEvents, CapabilityLo
 // Theming
 export { ThemeProvider } from "./ThemeProvider"
 export { useTheme } from "@silvery/theme/ThemeContext"
-export type { ThemeProviderProps } from "./ThemeProvider"
+export type { ThemeProviderProps, ThemeTokens } from "./ThemeProvider"
 export {
   defaultDarkTheme,
   defaultLightTheme,

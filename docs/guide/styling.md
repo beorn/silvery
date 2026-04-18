@@ -635,6 +635,7 @@ Supports theme tokens (`$bg`, `$link`), named colors (`red`, `blue`), and hex (`
 
 ## See Also
 
+- **[Token Taxonomy](./token-taxonomy)** — every token category silvery ships and the decision tree for which to use ($brand vs $red vs $error vs $color1 vs $primary).
 - **[Color Schemes](./color-schemes)** — the 22-slot scheme model, `deriveTheme()`, the 84+ bundled schemes, and how to author your own.
 - **[Capability Tiers](./capability-tiers)** — how tokens render at truecolor / 256 / ANSI 16 / monochrome, and the four opt-out modes (`NO_COLOR`, `SILVERY_COLOR=mono|plain`, `SILVERY_STRIP_ALL`).
 - **[Custom Tokens](./custom-tokens)** — `defineTokens()` for app-specific semantic tokens and brand colors with proper fallbacks.

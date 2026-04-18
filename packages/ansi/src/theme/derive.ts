@@ -300,8 +300,18 @@ function deriveAnsi16Theme(p: ColorScheme): Theme {
     brand: primaryColor,
     brandHover: primaryColor,
     brandActive: primaryColor,
+    // Categorical ring (canonical names)
+    red: dark ? p.brightRed : p.red,
+    orange: dark ? p.brightRed : p.red, // no orange slot in ANSI 16
+    yellow: p.yellow,
+    green: dark ? p.brightGreen : p.green,
+    teal: p.cyan,
+    blue: dark ? p.brightBlue : p.blue,
+    purple: p.magenta,
+    pink: dark ? p.brightMagenta : p.magenta,
+    // Deprecated brand-<hue> aliases (same values)
     brandRed: dark ? p.brightRed : p.red,
-    brandOrange: dark ? p.brightRed : p.red, // no orange slot in ANSI 16 — use red
+    brandOrange: dark ? p.brightRed : p.red,
     brandYellow: p.yellow,
     brandGreen: dark ? p.brightGreen : p.green,
     brandTeal: p.cyan,

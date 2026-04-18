@@ -1942,7 +1942,7 @@ function selectPalette(name) {
       <!-- Palette colors detail -->
       <div v-if="detailTab === 'palette'" class="palette-pane">
         <p class="tokens-intro">
-          The 22 colors in the <code>ColorPalette</code>: 16 ANSI colors + 6 special colors. These are the raw inputs
+          The 22 colors in the <code>ColorScheme</code>: 16 ANSI colors + 6 special colors. These are the raw inputs
           that <code>deriveTheme()</code> transforms into semantic tokens.
         </p>
 

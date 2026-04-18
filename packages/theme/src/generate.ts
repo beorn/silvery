@@ -75,5 +75,30 @@ export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
       "cyanBright",
       "whiteBright",
     ],
+
+    // ── Brand identity (Apple system-color model) ────────────────
+    brand: primary,
+    brandHover: primary,
+    brandActive: primary,
+
+    // ── Categorical color ring ───────────────────────────────────
+    red: dark ? "redBright" : "red",
+    orange: dark ? "redBright" : "red", // no orange slot in ANSI 16
+    yellow: "yellow",
+    green: dark ? "greenBright" : "green",
+    teal: dark ? "cyanBright" : "cyan",
+    blue: dark ? "blueBright" : "blue",
+    purple: "magenta",
+    pink: dark ? "magentaBright" : "magenta",
+
+    // ── Deprecated aliases (one-cycle compat) ────────────────────
+    brandRed: dark ? "redBright" : "red",
+    brandOrange: dark ? "redBright" : "red",
+    brandYellow: "yellow",
+    brandGreen: dark ? "greenBright" : "green",
+    brandTeal: dark ? "cyanBright" : "cyan",
+    brandBlue: dark ? "blueBright" : "blue",
+    brandPurple: "magenta",
+    brandPink: dark ? "magentaBright" : "magenta",
   }
 }

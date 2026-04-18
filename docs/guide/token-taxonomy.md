@@ -223,7 +223,7 @@ What color are you choosing for?
 
 ## Anti-patterns
 
-- **`$error` for anything that isn't literally an error** — e.g. "delete" buttons, red tags. Use `$red` or `$brand-red` instead.
+- **`$error` for anything that isn't literally an error** — e.g. "delete" buttons, red tags. Use `$red` or `$brand` instead.
 - **`$color1` for everyday UI** — it's the user's raw ANSI, not contrast-adjusted. Use `$red` unless you're writing a syntax highlighter.
 - **`$primary` for app brand** — `$primary` is the *scheme's* primary. For *app brand*, use `$brand`.
 - **Hardcoded hex for a tinted surface** — use `$surface-bg` / `$popover-bg` or `mix($bg, $token, N%)`.

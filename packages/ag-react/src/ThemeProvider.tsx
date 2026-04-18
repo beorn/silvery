@@ -32,8 +32,8 @@ import React, { useContext, useMemo } from "react"
 import { ThemeContext } from "@silvery/theme/ThemeContext"
 import type { Theme } from "@silvery/theme/types"
 
-/** Partial token bag — merged over the base theme. */
-export type ThemeTokens = Partial<Theme> & Record<string, unknown>
+/** Partial token bag — merged over the base theme. Accepts any Theme key, custom $tokens via app-defined keys, or a full Theme. */
+export type ThemeTokens = Partial<Theme> | (Partial<Theme> & Record<string, string | string[] | undefined>) | Theme
 
 export interface ThemeProviderProps {
   /**
