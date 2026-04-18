@@ -243,9 +243,17 @@ Keybindings are a UI detail. Commands are the API. Build on commands; bind keys 
 
 → [Event handling](/guide/event-handling)
 
-## 6. Semantic Theme Colors
+## 6. Style using Design Tokens
 
-[`silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. Use semantic tokens and your app looks right in every terminal theme. 38 built-in palettes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, and more) work automatically.
+Components express semantic intent — color, hierarchy, state — via **tokens and presets**. The token system decides the concrete rendering details: which hex value, which SGR attributes, which tier-appropriate fallback. Components never reach for raw rendering primitives (hex colors, ANSI escapes, or SGR modifiers like `dim` / `bold` / `italic` / `underline`).
+
+[`silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. ~33 semantic tokens and typography presets adapt to every terminal theme. 38 built-in palettes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, …) work automatically.
+
+### Why not SGR in components
+
+Terminal SGR codes (`bold`, `dim`, `italic`, `underline`, `inverse`, `strikethrough`) have **uneven support** across emulators — `dim` does alpha-blending on some, intensity-reduction on others, nothing on older terminals. `bold` sometimes brightens color, sometimes only affects font weight. Writing these in components guarantees inconsistent results.
+
+Tokens avoid this. At truecolor, `$faint` resolves to a specific pre-dimmed hex — deterministic on any terminal. At ANSI 16 where we can't express intermediate intensities, the renderer emits SGR 2 as a necessary concession. Components never make that choice; derivation does.
 
 ::: tip ✨ Shiny
 
@@ -257,8 +265,12 @@ Keybindings are a UI detail. Commands are the API. Build on commands; bind keys 
 <Text color="$muted">Last modified 2h ago</Text>
 <Box borderColor="$border" borderStyle="round" />
 
-// 33 tokens: $primary, $secondary, $success, $warning, $error,
-// $info, $muted, $border, $surface, $text, and more
+// Typography presets — semantic intent, not manual attrs
+<H1>Page title</H1>         // $primary + bold (composed by preset)
+<Strong>urgent</Strong>      // bold
+<Em>aside</Em>               // italic
+<Small>fine print</Small>    // $faint (pre-dimmed hex at truecolor)
+<Link>clickable</Link>       // $link + underline (composed by preset)
 
 // Status indicators: shape + color (colorblind-safe)
 <Text color="$success">✓</Text>   // done
@@ -271,18 +283,26 @@ Keybindings are a UI detail. Commands are the API. Build on commands; bind keys 
 ::: danger 🩶 Tarnished
 
 ```tsx
-// Hardcoded colors — wrong in light themes, wrong in high-contrast, wrong in everything
+// Hardcoded colors — wrong in light themes, wrong in high-contrast
 <Text color="#ff0000">Error</Text>
 <Text color="red">Error</Text>
 
 // ANSI escapes in strings — bypasses the theme entirely
-console.log("\x1b[31mError\x1b[0m")
+console.log("\x1b[31;1mError\x1b[0m")
+
+// Raw SGR attrs in component code — unreliable across terminals
+<Text dimColor>Last modified 2h ago</Text>           // → use $muted or <Small>
+<Text bold underline>Warning</Text>                   // → use <H2> or semantic token
+<Text italic>aside</Text>                             // → use <Em>
+
+// Manual composition of tokens with attrs — double trouble
+<Text color="$muted" dimColor>Fine print</Text>       // → use <Small>
 
 // Color-only status (colorblind users can't distinguish)
 <Text color="green">●</Text>  // done? pending? who knows without color
 ```
 
-If you hardcode a color, you've married one theme. Semantic tokens marry them all.
+Hardcoded colors marry one theme. Raw SGR marries whatever that specific terminal does with SGR 2 and SGR 1. **Semantic tokens and typography presets marry them all.**
 :::
 
 → [Styling guide](/guide/styling) · [Theming reference](/reference/theming) · [Themes gallery](/themes)

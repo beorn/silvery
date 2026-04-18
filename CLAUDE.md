@@ -158,10 +158,10 @@ Full styling reference: [Styling Guide](docs/guide/styling.md)
 > Read that doc before debugging input issues. It covers filtering, Kitty protocol, focus dispatch, and the hook hierarchy.
 >
 > **Plugin-centric design**: Events are ops that flow through the plugin `apply` chain.
-> Plugins own event routing — React hooks are thin store readers. See the
-> [era2 architecture](silvery-internal/archive/era2-drafts/00-architecture.md) for the
-> dispatch/apply pipeline model. **Any work on events, input handling, or focus dispatch
-> must follow the era2 plugin composition pattern.**
+> Plugins own event routing — React hooks are thin store readers. The era2
+> plugin composition pattern (dispatch/apply pipeline) is the target model;
+> design notes live in km's private workspace. **Any work on events, input
+> handling, or focus dispatch must follow the era2 plugin composition pattern.**
 
 ### Single useInput — two import paths, one implementation
 
@@ -426,7 +426,7 @@ Silvery apps are assembled via `pipe()` — each **provider** (`with-*` function
 
 **Public docs** describe the system as-is: [App Composition](docs/design/app-composition.md) — `createApp`, `pipe()`, `with*` plugins, event flow.
 
-**Internal design** (target architecture): `silvery-internal/design/v10-terminal/app-composition.md` — `create()` + `pipe()` + plugins wrapping `apply()`. V1r prototype: `silvery-internal/design/v15-tea/plugin-system-v1r.ts`. Tracking bead: `km-silvery.tea`.
+**Internal design** (target architecture): `create()` + `pipe()` + plugins wrapping `apply()`. Design docs live in km's private workspace. Tracking bead: `km-silvery.tea`.
 
 - **[Providers and Plugins](docs/guide/providers.md)** — `pipe()` composition, `AppPlugin` type, all built-in providers, how to write custom providers
 - **[Headless Machines](docs/guide/headless-machines.md)** — `createMachine()`, pure update functions (readline, select-list), naming conventions, React hooks

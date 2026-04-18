@@ -16,16 +16,16 @@ Most Silvery components already use the correct semantic colors by default. **Th
 | `<ModalDialog>`        | `$surfacebg` bg, `$border` border, `$primary` title                 |
 | `<CommandPalette>`     | `$surfacebg` bg, `$border` border                                   |
 | `<Toast>`              | `$surfacebg` bg, `$border` border                                   |
-| `<SelectList>`         | `inverse` for selection, `dimColor` for disabled                    |
+| `<SelectList>`         | `inverse` for selection, `$disabledfg` for disabled                 |
 | `<Badge>`              | Variant colors: `$success`, `$error`, `$warning`, `$primary`        |
 | `<ErrorBoundary>`      | `$error` border                                                     |
-| `<Divider>`            | `dimColor` for line character                                       |
-| `<ProgressBar>`        | `dimColor` for empty portion                                        |
+| `<Divider>`            | `$border` for line character                                        |
+| `<ProgressBar>`        | `$muted` for empty portion                                          |
 | `<Spinner>`            | `$fg`                                                               |
 | `<Button>`             | `inverse` when focused/active                                       |
 | `<H1>`, `<H2>`, `<H3>` | `$primary`/`$accent`/`$fg` + bold                                   |
 | `<Muted>`              | `$muted` text                                                       |
-| `<Small>`              | `$muted` + `dimColor`                                               |
+| `<Small>`              | `$faint` (pre-dimmed)                                               |
 | `<Lead>`               | `italic` text                                                       |
 | `<Code>`               | `$mutedbg` background                                               |
 | `<Blockquote>`         | `$muted` border + italic                                            |
@@ -84,19 +84,37 @@ TUIs can't vary font size — bold, dim, and italic are your only typographic to
 | H3 — Group      | `$fg` + `bold`      | Bright, bold — stands out without accent color |
 | Body            | `$fg`               | Normal text                                    |
 | Meta / caption  | `$muted`            | Dimmed, recedes                                |
-| Fine print      | `$muted` + `dim`    | Maximally receded — captions, footnotes        |
+| Fine print      | `$faint` (via `<Small>`) | Maximally receded — captions, footnotes        |
 | Disabled        | `$disabledfg`       | Faded — clearly inactive                       |
 
-::: tip ✨ MECE rule — when to use `$muted`, when to add `dim`
+::: tip ✨ Rule — `dim` is a rendering detail, not a design primitive
 
-`$muted` and `dimColor` are **two separate layers**. They compose; they don't imply each other.
+**Don't write `dim` in application or component code.** Ever. It's a terminal-level SGR modifier with [uneven support](https://terminfo.dev/extensions) and renderer-specific behavior — exactly the kind of thing semantic tokens exist to hide.
 
-- **`$muted` alone** — meta text, captions, labels, hints, secondary info. The canonical "grey". **Use this by default.**
-- **`$muted` + `dimColor`** — fine print. Maximally recessed. Keybinding legends, footnotes, timestamps next to primary content.
-- **`dimColor` without `$muted`** — only when deliberately dimming a non-muted color (rare; usually means you want `$muted` instead).
-- **Neither** — primary body text. `$fg` is inherited from the parent or resolved by the theme.
+Use semantic tokens to express intent:
 
-Rule of thumb: **don't manually pair `$muted` + `dimColor`** — reach for the `<Small>` preset instead. The preset bundles them correctly and documents the intent ("this is fine print"). If `<Small>`'s dim washes your color (e.g. on a selection bg), opt out per-call with `<Small dimColor={false}>` — `TypographyProps` spreads `{...rest}` last, so the override wins.
+- **`$muted`** — meta text, captions, labels, hints, secondary info. The canonical "grey". **Use by default.**
+- **`<Small>` preset** — fine print. Resolves to `$faint` (a pre-dimmed hex at truecolor; dim attrs only at ANSI 16 / monochrome). Keybinding legends, footnotes, timestamps.
+- **`$disabledfg`** — clearly inactive. Faded for contrast, not for "less important."
+- **None of the above** — primary body text. `$fg` is inherited; don't set it.
+
+Where `dim` *is* allowed (inside the token system only):
+
+1. `<Small>` preset — the canonical composition
+2. Monochrome derivation (`deriveTheme(s, "monochrome")`) — dim/bold/italic are the only expressive channels at mono tier
+3. Custom-token `attrs` — explicit opt-in at registration via `defineTokens({ "$x": { attrs: ["dim"] } })`
+4. Renderer realization at ANSI 16 tier — `deriveTheme` may emit `SGR 2` as the concrete form of a token whose truecolor value is a pre-dimmed hex
+
+Where `dim` is **forbidden**:
+
+- `<Text dimColor>` in component code
+- `<Box dim>` inline props
+- Manual `$muted + dimColor` pairing
+- Anywhere views express rendering details rather than semantic meaning
+
+If you need "this should look dim here," the answer is always: use `$muted`, `<Small>`, or `$disabledfg`. Let derivation + tier decide what to emit.
+
+If `<Small>`'s `$faint` value doesn't contrast well with a specific background (e.g. a selection bg), override per-call with `<Small color="$muted">` — `TypographyProps` spreads `{...rest}` last, so the override wins.
 :::
 
 Since TUIs lack font-size variation, using 2-3 colors for heading levels is natural and expected — just use **semantic tokens** (`$primary`, `$accent`, `$fg`) rather than status colors (`$success`, `$error`).
@@ -137,7 +155,7 @@ import { H1, H2, H3, Muted, Small, Lead, Code, Blockquote, P, LI } from "silvery
 <H3>Appearance</H3>                   // bold
 <P>Use dark colors for the UI.</P>    // plain body text
 <Muted>Requires restart</Muted>       // $muted
-<Small>Last updated 2 hours ago</Small> // $muted + dim
+<Small>Last updated 2 hours ago</Small> // $faint (pre-dimmed hex)
 <Lead>Welcome to the app</Lead>       // italic
 <Code>npm install silvery</Code>      // $mutedbg background
 <Blockquote>Less is more.</Blockquote> // │ border + italic
