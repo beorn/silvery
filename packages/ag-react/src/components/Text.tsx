@@ -10,8 +10,10 @@
  * Supports forwardRef for imperative access to the underlying node.
  */
 
-import { type ForwardedRef, type JSX, type ReactNode, forwardRef } from "react"
+import { type ForwardedRef, type JSX, type ReactNode, forwardRef, useContext } from "react"
 import type { AgNode, TextProps as TextPropsType } from "@silvery/ag/types"
+import type { KnownVariant } from "@silvery/ansi"
+import { ThemeContext } from "@silvery/theme/ThemeContext"
 
 // ============================================================================
 // Props
@@ -20,6 +22,20 @@ import type { AgNode, TextProps as TextPropsType } from "@silvery/ag/types"
 export interface TextProps extends TextPropsType {
   /** Text content (string, number, or nested Text elements) */
   children?: ReactNode
+  /**
+   * Typography variant — pulls defaults from `theme.variants[variant]`.
+   * Caller props always win over variant values (variant is the *default*).
+   *
+   * @example
+   * ```tsx
+   * <Text variant="h1">Title</Text>
+   * // → uses theme.variants.h1 as defaults ({ color: "$primary", bold: true })
+   *
+   * <Text variant="h1" color="$success">Done</Text>
+   * // → color="$success" wins; bold still comes from variant
+   * ```
+   */
+  variant?: KnownVariant
 }
 
 /**
@@ -67,10 +83,51 @@ export interface TextHandle {
  * // With ref
  * const textRef = useRef<TextHandle>(null);
  * <Text ref={textRef}>Hello</Text>
+ *
+ * // With variant — typography presets from theme
+ * <Text variant="h1">Page Title</Text>
+ * <Text variant="body-muted">Caption text</Text>
+ * <Text variant="h1" color="$success">Done</Text>  // caller color wins
  * ```
  */
-export const Text = forwardRef(function Text(props: TextProps, ref: ForwardedRef<TextHandle>): JSX.Element {
-  const { children, ...styleProps } = props
+export const Text = forwardRef(function Text(
+  props: TextProps,
+  ref: ForwardedRef<TextHandle>,
+): JSX.Element {
+  const { children, variant, ...callerProps } = props
+  const theme = useContext(ThemeContext)
+
+  // Resolve variant defaults. Variant is the DEFAULT; caller props always win.
+  //
+  // Merge strategy (three passes):
+  //   1. callerProps — base layer: all caller props including undefined values
+  //                    (preserves non-style props like wrap, data-*, etc.)
+  //   2. variantDefaults — overwrite only where callerProps was undefined
+  //                        (fills in color/bold/etc when caller didn't specify)
+  //   3. definedCallerProps — restore any explicitly provided caller overrides
+  //                           (e.g. color="$success", bold={false} win over variant)
+  //
+  // Example: `<Text variant="h1">T</Text>` (color not passed → undefined)
+  //   callerProps = { color: undefined }
+  //   variantDefaults = { color: "$primary", bold: true }
+  //   definedCallerProps = {} (color=undefined excluded)
+  //   → { color: "$primary", bold: true } ✓
+  //
+  // Example: `<Text variant="h1" color="$success">T</Text>`
+  //   callerProps = { color: "$success" }
+  //   variantDefaults = { color: "$primary", bold: true }
+  //   definedCallerProps = { color: "$success" }
+  //   → { color: "$success", bold: true } ✓ (caller color wins)
+  let styleProps = callerProps
+  if (variant != null) {
+    const variantDefaults = theme.variants?.[variant] ?? {}
+    const definedCallerProps: Record<string, unknown> = {}
+    for (const key of Object.keys(callerProps)) {
+      const v = (callerProps as Record<string, unknown>)[key]
+      if (v !== undefined) definedCallerProps[key] = v
+    }
+    styleProps = { ...callerProps, ...variantDefaults, ...definedCallerProps } as typeof callerProps
+  }
 
   // For Text, we need to pass the ref through to the host element
   // The reconciler's getPublicInstance will return the SilveryNode

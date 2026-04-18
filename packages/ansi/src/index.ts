@@ -161,7 +161,12 @@ export type { MonoAttr, MonochromeAttrs } from "./theme/monochrome"
 export { fingerprintMatch, fingerprintCandidates } from "./theme/fingerprint"
 export type { FingerprintMatch, FingerprintOptions } from "./theme/fingerprint"
 export { detectScheme, detectSchemeTheme } from "./theme/orchestrator"
-export type { DetectSchemeResult, DetectSchemeOptions, DetectSource, SlotSource } from "./theme/orchestrator"
+export type {
+  DetectSchemeResult,
+  DetectSchemeOptions,
+  DetectSource,
+  SlotSource,
+} from "./theme/orchestrator"
 export type {
   ThemeToken,
   StandardThemeToken,
@@ -173,7 +178,12 @@ export type {
   ColorKeyword,
 } from "./theme/tokens"
 export { defineTokens, resolveCustomToken, CustomTokenError } from "./theme/custom"
-export type { DeriveTokenDef, BrandTokenDef, CustomTokenDef, CustomTokenRegistry } from "./theme/custom"
+export type {
+  DeriveTokenDef,
+  BrandTokenDef,
+  CustomTokenDef,
+  CustomTokenRegistry,
+} from "./theme/custom"
 export {
   validateThemeInvariants,
   formatViolations,
@@ -185,10 +195,16 @@ export {
   CURSOR_DELTA_E,
 } from "./theme/invariants"
 export type { InvariantViolation, InvariantResult, InvariantOptions } from "./theme/invariants"
-export { ansi16DarkTheme, ansi16LightTheme, defaultDarkScheme, defaultLightScheme } from "./theme/default-schemes"
-export type { ColorScheme, Theme, AnsiPrimary, HueName } from "./theme/types"
+export {
+  ansi16DarkTheme,
+  ansi16LightTheme,
+  defaultDarkScheme,
+  defaultLightScheme,
+} from "./theme/default-schemes"
+export type { ColorScheme, Theme, Variant, AnsiPrimary, HueName } from "./theme/types"
 export type { AnsiColorName as PaletteColorName } from "./theme/types"
 export { COLOR_SCHEME_FIELDS } from "./theme/types"
+export type { VariantName, KnownVariant } from "./theme/tokens"
 
 // =============================================================================
 // Theme Detection (async, OSC-based)
@@ -201,7 +217,12 @@ export type { DetectedScheme, DetectThemeOptions } from "./theme/detect"
 // OSC Protocol — Terminal color queries
 // =============================================================================
 
-export { queryPaletteColor, queryMultiplePaletteColors, setPaletteColor, parsePaletteResponse } from "./osc-palette"
+export {
+  queryPaletteColor,
+  queryMultiplePaletteColors,
+  setPaletteColor,
+  parsePaletteResponse,
+} from "./osc-palette"
 
 export {
   queryForegroundColor,

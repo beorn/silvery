@@ -2,7 +2,23 @@
  * Default palettes and themes — shipped with @silvery/ansi.
  */
 
-import type { ColorScheme, Theme } from "./types.ts"
+import type { ColorScheme, Theme, Variant } from "./types.ts"
+
+/** Default variants — token-based so they work across any theme. */
+const DEFAULT_VARIANTS: Record<string, Variant> = {
+  h1: { color: "$primary", bold: true },
+  h2: { color: "$accent", bold: true },
+  h3: { bold: true },
+  body: {},
+  "body-muted": { color: "$muted" },
+  "fine-print": { color: "$muted", dim: true },
+  strong: { bold: true },
+  em: { italic: true },
+  link: { color: "$link", underlineStyle: "single" },
+  key: { color: "$accent", bold: true },
+  code: { backgroundColor: "$mutedbg" },
+  kbd: { backgroundColor: "$mutedbg", color: "$accent", bold: true },
+}
 
 export const ansi16DarkTheme: Theme = {
   name: "dark-ansi16",
@@ -60,6 +76,14 @@ export const ansi16DarkTheme: Theme = {
   brand: "yellow",
   brandHover: "yellow",
   brandActive: "yellow",
+  primaryHover: "yellow",
+  primaryActive: "yellow",
+  accentHover: "blueBright",
+  accentActive: "blueBright",
+  fgHover: "whiteBright",
+  fgActive: "whiteBright",
+  bgSelectedHover: "yellow",
+  bgSurfaceHover: "black",
   red: "redBright",
   orange: "redBright",
   yellow: "yellow",
@@ -76,6 +100,7 @@ export const ansi16DarkTheme: Theme = {
   brandBlue: "blueBright",
   brandPurple: "magenta",
   brandPink: "magentaBright",
+  variants: DEFAULT_VARIANTS,
 }
 
 export const ansi16LightTheme: Theme = {
@@ -134,6 +159,14 @@ export const ansi16LightTheme: Theme = {
   brand: "blue",
   brandHover: "blue",
   brandActive: "blue",
+  primaryHover: "blue",
+  primaryActive: "blue",
+  accentHover: "cyan",
+  accentActive: "cyan",
+  fgHover: "black",
+  fgActive: "black",
+  bgSelectedHover: "cyan",
+  bgSurfaceHover: "white",
   red: "red",
   orange: "red",
   yellow: "yellow",
@@ -150,6 +183,7 @@ export const ansi16LightTheme: Theme = {
   brandBlue: "blue",
   brandPurple: "magenta",
   brandPink: "magenta",
+  variants: DEFAULT_VARIANTS,
 }
 
 export const defaultDarkScheme: ColorScheme = {

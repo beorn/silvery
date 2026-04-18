@@ -50,7 +50,7 @@ export interface TypographyProps extends Omit<TextProps, "children"> {
 /** Page title — $primary + bold. Maximum emphasis. */
 export function H1({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text bold color={color ?? "$primary"} {...rest}>
+    <Text variant="h1" color={color} {...rest}>
       {children}
     </Text>
   )
@@ -59,16 +59,16 @@ export function H1({ children, color, ...rest }: TypographyProps) {
 /** Section heading — $accent + bold. Contrasts with H1. */
 export function H2({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text bold color={color ?? "$accent"} {...rest}>
+    <Text variant="h2" color={color} {...rest}>
       {children}
     </Text>
   )
 }
 
-/** Group heading — $primary, not bold. Same hue as H1 but lighter weight. */
+/** Group heading — bold, no color override. Same hue as theme's primary but no bold means lighter weight than H1. */
 export function H3({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text color={color ?? "$primary"} {...rest}>
+    <Text variant="h3" color={color} {...rest}>
       {children}
     </Text>
   )
@@ -81,7 +81,7 @@ export function H3({ children, color, ...rest }: TypographyProps) {
 /** Paragraph — plain body text. Inherits foreground from parent. */
 export function P({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text color={color} {...rest}>
+    <Text variant="body" color={color} {...rest}>
       {children}
     </Text>
   )
@@ -90,7 +90,7 @@ export function P({ children, color, ...rest }: TypographyProps) {
 /** Introductory/lead text — $muted + italic. Slightly elevated, slightly receded. */
 export function Lead({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text italic color={color ?? "$muted"} {...rest}>
+    <Text variant="body-muted" italic color={color} {...rest}>
       {children}
     </Text>
   )
@@ -99,7 +99,7 @@ export function Lead({ children, color, ...rest }: TypographyProps) {
 /** Secondary/supporting text — $muted. Recedes from body text. */
 export function Muted({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text color={color ?? "$muted"} {...rest}>
+    <Text variant="body-muted" color={color} {...rest}>
       {children}
     </Text>
   )
@@ -108,7 +108,7 @@ export function Muted({ children, color, ...rest }: TypographyProps) {
 /** Fine print — $muted + dim. Captions, footnotes, text that recedes even more than Muted. */
 export function Small({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text dimColor color={color ?? "$muted"} {...rest}>
+    <Text variant="fine-print" color={color} {...rest}>
       {children}
     </Text>
   )
@@ -117,7 +117,7 @@ export function Small({ children, color, ...rest }: TypographyProps) {
 /** Bold emphasis — inline strong text. Inherits foreground from parent. */
 export function Strong({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text bold color={color} {...rest}>
+    <Text variant="strong" color={color} {...rest}>
       {children}
     </Text>
   )
@@ -126,7 +126,7 @@ export function Strong({ children, color, ...rest }: TypographyProps) {
 /** Italic emphasis — inline emphasized text. Inherits foreground from parent. */
 export function Em({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text italic color={color} {...rest}>
+    <Text variant="em" color={color} {...rest}>
       {children}
     </Text>
   )
@@ -139,7 +139,7 @@ export function Em({ children, color, ...rest }: TypographyProps) {
 /** Inline code — $mutedbg background with padding. Inherits foreground from parent. */
 export function Code({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text backgroundColor="$mutedbg" color={color} {...rest}>
+    <Text variant="code" color={color} {...rest}>
       {` ${children} `}
     </Text>
   )
@@ -148,7 +148,7 @@ export function Code({ children, color, ...rest }: TypographyProps) {
 /** Keyboard shortcut badge — $mutedbg background + bold. Inherits foreground from parent. */
 export function Kbd({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text backgroundColor="$mutedbg" bold color={color} {...rest}>
+    <Text variant="kbd" color={color} {...rest}>
       {` ${children} `}
     </Text>
   )

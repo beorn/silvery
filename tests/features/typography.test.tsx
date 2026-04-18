@@ -8,7 +8,25 @@
 
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
-import { H1, H2, H3, P, Lead, Muted, Strong, Em, Code, Kbd, Blockquote, CodeBlock, HR, UL, OL, LI, Box } from "silvery"
+import {
+  H1,
+  H2,
+  H3,
+  P,
+  Lead,
+  Muted,
+  Strong,
+  Em,
+  Code,
+  Kbd,
+  Blockquote,
+  CodeBlock,
+  HR,
+  UL,
+  OL,
+  LI,
+  Box,
+} from "silvery"
 
 const render = createRenderer({ cols: 80, rows: 10 })
 
@@ -60,13 +78,14 @@ describe("Headings", () => {
     expect(app.text).toContain("Group")
   })
 
-  test("H3 uses $primary color without bold (lighter weight than H1)", () => {
+  test("H3 is bold with no explicit color (inherits foreground from parent)", () => {
     const app = render(<H3>Group</H3>)
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.char).toBe("G")
-    expect(cell.attrs.bold).toBeFalsy()
-    // H3 defaults to $primary (same hue as H1, lighter weight — no bold)
-    expect(cell.fg).not.toBeNull()
+    // h3 variant: { bold: true } — bold emphasis with no default color
+    expect(cell.attrs.bold).toBe(true)
+    // H3 inherits fg from parent — null when no ancestor sets a color
+    expect(cell.fg).toBeNull()
   })
 
   test("headings accept color override", () => {

@@ -21,6 +21,10 @@
  * Either way, the merged result becomes the active theme for `useTheme()` and
  * `$token` resolution.
  *
+ * The `variants` sub-object is deep-merged — passing
+ * `tokens={{ variants: { hero: {...} } }}` adds to (not replaces) the
+ * existing variants map from the inherited theme.
+ *
  * The legacy `theme` prop still works and is equivalent to passing the whole
  * theme object as `tokens`. Passing both is an error (developer typo).
  *
@@ -33,7 +37,10 @@ import { ThemeContext } from "@silvery/theme/ThemeContext"
 import type { Theme } from "@silvery/theme/types"
 
 /** Partial token bag — merged over the base theme. Accepts any Theme key, custom $tokens via app-defined keys, or a full Theme. */
-export type ThemeTokens = Partial<Theme> | (Partial<Theme> & Record<string, string | string[] | undefined>) | Theme
+export type ThemeTokens =
+  | Partial<Theme>
+  | (Partial<Theme> & Record<string, string | string[] | undefined>)
+  | Theme
 
 export interface ThemeProviderProps {
   /**
@@ -60,8 +67,18 @@ export function ThemeProvider({ tokens, theme, children }: ThemeProviderProps): 
     }
     if (theme) return theme
     if (!tokens) return parent
-    // Sparse merge: parent theme (or empty) + tokens override.
-    return { ...parent, ...tokens } as Theme
+    // Sparse merge: parent theme + tokens override.
+    // `variants` is deep-merged so `tokens={{ variants: { hero: {...} } }}` adds
+    // to the existing variants map rather than replacing it entirely.
+    const t = tokens as Record<string, unknown>
+    const result = { ...parent, ...tokens } as Theme
+    if (t["variants"] !== null && typeof t["variants"] === "object" && !Array.isArray(t["variants"])) {
+      result.variants = {
+        ...parent.variants,
+        ...(t["variants"] as Record<string, unknown>),
+      } as Theme["variants"]
+    }
+    return result
   }, [tokens, theme, parent])
   return <ThemeContext.Provider value={merged}>{children}</ThemeContext.Provider>
 }
