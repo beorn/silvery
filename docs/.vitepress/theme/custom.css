@@ -75,29 +75,31 @@
 }
 
 /* ============================================================
- * Unified page-wide gleam
+ * Unified page-wide gleam — one highlight, shared viewport space
  *
  * Every silvery-branded element uses:
- *   background-attachment: fixed     (gradient is viewport-relative)
- *   background-size: 300% 100%     (double viewport width)
- *   animation: silvery-page-gleam    (same duration for all)
+ *   background-size: 100vw 100vh     (one viewport wide)
+ *   background-attachment: fixed     (bg anchored to viewport, not element)
+ *   animation: silvery-page-gleam    (same keyframes, same duration)
  *
- * The gradient origin is the same across all elements — so the
- * bright highlight passes through wordmark, HERO-TEXT, button,
- * and terminal chrome at the same horizontal position in the
- * viewport at the same moment.
+ * Because bg is viewport-anchored, every element's gradient is
+ * painted in the SAME viewport coordinate system. The bright band
+ * exists at one viewport-x at any moment — every element whose
+ * bounds overlap that x shows its highlight color there. The effect
+ * is a single spotlight moving across the page, hitting the nav
+ * wordmark, hero wordmark, tagline, button, and terminal chrome
+ * one after another as it sweeps from left to right.
  * ============================================================ */
 
-/* Gleam pulses — quick left → right sweep, then a pause at rest
- * before the next pulse. Both endpoints show rest color (highlight
- * band sits at 30-70% of the gradient, and visible windows at
- * background-position 0% and 100% fall entirely outside that band),
- * so the hold segment is truly invisible and the jump back to the
- * start is seamless. */
+/* Pulse: bright band enters from off-left (-100vw), sweeps across
+ * the viewport in 40% of the cycle, exits off-right (+100vw), then
+ * holds at rest for the remaining 60%. Both animation endpoints
+ * have the bright band off-screen, so the jump at the cycle
+ * boundary is invisible. */
 @keyframes silvery-page-gleam {
-  0%   { background-position: 100% 0; }   /* pulse starts: highlight off-left */
-  40%  { background-position: 0% 0; }     /* pulse finished: highlight off-right */
-  100% { background-position: 0% 0; }     /* hold at rest until next pulse */
+  0%   { background-position: -100vw 0; }  /* pulse starts: bright off-left */
+  40%  { background-position: 100vw 0; }   /* pulse finished: bright off-right */
+  100% { background-position: 100vw 0; }   /* hold at rest until next pulse */
 }
 
 /* Nav wordmark */
@@ -110,8 +112,9 @@
     var(--silvery-wordmark-rest) 70%,
     var(--silvery-wordmark-rest) 100%
   );
-  background-size: 300% 100%;
-  background-position: 100% 0;
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-position: 100vw 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -130,8 +133,9 @@
     var(--silvery-hero-rest) 70%,
     var(--silvery-hero-rest) 100%
   );
-  background-size: 300% 100%;
-  background-position: 100% 0;
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-position: 100vw 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -150,8 +154,9 @@
     var(--silvery-accent) 70%,
     var(--silvery-accent) 100%
   );
-  background-size: 300% 100%;
-  background-position: 100% 0;
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-position: 100vw 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -169,8 +174,9 @@
     var(--silvery-accent-light) 70%,
     var(--silvery-accent-light) 100%
   );
-  background-size: 300% 100%;
-  background-position: 100% 0;
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-position: 100vw 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -190,8 +196,9 @@
     var(--silvery-accent) 70%,
     var(--silvery-accent) 100%
   ) !important;
-  background-size: 300% 100% !important;
-  background-position: 100% 0;
+  background-size: 100vw 100vh !important;
+  background-attachment: fixed !important;
+  background-position: 100vw 0;
   animation: silvery-page-gleam 3s linear infinite;
   border-color: var(--silvery-accent) !important;
   color: #ffffff !important;
@@ -321,8 +328,9 @@
     #9aa1b0 70%,
     #9aa1b0 100%
   );
-  background-size: 300% 100%;
-  background-position: 100% 0;
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-position: 100vw 0;
   animation: silvery-page-gleam 3s linear infinite;
 
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
@@ -337,8 +345,9 @@
     #b0b6c4 70%,
     #b0b6c4 100%
   );
-  background-size: 300% 100%;
-  background-position: 100% 0;
+  background-size: 100vw 100vh;
+  background-attachment: fixed;
+  background-position: 100vw 0;
   animation: silvery-page-gleam 3s linear infinite;
 }
 
