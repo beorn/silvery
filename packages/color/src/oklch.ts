@@ -125,8 +125,8 @@ export function oklchToHex(c: OKLCH): string {
   let hi = Math.max(0, c.C)
 
   // Quick path: if c.C is already in gamut, skip the search.
-  let aHi = hi * Math.cos(Crad)
-  let bbHi = hi * Math.sin(Crad)
+  const aHi = hi * Math.cos(Crad)
+  const bbHi = hi * Math.sin(Crad)
   let [rHi, gHi, bHi] = oklabToLinearRgb(L, aHi, bbHi)
   if (inGamut(rHi, gHi, bHi)) {
     const r = linearToSrgb(rHi)
