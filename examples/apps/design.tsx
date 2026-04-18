@@ -49,7 +49,7 @@ import {
   deriveTheme,
   ansi16DarkTheme,
   ansi16LightTheme,
-  type ColorPalette,
+  type ColorScheme,
   type ThemeAdjustment,
 } from "@silvery/theme"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
@@ -72,7 +72,7 @@ interface GlobalConfig {
 
 interface PaletteEntry {
   name: string
-  palette: ColorPalette | null // null = detected terminal theme (no palette)
+  palette: ColorScheme | null // null = detected terminal theme (no palette)
   preBuiltTheme?: Theme // for detected / ansi16 themes without a palette
 }
 
@@ -532,7 +532,7 @@ function TokenRow({
 // Palettes view
 // ============================================================================
 
-function MiniSwatch({ palette }: { palette: ColorPalette }) {
+function MiniSwatch({ palette }: { palette: ColorScheme }) {
   return (
     <Text>
       <Text color={palette.red}>{"█"}</Text>
@@ -664,7 +664,7 @@ function ComponentsView() {
 // ANSI 16 degradation view
 // ============================================================================
 
-function Ansi16View({ theme, palette }: { theme: Theme; palette: ColorPalette | null }) {
+function Ansi16View({ theme, palette }: { theme: Theme; palette: ColorScheme | null }) {
   if (!palette) {
     return (
       <Box padding={1}>

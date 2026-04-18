@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi } from "vitest"
 import { pipe, withTerminal, type AppWithTerminal, type ProcessLike } from "@silvery/create"
-import { ENABLE_COLOR_SCHEME_REPORTING, DISABLE_COLOR_SCHEME_REPORTING, WidthMode } from "@silvery/ag-term"
+import { ENABLE_BG_MODE_REPORTING, DISABLE_BG_MODE_REPORTING, WidthMode } from "@silvery/ag-term"
 
 // =============================================================================
 // Helpers
@@ -112,7 +112,7 @@ describe("withTerminal startup detection", () => {
   it("sends Mode 2031 enable on creation when autoDetect enabled", () => {
     const { proc, written } = createMockProcess()
     pipe(createBaseApp(), withTerminal(proc, { autoDetect: true }))
-    expect(written).toContain(ENABLE_COLOR_SCHEME_REPORTING)
+    expect(written).toContain(ENABLE_BG_MODE_REPORTING)
   })
 
   it("sends DECRQM queries for width modes when autoDetect enabled", () => {
@@ -252,7 +252,7 @@ describe("withTerminal startup detection", () => {
 
     // Both Mode 2031 enable AND the first DECRQM query should appear
     // without waiting for either to respond first
-    const hasMode2031 = written.some((s) => s === ENABLE_COLOR_SCHEME_REPORTING)
+    const hasMode2031 = written.some((s) => s === ENABLE_BG_MODE_REPORTING)
     const hasDecrqm = written.some((s) => s.includes("$p"))
     expect(hasMode2031).toBe(true)
     expect(hasDecrqm).toBe(true)

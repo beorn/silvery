@@ -257,7 +257,7 @@ The inkx era. Initial development as a high-performance Ink alternative with inc
 
 ### Added — Theming
 
-- `@silvery/theme` with `ColorPalette` and `Theme` types (33 semantic tokens).
+- `@silvery/theme` with `ColorScheme` and `Theme` types (33 semantic tokens).
 - 45 built-in color palettes (Snazzy, Monokai, and more).
 - `$token` color resolution in all style props via active theme context.
 - `Box` `theme` prop for per-subtree theme override.

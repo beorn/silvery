@@ -1,15 +1,15 @@
 /**
- * Export ColorPalette to Base16 YAML format.
+ * Export ColorScheme to Base16 YAML format.
  *
- * Maps ColorPalette fields to base00–base0F. For fields that
- * ColorPalette doesn't store directly (base04/base06/base07),
+ * Maps ColorScheme fields to base00–base0F. For fields that
+ * ColorScheme doesn't store directly (base04/base06/base07),
  * we interpolate between neighboring values.
  *
  * @see https://github.com/chriskempson/base16
  */
 
 import { blend } from "../color"
-import type { ColorPalette } from "../types"
+import type { ColorScheme } from "../types"
 
 /** Strip `#` prefix from a hex color string and uppercase. */
 function stripHash(hex: string): string {
@@ -18,7 +18,7 @@ function stripHash(hex: string): string {
 }
 
 /**
- * Export a ColorPalette to Base16 YAML format.
+ * Export a ColorScheme to Base16 YAML format.
  *
  * Mapping:
  *   background → base00, brightBlack → base01, selectionBackground → base02,
@@ -27,7 +27,7 @@ function stripHash(hex: string): string {
  *   red → base08, brightRed → base09, yellow → base0A, green → base0B,
  *   cyan → base0C, blue → base0D, magenta → base0E, brightMagenta → base0F.
  */
-export function exportBase16(palette: ColorPalette): string {
+export function exportBase16(palette: ColorScheme): string {
   const dark = palette.dark ?? true
 
   // base04: between white (base03/muted fg) and foreground (base05)

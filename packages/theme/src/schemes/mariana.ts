@@ -1,0 +1,33 @@
+/**
+ * Mariana palette — Sublime Text's default dark theme.
+ */
+
+import type { ColorScheme } from "../types"
+
+/** Mariana — Sublime Text's oceanic dark theme. */
+export const mariana: ColorScheme = {
+  name: "mariana",
+  dark: true,
+  black: "#000000",
+  red: "#ec5f66",
+  green: "#99c794",
+  yellow: "#f9ae58",
+  blue: "#6699cc",
+  magenta: "#c695c6",
+  cyan: "#5fb4b4",
+  white: "#f7f7f7",
+  brightBlack: "#333333",
+  brightRed: "#f97b58",
+  brightGreen: "#acd1a8",
+  brightYellow: "#fac761",
+  brightBlue: "#85add6",
+  brightMagenta: "#d8b6d8",
+  brightCyan: "#82c4c4",
+  brightWhite: "#ffffff",
+  foreground: "#d8dee9",
+  background: "#343d46",
+  cursorColor: "#fcbb6a",
+  cursorText: "#343d46",
+  selectionBackground: "#4e5a65",
+  selectionForeground: "#d8dee9",
+}

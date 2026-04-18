@@ -1,8 +1,8 @@
 /**
  * Theme validation — checks that all required semantic tokens are present.
  *
- * Complements validateColorPalette() which validates the lower-level
- * ColorPalette. This validates the derived Theme object.
+ * Complements validateColorScheme() which validates the lower-level
+ * ColorScheme. This validates the derived Theme object.
  */
 
 /** All 33 required semantic token keys on Theme (excludes `name` and `palette`). */

@@ -13,7 +13,7 @@ import type { Theme } from "./types"
 /**
  * Generate a complete Theme from a single primary color.
  *
- * Derives a full ColorPalette using HSL color manipulation:
+ * Derives a full ColorScheme using HSL color manipulation:
  * - Background/foreground from lightness inversion
  * - Complementary and analogous accent colors from hue rotation
  * - Surface ramp from background blending

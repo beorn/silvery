@@ -3,12 +3,12 @@
 The silvery theme system transforms a 22-color terminal palette into 33 semantic tokens for UI consumption. The pipeline flows in one direction:
 
 ```
-ColorPalette (22) → deriveTheme() → Theme (33) → resolveThemeColor() → ANSI output
+ColorScheme (22) → deriveTheme() → Theme (33) → resolveThemeColor() → ANSI output
 ```
 
 Components never reference raw colors directly. They use `$token` strings (`color="$primary"`) that resolve against the active theme at render time. This decouples UI code from any specific palette.
 
-## ColorPalette (22 Colors)
+## ColorScheme (22 Colors)
 
 The universal terminal color format. Every modern terminal emulator uses this shape — Ghostty, Kitty, Alacritty, iTerm2, WezTerm, and others all export/import these 22 fields.
 
@@ -59,7 +59,7 @@ When `primary` is set, `deriveTheme()` uses it instead of inferring from ANSI sl
 ### Type Definition
 
 ```typescript
-interface ColorPalette {
+interface ColorScheme {
   name?: string
   dark?: boolean
   primary?: string
@@ -227,17 +227,17 @@ interface Theme {
 
 ## deriveTheme()
 
-Transforms a 22-color `ColorPalette` into a 33-token `Theme`.
+Transforms a 22-color `ColorScheme` into a 33-token `Theme`.
 
 ```typescript
-function deriveTheme(palette: ColorPalette, mode?: "truecolor" | "ansi16", adjustments?: ThemeAdjustment[]): Theme
+function deriveTheme(palette: ColorScheme, mode?: "truecolor" | "ansi16", adjustments?: ThemeAdjustment[]): Theme
 ```
 
 ### Parameters
 
 | Parameter     | Type                      | Default       | Description                                         |
 | ------------- | ------------------------- | ------------- | --------------------------------------------------- |
-| `palette`     | `ColorPalette`            | required      | The 22-color terminal palette                       |
+| `palette`     | `ColorScheme`            | required      | The 22-color terminal palette                       |
 | `mode`        | `"truecolor" \| "ansi16"` | `"truecolor"` | Derivation mode                                     |
 | `adjustments` | `ThemeAdjustment[]`       | `undefined`   | Optional array to collect contrast adjustments made |
 
@@ -371,14 +371,14 @@ The `@silvery/theme` package ships 38 palettes across 23 palette files, covering
 ### Using Palettes
 
 ```typescript
-import { builtinPalettes, getPaletteByName, deriveTheme } from "silvery/theme"
+import { builtinPalettes, getSchemeByName, deriveTheme } from "silvery/theme"
 
 // List all palette names
 const names = Object.keys(builtinPalettes)
 // ["catppuccin-mocha", "catppuccin-frappe", ..., "modus-operandi"]
 
 // Look up by name
-const palette = getPaletteByName("catppuccin-mocha")
+const palette = getSchemeByName("catppuccin-mocha")
 if (palette) {
   const theme = deriveTheme(palette)
 }
@@ -575,15 +575,15 @@ s.bold.red("error!") // standard chalk-compatible styling
 
 ## Custom Palettes
 
-### Manual ColorPalette
+### Manual ColorScheme
 
-Create a `ColorPalette` object with all 22 required hex fields:
+Create a `ColorScheme` object with all 22 required hex fields:
 
 ```typescript
 import { deriveTheme } from "silvery/theme"
-import type { ColorPalette } from "silvery/theme"
+import type { ColorScheme } from "silvery/theme"
 
-const myPalette: ColorPalette = {
+const myPalette: ColorScheme = {
   name: "my-palette",
   dark: true,
   black: "#1a1b26",
@@ -615,7 +615,7 @@ const theme = deriveTheme(myPalette)
 
 ### Theme Builder
 
-The chainable builder API generates a full `ColorPalette` from minimal input:
+The chainable builder API generates a full `ColorScheme` from minimal input:
 
 ```typescript
 import { createTheme } from "silvery/theme"
@@ -678,7 +678,7 @@ Uses HSL manipulation to derive complementary accents, surface ramps, and status
 
 ### fromColors()
 
-Generate a full `ColorPalette` from 1--3 hex colors:
+Generate a full `ColorScheme` from 1--3 hex colors:
 
 ```typescript
 import { fromColors, deriveTheme } from "silvery/theme"
@@ -701,7 +701,7 @@ Terminal palette file (Ghostty, Kitty, etc.)
            │
            ▼
     ┌──────────────┐
-    │ ColorPalette │  22 hex colors — universal pivot format
+    │ ColorScheme │  22 hex colors — universal pivot format
     │   (Layer 1)  │
     └──────┬───────┘
            │

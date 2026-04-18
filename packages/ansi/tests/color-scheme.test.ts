@@ -4,43 +4,43 @@
 
 import { describe, expect, it, vi } from "vitest"
 import {
-  createColorSchemeDetector,
-  parseColorSchemeResponse,
-  ENABLE_COLOR_SCHEME_REPORTING,
-  DISABLE_COLOR_SCHEME_REPORTING,
+  createBgModeDetector,
+  parseBgModeResponse,
+  ENABLE_BG_MODE_REPORTING,
+  DISABLE_BG_MODE_REPORTING,
 } from "../src/color-scheme.ts"
 
 // =============================================================================
-// parseColorSchemeResponse
+// parseBgModeResponse
 // =============================================================================
 
-describe("parseColorSchemeResponse", () => {
+describe("parseBgModeResponse", () => {
   it("parses dark scheme response", () => {
-    expect(parseColorSchemeResponse("\x1b[?2031;1n")).toBe("dark")
+    expect(parseBgModeResponse("\x1b[?2031;1n")).toBe("dark")
   })
 
   it("parses light scheme response", () => {
-    expect(parseColorSchemeResponse("\x1b[?2031;2n")).toBe("light")
+    expect(parseBgModeResponse("\x1b[?2031;2n")).toBe("light")
   })
 
   it("returns null for unrelated input", () => {
-    expect(parseColorSchemeResponse("hello")).toBeNull()
-    expect(parseColorSchemeResponse("\x1b[?2031h")).toBeNull()
-    expect(parseColorSchemeResponse("\x1b[?1049h")).toBeNull()
+    expect(parseBgModeResponse("hello")).toBeNull()
+    expect(parseBgModeResponse("\x1b[?2031h")).toBeNull()
+    expect(parseBgModeResponse("\x1b[?1049h")).toBeNull()
   })
 
   it("extracts response from mixed input", () => {
     // Response may arrive with other data in the same chunk
-    expect(parseColorSchemeResponse("junk\x1b[?2031;1nmore")).toBe("dark")
-    expect(parseColorSchemeResponse("\x1b[?25h\x1b[?2031;2n")).toBe("light")
+    expect(parseBgModeResponse("junk\x1b[?2031;1nmore")).toBe("dark")
+    expect(parseBgModeResponse("\x1b[?25h\x1b[?2031;2n")).toBe("light")
   })
 })
 
 // =============================================================================
-// createColorSchemeDetector
+// createBgModeDetector
 // =============================================================================
 
-describe("createColorSchemeDetector", () => {
+describe("createBgModeDetector", () => {
   function createMockTerminal() {
     const written: string[] = []
     const handlers = new Set<(data: string) => void>()
@@ -61,7 +61,7 @@ describe("createColorSchemeDetector", () => {
 
   it("starts with unknown scheme", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
@@ -70,13 +70,13 @@ describe("createColorSchemeDetector", () => {
 
   it("detects dark scheme from Mode 2031 response", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
 
     detector.start()
-    expect(terminal.written).toContain(ENABLE_COLOR_SCHEME_REPORTING)
+    expect(terminal.written).toContain(ENABLE_BG_MODE_REPORTING)
 
     // Simulate terminal responding with dark mode
     terminal.send("\x1b[?2031;1n")
@@ -85,7 +85,7 @@ describe("createColorSchemeDetector", () => {
 
   it("detects light scheme from Mode 2031 response", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
@@ -100,7 +100,7 @@ describe("createColorSchemeDetector", () => {
 
     const terminal = createMockTerminal()
     const fallback = vi.fn(() => "dark" as const)
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
       fallback,
@@ -123,7 +123,7 @@ describe("createColorSchemeDetector", () => {
 
     const terminal = createMockTerminal()
     const fallback = vi.fn(() => "dark" as const)
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
       fallback,
@@ -142,7 +142,7 @@ describe("createColorSchemeDetector", () => {
 
   it("subscribes to scheme changes", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
@@ -160,7 +160,7 @@ describe("createColorSchemeDetector", () => {
 
   it("does not notify when scheme stays the same", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
@@ -177,7 +177,7 @@ describe("createColorSchemeDetector", () => {
 
   it("unsubscribe removes listener", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
@@ -195,7 +195,7 @@ describe("createColorSchemeDetector", () => {
 
   it("dispose sends disable sequence", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
@@ -204,12 +204,12 @@ describe("createColorSchemeDetector", () => {
     terminal.written.length = 0 // clear
 
     detector[Symbol.dispose]()
-    expect(terminal.written).toContain(DISABLE_COLOR_SCHEME_REPORTING)
+    expect(terminal.written).toContain(DISABLE_BG_MODE_REPORTING)
   })
 
   it("stop sends disable sequence and cleans up", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
@@ -222,7 +222,7 @@ describe("createColorSchemeDetector", () => {
     expect(changes).toEqual(["dark"])
 
     detector.stop()
-    expect(terminal.written).toContain(DISABLE_COLOR_SCHEME_REPORTING)
+    expect(terminal.written).toContain(DISABLE_BG_MODE_REPORTING)
 
     // No more notifications after stop
     terminal.send("\x1b[?2031;2n")
@@ -232,7 +232,7 @@ describe("createColorSchemeDetector", () => {
   it("works with using pattern", () => {
     const terminal = createMockTerminal()
     {
-      using detector = createColorSchemeDetector({
+      using detector = createBgModeDetector({
         write: terminal.write,
         onData: terminal.onData,
       })
@@ -241,12 +241,12 @@ describe("createColorSchemeDetector", () => {
       expect(detector.scheme).toBe("light")
     }
     // After scope exit, disable should have been sent
-    expect(terminal.written.filter((s) => s === DISABLE_COLOR_SCHEME_REPORTING)).toHaveLength(1)
+    expect(terminal.written.filter((s) => s === DISABLE_BG_MODE_REPORTING)).toHaveLength(1)
   })
 
   it("ignores data after stop", () => {
     const terminal = createMockTerminal()
-    const detector = createColorSchemeDetector({
+    const detector = createBgModeDetector({
       write: terminal.write,
       onData: terminal.onData,
     })
@@ -261,7 +261,7 @@ describe("createColorSchemeDetector", () => {
   })
 
   it("constants match expected escape sequences", () => {
-    expect(ENABLE_COLOR_SCHEME_REPORTING).toBe("\x1b[?2031h")
-    expect(DISABLE_COLOR_SCHEME_REPORTING).toBe("\x1b[?2031l")
+    expect(ENABLE_BG_MODE_REPORTING).toBe("\x1b[?2031h")
+    expect(DISABLE_BG_MODE_REPORTING).toBe("\x1b[?2031l")
   })
 })

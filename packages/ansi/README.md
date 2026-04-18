@@ -105,7 +105,7 @@ nearestAnsi16([255, 0, 0]) // → nearest 16-color index
 | **SGR codes**        | `fgColorCode`, `bgColorCode`, `fgFromRgb`, `bgFromRgb`                                      |
 | **Color maps**       | `nearestAnsi16`, `rgbToAnsi256`, `ANSI_16_COLORS`                                           |
 | **Underlines**       | `curlyUnderline`, `dottedUnderline`, `dashedUnderline`, `doubleUnderline`, `underlineColor` |
-| **Theme**            | `deriveTheme`, `detectTheme`, `defaultDarkPalette`, `defaultLightPalette`                   |
+| **Theme**            | `deriveTheme`, `detectTheme`, `defaultDarkScheme`, `defaultLightScheme`                   |
 | **OSC protocol**     | `queryPaletteColor`, `queryForegroundColor`, `detectColorScheme`                            |
 | **Utilities**        | `stripAnsi`, `displayLength`, `ANSI_REGEX`                                                  |
 | **Hyperlinks**       | `hyperlink`, `HYPERLINK_START`, `HYPERLINK_END`                                             |

@@ -21,8 +21,8 @@
 import { hexToRgb } from "./color"
 import { deriveTheme } from "./derive"
 import { fromColors, assignPrimaryToSlot } from "./generators"
-import { getPaletteByName } from "./palettes/index"
-import type { Theme, ColorPalette, HueName } from "./types"
+import { getSchemeByName } from "./schemes/index"
+import type { Theme, ColorScheme, HueName } from "./types"
 
 // ============================================================================
 // Luminance
@@ -43,8 +43,8 @@ interface ThemeBuilderState {
   bgColor?: string
   fgColor?: string
   primaryColor?: string
-  colors: Partial<ColorPalette>
-  presetPalette?: ColorPalette
+  colors: Partial<ColorScheme>
+  presetPalette?: ColorScheme
 }
 
 export interface ThemeBuilder {
@@ -61,9 +61,9 @@ export interface ThemeBuilder {
   /** Force light mode. */
   light(): ThemeBuilder
   /** Set any palette color by name. */
-  color(name: keyof Omit<ColorPalette, "name" | "dark">, value: string): ThemeBuilder
+  color(name: keyof Omit<ColorScheme, "name" | "dark">, value: string): ThemeBuilder
   /** Set full palette at once. */
-  palette(p: ColorPalette): ThemeBuilder
+  palette(p: ColorScheme): ThemeBuilder
   /** Load a built-in palette by name. */
   preset(name: string): ThemeBuilder
   /** Derive the final Theme from accumulated state. */
@@ -107,7 +107,7 @@ export function createTheme(): ThemeBuilder {
       return builder
     },
     preset(name) {
-      const p = getPaletteByName(name)
+      const p = getSchemeByName(name)
       if (p) state.presetPalette = p
       return builder
     },
@@ -115,7 +115,7 @@ export function createTheme(): ThemeBuilder {
     build(): Theme {
       const isDark = state.dark ?? (state.bgColor ? isDarkColor(state.bgColor) : true)
 
-      let palette: ColorPalette
+      let palette: ColorScheme
 
       if (state.presetPalette) {
         // Start from preset, apply overrides
@@ -153,9 +153,9 @@ export function createTheme(): ThemeBuilder {
   return builder
 }
 
-/** Map a HueName to the corresponding ColorPalette field. */
-function hueToAnsiField(hue: HueName): keyof ColorPalette {
-  const map: Record<HueName, keyof ColorPalette> = {
+/** Map a HueName to the corresponding ColorScheme field. */
+function hueToAnsiField(hue: HueName): keyof ColorScheme {
+  const map: Record<HueName, keyof ColorScheme> = {
     red: "red",
     orange: "brightRed",
     yellow: "yellow",

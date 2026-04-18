@@ -1,14 +1,14 @@
 /**
- * Import Base16 YAML/JSON schemes into ColorPalette format.
+ * Import Base16 YAML/JSON schemes into ColorScheme format.
  *
- * Base16 defines 16 colors (base00–base0F). We map them to ColorPalette's
+ * Base16 defines 16 colors (base00–base0F). We map them to ColorScheme's
  * 22 colors, deriving bright variants and special colors.
  *
  * @see https://github.com/chriskempson/base16
  */
 
 import { darken, brighten, hexToRgb } from "../color"
-import type { ColorPalette } from "../types"
+import type { ColorScheme } from "../types"
 import type { Base16Scheme } from "./types"
 import { BASE16_KEYS } from "./types"
 
@@ -90,7 +90,7 @@ function hex(bare: string): string {
 }
 
 /**
- * Import a Base16 YAML (or JSON) scheme into a ColorPalette.
+ * Import a Base16 YAML (or JSON) scheme into a ColorScheme.
  *
  * Mapping:
  *   base00 → background, base01 → brightBlack, base02 → selectionBackground,
@@ -102,13 +102,13 @@ function hex(bare: string): string {
  * Bright color variants are derived by brightening normals.
  * `dark` is inferred from base00 luminance.
  */
-export function importBase16(yamlOrJson: string): ColorPalette {
+export function importBase16(yamlOrJson: string): ColorScheme {
   const scheme = parseBase16Yaml(yamlOrJson)
-  return base16ToColorPalette(scheme)
+  return base16ToColorScheme(scheme)
 }
 
-/** Convert a parsed Base16Scheme to ColorPalette. */
-export function base16ToColorPalette(scheme: Base16Scheme): ColorPalette {
+/** Convert a parsed Base16Scheme to ColorScheme. */
+export function base16ToColorScheme(scheme: Base16Scheme): ColorScheme {
   const bg = hex(scheme.base00)
   const fg = hex(scheme.base05)
   const isDark = luminance(bg) < 0.179

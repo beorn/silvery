@@ -94,12 +94,12 @@ export {
   detectExtendedUnderline,
   detectTerminalCaps,
   defaultCaps,
-  createColorSchemeDetector,
-  parseColorSchemeResponse,
-  ENABLE_COLOR_SCHEME_REPORTING,
-  DISABLE_COLOR_SCHEME_REPORTING,
+  createBgModeDetector,
+  parseBgModeResponse,
+  ENABLE_BG_MODE_REPORTING,
+  DISABLE_BG_MODE_REPORTING,
 } from "./detection"
-export type { TerminalCaps, ColorSchemeDetector, ColorSchemeDetectorOptions, ColorScheme } from "./detection"
+export type { TerminalCaps, BgModeDetector, BgModeDetectorOptions, BgMode } from "./detection"
 
 // =============================================================================
 // Utilities

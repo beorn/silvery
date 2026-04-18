@@ -1,10 +1,10 @@
 /**
- * Theme derivation — transforms a ColorPalette into a Theme.
+ * Theme derivation — transforms a ColorScheme into a Theme.
  */
 
 import { blend, contrastFg, complement } from "@silvery/color"
 import { checkContrast, ensureContrast } from "@silvery/color"
-import type { ColorPalette, Theme } from "./types.ts"
+import type { ColorScheme, Theme } from "./types.ts"
 
 export interface ThemeAdjustment {
   token: string
@@ -17,7 +17,7 @@ export interface ThemeAdjustment {
 }
 
 export function deriveTheme(
-  palette: ColorPalette,
+  palette: ColorScheme,
   mode: "ansi16" | "truecolor" = "truecolor",
   adjustments?: ThemeAdjustment[],
 ): Theme {
@@ -30,7 +30,7 @@ const DIM = 3.0
 const FAINT = 1.5
 const CONTROL = 3.0
 
-function deriveTruecolorTheme(p: ColorPalette, adjustments?: ThemeAdjustment[]): Theme {
+function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): Theme {
   const dark = p.dark ?? true
   const bg = p.background
 
@@ -127,7 +127,7 @@ function deriveTruecolorTheme(p: ColorPalette, adjustments?: ThemeAdjustment[]):
   }
 }
 
-function deriveAnsi16Theme(p: ColorPalette): Theme {
+function deriveAnsi16Theme(p: ColorScheme): Theme {
   const dark = p.dark ?? true
   const primaryColor = dark ? p.yellow : p.blue
   return {

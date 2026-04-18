@@ -151,17 +151,17 @@ export type { Style, StyleOptions, ThemeLike } from "./style/types"
 
 export { deriveTheme } from "./theme/derive"
 export type { ThemeAdjustment } from "./theme/derive"
-export { ansi16DarkTheme, ansi16LightTheme, defaultDarkPalette, defaultLightPalette } from "./theme/default-palettes"
-export type { ColorPalette, Theme, AnsiPrimary, HueName } from "./theme/types"
+export { ansi16DarkTheme, ansi16LightTheme, defaultDarkScheme, defaultLightScheme } from "./theme/default-schemes"
+export type { ColorScheme, Theme, AnsiPrimary, HueName } from "./theme/types"
 export type { AnsiColorName as PaletteColorName } from "./theme/types"
-export { COLOR_PALETTE_FIELDS } from "./theme/types"
+export { COLOR_SCHEME_FIELDS } from "./theme/types"
 
 // =============================================================================
 // Theme Detection (async, OSC-based)
 // =============================================================================
 
-export { detectTerminalPalette, detectTheme } from "./theme/detect"
-export type { DetectedPalette, DetectThemeOptions } from "./theme/detect"
+export { detectTerminalScheme, detectTheme } from "./theme/detect"
+export type { DetectedScheme, DetectThemeOptions } from "./theme/detect"
 
 // =============================================================================
 // OSC Protocol — Terminal color queries
@@ -187,9 +187,9 @@ export {
 // =============================================================================
 
 export {
-  createColorSchemeDetector,
-  parseColorSchemeResponse,
-  ENABLE_COLOR_SCHEME_REPORTING,
-  DISABLE_COLOR_SCHEME_REPORTING,
+  createBgModeDetector,
+  parseBgModeResponse,
+  ENABLE_BG_MODE_REPORTING,
+  DISABLE_BG_MODE_REPORTING,
 } from "./color-scheme"
-export type { ColorSchemeDetector, ColorSchemeDetectorOptions, ColorScheme } from "./color-scheme"
+export type { BgModeDetector, BgModeDetectorOptions, BgMode } from "./color-scheme"

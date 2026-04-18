@@ -1,11 +1,11 @@
 /**
- * Palette validation — checks ColorPalette fields and contrast.
+ * Palette validation — checks ColorScheme fields and contrast.
  */
 
 import { hexToRgb } from "./color"
-import { COLOR_PALETTE_FIELDS, type ColorPalette } from "./types"
+import { COLOR_SCHEME_FIELDS, type ColorScheme } from "./types"
 
-/** Validation result from validateColorPalette(). */
+/** Validation result from validateColorScheme(). */
 export interface ValidationResult {
   valid: boolean
   errors: string[]
@@ -13,18 +13,18 @@ export interface ValidationResult {
 }
 
 /**
- * Validate a ColorPalette.
+ * Validate a ColorScheme.
  *
  * Checks:
  * - All 22 color fields are present and non-empty hex strings
  * - Warns on low-contrast foreground/background combinations
  */
-export function validateColorPalette(p: ColorPalette): ValidationResult {
+export function validateColorScheme(p: ColorScheme): ValidationResult {
   const errors: string[] = []
   const warnings: string[] = []
 
   // Required color fields
-  for (const field of COLOR_PALETTE_FIELDS) {
+  for (const field of COLOR_SCHEME_FIELDS) {
     const val = p[field]
     if (!val || typeof val !== "string") {
       errors.push(`${field} is required and must be a non-empty string`)

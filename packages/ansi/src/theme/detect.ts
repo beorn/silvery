@@ -2,21 +2,21 @@
  * Terminal palette auto-detection via OSC queries.
  */
 
-import type { ColorPalette, Theme } from "./types.ts"
+import type { ColorScheme, Theme } from "./types.ts"
 import { deriveTheme } from "./derive.ts"
-import { ansi16DarkTheme, ansi16LightTheme, defaultDarkPalette, defaultLightPalette } from "./default-palettes.ts"
+import { ansi16DarkTheme, ansi16LightTheme, defaultDarkScheme, defaultLightScheme } from "./default-schemes.ts"
 import { queryMultiplePaletteColors, parsePaletteResponse } from "../osc-palette.ts"
 import { queryForegroundColor, queryBackgroundColor } from "../osc-colors.ts"
 
-export interface DetectedPalette {
+export interface DetectedScheme {
   fg: string | null
   bg: string | null
   ansi: (string | null)[]
   dark: boolean
-  palette: Partial<ColorPalette>
+  palette: Partial<ColorScheme>
 }
 
-export async function detectTerminalPalette(timeoutMs = 150): Promise<DetectedPalette | null> {
+export async function detectTerminalScheme(timeoutMs = 150): Promise<DetectedScheme | null> {
   const stdin = process.stdin
   const stdout = process.stdout
   if (!stdin.isTTY || !stdout.isTTY) return null
@@ -85,11 +85,11 @@ export async function detectTerminalPalette(timeoutMs = 150): Promise<DetectedPa
     }
 
     const dark = bg ? isDarkColor(bg) : true
-    const palette: Partial<ColorPalette> = { dark }
+    const palette: Partial<ColorScheme> = { dark }
     if (bg) palette.background = bg
     if (fg) palette.foreground = fg
 
-    const ansiFields: (keyof ColorPalette)[] = [
+    const ansiFields: (keyof ColorScheme)[] = [
       "black",
       "red",
       "green",
@@ -125,7 +125,7 @@ export async function detectTerminalPalette(timeoutMs = 150): Promise<DetectedPa
 }
 
 export interface DetectThemeOptions {
-  fallback?: ColorPalette
+  fallback?: ColorScheme
   timeoutMs?: number
   caps?: { colorLevel?: string; darkBackground?: boolean }
 }
@@ -136,20 +136,20 @@ export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme>
     const isDark = opts.caps?.darkBackground ?? true
     return isDark ? ansi16DarkTheme : ansi16LightTheme
   }
-  const detected = await detectTerminalPalette(opts.timeoutMs)
+  const detected = await detectTerminalScheme(opts.timeoutMs)
   const isDark = detected?.dark ?? opts.caps?.darkBackground ?? true
-  const fallback = opts.fallback ?? (isDark ? defaultDarkPalette : defaultLightPalette)
+  const fallback = opts.fallback ?? (isDark ? defaultDarkScheme : defaultLightScheme)
   if (!detected) return deriveTheme(fallback)
-  const merged: ColorPalette = { ...fallback, ...stripNulls(detected.palette) }
+  const merged: ColorScheme = { ...fallback, ...stripNulls(detected.palette) }
   return deriveTheme(merged)
 }
 
-function stripNulls(partial: Partial<ColorPalette>): Partial<ColorPalette> {
+function stripNulls(partial: Partial<ColorScheme>): Partial<ColorScheme> {
   const result: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(partial)) {
     if (v != null) result[k] = v
   }
-  return result as Partial<ColorPalette>
+  return result as Partial<ColorScheme>
 }
 
 function isDarkColor(hex: string): boolean {

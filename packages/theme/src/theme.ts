@@ -2,10 +2,10 @@
  * @silvery/theme — Universal color themes for any platform.
  *
  * Two-layer architecture:
- *   Layer 1: ColorPalette (22 terminal colors — universal pivot format)
+ *   Layer 1: ColorScheme (22 terminal colors — universal pivot format)
  *   Layer 2: Theme (33 semantic tokens — what UI apps consume)
  *
- * Pipeline: Palette generators → ColorPalette → deriveTheme() → Theme
+ * Pipeline: Palette generators → ColorScheme → deriveTheme() → Theme
  *
  * @example
  * ```typescript
@@ -23,8 +23,8 @@ export { ThemeProvider, useTheme } from "./ThemeContext"
 export type { ThemeProviderProps } from "./ThemeContext"
 
 // Core types
-export type { Theme, ColorPalette, HueName, AnsiPrimary, AnsiColorName } from "./types"
-export { COLOR_PALETTE_FIELDS } from "./types"
+export type { Theme, ColorScheme, HueName, AnsiPrimary, AnsiColorName } from "./types"
+export { COLOR_SCHEME_FIELDS } from "./types"
 
 // Derivation
 export { deriveTheme } from "./derive"
@@ -62,7 +62,7 @@ export { fromBase16, fromColors, fromPreset } from "./generators"
 export { setActiveTheme, getActiveTheme, pushContextTheme, popContextTheme } from "./state"
 
 // Validation
-export { validateColorPalette } from "./validate"
+export { validateColorScheme } from "./validate"
 export type { ValidationResult } from "./validate"
 export { validateTheme, THEME_TOKEN_KEYS } from "./validate-theme"
 export type { ThemeValidationResult } from "./validate-theme"
@@ -86,8 +86,8 @@ export { exportBase16 } from "./export/base16"
 export type { Base16Scheme } from "./import/types"
 
 // Terminal detection
-export { detectTerminalPalette, detectTheme } from "./detect"
-export type { DetectedPalette, DetectThemeOptions } from "./detect"
+export { detectTerminalScheme, detectTheme } from "./detect"
+export type { DetectedScheme, DetectThemeOptions } from "./detect"
 
 // Built-in themes (pre-derived)
 export {
@@ -97,12 +97,12 @@ export {
   defaultLightTheme,
   builtinThemes,
   getThemeByName,
-} from "./palettes/index"
+} from "./schemes/index"
 
 // Built-in palettes (45 palettes from 15 theme families)
 export {
   builtinPalettes,
-  getPaletteByName,
+  getSchemeByName,
   catppuccinMocha,
   catppuccinFrappe,
   catppuccinMacchiato,
@@ -146,4 +146,4 @@ export {
   edgeLight,
   modusVivendi,
   modusOperandi,
-} from "./palettes/index"
+} from "./schemes/index"

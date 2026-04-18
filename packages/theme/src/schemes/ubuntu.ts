@@ -1,0 +1,33 @@
+/**
+ * Ubuntu palette — the default Ubuntu terminal theme.
+ */
+
+import type { ColorScheme } from "../types"
+
+/** Ubuntu — the iconic purple terminal from Ubuntu Linux. */
+export const ubuntu: ColorScheme = {
+  name: "ubuntu",
+  dark: true,
+  black: "#2e3436",
+  red: "#cc0000",
+  green: "#4e9a06",
+  yellow: "#c4a000",
+  blue: "#3465a4",
+  magenta: "#75507b",
+  cyan: "#06989a",
+  white: "#d3d7cf",
+  brightBlack: "#555753",
+  brightRed: "#ef2929",
+  brightGreen: "#8ae234",
+  brightYellow: "#fce94f",
+  brightBlue: "#729fcf",
+  brightMagenta: "#ad7fa8",
+  brightCyan: "#34e2e2",
+  brightWhite: "#eeeeec",
+  foreground: "#eeeeec",
+  background: "#300a24",
+  cursorColor: "#bbbbbb",
+  cursorText: "#300a24",
+  selectionBackground: "#b5d5ff",
+  selectionForeground: "#300a24",
+}

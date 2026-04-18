@@ -2,13 +2,13 @@
  * Core type definitions for the theme system.
  *
  * Two-layer architecture:
- *   Layer 1: ColorPalette — 22 terminal colors (what palette generators produce)
- *   Layer 2: Theme — 33 semantic tokens (what UI apps consume)
+ *   Layer 1: ColorScheme — 22 terminal colors (what schemes expose; auto-detectable)
+ *   Layer 2: Theme — ~33 semantic tokens (what UI apps consume)
  *
- * Pipeline: Palette generators → ColorPalette (22) → deriveTheme() → Theme (33)
+ * Pipeline: Scheme catalog → ColorScheme (22) → deriveTheme() → Theme (33)
  */
 
-export interface ColorPalette {
+export interface ColorScheme {
   name?: string
   dark?: boolean
   primary?: string
@@ -36,7 +36,7 @@ export interface ColorPalette {
   selectionForeground: string
 }
 
-export const COLOR_PALETTE_FIELDS = [
+export const COLOR_SCHEME_FIELDS = [
   "black",
   "red",
   "green",

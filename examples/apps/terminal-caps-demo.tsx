@@ -32,7 +32,7 @@ import {
   DEFAULT_WIDTH_CONFIG,
   detectKittyFromStdio,
 } from "@silvery/ag-term"
-import { createColorSchemeDetector, type ColorScheme } from "@silvery/ag-term/ansi"
+import { createBgModeDetector, type BgMode } from "@silvery/ag-term/ansi"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -118,11 +118,11 @@ function buildStaticEntries(caps: TerminalCaps): CapEntry[] {
 function TerminalCapsApp({
   initialProbes,
 }: {
-  initialProbes?: { colorScheme: ColorScheme; widthConfig: TerminalWidthConfig | null; kittyDetected: boolean | null }
+  initialProbes?: { colorScheme: BgMode; widthConfig: TerminalWidthConfig | null; kittyDetected: boolean | null }
 }) {
   const { exit } = useApp()
   const [caps] = useState<TerminalCaps>(() => detectTerminalCaps())
-  const [colorScheme] = useState<ColorScheme>(initialProbes?.colorScheme ?? "unknown")
+  const [colorScheme] = useState<BgMode>(initialProbes?.colorScheme ?? "unknown")
   const [widthConfig] = useState<TerminalWidthConfig | null>(initialProbes?.widthConfig ?? null)
   const [kittyDetected] = useState<boolean | null>(initialProbes?.kittyDetected ?? null)
 
@@ -255,7 +255,7 @@ export async function main() {
   // Probe BEFORE render() starts — avoids stdin conflict with useInput.
   // Once render() owns stdin, protocol responses leak as visible text.
   let probeResults: {
-    colorScheme: ColorScheme
+    colorScheme: BgMode
     widthConfig: TerminalWidthConfig | null
     kittyDetected: boolean | null
   } = { colorScheme: "unknown", widthConfig: null, kittyDetected: null }
@@ -273,8 +273,8 @@ export async function main() {
 
     // Run all probes in parallel with 500ms timeout
     const [colorResult, widthResult, kittyResult] = await Promise.allSettled([
-      new Promise<ColorScheme>((resolve) => {
-        const det = createColorSchemeDetector({ write, onData, timeoutMs: 500 })
+      new Promise<BgMode>((resolve) => {
+        const det = createBgModeDetector({ write, onData, timeoutMs: 500 })
         det.subscribe((s) => {
           resolve(s)
           det.stop()

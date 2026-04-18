@@ -240,12 +240,12 @@ export {
 // =============================================================================
 
 export {
-  createColorSchemeDetector,
-  parseColorSchemeResponse,
-  ENABLE_COLOR_SCHEME_REPORTING,
-  DISABLE_COLOR_SCHEME_REPORTING,
-  type ColorSchemeDetector,
-  type ColorSchemeDetectorOptions,
+  createBgModeDetector,
+  parseBgModeResponse,
+  ENABLE_BG_MODE_REPORTING,
+  DISABLE_BG_MODE_REPORTING,
+  type BgModeDetector,
+  type BgModeDetectorOptions,
 } from "@silvery/ansi"
 
 // =============================================================================

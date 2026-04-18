@@ -1,0 +1,33 @@
+/**
+ * Twilight palette — the warm, muted classic.
+ */
+
+import type { ColorScheme } from "../types"
+
+/** Twilight — warm earthy dark theme. */
+export const twilight: ColorScheme = {
+  name: "twilight",
+  dark: true,
+  black: "#141414",
+  red: "#c06d44",
+  green: "#afb97a",
+  yellow: "#c2a86c",
+  blue: "#44474a",
+  magenta: "#b4be7c",
+  cyan: "#778385",
+  white: "#ffffd4",
+  brightBlack: "#262626",
+  brightRed: "#de7c4c",
+  brightGreen: "#ccd88c",
+  brightYellow: "#e2c47e",
+  brightBlue: "#5a5e62",
+  brightMagenta: "#d0dc8e",
+  brightCyan: "#8a989b",
+  brightWhite: "#ffffd4",
+  foreground: "#ffffd4",
+  background: "#141414",
+  cursorColor: "#ffffff",
+  cursorText: "#141414",
+  selectionBackground: "#313131",
+  selectionForeground: "#ffffd4",
+}

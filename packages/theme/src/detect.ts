@@ -8,10 +8,10 @@
  * Standalone consumers: import from @silvery/ansi for lightweight defaults.
  */
 
-import type { ColorPalette, Theme } from "./types"
+import type { ColorScheme, Theme } from "./types"
 import { deriveTheme } from "./derive"
 import {
-  detectTerminalPalette as _detectTerminalPalette,
+  detectTerminalScheme as _detectTerminalScheme,
   queryMultiplePaletteColors,
   parsePaletteResponse,
   queryForegroundColor,
@@ -19,22 +19,22 @@ import {
   ansi16DarkTheme,
   ansi16LightTheme,
 } from "@silvery/ansi"
-import type { DetectedPalette } from "@silvery/ansi"
-import { nord } from "./palettes/nord"
-import { catppuccinLatte } from "./palettes/catppuccin"
+import type { DetectedScheme } from "@silvery/ansi"
+import { nord } from "./schemes/nord"
+import { catppuccinLatte } from "./schemes/catppuccin"
 
 // Re-export the base detection — works standalone without named palettes
-export { _detectTerminalPalette as detectTerminalPalette }
-export type { DetectedPalette }
+export { _detectTerminalScheme as detectTerminalScheme }
+export type { DetectedScheme }
 
 // ============================================================================
 // detectTheme — high-level: detect terminal palette, fill gaps, derive theme
 // ============================================================================
 
 export interface DetectThemeOptions {
-  /** Fallback ColorPalette when detection fails or returns partial data.
+  /** Fallback ColorScheme when detection fails or returns partial data.
    * Detected colors override matching fallback fields. */
-  fallback?: ColorPalette
+  fallback?: ColorScheme
   /** Timeout per OSC query in ms (default 150). */
   timeoutMs?: number
   /** Terminal capabilities (from detectTerminalCaps). When provided:
@@ -56,7 +56,7 @@ export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme>
     return isDark ? ansi16DarkTheme : ansi16LightTheme
   }
 
-  const detected = await _detectTerminalPalette(opts.timeoutMs)
+  const detected = await _detectTerminalScheme(opts.timeoutMs)
   const isDark = detected?.dark ?? opts.caps?.darkBackground ?? true
   const fallback = opts.fallback ?? (isDark ? nord : catppuccinLatte)
 
@@ -64,14 +64,14 @@ export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme>
     return deriveTheme(fallback)
   }
 
-  const merged: ColorPalette = { ...fallback, ...stripNulls(detected.palette) }
+  const merged: ColorScheme = { ...fallback, ...stripNulls(detected.palette) }
   return deriveTheme(merged)
 }
 
-function stripNulls(partial: Partial<ColorPalette>): Partial<ColorPalette> {
+function stripNulls(partial: Partial<ColorScheme>): Partial<ColorScheme> {
   const result: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(partial)) {
     if (v != null) result[k] = v
   }
-  return result as Partial<ColorPalette>
+  return result as Partial<ColorScheme>
 }

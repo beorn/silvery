@@ -43,7 +43,7 @@ import {
   deriveTheme,
   ansi16DarkTheme,
   ansi16LightTheme,
-  type ColorPalette,
+  type ColorScheme,
   type ThemeAdjustment,
 } from "@silvery/theme"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
@@ -61,7 +61,7 @@ export const meta: ExampleMeta = {
 
 export interface ThemeEntry {
   name: string
-  palette: ColorPalette | null // null for detected theme
+  palette: ColorScheme | null // null for detected theme
   theme: Theme
   adjustments: ThemeAdjustment[]
   detected?: boolean
@@ -83,7 +83,7 @@ function Swatch({ color }: { color: string }) {
 }
 
 /** Mini swatch: 4 colored blocks showing palette character */
-function MiniSwatch({ palette }: { palette: ColorPalette }) {
+function MiniSwatch({ palette }: { palette: ColorScheme }) {
   return (
     <Text>
       <Text color={palette.red}>{"█"}</Text>
@@ -163,7 +163,7 @@ function SemanticTokens() {
 }
 
 /** ANSI 16-color table */
-function AnsiColorTable({ palette }: { palette: ColorPalette }) {
+function AnsiColorTable({ palette }: { palette: ColorScheme }) {
   const normal = [
     palette.black,
     palette.red,

@@ -22,10 +22,10 @@ const ESC = "\x1b"
 const CSI = `${ESC}[`
 
 /** Enable Mode 2031 color scheme reporting */
-export const ENABLE_COLOR_SCHEME_REPORTING = `${CSI}?2031h`
+export const ENABLE_BG_MODE_REPORTING = `${CSI}?2031h`
 
 /** Disable Mode 2031 color scheme reporting */
-export const DISABLE_COLOR_SCHEME_REPORTING = `${CSI}?2031l`
+export const DISABLE_BG_MODE_REPORTING = `${CSI}?2031l`
 
 /** Response pattern: \x1b[?2031;Nn where N is 1 (dark) or 2 (light) */
 const MODE_2031_RESPONSE_RE = /\x1b\[\?2031;([12])n/
@@ -34,11 +34,11 @@ const MODE_2031_RESPONSE_RE = /\x1b\[\?2031;([12])n/
 // Types
 // =============================================================================
 
-export type ColorScheme = "dark" | "light" | "unknown"
+export type BgMode = "dark" | "light" | "unknown"
 
-export interface ColorSchemeDetector extends Disposable {
+export interface BgModeDetector extends Disposable {
   /** Current detected scheme */
-  readonly scheme: ColorScheme
+  readonly scheme: BgMode
   /** Subscribe to scheme changes. Returns unsubscribe function. */
   subscribe(listener: (scheme: "dark" | "light") => void): () => void
   /** Start detection (sends Mode 2031 enable to terminal) */
@@ -47,13 +47,13 @@ export interface ColorSchemeDetector extends Disposable {
   stop(): void
 }
 
-export interface ColorSchemeDetectorOptions {
+export interface BgModeDetectorOptions {
   /** Write data to the terminal */
   write: (data: string) => void
   /** Subscribe to terminal input. Returns unsubscribe function. */
   onData: (handler: (data: string) => void) => () => void
   /** Fallback detection when Mode 2031 is not supported */
-  fallback?: () => ColorScheme
+  fallback?: () => BgMode
   /** Timeout in ms to wait for Mode 2031 response (default: 200) */
   timeoutMs?: number
 }
@@ -66,7 +66,7 @@ export interface ColorSchemeDetectorOptions {
  * Parse a Mode 2031 response from terminal input data.
  * Returns "dark", "light", or null if not a Mode 2031 response.
  */
-export function parseColorSchemeResponse(data: string): "dark" | "light" | null {
+export function parseBgModeResponse(data: string): "dark" | "light" | null {
   const match = MODE_2031_RESPONSE_RE.exec(data)
   if (!match) return null
   return match[1] === "1" ? "dark" : "light"
@@ -88,7 +88,7 @@ export function parseColorSchemeResponse(data: string): "dark" | "light" | null 
  *
  * @example
  * ```ts
- * const detector = createColorSchemeDetector({
+ * const detector = createBgModeDetector({
  *   write: (data) => process.stdout.write(data),
  *   onData: (handler) => {
  *     process.stdin.on("data", handler)
@@ -101,10 +101,10 @@ export function parseColorSchemeResponse(data: string): "dark" | "light" | null 
  * detector.subscribe((scheme) => console.log("scheme changed:", scheme))
  * ```
  */
-export function createColorSchemeDetector(options: ColorSchemeDetectorOptions): ColorSchemeDetector {
+export function createBgModeDetector(options: BgModeDetectorOptions): BgModeDetector {
   const { write, onData, fallback, timeoutMs = 200 } = options
 
-  let scheme: ColorScheme = "unknown"
+  let scheme: BgMode = "unknown"
   let started = false
   let stopped = false
   let unsubData: (() => void) | null = null
@@ -128,7 +128,7 @@ export function createColorSchemeDetector(options: ColorSchemeDetectorOptions): 
   }
 
   function handleData(data: string) {
-    const result = parseColorSchemeResponse(data)
+    const result = parseBgModeResponse(data)
     if (result !== null) {
       handleResponse(result)
     }
@@ -165,7 +165,7 @@ export function createColorSchemeDetector(options: ColorSchemeDetectorOptions): 
       unsubData = onData(handleData)
 
       // Send Mode 2031 enable
-      write(ENABLE_COLOR_SCHEME_REPORTING)
+      write(ENABLE_BG_MODE_REPORTING)
 
       // Set timeout for fallback
       timeoutId = setTimeout(applyFallback, timeoutMs)
@@ -186,7 +186,7 @@ export function createColorSchemeDetector(options: ColorSchemeDetectorOptions): 
       }
 
       // Send Mode 2031 disable
-      write(DISABLE_COLOR_SCHEME_REPORTING)
+      write(DISABLE_BG_MODE_REPORTING)
 
       listeners.clear()
     },
@@ -206,7 +206,7 @@ export function createColorSchemeDetector(options: ColorSchemeDetectorOptions): 
           unsubData = null
         }
 
-        write(DISABLE_COLOR_SCHEME_REPORTING)
+        write(DISABLE_BG_MODE_REPORTING)
         listeners.clear()
       }
     },

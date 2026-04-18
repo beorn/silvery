@@ -18,7 +18,7 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./palettes": "./src/palettes/index.ts",
+    "./schemes": "./src/schemes/index.ts",
     "./ThemeContext": "./src/ThemeContext.tsx",
     "./*": "./src/*.ts"
   },
@@ -37,9 +37,9 @@
         "types": "./dist/detect.d.mts",
         "import": "./dist/detect.mjs"
       },
-      "./palettes": {
-        "types": "./dist/palettes.d.mts",
-        "import": "./dist/palettes.mjs"
+      "./schemes": {
+        "types": "./dist/schemes.d.mts",
+        "import": "./dist/schemes.mjs"
       },
       "./resolve": {
         "types": "./dist/resolve.d.mts",
@@ -73,7 +73,7 @@
       "src/index.ts",
       "src/ThemeContext.tsx",
       "src/detect.ts",
-      "src/palettes/index.ts",
+      "src/schemes/index.ts",
       "src/resolve.ts",
       "src/state.ts",
       "src/theme.ts",

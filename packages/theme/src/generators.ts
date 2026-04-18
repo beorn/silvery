@@ -1,13 +1,13 @@
 /**
- * Palette generators — produce a ColorPalette from various inputs.
+ * Palette generators — produce a ColorScheme from various inputs.
  *
- * All generators return a complete ColorPalette (22 fields).
+ * All generators return a complete ColorScheme (22 fields).
  */
 
 import { hexToRgb, hexToHsl, hslToHex, brighten, darken, blend } from "./color"
 import { importBase16 as importBase16Internal } from "./import/base16"
-import { getPaletteByName } from "./palettes/index"
-import type { ColorPalette, HueName } from "./types"
+import { getSchemeByName } from "./schemes/index"
+import type { ColorScheme, HueName } from "./types"
 
 // ============================================================================
 // Luminance
@@ -86,15 +86,15 @@ function generateAccentsFromPrimary(primary: string): Record<HueName, string> {
 }
 
 // ============================================================================
-// fromBase16 — Base16 YAML → ColorPalette
+// fromBase16 — Base16 YAML → ColorScheme
 // ============================================================================
 
 /**
- * Generate a ColorPalette from a Base16 YAML scheme.
+ * Generate a ColorScheme from a Base16 YAML scheme.
  *
  * Maps base00–base0F to ANSI palette colors, derives special colors.
  */
-export function fromBase16(yamlOrJson: string): ColorPalette {
+export function fromBase16(yamlOrJson: string): ColorScheme {
   return importBase16Internal(yamlOrJson)
 }
 
@@ -116,12 +116,12 @@ interface FromColorsOptions {
 }
 
 /**
- * Generate a full ColorPalette from 1-3 hex colors.
+ * Generate a full ColorScheme from 1-3 hex colors.
  *
  * At minimum, provide `background` or `primary`. Missing colors are
  * generated via surface ramp (from bg) and hue rotation (from primary).
  */
-export function fromColors(opts: FromColorsOptions): ColorPalette {
+export function fromColors(opts: FromColorsOptions): ColorScheme {
   const dark = opts.dark ?? (opts.background ? isDarkColor(opts.background) : true)
   const step = dark ? brighten : darken
 
@@ -179,20 +179,20 @@ export function fromColors(opts: FromColorsOptions): ColorPalette {
 }
 
 // ============================================================================
-// fromPreset — Look up a built-in ColorPalette by name
+// fromPreset — Look up a built-in ColorScheme by name
 // ============================================================================
 
 /**
  * Look up a built-in palette by name.
  *
- * @returns The ColorPalette, or undefined if not found.
+ * @returns The ColorScheme, or undefined if not found.
  */
-export function fromPreset(name: string): ColorPalette | undefined {
-  return getPaletteByName(name)
+export function fromPreset(name: string): ColorScheme | undefined {
+  return getSchemeByName(name)
 }
 
 // ============================================================================
-// ThemePalette → ColorPalette conversion (migration helper)
+// ThemePalette → ColorScheme conversion (migration helper)
 // ============================================================================
 
 /** Old ThemePalette shape for migration. */
@@ -216,7 +216,7 @@ interface OldThemePalette {
 }
 
 /**
- * Convert an old ThemePalette to a ColorPalette.
+ * Convert an old ThemePalette to a ColorScheme.
  *
  * Mapping:
  *   black = crust, red/green/yellow/blue = direct, magenta = purple,
@@ -226,7 +226,7 @@ interface OldThemePalette {
  *   foreground = text, background = base,
  *   cursor = text/base, selection = overlay/text.
  */
-export function themePaletteToColorPalette(p: OldThemePalette): ColorPalette {
+export function themePaletteToColorScheme(p: OldThemePalette): ColorScheme {
   return {
     name: p.name,
     dark: p.dark,

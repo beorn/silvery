@@ -46,8 +46,8 @@ import { CLIPBOARD_CAPABILITY } from "@silvery/create/internal/capabilities"
 import { createOSC52Clipboard, createRichClipboard, type ClipboardCapability } from "../features"
 import { createAdvancedClipboard } from "../ansi"
 import {
-  createColorSchemeDetector,
-  type ColorSchemeDetector,
+  createBgModeDetector,
+  type BgModeDetector,
   createWidthDetector,
   type WidthDetector,
   type TerminalWidthConfig,
@@ -183,7 +183,7 @@ export interface AppWithTerminal {
   readonly clipboardCapability: ClipboardCapability
 
   /** Color scheme detector (Mode 2031). Subscribe for reactive theme updates. */
-  readonly colorSchemeDetector: ColorSchemeDetector | undefined
+  readonly colorSchemeDetector: BgModeDetector | undefined
 
   /** Width detector (DEC 1020-1023). Results applied to term.caps. */
   readonly widthDetector: WidthDetector | undefined
@@ -254,7 +254,7 @@ export function withTerminal<T extends RunnableApp>(
     const autoDetect = termConfig.autoDetect ?? false // disabled until input filter strips responses
     const timeoutMs = termConfig.autoDetectTimeoutMs ?? 200
 
-    let colorSchemeDetector: ColorSchemeDetector | undefined
+    let colorSchemeDetector: BgModeDetector | undefined
     let widthDetector: WidthDetector | undefined
     let detectionReady: Promise<void>
 
@@ -274,7 +274,7 @@ export function withTerminal<T extends RunnableApp>(
       }
 
       // Color scheme detector (Mode 2031)
-      colorSchemeDetector = createColorSchemeDetector({
+      colorSchemeDetector = createBgModeDetector({
         write,
         onData,
         timeoutMs,

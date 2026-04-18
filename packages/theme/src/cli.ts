@@ -9,9 +9,9 @@
  *   bun theme json <name>  # Output theme as JSON
  */
 
-import { builtinPalettes, getThemeByName } from "./palettes"
+import { builtinPalettes, getThemeByName } from "./schemes"
 import { deriveTheme } from "./derive"
-import type { Theme, ColorPalette } from "./types"
+import type { Theme, ColorScheme } from "./types"
 
 // ── ANSI helpers ─────────────────────────────────────────────────────
 

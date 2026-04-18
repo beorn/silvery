@@ -1,12 +1,12 @@
 /**
  * useColorScheme — reactive terminal color scheme (dark/light/unknown).
  *
- * Reads from the ColorSchemeDetector registered on the CapabilityRegistry
+ * Reads from the BgModeDetector registered on the CapabilityRegistry
  * by withTerminal(). Updates when Mode 2031 reports a scheme change.
  *
  * Returns "unknown" when:
  * - No CapabilityRegistry is present (e.g., simple run() without pipe())
- * - No ColorSchemeDetector was registered
+ * - No BgModeDetector was registered
  * - The terminal hasn't responded to Mode 2031 yet
  *
  * @example
@@ -35,7 +35,7 @@ export type ColorScheme = "dark" | "light" | "unknown"
 
 /**
  * Minimal interface for the color scheme detector capability.
- * Matches the shape of ColorSchemeDetector from @silvery/ansi without importing it.
+ * Matches the shape of BgModeDetector from @silvery/ansi without importing it.
  */
 interface ColorSchemeDetectorLike {
   readonly scheme: ColorScheme
@@ -48,7 +48,7 @@ const COLOR_SCHEME_CAPABILITY = Symbol.for("silvery.color-scheme")
 /**
  * Hook that returns the current terminal color scheme reactively.
  *
- * Subscribes to the ColorSchemeDetector via the capability registry.
+ * Subscribes to the BgModeDetector via the capability registry.
  * Re-renders the component when the scheme changes (dark <-> light).
  */
 export function useColorScheme(): ColorScheme {

@@ -10,7 +10,7 @@
  */
 
 import type { Theme } from "./types"
-import { ansi16DarkTheme } from "./palettes/index"
+import { ansi16DarkTheme } from "./schemes/index"
 
 // ============================================================================
 // Active Theme

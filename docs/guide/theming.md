@@ -242,13 +242,13 @@ Builder methods: `.bg()`, `.fg()`, `.primary()`, `.accent()`, `.dark()`, `.light
 
 ### Full Manual Palette
 
-For complete control, provide all 22 colors as a `ColorPalette` and derive a theme from it:
+For complete control, provide all 22 colors as a `ColorScheme` and derive a theme from it:
 
 ```typescript
 import { deriveTheme } from "silvery/theme"
-import type { ColorPalette } from "silvery/theme"
+import type { ColorScheme } from "silvery/theme"
 
-const myPalette: ColorPalette = {
+const myPalette: ColorScheme = {
   name: "my-palette",
   dark: true,
   black: "#1a1b26",
@@ -278,7 +278,7 @@ const myPalette: ColorPalette = {
 const theme = deriveTheme(myPalette)
 ```
 
-See the [ColorPalette type definition](/reference/theme#colorpalette-22-colors) for all fields.
+See the [ColorScheme type definition](/reference/theme#colorpalette-22-colors) for all fields.
 
 ## CLI Usage
 
@@ -377,11 +377,11 @@ These activate automatically when the detected color level is `basic`.
 Silvery reads the terminal's actual colors at startup via OSC escape sequences (OSC 4 for ANSI colors, OSC 10/11 for fg/bg). This means a Dracula user gets Dracula colors and a Nord user gets Nord colors — automatically.
 
 ```typescript
-import { detectTheme, getPaletteByName } from "silvery/theme"
+import { detectTheme, getSchemeByName } from "silvery/theme"
 
 // Manual detection with a custom fallback
 const theme = await detectTheme({
-  fallback: getPaletteByName("nord"),
+  fallback: getSchemeByName("nord"),
 })
 ```
 
@@ -392,9 +392,9 @@ Supported terminals: Ghostty, Kitty, WezTerm, iTerm2, foot, Alacritty, xterm. Fa
 Silvery can detect whether the terminal is in dark or light mode using Mode 2031 — a terminal protocol where the terminal self-reports its color scheme. This works cross-platform (Linux, Windows Terminal, SSH sessions), unlike the macOS-only `AppleInterfaceStyle` approach.
 
 ```typescript
-import { createColorSchemeDetector } from "@silvery/ansi"
+import { createBgModeDetector } from "@silvery/ansi"
 
-using detector = createColorSchemeDetector({
+using detector = createBgModeDetector({
   write: (data) => process.stdout.write(data),
   onData: (handler) => {
     process.stdin.on("data", handler)

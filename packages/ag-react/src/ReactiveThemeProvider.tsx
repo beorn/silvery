@@ -1,7 +1,7 @@
 /**
  * ReactiveThemeProvider — auto-switches theme based on terminal color scheme.
  *
- * Wraps ThemeProvider and subscribes to the ColorSchemeDetector (Mode 2031).
+ * Wraps ThemeProvider and subscribes to the BgModeDetector (Mode 2031).
  * When the terminal reports a dark↔light change, the theme automatically
  * switches to the corresponding variant.
  *
