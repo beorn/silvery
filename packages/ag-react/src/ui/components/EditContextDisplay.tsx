@@ -119,13 +119,13 @@ export function EditContextDisplay({
     if (hasViewport) {
       return (
         <Box flexDirection="column" height={height} justifyContent="center" alignItems="center">
-          <Text dimColor>{placeholder}</Text>
+          <Text color="$muted">{placeholder}</Text>
         </Box>
       )
     }
     return (
       <Box flexDirection="column">
-        <Text dimColor>{placeholder}</Text>
+        <Text color="$muted">{placeholder}</Text>
       </Box>
     )
   }

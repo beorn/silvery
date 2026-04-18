@@ -136,16 +136,16 @@ export function Table({
               return (
                 <React.Fragment key={col.key ?? col.header}>
                   <Box width={colWidths[i]} flexShrink={0}>
-                    <Text bold={headerBold} dimColor>
+                    <Text bold={headerBold} color="$muted">
                       {col.header}
                     </Text>
                   </Box>
-                  {!isLast && <Text dimColor>{separator}</Text>}
+                  {!isLast && <Text color="$border">{separator}</Text>}
                 </React.Fragment>
               )
             })}
           </Box>
-          <Text dimColor>{separatorLine}</Text>
+          <Text color="$border">{separatorLine}</Text>
         </>
       )}
       {data.length > 0 && <ListView items={data} height={viewportHeight} estimateHeight={1} renderItem={renderRow} />}

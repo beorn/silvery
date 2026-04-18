@@ -230,15 +230,15 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
       {showPlaceholder ? (
         <>
           {cursorStyle === "underline" ? (
-            <Text underline dimColor>
+            <Text underline color="$muted">
               {placeholder[0]}
             </Text>
           ) : (
-            <Text inverse dimColor>
+            <Text inverse color="$muted">
               {placeholder[0]}
             </Text>
           )}
-          <Text dimColor>{placeholder.slice(1)}</Text>
+          <Text color="$muted">{placeholder.slice(1)}</Text>
         </>
       ) : (
         <>
@@ -262,7 +262,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
         onMouseDown={handleMouseDown}
       >
         {inputContent}
-        {showUnderline && <Text dimColor>{"─".repeat(underlineWidth)}</Text>}
+        {showUnderline && <Text color="$border">{"─".repeat(underlineWidth)}</Text>}
       </Box>
     )
   }
@@ -270,7 +270,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   return (
     <Box focusable testID={testID} flexDirection="column" onMouseDown={handleMouseDown}>
       {inputContent}
-      {showUnderline && <Text dimColor>{"─".repeat(underlineWidth)}</Text>}
+      {showUnderline && <Text color="$border">{"─".repeat(underlineWidth)}</Text>}
     </Box>
   )
 })

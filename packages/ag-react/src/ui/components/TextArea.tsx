@@ -228,7 +228,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   if (showPlaceholder) {
     return (
       <Box focusable testID={testID} flexDirection="column" height={height} {...borderProps}>
-        <Text dimColor>{placeholder}</Text>
+        <Text color="$muted">{placeholder}</Text>
       </Box>
     )
   }
@@ -254,7 +254,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
         if (disabled) {
           return (
-            <Text key={absoluteRow} dimColor>
+            <Text key={absoluteRow} color="$disabledfg">
               {wl.line || " "}
             </Text>
           )

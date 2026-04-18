@@ -192,12 +192,12 @@ export function PickerDialog<T>({
         <Box>
           {prompt && <Text color={promptColor}>{prompt}</Text>}
           {showPlaceholder ? (
-            <Text dimColor>{placeholder}</Text>
+            <Text color="$muted">{placeholder}</Text>
           ) : (
             <CursorLine beforeCursor={readline.beforeCursor} afterCursor={readline.afterCursor} showCursor={isActive} />
           )}
         </Box>
-        <Text dimColor>{"─".repeat(40)}</Text>
+        <Text color="$border">{"─".repeat(40)}</Text>
       </Box>
 
       {/* Result list (delegated to PickerList) */}

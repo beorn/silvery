@@ -88,11 +88,11 @@ export function formatTitleWithHotkey(title: string, hotkey: string, color?: str
     return (
       <Text color={color} bold>
         {before}
-        <Text dimColor bold={false}>
+        <Text color="$muted" bold={false}>
           [
         </Text>
         <Text bold>{matched}</Text>
-        <Text dimColor bold={false}>
+        <Text color="$muted" bold={false}>
           ]
         </Text>
         {after}
@@ -102,11 +102,11 @@ export function formatTitleWithHotkey(title: string, hotkey: string, color?: str
   // Hotkey not in title (or symbol) — prepend [X] Title
   return (
     <Text color={color} bold>
-      <Text dimColor bold={false}>
+      <Text color="$muted" bold={false}>
         [
       </Text>
       <Text bold>{hotkey}</Text>
-      <Text dimColor bold={false}>
+      <Text color="$muted" bold={false}>
         ]
       </Text>{" "}
       {title}
@@ -192,7 +192,7 @@ export function ModalDialog({
       {footer && (
         <>
           <Text> </Text>
-          <Box justifyContent={footerAlign}>{typeof footer === "string" ? <Text dimColor>{footer}</Text> : footer}</Box>
+          <Box justifyContent={footerAlign}>{typeof footer === "string" ? <Text color="$muted">{footer}</Text> : footer}</Box>
         </>
       )}
     </Box>

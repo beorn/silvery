@@ -166,7 +166,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </Text>
           {error && <Text color="$error">{error.message}</Text>}
           {errorInfo?.componentStack && (
-            <Text dim wrap="truncate">
+            <Text color="$muted" wrap="truncate">
               {errorInfo.componentStack.split("\n").slice(0, 3).join("\n")}
             </Text>
           )}

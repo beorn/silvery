@@ -43,6 +43,18 @@ export type {
   DetectThemeOptions,
 } from "@silvery/ansi"
 
+// Unified orchestrator — one entry point for the whole cascade
+export {
+  detectScheme,
+  detectSchemeTheme,
+} from "@silvery/ansi"
+export type {
+  DetectSchemeResult,
+  DetectSchemeOptions,
+  DetectSource,
+  SlotSource,
+} from "@silvery/ansi"
+
 // BgMode — dark/light/unknown detection
 export {
   createBgModeDetector,
