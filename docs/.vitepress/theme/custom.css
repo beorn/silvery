@@ -2,48 +2,43 @@
  * silvery.dev design tokens
  *
  * Source of truth: hub/silvery/design/silvery-dev-design-system.md
- * Architecture: stock VitePress default theme, override via
- * CSS custom properties. No layout customizations.
+ *
+ * Hover discipline: COLOR changes only. Never raise, translate,
+ * scale, or change padding/border-radius on hover.
  * ============================================================ */
 
 /* ---- Brand palette ---- */
 :root {
-  /* Silver + charcoal — the anchor colors */
   --silvery-silver: #c0c0c0;
   --silvery-silver-dark: #6a7080;
   --silvery-charcoal: #2d2d2d;
 
-  /* Cold silver-blue accent (primary brand color for CTAs, links) */
   --silvery-accent: #5a6a85;
   --silvery-accent-light: #7a8aa5;
   --silvery-accent-dark: #3a4a65;
 
-  /* Nav wordmark rest color (settled silver-gray) */
+  /* Nav wordmark settles to silver-gray */
   --silvery-wordmark-rest: #2a3040;
   --silvery-wordmark-highlight: #d6d9e0;
 
-  /* Hero wordmark rest color (pure black — distinct from nav) */
+  /* Hero wordmark settles to pure black */
   --silvery-hero-rest: #000000;
   --silvery-hero-highlight: #e8eaef;
 
-  /* TS-blue reserved for TypeScript-specific refs */
   --silvery-ts-blue: #3178c6;
 
-  /* Metallurgic semantic tones */
   --silvery-success: #6a9b7a;
   --silvery-warning: #b89058;
   --silvery-danger: #b4614a;
 }
 
-/* ---- VitePress brand variable overrides (light mode defaults) ---- */
+/* ---- VitePress brand variable overrides ---- */
 :root {
-  /* Brand color scale — cold silver-blue family */
   --vp-c-brand-1: var(--silvery-accent);
   --vp-c-brand-2: var(--silvery-accent-dark);
   --vp-c-brand-3: var(--silvery-accent-dark);
   --vp-c-brand-soft: rgba(90, 106, 133, 0.12);
 
-  /* Button colors */
   --vp-button-brand-border: var(--silvery-accent);
   --vp-button-brand-text: #ffffff;
   --vp-button-brand-bg: var(--silvery-accent);
@@ -54,7 +49,6 @@
   --vp-button-brand-active-text: #ffffff;
   --vp-button-brand-active-bg: var(--silvery-accent-dark);
 
-  /* Image slot for hero — no tiny blob */
   --vp-home-hero-image-background-image: none;
   --vp-home-hero-image-filter: none;
 }
@@ -80,12 +74,11 @@
 /* ============================================================
  * Chrome gleam on "Silvery" wordmark
  *
- * Two rest colors: nav stays silver-gray; hero goes pure black.
- * Gleam sweep lasts 10% of the cycle (1.8s of 18s), then sits.
- * Both endpoints are the rest color — no visible snap at restart.
+ * Two sweeps per cycle, with smooth cubic-bezier acceleration.
+ * Both gradient endpoints are the rest color, so cycle restart
+ * and the between-sweeps reset are both invisible.
  * ============================================================ */
 
-/* Nav wordmark */
 .VPNavBarTitle .title {
   background: linear-gradient(
     110deg,
@@ -101,10 +94,9 @@
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: silvery-wordmark-gleam 18s ease-in-out infinite;
+  animation: silvery-wordmark-gleam 22s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
-/* Hero wordmark — same gleam mechanism, settles to pure black */
 .VPHome .name,
 .VPHero .name {
   background: linear-gradient(
@@ -121,45 +113,45 @@
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: silvery-wordmark-gleam 18s ease-in-out infinite;
+  animation: silvery-wordmark-gleam 22s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
+/* Two-sweep cycle: smooth long sweep, brief pause, second smooth sweep,
+ * then a long rest. Endpoints are solid rest color so the between-sweep
+ * "reset" and the cycle restart are both invisible. */
 @keyframes silvery-wordmark-gleam {
-  0% {
-    background-position: 100% 0;
-  }
-  10% {
-    background-position: -100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
+  0%      { background-position: 100% 0; }
+  18%     { background-position: -100% 0; }   /* first sweep, ~4s smooth */
+  22%     { background-position: -100% 0; }   /* brief hold (dark, invisible) */
+  22.01%  { background-position: 100% 0; }    /* reset to right (dark→dark, invisible) */
+  40%     { background-position: -100% 0; }   /* second sweep, ~4s smooth */
+  100%    { background-position: -100% 0; }   /* long rest */
 }
 
 /* ============================================================
- * Hover states — noticeably stronger than defaults
+ * Hover states — COLOR CHANGES ONLY
+ *
+ * Rules:
+ *   - No transform (translateY, translateX, scale)
+ *   - No padding / margin / border-width change
+ *   - No border-radius change
+ *   - Only color, background-color, text-decoration-color, opacity
  * ============================================================ */
 
-/* Feature cards — lift + accent border + shadow on hover */
+/* Feature cards — border color + subtle background shift on hover (no lift) */
 .VPFeature {
   transition:
     border-color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
     background-color 0.18s ease !important;
 }
 .VPFeature:hover {
   border-color: var(--silvery-accent) !important;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(90, 106, 133, 0.18);
   background-color: var(--vp-c-bg-soft);
 }
 .dark .VPFeature:hover {
   border-color: var(--silvery-accent-light) !important;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
 
-/* Feature card title gets accent color on hover */
 .VPFeature .title {
   transition: color 0.18s ease;
 }
@@ -171,77 +163,63 @@
 }
 
 /* ============================================================
- * Feature card key-term highlighting
- *
- * Inline links inside feature cards (e.g. "React 18 + 19",
- * "3-27× faster", "useBoxRect()") are chip-styled: accent color,
- * weight 500, subtle underline at rest; filled pill on hover.
+ * Feature card inline links — accent text + solid underline.
+ * On hover: color shift only. No pill, no padding, no margin.
  * ============================================================ */
 
 .VPFeature a:not(.feature-link) {
   color: var(--silvery-accent);
   font-weight: 500;
-  text-decoration: none;
-  border-bottom: 1.5px solid var(--silvery-accent);
-  padding: 0 1px;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: var(--silvery-accent);
+  text-underline-offset: 3px;
   transition:
     color 0.15s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+    text-decoration-color 0.15s ease;
 }
 .VPFeature a:not(.feature-link):hover {
-  color: #ffffff;
-  background-color: var(--silvery-accent);
-  border-bottom-color: transparent;
-  border-radius: 3px;
-  padding: 1px 4px;
-  margin: 0 -3px;
+  color: var(--silvery-accent-dark);
+  text-decoration-color: var(--silvery-accent-dark);
 }
 .dark .VPFeature a:not(.feature-link) {
   color: var(--silvery-accent-light);
-  border-bottom-color: var(--silvery-accent-light);
+  text-decoration-color: var(--silvery-accent-light);
 }
 .dark .VPFeature a:not(.feature-link):hover {
   color: #ffffff;
-  background-color: var(--silvery-accent-light);
+  text-decoration-color: #ffffff;
 }
 
-/* Prose links (docs pages) — accent underline, visible hover */
+/* Prose docs links — standard underline, color shift on hover only */
 .vp-doc a {
   text-decoration-thickness: 1.5px;
   text-decoration-color: var(--silvery-accent);
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
   transition:
     color 0.15s ease,
-    background-color 0.15s ease,
-    text-decoration-thickness 0.15s ease;
+    text-decoration-color 0.15s ease;
 }
 .vp-doc a:hover {
-  color: var(--silvery-accent);
-  background-color: var(--vp-c-brand-soft);
-  text-decoration-thickness: 2px;
-  border-radius: 3px;
-  padding: 0 2px;
-  margin: 0 -2px;
+  color: var(--silvery-accent-dark);
+  text-decoration-color: var(--silvery-accent-dark);
 }
 .dark .vp-doc a:hover {
-  color: var(--silvery-accent-light);
+  color: #ffffff;
+  text-decoration-color: #ffffff;
 }
 
-/* "Feature link →" arrows — subtle, slide-right on hover */
+/* "Feature link →" arrows — color shift only on hover, no translate */
 .feature-link {
   display: inline-block;
   margin-top: 0.5em;
   font-weight: 500;
   color: var(--silvery-accent) !important;
   text-decoration: none;
-  transition:
-    transform 0.15s ease,
-    color 0.15s ease;
+  transition: color 0.15s ease;
 }
 .feature-link:hover {
   color: var(--silvery-accent-dark) !important;
-  transform: translateX(3px);
 }
 .dark .feature-link {
   color: var(--silvery-accent-light) !important;

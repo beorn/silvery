@@ -1,10 +1,17 @@
 <!--
   SilveryTerminal — hero image slot component for silvery.dev
 
-  macOS-Terminal.app-fidelity mockup. Chrome bezel is thicker and
-  whiter than before, with its own gleam animation that syncs with
-  the wordmark gleam. Interior uses Unicode box-drawing panels
-  inside a single <pre> block to guarantee character alignment.
+  macOS-Terminal.app fidelity. The chrome bezel is a separate
+  wrapper with its own gleam animation synced to the wordmark
+  gleam (one light source across both).
+
+  Box width verified via the diagram skill protocol:
+    W (longest content) = 41 chars ("One cursor per page · matches the design.")
+    interior = W + 2 = 43 chars (between the `│` walls)
+    total    = interior + 2 = 45 chars per line
+
+  Every box line below is exactly 45 chars wide in monospace,
+  regardless of HTML span wrappers around color tokens.
 -->
 
 <template>
@@ -19,45 +26,36 @@
         <div class="silvery-terminal__title">silvery-agent — ~/silvery</div>
       </div>
 
-      <!-- Using <pre> so exact character widths and box-drawing chars
-           align pixel-perfect. Only color classes inside. -->
-      <pre class="silvery-terminal__body"><span class="t-dim">╭─ </span><span class="t-accent">user</span><span class="t-dim"> ────────────────────────╮
-│</span> <span class="t-command">add a blinking cursor after</span> <span class="t-dim">│
-│</span> <span class="t-command">the tagline</span>                 <span class="t-dim">│
-╰────────────────────────────────╯</span>
+      <pre class="silvery-terminal__body"><span class="t-dim">╭─ </span><span class="t-accent">user</span><span class="t-dim"> ────────────────────────────────────╮</span>
+<span class="t-dim">│</span> <span class="t-command">add a blinking cursor after the tagline</span>   <span class="t-dim">│</span>
+<span class="t-dim">╰───────────────────────────────────────────╯</span>
 
 <span class="t-think">⏺</span> <span class="t-dim">Planning the change...</span>
 
 <span class="t-tool">●</span> Read <span class="t-path">.vitepress/theme/custom.css</span>
-  <span class="t-ok">✓</span> <span class="t-dim">found</span> <span class="t-path">.VPHero .tagline</span>
+  <span class="t-ok">✓</span> <span class="t-dim">found </span><span class="t-path">.VPHero .tagline</span><span class="t-dim"> selector</span>
 
 <span class="t-tool">●</span> Edit <span class="t-path">.vitepress/theme/custom.css</span>
-  <span class="t-dim">+ tagline::after blink anim</span>
-  <span class="t-dim">+ 1Hz steps(1), currentColor</span>
+  <span class="t-dim">+ tagline::after blink (1Hz steps(1))</span>
   <span class="t-ok">✓</span> <span class="t-dim">applied · 12 insertions</span>
 
-<span class="t-dim">╭─ </span><span class="t-accent">assistant</span><span class="t-dim"> ───────────────────╮
-│</span> <span class="t-fg">Blink lands at end.</span>            <span class="t-dim">│
-│</span> <span class="t-dim">One cursor per page.</span>           <span class="t-dim">│
-╰────────────────────────────────╯</span></pre>
+<span class="t-dim">╭─ </span><span class="t-accent">assistant</span><span class="t-dim"> ───────────────────────────────╮</span>
+<span class="t-dim">│</span> <span class="t-fg">Blink lands at end of tagline.</span>            <span class="t-dim">│</span>
+<span class="t-dim">│</span> <span class="t-dim">One cursor per page · matches the design.</span> <span class="t-dim">│</span>
+<span class="t-dim">╰───────────────────────────────────────────╯</span></pre>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* ----- Wrapper: gleam-enabled chrome bezel ----- */
+/* ----- Chrome bezel wrapper with gleam ----- */
 .silvery-terminal-wrap {
-  /* This wrapper IS the chrome frame — thicker and whiter than the
-     inner terminal border. Padded to reveal the frame around the
-     inner terminal. The gleam animation plays on this wrapper's
-     background. */
   padding: 5px;
   border-radius: 14px;
   margin: 2.5em auto 0;
-  max-width: 500px;
+  max-width: 620px;          /* wider terminal */
   overflow: hidden;
 
-  /* Chrome gradient matches wordmark gleam timing */
   background: linear-gradient(
     110deg,
     #9aa1b0 0%,
@@ -68,7 +66,7 @@
   );
   background-size: 300% 100%;
   background-position: 100% 0;
-  animation: silvery-chrome-gleam 18s ease-in-out infinite;
+  animation: silvery-chrome-gleam 22s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
@@ -84,30 +82,27 @@
   );
   background-size: 300% 100%;
   background-position: 100% 0;
-  animation: silvery-chrome-gleam 18s ease-in-out infinite;
+  animation: silvery-chrome-gleam 22s cubic-bezier(0.45, 0, 0.55, 1) infinite;
 }
 
 @keyframes silvery-chrome-gleam {
-  0% {
-    background-position: 100% 0;
-  }
-  10% {
-    background-position: -100% 0;
-  }
-  100% {
-    background-position: -100% 0;
-  }
+  0%      { background-position: 100% 0; }
+  18%     { background-position: -100% 0; }
+  22%     { background-position: -100% 0; }
+  22.01%  { background-position: 100% 0; }
+  40%     { background-position: -100% 0; }
+  100%    { background-position: -100% 0; }
 }
 
-/* ----- Inner terminal (sits on top of the chrome wrapper) ----- */
+/* ----- Inner terminal ----- */
 .silvery-terminal {
   background: #0f1419;
   color: #d6d9e0;
   border-radius: 9px;
 
   font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 11px;
-  line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.5;
   overflow: hidden;
 }
 
@@ -116,7 +111,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: #1a1f27;
   border-bottom: 1px solid #3a4050;
 }
@@ -128,8 +123,8 @@
 }
 
 .silvery-terminal__dot {
-  width: 11px;
-  height: 11px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   display: inline-block;
 }
@@ -139,7 +134,7 @@
 .silvery-terminal__dot--green  { background: #28c840; }
 
 .silvery-terminal__title {
-  font-size: 11px;
+  font-size: 12px;
   color: #e6e9ef;
   font-weight: 600;
   white-space: nowrap;
@@ -151,8 +146,8 @@
 /* ----- Body ----- */
 .silvery-terminal__body {
   margin: 0;
-  padding: 12px 14px 14px;
-  font-family: inherit;  /* inherit from .silvery-terminal */
+  padding: 14px 18px 16px;
+  font-family: inherit;
   font-size: inherit;
   line-height: inherit;
   color: inherit;
@@ -160,9 +155,10 @@
   white-space: pre;
   overflow-x: auto;
 
-  /* Disable font ligatures so box-drawing aligns perfectly */
+  /* Ligatures and kerning off so monospace chars all have identical width */
   font-feature-settings: "liga" 0, "calt" 0;
   font-variant-ligatures: none;
+  font-kerning: none;
 }
 
 /* ----- Token colors ----- */
@@ -176,7 +172,7 @@
 .t-dim     { color: #6a7080; }
 
 /* Responsive */
-@media (max-width: 640px) {
+@media (max-width: 700px) {
   .silvery-terminal-wrap {
     max-width: 100%;
     margin-top: 1.5em;
@@ -184,11 +180,11 @@
     border-radius: 12px;
   }
   .silvery-terminal {
-    font-size: 10px;
+    font-size: 11px;
     border-radius: 8px;
   }
   .silvery-terminal__body {
-    padding: 10px 12px 12px;
+    padding: 12px 14px 14px;
   }
 }
 </style>
