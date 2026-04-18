@@ -621,7 +621,7 @@ Supports theme tokens (`$bg`, `$link`), named colors (`red`, `blue`), and hex (`
 | Borders (`$border`) on `$bg`                                                             | 1.5:1        | Faint structural dividers — visible, not prominent |
 | Input borders (`$inputborder`) on `$bg`                                                  | 3.0:1        | WCAG 1.4.11 non-text minimum for controls          |
 
-**How it works**: Tokens start from their aesthetic blend or palette color. If the resulting contrast against the background is below the target, `ensureContrast()` shifts lightness in HSL space (darken for light backgrounds, lighten for dark) using binary search to find the minimum adjustment. The color stays recognizable — only lightness changes.
+**How it works**: Tokens start from their aesthetic blend or palette color. If the resulting contrast against the background is below the target, `ensureContrast()` shifts lightness in OKLCH space (darken for light backgrounds, lighten for dark) using binary search to find the minimum adjustment. The color stays recognizable — hue and chroma are preserved, only OKLCH lightness changes. `@silvery/color` is OKLCH-native throughout: `blend`, `brighten`, `darken`, `complement`, `saturate`, and `desaturate` all operate in the perceptually-uniform space.
 
 **What it adjusts**: Body text (`$fg`) is ensured against `$popover-bg` (the hardest surface, since it's the most shifted from `$bg`). This guarantees readability on `$bg`, `$surface-bg`, and `$popover-bg` simultaneously. For palettes with low fg/bg contrast (like Tokyo Night Day), `$fg` gets a minimal lightness shift to reach AA.
 

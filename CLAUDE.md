@@ -474,7 +474,7 @@ Users install and import from these packages:
 | `@silvery/model`     | Optional DI model factories                                                              |
 | `@silvery/commander` | Type-safe Commander.js with colorized help, Standard Schema                              |
 | `@silvery/ansi`      | Everything terminal — styling, ANSI primitives, detection, theme derivation              |
-| `@silvery/color`     | Color math — blend, brighten, darken, hexToRgb, contrast (re-exported by @silvery/theme) |
+| `@silvery/color`     | Color math — OKLCH-native blend, brighten, darken, complement, contrast (hex public API, re-exported by @silvery/theme) |
 
 Subpath imports available from `silvery`:
 
