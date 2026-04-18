@@ -153,6 +153,8 @@ export { deriveTheme, loadTheme } from "./theme/derive"
 export type { ThemeAdjustment, LoadThemeOptions } from "./theme/derive"
 export { deriveMonochromeTheme, monoAttrsFor, DEFAULT_MONO_ATTRS } from "./theme/monochrome"
 export type { MonoAttr, MonochromeAttrs } from "./theme/monochrome"
+export { fingerprintMatch, fingerprintCandidates } from "./theme/fingerprint"
+export type { FingerprintMatch, FingerprintOptions } from "./theme/fingerprint"
 export {
   validateThemeInvariants,
   formatViolations,
