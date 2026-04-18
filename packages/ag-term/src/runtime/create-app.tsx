@@ -116,6 +116,18 @@ import { createSelectionBridge, type SelectionFeature } from "../features/select
 import { renderSelectionOverlay } from "../selection-renderer"
 import { createCapabilityRegistry, type CapabilityRegistry } from "@silvery/create/internal/capability-registry"
 import { SELECTION_CAPABILITY } from "@silvery/create/internal/capabilities"
+import {
+  createBaseApp,
+  withTerminalChain,
+  withPasteChain,
+  withInputChain,
+  withFocusChain,
+  type BaseApp,
+  type InputStore,
+  type PasteStore,
+  type TerminalStore,
+  type FocusChainStore,
+} from "@silvery/create/plugins"
 import { createVirtualScrollback } from "../virtual-scrollback"
 import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "../search-overlay"
 import { createOutputGuard, type OutputGuard } from "../ansi/output-guard"
@@ -1303,6 +1315,55 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   const runtimePasteListeners: Array<(text: string) => void> = []
   const runtimeFocusListeners: Array<(focused: boolean) => void> = []
 
+  // Apply-chain substrate (TEA Phase 2 wiring) — see
+  // @silvery/create/runtime/{base-app,with-*-chain,event-loop}.
+  //
+  // Built additively: for now the chain runs alongside the legacy listener
+  // arrays via fan-out in `runtimeContextValue.on` below. Commits 2/3 migrate
+  // hooks to subscribe via the plugin stores directly, at which point the
+  // legacy arrays can be deleted.
+  const baseApp = createBaseApp()
+  const terminalChainApp = withTerminalChain({
+    cols: currentDims.cols,
+    rows: currentDims.rows,
+  })(baseApp)
+  const pasteChainApp = withPasteChain({})(terminalChainApp)
+  const inputChainApp = withInputChain(pasteChainApp)
+  const app = withFocusChain({
+    dispatchKey: (input, key) => {
+      const focusResult = handleFocusNavigation(input, key as Key, focusManager, container)
+      return focusResult === "consumed"
+    },
+    hasActiveFocus: () => focusManager.activeElement !== null,
+  })(inputChainApp)
+  // Focus event slice — withTerminalChain observes window focus/blur on ops,
+  // but legacy RuntimeContext 'focus' subscribers (useTerminalFocused, the
+  // modifier-reset in useModifierKeys) still go through `runtimeFocusListeners`
+  // until commit 2 migrates them to this slice.
+  const focusEventListeners: Array<(focused: boolean) => void> = []
+  const appFocusEvents = {
+    register(handler: (focused: boolean) => void): () => void {
+      focusEventListeners.push(handler)
+      return () => {
+        const i = focusEventListeners.indexOf(handler)
+        if (i >= 0) focusEventListeners.splice(i, 1)
+      }
+    },
+  }
+  // Expose on the BaseApp so ag-react hooks can reach the slice once migrated.
+  // Keep typing loose here — BaseApp extensions are added by plugins.
+  type AppWithChains = BaseApp & {
+    input: InputStore
+    paste: PasteStore
+    terminal: TerminalStore
+    focusChain: FocusChainStore
+    focusEvents: typeof appFocusEvents
+  }
+  const chainApp: AppWithChains = Object.assign(app, { focusEvents: appFocusEvents })
+  // Side-effect anchors so the chain substrate isn't tree-shaken / so tests
+  // can peek at it. No behaviour depends on these references in commit 1.
+  void chainApp
+
   // Typed event bus — supports view → runtime events via emit()
   const runtimeEventListeners = new Map<string, Array<Function>>()
   runtimeEventListeners.set("input", runtimeInputListeners as unknown as Array<Function>)
@@ -1317,9 +1378,29 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         runtimeEventListeners.set(event, listeners)
       }
       listeners.push(handler)
+
+      // Dual-path fan-out: register into the plugin stores too, so we can
+      // migrate hooks in subsequent commits without touching the legacy
+      // arrays again. The imperative loop below is still authoritative in
+      // commit 1, so the plugin stores are purely observational for now.
+      let unregisterPlugin: (() => void) | undefined
+      if (event === "input") {
+        const inputHandler = handler as (input: string, key: Key) => void | "exit"
+        unregisterPlugin = chainApp.input.register((input, key) => {
+          return inputHandler(input, key as Key)
+        })
+      } else if (event === "paste") {
+        const pasteHandler = handler as (text: string) => void
+        unregisterPlugin = chainApp.paste.register((text) => pasteHandler(text))
+      } else if (event === "focus") {
+        const focusHandler = handler as (focused: boolean) => void
+        unregisterPlugin = chainApp.focusEvents.register((f) => focusHandler(f))
+      }
+
       return () => {
         const idx = listeners!.indexOf(handler)
         if (idx >= 0) listeners!.splice(idx, 1)
+        unregisterPlugin?.()
       }
     },
     emit(event, ...args) {
