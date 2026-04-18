@@ -330,10 +330,10 @@
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-position: 100vw 0;
-  /* Offset the terminal's sweep 1s after the text elements.
+  /* Offset the terminal's sweep 0.5s after the text elements.
    * Combined with the ~0.71s natural spatial stagger, the terminal
-   * hits roughly 1.7s after the text — distinct second pulse. */
-  animation: silvery-page-gleam 5s linear 1s infinite;
+   * hits roughly 1.2s after the text — distinct second pulse. */
+  animation: silvery-page-gleam 5s linear 0.5s infinite;
 
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
