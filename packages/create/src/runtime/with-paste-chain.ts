@@ -22,7 +22,6 @@
 
 import type { ApplyResult, Effect, Op } from "../types"
 import type { BaseApp } from "./base-app"
-import { wrapApply } from "./base-app"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -92,7 +91,8 @@ export function withPasteChain(
         }
       },
     }
-    wrapApply(app, (op: Op, prev): ApplyResult => {
+    const prev = app.apply
+    app.apply = (op: Op): ApplyResult => {
       if (op.type !== "term:paste") return prev(op)
       const text = (op as { text?: string }).text ?? ""
       let consumed = false
@@ -118,7 +118,7 @@ export function withPasteChain(
       if (!consumed) return prev(op)
       const effects: Effect[] = [{ type: "render" }]
       return effects
-    })
+    }
     return Object.assign(app, { paste: store })
   }
 }

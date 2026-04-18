@@ -165,7 +165,7 @@ Full styling reference: [Styling Guide](docs/guide/styling.md)
 >
 > Substrate modules (shipped, tested, stable API):
 >
-> - `runtime/base-app.ts` — `createBaseApp()` + `wrapApply()`
+> - `runtime/base-app.ts` — `createBaseApp()` (plugins use raw capture-and-override idiom, no helper)
 > - `runtime/with-terminal-chain.ts` — modifier observer + resize/focus
 > - `runtime/with-input-chain.ts` — the fallback `useInput` store
 > - `runtime/with-paste-chain.ts` — focused-route + global paste handlers

@@ -31,7 +31,6 @@
 
 import type { ApplyResult, Effect, Op } from "../types"
 import type { BaseApp } from "./base-app"
-import { wrapApply } from "./base-app"
 
 // ---------------------------------------------------------------------------
 // Store shape
@@ -119,7 +118,8 @@ export function withTerminalChain(
         hyper: false,
       },
     }
-    wrapApply(app, (op: Op, prev): ApplyResult => {
+    const prev = app.apply
+    app.apply = (op: Op): ApplyResult => {
       if (op.type === "input:key") {
         // Observer lane: peek the modifiers, never consume.
         const key = (op as { key?: KeyShape }).key
@@ -165,7 +165,7 @@ export function withTerminalChain(
         return []
       }
       return prev(op)
-    })
+    }
     return Object.assign(app, { terminal: store })
   }
 }

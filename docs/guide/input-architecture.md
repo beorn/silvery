@@ -131,7 +131,7 @@ After the bridge, the event loop filters for app handlers using `isModifierOnlyE
 
 The ad-hoc `runtimeInputListeners` arrays and hardcoded `handleFocusNavigation` branch are being replaced with a typed apply chain. The substrate ships in `@silvery/create/runtime/`:
 
-- **`base-app.ts`** — `createBaseApp()` + `wrapApply()`. The apply chain: plugins wrap `apply(op) -> false | Effect[]`, `dispatch(op)` runs the chain inside a reentry guard and drains effects via a queue (so `{type:"dispatch", op}` effects re-enter safely).
+- **`base-app.ts`** — `createBaseApp()`. The apply chain: plugins capture `app.apply` and replace it with a wrapper that delegates to the captured function. `apply(op) -> false | Effect[]`. `dispatch(op)` runs the chain inside a reentry guard and drains effects via a queue (so `{type:"dispatch", op}` effects re-enter safely).
 - **`with-terminal-chain.ts`** — observer lane (modifier state) + `term:resize` + `term:focus` (clears sticky modifiers on blur).
 - **`with-input-chain.ts`** — the fallback `useInput` store, running AFTER focused dispatch. Handlers invoked in registration order; `"exit"` short-circuits.
 - **`with-paste-chain.ts`** — paste routing: focused `onPaste` (via `routeToFocused`) wins; otherwise global handlers fire.

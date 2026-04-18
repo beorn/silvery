@@ -34,7 +34,6 @@
 
 import type { ApplyResult, Effect, Op } from "../types"
 import type { BaseApp } from "./base-app"
-import { wrapApply } from "./base-app"
 import type { KeyShape } from "./with-terminal-chain"
 
 // ---------------------------------------------------------------------------
@@ -117,7 +116,8 @@ export function withInputChain<A extends BaseApp>(app: A): A & { input: InputSto
       }
     },
   }
-  wrapApply(app, (op: Op, prev): ApplyResult => {
+  const prev = app.apply
+  app.apply = (op: Op): ApplyResult => {
     if (op.type !== "input:key") return prev(op)
     const input = (op as { input?: string }).input ?? ""
     const key = (op as { key?: KeyShape }).key
@@ -148,6 +148,6 @@ export function withInputChain<A extends BaseApp>(app: A): A & { input: InputSto
     }
     if (hasActive) return effects
     return prev(op)
-  })
+  }
   return Object.assign(app, { input: store })
 }

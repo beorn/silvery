@@ -76,7 +76,7 @@ export type {
 } from "./runtime/with-focus-chain"
 
 // --- Apply-chain substrate ---------------------------------------------------
-export { createBaseApp, wrapApply } from "./runtime/base-app"
+export { createBaseApp } from "./runtime/base-app"
 export type { BaseApp, Apply } from "./runtime/base-app"
 
 export { runEventBatch, eventToOp } from "./runtime/event-loop"

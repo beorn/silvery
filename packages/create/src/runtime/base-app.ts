@@ -54,9 +54,10 @@ export type Apply = (op: Op) => ApplyResult
 /**
  * The minimal contract every silvery runtime exposes.
  *
- * Plugins extend this by wrapping `apply` with `prevApply` closure (see
- * {@link wrapApply}). Stores/state slices ride as extra properties on
- * the concrete plugin-enhanced type.
+ * Plugins extend this by capturing `app.apply` and replacing it with a
+ * new function that delegates to the captured one for ops it doesn't
+ * handle. Stores/state slices ride as extra properties on the concrete
+ * plugin-enhanced type.
  */
 export interface BaseApp {
   /**
@@ -158,30 +159,26 @@ export function createBaseApp(): BaseApp {
 }
 
 // ---------------------------------------------------------------------------
-// wrapApply — safe helper for plugins
+// Plugin pattern (no helper — just the idiom)
 // ---------------------------------------------------------------------------
 
 /**
- * Wrap an app's `apply` with a new handler. The handler receives the
- * previous `apply` via closure and must delegate (`return prevApply(op)`)
- * for any op it doesn't handle. This is the canonical pattern every
- * `with*` plugin uses.
+ * Every `with*` plugin follows the same three-line idiom:
  *
- * @example
  * ```ts
- * function withEcho<A extends BaseApp>(app: A): A {
- *   wrapApply(app, (op, prev) => {
+ * export function withEcho<A extends BaseApp>(app: A): A {
+ *   const prev = app.apply
+ *   app.apply = (op) => {
  *     if (op.type === "echo") {
- *       console.log(op.msg)
+ *       // handle
  *       return []
  *     }
- *     return prev(op)
- *   })
+ *     return prev(op)   // delegate to downstream chain
+ *   }
  *   return app
  * }
  * ```
+ *
+ * The last plugin installed is the OUTERMOST wrapper and runs first.
+ * Always delegate via `prev(op)` for ops you don't handle.
  */
-export function wrapApply<A extends BaseApp>(app: A, handler: (op: Op, prev: Apply) => ApplyResult): void {
-  const prevApply = app.apply
-  app.apply = (op) => handler(op, prevApply)
-}

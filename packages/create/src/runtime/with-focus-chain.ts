@@ -42,7 +42,6 @@
 
 import type { ApplyResult, Op } from "../types"
 import type { BaseApp } from "./base-app"
-import { wrapApply } from "./base-app"
 import type { KeyShape } from "./with-terminal-chain"
 
 // ---------------------------------------------------------------------------
@@ -111,7 +110,8 @@ export function withFocusChain(
 ): <A extends BaseApp>(app: A) => A & { focusChain: FocusChainStore } {
   return <A extends BaseApp>(app: A): A & { focusChain: FocusChainStore } => {
     const store: FocusChainStore = { lastConsumed: false }
-    wrapApply(app, (op: Op, prev): ApplyResult => {
+    const prev = app.apply
+    app.apply = (op: Op): ApplyResult => {
       if (op.type !== "input:key") return prev(op)
       if (!options.hasActiveFocus()) return prev(op)
       const input = (op as { input?: string }).input ?? ""
@@ -137,7 +137,7 @@ export function withFocusChain(
         return [{ type: "render" }]
       }
       return prev(op)
-    })
+    }
     return Object.assign(app, { focusChain: store })
   }
 }

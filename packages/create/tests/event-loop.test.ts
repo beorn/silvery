@@ -266,14 +266,14 @@ describe("runEventBatch — robustness", () => {
   test("onOtherEffect catches plugin-specific effects", async () => {
     const app = mkApp()
     // Install a plugin that emits a custom effect on paste.
-    const { wrapApply } = await import("../src/runtime/base-app")
-    wrapApply(app, (op, prev) => {
+    const prev = app.apply
+    app.apply = (op) => {
       if (op.type === "term:paste") {
         const downstream = prev(op) || []
         return [...downstream, { type: "telemetry", kind: "paste-ingested" }]
       }
       return prev(op)
-    })
+    }
     const onOther = vi.fn()
     await runEventBatch(app, [{ type: "term:paste", text: "x" }], {
       onRender: () => {},
