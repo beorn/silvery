@@ -1,13 +1,10 @@
 <!--
   SilveryTerminal — hero image slot component for silvery.dev
 
-  Box widths verified via diagram skill protocol:
-    W (longest content) = 46 ("One cursor per page · matches the design doc.")
-    total width = 62 chars per line
-
-  Gleam is continuous — a slow steady drift across the chrome bezel,
-  looping forever. Both gradient endpoints are dark so the cycle wrap
-  is invisible.
+  All box-drawing lines exactly 62 chars wide (verified via Python
+  HTML-strip + length check). Continuous gleam drift on chrome bezel.
+  Agent-style input box at the bottom as the final "awaiting input"
+  affordance.
 -->
 
 <template>
@@ -26,20 +23,21 @@
 <span class="t-dim">│</span> <span class="t-command">add a blinking cursor after the tagline</span>                    <span class="t-dim">│</span>
 <span class="t-dim">╰────────────────────────────────────────────────────────────╯</span>
 
-<span class="t-think">⏺</span> <span class="t-dim">Planning the change...</span>
-
 <span class="t-tool">●</span> Read <span class="t-path">.vitepress/theme/custom.css</span>
   <span class="t-ok">✓</span> <span class="t-dim">found </span><span class="t-path">.VPHero .tagline</span><span class="t-dim"> selector at line 148</span>
 
 <span class="t-tool">●</span> Edit <span class="t-path">.vitepress/theme/custom.css</span>
   <span class="t-dim">+ tagline::after blink animation (1Hz steps(1))</span>
-  <span class="t-dim">+ silvery-cursor-blink keyframes</span>
   <span class="t-ok">✓</span> <span class="t-dim">applied · 12 insertions · 0 deletions</span>
 
 <span class="t-dim">╭─ </span><span class="t-accent">assistant</span><span class="t-dim"> ────────────────────────────────────────────────╮</span>
 <span class="t-dim">│</span> <span class="t-fg">Blink lands at end of tagline.</span>                             <span class="t-dim">│</span>
 <span class="t-dim">│</span> <span class="t-dim">One cursor per page · matches the design doc.</span>              <span class="t-dim">│</span>
-<span class="t-dim">╰────────────────────────────────────────────────────────────╯</span></pre>
+<span class="t-dim">╰────────────────────────────────────────────────────────────╯</span>
+
+<span class="t-accent">╭────────────────────────────────────────────────────────────╮</span>
+<span class="t-accent">│</span> <span class="t-prompt">❯</span> <span class="t-dim">ask anything about silvery</span>                               <span class="t-accent">│</span>
+<span class="t-accent">╰────────────────────────────────────────────────────────────╯</span></pre>
     </div>
   </div>
 </template>
@@ -49,8 +47,8 @@
 .silvery-terminal-wrap {
   padding: 5px;
   border-radius: 14px;
-  margin: 2.5em auto 0;
-  max-width: 760px;          /* wider terminal */
+  margin: 1.5em auto 0;      /* pushed up 1 line */
+  max-width: 760px;
   overflow: hidden;
 
   background: linear-gradient(
@@ -63,7 +61,7 @@
   );
   background-size: 300% 100%;
   background-position: 150% 0;
-  animation: silvery-chrome-drift 18s linear infinite;
+  animation: silvery-chrome-drift 9s linear infinite;   /* 2x faster: 18 → 9s */
 
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
 }
@@ -79,12 +77,9 @@
   );
   background-size: 300% 100%;
   background-position: 150% 0;
-  animation: silvery-chrome-drift 18s linear infinite;
+  animation: silvery-chrome-drift 9s linear infinite;
 }
 
-/* Continuous drift — the highlight moves steadily across forever.
- * Both endpoints (150% and -150%) show the dark rest color, so the
- * cycle wrap is invisible and the gleam never visibly "stops". */
 @keyframes silvery-chrome-drift {
   0%   { background-position: 150% 0; }
   100% { background-position: -150% 0; }
@@ -142,7 +137,7 @@
 /* ----- Body ----- */
 .silvery-terminal__body {
   margin: 0;
-  padding: 14px 18px 16px;
+  padding: 12px 18px 14px;
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
@@ -160,7 +155,7 @@
 .t-accent  { color: #8ea4c8; font-weight: 500; }
 .t-fg      { color: #e6e9ef; }
 .t-command { color: #f1f3f7; font-weight: 500; }
-.t-think   { color: #8ea4c8; }
+.t-prompt  { color: #f1f3f7; font-weight: 600; }
 .t-tool    { color: #7dd3c0; }
 .t-ok      { color: #8bc79a; }
 .t-path    { color: #e6b872; }
@@ -170,7 +165,7 @@
 @media (max-width: 820px) {
   .silvery-terminal-wrap {
     max-width: 100%;
-    margin-top: 1.5em;
+    margin-top: 1em;
     padding: 4px;
     border-radius: 12px;
   }
@@ -179,7 +174,7 @@
     border-radius: 8px;
   }
   .silvery-terminal__body {
-    padding: 12px 14px 14px;
+    padding: 10px 14px 12px;
   }
 }
 </style>

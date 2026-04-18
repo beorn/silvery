@@ -95,7 +95,7 @@
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: silvery-wordmark-drift 18s linear infinite;
+  animation: silvery-wordmark-drift 9s linear infinite;
 }
 
 .VPHome .name,
@@ -114,7 +114,7 @@
   background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: silvery-wordmark-drift 18s linear infinite;
+  animation: silvery-wordmark-drift 9s linear infinite;
 }
 
 /* Continuous linear drift. At position 150% we see the far-right of
