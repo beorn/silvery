@@ -38,7 +38,7 @@
 <span class="t-box">╰────────────────────────────────────────────────────────────╯</span>
 
 <span class="t-input-frame">╭─ </span><span class="t-label">Input</span><span class="t-input-frame"> ────────────────────────────────────────────────────╮</span>
-<span class="t-input-frame">│</span> <span class="t-prompt">❯</span> <span class="t-cursor">█</span> <span class="t-dim">ask anything about silvery</span>                             <span class="t-input-frame">│</span>
+<span class="t-input-frame">│</span> <span class="t-prompt">❯</span> <span class="t-cursor">█</span>                                                        <span class="t-input-frame">│</span>
 <span class="t-input-frame">╰────────────────────────────────────────────────────────────╯</span></pre>
     </div>
   </div>
