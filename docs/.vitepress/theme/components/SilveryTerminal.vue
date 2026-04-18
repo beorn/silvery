@@ -66,7 +66,7 @@
   );
   background-size: 200vw 100vh;
   background-attachment: fixed;
-  background-position: 100vw 0;
+  background-position: -100vw 0;
   animation: silvery-page-gleam 9s linear infinite;
 
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
@@ -83,7 +83,7 @@
   );
   background-size: 200vw 100vh;
   background-attachment: fixed;
-  background-position: 100vw 0;
+  background-position: -100vw 0;
   animation: silvery-page-gleam 9s linear infinite;
 }
 

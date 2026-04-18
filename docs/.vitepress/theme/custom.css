@@ -88,8 +88,11 @@
  * viewport at the same moment.
  * ============================================================ */
 
+/* Gleam travels left → right across the viewport, cycles forever.
+ * Both endpoints of the gradient are the rest color, so the jump
+ * from 100vw back to -100vw at cycle boundary is invisible. */
 @keyframes silvery-page-gleam {
-  0%   { background-position: 100vw 0; }
+  0%   { background-position: -100vw 0; }
   100% { background-position: -100vw 0; }
 }
 
@@ -105,7 +108,7 @@
   );
   background-size: 200vw 100vh;
   background-attachment: fixed;
-  background-position: 100vw 0;
+  background-position: -100vw 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -126,7 +129,7 @@
   );
   background-size: 200vw 100vh;
   background-attachment: fixed;
-  background-position: 100vw 0;
+  background-position: -100vw 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -147,7 +150,7 @@
   );
   background-size: 200vw 100vh;
   background-attachment: fixed;
-  background-position: 100vw 0;
+  background-position: -100vw 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -167,7 +170,7 @@
   );
   background-size: 200vw 100vh;
   background-attachment: fixed;
-  background-position: 100vw 0;
+  background-position: -100vw 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -189,7 +192,7 @@
   ) !important;
   background-size: 200vw 100vh !important;
   background-attachment: fixed !important;
-  background-position: 100vw 0 !important;
+  background-position: -100vw 0 !important;
   animation: silvery-page-gleam 9s linear infinite;
   border-color: var(--silvery-accent) !important;
   color: #ffffff !important;
