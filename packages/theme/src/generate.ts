@@ -4,7 +4,23 @@
  * Uses ANSI color names (not hex) so it works on any terminal without truecolor support.
  */
 
-import type { AnsiPrimary, Theme } from "./types"
+import type { AnsiPrimary, Theme, Variant } from "./types"
+
+/** Default variants — token-based so they work across any theme. */
+const DEFAULT_VARIANTS: Record<string, Variant> = {
+  h1: { color: "$primary", bold: true },
+  h2: { color: "$accent", bold: true },
+  h3: { bold: true },
+  body: {},
+  "body-muted": { color: "$muted" },
+  "fine-print": { color: "$muted", dim: true },
+  strong: { bold: true },
+  em: { italic: true },
+  link: { color: "$link", underlineStyle: "single" },
+  key: { color: "$accent", bold: true },
+  code: { backgroundColor: "$mutedbg" },
+  kbd: { backgroundColor: "$mutedbg", color: "$accent", bold: true },
+}
 
 /**
  * Generate a complete ANSI 16 theme from a primary color + dark/light preference.
@@ -81,6 +97,16 @@ export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
     brandHover: primary,
     brandActive: primary,
 
+    // ── State variants (no lightness shifts in ANSI 16 — fall back to base) ──
+    primaryHover: primary,
+    primaryActive: primary,
+    accentHover: primary,
+    accentActive: primary,
+    fgHover: dark ? "whiteBright" : "black",
+    fgActive: dark ? "whiteBright" : "black",
+    bgSelectedHover: primary,
+    bgSurfaceHover: dark ? "black" : "white",
+
     // ── Categorical color ring ───────────────────────────────────
     red: dark ? "redBright" : "red",
     orange: dark ? "redBright" : "red", // no orange slot in ANSI 16
@@ -100,5 +126,8 @@ export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
     brandBlue: dark ? "blueBright" : "blue",
     brandPurple: "magenta",
     brandPink: dark ? "magentaBright" : "magenta",
+
+    // ── Typography variants ───────────────────────────────────────
+    variants: DEFAULT_VARIANTS,
   }
 }

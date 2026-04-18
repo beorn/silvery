@@ -17,7 +17,15 @@
 
 import { detectColor } from "../detection.ts"
 
-import { BG_COLORS, FG_COLORS, MODIFIERS, THEME_TOKEN_DEFAULTS, bgFromRgb, fgFromRgb, hexToRgb } from "./colors.ts"
+import {
+  BG_COLORS,
+  FG_COLORS,
+  MODIFIERS,
+  THEME_TOKEN_DEFAULTS,
+  bgFromRgb,
+  fgFromRgb,
+  hexToRgb,
+} from "./colors.ts"
 import type { Style, StyleOptions, ThemeLike } from "./types.ts"
 
 // =============================================================================
@@ -44,7 +52,10 @@ interface ChainState {
  *
  * Compatible with @silvery/theme's Theme type (or any object with string properties).
  */
-export function resolveThemeColor(name: string | undefined, theme: object | undefined): string | undefined {
+export function resolveThemeColor(
+  name: string | undefined,
+  theme: object | undefined,
+): string | undefined {
   if (!name) return undefined
   if (!name.startsWith("$")) return name
   if (!theme) return undefined
@@ -87,6 +98,15 @@ const PRIMER_ALIASES: Record<string, string> = {
   // Brand tokens (Apple system-color model) — kebab-case → camelCase in Theme
   brandhover: "brandHover",
   brandactive: "brandActive",
+  // State variants — kebab-stripped → camelCase Theme field
+  primaryhover: "primaryHover",
+  primaryactive: "primaryActive",
+  accenthover: "accentHover",
+  accentactive: "accentActive",
+  fghover: "fgHover",
+  fgactive: "fgActive",
+  bgselectedhover: "bgSelectedHover",
+  bgsurfacehover: "bgSurfaceHover",
   brandred: "brandRed",
   brandorange: "brandOrange",
   brandyellow: "brandYellow",
@@ -311,9 +331,14 @@ function createChainWithRef(
           const rgb = hexToRgb(color)
           if (!rgb) return createChainWithRef(state, ref)
           const code =
-            prop === "hex" ? fgFromRgb(rgb[0], rgb[1], rgb[2], level) : bgFromRgb(rgb[0], rgb[1], rgb[2], level)
+            prop === "hex"
+              ? fgFromRgb(rgb[0], rgb[1], rgb[2], level)
+              : bgFromRgb(rgb[0], rgb[1], rgb[2], level)
           const close = prop === "hex" ? "39" : "49"
-          return createChainWithRef({ opens: [...state.opens, code], closes: [...state.closes, close] }, ref)
+          return createChainWithRef(
+            { opens: [...state.opens, code], closes: [...state.closes, close] },
+            ref,
+          )
         }
       }
 
@@ -322,21 +347,30 @@ function createChainWithRef(
           if (level === null) return createChainWithRef(state, ref)
           const code = prop === "rgb" ? fgFromRgb(r, g, b, level) : bgFromRgb(r, g, b, level)
           const close = prop === "rgb" ? "39" : "49"
-          return createChainWithRef({ opens: [...state.opens, code], closes: [...state.closes, close] }, ref)
+          return createChainWithRef(
+            { opens: [...state.opens, code], closes: [...state.closes, close] },
+            ref,
+          )
         }
       }
 
       if (prop === "ansi256") {
         return (code: number) => {
           if (level === null) return createChainWithRef(state, ref)
-          return createChainWithRef({ opens: [...state.opens, `38;5;${code}`], closes: [...state.closes, "39"] }, ref)
+          return createChainWithRef(
+            { opens: [...state.opens, `38;5;${code}`], closes: [...state.closes, "39"] },
+            ref,
+          )
         }
       }
 
       if (prop === "bgAnsi256") {
         return (code: number) => {
           if (level === null) return createChainWithRef(state, ref)
-          return createChainWithRef({ opens: [...state.opens, `48;5;${code}`], closes: [...state.closes, "49"] }, ref)
+          return createChainWithRef(
+            { opens: [...state.opens, `48;5;${code}`], closes: [...state.closes, "49"] },
+            ref,
+          )
         }
       }
 
@@ -382,7 +416,10 @@ function createChainWithRef(
                 ref,
               )
             }
-            return createChainWithRef({ opens: [...state.opens, code], closes: [...state.closes, "39"] }, ref)
+            return createChainWithRef(
+              { opens: [...state.opens, code], closes: [...state.closes, "39"] },
+              ref,
+            )
           }
         }
         const fallback = THEME_TOKEN_DEFAULTS[prop]
@@ -402,7 +439,10 @@ function createChainWithRef(
               ref,
             )
           }
-          return createChainWithRef({ opens: [...state.opens, String(fallback)], closes: [...state.closes, "39"] }, ref)
+          return createChainWithRef(
+            { opens: [...state.opens, String(fallback)], closes: [...state.closes, "39"] },
+            ref,
+          )
         }
       }
 
@@ -421,7 +461,11 @@ function createChainWithRef(
       if (prop === "level") return true
       if (typeof prop === "symbol") return false
       return (
-        prop in MODIFIERS || prop in FG_COLORS || prop in BG_COLORS || THEME_TOKENS.has(prop) || KNOWN_METHODS.has(prop)
+        prop in MODIFIERS ||
+        prop in FG_COLORS ||
+        prop in BG_COLORS ||
+        THEME_TOKENS.has(prop) ||
+        KNOWN_METHODS.has(prop)
       )
     },
   }

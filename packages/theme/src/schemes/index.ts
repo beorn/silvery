@@ -8,10 +8,31 @@
  */
 
 import { deriveTheme } from "../derive"
-import type { Theme, ColorScheme } from "../types"
+import type { Theme, ColorScheme, Variant } from "../types"
+
+/** Default variants — token-based so they work across any theme. */
+const DEFAULT_VARIANTS: Record<string, Variant> = {
+  h1: { color: "$primary", bold: true },
+  h2: { color: "$accent", bold: true },
+  h3: { bold: true },
+  body: {},
+  "body-muted": { color: "$muted" },
+  "fine-print": { color: "$muted", dim: true },
+  strong: { bold: true },
+  em: { italic: true },
+  link: { color: "$link", underlineStyle: "single" },
+  key: { color: "$accent", bold: true },
+  code: { backgroundColor: "$mutedbg" },
+  kbd: { backgroundColor: "$mutedbg", color: "$accent", bold: true },
+}
 
 // ── Re-export all palette definitions ──────────────────────────────
-export { catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte } from "./catppuccin"
+export {
+  catppuccinMocha,
+  catppuccinFrappe,
+  catppuccinMacchiato,
+  catppuccinLatte,
+} from "./catppuccin"
 export { nord } from "./nord"
 export { dracula } from "./dracula"
 export { solarizedDark, solarizedLight } from "./solarized"
@@ -61,10 +82,21 @@ export { breeze } from "./breeze"
 export { andromeda } from "./andromeda"
 export { relaxed } from "./relaxed"
 export { silveryDark, silveryLight } from "./silvery"
-export { vga, xtermDefault, appleTerminalBasic, windowsTerminalCampbell, gnomeTerminalTango } from "./classics"
+export {
+  vga,
+  xtermDefault,
+  appleTerminalBasic,
+  windowsTerminalCampbell,
+  gnomeTerminalTango,
+} from "./classics"
 
 // ── Import for registry ────────────────────────────────────────────
-import { catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte } from "./catppuccin"
+import {
+  catppuccinMocha,
+  catppuccinFrappe,
+  catppuccinMacchiato,
+  catppuccinLatte,
+} from "./catppuccin"
 import { nord } from "./nord"
 import { dracula } from "./dracula"
 import { solarizedDark, solarizedLight } from "./solarized"
@@ -183,6 +215,14 @@ export const ansi16DarkTheme: Theme = {
   brand: "yellow",
   brandHover: "yellow",
   brandActive: "yellow",
+  primaryHover: "yellow",
+  primaryActive: "yellow",
+  accentHover: "blueBright",
+  accentActive: "blueBright",
+  fgHover: "whiteBright",
+  fgActive: "whiteBright",
+  bgSelectedHover: "yellow",
+  bgSurfaceHover: "black",
   red: "redBright",
   orange: "redBright",
   yellow: "yellow",
@@ -199,6 +239,7 @@ export const ansi16DarkTheme: Theme = {
   brandBlue: "blueBright",
   brandPurple: "magenta",
   brandPink: "magentaBright",
+  variants: DEFAULT_VARIANTS,
 }
 
 /** Light ANSI 16 theme — works on any terminal. Primary = blue. */
@@ -258,6 +299,14 @@ export const ansi16LightTheme: Theme = {
   brand: "blue",
   brandHover: "blue",
   brandActive: "blue",
+  primaryHover: "blue",
+  primaryActive: "blue",
+  accentHover: "cyan",
+  accentActive: "cyan",
+  fgHover: "black",
+  fgActive: "black",
+  bgSelectedHover: "cyan",
+  bgSurfaceHover: "white",
   red: "red",
   orange: "red",
   yellow: "yellow",
@@ -274,6 +323,7 @@ export const ansi16LightTheme: Theme = {
   brandBlue: "blue",
   brandPurple: "magenta",
   brandPink: "magenta",
+  variants: DEFAULT_VARIANTS,
 }
 
 // ============================================================================

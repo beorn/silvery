@@ -2,9 +2,18 @@
  * Theme derivation — transforms a ColorScheme into a Theme.
  */
 
-import { blend, contrastFg, complement, hexToOklch, oklchToHex, colorDistance, brighten, darken } from "@silvery/color"
+import {
+  blend,
+  contrastFg,
+  complement,
+  hexToOklch,
+  oklchToHex,
+  colorDistance,
+  brighten,
+  darken,
+} from "@silvery/color"
 import { checkContrast, ensureContrast } from "@silvery/color"
-import type { ColorScheme, Theme } from "./types.ts"
+import type { ColorScheme, Theme, Variant } from "./types.ts"
 import {
   validateThemeInvariants,
   ThemeInvariantError,
@@ -159,6 +168,20 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
   // this shifts the selection ~0.05 L while keeping the aesthetic.
   const selectionBg = repairSelectionBg(p.selectionBackground, bg)
   const selection = ensure("selection", p.selectionForeground, selectionBg, AA)
+
+  // State variant helper — brightens on dark themes, darkens on light themes.
+  const shift = (hex: string, amount: number): string =>
+    dark ? brighten(hex, amount) : darken(hex, amount)
+
+  // State variants — hover (+0.04L), active (+0.08L)
+  const primaryHover = shift(primary, 0.04)
+  const primaryActive = shift(primary, 0.08)
+  const accentHover = shift(accent, 0.04)
+  const accentActive = shift(accent, 0.08)
+  const fgHover = shift(fg, 0.04)
+  const fgActive = shift(fg, 0.08)
+  const bgSelectedHover = shift(selectionBg, 0.04)
+  const bgSurfaceHover = shift(surfacebg, 0.04)
   // Repair cursor visibility — nudge cursorbg ΔE away from bg (OKLCH).
   const cursorBgRepaired = repairCursorBg(p.cursorColor, bg)
   const cursor = ensure("cursor", p.cursorText, cursorBgRepaired, AA)
@@ -219,6 +242,15 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
     brand,
     brandHover,
     brandActive,
+    // State variants
+    primaryHover,
+    primaryActive,
+    accentHover,
+    accentActive,
+    fgHover,
+    fgActive,
+    bgSelectedHover,
+    bgSurfaceHover,
     // Categorical ring — primary names
     red,
     orange,
@@ -237,6 +269,8 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
     brandBlue: blue,
     brandPurple: purple,
     brandPink: pink,
+    // Typography variants — defaults matching the Typography preset components.
+    variants: defaultVariants(primary, accent, muted, mutedbg, link),
   }
 }
 
@@ -300,6 +334,15 @@ function deriveAnsi16Theme(p: ColorScheme): Theme {
     brand: primaryColor,
     brandHover: primaryColor,
     brandActive: primaryColor,
+    // State variants at ANSI 16 — no lightness shifts possible; fall back to base.
+    primaryHover: primaryColor,
+    primaryActive: primaryColor,
+    accentHover: p.cyan,
+    accentActive: p.cyan,
+    fgHover: p.foreground,
+    fgActive: p.foreground,
+    bgSelectedHover: p.selectionBackground,
+    bgSurfaceHover: p.black,
     // Categorical ring (canonical names)
     red: dark ? p.brightRed : p.red,
     orange: dark ? p.brightRed : p.red, // no orange slot in ANSI 16
@@ -318,6 +361,40 @@ function deriveAnsi16Theme(p: ColorScheme): Theme {
     brandBlue: dark ? p.brightBlue : p.blue,
     brandPurple: p.magenta,
     brandPink: dark ? p.brightMagenta : p.magenta,
+    // Typography variants — defaults matching the Typography preset components.
+    variants: defaultVariants(primaryColor, p.cyan, p.white, p.black, dark ? p.brightBlue : p.blue),
+  }
+}
+
+/**
+ * Build the default variants map from derived theme tokens.
+ *
+ * @param primary - resolved primary color (or ANSI name)
+ * @param accent  - resolved accent color (or ANSI name)
+ * @param muted   - resolved muted color (or ANSI name)
+ * @param mutedbg - resolved muted background (or ANSI name)
+ * @param link    - resolved link color (or ANSI name)
+ */
+function defaultVariants(
+  primary: string,
+  accent: string,
+  muted: string,
+  mutedbg: string,
+  link: string,
+): Record<string, Variant> {
+  return {
+    h1: { color: "$primary", bold: true },
+    h2: { color: "$accent", bold: true },
+    h3: { bold: true },
+    body: {},
+    "body-muted": { color: "$muted" },
+    "fine-print": { color: "$muted", dim: true },
+    strong: { bold: true },
+    em: { italic: true },
+    link: { color: "$link", underlineStyle: "single" },
+    key: { color: "$accent", bold: true },
+    code: { backgroundColor: "$mutedbg" },
+    kbd: { backgroundColor: "$mutedbg", color: "$accent", bold: true },
   }
 }
 

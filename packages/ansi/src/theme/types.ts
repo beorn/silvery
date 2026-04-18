@@ -122,6 +122,18 @@ export interface Theme {
   brandHover: string
   brandActive: string
 
+  // State variants — hover (+0.04L) and active (+0.08L) shifts from base in OKLCH.
+  // Direction: dark themes brighten, light themes darken. Use $primary-hover,
+  // $primary-active, $accent-hover, etc. in JSX.
+  primaryHover: string
+  primaryActive: string
+  accentHover: string
+  accentActive: string
+  fgHover: string
+  fgActive: string
+  bgSelectedHover: string
+  bgSurfaceHover: string
+
   // Categorical color ring — 8 harmonious hues for tags, chart series, calendar
   // categories, priority levels, any color that's CATEGORICAL, not stateful.
   // ensureContrast-adjusted against bg. Use $red, $orange, …, $pink in JSX.
@@ -155,7 +167,38 @@ export interface Theme {
   brandPurple: string
   /** @deprecated Use `pink` (available as `$pink` token). Will be removed in next silvery major. */
   brandPink: string
+
+  /**
+   * Named typography variants — resolved by `<Text variant="h1">`.
+   *
+   * Each variant is a bundle of visual defaults (color, bold, italic, dim,
+   * underlineStyle). Caller props always win over variant values — the variant
+   * is the *default*, not an override.
+   *
+   * Apps extend variants via:
+   * ```tsx
+   * <ThemeProvider tokens={{ variants: { hero: { color: "$brand", bold: true } } }}>
+   * ```
+   */
+  variants: Record<string, Variant>
 }
 
 export type AnsiPrimary = "yellow" | "cyan" | "magenta" | "green" | "red" | "blue" | "white"
 export type HueName = "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink"
+
+/**
+ * A typography variant — a named bundle of visual properties that can be
+ * applied to a Text component via `variant="h1"`. The variant acts as a
+ * *default*: caller props always win over variant values.
+ *
+ * Color values follow the same syntax as `TextColor` — `$token` strings,
+ * hex values, ANSI names, or any string accepted by the color system.
+ */
+export interface Variant {
+  color?: string
+  backgroundColor?: string
+  bold?: boolean
+  italic?: boolean
+  dim?: boolean
+  underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed"
+}
