@@ -65,13 +65,9 @@ import { SilveryErrorBoundary } from "@silvery/ag-react/error-boundary"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 import { createFocusEvent, dispatchFocusEvent } from "@silvery/ag/focus-events"
-import { createAg, type Ag } from "../ag"
-import { runWithMeasurer } from "../unicode"
 import { createPipeline } from "../measurer"
 import { isTextSizingLikelySupported, detectTextSizingSupport, getCachedProbeResult } from "../text-sizing"
 import { createWidthDetector, applyWidthConfig } from "../ansi/width-detection"
-import { IncrementalRenderMismatchError } from "../scheduler"
-import { isAnyDirty } from "@silvery/ag/epoch"
 import {
   createContainer,
   createFiberRoot,
@@ -80,7 +76,6 @@ import {
   setOnNodeRemoved,
 } from "@silvery/ag-react/reconciler"
 import { map, merge, takeUntil } from "@silvery/create/streams"
-import { createBuffer } from "./create-buffer"
 import { createRuntime } from "./create-runtime"
 import {
   createHandlerContext,
@@ -115,7 +110,6 @@ import { type TermProvider, createTermProvider } from "./term-provider"
 import type { Buffer, Dims, Provider, RenderTarget } from "./types"
 import { createTerminalSelectionState, terminalSelectionUpdate, extractText } from "@silvery/headless/selection"
 import { createSelectionBridge, type SelectionFeature } from "../features/selection"
-import { renderSelectionOverlay } from "../selection-renderer"
 import { createCapabilityRegistry, type CapabilityRegistry } from "@silvery/create/internal/capability-registry"
 import { SELECTION_CAPABILITY } from "@silvery/create/internal/capabilities"
 import {
@@ -131,10 +125,19 @@ import {
   type FocusChainStore,
 } from "@silvery/create/plugins"
 import { createVirtualScrollback } from "../virtual-scrollback"
-import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "../search-overlay"
+import { createSearchState, searchUpdate } from "../search-overlay"
 import { createOutputGuard, type OutputGuard } from "../ansi/output-guard"
 import { perfLog, checkBudget, logExitSummary, startTracking } from "./perf"
 import { createLogger } from "loggily"
+import {
+  createRenderer,
+  createSearchScrollback,
+  pushToScrollback as pushToScrollbackFn,
+  renderSearchBarOverlay as renderSearchBarOverlayFn,
+  renderSearchHighlights as renderSearchHighlightsFn,
+  renderVirtualScrollbackView as renderVirtualScrollbackViewFn,
+  writeSelectionOverlay as writeSelectionOverlayFn,
+} from "./renderer"
 
 const log = createLogger("silvery:app")
 
@@ -1526,288 +1529,32 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   )
 
   // Performance instrumentation — count renders per event
-  let _renderCount = 0
   let _eventStart = 0
-  const _perfLog = typeof process !== "undefined" && process.env?.DEBUG?.includes("silvery:perf")
+  const _perfLog: boolean = !!(
+    typeof process !== "undefined" && process.env?.DEBUG?.includes("silvery:perf")
+  )
 
-  // Incremental rendering via long-lived Ag instance.
-  // The Ag manages its own prevBuffer for incremental rendering.
-  // Set SILVERY_NO_INCREMENTAL=1 to disable (for debugging blank screen issues).
-  // _noIncremental aliases the module-level NO_INCREMENTAL constant for readability.
-  const _noIncremental = NO_INCREMENTAL
-
-  // Long-lived Ag instance — created lazily on first doRender() after reconciler
-  // produces the root node. Reused across all subsequent frames, avoiding per-frame
-  // pipeline state allocation. The Ag manages its own prevBuffer for incremental
-  // content rendering.
-  let _ag: Ag | null = null
-  // Track the last TerminalBuffer for dimension-change detection (the Ag manages
-  // prevBuffer internally, but we need the dimensions for resize detection).
-  let _lastTermBuffer: import("../buffer").TerminalBuffer | null = null
-
-  // Helper to render and get text
-  function doRender(): Buffer {
-    _renderCount++
-    if (_ansiTrace) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require("node:fs").appendFileSync(
-        "/tmp/silvery-trace.log",
-        `--- doRender #${_renderCount} (ag=${_ag ? "reuse" : "create"}, incremental=${!_noIncremental}) ---\n`,
-      )
-    }
-    const renderStart = performance.now()
-
-    // Phase A: React reconciliation
-    reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {})
-    reconciler.flushSyncWork()
-    const reconcileMs = performance.now() - renderStart
-
-    // Bench instrumentation: accumulate reconcile time. The pipeline accumulator
-    // (set by silveryBenchStart) catches measure/layout/content/output; reconcile
-    // lives outside pipeline/index.ts so we add it here.
-    {
-      const acc = (globalThis as any).__silvery_bench_phases
-      if (acc) acc.reconcile += reconcileMs
-    }
-
-    // Phase B: Render pipeline (incremental when prevBuffer available)
-    const pipelineStart = performance.now()
-    const rootNode = getContainerRoot(container)
-    const dims = runtime.getDims()
-
-    const isInline = !alternateScreen
-
-    // Create or reuse long-lived Ag instance. Created lazily because the root
-    // AgNode is produced by the React reconciler in Phase A above.
-    if (!_ag) {
-      _ag = createAg(rootNode, { measurer: pipelineConfig?.measurer })
-    }
-
-    // Invalidate prevBuffer on dimension change (resize).
-    // Both Ag-level (ag.resetBuffer()) and runtime-level (runtime.invalidate())
-    // must be cleared — otherwise the ANSI diff compares different-sized buffers.
-    //
-    // In inline mode, only WIDTH changes trigger invalidation. Height changes are
-    // normal (content grows/shrinks as items are added/frozen) and are handled
-    // incrementally by the output phase. Invalidating on height causes the runtime's
-    // prevBuffer to be null, which triggers the first-render clear path with \x1b[J
-    // — wiping the entire visible screen including shell prompt content above the app.
-    if (_ag) {
-      // Check dimension changes. On first render there's no prevBuffer to compare.
-      const lastBuffer = _lastTermBuffer
-      if (lastBuffer) {
-        const widthChanged = dims.cols !== lastBuffer.width
-        const heightChanged = !isInline && dims.rows !== lastBuffer.height
-        if (widthChanged || heightChanged) {
-          _ag.resetBuffer()
-          runtime.invalidate()
-        }
-      }
-    }
-
-    // Clear diagnostic arrays before the render so we capture only this render's data.
-    // INSTRUMENTED is hoisted from env vars at module load — when no diagnostic is
-    // active (the hot path), all three global resets and the cell-debug setup
-    // constant-fold out of the frame.
-    if (INSTRUMENTED) {
-      ;(globalThis as any).__silvery_content_all = undefined
-      ;(globalThis as any).__silvery_node_trace = undefined
-      // Cell debug: enable during real incremental render for SILVERY_STRICT diagnosis.
-      // Set SILVERY_CELL_DEBUG=x,y to trace which nodes cover a specific cell.
-      // The log is captured during the render and included in any mismatch error.
-      ;(globalThis as any).__silvery_cell_debug =
-        CELL_DEBUG !== null ? { x: CELL_DEBUG.x, y: CELL_DEBUG.y, log: [] as string[] } : undefined
-    }
-
-    // Early return: if reconciliation produced no dirty flags on the tree,
-    // skip the pipeline entirely. This avoids cloning prevBuffer (which
-    // resets dirty rows to 0), preserving the row-level dirty markers that
-    // the runtime diff needs to detect actual changes.
-    // Exception: dimension changes require re-layout even without dirty flags.
-    const rootHasDirty = rootNode.layoutNode?.isDirty() || isAnyDirty(rootNode.dirtyBits, rootNode.dirtyEpoch)
-    const dimsChanged =
-      _lastTermBuffer != null && (dims.cols !== _lastTermBuffer.width || dims.rows !== _lastTermBuffer.height)
-    if (!rootHasDirty && !dimsChanged && _lastTermBuffer && currentBuffer) {
-      return currentBuffer
-    }
-
-    // When SILVERY_NO_INCREMENTAL is set, force fresh render every frame
-    if (_noIncremental) {
-      _ag.resetBuffer()
-    }
-
-    // Run layout + content render via the long-lived Ag instance.
-    // The Ag manages prevBuffer internally for incremental rendering.
-    // Output phase is NOT run here — the runtime handles it separately.
-    _ag.layout(dims)
-    const { buffer: termBuffer, prevBuffer: agPrevBuffer } = _ag.render()
-    _lastTermBuffer = termBuffer
-    const wasIncremental = !_noIncremental && agPrevBuffer !== null
-    const pipelineMs = performance.now() - pipelineStart
-
-    // Expose timing for diagnostics.
-    // Output timing is 0 here — the runtime handles the output phase separately.
-    ;(globalThis as any).__silvery_last_pipeline = {
-      layout: pipelineMs,
-      output: 0,
-      total: pipelineMs,
-      incremental: wasIncremental,
-    }
-    ;(globalThis as any).__silvery_render_count = ((globalThis as any).__silvery_render_count ?? 0) + 1
-
-    // Bench instrumentation: accumulate pipeline-level timing.
-    // ag.ts handles measure/layout/content accumulation; we add total here.
-    {
-      const acc = (globalThis as any).__silvery_bench_phases
-      if (acc) {
-        acc.total += pipelineMs
-        acc.pipelineCalls += 1
-      }
-    }
-
-    // SILVERY_STRICT: compare incremental render against fresh render.
-    // createApp bypasses Scheduler/Renderer which have this check built-in,
-    // so we add it here to catch incremental rendering bugs at runtime.
-    // STRICT_MODE is hoisted to module scope — the env var is read once at load.
-    if (STRICT_MODE && wasIncremental) {
-      const doFreshRender = () => {
-        const freshAg = createAg(rootNode, { measurer: pipelineConfig?.measurer })
-        freshAg.layout(
-          { cols: dims.cols, rows: dims.rows },
-          { skipLayoutNotifications: true, skipScrollStateUpdates: true },
-        )
-        return freshAg.render()
-      }
-      const measurer = pipelineConfig?.measurer
-      const { buffer: freshBuffer } = measurer ? runWithMeasurer(measurer, doFreshRender) : doFreshRender()
-      const { cellEquals, bufferToText } =
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require("../buffer") as typeof import("../buffer")
-      for (let y = 0; y < termBuffer.height; y++) {
-        for (let x = 0; x < termBuffer.width; x++) {
-          const a = termBuffer.getCell(x, y)
-          const b = freshBuffer.getCell(x, y)
-          if (!cellEquals(a, b)) {
-            // Use cell debug log collected during the real incremental render
-            let cellDebugInfo = ""
-            const savedCellDbg = (globalThis as any).__silvery_cell_debug as
-              | { x: number; y: number; log: string[] }
-              | undefined
-            if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y && savedCellDbg.log.length > 0) {
-              cellDebugInfo = `\nCELL DEBUG (${savedCellDbg.log.length} entries for (${x},${y})):\n${savedCellDbg.log.join("\n")}\n`
-            } else if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y) {
-              cellDebugInfo = `\nCELL DEBUG: No nodes cover (${x},${y}) during incremental render\n`
-            } else {
-              cellDebugInfo = `\nCELL DEBUG: Target cell (${x},${y}) differs from debug cell (${savedCellDbg?.x},${savedCellDbg?.y})\n`
-            }
-
-            // Re-run fresh render with write trap to capture what writes to the mismatched cell
-            let trapInfo = ""
-            const trap = { x, y, log: [] as string[] }
-            ;(globalThis as any).__silvery_write_trap = trap
-            try {
-              if (measurer) {
-                runWithMeasurer(measurer, doFreshRender)
-              } else {
-                doFreshRender()
-              }
-            } catch {
-              // ignore
-            }
-            ;(globalThis as any).__silvery_write_trap = null
-            if (trap.log.length > 0) {
-              trapInfo = `\nWRITE TRAP (${trap.log.length} writes to (${x},${y})):\n${trap.log.join("\n")}\n`
-            } else {
-              trapInfo = `\nWRITE TRAP: NO WRITES to (${x},${y})\n`
-            }
-            const incText = bufferToText(termBuffer)
-            const freshText = bufferToText(freshBuffer)
-            const cellStr = (c: typeof a) =>
-              `char=${JSON.stringify(c.char)} fg=${c.fg} bg=${c.bg} ulColor=${c.underlineColor} wide=${c.wide} cont=${c.continuation} attrs={bold=${c.attrs.bold},dim=${c.attrs.dim},italic=${c.attrs.italic},ul=${c.attrs.underline},ulStyle=${c.attrs.underlineStyle},blink=${c.attrs.blink},inv=${c.attrs.inverse},hidden=${c.attrs.hidden},strike=${c.attrs.strikethrough}}`
-            // Dump render phase stats for diagnosis
-            const contentAll = (globalThis as any).__silvery_content_all as unknown[]
-            const statsStr = contentAll
-              ? `\n--- render phase stats (${contentAll.length} calls) ---\n` +
-                contentAll
-                  .map(
-                    (s: any, i: number) =>
-                      `  #${i}: visited=${s.nodesVisited} rendered=${s.nodesRendered} skipped=${s.nodesSkipped} ` +
-                      `clearOps=${s.clearOps} cascade="${s.cascadeNodes}" ` +
-                      `flags={C=${s.flagContentDirty} P=${s.flagStylePropsDirty} L=${s.flagLayoutChanged} ` +
-                      `S=${s.flagSubtreeDirty} Ch=${s.flagChildrenDirty} CP=${s.flagChildPositionChanged} AL=${s.flagAncestorLayoutChanged} noPrev=${s.noPrevBuffer}} ` +
-                      `scroll={containers=${s.scrollContainerCount} cleared=${s.scrollViewportCleared} reason="${s.scrollClearReason}"} ` +
-                      `normalRepaint="${s.normalRepaintReason}" ` +
-                      `prevBuf={null=${s._prevBufferNull} dimMismatch=${s._prevBufferDimMismatch} hasPrev=${s._hasPrevBuffer} ` +
-                      `layout=${s._layoutW}x${s._layoutH} prev=${s._prevW}x${s._prevH}}`,
-                  )
-                  .join("\n")
-              : ""
-            const msg =
-              `SILVERY_STRICT (createApp): MISMATCH at (${x}, ${y}) on render #${_renderCount}\n` +
-              `  incremental: ${cellStr(a)}\n` +
-              `  fresh:       ${cellStr(b)}` +
-              statsStr +
-              // Per-node trace
-              (() => {
-                const traces = (globalThis as any).__silvery_node_trace as unknown[][] | undefined
-                if (!traces || traces.length === 0) return ""
-                let out = "\n--- node trace ---"
-                for (let ti = 0; ti < traces.length; ti++) {
-                  out += `\n  renderPhase #${ti}:`
-                  for (const t of traces[ti] as any[]) {
-                    out += `\n    ${t.decision} ${t.id}(${t.type})@${t.depth} rect=${t.rect} prev=${t.prevLayout}`
-                    out += ` hasPrev=${t.hasPrev} ancClr=${t.ancestorCleared} flags=[${t.flags}] layout∆=${t.layoutChanged}`
-                    if (t.decision === "RENDER") {
-                      out += ` caa=${t.contentAreaAffected} crc=${t.contentRegionCleared} cnfr=${t.childrenNeedFreshRender}`
-                      out += ` childPrev=${t.childHasPrev} childAnc=${t.childAncestorCleared} skipBg=${t.skipBgFill} bg=${t.bgColor ?? "none"}`
-                    }
-                  }
-                }
-                return out
-              })() +
-              cellDebugInfo +
-              trapInfo +
-              `\n--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
-            // Dump full diagnostics to temp file — alt screen hides stderr
-            let dumpPath: string | undefined
-            try {
-              dumpPath = `${tmpdir()}/silvery-strict-failure-${Date.now()}.txt`
-              writeFileSync(dumpPath, msg)
-            } catch {}
-            throw new IncrementalRenderMismatchError(
-              dumpPath ? `${msg.split("\n")[0]}\n  dump: ${dumpPath}` : msg,
-            )
-          }
-        }
-      }
-      if (_perfLog) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require("node:fs").appendFileSync(
-          "/tmp/silvery-perf.log",
-          `SILVERY_STRICT (createApp): render #${_renderCount} OK\n`,
-        )
-      }
-    }
-
-    const buf = createBuffer(termBuffer, rootNode)
-    if (_perfLog) {
-      const renderDuration = performance.now() - renderStart
-      const phases = (globalThis as any).__silvery_last_pipeline
-      const detail = (globalThis as any).__silvery_content_detail
-      const phaseStr = phases
-        ? ` [measure=${phases.measure.toFixed(1)} layout=${phases.layout.toFixed(1)} content=${phases.content.toFixed(1)} output=${phases.output.toFixed(1)}]`
-        : ""
-      const detailStr = detail
-        ? ` {visited=${detail.nodesVisited} rendered=${detail.nodesRendered} skipped=${detail.nodesSkipped} noPrev=${detail.noPrevBuffer ?? 0} dirty=${detail.flagContentDirty ?? 0} paint=${detail.flagStylePropsDirty ?? 0} layoutChg=${detail.flagLayoutChanged ?? 0} subtree=${detail.flagSubtreeDirty ?? 0} children=${detail.flagChildrenDirty ?? 0} childPos=${detail.flagChildPositionChanged ?? 0} scroll=${detail.scrollContainerCount ?? 0}/${detail.scrollViewportCleared ?? 0}${detail.scrollClearReason ? `(${detail.scrollClearReason})` : ""}}${detail.cascadeNodes ? ` CASCADE[minDepth=${detail.cascadeMinDepth} ${detail.cascadeNodes}]` : ""}`
-        : ""
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require("node:fs").appendFileSync(
-        "/tmp/silvery-perf.log",
-        `doRender #${_renderCount}: ${renderDuration.toFixed(1)}ms (reconcile=${reconcileMs.toFixed(1)}ms pipeline=${pipelineMs.toFixed(1)}ms ${dims.cols}x${dims.rows})${phaseStr}${detailStr}\n`,
-      )
-    }
-    return buf
-  }
+  // Renderer factory — owns the long-lived Ag instance, prevBuffer tracking,
+  // SILVERY_STRICT comparison, and perf logging. See renderer.ts.
+  const rendererCellDebug =
+    CELL_DEBUG && typeof CELL_DEBUG.x === "number" && typeof CELL_DEBUG.y === "number"
+      ? { x: CELL_DEBUG.x, y: CELL_DEBUG.y }
+      : null
+  const renderer = createRenderer({
+    wrappedElement,
+    fiberRoot,
+    container,
+    runtime,
+    alternateScreen,
+    pipelineConfig,
+    noIncremental: NO_INCREMENTAL,
+    strictMode: STRICT_MODE,
+    cellDebug: rendererCellDebug,
+    instrumented: INSTRUMENTED,
+    ansiTrace: _ansiTrace,
+    perfLog: _perfLog,
+  })
+  const doRender = renderer.doRender
 
   // Initial render
   if (_ansiTrace) {
@@ -1871,7 +1618,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("node:fs").appendFileSync(
       "/tmp/silvery-perf.log",
-      `STARTUP: initial render done (render #${_renderCount}, incremental=${!_noIncremental})\n`,
+      `STARTUP: initial render done (render #${renderer.renderCount()}, incremental=${!renderer.isIncrementalOff()})\n`,
     )
   }
 
@@ -1907,7 +1654,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // The screen was cleared when entering console mode, so
       // incremental diffing would produce an incomplete frame.
       runtime.invalidate()
-      _ag?.resetBuffer()
+      renderer.resetAg()
       // Force full re-render to restore display, but only if we're not
       // already inside a doRender() call (e.g. when resume() is called
       // from a React effect cleanup during reconciliation).
@@ -2009,7 +1756,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("node:fs").appendFileSync(
         "/tmp/silvery-trace.log",
-        `=== SUBSCRIPTION (case ${_case}, render #${_renderCount + 1}) ===\n${stack}\n`,
+        `=== SUBSCRIPTION (case ${_case}, render #${renderer.renderCount() + 1}) ===\n${stack}\n`,
       )
     }
     if (inEventHandler) {
@@ -2029,7 +1776,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               // eslint-disable-next-line @typescript-eslint/no-require-imports
               require("node:fs").appendFileSync(
                 "/tmp/silvery-perf.log",
-                `SUBSCRIPTION: deferred microtask render (case 2, render #${_renderCount + 1})\n`,
+                `SUBSCRIPTION: deferred microtask render (case 2, render #${renderer.renderCount() + 1})\n`,
               )
             }
             isRendering = true
@@ -2048,7 +1795,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("node:fs").appendFileSync(
         "/tmp/silvery-perf.log",
-        `SUBSCRIPTION: immediate render (case 3, render #${_renderCount + 1})\n`,
+        `SUBSCRIPTION: immediate render (case 3, render #${renderer.renderCount() + 1})\n`,
       )
     }
     isRendering = true
@@ -2073,118 +1820,31 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     }))
   }
 
-  /**
-   * Write selection overlay to stdout after a render.
-   * Appends inverse-video ANSI sequences over selected cells.
-   */
-  function writeSelectionOverlay(): void {
-    if (!selectionEnabled || !selectionState.range || !currentBuffer) return
-    const mode = alternateScreen ? "fullscreen" : "inline"
-    const overlay = renderSelectionOverlay(selectionState.range, currentBuffer._buffer, mode, selectionState.scope)
-    if (overlay) target.write(overlay)
-  }
-
-  /**
-   * Push the current rendered frame to the virtual scrollback buffer.
-   */
-  function pushToScrollback(): void {
-    if (!scrollback || !currentBuffer) return
-    const lines = currentBuffer.text.split("\n")
-    scrollback.push(lines)
-  }
-
-  /**
-   * Render the virtual scrollback view (historical content) to the terminal.
-   * When scrolled up, replaces the live app content with historical rows.
-   */
-  function renderVirtualScrollbackView(): void {
-    if (!scrollback || virtualScrollOffset <= 0) return
-    const dims = target.getDims()
-    const rows = scrollback.getVisibleRows(virtualScrollOffset, dims.rows)
-
-    // Clear screen and write rows using absolute positioning
-    let out = ""
-    for (let row = 0; row < rows.length; row++) {
-      out += `\x1b[${row + 1};1H\x1b[2K${rows[row] ?? ""}`
-    }
-
-    // Scroll indicator at top-right
-    const indicator = ` ↑ ${virtualScrollOffset} lines `
-    const indicatorCol = Math.max(1, dims.cols - indicator.length + 1)
-    out += `\x1b[1;${indicatorCol}H\x1b[7m${indicator}\x1b[27m`
-
-    target.write(out)
-  }
-
-  /**
-   * Render search highlights for the current match with inverse video.
-   */
-  function renderSearchHighlights(): void {
-    if (!searchState.active || searchState.currentMatch < 0) return
-    const match = searchState.matches[searchState.currentMatch]
-    if (!match) return
-
-    const dims = target.getDims()
-    // Calculate the screen row of the current match
-    let screenRow: number
-    if (scrollback && virtualScrollOffset > 0) {
-      // In scrollback view: calculate relative position
-      const totalLines = scrollback.totalLines
-      const firstVisibleLine = totalLines - virtualScrollOffset - dims.rows
-      screenRow = match.row - firstVisibleLine
-    } else {
-      screenRow = match.row
-    }
-
-    if (screenRow < 0 || screenRow >= dims.rows) return
-
-    // Move to match position and render with inverse
-    let out = `\x1b[${screenRow + 1};${match.startCol + 1}H\x1b[7m`
-    // Emit the match text (we know the query length)
-    for (let col = match.startCol; col <= match.endCol; col++) {
-      if (currentBuffer && virtualScrollOffset <= 0) {
-        out += currentBuffer._buffer.getCell(col, screenRow).char
-      } else {
-        out += searchState.query[col - match.startCol] ?? " "
-      }
-    }
-    out += "\x1b[27m"
-    target.write(out)
-  }
-
-  /**
-   * Render the search bar at the bottom of the screen.
-   */
-  function renderSearchBarOverlay(): void {
-    if (!searchState.active) return
-    const dims = target.getDims()
-    const bar = renderSearchBar(searchState, dims.cols)
-    // Position at the last row
-    target.write(`\x1b[${dims.rows};1H${bar}`)
-  }
-
-  /**
-   * Search function for virtual scrollback — converts line matches to SearchMatch[].
-   */
-  function searchScrollback(query: string): SearchMatch[] {
-    if (!scrollback || !query) return []
-    const matchingLines = scrollback.search(query)
-    const lowerQuery = query.toLowerCase()
-    const matches: SearchMatch[] = []
-    for (const lineIdx of matchingLines) {
-      // Find exact column positions by getting the line text
-      const rows = scrollback.getVisibleRows(scrollback.totalLines - lineIdx - 1, 1)
-      const line = rows[0] ?? ""
-      // Strip ANSI for column matching
-      const plain = line.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "")
-      let col = plain.toLowerCase().indexOf(lowerQuery)
-      while (col !== -1) {
-        matches.push({ row: lineIdx, startCol: col, endCol: col + query.length - 1 })
-        col = plain.toLowerCase().indexOf(lowerQuery, col + 1)
-      }
-    }
-    return matches
-  }
+  // Overlay helpers — thin wrappers over the pure functions in ./renderer.ts.
+  // These bridge the closure state (currentBuffer, selectionState, scrollback,
+  // virtualScrollOffset, searchState) into the pure functional API.
+  const writeSelectionOverlay = (): void =>
+    writeSelectionOverlayFn({
+      selectionEnabled,
+      selectionState,
+      currentBuffer: currentBuffer ?? null,
+      alternateScreen,
+      target,
+    })
+  const pushToScrollback = (): void =>
+    pushToScrollbackFn({ scrollback, currentBuffer: currentBuffer ?? null })
+  const renderVirtualScrollbackView = (): void =>
+    renderVirtualScrollbackViewFn({ scrollback, virtualScrollOffset, target })
+  const renderSearchHighlights = (): void =>
+    renderSearchHighlightsFn({
+      searchState,
+      scrollback,
+      virtualScrollOffset,
+      currentBuffer: currentBuffer ?? null,
+      target,
+    })
+  const renderSearchBarOverlay = (): void => renderSearchBarOverlayFn({ searchState, target })
+  const searchScrollback = createSearchScrollback(scrollback)
 
   /**
    * Run a single event's handler (state mutation only, no render).
@@ -2400,7 +2060,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
    */
   async function processEventBatch(events: NamespacedEvent[]): Promise<Buffer | null> {
     if (shouldExit || events.length === 0) return null
-    _renderCount = 0
+    renderer.resetCount()
     _eventStart = performance.now()
 
     // Keypress performance span — wraps the entire batch cycle.
@@ -2628,7 +2288,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("node:fs").appendFileSync(
         "/tmp/silvery-perf.log",
-        `EVENT batch(${events.length} ${events[0]?.type}): ${totalMs.toFixed(1)}ms total, ${_renderCount} doRender() calls, runtime.render=${runtimeMs.toFixed(1)}ms\n---\n`,
+        `EVENT batch(${events.length} ${events[0]?.type}): ${totalMs.toFixed(1)}ms total, ${renderer.renderCount()} doRender() calls, runtime.render=${runtimeMs.toFixed(1)}ms\n---\n`,
       )
     }
     // Budget check — warn if batch took longer than one frame (16ms)
@@ -2721,7 +2381,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           }
           // Invalidate pipeline and runtime diff state for full redraw.
           // Recreate Ag with updated measurer (text sizing support changed).
-          _ag = null
+          renderer.resetAg()
           runtime.invalidate()
           // Force full re-render with updated measurer
           if (!isRendering) {
@@ -2790,7 +2450,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             pipelineConfig = createPipeline({ caps: effectiveCaps })
             runtime.setOutputPhaseFn(pipelineConfig.outputPhaseFn)
             // Recreate Ag with updated measurer (caps changed text sizing/emoji width)
-            _ag = null
+            renderer.resetAg()
             runtime.invalidate()
             if (!isRendering) {
               isRendering = true
