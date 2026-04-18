@@ -93,7 +93,7 @@
  * from 100vw back to -100vw at cycle boundary is invisible. */
 @keyframes silvery-page-gleam {
   0%   { background-position: -100vw 0; }
-  100% { background-position: -100vw 0; }
+  100% { background-position: 100vw 0; }
 }
 
 /* Nav wordmark */
