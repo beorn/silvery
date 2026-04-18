@@ -140,7 +140,8 @@
   color: #e6e9ef;
 }
 
-/* Responsive */
+/* Responsive — scale down font + padding so the 62-char box panels
+ * fit narrow screens without horizontal clipping. */
 @media (max-width: 820px) {
   .silvery-terminal-wrap {
     max-width: 100%;
@@ -149,11 +150,42 @@
     border-radius: 12px;
   }
   .silvery-terminal {
-    font-size: 11px;
+    font-size: 10px;
     border-radius: 8px;
   }
   .silvery-terminal__body {
-    padding: 12px 14px 14px;
+    padding: 10px 10px 12px;
+  }
+  .silvery-terminal__titlebar {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .silvery-terminal-wrap {
+    padding: 3px;
+    border-radius: 10px;
+  }
+  .silvery-terminal {
+    font-size: 7.5px;
+    border-radius: 7px;
+  }
+  .silvery-terminal__body {
+    padding: 6px 6px 8px;
+  }
+  .silvery-terminal__titlebar {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+  .silvery-terminal__dots {
+    gap: 5px;
+  }
+  .silvery-terminal__dot {
+    width: 9px;
+    height: 9px;
+  }
+  .silvery-terminal__title {
+    font-size: 10px;
   }
 }
 </style>

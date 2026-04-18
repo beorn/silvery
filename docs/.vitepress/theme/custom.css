@@ -351,6 +351,17 @@
   }
 }
 
+/* VitePress hero on mobile pulls .image up by -76px and offsets content
+ * with -48px bottom margin (for stylized halo images). Our terminal has
+ * real content, so those negatives make the title overlap the terminal.
+ * Reset on mobile. */
+@media (max-width: 960px) {
+  .VPHero .image {
+    margin-top: 0 !important;
+    margin-bottom: 1rem !important;
+  }
+}
+
 /* ---- Preserve existing fixes ---- */
 
 .vp-doc .table-wrapper {
