@@ -173,14 +173,10 @@
 /* Input prompt glyph — silver-blue to match input frame */
 .t-prompt { color: #9fb3d8; font-weight: 700; }
 
-/* Blinking block cursor at start of input field */
+/* Static block cursor at start of input field (no blink — it's a mockup,
+ * a blinking cursor falsely implies the input is interactive). */
 .t-cursor {
   color: #e6e9ef;
-  animation: silvery-term-cursor-blink 1s steps(1) infinite;
-}
-@keyframes silvery-term-cursor-blink {
-  0%, 50%       { opacity: 1; }
-  50.01%, 100%  { opacity: 0; }
 }
 
 /* Responsive */
