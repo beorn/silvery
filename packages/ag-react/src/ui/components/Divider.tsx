@@ -46,7 +46,7 @@ export function Divider({ char = DEFAULT_CHAR, title, width: widthProp }: Divide
   if (!title) {
     return (
       <Box>
-        <Text dimColor>{char.repeat(totalWidth)}</Text>
+        <Text color="$border">{char.repeat(totalWidth)}</Text>
       </Box>
     )
   }
@@ -59,9 +59,9 @@ export function Divider({ char = DEFAULT_CHAR, title, width: widthProp }: Divide
 
   return (
     <Box>
-      <Text dimColor>{char.repeat(leftLen)}</Text>
+      <Text color="$border">{char.repeat(leftLen)}</Text>
       <Text bold>{titleWithPad}</Text>
-      <Text dimColor>{char.repeat(rightLen)}</Text>
+      <Text color="$border">{char.repeat(rightLen)}</Text>
     </Box>
   )
 }

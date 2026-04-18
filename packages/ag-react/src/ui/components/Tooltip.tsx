@@ -19,7 +19,7 @@
  */
 import React from "react"
 import { Box, type BoxProps } from "../../components/Box"
-import { Text } from "../../components/Text"
+import { Small } from "./Typography"
 
 // =============================================================================
 // Types
@@ -50,9 +50,7 @@ export function Tooltip({ content, show = false, children, ...boxProps }: Toolti
       {children}
       {show && (
         <Box width="snug-content">
-          <Text color="$muted" dimColor>
-            {content}
-          </Text>
+          <Small>{content}</Small>
         </Box>
       )}
     </Box>

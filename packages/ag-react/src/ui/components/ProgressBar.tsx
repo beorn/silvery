@@ -121,7 +121,7 @@ export function ProgressBar({
     <Box>
       {label && <Text>{label} </Text>}
       <Text color={color}>{filledPart}</Text>
-      <Text dimColor>{emptyPart}</Text>
+      <Text color="$muted">{emptyPart}</Text>
       {showPct && <Text>{String(pct).padStart(4)}%</Text>}
     </Box>
   )
