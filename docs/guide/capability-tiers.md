@@ -104,6 +104,7 @@ Your component code doesn't branch on tier. The renderer handles it.
 
 ## Related
 
+- **[Token Taxonomy](./token-taxonomy)** — the full decision tree for every token family
 - [Color Schemes](./color-schemes) — the 22-slot scheme model
 - [Custom Tokens](./custom-tokens) — ansi16 + attrs fallbacks for brand tokens
 - [Styling Guide](./styling) — using tokens in components

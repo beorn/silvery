@@ -151,7 +151,12 @@ export type { Style, StyleOptions, ThemeLike } from "./style/types"
 
 export { deriveTheme, loadTheme } from "./theme/derive"
 export type { ThemeAdjustment, LoadThemeOptions } from "./theme/derive"
-export { deriveMonochromeTheme, monoAttrsFor, DEFAULT_MONO_ATTRS } from "./theme/monochrome"
+export {
+  deriveMonochromeTheme,
+  monoAttrsFor,
+  monoAttrsForColorString,
+  DEFAULT_MONO_ATTRS,
+} from "./theme/monochrome"
 export type { MonoAttr, MonochromeAttrs } from "./theme/monochrome"
 export { fingerprintMatch, fingerprintCandidates } from "./theme/fingerprint"
 export type { FingerprintMatch, FingerprintOptions } from "./theme/fingerprint"
@@ -160,6 +165,7 @@ export type { DetectSchemeResult, DetectSchemeOptions, DetectSource, SlotSource 
 export type {
   ThemeToken,
   StandardThemeToken,
+  ColorRingToken,
   BrandToken,
   PaletteToken,
   KnownThemeToken,

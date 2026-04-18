@@ -116,26 +116,44 @@ export interface Theme {
   disabledfg: string
   palette: string[]
 
-  // Brand tokens (Apple system-color model) — standard in every theme, auto-derived
-  // from scheme, overridable via ThemeProvider tokens. Auxiliary hues (red/orange/
-  // yellow/green/teal/blue/purple/pink) are categorical accents, NOT status colors.
-  //
-  // Use for: tag palettes, calendar categories, chart series, diff-type labels,
-  // priority levels where color is categorical rather than stateful.
-  //
-  // Distinguish from:
-  //   - $color0..$color15  (raw terminal ANSI, user's theme verbatim, unadjusted)
-  //   - $error/$warning/$success/$info  (semantic state — communicates meaning)
+  // Brand anchor (Apple system-color model) — THE app's identity. Auto-derives
+  // from scheme.primary; apps override via <ThemeProvider tokens={{ brand: "#…" }}>.
   brand: string
   brandHover: string
   brandActive: string
+
+  // Categorical color ring — 8 harmonious hues for tags, chart series, calendar
+  // categories, priority levels, any color that's CATEGORICAL, not stateful.
+  // ensureContrast-adjusted against bg. Use $red, $orange, …, $pink in JSX.
+  //
+  // Distinguish from:
+  //   - $color0..$color15           — raw terminal ANSI (user's theme verbatim)
+  //   - $error/$warning/$success    — semantic state (communicates meaning)
+  //   - $brand                      — app identity anchor (one color)
+  red: string
+  orange: string
+  yellow: string
+  green: string
+  teal: string
+  blue: string
+  purple: string
+  pink: string
+
+  /** @deprecated Use `red` (available as `$red` token). Will be removed in next silvery major. */
   brandRed: string
+  /** @deprecated Use `orange` (available as `$orange` token). Will be removed in next silvery major. */
   brandOrange: string
+  /** @deprecated Use `yellow` (available as `$yellow` token). Will be removed in next silvery major. */
   brandYellow: string
+  /** @deprecated Use `green` (available as `$green` token). Will be removed in next silvery major. */
   brandGreen: string
+  /** @deprecated Use `teal` (available as `$teal` token). Will be removed in next silvery major. */
   brandTeal: string
+  /** @deprecated Use `blue` (available as `$blue` token). Will be removed in next silvery major. */
   brandBlue: string
+  /** @deprecated Use `purple` (available as `$purple` token). Will be removed in next silvery major. */
   brandPurple: string
+  /** @deprecated Use `pink` (available as `$pink` token). Will be removed in next silvery major. */
   brandPink: string
 }
 

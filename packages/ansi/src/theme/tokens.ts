@@ -45,16 +45,22 @@ export type StandardThemeToken =
   | "$focusborder" | "$border-focus"
   | "$link"
 
-/** Brand tokens (Apple system-color model). */
+/** Categorical color ring — harmonious hues for tagging / chart series / categories. */
+export type ColorRingToken = `$${HueName}` // $red, $orange, $yellow, $green, $teal, $blue, $purple, $pink
+
+/** Brand tokens (Apple system-color model) — app identity anchor. */
 export type BrandToken =
-  | "$brand" | "$brand-hover" | "$brand-active"
-  | `$brand-${HueName}`  // $brand-red, $brand-orange, …, $brand-pink
+  | "$brand"
+  | "$brand-hover"
+  | "$brand-active"
+  /** @deprecated Prefer `$<hue>` (e.g. `$red`). */
+  | `$brand-${HueName}`
 
 /** Raw ANSI palette slots. */
 export type PaletteToken = `$color${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15}`
 
 /** Every known token shipped by silvery — useful for `switch` exhaustiveness. */
-export type KnownThemeToken = StandardThemeToken | BrandToken | PaletteToken
+export type KnownThemeToken = StandardThemeToken | ColorRingToken | BrandToken | PaletteToken
 
 /**
  * Any `$token` string — known or app-specific. Template literal narrows to
