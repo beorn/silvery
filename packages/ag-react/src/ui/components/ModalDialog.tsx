@@ -62,7 +62,12 @@ export interface ModalDialogProps extends Omit<BoxProps, "children" | "flexDirec
   children: React.ReactNode
 }
 
-const DEFAULT_FADE = 0.4
+// Temporarily off by default — the backdrop-phase cell transform produces an
+// incremental/fresh mismatch under SILVERY_STRICT=1 in scenarios where the
+// modal rect changes frame-to-frame (e.g., search results streaming in).
+// Infrastructure ships; apps opt in via explicit `fade={0.4}`. Re-enabling
+// the default is tracked in km-silvery.backdrop-fade (follow-up).
+const DEFAULT_FADE = 0
 
 // =============================================================================
 // Helpers
