@@ -11,7 +11,7 @@
 import React from "react"
 import { Box, Text, Muted, H2, H3 } from "silvery"
 import type { ColorScheme, Theme } from "@silvery/theme"
-import { hexToOklch } from "@silvery/color"
+import { hexToOklch } from "@silvery/theme"
 import { monoAttrsFor } from "@silvery/ansi"
 import type { MonoAttr } from "@silvery/ansi"
 import { quantize256, quantizeAnsi16Hex } from "./tier"
@@ -198,7 +198,9 @@ function PairRow({ theme, pair }: { theme: Theme; pair: (typeof PAIRS)[number] }
       <Box backgroundColor={bg} paddingX={1}>
         <Text color={fg}>{pair.label.padEnd(10)}</Text>
       </Box>
-      <Muted>${String(pair.bg)} / ${String(pair.fg)}</Muted>
+      <Muted>
+        ${String(pair.bg)} / ${String(pair.fg)}
+      </Muted>
     </Box>
   )
 }
@@ -293,10 +295,9 @@ export function TokenSwatches({ theme }: { theme: Theme }) {
       <H2>Theme tokens (33)</H2>
       <Box paddingX={1}>
         <Muted>
-          Each row: <Text>truecolor · 256 · ansi16 · mono</Text>{" "}
-          · name · derivation rule. Mono column shows the one-letter code
-          for each SGR attr (B=bold, D=dim, I=italic, U=underline, V=inverse)
-          applied to the token at monochrome tier.
+          Each row: <Text>truecolor · 256 · ansi16 · mono</Text> · name · derivation rule. Mono
+          column shows the one-letter code for each SGR attr (B=bold, D=dim, I=italic, U=underline,
+          V=inverse) applied to the token at monochrome tier.
         </Muted>
       </Box>
 

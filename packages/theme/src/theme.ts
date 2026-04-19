@@ -45,8 +45,10 @@ export {
   hexToHsl,
   hslToHex,
   rgbToHsl,
+  hexToOklch,
+  oklchToHex,
 } from "@silvery/color"
-export type { HSL } from "@silvery/color"
+export type { HSL, OKLCH } from "@silvery/color"
 
 // Token resolution
 export { resolveThemeColor } from "@silvery/ansi"
