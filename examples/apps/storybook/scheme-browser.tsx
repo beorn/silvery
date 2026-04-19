@@ -122,7 +122,7 @@ export function SchemeBrowser({
           const label = entry.name.padEnd(nameWidth)
 
           return (
-            <Box key={entry.name}>
+            <Box key={entry.name} flexDirection="row">
               <Text inverse={isPrimary} color={isSecondary && !isPrimary ? "$accent" : undefined}>
                 {marker}{" "}
               </Text>
