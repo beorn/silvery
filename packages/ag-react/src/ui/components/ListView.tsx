@@ -136,6 +136,19 @@ export interface ListViewProps<T> {
   /** How many items from the end to trigger onEndReached. Default: 5 */
   onEndReachedThreshold?: number
 
+  /**
+   * Called when mouse enters an item. Defaults to moving the cursor to that
+   * item (hover-to-focus). Provide a custom handler to override this behavior.
+   * Only active when nav=true.
+   */
+  onItemHover?: (index: number) => void
+  /**
+   * Called when an item is clicked. Defaults to moving the cursor + firing
+   * onSelect (click-to-confirm). Provide a custom handler to override.
+   * Only active when nav=true.
+   */
+  onItemClick?: (index: number) => void
+
   /** Content rendered after all items inside the scroll container (e.g., hidden count indicator) */
   listFooter?: React.ReactNode
 
@@ -264,6 +277,8 @@ function ListViewInner<T>(
     cursorKey: cursorKeyProp,
     onCursor,
     onSelect,
+    onItemHover,
+    onItemClick,
     active,
     surfaceId,
     search: searchProp,
@@ -667,10 +682,37 @@ function ListViewInner<T>(
         // Use wrappedGetKey (index within activeItems) for measurement cache
         const measureKey = wrappedGetKey ? wrappedGetKey(startIndex + i) : startIndex + i
 
+        // In nav mode, wrap each item with hover/click handlers so that
+        // hovering moves the keyboard cursor and clicking confirms the selection.
+        // renderItem is responsible for its own mouse handlers when
+        // onItemHover/onItemClick are provided — the wrapper only adds nav
+        // defaults when renderItem doesn't handle it itself (passive mode).
+        const rendered = renderItem(item, originalIndex, meta)
+        const itemNode =
+          nav && active !== false && (onItemHover !== undefined || onItemClick !== undefined) ? (
+            <Box
+              onMouseEnter={
+                onItemHover ? () => onItemHover(originalIndex) : () => moveTo(originalIndex)
+              }
+              onClick={
+                onItemClick
+                  ? () => onItemClick(originalIndex)
+                  : () => {
+                      moveTo(originalIndex)
+                      onSelect?.(originalIndex)
+                    }
+              }
+            >
+              {rendered}
+            </Box>
+          ) : (
+            rendered
+          )
+
         return (
           <React.Fragment key={key}>
             <MeasuredItem itemKey={measureKey} measureItem={measureItem}>
-              {renderItem(item, originalIndex, meta)}
+              {itemNode}
             </MeasuredItem>
             {!isLast && renderSeparator && renderSeparator()}
             {!isLast && gap > 0 && !renderSeparator && <Box height={gap} flexShrink={0} />}

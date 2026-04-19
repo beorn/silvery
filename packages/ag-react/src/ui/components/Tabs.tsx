@@ -172,18 +172,32 @@ export function TabList({ children }: TabListProps): React.ReactElement {
  *
  * Renders the tab label with active/inactive styling. Active tab is bold
  * with `$primary` color; inactive tabs use `$muted`.
+ *
+ * Hover: a non-active hovered tab gets a subtle `$bg-muted` background to
+ * signal interactivity. The active tab is already visually prominent — no
+ * extra hover styling is applied to avoid double-styling.
  */
 export function Tab({ value, children }: TabProps): React.ReactElement {
   const { activeValue, setActiveValue, registerTab } = useTabsContext()
   const isActive = activeValue === value
+  const [isHovered, setIsHovered] = useState(false)
 
   // Register this tab's value for keyboard navigation
   React.useEffect(() => {
     registerTab(value)
   }, [value, registerTab])
 
+  // Hover background: only for inactive tabs. Active tab already has $primary
+  // fg + bold — adding a bg on top creates visual conflict.
+  const hoverBg = !isActive && isHovered ? "$bg-muted" : undefined
+
   return (
-    <Box onMouseDown={() => setActiveValue(value)}>
+    <Box
+      onMouseDown={() => setActiveValue(value)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      backgroundColor={hoverBg}
+    >
       <Text color={isActive ? "$primary" : "$muted"} bold={isActive} underline={isActive}>
         {children}
       </Text>

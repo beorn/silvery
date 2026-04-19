@@ -19,6 +19,7 @@
  * ```
  */
 import React, { useCallback, useState } from "react"
+import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { ListView } from "./ListView"
 
@@ -47,8 +48,24 @@ export interface SelectListProps {
   maxVisible?: number
   /** Whether this list captures input (default: true) */
   isActive?: boolean
-  /** Selection indicator prefix shown on highlighted item (default: "▸ "). Non-highlighted items get equal-width spaces. Pass "" to hide. */
+  /**
+   * Selection indicator prefix shown on highlighted item (default: "").
+   * When empty (default), the cursor row is communicated via full-row background
+   * color ($cursor-bg / $cursor fg) — the omnibox-style UX.
+   * Pass "▸ " (or any string) to use an arrow/glyph indicator instead of row bg.
+   * Non-highlighted items then get equal-width spaces for alignment.
+   */
   indicator?: string
+  /**
+   * Called when mouse enters an item row. Defaults to moving the keyboard cursor
+   * to that row (hover-to-focus). Override to suppress or replace this behavior.
+   */
+  onItemHover?: (index: number) => void
+  /**
+   * Called when an item row is clicked. Defaults to moving the cursor + firing
+   * onSelect (click-to-confirm). Override to replace this behavior.
+   */
+  onItemClick?: (index: number) => void
 }
 
 // =============================================================================
@@ -89,7 +106,9 @@ export function SelectList({
   initialIndex,
   maxVisible,
   isActive = true,
-  indicator = "▸ ",
+  indicator = "",
+  onItemHover,
+  onItemClick,
 }: SelectListProps): React.ReactElement {
   // SelectList always controls ListView's cursor (for disabled-item skipping).
   // In uncontrolled mode, internal state tracks the cursor; in controlled mode,
@@ -134,20 +153,59 @@ export function SelectList({
   )
 
   const renderItem = useCallback(
-    (item: SelectOption, _index: number, meta: { isCursor: boolean }) => (
-      // Fake cursor uses scheme cursorColor/cursorText ($cursorbg + $cursor)
+    (item: SelectOption, index: number, meta: { isCursor: boolean }) => {
+      // Fake cursor uses scheme cursorColor/cursorText ($cursor-bg + $cursor)
       // so it matches the user's terminal cursor color — native feel per theme.
       // Disabled rows route through $disabledfg (not dimColor) per token system.
-      <Text
-        key={item.value}
-        color={item.disabled ? "$disabledfg" : meta.isCursor ? "$cursor" : undefined}
-        backgroundColor={meta.isCursor ? "$cursorbg" : undefined}
-      >
-        {indicator ? (meta.isCursor ? indicator : " ".repeat(indicator.length)) : ""}
-        {item.label}
-      </Text>
-    ),
-    [indicator],
+
+      // Default hover/click handlers: hover moves keyboard cursor; click
+      // moves cursor + confirms selection (Enter-equivalent).
+      const handleHover = onItemHover
+        ? () => onItemHover(index)
+        : () => handleCursor(index)
+      const handleClick = onItemClick
+        ? () => onItemClick(index)
+        : () => {
+            handleCursor(index)
+            handleSelect(index)
+          }
+
+      if (!indicator) {
+        // No-indicator mode (default): communicate selection via full-row bg.
+        // The wrapping Box expands to 100% width so the bg fills the row.
+        return (
+          <Box
+            key={item.value}
+            width="100%"
+            backgroundColor={meta.isCursor ? "$cursor-bg" : undefined}
+            onMouseEnter={handleHover}
+            onClick={handleClick}
+          >
+            <Text
+              color={item.disabled ? "$disabledfg" : meta.isCursor ? "$cursor" : undefined}
+              bold={meta.isCursor && !item.disabled}
+            >
+              {item.label}
+            </Text>
+          </Box>
+        )
+      }
+
+      // Indicator mode (backward compat): arrow/glyph prefix, text-only bg.
+      return (
+        <Text
+          key={item.value}
+          color={item.disabled ? "$disabledfg" : meta.isCursor ? "$cursor" : undefined}
+          backgroundColor={meta.isCursor ? "$cursor-bg" : undefined}
+          onMouseEnter={handleHover}
+          onClick={handleClick}
+        >
+          {meta.isCursor ? indicator : " ".repeat(indicator.length)}
+          {item.label}
+        </Text>
+      )
+    },
+    [indicator, onItemHover, onItemClick, handleCursor, handleSelect],
   )
 
   return (
