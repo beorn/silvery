@@ -46,6 +46,7 @@ import {
   hasBackdropMarkers,
   type BackdropColorLevel,
 } from "./pipeline/backdrop-phase"
+import type { Theme } from "@silvery/ansi"
 import { clearDirtyTracking, hasScrollDirty } from "@silvery/ag/dirty-tracking"
 import type { PipelineContext } from "./pipeline/types"
 
@@ -157,6 +158,35 @@ export interface CreateAgOptions {
    * See `backdrop-phase.ts` for tier semantics.
    */
   colorLevel?: BackdropColorLevel
+}
+
+// =============================================================================
+// Helpers
+// =============================================================================
+
+/**
+ * Walk the ag tree top-down to find the root ThemeProvider's background color.
+ *
+ * ThemeProvider in @silvery/ag-react renders a `<Box theme={merged}>` wrapper.
+ * The render phase pushes/pops this theme via pushContextTheme/popContextTheme,
+ * so the module-level theme stack is empty after the render phase completes.
+ * We walk the tree directly to recover the root bg without requiring the
+ * render phase to be running.
+ *
+ * Returns the first Box node's `theme.bg` value found in a depth-first walk,
+ * or `null` if no theme node is present (bare tests without ThemeProvider).
+ */
+function findRootThemeBg(root: AgNode): string | null {
+  const props = root.props as Record<string, unknown>
+  if (props.theme) {
+    const theme = props.theme as Theme
+    if (theme.bg && typeof theme.bg === "string") return theme.bg
+  }
+  for (const child of root.children) {
+    const found = findRootThemeBg(child)
+    if (found !== null) return found
+  }
+  return null
 }
 
 // =============================================================================
@@ -319,7 +349,8 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       if (!opts?.fresh) {
         _prevBuffer = carryForwardBuffer
       }
-      applyBackdropFade(root, buffer, { colorLevel })
+      const rootBg = findRootThemeBg(root) ?? undefined
+      applyBackdropFade(root, buffer, { colorLevel, rootBg })
     } else {
       carryForwardBuffer = buffer
       if (!opts?.fresh) {
