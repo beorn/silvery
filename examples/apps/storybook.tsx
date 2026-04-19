@@ -88,44 +88,39 @@ function StatusBar({
   schemeName,
   secondaryName,
   dark,
-  detected,
 }: {
   panel: Panel
   tier: Tier
   schemeName: string
   secondaryName?: string
   dark: boolean
-  detected?: DetectedInfo | null
 }) {
   return (
-    <Box flexDirection="column">
-      <Box paddingX={1} gap={1}>
-        <Muted>scheme</Muted>
-        <Text bold color="$primary">
-          {schemeName}
-        </Text>
-        {secondaryName ? (
-          <>
-            <Muted>vs</Muted>
-            <Text bold color="$accent">
-              {secondaryName}
-            </Text>
-          </>
-        ) : null}
-        <Text>·</Text>
-        <Muted>{dark ? "dark" : "light"}</Muted>
-        <Text>·</Text>
-        <Muted>tier</Muted>
-        <Text bold color="$success">
-          {TIER_LABEL[tier]}
-        </Text>
-        <Text>·</Text>
-        <Muted>panel</Muted>
-        <Text bold color="$info">
-          {PANEL_LABEL[panel]}
-        </Text>
-      </Box>
-      <DetectedLine detected={detected} />
+    <Box paddingX={1} gap={1}>
+      <Muted>scheme</Muted>
+      <Text bold color="$primary">
+        {schemeName}
+      </Text>
+      {secondaryName ? (
+        <>
+          <Muted>vs</Muted>
+          <Text bold color="$accent">
+            {secondaryName}
+          </Text>
+        </>
+      ) : null}
+      <Text>·</Text>
+      <Muted>{dark ? "dark" : "light"}</Muted>
+      <Text>·</Text>
+      <Muted>tier</Muted>
+      <Text bold color="$success">
+        {TIER_LABEL[tier]}
+      </Text>
+      <Text>·</Text>
+      <Muted>panel</Muted>
+      <Text bold color="$info">
+        {PANEL_LABEL[panel]}
+      </Text>
     </Box>
   )
 }
@@ -322,6 +317,9 @@ export function Storybook({ entries, detected }: StorybookProps) {
 
   return (
     <Box flexDirection="column" height="100%" padding={1}>
+      {/* Detected-scheme banner — topmost, outside the flexGrow area so the
+          viewport can't hide it behind a shifted scheme list. Always visible. */}
+      <DetectedLine detected={detected} />
       <NavBar panel={panel} />
       <Divider />
       <Box flexGrow={1} flexDirection="row" gap={1} overflow="hidden">
@@ -345,7 +343,6 @@ export function Storybook({ entries, detected }: StorybookProps) {
         schemeName={primary.name}
         secondaryName={panel === "compare" ? secondary.name : undefined}
         dark={primary.dark}
-        detected={detected}
       />
       <Legend panel={panel} />
     </Box>
