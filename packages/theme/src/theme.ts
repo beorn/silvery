@@ -77,7 +77,9 @@ export {
   autoLift as sterlingAutoLift,
   checkAA as sterlingCheckAA,
   ContrastError as SterlingContrastError,
+  augmentWithSterlingFlat,
 } from "./sterling/index"
+export type { UnifiedTheme as SterlingUnifiedTheme } from "./sterling/index"
 export type {
   AccentRole,
   BorderRole,

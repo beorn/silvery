@@ -13,6 +13,7 @@ import {
   ansi16LightTheme as _ansi16LightTheme,
 } from "@silvery/ansi"
 import type { Theme, ColorScheme } from "@silvery/ansi"
+import { augmentWithSterlingFlat } from "../sterling/augment.ts"
 
 // ── Re-export all palette definitions ──────────────────────────────
 export {
@@ -150,25 +151,33 @@ import {
  * Dark ANSI 16 theme — hex-valued, derived from the default dark scheme.
  * All token values are hex strings (no ANSI slot names).
  * Terminal rendering quantizes hex to 4-bit ANSI codes when colorLevel === "basic".
+ *
+ * Augmented with Sterling flat tokens (Phase 2b) so components can read
+ * `theme["bg-surface-subtle"]` / `theme["fg-on-accent"]` / etc.
  */
-export const ansi16DarkTheme: Theme = _ansi16DarkTheme
+export const ansi16DarkTheme: Theme = augmentWithSterlingFlat(_ansi16DarkTheme)
 
 /**
  * Light ANSI 16 theme — hex-valued, derived from the default light scheme.
  * All token values are hex strings (no ANSI slot names).
  * Terminal rendering quantizes hex to 4-bit ANSI codes when colorLevel === "basic".
+ *
+ * Augmented with Sterling flat tokens (Phase 2b).
  */
-export const ansi16LightTheme: Theme = _ansi16LightTheme
+export const ansi16LightTheme: Theme = augmentWithSterlingFlat(_ansi16LightTheme)
 
 // ============================================================================
 // Default Truecolor Themes (derived from Nord palette)
 // ============================================================================
 
-/** Dark truecolor theme — derived from Nord. */
-export const defaultDarkTheme: Theme = deriveTheme(nord)
+/** Dark truecolor theme — derived from Nord. Augmented with Sterling flat tokens. */
+export const defaultDarkTheme: Theme = augmentWithSterlingFlat(deriveTheme(nord), nord)
 
-/** Light truecolor theme — derived from Catppuccin Latte. */
-export const defaultLightTheme: Theme = deriveTheme(catppuccinLatte)
+/** Light truecolor theme — derived from Catppuccin Latte. Augmented with Sterling flat tokens. */
+export const defaultLightTheme: Theme = augmentWithSterlingFlat(
+  deriveTheme(catppuccinLatte),
+  catppuccinLatte,
+)
 
 // ============================================================================
 // Registry
@@ -333,9 +342,11 @@ export function getThemeByName(name?: string): Theme {
   // Check pre-built themes first
   const builtin = builtinThemes[name]
   if (builtin) return builtin
-  // Check palettes (derive on first access)
+  // Check palettes (derive on first access) — augment with Sterling flat tokens
+  // so `$fg-accent` / `$bg-surface-subtle` / etc. resolve the same way the
+  // default themes do.
   const palette = builtinPalettes[name]
-  if (palette) return deriveTheme(palette)
+  if (palette) return augmentWithSterlingFlat(deriveTheme(palette), palette)
   return ansi16DarkTheme
 }
 
