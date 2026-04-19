@@ -655,7 +655,7 @@ useEffect(() => { const t = setInterval(() => setFade(f => Math.min(f + 0.1, 0.7
 `Backdrop` is a render-time transform, not an animation primitive. Fade values set in React state are fine for instant transitions (modal open/close); don't animate them in a 50ms loop. And there's no `opacity` in TUIs — `Backdrop` is the only semantic way to dim a region.
 :::
 
-→ [Backdrop API](/api/backdrop) · [ModalDialog](/api/modal-dialog)
+→ See `Backdrop` and `ModalDialog` in the [components index](/api/).
 
 ## Quick Reference
 
