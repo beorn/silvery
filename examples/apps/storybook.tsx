@@ -125,13 +125,25 @@ function StatusBar({
           {PANEL_LABEL[panel]}
         </Text>
       </Box>
-      {detected ? <DetectedLine detected={detected} /> : null}
+      <DetectedLine detected={detected} />
     </Box>
   )
 }
 
-/** One-line banner describing how the user's actual terminal scheme was detected. */
-function DetectedLine({ detected }: { detected: DetectedInfo }) {
+/**
+ * One-line banner describing how the user's actual terminal scheme was
+ * detected. Always rendered so the feature is discoverable even when
+ * detection failed or returned nothing.
+ */
+function DetectedLine({ detected }: { detected?: DetectedInfo | null }) {
+  if (!detected) {
+    return (
+      <Box paddingX={1} gap={1}>
+        <Muted>detected</Muted>
+        <Muted>(detection unavailable)</Muted>
+      </Box>
+    )
+  }
   const confidencePct = Math.round(detected.confidence * 100)
   return (
     <Box paddingX={1} gap={1}>
