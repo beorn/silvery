@@ -31,10 +31,16 @@ import {
   Lead,
   SelectList,
   Table,
+  TextInput,
   type Column,
 } from "silvery"
 
-function FakeTextInput({
+/**
+ * Show silvery's real TextInput with isActive toggled. No fake replica —
+ * pass-through to the canonical component exercises the same code path
+ * real apps use, and the real fake-cursor / focus-border styling.
+ */
+function TextInputPreview({
   label,
   value,
   placeholder,
@@ -45,32 +51,18 @@ function FakeTextInput({
   placeholder?: string
   focused?: boolean
 }) {
-  // Non-interactive replica so the storybook doesn't steal focus from the
-  // browser. Shows exactly how silvery renders an input in both states,
-  // including the block cursor when focused.
-  const hasValue = value.length > 0
+  const [text, setText] = React.useState(value)
+  React.useEffect(() => setText(value), [value])
   return (
     <Box flexDirection="column">
       <Muted>{label}</Muted>
-      <Box
-        borderStyle="single"
-        borderColor={focused ? "$focusborder" : "$inputborder"}
-        paddingX={1}
-        width={36}
-      >
-        {hasValue ? (
-          <Text>
-            <Text>{value}</Text>
-            {focused ? <Text inverse> </Text> : null}
-          </Text>
-        ) : focused ? (
-          <Text>
-            <Text inverse> </Text>
-            <Text color="$disabledfg">{placeholder ? placeholder.slice(1) : ""}</Text>
-          </Text>
-        ) : (
-          <Text color="$disabledfg">{placeholder ?? ""}</Text>
-        )}
+      <Box width={36}>
+        <TextInput
+          value={text}
+          onChange={setText}
+          placeholder={placeholder}
+          isActive={!!focused}
+        />
       </Box>
     </Box>
   )
@@ -108,109 +100,86 @@ export function ComponentShowcase({ interactive = true }: ComponentShowcaseProps
 }
 
 /**
- * Syntax-highlighted code snippet — exercises every semantic + accent token
- * so you can eyeball how the scheme handles real code. Each color role maps
- * to a theme token, so the snippet is readable under any scheme.
+ * Syntax-highlighted code snippet — uses the `$color0..$color15` raw ANSI
+ * palette slots as silvery's token taxonomy explicitly prescribes for syntax
+ * highlighting ("exact terminal color parity matters"). See
+ * vendor/silvery/docs/guide/token-taxonomy.md.
+ *
+ * Mapping (tree-sitter / vim / Neovim convention):
+ *   keyword / control flow → $color1  (red)
+ *   string literal         → $color2  (green)
+ *   number / constant      → $color3  (yellow)
+ *   function name          → $color4  (blue)
+ *   type / purple          → $color5  (magenta)
+ *   type name / built-in   → $color6  (cyan)
+ *   operator / default fg  → $fg      (plain)
+ *   comment                → $color8  (bright black / dim)
+ *   link in comment        → $color4 + underline
  */
 function CodeSample() {
-  // Map syntax roles → tokens:
-  //   keyword     $primary   (most prominent semantic color)
-  //   function    $accent    (contrasting complement)
-  //   string      $success   (green, universal string convention)
-  //   number      $warning   (yellow/orange)
-  //   type        $info      (cyan, type-name convention)
-  //   comment     $muted     (receding, dim)
-  //   operator    $fg        (default)
-  //   bracket     $muted     (receding)
-  //   error inline $error    (mark a bad token)
-  //   link inline  $link      (URLs)
   return (
     <Box flexDirection="column" paddingX={1} gap={1}>
-      <H2>Code sample</H2>
+      <H2>Code sample (syntax highlighting via $color0..$color15)</H2>
       <Box backgroundColor="$mutedbg" padding={1} flexDirection="column">
         <Box>
-          <Text color="$muted">// See </Text>
-          <Text color="$link" underlineStyle="single">
+          <Text color="$color8">// See </Text>
+          <Text color="$color4" underlineStyle="single">
             https://silvery.dev
           </Text>
-          <Text color="$muted"> — theme tokens in action</Text>
+          <Text color="$color8"> — theme tokens in action</Text>
         </Box>
 
         <Box>
-          <Text color="$primary" bold>
-            export async
-          </Text>
-          <Text> </Text>
-          <Text color="$primary" bold>
-            function
-          </Text>
-          <Text> </Text>
-          <Text color="$accent">resolveToken</Text>
-          <Text color="$muted">(</Text>
-          <Text>name</Text>
+          <Text color="$color1">export async </Text>
+          <Text color="$color1">function </Text>
+          <Text color="$color4">resolveToken</Text>
+          <Text color="$fg">(name</Text>
           <Text color="$fg">: </Text>
-          <Text color="$info">string</Text>
-          <Text color="$muted">,</Text>
-          <Text> theme</Text>
+          <Text color="$color6">string</Text>
+          <Text color="$fg">, theme</Text>
           <Text color="$fg">?: </Text>
-          <Text color="$info">Theme</Text>
-          <Text color="$muted">): </Text>
-          <Text color="$info">Promise</Text>
-          <Text color="$muted">{"<"}</Text>
-          <Text color="$info">string</Text>
-          <Text color="$muted">{">"}</Text>
-          <Text color="$muted"> {"{"}</Text>
+          <Text color="$color6">Theme</Text>
+          <Text color="$fg">): </Text>
+          <Text color="$color6">Promise</Text>
+          <Text color="$fg">{"<"}</Text>
+          <Text color="$color6">string</Text>
+          <Text color="$fg">{">"}</Text>
+          <Text color="$fg"> {"{"}</Text>
         </Box>
 
         <Box>
           <Text>{"  "}</Text>
-          <Text color="$primary" bold>
-            const
-          </Text>
-          <Text> result </Text>
-          <Text color="$fg">= </Text>
-          <Text color="$primary" bold>
-            await
-          </Text>
-          <Text> </Text>
-          <Text color="$accent">lookup</Text>
-          <Text color="$muted">(</Text>
-          <Text color="$success">{`"$`}</Text>
-          <Text color="$success">{`{name}"`}</Text>
-          <Text color="$muted">, </Text>
-          <Text color="$warning">42</Text>
-          <Text color="$muted">)</Text>
+          <Text color="$color1">const</Text>
+          <Text color="$fg"> result = </Text>
+          <Text color="$color1">await </Text>
+          <Text color="$color4">lookup</Text>
+          <Text color="$fg">(</Text>
+          <Text color="$color2">{`"$`}</Text>
+          <Text color="$color2">{`{name}"`}</Text>
+          <Text color="$fg">, </Text>
+          <Text color="$color3">42</Text>
+          <Text color="$fg">)</Text>
         </Box>
 
         <Box>
           <Text>{"  "}</Text>
-          <Text color="$primary" bold>
-            if
-          </Text>
-          <Text color="$muted"> (</Text>
-          <Text color="$fg">!</Text>
-          <Text>result</Text>
-          <Text color="$muted">) </Text>
-          <Text color="$primary" bold>
-            throw new
-          </Text>
-          <Text> </Text>
-          <Text color="$error">Error</Text>
-          <Text color="$muted">(</Text>
-          <Text color="$success">{`"not found"`}</Text>
-          <Text color="$muted">)</Text>
+          <Text color="$color1">if</Text>
+          <Text color="$fg"> (!result) </Text>
+          <Text color="$color1">throw new </Text>
+          <Text color="$color6">Error</Text>
+          <Text color="$fg">(</Text>
+          <Text color="$color2">{`"not found"`}</Text>
+          <Text color="$fg">)</Text>
         </Box>
 
         <Box>
           <Text>{"  "}</Text>
-          <Text color="$primary" bold>
-            return
-          </Text>
-          <Text> result</Text>
+          <Text color="$color1">return </Text>
+          <Text color="$fg">result</Text>
         </Box>
 
         <Box>
-          <Text color="$muted">{"}"}</Text>
+          <Text color="$fg">{"}"}</Text>
         </Box>
       </Box>
     </Box>
@@ -292,8 +261,8 @@ function InputsSection() {
     <Box flexDirection="column" paddingX={1} gap={1}>
       <H2>Inputs</H2>
       <Box gap={2} flexWrap="wrap">
-        <FakeTextInput label="TextInput (empty)" value="" placeholder="Search…" />
-        <FakeTextInput label="TextInput (focused)" value="storybook" focused />
+        <TextInputPreview label="TextInput (empty)" value="" placeholder="Search…" />
+        <TextInputPreview label="TextInput (focused)" value="storybook" focused />
       </Box>
       <Box gap={2} flexWrap="wrap" marginTop={1}>
         <Toggle value={true} onChange={() => {}} label="Enabled" />
