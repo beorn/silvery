@@ -260,3 +260,10 @@ export type {
   KeybindingEntry,
   AppWithApp,
 } from "./with-app"
+
+// =============================================================================
+// App context helper (React bridge for domain models)
+// =============================================================================
+
+export { createAppContext } from "./create-app-context"
+export type { CreateAppContextOptions, AppContextHelpers } from "./create-app-context"
