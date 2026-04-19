@@ -12,18 +12,37 @@
 
 import { type ForwardedRef, type JSX, type ReactNode, forwardRef, useContext } from "react"
 import type { AgNode, TextProps as TextPropsType } from "@silvery/ag/types"
-import type { KnownVariant } from "@silvery/ansi"
+import type { KnownVariant, Theme } from "@silvery/ansi"
 import { KNOWN_VARIANTS } from "@silvery/ansi"
 import { ThemeContext } from "@silvery/theme/ThemeContext"
 
 // ============================================================================
-// Runtime variant warning — fires once per unknown variant name per session.
+// Runtime variant warning — fires once per (theme, variantName) pair.
 // Warns the developer that a variant lookup returned undefined (typo, etc.).
 // Does NOT throw — silent no-op rendering is still the correct behavior.
+// Only fires in development/test (process.env.NODE_ENV !== "production").
 // ============================================================================
 
-/** Variant names that have already triggered a warning this session. */
-const _warnedVariants = new Set<string>()
+/** Per-theme set of variant names that have already triggered a warning. */
+const _warnedVariants = new WeakMap<Theme, Set<string>>()
+
+function warnOnce(theme: Theme, variant: string): void {
+  if (process.env.NODE_ENV === "production") return
+  let warned = _warnedVariants.get(theme)
+  if (warned === undefined) {
+    warned = new Set<string>()
+    _warnedVariants.set(theme, warned)
+  }
+  if (warned.has(variant)) return
+  warned.add(variant)
+  const known = KNOWN_VARIANTS.join(", ")
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[silvery] <Text variant="${variant}"> — unknown variant, defaulting to bare. ` +
+      `Known: ${known}. ` +
+      `Register custom variants via <ThemeProvider tokens={{ variants: { ${variant}: {...} } }}>.`,
+  )
+}
 
 // ============================================================================
 // Props
@@ -131,13 +150,8 @@ export const Text = forwardRef(function Text(
   let styleProps = callerProps
   if (variant != null) {
     const resolved = theme.variants?.[variant]
-    if (resolved === undefined && !_warnedVariants.has(variant)) {
-      _warnedVariants.add(variant)
-      const known = KNOWN_VARIANTS.join(", ")
-      console.warn(
-        `[silvery] Unknown variant "${variant}". Known variants: ${known}. ` +
-          `Check the theme.variants object or the variant name spelling.`,
-      )
+    if (resolved === undefined) {
+      warnOnce(theme, variant)
     }
     const variantDefaults = resolved ?? {}
     const definedCallerProps: Record<string, unknown> = {}
