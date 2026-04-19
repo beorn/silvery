@@ -232,16 +232,6 @@ async function ensureLayoutEngineInitialized(engineType?: LayoutEngineType): Pro
 // ============================================================================
 
 // ============================================================================
-// Lightweight subscriber list — replaces EventEmitter from node:events
-// ============================================================================
-
-import {
-  type InputCallback,
-  type PasteCallback,
-  type SubscriberList,
-  createSubscriberList,
-} from "./runtime-subscribers"
-
 // ============================================================================
 // App Props — callback-based, no Node.js types in the callback interface
 // ============================================================================
@@ -288,19 +278,10 @@ function SilveryApp({
   getRoot: getRootProp,
   handleFocusCycling = true,
 }: AppProps): ReactElement {
-  // Subscriber list — lightweight replacement for EventEmitter
-  const subscribersRef = useRef<SubscriberList | null>(null)
-  if (!subscribersRef.current) {
-    subscribersRef.current = createSubscriberList()
-  }
-  const subscribers = subscribersRef.current
-
   // Child apply-chain BaseApp — the ChainAppContext surface for hooks
   // inside this render tree. Built once per instance, mirrors the
   // plumbing in `create-app.tsx` (TEA Phase 2). Hooks subscribe via
-  // ChainAppContext only; legacy `rt.on("input"|"paste")` callers still
-  // work through the subscriber list for backwards compatibility (see
-  // runtimeContextValue below).
+  // ChainAppContext only — RuntimeContext is trimmed to {exit}.
   const childAppRef = useRef<ReturnType<typeof createChildApp> | null>(null)
   if (!childAppRef.current) childAppRef.current = createChildApp()
   const childApp = childAppRef.current
@@ -340,15 +321,12 @@ function SilveryApp({
       // Check for bracketed paste before splitting into individual keys.
       const pasteResult = parseBracketedPaste(rawChunk)
       if (pasteResult) {
-        // Dispatch to the child chain (ChainAppContext consumers — the
-        // canonical subscription surface) AND to the legacy subscriber
-        // list (for `rt.on("paste", …)` callers such as the ink
-        // compatibility shim).
+        // Dispatch to the child chain — the canonical subscription
+        // surface for hooks via ChainAppContext. The legacy
+        // `rt.on("paste", …)` subscriber list is gone (RuntimeContext
+        // trimmed to {exit} only).
         childApp.dispatch({ type: "term:paste", text: pasteResult.content })
         childApp.drainEffects()
-        for (const handler of subscribers.paste) {
-          handler(pasteResult.content)
-        }
         return
       }
 
@@ -395,7 +373,7 @@ function SilveryApp({
         }
       }
 
-      // Parse the key and dispatch to subscribers.
+      // Parse the key and dispatch to the child chain.
       const [input, key] = parseKey(chunk)
 
       // All input handling runs at discrete priority so React commits
@@ -411,12 +389,6 @@ function SilveryApp({
         // lifecycle below.
         childApp.dispatch({ type: "input:key", input, key })
         childApp.drainEffects()
-        // Legacy subscriber list — preserved for `rt.on("input", …)`
-        // callers such as the ink compatibility shim. Nothing in the
-        // first-party hook surface reaches for these any more.
-        for (const handler of subscribers.input) {
-          handler(input, key)
-        }
       })
       reconciler.flushSyncWork()
     }
@@ -438,34 +410,16 @@ function SilveryApp({
     [stdout, stdoutWrite, onScrollback],
   )
 
-  // RuntimeContext — direct subscriber list, no EventEmitter
+  // RuntimeContext — trimmed to lifecycle controls (exit + optional
+  // pause/resume for console suspension). Input / paste / focus flow
+  // through ChainAppContext.
   const runtimeContextValue = useMemo<RuntimeContextValue>(
     () => ({
-      on(event, handler) {
-        if (event === "input") {
-          const typed = handler as InputCallback
-          subscribers.input.add(typed)
-          return () => {
-            subscribers.input.delete(typed)
-          }
-        }
-        if (event === "paste") {
-          const typed = handler as unknown as PasteCallback
-          subscribers.paste.add(typed)
-          return () => {
-            subscribers.paste.delete(typed)
-          }
-        }
-        return () => {} // Unknown event — no-op cleanup
-      },
-      emit() {
-        // render() runtime doesn't support view → runtime events
-      },
       exit: handleExit,
       pause: onPause,
       resume: onResume,
     }),
-    [subscribers, handleExit, onPause, onResume],
+    [handleExit, onPause, onResume],
   )
 
   // ChainAppContext — canonical subscription surface for ag-react hooks.

@@ -478,33 +478,10 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     childApp.drainEffects()
   })
 
-  // RuntimeContext — retains `exit()` and legacy `on("input"|"paste")`
-  // subscriptions for callers that still reach for the old event bus
-  // (ink compatibility, stale extensions). The first-party hook surface
-  // subscribes via ChainAppContext only.
+  // RuntimeContext — trimmed to `exit()` only. First-party hooks
+  // subscribe via ChainAppContext above; app-defined events ride on
+  // `chain.events`.
   const runtimeValue: RuntimeContextValue = {
-    on(event, handler) {
-      if (event === "input") {
-        const wrapped = (data: string | Buffer) => {
-          const [input, key] = parseKey(data)
-          ;(handler as (input: string, key: import("@silvery/ag/keys").Key) => void)(input, key)
-        }
-        instance.inputEmitter.on("input", wrapped)
-        return () => {
-          instance.inputEmitter.removeListener("input", wrapped)
-        }
-      }
-      if (event === "paste") {
-        instance.inputEmitter.on("paste", handler)
-        return () => {
-          instance.inputEmitter.removeListener("paste", handler)
-        }
-      }
-      return () => {} // Unknown event — no-op cleanup
-    },
-    emit() {
-      // Test renderer doesn't support view → runtime events
-    },
     exit: handleExit,
   }
 

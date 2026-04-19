@@ -46,7 +46,14 @@ import {
 } from "@silvery/ag-react/reconciler"
 import type { RenderBuffer } from "../render-adapter"
 import { setRenderAdapter } from "../render-adapter"
-import { RuntimeContext, FocusManagerContext, type RuntimeContextValue } from "@silvery/ag-react/context"
+import {
+  ChainAppContext,
+  FocusManagerContext,
+  RuntimeContext,
+  type ChainAppContextValue,
+  type RuntimeContextValue,
+} from "@silvery/ag-react/context"
+import { createChildApp, toChainAppContextValue } from "@silvery/ag-react/chain-bridge"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey, splitRawInput } from "@silvery/ag/keys"
 import { parseBracketedPaste } from "../bracketed-paste"
@@ -187,13 +194,6 @@ function initXtermRenderer(): void {
 }
 
 // ============================================================================
-// Input handler type for subscriber list
-// ============================================================================
-
-type InputEventHandler = (input: string, key: import("@silvery/ag/keys").Key) => void
-type PasteEventHandler = (text: string) => void
-
-// ============================================================================
 // Render Functions
 // ============================================================================
 
@@ -280,10 +280,8 @@ export function renderToXterm(
   let provider: XtermProvider | null = null
   let focusManager: ReturnType<typeof createFocusManager> | null = null
   let runtimeContextValue: RuntimeContextValue | null = null
-
-  // Subscriber lists for RuntimeContext (no EventEmitter)
-  const inputHandlers = new Set<InputEventHandler>()
-  const pasteHandlers = new Set<PasteEventHandler>()
+  let chainAppContextValue: ChainAppContextValue | null = null
+  let childApp: ReturnType<typeof createChildApp> | null = null
 
   // Exit handler — uses doUnmount() indirection to avoid referencing
   // the `unmount` const before it's declared.
@@ -299,16 +297,21 @@ export function renderToXterm(
     // Wire up focus cleanup on node removal
     setOnNodeRemoved((removedNode) => focusManager!.handleSubtreeRemoved(removedNode))
 
-    // Wire provider input to RuntimeContext subscribers + user callbacks
+    // Child apply-chain BaseApp — the ChainAppContext surface for hooks
+    // inside this xterm render tree (TEA Phase 2). xterm input flows
+    // into this chain's dispatch; hooks subscribe via ChainAppContext.
+    childApp = createChildApp()
+    chainAppContextValue = toChainAppContextValue(childApp)
+
+    // Wire provider input to the child chain + user callbacks
     provider.onInput((chunk: string) => {
       if (unmounted) return
 
       // Check for bracketed paste
       const pasteResult = parseBracketedPaste(chunk)
       if (pasteResult) {
-        for (const handler of pasteHandlers) {
-          handler(pasteResult.content)
-        }
+        childApp!.dispatch({ type: "term:paste", text: pasteResult.content })
+        childApp!.drainEffects()
         return
       }
 
@@ -367,12 +370,12 @@ export function renderToXterm(
         }
       }
 
-      // Parse and dispatch to RuntimeContext subscribers
+      // Parse and dispatch through the child apply chain.
       const [input, key] = parseKey(rawKey)
       runWithDiscreteEvent(() => {
-        for (const handler of inputHandlers) {
-          handler(input, key)
-        }
+        childApp!.rawKeys.notify(input, key)
+        childApp!.dispatch({ type: "input:key", input, key })
+        childApp!.drainEffects()
       })
       reconciler.flushSyncWork()
 
@@ -380,28 +383,8 @@ export function renderToXterm(
       inputCallbacks.onKey?.(rawKey)
     }
 
-    // Build RuntimeContext value
+    // RuntimeContext — trimmed to `exit()` only.
     runtimeContextValue = {
-      on(event, handler) {
-        if (event === "input") {
-          const typed = handler as InputEventHandler
-          inputHandlers.add(typed)
-          return () => {
-            inputHandlers.delete(typed)
-          }
-        }
-        if (event === "paste") {
-          const typed = handler as unknown as PasteEventHandler
-          pasteHandlers.add(typed)
-          return () => {
-            pasteHandlers.delete(typed)
-          }
-        }
-        return () => {} // Unknown event — no-op cleanup
-      },
-      emit() {
-        // renderToXterm doesn't support view → runtime events
-      },
       exit: handleExit,
     }
   }
@@ -415,11 +398,15 @@ export function renderToXterm(
       children: withCursor,
     })
 
-    if (!inputEnabled || !runtimeContextValue || !focusManager) return themed
+    if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue) return themed
     return React.createElement(
       FocusManagerContext.Provider,
       { value: focusManager },
-      React.createElement(RuntimeContext.Provider, { value: runtimeContextValue }, themed),
+      React.createElement(
+        RuntimeContext.Provider,
+        { value: runtimeContextValue },
+        React.createElement(ChainAppContext.Provider, { value: chainAppContextValue }, themed),
+      ),
     )
   }
 
@@ -493,9 +480,6 @@ export function renderToXterm(
     reconciler.flushSyncWork()
     // Unregister node removal hook
     setOnNodeRemoved(null)
-    // Clean up subscriber lists
-    inputHandlers.clear()
-    pasteHandlers.clear()
     // Show cursor on unmount
     terminal.write(CURSOR_SHOW)
   }

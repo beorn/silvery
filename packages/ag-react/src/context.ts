@@ -98,7 +98,11 @@ export const StderrContext = createContext<StderrContextValue | null>(null)
 
 /**
  * Base events every runtime provides.
- * Apps extend this to add custom events (e.g., BoardEvents adds "op").
+ *
+ * Retained for backwards compatibility (legacy `useRuntime<E>()` generic
+ * slot). The canonical subscription surface is {@link ChainAppContextValue}
+ * — input / paste / focus flow through the apply-chain plugin stores and
+ * app-defined events ride on {@link ChainCustomEvents}.
  */
 export interface BaseRuntimeEvents {
   /** Keyboard input: [parsedInput, keyMetadata] */
@@ -110,52 +114,34 @@ export interface BaseRuntimeEvents {
 }
 
 /**
- * Extract handler function type from an event map entry.
+ * Minimal runtime handle — the trimmed RuntimeContextValue exposes only
+ * app-lifecycle controls (`exit`, and the opt-in pause / resume pair
+ * used by console-mode suspension). Input / paste / focus subscriptions
+ * live on {@link ChainAppContextValue}; custom view ↔ runtime events
+ * live on {@link ChainCustomEvents} (`chain.events.emit / on`).
+ *
+ * The generic parameter is retained for source compatibility with
+ * callers of `useRuntime<LinkEvents>()`; it has no effect on the type
+ * surface below.
  */
-type EventHandler<Args extends unknown[]> = (...args: Args) => void
-
-/**
- * Typed bidirectional event bus + app lifecycle controls.
- *
- * Replaces EventsContext, InputContext, StdinContext, and AppContext with
- * a single typed interface. Components never see stdin or raw mode.
- *
- * Generic parameter E extends BaseRuntimeEvents — all runtimes provide
- * at least "input" and "paste" events. Apps can extend with custom events:
- *
- * ```tsx
- * interface BoardEvents extends BaseRuntimeEvents {
- *   op: [BoardOp]
- * }
- * const rt = useRuntime<BoardEvents>()
- * rt?.on("input", handler)              // runtime → view
- * rt?.emit("op", { type: "cursor_down" }) // view → runtime
- * ```
- *
- * Present in interactive mode (run/render/createApp/test renderer).
- * Absent (null) in static mode (renderStatic).
- */
-export interface RuntimeContextValue<E extends BaseRuntimeEvents = BaseRuntimeEvents> {
-  /** Subscribe to a typed event. Returns cleanup function. */
-  on<K extends string & keyof E>(event: K, handler: EventHandler<E[K] extends unknown[] ? E[K] : never>): () => void
-  /** Emit a typed event (view → runtime). */
-  emit<K extends string & keyof E>(event: K, ...args: E[K] extends unknown[] ? E[K] : never): void
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface RuntimeContextValue<_E extends BaseRuntimeEvents = BaseRuntimeEvents> {
   /** Exit the application with optional error. */
   exit: (error?: Error) => void
-  /** Pause rendering output (for screen switching). */
+  /** Pause rendering output (used by console suspend). */
   pause?: () => void
-  /** Resume rendering after pause. */
+  /** Resume rendering after a pause. Forces a full redraw. */
   resume?: () => void
 }
 
 /**
- * Context that provides the typed runtime event bus.
+ * Context that provides the trimmed runtime handle.
  *
- * When non-null: interactive mode — useInput works, components can subscribe
- * to events via rt.on() and emit via rt.emit().
+ * When non-null: interactive mode — `useExit()` works. Input / paste /
+ * focus subscriptions use `ChainAppContext`.
  *
- * When null: static mode — useInput throws (by design), use useRuntime()
- * for components that need to work in both modes.
+ * When null: static mode — `useExit()` throws. Hooks subscribe through
+ * `ChainAppContext` when present, otherwise no-op.
  */
 export const RuntimeContext = createContext<RuntimeContextValue | null>(null)
 
@@ -190,6 +176,9 @@ export type ChainFocusHandler = (focused: boolean) => void
 /** Raw-key observer handler — fires for every input:key op (press/repeat/release/modifier-only). */
 export type ChainRawKeyHandler = (input: string, key: ChainKey) => void
 
+/** Handler registered with the custom-events store — payload is app-defined. */
+export type ChainCustomEventHandler = (...args: unknown[]) => void
+
 /** Input-fallback store slice exposed by withInputChain. */
 export interface ChainInputStore {
   register(handler: ChainInputHandler, active?: boolean): () => void
@@ -212,6 +201,17 @@ export interface ChainFocusEvents {
 }
 
 /**
+ * Custom-events slice — app-defined view ↔ runtime events (e.g.
+ * `link:open` fired by `<Link>` and consumed by km-tui's
+ * `useLinkOpen`). Channels are arbitrary strings chosen by the app;
+ * payloads are untyped at the bus layer.
+ */
+export interface ChainCustomEvents {
+  on(channel: string, handler: ChainCustomEventHandler): () => void
+  emit(channel: string, ...args: unknown[]): void
+}
+
+/**
  * Context that exposes the apply-chain plugin stores.
  *
  * Provided by `createApp()` (and `run()` eventually) when an apply-chain
@@ -231,6 +231,13 @@ export interface ChainAppContextValue {
    * whether a focused element consumed the key.
    */
   readonly rawKeys: ChainRawKeyObserver
+  /**
+   * Custom event bus — replaces the legacy `RuntimeContextValue.on /
+   * emit` surface for app-defined channels. Consumers subscribe via
+   * `events.on("channel", handler)` and producers fire via
+   * `events.emit("channel", …payload)`.
+   */
+  readonly events: ChainCustomEvents
 }
 
 export const ChainAppContext = createContext<ChainAppContextValue | null>(null)

@@ -114,11 +114,13 @@ import { createCapabilityRegistry, type CapabilityRegistry } from "@silvery/crea
 import { SELECTION_CAPABILITY } from "@silvery/create/internal/capabilities"
 import {
   createBaseApp,
+  withCustomEvents,
   withTerminalChain,
   withPasteChain,
   withInputChain,
   withFocusChain,
   type BaseApp,
+  type CustomEventStore,
   type InputStore,
   type PasteStore,
   type TerminalStore,
@@ -1328,13 +1330,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   })(baseApp)
   const pasteChainApp = withPasteChain({})(terminalChainApp)
   const inputChainApp = withInputChain(pasteChainApp)
-  const app = withFocusChain({
+  const focusChainApp = withFocusChain({
     dispatchKey: (input, key) => {
       const focusResult = handleFocusNavigation(input, key as Key, focusManager, container)
       return focusResult === "consumed"
     },
     hasActiveFocus: () => focusManager.activeElement !== null,
   })(inputChainApp)
+  // Custom events — replaces the legacy RuntimeContext.on/emit surface
+  // for app-defined channels (e.g. km-tui's `link:open`).
+  const app = withCustomEvents(focusChainApp)
   // Focus event slice — mirrors the withTerminalChain `focused` snapshot
   // into a pub/sub store shaped like InputStore/PasteStore. Used by the
   // ChainAppContext `focusEvents` accessor (hooks useTerminalFocused,
@@ -1376,6 +1381,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     paste: PasteStore
     terminal: TerminalStore
     focusChain: FocusChainStore
+    events: CustomEventStore
     focusEvents: typeof appFocusEvents
     rawKeys: typeof appRawKeys
   }
@@ -1390,87 +1396,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     paste: chainApp.paste,
     focusEvents: chainApp.focusEvents,
     rawKeys: chainApp.rawKeys,
+    events: chainApp.events,
   }
 
-  // Typed event bus — supports CUSTOM view ↔ runtime events via on()/emit().
-  //
-  // Built-in events (input / paste / focus) are NOT routed through this
-  // map any more — they flow through the apply-chain stores exposed on
-  // ChainAppContext. Hooks like useInput / usePaste / useTerminalFocused /
-  // useModifierKeys subscribe via ChainAppContext.
-  //
-  // What remains are app-level custom events such as km-tui's `link:open`
-  // (emitted by `<Link>` components, consumed by `useLinkOpen`). The
-  // `on` + `emit` pair keeps working for any user-defined event name.
-  //
-  // For input / paste / focus events, `on()` also fans out into the chain
-  // plugin stores as a compatibility bridge for non-root callers (e.g.
-  // InputBoundary-scoped subtrees still use rt.on with their own isolated
-  // runtime value, which is unrelated to this root value). The root runtime
-  // value no longer sees input/paste/focus subscribers in practice.
-  const runtimeEventListeners = new Map<string, Array<Function>>()
-
+  // Runtime handle — trimmed to `exit()` only. Input / paste / focus
+  // subscriptions live on `ChainAppContext` (see chainAppContextValue
+  // above); app-defined view ↔ runtime events ride on
+  // `ChainAppContext.events` (withCustomEvents).
   const runtimeContextValue: RuntimeContextValue = {
-    on(event, handler) {
-      // Built-in events: route into the chain stores so legacy callers that
-      // still reach for rt.on("input"|"paste"|"focus", …) on the root keep
-      // working. Nothing in-tree does this any more (commit 2 migrated all
-      // the hooks), but removing the bridge would silently break third-party
-      // extensions or stale integrations.
-      if (event === "input") {
-        const inputHandler = handler as (input: string, key: Key) => void | "exit"
-        return chainApp.input.register((input, key) => inputHandler(input, key as Key))
-      }
-      if (event === "paste") {
-        const pasteHandler = handler as (text: string) => void
-        return chainApp.paste.register((text) => pasteHandler(text))
-      }
-      if (event === "focus") {
-        const focusHandler = handler as (focused: boolean) => void
-        return chainApp.focusEvents.register((f) => focusHandler(f))
-      }
-      // Custom events — stored in the generic event-listeners map.
-      let listeners = runtimeEventListeners.get(event)
-      if (!listeners) {
-        listeners = []
-        runtimeEventListeners.set(event, listeners)
-      }
-      listeners.push(handler)
-      return () => {
-        const idx = listeners!.indexOf(handler)
-        if (idx >= 0) listeners!.splice(idx, 1)
-      }
-    },
-    emit(event, ...args) {
-      // For built-in events, dispatch through the chain so plugin-store
-      // subscribers see them. No production caller emits these today, but
-      // keeping the behaviour consistent avoids an easy footgun.
-      if (event === "input") {
-        const [input, key] = args as [string, Key]
-        chainApp.dispatch({ type: "input:key", input, key })
-        chainApp.drainEffects()
-        return
-      }
-      if (event === "paste") {
-        const [text] = args as [string]
-        chainApp.dispatch({ type: "term:paste", text })
-        chainApp.drainEffects()
-        return
-      }
-      if (event === "focus") {
-        const [focused] = args as [boolean]
-        chainApp.dispatch({ type: "term:focus", focused })
-        chainApp.drainEffects()
-        chainApp.focusEvents.notify(focused)
-        return
-      }
-      const listeners = runtimeEventListeners.get(event)
-      if (listeners) {
-        for (const listener of listeners) {
-          listener(...args)
-        }
-      }
-    },
     exit: () => exit(),
   }
 

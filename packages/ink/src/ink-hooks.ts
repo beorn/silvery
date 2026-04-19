@@ -7,7 +7,7 @@ import { useContext, useEffect, useLayoutEffect, useCallback, useState, useMemo,
 import { effect as signalEffect } from "@silvery/signals"
 import { getLayoutSignals } from "@silvery/ag/layout-signals"
 import { StdoutContext } from "@silvery/ag-react/context"
-import { RuntimeContext } from "@silvery/ag-react/context"
+import { ChainAppContext } from "@silvery/ag-react/context"
 import { InkCursorStoreCtx } from "./with-ink-cursor"
 import { InkFocusContext } from "./with-ink-focus"
 import { InkStdinCtx } from "./ink-stdin"
@@ -115,7 +115,7 @@ export function useStdin() {
  */
 export function usePaste(handler: (text: string) => void, options: { isActive?: boolean } = {}): void {
   const ctx = useContext(InkStdinCtx)
-  const rt = useContext(RuntimeContext)
+  const chain = useContext(ChainAppContext)
 
   useEffect(() => {
     if (options.isActive === false) return
@@ -127,14 +127,14 @@ export function usePaste(handler: (text: string) => void, options: { isActive?: 
     }
   }, [options.isActive, ctx.setRawMode, ctx.setBracketedPasteMode])
 
-  // Subscribe to paste events from silvery's RuntimeContext (interactive path)
+  // Subscribe to paste events from silvery's apply chain (interactive path)
   useEffect(() => {
     if (options.isActive === false) return
-    if (!rt) return
-    return rt.on("paste", (text: string) => {
+    if (!chain) return
+    return chain.paste.register((text: string) => {
       handler(text)
     })
-  }, [options.isActive, rt, handler])
+  }, [options.isActive, chain, handler])
 
   // Subscribe to paste events from InkStdinCtx (test renderer path)
   useEffect(() => {

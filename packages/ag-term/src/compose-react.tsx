@@ -75,12 +75,8 @@ export function withReact(element: ReactElement) {
     const newAg = createAg(reconcilerRoot, { measurer: undefined })
     ;(app as any).ag = newAg
 
-    // Minimal runtime context for useInput/useExit
+    // Minimal runtime context for useExit — trimmed to lifecycle only.
     const runtimeValue: RuntimeContextValue = {
-      on(_event, _handler) {
-        return () => {}
-      },
-      emit() {},
       exit() {
         mounted = false
         reconciler.updateContainer(null, fiberRoot, null, () => {})

@@ -26,7 +26,7 @@ import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
 import { Text } from "./Text"
 import { useModifierKeys } from "../hooks/useModifierKeys"
 import { useMouseCursor } from "../hooks/useMouseCursor"
-import { RuntimeContext } from "../context"
+import { ChainAppContext } from "../context"
 
 // ============================================================================
 // OSC 8 Escape Sequences
@@ -82,7 +82,7 @@ export function Link({
   ...rest
 }: LinkProps) {
   const [hovered, setHovered] = useState(false)
-  const rt = useContext(RuntimeContext)
+  const chain = useContext(ChainAppContext)
   // Only subscribe to modifiers when hovered and variant needs it — zero cost for non-hovered links
   const needsModifier = variant === "arm-on-cmd-hover"
   const { super: cmdHeld } = useModifierKeys({ enabled: hovered && needsModifier })
@@ -98,12 +98,12 @@ export function Link({
     (e: SilveryMouseEvent) => {
       const isArmed = armed || (needsModifier && hovered && e.metaKey)
       if (isArmed) {
-        ;(rt as any)?.emit("link:open", href)
+        chain?.events.emit("link:open", href)
         e.preventDefault()
       }
       onClick?.(e)
     },
-    [armed, needsModifier, hovered, href, onClick, rt],
+    [armed, needsModifier, hovered, href, onClick, chain],
   )
 
   return (

@@ -40,7 +40,8 @@ import {
   runWithDiscreteEvent,
   setOnNodeRemoved,
 } from "../../reconciler/index"
-import { RuntimeContext, FocusManagerContext, type RuntimeContextValue } from "../../context"
+import { ChainAppContext, RuntimeContext, FocusManagerContext, type ChainAppContextValue, type RuntimeContextValue } from "../../context"
+import { createChildApp, toChainAppContextValue } from "../../chain-bridge"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey, splitRawInput } from "@silvery/ag/keys"
 import { parseBracketedPaste } from "@silvery/ag-term/bracketed-paste"
@@ -318,12 +319,7 @@ export function renderToCanvas(
   let canvasInput: ReturnType<typeof createCanvasInput> | null = null
   let focusManager: ReturnType<typeof createFocusManager> | null = null
   let runtimeContextValue: RuntimeContextValue | null = null
-
-  // Subscriber lists for RuntimeContext
-  type InputEventHandler = (input: string, key: import("@silvery/ag/keys").Key) => void
-  type PasteEventHandler = (text: string) => void
-  const inputHandlers = new Set<InputEventHandler>()
-  const pasteHandlers = new Set<PasteEventHandler>()
+  let chainAppContextValue: ChainAppContextValue | null = null
 
   let doUnmount: () => void = () => {}
   const handleExit = (_error?: Error) => {
@@ -333,6 +329,12 @@ export function renderToCanvas(
   if (inputEnabled) {
     focusManager = createFocusManager()
     setOnNodeRemoved((removedNode) => focusManager!.handleSubtreeRemoved(removedNode))
+
+    // Child apply-chain BaseApp — the ChainAppContext surface for hooks
+    // inside this canvas render tree (TEA Phase 2). Canvas input flows
+    // into this chain's dispatch; hooks subscribe via ChainAppContext.
+    const childApp = createChildApp()
+    chainAppContextValue = toChainAppContextValue(childApp)
 
     // Create canvas input handler (hidden textarea + DOM event conversion)
     const canvasContainer = canvas.parentElement ?? canvas
@@ -344,7 +346,8 @@ export function renderToCanvas(
         // Check for bracketed paste
         const pasteResult = parseBracketedPaste(data)
         if (pasteResult) {
-          for (const handler of pasteHandlers) handler(pasteResult.content)
+          childApp.dispatch({ type: "term:paste", text: pasteResult.content })
+          childApp.drainEffects()
           return
         }
 
@@ -392,10 +395,12 @@ export function renderToCanvas(
         }
       }
 
-      // Parse and dispatch to RuntimeContext subscribers
+      // Parse and dispatch through the child apply chain.
       const [input, key] = parseKey(rawKey)
       runWithDiscreteEvent(() => {
-        for (const handler of inputHandlers) handler(input, key)
+        childApp.rawKeys.notify(input, key)
+        childApp.dispatch({ type: "input:key", input, key })
+        childApp.drainEffects()
       })
       reconciler.flushSyncWork()
 
@@ -403,28 +408,8 @@ export function renderToCanvas(
       inputCallbacks.onKey?.(rawKey)
     }
 
-    // Build RuntimeContext value
+    // RuntimeContext — trimmed to `exit()` only.
     runtimeContextValue = {
-      on(event, handler) {
-        if (event === "input") {
-          const typed = handler as InputEventHandler
-          inputHandlers.add(typed)
-          return () => {
-            inputHandlers.delete(typed)
-          }
-        }
-        if (event === "paste") {
-          const typed = handler as unknown as PasteEventHandler
-          pasteHandlers.add(typed)
-          return () => {
-            pasteHandlers.delete(typed)
-          }
-        }
-        return () => {} // Unknown event — no-op cleanup
-      },
-      emit() {
-        // renderToCanvas doesn't support view → runtime events
-      },
       exit: handleExit,
     }
   }
@@ -434,11 +419,15 @@ export function renderToCanvas(
     const withCursor = React.createElement(CursorProvider, { store: cursorStore }, el)
     const themed = React.createElement(ThemeProvider, { theme, children: withCursor })
 
-    if (!inputEnabled || !runtimeContextValue || !focusManager) return themed
+    if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue) return themed
     return React.createElement(
       FocusManagerContext.Provider,
       { value: focusManager },
-      React.createElement(RuntimeContext.Provider, { value: runtimeContextValue }, themed),
+      React.createElement(
+        RuntimeContext.Provider,
+        { value: runtimeContextValue },
+        React.createElement(ChainAppContext.Provider, { value: chainAppContextValue }, themed),
+      ),
     )
   }
 

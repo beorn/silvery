@@ -150,20 +150,10 @@ export function InputBoundary({
   const chainAppContextValue = useMemo(() => toChainAppContextValue(childApp), [childApp])
 
   // RuntimeContext retains a minimal handle — only `exit` (no-op inside
-  // the boundary) and `emit` (no-op; custom view-only events do not
-  // escape the isolated scope). Child hooks no longer use `rt.on` —
-  // they subscribe via ChainAppContext.
+  // the boundary). Custom app events use the child chain's events store
+  // (`chain.events.emit / on` via ChainAppContext).
   const runtimeContextValue = useMemo<RuntimeContextValue>(
     () => ({
-      on() {
-        // Inside a boundary, `rt.on` is deprecated — hooks subscribe via
-        // ChainAppContext. Return a no-op unsubscribe so any stale caller
-        // fails safe.
-        return () => {}
-      },
-      emit() {
-        // Boundary doesn't forward custom events to the parent runtime.
-      },
       exit: () => {},
     }),
     [],

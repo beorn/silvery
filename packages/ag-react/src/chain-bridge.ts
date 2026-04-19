@@ -25,11 +25,13 @@
 import type { Key } from "@silvery/ag/keys"
 import {
   createBaseApp,
+  withCustomEvents,
   withFocusChain,
   withInputChain,
   withPasteChain,
   withTerminalChain,
   type BaseApp,
+  type CustomEventStore,
   type InputStore,
   type PasteStore,
   type TerminalStore,
@@ -51,6 +53,7 @@ export interface ChildApp extends BaseApp {
   readonly input: InputStore
   readonly paste: PasteStore
   readonly terminal: TerminalStore
+  readonly events: CustomEventStore
   readonly rawKeys: ChainRawKeyObserver & {
     /** Fire all registered raw-key observers. */
     notify(input: string, key: Key): void
@@ -77,6 +80,7 @@ export function createChildApp(): ChildApp {
     dispatchKey: () => false,
     hasActiveFocus: () => false,
   })(input)
+  const events = withCustomEvents(focus)
 
   // Raw-key observer slice — unfiltered access to every dispatched key
   // (used by useModifierKeys which needs release + modifier-only events).
@@ -111,7 +115,7 @@ export function createChildApp(): ChildApp {
     },
   }
 
-  return Object.assign(focus, { rawKeys, focusEvents }) as ChildApp
+  return Object.assign(events, { rawKeys, focusEvents }) as ChildApp
 }
 
 /**
@@ -124,5 +128,6 @@ export function toChainAppContextValue(app: ChildApp): ChainAppContextValue {
     paste: app.paste,
     focusEvents: app.focusEvents,
     rawKeys: app.rawKeys,
+    events: app.events,
   }
 }
