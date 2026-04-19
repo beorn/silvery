@@ -75,6 +75,9 @@ export type {
   HasActiveFocus,
 } from "./runtime/with-focus-chain"
 
+export { withCustomEvents } from "./runtime/with-custom-events"
+export type { CustomEventHandler, CustomEventStore } from "./runtime/with-custom-events"
+
 // --- Apply-chain substrate ---------------------------------------------------
 export { createBaseApp } from "./runtime/base-app"
 export type { BaseApp, Apply } from "./runtime/base-app"
