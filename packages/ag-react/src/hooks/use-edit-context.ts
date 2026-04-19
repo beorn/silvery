@@ -188,7 +188,9 @@ export function useEditContext({
         cursorPos = Math.max(0, Math.min(initialCursorPos, initialValue.length))
       } else {
         const targetRow =
-          initialCursorPos === "start" ? 0 : Math.max(0, countVisualLines(initialValue, effectiveWrapWidth) - 1)
+          initialCursorPos === "start"
+            ? 0
+            : Math.max(0, countVisualLines(initialValue, effectiveWrapWidth) - 1)
         cursorPos = rowColToCursor(initialValue, targetRow, stickyX, effectiveWrapWidth)
       }
     } else {

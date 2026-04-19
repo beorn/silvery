@@ -3,8 +3,8 @@
  * Source: https://github.com/rebelot/kanagawa.nvim (palette.lua)
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Kanagawa Wave — the default dark variant, inspired by "The Great Wave off Kanagawa". */
 export const kanagawaWave: ColorScheme = {

@@ -41,7 +41,8 @@ import {
 
 const log = createLogger("silvery:output")
 
-const _env = typeof process !== "undefined" ? process.env : ({} as Record<string, string | undefined>)
+const _env =
+  typeof process !== "undefined" ? process.env : ({} as Record<string, string | undefined>)
 const DEBUG_OUTPUT = !!_env.SILVERY_DEBUG_OUTPUT
 const FULL_RENDER = !!_env.SILVERY_FULL_RENDER
 const DEBUG_CAPTURE = !!_env.SILVERY_DEBUG_CAPTURE
@@ -53,7 +54,9 @@ let _captureRawFrameCount = 0
 export { replayAnsiWithStyles } from "./output-verify"
 export type { StyledCell } from "./output-verify"
 // Wrap captureStrictFailureArtifacts to bind bufferToAnsi (avoids circular dep in output-verify.ts)
-export function captureStrictFailureArtifacts(opts: Parameters<typeof _captureArtifacts>[0]): string {
+export function captureStrictFailureArtifacts(
+  opts: Parameters<typeof _captureArtifacts>[0],
+): string {
   return _captureArtifacts({ ...opts, renderFull: opts.renderFull ?? bufferToAnsi })
 }
 
@@ -169,7 +172,10 @@ function outputTextSizingEnabled(ctx: OutputContext): boolean {
  * @param caps - Terminal capabilities for SGR code generation
  * @param measurer - Width measurer for graphemeWidth/textSizingEnabled (avoids dual-module-loading issues)
  */
-export function createOutputPhase(caps: Partial<OutputCaps>, measurer?: OutputMeasurer): OutputPhaseFn {
+export function createOutputPhase(
+  caps: Partial<OutputCaps>,
+  measurer?: OutputMeasurer,
+): OutputPhaseFn {
   // Instance-scoped context — caps, measurer, and caches are all per-instance.
   // mode and termRows are set per-frame in scopedOutputPhase() below.
   // No module-level globals are read or modified.
@@ -220,9 +226,27 @@ export function createOutputPhase(caps: Partial<OutputCaps>, measurer?: OutputMe
     if (pendingPromotion && mode === "inline") {
       const promo = pendingPromotion
       pendingPromotion = null
-      return handleScrollbackPromotion(inlineState, promo.frozenContent, promo.frozenLineCount, next, cursorPos, ctx)
+      return handleScrollbackPromotion(
+        inlineState,
+        promo.frozenContent,
+        promo.frozenLineCount,
+        next,
+        cursorPos,
+        ctx,
+      )
     }
-    return outputPhase(prev, next, mode, scrollbackOffset, termRows, cursorPos, inlineState, ctx, accState, tvState)
+    return outputPhase(
+      prev,
+      next,
+      mode,
+      scrollbackOffset,
+      termRows,
+      cursorPos,
+      inlineState,
+      ctx,
+      accState,
+      tvState,
+    )
   }
 
   fn.resetInlineState = () => {
@@ -327,7 +351,8 @@ function handleScrollbackPromotion(
   // inlineCursorSuffix already positioned the cursor within the live content.
   if (cursorPos?.visible) {
     const visibleRow = cursorPos.y - startLine
-    state.prevCursorRow = visibleRow >= 0 && visibleRow < maxOutputLines ? visibleRow : maxOutputLines - 1
+    state.prevCursorRow =
+      visibleRow >= 0 && visibleRow < maxOutputLines ? visibleRow : maxOutputLines - 1
   } else {
     state.prevCursorRow = maxOutputLines - 1
   }
@@ -404,7 +429,8 @@ function updateInlineCursorRow(
 ): void {
   if (cursorPos?.visible) {
     const visibleRow = cursorPos.y - startLine
-    state.prevCursorRow = visibleRow >= 0 && visibleRow < maxOutputLines ? visibleRow : maxOutputLines - 1
+    state.prevCursorRow =
+      visibleRow >= 0 && visibleRow < maxOutputLines ? visibleRow : maxOutputLines - 1
   } else {
     // Cursor hidden: cursor stays at end of last content line
     state.prevCursorRow = maxOutputLines - 1
@@ -634,7 +660,9 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
     } else if (typeof newStyle.underlineColor === "number") {
       codes.push(`58;5;${newStyle.underlineColor}`)
     } else {
-      codes.push(`58;2;${newStyle.underlineColor.r};${newStyle.underlineColor.g};${newStyle.underlineColor.b}`)
+      codes.push(
+        `58;2;${newStyle.underlineColor.r};${newStyle.underlineColor.g};${newStyle.underlineColor.b}`,
+      )
     }
   }
 
@@ -727,7 +755,8 @@ export function outputPhase(
     const fullRenderAcc = (globalThis as any).__silvery_bench_output_detail
     if (fullRenderAcc) {
       fullRenderAcc.fullRenderCalls = (fullRenderAcc.fullRenderCalls ?? 0) + 1
-      fullRenderAcc.fullRenderCells = (fullRenderAcc.fullRenderCells ?? 0) + next.width * next.height
+      fullRenderAcc.fullRenderCells =
+        (fullRenderAcc.fullRenderCells ?? 0) + next.width * next.height
     }
     // Inline mode resize optimization: if the runtime invalidated prevBuffer (resize)
     // but we have a stored buffer with matching dimensions, use incremental rendering
@@ -738,7 +767,15 @@ export function outputPhase(
       if (stored.width === next.width && stored.height === next.height) {
         // Dimensions match — use incremental rendering (skip clear entirely)
         inlineState.prevBuffer = next
-        return inlineIncrementalRender(inlineState, stored, next, scrollbackOffset, cursorPos, ctx, tvState)
+        return inlineIncrementalRender(
+          inlineState,
+          stored,
+          next,
+          scrollbackOffset,
+          cursorPos,
+          ctx,
+          tvState,
+        )
       }
     }
 
@@ -756,9 +793,11 @@ export function outputPhase(
     // For inline first render, append cursor positioning and initialize tracking
     if (mode === "inline") {
       const firstContentLines = findLastContentLine(next) + 1
-      const firstMaxOutput = termRows != null ? Math.min(firstContentLines, termRows) : firstContentLines
+      const firstMaxOutput =
+        termRows != null ? Math.min(firstContentLines, termRows) : firstContentLines
       let firstStartLine = 0
-      if (termRows != null && firstContentLines > termRows) firstStartLine = firstContentLines - termRows
+      if (termRows != null && firstContentLines > termRows)
+        firstStartLine = firstContentLines - termRows
 
       // Resize: clear the entire visible screen and re-render.
       // Terminal reflow is unpredictable — lines wrap differently based on content,
@@ -767,7 +806,8 @@ export function outputPhase(
       // so using termRows is safe. Frozen scrollback content above is preserved.
       let prefix = ""
       if (inlineState.prevCursorRow >= 0) {
-        const clearDistance = termRows ?? Math.max(inlineState.prevCursorRow, inlineState.prevOutputLines - 1)
+        const clearDistance =
+          termRows ?? Math.max(inlineState.prevCursorRow, inlineState.prevOutputLines - 1)
         if (clearDistance > 0) {
           prefix += `\x1b[${clearDistance}A`
         }
@@ -811,7 +851,15 @@ export function outputPhase(
   // Inline mode: use incremental rendering when safe, fall back to full render.
   if (mode === "inline") {
     inlineState.prevBuffer = next
-    return inlineIncrementalRender(inlineState, prev, next, scrollbackOffset, cursorPos, ctx, tvState)
+    return inlineIncrementalRender(
+      inlineState,
+      prev,
+      next,
+      scrollbackOffset,
+      cursorPos,
+      ctx,
+      tvState,
+    )
   }
 
   // SILVERY_FULL_RENDER: bypass incremental diff, always render full buffer.
@@ -908,7 +956,10 @@ export function outputPhase(
     const bytes = Buffer.byteLength(incrOutput)
     try {
       const fs = require("fs")
-      fs.appendFileSync("/tmp/silvery-sizes.log", `changesToAnsi: ${count} changes, ${bytes} bytes\n`)
+      fs.appendFileSync(
+        "/tmp/silvery-sizes.log",
+        `changesToAnsi: ${count} changes, ${bytes} bytes\n`,
+      )
     } catch {}
   }
 
@@ -930,7 +981,11 @@ export function outputPhase(
         for (let x = 0; x < w && !mismatchInfo; x++) {
           const ic = screenIncr[y]?.[x]
           const fc = screenFresh[y]?.[x]
-          if (ic && fc && (ic.char !== fc.char || !sgrColorEquals(ic.fg, fc.fg) || !sgrColorEquals(ic.bg, fc.bg))) {
+          if (
+            ic &&
+            fc &&
+            (ic.char !== fc.char || !sgrColorEquals(ic.fg, fc.fg) || !sgrColorEquals(ic.bg, fc.bg))
+          ) {
             mismatchInfo = `MISMATCH at (${x},${y}): incr='${ic.char}' fresh='${fc.char}' incrFg=${formatColor(ic.fg)} freshFg=${formatColor(fc.fg)} incrBg=${formatColor(ic.bg)} freshBg=${formatColor(fc.bg)}`
             // Show row context
             const incrRow = screenIncr[y]!.map((c) => c.char).join("")
@@ -940,7 +995,10 @@ export function outputPhase(
         }
       }
       const status = mismatchInfo || "MATCH"
-      fs.appendFileSync("/tmp/silvery-capture.log", `Frame ${_debugFrameCount}: ${count} changes, ${status}\n`)
+      fs.appendFileSync(
+        "/tmp/silvery-capture.log",
+        `Frame ${_debugFrameCount}: ${count} changes, ${status}\n`,
+      )
       if (mismatchInfo) {
         fs.writeFileSync(`/tmp/silvery-incr-${_debugFrameCount}.ansi`, freshPrev + incrOutput)
         fs.writeFileSync(`/tmp/silvery-fresh-${_debugFrameCount}.ansi`, freshOutput)
@@ -951,7 +1009,10 @@ export function outputPhase(
       }
     } catch (e) {
       try {
-        require("fs").appendFileSync("/tmp/silvery-capture.log", `Frame ${_debugFrameCount}: ERROR ${e}\n`)
+        require("fs").appendFileSync(
+          "/tmp/silvery-capture.log",
+          `Frame ${_debugFrameCount}: ERROR ${e}\n`,
+        )
       } catch {}
     }
   }
@@ -961,7 +1022,15 @@ export function outputPhase(
   // replayAnsiWithStyles parser (stateless). Enabled by SILVERY_STRICT or
   // SILVERY_STRICT_TERMINAL containing "vt100".
   if (isStrictOutput() || tvState.hasVt100) {
-    _verifyOutputEquivalence(prev, next, incrOutput, ctx, bufferToAnsi, outputGraphemeWidth, outputTextSizingEnabled)
+    _verifyOutputEquivalence(
+      prev,
+      next,
+      incrOutput,
+      ctx,
+      bufferToAnsi,
+      outputGraphemeWidth,
+      outputTextSizingEnabled,
+    )
   }
 
   // SILVERY_STRICT_ACCUMULATE: verify that the accumulated output from ALL frames
@@ -1071,7 +1140,8 @@ function inlineCursorSuffix(
   const lastContentLine = findLastContentLine(buffer)
   const maxLine = lastContentLine
   let startLine = 0
-  const maxOutputLines = termRows != null ? Math.min(lastContentLine + 1, termRows) : lastContentLine + 1
+  const maxOutputLines =
+    termRows != null ? Math.min(lastContentLine + 1, termRows) : lastContentLine + 1
   if (termRows != null && maxLine >= termRows) {
     startLine = maxLine - termRows + 1
   }
@@ -1124,7 +1194,12 @@ function inlineIncrementalRender(
 ): string {
   const { termRows } = ctx
   // Guard: fall back to full render for complex cases
-  if (scrollbackOffset > 0 || prev.width !== next.width || prev.height !== next.height || state.prevCursorRow < 0) {
+  if (
+    scrollbackOffset > 0 ||
+    prev.width !== next.width ||
+    prev.height !== next.height ||
+    state.prevCursorRow < 0
+  ) {
     return inlineFullRender(state, prev, next, scrollbackOffset, cursorPos, ctx)
   }
 
@@ -1132,7 +1207,8 @@ function inlineIncrementalRender(
   const prevContentLines = findLastContentLine(prev) + 1
 
   // Compute visible ranges for both prev and next content
-  const prevMaxOutputLines = termRows != null ? Math.min(prevContentLines, termRows) : prevContentLines
+  const prevMaxOutputLines =
+    termRows != null ? Math.min(prevContentLines, termRows) : prevContentLines
   const maxOutputLines = termRows != null ? Math.min(nextContentLines, termRows) : nextContentLines
   let prevStartLine = 0
   if (termRows != null && prevContentLines > termRows) {
@@ -1256,7 +1332,15 @@ function inlineIncrementalRender(
     const savedMode = ctx.mode
     ctx.mode = "fullscreen"
     const fsIncrOutput = changesToAnsi(pool, count, ctx, next).output
-    _verifyOutputEquivalence(prev, next, fsIncrOutput, ctx, bufferToAnsi, outputGraphemeWidth, outputTextSizingEnabled)
+    _verifyOutputEquivalence(
+      prev,
+      next,
+      fsIncrOutput,
+      ctx,
+      bufferToAnsi,
+      outputGraphemeWidth,
+      outputTextSizingEnabled,
+    )
     ctx.mode = savedMode
   }
   // TODO: verifyTerminalEquivalence (xterm/ghostty) is skipped for inline mode.
@@ -1315,7 +1399,10 @@ function inlineFullRender(
   // tracked cursor row + any lines written to stdout between renders.
   // Cap to termRows-1: terminal clamps cursor-up at row 0.
   const rawCursorOffset = cursorRowInRegion + scrollbackOffset
-  const cursorOffset = termRows != null && !isStrictOutput() ? Math.min(rawCursorOffset, termRows - 1) : rawCursorOffset
+  const cursorOffset =
+    termRows != null && !isStrictOutput()
+      ? Math.min(rawCursorOffset, termRows - 1)
+      : rawCursorOffset
 
   // Cap output at terminal height to prevent scrollback corruption.
   // Content taller than the terminal pushes lines into scrollback where
@@ -1379,7 +1466,11 @@ function inlineFullRender(
  * @param maxRows Optional cap on number of rows to output (inline mode).
  *   When content exceeds terminal height, this prevents scrollback corruption.
  */
-function bufferToAnsi(buffer: TerminalBuffer, ctx: OutputContext = defaultContext, maxRows?: number): string {
+function bufferToAnsi(
+  buffer: TerminalBuffer,
+  ctx: OutputContext = defaultContext,
+  maxRows?: number,
+): string {
   const { mode } = ctx
   let output = ""
   let currentStyle: Style | null = null
@@ -2056,11 +2147,17 @@ function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string 
   if (style.attrs.strikethrough) codes.push("9")
 
   // Append underline color if specified (SGR 58) — skip for limited terminals
-  if (ctx.caps.underlineColor && style.underlineColor !== null && style.underlineColor !== undefined) {
+  if (
+    ctx.caps.underlineColor &&
+    style.underlineColor !== null &&
+    style.underlineColor !== undefined
+  ) {
     if (typeof style.underlineColor === "number") {
       codes.push(`58;5;${style.underlineColor}`)
     } else {
-      codes.push(`58;2;${style.underlineColor.r};${style.underlineColor.g};${style.underlineColor.b}`)
+      codes.push(
+        `58;2;${style.underlineColor.r};${style.underlineColor.g};${style.underlineColor.b}`,
+      )
     }
   }
 

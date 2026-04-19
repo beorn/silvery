@@ -210,7 +210,11 @@ export function ToastItem({ toast, ...boxProps }: ToastItemProps): React.ReactEl
  *
  * Place at the bottom of your layout to show toasts as they appear.
  */
-export function ToastContainer({ toasts, maxVisible = 5, ...boxProps }: ToastContainerProps): React.ReactElement {
+export function ToastContainer({
+  toasts,
+  maxVisible = 5,
+  ...boxProps
+}: ToastContainerProps): React.ReactElement {
   const visible = toasts.slice(-maxVisible)
 
   return (

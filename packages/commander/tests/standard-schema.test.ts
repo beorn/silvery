@@ -22,7 +22,11 @@ describe("Standard Schema detection", () => {
   })
 
   it("validates via Standard Schema and throws on error", () => {
-    const cmd = new Command("test").option("-p, --port <n>", "Port", z.coerce.number().min(1).max(65535))
+    const cmd = new Command("test").option(
+      "-p, --port <n>",
+      "Port",
+      z.coerce.number().min(1).max(65535),
+    )
     cmd.exitOverride()
     cmd.configureOutput({ writeErr: () => {} })
     expect(() => {
@@ -49,7 +53,8 @@ describe("custom Standard Schema objects", () => {
         vendor: "test",
         validate: (value) => {
           const n = Number(value)
-          if (Number.isNaN(n) || n <= 0) return { issues: [{ message: `Expected positive number, got "${value}"` }] }
+          if (Number.isNaN(n) || n <= 0)
+            return { issues: [{ message: `Expected positive number, got "${value}"` }] }
           return { value: n }
         },
       },
@@ -67,7 +72,8 @@ describe("custom Standard Schema objects", () => {
         vendor: "test",
         validate: (value) => {
           const n = Number(value)
-          if (Number.isNaN(n) || n <= 0) return { issues: [{ message: `Expected positive number` }] }
+          if (Number.isNaN(n) || n <= 0)
+            return { issues: [{ message: `Expected positive number` }] }
           return { value: n }
         },
       },

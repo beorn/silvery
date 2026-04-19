@@ -31,7 +31,11 @@ export type StateCreator<
   Mis extends [StoreMutatorIdentifier, unknown][] = [],
   Mos extends [StoreMutatorIdentifier, unknown][] = [],
   U = T,
-> = ((setState: StoreApi<T>["setState"], getState: StoreApi<T>["getState"], store: StoreApi<T>) => U) & {
+> = ((
+  setState: StoreApi<T>["setState"],
+  getState: StoreApi<T>["getState"],
+  store: StoreApi<T>,
+) => U) & {
   $$storeMutators?: Mos
 }
 
@@ -51,7 +55,9 @@ export function createStore<T>(factory: StateCreator<T>): StoreApi<T> {
   const setState: SetStateInternal<T> = (partial: unknown, replace?: boolean) => {
     const prev = state$()
     const raw =
-      typeof partial === "function" ? (partial as (state: T) => T | Partial<T>)(prev) : (partial as T | Partial<T>)
+      typeof partial === "function"
+        ? (partial as (state: T) => T | Partial<T>)(prev)
+        : (partial as T | Partial<T>)
 
     let next: T
     if (!replace && raw !== null && typeof raw === "object" && !Array.isArray(raw)) {

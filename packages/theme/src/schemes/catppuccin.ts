@@ -2,8 +2,8 @@
  * Catppuccin palettes — the most popular 4-flavor theme system.
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Catppuccin Mocha — the classic dark variant. */
 export const catppuccinMocha: ColorScheme = {

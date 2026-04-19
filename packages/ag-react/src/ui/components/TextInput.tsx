@@ -198,7 +198,11 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   // Always show visual cursor (inverse/underline). When active, the hardware
   // cursor is also positioned via useCursor() for terminal blink support.
   const cursorEl =
-    cursorStyle === "underline" ? <Text underline>{displayAtCursor}</Text> : <Text inverse>{displayAtCursor}</Text>
+    cursorStyle === "underline" ? (
+      <Text underline>{displayAtCursor}</Text>
+    ) : (
+      <Text inverse>{displayAtCursor}</Text>
+    )
 
   // Compute border+padding offset for cursor positioning.
   // useCursor reads scrollRect from the parent's NodeContext, but the text

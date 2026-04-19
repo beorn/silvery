@@ -28,7 +28,10 @@
 import { describe, test, expect } from "vitest"
 import type { AgNode, TextProps, BoxProps } from "@silvery/ag/types"
 import { INITIAL_EPOCH } from "@silvery/ag/epoch"
-import { collectPlainText, collectPlainTextSkipHidden } from "@silvery/ag-term/pipeline/collect-text"
+import {
+  collectPlainText,
+  collectPlainTextSkipHidden,
+} from "@silvery/ag-term/pipeline/collect-text"
 import { collectTextContent as collectTextContentForRender } from "@silvery/ag-term/pipeline/render-text"
 import { createRenderer } from "@silvery/test"
 import React from "react"
@@ -139,7 +142,10 @@ describe("collectPlainText (shared primitive)", () => {
   })
 
   test("applies internal_transform", () => {
-    const child = virtualTextNode({ internal_transform: (t: string) => t.toUpperCase() } as any, textNode("hello"))
+    const child = virtualTextNode(
+      { internal_transform: (t: string) => t.toUpperCase() } as any,
+      textNode("hello"),
+    )
     const node = virtualTextNode({}, child)
     expect(collectPlainText(node)).toBe("HELLO")
   })
@@ -201,7 +207,10 @@ describe("collectPlainTextSkipHidden (shared primitive)", () => {
   })
 
   test("applies internal_transform", () => {
-    const child = virtualTextNode({ internal_transform: (t: string) => `[${t}]` } as any, textNode("x"))
+    const child = virtualTextNode(
+      { internal_transform: (t: string) => `[${t}]` } as any,
+      textNode("x"),
+    )
     const node = virtualTextNode({}, child)
     expect(collectPlainTextSkipHidden(node)).toBe("[x]")
   })
@@ -249,7 +258,11 @@ describe("render-text.ts collectTextContent (ANSI-styled)", () => {
   })
 
   test("applies ANSI codes for styled virtual text children", () => {
-    const node = virtualTextNode({}, textNode("plain "), virtualTextNode({ bold: true }, textNode("bold")))
+    const node = virtualTextNode(
+      {},
+      textNode("plain "),
+      virtualTextNode({ bold: true }, textNode("bold")),
+    )
     const result = collectTextContentForRender(node)
     // bold child gets ANSI bold (code 1), then reset + restore parent
     expect(result).toContain("plain ")
@@ -316,7 +329,10 @@ describe("render-text.ts collectTextContent (ANSI-styled)", () => {
   test("does NOT apply internal_transform to non-virtual-text children", () => {
     // When child has a layoutNode, it's not treated as a styled Text node,
     // so internal_transform is NOT applied in the else branch
-    const child = layoutTextNode({ internal_transform: (text: string) => `[${text}]` } as any, textNode("content"))
+    const child = layoutTextNode(
+      { internal_transform: (text: string) => `[${text}]` } as any,
+      textNode("content"),
+    )
     const node = virtualTextNode({}, child)
     const result = collectTextContentForRender(node)
     // No transform applied because child has layoutNode
@@ -327,7 +343,11 @@ describe("render-text.ts collectTextContent (ANSI-styled)", () => {
   test("nested style inheritance", () => {
     const node = virtualTextNode(
       {},
-      virtualTextNode({ color: "red" }, textNode("red "), virtualTextNode({ bold: true }, textNode("red-bold"))),
+      virtualTextNode(
+        { color: "red" },
+        textNode("red "),
+        virtualTextNode({ bold: true }, textNode("red-bold")),
+      ),
     )
     const result = collectTextContentForRender(node)
     expect(result).toContain("red ")

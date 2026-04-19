@@ -21,7 +21,9 @@ describe("Command subclass", () => {
   })
 
   it("returns opts for boolean flags", () => {
-    const cmd = new Command("test").option("-v, --verbose", "Verbose output").option("-d, --debug", "Debug mode")
+    const cmd = new Command("test")
+      .option("-v, --verbose", "Verbose output")
+      .option("-d, --debug", "Debug mode")
 
     cmd.parse(["node", "test", "--verbose"], { from: "node" })
     const opts = cmd.opts()
@@ -31,7 +33,9 @@ describe("Command subclass", () => {
   })
 
   it("returns opts for string value flags", () => {
-    const cmd = new Command("test").option("-p, --port <number>", "Port").option("-h, --host <addr>", "Host address")
+    const cmd = new Command("test")
+      .option("-p, --port <number>", "Port")
+      .option("-h, --host <addr>", "Host address")
 
     cmd.parse(["node", "test", "--port", "3000", "--host", "localhost"], { from: "node" })
     const opts = cmd.opts()
@@ -129,13 +133,21 @@ describe("custom parser", () => {
 
 describe("array choices", () => {
   it("restricts to valid choices via array", () => {
-    const cmd = new Command("test").option("-e, --env <env>", "Environment", ["dev", "staging", "prod"])
+    const cmd = new Command("test").option("-e, --env <env>", "Environment", [
+      "dev",
+      "staging",
+      "prod",
+    ])
     cmd.parse(["node", "test", "--env", "dev"], { from: "node" })
     expect(cmd.opts().env).toBe("dev")
   })
 
   it("rejects invalid choices", () => {
-    const cmd = new Command("test").option("-e, --env <env>", "Environment", ["dev", "staging", "prod"])
+    const cmd = new Command("test").option("-e, --env <env>", "Environment", [
+      "dev",
+      "staging",
+      "prod",
+    ])
     cmd.exitOverride()
     cmd.configureOutput({ writeErr: () => {} })
     expect(() => {
@@ -144,7 +156,11 @@ describe("array choices", () => {
   })
 
   it("is undefined when not provided", () => {
-    const cmd = new Command("test").option("-e, --env <env>", "Environment", ["dev", "staging", "prod"])
+    const cmd = new Command("test").option("-e, --env <env>", "Environment", [
+      "dev",
+      "staging",
+      "prod",
+    ])
     cmd.parse(["node", "test"], { from: "node" })
     expect(cmd.opts().env).toBeUndefined()
   })
@@ -212,7 +228,9 @@ describe("actionMerged — merged named-object form", () => {
   })
 
   it("argument with choices rejects invalid values", () => {
-    const cmd = new Command("test").argument("<env>", "Environment", ["dev", "staging", "prod"]).actionMerged(() => {})
+    const cmd = new Command("test")
+      .argument("<env>", "Environment", ["dev", "staging", "prod"])
+      .actionMerged(() => {})
     cmd.exitOverride()
     cmd.configureOutput({ writeErr: () => {} })
     expect(() => {
@@ -232,27 +250,33 @@ describe("actionMerged — merged named-object form", () => {
 
   it("argument with Standard Schema validates", () => {
     let received: any
-    const cmd = new Command("test").argument("<port>", "Port", z.coerce.number()).actionMerged((params) => {
-      received = params
-    })
+    const cmd = new Command("test")
+      .argument("<port>", "Port", z.coerce.number())
+      .actionMerged((params) => {
+        received = params
+      })
     cmd.parse(["node", "test", "8080"], { from: "node" })
     expect(received.port).toBe(8080)
   })
 
   it("kebab-case argument name becomes camelCase", () => {
     let received: any
-    const cmd = new Command("test").argument("<service-name>", "Service name").actionMerged((params) => {
-      received = params
-    })
+    const cmd = new Command("test")
+      .argument("<service-name>", "Service name")
+      .actionMerged((params) => {
+        received = params
+      })
     cmd.parse(["node", "test", "my-api"], { from: "node" })
     expect(received.serviceName).toBe("my-api")
   })
 
   it("variadic argument collects multiple values", () => {
     let received: any
-    const cmd = new Command("test").argument("<files...>", "Files to process").actionMerged((params) => {
-      received = params
-    })
+    const cmd = new Command("test")
+      .argument("<files...>", "Files to process")
+      .actionMerged((params) => {
+        received = params
+      })
     cmd.parse(["node", "test", "a.txt", "b.txt", "c.txt"], { from: "node" })
     expect(received.files).toEqual(["a.txt", "b.txt", "c.txt"])
   })
@@ -424,9 +448,11 @@ describe("action — Commander-native positional form", () => {
 
   it("variadic positional arg", () => {
     let receivedFiles: any
-    const cmd = new Command("test").argument("<files...>", "Files to process").action((files, _opts) => {
-      receivedFiles = files
-    })
+    const cmd = new Command("test")
+      .argument("<files...>", "Files to process")
+      .action((files, _opts) => {
+        receivedFiles = files
+      })
     cmd.parse(["node", "test", "a.txt", "b.txt", "c.txt"], { from: "node" })
     expect(receivedFiles).toEqual(["a.txt", "b.txt", "c.txt"])
   })
@@ -489,7 +515,11 @@ describe("zod schema via Standard Schema", () => {
   })
 
   it("throws on zod validation failure", () => {
-    const cmd = new Command("test").option("-p, --port <n>", "Port", z.coerce.number().min(1).max(65535))
+    const cmd = new Command("test").option(
+      "-p, --port <n>",
+      "Port",
+      z.coerce.number().min(1).max(65535),
+    )
     cmd.exitOverride()
     cmd.configureOutput({ writeErr: () => {} })
     expect(() => {
@@ -498,13 +528,21 @@ describe("zod schema via Standard Schema", () => {
   })
 
   it("validates with z.enum()", () => {
-    const cmd = new Command("test").option("-e, --env <env>", "Env", z.enum(["dev", "staging", "prod"]))
+    const cmd = new Command("test").option(
+      "-e, --env <env>",
+      "Env",
+      z.enum(["dev", "staging", "prod"]),
+    )
     cmd.parse(["node", "test", "--env", "dev"], { from: "node" })
     expect(cmd.opts().env).toBe("dev")
   })
 
   it("rejects invalid z.enum() value", () => {
-    const cmd = new Command("test").option("-e, --env <env>", "Env", z.enum(["dev", "staging", "prod"]))
+    const cmd = new Command("test").option(
+      "-e, --env <env>",
+      "Env",
+      z.enum(["dev", "staging", "prod"]),
+    )
     cmd.exitOverride()
     cmd.configureOutput({ writeErr: () => {} })
     expect(() => {

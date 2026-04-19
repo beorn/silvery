@@ -120,10 +120,14 @@ export function useTasks(initialTasks: Array<{ id: string; title: string }>) {
   }
 
   const start = (id: string) => updateTask(id, { status: "running" })
-  const complete = (id: string, title?: string) => updateTask(id, { status: "completed", ...(title && { title }) })
-  const fail = (id: string, title?: string) => updateTask(id, { status: "failed", ...(title && { title }) })
-  const skip = (id: string, title?: string) => updateTask(id, { status: "skipped", ...(title && { title }) })
-  const updateProgress = (id: string, progress: { current: number; total: number }) => updateTask(id, { progress })
+  const complete = (id: string, title?: string) =>
+    updateTask(id, { status: "completed", ...(title && { title }) })
+  const fail = (id: string, title?: string) =>
+    updateTask(id, { status: "failed", ...(title && { title }) })
+  const skip = (id: string, title?: string) =>
+    updateTask(id, { status: "skipped", ...(title && { title }) })
+  const updateProgress = (id: string, progress: { current: number; total: number }) =>
+    updateTask(id, { progress })
 
   const getTask = (id: string) => tasks.find((t) => t.id === id)
   const allCompleted = tasks.every((t) => t.status === "completed" || t.status === "skipped")

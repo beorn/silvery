@@ -4,8 +4,8 @@
  * Reference: https://github.com/Shatur/neovim-ayu
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Ayu Dark — deep dark variant with warm accents. */
 export const ayuDark: ColorScheme = {

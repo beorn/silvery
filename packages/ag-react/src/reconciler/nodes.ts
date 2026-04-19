@@ -8,8 +8,19 @@ import { createLogger } from "loggily"
 import type { LayoutNode } from "@silvery/ag/layout-types"
 import { getConstants, getLayoutEngine } from "@silvery/ag-term/layout-engine"
 import { collectPlainTextSkipHidden as collectNodeTextContent } from "@silvery/ag-term/pipeline/collect-text"
-import { type BoxProps, type AgNode, type AgNodeType, type TextProps, rectEqual } from "@silvery/ag/types"
-import { type Measurer, displayWidth, wrapText, getActiveLineHeight } from "@silvery/ag-term/unicode"
+import {
+  type BoxProps,
+  type AgNode,
+  type AgNodeType,
+  type TextProps,
+  rectEqual,
+} from "@silvery/ag/types"
+import {
+  type Measurer,
+  displayWidth,
+  wrapText,
+  getActiveLineHeight,
+} from "@silvery/ag-term/unicode"
 import {
   getRenderEpoch,
   INITIAL_EPOCH,
@@ -129,7 +140,8 @@ export function createNode(
       // Calculate text dimensions
       const lines = text.split("\n")
       // Treat NaN width the same as unconstrained (can happen with auto-sized parents)
-      const maxWidth = widthMode === "undefined" || Number.isNaN(width) ? Number.POSITIVE_INFINITY : width
+      const maxWidth =
+        widthMode === "undefined" || Number.isNaN(width) ? Number.POSITIVE_INFINITY : width
 
       // Check if text will be truncated (not wrapped) — affects height calculation
       const { wrap } = node.props as TextProps
@@ -162,7 +174,10 @@ export function createNode(
         const lineWidth = dw(line)
         if (isTruncate || lineWidth <= maxWidth) {
           totalHeight += lh
-          actualWidth = Math.max(actualWidth, isTruncate ? Math.min(lineWidth, maxWidth) : lineWidth)
+          actualWidth = Math.max(
+            actualWidth,
+            isTruncate ? Math.min(lineWidth, maxWidth) : lineWidth,
+          )
         } else if (isHardWrap) {
           // Character-level hard wrap: ceil(lineWidth / maxWidth) lines.
           // Guard: when maxWidth is not finite (unconstrained), treat as 1 line.
@@ -260,7 +275,8 @@ export function createVirtualTextNode(props: TextProps): AgNode {
 export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?: BoxProps): void {
   const c = getConstants()
   // Helper: true when a prop was set in oldProps but not in newProps (prop removed on rerender)
-  const wasRemoved = (prop: keyof BoxProps): boolean => oldProps?.[prop] !== undefined && props[prop] === undefined
+  const wasRemoved = (prop: keyof BoxProps): boolean =>
+    oldProps?.[prop] !== undefined && props[prop] === undefined
 
   // Dimensions
   if (props.width !== undefined) {
@@ -476,7 +492,8 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
   // Overflow
   // Derive effective overflow: explicit overflow takes precedence, then per-axis (hidden if either axis is hidden)
   const effectiveOverflow =
-    props.overflow ?? (props.overflowX === "hidden" || props.overflowY === "hidden" ? "hidden" : undefined)
+    props.overflow ??
+    (props.overflowX === "hidden" || props.overflowY === "hidden" ? "hidden" : undefined)
   if (effectiveOverflow !== undefined) {
     if (effectiveOverflow === "hidden") {
       layoutNode.setOverflow(c.OVERFLOW_HIDDEN)
@@ -532,7 +549,10 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
  */
 function applySpacing(layoutNode: LayoutNode, type: "padding" | "margin", props: BoxProps): void {
   const c = getConstants()
-  const set = type === "padding" ? layoutNode.setPadding.bind(layoutNode) : layoutNode.setMargin.bind(layoutNode)
+  const set =
+    type === "padding"
+      ? layoutNode.setPadding.bind(layoutNode)
+      : layoutNode.setMargin.bind(layoutNode)
 
   const all = props[type] as number | undefined
   const x = props[`${type}X` as keyof BoxProps] as number | undefined
@@ -556,7 +576,11 @@ function applySpacing(layoutNode: LayoutNode, type: "padding" | "margin", props:
  * Apply a position offset (top/left/bottom/right) to a layout node.
  * Supports both numeric (absolute) and percentage string values.
  */
-function applyPositionOffset(layoutNode: LayoutNode, edge: number, value: number | string | undefined): void {
+function applyPositionOffset(
+  layoutNode: LayoutNode,
+  edge: number,
+  value: number | string | undefined,
+): void {
   if (value === undefined) {
     // Unset stale position offset when prop is removed on rerender
     layoutNode.setPosition(edge, NaN)

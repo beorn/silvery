@@ -86,11 +86,23 @@ The border color automatically changes between `borderColor` and `focusBorderCol
 ### Password Input
 
 ```tsx
-<TextInput value={password} onChange={setPassword} onSubmit={handleLogin} mask="*" placeholder="Password" />
+<TextInput
+  value={password}
+  onChange={setPassword}
+  onSubmit={handleLogin}
+  mask="*"
+  placeholder="Password"
+/>
 ```
 
 ### With Prompt
 
 ```tsx
-<TextInput value={command} onChange={setCommand} onSubmit={executeCommand} prompt="$ " promptColor="$success" />
+<TextInput
+  value={command}
+  onChange={setCommand}
+  onSubmit={executeCommand}
+  prompt="$ "
+  promptColor="$success"
+/>
 ```

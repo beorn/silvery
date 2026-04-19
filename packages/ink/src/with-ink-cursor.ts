@@ -6,7 +6,11 @@
  * @packageDocumentation
  */
 import React, { createContext, Fragment } from "react"
-import { createCursorStore, CursorProvider, type CursorStore } from "@silvery/ag-react/hooks/useCursor"
+import {
+  createCursorStore,
+  CursorProvider,
+  type CursorStore,
+} from "@silvery/ag-react/hooks/useCursor"
 import type { RunnableApp } from "./with-ink"
 
 // =============================================================================

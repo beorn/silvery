@@ -311,7 +311,8 @@ export function renderToCanvas(
   // ---- Input / Runtime setup ----
   const inputOpts = options.input
   const inputEnabled = inputOpts === true || (typeof inputOpts === "object" && inputOpts !== null)
-  const inputCallbacks: CanvasInputOptions = typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
+  const inputCallbacks: CanvasInputOptions =
+    typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
   const exitOnCtrlC = options.exitOnCtrlC ?? inputEnabled
   const handleFocusCycling = options.handleFocusCycling ?? inputEnabled
 

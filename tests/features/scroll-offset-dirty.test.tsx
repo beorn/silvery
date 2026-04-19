@@ -72,7 +72,13 @@ describe("scroll offset dirty propagation (km-rpv0n)", () => {
       return (
         <Box flexDirection="column" height={14}>
           <Text>Title</Text>
-          <Box overflow="scroll" height={8} scrollTo={scrollTo} flexDirection="column" borderStyle="single">
+          <Box
+            overflow="scroll"
+            height={8}
+            scrollTo={scrollTo}
+            flexDirection="column"
+            borderStyle="single"
+          >
             {Array.from({ length: 15 }, (_, i) => (
               <Box key={i}>
                 <Text>Row {i}</Text>
@@ -173,7 +179,13 @@ describe("scroll offset dirty propagation (km-rpv0n)", () => {
     function App({ scrollTo }: { scrollTo: number }) {
       return (
         <Box flexDirection="column" height={10}>
-          <Box overflow="scroll" height={6} scrollTo={scrollTo} flexDirection="column" backgroundColor="blue">
+          <Box
+            overflow="scroll"
+            height={6}
+            scrollTo={scrollTo}
+            flexDirection="column"
+            backgroundColor="blue"
+          >
             {Array.from({ length: 15 }, (_, i) => (
               <Box key={i}>
                 <Text>Item {i}</Text>

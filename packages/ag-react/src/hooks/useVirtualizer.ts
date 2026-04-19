@@ -253,7 +253,13 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // passive effects don't flush within the same doRender() cycle, so the scroll
   // offset update was deferred until the next keypress.
   const scrollOffsetRef = useRef(
-    calcEdgeBasedScrollOffset(selectedIndexRef.current, 0, estimatedVisibleCount, count, scrollPadding),
+    calcEdgeBasedScrollOffset(
+      selectedIndexRef.current,
+      0,
+      estimatedVisibleCount,
+      count,
+      scrollPadding,
+    ),
   )
   const [, setScrollOffset] = useState(() => scrollOffsetRef.current)
 

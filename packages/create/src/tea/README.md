@@ -146,7 +146,10 @@ type TeaReducer<S, Op, E extends EffectLike = EffectLike> = (state: S, op: Op) =
 
 // Runners keyed by effect type. Each receives the effect + dispatch for round-trips.
 type EffectRunners<E extends EffectLike, Op = unknown> = {
-  [K in E["type"]]?: (effect: Extract<E, { type: K }>, dispatch: (op: Op) => void) => void | Promise<void>
+  [K in E["type"]]?: (
+    effect: Extract<E, { type: K }>,
+    dispatch: (op: Op) => void,
+  ) => void | Promise<void>
 }
 
 // Options for tea()

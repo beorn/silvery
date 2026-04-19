@@ -3,8 +3,8 @@
  * Source: https://github.com/sainnhe/everforest (medium background variants)
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Everforest Dark — warm green-based dark theme (medium background). */
 export const everforestDark: ColorScheme = {

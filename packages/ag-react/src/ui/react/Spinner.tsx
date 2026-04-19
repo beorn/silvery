@@ -21,7 +21,11 @@ import { SPINNER_FRAMES, SPINNER_INTERVALS } from "../cli/spinner"
  * <Spinner label="Processing..." style="arc" color="yellow" />
  * ```
  */
-export function Spinner({ label, style = "dots", color = "cyan" }: SpinnerProps): React.ReactElement {
+export function Spinner({
+  label,
+  style = "dots",
+  color = "cyan",
+}: SpinnerProps): React.ReactElement {
   const [frameIndex, setFrameIndex] = useState(0)
   const frames = SPINNER_FRAMES[style]
   const interval = SPINNER_INTERVALS[style]

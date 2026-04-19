@@ -7,7 +7,12 @@
 import type { BoxProps, AgNode, TextProps } from "@silvery/ag/types"
 import { displayWidthAnsi, graphemeWidth, wrapText, getActiveLineHeight } from "../unicode"
 import { collectPlainText as collectTextContent } from "./collect-text"
-import { getCachedPlainText, setCachedPlainText, getCachedAnalysis, setCachedAnalysis } from "./prepared-text"
+import {
+  getCachedPlainText,
+  setCachedPlainText,
+  getCachedAnalysis,
+  setCachedAnalysis,
+} from "./prepared-text"
 import { buildTextAnalysis, shrinkwrapWidth } from "./pretext"
 import { getBorderSize, getPadding } from "./helpers"
 import type { PipelineContext } from "./types"
@@ -119,7 +124,9 @@ function measureIntrinsicSize(
 
     if (availableWidth !== undefined && availableWidth > 0 && isWrapEnabled(textProps.wrap)) {
       // Wrap text at available width to compute correct height
-      lines = ctx ? ctx.measurer.wrapText(text, availableWidth, true, true) : wrapText(text, availableWidth, true, true)
+      lines = ctx
+        ? ctx.measurer.wrapText(text, availableWidth, true, true)
+        : wrapText(text, availableWidth, true, true)
     } else {
       lines = text.split("\n")
     }
@@ -185,7 +192,9 @@ function measureIntrinsicSize(
  * Check if text wrapping is enabled for a text node.
  */
 function isWrapEnabled(wrap: TextProps["wrap"]): boolean {
-  return wrap === "wrap" || wrap === "hard" || wrap === "even" || wrap === true || wrap === undefined
+  return (
+    wrap === "wrap" || wrap === "hard" || wrap === "even" || wrap === true || wrap === undefined
+  )
 }
 
 /**
@@ -193,7 +202,11 @@ function isWrapEnabled(wrap: TextProps["wrap"]): boolean {
  * Uses Pretext analysis to binary-search for the tightest width
  * that keeps the same line count as the fit-content width.
  */
-function computeSnugContentWidth(node: AgNode, fitContentWidth: number, ctx?: PipelineContext): number {
+function computeSnugContentWidth(
+  node: AgNode,
+  fitContentWidth: number,
+  ctx?: PipelineContext,
+): number {
   const props = node.props as BoxProps
 
   // Subtract padding + border from fitContentWidth to get CONTENT width.

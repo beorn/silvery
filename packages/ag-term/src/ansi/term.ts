@@ -34,7 +34,14 @@ import type { TerminalBuffer } from "../buffer"
 import { createTextFrame } from "../buffer"
 import type { TextFrame } from "@silvery/ag/text-frame"
 import { outputPhase } from "../pipeline/output-phase"
-import { defaultCaps, detectColor, detectCursor, detectInput, detectTerminalCaps, detectUnicode } from "./detection"
+import {
+  defaultCaps,
+  detectColor,
+  detectCursor,
+  detectInput,
+  detectTerminalCaps,
+  detectUnicode,
+} from "./detection"
 import type { ProviderEvent } from "../runtime/types"
 import { createTermProvider, type TermState, type TermEvents } from "../runtime/term-provider"
 import { splitRawInput, parseKey } from "@silvery/ag/keys"
@@ -322,7 +329,10 @@ export interface Term extends Disposable, StyleChain {
    * Returns resolved RGB colors, attributes, wide-char info.
    * Only available on emulator-backed terms (createTermless).
    */
-  cell?(row: number, col: number): { readonly fg: unknown; readonly bg: unknown; readonly char: string }
+  cell?(
+    row: number,
+    col: number,
+  ): { readonly fg: unknown; readonly bg: unknown; readonly char: string }
 
   /**
    * Row-level access for the visible screen.
@@ -535,7 +545,11 @@ export function createTerm(
     // trying to resolve it at bundle/parse time.
     const mod = "@termless/core"
     const { createTerminal } = require(mod) as {
-      createTerminal: (opts: { backend: TermEmulatorBackend; cols: number; rows: number }) => TermEmulator
+      createTerminal: (opts: {
+        backend: TermEmulatorBackend
+        cols: number
+        rows: number
+      }) => TermEmulator
     }
     const emulator = createTerminal({ backend: first as TermEmulatorBackend, ...second })
     return createBackendTerm(emulator)
@@ -562,14 +576,18 @@ function isTermEmulator(obj: unknown): obj is TermEmulator {
 function isTermBackend(obj: unknown): obj is TermEmulatorBackend {
   if (typeof obj !== "object" || obj === null) return false
   const o = obj as Record<string, unknown>
-  return typeof o.init === "function" && typeof o.name === "string" && typeof o.destroy === "function"
+  return (
+    typeof o.init === "function" && typeof o.name === "string" && typeof o.destroy === "function"
+  )
 }
 
 /** Detect headless dims: has cols and rows numbers, no stdout */
 function isHeadlessDims(obj: unknown): boolean {
   if (typeof obj !== "object" || obj === null) return false
   const o = obj as Record<string, unknown>
-  return typeof o.cols === "number" && typeof o.rows === "number" && !("stdout" in o) && !("stdin" in o)
+  return (
+    typeof o.cols === "number" && typeof o.rows === "number" && !("stdout" in o) && !("stdin" in o)
+  )
 }
 
 /**
@@ -625,7 +643,8 @@ function createNodeTerm(options: CreateTermOptions): Term {
       stdout.write(str + "\n")
     },
     getState: (): TermState => getProvider().getState(),
-    subscribe: (listener: (state: TermState) => void): (() => void) => getProvider().subscribe(listener),
+    subscribe: (listener: (state: TermState) => void): (() => void) =>
+      getProvider().subscribe(listener),
     events: (): AsyncIterable<ProviderEvent<TermEvents>> => getProvider().events(),
     stripAnsi,
     paint: (buffer: TerminalBuffer, prev: TerminalBuffer | null): string => {
@@ -671,7 +690,9 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
     subscribe: (): (() => void) => () => {},
     async *events(): AsyncIterable<ProviderEvent<TermEvents>> {
       if (disposed) return
-      await new Promise<void>((r) => controller.signal.addEventListener("abort", () => r(), { once: true }))
+      await new Promise<void>((r) =>
+        controller.signal.addEventListener("abort", () => r(), { once: true }),
+      )
     },
     stripAnsi,
     paint: (_buffer: TerminalBuffer, _prev: TerminalBuffer | null): string => {

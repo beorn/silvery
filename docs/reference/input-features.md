@@ -130,7 +130,12 @@ const result = await detectKittySupport(
 For manual protocol management (auto-enable handles this for you):
 
 ```tsx
-import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "@silvery/ag-term"
+import {
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+  queryKittyKeyboard,
+  KittyFlags,
+} from "@silvery/ag-term"
 
 stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS))
 // ... app runs ...

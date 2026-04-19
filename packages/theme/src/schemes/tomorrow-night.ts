@@ -2,7 +2,7 @@
  * Tomorrow Night palettes — Chris Kempson's classic theme family.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Tomorrow Night — the original dark variant. */
 export const tomorrowNight: ColorScheme = {

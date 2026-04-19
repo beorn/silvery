@@ -147,7 +147,11 @@ export type { BracketedPasteResult, PasteEvent } from "./bracketed-paste"
 // =============================================================================
 
 export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./clipboard"
-export { createOsc52Backend, createInternalClipboardBackend, createCompositeClipboard } from "./clipboard"
+export {
+  createOsc52Backend,
+  createInternalClipboardBackend,
+  createCompositeClipboard,
+} from "./clipboard"
 export type { ClipboardData, ClipboardBackend, ClipboardCapabilities } from "./clipboard"
 
 // =============================================================================
@@ -161,13 +165,22 @@ export {
   ENABLE_PASTE_EVENTS,
   DISABLE_PASTE_EVENTS,
 } from "./ansi/advanced-clipboard"
-export type { AdvancedClipboard, AdvancedClipboardOptions, ClipboardEntry } from "./ansi/advanced-clipboard"
+export type {
+  AdvancedClipboard,
+  AdvancedClipboardOptions,
+  ClipboardEntry,
+} from "./ansi/advanced-clipboard"
 
 // =============================================================================
 // OSC 4 Palette Color Query/Set
 // =============================================================================
 
-export { queryPaletteColor, setPaletteColor, parsePaletteResponse, queryMultiplePaletteColors } from "./osc-palette"
+export {
+  queryPaletteColor,
+  setPaletteColor,
+  parsePaletteResponse,
+  queryMultiplePaletteColors,
+} from "./osc-palette"
 
 // =============================================================================
 // OSC 133 Semantic Prompt Markers
@@ -197,7 +210,12 @@ export { detectTerminalCaps, defaultCaps, type TerminalCaps } from "./terminal-c
 // Terminal Capability Visual Test
 // =============================================================================
 
-export { runTermtest, TERMTEST_SECTIONS, type TermtestSection, type TermtestOptions } from "./termtest"
+export {
+  runTermtest,
+  TERMTEST_SECTIONS,
+  type TermtestSection,
+  type TermtestOptions,
+} from "./termtest"
 
 // =============================================================================
 // Text Sizing (OSC 66)
@@ -427,7 +445,13 @@ export {
 export type { StyledSegment } from "./unicode"
 
 // Width measurer factory
-export { createWidthMeasurer, createMeasurer, runWithMeasurer, type Measurer, type WidthMeasurer } from "./unicode"
+export {
+  createWidthMeasurer,
+  createMeasurer,
+  runWithMeasurer,
+  type Measurer,
+  type WidthMeasurer,
+} from "./unicode"
 
 // Measurer composition (term + measurement)
 export { withMeasurer, createPipeline, type MeasuredTerm } from "./measurer"
@@ -504,7 +528,13 @@ export type {
 } from "./ansi/index"
 
 // Detection
-export { detectCursor, detectInput, detectColor, detectUnicode, detectExtendedUnderline } from "./ansi/index"
+export {
+  detectCursor,
+  detectInput,
+  detectColor,
+  detectUnicode,
+  detectExtendedUnderline,
+} from "./ansi/index"
 
 // Utilities
 export { ANSI_REGEX, displayLength } from "./ansi/index"
@@ -647,25 +677,43 @@ export {
 // Virtual Scrollback
 // =============================================================================
 
-export { createVirtualScrollback, type VirtualScrollback, type VirtualScrollbackOptions } from "./virtual-scrollback"
+export {
+  createVirtualScrollback,
+  type VirtualScrollback,
+  type VirtualScrollbackOptions,
+} from "./virtual-scrollback"
 
 // =============================================================================
 // History Buffer
 // =============================================================================
 
-export { createHistoryBuffer, createHistoryItem, type HistoryItem, type HistoryBuffer } from "./history-buffer"
+export {
+  createHistoryBuffer,
+  createHistoryItem,
+  type HistoryItem,
+  type HistoryBuffer,
+} from "./history-buffer"
 
 // =============================================================================
 // Viewport Compositor
 // =============================================================================
 
-export { composeViewport, type ViewportCompositorConfig, type ComposedViewport } from "./viewport-compositor"
+export {
+  composeViewport,
+  type ViewportCompositorConfig,
+  type ComposedViewport,
+} from "./viewport-compositor"
 
 // =============================================================================
 // List Document
 // =============================================================================
 
-export { createListDocument, type ListDocument, type DocumentSource, type LiveItemBlock } from "./list-document"
+export {
+  createListDocument,
+  type ListDocument,
+  type DocumentSource,
+  type LiveItemBlock,
+} from "./list-document"
 
 // =============================================================================
 // Text Surface

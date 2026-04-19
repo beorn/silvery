@@ -12,6 +12,7 @@ Read this before modifying render-phase.ts, render-text.ts, render-box.ts, or la
 **Tests MUST use realistic-scale fixtures (50+ nodes), not 2-3 node toy components.** Many pipeline bugs only compound at scale — false-positive dirty cascades, stack overflows from recursive walks, cumulative paint errors. Synthetic micro-tests pass while real apps crash. See `tests/features/outline-realistic-scale.test.tsx` for the canonical pattern.
 
 **Verification has two layers:**
+
 1. STRICT vendor tests pass (including the realistic-scale fixture)
 2. `SILVERY_STRICT=2 bun apps/km-cli/src/index.ts view` runs without crashes for 5+ seconds
 
@@ -158,13 +159,15 @@ contentAreaAffected =
 
 // Should we clear this node's region with inherited bg?
 // Only when: buffer has stale pixels AND content area changed AND no own bg fill
-contentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
+contentRegionCleared =
+  (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
 
 // Can we skip the bg fill? Only when clone has correct bg already
 // bgRefillNeeded: a descendant changed inside a Box with backgroundColor.
 // The bg fill must re-run to clear stale child pixels (e.g., trailing chars from
 // a shrunk Text). Only applies to bg-bearing boxes when contentAreaAffected is false.
-bgRefillNeeded = hasPrevBuffer && !contentAreaAffected && node.subtreeDirty && !!props.backgroundColor
+bgRefillNeeded =
+  hasPrevBuffer && !contentAreaAffected && node.subtreeDirty && !!props.backgroundColor
 
 skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !bgRefillNeeded
 
@@ -179,13 +182,15 @@ bgOnlyAffected =
   !textPaintDirty &&
   !absoluteChildMutated &&
   !descendantOverflowChanged
-bgOnlyChange = hasPrevBuffer && bgOnlyAffected && hasBgColor && !ancestorLayoutChanged && !ancestorCleared
+bgOnlyChange =
+  hasPrevBuffer && bgOnlyAffected && hasBgColor && !ancestorLayoutChanged && !ancestorCleared
 
 // Must children re-render? (content area was modified OR bg needs refresh on a cloned buffer)
 // bgRefillNeeded triggers this because bg refill overwrites child pixels — children
 // must re-render on top of the fresh fill.
 // Exception: bgOnlyChange uses fillBg() which preserves chars, so children skip.
-childrenNeedFreshRender = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || bgRefillNeeded) && !bgOnlyChange
+childrenNeedFreshRender =
+  (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || bgRefillNeeded) && !bgOnlyChange
 ```
 
 ## Style-Only Fast Paths
@@ -227,7 +232,8 @@ When ONLY visual style props changed on a Text node (color, bold, dim, inverse �
 
 ```typescript
 // Normal containers:
-childHasPrev = childrenDirty || childPositionChanged || childrenNeedFreshRender ? false : hasPrevBuffer
+childHasPrev =
+  childrenDirty || childPositionChanged || childrenNeedFreshRender ? false : hasPrevBuffer
 childAncestorCleared = contentRegionCleared || (ancestorCleared && !props.backgroundColor)
 childAncestorLayoutChanged = node.layoutChangedThisFrame || ancestorLayoutChanged
 ```
@@ -556,7 +562,11 @@ import { item } from "@km/tui/tests/helpers/board-test.ts"
 
 describe("regression: <brief description>", () => {
   test("repro from fuzz/user report", async () => {
-    const nodes = item.root("board", item("Column 1", item("Task A"), item("Task B")), item("Column 2", item("Task C")))
+    const nodes = item.root(
+      "board",
+      item("Column 1", item("Task A"), item("Task B")),
+      item("Column 2", item("Task C")),
+    )
     const driver = withDiagnostics(createBoardDriver(createFakeRepo({ nodes }), "board"), {
       checkIncremental: true,
       checkReplay: true,

@@ -67,7 +67,14 @@ export interface DetectSchemeOptions {
 function envOverride(): "truecolor" | "256" | "ansi16" | "scheme" | "mono" | "auto" | null {
   const v = process.env.SILVERY_COLOR
   if (!v) return null
-  if (v === "truecolor" || v === "256" || v === "ansi16" || v === "scheme" || v === "mono" || v === "auto")
+  if (
+    v === "truecolor" ||
+    v === "256" ||
+    v === "ansi16" ||
+    v === "scheme" ||
+    v === "mono" ||
+    v === "auto"
+  )
     return v
   return null
 }

@@ -4,7 +4,12 @@
 
 import type { ColorScheme, Theme } from "./types.ts"
 import { deriveTheme } from "./derive.ts"
-import { ansi16DarkTheme, ansi16LightTheme, defaultDarkScheme, defaultLightScheme } from "./default-schemes.ts"
+import {
+  ansi16DarkTheme,
+  ansi16LightTheme,
+  defaultDarkScheme,
+  defaultLightScheme,
+} from "./default-schemes.ts"
 import { queryMultiplePaletteColors, parsePaletteResponse } from "../osc-palette.ts"
 import { queryForegroundColor, queryBackgroundColor } from "../osc-colors.ts"
 

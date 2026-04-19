@@ -76,7 +76,9 @@ export function readlineUpdate(state: ReadlineState, action: ReadlineAction): Re
       return cursor > 0 ? { ...state, cursor: cursor - 1, yankState: null } : resetYank(state)
 
     case "move_right":
-      return cursor < value.length ? { ...state, cursor: cursor + 1, yankState: null } : resetYank(state)
+      return cursor < value.length
+        ? { ...state, cursor: cursor + 1, yankState: null }
+        : resetYank(state)
 
     case "move_word_left": {
       const pos = findPrevWordStart(value, cursor)
@@ -92,7 +94,9 @@ export function readlineUpdate(state: ReadlineState, action: ReadlineAction): Re
       return cursor === 0 ? resetYank(state) : { ...state, cursor: 0, yankState: null }
 
     case "move_end":
-      return cursor === value.length ? resetYank(state) : { ...state, cursor: value.length, yankState: null }
+      return cursor === value.length
+        ? resetYank(state)
+        : { ...state, cursor: value.length, yankState: null }
 
     // =========================================================================
     // Character Editing
@@ -129,7 +133,8 @@ export function readlineUpdate(state: ReadlineState, action: ReadlineAction): Re
       if (cursor < 2) return resetYank(state)
       return {
         ...state,
-        value: value.slice(0, cursor - 2) + value[cursor - 1] + value[cursor - 2] + value.slice(cursor),
+        value:
+          value.slice(0, cursor - 2) + value[cursor - 1] + value[cursor - 2] + value.slice(cursor),
         yankState: null,
       }
 
@@ -271,7 +276,8 @@ export function createReadlineContext(): ReadlineContext {
   return {
     update(state: ReadlineState, action: ReadlineAction): ReadlineState {
       // Inject shared kill ring before update
-      const stateWithSharedRing = state.killRing === sharedKillRing ? state : { ...state, killRing: sharedKillRing }
+      const stateWithSharedRing =
+        state.killRing === sharedKillRing ? state : { ...state, killRing: sharedKillRing }
       const next = readlineUpdate(stateWithSharedRing, action)
       // Sync shared kill ring from result
       if (next.killRing !== sharedKillRing) {

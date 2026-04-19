@@ -6,7 +6,12 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { getLayoutSignals, hasLayoutSignals, syncRectSignals, type LayoutSignals } from "@silvery/ag/layout-signals"
+import {
+  getLayoutSignals,
+  hasLayoutSignals,
+  syncRectSignals,
+  type LayoutSignals,
+} from "@silvery/ag/layout-signals"
 import type { AgNode, Rect } from "@silvery/ag/types"
 
 /** Minimal AgNode stub with rect fields for testing. */

@@ -21,9 +21,10 @@ import { Backdrop, Box, Text, ModalDialog } from "@silvery/ag-react"
 
 // Fade any fg > 0 toward bg in OKLab. For cells where fg is white(#FFFFFF) and
 // bg is black(#000000), the blended result must have all channels < 255.
-function isFaded(
-  cell: { fg: { r: number; g: number; b: number } | null; bg: { r: number; g: number; b: number } | null },
-): boolean {
+function isFaded(cell: {
+  fg: { r: number; g: number; b: number } | null
+  bg: { r: number; g: number; b: number } | null
+}): boolean {
   if (!cell.fg) return false
   return cell.fg.r < 255 || cell.fg.g < 255 || cell.fg.b < 255
 }

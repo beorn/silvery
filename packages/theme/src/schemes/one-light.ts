@@ -2,7 +2,7 @@
  * One Light palette — Atom's iconic light theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** One Light — the classic Atom editor light theme. */
 export const oneLight: ColorScheme = {

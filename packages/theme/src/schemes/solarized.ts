@@ -2,8 +2,8 @@
  * Solarized palettes — precision colors for machines and people.
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Solarized Dark — Ethan Schoonover's classic dark variant. */
 export const solarizedDark: ColorScheme = {

@@ -124,7 +124,10 @@ describe("terminalSelectionUpdate — startWord (double-click)", () => {
   test("selects the word under cursor", () => {
     const buf = createBufferWithText(["hello world"])
     const state = createTerminalSelectionState()
-    const [next, effects] = terminalSelectionUpdate({ type: "startWord", col: 7, row: 0, buffer: buf }, state)
+    const [next, effects] = terminalSelectionUpdate(
+      { type: "startWord", col: 7, row: 0, buffer: buf },
+      state,
+    )
 
     expect(next.selecting).toBe(true)
     expect(next.granularity).toBe("word")
@@ -138,7 +141,10 @@ describe("terminalSelectionUpdate — startWord (double-click)", () => {
   test("selects punctuation as single char", () => {
     const buf = createBufferWithText(["hello, world"])
     const state = createTerminalSelectionState()
-    const [next] = terminalSelectionUpdate({ type: "startWord", col: 5, row: 0, buffer: buf }, state)
+    const [next] = terminalSelectionUpdate(
+      { type: "startWord", col: 5, row: 0, buffer: buf },
+      state,
+    )
 
     expect(next.range).toEqual({
       anchor: { col: 5, row: 0 },
@@ -156,7 +162,10 @@ describe("terminalSelectionUpdate — startLine (triple-click)", () => {
   test("selects entire line content", () => {
     const buf = createBufferWithText(["  hello world  "], 20)
     const state = createTerminalSelectionState()
-    const [next, effects] = terminalSelectionUpdate({ type: "startLine", col: 5, row: 0, buffer: buf }, state)
+    const [next, effects] = terminalSelectionUpdate(
+      { type: "startLine", col: 5, row: 0, buffer: buf },
+      state,
+    )
 
     expect(next.selecting).toBe(true)
     expect(next.granularity).toBe("line")
@@ -178,11 +187,17 @@ describe("terminalSelectionUpdate — granularity-aware extend", () => {
     const state = createTerminalSelectionState()
 
     // Start with double-click on "hello"
-    const [wordState] = terminalSelectionUpdate({ type: "startWord", col: 2, row: 0, buffer: buf }, state)
+    const [wordState] = terminalSelectionUpdate(
+      { type: "startWord", col: 2, row: 0, buffer: buf },
+      state,
+    )
     expect(wordState.granularity).toBe("word")
 
     // Extend to "foo" — should snap to end of "foo"
-    const [extended] = terminalSelectionUpdate({ type: "extend", col: 13, row: 0, buffer: buf }, wordState)
+    const [extended] = terminalSelectionUpdate(
+      { type: "extend", col: 13, row: 0, buffer: buf },
+      wordState,
+    )
     expect(extended.range!.head.col).toBe(14) // end of "foo"
   })
 
@@ -191,10 +206,16 @@ describe("terminalSelectionUpdate — granularity-aware extend", () => {
     const state = createTerminalSelectionState()
 
     // Start with double-click on "foo" (col 12-14)
-    const [wordState] = terminalSelectionUpdate({ type: "startWord", col: 13, row: 0, buffer: buf }, state)
+    const [wordState] = terminalSelectionUpdate(
+      { type: "startWord", col: 13, row: 0, buffer: buf },
+      state,
+    )
 
     // Extend backwards towards "hello" — should snap to start of "hello"
-    const [extended] = terminalSelectionUpdate({ type: "extend", col: 2, row: 0, buffer: buf }, wordState)
+    const [extended] = terminalSelectionUpdate(
+      { type: "extend", col: 2, row: 0, buffer: buf },
+      wordState,
+    )
     expect(extended.range!.head.col).toBe(0) // start of "hello"
   })
 
@@ -203,11 +224,17 @@ describe("terminalSelectionUpdate — granularity-aware extend", () => {
     const state = createTerminalSelectionState()
 
     // Start with triple-click on line 0
-    const [lineState] = terminalSelectionUpdate({ type: "startLine", col: 5, row: 0, buffer: buf }, state)
+    const [lineState] = terminalSelectionUpdate(
+      { type: "startLine", col: 5, row: 0, buffer: buf },
+      state,
+    )
     expect(lineState.granularity).toBe("line")
 
     // Extend to line 2 — should snap to end of line 2 content
-    const [extended] = terminalSelectionUpdate({ type: "extend", col: 5, row: 2, buffer: buf }, lineState)
+    const [extended] = terminalSelectionUpdate(
+      { type: "extend", col: 5, row: 2, buffer: buf },
+      lineState,
+    )
     expect(extended.range!.head.row).toBe(2)
   })
 
@@ -223,7 +250,10 @@ describe("terminalSelectionUpdate — granularity-aware extend", () => {
   test("extend without buffer falls back to character behavior", () => {
     const buf = createBufferWithText(["hello world"])
     const state = createTerminalSelectionState()
-    const [wordState] = terminalSelectionUpdate({ type: "startWord", col: 2, row: 0, buffer: buf }, state)
+    const [wordState] = terminalSelectionUpdate(
+      { type: "startWord", col: 2, row: 0, buffer: buf },
+      state,
+    )
 
     // Extend without buffer — should just use raw position
     const [extended] = terminalSelectionUpdate({ type: "extend", col: 8, row: 0 }, wordState)
@@ -239,7 +269,10 @@ describe("granularity through lifecycle", () => {
   test("finish preserves granularity", () => {
     const buf = createBufferWithText(["hello world"])
     const state = createTerminalSelectionState()
-    const [wordState] = terminalSelectionUpdate({ type: "startWord", col: 2, row: 0, buffer: buf }, state)
+    const [wordState] = terminalSelectionUpdate(
+      { type: "startWord", col: 2, row: 0, buffer: buf },
+      state,
+    )
     const [finished] = terminalSelectionUpdate({ type: "finish" }, wordState)
 
     expect(finished.granularity).toBe("word")
@@ -249,7 +282,10 @@ describe("granularity through lifecycle", () => {
   test("clear resets granularity to character", () => {
     const buf = createBufferWithText(["hello world"])
     const state = createTerminalSelectionState()
-    const [wordState] = terminalSelectionUpdate({ type: "startWord", col: 2, row: 0, buffer: buf }, state)
+    const [wordState] = terminalSelectionUpdate(
+      { type: "startWord", col: 2, row: 0, buffer: buf },
+      state,
+    )
     const [cleared] = terminalSelectionUpdate({ type: "clear" }, wordState)
 
     expect(cleared.granularity).toBe("character")
@@ -258,7 +294,10 @@ describe("granularity through lifecycle", () => {
   test("new start resets granularity to character", () => {
     const buf = createBufferWithText(["hello world"])
     const state = createTerminalSelectionState()
-    const [wordState] = terminalSelectionUpdate({ type: "startWord", col: 2, row: 0, buffer: buf }, state)
+    const [wordState] = terminalSelectionUpdate(
+      { type: "startWord", col: 2, row: 0, buffer: buf },
+      state,
+    )
     const [newStart] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, wordState)
 
     expect(newStart.granularity).toBe("character")

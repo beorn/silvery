@@ -44,7 +44,12 @@ export interface TooltipProps extends Omit<BoxProps, "children"> {
  * Renders inline below the target element when `show` is true.
  * Tooltip text is rendered in `$muted` with dimColor for subtlety.
  */
-export function Tooltip({ content, show = false, children, ...boxProps }: TooltipProps): React.ReactElement {
+export function Tooltip({
+  content,
+  show = false,
+  children,
+  ...boxProps
+}: TooltipProps): React.ReactElement {
   return (
     <Box flexDirection="column" {...boxProps}>
       {children}

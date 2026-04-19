@@ -6,10 +6,10 @@
  * lightness and chroma across hue rotations, so accent ramps look balanced.
  */
 
-import { hexToOklch, oklchToHex, blend } from "./color"
+import { hexToOklch, oklchToHex, blend } from "@silvery/color"
 import { fromColors } from "./generators"
-import { deriveTheme } from "./derive"
-import type { Theme } from "./types"
+import { deriveTheme } from "@silvery/ansi"
+import type { Theme } from "@silvery/ansi"
 
 /** Standard OKLCH hue positions for semantic accents (degrees).
  * OKLCH hues differ from HSL: red≈29, orange≈55, yellow≈90, green≈142,

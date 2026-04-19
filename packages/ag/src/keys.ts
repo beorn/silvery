@@ -417,7 +417,20 @@ const NON_ALPHANUMERIC_KEYS = [
   // Use key.return / key.escape boolean flags to detect these keys.
 ]
 
-const SHIFT_CODES = new Set(["[a", "[b", "[c", "[d", "[e", "[2$", "[3$", "[5$", "[6$", "[7$", "[8$", "[Z"])
+const SHIFT_CODES = new Set([
+  "[a",
+  "[b",
+  "[c",
+  "[d",
+  "[e",
+  "[2$",
+  "[3$",
+  "[5$",
+  "[6$",
+  "[7$",
+  "[8$",
+  "[Z",
+])
 
 const CTRL_CODES = new Set(["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "[6^", "[7^", "[8^"])
 
@@ -804,7 +817,8 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
     const kittySpecialParts = !kittyParts && KITTY_SPECIAL_RE.exec(input)
     // xterm modifyOtherKeys format: CSI 27 ; modifier ; keycode ~
     // Sent by Ghostty, xterm, and others for modified keys like Ctrl+Enter
-    const modifyOtherKeysParts = !kittyParts && !kittySpecialParts && MODIFY_OTHER_KEYS_RE.exec(input)
+    const modifyOtherKeysParts =
+      !kittyParts && !kittySpecialParts && MODIFY_OTHER_KEYS_RE.exec(input)
 
     if (kittySpecialParts) {
       // Kitty-enhanced special key: CSI number ; modifiers : eventType {letter|~}
@@ -813,7 +827,10 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
       const eventType = Number(kittySpecialParts[3])
       const terminator = kittySpecialParts[4]!
 
-      const name = terminator === "~" ? KITTY_SPECIAL_NUMBER_KEYS[number] : KITTY_SPECIAL_LETTER_KEYS[terminator]
+      const name =
+        terminator === "~"
+          ? KITTY_SPECIAL_NUMBER_KEYS[number]
+          : KITTY_SPECIAL_LETTER_KEYS[terminator]
 
       key.isKittyProtocol = true
       key.isPrintable = false
@@ -939,7 +956,13 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
           key.text = String.fromCharCode(codepoint - 32) // 'a'→'A'
         } else if (key.shift && codepoint >= 65 && codepoint <= 90) {
           key.text = String.fromCharCode(codepoint) // Already uppercase — 'A' stays 'A'
-        } else if (key.shift && key.isPrintable && !key.shiftedKey && codepoint >= 32 && codepoint <= 126) {
+        } else if (
+          key.shift &&
+          key.isPrintable &&
+          !key.shiftedKey &&
+          codepoint >= 32 &&
+          codepoint <= 126
+        ) {
           // Kitty protocol with Shift held on a non-letter key but no shifted_codepoint.
           // The terminal is using DISAMBIGUATE flag only (missing REPORT_ALL_KEYS flag 8).
           //
@@ -1052,7 +1075,12 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
     // check `input === "G"` directly. The km command system normalizes via keyToString
     // so uppercase vs lowercase doesn't affect keybinding resolution for letters.
     if (keypress.isPrintable) {
-      if (keypress.shift && keypress.name.length === 1 && keypress.name >= "a" && keypress.name <= "z") {
+      if (
+        keypress.shift &&
+        keypress.name.length === 1 &&
+        keypress.name >= "a" &&
+        keypress.name <= "z"
+      ) {
         input = keypress.name.toUpperCase()
       } else if (keypress.name === "space") {
         input = " "
@@ -1083,7 +1111,10 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
     // Filter out escape sequence fragments that leak through
     // e.g., "[2~" from Insert key, "[A" from arrows when not fully parsed
     // Single "[" and "]" are allowed — they're valid key bindings
-    if ((input.startsWith("[") && input.length > 1) || (input.startsWith("O") && input.length > 1)) {
+    if (
+      (input.startsWith("[") && input.length > 1) ||
+      (input.startsWith("O") && input.length > 1)
+    ) {
       // For Kitty-encoded keys (Super/Hyper modifiers), preserve the key name
       // since the raw sequence was CSI codepoint;modifiers u
       if (keypress.super || keypress.hyper) {
@@ -1250,7 +1281,11 @@ export function parseHotkey(keyStr: string): ParsedHotkey {
       modifiers.has("⌥"),
     shift: modifiers.has("shift") || modifiers.has("⇧"),
     alt: false, // alt and meta are indistinguishable in terminals; use meta
-    super: modifiers.has("super") || modifiers.has("cmd") || modifiers.has("command") || modifiers.has("⌘"),
+    super:
+      modifiers.has("super") ||
+      modifiers.has("cmd") ||
+      modifiers.has("command") ||
+      modifiers.has("⌘"),
     hyper: modifiers.has("hyper") || modifiers.has("✦"),
   }
 }

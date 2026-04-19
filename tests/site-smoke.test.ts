@@ -110,7 +110,11 @@ test.describe("silvery.dev smoke tests", () => {
       const iframe = page.locator(selector).first()
       await expect(iframe).toBeAttached({ timeout: 15_000 })
       expect(await iframe.getAttribute("src")).toBeTruthy()
-      const inner = page.frameLocator(selector).first().locator("#terminal, #viewer-root, #app").first()
+      const inner = page
+        .frameLocator(selector)
+        .first()
+        .locator("#terminal, #viewer-root, #app")
+        .first()
       await expect(inner).toBeAttached({ timeout: 15_000 })
     })
   }

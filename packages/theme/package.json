@@ -41,10 +41,6 @@
         "types": "./dist/schemes.d.mts",
         "import": "./dist/schemes.mjs"
       },
-      "./resolve": {
-        "types": "./dist/resolve.d.mts",
-        "import": "./dist/resolve.mjs"
-      },
       "./state": {
         "types": "./dist/state.d.mts",
         "import": "./dist/state.mjs"
@@ -52,10 +48,6 @@
       "./theme": {
         "types": "./dist/theme.d.mts",
         "import": "./dist/theme.mjs"
-      },
-      "./types": {
-        "types": "./dist/types.d.mts",
-        "import": "./dist/types.mjs"
       }
     }
   },
@@ -74,10 +66,8 @@
       "src/ThemeContext.tsx",
       "src/detect.ts",
       "src/schemes/index.ts",
-      "src/resolve.ts",
       "src/state.ts",
-      "src/theme.ts",
-      "src/types.ts"
+      "src/theme.ts"
     ],
     "format": "esm"
   }

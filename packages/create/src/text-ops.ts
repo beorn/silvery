@@ -47,7 +47,9 @@ export type TextOp =
  */
 export function applyTextOp(text: string, op: TextOp): string {
   if (op.offset < 0 || op.offset > text.length) {
-    throw new RangeError(`TextOp offset ${op.offset} out of bounds for text of length ${text.length}`)
+    throw new RangeError(
+      `TextOp offset ${op.offset} out of bounds for text of length ${text.length}`,
+    )
   }
 
   if (op.type === "insert") {

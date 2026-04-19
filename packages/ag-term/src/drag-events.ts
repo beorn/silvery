@@ -66,7 +66,11 @@ export interface DragEvent {
 /**
  * Create a DragEvent payload.
  */
-export function createDragEvent(source: AgNode, position: Position, dropTarget: AgNode | null): DragEvent {
+export function createDragEvent(
+  source: AgNode,
+  position: Position,
+  dropTarget: AgNode | null,
+): DragEvent {
   return { source, position, dropTarget }
 }
 

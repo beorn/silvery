@@ -94,7 +94,13 @@ With `submitKey="enter"`, pressing Enter submits. Use Shift+Enter or the default
 ### Bordered Editor
 
 ```tsx
-<TextArea value={content} onChange={setContent} height={15} borderStyle="round" placeholder="Write your note..." />
+<TextArea
+  value={content}
+  onChange={setContent}
+  height={15}
+  borderStyle="round"
+  placeholder="Write your note..."
+/>
 ```
 
 ### Disabled State

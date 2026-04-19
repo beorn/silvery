@@ -7,7 +7,11 @@
  * and more accurate wrapping than character-by-character measurement.
  */
 
-import { prepareWithSegments, layoutWithLines, type PreparedTextWithSegments } from "@chenglou/pretext"
+import {
+  prepareWithSegments,
+  layoutWithLines,
+  type PreparedTextWithSegments,
+} from "@chenglou/pretext"
 import type { Measurer } from "@silvery/ag-term/unicode"
 import { stripAnsi } from "@silvery/ag-term/unicode"
 

@@ -236,30 +236,49 @@ function TableHeader({ width }: { width: number }) {
   )
 }
 
-function ProcessRow({ proc, isSelected, width }: { proc: ProcessInfo; isSelected: boolean; width: number }) {
+function ProcessRow({
+  proc,
+  isSelected,
+  width,
+}: {
+  proc: ProcessInfo
+  isSelected: boolean
+  width: number
+}) {
   const cols = useColumns(width)
   const cpuColor = proc.cpu > 80 ? "$error" : proc.cpu > 40 ? "$warning" : "$success"
   const memColor = proc.mem > 40 ? "$warning" : "$muted"
 
   // Truncate name to fit column
-  const displayName = proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\u2026" : proc.name
+  const displayName =
+    proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\u2026" : proc.name
 
   return (
     <Box paddingX={1} backgroundColor={isSelected ? "$primary" : undefined}>
-      <Text color={isSelected ? "$primary-fg" : "$muted"}>{String(proc.pid).padEnd(cols.pidW)}</Text>
+      <Text color={isSelected ? "$primary-fg" : "$muted"}>
+        {String(proc.pid).padEnd(cols.pidW)}
+      </Text>
       <Text bold={isSelected} color={isSelected ? "$primary-fg" : undefined}>
         {displayName.padEnd(cols.nameW)}
       </Text>
-      <Text color={isSelected ? "$primary-fg" : cpuColor}>{proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%</Text>
-      <Text color={isSelected ? "$primary-fg" : memColor}>{proc.mem.toFixed(1).padStart(cols.memW - 1)}%</Text>
+      <Text color={isSelected ? "$primary-fg" : cpuColor}>
+        {proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%
+      </Text>
+      <Text color={isSelected ? "$primary-fg" : memColor}>
+        {proc.mem.toFixed(1).padStart(cols.memW - 1)}%
+      </Text>
       <Text>{"  "}</Text>
       <Text color={isSelected ? "$primary-fg" : STATUS_COLORS[proc.status]}>
         {STATUS_ICONS[proc.status]} {proc.status.padEnd(cols.statusW - 2)}
       </Text>
       <Text color={isSelected ? "$primary-fg" : "$muted"}>{proc.user.padEnd(cols.userW)}</Text>
-      <Text color={isSelected ? "$primary-fg" : "$muted"}>{String(proc.threads).padStart(cols.threadsW)}</Text>
+      <Text color={isSelected ? "$primary-fg" : "$muted"}>
+        {String(proc.threads).padStart(cols.threadsW)}
+      </Text>
       <Text>{"  "}</Text>
-      <Text color={isSelected ? "$primary-fg" : "$muted"}>{proc.uptime.padStart(cols.uptimeW)}</Text>
+      <Text color={isSelected ? "$primary-fg" : "$muted"}>
+        {proc.uptime.padStart(cols.uptimeW)}
+      </Text>
     </Box>
   )
 }
@@ -299,7 +318,15 @@ function SummaryBar({ processes, query }: { processes: ProcessInfo[]; query: str
 }
 
 /** Inner component that reads the flex container's height */
-function ProcessListArea({ processes, cursor, width }: { processes: ProcessInfo[]; cursor: number; width: number }) {
+function ProcessListArea({
+  processes,
+  cursor,
+  width,
+}: {
+  processes: ProcessInfo[]
+  cursor: number
+  width: number
+}) {
   const { height } = useBoxRect()
 
   return (
@@ -459,8 +486,8 @@ export function DataExplorer() {
       {/* Scroll indicator + help */}
       <Box paddingX={1} justifyContent="space-between">
         <Muted>
-          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>/</Kbd> search <Kbd>Esc/q</Kbd>{" "}
-          quit
+          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>/</Kbd>{" "}
+          search <Kbd>Esc/q</Kbd> quit
         </Muted>
         <Muted>
           {effectiveCursor + 1}/{filtered.length}
@@ -477,7 +504,10 @@ export function DataExplorer() {
 export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit"
+    >
       <DataExplorer />
     </ExampleBanner>,
     term,

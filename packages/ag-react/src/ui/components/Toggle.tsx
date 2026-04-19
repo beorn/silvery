@@ -45,7 +45,13 @@ export interface ToggleProps extends Omit<BoxProps, "children" | "onChange"> {
  * Renders `[x]` when on, `[ ]` when off. When focused, the checkbox indicator
  * is rendered with inverse styling for visibility.
  */
-export function Toggle({ value, onChange, label, isActive, ...rest }: ToggleProps): React.ReactElement {
+export function Toggle({
+  value,
+  onChange,
+  label,
+  isActive,
+  ...rest
+}: ToggleProps): React.ReactElement {
   const { focused } = useFocusable()
 
   // isActive prop overrides focus state (same pattern as TextInput)

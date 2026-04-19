@@ -48,9 +48,15 @@ describe("blink-hidden-style: styleToAnsi produces SGR codes for blink and hidde
     // SGR codes may be combined in a single sequence (e.g., \x1b[5;8m)
     // or separate. Check that both codes appear somewhere in the output.
     const hasBlink =
-      ansi.includes("\x1b[5m") || ansi.includes("\x1b[5;") || ansi.includes(";5m") || ansi.includes(";5;")
+      ansi.includes("\x1b[5m") ||
+      ansi.includes("\x1b[5;") ||
+      ansi.includes(";5m") ||
+      ansi.includes(";5;")
     const hasHidden =
-      ansi.includes("\x1b[8m") || ansi.includes("\x1b[8;") || ansi.includes(";8m") || ansi.includes(";8;")
+      ansi.includes("\x1b[8m") ||
+      ansi.includes("\x1b[8;") ||
+      ansi.includes(";8m") ||
+      ansi.includes(";8;")
     expect(hasBlink).toBe(true)
     expect(hasHidden).toBe(true)
   })

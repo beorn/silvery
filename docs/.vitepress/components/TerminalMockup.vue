@@ -7,7 +7,10 @@ defineProps({
 </script>
 
 <template>
-  <div class="terminal-mockup" :style="{ width, display: side ? 'inline-block' : 'block', verticalAlign: 'top' }">
+  <div
+    class="terminal-mockup"
+    :style="{ width, display: side ? 'inline-block' : 'block', verticalAlign: 'top' }"
+  >
     <div class="terminal-titlebar">
       <span class="terminal-dot red"></span>
       <span class="terminal-dot yellow"></span>

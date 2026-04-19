@@ -173,7 +173,8 @@ function createInitialState(): DashboardState {
   ]
 
   const cpuHistory = [
-    1, 2, 2, 3, 2, 4, 5, 4, 6, 5, 4, 6, 7, 6, 5, 6, 7, 6, 5, 4, 5, 6, 5, 7, 6, 5, 6, 7, 7, 6, 5, 4, 5, 6, 5, 4,
+    1, 2, 2, 3, 2, 4, 5, 4, 6, 5, 4, 6, 7, 6, 5, 6, 7, 6, 5, 4, 5, 6, 5, 7, 6, 5, 6, 7, 7, 6, 5, 4,
+    5, 6, 5, 4,
   ]
 
   const memHistory = [4, 4, 5, 5, 4, 5, 6, 5, 5, 6, 6, 5, 6, 6, 7, 6, 6, 5, 6, 6, 5, 5, 6, 5]
@@ -413,10 +414,18 @@ function tickState(prev: DashboardState): DashboardState {
   })
 
   const totalCpu = Math.round(jitter(prev.totalCpu, 8))
-  const cpuHistory = pushHistory(prev.cpuHistory, Math.max(0, Math.min(7, Math.round(totalCpu / 14))), 36)
+  const cpuHistory = pushHistory(
+    prev.cpuHistory,
+    Math.max(0, Math.min(7, Math.round(totalCpu / 14))),
+    36,
+  )
 
   const ramPct = Math.round((prev.memory.ramUsed / prev.memory.ramTotal) * 100)
-  const memHistory = pushHistory(prev.memory.history, Math.max(0, Math.min(7, Math.round(ramPct / 14))), 24)
+  const memHistory = pushHistory(
+    prev.memory.history,
+    Math.max(0, Math.min(7, Math.round(ramPct / 14))),
+    24,
+  )
   const memory: MemoryMetrics = { ...prev.memory, history: memHistory }
 
   const dlVal = Math.max(0, Math.min(7, Math.round(jitter(5, 4))))

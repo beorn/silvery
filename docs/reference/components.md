@@ -228,7 +228,12 @@ Fullscreen root component. Claims the full terminal dimensions for flexbox layou
 Native scrollback root component. Items flow vertically and transition through Live → Virtualized → Static as they scroll off-screen. Uses `useScrollbackItem()` for per-item lifecycle control.
 
 ```tsx
-<ScrollbackView items={tasks} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} footer={<Text>Status bar</Text>}>
+<ScrollbackView
+  items={tasks}
+  keyExtractor={(t) => t.id}
+  isFrozen={(t) => t.done}
+  footer={<Text>Status bar</Text>}
+>
   {(task) => <TaskItem task={task} />}
 </ScrollbackView>
 ```

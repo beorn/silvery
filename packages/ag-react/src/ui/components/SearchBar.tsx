@@ -24,7 +24,8 @@ export function SearchBar(): ReactElement | null {
 
   if (!isActive) return null
 
-  const matchInfo = matches.length > 0 ? `[${currentMatch + 1}/${matches.length}]` : query ? "[no matches]" : ""
+  const matchInfo =
+    matches.length > 0 ? `[${currentMatch + 1}/${matches.length}]` : query ? "[no matches]" : ""
 
   return React.createElement(
     Box,

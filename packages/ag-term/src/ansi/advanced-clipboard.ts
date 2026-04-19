@@ -334,7 +334,10 @@ export function createAdvancedClipboard(options: AdvancedClipboardOptions): Adva
         // Fallback: find text/plain entry and use OSC 52
         const textEntry = entries.find((e) => e.mime === "text/plain")
         if (textEntry) {
-          const text = typeof textEntry.data === "string" ? textEntry.data : fromBase64(bytesToBase64(textEntry.data))
+          const text =
+            typeof textEntry.data === "string"
+              ? textEntry.data
+              : fromBase64(bytesToBase64(textEntry.data))
           osc52Copy(write, text)
         }
         return

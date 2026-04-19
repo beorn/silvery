@@ -3,7 +3,15 @@
  * @internal
  */
 
-import { useContext, useEffect, useLayoutEffect, useCallback, useState, useMemo, useRef } from "react"
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useState,
+  useMemo,
+  useRef,
+} from "react"
 import { effect as signalEffect } from "@silvery/signals"
 import { getLayoutSignals } from "@silvery/ag/layout-signals"
 import { StdoutContext } from "@silvery/ag-react/context"
@@ -113,7 +121,10 @@ export function useStdin() {
  * Enables bracketed paste mode and calls the handler when the user pastes text.
  * Paste content is delivered as a single string, not forwarded to useInput handlers.
  */
-export function usePaste(handler: (text: string) => void, options: { isActive?: boolean } = {}): void {
+export function usePaste(
+  handler: (text: string) => void,
+  options: { isActive?: boolean } = {},
+): void {
   const ctx = useContext(InkStdinCtx)
   const rt = useContext(RuntimeContext)
 
@@ -463,7 +474,12 @@ export function useBoxMetrics(ref: import("react").RefObject<any>) {
 // Re-exported hooks
 // =============================================================================
 
-export { useInput, type Key, type InputHandler, type UseInputOptions } from "@silvery/ag-react/hooks/useInput"
+export {
+  useInput,
+  type Key,
+  type InputHandler,
+  type UseInputOptions,
+} from "@silvery/ag-react/hooks/useInput"
 export { useApp } from "@silvery/ag-react/hooks/useApp"
 export type { UseAppResult } from "@silvery/ag-react/hooks/useApp"
 export { useStdout } from "@silvery/ag-react/hooks/useStdout"
@@ -535,7 +551,9 @@ export type KittyKeyboardOptions = {
  * Silvery's own default (DISAMBIGUATE | REPORT_EVENTS | REPORT_ALL_KEYS = 11)
  * applies only to silvery's native runtime — not the Ink compat layer.
  */
-export function resolveKittyManagerOptions(opts: KittyKeyboardOptions | undefined): KittyManagerOptions | undefined {
+export function resolveKittyManagerOptions(
+  opts: KittyKeyboardOptions | undefined,
+): KittyManagerOptions | undefined {
   if (!opts) return undefined
   return {
     mode: opts.mode,

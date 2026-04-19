@@ -12,7 +12,12 @@ The **public glossary** for silvery.dev. Each entry becomes an auto-linked term 
 [
   { "term": "SelectList", "href": "/api/select-list", "tooltip": "Interactive list component" },
   { "term": "SGR", "tooltip": "Select Graphic Rendition — controls text styling" },
-  { "term": "Termless", "href": "https://termless.dev", "tooltip": "Headless terminal testing", "external": true }
+  {
+    "term": "Termless",
+    "href": "https://termless.dev",
+    "tooltip": "Headless terminal testing",
+    "external": true
+  }
 ]
 ```
 

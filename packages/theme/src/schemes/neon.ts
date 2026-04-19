@@ -2,7 +2,7 @@
  * Neon palette — high-saturation neon glow theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Neon — electric high-contrast neon colors. */
 export const neon: ColorScheme = {

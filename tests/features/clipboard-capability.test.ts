@@ -8,7 +8,10 @@
  */
 
 import { describe, test, expect, vi } from "vitest"
-import { createOSC52Clipboard, wrapClipboardBackend } from "../../packages/ag-term/src/features/clipboard-capability"
+import {
+  createOSC52Clipboard,
+  wrapClipboardBackend,
+} from "../../packages/ag-term/src/features/clipboard-capability"
 
 // ============================================================================
 // OSC 52 clipboard

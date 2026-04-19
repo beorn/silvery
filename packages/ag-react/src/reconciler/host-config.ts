@@ -7,9 +7,17 @@
  */
 
 import { createContext } from "react"
-import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
+import {
+  DefaultEventPriority,
+  DiscreteEventPriority,
+  NoEventPriority,
+} from "react-reconciler/constants.js"
 import type { BoxProps, AgNode, AgNodeType, TextProps } from "@silvery/ag/types"
-import { trackContentDirty, trackStyleOnlyDirty, trackScrollDirty } from "@silvery/ag/dirty-tracking"
+import {
+  trackContentDirty,
+  trackStyleOnlyDirty,
+  trackScrollDirty,
+} from "@silvery/ag/dirty-tracking"
 import { syncTextContentSignal } from "@silvery/ag/layout-signals"
 import {
   getRenderEpoch,
@@ -304,7 +312,8 @@ export const hostConfig = {
     {
       const epoch = getRenderEpoch()
       const bits = CHILDREN_BIT | CONTENT_BIT
-      parentInstance.dirtyBits = parentInstance.dirtyEpoch !== epoch ? bits : parentInstance.dirtyBits | bits
+      parentInstance.dirtyBits =
+        parentInstance.dirtyEpoch !== epoch ? bits : parentInstance.dirtyBits | bits
       parentInstance.dirtyEpoch = epoch
     }
     parentInstance.layoutNode?.markDirty()
@@ -341,7 +350,8 @@ export const hostConfig = {
     {
       const epoch = getRenderEpoch()
       const bits = CHILDREN_BIT | CONTENT_BIT
-      container.root.dirtyBits = container.root.dirtyEpoch !== epoch ? bits : container.root.dirtyBits | bits
+      container.root.dirtyBits =
+        container.root.dirtyEpoch !== epoch ? bits : container.root.dirtyBits | bits
       container.root.dirtyEpoch = epoch
     }
     container.root.layoutNode?.markDirty()
@@ -363,7 +373,8 @@ export const hostConfig = {
       {
         const epoch = getRenderEpoch()
         const bits = CHILDREN_BIT | CONTENT_BIT
-        parentInstance.dirtyBits = parentInstance.dirtyEpoch !== epoch ? bits : parentInstance.dirtyBits | bits
+        parentInstance.dirtyBits =
+          parentInstance.dirtyEpoch !== epoch ? bits : parentInstance.dirtyBits | bits
         parentInstance.dirtyEpoch = epoch
       }
       parentInstance.layoutNode?.markDirty()
@@ -387,7 +398,8 @@ export const hostConfig = {
       {
         const epoch = getRenderEpoch()
         const bits = CHILDREN_BIT | CONTENT_BIT
-        container.root.dirtyBits = container.root.dirtyEpoch !== epoch ? bits : container.root.dirtyBits | bits
+        container.root.dirtyBits =
+          container.root.dirtyEpoch !== epoch ? bits : container.root.dirtyBits | bits
         container.root.dirtyEpoch = epoch
       }
       container.root.layoutNode?.markDirty()
@@ -412,13 +424,16 @@ export const hostConfig = {
       parentInstance.children.splice(beforeIndex, 0, child)
       if (parentInstance.layoutNode && child.layoutNode) {
         // Count non-raw-text children before this position for proper layout index
-        const layoutIndex = parentInstance.children.slice(0, beforeIndex).filter((c) => c.layoutNode !== null).length
+        const layoutIndex = parentInstance.children
+          .slice(0, beforeIndex)
+          .filter((c) => c.layoutNode !== null).length
         parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex)
       }
       {
         const epoch = getRenderEpoch()
         const bits = CHILDREN_BIT | CONTENT_BIT
-        parentInstance.dirtyBits = parentInstance.dirtyEpoch !== epoch ? bits : parentInstance.dirtyBits | bits
+        parentInstance.dirtyBits =
+          parentInstance.dirtyEpoch !== epoch ? bits : parentInstance.dirtyBits | bits
         parentInstance.dirtyEpoch = epoch
       }
       parentInstance.layoutNode?.markDirty()
@@ -442,13 +457,16 @@ export const hostConfig = {
       child.parent = container.root
       container.root.children.splice(beforeIndex, 0, child)
       if (container.root.layoutNode && child.layoutNode) {
-        const layoutIndex = container.root.children.slice(0, beforeIndex).filter((c) => c.layoutNode !== null).length
+        const layoutIndex = container.root.children
+          .slice(0, beforeIndex)
+          .filter((c) => c.layoutNode !== null).length
         container.root.layoutNode.insertChild(child.layoutNode, layoutIndex)
       }
       {
         const epoch = getRenderEpoch()
         const bits = CHILDREN_BIT | CONTENT_BIT
-        container.root.dirtyBits = container.root.dirtyEpoch !== epoch ? bits : container.root.dirtyBits | bits
+        container.root.dirtyBits =
+          container.root.dirtyEpoch !== epoch ? bits : container.root.dirtyBits | bits
         container.root.dirtyEpoch = epoch
       }
       container.root.layoutNode?.markDirty()
@@ -465,7 +483,10 @@ export const hostConfig = {
     newProps: BoxProps | TextProps,
   ): boolean | null {
     // Return true if we need to update
-    return classifyPropChanges(oldProps as Record<string, unknown>, newProps as Record<string, unknown>).anyChanged
+    return classifyPropChanges(
+      oldProps as Record<string, unknown>,
+      newProps as Record<string, unknown>,
+    ).anyChanged
   },
 
   // Note: react-reconciler 0.33+ changed the signature from
@@ -525,7 +546,8 @@ export const hostConfig = {
       // Render phase uses this to cascade re-renders only when the content area
       // was actually affected (not for border-only paint changes).
       if (
-        (oldProps as Record<string, unknown>).backgroundColor !== (newProps as Record<string, unknown>).backgroundColor
+        (oldProps as Record<string, unknown>).backgroundColor !==
+        (newProps as Record<string, unknown>).backgroundColor
       ) {
         bits |= BG_BIT
       }
@@ -534,7 +556,10 @@ export const hostConfig = {
       // draw anything at those positions. Setting bgDirty makes contentAreaAffected
       // true, triggering clearNodeRegion to fill the area with inherited bg.
       // Border *addition* doesn't need this — renderBorder overwrites the old cells.
-      if ((oldProps as Record<string, unknown>).borderStyle && !(newProps as Record<string, unknown>).borderStyle) {
+      if (
+        (oldProps as Record<string, unknown>).borderStyle &&
+        !(newProps as Record<string, unknown>).borderStyle
+      ) {
         bits |= BG_BIT
       }
       // NOTE: outline removal does NOT need a dirty bit here — the decoration
@@ -543,7 +568,9 @@ export const hostConfig = {
       // Theme change: all descendants need re-rendering with new token values.
       // bgDirty makes contentAreaAffected=true, cascading childrenNeedFreshRender
       // to force children to re-render with the new theme context.
-      if ((oldProps as Record<string, unknown>).theme !== (newProps as Record<string, unknown>).theme) {
+      if (
+        (oldProps as Record<string, unknown>).theme !== (newProps as Record<string, unknown>).theme
+      ) {
         bits |= BG_BIT
       }
       instance.dirtyBits = instance.dirtyEpoch !== epoch ? bits : instance.dirtyBits | bits
@@ -584,9 +611,11 @@ export const hostConfig = {
     // the scroll container, never reaching the container to re-render at the
     // new scroll position.
     const scrollToChanged =
-      (oldProps as Record<string, unknown>).scrollTo !== (newProps as Record<string, unknown>).scrollTo
+      (oldProps as Record<string, unknown>).scrollTo !==
+      (newProps as Record<string, unknown>).scrollTo
     const scrollOffsetChanged =
-      (oldProps as Record<string, unknown>).scrollOffset !== (newProps as Record<string, unknown>).scrollOffset
+      (oldProps as Record<string, unknown>).scrollOffset !==
+      (newProps as Record<string, unknown>).scrollOffset
     if (scrollToChanged || scrollOffsetChanged) {
       trackScrollDirty(instance)
     }
@@ -602,7 +631,8 @@ export const hostConfig = {
     textInstance.props = { children: newText } as TextProps
     const epoch = getRenderEpoch()
     const bits = CONTENT_BIT | STYLE_PROPS_BIT
-    textInstance.dirtyBits = textInstance.dirtyEpoch !== epoch ? bits : textInstance.dirtyBits | bits
+    textInstance.dirtyBits =
+      textInstance.dirtyEpoch !== epoch ? bits : textInstance.dirtyBits | bits
     textInstance.dirtyEpoch = epoch
     trackContentDirty(textInstance)
     // Text content change affects layout (measure function will return different size)
@@ -652,7 +682,8 @@ export const hostConfig = {
     {
       const epoch = getRenderEpoch()
       const bits = CHILDREN_BIT | CONTENT_BIT
-      container.root.dirtyBits = container.root.dirtyEpoch !== epoch ? bits : container.root.dirtyBits | bits
+      container.root.dirtyBits =
+        container.root.dirtyEpoch !== epoch ? bits : container.root.dirtyBits | bits
       container.root.dirtyEpoch = epoch
     }
     container.root.layoutNode?.markDirty()
@@ -837,7 +868,8 @@ export const hostConfig = {
     textInstance.hidden = true
     const epoch = getRenderEpoch()
     const bits = CONTENT_BIT | STYLE_PROPS_BIT
-    textInstance.dirtyBits = textInstance.dirtyEpoch !== epoch ? bits : textInstance.dirtyBits | bits
+    textInstance.dirtyBits =
+      textInstance.dirtyEpoch !== epoch ? bits : textInstance.dirtyBits | bits
     textInstance.dirtyEpoch = epoch
     trackContentDirty(textInstance)
     if (textInstance.parent) {
@@ -863,7 +895,8 @@ export const hostConfig = {
     textInstance.hidden = false
     const epoch = getRenderEpoch()
     const bits = CONTENT_BIT | STYLE_PROPS_BIT
-    textInstance.dirtyBits = textInstance.dirtyEpoch !== epoch ? bits : textInstance.dirtyBits | bits
+    textInstance.dirtyBits =
+      textInstance.dirtyEpoch !== epoch ? bits : textInstance.dirtyBits | bits
     textInstance.dirtyEpoch = epoch
     trackContentDirty(textInstance)
     if (textInstance.parent) {

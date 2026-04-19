@@ -2,8 +2,8 @@
  * Palette validation — checks ColorScheme fields and contrast.
  */
 
-import { hexToRgb } from "./color"
-import { COLOR_SCHEME_FIELDS, type ColorScheme } from "./types"
+import { hexToRgb } from "@silvery/color"
+import { COLOR_SCHEME_FIELDS, type ColorScheme } from "@silvery/ansi"
 
 /** Validation result from validateColorScheme(). */
 export interface ValidationResult {

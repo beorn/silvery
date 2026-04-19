@@ -2,8 +2,8 @@
  * Nord palette — Arctic, north-bluish clean.
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Nord — the classic dark arctic theme. */
 export const nord: ColorScheme = {

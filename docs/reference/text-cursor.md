@@ -42,7 +42,11 @@ import type { WrappedLine } from "@silvery/ag-term"
 Convert a flat cursor offset to a visual (row, col) position in word-wrapped text.
 
 ```ts
-function cursorToRowCol(text: string, cursor: number, wrapWidth: number): { row: number; col: number }
+function cursorToRowCol(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+): { row: number; col: number }
 ```
 
 ```ts
@@ -112,7 +116,12 @@ rowColToCursor("hi\nbye", 0, 10, 80)
 Move the cursor up one visual line. Returns the new cursor offset, or `null` if already on the first visual line.
 
 ```ts
-function cursorMoveUp(text: string, cursor: number, wrapWidth: number, stickyX?: number): number | null
+function cursorMoveUp(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+  stickyX?: number,
+): number | null
 ```
 
 ```ts
@@ -132,7 +141,12 @@ Returns `null` at the boundary to signal the caller should handle cross-block na
 Move the cursor down one visual line. Returns the new cursor offset, or `null` if already on the last visual line.
 
 ```ts
-function cursorMoveDown(text: string, cursor: number, wrapWidth: number, stickyX?: number): number | null
+function cursorMoveDown(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+  stickyX?: number,
+): number | null
 ```
 
 ```ts
@@ -220,7 +234,13 @@ function handleArrowDown(text: string, cursor: number, width: number, stickyX: n
 The `null` return from `cursorMoveUp` / `cursorMoveDown` signals a boundary. In a block-based editor (like Slate or a markdown document), use this to transition between blocks:
 
 ```ts
-function handleVerticalMove(direction: "up" | "down", block: Block, cursor: number, width: number, stickyX: number) {
+function handleVerticalMove(
+  direction: "up" | "down",
+  block: Block,
+  cursor: number,
+  width: number,
+  stickyX: number,
+) {
   const moveFn = direction === "up" ? cursorMoveUp : cursorMoveDown
   const newCursor = moveFn(block.text, cursor, width, stickyX)
 
@@ -255,7 +275,9 @@ function TextWithCursor({ text, cursor, width }: Props) {
   return (
     <Box flexDirection="column">
       {lines.map((wl, i) => (
-        <Text key={i}>{i === row ? wl.line.slice(0, col) + "|" + wl.line.slice(col) : wl.line}</Text>
+        <Text key={i}>
+          {i === row ? wl.line.slice(0, col) + "|" + wl.line.slice(col) : wl.line}
+        </Text>
       ))}
     </Box>
   )

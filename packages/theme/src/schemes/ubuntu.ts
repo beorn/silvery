@@ -2,7 +2,7 @@
  * Ubuntu palette — the default Ubuntu terminal theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Ubuntu — the iconic purple terminal from Ubuntu Linux. */
 export const ubuntu: ColorScheme = {

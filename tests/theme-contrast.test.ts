@@ -205,7 +205,15 @@ describe("deriveTheme contrast guarantees", () => {
     }
 
     // Accent fg text on accent bg (badge readability)
-    for (const token of ["primary", "secondary", "accent", "error", "warning", "success", "info"] as const) {
+    for (const token of [
+      "primary",
+      "secondary",
+      "accent",
+      "error",
+      "warning",
+      "success",
+      "info",
+    ] as const) {
       it(`${token}-fg / ${token} >= AA (4.5:1)`, () => {
         const fgColor = theme[`${token}fg` as keyof Theme] as string
         const bgColor = theme[token] as string

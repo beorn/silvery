@@ -4,8 +4,8 @@
  * Reference: https://github.com/JonathanSpeek/palenight-iterm2
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Palenight — the soft, purple-tinted Material dark variant. */
 export const palenight: ColorScheme = {

@@ -34,7 +34,7 @@ const brandTokens = defineTokens({
   "$km-brand": {
     rgb: "#5B8DEF",
     ansi16: "brightBlue",
-    attrs: ["bold"],  // monochrome
+    attrs: ["bold"], // monochrome
   },
   "$km-logo": {
     rgb: "#9FB7C9",
@@ -61,15 +61,15 @@ defineTokens({ priority: { derive: () => "#FF0000" } })
 // CustomTokenError: must begin with "$"
 
 // ❌ Collides with built-in
-defineTokens({ "$fg": { rgb: "#FF0000", ansi16: "red" } })
+defineTokens({ $fg: { rgb: "#FF0000", ansi16: "red" } })
 // CustomTokenError: collides with built-in Theme token "fg"
 
 // ❌ Mixed derive + rgb
-defineTokens({ "$mixed": { derive: () => "#F00", rgb: "#0F0", ansi16: "red" } })
+defineTokens({ $mixed: { derive: () => "#F00", rgb: "#0F0", ansi16: "red" } })
 // CustomTokenError: pick one
 
 // ❌ Brand without ansi16
-defineTokens({ "$naked": { rgb: "#5B8DEF" } })
+defineTokens({ $naked: { rgb: "#5B8DEF" } })
 // CustomTokenError: requires an 'ansi16' fallback
 
 // ✅ All valid

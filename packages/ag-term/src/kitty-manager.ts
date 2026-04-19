@@ -63,7 +63,8 @@ export function createKittyManager(
     // (Shift+1 → '!') produces correct key.text and matchHotkey results.
     // All Kitty-supporting terminals handle these flags (Ghostty, WezTerm,
     // iTerm2, Alacritty, Kitty, VS Code, Warp — see terminfo.dev).
-    const flagBitmask = opts.flags ?? KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
+    const flagBitmask =
+      opts.flags ?? KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
     const isTTY = (stdin as any)?.isTTY && (stdout as any)?.isTTY
 
     if (isTTY) {

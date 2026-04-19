@@ -7,7 +7,7 @@
 
 import { type Color, TerminalBuffer } from "../buffer"
 import { getActiveTheme } from "@silvery/theme/state"
-import { resolveThemeColor } from "@silvery/theme/resolve"
+import { resolveThemeColor } from "@silvery/ansi"
 import { outputPhase } from "../pipeline/output-phase"
 import type {
   BorderChars,
@@ -304,7 +304,9 @@ export const terminalAdapter: RenderAdapter = {
 
   flush(buffer: RenderBuffer, prevBuffer: RenderBuffer | null): string {
     const termBuffer = (buffer as TerminalRenderBuffer).getTerminalBuffer()
-    const prevTermBuffer = prevBuffer ? (prevBuffer as TerminalRenderBuffer).getTerminalBuffer() : null
+    const prevTermBuffer = prevBuffer
+      ? (prevBuffer as TerminalRenderBuffer).getTerminalBuffer()
+      : null
     return outputPhase(prevTermBuffer, termBuffer)
   },
 

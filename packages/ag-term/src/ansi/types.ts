@@ -9,7 +9,14 @@
 // Re-exports from @silvery/ansi
 // =============================================================================
 
-export type { ColorLevel, RGB, AnsiColorName, Color, UnderlineStyle, TerminalCaps } from "@silvery/ansi"
+export type {
+  ColorLevel,
+  RGB,
+  AnsiColorName,
+  Color,
+  UnderlineStyle,
+  TerminalCaps,
+} from "@silvery/ansi"
 
 // =============================================================================
 // Style Types
@@ -84,7 +91,10 @@ export interface TermScreen {
   containsText?(text: string): boolean
   /** Cell-level access — row-first order. Returns resolved RGB colors.
    *  Only available on emulator-backed terms (createTermless). */
-  cell?(row: number, col: number): { readonly fg: unknown; readonly bg: unknown; readonly char: string }
+  cell?(
+    row: number,
+    col: number,
+  ): { readonly fg: unknown; readonly bg: unknown; readonly char: string }
 }
 
 /**

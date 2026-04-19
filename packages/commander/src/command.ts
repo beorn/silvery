@@ -159,7 +159,9 @@ type ArgKey<S extends string> = CamelCase<ExtractArgName<S>>
  */
 
 /** Split a command name string at the first space. `"deploy <service>"` → `["deploy", "<service>"]` */
-type SplitCommandHead<S extends string> = S extends `${infer Name} ${infer Rest}` ? [Name, Rest] : [S, ""]
+type SplitCommandHead<S extends string> = S extends `${infer Name} ${infer Rest}`
+  ? [Name, Rest]
+  : [S, ""]
 
 /** Walk the tail tokens after the command name and build [Args tuple, ArgsRecord]. */
 type ParseInlineArgs<S extends string, Tuple extends any[] = [], Rec = {}> = S extends ""
@@ -172,7 +174,11 @@ type ParseInlineArgs<S extends string, Tuple extends any[] = [], Rec = {}> = S e
         : Tok extends `[${infer Name}...]`
           ? ParseInlineArgs<Rest, [...Tuple, string[]], Rec & Record<CamelCase<Name>, string[]>>
           : Tok extends `[${infer Name}]`
-            ? ParseInlineArgs<Rest, [...Tuple, string | undefined], Rec & Record<CamelCase<Name>, string | undefined>>
+            ? ParseInlineArgs<
+                Rest,
+                [...Tuple, string | undefined],
+                Rec & Record<CamelCase<Name>, string | undefined>
+              >
             : ParseInlineArgs<Rest, Tuple, Rec> // skip non-arg tokens
     : // Last token (no trailing space)
       S extends `<${infer Name}...>`
@@ -482,17 +488,32 @@ class _CommandBase extends BaseCommand {
    * 4. **Function** -- passed through as Commander's parser function
    * 5. **Anything else** -- passed through as a default value
    */
-  override option(flags: string, description?: string, parseArgOrDefault?: any, defaultValue?: any): this {
+  override option(
+    flags: string,
+    description?: string,
+    parseArgOrDefault?: any,
+    defaultValue?: any,
+  ): this {
     if (Array.isArray(parseArgOrDefault)) {
       const opt = new Option(flags, description ?? "").choices(parseArgOrDefault as string[])
       this.addOption(opt)
       return this
     }
     if (isStandardSchema(parseArgOrDefault)) {
-      return super.option(flags, description ?? "", standardSchemaParser(parseArgOrDefault), defaultValue)
+      return super.option(
+        flags,
+        description ?? "",
+        standardSchemaParser(parseArgOrDefault),
+        defaultValue,
+      )
     }
     if (isLegacyZodSchema(parseArgOrDefault)) {
-      return super.option(flags, description ?? "", legacyZodParser(parseArgOrDefault), defaultValue)
+      return super.option(
+        flags,
+        description ?? "",
+        legacyZodParser(parseArgOrDefault),
+        defaultValue,
+      )
     }
     if (typeof parseArgOrDefault === "function") {
       return super.option(flags, description ?? "", parseArgOrDefault, defaultValue)
@@ -507,7 +528,12 @@ class _CommandBase extends BaseCommand {
    * legacy Zod → parser, function → parser, anything else → default value.
    * Tracks argument names for `.action()` merging.
    */
-  override argument(flags: string, description?: string, parseArgOrDefault?: any, defaultValue?: any): this {
+  override argument(
+    flags: string,
+    description?: string,
+    parseArgOrDefault?: any,
+    defaultValue?: any,
+  ): this {
     // Extract the camelCase name from the flags string for action() merging
     const rawName = flags.replace(/[<\[\]>.]/g, "").trim()
     const camelName = rawName.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())
@@ -520,10 +546,20 @@ class _CommandBase extends BaseCommand {
       return this
     }
     if (isStandardSchema(parseArgOrDefault)) {
-      return super.argument(flags, description ?? "", standardSchemaParser(parseArgOrDefault), defaultValue)
+      return super.argument(
+        flags,
+        description ?? "",
+        standardSchemaParser(parseArgOrDefault),
+        defaultValue,
+      )
     }
     if (isLegacyZodSchema(parseArgOrDefault)) {
-      return super.argument(flags, description ?? "", legacyZodParser(parseArgOrDefault), defaultValue)
+      return super.argument(
+        flags,
+        description ?? "",
+        legacyZodParser(parseArgOrDefault),
+        defaultValue,
+      )
     }
     if (typeof parseArgOrDefault === "function") {
       return super.argument(flags, description ?? "", parseArgOrDefault, defaultValue)
@@ -663,7 +699,10 @@ class _CommandBase extends BaseCommand {
     this.helpInformation = () => {
       const builtinFlags = new Set(["-V, --version", "-h, --help"])
       const userDescs = this.options
-        .filter((opt) => !builtinFlags.has(opt.flags) && opt.description && /^[a-zA-Z]/.test(opt.description))
+        .filter(
+          (opt) =>
+            !builtinFlags.has(opt.flags) && opt.description && /^[a-zA-Z]/.test(opt.description),
+        )
         .map((opt) => opt.description!)
       for (const cmd of this.commands) {
         if (cmd.description() && /^[a-zA-Z]/.test(cmd.description())) {
@@ -680,7 +719,8 @@ class _CommandBase extends BaseCommand {
           }
           const helpOpt = (this as any)._helpOption
           if (helpOpt?.description && /^[a-z]/.test(helpOpt.description)) {
-            helpOpt.description = helpOpt.description[0]!.toUpperCase() + helpOpt.description.slice(1)
+            helpOpt.description =
+              helpOpt.description[0]!.toUpperCase() + helpOpt.description.slice(1)
           }
         }
       }
@@ -764,7 +804,9 @@ class _CommandBase extends BaseCommand {
       },
       // Render "before" and "after" sections inside formatHelp
       formatHelp(cmd: any, helper: any) {
-        const baseHelp = origFormatHelp ? origFormatHelp(cmd, helper) : protoFormatHelp.call(helper, cmd, helper)
+        const baseHelp = origFormatHelp
+          ? origFormatHelp(cmd, helper)
+          : protoFormatHelp.call(helper, cmd, helper)
         // Only render THIS command's sections. configureHelp is inherited by
         // subcommands, so without this guard parent sections leak into subcommand help.
         // Subcommands with their own sections install their own hooks.
@@ -827,7 +869,10 @@ export interface Command<
   opts(): Opts
 
   /** Accept any `Command<...>` variant as a subcommand. */
-  addCommand(cmd: Command<any, any, any>, opts?: { isDefault?: boolean; hidden?: boolean; noHelp?: boolean }): this
+  addCommand(
+    cmd: Command<any, any, any>,
+    opts?: { isDefault?: boolean; hidden?: boolean; noHelp?: boolean },
+  ): this
 
   /** Factory for subcommands — returns a fresh `Command<{}>`. */
   createCommand(name?: string): Command<{}, [], {}>
@@ -913,12 +958,20 @@ export interface Command<
     Opts,
     [
       ...Args,
-      IsArgVariadic<F> extends true ? C[number][] : IsArgRequired<F> extends true ? C[number] : C[number] | undefined,
+      IsArgVariadic<F> extends true
+        ? C[number][]
+        : IsArgRequired<F> extends true
+          ? C[number]
+          : C[number] | undefined,
     ],
     ArgsRecord &
       Record<
         ArgKey<F>,
-        IsArgVariadic<F> extends true ? C[number][] : IsArgRequired<F> extends true ? C[number] : C[number] | undefined
+        IsArgVariadic<F> extends true
+          ? C[number][]
+          : IsArgRequired<F> extends true
+            ? C[number]
+            : C[number] | undefined
       >
   >
 
@@ -928,7 +981,11 @@ export interface Command<
     description: string,
     schema: CLIType<T>,
     defaultValue?: T,
-  ): Command<Opts, [...Args, InferArgType<F, CLIType<T>>], ArgsRecord & Record<ArgKey<F>, InferArgType<F, CLIType<T>>>>
+  ): Command<
+    Opts,
+    [...Args, InferArgType<F, CLIType<T>>],
+    ArgsRecord & Record<ArgKey<F>, InferArgType<F, CLIType<T>>>
+  >
 
   /** Add an argument with a Standard Schema v1 validator (Zod, Valibot, ArkType) */
   argument<F extends string, S extends AnyStandardSchema>(
@@ -976,7 +1033,9 @@ export interface Command<
    * Receives `(...positionalArgs, opts, command)`. The command instance is
    * appended last so it can be safely ignored by handlers that don't need it.
    */
-  action(fn: (...args: [...Args, Opts, Command<Opts, Args, ArgsRecord>]) => void | Promise<void>): this
+  action(
+    fn: (...args: [...Args, Opts, Command<Opts, Args, ArgsRecord>]) => void | Promise<void>,
+  ): this
 
   /**
    * Register an action handler — merged named-object form.
@@ -986,7 +1045,9 @@ export interface Command<
    * Use this when you prefer a single destructured object to multiple positional
    * parameters — especially for commands with 2+ arguments.
    */
-  actionMerged(fn: (params: Opts & ArgsRecord, cmd: Command<Opts, Args, ArgsRecord>) => void | Promise<void>): this
+  actionMerged(
+    fn: (params: Opts & ArgsRecord, cmd: Command<Opts, Args, ArgsRecord>) => void | Promise<void>,
+  ): this
 
   // -- Typed command overload --
 

@@ -159,7 +159,11 @@ function VirtualListApp({ items }) {
 
   return (
     <SearchProvider value={findProvider}>
-      <ListView items={items} getKey={(item) => item.id} renderItem={(item) => <Text>{item.text}</Text>} />
+      <ListView
+        items={items}
+        getKey={(item) => item.id}
+        renderItem={(item) => <Text>{item.text}</Text>}
+      />
     </SearchProvider>
   )
 }

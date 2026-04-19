@@ -41,7 +41,12 @@ const VARIANT_COLORS: Record<NonNullable<BadgeProps["variant"]>, string> = {
 // Component
 // =============================================================================
 
-export function Badge({ label, variant = "default", color, ...rest }: BadgeProps): React.ReactElement {
+export function Badge({
+  label,
+  variant = "default",
+  color,
+  ...rest
+}: BadgeProps): React.ReactElement {
   const resolvedColor = color ?? VARIANT_COLORS[variant]
 
   return (

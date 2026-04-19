@@ -42,7 +42,12 @@ const FRAMES: Record<NonNullable<SpinnerProps["type"]>, readonly string[]> = {
 // Component
 // =============================================================================
 
-export function Spinner({ type = "dots", label, interval = 80, ...rest }: SpinnerProps): React.ReactElement {
+export function Spinner({
+  type = "dots",
+  label,
+  interval = 80,
+  ...rest
+}: SpinnerProps): React.ReactElement {
   const [frameIndex, setFrameIndex] = useState(0)
   const frames = FRAMES[type]
 

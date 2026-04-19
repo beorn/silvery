@@ -23,12 +23,12 @@ export { ThemeProvider, useTheme } from "./ThemeContext"
 export type { ThemeProviderProps } from "./ThemeContext"
 
 // Core types
-export type { Theme, ColorScheme, HueName, AnsiPrimary, AnsiColorName } from "./types"
-export { COLOR_SCHEME_FIELDS } from "./types"
+export type { Theme, ColorScheme, HueName, AnsiPrimary, AnsiColorName } from "@silvery/ansi"
+export { COLOR_SCHEME_FIELDS } from "@silvery/ansi"
 
 // Derivation
-export { deriveTheme } from "./derive"
-export type { ThemeAdjustment } from "./derive"
+export { deriveTheme } from "@silvery/ansi"
+export type { ThemeAdjustment } from "@silvery/ansi"
 
 // Color utilities
 export {
@@ -43,11 +43,11 @@ export {
   hexToHsl,
   hslToHex,
   rgbToHsl,
-} from "./color"
-export type { HSL } from "./color"
+} from "@silvery/color"
+export type { HSL } from "@silvery/color"
 
 // Token resolution
-export { resolveThemeColor } from "./resolve"
+export { resolveThemeColor } from "@silvery/ansi"
 
 // ANSI 16 theme generation
 export { generateTheme } from "./generate"
@@ -76,8 +76,8 @@ export { validateTheme, THEME_TOKEN_KEYS } from "./validate-theme"
 export type { ThemeValidationResult } from "./validate-theme"
 
 // Contrast checking and enforcement
-export { checkContrast, ensureContrast } from "./contrast"
-export type { ContrastResult } from "./contrast"
+export { checkContrast, ensureContrast } from "@silvery/color"
+export type { ContrastResult } from "@silvery/color"
 
 // Token aliasing
 export { resolveAliases, resolveTokenAlias } from "./alias"

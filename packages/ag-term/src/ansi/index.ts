@@ -219,4 +219,8 @@ export {
   ENABLE_PASTE_EVENTS,
   DISABLE_PASTE_EVENTS,
 } from "./advanced-clipboard"
-export type { AdvancedClipboard, AdvancedClipboardOptions, ClipboardEntry } from "./advanced-clipboard"
+export type {
+  AdvancedClipboard,
+  AdvancedClipboardOptions,
+  ClipboardEntry,
+} from "./advanced-clipboard"

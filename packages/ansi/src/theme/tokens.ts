@@ -92,8 +92,6 @@ export type BrandToken =
   | "$brand"
   | "$brand-hover"
   | "$brand-active"
-  /** @deprecated Prefer `$<hue>` (e.g. `$red`). */
-  | `$brand-${HueName}`
 
 /** Raw ANSI palette slots. */
 export type PaletteToken =
@@ -153,3 +151,28 @@ export type VariantName =
  * accepting any runtime string value.
  */
 export type KnownVariant = VariantName | (string & {})
+
+/**
+ * Runtime constant — the 12 built-in variant names shipped by silvery.
+ *
+ * Used in dev warnings when an unknown variant is looked up in Text.tsx:
+ * ```
+ * Warning: Unknown variant "h11". Known variants: h1, h2, h3, …
+ * ```
+ *
+ * Mirrors `VariantName` exactly — update both when variants change.
+ */
+export const KNOWN_VARIANTS: readonly VariantName[] = [
+  "h1",
+  "h2",
+  "h3",
+  "body",
+  "body-muted",
+  "fine-print",
+  "strong",
+  "em",
+  "link",
+  "key",
+  "code",
+  "kbd",
+] as const

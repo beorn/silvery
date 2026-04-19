@@ -124,7 +124,11 @@ export interface PropChangeResult {
 }
 
 /** Shared singleton for the no-changes fast path (identity check). */
-const NO_CHANGES: PropChangeResult = { anyChanged: false, layoutChanged: false, contentChanged: false }
+const NO_CHANGES: PropChangeResult = {
+  anyChanged: false,
+  layoutChanged: false,
+  contentChanged: false,
+}
 
 /**
  * Classify all prop changes in a single pass over the union of old and new keys.
@@ -160,8 +164,10 @@ export function classifyPropChanges(
         if (key === "children") {
           // Only primitive children (string, number) affect text rendering.
           // Array/object children are React elements reconciled separately.
-          const oldIsPrimitive = typeof oldProps[key] === "string" || typeof oldProps[key] === "number"
-          const newIsPrimitive = typeof newProps[key] === "string" || typeof newProps[key] === "number"
+          const oldIsPrimitive =
+            typeof oldProps[key] === "string" || typeof oldProps[key] === "number"
+          const newIsPrimitive =
+            typeof newProps[key] === "string" || typeof newProps[key] === "number"
           if (oldIsPrimitive || newIsPrimitive) {
             contentChanged = "text"
           }
@@ -186,7 +192,8 @@ export function classifyPropChanges(
         if (LAYOUT_PROPS.has(key)) layoutChanged = true
         if (contentChanged !== "text") {
           if (key === "children") {
-            const newIsPrimitive = typeof newProps[key] === "string" || typeof newProps[key] === "number"
+            const newIsPrimitive =
+              typeof newProps[key] === "string" || typeof newProps[key] === "number"
             if (newIsPrimitive) {
               contentChanged = "text"
             }

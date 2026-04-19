@@ -2,7 +2,7 @@
  * Breeze palette — KDE's default terminal theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Breeze — KDE Plasma's clean dark theme. */
 export const breeze: ColorScheme = {

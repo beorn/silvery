@@ -139,7 +139,10 @@ describe("pointer state machine: text selection", () => {
   })
 
   test("pointerDown on auto userSelect -> pointing-text", () => {
-    const [state] = pointerStateUpdate(down(10, 5, { target: textNode, userSelect: "auto" }), createPointerState())
+    const [state] = pointerStateUpdate(
+      down(10, 5, { target: textNode, userSelect: "auto" }),
+      createPointerState(),
+    )
     expect(state.type).toBe("pointing-text")
   })
 
@@ -150,8 +153,15 @@ describe("pointer state machine: text selection", () => {
     ])
 
     expect(state.type).toBe("dragging-text")
-    expect(effects).toContainEqual({ type: "startSelection", anchor: { x: 10, y: 5 }, scope: textNode.scrollRect })
-    expect(effects).toContainEqual({ type: "extendSelection", head: { x: 10 + DRAG_THRESHOLD + 1, y: 5 } })
+    expect(effects).toContainEqual({
+      type: "startSelection",
+      anchor: { x: 10, y: 5 },
+      scope: textNode.scrollRect,
+    })
+    expect(effects).toContainEqual({
+      type: "extendSelection",
+      head: { x: 10 + DRAG_THRESHOLD + 1, y: 5 },
+    })
   })
 
   test("move below threshold stays in pointing-text", () => {
@@ -193,7 +203,10 @@ describe("pointer state machine: text selection", () => {
   })
 
   test("pointerUp before threshold -> click (no drag)", () => {
-    const { state, effects } = runSequence([down(10, 5, { target: textNode, userSelect: "text" }), up(10, 5)])
+    const { state, effects } = runSequence([
+      down(10, 5, { target: textNode, userSelect: "text" }),
+      up(10, 5),
+    ])
 
     expect(state.type).toBe("idle")
     expect(effects).toContainEqual({ type: "click", target: textNode, x: 10, y: 5 })
@@ -210,19 +223,28 @@ describe("pointer state machine: node interaction", () => {
   const nodeElement = makeNode()
 
   test("pointerDown on non-selectable node -> pointing-node", () => {
-    const [state] = pointerStateUpdate(down(10, 5, { target: nodeElement, userSelect: "none" }), createPointerState())
+    const [state] = pointerStateUpdate(
+      down(10, 5, { target: nodeElement, userSelect: "none" }),
+      createPointerState(),
+    )
     expect(state.type).toBe("pointing-node")
   })
 
   test("pointerUp on pointing-node -> click effect", () => {
-    const { state, effects } = runSequence([down(10, 5, { target: nodeElement, userSelect: "none" }), up(10, 5)])
+    const { state, effects } = runSequence([
+      down(10, 5, { target: nodeElement, userSelect: "none" }),
+      up(10, 5),
+    ])
 
     expect(state.type).toBe("idle")
     expect(effects).toContainEqual({ type: "click", target: nodeElement, x: 10, y: 5 })
   })
 
   test("draggable node: pointerDown -> pointing-node", () => {
-    const [state] = pointerStateUpdate(down(10, 5, { target: nodeElement, draggable: true }), createPointerState())
+    const [state] = pointerStateUpdate(
+      down(10, 5, { target: nodeElement, draggable: true }),
+      createPointerState(),
+    )
     expect(state.type).toBe("pointing-node")
   })
 
@@ -330,14 +352,20 @@ describe("pointer state machine: cancel", () => {
   const nodeElement = makeNode()
 
   test("cancel from pointing-text -> idle (no effects)", () => {
-    const { state, effects } = runSequence([down(10, 5, { target: textNode, userSelect: "text" }), cancel()])
+    const { state, effects } = runSequence([
+      down(10, 5, { target: textNode, userSelect: "text" }),
+      cancel(),
+    ])
 
     expect(state.type).toBe("idle")
     expect(effects).toEqual([])
   })
 
   test("cancel from pointing-node -> idle (no effects)", () => {
-    const { state, effects } = runSequence([down(10, 5, { target: nodeElement, userSelect: "none" }), cancel()])
+    const { state, effects } = runSequence([
+      down(10, 5, { target: nodeElement, userSelect: "none" }),
+      cancel(),
+    ])
 
     expect(state.type).toBe("idle")
     expect(effects).toEqual([])
@@ -373,7 +401,11 @@ describe("pointer state machine: cancel", () => {
   })
 
   test("cancel from dragging-area -> idle with clearSelection", () => {
-    const { state, effects } = runSequence([down(10, 5), move(10 + DRAG_THRESHOLD + 1, 5), cancel()])
+    const { state, effects } = runSequence([
+      down(10, 5),
+      move(10 + DRAG_THRESHOLD + 1, 5),
+      cancel(),
+    ])
 
     expect(state.type).toBe("idle")
     expect(effects).toContainEqual({ type: "clearSelection" })
@@ -388,7 +420,10 @@ describe("pointer state machine: drag threshold", () => {
   const textNode = makeNode()
 
   test("exact threshold distance does NOT transition", () => {
-    const { state } = runSequence([down(10, 5, { target: textNode, userSelect: "text" }), move(10 + DRAG_THRESHOLD, 5)])
+    const { state } = runSequence([
+      down(10, 5, { target: textNode, userSelect: "text" }),
+      move(10 + DRAG_THRESHOLD, 5),
+    ])
 
     expect(state.type).toBe("pointing-text")
   })
@@ -404,11 +439,17 @@ describe("pointer state machine: drag threshold", () => {
 
   test("diagonal distance uses Chebyshev (max of dx, dy)", () => {
     // Diagonal: dx=2, dy=2 -> distance = max(2,2) = 2 = DRAG_THRESHOLD -> no transition
-    const { state: state1 } = runSequence([down(10, 5, { target: textNode, userSelect: "text" }), move(12, 7)])
+    const { state: state1 } = runSequence([
+      down(10, 5, { target: textNode, userSelect: "text" }),
+      move(12, 7),
+    ])
     expect(state1.type).toBe("pointing-text")
 
     // Diagonal: dx=3, dy=1 -> distance = max(3,1) = 3 > DRAG_THRESHOLD -> transition
-    const { state: state2 } = runSequence([down(10, 5, { target: textNode, userSelect: "text" }), move(13, 6)])
+    const { state: state2 } = runSequence([
+      down(10, 5, { target: textNode, userSelect: "text" }),
+      move(13, 6),
+    ])
     expect(state2.type).toBe("dragging-text")
   })
 
@@ -483,12 +524,19 @@ describe("pointer state machine: edge cases", () => {
 
   test("multiple sequential gestures return to idle correctly", () => {
     // First gesture: click
-    const { state } = runSequence([down(10, 5, { target: textNode, userSelect: "text" }), up(10, 5)])
+    const { state } = runSequence([
+      down(10, 5, { target: textNode, userSelect: "text" }),
+      up(10, 5),
+    ])
     expect(state.type).toBe("idle")
 
     // Second gesture: drag
     const result = runSequence(
-      [down(20, 10, { target: textNode, userSelect: "text" }), move(20 + DRAG_THRESHOLD + 1, 10), up(30, 10)],
+      [
+        down(20, 10, { target: textNode, userSelect: "text" }),
+        move(20 + DRAG_THRESHOLD + 1, 10),
+        up(30, 10),
+      ],
       state,
     )
     expect(result.state.type).toBe("idle")
@@ -514,7 +562,10 @@ describe("pointer state machine: edge cases", () => {
 
   test("scope captures target scrollRect", () => {
     const nodeWithRect = makeNode({ scrollRect: { x: 5, y: 3, width: 20, height: 10 } })
-    const [state] = pointerStateUpdate(down(10, 5, { target: nodeWithRect, userSelect: "text" }), createPointerState())
+    const [state] = pointerStateUpdate(
+      down(10, 5, { target: nodeWithRect, userSelect: "text" }),
+      createPointerState(),
+    )
 
     expect(state.type).toBe("pointing-text")
     if (state.type === "pointing-text") {
@@ -524,7 +575,10 @@ describe("pointer state machine: edge cases", () => {
 
   test("target with no scrollRect -> scope is null", () => {
     const nodeNoRect = makeNode({ scrollRect: null })
-    const [state] = pointerStateUpdate(down(10, 5, { target: nodeNoRect, userSelect: "text" }), createPointerState())
+    const [state] = pointerStateUpdate(
+      down(10, 5, { target: nodeNoRect, userSelect: "text" }),
+      createPointerState(),
+    )
 
     expect(state.type).toBe("pointing-text")
     if (state.type === "pointing-text") {
@@ -559,7 +613,10 @@ describe("pointer state machine: full scenarios", () => {
   const emptyTarget = null
 
   test("scenario: click on text node", () => {
-    const { state, effects } = runSequence([down(10, 5, { target: textNode, userSelect: "text" }), up(10, 5)])
+    const { state, effects } = runSequence([
+      down(10, 5, { target: textNode, userSelect: "text" }),
+      up(10, 5),
+    ])
 
     expect(state.type).toBe("idle")
     // Should produce exactly one click effect
@@ -589,7 +646,10 @@ describe("pointer state machine: full scenarios", () => {
     const { state } = runSequence([down(50, 50), up(50, 50)])
     expect(state.type).toBe("idle")
 
-    const result = runSequence([down(10, 5, { target: textNode, userSelect: "text" }), up(10, 5)], state)
+    const result = runSequence(
+      [down(10, 5, { target: textNode, userSelect: "text" }), up(10, 5)],
+      state,
+    )
     expect(result.state.type).toBe("idle")
     expect(result.effects.filter((e) => e.type === "click")).toHaveLength(1)
   })

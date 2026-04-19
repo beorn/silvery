@@ -22,7 +22,10 @@ import type { AgNode } from "../../packages/ag/src/types"
 // ============================================================================
 
 /** Create a minimal AgNode stub for testing. */
-function createMockNode(props: Record<string, unknown> = {}, extra: Record<string, unknown> = {}): AgNode {
+function createMockNode(
+  props: Record<string, unknown> = {},
+  extra: Record<string, unknown> = {},
+): AgNode {
   return {
     type: "box",
     props,

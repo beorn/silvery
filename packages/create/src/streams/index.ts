@@ -40,14 +40,18 @@
  * }
  * ```
  */
-export async function* merge<T>(...sources: AsyncIterable<T>[]): AsyncGenerator<T, void, undefined> {
+export async function* merge<T>(
+  ...sources: AsyncIterable<T>[]
+): AsyncGenerator<T, void, undefined> {
   if (sources.length === 0) return
 
   // Track active iterators and their pending promises
   const iterators = sources.map((source) => source[Symbol.asyncIterator]())
   const pending = new Map<number, Promise<{ index: number; result: IteratorResult<T, unknown> }>>()
 
-  async function nextWithIndex(idx: number): Promise<{ index: number; result: IteratorResult<T, unknown> }> {
+  async function nextWithIndex(
+    idx: number,
+  ): Promise<{ index: number; result: IteratorResult<T, unknown> }> {
     const iterator = iterators[idx]
     if (!iterator) throw new Error(`No iterator at index ${idx}`)
     const result = await iterator.next()
@@ -87,7 +91,10 @@ export async function* merge<T>(...sources: AsyncIterable<T>[]): AsyncGenerator<
  * const keyEvents = map(keys, k => ({ type: 'key' as const, key: k }))
  * ```
  */
-export async function* map<T, U>(source: AsyncIterable<T>, fn: (value: T) => U): AsyncGenerator<U, void, undefined> {
+export async function* map<T, U>(
+  source: AsyncIterable<T>,
+  fn: (value: T) => U,
+): AsyncGenerator<U, void, undefined> {
   const iterator = source[Symbol.asyncIterator]()
   try {
     // Use the iterator directly to avoid double-iteration
@@ -170,7 +177,10 @@ export async function* filterMap<T, U>(
  * // Later: controller.abort() will end the iteration
  * ```
  */
-export async function* takeUntil<T>(source: AsyncIterable<T>, signal: AbortSignal): AsyncGenerator<T, void, undefined> {
+export async function* takeUntil<T>(
+  source: AsyncIterable<T>,
+  signal: AbortSignal,
+): AsyncGenerator<T, void, undefined> {
   if (signal.aborted) return
 
   const iterator = source[Symbol.asyncIterator]()
@@ -210,7 +220,10 @@ export async function* takeUntil<T>(source: AsyncIterable<T>, signal: AbortSigna
  * const firstThree = take(events, 3)
  * ```
  */
-export async function* take<T>(source: AsyncIterable<T>, count: number): AsyncGenerator<T, void, undefined> {
+export async function* take<T>(
+  source: AsyncIterable<T>,
+  count: number,
+): AsyncGenerator<T, void, undefined> {
   if (count <= 0) return
 
   const iterator = source[Symbol.asyncIterator]()
@@ -254,7 +267,10 @@ export async function* fromArray<T>(items: T[]): AsyncGenerator<T, void, undefin
  * const delayed = fromArrayWithDelay([1, 2, 3], 100) // 100ms between each
  * ```
  */
-export async function* fromArrayWithDelay<T>(items: T[], delayMs: number): AsyncGenerator<T, void, undefined> {
+export async function* fromArrayWithDelay<T>(
+  items: T[],
+  delayMs: number,
+): AsyncGenerator<T, void, undefined> {
   for (const item of items) {
     await new Promise((resolve) => setTimeout(resolve, delayMs))
     yield item
@@ -272,7 +288,10 @@ export async function* fromArrayWithDelay<T>(items: T[], delayMs: number): Async
  * const throttled = throttle(mouseMoves, 16) // ~60fps
  * ```
  */
-export async function* throttle<T>(source: AsyncIterable<T>, ms: number): AsyncGenerator<T, void, undefined> {
+export async function* throttle<T>(
+  source: AsyncIterable<T>,
+  ms: number,
+): AsyncGenerator<T, void, undefined> {
   const iterator = source[Symbol.asyncIterator]()
   let lastEmit = 0
 
@@ -304,7 +323,10 @@ export async function* throttle<T>(source: AsyncIterable<T>, ms: number): AsyncG
  * const debounced = debounce(searchInput, 300) // Yields last value after source ends + delay
  * ```
  */
-export async function* debounce<T>(source: AsyncIterable<T>, ms: number): AsyncGenerator<T, void, undefined> {
+export async function* debounce<T>(
+  source: AsyncIterable<T>,
+  ms: number,
+): AsyncGenerator<T, void, undefined> {
   const iterator = source[Symbol.asyncIterator]()
   let last: { value: T } | undefined
 
@@ -334,12 +356,18 @@ export async function* debounce<T>(source: AsyncIterable<T>, ms: number): AsyncG
  * const batched = batch(events, 10) // Emit arrays of 10 events
  * ```
  */
-export function batch<T>(source: AsyncIterable<T>, size: number): AsyncGenerator<T[], void, undefined> {
+export function batch<T>(
+  source: AsyncIterable<T>,
+  size: number,
+): AsyncGenerator<T[], void, undefined> {
   if (size <= 0) throw new Error("Batch size must be positive")
   return batchImpl(source, size)
 }
 
-async function* batchImpl<T>(source: AsyncIterable<T>, size: number): AsyncGenerator<T[], void, undefined> {
+async function* batchImpl<T>(
+  source: AsyncIterable<T>,
+  size: number,
+): AsyncGenerator<T[], void, undefined> {
   const iterator = source[Symbol.asyncIterator]()
   let buffer: T[] = []
 
@@ -370,7 +398,9 @@ async function* batchImpl<T>(source: AsyncIterable<T>, size: number): AsyncGener
  * const all = concat(header, body, footer)
  * ```
  */
-export async function* concat<T>(...sources: AsyncIterable<T>[]): AsyncGenerator<T, void, undefined> {
+export async function* concat<T>(
+  ...sources: AsyncIterable<T>[]
+): AsyncGenerator<T, void, undefined> {
   for (const source of sources) {
     yield* source
   }

@@ -16,7 +16,12 @@ import { setRenderAdapter, hasRenderAdapter } from "@silvery/ag-term/render-adap
 import { terminalAdapter, TerminalRenderBuffer } from "@silvery/ag-term/adapters/terminal-adapter"
 import { setLayoutEngine } from "@silvery/ag-term/layout-engine"
 import { createFlexilyZeroEngine } from "@silvery/ag-term/adapters/flexily-zero-adapter"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/ag-react/reconciler"
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+} from "@silvery/ag-react/reconciler"
 import {
   measurePhase,
   layoutPhase,
@@ -34,7 +39,11 @@ function setupAdapter() {
 }
 
 /** Render a React element through the adapter pipeline and return the buffer. */
-function renderViaAdapter(element: React.ReactElement, cols: number, rows: number): TerminalRenderBuffer {
+function renderViaAdapter(
+  element: React.ReactElement,
+  cols: number,
+  rows: number,
+): TerminalRenderBuffer {
   setupAdapter()
 
   const container = createContainer(() => {})
@@ -203,9 +212,13 @@ describe("render-phase-adapter internal_transform", () => {
   test("internal_transform is applied to nested Text content", () => {
     // internal_transform is set by the Transform component internally.
     // We simulate it by using it on a Text props directly.
-    const Transform = ({ children, transform }: { children: React.ReactNode; transform: (s: string) => string }) => (
-      <Text internal_transform={(s: string) => transform(s)}>{children}</Text>
-    )
+    const Transform = ({
+      children,
+      transform,
+    }: {
+      children: React.ReactNode
+      transform: (s: string) => string
+    }) => <Text internal_transform={(s: string) => transform(s)}>{children}</Text>
 
     const buffer = renderViaAdapter(
       <Box width={30}>

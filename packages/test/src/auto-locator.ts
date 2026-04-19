@@ -72,7 +72,10 @@ type NodePredicate = (node: AgNode) => boolean
  * Create an AutoLocator from a container getter function.
  * The getter is called fresh on each resolution.
  */
-export function createAutoLocator(getContainer: () => AgNode, opts?: { strict?: boolean }): AutoLocator {
+export function createAutoLocator(
+  getContainer: () => AgNode,
+  opts?: { strict?: boolean },
+): AutoLocator {
   return new AutoLocatorImpl(getContainer, [], undefined, opts?.strict ?? false)
 }
 
@@ -107,14 +110,24 @@ class AutoLocatorImpl implements AutoLocator {
       }
       return text.test(content)
     }
-    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate], undefined, this.strict)
+    return new AutoLocatorImpl(
+      this.getContainer,
+      [...this.predicates, predicate],
+      undefined,
+      this.strict,
+    )
   }
 
   getByTestId(id: string): AutoLocator {
     const predicate: NodePredicate = (node) => {
       return getNodeProp(node, "testID") === id
     }
-    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate], undefined, this.strict)
+    return new AutoLocatorImpl(
+      this.getContainer,
+      [...this.predicates, predicate],
+      undefined,
+      this.strict,
+    )
   }
 
   locator(selector: string): AutoLocator {
@@ -125,7 +138,12 @@ class AutoLocatorImpl implements AutoLocator {
         return false // Invalid selector → match nothing
       }
     }
-    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate], undefined, this.strict)
+    return new AutoLocatorImpl(
+      this.getContainer,
+      [...this.predicates, predicate],
+      undefined,
+      this.strict,
+    )
   }
 
   filter(optionsOrPredicate: FilterOptions | ((node: AgNode) => boolean)): AutoLocator {
@@ -159,7 +177,12 @@ class AutoLocatorImpl implements AutoLocator {
       }
     }
 
-    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate], undefined, this.strict)
+    return new AutoLocatorImpl(
+      this.getContainer,
+      [...this.predicates, predicate],
+      undefined,
+      this.strict,
+    )
   }
 
   first(): AutoLocator {
@@ -314,7 +337,8 @@ function getNodeProp(node: AgNode, name: string): string | undefined {
 const agNodeAdapter = {
   isTag: (node: AgNode): node is AgNode => !node.isRawText,
 
-  getAttributeValue: (element: AgNode, name: string): string | undefined => getNodeProp(element, name),
+  getAttributeValue: (element: AgNode, name: string): string | undefined =>
+    getNodeProp(element, name),
 
   getChildren: (node: AgNode): AgNode[] => [...node.children],
 
@@ -355,4 +379,8 @@ const agNodeAdapter = {
 }
 
 /** Shared css-select options — case-sensitive tags, no caching (tree changes between queries) */
-const cssSelectOptions: Options<AgNode, AgNode> = { adapter: agNodeAdapter, xmlMode: true, cacheResults: false }
+const cssSelectOptions: Options<AgNode, AgNode> = {
+  adapter: agNodeAdapter,
+  xmlMode: true,
+  cacheResults: false,
+}

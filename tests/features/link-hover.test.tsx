@@ -375,7 +375,16 @@ describe("useMouseCursor", () => {
   })
 
   test("all cursor shapes accepted", () => {
-    const shapes = ["default", "text", "pointer", "crosshair", "move", "not-allowed", "wait", "help"] as const
+    const shapes = [
+      "default",
+      "text",
+      "pointer",
+      "crosshair",
+      "move",
+      "not-allowed",
+      "wait",
+      "help",
+    ] as const
     for (const shape of shapes) {
       function App() {
         useMouseCursor(shape)

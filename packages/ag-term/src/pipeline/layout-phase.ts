@@ -34,7 +34,8 @@ const log = createLogger("silvery:layout")
 export function layoutPhase(root: AgNode, width: number, height: number): void {
   // Check if dimensions changed from previous layout
   const prevLayout = root.boxRect
-  const dimensionsChanged = prevLayout && (prevLayout.width !== width || prevLayout.height !== height)
+  const dimensionsChanged =
+    prevLayout && (prevLayout.width !== width || prevLayout.height !== height)
 
   // Only recalculate if something changed (dirty nodes or dimensions).
   // Flexily's root isDirty() propagates from any markDirty() call —
@@ -109,7 +110,12 @@ function countNodes(node: AgNode): number {
  * @param parentY Absolute Y position of parent
  * @param incrementalSkip When true, skip subtrees where Flexily results match existing boxRect
  */
-function propagateLayout(node: AgNode, parentX: number, parentY: number, incrementalSkip: boolean): void {
+function propagateLayout(
+  node: AgNode,
+  parentX: number,
+  parentY: number,
+  incrementalSkip: boolean,
+): void {
   // Virtual/raw text nodes (no layoutNode) inherit parent's position
   if (!node.layoutNode) {
     // Save previous layout for change detection
@@ -323,7 +329,13 @@ function _hasChildPositionChanged(node: AgNode): boolean {
  * Recursive: follows subtreeDirty paths for efficiency.
  */
 function _hasDescendantOverflowChanged(node: AgNode, rect: Rect): boolean {
-  return _checkDescendantOverflow(node.children, rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
+  return _checkDescendantOverflow(
+    node.children,
+    rect.x,
+    rect.y,
+    rect.x + rect.width,
+    rect.y + rect.height,
+  )
 }
 
 function _checkDescendantOverflow(
@@ -425,9 +437,12 @@ export function strictLayoutOverflowCheck(root: AgNode): void {
         }
 
         // Compute parent's inner content width
-        const border = parentProps.borderStyle ? getBorderSize(parentProps) : { top: 0, bottom: 0, left: 0, right: 0 }
+        const border = parentProps.borderStyle
+          ? getBorderSize(parentProps)
+          : { top: 0, bottom: 0, left: 0, right: 0 }
         const padding = getPadding(parentProps)
-        const parentInnerWidth = node.boxRect.width - padding.left - padding.right - border.left - border.right
+        const parentInnerWidth =
+          node.boxRect.width - padding.left - padding.right - border.left - border.right
 
         if (child.boxRect.width > parentInnerWidth) {
           const childId = (childProps as any).id ?? child.type
@@ -499,7 +514,8 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
 
-  const rawViewportHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
+  const rawViewportHeight =
+    layout.height - border.top - border.bottom - padding.top - padding.bottom
 
   // Calculate total content height and child positions
   let contentHeight = 0
@@ -709,7 +725,11 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
   // Mark node dirty if scroll offset or visible range changed (for incremental rendering)
   // Without this, renderPhase would skip the container and children would
   // remain at their old pixel positions in the cloned buffer
-  if (scrollOffset !== prevOffset || firstVisible !== prevFirstVisible || lastVisible !== prevLastVisible) {
+  if (
+    scrollOffset !== prevOffset ||
+    firstVisible !== prevFirstVisible ||
+    lastVisible !== prevLastVisible
+  ) {
     const epoch = getRenderEpoch()
     if (node.dirtyEpoch !== epoch) {
       node.dirtyBits = SUBTREE_BIT
@@ -784,9 +804,12 @@ export function stickyPhase(root: AgNode): void {
     const layout = node.boxRect
     if (!layout || !node.layoutNode) return
 
-    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
+    const border = props.borderStyle
+      ? getBorderSize(props)
+      : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
-    const parentContentHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
+    const parentContentHeight =
+      layout.height - border.top - border.bottom - padding.top - padding.bottom
 
     const newStickyChildren: NonNullable<AgNode["stickyChildren"]> = []
 

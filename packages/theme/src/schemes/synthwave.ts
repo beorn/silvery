@@ -2,7 +2,7 @@
  * Synthwave palettes — retro neon themes.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Synthwave — classic retro terminal neon. */
 export const synthwave: ColorScheme = {

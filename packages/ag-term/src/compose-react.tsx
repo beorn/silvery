@@ -23,7 +23,12 @@ import React from "react"
 import { createAg, type Ag } from "./ag"
 import type { Term } from "./ansi/term"
 import { ensureDefaultLayoutEngine, isLayoutEngineInitialized } from "./layout-engine"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/ag-react/reconciler"
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+} from "@silvery/ag-react/reconciler"
 import { TermContext, RuntimeContext, FocusManagerContext } from "@silvery/ag-react/context"
 import type { RuntimeContextValue } from "@silvery/ag-react/context"
 import { createFocusManager } from "@silvery/ag/focus-manager"

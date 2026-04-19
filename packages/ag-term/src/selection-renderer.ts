@@ -10,7 +10,11 @@
  */
 
 import type { Color, TerminalBuffer } from "./buffer"
-import { type SelectionRange, type SelectionScope, normalizeRange } from "@silvery/headless/selection"
+import {
+  type SelectionRange,
+  type SelectionScope,
+  normalizeRange,
+} from "@silvery/headless/selection"
 
 // ============================================================================
 // Types
@@ -119,7 +123,10 @@ export function composeSelectionCells(
  * @param buffer The rendered buffer to modify
  * @param changes Cell changes from composeSelectionCells
  */
-export function applySelectionToBuffer(buffer: TerminalBuffer, changes: SelectionCellChange[]): void {
+export function applySelectionToBuffer(
+  buffer: TerminalBuffer,
+  changes: SelectionCellChange[],
+): void {
   for (const change of changes) {
     const cell = buffer.getCell(change.col, change.row)
     buffer.setCell(change.col, change.row, {

@@ -63,17 +63,23 @@ export function resolveThemeColor(
 }
 
 /**
- * Primer-style alias table. Maps new compound names (hyphens stripped) to the
- * existing Theme keys. Lets `$fg-muted` / `$bg-surface` / `$border-focus` / etc.
- * work alongside the legacy Ink-style names like `$muted` / `$surfacebg` /
- * `$focusborder`. Enables the Primer-style token rename (theme-system-v2) to
- * roll out gradually without breaking existing consumers.
+ * Legacy alias table — maps no-hyphen variants of old Ink-style names to the
+ * canonical (all-lowercase, no-hyphen) Theme keys that have always existed.
+ *
+ * This is a subset of the old PRIMER_ALIASES: only entries where the token
+ * introduces a NEW semantic name for an existing differently-named key. The
+ * state-variant entries (primaryhover → primaryHover, etc.) are gone — those
+ * fields are now kebab keys ("primary-hover") in the Theme and are found by
+ * the direct-lookup path.
+ *
+ * Keys: token name with hyphens stripped and $ removed (e.g. "fgmuted").
+ * Values: the canonical Theme property name (e.g. "muted").
  */
-const PRIMER_ALIASES: Record<string, string> = {
-  // Text slots — "fg-<role>"
+const LEGACY_ALIASES: Record<string, string> = {
+  // Text slots — "fg-<role>" maps to legacy all-lowercase name
   fgmuted: "muted",
   fgdisabled: "disabledfg",
-  fgcursor: "cursor", // fg-cursor = text on cursor bg
+  fgcursor: "cursor",
   fgselected: "selection",
   fginverse: "inverse",
   fgonsurface: "surface",
@@ -85,36 +91,16 @@ const PRIMER_ALIASES: Record<string, string> = {
   fgonwarning: "warningfg",
   fgonsuccess: "successfg",
   fgoninfo: "infofg",
-  // Background slots — "bg-<role>"
+  // Background slots — "bg-<role>" maps to legacy name
   bgmuted: "mutedbg",
   bgsurface: "surfacebg",
   bgpopover: "popoverbg",
   bginverse: "inversebg",
   bgselected: "selectionbg",
   bgcursor: "cursorbg",
-  // Border slots — "border-<role>"
+  // Border slots
   borderfocus: "focusborder",
   borderinput: "inputborder",
-  // Brand tokens (Apple system-color model) — kebab-case → camelCase in Theme
-  brandhover: "brandHover",
-  brandactive: "brandActive",
-  // State variants — kebab-stripped → camelCase Theme field
-  primaryhover: "primaryHover",
-  primaryactive: "primaryActive",
-  accenthover: "accentHover",
-  accentactive: "accentActive",
-  fghover: "fgHover",
-  fgactive: "fgActive",
-  bgselectedhover: "bgSelectedHover",
-  bgsurfacehover: "bgSurfaceHover",
-  brandred: "brandRed",
-  brandorange: "brandOrange",
-  brandyellow: "brandYellow",
-  brandgreen: "brandGreen",
-  brandteal: "brandTeal",
-  brandblue: "brandBlue",
-  brandpurple: "brandPurple",
-  brandpink: "brandPink",
 }
 
 /** Internal: resolve a token name (with or without $ prefix) against a theme. */
@@ -128,17 +114,22 @@ function resolveToken(name: string, theme: ThemeLike | undefined): string | unde
       return theme.palette[idx]
     }
   }
-  // Strip hyphens for lookup ($surface-bg → surfacebg)
-  const key = token.replace(/-/g, "")
   const themeObj = theme as Record<string, unknown>
-  // Try direct key first (legacy names: muted, surfacebg, focusborder, …)
-  const direct = themeObj[key]
+  // Direct kebab lookup first — handles new-style keys like "primary-hover",
+  // "fg-hover", "bg-surface-hover", and all plain tokens like "bg", "primary".
+  const direct = themeObj[token]
   if (typeof direct === "string") return direct
-  // Try Primer-style alias (new names: fgmuted, bgsurface, borderfocus, …)
-  const aliased = PRIMER_ALIASES[key]
-  if (aliased) {
-    const val = themeObj[aliased]
-    if (typeof val === "string") return val
+  // Strip hyphens and try the no-hyphen key (legacy names: surfacebg, focusborder, …)
+  const noHyphen = token.replace(/-/g, "")
+  if (noHyphen !== token) {
+    const stripped = themeObj[noHyphen]
+    if (typeof stripped === "string") return stripped
+    // Legacy alias fallback (e.g. "fgmuted" → "muted", "bgsurface" → "surfacebg")
+    const aliased = LEGACY_ALIASES[noHyphen]
+    if (aliased) {
+      const val = themeObj[aliased]
+      if (typeof val === "string") return val
+    }
   }
   return undefined
 }

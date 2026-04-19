@@ -14,7 +14,15 @@
  * ```
  */
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import {
   type SearchState,
   type SearchMatch,
@@ -132,7 +140,10 @@ export function SearchProvider({ children }: { children: ReactNode }): ReactElem
     if (!searchable) return
     for (const eff of pending.effects) {
       if (eff.type === "scrollTo") {
-        const match = pending.state.currentMatch >= 0 ? pending.state.matches[pending.state.currentMatch] : undefined
+        const match =
+          pending.state.currentMatch >= 0
+            ? pending.state.matches[pending.state.currentMatch]
+            : undefined
         if (match) {
           searchable.reveal(match)
         }

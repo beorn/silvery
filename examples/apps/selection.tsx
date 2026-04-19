@@ -35,7 +35,8 @@ const S = {
   ids: (sel: Selection): ReadonlySet<ID> => new Set(sel.nodes),
   includes: (sel: Selection, id: ID): boolean => sel.nodes.includes(id),
   isEditing: (sel: Selection): boolean => !!sel.text,
-  inputMode: (sel: Selection | undefined): "board" | "node" | "text" => (!sel ? "board" : sel.text ? "text" : "node"),
+  inputMode: (sel: Selection | undefined): "board" | "node" | "text" =>
+    !sel ? "board" : sel.text ? "text" : "node",
 
   // Node mutations (clear text)
   select: (id: ID): Selection => ({ nodes: [id] }),
@@ -56,11 +57,16 @@ const S = {
     const hi = Math.max(anchorIdx, targetIdx)
     const range = allIds.slice(lo, hi + 1)
     // cursor first, anchor last
-    const nodes = targetIdx <= anchorIdx ? (range as [ID, ...ID[]]) : ([...range].reverse() as [ID, ...ID[]])
+    const nodes =
+      targetIdx <= anchorIdx ? (range as [ID, ...ID[]]) : ([...range].reverse() as [ID, ...ID[]])
     return { nodes }
   },
 
-  areaSelect(_sel: Selection | undefined, hitIds: readonly ID[], mode: "replace" | "xor"): Selection | undefined {
+  areaSelect(
+    _sel: Selection | undefined,
+    hitIds: readonly ID[],
+    mode: "replace" | "xor",
+  ): Selection | undefined {
     if (mode === "replace") {
       return hitIds.length > 0 ? { nodes: hitIds as [ID, ...ID[]] } : undefined
     }
@@ -308,7 +314,13 @@ function SelectionDemo() {
         <Text color="$muted"> — silvery reactive selection</Text>
       </Box>
 
-      <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" overflow="hidden">
+      <Box
+        flexDirection="column"
+        flexGrow={1}
+        borderStyle="round"
+        borderColor="$border"
+        overflow="hidden"
+      >
         {displayItems.map((item) => (
           <ItemRow key={item.id} item={item} sel={sel} onSelect={handleSelect} />
         ))}

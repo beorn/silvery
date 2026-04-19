@@ -258,7 +258,11 @@ describe("metamorphic fuzz properties", () => {
         // Verify both are in same state before resize
         const stayTextBefore = appStay.text
         const bounceTextBefore = appBounce.text
-        assertTextEqual(stayTextBefore, bounceTextBefore, "Pre-resize: apps should be in same state")
+        assertTextEqual(
+          stayTextBefore,
+          bounceTextBefore,
+          "Pre-resize: apps should be in same state",
+        )
 
         // Resize bounce app: A → B → A
         appBounce.resize(dimB.cols, dimB.rows)
@@ -506,7 +510,11 @@ describe("metamorphic fuzz properties", () => {
           // Identify which cells changed
           const changedCells: Array<{ row: number; col: number; was: string; now: string }> = []
           for (let row = 0; row < Math.min(prevContent.length, currContent.length); row++) {
-            for (let col = 0; col < Math.min(prevContent[row]!.length, currContent[row]!.length); col++) {
+            for (
+              let col = 0;
+              col < Math.min(prevContent[row]!.length, currContent[row]!.length);
+              col++
+            ) {
               if (prevContent[row]![col] !== currContent[row]![col]) {
                 changedCells.push({
                   row,
@@ -681,7 +689,11 @@ describe("metamorphic fuzz properties", () => {
         }
         // After applying the same prefix, state should be identical
         const fullPrefixText = appFull.text
-        assertTextEqual(prefixText, fullPrefixText, "Prefix equivalence: same state after same prefix")
+        assertTextEqual(
+          prefixText,
+          fullPrefixText,
+          "Prefix equivalence: same state after same prefix",
+        )
 
         // Now apply remaining actions to the full path
         for (let i = splitPoint; i < actions.length; i++) {

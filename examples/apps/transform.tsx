@@ -14,7 +14,20 @@
  */
 
 import React, { useState } from "react"
-import { render, Box, Text, H1, Small, Kbd, Muted, Transform, useInput, useApp, createTerm, type Key } from "silvery"
+import {
+  render,
+  Box,
+  Text,
+  H1,
+  Small,
+  Kbd,
+  Muted,
+  Transform,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "silvery"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -118,7 +131,13 @@ const sampleLines = [
 // Components
 // ============================================================================
 
-function TransformSelector({ current, transforms: items }: { current: number; transforms: TransformDef[] }) {
+function TransformSelector({
+  current,
+  transforms: items,
+}: {
+  current: number
+  transforms: TransformDef[]
+}) {
   return (
     <Box flexDirection="column" overflow="scroll" scrollTo={current} height={7}>
       {items.map((t, index) => {
@@ -140,7 +159,15 @@ function TransformSelector({ current, transforms: items }: { current: number; tr
   )
 }
 
-function TextPanel({ title, titleColor, children }: { title: string; titleColor: string; children: React.ReactNode }) {
+function TextPanel({
+  title,
+  titleColor,
+  children,
+}: {
+  title: string
+  titleColor: string
+  children: React.ReactNode
+}) {
   return (
     <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1}>
       <Box marginBottom={1}>

@@ -16,8 +16,16 @@ import {
   isCellSelectable,
   clearSelectableFlag,
 } from "@silvery/ag-term/buffer"
-import { composeSelectionCells, applySelectionToBuffer, type SelectionTheme } from "@silvery/ag-term/selection-renderer"
-import { resolveUserSelect, selectionHitTest, findContainBoundary } from "@silvery/ag-term/mouse-events"
+import {
+  composeSelectionCells,
+  applySelectionToBuffer,
+  type SelectionTheme,
+} from "@silvery/ag-term/selection-renderer"
+import {
+  resolveUserSelect,
+  selectionHitTest,
+  findContainBoundary,
+} from "@silvery/ag-term/mouse-events"
 import type { AgNode, Rect } from "@silvery/ag/types"
 
 // ============================================================================
@@ -38,7 +46,10 @@ describe("terminalSelectionUpdate", () => {
   })
 
   test("extend updates head while selecting", () => {
-    const [state] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, createTerminalSelectionState())
+    const [state] = terminalSelectionUpdate(
+      { type: "start", col: 0, row: 0 },
+      createTerminalSelectionState(),
+    )
     const [next, effects] = terminalSelectionUpdate({ type: "extend", col: 10, row: 2 }, state)
 
     expect(next.range!.anchor).toEqual({ col: 0, row: 0 })
@@ -56,7 +67,10 @@ describe("terminalSelectionUpdate", () => {
   })
 
   test("finish sets selecting=false, emits no effects", () => {
-    let [state] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, createTerminalSelectionState())
+    let [state] = terminalSelectionUpdate(
+      { type: "start", col: 0, row: 0 },
+      createTerminalSelectionState(),
+    )
     ;[state] = terminalSelectionUpdate({ type: "extend", col: 10, row: 2 }, state)
     const [next, effects] = terminalSelectionUpdate({ type: "finish" }, state)
 
@@ -75,7 +89,10 @@ describe("terminalSelectionUpdate", () => {
   })
 
   test("clear resets to initial state, emits render if had range", () => {
-    const [state] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, createTerminalSelectionState())
+    const [state] = terminalSelectionUpdate(
+      { type: "start", col: 0, row: 0 },
+      createTerminalSelectionState(),
+    )
     const [next, effects] = terminalSelectionUpdate({ type: "clear" }, state)
 
     expect(next.range).toBeNull()
@@ -94,7 +111,10 @@ describe("terminalSelectionUpdate", () => {
   test("start initializes source, granularity, scope", () => {
     const state = createTerminalSelectionState()
     const scope: SelectionScope = { top: 2, bottom: 10, left: 5, right: 30 }
-    const [next] = terminalSelectionUpdate({ type: "start", col: 7, row: 3, source: "keyboard", scope }, state)
+    const [next] = terminalSelectionUpdate(
+      { type: "start", col: 7, row: 3, source: "keyboard", scope },
+      state,
+    )
 
     expect(next.source).toBe("keyboard")
     expect(next.granularity).toBe("character") // default granularity on start
@@ -115,7 +135,10 @@ describe("terminalSelectionUpdate", () => {
 
   test("extend clamps to scope", () => {
     const scope: SelectionScope = { top: 0, bottom: 5, left: 0, right: 15 }
-    const [state] = terminalSelectionUpdate({ type: "start", col: 5, row: 2, scope }, createTerminalSelectionState())
+    const [state] = terminalSelectionUpdate(
+      { type: "start", col: 5, row: 2, scope },
+      createTerminalSelectionState(),
+    )
     const [next] = terminalSelectionUpdate(
       { type: "extend", col: 25, row: 8 }, // beyond scope
       state,
@@ -134,7 +157,10 @@ describe("terminalSelectionUpdate", () => {
   })
 
   test("multiple start/extend cycles", () => {
-    let [state] = terminalSelectionUpdate({ type: "start", col: 0, row: 0 }, createTerminalSelectionState())
+    let [state] = terminalSelectionUpdate(
+      { type: "start", col: 0, row: 0 },
+      createTerminalSelectionState(),
+    )
     ;[state] = terminalSelectionUpdate({ type: "extend", col: 5, row: 0 }, state)
     ;[state] = terminalSelectionUpdate({ type: "extend", col: 10, row: 1 }, state)
     ;[state] = terminalSelectionUpdate({ type: "extend", col: 3, row: 2 }, state)
@@ -519,7 +545,12 @@ describe("resolveUserSelect", () => {
 // ============================================================================
 
 describe("selectionHitTest", () => {
-  function makeTree(): { root: AgNode; selectable: AgNode; nonSelectable: AgNode; pointerNone: AgNode } {
+  function makeTree(): {
+    root: AgNode
+    selectable: AgNode
+    nonSelectable: AgNode
+    pointerNone: AgNode
+  } {
     const root: AgNode = {
       type: "silvery-root",
       props: {},

@@ -2,7 +2,12 @@
  * Tests for search overlay state machine.
  */
 import { describe, test, expect } from "vitest"
-import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "@silvery/ag-term/search-overlay"
+import {
+  createSearchState,
+  searchUpdate,
+  renderSearchBar,
+  type SearchMatch,
+} from "@silvery/ag-term/search-overlay"
 
 // ============================================================================
 // Search State Machine

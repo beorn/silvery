@@ -83,7 +83,10 @@ function clampRow(row: number, height: number): number {
   return Math.max(0, Math.min(row, height - 1))
 }
 
-function moveCursor(state: CopyModeState, direction: "up" | "down" | "left" | "right"): CopyModePosition {
+function moveCursor(
+  state: CopyModeState,
+  direction: "up" | "down" | "left" | "right",
+): CopyModePosition {
   const { col, row } = state.cursor
   switch (direction) {
     case "up":
@@ -110,7 +113,11 @@ function detectAutoScroll(
   if (direction === "up" && cursor.row <= 0 && state.cursor.row <= 0) {
     return { type: "scroll", direction: "up", amount: 1 }
   }
-  if (direction === "down" && cursor.row >= state.bufferHeight - 1 && state.cursor.row >= state.bufferHeight - 1) {
+  if (
+    direction === "down" &&
+    cursor.row >= state.bufferHeight - 1 &&
+    state.cursor.row >= state.bufferHeight - 1
+  ) {
     return { type: "scroll", direction: "down", amount: 1 }
   }
   return null
@@ -120,7 +127,10 @@ function detectAutoScroll(
 // Update
 // ============================================================================
 
-export function copyModeUpdate(action: CopyModeAction, state: CopyModeState): [CopyModeState, CopyModeEffect[]] {
+export function copyModeUpdate(
+  action: CopyModeAction,
+  state: CopyModeState,
+): [CopyModeState, CopyModeEffect[]] {
   switch (action.type) {
     case "enter": {
       return [
@@ -182,7 +192,12 @@ export function copyModeUpdate(action: CopyModeAction, state: CopyModeState): [C
       const cursor = { col, row }
       const effects: CopyModeEffect[] = [{ type: "render" }]
       if ((state.visual || state.visualLine) && state.anchor) {
-        effects.push({ type: "setSelection", anchor: state.anchor, head: cursor, lineWise: state.visualLine })
+        effects.push({
+          type: "setSelection",
+          anchor: state.anchor,
+          head: cursor,
+          lineWise: state.visualLine,
+        })
       }
       return [{ ...state, cursor }, effects]
     }
@@ -203,7 +218,12 @@ export function copyModeUpdate(action: CopyModeAction, state: CopyModeState): [C
       const cursor = { col, row }
       const effects: CopyModeEffect[] = [{ type: "render" }]
       if ((state.visual || state.visualLine) && state.anchor) {
-        effects.push({ type: "setSelection", anchor: state.anchor, head: cursor, lineWise: state.visualLine })
+        effects.push({
+          type: "setSelection",
+          anchor: state.anchor,
+          head: cursor,
+          lineWise: state.visualLine,
+        })
       }
       return [{ ...state, cursor }, effects]
     }
@@ -226,7 +246,12 @@ export function copyModeUpdate(action: CopyModeAction, state: CopyModeState): [C
       const cursor = { col, row }
       const effects: CopyModeEffect[] = [{ type: "render" }]
       if ((state.visual || state.visualLine) && state.anchor) {
-        effects.push({ type: "setSelection", anchor: state.anchor, head: cursor, lineWise: state.visualLine })
+        effects.push({
+          type: "setSelection",
+          anchor: state.anchor,
+          head: cursor,
+          lineWise: state.visualLine,
+        })
       }
       return [{ ...state, cursor }, effects]
     }
@@ -236,7 +261,12 @@ export function copyModeUpdate(action: CopyModeAction, state: CopyModeState): [C
       const cursor = { col: 0, row: state.cursor.row }
       const effects: CopyModeEffect[] = [{ type: "render" }]
       if ((state.visual || state.visualLine) && state.anchor) {
-        effects.push({ type: "setSelection", anchor: state.anchor, head: cursor, lineWise: state.visualLine })
+        effects.push({
+          type: "setSelection",
+          anchor: state.anchor,
+          head: cursor,
+          lineWise: state.visualLine,
+        })
       }
       return [{ ...state, cursor }, effects]
     }
@@ -246,7 +276,12 @@ export function copyModeUpdate(action: CopyModeAction, state: CopyModeState): [C
       const cursor = { col: state.bufferWidth - 1, row: state.cursor.row }
       const effects: CopyModeEffect[] = [{ type: "render" }]
       if ((state.visual || state.visualLine) && state.anchor) {
-        effects.push({ type: "setSelection", anchor: state.anchor, head: cursor, lineWise: state.visualLine })
+        effects.push({
+          type: "setSelection",
+          anchor: state.anchor,
+          head: cursor,
+          lineWise: state.visualLine,
+        })
       }
       return [{ ...state, cursor }, effects]
     }

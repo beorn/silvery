@@ -39,10 +39,12 @@ function withConsoleSpy(fn: () => void): string[] {
   const errorSpy = vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
     messages.push(args.map(String).join(" "))
   })
-  const stderrSpy = vi.spyOn(process.stderr, "write").mockImplementation((chunk: string | Uint8Array) => {
-    messages.push(typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk))
-    return true
-  })
+  const stderrSpy = vi
+    .spyOn(process.stderr, "write")
+    .mockImplementation((chunk: string | Uint8Array) => {
+      messages.push(typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk))
+      return true
+    })
   try {
     fn()
   } finally {

@@ -97,8 +97,15 @@ interface LayoutNodeViewProps {
 }
 
 function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
-  const { node, renderPane, focusedPaneId, showBorders, focusedBorderColor, unfocusedBorderColor, renderPaneTitle } =
-    props
+  const {
+    node,
+    renderPane,
+    focusedPaneId,
+    showBorders,
+    focusedBorderColor,
+    unfocusedBorderColor,
+    renderPaneTitle,
+  } = props
 
   if (node.type === "leaf") {
     return (
@@ -174,7 +181,15 @@ interface LeafPaneProps {
 }
 
 function LeafPane(props: LeafPaneProps): React.ReactElement {
-  const { id, renderPane, isFocused, showBorders, focusedBorderColor, unfocusedBorderColor, title } = props
+  const {
+    id,
+    renderPane,
+    isFocused,
+    showBorders,
+    focusedBorderColor,
+    unfocusedBorderColor,
+    title,
+  } = props
 
   if (!showBorders) {
     return (

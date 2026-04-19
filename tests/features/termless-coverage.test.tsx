@@ -81,7 +81,9 @@ function FreezePromoteApp({ initialItems }: { initialItems: FreezeItem[] }) {
       setItems((prev) => {
         const firstUnfrozen = prev.findIndex((it: FreezeItem) => !it.frozen)
         if (firstUnfrozen < 0) return prev
-        const next = prev.map((it: FreezeItem, i: number) => (i === firstUnfrozen ? { ...it, frozen: true } : it))
+        const next = prev.map((it: FreezeItem, i: number) =>
+          i === firstUnfrozen ? { ...it, frozen: true } : it,
+        )
         const newId = prev.length > 0 ? Math.max(...prev.map((it: FreezeItem) => it.id)) + 1 : 1
         return [...next, { id: newId, text: `Item ${newId}`, frozen: false }]
       })

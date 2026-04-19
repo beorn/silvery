@@ -3,8 +3,8 @@
  * Source: https://github.com/nyoom-engineering/oxocarbon.nvim
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Oxocarbon Dark — IBM Carbon-inspired dark variant. */
 export const oxocarbonDark: ColorScheme = {

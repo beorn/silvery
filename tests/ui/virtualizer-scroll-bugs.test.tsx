@@ -21,7 +21,11 @@ import { describe, test, expect, beforeEach } from "vitest"
 // Import the internal helpers we need to test.
 // The hook itself is hard to test without React, but the helper functions
 // and the hook's computation logic can be verified by simulating state.
-import { calcAverageHeight, getHeight, sumHeights } from "../../packages/ag-react/src/hooks/useVirtualizer"
+import {
+  calcAverageHeight,
+  getHeight,
+  sumHeights,
+} from "../../packages/ag-react/src/hooks/useVirtualizer"
 
 // ============================================================================
 // Bug 1: getHeight / sumHeights for unmeasured items should use measured avg
@@ -77,7 +81,10 @@ describe("Bug 1: leadingHeight with unmeasured items", () => {
     const total = sumHeights(0, 10, estimateHeight, 0, measuredHeights, getItemKey)
     // Average measured = (2+2+2+3+2)/5 = 2.2
     // Expected: 10 * 2.2 = 22 (not 10 * 4 = 40)
-    expect(total, "sumHeights for unmeasured items should use measured average").toBeLessThanOrEqual(25)
+    expect(
+      total,
+      "sumHeights for unmeasured items should use measured average",
+    ).toBeLessThanOrEqual(25)
     expect(total, "sumHeights should not use the inflated estimate").toBeLessThan(40)
   })
 

@@ -54,7 +54,13 @@ const PasteContext = createContext<PasteHandler | null>(null)
  * When a bracketed paste event arrives, it is routed to the nearest
  * ancestor PasteHandler.
  */
-export function PasteProvider({ handler, children }: { handler: PasteHandler; children: ReactNode }) {
+export function PasteProvider({
+  handler,
+  children,
+}: {
+  handler: PasteHandler
+  children: ReactNode
+}) {
   return React.createElement(PasteContext.Provider, { value: handler }, children)
 }
 

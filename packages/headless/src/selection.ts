@@ -52,7 +52,13 @@ export interface TerminalSelectionState {
 }
 
 export type SelectionAction =
-  | { type: "start"; col: number; row: number; scope?: SelectionScope | null; source?: "mouse" | "keyboard" }
+  | {
+      type: "start"
+      col: number
+      row: number
+      scope?: SelectionScope | null
+      source?: "mouse" | "keyboard"
+    }
   | {
       type: "startWord"
       col: number
@@ -127,7 +133,10 @@ export function findWordBoundary(
  * Returns { startCol, endCol } spanning from first content to last content.
  * If the row is empty, returns { startCol: 0, endCol: width - 1 }.
  */
-export function findLineBoundary(buffer: TerminalBuffer, row: number): { startCol: number; endCol: number } {
+export function findLineBoundary(
+  buffer: TerminalBuffer,
+  row: number,
+): { startCol: number; endCol: number } {
   const width = buffer.width
 
   // Find last non-space column
@@ -343,7 +352,11 @@ export interface ExtractTextOptions {
  * - SELECTABLE_FLAG filtering (when respectSelectableFlag is true)
  * - Contain-scope clipping (when options.scope is set)
  */
-export function extractText(buffer: TerminalBuffer, range: SelectionRange, options?: ExtractTextOptions): string {
+export function extractText(
+  buffer: TerminalBuffer,
+  range: SelectionRange,
+  options?: ExtractTextOptions,
+): string {
   const { startRow, startCol, endRow, endCol } = normalizeRange(range)
   const respectSelectable = options?.respectSelectableFlag ?? false
   const rowMeta = options?.rowMetadata

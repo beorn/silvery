@@ -90,9 +90,15 @@
  * ============================================================ */
 
 @keyframes silvery-page-gleam {
-  0%   { background-position: -100vw 0; }  /* pulse starts: off-left */
-  50%  { background-position: 100vw 0; }   /* pulse done: off-right */
-  100% { background-position: 100vw 0; }   /* hold */
+  0% {
+    background-position: -100vw 0;
+  } /* pulse starts: off-left */
+  50% {
+    background-position: 100vw 0;
+  } /* pulse done: off-right */
+  100% {
+    background-position: 100vw 0;
+  } /* hold */
 }
 
 /* Nav wordmark */
@@ -357,22 +363,22 @@
  * for a compact mobile hero. */
 @media (max-width: 960px) {
   .VPHero {
-    padding-top: 80px !important;   /* was 112px (nav is 64px, leaves ~16px gap) */
+    padding-top: 80px !important; /* was 112px (nav is 64px, leaves ~16px gap) */
     padding-bottom: 16px !important; /* was 48px */
   }
   .VPHero .image {
-    margin-top: 0 !important;        /* was -76px */
+    margin-top: 0 !important; /* was -76px */
     margin-bottom: 0.5rem !important; /* was -48px */
   }
   .VPHero .image-container {
-    width: auto !important;          /* was 320px fixed */
-    height: auto !important;         /* was 320px fixed — left 112px empty */
+    width: auto !important; /* was 320px fixed */
+    height: auto !important; /* was 320px fixed — left 112px empty */
   }
   .VPHero .image-bg {
-    display: none;                   /* hide halo bg — we don't use it */
+    display: none; /* hide halo bg — we don't use it */
   }
   .silvery-terminal-wrap {
-    margin-top: 0.5em;               /* tighter gap above terminal */
+    margin-top: 0.5em; /* tighter gap above terminal */
   }
 }
 

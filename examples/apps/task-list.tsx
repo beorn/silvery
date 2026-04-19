@@ -93,7 +93,15 @@ function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }) {
   )
 }
 
-function TaskItem({ task, isSelected, isExpanded }: { task: Task; isSelected: boolean; isExpanded: boolean }) {
+function TaskItem({
+  task,
+  isSelected,
+  isExpanded,
+}: {
+  task: Task
+  isSelected: boolean
+  isExpanded: boolean
+}) {
   const checkbox = task.completed ? "[x]" : "[ ]"
   const hasSubtasks = task.subtasks && task.subtasks.length > 0
 
@@ -145,7 +153,8 @@ function StatusBar({
     <Box justifyContent="space-between">
       <Muted>
         {" "}
-        <Kbd>j/k</Kbd> navigate <Kbd>space</Kbd> toggle <Kbd>enter</Kbd> expand <Kbd>Esc/q</Kbd> quit
+        <Kbd>j/k</Kbd> navigate <Kbd>space</Kbd> toggle <Kbd>enter</Kbd> expand <Kbd>Esc/q</Kbd>{" "}
+        quit
       </Muted>
       <Muted>
         {" "}
@@ -204,7 +213,9 @@ export function TaskList() {
     }
     if (input === " ") {
       // Toggle completion
-      setTasks((prev) => prev.map((task, idx) => (idx === cursor ? { ...task, completed: !task.completed } : task)))
+      setTasks((prev) =>
+        prev.map((task, idx) => (idx === cursor ? { ...task, completed: !task.completed } : task)),
+      )
     }
     if (key.return || input === "e") {
       // Toggle expand/collapse subtasks
@@ -246,7 +257,12 @@ export function TaskList() {
         })}
       </Box>
 
-      <StatusBar tasks={tasks} cursor={cursor} scrollOffset={scrollOffset} visibleCount={visibleCount} />
+      <StatusBar
+        tasks={tasks}
+        cursor={cursor}
+        scrollOffset={scrollOffset}
+        visibleCount={visibleCount}
+      />
     </Box>
   )
 }

@@ -138,7 +138,12 @@ export function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffRes
     // scrollRegion() that didn't actually change content.
     // NOTE: rowExtrasEquals is essential — rowMetadataEquals only checks packed
     // flags (e.g., "has true color fg"), not the actual RGB values in the Maps.
-    if (next.rowMetadataEquals(y, prev) && next.rowCharsEquals(y, prev) && next.rowExtrasEquals(y, prev)) continue
+    if (
+      next.rowMetadataEquals(y, prev) &&
+      next.rowCharsEquals(y, prev) &&
+      next.rowExtrasEquals(y, prev)
+    )
+      continue
 
     for (let x = 0; x < width; x++) {
       // Use buffer's optimized cellEquals which compares packed metadata first

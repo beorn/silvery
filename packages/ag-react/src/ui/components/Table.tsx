@@ -55,7 +55,11 @@ export interface TableProps {
 // Helpers
 // =============================================================================
 
-function getCellValue(row: Record<string, unknown> | unknown[], col: TableColumn, colIndex: number): string {
+function getCellValue(
+  row: Record<string, unknown> | unknown[],
+  col: TableColumn,
+  colIndex: number,
+): string {
   if (Array.isArray(row)) {
     const val = row[colIndex]
     return val == null ? "" : String(val)
@@ -67,7 +71,10 @@ function getCellValue(row: Record<string, unknown> | unknown[], col: TableColumn
   return ""
 }
 
-function computeWidths(columns: TableColumn[], data: Array<Record<string, unknown> | unknown[]>): number[] {
+function computeWidths(
+  columns: TableColumn[],
+  data: Array<Record<string, unknown> | unknown[]>,
+): number[] {
   return columns.map((col, colIndex) => {
     if (col.width) return col.width
     let maxWidth = col.header.length
@@ -94,12 +101,22 @@ export function Table({
 
   // Build separator line for header underline
   const separatorLine = useMemo(() => {
-    return colWidths.map((w) => "─".repeat(w)).join(separator.replace(/[^│]/g, "─").replace(/│/g, "┼"))
+    return colWidths
+      .map((w) => "─".repeat(w))
+      .join(separator.replace(/[^│]/g, "─").replace(/│/g, "┼"))
   }, [colWidths, separator])
 
-  const renderCell = (value: string, width: number, align: "left" | "right" | "center" = "left") => {
+  const renderCell = (
+    value: string,
+    width: number,
+    align: "left" | "right" | "center" = "left",
+  ) => {
     const justifyContent =
-      align === "right" ? ("flex-end" as const) : align === "center" ? ("center" as const) : undefined
+      align === "right"
+        ? ("flex-end" as const)
+        : align === "center"
+          ? ("center" as const)
+          : undefined
     return (
       <Box width={width} justifyContent={justifyContent} flexShrink={0}>
         <Text>{value}</Text>
@@ -148,7 +165,9 @@ export function Table({
           <Text color="$border">{separatorLine}</Text>
         </>
       )}
-      {data.length > 0 && <ListView items={data} height={viewportHeight} estimateHeight={1} renderItem={renderRow} />}
+      {data.length > 0 && (
+        <ListView items={data} height={viewportHeight} estimateHeight={1} renderItem={renderRow} />
+      )}
     </Box>
   )
 }

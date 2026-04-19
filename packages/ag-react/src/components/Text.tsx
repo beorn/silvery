@@ -13,7 +13,17 @@
 import { type ForwardedRef, type JSX, type ReactNode, forwardRef, useContext } from "react"
 import type { AgNode, TextProps as TextPropsType } from "@silvery/ag/types"
 import type { KnownVariant } from "@silvery/ansi"
+import { KNOWN_VARIANTS } from "@silvery/ansi"
 import { ThemeContext } from "@silvery/theme/ThemeContext"
+
+// ============================================================================
+// Runtime variant warning — fires once per unknown variant name per session.
+// Warns the developer that a variant lookup returned undefined (typo, etc.).
+// Does NOT throw — silent no-op rendering is still the correct behavior.
+// ============================================================================
+
+/** Variant names that have already triggered a warning this session. */
+const _warnedVariants = new Set<string>()
 
 // ============================================================================
 // Props
@@ -120,7 +130,16 @@ export const Text = forwardRef(function Text(
   //   → { color: "$success", bold: true } ✓ (caller color wins)
   let styleProps = callerProps
   if (variant != null) {
-    const variantDefaults = theme.variants?.[variant] ?? {}
+    const resolved = theme.variants?.[variant]
+    if (resolved === undefined && !_warnedVariants.has(variant)) {
+      _warnedVariants.add(variant)
+      const known = KNOWN_VARIANTS.join(", ")
+      console.warn(
+        `[silvery] Unknown variant "${variant}". Known variants: ${known}. ` +
+          `Check the theme.variants object or the variant name spelling.`,
+      )
+    }
+    const variantDefaults = resolved ?? {}
     const definedCallerProps: Record<string, unknown> = {}
     for (const key of Object.keys(callerProps)) {
       const v = (callerProps as Record<string, unknown>)[key]

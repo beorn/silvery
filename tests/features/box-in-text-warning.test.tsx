@@ -21,7 +21,9 @@ describe("Box inside Text warning", () => {
     )
 
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("<Box> cannot be nested inside <Text>. This produces undefined layout behavior."),
+      expect.stringContaining(
+        "<Box> cannot be nested inside <Text>. This produces undefined layout behavior.",
+      ),
     )
 
     warnSpy.mockRestore()

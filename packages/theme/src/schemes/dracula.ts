@@ -2,8 +2,8 @@
  * Dracula palette — dark theme with vibrant accents.
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Dracula — vibrant dark theme. */
 export const dracula: ColorScheme = {

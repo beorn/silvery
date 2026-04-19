@@ -7,9 +7,8 @@
  * - Registry functions (getThemeByName, getSchemeByName)
  */
 
-import { deriveTheme } from "../derive"
-import type { Theme, ColorScheme } from "../types"
-import { deriveFields, DEFAULT_VARIANTS } from "@silvery/ansi"
+import { deriveTheme, deriveFields, DEFAULT_VARIANTS } from "@silvery/ansi"
+import type { Theme, ColorScheme } from "@silvery/ansi"
 
 // ── Re-export all palette definitions ──────────────────────────────
 export {

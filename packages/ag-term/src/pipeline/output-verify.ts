@@ -18,7 +18,8 @@ import type { OutputContext } from "./output-phase"
 
 const log = createLogger("silvery:output")
 
-const _env = typeof process !== "undefined" ? process.env : ({} as Record<string, string | undefined>)
+const _env =
+  typeof process !== "undefined" ? process.env : ({} as Record<string, string | undefined>)
 const DEBUG_OUTPUT = !!_env.SILVERY_DEBUG_OUTPUT
 
 // ============================================================================
@@ -26,7 +27,11 @@ const DEBUG_OUTPUT = !!_env.SILVERY_DEBUG_OUTPUT
 // ============================================================================
 
 /** Function signature for bufferToAnsi — passed from output-phase to avoid circular import. */
-export type BufferToAnsiFn = (buffer: TerminalBuffer, ctx: OutputContext, maxRows?: number) => string
+export type BufferToAnsiFn = (
+  buffer: TerminalBuffer,
+  ctx: OutputContext,
+  maxRows?: number,
+) => string
 
 /** Function signature for outputGraphemeWidth. */
 export type OutputGraphemeWidthFn = (g: string, ctx: OutputContext) => number
@@ -75,7 +80,9 @@ export interface TerminalVerifyState {
  * `xterm` and `ghostty` use persistent terminal emulators (stateful).
  */
 export function strictTerminalBackends(): Array<"vt100" | "xterm" | "ghostty"> {
-  const val = (typeof process !== "undefined" ? (process.env.SILVERY_STRICT_TERMINAL ?? "") : "").toLowerCase().trim()
+  const val = (typeof process !== "undefined" ? (process.env.SILVERY_STRICT_TERMINAL ?? "") : "")
+    .toLowerCase()
+    .trim()
   if (!val) return []
   if (val === "all") return ["vt100", "xterm", "ghostty"]
   // Comma-separated list
@@ -262,7 +269,11 @@ function applySgrParams(params: string, sgr: SgrState): void {
         sgr.fg = parseInt(parts[i + 2]!)
         i += 2
       } else if (parts[i + 1] === "2") {
-        sgr.fg = { r: parseInt(parts[i + 2]!), g: parseInt(parts[i + 3]!), b: parseInt(parts[i + 4]!) }
+        sgr.fg = {
+          r: parseInt(parts[i + 2]!),
+          g: parseInt(parts[i + 3]!),
+          b: parseInt(parts[i + 4]!),
+        }
         i += 4
       }
     } else if (n === 39) {
@@ -275,7 +286,11 @@ function applySgrParams(params: string, sgr: SgrState): void {
         sgr.bg = parseInt(parts[i + 2]!)
         i += 2
       } else if (parts[i + 1] === "2") {
-        sgr.bg = { r: parseInt(parts[i + 2]!), g: parseInt(parts[i + 3]!), b: parseInt(parts[i + 4]!) }
+        sgr.bg = {
+          r: parseInt(parts[i + 2]!),
+          g: parseInt(parts[i + 3]!),
+          b: parseInt(parts[i + 4]!),
+        }
         i += 4
       }
     } else if (n === 49) {
@@ -327,7 +342,10 @@ export function replayAnsiWithStyles(
         let params = ""
         while (
           i < ansi.length &&
-          ((ansi[i]! >= "0" && ansi[i]! <= "9") || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":")
+          ((ansi[i]! >= "0" && ansi[i]! <= "9") ||
+            ansi[i] === ";" ||
+            ansi[i] === "?" ||
+            ansi[i] === ":")
         ) {
           params += ansi[i]
           i++
@@ -793,7 +811,9 @@ export function verifyOutputEquivalence(
   const vtHeight = Math.max(prev.height, next.height)
   // DEBUG: log buffer dimensions
   if (DEBUG_OUTPUT) {
-    log.error?.(`[VERIFY] prev=${prev.width}x${prev.height} next=${next.width}x${next.height} vtSize=${w}x${vtHeight}`)
+    log.error?.(
+      `[VERIFY] prev=${prev.width}x${prev.height} next=${next.width}x${next.height} vtSize=${w}x${vtHeight}`,
+    )
   }
   // Replay: fresh prev render + incremental diff applied on top
   const freshPrev = renderFull(prev, ctx)
@@ -813,7 +833,11 @@ export function verifyOutputEquivalence(
     for (let cx = 0; cx < buf.width; cx++) {
       const c = buf.getCell(cx, row)
       const cp = c.char
-        ? [...c.char].map((ch) => "U+" + (ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0")).join(",")
+        ? [...c.char]
+            .map(
+              (ch) => "U+" + (ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0"),
+            )
+            .join(",")
         : "empty"
       if (c.wide) parts.push(`W@${cx}:${cp}(gw=${graphemeWidthFn(c.char, ctx)})`)
       if (c.continuation) parts.push(`C@${cx}`)
@@ -822,7 +846,9 @@ export function verifyOutputEquivalence(
       const vtWidth = graphemeWidthFn(charToWrite, ctx)
       const bufWidth = c.wide ? 2 : 1
       if (!c.continuation && vtWidth !== bufWidth) {
-        parts.push(`MISMATCH@${cx}:${cp}(vtW=${vtWidth},bufW=${bufWidth},tse=${textSizingEnabledFn(ctx)})`)
+        parts.push(
+          `MISMATCH@${cx}:${cp}(vtW=${vtWidth},bufW=${bufWidth},tse=${textSizingEnabledFn(ctx)})`,
+        )
       }
     }
     return parts.join(" ")
@@ -892,12 +918,15 @@ export function verifyOutputEquivalence(
 
       // Check styles
       const diffs: string[] = []
-      if (!sgrColorEquals(incr.fg, fresh.fg)) diffs.push(`fg: ${formatColor(incr.fg)} vs ${formatColor(fresh.fg)}`)
-      if (!sgrColorEquals(incr.bg, fresh.bg)) diffs.push(`bg: ${formatColor(incr.bg)} vs ${formatColor(fresh.bg)}`)
+      if (!sgrColorEquals(incr.fg, fresh.fg))
+        diffs.push(`fg: ${formatColor(incr.fg)} vs ${formatColor(fresh.fg)}`)
+      if (!sgrColorEquals(incr.bg, fresh.bg))
+        diffs.push(`bg: ${formatColor(incr.bg)} vs ${formatColor(fresh.bg)}`)
       if (incr.bold !== fresh.bold) diffs.push(`bold: ${incr.bold} vs ${fresh.bold}`)
       if (incr.dim !== fresh.dim) diffs.push(`dim: ${incr.dim} vs ${fresh.dim}`)
       if (incr.italic !== fresh.italic) diffs.push(`italic: ${incr.italic} vs ${fresh.italic}`)
-      if (incr.underline !== fresh.underline) diffs.push(`underline: ${incr.underline} vs ${fresh.underline}`)
+      if (incr.underline !== fresh.underline)
+        diffs.push(`underline: ${incr.underline} vs ${fresh.underline}`)
       if (incr.inverse !== fresh.inverse) diffs.push(`inverse: ${incr.inverse} vs ${fresh.inverse}`)
       if (incr.strikethrough !== fresh.strikethrough)
         diffs.push(`strikethrough: ${incr.strikethrough} vs ${fresh.strikethrough}`)
@@ -971,13 +1000,17 @@ export function verifyAccumulatedOutput(
       }
 
       const diffs: string[] = []
-      if (!sgrColorEquals(accum.fg, fresh.fg)) diffs.push(`fg: ${formatColor(accum.fg)} vs ${formatColor(fresh.fg)}`)
-      if (!sgrColorEquals(accum.bg, fresh.bg)) diffs.push(`bg: ${formatColor(accum.bg)} vs ${formatColor(fresh.bg)}`)
+      if (!sgrColorEquals(accum.fg, fresh.fg))
+        diffs.push(`fg: ${formatColor(accum.fg)} vs ${formatColor(fresh.fg)}`)
+      if (!sgrColorEquals(accum.bg, fresh.bg))
+        diffs.push(`bg: ${formatColor(accum.bg)} vs ${formatColor(fresh.bg)}`)
       if (accum.bold !== fresh.bold) diffs.push(`bold: ${accum.bold} vs ${fresh.bold}`)
       if (accum.dim !== fresh.dim) diffs.push(`dim: ${accum.dim} vs ${fresh.dim}`)
       if (accum.italic !== fresh.italic) diffs.push(`italic: ${accum.italic} vs ${fresh.italic}`)
-      if (accum.underline !== fresh.underline) diffs.push(`underline: ${accum.underline} vs ${fresh.underline}`)
-      if (accum.inverse !== fresh.inverse) diffs.push(`inverse: ${accum.inverse} vs ${fresh.inverse}`)
+      if (accum.underline !== fresh.underline)
+        diffs.push(`underline: ${accum.underline} vs ${fresh.underline}`)
+      if (accum.inverse !== fresh.inverse)
+        diffs.push(`inverse: ${accum.inverse} vs ${fresh.inverse}`)
       if (accum.strikethrough !== fresh.strikethrough)
         diffs.push(`strikethrough: ${accum.strikethrough} vs ${fresh.strikethrough}`)
 
@@ -1186,8 +1219,14 @@ function compareTerminals(
       const freshChar = freshCell.char || " "
 
       if (incrChar !== freshChar) {
-        const incrRow = Array.from({ length: w }, (_, cx) => incrTerm.getCell(y, cx).char || " ").join("")
-        const freshRow = Array.from({ length: w }, (_, cx) => freshTerm.getCell(y, cx).char || " ").join("")
+        const incrRow = Array.from(
+          { length: w },
+          (_, cx) => incrTerm.getCell(y, cx).char || " ",
+        ).join("")
+        const freshRow = Array.from(
+          { length: w },
+          (_, cx) => freshTerm.getCell(y, cx).char || " ",
+        ).join("")
         const msg =
           `${prefix} char mismatch at (${x},${y}) frame ${state.frameCount}: ` +
           `incremental='${incrChar}' fresh='${freshChar}'\n` +
@@ -1214,16 +1253,20 @@ function compareTerminals(
       }
 
       const attrDiffs: string[] = []
-      if (incrCell.bold !== freshCell.bold) attrDiffs.push(`bold: ${incrCell.bold} vs ${freshCell.bold}`)
+      if (incrCell.bold !== freshCell.bold)
+        attrDiffs.push(`bold: ${incrCell.bold} vs ${freshCell.bold}`)
       if (incrCell.dim !== freshCell.dim) attrDiffs.push(`dim: ${incrCell.dim} vs ${freshCell.dim}`)
-      if (incrCell.italic !== freshCell.italic) attrDiffs.push(`italic: ${incrCell.italic} vs ${freshCell.italic}`)
-      if (incrCell.inverse !== freshCell.inverse) attrDiffs.push(`inverse: ${incrCell.inverse} vs ${freshCell.inverse}`)
+      if (incrCell.italic !== freshCell.italic)
+        attrDiffs.push(`italic: ${incrCell.italic} vs ${freshCell.italic}`)
+      if (incrCell.inverse !== freshCell.inverse)
+        attrDiffs.push(`inverse: ${incrCell.inverse} vs ${freshCell.inverse}`)
       if (incrCell.strikethrough !== freshCell.strikethrough)
         attrDiffs.push(`strikethrough: ${incrCell.strikethrough} vs ${freshCell.strikethrough}`)
 
       if (attrDiffs.length > 0) {
         const msg =
-          `${prefix} attr mismatch at (${x},${y}) char='${incrChar}' frame ${state.frameCount}: ` + attrDiffs.join(", ")
+          `${prefix} attr mismatch at (${x},${y}) char='${incrChar}' frame ${state.frameCount}: ` +
+          attrDiffs.join(", ")
         log.error?.(msg)
         throw new IncrementalRenderMismatchError(msg)
       }

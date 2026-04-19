@@ -50,7 +50,14 @@ describe("deriveMonochromeTheme", () => {
 
   it("structural backgrounds have no attrs", () => {
     // These represent background planes that mono terminals can't color/vary.
-    for (const token of ["bg", "mutedbg", "surfacebg", "popoverbg", "border", "cursorbg"] as const) {
+    for (const token of [
+      "bg",
+      "mutedbg",
+      "surfacebg",
+      "popoverbg",
+      "border",
+      "cursorbg",
+    ] as const) {
       expect(DEFAULT_MONO_ATTRS[token]).toEqual([])
     }
   })

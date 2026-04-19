@@ -7,7 +7,13 @@
  * produces a buffer matching next.
  */
 import { describe, test, expect } from "vitest"
-import { TerminalBuffer, type Cell, type CellAttrs, type Color, attrsEquals } from "@silvery/ag-term/buffer"
+import {
+  TerminalBuffer,
+  type Cell,
+  type CellAttrs,
+  type Color,
+  attrsEquals,
+} from "@silvery/ag-term/buffer"
 import { diffBuffers } from "@silvery/ag-term/pipeline/diff-buffers"
 
 // ============================================================================
@@ -55,7 +61,9 @@ function describeMismatch(a: TerminalBuffer, b: TerminalBuffer): string {
       const aInBounds = a.inBounds(x, y)
       const bInBounds = b.inBounds(x, y)
       if (!aInBounds || !bInBounds) {
-        mismatches.push(`(${x},${y}): ${aInBounds ? "in A" : "not in A"}, ${bInBounds ? "in B" : "not in B"}`)
+        mismatches.push(
+          `(${x},${y}): ${aInBounds ? "in A" : "not in A"}, ${bInBounds ? "in B" : "not in B"}`,
+        )
         continue
       }
       if (!a.cellEquals(x, y, b)) {
@@ -462,7 +470,11 @@ describe("diffBuffers property tests", () => {
   }
 
   /** Create a random buffer with varied cell content including attrs, underlineColor, hyperlink. */
-  function randomBuffer(width: number, height: number, rng: ReturnType<typeof createRng>): TerminalBuffer {
+  function randomBuffer(
+    width: number,
+    height: number,
+    rng: ReturnType<typeof createRng>,
+  ): TerminalBuffer {
     const buf = new TerminalBuffer(width, height)
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
     for (let y = 0; y < height; y++) {
@@ -519,7 +531,10 @@ describe("diffBuffers property tests", () => {
           buf.setCell(x, y, {
             char: chars[rng.nextInt(chars.length)]!,
             fg: rng.nextInt(256),
-            bg: rng.next() > 0.5 ? { r: rng.nextInt(256), g: rng.nextInt(256), b: rng.nextInt(256) } : null,
+            bg:
+              rng.next() > 0.5
+                ? { r: rng.nextInt(256), g: rng.nextInt(256), b: rng.nextInt(256) }
+                : null,
             underlineColor: randomUnderlineColor(rng),
             hyperlink: randomHyperlink(rng),
             attrs: randomAttrs(rng),
@@ -534,7 +549,13 @@ describe("diffBuffers property tests", () => {
    * Core invariant: create prev and next, run diffBuffers, apply changes
    * to a clone of prev, verify it matches next.
    */
-  function verifySoundness(seed: number, prevW: number, prevH: number, nextW: number, nextH: number) {
+  function verifySoundness(
+    seed: number,
+    prevW: number,
+    prevH: number,
+    nextW: number,
+    nextH: number,
+  ) {
     const rng = createRng(seed)
     const prev = randomBuffer(prevW, prevH, rng)
     const next = randomBuffer(nextW, nextH, rng)

@@ -75,7 +75,16 @@ interface ListItemProviderProps extends ListItemContext {
  * Wraps each item rendered by ListView with its context.
  * Internal — not exported from the package's public API.
  */
-export function ListItemProvider({ children, freeze, isCached, index, nearCache }: ListItemProviderProps) {
-  const value = useMemo(() => ({ freeze, isCached, index, nearCache }), [freeze, isCached, index, nearCache])
+export function ListItemProvider({
+  children,
+  freeze,
+  isCached,
+  index,
+  nearCache,
+}: ListItemProviderProps) {
+  const value = useMemo(
+    () => ({ freeze, isCached, index, nearCache }),
+    [freeze, isCached, index, nearCache],
+  )
   return <ListItemCtx.Provider value={value}>{children}</ListItemCtx.Provider>
 }

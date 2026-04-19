@@ -43,7 +43,13 @@ const TREE_DATA: TreeNode[] = [
   },
 ]
 
-function QuitableTree({ data = TREE_DATA, defaultExpanded = false }: { data?: TreeNode[]; defaultExpanded?: boolean }) {
+function QuitableTree({
+  data = TREE_DATA,
+  defaultExpanded = false,
+}: {
+  data?: TreeNode[]
+  defaultExpanded?: boolean
+}) {
   useInput((input) => {
     if (input === "q") return "exit"
   })

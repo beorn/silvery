@@ -78,7 +78,11 @@ const DEFAULT_FADE = 0.4
  *
  * Brackets are dim, the hotkey letter is bold/bright.
  */
-export function formatTitleWithHotkey(title: string, hotkey: string, color?: string): React.ReactElement {
+export function formatTitleWithHotkey(
+  title: string,
+  hotkey: string,
+  color?: string,
+): React.ReactElement {
   const idx = title.toLowerCase().indexOf(hotkey.toLowerCase())
   if (idx >= 0 && hotkey.length === 1 && hotkey.toLowerCase() !== hotkey.toUpperCase()) {
     // Letter found in title — highlight it inline: prefix + [X] + rest
@@ -192,7 +196,9 @@ export function ModalDialog({
       {footer && (
         <>
           <Text> </Text>
-          <Box justifyContent={footerAlign}>{typeof footer === "string" ? <Text color="$muted">{footer}</Text> : footer}</Box>
+          <Box justifyContent={footerAlign}>
+            {typeof footer === "string" ? <Text color="$muted">{footer}</Text> : footer}
+          </Box>
         </>
       )}
     </Box>

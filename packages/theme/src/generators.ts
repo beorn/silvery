@@ -4,10 +4,10 @@
  * All generators return a complete ColorScheme (22 fields).
  */
 
-import { hexToOklch, oklchToHex, brighten, darken, blend, relativeLuminance } from "./color"
+import { hexToOklch, oklchToHex, brighten, darken, blend, relativeLuminance } from "@silvery/color"
 import { importBase16 as importBase16Internal } from "./import/base16"
 import { getSchemeByName } from "./schemes/index"
-import type { ColorScheme, HueName } from "./types"
+import type { ColorScheme, HueName } from "@silvery/ansi"
 
 // ============================================================================
 // Luminance

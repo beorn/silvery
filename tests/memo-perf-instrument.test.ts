@@ -9,7 +9,11 @@ import React from "react"
 import { test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box as SBox, Text as SText } from "@silvery/ag-react"
-import { silveryBenchStart, silveryBenchStop, silveryBenchOutputDetail } from "@silvery/ag-term/pipeline"
+import {
+  silveryBenchStart,
+  silveryBenchStop,
+  silveryBenchOutputDetail,
+} from "@silvery/ag-term/pipeline"
 
 // Memo'd item — React skips reconciliation entirely for unchanged items
 const SMemoItem = React.memo(
@@ -17,7 +21,11 @@ const SMemoItem = React.memo(
     React.createElement(
       SBox,
       { paddingLeft: 1, borderStyle: active ? "double" : "single" },
-      React.createElement(SText, { bold: active, inverse: active }, `Task ${index}: ${active ? "ACTIVE" : "idle"}`),
+      React.createElement(
+        SText,
+        { bold: active, inverse: active },
+        `Task ${index}: ${active ? "ACTIVE" : "idle"}`,
+      ),
     ),
   (prev, next) => prev.index === next.index && prev.active === next.active,
 )

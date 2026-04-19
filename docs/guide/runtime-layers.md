@@ -207,8 +207,21 @@ controller.abort() // Cancels the effect
 Between `createRuntime()` and the React layers sits a pure **TEA (The Elm Architecture) store**. It has no React dependency — use it for Elm-style apps or as the state backbone under React components.
 
 ```typescript
-import { createStore, silveryUpdate, defaultInit, withFocusManagement } from "@silvery/ag-term/store"
-import { type Effect, type SilveryModel, type SilveryMsg, none, batch, dispatch, compose } from "@silvery/ag-term/core"
+import {
+  createStore,
+  silveryUpdate,
+  defaultInit,
+  withFocusManagement,
+} from "@silvery/ag-term/store"
+import {
+  type Effect,
+  type SilveryModel,
+  type SilveryMsg,
+  none,
+  batch,
+  dispatch,
+  compose,
+} from "@silvery/ag-term/core"
 
 // Extend the base model with your state
 interface AppModel extends SilveryModel {

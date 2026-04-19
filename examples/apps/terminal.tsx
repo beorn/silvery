@@ -176,7 +176,11 @@ function KeysTab({ kittySupported }: { kittySupported: boolean }) {
       <Box flexDirection="column" width={46}>
         <H2>Last Key Pressed</H2>
         <Box height={1} />
-        {latest ? <KeyDetails event={latest} /> : <KeyPlaceholder kittySupported={kittySupported} />}
+        {latest ? (
+          <KeyDetails event={latest} />
+        ) : (
+          <KeyPlaceholder kittySupported={kittySupported} />
+        )}
       </Box>
 
       {/* Right: Event log */}
@@ -194,7 +198,8 @@ function KeysTab({ kittySupported }: { kittySupported: boolean }) {
           <Box flexDirection="column" overflow="scroll" scrollTo={events.length - 1}>
             {events.map((e, i) => (
               <Text key={e.index} dimColor={i < events.length - 1}>
-                <Text color="$muted">#{String(e.index).padStart(3)}</Text> {formatKeyEventSummary(e)}
+                <Text color="$muted">#{String(e.index).padStart(3)}</Text>{" "}
+                {formatKeyEventSummary(e)}
               </Text>
             ))}
           </Box>
@@ -219,7 +224,13 @@ function KeyPlaceholder({ kittySupported }: { kittySupported: boolean }) {
 
 function KeyDetails({ event }: { event: KeyEvent }) {
   const { parsed, raw } = event
-  const modActive: boolean[] = [parsed.ctrl, parsed.shift, parsed.meta || parsed.option, parsed.super, parsed.hyper]
+  const modActive: boolean[] = [
+    parsed.ctrl,
+    parsed.shift,
+    parsed.meta || parsed.option,
+    parsed.super,
+    parsed.hyper,
+  ]
 
   return (
     <Box flexDirection="column">
@@ -507,7 +518,10 @@ function ClipboardTab() {
     // Request clipboard
     if (input === "v") {
       requestClipboard(stdout)
-      setHistory((h) => [...h.slice(-7), { action: "request", text: "(paste requested)", time: now() }])
+      setHistory((h) => [
+        ...h.slice(-7),
+        { action: "request", text: "(paste requested)", time: now() },
+      ])
     }
 
     // Parse clipboard response from raw input
@@ -571,7 +585,12 @@ function ClipboardTab() {
             {history.map((h, i) => (
               <Text key={i} dimColor={i < history.length - 1}>
                 <Small>{h.time}</Small>{" "}
-                <Text color={h.action === "copy" ? "$success" : h.action === "paste" ? "$warning" : "$muted"} bold>
+                <Text
+                  color={
+                    h.action === "copy" ? "$success" : h.action === "paste" ? "$warning" : "$muted"
+                  }
+                  bold
+                >
                   {h.action}
                 </Text>{" "}
                 <Text>{h.text.length > 40 ? h.text.slice(0, 37) + "..." : h.text}</Text>
@@ -640,7 +659,8 @@ function FocusTab() {
 
         <Box marginTop={2} flexDirection="column">
           <Muted>
-            Switch to another window and back to see focus events. Uses CSI I/O terminal focus reporting protocol.
+            Switch to another window and back to see focus events. Uses CSI I/O terminal focus
+            reporting protocol.
           </Muted>
         </Box>
 
@@ -698,7 +718,11 @@ export function TerminalDemo({ kittySupported }: { kittySupported: boolean }) {
       <Box paddingX={1} gap={2}>
         <Text>
           <Text bold>Kitty:</Text>{" "}
-          {kittySupported ? <Text color="$success">enabled</Text> : <Text color="$warning">legacy mode</Text>}
+          {kittySupported ? (
+            <Text color="$success">enabled</Text>
+          ) : (
+            <Text color="$warning">legacy mode</Text>
+          )}
         </Text>
       </Box>
 

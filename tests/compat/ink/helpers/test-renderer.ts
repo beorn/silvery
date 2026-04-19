@@ -26,7 +26,10 @@ type TestInstance = {
 /**
  * Render helper that supports concurrent mode with act() wrapping.
  */
-export async function renderAsync(node: React.ReactNode, options: TestRenderOptions = {}): Promise<TestInstance> {
+export async function renderAsync(
+  node: React.ReactNode,
+  options: TestRenderOptions = {},
+): Promise<TestInstance> {
   const stdout = createStdout(options.columns ?? 100)
 
   let instance: ReturnType<typeof render>

@@ -159,7 +159,10 @@ const PRIMER_ALIASES_FOR_MONO: Record<string, keyof Theme> = {
  * @returns        Array of mono-attrs for the token, or `undefined` if not a
  *                 recognized token.
  */
-export function monoAttrsForColorString(color: string, theme: Theme): readonly MonoAttr[] | undefined {
+export function monoAttrsForColorString(
+  color: string,
+  theme: Theme,
+): readonly MonoAttr[] | undefined {
   if (!color.startsWith("$")) return undefined
   const raw = color.slice(1).replace(/-/g, "")
   const attrs = deriveMonochromeTheme(theme)

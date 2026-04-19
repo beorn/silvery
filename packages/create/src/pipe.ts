@@ -66,7 +66,12 @@ export type AppPlugin<A, B> = (app: A) => B
 export function pipe<A>(base: A): A
 export function pipe<A, B>(base: A, p1: AppPlugin<A, B>): B
 export function pipe<A, B, C>(base: A, p1: AppPlugin<A, B>, p2: AppPlugin<B, C>): C
-export function pipe<A, B, C, D>(base: A, p1: AppPlugin<A, B>, p2: AppPlugin<B, C>, p3: AppPlugin<C, D>): D
+export function pipe<A, B, C, D>(
+  base: A,
+  p1: AppPlugin<A, B>,
+  p2: AppPlugin<B, C>,
+  p3: AppPlugin<C, D>,
+): D
 export function pipe<A, B, C, D, E>(
   base: A,
   p1: AppPlugin<A, B>,

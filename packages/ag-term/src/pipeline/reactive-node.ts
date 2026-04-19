@@ -19,7 +19,14 @@
 
 import { signal, computed } from "@silvery/signals"
 import type { AgNode } from "@silvery/ag/types"
-import { isDirty, CONTENT_BIT, STYLE_PROPS_BIT, BG_BIT, CHILDREN_BIT, SUBTREE_BIT } from "@silvery/ag/epoch"
+import {
+  isDirty,
+  CONTENT_BIT,
+  STYLE_PROPS_BIT,
+  BG_BIT,
+  CHILDREN_BIT,
+  SUBTREE_BIT,
+} from "@silvery/ag/epoch"
 import { computeCascade, type CascadeInputs, type CascadeOutputs } from "./cascade-predicates.ts"
 
 // ============================================================================
@@ -136,7 +143,9 @@ export function createReactiveNodeState(): ReactiveNodeState {
   // Matches cascade-predicates.ts which hardcodes `false`.
   const bgOnlyChange = computed(() => false)
 
-  const bgRefillNeeded = computed(() => hasPrevBuffer() && !contentAreaAffected() && subtreeDirty() && hasBgColor())
+  const bgRefillNeeded = computed(
+    () => hasPrevBuffer() && !contentAreaAffected() && subtreeDirty() && hasBgColor(),
+  )
 
   const contentRegionCleared = computed(
     () => (hasPrevBuffer() || ancestorCleared()) && contentAreaAffected() && !hasBgColor(),
@@ -147,7 +156,10 @@ export function createReactiveNodeState(): ReactiveNodeState {
   )
 
   const childrenNeedFreshRender = computed(
-    () => (hasPrevBuffer() || ancestorCleared()) && (contentAreaAffected() || bgRefillNeeded()) && !bgOnlyChange(),
+    () =>
+      (hasPrevBuffer() || ancestorCleared()) &&
+      (contentAreaAffected() || bgRefillNeeded()) &&
+      !bgOnlyChange(),
   )
 
   return {
@@ -251,7 +263,11 @@ export function readReactiveCascade(state: ReactiveNodeState): CascadeOutputs {
  * Call in dev mode (SILVERY_STRICT=1) after syncToSignals + computeCascade.
  * Throws on mismatch with a detailed diff.
  */
-export function assertReactiveMatchesOracle(state: ReactiveNodeState, oracle: CascadeOutputs, nodeId: string): void {
+export function assertReactiveMatchesOracle(
+  state: ReactiveNodeState,
+  oracle: CascadeOutputs,
+  nodeId: string,
+): void {
   const fields: (keyof CascadeOutputs)[] = [
     "canSkipEntireSubtree",
     "contentAreaAffected",
@@ -272,7 +288,9 @@ export function assertReactiveMatchesOracle(state: ReactiveNodeState, oracle: Ca
   }
 
   if (mismatches.length > 0) {
-    throw new Error(`ReactiveNodeState mismatch for ${nodeId || "(unnamed)"}:\n${mismatches.join("\n")}`)
+    throw new Error(
+      `ReactiveNodeState mismatch for ${nodeId || "(unnamed)"}:\n${mismatches.join("\n")}`,
+    )
   }
 }
 

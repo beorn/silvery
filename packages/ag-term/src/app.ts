@@ -28,7 +28,13 @@ import type { ReactNode } from "react"
 import { type AutoLocator, createAutoLocator } from "@silvery/test/auto-locator"
 import { type BoundTerm, createBoundTerm } from "./bound-term"
 import type { TerminalBuffer } from "./buffer"
-import { bufferToHTML, bufferToStyledText, bufferToText, cellToFrameCell, EMPTY_FRAME_CELL } from "./buffer"
+import {
+  bufferToHTML,
+  bufferToStyledText,
+  bufferToText,
+  cellToFrameCell,
+  EMPTY_FRAME_CELL,
+} from "./buffer"
 import { type Screenshotter, createScreenshotter } from "./screenshot"
 import { keyToAnsi, keyToKittyAnsi, parseHotkey } from "@silvery/ag/keys"
 import { updateKeyboardModifiers } from "./mouse-events"

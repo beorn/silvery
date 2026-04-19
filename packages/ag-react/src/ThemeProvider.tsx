@@ -28,13 +28,15 @@
  * The legacy `theme` prop still works and is equivalent to passing the whole
  * theme object as `tokens`. Passing both is an error (developer typo).
  *
- * For pipeline $token resolution and automatic fg/bg within a subtree, use
- * `<Box theme={}>` (unchanged).
+ * Pipeline $token resolution uses the same `theme` prop on the inner Box —
+ * no separate `<Box theme={}>` wrapper needed. Nested ThemeProviders each
+ * scope their own Box, so inner themes never bleed into outer subtrees.
  */
 
 import React, { useContext, useMemo } from "react"
 import { ThemeContext } from "@silvery/theme/ThemeContext"
-import type { Theme } from "@silvery/theme/types"
+import type { Theme } from "@silvery/ansi"
+import { Box } from "./components/Box"
 
 /** Partial token bag — merged over the base theme. Accepts any Theme key, custom $tokens via app-defined keys, or a full Theme. */
 export type ThemeTokens =
@@ -80,5 +82,14 @@ export function ThemeProvider({ tokens, theme, children }: ThemeProviderProps): 
     }
     return result
   }, [tokens, theme, parent])
-  return <ThemeContext.Provider value={merged}>{children}</ThemeContext.Provider>
+  // Wrap children in a Box with theme= prop so the render pipeline picks up the
+  // theme via the AgNode tree (same mechanism as color="inherit" cascade). The
+  // render phase calls pushContextTheme/popContextTheme when it encounters a node
+  // with a theme prop, so $token resolution always uses the nearest ancestor theme
+  // without relying on any module-level global.
+  return (
+    <ThemeContext.Provider value={merged}>
+      <Box theme={merged}>{children}</Box>
+    </ThemeContext.Provider>
+  )
 }

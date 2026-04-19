@@ -62,10 +62,20 @@ export const meta: ExampleMeta = {
 
 function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
   return (
-    <Box flexDirection="column" gap={1} paddingX={1} overflow="scroll" scrollOffset={scrollOffset} flexGrow={1}>
+    <Box
+      flexDirection="column"
+      gap={1}
+      paddingX={1}
+      overflow="scroll"
+      scrollOffset={scrollOffset}
+      flexGrow={1}
+    >
       <Box flexDirection="column">
         <H1>Getting Started with Silvery</H1>
-        <Lead>Build modern terminal UIs with React — layout feedback, semantic theming, and 30+ components.</Lead>
+        <Lead>
+          Build modern terminal UIs with React — layout feedback, semantic theming, and 30+
+          components.
+        </Lead>
       </Box>
 
       <HR />
@@ -153,9 +163,12 @@ function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
 
       <H2>Block Elements</H2>
       <Blockquote>
-        The best color code is no color code — most components already use the right semantic tokens.
+        The best color code is no color code — most components already use the right semantic
+        tokens.
       </Blockquote>
-      <CodeBlock>{"bun add silvery      # install\nbun run dev          # start dev server"}</CodeBlock>
+      <CodeBlock>
+        {"bun add silvery      # install\nbun run dev          # start dev server"}
+      </CodeBlock>
 
       <H2>Lists</H2>
       <Box flexDirection="row" gap={4}>
@@ -268,7 +281,11 @@ function InputsTab() {
           />
 
           <H2>Select List</H2>
-          <Box borderStyle="round" borderColor={focusIndex === 2 ? "$focusborder" : "$border"} paddingX={1}>
+          <Box
+            borderStyle="round"
+            borderColor={focusIndex === 2 ? "$focusborder" : "$border"}
+            paddingX={1}
+          >
             <SelectList
               items={frameworkItems}
               highlightedIndex={selectedFramework}
@@ -289,8 +306,18 @@ function InputsTab() {
             paddingY={1}
             gap={1}
           >
-            <Toggle value={darkMode} onChange={setDarkMode} label="Dark mode" isActive={focusIndex === 3} />
-            <Toggle value={notifications} onChange={setNotifications} label="Notifications" isActive={false} />
+            <Toggle
+              value={darkMode}
+              onChange={setDarkMode}
+              label="Dark mode"
+              isActive={focusIndex === 3}
+            />
+            <Toggle
+              value={notifications}
+              onChange={setNotifications}
+              label="Notifications"
+              isActive={false}
+            />
             <Toggle value={autoSave} onChange={setAutoSave} label="Auto-save" isActive={false} />
           </Box>
 
@@ -300,13 +327,23 @@ function InputsTab() {
           <HR />
 
           <H2>Current Values</H2>
-          <Box flexDirection="column" backgroundColor="$surfacebg" paddingX={1} paddingY={1} borderStyle="round">
+          <Box
+            flexDirection="column"
+            backgroundColor="$surfacebg"
+            paddingX={1}
+            paddingY={1}
+            borderStyle="round"
+          >
             <Text color="$surface">
               <Strong>Text:</Strong> {textValue || <Muted>(empty)</Muted>}
             </Text>
             <Text color="$surface">
               <Strong>Area:</Strong>{" "}
-              {areaValue ? areaValue.split("\n")[0] + (areaValue.includes("\n") ? "..." : "") : <Muted>(empty)</Muted>}
+              {areaValue ? (
+                areaValue.split("\n")[0] + (areaValue.includes("\n") ? "..." : "")
+              ) : (
+                <Muted>(empty)</Muted>
+              )}
             </Text>
             <Text color="$surface">
               <Strong>Framework:</Strong> {frameworkItems[selectedFramework]?.label}
@@ -413,7 +450,12 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Box gap={1}>
               <Muted>Search:</Muted>
               <Box flexGrow={1}>
-                <TextInput value="flutter widgets" onChange={() => {}} showUnderline underlineWidth={25} />
+                <TextInput
+                  value="flutter widgets"
+                  onChange={() => {}}
+                  showUnderline
+                  underlineWidth={25}
+                />
               </Box>
             </Box>
             <Box gap={2} wrap="truncate">
@@ -516,7 +558,13 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
           <Box flexDirection="column" gap={1}>
             <Box gap={1}>
               <Muted>Branch:</Muted>
-              <TextInput value="main" onChange={() => {}} showUnderline underlineWidth={25} isActive={true} />
+              <TextInput
+                value="main"
+                onChange={() => {}}
+                showUnderline
+                underlineWidth={25}
+                isActive={true}
+              />
             </Box>
             <Box flexDirection="column">
               <Text>
@@ -545,17 +593,27 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
       </Box>
 
       {showModal && (
-        <Box position="absolute" display="flex" justifyContent="center" alignItems="center" width="100%" height="100%">
+        <Box
+          position="absolute"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          width="100%"
+          height="100%"
+        >
           <ModalDialog title="Component Gallery" width={50} footer="ESC or q to close">
             <Box flexDirection="column" gap={1}>
               <P>
-                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every component uses
-                semantic theme tokens — they adapt to any of the 84 color schemes automatically.
+                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every
+                component uses semantic theme tokens — they adapt to any of the 84 color schemes
+                automatically.
               </P>
               <HR />
               <Box flexDirection="column">
                 <Text color="$success">{"✓ Typography presets (H1-H3, Lead, Muted, Code)"}</Text>
-                <Text color="$success">{"✓ Input components (TextInput, TextArea, SelectList)"}</Text>
+                <Text color="$success">
+                  {"✓ Input components (TextInput, TextArea, SelectList)"}
+                </Text>
                 <Text color="$success">{"✓ Display widgets (ProgressBar, Spinner, Badge)"}</Text>
                 <Text color="$success">{"✓ Layout primitives (Box, Divider, border styles)"}</Text>
                 <Text color="$success">{"✓ Dialog system (ModalDialog with input blocking)"}</Text>
@@ -645,7 +703,10 @@ export function ComponentsApp() {
 export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit"
+    >
       <ComponentsApp />
     </ExampleBanner>,
     term,

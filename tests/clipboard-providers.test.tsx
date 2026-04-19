@@ -13,7 +13,11 @@ import { createRenderer } from "@silvery/test"
 import { Text } from "../src/index.js"
 import { PasteProvider, usePaste, type PasteHandler } from "../packages/ag-react/src/hooks/usePaste"
 import type { PasteEvent } from "../packages/ag-term/src/copy-extraction"
-import { parseBracketedPaste, PASTE_START, PASTE_END } from "../packages/ag-term/src/bracketed-paste"
+import {
+  parseBracketedPaste,
+  PASTE_START,
+  PASTE_END,
+} from "../packages/ag-term/src/bracketed-paste"
 
 // ============================================================================
 // PasteProvider Context

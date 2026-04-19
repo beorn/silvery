@@ -17,7 +17,13 @@
 
 import type { AgNode } from "@silvery/ag/types"
 import type { Position } from "@silvery/headless/pointer"
-import { createDragState, createDragEvent, findDropTarget, type DragState, type DragEventProps } from "../drag-events"
+import {
+  createDragState,
+  createDragEvent,
+  findDropTarget,
+  type DragState,
+  type DragEventProps,
+} from "../drag-events"
 
 // ============================================================================
 // Types
@@ -42,7 +48,11 @@ export interface DragFeature {
   handleMouseDown(col: number, row: number, node: AgNode): boolean
 
   /** Handle mouse move — transition from pointing to dragging, update drop target. */
-  handleMouseMove(col: number, row: number, hitTestFn: (x: number, y: number) => AgNode | null): void
+  handleMouseMove(
+    col: number,
+    row: number,
+    hitTestFn: (x: number, y: number) => AgNode | null,
+  ): void
 
   /** Handle mouse up — emit drop event, reset state. */
   handleMouseUp(col: number, row: number, hitTestFn: (x: number, y: number) => AgNode | null): void
@@ -168,7 +178,11 @@ export function createDragFeature(options: DragFeatureOptions): DragFeature {
       return true
     },
 
-    handleMouseMove(col: number, row: number, hitTestFn: (x: number, y: number) => AgNode | null): void {
+    handleMouseMove(
+      col: number,
+      row: number,
+      hitTestFn: (x: number, y: number) => AgNode | null,
+    ): void {
       const pos: Position = { x: col, y: row }
 
       // --- Pointing phase: check threshold ---
@@ -202,7 +216,8 @@ export function createDragFeature(options: DragFeatureOptions): DragFeature {
       const hitNode = hitTestFn(col, row)
       const newDropTarget = findDropTarget(hitNode)
       // Don't allow dropping on self
-      const effectiveTarget = newDropTarget && newDropTarget !== dragState.source ? newDropTarget : null
+      const effectiveTarget =
+        newDropTarget && newDropTarget !== dragState.source ? newDropTarget : null
       const prevTarget = dragState.dropTarget
 
       // Dispatch enter/leave events on target change
@@ -222,7 +237,11 @@ export function createDragFeature(options: DragFeatureOptions): DragFeature {
       invalidate()
     },
 
-    handleMouseUp(col: number, row: number, hitTestFn: (x: number, y: number) => AgNode | null): void {
+    handleMouseUp(
+      col: number,
+      row: number,
+      hitTestFn: (x: number, y: number) => AgNode | null,
+    ): void {
       // If still in pointing phase (threshold not crossed), just reset
       if (pointing && !dragState) {
         pointing = null

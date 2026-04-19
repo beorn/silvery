@@ -2,8 +2,8 @@
  * Gruvbox palettes — retro groove color scheme.
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Gruvbox Dark — warm retro dark theme. */
 export const gruvboxDark: ColorScheme = {

@@ -60,7 +60,12 @@ describe("wrapRoot", () => {
       cols: 40,
       rows: 5,
       wrapRoot: (el) =>
-        React.createElement(Box, { flexDirection: "column" }, React.createElement(Text, null, "header"), el),
+        React.createElement(
+          Box,
+          { flexDirection: "column" },
+          React.createElement(Text, null, "header"),
+          el,
+        ),
     })
 
     expect(app.text).toContain("header")

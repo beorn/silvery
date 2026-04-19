@@ -23,7 +23,15 @@ import { useFocus } from "@silvery/ag-react"
 // ============================================================================
 
 /** Component using useFocus hook */
-function HookFocusable({ id, autoFocus, isActive }: { id?: string; autoFocus?: boolean; isActive?: boolean }) {
+function HookFocusable({
+  id,
+  autoFocus,
+  isActive,
+}: {
+  id?: string
+  autoFocus?: boolean
+  isActive?: boolean
+}) {
   const { isFocused } = useFocus({ id, autoFocus, isActive })
   const label = id ?? "auto"
   return (

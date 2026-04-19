@@ -2,7 +2,7 @@
  * Iceberg palettes — cocopon's blue-tinged theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Iceberg Dark — cool blue dark theme. */
 export const icebergDark: ColorScheme = {

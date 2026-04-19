@@ -25,7 +25,15 @@ import { SplitView } from "silvery"
 The layout tree is built using helper functions:
 
 ```ts
-import { createLeaf, splitPane, removePane, getPaneIds, findAdjacentPane, resizeSplit, swapPanes } from "silvery"
+import {
+  createLeaf,
+  splitPane,
+  removePane,
+  getPaneIds,
+  findAdjacentPane,
+  resizeSplit,
+  swapPanes,
+} from "silvery"
 
 // Create a single pane
 const single = createLeaf("main")

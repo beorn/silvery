@@ -18,7 +18,13 @@
 
 import { createLogger } from "loggily"
 import type { AgNode, AgNodeType } from "@silvery/ag/types"
-import { getRenderEpoch, INITIAL_EPOCH, ALL_RECONCILER_BITS, CONTENT_BIT, STYLE_PROPS_BIT } from "@silvery/ag/epoch"
+import {
+  getRenderEpoch,
+  INITIAL_EPOCH,
+  ALL_RECONCILER_BITS,
+  CONTENT_BIT,
+  STYLE_PROPS_BIT,
+} from "@silvery/ag/epoch"
 import { getLayoutEngine } from "./layout-engine"
 import type { TextFrame } from "@silvery/ag/text-frame"
 import { type TerminalBuffer, createTextFrame } from "./buffer"
@@ -35,7 +41,11 @@ import {
   strictLayoutOverflowCheck,
 } from "./pipeline/layout-phase"
 import { renderPhase, clearBgConflictWarnings } from "./pipeline/render-phase"
-import { applyBackdropFade, hasBackdropMarkers, type BackdropColorLevel } from "./pipeline/backdrop-phase"
+import {
+  applyBackdropFade,
+  hasBackdropMarkers,
+  type BackdropColorLevel,
+} from "./pipeline/backdrop-phase"
 import { clearDirtyTracking, hasScrollDirty } from "@silvery/ag/dirty-tracking"
 import type { PipelineContext } from "./pipeline/types"
 
@@ -126,7 +136,11 @@ export interface Ag {
   removeChild(parent: AgNode, child: AgNode): void
 
   /** Update node props (applies to layout node if layout-affecting). */
-  updateProps(node: AgNode, props: Record<string, unknown>, oldProps?: Record<string, unknown>): void
+  updateProps(
+    node: AgNode,
+    props: Record<string, unknown>,
+    oldProps?: Record<string, unknown>,
+  ): void
 
   /** Update text content on a node. */
   setText(node: AgNode, text: string): void
@@ -173,7 +187,8 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     // scrollTo/scrollOffset changes don't affect Flexily (they don't change
     // dimensions) but DO need scroll/sticky/scrollRect/notify phases to run.
     const prevRootLayout = root.boxRect
-    const dimensionsChanged = prevRootLayout && (prevRootLayout.width !== cols || prevRootLayout.height !== rows)
+    const dimensionsChanged =
+      prevRootLayout && (prevRootLayout.width !== cols || prevRootLayout.height !== rows)
     if (!dimensionsChanged && !root.layoutNode?.isDirty() && !hasScrollDirty()) {
       log.debug?.("layout: skipped (Flexily clean, no scrollDirty, dimensions unchanged)")
       // Even when the full layout phase is skipped, style-only changes
@@ -270,7 +285,11 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
 
   function doRender(opts?: AgRenderOptions): AgRenderResult & { tContent: number } {
     clearBgConflictWarnings()
-    const prevBuffer = opts?.fresh ? null : opts?.prevBuffer !== undefined ? opts.prevBuffer : _prevBuffer
+    const prevBuffer = opts?.fresh
+      ? null
+      : opts?.prevBuffer !== undefined
+        ? opts.prevBuffer
+        : _prevBuffer
 
     let tContent: number
     let buffer: TerminalBuffer
@@ -362,7 +381,9 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     // Sync layout tree
     if (parent.layoutNode && child.layoutNode) {
       // Layout index = count of children with layoutNode before this position
-      const layoutIndex = parent.children.slice(0, index).filter((c) => c.layoutNode !== null).length
+      const layoutIndex = parent.children
+        .slice(0, index)
+        .filter((c) => c.layoutNode !== null).length
       parent.layoutNode.insertChild(child.layoutNode, layoutIndex)
     }
   }
@@ -394,7 +415,9 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     },
 
     render(options) {
-      const result = measurer ? runWithMeasurer(measurer, () => doRender(options)) : doRender(options)
+      const result = measurer
+        ? runWithMeasurer(measurer, () => doRender(options))
+        : doRender(options)
       return {
         frame: result.frame,
         buffer: result.buffer,

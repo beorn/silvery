@@ -36,7 +36,10 @@ export type SelectListAction =
 // Update
 // =============================================================================
 
-export function selectListUpdate(state: SelectListState, action: SelectListAction): SelectListState {
+export function selectListUpdate(
+  state: SelectListState,
+  action: SelectListAction,
+): SelectListState {
   const { index, count } = state
   if (count === 0) return state
 

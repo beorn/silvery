@@ -7,8 +7,8 @@
  * @see https://github.com/chriskempson/base16
  */
 
-import { darken, brighten, hexToRgb } from "../color"
-import type { ColorScheme } from "../types"
+import { darken, brighten, hexToRgb } from "@silvery/color"
+import type { ColorScheme } from "@silvery/ansi"
 import type { Base16Scheme } from "./types"
 import { BASE16_KEYS } from "./types"
 
@@ -34,7 +34,10 @@ function parseBase16Yaml(yaml: string): Base16Scheme {
     let value = line.slice(colonIdx + 1).trim()
 
     // Strip surrounding quotes (single or double)
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1)
     }
 
@@ -58,7 +61,9 @@ function parseBase16Yaml(yaml: string): Base16Scheme {
     }
     // Validate hex format (6 hex chars, no # prefix)
     if (!/^[0-9a-fA-F]{6}$/.test(result[key]!)) {
-      throw new Error(`Base16 color ${key} must be a 6-digit hex string without '#', got: "${result[key]}"`)
+      throw new Error(
+        `Base16 color ${key} must be a 6-digit hex string without '#', got: "${result[key]}"`,
+      )
     }
   }
 

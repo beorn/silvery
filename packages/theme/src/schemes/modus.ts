@@ -3,8 +3,8 @@
  * Source: https://github.com/protesilaos/modus-themes
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Modus Vivendi — elegant dark theme with maximum legibility. */
 export const modusVivendi: ColorScheme = {

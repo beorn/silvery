@@ -36,7 +36,9 @@ export function checkBudget(key: string, durationMs: number, budgetMs = 16) {
   }
   if (durationMs > budgetMs) {
     budgetOverruns++
-    perfLog.warn?.(`keypress over budget: ${key} took ${durationMs.toFixed(1)}ms (budget: ${budgetMs}ms)`)
+    perfLog.warn?.(
+      `keypress over budget: ${key} took ${durationMs.toFixed(1)}ms (budget: ${budgetMs}ms)`,
+    )
   }
 }
 

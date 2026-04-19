@@ -95,7 +95,9 @@ export function SelectList({
   // In uncontrolled mode, internal state tracks the cursor; in controlled mode,
   // the parent's highlightedIndex is the source of truth.
   const isControlled = controlledIndex !== undefined
-  const [uncontrolledIndex, setUncontrolledIndex] = useState(initialIndex ?? findFirstEnabled(items))
+  const [uncontrolledIndex, setUncontrolledIndex] = useState(
+    initialIndex ?? findFirstEnabled(items),
+  )
   const currentIndex = isControlled ? controlledIndex : uncontrolledIndex
 
   const setIndex = useCallback(

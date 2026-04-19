@@ -212,6 +212,7 @@ export type { ColorScheme, Theme, Variant, AnsiPrimary, HueName } from "./theme/
 export type { AnsiColorName as PaletteColorName } from "./theme/types"
 export { COLOR_SCHEME_FIELDS } from "./theme/types"
 export type { VariantName, KnownVariant } from "./theme/tokens"
+export { KNOWN_VARIANTS } from "./theme/tokens"
 
 // =============================================================================
 // Theme Detection (async, OSC-based)

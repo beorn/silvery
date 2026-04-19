@@ -82,7 +82,11 @@ function App() {
     <Box flexDirection="column">
       <MainContent />
       {showPalette && (
-        <CommandPalette commands={commands} onSelect={handleCommand} onClose={() => setShowPalette(false)} />
+        <CommandPalette
+          commands={commands}
+          onSelect={handleCommand}
+          onClose={() => setShowPalette(false)}
+        />
       )}
     </Box>
   )

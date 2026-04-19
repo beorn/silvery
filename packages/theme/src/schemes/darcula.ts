@@ -2,7 +2,7 @@
  * Darcula palette — JetBrains' iconic dark theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Darcula — the JetBrains IDE dark theme. */
 export const darcula: ColorScheme = {

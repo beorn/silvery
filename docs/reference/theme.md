@@ -230,14 +230,18 @@ interface Theme {
 Transforms a 22-color `ColorScheme` into a 33-token `Theme`.
 
 ```typescript
-function deriveTheme(palette: ColorScheme, mode?: "truecolor" | "ansi16", adjustments?: ThemeAdjustment[]): Theme
+function deriveTheme(
+  palette: ColorScheme,
+  mode?: "truecolor" | "ansi16",
+  adjustments?: ThemeAdjustment[],
+): Theme
 ```
 
 ### Parameters
 
 | Parameter     | Type                      | Default       | Description                                         |
 | ------------- | ------------------------- | ------------- | --------------------------------------------------- |
-| `palette`     | `ColorScheme`            | required      | The 22-color terminal palette                       |
+| `palette`     | `ColorScheme`             | required      | The 22-color terminal palette                       |
 | `mode`        | `"truecolor" \| "ansi16"` | `"truecolor"` | Derivation mode                                     |
 | `adjustments` | `ThemeAdjustment[]`       | `undefined`   | Optional array to collect contrast adjustments made |
 
@@ -400,7 +404,13 @@ Four themes ship pre-derived for instant use:
 | `ansi16LightTheme`  | (hardcoded)      | light | blue    |
 
 ```typescript
-import { defaultDarkTheme, defaultLightTheme, ansi16DarkTheme, ansi16LightTheme, getThemeByName } from "silvery/theme"
+import {
+  defaultDarkTheme,
+  defaultLightTheme,
+  ansi16DarkTheme,
+  ansi16LightTheme,
+  getThemeByName,
+} from "silvery/theme"
 
 // Look up by name
 const theme = getThemeByName("dark-truecolor") // defaultDarkTheme

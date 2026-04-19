@@ -92,7 +92,9 @@ test("line breaks should open and close colors", () => {
 })
 
 test("line breaks should open and close colors with CRLF", () => {
-  expect(chalk.grey("hello\r\nworld")).toBe("\u001B[90mhello\u001B[39m\r\n\u001B[90mworld\u001B[39m")
+  expect(chalk.grey("hello\r\nworld")).toBe(
+    "\u001B[90mhello\u001B[39m\r\n\u001B[90mworld\u001B[39m",
+  )
 })
 
 test("properly convert RGB to 16 colors on basic color terminals", () => {
@@ -103,7 +105,9 @@ test("properly convert RGB to 16 colors on basic color terminals", () => {
 test("properly convert RGB to 256 colors on basic color terminals", () => {
   expect(new Chalk({ level: 2 }).hex("#FF0000")("hello")).toBe("\u001B[38;5;196mhello\u001B[39m")
   expect(new Chalk({ level: 2 }).bgHex("#FF0000")("hello")).toBe("\u001B[48;5;196mhello\u001B[49m")
-  expect(new Chalk({ level: 3 }).bgHex("#FF0000")("hello")).toBe("\u001B[48;2;255;0;0mhello\u001B[49m")
+  expect(new Chalk({ level: 3 }).bgHex("#FF0000")("hello")).toBe(
+    "\u001B[48;2;255;0;0mhello\u001B[49m",
+  )
 })
 
 test("don't emit RGB codes if level is 0", () => {

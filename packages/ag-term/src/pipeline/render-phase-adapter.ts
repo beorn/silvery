@@ -49,7 +49,12 @@
  *   may need a corresponding (simplified) implementation here.
  */
 
-import { type RenderBuffer, type RenderStyle, getRenderAdapter, hasRenderAdapter } from "../render-adapter"
+import {
+  type RenderBuffer,
+  type RenderStyle,
+  getRenderAdapter,
+  hasRenderAdapter,
+} from "../render-adapter"
 import type { BoxProps, AgNode, Rect, TextProps } from "@silvery/ag/types"
 import { INITIAL_EPOCH, CONTENT_BIT } from "@silvery/ag/epoch"
 import { getBorderSize, getPadding } from "./helpers"
@@ -95,7 +100,12 @@ interface ClipRect {
   right?: number
 }
 
-function renderNodeToBuffer(node: AgNode, buffer: RenderBuffer, scrollOffset = 0, clipBounds?: ClipRect): void {
+function renderNodeToBuffer(
+  node: AgNode,
+  buffer: RenderBuffer,
+  scrollOffset = 0,
+  clipBounds?: ClipRect,
+): void {
   const layout = node.boxRect
   if (!layout) return
 
@@ -193,7 +203,9 @@ function renderBox(
       const clippedHeight = Math.min(y + height, clipBounds.bottom) - clippedY
       const clippedX = clipBounds.left !== undefined ? Math.max(x, clipBounds.left) : x
       const clippedWidth =
-        clipBounds.right !== undefined ? Math.min(x + width, clipBounds.right) - clippedX : width - (clippedX - x)
+        clipBounds.right !== undefined
+          ? Math.min(x + width, clipBounds.right) - clippedX
+          : width - (clippedX - x)
       if (clippedHeight > 0 && clippedWidth > 0) {
         buffer.fillRect(clippedX, clippedY, clippedWidth, clippedHeight, style)
       }
@@ -230,7 +242,9 @@ function renderBorder(
   const showRight = props.borderRight !== false
 
   const isRowVisible = (row: number): boolean =>
-    clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
+    clipBounds
+      ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row)
+      : buffer.inBounds(0, row)
 
   // Top border
   if (showTop && isRowVisible(y)) {
@@ -335,7 +349,12 @@ function renderSideBorders(
     if (!isRowVisible(row)) continue
     if (showLeft && x >= clipLeft && x < clipRight) buffer.drawChar(x, row, leftVertical, style)
     const rightCol = x + width - 1
-    if (showRight && rightCol >= clipLeft && rightCol < clipRight && buffer.inBounds(rightCol, row)) {
+    if (
+      showRight &&
+      rightCol >= clipLeft &&
+      rightCol < clipRight &&
+      buffer.inBounds(rightCol, row)
+    ) {
       buffer.drawChar(rightCol, row, rightVertical, style)
     }
   }
@@ -373,7 +392,9 @@ function renderOutlineAdapter(
   const showRight = props.outlineRight !== false
 
   const isRowVisible = (row: number): boolean =>
-    clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
+    clipBounds
+      ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row)
+      : buffer.inBounds(0, row)
 
   // Top border
   if (showTop && isRowVisible(y)) {
@@ -469,14 +490,18 @@ interface AdapterStyleContext {
 }
 
 /** Merge child TextProps into parent style context. Child values override parent. */
-function mergeAdapterStyleContext(parent: AdapterStyleContext, childProps: TextProps): AdapterStyleContext {
+function mergeAdapterStyleContext(
+  parent: AdapterStyleContext,
+  childProps: TextProps,
+): AdapterStyleContext {
   return {
     color: childProps.color ?? parent.color,
     bold: childProps.bold ?? parent.bold,
     dim: childProps.dim ?? (childProps as any).dimColor ?? parent.dim,
     italic: childProps.italic ?? parent.italic,
     underline: childProps.underline ?? parent.underline,
-    underlineStyle: (childProps.underlineStyle as AdapterStyleContext["underlineStyle"]) ?? parent.underlineStyle,
+    underlineStyle:
+      (childProps.underlineStyle as AdapterStyleContext["underlineStyle"]) ?? parent.underlineStyle,
     underlineColor: childProps.underlineColor ?? parent.underlineColor,
     inverse: childProps.inverse ?? parent.inverse,
     strikethrough: childProps.strikethrough ?? parent.strikethrough,
@@ -654,7 +679,8 @@ function renderText(
 
   // If all segments have the same style (common case), use fast path
   if (segments.length <= 1) {
-    const style = segments.length === 1 ? segments[0]!.style : contextToRenderStyle(rootContext, inheritedBg)
+    const style =
+      segments.length === 1 ? segments[0]!.style : contextToRenderStyle(rootContext, inheritedBg)
     const lh = getActiveLineHeight()
     for (let i = 0; i < lines.length; i++) {
       const lineY = y + i * lh
@@ -933,7 +959,9 @@ function renderNormalChildren(
   let effectiveClipBounds = clipBounds
 
   if (props.overflow === "hidden") {
-    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
+    const border = props.borderStyle
+      ? getBorderSize(props)
+      : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
 
     // Adjust layout position by scrollOffset to get screen coordinates

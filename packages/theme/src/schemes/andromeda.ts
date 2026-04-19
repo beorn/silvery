@@ -2,7 +2,7 @@
  * Andromeda palette — EliverLara's VS Code theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Andromeda — rich dark theme with balanced colors. */
 export const andromeda: ColorScheme = {

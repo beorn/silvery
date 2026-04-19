@@ -47,7 +47,7 @@ describe("defineTokens — validation", () => {
   it("rejects collisions with built-in Theme tokens", () => {
     expect(() =>
       defineTokens({
-        "$fg": { rgb: "#FF0000", ansi16: "red" },
+        $fg: { rgb: "#FF0000", ansi16: "red" },
       }),
     ).toThrow(/collides with built-in/)
   })
@@ -55,7 +55,7 @@ describe("defineTokens — validation", () => {
   it("rejects mixed derive + rgb", () => {
     expect(() =>
       defineTokens({
-        "$mixed": { derive: () => "#FF0000", rgb: "#00FF00" } as never,
+        $mixed: { derive: () => "#FF0000", rgb: "#00FF00" } as never,
       }),
     ).toThrow(/pick one/)
   })
@@ -63,7 +63,7 @@ describe("defineTokens — validation", () => {
   it("rejects empty declarations (no derive, no rgb)", () => {
     expect(() =>
       defineTokens({
-        "$empty": {} as never,
+        $empty: {} as never,
       }),
     ).toThrow(/either 'derive' .* or 'rgb'/)
   })
@@ -71,7 +71,7 @@ describe("defineTokens — validation", () => {
   it("rejects brand tokens without ansi16 fallback", () => {
     expect(() =>
       defineTokens({
-        "$naked": { rgb: "#5B8DEF" } as never,
+        $naked: { rgb: "#5B8DEF" } as never,
       }),
     ).toThrow(/requires an 'ansi16' fallback/)
   })
@@ -115,13 +115,15 @@ describe("resolveCustomToken — tier-aware lookup", () => {
   })
 
   it("returns undefined for unknown token", () => {
-    expect(resolveCustomToken("$nope", registry, defaultDarkScheme, theme, "truecolor")).toBeUndefined()
+    expect(
+      resolveCustomToken("$nope", registry, defaultDarkScheme, theme, "truecolor"),
+    ).toBeUndefined()
   })
 })
 
 describe("resolveCustomToken — derive accepts both scheme and theme", () => {
   const registry = defineTokens({
-    "$combo": { derive: (s, t) => blend(s.foreground, t.muted, 0.5) },
+    $combo: { derive: (s, t) => blend(s.foreground, t.muted, 0.5) },
   })
 
   it("derive function receives both arguments", () => {

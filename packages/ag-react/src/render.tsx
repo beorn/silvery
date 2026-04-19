@@ -14,7 +14,14 @@
 import process from "node:process"
 import { createLogger } from "loggily"
 import { type Term, createTerm } from "@silvery/ag-term/ansi"
-import React, { useCallback, useEffect, useMemo, useRef, type ReactElement, type ReactNode } from "react"
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactElement,
+  type ReactNode,
+} from "react"
 
 const log = createLogger("silvery:render")
 import {
@@ -29,7 +36,11 @@ import { createCursorStore, CursorProvider, type CursorStore } from "./hooks/use
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey } from "@silvery/ag/keys"
 import { type LayoutEngineType, isLayoutEngineInitialized } from "@silvery/ag-term/layout-engine"
-import { enableBracketedPaste, disableBracketedPaste, parseBracketedPaste } from "@silvery/ag-term/bracketed-paste"
+import {
+  enableBracketedPaste,
+  disableBracketedPaste,
+  parseBracketedPaste,
+} from "@silvery/ag-term/bracketed-paste"
 import {
   ANSI,
   enterAlternateScreen,
@@ -562,7 +573,9 @@ class SilveryInstance {
       mode: this.mode,
       nonTTYMode: this.nonTTYMode,
       cursorAccessors: this.cursorStore.accessors,
-      writeOutput: this.outputGuard ? (data: string) => this.outputGuard!.writeStdout(data) : undefined,
+      writeOutput: this.outputGuard
+        ? (data: string) => this.outputGuard!.writeStdout(data)
+        : undefined,
     })
 
     // Set up resize listener
@@ -613,7 +626,9 @@ class SilveryInstance {
     // in environments like Bun where the event loop may not be pumped
     log.debug?.("SilveryInstance.render() calling updateContainerSync")
     reconciler.updateContainerSync(tree, this.fiberRoot, null, null)
-    log.debug?.(`SilveryInstance.render() updateContainerSync complete in ${Date.now() - startTime}ms`)
+    log.debug?.(
+      `SilveryInstance.render() updateContainerSync complete in ${Date.now() - startTime}ms`,
+    )
 
     log.debug?.("SilveryInstance.render() calling flushSyncWork")
     const flushStart = Date.now()
@@ -910,7 +925,11 @@ class SilveryInstance {
  * await render(<App />, term).run()
  * ```
  */
-export function render(element: ReactElement, termOrDef?: Term | TermDef, options?: RenderOptions): RenderHandle {
+export function render(
+  element: ReactElement,
+  termOrDef?: Term | TermDef,
+  options?: RenderOptions,
+): RenderHandle {
   return new RenderHandle(renderAsync(element, termOrDef, options))
 }
 
@@ -1034,7 +1053,11 @@ async function renderImpl(
  * Render in static mode (no events, render until stable).
  * Internal implementation for render() when no events are present.
  */
-async function renderStaticImpl(element: ReactElement, term: Term, resolved: ResolvedTermDef): Promise<Instance> {
+async function renderStaticImpl(
+  element: ReactElement,
+  term: Term,
+  resolved: ResolvedTermDef,
+): Promise<Instance> {
   log.debug?.(`renderStatic() called, dimensions: ${resolved.width}x${resolved.height}`)
 
   // Import renderString functionality
@@ -1102,7 +1125,11 @@ async function renderStaticImpl(element: ReactElement, term: Term, resolved: Res
  * @param options - Additional render options
  * @returns An Instance object with control methods
  */
-export function renderSync(element: ReactElement, termOrDef?: Term | TermDef, options?: RenderOptions): Instance {
+export function renderSync(
+  element: ReactElement,
+  termOrDef?: Term | TermDef,
+  options?: RenderOptions,
+): Instance {
   if (!isLayoutEngineInitialized()) {
     throw new Error(
       "Layout engine is not initialized. Call render() (async) first, or initialize manually with setLayoutEngine().",
@@ -1243,10 +1270,18 @@ export async function renderStatic(
 }
 
 // Re-export layout engine management for convenience
-export { setLayoutEngine, isLayoutEngineInitialized, type LayoutEngineType } from "@silvery/ag-term/layout-engine"
+export {
+  setLayoutEngine,
+  isLayoutEngineInitialized,
+  type LayoutEngineType,
+} from "@silvery/ag-term/layout-engine"
 
 // Re-export adapters for custom engine initialization
-export { createYogaEngine, initYogaEngine, YogaLayoutEngine } from "@silvery/ag-term/adapters/yoga-adapter"
+export {
+  createYogaEngine,
+  initYogaEngine,
+  YogaLayoutEngine,
+} from "@silvery/ag-term/adapters/yoga-adapter"
 export {
   createFlexilyZeroEngine as createFlexilyEngine,
   FlexilyZeroLayoutEngine as FlexilyLayoutEngine,

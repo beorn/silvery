@@ -305,7 +305,7 @@ describe("complement", () => {
     // L and H must still be preserved exactly.
     const before = hexToOklch("#FF0000")!
     const after = hexToOklch(complement("#FF0000"))!
-    const hueDiff = ((((after.H - before.H) % 360) + 360) % 360)
+    const hueDiff = (((after.H - before.H) % 360) + 360) % 360
     expect(Math.abs(hueDiff - 180)).toBeLessThan(1)
     expect(after.L).toBeCloseTo(before.L, 2)
     // Chroma ≤ original (gamut-mapped down if needed), but still colorful.
@@ -473,7 +473,7 @@ describe("ensureContrast (OKLCH L adjustment)", () => {
     const before = hexToOklch("#5570C0")!
     const after = hexToOklch(adjusted)!
     // Hue difference from 0 (perfect preservation) — allow ≤10° drift from gamut mapping.
-    const diff = ((((after.H - before.H) % 360) + 360) % 360) // 0..360
+    const diff = (((after.H - before.H) % 360) + 360) % 360 // 0..360
     const shortArc = Math.min(diff, 360 - diff)
     expect(shortArc).toBeLessThan(10)
   })

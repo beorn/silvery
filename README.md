@@ -79,7 +79,7 @@ Along the way, three principles emerged. Take the best from the web, stay true t
 | `@silvery/ink` / `@silvery/chalk` | Ink compatibility — 918/931 Ink 7.0 tests, 32/32 Chalk tests      |
 | `@silvery/test`                   | Playwright-style testing — locators, `press()`, buffer assertions |
 | `@silvery/create`                 | Composable app builder — `pipe()` providers                       |
-| `@silvery/theme`                  | 84 color schemes, semantic tokens, auto-detect                         |
+| `@silvery/theme`                  | 84 color schemes, semantic tokens, auto-detect                    |
 | `@silvery/commander`              | **Beautiful CLIs for free** — help renders through Silvery itself |
 | `@silvery/headless`               | Pure state machines — portable, no React                          |
 | `@silvery/ansi`                   | Terminal primitives — styling, SGR, detection                     |

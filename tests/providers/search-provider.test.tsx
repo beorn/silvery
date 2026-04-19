@@ -12,7 +12,10 @@ import { describe, test, expect, vi } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Text } from "../../src/index.js"
 import { SearchProvider, useSearch } from "../../packages/ag-react/src/providers/SearchProvider"
-import type { Searchable, SearchContextValue } from "../../packages/ag-react/src/providers/SearchProvider"
+import type {
+  Searchable,
+  SearchContextValue,
+} from "../../packages/ag-react/src/providers/SearchProvider"
 import type { SearchMatch } from "../../packages/ag-term/src/search-overlay"
 
 // ============================================================================

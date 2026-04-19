@@ -12,7 +12,11 @@ import React from "react"
 import { bench, describe } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
-import { buildTextAnalysis, shrinkwrapWidth, knuthPlassBreaks } from "@silvery/ag-term/pipeline/pretext"
+import {
+  buildTextAnalysis,
+  shrinkwrapWidth,
+  knuthPlassBreaks,
+} from "@silvery/ag-term/pipeline/pretext"
 import { graphemeWidth } from "@silvery/ag-term/unicode"
 
 // ============================================================================
@@ -21,7 +25,11 @@ import { graphemeWidth } from "@silvery/ag-term/unicode"
 
 const SStyleItem = React.memo(
   ({ index, selected }: { index: number; selected: boolean }) =>
-    React.createElement(Box, { key: index }, React.createElement(Text, { inverse: selected }, `Item ${index}`)),
+    React.createElement(
+      Box,
+      { key: index },
+      React.createElement(Text, { inverse: selected }, `Item ${index}`),
+    ),
   (prev, next) => prev.index === next.index && prev.selected === next.selected,
 )
 
@@ -57,9 +65,16 @@ function kanban(cols: number, cards: number, editCol: number, editCard: number) 
       React.createElement(
         Box,
         { key: col, flexDirection: "column", flexGrow: 1 },
-        React.createElement(Box, { borderStyle: "single" }, React.createElement(Text, { bold: true }, `Col ${col}`)),
+        React.createElement(
+          Box,
+          { borderStyle: "single" },
+          React.createElement(Text, { bold: true }, `Col ${col}`),
+        ),
         ...Array.from({ length: cards }, (_, card) => {
-          const text = col === editCol && card === editCard ? `Card ${col}-${card} [EDITING]` : `Card ${col}-${card}`
+          const text =
+            col === editCol && card === editCard
+              ? `Card ${col}-${card} [EDITING]`
+              : `Card ${col}-${card}`
           return React.createElement(
             Box,
             { key: card, paddingLeft: 1, borderStyle: "round" },

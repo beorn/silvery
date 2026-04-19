@@ -81,8 +81,10 @@ export type AnsiColorName =
 
 export interface Theme {
   name: string
+  // ── Root pair ────────────────────────────────────────────────────
   bg: string
   fg: string
+  // ── Surface pairs ────────────────────────────────────────────────
   muted: string
   mutedbg: string
   surface: string
@@ -91,16 +93,19 @@ export interface Theme {
   popoverbg: string
   inverse: string
   inversebg: string
+  // ── Cursor + selection ───────────────────────────────────────────
   cursor: string
   cursorbg: string
   selection: string
   selectionbg: string
+  // ── Accents ──────────────────────────────────────────────────────
   primary: string
   primaryfg: string
   secondary: string
   secondaryfg: string
   accent: string
   accentfg: string
+  // ── Semantic states ──────────────────────────────────────────────
   error: string
   errorfg: string
   warning: string
@@ -109,6 +114,7 @@ export interface Theme {
   successfg: string
   info: string
   infofg: string
+  // ── Borders + links ──────────────────────────────────────────────
   border: string
   inputborder: string
   focusborder: string
@@ -119,20 +125,30 @@ export interface Theme {
   // Brand anchor (Apple system-color model) — THE app's identity. Auto-derives
   // from scheme.primary; apps override via <ThemeProvider tokens={{ brand: "#…" }}>.
   brand: string
-  brandHover: string
-  brandActive: string
+  /** Kebab key for $brand-hover. Hover lightness shift (+0.04L OKLCH). */
+  "brand-hover": string
+  /** Kebab key for $brand-active. Active lightness shift (+0.08L OKLCH). */
+  "brand-active": string
 
   // State variants — hover (+0.04L) and active (+0.08L) shifts from base in OKLCH.
-  // Direction: dark themes brighten, light themes darken. Use $primary-hover,
-  // $primary-active, $accent-hover, etc. in JSX.
-  primaryHover: string
-  primaryActive: string
-  accentHover: string
-  accentActive: string
-  fgHover: string
-  fgActive: string
-  bgSelectedHover: string
-  bgSurfaceHover: string
+  // Direction: dark themes brighten, light themes darken.
+  // Access via $primary-hover, $primary-active, $accent-hover, etc. in JSX.
+  /** Kebab key for $primary-hover. */
+  "primary-hover": string
+  /** Kebab key for $primary-active. */
+  "primary-active": string
+  /** Kebab key for $accent-hover. */
+  "accent-hover": string
+  /** Kebab key for $accent-active. */
+  "accent-active": string
+  /** Kebab key for $fg-hover. */
+  "fg-hover": string
+  /** Kebab key for $fg-active. */
+  "fg-active": string
+  /** Kebab key for $bg-selected-hover. */
+  "bg-selected-hover": string
+  /** Kebab key for $bg-surface-hover. */
+  "bg-surface-hover": string
 
   // Categorical color ring — 8 harmonious hues for tags, chart series, calendar
   // categories, priority levels, any color that's CATEGORICAL, not stateful.
@@ -150,23 +166,6 @@ export interface Theme {
   blue: string
   purple: string
   pink: string
-
-  /** @deprecated Use `red` (available as `$red` token). Will be removed in next silvery major. */
-  brandRed: string
-  /** @deprecated Use `orange` (available as `$orange` token). Will be removed in next silvery major. */
-  brandOrange: string
-  /** @deprecated Use `yellow` (available as `$yellow` token). Will be removed in next silvery major. */
-  brandYellow: string
-  /** @deprecated Use `green` (available as `$green` token). Will be removed in next silvery major. */
-  brandGreen: string
-  /** @deprecated Use `teal` (available as `$teal` token). Will be removed in next silvery major. */
-  brandTeal: string
-  /** @deprecated Use `blue` (available as `$blue` token). Will be removed in next silvery major. */
-  brandBlue: string
-  /** @deprecated Use `purple` (available as `$purple` token). Will be removed in next silvery major. */
-  brandPurple: string
-  /** @deprecated Use `pink` (available as `$pink` token). Will be removed in next silvery major. */
-  brandPink: string
 
   /**
    * Named typography variants — resolved by `<Text variant="h1">`.

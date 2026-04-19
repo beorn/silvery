@@ -58,7 +58,13 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 Turns input into named, serializable commands. Keys and clicks resolve to commands; commands produce actions.
 
 ```tsx
-import { pipe, withDomEvents, withCommands, withReact, createCommandRegistry } from "@silvery/create/plugins"
+import {
+  pipe,
+  withDomEvents,
+  withCommands,
+  withReact,
+  createCommandRegistry,
+} from "@silvery/create/plugins"
 
 const registry = createCommandRegistry({
   cursor_down: {
@@ -154,7 +160,11 @@ import { withTerminal } from "@silvery/create/plugins"
 
 // withTerminal captures process streams and terminal options,
 // then wraps run() to inject them:
-const app = pipe(createApp(store), withReact(<Board />), withTerminal(process, { mouse: true, kitty: true }))
+const app = pipe(
+  createApp(store),
+  withReact(<Board />),
+  withTerminal(process, { mouse: true, kitty: true }),
+)
 // app.terminalOptions is now available
 // app.run() will configure stdin/stdout automatically
 ```
@@ -230,7 +240,9 @@ interface EventMap {
   "term:resize": { cols: number; rows: number }
 }
 
-type AppEvent<K extends keyof EventMap = keyof EventMap> = K extends K ? { type: K; data: EventMap[K] } : never
+type AppEvent<K extends keyof EventMap = keyof EventMap> = K extends K
+  ? { type: K; data: EventMap[K] }
+  : never
 ```
 
 Sources are typed against the map:

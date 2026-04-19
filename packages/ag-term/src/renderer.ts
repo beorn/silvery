@@ -365,7 +365,13 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // Auto-render: schedule a microtask re-render on async React commits
     // (e.g., setTimeout → setState). Skipped during explicit render operations
     // (rendering=true or inRenderCycle=true) since those call doRender() themselves.
-    if (autoRender && !instance.rendering && !inRenderCycle && !autoRenderScheduled && instance.mounted) {
+    if (
+      autoRender &&
+      !instance.rendering &&
+      !inRenderCycle &&
+      !autoRenderScheduled &&
+      instance.mounted
+    ) {
       autoRenderScheduled = true
       queueMicrotask(() => {
         autoRenderScheduled = false
@@ -404,7 +410,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           // boxRect includes marginTop in the y position but NOT marginBottom
           // in the height. Read marginBottom from props to get the full outer extent.
           const props = child.props as Record<string, unknown>
-          const mb = (props.marginBottom as number) ?? (props.marginY as number) ?? (props.margin as number) ?? 0
+          const mb =
+            (props.marginBottom as number) ??
+            (props.marginY as number) ??
+            (props.margin as number) ??
+            0
           const childBottom = child.boxRect.y + child.boxRect.height + mb
           if (childBottom > maxBottom) maxBottom = childBottom
         }
@@ -783,7 +793,8 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             const ctx = buildMismatchContext(root, x, y, a, b, instance.renderCount)
 
             // Capture render-phase instrumentation snapshot
-            const renderPhaseStats: RenderPhaseStats | undefined = (globalThis as any).__silvery_content_detail
+            const renderPhaseStats: RenderPhaseStats | undefined = (globalThis as any)
+              .__silvery_content_detail
               ? structuredClone((globalThis as any).__silvery_content_detail)
               : undefined
 
@@ -792,7 +803,8 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             // Include text output for full picture
             const incText = bufferToText(buffer!)
             const freshText = bufferToText(freshBuffer)
-            const msg = debugInfo + trapInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
+            const msg =
+              debugInfo + trapInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
             throw new IncrementalRenderMismatchError(msg, {
               renderPhaseStats,
               mismatchContext: ctx,
@@ -985,14 +997,20 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     }
     if (instance.rendering) {
       throw new Error(
-        "silvery: Re-entrant render detected. " + "Cannot call rerender() from inside a React render or effect.",
+        "silvery: Re-entrant render detected. " +
+          "Cannot call rerender() from inside a React render or effect.",
       )
     }
     instance.rendering = true
     try {
       withActEnvironment(() => {
         act(() => {
-          reconciler.updateContainerSync(wrapWithContexts(newElement as ReactElement), instance.fiberRoot, null, null)
+          reconciler.updateContainerSync(
+            wrapWithContexts(newElement as ReactElement),
+            instance.fiberRoot,
+            null,
+            null,
+          )
           reconciler.flushSyncWork()
         })
       })
@@ -1258,10 +1276,16 @@ function canReuseInstance(
   baseOpts: { incremental?: boolean; singlePassLayout?: boolean; kittyMode?: boolean },
 ): boolean {
   if (!overrides) return true
-  if (overrides.incremental !== undefined && overrides.incremental !== (baseOpts.incremental ?? true)) {
+  if (
+    overrides.incremental !== undefined &&
+    overrides.incremental !== (baseOpts.incremental ?? true)
+  ) {
     return false
   }
-  if (overrides.singlePassLayout !== undefined && overrides.singlePassLayout !== (baseOpts.singlePassLayout ?? false)) {
+  if (
+    overrides.singlePassLayout !== undefined &&
+    overrides.singlePassLayout !== (baseOpts.singlePassLayout ?? false)
+  ) {
     return false
   }
   if (overrides.kittyMode !== undefined && overrides.kittyMode !== (baseOpts.kittyMode ?? false)) {

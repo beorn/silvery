@@ -235,7 +235,11 @@ const theme = createTheme().preset("nord").primary("#A3BE8C").build()
 const theme = createTheme().bg("#1e1e2e").fg("#cdd6f4").primary("#89b4fa").dark().build()
 
 // Override individual palette colors
-const theme = createTheme().preset("dracula").color("red", "#FF6E6E").color("green", "#69FF94").build()
+const theme = createTheme()
+  .preset("dracula")
+  .color("red", "#FF6E6E")
+  .color("green", "#69FF94")
+  .build()
 ```
 
 Builder methods: `.bg()`, `.fg()`, `.primary()`, `.accent()`, `.dark()`, `.light()`, `.color(name, value)`, `.palette(p)`, `.preset(name)`, `.build()`.

@@ -55,7 +55,9 @@ export function createMouseEvent(
   let defaultPrevented = false
   const metaKey = keyboardMods?.super ?? false
   if (type === "click" || type === "mousedown") {
-    mouseLog.debug?.(`createMouseEvent(${type}) metaKey=${metaKey} keyboardMods.super=${keyboardMods?.super}`)
+    mouseLog.debug?.(
+      `createMouseEvent(${type}) metaKey=${metaKey} keyboardMods.super=${keyboardMods?.super}`,
+    )
   }
 
   return {
@@ -314,7 +316,9 @@ export function dispatchMouseEvent(event: SilveryMouseEvent): void {
   for (const node of path) {
     if (event.propagationStopped) break
 
-    const handler = (node.props as Record<string, unknown>)[handlerProp] as ((e: SilveryMouseEvent) => void) | undefined
+    const handler = (node.props as Record<string, unknown>)[handlerProp] as
+      | ((e: SilveryMouseEvent) => void)
+      | undefined
     if (handler) {
       const mutableEvent = event as { currentTarget: AgNode }
       mutableEvent.currentTarget = node
@@ -364,7 +368,10 @@ export function checkDoubleClick(
   const sameButton = button === state.lastClickButton
 
   const isDouble =
-    sameButton && timeDelta <= DOUBLE_CLICK_TIME_MS && dx <= DOUBLE_CLICK_DISTANCE && dy <= DOUBLE_CLICK_DISTANCE
+    sameButton &&
+    timeDelta <= DOUBLE_CLICK_TIME_MS &&
+    dx <= DOUBLE_CLICK_DISTANCE &&
+    dy <= DOUBLE_CLICK_DISTANCE
 
   // Update state
   state.lastClickTime = now
@@ -391,7 +398,10 @@ export function checkDoubleClick(
  * Mirrors the DOM spec: fire mouseleave on nodes in prevPath not in nextPath,
  * and mouseenter on nodes in nextPath not in prevPath.
  */
-export function computeEnterLeave(prevPath: AgNode[], nextPath: AgNode[]): { entered: AgNode[]; left: AgNode[] } {
+export function computeEnterLeave(
+  prevPath: AgNode[],
+  nextPath: AgNode[],
+): { entered: AgNode[]; left: AgNode[] } {
   const prevSet = new Set(prevPath)
   const nextSet = new Set(nextPath)
 
@@ -441,7 +451,9 @@ export interface MouseEventProcessorState {
   keyboardModifiers: KeyboardModifierState
 }
 
-export function createMouseEventProcessor(options?: MouseEventProcessorOptions): MouseEventProcessorState {
+export function createMouseEventProcessor(
+  options?: MouseEventProcessorOptions,
+): MouseEventProcessorState {
   return {
     doubleClick: createDoubleClickState(),
     hoverPath: [],
@@ -489,7 +501,11 @@ export function updateKeyboardModifiers(
  * - mousemove + mouseenter/mouseleave
  * - wheel
  */
-export function processMouseEvent(state: MouseEventProcessorState, parsed: ParsedMouse, root: AgNode): boolean {
+export function processMouseEvent(
+  state: MouseEventProcessorState,
+  parsed: ParsedMouse,
+  root: AgNode,
+): boolean {
   const { x, y, action } = parsed
   const target = hitTest(root, x, y)
   if (action === "move") {

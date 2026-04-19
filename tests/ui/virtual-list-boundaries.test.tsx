@@ -317,10 +317,19 @@ describe("ListView — gap handling", () => {
     const items = makeItems(10)
     const r1 = createRenderer({ cols: 40, rows: 7 })
     const app1 = r1(
-      <ListView items={items} height={5} estimateHeight={1} gap={0} scrollTo={0} renderItem={renderItem} />,
+      <ListView
+        items={items}
+        height={5}
+        estimateHeight={1}
+        gap={0}
+        scrollTo={0}
+        renderItem={renderItem}
+      />,
     )
     const r2 = createRenderer({ cols: 40, rows: 7 })
-    const app2 = r2(<ListView items={items} height={5} estimateHeight={1} scrollTo={0} renderItem={renderItem} />)
+    const app2 = r2(
+      <ListView items={items} height={5} estimateHeight={1} scrollTo={0} renderItem={renderItem} />,
+    )
     expect(stripAnsi(app1.text)).toBe(stripAnsi(app2.text))
   })
 })
@@ -458,12 +467,19 @@ describe("ListView — boundary heights (parametric)", () => {
 
       if (itemCount * itemHeight <= height) {
         // All items fit — all should be visible
-        expect(visible, `All ${itemCount} items should be visible at height=${height}`).toBe(itemCount)
+        expect(visible, `All ${itemCount} items should be visible at height=${height}`).toBe(
+          itemCount,
+        )
       } else {
         // Items overflow — at least 1 item should be visible
-        expect(visible, `At least 1 item should be visible at height=${height}`).toBeGreaterThanOrEqual(1)
+        expect(
+          visible,
+          `At least 1 item should be visible at height=${height}`,
+        ).toBeGreaterThanOrEqual(1)
         // And not all items should be visible
-        expect(visible, `Not all items should be visible at height=${height}`).toBeLessThan(itemCount)
+        expect(visible, `Not all items should be visible at height=${height}`).toBeLessThan(
+          itemCount,
+        )
         // Overflow indicator should be present
         expect(text, `Should show ▼ overflow at height=${height}`).toContain("▼")
       }
@@ -522,7 +538,9 @@ describe("ListView — nav mode boundaries", () => {
         />,
       )
       const text = stripAnsi(app.text)
-      expect(text, `Item ${selectedIdx} should be visible when selected`).toContain(`Item ${selectedIdx}`)
+      expect(text, `Item ${selectedIdx} should be visible when selected`).toContain(
+        `Item ${selectedIdx}`,
+      )
     }
   })
 })

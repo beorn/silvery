@@ -8,8 +8,8 @@
  * @see https://github.com/chriskempson/base16
  */
 
-import { blend } from "../color"
-import type { ColorScheme } from "../types"
+import { blend } from "@silvery/color"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Strip `#` prefix from a hex color string and uppercase. */
 function stripHash(hex: string): string {
@@ -34,7 +34,9 @@ export function exportBase16(palette: ColorScheme): string {
   const base04 = blend(palette.white, palette.foreground, 0.33)
 
   // base06: light foreground — between fg and the inverse extreme
-  const base06 = dark ? blend(palette.foreground, "#FFFFFF", 0.15) : blend(palette.foreground, "#000000", 0.15)
+  const base06 = dark
+    ? blend(palette.foreground, "#FFFFFF", 0.15)
+    : blend(palette.foreground, "#000000", 0.15)
 
   // base07: lightest background — use black (the deepest bg extreme)
   const base07 = palette.black

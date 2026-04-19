@@ -2,7 +2,7 @@
  * GitHub palettes — GitHub's terminal color schemes.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** GitHub Dark — GitHub's dark terminal theme. */
 export const githubDark: ColorScheme = {

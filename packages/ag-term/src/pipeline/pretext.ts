@@ -52,7 +52,10 @@ export interface TextAnalysis {
  * Build text analysis from an ANSI-embedded text string.
  * O(N) where N is grapheme count. Call once per text change (cached by PreparedText).
  */
-export function buildTextAnalysis(text: string, gWidthFn: (g: string) => number = defaultGraphemeWidth): TextAnalysis {
+export function buildTextAnalysis(
+  text: string,
+  gWidthFn: (g: string) => number = defaultGraphemeWidth,
+): TextAnalysis {
   const graphemes = splitGraphemesAnsiAware(text)
   const len = graphemes.length
   const widths = new Array<number>(len)
@@ -239,7 +242,12 @@ export function knuthPlassBreaks(analysis: TextAnalysis, width: number): number[
 }
 
 /** DP for a single paragraph (no newlines). */
-function knuthPlassForParagraph(analysis: TextAnalysis, pStart: number, pEnd: number, width: number): number[] {
+function knuthPlassForParagraph(
+  analysis: TextAnalysis,
+  pStart: number,
+  pEnd: number,
+  width: number,
+): number[] {
   const { cumWidths, breakIndices, widths, graphemes } = analysis
 
   // Build candidates for this paragraph

@@ -143,7 +143,9 @@ subsection("Styled hyperlinks")
 console.log(` Underlined: ${term.underline(hyperlink("Underlined link", "https://example.com"))}`)
 console.log(` Colored:    ${term.blue(hyperlink("Blue link", "https://example.com"))}`)
 console.log(` Bold:       ${term.bold(hyperlink("Bold link", "https://example.com"))}`)
-console.log(` Combined:   ${term.bold.blue.underline(hyperlink("Styled link", "https://example.com"))}`)
+console.log(
+  ` Combined:   ${term.bold.blue.underline(hyperlink("Styled link", "https://example.com"))}`,
+)
 
 // =============================================================================
 // ANSI Utilities
@@ -180,8 +182,12 @@ console.log()
 subsection("Task manager styling")
 
 console.log(` ${term.green("✓")} ${term.dim.strikethrough("Completed task")}`)
-console.log(` ${term.yellow("◐")} ${styledUnderline("curly", [255, 180, 0], "Due today: Submit report")}`)
-console.log(` ${term.red("○")} ${styledUnderline("curly", [255, 80, 80], "Overdue: Fix critical bug")}`)
+console.log(
+  ` ${term.yellow("◐")} ${styledUnderline("curly", [255, 180, 0], "Due today: Submit report")}`,
+)
+console.log(
+  ` ${term.red("○")} ${styledUnderline("curly", [255, 80, 80], "Overdue: Fix critical bug")}`,
+)
 console.log(` ${term.blue("○")} ${dottedUnderline("Embedded from [[Projects]]")}`)
 console.log(` ${term.gray("○")} ${dashedUnderline("Draft: New feature idea")}`)
 console.log()

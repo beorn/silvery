@@ -20,7 +20,11 @@ import { renderSync, type Instance } from "@silvery/ag-react/render"
 import { render as silveryTestRender } from "@silvery/ag-term/renderer"
 import { setInkStrictValidation } from "@silvery/ag-react/reconciler/host-config"
 import { renderStringSync } from "@silvery/ag-react/render-string"
-import { isLayoutEngineInitialized, setLayoutEngine, ensureDefaultLayoutEngine } from "@silvery/ag-term/layout-engine"
+import {
+  isLayoutEngineInitialized,
+  setLayoutEngine,
+  ensureDefaultLayoutEngine,
+} from "@silvery/ag-term/layout-engine"
 import { createFlexilyZeroEngine } from "@silvery/ag-term/adapters/flexily-zero-adapter"
 import { measureElement as baseMeasureElement } from "@silvery/ag-react/measureElement"
 import { calculateLayout } from "@silvery/ag-react/reconciler/nodes"
@@ -96,7 +100,10 @@ interface InkInstance extends Instance {
  * When no custom stdout (real terminal): delegates to renderSync() which
  * creates a full SilveryInstance with scheduler.
  */
-export function render(element: import("react").ReactNode, options?: Record<string, unknown>): InkInstance {
+export function render(
+  element: import("react").ReactNode,
+  options?: Record<string, unknown>,
+): InkInstance {
   // Enable Ink-compatible strict validation (text must be inside <Text>,
   // <Box> cannot be inside <Text>)
   setInkStrictValidation(true)
@@ -177,8 +184,10 @@ function renderTestMode(
   // Ink requires all three: alternateScreen=true, interactive mode, and stdout.isTTY.
   // interactive defaults to stdout.isTTY when not explicitly set.
   const isTTY = (stdout as any).isTTY === true
-  const resolvedInteractive = options?.interactive !== undefined ? Boolean(options.interactive) : isTTY
-  const useAltScreen = (options?.alternateScreen as boolean) === true && resolvedInteractive && isTTY
+  const resolvedInteractive =
+    options?.interactive !== undefined ? Boolean(options.interactive) : isTTY
+  const useAltScreen =
+    (options?.alternateScreen as boolean) === true && resolvedInteractive && isTTY
   let altScreenExited = false
 
   if (useAltScreen) {
@@ -415,7 +424,11 @@ function renderTestMode(
                       React.createElement(
                         InkAnimationProvider,
                         { renderThrottleMs },
-                        React.createElement(InkFocusProvider, null, React.createElement(InkFocusBridge, null, el)),
+                        React.createElement(
+                          InkFocusProvider,
+                          null,
+                          React.createElement(InkFocusBridge, null, el),
+                        ),
                       ),
                     ),
                   ),
@@ -784,7 +797,9 @@ function needsLayoutRecalculation(node: any): boolean {
  * This bridges the timing gap between Ink (Yoga runs during commit, so
  * effects see layout) and silvery (layout runs in a separate pipeline pass).
  */
-export function measureElement(nodeOrHandle: any): import("@silvery/ag-react/measureElement").MeasureElementOutput {
+export function measureElement(
+  nodeOrHandle: any,
+): import("@silvery/ag-react/measureElement").MeasureElementOutput {
   // Resolve BoxHandle → AgNode
   const node = typeof nodeOrHandle?.getNode === "function" ? nodeOrHandle.getNode() : nodeOrHandle
   if (!node) return { width: 0, height: 0 }

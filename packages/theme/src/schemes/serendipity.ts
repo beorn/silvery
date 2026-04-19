@@ -2,7 +2,7 @@
  * Serendipity palettes — Michael Andreuzza's elegant themes.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Serendipity Midnight — deep dark variant. */
 export const serendipityMidnight: ColorScheme = {

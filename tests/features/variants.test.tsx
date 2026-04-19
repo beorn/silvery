@@ -12,11 +12,12 @@
  */
 
 import React from "react"
-import { describe, test, expect } from "vitest"
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Text, H1, H2, Box } from "silvery"
 import { ThemeProvider } from "silvery"
 import { defaultDarkTheme } from "@silvery/theme/schemes"
+import { KNOWN_VARIANTS } from "@silvery/ansi"
 
 const r = createRenderer({ cols: 80, rows: 5 })
 
@@ -121,20 +122,67 @@ describe("Text variant prop", () => {
   })
 
   // =============================================================================
-  // Test 7: unknown variant → renders without crashing (graceful no-op)
+  // Test 7: unknown variant → renders without crashing + emits console.warn once
   // =============================================================================
 
-  test("unknown variant renders gracefully (no-op)", () => {
-    const app = r(<Text variant="nonexistent-variant-xyz">Hi</Text>)
-    expect(app.text).toContain("Hi")
-    const cell = app.cell(0, 0)
-    // No styling from variant (it didn't exist), renders as plain text
-    expect(cell.char).toBe("H")
+  describe("unknown variant warning", () => {
+    let warnSpy: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      warnSpy.mockRestore()
+    })
+
+    test("unknown variant renders gracefully (no-op)", () => {
+      // Use a unique name to avoid collision with the module-level dedup Set
+      // (other test runs in this file may have already warned for "nonexistent-variant-xyz")
+      const app = r(<Text variant="unknown-variant-for-graceful-test-abc123">Hi</Text>)
+      expect(app.text).toContain("Hi")
+      const cell = app.cell(0, 0)
+      // No styling from variant (it didn't exist), renders as plain text
+      expect(cell.char).toBe("H")
+    })
+
+    test("unknown variant emits a console.warn with variant name and known list", () => {
+      // Fresh unique name — must not have been warned yet in this session
+      const variantName = "typo-variant-test-unique-9f3a"
+      r(<Text variant={variantName}>X</Text>)
+      expect(warnSpy).toHaveBeenCalledTimes(1)
+      const [msg] = warnSpy.mock.calls[0] as [string]
+      expect(msg).toContain(variantName)
+      // Should include at least one known variant name
+      expect(msg).toContain("h1")
+    })
+
+    test("unknown variant warning fires only once per variant name per session", () => {
+      // Use a different unique name so the session-level dedup Set isn't already populated
+      const name = "dedup-test-variant-8c2e"
+      r(<Text variant={name}>A</Text>)
+      r(<Text variant={name}>B</Text>)
+      r(<Text variant={name}>C</Text>)
+      // Only the first render should have triggered a warning
+      expect(warnSpy).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  // =============================================================================
+  // Test 8: KNOWN_VARIANTS runtime constant matches VariantName values
+  // =============================================================================
+
+  test("KNOWN_VARIANTS runtime constant has all 12 known variant names", () => {
+    expect(KNOWN_VARIANTS).toHaveLength(12)
+    const expected = ["h1", "h2", "h3", "body", "body-muted", "fine-print", "strong", "em", "link", "key", "code", "kbd"]
+    for (const name of expected) {
+      expect(KNOWN_VARIANTS).toContain(name)
+    }
   })
 })
 
 // =============================================================================
-// Test 8: <H1> Typography wrapper behaves identically to <Text variant="h1">
+// <H1> Typography wrapper behaves identically to <Text variant="h1">
 // =============================================================================
 
 describe("Typography wrapper parity", () => {
@@ -171,7 +219,7 @@ describe("Typography wrapper parity", () => {
 })
 
 // =============================================================================
-// Test 9: ThemeProvider tokens={{ variants: { hero: ... } }} adds custom variants
+// ThemeProvider tokens={{ variants: { hero: ... } }} adds custom variants
 // =============================================================================
 
 describe("Custom variants via ThemeProvider", () => {
@@ -215,7 +263,7 @@ describe("Custom variants via ThemeProvider", () => {
 })
 
 // =============================================================================
-// Test 10: Theme.variants contains the standard keys
+// Theme.variants contains the standard keys
 // =============================================================================
 
 describe("Theme.variants structure", () => {

@@ -257,12 +257,26 @@ describe("inline jump: content height changes between frames", () => {
     expect(screen.getNonEmptyLines()).toEqual(["Header", "Input>", "Result A", "Footer"])
 
     // Frame 2: Content grows — new result added
-    const buf2 = bufferWithLines(COLS, ROWS, ["Header", "Input>", "Result A", "Result B", "Result C", "Footer"])
+    const buf2 = bufferWithLines(COLS, ROWS, [
+      "Header",
+      "Input>",
+      "Result A",
+      "Result B",
+      "Result C",
+      "Footer",
+    ])
     const cursor2 = { x: 6, y: 1, visible: true }
     screen.feed(outputPhase(buf1, buf2, "inline", 0, ROWS, cursor2))
 
     // All lines should be present without duplication
-    expect(screen.getNonEmptyLines()).toEqual(["Header", "Input>", "Result A", "Result B", "Result C", "Footer"])
+    expect(screen.getNonEmptyLines()).toEqual([
+      "Header",
+      "Input>",
+      "Result A",
+      "Result B",
+      "Result C",
+      "Footer",
+    ])
   })
 
   test("content shrinks from 5 to 3 lines with cursor in middle", () => {
@@ -318,10 +332,22 @@ describe("inline jump: content height changes between frames", () => {
     expect(screen.getNonEmptyLines()).toEqual(["Prompt>", "Response", "More"])
 
     // Frame 2: Content grows, cursor becomes hidden (processing)
-    const buf2 = bufferWithLines(COLS, ROWS, ["Prompt>", "Response", "More", "Thinking...", "Status"])
+    const buf2 = bufferWithLines(COLS, ROWS, [
+      "Prompt>",
+      "Response",
+      "More",
+      "Thinking...",
+      "Status",
+    ])
     screen.feed(outputPhase(buf1, buf2, "inline", 0, ROWS))
 
-    expect(screen.getNonEmptyLines()).toEqual(["Prompt>", "Response", "More", "Thinking...", "Status"])
+    expect(screen.getNonEmptyLines()).toEqual([
+      "Prompt>",
+      "Response",
+      "More",
+      "Thinking...",
+      "Status",
+    ])
   })
 
   test("content grows after scrollback promotion (freeze + add in same sequence)", () => {
@@ -342,7 +368,13 @@ describe("inline jump: content height changes between frames", () => {
 
     // Frozen exchange 1 stays on-screen (overwritten by next render); live exchange 2 below
     expect(screen.getScrollbackLines()).toEqual([])
-    expect(screen.getNonEmptyLines()).toEqual(["User: hello", "AI: world", "---", "User: how?", "AI: ..."])
+    expect(screen.getNonEmptyLines()).toEqual([
+      "User: hello",
+      "AI: world",
+      "---",
+      "User: how?",
+      "AI: ...",
+    ])
 
     // Frame 3: Exchange 2 response grows (content height changes)
     const buf3 = bufferWithLines(COLS, ROWS, [
@@ -384,9 +416,23 @@ describe("inline jump: content height changes between frames", () => {
     expect(screen.getNonEmptyLines()).toEqual(["Line 1", "Line 2", "Line 3", "Line 4"])
 
     // Frame 3: Grows to 6 lines
-    const buf3 = bufferWithLines(COLS, ROWS, ["Line 1", "Line 2", "Line 3", "Line 4", "Line 5", "Line 6"])
+    const buf3 = bufferWithLines(COLS, ROWS, [
+      "Line 1",
+      "Line 2",
+      "Line 3",
+      "Line 4",
+      "Line 5",
+      "Line 6",
+    ])
     screen.feed(outputPhase(buf2, buf3, "inline", 0, ROWS))
-    expect(screen.getNonEmptyLines()).toEqual(["Line 1", "Line 2", "Line 3", "Line 4", "Line 5", "Line 6"])
+    expect(screen.getNonEmptyLines()).toEqual([
+      "Line 1",
+      "Line 2",
+      "Line 3",
+      "Line 4",
+      "Line 5",
+      "Line 6",
+    ])
 
     // Frame 4: Shrinks to 3 lines
     const buf4 = bufferWithLines(COLS, ROWS, ["Line 1", "Line 2", "Line 3"])
@@ -407,11 +453,21 @@ describe("inline jump: content height changes between frames", () => {
     expect(screen.getNonEmptyLines()).toEqual(["Input>", "Footer"])
 
     // Frame 2: Content grows (response appears below input)
-    const buf2 = bufferWithLines(COLS, ROWS, ["Input>", "Response line 1", "Response line 2", "Footer"])
+    const buf2 = bufferWithLines(COLS, ROWS, [
+      "Input>",
+      "Response line 1",
+      "Response line 2",
+      "Footer",
+    ])
     const cursor2 = { x: 6, y: 0, visible: true }
     screen.feed(outputPhase(buf1, buf2, "inline", 0, ROWS, cursor2))
 
-    expect(screen.getNonEmptyLines()).toEqual(["Input>", "Response line 1", "Response line 2", "Footer"])
+    expect(screen.getNonEmptyLines()).toEqual([
+      "Input>",
+      "Response line 1",
+      "Response line 2",
+      "Footer",
+    ])
   })
 
   test("content grows near terminal bottom (causes natural scroll)", () => {
@@ -426,10 +482,24 @@ describe("inline jump: content height changes between frames", () => {
     expect(screen.getNonEmptyLines()).toEqual(["Line A", "Line B", "Line C", "Line D"])
 
     // Frame 2: Grows to 6 lines (fills terminal exactly)
-    const buf2 = bufferWithLines(COLS, ROWS, ["Line A", "Line B", "Line C", "Line D", "Line E", "Line F"])
+    const buf2 = bufferWithLines(COLS, ROWS, [
+      "Line A",
+      "Line B",
+      "Line C",
+      "Line D",
+      "Line E",
+      "Line F",
+    ])
     screen.feed(outputPhase(buf1, buf2, "inline", 0, ROWS))
 
-    expect(screen.getNonEmptyLines()).toEqual(["Line A", "Line B", "Line C", "Line D", "Line E", "Line F"])
+    expect(screen.getNonEmptyLines()).toEqual([
+      "Line A",
+      "Line B",
+      "Line C",
+      "Line D",
+      "Line E",
+      "Line F",
+    ])
   })
 
   test("content grows and shrinks with no diff (all same lines)", () => {

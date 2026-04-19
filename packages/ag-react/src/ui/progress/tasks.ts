@@ -64,7 +64,10 @@ export interface TaskBuilder {
    * @param title - Display title
    * @param work - Function, async function, or generator
    */
-  add<T>(title: string, work: () => T | PromiseLike<T> | Generator<ProgressInfo, T, unknown>): TaskBuilder
+  add<T>(
+    title: string,
+    work: () => T | PromiseLike<T> | Generator<ProgressInfo, T, unknown>,
+  ): TaskBuilder
 
   /**
    * Run all tasks in sequence
@@ -83,7 +86,10 @@ export function tasks(): TaskBuilder {
   const taskList: TaskDef[] = []
 
   const builder: TaskBuilder = {
-    add<T>(title: string, work: () => T | PromiseLike<T> | Generator<ProgressInfo, T, unknown>): TaskBuilder {
+    add<T>(
+      title: string,
+      work: () => T | PromiseLike<T> | Generator<ProgressInfo, T, unknown>,
+    ): TaskBuilder {
       taskList.push({ title, work })
       return builder
     },
@@ -212,5 +218,9 @@ function isGenerator(value: unknown): value is Generator<ProgressInfo, unknown, 
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
-  return value !== null && typeof value === "object" && typeof (value as PromiseLike<unknown>).then === "function"
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    typeof (value as PromiseLike<unknown>).then === "function"
+  )
 }

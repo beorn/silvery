@@ -17,7 +17,14 @@ function writeBold(buffer: TerminalBuffer, x: number, y: number, text: string): 
 }
 
 /** Write colored text */
-function writeColored(buffer: TerminalBuffer, x: number, y: number, text: string, fg: number, bg?: number): void {
+function writeColored(
+  buffer: TerminalBuffer,
+  x: number,
+  y: number,
+  text: string,
+  fg: number,
+  bg?: number,
+): void {
   for (let i = 0; i < text.length && x + i < buffer.width; i++) {
     buffer.setCell(x + i, y, { char: text[i]!, fg, bg: bg ?? null })
   }

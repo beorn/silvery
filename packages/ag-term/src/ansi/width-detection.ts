@@ -151,10 +151,9 @@ function queryWidthMode(
  * CJK width and UTF-8 mode are informational — they don't yet map to
  * caps fields but are available in the TerminalWidthConfig for consumers.
  */
-export function applyWidthConfig<T extends { textEmojiWide: boolean; textSizingSupported: boolean }>(
-  caps: T,
-  config: TerminalWidthConfig,
-): T {
+export function applyWidthConfig<
+  T extends { textEmojiWide: boolean; textSizingSupported: boolean },
+>(caps: T, config: TerminalWidthConfig): T {
   return {
     ...caps,
     textEmojiWide: config.emojiWidth === 2,
@@ -204,7 +203,8 @@ export function createWidthDetector(options: WidthDetectorOptions): WidthDetecto
         utf8: utf8Ps !== null ? isSet(utf8Ps) : DEFAULT_WIDTH_CONFIG.utf8,
         cjkWidth: cjkPs !== null ? (isSet(cjkPs) ? 2 : 1) : DEFAULT_WIDTH_CONFIG.cjkWidth,
         emojiWidth: emojiPs !== null ? (isSet(emojiPs) ? 2 : 1) : DEFAULT_WIDTH_CONFIG.emojiWidth,
-        privateUseWidth: puaPs !== null ? (isSet(puaPs) ? 2 : 1) : DEFAULT_WIDTH_CONFIG.privateUseWidth,
+        privateUseWidth:
+          puaPs !== null ? (isSet(puaPs) ? 2 : 1) : DEFAULT_WIDTH_CONFIG.privateUseWidth,
       }
 
       return config

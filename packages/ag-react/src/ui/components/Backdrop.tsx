@@ -47,8 +47,7 @@ export interface BackdropProps extends Omit<BoxProps, "children"> {
  */
 export function Backdrop({ fade = 0.4, children, ...boxProps }: BackdropProps): React.ReactElement {
   const clamped = clamp01(fade)
-  const attrs: Record<string, unknown> =
-    clamped > 0 ? { "data-backdrop-fade": clamped } : {}
+  const attrs: Record<string, unknown> = clamped > 0 ? { "data-backdrop-fade": clamped } : {}
   return (
     <Box {...boxProps} {...attrs}>
       {children}

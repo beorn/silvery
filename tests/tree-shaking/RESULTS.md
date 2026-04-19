@@ -47,7 +47,7 @@ Ink does not tree-shake: importing `{ Text }` alone bundles 335.6 KB gzip (96% o
 | `@silvery/create/core`          | 0.2 KB   | 0.2 KB   | No     | Pure TEA functions                   |
 | `@silvery/create/store`         | 2.0 KB   | --       | No     | Zustand-based store                  |
 | `@silvery/create/streams`       | 1.0 KB   | --       | No     | Stream combinators                   |
-| `@silvery/theme`                | 77.3 KB  | 17.7 KB  | Yes    | Theme engine + 84 color schemes           |
+| `@silvery/theme`                | 77.3 KB  | 17.7 KB  | Yes    | Theme engine + 84 color schemes      |
 | `@silvery/ag-react/ui/cli`      | 22.9 KB  | 6.4 KB   | No     | Spinner, ProgressBar (React-free)    |
 | `@silvery/ag-react/ui/wrappers` | 18.6 KB  | --       | No     | withSpinner, withProgress            |
 

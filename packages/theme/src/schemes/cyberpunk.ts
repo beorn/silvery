@@ -2,7 +2,7 @@
  * Cyberpunk palette — neon-drenched futuristic theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Cyberpunk — neon colors on deep purple. */
 export const cyberpunk: ColorScheme = {

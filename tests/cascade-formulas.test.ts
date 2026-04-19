@@ -72,12 +72,16 @@ function expectedOutputs(i: CascadeInputs): CascadeOutputs {
 
   const bgRefillNeeded = i.hasPrevBuffer && !contentAreaAffected && i.subtreeDirty && i.hasBgColor
 
-  const contentRegionCleared = (i.hasPrevBuffer || i.ancestorCleared) && contentAreaAffected && !i.hasBgColor
+  const contentRegionCleared =
+    (i.hasPrevBuffer || i.ancestorCleared) && contentAreaAffected && !i.hasBgColor
 
-  const skipBgFill = i.hasPrevBuffer && !i.ancestorCleared && !contentAreaAffected && !bgRefillNeeded
+  const skipBgFill =
+    i.hasPrevBuffer && !i.ancestorCleared && !contentAreaAffected && !bgRefillNeeded
 
   const childrenNeedFreshRender =
-    (i.hasPrevBuffer || i.ancestorCleared) && (contentAreaAffected || bgRefillNeeded) && !bgOnlyChange
+    (i.hasPrevBuffer || i.ancestorCleared) &&
+    (contentAreaAffected || bgRefillNeeded) &&
+    !bgOnlyChange
 
   return {
     canSkipEntireSubtree,
@@ -109,7 +113,9 @@ describe("cascade predicates — exhaustive (2^14 = 16384 cases)", () => {
 
       for (const key of Object.keys(expected) as (keyof CascadeOutputs)[]) {
         if (actual[key] !== expected[key]) {
-          failures.push(`bits=${bits} [${formatInputs(inputs)}]: ${key} = ${actual[key]}, expected ${expected[key]}`)
+          failures.push(
+            `bits=${bits} [${formatInputs(inputs)}]: ${key} = ${actual[key]}, expected ${expected[key]}`,
+          )
         }
       }
 
@@ -208,7 +214,9 @@ describe("cascade predicates — structural invariants (2^14 = 16384 cases)", ()
       if (out.canSkipEntireSubtree) {
         for (const flag of dirtyFlags) {
           if (inputs[flag]) {
-            violations.push(`bits=${bits} [${formatInputs(inputs)}]: ${flag} is true but canSkipEntireSubtree is true`)
+            violations.push(
+              `bits=${bits} [${formatInputs(inputs)}]: ${flag} is true but canSkipEntireSubtree is true`,
+            )
           }
         }
       }

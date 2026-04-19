@@ -45,7 +45,8 @@ const workspaceCli = resolve(root, "packages/examples/bin/cli.ts")
 const runtime = typeof globalThis.Bun !== "undefined" ? "bun" : "node"
 
 if (existsSync(workspaceCli)) {
-  const runArgs = runtime === "bun" ? ["run", workspaceCli, ...delegateArgs] : [workspaceCli, ...delegateArgs]
+  const runArgs =
+    runtime === "bun" ? ["run", workspaceCli, ...delegateArgs] : [workspaceCli, ...delegateArgs]
   const proc = spawn(runtime, runArgs, { stdio: "inherit" })
   proc.on("exit", (code) => process.exit(code ?? 1))
 } else {

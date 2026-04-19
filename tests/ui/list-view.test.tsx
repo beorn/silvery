@@ -60,7 +60,13 @@ describe("ListView — basic rendering", () => {
   test("renders empty viewport with no items", () => {
     const items: Item[] = []
     const r = createRenderer({ cols: 40, rows: 7 })
-    const app = r(<ListView items={items} height={5} renderItem={(item, _i, _meta) => <Text>{item.title}</Text>} />)
+    const app = r(
+      <ListView
+        items={items}
+        height={5}
+        renderItem={(item, _i, _meta) => <Text>{item.title}</Text>}
+      />,
+    )
     const text = stripAnsi(app.text)
     expect(text).not.toContain("Item")
   })
@@ -68,7 +74,13 @@ describe("ListView — basic rendering", () => {
   test("single item renders correctly", () => {
     const items = makeItems(1)
     const r = createRenderer({ cols: 40, rows: 7 })
-    const app = r(<ListView items={items} height={5} renderItem={(item, _i, _meta) => <Text>{item.title}</Text>} />)
+    const app = r(
+      <ListView
+        items={items}
+        height={5}
+        renderItem={(item, _i, _meta) => <Text>{item.title}</Text>}
+      />,
+    )
     const text = stripAnsi(app.text)
     expect(text).toContain("Item 0")
   })

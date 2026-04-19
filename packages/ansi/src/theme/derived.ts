@@ -12,7 +12,6 @@
  * deriveAnsi16Theme output (which is itself the canonical ANSI16 reference).
  */
 
-import { brighten, darken } from "@silvery/color"
 import type { Theme, Variant } from "./types.ts"
 
 // =============================================================================
@@ -37,28 +36,38 @@ export const DEFAULT_VARIANTS: Record<string, Variant> = {
 }
 
 // =============================================================================
-// Input types
+// Input type
 // =============================================================================
 
-/** Inputs for ANSI16 mode — ANSI color name strings (no hex math possible). */
-export interface DeriveFieldsAnsi16Input {
-  mode: "ansi16"
-  /** The primary color (e.g. "yellow", "blue"). */
+/**
+ * Inputs for `deriveFields`.
+ *
+ * `shift` controls hover/active lightness derivation:
+ *   - Truecolor: pass `(hex, amount) => dark ? brighten(hex, amount) : darken(hex, amount)`
+ *   - ANSI16: omit (or pass `undefined`) — hover/active fall back to the base color.
+ */
+export interface DeriveFieldsInput {
+  /**
+   * Optional color-shift function. Receives a color value and a positive
+   * lightness-shift amount, returns the shifted color.
+   *
+   * When absent, hover/active state variants equal their base color (correct
+   * for ANSI16 where no OKLCH math is possible).
+   */
+  shift?: (color: string, amount: number) => string
+  /** The primary color. */
   primary: string
-  /** The accent color (e.g. "blueBright", "cyan"). */
+  /** The accent color. */
   accent: string
-  /** The foreground color (e.g. "whiteBright", "black"). */
+  /** The foreground color. */
   fg: string
   /** The selectionbg color — used for bgSelectedHover. */
   selectionbg: string
   /** The surfacebg color — used for bgSurfaceHover. */
   surfacebg: string
   /**
-   * Pre-computed categorical ring colors. In ANSI16 mode these are named
-   * slots; no blending is possible.
-   *
-   * All 8 ring fields are required for ANSI16. Pass them explicitly from the
-   * calling site (whether static or schema-derived).
+   * Pre-computed categorical ring colors. ANSI16 callers pass named slots;
+   * truecolor callers pass ensureContrast-adjusted hex values.
    */
   ring: {
     red: string
@@ -72,38 +81,12 @@ export interface DeriveFieldsAnsi16Input {
   }
 }
 
-/** Inputs for truecolor mode — hex strings + OKLCH shift direction. */
-export interface DeriveFieldsTruecolorInput {
-  mode: "truecolor"
-  /** Whether the theme is dark (controls shift direction). */
-  dark: boolean
-  /** The primary color (hex). */
-  primary: string
-  /** The accent color (hex). */
-  accent: string
-  /** The foreground color (hex). */
-  fg: string
-  /** The selectionbg color (hex) — used for bgSelectedHover. */
-  selectionbg: string
-  /** The surfacebg color (hex) — used for bgSurfaceHover. */
-  surfacebg: string
-  /**
-   * Pre-computed categorical ring colors (hex). The caller is responsible for
-   * applying ensureContrast before passing these.
-   */
-  ring: {
-    red: string
-    orange: string
-    yellow: string
-    green: string
-    teal: string
-    blue: string
-    purple: string
-    pink: string
-  }
-}
-
-export type DeriveFieldsInput = DeriveFieldsAnsi16Input | DeriveFieldsTruecolorInput
+// Legacy discriminant-union type aliases — retained for any external callers
+// that still reference the old named types. Both are now identical to
+// DeriveFieldsInput (the `mode` field is no longer read).
+// @deprecated Use DeriveFieldsInput directly and pass `shift` instead of `mode`.
+export type DeriveFieldsAnsi16Input = DeriveFieldsInput
+export type DeriveFieldsTruecolorInput = DeriveFieldsInput
 
 // =============================================================================
 // Output type
@@ -112,8 +95,8 @@ export type DeriveFieldsInput = DeriveFieldsAnsi16Input | DeriveFieldsTruecolorI
 export interface DerivedFields {
   // Brand
   brand: string
-  brandHover: string
-  brandActive: string
+  "brand-hover": string
+  "brand-active": string
 
   // Categorical ring (canonical names)
   red: string
@@ -125,25 +108,15 @@ export interface DerivedFields {
   purple: string
   pink: string
 
-  // Deprecated brand-<hue> aliases (same values; for backward compat one release)
-  brandRed: string
-  brandOrange: string
-  brandYellow: string
-  brandGreen: string
-  brandTeal: string
-  brandBlue: string
-  brandPurple: string
-  brandPink: string
-
-  // State variants
-  primaryHover: string
-  primaryActive: string
-  accentHover: string
-  accentActive: string
-  fgHover: string
-  fgActive: string
-  bgSelectedHover: string
-  bgSurfaceHover: string
+  // State variants (flat kebab keys — direct lookup, no PRIMER_ALIASES needed)
+  "primary-hover": string
+  "primary-active": string
+  "accent-hover": string
+  "accent-active": string
+  "fg-hover": string
+  "fg-active": string
+  "bg-selected-hover": string
+  "bg-surface-hover": string
 
   // Typography variants
   variants: Theme["variants"]
@@ -173,31 +146,21 @@ function deriveFieldsAnsi16(input: DeriveFieldsAnsi16Input): DerivedFields {
   return {
     // Brand — maps to primary; no shifts in ANSI16
     brand: primary,
-    brandHover: primary,
-    brandActive: primary,
+    "brand-hover": primary,
+    "brand-active": primary,
 
     // Categorical ring
     ...ring,
 
-    // Deprecated aliases (mirror canonical ring)
-    brandRed: ring.red,
-    brandOrange: ring.orange,
-    brandYellow: ring.yellow,
-    brandGreen: ring.green,
-    brandTeal: ring.teal,
-    brandBlue: ring.blue,
-    brandPurple: ring.purple,
-    brandPink: ring.pink,
-
     // State variants — no OKLCH shifts in ANSI16; fall back to base color
-    primaryHover: primary,
-    primaryActive: primary,
-    accentHover: accent,
-    accentActive: accent,
-    fgHover: fg,
-    fgActive: fg,
-    bgSelectedHover: selectionbg,
-    bgSurfaceHover: surfacebg,
+    "primary-hover": primary,
+    "primary-active": primary,
+    "accent-hover": accent,
+    "accent-active": accent,
+    "fg-hover": fg,
+    "fg-active": fg,
+    "bg-selected-hover": selectionbg,
+    "bg-surface-hover": surfacebg,
 
     variants: DEFAULT_VARIANTS,
   }
@@ -213,31 +176,21 @@ function deriveFieldsTruecolor(input: DeriveFieldsTruecolorInput): DerivedFields
   return {
     // Brand — maps to primary; hover/active shift OKLCH L ±0.04 / ±0.08
     brand: primary,
-    brandHover: shift(primary, 0.04),
-    brandActive: shift(primary, 0.08),
+    "brand-hover": shift(primary, 0.04),
+    "brand-active": shift(primary, 0.08),
 
     // Categorical ring
     ...ring,
 
-    // Deprecated aliases (mirror canonical ring)
-    brandRed: ring.red,
-    brandOrange: ring.orange,
-    brandYellow: ring.yellow,
-    brandGreen: ring.green,
-    brandTeal: ring.teal,
-    brandBlue: ring.blue,
-    brandPurple: ring.purple,
-    brandPink: ring.pink,
-
-    // State variants — OKLCH lightness shift ±0.04 / ±0.08
-    primaryHover: shift(primary, 0.04),
-    primaryActive: shift(primary, 0.08),
-    accentHover: shift(accent, 0.04),
-    accentActive: shift(accent, 0.08),
-    fgHover: shift(fg, 0.04),
-    fgActive: shift(fg, 0.08),
-    bgSelectedHover: shift(selectionbg, 0.04),
-    bgSurfaceHover: shift(surfacebg, 0.04),
+    // State variants — OKLCH lightness shift ±0.04 / ±0.08 (flat kebab keys)
+    "primary-hover": shift(primary, 0.04),
+    "primary-active": shift(primary, 0.08),
+    "accent-hover": shift(accent, 0.04),
+    "accent-active": shift(accent, 0.08),
+    "fg-hover": shift(fg, 0.04),
+    "fg-active": shift(fg, 0.08),
+    "bg-selected-hover": shift(selectionbg, 0.04),
+    "bg-surface-hover": shift(surfacebg, 0.04),
 
     variants: DEFAULT_VARIANTS,
   }

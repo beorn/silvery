@@ -40,13 +40,21 @@ function createMockStdout(cols: number, rows: number) {
 
 const SItem = React.memo(
   ({ index, selected }: { index: number; selected: boolean }) =>
-    React.createElement(SBox, { key: index }, React.createElement(SText, { inverse: selected }, `Item ${index}`)),
+    React.createElement(
+      SBox,
+      { key: index },
+      React.createElement(SText, { inverse: selected }, `Item ${index}`),
+    ),
   (prev, next) => prev.index === next.index && prev.selected === next.selected,
 )
 
 const IItem = React.memo(
   ({ index, selected }: { index: number; selected: boolean }) =>
-    React.createElement(IBox, { key: index }, React.createElement(IText, { inverse: selected }, `Item ${index}`)),
+    React.createElement(
+      IBox,
+      { key: index },
+      React.createElement(IText, { inverse: selected }, `Item ${index}`),
+    ),
   (prev, next) => prev.index === next.index && prev.selected === next.selected,
 )
 

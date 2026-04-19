@@ -58,7 +58,10 @@ export interface RunThemedOptions extends DetectSchemeOptions {
  * @param opts - Detection + token overrides + run options
  * @returns RunHandle — same shape as `run()`
  */
-export async function runThemed(element: ReactElement, opts: RunThemedOptions = {}): Promise<RunHandle> {
+export async function runThemed(
+  element: ReactElement,
+  opts: RunThemedOptions = {},
+): Promise<RunHandle> {
   const { theme } = await detectScheme({
     override: opts.override,
     catalog: opts.catalog,

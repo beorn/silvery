@@ -166,7 +166,15 @@ Single-line text input with full readline shortcuts (Ctrl+A/E, Ctrl+K/U, Alt+B/F
 import { TextInput } from "silvery"
 
 function MyInput() {
-  return <TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
+  return (
+    <TextInput
+      value={text}
+      onChange={setText}
+      onSubmit={handleSubmit}
+      placeholder="Type here..."
+      prompt="> "
+    />
+  )
 }
 ```
 

@@ -11,7 +11,12 @@ import { bufferToStyledText, bufferToText } from "../buffer"
 import { StdoutContext, StderrContext, TermContext } from "@silvery/ag-react/context"
 import { ensureDefaultLayoutEngine, isLayoutEngineInitialized } from "../layout-engine"
 import { createAg } from "../ag"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/ag-react/reconciler"
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+} from "@silvery/ag-react/reconciler"
 import type { Buffer, Dims } from "./types"
 
 /**

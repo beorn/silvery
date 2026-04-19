@@ -4,8 +4,8 @@
  * Pro source: https://monokai.pro/ (default "Pro" filter)
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Monokai Classic — the original Sublime Text Monokai colors. */
 export const monokai: ColorScheme = {

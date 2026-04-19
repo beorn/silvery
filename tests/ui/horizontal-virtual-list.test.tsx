@@ -328,13 +328,17 @@ describe("HorizontalVirtualList — boundary widths", () => {
       expect(text, `Column ${i} should be visible at width=${width}`).toContain(`Column ${i}`)
     }
     for (let i = expectedVisible; i < ITEM_COUNT; i++) {
-      expect(text, `Column ${i} should NOT be visible at width=${width}`).not.toContain(`Column ${i}`)
+      expect(text, `Column ${i} should NOT be visible at width=${width}`).not.toContain(
+        `Column ${i}`,
+      )
     }
 
     // Overflow indicator invariant
     const hiddenCount = ITEM_COUNT - expectedVisible
     if (hiddenCount > 0) {
-      expect(text, `Should show right overflow indicator at width=${width}`).toContain(`${hiddenCount}▶`)
+      expect(text, `Should show right overflow indicator at width=${width}`).toContain(
+        `${hiddenCount}▶`,
+      )
     }
   })
 

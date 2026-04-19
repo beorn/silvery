@@ -4,7 +4,15 @@
 
 import chalk from "@silvery/ink/chalk"
 import type { SelectOption, WithSelectOptions } from "../types.js"
-import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, cursorUp, write, isTTY } from "../cli/ansi"
+import {
+  CURSOR_HIDE,
+  CURSOR_SHOW,
+  CURSOR_TO_START,
+  CLEAR_LINE_END,
+  cursorUp,
+  write,
+  isTTY,
+} from "../cli/ansi"
 
 /**
  * Display an interactive selection list in the terminal

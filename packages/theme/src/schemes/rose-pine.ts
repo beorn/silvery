@@ -2,8 +2,8 @@
  * Rosé Pine palettes — all natural pine, faux fur and a bit of soho vibes.
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Rosé Pine — the main dark variant. */
 export const rosePine: ColorScheme = {

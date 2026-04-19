@@ -34,20 +34,11 @@
  */
 
 // Detection — OSC probing
-export {
-  detectTerminalScheme,
-  detectTheme,
-} from "@silvery/ansi"
-export type {
-  DetectedScheme,
-  DetectThemeOptions,
-} from "@silvery/ansi"
+export { detectTerminalScheme, detectTheme } from "@silvery/ansi"
+export type { DetectedScheme, DetectThemeOptions } from "@silvery/ansi"
 
 // Unified orchestrator — one entry point for the whole cascade
-export {
-  detectScheme,
-  detectSchemeTheme,
-} from "@silvery/ansi"
+export { detectScheme, detectSchemeTheme } from "@silvery/ansi"
 export type {
   DetectSchemeResult,
   DetectSchemeOptions,
@@ -62,11 +53,7 @@ export {
   ENABLE_BG_MODE_REPORTING,
   DISABLE_BG_MODE_REPORTING,
 } from "@silvery/ansi"
-export type {
-  BgMode,
-  BgModeDetector,
-  BgModeDetectorOptions,
-} from "@silvery/ansi"
+export type { BgMode, BgModeDetector, BgModeDetectorOptions } from "@silvery/ansi"
 
 // Capability detection — truecolor / 256 / ansi16 / mono
 export {
@@ -89,24 +76,12 @@ export {
 } from "@silvery/ansi"
 
 // Fingerprinting — match probed slots against a catalog
-export {
-  fingerprintMatch,
-  fingerprintCandidates,
-} from "@silvery/ansi"
-export type {
-  FingerprintMatch,
-  FingerprintOptions,
-} from "@silvery/ansi"
+export { fingerprintMatch, fingerprintCandidates } from "@silvery/ansi"
+export type { FingerprintMatch, FingerprintOptions } from "@silvery/ansi"
 
 // Theme derivation — ColorScheme → Theme
-export {
-  deriveTheme,
-  loadTheme,
-} from "@silvery/ansi"
-export type {
-  ThemeAdjustment,
-  LoadThemeOptions,
-} from "@silvery/ansi"
+export { deriveTheme, loadTheme } from "@silvery/ansi"
+export type { ThemeAdjustment, LoadThemeOptions } from "@silvery/ansi"
 
 // Invariants — WCAG + visibility validation
 export {
@@ -119,29 +94,14 @@ export {
   SELECTION_DELTA_L,
   CURSOR_DELTA_E,
 } from "@silvery/ansi"
-export type {
-  InvariantViolation,
-  InvariantResult,
-  InvariantOptions,
-} from "@silvery/ansi"
+export type { InvariantViolation, InvariantResult, InvariantOptions } from "@silvery/ansi"
 
 // Monochrome — per-token SGR attrs for NO_COLOR terminals
-export {
-  deriveMonochromeTheme,
-  monoAttrsFor,
-  DEFAULT_MONO_ATTRS,
-} from "@silvery/ansi"
-export type {
-  MonoAttr,
-  MonochromeAttrs,
-} from "@silvery/ansi"
+export { deriveMonochromeTheme, monoAttrsFor, DEFAULT_MONO_ATTRS } from "@silvery/ansi"
+export type { MonoAttr, MonochromeAttrs } from "@silvery/ansi"
 
 // Custom tokens — app-specific semantic + brand tokens
-export {
-  defineTokens,
-  resolveCustomToken,
-  CustomTokenError,
-} from "@silvery/ansi"
+export { defineTokens, resolveCustomToken, CustomTokenError } from "@silvery/ansi"
 export type {
   DeriveTokenDef,
   BrandTokenDef,
@@ -150,11 +110,5 @@ export type {
 } from "@silvery/ansi"
 
 // Types — the 22-slot scheme + derived theme shapes
-export type {
-  ColorScheme,
-  Theme,
-  AnsiColorName,
-  AnsiPrimary,
-  HueName,
-} from "@silvery/ansi"
+export type { ColorScheme, Theme, AnsiColorName, AnsiPrimary, HueName } from "@silvery/ansi"
 export { COLOR_SCHEME_FIELDS } from "@silvery/ansi"

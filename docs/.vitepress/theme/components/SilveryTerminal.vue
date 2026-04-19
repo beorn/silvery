@@ -21,7 +21,9 @@
         <div class="silvery-terminal__title">silvery-agent — ~/silvery</div>
       </div>
 
-      <pre class="silvery-terminal__body"><span class="t-box">╭─ </span><span class="t-label">User</span><span class="t-box"> ─────────────────────────────────────────────────────╮</span>
+      <pre
+        class="silvery-terminal__body"
+      ><span class="t-box">╭─ </span><span class="t-label">User</span><span class="t-box"> ─────────────────────────────────────────────────────╮</span>
 <span class="t-box">│</span> <span class="t-command">add a blinking cursor after the tagline</span>                    <span class="t-box">│</span>
 <span class="t-box">╰────────────────────────────────────────────────────────────╯</span>
 
@@ -85,9 +87,15 @@
   display: inline-block;
 }
 
-.silvery-terminal__dot--red    { background: #ff5f57; }
-.silvery-terminal__dot--yellow { background: #febc2e; }
-.silvery-terminal__dot--green  { background: #28c840; }
+.silvery-terminal__dot--red {
+  background: #ff5f57;
+}
+.silvery-terminal__dot--yellow {
+  background: #febc2e;
+}
+.silvery-terminal__dot--green {
+  background: #28c840;
+}
 
 .silvery-terminal__title {
   font-size: 12px;
@@ -111,28 +119,58 @@
   white-space: pre;
   overflow-x: auto;
 
-  font-feature-settings: "liga" 0, "calt" 0;
+  font-feature-settings:
+    "liga" 0,
+    "calt" 0;
   font-variant-ligatures: none;
   font-kerning: none;
 }
 
 /* ----- Token colors ----- */
-.t-label       { color: #e6b872; font-weight: 600; }   /* section labels */
-.t-fg          { color: #e6e9ef; font-weight: 500; }
-.t-command     { color: #ffffff; font-weight: 500; }
-.t-tool        { color: #7dd3c0; font-weight: 600; }
-.t-ok          { color: #8bc79a; font-weight: 600; }
-.t-path        { color: #8ea4c8; font-weight: 500; }
-.t-dim         { color: #6a7080; }                     /* dim text content */
+.t-label {
+  color: #e6b872;
+  font-weight: 600;
+} /* section labels */
+.t-fg {
+  color: #e6e9ef;
+  font-weight: 500;
+}
+.t-command {
+  color: #ffffff;
+  font-weight: 500;
+}
+.t-tool {
+  color: #7dd3c0;
+  font-weight: 600;
+}
+.t-ok {
+  color: #8bc79a;
+  font-weight: 600;
+}
+.t-path {
+  color: #8ea4c8;
+  font-weight: 500;
+}
+.t-dim {
+  color: #6a7080;
+} /* dim text content */
 
 /* Box border hierarchy
  * t-box         — very dim past-turn borders (user + assistant)
  * t-input-frame — BRIGHT BLUE active input border (also used on Input label) */
-.t-box         { color: #2f343d; }
-.t-input-frame { color: #5ba8f5; font-weight: 600; }   /* vivid silvery-blue */
+.t-box {
+  color: #2f343d;
+}
+.t-input-frame {
+  color: #5ba8f5;
+  font-weight: 600;
+} /* vivid silvery-blue */
 
 /* Input prompt glyph — matches the brighter blue input frame */
-.t-prompt { color: #5ba8f5; font-weight: 700; }
+.t-prompt {
+  color: #5ba8f5;
+  font-weight: 700;
+}
 
 /* Static block cursor at start of input field (no blink — it's a mockup,
  * a blinking cursor falsely implies the input is interactive). */

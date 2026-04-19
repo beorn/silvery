@@ -13,7 +13,10 @@
  */
 
 import { describe, test, expect, vi } from "vitest"
-import { createSelectionFeature, type SelectionFeature } from "../../packages/ag-term/src/features/selection"
+import {
+  createSelectionFeature,
+  type SelectionFeature,
+} from "../../packages/ag-term/src/features/selection"
 import type { ClipboardCapability } from "../../packages/ag-term/src/features/clipboard-capability"
 import { createBuffer, type TerminalBuffer } from "../../packages/ag-term/src/buffer"
 

@@ -41,7 +41,11 @@ function fillRow(buf: TerminalBuffer, y: number, char: string, fg?: number): voi
  * terminal, so shrink-region cells in the diff output land at wrong positions
  * if not filtered or handled.
  */
-function verifyIncrementalMatchesFresh(prev: TerminalBuffer, next: TerminalBuffer, description: string): void {
+function verifyIncrementalMatchesFresh(
+  prev: TerminalBuffer,
+  next: TerminalBuffer,
+  description: string,
+): void {
   // The terminal dimensions after the resize are next's dimensions
   const termW = next.width
   const termH = next.height

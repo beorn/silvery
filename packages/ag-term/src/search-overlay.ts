@@ -64,7 +64,10 @@ export function searchUpdate(
       return [createSearchState(), [{ type: "render" }]]
 
     case "input": {
-      const query = state.query.slice(0, state.cursorPosition) + action.char + state.query.slice(state.cursorPosition)
+      const query =
+        state.query.slice(0, state.cursorPosition) +
+        action.char +
+        state.query.slice(state.cursorPosition)
       const cursorPosition = state.cursorPosition + 1
       const matches = searchFn ? searchFn(query) : []
       const currentMatch = matches.length > 0 ? 0 : -1
@@ -77,7 +80,8 @@ export function searchUpdate(
 
     case "backspace": {
       if (state.cursorPosition === 0) return [state, []]
-      const query = state.query.slice(0, state.cursorPosition - 1) + state.query.slice(state.cursorPosition)
+      const query =
+        state.query.slice(0, state.cursorPosition - 1) + state.query.slice(state.cursorPosition)
       const cursorPosition = state.cursorPosition - 1
       const matches = searchFn ? searchFn(query) : []
       const currentMatch = matches.length > 0 ? 0 : -1

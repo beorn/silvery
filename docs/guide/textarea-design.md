@@ -17,7 +17,9 @@ import { TextArea } from "silvery"
 function App() {
   const [value, setValue] = useState("")
 
-  return <TextArea value={value} onChange={setValue} height={5} placeholder="Type your message..." />
+  return (
+    <TextArea value={value} onChange={setValue} height={5} placeholder="Type your message..." />
+  )
 }
 ```
 
@@ -384,7 +386,11 @@ if (cursorLine >= scrollTop + visibleLines - SCROLL_MARGIN) {
 ### Insert Character
 
 ```typescript
-function insertChar(value: string, cursor: CursorPosition, char: string): { value: string; cursor: CursorPosition } {
+function insertChar(
+  value: string,
+  cursor: CursorPosition,
+  char: string,
+): { value: string; cursor: CursorPosition } {
   const offset = positionToOffset(value, cursor)
   const newValue = value.slice(0, offset) + char + value.slice(offset)
 
@@ -398,7 +404,10 @@ function insertChar(value: string, cursor: CursorPosition, char: string): { valu
 ### Insert Newline
 
 ```typescript
-function insertNewline(value: string, cursor: CursorPosition): { value: string; cursor: CursorPosition } {
+function insertNewline(
+  value: string,
+  cursor: CursorPosition,
+): { value: string; cursor: CursorPosition } {
   const offset = positionToOffset(value, cursor)
   const newValue = value.slice(0, offset) + "\n" + value.slice(offset)
 
@@ -412,7 +421,10 @@ function insertNewline(value: string, cursor: CursorPosition): { value: string; 
 ### Delete Character (Backspace)
 
 ```typescript
-function deleteBackward(value: string, cursor: CursorPosition): { value: string; cursor: CursorPosition } {
+function deleteBackward(
+  value: string,
+  cursor: CursorPosition,
+): { value: string; cursor: CursorPosition } {
   if (cursor.line === 0 && cursor.column === 0) {
     return { value, cursor } // Nothing to delete
   }
@@ -437,7 +449,10 @@ function deleteBackward(value: string, cursor: CursorPosition): { value: string;
 ### Delete Forward
 
 ```typescript
-function deleteForward(value: string, cursor: CursorPosition): { value: string; cursor: CursorPosition } {
+function deleteForward(
+  value: string,
+  cursor: CursorPosition,
+): { value: string; cursor: CursorPosition } {
   const offset = positionToOffset(value, cursor)
   if (offset >= value.length) {
     return { value, cursor } // Nothing to delete
@@ -457,7 +472,10 @@ Selection is always available:
 ### Extend Selection
 
 ```typescript
-function extendSelection(selection: Selection, direction: "left" | "right" | "up" | "down"): Selection {
+function extendSelection(
+  selection: Selection,
+  direction: "left" | "right" | "up" | "down",
+): Selection {
   // Anchor stays fixed, cursor moves
   return {
     anchor: selection.anchor,
@@ -469,7 +487,10 @@ function extendSelection(selection: Selection, direction: "left" | "right" | "up
 ### Delete Selection
 
 ```typescript
-function deleteSelection(value: string, selection: Selection): { value: string; cursor: CursorPosition } {
+function deleteSelection(
+  value: string,
+  selection: Selection,
+): { value: string; cursor: CursorPosition } {
   const [start, end] = normalizeSelection(selection)
   const startOffset = positionToOffset(value, start)
   const endOffset = positionToOffset(value, end)
@@ -686,7 +707,12 @@ const visibleLines = visualLines.slice(scrollTop, scrollTop + height)
 ### 4. Render Each Line
 
 ```typescript
-function renderLine(line: string, cursor: CursorPosition, selection: Selection | null, lineIndex: number): string {
+function renderLine(
+  line: string,
+  cursor: CursorPosition,
+  selection: Selection | null,
+  lineIndex: number,
+): string {
   let result = ""
 
   for (let col = 0; col < line.length; col++) {

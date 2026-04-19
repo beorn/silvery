@@ -217,7 +217,10 @@ const TOKEN_SPECS: TokenSpec[] = [
 // Config tables (mode → magic numbers)
 // ============================================================================
 
-const CONTRAST_TARGETS: Record<GlobalConfig["contrast"], { body: number; dim: number; faint: number; control: number }> = {
+const CONTRAST_TARGETS: Record<
+  GlobalConfig["contrast"],
+  { body: number; dim: number; faint: number; control: number }
+> = {
   native: { body: 4.5, dim: 3.0, faint: 1.5, control: 3.0 },
   comfortable: { body: 5.5, dim: 3.5, faint: 2.0, control: 3.5 },
   high: { body: 7.0, dim: 4.5, faint: 3.0, control: 4.5 },
@@ -239,13 +242,15 @@ const SPEC_MODES: SpecMode[] = [
     name: "inherit-all",
     input: "{}",
     formula: "detectTheme()",
-    rationale: "No opinion — be the user's terminal. km's default; every slot from the shell palette.",
+    rationale:
+      "No opinion — be the user's terminal. km's default; every slot from the shell palette.",
   },
   {
     name: "brand + inherit",
     input: "{ primary }",
     formula: "{ ...detectTheme(), primary }",
-    rationale: "Minimal brand touch. Status, neutrals, ANSI 16 all inherit. Respects the user's shell.",
+    rationale:
+      "Minimal brand touch. Status, neutrals, ANSI 16 all inherit. Respects the user's shell.",
   },
   {
     name: "brand-pair + inherit",
@@ -257,7 +262,8 @@ const SPEC_MODES: SpecMode[] = [
     name: "brand-derived",
     input: "{ primary }",
     formula: "{ neutrals from detect(), ANSI 16 = hueRotate(primary, offsets) }",
-    rationale: "Brand owns the mood. Even red/yellow/green shift to harmonize around the brand hue.",
+    rationale:
+      "Brand owns the mood. Even red/yellow/green shift to harmonize around the brand hue.",
   },
   {
     name: "semantic override",
@@ -452,7 +458,14 @@ function FormulaView({ theme, config }: { theme: Theme; config: GlobalConfig }) 
   const targets = CONTRAST_TARGETS[config.contrast]
 
   // Group tokens by category
-  const categories: TokenSpec["category"][] = ["neutral", "surface", "accent", "status", "structural", "input"]
+  const categories: TokenSpec["category"][] = [
+    "neutral",
+    "surface",
+    "accent",
+    "status",
+    "structural",
+    "input",
+  ]
 
   return (
     <Box flexDirection="column" flexGrow={1} overflow="scroll" paddingX={1}>
@@ -487,10 +500,13 @@ function TokenRow({
 
   // Pick target based on category
   const targetRatio =
-    spec.category === "structural" ? targets.faint :
-    spec.category === "input" ? targets.control :
-    spec.category === "neutral" && spec.token === "disabledfg" ? targets.dim :
-    targets.body
+    spec.category === "structural"
+      ? targets.faint
+      : spec.category === "input"
+        ? targets.control
+        : spec.category === "neutral" && spec.token === "disabledfg"
+          ? targets.dim
+          : targets.body
 
   const passesTarget = result ? result.ratio >= targetRatio : true
 
@@ -568,11 +584,23 @@ function PalettesView({
       {/* Preview (truecolor theme) */}
       <Box flexGrow={1} flexDirection="column" overflow="scroll" paddingX={1}>
         <H2>{entries[selectedIndex]?.name}</H2>
-        <Muted>bg {theme.bg} · fg {theme.fg}</Muted>
+        <Muted>
+          bg {theme.bg} · fg {theme.fg}
+        </Muted>
         <Box height={1} />
         {/* Show each accent/status color */}
         <Box flexDirection="column" gap={0}>
-          {["primary", "accent", "secondary", "info", "success", "warning", "error", "muted", "link"].map((t) => {
+          {[
+            "primary",
+            "accent",
+            "secondary",
+            "info",
+            "success",
+            "warning",
+            "error",
+            "muted",
+            "link",
+          ].map((t) => {
             const c = (theme as unknown as Record<string, string | undefined>)[t]
             return (
               <Box key={t} gap={1}>
@@ -610,7 +638,8 @@ function ComponentsView() {
           <Muted>Muted — secondary info</Muted>
           <Small>Small — fine print</Small>
           <Text>
-            <Strong>Strong</Strong> · <Code>inline code</Code> · <Link href="https://silvery.dev">a link</Link>
+            <Strong>Strong</Strong> · <Code>inline code</Code> ·{" "}
+            <Link href="https://silvery.dev">a link</Link>
           </Text>
         </Box>
       </Box>
@@ -695,8 +724,12 @@ function Ansi16View({ theme, palette }: { theme: Theme; palette: ColorScheme | n
   return (
     <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="scroll" gap={1}>
       <H2>ANSI 16 Degradation Preview</H2>
-      <Muted>When the terminal only supports 16 colors, truecolor tokens collapse to the nearest slot.</Muted>
-      <Small>Collisions (multiple tokens mapping to the same slot) are accepted as graceful degradation.</Small>
+      <Muted>
+        When the terminal only supports 16 colors, truecolor tokens collapse to the nearest slot.
+      </Muted>
+      <Small>
+        Collisions (multiple tokens mapping to the same slot) are accepted as graceful degradation.
+      </Small>
 
       <Box flexDirection="column">
         <H3>The 16 slots</H3>

@@ -112,7 +112,11 @@ function measureInk(cols: number, rows: number, items: number) {
         React.createElement(
           IBox,
           { key: i },
-          React.createElement(IText, { inverse: i === 0 }, `Item ${i}: Some content here for a realistic line`),
+          React.createElement(
+            IText,
+            { inverse: i === 0 },
+            `Item ${i}: Some content here for a realistic line`,
+          ),
         ),
       ),
     ),
@@ -130,7 +134,11 @@ function measureInk(cols: number, rows: number, items: number) {
         React.createElement(
           IBox,
           { key: i },
-          React.createElement(IText, { inverse: i === 1 }, `Item ${i}: Some content here for a realistic line`),
+          React.createElement(
+            IText,
+            { inverse: i === 1 },
+            `Item ${i}: Some content here for a realistic line`,
+          ),
         ),
       ),
     ),
@@ -146,8 +154,12 @@ function measureInk(cols: number, rows: number, items: number) {
 // ============================================================================
 
 console.log("\nOutput Bytes — cursor move (bg/inverse change, 2 items affected)\n")
-console.log("Scenario                    | Silvery  | Ink      | Ratio    | @100Kbps (Silvery) | @100Kbps (Ink)")
-console.log("----------------------------|----------|----------|----------|--------------------|--------------")
+console.log(
+  "Scenario                    | Silvery  | Ink      | Ratio    | @100Kbps (Silvery) | @100Kbps (Ink)",
+)
+console.log(
+  "----------------------------|----------|----------|----------|--------------------|--------------",
+)
 
 for (const [label, cols, rows, items] of [
   ["100 items, 80×24", 80, 24, 100],

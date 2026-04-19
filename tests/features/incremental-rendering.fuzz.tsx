@@ -503,7 +503,9 @@ describe("incremental rendering fuzz", () => {
   describe("ScrollableList (scroll + overflow hidden)", () => {
     function ScrollableList() {
       const [offset, setOffset] = useState(0)
-      const [items, setItems] = useState(Array.from({ length: 30 }, (_, i) => `Item ${i}: ${"x".repeat((i * 7) % 20)}`))
+      const [items, setItems] = useState(
+        Array.from({ length: 30 }, (_, i) => `Item ${i}: ${"x".repeat((i * 7) % 20)}`),
+      )
       useInput((input) => {
         if (input === "j") setOffset((o) => Math.min(o + 1, items.length - 1))
         if (input === "k") setOffset((o) => Math.max(o - 1, 0))
@@ -567,8 +569,10 @@ describe("incremental rendering fuzz", () => {
       const [innerBg, setInnerBg] = useState<string | undefined>(undefined)
       const [showMiddle, setShowMiddle] = useState(true)
       useInput((input) => {
-        if (input === "1") setOuterBg((bg) => (bg === "blue" ? "red" : bg === "red" ? undefined : "blue"))
-        if (input === "2") setInnerBg((bg) => (bg === undefined ? "green" : bg === "green" ? "yellow" : undefined))
+        if (input === "1")
+          setOuterBg((bg) => (bg === "blue" ? "red" : bg === "red" ? undefined : "blue"))
+        if (input === "2")
+          setInnerBg((bg) => (bg === undefined ? "green" : bg === "green" ? "yellow" : undefined))
         if (input === "3") setShowMiddle((v) => !v)
       })
       return (
@@ -749,7 +753,12 @@ describe("incremental rendering fuzz", () => {
       return (
         <Box>
           {items.slice(0, colCount).map((col, ci) => (
-            <Box key={ci} flexDirection="column" borderStyle={ci === selected ? "double" : "single"} flexGrow={1}>
+            <Box
+              key={ci}
+              flexDirection="column"
+              borderStyle={ci === selected ? "double" : "single"}
+              flexGrow={1}
+            >
               <Text bold>
                 {ci === selected ? "\u25b6" : " "} Col {ci}
               </Text>
@@ -824,7 +833,12 @@ describe("incremental rendering fuzz", () => {
       return (
         <Box>
           {items.map((col, ci) => (
-            <Box key={ci} flexDirection="column" borderStyle={ci === selected ? "double" : "single"} flexGrow={1}>
+            <Box
+              key={ci}
+              flexDirection="column"
+              borderStyle={ci === selected ? "double" : "single"}
+              flexGrow={1}
+            >
               <Text bold>Col {ci}</Text>
               {col.map((item, ii) => (
                 <Text key={ii}> {item}</Text>

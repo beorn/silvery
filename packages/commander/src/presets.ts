@@ -35,7 +35,9 @@ export interface StandardSchemaV1<T = unknown> {
     readonly vendor: string
     readonly validate: (
       value: unknown,
-    ) => { value: T } | { issues: ReadonlyArray<{ message: string; path?: ReadonlyArray<unknown> }> }
+    ) =>
+      | { value: T }
+      | { issues: ReadonlyArray<{ message: string; path?: ReadonlyArray<unknown> }> }
   }
 }
 
@@ -44,7 +46,9 @@ export interface CLIType<T> extends StandardSchemaV1<T> {
   /** Parse and validate a value, throwing on failure. */
   parse(value: unknown): T
   /** Parse and validate a value, returning a result object. */
-  safeParse(value: unknown): { success: true; value: T } | { success: false; issues: Array<{ message: string }> }
+  safeParse(
+    value: unknown,
+  ): { success: true; value: T } | { success: false; issues: Array<{ message: string }> }
 }
 
 function createType<T>(vendor: string, validate: (value: unknown) => T): CLIType<T> {
@@ -106,7 +110,8 @@ export const float = createType<number>(VENDOR, (v) => {
 /** Port number (1-65535). */
 export const port = createType<number>(VENDOR, (v) => {
   const n = Number(v)
-  if (!Number.isInteger(n) || n < 1 || n > 65535) throw new Error(`Expected port (1-65535), got "${v}"`)
+  if (!Number.isInteger(n) || n < 1 || n > 65535)
+    throw new Error(`Expected port (1-65535), got "${v}"`)
   return n
 })
 
@@ -180,7 +185,8 @@ export const regex = createType<RegExp>(VENDOR, (v) => {
 export function intRange(min: number, max: number): CLIType<number> {
   return createType<number>(VENDOR, (v) => {
     const n = Number(v)
-    if (!Number.isInteger(n) || n < min || n > max) throw new Error(`Expected integer ${min}-${max}, got "${v}"`)
+    if (!Number.isInteger(n) || n < min || n > max)
+      throw new Error(`Expected integer ${min}-${max}, got "${v}"`)
     return n
   })
 }

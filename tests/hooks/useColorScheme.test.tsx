@@ -74,7 +74,11 @@ function withRegistry(
   registry: ReturnType<typeof createMockRegistry>,
   element: React.ReactElement,
 ): React.ReactElement {
-  return <CapabilityRegistryContext.Provider value={registry}>{element}</CapabilityRegistryContext.Provider>
+  return (
+    <CapabilityRegistryContext.Provider value={registry}>
+      {element}
+    </CapabilityRegistryContext.Provider>
+  )
 }
 
 // =============================================================================

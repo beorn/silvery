@@ -26,7 +26,7 @@ import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
 import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
-import type { Theme } from "@silvery/theme/types"
+import type { Theme } from "@silvery/ansi"
 // cascade-predicates is the imperative oracle — used for STRICT verification
 // and as the fallback when SILVERY_REACTIVE=0 (bench only).
 import { computeCascade } from "./cascade-predicates"
@@ -46,8 +46,19 @@ import {
   DESC_OVERFLOW_BIT,
 } from "@silvery/ag/epoch"
 import type { CascadeOutputs } from "./cascade-predicates"
-import type { ClipBounds, RenderPhaseStats, NodeRenderState, NodeTraceEntry, PipelineContext } from "./types"
-import { getReactiveState, syncToSignals, readReactiveCascade, assertReactiveMatchesOracle } from "./reactive-node"
+import type {
+  ClipBounds,
+  RenderPhaseStats,
+  NodeRenderState,
+  NodeTraceEntry,
+  PipelineContext,
+} from "./types"
+import {
+  getReactiveState,
+  syncToSignals,
+  readReactiveCascade,
+  assertReactiveMatchesOracle,
+} from "./reactive-node"
 
 const contentLog = createLogger("silvery:content")
 const traceLog = createLogger("silvery:content:trace")
@@ -60,7 +71,11 @@ const cellLog = createLogger("silvery:content:cell")
  * @param prevBuffer Previous buffer for incremental rendering (optional)
  * @returns A TerminalBuffer with the rendered content
  */
-export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ctx?: PipelineContext): TerminalBuffer {
+export function renderPhase(
+  root: AgNode,
+  prevBuffer?: TerminalBuffer | null,
+  ctx?: PipelineContext,
+): TerminalBuffer {
   const layout = root.boxRect
   if (!layout) {
     throw new Error("renderPhase called before layout phase")
@@ -69,7 +84,8 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
   const instr = resolveInstrumentation(ctx)
 
   // Clone prevBuffer if same dimensions, else create fresh
-  const hasPrevBuffer = prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
+  const hasPrevBuffer =
+    prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
 
   // No-op frame skip: if nothing changed since last render and we have a valid
   // prev buffer, return it unchanged. Saves buffer clone + tree walk + epoch advance.
@@ -79,7 +95,11 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
   // - Signal-driven updates (v1.5) that bypass React
   // - Timer-driven re-renders where nothing changed
   // - Scheduler polling without React pending work
-  if (hasPrevBuffer && !isAnyDirty(root.dirtyBits, root.dirtyEpoch) && !isCurrentEpoch(root.layoutChangedThisFrame)) {
+  if (
+    hasPrevBuffer &&
+    !isAnyDirty(root.dirtyBits, root.dirtyEpoch) &&
+    !isCurrentEpoch(root.layoutChangedThisFrame)
+  ) {
     if (instr.enabled) instr.stats._noopSkip = 1
     advanceRenderEpoch()
     return prevBuffer
@@ -96,7 +116,9 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
   }
 
   const t0 = instr.enabled ? performance.now() : 0
-  const buffer = hasPrevBuffer ? prevBuffer.clone() : new TerminalBuffer(layout.width, layout.height)
+  const buffer = hasPrevBuffer
+    ? prevBuffer.clone()
+    : new TerminalBuffer(layout.width, layout.height)
   const tClone = instr.enabled ? performance.now() - t0 : 0
 
   // Default: root is selectable (userSelect defaults to "text").
@@ -145,7 +167,8 @@ export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ct
   // The layout phase sets layoutChangedThisFrame on affected nodes; if root's
   // subtree has any, we need the full sync. If not, prevLayout is already correct.
   const anyLayoutChanged =
-    isCurrentEpoch(root.layoutChangedThisFrame) || isDirty(root.dirtyBits, root.dirtyEpoch, SUBTREE_BIT)
+    isCurrentEpoch(root.layoutChangedThisFrame) ||
+    isDirty(root.dirtyBits, root.dirtyEpoch, SUBTREE_BIT)
   syncPrevLayout(root, anyLayoutChanged || !hasPrevBuffer)
 
   // Advance the render epoch — all dirty flags stamped with the old epoch
@@ -257,7 +280,8 @@ let _reactiveVerifyEnabled =
 /** Toggle reactive cascade mode at runtime (for three-way bench). */
 export function setReactiveEnabled(enabled: boolean): void {
   _reactiveEnabled = enabled
-  _reactiveVerifyEnabled = enabled && typeof process !== "undefined" && envTruthy(process.env?.SILVERY_STRICT)
+  _reactiveVerifyEnabled =
+    enabled && typeof process !== "undefined" && envTruthy(process.env?.SILVERY_STRICT)
 }
 
 // ============================================================================
@@ -291,7 +315,13 @@ function getCellDebug(): CellDebug | undefined {
 }
 
 /** Check if a rect covers the cell debug target point. */
-function cellCoversPoint(cellDbg: CellDebug, x: number, y: number, width: number, height: number): boolean {
+function cellCoversPoint(
+  cellDbg: CellDebug,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): boolean {
   return x <= cellDbg.x && x + width > cellDbg.x && y <= cellDbg.y && y + height > cellDbg.y
 }
 
@@ -422,7 +452,9 @@ function renderNodeToBuffer(
   // layoutChanged uses layoutChangedThisFrame (symmetric between incremental/fresh).
   const layoutChanged = isCurrentEpoch(node.layoutChangedThisFrame)
   const childPositionChanged = !!(hasPrevBuffer && !layoutChanged && hasChildPositionChanged(node))
-  const scrollOffsetChanged = !!(node.scrollState && node.scrollState.offset !== node.scrollState.prevOffset)
+  const scrollOffsetChanged = !!(
+    node.scrollState && node.scrollState.offset !== node.scrollState.prevOffset
+  )
 
   const canSkipEntireSubtree =
     hasPrevBuffer &&
@@ -439,7 +471,8 @@ function renderNodeToBuffer(
   const _nodeId = instr.enabled ? ((props.id as string | undefined) ?? "") : ""
   const _traceThis = instr.enabled && instr.nodeTraceEnabled && _nodeId
   const _cellDbg = getCellDebug()
-  const _coversCellNow = _cellDbg && cellCoversPoint(_cellDbg, layout.x, screenY, layout.width, layout.height)
+  const _coversCellNow =
+    _cellDbg && cellCoversPoint(_cellDbg, layout.x, screenY, layout.width, layout.height)
   const _coversCellPrev =
     _cellDbg &&
     node.prevLayout &&
@@ -508,7 +541,10 @@ function renderNodeToBuffer(
     const isScrollContainer = props.overflow === "scroll" && node.scrollState
 
     // Build tree-dependent cascade inputs (child traversal).
-    const { absoluteChildMutated, descendantOverflowChanged } = buildCascadeInputs(node, hasPrevBuffer)
+    const { absoluteChildMutated, descendantOverflowChanged } = buildCascadeInputs(
+      node,
+      hasPrevBuffer,
+    )
 
     // Cascade computation: reactive (alien-signals) is the production path.
     // SILVERY_REACTIVE=0 falls back to imperative computeCascade (bench only).
@@ -545,7 +581,11 @@ function renderNodeToBuffer(
 
       // STRICT: verify reactive matches imperative oracle.
       if (_reactiveVerifyEnabled) {
-        assertReactiveMatchesOracle(reactiveState, computeCascade(cascadeInputs), (props.id as string) ?? node.type)
+        assertReactiveMatchesOracle(
+          reactiveState,
+          computeCascade(cascadeInputs),
+          (props.id as string) ?? node.type,
+        )
       }
     } else {
       cascade = computeCascade(cascadeInputs)
@@ -556,7 +596,8 @@ function renderNodeToBuffer(
     // Fall back to the full path when any descendant has its own bg.
     if (cascade.bgOnlyChange && hasDescendantWithBg(node)) {
       const childrenNeedFreshRender =
-        (hasPrevBuffer || ancestorCleared) && (cascade.contentAreaAffected || cascade.bgRefillNeeded)
+        (hasPrevBuffer || ancestorCleared) &&
+        (cascade.contentAreaAffected || cascade.bgRefillNeeded)
       cascade = { ...cascade, bgOnlyChange: false, childrenNeedFreshRender }
     }
     const { contentRegionCleared, skipBgFill, childrenNeedFreshRender } = cascade
@@ -624,7 +665,9 @@ function renderNodeToBuffer(
     // Compute boxInheritedBg even when skipping own repaint — it's needed by
     // outline rendering (after children) and may be needed by child rendering.
     const boxInheritedBg =
-      node.type === "silvery-box" && !getEffectiveBg(props) ? nodeState.inheritedBg.color : undefined
+      node.type === "silvery-box" && !getEffectiveBg(props)
+        ? nodeState.inheritedBg.color
+        : undefined
     if (needsOwnRepaint) {
       renderOwnContent(
         node,
@@ -664,9 +707,21 @@ function renderNodeToBuffer(
           : nodeState.inheritedFg
 
     // Render children — pass inherited bg/fg so children don't walk the parent chain
-    const childState: NodeRenderState = { ...nodeState, inheritedBg: childInheritedBg, inheritedFg: childInheritedFg }
+    const childState: NodeRenderState = {
+      ...nodeState,
+      inheritedBg: childInheritedBg,
+      inheritedFg: childInheritedFg,
+    }
     if (isScrollContainer) {
-      renderScrollContainerChildren(node, buffer, props, childState, contentRegionCleared, childrenNeedFreshRender, ctx)
+      renderScrollContainerChildren(
+        node,
+        buffer,
+        props,
+        childState,
+        contentRegionCleared,
+        childrenNeedFreshRender,
+        ctx,
+      )
 
       // Render overflow indicators AFTER children so they survive viewport clear.
       // renderScrollContainerChildren may clear the viewport (Tier 2) which would
@@ -715,7 +770,11 @@ function buildCascadeInputs(
   node: AgNode,
   hasPrevBuffer: boolean,
 ): { absoluteChildMutated: boolean; descendantOverflowChanged: boolean } {
-  if (!hasPrevBuffer || !isDirty(node.dirtyBits, node.dirtyEpoch, SUBTREE_BIT) || node.children === undefined) {
+  if (
+    !hasPrevBuffer ||
+    !isDirty(node.dirtyBits, node.dirtyEpoch, SUBTREE_BIT) ||
+    node.children === undefined
+  ) {
     return { absoluteChildMutated: false, descendantOverflowChanged: false }
   }
 
@@ -773,9 +832,12 @@ function traceRenderDecision(
         .filter(Boolean)
         .join(",")
       const childrenNeedRepaint_ =
-        isDirty(node.dirtyBits, node.dirtyEpoch, CHILDREN_BIT) || childPositionChanged || childrenNeedFreshRender
+        isDirty(node.dirtyBits, node.dirtyEpoch, CHILDREN_BIT) ||
+        childPositionChanged ||
+        childrenNeedFreshRender
       const childHasPrev_ = childrenNeedRepaint_ ? false : hasPrevBuffer
-      const childAncestorCleared_ = contentRegionCleared || (ancestorCleared && !getEffectiveBg(props))
+      const childAncestorCleared_ =
+        contentRegionCleared || (ancestorCleared && !getEffectiveBg(props))
       nodeTrace.push({
         id: _nodeId,
         type: node.type,
@@ -876,7 +938,15 @@ function executeRegionClearing(
 ): void {
   if (contentRegionCleared) {
     if (instrumentEnabled) stats.clearOps++
-    clearNodeRegion(node, buffer, layout, scrollOffset, clipBounds, layoutChanged, threadedInheritedBg)
+    clearNodeRegion(
+      node,
+      buffer,
+      layout,
+      scrollOffset,
+      clipBounds,
+      layoutChanged,
+      threadedInheritedBg,
+    )
   } else if (bufferIsCloned && layoutChanged && node.prevLayout) {
     // Even when contentRegionCleared is false, a shrinking node needs its excess
     // area cleared. Key scenario: absolute-positioned overlays (e.g., search dialog)
@@ -890,7 +960,15 @@ function executeRegionClearing(
     // dimensions changed between passes), there are no stale pixels to clear.
     // Without this guard, clearExcessArea writes inherited bg into cells that
     // doFreshRender leaves as default, causing STRICT mismatches.
-    clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged, threadedInheritedBg)
+    clearExcessArea(
+      node,
+      buffer,
+      layout,
+      scrollOffset,
+      clipBounds,
+      layoutChanged,
+      threadedInheritedBg,
+    )
   }
 
   // Clear descendant overflow regions: areas where descendants' previous layouts
@@ -899,7 +977,14 @@ function executeRegionClearing(
   // because overflow is OUTSIDE the rect -- it needs clearing even for nodes with
   // backgroundColor (whose interior is handled by renderBox's bg fill).
   if (descendantOverflowChanged) {
-    clearDescendantOverflowRegions(node, buffer, layout, scrollOffset, clipBounds, threadedInheritedBg)
+    clearDescendantOverflowRegions(
+      node,
+      buffer,
+      layout,
+      scrollOffset,
+      clipBounds,
+      threadedInheritedBg,
+    )
   }
 
   // Outline cleanup is handled entirely by the decoration phase (outlines
@@ -933,12 +1018,23 @@ function renderOwnContent(
   useTextStyleFastPath = false,
 ): Color | undefined {
   // O(1) inherited bg/fg from nodeState — threaded top-down, no parent chain walks.
-  const boxInheritedBg = node.type === "silvery-box" && !getEffectiveBg(props) ? nodeState.inheritedBg.color : undefined
+  const boxInheritedBg =
+    node.type === "silvery-box" && !getEffectiveBg(props) ? nodeState.inheritedBg.color : undefined
 
   if (node.type === "silvery-box") {
     if (instrumentEnabled) stats.boxNodes++
     // inheritedFg is threaded so renderBorder can resolve borderColor="currentColor".
-    renderBox(node, buffer, layout, props, nodeState, skipBgFill, boxInheritedBg, bgOnlyChange, nodeState.inheritedFg)
+    renderBox(
+      node,
+      buffer,
+      layout,
+      props,
+      nodeState,
+      skipBgFill,
+      boxInheritedBg,
+      bgOnlyChange,
+      nodeState.inheritedFg,
+    )
   } else if (node.type === "silvery-text") {
     if (instrumentEnabled) stats.textNodes++
     // O(1) inherited bg/fg — threaded top-down through nodeState.
@@ -1146,7 +1242,8 @@ function renderScrollContainerChildren(
   const scrollOffsetChanged = ss.offset !== ss.prevOffset
   const hasStickyChildren = !!(ss.stickyChildren && ss.stickyChildren.length > 0)
   const visibleRangeChanged =
-    ss.firstVisibleChild !== ss.prevFirstVisibleChild || ss.lastVisibleChild !== ss.prevLastVisibleChild
+    ss.firstVisibleChild !== ss.prevFirstVisibleChild ||
+    ss.lastVisibleChild !== ss.prevLastVisibleChild
 
   // Compute viewport geometry (shared by all tiers)
   const clearY = childClipBounds.top
@@ -1237,7 +1334,8 @@ function renderScrollContainerChildren(
   }
 
   // Propagate ancestor layout change to scroll container children.
-  const childAncestorLayoutChanged = isCurrentEpoch(node.layoutChangedThisFrame) || !!ancestorLayoutChanged
+  const childAncestorLayoutChanged =
+    isCurrentEpoch(node.layoutChangedThisFrame) || !!ancestorLayoutChanged
 
   // For buffer shift: children that were fully visible in BOTH the previous
   // and current frames have correct pixels after the shift (childHasPrev=true).
@@ -1382,7 +1480,9 @@ function renderNormalChildren(
   const clipX = (props.overflowX ?? props.overflow) === "hidden"
   const clipY = (props.overflowY ?? props.overflow) === "hidden"
   const effectiveClipBounds =
-    clipX || clipY ? computeChildClipBounds(layout, props, clipBounds, scrollOffset, clipX, clipY) : clipBounds
+    clipX || clipY
+      ? computeChildClipBounds(layout, props, clipBounds, scrollOffset, clipX, clipY)
+      : clipBounds
 
   // Non-scroll sticky children support. When the layout phase computes
   // node.stickyChildren, we use the same two-pass pattern as scroll containers:
@@ -1402,7 +1502,9 @@ function renderNormalChildren(
   // on incremental renders. Clearing to null matches fresh render state before
   // any content renders.
   if (stickyForceRefresh) {
-    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
+    const border = props.borderStyle
+      ? getBorderSize(props)
+      : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
     let clearX = layout.x + border.left + padding.left
     let clearY = layout.y - scrollOffset + border.top + padding.top
@@ -1435,7 +1537,9 @@ function renderNormalChildren(
   // Force children to re-render when parent's region was modified on a clone,
   // children were restructured, or sibling positions shifted.
   const childrenNeedRepaint =
-    isDirty(node.dirtyBits, node.dirtyEpoch, CHILDREN_BIT) || childPositionChanged || childrenNeedFreshRender
+    isDirty(node.dirtyBits, node.dirtyEpoch, CHILDREN_BIT) ||
+    childPositionChanged ||
+    childrenNeedFreshRender
   if (instr.enabled && childrenNeedRepaint && hasPrevBuffer) {
     instr.stats.normalChildrenRepaint++
     const reasons: string[] = []
@@ -1457,7 +1561,8 @@ function renderNormalChildren(
   // Propagate ancestor layout change to children: if this node or any ancestor
   // had layoutChangedThisFrame, children must not be skipped even if their own
   // flags are clean — their pixels in the cloned buffer are at wrong positions.
-  const childAncestorLayoutChanged = isCurrentEpoch(node.layoutChangedThisFrame) || !!ancestorLayoutChanged
+  const childAncestorLayoutChanged =
+    isCurrentEpoch(node.layoutChangedThisFrame) || !!ancestorLayoutChanged
 
   // Override child flags when sticky force refresh is active — all first-pass
   // children must re-render fresh (matching the scroll container pattern).
@@ -1613,7 +1718,11 @@ function renderNormalChildren(
  * with layoutChangedThisFrame (set by layout phase but NOT included in
  * subtreeDirtyEpoch on self — only on parent), this covers all dirty paths.
  */
-function canSkipChildSubtree(child: AgNode, childHasPrev: boolean, childAncestorLayoutChanged: boolean): boolean {
+function canSkipChildSubtree(
+  child: AgNode,
+  childHasPrev: boolean,
+  childAncestorLayoutChanged: boolean,
+): boolean {
   // Can't skip without a previous buffer (first render or dimension change)
   if (!childHasPrev) return false
   // Ancestor layout change forces re-render at new position
@@ -1941,7 +2050,9 @@ function clearNodeRegion(
   const parentBottom = parentRect ? parentRect.y - scrollOffset + parentRect.height : undefined
 
   const clearY = clipBounds ? Math.max(screenY, clipBounds.top) : screenY
-  let clearBottom = clipBounds ? Math.min(screenY + layout.height, clipBounds.bottom) : screenY + layout.height
+  let clearBottom = clipBounds
+    ? Math.min(screenY + layout.height, clipBounds.bottom)
+    : screenY + layout.height
   if (parentBottom !== undefined) {
     clearBottom = Math.min(clearBottom, parentBottom)
   }
@@ -2085,7 +2196,8 @@ function clearExcessArea(
     const border = getBorderSize(parentProps)
     const padding = getPadding(parentProps)
     const parentRight = parent.boxRect.x + parent.boxRect.width - border.right - padding.right
-    const parentBottom = parent.boxRect.y - scrollOffset + parent.boxRect.height - border.bottom - padding.bottom
+    const parentBottom =
+      parent.boxRect.y - scrollOffset + parent.boxRect.height - border.bottom - padding.bottom
     clipRectRight = Math.min(clipRectRight, parentRight)
     clipRectBottom = Math.min(clipRectBottom, parentBottom)
   }
@@ -2146,7 +2258,10 @@ function clippedFill(
   bg: Color,
 ): void {
   const clippedTop = clipBounds ? Math.max(top, clipBounds.top) : top
-  const clippedBottom = Math.min(clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom, outerBottom)
+  const clippedBottom = Math.min(
+    clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom,
+    outerBottom,
+  )
   let clippedX = x
   let clippedWidth = width
   if (clipBounds?.left !== undefined && clipBounds.right !== undefined) {

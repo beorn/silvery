@@ -175,7 +175,9 @@ export function PickerDialog<T>({
         return
       }
       if (key.pageDown) {
-        setSelectedIndex((i) => Math.min(i + effectiveMaxVisible, Math.max(0, itemsRef.current.length - 1)))
+        setSelectedIndex((i) =>
+          Math.min(i + effectiveMaxVisible, Math.max(0, itemsRef.current.length - 1)),
+        )
         return
       }
     },
@@ -186,7 +188,13 @@ export function PickerDialog<T>({
   const showPlaceholder = !readline.value && placeholder
 
   return (
-    <ModalDialog title={title} width={width} height={height} footer={footer} {...(fade !== undefined ? { fade } : {})}>
+    <ModalDialog
+      title={title}
+      width={width}
+      height={height}
+      footer={footer}
+      {...(fade !== undefined ? { fade } : {})}
+    >
       {/* Search input */}
       <Box flexShrink={0} flexDirection="column">
         <Box>
@@ -194,7 +202,11 @@ export function PickerDialog<T>({
           {showPlaceholder ? (
             <Text color="$muted">{placeholder}</Text>
           ) : (
-            <CursorLine beforeCursor={readline.beforeCursor} afterCursor={readline.afterCursor} showCursor={isActive} />
+            <CursorLine
+              beforeCursor={readline.beforeCursor}
+              afterCursor={readline.afterCursor}
+              showCursor={isActive}
+            />
           )}
         </Box>
         <Text color="$border">{"─".repeat(40)}</Text>

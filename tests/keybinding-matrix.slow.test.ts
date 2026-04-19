@@ -21,7 +21,13 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { defaultKeybindingLayers, parseKeyString, keyToString, keyToModifiers, type ParsedKey } from "@km/commands"
+import {
+  defaultKeybindingLayers,
+  parseKeyString,
+  keyToString,
+  keyToModifiers,
+  type ParsedKey,
+} from "@km/commands"
 import { parseKey, keyToAnsi, keyToKittyAnsi, splitRawInput } from "@silvery/ag/keys"
 
 // =============================================================================
@@ -144,7 +150,8 @@ function verifyRoundtrip(kmKey: string, parsed: ParsedKey): DeliveryResult {
 
     const expectedKey = parsed.key
     const actualKey = result.resolvedKey
-    const isUppercaseLetter = expectedKey.length === 1 && expectedKey >= "A" && expectedKey <= "Z" && !parsed.shift
+    const isUppercaseLetter =
+      expectedKey.length === 1 && expectedKey >= "A" && expectedKey <= "Z" && !parsed.shift
     const isShiftedLetter =
       parsed.shift &&
       expectedKey.length === 1 &&
@@ -157,7 +164,8 @@ function verifyRoundtrip(kmKey: string, parsed: ParsedKey): DeliveryResult {
     const ctrlOk = result.resolvedModifiers.ctrl === parsed.ctrl
     const optOk = result.resolvedModifiers.opt === parsed.opt
     const cmdOk = result.resolvedModifiers.cmd === parsed.cmd
-    const shiftOk = isUppercaseLetter || isShiftedLetter || result.resolvedModifiers.shift === parsed.shift
+    const shiftOk =
+      isUppercaseLetter || isShiftedLetter || result.resolvedModifiers.shift === parsed.shift
 
     result.modifiersMatch = ctrlOk && optOk && cmdOk && shiftOk
 
@@ -287,11 +295,15 @@ describe("keybinding delivery matrix", () => {
 
   describe("simple keys — full-stack roundtrip", () => {
     const testable = simple.filter((b) => !knownLimitation(b.key, b.parsed))
-    const noMods = testable.filter((b) => !b.parsed.ctrl && !b.parsed.cmd && !b.parsed.opt && !b.parsed.shift)
+    const noMods = testable.filter(
+      (b) => !b.parsed.ctrl && !b.parsed.cmd && !b.parsed.opt && !b.parsed.shift,
+    )
     const ctrlKeys = testable.filter((b) => b.parsed.ctrl && !b.parsed.cmd)
     const cmdKeys = testable.filter((b) => b.parsed.cmd)
     const optKeys = testable.filter((b) => b.parsed.opt && !b.parsed.cmd)
-    const shiftKeys = testable.filter((b) => b.parsed.shift && !b.parsed.ctrl && !b.parsed.cmd && !b.parsed.opt)
+    const shiftKeys = testable.filter(
+      (b) => b.parsed.shift && !b.parsed.ctrl && !b.parsed.cmd && !b.parsed.opt,
+    )
 
     describe("bare keys (no modifiers)", () => {
       test.each(noMods.map((b) => [b.key, b.commandId, b.layer, b.parsed] as const))(
@@ -369,7 +381,9 @@ describe("keybinding delivery matrix", () => {
           const result = verifyRoundtrip(key, parsed)
           // If it passes, the ambiguity was fixed upstream — remove from list
           if (!result.error) {
-            expect.fail(`${key} now roundtrips correctly — remove from LEGACY_AMBIGUOUS. Reason was: ${reason}`)
+            expect.fail(
+              `${key} now roundtrips correctly — remove from LEGACY_AMBIGUOUS. Reason was: ${reason}`,
+            )
           }
         },
       )
@@ -421,7 +435,10 @@ describe("keybinding delivery matrix", () => {
 
         if (!knownLimitation(parsed.key, suffixParsed)) {
           const suffixResult = verifyRoundtrip(parsed.key, suffixParsed)
-          expect(suffixResult.error, `Chord suffix '${parsed.key}' in '${key}': ${suffixResult.error}`).toBeUndefined()
+          expect(
+            suffixResult.error,
+            `Chord suffix '${parsed.key}' in '${key}': ${suffixResult.error}`,
+          ).toBeUndefined()
         }
 
         // Verify prefix key
@@ -449,7 +466,9 @@ describe("keybinding delivery matrix", () => {
 
   describe("coverage summary", () => {
     test("all non-limited legacy ANSI keys roundtrip correctly", () => {
-      const testable = simple.filter((b) => !requiresKitty(b.parsed) && !knownLimitation(b.key, b.parsed))
+      const testable = simple.filter(
+        (b) => !requiresKitty(b.parsed) && !knownLimitation(b.key, b.parsed),
+      )
       const failures: string[] = []
 
       for (const binding of testable) {
@@ -460,14 +479,18 @@ describe("keybinding delivery matrix", () => {
       }
 
       if (failures.length > 0) {
-        expect.fail(`${failures.length} legacy ANSI roundtrip failures:\n  ${failures.join("\n  ")}`)
+        expect.fail(
+          `${failures.length} legacy ANSI roundtrip failures:\n  ${failures.join("\n  ")}`,
+        )
       }
     })
 
     test("all Kitty protocol keys roundtrip correctly (excluding known limitations)", () => {
       const testable = simple.filter(
         (b) =>
-          requiresKitty(b.parsed) && !knownLimitation(b.key, b.parsed) && !TERMINAL_CONSUMED[toPlaywright(b.parsed)],
+          requiresKitty(b.parsed) &&
+          !knownLimitation(b.key, b.parsed) &&
+          !TERMINAL_CONSUMED[toPlaywright(b.parsed)],
       )
       const failures: string[] = []
 

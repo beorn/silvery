@@ -22,7 +22,10 @@ export type {
 } from "./components/ListView"
 
 export { HorizontalVirtualList } from "./components/HorizontalVirtualList"
-export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from "./components/HorizontalVirtualList"
+export type {
+  HorizontalVirtualListProps,
+  HorizontalVirtualListHandle,
+} from "./components/HorizontalVirtualList"
 
 export { SplitView } from "./components/SplitView"
 export type { SplitViewProps } from "./components/SplitView"
@@ -189,7 +192,11 @@ export type { SkeletonProps } from "./components/Skeleton"
 // Position Registry (2D Grid Virtualization)
 // =============================================================================
 
-export { PositionRegistryProvider, usePositionRegistry, createPositionRegistry } from "../hooks/usePositionRegistry"
+export {
+  PositionRegistryProvider,
+  usePositionRegistry,
+  createPositionRegistry,
+} from "../hooks/usePositionRegistry"
 export type { PositionRegistry, ScrollRect } from "../hooks/usePositionRegistry"
 export { useGridPosition } from "../hooks/useGridPosition"
 export { GridCell } from "./components/GridCell"

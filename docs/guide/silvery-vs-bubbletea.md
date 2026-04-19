@@ -69,7 +69,7 @@ Bubble Tea first, Silvery second. Features marked "core" are built into the fram
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | **Built-in components** | Bubbles: ~12 (spinner, textinput, textarea, viewport, table, list, filepicker, paginator, progress, help, timer, stopwatch) | **45+** core (VirtualList, Table, CommandPalette, TreeView, Toast, Tabs, SplitView, ModalDialog, Image, TextArea, ...) |
 | **Forms**               | [Huh](https://github.com/charmbracelet/huh) — form builder with groups, validation, accessibility                           | Built-in form components (TextInput, SelectList, Checkbox, etc.)                                                       |
-| **Theme system**        | Lip Gloss: chainable style functions, auto color downsampling (truecolor → 256 → 16)                                        | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect terminal scheme                                       |
+| **Theme system**        | Lip Gloss: chainable style functions, auto color downsampling (truecolor → 256 → 16)                                        | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect terminal scheme                                  |
 | **TEA state machines**  | Core — every program is `Init`/`Update`/`View`                                                                              | Optional via `@silvery/create`: `(action, state) → [state, effects]`, replay, undo                                     |
 | **Composition**         | Embed models in parent, forward messages manually                                                                           | React JSX nesting + `pipe()` provider composition                                                                      |
 | **SSH server**          | [Wish](https://github.com/charmbracelet/wish) — serve TUI apps over SSH                                                     | None                                                                                                                   |
@@ -333,7 +333,7 @@ Silvery's ecosystem is smaller but more integrated:
 | `silvery`           | Core renderer + 45+ components          |
 | `@silvery/create`   | TEA state machines                      |
 | `@silvery/test`     | Testing (headless + Termless emulator)  |
-| `@silvery/theme`    | 84 color schemes, semantic tokens            |
+| `@silvery/theme`    | 84 color schemes, semantic tokens       |
 | `@silvery/commands` | Command system with keybindings         |
 | `@silvery/ansi`     | Terminal primitives, styling, detection |
 

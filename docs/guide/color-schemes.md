@@ -22,20 +22,31 @@ Every UI token you style with (`$primary`, `$muted`, `$success`, …) resolves b
 interface ColorScheme {
   name?: string
   dark?: boolean
-  primary?: string               // optional brand anchor
+  primary?: string // optional brand anchor
 
   // 16 ANSI slots (ANSI 0–15)
-  black: string; red: string; green: string; yellow: string
-  blue: string; magenta: string; cyan: string; white: string
-  brightBlack: string; brightRed: string; brightGreen: string
-  brightYellow: string; brightBlue: string; brightMagenta: string
-  brightCyan: string; brightWhite: string
+  black: string
+  red: string
+  green: string
+  yellow: string
+  blue: string
+  magenta: string
+  cyan: string
+  white: string
+  brightBlack: string
+  brightRed: string
+  brightGreen: string
+  brightYellow: string
+  brightBlue: string
+  brightMagenta: string
+  brightCyan: string
+  brightWhite: string
 
   // 6 semantic slots
   foreground: string
   background: string
-  cursorColor: string            // the cursor's BACKGROUND color
-  cursorText: string             // the character UNDER the cursor
+  cursorColor: string // the cursor's BACKGROUND color
+  cursorText: string // the character UNDER the cursor
   selectionBackground: string
   selectionForeground: string
 }
@@ -147,7 +158,7 @@ For more: see [Capability Tiers](./capability-tiers).
 
 ### Fingerprint matching
 
-Detection can also match the probed colors against the bundled catalog to give you a *named* scheme:
+Detection can also match the probed colors against the bundled catalog to give you a _named_ scheme:
 
 ```ts
 import { fingerprintMatch } from "silvery/theme"

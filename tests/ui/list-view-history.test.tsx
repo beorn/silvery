@@ -14,7 +14,11 @@ import React from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Text } from "../../src/index.js"
-import { ListView, type ListViewHandle, type ListItemMeta } from "../../packages/ag-react/src/ui/components/ListView"
+import {
+  ListView,
+  type ListViewHandle,
+  type ListItemMeta,
+} from "../../packages/ag-react/src/ui/components/ListView"
 
 // ============================================================================
 // Test Helpers
@@ -45,7 +49,12 @@ describe("ListView", () => {
 
     const r = createRenderer({ cols: 40, rows: 10 })
     const app = r(
-      <ListView items={items} getKey={(m) => m.id} height={10} renderItem={(msg) => <Text>{msg.body}</Text>} />,
+      <ListView
+        items={items}
+        getKey={(m) => m.id}
+        height={10}
+        renderItem={(msg) => <Text>{msg.body}</Text>}
+      />,
     )
 
     const text = stripAnsi(app.text)

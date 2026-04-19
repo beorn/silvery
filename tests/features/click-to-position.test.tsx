@@ -27,7 +27,9 @@ describe("EditContextDisplay onCursorClick", () => {
     const onClick = vi.fn()
     const render = createRenderer({ cols: 40, rows: 5 })
 
-    render(<EditContextDisplay value="hello world" cursor={0} wrapWidth={40} onCursorClick={onClick} />)
+    render(
+      <EditContextDisplay value="hello world" cursor={0} wrapWidth={40} onCursorClick={onClick} />,
+    )
 
     // The callback is passed as a prop; verify no spurious calls
     expect(onClick).not.toHaveBeenCalled()
@@ -44,7 +46,9 @@ describe("EditContextDisplay onCursorClick", () => {
     const onClick = vi.fn()
     const render = createRenderer({ cols: 40, rows: 5 })
 
-    const app = render(<EditContextDisplay value="hello world" cursor={5} wrapWidth={40} onCursorClick={onClick} />)
+    const app = render(
+      <EditContextDisplay value="hello world" cursor={5} wrapWidth={40} onCursorClick={onClick} />,
+    )
     expect(app.text).toContain("hello world")
   })
 
@@ -71,7 +75,13 @@ describe("EditContextDisplay onCursorClick", () => {
     const render = createRenderer({ cols: 40, rows: 5 })
 
     const app = render(
-      <EditContextDisplay value="" cursor={0} wrapWidth={40} placeholder="Type here..." onCursorClick={onClick} />,
+      <EditContextDisplay
+        value=""
+        cursor={0}
+        wrapWidth={40}
+        placeholder="Type here..."
+        onCursorClick={onClick}
+      />,
     )
     expect(app.text).toContain("Type here...")
   })

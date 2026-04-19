@@ -2,7 +2,7 @@
  * VS Code palettes — Visual Studio Code's built-in terminal themes.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** VS Code Dark+ — the default VS Code dark terminal theme. */
 export const vscodeDark: ColorScheme = {

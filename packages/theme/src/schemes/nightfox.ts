@@ -3,8 +3,8 @@
  * Source: https://github.com/EdenEast/nightfox.nvim
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Nightfox — dark blue-toned variant. */
 export const nightfox: ColorScheme = {

@@ -19,7 +19,8 @@ The observable container that wraps any update function:
 import { createMachine, type Machine, type UpdateFn } from "@silvery/headless"
 
 // Define your pure update function
-const counterUpdate: UpdateFn<number, "inc" | "dec"> = (state, action) => (action === "inc" ? state + 1 : state - 1)
+const counterUpdate: UpdateFn<number, "inc" | "dec"> = (state, action) =>
+  action === "inc" ? state + 1 : state - 1
 
 // Wrap it in an observable container
 const counter: Machine<number, "inc" | "dec"> = createMachine(counterUpdate, 0)
@@ -59,7 +60,12 @@ type UpdateFn<S, A> = (state: S, action: A) => S
 Pure state machine for single-line text editing. Cursor movement, character editing, kill ring with yank cycling — all as immutable state transitions.
 
 ```typescript
-import { readlineUpdate, createReadlineState, type ReadlineState, type ReadlineAction } from "@silvery/headless"
+import {
+  readlineUpdate,
+  createReadlineState,
+  type ReadlineState,
+  type ReadlineAction,
+} from "@silvery/headless"
 
 let state = createReadlineState({ value: "hello world", cursor: 5 })
 state = readlineUpdate(state, { type: "kill_to_end" })
@@ -76,7 +82,12 @@ state = readlineUpdate(state, { type: "yank" })
 Pure state machine for navigating a list with a cursor. The machine tracks the index and count; actual items are external.
 
 ```typescript
-import { selectListUpdate, createSelectListState, type SelectListState, type SelectListAction } from "@silvery/headless"
+import {
+  selectListUpdate,
+  createSelectListState,
+  type SelectListState,
+  type SelectListAction,
+} from "@silvery/headless"
 
 let state = createSelectListState({ count: 10 })
 state = selectListUpdate(state, { type: "move_down" })
@@ -144,7 +155,10 @@ export interface ClipboardState {
   readonly current: number
 }
 
-export type ClipboardAction = { type: "copy"; text: string } | { type: "cycle_next" } | { type: "cycle_prev" }
+export type ClipboardAction =
+  | { type: "copy"; text: string }
+  | { type: "cycle_next" }
+  | { type: "cycle_prev" }
 ```
 
 ### 2. Write the Pure Update Function
@@ -172,7 +186,12 @@ export function createClipboardState(): ClipboardState {
 
 ```typescript
 // index.ts
-export { clipboardUpdate, createClipboardState, type ClipboardState, type ClipboardAction } from "./clipboard"
+export {
+  clipboardUpdate,
+  createClipboardState,
+  type ClipboardState,
+  type ClipboardAction,
+} from "./clipboard"
 ```
 
 ### Naming Conventions

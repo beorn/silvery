@@ -34,7 +34,7 @@
 
 import type { TerminalBuffer, Cell, Color } from "../buffer"
 import type { BoxProps, AgNode } from "@silvery/ag/types"
-import type { Theme } from "@silvery/theme/types"
+import type { Theme } from "@silvery/ansi"
 import { getBorderSize, getPadding } from "./helpers"
 import { renderOutline, getEffectiveBg } from "./render-box"
 import { parseColor } from "./render-helpers"
@@ -128,12 +128,29 @@ function walk(
   // those pre-outline pixels so the next frame can restore them.
   if (node.type === "silvery-box" && props.outlineStyle) {
     const boxInheritedBg = effectiveBg ? undefined : inheritedBg.color
-    const positions = collectOutlineCells(layout.x, y, layout.width, layout.height, props, clipBounds, buffer)
+    const positions = collectOutlineCells(
+      layout.x,
+      y,
+      layout.width,
+      layout.height,
+      props,
+      clipBounds,
+      buffer,
+    )
     for (const pos of positions) {
       // Snapshot the cell BEFORE the outline overwrites it.
       snapshots.push({ x: pos.x, y: pos.y, cell: buffer.getCell(pos.x, pos.y) })
     }
-    renderOutline(buffer, layout.x, y, layout.width, layout.height, props, clipBounds, boxInheritedBg)
+    renderOutline(
+      buffer,
+      layout.x,
+      y,
+      layout.width,
+      layout.height,
+      props,
+      clipBounds,
+      boxInheritedBg,
+    )
   }
 
   // Descend into children with the appropriate state. Scroll containers
@@ -168,7 +185,10 @@ function walk(
       }
     }
   } else {
-    const childClip = clipX || clipY ? computeChildClip(layout, props, clipBounds, scrollOffset, clipX, clipY) : clipBounds
+    const childClip =
+      clipX || clipY
+        ? computeChildClip(layout, props, clipBounds, scrollOffset, clipX, clipY)
+        : clipBounds
     for (const child of node.children) {
       walk(child, buffer, scrollOffset, childClip, childInheritedBg, snapshots)
     }
@@ -205,7 +225,8 @@ function collectOutlineCells(
     return row >= clipBounds.top && row < clipBounds.bottom && row < buffer.height
   }
   const isColVisible = (col: number): boolean => {
-    if (clipBounds?.left === undefined || clipBounds.right === undefined) return col >= 0 && col < buffer.width
+    if (clipBounds?.left === undefined || clipBounds.right === undefined)
+      return col >= 0 && col < buffer.width
     return col >= clipBounds.left && col < clipBounds.right && col < buffer.width
   }
 

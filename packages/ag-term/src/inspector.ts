@@ -18,7 +18,14 @@
 import type { createWriteStream as createWriteStreamType } from "node:fs"
 import type { RenderStats } from "./scheduler"
 import type { AgNode } from "@silvery/ag/types"
-import { isDirty, CONTENT_BIT, STYLE_PROPS_BIT, BG_BIT, SUBTREE_BIT, CHILDREN_BIT } from "@silvery/ag/epoch"
+import {
+  isDirty,
+  CONTENT_BIT,
+  STYLE_PROPS_BIT,
+  BG_BIT,
+  SUBTREE_BIT,
+  CHILDREN_BIT,
+} from "@silvery/ag/epoch"
 
 // =============================================================================
 // Types
@@ -92,7 +99,10 @@ export function inspectFrame(stats: RenderStats): void {
  * Walks the SilveryNode tree and formats each node with its type, testID,
  * layout rect, and dirty flags.
  */
-export function inspectTree(rootNode: AgNode, options?: { depth?: number; showLayout?: boolean }): string {
+export function inspectTree(
+  rootNode: AgNode,
+  options?: { depth?: number; showLayout?: boolean },
+): string {
   const maxDepth = options?.depth ?? 10
   const showLayout = options?.showLayout ?? true
   const lines: string[] = []

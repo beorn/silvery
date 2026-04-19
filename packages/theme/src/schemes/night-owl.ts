@@ -2,7 +2,7 @@
  * Night Owl palette — Sarah Drasner's popular VS Code theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Night Owl Light — the light variant by Sarah Drasner. */
 export const nightOwlLight: ColorScheme = {

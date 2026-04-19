@@ -218,7 +218,8 @@ describe('regression: wrap="even" is wired through to the text pipeline', () => 
     // under greedy vs Knuth-Plass (see the pretext algorithm unit tests
     // and the tests/pipeline/pretext.test.ts verification). The two
     // rendered outputs must differ at least on one row.
-    const text = "Four score and seven years ago our fathers brought forth on this continent a new nation"
+    const text =
+      "Four score and seven years ago our fathers brought forth on this continent a new nation"
     const render = createRenderer({ cols: 40, rows: 20 })
     const app = render(
       <Box flexDirection="column">
@@ -328,7 +329,8 @@ describe("fit-content and snug-content respect maxWidth during measurement", () 
   test("snug-content + even visibly rebalances line widths vs fit-content + greedy", () => {
     // Uses the "Four score" input where optimal and greedy both fit in the
     // same number of lines but with different break positions.
-    const text = "Four score and seven years ago our fathers brought forth on this continent a new nation"
+    const text =
+      "Four score and seven years ago our fathers brought forth on this continent a new nation"
     const render = createRenderer({ cols: 40, rows: 20 })
     const app = render(
       <Box flexDirection="column">

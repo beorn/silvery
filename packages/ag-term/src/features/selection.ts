@@ -142,13 +142,19 @@ export function createSelectionFeature(options: SelectionFeatureOptions): Select
     },
 
     handleMouseDown(col: number, row: number, _altKey: boolean): void {
-      const [newState, effects] = terminalSelectionUpdate({ type: "start", col, row, source: "mouse" }, selectionState)
+      const [newState, effects] = terminalSelectionUpdate(
+        { type: "start", col, row, source: "mouse" },
+        selectionState,
+      )
       updateState(newState, effects)
     },
 
     handleMouseMove(col: number, row: number): void {
       if (!selectionState.selecting) return
-      const [newState, effects] = terminalSelectionUpdate({ type: "extend", col, row, buffer: buffer! }, selectionState)
+      const [newState, effects] = terminalSelectionUpdate(
+        { type: "extend", col, row, buffer: buffer! },
+        selectionState,
+      )
       updateState(newState, effects)
     },
 
@@ -182,7 +188,10 @@ export function createSelectionFeature(options: SelectionFeatureOptions): Select
           { type: "extend", col: range.head.col, row: range.head.row },
           startState,
         )
-        const [finishState, finishEffects] = terminalSelectionUpdate({ type: "finish" }, extendState)
+        const [finishState, finishEffects] = terminalSelectionUpdate(
+          { type: "finish" },
+          extendState,
+        )
         updateState(finishState, [...startEffects, ...extendEffects, ...finishEffects])
       }
     },

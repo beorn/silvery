@@ -41,7 +41,8 @@ function fromChalkLevel(level: ChalkLevel): ColorLevel | null {
 // Default instance (auto-detected)
 // =============================================================================
 
-const detectedColor = typeof process !== "undefined" && process.stdout ? detectColor(process.stdout) : null
+const detectedColor =
+  typeof process !== "undefined" && process.stdout ? detectColor(process.stdout) : null
 
 /**
  * Default chalk instance — drop-in replacement for `import chalk from 'chalk'`.
@@ -91,7 +92,8 @@ export type ChalkInstance = Style
  * Returns false if no color, or an object with the chalk level.
  */
 const detectedLevel = toChalkLevel(detectedColor)
-export const supportsColor: false | { level: ChalkLevel } = detectedLevel === 0 ? false : { level: detectedLevel }
+export const supportsColor: false | { level: ChalkLevel } =
+  detectedLevel === 0 ? false : { level: detectedLevel }
 
 /**
  * Color support detection for stderr.

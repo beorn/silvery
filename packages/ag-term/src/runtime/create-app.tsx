@@ -66,7 +66,11 @@ import { createFocusEvent, dispatchFocusEvent } from "@silvery/ag/focus-events"
 import { createAg, type Ag } from "../ag"
 import { runWithMeasurer } from "../unicode"
 import { createPipeline } from "../measurer"
-import { isTextSizingLikelySupported, detectTextSizingSupport, getCachedProbeResult } from "../text-sizing"
+import {
+  isTextSizingLikelySupported,
+  detectTextSizingSupport,
+  getCachedProbeResult,
+} from "../text-sizing"
 import { createWidthDetector, applyWidthConfig } from "../ansi/width-detection"
 import { IncrementalRenderMismatchError } from "../scheduler"
 import { isAnyDirty } from "@silvery/ag/epoch"
@@ -111,13 +115,25 @@ import { detectKittyFromStdio } from "../kitty-detect"
 import { captureTerminalState, performSuspend } from "./terminal-lifecycle"
 import { type TermProvider, createTermProvider } from "./term-provider"
 import type { Buffer, Dims, Provider, RenderTarget } from "./types"
-import { createTerminalSelectionState, terminalSelectionUpdate, extractText } from "@silvery/headless/selection"
+import {
+  createTerminalSelectionState,
+  terminalSelectionUpdate,
+  extractText,
+} from "@silvery/headless/selection"
 import { createSelectionBridge, type SelectionFeature } from "../features/selection"
 import { renderSelectionOverlay } from "../selection-renderer"
-import { createCapabilityRegistry, type CapabilityRegistry } from "@silvery/create/internal/capability-registry"
+import {
+  createCapabilityRegistry,
+  type CapabilityRegistry,
+} from "@silvery/create/internal/capability-registry"
 import { SELECTION_CAPABILITY } from "@silvery/create/internal/capabilities"
 import { createVirtualScrollback } from "../virtual-scrollback"
-import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "../search-overlay"
+import {
+  createSearchState,
+  searchUpdate,
+  renderSearchBar,
+  type SearchMatch,
+} from "../search-overlay"
 import { createOutputGuard, type OutputGuard } from "../ansi/output-guard"
 import { perfLog, checkBudget, logExitSummary, startTracking } from "./perf"
 import { createLogger } from "loggily"
@@ -608,7 +624,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // auto-enable when kitty protocol is active (so press() encodes modifier keys correctly)
   const useKittyMode = explicitKittyMode ?? !!kittyOption
 
-  const headless = (explicitCols != null && explicitRows != null && !explicitStdout) || explicitWritable != null
+  const headless =
+    (explicitCols != null && explicitRows != null && !explicitStdout) || explicitWritable != null
   const cols = explicitCols ?? process.stdout.columns ?? 80
   const rows = explicitRows ?? process.stdout.rows ?? 24
   const stdout = explicitStdout ?? process.stdout
@@ -830,7 +847,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       const decoded = symbolize(str)
       // Truncate for readability but keep enough to identify content
       const preview =
-        decoded.length > 400 ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100) : decoded
+        decoded.length > 400
+          ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100)
+          : decoded
       fs.appendFileSync(
         "/tmp/silvery-trace.log",
         `[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}\n`,
@@ -891,7 +910,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // For "probe": start disabled, probe async to determine
   // For true/false: use directly
   const heuristicSupported = capsOption?.textSizingSupported ?? isTextSizingLikelySupported()
-  const shouldProbe = textSizingOption === "probe" || (textSizingOption === "auto" && heuristicSupported)
+  const shouldProbe =
+    textSizingOption === "probe" || (textSizingOption === "auto" && heuristicSupported)
   // If we have a cached probe result, use it immediately instead of probing again
   const cachedProbe = shouldProbe ? getCachedProbeResult() : undefined
   let textSizingEnabled: boolean
@@ -917,10 +937,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   // Resolve width detection: "auto" enables when caps are provided and not headless
   const needsWidthDetection =
-    !headless && (widthDetectionOption === true || (widthDetectionOption === "auto" && capsOption != null))
+    !headless &&
+    (widthDetectionOption === true || (widthDetectionOption === "auto" && capsOption != null))
 
   // Track effective caps — may be updated by width detection and text sizing probes
-  let effectiveCaps = capsOption ? { ...capsOption, textSizingSupported: textSizingEnabled } : undefined
+  let effectiveCaps = capsOption
+    ? { ...capsOption, textSizingSupported: textSizingEnabled }
+    : undefined
 
   // Create pipeline config from caps (scoped width measurer + output phase)
   // Use `let` because the pipeline may be recreated after a probe changes textSizing
@@ -951,11 +974,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       writeFileSync(dumpPath, `${error.message}\n\n${error.stack ?? "(no stack)"}\n`)
     } catch {}
     caughtErrors.push({ error, dumpPath })
-    log.error?.(`React render error caught by SilveryErrorBoundary: ${error.message}${dumpPath ? ` (dump: ${dumpPath})` : ""}`)
+    log.error?.(
+      `React render error caught by SilveryErrorBoundary: ${error.message}${dumpPath ? ` (dump: ${dumpPath})` : ""}`,
+    )
   }
   // Track protocol state for cleanup and suspend/resume
   let kittyEnabled = false
-  const defaultKittyFlags = KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
+  const defaultKittyFlags =
+    KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
   let kittyFlags: number = defaultKittyFlags
   let mouseEnabled = false
   let focusReportingEnabled = false
@@ -1001,7 +1027,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             { type: "start", col: range.anchor.col, row: range.anchor.row, source: "keyboard" },
             selectionState,
           )
-          const [s2] = terminalSelectionUpdate({ type: "extend", col: range.head.col, row: range.head.row }, s1)
+          const [s2] = terminalSelectionUpdate(
+            { type: "extend", col: range.head.col, row: range.head.row },
+            s1,
+          )
           const [s3] = terminalSelectionUpdate({ type: "finish" }, s2)
           selectionState = s3
         }
@@ -1355,7 +1384,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 stdout: mockStdout,
                 write: () => {},
                 notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
-                promoteScrollback: (content: string, lines: number) => runtime.promoteScrollback(content, lines),
+                promoteScrollback: (content: string, lines: number) =>
+                  runtime.promoteScrollback(content, lines),
                 resetInlineCursor: () => runtime.resetInlineCursor(),
                 getInlineCursorRow: () => runtime.getInlineCursorRow(),
               }}
@@ -1372,7 +1402,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                   <RuntimeContext.Provider value={runtimeContextValue}>
                     <CapabilityRegistryContext.Provider value={capabilityRegistry}>
                       <Root>
-                        <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
+                        <StoreContext.Provider value={store as StoreApi<unknown>}>
+                          {element}
+                        </StoreContext.Provider>
                       </Root>
                     </CapabilityRegistryContext.Provider>
                   </RuntimeContext.Provider>
@@ -1440,7 +1472,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Create or reuse long-lived Ag instance. Created lazily because the root
     // AgNode is produced by the React reconciler in Phase A above.
     if (!_ag) {
-      _ag = createAg(rootNode, { measurer: pipelineConfig?.measurer, colorLevel: effectiveCaps?.colorLevel })
+      _ag = createAg(rootNode, {
+        measurer: pipelineConfig?.measurer,
+        colorLevel: effectiveCaps?.colorLevel,
+      })
     }
 
     // Invalidate prevBuffer on dimension change (resize).
@@ -1484,9 +1519,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // resets dirty rows to 0), preserving the row-level dirty markers that
     // the runtime diff needs to detect actual changes.
     // Exception: dimension changes require re-layout even without dirty flags.
-    const rootHasDirty = rootNode.layoutNode?.isDirty() || isAnyDirty(rootNode.dirtyBits, rootNode.dirtyEpoch)
+    const rootHasDirty =
+      rootNode.layoutNode?.isDirty() || isAnyDirty(rootNode.dirtyBits, rootNode.dirtyEpoch)
     const dimsChanged =
-      _lastTermBuffer != null && (dims.cols !== _lastTermBuffer.width || dims.rows !== _lastTermBuffer.height)
+      _lastTermBuffer != null &&
+      (dims.cols !== _lastTermBuffer.width || dims.rows !== _lastTermBuffer.height)
     if (!rootHasDirty && !dimsChanged && _lastTermBuffer && currentBuffer) {
       return currentBuffer
     }
@@ -1513,7 +1550,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       total: pipelineMs,
       incremental: wasIncremental,
     }
-    ;(globalThis as any).__silvery_render_count = ((globalThis as any).__silvery_render_count ?? 0) + 1
+    ;(globalThis as any).__silvery_render_count =
+      ((globalThis as any).__silvery_render_count ?? 0) + 1
 
     // Bench instrumentation: accumulate pipeline-level timing.
     // ag.ts handles measure/layout/content accumulation; we add total here.
@@ -1531,7 +1569,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // STRICT_MODE is hoisted to module scope — the env var is read once at load.
     if (STRICT_MODE && wasIncremental) {
       const doFreshRender = () => {
-        const freshAg = createAg(rootNode, { measurer: pipelineConfig?.measurer, colorLevel: effectiveCaps?.colorLevel })
+        const freshAg = createAg(rootNode, {
+          measurer: pipelineConfig?.measurer,
+          colorLevel: effectiveCaps?.colorLevel,
+        })
         freshAg.layout(
           { cols: dims.cols, rows: dims.rows },
           { skipLayoutNotifications: true, skipScrollStateUpdates: true },
@@ -1539,7 +1580,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         return freshAg.render()
       }
       const measurer = pipelineConfig?.measurer
-      const { buffer: freshBuffer } = measurer ? runWithMeasurer(measurer, doFreshRender) : doFreshRender()
+      const { buffer: freshBuffer } = measurer
+        ? runWithMeasurer(measurer, doFreshRender)
+        : doFreshRender()
       const { cellEquals, bufferToText } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require("../buffer") as typeof import("../buffer")
@@ -1553,7 +1596,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const savedCellDbg = (globalThis as any).__silvery_cell_debug as
               | { x: number; y: number; log: string[] }
               | undefined
-            if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y && savedCellDbg.log.length > 0) {
+            if (
+              savedCellDbg &&
+              savedCellDbg.x === x &&
+              savedCellDbg.y === y &&
+              savedCellDbg.log.length > 0
+            ) {
               cellDebugInfo = `\nCELL DEBUG (${savedCellDbg.log.length} entries for (${x},${y})):\n${savedCellDbg.log.join("\n")}\n`
             } else if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y) {
               cellDebugInfo = `\nCELL DEBUG: No nodes cover (${x},${y}) during incremental render\n`
@@ -1724,7 +1772,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
   if (_ansiTrace) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("node:fs").appendFileSync("/tmp/silvery-trace.log", "=== RUNTIME.RENDER (initial) ===\n")
+    require("node:fs").appendFileSync(
+      "/tmp/silvery-trace.log",
+      "=== RUNTIME.RENDER (initial) ===\n",
+    )
   }
   runtime.render(currentBuffer)
   if (_perfLog) {
@@ -1940,7 +1991,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   function writeSelectionOverlay(): void {
     if (!selectionEnabled || !selectionState.range || !currentBuffer) return
     const mode = alternateScreen ? "fullscreen" : "inline"
-    const overlay = renderSelectionOverlay(selectionState.range, currentBuffer._buffer, mode, selectionState.scope)
+    const overlay = renderSelectionOverlay(
+      selectionState.range,
+      currentBuffer._buffer,
+      mode,
+      selectionState.scope,
+    )
     if (overlay) target.write(overlay)
   }
 
@@ -2067,7 +2123,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         searchState = next
         for (const eff of effects) {
           if (eff.type === "scrollTo") {
-            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+            virtualScrollOffset = Math.max(
+              0,
+              scrollback.totalLines - eff.row - target.getDims().rows,
+            )
           }
         }
         return true
@@ -2077,7 +2136,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         searchState = next
         for (const eff of effects) {
           if (eff.type === "scrollTo") {
-            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+            virtualScrollOffset = Math.max(
+              0,
+              scrollback.totalLines - eff.row - target.getDims().rows,
+            )
           }
         }
         return true
@@ -2087,7 +2149,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         searchState = next
         for (const eff of effects) {
           if (eff.type === "scrollTo") {
-            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+            virtualScrollOffset = Math.max(
+              0,
+              scrollback.totalLines - eff.row - target.getDims().rows,
+            )
           }
         }
         return true
@@ -2103,11 +2168,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         return true
       }
       if (data.input && !data.key.ctrl && !data.key.meta) {
-        const [next, effects] = searchUpdate({ type: "input", char: data.input }, searchState, searchScrollback)
+        const [next, effects] = searchUpdate(
+          { type: "input", char: data.input },
+          searchState,
+          searchScrollback,
+        )
         searchState = next
         for (const eff of effects) {
           if (eff.type === "scrollTo") {
-            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+            virtualScrollOffset = Math.max(
+              0,
+              scrollback.totalLines - eff.row - target.getDims().rows,
+            )
           }
         }
         return true
@@ -2190,7 +2262,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           }
           // Don't consume — let the component tree also handle mousedown (for click-to-focus etc.)
         } else if (mouseData.action === "move" && selectionState.selecting) {
-          const [next] = terminalSelectionUpdate({ type: "extend", col: mouseData.x, row: mouseData.y }, selectionState)
+          const [next] = terminalSelectionUpdate(
+            { type: "extend", col: mouseData.x, row: mouseData.y },
+            selectionState,
+          )
           selectionState = next
           notifySelectionListeners()
           // Re-render overlay to show updated selection

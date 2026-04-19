@@ -10,7 +10,12 @@ import type { ReactElement } from "react"
 import { createFlexilyZeroEngine } from "./adapters/flexily-zero-adapter"
 import { setLayoutEngine } from "./layout-engine"
 import { executeRenderAdapter } from "./pipeline"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/ag-react/reconciler"
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+} from "@silvery/ag-react/reconciler"
 import type { RenderAdapter, RenderBuffer } from "./render-adapter"
 import { setRenderAdapter } from "./render-adapter"
 
@@ -51,7 +56,10 @@ let initialized = false
  * Called automatically by render functions, but can be called manually.
  * Idempotent — only the first call takes effect.
  */
-export function initBrowserRenderer<TConfig>(factory: BrowserAdapterFactory<TConfig>, config: TConfig): void {
+export function initBrowserRenderer<TConfig>(
+  factory: BrowserAdapterFactory<TConfig>,
+  config: TConfig,
+): void {
   if (initialized) return
 
   setLayoutEngine(createFlexilyZeroEngine())

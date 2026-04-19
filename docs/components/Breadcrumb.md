@@ -30,7 +30,10 @@ The last item is rendered in bold `$fg` as the current location. Preceding items
 ## Usage
 
 ```tsx
-<Breadcrumb items={[{ label: "Home" }, { label: "Settings" }, { label: "Profile" }]} separator=">" />
+<Breadcrumb
+  items={[{ label: "Home" }, { label: "Settings" }, { label: "Profile" }]}
+  separator=">"
+/>
 // Renders: Home > Settings > Profile
 ```
 

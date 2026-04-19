@@ -59,8 +59,7 @@ describe('<Text color="inherit">', () => {
     const r = createRenderer({ cols: 20, rows: 3 })
     const app = r(
       <Text color="#0000ff">
-        A
-        <Text color="currentColor">B</Text>
+        A<Text color="currentColor">B</Text>
       </Text>,
     )
     expect(app.cell(0, 0).fg).toEqual(BLUE)
@@ -106,8 +105,7 @@ describe('<Text color="inherit">', () => {
     const r = createRenderer({ cols: 20, rows: 3 })
     const app = r(
       <Text color="#ff0000">
-        A
-        <Text color="#0000ff">B</Text>
+        A<Text color="#0000ff">B</Text>
         <Text color="inherit">C</Text>
       </Text>,
     )

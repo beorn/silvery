@@ -11,7 +11,11 @@
  */
 
 import { bench, describe } from "vitest"
-import { ensureDefaultLayoutEngine, getLayoutEngine, getConstants } from "@silvery/ag-term/layout-engine"
+import {
+  ensureDefaultLayoutEngine,
+  getLayoutEngine,
+  getConstants,
+} from "@silvery/ag-term/layout-engine"
 import type { LayoutNode } from "@silvery/ag/layout-types"
 
 // Top-level await for layout engine initialization —
@@ -55,7 +59,12 @@ function createDeepTree(depth: number, width: number, height: number): LayoutNod
   return root
 }
 
-function createKanbanTree(columns: number, cardsPerColumn: number, width: number, height: number): LayoutNode {
+function createKanbanTree(
+  columns: number,
+  cardsPerColumn: number,
+  width: number,
+  height: number,
+): LayoutNode {
   const root = engine.createNode()
   root.setWidth(width)
   root.setHeight(height)

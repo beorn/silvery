@@ -2,7 +2,7 @@
  * Homebrew palette — classic green-on-black terminal.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Homebrew — the classic green phosphor terminal look. */
 export const homebrew: ColorScheme = {

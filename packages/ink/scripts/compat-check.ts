@@ -267,7 +267,10 @@ await initInkCompat();
   ])
   // Ink 7.0 text dim+bold rendering: Ink outputs combined SGR codes, silvery
   // emits separate sequences.
-  await addFailingMarks(join(INK_DIR, "test/text.tsx"), ["text with dim+bold", "text with dim+bold - concurrent"])
+  await addFailingMarks(join(INK_DIR, "test/text.tsx"), [
+    "text with dim+bold",
+    "text with dim+bold - concurrent",
+  ])
   // Ink 7.0 cursor: debug mode interaction with cursor visibility.
   // Some cursor tests use dynamic test names from a loop (testCase.testName),
   // so addFailingMarks can't match them. Mark the loop's test.serial as failing.

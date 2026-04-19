@@ -49,7 +49,10 @@ import {
   type MouseEventProcessorState,
 } from "../mouse-events"
 import { createInputRouter, type InputRouter } from "@silvery/create/internal/input-router"
-import { createCapabilityRegistry, type CapabilityRegistry } from "@silvery/create/internal/capability-registry"
+import {
+  createCapabilityRegistry,
+  type CapabilityRegistry,
+} from "@silvery/create/internal/capability-registry"
 import { INPUT_ROUTER } from "@silvery/create/internal/capabilities"
 
 // =============================================================================
@@ -100,7 +103,9 @@ export interface AppWithDomEvents {
  * @param options - Configuration (focusManager for click-to-focus)
  * @returns Plugin function that enhances an App with DOM event dispatch
  */
-export function withDomEvents(options: WithDomEventsOptions = {}): <T extends App>(app: T) => T & AppWithDomEvents {
+export function withDomEvents(
+  options: WithDomEventsOptions = {},
+): <T extends App>(app: T) => T & AppWithDomEvents {
   return <T extends App>(app: T): T & AppWithDomEvents => {
     // Get focus manager from options or from the app itself
     const fm = options.focusManager ?? (app as App & { focusManager?: FocusManager }).focusManager
@@ -137,7 +142,11 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
         if (prop === "inputRouter") return router
 
         if (prop === "click") {
-          return async function enhancedClick(x: number, y: number, clickOptions?: { button?: number }): Promise<T> {
+          return async function enhancedClick(
+            x: number,
+            y: number,
+            clickOptions?: { button?: number },
+          ): Promise<T> {
             const button = clickOptions?.button ?? 0
 
             // Dispatch through input router first

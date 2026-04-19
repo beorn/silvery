@@ -61,7 +61,12 @@ export { outputPhase } from "./output-phase"
 export { applyBackdropFade, hasBackdropMarkers } from "./backdrop-phase"
 export type { BackdropColorLevel, BackdropFadeOptions } from "./backdrop-phase"
 // Layout signals — unified module (backward compat re-exports)
-export { getLayoutSignals, hasLayoutSignals, syncRectSignals, type LayoutSignals } from "@silvery/ag/layout-signals"
+export {
+  getLayoutSignals,
+  hasLayoutSignals,
+  syncRectSignals,
+  type LayoutSignals,
+} from "@silvery/ag/layout-signals"
 export { getLayoutSignals as getRectSignals } from "@silvery/ag/layout-signals"
 
 // ============================================================================

@@ -18,7 +18,11 @@ import {
 // ============================================================================
 
 /** Create a buffer and set cells from a simple spec. */
-function makeBuffer(width: number, height: number, cells?: Array<{ x: number; y: number; cell: Partial<Cell> }>) {
+function makeBuffer(
+  width: number,
+  height: number,
+  cells?: Array<{ x: number; y: number; cell: Partial<Cell> }>,
+) {
   const buf = new TerminalBuffer(width, height)
   for (const { x, y, cell } of cells ?? []) {
     buf.setCell(x, y, cell)
@@ -140,7 +144,9 @@ describe("createTextFrame", () => {
   // ==========================================================================
 
   test("underline style is preserved as UnderlineStyle, not boolean", () => {
-    const buf = makeBuffer(10, 1, [{ x: 0, y: 0, cell: { char: "U", attrs: { underlineStyle: "curly" } } }])
+    const buf = makeBuffer(10, 1, [
+      { x: 0, y: 0, cell: { char: "U", attrs: { underlineStyle: "curly" } } },
+    ])
     const frame = createTextFrame(buf)
     const c = frame.cell(0, 0)
 

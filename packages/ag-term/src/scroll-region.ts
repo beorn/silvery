@@ -55,11 +55,22 @@ export function supportsScrollRegions(): boolean {
   const termProgram = process.env.TERM_PROGRAM ?? ""
 
   // Known-good terminal programs
-  if (termProgram === "iTerm.app" || termProgram === "WezTerm" || termProgram === "ghostty" || termProgram === "vscode")
+  if (
+    termProgram === "iTerm.app" ||
+    termProgram === "WezTerm" ||
+    termProgram === "ghostty" ||
+    termProgram === "vscode"
+  )
     return true
 
   // Known-good TERM values
-  if (term.includes("xterm") || term.includes("screen") || term.includes("tmux") || term.includes("kitty")) return true
+  if (
+    term.includes("xterm") ||
+    term.includes("screen") ||
+    term.includes("tmux") ||
+    term.includes("kitty")
+  )
+    return true
 
   // Linux console doesn't support DECSTBM
   if (term === "linux") return false

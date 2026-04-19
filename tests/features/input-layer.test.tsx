@@ -422,7 +422,11 @@ describe("useInputLayer — dynamic layers", () => {
     const handlerV1 = vi.fn(() => true)
     const handlerV2 = vi.fn(() => true)
 
-    function App({ handler }: { handler: (input: string, key: import("@silvery/ag/keys").Key) => boolean }) {
+    function App({
+      handler,
+    }: {
+      handler: (input: string, key: import("@silvery/ag/keys").Key) => boolean
+    }) {
       return (
         <InputLayerProvider>
           <Layer id="switchable" handler={handler} />
@@ -553,7 +557,9 @@ describe("useInputLayer — edge cases", () => {
 
     const render = createRenderer({ cols: 40, rows: 5 })
 
-    expect(() => render(<App />)).toThrow("useInputLayerContext must be used within an InputLayerProvider")
+    expect(() => render(<App />)).toThrow(
+      "useInputLayerContext must be used within an InputLayerProvider",
+    )
   })
 
   test("useInputLayerContext inside provider does not throw", () => {

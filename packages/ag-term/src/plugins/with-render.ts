@@ -42,7 +42,10 @@ export interface RenderTerm extends MeasuredTerm {
    * Render a React element to a string using this terminal's caps.
    * Uses the term's width measurer for correct text measurement.
    */
-  renderStatic(element: ReactElement, options?: { width?: number; height?: number; plain?: boolean }): Promise<string>
+  renderStatic(
+    element: ReactElement,
+    options?: { width?: number; height?: number; plain?: boolean },
+  ): Promise<string>
 }
 
 /**
@@ -65,7 +68,8 @@ export function withRender(term: Term): RenderTerm {
     prevBuffer: TerminalBuffer | null,
     options?: ExecuteRenderOptions | "fullscreen" | "inline",
   ): { output: string; buffer: TerminalBuffer } {
-    const opts: ExecuteRenderOptions = typeof options === "string" ? { mode: options } : (options ?? {})
+    const opts: ExecuteRenderOptions =
+      typeof options === "string" ? { mode: options } : (options ?? {})
     const {
       mode = "fullscreen",
       skipLayoutNotifications = false,

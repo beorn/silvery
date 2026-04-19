@@ -17,7 +17,10 @@ import { Box, Text } from "silvery"
 import type { AgNode, Rect } from "@silvery/ag"
 
 /** Walk the ag tree and collect all nodes with their scrollrects. */
-function collectRects(node: AgNode, acc: { type: string; rect: Rect | null; text?: string }[] = []) {
+function collectRects(
+  node: AgNode,
+  acc: { type: string; rect: Rect | null; text?: string }[] = [],
+) {
   acc.push({
     type: node.type,
     rect: node.scrollRect ?? node.boxRect,

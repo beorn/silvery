@@ -451,7 +451,12 @@ The `buffered` field contains any non-response data read during detection (user 
 Manual control functions (auto-enable handles these for you):
 
 ```typescript
-import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "@silvery/ag-term"
+import {
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+  queryKittyKeyboard,
+  KittyFlags,
+} from "@silvery/ag-term"
 
 // Enable with default flags (disambiguate only)
 stdout.write(enableKittyKeyboard())

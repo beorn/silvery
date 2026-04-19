@@ -2,7 +2,7 @@
  * Mariana palette — Sublime Text's default dark theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Mariana — Sublime Text's oceanic dark theme. */
 export const mariana: ColorScheme = {

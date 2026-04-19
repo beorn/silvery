@@ -98,7 +98,10 @@ export function EditContextDisplay({
   const clampedCursor = Math.min(Math.max(0, cursor), value.length)
 
   // Compute wrapped lines and cursor position
-  const wrappedLines = useMemo(() => getWrappedLines(value, effectiveWrapWidth), [value, effectiveWrapWidth])
+  const wrappedLines = useMemo(
+    () => getWrappedLines(value, effectiveWrapWidth),
+    [value, effectiveWrapWidth],
+  )
 
   const { row: cursorRow, col: cursorCol } = useMemo(
     () => cursorToRowCol(value, clampedCursor, effectiveWrapWidth),
@@ -135,7 +138,9 @@ export function EditContextDisplay({
   // =========================================================================
 
   const currentScroll = hasViewport ? scrollRef.current : 0
-  const visibleLines = hasViewport ? wrappedLines.slice(currentScroll, currentScroll + height) : wrappedLines
+  const visibleLines = hasViewport
+    ? wrappedLines.slice(currentScroll, currentScroll + height)
+    : wrappedLines
 
   // =========================================================================
   // Mouse click handler
@@ -196,7 +201,11 @@ export function EditContextDisplay({
         return (
           <Text key={absoluteRow}>
             {beforeCursorText}
-            {cursorStyle === "block" ? <Text inverse>{atCursor}</Text> : <Text underline>{atCursor}</Text>}
+            {cursorStyle === "block" ? (
+              <Text inverse>{atCursor}</Text>
+            ) : (
+              <Text underline>{atCursor}</Text>
+            )}
             {afterCursorText}
           </Text>
         )

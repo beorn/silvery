@@ -48,7 +48,10 @@ function addSubcommands(program: InstanceType<typeof BaseCommand>): void {
     .option("-w, --watch", "Watch mode")
     .option("--target <platform>", "Target platform")
 
-  program.command("serve").description("Start dev server").option("-p, --port <number>", "Port number")
+  program
+    .command("serve")
+    .description("Start dev server")
+    .option("-p, --port <number>", "Port number")
 }
 
 describe("colorizeHelp", () => {
@@ -258,7 +261,9 @@ describe("addHelpSection", () => {
   it("should support multiple sections", () => {
     const program = new Command("myapp")
     colorizeHelp(program)
-    program.addHelpSection("Section A:", [["a", "first"]]).addHelpSection("Section B:", [["b", "second"]])
+    program
+      .addHelpSection("Section A:", [["a", "first"]])
+      .addHelpSection("Section B:", [["b", "second"]])
     const help = program.helpInformation()
     expect(help).toContain("Section A:")
     expect(help).toContain("Section B:")
@@ -284,7 +289,9 @@ describe("addHelpSection", () => {
   it("renders multi-line terms with description on first line only", () => {
     const program = new Command("myapp")
     colorizeHelp(program)
-    program.addHelpSection("Quick Start:", [["$ myapp init\n$ myapp build\n$ myapp serve", "Set up and run the app"]])
+    program.addHelpSection("Quick Start:", [
+      ["$ myapp init\n$ myapp build\n$ myapp serve", "Set up and run the app"],
+    ])
     const plain = stripAnsi(program.helpInformation())
 
     // All three command lines must be present (plain text — ANSI stripped)

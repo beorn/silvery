@@ -33,7 +33,10 @@ export interface ListDocument {
   search(query: string): SearchMatch[]
 }
 
-export function createListDocument(history: HistoryBuffer, getLiveItems: () => LiveItemBlock[]): ListDocument {
+export function createListDocument(
+  history: HistoryBuffer,
+  getLiveItems: () => LiveItemBlock[],
+): ListDocument {
   function liveRowCount(): number {
     let total = 0
     for (const block of getLiveItems()) {

@@ -3,8 +3,8 @@
  * Source: https://github.com/sindresorhus/hyper-snazzy
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Snazzy — clean dark theme by Sindre Sorhus. */
 export const snazzy: ColorScheme = {

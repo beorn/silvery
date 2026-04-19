@@ -2,7 +2,7 @@
  * Shades of Purple palette — Ahmad Awais's vibrant purple theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Shades of Purple — vivid purple-based dark theme. */
 export const shadesOfPurple: ColorScheme = {

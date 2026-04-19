@@ -186,7 +186,11 @@ export {
  * Internally delegates to createApp() with an empty store.
  * For stores and providers, use createApp() directly.
  */
-export async function run(element: ReactElement, term: Term, termOptions?: Partial<RunOptions>): Promise<RunHandle>
+export async function run(
+  element: ReactElement,
+  term: Term,
+  termOptions?: Partial<RunOptions>,
+): Promise<RunHandle>
 export async function run(element: ReactElement, options?: RunOptions): Promise<RunHandle>
 export async function run(
   element: ReactElement,
@@ -196,7 +200,9 @@ export async function run(
   // Term path: pass Term as provider + its streams, auto-enable from Term caps
   if (isTerm(optionsOrTerm)) {
     const term = optionsOrTerm as Term
-    const emulator = (term as unknown as Record<string, unknown>)._emulator as { feed(data: string): void } | undefined
+    const emulator = (term as unknown as Record<string, unknown>)._emulator as
+      | { feed(data: string): void }
+      | undefined
 
     // Emulator-backed term: non-headless mode with stdout routing to emulator.
     // Create a mock stdin that forwards sendInput() data to the term provider's

@@ -9,7 +9,7 @@
  * silvery's render pipeline where React context isn't accessible.
  */
 
-import type { Theme } from "./types"
+import type { Theme } from "@silvery/ansi"
 import { ansi16DarkTheme } from "./schemes/index"
 
 // ============================================================================

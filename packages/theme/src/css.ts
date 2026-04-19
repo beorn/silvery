@@ -5,7 +5,7 @@
  * suitable for applying as inline styles or injecting into a stylesheet.
  */
 
-import type { Theme } from "./types"
+import type { Theme } from "@silvery/ansi"
 import { THEME_TOKEN_KEYS } from "./validate-theme"
 
 /**

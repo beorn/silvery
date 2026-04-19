@@ -18,11 +18,11 @@
  * ```
  */
 
-import { hexToRgb } from "./color"
-import { deriveTheme } from "./derive"
+import { hexToRgb } from "@silvery/color"
+import { deriveTheme } from "@silvery/ansi"
 import { fromColors, assignPrimaryToSlot } from "./generators"
 import { getSchemeByName } from "./schemes/index"
-import type { Theme, ColorScheme, HueName } from "./types"
+import type { Theme, ColorScheme, HueName } from "@silvery/ansi"
 
 // ============================================================================
 // Luminance
@@ -143,7 +143,8 @@ export function createTheme(): ThemeBuilder {
 
       // Apply explicit color overrides
       for (const [key, val] of Object.entries(state.colors)) {
-        if (val !== undefined && typeof val === "string") (palette as unknown as Record<string, string>)[key] = val
+        if (val !== undefined && typeof val === "string")
+          (palette as unknown as Record<string, string>)[key] = val
       }
 
       return deriveTheme(palette)

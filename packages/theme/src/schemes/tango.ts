@@ -2,7 +2,7 @@
  * Tango palettes — GNOME terminal defaults based on the Tango icon palette.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Tango Dark — GNOME terminal's classic dark Tango theme. */
 export const tangoDark: ColorScheme = {

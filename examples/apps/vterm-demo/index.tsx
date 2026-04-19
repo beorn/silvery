@@ -88,7 +88,12 @@ function ChatApp({
         <Box paddingX={1}>
           <Text>
             {meta.isCursor ? ">" : " "}{" "}
-            <Text color={ex.role === "user" ? "$primary" : ex.role === "agent" ? "$success" : "$warning"} bold>
+            <Text
+              color={
+                ex.role === "user" ? "$primary" : ex.role === "agent" ? "$success" : "$warning"
+              }
+              bold
+            >
               {ex.role}
             </Text>
             : {ex.content.slice(0, 70)}

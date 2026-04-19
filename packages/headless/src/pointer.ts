@@ -107,7 +107,8 @@ export function checkPointerDoubleClick(
   const dx = Math.abs(x - state.lastDownX)
   const dy = Math.abs(y - state.lastDownY)
 
-  const isDouble = timeDelta <= DOUBLE_CLICK_TIME_MS && dx <= DOUBLE_CLICK_DISTANCE && dy <= DOUBLE_CLICK_DISTANCE
+  const isDouble =
+    timeDelta <= DOUBLE_CLICK_TIME_MS && dx <= DOUBLE_CLICK_DISTANCE && dy <= DOUBLE_CLICK_DISTANCE
 
   // Update state
   state.lastDownTime = now
@@ -150,7 +151,10 @@ function distance(a: Position, b: Position): number {
  * Processes pointer actions and returns [newState, effects[]].
  * Effects are consumed by the integration hook.
  */
-export function pointerStateUpdate(action: PointerAction, state: PointerState): [PointerState, PointerEffect[]] {
+export function pointerStateUpdate(
+  action: PointerAction,
+  state: PointerState,
+): [PointerState, PointerEffect[]] {
   switch (action.type) {
     case "pointerDown":
       return handlePointerDown(action, state)
@@ -244,7 +248,12 @@ function handlePointerMove(
       if (dist > DRAG_THRESHOLD) {
         // Transition to dragging-node
         return [
-          { type: "dragging-node", target: state.target, startPos: state.startPos, currentPos: pos },
+          {
+            type: "dragging-node",
+            target: state.target,
+            startPos: state.startPos,
+            currentPos: pos,
+          },
           [{ type: "startDrag", target: state.target }],
         ]
       }
@@ -255,7 +264,10 @@ function handlePointerMove(
       const dist = distance(state.startPos, pos)
       if (dist > DRAG_THRESHOLD) {
         // Transition to dragging-area
-        return [{ type: "dragging-area", startPos: state.startPos, currentPos: pos }, [{ type: "clearSelection" }]]
+        return [
+          { type: "dragging-area", startPos: state.startPos, currentPos: pos },
+          [{ type: "clearSelection" }],
+        ]
       }
       return [state, []]
     }
@@ -290,13 +302,17 @@ function handlePointerUp(
 
     case "pointing-text": {
       // No drag threshold crossed — this is a click on a text target
-      const effects: PointerEffect[] = [{ type: "click", target: state.target, x: action.x, y: action.y }]
+      const effects: PointerEffect[] = [
+        { type: "click", target: state.target, x: action.x, y: action.y },
+      ]
       return [{ type: "idle" }, effects]
     }
 
     case "pointing-node": {
       // No drag threshold crossed — this is a click
-      const effects: PointerEffect[] = [{ type: "click", target: state.target, x: action.x, y: action.y }]
+      const effects: PointerEffect[] = [
+        { type: "click", target: state.target, x: action.x, y: action.y },
+      ]
       return [{ type: "idle" }, effects]
     }
 
@@ -311,7 +327,10 @@ function handlePointerUp(
 
     case "dragging-node": {
       // End the node drag — emit finishDrag so integration layer can dispatch onDrop
-      return [{ type: "idle" }, [{ type: "finishDrag", target: state.target, pos: { x: action.x, y: action.y } }]]
+      return [
+        { type: "idle" },
+        [{ type: "finishDrag", target: state.target, pos: { x: action.x, y: action.y } }],
+      ]
     }
 
     case "dragging-area": {

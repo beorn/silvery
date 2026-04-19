@@ -2,8 +2,8 @@
  * Tokyo Night palette — a clean dark theme inspired by Tokyo city lights.
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Tokyo Night — the default dark variant. */
 export const tokyoNight: ColorScheme = {

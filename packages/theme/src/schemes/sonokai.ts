@@ -3,8 +3,8 @@
  * Source: https://github.com/sainnhe/sonokai (default style)
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Sonokai — vivid dark theme with Monokai-inspired accents. */
 export const sonokai: ColorScheme = {

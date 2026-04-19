@@ -2,7 +2,7 @@
  * Cobalt2 palette — Wes Bos's vibrant dark theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Cobalt2 — vibrant dark blue theme by Wes Bos. */
 export const cobalt2: ColorScheme = {

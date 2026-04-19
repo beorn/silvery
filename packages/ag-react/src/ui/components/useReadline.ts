@@ -29,7 +29,12 @@
  */
 import { useCallback, useRef, useState } from "react"
 import { useInput } from "../../hooks/index"
-import { killRing, addToKillRing, handleReadlineKey, type YankState } from "../../hooks/readline-ops"
+import {
+  killRing,
+  addToKillRing,
+  handleReadlineKey,
+  type YankState,
+} from "../../hooks/readline-ops"
 
 // =============================================================================
 // Types

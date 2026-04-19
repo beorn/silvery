@@ -53,7 +53,17 @@ A process explorer with search filtering, a sortable table, and responsive colum
 
 ```tsx [explorer.tsx]
 import { useState, useDeferredValue } from "react"
-import { Box, Text, Table, TextInput, VirtualList, useBoxRect, render, useApp, createTerm } from "silvery"
+import {
+  Box,
+  Text,
+  Table,
+  TextInput,
+  VirtualList,
+  useBoxRect,
+  render,
+  useApp,
+  createTerm,
+} from "silvery"
 
 // Sample data — replace with your own data source
 const processes = Array.from({ length: 500 }, (_, i) => ({
@@ -72,7 +82,10 @@ function App() {
 
   // Filter rows against the deferred query so typing stays responsive
   const filtered = processes.filter(
-    (p) => p.name.includes(deferredQuery) || String(p.pid).includes(deferredQuery) || p.status.includes(deferredQuery),
+    (p) =>
+      p.name.includes(deferredQuery) ||
+      String(p.pid).includes(deferredQuery) ||
+      p.status.includes(deferredQuery),
   )
 
   // Responsive column widths
@@ -83,7 +96,11 @@ function App() {
     <Box flexDirection="column" width="100%" height="100%">
       <Box paddingX={1} height={1}>
         <Text bold>Filter: </Text>
-        <TextInput value={query} onChange={setQuery} placeholder="Search by name, PID, or status..." />
+        <TextInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search by name, PID, or status..."
+        />
       </Box>
 
       <Box paddingX={1} flexGrow={1}>

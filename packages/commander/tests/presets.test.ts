@@ -294,7 +294,9 @@ describe("bool", () => {
   })
 
   it("rejects ambiguous values", () => {
-    expect(() => bool.parse("maybe")).toThrow('Expected boolean (true/false/yes/no/1/0), got "maybe"')
+    expect(() => bool.parse("maybe")).toThrow(
+      'Expected boolean (true/false/yes/no/1/0), got "maybe"',
+    )
     expect(() => bool.parse("")).toThrow("Expected boolean")
     expect(() => bool.parse("2")).toThrow("Expected boolean")
   })

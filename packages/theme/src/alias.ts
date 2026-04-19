@@ -5,7 +5,7 @@
  * depth limit to prevent infinite loops from circular references.
  */
 
-import type { Theme } from "./types"
+import type { Theme } from "@silvery/ansi"
 
 /** Maximum depth for alias chain resolution before treating as circular. */
 const MAX_ALIAS_DEPTH = 10

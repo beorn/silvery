@@ -4,7 +4,7 @@
  * Uses ANSI color names (not hex) so it works on any terminal without truecolor support.
  */
 
-import type { AnsiPrimary, Theme } from "./types"
+import type { AnsiPrimary, Theme } from "@silvery/ansi"
 import { deriveFields, DEFAULT_VARIANTS } from "@silvery/ansi"
 
 // Re-export for consumers that import DEFAULT_VARIANTS from here.

@@ -65,7 +65,12 @@ export type {
 } from "./focus-manager"
 
 // Focus Events
-export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "./focus-events"
+export {
+  createKeyEvent,
+  createFocusEvent,
+  dispatchKeyEvent,
+  dispatchFocusEvent,
+} from "./focus-events"
 export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "./focus-events"
 
 // Drag Event Types

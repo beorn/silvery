@@ -2,7 +2,7 @@
  * Espresso palette — the warm coffee-inspired dark theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Espresso — warm, balanced dark theme. */
 export const espresso: ColorScheme = {

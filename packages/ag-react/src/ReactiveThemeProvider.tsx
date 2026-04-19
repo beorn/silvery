@@ -21,7 +21,7 @@
 import React from "react"
 import { ThemeProvider } from "./ThemeProvider"
 import { useColorScheme } from "./hooks/useColorScheme"
-import type { Theme } from "@silvery/theme/types"
+import type { Theme } from "@silvery/ansi"
 import { defaultDarkTheme, defaultLightTheme } from "@silvery/theme"
 
 export interface ReactiveThemeProviderProps {

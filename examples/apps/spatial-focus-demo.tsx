@@ -41,7 +41,8 @@ const columns: ColumnData[] = [
       {
         id: "b2",
         title: "Refactor auth module",
-        description: "Move from JWT to session-based auth.\nUpdate all middleware.\nAdd refresh token rotation.",
+        description:
+          "Move from JWT to session-based auth.\nUpdate all middleware.\nAdd refresh token rotation.",
         tags: ["backend", "security"],
         priority: "high",
       },
@@ -71,7 +72,8 @@ const columns: ColumnData[] = [
       {
         id: "t3",
         title: "E2E test suite",
-        description: "Cover critical user flows:\n- Login/signup\n- Project CRUD\n- Team management\n- Billing",
+        description:
+          "Cover critical user flows:\n- Login/signup\n- Project CRUD\n- Team management\n- Billing",
         tags: ["testing"],
         priority: "high",
       },
@@ -93,7 +95,8 @@ const columns: ColumnData[] = [
       {
         id: "p3",
         title: "CI/CD pipeline",
-        description: "GitHub Actions workflow:\n- Lint + typecheck\n- Unit tests\n- E2E tests\n- Deploy to staging",
+        description:
+          "GitHub Actions workflow:\n- Lint + typecheck\n- Unit tests\n- E2E tests\n- Deploy to staging",
         tags: ["devops"],
         priority: "medium",
       },
@@ -217,7 +220,12 @@ function CardView({ card, focused }: { card: CardData; focused: boolean }) {
   const priority = card.priority ? prioritySymbols[card.priority] : null
 
   return (
-    <Box testID={card.id} flexDirection="column" borderStyle="round" borderColor={focused ? "$warning" : "$border"}>
+    <Box
+      testID={card.id}
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={focused ? "$warning" : "$border"}
+    >
       <Box paddingX={1} gap={1}>
         {priority && <Text color={priority.color}>{priority.symbol}</Text>}
         <Text bold={focused} color={focused ? "$warning" : undefined} wrap="truncate">
@@ -240,7 +248,13 @@ function CardView({ card, focused }: { card: CardData; focused: boolean }) {
   )
 }
 
-function ColumnView({ column, focusedCardId }: { column: ColumnData; focusedCardId: string | null }) {
+function ColumnView({
+  column,
+  focusedCardId,
+}: {
+  column: ColumnData
+  focusedCardId: string | null
+}) {
   const hasFocus = column.cards.some((c) => c.id === focusedCardId)
 
   return (
@@ -357,7 +371,8 @@ function SpatialFocusBoard() {
 
 export const meta = {
   name: "Spatial Focus",
-  description: "Kanban board with spatial navigation — arrow keys / hjkl move between cards across columns",
+  description:
+    "Kanban board with spatial navigation — arrow keys / hjkl move between cards across columns",
   demo: true,
   features: ["spatial navigation", "kanban layout", "varied card heights", "column focus tracking"],
 }

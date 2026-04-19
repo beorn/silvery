@@ -27,7 +27,13 @@ const COLS = 120
 const ROWS = 40
 
 /** Write string to buffer at (x, y), returns new x position */
-function writeStr(buf: TerminalBuffer, x: number, y: number, text: string, fg: string | null = null): number {
+function writeStr(
+  buf: TerminalBuffer,
+  x: number,
+  y: number,
+  text: string,
+  fg: string | null = null,
+): number {
   for (const ch of text) {
     buf.setCell(x, y, { char: ch, wide: false, fg: fg as any })
     x++
@@ -175,7 +181,9 @@ describe("cross-backend output comparison", () => {
         context += `  xterm  row ${y}: ${xr.trimEnd()}\n`
         context += `  ghostty row ${y}: ${gr.trimEnd()}\n`
       }
-      expect.fail(`${mismatches.length}+ cross-backend mismatches:\n${mismatches.join("\n")}\n\nContext:\n${context}`)
+      expect.fail(
+        `${mismatches.length}+ cross-backend mismatches:\n${mismatches.join("\n")}\n\nContext:\n${context}`,
+      )
     }
 
     xtermTerm.close()
@@ -285,7 +293,10 @@ describe("cross-backend output comparison", () => {
     }
 
     // Check if content shifted in Ghostty (scroll indicator)
-    const ghosttyRow0 = Array.from({ length: cols }, (_, x) => ghosttyTerm.getCell(0, x)?.char || " ")
+    const ghosttyRow0 = Array.from(
+      { length: cols },
+      (_, x) => ghosttyTerm.getCell(0, x)?.char || " ",
+    )
       .join("")
       .trimEnd()
     const xtermRow0 = Array.from({ length: cols }, (_, x) => xtermTerm.getCell(0, x)?.char || " ")

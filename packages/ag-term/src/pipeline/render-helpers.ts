@@ -13,7 +13,7 @@
 
 import { DEFAULT_BG, type Color, type Style, type UnderlineStyle } from "../buffer"
 import { getActiveColorLevel, getActiveTheme } from "@silvery/theme/state"
-import { resolveThemeColor } from "@silvery/theme/resolve"
+import { resolveThemeColor } from "@silvery/ansi"
 import { monoAttrsForColorString, type MonoAttr } from "@silvery/ansi"
 import type { BoxProps, TextProps } from "@silvery/ag/types"
 import { displayWidthAnsi } from "../unicode"
@@ -113,7 +113,13 @@ export function parseColor(color: string): Color {
       }
 
       // Only blend RGB objects; ANSI indices (number) and null cannot be blended
-      if (c1 !== null && c2 !== null && typeof c1 === "object" && typeof c2 === "object" && !Number.isNaN(t)) {
+      if (
+        c1 !== null &&
+        c2 !== null &&
+        typeof c1 === "object" &&
+        typeof c2 === "object" &&
+        !Number.isNaN(t)
+      ) {
         return blendColors(c1, c2, Math.max(0, Math.min(1, t)))
       }
       return null

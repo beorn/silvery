@@ -32,7 +32,11 @@ export type FocusOrigin = "keyboard" | "mouse" | "programmatic"
  * @param newNode - The node gaining focus (null on blur)
  * @param origin - How focus was acquired
  */
-export type FocusChangeCallback = (oldNode: AgNode | null, newNode: AgNode | null, origin: FocusOrigin | null) => void
+export type FocusChangeCallback = (
+  oldNode: AgNode | null,
+  newNode: AgNode | null,
+  origin: FocusOrigin | null,
+) => void
 
 export interface FocusSnapshot {
   activeId: string | null
@@ -565,7 +569,9 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     // the component is already in the tab order via the tree scan.
     if (!effectiveScope && hookFocusEnabled) {
       const treeIds = new Set(
-        nodes.map((n) => (n.props as Record<string, unknown>).testID as string | undefined).filter(Boolean),
+        nodes
+          .map((n) => (n.props as Record<string, unknown>).testID as string | undefined)
+          .filter(Boolean),
       )
       for (const entry of hookFocusables) {
         if (entry.isActive && !treeIds.has(entry.id)) entries.push({ kind: "hook", id: entry.id })

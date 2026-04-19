@@ -104,11 +104,19 @@ export function Table<T>({
       )
 
     return col.grow ? (
-      <Box key={col.header} flexGrow={1} justifyContent={col.align === "right" ? "flex-end" : undefined}>
+      <Box
+        key={col.header}
+        flexGrow={1}
+        justifyContent={col.align === "right" ? "flex-end" : undefined}
+      >
         {content}
       </Box>
     ) : (
-      <Box key={col.header} width={width} justifyContent={col.align === "right" ? "flex-end" : undefined}>
+      <Box
+        key={col.header}
+        width={width}
+        justifyContent={col.align === "right" ? "flex-end" : undefined}
+      >
         {content}
       </Box>
     )
@@ -143,7 +151,9 @@ export function Table<T>({
           )}
         </Box>
       )}
-      {data.length > 0 && <ListView items={data} height={viewportHeight} estimateHeight={1} renderItem={renderRow} />}
+      {data.length > 0 && (
+        <ListView items={data} height={viewportHeight} estimateHeight={1} renderItem={renderRow} />
+      )}
     </Box>
   )
 }

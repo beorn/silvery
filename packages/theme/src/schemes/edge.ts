@@ -3,8 +3,8 @@
  * Source: https://github.com/sainnhe/edge (default style)
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Edge Dark — clean dark variant with balanced accents. */
 export const edgeDark: ColorScheme = {

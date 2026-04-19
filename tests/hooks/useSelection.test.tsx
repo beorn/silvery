@@ -12,7 +12,10 @@ import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
 import { useSelection } from "../../packages/ag-react/src/hooks/useSelection"
-import { CapabilityRegistryContext, type CapabilityLookup } from "../../packages/ag-react/src/context"
+import {
+  CapabilityRegistryContext,
+  type CapabilityLookup,
+} from "../../packages/ag-react/src/context"
 import type { TerminalSelectionState } from "../../packages/headless/src/selection"
 
 // ============================================================================
@@ -69,7 +72,8 @@ function SelectionDisplay() {
   const selecting = selection.selecting
   return (
     <Text>
-      range={hasRange ? "active" : "null"} selecting={String(selecting)} source={selection.source ?? "null"}
+      range={hasRange ? "active" : "null"} selecting={String(selecting)} source=
+      {selection.source ?? "null"}
     </Text>
   )
 }

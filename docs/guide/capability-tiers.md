@@ -9,12 +9,12 @@ Not every terminal supports 16 million colors. Silvery detects your terminal's c
 
 ## The four tiers
 
-| Tier         | Colors      | Example terminals                       | What silvery emits                 |
-|--------------|-------------|-----------------------------------------|------------------------------------|
-| `truecolor`  | ~16.7M      | Ghostty, Kitty, iTerm2, WezTerm, Alacritty, Windows Terminal, modern xterm | 24-bit hex (SGR 38;2;r;g;b) |
-| `256`        | 256         | Older terminals with `COLORTERM` unset  | 256-color indexed (SGR 38;5;n)     |
-| `ansi16`     | 16          | Basic terminals, SSH to legacy hosts    | ANSI 16 names (`\e[31m`, `\e[91m`) |
-| `mono`       | 0 (attrs)   | `TERM=dumb`, `NO_COLOR`, pipes          | SGR attrs only (bold, inverse, …)  |
+| Tier        | Colors    | Example terminals                                                          | What silvery emits                 |
+| ----------- | --------- | -------------------------------------------------------------------------- | ---------------------------------- |
+| `truecolor` | ~16.7M    | Ghostty, Kitty, iTerm2, WezTerm, Alacritty, Windows Terminal, modern xterm | 24-bit hex (SGR 38;2;r;g;b)        |
+| `256`       | 256       | Older terminals with `COLORTERM` unset                                     | 256-color indexed (SGR 38;5;n)     |
+| `ansi16`    | 16        | Basic terminals, SSH to legacy hosts                                       | ANSI 16 names (`\e[31m`, `\e[91m`) |
+| `mono`      | 0 (attrs) | `TERM=dumb`, `NO_COLOR`, pipes                                             | SGR attrs only (bold, inverse, …)  |
 
 Each tier is a correct rendering. A cursor at truecolor is a specific hex color; the same cursor at mono is `inverse` attrs with no color.
 
@@ -52,31 +52,31 @@ This is an accessibility feature as much as a preference. Users with color visio
 
 ### Four related-but-distinct modes
 
-| Env / flag        | Effect                                                       |
-|-------------------|--------------------------------------------------------------|
-| `NO_COLOR=1`      | No color, but attrs (bold, inverse, underline) remain.       |
-| `SILVERY_COLOR=mono` | Same as above — the explicit silvery toggle.              |
+| Env / flag            | Effect                                                   |
+| --------------------- | -------------------------------------------------------- |
+| `NO_COLOR=1`          | No color, but attrs (bold, inverse, underline) remain.   |
+| `SILVERY_COLOR=mono`  | Same as above — the explicit silvery toggle.             |
 | `SILVERY_COLOR=plain` | No color AND no attrs — pure text, for piping + scripts. |
-| `SILVERY_STRIP_ALL=1` | Strip ALL ANSI output — for logging to plain files.       |
+| `SILVERY_STRIP_ALL=1` | Strip ALL ANSI output — for logging to plain files.      |
 
 ## Monochrome attrs mapping
 
 At the `mono` tier, tokens map to per-token SGR attrs so state and hierarchy stay distinguishable:
 
-| Token       | Attrs                          | Rationale                             |
-|-------------|--------------------------------|---------------------------------------|
-| `fg`        | `[]` (default)                 | Body text                             |
-| `muted`     | `["dim"]`                      | Secondary info                        |
-| `disabledfg`| `["dim"]`                      | Inactive                              |
-| `primary`   | `["bold"]`                     | Brand emphasis                        |
-| `error`     | `["bold", "inverse"]`          | Loudest — danger grabs attention      |
-| `warning`   | `["bold"]`                     | Caution                               |
-| `success`   | `["bold"]`                     | Confirmation                          |
-| `info`      | `["italic"]`                   | Auxiliary                             |
-| `link`      | `["underline"]`                | Standard convention                   |
-| `inverse`   | `["inverse"]`                  | Direct                                |
-| `selectionbg`| `["inverse"]`                 | Visible selection without color       |
-| `focusborder`| `["bold"]`                    | Focus chrome                          |
+| Token         | Attrs                 | Rationale                        |
+| ------------- | --------------------- | -------------------------------- |
+| `fg`          | `[]` (default)        | Body text                        |
+| `muted`       | `["dim"]`             | Secondary info                   |
+| `disabledfg`  | `["dim"]`             | Inactive                         |
+| `primary`     | `["bold"]`            | Brand emphasis                   |
+| `error`       | `["bold", "inverse"]` | Loudest — danger grabs attention |
+| `warning`     | `["bold"]`            | Caution                          |
+| `success`     | `["bold"]`            | Confirmation                     |
+| `info`        | `["italic"]`          | Auxiliary                        |
+| `link`        | `["underline"]`       | Standard convention              |
+| `inverse`     | `["inverse"]`         | Direct                           |
+| `selectionbg` | `["inverse"]`         | Visible selection without color  |
+| `focusborder` | `["bold"]`            | Focus chrome                     |
 
 Structural surfaces (`bg`, `mutedbg`, `surfacebg`, `popoverbg`, `border`, `cursorbg`) have no attrs — they represent background planes that mono terminals can't vary.
 

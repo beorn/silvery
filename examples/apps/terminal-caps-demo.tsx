@@ -39,7 +39,15 @@ export const meta: ExampleMeta = {
   name: "Terminal Capabilities",
   description: "Probe and display all supported terminal protocols",
   demo: true,
-  features: ["detectTerminalCaps()", "Mode 2031", "DEC 1020-1023", "OSC 66", "OSC 52", "OSC 5522", "DA1/DA2/DA3"],
+  features: [
+    "detectTerminalCaps()",
+    "Mode 2031",
+    "DEC 1020-1023",
+    "OSC 66",
+    "OSC 52",
+    "OSC 5522",
+    "DA1/DA2/DA3",
+  ],
 }
 
 // ============================================================================
@@ -118,7 +126,11 @@ function buildStaticEntries(caps: TerminalCaps): CapEntry[] {
 function TerminalCapsApp({
   initialProbes,
 }: {
-  initialProbes?: { colorScheme: BgMode; widthConfig: TerminalWidthConfig | null; kittyDetected: boolean | null }
+  initialProbes?: {
+    colorScheme: BgMode
+    widthConfig: TerminalWidthConfig | null
+    kittyDetected: boolean | null
+  }
 }) {
   const { exit } = useApp()
   const [caps] = useState<TerminalCaps>(() => detectTerminalCaps())
@@ -266,7 +278,8 @@ export async function main() {
 
     const write = (data: string) => process.stdout.write(data)
     const onData = (handler: (data: string) => void): (() => void) => {
-      const h = (chunk: Buffer | string) => handler(typeof chunk === "string" ? chunk : chunk.toString())
+      const h = (chunk: Buffer | string) =>
+        handler(typeof chunk === "string" ? chunk : chunk.toString())
       process.stdin.on("data", h)
       return () => process.stdin.removeListener("data", h)
     }

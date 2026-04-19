@@ -421,7 +421,12 @@ export {
   findSpatialTarget,
   getExplicitFocusLink,
 } from "@silvery/ag/focus-queries"
-export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "@silvery/ag/focus-events"
+export {
+  createKeyEvent,
+  createFocusEvent,
+  dispatchKeyEvent,
+  dispatchFocusEvent,
+} from "@silvery/ag/focus-events"
 export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "@silvery/ag/focus-events"
 export { useFocusable } from "./hooks/useFocusable"
 export type { UseFocusableResult } from "./hooks/useFocusable"
@@ -455,8 +460,17 @@ export type { PasteHandler } from "./hooks/usePaste"
 export { usePasteEvents } from "./hooks/usePasteEvents"
 
 // Re-export copy extraction types from ag-term for convenience
-export type { CopyEvent, SemanticCopyProvider, ClipboardData, PasteEvent } from "@silvery/ag-term/copy-extraction"
-export { createPasteEvent, createCopyProvider, getInternalClipboard } from "@silvery/ag-term/copy-extraction"
+export type {
+  CopyEvent,
+  SemanticCopyProvider,
+  ClipboardData,
+  PasteEvent,
+} from "@silvery/ag-term/copy-extraction"
+export {
+  createPasteEvent,
+  createCopyProvider,
+  getInternalClipboard,
+} from "@silvery/ag-term/copy-extraction"
 export { useVirtualizer } from "./hooks/useVirtualizer"
 export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer"
 export { useListItem } from "./hooks/useListItem"
@@ -511,7 +525,12 @@ export {
   StderrContext,
   CapabilityRegistryContext,
 } from "./context"
-export type { CacheBackend, RuntimeContextValue, BaseRuntimeEvents, CapabilityLookup } from "./context"
+export type {
+  CacheBackend,
+  RuntimeContextValue,
+  BaseRuntimeEvents,
+  CapabilityLookup,
+} from "./context"
 
 // Theming
 export { ThemeProvider } from "./ThemeProvider"
@@ -648,7 +667,11 @@ export {
 export type { BracketedPasteResult } from "@silvery/ag-term/bracketed-paste"
 
 // OSC 52 clipboard support
-export { copyToClipboard, requestClipboard, parseClipboardResponse } from "@silvery/ag-term/clipboard"
+export {
+  copyToClipboard,
+  requestClipboard,
+  parseClipboardResponse,
+} from "@silvery/ag-term/clipboard"
 
 // OSC 4 palette color query/set
 export {
@@ -662,13 +685,22 @@ export {
 export { OSC133 } from "@silvery/ag-term/osc-markers"
 
 // Kitty protocol detection
-export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from "@silvery/ag-term/kitty-detect"
+export {
+  detectKittySupport,
+  detectKittyFromStdio,
+  type KittyDetectResult,
+} from "@silvery/ag-term/kitty-detect"
 
 // Terminal capability detection
 export { detectTerminalCaps, defaultCaps, type TerminalCaps } from "@silvery/ag-term/terminal-caps"
 
 // Terminal capability visual test
-export { runTermtest, TERMTEST_SECTIONS, type TermtestSection, type TermtestOptions } from "@silvery/ag-term/termtest"
+export {
+  runTermtest,
+  TERMTEST_SECTIONS,
+  type TermtestSection,
+  type TermtestOptions,
+} from "@silvery/ag-term/termtest"
 
 // Output-phase capability configuration (suppress unsupported SGR codes)
 export {
@@ -720,7 +752,11 @@ export {
 } from "@silvery/ag-term/device-attrs"
 
 // Focus reporting (CSI ?1004h)
-export { enableFocusReporting, disableFocusReporting, parseFocusEvent } from "@silvery/ag-term/focus-reporting"
+export {
+  enableFocusReporting,
+  disableFocusReporting,
+  parseFocusEvent,
+} from "@silvery/ag-term/focus-reporting"
 
 // DECRQM mode query
 export { queryMode, queryModes, DecMode } from "@silvery/ag-term/mode-query"
@@ -747,7 +783,11 @@ export { createCanvasAdapter, CanvasRenderBuffer } from "@silvery/ag-term/adapte
 export type { CanvasAdapterConfig } from "@silvery/ag-term/adapters/canvas-adapter"
 
 // DOM adapter
-export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles } from "@silvery/ag-term/adapters/dom-adapter"
+export {
+  createDOMAdapter,
+  DOMRenderBuffer,
+  injectDOMStyles,
+} from "@silvery/ag-term/adapters/dom-adapter"
 export type { DOMAdapterConfig } from "@silvery/ag-term/adapters/dom-adapter"
 
 // App types (unified render API)
@@ -991,7 +1031,11 @@ export { applyTextOp, invertTextOp, mergeTextOps } from "@silvery/create/text-op
 export type { TextOp } from "@silvery/create/text-ops"
 
 export { useEditContext, activeEditContextRef, activeEditTargetRef } from "./hooks/use-edit-context"
-export type { UseEditContextOptions, UseEditContextResult, EditTarget } from "./hooks/use-edit-context"
+export type {
+  UseEditContextOptions,
+  UseEditContextResult,
+  EditTarget,
+} from "./hooks/use-edit-context"
 
 // =============================================================================
 // Scroll Utilities
@@ -1155,7 +1199,11 @@ export type { InputBoundaryProps } from "./contexts/InputBoundary"
  * </PositionRegistryProvider>
  * ```
  */
-export { PositionRegistryProvider, usePositionRegistry, createPositionRegistry } from "./hooks/usePositionRegistry"
+export {
+  PositionRegistryProvider,
+  usePositionRegistry,
+  createPositionRegistry,
+} from "./hooks/usePositionRegistry"
 export type { PositionRegistry, ScrollRect } from "./hooks/usePositionRegistry"
 export { useGridPosition } from "./hooks/useGridPosition"
 export { GridCell } from "./ui/components"
@@ -1181,7 +1229,14 @@ export type { GridCellProps } from "./ui/components"
  * Note: `useAnimatedTransition` is the animation interpolation hook.
  * React's `useTransition` (concurrent mode) is exported separately above.
  */
-export { easings, resolveEasing, useAnimation, useInterval, useTimeout, useLatest } from "./ui/animation"
+export {
+  easings,
+  resolveEasing,
+  useAnimation,
+  useInterval,
+  useTimeout,
+  useLatest,
+} from "./ui/animation"
 export { useAnimatedTransition } from "./ui/animation"
 export type {
   EasingFn,

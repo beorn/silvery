@@ -439,7 +439,8 @@ lazy dog sat on the mat.
 ```tsx
 <Box width={60}>
   <Text wrap="even">
-    Long paragraph that benefits from globally-even line breaks rather than greedy per-line decisions.
+    Long paragraph that benefits from globally-even line breaks rather than greedy per-line
+    decisions.
   </Text>
 </Box>
 ```

@@ -150,7 +150,9 @@ describe("Table", () => {
           {
             header: "Status",
             render: (item: Person) => (
-              <Text color={item.age >= 30 ? "$success" : "$warning"}>{item.age >= 30 ? "senior" : "junior"}</Text>
+              <Text color={item.age >= 30 ? "$success" : "$warning"}>
+                {item.age >= 30 ? "senior" : "junior"}
+              </Text>
             ),
           },
         ]}
@@ -226,7 +228,13 @@ describe("Table", () => {
   })
 
   test("header uses custom color", () => {
-    const app = render(<Table columns={[{ header: "X", key: "name" }]} data={[{ name: "A" }]} headerColor="$success" />)
+    const app = render(
+      <Table
+        columns={[{ header: "X", key: "name" }]}
+        data={[{ name: "A" }]}
+        headerColor="$success"
+      />,
+    )
     expect(app.text).toContain("X")
     expect(app.text).toContain("A")
   })

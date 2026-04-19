@@ -10,7 +10,11 @@
  */
 
 // Command registry
-export { createCommandRegistry, type CommandDefInput, type CommandDefs } from "./create-command-registry"
+export {
+  createCommandRegistry,
+  type CommandDefInput,
+  type CommandDefs,
+} from "./create-command-registry"
 
 // withCommands plugin
 export {

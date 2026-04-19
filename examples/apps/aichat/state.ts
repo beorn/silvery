@@ -8,7 +8,12 @@
 import { fx } from "silvery"
 import type { TeaResult, TimerEffect } from "silvery"
 import type { Exchange, ScriptEntry } from "./types.js"
-import { RANDOM_AGENT_RESPONSES, INPUT_COST_PER_M, OUTPUT_COST_PER_M, CONTEXT_WINDOW } from "./script.js"
+import {
+  RANDOM_AGENT_RESPONSES,
+  INPUT_COST_PER_M,
+  OUTPUT_COST_PER_M,
+  CONTEXT_WINDOW,
+} from "./script.js"
 
 // ============================================================================
 // Types
@@ -122,7 +127,13 @@ export function computeCumulativeTokens(exchanges: Exchange[]): {
 
 /** Next scripted user message for footer placeholder. */
 export function getNextMessage(state: DemoState, script: ScriptEntry[], autoMode: boolean): string {
-  if (autoMode || state.done || state.offScript || state.streamPhase !== "done" || state.exchanges.length === 0)
+  if (
+    autoMode ||
+    state.done ||
+    state.offScript ||
+    state.streamPhase !== "done" ||
+    state.exchanges.length === 0
+  )
     return ""
   const entry = script[state.scriptIdx]
   return entry?.role === "user" ? entry.content : ""
@@ -144,16 +155,23 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
       return [{ ...s, streamPhase: "done", revealFraction: 1 }, []]
     }
     if (entry.thinking) {
-      return [{ ...s, streamPhase: "thinking", revealFraction: 0 }, [fx.delay(1200, { type: "endThinking" })]]
+      return [
+        { ...s, streamPhase: "thinking", revealFraction: 0 },
+        [fx.delay(1200, { type: "endThinking" })],
+      ]
     }
-    return [{ ...s, streamPhase: "streaming", revealFraction: 0 }, [fx.interval(50, { type: "streamTick" }, "reveal")]]
+    return [
+      { ...s, streamPhase: "streaming", revealFraction: 0 },
+      [fx.interval(50, { type: "streamTick" }, "reveal")],
+    ]
   }
 
   function autoAdvanceEffects(state: DemoState): DemoEffect[] {
     if (state.done || state.compacting || state.streamPhase !== "done") return []
     const next = script[state.scriptIdx]
     if (!next) return autoMode ? [fx.delay(0, { type: "autoAdvance" })] : []
-    if (autoMode || next.role !== "user") return [fx.delay(fastMode ? 100 : 400, { type: "autoAdvance" })]
+    if (autoMode || next.role !== "user")
+      return [fx.delay(fastMode ? 100 : 400, { type: "autoAdvance" })]
     return []
   }
 
@@ -197,7 +215,13 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
 
       case "advance":
       case "autoAdvance": {
-        if (autoMode && !fastMode && state.streamPhase === "done" && !state.done && !state.compacting) {
+        if (
+          autoMode &&
+          !fastMode &&
+          state.streamPhase === "done" &&
+          !state.done &&
+          !state.compacting
+        ) {
           const next = script[state.scriptIdx]
           if (next?.role === "user") {
             return [
@@ -265,7 +289,9 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
               ? { ...state, autoTyping: null }
               : state
         const cancelEffects: DemoEffect[] =
-          state.streamPhase !== "done" ? [fx.cancel("reveal"), fx.cancel("typing")] : [fx.cancel("typing")]
+          state.streamPhase !== "done"
+            ? [fx.cancel("reveal"), fx.cancel("typing")]
+            : [fx.cancel("typing")]
 
         // Empty submit just fast-forwards (no text to queue)
         if (!msg.text.trim()) return [base, cancelEffects]
@@ -280,14 +306,21 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
         if (s.scriptIdx < script.length) {
           let nextIdx = s.scriptIdx
           while (nextIdx < script.length && script[nextIdx]!.role === "user") nextIdx++
-          return [{ ...s, scriptIdx: nextIdx }, [...cancelEffects, fx.delay(150, { type: "autoAdvance" })]]
+          return [
+            { ...s, scriptIdx: nextIdx },
+            [...cancelEffects, fx.delay(150, { type: "autoAdvance" })],
+          ]
         }
 
-        return [{ ...s, offScript: true }, [...cancelEffects, fx.delay(150, { type: "respondRandom" })]]
+        return [
+          { ...s, offScript: true },
+          [...cancelEffects, fx.delay(150, { type: "respondRandom" })],
+        ]
       }
 
       case "respondRandom": {
-        const resp = RANDOM_AGENT_RESPONSES[Math.floor(Math.random() * RANDOM_AGENT_RESPONSES.length)]!
+        const resp =
+          RANDOM_AGENT_RESPONSES[Math.floor(Math.random() * RANDOM_AGENT_RESPONSES.length)]!
         const [s, effects] = startStreaming(state, resp)
         return [{ ...s, offScript: true }, effects]
       }
@@ -305,7 +338,11 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
             exchanges: state.exchanges,
             autoTyping: null,
           },
-          [fx.cancel("reveal"), fx.cancel("typing"), fx.delay(fastMode ? 300 : 3000, { type: "compactDone" })],
+          [
+            fx.cancel("reveal"),
+            fx.cancel("typing"),
+            fx.delay(fastMode ? 300 : 3000, { type: "compactDone" }),
+          ],
         ]
       }
 

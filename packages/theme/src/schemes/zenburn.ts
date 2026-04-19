@@ -2,7 +2,7 @@
  * Zenburn palette — the classic low-contrast vim theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Zenburn — Jani Nurminen's low-contrast dark theme. */
 export const zenburn: ColorScheme = {

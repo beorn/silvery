@@ -178,7 +178,12 @@ For lists where items complete over time — task runners, test output, chat mes
 
 ```tsx
 import { ScrollbackList } from "silvery"
-;<ScrollbackList items={tasks} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} footer={<StatusBar />}>
+;<ScrollbackList
+  items={tasks}
+  keyExtractor={(t) => t.id}
+  isFrozen={(t) => t.done}
+  footer={<StatusBar />}
+>
   {(task) => <TaskRow task={task} />}
 </ScrollbackList>
 ```

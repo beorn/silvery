@@ -163,7 +163,13 @@ function ParagraphComparison({
       </Text>
       <Muted>{sublabel}</Muted>
       <Text> </Text>
-      <Box width="fit-content" maxWidth={54} borderStyle="single" borderColor="$border" paddingX={1}>
+      <Box
+        width="fit-content"
+        maxWidth={54}
+        borderStyle="single"
+        borderColor="$border"
+        paddingX={1}
+      >
         <Text wrap={wrap}>{PARAGRAPH}</Text>
       </Box>
     </Box>
@@ -179,7 +185,9 @@ function Demo1Bubbles() {
     <Box flexDirection="column">
       <H2>Chat Bubbles: fit-content vs snug-content</H2>
       <Muted>{"  "}fit-content sizes to the widest wrapped line (dead space on short lines).</Muted>
-      <Muted>{"  "}snug-content binary-searches for the tightest width with the same line count.</Muted>
+      <Muted>
+        {"  "}snug-content binary-searches for the tightest width with the same line count.
+      </Muted>
       <Text> </Text>
       <Box flexDirection="row" gap={1} paddingX={1}>
         <BubbleColumn
@@ -208,8 +216,17 @@ function Demo2EvenWrap() {
       <Muted>{"  "}Even uses minimum-raggedness DP to distribute words across all lines.</Muted>
       <Text> </Text>
       <Box flexDirection="row" gap={1} paddingX={1}>
-        <ParagraphComparison label='wrap="wrap"' sublabel="Greedy — ragged right edge" wrap="wrap" />
-        <ParagraphComparison label='wrap="even"' sublabel="Min-raggedness — balanced lines" wrap="even" border />
+        <ParagraphComparison
+          label='wrap="wrap"'
+          sublabel="Greedy — ragged right edge"
+          wrap="wrap"
+        />
+        <ParagraphComparison
+          label='wrap="even"'
+          sublabel="Min-raggedness — balanced lines"
+          wrap="even"
+          border
+        />
       </Box>
     </Box>
   )
@@ -229,14 +246,28 @@ function Demo3Combined() {
           <Muted>Widest line sets width, lines fill greedily</Muted>
           <Text> </Text>
           <Box flexDirection="column" gap={1}>
-            <Box width="fit-content" borderStyle="round" borderColor="$border" paddingX={1} maxWidth={48}>
+            <Box
+              width="fit-content"
+              borderStyle="round"
+              borderColor="$border"
+              paddingX={1}
+              maxWidth={48}
+            >
               <Text wrap="wrap">
-                Terminal typography matters more than you think — especially when reading a long message like this one.
+                Terminal typography matters more than you think — especially when reading a long
+                message like this one.
               </Text>
             </Box>
-            <Box width="fit-content" borderStyle="round" borderColor="$border" paddingX={1} maxWidth={48}>
+            <Box
+              width="fit-content"
+              borderStyle="round"
+              borderColor="$border"
+              paddingX={1}
+              maxWidth={48}
+            >
               <Text wrap="wrap">
-                The algorithms balance lines using minimum raggedness which is literally Knuth Plass from TeX.
+                The algorithms balance lines using minimum raggedness which is literally Knuth Plass
+                from TeX.
               </Text>
             </Box>
           </Box>
@@ -258,14 +289,28 @@ function Demo3Combined() {
           <Muted>Tightest width, balanced line lengths</Muted>
           <Text> </Text>
           <Box flexDirection="column" gap={1}>
-            <Box width="snug-content" borderStyle="round" borderColor="$primary" paddingX={1} maxWidth={48}>
+            <Box
+              width="snug-content"
+              borderStyle="round"
+              borderColor="$primary"
+              paddingX={1}
+              maxWidth={48}
+            >
               <Text wrap="even">
-                Terminal typography matters more than you think — especially when reading a long message like this one.
+                Terminal typography matters more than you think — especially when reading a long
+                message like this one.
               </Text>
             </Box>
-            <Box width="snug-content" borderStyle="round" borderColor="$primary" paddingX={1} maxWidth={48}>
+            <Box
+              width="snug-content"
+              borderStyle="round"
+              borderColor="$primary"
+              paddingX={1}
+              maxWidth={48}
+            >
               <Text wrap="even">
-                The algorithms balance lines using minimum raggedness which is literally Knuth Plass from TeX.
+                The algorithms balance lines using minimum raggedness which is literally Knuth Plass
+                from TeX.
               </Text>
             </Box>
           </Box>

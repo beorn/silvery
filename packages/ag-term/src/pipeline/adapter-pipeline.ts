@@ -15,7 +15,13 @@ import type { ExecuteRenderOptions } from "./index"
 import { type RenderBuffer, getRenderAdapter, hasRenderAdapter } from "../render-adapter"
 import { renderPhaseAdapter } from "./render-phase-adapter"
 import { clearBgConflictWarnings } from "./render-phase"
-import { layoutPhase, notifyLayoutSubscribers, scrollrectPhase, scrollPhase, stickyPhase } from "./layout-phase"
+import {
+  layoutPhase,
+  notifyLayoutSubscribers,
+  scrollrectPhase,
+  scrollPhase,
+  stickyPhase,
+} from "./layout-phase"
 import { measurePhase } from "./measure-phase"
 
 const log = createLogger("silvery:render")

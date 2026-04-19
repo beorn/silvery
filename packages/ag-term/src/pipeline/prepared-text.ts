@@ -19,7 +19,14 @@
  */
 
 import type { AgNode } from "@silvery/ag/types"
-import { isDirty, CONTENT_BIT, CHILDREN_BIT, STYLE_PROPS_BIT, BG_BIT, SUBTREE_BIT } from "@silvery/ag/epoch"
+import {
+  isDirty,
+  CONTENT_BIT,
+  CHILDREN_BIT,
+  STYLE_PROPS_BIT,
+  BG_BIT,
+  SUBTREE_BIT,
+} from "@silvery/ag/epoch"
 import type { TextAnalysis } from "./pretext"
 
 // ============================================================================
@@ -141,7 +148,10 @@ export function setCachedPlainText(node: AgNode, text: string, lineCount: number
  * Get cached collected text (from collectTextWithBg).
  * Invalidated by content, children, style, or bg changes, or maxDisplayWidth mismatch.
  */
-export function getCachedCollectedText(node: AgNode, maxDisplayWidth: number | undefined): CollectedTextResult | null {
+export function getCachedCollectedText(
+  node: AgNode,
+  maxDisplayWidth: number | undefined,
+): CollectedTextResult | null {
   if (_cacheDisabled) return null
   const entry = textCaches.get(node)
   if (!entry?.collected) return null

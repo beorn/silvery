@@ -11,7 +11,10 @@ import { createCopyModeState, copyModeUpdate } from "@silvery/headless/copy-mode
 describe("copyModeUpdate — enter/exit", () => {
   test("enter activates copy-mode at given position", () => {
     const state = createCopyModeState()
-    const [next, effects] = copyModeUpdate({ type: "enter", col: 5, row: 3, bufferWidth: 80, bufferHeight: 24 }, state)
+    const [next, effects] = copyModeUpdate(
+      { type: "enter", col: 5, row: 3, bufferWidth: 80, bufferHeight: 24 },
+      state,
+    )
 
     expect(next.active).toBe(true)
     expect(next.cursor).toEqual({ col: 5, row: 3 })

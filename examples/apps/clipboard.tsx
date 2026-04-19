@@ -54,7 +54,9 @@ const items = [
   },
 ]
 
-const allItems = items.flatMap((group) => group.values.map((value) => ({ category: group.category, value })))
+const allItems = items.flatMap((group) =>
+  group.values.map((value) => ({ category: group.category, value })),
+)
 
 // ============================================================================
 // Components
@@ -76,7 +78,13 @@ function ListItem({ item, isSelected }: { item: (typeof allItems)[0]; isSelected
   )
 }
 
-function StatusBar({ lastCopied, lastPasted }: { lastCopied: string | null; lastPasted: string | null }) {
+function StatusBar({
+  lastCopied,
+  lastPasted,
+}: {
+  lastCopied: string | null
+  lastPasted: string | null
+}) {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$border" paddingX={1}>
       <Box gap={1}>
@@ -148,7 +156,11 @@ export function ClipboardDemo() {
         </Box>
         <Box flexDirection="column" overflow="scroll" scrollTo={selectedIndex} height={10}>
           {allItems.map((item, index) => (
-            <ListItem key={`${item.category}-${item.value}`} item={item} isSelected={index === selectedIndex} />
+            <ListItem
+              key={`${item.category}-${item.value}`}
+              item={item}
+              isSelected={index === selectedIndex}
+            />
           ))}
         </Box>
       </Box>

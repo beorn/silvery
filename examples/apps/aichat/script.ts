@@ -106,7 +106,8 @@ export const SCRIPT: ScriptEntry[] = [
     role: "agent",
     thinking:
       "Found it — decoded.exp is in seconds (Unix timestamp) but Date.now() returns milliseconds. Every token appears expired because exp (e.g. 1700000000) is always less than Date.now() (e.g. 1700000000000). I need to divide Date.now() by 1000, and change the throw to a refresh call.",
-    content: "Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.",
+    content:
+      "Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.",
     toolCalls: [
       {
         tool: "Edit",
@@ -225,12 +226,14 @@ export const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    content: "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
+    content:
+      "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
     tokens: { input: 8468, output: 156 },
   },
   {
     role: "user",
-    content: "Now add i18n support for error messages. We need 日本語 (Japanese) and Deutsch (German). 🌍",
+    content:
+      "Now add i18n support for error messages. We need 日本語 (Japanese) and Deutsch (German). 🌍",
     tokens: { input: 146, output: 0 },
   },
   {

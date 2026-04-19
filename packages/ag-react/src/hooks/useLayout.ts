@@ -88,7 +88,10 @@ type RectSignalKey = "boxRect" | "scrollRect" | "screenRect"
  * syncRectSignals writes a new value, the effect re-runs, compares via
  * rectEqual, and triggers forceUpdate only when the derived rect changed.
  */
-function useReactiveRect(getRect: (node: AgNode) => Rect | null | undefined, signalKey: RectSignalKey): Rect {
+function useReactiveRect(
+  getRect: (node: AgNode) => Rect | null | undefined,
+  signalKey: RectSignalKey,
+): Rect {
   const node = useContext(NodeContext)
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
   const prevRef = useRef<Rect | null>(null)

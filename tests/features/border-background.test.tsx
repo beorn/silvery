@@ -97,7 +97,13 @@ describe("border background color", () => {
   test("per-side without shorthand falls back to box bg", () => {
     const r = createRenderer({ cols: 20, rows: 5 })
     const app = r(
-      <Box borderStyle="single" width={10} height={3} backgroundColor="#333333" borderTopBackgroundColor="#00ff00">
+      <Box
+        borderStyle="single"
+        width={10}
+        height={3}
+        backgroundColor="#333333"
+        borderTopBackgroundColor="#00ff00"
+      >
         <Text>Hi</Text>
       </Box>,
     )

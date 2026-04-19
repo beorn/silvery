@@ -109,7 +109,9 @@ describe("createAg", () => {
     })
 
     test("detectPipelineFeatures: detects position=sticky", () => {
-      const root = makeNode("silvery-box", {}, [makeNode("silvery-box", { position: "sticky", stickyBottom: 0 }, [])])
+      const root = makeNode("silvery-box", {}, [
+        makeNode("silvery-box", { position: "sticky", stickyBottom: 0 }, []),
+      ])
       const features = detectPipelineFeatures(root)
       expect(features.hasScroll).toBe(false)
       expect(features.hasSticky).toBe(true)
@@ -117,7 +119,9 @@ describe("createAg", () => {
 
     test("detectPipelineFeatures: detects both scroll and sticky", () => {
       const root = makeNode("silvery-box", {}, [
-        makeNode("silvery-box", { overflow: "scroll" }, [makeNode("silvery-box", { position: "sticky" }, [])]),
+        makeNode("silvery-box", { overflow: "scroll" }, [
+          makeNode("silvery-box", { position: "sticky" }, []),
+        ]),
       ])
       const features = detectPipelineFeatures(root)
       expect(features.hasScroll).toBe(true)

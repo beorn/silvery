@@ -190,7 +190,10 @@ describe("withTerminal startup detection", () => {
 
     const proc = { stdin, stdout } as ProcessLike
 
-    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: true, autoDetectTimeoutMs: 500 }))
+    const app = pipe(
+      createBaseApp(),
+      withTerminal(proc, { autoDetect: true, autoDetectTimeoutMs: 500 }),
+    )
 
     await app.detectionReady
 
@@ -203,7 +206,10 @@ describe("withTerminal startup detection", () => {
 
   it("detectionReady resolves even when detection times out", async () => {
     const { proc } = createMockProcess()
-    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: true, autoDetectTimeoutMs: 30 }))
+    const app = pipe(
+      createBaseApp(),
+      withTerminal(proc, { autoDetect: true, autoDetectTimeoutMs: 30 }),
+    )
 
     // Don't send any responses — detection should time out
     await app.detectionReady
@@ -239,7 +245,10 @@ describe("withTerminal startup detection", () => {
 
   it("uses custom timeout from autoDetectTimeoutMs option", () => {
     const { proc } = createMockProcess()
-    const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: true, autoDetectTimeoutMs: 50 }))
+    const app = pipe(
+      createBaseApp(),
+      withTerminal(proc, { autoDetect: true, autoDetectTimeoutMs: 50 }),
+    )
 
     // Detectors should be created with the custom timeout
     expect(app.widthDetector).toBeDefined()

@@ -100,7 +100,8 @@ export function withApp() {
 
       command(path: string, ...args: any[]) {
         const [ns, name] = path.split(".")
-        if (!ns || !name) throw new Error(`Invalid command path: ${path} (expected "namespace.command")`)
+        if (!ns || !name)
+          throw new Error(`Invalid command path: ${path} (expected "namespace.command")`)
         const cmd = commands[ns]?.[name]
         if (!cmd) throw new Error(`Command not found: ${path}`)
         if (cmd.when && !cmd.when()) throw new Error(`Command not available: ${path}`)

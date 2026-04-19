@@ -46,7 +46,11 @@ import {
 } from "@silvery/ag-react/reconciler"
 import type { RenderBuffer } from "../render-adapter"
 import { setRenderAdapter } from "../render-adapter"
-import { RuntimeContext, FocusManagerContext, type RuntimeContextValue } from "@silvery/ag-react/context"
+import {
+  RuntimeContext,
+  FocusManagerContext,
+  type RuntimeContextValue,
+} from "@silvery/ag-react/context"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey, splitRawInput } from "@silvery/ag/keys"
 import { parseBracketedPaste } from "../bracketed-paste"
@@ -72,11 +76,20 @@ function deriveThemeFromXterm(_terminal: XtermTerminal): Theme {
 export { Box, type BoxProps } from "@silvery/ag-react/components/Box"
 export { Text, type TextProps } from "@silvery/ag-react/components/Text"
 export { Divider, type DividerProps } from "@silvery/ag-react/ui/components/Divider"
-export { TextInput, type TextInputProps, type TextInputHandle } from "@silvery/ag-react/ui/components/TextInput"
+export {
+  TextInput,
+  type TextInputProps,
+  type TextInputHandle,
+} from "@silvery/ag-react/ui/components/TextInput"
 export { Spinner, type SpinnerProps } from "@silvery/ag-react/ui/components/Spinner"
 export { useBoxRect, useScrollRect } from "@silvery/ag-react/hooks/useLayout"
 export { useApp } from "@silvery/ag-react/hooks/useApp"
-export { useInput, type Key, type InputHandler, type UseInputOptions } from "@silvery/ag-react/hooks/useInput"
+export {
+  useInput,
+  type Key,
+  type InputHandler,
+  type UseInputOptions,
+} from "@silvery/ag-react/hooks/useInput"
 
 // Re-export adapter utilities
 export { terminalAdapter } from "../adapters/terminal-adapter"
@@ -272,7 +285,8 @@ export function renderToXterm(
   // ---- Input / Runtime setup ----
   const inputOpts = options.input
   const inputEnabled = inputOpts === true || (typeof inputOpts === "object" && inputOpts !== null)
-  const inputCallbacks: XtermInputOptions = typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
+  const inputCallbacks: XtermInputOptions =
+    typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
   const exitOnCtrlC = options.exitOnCtrlC ?? inputEnabled
   const handleFocusCycling = options.handleFocusCycling ?? inputEnabled
 

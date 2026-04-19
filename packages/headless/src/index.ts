@@ -20,10 +20,20 @@
 export { createMachine, type Machine, type UpdateFn } from "./machine"
 
 // SelectList — cursor navigation over a list
-export { selectListUpdate, createSelectListState, type SelectListState, type SelectListAction } from "./select-list"
+export {
+  selectListUpdate,
+  createSelectListState,
+  type SelectListState,
+  type SelectListAction,
+} from "./select-list"
 
 // Readline — text editing with cursor, kill ring, history
-export { readlineUpdate, createReadlineState, type ReadlineState, type ReadlineAction } from "./readline"
+export {
+  readlineUpdate,
+  createReadlineState,
+  type ReadlineState,
+  type ReadlineAction,
+} from "./readline"
 
 // Selection — buffer-level text selection state machine
 export {

@@ -610,7 +610,8 @@ export function computeCascade(inputs: CascadeInputs): CascadeOutputs {
 
   // Clear region with inherited bg when content changed but no own bg fill.
   // bgOnlyChange on nodes WITHOUT bg still needs clearing (bg removed).
-  const contentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !hasBgColor
+  const contentRegionCleared =
+    (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !hasBgColor
 
   // Skip bg fill when clone already has correct bg at this position.
   const skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !bgRefillNeeded

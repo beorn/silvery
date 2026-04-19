@@ -52,5 +52,7 @@ export function useFindState() {
     return feature?.state
   }, [feature])
 
-  return useSyncExternalStore(subscribe, getSnapshot) as import("@silvery/headless/find").FindState | undefined
+  return useSyncExternalStore(subscribe, getSnapshot) as
+    | import("@silvery/headless/find").FindState
+    | undefined
 }

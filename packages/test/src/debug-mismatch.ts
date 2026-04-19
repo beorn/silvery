@@ -11,7 +11,14 @@
 
 import type { Cell } from "@silvery/ag-term/buffer"
 import type { BoxProps, AgNode, Rect, TextProps } from "@silvery/ag/types"
-import { isDirty, isAnyDirty, CONTENT_BIT, STYLE_PROPS_BIT, SUBTREE_BIT, CHILDREN_BIT } from "@silvery/ag/epoch"
+import {
+  isDirty,
+  isAnyDirty,
+  CONTENT_BIT,
+  STYLE_PROPS_BIT,
+  SUBTREE_BIT,
+  CHILDREN_BIT,
+} from "@silvery/ag/epoch"
 import type { RenderPhaseStats } from "@silvery/ag-term/pipeline/types"
 
 // ============================================================================
@@ -264,7 +271,9 @@ function analyzeFastPath(node: AgNode | null, scrollAncestors: AgNode[]): string
       )
       analysis.push("  → Node should have been skipped, but mismatch suggests it should render")
     } else if (inVisibleRange) {
-      analysis.push(`✓ Node index ${childIndex} is in visible range [${ss.firstVisibleChild}..${ss.lastVisibleChild}]`)
+      analysis.push(
+        `✓ Node index ${childIndex} is in visible range [${ss.firstVisibleChild}..${ss.lastVisibleChild}]`,
+      )
     }
 
     // Check scroll offset
@@ -298,7 +307,10 @@ function analyzeFastPath(node: AgNode | null, scrollAncestors: AgNode[]): string
     let siblingMoved = false
     for (const sibling of node.parent.children) {
       if (sibling !== node && sibling.boxRect && sibling.prevLayout) {
-        if (sibling.boxRect.x !== sibling.prevLayout.x || sibling.boxRect.y !== sibling.prevLayout.y) {
+        if (
+          sibling.boxRect.x !== sibling.prevLayout.x ||
+          sibling.boxRect.y !== sibling.prevLayout.y
+        ) {
           siblingMoved = true
           break
         }
@@ -352,11 +364,16 @@ export function buildMismatchContext(
  * @param ctx - The mismatch debug context (node attribution, dirty flags, scroll, fast-path)
  * @param renderPhaseStats - Optional render-phase instrumentation snapshot (auto-included by SILVERY_STRICT)
  */
-export function formatMismatchContext(ctx: MismatchDebugContext, renderPhaseStats?: RenderPhaseStats): string {
+export function formatMismatchContext(
+  ctx: MismatchDebugContext,
+  renderPhaseStats?: RenderPhaseStats,
+): string {
   const lines: string[] = []
 
   // Header
-  lines.push(`SILVERY_STRICT: MISMATCH at (${ctx.position.x}, ${ctx.position.y}) on render #${ctx.renderNum}`)
+  lines.push(
+    `SILVERY_STRICT: MISMATCH at (${ctx.position.x}, ${ctx.position.y}) on render #${ctx.renderNum}`,
+  )
   lines.push("")
 
   // Cell values
@@ -461,7 +478,9 @@ export function formatMismatchContext(ctx: MismatchDebugContext, renderPhaseStat
   if (renderPhaseStats) {
     const s = renderPhaseStats
     lines.push("RENDER PHASE STATS:")
-    lines.push(`  nodesVisited: ${s.nodesVisited}  nodesRendered: ${s.nodesRendered}  nodesSkipped: ${s.nodesSkipped}`)
+    lines.push(
+      `  nodesVisited: ${s.nodesVisited}  nodesRendered: ${s.nodesRendered}  nodesSkipped: ${s.nodesSkipped}`,
+    )
     lines.push(`  textNodes: ${s.textNodes}  boxNodes: ${s.boxNodes}  clearOps: ${s.clearOps}`)
     // Per-flag breakdown (why nodes weren't skipped)
     const flagLines: string[] = []
@@ -471,13 +490,16 @@ export function formatMismatchContext(ctx: MismatchDebugContext, renderPhaseStat
     if (s.flagLayoutChanged) flagLines.push(`layoutChanged=${s.flagLayoutChanged}`)
     if (s.flagSubtreeDirty) flagLines.push(`subtreeDirty=${s.flagSubtreeDirty}`)
     if (s.flagChildrenDirty) flagLines.push(`childrenDirty=${s.flagChildrenDirty}`)
-    if (s.flagChildPositionChanged) flagLines.push(`childPositionChanged=${s.flagChildPositionChanged}`)
+    if (s.flagChildPositionChanged)
+      flagLines.push(`childPositionChanged=${s.flagChildPositionChanged}`)
     if (flagLines.length > 0) {
       lines.push(`  render reasons: ${flagLines.join(", ")}`)
     }
     // Scroll container diagnostics
     if (s.scrollContainerCount > 0) {
-      lines.push(`  scrollContainers: ${s.scrollContainerCount}  viewportCleared: ${s.scrollViewportCleared}`)
+      lines.push(
+        `  scrollContainers: ${s.scrollContainerCount}  viewportCleared: ${s.scrollViewportCleared}`,
+      )
       if (s.scrollClearReason) lines.push(`  scrollClearReason: ${s.scrollClearReason}`)
     }
     // Normal container diagnostics
@@ -501,7 +523,11 @@ function formatRect(rect: Rect | null): string {
   return `{x:${rect.x}, y:${rect.y}, w:${rect.width}, h:${rect.height}}`
 }
 
-function formatScrollState(lines: string[], scroll: NonNullable<NodeDebugInfo["scroll"]>, indent = "  "): void {
+function formatScrollState(
+  lines: string[],
+  scroll: NonNullable<NodeDebugInfo["scroll"]>,
+  indent = "  ",
+): void {
   if (scroll.offsetChanged) {
     lines.push(`${indent}⚠ SCROLL CHANGED: offset ${scroll.prevOffset} → ${scroll.offset}`)
   } else {

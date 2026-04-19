@@ -72,7 +72,8 @@ export async function withProgress<T>(
 
   // Determine format
   const format =
-    options.format ?? (options.phases ? ":phase [:bar] :current/:total" : "[:bar] :current/:total :percent")
+    options.format ??
+    (options.phases ? ":phase [:bar] :current/:total" : "[:bar] :current/:total :percent")
 
   const bar = new ProgressBar({
     format,
@@ -196,12 +197,15 @@ export async function withProgress<T>(
  * complete();
  * ```
  */
-export function createProgressCallback(options: WithProgressOptions = {}): [ProgressCallback, () => void] {
+export function createProgressCallback(
+  options: WithProgressOptions = {},
+): [ProgressCallback, () => void] {
   const stream = process.stdout
   const isTty = isTTY(stream)
 
   const format =
-    options.format ?? (options.phases ? ":phase [:bar] :current/:total" : "[:bar] :current/:total :percent")
+    options.format ??
+    (options.phases ? ":phase [:bar] :current/:total" : "[:bar] :current/:total :percent")
 
   const bar = new ProgressBar({
     format,

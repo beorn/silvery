@@ -1,5 +1,19 @@
 import { describe, it, expectTypeOf, assertType } from "vitest"
-import { Command, port, csv, uint, int, float, url, path, email, json, bool, date, regex } from "../src/index.ts"
+import {
+  Command,
+  port,
+  csv,
+  uint,
+  int,
+  float,
+  url,
+  path,
+  email,
+  json,
+  bool,
+  date,
+  regex,
+} from "../src/index.ts"
 import type { OptionValues } from "../src/index.ts"
 import { z } from "zod"
 
@@ -193,7 +207,11 @@ describe("CLIType / preset inference", () => {
 
 describe("choices array inference", () => {
   it("string choices → union type | undefined", () => {
-    const cmd = new Command("test").option("-e, --env <env>", "Environment", ["dev", "staging", "prod"] as const)
+    const cmd = new Command("test").option("-e, --env <env>", "Environment", [
+      "dev",
+      "staging",
+      "prod",
+    ] as const)
     type Opts = ReturnType<typeof cmd.opts>
     expectTypeOf<Opts["env"]>().toEqualTypeOf<"dev" | "staging" | "prod" | undefined>()
   })
@@ -207,7 +225,11 @@ describe("Standard Schema / Zod inference", () => {
   })
 
   it("z.enum() → env: union | undefined", () => {
-    const cmd = new Command("test").option("-e, --env <env>", "Env", z.enum(["dev", "staging", "prod"]))
+    const cmd = new Command("test").option(
+      "-e, --env <env>",
+      "Env",
+      z.enum(["dev", "staging", "prod"]),
+    )
     type Opts = ReturnType<typeof cmd.opts>
     expectTypeOf<Opts["env"]>().toEqualTypeOf<"dev" | "staging" | "prod" | undefined>()
   })
@@ -287,7 +309,9 @@ describe("opts() returns typed values after action()", () => {
 
 describe("nonexistent property access is a type error", () => {
   it("accessing undefined option is a type error", () => {
-    const cmd = new Command("test").option("--verbose", "Verbose").option("--port <n>", "Port", port)
+    const cmd = new Command("test")
+      .option("--verbose", "Verbose")
+      .option("--port <n>", "Port", port)
 
     type Opts = ReturnType<typeof cmd.opts>
 
@@ -378,15 +402,19 @@ describe("argument with parser", () => {
 
 describe("argument with choices", () => {
   it("<env> with choices → union", () => {
-    new Command("test").argument("<env>", "Env", ["dev", "staging", "prod"] as const).actionMerged((params) => {
-      expectTypeOf(params.env).toEqualTypeOf<"dev" | "staging" | "prod">()
-    })
+    new Command("test")
+      .argument("<env>", "Env", ["dev", "staging", "prod"] as const)
+      .actionMerged((params) => {
+        expectTypeOf(params.env).toEqualTypeOf<"dev" | "staging" | "prod">()
+      })
   })
 
   it("[env] with choices → union | undefined", () => {
-    new Command("test").argument("[env]", "Env", ["dev", "staging"] as const).actionMerged((params) => {
-      expectTypeOf(params.env).toEqualTypeOf<"dev" | "staging" | undefined>()
-    })
+    new Command("test")
+      .argument("[env]", "Env", ["dev", "staging"] as const)
+      .actionMerged((params) => {
+        expectTypeOf(params.env).toEqualTypeOf<"dev" | "staging" | undefined>()
+      })
   })
 })
 

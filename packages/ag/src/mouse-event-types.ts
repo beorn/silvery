@@ -32,7 +32,15 @@ export interface SilveryMouseEvent {
   /** Node whose handler is currently firing (changes during bubble) */
   currentTarget: AgNode
   /** Event type */
-  type: "click" | "dblclick" | "mousedown" | "mouseup" | "mousemove" | "mouseenter" | "mouseleave" | "wheel"
+  type:
+    | "click"
+    | "dblclick"
+    | "mousedown"
+    | "mouseup"
+    | "mousemove"
+    | "mouseenter"
+    | "mouseleave"
+    | "wheel"
   /** Stop event from bubbling to parent nodes */
   stopPropagation(): void
   /** Prevent default behavior */

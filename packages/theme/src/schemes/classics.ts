@@ -12,7 +12,7 @@
  * License: values are factual defaults, not copyrightable.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Classic IBM VGA 16-color palette (circa 1987). The OG 16 colors. */
 export const vga: ColorScheme = {

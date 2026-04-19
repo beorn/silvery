@@ -6,7 +6,10 @@
 import { describe, test, expect, afterEach } from "vitest"
 import { existsSync, readFileSync, rmSync, readdirSync } from "fs"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
-import { captureStrictFailureArtifacts, type OutputContext } from "@silvery/ag-term/pipeline/output-phase"
+import {
+  captureStrictFailureArtifacts,
+  type OutputContext,
+} from "@silvery/ag-term/pipeline/output-phase"
 
 // ============================================================================
 // Helpers

@@ -4,8 +4,8 @@
  * Reference: https://material-theme.com/docs/reference/color-palette/
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Material Darker — the deep dark Material variant. */
 export const materialDark: ColorScheme = {

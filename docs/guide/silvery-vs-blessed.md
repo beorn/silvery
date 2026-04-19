@@ -156,7 +156,7 @@ For compatibility data across terminals, see [terminfo.dev](https://terminfo.dev
 | ------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | **Built-in widgets/components** | ~40 widgets (list, table, form, textbox, terminal, etc.) | **45+** components (VirtualList, Table, CommandPalette, TreeView, Toast, Tabs, SplitView, ...) |
 | **Specialized widgets**         | Terminal emulator, video player, IRC widgets             | None — focused on general-purpose UI components                                                |
-| **Theme system**                | Manual styling                                           | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect                               |
+| **Theme system**                | Manual styling                                           | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect                          |
 | **Plugin composition**          | Not in core                                              | `withCommands` / `withKeybindings` / `withDomEvents` / `withFocus`                             |
 | **TEA state machines**          | Not in core                                              | `@silvery/create`: `(action, state) → [state, effects]`, replay, undo                          |
 | **Animation**                   | Not built-in                                             | `useAnimation` + easing functions + `useAnimatedTransition`                                    |
@@ -267,7 +267,9 @@ Silvery uses DOM-style event handling with input layering:
   </Box>
 
   {isDialogOpen && (
-    <ModalDialog onClose={() => setDialogOpen(false)}>{/* Dialog consumes input, parent never sees it */}</ModalDialog>
+    <ModalDialog onClose={() => setDialogOpen(false)}>
+      {/* Dialog consumes input, parent never sees it */}
+    </ModalDialog>
   )}
 </InputLayerProvider>
 ```

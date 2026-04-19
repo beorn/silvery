@@ -127,13 +127,7 @@ describe("outside outline: incremental rendering", () => {
     function App({ style }: { style: "single" | "round" }) {
       return (
         <Box flexDirection="column" padding={1}>
-          <Box
-            id="styled-child"
-            outlineStyle={style}
-            outlineColor="green"
-            width={10}
-            height={3}
-          >
+          <Box id="styled-child" outlineStyle={style} outlineColor="green" width={10} height={3}>
             <Text>Styled</Text>
           </Box>
         </Box>
@@ -155,12 +149,7 @@ describe("outside outline: incremental rendering", () => {
     function App({ outlined }: { outlined: boolean }) {
       return (
         <Box flexDirection="column" padding={1}>
-          <Box
-            id="toggle-child"
-            outlineStyle={outlined ? "bold" : undefined}
-            width={10}
-            height={3}
-          >
+          <Box id="toggle-child" outlineStyle={outlined ? "bold" : undefined} width={10} height={3}>
             <Text>Toggle</Text>
           </Box>
         </Box>

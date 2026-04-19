@@ -53,7 +53,8 @@ const log = createLogger("silvery:content")
 
 /** Cached bg conflict mode. Read from env once at module load. */
 let bgConflictMode: BgConflictMode = (() => {
-  const env = typeof process !== "undefined" ? process.env.SILVERY_BG_CONFLICT?.toLowerCase() : undefined
+  const env =
+    typeof process !== "undefined" ? process.env.SILVERY_BG_CONFLICT?.toLowerCase() : undefined
   if (env === "ignore" || env === "warn" || env === "throw") return env
   return "throw" // default - fail fast on programming errors
 })()
@@ -76,7 +77,9 @@ export function setBgConflictMode(mode: BgConflictMode): void {
 const warnedBgConflicts = new Set<string>()
 
 /** Format a Color value for bg conflict diagnostics */
-function formatBgConflictColor(c: number | { r: number; g: number; b: number } | null | undefined): string {
+function formatBgConflictColor(
+  c: number | { r: number; g: number; b: number } | null | undefined,
+): string {
   if (c === null || c === undefined) return "none"
   if (typeof c === "number") {
     // Packed RGB (0x1000000 marker) or ANSI palette index
@@ -230,7 +233,8 @@ function mergeStyleContext(parent: StyleContext, childProps: TextProps): StyleCo
     bold: childProps.bold ?? parent.bold,
     dim: childProps.dim ?? childProps.dimColor ?? parent.dim,
     italic: childProps.italic ?? parent.italic,
-    underline: (childProps.underline ?? (childProps as any).underlineStyle) ? true : parent.underline,
+    underline:
+      (childProps.underline ?? (childProps as any).underlineStyle) ? true : parent.underline,
     underlineStyle: (childProps as any).underlineStyle ?? parent.underlineStyle,
     underlineColor: (childProps as any).underlineColor ?? parent.underlineColor,
     inverse: childProps.inverse ?? parent.inverse,
@@ -246,7 +250,11 @@ function mergeStyleContext(parent: StyleContext, childProps: TextProps): StyleCo
  * @param childStyle - The merged style for this child (child overrides parent)
  * @param parentStyle - The parent's style context to restore after
  */
-function applyTextStyleAnsi(text: string, childStyle: StyleContext, parentStyle: StyleContext): string {
+function applyTextStyleAnsi(
+  text: string,
+  childStyle: StyleContext,
+  parentStyle: StyleContext,
+): string {
   if (!text) {
     return text
   }
@@ -416,7 +424,8 @@ function collectTextWithBg(
     if (maxDisplayWidth !== undefined && displayWidthCollected >= maxDisplayWidth) break
 
     // Compute remaining budget for this child
-    const childBudget = maxDisplayWidth !== undefined ? maxDisplayWidth - displayWidthCollected : undefined
+    const childBudget =
+      maxDisplayWidth !== undefined ? maxDisplayWidth - displayWidthCollected : undefined
 
     if (child.type === "silvery-text" && child.props && !child.layoutNode) {
       const childProps = child.props as TextProps
@@ -879,7 +888,17 @@ function renderTextLineReturn(
   if (hasAnsi(text)) {
     return renderAnsiTextLineReturn(buffer, x, y, text, baseStyle, maxCol, inheritedBg, ctx, minCol)
   }
-  return renderGraphemes(buffer, splitGraphemes(text), x, y, baseStyle, maxCol, inheritedBg, ctx, minCol)
+  return renderGraphemes(
+    buffer,
+    splitGraphemes(text),
+    x,
+    y,
+    baseStyle,
+    maxCol,
+    inheritedBg,
+    ctx,
+    minCol,
+  )
 }
 
 /**
@@ -948,7 +967,12 @@ function renderGraphemes(
     // Using inherited bg instead of getCellBg decouples text rendering from buffer state,
     // which is critical for incremental rendering: the cloned buffer may have stale bg
     // at positions outside the parent's bg-filled region (e.g., overflow text).
-    const existingBg = style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col, y)
+    const existingBg =
+      style.bg !== null
+        ? style.bg
+        : inheritedBg !== undefined
+          ? inheritedBg
+          : buffer.getCellBg(col, y)
 
     // Wide character at the boundary: the continuation cell would overflow
     // into an adjacent container. Replace with a space to match terminal
@@ -988,7 +1012,11 @@ function renderGraphemes(
 
     if (width === 2 && col + 1 < buffer.width) {
       const existingBg2 =
-        style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col + 1, y)
+        style.bg !== null
+          ? style.bg
+          : inheritedBg !== undefined
+            ? inheritedBg
+            : buffer.getCellBg(col + 1, y)
       buffer.setCell(col + 1, y, {
         char: "",
         fg: style.fg,
@@ -1084,7 +1112,17 @@ function renderAnsiTextLineReturn(
       }
     }
 
-    col = renderGraphemes(buffer, splitGraphemes(segment.text), col, y, style, maxCol, inheritedBg, ctx, minCol)
+    col = renderGraphemes(
+      buffer,
+      splitGraphemes(segment.text),
+      col,
+      y,
+      style,
+      maxCol,
+      inheritedBg,
+      ctx,
+      minCol,
+    )
   }
   return col
 }
@@ -1125,7 +1163,11 @@ export interface MergeStylesOptions {
  * @param overlay - The overlay style (from child/content)
  * @param options - Merge behavior options
  */
-export function mergeStyles(base: Style, overlay: Partial<Style>, options: MergeStylesOptions = {}): Style {
+export function mergeStyles(
+  base: Style,
+  overlay: Partial<Style>,
+  options: MergeStylesOptions = {},
+): Style {
   const { preserveDecorations = true, preserveEmphasis = true } = options
 
   const baseAttrs = base.attrs ?? {}
@@ -1185,7 +1227,11 @@ export function mergeStyles(base: Style, overlay: Partial<Style>, options: Merge
  * Merge ANSI segment style with base style.
  * Uses category-based merging to preserve decorations and emphasis.
  */
-function mergeAnsiStyle(base: Style, segment: StyledSegment, options: MergeStylesOptions = {}): Style {
+function mergeAnsiStyle(
+  base: Style,
+  segment: StyledSegment,
+  options: MergeStylesOptions = {},
+): Style {
   const { preserveDecorations = true, preserveEmphasis = true } = options
 
   // Convert ANSI SGR codes to overlay style
@@ -1328,7 +1374,10 @@ export function renderText(
   // making OSC 8 hyperlinks and other escape sequences safe by construction.
   let maxDisplayWidth: number | undefined
   const isTruncateEnd =
-    props.wrap === false || props.wrap === "truncate-end" || props.wrap === "truncate" || props.wrap === "clip"
+    props.wrap === false ||
+    props.wrap === "truncate-end" ||
+    props.wrap === "truncate" ||
+    props.wrap === "clip"
   if (isTruncateEnd && width > 0) {
     const cachedPlain = getCachedPlainText(node)
     let lineCount: number
@@ -1396,7 +1445,10 @@ export function renderText(
 
   // --- PreparedText cache: Level 2 (formatted lines per width) ---
   // When text has background color, preserve trailing spaces so bg covers them.
-  const hasBg = style.bg !== null || bgSegments.length > 0 || (inheritedBg !== undefined && inheritedBg !== null)
+  const hasBg =
+    style.bg !== null ||
+    bgSegments.length > 0 ||
+    (inheritedBg !== undefined && inheritedBg !== null)
   const trim = !hasBg
   const internalTransform = props.internal_transform
 
@@ -1444,8 +1496,21 @@ export function renderText(
     // by a node whose x is BEFORE the parent's clip-left (e.g., negative
     // marginLeft inside an overflow:hidden container with a border) would
     // overwrite the parent's left border or padding cells.
-    const minCol = clipBounds && "left" in clipBounds && clipBounds.left !== undefined ? clipBounds.left : undefined
-    const endCol = renderTextLineReturn(buffer, x, lineY, line, style, maxCol, inheritedBg, ctx, minCol)
+    const minCol =
+      clipBounds && "left" in clipBounds && clipBounds.left !== undefined
+        ? clipBounds.left
+        : undefined
+    const endCol = renderTextLineReturn(
+      buffer,
+      x,
+      lineY,
+      line,
+      style,
+      maxCol,
+      inheritedBg,
+      ctx,
+      minCol,
+    )
 
     // Clear remaining cells after text to end of layout width (clipped).
     // When text content shrinks (e.g., breadcrumb changes from long to short path),

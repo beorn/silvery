@@ -22,7 +22,11 @@ import { INITIAL_EPOCH } from "@silvery/ag/epoch"
 // ============================================================================
 
 /** Create a minimal AgNode stub with a screen rect for spatial tests. */
-function stubNode(testID: string, rect: Rect, opts?: { focusable?: boolean; children?: AgNode[] }): AgNode {
+function stubNode(
+  testID: string,
+  rect: Rect,
+  opts?: { focusable?: boolean; children?: AgNode[] },
+): AgNode {
   const children = opts?.children ?? []
   const node: AgNode = {
     type: "silvery-box",
@@ -276,8 +280,18 @@ describe("Kanban layout — varied-height cards", () => {
     const c1card2 = stubNode("c1-card2", { x: colWidth + gap, y: 8, width: colWidth, height: 4 })
 
     // Column 2: cards at y=1, y=3
-    const c2card0 = stubNode("c2-card0", { x: 2 * (colWidth + gap), y: 1, width: colWidth, height: 2 })
-    const c2card1 = stubNode("c2-card1", { x: 2 * (colWidth + gap), y: 3, width: colWidth, height: 6 })
+    const c2card0 = stubNode("c2-card0", {
+      x: 2 * (colWidth + gap),
+      y: 1,
+      width: colWidth,
+      height: 2,
+    })
+    const c2card1 = stubNode("c2-card1", {
+      x: 2 * (colWidth + gap),
+      y: 3,
+      width: colWidth,
+      height: 6,
+    })
 
     const all = [c0card0, c0card1, c0card2, c1card0, c1card1, c1card2, c2card0, c2card1]
     const root = stubNode(

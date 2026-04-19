@@ -87,7 +87,9 @@ export interface AppWithInk {
  * @param options - Optional cursor store and input emitter
  * @returns Plugin function `(app) => enhancedApp`
  */
-export function withInk<T extends RunnableApp>(options: WithInkOptions = {}): (app: T) => T & AppWithInk {
+export function withInk<T extends RunnableApp>(
+  options: WithInkOptions = {},
+): (app: T) => T & AppWithInk {
   return (app: T): T & AppWithInk => {
     // Apply cursor adapter
     const appWithCursor = withInkCursor({ cursorStore: options.cursorStore })(app)

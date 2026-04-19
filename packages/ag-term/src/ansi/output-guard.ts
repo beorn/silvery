@@ -144,7 +144,9 @@ export function createOutputGuard(options?: OutputGuardOptions): OutputGuard {
     console.error = savedConsoleError
     console.debug = savedConsoleDebug
 
-    log?.info?.(`deactivated (suppressed ${suppressedCount} stdout, redirected ${redirectedCount} stderr)`)
+    log?.info?.(
+      `deactivated (suppressed ${suppressedCount} stdout, redirected ${redirectedCount} stderr)`,
+    )
 
     // Flush buffered stderr
     for (const line of stderrBuffer) {

@@ -179,13 +179,19 @@ export function findUpdate(action: FindAction, state: FindState): [FindState, Fi
         const total = state.providerResults.length
         const currentIndex = (state.currentIndex + 1) % total
         const result = state.providerResults[currentIndex]!
-        return [{ ...state, currentIndex }, [{ type: "render" }, { type: "providerReveal", result }]]
+        return [
+          { ...state, currentIndex },
+          [{ type: "render" }, { type: "providerReveal", result }],
+        ]
       }
       // Buffer mode
       if (!state.active || state.matches.length === 0) return [state, []]
       const currentIndex = (state.currentIndex + 1) % state.matches.length
       const match = state.matches[currentIndex]!
-      return [{ ...state, currentIndex }, [{ type: "render" }, { type: "scrollTo", row: match.row }]]
+      return [
+        { ...state, currentIndex },
+        [{ type: "render" }, { type: "scrollTo", row: match.row }],
+      ]
     }
 
     case "prev": {
@@ -194,13 +200,19 @@ export function findUpdate(action: FindAction, state: FindState): [FindState, Fi
         const total = state.providerResults.length
         const currentIndex = (state.currentIndex - 1 + total) % total
         const result = state.providerResults[currentIndex]!
-        return [{ ...state, currentIndex }, [{ type: "render" }, { type: "providerReveal", result }]]
+        return [
+          { ...state, currentIndex },
+          [{ type: "render" }, { type: "providerReveal", result }],
+        ]
       }
       // Buffer mode
       if (!state.active || state.matches.length === 0) return [state, []]
       const currentIndex = (state.currentIndex - 1 + state.matches.length) % state.matches.length
       const match = state.matches[currentIndex]!
-      return [{ ...state, currentIndex }, [{ type: "render" }, { type: "scrollTo", row: match.row }]]
+      return [
+        { ...state, currentIndex },
+        [{ type: "render" }, { type: "scrollTo", row: match.row }],
+      ]
     }
 
     case "close": {

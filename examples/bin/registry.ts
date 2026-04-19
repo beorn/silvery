@@ -78,7 +78,12 @@ export const REGISTRY: RegistryEntry[] = [
   { name: "clipboard", main: clipboard, category: "Apps" },
   { name: "components", main: components, category: "Apps" },
   { name: "data explorer", main: dataExplorer, category: "Apps" },
-  { name: "design", main: design, category: "Apps", description: "Design system workbench — formula + tokens + components" },
+  {
+    name: "design",
+    main: design,
+    category: "Apps",
+    description: "Design system workbench — formula + tokens + components",
+  },
   { name: "dev tools", main: devTools, category: "Apps" },
   { name: "explorer", main: explorer, category: "Apps" },
   { name: "gallery", main: gallery, category: "Apps" },

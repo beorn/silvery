@@ -58,7 +58,12 @@ export type {
 } from "./core"
 
 // Focus events
-export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "./focus-events"
+export {
+  createKeyEvent,
+  createFocusEvent,
+  dispatchKeyEvent,
+  dispatchFocusEvent,
+} from "./focus-events"
 
 // Focus queries (canonical: @silvery/ag/focus-queries)
 export {
@@ -248,4 +253,10 @@ export type {
 // =============================================================================
 
 export { withApp } from "./with-app"
-export type { CommandEntry, CommandNamespace, CommandTree, KeybindingEntry, AppWithApp } from "./with-app"
+export type {
+  CommandEntry,
+  CommandNamespace,
+  CommandTree,
+  KeybindingEntry,
+  AppWithApp,
+} from "./with-app"

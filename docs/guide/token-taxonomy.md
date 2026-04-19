@@ -7,7 +7,7 @@ description: Every token category silvery ships — when to use each, how they r
 
 <p class="page-tagline">Six token families, one decision tree</p>
 
-Silvery ships six distinct token categories. Each has a *different contract* — picking the right one makes your UI adapt correctly across 84 schemes, four tiers, and every user's terminal. Picking the wrong one produces hardcoded-looking apps that don't respect user themes.
+Silvery ships six distinct token categories. Each has a _different contract_ — picking the right one makes your UI adapt correctly across 84 schemes, four tiers, and every user's terminal. Picking the wrong one produces hardcoded-looking apps that don't respect user themes.
 
 The decision tree, memorized:
 
@@ -22,18 +22,18 @@ Each branch below explains when it's the right answer.
 
 ## 1. App identity — `$brand`
 
-**The one color that's *you*.** Your logo, your chrome, the signature accent that says "this is my app."
+**The one color that's _you_.** Your logo, your chrome, the signature accent that says "this is my app."
 
 ```tsx
 <Text color="$brand">MyApp v2.3</Text>
 <Box borderColor="$brand">…</Box>
 ```
 
-| Token | Resolves to |
-|-------|-------------|
-| `$brand` | App's primary identity color. Defaults to `scheme.primary` (often the cursor color or the scheme's declared primary). Apps pin via <span v-pre>`<ThemeProvider tokens={{ brand: "#5B8DEF" }}>`</span>. |
-| `$brand-hover` | +0.04 L in OKLCH (+darken on light themes). For interactive hover states. |
-| `$brand-active` | +0.08 L in OKLCH. For active/pressed states. |
+| Token           | Resolves to                                                                                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `$brand`        | App's primary identity color. Defaults to `scheme.primary` (often the cursor color or the scheme's declared primary). Apps pin via <span v-pre>`<ThemeProvider tokens={{ brand: "#5B8DEF" }}>`</span>. |
+| `$brand-hover`  | +0.04 L in OKLCH (+darken on light themes). For interactive hover states.                                                                                                                              |
+| `$brand-active` | +0.08 L in OKLCH. For active/pressed states.                                                                                                                                                           |
 
 **Apple analogue**: `UIColor.tintColor` / the per-app accent. Each app has ONE.
 
@@ -57,16 +57,16 @@ Each branch below explains when it's the right answer.
 <Series data={mem} color="$orange" />
 ```
 
-| Token | Resolves to |
-|-------|-------------|
-| `$red` | Scheme's red, contrast-adjusted. |
-| `$orange` | Blend of scheme's red + yellow. |
-| `$yellow` | Scheme's yellow. |
-| `$green` | Scheme's green. |
-| `$teal` | Blend of scheme's green + cyan. |
-| `$blue` | Scheme's blue (bright on dark themes). |
-| `$purple` | Scheme's magenta. |
-| `$pink` | Blend of scheme's magenta + red. |
+| Token     | Resolves to                            |
+| --------- | -------------------------------------- |
+| `$red`    | Scheme's red, contrast-adjusted.       |
+| `$orange` | Blend of scheme's red + yellow.        |
+| `$yellow` | Scheme's yellow.                       |
+| `$green`  | Scheme's green.                        |
+| `$teal`   | Blend of scheme's green + cyan.        |
+| `$blue`   | Scheme's blue (bright on dark themes). |
+| `$purple` | Scheme's magenta.                      |
+| `$pink`   | Blend of scheme's magenta + red.       |
 
 **Prior art**: Apple's `.systemRed/.systemIndigo/.systemTeal/…`, Tailwind's `bg-red-500`, Material's `red.500`.
 
@@ -76,7 +76,7 @@ Each branch below explains when it's the right answer.
 
 ## 3. Semantic state — `$error`, `$success`, `$warning`, `$info`
 
-**Colors that *communicate meaning*.** The reader parses "yellow = caution" because the token says so semantically, not because the hue happens to be warning-shaped.
+**Colors that _communicate meaning_.** The reader parses "yellow = caution" because the token says so semantically, not because the hue happens to be warning-shaped.
 
 ```tsx
 <Text color="$error">Build failed</Text>
@@ -85,14 +85,14 @@ Each branch below explains when it's the right answer.
 <Text color="$info">3 updates available</Text>
 ```
 
-| Token | Paired bg | Paired fg-on |
-|-------|-----------|--------------|
-| `$error` | `$errorfg` / `$fg-on-error` | danger, validation errors |
-| `$warning` | `$warningfg` / `$fg-on-warning` | caution, deprecations |
+| Token      | Paired bg                       | Paired fg-on               |
+| ---------- | ------------------------------- | -------------------------- |
+| `$error`   | `$errorfg` / `$fg-on-error`     | danger, validation errors  |
+| `$warning` | `$warningfg` / `$fg-on-warning` | caution, deprecations      |
 | `$success` | `$successfg` / `$fg-on-success` | completions, confirmations |
-| `$info` | `$infofg` / `$fg-on-info` | neutral info, tips |
+| `$info`    | `$infofg` / `$fg-on-info`       | neutral info, tips         |
 
-**When an app needs a red that's NOT an error** (e.g. "delete button" or a red tag category): use `$red` or `$brand`. `$error` is reserved for *error state*.
+**When an app needs a red that's NOT an error** (e.g. "delete button" or a red tag category): use `$red` or `$brand`. `$error` is reserved for _error state_.
 
 **Visual state cue chain**: don't rely on color alone. Pair with icons / attrs / text prefixes so colorblind users and monochrome terminals still convey state. See the [Color Fundamentals](/guide/capability-tiers) tier degradation section.
 
@@ -102,14 +102,14 @@ Each branch below explains when it's the right answer.
 
 ### Root + text hierarchy
 
-| Token | Meaning |
-|-------|---------|
-| `$fg` | Default body text |
-| `$bg` | Default background |
-| `$muted` / `$fg-muted` | Secondary text (captions, hints) |
-| `$faint` / `$fg-faint` | Fine print (via `<Small>`) |
-| `$disabledfg` / `$fg-disabled` | Inactive text |
-| `$inverse` / `$fg-inverse` | Inverse text (on dark status bars over light themes, etc.) |
+| Token                          | Meaning                                                    |
+| ------------------------------ | ---------------------------------------------------------- |
+| `$fg`                          | Default body text                                          |
+| `$bg`                          | Default background                                         |
+| `$muted` / `$fg-muted`         | Secondary text (captions, hints)                           |
+| `$faint` / `$fg-faint`         | Fine print (via `<Small>`)                                 |
+| `$disabledfg` / `$fg-disabled` | Inactive text                                              |
+| `$inverse` / `$fg-inverse`     | Inverse text (on dark status bars over light themes, etc.) |
 
 ### Surface pairs
 
@@ -121,39 +121,39 @@ Every "surface" (background plane) comes as a `bg-*` + matching fg token. Pair t
 </Box>
 ```
 
-| Surface pair | When |
-|--------------|------|
-| `$bg` / `$fg` | Default root |
-| `$surface` / `$surfacebg` | Elevated cards |
+| Surface pair              | When                     |
+| ------------------------- | ------------------------ |
+| `$bg` / `$fg`             | Default root             |
+| `$surface` / `$surfacebg` | Elevated cards           |
 | `$popover` / `$popoverbg` | Floating menus, tooltips |
-| `$inverse` / `$inversebg` | Status bars, footers |
-| `$muted` / `$mutedbg` | Inline muted chips |
+| `$inverse` / `$inversebg` | Status bars, footers     |
+| `$muted` / `$mutedbg`     | Inline muted chips       |
 
 ### Accent + primary / secondary
 
-| Token | Meaning |
-|-------|---------|
-| `$primary` | Design-system primary (often the scheme's primary — *not* app brand). Use for: headings, focus indicators, nav highlights. |
-| `$secondary` | Design-system secondary. |
-| `$accent` | Complement of primary — the pop-out color. |
+| Token        | Meaning                                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `$primary`   | Design-system primary (often the scheme's primary — _not_ app brand). Use for: headings, focus indicators, nav highlights. |
+| `$secondary` | Design-system secondary.                                                                                                   |
+| `$accent`    | Complement of primary — the pop-out color.                                                                                 |
 
-**Wait, `$primary` vs `$brand`?** `$primary` is the *scheme's* primary color (Nord yellow, Dracula purple, etc). `$brand` is the *app's* identity. Apps that want their brand to dominate pin `$brand`; apps that want to blend in let `$brand` default to `$primary`.
+**Wait, `$primary` vs `$brand`?** `$primary` is the _scheme's_ primary color (Nord yellow, Dracula purple, etc). `$brand` is the _app's_ identity. Apps that want their brand to dominate pin `$brand`; apps that want to blend in let `$brand` default to `$primary`.
 
 ### Borders + links
 
-| Token | Meaning |
-|-------|---------|
-| `$border` | Default structural border — faint, not prominent (1.5:1 contrast target). |
-| `$inputborder` / `$border-input` | Input field border (3:1 WCAG 1.4.11). |
-| `$focusborder` / `$border-focus` | Focused input border (usually primary/link). |
-| `$link` | Hyperlink color. |
+| Token                            | Meaning                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `$border`                        | Default structural border — faint, not prominent (1.5:1 contrast target). |
+| `$inputborder` / `$border-input` | Input field border (3:1 WCAG 1.4.11).                                     |
+| `$focusborder` / `$border-focus` | Focused input border (usually primary/link).                              |
+| `$link`                          | Hyperlink color.                                                          |
 
 ### Selection + cursor
 
-| Token | Meaning |
-|-------|---------|
-| `$selection` / `$selectionbg` | Multi-row selection highlight (e.g. marquee, visual mode). |
-| `$cursor` / `$cursorbg` | Single-point cursor highlight — matches the user's terminal cursor color. |
+| Token                         | Meaning                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------- |
+| `$selection` / `$selectionbg` | Multi-row selection highlight (e.g. marquee, visual mode).                |
+| `$cursor` / `$cursorbg`       | Single-point cursor highlight — matches the user's terminal cursor color. |
 
 ## 5. Raw ANSI palette — `$color0`–`$color15`
 
@@ -164,17 +164,17 @@ Every "surface" (background plane) comes as a `bg-*` + matching fg token. Pair t
 <Text color="$color14">cyan bright</Text>  {/* scheme.brightCyan directly */}
 ```
 
-| Index | Slot |
-|-------|------|
-| 0 | black |
-| 1 | red |
-| 2 | green |
-| 3 | yellow |
-| 4 | blue |
-| 5 | magenta |
-| 6 | cyan |
-| 7 | white |
-| 8–15 | bright variants of the above |
+| Index | Slot                         |
+| ----- | ---------------------------- |
+| 0     | black                        |
+| 1     | red                          |
+| 2     | green                        |
+| 3     | yellow                       |
+| 4     | blue                         |
+| 5     | magenta                      |
+| 6     | cyan                         |
+| 7     | white                        |
+| 8–15  | bright variants of the above |
 
 **Use for**: syntax highlighters (Prettier/tree-sitter-style) where exact terminal color parity matters. Git diff viewers. Anywhere the app explicitly wants the user's ANSI verbatim.
 
@@ -225,7 +225,7 @@ What color are you choosing for?
 
 - **`$error` for anything that isn't literally an error** — e.g. "delete" buttons, red tags. Use `$red` or `$brand` instead.
 - **`$color1` for everyday UI** — it's the user's raw ANSI, not contrast-adjusted. Use `$red` unless you're writing a syntax highlighter.
-- **`$primary` for app brand** — `$primary` is the *scheme's* primary. For *app brand*, use `$brand`.
+- **`$primary` for app brand** — `$primary` is the _scheme's_ primary. For _app brand_, use `$brand`.
 - **Hardcoded hex for a tinted surface** — use `$surface-bg` / `$popover-bg` or `mix($bg, $token, N%)`.
 - **`dim` or `dimColor` anywhere** — `dim` is a rendering detail. Use `$muted`, `<Small>`, or `$disabledfg` instead. (See the [Styling Guide](/guide/styling) for the full deprecation rationale.)
 

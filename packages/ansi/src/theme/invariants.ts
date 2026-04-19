@@ -141,7 +141,10 @@ function lightness(hex: string): number | null {
  * const audit = validateThemeInvariants(theme, { wcag: true })
  * ```
  */
-export function validateThemeInvariants(theme: Theme, opts: InvariantOptions = {}): InvariantResult {
+export function validateThemeInvariants(
+  theme: Theme,
+  opts: InvariantOptions = {},
+): InvariantResult {
   const checkWcag = opts.wcag ?? false
   const checkVisibility = opts.visibility ?? true
   const violations: InvariantViolation[] = []
@@ -217,7 +220,9 @@ export function formatViolations(violations: InvariantViolation[]): string {
 export class ThemeInvariantError extends Error {
   readonly violations: InvariantViolation[]
   constructor(violations: InvariantViolation[]) {
-    super(`Theme invariants failed (${violations.length} violation${violations.length === 1 ? "" : "s"}):\n${formatViolations(violations)}`)
+    super(
+      `Theme invariants failed (${violations.length} violation${violations.length === 1 ? "" : "s"}):\n${formatViolations(violations)}`,
+    )
     this.name = "ThemeInvariantError"
     this.violations = violations
   }

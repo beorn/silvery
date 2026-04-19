@@ -3,15 +3,18 @@
  * @silvery/theme CLI — browse and preview built-in themes.
  *
  * Usage:
- *   bun theme              # Interactive theme browser
- *   bun theme list         # List all themes
- *   bun theme show <name>  # Show a specific theme
- *   bun theme json <name>  # Output theme as JSON
+ *   bun theme                    # Interactive theme browser
+ *   bun theme list               # List all themes
+ *   bun theme show <name>        # Show a specific theme
+ *   bun theme json <name>        # Output theme as JSON
+ *   bun theme inspect            # Inspect active terminal theme
+ *   bun theme inspect --diff <n> # Diff against a named scheme
+ *   bun theme inspect --format json  # JSON output
  */
 
 import { builtinPalettes, getThemeByName } from "./schemes"
-import { deriveTheme } from "./derive"
-import type { Theme, ColorScheme } from "./types"
+import { deriveTheme, detectScheme, DEFAULT_MONO_ATTRS } from "@silvery/ansi"
+import type { Theme, ColorScheme } from "@silvery/ansi"
 
 // ── ANSI helpers ─────────────────────────────────────────────────────
 
@@ -100,8 +103,12 @@ function showTheme(name: string): void {
 
   // Special colors
   console.log(`\n  Special:`)
-  console.log(`  ${swatch(palette.background)} background  ${swatch(palette.foreground)} foreground`)
-  console.log(`  ${swatch(palette.cursorColor)} cursor      ${swatch(palette.selectionBackground)} selection`)
+  console.log(
+    `  ${swatch(palette.background)} background  ${swatch(palette.foreground)} foreground`,
+  )
+  console.log(
+    `  ${swatch(palette.cursorColor)} cursor      ${swatch(palette.selectionBackground)} selection`,
+  )
 
   // Semantic tokens
   console.log(`\n  Semantic tokens:`)

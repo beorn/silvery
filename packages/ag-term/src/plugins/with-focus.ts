@@ -28,14 +28,27 @@
  */
 
 import type { App } from "../app"
-import { createFocusManager, type FocusManager, type FocusManagerOptions } from "@silvery/create/focus-manager"
-import { createFocusEvent, createKeyEvent, dispatchFocusEvent, dispatchKeyEvent } from "@silvery/create/focus-events"
+import {
+  createFocusManager,
+  type FocusManager,
+  type FocusManagerOptions,
+} from "@silvery/create/focus-manager"
+import {
+  createFocusEvent,
+  createKeyEvent,
+  dispatchFocusEvent,
+  dispatchKeyEvent,
+} from "@silvery/create/focus-events"
 import { parseHotkey, parseKey } from "@silvery/ag/keys"
 import { createSelectionFeature, type SelectionFeature } from "../features/selection"
 import { createCopyModeFeature, type CopyModeFeature } from "../features/copy-mode"
 import type { CapabilityRegistry } from "@silvery/create/internal/capability-registry"
 import type { InputRouter } from "@silvery/create/internal/input-router"
-import { SELECTION_CAPABILITY, COPY_MODE_CAPABILITY, FIND_CAPABILITY } from "@silvery/create/internal/capabilities"
+import {
+  SELECTION_CAPABILITY,
+  COPY_MODE_CAPABILITY,
+  FIND_CAPABILITY,
+} from "@silvery/create/internal/capabilities"
 import { createFindFeature, type FindFeature, type FindFeatureOptions } from "../find-feature"
 
 // =============================================================================
@@ -299,7 +312,12 @@ export function withFocus(options: WithFocusOptions = {}): (app: App) => AppWith
               if (key === "Escape") {
                 lastEscapeTime = Date.now()
                 // Don't consume Escape here — let it fall through for blur behavior
-              } else if (key === "v" && !shift && !alt && Date.now() - lastEscapeTime < ESC_V_CHORD_TIMEOUT) {
+              } else if (
+                key === "v" &&
+                !shift &&
+                !alt &&
+                Date.now() - lastEscapeTime < ESC_V_CHORD_TIMEOUT
+              ) {
                 lastEscapeTime = 0
                 copyModeFeatureInstance.enter()
                 return enhancedApp

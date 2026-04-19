@@ -50,7 +50,10 @@ export async function connectDevTools(): Promise<boolean> {
         globalThis.WebSocket = ws.default ?? ws
       } catch {
         // ws not available -- devtools won't be able to connect
-        log.warn?.("WebSocket polyfill (ws) not available. " + "Install ws for DevTools support: bun add -d ws")
+        log.warn?.(
+          "WebSocket polyfill (ws) not available. " +
+            "Install ws for DevTools support: bun add -d ws",
+        )
         return false
       }
     }

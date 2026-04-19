@@ -6,7 +6,12 @@
  * This verifies the integration layer is correctly plumbed.
  */
 import { describe, test, expect } from "vitest"
-import { selectListUpdate, createSelectListState, readlineUpdate, createReadlineState } from "@silvery/headless"
+import {
+  selectListUpdate,
+  createSelectListState,
+  readlineUpdate,
+  createReadlineState,
+} from "@silvery/headless"
 
 // The hooks use useReducer(update, options, initializer).
 // We test the exact initializer + reducer combos the hooks wire up.
@@ -56,7 +61,8 @@ describe("useSelectList wiring", () => {
 
 describe("useReadline wiring", () => {
   // Mirrors the initializer: (opts) => createReadlineState({ value: opts?.initialValue })
-  const initializer = (opts?: { initialValue?: string }) => createReadlineState({ value: opts?.initialValue })
+  const initializer = (opts?: { initialValue?: string }) =>
+    createReadlineState({ value: opts?.initialValue })
 
   test("initializer creates empty state", () => {
     const state = initializer()

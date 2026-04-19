@@ -3,8 +3,8 @@
  * Source: https://github.com/bluz71/vim-nightfly-colors
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Nightfly — midnight-blue dark theme. */
 export const nightfly: ColorScheme = {

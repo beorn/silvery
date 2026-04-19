@@ -56,11 +56,18 @@ export const ABS_CHILD_BIT = 1 << 5 // 0b0100000
 export const DESC_OVERFLOW_BIT = 1 << 6 // 0b1000000
 
 /** All reconciler-owned bits (content + styleProps + bg + children + subtree). */
-export const ALL_RECONCILER_BITS = CONTENT_BIT | STYLE_PROPS_BIT | BG_BIT | CHILDREN_BIT | SUBTREE_BIT
+export const ALL_RECONCILER_BITS =
+  CONTENT_BIT | STYLE_PROPS_BIT | BG_BIT | CHILDREN_BIT | SUBTREE_BIT
 
 /** All bits combined. */
 export const ALL_BITS =
-  CONTENT_BIT | STYLE_PROPS_BIT | BG_BIT | CHILDREN_BIT | SUBTREE_BIT | ABS_CHILD_BIT | DESC_OVERFLOW_BIT
+  CONTENT_BIT |
+  STYLE_PROPS_BIT |
+  BG_BIT |
+  CHILDREN_BIT |
+  SUBTREE_BIT |
+  ABS_CHILD_BIT |
+  DESC_OVERFLOW_BIT
 
 /**
  * The current render epoch. Incremented after each render pass.

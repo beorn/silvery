@@ -250,7 +250,8 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         const lineEnd = lineStart + wl.line.length
 
         // Check if this line has any selection overlap
-        const hasSelectionOnLine = ta.selection && lineStart < ta.selection.end && lineEnd > ta.selection.start
+        const hasSelectionOnLine =
+          ta.selection && lineStart < ta.selection.end && lineEnd > ta.selection.start
 
         if (disabled) {
           return (
@@ -272,7 +273,9 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
           return (
             <Text key={absoluteRow}>
               {before}
-              <Text inverse>{selected || (selEnd === wl.line.length && isCursorRow ? " " : "")}</Text>
+              <Text inverse>
+                {selected || (selEnd === wl.line.length && isCursorRow ? " " : "")}
+              </Text>
               {after}
             </Text>
           )

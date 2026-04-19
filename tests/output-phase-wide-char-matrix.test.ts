@@ -88,33 +88,39 @@ describe("output-phase wide char matrix", () => {
   describe("OSC 66 wrapping (text sizing enabled)", () => {
     const render = createTextSizedOutputPhase()
 
-    test.each(WIDE_CHARS)("$name ($description) is wrapped in OSC 66 in fresh render", ({ char }) => {
-      const buf = new TerminalBuffer(COLS, ROWS)
-      writeString(buf, 0, 0, `A${char}B`)
+    test.each(WIDE_CHARS)(
+      "$name ($description) is wrapped in OSC 66 in fresh render",
+      ({ char }) => {
+        const buf = new TerminalBuffer(COLS, ROWS)
+        writeString(buf, 0, 0, `A${char}B`)
 
-      const ansi = render(null, buf, "fullscreen")
-      const matches = [...ansi.matchAll(OSC66_REGEX)]
-      const wrappedChars = matches.map((m) => m[1])
+        const ansi = render(null, buf, "fullscreen")
+        const matches = [...ansi.matchAll(OSC66_REGEX)]
+        const wrappedChars = matches.map((m) => m[1])
 
-      expect(wrappedChars).toContain(char)
-    })
+        expect(wrappedChars).toContain(char)
+      },
+    )
 
-    test.each(WIDE_CHARS)("$name ($description) is wrapped in OSC 66 in incremental render", ({ char }) => {
-      const render2 = createTextSizedOutputPhase()
-      const prev = new TerminalBuffer(COLS, ROWS)
-      writeString(prev, 0, 0, "A  B")
-      prev.resetDirtyRows()
+    test.each(WIDE_CHARS)(
+      "$name ($description) is wrapped in OSC 66 in incremental render",
+      ({ char }) => {
+        const render2 = createTextSizedOutputPhase()
+        const prev = new TerminalBuffer(COLS, ROWS)
+        writeString(prev, 0, 0, "A  B")
+        prev.resetDirtyRows()
 
-      const next = prev.clone()
-      next.setCell(1, 0, { char, wide: true, fg: null })
-      next.setCell(2, 0, { char: "", continuation: true, fg: null })
+        const next = prev.clone()
+        next.setCell(1, 0, { char, wide: true, fg: null })
+        next.setCell(2, 0, { char: "", continuation: true, fg: null })
 
-      const incrAnsi = render2(prev, next, "fullscreen")
-      const matches = [...incrAnsi.matchAll(OSC66_REGEX)]
-      const wrappedChars = matches.map((m) => m[1])
+        const incrAnsi = render2(prev, next, "fullscreen")
+        const matches = [...incrAnsi.matchAll(OSC66_REGEX)]
+        const wrappedChars = matches.map((m) => m[1])
 
-      expect(wrappedChars).toContain(char)
-    })
+        expect(wrappedChars).toContain(char)
+      },
+    )
 
     test("ASCII characters are NOT wrapped in OSC 66", () => {
       const buf = new TerminalBuffer(COLS, ROWS)
@@ -127,21 +133,24 @@ describe("output-phase wide char matrix", () => {
   })
 
   describe("CUP cursor re-sync after wide chars (belt-and-suspenders)", () => {
-    test.each(WIDE_CHARS)("$name ($description): CUP emitted after wide char in fresh render", ({ char }) => {
-      const buf = new TerminalBuffer(COLS, ROWS)
-      writeString(buf, 0, 0, `A${char}B`)
+    test.each(WIDE_CHARS)(
+      "$name ($description): CUP emitted after wide char in fresh render",
+      ({ char }) => {
+        const buf = new TerminalBuffer(COLS, ROWS)
+        writeString(buf, 0, 0, `A${char}B`)
 
-      // Use bare outputPhase (no text sizing) — CUP re-sync is independent
-      const ansi = outputPhase(null, buf, "fullscreen")
+        // Use bare outputPhase (no text sizing) — CUP re-sync is independent
+        const ansi = outputPhase(null, buf, "fullscreen")
 
-      // After wide char at cols 1-2, CUP should position cursor at col 4 (1-indexed)
-      // CUP format: ESC [ row ; col H
-      const cups = [...ansi.matchAll(CUP_REGEX)]
-      const cupCols = cups.map((m) => Number(m[2]))
+        // After wide char at cols 1-2, CUP should position cursor at col 4 (1-indexed)
+        // CUP format: ESC [ row ; col H
+        const cups = [...ansi.matchAll(CUP_REGEX)]
+        const cupCols = cups.map((m) => Number(m[2]))
 
-      // The re-sync CUP should target column 4 (0-indexed col 3 = 1-indexed col 4)
-      expect(cupCols).toContain(4)
-    })
+        // The re-sync CUP should target column 4 (0-indexed col 3 = 1-indexed col 4)
+        expect(cupCols).toContain(4)
+      },
+    )
 
     test("CUP column is correct for multiple wide chars", () => {
       const buf = new TerminalBuffer(COLS, ROWS)
@@ -160,18 +169,21 @@ describe("output-phase wide char matrix", () => {
   })
 
   describe("xterm.js cell positions (end-to-end)", () => {
-    test.each(WIDE_CHARS)("$name ($description): character after wide char at correct column", ({ char }) => {
-      const buf = new TerminalBuffer(COLS, ROWS)
-      writeString(buf, 0, 0, `A${char}B`)
+    test.each(WIDE_CHARS)(
+      "$name ($description): character after wide char at correct column",
+      ({ char }) => {
+        const buf = new TerminalBuffer(COLS, ROWS)
+        writeString(buf, 0, 0, `A${char}B`)
 
-      const ansi = outputPhase(null, buf, "fullscreen")
-      const term = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
-      term.feed(ansi)
+        const ansi = outputPhase(null, buf, "fullscreen")
+        const term = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
+        term.feed(ansi)
 
-      expect(term.getCell(0, 0)?.char).toBe("A")
-      expect(term.getCell(0, 3)?.char).toBe("B")
-      term.close()
-    })
+        expect(term.getCell(0, 0)?.char).toBe("A")
+        expect(term.getCell(0, 3)?.char).toBe("B")
+        term.close()
+      },
+    )
 
     test("mixed wide chars maintain correct positions", () => {
       const buf = new TerminalBuffer(COLS, ROWS)
@@ -194,31 +206,34 @@ describe("output-phase wide char matrix", () => {
   })
 
   describe("incremental render matches fresh render", () => {
-    test.each(WIDE_CHARS)("$name ($description): incremental after change matches fresh", ({ char }) => {
-      const prev = new TerminalBuffer(COLS, ROWS)
-      writeString(prev, 0, 0, `A${char}BXYZ`)
-      prev.resetDirtyRows()
+    test.each(WIDE_CHARS)(
+      "$name ($description): incremental after change matches fresh",
+      ({ char }) => {
+        const prev = new TerminalBuffer(COLS, ROWS)
+        writeString(prev, 0, 0, `A${char}BXYZ`)
+        prev.resetDirtyRows()
 
-      const next = prev.clone()
-      writeString(next, 4, 0, "QRS")
+        const next = prev.clone()
+        writeString(next, 4, 0, "QRS")
 
-      const initialAnsi = outputPhase(null, prev, "fullscreen")
-      const incrAnsi = outputPhase(prev, next, "fullscreen")
-      const freshAnsi = outputPhase(null, next, "fullscreen")
+        const initialAnsi = outputPhase(null, prev, "fullscreen")
+        const incrAnsi = outputPhase(prev, next, "fullscreen")
+        const freshAnsi = outputPhase(null, next, "fullscreen")
 
-      const termIncr = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
-      termIncr.feed(initialAnsi)
-      termIncr.feed(incrAnsi)
+        const termIncr = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
+        termIncr.feed(initialAnsi)
+        termIncr.feed(incrAnsi)
 
-      const termFresh = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
-      termFresh.feed(freshAnsi)
+        const termFresh = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
+        termFresh.feed(freshAnsi)
 
-      for (let x = 0; x < 20; x++) {
-        expect(termIncr.getCell(0, x)?.char, `col ${x}`).toBe(termFresh.getCell(0, x)?.char)
-      }
+        for (let x = 0; x < 20; x++) {
+          expect(termIncr.getCell(0, x)?.char, `col ${x}`).toBe(termFresh.getCell(0, x)?.char)
+        }
 
-      termIncr.close()
-      termFresh.close()
-    })
+        termIncr.close()
+        termFresh.close()
+      },
+    )
   })
 })

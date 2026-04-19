@@ -67,11 +67,21 @@ function isWideChar(char: string): boolean {
 function isPUA(char: string): boolean {
   const cp = char.codePointAt(0)
   if (cp === undefined) return false
-  return (cp >= 0xe000 && cp <= 0xf8ff) || (cp >= 0xf0000 && cp <= 0xffffd) || (cp >= 0x100000 && cp <= 0x10fffd)
+  return (
+    (cp >= 0xe000 && cp <= 0xf8ff) ||
+    (cp >= 0xf0000 && cp <= 0xffffd) ||
+    (cp >= 0x100000 && cp <= 0x10fffd)
+  )
 }
 
 /** Write a string into a buffer, handling wide chars */
-function writeString(buf: TerminalBuffer, startX: number, y: number, text: string, treatPuaAsWide = false): number {
+function writeString(
+  buf: TerminalBuffer,
+  startX: number,
+  y: number,
+  text: string,
+  treatPuaAsWide = false,
+): number {
   const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
   let x = startX
   for (const { segment: char } of segmenter.segment(text)) {
@@ -90,13 +100,19 @@ function writeString(buf: TerminalBuffer, startX: number, y: number, text: strin
 /** Create output phase with text sizing ENABLED (Kitty-like) */
 function createOsc66EnabledOutputPhase() {
   const measurer = createWidthMeasurer({ textSizingEnabled: true, textEmojiWide: true })
-  return createOutputPhase({ underlineStyles: true, underlineColor: true, colorLevel: "truecolor" }, measurer)
+  return createOutputPhase(
+    { underlineStyles: true, underlineColor: true, colorLevel: "truecolor" },
+    measurer,
+  )
 }
 
 /** Create output phase with text sizing DISABLED (most terminals) */
 function createOsc66DisabledOutputPhase() {
   const measurer = createWidthMeasurer({ textSizingEnabled: false, textEmojiWide: true })
-  return createOutputPhase({ underlineStyles: true, underlineColor: true, colorLevel: "truecolor" }, measurer)
+  return createOutputPhase(
+    { underlineStyles: true, underlineColor: true, colorLevel: "truecolor" },
+    measurer,
+  )
 }
 
 /** Collect all visible text from xterm.js terminal row */
@@ -129,16 +145,19 @@ describe("capability profile: OSC 66 supported (Kitty-like)", () => {
     expect(wrappedChars).toContain(char)
   })
 
-  test.each(PUA_CHARS)("$name ($description): PUA wrapped in OSC 66 when textSizingEnabled", ({ char }) => {
-    const buf = new TerminalBuffer(COLS, ROWS)
-    writeString(buf, 0, 0, `A${char}B`, true)
+  test.each(PUA_CHARS)(
+    "$name ($description): PUA wrapped in OSC 66 when textSizingEnabled",
+    ({ char }) => {
+      const buf = new TerminalBuffer(COLS, ROWS)
+      writeString(buf, 0, 0, `A${char}B`, true)
 
-    const ansi = render(null, buf, "fullscreen")
-    const matches = [...ansi.matchAll(OSC66_REGEX)]
-    const wrappedChars = matches.map((m) => m[1])
+      const ansi = render(null, buf, "fullscreen")
+      const matches = [...ansi.matchAll(OSC66_REGEX)]
+      const wrappedChars = matches.map((m) => m[1])
 
-    expect(wrappedChars).toContain(char)
-  })
+      expect(wrappedChars).toContain(char)
+    },
+  )
 
   test("content is fully preserved through xterm.js", () => {
     const buf = new TerminalBuffer(COLS, ROWS)
@@ -176,16 +195,19 @@ describe("capability profile: OSC 66 unsupported (most terminals)", () => {
       expect(matches).toHaveLength(0)
     })
 
-    test.each(PUA_CHARS)("$name ($description): PUA NOT wrapped in OSC 66 when textSizingEnabled=false", ({ char }) => {
-      const buf = new TerminalBuffer(COLS, ROWS)
-      // PUA treated as narrow (width 1) when textSizing is disabled
-      writeString(buf, 0, 0, `A${char}B`, false)
+    test.each(PUA_CHARS)(
+      "$name ($description): PUA NOT wrapped in OSC 66 when textSizingEnabled=false",
+      ({ char }) => {
+        const buf = new TerminalBuffer(COLS, ROWS)
+        // PUA treated as narrow (width 1) when textSizing is disabled
+        writeString(buf, 0, 0, `A${char}B`, false)
 
-      const ansi = render(null, buf, "fullscreen")
-      const matches = [...ansi.matchAll(OSC66_REGEX)]
+        const ansi = render(null, buf, "fullscreen")
+        const matches = [...ansi.matchAll(OSC66_REGEX)]
 
-      expect(matches).toHaveLength(0)
-    })
+        expect(matches).toHaveLength(0)
+      },
+    )
 
     test("mixed content with emoji, CJK, PUA: zero OSC 66 sequences", () => {
       const buf = new TerminalBuffer(COLS, ROWS)
@@ -199,24 +221,27 @@ describe("capability profile: OSC 66 unsupported (most terminals)", () => {
   })
 
   describe("content preservation without OSC 66", () => {
-    test.each(WIDE_CHARS)("$name ($description): character visible in xterm.js without OSC 66", ({ char }) => {
-      const buf = new TerminalBuffer(COLS, ROWS)
-      writeString(buf, 0, 0, `A${char}B`)
+    test.each(WIDE_CHARS)(
+      "$name ($description): character visible in xterm.js without OSC 66",
+      ({ char }) => {
+        const buf = new TerminalBuffer(COLS, ROWS)
+        writeString(buf, 0, 0, `A${char}B`)
 
-      const ansi = render(null, buf, "fullscreen")
-      const term = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
-      term.feed(ansi)
+        const ansi = render(null, buf, "fullscreen")
+        const term = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
+        term.feed(ansi)
 
-      // ASCII chars must be at correct positions
-      expect(term.getCell(0, 0)?.char).toBe("A")
-      expect(term.getCell(0, 3)?.char).toBe("B")
+        // ASCII chars must be at correct positions
+        expect(term.getCell(0, 0)?.char).toBe("A")
+        expect(term.getCell(0, 3)?.char).toBe("B")
 
-      // The wide character itself must appear in the row
-      const rowText = getRowText(term, 0, 20)
-      expect(rowText).toContain(char)
+        // The wide character itself must appear in the row
+        const rowText = getRowText(term, 0, 20)
+        expect(rowText).toContain(char)
 
-      term.close()
-    })
+        term.close()
+      },
+    )
 
     test("all characters preserved: emoji + flags + CJK mixed", () => {
       const buf = new TerminalBuffer(COLS, ROWS)
@@ -308,79 +333,85 @@ describe("capability profile: OSC 66 parse-but-swallow (Ghostty simulation)", ()
 
 describe("incremental render consistency across profiles", () => {
   describe("OSC 66 enabled: incremental matches fresh through xterm.js", () => {
-    test.each(WIDE_CHARS)("$name ($description): incremental render matches fresh render", ({ char }) => {
-      const render1 = createOsc66EnabledOutputPhase()
-      const render2 = createOsc66EnabledOutputPhase()
+    test.each(WIDE_CHARS)(
+      "$name ($description): incremental render matches fresh render",
+      ({ char }) => {
+        const render1 = createOsc66EnabledOutputPhase()
+        const render2 = createOsc66EnabledOutputPhase()
 
-      // Fresh render of initial state
-      const prev = new TerminalBuffer(COLS, ROWS)
-      writeString(prev, 0, 0, `A${char}BXYZ`)
+        // Fresh render of initial state
+        const prev = new TerminalBuffer(COLS, ROWS)
+        writeString(prev, 0, 0, `A${char}BXYZ`)
 
-      const initialAnsi = render1(null, prev, "fullscreen")
+        const initialAnsi = render1(null, prev, "fullscreen")
 
-      // Incremental render after change
-      prev.resetDirtyRows()
-      const next = prev.clone()
-      writeString(next, 4, 0, "QRS")
+        // Incremental render after change
+        prev.resetDirtyRows()
+        const next = prev.clone()
+        writeString(next, 4, 0, "QRS")
 
-      const incrAnsi = render1(prev, next, "fullscreen")
+        const incrAnsi = render1(prev, next, "fullscreen")
 
-      // Fresh render of final state
-      const freshAnsi = render2(null, next, "fullscreen")
+        // Fresh render of final state
+        const freshAnsi = render2(null, next, "fullscreen")
 
-      // Compare through xterm.js
-      const termIncr = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
-      termIncr.feed(initialAnsi)
-      termIncr.feed(incrAnsi)
+        // Compare through xterm.js
+        const termIncr = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
+        termIncr.feed(initialAnsi)
+        termIncr.feed(incrAnsi)
 
-      const termFresh = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
-      termFresh.feed(freshAnsi)
+        const termFresh = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
+        termFresh.feed(freshAnsi)
 
-      for (let x = 0; x < 20; x++) {
-        expect(termIncr.getCell(0, x)?.char, `col ${x}`).toBe(termFresh.getCell(0, x)?.char)
-      }
+        for (let x = 0; x < 20; x++) {
+          expect(termIncr.getCell(0, x)?.char, `col ${x}`).toBe(termFresh.getCell(0, x)?.char)
+        }
 
-      termIncr.close()
-      termFresh.close()
-    })
+        termIncr.close()
+        termFresh.close()
+      },
+    )
   })
 
   describe("OSC 66 disabled: incremental matches fresh through xterm.js", () => {
-    test.each(WIDE_CHARS)("$name ($description): incremental render matches fresh render", ({ char }) => {
-      const render1 = createOsc66DisabledOutputPhase()
-      const render2 = createOsc66DisabledOutputPhase()
+    test.each(WIDE_CHARS)(
+      "$name ($description): incremental render matches fresh render",
+      ({ char }) => {
+        const render1 = createOsc66DisabledOutputPhase()
+        const render2 = createOsc66DisabledOutputPhase()
 
-      // Fresh render of initial state
-      const prev = new TerminalBuffer(COLS, ROWS)
-      writeString(prev, 0, 0, `A${char}BXYZ`)
+        // Fresh render of initial state
+        const prev = new TerminalBuffer(COLS, ROWS)
+        writeString(prev, 0, 0, `A${char}BXYZ`)
 
-      const initialAnsi = render1(null, prev, "fullscreen")
+        const initialAnsi = render1(null, prev, "fullscreen")
 
-      // Incremental render after change
-      prev.resetDirtyRows()
-      const next = prev.clone()
-      writeString(next, 4, 0, "QRS")
+        // Incremental render after change
+        prev.resetDirtyRows()
+        const next = prev.clone()
+        writeString(next, 4, 0, "QRS")
 
-      const incrAnsi = render1(prev, next, "fullscreen")
+        const incrAnsi = render1(prev, next, "fullscreen")
 
-      // Fresh render of final state
-      const freshAnsi = render2(null, next, "fullscreen")
+        // Fresh render of final state
+        const freshAnsi = render2(null, next, "fullscreen")
 
-      // Compare through xterm.js
-      const termIncr = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
-      termIncr.feed(initialAnsi)
-      termIncr.feed(incrAnsi)
+        // Compare through xterm.js
+        const termIncr = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
+        termIncr.feed(initialAnsi)
+        termIncr.feed(incrAnsi)
 
-      const termFresh = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
-      termFresh.feed(freshAnsi)
+        const termFresh = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
+        termFresh.feed(freshAnsi)
 
-      for (let x = 0; x < 20; x++) {
-        expect(termIncr.getCell(0, x)?.char, `col ${x}`).toBe(termFresh.getCell(0, x)?.char)
-      }
+        for (let x = 0; x < 20; x++) {
+          expect(termIncr.getCell(0, x)?.char, `col ${x}`).toBe(termFresh.getCell(0, x)?.char)
+        }
 
-      termIncr.close()
-      termFresh.close()
-    })
+        termIncr.close()
+        termFresh.close()
+      },
+    )
   })
 })
 

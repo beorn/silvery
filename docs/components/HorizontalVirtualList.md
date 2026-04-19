@@ -43,7 +43,9 @@ interface HorizontalVirtualListHandle {
   width={80}
   itemWidth={20}
   scrollTo={selectedIndex}
-  renderItem={(column, index) => <Column key={column.id} column={column} isSelected={index === selected} />}
+  renderItem={(column, index) => (
+    <Column key={column.id} column={column} isSelected={index === selected} />
+  )}
 />
 ```
 

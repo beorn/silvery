@@ -303,7 +303,12 @@ describe("DEFAULT_WIDTH_CONFIG", () => {
 describe("applyWidthConfig", () => {
   it("maps emojiWidth=2 to textEmojiWide=true", () => {
     const caps = { textEmojiWide: false, textSizingSupported: false, other: "preserved" }
-    const config: TerminalWidthConfig = { utf8: true, cjkWidth: 1, emojiWidth: 2, privateUseWidth: 1 }
+    const config: TerminalWidthConfig = {
+      utf8: true,
+      cjkWidth: 1,
+      emojiWidth: 2,
+      privateUseWidth: 1,
+    }
     const result = applyWidthConfig(caps, config)
     expect(result.textEmojiWide).toBe(true)
     expect(result.other).toBe("preserved")
@@ -311,21 +316,36 @@ describe("applyWidthConfig", () => {
 
   it("maps emojiWidth=1 to textEmojiWide=false", () => {
     const caps = { textEmojiWide: true, textSizingSupported: false }
-    const config: TerminalWidthConfig = { utf8: true, cjkWidth: 1, emojiWidth: 1, privateUseWidth: 1 }
+    const config: TerminalWidthConfig = {
+      utf8: true,
+      cjkWidth: 1,
+      emojiWidth: 1,
+      privateUseWidth: 1,
+    }
     const result = applyWidthConfig(caps, config)
     expect(result.textEmojiWide).toBe(false)
   })
 
   it("maps privateUseWidth=2 to textSizingSupported=true", () => {
     const caps = { textEmojiWide: true, textSizingSupported: false }
-    const config: TerminalWidthConfig = { utf8: true, cjkWidth: 1, emojiWidth: 2, privateUseWidth: 2 }
+    const config: TerminalWidthConfig = {
+      utf8: true,
+      cjkWidth: 1,
+      emojiWidth: 2,
+      privateUseWidth: 2,
+    }
     const result = applyWidthConfig(caps, config)
     expect(result.textSizingSupported).toBe(true)
   })
 
   it("maps privateUseWidth=1 to textSizingSupported=false", () => {
     const caps = { textEmojiWide: true, textSizingSupported: true }
-    const config: TerminalWidthConfig = { utf8: true, cjkWidth: 1, emojiWidth: 2, privateUseWidth: 1 }
+    const config: TerminalWidthConfig = {
+      utf8: true,
+      cjkWidth: 1,
+      emojiWidth: 2,
+      privateUseWidth: 1,
+    }
     const result = applyWidthConfig(caps, config)
     expect(result.textSizingSupported).toBe(false)
   })

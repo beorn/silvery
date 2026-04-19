@@ -10,7 +10,7 @@
  * Attribution: Bjørn Stabell (silvery project). License: MIT.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Silvery Dark — the flagship dark scheme. Cool, low-saturation, silver accent. */
 export const silveryDark: ColorScheme = {

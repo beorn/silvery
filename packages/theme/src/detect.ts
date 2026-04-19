@@ -8,8 +8,8 @@
  * Standalone consumers: import from @silvery/ansi for lightweight defaults.
  */
 
-import type { ColorScheme, Theme } from "./types"
-import { deriveTheme } from "./derive"
+import type { ColorScheme, Theme } from "@silvery/ansi"
+import { deriveTheme } from "@silvery/ansi"
 import {
   detectTerminalScheme as _detectTerminalScheme,
   queryMultiplePaletteColors,

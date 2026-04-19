@@ -3,8 +3,8 @@
  * Source: https://github.com/jolaleye/horizon-theme-vscode
  */
 
-import type { ColorScheme } from "../types"
-import { brighten } from "../color"
+import type { ColorScheme } from "@silvery/ansi"
+import { brighten } from "@silvery/color"
 
 /** Horizon — warm dark variant with vivid accents. */
 export const horizon: ColorScheme = {

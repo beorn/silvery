@@ -23,7 +23,10 @@ import {
   clearInteractiveState,
 } from "../../packages/ag/src/interactive-signals"
 import { createFocusManager } from "../../packages/ag/src/focus-manager"
-import { createMouseEventProcessor, processMouseEvent } from "../../packages/ag-term/src/mouse-events"
+import {
+  createMouseEventProcessor,
+  processMouseEvent,
+} from "../../packages/ag-term/src/mouse-events"
 import type { ParsedMouse } from "../../packages/ag-term/src/mouse"
 
 // ============================================================================
@@ -59,7 +62,12 @@ function stubNode(
   return node
 }
 
-function makeParsedMouse(action: ParsedMouse["action"], x: number, y: number, button = 0): ParsedMouse {
+function makeParsedMouse(
+  action: ParsedMouse["action"],
+  x: number,
+  y: number,
+  button = 0,
+): ParsedMouse {
   return {
     action,
     x,
@@ -176,7 +184,10 @@ describe("clearInteractiveState", () => {
 describe("hover tracking via processMouseEvent", () => {
   test("mouseenter sets hovered=true, mouseleave sets hovered=false", () => {
     const child = stubNode("child", { rect: { x: 5, y: 5, width: 10, height: 5 } })
-    const root = stubNode("root", { children: [child], rect: { x: 0, y: 0, width: 80, height: 24 } })
+    const root = stubNode("root", {
+      children: [child],
+      rect: { x: 0, y: 0, width: 80, height: 24 },
+    })
     const state = createMouseEventProcessor()
 
     // Move into child — triggers mouseenter
@@ -196,7 +207,10 @@ describe("hover tracking via processMouseEvent", () => {
 describe("armed tracking via processMouseEvent", () => {
   test("mousedown sets armed=true, mouseup clears it", () => {
     const child = stubNode("child", { rect: { x: 5, y: 5, width: 10, height: 5 } })
-    const root = stubNode("root", { children: [child], rect: { x: 0, y: 0, width: 80, height: 24 } })
+    const root = stubNode("root", {
+      children: [child],
+      rect: { x: 0, y: 0, width: 80, height: 24 },
+    })
     const state = createMouseEventProcessor()
 
     // Mouse down on child

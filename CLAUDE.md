@@ -462,18 +462,18 @@ bun run compat            # Run Ink/Chalk compatibility checks
 
 Users install and import from these packages:
 
-| Package              | What                                                                                     |
-| -------------------- | ---------------------------------------------------------------------------------------- |
-| `silvery`            | Main barrel — components, hooks, render, types, runtime                                  |
-| `@silvery/create`    | App composition — createApp, pipe, withApp, TEA store                                    |
-| `@silvery/test`      | Testing utilities — virtual renderer, locators                                           |
-| `@silvery/headless`  | Pure state machines — SelectList, Readline (no React)                                    |
-| `@silvery/commands`  | Command registry, keymaps, invocation                                                    |
-| `@silvery/scope`     | Structured concurrency — createScope, withScope                                          |
-| `@silvery/signals`   | Reactive signals — thin wrapper around alien-signals                                     |
-| `@silvery/model`     | Optional DI model factories                                                              |
-| `@silvery/commander` | Type-safe Commander.js with colorized help, Standard Schema                              |
-| `@silvery/ansi`      | Everything terminal — styling, ANSI primitives, detection, theme derivation              |
+| Package              | What                                                                                                                    |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `silvery`            | Main barrel — components, hooks, render, types, runtime                                                                 |
+| `@silvery/create`    | App composition — createApp, pipe, withApp, TEA store                                                                   |
+| `@silvery/test`      | Testing utilities — virtual renderer, locators                                                                          |
+| `@silvery/headless`  | Pure state machines — SelectList, Readline (no React)                                                                   |
+| `@silvery/commands`  | Command registry, keymaps, invocation                                                                                   |
+| `@silvery/scope`     | Structured concurrency — createScope, withScope                                                                         |
+| `@silvery/signals`   | Reactive signals — thin wrapper around alien-signals                                                                    |
+| `@silvery/model`     | Optional DI model factories                                                                                             |
+| `@silvery/commander` | Type-safe Commander.js with colorized help, Standard Schema                                                             |
+| `@silvery/ansi`      | Everything terminal — styling, ANSI primitives, detection, theme derivation                                             |
 | `@silvery/color`     | Color math — OKLCH-native blend, brighten, darken, complement, contrast (hex public API, re-exported by @silvery/theme) |
 
 Subpath imports available from `silvery`:
@@ -495,7 +495,7 @@ These are workspace packages for development. Users do not import from them dire
 | `@silvery/ag`       | Core types, layout-signals (framework-agnostic reactive layer)            |
 | `@silvery/ag-react` | React reconciler, hooks (useSignal, useAgNode, useBoxRect), UI components |
 | `@silvery/ag-term`  | Terminal runtime, ANSI output, pipeline, syncRectSignals bridge           |
-| `@silvery/theme`    | Theme tokens, 84 color schemes, theme CLI                                      |
+| `@silvery/theme`    | Theme tokens, 84 color schemes, theme CLI                                 |
 | `@silvery/ink`      | Ink/Chalk compatibility layers                                            |
 
 ## Structure

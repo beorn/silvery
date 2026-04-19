@@ -157,7 +157,10 @@ const SILVERY_IMPORT = /(['"])@silvery\/(term|ansi)(?:\/([^'"]*?))?(['"])/g
 const LOGGILY_IMPORT = /(['"])loggily(?:\/([^'"]*?))?(['"])/g
 const SWATCH_IMPORT = /(['"])swatch(?:\/([^'"]*?))?(['"])/g
 
-function rewriteFile(entry: FileEntry, map: Map<string, FileEntry>): { changed: boolean; content: string } {
+function rewriteFile(
+  entry: FileEntry,
+  map: Map<string, FileEntry>,
+): { changed: boolean; content: string } {
   let content = readFileSync(entry.fullPath, "utf-8")
   let changed = false
   const oldSrcPath = getOldSrcPath(entry)

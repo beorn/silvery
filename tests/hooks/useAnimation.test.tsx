@@ -27,7 +27,15 @@ import {
 // ============================================================================
 
 /** Displays animation state as parseable text. */
-function AnimDisplay({ testID, interval, isActive }: { testID: string; interval?: number; isActive?: boolean }) {
+function AnimDisplay({
+  testID,
+  interval,
+  isActive,
+}: {
+  testID: string
+  interval?: number
+  isActive?: boolean
+}) {
   const { frame, time, delta } = useAnimation({ interval, isActive })
   return (
     <Text testID={testID}>

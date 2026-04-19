@@ -2,7 +2,7 @@
  * Challenger Deep palette — a dark, space-inspired theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Challenger Deep — dreamy purple-blue dark theme. */
 export const challengerDeep: ColorScheme = {

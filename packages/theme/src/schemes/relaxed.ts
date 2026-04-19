@@ -2,7 +2,7 @@
  * Relaxed palette — a calm, muted dark theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Relaxed — low-contrast muted dark theme. */
 export const relaxed: ColorScheme = {

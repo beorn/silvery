@@ -25,7 +25,12 @@ import { bench, describe } from "vitest"
 import { Writable } from "node:stream"
 import { createRenderer } from "@silvery/test"
 import { Box as SBox, Text as SText } from "silvery"
-import { render as inkRender, renderToString as inkRenderToString, Box as IBox, Text as IText } from "ink"
+import {
+  render as inkRender,
+  renderToString as inkRenderToString,
+  Box as IBox,
+  Text as IText,
+} from "ink"
 
 // ============================================================================
 // Mock stdout for Ink mounted-app benchmarks (synchronous rerender path)
@@ -37,7 +42,8 @@ function createMockStdout(
 ): NodeJS.WriteStream & { bytesWritten: number; resetBytes(): void } {
   const stream = new Writable({
     write(chunk, _encoding, cb) {
-      ;(stream as any).bytesWritten += typeof chunk === "string" ? Buffer.byteLength(chunk) : chunk.length
+      ;(stream as any).bytesWritten +=
+        typeof chunk === "string" ? Buffer.byteLength(chunk) : chunk.length
       cb()
     },
   })
@@ -86,7 +92,11 @@ function silveryStyledList(count: number) {
       React.createElement(
         SBox,
         { key: i, paddingLeft: 1, borderStyle: i % 3 === 0 ? "single" : undefined },
-        React.createElement(SText, { bold: i % 2 === 0, color: i % 4 === 0 ? "green" : undefined }, `Item ${i}`),
+        React.createElement(
+          SText,
+          { bold: i % 2 === 0, color: i % 4 === 0 ? "green" : undefined },
+          `Item ${i}`,
+        ),
       ),
     ),
   )
@@ -100,7 +110,11 @@ function inkStyledList(count: number) {
       React.createElement(
         IBox,
         { key: i, paddingLeft: 1, borderStyle: i % 3 === 0 ? "single" : undefined },
-        React.createElement(IText, { bold: i % 2 === 0, color: i % 4 === 0 ? "green" : undefined }, `Item ${i}`),
+        React.createElement(
+          IText,
+          { bold: i % 2 === 0, color: i % 4 === 0 ? "green" : undefined },
+          `Item ${i}`,
+        ),
       ),
     ),
   )
@@ -114,7 +128,11 @@ function silveryKanban(cols: number, cards: number) {
       React.createElement(
         SBox,
         { key: col, flexDirection: "column", flexGrow: 1 },
-        React.createElement(SBox, { borderStyle: "single" }, React.createElement(SText, { bold: true }, `Col ${col}`)),
+        React.createElement(
+          SBox,
+          { borderStyle: "single" },
+          React.createElement(SText, { bold: true }, `Col ${col}`),
+        ),
         ...Array.from({ length: cards }, (_, card) =>
           React.createElement(
             SBox,
@@ -135,7 +153,11 @@ function inkKanban(cols: number, cards: number) {
       React.createElement(
         IBox,
         { key: col, flexDirection: "column", flexGrow: 1 },
-        React.createElement(IBox, { borderStyle: "single" }, React.createElement(IText, { bold: true }, `Col ${col}`)),
+        React.createElement(
+          IBox,
+          { borderStyle: "single" },
+          React.createElement(IText, { bold: true }, `Col ${col}`),
+        ),
         ...Array.from({ length: cards }, (_, card) =>
           React.createElement(
             IBox,
@@ -156,9 +178,16 @@ function silveryKanbanEdit(cols: number, cards: number, editCol: number, editCar
       React.createElement(
         SBox,
         { key: col, flexDirection: "column", flexGrow: 1 },
-        React.createElement(SBox, { borderStyle: "single" }, React.createElement(SText, { bold: true }, `Col ${col}`)),
+        React.createElement(
+          SBox,
+          { borderStyle: "single" },
+          React.createElement(SText, { bold: true }, `Col ${col}`),
+        ),
         ...Array.from({ length: cards }, (_, card) => {
-          const text = col === editCol && card === editCard ? `Card ${col}-${card} [EDITING]` : `Card ${col}-${card}`
+          const text =
+            col === editCol && card === editCard
+              ? `Card ${col}-${card} [EDITING]`
+              : `Card ${col}-${card}`
           return React.createElement(
             SBox,
             { key: card, paddingLeft: 1, borderStyle: "round" },
@@ -178,9 +207,16 @@ function inkKanbanEdit(cols: number, cards: number, editCol: number, editCard: n
       React.createElement(
         IBox,
         { key: col, flexDirection: "column", flexGrow: 1 },
-        React.createElement(IBox, { borderStyle: "single" }, React.createElement(IText, { bold: true }, `Col ${col}`)),
+        React.createElement(
+          IBox,
+          { borderStyle: "single" },
+          React.createElement(IText, { bold: true }, `Col ${col}`),
+        ),
         ...Array.from({ length: cards }, (_, card) => {
-          const text = col === editCol && card === editCard ? `Card ${col}-${card} [EDITING]` : `Card ${col}-${card}`
+          const text =
+            col === editCol && card === editCard
+              ? `Card ${col}-${card} [EDITING]`
+              : `Card ${col}-${card}`
           return React.createElement(
             IBox,
             { key: card, paddingLeft: 1, borderStyle: "round" },
@@ -322,7 +358,11 @@ describe("Reused renderer rerender vs one-shot — cursor move in 100-item list"
           React.createElement(
             SBox,
             { key: i },
-            React.createElement(SText, { inverse: i === sCursor, bold: i === sCursor }, `Item ${i}`),
+            React.createElement(
+              SText,
+              { inverse: i === sCursor, bold: i === sCursor },
+              `Item ${i}`,
+            ),
           ),
         ),
       ),
@@ -340,7 +380,11 @@ describe("Reused renderer rerender vs one-shot — cursor move in 100-item list"
           React.createElement(
             IBox,
             { key: i },
-            React.createElement(IText, { inverse: i === iCursor, bold: i === iCursor }, `Item ${i}`),
+            React.createElement(
+              IText,
+              { inverse: i === iCursor, bold: i === iCursor },
+              `Item ${i}`,
+            ),
           ),
         ),
       ),
@@ -360,7 +404,11 @@ describe("Reused renderer rerender vs one-shot — cursor move in 1000-item list
           React.createElement(
             SBox,
             { key: i },
-            React.createElement(SText, { inverse: i === sCursor, bold: i === sCursor }, `Item ${i}`),
+            React.createElement(
+              SText,
+              { inverse: i === sCursor, bold: i === sCursor },
+              `Item ${i}`,
+            ),
           ),
         ),
       ),
@@ -378,7 +426,11 @@ describe("Reused renderer rerender vs one-shot — cursor move in 1000-item list
           React.createElement(
             IBox,
             { key: i },
-            React.createElement(IText, { inverse: i === iCursor, bold: i === iCursor }, `Item ${i}`),
+            React.createElement(
+              IText,
+              { inverse: i === iCursor, bold: i === iCursor },
+              `Item ${i}`,
+            ),
           ),
         ),
       ),
@@ -432,7 +484,13 @@ describe("Mounted rerender — cursor move in 100-item list", () => {
         React.createElement(IBox, { key: i }, React.createElement(IText, null, `Item ${i}`)),
       ),
     ),
-    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
+    {
+      stdout: inkStdout,
+      debug: true,
+      patchConsole: false,
+      incrementalRendering: true,
+      maxFps: 10000,
+    },
   )
 
   let sCursor = 0
@@ -446,7 +504,11 @@ describe("Mounted rerender — cursor move in 100-item list", () => {
           React.createElement(
             SBox,
             { key: i },
-            React.createElement(SText, { inverse: i === sCursor, bold: i === sCursor }, `Item ${i}`),
+            React.createElement(
+              SText,
+              { inverse: i === sCursor, bold: i === sCursor },
+              `Item ${i}`,
+            ),
           ),
         ),
       ),
@@ -464,7 +526,11 @@ describe("Mounted rerender — cursor move in 100-item list", () => {
           React.createElement(
             IBox,
             { key: i },
-            React.createElement(IText, { inverse: i === iCursor, bold: i === iCursor }, `Item ${i}`),
+            React.createElement(
+              IText,
+              { inverse: i === iCursor, bold: i === iCursor },
+              `Item ${i}`,
+            ),
           ),
         ),
       ),
@@ -495,7 +561,13 @@ describe("Mounted rerender — cursor move in 20-item list (all visible)", () =>
         React.createElement(IBox, { key: i }, React.createElement(IText, null, `Item ${i}`)),
       ),
     ),
-    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
+    {
+      stdout: inkStdout,
+      debug: true,
+      patchConsole: false,
+      incrementalRendering: true,
+      maxFps: 10000,
+    },
   )
 
   let sCursor = 0
@@ -509,7 +581,11 @@ describe("Mounted rerender — cursor move in 20-item list (all visible)", () =>
           React.createElement(
             SBox,
             { key: i },
-            React.createElement(SText, { inverse: i === sCursor, bold: i === sCursor }, `Item ${i}`),
+            React.createElement(
+              SText,
+              { inverse: i === sCursor, bold: i === sCursor },
+              `Item ${i}`,
+            ),
           ),
         ),
       ),
@@ -527,7 +603,11 @@ describe("Mounted rerender — cursor move in 20-item list (all visible)", () =>
           React.createElement(
             IBox,
             { key: i },
-            React.createElement(IText, { inverse: i === iCursor, bold: i === iCursor }, `Item ${i}`),
+            React.createElement(
+              IText,
+              { inverse: i === iCursor, bold: i === iCursor },
+              `Item ${i}`,
+            ),
           ),
         ),
       ),
@@ -539,13 +619,21 @@ describe("Mounted rerender — cursor move in 20-item list (all visible)", () =>
 // only 2 items change per cycle (old cursor + new cursor). Both use `inverse`.
 const SStyleItem = React.memo(
   ({ index, selected }: { index: number; selected: boolean }) =>
-    React.createElement(SBox, { key: index }, React.createElement(SText, { inverse: selected }, `Item ${index}`)),
+    React.createElement(
+      SBox,
+      { key: index },
+      React.createElement(SText, { inverse: selected }, `Item ${index}`),
+    ),
   (prev, next) => prev.index === next.index && prev.selected === next.selected,
 )
 
 const IStyleItem = React.memo(
   ({ index, selected }: { index: number; selected: boolean }) =>
-    React.createElement(IBox, { key: index }, React.createElement(IText, { inverse: selected }, `Item ${index}`)),
+    React.createElement(
+      IBox,
+      { key: index },
+      React.createElement(IText, { inverse: selected }, `Item ${index}`),
+    ),
   (prev, next) => prev.index === next.index && prev.selected === next.selected,
 )
 
@@ -571,7 +659,13 @@ describe("Mounted memo'd cursor highlight (inverse) — 100 items", () => {
         React.createElement(IStyleItem, { key: i, index: i, selected: i === 0 }),
       ),
     ),
-    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
+    {
+      stdout: inkStdout,
+      debug: true,
+      patchConsole: false,
+      incrementalRendering: true,
+      maxFps: 10000,
+    },
   )
 
   let sCursor = 0
@@ -624,7 +718,13 @@ describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
         React.createElement(IStyleItem, { key: i, index: i, selected: i === 0 }),
       ),
     ),
-    { stdout: inkStdout, debug: true, patchConsole: false, incrementalRendering: true, maxFps: 10000 },
+    {
+      stdout: inkStdout,
+      debug: true,
+      patchConsole: false,
+      incrementalRendering: true,
+      maxFps: 10000,
+    },
   )
 
   let sCursor = 0
@@ -694,7 +794,11 @@ const SMemoItem = React.memo(
     React.createElement(
       SBox,
       { paddingLeft: 1, borderStyle: active ? "double" : "single" },
-      React.createElement(SText, { bold: active, inverse: active }, `Task ${index}: ${active ? "ACTIVE" : "idle"}`),
+      React.createElement(
+        SText,
+        { bold: active, inverse: active },
+        `Task ${index}: ${active ? "ACTIVE" : "idle"}`,
+      ),
     ),
   (prev, next) => prev.index === next.index && prev.active === next.active,
 )
@@ -704,7 +808,11 @@ const IMemoItem = React.memo(
     React.createElement(
       IBox,
       { paddingLeft: 1, borderStyle: active ? "double" : "single" },
-      React.createElement(IText, { bold: active, inverse: active }, `Task ${index}: ${active ? "ACTIVE" : "idle"}`),
+      React.createElement(
+        IText,
+        { bold: active, inverse: active },
+        `Task ${index}: ${active ? "ACTIVE" : "idle"}`,
+      ),
     ),
   (prev, next) => prev.index === next.index && prev.active === next.active,
 )
@@ -782,13 +890,21 @@ describe("useState pattern — memo'd 500-item list, single active toggle", () =
 // Memo'd kanban — change one card's text in a 5×20 board
 const SMemoCard = React.memo(
   ({ col, card, text }: { col: number; card: number; text: string }) =>
-    React.createElement(SBox, { paddingLeft: 1, borderStyle: "round" }, React.createElement(SText, null, text)),
+    React.createElement(
+      SBox,
+      { paddingLeft: 1, borderStyle: "round" },
+      React.createElement(SText, null, text),
+    ),
   (prev, next) => prev.text === next.text,
 )
 
 const IMemoCard = React.memo(
   ({ col, card, text }: { col: number; card: number; text: string }) =>
-    React.createElement(IBox, { paddingLeft: 1, borderStyle: "round" }, React.createElement(IText, null, text)),
+    React.createElement(
+      IBox,
+      { paddingLeft: 1, borderStyle: "round" },
+      React.createElement(IText, null, text),
+    ),
   (prev, next) => prev.text === next.text,
 )
 
@@ -800,9 +916,16 @@ function silveryMemoKanban(cols: number, cards: number, editCol: number, editCar
       React.createElement(
         SBox,
         { key: col, flexDirection: "column", flexGrow: 1 },
-        React.createElement(SBox, { borderStyle: "single" }, React.createElement(SText, { bold: true }, `Col ${col}`)),
+        React.createElement(
+          SBox,
+          { borderStyle: "single" },
+          React.createElement(SText, { bold: true }, `Col ${col}`),
+        ),
         ...Array.from({ length: cards }, (_, card) => {
-          const text = col === editCol && card === editCard ? `Card ${col}-${card} [EDITING]` : `Card ${col}-${card}`
+          const text =
+            col === editCol && card === editCard
+              ? `Card ${col}-${card} [EDITING]`
+              : `Card ${col}-${card}`
           return React.createElement(SMemoCard, { key: card, col, card, text })
         }),
       ),
@@ -818,9 +941,16 @@ function inkMemoKanban(cols: number, cards: number, editCol: number, editCard: n
       React.createElement(
         IBox,
         { key: col, flexDirection: "column", flexGrow: 1 },
-        React.createElement(IBox, { borderStyle: "single" }, React.createElement(IText, { bold: true }, `Col ${col}`)),
+        React.createElement(
+          IBox,
+          { borderStyle: "single" },
+          React.createElement(IText, { bold: true }, `Col ${col}`),
+        ),
         ...Array.from({ length: cards }, (_, card) => {
-          const text = col === editCol && card === editCard ? `Card ${col}-${card} [EDITING]` : `Card ${col}-${card}`
+          const text =
+            col === editCol && card === editCard
+              ? `Card ${col}-${card} [EDITING]`
+              : `Card ${col}-${card}`
           return React.createElement(IMemoCard, { key: card, col, card, text })
         }),
       ),

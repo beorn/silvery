@@ -14,7 +14,11 @@ import { describe, test, expect, vi } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Text } from "../../src/index.js"
 import { ListView, type ListViewHandle } from "../../packages/ag-react/src/ui/components/ListView"
-import { CacheBackendContext, StdoutContext, type StdoutContextValue } from "../../packages/ag-react/src/context"
+import {
+  CacheBackendContext,
+  StdoutContext,
+  type StdoutContextValue,
+} from "../../packages/ag-react/src/context"
 
 // ============================================================================
 // Test Helpers

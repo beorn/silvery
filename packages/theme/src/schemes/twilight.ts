@@ -2,7 +2,7 @@
  * Twilight palette — the warm, muted classic.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Twilight — warm earthy dark theme. */
 export const twilight: ColorScheme = {

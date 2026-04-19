@@ -39,7 +39,11 @@
         width: 520px;
         height: 450px;
         transform: translateY(-50%);
-        background: radial-gradient(ellipse at center, rgba(88, 101, 242, 0.05) 0%, transparent 70%);
+        background: radial-gradient(
+          ellipse at center,
+          rgba(88, 101, 242, 0.05) 0%,
+          transparent 70%
+        );
         pointer-events: none;
         z-index: 0;
       }
@@ -232,7 +236,8 @@
 
       /* Terminal text */
       .term-text {
-        font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
+        font-family:
+          "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", "Menlo", "Consolas", monospace;
         font-size: 13px;
         line-height: 1.85;
         color: #d4d8e0;
@@ -505,8 +510,9 @@
           <div class="boundary-label">← maxHistory boundary</div>
           <div class="zone zone-tracked" id="zoneTracked">
             <div class="term-text">
-              <span class="bullet">&gt;</span> Run the tests <span class="success">✓ 47 tests passed</span>
-              <span class="comment">(3 files)</span> <span class="bullet">&gt;</span> Show recent commits
+              <span class="bullet">&gt;</span> Run the tests
+              <span class="success">✓ 47 tests passed</span> <span class="comment">(3 files)</span>
+              <span class="bullet">&gt;</span> Show recent commits
               <span class="string">ab3f1e2</span> fix: resolve flicker on resize
               <span class="string">7c9d4a1</span> feat: add streaming support
             </div>
@@ -522,14 +528,16 @@
             </div>
             <div class="zone-live" id="zoneLive">
               <div class="term-text">
-                <span class="bullet">&gt;</span> Help me refactor the auth module <span class="bullet">●</span> Reading
-                src/auth/middleware.ts... <span class="bullet">●</span> Found 3 issues. Streaming fix...
+                <span class="bullet">&gt;</span> Help me refactor the auth module
+                <span class="bullet">●</span> Reading src/auth/middleware.ts...
+                <span class="bullet">●</span> Found 3 issues. Streaming fix...
                 <span class="keyword">export</span> <span class="keyword">function</span>
-                <span class="func">validateToken</span>( token: <span class="string">string</span>, secret:
-                <span class="string">string</span> <span class="dimmed">)</span>
+                <span class="func">validateToken</span>( token: <span class="string">string</span>,
+                secret: <span class="string">string</span> <span class="dimmed">)</span>
                 <span class="dimmed">{</span>
-                <span class="input-divider" style="margin-top: 8px"></span><span class="prompt">&gt; </span
-                ><span class="cursor-block">▌</span><span class="input-divider"></span>
+                <span class="input-divider" style="margin-top: 8px"></span
+                ><span class="prompt">&gt; </span><span class="cursor-block">▌</span
+                ><span class="input-divider"></span>
               </div>
             </div>
             <div class="footer-bar">Footer (pinned via flex, not DECSTBM)</div>
@@ -541,7 +549,9 @@
           <div class="annotation ann-native" id="annNative">
             <div class="connector-line"></div>
             <div class="annotation-card">
-              <div class="annotation-title"><span class="zone-badge z1">1</span> Terminal Scrollback</div>
+              <div class="annotation-title">
+                <span class="zone-badge z1">1</span> Terminal Scrollback
+              </div>
 
               <ul class="annotation-details">
                 <li>State: <b>gone</b></li>
@@ -555,7 +565,9 @@
           <div class="annotation ann-tracked" id="annTracked">
             <div class="connector-line"></div>
             <div class="annotation-card">
-              <div class="annotation-title"><span class="zone-badge z2">2</span> App Scrollback</div>
+              <div class="annotation-title">
+                <span class="zone-badge z2">2</span> App Scrollback
+              </div>
               <ul class="annotation-details">
                 <li>State: <b>virtualized</b></li>
                 <li>Data retained, component unmounted</li>

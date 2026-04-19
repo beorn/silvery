@@ -2,7 +2,7 @@
  * Doom One palette — Emacs Doom's default dark theme.
  */
 
-import type { ColorScheme } from "../types"
+import type { ColorScheme } from "@silvery/ansi"
 
 /** Doom One — Henrik Lissner's Emacs Doom default theme. */
 export const doomOne: ColorScheme = {

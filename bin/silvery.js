@@ -28,7 +28,8 @@ if (args.includes("--version") || args.includes("-v")) {
   ;(console.log(`silvery ${pkg.version}`), process.exit(0))
 }
 var delegateArgs = args[0] === "examples" ? args.slice(1) : args,
-  runArgs = runtime === "bun" ? ["run", examplesCli, ...delegateArgs] : [examplesCli, ...delegateArgs],
+  runArgs =
+    runtime === "bun" ? ["run", examplesCli, ...delegateArgs] : [examplesCli, ...delegateArgs],
   proc = spawn(runtime, runArgs, { stdio: "inherit" })
 proc.on("exit", (code) => process.exit(code ?? 1))
 

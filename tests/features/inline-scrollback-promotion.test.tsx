@@ -88,10 +88,13 @@ describe("inline mode with pre-existing terminal content", () => {
   })
 
   test("shell prompt survives initial render", async () => {
-    ;({ term, handle } = await runInlineWithShellPrompt(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
-      cols: 120,
-      rows: 40,
-    }))
+    ;({ term, handle } = await runInlineWithShellPrompt(
+      <AIChat script={SCRIPT} autoStart={false} fastMode={true} />,
+      {
+        cols: 120,
+        rows: 40,
+      },
+    ))
 
     // The shell prompt should still be visible on screen (or in scrollback)
     const screenText = term.screen!.getText()
@@ -104,10 +107,13 @@ describe("inline mode with pre-existing terminal content", () => {
   })
 
   test("shell prompt survives after first Enter press", async () => {
-    ;({ term, handle } = await runInlineWithShellPrompt(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
-      cols: 120,
-      rows: 40,
-    }))
+    ;({ term, handle } = await runInlineWithShellPrompt(
+      <AIChat script={SCRIPT} autoStart={false} fastMode={true} />,
+      {
+        cols: 120,
+        rows: 40,
+      },
+    ))
 
     await handle.press("Enter")
 
@@ -124,10 +130,13 @@ describe("inline mode with pre-existing terminal content", () => {
   })
 
   test("cursor-up does not overshoot into shell prompt area", async () => {
-    ;({ term, handle } = await runInlineWithShellPrompt(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
-      cols: 120,
-      rows: 40,
-    }))
+    ;({ term, handle } = await runInlineWithShellPrompt(
+      <AIChat script={SCRIPT} autoStart={false} fastMode={true} />,
+      {
+        cols: 120,
+        rows: 40,
+      },
+    ))
 
     // Record which lines have shell content before first Enter
     const screenBefore = term.screen!.getLines()
@@ -204,14 +213,19 @@ describe("inline mode with pre-existing terminal content", () => {
   test("content does not jump up — render region stays at bottom", async () => {
     // With a 40-row terminal and 5 shell lines, the app starts at ~row 6.
     // After Enter, content should stay in the same region, not jump to row 0.
-    ;({ term, handle } = await runInlineWithShellPrompt(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
-      cols: 120,
-      rows: 40,
-    }))
+    ;({ term, handle } = await runInlineWithShellPrompt(
+      <AIChat script={SCRIPT} autoStart={false} fastMode={true} />,
+      {
+        cols: 120,
+        rows: 40,
+      },
+    ))
 
     // Find where app content starts
     const linesBefore = term.screen!.getLines()
-    const appStartBefore = linesBefore.findIndex((l: string) => l.includes("AI Chat") || l.includes("Fix the login"))
+    const appStartBefore = linesBefore.findIndex(
+      (l: string) => l.includes("AI Chat") || l.includes("Fix the login"),
+    )
 
     await handle.press("Enter")
 
@@ -231,7 +245,10 @@ describe("inline mode with pre-existing terminal content", () => {
       const linesOfContent = linesAfter.filter((l: string) => l.trim().length > 0).length
       if (linesOfContent < 35) {
         // Screen isn't full — content shouldn't be at the very top
-        expect(appStartAfter, `Content jumped from row ${appStartBefore} to row ${appStartAfter}`).toBeGreaterThan(0)
+        expect(
+          appStartAfter,
+          `Content jumped from row ${appStartBefore} to row ${appStartAfter}`,
+        ).toBeGreaterThan(0)
       }
     }
   })

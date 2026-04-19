@@ -81,21 +81,21 @@ import { Box } from "silvery"
 
 ### Border & Outline
 
-| Prop              | Type                                                                                         | Default | Description                      |
-| ----------------- | -------------------------------------------------------------------------------------------- | ------- | -------------------------------- |
-| `borderStyle`     | `"single" \| "double" \| "round" \| "bold" \| "singleDouble" \| "doubleSingle" \| "classic"` | --      | Border style                     |
-| `borderColor`     | `string`                                                                                     | --      | Border color                     |
-| `borderTop`       | `boolean`                                                                                    | --      | Show top border                  |
-| `borderBottom`    | `boolean`                                                                                    | --      | Show bottom border               |
-| `borderLeft`      | `boolean`                                                                                    | --      | Show left border                 |
-| `borderRight`     | `boolean`                                                                                    | --      | Show right border                |
+| Prop              | Type                                                                                         | Default | Description                                             |
+| ----------------- | -------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------- |
+| `borderStyle`     | `"single" \| "double" \| "round" \| "bold" \| "singleDouble" \| "doubleSingle" \| "classic"` | --      | Border style                                            |
+| `borderColor`     | `string`                                                                                     | --      | Border color                                            |
+| `borderTop`       | `boolean`                                                                                    | --      | Show top border                                         |
+| `borderBottom`    | `boolean`                                                                                    | --      | Show bottom border                                      |
+| `borderLeft`      | `boolean`                                                                                    | --      | Show left border                                        |
+| `borderRight`     | `boolean`                                                                                    | --      | Show right border                                       |
 | `outlineStyle`    | `"single" \| "double" \| "round" \| "bold" \| "singleDouble" \| "doubleSingle" \| "classic"` | --      | Outline style (draws outside the box, no layout impact) |
-| `outlineColor`    | `string`                                                                                     | --      | Outline color                    |
-| `outlineDimColor` | `boolean`                                                                                    | --      | Dim outline                      |
-| `outlineTop`      | `boolean`                                                                                    | `true`  | Show top outline                 |
-| `outlineBottom`   | `boolean`                                                                                    | `true`  | Show bottom outline              |
-| `outlineLeft`     | `boolean`                                                                                    | `true`  | Show left outline                |
-| `outlineRight`    | `boolean`                                                                                    | `true`  | Show right outline               |
+| `outlineColor`    | `string`                                                                                     | --      | Outline color                                           |
+| `outlineDimColor` | `boolean`                                                                                    | --      | Dim outline                                             |
+| `outlineTop`      | `boolean`                                                                                    | `true`  | Show top outline                                        |
+| `outlineBottom`   | `boolean`                                                                                    | `true`  | Show bottom outline                                     |
+| `outlineLeft`     | `boolean`                                                                                    | `true`  | Show left outline                                       |
+| `outlineRight`    | `boolean`                                                                                    | `true`  | Show right outline                                      |
 
 ### Other
 

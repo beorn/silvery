@@ -66,7 +66,7 @@ All MIT-licensed, all part of the same development effort.
 | `@silvery/ink` / `@silvery/chalk` | Ink compatibility — 99% of Ink 7.0 tests, 100% of Chalk tests            |
 | `@silvery/test`                   | Playwright-style testing — locators, `press()`, buffer assertions        |
 | `@silvery/create`                 | Composable app builder — `pipe()` providers _(under active development)_ |
-| `@silvery/theme`                  | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect         |
+| `@silvery/theme`                  | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect    |
 | `@silvery/commander`              | **Beautiful CLIs for free** — help renders through Silvery itself        |
 | `@silvery/headless`               | Pure state machines — portable, embeddable, no React                     |
 | `@silvery/ansi`                   | Terminal primitives — styling, SGR, truecolor, detection                 |

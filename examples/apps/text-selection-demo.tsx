@@ -34,7 +34,9 @@ function SelectableTextPanel(): React.ReactElement {
       <Text>Drag your mouse over this text to select it.</Text>
       <Text>Multi-line selections work across paragraphs.</Text>
       <Box height={1} />
-      <Text color="$muted">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</Text>
+      <Text color="$muted">
+        The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.
+      </Text>
     </Box>
   )
 }
@@ -45,7 +47,14 @@ function SelectableTextPanel(): React.ReactElement {
 
 function NonSelectablePanel(): React.ReactElement {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="$border" paddingX={1} flexGrow={1} userSelect="none">
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="$border"
+      paddingX={1}
+      flexGrow={1}
+      userSelect="none"
+    >
       <H2>Non-Selectable</H2>
       <Small>userSelect="none"</Small>
       <Box height={1} />
@@ -63,11 +72,23 @@ function NonSelectablePanel(): React.ReactElement {
 
 function ContainedPanel(): React.ReactElement {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="$warning" paddingX={1} flexGrow={1}>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="$warning"
+      paddingX={1}
+      flexGrow={1}
+    >
       <H2 color="$warning">Contained Selection</H2>
       <Small>userSelect="contain"</Small>
       <Box height={1} />
-      <Box flexDirection="column" borderStyle="round" borderColor="$primary" paddingX={1} userSelect="contain">
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor="$primary"
+        paddingX={1}
+        userSelect="contain"
+      >
         <Text bold color="$primary">
           Selection Boundary
         </Text>
