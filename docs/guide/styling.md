@@ -77,15 +77,15 @@ Rebuilding what the component already does. If you're writing `color="$fg"` or `
 
 TUIs can't vary font size — bold, dim, and italic are your only typographic tools. That makes color **more important** for hierarchy than in web UIs. Use intentional combinations of color + bold/dim to create clear levels.
 
-| Level           | Style               | Visual effect                                  |
-| --------------- | ------------------- | ---------------------------------------------- |
-| H1 — Page title | `$primary` + `bold` | Colored, bold — maximum emphasis               |
-| H2 — Section    | `$accent` + `bold`  | Contrasting color, bold — distinct from H1     |
-| H3 — Group      | `$fg` + `bold`      | Bright, bold — stands out without accent color |
-| Body            | `$fg`               | Normal text                                    |
-| Meta / caption  | `$muted`            | Dimmed, recedes                                |
+| Level           | Style                    | Visual effect                                  |
+| --------------- | ------------------------ | ---------------------------------------------- |
+| H1 — Page title | `$primary` + `bold`      | Colored, bold — maximum emphasis               |
+| H2 — Section    | `$accent` + `bold`       | Contrasting color, bold — distinct from H1     |
+| H3 — Group      | `$fg` + `bold`           | Bright, bold — stands out without accent color |
+| Body            | `$fg`                    | Normal text                                    |
+| Meta / caption  | `$muted`                 | Dimmed, recedes                                |
 | Fine print      | `$faint` (via `<Small>`) | Maximally receded — captions, footnotes        |
-| Disabled        | `$disabledfg`       | Faded — clearly inactive                       |
+| Disabled        | `$disabledfg`            | Faded — clearly inactive                       |
 
 ::: tip ✨ Rule — `dim` is a rendering detail, not a design primitive
 
@@ -98,7 +98,7 @@ Use semantic tokens to express intent:
 - **`$disabledfg`** — clearly inactive. Faded for contrast, not for "less important."
 - **None of the above** — primary body text. `$fg` is inherited; don't set it.
 
-Where `dim` *is* allowed (inside the token system only):
+Where `dim` _is_ allowed (inside the token system only):
 
 1. `<Small>` preset — the canonical composition
 2. Monochrome derivation (`deriveTheme(s, "monochrome")`) — dim/bold/italic are the only expressive channels at mono tier
@@ -164,6 +164,18 @@ import { H1, H2, H3, Muted, Small, Lead, Code, Blockquote, P, LI } from "silvery
 ```
 
 Zero color props — the presets handle it. This is the easiest way to get correct hierarchy.
+:::
+
+::: tip ✨ Shiny — `<Text variant=…>` resolves from the theme
+Variants are theme tokens — `h1`, `h2`, `h3`, `body`, `body-muted`, `fine-print`, `strong`, `em`, `link`, `key`, `code`, `kbd` come built in. The `<H1>` / `<H2>` / … components are thin wrappers over `<Text variant=…>`.
+
+```tsx
+<Text variant="h1">Settings</Text>              // = H1 — $primary + bold
+<Text variant="body-muted">Context</Text>       // $muted
+<Text variant="kbd">⌘K</Text>                   // $mutedbg + $accent + bold
+```
+
+Apps extend the variant table via `<ThemeProvider tokens={{ variants: { hero: { color: "$brand", bold: true } } }}>`. Caller props always win over the variant (`<Text variant="h1" color="$success">` overrides color, keeps bold).
 :::
 
 → [Typography reference](/components/typography) · [Text reference](/api/text) · [Theme tokens](/reference/theming#token-reference)
@@ -513,6 +525,17 @@ Use `color="inherit"` to skip a component's default color and inherit from the p
 ```
 
 This is essential for `<Link>` (which defaults to `$link` blue) inside colored containers like status bars.
+
+### State variants
+
+Every interactive token has `-hover` and `-active` companions — derived in OKLCH (`±0.04L` / `±0.08L`) so they stay in-palette. Use them when mouse hover or press state matters:
+
+```tsx
+<Text color={hovered ? "$primary-hover" : "$primary"}>Click me</Text>
+<Box backgroundColor={pressed ? "$bg-selected-hover" : "$bg-selected"}>…</Box>
+```
+
+Available: `$primary-hover/-active`, `$accent-hover/-active`, `$brand-hover/-active`, `$fg-hover/-active`, `$bg-selected-hover`, `$bg-surface-hover`.
 
 ### Mix
 
