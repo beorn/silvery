@@ -46,7 +46,9 @@ function FakeTextInput({
   focused?: boolean
 }) {
   // Non-interactive replica so the storybook doesn't steal focus from the
-  // browser. Shows exactly how silvery renders an input in both states.
+  // browser. Shows exactly how silvery renders an input in both states,
+  // including the block cursor when focused.
+  const hasValue = value.length > 0
   return (
     <Box flexDirection="column">
       <Muted>{label}</Muted>
@@ -56,7 +58,19 @@ function FakeTextInput({
         paddingX={1}
         width={36}
       >
-        {value ? <Text>{value}</Text> : <Text color="$disabledfg">{placeholder ?? ""}</Text>}
+        {hasValue ? (
+          <Text>
+            <Text>{value}</Text>
+            {focused ? <Text inverse> </Text> : null}
+          </Text>
+        ) : focused ? (
+          <Text>
+            <Text inverse> </Text>
+            <Text color="$disabledfg">{placeholder ? placeholder.slice(1) : ""}</Text>
+          </Text>
+        ) : (
+          <Text color="$disabledfg">{placeholder ?? ""}</Text>
+        )}
       </Box>
     </Box>
   )
