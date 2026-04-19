@@ -52,7 +52,7 @@ export interface ModalDialogProps extends Omit<BoxProps, "children" | "flexDirec
   focusScope?: boolean
   /**
    * Backdrop fade amount — fades everything OUTSIDE this dialog's rect, making
-   * the modal's content stand out visually. Range [0, 1]. Default: 0.55.
+   * the modal's content stand out visually. Range [0, 1]. Default: 0.7.
    *
    * Applied at render time via a cell-level color transform (see
    * `@silvery/ag-term/pipeline/backdrop-phase`). Set `fade={0}` to disable.
@@ -62,7 +62,7 @@ export interface ModalDialogProps extends Omit<BoxProps, "children" | "flexDirec
   children: React.ReactNode
 }
 
-const DEFAULT_FADE = 0.55
+const DEFAULT_FADE = 0.7
 
 // =============================================================================
 // Helpers

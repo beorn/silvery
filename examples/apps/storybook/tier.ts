@@ -71,14 +71,14 @@ function rgbToHex(r: number, g: number, b: number): string {
   )
 }
 
-function quantize256(hex: string): string {
+export function quantize256(hex: string): string {
   const rgb = hexToRgb(hex)
   if (!rgb) return hex
   const idx = rgbToAnsi256(rgb[0], rgb[1], rgb[2])
   return ansi256ToHex(idx)
 }
 
-function quantizeAnsi16Hex(hex: string): string {
+export function quantizeAnsi16Hex(hex: string): string {
   const rgb = hexToRgb(hex)
   if (!rgb) return hex
   const idx = nearestAnsi16(rgb[0], rgb[1], rgb[2])

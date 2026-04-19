@@ -12,6 +12,9 @@ import React from "react"
 import { Box, Text, Muted, H2, H3 } from "silvery"
 import type { ColorScheme, Theme } from "@silvery/theme"
 import { hexToOklch } from "@silvery/color"
+import { monoAttrsFor } from "@silvery/ansi"
+import type { MonoAttr } from "@silvery/ansi"
+import { quantize256, quantizeAnsi16Hex } from "./tier"
 
 function SwatchCell({ color }: { color: string }) {
   return <Text color={color}>{"██"}</Text>
@@ -200,16 +203,86 @@ function PairRow({ theme, pair }: { theme: Theme; pair: (typeof PAIRS)[number] }
   )
 }
 
+/**
+ * Human-readable derivation rule for each derived Theme token — mirrors
+ * deriveTruecolorTheme in @silvery/ansi/theme/derive.ts. Shown next to each
+ * row so readers can see WHY a token has its value, not just what it is.
+ */
+const RULES: Partial<Record<keyof Theme, string>> = {
+  bg: "palette.background",
+  fg: "ensureContrast(palette.fg, popoverbg, AA)",
+  muted: "ensureContrast(blend(fg, bg, 40%), mutedbg, AA)",
+  mutedbg: "blend(bg, palette.fg, 4%)",
+  surface: "= fg",
+  surfacebg: "blend(bg, palette.fg, 5%)",
+  popover: "= fg",
+  popoverbg: "blend(bg, palette.fg, 8%)",
+  inverse: "contrastFg(blend(fg, bg, 10%))",
+  inversebg: "blend(fg, bg, 10%)",
+  cursor: "ensureContrast(palette.cursorText, repaired-cursorbg, AA)",
+  cursorbg: "repairCursorBg(palette.cursorColor, bg)",
+  selection: "ensureContrast(palette.selFg, repaired-selbg, AA)",
+  selectionbg: "repairSelectionBg(palette.selBg, bg)",
+  primary: "ensureContrast(palette.primary ?? (dark ? yellow : blue), bg, AA)",
+  primaryfg: "contrastFg(primary)",
+  secondary: "ensureContrast(blend(primary, accent, 35%), bg, AA)",
+  secondaryfg: "contrastFg(secondary)",
+  accent: "ensureContrast(complement(primary), bg, AA)",
+  accentfg: "contrastFg(accent)",
+  error: "ensureContrast(palette.red, bg, AA)",
+  errorfg: "contrastFg(error)",
+  warning: "ensureContrast(palette.yellow, bg, AA)",
+  warningfg: "contrastFg(warning)",
+  success: "ensureContrast(palette.green, bg, AA)",
+  successfg: "contrastFg(success)",
+  info: "ensureContrast(blend(fg, accent, 50%), bg, AA)",
+  infofg: "contrastFg(info)",
+  border: "ensureContrast(blend(bg, palette.fg, 15%), bg, FAINT)",
+  inputborder: "ensureContrast(blend(bg, palette.fg, 25%), bg, CONTROL)",
+  focusborder: "= link",
+  link: "ensureContrast(dark ? brightBlue : blue, bg, AA)",
+  disabledfg: "ensureContrast(blend(fg, bg, 50%), bg, DIM)",
+}
+
+/** Render a token name with its mono-tier SGR attrs applied as a preview. */
+function MonoPreview({ attrs }: { attrs: readonly MonoAttr[] }) {
+  const hasAttrs = attrs.length > 0
+  return (
+    <Text
+      bold={attrs.includes("bold")}
+      dim={attrs.includes("dim")}
+      italic={attrs.includes("italic")}
+      inverse={attrs.includes("inverse")}
+      underlineStyle={attrs.includes("underline") ? "single" : undefined}
+      strikethrough={attrs.includes("strikethrough")}
+    >
+      {hasAttrs ? attrs.map((a) => a.slice(0, 1).toUpperCase()).join("") : "·"}
+    </Text>
+  )
+}
+
+/**
+ * One row per Theme token. Shows four tier-rendered swatches side by side
+ * (truecolor / 256 / ansi16 / mono) so the reader can compare a token's
+ * rendering across capability tiers without switching tiers globally. The
+ * derivation rule is shown in $muted at the right.
+ */
 function TokenRow({ theme, token }: { theme: Theme; token: keyof Theme }) {
   const value = theme[token]
   if (typeof value !== "string") return null
-  const oklch = formatOklch(value)
+  const tc = value
+  const c256 = quantize256(value)
+  const c16 = quantizeAnsi16Hex(value)
+  const monoAttrs = monoAttrsFor(theme, token)
+  const rule = RULES[token] ?? ""
   return (
     <Box gap={1}>
-      <SwatchCell color={value} />
+      <SwatchCell color={tc} />
+      <SwatchCell color={c256} />
+      <SwatchCell color={c16} />
+      <MonoPreview attrs={monoAttrs} />
       <Text>${String(token).padEnd(14)}</Text>
-      <Muted>{value}</Muted>
-      {oklch ? <Muted>· {oklch}</Muted> : null}
+      {rule ? <Muted>{rule}</Muted> : null}
     </Box>
   )
 }
@@ -218,6 +291,14 @@ export function TokenSwatches({ theme }: { theme: Theme }) {
   return (
     <Box flexDirection="column" gap={1}>
       <H2>Theme tokens (33)</H2>
+      <Box paddingX={1}>
+        <Muted>
+          Each row: <Text>truecolor · 256 · ansi16 · mono</Text>{" "}
+          · name · derivation rule. Mono column shows the one-letter code
+          for each SGR attr (B=bold, D=dim, I=italic, U=underline, V=inverse)
+          applied to the token at monochrome tier.
+        </Muted>
+      </Box>
 
       <Box flexDirection="column" paddingX={1}>
         <H3>Surfaces + text</H3>

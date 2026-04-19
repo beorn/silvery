@@ -45,7 +45,7 @@ export interface BackdropProps extends Omit<BoxProps, "children"> {
  *
  * `fade={0}` is a passthrough — no data attribute is emitted, no pass work.
  */
-export function Backdrop({ fade = 0.55, children, ...boxProps }: BackdropProps): React.ReactElement {
+export function Backdrop({ fade = 0.7, children, ...boxProps }: BackdropProps): React.ReactElement {
   const clamped = clamp01(fade)
   const attrs: Record<string, unknown> = clamped > 0 ? { "data-backdrop-fade": clamped } : {}
   return (
