@@ -322,7 +322,7 @@ export interface BoxProps
    * Override theme for this subtree — $token colors resolve against this theme.
    * Pushed onto the context theme stack during render phase tree walk.
    */
-  theme?: import("@silvery/theme").Theme
+  theme?: import("@silvery/ansi").Theme
 
   /** CSS pointer-events equivalent. "none" makes this node and its subtree invisible to hit testing. */
   pointerEvents?: "auto" | "none"

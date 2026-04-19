@@ -8,7 +8,7 @@
 import React from "react"
 import { describe, expect, it } from "vitest"
 import { ThemeProvider } from "../src/ThemeProvider"
-import { ThemeContext } from "@silvery/theme/ThemeContext"
+import { ThemeContext } from "../src/ThemeContext"
 import { createRenderer } from "@silvery/test"
 import { defaultDarkScheme, deriveTheme } from "@silvery/ansi"
 

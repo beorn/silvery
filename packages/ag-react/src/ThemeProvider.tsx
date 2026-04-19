@@ -39,7 +39,7 @@
  */
 
 import React, { useContext, useMemo } from "react"
-import { ThemeContext, ActiveSchemeContext } from "@silvery/theme/ThemeContext"
+import { ThemeContext, ActiveSchemeContext } from "./ThemeContext"
 import type { Theme, ActiveScheme } from "@silvery/ansi"
 import { Box } from "./components/Box"
 
@@ -71,7 +71,12 @@ export interface ThemeProviderProps {
   children: React.ReactNode
 }
 
-export function ThemeProvider({ tokens, theme, scheme, children }: ThemeProviderProps): React.ReactElement {
+export function ThemeProvider({
+  tokens,
+  theme,
+  scheme,
+  children,
+}: ThemeProviderProps): React.ReactElement {
   const parent = useContext(ThemeContext)
   const merged = useMemo(() => {
     if (tokens && theme) {
@@ -86,7 +91,11 @@ export function ThemeProvider({ tokens, theme, scheme, children }: ThemeProvider
     // to the existing variants map rather than replacing it entirely.
     const t = tokens as Record<string, unknown>
     const result = { ...parent, ...tokens } as Theme
-    if (t["variants"] !== null && typeof t["variants"] === "object" && !Array.isArray(t["variants"])) {
+    if (
+      t["variants"] !== null &&
+      typeof t["variants"] === "object" &&
+      !Array.isArray(t["variants"])
+    ) {
       result.variants = {
         ...parent.variants,
         ...(t["variants"] as Record<string, unknown>),

@@ -140,7 +140,7 @@ const app = pipe(
 
 await runEventBatch(app, events, {
   onRender: () => doRender(),
-  onExit:   (e) => shutdown(e),
+  onExit: (e) => shutdown(e),
   onSuspend: () => performSuspend(),
   onBarrier: () => flushAndRender(),
 })

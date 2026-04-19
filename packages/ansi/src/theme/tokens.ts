@@ -88,10 +88,7 @@ export type StandardThemeToken =
 export type ColorRingToken = `$${HueName}` // $red, $orange, $yellow, $green, $teal, $blue, $purple, $pink
 
 /** Brand tokens (Apple system-color model) — app identity anchor. */
-export type BrandToken =
-  | "$brand"
-  | "$brand-hover"
-  | "$brand-active"
+export type BrandToken = "$brand" | "$brand-hover" | "$brand-active"
 
 /** Raw ANSI palette slots. */
 export type PaletteToken =

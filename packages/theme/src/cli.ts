@@ -210,10 +210,7 @@ function divider(char: string, width: number): string {
   return char.repeat(width)
 }
 
-async function inspectTheme(flags: {
-  diff?: string
-  format?: string
-}): Promise<void> {
+async function inspectTheme(flags: { diff?: string; format?: string }): Promise<void> {
   const catalog = Object.values(builtinPalettes)
 
   // Detect the active terminal scheme via OSC probe + fingerprint

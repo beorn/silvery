@@ -15,7 +15,8 @@ import {
   type InvariantResult,
   type FingerprintMatch,
 } from "@silvery/ansi"
-import { builtinPalettes, type ColorScheme, type Theme, type ThemeAdjustment } from "@silvery/theme"
+import { builtinPalettes, type ColorScheme } from "@silvery/theme"
+import type { Theme, ThemeAdjustment } from "@silvery/ansi"
 import type { MonochromeAttrs } from "@silvery/ansi"
 
 interface Props {

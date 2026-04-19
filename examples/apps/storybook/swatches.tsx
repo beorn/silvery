@@ -10,8 +10,9 @@
 
 import React from "react"
 import { Box, Text, Muted, H2, H3 } from "silvery"
-import type { ColorScheme, Theme } from "@silvery/theme"
-import { hexToOklch } from "@silvery/theme"
+import type { ColorScheme } from "@silvery/theme"
+import type { Theme } from "@silvery/ansi"
+import { hexToOklch } from "@silvery/color"
 import { monoAttrsFor } from "@silvery/ansi"
 import type { MonoAttr } from "@silvery/ansi"
 import { quantize256, quantizeAnsi16Hex } from "./tier"

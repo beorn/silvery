@@ -24,7 +24,7 @@
  */
 
 import { useContext } from "react"
-import { ActiveSchemeContext } from "@silvery/theme/ThemeContext"
+import { ActiveSchemeContext } from "../ThemeContext"
 import type { ActiveScheme } from "@silvery/ansi"
 
 /**

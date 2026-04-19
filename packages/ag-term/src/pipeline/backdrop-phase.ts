@@ -58,7 +58,7 @@
  * state across frames.
  */
 
-import { blend } from "@silvery/theme"
+import { blend } from "@silvery/color"
 import { relativeLuminance } from "@silvery/color"
 import type { AgNode, Rect } from "@silvery/ag/types"
 import { ansi256ToRgb, isDefaultBg, type Color, type TerminalBuffer } from "../buffer"

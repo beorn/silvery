@@ -11,8 +11,7 @@ import React, { useState } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
-import type { Theme } from "@silvery/theme"
-import { ansi16DarkTheme, ansi16LightTheme } from "@silvery/theme"
+import { ansi16DarkTheme, ansi16LightTheme, type Theme } from "@silvery/ansi"
 
 // Two themes with clearly different primary colors for assertions
 const themeA: Theme = {

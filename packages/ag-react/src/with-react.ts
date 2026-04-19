@@ -110,7 +110,10 @@ export interface WithReactOptions<T> {
  */
 function isReactElement(x: unknown): x is ReactElement {
   return (
-    typeof x === "object" && x !== null && "type" in x && !("view" in (x as Record<string, unknown>))
+    typeof x === "object" &&
+    x !== null &&
+    "type" in x &&
+    !("view" in (x as Record<string, unknown>))
   )
 }
 

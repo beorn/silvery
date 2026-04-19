@@ -59,7 +59,9 @@ export interface AppContextHelpers<T> {
   /** The underlying React.Context — useful if you need to pass it to another consumer. */
   AppContext: React.Context<T | null>
   /** Provider component — pass `value={yourApp}`. */
-  AppProvider: ((props: { value: T; children: ReactNode }) => React.ReactElement) & { displayName?: string }
+  AppProvider: ((props: { value: T; children: ReactNode }) => React.ReactElement) & {
+    displayName?: string
+  }
   /** Hook — returns the app from the nearest Provider, throws if used outside one. */
   useApp: () => T
 }

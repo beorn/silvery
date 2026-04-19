@@ -67,7 +67,10 @@ export function isCtrlZ(input: string, key: KeyShape): boolean {
 // consistent across callers.
 // ---------------------------------------------------------------------------
 
-export function exitEffect(reason: ExitEffect["reason"] = "app-handler", code?: number): ExitEffect {
+export function exitEffect(
+  reason: ExitEffect["reason"] = "app-handler",
+  code?: number,
+): ExitEffect {
   return code === undefined ? { type: "exit", reason } : { type: "exit", reason, code }
 }
 

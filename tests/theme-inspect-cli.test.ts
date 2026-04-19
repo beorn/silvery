@@ -20,7 +20,10 @@ const CLI_PATH = resolve(__dirname, "../packages/theme/src/cli.ts")
 const BUN = process.execPath.includes("bun") ? process.execPath : "bun"
 
 /** Run the theme CLI with given args, returns stdout + exit code. */
-function runCli(args: string[], env: Record<string, string> = {}): { stdout: string; stderr: string; status: number } {
+function runCli(
+  args: string[],
+  env: Record<string, string> = {},
+): { stdout: string; stderr: string; status: number } {
   const result = spawnSync(BUN, ["run", CLI_PATH, ...args], {
     encoding: "utf8",
     env: { ...process.env, ...env },
@@ -62,7 +65,18 @@ describe("theme inspect CLI", () => {
     const theme = parsed.theme as Record<string, unknown>
 
     // Verify all standard token pairs are present
-    const expectedTokens = ["$fg", "$bg", "$primary", "$error", "$warning", "$success", "$info", "$muted", "$border", "$link"]
+    const expectedTokens = [
+      "$fg",
+      "$bg",
+      "$primary",
+      "$error",
+      "$warning",
+      "$success",
+      "$info",
+      "$muted",
+      "$border",
+      "$link",
+    ]
     for (const token of expectedTokens) {
       expect(theme).toHaveProperty(token)
       const entry = theme[token] as Record<string, unknown>

@@ -19,7 +19,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./schemes": "./src/schemes/index.ts",
-    "./ThemeContext": "./src/ThemeContext.tsx",
     "./*": "./src/*.ts"
   },
   "publishConfig": {
@@ -29,10 +28,6 @@
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs"
       },
-      "./ThemeContext": {
-        "types": "./dist/ThemeContext.d.mts",
-        "import": "./dist/ThemeContext.mjs"
-      },
       "./detect": {
         "types": "./dist/detect.d.mts",
         "import": "./dist/detect.mjs"
@@ -40,10 +35,6 @@
       "./schemes": {
         "types": "./dist/schemes.d.mts",
         "import": "./dist/schemes.mjs"
-      },
-      "./state": {
-        "types": "./dist/state.d.mts",
-        "import": "./dist/state.mjs"
       },
       "./theme": {
         "types": "./dist/theme.d.mts",
@@ -63,10 +54,8 @@
     "dts": true,
     "entry": [
       "src/index.ts",
-      "src/ThemeContext.tsx",
       "src/detect.ts",
       "src/schemes/index.ts",
-      "src/state.ts",
       "src/theme.ts"
     ],
     "format": "esm"

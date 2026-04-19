@@ -60,6 +60,16 @@ export { renderPhaseAdapter } from "./render-phase-adapter"
 export { outputPhase } from "./output-phase"
 export { applyBackdropFade, hasBackdropMarkers } from "./backdrop-phase"
 export type { BackdropColorLevel, BackdropFadeOptions } from "./backdrop-phase"
+// Active theme + color level state (pipeline-internal, exposed for out-of-tree consumers)
+export {
+  getActiveTheme,
+  pushContextTheme,
+  popContextTheme,
+  getActiveColorLevel,
+  setActiveColorLevel,
+} from "./state"
+export type { ActiveColorLevel } from "./state"
+
 // Layout signals — unified module (backward compat re-exports)
 export {
   getLayoutSignals,

@@ -160,9 +160,7 @@ export function SelectList({
 
       // Default hover/click handlers: hover moves keyboard cursor; click
       // moves cursor + confirms selection (Enter-equivalent).
-      const handleHover = onItemHover
-        ? () => onItemHover(index)
-        : () => handleCursor(index)
+      const handleHover = onItemHover ? () => onItemHover(index) : () => handleCursor(index)
       const handleClick = onItemClick
         ? () => onItemClick(index)
         : () => {

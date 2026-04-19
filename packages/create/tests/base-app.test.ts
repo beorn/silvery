@@ -146,7 +146,8 @@ describe("createBaseApp", () => {
     app.apply = (op) => {
       seen.push(op.type)
       if (op.type === "a") return [{ type: "dispatch", op: { type: "b" } } as Effect]
-      if (op.type === "b") return [{ type: "dispatch", op: { type: "c" } } as Effect, { type: "render" }]
+      if (op.type === "b")
+        return [{ type: "dispatch", op: { type: "c" } } as Effect, { type: "render" }]
       if (op.type === "c") return [{ type: "exit" }]
       return false
     }

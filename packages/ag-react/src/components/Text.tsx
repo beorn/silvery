@@ -14,7 +14,7 @@ import { type ForwardedRef, type JSX, type ReactNode, forwardRef, useContext } f
 import type { AgNode, TextProps as TextPropsType } from "@silvery/ag/types"
 import type { KnownVariant, Theme } from "@silvery/ansi"
 import { KNOWN_VARIANTS } from "@silvery/ansi"
-import { ThemeContext } from "@silvery/theme/ThemeContext"
+import { ThemeContext } from "../ThemeContext"
 
 // ============================================================================
 // Runtime variant warning — fires once per (theme, variantName) pair.

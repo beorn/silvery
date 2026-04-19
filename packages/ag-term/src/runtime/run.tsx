@@ -299,9 +299,9 @@ export async function run(
   // Detect terminal colors via OSC — must happen before alt screen (skipped for headless)
   const themed = headless
     ? element
-    : await detectTheme({ fallbackDark: nord, fallbackLight: catppuccinLatte }).then(
-        (theme) => <ThemeProvider theme={theme}>{element}</ThemeProvider>,
-      )
+    : await detectTheme({ fallbackDark: nord, fallbackLight: catppuccinLatte }).then((theme) => (
+        <ThemeProvider theme={theme}>{element}</ThemeProvider>
+      ))
   const app = createApp(() => () => ({}))
   const handle = await app.run(themed, {
     ...rest,

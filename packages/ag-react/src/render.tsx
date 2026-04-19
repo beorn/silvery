@@ -459,7 +459,9 @@ function SilveryApp({
       >
         <FocusManagerContext.Provider value={focusManager}>
           <RuntimeContext.Provider value={runtimeContextValue}>
-            <ChainAppContext.Provider value={chainAppContextValue}>{children}</ChainAppContext.Provider>
+            <ChainAppContext.Provider value={chainAppContextValue}>
+              {children}
+            </ChainAppContext.Provider>
           </RuntimeContext.Provider>
         </FocusManagerContext.Provider>
       </StderrContext.Provider>

@@ -12,17 +12,15 @@
 import { describe, expect, test, vi } from "vitest"
 import { pipe } from "../src/pipe"
 import { createBaseApp } from "../src/runtime/base-app"
-import {
-  eventToOp,
-  runEventBatch,
-  type BatchedEvent,
-} from "../src/runtime/event-loop"
+import { eventToOp, runEventBatch, type BatchedEvent } from "../src/runtime/event-loop"
 import { withFocusChain } from "../src/runtime/with-focus-chain"
 import { withInputChain } from "../src/runtime/with-input-chain"
 import { withPasteChain } from "../src/runtime/with-paste-chain"
 import { withTerminalChain, type KeyShape } from "../src/runtime/with-terminal-chain"
 
-function mkApp(opts?: { focus?: { dispatchKey: (input: string, key: KeyShape) => boolean; active: boolean } }) {
+function mkApp(opts?: {
+  focus?: { dispatchKey: (input: string, key: KeyShape) => boolean; active: boolean }
+}) {
   const base = pipe(createBaseApp(), withTerminalChain(), withPasteChain(), withInputChain)
   if (!opts?.focus) return base
   return pipe(
@@ -43,10 +41,16 @@ describe("eventToOp", () => {
     })
   })
   test("maps term:paste", () => {
-    expect(eventToOp({ type: "term:paste", text: "hi" })).toEqual({ type: "term:paste", text: "hi" })
+    expect(eventToOp({ type: "term:paste", text: "hi" })).toEqual({
+      type: "term:paste",
+      text: "hi",
+    })
   })
   test("maps term:focus", () => {
-    expect(eventToOp({ type: "term:focus", focused: true })).toEqual({ type: "term:focus", focused: true })
+    expect(eventToOp({ type: "term:focus", focused: true })).toEqual({
+      type: "term:focus",
+      focused: true,
+    })
   })
   test("maps term:resize", () => {
     expect(eventToOp({ type: "term:resize", cols: 80, rows: 24 })).toEqual({
@@ -201,11 +205,10 @@ describe("runEventBatch — afterDispatch hook", () => {
     const app = mkApp()
     const onExit = vi.fn()
     const afterDispatch = vi.fn((): false | void => false)
-    const exited = await runEventBatch(
-      app,
-      [{ type: "term:resize", cols: 80, rows: 24 }],
-      { afterDispatch, onExit },
-    )
+    const exited = await runEventBatch(app, [{ type: "term:resize", cols: 80, rows: 24 }], {
+      afterDispatch,
+      onExit,
+    })
     expect(exited).toBe(true)
     expect(afterDispatch).toHaveBeenCalledTimes(1)
     expect(onExit).toHaveBeenCalledWith({ type: "exit", reason: "app-handler" })
@@ -214,22 +217,22 @@ describe("runEventBatch — afterDispatch hook", () => {
   test("afterDispatch === 'flush' fires onBarrier", async () => {
     const app = mkApp()
     const onBarrier = vi.fn()
-    await runEventBatch(
-      app,
-      [{ type: "term:resize", cols: 80, rows: 24 }],
-      { afterDispatch: () => "flush", onBarrier, onRender: () => {} },
-    )
+    await runEventBatch(app, [{ type: "term:resize", cols: 80, rows: 24 }], {
+      afterDispatch: () => "flush",
+      onBarrier,
+      onRender: () => {},
+    })
     expect(onBarrier).toHaveBeenCalledTimes(1)
   })
 
   test("afterDispatch returning nothing is a no-op", async () => {
     const app = mkApp()
     const onBarrier = vi.fn()
-    await runEventBatch(
-      app,
-      [{ type: "term:resize", cols: 80, rows: 24 }],
-      { afterDispatch: () => undefined, onBarrier, onRender: () => {} },
-    )
+    await runEventBatch(app, [{ type: "term:resize", cols: 80, rows: 24 }], {
+      afterDispatch: () => undefined,
+      onBarrier,
+      onRender: () => {},
+    })
     expect(onBarrier).not.toHaveBeenCalled()
   })
 })
@@ -244,11 +247,9 @@ describe("runEventBatch — robustness", () => {
     const origError = console.error
     console.error = () => {}
     try {
-      await runEventBatch(
-        app,
-        [{ type: "term:key", input: "j", key: { eventType: "press" } }],
-        { onRender: () => {} },
-      )
+      await runEventBatch(app, [{ type: "term:key", input: "j", key: { eventType: "press" } }], {
+        onRender: () => {},
+      })
     } finally {
       console.error = origError
     }

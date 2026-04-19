@@ -5,7 +5,8 @@
  * tier toggle has zero-latency switching.
  */
 
-import { builtinPalettes, deriveTheme, type ThemeAdjustment } from "@silvery/theme"
+import { builtinPalettes } from "@silvery/theme"
+import { deriveTheme, type ThemeAdjustment } from "@silvery/ansi"
 import type { StorybookEntry } from "./types"
 
 export function buildEntries(): StorybookEntry[] {

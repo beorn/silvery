@@ -174,7 +174,20 @@ describe("Text variant prop", () => {
 
   test("KNOWN_VARIANTS runtime constant has all 12 known variant names", () => {
     expect(KNOWN_VARIANTS).toHaveLength(12)
-    const expected = ["h1", "h2", "h3", "body", "body-muted", "fine-print", "strong", "em", "link", "key", "code", "kbd"]
+    const expected = [
+      "h1",
+      "h2",
+      "h3",
+      "body",
+      "body-muted",
+      "fine-print",
+      "strong",
+      "em",
+      "link",
+      "key",
+      "code",
+      "kbd",
+    ]
     for (const name of expected) {
       expect(KNOWN_VARIANTS).toContain(name)
     }

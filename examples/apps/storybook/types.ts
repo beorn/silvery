@@ -2,7 +2,8 @@
  * Shared types for the Design System Storybook.
  */
 
-import type { ColorScheme, Theme, ThemeAdjustment } from "@silvery/theme"
+import type { ColorScheme } from "@silvery/theme"
+import type { Theme, ThemeAdjustment } from "@silvery/ansi"
 
 /** A tier controls which color backend is used to render the preview. */
 export type Tier = "truecolor" | "256" | "ansi16" | "mono"

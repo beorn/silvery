@@ -8,7 +8,7 @@
 import type { Term, TerminalCaps } from "./ansi/index"
 import { createWidthMeasurer, type Measurer } from "./unicode"
 import { createOutputPhase } from "./pipeline/output-phase"
-import { setActiveColorLevel } from "@silvery/theme/state"
+import { setActiveColorLevel } from "./pipeline/state"
 import type { PipelineConfig } from "./pipeline"
 
 export type { Measurer } from "./unicode"

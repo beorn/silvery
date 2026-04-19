@@ -60,7 +60,7 @@ import { parseBracketedPaste } from "../bracketed-paste"
 import { createXtermProvider, type XtermProvider } from "./xterm-provider"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
 import { catppuccinMocha } from "@silvery/theme/schemes"
-import { deriveTheme, type Theme } from "@silvery/theme"
+import { deriveTheme, type Theme } from "@silvery/ansi"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 
 /** Default theme for xterm.js rendering — Catppuccin Mocha (dark). */
@@ -407,7 +407,8 @@ export function renderToXterm(
       children: withCursor,
     })
 
-    if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue) return themed
+    if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue)
+      return themed
     return React.createElement(
       FocusManagerContext.Provider,
       { value: focusManager },

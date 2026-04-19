@@ -1,79 +1,41 @@
 /**
- * @silvery/theme — Universal color themes for any platform.
+ * @silvery/theme — Color scheme catalog for silvery.
+ *
+ * 84 built-in color schemes (the "inspiration library") for any platform.
+ * Theme derivation and color utilities live in `@silvery/ansi` and `@silvery/color`.
  *
  * Two-layer architecture:
  *   Layer 1: ColorScheme (22 terminal colors — universal pivot format)
- *   Layer 2: Theme (33 semantic tokens — what UI apps consume)
+ *   Layer 2: Theme (33 semantic tokens — what UI apps consume, via @silvery/ansi deriveTheme)
  *
- * Pipeline: Palette generators → ColorScheme → deriveTheme() → Theme
+ * Pipeline: builtinPalettes → deriveTheme() → Theme
  *
  * @example
  * ```typescript
- * import { createTheme, catppuccinMocha, resolveThemeColor } from "@silvery/theme"
+ * import { catppuccinMocha } from "@silvery/theme"
+ * import { deriveTheme } from "@silvery/ansi"
  *
- * const theme = createTheme().preset('catppuccin-mocha').build()
- * const color = resolveThemeColor("$primary", theme) // → "#F9E2AF"
+ * const theme = deriveTheme(catppuccinMocha)
  * ```
  *
  * @packageDocumentation
  */
 
-// React integration — ThemeContext + useTheme hook
-// Note: ThemeProvider is in @silvery/ag-react (the full provider with AgNode tree integration).
-// This module re-exports the raw React context + hook only; the provider component
-// was removed in R1 (km-silvery.theme-v3-r1-one-provider).
-export { ThemeContext, useTheme } from "./ThemeContext"
-
-// Core types
-export type { Theme, ColorScheme, HueName, AnsiPrimary, AnsiColorName } from "@silvery/ansi"
+// Core types (ColorScheme lives here; Theme lives in @silvery/ansi)
+export type { ColorScheme } from "@silvery/ansi"
 export { COLOR_SCHEME_FIELDS } from "@silvery/ansi"
 
-// Derivation
-export { deriveTheme } from "@silvery/ansi"
-export type { ThemeAdjustment } from "@silvery/ansi"
-
-// Color utilities
-export {
-  blend,
-  brighten,
-  darken,
-  contrastFg,
-  desaturate,
-  complement,
-  hexToRgb,
-  rgbToHex,
-  hexToHsl,
-  hslToHex,
-  rgbToHsl,
-  hexToOklch,
-  oklchToHex,
-} from "@silvery/color"
-export type { HSL, OKLCH } from "@silvery/color"
-
-// Token resolution
-export { resolveThemeColor } from "@silvery/ansi"
-
-// ANSI 16 theme generation
+// ANSI 16 theme generation (produces Theme from primary color, no ColorScheme needed)
 export { generateTheme } from "./generate"
 
-// Builder API
+// Palette generators (fromColors, fromPreset, assignPrimaryToSlot also in @silvery/ansi)
+export { fromBase16, fromColors, fromPreset, assignPrimaryToSlot } from "./generators"
+
+// Builder API (convenience wrappers that use preset schemes from this package)
 export { createTheme, quickTheme, presetTheme } from "./builder"
 
-// Palette generators
-export { fromBase16, fromColors, fromPreset } from "./generators"
-
-// Active theme state (side-effectful). Theme flows via pushContextTheme/
-// popContextTheme during render-phase tree walks; getActiveTheme reads the
-// stack with ansi16DarkTheme as fallback. setActiveTheme was removed in R2
-// (no-op after AgNode cascade; use ThemeProvider from @silvery/ag-react).
-export {
-  getActiveTheme,
-  pushContextTheme,
-  popContextTheme,
-  setActiveColorLevel,
-  getActiveColorLevel,
-} from "./state"
-export type { ActiveColorLevel } from "./state"
+// Auto-generate (also in @silvery/ansi; kept here for convenience)
+export { autoGenerateTheme } from "./auto-generate"
 
 // Validation
 export { validateColorScheme } from "./validate"
@@ -81,27 +43,16 @@ export type { ValidationResult } from "./validate"
 export { validateTheme, THEME_TOKEN_KEYS } from "./validate-theme"
 export type { ThemeValidationResult } from "./validate-theme"
 
-// Contrast checking and enforcement
-export { checkContrast, ensureContrast } from "@silvery/color"
-export type { ContrastResult } from "@silvery/color"
-
 // Token aliasing
 export { resolveAliases, resolveTokenAlias } from "./alias"
 
 // CSS variables export
 export { themeToCSSVars } from "./css"
 
-// Auto-generate themes from a single color
-export { autoGenerateTheme } from "./auto-generate"
-
 // Base16 import/export
 export { importBase16 } from "./import/base16"
 export { exportBase16 } from "./export/base16"
 export type { Base16Scheme } from "./import/types"
-
-// Terminal detection
-export { detectTerminalScheme, detectTheme } from "./detect"
-export type { DetectedScheme, DetectThemeOptions } from "./detect"
 
 // Built-in themes (pre-derived)
 export {

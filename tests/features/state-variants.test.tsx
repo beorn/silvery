@@ -14,7 +14,7 @@ import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Text, Box, ThemeProvider } from "silvery"
 import { deriveTheme } from "@silvery/ansi"
-import { brighten, darken } from "@silvery/theme"
+import { brighten, darken } from "@silvery/color"
 import { catppuccinMocha, catppuccinLatte, oneDark } from "@silvery/theme"
 import { hexToOklch } from "../../packages/color/src/index.ts"
 

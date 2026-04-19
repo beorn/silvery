@@ -17,13 +17,13 @@
 
 import { createContext, useContext } from "react"
 import type { Theme, ActiveScheme } from "@silvery/ansi"
-import { defaultDarkTheme } from "./schemes/index"
+import { defaultDarkTheme } from "@silvery/theme/schemes"
 
 // ============================================================================
 // Context
 // ============================================================================
 
-/** @internal Exported for @silvery/ag-react ThemeProvider — not public API. */
+/** @internal Exported for ThemeProvider and Text component — not public API. */
 export const ThemeContext = createContext<Theme>(defaultDarkTheme)
 
 /**
@@ -34,7 +34,7 @@ export const ThemeContext = createContext<Theme>(defaultDarkTheme)
  * caller passes detection provenance (e.g. from `runThemed`). Null when
  * no scheme metadata was injected.
  *
- * @internal Exported for @silvery/ag-react ThemeProvider.
+ * @internal Exported for ThemeProvider.
  */
 export const ActiveSchemeContext = createContext<ActiveScheme | null>(null)
 

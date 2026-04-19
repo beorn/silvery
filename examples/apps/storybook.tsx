@@ -152,7 +152,7 @@ function DetectedLine({ detected }: { detected?: DetectedInfo | null }) {
             ({detected.source} · {confidencePct}%)
           </Muted>
         </>
-      ) : detected.source === "probe" ? (
+      ) : detected.source === "probed" ? (
         <>
           <Muted>probed OSC palette — no catalog match</Muted>
         </>
@@ -216,7 +216,7 @@ function Legend({ panel }: { panel: Panel }) {
 
 /** Detected scheme metadata (subset of DetectSchemeResult — just what the UI needs). */
 export interface DetectedInfo {
-  source: "probe" | "fingerprint" | "fallback" | "override"
+  source: "probed" | "fingerprint" | "fallback" | "override" | "bg-mode"
   confidence: number
   matchedName?: string
 }

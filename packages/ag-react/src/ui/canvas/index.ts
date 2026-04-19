@@ -40,14 +40,20 @@ import {
   runWithDiscreteEvent,
   setOnNodeRemoved,
 } from "../../reconciler/index"
-import { ChainAppContext, RuntimeContext, FocusManagerContext, type ChainAppContextValue, type RuntimeContextValue } from "../../context"
+import {
+  ChainAppContext,
+  RuntimeContext,
+  FocusManagerContext,
+  type ChainAppContextValue,
+  type RuntimeContextValue,
+} from "../../context"
 import { createChildApp, toChainAppContextValue } from "../../chain-bridge"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey, splitRawInput } from "@silvery/ag/keys"
 import { parseBracketedPaste } from "@silvery/ag-term/bracketed-paste"
 import { ThemeProvider } from "../../ThemeProvider"
 import { catppuccinMocha } from "@silvery/theme/schemes"
-import { deriveTheme, type Theme } from "@silvery/theme"
+import { deriveTheme, type Theme } from "@silvery/ansi"
 import { createCursorStore, CursorProvider } from "../../hooks/useCursor"
 import { createCanvasInput, type CanvasInputConfig } from "./input"
 
@@ -419,7 +425,8 @@ export function renderToCanvas(
     const withCursor = React.createElement(CursorProvider, { store: cursorStore }, el)
     const themed = React.createElement(ThemeProvider, { theme, children: withCursor })
 
-    if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue) return themed
+    if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue)
+      return themed
     return React.createElement(
       FocusManagerContext.Provider,
       { value: focusManager },

@@ -545,21 +545,18 @@ export type {
 
 // Theming
 export { ThemeProvider } from "./ThemeProvider"
-export { useTheme } from "@silvery/theme/ThemeContext"
+export { useTheme } from "./ThemeContext"
 export type { ThemeProviderProps, ThemeTokens } from "./ThemeProvider"
+export { defaultDarkTheme, defaultLightTheme, builtinThemes, getThemeByName } from "@silvery/theme"
 export {
-  defaultDarkTheme,
-  defaultLightTheme,
   ansi16DarkTheme,
   ansi16LightTheme,
-  builtinThemes,
-  getThemeByName,
   resolveThemeColor,
-  generateTheme,
   detectTheme,
   deriveTheme,
-} from "@silvery/theme"
-export type { Theme, AnsiPrimary, DetectThemeOptions } from "@silvery/theme"
+} from "@silvery/ansi"
+export type { Theme, AnsiPrimary, DetectThemeOptions } from "@silvery/ansi"
+export { generateTheme } from "@silvery/ansi"
 
 // =============================================================================
 // Re-exports from term/ansi
@@ -1296,4 +1293,4 @@ export { useColorScheme } from "./hooks/useColorScheme"
 export { ReactiveThemeProvider } from "./ReactiveThemeProvider"
 export { useActiveScheme } from "./hooks/useActiveScheme"
 export type { ActiveScheme } from "@silvery/ansi"
-export { ActiveSchemeContext } from "@silvery/theme/ThemeContext"
+export { ActiveSchemeContext } from "./ThemeContext"

@@ -131,6 +131,7 @@ Example output:
 ```
 
 Useful when:
+
 - You want to confirm which scheme silvery detected and at what confidence
 - Debugging a "wrong colors" issue — see which token resolved to what hex
 - Comparing your terminal's detected scheme against a reference scheme
@@ -138,12 +139,12 @@ Useful when:
 
 The `source` field tells you how the scheme was determined:
 
-| Source        | Meaning                                                        |
-| ------------- | -------------------------------------------------------------- |
-| `fingerprint` | Probed slots matched a catalog scheme (most accurate)          |
-| `probed`      | Probed but no catalog match — uses merged scheme               |
-| `fallback`    | Detection failed — using default dark or light scheme          |
-| `override`    | Explicit override via `SILVERY_COLOR` env var or option        |
+| Source        | Meaning                                                 |
+| ------------- | ------------------------------------------------------- |
+| `fingerprint` | Probed slots matched a catalog scheme (most accurate)   |
+| `probed`      | Probed but no catalog match — uses merged scheme        |
+| `fallback`    | Detection failed — using default dark or light scheme   |
+| `override`    | Explicit override via `SILVERY_COLOR` env var or option |
 
 ## Diagnostic Workflow
 

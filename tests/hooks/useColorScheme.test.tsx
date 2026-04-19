@@ -13,8 +13,7 @@ import { createRenderer } from "@silvery/test"
 import { Box, Text, ThemeProvider, useTheme, ReactiveThemeProvider } from "@silvery/ag-react"
 import { CapabilityRegistryContext } from "@silvery/ag-react/context"
 import { useColorScheme } from "@silvery/ag-react/hooks"
-import { ansi16DarkTheme, ansi16LightTheme } from "@silvery/theme"
-import type { Theme } from "@silvery/theme"
+import { ansi16DarkTheme, ansi16LightTheme, type Theme } from "@silvery/ansi"
 
 // =============================================================================
 // Helpers

@@ -124,9 +124,7 @@ export async function wrapWithThemedProvider(
  * collapse to "probe" — they represent a successful or partial terminal
  * query rather than a catalog fingerprint or explicit override.
  */
-function mapDetectSource(
-  source: DetectSchemeResult["source"],
-): ActiveScheme["source"] {
+function mapDetectSource(source: DetectSchemeResult["source"]): ActiveScheme["source"] {
   switch (source) {
     case "fingerprint":
       return "fingerprint"

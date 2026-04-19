@@ -36,6 +36,8 @@
     "./ui/components/TextInput": "./src/ui/components/TextInput.tsx",
     "./ui/wrappers": "./src/ui/wrappers/index.ts",
     "./ThemeProvider": "./src/ThemeProvider.tsx",
+    "./ThemeContext": "./src/ThemeContext.tsx",
+    "./hooks": "./src/hooks/index.ts",
     "./*": "./src/*.ts"
   },
   "publishConfig": {
@@ -288,7 +290,8 @@
       "src/ui/react/index.ts",
       "src/ui/utils/index.ts",
       "src/ui/wrappers/index.ts",
-      "src/with-react.ts"
+      "src/with-react.ts",
+      "src/ThemeContext.tsx"
     ],
     "format": "esm"
   }

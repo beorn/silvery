@@ -53,7 +53,11 @@ describe("withTerminalChain", () => {
   test("term:focus true updates focused, leaves modifiers alone", () => {
     const app = mkApp()
     // Set some modifier state first.
-    app.dispatch({ type: "input:key", input: "", key: { shift: true, eventType: "press" } as KeyShape })
+    app.dispatch({
+      type: "input:key",
+      input: "",
+      key: { shift: true, eventType: "press" } as KeyShape,
+    })
     expect(app.terminal.modifiers.shift).toBe(true)
     app.dispatch({ type: "term:focus", focused: true })
     expect(app.terminal.focused).toBe(true)
@@ -62,7 +66,11 @@ describe("withTerminalChain", () => {
 
   test("term:focus false clears sticky modifiers (the classic Alt-Tab bug)", () => {
     const app = mkApp()
-    app.dispatch({ type: "input:key", input: "", key: { ctrl: true, eventType: "press" } as KeyShape })
+    app.dispatch({
+      type: "input:key",
+      input: "",
+      key: { ctrl: true, eventType: "press" } as KeyShape,
+    })
     expect(app.terminal.modifiers.ctrl).toBe(true)
     app.dispatch({ type: "term:focus", focused: false })
     expect(app.terminal.focused).toBe(false)
@@ -72,7 +80,11 @@ describe("withTerminalChain", () => {
 
   test("meta flag maps to alt for Mac compatibility", () => {
     const app = mkApp()
-    app.dispatch({ type: "input:key", input: "x", key: { meta: true, eventType: "press" } as KeyShape })
+    app.dispatch({
+      type: "input:key",
+      input: "x",
+      key: { meta: true, eventType: "press" } as KeyShape,
+    })
     expect(app.terminal.modifiers.alt).toBe(true)
     expect(app.terminal.modifiers.meta).toBe(true)
   })

@@ -86,7 +86,7 @@ describe("Theme objects carry pure hex values (no ANSI slot name strings)", () =
     expect(theme.palette).toHaveLength(16)
     for (let i = 0; i < theme.palette.length; i++) {
       expect(
-        HEX_RE.test(theme.palette[i]),
+        HEX_RE.test(theme.palette[i]!),
         `generateTheme('cyan', true).palette[${i}] = ${JSON.stringify(theme.palette[i])} is not hex`,
       ).toBe(true)
     }

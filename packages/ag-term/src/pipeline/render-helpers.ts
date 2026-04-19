@@ -12,7 +12,7 @@
  */
 
 import { DEFAULT_BG, type Color, type Style, type UnderlineStyle } from "../buffer"
-import { getActiveColorLevel, getActiveTheme } from "@silvery/theme/state"
+import { getActiveColorLevel, getActiveTheme } from "./state"
 import { resolveThemeColor } from "@silvery/ansi"
 import { monoAttrsForColorString, type MonoAttr } from "@silvery/ansi"
 import type { BoxProps, TextProps } from "@silvery/ag/types"

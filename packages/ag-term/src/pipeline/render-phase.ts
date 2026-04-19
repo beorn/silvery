@@ -25,7 +25,7 @@ import { renderBox, renderScrollIndicators, getEffectiveBg } from "./render-box"
 import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
-import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
+import { pushContextTheme, popContextTheme } from "./state"
 import type { Theme } from "@silvery/ansi"
 // cascade-predicates is the imperative oracle — used for STRICT verification
 // and as the fallback when SILVERY_REACTIVE=0 (bench only).

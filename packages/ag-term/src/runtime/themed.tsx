@@ -33,10 +33,7 @@
 import type { ReactElement } from "react"
 import type { ColorScheme } from "@silvery/ansi"
 import { run, type RunHandle, type RunOptions } from "./run"
-import {
-  wrapWithThemedProvider,
-  type ThemedProviderOptions,
-} from "./wrap-with-themed-provider"
+import { wrapWithThemedProvider, type ThemedProviderOptions } from "./wrap-with-themed-provider"
 
 export interface RunThemedOptions extends ThemedProviderOptions {
   /** Forwarded to `run()` — terminal + rendering options. */

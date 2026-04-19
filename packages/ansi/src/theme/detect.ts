@@ -158,9 +158,7 @@ export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme>
   const isDark = detected?.dark ?? opts.caps?.darkBackground ?? true
   const fallback =
     opts.fallback ??
-    (isDark
-      ? (opts.fallbackDark ?? defaultDarkScheme)
-      : (opts.fallbackLight ?? defaultLightScheme))
+    (isDark ? (opts.fallbackDark ?? defaultDarkScheme) : (opts.fallbackLight ?? defaultLightScheme))
   if (!detected) return deriveTheme(fallback)
   const merged: ColorScheme = { ...fallback, ...stripNulls(detected.palette) }
   return deriveTheme(merged)

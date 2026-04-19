@@ -22,11 +22,7 @@
 
 import type { Effect, Op } from "../types"
 import type { BaseApp } from "./base-app"
-import {
-  exitEffect,
-  interceptLifecycleKey,
-  type LifecycleOptions,
-} from "./lifecycle-effects"
+import { exitEffect, interceptLifecycleKey, type LifecycleOptions } from "./lifecycle-effects"
 import type { KeyShape } from "./with-terminal-chain"
 
 // ---------------------------------------------------------------------------

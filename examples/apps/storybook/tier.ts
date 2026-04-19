@@ -9,11 +9,10 @@
  * same pixels they'd get at that tier, and the tier toggle is zero-latency.
  */
 
-import { hexToRgb } from "@silvery/theme"
-import type { ColorScheme, Theme } from "@silvery/theme"
-import { deriveMonochromeTheme, rgbToAnsi256, nearestAnsi16 } from "@silvery/ansi"
+import { hexToRgb } from "@silvery/color"
+import type { ColorScheme } from "@silvery/theme"
+import { deriveMonochromeTheme, rgbToAnsi256, nearestAnsi16, deriveTheme, type Theme } from "@silvery/ansi"
 import type { MonochromeAttrs } from "@silvery/ansi"
-import { deriveTheme } from "@silvery/theme"
 import type { Tier } from "./types"
 
 // -----------------------------------------------------------------------------

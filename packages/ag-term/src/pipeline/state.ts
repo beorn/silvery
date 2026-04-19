@@ -15,7 +15,7 @@
  */
 
 import type { Theme } from "@silvery/ansi"
-import { ansi16DarkTheme } from "./schemes/index"
+import { ansi16DarkTheme } from "@silvery/ansi"
 
 // ============================================================================
 // Active Theme (fallback only — not set by ThemeProvider)

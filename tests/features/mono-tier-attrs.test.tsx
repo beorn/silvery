@@ -28,8 +28,13 @@ import { Box, Text } from "silvery"
 import { parseColor, getTextStyle } from "@silvery/ag-term/pipeline/render-helpers"
 import { createOutputPhase } from "@silvery/ag-term/pipeline/output-phase"
 import { createBuffer } from "@silvery/ag-term/buffer"
-import { getActiveColorLevel, setActiveColorLevel, ansi16DarkTheme } from "@silvery/theme"
-import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
+import { ansi16DarkTheme } from "@silvery/ansi"
+import {
+  getActiveColorLevel,
+  setActiveColorLevel,
+  pushContextTheme,
+  popContextTheme,
+} from "@silvery/ag-term/pipeline"
 
 // ============================================================================
 // Tier-dispatch fixtures

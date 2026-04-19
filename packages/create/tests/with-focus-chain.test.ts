@@ -9,7 +9,11 @@ import { withFocusChain } from "../src/runtime/with-focus-chain"
 import { withInputChain } from "../src/runtime/with-input-chain"
 import type { KeyShape } from "../src/runtime/with-terminal-chain"
 
-function pressKey(app: { dispatch: (op: { type: string; input: string; key: KeyShape }) => void }, input: string, extra: Partial<KeyShape> = {}) {
+function pressKey(
+  app: { dispatch: (op: { type: string; input: string; key: KeyShape }) => void },
+  input: string,
+  extra: Partial<KeyShape> = {},
+) {
   app.dispatch({ type: "input:key", input, key: { eventType: "press", ...extra } as KeyShape })
 }
 
@@ -81,7 +85,11 @@ describe("withFocusChain", () => {
   test("modifier-only events skip focus dispatch by default", () => {
     const dispatchKey = vi.fn(() => true)
     const app = withFocusChain({ dispatchKey, hasActiveFocus: () => true })(createBaseApp())
-    app.dispatch({ type: "input:key", input: "", key: { shift: true, eventType: "press" } as KeyShape })
+    app.dispatch({
+      type: "input:key",
+      input: "",
+      key: { shift: true, eventType: "press" } as KeyShape,
+    })
     expect(dispatchKey).not.toHaveBeenCalled()
   })
 

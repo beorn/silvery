@@ -120,7 +120,8 @@ export function createRenderer(opts: RendererOptions): Renderer {
     // (set by silveryBenchStart) catches measure/layout/content/output; reconcile
     // lives outside pipeline/index.ts so we add it here.
     {
-      const acc = (globalThis as { __silvery_bench_phases?: { reconcile: number } }).__silvery_bench_phases
+      const acc = (globalThis as { __silvery_bench_phases?: { reconcile: number } })
+        .__silvery_bench_phases
       if (acc) acc.reconcile += reconcileMs
     }
 
@@ -170,7 +171,9 @@ export function createRenderer(opts: RendererOptions): Renderer {
       // Set SILVERY_CELL_DEBUG=x,y to trace which nodes cover a specific cell.
       // The log is captured during the render and included in any mismatch error.
       g.__silvery_cell_debug =
-        opts.cellDebug !== null ? { x: opts.cellDebug.x, y: opts.cellDebug.y, log: [] as string[] } : undefined
+        opts.cellDebug !== null
+          ? { x: opts.cellDebug.x, y: opts.cellDebug.y, log: [] as string[] }
+          : undefined
     }
 
     // Early return: if reconciliation produced no dirty flags on the tree,
@@ -178,9 +181,11 @@ export function createRenderer(opts: RendererOptions): Renderer {
     // resets dirty rows to 0), preserving the row-level dirty markers that
     // the runtime diff needs to detect actual changes.
     // Exception: dimension changes require re-layout even without dirty flags.
-    const rootHasDirty = rootNode.layoutNode?.isDirty() || isAnyDirty(rootNode.dirtyBits, rootNode.dirtyEpoch)
+    const rootHasDirty =
+      rootNode.layoutNode?.isDirty() || isAnyDirty(rootNode.dirtyBits, rootNode.dirtyEpoch)
     const dimsChanged =
-      _lastTermBuffer != null && (dims.cols !== _lastTermBuffer.width || dims.rows !== _lastTermBuffer.height)
+      _lastTermBuffer != null &&
+      (dims.cols !== _lastTermBuffer.width || dims.rows !== _lastTermBuffer.height)
     if (!rootHasDirty && !dimsChanged && _lastTermBuffer && lastCurrentBuffer) {
       return lastCurrentBuffer
     }
@@ -203,7 +208,12 @@ export function createRenderer(opts: RendererOptions): Renderer {
     // Output timing is 0 here — the runtime handles the output phase separately.
     ;(
       globalThis as {
-        __silvery_last_pipeline?: { layout: number; output: number; total: number; incremental: boolean }
+        __silvery_last_pipeline?: {
+          layout: number
+          output: number
+          total: number
+          incremental: boolean
+        }
       }
     ).__silvery_last_pipeline = {
       layout: pipelineMs,
@@ -217,8 +227,9 @@ export function createRenderer(opts: RendererOptions): Renderer {
     // Bench instrumentation: accumulate pipeline-level timing.
     // ag.ts handles measure/layout/content accumulation; we add total here.
     {
-      const acc = (globalThis as { __silvery_bench_phases?: { total: number; pipelineCalls: number } })
-        .__silvery_bench_phases
+      const acc = (
+        globalThis as { __silvery_bench_phases?: { total: number; pipelineCalls: number } }
+      ).__silvery_bench_phases
       if (acc) {
         acc.total += pipelineMs
         acc.pipelineCalls += 1
@@ -238,7 +249,9 @@ export function createRenderer(opts: RendererOptions): Renderer {
         return freshAg.render()
       }
       const measurer = opts.pipelineConfig?.measurer
-      const { buffer: freshBuffer } = measurer ? runWithMeasurer(measurer, doFreshRender) : doFreshRender()
+      const { buffer: freshBuffer } = measurer
+        ? runWithMeasurer(measurer, doFreshRender)
+        : doFreshRender()
       const { cellEquals, bufferToText } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require("../buffer") as typeof import("../buffer")
@@ -249,9 +262,15 @@ export function createRenderer(opts: RendererOptions): Renderer {
           if (!cellEquals(a, b)) {
             // Use cell debug log collected during the real incremental render
             let cellDebugInfo = ""
-            const savedCellDbg = (globalThis as { __silvery_cell_debug?: { x: number; y: number; log: string[] } })
-              .__silvery_cell_debug
-            if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y && savedCellDbg.log.length > 0) {
+            const savedCellDbg = (
+              globalThis as { __silvery_cell_debug?: { x: number; y: number; log: string[] } }
+            ).__silvery_cell_debug
+            if (
+              savedCellDbg &&
+              savedCellDbg.x === x &&
+              savedCellDbg.y === y &&
+              savedCellDbg.log.length > 0
+            ) {
               cellDebugInfo = `\nCELL DEBUG (${savedCellDbg.log.length} entries for (${x},${y})):\n${savedCellDbg.log.join("\n")}\n`
             } else if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y) {
               cellDebugInfo = `\nCELL DEBUG: No nodes cover (${x},${y}) during incremental render\n`
@@ -262,8 +281,11 @@ export function createRenderer(opts: RendererOptions): Renderer {
             // Re-run fresh render with write trap to capture what writes to the mismatched cell
             let trapInfo = ""
             const trap = { x, y, log: [] as string[] }
-            ;(globalThis as { __silvery_write_trap?: { x: number; y: number; log: string[] } | null }).__silvery_write_trap =
-              trap
+            ;(
+              globalThis as {
+                __silvery_write_trap?: { x: number; y: number; log: string[] } | null
+              }
+            ).__silvery_write_trap = trap
             try {
               if (measurer) {
                 runWithMeasurer(measurer, doFreshRender)
@@ -273,8 +295,11 @@ export function createRenderer(opts: RendererOptions): Renderer {
             } catch {
               // ignore
             }
-            ;(globalThis as { __silvery_write_trap?: { x: number; y: number; log: string[] } | null }).__silvery_write_trap =
-              null
+            ;(
+              globalThis as {
+                __silvery_write_trap?: { x: number; y: number; log: string[] } | null
+              }
+            ).__silvery_write_trap = null
             if (trap.log.length > 0) {
               trapInfo = `\nWRITE TRAP (${trap.log.length} writes to (${x},${y})):\n${trap.log.join("\n")}\n`
             } else {
@@ -284,25 +309,24 @@ export function createRenderer(opts: RendererOptions): Renderer {
             const freshText = bufferToText(freshBuffer)
             const cellStr = (c: typeof a) =>
               `char=${JSON.stringify(c.char)} fg=${c.fg} bg=${c.bg} ulColor=${c.underlineColor} wide=${c.wide} cont=${c.continuation} attrs={bold=${c.attrs.bold},dim=${c.attrs.dim},italic=${c.attrs.italic},ul=${c.attrs.underline},ulStyle=${c.attrs.underlineStyle},blink=${c.attrs.blink},inv=${c.attrs.inverse},hidden=${c.attrs.hidden},strike=${c.attrs.strikethrough}}`
-            const contentAll = (globalThis as { __silvery_content_all?: unknown[] }).__silvery_content_all
+            const contentAll = (globalThis as { __silvery_content_all?: unknown[] })
+              .__silvery_content_all
             const statsStr = contentAll
               ? `\n--- render phase stats (${contentAll.length} calls) ---\n` +
                 contentAll
-                  .map(
-                    (s: unknown, i: number) => {
-                      const x = s as Record<string, unknown>
-                      return (
-                        `  #${i}: visited=${x.nodesVisited} rendered=${x.nodesRendered} skipped=${x.nodesSkipped} ` +
-                        `clearOps=${x.clearOps} cascade="${x.cascadeNodes}" ` +
-                        `flags={C=${x.flagContentDirty} P=${x.flagStylePropsDirty} L=${x.flagLayoutChanged} ` +
-                        `S=${x.flagSubtreeDirty} Ch=${x.flagChildrenDirty} CP=${x.flagChildPositionChanged} AL=${x.flagAncestorLayoutChanged} noPrev=${x.noPrevBuffer}} ` +
-                        `scroll={containers=${x.scrollContainerCount} cleared=${x.scrollViewportCleared} reason="${x.scrollClearReason}"} ` +
-                        `normalRepaint="${x.normalRepaintReason}" ` +
-                        `prevBuf={null=${x._prevBufferNull} dimMismatch=${x._prevBufferDimMismatch} hasPrev=${x._hasPrevBuffer} ` +
-                        `layout=${x._layoutW}x${x._layoutH} prev=${x._prevW}x${x._prevH}}`
-                      )
-                    },
-                  )
+                  .map((s: unknown, i: number) => {
+                    const x = s as Record<string, unknown>
+                    return (
+                      `  #${i}: visited=${x.nodesVisited} rendered=${x.nodesRendered} skipped=${x.nodesSkipped} ` +
+                      `clearOps=${x.clearOps} cascade="${x.cascadeNodes}" ` +
+                      `flags={C=${x.flagContentDirty} P=${x.flagStylePropsDirty} L=${x.flagLayoutChanged} ` +
+                      `S=${x.flagSubtreeDirty} Ch=${x.flagChildrenDirty} CP=${x.flagChildPositionChanged} AL=${x.flagAncestorLayoutChanged} noPrev=${x.noPrevBuffer}} ` +
+                      `scroll={containers=${x.scrollContainerCount} cleared=${x.scrollViewportCleared} reason="${x.scrollClearReason}"} ` +
+                      `normalRepaint="${x.normalRepaintReason}" ` +
+                      `prevBuf={null=${x._prevBufferNull} dimMismatch=${x._prevBufferDimMismatch} hasPrev=${x._hasPrevBuffer} ` +
+                      `layout=${x._layoutW}x${x._layoutH} prev=${x._prevW}x${x._prevH}}`
+                    )
+                  })
                   .join("\n")
               : ""
             const msg =
@@ -311,7 +335,8 @@ export function createRenderer(opts: RendererOptions): Renderer {
               `  fresh:       ${cellStr(b)}` +
               statsStr +
               (() => {
-                const traces = (globalThis as { __silvery_node_trace?: unknown[][] }).__silvery_node_trace
+                const traces = (globalThis as { __silvery_node_trace?: unknown[][] })
+                  .__silvery_node_trace
                 if (!traces || traces.length === 0) return ""
                 let out = "\n--- node trace ---"
                 for (let ti = 0; ti < traces.length; ti++) {
@@ -421,7 +446,12 @@ export function writeSelectionOverlay(opts: SelectionOverlayOptions): void {
   const { selectionEnabled, selectionState, currentBuffer, alternateScreen, target } = opts
   if (!selectionEnabled || !selectionState.range || !currentBuffer) return
   const mode = alternateScreen ? "fullscreen" : "inline"
-  const overlay = renderSelectionOverlay(selectionState.range, currentBuffer._buffer, mode, selectionState.scope)
+  const overlay = renderSelectionOverlay(
+    selectionState.range,
+    currentBuffer._buffer,
+    mode,
+    selectionState.scope,
+  )
   if (overlay) target.write(overlay)
 }
 

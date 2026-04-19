@@ -6,7 +6,7 @@
  */
 
 import { type Color, TerminalBuffer } from "../buffer"
-import { getActiveTheme } from "@silvery/theme/state"
+import { getActiveTheme } from "../pipeline/state"
 import { resolveThemeColor } from "@silvery/ansi"
 import { outputPhase } from "../pipeline/output-phase"
 import type {

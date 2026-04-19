@@ -10,7 +10,8 @@ import { describe, it, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 
 import { ThemeExplorer, type ThemeEntry } from "../../examples/apps/theme.tsx"
-import { builtinPalettes, deriveTheme, type ThemeAdjustment } from "@silvery/theme"
+import { builtinPalettes } from "@silvery/theme"
+import { deriveTheme, type ThemeAdjustment } from "@silvery/ansi"
 
 // Smoke test — disable strict mode (not testing rendering correctness)
 const render = createRenderer({ cols: 120, rows: 40 })

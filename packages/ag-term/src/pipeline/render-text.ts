@@ -31,7 +31,7 @@ import {
 } from "../unicode"
 import { collectPlainText } from "./collect-text"
 import { getTextStyle, getTextWidth, parseColor } from "./render-helpers"
-import { getActiveTheme } from "@silvery/theme/state"
+import { getActiveTheme } from "./state"
 import {
   getCachedPlainText,
   setCachedPlainText,

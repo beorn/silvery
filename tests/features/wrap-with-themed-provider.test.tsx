@@ -20,12 +20,9 @@ import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Text } from "silvery"
 import { useActiveScheme } from "@silvery/ag-react"
-import { useTheme } from "@silvery/theme/ThemeContext"
+import { useTheme } from "@silvery/ag-react"
 import { defaultDarkScheme } from "@silvery/ansi"
-import {
-  wrapWithThemedProvider,
-  type ThemedProviderOptions,
-} from "@silvery/ag-term/runtime"
+import { wrapWithThemedProvider, type ThemedProviderOptions } from "@silvery/ag-term/runtime"
 
 const r = createRenderer({ cols: 40, rows: 4 })
 
@@ -110,13 +107,10 @@ describe("wrapWithThemedProvider", () => {
   })
 
   test("token overrides applied as inner ThemeProvider", async () => {
-    const { element } = await wrapWithThemedProvider(
-      <TokenDisplay token="brand" />,
-      {
-        override: defaultDarkScheme,
-        tokens: { brand: "#ABCDEF" },
-      },
-    )
+    const { element } = await wrapWithThemedProvider(<TokenDisplay token="brand" />, {
+      override: defaultDarkScheme,
+      tokens: { brand: "#ABCDEF" },
+    })
 
     const app = r(element)
     expect(app.text).toContain("#ABCDEF")

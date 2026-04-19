@@ -20,7 +20,7 @@ import React, { useState } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Backdrop, Box, Text, ModalDialog, ThemeProvider } from "@silvery/ag-react"
-import { deriveTheme } from "@silvery/theme"
+import { deriveTheme } from "@silvery/ansi"
 import { catppuccinMocha } from "@silvery/theme/schemes"
 
 // A dark theme with known bg — catppuccin mocha bg is #1e1e2e (luminance ≈ 0.012).

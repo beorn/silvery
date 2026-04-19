@@ -95,6 +95,7 @@
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.3",
+    "@silvery/color": "0.18.0",
     "@silvery/commander": "0.18.0",
     "css-select": "^7.0.0",
     "css-what": "^8.0.0",

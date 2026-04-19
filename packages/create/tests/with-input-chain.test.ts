@@ -131,7 +131,11 @@ describe("withInputChain", () => {
     app.input.register(() => {
       seen.push("ran")
     })
-    app.dispatch({ type: "input:key", input: "", key: { shift: true, eventType: "press" } as KeyShape })
+    app.dispatch({
+      type: "input:key",
+      input: "",
+      key: { shift: true, eventType: "press" } as KeyShape,
+    })
     expect(seen).toEqual([])
   })
 

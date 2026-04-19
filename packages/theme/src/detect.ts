@@ -15,8 +15,5 @@
  * @silvery/theme consumers can continue importing from here.
  */
 
-export {
-  detectTerminalScheme,
-  detectTheme,
-} from "@silvery/ansi"
+export { detectTerminalScheme, detectTheme } from "@silvery/ansi"
 export type { DetectedScheme, DetectThemeOptions } from "@silvery/ansi"

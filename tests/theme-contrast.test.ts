@@ -6,16 +6,10 @@
  */
 
 import { describe, expect, it } from "vitest"
-import {
-  builtinPalettes,
-  deriveTheme,
-  checkContrast,
-  ensureContrast,
-  createTheme,
-  quickTheme,
-  autoGenerateTheme,
-} from "@silvery/theme"
-import type { Theme } from "@silvery/theme"
+import { builtinPalettes, createTheme, quickTheme } from "@silvery/theme"
+import { autoGenerateTheme } from "@silvery/ansi"
+import { deriveTheme, type Theme } from "@silvery/ansi"
+import { checkContrast, ensureContrast } from "@silvery/color"
 
 // ── Contrast targets (from derive.ts) ────────────────────────────────
 
