@@ -24,12 +24,7 @@
  */
 
 import { useContext, useMemo, useSyncExternalStore } from "react"
-import {
-  ChainAppContext,
-  type ChainAppContextValue,
-  RuntimeContext,
-  type RuntimeContextValue,
-} from "../context"
+import { ChainAppContext, type ChainAppContextValue } from "../context"
 import type { Key } from "@silvery/ag/keys"
 
 // ============================================================================
@@ -74,7 +69,6 @@ interface ModifierStore {
   getSnapshot: () => ModifierState
 }
 
-const rtStores = new WeakMap<RuntimeContextValue, ModifierStore>()
 const chainStores = new WeakMap<ChainAppContextValue, ModifierStore>()
 
 function buildStore(
@@ -124,17 +118,6 @@ function buildStore(
   }
 }
 
-function getOrCreateRtStore(rt: RuntimeContextValue): ModifierStore {
-  let store = rtStores.get(rt)
-  if (store) return store
-  store = buildStore(
-    (h) => rt.on("input", h),
-    (h) => rt.on("focus", h),
-  )
-  rtStores.set(rt, store)
-  return store
-}
-
 function getOrCreateChainStore(chain: ChainAppContextValue): ModifierStore {
   let store = chainStores.get(chain)
   if (store) return store
@@ -152,9 +135,14 @@ function getOrCreateChainStore(chain: ChainAppContextValue): ModifierStore {
 /**
  * Read the current modifier state imperatively (outside React).
  * For use in event handlers, TEA update functions, etc.
+ *
+ * Accepts a {@link ChainAppContextValue} — the canonical subscription
+ * surface after the TEA Phase 2 wiring. Returns {@link INITIAL} when the
+ * chain has no cached modifier store yet.
  */
-export function getModifierState(rt: RuntimeContextValue): ModifierState {
-  const store = rtStores.get(rt)
+export function getModifierState(chain: ChainAppContextValue | null | undefined): ModifierState {
+  if (!chain) return INITIAL
+  const store = chainStores.get(chain)
   return store ? store.getSnapshot() : INITIAL
 }
 
@@ -182,16 +170,13 @@ const noopSubscribe = (_cb: () => void) => noopUnsubscribe
 export function useModifierKeys(opts?: UseModifierKeysOptions): ModifierState {
   const enabled = opts?.enabled ?? true
   const chain = useContext(ChainAppContext)
-  const rt = useContext(RuntimeContext)
 
-  // Memoize the store instance (stable across renders for same runtime).
-  // Prefer the apply-chain store when present; fall back to the RuntimeContext
-  // subscriber-list store (InputBoundary / static modes).
+  // Memoize the store instance (stable across renders for same chain app).
+  // No chain (static mode, no runtime) → null → returns INITIAL.
   const store = useMemo(() => {
     if (chain) return getOrCreateChainStore(chain)
-    if (rt) return getOrCreateRtStore(rt)
     return null
-  }, [chain, rt])
+  }, [chain])
 
   return useSyncExternalStore(
     enabled && store ? store.subscribe : noopSubscribe,

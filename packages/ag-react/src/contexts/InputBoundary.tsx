@@ -10,6 +10,20 @@
  * a storybook viewer) causes both parent and child input handlers to fire
  * simultaneously.
  *
+ * ## Architecture (TEA Phase 2)
+ *
+ * The boundary hosts its own child `BaseApp` built from the same apply-chain
+ * plugins as the root runtime (`withTerminalChain`, `withPasteChain`,
+ * `withInputChain`, `withFocusChain`). Child hooks (`useInput`,
+ * `useModifierKeys`, `useTerminalFocused`, `usePasteEvents`,
+ * `usePasteCallback`) subscribe via `ChainAppContext` just like root-level
+ * hooks do — no `rt.on` fallback path is required.
+ *
+ * Forwarded input is dispatched as `input:key` ops on the child app. The
+ * boundary exposes its own raw-key observer and focus events store so
+ * `useModifierKeys`/`useTerminalFocused` stay functional inside the
+ * isolated scope.
+ *
  * @example
  * ```tsx
  * function StoryViewer() {
@@ -34,10 +48,11 @@
  */
 
 import type React from "react"
-import { useCallback, useId, useLayoutEffect, useMemo, useRef } from "react"
-import { RuntimeContext, type RuntimeContextValue } from "../context"
+import { useCallback, useId, useMemo, useRef } from "react"
+import { ChainAppContext, RuntimeContext, type RuntimeContextValue } from "../context"
 import type { Key } from "../hooks/useInput"
-import { keyToAnsi, keyToName, parseKey } from "@silvery/ag/keys"
+import { keyToName } from "@silvery/ag/keys"
+import { createChildApp, toChainAppContextValue, type ChildApp } from "../chain-bridge"
 import { InputLayerProvider, useInputLayer } from "./InputLayerContext"
 
 // =============================================================================
@@ -56,43 +71,6 @@ export interface InputBoundaryProps {
 }
 
 // =============================================================================
-// Subscriber list — lightweight replacement for EventEmitter
-// =============================================================================
-
-import {
-  type InputCallback,
-  type PasteCallback,
-  type SubscriberList,
-  createSubscriberList,
-} from "../runtime-subscribers"
-
-// =============================================================================
-// Helpers
-// =============================================================================
-
-/**
- * Reconstruct raw terminal data from parsed (input, key) pair.
- * This allows forwarding input from the parent layer stack to the
- * isolated child's RuntimeContext subscriber list.
- */
-function toRawData(input: string, key: Key): string {
-  const name = keyToName(key)
-  if (name) {
-    const mods: string[] = []
-    if (key.ctrl) mods.push("Control")
-    if (key.shift) mods.push("Shift")
-    if (key.meta) mods.push("Meta")
-    if (key.super) mods.push("Super")
-    if (key.hyper) mods.push("Hyper")
-    mods.push(name)
-    return keyToAnsi(mods.join("+"))
-  }
-  // Regular character with ctrl modifier
-  if (key.ctrl) return keyToAnsi(`Control+${input}`)
-  return input
-}
-
-// =============================================================================
 // Component
 // =============================================================================
 
@@ -101,7 +79,7 @@ function toRawData(input: string, key: Key): string {
  *
  * When `active` is true:
  * - Registers a consuming layer in the parent's input layer stack
- * - Forwards all input into the isolated child scope
+ * - Dispatches every forwarded key as an `input:key` op on the child BaseApp
  * - Parent useInputLayer handlers do NOT fire (consumed by boundary)
  * - Parent useInput handlers still fire (useInput bypasses the layer stack)
  *
@@ -110,7 +88,7 @@ function toRawData(input: string, key: Key): string {
  * - Parent input flows normally
  *
  * The `onEscape` callback (or custom `exitKey`) is intercepted BEFORE
- * forwarding, allowing the parent to deactivate the boundary.
+ * dispatch, allowing the parent to deactivate the boundary.
  */
 export function InputBoundary({
   active,
@@ -118,15 +96,14 @@ export function InputBoundary({
   exitKey = "Escape",
   children,
 }: InputBoundaryProps): React.JSX.Element {
-  // Create an isolated subscriber list for children (replaces EventEmitter)
-  const subscribersRef = useRef<SubscriberList | null>(null)
-  if (!subscribersRef.current) {
-    subscribersRef.current = createSubscriberList()
-  }
-  const subscribers = subscribersRef.current
+  // Child BaseApp (stable across renders). Built lazily on first render so
+  // we don't pay the cost for inactive boundaries until they matter.
+  const childAppRef = useRef<ChildApp | null>(null)
+  if (!childAppRef.current) childAppRef.current = createChildApp()
+  const childApp = childAppRef.current
 
   // Register a consuming layer in the parent when active.
-  // This layer intercepts ALL input and forwards to the isolated subscriber list.
+  // This layer intercepts ALL input and dispatches to the child chain.
   const activeRef = useRef(active)
   activeRef.current = active
 
@@ -140,7 +117,7 @@ export function InputBoundary({
     (input: string, key: Key): boolean => {
       if (!activeRef.current) return false
 
-      // Check exit key before forwarding
+      // Check exit key before dispatch
       const currentExitKey = exitKeyRef.current
       if (currentExitKey !== null) {
         const name = keyToName(key)
@@ -150,60 +127,53 @@ export function InputBoundary({
         }
       }
 
-      // Forward to isolated scope — parse from raw data so subscribers
-      // get the same (input, key) format as the parent RuntimeContext
-      const raw = toRawData(input, key)
-      const [parsedInput, parsedKey] = parseKey(raw)
-      for (const h of subscribers.input) {
-        h(parsedInput, parsedKey)
-      }
+      // Fire raw-key observers first (useModifierKeys needs unfiltered keys).
+      childApp.rawKeys.notify(input, key)
+
+      // Dispatch into the child apply chain. The chain produces effects
+      // (exit/render/...) which we drain and discard — the boundary owns
+      // neither exit nor render (those belong to the root runner). Handler
+      // return value of "exit" is surfaced by withInputChain as an exit
+      // effect; we ignore it here since embedded scopes don't terminate.
+      childApp.dispatch({ type: "input:key", input, key })
+      childApp.drainEffects()
       return true
     },
-    [subscribers],
+    [childApp],
   )
 
   const layerId = useId()
   useInputLayer(`input-boundary-${layerId}`, handler)
 
-  // RuntimeContext — direct subscriber list for the isolated scope
+  // ChainAppContext value — the canonical subscription surface for child
+  // hooks. Identical shape to the root `chainAppContextValue` in create-app.
+  const chainAppContextValue = useMemo(() => toChainAppContextValue(childApp), [childApp])
+
+  // RuntimeContext retains a minimal handle — only `exit` (no-op inside
+  // the boundary) and `emit` (no-op; custom view-only events do not
+  // escape the isolated scope). Child hooks no longer use `rt.on` —
+  // they subscribe via ChainAppContext.
   const runtimeContextValue = useMemo<RuntimeContextValue>(
     () => ({
-      on(event, handler) {
-        if (event === "input") {
-          const typed = handler as InputCallback
-          subscribers.input.add(typed)
-          return () => {
-            subscribers.input.delete(typed)
-          }
-        }
-        if (event === "paste") {
-          const typed = handler as unknown as PasteCallback
-          subscribers.paste.add(typed)
-          return () => {
-            subscribers.paste.delete(typed)
-          }
-        }
-        return () => {} // Unknown event — no-op cleanup
+      on() {
+        // Inside a boundary, `rt.on` is deprecated — hooks subscribe via
+        // ChainAppContext. Return a no-op unsubscribe so any stale caller
+        // fails safe.
+        return () => {}
       },
       emit() {
-        // InputBoundary doesn't support view → runtime events
+        // Boundary doesn't forward custom events to the parent runtime.
       },
-      exit: () => {}, // InputBoundary doesn't control app exit
+      exit: () => {},
     }),
-    [subscribers],
+    [],
   )
-
-  // Clean up subscriber lists on unmount
-  useLayoutEffect(() => {
-    return () => {
-      subscribers.input.clear()
-      subscribers.paste.clear()
-    }
-  }, [subscribers])
 
   return (
     <RuntimeContext.Provider value={runtimeContextValue}>
-      <InputLayerProvider>{children}</InputLayerProvider>
+      <ChainAppContext.Provider value={chainAppContextValue}>
+        <InputLayerProvider>{children}</InputLayerProvider>
+      </ChainAppContext.Provider>
     </RuntimeContext.Provider>
   )
 }

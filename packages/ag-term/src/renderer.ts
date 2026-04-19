@@ -14,12 +14,14 @@ import React, { type ReactElement, type ReactNode, act } from "react"
 import { type App, buildApp } from "./app.js"
 import { type TerminalBuffer, cellEquals } from "./buffer.js"
 import {
+  ChainAppContext,
   FocusManagerContext,
   RuntimeContext,
   type RuntimeContextValue,
   StdoutContext,
   TermContext,
 } from "@silvery/ag-react/context"
+import { createChildApp, toChainAppContextValue } from "@silvery/ag-react/chain-bridge"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import {
   type LayoutEngine,
@@ -459,7 +461,27 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // Per-instance cursor state (replaces module-level globals)
   const cursorStore = createCursorStore()
 
-  // RuntimeContext — typed event bus bridging from test renderer's inputEmitter
+  // Child apply-chain BaseApp — the ChainAppContext surface for hooks
+  // rendered via the test renderer. Mirrors the plumbing in
+  // `create-app.tsx` (TEA Phase 2). Inputs routed here via the
+  // inputEmitter bridge below.
+  const childApp = createChildApp()
+  const chainAppContextValue = toChainAppContextValue(childApp)
+  instance.inputEmitter.on("input", (data: string | Buffer) => {
+    const [input, key] = parseKey(data)
+    childApp.rawKeys.notify(input, key)
+    childApp.dispatch({ type: "input:key", input, key })
+    childApp.drainEffects()
+  })
+  instance.inputEmitter.on("paste", (text: string) => {
+    childApp.dispatch({ type: "term:paste", text })
+    childApp.drainEffects()
+  })
+
+  // RuntimeContext — retains `exit()` and legacy `on("input"|"paste")`
+  // subscriptions for callers that still reach for the old event bus
+  // (ink compatibility, stale extensions). The first-party hook surface
+  // subscribes via ChainAppContext only.
   const runtimeValue: RuntimeContextValue = {
     on(event, handler) {
       if (event === "input") {
@@ -501,7 +523,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           React.createElement(
             FocusManagerContext.Provider,
             { value: focusManager },
-            React.createElement(RuntimeContext.Provider, { value: runtimeValue }, inner),
+            React.createElement(
+              RuntimeContext.Provider,
+              { value: runtimeValue },
+              React.createElement(ChainAppContext.Provider, { value: chainAppContextValue }, inner),
+            ),
           ),
         ),
       ),

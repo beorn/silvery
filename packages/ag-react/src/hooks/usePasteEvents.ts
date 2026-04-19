@@ -16,7 +16,7 @@
  */
 
 import { useContext, useEffect, useRef } from "react"
-import { ChainAppContext, RuntimeContext } from "../context"
+import { ChainAppContext } from "../context"
 import { createPasteEvent, getInternalClipboard } from "@silvery/ag-term/copy-extraction"
 import { usePaste } from "./usePaste"
 
@@ -31,7 +31,6 @@ import { usePaste } from "./usePaste"
  */
 export function usePasteEvents(): void {
   const chain = useContext(ChainAppContext)
-  const rt = useContext(RuntimeContext)
   const pasteHandler = usePaste()
 
   // Use ref for handler to avoid teardown/setup on every render
@@ -39,19 +38,13 @@ export function usePasteEvents(): void {
   handlerRef.current = pasteHandler
 
   useEffect(() => {
-    const deliver = (text: string): void => {
+    if (!chain) return
+    return chain.paste.register((text: string) => {
       const handler = handlerRef.current
       if (!handler) return
       const clipboard = getInternalClipboard()
       const event = createPasteEvent(text, clipboard)
       handler.onPaste(event)
-    }
-    if (chain) {
-      return chain.paste.register(deliver)
-    }
-    if (rt) {
-      return rt.on("paste", deliver)
-    }
-    return undefined
-  }, [chain, rt])
+    })
+  }, [chain])
 }

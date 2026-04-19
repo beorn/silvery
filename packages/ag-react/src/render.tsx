@@ -18,6 +18,7 @@ import React, { useCallback, useEffect, useMemo, useRef, type ReactElement, type
 
 const log = createLogger("silvery:render")
 import {
+  ChainAppContext,
   FocusManagerContext,
   RuntimeContext,
   type RuntimeContextValue,
@@ -25,6 +26,7 @@ import {
   StderrContext,
   TermContext,
 } from "./context"
+import { createChildApp, toChainAppContextValue } from "./chain-bridge"
 import { createCursorStore, CursorProvider, type CursorStore } from "./hooks/useCursor"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey } from "@silvery/ag/keys"
@@ -293,6 +295,16 @@ function SilveryApp({
   }
   const subscribers = subscribersRef.current
 
+  // Child apply-chain BaseApp — the ChainAppContext surface for hooks
+  // inside this render tree. Built once per instance, mirrors the
+  // plumbing in `create-app.tsx` (TEA Phase 2). Hooks subscribe via
+  // ChainAppContext only; legacy `rt.on("input"|"paste")` callers still
+  // work through the subscriber list for backwards compatibility (see
+  // runtimeContextValue below).
+  const childAppRef = useRef<ReturnType<typeof createChildApp> | null>(null)
+  if (!childAppRef.current) childAppRef.current = createChildApp()
+  const childApp = childAppRef.current
+
   // Exit handler
   const handleExit = useCallback(
     (error?: Error) => {
@@ -328,6 +340,12 @@ function SilveryApp({
       // Check for bracketed paste before splitting into individual keys.
       const pasteResult = parseBracketedPaste(rawChunk)
       if (pasteResult) {
+        // Dispatch to the child chain (ChainAppContext consumers — the
+        // canonical subscription surface) AND to the legacy subscriber
+        // list (for `rt.on("paste", …)` callers such as the ink
+        // compatibility shim).
+        childApp.dispatch({ type: "term:paste", text: pasteResult.content })
+        childApp.drainEffects()
         for (const handler of subscribers.paste) {
           handler(pasteResult.content)
         }
@@ -377,13 +395,25 @@ function SilveryApp({
         }
       }
 
-      // Parse the key and dispatch to subscribers
+      // Parse the key and dispatch to subscribers.
       const [input, key] = parseKey(chunk)
 
       // All input handling runs at discrete priority so React commits
       // synchronously. Without this, concurrent mode defers the commit
       // and onCommit → scheduleRender() never fires.
       runWithDiscreteEvent(() => {
+        // Fire raw-key observers first (useModifierKeys, etc.) so modifier
+        // state is up-to-date before the filtered input handlers run.
+        childApp.rawKeys.notify(input, key)
+        // Dispatch into the child apply chain — this reaches `useInput`
+        // consumers via `chain.input.register`. Effects (render/exit)
+        // are drained and discarded; render.tsx owns its own commit
+        // lifecycle below.
+        childApp.dispatch({ type: "input:key", input, key })
+        childApp.drainEffects()
+        // Legacy subscriber list — preserved for `rt.on("input", …)`
+        // callers such as the ink compatibility shim. Nothing in the
+        // first-party hook surface reaches for these any more.
         for (const handler of subscribers.input) {
           handler(input, key)
         }
@@ -438,6 +468,9 @@ function SilveryApp({
     [subscribers, handleExit, onPause, onResume],
   )
 
+  // ChainAppContext — canonical subscription surface for ag-react hooks.
+  const chainAppContextValue = useMemo(() => toChainAppContextValue(childApp), [childApp])
+
   // Focus manager (tree-based focus system)
   const focusManager = useMemo(() => createFocusManager(), [])
   // Store in ref so the stable input handler closure can access it
@@ -460,7 +493,9 @@ function SilveryApp({
         }}
       >
         <FocusManagerContext.Provider value={focusManager}>
-          <RuntimeContext.Provider value={runtimeContextValue}>{children}</RuntimeContext.Provider>
+          <RuntimeContext.Provider value={runtimeContextValue}>
+            <ChainAppContext.Provider value={chainAppContextValue}>{children}</ChainAppContext.Provider>
+          </RuntimeContext.Provider>
         </FocusManagerContext.Provider>
       </StderrContext.Provider>
     </StdoutContext.Provider>
