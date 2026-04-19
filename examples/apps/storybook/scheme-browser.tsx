@@ -50,7 +50,7 @@ export function SchemeBrowser({
   selectedIndex,
   secondaryIndex,
   title = "Color Schemes",
-  width = 30,
+  width = 36,
 }: Props) {
   // Split entries into dark-first then light, preserving relative order within each group.
   // We build a flat render list that interleaves non-selectable section headers.
@@ -61,18 +61,18 @@ export function SchemeBrowser({
   const light = entries.filter((e) => !e.dark)
 
   type RenderItem =
-    | { kind: "header"; label: string }
+    | { kind: "header"; label: string; leadingGap: boolean }
     | { kind: "entry"; entry: StorybookEntry; originalIndex: number }
 
   const renderList: RenderItem[] = []
   if (dark.length > 0) {
-    renderList.push({ kind: "header", label: `── dark (${dark.length}) ──` })
+    renderList.push({ kind: "header", label: `── dark (${dark.length}) ──`, leadingGap: false })
     for (const entry of dark) {
       renderList.push({ kind: "entry", entry, originalIndex: entries.indexOf(entry) })
     }
   }
   if (light.length > 0) {
-    renderList.push({ kind: "header", label: `── light (${light.length}) ──` })
+    renderList.push({ kind: "header", label: `── light (${light.length}) ──`, leadingGap: true })
     for (const entry of light) {
       renderList.push({ kind: "entry", entry, originalIndex: entries.indexOf(entry) })
     }
@@ -91,8 +91,8 @@ export function SchemeBrowser({
   )
 
   return (
-    <Box flexDirection="column" width={width} borderStyle="single">
-      <Box paddingX={1} gap={1}>
+    <Box flexDirection="column" width={width} flexShrink={0} borderStyle="single">
+      <Box paddingX={1} paddingY={0} gap={1}>
         <Text bold color="$primary">
           {title}
         </Text>
@@ -102,6 +102,7 @@ export function SchemeBrowser({
       <Box
         flexDirection="column"
         paddingX={1}
+        paddingY={1}
         overflow="scroll"
         scrollTo={scrollToIndex >= 0 ? scrollToIndex : selectedIndex}
         flexGrow={1}
@@ -109,7 +110,7 @@ export function SchemeBrowser({
         {renderList.map((item) => {
           if (item.kind === "header") {
             return (
-              <Box key={`header-${item.label}`}>
+              <Box key={`header-${item.label}`} marginTop={item.leadingGap ? 1 : 0}>
                 <SectionDivider label={item.label} />
               </Box>
             )
@@ -119,30 +120,34 @@ export function SchemeBrowser({
           const isPrimary = originalIndex === selectedIndex
           const isSecondary = secondaryIndex !== undefined && originalIndex === secondaryIndex
           const marker = isPrimary ? "▸" : isSecondary ? "·" : " "
-          const label = entry.name.padEnd(nameWidth)
+          // Truncate long names with ellipsis so they fit the column — avoids
+          // the right-side cropping the user saw on "tomorrow-night-eighties"
+          // and similar long scheme names.
+          const truncated =
+            entry.name.length > nameWidth ? entry.name.slice(0, nameWidth - 1) + "…" : entry.name
+          const label = truncated.padEnd(nameWidth)
 
           return (
             <Box key={entry.name} flexDirection="row">
-              <Text inverse={isPrimary} color={isSecondary && !isPrimary ? "$accent" : undefined}>
+              <Text
+                inverse={isPrimary}
+                color={isSecondary && !isPrimary ? "$accent" : undefined}
+                wrap="truncate"
+              >
                 {marker}{" "}
               </Text>
               <MiniSwatch entry={entry} />
-              <Text inverse={isPrimary} color={isSecondary && !isPrimary ? "$accent" : undefined}>
+              <Text
+                inverse={isPrimary}
+                color={isSecondary && !isPrimary ? "$accent" : undefined}
+                wrap="truncate"
+              >
                 {" "}
                 {label}
               </Text>
             </Box>
           )
         })}
-      </Box>
-      <Divider />
-      <Box paddingX={1} flexDirection="row" gap={2}>
-        <Small>
-          <Muted>{entries.filter((e) => e.dark).length} dark</Muted>
-        </Small>
-        <Small>
-          <Muted>{entries.filter((e) => !e.dark).length} light</Muted>
-        </Small>
       </Box>
     </Box>
   )
