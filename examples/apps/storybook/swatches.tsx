@@ -162,6 +162,44 @@ const STANDALONE_TOKENS: (keyof Theme)[] = [
   "disabledfg",
 ]
 
+/**
+ * Paired tokens — rendered as a background-colored chip with its paired
+ * foreground text on top. Shows the pair IN USE so you can eyeball contrast.
+ *
+ * Convention: first element is the BG token; second is the FG token used
+ * on that bg. Matches the silvery styling guide "always pair surfaces" rule.
+ */
+const PAIRS: { bg: keyof Theme; fg: keyof Theme; label: string }[] = [
+  { bg: "bg", fg: "fg", label: "root" },
+  { bg: "mutedbg", fg: "muted", label: "muted" },
+  { bg: "surfacebg", fg: "surface", label: "surface" },
+  { bg: "popoverbg", fg: "popover", label: "popover" },
+  { bg: "inversebg", fg: "inverse", label: "inverse" },
+  { bg: "cursorbg", fg: "cursor", label: "cursor" },
+  { bg: "selectionbg", fg: "selection", label: "selection" },
+  { bg: "primary", fg: "primaryfg", label: "primary" },
+  { bg: "secondary", fg: "secondaryfg", label: "secondary" },
+  { bg: "accent", fg: "accentfg", label: "accent" },
+  { bg: "error", fg: "errorfg", label: "error" },
+  { bg: "warning", fg: "warningfg", label: "warning" },
+  { bg: "success", fg: "successfg", label: "success" },
+  { bg: "info", fg: "infofg", label: "info" },
+]
+
+function PairRow({ theme, pair }: { theme: Theme; pair: (typeof PAIRS)[number] }) {
+  const bg = theme[pair.bg]
+  const fg = theme[pair.fg]
+  if (typeof bg !== "string" || typeof fg !== "string") return null
+  return (
+    <Box gap={1}>
+      <Box backgroundColor={bg} paddingX={1}>
+        <Text color={fg}>{pair.label.padEnd(10)}</Text>
+      </Box>
+      <Muted>${String(pair.bg)} / ${String(pair.fg)}</Muted>
+    </Box>
+  )
+}
+
 function TokenRow({ theme, token }: { theme: Theme; token: keyof Theme }) {
   const value = theme[token]
   if (typeof value !== "string") return null
@@ -199,6 +237,13 @@ export function TokenSwatches({ theme }: { theme: Theme }) {
         <H3>Standalone</H3>
         {STANDALONE_TOKENS.map((t) => (
           <TokenRow key={t as string} theme={theme} token={t} />
+        ))}
+      </Box>
+
+      <Box flexDirection="column" paddingX={1}>
+        <H3>Combined pairs (bg + fg)</H3>
+        {PAIRS.map((p) => (
+          <PairRow key={p.label} theme={theme} pair={p} />
         ))}
       </Box>
     </Box>

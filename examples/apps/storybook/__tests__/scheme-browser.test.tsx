@@ -130,36 +130,33 @@ describe("SchemeBrowser section dividers", () => {
 })
 
 // ============================================================================
-// Item 4 (scroll bug): cursor marker visible after scrolling down
+// Item 4 (scroll bug): selected entry visible in viewport at every scroll depth
 // ============================================================================
 
-describe("SchemeBrowser scroll cursor visibility", () => {
-  test("cursor marker (▸) is visible after selecting index 10 in a tall list", () => {
-    // Render with enough rows to show a scroll window but not all 84 entries.
+describe("SchemeBrowser scroll visibility", () => {
+  // The selection indicator was an arrow (▸); it's now the `inverse` attribute
+  // on the whole row (omnibox/PickerDialog style). stripAnsi erases inverse,
+  // so these tests verify the selected entry's NAME is in the viewport —
+  // equivalent to "the scroll follows the cursor".
+  test("selected entry (index 10) is visible in a 20-row viewport", () => {
     const entries = makeEntries()
-    // We need at least 30 entries for a meaningful scroll test.
     expect(entries.length).toBeGreaterThan(15)
 
     const render = createRenderer({ cols: 36, rows: 20 })
     const selectedIndex = 10
-
     const app = render(
       <ThemeProvider>
         <SchemeBrowser entries={entries} selectedIndex={selectedIndex} width={36} />
       </ThemeProvider>,
     )
     const text = stripAnsi(app.text)
-    // The cursor marker ▸ must be visible in the viewport.
-    expect(text).toContain("▸")
-    // The selected entry name should also be visible.
     const selectedName = entries[selectedIndex]!.name
     expect(text).toContain(selectedName)
   })
 
-  test("cursor marker (▸) stays visible at selectedIndex 20 in a 15-row viewport", () => {
+  test("selected entry (index 20) stays visible in a 15-row viewport", () => {
     const entries = makeEntries()
     const selectedIndex = 20
-
     const render = createRenderer({ cols: 36, rows: 15 })
     const app = render(
       <ThemeProvider>
@@ -167,15 +164,13 @@ describe("SchemeBrowser scroll cursor visibility", () => {
       </ThemeProvider>,
     )
     const text = stripAnsi(app.text)
-    expect(text).toContain("▸")
     const selectedName = entries[selectedIndex]!.name
     expect(text).toContain(selectedName)
   })
 
-  test("cursor marker (▸) stays visible at selectedIndex 30 in a 12-row viewport", () => {
+  test("selected entry (index 30) stays visible in a 12-row viewport", () => {
     const entries = makeEntries()
     const selectedIndex = 30
-
     const render = createRenderer({ cols: 36, rows: 12 })
     const app = render(
       <ThemeProvider>
@@ -183,12 +178,11 @@ describe("SchemeBrowser scroll cursor visibility", () => {
       </ThemeProvider>,
     )
     const text = stripAnsi(app.text)
-    expect(text).toContain("▸")
     const selectedName = entries[selectedIndex]!.name
     expect(text).toContain(selectedName)
   })
 
-  test("rerender at progressively deeper selected indices always shows cursor", () => {
+  test("selected entry name is visible at every scroll depth 0..30 step 5", () => {
     const entries = makeEntries()
     const render = createRenderer({ cols: 36, rows: 15 })
 
@@ -199,7 +193,6 @@ describe("SchemeBrowser scroll cursor visibility", () => {
         </ThemeProvider>,
       )
       const text = stripAnsi(app.text)
-      expect(text, `cursor not visible at selectedIndex=${i}`).toContain("▸")
       const selectedName = entries[i]!.name
       expect(text, `entry name not visible at selectedIndex=${i}`).toContain(selectedName)
     }

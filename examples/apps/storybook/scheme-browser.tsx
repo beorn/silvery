@@ -20,10 +20,10 @@ interface Props {
   width?: number
 }
 
-function MiniSwatch({ entry }: { entry: StorybookEntry }) {
+function MiniSwatch({ entry, inverse }: { entry: StorybookEntry; inverse?: boolean }) {
   const { palette } = entry
   return (
-    <Text>
+    <Text inverse={inverse}>
       <Text color={palette.red}>{"█"}</Text>
       <Text color={palette.green}>{"█"}</Text>
       <Text color={palette.blue}>{"█"}</Text>
@@ -78,11 +78,10 @@ export function SchemeBrowser({
     }
   }
 
-  // The swatch cluster is 6 chars wide. The name column fills the rest.
-  // Layout: marker(1) + space(1) + swatch(6) + space(1) + name
-  // Fixed swatch column = 8 chars (marker + space + swatch + space).
-  // Name column = width - border(2) - paddingX(2) - swatch-cluster(8).
-  const nameWidth = Math.max(width - 14, 10)
+  // Compact row: swatch(6) + space(1) + name. Selection shown via `inverse`
+  // on the entire row — no arrow marker (matches omnibox / PickerDialog style).
+  // Name column = width - border(2) - paddingX(2) - swatch(6) - space(1) = width - 11.
+  const nameWidth = Math.max(width - 11, 10)
 
   // We need scrollTo to point at the row in the render list that corresponds
   // to the selected entry. Find that row index.
@@ -119,7 +118,6 @@ export function SchemeBrowser({
           const { entry, originalIndex } = item
           const isPrimary = originalIndex === selectedIndex
           const isSecondary = secondaryIndex !== undefined && originalIndex === secondaryIndex
-          const marker = isPrimary ? "▸" : isSecondary ? "·" : " "
           // Truncate long names with ellipsis so they fit the column — avoids
           // the right-side cropping the user saw on "tomorrow-night-eighties"
           // and similar long scheme names.
@@ -127,16 +125,13 @@ export function SchemeBrowser({
             entry.name.length > nameWidth ? entry.name.slice(0, nameWidth - 1) + "…" : entry.name
           const label = truncated.padEnd(nameWidth)
 
+          // Selection styling matches omnibox/PickerDialog: inverse across the
+          // whole row, no arrow marker. Secondary cursor (compare mode) uses
+          // $accent foreground on the label so it's visible without hiding the
+          // swatches.
           return (
             <Box key={entry.name} flexDirection="row">
-              <Text
-                inverse={isPrimary}
-                color={isSecondary && !isPrimary ? "$accent" : undefined}
-                wrap="truncate"
-              >
-                {marker}{" "}
-              </Text>
-              <MiniSwatch entry={entry} />
+              <MiniSwatch entry={entry} inverse={isPrimary} />
               <Text
                 inverse={isPrimary}
                 color={isSecondary && !isPrimary ? "$accent" : undefined}
