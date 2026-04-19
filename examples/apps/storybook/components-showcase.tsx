@@ -62,7 +62,16 @@ function FakeTextInput({
   )
 }
 
-export function ComponentShowcase() {
+interface ComponentShowcaseProps {
+  /**
+   * When false, interactive components (SelectList) have isActive=false so
+   * they do not capture j/k input. Use this when rendering inside a container
+   * that owns key handling (e.g. CompareView, storybook panel routing).
+   */
+  interactive?: boolean
+}
+
+export function ComponentShowcase({ interactive = true }: ComponentShowcaseProps) {
   return (
     <Box flexDirection="column" gap={1}>
       <TypographySection />
@@ -73,7 +82,7 @@ export function ComponentShowcase() {
       <Divider />
       <InputsSection />
       <Divider />
-      <SelectAndTableSection />
+      <SelectAndTableSection interactive={interactive} />
       <Divider />
       <DialogSection />
       <Divider />
@@ -168,7 +177,7 @@ function InputsSection() {
   )
 }
 
-function SelectAndTableSection() {
+function SelectAndTableSection({ interactive = true }: { interactive?: boolean }) {
   const items = [
     { label: "TypeScript", value: "ts" },
     { label: "Rust", value: "rs" },
@@ -195,7 +204,7 @@ function SelectAndTableSection() {
       <Box gap={3} flexWrap="wrap">
         <Box flexDirection="column">
           <Muted>SelectList (static render)</Muted>
-          <SelectList items={items} />
+          <SelectList items={items} isActive={interactive} />
         </Box>
         <Box flexDirection="column" flexGrow={1}>
           <Muted>Table</Muted>

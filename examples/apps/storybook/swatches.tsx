@@ -11,17 +11,30 @@
 import React from "react"
 import { Box, Text, Muted, H2, H3 } from "silvery"
 import type { ColorScheme, Theme } from "@silvery/theme"
+import { hexToOklch } from "@silvery/color"
 
 function SwatchCell({ color }: { color: string }) {
   return <Text color={color}>{"██"}</Text>
 }
 
+/** Format OKLCH as a compact readable string: L65 C0.17 H25 */
+function formatOklch(hex: string): string {
+  const ok = hexToOklch(hex)
+  if (!ok) return ""
+  const L = Math.round(ok.L * 100)
+  const C = ok.C.toFixed(2)
+  const H = Math.round(ok.H)
+  return `L${L} C${C} H${H}`
+}
+
 function SwatchRow({ color, label, hex }: { color: string; label: string; hex: string }) {
+  const oklch = formatOklch(hex)
   return (
     <Box gap={1}>
       <SwatchCell color={color} />
       <Text>{label.padEnd(16)}</Text>
-      <Muted>{hex}</Muted>
+      <Text>{hex}</Text>
+      {oklch ? <Muted>· {oklch}</Muted> : null}
     </Box>
   )
 }

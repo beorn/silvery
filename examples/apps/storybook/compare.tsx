@@ -53,7 +53,7 @@ function ComparePane({
           {active ? <Text color="$primary">● active</Text> : null}
         </Box>
         <Divider />
-        <ComponentShowcase />
+        <ComponentShowcase interactive={false} />
       </Box>
     </ThemeProvider>
   )

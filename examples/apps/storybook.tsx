@@ -147,9 +147,14 @@ function Legend({ panel }: { panel: Panel }) {
           </Muted>
         </>
       ) : (
-        <Muted>
-          <Kbd>c</Kbd> compare
-        </Muted>
+        <>
+          <Muted>
+            <Kbd>h/l</Kbd> prev/next panel
+          </Muted>
+          <Muted>
+            <Kbd>c</Kbd> compare
+          </Muted>
+        </>
       )}
       <Muted>
         <Kbd>g/G</Kbd> top/bottom
@@ -230,8 +235,19 @@ export function Storybook({ entries }: StorybookProps) {
       return setPrimaryIdx(entries.length - 1)
     }
     if (panel === "compare") {
+      // In compare mode h/l switch the active pane (compare's own semantics).
       if (input === "h") return setActivePane("left")
       if (input === "l") return setActivePane("right")
+    } else {
+      // Outside compare, h/l cycle panels (prev/next).
+      if (input === "h") {
+        const idx = PANEL_ORDER.indexOf(panel)
+        return setPanel(PANEL_ORDER[(idx - 1 + PANEL_ORDER.length) % PANEL_ORDER.length]!)
+      }
+      if (input === "l") {
+        const idx = PANEL_ORDER.indexOf(panel)
+        return setPanel(PANEL_ORDER[(idx + 1) % PANEL_ORDER.length]!)
+      }
     }
   })
 
@@ -302,7 +318,7 @@ function PanelBody({ panel, primary, tier, tierView }: PanelBodyProps) {
           <TokenSwatches theme={tierView.theme} />
         </Box>
       ) : panel === "components" ? (
-        <ComponentShowcase />
+        <ComponentShowcase interactive={false} />
       ) : panel === "audit" ? (
         <AuditPanel
           name={primary.name}
