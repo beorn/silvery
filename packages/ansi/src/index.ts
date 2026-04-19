@@ -88,6 +88,7 @@ export {
   fgFromRgb,
   bgFromRgb,
   quantizeHex,
+  pickColorLevel,
   type ColorTier,
 } from "./color-maps"
 

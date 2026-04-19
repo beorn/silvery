@@ -554,8 +554,10 @@ export {
   resolveThemeColor,
   detectTheme,
   deriveTheme,
+  quantizeHex,
+  pickColorLevel,
 } from "@silvery/ansi"
-export type { Theme, AnsiPrimary, DetectThemeOptions } from "@silvery/ansi"
+export type { Theme, AnsiPrimary, DetectThemeOptions, ColorTier } from "@silvery/ansi"
 export { generateTheme } from "@silvery/ansi"
 
 // =============================================================================

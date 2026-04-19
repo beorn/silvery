@@ -278,3 +278,75 @@ export function quantizeHex(hex: string, tier: ColorTier): string {
   const y = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255
   return y >= 0.5 ? "#ffffff" : "#000000"
 }
+
+/**
+ * Hex-regex used to detect hex leaves during tier quantization walks.
+ * Matches `#rgb` and `#rrggbb` (case-insensitive).
+ */
+const HEX_LEAF_RE = /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/
+
+function isHexLeaf(value: unknown): value is string {
+  return typeof value === "string" && HEX_LEAF_RE.test(value)
+}
+
+/**
+ * Pre-quantize every hex leaf in a Theme (or any object tree) to the
+ * requested color tier.
+ *
+ * Walks the input recursively — each string leaf matching `#rgb` / `#rrggbb`
+ * is passed through {@link quantizeHex}; all other values (numbers, booleans,
+ * non-hex strings like `"Nord"`, null/undefined, arrays of non-hex values)
+ * pass through unchanged. Arrays and nested objects are rebuilt with
+ * quantized leaves.
+ *
+ * Works on both the legacy ANSI Theme (flat hex tokens + `palette` array)
+ * and the Sterling Theme (nested roles + flat tokens) — the structural rule
+ * "any leaf that looks like a hex is a color value" holds for both.
+ *
+ * @example Pre-cache tier variants
+ * ```ts
+ * import { pickColorLevel } from "silvery"
+ *
+ * const themes = {
+ *   truecolor: theme,
+ *   ansi16: pickColorLevel(theme, "ansi16"),
+ *   mono: pickColorLevel(theme, "mono"),
+ * }
+ * ```
+ *
+ * @example Storybook — show multiple tiers simultaneously
+ * ```tsx
+ * <ThemeProvider theme={pickColorLevel(theme, "ansi16")}>
+ *   <AlertPreview />
+ * </ThemeProvider>
+ * ```
+ *
+ * Notes:
+ * - `truecolor` is a no-op — returns the input unchanged (identity).
+ * - The result is structurally identical to the input (same keys, same
+ *   nesting); only hex leaves are remapped.
+ * - Idempotent per tier: `pickColorLevel(pickColorLevel(t, "ansi16"), "ansi16")`
+ *   yields the same hex values as `pickColorLevel(t, "ansi16")`.
+ * - Does not freeze the returned object. Callers that want immutability
+ *   should `Object.freeze()` (or deep-freeze) the result themselves.
+ */
+export function pickColorLevel<T>(theme: T, tier: ColorTier): T {
+  if (tier === "truecolor") return theme
+  return pickColorLevelWalk(theme, tier)
+}
+
+function pickColorLevelWalk<T>(obj: T, tier: ColorTier): T {
+  if (obj == null) return obj
+  if (isHexLeaf(obj)) return quantizeHex(obj, tier) as unknown as T
+  if (Array.isArray(obj)) {
+    return obj.map((v) => pickColorLevelWalk(v, tier)) as unknown as T
+  }
+  if (typeof obj === "object") {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      out[k] = pickColorLevelWalk(v, tier)
+    }
+    return out as T
+  }
+  return obj
+}
