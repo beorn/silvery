@@ -146,6 +146,56 @@ The `source` field tells you how the scheme was determined:
 | `fallback`    | Detection failed — using default dark or light scheme   |
 | `override`    | Explicit override via `SILVERY_COLOR` env var or option |
 
+## Forcing a Color Tier
+
+Sometimes auto-detection picks the wrong tier — a truecolor-capable
+terminal under-reports as `xterm-256color`, a CI runner reports no color
+but you want to force ANSI16, or you're sanity-checking an accessibility
+theme. `run({ colorLevel })` overrides the detected tier end-to-end:
+
+```tsx
+import { run } from "silvery/runtime"
+
+// Bypass under-reporting — force truecolor
+await run(<App />, { colorLevel: "truecolor" })
+
+// Test the low-end look in a modern terminal
+await run(<App />, { colorLevel: "ansi16" })
+
+// Accessibility / CI output — no colors, hierarchy via attrs
+await run(<App />, { colorLevel: "mono" })
+```
+
+Setting `colorLevel` does two things:
+
+- Overrides `caps.colorLevel` for the run — the pipeline sees the
+  requested tier end-to-end (mono attr fallback, SGR encoding, backdrop
+  blend targets).
+- Pre-quantizes the active Theme via `pickColorLevel()` so every token
+  hex leaf snaps to the tier's palette (16-slot ANSI, xterm-256 cube, or
+  `#000`/`#fff`).
+
+Priority (highest wins): `NO_COLOR` env → `FORCE_COLOR` env →
+`run({ colorLevel })` → auto-detect.
+
+For advanced cases (pre-caching tier variants, showing multiple tiers in
+one process), `pickColorLevel(theme, level)` is exported from `silvery`:
+
+```ts
+import { pickColorLevel } from "silvery"
+
+const themes = {
+  truecolor: theme,
+  ansi16: pickColorLevel(theme, "ansi16"),
+  mono: pickColorLevel(theme, "mono"),
+}
+```
+
+`pickColorLevel` walks any Theme-shaped tree, replacing each hex leaf
+(`#rgb` / `#rrggbb`) with `quantizeHex(leaf, level)`. Non-hex values
+(names, `$tokens`, numbers, booleans) pass through unchanged. Idempotent
+per tier; `truecolor` is an identity no-op.
+
 ## Diagnostic Workflow
 
 1. **Start with STRICT**: `SILVERY_STRICT=1 bun vitest run ...` catches any incremental vs fresh render divergence immediately.

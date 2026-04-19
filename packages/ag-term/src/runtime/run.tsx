@@ -32,9 +32,10 @@ import React, { type ReactElement } from "react"
 import { createApp } from "./create-app"
 import type { Term } from "../ansi/term"
 import { detectTerminalCaps } from "../terminal-caps"
-import { detectTheme } from "@silvery/ansi"
+import { detectTheme, pickColorLevel, type ColorTier } from "@silvery/ansi"
 import { nord, catppuccinLatte } from "@silvery/theme/schemes"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
+import type { TerminalCaps } from "../terminal-caps"
 
 // Re-export types from keys.ts
 export type { Key, InputHandler } from "./keys"
@@ -124,6 +125,29 @@ export interface RunOptions {
    * Default: auto-detected via detectTerminalCaps()
    */
   caps?: import("../terminal-caps.js").TerminalCaps
+  /**
+   * Force the color tier end-to-end, bypassing auto-detection.
+   *
+   * When set, the pipeline's `caps.colorLevel` is overridden for the full
+   * run (affects inline hex quantization, mono attribute fallback, SGR
+   * encoding, backdrop blend targets), AND the active Theme is pre-quantized
+   * via {@link pickColorLevel} so token hex values match.
+   *
+   * Useful for:
+   * - bypassing under-reporting terminals (force `"truecolor"`),
+   * - testing low-end degradation (force `"ansi16"` or `"mono"`),
+   * - accessibility / CI output (force `"mono"`).
+   *
+   * Priority (highest wins): `NO_COLOR` env → `FORCE_COLOR` env →
+   * `colorLevel` → auto-detect.
+   *
+   * Tiers:
+   * - `"mono"` — monochrome (attribute fallback: bold/dim/inverse).
+   * - `"ansi16"` — 16-slot palette (SGR 30-37, 90-97).
+   * - `"256"` — xterm-256 palette.
+   * - `"truecolor"` — 24-bit RGB (no quantization).
+   */
+  colorLevel?: ColorTier
   /**
    * Handle Ctrl+Z by suspending the process. Default: true
    */
@@ -270,10 +294,17 @@ export async function run(
     }
 
     // Real terminal: full setup
-    const caps = term.caps ?? detectTerminalCaps()
-    // Detect terminal colors via OSC — must happen before alt screen
+    const detectedCaps = term.caps ?? detectTerminalCaps()
+    // Honor termOptions.colorLevel + env vars (same precedence as the options path).
+    const termTier = resolveColorTier(termOptions?.colorLevel, detectedCaps)
+    const caps: TerminalCaps = termTier
+      ? { ...detectedCaps, colorLevel: tierToCapsLevel(termTier) }
+      : detectedCaps
+    // Detect terminal colors via OSC — must happen before alt screen.
+    // When colorLevel is forced, pre-quantize the detected theme.
     const theme = await detectTheme({ fallbackDark: nord, fallbackLight: catppuccinLatte })
-    const themed = <ThemeProvider theme={theme}>{element}</ThemeProvider>
+    const resolvedTheme = termTier ? pickColorLevel(theme, termTier) : theme
+    const themed = <ThemeProvider theme={resolvedTheme}>{element}</ThemeProvider>
     const app = createApp(() => () => ({}))
     const handle = await app.run(themed, {
       term,
@@ -293,15 +324,23 @@ export async function run(
   }
 
   // Options path: auto-detect caps and derive defaults
-  const { mode, ...rest } = optionsOrTerm as RunOptions
-  const caps = rest.caps ?? detectTerminalCaps()
+  const { mode, colorLevel: colorLevelOption, ...rest } = optionsOrTerm as RunOptions
+  const detectedCaps = rest.caps ?? detectTerminalCaps()
+  // Resolve effective tier (env wins over the user override, auto-detect loses).
+  const effectiveTier = resolveColorTier(colorLevelOption, detectedCaps)
+  const caps: TerminalCaps = effectiveTier
+    ? { ...detectedCaps, colorLevel: tierToCapsLevel(effectiveTier) }
+    : detectedCaps
   const headless = rest.writable != null || (rest.cols != null && rest.rows != null && !rest.stdout)
-  // Detect terminal colors via OSC — must happen before alt screen (skipped for headless)
+  // Detect terminal colors via OSC — must happen before alt screen (skipped for headless).
+  // When colorLevel is forced, pre-quantize the detected theme to the chosen tier so
+  // token hex values match what the pipeline will actually emit.
   const themed = headless
     ? element
-    : await detectTheme({ fallbackDark: nord, fallbackLight: catppuccinLatte }).then((theme) => (
-        <ThemeProvider theme={theme}>{element}</ThemeProvider>
-      ))
+    : await detectTheme({ fallbackDark: nord, fallbackLight: catppuccinLatte }).then((theme) => {
+        const resolvedTheme = effectiveTier ? pickColorLevel(theme, effectiveTier) : theme
+        return <ThemeProvider theme={resolvedTheme}>{element}</ThemeProvider>
+      })
   const app = createApp(() => () => ({}))
   const handle = await app.run(themed, {
     ...rest,
@@ -316,6 +355,73 @@ export async function run(
   })
   return wrapHandle(handle)
 }
+
+/**
+ * Map the public `ColorTier` spelling (used by `run({ colorLevel })` and
+ * `pickColorLevel`) to the internal caps spelling (`"none" | "basic" | "256"
+ * | "truecolor"`). The pipeline lives in caps-space.
+ */
+function tierToCapsLevel(tier: ColorTier): TerminalCaps["colorLevel"] {
+  switch (tier) {
+    case "mono":
+      return "none"
+    case "ansi16":
+      return "basic"
+    case "256":
+      return "256"
+    case "truecolor":
+      return "truecolor"
+  }
+}
+
+/** Inverse of {@link tierToCapsLevel} — caps-space to tier-space. */
+function capsLevelToTier(level: TerminalCaps["colorLevel"]): ColorTier {
+  switch (level) {
+    case "none":
+      return "mono"
+    case "basic":
+      return "ansi16"
+    case "256":
+      return "256"
+    case "truecolor":
+      return "truecolor"
+  }
+}
+
+/**
+ * Resolve the effective color tier, honoring env-var precedence.
+ *
+ * Priority (highest wins):
+ *   1. `NO_COLOR` (any value) → "mono"
+ *   2. `FORCE_COLOR` (0/false → "mono"; 1 → "ansi16"; 2 → "256"; 3 → "truecolor")
+ *   3. Explicit `colorLevel` option
+ *   4. `undefined` — caller keeps detected caps.colorLevel unchanged
+ *
+ * Returns `undefined` when nothing overrides auto-detection (callers keep
+ * `detectedCaps` as-is).
+ */
+function resolveColorTier(
+  optionTier: ColorTier | undefined,
+  _detectedCaps: TerminalCaps,
+): ColorTier | undefined {
+  // NO_COLOR wins over everything.
+  if (process.env.NO_COLOR !== undefined) return "mono"
+  // FORCE_COLOR wins over the option but not over NO_COLOR.
+  const force = process.env.FORCE_COLOR
+  if (force !== undefined) {
+    if (force === "0" || force === "false") return "mono"
+    if (force === "1") return "ansi16"
+    if (force === "2") return "256"
+    if (force === "3") return "truecolor"
+    // Unknown truthy FORCE_COLOR → basic (mirrors @silvery/ansi detectColor)
+    return "ansi16"
+  }
+  return optionTier
+}
+
+// Expose the mapping helpers for tests / advanced callers that need to
+// bridge the two spellings (ColorTier ⇄ caps.colorLevel).
+export { tierToCapsLevel, capsLevelToTier }
 
 /** Duck-type check: Term has getState and events as functions.
  *  Note: Term is a Proxy wrapping chalk, so typeof is "function" not "object". */
