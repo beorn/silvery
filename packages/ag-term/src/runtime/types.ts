@@ -30,6 +30,13 @@ export interface Buffer {
   readonly nodes: AgNode
   /** Raw terminal buffer for diffing */
   readonly _buffer: TerminalBuffer
+  /**
+   * Optional out-of-band ANSI escapes (currently Kitty graphics placements
+   * for emoji scrim in the backdrop-fade pass). Appended by the runtime AFTER
+   * the output-phase diff — they're not part of the cell grid but need to be
+   * emitted every frame the overlay is active. Empty string when no overlay.
+   */
+  readonly kittyOverlay?: string
 }
 
 /**

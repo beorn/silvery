@@ -199,7 +199,9 @@ export function createRenderer(opts: RendererOptions): Renderer {
     // The Ag manages prevBuffer internally for incremental rendering.
     // Output phase is NOT run here — the runtime handles it separately.
     _ag.layout(dims)
-    const { buffer: termBuffer, prevBuffer: agPrevBuffer } = _ag.render()
+    const agResult = _ag.render()
+    const { buffer: termBuffer, prevBuffer: agPrevBuffer } = agResult
+    const kittyOverlay = agResult.kittyOverlay
     _lastTermBuffer = termBuffer
     const wasIncremental = !opts.noIncremental && agPrevBuffer !== null
     const pipelineMs = performance.now() - pipelineStart
@@ -376,7 +378,7 @@ export function createRenderer(opts: RendererOptions): Renderer {
       }
     }
 
-    const buf = createBuffer(termBuffer, rootNode)
+    const buf = createBuffer(termBuffer, rootNode, kittyOverlay)
     lastCurrentBuffer = buf
     if (opts.perfLog) {
       const renderDuration = performance.now() - renderStart

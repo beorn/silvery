@@ -82,10 +82,12 @@ export function withRender(term: Term): RenderTerm {
     const doRender = () => {
       const ag = createAg(root, { measurer })
       ag.layout({ cols: width, rows: height }, { skipLayoutNotifications, skipScrollStateUpdates })
-      const { buffer } = ag.render({ prevBuffer })
+      const { buffer, kittyOverlay } = ag.render({ prevBuffer })
 
       const outputFn = pipelineConfig.outputPhaseFn ?? outputPhase
-      const output = outputFn(prevBuffer, buffer, mode, scrollbackOffset, termRows, cursorPos)
+      let output = outputFn(prevBuffer, buffer, mode, scrollbackOffset, termRows, cursorPos)
+      // Append Kitty emoji-scrim overlay when backdrop-fade produced one.
+      if (kittyOverlay) output += kittyOverlay
 
       return { output, buffer }
     }

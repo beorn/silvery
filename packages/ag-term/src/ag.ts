@@ -46,6 +46,7 @@ import {
   hasBackdropMarkers,
   type BackdropColorLevel,
 } from "./pipeline/backdrop-phase"
+import { CURSOR_RESTORE, CURSOR_SAVE, kittyDeleteAllScrimPlacements } from "@silvery/ansi"
 import type { Theme } from "@silvery/ansi"
 import { clearDirtyTracking, hasScrollDirty } from "@silvery/ag/dirty-tracking"
 import type { PipelineContext } from "./pipeline/types"
@@ -78,6 +79,17 @@ export interface CreateAgOptionsInternal {
    * (SGR 2 dim) or `"none"` to disable the pass entirely.
    */
   colorLevel?: BackdropColorLevel
+  /**
+   * When true, the backdrop-fade pass emits Kitty graphics placements over
+   * emoji / wide-char cells in the faded region so those glyphs visually
+   * fade alongside surrounding text. Required because SGR 2 "dim" is a
+   * no-op on bitmap emoji in most terminals (Ghostty confirmed).
+   *
+   * When undefined, `ag.ts` falls back to an env heuristic (Kitty/Ghostty/
+   * WezTerm, not inside tmux, `SILVERY_KITTY_GRAPHICS` env not "0"). Pass
+   * `false` to force-disable (tests, fallback terminals).
+   */
+  kittyGraphics?: boolean
 }
 
 export interface AgRenderResult {
@@ -97,6 +109,14 @@ export interface AgRenderResult {
   readonly carryForwardBuffer: TerminalBuffer
   /** Previous frame's buffer (null on first render). For output-phase diffing. */
   readonly prevBuffer: TerminalBuffer | null
+  /**
+   * Out-of-band ANSI escapes that must be appended to the output stream after
+   * the normal output phase diff. Currently carries Kitty graphics placements
+   * emitted by the backdrop-fade pass to scrim emoji / wide-char cells. Empty
+   * string when no overlays are active (backdrop inactive, kittyGraphics cap
+   * disabled, or no wide cells in the faded region).
+   */
+  readonly kittyOverlay: string
 }
 
 export interface Ag {
@@ -158,6 +178,12 @@ export interface CreateAgOptions {
    * See `backdrop-phase.ts` for tier semantics.
    */
   colorLevel?: BackdropColorLevel
+  /**
+   * Whether the backdrop-fade pass may emit Kitty graphics placements for
+   * emoji scrim. Defaults to an env heuristic (see `isKittyGraphicsEnabled`).
+   * Pass `false` to force-disable (tests, explicit opt-out).
+   */
+  kittyGraphics?: boolean
 }
 
 // =============================================================================
@@ -189,6 +215,51 @@ function findRootThemeBg(root: AgNode): string | null {
   return null
 }
 
+/**
+ * Env heuristic: should the backdrop-fade pass emit Kitty graphics overlays?
+ *
+ * This is the MVP gate — a lightweight capability detector used when the
+ * caller doesn't pass `kittyGraphics` explicitly. Matches the Option C design
+ * intent: emit only on modern terminals where Kitty graphics are known to
+ * work (Kitty, Ghostty, WezTerm), NOT inside tmux (DCS passthrough is
+ * unreliable), with an explicit `SILVERY_KITTY_GRAPHICS` override.
+ *
+ * - `SILVERY_KITTY_GRAPHICS=0` → always off
+ * - `SILVERY_KITTY_GRAPHICS=1` → always on (bypasses tmux + term checks)
+ * - `TMUX` env var present → off (unless forced on above)
+ * - `TERM_PROGRAM` in {Ghostty, WezTerm} → on
+ * - `TERM` contains "kitty" → on
+ * - `KITTY_WINDOW_ID` set → on
+ * - otherwise → off
+ *
+ * The long-term plan is to promote this to a `TerminalCaps.kittyGraphics`
+ * consumer. That field exists (see `@silvery/ansi` detectTerminalCaps) but
+ * isn't threaded into the render pipeline yet — tracked as a follow-up.
+ */
+function isKittyGraphicsEnabledFromEnv(): boolean {
+  const env =
+    typeof process !== "undefined" ? process.env : ({} as Record<string, string | undefined>)
+
+  const override = env.SILVERY_KITTY_GRAPHICS
+  if (override === "0" || override === "false") return false
+  if (override === "1" || override === "true") return true
+
+  // tmux's DCS passthrough for Kitty graphics is flaky — off by default.
+  // User can override via SILVERY_KITTY_GRAPHICS=1 if their tmux config
+  // (allow-passthrough + extended keys) actually works.
+  if (env.TMUX) return false
+
+  const program = env.TERM_PROGRAM ?? ""
+  if (program === "ghostty" || program === "Ghostty" || program === "WezTerm") return true
+
+  const term = env.TERM ?? ""
+  if (term.includes("kitty")) return true
+
+  if (env.KITTY_WINDOW_ID) return true
+
+  return false
+}
+
 // =============================================================================
 // Factory
 // =============================================================================
@@ -196,8 +267,20 @@ function findRootThemeBg(root: AgNode): string | null {
 export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
   const measurer = options?.measurer
   const colorLevel: BackdropColorLevel = options?.colorLevel ?? "truecolor"
+  // Kitty graphics: explicit option wins. Otherwise fall back to env heuristic
+  // so the default behavior matches the terminal running the app without
+  // callers needing to thread TerminalCaps through every site. Tests that
+  // want to pin determinism pass `kittyGraphics: false`.
+  const kittyGraphics =
+    options?.kittyGraphics !== undefined ? options.kittyGraphics : isKittyGraphicsEnabledFromEnv()
   const ctx: PipelineContext | undefined = measurer ? { measurer } : undefined
   let _prevBuffer: TerminalBuffer | null = null
+  // True when the PREVIOUS frame had backdrop markers (and so emitted Kitty
+  // placements). Drives the one-shot delete-all on the first frame where the
+  // backdrop goes away so leftover scrim rectangles don't linger on screen.
+  // Scoped per-Ag; non-persistent-Ag callers (test driver renderer.ts)
+  // additionally track at their own level — see that file.
+  let _kittyActive = false
 
   // Feature flags — one-way: once true, stays true for the lifetime of this Ag.
   // This ensures dynamically mounted scroll/sticky components enable their phases
@@ -344,19 +427,36 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     // state (renderer.ts) can track pre-fade. The post-fade `buffer` is
     // what gets painted; pre-fade is what gets cloned for incremental.
     let carryForwardBuffer: TerminalBuffer
-    if (hasBackdropMarkers(root)) {
+    let kittyOverlay = ""
+    const backdropActive = hasBackdropMarkers(root)
+    if (backdropActive) {
       carryForwardBuffer = buffer.clone()
       if (!opts?.fresh) {
         _prevBuffer = carryForwardBuffer
       }
       const rootBg = findRootThemeBg(root) ?? undefined
-      applyBackdropFade(root, buffer, { colorLevel, rootBg })
+      const result = applyBackdropFade(root, buffer, {
+        colorLevel,
+        rootBg,
+        kittyGraphics,
+      })
+      kittyOverlay = result.kittyOverlay
     } else {
       carryForwardBuffer = buffer
       if (!opts?.fresh) {
         _prevBuffer = buffer
       }
+      // Kitty scrim deactivation: when the backdrop was active last frame but
+      // is gone now (modal closed), emit a one-shot delete-all so leftover
+      // placements don't linger on screen. The flag `_kittyActive` tracks
+      // whether we emitted placements in the previous frame.
+      if (_kittyActive) {
+        kittyOverlay = CURSOR_SAVE + kittyDeleteAllScrimPlacements() + CURSOR_RESTORE
+      }
     }
+    // Track active placements across frames. True when we emitted (or will
+    // emit) overlay escapes this frame WITH backdrop still active.
+    _kittyActive = backdropActive && kittyOverlay.length > 0
 
     // Clear the module-level dirty tracking after each render pass.
     // Content dirty nodes were processed by renderPhase; layout dirty is
@@ -371,7 +471,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     }
 
     const frame = createTextFrame(buffer)
-    return { frame, buffer, carryForwardBuffer, prevBuffer, tContent }
+    return { frame, buffer, carryForwardBuffer, prevBuffer, tContent, kittyOverlay }
   }
 
   // -------------------------------------------------------------------------
@@ -454,6 +554,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
         buffer: result.buffer,
         carryForwardBuffer: result.carryForwardBuffer,
         prevBuffer: result.prevBuffer,
+        kittyOverlay: result.kittyOverlay,
       }
     },
 

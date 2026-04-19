@@ -1012,7 +1012,6 @@ describe("backdrop fade: real-app regressions (b2dafd70)", () => {
     const nordTheme = {
       ...darkTheme,
       bg: "#2E3440",
-      theme: { ...darkTheme.theme, bg: "#2E3440" },
     }
 
     function App({ open }: { open: boolean }) {

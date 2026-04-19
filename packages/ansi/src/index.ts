@@ -118,6 +118,24 @@ export {
 } from "./terminal-control"
 
 // =============================================================================
+// Kitty Graphics Protocol — cell-sized overlay placements
+// =============================================================================
+
+export {
+  BACKDROP_SCRIM_IMAGE_ID,
+  BACKDROP_PLACEMENT_X_STRIDE,
+  backdropPlacementId,
+  buildScrimPixels,
+  kittyUploadScrimImage,
+  kittyPlaceAt,
+  kittyDeletePlacement,
+  kittyDeleteAllScrimPlacements,
+  cupTo,
+  CURSOR_SAVE,
+  CURSOR_RESTORE,
+} from "./kitty-graphics"
+
+// =============================================================================
 // Extended Underline Functions
 // =============================================================================
 

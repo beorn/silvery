@@ -62,6 +62,16 @@ import { blend, hexToOklch, oklchToHex } from "@silvery/color"
 import { relativeLuminance } from "@silvery/color"
 import type { AgNode, Rect } from "@silvery/ag/types"
 import { ansi256ToRgb, isDefaultBg, type Color, type TerminalBuffer } from "../buffer"
+import {
+  backdropPlacementId,
+  buildScrimPixels,
+  cupTo,
+  CURSOR_RESTORE,
+  CURSOR_SAVE,
+  kittyDeleteAllScrimPlacements,
+  kittyPlaceAt,
+  kittyUploadScrimImage,
+} from "@silvery/ansi"
 
 export type BackdropColorLevel = "none" | "basic" | "256" | "truecolor"
 
@@ -80,6 +90,39 @@ export interface BackdropFadeOptions {
    * `cell.fg = blend(fg, cell.bg, amount)`.
    */
   rootBg?: string
+  /**
+   * When true, emit Kitty graphics protocol overlays on wide-char cells
+   * (emoji, CJK) inside the faded region. The terminal renders a translucent
+   * scrim *above* the emoji glyph, which SGR 2 "dim" alone can't fade on
+   * bitmap emoji (verified empirically — Ghostty ignores SGR 2 on bitmap
+   * emoji). Degrades gracefully: terminals without Kitty graphics ignore the
+   * APC sequences (they're eaten by the parser).
+   *
+   * Only emitted on modern terminals (Ghostty, Kitty, WezTerm) that are not
+   * inside tmux. Caller should set based on `TerminalCaps.kittyGraphics` and
+   * absence of `TMUX` env var. See `agKittyGraphicsEnabled()` in `ag.ts`.
+   */
+  kittyGraphics?: boolean
+}
+
+/**
+ * Result of `applyBackdropFade`. Replaces the old boolean return so callers
+ * can route the out-of-band Kitty overlay escapes through the output path
+ * alongside the normal ANSI diff.
+ */
+export interface BackdropFadeResult {
+  /** Whether at least one cell in the buffer was modified (for logging/stats). */
+  modified: boolean
+  /**
+   * Out-of-band ANSI escapes that must be appended to the output stream after
+   * the normal output phase diff. Empty string when no Kitty overlays are
+   * emitted (cap disabled, no wide cells in region, or no backdrop active).
+   *
+   * Contains: CURSOR_SAVE + (optional image upload on first frame per term)
+   * + per-cell CUP + place + CURSOR_RESTORE. Wrapped in save/restore so the
+   * overlay doesn't disturb the main output phase's cursor tracking.
+   */
+  kittyOverlay: string
 }
 
 const FADE_ATTR = "data-backdrop-fade"
@@ -177,22 +220,28 @@ export function hasBackdropMarkers(root: AgNode): boolean {
 /**
  * Apply backdrop-fade to the buffer based on tree markers.
  *
- * Returns `true` if at least one region was modified; `false` if nothing
- * changed (no markers found, or colorLevel is `none`).
+ * Returns a `BackdropFadeResult`:
+ * - `modified` — whether any cells changed (for stats/logging).
+ * - `kittyOverlay` — out-of-band ANSI escapes to append after output-phase
+ *   diff. Empty when Kitty graphics are disabled or no wide cells exist in
+ *   the faded region.
+ *
+ * The result was promoted from a bare `boolean` when the Kitty emoji-scrim
+ * overlay was added — the old shape is preserved via `modified`.
  */
 export function applyBackdropFade(
   root: AgNode,
   buffer: TerminalBuffer,
   options?: BackdropFadeOptions,
-): boolean {
+): BackdropFadeResult {
   const colorLevel: BackdropColorLevel = options?.colorLevel ?? "truecolor"
-  if (colorLevel === "none") return false
+  if (colorLevel === "none") return EMPTY_RESULT
 
   const includes: FadeRect[] = []
   const excludes: FadeRect[] = []
   collectBackdropMarkers(root, includes, excludes)
 
-  if (includes.length === 0 && excludes.length === 0) return false
+  if (includes.length === 0 && excludes.length === 0) return EMPTY_RESULT
 
   const strategy: FadeStrategy = colorLevel === "basic" ? "dim" : "blend"
 
@@ -222,8 +271,25 @@ export function applyBackdropFade(
     }
   }
 
-  return modified
+  // After the per-cell fade pass, emit Kitty graphics placements for any
+  // wide-char cells in the faded region. SGR 2 "dim" is a no-op on bitmap
+  // emoji in most terminals (Ghostty confirmed), so the scrim overlay is
+  // the only way to visually fade emoji/CJK alongside text.
+  //
+  // Incremental invariant: the wide-cell set is derived from the same
+  // post-fade buffer state on both fresh and incremental paths (renderPhase
+  // writes the same pre-transform pixels on both paths, and the fade pass
+  // is a pure function). So the emitted placements are byte-identical
+  // between fresh and incremental renders. STRICT mode stays green.
+  const kittyEnabled = options?.kittyGraphics === true && strategy === "blend"
+  const kittyOverlay = kittyEnabled
+    ? buildKittyOverlay(buffer, includes, excludes, blendTarget, rootBgHex)
+    : ""
+
+  return { modified, kittyOverlay }
 }
+
+const EMPTY_RESULT: BackdropFadeResult = { modified: false, kittyOverlay: "" }
 
 /**
  * Derive the blend target color from the root bg hex.
@@ -576,4 +642,146 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const b = parseInt(s.slice(4, 6), 16)
   if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null
   return { r, g, b }
+}
+
+// =============================================================================
+// Kitty graphics overlay for emoji/wide-char cells
+// =============================================================================
+
+/**
+ * Alpha for the scrim overlay (0-255). Matches the "~50% darken" look: enough
+ * to visibly mute the emoji without hiding it entirely. Chosen to feel
+ * consistent with the ~0.25 fade applied to surrounding text cells.
+ */
+const SCRIM_ALPHA = 128
+
+/**
+ * Build the Kitty graphics escape sequence that covers wide-char cells in the
+ * backdrop region with a translucent scrim.
+ *
+ * ## What this emits
+ *
+ * 1. `CURSOR_SAVE` — preserve output-phase cursor tracking
+ * 2. `kittyUploadScrimImage` — upload a 2x2 RGBA image under our reserved
+ *    image ID. Repeat every frame (idempotent per Kitty spec — terminal
+ *    replaces existing image with same `i=<id>`). Tiny payload (~60 bytes).
+ * 3. `kittyDeleteAllScrimPlacements` — clear prior placements. Without this,
+ *    placements from the previous frame's backdrop region would accumulate.
+ * 4. For each wide-char cell in the faded region:
+ *    - `cupTo(x, y)` — move to the cell
+ *    - `kittyPlaceAt` — emit a `c=2,r=1` placement (covers both lead + cont)
+ *      with `z=1` (above text) and `C=1` (don't advance cursor)
+ * 5. `CURSOR_RESTORE`
+ *
+ * Placement extent is `c=2,r=1` because wide chars occupy 2 cells. We only
+ * target the lead cell (`!isCellContinuation`) — the placement naturally
+ * spans the continuation.
+ *
+ * ## Determinism / STRICT compatibility
+ *
+ * The set of wide cells is derived from the POST-fade buffer state. The fade
+ * pass is a pure function of (tree markers, buffer, rootBg) and produces
+ * identical buffers on fresh and incremental paths (this is the existing
+ * invariant documented in `ag.ts`). So the Kitty overlay string is also
+ * byte-identical on both paths. `SILVERY_STRICT=1` compares cells, not ANSI
+ * output, so this is unaffected. ANSI-level STRICT modes (vt100/xterm) never
+ * ran the emission path — we now short-circuit via the per-instance env
+ * check to keep them deterministic.
+ */
+function buildKittyOverlay(
+  buffer: TerminalBuffer,
+  includes: FadeRect[],
+  excludes: FadeRect[],
+  blendTarget: string | null,
+  rootBgHex: string | null,
+): string {
+  const cells = collectWideCellsInFadeRegion(buffer, includes, excludes)
+  if (cells.length === 0) return ""
+
+  // Pick a tint for the scrim. When we have a blend target (theme-neutral),
+  // use it directly — the scrim lands on the emoji at the same darken amount
+  // as the surrounding cell bg blend. Fallback to pure black.
+  const tintHex = blendTarget ?? rootBgHex ?? "#000000"
+  const tint = hexToRgb(tintHex) ?? { r: 0, g: 0, b: 0 }
+  const pixels = buildScrimPixels(tint, SCRIM_ALPHA)
+
+  const parts: string[] = []
+  parts.push(CURSOR_SAVE)
+  parts.push(kittyUploadScrimImage(pixels, 2, 2))
+  // Clear any placements left over from prior frames. We re-emit the full set
+  // each frame, so a single delete-all at the top is simpler than tracking
+  // deltas. Kitty handles this in O(N) where N = active placements — cheap.
+  parts.push(kittyDeleteAllScrimPlacements())
+
+  for (const { x, y } of cells) {
+    parts.push(cupTo(x, y))
+    parts.push(
+      kittyPlaceAt({
+        placementId: backdropPlacementId(x, y),
+        cols: 2,
+        rows: 1,
+        z: 1,
+      }),
+    )
+  }
+  parts.push(CURSOR_RESTORE)
+  return parts.join("")
+}
+
+/**
+ * Walk the include and exclude rects and collect the coordinates of every
+ * wide-char LEAD cell (not continuation) inside a faded region.
+ *
+ * For `includes`, a cell is in the faded region iff it falls inside the rect.
+ * For `excludes` (the "modal cuts a hole" pattern), a cell is faded iff it
+ * falls OUTSIDE the rect. When both include and exclude rects are present,
+ * the union is walked independently — this matches the fade pass semantics.
+ */
+function collectWideCellsInFadeRegion(
+  buffer: TerminalBuffer,
+  includes: FadeRect[],
+  excludes: FadeRect[],
+): Array<{ x: number; y: number }> {
+  const seen = new Set<number>() // encoded y * W + x
+  const out: Array<{ x: number; y: number }> = []
+
+  const add = (x: number, y: number) => {
+    if (x + 1 >= buffer.width) return // no room for continuation
+    if (!buffer.isCellWide(x, y)) return
+    if (buffer.isCellContinuation(x, y)) return
+    const key = y * buffer.width + x
+    if (seen.has(key)) return
+    seen.add(key)
+    out.push({ x, y })
+  }
+
+  for (const { rect } of includes) {
+    const x0 = Math.max(0, rect.x)
+    const y0 = Math.max(0, rect.y)
+    const x1 = Math.min(buffer.width, rect.x + rect.width)
+    const y1 = Math.min(buffer.height, rect.y + rect.height)
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) add(x, y)
+    }
+  }
+
+  if (excludes.length > 0) {
+    // Faded region = full buffer MINUS union of exclude rects. For a single
+    // exclude rect this degenerates to "everything outside one hole" which
+    // is the common modal case.
+    for (const { rect } of excludes) {
+      const ix0 = Math.max(0, rect.x)
+      const iy0 = Math.max(0, rect.y)
+      const ix1 = Math.min(buffer.width, rect.x + rect.width)
+      const iy1 = Math.min(buffer.height, rect.y + rect.height)
+      for (let y = 0; y < buffer.height; y++) {
+        for (let x = 0; x < buffer.width; x++) {
+          if (x >= ix0 && x < ix1 && y >= iy0 && y < iy1) continue
+          add(x, y)
+        }
+      }
+    }
+  }
+
+  return out
 }

@@ -32,6 +32,11 @@ import {
 import { createAg } from "./ag.js"
 import { outputPhase } from "./pipeline/output-phase.js"
 import {
+  CURSOR_SAVE as _CURSOR_SAVE,
+  CURSOR_RESTORE as _CURSOR_RESTORE,
+  kittyDeleteAllScrimPlacements as _kittyDeleteAllScrimPlacements,
+} from "@silvery/ansi"
+import {
   createContainer,
   createFiberRoot,
   getContainerRoot,
@@ -262,6 +267,16 @@ interface RenderInstance {
   renderCount: number
   /** Use production-like single-pass layout (no stabilization loop) */
   singlePassLayout: boolean
+  /**
+   * True when the PREVIOUS frame emitted Kitty scrim placements. Drives the
+   * one-shot `a=d` delete-all on the first frame where the backdrop goes away.
+   * Lives at the instance level (not on `Ag`) because this test driver
+   * creates a fresh `Ag` per `runPipeline()` call, so `Ag`-scoped tracking
+   * doesn't persist across frames here. Production runtimes with a
+   * long-lived `Ag` also track this internally and produce the correct
+   * deactivation emission — both paths converge on identical behavior.
+   */
+  kittyActive: boolean
 }
 
 function isStore(arg: unknown): arg is Store {
@@ -356,6 +371,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     incremental,
     renderCount: 0,
     singlePassLayout,
+    kittyActive: false,
   }
 
   // Track whether React committed new work (from layout notifications etc.)
@@ -570,12 +586,26 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // `buffer` is post-fade (what we paint); `carryForwardBuffer` is pre-fade
     // (what the NEXT frame's incremental render must clone). See ag.ts
     // `AgRenderResult.carryForwardBuffer` for the invariant rationale.
-    const { buffer, carryForwardBuffer } = ag.render({ prevBuffer })
+    const { buffer, carryForwardBuffer, kittyOverlay } = ag.render({ prevBuffer })
     // Output-phase diff uses the previously painted (post-fade) buffer.
     // `prevPaintedBuffer` is set by the caller (see singlePass/classic loops)
     // and stored as `instance.prevPaintedBuffer`.
     const prevForDiff = instance.prevPaintedBuffer ?? prevBuffer
-    const output = outputPhase(prevForDiff, buffer, "fullscreen")
+    let output = outputPhase(prevForDiff, buffer, "fullscreen")
+    // Backdrop emoji-scrim overlay (Kitty graphics). Since we create a fresh
+    // `Ag` per render, the ag-internal `_kittyActive` tracker is always fresh
+    // and can't emit the deactivation `a=d`. Track it at the instance level
+    // and synthesize the delete-all when the overlay disappears.
+    const overlayEmitted = kittyOverlay.length > 0
+    if (overlayEmitted) {
+      output += kittyOverlay
+      instance.kittyActive = true
+    } else if (instance.kittyActive) {
+      // Transition active → inactive (modal closed). Emit delete-all once
+      // so leftover scrim rectangles don't linger in the terminal.
+      output += _CURSOR_SAVE + _kittyDeleteAllScrimPlacements() + _CURSOR_RESTORE
+      instance.kittyActive = false
+    }
     return { output, buffer, carryForwardBuffer }
   }
 

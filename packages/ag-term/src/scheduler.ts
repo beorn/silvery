@@ -491,7 +491,7 @@ export class RenderScheduler {
       const doRender = () => {
         const ag = createAg(this.root, { measurer })
         ag.layout({ cols: width, rows: height })
-        const { buffer } = ag.render({ prevBuffer: this.prevBuffer })
+        const { buffer, kittyOverlay } = ag.render({ prevBuffer: this.prevBuffer })
 
         const start = performance.now()
         const outputFn = this.pipelineConfig?.outputPhaseFn ?? outputPhase
@@ -511,6 +511,9 @@ export class RenderScheduler {
           }
           throw e
         }
+        // Append Kitty emoji-scrim overlay from the backdrop-fade pass.
+        // No-op when backdrop inactive or cap disabled — zero-length string.
+        if (kittyOverlay) ansiOutput += kittyOverlay
         const tOutput = performance.now() - start
 
         // Bench instrumentation: accumulate output-phase timing
