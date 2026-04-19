@@ -67,9 +67,50 @@ export function toHex(c: OKLCH): string {
  * undefined). For explicit hue-rotation blending, use `lerpOklch` directly.
  *
  * For non-hex inputs (ANSI names), returns `a` unchanged.
+ *
+ * Use `blend` for palette/interpolation work (dark-mode derivation, picker
+ * gradients, theme synthesis). For UI compositing (backdrop scrims, alpha
+ * overlays, "darken" effects), use `mixSrgb` — OKLab drags chroma toward the
+ * target, violating the source-over compositing contract every production UI
+ * stack (CSS, macOS, Material, Flutter, Figma) actually ships. Ottosson
+ * himself recommends linear-sRGB over OKLab for blending/transparency; sRGB
+ * is the simpler, CSS-filter-aligned choice.
  */
 export function blend(a: string, b: string, t: number): string {
   return lerpOklabHex(a, b, t) ?? a
+}
+
+/**
+ * sRGB source-over alpha compositing: the canonical "scrim over backdrop"
+ * operation used by CSS `filter: brightness()`, Quartz, Cairo OVER, Skia
+ * kSrcOver, Material 3 `Scrim`, and Flutter `AnimatedModalBarrier`.
+ *
+ *   result = a * (1 - t) + b * t
+ *
+ * For a fully-opaque backdrop `a` and a scrim `b` at opacity `t`, this is
+ * equivalent to drawing a translucent `b` rectangle "over" `a` at alpha `t`.
+ * With `b = "#000000"` this is a pure darken by `t`; with `b = rootBg` the
+ * result eases toward the ambient theme background.
+ *
+ * Channels are linearly interpolated in sRGB gamma space. This is NOT
+ * perceptually uniform — halfway between `#FFFFFF` and `#000000` lands at the
+ * byte value `128`, which looks roughly 22% perceived brightness (gamma ≈
+ * 2.2). That matches what every shipping design tool and UI toolkit
+ * produces, because their rendering pipelines also operate in sRGB. If you
+ * need a perceptually-uniform mix for palette work, use `blend` (OKLab)
+ * instead.
+ *
+ * For non-hex inputs, returns `a` unchanged.
+ */
+export function mixSrgb(a: string, b: string, t: number): string {
+  const ra = hexToRgb(a)
+  const rb = hexToRgb(b)
+  if (!ra || !rb) return a
+  const u = Math.max(0, Math.min(1, t))
+  const r = ra[0] * (1 - u) + rb[0] * u
+  const g = ra[1] * (1 - u) + rb[1] * u
+  const bl = ra[2] * (1 - u) + rb[2] * u
+  return rgbToHex(r, g, bl)
 }
 
 /**

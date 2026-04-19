@@ -2,14 +2,21 @@
  * Backdrop Fade — SILVERY_STRICT regression tests.
  *
  * Verifies:
- *   1. `<Backdrop fade={amount}>` shifts fg toward bg on every cell it covers.
+ *   1. `<Backdrop fade={amount}>` mixes fg toward the scrim on every cell it
+ *      covers (sRGB source-over alpha).
  *   2. `fade={0}` is a passthrough (cells unchanged).
  *   3. `<ModalDialog fade={0.4}>` fades cells OUTSIDE the dialog's rect while
  *      leaving cells INSIDE crisp.
  *   4. Incremental rendering matches fresh (STRICT=1 auto-check every rerender).
  *   5. Realistic-scale fixture (50+ nodes) — catches cumulative cascade issues.
- *   6. Two-channel transform (with rootBg): explicit cell.bg is also blended
- *      toward the theme-neutral; null/default bg is left unchanged.
+ *   6. Two-channel transform (with rootBg): explicit cell.bg is also mixed
+ *      toward the scrim; null bg is resolved to rootBg first, then mixed.
+ *
+ * Model: sRGB source-over alpha compositing — `out = cell * (1 - α) + scrim * α`.
+ * Scrim is pure black (`#000000`) for dark themes, pure white (`#ffffff`) for
+ * light. This is what every production UI stack ships (CSS filter brightness,
+ * macOS UIKit dimming, Material 3 `Scrim`, Flutter `AnimatedModalBarrier`,
+ * Figma/Adobe Normal+opacity, Quartz/Cairo/Skia source-over).
  *
  * SILVERY_STRICT=1 (set by vitest/setup.ts) verifies incremental === fresh on
  * every rerender. The backdrop pass runs inside `ag.render()` on both paths,
@@ -24,11 +31,11 @@ import { deriveTheme } from "@silvery/ansi"
 import { catppuccinMocha } from "@silvery/theme/schemes"
 
 // A dark theme with known bg — catppuccin mocha bg is #1e1e2e (luminance ≈ 0.012).
-// With rootBg="#1e1e2e", deriveBlendTarget returns "#000000" (dark neutral).
+// With rootBg="#1e1e2e", deriveScrimColor returns "#000000" (dark scrim).
 const darkTheme = deriveTheme(catppuccinMocha, "truecolor")
 
-// Fade any fg > 0 toward bg in OKLab. For cells where fg is white(#FFFFFF) and
-// bg is black(#000000), the blended result must have all channels < 255.
+// Check whether a cell's fg has been mixed toward the scrim. For cells where
+// fg is white (#FFFFFF), any post-fade fg with all channels < 255 counts.
 function isFaded(cell: {
   fg: { r: number; g: number; b: number } | null
   bg: { r: number; g: number; b: number } | null
@@ -62,14 +69,14 @@ describe("backdrop fade: Backdrop primitive", () => {
     const crisp = app.cell(0, 0)
     expect(fgIsWhite(crisp)).toBe(true)
 
-    // Frame 2 — fade 0.5. Same text, but fg is darkened toward black bg.
+    // Frame 2 — fade 0.5. Same text, but fg is mixed toward cell.bg (legacy
+    // path — no rootBg context in this test). White toward black at α=0.5 in
+    // sRGB source-over lands at (128,128,128) exactly.
     app.rerender(<App faded={true} />)
     expect(app.text).toContain("HELLO WORLD")
     const faded = app.cell(0, 0)
     expect(faded.char).toBe("H")
     expect(isFaded(faded)).toBe(true)
-    // OKLab halfway between white and black is a mid-gray, NOT raw sRGB average (128).
-    // Just assert it's strictly less than white on all channels.
     expect(faded.fg!.r).toBeLessThan(255)
     expect(faded.fg!.g).toBeLessThan(255)
     expect(faded.fg!.b).toBeLessThan(255)
@@ -229,8 +236,9 @@ describe("backdrop fade: realistic-scale fixture (50+ nodes)", () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Two-channel transform: when rootBg flows through a Box with theme= prop,
-// both cell.fg AND cell.bg are blended toward the theme-neutral (pure black for
-// dark themes, pure white for light). These tests verify the two-channel path.
+// both cell.fg AND cell.bg are mixed toward the scrim (pure black for dark
+// themes, pure white for light) via sRGB source-over. Null/default bg is
+// resolved to rootBg first, then mixed. These tests verify that path.
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("backdrop fade: two-channel transform (rootBg via theme prop)", () => {
@@ -276,11 +284,11 @@ describe("backdrop fade: two-channel transform (rootBg via theme prop)", () => {
       expect((preCell.bg as { r: number; g: number; b: number }).b).toBe(0)
     }
 
-    // After modal: row 0 bg is blended toward a desaturated neutral — no
-    // longer pure #ff0000. Blend target is a C=0 dark gray (see
-    // `deriveBlendTarget`), so saturated red cells desaturate slightly as
-    // they darken — g/b channels may rise a bit off 0, but red still
-    // dominates.
+    // After modal: row 0 bg is mixed toward the scrim (#000000) via sRGB
+    // source-over alpha. At α=0.4: (255*0.6, 0*0.6, 0*0.6) = (153, 0, 0).
+    // Red still dominates because sRGB source-over scales every channel by
+    // the same (1-α) factor — saturated cells stay saturated in ratio, just
+    // darker.
     app.rerender(<App open={true} />)
     const fadedCell = app.cell(0, 0)
     expect(fadedCell.char).toBe("c")
@@ -420,21 +428,15 @@ describe("backdrop fade: two-channel transform (rootBg via theme prop)", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("standalone Backdrop: rootBg from ThemeProvider", () => {
-  test("fades fg + bg toward theme neutral (dark) when wrapped in ThemeProvider", () => {
-    // darkTheme.bg = "#1e1e2e" → luminance ≈ 0.012 → dark neutral = "#000000".
+  test("fades fg + bg toward theme scrim (dark) when wrapped in ThemeProvider", () => {
+    // darkTheme.bg = "#1e1e2e" → luminance ≈ 0.012 → dark scrim = "#000000".
     //
-    // UNIFORM blend amounts (post-b2dafd70 regression fix):
-    //   Both fg and bg blend toward the neutral at the same `amount`.
-    //   The previous asymmetric approach (bg at half amount) broke
-    //   border/panel brightness ordering — see `fadeCell` docblock.
+    // sRGB source-over alpha at α=0.4:
+    //   fg #ffffff → (255, 255, 255) * 0.6 + (0,0,0) * 0.4 = (153, 153, 153)
+    //   bg #ff0000 → (255, 0, 0) * 0.6 + (0,0,0) * 0.4 = (153, 0, 0)
     //
-    // Calibration moved to the CALL SITE: use a small fade (0.25) for a
-    // gentle backdrop, or a larger one for a heavier dim. Here we use
-    // fade=0.4 to produce an easily-observable blend result.
-    //
-    // With fade=0.4:
-    //   fg #ffffff → 40% toward #000000 in OKLab
-    //   bg #ff0000 → 40% toward #000000 in OKLab (uniform with fg)
+    // Uniform fg/bg amounts preserve brightness ordering across border vs
+    // fill cells. Calibration at call site — 0.4 here for easy observation.
     const render = createRenderer({ cols: 40, rows: 10 })
 
     function App() {
@@ -455,28 +457,25 @@ describe("standalone Backdrop: rootBg from ThemeProvider", () => {
     const cell = app.cell(0, 0)
     expect(cell.char).toBe("R")
 
-    // fg: 40% blend toward black — white becomes mid-gray.
+    // fg: 40% mix toward #000000 — white → (153, 153, 153). Grayscale preserved.
     expect(cell.fg).not.toBeNull()
     const fg = cell.fg as { r: number; g: number; b: number }
-    expect(fg.r).toBeLessThan(255)
-    expect(fg.r).toBeGreaterThan(0)
-    expect(fg.r).toBe(fg.g) // white preserves grayscale through blend-to-black
-    expect(fg.g).toBe(fg.b)
+    expect(fg.r).toBe(153)
+    expect(fg.g).toBe(153)
+    expect(fg.b).toBe(153)
 
-    // bg: 40% blend toward DESATURATED neutral — red darkens and slightly
-    // desaturates, but red channel still dominates. Target has C=0 so a
-    // small g/b rise is expected (cell gains a touch of gray).
+    // bg: 40% mix toward #000000 — (255, 0, 0) → (153, 0, 0). Saturation
+    // preserved (ratios of r:g:b unchanged when mixing toward achromatic).
     expect(cell.bg).not.toBeNull()
     const bg = cell.bg as { r: number; g: number; b: number }
-    expect(bg.r).toBeLessThan(255) // darkened
-    expect(bg.r).toBeGreaterThan(100) // still clearly red-dominant
-    expect(bg.r).toBeGreaterThan(bg.g + 80) // red still clearly wins
-    expect(bg.r).toBeGreaterThan(bg.b + 80)
+    expect(bg.r).toBe(153)
+    expect(bg.g).toBe(0)
+    expect(bg.b).toBe(0)
   })
 
   test("Backdrop without ThemeProvider falls back to legacy fg-toward-bg path", () => {
-    // Without ThemeProvider, findRootThemeBg returns null → blendTarget = null
-    // → legacy path: cell.fg = blend(fg, cell.bg, amount), cell.bg unchanged.
+    // Without ThemeProvider, findRootThemeBg returns null → scrim = null →
+    // legacy path: cell.fg = mixSrgb(fg, cell.bg, amount), cell.bg unchanged.
     const render = createRenderer({ cols: 20, rows: 5 })
 
     function App() {
@@ -498,15 +497,15 @@ describe("standalone Backdrop: rootBg from ThemeProvider", () => {
     const cell = app.cell(0, 0)
     expect(cell.char).toBe("H")
 
-    // fg must be faded (legacy: fg blends toward cell.bg which is #ff0000)
-    // White #ffffff blended 70% toward red #ff0000 in OKLab → {r:255,g:127,b:110}
+    // fg is mixed toward cell.bg (#ff0000) at α=0.7 in sRGB:
+    //   (255, 255, 255) * 0.3 + (255, 0, 0) * 0.7 = (255, 77, 77)
     expect(cell.fg).not.toBeNull()
     const fg = cell.fg as { r: number; g: number; b: number }
     expect(fg.r).toBe(255)
-    expect(fg.g).toBe(127)
-    expect(fg.b).toBe(110)
+    expect(fg.g).toBe(77)
+    expect(fg.b).toBe(77)
 
-    // bg is UNCHANGED in legacy path (only fg blended, not bg)
+    // bg is UNCHANGED in legacy path (only fg is mixed).
     expect(cell.bg).not.toBeNull()
     const bg = cell.bg as { r: number; g: number; b: number }
     expect(bg.r).toBe(255)
@@ -591,16 +590,14 @@ describe("backdrop fade: empty-cell bg darkening (regression)", () => {
     expect(preBg.g).toBe(30)
     expect(preBg.b).toBe(46)
 
-    // After modal opens: same cell must darken (blended toward #000000).
+    // After modal opens: same cell must darken (mixed toward #000000 at α).
+    // With sRGB source-over at α=0.4: (30*0.6, 30*0.6, 46*0.6) = (18, 18, 28).
     app.rerender(<App open={true} />)
     const post = app.cell(35, 7)
     expect(post.char).toBe(" ")
-    // fg is still null (no text), that's fine.
-    // bg MUST be darker than pre.bg — this is the regression guard.
     expect(post.bg).not.toBeNull()
     const postBg = post.bg as { r: number; g: number; b: number }
-    // Every channel must be STRICTLY less than the pre-fade bg — the
-    // modal's "spotlight" effect has pushed every cell toward pure black.
+    // Every channel strictly less than pre — scrim pushes cells toward black.
     expect(postBg.r).toBeLessThan(preBg.r)
     expect(postBg.g).toBeLessThan(preBg.g)
     expect(postBg.b).toBeLessThan(preBg.b)
@@ -740,10 +737,11 @@ describe("backdrop fade: wide-char / emoji bg propagation (regression)", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("backdrop fade: uniform fg/bg calibration (regression)", () => {
-  test("fg and bg blend toward neutral at the same amount (no asymmetric drift)", () => {
-    // White fg + colored bg. Under uniform amounts, fg and bg both blend at
-    // the given `amount`. Pure hue channels survive the blend (green bg stays
-    // green, just darker). Grayscale fg stays grayscale.
+  test("fg and bg mix toward scrim at the same amount (no asymmetric drift)", () => {
+    // White fg + colored bg. Uniform sRGB source-over at α=0.5:
+    //   fg #ffffff → (128, 128, 128)
+    //   bg #00aa00 → (0, 85, 0) — green halved, r/b untouched (no chroma
+    //   drift because scrim is achromatic).
     const render = createRenderer({ cols: 30, rows: 3 })
 
     function App() {
@@ -766,16 +764,15 @@ describe("backdrop fade: uniform fg/bg calibration (regression)", () => {
     const fg = cell.fg as { r: number; g: number; b: number }
     const bg = cell.bg as { r: number; g: number; b: number }
 
-    // White fg at 50% blend toward black → mid-gray. Grayscale preserved.
+    // White fg at 50% mix toward black → (128, 128, 128). Grayscale preserved.
     expect(fg.r).toBe(fg.g)
     expect(fg.g).toBe(fg.b)
     expect(fg.r).toBeLessThan(255)
     expect(fg.r).toBeGreaterThan(0)
 
-    // Green bg at 50% blend toward a DESATURATED neutral → dimmed green.
-    // Green still clearly dominates; r/b may have a small rise from the
-    // desaturation pull. Started at 170 (0xaa).
-    expect(bg.g).toBeLessThan(170) // darkened
+    // Green bg at 50% mix toward #000000 — r, b stay 0 (nothing to mix from);
+    // g halves. Saturation preserved in ratio (bg still pure hue-green).
+    expect(bg.g).toBeLessThan(170) // darkened from 0xaa=170
     expect(bg.g).toBeGreaterThan(0)
     expect(bg.g).toBeGreaterThan(bg.r + 40) // green still dominates
     expect(bg.g).toBeGreaterThan(bg.b + 40)
@@ -817,11 +814,11 @@ describe("backdrop fade: uniform fg/bg calibration (regression)", () => {
     const fg = cell.fg as { r: number; g: number; b: number }
     const bg = cell.bg as { r: number; g: number; b: number }
 
-    // At the default fade the scene must still be clearly legible:
+    // At the default fade (0.25) the scene must still be clearly legible:
     //   - fg has darkened (fade is working)
     expect(fg.r).toBeLessThan(255)
-    //   - bg remains clearly magenta (hue survives — target is desaturated
-    //     but saturated colors still dominate through the blend)
+    //   - bg remains clearly magenta. sRGB source-over at α=0.25:
+    //     #ff00ff → (191, 0, 191). Hue untouched by achromatic scrim.
     expect(bg.r).toBeGreaterThan(150)
     expect(bg.b).toBeGreaterThan(150)
     //   - magenta dominates over the green channel
@@ -996,16 +993,16 @@ describe("backdrop fade: real-app regressions (b2dafd70)", () => {
     )
   })
 
-  test("backdrop does not tint the whole scene with rootBg's hue (no blue cast on Nord)", () => {
-    // Regression: blending null-bg cells toward pure black (`#000000`) in
-    // OKLab preserves the starting hue. On a Nord-like blue-tinted theme
-    // (rootBg #2E3440, OKLCH H ≈ 264°), every null-bg cell gets resolved to
-    // explicit darker-blue hex post-fade. The whole backdrop tints blue.
+  test("backdrop hue cast fades proportionally with alpha (not amplified on Nord)", () => {
+    // On a Nord-like blue-tinted theme (rootBg #2E3440), null-bg cells are
+    // resolved to rootBg then mixed toward #000000. sRGB source-over scales
+    // every channel by (1 - α), so the absolute r/g/b gap shrinks by the
+    // same factor — the blue cast is reduced, not amplified.
     //
-    // Fix: blend target is a DESATURATED neutral gray (C=0) at lower L, so
-    // null-bg cells lose their hue as they darken (chroma drops toward 0).
-    // This test verifies the post-fade null-bg cell has LOWER chroma than
-    // the pre-fade rootBg hue — the cell genuinely desaturates.
+    // This test pins that property: post-fade (b - r) must be strictly less
+    // than pre-fade (b - r). It's not a hard "desaturation" contract (that
+    // would require a chromatic scrim or OKLab-desat math), just the
+    // industry-standard "scrim fades the whole scene proportionally".
     const render = createRenderer({ cols: 40, rows: 10 })
 
     // Emulate Nord dark theme — blue-tinted bg.
@@ -1043,17 +1040,16 @@ describe("backdrop fade: real-app regressions (b2dafd70)", () => {
     expect(preBg.b).toBeGreaterThan(preBg.r)
     const preBlueness = preBg.b - preBg.r // how much blue over red
 
-    // After fade: blue channel - red channel gap must SHRINK — the cell has
-    // desaturated toward neutral. With the old pure-black target, this gap
-    // stayed constant (or even grew proportionally) because OKLab preserves
-    // hue when blending toward black.
+    // After fade: (b - r) gap must SHRINK proportionally. With α=0.4 scrim
+    // toward #000000, each channel scales by 0.6, so the absolute delta
+    // shrinks to ~0.6 * preBlueness (modulo rounding).
     app.rerender(<App open={true} />)
     const post = app.cell(35, 0)
     const postBg = post.bg as { r: number; g: number; b: number }
     const postBlueness = postBg.b - postBg.r
-    // Post-fade blueness must be at most 50% of pre-fade blueness — the
-    // backdrop has visibly desaturated, not just darkened.
-    expect(postBlueness).toBeLessThan(preBlueness * 0.6)
+    // Post-fade blueness strictly less than pre-fade. The fade has dimmed
+    // the whole cell (including the hue cast) proportional to alpha.
+    expect(postBlueness).toBeLessThan(preBlueness)
   })
 
   test("emoji cells stamp dim attribute so terminals visibly fade emoji glyphs", () => {
