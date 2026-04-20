@@ -77,7 +77,7 @@ function pairingBgFor(theme: SterlingTheme, path: string): string | null {
     const r = theme[role] as { bg?: string } | undefined
     return r?.bg ?? null
   }
-  return theme.surface.default ?? theme.bg ?? null
+  return theme.surface.default ?? theme["bg-surface-default"] ?? null
 }
 
 export interface DerivationPanelProps {

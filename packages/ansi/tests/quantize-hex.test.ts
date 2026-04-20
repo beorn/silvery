@@ -12,12 +12,20 @@ import {
   rgbToAnsi256,
 } from "../src/color-maps"
 
+/** Extract [r, g, b] channels from a `#rrggbb` string as non-optional numbers. */
+function hexChannels(hex: string): [number, number, number] {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return [r, g, b]
+}
+
 describe("ansi256ToHex", () => {
   it("maps every cube index back to a canonical cube level", () => {
     const cubeLevels = new Set([0, 95, 135, 175, 215, 255])
     for (let idx = 16; idx < 232; idx++) {
       const hex = ansi256ToHex(idx)
-      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+      const [r, g, b] = hexChannels(hex)
       expect(cubeLevels.has(r)).toBe(true)
       expect(cubeLevels.has(g)).toBe(true)
       expect(cubeLevels.has(b)).toBe(true)
@@ -26,7 +34,7 @@ describe("ansi256ToHex", () => {
 
   it("ansi256ToHex(rgbToAnsi256(r,g,b)) returns a canonical cube or ramp hex", () => {
     const cubeLevels = new Set([0, 95, 135, 175, 215, 255])
-    const samples = [
+    const samples: Array<[number, number, number]> = [
       [0x88, 0xc0, 0xd0],
       [0xbf, 0x61, 0x6a],
       [0xa3, 0xbe, 0x8c],
@@ -34,7 +42,7 @@ describe("ansi256ToHex", () => {
     ]
     for (const [r, g, b] of samples) {
       const hex = ansi256ToHex(rgbToAnsi256(r, g, b))
-      const [rr, gg, bb] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+      const [rr, gg, bb] = hexChannels(hex)
       // Each channel is either a cube level, or all three equal (grayscale ramp),
       // or a canonical ANSI16 slot (low index — unlikely here but allowed).
       const isCube = cubeLevels.has(rr) && cubeLevels.has(gg) && cubeLevels.has(bb)
@@ -51,8 +59,8 @@ describe("ansi256ToHex", () => {
   })
 
   it("returns ANSI16 slot hex for low indices", () => {
-    expect(ansi256ToHex(1).toLowerCase()).toBe(ANSI16_SLOT_HEX.red.toLowerCase())
-    expect(ansi256ToHex(9).toLowerCase()).toBe(ANSI16_SLOT_HEX.redBright.toLowerCase())
+    expect(ansi256ToHex(1).toLowerCase()).toBe(ANSI16_SLOT_HEX.red!.toLowerCase())
+    expect(ansi256ToHex(9).toLowerCase()).toBe(ANSI16_SLOT_HEX.redBright!.toLowerCase())
   })
 })
 
@@ -73,9 +81,8 @@ describe("quantizeHex", () => {
   })
 
   it("ansi16 result matches nearestAnsi16 directly", () => {
-    const [r, g, b] = [0x88, 0xc0, 0xd0]
-    const idx = nearestAnsi16(r, g, b)
-    const [cr, cg, cb] = [
+    const idx = nearestAnsi16(0x88, 0xc0, 0xd0)
+    const slots: Array<[number, number, number]> = [
       [0, 0, 0],
       [128, 0, 0],
       [0, 128, 0],
@@ -92,7 +99,8 @@ describe("quantizeHex", () => {
       [255, 0, 255],
       [0, 255, 255],
       [255, 255, 255],
-    ][idx]!
+    ]
+    const [cr, cg, cb] = slots[idx]!
     const expected = `#${[cr, cg, cb].map((n) => n.toString(16).padStart(2, "0")).join("")}`
     expect(quantizeHex("#88c0d0", "ansi16")).toBe(expected)
   })
@@ -101,7 +109,7 @@ describe("quantizeHex", () => {
     const q = quantizeHex("#88c0d0", "256")
     // The result must be a cube point (components ∈ {0,95,135,175,215,255})
     // or a grayscale ramp value. Cheapest check: round-trip through rgbToAnsi256.
-    const [r, g, b] = [1, 3, 5].map((i) => parseInt(q.slice(i, i + 2), 16))
+    const [r, g, b] = hexChannels(q)
     const idx = rgbToAnsi256(r, g, b)
     expect(ansi256ToHex(idx).toLowerCase()).toBe(q.toLowerCase())
   })
