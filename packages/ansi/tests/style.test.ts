@@ -185,70 +185,70 @@ describe("resolveThemeColor", () => {
     expect(resolveThemeColor("$bg-selected-hover", theme)).toBe("#112233")
   })
 
-  // Primer-style aliases (theme-system-v2 token rename) — new names resolve to
-  // existing Theme keys so apps can migrate gradually.
-  describe("Primer-style aliases", () => {
-    const legacyTheme = {
+  // Sterling flat tokens resolve via direct lookup — every shipped default
+  // Theme carries them as first-class fields (see `@silvery/theme/schemes`).
+  // The previous `LEGACY_ALIASES` translation layer (e.g. `fgmuted` → `muted`,
+  // `bgsurface` → `surfacebg`) was deleted in 0.18.1 as redundant.
+  describe("Sterling flat tokens (direct lookup)", () => {
+    const sterlingTheme = {
+      // Legacy roots — still present on every Theme
       muted: "#8b8da2",
-      mutedbg: "#2a2a40",
-      surfacebg: "#1e1e2e",
-      popoverbg: "#262637",
-      inversebg: "#c0c0c0",
-      selectionbg: "#6272a4",
-      cursorbg: "#f1fa8c",
-      cursor: "#282a36",
-      selection: "#f8f8f2",
-      inverse: "#1a1a1a",
       surface: "#f8f8f2",
       popover: "#f8f8f2",
-      primaryfg: "#000000",
-      disabledfg: "#4a4a5f",
+      inverse: "#1a1a1a",
+      cursor: "#282a36",
+      selection: "#f8f8f2",
       focusborder: "#bd93f9",
       inputborder: "#44475a",
+      // Sterling flat tokens — baked in by inlineSterlingTokens at theme
+      // construction
+      "fg-muted": "#8b8da2",
+      "bg-muted": "#2a2a40",
+      "bg-surface-default": "#1e1e2e",
+      "bg-surface-subtle": "#232336",
+      "bg-surface-overlay": "#262637",
+      "fg-on-accent": "#000000",
+      "fg-on-error": "#ffffff",
+      "bg-cursor": "#f1fa8c",
+      "fg-cursor": "#282a36",
+      "border-focus": "#bd93f9",
+      "border-default": "#44475a",
     }
-    it("$fg-muted → muted", () => {
-      expect(resolveThemeColor("$fg-muted", legacyTheme)).toBe("#8b8da2")
+    it("$fg-muted resolves directly", () => {
+      expect(resolveThemeColor("$fg-muted", sterlingTheme)).toBe("#8b8da2")
     })
-    it("$bg-muted → mutedbg", () => {
-      expect(resolveThemeColor("$bg-muted", legacyTheme)).toBe("#2a2a40")
+    it("$bg-muted resolves directly", () => {
+      expect(resolveThemeColor("$bg-muted", sterlingTheme)).toBe("#2a2a40")
     })
-    it("$bg-surface → surfacebg", () => {
-      expect(resolveThemeColor("$bg-surface", legacyTheme)).toBe("#1e1e2e")
+    it("$bg-surface-default resolves directly", () => {
+      expect(resolveThemeColor("$bg-surface-default", sterlingTheme)).toBe("#1e1e2e")
     })
-    it("$bg-popover → popoverbg", () => {
-      expect(resolveThemeColor("$bg-popover", legacyTheme)).toBe("#262637")
+    it("$bg-cursor resolves directly", () => {
+      expect(resolveThemeColor("$bg-cursor", sterlingTheme)).toBe("#f1fa8c")
     })
-    it("$bg-inverse → inversebg", () => {
-      expect(resolveThemeColor("$bg-inverse", legacyTheme)).toBe("#c0c0c0")
+    it("$fg-cursor resolves directly", () => {
+      expect(resolveThemeColor("$fg-cursor", sterlingTheme)).toBe("#282a36")
     })
-    it("$bg-selected → selectionbg", () => {
-      expect(resolveThemeColor("$bg-selected", legacyTheme)).toBe("#6272a4")
+    it("$border-focus resolves directly", () => {
+      expect(resolveThemeColor("$border-focus", sterlingTheme)).toBe("#bd93f9")
     })
-    it("$bg-cursor → cursorbg", () => {
-      expect(resolveThemeColor("$bg-cursor", legacyTheme)).toBe("#f1fa8c")
+    it("$fg-on-accent resolves directly", () => {
+      expect(resolveThemeColor("$fg-on-accent", sterlingTheme)).toBe("#000000")
     })
-    it("$fg-cursor → cursor", () => {
-      expect(resolveThemeColor("$fg-cursor", legacyTheme)).toBe("#282a36")
+    it("legacy names still resolve via direct lookup", () => {
+      expect(resolveThemeColor("$muted", sterlingTheme)).toBe("#8b8da2")
+      expect(resolveThemeColor("$focusborder", sterlingTheme)).toBe("#bd93f9")
     })
-    it("$fg-selected → selection", () => {
-      expect(resolveThemeColor("$fg-selected", legacyTheme)).toBe("#f8f8f2")
-    })
-    it("$fg-disabled → disabledfg", () => {
-      expect(resolveThemeColor("$fg-disabled", legacyTheme)).toBe("#4a4a5f")
-    })
-    it("$border-focus → focusborder", () => {
-      expect(resolveThemeColor("$border-focus", legacyTheme)).toBe("#bd93f9")
-    })
-    it("$border-input → inputborder", () => {
-      expect(resolveThemeColor("$border-input", legacyTheme)).toBe("#44475a")
-    })
-    it("$fg-on-primary → primaryfg", () => {
-      expect(resolveThemeColor("$fg-on-primary", legacyTheme)).toBe("#000000")
-    })
-    it("legacy names still resolve (backwards compat)", () => {
-      expect(resolveThemeColor("$muted", legacyTheme)).toBe("#8b8da2")
-      expect(resolveThemeColor("$focusborder", legacyTheme)).toBe("#bd93f9")
-      expect(resolveThemeColor("$disabledfg", legacyTheme)).toBe("#4a4a5f")
+    it("legacy-only aliases without Sterling equivalents no longer resolve", () => {
+      // Removed in 0.18.1 — callers should switch to canonical Sterling forms.
+      expect(resolveThemeColor("$bg-surface", sterlingTheme)).toBeUndefined()
+      expect(resolveThemeColor("$bg-popover", sterlingTheme)).toBeUndefined()
+      expect(resolveThemeColor("$bg-inverse", sterlingTheme)).toBeUndefined()
+      expect(resolveThemeColor("$bg-selected", sterlingTheme)).toBeUndefined()
+      expect(resolveThemeColor("$fg-selected", sterlingTheme)).toBeUndefined()
+      expect(resolveThemeColor("$fg-disabled", sterlingTheme)).toBeUndefined()
+      expect(resolveThemeColor("$border-input", sterlingTheme)).toBeUndefined()
+      expect(resolveThemeColor("$fg-on-primary", sterlingTheme)).toBeUndefined()
     })
   })
 })

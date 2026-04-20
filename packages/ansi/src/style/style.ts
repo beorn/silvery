@@ -62,48 +62,26 @@ export function resolveThemeColor(
   return resolveToken(name, theme as ThemeLike)
 }
 
-/**
- * Legacy alias table — maps no-hyphen variants of old Ink-style names to the
- * canonical (all-lowercase, no-hyphen) Theme keys that have always existed.
+/** Internal: resolve a token name (with or without $ prefix) against a theme.
  *
- * This is a subset of the old PRIMER_ALIASES: only entries where the token
- * introduces a NEW semantic name for an existing differently-named key. The
- * state-variant entries (primaryhover → primaryHover, etc.) are gone — those
- * fields are now kebab keys ("primary-hover") in the Theme and are found by
- * the direct-lookup path.
+ * Resolution order:
+ *   1. Direct key lookup — finds Sterling flat keys (`bg-accent`,
+ *      `fg-on-error`, `border-focus`, …) and legacy kebab keys
+ *      (`primary-hover`, `fg-hover`, `bg-surface-hover`) and plain names
+ *      (`bg`, `primary`, `muted`).
+ *   2. No-hyphen fallback — `$surface-bg` → `theme.surfacebg`,
+ *      `$focus-border` → `theme.focusborder`.
  *
- * Keys: token name with hyphens stripped and $ removed (e.g. "fgmuted").
- * Values: the canonical Theme property name (e.g. "muted").
+ * The old `LEGACY_ALIASES` table (e.g. `fgmuted` → `muted`, `bgsurface` →
+ * `surfacebg`) was removed in 0.18.1 once every shipped default Theme ships
+ * with Sterling flat tokens baked in — `theme["fg-muted"]` and
+ * `theme["bg-surface-subtle"]` are direct fields now, so no alias fallback
+ * is required for canonical Sterling tokens. Tokens that existed only as
+ * aliases (e.g. `$bg-surface`, `$fg-on-primary`, `$border-input`,
+ * `$fg-disabled`) no longer resolve — callers should use the canonical
+ * Sterling equivalents (`$bg-surface-default`, `$fg-on-accent`,
+ * `$border-default`, `$fg-muted`).
  */
-const LEGACY_ALIASES: Record<string, string> = {
-  // Text slots — "fg-<role>" maps to legacy all-lowercase name
-  fgmuted: "muted",
-  fgdisabled: "disabledfg",
-  fgcursor: "cursor",
-  fgselected: "selection",
-  fginverse: "inverse",
-  fgonsurface: "surface",
-  fgonpopover: "popover",
-  fgonprimary: "primaryfg",
-  fgonsecondary: "secondaryfg",
-  fgonaccent: "accentfg",
-  fgonerror: "errorfg",
-  fgonwarning: "warningfg",
-  fgonsuccess: "successfg",
-  fgoninfo: "infofg",
-  // Background slots — "bg-<role>" maps to legacy name
-  bgmuted: "mutedbg",
-  bgsurface: "surfacebg",
-  bgpopover: "popoverbg",
-  bginverse: "inversebg",
-  bgselected: "selectionbg",
-  bgcursor: "cursorbg",
-  // Border slots
-  borderfocus: "focusborder",
-  borderinput: "inputborder",
-}
-
-/** Internal: resolve a token name (with or without $ prefix) against a theme. */
 function resolveToken(name: string, theme: ThemeLike | undefined): string | undefined {
   if (!theme) return undefined
   const token = name.startsWith("$") ? name.slice(1) : name
@@ -115,21 +93,16 @@ function resolveToken(name: string, theme: ThemeLike | undefined): string | unde
     }
   }
   const themeObj = theme as Record<string, unknown>
-  // Direct kebab lookup first — handles new-style keys like "primary-hover",
-  // "fg-hover", "bg-surface-hover", and all plain tokens like "bg", "primary".
+  // Direct kebab lookup — covers Sterling flat keys AND legacy kebab keys
+  // AND plain tokens (`bg`, `primary`, `muted`, …).
   const direct = themeObj[token]
   if (typeof direct === "string") return direct
-  // Strip hyphens and try the no-hyphen key (legacy names: surfacebg, focusborder, …)
+  // No-hyphen fallback for legacy names: `$surface-bg` → `surfacebg`,
+  // `$focus-border` → `focusborder`, etc.
   const noHyphen = token.replace(/-/g, "")
   if (noHyphen !== token) {
     const stripped = themeObj[noHyphen]
     if (typeof stripped === "string") return stripped
-    // Legacy alias fallback (e.g. "fgmuted" → "muted", "bgsurface" → "surfacebg")
-    const aliased = LEGACY_ALIASES[noHyphen]
-    if (aliased) {
-      const val = themeObj[aliased]
-      if (typeof val === "string") return val
-    }
   }
   return undefined
 }

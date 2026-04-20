@@ -16,41 +16,42 @@
 
 import type { HueName } from "./types.ts"
 
-/** Standard Theme tokens (Primer-aligned + brand family). */
+/** Standard Theme tokens (Primer-aligned + brand family).
+ *
+ * Since 0.18.1: the tokens `$bg-surface`, `$bg-popover`, `$bg-inverse`,
+ * `$bg-selected`, `$fg-selected`, `$fg-disabled`, `$fg-on-primary`,
+ * `$fg-on-secondary`, and `$border-input` have been dropped — the
+ * `LEGACY_ALIASES` translation layer that made them resolve was deleted when
+ * Sterling flat tokens started shipping directly on every Theme. Callers
+ * should migrate to the canonical Sterling forms: `$bg-surface-default`,
+ * `$bg-surface-overlay`, `$fg-muted`, `$fg-on-accent`, `$border-default`.
+ */
 export type StandardThemeToken =
   // Root pair
   | "$fg"
   | "$bg"
-  // Surfaces — fg + bg pairs
+  // Surfaces — legacy roots (Sterling variants live as $bg-surface-default etc.)
   | "$surface"
-  | "$bg-surface"
   | "$popover"
-  | "$bg-popover"
   | "$inverse"
-  | "$bg-inverse"
   // Muted + disabled
   | "$muted"
   | "$fg-muted"
   | "$mutedbg"
   | "$bg-muted"
   | "$disabledfg"
-  | "$fg-disabled"
   // Cursor + selection
   | "$cursor"
   | "$fg-cursor"
   | "$cursorbg"
   | "$bg-cursor"
   | "$selection"
-  | "$fg-selected"
   | "$selectionbg"
-  | "$bg-selected"
   // Accents + their fg
   | "$primary"
   | "$primaryfg"
-  | "$fg-on-primary"
   | "$secondary"
   | "$secondaryfg"
-  | "$fg-on-secondary"
   | "$accent"
   | "$accentfg"
   | "$fg-on-accent"
@@ -70,10 +71,18 @@ export type StandardThemeToken =
   // Borders + links
   | "$border"
   | "$inputborder"
-  | "$border-input"
   | "$focusborder"
   | "$border-focus"
+  | "$border-default"
   | "$link"
+  // Sterling flat — surface/border/accent variants baked in by every shipped Theme
+  | "$bg-surface-default"
+  | "$bg-surface-subtle"
+  | "$bg-surface-raised"
+  | "$bg-surface-overlay"
+  | "$fg-accent"
+  | "$bg-accent"
+  | "$border-accent"
   // State variants — hover/active lightness shifts (dark: +L, light: -L)
   | "$primary-hover"
   | "$primary-active"

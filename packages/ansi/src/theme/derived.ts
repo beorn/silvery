@@ -116,7 +116,7 @@ export interface DerivedFields {
   purple: string
   pink: string
 
-  // State variants (flat kebab keys — direct lookup, no PRIMER_ALIASES needed)
+  // State variants — flat kebab keys, resolved via direct lookup.
   "primary-hover": string
   "primary-active": string
   "accent-hover": string

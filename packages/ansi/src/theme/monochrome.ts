@@ -26,8 +26,13 @@ export type MonoAttr = "bold" | "dim" | "italic" | "underline" | "inverse" | "st
  *
  * Keyed by Theme token name. Tokens not in this map have no attrs (default
  * rendering). Callers apply these attrs at paint time when color tier is none.
+ *
+ * The key space is legacy `keyof Theme` UNION the Sterling flat token strings
+ * (`"fg-muted"`, `"border-focus"`, `"bg-surface-default"`, …). Both are
+ * first-class entries so `$fg-muted` in a `<Text color=…>` resolves via a
+ * single direct lookup — no alias table required.
  */
-export type MonochromeAttrs = Partial<Record<keyof Theme, readonly MonoAttr[]>>
+export type MonochromeAttrs = Partial<Record<keyof Theme | string, readonly MonoAttr[]>>
 
 /**
  * Default monochrome attrs — Polaris-aligned mapping from the design spec.
@@ -87,6 +92,51 @@ export const DEFAULT_MONO_ATTRS: MonochromeAttrs = {
   selection: [],
   selectionbg: ["inverse"],
   cursor: [],
+
+  // Sterling flat tokens — paired with their legacy-attr equivalents so that
+  // `$fg-muted`, `$border-focus`, `$bg-selected`, etc. resolve to the same
+  // mono attrs as their legacy counterparts without an alias table. Extending
+  // the map keeps the resolution path a single direct lookup.
+  "fg-muted": ["dim"],
+  "bg-muted": [],
+  "fg-accent": ["italic", "bold"],
+  "bg-accent": [],
+  "fg-on-accent": [],
+  "border-accent": [],
+  "fg-accent-hover": ["italic", "bold"],
+  "bg-accent-hover": [],
+  "fg-accent-active": ["italic", "bold"],
+  "bg-accent-active": [],
+  "fg-info": ["italic"],
+  "bg-info": [],
+  "fg-on-info": [],
+  "bg-info-hover": [],
+  "bg-info-active": [],
+  "fg-success": ["bold"],
+  "bg-success": [],
+  "fg-on-success": [],
+  "bg-success-hover": [],
+  "bg-success-active": [],
+  "fg-warning": ["bold"],
+  "bg-warning": [],
+  "fg-on-warning": [],
+  "bg-warning-hover": [],
+  "bg-warning-active": [],
+  "fg-error": ["bold", "inverse"],
+  "bg-error": [],
+  "fg-on-error": ["inverse"],
+  "bg-error-hover": [],
+  "bg-error-active": [],
+  "bg-surface-default": [],
+  "bg-surface-subtle": [],
+  "bg-surface-raised": [],
+  "bg-surface-overlay": [],
+  "bg-surface-hover": [],
+  "border-default": [],
+  "border-focus": ["bold"],
+  "border-muted": [],
+  "fg-cursor": [],
+  "bg-cursor": [],
 }
 
 /**
@@ -111,48 +161,19 @@ export function monoAttrsFor(theme: Theme, token: keyof Theme): readonly MonoAtt
 }
 
 /**
- * Primer-style alias table for mono-attr resolution. Mirrors the alias table
- * in `style/style.ts:PRIMER_ALIASES` — kept local to avoid a cross-package
- * import cycle.
- *
- * Maps the Primer-style compound token names (hyphens stripped) to the
- * canonical Theme keys that `DEFAULT_MONO_ATTRS` is keyed by. This lets
- * `$fg-muted`, `$bg-selected`, `$border-focus`, etc. resolve to the same attrs
- * set as their legacy counterparts.
- */
-const PRIMER_ALIASES_FOR_MONO: Record<string, keyof Theme> = {
-  fgmuted: "muted",
-  fgdisabled: "disabledfg",
-  fgcursor: "cursor",
-  fgselected: "selection",
-  fginverse: "inverse",
-  fgonsurface: "surface",
-  fgonpopover: "popover",
-  fgonprimary: "primaryfg",
-  fgonsecondary: "secondaryfg",
-  fgonaccent: "accentfg",
-  fgonerror: "errorfg",
-  fgonwarning: "warningfg",
-  fgonsuccess: "successfg",
-  fgoninfo: "infofg",
-  bgmuted: "mutedbg",
-  bgsurface: "surfacebg",
-  bgpopover: "popoverbg",
-  bginverse: "inversebg",
-  bgselected: "selectionbg",
-  bgcursor: "cursorbg",
-  borderfocus: "focusborder",
-  borderinput: "inputborder",
-}
-
-/**
  * Resolve mono-attrs from a color *string* — the high-level entry point
  * consumed by the render pipeline.
  *
  * Accepts strings like `"$primary"`, `"$fg-muted"`, `"$border-focus"`. Strips
- * the `$` prefix and hyphens, tries direct Theme key lookup, then falls back
- * to the Primer alias table. Returns `undefined` for non-token strings (hex,
+ * the `$` prefix and looks the name up directly against `DEFAULT_MONO_ATTRS`,
+ * which carries both legacy keys (`muted`, `surfacebg`, `focusborder`, …) AND
+ * Sterling flat tokens (`fg-muted`, `bg-surface-default`, `border-focus`, …)
+ * as first-class entries. Returns `undefined` for non-token strings (hex,
  * rgb(), named ANSI colors) — callers should treat this as "no attrs".
+ *
+ * A secondary no-hyphen fallback (`$surface-bg` → `surfacebg`) keeps the
+ * legacy hyphenated-compound form working for callers that still emit that
+ * shape.
  *
  * @param color    The color string (e.g. `"$primary"`, `"#ff0000"`, `"red"`)
  * @param theme    Active theme (reserved for per-theme overrides)
@@ -164,16 +185,16 @@ export function monoAttrsForColorString(
   theme: Theme,
 ): readonly MonoAttr[] | undefined {
   if (!color.startsWith("$")) return undefined
-  const raw = color.slice(1).replace(/-/g, "")
+  const name = color.slice(1)
   const attrs = deriveMonochromeTheme(theme)
-  // Direct key (legacy names: muted, surfacebg, focusborder, primary, …)
-  const direct = attrs[raw as keyof Theme]
+  // Direct lookup — covers Sterling flat keys AND legacy names.
+  const direct = attrs[name as keyof Theme]
   if (direct !== undefined) return direct
-  // Primer aliases (fg-muted, bg-surface, border-focus, …)
-  const aliased = PRIMER_ALIASES_FOR_MONO[raw]
-  if (aliased) {
-    const v = attrs[aliased]
-    if (v !== undefined) return v
+  // No-hyphen fallback for compound legacy names (`$surface-bg` → `surfacebg`).
+  const noHyphen = name.replace(/-/g, "")
+  if (noHyphen !== name) {
+    const stripped = attrs[noHyphen as keyof Theme]
+    if (stripped !== undefined) return stripped
   }
   return undefined
 }

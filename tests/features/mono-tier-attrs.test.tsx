@@ -189,10 +189,12 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
     })
   })
 
-  test("$bg-selected (Primer alias) → inverse", () => {
+  test("$selectionbg → inverse", () => {
     withMonoTier(() => {
-      // selectionbg → ["inverse"] in DEFAULT_MONO_ATTRS
-      const style = getTextStyle({ backgroundColor: "$bg-selected" })
+      // selectionbg → ["inverse"] in DEFAULT_MONO_ATTRS. The Primer-style
+      // alias `$bg-selected` was removed in 0.18.1 — the canonical legacy
+      // key still resolves via direct lookup.
+      const style = getTextStyle({ backgroundColor: "$selectionbg" })
       expect(style.attrs.inverse).toBe(true)
     })
   })
