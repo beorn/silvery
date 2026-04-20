@@ -7,6 +7,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.18.2] - 2026-04-20
+
+Backdrop internal refactor + snap-scroll fix. **No public API break.**
+
+### Changed
+
+- **`pipeline/backdrop-phase.ts` (1032 LOC) split into `pipeline/backdrop/`**:
+  `plan.ts`, `realize-buffer.ts`, `realize-kitty.ts`, `color.ts`, `index.ts`.
+  Zero behaviour change — 46/46 backdrop tests still pass, STRICT=2 clean.
+  Splits the mask→realize phases into separate files for maintainability.
+- **Sterling border tokens in backdrop defaults**: `ModalDialog` borderColor
+  default is now `$border-default` (was `$border`); title default is
+  `$fg-accent` (was `$primary`). Matches the Sterling 0.18.1 direct-lookup
+  path — legacy aliases like `$primary` / `$border` continue to resolve.
+
+### Fixed
+
+- **`pipeline/layout-phase.ts`**: scroll offset now snaps to the child-top
+  boundary, preventing a clipped card top in the first visible row of a
+  scrolling list. Visual fix; no API change. New test suite:
+  `tests/features/scroll-snap-child-top.test.tsx`.
+
+### Publish note
+
+Packages `@silvery/{color,ansi,theme-detect,commander}@0.18.1` were
+published earlier on 2026-04-20 before the backdrop split landed. Those
+four foundational packages have no material change in 0.18.2 but are
+re-published to keep all 18 workspace packages at the same version.
+
 ## [0.18.1] - 2026-04-20
 
 Internal cleanup — **no public API break**. Sterling flat tokens that used

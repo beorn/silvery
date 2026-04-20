@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ag",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "private": true,
   "description": "Core types and infrastructure for silvery (internal — use silvery instead)",
   "license": "MIT",

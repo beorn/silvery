@@ -1,6 +1,6 @@
 {
   "name": "@silvery/color",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "description": "Pure color math utilities — hex/RGB/HSL conversion, blending, contrast checking. Zero dependencies.",
   "keywords": [
     "color",

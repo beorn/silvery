@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ag-react",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "private": true,
   "description": "Core React reconciler and runtime for silvery (internal — use silvery instead)",
   "license": "MIT",

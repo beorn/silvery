@@ -1,6 +1,6 @@
 {
   "name": "@silvery/headless",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "private": true,
   "description": "Pure state machines for UI components — no React, no rendering, no side effects",
   "license": "MIT",

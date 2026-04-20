@@ -1,6 +1,6 @@
 {
   "name": "@silvery/theme-detect",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "description": "Framework-agnostic terminal color scheme detection — OSC probing + catalog fingerprinting. For any TUI/CLI that wants to adopt the user's terminal theme.",
   "keywords": [
     "ansi",
