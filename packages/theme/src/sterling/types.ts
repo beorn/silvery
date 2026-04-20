@@ -16,7 +16,7 @@
  * @see `hub/silvery/design/v10-terminal/sterling-preflight.md` — D1-D6
  */
 
-export type { ColorScheme } from "@silvery/ansi"
+export type { ColorScheme, FlattenRule } from "@silvery/ansi"
 
 // ── Role / State / Surface primitives ──────────────────────────────────────
 
@@ -256,7 +256,7 @@ export interface ThemeShape {
 
 // ── DesignSystem contract ──────────────────────────────────────────────────
 
-import type { ColorScheme } from "@silvery/ansi"
+import type { ColorScheme, FlattenRule } from "@silvery/ansi"
 
 /** Contrast enforcement mode for derivation. See D3 in sterling-preflight.md. */
 export type ContrastMode =
@@ -296,6 +296,21 @@ export interface DesignSystem {
 
   /** Metadata about this system's Theme shape. */
   readonly shape: ThemeShape
+
+  /**
+   * Whether the framework should auto-apply `bakeFlat` to each derivation's
+   * output — projecting hex leaves onto flat hyphen-keys on the same object.
+   *
+   * - `true` — use {@link defaultFlattenRule} (channel-role-state, Sterling style)
+   * - `FlattenRule` — system-specific rule (e.g. Material `onPrimary`)
+   * - `false` or omitted — no auto-flatten (system is responsible, or
+   *   consumer only uses nested form)
+   *
+   * Sterling and anything modelled on it should set `flatten: true` —
+   * flat-projection-on-same-object is a universal feature of nested
+   * hex-leaf POJOs and Sterling users expect `theme["bg-accent"]` access.
+   */
+  readonly flatten?: boolean | FlattenRule
 
   /** Return a raw default Theme, no input required. */
   defaults(mode?: "light" | "dark"): Theme

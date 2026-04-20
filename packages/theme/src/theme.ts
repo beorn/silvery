@@ -75,13 +75,17 @@ export { sterling } from "./sterling/index"
 export {
   deriveTheme as sterlingDeriveTheme,
   deriveRoles as sterlingDeriveRoles,
-  populateFlat as sterlingPopulateFlat,
   defaultScheme as sterlingDefaultScheme,
+  defineDesignSystem,
   STERLING_FLAT_TOKENS,
   WCAG_AA,
   autoLift as sterlingAutoLift,
   checkAA as sterlingCheckAA,
   ContrastError as SterlingContrastError,
+  // Generic flat-projection helper — re-exported from @silvery/ansi so every
+  // DesignSystem (Sterling included) can bake its own Theme on demand.
+  bakeFlat,
+  defaultFlattenRule,
 } from "./sterling/index"
 export type {
   AccentRole,
@@ -96,6 +100,7 @@ export type {
   DesignSystem,
   FlatToken as SterlingFlatToken,
   FlatTokens as SterlingFlatTokens,
+  FlattenRule,
   InteractiveRole,
   MutedRole,
   Roles as SterlingRoles,

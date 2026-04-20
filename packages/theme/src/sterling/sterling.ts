@@ -5,6 +5,14 @@
  * the `DesignSystem` contract from `types.ts` and serves as the reference
  * for alternative systems (`@silvery/design-material`, `-primer`, etc.).
  *
+ * The flat-projection (`theme["bg-accent"]` as a sibling of `theme.accent.bg`
+ * on the same object) is NOT Sterling-specific — it's a framework feature.
+ * Sterling opts in via `flatten: true` in {@link defineDesignSystem}, which
+ * auto-applies `bakeFlat` (from `@silvery/ansi`) to every derivation's
+ * output. The default rule is channel-role-state (`fg-accent`, `bg-accent-hover`,
+ * `fg-on-error`, `bg-surface-subtle`, `border-focus`, …) — exactly what
+ * Sterling's pre-generalization `populateFlat` produced.
+ *
  * All derivation functions return a frozen Theme with both nested roles
  * AND flat hyphen keys populated — the user-facing `$fg-accent` syntax
  * resolves against the flat keys, while programmatic access uses nested.
@@ -14,8 +22,9 @@ import { blend } from "@silvery/color"
 import type { ColorScheme } from "@silvery/ansi"
 import type { DeepPartial, DeriveOptions, DesignSystem, Theme, ThemeShape } from "./types.ts"
 import { deriveTheme, mergePartial } from "./derive.ts"
-import { populateFlat, STERLING_FLAT_TOKENS } from "./flatten.ts"
+import { STERLING_FLAT_TOKENS } from "./flat-tokens.ts"
 import { defaultScheme } from "./defaults.ts"
+import { defineDesignSystem } from "./define.ts"
 
 const STERLING_SHAPE: ThemeShape = {
   flatTokens: STERLING_FLAT_TOKENS,
@@ -24,11 +33,13 @@ const STERLING_SHAPE: ThemeShape = {
 }
 
 /**
- * Internal: derive → flatten → freeze. Shared by every deriveFrom* entry.
+ * Internal: build a nested Theme (no flat keys). `defineDesignSystem` applies
+ * `bakeFlat` afterwards — the inner derivation stays flat-agnostic.
  */
-function buildTheme(scheme: ColorScheme, opts: DeriveOptions = {}): Theme {
-  const nested = deriveTheme(scheme, opts)
-  return populateFlat({ ...nested })
+function buildRawTheme(scheme: ColorScheme, opts: DeriveOptions = {}): Theme {
+  // `deriveTheme` returns Omit<Theme, keyof FlatTokens> — a nested-only theme.
+  // Cast to Theme; `bakeFlat` (applied by the wrapper) will fill in flat keys.
+  return deriveTheme(scheme, opts) as unknown as Theme
 }
 
 /**
@@ -43,34 +54,34 @@ function applyBrand(scheme: ColorScheme, brand: string): ColorScheme {
   }
 }
 
-export const sterling: DesignSystem = {
+/**
+ * Raw Sterling — returns nested-only Themes. `defineDesignSystem` wraps this
+ * with auto-`bakeFlat` (per `flatten: true`) to produce the user-facing
+ * system with flat keys.
+ */
+const rawSterling: DesignSystem = {
   name: "sterling",
   shape: STERLING_SHAPE,
+  flatten: true,
 
   defaults(mode: "light" | "dark" = "dark"): Theme {
-    return buildTheme(defaultScheme(mode), { contrast: "auto-lift" })
+    return buildRawTheme(defaultScheme(mode), { contrast: "auto-lift" })
   },
 
   theme(partial?: DeepPartial<Theme>, opts: DeriveOptions = {}): Theme {
     const mode = opts.mode ?? "dark"
-    const base = buildTheme(defaultScheme(mode), {
+    const base = buildRawTheme(defaultScheme(mode), {
       ...opts,
       contrast: opts.contrast ?? "auto-lift",
     })
     if (!partial) return base
-    // Merge partial over base, then re-flatten (nested keys may have changed).
-    const merged = mergePartial(base, partial)
-    // Re-flatten the merged result. mergePartial returns an unfrozen shallow
-    // copy of the object in the shape of Theme; we need to rewrite flat keys
-    // and re-freeze.
-    const rebuilt: any = { ...merged }
-    // Clear the old flat keys — they may be stale after patching the nested form.
-    for (const k of STERLING_FLAT_TOKENS) delete rebuilt[k]
-    return populateFlat(rebuilt)
+    // Merge partial over base (both nested-only). `bakeFlat` (applied by the
+    // wrapper) will compute fresh flat keys from the merged nested form.
+    return mergePartial(base, partial)
   },
 
   deriveFromScheme(scheme: ColorScheme, opts: DeriveOptions = {}): Theme {
-    return buildTheme(scheme, opts)
+    return buildRawTheme(scheme, opts)
   },
 
   deriveFromColor(color: string, opts: DeriveOptions & { mode?: "light" | "dark" } = {}): Theme {
@@ -84,7 +95,7 @@ export const sterling: DesignSystem = {
       blue: color,
       brightBlue: blend(color, "#ffffff", 0.15),
     }
-    return buildTheme(scheme, opts)
+    return buildRawTheme(scheme, opts)
   },
 
   deriveFromPair(
@@ -96,12 +107,19 @@ export const sterling: DesignSystem = {
     dark: Theme
   } {
     return {
-      light: buildTheme(light, { ...opts, mode: "light" }),
-      dark: buildTheme(dark, { ...opts, mode: "dark" }),
+      light: buildRawTheme(light, { ...opts, mode: "light" }),
+      dark: buildRawTheme(dark, { ...opts, mode: "dark" }),
     }
   },
 
   deriveFromSchemeWithBrand(scheme: ColorScheme, brand: string, opts: DeriveOptions = {}): Theme {
-    return buildTheme(applyBrand(scheme, brand), opts)
+    return buildRawTheme(applyBrand(scheme, brand), opts)
   },
 }
+
+/**
+ * Sterling — the user-facing DesignSystem. `defineDesignSystem` wraps
+ * `rawSterling` with auto-`bakeFlat` (per `flatten: true`), so every
+ * returned Theme has both nested roles AND flat hyphen keys populated.
+ */
+export const sterling: DesignSystem = defineDesignSystem(rawSterling)

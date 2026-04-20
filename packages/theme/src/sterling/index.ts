@@ -38,7 +38,14 @@ export type {
 } from "./types.ts"
 
 export { sterling } from "./sterling.ts"
+export { defineDesignSystem } from "./define.ts"
 export { deriveTheme, deriveRoles, mergePartial } from "./derive.ts"
-export { populateFlat, STERLING_FLAT_TOKENS } from "./flatten.ts"
+export { STERLING_FLAT_TOKENS } from "./flat-tokens.ts"
 export { defaultScheme } from "./defaults.ts"
 export { WCAG_AA, autoLift, checkAA, ContrastError, type ContrastViolation } from "./contrast.ts"
+
+// Re-export the generic flat-projection helper for Sterling users who want
+// it directly (e.g. to bake their own one-off Theme). This is the same
+// function `defineDesignSystem({ flatten: true })` applies under the hood.
+export { bakeFlat, defaultFlattenRule } from "@silvery/ansi"
+export type { FlattenRule } from "@silvery/ansi"
