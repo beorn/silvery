@@ -93,6 +93,13 @@ export {
 } from "./color-maps"
 
 // =============================================================================
+// Flat Projection (generic — any nested-hex DesignSystem Theme)
+// =============================================================================
+
+export { bakeFlat, defaultFlattenRule } from "./flatten"
+export type { FlattenRule } from "./flatten"
+
+// =============================================================================
 // Terminal Control Sequences
 // =============================================================================
 
