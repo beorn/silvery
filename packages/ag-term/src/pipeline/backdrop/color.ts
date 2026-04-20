@@ -3,12 +3,11 @@
  *
  * This module owns the buffer-cell adapter (`colorToHex`), hex↔rgb
  * conversion (`rgbToHex`, `hexToRgb`), hex normalization (`normalizeHex`),
- * and the structural `HexColor` type alias. The color math ops that can
- * pass through to `@silvery/color` (`mixSrgb`, `deemphasizeOklch*`) live in
- * `./color-compat.ts` — they follow the upstream-with-fallback pattern so
- * silvery stays publishable during `@silvery/color` release cycles.
+ * and the structural `HexColor` type alias. Math ops that have an upstream
+ * equivalent (`mixSrgb`, `deemphasize`) are imported from `@silvery/color`
+ * directly. The local polarity-aware variant lives in `./color-shim.ts`.
  *
- * @see ./color-compat.ts for the upstream color math shim.
+ * @see ./color-shim.ts for `deemphasizeOklchToward` (deletion-pending).
  * @see ./plan.ts for the full backdrop color model.
  */
 

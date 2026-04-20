@@ -26,7 +26,7 @@
  * Fg uses OKLCH deemphasize with explicit polarity so colored text
  * deemphasizes toward the correct theme neutral — toward black on dark
  * themes (same formula we've always used), toward white on light themes
- * (new — see `./color-compat.ts` for the math). The quadratic chroma
+ * (new — see `./color-shim.ts` for the math). The quadratic chroma
  * falloff compensates for the human-vision nonlinearity that reads chroma
  * relative to luminance. Bg uses sRGB source-over because the Kitty
  * graphics scrim overlay composites in sRGB at alpha at the hardware

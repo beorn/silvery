@@ -55,10 +55,11 @@
  *   ./region.ts        — shared include/exclude region walker (Uint8Array
  *                         dedup, deterministic iteration order)
  *   ./color.ts         — hex↔rgb adapter, normalizeHex, HexColor brand type
- *   ./color-compat.ts  — upstream-with-fallback shim for mixSrgb /
- *                         deemphasizeOklch[Toward]; prefers @silvery/color
- *                         exports, falls back to local copies during
- *                         publish-cycle lag
+ *   ./color-shim.ts    — local `deemphasizeOklchToward` (polarity-aware
+ *                         dark/light variant). Delete once upstream
+ *                         `@silvery/color` exports the polarity API; until
+ *                         then `mixSrgb` + `deemphasize` are imported from
+ *                         upstream directly.
  *   ./index.ts         — this file: applyBackdrop orchestrator + barrel
  */
 

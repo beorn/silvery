@@ -31,14 +31,17 @@
  *
  * @see ./plan.ts for the color model and scrim derivation.
  * @see ./color.ts for the hex↔rgb adapter helpers.
- * @see ./color-compat.ts for `mixSrgb` + `deemphasizeOklchToward`.
+ * @see @silvery/color for `mixSrgb`.
+ * @see ./color-shim.ts for `deemphasizeOklchToward` (polarity-aware,
+ *   not yet upstream).
  * @see ./region.ts for the shared include/exclude region walker.
  */
 
+import { mixSrgb } from "@silvery/color"
 import type { TerminalBuffer } from "../../buffer"
 import { isLikelyEmoji } from "../../unicode"
 import { colorToHex, type HexColor, hexToRgb } from "./color"
-import { deemphasizeOklchToward, mixSrgb } from "./color-compat"
+import { deemphasizeOklchToward } from "./color-shim"
 import { DARK_SCRIM, LIGHT_SCRIM, type Plan } from "./plan"
 import { forEachFadeRegionCell } from "./region"
 
