@@ -53,7 +53,13 @@ describe("sterling.deriveFromScheme — shape", () => {
 
     expect(theme.error.fg).toBe(theme["fg-error"])
     expect(theme.error.bg).toBe(theme["bg-error"])
-    expect(theme.error.hover.fg).toBe(theme["fg-error-hover"])
+    // Status roles: only bg state variants (fg doesn't hover).
+    expect(theme.error.hover.bg).toBe(theme["bg-error-hover"])
+    expect(theme.error.active.bg).toBe(theme["bg-error-active"])
+    // Prune invariant: fg state variants don't exist on status roles.
+    expect((theme.error.hover as { fg?: unknown }).fg).toBeUndefined()
+    expect((theme.error.active as { fg?: unknown }).fg).toBeUndefined()
+    expect((theme as unknown as Record<string, unknown>)["fg-error-hover"]).toBeUndefined()
 
     expect(theme.success.fg).toBe(theme["fg-success"])
     expect(theme.warning.fg).toBe(theme["fg-warning"])

@@ -230,3 +230,66 @@ describe("sterling adaptive L-shift — no white/black-out at L extremes", () =>
     }
   })
 })
+
+describe("sterling pruned state variants — status text doesn't hover", () => {
+  const theme = sterling.deriveFromScheme(builtinPalettes["catppuccin-frappe"]!)
+
+  test("status roles have no fg state variants (nested form)", () => {
+    // Typescript won't expose `.fg` on BgStatePair — verify at runtime too.
+    for (const role of ["info", "success", "warning", "error"] as const) {
+      const hover = theme[role].hover as unknown as Record<string, unknown>
+      const active = theme[role].active as unknown as Record<string, unknown>
+      expect(hover.fg, `${role}.hover.fg`).toBeUndefined()
+      expect(active.fg, `${role}.active.fg`).toBeUndefined()
+      // bg state still present
+      expect(typeof theme[role].hover.bg, `${role}.hover.bg`).toBe("string")
+      expect(typeof theme[role].active.bg, `${role}.active.bg`).toBe("string")
+    }
+  })
+
+  test("status roles have no fg state variants (flat form)", () => {
+    const flat = theme as unknown as Record<string, unknown>
+    for (const role of ["info", "success", "warning", "error"]) {
+      for (const state of ["hover", "active"]) {
+        expect(flat[`fg-${role}-${state}`], `fg-${role}-${state}`).toBeUndefined()
+        // bg state preserved
+        expect(flat[`bg-${role}-${state}`], `bg-${role}-${state}`).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+      }
+    }
+  })
+
+  test("accent (link-like) keeps fg state variants", () => {
+    expect(theme.accent.hover.fg).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+    expect(theme.accent.active.fg).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+    expect(theme.accent.hover.bg).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+    expect(theme.accent.active.bg).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+    // Flat form too
+    expect(theme["fg-accent-hover"]).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+    expect(theme["fg-accent-active"]).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+    expect(theme["bg-accent-hover"]).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+    expect(theme["bg-accent-active"]).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+  })
+
+  test("muted has no state variants at all (deemphasized, never interactive)", () => {
+    const m = theme.muted as unknown as Record<string, unknown>
+    expect(m.hover).toBeUndefined()
+    expect(m.active).toBeUndefined()
+  })
+
+  test("surface.hover is preserved (surfaces are hoverable)", () => {
+    expect(theme.surface.hover).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+    expect(theme["bg-surface-hover"]).toMatch(/^#[0-9a-fA-F]{3,8}$/)
+  })
+
+  test("catalog: no status role has fg state leakage", () => {
+    for (const name of Object.keys(builtinPalettes)) {
+      const t = sterling.deriveFromScheme(builtinPalettes[name]!)
+      for (const role of ["info", "success", "warning", "error"] as const) {
+        const hover = t[role].hover as unknown as Record<string, unknown>
+        const active = t[role].active as unknown as Record<string, unknown>
+        expect(hover.fg, `${name}.${role}.hover.fg`).toBeUndefined()
+        expect(active.fg, `${name}.${role}.active.fg`).toBeUndefined()
+      }
+    }
+  })
+})

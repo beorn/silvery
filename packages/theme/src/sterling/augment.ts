@@ -121,19 +121,30 @@ export function augmentWithSterlingFlat(theme: LegacyTheme, scheme?: ColorScheme
   // (accent / info / success / warning / error / muted / surface / border /
   // cursor) which still hold hex strings in the legacy form.
 
-  // Interactive roles: accent, info, success, warning, error
-  for (const role of ["accent", "info", "success", "warning", "error"] as const) {
+  // Accent — link-like interactive text: both fg and bg state variants
+  const accent = roles.accent
+  if (accent) {
+    setIfAbsent("fg-accent", accent.fg)
+    setIfAbsent("bg-accent", accent.bg)
+    setIfAbsent("fg-on-accent", accent.fgOn)
+    for (const state of ["hover", "active"] as const) {
+      const s = accent[state]
+      if (!s) continue
+      setIfAbsent(`fg-accent-${state}`, s.fg)
+      setIfAbsent(`bg-accent-${state}`, s.bg)
+    }
+  }
+
+  // Status roles — only bg state variants (text doesn't hover)
+  for (const role of ["info", "success", "warning", "error"] as const) {
     const r = roles[role]
     if (!r) continue
     setIfAbsent(`fg-${role}`, r.fg)
     setIfAbsent(`bg-${role}`, r.bg)
     setIfAbsent(`fg-on-${role}`, r.fgOn)
     for (const state of ["hover", "active"] as const) {
-      const s = (r as { hover?: { fg: string; bg: string }; active?: { fg: string; bg: string } })[
-        state
-      ]
+      const s = (r as { hover?: { bg: string }; active?: { bg: string } })[state]
       if (!s) continue
-      setIfAbsent(`fg-${role}-${state}`, s.fg)
       setIfAbsent(`bg-${role}-${state}`, s.bg)
     }
   }

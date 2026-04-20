@@ -20,15 +20,33 @@ export type { ColorScheme } from "@silvery/ansi"
 
 // ── Role / State / Surface primitives ──────────────────────────────────────
 
-/** Interactive state variants that carry a role's color at different user-action phases. */
+/**
+ * Surface-only state pair: only `bg` varies by state. Used by the status
+ * roles (`info`, `success`, `warning`, `error`) where state variants are
+ * meaningful only for surfaces (filled bg), never for text.
+ *
+ * Text tokens on status roles don't hover — `fg-error` is a status color,
+ * not an interactive link. Keeping `fg.hover` / `fg.active` on those roles
+ * invited algorithmic over-generation that produced illegible results
+ * (e.g. catppuccin-frappe `warning.active.fg` collapsing to `#FFFFFF`).
+ */
+export interface BgStatePair {
+  readonly bg: string
+}
+
+/**
+ * Interactive (link-like) state pair: both `fg` and `bg` vary by state.
+ * Used by `accent` — the canonical interactive-text role.
+ */
 export interface StatePair {
   readonly fg: string
   readonly bg: string
 }
 
 /**
- * An interactive status role — fg, bg, and `fgOn` (text color to draw when
- * rendering ON a filled bg of this role). Plus hover/active state pairs.
+ * A status role — fg, bg, and `fgOn` (text color to draw when rendering ON
+ * a filled bg of this role). State variants apply to SURFACE (bg) only;
+ * text-color state variants are reserved for link-like roles (`accent`).
  */
 export interface InteractiveRole {
   /** Foreground hex — use for text/icon in this role. */
@@ -37,16 +55,30 @@ export interface InteractiveRole {
   readonly bg: string
   /** Foreground to use when drawing ON `bg` (contrast-picked). */
   readonly fgOn: string
-  /** Hover state — typically +0.04L shift. */
-  readonly hover: StatePair
-  /** Active (pressed) state — typically +0.08L shift. */
-  readonly active: StatePair
+  /** Hover state — surface only (adaptive ±L shift on bg). */
+  readonly hover: BgStatePair
+  /** Active (pressed) state — surface only (adaptive ±L shift on bg). */
+  readonly active: BgStatePair
 }
 
-/** Accent adds a focus-ring border to the standard interactive shape. */
-export interface AccentRole extends InteractiveRole {
+/**
+ * Accent — the canonical link-like interactive-text role. Has everything
+ * `InteractiveRole` does PLUS a focus-ring border AND `fg.hover` /
+ * `fg.active` text-color state variants (link hover treatments).
+ */
+export interface AccentRole {
+  /** Foreground hex — use for text/icon in accent. */
+  readonly fg: string
+  /** Background hex — use as fill for emphasis. */
+  readonly bg: string
+  /** Foreground to use when drawing ON `bg` (contrast-picked). */
+  readonly fgOn: string
   /** Border color for focus rings using this accent. */
   readonly border: string
+  /** Hover state — both fg (link hover) and bg (surface hover). */
+  readonly hover: StatePair
+  /** Active (pressed) state — both fg and bg. */
+  readonly active: StatePair
 }
 
 /** Surface hierarchy — `default` is the canvas, subtle/raised/overlay stack upward. */
@@ -118,10 +150,10 @@ export type FlatToken =
   // Cursor
   | "fg-cursor"
   | "bg-cursor"
-  // Muted
+  // Muted (status-text — no state variants)
   | "fg-muted"
   | "bg-muted"
-  // Accent (has border)
+  // Accent — link-like interactive text, keeps fg.hover + fg.active
   | "fg-accent"
   | "bg-accent"
   | "fg-on-accent"
@@ -130,37 +162,29 @@ export type FlatToken =
   | "fg-accent-active"
   | "bg-accent-active"
   | "border-accent"
-  // Info
+  // Info — status role; bg-state only (text doesn't hover)
   | "fg-info"
   | "bg-info"
   | "fg-on-info"
-  | "fg-info-hover"
   | "bg-info-hover"
-  | "fg-info-active"
   | "bg-info-active"
-  // Success
+  // Success — status role; bg-state only
   | "fg-success"
   | "bg-success"
   | "fg-on-success"
-  | "fg-success-hover"
   | "bg-success-hover"
-  | "fg-success-active"
   | "bg-success-active"
-  // Warning
+  // Warning — status role; bg-state only
   | "fg-warning"
   | "bg-warning"
   | "fg-on-warning"
-  | "fg-warning-hover"
   | "bg-warning-hover"
-  | "fg-warning-active"
   | "bg-warning-active"
-  // Error
+  // Error — status role; bg-state only
   | "fg-error"
   | "bg-error"
   | "fg-on-error"
-  | "fg-error-hover"
   | "bg-error-hover"
-  | "fg-error-active"
   | "bg-error-active"
 
 /** The flat projection — every FlatToken maps to a hex string. */

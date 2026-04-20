@@ -19,7 +19,14 @@
 
 import type { Theme, FlatToken } from "./types.ts"
 
-const INTERACTIVE_ROLES = ["accent", "info", "success", "warning", "error"] as const
+/**
+ * Roles that get state variants. Split by which keys vary:
+ *   - `accent` is link-like: both fg AND bg vary (fg.hover / fg.active +
+ *     bg.hover / bg.active).
+ *   - `info | success | warning | error` are status roles: only SURFACE
+ *     (bg) varies; text doesn't hover.
+ */
+const STATUS_ROLES = ["info", "success", "warning", "error"] as const
 const STATES = ["hover", "active"] as const
 
 /**
@@ -29,7 +36,23 @@ const STATES = ["hover", "active"] as const
  * After this runs, the object is a full Theme (FlatTokens & Roles).
  */
 export function populateFlat(theme: any): Theme {
-  for (const role of INTERACTIVE_ROLES) {
+  // Accent — link-like: emit both fg and bg state variants + border
+  const accent = theme.accent
+  if (accent) {
+    theme["fg-accent"] = accent.fg
+    theme["bg-accent"] = accent.bg
+    theme["fg-on-accent"] = accent.fgOn
+    for (const state of STATES) {
+      const s = accent[state]
+      if (!s) continue
+      theme[`fg-accent-${state}`] = s.fg
+      theme[`bg-accent-${state}`] = s.bg
+    }
+    if (accent.border) theme["border-accent"] = accent.border
+  }
+
+  // Status roles — emit fg, bg, fgOn + bg.{hover,active} ONLY (no fg state)
+  for (const role of STATUS_ROLES) {
     const r = theme[role]
     if (!r) continue
     theme[`fg-${role}`] = r.fg
@@ -38,14 +61,8 @@ export function populateFlat(theme: any): Theme {
     for (const state of STATES) {
       const s = r[state]
       if (!s) continue
-      theme[`fg-${role}-${state}`] = s.fg
       theme[`bg-${role}-${state}`] = s.bg
     }
-  }
-
-  // Accent's border
-  if (theme.accent?.border) {
-    theme["border-accent"] = theme.accent.border
   }
 
   // Surface
@@ -113,7 +130,7 @@ export const STERLING_FLAT_TOKENS: readonly FlatToken[] = [
   // Muted
   "fg-muted",
   "bg-muted",
-  // Accent
+  // Accent — link-like interactive text, keeps fg state variants
   "fg-accent",
   "bg-accent",
   "fg-on-accent",
@@ -122,36 +139,28 @@ export const STERLING_FLAT_TOKENS: readonly FlatToken[] = [
   "fg-accent-active",
   "bg-accent-active",
   "border-accent",
-  // Info
+  // Info — status role; bg state only
   "fg-info",
   "bg-info",
   "fg-on-info",
-  "fg-info-hover",
   "bg-info-hover",
-  "fg-info-active",
   "bg-info-active",
-  // Success
+  // Success — status role; bg state only
   "fg-success",
   "bg-success",
   "fg-on-success",
-  "fg-success-hover",
   "bg-success-hover",
-  "fg-success-active",
   "bg-success-active",
-  // Warning
+  // Warning — status role; bg state only
   "fg-warning",
   "bg-warning",
   "fg-on-warning",
-  "fg-warning-hover",
   "bg-warning-hover",
-  "fg-warning-active",
   "bg-warning-active",
-  // Error
+  // Error — status role; bg state only
   "fg-error",
   "bg-error",
   "fg-on-error",
-  "fg-error-hover",
   "bg-error-hover",
-  "fg-error-active",
   "bg-error-active",
 ]

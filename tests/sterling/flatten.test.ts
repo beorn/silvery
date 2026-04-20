@@ -17,14 +17,16 @@ describe("sterling flatten", () => {
     }
   })
 
-  test("STERLING_FLAT_TOKENS has exactly 47 tokens", () => {
-    // 5 surface + 3 border + 2 cursor + 2 muted + 8 accent + 7 info + 7 success + 7 warning + 7 error = 48
-    // accent has border so it's 8. Actually: accent = fg, bg, fgOn, hover.fg, hover.bg, active.fg, active.bg, border = 8
-    // others = 7 each (no border)
-    // surfaces = 5, border = 3, cursor = 2, muted = 2 = 12
-    // roles = 8 + 7*4 = 36
-    // total = 48
-    expect(STERLING_FLAT_TOKENS.length).toBe(48)
+  test("STERLING_FLAT_TOKENS has exactly 40 tokens", () => {
+    // Status roles (info/success/warning/error) no longer emit fg-X-hover
+    // and fg-X-active — text tokens on status roles are not state-varying.
+    //   surfaces = 5, border = 3, cursor = 2, muted = 2                = 12
+    //   accent (link-like) = fg, bg, fgOn, border,
+    //     fg-hover, bg-hover, fg-active, bg-active                      =  8
+    //   info | success | warning | error — each:
+    //     fg, bg, fgOn, bg-hover, bg-active = 5, × 4                   = 20
+    //   total = 40
+    expect(STERLING_FLAT_TOKENS.length).toBe(40)
   })
 
   test("theme is frozen (direct assignment throws in strict mode)", () => {
@@ -42,10 +44,10 @@ describe("sterling flatten", () => {
     expect(theme.surface.overlay).toBe(theme["bg-surface-overlay"])
   })
 
-  test("Object.keys counts ~59 entries (48 flat + 9 roles + mode + name)", () => {
+  test("Object.keys counts ~51 entries (40 flat + 9 roles + mode + name)", () => {
     const keys = Object.keys(theme)
-    expect(keys.length).toBeGreaterThanOrEqual(57)
-    expect(keys.length).toBeLessThanOrEqual(61)
+    expect(keys.length).toBeGreaterThanOrEqual(49)
+    expect(keys.length).toBeLessThanOrEqual(53)
   })
 
   test("flat-only filter finds exactly STERLING_FLAT_TOKENS entries", () => {

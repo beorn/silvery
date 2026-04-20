@@ -487,7 +487,6 @@ function buildInteractive(
   const roleBg = guard(`${name}.bg`, `bg-${name}`, seedRule(name), [seed], seed)
   const delta = stateDeltas(roleBg)
   const bgDir = shiftLabel(roleBg)
-  const fgDir = shiftLabel(fg)
 
   const fgOn = guard(
     `${name}.fgOn`,
@@ -497,6 +496,10 @@ function buildInteractive(
     pickFgOn(roleBg, scheme),
     roleBg,
   )
+  // Status roles: ONLY bg state variants. Text doesn't hover — fg-error
+  // is "this is an error", not an interactive link. Removing fg.hover /
+  // fg.active prevents the algorithmic over-generation of illegible
+  // variants on high-L seeds (see catppuccin-frappe warning whiteout).
   const hoverBg = guard(
     `${name}.hover.bg`,
     `bg-${name}-hover`,
@@ -511,29 +514,13 @@ function buildInteractive(
     [roleBg],
     shiftL(roleBg, delta.active),
   )
-  const hoverFg = guard(
-    `${name}.hover.fg`,
-    `fg-${name}-hover`,
-    `OKLCH ${fgDir} ${delta.hover}L on ${name}.fg`,
-    [fg],
-    shiftL(fg, delta.hover),
-    bg,
-  )
-  const activeFg = guard(
-    `${name}.active.fg`,
-    `fg-${name}-active`,
-    `OKLCH ${fgDir} ${delta.active}L on ${name}.fg`,
-    [fg],
-    shiftL(fg, delta.active),
-    bg,
-  )
 
   return {
     fg,
     bg: roleBg,
     fgOn,
-    hover: { fg: hoverFg, bg: hoverBg },
-    active: { fg: activeFg, bg: activeBg },
+    hover: { bg: hoverBg },
+    active: { bg: activeBg },
   }
 }
 
