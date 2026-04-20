@@ -134,7 +134,9 @@ describe("buildFadePlan — marker collection", () => {
     const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
     expect(plan.includes).toHaveLength(1)
     expect(plan.excludes).toHaveLength(0)
-    expect(plan.includes[0]!.amount).toBe(0.25)
+    // The per-rect `amount` was removed in the A1 follow-up; the single
+    // `plan.amount` is the source of truth for realization.
+    expect(plan.amount).toBe(0.25)
     expect(plan.includes[0]!.rect).toBe(RECT)
   })
 
@@ -150,7 +152,6 @@ describe("buildFadePlan — marker collection", () => {
     const child = fakeNode({ "data-backdrop-fade": 2.5 }, RECT)
     const root = fakeNode({}, null, [child])
     const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
-    expect(plan.includes[0]!.amount).toBe(1)
     expect(plan.amount).toBe(1)
   })
 

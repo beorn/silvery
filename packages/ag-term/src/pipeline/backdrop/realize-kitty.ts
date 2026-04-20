@@ -13,10 +13,13 @@
  * For a given `(plan, buffer)` pair, this function produces a byte-identical
  * string on every invocation. STRICT mode compares the overlay across
  * fresh and incremental paths to catch latent non-determinism in marker
- * collection order, emoji walk ordering, or placement ID derivation.
+ * collection order, emoji walk ordering, or placement ID derivation. The
+ * shared `forEachFadeRegionCell` walker provides the stable row-ascending,
+ * col-ascending iteration order.
  *
  * @see ./plan.ts for the FadePlan shape and color model.
  * @see ./realize-buffer.ts for the complementary cell-level transform.
+ * @see ./region.ts for the shared include/exclude walker.
  */
 
 import {
@@ -32,7 +35,8 @@ import {
 import type { TerminalBuffer } from "../../buffer"
 import { isLikelyEmoji } from "../../unicode"
 import { hexToRgb } from "./color"
-import type { FadePlan, FadeRect } from "./plan"
+import type { FadePlan } from "./plan"
+import { forEachFadeRegionCell } from "./region"
 
 /**
  * Stage 2b — emit the Kitty graphics overlay for the plan.
@@ -50,38 +54,14 @@ import type { FadePlan, FadeRect } from "./plan"
 export function realizeFadePlanToKittyOverlay(plan: FadePlan, buffer: TerminalBuffer): string {
   if (!plan.active) return ""
 
-  return buildKittyOverlay(buffer, plan.includes, plan.excludes, plan.scrim, plan.defaultBg, plan.amount)
-}
-
-/**
- * Build the Kitty graphics escape sequence that covers wide-char cells in the
- * backdrop region with a translucent scrim.
- *
- * The scrim alpha matches the fade `amount` (scaled 0-255) so the composited
- * emoji bg lands at the same luminance as surrounding text cells: both
- * produce `cell_bg * (1 - amount) + scrim * amount`.
- *
- * Always emits at least `CURSOR_SAVE + kittyDeleteAllScrimPlacements() +
- * CURSOR_RESTORE` when called — even with zero wide cells in the region —
- * so stale placements from a previous frame get cleared. Without the
- * unconditional clear, an emoji visible under a modal in frame N could
- * persist as an orphan scrim into frame N+1 after the modal closes.
- */
-function buildKittyOverlay(
-  buffer: TerminalBuffer,
-  includes: readonly FadeRect[],
-  excludes: readonly FadeRect[],
-  scrim: string | null,
-  defaultBg: string | null,
-  amount: number,
-): string {
-  const cells = collectEmojiCellsInFadeRegion(buffer, includes, excludes)
+  const cells = collectEmojiCellsInFadeRegion(buffer, plan)
 
   // Tint the scrim with the same color used for cell mixing (pure black /
-  // white by theme luminance). Fallback to pure black.
-  const tintHex = scrim ?? defaultBg ?? "#000000"
+  // white by theme luminance, or an app-supplied custom scrim). Fallback
+  // to pure black.
+  const tintHex = plan.scrim ?? plan.defaultBg ?? "#000000"
   const tint = hexToRgb(tintHex) ?? { r: 0, g: 0, b: 0 }
-  const scrimAlpha = Math.max(0, Math.min(255, Math.round(amount * 255)))
+  const scrimAlpha = Math.max(0, Math.min(255, Math.round(plan.amount * 255)))
 
   const parts: string[] = []
   parts.push(CURSOR_SAVE)
@@ -114,57 +94,29 @@ function buildKittyOverlay(
 }
 
 /**
- * Walk the include and exclude rects and collect the coordinates of every
- * EMOJI lead cell inside a faded region. CJK and other wide TEXT cells are
- * excluded — they respond to fg color mixing like normal text and don't
- * need the Kitty overlay. Only bitmap-glyph cells (detected via
- * `isLikelyEmoji(cell.char)`) need an overlay because their rendering
- * ignores the fg color.
+ * Collect the coordinates of every EMOJI lead cell inside the plan's faded
+ * region. CJK and other wide TEXT cells are excluded — they respond to fg
+ * color mixing like normal text and don't need the Kitty overlay. Only
+ * bitmap-glyph cells (detected via `isLikelyEmoji(cell.char)`) need an
+ * overlay because their rendering ignores the fg color.
+ *
+ * The iteration order is deterministic (delegated to
+ * `forEachFadeRegionCell`), matching the buffer realizer's order. STRICT
+ * mode compares the overlay string across fresh and incremental paths —
+ * any drift in this order would fail the comparison.
  */
 function collectEmojiCellsInFadeRegion(
   buffer: TerminalBuffer,
-  includes: readonly FadeRect[],
-  excludes: readonly FadeRect[],
+  plan: FadePlan,
 ): Array<{ x: number; y: number }> {
-  const seen = new Set<number>() // encoded y * W + x
   const out: Array<{ x: number; y: number }> = []
-
-  const add = (x: number, y: number) => {
+  forEachFadeRegionCell(buffer.width, buffer.height, plan.includes, plan.excludes, (x, y) => {
     if (x + 1 >= buffer.width) return // no room for continuation
     if (!buffer.isCellWide(x, y)) return
     if (buffer.isCellContinuation(x, y)) return
     const cell = buffer.getCell(x, y)
     if (!isLikelyEmoji(cell.char ?? "")) return
-    const key = y * buffer.width + x
-    if (seen.has(key)) return
-    seen.add(key)
     out.push({ x, y })
-  }
-
-  for (const { rect } of includes) {
-    const x0 = Math.max(0, rect.x)
-    const y0 = Math.max(0, rect.y)
-    const x1 = Math.min(buffer.width, rect.x + rect.width)
-    const y1 = Math.min(buffer.height, rect.y + rect.height)
-    for (let y = y0; y < y1; y++) {
-      for (let x = x0; x < x1; x++) add(x, y)
-    }
-  }
-
-  if (excludes.length > 0) {
-    for (const { rect } of excludes) {
-      const ix0 = Math.max(0, rect.x)
-      const iy0 = Math.max(0, rect.y)
-      const ix1 = Math.min(buffer.width, rect.x + rect.width)
-      const iy1 = Math.min(buffer.height, rect.y + rect.height)
-      for (let y = 0; y < buffer.height; y++) {
-        for (let x = 0; x < buffer.width; x++) {
-          if (x >= ix0 && x < ix1 && y >= iy0 && y < iy1) continue
-          add(x, y)
-        }
-      }
-    }
-  }
-
+  })
   return out
 }

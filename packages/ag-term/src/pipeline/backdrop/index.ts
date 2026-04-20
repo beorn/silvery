@@ -43,6 +43,21 @@
  * path. Only EMOJI (bitmap glyphs that ignore `fg`) need special handling,
  * detected via `isLikelyEmoji(cell.char)`. See `./realize-buffer.ts` for
  * the full text-vs-emoji decision table.
+ *
+ * ## Module layout
+ *
+ *   ./plan.ts         — stage 1: buildFadePlan, FadePlan / FadeRect shapes,
+ *                        marker collection, single-amount invariant
+ *   ./realize-buffer.ts — stage 2a: cell-level buffer transform
+ *   ./realize-kitty.ts  — stage 2b: Kitty overlay emission
+ *   ./region.ts       — shared include/exclude region walker (Uint8Array
+ *                        dedup, deterministic iteration order)
+ *   ./color.ts        — hex↔rgb adapter, normalizeHex, HexColor brand type
+ *   ./color-compat.ts — upstream-with-fallback shim for mixSrgb /
+ *                        deemphasizeOklch[Toward]; prefers @silvery/color
+ *                        exports, falls back to local copies during
+ *                        publish-cycle lag
+ *   ./index.ts        — this file: applyBackdropFade orchestrator + barrel
  */
 
 import {
@@ -60,12 +75,17 @@ import { realizeFadePlanToKittyOverlay } from "./realize-kitty"
 // below) or from `./pipeline` (which re-re-exports).
 export {
   buildFadePlan,
+  DEFAULT_FADE_AMOUNT,
   hasBackdropMarkers,
+  INACTIVE_PLAN,
   type BackdropColorLevel,
   type BackdropFadeOptions,
   type FadePlan,
   type FadeRect,
 } from "./plan"
+export { type HexColor, normalizeHex } from "./color"
+export { deemphasizeOklch, deemphasizeOklchToward, mixSrgb } from "./color-compat"
+export { forEachFadeRegionCell } from "./region"
 export { realizeFadePlanToBuffer } from "./realize-buffer"
 export { realizeFadePlanToKittyOverlay } from "./realize-kitty"
 

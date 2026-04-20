@@ -2,9 +2,10 @@
  * Backdrop fade — stage 2a: apply the plan's cell-level transform to the
  * terminal buffer.
  *
- * Walks every include rect (fade cells INSIDE) and every exclude rect (fade
- * cells OUTSIDE). Trusts the plan: no marker re-collection, no
- * scrim/default resolution, no amount validation.
+ * Uses the shared `forEachFadeRegionCell` walker (`./region.ts`) to visit
+ * every cell covered by the plan's include + exclude rects exactly once.
+ * Trusts the plan: no marker re-collection, no scrim/default resolution,
+ * no amount validation.
  *
  * Wide ≠ emoji. CJK / Hangul / Japanese fullwidth text occupies two columns
  * but responds to `fg` color normally — it goes through the standard mix
@@ -14,7 +15,7 @@
  * For emoji cells, two paths, mutually exclusive:
  *
  * 1. **Kitty graphics available** (`kittyEnabled === true`): emoji cells
- *    are SKIPPED entirely here. `../realize-kitty.ts` emits a translucent
+ *    are SKIPPED entirely here. `./realize-kitty.ts` emits a translucent
  *    scrim image at alpha=amount above each emoji cell, and the terminal
  *    composites the overlay on top of the unmixed cell, landing at
  *    `cell_bg * (1 - amount) + scrim * amount` — the same luminance as
@@ -28,21 +29,24 @@
  *    matches surroundings.
  *
  * @see ./plan.ts for the color model and scrim derivation.
- * @see ./color.ts for the sRGB / OKLCH color math.
+ * @see ./color.ts for the hex↔rgb adapter helpers.
+ * @see ./color-compat.ts for `mixSrgb` + `deemphasizeOklchToward`.
+ * @see ./region.ts for the shared include/exclude region walker.
  */
 
-import type { Rect } from "@silvery/ag/types"
 import type { TerminalBuffer } from "../../buffer"
 import { isLikelyEmoji } from "../../unicode"
-import { colorToHex, deemphasizeOklch, hexToRgb, mixSrgb } from "./color"
+import { colorToHex, type HexColor, hexToRgb } from "./color"
+import { deemphasizeOklchToward, mixSrgb } from "./color-compat"
 import { DARK_SCRIM, LIGHT_SCRIM, type FadePlan } from "./plan"
+import { forEachFadeRegionCell } from "./region"
 
 /**
  * Stage 2a — apply the plan's cell-level transform to the buffer.
  *
- * Walks every include rect (fade cells INSIDE) and every exclude rect (fade
- * cells OUTSIDE). Trusts the plan: no marker re-collection, no
- * scrim/default resolution, no amount validation.
+ * Walks every include + exclude cell once via `forEachFadeRegionCell` and
+ * applies `fadeCell` with the plan's single `amount`. The buffer is mutated
+ * in place.
  *
  * When `kittyEnabled === true`, emoji cells (detected via
  * `isLikelyEmoji(cell.char)`) are SKIPPED — the Kitty overlay realizer
@@ -58,94 +62,13 @@ export function realizeFadePlanToBuffer(
   kittyEnabled: boolean,
 ): boolean {
   if (!plan.active) return false
+  if (plan.amount <= 0) return false
 
   let bufferModified = false
-
-  // Pass 1: data-backdrop-fade — fade cells INSIDE each marked rect.
-  for (const { rect, amount } of plan.includes) {
-    if (amount <= 0) continue
-    if (fadeRect(buffer, rect, amount, plan.scrim, plan.defaultBg, plan.defaultFg, kittyEnabled))
-      bufferModified = true
-  }
-
-  // Pass 2: data-backdrop-fade-excluded — fade everything OUTSIDE each marked
-  // rect (the modal "cuts a hole").
-  if (plan.excludes.length > 0) {
-    const fullRect: Rect = { x: 0, y: 0, width: buffer.width, height: buffer.height }
-    for (const { rect, amount } of plan.excludes) {
-      if (amount <= 0) continue
-      if (
-        fadeRectExcluding(
-          buffer,
-          fullRect,
-          rect,
-          amount,
-          plan.scrim,
-          plan.defaultBg,
-          plan.defaultFg,
-          kittyEnabled,
-        )
-      )
-        bufferModified = true
-    }
-  }
-
+  forEachFadeRegionCell(buffer.width, buffer.height, plan.includes, plan.excludes, (x, y) => {
+    if (fadeCell(buffer, x, y, plan, kittyEnabled)) bufferModified = true
+  })
   return bufferModified
-}
-
-function fadeRect(
-  buffer: TerminalBuffer,
-  rect: Rect,
-  amount: number,
-  scrim: string | null,
-  defaultBg: string | null,
-  defaultFg: string | null,
-  kittyEnabled: boolean,
-): boolean {
-  const x0 = Math.max(0, rect.x)
-  const y0 = Math.max(0, rect.y)
-  const x1 = Math.min(buffer.width, rect.x + rect.width)
-  const y1 = Math.min(buffer.height, rect.y + rect.height)
-  if (x0 >= x1 || y0 >= y1) return false
-
-  let any = false
-  for (let y = y0; y < y1; y++) {
-    for (let x = x0; x < x1; x++) {
-      if (fadeCell(buffer, x, y, amount, scrim, defaultBg, defaultFg, kittyEnabled)) any = true
-    }
-  }
-  return any
-}
-
-function fadeRectExcluding(
-  buffer: TerminalBuffer,
-  outer: Rect,
-  inner: Rect,
-  amount: number,
-  scrim: string | null,
-  defaultBg: string | null,
-  defaultFg: string | null,
-  kittyEnabled: boolean,
-): boolean {
-  const ox0 = Math.max(0, outer.x)
-  const oy0 = Math.max(0, outer.y)
-  const ox1 = Math.min(buffer.width, outer.x + outer.width)
-  const oy1 = Math.min(buffer.height, outer.y + outer.height)
-
-  const ix0 = Math.max(ox0, inner.x)
-  const iy0 = Math.max(oy0, inner.y)
-  const ix1 = Math.min(ox1, inner.x + inner.width)
-  const iy1 = Math.min(oy1, inner.y + inner.height)
-  const innerValid = ix0 < ix1 && iy0 < iy1
-
-  let any = false
-  for (let y = oy0; y < oy1; y++) {
-    for (let x = ox0; x < ox1; x++) {
-      if (innerValid && x >= ix0 && x < ix1 && y >= iy0 && y < iy1) continue
-      if (fadeCell(buffer, x, y, amount, scrim, defaultBg, defaultFg, kittyEnabled)) any = true
-    }
-  }
-  return any
 }
 
 /**
@@ -153,21 +76,24 @@ function fadeRectExcluding(
  *
  * Two-channel transform (see `./plan.ts` for the full color model):
  *
- *   fg' = deemphasizeOklch(fg, amount)   // OKLCH: L*=(1-α), C*=(1-α)², H preserved
- *   bg' = mixSrgb(bg, scrim, amount)     // sRGB source-over alpha
+ *   fg' = deemphasizeOklchToward(fg, amount, scrimTowardLight)
+ *   bg' = mixSrgb(bg, scrim, amount)
  *
  * Fg uses OKLCH deemphasize (not sRGB mixing) so colored text deemphasizes
- * perceptually — pale lavender becomes dull slate, not deep indigo. Bg uses
- * sRGB source-over because the Kitty graphics scrim overlay composites in
- * sRGB at alpha at the hardware level.
+ * perceptually — pale lavender becomes dull slate on dark themes, pale
+ * grey on light themes. The polarity flag `scrimTowardLight` (from the
+ * plan) steers L toward 0 or 1; chroma falloff is symmetric. Bg uses sRGB
+ * source-over because the Kitty graphics scrim overlay composites in sRGB
+ * at alpha at the hardware level.
  *
- * `null`/`DEFAULT_BG` cells are resolved to `defaultBg` first (that IS the
- * color the terminal paints), then mixed toward the scrim — so empty cells
- * darken at the same rate as explicitly-colored cells.
+ * `null`/`DEFAULT_BG` cells are resolved to `plan.defaultBg` first (that
+ * IS the color the terminal paints), then mixed toward the scrim — so
+ * empty cells darken at the same rate as explicitly-colored cells.
  *
  * Uniform amounts for fg + bg preserve relative brightness ordering across
- * borders vs fills. Heaviness is controlled by `amount` (default 0.25,
- * calibrated against macOS 0.20, Material 3 0.32, iOS 0.40, Flutter 0.54).
+ * borders vs fills. Heaviness is controlled by `plan.amount` (default
+ * 0.25, calibrated against macOS 0.20, Material 3 0.32, iOS 0.40, Flutter
+ * 0.54).
  *
  * The `scrim !== null` gate activates the full two-channel path: fg always
  * deemphasizes, and bg mixes toward the scrim when a resolvable bg hex is
@@ -193,10 +119,7 @@ function fadeCell(
   buffer: TerminalBuffer,
   x: number,
   y: number,
-  amount: number,
-  scrim: string | null,
-  defaultBg: string | null,
-  defaultFg: string | null,
+  plan: FadePlan,
   kittyEnabled: boolean,
 ): boolean {
   // Skip continuation half of wide chars — the leading cell at x-1 updates
@@ -219,6 +142,7 @@ function fadeCell(
   // double-fade and produce a visibly blacker emoji bg.
   if (kittyEnabled && isEmojiGlyph) return false
 
+  const { amount, scrim, defaultBg, defaultFg, scrimTowardLight } = plan
   const rawFgHex = colorToHex(cell.fg)
 
   if (scrim !== null) {
@@ -233,11 +157,8 @@ function fadeCell(
     // fade entirely — bg darkens but fg stays at full terminal brightness,
     // producing a visible "text POPS against faded bg" effect that users
     // perceive as "colors look more saturated when darkened".
-    const fgHex =
-      rawFgHex ??
-      defaultFg ??
-      // Last-ditch: opposite of scrim (white for dark scrim, black for light)
-      (scrim === DARK_SCRIM ? LIGHT_SCRIM : DARK_SCRIM)
+    const fgHex: HexColor =
+      rawFgHex ?? defaultFg ?? (scrimTowardLight ? DARK_SCRIM : LIGHT_SCRIM)
 
     // sRGB source-over mix: uniform bg toward scrim at `amount`. sRGB
     // matches the Kitty graphics overlay compositing so text-cell bg and
@@ -245,7 +166,7 @@ function fadeCell(
     // `colorToHex(cell.bg) ?? defaultBg` — when cell.bg is null/default
     // and no defaultBg is available, bgHex stays null and we skip the bg
     // mix while still deemphasizing fg.
-    const bgHex = colorToHex(cell.bg) ?? defaultBg
+    const bgHex: HexColor | null = colorToHex(cell.bg) ?? defaultBg
     const mixedBgHex = bgHex !== null ? mixSrgb(bgHex, scrim, amount) : null
     const mixedBg = mixedBgHex !== null ? hexToRgb(mixedBgHex) : null
 
@@ -256,10 +177,11 @@ function fadeCell(
     const stampEmojiDim = isEmojiGlyph
     const newAttrs = stampEmojiDim && !cell.attrs.dim ? { ...cell.attrs, dim: true } : cell.attrs
 
-    // Fg uses OKLCH deemphasize — linear L, quadratic C, preserves H. See
-    // `deemphasizeOklch` docblock for the perceptual rationale. Bg stays
-    // sRGB to match Kitty overlay compositing.
-    const deemphasizedFgHex = deemphasizeOklch(fgHex, amount)
+    // Fg uses OKLCH deemphasize — L toward 0 (dark) or 1 (light) per
+    // `scrimTowardLight`, C *= (1-α)², H preserved. See
+    // `deemphasizeOklchToward` docblock for the perceptual rationale. Bg
+    // stays sRGB to match Kitty overlay compositing.
+    const deemphasizedFgHex = deemphasizeOklchToward(fgHex, amount, scrimTowardLight)
     const mixedFg = hexToRgb(deemphasizedFgHex)
 
     if (mixedFg) {

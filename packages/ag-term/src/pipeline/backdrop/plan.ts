@@ -4,8 +4,8 @@
  * `buildFadePlan(root, options)` is a PURE, capability-independent pass that
  * walks the tree, collects `data-backdrop-fade` / `data-backdrop-fade-excluded`
  * markers, enforces the single-amount invariant, and resolves the scrim +
- * default colors. The realizers (`../realize-buffer.ts`,
- * `../realize-kitty.ts`) trust the plan: they do NOT re-walk the tree,
+ * default colors. The realizers (`./realize-buffer.ts`,
+ * `./realize-kitty.ts`) trust the plan: they do NOT re-walk the tree,
  * re-resolve the scrim, or re-validate amounts. This module is the single
  * source of truth.
  *
@@ -14,22 +14,24 @@
  * The pass fades every covered cell by blending BOTH fg AND bg toward a
  * neutral scrim color at the caller's `amount`. Default scrim: pure black
  * for dark themes (Apple `colorWithWhite:0.0 alpha:0.4`), pure white for
- * light. Default amount: 0.25 (calibrated against macOS 0.20, Material 3
- * 0.32, iOS 0.40, Flutter 0.54).
+ * light. Default amount: `DEFAULT_FADE_AMOUNT` (0.25) — calibrated against
+ * macOS 0.20, Material 3 0.32, iOS 0.40, Flutter 0.54.
  *
  * ### Two operations, one per channel
  *
- *   fg' = deemphasize(fg, amount)     // OKLCH: L*=(1-α), C*=(1-α)², H preserved
- *   bg' = mixSrgb(bg, scrim, amount)  // sRGB source-over alpha
+ *   fg' = deemphasizeOklchToward(fg, amount, towardLight)
+ *                                             // OKLCH: L toward 0 or 1,
+ *                                             //        C *= (1-α)²
+ *   bg' = mixSrgb(bg, scrim, amount)          // sRGB source-over alpha
  *
- * Why the split: foreground colored text is where users notice "darkened
- * colors look MORE saturated" — human vision reads chroma RELATIVE to
- * luminance nonlinearly. The quadratic chroma falloff in `deemphasize`
- * compensates: chroma drops faster than lightness, producing a perceptually
- * muted result rather than an "intensified dark" — a pale lavender becomes
- * dull slate, not deep indigo. Background uses sRGB source-over because the
- * Kitty graphics scrim overlay composites in sRGB at alpha at the hardware
- * level. See `../color.ts` for the math.
+ * Fg uses OKLCH deemphasize with explicit polarity so colored text
+ * deemphasizes toward the correct theme neutral — toward black on dark
+ * themes (same formula we've always used), toward white on light themes
+ * (new — see `./color-compat.ts` for the math). The quadratic chroma
+ * falloff compensates for the human-vision nonlinearity that reads chroma
+ * relative to luminance. Bg uses sRGB source-over because the Kitty
+ * graphics scrim overlay composites in sRGB at alpha at the hardware
+ * level.
  *
  * ### Uniform amount per channel, heaviness tuned at call site
  *
@@ -43,8 +45,8 @@
  * - Dark themes: pure black (`#000000`) — Apple's modal-sheet dimming color.
  * - Light themes: pure white (`#ffffff`) — the sign-flipped equivalent.
  *
- * Null-bg cells are resolved to rootBg first, then `mixSrgb` toward the
- * scrim — empty cells darken at the same rate as explicitly-colored ones.
+ * Null-bg cells are resolved to `defaultBg` first, then `mixSrgb` toward
+ * the scrim — empty cells darken at the same rate as explicitly-colored ones.
  *
  * Tiers (`colorLevel`): a single code path for all supported tiers. For
  * `"none"` (monochrome) the pass short-circuits to a no-op. For `basic`,
@@ -61,6 +63,7 @@
 
 import { relativeLuminance } from "@silvery/color"
 import type { AgNode, Rect } from "@silvery/ag/types"
+import { type HexColor, normalizeHex } from "./color"
 
 export type BackdropColorLevel = "none" | "basic" | "256" | "truecolor"
 
@@ -77,12 +80,12 @@ export interface BackdropFadeOptions {
    * want a tinted scrim (e.g., a mid-gray for flat-color TUIs) override
    * here.
    */
-  scrimColor?: string | "auto"
+  scrimColor?: HexColor | string | "auto"
   /**
    * Default background hex — resolves null/default `cell.bg` before mixing
    * toward the scrim. If omitted, falls back to `rootBg`.
    */
-  defaultBg?: string
+  defaultBg?: HexColor | string
   /**
    * Default foreground hex — resolves null/default `cell.fg` before the
    * deemphasize pass. Without this, text using the terminal's default fg
@@ -90,7 +93,7 @@ export interface BackdropFadeOptions {
    * the text is POPPING instead of receding). If omitted, the pass picks
    * the opposite of the scrim (white for dark scrim, black for light).
    */
-  defaultFg?: string
+  defaultFg?: HexColor | string
   /**
    * When true, emit Kitty graphics protocol overlays on emoji cells inside
    * the faded region. The terminal renders a translucent scrim image above
@@ -110,7 +113,7 @@ export interface BackdropFadeOptions {
    * @deprecated Use `defaultBg` and `scrimColor` instead. Kept for
    *   back-compat with the pre-split options object.
    */
-  rootBg?: string
+  rootBg?: HexColor | string
 }
 
 /** Marker prop key for include rects (fade cells INSIDE the node's rect). */
@@ -128,12 +131,28 @@ export const FADE_EXCLUDE_ATTR = "data-backdrop-fade-excluded"
 export const DARK_LUMINANCE_THRESHOLD = 0.18
 
 /** Canonical scrim colors — Apple's `colorWithWhite:0.0` / `:1.0`. */
-export const DARK_SCRIM = "#000000"
-export const LIGHT_SCRIM = "#ffffff"
+export const DARK_SCRIM: HexColor = "#000000"
+export const LIGHT_SCRIM: HexColor = "#ffffff"
 
+/**
+ * Default fade amount — the calibrated baseline used when a marker
+ * materializes as a presence attribute (`<Backdrop fade />`,
+ * `data-backdrop-fade=""`, `data-backdrop-fade={true}`) without an explicit
+ * numeric value. Calibrated against macOS 0.20, Material 3 0.32, iOS 0.40,
+ * Flutter 0.54. Re-exported from `index.ts` so downstream callers can
+ * reference the same constant.
+ */
+export const DEFAULT_FADE_AMOUNT = 0.25
+
+/**
+ * A single fade region. The per-frame `amount` lives on `FadePlan`, not on
+ * the individual rect — the single-amount invariant (one scrim image per
+ * frame at one alpha) makes per-rect amounts meaningless for realization.
+ * `buildFadePlan` inspects the per-marker amount ONLY to detect the mixed-
+ * amounts condition, then discards it.
+ */
 export interface FadeRect {
   readonly rect: Rect
-  readonly amount: number
 }
 
 /**
@@ -153,11 +172,15 @@ export interface FadeRect {
  *   (single-amount invariant — mixed amounts break the Kitty overlay's
  *   one-image-one-alpha model; `mixedAmounts=true` surfaces the dev warn,
  *   prod falls back to first).
- * - `scrim` is either a resolved hex color (for the truecolor/256 tiers
- *   with a known theme bg) or `null` (legacy fallback where `fadeCell`
- *   mixes fg toward cell.bg without a scrim).
+ * - `scrim` is either a normalized `#rrggbb` hex (for the truecolor/256
+ *   tiers with a known theme bg or an explicit `scrimColor`) or `null`
+ *   (legacy fallback where `fadeCell` mixes fg toward cell.bg without a
+ *   scrim).
  * - `defaultBg` / `defaultFg` are resolved for the stage-2 passes — the
  *   realizers substitute these when `cell.bg` / `cell.fg` is null.
+ * - `scrimTowardLight` records whether the scrim is light (white-ish) or
+ *   dark (black-ish). The fg deemphasize pass uses this to drift toward
+ *   the correct neutral — toward 0 on dark themes, toward 1 on light.
  */
 export interface FadePlan {
   /** True when the tree had at least one fade marker with amount > 0. */
@@ -171,18 +194,18 @@ export interface FadePlan {
    * Resolved scrim hex, or null when no theme bg is available. The
    * buffer-realizer falls back to a legacy single-channel mix when null.
    */
-  readonly scrim: string | null
+  readonly scrim: HexColor | null
   /**
    * Default background hex for resolving null/default `cell.bg`. Derived
    * from `options.defaultBg` or `options.rootBg`.
    */
-  readonly defaultBg: string | null
+  readonly defaultBg: HexColor | null
   /**
    * Default foreground hex for resolving null/default `cell.fg`. Derived
    * from `options.defaultFg`, else the opposite of the scrim (white for
    * dark scrim, black for light).
    */
-  readonly defaultFg: string | null
+  readonly defaultFg: HexColor | null
   /** Rects marked `data-backdrop-fade` — fade cells INSIDE each rect. */
   readonly includes: readonly FadeRect[]
   /**
@@ -198,6 +221,18 @@ export interface FadePlan {
    * prod falls back to the first observed amount.
    */
   readonly mixedAmounts: boolean
+  /**
+   * True when the resolved `scrim` is on the LIGHT side of the luminance
+   * threshold (scrim drifts toward white on light themes). False for dark
+   * themes (scrim drifts toward black). Null-scrim plans default to
+   * `false` (legacy dark-theme behavior).
+   *
+   * Determined by luminance comparison, NOT by string equality against
+   * `DARK_SCRIM` / `LIGHT_SCRIM` — apps that supply a tinted scrim
+   * (e.g., a mid-gray neutral for a flat-color TUI) still get the right
+   * polarity.
+   */
+  readonly scrimTowardLight: boolean
 }
 
 /** Sentinel "nothing to do" plan — reused across frames to avoid allocations. */
@@ -210,6 +245,7 @@ export const INACTIVE_PLAN: FadePlan = Object.freeze({
   includes: Object.freeze([]) as readonly FadeRect[],
   excludes: Object.freeze([]) as readonly FadeRect[],
   mixedAmounts: false,
+  scrimTowardLight: false,
 })
 
 /**
@@ -243,34 +279,53 @@ export function buildFadePlan(root: AgNode, options?: BackdropFadeOptions): Fade
   const colorLevel: BackdropColorLevel = options?.colorLevel ?? "truecolor"
   if (colorLevel === "none") return INACTIVE_PLAN
 
+  // Collect rects + per-marker amounts. The amounts are inspected only to
+  // verify the single-amount invariant; they're discarded after.
   const includes: FadeRect[] = []
   const excludes: FadeRect[] = []
-  collectBackdropMarkers(root, includes, excludes)
+  const includeAmounts: number[] = []
+  const excludeAmounts: number[] = []
+  collectBackdropMarkers(root, includes, excludes, includeAmounts, excludeAmounts)
 
   if (includes.length === 0 && excludes.length === 0) return INACTIVE_PLAN
 
-  // Resolve the three color inputs. Prefer the split options; fall back to
-  // `rootBg` for back-compat.
+  // Resolve the three color inputs. Every user-provided hex is normalized
+  // exactly once here — downstream comparisons (e.g., `scrim === defaultBg`)
+  // and string-equality tests in the realizers work regardless of input
+  // casing or shorthand.
   //   - defaultBg: used to resolve null/default cell.bg before sRGB mix
-  //   - scrimColor: the target of the mix. "auto" (default) derives from bg
-  //     luminance: black for dark themes, white for light.
+  //   - scrimColor: the target of the mix. "auto" (default) derives from
+  //     luminance — black for dark themes, white for light.
   //   - defaultFg: used to resolve null/default cell.fg before deemphasize.
   //     Critical for default-fg text (common in TUIs that don't set colors
   //     on every Text node) — without it, default-fg cells skip the fade
   //     and the text pops against a dimmed bg.
-  const defaultBg = options?.defaultBg ?? options?.rootBg ?? null
+  const defaultBg = normalizeHex(options?.defaultBg ?? options?.rootBg ?? null)
   const scrimColorOpt = options?.scrimColor
-  const scrim =
-    typeof scrimColorOpt === "string" && scrimColorOpt !== "auto"
-      ? scrimColorOpt
-      : deriveAutoScrimColor(defaultBg)
+  // Explicit scrimColor wins when it parses to a valid hex. Unparseable
+  // strings (e.g. "#zzz", "rgb(...)") quietly fall back to the luminance-
+  // derived default — treating a typo as "use auto" is friendlier than
+  // nullifying the scrim and dropping to the legacy single-channel path.
+  const explicitScrim =
+    typeof scrimColorOpt === "string" && scrimColorOpt !== "auto" ? normalizeHex(scrimColorOpt) : null
+  const scrim = explicitScrim ?? deriveAutoScrimColor(defaultBg)
+
+  // Polarity by luminance: scrim with luminance >= threshold is "light"
+  // (drift fg toward white), below is "dark" (drift toward black). Uses
+  // the same WCAG-derived `relativeLuminance` as the auto-scrim derivation
+  // so any custom scrim color lands on the correct branch.
+  const scrimTowardLight = isLightScrim(scrim)
+
+  // Default fg fallback: opposite of the scrim polarity. For a tinted
+  // scrim the user probably wants to override with an explicit `defaultFg`
+  // anyway, but this gives a sensible default.
   const defaultFg =
-    options?.defaultFg ?? (scrim === null ? null : scrim === DARK_SCRIM ? LIGHT_SCRIM : DARK_SCRIM)
+    normalizeHex(options?.defaultFg) ?? (scrim === null ? null : scrimTowardLight ? DARK_SCRIM : LIGHT_SCRIM)
 
   // Single-amount invariant: one scrim image per frame at one alpha. Mixed
   // amounts are surfaced via `mixedAmounts` so the orchestrator can emit a
   // dev-mode warning; stage 1 stays pure.
-  const { amount, hasMixedAmounts } = assertSingleAmount(includes, excludes)
+  const { amount, hasMixedAmounts } = assertSingleAmount(includeAmounts, excludeAmounts)
 
   return {
     active: true,
@@ -281,6 +336,7 @@ export function buildFadePlan(root: AgNode, options?: BackdropFadeOptions): Fade
     includes,
     excludes,
     mixedAmounts: hasMixedAmounts,
+    scrimTowardLight,
   }
 }
 
@@ -295,36 +351,67 @@ export function buildFadePlan(root: AgNode, options?: BackdropFadeOptions): Fade
  * are reconciled to a single value.
  */
 function assertSingleAmount(
-  includes: FadeRect[],
-  excludes: FadeRect[],
+  includeAmounts: readonly number[],
+  excludeAmounts: readonly number[],
 ): { amount: number; hasMixedAmounts: boolean } {
-  const all = [...includes, ...excludes]
-  const first = all[0]?.amount ?? 0
+  const first =
+    includeAmounts.length > 0
+      ? includeAmounts[0]!
+      : excludeAmounts.length > 0
+        ? excludeAmounts[0]!
+        : 0
   let hasMixedAmounts = false
-  for (const r of all) {
-    if (Math.abs(r.amount - first) > 1e-6) {
+  for (const a of includeAmounts) {
+    if (Math.abs(a - first) > 1e-6) {
       hasMixedAmounts = true
       break
+    }
+  }
+  if (!hasMixedAmounts) {
+    for (const a of excludeAmounts) {
+      if (Math.abs(a - first) > 1e-6) {
+        hasMixedAmounts = true
+        break
+      }
     }
   }
   return { amount: Math.max(0, Math.min(1, first)), hasMixedAmounts }
 }
 
 /**
- * Derive the auto scrim color from the root bg hex.
- *
- * Dark themes scrim toward `#000000`; light themes scrim toward `#ffffff`.
- * Returns `null` when `rootBg` is absent or unparseable — signals legacy
- * single-channel fallback in `fadeCell`.
+ * Derive the auto scrim color from a normalized bg hex. Dark themes scrim
+ * toward `DARK_SCRIM`; light themes scrim toward `LIGHT_SCRIM`. Returns
+ * `null` when `bg` is absent or unparseable — signals legacy single-
+ * channel fallback in `fadeCell`.
  */
-function deriveAutoScrimColor(rootBg: string | null | undefined): string | null {
-  if (!rootBg) return null
-  const lum = relativeLuminance(rootBg)
+function deriveAutoScrimColor(bg: HexColor | null): HexColor | null {
+  if (!bg) return null
+  const lum = relativeLuminance(bg)
   if (lum === null) return null
   return lum < DARK_LUMINANCE_THRESHOLD ? DARK_SCRIM : LIGHT_SCRIM
 }
 
-function collectBackdropMarkers(node: AgNode, includes: FadeRect[], excludes: FadeRect[]): void {
+/**
+ * Polarity detection for an arbitrary scrim color. Returns `true` when the
+ * scrim is on the LIGHT side of the luminance threshold (fg should drift
+ * toward white), `false` otherwise. Uses luminance, not string equality,
+ * so tinted scrims (mid-gray neutrals, etc.) land on the correct branch.
+ * Null scrim defaults to false (dark-theme fallback behavior).
+ */
+function isLightScrim(scrim: HexColor | null): boolean {
+  if (scrim === null) return false
+  const lum = relativeLuminance(scrim)
+  if (lum === null) return false
+  return lum >= DARK_LUMINANCE_THRESHOLD
+}
+
+function collectBackdropMarkers(
+  node: AgNode,
+  includes: FadeRect[],
+  excludes: FadeRect[],
+  includeAmounts: number[],
+  excludeAmounts: number[],
+): void {
   const props = node.props as Record<string, unknown>
   const includeRaw = props[FADE_ATTR]
   const excludeRaw = props[FADE_EXCLUDE_ATTR]
@@ -333,19 +420,49 @@ function collectBackdropMarkers(node: AgNode, includes: FadeRect[], excludes: Fa
     const rect = node.screenRect ?? node.scrollRect ?? node.boxRect
     if (rect && rect.width > 0 && rect.height > 0) {
       const inc = parseFade(includeRaw)
-      if (inc !== null) includes.push({ rect, amount: inc })
+      if (inc !== null) {
+        includes.push({ rect })
+        includeAmounts.push(inc)
+      }
       const exc = parseFade(excludeRaw)
-      if (exc !== null) excludes.push({ rect, amount: exc })
+      if (exc !== null) {
+        excludes.push({ rect })
+        excludeAmounts.push(exc)
+      }
     }
   }
 
   for (const child of node.children) {
-    collectBackdropMarkers(child, includes, excludes)
+    collectBackdropMarkers(child, includes, excludes, includeAmounts, excludeAmounts)
   }
 }
 
+/**
+ * Coerce a marker attribute value into a fade amount in (0, 1], or `null`
+ * when the marker is absent / disabled.
+ *
+ * Accepted inputs:
+ *
+ *   - `undefined`, `null`, `false` → `null` (marker absent)
+ *   - `true` → `DEFAULT_FADE_AMOUNT` (presence attribute, e.g. `<Backdrop fade />`)
+ *   - `""` → `DEFAULT_FADE_AMOUNT` (HTML-attribute presence idiom)
+ *   - finite numeric or numeric-string (including in scientific notation):
+ *       - `<= 0` → `null` (explicit opt-out)
+ *       - `> 1` → `1` (clamped)
+ *       - otherwise → the numeric value itself
+ *   - any other non-numeric string (e.g. `"bad"`) → `null`
+ *
+ * The presence-attribute idiom lets components emit `data-backdrop-fade`
+ * without threading a numeric value through when the default is fine. The
+ * React `Backdrop.tsx` / `ModalDialog.tsx` today always emit a numeric
+ * attribute, but the semantic is forward-compatible so nothing breaks if
+ * a future component (or a hand-written JSX usage) prefers presence-only.
+ */
 function parseFade(raw: unknown): number | null {
   if (raw === undefined || raw === null) return null
+  if (raw === false) return null
+  if (raw === true) return DEFAULT_FADE_AMOUNT
+  if (raw === "") return DEFAULT_FADE_AMOUNT
   const n = typeof raw === "number" ? raw : Number(raw)
   if (!Number.isFinite(n)) return null
   if (n <= 0) return null
