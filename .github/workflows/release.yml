@@ -88,17 +88,21 @@ jobs:
           # Layer 6: Examples (depends on silvery)
           publish packages/examples
 
-      # Smoke test: verify published packages resolve correctly
+      # Smoke test: verify the JUST-PUBLISHED version resolves correctly.
+      # Pin to ${{ github.ref_name }} (e.g. v0.19.2 → 0.19.2) instead of
+      # `npm install silvery` (which resolves the `latest` dist-tag and
+      # races with CDN propagation immediately after publish).
       - name: Smoke test
         run: |
+          version="${GITHUB_REF_NAME#v}"
           dir=$(mktemp -d)
           cd "$dir"
           npm init -y --silent
-          echo "Installing silvery from npm..."
-          npm install silvery 2>&1
+          echo "Installing silvery@$version from npm..."
+          npm install --no-package-lock "silvery@$version" 2>&1
           echo "Verifying import..."
           node --experimental-strip-types -e "import 'silvery'" 2>&1
-          echo "✅ Smoke test passed"
+          echo "✅ Smoke test passed for silvery@$version"
           rm -rf "$dir"
 
       - name: Create GitHub Release
