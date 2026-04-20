@@ -61,8 +61,8 @@
     "build": "tsdown"
   },
   "peerDependencies": {
-    "@silvery/ag": "0.18.1",
-    "@silvery/ag-term": "0.18.1"
+    "@silvery/ag": "0.18.2",
+    "@silvery/ag-term": "0.18.2"
   },
   "peerDependenciesMeta": {
     "@silvery/ag": {

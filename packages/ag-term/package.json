@@ -373,15 +373,15 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ag": "0.18.1",
-    "@silvery/ag-react": "0.18.1",
-    "@silvery/ansi": "0.18.1",
-    "@silvery/color": "0.18.1",
-    "@silvery/create": "0.18.1",
-    "@silvery/headless": "0.18.1",
-    "@silvery/signals": "0.18.1",
-    "@silvery/test": "0.18.1",
-    "@silvery/theme": "0.18.1",
+    "@silvery/ag": "0.18.2",
+    "@silvery/ag-react": "0.18.2",
+    "@silvery/ansi": "0.18.2",
+    "@silvery/color": "0.18.2",
+    "@silvery/create": "0.18.2",
+    "@silvery/headless": "0.18.2",
+    "@silvery/signals": "0.18.2",
+    "@silvery/test": "0.18.2",
+    "@silvery/theme": "0.18.2",
     "flexily": "0.5.2"
   },
   "tsdown": {

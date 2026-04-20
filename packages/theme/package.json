@@ -51,8 +51,8 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ansi": "0.18.1",
-    "@silvery/color": "0.18.1"
+    "@silvery/ansi": "0.18.2",
+    "@silvery/color": "0.18.2"
   },
   "tsdown": {
     "clean": true,

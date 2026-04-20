@@ -89,7 +89,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/signals": "0.18.1"
+    "@silvery/signals": "0.18.2"
   },
   "tsdown": {
     "clean": true,

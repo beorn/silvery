@@ -119,13 +119,13 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ag": "0.18.1",
-    "@silvery/ag-react": "0.18.1",
-    "@silvery/ag-term": "0.18.1",
-    "@silvery/commands": "0.18.1",
-    "@silvery/headless": "0.18.1",
-    "@silvery/ink": "0.18.1",
-    "@silvery/test": "0.18.1",
+    "@silvery/ag": "0.18.2",
+    "@silvery/ag-react": "0.18.2",
+    "@silvery/ag-term": "0.18.2",
+    "@silvery/commands": "0.18.2",
+    "@silvery/headless": "0.18.2",
+    "@silvery/ink": "0.18.2",
+    "@silvery/test": "0.18.2",
     "alien-signals": "^3.1.2"
   },
   "tsdown": {

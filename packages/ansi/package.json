@@ -44,7 +44,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/color": "0.18.1",
+    "@silvery/color": "0.18.2",
     "string-width": "^8.2.0"
   },
   "tsdown": {
