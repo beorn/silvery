@@ -17,7 +17,7 @@
  * shared `forEachFadeRegionCell` walker provides the stable row-ascending,
  * col-ascending iteration order.
  *
- * @see ./plan.ts for the FadePlan shape and color model.
+ * @see ./plan.ts for the Plan shape and color model.
  * @see ./realize-buffer.ts for the complementary cell-level transform.
  * @see ./region.ts for the shared include/exclude walker.
  */
@@ -35,7 +35,7 @@ import {
 import type { TerminalBuffer } from "../../buffer"
 import { isLikelyEmoji } from "../../unicode"
 import { hexToRgb } from "./color"
-import type { FadePlan } from "./plan"
+import type { Plan } from "./plan"
 import { forEachFadeRegionCell } from "./region"
 
 /**
@@ -48,10 +48,10 @@ import { forEachFadeRegionCell } from "./region"
  *
  * Returns `""` when `plan.active` is false. Callers that also need to
  * suppress the overlay because Kitty graphics are not available should NOT
- * call this function at all — the ag-term orchestrator guards the call site
- * with its own `kittyEnabled` flag.
+ * call this function at all — the orchestrator (`./index.ts`) guards the
+ * call site with `plan.kittyEnabled`.
  */
-export function realizeFadePlanToKittyOverlay(plan: FadePlan, buffer: TerminalBuffer): string {
+export function realizeToKitty(plan: Plan, buffer: TerminalBuffer): string {
   if (!plan.active) return ""
 
   const cells = collectEmojiCellsInFadeRegion(buffer, plan)
@@ -107,7 +107,7 @@ export function realizeFadePlanToKittyOverlay(plan: FadePlan, buffer: TerminalBu
  */
 function collectEmojiCellsInFadeRegion(
   buffer: TerminalBuffer,
-  plan: FadePlan,
+  plan: Plan,
 ): Array<{ x: number; y: number }> {
   const out: Array<{ x: number; y: number }> = []
   forEachFadeRegionCell(buffer.width, buffer.height, plan.includes, plan.excludes, (x, y) => {

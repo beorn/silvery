@@ -5,7 +5,7 @@
  * tightening pass. Each block maps to one fix:
  *
  *   1. Mixed-amount invariant           → A1 (single plan.amount source of truth)
- *   2. Presence-style marker coercion   → A2 (DEFAULT_FADE_AMOUNT)
+ *   2. Presence-style marker coercion   → A2 (DEFAULT_AMOUNT)
  *   3. Light-theme fg deemphasize       → A3 (scrimTowardLight polarity)
  *   4. Overlap dedup in region walker   → A4 (Uint8Array bitset)
  *   5. Kitty inactive-frame cleanup     → A5 (earlier pass, re-pinned)
@@ -19,8 +19,8 @@
 import { describe, test, expect } from "vitest"
 import type { AgNode, Rect } from "@silvery/ag/types"
 import {
-  buildFadePlan,
-  DEFAULT_FADE_AMOUNT,
+  buildPlan,
+  DEFAULT_AMOUNT,
   deemphasizeOklchToward,
   forEachFadeRegionCell,
   INACTIVE_PLAN,
@@ -67,7 +67,7 @@ describe("backdrop-pro A1: single plan.amount, not per-rect", () => {
         fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A),
         fakeNode({ "data-backdrop-fade": 0.6 }, RECT_B),
       ])
-      const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
+      const plan = buildPlan(root, { defaultBg: "#1e1e2e" })
       expect(plan.active).toBe(true)
       expect(plan.mixedAmounts).toBe(true)
       expect(plan.amount).toBe(0.4) // first-observed wins
@@ -76,11 +76,11 @@ describe("backdrop-pro A1: single plan.amount, not per-rect", () => {
     }
   })
 
-  test("FadeRect shape has no `amount` — plan.amount is the sole source", () => {
+  test("PlanRect shape has no `amount` — plan.amount is the sole source", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.3 }, RECT_A)])
-    const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
+    const plan = buildPlan(root, { defaultBg: "#1e1e2e" })
     expect(plan.includes).toHaveLength(1)
-    // Structural check: FadeRect only carries the `rect` field. TS also
+    // Structural check: PlanRect only carries the `rect` field. TS also
     // enforces this via the `readonly rect: Rect` interface; this line
     // catches accidental runtime-level additions.
     expect(Object.keys(plan.includes[0] as object)).toEqual(["rect"])
@@ -95,7 +95,7 @@ describe("backdrop-pro A1: single plan.amount, not per-rect", () => {
         fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A),
         fakeNode({ "data-backdrop-fade-excluded": 0.7 }, RECT_B),
       ])
-      const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
+      const plan = buildPlan(root, { defaultBg: "#1e1e2e" })
       expect(plan.mixedAmounts).toBe(true)
       expect(plan.amount).toBe(0.4)
     } finally {
@@ -105,44 +105,44 @@ describe("backdrop-pro A1: single plan.amount, not per-rect", () => {
 })
 
 describe("backdrop-pro A2: presence-style markers default to 0.25", () => {
-  test("DEFAULT_FADE_AMOUNT is 0.25 (calibration pin)", () => {
-    expect(DEFAULT_FADE_AMOUNT).toBe(0.25)
+  test("DEFAULT_AMOUNT is 0.25 (calibration pin)", () => {
+    expect(DEFAULT_AMOUNT).toBe(0.25)
   })
 
   test("`data-backdrop-fade` === true materializes as the default amount", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": true }, RECT_A)])
-    const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
+    const plan = buildPlan(root, { defaultBg: "#1e1e2e" })
     expect(plan.active).toBe(true)
-    expect(plan.amount).toBe(DEFAULT_FADE_AMOUNT)
+    expect(plan.amount).toBe(DEFAULT_AMOUNT)
   })
 
   test("empty-string value (HTML presence idiom) materializes as the default", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": "" }, RECT_A)])
-    const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
-    expect(plan.amount).toBe(DEFAULT_FADE_AMOUNT)
+    const plan = buildPlan(root, { defaultBg: "#1e1e2e" })
+    expect(plan.amount).toBe(DEFAULT_AMOUNT)
   })
 
   test("numeric-string values are coerced", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": "0.5" }, RECT_A)])
-    const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
+    const plan = buildPlan(root, { defaultBg: "#1e1e2e" })
     expect(plan.amount).toBe(0.5)
   })
 
   test("non-numeric strings are rejected as inactive", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": "bad" }, RECT_A)])
-    const plan = buildFadePlan(root)
+    const plan = buildPlan(root)
     expect(plan.active).toBe(false)
   })
 
   test("false is treated as opt-out (not presence)", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": false }, RECT_A)])
-    const plan = buildFadePlan(root)
+    const plan = buildPlan(root)
     expect(plan.active).toBe(false)
   })
 
   test("negative numeric-string is pruned", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": "-0.3" }, RECT_A)])
-    const plan = buildFadePlan(root)
+    const plan = buildPlan(root)
     expect(plan.active).toBe(false)
   })
 })
@@ -150,7 +150,7 @@ describe("backdrop-pro A2: presence-style markers default to 0.25", () => {
 describe("backdrop-pro A3: light-theme fg polarity", () => {
   test("auto-scrim on a light theme sets scrimTowardLight=true", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A)])
-    const plan = buildFadePlan(root, { rootBg: "#ffffff" })
+    const plan = buildPlan(root, { defaultBg: "#ffffff" })
     expect(plan.scrim).toBe("#ffffff")
     expect(plan.scrimTowardLight).toBe(true)
     // defaultFg falls back to the OPPOSITE of the scrim polarity
@@ -159,7 +159,7 @@ describe("backdrop-pro A3: light-theme fg polarity", () => {
 
   test("auto-scrim on a dark theme sets scrimTowardLight=false", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A)])
-    const plan = buildFadePlan(root, { rootBg: "#1e1e2e" })
+    const plan = buildPlan(root, { defaultBg: "#1e1e2e" })
     expect(plan.scrim).toBe("#000000")
     expect(plan.scrimTowardLight).toBe(false)
     expect(plan.defaultFg).toBe("#ffffff")
@@ -169,22 +169,22 @@ describe("backdrop-pro A3: light-theme fg polarity", () => {
     // A mid-dark grey custom scrim (#333333 ≈ lum 0.03) is below the
     // threshold → scrimTowardLight=false (behaves as "dark" scrim).
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A)])
-    const planDark = buildFadePlan(root, { scrimColor: "#333333" })
+    const planDark = buildPlan(root, { scrimColor: "#333333" })
     expect(planDark.scrim).toBe("#333333")
     expect(planDark.scrimTowardLight).toBe(false)
 
     // A near-white tinted scrim (#eeeeee) is above → scrimTowardLight=true.
-    const planLight = buildFadePlan(root, { scrimColor: "#eeeeee" })
+    const planLight = buildPlan(root, { scrimColor: "#eeeeee" })
     expect(planLight.scrim).toBe("#eeeeee")
     expect(planLight.scrimTowardLight).toBe(true)
   })
 
   test("null scrim plan defaults scrimTowardLight=false (legacy branch)", () => {
-    // No rootBg, no scrimColor → scrim stays null, polarity defaults to
+    // No defaultBg, no scrimColor → scrim stays null, polarity defaults to
     // the dark-theme branch. The realizer short-circuits to the legacy
     // "mix fg toward cell.bg" path when scrim is null.
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A)])
-    const plan = buildFadePlan(root)
+    const plan = buildPlan(root)
     expect(plan.scrim).toBeNull()
     expect(plan.scrimTowardLight).toBe(false)
   })
@@ -281,27 +281,27 @@ describe("backdrop-pro A7: hex normalization", () => {
     expect(normalizeHex(undefined)).toBeNull()
   })
 
-  test("buildFadePlan normalizes defaultBg / rootBg before storing", () => {
+  test("buildPlan normalizes defaultBg before storing", () => {
     // Input "#1E1E2E" (uppercase) normalizes to "#1e1e2e" in the plan,
     // so downstream string comparisons (scrim derivation, etc.) work
     // regardless of how the app happened to type the hex value.
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A)])
-    const plan = buildFadePlan(root, { rootBg: "#1E1E2E" })
+    const plan = buildPlan(root, { defaultBg: "#1E1E2E" })
     expect(plan.defaultBg).toBe("#1e1e2e")
     expect(plan.scrim).toBe("#000000")
   })
 
-  test("buildFadePlan normalizes 3-char shorthand scrimColor", () => {
+  test("buildPlan normalizes 3-char shorthand scrimColor", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A)])
-    const plan = buildFadePlan(root, { scrimColor: "#ABC" })
+    const plan = buildPlan(root, { scrimColor: "#ABC" })
     expect(plan.scrim).toBe("#aabbcc")
   })
 
-  test("buildFadePlan rejects invalid hex strings and falls back", () => {
-    // Invalid scrimColor falls back to auto-derived from rootBg.
+  test("buildPlan rejects invalid hex strings and falls back", () => {
+    // Invalid scrimColor falls back to auto-derived from defaultBg.
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A)])
-    const plan = buildFadePlan(root, { scrimColor: "#zzz", rootBg: "#1e1e2e" })
-    // scrimColor normalized to null → falls back to auto-derive from rootBg.
+    const plan = buildPlan(root, { scrimColor: "#zzz", defaultBg: "#1e1e2e" })
+    // scrimColor normalized to null → falls back to auto-derive from defaultBg.
     expect(plan.scrim).toBe("#000000")
   })
 })
@@ -329,7 +329,7 @@ describe("backdrop-pro C3: readonly sentinels are frozen", () => {
 describe("backdrop-pro A6: explicit scrim without defaultBg still activates two-channel", () => {
   test("plan carries scrim even when defaultBg is null", () => {
     const root = fakeNode({}, null, [fakeNode({ "data-backdrop-fade": 0.4 }, RECT_A)])
-    const plan = buildFadePlan(root, { scrimColor: "#000000" })
+    const plan = buildPlan(root, { scrimColor: "#000000" })
     expect(plan.scrim).toBe("#000000")
     expect(plan.defaultBg).toBeNull()
     // defaultFg falls back to the opposite of the scrim polarity

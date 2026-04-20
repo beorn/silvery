@@ -36,7 +36,7 @@ export interface Buffer {
    * the output-phase diff — they're not part of the cell grid but need to be
    * emitted every frame the overlay is active. Empty string when no overlay.
    */
-  readonly kittyOverlay?: string
+  readonly overlay?: string
 }
 
 /**

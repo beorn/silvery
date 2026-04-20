@@ -5,7 +5,8 @@
  * Uses the shared `forEachFadeRegionCell` walker (`./region.ts`) to visit
  * every cell covered by the plan's include + exclude rects exactly once.
  * Trusts the plan: no marker re-collection, no scrim/default resolution,
- * no amount validation.
+ * no amount validation, no capability re-derivation (`plan.kittyEnabled`
+ * is the sole source of truth for the emoji branch).
  *
  * Wide ≠ emoji. CJK / Hangul / Japanese fullwidth text occupies two columns
  * but responds to `fg` color normally — it goes through the standard mix
@@ -14,7 +15,7 @@
  *
  * For emoji cells, two paths, mutually exclusive:
  *
- * 1. **Kitty graphics available** (`kittyEnabled === true`): emoji cells
+ * 1. **Kitty graphics available** (`plan.kittyEnabled === true`): emoji cells
  *    are SKIPPED entirely here. `./realize-kitty.ts` emits a translucent
  *    scrim image at alpha=amount above each emoji cell, and the terminal
  *    composites the overlay on top of the unmixed cell, landing at
@@ -22,7 +23,7 @@
  *    surrounding text cells. This avoids the double-fade that would make
  *    emoji bg visibly blacker.
  *
- * 2. **Kitty graphics unavailable** (`kittyEnabled === false`): the
+ * 2. **Kitty graphics unavailable** (`plan.kittyEnabled === false`): the
  *    per-cell mix runs on emoji cells too and stamps `attrs.dim` (SGR 2)
  *    on lead + continuation. Terminals honoring SGR 2 on emoji fade the
  *    glyph; others see the glyph at full brightness but the cell bg
@@ -38,7 +39,7 @@ import type { TerminalBuffer } from "../../buffer"
 import { isLikelyEmoji } from "../../unicode"
 import { colorToHex, type HexColor, hexToRgb } from "./color"
 import { deemphasizeOklchToward, mixSrgb } from "./color-compat"
-import { DARK_SCRIM, LIGHT_SCRIM, type FadePlan } from "./plan"
+import { DARK_SCRIM, LIGHT_SCRIM, type Plan } from "./plan"
 import { forEachFadeRegionCell } from "./region"
 
 /**
@@ -48,27 +49,23 @@ import { forEachFadeRegionCell } from "./region"
  * applies `fadeCell` with the plan's single `amount`. The buffer is mutated
  * in place.
  *
- * When `kittyEnabled === true`, emoji cells (detected via
+ * When `plan.kittyEnabled === true`, emoji cells (detected via
  * `isLikelyEmoji(cell.char)`) are SKIPPED — the Kitty overlay realizer
  * composites the scrim on top of the unmixed cell. When
- * `kittyEnabled === false`, emoji cells go through the per-cell mix AND
- * get SGR 2 (`attrs.dim`) stamped on lead + continuation.
+ * `plan.kittyEnabled === false`, emoji cells go through the per-cell mix
+ * AND get SGR 2 (`attrs.dim`) stamped on lead + continuation.
  *
  * Returns `true` when at least one buffer cell was mutated.
  */
-export function realizeFadePlanToBuffer(
-  plan: FadePlan,
-  buffer: TerminalBuffer,
-  kittyEnabled: boolean,
-): boolean {
+export function realizeToBuffer(plan: Plan, buffer: TerminalBuffer): boolean {
   if (!plan.active) return false
   if (plan.amount <= 0) return false
 
-  let bufferModified = false
+  let modified = false
   forEachFadeRegionCell(buffer.width, buffer.height, plan.includes, plan.excludes, (x, y) => {
-    if (fadeCell(buffer, x, y, plan, kittyEnabled)) bufferModified = true
+    if (fadeCell(buffer, x, y, plan)) modified = true
   })
-  return bufferModified
+  return modified
 }
 
 /**
@@ -115,13 +112,7 @@ export function realizeFadePlanToBuffer(
  *    TEXT (CJK etc.) goes through the normal deemphasize path on both
  *    branches — the fg mix works fine and SGR 2 on CJK over-fades.
  */
-function fadeCell(
-  buffer: TerminalBuffer,
-  x: number,
-  y: number,
-  plan: FadePlan,
-  kittyEnabled: boolean,
-): boolean {
+function fadeCell(buffer: TerminalBuffer, x: number, y: number, plan: Plan): boolean {
   // Skip continuation half of wide chars — the leading cell at x-1 updates
   // this cell in lockstep when it's processed.
   if (buffer.isCellContinuation(x, y)) return false
@@ -140,7 +131,7 @@ function fadeCell(
   // unmixed cell, landing at `cell_bg * (1 - amount) + scrim * amount`,
   // same luminance as surrounding mixed cells. Mixing here too would
   // double-fade and produce a visibly blacker emoji bg.
-  if (kittyEnabled && isEmojiGlyph) return false
+  if (plan.kittyEnabled && isEmojiGlyph) return false
 
   const { amount, scrim, defaultBg, defaultFg, scrimTowardLight } = plan
   const rawFgHex = colorToHex(cell.fg)

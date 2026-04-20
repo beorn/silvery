@@ -201,7 +201,7 @@ export function createRenderer(opts: RendererOptions): Renderer {
     _ag.layout(dims)
     const agResult = _ag.render()
     const { buffer: termBuffer, prevBuffer: agPrevBuffer } = agResult
-    const kittyOverlay = agResult.kittyOverlay
+    const overlay = agResult.overlay
     _lastTermBuffer = termBuffer
     const wasIncremental = !opts.noIncremental && agPrevBuffer !== null
     const pipelineMs = performance.now() - pipelineStart
@@ -378,7 +378,7 @@ export function createRenderer(opts: RendererOptions): Renderer {
       }
     }
 
-    const buf = createBuffer(termBuffer, rootNode, kittyOverlay)
+    const buf = createBuffer(termBuffer, rootNode, overlay)
     lastCurrentBuffer = buf
     if (opts.perfLog) {
       const renderDuration = performance.now() - renderStart

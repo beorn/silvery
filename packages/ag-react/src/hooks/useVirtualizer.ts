@@ -352,7 +352,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     const renderCount = Math.min(estimatedVisibleCount + 2 * overscan, maxRendered)
 
     let start = Math.max(0, effectiveScrollOffset - overscan)
-    let end = Math.min(count, start + renderCount)
+    const end = Math.min(count, start + renderCount)
 
     // Adjust start if we hit the end — keep the window size constant when
     // there are enough items to fill it, so trailing edges near the bottom

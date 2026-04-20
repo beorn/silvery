@@ -266,8 +266,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       // backdrop-fade region). The overlay is a self-contained save-cursor /
       // CUP / place / restore-cursor block — appending it after the main diff
       // keeps the output phase's cursor tracking intact.
-      if (buffer.kittyOverlay && buffer.kittyOverlay.length > 0) {
-        patch += buffer.kittyOverlay
+      if (buffer.overlay && buffer.overlay.length > 0) {
+        patch += buffer.overlay
       }
 
       // Debug: capture raw ANSI output that's actually written to the terminal

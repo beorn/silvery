@@ -1,20 +1,19 @@
 /**
- * Backdrop fade — stage 1: build the immutable `FadePlan`.
+ * Backdrop fade — stage 1: build the immutable `Plan`.
  *
- * `buildFadePlan(root, options)` is a PURE, capability-independent pass that
+ * `buildPlan(root, options)` is a PURE, capability-independent pass that
  * walks the tree, collects `data-backdrop-fade` / `data-backdrop-fade-excluded`
  * markers, enforces the single-amount invariant, and resolves the scrim +
- * default colors. The realizers (`./realize-buffer.ts`,
- * `./realize-kitty.ts`) trust the plan: they do NOT re-walk the tree,
- * re-resolve the scrim, or re-validate amounts. This module is the single
- * source of truth.
+ * default colors. The realizers (`./realize-buffer.ts`, `./realize-kitty.ts`)
+ * trust the plan: they do NOT re-walk the tree, re-resolve the scrim, or
+ * re-validate amounts. This module is the single source of truth.
  *
  * ## The model: per-channel alpha scrim with perceptually-aware fg
  *
  * The pass fades every covered cell by blending BOTH fg AND bg toward a
  * neutral scrim color at the caller's `amount`. Default scrim: pure black
  * for dark themes (Apple `colorWithWhite:0.0 alpha:0.4`), pure white for
- * light. Default amount: `DEFAULT_FADE_AMOUNT` (0.25) — calibrated against
+ * light. Default amount: `DEFAULT_AMOUNT` (0.25) — calibrated against
  * macOS 0.20, Material 3 0.32, iOS 0.40, Flutter 0.54.
  *
  * ### Two operations, one per channel
@@ -56,24 +55,30 @@
  * ## Purity
  *
  * This module is pure: no console I/O, no buffer access, no mutable module
- * state. `buildFadePlan` returns a `FadePlan` whose `mixedAmounts` flag
- * signals multi-amount frames; the orchestrator (`./index.ts`) emits the
- * dev-mode warning so stage 1 remains a pure function of its inputs.
+ * state. `buildPlan` returns a `Plan` whose `mixedAmounts` flag signals
+ * multi-amount frames; the orchestrator (`./index.ts`) emits the dev-mode
+ * warning so stage 1 remains a pure function of its inputs.
  */
 
 import { relativeLuminance } from "@silvery/color"
 import type { AgNode, Rect } from "@silvery/ag/types"
+import type { ColorLevel as AnsiColorLevel } from "@silvery/ansi"
 import { type HexColor, normalizeHex } from "./color"
 
-export type BackdropColorLevel = "none" | "basic" | "256" | "truecolor"
+/**
+ * Terminal color tier for the backdrop pass. Extends `@silvery/ansi`'s
+ * `ColorLevel` with `"none"`, which short-circuits the pass to a no-op on
+ * monochrome terminals.
+ */
+export type ColorLevel = AnsiColorLevel | "none"
 
-export interface BackdropFadeOptions {
+export interface BackdropOptions {
   /**
    * Terminal color tier. `"none"` short-circuits to a no-op (monochrome).
    * All other tiers run the same sRGB scrim mix — output phase quantizes
    * to the tier's palette on emit.
    */
-  colorLevel?: BackdropColorLevel
+  colorLevel?: ColorLevel
   /**
    * Explicit scrim color, or `"auto"` (default) to derive from theme
    * luminance: pure black for dark themes, pure white for light. Apps that
@@ -83,7 +88,8 @@ export interface BackdropFadeOptions {
   scrimColor?: HexColor | string | "auto"
   /**
    * Default background hex — resolves null/default `cell.bg` before mixing
-   * toward the scrim. If omitted, falls back to `rootBg`.
+   * toward the scrim AND feeds the auto-scrim luminance derivation when
+   * `scrimColor` is `"auto"`.
    */
   defaultBg?: HexColor | string
   /**
@@ -105,21 +111,12 @@ export interface BackdropFadeOptions {
    * buffer mix when Kitty is active.
    */
   kittyGraphics?: boolean
-  /**
-   * Root background hex color from the active theme. Used as the implicit
-   * `defaultBg` (for null/default cell bg) AND as the luminance source for
-   * deriving the scrim.
-   *
-   * @deprecated Use `defaultBg` and `scrimColor` instead. Kept for
-   *   back-compat with the pre-split options object.
-   */
-  rootBg?: HexColor | string
 }
 
 /** Marker prop key for include rects (fade cells INSIDE the node's rect). */
-export const FADE_ATTR = "data-backdrop-fade"
+export const BACKDROP_FADE_ATTR = "data-backdrop-fade"
 /** Marker prop key for exclude rects (fade everything OUTSIDE the node's rect). */
-export const FADE_EXCLUDE_ATTR = "data-backdrop-fade-excluded"
+export const BACKDROP_FADE_EXCLUDE_ATTR = "data-backdrop-fade-excluded"
 
 /**
  * Luminance threshold for dark/light theme detection.
@@ -142,28 +139,28 @@ export const LIGHT_SCRIM: HexColor = "#ffffff"
  * Flutter 0.54. Re-exported from `index.ts` so downstream callers can
  * reference the same constant.
  */
-export const DEFAULT_FADE_AMOUNT = 0.25
+export const DEFAULT_AMOUNT = 0.25
 
 /**
- * A single fade region. The per-frame `amount` lives on `FadePlan`, not on
+ * A single fade region. The per-frame `amount` lives on `Plan`, not on
  * the individual rect — the single-amount invariant (one scrim image per
  * frame at one alpha) makes per-rect amounts meaningless for realization.
- * `buildFadePlan` inspects the per-marker amount ONLY to detect the mixed-
+ * `buildPlan` inspects the per-marker amount ONLY to detect the mixed-
  * amounts condition, then discards it.
  */
-export interface FadeRect {
+export interface PlanRect {
   readonly rect: Rect
 }
 
 /**
- * The immutable output of `buildFadePlan` — a capability-independent
+ * The immutable output of `buildPlan` — a capability-independent
  * description of what the backdrop pass intends to do this frame.
  *
- * The realizers (`realizeFadePlanToBuffer`, `realizeFadePlanToKittyOverlay`)
- * trust the plan: they do NOT re-walk the tree, re-resolve the scrim, or
- * re-validate amounts. `buildFadePlan` is the single source of truth.
+ * The realizers (`realizeToBuffer`, `realizeToKitty`) trust the plan:
+ * they do NOT re-walk the tree, re-resolve the scrim, or re-validate
+ * amounts. `buildPlan` is the single source of truth.
  *
- * ### Invariants enforced by `buildFadePlan`
+ * ### Invariants enforced by `buildPlan`
  *
  * - `active = includes.length > 0 || excludes.length > 0` whenever a
  *   non-zero fade marker is present. The stage-1 pass short-circuits to an
@@ -181,8 +178,12 @@ export interface FadeRect {
  * - `scrimTowardLight` records whether the scrim is light (white-ish) or
  *   dark (black-ish). The fg deemphasize pass uses this to drift toward
  *   the correct neutral — toward 0 on dark themes, toward 1 on light.
+ * - `kittyEnabled` is the DERIVED capability flag — true only when the
+ *   caller enabled `kittyGraphics` AND the plan has a resolvable scrim
+ *   (Kitty overlay needs a tint). Realizers read this instead of
+ *   re-deriving at each call site.
  */
-export interface FadePlan {
+export interface Plan {
   /** True when the tree had at least one fade marker with amount > 0. */
   readonly active: boolean
   /**
@@ -195,10 +196,7 @@ export interface FadePlan {
    * buffer-realizer falls back to a legacy single-channel mix when null.
    */
   readonly scrim: HexColor | null
-  /**
-   * Default background hex for resolving null/default `cell.bg`. Derived
-   * from `options.defaultBg` or `options.rootBg`.
-   */
+  /** Default background hex for resolving null/default `cell.bg`. */
   readonly defaultBg: HexColor | null
   /**
    * Default foreground hex for resolving null/default `cell.fg`. Derived
@@ -207,12 +205,12 @@ export interface FadePlan {
    */
   readonly defaultFg: HexColor | null
   /** Rects marked `data-backdrop-fade` — fade cells INSIDE each rect. */
-  readonly includes: readonly FadeRect[]
+  readonly includes: readonly PlanRect[]
   /**
    * Rects marked `data-backdrop-fade-excluded` — fade everything OUTSIDE
    * each rect (the modal "cuts a hole").
    */
-  readonly excludes: readonly FadeRect[]
+  readonly excludes: readonly PlanRect[]
   /**
    * True when the collected markers had differing `amount` values. The
    * orchestrator reads this to emit a dev-mode warning; stage 1 stays pure
@@ -233,19 +231,28 @@ export interface FadePlan {
    * polarity.
    */
   readonly scrimTowardLight: boolean
+  /**
+   * True when the Kitty graphics overlay should run this frame. Derived
+   * from `options.kittyGraphics === true && scrim !== null` — the overlay
+   * needs a resolvable tint to composite, so a null-scrim plan can't use
+   * the Kitty path even when the caller has the capability enabled.
+   * Realizers read this directly (no re-derivation at call sites).
+   */
+  readonly kittyEnabled: boolean
 }
 
 /** Sentinel "nothing to do" plan — reused across frames to avoid allocations. */
-export const INACTIVE_PLAN: FadePlan = Object.freeze({
+export const INACTIVE_PLAN: Plan = Object.freeze({
   active: false,
   amount: 0,
   scrim: null,
   defaultBg: null,
   defaultFg: null,
-  includes: Object.freeze([]) as readonly FadeRect[],
-  excludes: Object.freeze([]) as readonly FadeRect[],
+  includes: Object.freeze([]) as readonly PlanRect[],
+  excludes: Object.freeze([]) as readonly PlanRect[],
   mixedAmounts: false,
   scrimTowardLight: false,
+  kittyEnabled: false,
 })
 
 /**
@@ -256,7 +263,9 @@ export const INACTIVE_PLAN: FadePlan = Object.freeze({
  */
 export function hasBackdropMarkers(root: AgNode): boolean {
   const props = root.props as Record<string, unknown>
-  if (props[FADE_ATTR] !== undefined || props[FADE_EXCLUDE_ATTR] !== undefined) return true
+  if (props[BACKDROP_FADE_ATTR] !== undefined || props[BACKDROP_FADE_EXCLUDE_ATTR] !== undefined) {
+    return true
+  }
   for (const child of root.children) {
     if (hasBackdropMarkers(child)) return true
   }
@@ -264,7 +273,7 @@ export function hasBackdropMarkers(root: AgNode): boolean {
 }
 
 /**
- * Stage 1 — build the immutable `FadePlan`.
+ * Stage 1 — build the immutable `Plan`.
  *
  * Pure function of `(tree markers, options)`. No buffer access, no Kitty
  * capability knowledge, no console I/O. The realizers read from the plan
@@ -275,14 +284,14 @@ export function hasBackdropMarkers(root: AgNode): boolean {
  * - `colorLevel === "none"` (monochrome terminal — pass is a no-op).
  * - The tree has no backdrop markers, OR all markers have `amount <= 0`.
  */
-export function buildFadePlan(root: AgNode, options?: BackdropFadeOptions): FadePlan {
-  const colorLevel: BackdropColorLevel = options?.colorLevel ?? "truecolor"
+export function buildPlan(root: AgNode, options?: BackdropOptions): Plan {
+  const colorLevel: ColorLevel = options?.colorLevel ?? "truecolor"
   if (colorLevel === "none") return INACTIVE_PLAN
 
   // Collect rects + per-marker amounts. The amounts are inspected only to
   // verify the single-amount invariant; they're discarded after.
-  const includes: FadeRect[] = []
-  const excludes: FadeRect[] = []
+  const includes: PlanRect[] = []
+  const excludes: PlanRect[] = []
   const includeAmounts: number[] = []
   const excludeAmounts: number[] = []
   collectBackdropMarkers(root, includes, excludes, includeAmounts, excludeAmounts)
@@ -294,13 +303,14 @@ export function buildFadePlan(root: AgNode, options?: BackdropFadeOptions): Fade
   // and string-equality tests in the realizers work regardless of input
   // casing or shorthand.
   //   - defaultBg: used to resolve null/default cell.bg before sRGB mix
+  //     AND feeds auto-scrim luminance derivation.
   //   - scrimColor: the target of the mix. "auto" (default) derives from
   //     luminance — black for dark themes, white for light.
   //   - defaultFg: used to resolve null/default cell.fg before deemphasize.
   //     Critical for default-fg text (common in TUIs that don't set colors
   //     on every Text node) — without it, default-fg cells skip the fade
   //     and the text pops against a dimmed bg.
-  const defaultBg = normalizeHex(options?.defaultBg ?? options?.rootBg ?? null)
+  const defaultBg = normalizeHex(options?.defaultBg ?? null)
   const scrimColorOpt = options?.scrimColor
   // Explicit scrimColor wins when it parses to a valid hex. Unparseable
   // strings (e.g. "#zzz", "rgb(...)") quietly fall back to the luminance-
@@ -327,6 +337,10 @@ export function buildFadePlan(root: AgNode, options?: BackdropFadeOptions): Fade
   // dev-mode warning; stage 1 stays pure.
   const { amount, hasMixedAmounts } = assertSingleAmount(includeAmounts, excludeAmounts)
 
+  // Kitty overlay is available only when the caller enabled the capability
+  // AND the plan resolved a scrim — the overlay needs a tint to composite.
+  const kittyEnabled = options?.kittyGraphics === true && scrim !== null
+
   return {
     active: true,
     amount,
@@ -337,6 +351,7 @@ export function buildFadePlan(root: AgNode, options?: BackdropFadeOptions): Fade
     excludes,
     mixedAmounts: hasMixedAmounts,
     scrimTowardLight,
+    kittyEnabled,
   }
 }
 
@@ -407,14 +422,14 @@ function isLightScrim(scrim: HexColor | null): boolean {
 
 function collectBackdropMarkers(
   node: AgNode,
-  includes: FadeRect[],
-  excludes: FadeRect[],
+  includes: PlanRect[],
+  excludes: PlanRect[],
   includeAmounts: number[],
   excludeAmounts: number[],
 ): void {
   const props = node.props as Record<string, unknown>
-  const includeRaw = props[FADE_ATTR]
-  const excludeRaw = props[FADE_EXCLUDE_ATTR]
+  const includeRaw = props[BACKDROP_FADE_ATTR]
+  const excludeRaw = props[BACKDROP_FADE_EXCLUDE_ATTR]
 
   if (includeRaw !== undefined || excludeRaw !== undefined) {
     const rect = node.screenRect ?? node.scrollRect ?? node.boxRect
@@ -444,8 +459,8 @@ function collectBackdropMarkers(
  * Accepted inputs:
  *
  *   - `undefined`, `null`, `false` → `null` (marker absent)
- *   - `true` → `DEFAULT_FADE_AMOUNT` (presence attribute, e.g. `<Backdrop fade />`)
- *   - `""` → `DEFAULT_FADE_AMOUNT` (HTML-attribute presence idiom)
+ *   - `true` → `DEFAULT_AMOUNT` (presence attribute, e.g. `<Backdrop fade />`)
+ *   - `""` → `DEFAULT_AMOUNT` (HTML-attribute presence idiom)
  *   - finite numeric or numeric-string (including in scientific notation):
  *       - `<= 0` → `null` (explicit opt-out)
  *       - `> 1` → `1` (clamped)
@@ -461,8 +476,8 @@ function collectBackdropMarkers(
 function parseFade(raw: unknown): number | null {
   if (raw === undefined || raw === null) return null
   if (raw === false) return null
-  if (raw === true) return DEFAULT_FADE_AMOUNT
-  if (raw === "") return DEFAULT_FADE_AMOUNT
+  if (raw === true) return DEFAULT_AMOUNT
+  if (raw === "") return DEFAULT_AMOUNT
   const n = typeof raw === "number" ? raw : Number(raw)
   if (!Number.isFinite(n)) return null
   if (n <= 0) return null

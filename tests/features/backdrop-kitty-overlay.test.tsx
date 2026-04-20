@@ -66,7 +66,7 @@ describe("backdrop Kitty overlay: capability enabled", () => {
 
     const render = createRenderer({ cols: 40, rows: 10 })
 
-    // ThemeProvider supplies rootBg so the blend target resolves to the
+    // ThemeProvider supplies defaultBg so the blend target resolves to the
     // dark neutral. ModalDialog marks its outside-region with
     // `data-backdrop-fade-excluded` — the entire area outside the dialog
     // gets faded, and any emoji cells in that area get Kitty overlays.

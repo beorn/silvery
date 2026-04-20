@@ -9,8 +9,8 @@
  *      leaving cells INSIDE crisp.
  *   4. Incremental rendering matches fresh (STRICT=1 auto-check every rerender).
  *   5. Realistic-scale fixture (50+ nodes) — catches cumulative cascade issues.
- *   6. Two-channel transform (with rootBg): explicit cell.bg is also mixed
- *      toward the scrim; null bg is resolved to rootBg first, then mixed.
+ *   6. Two-channel transform (with defaultBg): explicit cell.bg is also mixed
+ *      toward the scrim; null bg is resolved to defaultBg first, then mixed.
  *
  * Model: sRGB source-over alpha compositing — `out = cell * (1 - α) + scrim * α`.
  * Scrim is pure black (`#000000`) for dark themes, pure white (`#ffffff`) for
@@ -31,7 +31,7 @@ import { deriveTheme } from "@silvery/ansi"
 import { catppuccinMocha } from "@silvery/theme/schemes"
 
 // A dark theme with known bg — catppuccin mocha bg is #1e1e2e (luminance ≈ 0.012).
-// With rootBg="#1e1e2e", deriveScrimColor returns "#000000" (dark scrim).
+// With defaultBg="#1e1e2e", deriveScrimColor returns "#000000" (dark scrim).
 const darkTheme = deriveTheme(catppuccinMocha, "truecolor")
 
 // Check whether a cell's fg has been mixed toward the scrim. For cells where
@@ -70,7 +70,7 @@ describe("backdrop fade: Backdrop primitive", () => {
     expect(fgIsWhite(crisp)).toBe(true)
 
     // Frame 2 — fade 0.5. Same text, but fg is mixed toward cell.bg (legacy
-    // path — no rootBg context in this test). White toward black at α=0.5 in
+    // path — no defaultBg context in this test). White toward black at α=0.5 in
     // sRGB source-over lands at (128,128,128) exactly.
     app.rerender(<App faded={true} />)
     expect(app.text).toContain("HELLO WORLD")
@@ -235,13 +235,13 @@ describe("backdrop fade: realistic-scale fixture (50+ nodes)", () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Two-channel transform: when rootBg flows through a Box with theme= prop,
+// Two-channel transform: when defaultBg flows through a Box with theme= prop,
 // both cell.fg AND cell.bg are mixed toward the scrim (pure black for dark
 // themes, pure white for light) via sRGB source-over. Null/default bg is
-// resolved to rootBg first, then mixed. These tests verify that path.
+// resolved to defaultBg first, then mixed. These tests verify that path.
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("backdrop fade: two-channel transform (rootBg via theme prop)", () => {
+describe("backdrop fade: two-channel transform (defaultBg via theme prop)", () => {
   test("outside-modal cell with explicit colored bg: cell.bg blends toward black neutral", () => {
     const render = createRenderer({ cols: 40, rows: 10 })
 
@@ -421,13 +421,13 @@ describe("backdrop fade: two-channel transform (rootBg via theme prop)", () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Standalone Backdrop: <Backdrop fade={...}> used directly, not inside
-// ModalDialog. Verifies that the rootBg walk (findRootThemeBg in ag.ts)
+// ModalDialog. Verifies that the defaultBg walk (findRootThemeBg in ag.ts)
 // finds the theme from ThemeProvider and activates the two-channel blend path.
 //
 // Phase: km-silvery.theme-v4-backdrop-standalone
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("standalone Backdrop: rootBg from ThemeProvider", () => {
+describe("standalone Backdrop: defaultBg from ThemeProvider", () => {
   test("fades fg + bg toward theme scrim (dark) when wrapped in ThemeProvider", () => {
     // darkTheme.bg = "#1e1e2e" → luminance ≈ 0.012 → dark scrim = "#000000".
     //
@@ -515,7 +515,7 @@ describe("standalone Backdrop: rootBg from ThemeProvider", () => {
 
   test("incremental renders match fresh at SILVERY_STRICT=2 (standalone Backdrop)", () => {
     // Mount and toggle content inside a standalone Backdrop to exercise
-    // incremental rendering with the rootBg walk path.
+    // incremental rendering with the defaultBg walk path.
     const render = createRenderer({ cols: 40, rows: 10 })
 
     function App({ label }: { label: string }) {
@@ -583,7 +583,7 @@ describe("backdrop fade: empty-cell bg darkening (regression)", () => {
     const pre = app.cell(35, 7)
     expect(pre.char).toBe(" ")
     expect(pre.fg).toBeNull()
-    // Pre-modal: bg is inherited rootBg (darkTheme.bg = #1e1e2e = {30,30,46}).
+    // Pre-modal: bg is inherited defaultBg (darkTheme.bg = #1e1e2e = {30,30,46}).
     expect(pre.bg).not.toBeNull()
     const preBg = pre.bg as { r: number; g: number; b: number }
     expect(preBg.r).toBe(30)
@@ -1008,8 +1008,8 @@ describe("backdrop fade: real-app regressions (b2dafd70)", () => {
   })
 
   test("backdrop hue cast fades proportionally with alpha (not amplified on Nord)", () => {
-    // On a Nord-like blue-tinted theme (rootBg #2E3440), null-bg cells are
-    // resolved to rootBg then mixed toward #000000. sRGB source-over scales
+    // On a Nord-like blue-tinted theme (defaultBg #2E3440), null-bg cells are
+    // resolved to defaultBg then mixed toward #000000. sRGB source-over scales
     // every channel by (1 - α), so the absolute r/g/b gap shrinks by the
     // same factor — the blue cast is reduced, not amplified.
     //

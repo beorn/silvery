@@ -31,12 +31,12 @@
  * identical (plan, buffer) inputs must produce byte-identical overlay
  * strings across fresh and incremental paths.
  *
- * @see ./plan.ts — `FadePlan`, `FadeRect`
+ * @see ./plan.ts — `Plan`, `PlanRect`
  * @see ./realize-buffer.ts — stage 2a (cell-level transform)
  * @see ./realize-kitty.ts — stage 2b (Kitty overlay emission)
  */
 
-import type { FadeRect } from "./plan"
+import type { PlanRect } from "./plan"
 
 /**
  * Walk every cell covered by the plan's include and exclude rects and
@@ -57,8 +57,8 @@ import type { FadeRect } from "./plan"
 export function forEachFadeRegionCell(
   bufferWidth: number,
   bufferHeight: number,
-  includes: readonly FadeRect[],
-  excludes: readonly FadeRect[],
+  includes: readonly PlanRect[],
+  excludes: readonly PlanRect[],
   visit: (x: number, y: number) => void,
 ): number {
   if (bufferWidth <= 0 || bufferHeight <= 0) return 0

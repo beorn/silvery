@@ -75,10 +75,10 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
  * leading `#`, and surrounding whitespace. Returns null when the input is
  * not a hex color.
  *
- * Applied by `buildFadePlan` to every user-provided color option
- * (`defaultBg`, `defaultFg`, `rootBg`, `scrimColor`) exactly once so
- * downstream comparisons (`scrim === defaultBg`, etc.) work regardless of
- * input casing or shorthand.
+ * Applied by `buildPlan` to every user-provided color option
+ * (`defaultBg`, `defaultFg`, `scrimColor`) exactly once so downstream
+ * comparisons (`scrim === defaultBg`, etc.) work regardless of input
+ * casing or shorthand.
  */
 export function normalizeHex(hex: string | null | undefined): HexColor | null {
   if (hex === null || hex === undefined) return null

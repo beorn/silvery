@@ -584,14 +584,14 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     output: string
     buffer: TerminalBuffer
     carryForwardBuffer: TerminalBuffer
-    kittyOverlay: string
+    overlay: string
   } {
     const ag = createAg(root)
     ag.layout({ cols, rows }, opts)
     // `buffer` is post-fade (what we paint); `carryForwardBuffer` is pre-fade
     // (what the NEXT frame's incremental render must clone). See ag.ts
     // `AgRenderResult.carryForwardBuffer` for the invariant rationale.
-    const { buffer, carryForwardBuffer, kittyOverlay } = ag.render({ prevBuffer })
+    const { buffer, carryForwardBuffer, overlay } = ag.render({ prevBuffer })
     // Output-phase diff uses the previously painted (post-fade) buffer.
     // `prevPaintedBuffer` is set by the caller (see singlePass/classic loops)
     // and stored as `instance.prevPaintedBuffer`.
@@ -601,9 +601,9 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // `Ag` per render, the ag-internal `_kittyActive` tracker is always fresh
     // and can't emit the deactivation `a=d`. Track it at the instance level
     // and synthesize the delete-all when the overlay disappears.
-    const overlayEmitted = kittyOverlay.length > 0
+    const overlayEmitted = overlay.length > 0
     if (overlayEmitted) {
-      output += kittyOverlay
+      output += overlay
       instance.kittyActive = true
     } else if (instance.kittyActive) {
       // Transition active → inactive (modal closed). Emit delete-all once
@@ -611,7 +611,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       output += _CURSOR_SAVE + _kittyDeleteAllScrimPlacements() + _CURSOR_RESTORE
       instance.kittyActive = false
     }
-    return { output, buffer, carryForwardBuffer, kittyOverlay }
+    return { output, buffer, carryForwardBuffer, overlay }
   }
 
   function doRender(): string {
@@ -620,7 +620,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // Kitty backdrop-fade overlay from the incremental render. Captured
     // here so the STRICT block below can compare it against the fresh
     // render's overlay (determinism invariant — see pipeline/backdrop/).
-    let incrementalKittyOverlay = ""
+    let incrementalOverlay = ""
 
     if (instance.singlePassLayout) {
       // Production-matching single-pass: one runPipeline, no stabilization
@@ -660,7 +660,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
               output = result.output
               buffer = result.buffer
               carryForwardBuffer = result.carryForwardBuffer
-              incrementalKittyOverlay = result.kittyOverlay
+              incrementalOverlay = result.overlay
             } catch (e) {
               // STRICT output verification may throw from the output phase.
               // The render phase buffer is still valid and attached to the
@@ -748,7 +748,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
               output = result.output
               buffer = result.buffer
               carryForwardBuffer = result.carryForwardBuffer
-              incrementalKittyOverlay = result.kittyOverlay
+              incrementalOverlay = result.overlay
             } catch (e) {
               classicRenderError = e as Error
               const attachedBuffer = (e as any)?.__silvery_buffer
@@ -811,20 +811,20 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // Skip first render (nothing to compare against)
     if (strictMode && instance.renderCount > 1) {
       const root = getContainerRoot(instance.container)
-      const { buffer: freshBuffer, kittyOverlay: freshKittyOverlay } = doFreshRenderFull()
+      const { buffer: freshBuffer, overlay: freshOverlay } = doFreshRenderFull()
 
       // STRICT overlay-plan comparison.
       //
-      // Invariant: `applyBackdropFade` is a pure function of (tree markers,
-      // buffer cells, options) → kittyOverlay is deterministic. Incremental
+      // Invariant: `applyBackdrop` is a pure function of (tree markers,
+      // buffer cells, options) → overlay is deterministic. Incremental
       // and fresh paths MUST emit byte-identical overlay strings. Any drift
       // is a determinism bug in marker collection, the emoji walk, or
       // placement ID derivation — see `formatOverlayMismatch` in
       // scheduler.ts for the diagnostic path.
-      if (incrementalKittyOverlay !== freshKittyOverlay) {
+      if (incrementalOverlay !== freshOverlay) {
         const msg = formatRendererOverlayMismatch(
-          incrementalKittyOverlay,
-          freshKittyOverlay,
+          incrementalOverlay,
+          freshOverlay,
           instance.renderCount,
         )
         throw new IncrementalRenderMismatchError(msg)
@@ -880,15 +880,15 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   }
 
   // Fresh render: renders from scratch without updating incremental state.
-  // Returns buffer + kittyOverlay so the STRICT block can compare the
+  // Returns buffer + overlay so the STRICT block can compare the
   // backdrop-fade overlay byte-for-byte against the incremental render.
-  function doFreshRenderFull(): { buffer: TerminalBuffer; kittyOverlay: string } {
+  function doFreshRenderFull(): { buffer: TerminalBuffer; overlay: string } {
     const root = getContainerRoot(instance.container)
-    const { buffer, kittyOverlay } = runPipeline(root, instance.columns, instance.rows, null, {
+    const { buffer, overlay } = runPipeline(root, instance.columns, instance.rows, null, {
       skipLayoutNotifications: true,
       skipScrollStateUpdates: true,
     })
-    return { buffer, kittyOverlay }
+    return { buffer, overlay }
   }
   // Public shim: keeps the `freshRender(): TerminalBuffer` API stable for
   // external callers (with-diagnostics, app.freshRender).
@@ -1542,7 +1542,7 @@ export function getActiveRenderCount(): number {
 /**
  * Format a human-readable diff when the incremental and fresh Kitty overlays
  * disagree. The overlay is a Kitty graphics protocol escape sequence emitted
- * by `realizeFadePlanToKittyOverlay` (see `pipeline/backdrop/`) — it
+ * by `realizeToKitty` (see `pipeline/backdrop/`) — it
  * places translucent "scrim" images over emoji cells inside faded regions.
  * The invariant is that the fresh and incremental paths emit byte-identical
  * strings for the same tree; any drift is a determinism bug.

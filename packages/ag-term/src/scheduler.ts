@@ -491,7 +491,7 @@ export class RenderScheduler {
       const doRender = () => {
         const ag = createAg(this.root, { measurer })
         ag.layout({ cols: width, rows: height })
-        const { buffer, kittyOverlay } = ag.render({ prevBuffer: this.prevBuffer })
+        const { buffer, overlay } = ag.render({ prevBuffer: this.prevBuffer })
 
         const start = performance.now()
         const outputFn = this.pipelineConfig?.outputPhaseFn ?? outputPhase
@@ -513,7 +513,7 @@ export class RenderScheduler {
         }
         // Append Kitty emoji-scrim overlay from the backdrop-fade pass.
         // No-op when backdrop inactive or cap disabled — zero-length string.
-        if (kittyOverlay) ansiOutput += kittyOverlay
+        if (overlay) ansiOutput += overlay
         const tOutput = performance.now() - start
 
         // Bench instrumentation: accumulate output-phase timing
@@ -523,12 +523,12 @@ export class RenderScheduler {
           acc.pipelineCalls += 1
         }
 
-        return { output: ansiOutput, buffer, kittyOverlay }
+        return { output: ansiOutput, buffer, overlay }
       }
       const {
         output,
         buffer,
-        kittyOverlay: incrementalKittyOverlay,
+        overlay: incrementalOverlay,
       } = measurer ? runWithMeasurer(measurer, doRender) : doRender()
 
       // Transform output based on non-TTY mode
@@ -610,23 +610,23 @@ export class RenderScheduler {
           freshAg.layout({ cols: width, rows: height }, { skipLayoutNotifications: true })
           return freshAg.render()
         }
-        const { buffer: freshBuffer, kittyOverlay: freshKittyOverlay } = measurer
+        const { buffer: freshBuffer, overlay: freshOverlay } = measurer
           ? runWithMeasurer(measurer, doFreshRender)
           : doFreshRender()
 
         // STRICT overlay-plan comparison.
         //
-        // Invariant: `applyBackdropFade` is a pure function of (tree markers,
-        // buffer cells, options) → kittyOverlay is deterministic. Incremental
+        // Invariant: `applyBackdrop` is a pure function of (tree markers,
+        // buffer cells, options) → overlay is deterministic. Incremental
         // and fresh paths MUST emit byte-identical overlay strings.
         //
         // A drift here signals non-determinism in marker collection order,
         // the emoji walk, or placement ID derivation — any of which would
         // cause scrim flicker or orphaned placements across frames.
-        if (incrementalKittyOverlay !== freshKittyOverlay) {
+        if (incrementalOverlay !== freshOverlay) {
           const msg = formatOverlayMismatch(
-            incrementalKittyOverlay,
-            freshKittyOverlay,
+            incrementalOverlay,
+            freshOverlay,
             renderNum,
           )
           if (process.env.DEBUG_LOG) {

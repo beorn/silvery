@@ -42,9 +42,9 @@ import {
 } from "./pipeline/layout-phase"
 import { renderPhase, clearBgConflictWarnings } from "./pipeline/render-phase"
 import {
-  applyBackdropFade,
+  applyBackdrop,
   hasBackdropMarkers,
-  type BackdropColorLevel,
+  type ColorLevel as BackdropColorLevel,
 } from "./pipeline/backdrop"
 import { CURSOR_RESTORE, CURSOR_SAVE, kittyDeleteAllScrimPlacements } from "@silvery/ansi"
 import type { Theme } from "@silvery/ansi"
@@ -116,7 +116,7 @@ export interface AgRenderResult {
    * string when no overlays are active (backdrop inactive, kittyGraphics cap
    * disabled, or no wide cells in the faded region).
    */
-  readonly kittyOverlay: string
+  readonly overlay: string
 }
 
 export interface Ag {
@@ -427,20 +427,20 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     // state (renderer.ts) can track pre-fade. The post-fade `buffer` is
     // what gets painted; pre-fade is what gets cloned for incremental.
     let carryForwardBuffer: TerminalBuffer
-    let kittyOverlay = ""
+    let overlay = ""
     const backdropActive = hasBackdropMarkers(root)
     if (backdropActive) {
       carryForwardBuffer = buffer.clone()
       if (!opts?.fresh) {
         _prevBuffer = carryForwardBuffer
       }
-      const rootBg = findRootThemeBg(root) ?? undefined
-      const result = applyBackdropFade(root, buffer, {
+      const defaultBg = findRootThemeBg(root) ?? undefined
+      const result = applyBackdrop(root, buffer, {
         colorLevel,
-        rootBg,
+        defaultBg,
         kittyGraphics,
       })
-      kittyOverlay = result.kittyOverlay
+      overlay = result.overlay
     } else {
       carryForwardBuffer = buffer
       if (!opts?.fresh) {
@@ -451,12 +451,12 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       // placements don't linger on screen. The flag `_kittyActive` tracks
       // whether we emitted placements in the previous frame.
       if (_kittyActive) {
-        kittyOverlay = CURSOR_SAVE + kittyDeleteAllScrimPlacements() + CURSOR_RESTORE
+        overlay = CURSOR_SAVE + kittyDeleteAllScrimPlacements() + CURSOR_RESTORE
       }
     }
     // Track active placements across frames. True when we emitted (or will
     // emit) overlay escapes this frame WITH backdrop still active.
-    _kittyActive = backdropActive && kittyOverlay.length > 0
+    _kittyActive = backdropActive && overlay.length > 0
 
     // Clear the module-level dirty tracking after each render pass.
     // Content dirty nodes were processed by renderPhase; layout dirty is
@@ -471,7 +471,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     }
 
     const frame = createTextFrame(buffer)
-    return { frame, buffer, carryForwardBuffer, prevBuffer, tContent, kittyOverlay }
+    return { frame, buffer, carryForwardBuffer, prevBuffer, tContent, overlay }
   }
 
   // -------------------------------------------------------------------------
@@ -554,7 +554,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
         buffer: result.buffer,
         carryForwardBuffer: result.carryForwardBuffer,
         prevBuffer: result.prevBuffer,
-        kittyOverlay: result.kittyOverlay,
+        overlay: result.overlay,
       }
     },
 

@@ -38,7 +38,7 @@ const COLOR_PANEL: Array<[string, string]> = [
   // Pale / low-chroma
   ["catppuccin fg", "#cdd6f4"],
   ["catppuccin fg-muted", "#bac2de"],
-  ["nord-like rootBg", "#2e3440"],
+  ["nord-like defaultBg", "#2e3440"],
   // Mid chroma
   ["catppuccin primary", "#b4befe"],
   ["catppuccin blue", "#89b4fa"],
@@ -151,7 +151,7 @@ describe("backdrop perceptual invariants: deemphasize primitive", () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Integration: invariants hold when exercised through the full
-// `applyBackdropFade` pipeline (not just the primitive). This catches any
+// `applyBackdrop` pipeline (not just the primitive). This catches any
 // orchestration bug that would e.g. apply deemphasize twice or mix with the
 // wrong color. Uses `createRenderer` so the whole backdrop pass runs.
 // ─────────────────────────────────────────────────────────────────────────────

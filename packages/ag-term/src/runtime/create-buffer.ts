@@ -5,7 +5,7 @@ import type { Buffer } from "./types"
 export function createBuffer(
   termBuffer: TerminalBuffer,
   nodes: AgNode,
-  kittyOverlay?: string,
+  overlay?: string,
 ): Buffer {
   let _text: string | undefined
   let _ansi: string | undefined
@@ -18,6 +18,6 @@ export function createBuffer(
     },
     nodes,
     _buffer: termBuffer,
-    kittyOverlay,
+    overlay,
   }
 }
