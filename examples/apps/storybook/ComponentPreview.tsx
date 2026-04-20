@@ -31,6 +31,7 @@ import {
   ProgressBar,
   type SelectOption,
 } from "silvery"
+import { IntentDemo } from "./IntentDemo.tsx"
 
 // Sample data kept tiny so the pane always fits.
 const SELECT_ITEMS: SelectOption[] = [
@@ -315,6 +316,11 @@ export function ComponentPreview({ schemeName, mode }: ComponentPreviewProps): R
           </Small>
           <ModalPreview />
         </Box>
+
+        <Divider />
+
+        {/* Feature 3 — Intent vs role (Sterling preflight decision D1) */}
+        <IntentDemo />
       </Box>
     </Box>
   )
