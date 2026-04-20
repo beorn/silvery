@@ -151,3 +151,31 @@ Flag emoji are regional indicator sequences (U+1F1E6..U+1F1FF pairs). Some termi
 **Why it wasn't in changesToAnsi**: `changesToAnsi` is correct — it matches real terminal behavior. The bug was only in the STRICT verification parser, which caused false STRICT_OUTPUT failures. Production rendering was never affected.
 
 **Lesson**: When STRICT_OUTPUT fails but the content buffer is correct, check the `replayAnsiWithStyles` parser — it may not match real terminal semantics.
+
+## Borderless Overflow Indicator Overwrites Child Content (2026-04-20)
+
+**Symptom**: Scroll container with `overflowIndicator=true`, no `borderStyle`, and `contentHeight = viewportHeight + 1`. The last card renders only its top-border (`╭`), then `▼1` appears on the row where that card's text should be. User sees "lone ╭ stacked above ▼1 — card content gone."
+
+**Root cause**: `scrollPhase` correctly reserves one row for the indicator (`visibleBottom = rawViewportHeight - indicatorReserve` when `hasOverflow && overflowIndicator && !borderStyle`). This controls WHICH children are "visible", but flexbox has already positioned children by the time `layout-phase` ran — a card at flexbox-computed y=viewport-2..viewport+1 still writes its text row at y=viewport-1.
+
+`computeChildClipBounds` in `render-phase.ts` returned the FULL viewport rect (`layout.y..layout.y+layout.height`). Children rendered into that full rect; the `▼N` indicator (drawn afterward in `renderScrollIndicators`) then overwrote whatever the child wrote on the indicator row.
+
+**Fix** (`renderScrollContainerChildren` in `render-phase.ts`): split the clip into `viewportClipBounds` (used by Tier 1 shift / Tier 2 clear / Tier 3 sticky-force-refresh — all of which must span the full viewport so indicator rows repaint correctly) and `childClipBounds` (passed to child renders — reduced by 1 row at each indicator edge).
+
+```typescript
+const showBorderlessIndicator = props.overflowIndicator === true && !props.borderStyle
+const childClipBounds =
+  showBorderlessIndicator && (ss.hiddenAbove > 0 || ss.hiddenBelow > 0)
+    ? {
+        ...viewportClipBounds,
+        top: ss.hiddenAbove > 0 ? viewportClipBounds.top + 1 : viewportClipBounds.top,
+        bottom: ss.hiddenBelow > 0 ? viewportClipBounds.bottom - 1 : viewportClipBounds.bottom,
+      }
+    : viewportClipBounds
+```
+
+**Test**: `tests/features/listview-overflow-fits.test.tsx` — "content barely exceeds viewport: indicator reserves its row — last card's content not overwritten". Positive control: `▼N` still renders, but on its own row with no card text beside it.
+
+**Why STRICT didn't catch it**: The bug produces identical incremental and fresh renders (both wrong in the same way — both call `renderScrollIndicators` on top of children). STRICT verifies incremental==fresh, not incremental==intended.
+
+**Lesson**: `scrollPhase` state (visibleTop/visibleBottom, indicatorReserve) and `render-phase`'s child clip bounds must agree on the reserved area. When adding or changing indicator logic, verify that the clip passed to child renders matches the intended content area, not the raw viewport rect.

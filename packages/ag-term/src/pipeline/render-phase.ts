@@ -1231,7 +1231,7 @@ function renderScrollContainerChildren(
   // Scroll containers clip vertically (for scrolling) but NOT horizontally.
   // Scroll containers clip vertically (viewport) but not horizontally —
   // horizontal containment is handled by text wrapping, not clipping.
-  const childClipBounds = computeChildClipBounds(
+  const viewportClipBounds = computeChildClipBounds(
     layout,
     props,
     clipBounds,
@@ -1240,6 +1240,26 @@ function renderScrollContainerChildren(
     /* vertical */ true,
   )
 
+  // Borderless overflow indicators (overflowIndicator=true with no borderStyle)
+  // render ON TOP of the first/last content row of the viewport. When a child
+  // overflows into that row, the indicator overwrites the child's content,
+  // producing the user-reported "▼1 covers the last card's text" bug
+  // (km-tui.column-top-disappears).
+  //
+  // Build a reduced clip for children that excludes the reserved indicator
+  // row(s). Viewport operations (Tier 1 shift indicator pre-clear, Tier 2
+  // viewport clear) continue to use the full `viewportClipBounds` so the
+  // indicator row itself is repainted correctly.
+  const showBorderlessIndicator = props.overflowIndicator === true && !props.borderStyle
+  const childClipBounds =
+    showBorderlessIndicator && (ss.hiddenAbove > 0 || ss.hiddenBelow > 0)
+      ? {
+          ...viewportClipBounds,
+          top: ss.hiddenAbove > 0 ? viewportClipBounds.top + 1 : viewportClipBounds.top,
+          bottom: ss.hiddenBelow > 0 ? viewportClipBounds.bottom - 1 : viewportClipBounds.bottom,
+        }
+      : viewportClipBounds
+
   // Determine if scroll offset changed since last render.
   const scrollOffsetChanged = ss.offset !== ss.prevOffset
   const hasStickyChildren = !!(ss.stickyChildren && ss.stickyChildren.length > 0)
@@ -1247,9 +1267,13 @@ function renderScrollContainerChildren(
     ss.firstVisibleChild !== ss.prevFirstVisibleChild ||
     ss.lastVisibleChild !== ss.prevLastVisibleChild
 
-  // Compute viewport geometry (shared by all tiers)
-  const clearY = childClipBounds.top
-  const clearHeight = childClipBounds.bottom - childClipBounds.top
+  // Compute viewport geometry (shared by all tiers).
+  // `clearY` / `clearHeight` describe the FULL viewport (including indicator
+  // rows) — used by Tier 1 shift / Tier 2 clear / Tier 3 sticky-force-refresh,
+  // all of which need to repaint the indicator rows. Children still render
+  // with the shrunk `childClipBounds` so they don't overwrite indicators.
+  const clearY = viewportClipBounds.top
+  const clearHeight = viewportClipBounds.bottom - viewportClipBounds.top
   const contentX = layout.x + border.left + padding.left
   const contentWidth = layout.width - border.left - border.right - padding.left - padding.right
 

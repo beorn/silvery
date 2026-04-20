@@ -145,6 +145,47 @@ describe("ListView — overflow indicators", () => {
     expect(text).not.toContain("▼")
   })
 
+  // Regression for km-tui.column-top-disappears: with 20 mixed-height items
+  // (alternating 3-row and 7-row) in a tall viewport (3× total content height),
+  // no overflow indicator should render. The bug claim was that a spurious `▼1`
+  // appears at the bottom when items fit; verify that `hasOverflow=false` gates
+  // the indicator correctly at realistic scale.
+  test("no overflow indicator when mixed-height items fit in a tall viewport (20 items, height=150)", () => {
+    const items = makeItems(20)
+    const r = createRenderer({ cols: 80, rows: 152 })
+    const app = r(
+      <ListView
+        items={items}
+        height={150}
+        overflowIndicator
+        scrollTo={0}
+        renderItem={(item, i, _meta) => {
+          // Alternate between short (1-row) and tall (3-row) items.
+          // Total content: 10 short + 10 tall = 10×1 + 10×3 = 40 rows.
+          // Viewport: 150 rows → 110 rows of blank after content.
+          if (i % 2 === 0) {
+            return <Text>{item.title}</Text>
+          }
+          return (
+            <Box flexDirection="column">
+              <Text>{item.title} header</Text>
+              <Text>{item.title} body</Text>
+              <Text>{item.title} footer</Text>
+            </Box>
+          )
+        }}
+        getKey={(item) => item.id}
+      />,
+    )
+    const text = stripAnsi(app.text)
+    expect(text, "no ▼N when contentHeight (~40) < viewportHeight (150)").not.toContain("▼")
+    expect(text, "no ▲N at scrollTo=0").not.toContain("▲")
+    // All 20 items must render: count <= minWindowSize path.
+    for (let i = 0; i < 20; i++) {
+      expect(text, `item ${i} title must be visible`).toContain(`Item ${i}`)
+    }
+  })
+
   test("shows top overflow when scrolled past beginning", () => {
     const items = makeItems(10)
     const r = createRenderer({ cols: 40, rows: 7 })
