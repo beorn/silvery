@@ -334,16 +334,29 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       }
     }
 
-    // Render window = visible items + overscan buffer, capped at maxRendered
+    // Render window = visible items + overscan buffer, capped at maxRendered.
+    //
+    // CRITICAL INVARIANT: the window is derived from effectiveScrollOffset
+    // (the viewport top), NOT from the cursor. Cursor-centered windows fail
+    // at edges — when the cursor is at index 0 with overscan=5, only the
+    // lower half of the window renders (5 items), leaving blank viewport
+    // rows. The cursor's role is to drive scrollOffset (via
+    // calcEdgeBasedScrollOffset); it does not constrain the render window.
+    //
+    // Window layout:
+    //   start = scrollOffset - overscan        (items above the viewport)
+    //   end   = start + visibleCount + 2*overscan
+    //         = scrollOffset + visibleCount + overscan
+    //
+    // With both-edge overscan, the window always spans the viewport fully.
     const renderCount = Math.min(estimatedVisibleCount + 2 * overscan, maxRendered)
 
-    // Center the render window around the selected item
-    const viewportCenter = selectedIndexRef.current
-    const halfWindow = Math.floor(renderCount / 2)
-    let start = Math.max(0, viewportCenter - halfWindow)
-    const end = Math.min(count, start + renderCount)
+    let start = Math.max(0, effectiveScrollOffset - overscan)
+    let end = Math.min(count, start + renderCount)
 
-    // Adjust start if we hit the end
+    // Adjust start if we hit the end — keep the window size constant when
+    // there are enough items to fill it, so trailing edges near the bottom
+    // still show a full viewport.
     if (end === count) {
       start = Math.max(0, end - renderCount)
     }
