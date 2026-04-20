@@ -146,7 +146,7 @@ function Swatch({ hex }: { hex: string }) {
 function TokenSwatch() {
   return (
     <Box>
-      <Text color="$primary">X</Text>
+      <Text color="$fg-accent">X</Text>
     </Box>
   )
 }

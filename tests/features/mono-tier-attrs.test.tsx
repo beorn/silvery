@@ -19,6 +19,16 @@
  *
  * Bead: km-silvery.mono-tier-wiring
  * Spec: hub/silvery/design/v10-terminal/theme-system-v2-plan.md#p4
+ *
+ * NOTE (Sterling sweep — km-silvery.sterling-tests-legacy-sweep, 2026-04-20):
+ * This file deliberately retains legacy `$primary` / `$muted` / `$error` /
+ * `$success` / `$warning` / `$info` / `$selectionbg` tokens. The tests assert
+ * the legacy `DEFAULT_MONO_ATTRS` keying — `$primary → ["bold"]`,
+ * `$muted → ["dim"]`, etc. Sterling tokens (`$fg-accent`, `$fg-muted`, …) have
+ * different attr mappings (`fg-accent → ["italic","bold"]`) and are covered by
+ * `packages/ansi/tests/monochrome.test.ts`. When 0.20.0 drops the legacy
+ * `DEFAULT_MONO_ATTRS` keys, retire this file rather than mechanically
+ * renaming — the Sterling-keyed tests already cover the equivalent logic.
  */
 
 import React from "react"

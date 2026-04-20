@@ -7,6 +7,15 @@
  *
  * Dark themes: hover = +0.04L, active = +0.08L (brightens).
  * Light themes: hover = -0.04L, active = -0.08L (darkens).
+ *
+ * NOTE (Sterling sweep — km-silvery.sterling-tests-legacy-sweep, 2026-04-20):
+ * This file deliberately retains the legacy `$primary-*` / `$accent-*` /
+ * `$fg-*` state-variant tokens. The tests assert the legacy `deriveTheme`
+ * (from `@silvery/ansi`) state-variant rule (brighten/darken). Sterling has
+ * its own equivalent (`fg-accent-hover`, `bg-accent-active`) and its own
+ * derivation tests in `packages/theme/tests/`. When 0.20.0 drops the legacy
+ * `inlineSterlingTokens` shim, retire this file rather than mechanically
+ * renaming — the Sterling tests already cover the equivalent logic.
  */
 
 import React from "react"

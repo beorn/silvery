@@ -40,7 +40,7 @@ describe("Headings", () => {
     expect(app.text).toContain("Page Title")
   })
 
-  test("H1 is bold with $primary color", () => {
+  test("H1 is bold with $fg-accent color", () => {
     const app = render(<H1>Title</H1>)
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.char).toBe("T")
@@ -53,7 +53,7 @@ describe("Headings", () => {
     expect(app.text).toContain("Section")
   })
 
-  test("H2 is bold with $accent color", () => {
+  test("H2 is bold with $fg-accent color", () => {
     const app = render(<H2>Section</H2>)
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.char).toBe("S")
@@ -68,7 +68,7 @@ describe("Headings", () => {
     const app2 = render(<H2>A</H2>)
     const h2Fg = app2.term.buffer.getCell(0, 0).fg
 
-    // Both use semantic theme colors ($primary, $accent)
+    // Both use semantic theme colors ($fg-accent for both H1 and H2)
     expect(h1Fg).not.toBeNull()
     expect(h2Fg).not.toBeNull()
   })
@@ -89,7 +89,7 @@ describe("Headings", () => {
   })
 
   test("headings accept color override", () => {
-    const app = render(<H1 color="$success">OK</H1>)
+    const app = render(<H1 color="$fg-success">OK</H1>)
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.char).toBe("O")
     expect(cell.attrs.bold).toBe(true)
@@ -122,13 +122,13 @@ describe("Body text", () => {
     expect(cell.attrs.italic).toBe(true)
   })
 
-  test("Lead uses $muted color by default", () => {
+  test("Lead uses $fg-muted color by default", () => {
     const app = render(<Lead>Intro</Lead>)
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.fg).not.toBeNull()
   })
 
-  test("Muted renders text with $muted color", () => {
+  test("Muted renders text with $fg-muted color", () => {
     const app = render(<Muted>Secondary</Muted>)
     expect(app.text).toContain("Secondary")
     const cell = app.term.buffer.getCell(0, 0)
@@ -142,7 +142,7 @@ describe("Body text", () => {
     expect(cell.attrs.italic).toBeFalsy()
   })
 
-  test("Lead and Muted have the same $muted foreground", () => {
+  test("Lead and Muted have the same $fg-muted foreground", () => {
     const app1 = render(<Lead>A</Lead>)
     const leadFg = app1.term.buffer.getCell(0, 0).fg
 
@@ -185,10 +185,10 @@ describe("Inline emphasis", () => {
   })
 
   test("Strong and Em accept color override", () => {
-    const app1 = render(<Strong color="$success">A</Strong>)
+    const app1 = render(<Strong color="$fg-success">A</Strong>)
     expect(app1.term.buffer.getCell(0, 0).fg).not.toBeNull()
 
-    const app2 = render(<Em color="$warning">B</Em>)
+    const app2 = render(<Em color="$fg-warning">B</Em>)
     expect(app2.term.buffer.getCell(0, 0).fg).not.toBeNull()
   })
 })
@@ -203,7 +203,7 @@ describe("Inline code elements", () => {
     expect(app.text).toContain(" fn() ")
   })
 
-  test("Code has $mutedbg background", () => {
+  test("Code has $bg-muted background", () => {
     const app = render(<Code>x</Code>)
     // Find the 'x' character — it's at col 1 because of leading space
     const cell = app.term.buffer.getCell(1, 0)
@@ -216,7 +216,7 @@ describe("Inline code elements", () => {
     expect(app.text).toContain(" Ctrl+C ")
   })
 
-  test("Kbd has $mutedbg background and is bold", () => {
+  test("Kbd has $bg-muted background and is bold", () => {
     const app = render(<Kbd>K</Kbd>)
     const cell = app.term.buffer.getCell(1, 0)
     expect(cell.char).toBe("K")
@@ -235,7 +235,7 @@ describe("Inline code elements", () => {
   })
 
   test("Code and Kbd accept color override", () => {
-    const app = render(<Code color="$success">ok</Code>)
+    const app = render(<Code color="$fg-success">ok</Code>)
     const cell = app.term.buffer.getCell(1, 0)
     expect(cell.fg).not.toBeNull()
   })
@@ -267,7 +267,7 @@ describe("Block elements", () => {
     expect(buffer.getCell(quoteCol, 0).attrs.italic).toBe(true)
   })
 
-  test("Blockquote │ uses $muted color", () => {
+  test("Blockquote │ uses $fg-muted color", () => {
     const app = render(<Blockquote>Text</Blockquote>)
     const buffer = app.term.buffer
     // Find the │ character
@@ -302,7 +302,7 @@ describe("Block elements", () => {
     expect(buffer.getCell(codeCol, 0).attrs.italic).toBeFalsy()
   })
 
-  test("CodeBlock │ uses $border color", () => {
+  test("CodeBlock │ uses $border-default color", () => {
     const app = render(<CodeBlock>x</CodeBlock>)
     const buffer = app.term.buffer
     let barCol = -1
@@ -313,7 +313,7 @@ describe("Block elements", () => {
       }
     }
     expect(barCol).toBeGreaterThanOrEqual(0)
-    // $border resolves to a color
+    // $border-default resolves to a color
     expect(buffer.getCell(barCol, 0).fg).not.toBeNull()
   })
 
@@ -338,7 +338,7 @@ describe("Block elements", () => {
       }
     }
 
-    // $muted and $border should be different colors
+    // $fg-muted and $border-default should be different colors
     expect(bqBarFg).not.toEqual(cbBarFg)
   })
 })
@@ -353,7 +353,7 @@ describe("HR", () => {
     expect(app.text).toContain("─")
   })
 
-  test("uses $border color", () => {
+  test("uses $border-default color", () => {
     const app = render(<HR />)
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.char).toBe("─")
@@ -361,7 +361,7 @@ describe("HR", () => {
   })
 
   test("accepts color override", () => {
-    const app = render(<HR color="$success" />)
+    const app = render(<HR color="$fg-success" />)
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.fg).not.toBeNull()
   })
@@ -523,7 +523,7 @@ describe("Lists", () => {
   })
 
   describe("LI styling", () => {
-    test("LI marker uses $muted color by default", () => {
+    test("LI marker uses $fg-muted color by default", () => {
       const app = render(
         <UL>
           <LI>Item</LI>
@@ -550,7 +550,7 @@ describe("Lists", () => {
     test("LI accepts color override", () => {
       const app = render(
         <UL>
-          <LI color="$success">Green item</LI>
+          <LI color="$fg-success">Green item</LI>
         </UL>,
       )
       expect(app.text).toContain("Green item")
@@ -620,14 +620,14 @@ describe("Lists", () => {
 
 describe("Color override", () => {
   test.each([
-    ["H1", <H1 color="$success">X</H1>],
-    ["H2", <H2 color="$success">X</H2>],
-    ["H3", <H3 color="$success">X</H3>],
-    ["P", <P color="$success">X</P>],
-    ["Lead", <Lead color="$success">X</Lead>],
-    ["Muted", <Muted color="$success">X</Muted>],
-    ["Strong", <Strong color="$success">X</Strong>],
-    ["Em", <Em color="$success">X</Em>],
+    ["H1", <H1 color="$fg-success">X</H1>],
+    ["H2", <H2 color="$fg-success">X</H2>],
+    ["H3", <H3 color="$fg-success">X</H3>],
+    ["P", <P color="$fg-success">X</P>],
+    ["Lead", <Lead color="$fg-success">X</Lead>],
+    ["Muted", <Muted color="$fg-success">X</Muted>],
+    ["Strong", <Strong color="$fg-success">X</Strong>],
+    ["Em", <Em color="$fg-success">X</Em>],
   ] as const)("%s accepts color override", (_name, element) => {
     const app = render(element)
     expect(app.text).toContain("X")

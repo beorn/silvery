@@ -173,17 +173,22 @@ describe("useColorScheme", () => {
 // =============================================================================
 
 describe("ReactiveThemeProvider", () => {
-  // Two visually distinct themes for assertions
+  // Two visually distinct themes for assertions. Override both legacy and
+  // Sterling flat keys so JSX using either token shape resolves correctly.
   const darkTheme: Theme = {
     ...ansi16DarkTheme,
     name: "test-dark",
-    primary: "#ff0000", // red
+    primary: "#ff0000", // legacy alias
+    "bg-accent": "#ff0000", // red
+    "fg-accent": "#ff0000",
   }
 
   const lightTheme: Theme = {
     ...ansi16LightTheme,
     name: "test-light",
-    primary: "#00ff00", // green
+    primary: "#00ff00", // legacy alias
+    "bg-accent": "#00ff00", // green
+    "fg-accent": "#00ff00",
   }
 
   test("uses dark theme by default (unknown scheme)", () => {
@@ -314,7 +319,7 @@ describe("ReactiveThemeProvider", () => {
 
     function App() {
       return (
-        <Box theme={darkTheme} backgroundColor="$primary" width={10} height={1}>
+        <Box theme={darkTheme} backgroundColor="$bg-accent" width={10} height={1}>
           <Text>Test</Text>
         </Box>
       )
@@ -329,7 +334,7 @@ describe("ReactiveThemeProvider", () => {
       ),
     )
 
-    // Dark theme: $primary = #ff0000 (red) via Box theme prop
+    // Dark theme: $bg-accent = #ff0000 (red) via Box theme prop
     const cell = app.lastBuffer()!.getCell(0, 0)
     expect(cell.bg).toEqual({ r: 255, g: 0, b: 0 })
   })

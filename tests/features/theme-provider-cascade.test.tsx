@@ -31,31 +31,31 @@ const r = createRenderer({ cols: 40, rows: 4 })
 describe("nested ThemeProvider isolation", () => {
   /**
    * Layout:
-   *   <outer ThemeProvider primary="#FF0000">   row 0
-   *     <Text color="$primary">Outer</Text>      → should be red
-   *     <inner ThemeProvider primary="#0000FF">  row 1
-   *       <Text color="$primary">Inner</Text>    → should be blue
+   *   <outer ThemeProvider fg-accent="#FF0000">   row 0
+   *     <Text color="$fg-accent">Outer</Text>      → should be red
+   *     <inner ThemeProvider fg-accent="#0000FF">  row 1
+   *       <Text color="$fg-accent">Inner</Text>    → should be blue
    *     </inner>
-   *     <Text color="$primary">After</Text>      row 2 → should be red again
+   *     <Text color="$fg-accent">After</Text>      row 2 → should be red again
    *   </outer>
    */
-  test("inner provider primary overrides outer; outer resumes after inner", () => {
+  test("inner provider fg-accent overrides outer; outer resumes after inner", () => {
     // Each ThemeProvider Box has flexGrow=1 so we pin each content row to
     // height=1 via an explicit Box wrapper — otherwise the inner provider
     // consumes all remaining column space and pushes siblings to later rows.
     const app = r(
-      <ThemeProvider tokens={{ primary: "#FF0000" }}>
+      <ThemeProvider tokens={{ "fg-accent": "#FF0000" }}>
         <Box flexDirection="column">
           <Box height={1}>
-            <Text color="$primary">Outer</Text>
+            <Text color="$fg-accent">Outer</Text>
           </Box>
           <Box height={1}>
-            <ThemeProvider tokens={{ primary: "#0000FF" }}>
-              <Text color="$primary">Inner</Text>
+            <ThemeProvider tokens={{ "fg-accent": "#0000FF" }}>
+              <Text color="$fg-accent">Inner</Text>
             </ThemeProvider>
           </Box>
           <Box height={1}>
-            <Text color="$primary">After</Text>
+            <Text color="$fg-accent">After</Text>
           </Box>
         </Box>
       </ThemeProvider>,
@@ -64,15 +64,15 @@ describe("nested ThemeProvider isolation", () => {
     const RED = { r: 255, g: 0, b: 0 }
     const BLUE = { r: 0, g: 0, b: 255 }
 
-    // Row 0: "Outer" — outer theme ($primary = red)
+    // Row 0: "Outer" — outer theme ($fg-accent = red)
     expect(app.cell(0, 0).char).toBe("O")
     expect(app.cell(0, 0).fg).toEqual(RED)
 
-    // Row 1: "Inner" — inner theme ($primary = blue)
+    // Row 1: "Inner" — inner theme ($fg-accent = blue)
     expect(app.cell(0, 1).char).toBe("I")
     expect(app.cell(0, 1).fg).toEqual(BLUE)
 
-    // Row 2: "After" — outer theme resumes ($primary = red again)
+    // Row 2: "After" — outer theme resumes ($fg-accent = red again)
     expect(app.cell(0, 2).char).toBe("A")
     expect(app.cell(0, 2).fg).toEqual(RED)
   })
@@ -84,11 +84,11 @@ describe("nested ThemeProvider isolation", () => {
   test("outer subtree unchanged after inner theme update", () => {
     function App({ innerColor }: { innerColor: string }) {
       return (
-        <ThemeProvider tokens={{ primary: "#FF0000" }}>
+        <ThemeProvider tokens={{ "fg-accent": "#FF0000" }}>
           <Box flexDirection="column">
-            <Text color="$primary">Outer</Text>
-            <ThemeProvider tokens={{ primary: innerColor }}>
-              <Text color="$primary">Inner</Text>
+            <Text color="$fg-accent">Outer</Text>
+            <ThemeProvider tokens={{ "fg-accent": innerColor }}>
+              <Text color="$fg-accent">Inner</Text>
             </ThemeProvider>
           </Box>
         </ThemeProvider>
@@ -115,16 +115,16 @@ describe("nested ThemeProvider isolation", () => {
   /**
    * Three levels deep: each provider scopes only its own subtree.
    */
-  test("three-level nesting: each level gets its own primary", () => {
+  test("three-level nesting: each level gets its own fg-accent", () => {
     const app = r(
-      <ThemeProvider tokens={{ primary: "#FF0000" }}>
+      <ThemeProvider tokens={{ "fg-accent": "#FF0000" }}>
         <Box flexDirection="column">
-          <Text color="$primary">L1</Text>
-          <ThemeProvider tokens={{ primary: "#00FF00" }}>
+          <Text color="$fg-accent">L1</Text>
+          <ThemeProvider tokens={{ "fg-accent": "#00FF00" }}>
             <Box flexDirection="column">
-              <Text color="$primary">L2</Text>
-              <ThemeProvider tokens={{ primary: "#0000FF" }}>
-                <Text color="$primary">L3</Text>
+              <Text color="$fg-accent">L2</Text>
+              <ThemeProvider tokens={{ "fg-accent": "#0000FF" }}>
+                <Text color="$fg-accent">L3</Text>
               </ThemeProvider>
             </Box>
           </ThemeProvider>

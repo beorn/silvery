@@ -150,7 +150,7 @@ describe("Table", () => {
           {
             header: "Status",
             render: (item: Person) => (
-              <Text color={item.age >= 30 ? "$success" : "$warning"}>
+              <Text color={item.age >= 30 ? "$fg-success" : "$fg-warning"}>
                 {item.age >= 30 ? "senior" : "junior"}
               </Text>
             ),
@@ -232,7 +232,7 @@ describe("Table", () => {
       <Table
         columns={[{ header: "X", key: "name" }]}
         data={[{ name: "A" }]}
-        headerColor="$success"
+        headerColor="$fg-success"
       />,
     )
     expect(app.text).toContain("X")

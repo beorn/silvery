@@ -9,6 +9,14 @@
  * match fresh renders cell-for-cell.
  *
  * Bead: km-silvery.variants-as-tokens
+ *
+ * NOTE (Sterling sweep — km-silvery.sterling-tests-legacy-sweep, 2026-04-20):
+ * This file deliberately retains legacy `$primary`/`$accent`/`$success`/`$muted`
+ * tokens. The legacy `DEFAULT_VARIANTS` in `@silvery/ansi/theme/derived.ts` still
+ * binds `h1.color = "$primary"`, and these tests verify variant↔direct-color
+ * parity through that legacy binding. When 0.20.0 drops `inlineSterlingTokens`
+ * and migrates `DEFAULT_VARIANTS` to Sterling flat tokens, retire / rewrite this
+ * file rather than mechanically renaming.
  */
 
 import React from "react"
