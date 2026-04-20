@@ -7,75 +7,17 @@
  *
  *   <InlineAlert tone="error" />    LOW urgency — passive in-flow message
  *   <Banner tone="error" />         MEDIUM — dismissible top-of-page call
- *   <Dialog tone="error" />         HIGH — blocking modal that interrupts flow
+ *   <Alert tone="error" />          HIGH — blocking modal that interrupts flow
  *
  * Zero `priority` / `urgency` / `severity` prop involved. Urgency is carried
  * by component CHOICE + position + content, never by a Theme token.
  *
- * Sterling has no `InlineAlert`/`Banner` components yet — the demos below are
- * compositional presentations using Box + Text + theme tokens. When those
- * components ship (flagged for a separate bead), they replace these stubs.
+ * This demo eats its own dog food: uses the real silvery components shipped
+ * in `km-silvery.ui-alert-primitives`, not locally drawn approximations.
  */
 
 import React from "react"
-import { Box, Text, Muted, Divider, Strong, Small, Kbd } from "silvery"
-
-function InlineAlertStub({ children }: { children: string }): React.ReactElement {
-  return (
-    <Box gap={1}>
-      <Text color="$error" bold>
-        ✗
-      </Text>
-      <Text color="$error">{children}</Text>
-    </Box>
-  )
-}
-
-function BannerStub({ children }: { children: string }): React.ReactElement {
-  return (
-    <Box backgroundColor="$error" paddingX={2} paddingY={0} flexDirection="row" width={60}>
-      <Text color="$errorfg" bold>
-        ✗ {children}
-      </Text>
-      <Box flexGrow={1} />
-      <Text color="$errorfg" dim>
-        dismiss ×
-      </Text>
-    </Box>
-  )
-}
-
-function DialogStub({ title, body }: { title: string; body: string }): React.ReactElement {
-  return (
-    <Box
-      borderStyle="double"
-      borderColor="$error"
-      paddingX={2}
-      paddingY={1}
-      width={60}
-      flexDirection="column"
-    >
-      <Box gap={1}>
-        <Text color="$error" bold>
-          ✗
-        </Text>
-        <Strong>{title}</Strong>
-      </Box>
-      <Muted>{body}</Muted>
-      <Box marginTop={1} gap={1}>
-        <Box backgroundColor="$error" paddingX={1}>
-          <Text color="$errorfg" bold>
-            {" "}
-            Continue{" "}
-          </Text>
-        </Box>
-        <Box borderStyle="single" borderColor="$border" paddingX={1}>
-          <Text>Cancel</Text>
-        </Box>
-      </Box>
-    </Box>
-  )
-}
+import { Box, Text, Muted, Divider, Strong, Small, Kbd, InlineAlert, Banner, Alert, Button } from "silvery"
 
 function UrgencyRow({
   level,
@@ -88,7 +30,8 @@ function UrgencyRow({
   component: React.ReactElement
   annotation: string
 }): React.ReactElement {
-  const levelColor = level === "high" ? "$error" : level === "medium" ? "$warning" : "$info"
+  const levelColor =
+    level === "high" ? "$fg-error" : level === "medium" ? "$fg-warning" : "$fg-info"
   return (
     <Box flexDirection="column" gap={0}>
       <Box gap={1}>
@@ -110,7 +53,7 @@ export function UrgencyDemo(): React.ReactElement {
   return (
     <Box flexDirection="column" gap={1}>
       <Box gap={1}>
-        <Text color="$accent" bold>
+        <Text color="$fg-accent" bold>
           ◆
         </Text>
         <Strong>Urgency is not a token</Strong>
@@ -129,14 +72,18 @@ export function UrgencyDemo(): React.ReactElement {
           level="low"
           levelLabel="low"
           annotation="in-flow · passive"
-          component={<InlineAlertStub>Type-check failed in src/app.ts</InlineAlertStub>}
+          component={<InlineAlert tone="error">Type-check failed in src/app.ts</InlineAlert>}
         />
 
         <UrgencyRow
           level="medium"
           levelLabel="medium"
           annotation="above-the-fold · dismissible"
-          component={<BannerStub>Connection lost — retrying…</BannerStub>}
+          component={
+            <Banner tone="error" onDismiss={() => {}} width={60}>
+              Connection lost — retrying…
+            </Banner>
+          }
         />
 
         <UrgencyRow
@@ -144,10 +91,14 @@ export function UrgencyDemo(): React.ReactElement {
           levelLabel="high"
           annotation="blocking · interrupts flow"
           component={
-            <DialogStub
-              title="Delete workspace?"
-              body="This removes 3 projects and cannot be undone."
-            />
+            <Alert tone="error" open onClose={() => {}} width={60}>
+              <Alert.Title>Delete workspace?</Alert.Title>
+              <Alert.Body>This removes 3 projects and cannot be undone.</Alert.Body>
+              <Alert.Actions>
+                <Button label="Delete" tone="destructive" onPress={() => {}} />
+                <Button label="Cancel" tone="accent" onPress={() => {}} />
+              </Alert.Actions>
+            </Alert>
           }
         />
       </Box>
@@ -155,12 +106,12 @@ export function UrgencyDemo(): React.ReactElement {
       <Box
         flexDirection="column"
         borderStyle="single"
-        borderColor="$accent"
+        borderColor="$fg-accent"
         paddingX={1}
         marginTop={0}
       >
         <Box gap={1}>
-          <Text color="$accent" bold>
+          <Text color="$fg-accent" bold>
             ◆
           </Text>
           <Strong>No `priority` prop needed</Strong>

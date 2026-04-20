@@ -15,41 +15,14 @@
  *   [Error tone]    tone="error"         → error.bg / error.fgOn   (status)
  *   [Delete]        tone="destructive"   → same pixels, different intent
  *   [Delete]        tone="error"  ⚠      → BAD — linted anti-pattern
+ *
+ * This demo eats its own dog food: uses the real silvery `<Button>` with
+ * the `tone` prop shipped in `km-silvery.ui-button-tone`, not a locally
+ * drawn copy.
  */
 
 import React from "react"
-import { Box, Text, Muted, Divider, Strong, Small } from "silvery"
-
-/**
- * Inline "button" — no silvery Button here because `Button` doesn't ship a
- * `tone` prop (status→component design gap, flagged to the caller). Drawing
- * the button shape directly keeps this demo self-contained + style-accurate.
- */
-function ToneButton({
-  label,
-  tone,
-  muted,
-}: {
-  label: string
-  tone: "error" | "destructive" | "primary"
-  /** When true, render with lower emphasis (for anti-pattern). */
-  muted?: boolean
-}): React.ReactElement {
-  // "destructive" is an INTENT alias — the Theme has no destructive token.
-  // At the component layer we translate the intent to the status token.
-  const bgToken = tone === "destructive" ? "$error" : tone === "primary" ? "$accent" : "$error"
-  const fgToken =
-    tone === "destructive" ? "$errorfg" : tone === "primary" ? "$accentfg" : "$errorfg"
-
-  return (
-    <Box backgroundColor={bgToken} paddingX={2}>
-      <Text color={fgToken} bold={!muted} dim={muted}>
-        {" "}
-        {label}{" "}
-      </Text>
-    </Box>
-  )
-}
+import { Box, Text, Muted, Divider, Strong, Small, Button } from "silvery"
 
 function IntentRow({
   button,
@@ -65,7 +38,7 @@ function IntentRow({
   warning?: string
 }): React.ReactElement {
   const annColor =
-    annotationTone === "error" ? "$error" : annotationTone === "success" ? "$success" : undefined
+    annotationTone === "error" ? "$fg-error" : annotationTone === "success" ? "$fg-success" : undefined
   return (
     <Box flexDirection="column" gap={0}>
       <Box gap={2}>
@@ -80,9 +53,9 @@ function IntentRow({
       </Small>
       {warning ? (
         <Box gap={1}>
-          <Text color="$warning">⚠</Text>
+          <Text color="$fg-warning">⚠</Text>
           <Small>
-            <Text color="$warning">{warning}</Text>
+            <Text color="$fg-warning">{warning}</Text>
           </Small>
         </Box>
       ) : null}
@@ -94,7 +67,7 @@ export function IntentDemo(): React.ReactElement {
   return (
     <Box flexDirection="column" gap={1}>
       <Box gap={1}>
-        <Text color="$accent" bold>
+        <Text color="$fg-accent" bold>
           ◆
         </Text>
         <Strong>Intent vs role</Strong>
@@ -112,19 +85,19 @@ export function IntentDemo(): React.ReactElement {
 
       <Box flexDirection="column" gap={1}>
         <IntentRow
-          button={<ToneButton label="Error tone" tone="error" />}
+          button={<Button label="Error tone" tone="error" onPress={() => {}} />}
           code='<Button tone="error">Error tone</Button>'
           annotation="status — displays an error state"
           annotationTone="success"
         />
         <IntentRow
-          button={<ToneButton label="Delete" tone="destructive" />}
+          button={<Button label="Delete" tone="destructive" onPress={() => {}} />}
           code='<Button tone="destructive">Delete</Button>'
           annotation="intent — same pixels, different meaning"
           annotationTone="success"
         />
         <IntentRow
-          button={<ToneButton label="Delete" tone="error" muted />}
+          button={<Button label="Delete" tone="error" onPress={() => {}} />}
           code='<Button tone="error">Delete</Button>'
           annotation="BAD — action labelled with status tone"
           annotationTone="error"
@@ -135,13 +108,13 @@ export function IntentDemo(): React.ReactElement {
       <Box
         flexDirection="column"
         borderStyle="single"
-        borderColor="$accent"
+        borderColor="$fg-accent"
         paddingX={1}
         gap={0}
         marginTop={0}
       >
         <Box gap={1}>
-          <Text color="$accent" bold>
+          <Text color="$fg-accent" bold>
             D1
           </Text>
           <Strong>destructive is intent at the component layer, not a Theme field</Strong>
