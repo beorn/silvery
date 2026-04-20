@@ -95,6 +95,7 @@
 import { hexToOklch, oklchToHex, relativeLuminance } from "@silvery/color"
 import type { AgNode, Rect } from "@silvery/ag/types"
 import { ansi256ToRgb, isDefaultBg, type Color, type TerminalBuffer } from "../buffer"
+import { isLikelyEmoji } from "../unicode"
 import {
   backdropPlacementId,
   buildScrimPixels,
@@ -116,28 +117,41 @@ export interface BackdropFadeOptions {
    */
   colorLevel?: BackdropColorLevel
   /**
-   * Root background hex color from the active theme (e.g. `theme.bg`).
-   *
-   * When supplied, the scrim is derived from the theme's luminance: pure
-   * black (`#000000`) for dark themes, pure white (`#ffffff`) for light.
-   * Both `cell.fg` and `cell.bg` are mixed toward the scrim via sRGB
-   * source-over alpha at `amount`.
-   *
-   * When omitted, the pass falls back to the legacy single-channel behavior:
-   * `cell.fg = mixSrgb(fg, cell.bg, amount)`.
+   * Root background hex color from the active theme. Used as the implicit
+   * `defaultBg` (for null/default cell bg) AND as the luminance source for
+   * deriving the scrim. Kept for back-compat; prefer the split `defaultBg`
+   * / `scrimColor` options.
    */
   rootBg?: string
   /**
-   * When true, emit Kitty graphics protocol overlays on wide-char cells
-   * (emoji, CJK) inside the faded region. The terminal renders a translucent
-   * scrim *above* the emoji glyph, which SGR 2 "dim" alone can't fade on
-   * bitmap emoji (verified empirically — Ghostty ignores SGR 2 on bitmap
-   * emoji). Degrades gracefully: terminals without Kitty graphics ignore the
-   * APC sequences (they're eaten by the parser).
+   * Default background hex — resolves null/default `cell.bg` before mixing
+   * toward the scrim. If omitted, falls back to `rootBg`.
+   */
+  defaultBg?: string
+  /**
+   * Default foreground hex — resolves null/default `cell.fg` before the
+   * deemphasize pass. Without this, text using the terminal's default fg
+   * would stay at full brightness against a darkened backdrop (looks like
+   * the text is POPPING instead of receding). If omitted, the pass picks
+   * the opposite of the scrim (white for dark scrim, black for light).
+   */
+  defaultFg?: string
+  /**
+   * Explicit scrim color, or `"auto"` (default) to derive from theme
+   * luminance: pure black for dark themes, pure white for light. Apps that
+   * want a tinted scrim (e.g., a mid-gray for flat-color TUIs) override
+   * here.
+   */
+  scrimColor?: string | "auto"
+  /**
+   * When true, emit Kitty graphics protocol overlays on emoji cells inside
+   * the faded region. The terminal renders a translucent scrim image above
+   * the emoji glyph, which SGR 2 "dim" alone can't fade on bitmap emoji.
    *
-   * Only emitted on modern terminals (Ghostty, Kitty, WezTerm) that are not
-   * inside tmux. Caller should set based on `TerminalCaps.kittyGraphics` and
-   * absence of `TMUX` env var. See `agKittyGraphicsEnabled()` in `ag.ts`.
+   * CJK wide-char cells are NOT emoji — they respond to fg color like text,
+   * so they go through the normal deemphasize path regardless of Kitty
+   * availability. Only emoji cells (detected via `isLikelyEmoji`) skip the
+   * buffer mix when Kitty is active.
    */
   kittyGraphics?: boolean
 }
@@ -234,28 +248,30 @@ export function applyBackdropFade(
 
   if (includes.length === 0 && excludes.length === 0) return EMPTY_RESULT
 
-  // One mode for all supported color tiers: sRGB source-over scrim mix.
-  // For ANSI-16 terminals the output phase quantizes the mixed truecolor hex
-  // to the nearest palette slot — good enough, and strictly better than the
-  // earlier "SGR 2 dim" fallback which only affected fg, leaving bg bright.
-  // Monochrome is handled by the `colorLevel === "none"` early return above.
+  // Resolve the three color inputs. Prefer the split options; fall back to
+  // `rootBg` for back-compat.
+  //   - defaultBg: used to resolve null/default cell.bg before sRGB mix
+  //   - scrimColor: the target of the mix. "auto" (default) derives from bg
+  //     luminance: black for dark themes, white for light.
+  //   - defaultFg: used to resolve null/default cell.fg before deemphasize.
+  //     Critical for default-fg text (common in TUIs that don't set colors
+  //     on every Text node) — without it, default-fg cells skip the fade
+  //     and the text pops against a dimmed bg.
+  const defaultBg = options?.defaultBg ?? options?.rootBg ?? null
+  const scrimColorOpt = options?.scrimColor
+  const scrim =
+    typeof scrimColorOpt === "string" && scrimColorOpt !== "auto"
+      ? scrimColorOpt
+      : deriveScrimColor(defaultBg)
+  const defaultFg =
+    options?.defaultFg ?? (scrim === null ? null : scrim === DARK_SCRIM ? LIGHT_SCRIM : DARK_SCRIM)
 
-  // Derive the scrim from rootBg luminance. Pure black for dark themes, pure
-  // white for light — the canonical Apple / Material / Flutter convention.
-  const scrim = deriveScrimColor(options?.rootBg)
-  const rootBgHex = options?.rootBg ?? null
-
-  // Kitty graphics realize the scrim for wide-char cells (emoji, CJK): the
-  // overlay composites at alpha=amount above the unmixed cell, matching the
-  // luminance of surrounding text cells (mixed via the cell pass). Require a
-  // resolved scrim — mixing wide cells against an unknown scrim would
-  // produce inconsistent visuals.
+  // Kitty graphics realize the scrim for emoji cells (not CJK text — they
+  // respond to fg like normal text). The overlay composites at alpha=amount
+  // above the unmixed cell. Require a resolved scrim.
   const kittyEnabled = options?.kittyGraphics === true && scrim !== null
 
-  // Single-amount invariant: the Kitty overlay emits one scrim image at one
-  // alpha. Multiple fade regions with different amounts would require either
-  // per-cell alpha maps or grouping — neither is cheap. Assert one global
-  // amount for now; revisit if nested-modal use cases appear.
+  // Single-amount invariant: one scrim image per frame at one alpha.
   const uniqueAmount = assertSingleAmount(includes, excludes)
 
   let bufferModified = false
@@ -263,7 +279,8 @@ export function applyBackdropFade(
   // Pass 1: data-backdrop-fade — fade cells INSIDE each marked rect.
   for (const { rect, amount } of includes) {
     if (amount <= 0) continue
-    if (fadeRect(buffer, rect, amount, scrim, rootBgHex, kittyEnabled)) bufferModified = true
+    if (fadeRect(buffer, rect, amount, scrim, defaultBg, defaultFg, kittyEnabled))
+      bufferModified = true
   }
 
   // Pass 2: data-backdrop-fade-excluded — fade everything OUTSIDE each marked
@@ -272,18 +289,18 @@ export function applyBackdropFade(
     const fullRect: Rect = { x: 0, y: 0, width: buffer.width, height: buffer.height }
     for (const { rect, amount } of excludes) {
       if (amount <= 0) continue
-      if (fadeRectExcluding(buffer, fullRect, rect, amount, scrim, rootBgHex, kittyEnabled))
+      if (
+        fadeRectExcluding(buffer, fullRect, rect, amount, scrim, defaultBg, defaultFg, kittyEnabled)
+      )
         bufferModified = true
     }
   }
 
-  // Kitty overlay. Always emitted when kittyEnabled is true (even if no wide
-  // cells this frame) so last-frame placements get cleared by the delete-all
-  // at the head of the overlay string. Without this, stale scrims from a
-  // prior backdrop region can persist visually when the current frame has
-  // no emoji to overlay.
+  // Kitty overlay. Always emitted when kittyEnabled (even if no emoji this
+  // frame) so last-frame placements get cleared by the delete-all at the
+  // head of the overlay string.
   const kittyOverlay = kittyEnabled
-    ? buildKittyOverlay(buffer, includes, excludes, scrim, rootBgHex, uniqueAmount)
+    ? buildKittyOverlay(buffer, includes, excludes, scrim, defaultBg, uniqueAmount)
     : ""
 
   const visuallyModified = bufferModified || kittyOverlay !== ""
@@ -375,7 +392,8 @@ function fadeRect(
   rect: Rect,
   amount: number,
   scrim: string | null,
-  rootBgHex: string | null,
+  defaultBg: string | null,
+  defaultFg: string | null,
   kittyEnabled: boolean,
 ): boolean {
   const x0 = Math.max(0, rect.x)
@@ -387,7 +405,7 @@ function fadeRect(
   let any = false
   for (let y = y0; y < y1; y++) {
     for (let x = x0; x < x1; x++) {
-      if (fadeCell(buffer, x, y, amount, scrim, rootBgHex, kittyEnabled)) any = true
+      if (fadeCell(buffer, x, y, amount, scrim, defaultBg, defaultFg, kittyEnabled)) any = true
     }
   }
   return any
@@ -399,7 +417,8 @@ function fadeRectExcluding(
   inner: Rect,
   amount: number,
   scrim: string | null,
-  rootBgHex: string | null,
+  defaultBg: string | null,
+  defaultFg: string | null,
   kittyEnabled: boolean,
 ): boolean {
   const ox0 = Math.max(0, outer.x)
@@ -417,7 +436,7 @@ function fadeRectExcluding(
   for (let y = oy0; y < oy1; y++) {
     for (let x = ox0; x < ox1; x++) {
       if (innerValid && x >= ix0 && x < ix1 && y >= iy0 && y < iy1) continue
-      if (fadeCell(buffer, x, y, amount, scrim, rootBgHex, kittyEnabled)) any = true
+      if (fadeCell(buffer, x, y, amount, scrim, defaultBg, defaultFg, kittyEnabled)) any = true
     }
   }
   return any
@@ -459,72 +478,65 @@ function fadeCell(
   y: number,
   amount: number,
   scrim: string | null,
-  rootBgHex: string | null,
+  defaultBg: string | null,
+  defaultFg: string | null,
   kittyEnabled: boolean,
 ): boolean {
-  // Skip continuation half of wide chars — the leading cell at x-1 will update
-  // this cell's bg + dim in lockstep when it's processed.
+  // Skip continuation half of wide chars — the leading cell at x-1 updates
+  // this cell in lockstep when it's processed.
   if (buffer.isCellContinuation(x, y)) return false
 
   const cell = buffer.getCell(x, y)
 
-  // When Kitty graphics are available, the emoji scrim overlay will composite
-  // over the wide cell at alpha=amount — doing the per-cell mix here too
-  // would double-dim the bg and produce a visibly blacker emoji region than
-  // surrounding text cells. Skip wide cells entirely; Kitty does the fade.
-  // (When Kitty is NOT available, the `mix` branch below still runs on wide
-  // cells and stamps SGR 2 dim as a degraded fallback — visible fade on
-  // terminals honoring SGR 2 on emoji, bg slightly inconsistent otherwise.)
-  if (kittyEnabled && cell.wide) return false
+  // Glyph classification: only EMOJI cells (bitmap glyphs that ignore fg
+  // color) go through the Kitty overlay path. CJK and other wide TEXT cells
+  // respond to fg color like narrow text and go through the buffer mix
+  // path, which is correct for them. `cell.wide` alone is the wrong
+  // discriminator — wide != emoji — pro review flagged this as a bug class.
+  const isEmojiGlyph = cell.wide && isLikelyEmoji(cell.char ?? "")
+
+  // When Kitty is available and this cell is an emoji, skip the buffer mix
+  // — the Kitty overlay will composite the scrim at alpha=amount above the
+  // unmixed cell, landing at `cell_bg * (1 - amount) + scrim * amount`,
+  // same luminance as surrounding mixed cells. Mixing here too would
+  // double-fade and produce a visibly blacker emoji bg.
+  if (kittyEnabled && isEmojiGlyph) return false
 
   const rawFgHex = colorToHex(cell.fg)
 
-  if (scrim !== null && rootBgHex !== null) {
-    // Resolve null/default fg to its implicit terminal color BEFORE fading.
-    // On dark themes, default fg renders as white-ish; on light themes, as
-    // black-ish. Leaving it unresolved would skip the fg fade entirely —
-    // bg darkens but fg stays at full terminal brightness, producing a
-    // visible "text is MORE saturated / pops HARDER against faded bg"
-    // effect that users notice as "colors look more saturated when
-    // darkened". Substituting `scrim`'s opposite (white for dark scrim,
-    // black for light scrim) as the implicit default lets deemphasize
-    // produce a proportionally-faded fg that matches the backdrop's
-    // receded feel.
-    const fgHex = rawFgHex ?? (scrim === DARK_SCRIM ? LIGHT_SCRIM : DARK_SCRIM)
-    const fgWasDefault = rawFgHex === null
+  if (scrim !== null && defaultBg !== null) {
+    // Resolve null/default fg BEFORE deemphasize. Without this, default-fg
+    // text (common in TUIs that don't set Text color explicitly) skips the
+    // fade entirely — bg darkens but fg stays at full terminal brightness,
+    // producing a visible "text POPS against faded bg" effect that users
+    // perceive as "colors look more saturated when darkened".
+    const fgHex =
+      rawFgHex ??
+      defaultFg ??
+      // Last-ditch: opposite of scrim (white for dark scrim, black for light)
+      (scrim === DARK_SCRIM ? LIGHT_SCRIM : DARK_SCRIM)
 
-    // sRGB source-over mix: uniform bg toward scrim at `amount`.
-    const bgHex = colorToHex(cell.bg) ?? rootBgHex
+    // sRGB source-over mix: uniform bg toward scrim at `amount`. sRGB
+    // matches the Kitty graphics overlay compositing so text-cell bg and
+    // emoji-cell bg land at the same luminance in shared faded regions.
+    const bgHex = colorToHex(cell.bg) ?? defaultBg
     const mixedBgHex = mixSrgb(bgHex, scrim, amount)
     const mixedBg = hexToRgb(mixedBgHex)
 
-    // Wide-char fg is INVISIBLE for emoji — stamp dim on lead + continuation
-    // as best-effort for terminals honoring SGR 2 on bitmap glyphs.
-    const stampEmojiDim = cell.wide
+    // Stamp SGR 2 dim on emoji cells when Kitty is NOT available — it's the
+    // only portable way to signal "faded" on a glyph the fg mix can't
+    // affect. For wide TEXT (CJK etc.), do NOT stamp dim: the fg mix works
+    // fine, and SGR 2 on CJK over-fades the glyph.
+    const stampEmojiDim = isEmojiGlyph
     const newAttrs = stampEmojiDim && !cell.attrs.dim ? { ...cell.attrs, dim: true } : cell.attrs
 
-    // Fg uses OKLCH deemphasize (L *= 1-α, C *= 1-α, H preserved) instead of
-    // sRGB source-over. sRGB channel-linear scaling preserves HSL ratios but
-    // NOT C/L (perceived saturation) — colored text tends to look slightly
-    // MORE saturated per unit luminance after darkening, which users notice
-    // on flat-color TUIs (where the effect isn't masked by photos / blur /
-    // gradients). OKLCH proportional L+C scaling preserves C/L exactly, so
-    // darkened text reads as "the same color, less visually present" rather
-    // than "darker but somehow poppier".
-    //
-    // Bg stays sRGB because the Kitty overlay composites in sRGB at the same
-    // alpha — using sRGB for bg keeps text-cell bg matching emoji-cell bg
-    // when both appear in the same faded region.
+    // Fg uses OKLCH deemphasize — linear L, quadratic C, preserves H. See
+    // `deemphasizeOklch` docblock for the perceptual rationale. Bg stays
+    // sRGB to match Kitty overlay compositing.
     const deemphasizedFgHex = deemphasizeOklch(fgHex, amount)
     const mixedFg = hexToRgb(deemphasizedFgHex)
 
     if (mixedFg) {
-      // When `fg` was originally default (null), we write an explicit faded
-      // hex — the cell stops deferring to the terminal default under the
-      // backdrop. When the backdrop lifts, the cell is repainted from the
-      // fresh render (no state leak). `fgWasDefault` is tracked for future
-      // diagnostics / STRICT assertions but isn't behaviorally used today.
-      void fgWasDefault
       if (mixedBg) {
         buffer.setCell(x, y, { ...cell, fg: mixedFg, bg: mixedBg, attrs: newAttrs })
         propagateBgToContinuation(buffer, cell, x, y, mixedBg, stampEmojiDim)
@@ -535,8 +547,8 @@ function fadeCell(
       return true
     }
 
-    // Fg deemphasize failed (very rare — hex parse edge). Fall back to
-    // bg-only mix + dim stamp.
+    // Fg deemphasize failed (rare — hex parse edge). Fall back to bg-only
+    // mix + dim stamp.
     if (mixedBg) {
       buffer.setCell(x, y, { ...cell, bg: mixedBg, attrs: newAttrs })
       propagateBgToContinuation(buffer, cell, x, y, mixedBg, stampEmojiDim)
@@ -734,14 +746,14 @@ function buildKittyOverlay(
   includes: FadeRect[],
   excludes: FadeRect[],
   scrim: string | null,
-  rootBgHex: string | null,
+  defaultBg: string | null,
   amount: number,
 ): string {
-  const cells = collectWideCellsInFadeRegion(buffer, includes, excludes)
+  const cells = collectEmojiCellsInFadeRegion(buffer, includes, excludes)
 
   // Tint the scrim with the same color used for cell mixing (pure black /
   // white by theme luminance). Fallback to pure black.
-  const tintHex = scrim ?? rootBgHex ?? "#000000"
+  const tintHex = scrim ?? defaultBg ?? "#000000"
   const tint = hexToRgb(tintHex) ?? { r: 0, g: 0, b: 0 }
   const scrimAlpha = Math.max(0, Math.min(255, Math.round(amount * 255)))
 
@@ -777,9 +789,13 @@ function buildKittyOverlay(
 
 /**
  * Walk the include and exclude rects and collect the coordinates of every
- * wide-char LEAD cell (not continuation) inside a faded region.
+ * EMOJI lead cell inside a faded region. CJK and other wide TEXT cells are
+ * excluded — they respond to fg color mixing like normal text and don't
+ * need the Kitty overlay. Only bitmap-glyph cells (detected via
+ * `isLikelyEmoji(cell.char)`) need an overlay because their rendering
+ * ignores the fg color.
  */
-function collectWideCellsInFadeRegion(
+function collectEmojiCellsInFadeRegion(
   buffer: TerminalBuffer,
   includes: FadeRect[],
   excludes: FadeRect[],
@@ -791,6 +807,8 @@ function collectWideCellsInFadeRegion(
     if (x + 1 >= buffer.width) return // no room for continuation
     if (!buffer.isCellWide(x, y)) return
     if (buffer.isCellContinuation(x, y)) return
+    const cell = buffer.getCell(x, y)
+    if (!isLikelyEmoji(cell.char ?? "")) return
     const key = y * buffer.width + x
     if (seen.has(key)) return
     seen.add(key)
