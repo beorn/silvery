@@ -240,6 +240,28 @@ export type {
   ToastItemProps,
 } from "./ui/components"
 
+// Alert family — InlineAlert (low) / Banner (medium) / Alert (high). See
+// hub/silvery/design/v10-terminal/design-system.md §"Urgency is not a
+// design-system concern" — urgency is component choice, not a priority prop.
+export { InlineAlert } from "./ui/components"
+export type { InlineAlertProps } from "./ui/components"
+
+export { Banner } from "./ui/components"
+export type { BannerProps } from "./ui/components"
+
+export { Alert } from "./ui/components"
+export type {
+  AlertProps,
+  AlertTitleProps,
+  AlertBodyProps,
+  AlertActionsProps,
+} from "./ui/components"
+
+// Shared tone surface (ToneKey + resolvers) — building block for tone-bearing
+// components. Apps writing their own tone components can reuse these helpers.
+export { toneFillTokens, toneSubtleTokens, toneFgToken, toneIcon, TONE_ICONS } from "./ui/components"
+export type { ToneKey, ToneFillTokens, ToneSubtleTokens } from "./ui/components"
+
 // Command Palette
 export { CommandPalette } from "./ui/components"
 export type { CommandPaletteProps, CommandItem } from "./ui/components"

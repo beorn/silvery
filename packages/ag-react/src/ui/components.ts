@@ -164,6 +164,27 @@ export type {
   ToastItemProps,
 } from "./components/Toast"
 
+// Alert family — InlineAlert (low), Banner (medium), Alert (high)
+// Urgency is component choice, not a priority prop — see Sterling design-system.md
+// §"Urgency is not a design-system concern".
+export { InlineAlert } from "./components/InlineAlert"
+export type { InlineAlertProps } from "./components/InlineAlert"
+
+export { Banner } from "./components/Banner"
+export type { BannerProps } from "./components/Banner"
+
+export { Alert } from "./components/Alert"
+export type {
+  AlertProps,
+  AlertTitleProps,
+  AlertBodyProps,
+  AlertActionsProps,
+} from "./components/Alert"
+
+// Shared tone surface — ToneKey union and resolver helpers.
+export { toneFillTokens, toneSubtleTokens, toneFgToken, toneIcon, TONE_ICONS } from "./components/_tone"
+export type { ToneKey, ToneFillTokens, ToneSubtleTokens } from "./components/_tone"
+
 // Command Palette
 export { CommandPalette } from "./components/CommandPalette"
 export type { CommandPaletteProps, CommandItem } from "./components/CommandPalette"
