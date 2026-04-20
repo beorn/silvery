@@ -7,7 +7,12 @@
  * Derivation is:
  *   1. `scheme.primary` (or fallback) → accent.fg / accent.bg / info.fg
  *   2. status roles from `scheme.red / yellow / green / primary`
- *   3. OKLCH ±0.04L / ±0.08L for hover/active (direction auto-flips light/dark)
+ *   3. Adaptive OKLCH hover/active L-shift (direction = base-L, not scheme.dark):
+ *        baseL > 0.6  → darken (hover −0.04L, active −0.08L)
+ *        baseL ≤ 0.6  → brighten (hover +0.04L, active +0.08L)
+ *      At L extremes (target L > 0.9 or < 0.1) chroma is proportionally
+ *      reduced so the color pushes toward gray instead of collapsing to
+ *      white/black — fixes the Frappe yellow/light-accent whiteout.
  *   4. `fgOn` picked for WCAG AA against role's `bg` (prefers scheme bg/fg)
  *   5. surface ramp via OKLCH blend
  *   6. contrast guardrail: strict throws, auto-lift adjusts
@@ -58,19 +63,55 @@ function stateDeltas(base: string): { hover: number; active: number } {
   return { hover: 0.04, active: 0.08 }
 }
 
-// ── L-shift primitives (direction-aware) ───────────────────────────────────
+// ── L-shift primitives (adaptive, chroma-preserving) ──────────────────────
 
-/** Shift lightness. Dark mode brightens (+); light mode darkens (−). */
-function shiftL(hex: string, amount: number, mode: "light" | "dark"): string {
+/**
+ * Adaptive L-shift: direction follows the token's own luminance, NOT
+ * scheme.dark. High-L tokens (yellows, light accents) darken; low-L tokens
+ * brighten. Uniform handling — yields a reliable "more active than hover"
+ * relationship no matter what hue/lightness the base is.
+ *
+ * Chroma preservation at L extremes: when the target L pushes past 0.9
+ * (approaching white) or below 0.1 (approaching black), chroma is scaled
+ * down proportionally so the color drifts toward gray rather than
+ * collapsing to #FFFFFF or #000000. This preserves perceptual differences
+ * between the base / hover / active states even on intrinsically-bright
+ * tokens (catppuccin-frappe yellow, light blue accents, etc.).
+ *
+ * Returns the original hex unchanged when OKLCH parsing fails.
+ */
+function shiftL(hex: string, amount: number): string {
   const o = hexToOklch(hex)
   if (!o) return hex
-  const sign = mode === "dark" ? +1 : -1
-  const nextL = clamp01(o.L + sign * amount)
-  return oklchToHex({ L: nextL, C: o.C, H: o.H })
+  const direction = o.L > 0.6 ? -1 : +1
+  const targetL = clamp01(o.L + direction * amount)
+
+  // Chroma-preservation at L extremes:
+  // |L − 0.5| × 2 ∈ [0, 1] — 0 at mid-gray, 1 at L=0 or L=1.
+  // Below L=0.9 / above L=0.1 the factor is (1 − 0) = 1 (no dampening).
+  // As L saturates, chroma collapses toward 0 → pushes toward gray, not
+  // toward white/black.
+  let nextC = o.C
+  if (targetL > 0.9 || targetL < 0.1) {
+    const distanceFromMid = Math.abs(targetL - 0.5) * 2 // 0..1
+    // At L=0.9 or L=0.1, distance=0.8 → factor=0.2. At L=1/L=0 → factor=0.
+    // Chroma linearly collapses between the 0.9/0.1 boundary and the endpoint.
+    const factor = clamp01(1 - distanceFromMid)
+    nextC = o.C * factor
+  }
+
+  return oklchToHex({ L: targetL, C: nextC, H: o.H })
 }
 
 function clamp01(x: number): number {
   return x < 0 ? 0 : x > 1 ? 1 : x
+}
+
+/** Label the direction the adaptive L-shift took, for trace rule strings. */
+function shiftLabel(hex: string): "darken" | "brighten" {
+  const o = hexToOklch(hex)
+  if (!o) return "brighten"
+  return o.L > 0.6 ? "darken" : "brighten"
 }
 
 // ── Mode inference ─────────────────────────────────────────────────────────
@@ -234,19 +275,20 @@ export function deriveRoles(
   const accentBase = guard("accent.fg", "fg-accent", "scheme.primary", [primary], primary, bg)
   const accentBg = guard("accent.bg", "bg-accent", "scheme.primary", [primary], primary)
   const deltaA = stateDeltas(accentBg)
+  const bgDir = shiftLabel(accentBg)
   const accentHoverBg = guard(
     "accent.hover.bg",
     "bg-accent-hover",
-    `OKLCH ${mode === "dark" ? "+" : "−"}${deltaA.hover}L on accent.bg`,
+    `OKLCH ${bgDir} ${deltaA.hover}L on accent.bg`,
     [accentBg],
-    shiftL(accentBg, deltaA.hover, mode),
+    shiftL(accentBg, deltaA.hover),
   )
   const accentActiveBg = guard(
     "accent.active.bg",
     "bg-accent-active",
-    `OKLCH ${mode === "dark" ? "+" : "−"}${deltaA.active}L on accent.bg`,
+    `OKLCH ${bgDir} ${deltaA.active}L on accent.bg`,
     [accentBg],
-    shiftL(accentBg, deltaA.active, mode),
+    shiftL(accentBg, deltaA.active),
   )
   const accentFgOn = guard(
     "accent.fgOn",
@@ -257,20 +299,23 @@ export function deriveRoles(
     accentBg,
   )
   const accentBorder = guard("accent.border", "border-accent", "= accent.bg", [accentBg], accentBg)
+  // Accent is the canonical link-like role — retains fg.hover / fg.active
+  // for interactive text treatments (link hover, clickable accent text).
+  const fgDir = shiftLabel(accentBase)
   const accentHoverFg = guard(
     "accent.hover.fg",
     "fg-accent-hover",
-    `OKLCH ${mode === "dark" ? "+" : "−"}${deltaA.hover}L on accent.fg`,
+    `OKLCH ${fgDir} ${deltaA.hover}L on accent.fg`,
     [accentBase],
-    shiftL(accentBase, deltaA.hover, mode),
+    shiftL(accentBase, deltaA.hover),
     bg,
   )
   const accentActiveFg = guard(
     "accent.active.fg",
     "fg-accent-active",
-    `OKLCH ${mode === "dark" ? "+" : "−"}${deltaA.active}L on accent.fg`,
+    `OKLCH ${fgDir} ${deltaA.active}L on accent.fg`,
     [accentBase],
-    shiftL(accentBase, deltaA.active, mode),
+    shiftL(accentBase, deltaA.active),
     bg,
   )
 
@@ -285,12 +330,12 @@ export function deriveRoles(
 
   // ── Info — independent derivation, same seed as accent (D2) ──────────────
   const infoSeed = primary
-  const info = buildInteractive("info", infoSeed, scheme, mode, opts, trace, violations)
+  const info = buildInteractive("info", infoSeed, scheme, opts, trace, violations)
 
   // ── Success / Warning / Error ────────────────────────────────────────────
-  const success = buildInteractive("success", scheme.green, scheme, mode, opts, trace, violations)
-  const warning = buildInteractive("warning", scheme.yellow, scheme, mode, opts, trace, violations)
-  const error = buildInteractive("error", scheme.red, scheme, mode, opts, trace, violations)
+  const success = buildInteractive("success", scheme.green, scheme, opts, trace, violations)
+  const warning = buildInteractive("warning", scheme.yellow, scheme, opts, trace, violations)
+  const error = buildInteractive("error", scheme.red, scheme, opts, trace, violations)
 
   // ── Muted ────────────────────────────────────────────────────────────────
   // Muted is a DEEMPHASIZED role by design — it must NOT hit AA-normal (4.5:1)
@@ -407,7 +452,6 @@ function buildInteractive(
   name: "info" | "success" | "warning" | "error",
   seed: string,
   scheme: ColorScheme,
-  mode: "light" | "dark",
   opts: DeriveOptions,
   trace: DerivationStep[],
   violations: ContrastViolation[],
@@ -442,6 +486,8 @@ function buildInteractive(
   const fg = guard(`${name}.fg`, `fg-${name}`, seedRule(name), [seed], seed, bg)
   const roleBg = guard(`${name}.bg`, `bg-${name}`, seedRule(name), [seed], seed)
   const delta = stateDeltas(roleBg)
+  const bgDir = shiftLabel(roleBg)
+  const fgDir = shiftLabel(fg)
 
   const fgOn = guard(
     `${name}.fgOn`,
@@ -454,31 +500,31 @@ function buildInteractive(
   const hoverBg = guard(
     `${name}.hover.bg`,
     `bg-${name}-hover`,
-    `OKLCH ${mode === "dark" ? "+" : "−"}${delta.hover}L`,
+    `OKLCH ${bgDir} ${delta.hover}L`,
     [roleBg],
-    shiftL(roleBg, delta.hover, mode),
+    shiftL(roleBg, delta.hover),
   )
   const activeBg = guard(
     `${name}.active.bg`,
     `bg-${name}-active`,
-    `OKLCH ${mode === "dark" ? "+" : "−"}${delta.active}L`,
+    `OKLCH ${bgDir} ${delta.active}L`,
     [roleBg],
-    shiftL(roleBg, delta.active, mode),
+    shiftL(roleBg, delta.active),
   )
   const hoverFg = guard(
     `${name}.hover.fg`,
     `fg-${name}-hover`,
-    `OKLCH ${mode === "dark" ? "+" : "−"}${delta.hover}L on ${name}.fg`,
+    `OKLCH ${fgDir} ${delta.hover}L on ${name}.fg`,
     [fg],
-    shiftL(fg, delta.hover, mode),
+    shiftL(fg, delta.hover),
     bg,
   )
   const activeFg = guard(
     `${name}.active.fg`,
     `fg-${name}-active`,
-    `OKLCH ${mode === "dark" ? "+" : "−"}${delta.active}L on ${name}.fg`,
+    `OKLCH ${fgDir} ${delta.active}L on ${name}.fg`,
     [fg],
-    shiftL(fg, delta.active, mode),
+    shiftL(fg, delta.active),
     bg,
   )
 
