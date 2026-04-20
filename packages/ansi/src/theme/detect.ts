@@ -21,7 +21,20 @@ export interface DetectedScheme {
   palette: Partial<ColorScheme>
 }
 
-export async function detectTerminalScheme(timeoutMs = 150): Promise<DetectedScheme | null> {
+/**
+ * Probe the terminal for its 22-slot color scheme via OSC 4/10/11 queries.
+ *
+ * Pure terminal primitive — no fingerprinting, no theme derivation. Returns the
+ * raw probed slots (or `null` if probing isn't available, e.g. non-TTY).
+ *
+ * For the full detection cascade (override → probe → fingerprint → fallback +
+ * theme derivation), use `detectScheme` from `@silvery/ansi` or
+ * `detectTheme` from `@silvery/theme`.
+ *
+ * `probeColors` is the canonical name; `detectTerminalScheme` is the legacy
+ * alias kept for backward compatibility.
+ */
+export async function probeColors(timeoutMs = 150): Promise<DetectedScheme | null> {
   const stdin = process.stdin
   const stdout = process.stdout
   if (!stdin.isTTY || !stdout.isTTY) return null
@@ -129,6 +142,15 @@ export async function detectTerminalScheme(timeoutMs = 150): Promise<DetectedSch
   }
 }
 
+/**
+ * Legacy alias for {@link probeColors}. Prefer `probeColors` in new code —
+ * the name says what it does (probes terminal color slots), and "detect" is
+ * reserved for the full cascade (`detectScheme`, `detectTheme`).
+ *
+ * @deprecated Use `probeColors` instead. Will remain exported through 0.x.
+ */
+export const detectTerminalScheme = probeColors
+
 export interface DetectThemeOptions {
   /** Fallback ColorScheme when detection fails or returns partial data.
    * Detected colors override matching fallback fields.
@@ -154,7 +176,7 @@ export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme>
     const isDark = opts.caps?.darkBackground ?? true
     return isDark ? ansi16DarkTheme : ansi16LightTheme
   }
-  const detected = await detectTerminalScheme(opts.timeoutMs)
+  const detected = await probeColors(opts.timeoutMs)
   const isDark = detected?.dark ?? opts.caps?.darkBackground ?? true
   const fallback =
     opts.fallback ??

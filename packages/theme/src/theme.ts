@@ -64,10 +64,31 @@ export {
   getThemeByName,
 } from "./schemes/index"
 
-// Terminal detection — Sterling-aware wrapper (runs @silvery/ansi's detectTheme
-// through inlineSterlingTokens so `$border-default` etc. always resolve).
-export { detectTheme, detectTerminalScheme } from "./detect"
-export type { DetectedScheme, DetectThemeOptions } from "./detect"
+// Terminal detection — Sterling-aware wrappers around `@silvery/ansi`'s
+// detection layer. All four entry points run their result through
+// `inlineSterlingTokens` so `$border-default` etc. always resolve, and
+// re-export the underlying types unchanged.
+//
+// - `probeColors` — OSC 4/10/11 probe → 22-slot ColorScheme (canonical name)
+// - `detectTerminalScheme` — legacy alias for `probeColors`
+// - `detectTheme` — probe + derive (returns just a Theme, with fallbacks)
+// - `detectScheme` / `detectSchemeTheme` — full 4-layer cascade with
+//   provenance (override → probe → fingerprint → fallback)
+export {
+  probeColors,
+  detectTerminalScheme,
+  detectTheme,
+  detectScheme,
+  detectSchemeTheme,
+} from "./detect"
+export type {
+  DetectedScheme,
+  DetectThemeOptions,
+  DetectSchemeOptions,
+  DetectSchemeResult,
+  DetectSource,
+  SlotSource,
+} from "./detect"
 
 // Sterling — silvery's canonical design system.
 // See packages/theme/src/sterling/ and hub/silvery/design/v10-terminal/design-system.md.

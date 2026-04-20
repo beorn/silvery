@@ -28,14 +28,52 @@
 
 import {
   detectTheme as _detectTheme,
+  detectScheme as _detectScheme,
+  detectSchemeTheme as _detectSchemeTheme,
+  probeColors,
   detectTerminalScheme,
+  type DetectSchemeOptions,
+  type DetectSchemeResult,
   type DetectThemeOptions,
   type Theme,
 } from "@silvery/ansi"
 import { inlineSterlingTokens } from "./sterling/inline.ts"
 
-export type { DetectedScheme, DetectThemeOptions } from "@silvery/ansi"
-export { detectTerminalScheme }
+export type {
+  DetectedScheme,
+  DetectThemeOptions,
+  DetectSchemeOptions,
+  DetectSchemeResult,
+  DetectSource,
+  SlotSource,
+} from "@silvery/ansi"
+
+/**
+ * Probe the terminal for its 22-slot color scheme via OSC 4/10/11 queries.
+ * Re-exported from `@silvery/ansi` for convenience — prefer the canonical
+ * name `probeColors`. `detectTerminalScheme` is the legacy alias.
+ */
+export { probeColors, detectTerminalScheme }
+
+/**
+ * Run the full 4-layer scheme detection cascade and return a Sterling-aware
+ * Theme along with provenance metadata.
+ *
+ * Wraps `@silvery/ansi`'s `detectScheme` so the returned `theme` field has
+ * Sterling flat tokens (`border-default`, `fg-muted`, `bg-surface-default`, …)
+ * baked in via `inlineSterlingTokens`. Use this whenever consumers read
+ * Sterling tokens (most do).
+ */
+export async function detectScheme(opts: DetectSchemeOptions = {}): Promise<DetectSchemeResult> {
+  const result = await _detectScheme(opts)
+  return { ...result, theme: inlineSterlingTokens(result.theme) }
+}
+
+/** Shortcut: run `detectScheme` and return only the (Sterling-aware) Theme. */
+export async function detectSchemeTheme(opts: DetectSchemeOptions = {}): Promise<Theme> {
+  const theme = await _detectSchemeTheme(opts)
+  return inlineSterlingTokens(theme)
+}
 
 /**
  * Detect the terminal's palette and return a Sterling-aware Theme.

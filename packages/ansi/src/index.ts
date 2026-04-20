@@ -249,7 +249,7 @@ export { KNOWN_VARIANTS } from "./theme/tokens"
 // Theme Detection (async, OSC-based)
 // =============================================================================
 
-export { detectTerminalScheme, detectTheme } from "./theme/detect"
+export { probeColors, detectTerminalScheme, detectTheme } from "./theme/detect"
 export type { DetectedScheme, DetectThemeOptions } from "./theme/detect"
 
 // =============================================================================

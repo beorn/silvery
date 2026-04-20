@@ -16,7 +16,7 @@
 import type { ColorScheme, Theme } from "./types.ts"
 import { COLOR_SCHEME_FIELDS } from "./types.ts"
 import { deriveTheme, loadTheme } from "./derive.ts"
-import { detectTerminalScheme } from "./detect.ts"
+import { probeColors } from "./detect.ts"
 import { fingerprintMatch } from "./fingerprint.ts"
 import { defaultDarkScheme, defaultLightScheme } from "./default-schemes.ts"
 
@@ -135,7 +135,7 @@ export async function detectScheme(opts: DetectSchemeOptions = {}): Promise<Dete
   }
 
   // 2. Probe terminal
-  const detected = await detectTerminalScheme(opts.timeoutMs)
+  const detected = await probeColors(opts.timeoutMs)
 
   // No probe result → pure fallback
   if (!detected) {
