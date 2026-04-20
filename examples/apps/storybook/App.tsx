@@ -1,29 +1,25 @@
 /**
- * Sterling Storybook — interactive 3-pane design-system explorer.
+ * Sterling Storybook — interactive design-system explorer.
  *
  * MVP scope (sterling-storybook-mvp):
  *   1. 3-pane layout — SchemeList | ComponentPreview | TokenTree
  *   2. Scheme swap — `h` / `l` (or ←/→) switch focus between panes;
  *      j/k (or ↑/↓) moves cursor in the focused pane; selecting a scheme
  *      re-themes the whole middle pane live via a root <ThemeProvider>.
- *      (Tab is reserved for silvery's system focus manager.)
  *   3. Canonical component set in the middle pane.
  *   4. Collapsible token tree in the right pane — each leaf shows path +
  *      hex swatch + hex value.
  *   5. Token click → DerivationPanel appended under the tree, showing the
  *      rule from theme.derivationTrace.
- *   6. Tier toggle (1/2/3/4) — truecolor, 256, ansi16, mono. ansi16 + mono
- *      are the most visually different.
+ *   6. Tier toggle (1/2/3/4) — truecolor, 256, ansi16, mono.
  *
- * Out of scope (→ sterling-storybook-full):
- *   - Full OKLCH derivation visualizer
- *   - WCAG contrast audit
- *   - Scheme authoring grid
- *   - Intent / urgency demos
- *   - Cross-target preview
+ * Full (sterling-storybook-full — this file's extension):
+ *   1. OKLCH derivation visualizer (extends DerivationPanel)
+ *   2. WCAG contrast audit pane (view mode — `c`)   ← introduced here
  *
- * The storybook is itself a Sterling app: any visual bug here is a Sterling
- * bug.
+ * View modes toggle the middle pane only. Left (schemes) + right (tokens)
+ * stay up regardless, so scheme + token cursor state is preserved across
+ * mode toggles.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
@@ -46,7 +42,8 @@ import { SchemeList } from "./SchemeList.tsx"
 import { ComponentPreview } from "./ComponentPreview.tsx"
 import { TokenTree, flattenTokens, type FlatTokenEntry } from "./TokenTree.tsx"
 import { DerivationPanel } from "./DerivationPanel.tsx"
-import { TierBar, TIER_ORDER, type Tier } from "./TierBar.tsx"
+import { TierBar, TIER_ORDER, type Tier, type ViewMode } from "./TierBar.tsx"
+import { ContrastAudit } from "./ContrastAudit.tsx"
 import { quantizeLegacyTheme, quantizeSterlingTheme } from "./shared/quantize.ts"
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -72,26 +69,21 @@ function orderedSchemes(): string[] {
 
 /**
  * Build the legacy Theme that drives the middle pane (<ThemeProvider theme=>).
- * silvery/ui components consume the legacy `primary / accent / success ...`
- * token names today. Sterling lives alongside it and is used for the token
- * tree + derivation panel only.
+ * silvery/ui components consume the legacy token names today; Sterling lives
+ * alongside and drives the token tree + derivation panel + contrast audit.
  */
 function buildLegacyTheme(schemeName: string, tier: Tier): LegacyTheme {
   const palette = builtinPalettes[schemeName as keyof typeof builtinPalettes]
   if (!palette) {
     throw new Error(`Unknown scheme: ${schemeName}`)
   }
-  // Always derive at truecolor so the theme carries full-precision hex,
-  // then preview-quantize to the selected tier below. The output phase
-  // would quantize again for a real TTY at tier < truecolor — but our
-  // in-process preview bypasses that, so we mirror it here.
   const base = legacyDeriveTheme(palette, "truecolor")
   return quantizeLegacyTheme(base, tier)
 }
 
 /**
- * Build the Sterling Theme used by TokenTree + DerivationPanel. Always
- * derived with { trace: true } so the derivation panel has data.
+ * Build the Sterling Theme used by TokenTree + DerivationPanel + ContrastAudit.
+ * Always derived with { trace: true } so dependent views have the data.
  */
 function buildSterlingTheme(schemeName: string): SterlingTheme {
   const palette = builtinPalettes[schemeName as keyof typeof builtinPalettes]
@@ -115,10 +107,9 @@ export function App(): React.ReactElement {
   const [focus, setFocus] = useState<Focus>("schemes")
   const [tokenCursor, setTokenCursor] = useState(0)
   const [openedToken, setOpenedToken] = useState<string | null>(null)
+  const [view, setView] = useState<ViewMode>("components")
 
   const schemeName = schemes[schemeIdx]!
-  // Base = full-precision truecolor derivation; tier-quantized = what a
-  // real terminal would render at the current tier.
   const sterlingThemeBase = useMemo(() => buildSterlingTheme(schemeName), [schemeName])
   const sterlingTheme = useMemo(
     () => quantizeSterlingTheme(sterlingThemeBase, tier),
@@ -127,8 +118,6 @@ export function App(): React.ReactElement {
   const legacyTheme = useMemo(() => buildLegacyTheme(schemeName, tier), [schemeName, tier])
   const flatTokens: FlatTokenEntry[] = useMemo(() => flattenTokens(sterlingTheme), [sterlingTheme])
 
-  // Clamp the token cursor when the flat list shrinks (shouldn't happen
-  // within a single session, but defensive against scheme changes).
   useEffect(() => {
     if (tokenCursor >= flatTokens.length) setTokenCursor(Math.max(0, flatTokens.length - 1))
   }, [flatTokens.length, tokenCursor])
@@ -136,8 +125,6 @@ export function App(): React.ReactElement {
   const stepScheme = useCallback(
     (delta: number) => {
       setSchemeIdx((i) => Math.max(0, Math.min(schemes.length - 1, i + delta)))
-      // Close any open token — its hex is stale after scheme swap (the trace
-      // step still exists, but feels jumpier to leave open without a resync).
       setOpenedToken(null)
     },
     [schemes.length],
@@ -156,29 +143,20 @@ export function App(): React.ReactElement {
       exit()
       return
     }
-    if (input === "1") {
-      setTier("truecolor")
-      return
-    }
-    if (input === "2") {
-      setTier("256")
-      return
-    }
-    if (input === "3") {
-      setTier("ansi16")
-      return
-    }
-    if (input === "4") {
-      setTier("mono")
-      return
-    }
+    if (input === "1") return setTier("truecolor")
+    if (input === "2") return setTier("256")
+    if (input === "3") return setTier("ansi16")
+    if (input === "4") return setTier("mono")
     if (input === "t") {
       const idx = TIER_ORDER.indexOf(tier)
       setTier(TIER_ORDER[(idx + 1) % TIER_ORDER.length]!)
       return
     }
-    // `h` / `l` (or left/right arrows) switch panes — we don't use Tab because
-    // silvery's focus manager consumes it for system-level focus cycling.
+
+    // View-mode toggles.
+    if (input === "v") return setView("components")
+    if (input === "c") return setView("contrast")
+
     if (input === "h" || key.leftArrow) {
       setFocus("schemes")
       return
@@ -192,11 +170,14 @@ export function App(): React.ReactElement {
         setOpenedToken(null)
         return
       }
+      if (view !== "components") {
+        setView("components")
+        return
+      }
       exit()
       return
     }
 
-    // Focused-pane — keyboard directs scheme list or token tree
     if (focus === "schemes") {
       if (input === "j" || key.downArrow) return stepScheme(1)
       if (input === "k" || key.upArrow) return stepScheme(-1)
@@ -234,9 +215,15 @@ export function App(): React.ReactElement {
     </Box>
   )
 
-  // Wrap the middle pane in a ThemeProvider for the active scheme + tier. The
-  // left + right panes intentionally also re-theme (they're part of the same
-  // storybook surface) — consistent look, one root theme.
+  // Middle pane swaps by view mode; other panes stay mounted so scheme +
+  // token cursor state survive the toggle.
+  const middle =
+    view === "contrast" ? (
+      <ContrastAudit theme={sterlingThemeBase} schemeName={schemeName} />
+    ) : (
+      <ComponentPreview schemeName={schemeName} mode={sterlingTheme.mode} />
+    )
+
   return (
     <ThemeProvider theme={legacyTheme}>
       <Box flexDirection="column" height="100%" padding={0}>
@@ -249,7 +236,7 @@ export function App(): React.ReactElement {
             onSelect={setSchemeIdx}
             focused={focus === "schemes"}
           />
-          <ComponentPreview schemeName={schemeName} mode={sterlingTheme.mode} />
+          {middle}
           <Box flexDirection="column">
             <TokenTree
               theme={sterlingTheme}
@@ -261,7 +248,7 @@ export function App(): React.ReactElement {
           </Box>
         </Box>
         <Divider />
-        <TierBar tier={tier} focus={focus} />
+        <TierBar tier={tier} focus={focus} view={view} />
       </Box>
     </ThemeProvider>
   )
