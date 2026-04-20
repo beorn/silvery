@@ -30,6 +30,7 @@ import type { ColorScheme } from "@silvery/ansi"
 import type {
   AccentRole,
   BorderRole,
+  CategoricalHues,
   CursorRole,
   DeepPartial,
   DeriveOptions,
@@ -39,8 +40,76 @@ import type {
   Roles,
   SurfaceRole,
   Theme,
+  Variant,
 } from "./types.ts"
 import { WCAG_AA, autoLift, checkAA, ContrastError, type ContrastViolation } from "./contrast.ts"
+
+/**
+ * Default typography variants — token-based, works across any Sterling theme.
+ * Consumed by `<Text variant="h1">` via the theme's `variants` record.
+ *
+ * Keys use Sterling flat-token names in their color slots (`$fg-accent`,
+ * `$fg-muted`, `$bg-muted`) so the defaults resolve against every Sterling-
+ * derived Theme without further wiring.
+ */
+export const DEFAULT_VARIANTS: Record<string, Variant> = {
+  h1: { color: "$fg-accent", bold: true },
+  h2: { color: "$fg-accent", bold: true },
+  h3: { bold: true },
+  body: {},
+  "body-muted": { color: "$fg-muted" },
+  "fine-print": { color: "$fg-muted", dim: true },
+  strong: { bold: true },
+  em: { italic: true },
+  link: { color: "$fg-accent", underlineStyle: "single" },
+  key: { color: "$fg-accent", bold: true },
+  code: { backgroundColor: "$bg-muted" },
+  kbd: { backgroundColor: "$bg-muted", color: "$fg-accent", bold: true },
+}
+
+/**
+ * Build the 16-slot ANSI palette from a ColorScheme. Indexed `$color0` …
+ * `$color15` by the framework's token resolver.
+ */
+function buildPalette(scheme: ColorScheme): readonly string[] {
+  return [
+    scheme.black,
+    scheme.red,
+    scheme.green,
+    scheme.yellow,
+    scheme.blue,
+    scheme.magenta,
+    scheme.cyan,
+    scheme.white,
+    scheme.brightBlack,
+    scheme.brightRed,
+    scheme.brightGreen,
+    scheme.brightYellow,
+    scheme.brightBlue,
+    scheme.brightMagenta,
+    scheme.brightCyan,
+    scheme.brightWhite,
+  ]
+}
+
+/**
+ * Derive the 8-hue categorical ring from a ColorScheme. Mirrors the legacy
+ * derive.ts logic — blends scheme hues for the missing Sterling slots
+ * (orange from red+yellow, teal from green+cyan, pink from magenta+red).
+ */
+function buildCategoricalHues(scheme: ColorScheme): CategoricalHues {
+  const dark = scheme.dark ?? true
+  return {
+    red: scheme.red,
+    orange: blend(scheme.red, scheme.yellow, 0.5),
+    yellow: scheme.yellow,
+    green: scheme.green,
+    teal: blend(scheme.green, scheme.cyan, 0.5),
+    blue: dark ? scheme.brightBlue : scheme.blue,
+    purple: scheme.magenta,
+    pink: blend(scheme.magenta, scheme.red, 0.5),
+  }
+}
 
 // ── Hue / chroma helpers ───────────────────────────────────────────────────
 
@@ -562,8 +631,11 @@ export function deriveTheme(
 
   const partial = {
     ...roles,
+    ...buildCategoricalHues(scheme),
     name: scheme.name,
     mode,
+    variants: DEFAULT_VARIANTS,
+    palette: buildPalette(scheme),
     ...(opts.trace ? { derivationTrace: trace } : {}),
   }
   return partial as Omit<Theme, keyof import("./types.ts").FlatTokens>

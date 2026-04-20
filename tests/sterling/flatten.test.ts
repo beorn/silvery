@@ -44,10 +44,10 @@ describe("sterling flatten", () => {
     expect(theme.surface.overlay).toBe(theme["bg-surface-overlay"])
   })
 
-  test("Object.keys counts ~51 entries (40 flat + 9 roles + mode + name)", () => {
+  test("Object.keys counts ~61 entries (40 flat + 9 roles + mode + name + variants + palette + 8 hues)", () => {
     const keys = Object.keys(theme)
-    expect(keys.length).toBeGreaterThanOrEqual(49)
-    expect(keys.length).toBeLessThanOrEqual(53)
+    expect(keys.length).toBeGreaterThanOrEqual(59)
+    expect(keys.length).toBeLessThanOrEqual(63)
   })
 
   test("flat-only filter finds exactly STERLING_FLAT_TOKENS entries", () => {

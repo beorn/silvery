@@ -216,28 +216,85 @@ export interface DerivationStep {
 
 export type DerivationTrace = readonly DerivationStep[]
 
+// ── Convenience (non-token) metadata ──────────────────────────────────────
+
+/**
+ * Categorical color ring — 8 harmonious hues for tagging, chart series,
+ * calendar categories, priority levels — any CATEGORICAL color that isn't
+ * stateful. ensureContrast-adjusted against bg at derivation time. Consumers
+ * access these via `$red`, `$orange`, …, `$pink` or direct field access.
+ *
+ * Distinguish from:
+ *   - `$color0..$color15`         — raw terminal ANSI (user's theme verbatim)
+ *   - `$error/$warning/$success`  — semantic state (communicates meaning)
+ *   - `$brand`                    — app identity anchor (one color)
+ */
+export interface CategoricalHues {
+  readonly red: string
+  readonly orange: string
+  readonly yellow: string
+  readonly green: string
+  readonly teal: string
+  readonly blue: string
+  readonly purple: string
+  readonly pink: string
+}
+
 // ── The Theme ──────────────────────────────────────────────────────────────
 
 /**
- * The canonical Sterling Theme — double-populated intersection of
- * `FlatTokens & Roles`. Every leaf value exists at TWO paths:
+ * The canonical Sterling Theme — Sterling flat tokens + nested roles on the
+ * same object, plus a small surface of non-token metadata and runtime
+ * convenience fields the framework depends on:
+ *
+ * Two access paths for every hex leaf:
  *   - Nested:  `theme.accent.hover.bg`
  *   - Flat:    `theme["bg-accent-hover"]`
+ *   Both paths reference the same string (not copies). The object is frozen
+ *   after derivation (see `flatten.ts`).
  *
- * Both paths reference the same string (not copies). The object is frozen
- * after derivation (see `flatten.ts`).
- *
- * Non-token metadata lives alongside:
+ * Non-token metadata:
  *   - `name` — scheme display name (if derived from a named scheme)
  *   - `mode` — light/dark
  *   - `derivationTrace` — optional; present only when `{ trace: true }` was passed
+ *   - `variants` — typography preset bundles (h1, body, code, …) resolved by
+ *     `<Text variant="…">`
+ *   - `palette` — 16-slot ANSI catalog used by `$color0` … `$color15`
+ *   - categorical hues (`red`, `orange`, `yellow`, `green`, `teal`, `blue`,
+ *     `purple`, `pink`) — hex strings for categorical UI
+ *
+ * The nested roles (`accent`, `muted`, `surface`, `border`, `cursor`, plus
+ * the status roles `info`/`success`/`warning`/`error`) are authoritative for
+ * stateful tokens. Legacy flat hex aliases for these roles (`theme.primary`,
+ * `theme.muted`, `theme.accent` as strings) are emitted as runtime
+ * conveniences via the scheme-builder but are not part of this type — they
+ * were deleted in silvery 0.19.0.
  */
 export type Theme = FlatTokens &
   Roles & {
     readonly name?: string
     readonly mode: "light" | "dark"
     readonly derivationTrace?: DerivationTrace
-  }
+    readonly variants: Record<string, Variant>
+    readonly palette: readonly string[]
+  } & CategoricalHues
+
+/**
+ * A typography variant — a named bundle of visual properties applied to a
+ * Text component via `variant="h1"`. The variant acts as a *default*: caller
+ * props always win over variant values.
+ *
+ * Color values follow the same syntax as `TextColor` — `$token` strings, hex
+ * values, ANSI names, or any string accepted by the color system.
+ */
+export interface Variant {
+  readonly color?: string
+  readonly backgroundColor?: string
+  readonly bold?: boolean
+  readonly italic?: boolean
+  readonly dim?: boolean
+  readonly underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed"
+}
 
 // ── ThemeShape metadata ────────────────────────────────────────────────────
 
