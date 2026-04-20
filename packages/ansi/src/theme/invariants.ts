@@ -4,9 +4,9 @@
  * Two independent invariant groups:
  *
  * 1. **Visibility (always checked)** — selection and cursor must be
- *    distinguishable from bg. These fail silently in the old system because
- *    ensureContrast doesn't touch selectionbg/cursorbg; you get "invisible
- *    selection" bugs that only surface via user complaints.
+ *    distinguishable from bg. These fail silently because ensureContrast
+ *    doesn't touch `bg-selected`/`bg-cursor`; you get "invisible selection"
+ *    bugs that only surface via user complaints.
  *
  * 2. **WCAG contrast (opt-in)** — `deriveTheme()` already runs `ensureContrast`
  *    on every text/bg pair as it builds the Theme (lenient auto-adjust). A
@@ -17,6 +17,11 @@
  * This is why `validateThemeInvariants` defaults to `{ wcag: false }` — the
  * existing derivation already handles contrast. Callers opt in via
  * `validateThemeInvariants(theme, { wcag: true })` for strict pre-ship audits.
+ *
+ * All token access is Sterling-shaped — flat hyphen keys (`bg-accent`,
+ * `fg-on-error`, `border-focus`) exist on every Theme via the derive +
+ * bakeFlat pipeline. No concat-kebab legacy names (`primaryfg`, `mutedbg`, …)
+ * — those were removed in silvery 0.19.0 (Sterling interior migration).
  */
 
 import { checkContrast, hexToOklch, deltaE as oklchDeltaE } from "@silvery/color"
@@ -35,7 +40,7 @@ export const SELECTION_DELTA_L = 0.08
 export const CURSOR_DELTA_E = 0.15 // OKLCH ΔE (≈15 on ×100 scale)
 
 export interface InvariantViolation {
-  /** Which invariant failed (e.g. "contrast:fg/popoverbg", "visibility:selection"). */
+  /** Which invariant failed (e.g. "contrast:fg/bg-surface-overlay", "visibility:selection"). */
   rule: string
   /** Token pair or concept involved. */
   tokens: string[]
@@ -72,45 +77,77 @@ export interface InvariantOptions {
 
 interface Pair {
   rule: string
-  fg: keyof Theme
-  bg: keyof Theme
+  /**
+   * Sterling flat-token key for the fg hex. Access via bracket lookup
+   * (`theme[pair.fg]`). Keys follow `<channel>-<role>[-<state>]` or
+   * `<channel>-on-<role>` grammar (see `@silvery/ansi/flatten.ts`).
+   *
+   * Two non-Sterling keys survive: `fg` and `bg` — they are the raw scheme
+   * foreground and background. Sterling carries them at the top level as
+   * convenience shortcuts (see `Theme` type).
+   */
+  fg: string
+  /** Sterling flat-token key for the bg hex. */
+  bg: string
   min: number
 }
 
+/**
+ * Contrast invariant pairs — all Sterling flat-token keys.
+ *
+ * These keys are populated on every Theme at derivation time via `bakeFlat`;
+ * bracket access (`theme["bg-accent"]`) is the canonical lookup form and is
+ * what `validateThemeInvariants` uses below.
+ */
 const CONTRAST_PAIRS: Pair[] = [
   // AA — body text and accent-on-surface pairs
   { rule: "contrast:fg/bg", fg: "fg", bg: "bg", min: AA_RATIO },
-  { rule: "contrast:fg/surfacebg", fg: "fg", bg: "surfacebg", min: AA_RATIO },
-  { rule: "contrast:fg/popoverbg", fg: "fg", bg: "popoverbg", min: AA_RATIO },
-  { rule: "contrast:muted/mutedbg", fg: "muted", bg: "mutedbg", min: LARGE_RATIO },
-  { rule: "contrast:primary/bg", fg: "primary", bg: "bg", min: AA_RATIO },
-  { rule: "contrast:secondary/bg", fg: "secondary", bg: "bg", min: AA_RATIO },
-  { rule: "contrast:accent/bg", fg: "accent", bg: "bg", min: AA_RATIO },
-  { rule: "contrast:error/bg", fg: "error", bg: "bg", min: AA_RATIO },
-  { rule: "contrast:warning/bg", fg: "warning", bg: "bg", min: AA_RATIO },
-  { rule: "contrast:success/bg", fg: "success", bg: "bg", min: AA_RATIO },
-  { rule: "contrast:info/bg", fg: "info", bg: "bg", min: AA_RATIO },
-  { rule: "contrast:link/bg", fg: "link", bg: "bg", min: AA_RATIO },
+  { rule: "contrast:fg/bg-surface-subtle", fg: "fg", bg: "bg-surface-subtle", min: AA_RATIO },
+  { rule: "contrast:fg/bg-surface-overlay", fg: "fg", bg: "bg-surface-overlay", min: AA_RATIO },
+  { rule: "contrast:fg-muted/bg-muted", fg: "fg-muted", bg: "bg-muted", min: LARGE_RATIO },
+  { rule: "contrast:fg-accent/bg", fg: "fg-accent", bg: "bg", min: AA_RATIO },
+  { rule: "contrast:fg-error/bg", fg: "fg-error", bg: "bg", min: AA_RATIO },
+  { rule: "contrast:fg-warning/bg", fg: "fg-warning", bg: "bg", min: AA_RATIO },
+  { rule: "contrast:fg-success/bg", fg: "fg-success", bg: "bg", min: AA_RATIO },
+  { rule: "contrast:fg-info/bg", fg: "fg-info", bg: "bg", min: AA_RATIO },
 
-  // AA — inverse + selection + cursor + accent-on-accent pairs
-  { rule: "contrast:inverse/inversebg", fg: "inverse", bg: "inversebg", min: AA_RATIO },
-  { rule: "contrast:selection/selectionbg", fg: "selection", bg: "selectionbg", min: AA_RATIO },
-  { rule: "contrast:cursor/cursorbg", fg: "cursor", bg: "cursorbg", min: AA_RATIO },
-  { rule: "contrast:primaryfg/primary", fg: "primaryfg", bg: "primary", min: AA_RATIO },
-  { rule: "contrast:secondaryfg/secondary", fg: "secondaryfg", bg: "secondary", min: AA_RATIO },
-  { rule: "contrast:accentfg/accent", fg: "accentfg", bg: "accent", min: AA_RATIO },
-  { rule: "contrast:errorfg/error", fg: "errorfg", bg: "error", min: AA_RATIO },
-  { rule: "contrast:warningfg/warning", fg: "warningfg", bg: "warning", min: AA_RATIO },
-  { rule: "contrast:successfg/success", fg: "successfg", bg: "success", min: AA_RATIO },
-  { rule: "contrast:infofg/info", fg: "infofg", bg: "info", min: AA_RATIO },
+  // AA — fg-on-<role> pairs (text on filled emphasis surfaces)
+  { rule: "contrast:fg-on-accent/bg-accent", fg: "fg-on-accent", bg: "bg-accent", min: AA_RATIO },
+  { rule: "contrast:fg-on-error/bg-error", fg: "fg-on-error", bg: "bg-error", min: AA_RATIO },
+  {
+    rule: "contrast:fg-on-warning/bg-warning",
+    fg: "fg-on-warning",
+    bg: "bg-warning",
+    min: AA_RATIO,
+  },
+  {
+    rule: "contrast:fg-on-success/bg-success",
+    fg: "fg-on-success",
+    bg: "bg-success",
+    min: AA_RATIO,
+  },
+  { rule: "contrast:fg-on-info/bg-info", fg: "fg-on-info", bg: "bg-info", min: AA_RATIO },
+
+  // AA — selection + cursor pairs
+  {
+    rule: "contrast:fg-on-selected/bg-selected",
+    fg: "fg-on-selected",
+    bg: "bg-selected",
+    min: AA_RATIO,
+  },
+  { rule: "contrast:fg-cursor/bg-cursor", fg: "fg-cursor", bg: "bg-cursor", min: AA_RATIO },
 
   // Non-text chrome (WCAG 1.4.11)
-  { rule: "contrast:inputborder/bg", fg: "inputborder", bg: "bg", min: LARGE_RATIO },
-  { rule: "contrast:focusborder/bg", fg: "focusborder", bg: "bg", min: LARGE_RATIO },
-  { rule: "contrast:disabledfg/bg", fg: "disabledfg", bg: "bg", min: LARGE_RATIO },
+  {
+    rule: "contrast:border-default/bg",
+    fg: "border-default",
+    bg: "bg",
+    min: LARGE_RATIO,
+  },
+  { rule: "contrast:border-focus/bg", fg: "border-focus", bg: "bg", min: LARGE_RATIO },
 
-  // Structural dividers
-  { rule: "contrast:border/bg", fg: "border", bg: "bg", min: FAINT_RATIO },
+  // Structural dividers — border-muted is the subtle rule line
+  { rule: "contrast:border-muted/bg", fg: "border-muted", bg: "bg", min: FAINT_RATIO },
 ]
 
 function lightness(hex: string): number | null {
@@ -150,16 +187,20 @@ export function validateThemeInvariants(
   const violations: InvariantViolation[] = []
 
   if (checkWcag) {
+    // Bracket access into Sterling flat tokens + the `fg`/`bg` root shortcuts.
+    // We type-cast through Record because `pair.fg` / `pair.bg` are strings
+    // (Sterling flat keys) rather than legacy `keyof Theme` members.
+    const themeRecord = theme as unknown as Record<string, string | undefined>
     for (const pair of CONTRAST_PAIRS) {
-      const fg = theme[pair.fg] as string
-      const bg = theme[pair.bg] as string
+      const fg = themeRecord[pair.fg]
+      const bg = themeRecord[pair.bg]
       if (typeof fg !== "string" || typeof bg !== "string") continue
       const r = checkContrast(fg, bg)
       if (r === null) continue // non-hex — skip (ANSI16 mode)
       if (r.ratio < pair.min) {
         violations.push({
           rule: pair.rule,
-          tokens: [String(pair.fg), String(pair.bg)],
+          tokens: [pair.fg, pair.bg],
           actual: r.ratio,
           required: pair.min,
           message: `${pair.fg} (${fg}) on ${pair.bg} (${bg}) is ${r.ratio.toFixed(2)}:1, needs ${pair.min.toFixed(1)}:1`,
@@ -169,14 +210,18 @@ export function validateThemeInvariants(
   }
 
   if (checkVisibility) {
-    // Bracket access to Sterling flat tokens falls back to legacy concat-kebab
-    // field when the Theme hasn't been Sterling-augmented (hand-crafted Theme
-    // objects that bypass `inlineSterlingTokens`). The CONTRAST_PAIRS table
-    // migration (full Sterling-key rewrite) is tracked under
-    // km-silvery.sterling-2e-interior-migration.
+    // Read Sterling flat keys first, fall back to legacy fields. Sterling
+    // doesn't yet ship `bg-selected` or `bg-cursor` as first-class flat
+    // tokens (only `bg-selected-hover`), so the legacy shape `selectionbg`
+    // / `cursorbg` is the authoritative source until Sterling's selection +
+    // cursor flat tokens land. Tracked under
+    // `km-silvery.sterling-selection-tokens`.
     const themeAny = theme as unknown as Record<string, string | undefined>
     const selectionBg = themeAny["bg-selected"] ?? themeAny["selectionbg"] ?? ""
     const cursorBg = themeAny["bg-cursor"] ?? themeAny["cursorbg"] ?? ""
+    // Prefer Sterling key in violation tokens/messages when populated.
+    const selectionKey = themeAny["bg-selected"] !== undefined ? "bg-selected" : "selectionbg"
+    const cursorKey = themeAny["bg-cursor"] !== undefined ? "bg-cursor" : "cursorbg"
 
     // Selection visibility — ΔL ≥ 0.08 between selection bg and bg (so highlight is distinguishable)
     const lBg = lightness(theme.bg)
@@ -186,10 +231,10 @@ export function validateThemeInvariants(
       if (dL < SELECTION_DELTA_L) {
         violations.push({
           rule: "visibility:selection",
-          tokens: ["selectionbg", "bg"],
+          tokens: [selectionKey, "bg"],
           actual: dL,
           required: SELECTION_DELTA_L,
-          message: `selection bg (${selectionBg}) differs from bg (${theme.bg}) by ΔL=${dL.toFixed(3)}, needs ≥ ${SELECTION_DELTA_L.toFixed(2)}`,
+          message: `${selectionKey} (${selectionBg}) differs from bg (${theme.bg}) by ΔL=${dL.toFixed(3)}, needs ≥ ${SELECTION_DELTA_L.toFixed(2)}`,
         })
       }
     }
@@ -202,10 +247,10 @@ export function validateThemeInvariants(
       if (de < CURSOR_DELTA_E) {
         violations.push({
           rule: "visibility:cursor",
-          tokens: ["cursorbg", "bg"],
+          tokens: [cursorKey, "bg"],
           actual: de,
           required: CURSOR_DELTA_E,
-          message: `cursor bg (${cursorBg}) differs from bg (${theme.bg}) by ΔE=${de.toFixed(3)}, needs ≥ ${CURSOR_DELTA_E.toFixed(2)}`,
+          message: `${cursorKey} (${cursorBg}) differs from bg (${theme.bg}) by ΔE=${de.toFixed(3)}, needs ≥ ${CURSOR_DELTA_E.toFixed(2)}`,
         })
       }
     }
