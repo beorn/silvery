@@ -24,8 +24,10 @@
  *   1. Includes are walked in their given order (parent before child,
  *      matching `collectBackdropMarkers` walk order).
  *   2. Within each include rect, rows ascend; within each row, cols ascend.
- *   3. Excludes follow, with the same row-ascending/col-ascending scan
- *      over the full buffer.
+ *   3. Excludes follow as a SINGLE buffer scan (rows ascend, cols ascend
+ *      within each row). Each cell is tested against the union of all
+ *      clipped exclude rects via an `insideAnyExclude` guard so the
+ *      "outside the union" semantic holds across multiple holes.
  *
  * The Kitty overlay's STRICT determinism invariant depends on this —
  * identical (plan, buffer) inputs must produce byte-identical overlay
@@ -87,17 +89,43 @@ export function forEachFadeRegionCell(
   }
 
   if (excludes.length > 0) {
+    // Semantics: visit every cell OUTSIDE the UNION of all exclude rects.
+    //
+    // Per-rect iteration is incorrect: outside(A) ∪ outside(B) ⊃ outside(A ∪ B).
+    // With two disjoint excludes, cells inside exclude-A's hole are "outside
+    // exclude-B" (and vice versa) and would be visited, fading the hole.
+    //
+    // Single-pass scan with an `insideAnyExclude` guard preserves the modal
+    // "cuts a hole" semantic across multiple holes: a cell is visited iff it
+    // is outside EVERY exclude rect.
+    const clipped: Array<{ x0: number; y0: number; x1: number; y1: number }> = []
     for (const { rect } of excludes) {
-      const ix0 = Math.max(0, rect.x)
-      const iy0 = Math.max(0, rect.y)
-      const ix1 = Math.min(bufferWidth, rect.x + rect.width)
-      const iy1 = Math.min(bufferHeight, rect.y + rect.height)
-      const innerValid = ix0 < ix1 && iy0 < iy1
+      const x0 = Math.max(0, rect.x)
+      const y0 = Math.max(0, rect.y)
+      const x1 = Math.min(bufferWidth, rect.x + rect.width)
+      const y1 = Math.min(bufferHeight, rect.y + rect.height)
+      if (x0 < x1 && y0 < y1) clipped.push({ x0, y0, x1, y1 })
+    }
+    if (clipped.length > 0) {
       for (let y = 0; y < bufferHeight; y++) {
         for (let x = 0; x < bufferWidth; x++) {
-          if (innerValid && x >= ix0 && x < ix1 && y >= iy0 && y < iy1) continue
-          once(x, y)
+          let insideAnyExclude = false
+          for (const r of clipped) {
+            if (x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1) {
+              insideAnyExclude = true
+              break
+            }
+          }
+          if (!insideAnyExclude) once(x, y)
         }
+      }
+    } else {
+      // All exclude rects clipped to empty — degenerate case where no cell is
+      // "inside" any exclude, so every cell is "outside the union" and gets
+      // visited. Matches the historical single-rect behavior when the rect
+      // was wholly outside the buffer.
+      for (let y = 0; y < bufferHeight; y++) {
+        for (let x = 0; x < bufferWidth; x++) once(x, y)
       }
     }
   }
