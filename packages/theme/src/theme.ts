@@ -64,8 +64,13 @@ export {
   getThemeByName,
 } from "./schemes/index"
 
-// Sterling — new canonical design system (Phase 2a, additive).
+// Sterling — silvery's canonical design system.
 // See packages/theme/src/sterling/ and hub/silvery/design/v10-terminal/design-system.md.
+//
+// Sterling flat tokens (`bg-accent`, `fg-on-accent`, `border-focus`, …) are
+// baked into every shipped Theme at construction (see ./schemes/index.ts).
+// Consumers read flat keys directly off the Theme — no explicit augment call
+// is needed or available.
 export { sterling } from "./sterling/index"
 export {
   deriveTheme as sterlingDeriveTheme,
@@ -77,9 +82,7 @@ export {
   autoLift as sterlingAutoLift,
   checkAA as sterlingCheckAA,
   ContrastError as SterlingContrastError,
-  augmentWithSterlingFlat,
 } from "./sterling/index"
-export type { UnifiedTheme as SterlingUnifiedTheme } from "./sterling/index"
 export type {
   AccentRole,
   BorderRole,

@@ -1,50 +1,38 @@
 /**
- * Sterling augment — merge Sterling flat tokens onto a legacy Theme.
+ * Sterling flat-token inlining — internal helper that merges Sterling flat
+ * tokens onto a legacy Theme. Replaces the removed public `augmentWithSterlingFlat`.
  *
- * Phase 2b glue: Sterling is additive; legacy Theme fields stay; components
- * consume flat Sterling tokens (`$fg-on-accent`, `$bg-surface-subtle`, etc.)
- * via direct lookup on the Theme object. The nested Sterling role form is
- * intentionally NOT merged in this phase — legacy already uses those root
- * keys as hex strings (`theme.accent: string`). Nested access arrives in
- * Phase 2d when the legacy string form is removed.
+ * Public consumers don't call this directly. It's invoked implicitly at theme
+ * construction by:
+ *   - packages/theme/src/schemes/index.ts  (every shipped default theme)
+ *   - packages/ag-term/src/pipeline/state.ts  (pipeline fallback theme)
  *
- * Flat Sterling keys (`bg-accent`, `fg-on-error`, `border-focus`, …) have
- * hyphens and never collide with legacy kebab keys (`primary-hover`,
- * `fg-hover`, …) or legacy concat keys (`surfacebg`, `primaryfg`).
+ * Behavior mirrors the old `augmentWithSterlingFlat` exactly:
+ *   - Preserves every legacy Theme field unchanged
+ *   - Writes Sterling flat tokens (`bg-accent`, `fg-on-accent`, `border-focus`, …)
+ *     only when the key isn't already present as a string
+ *   - Not frozen (legacy consumers expect mutability in a few corners)
  *
- * `augmentWithSterlingFlat(theme, scheme?)` returns a NEW object containing:
- *   - every legacy Theme field (unchanged)
- *   - every Sterling flat token, populated from Sterling's derivation
+ * A ColorScheme can be supplied for full fidelity. When omitted, Sterling
+ * derives from a ColorScheme reconstructed from the theme's own palette —
+ * lossy for ANSI slot colors but sufficient for Sterling's 6-slot surface.
  *
- * The returned object is NOT frozen (legacy consumers expect mutability in
- * a few corners). Sterling's own freeze semantics arrive with Phase 2d.
- *
- * See hub/silvery/design/v10-terminal/design-system.md and
- * hub/silvery/design/v10-terminal/sterling-preflight.md (D4).
+ * This file is NOT exported from the `@silvery/theme` barrel.
  */
 
 import type { ColorScheme, Theme as LegacyTheme } from "@silvery/ansi"
 import { deriveRoles } from "./derive.ts"
-import { STERLING_FLAT_TOKENS } from "./flatten.ts"
 import type { FlatToken } from "./types.ts"
 
 /**
- * Legacy Theme + Sterling flat tokens on the same object.
- *
- * Type is a string-index intersection — every FlatToken key resolves to a
- * string. Components do `theme["bg-surface-subtle"]` and TypeScript catches
- * typos via the FlatToken string-literal union.
+ * Legacy Theme + Sterling flat tokens on the same object. Kept as a local
+ * type alias; the public barrel no longer re-exports this shape.
  */
-export type UnifiedTheme = LegacyTheme & { [K in FlatToken]: string }
+export type InlinedTheme = LegacyTheme & { [K in FlatToken]: string }
 
 /**
  * Build a ColorScheme-shaped input from a legacy Theme when the original
- * scheme isn't available (e.g. hand-crafted themes, theme picker round-trips).
- *
- * The reconstruction is lossy for ANSI slot colors but fine for Sterling's
- * derivation surface — Sterling derivation only depends on 6 slots:
- * foreground, background, primary, red, yellow, green. The rest fall back
- * to best-effort blends.
+ * scheme isn't available (hand-crafted themes, picker round-trips).
  */
 function schemeFromLegacy(theme: LegacyTheme): ColorScheme {
   const palette = theme.palette ?? []
@@ -78,8 +66,8 @@ function schemeFromLegacy(theme: LegacyTheme): ColorScheme {
 }
 
 /**
- * Quick-and-dirty luminance test — matches @silvery/color's relativeLuminance
- * threshold (0.5). Avoids pulling @silvery/color in just for one boolean.
+ * Quick luminance check — matches relativeLuminance threshold (0.5). Avoids
+ * pulling in @silvery/color for a single boolean.
  */
 function isDark(hex: string): boolean {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex)
@@ -94,32 +82,25 @@ function isDark(hex: string): boolean {
 }
 
 /**
- * Merge Sterling flat tokens onto a legacy Theme.
+ * Write Sterling flat tokens onto a legacy Theme in-place and return the
+ * augmented object. Mirrors the old `augmentWithSterlingFlat` semantics:
+ * only sets a key if it's not already a string on the theme.
  *
  * When `scheme` is provided, Sterling derives directly from it (full fidelity).
- * When omitted, Sterling derives from a ColorScheme reconstructed from the
- * theme itself — good enough for runtime augmentation of hand-authored themes.
+ * Otherwise a scheme is reconstructed from the theme's palette (lossy on ANSI
+ * slots but fine for Sterling's derivation surface).
  */
-export function augmentWithSterlingFlat(theme: LegacyTheme, scheme?: ColorScheme): UnifiedTheme {
+export function inlineSterlingTokens(theme: LegacyTheme, scheme?: ColorScheme): InlinedTheme {
   const src = scheme ?? schemeFromLegacy(theme)
   const { roles } = deriveRoles(src, { contrast: "auto-lift" })
 
   const out: Record<string, unknown> = { ...theme }
 
-  // Write a flat token only if the legacy theme doesn't already own that key.
-  // Prevents accidental mutation of legacy-defined flat kebab keys (e.g.
-  // `bg-surface-hover`, `accent-hover`) whose derivation rules may differ
-  // slightly from Sterling's. Phase 2d will unify these.
   const setIfAbsent = (key: string, value: string): void => {
     if (!(key in out) || typeof out[key] !== "string") {
       out[key] = value
     }
   }
-
-  // Populate flat tokens — mirrors populateFlat() but writes onto an
-  // existing object WITHOUT overwriting the legacy string-valued role keys
-  // (accent / info / success / warning / error / muted / surface / border /
-  // cursor) which still hold hex strings in the legacy form.
 
   // Accent — link-like interactive text: both fg and bg state variants
   const accent = roles.accent
@@ -183,8 +164,5 @@ export function augmentWithSterlingFlat(theme: LegacyTheme, scheme?: ColorScheme
     setIfAbsent("bg-muted", m.bg)
   }
 
-  return out as unknown as UnifiedTheme
+  return out as unknown as InlinedTheme
 }
-
-/** All Sterling flat tokens — re-exported for audits and tests. */
-export { STERLING_FLAT_TOKENS }

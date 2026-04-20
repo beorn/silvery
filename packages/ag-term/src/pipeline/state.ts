@@ -15,8 +15,10 @@
  */
 
 import type { Theme } from "@silvery/ansi"
-import { ansi16DarkTheme } from "@silvery/ansi"
-import { augmentWithSterlingFlat } from "@silvery/theme"
+// The `@silvery/theme` re-export of ansi16DarkTheme is pre-populated with
+// Sterling flat tokens; `@silvery/ansi`'s is not. Bare-test render paths need
+// the flat tokens to resolve `$fg-accent` / `$bg-surface-subtle` etc.
+import { ansi16DarkTheme } from "@silvery/theme"
 
 // ============================================================================
 // Active Theme (fallback only — not set by ThemeProvider)
@@ -29,11 +31,11 @@ import { augmentWithSterlingFlat } from "@silvery/theme"
  * has no pushContextTheme frame on the stack, e.g. a bare test that renders
  * without ThemeProvider.
  *
- * Augmented with Sterling flat tokens (Phase 2b) so bare-test render paths
- * resolve `$fg-accent` / `$bg-surface-subtle` / etc. without needing an
- * explicit ThemeProvider.
+ * `@silvery/theme`'s `ansi16DarkTheme` ships with Sterling flat tokens baked
+ * in, so bare-test render paths resolve `$fg-accent` / `$bg-surface-subtle` /
+ * etc. without needing an explicit ThemeProvider.
  */
-const _activeTheme: Theme = augmentWithSterlingFlat(ansi16DarkTheme)
+const _activeTheme: Theme = ansi16DarkTheme
 
 /** Get the active theme (fallback to ansi16DarkTheme when no context stack entry exists). */
 export function getActiveTheme(): Theme {
