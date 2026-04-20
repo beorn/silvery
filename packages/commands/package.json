@@ -1,6 +1,6 @@
 {
   "name": "@silvery/commands",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "private": true,
   "description": "Command registry, keymaps, and invocation for silvery apps",
   "license": "MIT",

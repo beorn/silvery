@@ -1,6 +1,6 @@
 {
   "name": "silvery",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "description": "React for modern terminal apps — powerful apps, polished UIs, proudly terminal",
   "keywords": [
     "ansi",
@@ -75,7 +75,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "build:all": "tsdown && tsdown -W -F '@silvery/*'",
+    "build:all": "tsdown && tsdown -W -F '@silvery/ag' -F '@silvery/ag-react' -F '@silvery/ag-term' -F '@silvery/ansi' -F '@silvery/color' -F '@silvery/commander' -F '@silvery/commands' -F '@silvery/create' -F '@silvery/headless' -F '@silvery/ink' -F '@silvery/model' -F '@silvery/scope' -F '@silvery/signals' -F '@silvery/theme'",
     "test": "bunx --bun vitest run",
     "test:fast": "bunx --bun vitest run --reporter=dot",
     "typecheck": "tsc --noEmit",
@@ -95,8 +95,8 @@
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.3",
-    "@silvery/color": "0.19.1",
-    "@silvery/commander": "0.19.1",
+    "@silvery/color": "0.19.2",
+    "@silvery/commander": "0.19.2",
     "css-select": "^7.0.0",
     "css-what": "^8.0.0",
     "loggily": "0.6.0",

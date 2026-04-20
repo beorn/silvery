@@ -1,6 +1,6 @@
 {
   "name": "@silvery/examples",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "description": "Example apps and component demos for silvery — npx @silvery/examples <name>",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",

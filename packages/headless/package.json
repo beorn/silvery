@@ -1,6 +1,6 @@
 {
   "name": "@silvery/headless",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "private": true,
   "description": "Pure state machines for UI components — no React, no rendering, no side effects",
   "license": "MIT",
@@ -61,8 +61,8 @@
     "build": "tsdown"
   },
   "peerDependencies": {
-    "@silvery/ag": "0.19.1",
-    "@silvery/ag-term": "0.19.1"
+    "@silvery/ag": "0.19.2",
+    "@silvery/ag-term": "0.19.2"
   },
   "peerDependenciesMeta": {
     "@silvery/ag": {

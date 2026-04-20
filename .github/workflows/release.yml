@@ -20,7 +20,7 @@ jobs:
         with:
           version: 9
       - run: bun install
-      - run: bun run build
+      - run: bun run build:all
       - uses: actions/setup-node@v4
         with:
           node-version: "23"
@@ -75,7 +75,6 @@ jobs:
           publish packages/ag-term
           publish packages/ansi
           publish packages/commands
-          publish packages/theme-detect
 
           # Layer 4: Depends on ag-term
           publish packages/ink

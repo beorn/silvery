@@ -1,6 +1,6 @@
 {
   "name": "@silvery/signals",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "private": true,
   "description": "Reactive signals for silvery — thin wrapper around alien-signals",
   "license": "MIT",

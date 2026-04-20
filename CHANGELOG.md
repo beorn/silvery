@@ -7,26 +7,66 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-## 0.19.1 — Republish with correct exports
+### Removed
 
-Republish of the 0.19.0 surface to fix broken installs of the standalone scoped packages on npm.
+- **`@silvery/theme-detect` package killed.** It was always a thin re-export
+  shell of `@silvery/ansi` — zero unique code, zero external consumers. Its
+  surface is now sourced directly from the two packages that actually own it:
+  - **OSC probing → `@silvery/ansi`.** The probe primitive `probeColors` (raw
+    OSC 4/10/11 query → 22-slot `ColorScheme`) lives in `@silvery/ansi/theme`.
+    `detectTerminalScheme` is kept as a deprecated alias of `probeColors`.
+  - **Scheme + theme detection → `@silvery/theme`.** The full 4-layer cascade
+    (`detectScheme`, `detectSchemeTheme`) and the Sterling-aware `detectTheme`
+    are exported from `@silvery/theme`. All four wrappers run their result
+    through `inlineSterlingTokens` so flat keys like `border-default` always
+    resolve.
+
+  Migration:
+
+  ```diff
+  - import { detectTerminalScheme, detectScheme, detectTheme } from "@silvery/theme-detect"
+  + import { probeColors } from "@silvery/ansi"        // raw OSC probe
+  + import { detectScheme, detectTheme } from "@silvery/theme"  // Sterling-aware
+  ```
+
+  The full re-export surface (fingerprinting, derivation, invariants,
+  monochrome, custom tokens) was already exported from `@silvery/ansi` —
+  drop the `-detect` suffix from the import path.
+
+## 0.19.2 — Republish with correct exports AND shipped dist
+
+Second republish of the 0.19.0 surface. 0.19.0 shipped with the wrong `exports` field; 0.19.1 fixed `exports` but the workspace `dist/` was never built in CI, so the published tarballs contained only `LICENSE`, `README.md`, and `package.json` (no `dist/index.mjs`). 0.19.2 ships both the right `exports` field AND the actual built artifacts.
 
 ### Why
 
-`@silvery/ansi@0.19.0`, `@silvery/color@0.19.0`, and `@silvery/commander@0.19.0` shipped with `exports → ./src/index.ts` because the release workflow used `npm publish`, and npm does not honour `publishConfig.exports`. Only `pnpm publish` applies the override that maps consumers to `dist/*.mjs`. As a result, `npm install @silvery/ansi@0.19.0 && node -e "import '@silvery/ansi'"` failed with `Cannot find module '.../@silvery/ansi/src/index.ts'`. The root `silvery@0.19.0` barrel was unaffected because it bundles its dependencies into its own `dist/`.
+Two release-workflow bugs compounded:
+
+1. `npm publish` (used in 0.19.0) ignores `publishConfig.exports`, so consumers of `@silvery/ansi@0.19.0` etc. saw `exports → ./src/index.ts` and `Cannot find module '.../src/index.ts'`.
+2. `bun run build` (used in 0.19.0 and 0.19.1) only builds the **root** package — it does not run `tsdown -W` over the workspace. So even after switching to `pnpm publish` in 0.19.1, the per-package `dist/` folders were empty in CI and the `files: ["dist"]` allowlist shipped nothing useful.
+
+The root `silvery@0.19.x` barrel was unaffected because it bundles its dependencies into its own `dist/`, masking both issues for consumers who only `import "silvery"`.
 
 ### What changed
 
-- `.github/workflows/release.yml`: switched the publish step from `npm publish` to `pnpm publish --no-git-checks`, and added `pnpm/action-setup` so the runner has pnpm available. No package contents changed.
-- All published package versions bumped 0.19.0 → 0.19.1 (and cross-package `@silvery/*` deps updated in lockstep) so consumers can pin a known-good tag.
+- `.github/workflows/release.yml`:
+  - `bun run build` → `bun run build:all` (which runs `tsdown && tsdown -W -F '@silvery/*'`), so workspace package `dist/` folders are populated before publish.
+  - `npm publish` → `pnpm publish --no-git-checks` (kept from 0.19.1), so `publishConfig.exports` overrides apply.
+  - Added `pnpm/action-setup@v4` so pnpm is available on the runner.
+  - Skip private packages (`private: true`) instead of failing the publish loop on EPRIVATE.
+- `@silvery/theme-detect` package killed (see [Unreleased] note below) — 0.19.2 will not include it.
+- All remaining published package versions bumped 0.19.1 → 0.19.2 with cross-package `@silvery/*` deps updated in lockstep.
 
 ### Migration
 
 ```bash
-npm install @silvery/ansi@0.19.1   # or @silvery/color, @silvery/commander, etc.
+npm install @silvery/ansi@0.19.2   # or @silvery/color, @silvery/commander
 ```
 
-No source-level changes from 0.19.0.
+No source-level changes from 0.19.0. Do not pin to `@silvery/{ansi,color,commander}@0.19.0` (broken `exports`) or `@0.19.1` (correct `exports` but missing `dist/`). Use `@0.19.2` or later.
+
+## 0.19.1 — Republish attempt (do not use)
+
+Switched `npm publish` → `pnpm publish` in the release workflow to fix the broken `exports` field on the standalone scoped packages, but the workspace `dist/` folders were never built in CI (the publish step ran on `bun run build`, which only builds the root barrel). The published tarballs contain `LICENSE` + `README.md` + `package.json` only — no shipped artifacts. Use 0.19.2 instead.
 
 ## 0.19.0 — Sterling Theme expansion (additive)
 
