@@ -82,24 +82,30 @@ export function blend(a: string, b: string, t: number): string {
 
 /**
  * Deemphasize a color — reduce visual prominence by scaling OKLCH lightness
- * and chroma proportionally toward the achromatic origin. Hue is preserved.
+ * LINEARLY and chroma QUADRATICALLY toward the achromatic origin. Hue is
+ * preserved.
  *
  *   L' = L × (1 - amount)
- *   C' = C × (1 - amount)
+ *   C' = C × (1 - amount)²
  *   H' = H
  *
- * Because L and C scale by the same factor, the C/L ratio (a proxy for
- * perceived saturation) is exactly preserved — the cell looks "like the
- * same color, just less visually present" rather than "darker but oddly
- * more saturated" (which is what pure sRGB source-over tends to produce
- * because sRGB channel scaling isn't perceptually uniform).
+ * The asymmetric falloff corrects for a perceptual nonlinearity: human
+ * vision reads chroma RELATIVE to luminance, so a modest OKLCH C at low L
+ * *appears* distinctly more chromatic than the same C at high L. Scaling
+ * C and L proportionally (the obvious "preserve C/L" choice) actually
+ * feels "darker but more saturated" to viewers because perceived saturation
+ * rises as L drops. `(1 - amount)²` reduces chroma faster than lightness,
+ * making the deemphasized cell read as "muted" rather than "intensified".
+ *
+ * At amount=0.25 (ModalDialog default): L *= 0.75, C *= 0.56 (44% chroma
+ * reduction). At amount=0.5: L *= 0.5, C *= 0.25 (75% chroma reduction).
+ * At amount=1: L=0, C=0 (pure black).
  *
  * Use `deemphasize` when you want a single "reduce prominence" control
- * that fades a cell toward neutrality without hue drift. For industry-
- * standard scrim compositing (overlay a translucent black rect), use
- * `mixSrgb` — it matches what CSS filter/backdrop-filter, Material, and
- * Flutter ship but will appear slightly hue-shifted during darkening on
- * some colors.
+ * that fades a cell toward neutrality. For industry-standard scrim
+ * compositing (overlay a translucent black rect), use `mixSrgb` — it
+ * matches what CSS filter/backdrop-filter, Material, and Flutter ship but
+ * doesn't compensate for the C/L perceptual nonlinearity.
  *
  * For non-hex inputs, returns the color unchanged.
  */
@@ -107,9 +113,10 @@ export function deemphasize(color: string, amount: number): string {
   const o = hexToOklch(color)
   if (!o) return color
   const a = Math.max(0, Math.min(1, amount))
+  const chromaFactor = (1 - a) * (1 - a)
   return oklchToHex({
     L: Math.max(0, o.L * (1 - a)),
-    C: Math.max(0, o.C * (1 - a)),
+    C: Math.max(0, o.C * chromaFactor),
     H: o.H,
   })
 }

@@ -644,11 +644,30 @@ function rgbToHex(r: number, g: number, b: number): string {
  * consumers; this inline copy exists only to keep silvery self-contained.
  */
 /**
- * OKLCH-native deemphasize: proportional L and C reduction, hue preserved.
- * `L *= (1 - amount); C *= (1 - amount); H unchanged`. Preserves the C/L
- * ratio — the cell reads as "same color, less visually present", not
- * "darker and oddly more saturated" (which sRGB channel scaling can
- * produce on some hues because it isn't perceptually uniform).
+ * OKLCH-native deemphasize: linear L reduction, QUADRATIC C reduction,
+ * hue preserved.
+ *
+ *   L' = L × (1 - amount)
+ *   C' = C × (1 - amount)²
+ *   H' = H
+ *
+ * The asymmetric chroma falloff corrects for a perceptual nonlinearity:
+ * the human visual system reads chroma RELATIVE to luminance, so a modest
+ * OKLCH C at low L *appears* distinctly more chromatic than the same C at
+ * high L. Proportional L+C scaling (`C *= 1-α`, preserving C/L) therefore
+ * feels "darker but more saturated" to viewers — the exact complaint that
+ * prompted this revision.
+ *
+ * Using `(1-α)²` for chroma reduces saturation faster than lightness:
+ *
+ *   α=0.25 → L *= 0.75, C *= 0.563  (C/L drops to 75% of original)
+ *   α=0.40 → L *= 0.60, C *= 0.360  (C/L drops to 60%)
+ *   α=0.50 → L *= 0.50, C *= 0.250  (C/L drops to 50%)
+ *   α=1.00 → both 0 (fully faded to pure black).
+ *
+ * At the default ModalDialog amount (0.25), pale-lavender `#cdd6f4`
+ * deemphasizes to L=0.66, C=0.024 — visibly muted, not "even more
+ * saturated than before".
  *
  * `@silvery/color` exports `deemphasize` for third-party consumers; this
  * inline copy exists only to keep silvery self-contained across publish
@@ -658,9 +677,10 @@ function deemphasizeOklch(hex: string, amount: number): string {
   const o = hexToOklch(hex)
   if (!o) return hex
   const a = Math.max(0, Math.min(1, amount))
+  const chromaFactor = (1 - a) * (1 - a)
   return oklchToHex({
     L: Math.max(0, o.L * (1 - a)),
-    C: Math.max(0, o.C * (1 - a)),
+    C: Math.max(0, o.C * chromaFactor),
     H: o.H,
   })
 }
