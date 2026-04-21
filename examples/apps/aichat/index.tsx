@@ -103,7 +103,6 @@ export function AIChat({
       <ListView
         items={state.exchanges}
         getKey={(ex) => ex.id}
-        width="100%"
         height={termRows}
         estimateHeight={6}
         renderItem={renderExchange}

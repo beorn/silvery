@@ -219,7 +219,7 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
         // In interactive mode, leave the intro exchange visible and wait
         // for user input — auto-advancing on mount buries the intro text
         // under the first scripted user message before the user sees it.
-        const pulseFx = fx.interval(400, { type: "pulse" }, "pulse")
+        const pulseFx = fx.interval(400, { type: "pulse" } as const, "pulse")
         if (autoMode) return doAdvance(state, [pulseFx])
         return [state, [pulseFx]]
       }
