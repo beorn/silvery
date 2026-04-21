@@ -10,18 +10,22 @@
  * This eliminates the fixed-itemHeight problem where a single constant can't
  * accurately represent variable-height items (e.g., cards with 3-6 row heights).
  *
- * ## Architecture (2026-04-21, bead km-silvery.virtualizer-from-layout activated)
+ * ## Architecture (2026-04-21, bead km-silvery.virtualizer-from-layout activated;
+ * simplified 2026-04-20 per bead km-silvery.virtualizer-single-mode strategy a)
  *
  * The virtualizer has TWO operating modes, chosen automatically:
  *
  * ### Bootstrap mode (no `containerNode` or first render pre-layout)
  *
  * Used when the scroll container's AgNode isn't available yet (first render
- * before `Box.useLayoutEffect` has captured its ref). Falls back to the
- * count-based algorithm: `calcEdgeBasedScrollOffset` + height-aware forward
- * walk using `estimateHeight` as a fallback for unmeasured items.
- *
- * This is the ONLY mode where estimates drive the visible range.
+ * before `Box.useLayoutEffect` has captured its ref). A MINIMAL count-based
+ * seed: anchor the window at `scrollTo ?? 0`, render `minWindowSize` items
+ * (estimatedVisibleCount + 2*overscan), and compute placeholder heights via
+ * `sumHeights`. No height-aware forward walk, no mid-cycle
+ * `calcEdgeBasedScrollOffset` dance — those were the feedback-loop sources
+ * the old bootstrap carried over from pre-steady-state designs. The next
+ * frame, steady-state takes over via `containerNode` + `scrollState` and
+ * produces the authoritative window.
  *
  * ### Steady-state mode (containerNode + scrollState signal available)
  *
@@ -61,7 +65,6 @@
  * to do with the visible range.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { calcEdgeBasedScrollOffset } from "@silvery/ag-term/scroll-utils"
 import type { AgNode } from "@silvery/ag/types"
 import { useScrollState } from "./useScrollState"
 
@@ -391,51 +394,27 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // within the viewport.
   const selectedIndexRef = useRef(Math.max(0, Math.min(scrollTo ?? 0, count - 1)))
 
-  // Scroll offset (item index of viewport top) — computed synchronously
-  // during render.
+  // Scroll offset (item index) — the cursor / viewport anchor.
   //
-  // In steady-state mode: derived from layout-phase's pixel-space offset by
-  // walking items with measuredHeights. This is the authoritative value.
+  // This is the PUBLIC API field consumers read to compute their scroll anchor
+  // (e.g. ListView's `boxScrollTo` fallback when `scrollTo` is undefined).
+  // We no longer run `calcEdgeBasedScrollOffset` here: the edge-based
+  // "ensure-visible with padding" behaviour is handled by the real scroll
+  // container (`Box overflow="scroll"`) in steady-state, and during bootstrap
+  // the window is small enough that the anchor doesn't need padding math.
   //
-  // In bootstrap mode: computed via calcEdgeBasedScrollOffset (count-based
-  // ensure-visible). Kept in a ref so mid-cycle scrollTo changes don't need
-  // a useEffect to settle.
-  const scrollOffsetRef = useRef(
-    calcEdgeBasedScrollOffset(
-      selectedIndexRef.current,
-      0,
-      estimatedVisibleCount,
-      count,
-      scrollPadding,
-    ),
-  )
-  const [, setScrollOffset] = useState(() => scrollOffsetRef.current)
-
-  // Bootstrap offset tracking: always-on, because we expose scrollOffset as
-  // public API (item index — ListView reads it to compute boxScrollTo).
-  //
-  // Critically, we do NOT let steady-state measurements feed back into this
-  // ref. If we derived `scrollOffsetRef` from `scrollState.offset`, each
+  // We also do NOT derive this ref from `scrollState.offset`. If we did, each
   // measurement that shifted `avgMeasured` would shift which item owns the
   // viewport-top pixel, which would change `scrollOffsetRef`, which would
   // setScrollOffset → re-render → re-measure → oscillation.
-  //
-  // Steady-state uses `scrollState.offset` for WINDOW BOUNDS only (inside
-  // the useMemo below) — the external scrollOffset API stays count-based
-  // and stable. ListView already uses scrollOffset to decide scrollTo anchor,
-  // which is count-based anyway (Box.scrollTo takes a child index).
+  const scrollOffsetRef = useRef(selectedIndexRef.current)
+  const [, setScrollOffset] = useState(() => scrollOffsetRef.current)
+
   if (scrollTo !== undefined) {
     const clampedIndex = Math.max(0, Math.min(scrollTo, count - 1))
     selectedIndexRef.current = clampedIndex
-    const newOffset = calcEdgeBasedScrollOffset(
-      clampedIndex,
-      scrollOffsetRef.current,
-      estimatedVisibleCount,
-      count,
-      scrollPadding,
-    )
-    if (newOffset !== scrollOffsetRef.current) {
-      scrollOffsetRef.current = newOffset
+    if (clampedIndex !== scrollOffsetRef.current) {
+      scrollOffsetRef.current = clampedIndex
     }
   }
 
@@ -446,23 +425,17 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     setScrollOffset((prev) => (prev === effectiveScrollOffset ? prev : effectiveScrollOffset))
   }, [effectiveScrollOffset])
 
-  // Imperative scroll function — updates the bootstrap anchor. In steady-state
-  // mode the layout-phase offset takes over on the next render.
+  // Imperative scroll function — sets the anchor; the scroll container
+  // handles the actual scroll (edge-based "keep in view with padding" lives
+  // in Box's overflow="scroll" path, not here).
   const scrollToItem = useCallback(
     (index: number) => {
       const clampedIndex = Math.max(0, Math.min(index, count - 1))
       selectedIndexRef.current = clampedIndex
-      const newOffset = calcEdgeBasedScrollOffset(
-        clampedIndex,
-        scrollOffsetRef.current,
-        estimatedVisibleCount,
-        count,
-        scrollPadding,
-      )
-      scrollOffsetRef.current = newOffset
-      setScrollOffset(newOffset)
+      scrollOffsetRef.current = clampedIndex
+      setScrollOffset(clampedIndex)
     },
-    [count, estimatedVisibleCount, scrollPadding],
+    [count],
   )
 
   // Key resolver
@@ -653,86 +626,37 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       }
     }
 
-    // ─── Bootstrap mode: count-based, estimate-driven ───────────────
+    // ─── Bootstrap mode: minimal count-based seed ───────────────────
     //
     // Used on the first render (before layout has run) and when the caller
-    // doesn't pass `containerNode`. Keeps the pre-existing behavior so
-    // callers that don't adopt `containerNode` see no change.
+    // doesn't pass `containerNode`. The goal is just to produce SOMETHING
+    // reasonable so tests that inspect the first-render output see content;
+    // the NEXT render (once `containerNode` is captured and `scrollState`
+    // flows in) hands control to the steady-state branch above.
     //
-    // Render window = enough items to fill the viewport + overscan buffer,
-    // capped at maxRendered.
+    // Window: anchor at `effectiveScrollOffset` (= cursor or 0), render
+    // `minWindowSize` items (estimatedVisibleCount + 2*overscan). Placeholder
+    // heights come from `sumHeights` so `representsItems` / ▲N ▼N counts
+    // still reflect the full list.
     //
-    // CRITICAL INVARIANT 1: the window is derived from effectiveScrollOffset
-    // (the viewport top), NOT from the cursor. Cursor-centered windows fail
-    // at edges — when the cursor is at index 0 with overscan=5, only the
-    // lower half of the window renders (5 items), leaving blank viewport
-    // rows. The cursor's role is to drive scrollOffset (via
-    // calcEdgeBasedScrollOffset); it does not constrain the render window.
-    //
-    // CRITICAL INVARIANT 2: the window size is derived from HEIGHTS, not
-    // from item counts. A count-based window (`estimatedVisibleCount +
-    // 2*overscan`) fails when item heights are highly variable — e.g. the
-    // first N items are short (3 rows) and the rest are tall (30 rows).
-    // avgHeight weighs these evenly, so estimatedVisibleCount undercounts
-    // how many of the (short) first items are needed to fill the viewport.
-    // Symptom: viewport partially blank, `▼N` indicator at the bottom even
-    // though items that would fit are NOT being rendered.
-    //
-    // The height-aware algorithm: expand `end` forward from `start`, summing
-    // measured heights, until accumulated height ≥ viewport + overscanPixels.
-    // Always include `estimatedVisibleCount + 2*overscan` items as a minimum
-    // (so unmeasured-first-render still has a reasonable window).
-    //
-    // Window layout:
-    //   start = scrollOffset - overscan        (items above viewport)
-    //   end   = smallest index s.t. sumHeights(start, end) covers the
-    //           viewport + overscan pixels below it
-    const overscanPixels = overscan * avgHeight
+    // The old bootstrap did a height-aware forward walk + mid-cycle
+    // `calcEdgeBasedScrollOffset` dance. That was the source of the
+    // measurement → avgMeasured → window-shift feedback loop we severed
+    // upstream; steady-state makes the walk redundant because layout-phase
+    // already knows what's visible. Simpler seed + one-frame handoff.
     const minItems = estimatedVisibleCount + 2 * overscan
 
     let start = Math.max(0, effectiveScrollOffset - overscan)
-    // Target rendered height = viewport (above scrollOffset is already
-    // measured by start reduction) + overscan both ends.
-    const targetHeight = viewportHeight + 2 * overscanPixels
-
-    // Expand `end` using actual heights (or estimates for unmeasured).
-    // Gap accounting: n items contribute (n-1) inter-item gaps. We add `gap`
-    // between consecutive items, not after the first one — this matches the
-    // `(itemCount - 1) * gap` semantics used in `sumHeights`, so the
-    // virtualizer's idea of window height agrees with the placeholder
-    // prefix-sum used in `leadingHeight`/`trailingHeight`.
-    let accumulated = 0
-    let end = start
-    while (end < count && accumulated < targetHeight) {
-      if (end > start) accumulated += gap
-      accumulated += getHeight(end, estimateHeight, measuredHeights, getItemKey, avgHeight)
-      end++
+    let end = Math.min(count, start + minItems)
+    // If we hit the end, pull start back to keep the window at `minItems`.
+    if (end === count) {
+      start = Math.max(0, end - minItems)
     }
-    // Minimum item count — protects against very small measured heights that
-    // would otherwise truncate the window (and guards fresh renders where
-    // nothing is measured yet).
-    end = Math.min(count, Math.max(end, start + minItems))
-    // Apply maxRendered cap last (safety bound).
+    // Safety cap.
     end = Math.min(end, start + maxRendered)
 
-    // Adjust start if we hit the end — keep enough items to cover the
-    // viewport when there are enough items to fill it.
-    if (end === count) {
-      // Pull `start` back so that start..count covers at least the viewport.
-      // Same gap semantics as the forward walk: (n-1) gaps for n items.
-      let startFill = 0
-      let newStart = end
-      while (newStart > 0 && startFill < targetHeight) {
-        newStart--
-        startFill += getHeight(newStart, estimateHeight, measuredHeights, getItemKey, avgHeight)
-        if (newStart + 1 < end) startFill += gap
-      }
-      // Keep minimum count so the window never shrinks below item-count floor.
-      start = Math.min(Math.max(0, newStart), Math.max(0, end - minItems))
-    }
-
-    // Calculate placeholder sizes using measured heights when available.
-    // sumHeights checks the measurement cache per-item and falls back to estimates.
+    // Placeholder sizes using measured heights when available; sumHeights
+    // falls back to estimate for unmeasured items.
     const leadingSize = sumHeights(0, start, estimateHeight, gap, measuredHeights, getItemKey)
     const trailingSize = sumHeights(end, count, estimateHeight, gap, measuredHeights, getItemKey)
 
