@@ -31,7 +31,7 @@ import { writeFileSync } from "node:fs"
 import { describe, test, expect } from "vitest"
 import { createTermless } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
-import { run, type RunHandle } from "@silvery/ag-term/runtime"
+import { run, type RunHandle } from "../../packages/ag-term/src/runtime/run"
 import type { Term } from "@silvery/ag-term"
 
 function LittleApp(): React.ReactElement {
