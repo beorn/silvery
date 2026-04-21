@@ -686,6 +686,16 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
   let hiddenAbove = 0
   let hiddenBelow = 0
 
+  // Read `representsItems` from a child's props — defaults to 1 (a single
+  // visual item). Virtualized lists set this on their leading/trailing
+  // placeholder Boxes so the parent's hiddenAbove/hiddenBelow count reflects
+  // real items rather than placeholder boxes.
+  const logicalCount = (cp: { child: AgNode }): number => {
+    const cps = cp.child.props as BoxProps
+    const r = cps.representsItems
+    return r !== undefined && r >= 0 ? r : 1
+  }
+
   for (const cp of childPositions) {
     // Sticky children are always considered "visible" for rendering purposes
     if (cp.isSticky) {
@@ -703,9 +713,9 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
     }
 
     if (cp.bottom <= visibleTop) {
-      hiddenAbove++
+      hiddenAbove += logicalCount(cp)
     } else if (cp.top >= visibleBottom) {
-      hiddenBelow++
+      hiddenBelow += logicalCount(cp)
     } else if (cp.top < visibleTop) {
       // Child is partially visible at top — render it (clipped by scroll
       // container's clip bounds) so partial content is visible instead of blank space
@@ -720,9 +730,20 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
       if (firstVisible === -1) firstVisible = cp.index
       lastVisible = cp.index
       // When indicator reserve is active, count partially visible bottom children
-      // in hiddenBelow so the indicator shows the correct count.
-      if (indicatorReserve > 0) {
-        hiddenBelow++
+      // in hiddenBelow so the indicator shows the correct count. But discriminate
+      // two cases for the LAST child:
+      //   (a) cp.bottom > raw viewport bottom → content is truly truncated,
+      //       indicator should fire (e.g. 10 cards × 3 rows in viewport=29 →
+      //       last card's bottom row is cut off; ▼N expected)
+      //   (b) cp.bottom ≤ raw viewport bottom but > effective (reserve-adjusted)
+      //       bottom → the reserve row "steals" from an otherwise-visible last
+      //       card, producing a PHANTOM ▼1 at scrollTo=lastIndex when nothing
+      //       lies beyond. Skip the increment in this case.
+      const isLastChild = cp.index === childPositions[childPositions.length - 1]?.index
+      const rawViewportBottom = scrollOffset + viewportHeight
+      const isPhantomReserveCut = isLastChild && cp.bottom <= rawViewportBottom
+      if (indicatorReserve > 0 && !isPhantomReserveCut) {
+        hiddenBelow += logicalCount(cp)
       }
     } else {
       // This child is fully visible within the viewport

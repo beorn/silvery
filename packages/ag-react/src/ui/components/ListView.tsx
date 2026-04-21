@@ -457,6 +457,8 @@ function ListViewInner<T>(
     range,
     leadingHeight,
     trailingHeight,
+    hiddenBefore,
+    hiddenAfter,
     scrollOffset,
     scrollToItem,
     measureItem,
@@ -707,8 +709,17 @@ function ListViewInner<T>(
       overflowIndicator={overflowIndicator}
       onWheel={onWheel}
     >
-      {/* Leading placeholder for virtual height */}
-      {leadingHeight > 0 && <Box height={leadingHeight} flexShrink={0} />}
+      {/* Leading placeholder for virtual height.
+       *
+       * `representsItems` tells the parent scroll container that this one
+       * placeholder Box stands in for `hiddenBefore` (= startIndex) logical
+       * items — so when it's fully scrolled above the viewport, the parent's
+       * `hiddenAbove` is incremented by that count (→ `▲N` shows real items).
+       * Without this, the ▲N indicator would always say `1` while many items
+       * are actually above the render window. */}
+      {leadingHeight > 0 && (
+        <Box height={leadingHeight} flexShrink={0} representsItems={hiddenBefore} />
+      )}
 
       {/* Render visible items with height measurement */}
       {visibleItems.map((item, i) => {
@@ -760,8 +771,14 @@ function ListViewInner<T>(
       {/* Footer content (e.g., filter hidden count) */}
       {listFooter}
 
-      {/* Trailing placeholder for virtual height */}
-      {trailingHeight > 0 && <Box height={trailingHeight} flexShrink={0} />}
+      {/* Trailing placeholder for virtual height.
+       *
+       * See leading placeholder above for why `representsItems` is set — the
+       * trailing version covers `hiddenAfter` (= count - endIndex) items that
+       * are beyond the render window on the bottom side. */}
+      {trailingHeight > 0 && (
+        <Box height={trailingHeight} flexShrink={0} representsItems={hiddenAfter} />
+      )}
     </Box>
   )
 }

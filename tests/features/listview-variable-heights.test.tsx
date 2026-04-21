@@ -254,6 +254,78 @@ describe("ListView variable-heights: column-top-disappears real-vault shape", ()
       ).toBeGreaterThanOrEqual(Math.ceil(hiddenItemCount / 2))
     }
   })
+
+  test("placeholder representsItems makes ▲N/▼N exact for a scrolled virtualized list", () => {
+    // Reproduce a scenario where the virtualizer renders a narrow window and
+    // the leading + trailing placeholders must individually announce how many
+    // items they represent. Precise-count variant of the broader "scales with
+    // hidden" test above — this one checks exact numerics, not "≥ half".
+    //
+    // Scenario: 50 uniform items (height=4), viewport=24, viewport scrolled so
+    // items 10..14 are visible. Expected: ▲10 (items 0..9 above), ▼35
+    // (items 15..49 below). WITHOUT representsItems on placeholders, Box would
+    // have reported 1 for each side (the placeholder Boxes).
+    const count = 50
+    const viewport = 24
+    const items = Array.from({ length: count }, (_, i) => ({ id: `k-${i}` }))
+
+    const r = createRenderer({ cols: 60, rows: viewport + 2 })
+    const app = r(
+      <ListView
+        items={items}
+        height={viewport}
+        width={58}
+        estimateHeight={4}
+        overflowIndicator
+        scrollTo={12} // Target the middle item; scroll settles so 10..14 are visible.
+        getKey={(item) => item.id}
+        renderItem={(item) => (
+          <Box flexDirection="column" height={4} flexShrink={0} borderStyle="round">
+            <Text>{item.id}</Text>
+          </Box>
+        )}
+      />,
+    )
+
+    const text = stripAnsi(app.text)
+    const up = text.match(/▲(\d+)/)
+    const down = text.match(/▼(\d+)/)
+
+    expect(up, `▲N must be present (items above viewport):\n${text}`).toBeTruthy()
+    expect(down, `▼N must be present (items below viewport):\n${text}`).toBeTruthy()
+
+    const upCount = up ? parseInt(up[1]!, 10) : 0
+    const downCount = down ? parseInt(down[1]!, 10) : 0
+
+    // Count items actually on-screen to derive expected hidden counts without
+    // relying on the virtualizer's window size (which may vary with overscan).
+    // Use word-boundary match so `k-1` doesn't match inside `k-10`, `k-11`, …
+    const visibleIds = Array.from({ length: count })
+      .map((_, i) => i)
+      .filter((i) => new RegExp(`\\bk-${i}\\b`).test(text))
+    const firstVisible = visibleIds[0]!
+    const lastVisible = visibleIds[visibleIds.length - 1]!
+    const expectedAbove = firstVisible // items 0..firstVisible-1
+    const expectedBelow = count - 1 - lastVisible // items lastVisible+1..count-1
+
+    // Allow ±1 slack: partially-visible edge items can move the count by one
+    // depending on scroll settlement, but the bug we're guarding against
+    // reports a stuck "1" — that's a >5-item divergence and far outside slack.
+    expect(
+      Math.abs(upCount - expectedAbove),
+      `▲${upCount} vs expected ~${expectedAbove} (items 0..${firstVisible - 1} above viewport)`,
+    ).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs(downCount - expectedBelow),
+      `▼${downCount} vs expected ~${expectedBelow} (items ${lastVisible + 1}..${count - 1} below viewport)`,
+    ).toBeLessThanOrEqual(1)
+
+    // Hard lower bound on the bug we're specifically fighting: the indicator
+    // MUST report more than 1 when more than 1 item is hidden. Without
+    // representsItems on placeholders, Box would report exactly 1.
+    expect(upCount, "▲ must exceed 1 when >1 item above viewport").toBeGreaterThan(1)
+    expect(downCount, "▼ must exceed 1 when >1 item below viewport").toBeGreaterThan(1)
+  })
 })
 
 // =============================================================================

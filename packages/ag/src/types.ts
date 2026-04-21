@@ -355,6 +355,19 @@ export interface BoxProps
    * Only applies when overflow='scroll'.
    */
   overflowIndicator?: boolean
+
+  /**
+   * For a child of an `overflow="scroll"` container: declare that this child
+   * is a placeholder representing multiple logical items (e.g. a virtualized
+   * list's leading/trailing spacer). When the child is fully scrolled out
+   * above/below the viewport, the parent's `hiddenAbove`/`hiddenBelow` count
+   * is incremented by this value instead of 1, so `▲N`/`▼N` indicators
+   * reflect real items rather than rendered placeholder boxes.
+   *
+   * Only read by the parent scroll container. Defaults to 1 (treat as a
+   * single visual item). Must be >= 0.
+   */
+  representsItems?: number
 }
 
 /**
