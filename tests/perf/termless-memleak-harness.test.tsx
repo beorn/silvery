@@ -54,14 +54,18 @@ const DIMS = { cols: 120, rows: 40 }
 
 /**
  * Warmup tolerance — first `WARMUP_ITERS` iterations are excluded from the
- * growth calculation because bun/vitest allocate fiber pools, string tables,
- * and JIT caches during early runs. After warmup, growth must be bounded.
+ * growth calculation. bun/vitest allocate fiber pools, string tables, and
+ * JIT caches during early runs; when this test file runs LATE in a worker
+ * (other test files already loaded silvery + React + zustand + etc.) the
+ * first iterations still allocate perf tables, theme derivation caches, and
+ * the fiber-root pool, so the "warmup" phase is larger than just the first
+ * few iters.
  */
-const WARMUP_ITERS = 40
+const WARMUP_ITERS = 60
 
 /**
  * Steady-state RSS growth budget in KB per iteration. Measured empirically
- * on the fix baseline (`using term`): ~50 KB/iter noise floor. A genuine
+ * on the fix baseline (`using term`): 20-40 KB/iter noise floor. A genuine
  * leak (xterm Terminal retained per iter) blows past 800 KB/iter.
  */
 const MAX_STEADY_GROWTH_KB_PER_ITER = 300
@@ -111,22 +115,33 @@ function emitCurve(samples: Sample[]): void {
 }
 
 /**
- * Compute steady-state growth by fitting a linear regression through
- * samples past `WARMUP_ITERS`. Returns growth in KB/iter. Early warmup
- * samples are excluded.
+ * Compute steady-state growth as "(median RSS of last third) − (median RSS
+ * of middle third)" divided by the iteration gap between them. Median is
+ * robust to the sawtooth caused by GC heap-total bumps. Early warmup
+ * samples (iter < WARMUP_ITERS) are excluded entirely.
+ *
+ * A genuine leak (per-iter retained xterm Terminal) produces monotonic
+ * growth that shows up cleanly in the median-of-thirds delta. Flat noise
+ * (what the `using` path produces) cancels to near zero.
  */
 function steadyGrowthKbPerIter(samples: Sample[]): number {
   const steady = samples.filter((s) => s.iter >= WARMUP_ITERS)
-  if (steady.length < 4) return 0
-  const n = steady.length
-  const sumX = steady.reduce((a, s) => a + s.iter, 0)
-  const sumY = steady.reduce((a, s) => a + s.rss, 0)
-  const sumXY = steady.reduce((a, s) => a + s.iter * s.rss, 0)
-  const sumXX = steady.reduce((a, s) => a + s.iter * s.iter, 0)
-  const denom = n * sumXX - sumX * sumX
-  if (denom === 0) return 0
-  const slopeMbPerIter = (n * sumXY - sumX * sumY) / denom
-  return slopeMbPerIter * 1024
+  if (steady.length < 6) return 0
+  const sortedByIter = steady.slice().sort((a, b) => a.iter - b.iter)
+  const third = Math.floor(sortedByIter.length / 3)
+  if (third < 2) return 0
+  const midGroup = sortedByIter.slice(third, third * 2)
+  const lastGroup = sortedByIter.slice(-third)
+  const median = (arr: Sample[]): number => {
+    const vs = arr.map((s) => s.rss).sort((a, b) => a - b)
+    return vs[Math.floor(vs.length / 2)]!
+  }
+  const deltaMb = median(lastGroup) - median(midGroup)
+  const midIter = midGroup[Math.floor(midGroup.length / 2)]!.iter
+  const lastIter = lastGroup[Math.floor(lastGroup.length / 2)]!.iter
+  const iterGap = lastIter - midIter
+  if (iterGap <= 0) return 0
+  return (deltaMb * 1024) / iterGap
 }
 
 describe("termless memory leak harness", () => {
