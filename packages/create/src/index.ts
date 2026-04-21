@@ -234,6 +234,24 @@ export type { RenderTerm } from "./with-render"
 export { IncrementalRenderMismatchError } from "./plugins"
 
 // =============================================================================
+// definePlugin — declarative plugin factory + useStore hook (spike)
+// =============================================================================
+
+export { definePlugin } from "./definePlugin"
+export type {
+  Plugin,
+  DefinePluginInput,
+  PluginReducer,
+  PluginOps,
+  PluginKeys,
+  PluginEffect,
+  OpOf,
+} from "./definePlugin"
+
+export { useStore } from "./useStore"
+export type { PluginHandle } from "./useStore"
+
+// =============================================================================
 // Layer 3: App integration (createApp, useApp, StoreContext)
 // =============================================================================
 
