@@ -63,7 +63,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calcEdgeBasedScrollOffset } from "@silvery/ag-term/scroll-utils"
 import type { AgNode } from "@silvery/ag/types"
-import { useScrollState, type ScrollStateSnapshot } from "./useScrollState"
+import { useScrollState } from "./useScrollState"
 
 // =============================================================================
 // Types
@@ -350,67 +350,16 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // when `containerNode` is null. When non-null, we have pixel-space truth
   // about what's visible.
   //
-  // CALLBACK FORM (not reactive): we use the non-reactive form to avoid
-  // cascading re-renders on every scroll-state change. The scroll-phase can
-  // oscillate its offset across consecutive layout iterations (e.g. for
-  // oversized `scrollTo` targets — target.top < visibleTop and target.bottom
-  // > visibleBottom branches pingpong when the target is taller than the
-  // viewport). A reactive subscription would force a re-render on every
-  // oscillation, exhausting the layout-loop iteration budget.
+  // REACTIVE FORM: re-render on every scroll-state change. The scroll-phase
+  // is stable by construction — `calculateScrollState` handles "target taller
+  // than viewport" explicitly, so the offset converges in one iteration
+  // regardless of target size. Earlier versions used a callback form with a
+  // window-stability debounce to absorb offset oscillation; that oscillation
+  // is eliminated upstream, so the simple reactive path is correct.
   //
-  // Instead, the callback stashes the latest snapshot in a ref and only
-  // triggers a re-render when the window-relevant fields
-  // (`firstVisibleChild`/`lastVisibleChild`) actually change. Offset-only
-  // oscillations don't force a re-render — the window calc depends only on
-  // child indices, not offset.
-  const scrollStateRef = useRef<ScrollStateSnapshot | null>(null)
-  const [scrollStateVersion, setScrollStateVersion] = useState(0)
-  useScrollState(containerNode ?? null, (next) => {
-    scrollStateRef.current = next
-    if (next === null) return
-    // Decide whether this scroll-state change would shift the RENDERED
-    // window. Compare to the last window we actually rendered (prevWindowRef)
-    // + the new scroll-state values. If the union-with-prev window absorbs
-    // the change (new visibility range lies within last window's [start+1,
-    // end-1) — i.e. not touching window edges), we DON'T bump version: the
-    // next render would produce the same window. This breaks the layout-loop
-    // oscillation on oversized scrollTo targets where scroll-phase pingpongs
-    // but both pingpong states fall inside our current window.
-    const prevWin = prevWindowRef.current
-    if (prevWin.endIndex - prevWin.startIndex === 0) {
-      // Bootstrap case — always bump.
-      setScrollStateVersion((v) => v + 1)
-      return
-    }
-    const firstVC = next.firstVisibleChild
-    const lastVC = next.lastVisibleChild
-    const leadingOffset = prevWin.hasLeading ? 1 : 0
-    const realItemChildEnd = leadingOffset + (prevWin.endIndex - prevWin.startIndex)
-    // Derive what first/lastVisibleItem would be:
-    let firstVI: number
-    let lastVI: number
-    if (firstVC < leadingOffset) firstVI = Math.max(0, prevWin.startIndex - overscan)
-    else if (firstVC >= realItemChildEnd) firstVI = prevWin.startIndex
-    else firstVI = prevWin.startIndex + (firstVC - leadingOffset)
-    if (lastVC < leadingOffset) lastVI = firstVI
-    else if (lastVC >= realItemChildEnd)
-      lastVI = Math.min(count - 1, prevWin.endIndex - 1 + overscan)
-    else lastVI = prevWin.startIndex + (lastVC - leadingOffset)
-
-    // Window-stability check: the computed `firstVI`/`lastVI` lies strictly
-    // inside the prev window — union with prev absorbs them, no shift. Use
-    // a 1-item margin from edges to prevent off-by-one thrash.
-    const stable =
-      firstVI >= prevWin.startIndex &&
-      lastVI < prevWin.endIndex &&
-      firstVC >= leadingOffset &&
-      lastVC < realItemChildEnd
-    if (stable) return
-    setScrollStateVersion((v) => v + 1)
-  })
-  // Read the current snapshot — updated by the callback above, or null before
-  // the first layout pass / when containerNode is null.
-  const scrollState = scrollStateRef.current
+  // `useScrollState` only fires when a field actually changes (per-field
+  // equality in `syncRectSignals`), so idle renders don't churn this hook.
+  const scrollState = useScrollState(containerNode ?? null)
 
   // Steady-state gating. Two conditions to enable read-don't-walk mode:
   // (1) scroll state exists with a non-zero viewport — layout ran,
@@ -806,13 +755,12 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     measurementVersion,
     getItemKey,
     trailingExtraChildren,
-    // Steady-state inputs — primitives so the memo fires only when values change
+    // Steady-state inputs — primitives so the memo fires only when values change.
+    // scrollState itself is a stable ref between layouts (per-field equality in
+    // layout-signals), so any relevant change shows up via these derived primitives.
     hasSteadyState,
     ssFirstVisibleChild,
     ssLastVisibleChild,
-    // scrollStateVersion forces memo re-run when new snapshot arrives with
-    // relevant changes (the callback only bumps when firstVC/lastVC shift).
-    scrollStateVersion,
   ])
 
   // Update previous-window ref AFTER the memo computes the new window. The
