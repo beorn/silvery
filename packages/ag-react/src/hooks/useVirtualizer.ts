@@ -10,7 +10,7 @@
  * This eliminates the fixed-itemHeight problem where a single constant can't
  * accurately represent variable-height items (e.g., cards with 3-6 row heights).
  *
- * ## Architecture (2026-04-20, bead km-silvery.virtualizer-from-layout)
+ * ## Architecture (2026-04-21, bead km-silvery.virtualizer-from-layout activated)
  *
  * The virtualizer has TWO operating modes, chosen automatically:
  *
@@ -25,15 +25,33 @@
  *
  * ### Steady-state mode (containerNode + scrollState signal available)
  *
- * Consumes `useScrollState(containerNode)` to read layout-phase's pixel-space
- * truth (offset, viewportHeight, contentHeight — computed from real measured
- * children in `calculateScrollState`). Walks items in pixel space using
- * `measuredHeights` to find which items are visible; placeholders are
- * `sumHeights(0, start)` / `sumHeights(end, count)` using the SAME heights
- * that layout-phase just used.
+ * **READ, DON'T WALK.** The virtualizer consumes `useScrollState(containerNode)`
+ * and reads `firstVisibleChild` / `lastVisibleChild` DIRECTLY from layout-phase.
+ * It does NOT re-derive "what's visible" via its own pixel walk — that would
+ * re-introduce the feedback loop where measurement arrivals shift the window
+ * which shifts placeholder heights which shift scroll offsets which shift
+ * which items are visible …
  *
- * By construction, `leadingHeight == sumHeights(0, startIndex)` — there's
- * only one source of truth for "which items occupy which rows."
+ * The mapping `firstVisibleChild → firstVisibleItem` is straightforward:
+ *   leadingOffset = leadingPlaceholder ? 1 : 0
+ *   firstVisibleItem = prevStartIndex + (firstVisibleChild - leadingOffset)
+ *
+ * Where `prevStartIndex` is the window start we rendered LAST frame (carried
+ * in a ref). Next frame's window is `[firstVisibleItem - overscan,
+ * lastVisibleItem + overscan + 1)`.
+ *
+ * ### Convergence
+ *
+ * When firstVisible sits strictly inside the overscan margin of the prev
+ * window, the new window equals (or is a subset of) the prev window — no
+ * re-render → pipeline converges in 1-2 iterations. When firstVisible is near
+ * a window edge (e.g. cursor just moved to a new item outside overscan), the
+ * window shifts once and converges on the next iteration.
+ *
+ * Critically, avgMeasured is NOT used for the window bounds — it's only used
+ * for placeholder heights (leading/trailing) via `sumHeights`, which doesn't
+ * influence which items render. Measurement arrivals therefore can't feed
+ * back into the window decision.
  *
  * Two components consume this hook:
  * - VirtualView: items mount/unmount based on scroll position (in-tree)
@@ -87,6 +105,16 @@ export interface VirtualizerConfig {
    * consumers that don't wire up a container node.
    */
   containerNode?: AgNode | null
+  /**
+   * Number of extra AgNode children rendered AFTER the visible items (but
+   * before the trailing placeholder). Used by consumers that render footer
+   * content (e.g. ListView's `listFooter`) between items and trailing
+   * placeholder. The virtualizer needs this to map layout-phase's
+   * `lastVisibleChild` back to a virtual-item index.
+   *
+   * Default: 0.
+   */
+  trailingExtraChildren?: number
 }
 
 export interface VirtualizerResult {
@@ -222,77 +250,12 @@ export function sumHeights(
   return total + gapTotal
 }
 
-/**
- * Walk items in pixel space to find the viewport-top-item given a pixel
- * offset. Returns the item index `i` such that `cumTop[i] ≤ pixelOffset <
- * cumTop[i+1]` (the item that owns the top row of the viewport).
- *
- * Uses measured heights when available, average-measured fallback otherwise.
- *
- * @returns Item index (clamped to [0, count-1]).
- */
-function findViewportTopItem(
-  pixelOffset: number,
-  count: number,
-  estimateHeight: number | ((index: number) => number),
-  gap: number,
-  measuredHeights: ReadonlyMap<string | number, number>,
-  getItemKey: ((index: number) => string | number) | undefined,
-  avgMeasured: number,
-): number {
-  if (count === 0) return 0
-  if (pixelOffset <= 0) return 0
-
-  let cumTop = 0
-  for (let i = 0; i < count; i++) {
-    const h = getHeight(i, estimateHeight, measuredHeights, getItemKey, avgMeasured)
-    const nextTop = cumTop + h + (i < count - 1 ? gap : 0)
-    // Item i occupies [cumTop, cumTop + h). Viewport top lands in this item
-    // when cumTop ≤ pixelOffset < cumTop + h. (Including gap in the check
-    // would over-assign; gaps are not covered by any item.)
-    if (pixelOffset < cumTop + h) return i
-    cumTop = nextTop
-  }
-  return count - 1
-}
-
-/**
- * Walk items forward from `startItem` to find the last item whose top is
- * within `viewportTop + viewportHeight`. Equivalent to "index of the last
- * item that is at least partially visible."
- */
-function findViewportBottomItem(
-  startItem: number,
-  viewportTop: number,
-  viewportHeight: number,
-  count: number,
-  estimateHeight: number | ((index: number) => number),
-  gap: number,
-  measuredHeights: ReadonlyMap<string | number, number>,
-  getItemKey: ((index: number) => string | number) | undefined,
-  avgMeasured: number,
-): number {
-  if (count === 0) return 0
-  const viewportBottom = viewportTop + viewportHeight
-
-  // cumTop at `startItem` = sumHeights(0, startItem) + startItem*gap (approx).
-  // We compute it incrementally to avoid a second pass.
-  let cumTop = 0
-  for (let i = 0; i < startItem; i++) {
-    cumTop += getHeight(i, estimateHeight, measuredHeights, getItemKey, avgMeasured)
-    cumTop += gap
-  }
-
-  let last = startItem
-  for (let i = startItem; i < count; i++) {
-    if (cumTop >= viewportBottom) break
-    last = i
-    const h = getHeight(i, estimateHeight, measuredHeights, getItemKey, avgMeasured)
-    cumTop += h
-    if (i < count - 1) cumTop += gap
-  }
-  return last
-}
+// Note: findViewportTopItem / findViewportBottomItem were removed on
+// 2026-04-21 when steady-state switched to "read, don't walk" — those
+// pixel-walk helpers used avgMeasured for unmeasured items, which produced a
+// feedback loop (measurement arrival → avgMeasured shift → window shift →
+// re-measure). The new steady-state reads `firstVisibleChild`/
+// `lastVisibleChild` directly from layout-phase's `scrollState` instead.
 
 // =============================================================================
 // Hook
@@ -331,6 +294,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     gap = 0,
     getItemKey,
     containerNode,
+    trailingExtraChildren = 0,
   } = config
 
   // ── Measurement cache ─────────────────────────────────────────────
@@ -354,33 +318,56 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
 
   const measuredHeights = measuredHeightsRef.current
 
+  // ── Track previous rendered window structure ───────────────────────
+  // Needed to interpret `scrollState.firstVisibleChild` / `lastVisibleChild`
+  // (which are AgNode child indices of the scroll container) as virtual-item
+  // indices. Mapping depends on what was rendered LAST frame:
+  //   children = [leadingPlaceholder?, item0, item1, ..., itemN-1,
+  //               ...trailingExtras (footer etc.), trailingPlaceholder?]
+  //   leadingOffset = hasLeading ? 1 : 0
+  //   realItemChildStart = leadingOffset
+  //   realItemChildEnd   = leadingOffset + N      (exclusive)
+  //
+  // Invariant: mapping below reads from THIS ref (last-frame's structure),
+  // NOT from the current window calc. The current window calc produces the
+  // NEXT frame's structure and updates this ref.
+  const prevWindowRef = useRef<{
+    startIndex: number
+    endIndex: number
+    hasLeading: boolean
+    hasTrailing: boolean
+    trailingExtras: number
+  }>({
+    startIndex: 0,
+    endIndex: 0,
+    hasLeading: false,
+    hasTrailing: false,
+    trailingExtras: 0,
+  })
+
   // ── Subscribe to layout-phase scroll state (steady-state mode) ────
   // Returns null before the first layout pass, for non-scroll containers, or
   // when `containerNode` is null. When non-null, we have pixel-space truth
   // about what's visible and can skip the count-based estimation.
   const scrollState = useScrollState(containerNode ?? null)
-  // Steady-state gating. Three conditions to enable pixel-space walking:
+  // Steady-state gating. Two conditions to enable read-don't-walk mode:
   // (1) scroll state exists with a non-zero viewport — layout ran,
   // (2) content actually overflows viewport — otherwise there's nothing to
-  //     virtualize and the bootstrap fast-path "render everything" is fine,
-  // (3) we have ENOUGH measurements — the window we compute will include
-  //     items whose heights inform avgMeasured; oscillation happens when a
-  //     newly-measured item drastically changes avgMeasured and thus moves
-  //     the window, which scrolls new items into view and repeats. Requiring
-  //     most items to be measured stabilizes the loop.
+  //     virtualize and the bootstrap fast-path "render everything" is fine.
   //
-  // The threshold is "measurements cover the steady-state viewport" — once
-  // we've seen enough items to fill the viewport with real measurements,
-  // subsequent measurement arrivals shift avgMeasured only marginally and
-  // the window converges.
+  // We deliberately DO NOT require `measuredHeights.size > 0`. The old walk-
+  // based steady-state used `avgMeasured` to estimate heights for unmeasured
+  // items, and measurement arrivals would shift avgMeasured → shift the walk's
+  // conclusions → shift the window → re-render → re-measure → loop.
+  //
+  // Read-don't-walk reads `firstVisibleChild` / `lastVisibleChild` DIRECTLY
+  // from layout-phase. Those are child INDICES (not pixel positions), so they
+  // don't depend on unmeasured-item estimates at all. The feedback loop is
+  // severed by topology.
   const hasSteadyState =
     scrollState !== null &&
     scrollState.viewportHeight > 0 &&
-    scrollState.contentHeight > scrollState.viewportHeight &&
-    // Require most items that could plausibly be on-screen to be measured.
-    // `measured / estimatedVisible ≥ 1.0` means the viewport's worth of items
-    // all have real heights.
-    measuredHeights.size > 0
+    scrollState.contentHeight > scrollState.viewportHeight
 
   // Calculate average item height for estimating visible count.
   // Uses measured heights when available for more accurate estimation.
@@ -479,6 +466,10 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // dependency list is just primitives (no new object allocation per render).
   const ssOffset = hasSteadyState && scrollState ? scrollState.offset : -1
   const ssViewportHeight = hasSteadyState && scrollState ? scrollState.viewportHeight : -1
+  const ssFirstVisibleChild =
+    hasSteadyState && scrollState ? scrollState.firstVisibleChild : -1
+  const ssLastVisibleChild =
+    hasSteadyState && scrollState ? scrollState.lastVisibleChild : -1
 
   // Calculate virtualization window.
   // Depends on measurementVersion to recompute placeholders when measurements arrive.
@@ -505,62 +496,129 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       }
     }
 
-    // ─── Steady-state mode: pixel-walk using layout-phase's offset ──
+    // ─── Steady-state mode: READ, DON'T WALK ────────────────────────
     //
-    // This is the "layout-phase is single source of truth" path. The scroll
-    // container has completed at least one layout pass, so `scrollState.offset`
-    // is real pixels and measuredHeights reflects what the pipeline measured.
+    // Layout-phase's `scrollState` already knows which AgNode children
+    // intersect the viewport — `firstVisibleChild` and `lastVisibleChild`.
+    // We map those back to virtual-item indices using the LAST FRAME's
+    // rendered window structure (stored in prevWindowRef).
     //
-    // Walk items in pixel space from the real offset to find:
-    //   firstVisible = smallest i s.t. cumBottom[i] > offset
-    //   lastVisible  = largest  i s.t. cumTop[i]    < offset + viewportHeight
+    // Child layout last frame was:
+    //   [leadingPlaceholder?, item(prevStart), ..., item(prevEnd-1),
+    //    ...trailingExtras (footer etc.), trailingPlaceholder?]
     //
-    // Window = [firstVisible - overscan, lastVisible + 1 + overscan].
-    // Placeholders = sumHeights(0, start) / sumHeights(end, count) — uses the
-    // SAME measured heights that produced the offset. By construction the
-    // leadingHeight matches the rendered placeholder slot.
+    //   leadingOffset       = prevHasLeading ? 1 : 0
+    //   realItemChildStart  = leadingOffset
+    //   realItemChildEnd    = leadingOffset + (prevEnd - prevStart)  (excl)
+    //
+    // Mapping a child index `c`:
+    //   c < leadingOffset                    → "before window" (in leading
+    //                                           placeholder)
+    //   leadingOffset ≤ c < realItemChildEnd → virtual item = prevStart +
+    //                                           (c - leadingOffset)
+    //   otherwise                            → "after window" (extras or
+    //                                           trailing placeholder)
+    //
+    // CRUCIAL: We do NOT consult `measuredHeights` or `avgHeight` here. The
+    // window bounds are a pure function of (prevWindow, firstVisibleChild,
+    // lastVisibleChild, overscan). This severs the measurement → avgMeasured
+    // → window feedback loop that caused the 5-iteration layout-loop blowup
+    // on the walk-based steady-state activation attempt.
     if (hasSteadyState && scrollState) {
-      const firstVisible = findViewportTopItem(
-        ssOffset,
-        count,
-        estimateHeight,
-        gap,
-        measuredHeights,
-        getItemKey,
-        avgHeight,
-      )
-      const lastVisible = findViewportBottomItem(
-        firstVisible,
-        ssOffset,
-        ssViewportHeight,
-        count,
-        estimateHeight,
-        gap,
-        measuredHeights,
-        getItemKey,
-        avgHeight,
-      )
+      const prev = prevWindowRef.current
+      const prevStart = prev.startIndex
+      const prevEnd = prev.endIndex
+      const prevVisibleCount = prevEnd - prevStart
+      const leadingOffset = prev.hasLeading ? 1 : 0
+      const realItemChildEnd = leadingOffset + prevVisibleCount
 
-      let start = Math.max(0, firstVisible - overscan)
-      let end = Math.min(count, lastVisible + 1 + overscan)
-      // Enforce item-count floor so tiny measured heights don't truncate.
-      end = Math.min(count, Math.max(end, start + minWindowSize))
-      // Safety cap.
-      end = Math.min(end, start + maxRendered)
+      // Degenerate: no items rendered last frame (e.g. bootstrap transition).
+      // Fall through to bootstrap below — the prev ref is empty.
+      if (prevVisibleCount > 0) {
+        type Mapped = { kind: "item"; idx: number } | { kind: "before" } | { kind: "after" }
+        const mapChild = (c: number): Mapped => {
+          if (c < leadingOffset) return { kind: "before" }
+          if (c >= realItemChildEnd) return { kind: "after" }
+          return { kind: "item", idx: prevStart + (c - leadingOffset) }
+        }
 
-      // At end of list — pull start back to maintain minimum size.
-      if (end === count) {
-        start = Math.max(0, Math.min(start, end - minWindowSize))
-      }
+        const firstMapped = mapChild(ssFirstVisibleChild)
+        const lastMapped = mapChild(ssLastVisibleChild)
 
-      const leadingSize = sumHeights(0, start, estimateHeight, gap, measuredHeights, getItemKey)
-      const trailingSize = sumHeights(end, count, estimateHeight, gap, measuredHeights, getItemKey)
+        // Derive the anchor window — the virtual-item range that MUST be
+        // in the next frame's window (plus overscan). When firstVisible maps
+        // to "before" (leading placeholder visible), shift start earlier.
+        // When lastVisible maps to "after" (trailing visible), extend end.
+        let firstVisibleItem: number
+        let lastVisibleItem: number
 
-      return {
-        startIndex: start,
-        endIndex: end,
-        leadingHeight: leadingSize,
-        trailingHeight: trailingSize,
+        if (firstMapped.kind === "item") {
+          firstVisibleItem = firstMapped.idx
+        } else if (firstMapped.kind === "before") {
+          // Leading placeholder is the first visible child. Items before
+          // prevStart are visible. Anchor as "0..prevStart-1 may be visible"
+          // — shift anchor earlier to pull items in. We don't know HOW many
+          // items of the leading placeholder are visible (it's a single
+          // opaque Box), so shift by a conservative amount: enough to
+          // guarantee the next window will include prevStart - overscan at
+          // minimum, which forces a further shift next frame if still short.
+          firstVisibleItem = Math.max(0, prevStart - overscan)
+        } else {
+          // Leading placeholder gone AND firstVisible points past real items
+          // — unusual (would mean viewport shows only footer/trailing).
+          // Defensive anchor at prev window.
+          firstVisibleItem = prevStart
+        }
+
+        if (lastMapped.kind === "item") {
+          lastVisibleItem = lastMapped.idx
+        } else if (lastMapped.kind === "after") {
+          // Trailing placeholder (or footer) is the last visible child.
+          // Items after prevEnd-1 may be visible. Shift anchor later to
+          // pull more items in.
+          lastVisibleItem = Math.min(count - 1, prevEnd - 1 + overscan)
+        } else {
+          // lastVisible < leadingOffset: entire viewport is in leading
+          // placeholder (cursor above window). Extend anchor earlier.
+          lastVisibleItem = firstVisibleItem
+        }
+
+        // Clamp to valid range.
+        firstVisibleItem = Math.max(0, Math.min(firstVisibleItem, count - 1))
+        lastVisibleItem = Math.max(firstVisibleItem, Math.min(lastVisibleItem, count - 1))
+
+        // Choose new window with symmetric overscan, plus a superset with
+        // the previous window so small cursor nudges don't shift items in
+        // and out rapidly (reduces re-render churn on near-boundary moves).
+        let start = Math.max(0, firstVisibleItem - overscan)
+        let end = Math.min(count, lastVisibleItem + 1 + overscan)
+
+        // Union with previous window to dampen oscillations. We only union
+        // when the previous window already covered the new anchor — this
+        // avoids never shrinking when the user genuinely scrolled far.
+        if (prevStart <= firstVisibleItem && lastVisibleItem < prevEnd) {
+          start = Math.min(start, prevStart)
+          end = Math.max(end, prevEnd)
+        }
+
+        // Enforce minimum item count.
+        end = Math.min(count, Math.max(end, start + minWindowSize))
+        // Pull start earlier if we hit end-of-list and window too small.
+        if (end === count && end - start < minWindowSize) {
+          start = Math.max(0, end - minWindowSize)
+        }
+        // Safety cap.
+        end = Math.min(end, start + maxRendered)
+
+        const leadingSize = sumHeights(0, start, estimateHeight, gap, measuredHeights, getItemKey)
+        const trailingSize = sumHeights(end, count, estimateHeight, gap, measuredHeights, getItemKey)
+
+        return {
+          startIndex: start,
+          endIndex: end,
+          leadingHeight: leadingSize,
+          trailingHeight: trailingSize,
+        }
       }
     }
 
@@ -665,11 +723,25 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     viewportHeight,
     measurementVersion,
     getItemKey,
+    trailingExtraChildren,
     // Steady-state inputs — primitives so the memo fires only when values change
     hasSteadyState,
     ssOffset,
     ssViewportHeight,
+    ssFirstVisibleChild,
+    ssLastVisibleChild,
   ])
+
+  // Update previous-window ref AFTER the memo computes the new window. The
+  // ref captures what we're about to render THIS frame — next frame will
+  // map `scrollState.*` through this structure.
+  prevWindowRef.current = {
+    startIndex: windowCalc.startIndex,
+    endIndex: windowCalc.endIndex,
+    hasLeading: windowCalc.leadingHeight > 0,
+    hasTrailing: windowCalc.trailingHeight > 0,
+    trailingExtras: trailingExtraChildren,
+  }
 
   // ── onEndReached ─────────────────────────────────────────────────────
   // Fire once when the visible window reaches near the end. Resets when
