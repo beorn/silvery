@@ -34,13 +34,15 @@ import React, {
   useContext,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react"
 import { sumHeights, useVirtualizer } from "../../hooks/useVirtualizer"
 import { useInput } from "../../hooks/useInput"
-import { Box } from "../../components/Box"
+import { Box, type BoxHandle } from "../../components/Box"
+import type { AgNode } from "@silvery/ag/types"
 import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { renderStringSync } from "../../render-string"
 import { createHistoryBuffer, createHistoryItem } from "@silvery/ag-term/history-buffer"
@@ -453,6 +455,21 @@ function ListViewInner<T>(
     return (index: number) => getKey(activeItems[index]!, index + unmountedCount)
   }, [getKey, activeItems, unmountedCount])
 
+  // Scroll container AgNode — captured after mount so useVirtualizer can
+  // subscribe to layout-phase's scrollState signal. Until the Box mounts
+  // (first render), this is null and useVirtualizer uses bootstrap mode.
+  const boxHandleRef = useRef<BoxHandle>(null)
+  const [containerNode, setContainerNode] = useState<AgNode | null>(null)
+  useLayoutEffect(() => {
+    const node = boxHandleRef.current?.getNode() ?? null
+    setContainerNode(node)
+  }, [])
+
+  // Count of trailing extra children rendered between the visible items and
+  // the trailing placeholder (listFooter). useVirtualizer uses this to
+  // correctly map `scrollState.lastVisibleChild` back to a virtual item.
+  const trailingExtraChildren = listFooter != null && listFooter !== false ? 1 : 0
+
   const {
     range,
     leadingHeight,
@@ -475,6 +492,8 @@ function ListViewInner<T>(
     getItemKey: wrappedGetKey,
     onEndReached,
     onEndReachedThreshold,
+    containerNode,
+    trailingExtraChildren,
   })
 
   // ── Surface / search registration ────────────────────────────────
@@ -699,13 +718,60 @@ function ListViewInner<T>(
   const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice
   const boxScrollTo = isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined
 
+  // Oversized-target bypass: when the scrollTo target is taller than the
+  // viewport, layout-phase's scrollTo logic cannot satisfy both
+  // "target.top >= visibleTop" and "target.bottom <= visibleBottom" — one
+  // iteration scrolls to show the top, the next iteration scrolls to show
+  // the bottom, and the offset oscillates indefinitely. Once anything
+  // subscribes to `scrollState` (e.g. useVirtualizer's steady-state mode),
+  // the oscillation is exposed as an `IncrementalRenderMismatchError` in
+  // STRICT mode.
+  //
+  // Sidestep by passing an explicit `scrollOffset` that places the target
+  // at the top of the viewport, and `scrollTo=undefined` so the layout-
+  // phase branch doesn't fire. The target is at least partially visible
+  // from row 0, and the user can see its top edge — which is the expected
+  // behavior for "cursor on oversized item."
+  let explicitBoxScrollOffset: number | undefined = undefined
+  let effectiveBoxScrollTo: number | undefined = boxScrollTo
+  if (
+    isSelectedInSlice &&
+    adjustedScrollTo !== undefined &&
+    wrappedGetKey !== undefined
+  ) {
+    const targetMeasuredKey = wrappedGetKey(adjustedScrollTo)
+    const targetMeasuredHeight = measuredHeights.get(targetMeasuredKey)
+    if (targetMeasuredHeight !== undefined && targetMeasuredHeight > height) {
+      // Compute the target's absolute top row within the scroll container's
+      // content. For children [leading?, items..., footer?, trailing?]:
+      //   leadingHeight  = sumHeights(0, startIndex)
+      //   rowsBeforeTarget = sumHeights(startIndex, adjustedScrollTo)
+      //   absoluteTop = leadingHeight + rowsBeforeTarget
+      //              = sumHeights(0, adjustedScrollTo)
+      // Shift by -1 to reserve a row for the top overflow indicator (matches
+      // scroll-phase's "target.top > 0 ? target.top - 1 : 0" convention).
+      const absoluteTop = sumHeights(
+        0,
+        adjustedScrollTo,
+        adjustedEstimateHeight,
+        gap,
+        measuredHeights,
+        wrappedGetKey,
+      )
+      explicitBoxScrollOffset = Math.max(0, Math.round(absoluteTop) - 1)
+      effectiveBoxScrollTo = undefined
+    }
+  }
+
   return (
     <Box
+      ref={boxHandleRef}
       flexDirection="column"
       height={height}
       width={width}
       overflow="scroll"
-      scrollTo={boxScrollTo}
+      scrollTo={effectiveBoxScrollTo}
+      scrollOffset={explicitBoxScrollOffset}
       overflowIndicator={overflowIndicator}
       onWheel={onWheel}
     >

@@ -63,7 +63,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calcEdgeBasedScrollOffset } from "@silvery/ag-term/scroll-utils"
 import type { AgNode } from "@silvery/ag/types"
-import { useScrollState } from "./useScrollState"
+import { useScrollState, type ScrollStateSnapshot } from "./useScrollState"
 
 // =============================================================================
 // Types
@@ -348,8 +348,70 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // ── Subscribe to layout-phase scroll state (steady-state mode) ────
   // Returns null before the first layout pass, for non-scroll containers, or
   // when `containerNode` is null. When non-null, we have pixel-space truth
-  // about what's visible and can skip the count-based estimation.
-  const scrollState = useScrollState(containerNode ?? null)
+  // about what's visible.
+  //
+  // CALLBACK FORM (not reactive): we use the non-reactive form to avoid
+  // cascading re-renders on every scroll-state change. The scroll-phase can
+  // oscillate its offset across consecutive layout iterations (e.g. for
+  // oversized `scrollTo` targets — target.top < visibleTop and target.bottom
+  // > visibleBottom branches pingpong when the target is taller than the
+  // viewport). A reactive subscription would force a re-render on every
+  // oscillation, exhausting the layout-loop iteration budget.
+  //
+  // Instead, the callback stashes the latest snapshot in a ref and only
+  // triggers a re-render when the window-relevant fields
+  // (`firstVisibleChild`/`lastVisibleChild`) actually change. Offset-only
+  // oscillations don't force a re-render — the window calc depends only on
+  // child indices, not offset.
+  const scrollStateRef = useRef<ScrollStateSnapshot | null>(null)
+  const [scrollStateVersion, setScrollStateVersion] = useState(0)
+  useScrollState(containerNode ?? null, (next) => {
+    scrollStateRef.current = next
+    if (next === null) return
+    // Decide whether this scroll-state change would shift the RENDERED
+    // window. Compare to the last window we actually rendered (prevWindowRef)
+    // + the new scroll-state values. If the union-with-prev window absorbs
+    // the change (new visibility range lies within last window's [start+1,
+    // end-1) — i.e. not touching window edges), we DON'T bump version: the
+    // next render would produce the same window. This breaks the layout-loop
+    // oscillation on oversized scrollTo targets where scroll-phase pingpongs
+    // but both pingpong states fall inside our current window.
+    const prevWin = prevWindowRef.current
+    if (prevWin.endIndex - prevWin.startIndex === 0) {
+      // Bootstrap case — always bump.
+      setScrollStateVersion((v) => v + 1)
+      return
+    }
+    const firstVC = next.firstVisibleChild
+    const lastVC = next.lastVisibleChild
+    const leadingOffset = prevWin.hasLeading ? 1 : 0
+    const realItemChildEnd = leadingOffset + (prevWin.endIndex - prevWin.startIndex)
+    // Derive what first/lastVisibleItem would be:
+    let firstVI: number
+    let lastVI: number
+    if (firstVC < leadingOffset) firstVI = Math.max(0, prevWin.startIndex - overscan)
+    else if (firstVC >= realItemChildEnd) firstVI = prevWin.startIndex
+    else firstVI = prevWin.startIndex + (firstVC - leadingOffset)
+    if (lastVC < leadingOffset) lastVI = firstVI
+    else if (lastVC >= realItemChildEnd)
+      lastVI = Math.min(count - 1, prevWin.endIndex - 1 + overscan)
+    else lastVI = prevWin.startIndex + (lastVC - leadingOffset)
+
+    // Window-stability check: the computed `firstVI`/`lastVI` lies strictly
+    // inside the prev window — union with prev absorbs them, no shift. Use
+    // a 1-item margin from edges to prevent off-by-one thrash.
+    const stable =
+      firstVI >= prevWin.startIndex &&
+      lastVI < prevWin.endIndex &&
+      firstVC >= leadingOffset &&
+      lastVC < realItemChildEnd
+    if (stable) return
+    setScrollStateVersion((v) => v + 1)
+  })
+  // Read the current snapshot — updated by the callback above, or null before
+  // the first layout pass / when containerNode is null.
+  const scrollState = scrollStateRef.current
+
   // Steady-state gating. Two conditions to enable read-don't-walk mode:
   // (1) scroll state exists with a non-zero viewport — layout ran,
   // (2) content actually overflows viewport — otherwise there's nothing to
@@ -462,10 +524,12 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     [getItemKey],
   )
 
-  // Effective scroll-state fields. Extracted outside useMemo so the memo
-  // dependency list is just primitives (no new object allocation per render).
-  const ssOffset = hasSteadyState && scrollState ? scrollState.offset : -1
-  const ssViewportHeight = hasSteadyState && scrollState ? scrollState.viewportHeight : -1
+  // Effective scroll-state fields for the window calc. Only firstVisibleChild
+  // / lastVisibleChild influence the window (offset affects only placeholder
+  // heights via sumHeights, which is stable when indices don't shift).
+  //
+  // Extracted outside useMemo so the memo dependency list is just primitives
+  // (no new object allocation per render).
   const ssFirstVisibleChild =
     hasSteadyState && scrollState ? scrollState.firstVisibleChild : -1
   const ssLastVisibleChild =
@@ -587,16 +651,34 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
         firstVisibleItem = Math.max(0, Math.min(firstVisibleItem, count - 1))
         lastVisibleItem = Math.max(firstVisibleItem, Math.min(lastVisibleItem, count - 1))
 
+        // Cursor-anchor expansion: when the consumer moved the cursor
+        // (via `scrollTo`) to an item outside the current window, expand
+        // the visible range to include it. Without this, steady-state
+        // would stay anchored to the last-rendered viewport range even
+        // after a cursor jump, because layout-phase's `firstVisibleChild`
+        // still points at items from the PRIOR frame (not the cursor).
+        //
+        // The scrollState-based read handles scroll-driven changes (user
+        // wheel, boxScrollTo-triggered scroll settles within a few frames);
+        // this branch handles cursor-driven jumps (G, PgDn, typed index).
+        let firstAnchor = firstVisibleItem
+        let lastAnchor = lastVisibleItem
+        if (scrollTo !== undefined) {
+          const cursor = Math.max(0, Math.min(scrollTo, count - 1))
+          if (cursor < firstAnchor) firstAnchor = cursor
+          if (cursor > lastAnchor) lastAnchor = cursor
+        }
+
         // Choose new window with symmetric overscan, plus a superset with
         // the previous window so small cursor nudges don't shift items in
         // and out rapidly (reduces re-render churn on near-boundary moves).
-        let start = Math.max(0, firstVisibleItem - overscan)
-        let end = Math.min(count, lastVisibleItem + 1 + overscan)
+        let start = Math.max(0, firstAnchor - overscan)
+        let end = Math.min(count, lastAnchor + 1 + overscan)
 
         // Union with previous window to dampen oscillations. We only union
         // when the previous window already covered the new anchor — this
         // avoids never shrinking when the user genuinely scrolled far.
-        if (prevStart <= firstVisibleItem && lastVisibleItem < prevEnd) {
+        if (prevStart <= firstAnchor && lastAnchor < prevEnd) {
           start = Math.min(start, prevStart)
           end = Math.max(end, prevEnd)
         }
@@ -726,10 +808,11 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     trailingExtraChildren,
     // Steady-state inputs — primitives so the memo fires only when values change
     hasSteadyState,
-    ssOffset,
-    ssViewportHeight,
     ssFirstVisibleChild,
     ssLastVisibleChild,
+    // scrollStateVersion forces memo re-run when new snapshot arrives with
+    // relevant changes (the callback only bumps when firstVC/lastVC shift).
+    scrollStateVersion,
   ])
 
   // Update previous-window ref AFTER the memo computes the new window. The
