@@ -319,6 +319,9 @@ function applySgrParams(params: string, sgr: SgrState): void {
  * @deprecated Use `SILVERY_STRICT_TERMINAL=vt100` instead. This function is now
  * the internal implementation of the `vt100` backend for STRICT_TERMINAL verification.
  * Direct usage is discouraged — prefer the unified STRICT_TERMINAL env var interface.
+ *
+ * Public-export removal tracked: km-silvery.unexport-replay-ansi-with-styles
+ * (function remains internal to output-verify.ts; only the public re-export is removed)
  */
 export function replayAnsiWithStyles(
   width: number,

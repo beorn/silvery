@@ -254,6 +254,7 @@ export function useCursor(position: CursorPosition): void {
 /**
  * @deprecated Use CursorAccessors from createCursorStore() instead.
  * These module-level functions are the global fallback for backward compat.
+ * Deletion tracked: km-silvery.delete-cursor-globals
  */
 function getCursorState(): CursorState | null {
   return globalGetCursorState()

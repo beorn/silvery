@@ -59,8 +59,9 @@ export interface DeriveFieldsInput {
    */
   dark?: boolean
   /**
-   * @deprecated Pass `dark` instead. Retained one release; ignored when
-   * `dark` is provided. If present without `dark`, invoked as before.
+   * Legacy: pass `dark` instead. Ignored when `dark` is provided.
+   * If present without `dark`, invoked as before. Retained for external
+   * callers built against the pre-`dark` API; new code should use `dark`.
    */
   shift?: (color: string, amount: number) => string
   /** The primary color. */
@@ -92,7 +93,8 @@ export interface DeriveFieldsInput {
 // Legacy discriminant-union type aliases — retained for any external callers
 // that still reference the old named types. Both are now identical to
 // DeriveFieldsInput (the `mode` field is no longer read).
-// @deprecated Use DeriveFieldsInput directly and pass `shift` instead of `mode`.
+// Kept as stable type aliases for backward compatibility; new code should use
+// DeriveFieldsInput directly.
 export type DeriveFieldsAnsi16Input = DeriveFieldsInput
 export type DeriveFieldsTruecolorInput = DeriveFieldsInput
 

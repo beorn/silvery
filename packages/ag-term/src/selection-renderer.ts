@@ -148,6 +148,8 @@ export function applySelectionToBuffer(
  * This approach re-emits characters with SGR 7m, which doesn't compose correctly
  * with existing cell styles. The new style composition approach modifies cell data
  * before the output phase, producing correct results.
+ *
+ * Deletion tracked: km-silvery.delete-render-selection-overlay
  */
 export function renderSelectionOverlay(
   selection: SelectionRange | null,

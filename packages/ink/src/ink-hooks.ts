@@ -41,6 +41,7 @@ import { useInput as silveryUseInput } from "@silvery/ag-react/hooks/useInput"
  *
  * @deprecated For non-Ink apps, prefer `useFocus` from `@silvery/ag-react`
  * which integrates with scopes, spatial nav, and the native FocusManager.
+ * Deletion tracked: km-silvery.delete-ink-use-focus
  */
 export function useFocus(opts?: { isActive?: boolean; autoFocus?: boolean; id?: string }): {
   isFocused: boolean

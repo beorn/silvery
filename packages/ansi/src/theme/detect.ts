@@ -145,9 +145,8 @@ export async function probeColors(timeoutMs = 150): Promise<DetectedScheme | nul
 /**
  * Legacy alias for {@link probeColors}. Prefer `probeColors` in new code —
  * the name says what it does (probes terminal color slots), and "detect" is
- * reserved for the full cascade (`detectScheme`, `detectTheme`).
- *
- * @deprecated Use `probeColors` instead. Will remain exported through 0.x.
+ * reserved for the full cascade (`detectScheme`, `detectTheme`). Retained
+ * as a stable alias — no deprecation schedule.
  */
 export const detectTerminalScheme = probeColors
 

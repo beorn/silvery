@@ -224,6 +224,7 @@ export function createCompositeClipboard(...backends: ClipboardBackend[]): Clipb
  * Encodes the text as base64 and writes the OSC 52 sequence to stdout.
  *
  * @deprecated Use createOsc52Backend() for new code.
+ * Deletion tracked: km-silvery.delete-clipboard-legacy-api
  */
 export function copyToClipboard(stdout: NodeJS.WriteStream, text: string): void {
   const base64 = Buffer.from(text).toString("base64")
@@ -237,6 +238,7 @@ export function copyToClipboard(stdout: NodeJS.WriteStream, text: string): void 
  * Use parseClipboardResponse() to decode the response.
  *
  * @deprecated Use createOsc52Backend() for new code.
+ * Deletion tracked: km-silvery.delete-clipboard-legacy-api
  */
 export function requestClipboard(stdout: NodeJS.WriteStream): void {
   stdout.write(`${ESC}]52;c;?${BEL}`)
