@@ -5,12 +5,9 @@
  *  - Initializes from stdout.columns / stdout.rows (with fallbacks).
  *  - Exposes reactive cols / rows / snapshot as callable ReadSignals.
  *  - Coalesces burst resize events within the 16ms window.
- *  - Push subscribers and reactive effects both receive the final geometry
- *    once per burst.
+ *  - `effect(() => size.cols())` fires once per coalesced change.
+ *  - First read installs the resize listener lazily.
  *  - Dispose stops listening and clears any pending coalesce timer.
- *
- * Mirrors the shape of term-provider-resize-coalesce.test.ts — the
- * coalescing logic was moved here from term-provider in Phase 5.
  *
  * Bead: km-silvery.term-sub-owners
  */
@@ -46,6 +43,28 @@ const setDims = (stdout: NodeJS.WriteStream, cols: number, rows: number) => {
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
+/**
+ * Subscribe to a size's coalesced resizes via `effect()`, skipping the seed
+ * fire so the returned array contains only *changes* (matching the old
+ * `size.subscribe(handler)` semantic).
+ */
+function observeChanges(size: ReturnType<typeof createSize>): {
+  changes: Array<{ cols: number; rows: number }>
+  stop: () => void
+} {
+  const changes: Array<{ cols: number; rows: number }> = []
+  let seeded = false
+  const stop = effect(() => {
+    const s = size.snapshot()
+    if (!seeded) {
+      seeded = true
+      return
+    }
+    changes.push(s)
+  })
+  return { changes, stop }
+}
+
 // ============================================================================
 // Tests — createSize
 // ============================================================================
@@ -77,27 +96,27 @@ describe("createSize: initialization", () => {
 })
 
 describe("createSize: resize coalescing", () => {
-  test("single resize fires subscribe with final dims", async () => {
+  test("single resize fires effect with final dims", async () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
 
-    const events: Array<{ cols: number; rows: number }> = []
-    size.subscribe((s) => events.push(s))
+    const { changes, stop } = observeChanges(size)
 
     setDims(stdout, 100, 30)
     await sleep(50)
 
-    expect(events).toEqual([{ cols: 100, rows: 30 }])
+    expect(changes).toEqual([{ cols: 100, rows: 30 }])
     expect(size.cols()).toBe(100)
     expect(size.rows()).toBe(30)
+
+    stop()
   })
 
   test("burst of 3 resizes within 16ms coalesces to ONE notification", async () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
 
-    const events: Array<{ cols: number; rows: number }> = []
-    size.subscribe((s) => events.push(s))
+    const { changes, stop } = observeChanges(size)
 
     setDims(stdout, 100, 30)
     await sleep(2)
@@ -107,75 +126,79 @@ describe("createSize: resize coalescing", () => {
 
     await sleep(50)
 
-    expect(events.length).toBe(1)
-    expect(events[0]).toEqual({ cols: 120, rows: 35 })
+    expect(changes.length).toBe(1)
+    expect(changes[0]).toEqual({ cols: 120, rows: 35 })
     expect(size.cols()).toBe(120)
     expect(size.rows()).toBe(35)
+
+    stop()
   })
 
   test("two resizes separated by > coalesce window produce two notifications", async () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
 
-    const events: Array<{ cols: number; rows: number }> = []
-    size.subscribe((s) => events.push(s))
+    const { changes, stop } = observeChanges(size)
 
     setDims(stdout, 100, 30)
     await sleep(50)
     setDims(stdout, 120, 35)
     await sleep(50)
 
-    expect(events.length).toBe(2)
-    expect(events[0]).toEqual({ cols: 100, rows: 30 })
-    expect(events[1]).toEqual({ cols: 120, rows: 35 })
+    expect(changes.length).toBe(2)
+    expect(changes[0]).toEqual({ cols: 100, rows: 30 })
+    expect(changes[1]).toEqual({ cols: 120, rows: 35 })
+
+    stop()
   })
 
   test("coalesceMs: 0 disables coalescing — each resize fires immediately", async () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout, { coalesceMs: 0 })
 
-    const events: Array<{ cols: number; rows: number }> = []
-    size.subscribe((s) => events.push(s))
+    const { changes, stop } = observeChanges(size)
 
     setDims(stdout, 100, 30)
     setDims(stdout, 120, 35)
 
     // No wait needed — synchronous.
-    expect(events.length).toBe(2)
+    expect(changes.length).toBe(2)
+
+    stop()
   })
 
-  test("multiple subscribers all receive the coalesced resize", async () => {
+  test("multiple effects all receive the coalesced resize", async () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
 
-    const a: Array<{ cols: number; rows: number }> = []
-    const b: Array<{ cols: number; rows: number }> = []
-    size.subscribe((s) => a.push(s))
-    size.subscribe((s) => b.push(s))
+    const a = observeChanges(size)
+    const b = observeChanges(size)
 
     setDims(stdout, 100, 30)
     setDims(stdout, 120, 35)
     await sleep(50)
 
-    expect(a).toEqual([{ cols: 120, rows: 35 }])
-    expect(b).toEqual([{ cols: 120, rows: 35 }])
+    expect(a.changes).toEqual([{ cols: 120, rows: 35 }])
+    expect(b.changes).toEqual([{ cols: 120, rows: 35 }])
+
+    a.stop()
+    b.stop()
   })
 
-  test("unsubscribe stops future notifications", async () => {
+  test("stopping the effect halts future notifications", async () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
 
-    const events: Array<{ cols: number; rows: number }> = []
-    const off = size.subscribe((s) => events.push(s))
+    const { changes, stop } = observeChanges(size)
 
     setDims(stdout, 100, 30)
     await sleep(50)
-    expect(events.length).toBe(1)
+    expect(changes.length).toBe(1)
 
-    off()
+    stop()
     setDims(stdout, 120, 35)
     await sleep(50)
-    expect(events.length).toBe(1)
+    expect(changes.length).toBe(1)
   })
 })
 
@@ -183,10 +206,6 @@ describe("createSize: reactive effect subscription", () => {
   test("effect(() => size.cols()) fires on coalesced resize", async () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
-    // Must subscribe (or call effect that reads a signal that reads the
-    // snapshot) to install the resize listener — matches the lazy-install
-    // contract exercised below.
-    size.subscribe(() => {})
 
     const observed: number[] = []
     const stop = effect(() => {
@@ -207,7 +226,6 @@ describe("createSize: reactive effect subscription", () => {
   test("effect reads of size.rows and size.snapshot stay in sync", async () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
-    size.subscribe(() => {})
 
     const rowsLog: number[] = []
     const snapLog: Array<{ cols: number; rows: number }> = []
@@ -230,39 +248,38 @@ describe("createSize: reactive effect subscription", () => {
 })
 
 describe("createSize: lazy install", () => {
-  // The resize listener is installed on first subscribe() — NOT at
-  // construction. Style-only createTerm() callers (chalk-compat paths in
-  // km-tui/text/*) never subscribe, so they pay zero listeners. Prevents
-  // the MaxListenersExceededWarning (11+ resize listeners) observed when
-  // every createTerm() eagerly wired one.
+  // The resize listener is installed on first read of any public ReadSignal.
+  // Style-only createTerm() callers (chalk-compat paths in km-tui/text/*)
+  // that never touch size pay zero listeners. Prevents the
+  // MaxListenersExceededWarning (11+ resize listeners) observed when every
+  // createTerm() eagerly wired one.
   test("no listener is installed at construction", () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
     expect((stdout as EventEmitter).listenerCount("resize")).toBe(0)
-    // Reads still work — they fall through to the initial snapshot.
-    expect(size.cols()).toBe(80)
-    expect(size.rows()).toBe(24)
+    // First read installs.
+    size.cols()
+    expect((stdout as EventEmitter).listenerCount("resize")).toBe(1)
   })
 
-  test("first subscribe installs the listener; subsequent subscribes do not stack", () => {
+  test("subsequent reads do not stack listeners", () => {
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
-    expect((stdout as EventEmitter).listenerCount("resize")).toBe(0)
-    size.subscribe(() => {})
-    expect((stdout as EventEmitter).listenerCount("resize")).toBe(1)
-    size.subscribe(() => {})
+    size.cols()
+    size.rows()
+    size.snapshot()
     expect((stdout as EventEmitter).listenerCount("resize")).toBe(1)
   })
 
-  test("reads without subscribe return the initial (construction-time) dims", () => {
-    // Without a listener the signal never advances, so reads reflect the
-    // snapshot captured at construction. That's fine for chalk-compat style
-    // usages that don't care about mid-run resizes.
+  test("reads without resize events return the initial (construction-time) dims", () => {
+    // Without any resize the signal never advances, so reads reflect the
+    // snapshot captured at construction. Fine for chalk-compat style usages
+    // that don't care about mid-run resizes.
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
     ;(stdout as unknown as { columns: number }).columns = 132
     ;(stdout as unknown as { rows: number }).rows = 40
-    // No subscribe, no listener — reads stay at the seeded initial.
+    // No resize emitted — reads stay at the seeded initial.
     expect(size.cols()).toBe(80)
     expect(size.rows()).toBe(24)
   })
@@ -272,7 +289,7 @@ describe("createSize: dispose", () => {
   test("dispose removes the resize listener when installed", () => {
     const stdout = createMockStdout(80, 24)
     const size = createSize(stdout)
-    size.subscribe(() => {})
+    size.cols() // installs the listener
     expect((stdout as EventEmitter).listenerCount("resize")).toBe(1)
     size[Symbol.dispose]()
     expect((stdout as EventEmitter).listenerCount("resize")).toBe(0)
@@ -289,8 +306,7 @@ describe("createSize: dispose", () => {
     const stdout = createMockStdout(80, 24)
     const size = createSize(stdout)
 
-    const events: Array<{ cols: number; rows: number }> = []
-    size.subscribe((s) => events.push(s))
+    const { changes, stop } = observeChanges(size)
 
     setDims(stdout, 100, 30)
     // Dispose BEFORE the coalesce window flushes.
@@ -298,7 +314,9 @@ describe("createSize: dispose", () => {
 
     await sleep(50)
     // No notification fired — the timer was cleared.
-    expect(events.length).toBe(0)
+    expect(changes.length).toBe(0)
+
+    stop()
   })
 })
 
@@ -314,26 +332,34 @@ describe("createFixedSize", () => {
     expect(size.snapshot()).toEqual({ cols: 100, rows: 30 })
   })
 
-  test("update() fires subscribers with new dims", () => {
+  test("update() fires effects with new dims", () => {
     using size = createFixedSize({ cols: 80, rows: 24 })
-    const events: Array<{ cols: number; rows: number }> = []
-    size.subscribe((s) => events.push(s))
+    const observed: Array<{ cols: number; rows: number }> = []
+    const stop = effect(() => observed.push(size.snapshot()))
 
     size.update(120, 40)
 
     expect(size.cols()).toBe(120)
     expect(size.rows()).toBe(40)
-    expect(events).toEqual([{ cols: 120, rows: 40 }])
+    expect(observed).toEqual([
+      { cols: 80, rows: 24 },
+      { cols: 120, rows: 40 },
+    ])
+
+    stop()
   })
 
   test("update after dispose is a no-op", () => {
     const size = createFixedSize({ cols: 80, rows: 24 })
-    const events: Array<{ cols: number; rows: number }> = []
-    size.subscribe((s) => events.push(s))
+    const observed: Array<{ cols: number; rows: number }> = []
+    const stop = effect(() => observed.push(size.snapshot()))
 
     size[Symbol.dispose]()
     size.update(120, 40)
 
-    expect(events.length).toBe(0)
+    // Only the seed fire — update() after dispose writes nothing.
+    expect(observed).toEqual([{ cols: 80, rows: 24 }])
+
+    stop()
   })
 })

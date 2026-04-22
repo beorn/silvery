@@ -91,16 +91,18 @@ The full session startup happens in one place. No subsystem re-toggles the modes
 
 ### React to resize
 
-`term.size` is backed by [alien-signals](https://github.com/stackblitz/alien-signals) and coalesces PTY burst resizes within one 60 Hz frame (16 ms). `cols`, `rows`, and `snapshot` are callable `ReadSignal`s — read with `size.cols()`, or subscribe reactively with `effect(() => size.cols())`. The imperative `subscribe(handler)` is retained for push-shaped consumers (React's `useSyncExternalStore`, event queues):
+`term.size` is backed by [alien-signals](https://github.com/stackblitz/alien-signals) and coalesces PTY burst resizes within one 60 Hz frame (16 ms). `cols`, `rows`, and `snapshot` are callable `ReadSignal`s — read with `size.cols()`, subscribe with `effect(() => size.cols())`:
 
 ```ts
 using term = createTerm()
+import { effect } from "@silvery/signals"
 
 console.log(`starting at ${term.size.cols()}×${term.size.rows()}`)
 
-const unsubscribe = term.size.subscribe((s) => {
-  console.log(`resized to ${s.cols}×${s.rows}`)
+const stop = effect(() => {
+  console.log(`resized to ${term.size.cols()}×${term.size.rows()}`)
 })
+// stop() to unsubscribe
 ```
 
 Inside React, `useBoxRect` and the runtime context already read through `term.size` — components get rect updates without subscribing directly.

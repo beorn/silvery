@@ -94,21 +94,17 @@ export interface Console extends Disposable {
   readonly capturing: ReadSignal<boolean>
 
   /**
-   * Read current entries. Returns the same reference until a new entry arrives
-   * (then a fresh array reference) — safe for `useSyncExternalStore`.
-   * Returns an empty frozen array when `capture=false` was passed.
+   * Reactive list of captured entries. Returns a frozen array reference that
+   * changes each time a new entry arrives (so alien-signals / React identity
+   * checks fire). Empty frozen array when `capture=false` was passed.
+   *
+   * Read synchronously with `entries()` or subscribe with
+   * `effect(() => entries())`. React: `useSignal(console.entries)`.
    */
-  getSnapshot(): readonly ConsoleEntry[]
+  readonly entries: ReadSignal<readonly ConsoleEntry[]>
 
   /** Aggregate counts. Tracked even when `capture=false`. */
   getStats(): ConsoleStats
-
-  /**
-   * Subscribe to changes — called when a new entry arrives (batched via
-   * microtask to avoid feedback loops when a subscriber logs). Returns
-   * unsubscribe.
-   */
-  subscribe(onStoreChange: () => void): () => void
 
   /**
    * Replay captured entries to explicit streams (typically `process.stdout` +
@@ -141,27 +137,17 @@ export function createConsole(target: globalThis.Console = globalThis.console): 
   let suppress = false
   let captureEntries = true
 
-  const entries: ConsoleEntry[] = []
-  let snapshot: readonly ConsoleEntry[] = entries
+  // Buffer the authoritative ConsoleEntry[] for replay(). The reactive
+  // `entries` signal holds the SAME data wrapped in a frozen array with a
+  // fresh reference on every push — so alien-signals/React identity checks
+  // fire and subscribers re-render.
+  const buffer: ConsoleEntry[] = []
+  const _entries = signal<readonly ConsoleEntry[]>(EMPTY_ENTRIES)
   const stats: ConsoleStats = { total: 0, errors: 0, warnings: 0 }
-
-  const subscribers = new Set<() => void>()
-  let notifyPending = false
 
   // Originals captured once the first `capture()` is called, then reused so
   // nested capture/restore cycles always restore to the same baseline.
   const originals = new Map<ConsoleMethod, globalThis.Console[ConsoleMethod]>()
-
-  function scheduleNotify() {
-    if (notifyPending) return
-    notifyPending = true
-    // queueMicrotask — same trick as patchConsole.ts: prevents sync feedback
-    // loops when a subscriber's render triggers console.debug().
-    queueMicrotask(() => {
-      notifyPending = false
-      for (const sub of subscribers) sub()
-    })
-  }
 
   function install() {
     for (const method of METHODS) {
@@ -182,14 +168,13 @@ export function createConsole(target: globalThis.Console = globalThis.console): 
             args,
             stream: STDERR_METHODS.has(method) ? "stderr" : "stdout",
           }
-          entries.push(entry)
-          // Fresh reference so useSyncExternalStore's Object.is check notices.
-          snapshot = entries.slice()
+          buffer.push(entry)
+          // Fresh reference so alien-signals equality check fires; Object.freeze
+          // so subscribers can't mutate the array they read.
+          _entries(Object.freeze(buffer.slice()))
         }
 
         if (!suppress) original.call(target, ...args)
-
-        scheduleNotify()
       }
     }
   }
@@ -217,7 +202,7 @@ export function createConsole(target: globalThis.Console = globalThis.console): 
   }
 
   function replay(stdout: NodeJS.WriteStream, stderr: NodeJS.WriteStream): void {
-    for (const entry of entries) {
+    for (const entry of buffer) {
       const stream = entry.stream === "stderr" ? stderr : stdout
       const line =
         entry.args
@@ -237,24 +222,15 @@ export function createConsole(target: globalThis.Console = globalThis.console): 
     if (disposed) return
     disposed = true
     restore()
-    subscribers.clear()
   }
 
   return {
     capture,
     restore,
     capturing: _capturing as ReadSignal<boolean>,
-    getSnapshot() {
-      return captureEntries ? snapshot : EMPTY_ENTRIES
-    },
+    entries: _entries as ReadSignal<readonly ConsoleEntry[]>,
     getStats() {
       return { ...stats }
-    },
-    subscribe(onStoreChange) {
-      subscribers.add(onStoreChange)
-      return () => {
-        subscribers.delete(onStoreChange)
-      }
     },
     replay,
     dispose,

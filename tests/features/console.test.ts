@@ -37,7 +37,7 @@ describe("createConsole", () => {
 
     stub.log("hello")
     expect(calls).toEqual([{ method: "log", args: ["hello"] }])
-    expect(owner.getSnapshot()).toEqual([])
+    expect(owner.entries()).toEqual([])
     expect(owner.getStats()).toEqual({ total: 0, errors: 0, warnings: 0 })
     expect(owner.capturing()).toBe(false)
   })
@@ -73,7 +73,7 @@ describe("createConsole", () => {
     stub.warn("third")
 
     expect(owner.capturing()).toBe(true)
-    const snap = owner.getSnapshot()
+    const snap = owner.entries()
     expect(snap).toHaveLength(3)
     expect(snap[0]).toMatchObject({ method: "log", stream: "stdout" })
     expect(snap[1]).toMatchObject({ method: "error", stream: "stderr" })
@@ -90,7 +90,7 @@ describe("createConsole", () => {
     stub.error("also hushed")
 
     expect(calls).toEqual([])
-    expect(owner.getSnapshot()).toHaveLength(2)
+    expect(owner.entries()).toHaveLength(2)
   })
 
   test("suppress=false (default) still forwards to original methods", () => {
@@ -101,7 +101,7 @@ describe("createConsole", () => {
     stub.log("forwarded")
 
     expect(calls).toEqual([{ method: "log", args: ["forwarded"] }])
-    expect(owner.getSnapshot()).toHaveLength(1)
+    expect(owner.entries()).toHaveLength(1)
   })
 
   test("capture=false keeps stats but drops entries", () => {
@@ -112,7 +112,7 @@ describe("createConsole", () => {
     stub.log("dropped")
     stub.error("also dropped")
 
-    expect(owner.getSnapshot()).toEqual([])
+    expect(owner.entries()).toEqual([])
     expect(owner.getStats()).toEqual({ total: 2, errors: 1, warnings: 0 })
   })
 
@@ -122,7 +122,7 @@ describe("createConsole", () => {
     owner.capture({ suppress: true })
 
     stub.log("captured")
-    expect(owner.getSnapshot()).toHaveLength(1)
+    expect(owner.entries()).toHaveLength(1)
 
     owner.restore()
     expect(owner.capturing()).toBe(false)
@@ -131,7 +131,7 @@ describe("createConsole", () => {
     stub.log("after")
     expect(calls).toEqual([{ method: "log", args: ["after"] }])
     // Pre-restore entries still present.
-    expect(owner.getSnapshot()).toHaveLength(1)
+    expect(owner.entries()).toHaveLength(1)
   })
 
   test("capture()/restore() cycles reuse the same originals", () => {
@@ -146,7 +146,7 @@ describe("createConsole", () => {
     stub.log("round2")
     owner.restore()
 
-    expect(owner.getSnapshot()).toHaveLength(2)
+    expect(owner.entries()).toHaveLength(2)
     expect(calls).toEqual([]) // both rounds suppressed
 
     // After final restore the stub is back to normal forwarding.
@@ -154,45 +154,46 @@ describe("createConsole", () => {
     expect(calls).toEqual([{ method: "log", args: ["after"] }])
   })
 
-  test("subscribe fires on new entry (batched via microtask)", async () => {
+  test("effect(() => entries()) fires on every new entry", () => {
     const { stub } = stubConsole()
     owner = createConsole(stub)
     owner.capture({ suppress: true })
 
     let fires = 0
-    const unsub = owner.subscribe(() => {
+    const stop = effect(() => {
+      owner!.entries()
       fires++
     })
+
+    // Seed fire.
+    expect(fires).toBe(1)
 
     stub.log("a")
     stub.log("b")
     stub.log("c")
 
-    // Synchronously no fires (batched).
-    expect(fires).toBe(0)
+    // Each entry writes a fresh array ref → effect re-runs synchronously.
+    expect(fires).toBe(4)
 
-    // After microtask, one fire.
-    await new Promise((r) => queueMicrotask(() => r(undefined)))
-    expect(fires).toBe(1)
-
-    unsub()
+    stop()
     stub.log("d")
-    await new Promise((r) => queueMicrotask(() => r(undefined)))
-    expect(fires).toBe(1)
+    expect(fires).toBe(4)
   })
 
-  test("getSnapshot returns a new array reference on new entry", () => {
+  test("entries() returns a new frozen array reference on every new entry", () => {
     const { stub } = stubConsole()
     owner = createConsole(stub)
     owner.capture({ suppress: true })
 
-    const before = owner.getSnapshot()
+    const before = owner.entries()
     stub.log("a")
-    const after = owner.getSnapshot()
+    const after = owner.entries()
 
-    // New reference — important for useSyncExternalStore's Object.is check.
+    // New reference — important for alien-signals equality + React identity.
     expect(after).not.toBe(before)
     expect(after).toHaveLength(1)
+    // Frozen — callers can't mutate the array they read.
+    expect(Object.isFrozen(after)).toBe(true)
   })
 
   test("replay() writes captured entries to explicit streams", () => {

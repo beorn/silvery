@@ -18,11 +18,10 @@ interface Size extends Disposable {
   readonly cols: ReadSignal<number>
   readonly rows: ReadSignal<number>
   readonly snapshot: ReadSignal<SizeSnapshot>
-  subscribe(handler: (s: SizeSnapshot) => void): () => void
 }
 ```
 
-`cols`, `rows`, and `snapshot` are read-only callables: call with no arguments to read the current value, and use them inside `computed` / `effect` to subscribe reactively. Writes happen only inside the owner (on coalesced `resize` events or `createFixedSize.update(...)`). `subscribe(handler)` is retained alongside the signals for push-shaped consumers — React's `useSyncExternalStore` and the term-provider event queue.
+`cols`, `rows`, and `snapshot` are read-only callables: call with no arguments to read the current value, and use them inside `computed` / `effect` to subscribe reactively. Writes happen only inside the owner (on coalesced `resize` events or `createFixedSize.update(...)`).
 
 ## Access
 
@@ -31,16 +30,18 @@ using term = createTerm()
 
 console.log(`starting size: ${term.size.cols()}×${term.size.rows()}`)
 
-const unsubscribe = term.size.subscribe((s) => {
-  console.log(`resized to ${s.cols}×${s.rows}`)
+import { effect } from "@silvery/signals"
+const stop = effect(() => {
+  console.log(`size is now ${term.size.cols()}×${term.size.rows()}`)
 })
+// stop() to unsubscribe
 ```
 
 `term.size` is always present. For headless and emulator-backed Terms the owner is a fixed-dimensions variant (`createFixedSize`) with an `update(cols, rows)` method that the emulator calls explicitly on resize.
 
 ## Live reads
 
-`term.size.cols()` and `term.size.rows()` read the current value of the underlying alien-signal. Every read reflects the latest resize that has cleared the coalescing window.
+`term.size.cols()` and `term.size.rows()` read the current value of the underlying alien-signal. Every read reflects the latest resize that has cleared the coalescing window. The first read installs the lazy `stdout.on("resize")` listener — consumers that never read pay nothing.
 
 `term.size.snapshot()` returns a plain `SizeSnapshot` — useful when you want to pin values for a render pass:
 
@@ -62,39 +63,31 @@ const columns = computed(() => Math.floor(term.size.cols() / 20))
 
 Multiplexers (tmux, cmux, Ghostty tabs) can emit multiple `SIGWINCH` bursts as the PTY re-syncs. Without coalescing, each burst triggers a layout pass at an intermediate size and the user sees visible multi-phase layout shift.
 
-The owner coalesces bursts within a single 60 Hz frame (16 ms). Within that window, only the **final** geometry is delivered to subscribers and to `computed` / `effect` dependents:
+The owner coalesces bursts within a single 60 Hz frame (16 ms). Within that window, only the **final** geometry is delivered to `computed` / `effect` dependents:
 
 ```
 t=0   stdout.columns=100  stdout.emit("resize")
 t=2   stdout.columns=110  stdout.emit("resize")
 t=5   stdout.columns=120  stdout.emit("resize")
-t=16  flush → subscribers receive { cols: 120, rows: … } ONCE
+t=16  flush → effects receive { cols: 120, rows: … } ONCE
 ```
 
 Discrete resizes spaced further apart than 16 ms pass through normally.
 
-```ts
-const events: SizeSnapshot[] = []
-term.size.subscribe((s) => events.push(s))
-
-// PTY burst — three rapid resizes
-// → events.length === 1, events[0] === final geometry
-```
-
 The coalescing window can be overridden via `createSize(stdout, { coalesceMs })`. `coalesceMs: 0` disables coalescing for tests.
 
-## `subscribe(handler)`
+## Subscribe with `effect`
 
-Registers an imperative subscriber that fires on every coalesced change. Returns an unsubscribe function. Multiple subscribers can coexist; each receives the same `SizeSnapshot` reference. Same update stream as `effect(() => size.cols())` — different caller shape.
+Subscribe with `effect(() => size.snapshot())`. The effect runs once at setup with the current value and re-runs on every coalesced change:
 
 ```ts
-using term = createTerm()
-const stop = term.size.subscribe((s) => {
-  console.log(`size is now ${s.cols}×${s.rows}`)
-})
+import { effect } from "@silvery/signals"
 
-// later…
-stop()
+const stop = effect(() => {
+  const { cols, rows } = term.size.snapshot()
+  renderPass(cols, rows)
+})
+// stop() to unsubscribe
 ```
 
 Inside React, `useBoxRect` and the runtime context already read through `term.size`. Components get dimension updates without subscribing directly.
@@ -105,7 +98,7 @@ At construction, the owner reads `stdout.columns` / `stdout.rows`. If either is 
 
 ## Dispose
 
-Removes the `resize` listener, clears any pending coalesce timer, drops subscribers. Idempotent. The last known cols/rows remain readable after dispose — useful for post-exit summaries.
+Removes the `resize` listener and clears any pending coalesce timer. Idempotent. The last known cols/rows remain readable after dispose — useful for post-exit summaries.
 
 ## See also
 

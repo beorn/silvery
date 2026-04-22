@@ -47,6 +47,7 @@ import { tmpdir } from "node:os"
 import process from "node:process"
 import React, { createContext, useContext, useEffect, useRef, type ReactElement } from "react"
 import { type StateCreator, type StoreApi, createStore } from "@silvery/create/signal-store"
+import { effect } from "@silvery/signals"
 
 import { createTerm } from "../ansi"
 import {
@@ -805,11 +806,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   if (!headless) {
     const termSize = injectedTerm?.size
     if (termSize) {
-      const unsub = termSize.subscribe((next) => {
+      // Subscribe via effect; skip the seed fire so mockTermSubscribers only
+      // see real resizes.
+      let seeded = false
+      const stop = effect(() => {
+        const next = termSize.snapshot()
+        if (!seeded) {
+          seeded = true
+          return
+        }
         currentDims = { cols: next.cols, rows: next.rows }
         for (const listener of mockTermSubscribers) listener(currentDims)
       })
-      providerCleanups.push(unsub)
+      providerCleanups.push(stop)
     } else {
       const onStdoutResize = () => {
         currentDims = {
@@ -937,7 +946,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           // fall back to direct stdout "resize" for standalone callers.
           const termSize = injectedTerm?.size
           if (termSize) {
-            return termSize.subscribe((next) => {
+            let seeded = false
+            return effect(() => {
+              const next = termSize.snapshot()
+              if (!seeded) {
+                seeded = true
+                return
+              }
               currentDims = { cols: next.cols, rows: next.rows }
               handler(currentDims)
             })

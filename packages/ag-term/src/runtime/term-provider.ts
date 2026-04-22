@@ -31,6 +31,7 @@ import {
 import { enableFocusReporting, disableFocusReporting, parseFocusEvent } from "../focus-reporting"
 import type { Dims, Provider, ProviderEvent } from "./types"
 import { createSize, type Size } from "./devices/size"
+import { effect } from "@silvery/signals"
 
 // ============================================================================
 // Input Splitting
@@ -173,10 +174,10 @@ export interface TermProviderOptions {
   rows?: number
   /**
    * Shared Size owner (from Term). When provided, the provider reads dims
-   * from `size.cols()` / `size.rows()` and emits coalesced resize events via
-   * `size.subscribe(...)`. When omitted, a private Size owner is constructed
-   * and disposed with the provider (backward compatibility for standalone
-   * use).
+   * from `size.cols()` / `size.rows()` and subscribes to changes via
+   * `effect(() => size.snapshot())`. When omitted, a private Size owner is
+   * constructed and disposed with the provider (backward compatibility for
+   * standalone use).
    */
   size?: Size
 }
@@ -230,8 +231,15 @@ export function createTermProvider(
 
   // Propagate size changes to provider subscribers. Size already coalesces
   // SIGWINCH bursts (16ms window) so every notification here carries the
-  // final geometry.
-  const unsubscribeSize = size.subscribe((next) => {
+  // final geometry. The effect skips its first (seed) fire so subscribers
+  // only see *changes*, matching the old `size.subscribe(handler)` semantic.
+  let sizeSeeded = false
+  const unsubscribeSize = effect(() => {
+    const next = size.snapshot()
+    if (!sizeSeeded) {
+      sizeSeeded = true
+      return
+    }
     state = { cols: next.cols, rows: next.rows }
     listeners.forEach((l) => l(state))
   })
@@ -331,7 +339,14 @@ export function createTermProvider(
       // SIGWINCH bursts within one 60Hz frame (see runtime/devices/size.ts
       // for the full rationale — bead: km-tui.tab-switch-layout-shift). The
       // provider just re-fires the coalesced geometry onto its event queue.
-      const unsubscribeResizeEvent = size.subscribe((next) => {
+      // Skip the first (seed) fire so only real resizes land in the queue.
+      let resizeSeeded = false
+      const unsubscribeResizeEvent = effect(() => {
+        const next = size.snapshot()
+        if (!resizeSeeded) {
+          resizeSeeded = true
+          return
+        }
         queue.push({ type: "resize", data: { cols: next.cols, rows: next.rows } })
         if (eventResolve) {
           const resolve = eventResolve

@@ -1,4 +1,5 @@
 import type { Console, ConsoleEntry } from "@silvery/ag-term/ansi"
+import { effect } from "@silvery/signals"
 import { useEffect, useState } from "react"
 
 /**
@@ -27,21 +28,22 @@ import { useEffect, useState } from "react"
  * ```
  */
 export function useConsole(console: Console, debounceMs = 200): readonly ConsoleEntry[] {
-  const [entries, setEntries] = useState<readonly ConsoleEntry[]>(console.getSnapshot)
+  const [entries, setEntries] = useState<readonly ConsoleEntry[]>(() => console.entries())
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
-    const unsub = console.subscribe(() => {
+    const stop = effect(() => {
+      const next = console.entries()
       if (timer) return
       timer = setTimeout(() => {
         timer = null
-        setEntries(console.getSnapshot())
+        setEntries(next)
       }, debounceMs)
     })
-    // Pick up entries that arrived before subscribe
-    setEntries(console.getSnapshot())
+    // Pick up entries that arrived before effect ran its seed read
+    setEntries(console.entries())
     return () => {
-      unsub()
+      stop()
       if (timer) clearTimeout(timer)
     }
   }, [console, debounceMs])

@@ -331,9 +331,8 @@ export interface Term extends Disposable, StyleChain {
    *
    * `term.size.cols()` / `term.size.rows()` / `term.size.snapshot()` read the
    * current value and, inside `computed` / `effect`, subscribe to changes.
-   * `term.size.subscribe(handler)` is an imperative push callback for
-   * `useSyncExternalStore` and event-queue consumers. Both paths deliver the
-   * same 16ms-coalesced updates (one 60Hz frame).
+   * The first read installs the stdout `resize` listener; SIGWINCH bursts
+   * coalesce to one notification per 16ms frame (one 60Hz frame).
    *
    * Replaces direct `process.stdout.columns` / `stdout.rows` reads — those
    * return stale snapshots under concurrent resize and scatter coalescing
