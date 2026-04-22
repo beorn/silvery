@@ -41,6 +41,10 @@ export {
   type TermProviderOptions,
 } from "./term-provider"
 
+// Input owner — single-owner stdin mediator (mirrors OutputGuard for stdout).
+// See ./input-owner.ts for the wasRaw anti-pattern it replaces.
+export { createInputOwner, type InputOwner, type InputOwnerOptions } from "./input-owner"
+
 // Layer 0: Pure render functions
 export { layout, layoutSync, ensureLayoutEngine, type LayoutOptions } from "./layout"
 export { diff, render, type DiffMode } from "./diff"
