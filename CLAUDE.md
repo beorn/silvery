@@ -21,11 +21,22 @@ try {
 }
 ```
 
-**Why it breaks**: `process.stdin` is a global, multi-tenant resource. The "snapshot at entry, restore at exit" protocol assumes a single consumer. Under async, multiple polite tenants race — and the last finally to run wins, silently disabling input for the host TUI. Caught in the wild April 2026: `probeColors` invoked from a React `useEffect` raced with the term-provider's `events()` generator and reset raw mode mid-frame, killing all input. See [silvery 2d9ab59f](https://github.com/beorn/silvery/commit/2d9ab59f) for the patch and `km-silvery.input-owner` for the structural fix in flight.
+**Why it breaks**: `process.stdin` is a global, multi-tenant resource. The "snapshot at entry, restore at exit" protocol assumes a single consumer. Under async, multiple polite tenants race — and the last finally to run wins, silently disabling input for the host TUI. Caught in the wild April 2026: `probeColors` invoked from a React `useEffect` raced with the term-provider's `events()` generator and reset raw mode mid-frame, killing all input. See [silvery 2d9ab59f](https://github.com/beorn/silvery/commit/2d9ab59f) for the patch.
 
-**The structural fix**: stdin has ONE owner per session — the term-provider, mediated through an `InputOwner` (mirrors `Output` in `runtime/devices/output.ts` for stdout). Probes never call `stdin.setRawMode` or `stdin.on('data', …)`. They call `inputOwner.probe(query, parseFn, timeoutMs)` and the owner routes matching response bytes to them. Same META-pattern as `Output` and `forwardConsole` (workers don't write stdout, post events to the owner).
+**The structural fix — `term.input.probe()` — is SHIPPED in silvery 0.19.2.** Stdin has ONE owner per session, exposed as `term.input` on the `Term` interface. Probes never call `stdin.setRawMode` or `stdin.on('data', …)`. They call `term.input.probe({ query, parse, timeoutMs })` and the owner routes matching response bytes back to the caller. Same META-pattern as `term.output` (stdout), `term.modes` (protocol modes), `term.size` (dimensions), and `term.console` (console.* capture). See [The I/O umbrella](docs/guide/term.md) and [term.input reference](docs/api/term-input.md).
 
-**Until that lands**: if you absolutely must call `setRawMode`, use the `didSetRaw` + `listenerCount("data") > 0` guard pattern — see `vendor/silvery/packages/ansi/src/theme/detect.ts:probeColors` for the canonical template. Restore by what YOU set, not by a stale capture.
+**File layout** — sub-owners live under `packages/ag-term/src/runtime/devices/`:
+
+- `devices/output.ts` — `Output` (stdout / stderr / console.* sink during alt screen)
+- `devices/modes.ts` — `Modes` (raw mode, alt screen, bracketed paste, Kitty keyboard, mouse, focus reporting)
+- `devices/size.ts` — `Size` (alien-signals-backed cols/rows with 16 ms resize coalescing)
+- `devices/signals.ts` — `Signals` (topologically-ordered SIGINT/SIGTERM/exit handler scope)
+- `devices/console.ts` — `Console` (console.* tap + replay, complementary to `Output`'s sink)
+- `runtime/input-owner.ts` — `Input` (InputOwner — single stdin mediator; file lives one level up for legacy reasons and may move to `devices/` later)
+
+`Term` wires them as `readonly input | output | console: … | undefined` (undefined on headless / emulator-backed terms) and `readonly modes | size: …` (always present — headless gets a no-op variant).
+
+**Still banned**: calling `stdin.setRawMode` / `stdin.on("data", …)` / `stdout.write(…)` directly from app or runtime code. If the sub-owners don't cover what you need, grow the sub-owner — don't punch through it.
 
 ## Mandatory: New Props Require Tests
 

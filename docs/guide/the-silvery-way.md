@@ -361,11 +361,11 @@ Silvery uses factory functions that return disposable objects. `using` (TC39 Exp
 ```tsx
 // Compose resources — each one is automatically cleaned up on any exit
 using term = createTerm()
+term.console?.capture({ suppress: true }) // redirect console.log into term's buffer
 using app = render(<App />, term)
-using console = patchConsole(term) // redirect console.log through term
 await app.run()
 // On exit (success, error, Ctrl+C):
-// 1. console restored  2. app unmounted  3. terminal restored
+// 1. app unmounted  2. term.console restored + term sub-owners disposed
 // Reverse order, guaranteed, every path
 ```
 
@@ -397,7 +397,7 @@ Silvery objects that support `using`:
 | `render()` / `app.run()`                    | Unmounts React tree, stops event loop            |
 | `createScope()`                             | Cancels child tasks, clears timers               |
 | `createEditContext()`                       | Releases input layer bindings                    |
-| `patchConsole()`                            | Restores original console methods                |
+| `term.console.capture()` (on `createTerm()`) | Restores original console methods via term dispose |
 | `Spinner` / `ProgressBar` / `MultiProgress` | Stops animation, clears interval                 |
 | `createScreenshot()`                        | Closes screenshot file handle                    |
 
@@ -498,6 +498,65 @@ Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If y
 
 → [Testing guide](/guide/testing) · [Testing examples](/examples/testing) · [Termless](https://termless.dev) · [terminfo.dev](https://terminfo.dev)
 
+## 11. Let the Term Own I/O
+
+Silvery owns terminal I/O. `Term` is the umbrella, and each class of shared-global state has a typed sub-owner — set once at session start, restored once on dispose, never toggled mid-flight by app code. When you reach for `process.stdin` or `process.stdout` directly, you're racing every other tenant in the session.
+
+::: tip ✨ Shiny
+
+```tsx
+using term = createTerm()
+
+// Raw mode, alt screen, bracketed paste — one authority, idempotent setters
+term.modes.setAlternateScreen(true)
+term.modes.setRawMode(true)
+term.modes.setBracketedPaste(true)
+
+// Dimensions — live reads, coalesced subscriptions
+const { cols, rows } = term.size.snapshot
+term.size.subscribe(({ cols, rows }) => relayout(cols, rows))
+
+// Terminal query — probe through the owner, no stdin-wrestling
+const bg = await term.input?.probe({
+  query: "\x1b]11;?\x07",
+  parse: parseOsc11,
+  timeoutMs: 50,
+})
+
+// Capture stray console.log so it doesn't corrupt the alt screen
+term.console?.capture({ suppress: true })
+```
+
+One owner per resource. Race-free by construction.
+:::
+
+::: danger 🩶 Tarnished
+
+```tsx
+// ❌ wasRaw capture/restore — races under async, kills the host TUI
+const wasRaw = process.stdin.isRaw
+if (!wasRaw) process.stdin.setRawMode(true)
+try {
+  await doProbe()
+} finally {
+  if (!wasRaw) process.stdin.setRawMode(false) // undoes whatever ran during the await
+}
+
+// ❌ Direct stdout dimensions — stale under concurrent resize, no coalescing
+const cols = process.stdout.columns
+process.stdout.on("resize", () => relayout(process.stdout.columns, process.stdout.rows))
+
+// ❌ Ad-hoc mode toggles — scattered ownership, unreliable restore on crash
+process.stdout.write("\x1b[?1049h") // enter alt screen
+process.stdout.write("\x1b[?1003h\x1b[?1006h") // enable mouse
+// …forgot the disable sequences on one of the error paths, terminal is broken
+```
+
+The fix is not "be more careful with capture/restore." It's "have one owner per resource." See [Term — the I/O umbrella](/guide/term).
+:::
+
+→ [Term — the I/O umbrella](/guide/term) · [term.input](/api/term-input) · [term.output](/api/term-output) · [term.modes](/api/term-modes) · [term.size](/api/term-size) · [term.console](/api/term-console)
+
 ## The Silvery Way, at a Glance
 
 1. **Use the built-in components** — don't reimplement what silvery already ships
@@ -510,5 +569,6 @@ Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If y
 8. **Compose and clean up with `using`** — factory functions + scope-bound lifetime
 9. **Gradually sip TEA** — hooks → reducer → store → @silvery/create, at your own pace
 10. **Test what the user sees** — render the buffer, not just the state
+11. **Let the Term own I/O** — sub-owners, not `process.stdin`/`stdout`
 
 Keep it shiny. ✨

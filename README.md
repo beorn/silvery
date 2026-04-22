@@ -8,7 +8,7 @@ $ npm install silvery react
 
 ```tsx
 import { useState } from "react"
-import { render, Box, Text, useInput } from "silvery"
+import { render, Box, Text, useInput, createTerm } from "silvery"
 
 function Counter() {
   const [count, setCount] = useState(0)
@@ -22,7 +22,10 @@ function Counter() {
   )
 }
 
-await render(<Counter />).run()
+using term = createTerm()
+term.modes.setAlternateScreen(true)
+term.modes.setRawMode(true)
+await render(<Counter />, term).run()
 ```
 
 React 18 + 19 with concurrent mode, Suspense, and flexbox layout. [Drop-in Ink compatible](https://silvery.dev/guide/silvery-vs-ink#compatibility) ([`@silvery/ink`](https://silvery.dev/guide/silvery-vs-ink)) — same `Box`, `Text`, `useInput` API with 918/931 Ink 7.0 tests passing.

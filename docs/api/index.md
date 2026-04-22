@@ -55,6 +55,18 @@ Everything you need to build terminal UIs with Silvery.
 | [useStdout](/api/use-stdout)    | Access stdout for raw writes                                                                                                                            |
 | [Focus Hooks](/api/use-focus)   | Focus management (useFocusable, useFocusScope)                                                                                                          |
 
+## Term sub-owners
+
+Typed facets of the `Term` abstraction — one owner per class of shared-global I/O state. See the [I/O umbrella guide](/guide/term) for the architecture.
+
+| Owner                               | Description                                                                |
+| ----------------------------------- | -------------------------------------------------------------------------- |
+| [term.input](/api/term-input)       | Single stdin mediator — `probe()` for terminal queries, `onData()` subscribers |
+| [term.output](/api/term-output)     | stdout / stderr / `console.*` sink during alt-screen rendering             |
+| [term.modes](/api/term-modes)       | Raw mode, alt screen, bracketed paste, Kitty keyboard, mouse, focus        |
+| [term.size](/api/term-size)         | Reactive cols/rows with 16 ms resize coalescing (alien-signals)            |
+| [term.console](/api/term-console)   | `console.*` capture + replay, complementary to `term.output`'s sink        |
+
 ## Quick Import
 
 All exports come from one package:
