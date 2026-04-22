@@ -145,5 +145,4 @@ await render(<App />).run()
 
 - [Components](/guides/components) -- Learn about Box, Text, and other components
 - [Terminal Apps](/guides/terminal-apps) -- Build a full terminal application step by step
-- [Migrate from Ink](/getting-started/migrate-from-ink) -- Switching from an existing Ink app
 - [API Reference](/api/box) -- Complete API documentation

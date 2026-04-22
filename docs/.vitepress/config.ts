@@ -154,8 +154,6 @@ export default withMermaid(
           text: "Getting Started",
           items: [
             { text: "Quick Start", link: "/getting-started/quick-start" },
-            { text: "Migrate from Ink", link: "/getting-started/migrate-from-ink" },
-            { text: "Migrate from Chalk", link: "/getting-started/migrate-from-chalk" },
           ],
         },
         { text: "The Silvery Way", link: "/guide/the-silvery-way" },
@@ -221,8 +219,6 @@ export default withMermaid(
           text: "Getting Started",
           items: [
             { text: "Quick Start", link: "/getting-started/quick-start" },
-            { text: "Migrate from Ink", link: "/getting-started/migrate-from-ink" },
-            { text: "Migrate from Chalk", link: "/getting-started/migrate-from-chalk" },
           ],
         },
         {
@@ -364,7 +360,6 @@ export default withMermaid(
             { text: "Providers and Plugins", link: "/guide/providers" },
             { text: "Headless Machines", link: "/guide/headless-machines" },
             { text: "Runtime Getting Started", link: "/guide/runtime-getting-started" },
-            { text: "Runtime Migration", link: "/guide/runtime-migration" },
             { text: "Imports", link: "/guide/imports" },
             { text: "React 19", link: "/guide/react-19" },
             { text: "Troubleshooting", link: "/guide/troubleshooting" },
@@ -395,7 +390,6 @@ export default withMermaid(
         //     { text: "Why Claude Code Flickers", link: "/blog/claude-code-rendering-dilemma" },
         //     { text: "Build a CLI Dashboard in 50 Lines", link: "/blog/build-cli-dashboard" },
         //     { text: "Silvery vs Ink: Benchmarks", link: "/blog/silvery-vs-ink-benchmarks" },
-        //     { text: "Migrating from Ink", link: "/blog/migrating-from-ink" },
         //     { text: "Layout-First Rendering", link: "/blog/layout-first-rendering" },
         //     { text: "Building an AI Agent TUI", link: "/blog/building-ai-agent-tui" },
         //   ],

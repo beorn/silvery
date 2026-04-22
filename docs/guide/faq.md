@@ -7,7 +7,7 @@ faq:
   - q: "How does Silvery compare to Ink?"
     a: "Both use React for terminal UIs. Silvery's key differences are layout-first rendering (components know their size during render via useBoxRect()), comparable performance with different strengths (Silvery faster on cursor/selection, Ink faster on content updates), bundle-parity with Ink+Yoga (114.9 KB vs 116.6 KB gzipped), a larger component library (45+ vs Ink's 6 core + @inkjs/ui's 13), and comprehensive terminal protocol support (Kitty keyboard, SGR mouse, graphics, synchronized output). Ink has a larger ecosystem and is the established standard."
   - q: "Is Silvery compatible with existing Ink code?"
-    a: "Yes. Silvery provides a compatibility layer via silvery/ink and silvery/chalk that passes ~99% of Ink 7.0's test suite (918/931 tests). Most Ink code works with import path changes. See the migration guide for details."
+    a: "Yes. Silvery provides a compatibility layer via silvery/ink and silvery/chalk that passes ~99% of Ink 7.0's test suite (918/931 tests). Most Ink code works with import path changes."
   - q: "How fast is Silvery compared to Ink?"
     a: "Silvery is 3–27× faster depending on the scenario (up to 20× on memo'd interactive updates). Both are fast enough for 60fps at typical terminal sizes. The cell-level output phase also emits 10-20x less output than Ink's line-level diff on incremental updates. See the detailed benchmarks on the Silvery vs Ink page."
   - q: "What components does Silvery include?"
@@ -30,8 +30,6 @@ faq:
     a: "Silvery uses Flexily, a Yoga-compatible flexbox layout engine written in pure TypeScript. Layout runs before rendering, so components can access their dimensions via useBoxRect(). This enables responsive layouts, native scrollable containers, and automatic text truncation without post-render measurement."
   - q: "Can I use Silvery for fullscreen terminal apps?"
     a: "Yes. Silvery supports both fullscreen mode (alternate screen buffer, absolute positioning, incremental diff) and inline mode (normal scrollback, relative positioning). Fullscreen is the default. Both modes use incremental rendering for efficient updates."
-  - q: "How do I migrate from Ink to Silvery?"
-    a: "Most Ink code works with minimal changes. Replace ink imports with silvery/ink, chalk with silvery/chalk, and you're running. For new code, use Silvery's native APIs (useBoxRect, SelectList, VirtualList) to take advantage of responsive layout and the full component library. See the migration guide for step-by-step instructions."
 ---
 
 # FAQ
@@ -73,7 +71,7 @@ import { Box, Text } from "silvery/ink"
 import chalk from "silvery/chalk"
 ```
 
-For new code, use Silvery's native APIs to take advantage of responsive layout and the full component library. See the [migration guide](/getting-started/migrate-from-ink) for step-by-step instructions.
+For new code, use Silvery's native APIs to take advantage of responsive layout and the full component library.
 
 ## How fast is Silvery compared to Ink?
 
@@ -210,15 +208,3 @@ Yes. Silvery supports two modes:
 - **Inline** -- normal scrollback, relative positioning. Best for CLIs that output results and exit, or tools that mix interactive and scrolling output.
 
 Both modes use incremental rendering for efficient updates. The mode is set at startup and affects only the output phase, not components or state management.
-
-## How do I migrate from Ink to Silvery?
-
-Three steps:
-
-1. **Swap imports** -- replace `ink` with `silvery/ink` and `chalk` with `silvery/chalk`
-2. **Run your tests** — ~99% of Ink 7.0's test suite (918/931) passes with the compatibility layer
-3. **Adopt native APIs gradually** -- use `useBoxRect()` for responsive layouts, replace manual key handlers with `SelectList`, add themes with semantic tokens
-
-The compatibility layer is a bridge, not a destination. New code should use Silvery's native APIs to get the full benefit of layout-first rendering and the component library.
-
-See the [migration guide](/getting-started/migrate-from-ink) for detailed instructions and common patterns.

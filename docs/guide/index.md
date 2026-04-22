@@ -19,7 +19,6 @@ In-depth guides for building terminal applications with Silvery -- from first pr
 
 - [Runtime Getting Started](/guide/runtime-getting-started) -- Five lines to a working app
 - [Runtime Layers](/guide/runtime-layers) -- Renderer architecture and the Term abstraction
-- [Runtime Migration](/guide/runtime-migration) -- Migrating to `silvery/runtime`
 - [Imports](/guide/imports) -- Import conventions and package structure
 
 ## Comparisons

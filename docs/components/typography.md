@@ -144,18 +144,3 @@ The `color` prop overrides the default semantic color, useful for panel differen
 <H1 color="$warning">Warning Panel</H1>
 ```
 
-## Migration Guide
-
-Replace manual typography patterns with presets:
-
-| Before                                           | After                              |
-| ------------------------------------------------ | ---------------------------------- |
-| `<Text bold color="$primary">Title</Text>`       | `<H1>Title</H1>`                   |
-| `<Text bold color="$accent">Section</Text>`      | `<H2>Section</H2>`                 |
-| `<Text bold>Heading</Text>`                      | `<H3>Heading</H3>`                 |
-| `<Text color="$muted">Info</Text>`               | `<Muted>Info</Muted>`              |
-| `<Text dimColor>Fine print</Text>`               | `<Small>Fine print</Small>`        |
-| `<Text dimColor color="$muted">Caption</Text>`   | `<Small>Caption</Small>`           |
-| `<Text bold color={c}>Label</Text>`              | `<Strong color={c}>Label</Strong>` |
-| `<Text italic>Note</Text>`                       | `<Em>Note</Em>`                    |
-| `<Text backgroundColor="$mutedbg"> code </Text>` | `<Code>code</Code>`                |

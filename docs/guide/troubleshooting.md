@@ -51,7 +51,7 @@
 
 ### Flexily vs Yoga layout differences
 
-If you migrated from Ink (which uses Yoga), some layout behaviors differ with Flexily:
+Some layout behaviors differ between Flexily and Yoga (the engine Ink uses), so if you're mixing the two or copying examples, watch for:
 
 - **Percentage widths**: Flexily resolves `width="50%"` against the parent's content area. Yoga resolves against the parent's total width including padding. If your layout is off by a few cells, check padding on the parent.
 - **Default `flexShrink`**: Both default to 1, but Flexily may clamp earlier on zero-width children. If a child collapses unexpectedly, set `flexShrink={0}` explicitly.

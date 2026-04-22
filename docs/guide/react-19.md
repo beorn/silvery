@@ -180,14 +180,6 @@ The testing environment automatically:
 - Wraps updates in `act()` for proper state flushing
 - Supports keyboard input via `app.press()`
 
-## Migration from React 18
-
-If upgrading from React 18, no changes to your Silvery code are required. The transition is seamless:
-
-1. Update React to version 19
-2. Silvery automatically uses the appropriate reconciler APIs
-3. All existing code continues to work
-
 ## Known Limitations
 
 ### Terminal-Specific Constraints

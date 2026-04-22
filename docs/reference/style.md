@@ -324,25 +324,3 @@ function statusLine(branch: string, files: number, errors: number) {
 }
 ```
 
-### Migrating from Chalk
-
-`@silvery/ansi` is a drop-in replacement for most chalk usage:
-
-```typescript
-// Before (chalk)
-import chalk from "chalk"
-chalk.bold.red("Error!")
-chalk.hex("#818cf8")("Indigo")
-chalk.rgb(255, 99, 71)("Tomato")
-
-// After (@silvery/ansi)
-import { createStyle } from "@silvery/ansi"
-const s = createStyle()
-s.bold.red("Error!")
-s.hex("#818cf8")("Indigo")
-s.rgb(255, 99, 71)("Tomato")
-```
-
-The main difference: `createStyle()` returns a new instance each time (no global state), and theme tokens are available as chainable properties. Or use the global `style` singleton for zero-config usage.
-
-See the [Migrate from Chalk](/getting-started/migrate-from-chalk) guide for a detailed migration walkthrough.

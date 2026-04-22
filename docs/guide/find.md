@@ -18,9 +18,7 @@ const app = pipe(
 
 Press `Ctrl+F` to open the find bar, type a query, use `n`/`N` to navigate matches, `Enter` to select the current match, and `Esc` to close.
 
-::: info Migration
-The older `useFind` hook still exists for backwards compatibility, but find now works automatically via `withFocus()`. No explicit hook setup is needed for basic find functionality.
-:::
+Find works automatically via `withFocus()` — no explicit hook setup is needed for basic find functionality. The `useFind` hook is still available for custom find UIs (see below).
 
 ## Buffer-Level Find
 

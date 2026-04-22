@@ -315,34 +315,6 @@ Blessed has several community forks that apply maintenance patches:
 
 These forks keep Blessed usable on modern Node.js versions, but none have changed the fundamental architecture. They are maintenance patches, not evolution.
 
-## Migration Considerations
-
-If you're maintaining a Blessed app and considering a move, here's what to expect:
-
-### What changes
-
-- **Imperative to declarative** -- `blessed.box({...})` becomes `<Box {...}>`. Widget mutation becomes React state + hooks.
-- **Manual positioning to flexbox** -- `top: 5, left: '30%'` becomes `<Box flexDirection="row">`. Most layouts get simpler.
-- **CommonJS to ESM** -- `require('blessed')` becomes `import { Box, Text } from 'silvery'`.
-- **Event handlers** -- `widget.on('click', fn)` becomes `<Box onClick={fn}>`. `screen.key(...)` becomes `useInput(...)` or the command system.
-
-### What stays similar
-
-- **Component tree** -- Blessed's Screen/Box hierarchy maps to React's component tree
-- **Box model** -- padding, margin, border concepts are the same
-- **Terminal abstraction** -- both abstract over raw terminal I/O
-
-### What you gain
-
-- CSS flexbox layout, eliminating manual coordinate math
-- React's component model (hooks, context, composition, third-party libraries)
-- Incremental rendering (10–20× less output per update)
-- Modern terminal protocols (Kitty keyboard, SGR mouse, images, clipboard)
-- Full Unicode/emoji support
-- Built-in testing with Termless (10+ terminal backends)
-- 38 theme palettes with semantic tokens
-- Active maintenance and development
-
 ## When to Choose What
 
 Both tools serve different needs. The right choice depends on your situation.

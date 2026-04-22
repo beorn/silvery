@@ -18,7 +18,7 @@ The biggest differences at a glance:
 - **Multi-target** — terminal, Canvas 2D, DOM (experimental). Textual has a mature web target via Textual Web (serve TUI in browser).
 - **Fast incremental rendering** — cell-level dirty tracking with per-node dirty flags. Performance is comparable to Ink 7.0 — see [benchmarks](/guide/silvery-vs-ink#performance-size) for details. No direct Textual benchmarks; in practice, all three frameworks are fast enough for most TUI apps.
 - **Termless testing** — [Termless](https://termless.dev) runs tests across 10+ real terminal parsers (xterm.js, vt100, Ghostty, Kitty, Alacritty, ...). Verify resolved RGB colors per cell, not just widget state.
-- **Ink compatibility layer** — 99% of Ink's tests pass on silvery's compat layer. If you're in the JS ecosystem and have Ink code, it migrates easily.
+- **Ink compatibility layer** — 99% of Ink's tests pass on silvery's compat layer. If you're in the JS ecosystem and have Ink code, it runs with minimal changes.
 - **Blurred inline/fullscreen boundary** — inline mode gets cell-level incremental rendering and dynamic scrollback graduation; fullscreen mode gets app-managed scrollback history.
 
 **Where Textual is stronger:**

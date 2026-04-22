@@ -402,7 +402,7 @@ const {
 
 | Need                                  | Use                                                       |
 | ------------------------------------- | --------------------------------------------------------- |
-| Simple focus tracking (Ink migration) | `useFocus({ id })`                                        |
+| Simple focus tracking (Ink-compat API) | `useFocus({ id })`                                       |
 | Focus origin ("keyboard" vs "mouse")  | `useFocusable()`                                          |
 | Parent knows if descendants focused   | `useFocusWithin()`                                        |
 | Control focus from anywhere           | `useFocusManager()`                                       |

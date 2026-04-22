@@ -313,16 +313,6 @@ expect(handle.store.getState().count).toBe(1)
 handle.unmount()
 ```
 
-## Migration from Ink
-
-`silvery/runtime` is compatible with existing Silvery components. Key differences:
-
-| Ink                    | `silvery/runtime`                           |
-| ---------------------- | ------------------------------------------- |
-| `useInput(input, key)` | `useInput(input, key)` (same signature!)    |
-| `useApp().exit()`      | `return 'exit'` from handler or `useExit()` |
-| Props for callbacks    | Store actions (createApp)                   |
-
 ## What's Next
 
 When your app outgrows `useState` and `useInput`, the progression guide shows how to grow without rewriting:

@@ -62,17 +62,6 @@ interface ItemMeta {
 }
 ```
 
-## Migration to ListView
-
-| VirtualList         | ListView              |
-| ------------------- | --------------------- |
-| `interactive`       | `navigable`           |
-| `selectedIndex`     | `cursorIndex`         |
-| `onSelectionChange` | `onCursorIndexChange` |
-| `keyExtractor`      | `getKey`              |
-| `itemHeight`        | `estimateHeight`      |
-| `meta.isSelected`   | `meta.isCursor`       |
-
 ## Examples
 
 ### Interactive List

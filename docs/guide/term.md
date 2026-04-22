@@ -123,23 +123,6 @@ if (term.console) {
 }
 ```
 
-## Migration — old API → new API
-
-If you're moving an app off the old helpers, the mapping is mechanical:
-
-| Old                                                    | New                                                       |
-| ------------------------------------------------------ | --------------------------------------------------------- |
-| `process.stdin.setRawMode(true)`                       | `term.modes.rawMode(true)`                                |
-| `process.stdin.on("data", …)`                          | `term.input.onData(…)` (or use `term.input.probe` for queries) |
-| `process.stdout.write(seq)` (for protocol ANSI)        | `term.modes.altScreen(true)` / equivalent mode signal     |
-| `process.stdout.columns`, `process.stdout.rows`        | `term.size.cols`, `term.size.rows`                        |
-| `stdout.on("resize", …)`                               | `term.size.subscribe(…)`                                  |
-| `enableMouse()` / `enableKittyKeyboard()` / etc.       | `term.modes.mouse(true)` / `term.modes.kittyKeyboard(flags)` |
-| `createOutputGuard(…)` / `OutputGuard`                 | `term.output` / `createOutput()` (type is now `Output`)   |
-| `patchConsole(…)`                                      | `term.console.capture({ suppress: true })`                |
-| `probeColors(stdin, stdout, …)` (direct stdin access)  | `probeColors(stdin, stdout, { inputOwner: term.input })`  |
-| `process.on("SIGINT", …)` ad hoc                       | `term.signals.on("SIGINT", …, { priority })`              |
-
 ## Ownership axiom
 
 Silvery owns terminal I/O. Components and helpers never touch `process.*` or emit ANSI directly. They go through the Term's sub-owners. When a feature needs something the sub-owners don't cover, grow the sub-owner — don't punch through it.

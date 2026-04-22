@@ -28,9 +28,7 @@ function SelectionStatus() {
 }
 ```
 
-::: info Migration
-The older `useTerminalSelection` hook and `TerminalSelectionProvider` component still exist for backwards compatibility, but `useSelection()` is the recommended API. It reads from the `CapabilityRegistry` — no provider wrapper needed.
-:::
+`useSelection()` is the recommended API — it reads from the `CapabilityRegistry`, so no provider wrapper is needed. The older `useTerminalSelection` hook and `TerminalSelectionProvider` component remain as fallback options.
 
 ## The `userSelect` Prop
 

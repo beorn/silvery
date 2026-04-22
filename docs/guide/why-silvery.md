@@ -113,4 +113,4 @@ If you know React, you know Silvery -- the core API (`Box`, `Text`, `useInput`, 
 
 ## Get Started
 
-Ready to try Silvery? The [quick start guide](/getting-started/quick-start) gets you from zero to a running terminal app in under 5 minutes. If you're migrating from Ink, see the [migration guide](/getting-started/migrate-from-ink) -- most Ink code works with minimal changes.
+Ready to try Silvery? The [quick start guide](/getting-started/quick-start) gets you from zero to a running terminal app in under 5 minutes.
