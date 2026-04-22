@@ -5,14 +5,14 @@
  * `@silvery/ansi` and are re-exported here for backwards compatibility.
  *
  * ```ts
- * import { createTerm, patchConsole } from '@silvery/ag-term'
+ * import { createTerm } from '@silvery/ag-term'
  *
  * using term = createTerm()
  * term.red('error')
  * term.bold.green('success')
  *
- * using patched = patchConsole(console)
- * patched.subscribe(() => console.log('new entry'))
+ * term.console?.capture({ suppress: true })
+ * term.console?.subscribe(() => {})
  * ```
  *
  * @module
@@ -57,10 +57,13 @@ export const term: Term = new Proxy({} as Term, {
   },
 })
 
-export { patchConsole } from "./patch-console"
-export type { PatchedConsole, PatchConsoleOptions, ConsoleStats } from "./patch-console"
-
 export type { Output, OutputOptions } from "../runtime/devices/output"
+export type {
+  Console,
+  ConsoleCaptureOptions,
+  ConsoleStats,
+} from "../runtime/devices/console"
+export { createConsole } from "../runtime/devices/console"
 
 // =============================================================================
 // Types

@@ -611,12 +611,16 @@ export { generateTheme } from "@silvery/ansi"
 // =============================================================================
 
 // Term primitives (so consumers don't need to import from term directly)
-export { createTerm, term, patchConsole } from "@silvery/ag-term/ansi"
+export { createTerm, term, createConsole } from "@silvery/ag-term/ansi"
 export type {
   Term,
   StyleChain,
-  PatchedConsole,
-  PatchConsoleOptions,
+  // `Console` the device type is re-exported here as `PatchedConsole` to
+  // avoid clashing with the React `<Console>` component that this barrel
+  // also exports as a value. In ag-term both live on separate subpaths
+  // ('@silvery/ag-term/ansi' → type, '@silvery/ag-react' → component).
+  Console as PatchedConsole,
+  ConsoleCaptureOptions,
   ConsoleStats,
   ColorLevel,
   ConsoleEntry,

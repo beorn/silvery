@@ -120,7 +120,7 @@ function measureInk(cols: number, rows: number, items: number) {
         ),
       ),
     ),
-    { stdout: stdout.stream, debug: true, patchConsole: false, incrementalRendering: true },
+    { stdout: stdout.stream, debug: true, incrementalRendering: true },
   )
   const initialBytes = stdout.bytes
   stdout.reset()

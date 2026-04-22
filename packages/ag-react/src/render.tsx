@@ -104,8 +104,6 @@ export interface RenderOptions {
   exitOnCtrlC?: boolean
   /** Enable debug mode with verbose logging (default: false) */
   debug?: boolean
-  /** Patch console methods to work with Silvery output (default: true) */
-  patchConsole?: boolean
   /** Use alternate screen buffer (default: true for fullscreen mode, false for inline) */
   alternateScreen?: boolean
   /**
@@ -500,7 +498,7 @@ class SilveryInstance {
   private signalCleanup: (() => void) | null = null
   private output: Output | null = null
 
-  constructor(options: Required<Omit<RenderOptions, "patchConsole" | "layoutEngine">>) {
+  constructor(options: Required<Omit<RenderOptions, "layoutEngine">>) {
     log.debug?.("SilveryInstance constructor start")
     const startTime = Date.now()
 
@@ -1005,7 +1003,6 @@ async function renderImpl(
     stdin: options.stdin ?? process.stdin,
     exitOnCtrlC: options.exitOnCtrlC ?? true,
     debug: options.debug ?? false,
-    patchConsole: options.patchConsole ?? true,
     alternateScreen: options.alternateScreen ?? mode === "fullscreen",
     mode,
     nonTTYMode: options.nonTTYMode ?? ("auto" as NonTTYMode),
@@ -1192,7 +1189,6 @@ export function renderSync(
     stdin: mergedOptions.stdin ?? process.stdin,
     exitOnCtrlC: mergedOptions.exitOnCtrlC ?? true,
     debug: mergedOptions.debug ?? false,
-    patchConsole: mergedOptions.patchConsole ?? true,
     alternateScreen: mergedOptions.alternateScreen ?? mode === "fullscreen",
     mode,
     nonTTYMode: mergedOptions.nonTTYMode ?? ("auto" as NonTTYMode),

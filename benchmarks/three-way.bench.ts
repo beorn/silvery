@@ -98,7 +98,6 @@ describe("Three-way — cursor move 100 items (80x24)", () => {
   const inkApp = inkRender(inkList(100, 0), {
     stdout: inkStdout,
     debug: true,
-    patchConsole: false,
     incrementalRendering: true,
     maxFps: 10000,
   })
@@ -142,7 +141,6 @@ describe("Three-way — cursor move 1000 items (80x24)", () => {
   const inkApp = inkRender(inkList(1000, 0), {
     stdout: inkStdout,
     debug: true,
-    patchConsole: false,
     incrementalRendering: true,
     maxFps: 10000,
   })

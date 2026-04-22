@@ -502,12 +502,13 @@ export { IncrementalRenderMismatchError } from "./errors"
 export { createTerm, term } from "./ansi/index"
 export type { Term, StyleChain, TermEmulatorBackend } from "./ansi/index"
 
-// Console patching
-export { patchConsole } from "./ansi/index"
-export type { PatchedConsole, PatchConsoleOptions, ConsoleStats } from "./ansi/index"
-
 // Output owner — accessed via `term.output` (see Term in ansi/term.ts)
 export type { Output, OutputOptions } from "./ansi/index"
+
+// Console owner — accessed via `term.console`. Replaces the standalone
+// console-patching helper (removed in km-silvery.term-sub-owners Phase 7).
+export type { Console, ConsoleCaptureOptions, ConsoleStats } from "./ansi/index"
+export { createConsole } from "./ansi/index"
 
 // Types
 export type {

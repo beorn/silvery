@@ -487,7 +487,6 @@ describe("Mounted rerender — cursor move in 100-item list", () => {
     {
       stdout: inkStdout,
       debug: true,
-      patchConsole: false,
       incrementalRendering: true,
       maxFps: 10000,
     },
@@ -564,7 +563,6 @@ describe("Mounted rerender — cursor move in 20-item list (all visible)", () =>
     {
       stdout: inkStdout,
       debug: true,
-      patchConsole: false,
       incrementalRendering: true,
       maxFps: 10000,
     },
@@ -662,7 +660,6 @@ describe("Mounted memo'd cursor highlight (inverse) — 100 items", () => {
     {
       stdout: inkStdout,
       debug: true,
-      patchConsole: false,
       incrementalRendering: true,
       maxFps: 10000,
     },
@@ -721,7 +718,6 @@ describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
     {
       stdout: inkStdout,
       debug: true,
-      patchConsole: false,
       incrementalRendering: true,
       maxFps: 10000,
     },
@@ -764,7 +760,6 @@ describe("Mounted rerender — move editing marker in kanban 5×20", () => {
   const inkInstance = inkRender(inkKanbanEdit(5, 20, 2, 0), {
     stdout: inkStdout,
     debug: true,
-    patchConsole: false,
     incrementalRendering: true,
   })
 
@@ -845,7 +840,6 @@ describe("useState pattern — memo'd 100-item list, single active toggle", () =
   const inkInstance = inkRender(inkMemoList(100, 0), {
     stdout: inkStdout,
     debug: true,
-    patchConsole: false,
     incrementalRendering: true,
   })
 
@@ -870,7 +864,6 @@ describe("useState pattern — memo'd 500-item list, single active toggle", () =
   const inkInstance = inkRender(inkMemoList(500, 0), {
     stdout: inkStdout,
     debug: true,
-    patchConsole: false,
     incrementalRendering: true,
   })
 
@@ -966,7 +959,6 @@ describe("useState pattern — memo'd kanban 5×20, move editing marker", () => 
   const inkInstance = inkRender(inkMemoKanban(5, 20, 0, 0), {
     stdout: inkStdout,
     debug: true,
-    patchConsole: false,
     incrementalRendering: true,
   })
 

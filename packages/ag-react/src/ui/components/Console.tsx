@@ -1,12 +1,12 @@
-import type { ConsoleEntry, PatchedConsole } from "@silvery/ag-term/ansi"
+import type { Console as TermConsole, ConsoleEntry } from "@silvery/ag-term/ansi"
 import type { ReactElement, ReactNode } from "react"
 import { useConsole } from "../../hooks/useConsole"
 import { Text } from "../../components/Text"
 import { ListView } from "./ListView"
 
 export interface ConsoleProps {
-  /** The patched console to render entries from */
-  console: PatchedConsole
+  /** The Term console owner to render entries from (via `term.console`). */
+  console: TermConsole
 
   /** Optional render function for custom entry rendering */
   children?: (entry: ConsoleEntry, index: number) => ReactNode
@@ -47,7 +47,7 @@ function formatArgs(args: unknown[]): string {
 }
 
 /**
- * Renders captured console output from a PatchedConsole.
+ * Renders captured console output from a Term Console owner.
  *
  * Thin composition over ListView — gets caching, search, and virtualization
  * for free. Follows output by default (scrollTo = last item).
@@ -55,15 +55,16 @@ function formatArgs(args: unknown[]): string {
  * @example Default rendering
  * ```tsx
  * import { Console } from '@silvery/ag-react'
- * import { patchConsole } from '@silvery/chalk'
+ * import { createTerm } from '@silvery/ag-term'
  *
- * using patched = patchConsole(console)
- * <Console console={patched} height={20} />
+ * using term = createTerm()
+ * term.console?.capture({ suppress: true })
+ * <Console console={term.console} height={20} />
  * ```
  *
  * @example Custom rendering
  * ```tsx
- * <Console console={patched} height={20}>
+ * <Console console={term.console} height={20}>
  *   {(entry, i) => (
  *     <Text key={i} color={entry.stream === 'stderr' ? 'yellow' : 'green'}>
  *       [{entry.method}] {entry.args.join(' ')}
@@ -73,14 +74,14 @@ function formatArgs(args: unknown[]): string {
  * ```
  */
 export function Console({
-  console: patched,
+  console: termConsole,
   children,
   height = 20,
   cache = true,
   search = true,
   surfaceId,
 }: ConsoleProps): ReactElement {
-  const entries = useConsole(patched)
+  const entries = useConsole(termConsole)
 
   return (
     <ListView<ConsoleEntry>

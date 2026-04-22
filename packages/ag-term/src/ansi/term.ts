@@ -57,6 +57,8 @@ import {
 export type { Size, SizeSnapshot }
 import { createModes, type Modes } from "../runtime/devices/modes"
 export type { Modes }
+import { createSignals, type Signals } from "../runtime/devices/signals"
+export type { Signals }
 import {
   createConsole,
   type Console as DeviceConsole,
@@ -366,6 +368,29 @@ export interface Term extends Disposable, StyleChain {
   readonly modes: Modes
 
   /**
+   * Signals owner — single coordinator for every process-signal handler
+   * bound to this Term's lifetime.
+   *
+   * `term.signals.on("SIGINT", handler, { priority, before, after, name })`
+   * registers a teardown handler. One shared `process.on(signal, …)` listener
+   * is installed per signal, regardless of how many handlers the owner
+   * manages. On `dispose()` (called from `term[Symbol.dispose]`), every
+   * handler runs in priority / dependency order, each wrapped in try/catch
+   * so one failure doesn't block the rest.
+   *
+   * Replaces ad-hoc `process.on("SIGINT", …)` / `process.once("SIGTERM", …)`
+   * call sites scattered across runtime + apps. The 2026-04-22 shared-global
+   * audit found 78 such sites with no documented cleanup order — late
+   * handlers could crash while earlier handlers' resources leaked. The owner
+   * gives every Term exactly one entry-point to the signal graph.
+   *
+   * Present on every Term variant — even headless / emulator-backed — since
+   * signal handling is cross-cutting and benefits from consistent teardown
+   * semantics in tests as well as production.
+   */
+  readonly signals: Signals
+
+  /**
    * Console owner — single-owner console.* interceptor for the Term's lifetime.
    *
    * Starts inert. Call `term.console.capture({suppress:true})` once the alt
@@ -374,7 +399,7 @@ export interface Term extends Disposable, StyleChain {
    * on exit to re-emit captured entries to the normal streams. React apps
    * read via `subscribe` + `getSnapshot` (see `<Console>` + `useConsole`).
    *
-   * Replaces the standalone `patchConsole()` helper — same implementation,
+   * Replaces the standalone console-patching helper — same implementation,
    * Term-owned lifecycle. Undefined for Terms that don't own a real console
    * (headless dims + emulator-backed), which never render through the global
    * terminal and therefore have nothing to corrupt.
@@ -790,6 +815,12 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // See km-silvery.term-sub-owners Phase 7.
   const consoleOwner = createConsole(globalThis.console)
 
+  // Signals owner — coordinates process-signal handlers for this Term's
+  // lifetime. No process-level listener is installed until the first `on()`
+  // call. Replaces the 78+ scattered `process.on(SIG…, …)` sites found in the
+  // 2026-04-22 shared-global audit. See Phase 6.
+  const signals = createSignals()
+
   const termBase = {
     hasCursor: () => cachedCursor,
     hasInput: () => cachedInput,
@@ -800,6 +831,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
     stdin,
     size,
     modes,
+    signals,
     console: consoleOwner,
     write: (str: string) => {
       stdout.write(str)
@@ -818,6 +850,10 @@ function createNodeTerm(options: CreateTermOptions): Term {
       return output
     },
     [Symbol.dispose]: () => {
+      // Run signal teardown FIRST so handlers can still touch sub-owners
+      // (input/output/modes) while they're alive. After this, we drop each
+      // owner in reverse-construction order.
+      signals.dispose()
       if (_input) _input[Symbol.dispose]()
       if (_output) _output[Symbol.dispose]()
       if (provider) provider[Symbol.dispose]()

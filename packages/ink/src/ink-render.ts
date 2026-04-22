@@ -592,10 +592,9 @@ function renderInteractiveMode(
 ): InkInstance {
   const inkOptions: Record<string, unknown> = {
     ...options,
-    // Ink defaults: no alternate screen, inline mode, no console patching
+    // Ink defaults: no alternate screen, inline mode
     alternateScreen: (options?.alternateScreen as boolean) ?? false,
     mode: "inline" as const,
-    patchConsole: (options?.patchConsole as boolean) ?? false,
     exitOnCtrlC: (options?.exitOnCtrlC as boolean) ?? true,
     debug: (options?.debug as boolean) ?? false,
   }
