@@ -2340,12 +2340,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // data listener, otherwise the CPR response would be consumed as a key event.
     if (needsProbe) {
       try {
-        // Set up temporary raw mode + stdin listener for probe
+        // Set up temporary raw mode + stdin listener for probe.
+        // Race-safe: only flip raw mode if NO other consumer is on stdin.
+        // See vendor/silvery/packages/ansi/src/theme/detect.ts probeColors
+        // for the same fix — re-setting raw=false in finally based on a stale
+        // wasRaw capture kills the host TUI's input.
+        const otherListeners = stdin.listenerCount("data") > 0
         const wasRaw = stdin.isRaw
-        if (stdin.isTTY && !wasRaw) {
+        let didSetRaw = false
+        if (stdin.isTTY && !wasRaw && !otherListeners) {
           stdin.setRawMode(true)
           stdin.resume()
           stdin.setEncoding("utf8")
+          didSetRaw = true
         }
 
         const probeRead = (): Promise<string> =>
@@ -2388,8 +2395,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           }
         }
 
-        // Restore raw mode if we changed it (pumpEvents will set it again)
-        if (stdin.isTTY && !wasRaw) {
+        // Restore raw mode only if WE set it. Same race-safety pattern as
+        // probeColors — never undo someone else's setRawMode(true).
+        if (stdin.isTTY && didSetRaw) {
           stdin.setRawMode(false)
           stdin.pause()
         }
@@ -2403,11 +2411,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Must happen before pumpEvents() for the same reason as text-sizing probe.
     if (needsWidthDetection) {
       try {
+        // Race-safe — see text-sizing probe above for the same pattern.
+        const otherListeners = stdin.listenerCount("data") > 0
         const wasRaw = stdin.isRaw
-        if (stdin.isTTY && !wasRaw) {
+        let didSetRaw = false
+        if (stdin.isTTY && !wasRaw && !otherListeners) {
           stdin.setRawMode(true)
           stdin.resume()
           stdin.setEncoding("utf8")
+          didSetRaw = true
         }
 
         const stdinHandlers: Array<(data: string) => void> = []
@@ -2457,7 +2469,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           }
         }
 
-        if (stdin.isTTY && !wasRaw) {
+        if (stdin.isTTY && didSetRaw) {
           stdin.setRawMode(false)
           stdin.pause()
         }
