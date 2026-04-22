@@ -21,20 +21,11 @@
  * size.rows()          // current height
  * size.snapshot()      // { cols, rows }
  * effect(() => { … use size.cols() … })  // subscribe reactively
- * size.subscribe(fn)   // imperative push callback (useSyncExternalStore / event-queue)
  * ```
- *
- * Both `effect(() => size.cols())` and `size.subscribe(fn)` get the same
- * coalesced updates. The imperative `subscribe` is retained for callers
- * that already have a push-callback shape (React's useSyncExternalStore and
- * the term-provider event queue).
  *
  * Ownership: one `Size` per terminal session. Constructed by `createTerm()`
  * (Node terminal) or the emulator path (termless). Readers never touch
  * `stdout.columns` / `stdout.rows` directly.
- *
- * Bead: km-silvery.term-sub-owners (Phase 5) + km-silvery.modes-as-signals
- * follow-up (expose as ReadSignal).
  */
 
 import { signal, type ReadSignal } from "@silvery/signals"

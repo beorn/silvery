@@ -512,9 +512,9 @@ term.modes.altScreen(true)
 term.modes.rawMode(true)
 term.modes.bracketedPaste(true)
 
-// Dimensions — live reads, coalesced subscriptions
-const { cols, rows } = term.size.snapshot
-term.size.subscribe(({ cols, rows }) => relayout(cols, rows))
+// Dimensions — live reads, coalesced reactive subscriptions via effect()
+const { cols, rows } = term.size.snapshot()
+effect(() => relayout(term.size.cols(), term.size.rows()))
 
 // Terminal query — probe through the owner, no stdin-wrestling
 const bg = await term.input?.probe({
