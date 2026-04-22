@@ -127,6 +127,7 @@ describe("km-silvery.layout-churn-leaks-pixels (terminal)", () => {
     const lines = text.split("\n")
     for (let y = 1; y < lines.length; y++) {
       const line = lines[y]
+      if (!line) continue
       for (let x = 0; x < line.length; x++) {
         const ch = line[x]
         if (ch === "╯" || ch === "╰") {
