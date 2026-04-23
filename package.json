@@ -42,6 +42,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./runtime": "./src/runtime.ts",
+    "./term": "./src/term.ts",
     "./theme": "./src/theme.ts",
     "./ui": "./src/ui.ts",
     "./ui/*": "./src/ui/*.ts",
@@ -58,6 +59,10 @@
       "./runtime": {
         "types": "./dist/runtime.d.mts",
         "import": "./dist/runtime.mjs"
+      },
+      "./term": {
+        "types": "./dist/term.d.mts",
+        "import": "./dist/term.mjs"
       },
       "./theme": {
         "types": "./dist/theme.d.mts",
@@ -148,6 +153,7 @@
     "entry": [
       "src/index.ts",
       "src/runtime.ts",
+      "src/term.ts",
       "src/theme.ts",
       "src/ui.ts",
       "src/ui/*.ts"
