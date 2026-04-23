@@ -10,8 +10,17 @@ import type { TerminalCaps } from "../detection.ts"
  * {@link Style} actually read. Declared here so test fixtures can synthesize
  * underline-specific caps without constructing a full profile. Prefer passing
  * `term.caps` / `createTerminalProfile().caps` in production code.
+ *
+ * Post km-silvery.caps-restructure (Phase 7, 2026-04-23): TerminalCaps.
+ * underlineStyles became `readonly UnderlineStyle[]` (was `boolean`). The
+ * Style implementation only needs a boolean gate ("does any extended style
+ * work?") so this shape stays boolean — callers project from the array at
+ * construction: `{ underlineStyles: caps.underlineStyles.length > 0 }`.
  */
-export type UnderlineCaps = Pick<TerminalCaps, "underlineStyles" | "underlineColor">
+export interface UnderlineCaps {
+  readonly underlineStyles: boolean
+  readonly underlineColor: boolean
+}
 
 /** Options for createStyle(). */
 export interface StyleOptions {

@@ -17,7 +17,7 @@
  * - 'plain': Strip all ANSI codes
  */
 
-import { createTerminalProfile, type TerminalCaps } from "@silvery/ansi"
+import { createTerminalProfile } from "@silvery/ansi"
 import { stripAnsi } from "./unicode"
 
 // ============================================================================
@@ -62,7 +62,7 @@ export type ResolvedNonTTYMode = Exclude<NonTTYMode, "auto">
  * - TERM=dumb
  * - CI environment variables are set
  *
- * Pass `caps` (from `term.caps` or a {@link TerminalCaps} fixture) when
+ * Pass `identity` (from `term.identity` or a TerminalIdentity fixture) when
  * available to avoid a redundant env read. Without caps, the TERM=dumb
  * check delegates to {@link createTerminalProfile} — the canonical single-
  * source-of-truth entry in `@silvery/ansi/profile`. CI env vars remain
@@ -71,16 +71,18 @@ export type ResolvedNonTTYMode = Exclude<NonTTYMode, "auto">
  */
 export function isTTY(
   stdout: NodeJS.WriteStream = process.stdout,
-  caps?: Pick<TerminalCaps, "term">,
+  /** Structural identity — post km-silvery.caps-restructure (Phase 7) TERM
+   * lives on TerminalIdentity as `termName` (renamed to avoid Term type shadow). */
+  identity?: { termName: string },
 ): boolean {
   // Check stdout.isTTY
   if (!stdout.isTTY) {
     return false
   }
 
-  // Check TERM=dumb via caps (preferred) or the canonical profile factory.
-  const term = caps?.term ?? createTerminalProfile().caps.term
-  if (term === "dumb") {
+  // Check TERM=dumb via identity (preferred) or the canonical profile factory.
+  const termName = identity?.termName ?? createTerminalProfile().identity.termName
+  if (termName === "dumb") {
     return false
   }
 

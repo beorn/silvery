@@ -674,6 +674,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // `capsOption?.textSizing` / `capsOption?.kittyKeyboard` sees the
   // same shape whether caps came from `caps` or `profile.caps`.
   const capsOption = profileOption?.caps ?? capsOptionRaw
+  // Post km-silvery.caps-restructure (Phase 7, 2026-04-23): program / version
+  // moved from caps onto TerminalIdentity. createApp's probe-cache fingerprint
+  // still needs them, so we source the identity off the profile when present.
+  const identityOption = profileOption?.identity
 
   // Derive kitty mode for press(): use explicit kittyMode if set, otherwise
   // auto-enable when kitty protocol is active (so press() encodes modifier keys correctly)
@@ -1008,7 +1012,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     textSizingOption === "probe" || (textSizingOption === "auto" && heuristicSupported)
   // Probe-cache fingerprint: program@version, derived from caps. Computed
   // once so the initial cache check and the async-probe path share one key.
-  const probeFingerprint = getTerminalFingerprint(capsOption ?? { program: "", version: "" })
+  const probeFingerprint = getTerminalFingerprint(identityOption ?? { program: "", version: "" })
   // If we have a cached probe result, use it immediately instead of probing again
   const cachedProbe = shouldProbe ? getCachedProbeResult(probeFingerprint) : undefined
   let textSizingEnabled: boolean
@@ -1041,10 +1045,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let effectiveCaps = capsOption
     ? { ...capsOption, textSizing: textSizingEnabled }
     : undefined
+  // Post km-silvery.caps-restructure (Phase 7): textEmojiWide lives on
+  // TerminalHeuristics. Width detection + createPipeline need heuristics
+  // alongside caps so they can react to DEC emoji-width mode changes.
+  let effectiveHeuristics = profileOption?.heuristics
 
-  // Create pipeline config from caps (scoped width measurer + output phase)
+  // Create pipeline config from caps + heuristics (scoped width measurer + output phase)
   // Use `let` because the pipeline may be recreated after a probe changes textSizing
-  let pipelineConfig = effectiveCaps ? createPipeline({ caps: effectiveCaps }) : undefined
+  let pipelineConfig = effectiveCaps
+    ? createPipeline({ caps: effectiveCaps, heuristics: effectiveHeuristics })
+    : undefined
 
   // Create runtime (pass scoped output phase to ensure measurer/caps are threaded)
   // mode must match alternateScreen: inline apps (alternateScreen=false) need
@@ -2724,15 +2734,26 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         detector.dispose()
         stdin.off("data", stdinListener)
 
-        // Apply detected width config to caps and recreate pipeline if changed
+        // Apply detected width config to caps + heuristics and recreate
+        // pipeline if changed. Post Phase 7 textEmojiWide moved to
+        // heuristics; applyWidthConfig splits the update across both layers.
         if (effectiveCaps) {
-          const updatedCaps = applyWidthConfig(effectiveCaps, widthConfig)
+          const heuristicsBefore = effectiveHeuristics ?? { textEmojiWide: true }
+          const { caps: updatedCaps, heuristics: updatedHeuristics } = applyWidthConfig(
+            effectiveCaps,
+            heuristicsBefore,
+            widthConfig,
+          )
           const capsChanged =
-            updatedCaps.textEmojiWide !== effectiveCaps.textEmojiWide ||
+            updatedHeuristics.textEmojiWide !== heuristicsBefore.textEmojiWide ||
             updatedCaps.textSizing !== effectiveCaps.textSizing
           if (capsChanged) {
             effectiveCaps = updatedCaps
-            pipelineConfig = createPipeline({ caps: effectiveCaps })
+            effectiveHeuristics = updatedHeuristics as typeof effectiveHeuristics
+            pipelineConfig = createPipeline({
+              caps: effectiveCaps,
+              heuristics: effectiveHeuristics,
+            })
             runtime.setOutputPhaseFn(pipelineConfig.outputPhaseFn)
             // Recreate Ag with updated measurer (caps changed text sizing/emoji width)
             renderer.resetAg()

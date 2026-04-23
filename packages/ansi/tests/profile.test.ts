@@ -5,7 +5,7 @@
  * Covers:
  * - Env precedence (NO_COLOR, FORCE_COLOR)
  * - Explicit `colorOverride`
- * - `caps` base + `caps.colorTier` fallback
+ * - `caps` base + `profile.caps.colorTier` fallback
  * - Merge order (env > override > caps > auto)
  * - Edge cases: `null` colorOverride, TTY/non-TTY, COLORTERM, TERM_PROGRAM
  */
@@ -16,6 +16,7 @@ import {
   probeTerminalProfile,
   detectColorFromEnv,
   detectTerminalCapsFromEnv,
+  detectTerminalProfileFromEnv,
 } from "../src/profile"
 import { defaultCaps } from "../src/detection"
 
@@ -148,7 +149,6 @@ describe("createTerminalProfile — caps base", () => {
   test("full caps passed through unchanged (no env/override)", () => {
     const caps = {
       ...defaultCaps(),
-      program: "Ghostty",
       kittyKeyboard: true,
       colorTier: "truecolor" as const,
     }
@@ -156,13 +156,14 @@ describe("createTerminalProfile — caps base", () => {
       env: {},
       stdout: nonTty,
       caps,
+      identity: { program: "Ghostty" },
     })
-    expect(profile.caps.program).toBe("Ghostty")
+    expect(profile.identity.program).toBe("Ghostty")
     expect(profile.caps.kittyKeyboard).toBe(true)
     expect(profile.caps.colorTier).toBe("truecolor")
   })
 
-  test("caps.colorTier acts as fallback when override+env are absent", () => {
+  test("profile.caps.colorTier acts as fallback when override+env are absent", () => {
     const profile = createTerminalProfile({
       env: {},
       stdout: nonTty,
@@ -188,7 +189,7 @@ describe("createTerminalProfile — caps base", () => {
       env: { TERM: "xterm-kitty", TERM_PROGRAM: "kitty" },
       stdout: tty,
     })
-    expect(profile.caps.program).toBe("kitty")
+    expect(profile.identity.program).toBe("kitty")
     expect(profile.caps.kittyKeyboard).toBe(true)
     expect(profile.caps.colorTier).toBe("truecolor") // via TERM pattern
   })
@@ -366,18 +367,18 @@ describe("createTerminalProfile — caps shape", () => {
   test("profile.caps always has every required field", () => {
     const profile = createTerminalProfile({ env: {}, stdout: nonTty })
     // Spot-check the fields the pipeline depends on.
-    expect(typeof profile.caps.program).toBe("string")
-    expect(typeof profile.caps.term).toBe("string")
+    expect(typeof profile.identity.program).toBe("string")
+    expect(typeof profile.identity.termName).toBe("string")
     expect(typeof profile.caps.colorTier).toBe("string")
     expect(typeof profile.caps.kittyKeyboard).toBe("boolean")
     expect(typeof profile.caps.unicode).toBe("boolean")
     expect(typeof profile.caps.bracketedPaste).toBe("boolean")
     expect(typeof profile.caps.mouse).toBe("boolean")
-    expect(typeof profile.caps.darkBackground).toBe("boolean")
-    expect(typeof profile.caps.nerdfont).toBe("boolean")
+    expect(typeof profile.heuristics.darkBackground).toBe("boolean")
+    expect(typeof profile.heuristics.nerdfont).toBe("boolean")
   })
 
-  test("colorTier matches caps.colorTier", () => {
+  test("colorTier matches profile.caps.colorTier", () => {
     const profile = createTerminalProfile({
       env: { FORCE_COLOR: "2" },
       stdout: tty,
@@ -385,17 +386,17 @@ describe("createTerminalProfile — caps shape", () => {
     expect(profile.colorTier).toBe(profile.caps.colorTier)
   })
 
-  test("profile.caps.program reflects TERM_PROGRAM", () => {
+  test("profile.identity.program reflects TERM_PROGRAM", () => {
     const profile = createTerminalProfile({
       env: { TERM_PROGRAM: "Ghostty" },
       stdout: tty,
     })
-    expect(profile.caps.program).toBe("Ghostty")
+    expect(profile.identity.program).toBe("Ghostty")
   })
 })
 
 // ============================================================================
-// caps.unicode — env-sensitive (regression: km-silvery.unicode-plateau Phase 1)
+// profile.caps.unicode — env-sensitive (regression: km-silvery.unicode-plateau Phase 1)
 // ============================================================================
 //
 // Before the unicode plateau, `detectTerminalCapsFromEnv` hardcoded
@@ -404,7 +405,7 @@ describe("createTerminalProfile — caps shape", () => {
 // the detection into the profile factory. These tests pin the absorbed
 // semantics so neither regression can reappear.
 
-describe("createTerminalProfile — caps.unicode env-sensitivity", () => {
+describe("createTerminalProfile — profile.caps.unicode env-sensitivity", () => {
   test("empty env + non-TTY: unicode is false (conservative default)", () => {
     const profile = createTerminalProfile({ env: {}, stdout: nonTty })
     expect(profile.caps.unicode).toBe(false)
@@ -495,11 +496,11 @@ describe("createTerminalProfile — caps.unicode env-sensitivity", () => {
 })
 
 // ============================================================================
-// caps.textSizing + caps.version — migrated from the retired
+// profile.caps.textSizing + profile.identity.version — migrated from the retired
 // isTextSizingLikelySupported env probe (unicode-plateau Phase 2, 2026-04-23).
 // ============================================================================
 
-describe("createTerminalProfile — caps.textSizing (Kitty ≥ 0.40)", () => {
+describe("createTerminalProfile — profile.caps.textSizing (Kitty ≥ 0.40)", () => {
   test("Kitty 0.40 on TERM=xterm-kitty: textSizing true", () => {
     const profile = createTerminalProfile({
       env: {
@@ -589,7 +590,7 @@ describe("createTerminalProfile — caps.textSizing (Kitty ≥ 0.40)", () => {
   })
 })
 
-describe("createTerminalProfile — caps.input (absorbed from detectInput)", () => {
+describe("createTerminalProfile — profile.caps.input (absorbed from detectInput)", () => {
   test("TTY stdin with setRawMode: input true", () => {
     const ttyStdin = {
       isTTY: true as const,
@@ -639,7 +640,7 @@ describe("createTerminalProfile — caps.input (absorbed from detectInput)", () 
     expect(profile.caps.input).toBe(false)
   })
 
-  test("caps.input can be forced via options.caps", () => {
+  test("profile.caps.input can be forced via options.caps", () => {
     const profile = createTerminalProfile({
       env: {},
       stdout: nonTty,
@@ -650,7 +651,7 @@ describe("createTerminalProfile — caps.input (absorbed from detectInput)", () 
   })
 })
 
-describe("createTerminalProfile — caps.cursor (absorbed from detectCursor)", () => {
+describe("createTerminalProfile — profile.caps.cursor (absorbed from detectCursor)", () => {
   test("TTY + regular TERM: cursor true", () => {
     const profile = createTerminalProfile({
       env: { TERM: "xterm-256color" },
@@ -678,21 +679,21 @@ describe("createTerminalProfile — caps.cursor (absorbed from detectCursor)", (
   })
 })
 
-describe("createTerminalProfile — caps.version", () => {
-  test("caps.version mirrors TERM_PROGRAM_VERSION", () => {
+describe("createTerminalProfile — profile.identity.version", () => {
+  test("profile.identity.version mirrors TERM_PROGRAM_VERSION", () => {
     const profile = createTerminalProfile({
       env: { TERM_PROGRAM: "kitty", TERM_PROGRAM_VERSION: "0.40.0" },
       stdout: tty,
     })
-    expect(profile.caps.version).toBe("0.40.0")
+    expect(profile.identity.version).toBe("0.40.0")
   })
 
-  test("caps.version is empty string when TERM_PROGRAM_VERSION unset", () => {
+  test("profile.identity.version is empty string when TERM_PROGRAM_VERSION unset", () => {
     const profile = createTerminalProfile({
       env: { TERM_PROGRAM: "kitty" },
       stdout: tty,
     })
-    expect(profile.caps.version).toBe("")
+    expect(profile.identity.version).toBe("")
   })
 })
 
@@ -702,7 +703,7 @@ describe("createTerminalProfile — caps.version", () => {
 // ============================================================================
 
 // ============================================================================
-// profile.colorProvenance + profile.colorForced — color-scoped provenance
+// profile.caps.colorProvenance + profile.caps.colorForced — color-scoped provenance
 // ============================================================================
 //
 // Phase 5 of km-silvery.terminal-profile-plateau (/pro review 2026-04-23).
@@ -721,8 +722,8 @@ describe("createTerminalProfile — color provenance attribution", () => {
       colorOverride: "truecolor",
       caps: { colorTier: "truecolor" },
     })
-    expect(profile.colorProvenance).toBe("env")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("env")
+    expect(profile.caps.colorForced).toBe(true)
   })
 
   test('FORCE_COLOR=3 → colorProvenance = "env", colorForced = true', () => {
@@ -730,8 +731,8 @@ describe("createTerminalProfile — color provenance attribution", () => {
       env: { FORCE_COLOR: "3" },
       stdout: nonTty,
     })
-    expect(profile.colorProvenance).toBe("env")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("env")
+    expect(profile.caps.colorForced).toBe(true)
   })
 
   test('FORCE_COLOR=0 with caller override → colorProvenance = "env" (env still wins)', () => {
@@ -740,8 +741,8 @@ describe("createTerminalProfile — color provenance attribution", () => {
       stdout: tty,
       colorOverride: "truecolor",
     })
-    expect(profile.colorProvenance).toBe("env")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("env")
+    expect(profile.caps.colorForced).toBe(true)
   })
 
   test('colorOverride with no env → colorProvenance = "override", colorForced = true', () => {
@@ -751,8 +752,8 @@ describe("createTerminalProfile — color provenance attribution", () => {
       colorOverride: "truecolor",
       caps: { colorTier: "ansi16" },
     })
-    expect(profile.colorProvenance).toBe("override")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("override")
+    expect(profile.caps.colorForced).toBe(true)
   })
 
   test('null colorOverride (legacy mono alias) → colorProvenance = "override"', () => {
@@ -761,18 +762,18 @@ describe("createTerminalProfile — color provenance attribution", () => {
       stdout: tty,
       colorOverride: null,
     })
-    expect(profile.colorProvenance).toBe("override")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("override")
+    expect(profile.caps.colorForced).toBe(true)
   })
 
-  test('caps.colorTier fallback → colorProvenance = "caller-caps", colorForced = false', () => {
+  test('profile.caps.colorTier fallback → colorProvenance = "caller-caps", colorForced = false', () => {
     const profile = createTerminalProfile({
       env: {},
       stdout: nonTty,
       caps: { colorTier: "256" },
     })
-    expect(profile.colorProvenance).toBe("caller-caps")
-    expect(profile.colorForced).toBe(false)
+    expect(profile.caps.colorProvenance).toBe("caller-caps")
+    expect(profile.caps.colorForced).toBe(false)
   })
 
   test('full caps passed without override → colorProvenance = "caller-caps"', () => {
@@ -787,8 +788,8 @@ describe("createTerminalProfile — color provenance attribution", () => {
       stdout: nonTty,
       caps,
     })
-    expect(profile.colorProvenance).toBe("caller-caps")
-    expect(profile.colorForced).toBe(false)
+    expect(profile.caps.colorProvenance).toBe("caller-caps")
+    expect(profile.caps.colorForced).toBe(false)
   })
 
   test('no env, no override, no caps → colorProvenance = "auto", colorForced = false', () => {
@@ -796,8 +797,8 @@ describe("createTerminalProfile — color provenance attribution", () => {
       env: { TERM: "xterm-ghostty" },
       stdout: tty,
     })
-    expect(profile.colorProvenance).toBe("auto")
-    expect(profile.colorForced).toBe(false)
+    expect(profile.caps.colorProvenance).toBe("auto")
+    expect(profile.caps.colorForced).toBe(false)
     expect(profile.colorTier).toBe("truecolor")
   })
 
@@ -806,8 +807,8 @@ describe("createTerminalProfile — color provenance attribution", () => {
       env: {},
       stdout: nonTty,
     })
-    expect(profile.colorProvenance).toBe("auto")
-    expect(profile.colorForced).toBe(false)
+    expect(profile.caps.colorProvenance).toBe("auto")
+    expect(profile.caps.colorForced).toBe(false)
     expect(profile.colorTier).toBe("mono")
   })
 
@@ -818,8 +819,8 @@ describe("createTerminalProfile — color provenance attribution", () => {
       colorOverride: "truecolor",
       caps: { colorTier: "256" },
     })
-    expect(profile.colorProvenance).toBe("env")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("env")
+    expect(profile.caps.colorForced).toBe(true)
     expect(profile.colorTier).toBe("ansi16") // FORCE_COLOR=1
   })
 
@@ -841,10 +842,10 @@ describe("createTerminalProfile — color provenance attribution", () => {
     })
     const auto = createTerminalProfile({ env: {}, stdout: nonTty })
 
-    expect(envForced.colorForced).toBe(true)
-    expect(overrideForced.colorForced).toBe(true)
-    expect(callerCaps.colorForced).toBe(false)
-    expect(auto.colorForced).toBe(false)
+    expect(envForced.caps.colorForced).toBe(true)
+    expect(overrideForced.caps.colorForced).toBe(true)
+    expect(callerCaps.caps.colorForced).toBe(false)
+    expect(auto.caps.colorForced).toBe(false)
   })
 })
 
@@ -868,31 +869,31 @@ describe("detectColorFromEnv", () => {
 
 describe("detectTerminalCapsFromEnv", () => {
   test("kittyKeyboard is true for xterm-kitty", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM: "xterm-kitty" }, tty)
-    expect(caps.kittyKeyboard).toBe(true)
+    const profile = detectTerminalProfileFromEnv({ TERM: "xterm-kitty" }, tty)
+    expect(profile.caps.kittyKeyboard).toBe(true)
   })
 
   test("kittyKeyboard is false for Apple_Terminal", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM_PROGRAM: "Apple_Terminal" }, tty)
-    expect(caps.kittyKeyboard).toBe(false)
+    const profile = detectTerminalProfileFromEnv({ TERM_PROGRAM: "Apple_Terminal" }, tty)
+    expect(profile.caps.kittyKeyboard).toBe(false)
   })
 
   test("colorTier honors FORCE_COLOR in caps", () => {
-    const caps = detectTerminalCapsFromEnv({ FORCE_COLOR: "2" }, nonTty)
-    expect(caps.colorTier).toBe("256")
+    const profile = detectTerminalProfileFromEnv({ FORCE_COLOR: "2" }, nonTty)
+    expect(profile.caps.colorTier).toBe("256")
   })
 
   test("nerdfont defaults to true for modern terminals (iTerm.app)", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM_PROGRAM: "iTerm.app" }, tty)
-    expect(caps.nerdfont).toBe(true)
+    const profile = detectTerminalProfileFromEnv({ TERM_PROGRAM: "iTerm.app" }, tty)
+    expect(profile.heuristics.nerdfont).toBe(true)
   })
 
   test("NERDFONT=0 disables nerdfont override", () => {
-    const caps = detectTerminalCapsFromEnv(
+    const profile = detectTerminalProfileFromEnv(
       { TERM_PROGRAM: "iTerm.app", NERDFONT: "0" },
       tty,
     )
-    expect(caps.nerdfont).toBe(false)
+    expect(profile.heuristics.nerdfont).toBe(false)
   })
 })
 
@@ -908,95 +909,95 @@ describe("detectTerminalCapsFromEnv", () => {
 
 describe("detectTerminalCapsFromEnv — terminal matrix", () => {
   test("Ghostty (TERM_PROGRAM=Ghostty) populates every modern-terminal cap", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM_PROGRAM: "Ghostty" }, tty)
+    const profile = detectTerminalProfileFromEnv({ TERM_PROGRAM: "Ghostty" }, tty)
     // Regression: km-silvery.ghostty-case-sensitivity — the lowercase compare
     // at profile.ts:295 meant every one of these was false on real Ghostty
     // machines while the test suite (which only checked colorTier) passed.
-    expect(caps.program).toBe("Ghostty")
-    expect(caps.colorTier).toBe("truecolor")
-    expect(caps.kittyKeyboard).toBe(true)
-    expect(caps.kittyGraphics).toBe(true)
-    expect(caps.osc52).toBe(true)
-    expect(caps.hyperlinks).toBe(true)
-    expect(caps.syncOutput).toBe(true)
-    expect(caps.underlineStyles).toBe(true)
-    expect(caps.underlineColor).toBe(true)
-    expect(caps.nerdfont).toBe(true)
+    expect(profile.identity.program).toBe("Ghostty")
+    expect(profile.caps.colorTier).toBe("truecolor")
+    expect(profile.caps.kittyKeyboard).toBe(true)
+    expect(profile.caps.kittyGraphics).toBe(true)
+    expect(profile.caps.osc52).toBe(true)
+    expect(profile.caps.hyperlinks).toBe(true)
+    expect(profile.caps.syncOutput).toBe(true)
+    expect(profile.caps.underlineStyles.length).toBeGreaterThan(0)
+    expect(profile.caps.underlineColor).toBe(true)
+    expect(profile.heuristics.nerdfont).toBe(true)
   })
 
   test("Kitty (TERM=xterm-kitty) populates kitty + modern caps", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM: "xterm-kitty" }, tty)
-    expect(caps.term).toBe("xterm-kitty")
-    expect(caps.colorTier).toBe("truecolor")
-    expect(caps.kittyKeyboard).toBe(true)
-    expect(caps.kittyGraphics).toBe(true)
-    expect(caps.osc52).toBe(true)
-    expect(caps.hyperlinks).toBe(true)
-    expect(caps.notifications).toBe(true)
+    const profile = detectTerminalProfileFromEnv({ TERM: "xterm-kitty" }, tty)
+    expect(profile.identity.termName).toBe("xterm-kitty")
+    expect(profile.caps.colorTier).toBe("truecolor")
+    expect(profile.caps.kittyKeyboard).toBe(true)
+    expect(profile.caps.kittyGraphics).toBe(true)
+    expect(profile.caps.osc52).toBe(true)
+    expect(profile.caps.hyperlinks).toBe(true)
+    expect(profile.caps.notifications).toBe(true)
   })
 
   test("WezTerm (TERM_PROGRAM=WezTerm) populates kitty + modern caps", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM_PROGRAM: "WezTerm" }, tty)
-    expect(caps.program).toBe("WezTerm")
-    expect(caps.colorTier).toBe("truecolor")
-    expect(caps.kittyKeyboard).toBe(true)
-    expect(caps.sixel).toBe(true)
-    expect(caps.osc52).toBe(true)
-    expect(caps.hyperlinks).toBe(true)
+    const profile = detectTerminalProfileFromEnv({ TERM_PROGRAM: "WezTerm" }, tty)
+    expect(profile.identity.program).toBe("WezTerm")
+    expect(profile.caps.colorTier).toBe("truecolor")
+    expect(profile.caps.kittyKeyboard).toBe(true)
+    expect(profile.caps.sixel).toBe(true)
+    expect(profile.caps.osc52).toBe(true)
+    expect(profile.caps.hyperlinks).toBe(true)
   })
 
   test("foot (TERM=foot) populates kitty + modern caps", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM: "foot" }, tty)
-    expect(caps.kittyKeyboard).toBe(true)
-    expect(caps.sixel).toBe(true)
-    expect(caps.osc52).toBe(true)
-    expect(caps.hyperlinks).toBe(true)
+    const profile = detectTerminalProfileFromEnv({ TERM: "foot" }, tty)
+    expect(profile.caps.kittyKeyboard).toBe(true)
+    expect(profile.caps.sixel).toBe(true)
+    expect(profile.caps.osc52).toBe(true)
+    expect(profile.caps.hyperlinks).toBe(true)
   })
 
   test("iTerm.app (TERM_PROGRAM=iTerm.app) populates iTerm caps", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM_PROGRAM: "iTerm.app" }, tty)
-    expect(caps.program).toBe("iTerm.app")
-    expect(caps.colorTier).toBe("truecolor")
-    expect(caps.osc52).toBe(true)
-    expect(caps.hyperlinks).toBe(true)
-    expect(caps.notifications).toBe(true)
+    const profile = detectTerminalProfileFromEnv({ TERM_PROGRAM: "iTerm.app" }, tty)
+    expect(profile.identity.program).toBe("iTerm.app")
+    expect(profile.caps.colorTier).toBe("truecolor")
+    expect(profile.caps.osc52).toBe(true)
+    expect(profile.caps.hyperlinks).toBe(true)
+    expect(profile.caps.notifications).toBe(true)
     // iTerm is not Kitty-keyboard by default — that matrix cell must stay false.
-    expect(caps.kittyKeyboard).toBe(false)
+    expect(profile.caps.kittyKeyboard).toBe(false)
   })
 
   test("Apple_Terminal reports 256 color + text-narrow emoji + no modern caps", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM_PROGRAM: "Apple_Terminal" }, tty)
-    expect(caps.program).toBe("Apple_Terminal")
-    expect(caps.colorTier).toBe("256")
-    expect(caps.kittyKeyboard).toBe(false)
-    expect(caps.kittyGraphics).toBe(false)
-    expect(caps.osc52).toBe(false)
-    expect(caps.hyperlinks).toBe(false)
-    expect(caps.underlineStyles).toBe(false)
-    expect(caps.underlineColor).toBe(false)
+    const profile = detectTerminalProfileFromEnv({ TERM_PROGRAM: "Apple_Terminal" }, tty)
+    expect(profile.identity.program).toBe("Apple_Terminal")
+    expect(profile.caps.colorTier).toBe("256")
+    expect(profile.caps.kittyKeyboard).toBe(false)
+    expect(profile.caps.kittyGraphics).toBe(false)
+    expect(profile.caps.osc52).toBe(false)
+    expect(profile.caps.hyperlinks).toBe(false)
+    expect(profile.caps.underlineStyles.length).toBe(0)
+    expect(profile.caps.underlineColor).toBe(false)
     // Apple Terminal renders text-emoji at 1-cell width — required for correct
     // grapheme measurement in the pipeline.
-    expect(caps.textEmojiWide).toBe(false)
+    expect(profile.heuristics.textEmojiWide).toBe(false)
   })
 
   test("Alacritty (TERM_PROGRAM=Alacritty) reports osc52 + hyperlinks without kitty", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM_PROGRAM: "Alacritty" }, tty)
-    expect(caps.program).toBe("Alacritty")
-    expect(caps.osc52).toBe(true)
-    expect(caps.hyperlinks).toBe(true)
-    expect(caps.underlineStyles).toBe(true)
-    expect(caps.underlineColor).toBe(true)
+    const profile = detectTerminalProfileFromEnv({ TERM_PROGRAM: "Alacritty" }, tty)
+    expect(profile.identity.program).toBe("Alacritty")
+    expect(profile.caps.osc52).toBe(true)
+    expect(profile.caps.hyperlinks).toBe(true)
+    expect(profile.caps.underlineStyles.length).toBeGreaterThan(0)
+    expect(profile.caps.underlineColor).toBe(true)
     // Alacritty doesn't implement Kitty keyboard protocol.
-    expect(caps.kittyKeyboard).toBe(false)
+    expect(profile.caps.kittyKeyboard).toBe(false)
   })
 
   test("unknown TERM (e.g. plain xterm) falls back to ansi16 without modern caps", () => {
-    const caps = detectTerminalCapsFromEnv({ TERM: "xterm" }, tty)
-    expect(caps.colorTier).toBe("ansi16")
-    expect(caps.kittyKeyboard).toBe(false)
-    expect(caps.kittyGraphics).toBe(false)
-    expect(caps.osc52).toBe(false)
-    expect(caps.hyperlinks).toBe(false)
+    const profile = detectTerminalProfileFromEnv({ TERM: "xterm" }, tty)
+    expect(profile.caps.colorTier).toBe("ansi16")
+    expect(profile.caps.kittyKeyboard).toBe(false)
+    expect(profile.caps.kittyGraphics).toBe(false)
+    expect(profile.caps.osc52).toBe(false)
+    expect(profile.caps.hyperlinks).toBe(false)
   })
 })
 
@@ -1018,7 +1019,7 @@ describe("createTerminalProfile — contract", () => {
         stdout: tty,
         colorOverride: "mono",
         caps: { colorTier: "truecolor" },
-      }).colorProvenance,
+      }).caps.colorProvenance,
     ).toBe("env")
 
     // Override wins over caller-caps
@@ -1028,7 +1029,7 @@ describe("createTerminalProfile — contract", () => {
         stdout: nonTty,
         colorOverride: "mono",
         caps: { colorTier: "truecolor" },
-      }).colorProvenance,
+      }).caps.colorProvenance,
     ).toBe("override")
 
     // Caller-caps wins over auto
@@ -1037,7 +1038,7 @@ describe("createTerminalProfile — contract", () => {
         env: {},
         stdout: nonTty,
         caps: { colorTier: "256" },
-      }).colorProvenance,
+      }).caps.colorProvenance,
     ).toBe("caller-caps")
 
     // Nothing supplied → auto (from env-based detection)
@@ -1045,7 +1046,7 @@ describe("createTerminalProfile — contract", () => {
       createTerminalProfile({
         env: { TERM: "xterm-ghostty" },
         stdout: tty,
-      }).colorProvenance,
+      }).caps.colorProvenance,
     ).toBe("auto")
   })
 })
@@ -1075,8 +1076,8 @@ describe("probeTerminalProfile — contract", () => {
       probeTheme: false,
     })
     expect(profile.colorTier).toBe("truecolor")
-    expect(profile.colorProvenance).toBe("env")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("env")
+    expect(profile.caps.colorForced).toBe(true)
     expect(profile.theme).toBeUndefined()
   })
 
@@ -1092,7 +1093,7 @@ describe("probeTerminalProfile — contract", () => {
       fallbackLight: undefined,
     })
     expect(profile.colorTier).toBe("mono")
-    expect(profile.colorProvenance).toBe("env")
+    expect(profile.caps.colorProvenance).toBe("env")
     expect(profile.theme).toBeDefined()
     // Sanity: the theme has the required top-level fields (not a test of
     // theme shape, just that we returned *a* theme).
@@ -1105,7 +1106,7 @@ describe("probeTerminalProfile — contract", () => {
       stdout: tty,
     })
     expect(profile.colorTier).toBe("ansi16")
-    expect(profile.colorProvenance).toBe("env")
+    expect(profile.caps.colorProvenance).toBe("env")
     expect(profile.theme).toBeDefined()
   })
 
@@ -1121,8 +1122,8 @@ describe("probeTerminalProfile — contract", () => {
       probeTheme: false, // isolate the precedence assertion from theme probing
     })
     expect(profile.colorTier).toBe("mono")
-    expect(profile.colorProvenance).toBe("env")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("env")
+    expect(profile.caps.colorForced).toBe(true)
   })
 })
 

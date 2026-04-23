@@ -143,21 +143,24 @@ function queryWidthMode(
 /**
  * Apply detected width configuration to terminal capabilities.
  *
- * Maps DEC width modes to the existing TerminalCaps fields:
- * - emojiWidth=2 → textEmojiWide=true
- * - privateUseWidth=2 → textSizing=true (PUA treated as 2-wide)
+ * Post km-silvery.caps-restructure (Phase 7, 2026-04-23): `textEmojiWide`
+ * moved from caps onto {@link TerminalHeuristics}. This helper still lives
+ * on ag-term (terminal-facing) and takes the raw caps + heuristics pair,
+ * returning `{ caps, heuristics }` with the DEC width overlay applied. The
+ * mapping is:
+ * - emojiWidth=2 → heuristics.textEmojiWide=true
+ * - privateUseWidth=2 → caps.textSizing=true (PUA treated as 2-wide)
  *
- * Returns a new caps object with the detected overrides applied.
  * CJK width and UTF-8 mode are informational — they don't yet map to
- * caps fields but are available in the TerminalWidthConfig for consumers.
+ * caps/heuristics fields but are available in TerminalWidthConfig for consumers.
  */
 export function applyWidthConfig<
-  T extends { textEmojiWide: boolean; textSizing: boolean },
->(caps: T, config: TerminalWidthConfig): T {
+  C extends { textSizing: boolean },
+  H extends { textEmojiWide: boolean },
+>(caps: C, heuristics: H, config: TerminalWidthConfig): { caps: C; heuristics: H } {
   return {
-    ...caps,
-    textEmojiWide: config.emojiWidth === 2,
-    textSizing: config.privateUseWidth === 2,
+    caps: { ...caps, textSizing: config.privateUseWidth === 2 },
+    heuristics: { ...heuristics, textEmojiWide: config.emojiWidth === 2 },
   }
 }
 

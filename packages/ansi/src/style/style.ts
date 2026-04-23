@@ -221,7 +221,10 @@ export function createStyle(options?: StyleOptions): Style {
       const profile = createTerminalProfile({ stdout: process.stdout })
       ref.level = profile.colorTier
       ref.caps = options?.caps ?? {
-        underlineStyles: profile.caps.underlineStyles,
+        // Phase 7: profile.caps.underlineStyles is a
+        // `readonly UnderlineStyle[]`. Style's internal ref only needs a
+        // boolean ("any extended style supported?") so project the length.
+        underlineStyles: profile.caps.underlineStyles.length > 0,
         underlineColor: profile.caps.underlineColor,
       }
     } catch {

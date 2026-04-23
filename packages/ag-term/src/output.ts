@@ -286,11 +286,16 @@ export function notifyKitty(message: string, opts?: { title?: string }): string 
 export function notify(
   stdout: NodeJS.WriteStream,
   message: string,
-  opts?: { title?: string; caps?: Pick<TerminalCaps, "program" | "term"> },
+  opts?: {
+    title?: string
+    /** Terminal identity — post km-silvery.caps-restructure (Phase 7) program
+     * and termName live on TerminalIdentity, not on TerminalCaps. */
+    identity?: { program: string; termName: string }
+  },
 ): void {
-  const caps = opts?.caps ?? createTerminalProfile().caps
-  const termProgram = caps.program
-  const term = caps.term
+  const identity = opts?.identity ?? createTerminalProfile().identity
+  const termProgram = identity.program
+  const term = identity.termName
 
   if (termProgram === "iTerm.app") {
     stdout.write(notifyITerm2(message))

@@ -29,6 +29,7 @@ import {
   SelectList,
   Spinner,
   ProgressBar,
+  useKineticScroll,
   type SelectOption,
 } from "silvery"
 import { IntentDemo } from "./IntentDemo.tsx"
@@ -158,6 +159,10 @@ export interface ComponentPreviewProps {
 
 export function ComponentPreview({ schemeName, mode }: ComponentPreviewProps): React.ReactElement {
   const [selectIdx, setSelectIdx] = useState(0)
+  // Wheel over the preview pane scrolls its viewport with iOS-style kinetic
+  // momentum. The layout phase clamps `scrollOffset` to a valid range so we
+  // don't need to know content height up-front.
+  const { scrollOffset, onWheel } = useKineticScroll()
 
   return (
     <Box
@@ -166,6 +171,8 @@ export function ComponentPreview({ schemeName, mode }: ComponentPreviewProps): R
       borderStyle="single"
       borderColor="$border-default"
       overflow="scroll"
+      scrollOffset={scrollOffset}
+      onWheel={onWheel}
     >
       <Box paddingX={1} gap={1}>
         <Text bold color="$fg-accent">

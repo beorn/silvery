@@ -67,17 +67,23 @@ export function runTermtest(options?: TermtestOptions): void {
   // one-shot), so the zero-arg variant auto-detects from process.env /
   // process.stdout — same behavior the deleted `detectTerminalCaps()` shim
   // provided.
-  const caps = createTerminalProfile().caps
+  // Post km-silvery.caps-restructure (Phase 7): the flat caps shape split
+  // into caps + identity + heuristics on the profile. termtest prints all
+  // three layers for visibility.
+  const profile = createTerminalProfile()
+  const { caps, identity, heuristics } = profile
 
   w.write(`\n${sgr(1)}Terminal Capability Test${RESET}\n`)
-  w.write(`  Program: ${caps.program || "(unknown)"}\n`)
-  w.write(`  TERM: ${caps.term || "(unknown)"}\n`)
+  w.write(`  Program: ${identity.program || "(unknown)"}\n`)
+  w.write(`  TERM: ${identity.termName || "(unknown)"}\n`)
   w.write(`  COLORTERM: ${process.env.COLORTERM || "(unset)"}\n`)
   w.write(
-    `  Detected: color=${caps.colorTier} dark=${caps.darkBackground} nerdfont=${caps.nerdfont}\n`,
+    `  Detected: color=${caps.colorTier} dark=${heuristics.darkBackground} nerdfont=${heuristics.nerdfont}\n`,
   )
-  w.write(`  Underline: styles=${caps.underlineStyles} color=${caps.underlineColor}\n`)
-  w.write(`  Emoji wide: ${caps.textEmojiWide}\n`)
+  w.write(
+    `  Underline: styles=[${caps.underlineStyles.join(", ")}] color=${caps.underlineColor}\n`,
+  )
+  w.write(`  Emoji wide: ${heuristics.textEmojiWide}\n`)
 
   if (show("sgr")) {
     w.write(sectionHeader("SGR Text Attributes"))

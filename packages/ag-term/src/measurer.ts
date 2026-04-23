@@ -6,6 +6,7 @@
  */
 
 import type { Term, TerminalCaps } from "./ansi/index"
+import type { TerminalHeuristics } from "@silvery/ansi"
 import { createWidthMeasurer, type Measurer } from "./unicode"
 import { createOutputPhase } from "./pipeline/output-phase"
 import { setActiveColorLevel } from "./pipeline/state"
@@ -26,8 +27,13 @@ export interface MeasuredTerm extends Term, Measurer {}
  */
 export function withMeasurer(term: Term): MeasuredTerm {
   const caps = term.caps
+  const heuristics = term.heuristics
+  // Post km-silvery.caps-restructure (Phase 7): textEmojiWide moved from
+  // caps onto TerminalHeuristics; textSizing stays on caps (hard protocol flag).
   const measurer = createWidthMeasurer(
-    caps ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizing } : {},
+    caps
+      ? { textEmojiWide: heuristics.textEmojiWide, textSizingEnabled: caps.textSizing }
+      : {},
   )
 
   return Object.create(term, {
@@ -54,21 +60,31 @@ export function withMeasurer(term: Term): MeasuredTerm {
 export function createPipeline(
   options: {
     caps?: TerminalCaps
+    /** Post km-silvery.caps-restructure (Phase 7): textEmojiWide moved from
+     * caps onto TerminalHeuristics. When omitted the measurer defaults to
+     * `true` (modern-terminal behavior). */
+    heuristics?: TerminalHeuristics
     measurer?: Measurer
   } = {},
 ): PipelineConfig {
-  const { caps, measurer: explicitMeasurer } = options
+  const { caps, heuristics, measurer: explicitMeasurer } = options
   const measurer =
     explicitMeasurer ??
     createWidthMeasurer(
       caps
-        ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizing }
+        ? {
+            textEmojiWide: heuristics?.textEmojiWide ?? true,
+            textSizingEnabled: caps.textSizing,
+          }
         : {},
     )
   const outputPhaseFn = createOutputPhase(
     caps
       ? {
-          underlineStyles: caps.underlineStyles,
+          // Phase 7 turned underlineStyles into an array of supported styles;
+          // output-phase's gate still wants a boolean ("does any extended
+          // underline work?"), so we project the array length.
+          underlineStyles: caps.underlineStyles.length > 0,
           underlineColor: caps.underlineColor,
           colorTier: caps.colorTier,
         }

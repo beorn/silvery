@@ -348,23 +348,22 @@ function ListViewInner<T>(
   const [uncontrolledCursor, setUncontrolledCursor] = useState(0)
   const activeCursor = nav ? (isControlled ? cursorKeyProp! : uncontrolledCursor) : -1
 
-  // ── Viewport scroll anchor (decoupled from cursor) ────────────────
+  // ── Viewport scroll state (decoupled from cursor, indexed in ROWS) ──
   //
   // Wheel events scroll the viewport without dragging the cursor along
-  // (mouse follows hover, keyboard moves focus). `viewportAnchor` pins the
-  // viewport to a specific item index; null means "follow cursor".
-  // `anchorFloatRef` is the sub-item accumulator used by the kinetic loop
-  // for smooth momentum; the rendered viewportAnchor is always an integer.
+  // (mouse follows hover, keyboard moves focus). `scrollRow` is the row
+  // offset of the viewport's top edge — passed to Box as `scrollOffset`
+  // (row-precise, not item-"ensure-visible"). Null means "not
+  // wheel-scrolling, let nav's scrollTo follow the cursor".
+  // `scrollRowFloatRef` is the sub-row accumulator used by the kinetic
+  // loop; the rendered `scrollRow` is always an integer.
   //
   // `isScrolling` controls the scrollbar thumb visibility; a setTimeout
-  // hides it SCROLLBAR_FADE_AFTER_MS after the last wheel activity. The
-  // thumb's position is derived from the virtualizer's `leadingHeight` in
-  // row space (see render below) so it stays locked to content motion
-  // rather than drifting ahead via item-index interpolation.
-  const [viewportAnchor, setViewportAnchor] = useState<number | null>(null)
+  // hides it SCROLLBAR_FADE_AFTER_MS after the last wheel activity.
+  const [scrollRow, setScrollRow] = useState<number | null>(null)
   const [isScrolling, setIsScrolling] = useState(false)
-  const anchorFloatRef = useRef<number | null>(null)
-  // Velocity in items/sec, sampled from wheel-event position deltas.
+  const scrollRowFloatRef = useRef<number | null>(null)
+  // Velocity in rows/sec, sampled from wheel-event position deltas.
   const velocityRef = useRef(0)
   const lastWheelTimeRef = useRef(0)
   // Momentum phase (closed-form exponential decay) state. Populated on
@@ -421,8 +420,8 @@ function ListViewInner<T>(
       onCursor?.(clamped)
       // Keyboard/programmatic cursor move → viewport snaps back to cursor.
       // Kill any in-flight wheel/momentum animation and release timer.
-      anchorFloatRef.current = null
-      setViewportAnchor(null)
+      scrollRowFloatRef.current = null
+      setScrollRow(null)
       velocityRef.current = 0
       lastWheelTimeRef.current = 0
       stopKinetic()
@@ -431,21 +430,24 @@ function ListViewInner<T>(
     [clearReleaseTimer, isControlled, items.length, onCursor, stopKinetic],
   )
 
+  // Max row offset the viewport can have — pre-computed per render below.
+  // Populated before this callback fires because React closures capture the
+  // render-scope `maxScrollRowRef` which tracks the latest value.
+  const maxScrollRowRef = useRef(0)
+
   // Closed-form momentum sample — evaluates the exponential decay curve at
   // absolute time t relative to release, returns false when the animation
   // should terminate.
   //
-  //   pos(t) = target − amplitude × exp(−t / τ)
+  //   pos(t) = start + amplitude × (1 − exp(−t / τ))
   //
-  // Where amplitude = v₀ × τ (total coast distance in items) and target
-  // is the clamped final position. Stop when t > 6τ or remaining distance
-  // is below KINETIC_STOP_DISTANCE — either criterion ensures a clean end.
+  // Where amplitude is the pre-clamped distance to the final target and
+  // start is the release-time row offset. Stops at t > 6τ, within
+  // KINETIC_STOP_DISTANCE of target, or at either edge.
   const momentumStep = useCallback((): boolean => {
     const m = momentumRef.current
     if (m === null) return false
-    const count = itemCountRef.current
-    if (count <= 0) return false
-    const maxIdx = count - 1
+    const maxRow = maxScrollRowRef.current
     const tau = KINETIC_TIME_CONSTANT_MS
     const t = performance.now() - m.startTime
     if (t >= tau * KINETIC_STOP_AFTER_TAU_MULTIPLES) return false
@@ -455,20 +457,18 @@ function ListViewInner<T>(
     let pos = m.startPos + m.amplitude * (1 - decay)
     // Hard clamp at edges — zero-remaining terminates.
     if (pos <= 0) {
-      pos = 0
-      anchorFloatRef.current = 0
-      setViewportAnchor(0)
+      scrollRowFloatRef.current = 0
+      setScrollRow(0)
       return false
     }
-    if (pos >= maxIdx) {
-      pos = maxIdx
-      anchorFloatRef.current = maxIdx
-      setViewportAnchor(maxIdx)
+    if (pos >= maxRow) {
+      scrollRowFloatRef.current = maxRow
+      setScrollRow(maxRow)
       return false
     }
-    anchorFloatRef.current = pos
+    scrollRowFloatRef.current = pos
     const rendered = Math.round(pos)
-    setViewportAnchor((prev) => (prev === rendered ? prev : rendered))
+    setScrollRow((prev) => (prev === rendered ? prev : rendered))
     return true
   }, [])
 
@@ -487,14 +487,13 @@ function ListViewInner<T>(
       velocityRef.current = 0
       return
     }
-    const count = itemCountRef.current
-    if (count <= 0) return
-    const maxIdx = count - 1
-    const startPos = anchorFloatRef.current ?? 0
-    // amplitude = v × τ (with τ in seconds)
+    const maxRow = maxScrollRowRef.current
+    if (maxRow <= 0) return
+    const startPos = scrollRowFloatRef.current ?? 0
+    // amplitude = v × τ (with τ in seconds) — rows of total coast distance.
     const amplitude = v * (KINETIC_TIME_CONSTANT_MS / 1000)
     const rawTarget = startPos + amplitude
-    const clampedTarget = Math.max(0, Math.min(maxIdx, rawTarget))
+    const clampedTarget = Math.max(0, Math.min(maxRow, rawTarget))
     momentumRef.current = {
       startPos,
       amplitude: clampedTarget - startPos,
@@ -512,21 +511,26 @@ function ListViewInner<T>(
     }, RELEASE_TIMEOUT_MS)
   }, [clearReleaseTimer, enterMomentum])
 
+  // Seed the row-space scroll state from the current viewport position —
+  // run on the first wheel event of a gesture so momentum picks up from
+  // where the user is looking, not from row 0.
+  const rowsAboveViewportRef = useRef(0)
+
   const handleWheel = useCallback(
     ({ deltaY }: { deltaY: number }) => {
-      const count = itemCountRef.current
-      if (count <= 0) return
-      const maxIdx = count - 1
+      const maxRow = maxScrollRowRef.current
+      if (maxRow <= 0) return
       const now = performance.now()
       const dir = Math.sign(deltaY) || 0
       if (dir === 0) return
       // Cancel any in-flight momentum — user is actively driving again.
       stopKinetic()
       clearReleaseTimer()
-      // First wheel event seeds the anchor from the current cursor (nav
-      // mode) or 0 (passive mode — cursor is -1).
-      if (anchorFloatRef.current === null) {
-        anchorFloatRef.current = activeCursor >= 0 ? activeCursor : 0
+      // First wheel event of a gesture seeds scrollRow from the virtualizer's
+      // current viewport top (rows scrolled past). Without this, the first
+      // wheel would jump the viewport back to row 0.
+      if (scrollRowFloatRef.current === null) {
+        scrollRowFloatRef.current = rowsAboveViewportRef.current
       }
       // Inter-event dt drives both step size (acceleration) and velocity
       // estimation. Clamp dt to [1ms, ISOLATED] to avoid pathological
@@ -538,20 +542,22 @@ function ListViewInner<T>(
         WHEEL_ACCEL_MAX,
         Math.max(1, WHEEL_ACCEL_REFERENCE_DT_MS / dt),
       )
-      const stepItems = WHEEL_BASE_STEP * accel
+      // Step in rows. Slow isolated click (dt ≥ REFERENCE) → accel=1 → exactly
+      // 1 row. Fast streams → up to ACCEL_MAX rows per event.
+      const stepRows = WHEEL_BASE_STEP * accel
       lastWheelTimeRef.current = now
-      // Advance anchor immediately — content follows on the next render.
-      let nextFloat = anchorFloatRef.current + dir * stepItems
+      // Advance scroll row immediately — content follows on the next render.
+      let nextFloat = scrollRowFloatRef.current + dir * stepRows
       if (nextFloat < 0) nextFloat = 0
-      else if (nextFloat > maxIdx) nextFloat = maxIdx
-      anchorFloatRef.current = nextFloat
+      else if (nextFloat > maxRow) nextFloat = maxRow
+      scrollRowFloatRef.current = nextFloat
       const rendered = Math.round(nextFloat)
-      setViewportAnchor((prev) => (prev === rendered ? prev : rendered))
-      // Velocity estimate: items/sec implied by this single step, capped.
+      setScrollRow((prev) => (prev === rendered ? prev : rendered))
+      // Velocity estimate: rows/sec implied by this single step, capped.
       // An isolated slow click (long dt) yields tiny velocity → negligible
       // momentum after release. A dense trackpad stream (short dt) sustains
       // high velocity → long coast.
-      const vSample = dt >= WHEEL_ISOLATED_DT_MS ? 0 : (dir * stepItems) / (dt / 1000)
+      const vSample = dt >= WHEEL_ISOLATED_DT_MS ? 0 : (dir * stepRows) / (dt / 1000)
       velocityRef.current = Math.max(
         -KINETIC_MAX_VELOCITY,
         Math.min(KINETIC_MAX_VELOCITY, vSample),
@@ -563,7 +569,7 @@ function ListViewInner<T>(
       // velocity into a closed-form momentum animation.
       scheduleRelease()
     },
-    [activeCursor, clearReleaseTimer, scheduleRelease, scheduleScrollbarHide, stopKinetic],
+    [clearReleaseTimer, scheduleRelease, scheduleScrollbarHide, stopKinetic],
   )
 
   // Observe search bar state — while the bar is open, the app-wide
@@ -592,14 +598,15 @@ function ListViewInner<T>(
 
   // Resolve viewport target in priority order:
   //   1. scrollToProp (declarative override — e.g. programmatic reveal)
-  //   2. viewportAnchor (wheel is driving — viewport decoupled from cursor)
+  //   2. scrollRow set (wheel is driving — Box uses scrollOffset below,
+  //      scrollTo stays undefined so it doesn't compete)
   //   3. activeCursor (nav mode default — viewport follows cursor)
   //   4. undefined (passive list with no scroll position opinion)
   const scrollTo =
     scrollToProp !== undefined
       ? scrollToProp
-      : viewportAnchor !== null
-        ? viewportAnchor
+      : scrollRow !== null
+        ? undefined
         : nav
           ? activeCursor
           : undefined
@@ -953,8 +960,9 @@ function ListViewInner<T>(
   // Wheel over the list scrolls its viewport with iOS-style kinetic
   // momentum (mouse follows hover, keyboard moves focus). Cursor is
   // untouched by scrolling. Any subsequent keyboard cursor move snaps the
-  // viewport back to the cursor via `moveTo`. See `handleWheel` +
-  // `startKinetic` above for the physics model.
+  // viewport back to the cursor via `moveTo`. Physics: inter-event dt
+  // drives wheel acceleration; closed-form exponential decay runs during
+  // the momentum phase. See `handleWheel` + `enterMomentum` above.
   const onWheel = handleWheel
 
   // ── Empty state ─────────────────────────────────────────────────
@@ -1008,6 +1016,12 @@ function ListViewInner<T>(
   }
 
   // Calculate scrollTo index for silvery Box overflow="scroll"
+  //
+  // When the user is wheel-driving (scrollRow !== null), suppress
+  // scrollTo entirely — Box's `scrollOffset` prop (below) drives the
+  // viewport directly in row space. If we kept passing scrollTo too, the
+  // layout phase's edge-based scroll would snap viewport back to the
+  // cursor whenever the cursor drifted off-screen, undoing the wheel.
   const hasTopPlaceholder = leadingHeight > 0
   const currentScrollTarget =
     adjustedScrollTo !== undefined
@@ -1016,7 +1030,12 @@ function ListViewInner<T>(
   const selectedIndexInSlice = currentScrollTarget - startIndex
   const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length
   const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice
-  const boxScrollTo = isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined
+  const boxScrollTo =
+    scrollRow !== null
+      ? undefined
+      : isSelectedInSlice
+        ? Math.max(0, scrollToIndex)
+        : undefined
 
   // Scrollbar geometry — indexed on ROW (vertical position), not item#.
   // Item-indexed thumb jumps erratically when item heights vary, because
@@ -1039,7 +1058,21 @@ function ListViewInner<T>(
   // scrollbar uses, so tall items before the viewport correctly push the
   // thumb further down than short ones.
   const trackHeight = Math.max(1, height)
-  const totalRows = Math.max(
+  // Stable total-content height for THUMB SIZE: item count × estimate
+  // (ignores the measurement cache) — TanStack Virtual / react-window
+  // convention. A measurement-sum-based total would shrink/grow the thumb
+  // as the user scrolls into unmeasured items, producing a visible resize
+  // jitter that's more distracting than a slight inaccuracy.
+  //
+  // `estimateAsNumber` folds function-estimates into an average by sampling
+  // index 0; for uniform-height lists this is exact, and for variable-height
+  // the thumb is mildly imprecise in size but doesn't jitter.
+  const estimateAsNumber =
+    typeof estimateHeight === "number" ? estimateHeight : estimateHeight(0)
+  const totalRowsStable = Math.max(1, activeItems.length * (estimateAsNumber + gap))
+  // Accurate rows-above-viewport for THUMB POSITION: uses measurement cache
+  // (items that have scrolled past are always measured → stable in use).
+  const totalRowsMeasured = Math.max(
     1,
     sumHeights(
       0,
@@ -1050,6 +1083,7 @@ function ListViewInner<T>(
       wrappedGetKey,
     ),
   )
+  const totalRows = totalRowsMeasured
   // Rows scrolled past the viewport top — the exact measurement a browser
   // uses for scrollbar position. `leadingHeight` from the virtualizer is
   // `sumHeights(0, startIndex)` where startIndex = scrollOffset − overscan,
@@ -1065,17 +1099,25 @@ function ListViewInner<T>(
     wrappedGetKey,
   )
   const thumbHeight =
-    totalRows > trackHeight
-      ? Math.max(1, Math.floor((trackHeight * trackHeight) / totalRows))
+    totalRowsStable > trackHeight
+      ? Math.max(1, Math.floor((trackHeight * trackHeight) / totalRowsStable))
       : 0
   const scrollableRows = Math.max(1, totalRows - trackHeight)
   const trackRemainder = trackHeight - thumbHeight
+  // When the user is wheel-driving, derive thumb from our own `scrollRow`
+  // (exact row offset). Otherwise use the virtualizer's measurement-based
+  // `rowsAboveViewport` (keyboard-following mode).
+  const effectiveRowsAbove = scrollRow !== null ? scrollRow : rowsAboveViewport
+  // Keep refs fresh for the wheel / momentum callbacks (captured via
+  // closure with stable identity).
+  maxScrollRowRef.current = scrollableRows
+  rowsAboveViewportRef.current = rowsAboveViewport
   // Clamp position to [0, trackRemainder] — thumb is always fully visible
   // within the track, never over-runs top or bottom. Content clamp lives
-  // in `kineticStep` (anchor clamped to [0, maxIdx], velocity zeroed at
-  // edges — no rubber-band overshoot).
+  // in `handleWheel` + `momentumStep` (scrollRow clamped to [0, maxRow],
+  // momentum amplitude pre-clamped — no rubber-band overshoot).
   const clampedFrac =
-    scrollableRows > 0 ? Math.max(0, Math.min(1, rowsAboveViewport / scrollableRows)) : 0
+    scrollableRows > 0 ? Math.max(0, Math.min(1, effectiveRowsAbove / scrollableRows)) : 0
   const thumbTop =
     thumbHeight > 0 ? Math.max(0, Math.min(trackRemainder, Math.round(clampedFrac * trackRemainder))) : 0
   const showScrollbar = isScrolling && thumbHeight > 0 && thumbHeight < trackHeight
@@ -1089,6 +1131,7 @@ function ListViewInner<T>(
       width={width}
       overflow="scroll"
       scrollTo={boxScrollTo}
+      scrollOffset={scrollRow ?? undefined}
       overflowIndicator={overflowIndicator}
       onWheel={onWheel}
     >

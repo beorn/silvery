@@ -326,6 +326,19 @@ export type { SixelImageData } from "./ui/image/index"
 export { useBoxRect, useScrollRect, useScreenRect } from "./hooks/useLayout"
 
 /**
+ * Kinetic wheel scrolling for any scrollable Box. Attach the returned
+ * `scrollOffset` + `onWheel` to a `<Box overflow="scroll">` and wheel events
+ * drive the viewport with iOS-style momentum. See ListView for the canonical
+ * usage (ListView wires this internally).
+ */
+export {
+  useKineticScroll,
+  type UseKineticScrollOptions,
+  type UseKineticScrollResult,
+  SCROLLBAR_FADE_AFTER_MS,
+} from "./hooks/useKineticScroll"
+
+/**
  * Access the current component's AgNode and its reactive rect signals.
  *
  * Returns `{ node, signals }` where `signals` contains `boxRect`, `scrollRect`,

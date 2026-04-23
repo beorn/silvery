@@ -269,7 +269,7 @@ describe("contract: createTerminalProfile env precedence", () => {
 // Phase 4 of km-silvery.terminal-profile-plateau adds `profile?: TerminalProfile`
 // to RunOptions so callers that already built a profile (bootstrap, tests,
 // upstream adapters) can pass it through. `run()` must use the profile's caps
-// end-to-end and honour `profile.colorForced` for the pre-quantize gate — no
+// end-to-end and honour `profile.caps.colorForced` for the pre-quantize gate — no
 // double-detection, no env re-read.
 
 describe("contract: RunOptions.profile", () => {
@@ -293,15 +293,15 @@ describe("contract: RunOptions.profile", () => {
   test("contract: profile with colorProvenance='override' triggers pre-quantize gate (options path)", () => {
     // This test pins the gate behaviour at the unit level — building the
     // profile directly and asserting `colorForced` / `colorTier` lets us prove
-    // that probeTerminalProfile's `profile.colorForced` branch will fire
+    // that probeTerminalProfile's `profile.caps.colorForced` branch will fire
     // without spinning up a full Termless harness.
     const profile = createTerminalProfile({
       env: {},
       stdout: { isTTY: false },
       colorOverride: "256",
     })
-    expect(profile.colorProvenance).toBe("override")
-    expect(profile.colorForced).toBe(true)
+    expect(profile.caps.colorProvenance).toBe("override")
+    expect(profile.caps.colorForced).toBe(true)
     expect(profile.colorTier).toBe("256")
   })
 
@@ -310,8 +310,8 @@ describe("contract: RunOptions.profile", () => {
       env: { TERM: "xterm-ghostty" },
       stdout: { isTTY: true },
     })
-    expect(profile.colorProvenance).toBe("auto")
-    expect(profile.colorForced).toBe(false)
+    expect(profile.caps.colorProvenance).toBe("auto")
+    expect(profile.caps.colorForced).toBe(false)
     expect(profile.colorTier).toBe("truecolor")
   })
 
@@ -370,7 +370,7 @@ describe("contract: RunOptions.profile", () => {
     // minimal-fixture JS-style call targeting the deprecation warning.
     const handle = await run(<Text>hi</Text>, term, {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      caps: { colorTier: "256" } as any,
+      caps: { colorTier: "256", underlineStyles: [], underlineColor: false } as any,
     })
     await settle(80)
     expect(warnSpy).toHaveBeenCalled()
@@ -383,16 +383,22 @@ describe("contract: RunOptions.profile", () => {
     handle.unmount()
   })
 
-  test("contract: run({ colorTier }) alone emits the deprecation warning", async () => {
+  test("contract: run({ colorLevel }) alone emits the deprecation warning", async () => {
+    // Legacy option field name — the RunOptions deprecation branch is still
+    // called `colorLevel` (not `colorTier`) even after Phase 7 renamed
+    // the caps field. Migration is via `profile: createTerminalProfile({
+    // colorOverride })` which uses the new vocabulary; the legacy field
+    // name stays for backward compat until 1.1 deletion.
     using term = createTermless({ cols: 20, rows: 3 })
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
     _resetRunOptionsWarningForTesting()
-    const handle = await run(<Text>hi</Text>, term, { colorTier: "mono" })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handle = await run(<Text>hi</Text>, term, { colorLevel: "mono" } as any)
     await settle(80)
     expect(warnSpy).toHaveBeenCalled()
     const messages = warnSpy.mock.calls.map((c) => c[0] as string)
     expect(
-      messages.some((m) => m.includes("run({ colorTier })") && m.includes("deprecated")),
+      messages.some((m) => m.includes("run({ colorLevel })") && m.includes("deprecated")),
     ).toBe(true)
     expect(messages.some((m) => m.includes("colorOverride"))).toBe(true)
     warnSpy.mockRestore()

@@ -79,23 +79,29 @@ export function isPrivateUseArea(cp: number): boolean {
 // ============================================================================
 
 /**
- * Structural subset of {@link TerminalCaps} the fingerprint helper needs.
+ * Structural subset of the terminal profile's identity the fingerprint helper
+ * needs. Post km-silvery.caps-restructure (Phase 7, 2026-04-23): program /
+ * version moved from {@link TerminalCaps} onto `TerminalIdentity`, so the
+ * fingerprint now takes an identity shape.
  */
-export type FingerprintCaps = Pick<TerminalCaps, "program" | "version">
+export interface FingerprintCaps {
+  readonly program: string
+  readonly version: string
+}
 
 /**
  * Build a terminal fingerprint for cache keying. Combines `program` +
- * `version` from the supplied caps to uniquely identify the terminal type.
- * Different versions may add/remove OSC 66 support, so version is part of
- * the key.
+ * `version` from the supplied identity to uniquely identify the terminal
+ * type. Different versions may add/remove OSC 66 support, so version is part
+ * of the key.
  *
- * Post unicode-plateau Phase 2: caps is required — the legacy env-reading
- * variant is gone. Callers building fingerprints from a one-shot probe can
- * use `createTerminalProfile().caps` upstream.
+ * Post unicode-plateau Phase 2: identity is required — the legacy
+ * env-reading variant is gone. Callers building fingerprints from a one-shot
+ * probe can use `createTerminalProfile().identity` upstream.
  */
-export function getTerminalFingerprint(caps: FingerprintCaps): string {
-  const program = caps.program || "unknown"
-  const version = caps.version || "unknown"
+export function getTerminalFingerprint(identity: FingerprintCaps): string {
+  const program = identity.program || "unknown"
+  const version = identity.version || "unknown"
   return `${program}@${version}`
 }
 

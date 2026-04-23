@@ -70,8 +70,20 @@ import type { TerminalCaps } from "../terminal-caps"
 // Output Phase Factory (per-term instance, no globals)
 // ============================================================================
 
-/** Output-phase capabilities type. */
-export type OutputCaps = Pick<TerminalCaps, "underlineStyles" | "underlineColor" | "colorTier">
+/**
+ * Output-phase capabilities type.
+ *
+ * Post km-silvery.caps-restructure (Phase 7, 2026-04-23): the consumer-facing
+ * `underlineStyles` on TerminalCaps is a `readonly UnderlineStyle[]`. The
+ * output phase only needs a boolean gate ("does any extended underline
+ * work?"), so OutputCaps keeps the legacy boolean shape — callers project
+ * from the array at construction via `caps.underlineStyles.length > 0`.
+ */
+export interface OutputCaps {
+  readonly underlineStyles: boolean
+  readonly underlineColor: boolean
+  readonly colorTier: TerminalCaps["colorTier"]
+}
 
 // ============================================================================
 // Output Context (per-instance state, replaces module-level globals)
