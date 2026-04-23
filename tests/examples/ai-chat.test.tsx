@@ -156,8 +156,8 @@ describe("ai-chat example (in-process termless)", { timeout: 15000 }, () => {
     // Wait for re-render at new dimensions
     await settle(50)
 
-    expect(term.size.cols()).toBe(80)
-    expect(term.size.rows()).toBe(24)
+    expect(term.cols).toBe(80)
+    expect(term.rows).toBe(24)
     const screenText = term.screen!.getText()
     // Content should still render after resize
     expect(screenText.length).toBeGreaterThan(100)

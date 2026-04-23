@@ -2,7 +2,7 @@
  * Mixed style proxy — combines a Style instance with additional properties.
  *
  * Used by ag-term to create a Term that is both a style chain (term.bold.red('text'))
- * and a terminal interface (term.write(), etc.).
+ * and a terminal interface (term.write(), term.cols, etc.).
  */
 
 import type { Style } from "./types.ts"

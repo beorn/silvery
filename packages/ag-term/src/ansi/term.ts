@@ -255,6 +255,22 @@ export interface Term extends Disposable, StyleChain {
   readonly caps: TerminalCaps | undefined
 
   // -------------------------------------------------------------------------
+  // Dimensions
+  // -------------------------------------------------------------------------
+
+  /**
+   * Terminal width in columns.
+   * Undefined if not a TTY or dimensions unavailable.
+   */
+  readonly cols: number | undefined
+
+  /**
+   * Terminal height in rows.
+   * Undefined if not a TTY or dimensions unavailable.
+   */
+  readonly rows: number | undefined
+
+  // -------------------------------------------------------------------------
   // Sub-owners replace direct stdin/stdout (Phase 8 of km-silvery.term-sub-owners)
   //
   // The public Term interface no longer exposes raw NodeJS.ReadStream /
@@ -320,9 +336,9 @@ export interface Term extends Disposable, StyleChain {
    * return stale snapshots under concurrent resize and scatter coalescing
    * logic across every consumer.
    *
-   * Callers read dimensions via `term.size.cols()` / `term.size.rows()` —
-   * the shorthand getters `term.cols` / `term.rows` were removed in Phase 8
-   * as part of km-silvery.term-interface-diet (single source of truth).
+   * `term.cols` / `term.rows` remain as shorthand getters that delegate to
+   * this owner; they are slated for removal alongside `term.stdin/stdout` in
+   * Phase 8.
    */
   readonly size: Size
 
@@ -652,7 +668,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // Size owner — single source of truth for cols/rows. Subscribes to stdout's
   // `resize` event with 16ms coalescing so burst SIGWINCH from tmux/cmux/
   // Ghostty tab switches collapses to one notification. Constructed eagerly
-  // so term.size is valid for any consumer.
+  // so term.size and term.cols/rows are valid for any consumer.
   // See km-silvery.term-sub-owners Phase 5.
   const size = createSize(stdout)
 
@@ -789,6 +805,10 @@ function createNodeTerm(options: CreateTermOptions): Term {
     { get: () => _frame },
     {
       defineProperties: {
+        // cols / rows are shorthand for term.size.cols() / .rows(). Non-TTY
+        // streams have no reliable dims — surface undefined then.
+        cols: { get: () => (stdout.isTTY ? size.cols() : undefined), enumerable: true },
+        rows: { get: () => (stdout.isTTY ? size.rows() : undefined), enumerable: true },
         input: { get: () => getInput(), enumerable: true },
         output: { get: () => getOutput(), enumerable: true },
       },
@@ -869,6 +889,8 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
     { get: () => _frame },
     {
       defineProperties: {
+        cols: { get: () => size.cols(), enumerable: true },
+        rows: { get: () => size.rows(), enumerable: true },
         // Headless Terms have no real stdin to own — sub-owner is undefined.
         input: { get: () => undefined, enumerable: true },
         // Headless Terms have no real stdout to own — sub-owner is undefined.
@@ -980,6 +1002,8 @@ function createBackendTerm(emulator: TermEmulator): Term {
     { get: () => _frame },
     {
       defineProperties: {
+        cols: { get: () => size.cols(), enumerable: true },
+        rows: { get: () => size.rows(), enumerable: true },
         screen: { get: () => emulator.screen, enumerable: true },
         scrollback: { get: () => emulator.scrollback, enumerable: true },
         // Emulator-backed Terms expose a non-TTY InputOwner as a pure event
