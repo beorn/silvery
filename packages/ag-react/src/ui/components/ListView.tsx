@@ -525,6 +525,26 @@ function ListViewInner<T>(
   // Kills any in-flight wheel/momentum animation and release timer.
   const moveTo = useCallback(
     (next: number) => {
+      // Intent-based edge-bump: compare REQUESTED position against current
+      // bounds (before clamping). If the user pressed j/ArrowDown at the last
+      // item, `next` exceeds items.length-1 even though the cursor will clamp
+      // to the same value — that's an intent to move past the edge, and we
+      // flash the bottom indicator. Mirror for top.
+      //
+      // Using `cursor`-current (not `next`) as the "from" is critical:
+      // setCursorSilently runs NEXT and mutates, so we must read the prior
+      // cursor position here. The `cursorRef` indirection would also work; a
+      // direct snapshot of `activeCursor` is fine because React guarantees
+      // this callback re-binds when activeCursor changes.
+      //
+      // Bead: km-silvery.overline-attr (intent-based overscroll detection;
+      // factored out to km-silvery.overscroll-bump-at-edge for the wheel +
+      // kinetic-loop cases that remain follow-up).
+      if (next > items.length - 1 && items.length > 0) {
+        flashEdgeBump("bottom")
+      } else if (next < 0 && items.length > 0) {
+        flashEdgeBump("top")
+      }
       setCursorSilently(next)
       scrollRowFloatRef.current = null
       setScrollRow(null)
@@ -536,7 +556,7 @@ function ListViewInner<T>(
       stopKinetic()
       clearReleaseTimer()
     },
-    [clearReleaseTimer, setCursorSilently, stopKinetic],
+    [clearReleaseTimer, flashEdgeBump, items.length, setCursorSilently, stopKinetic],
   )
 
   // Max row offset the viewport can have — pre-computed per render below.
@@ -1531,61 +1551,58 @@ function ListViewInner<T>(
       // Bar paints the full ListView width (left/right:0) using a bg-only
       // Box — no Text child — so cell characters beneath are preserved.
       return (
-        <>
-          <Box
-            position="absolute"
-            top={firstRow}
-            right={0}
-            width={1}
-            flexDirection="column"
-          >
-            {rows}
-          </Box>
-          {/* Overscroll indicator — spans the entire ListView width: a
-            * transparent SGR overlay on the first line (top) or the last
-            * visible line (bottom). Transient: the flash timer auto-hides
-            * after EDGE_BUMP_SHOW_MS, BUT we also gate on the scroll position
-            * still being at the corresponding edge. If the user scrolls away
-            * from the edge before the timer fires, the indicator vanishes
-            * immediately — it's meaningless when the edge line isn't on
-            * screen anymore.
-            *
-            * Edge asymmetry (top = overline, bottom = underline):
-            * SGR 53 (overline) draws the line ABOVE the character cell; SGR 4
-            * (underline) draws BELOW. The top indicator uses overline so the
-            * line sits against the very top of the first row — "you're bumped
-            * against the top" — instead of reading as "this row's content is
-            * underlined". The bottom indicator uses underline for the mirror
-            * reason. Bead: km-silvery.overline-attr.
-            *
-            * Rendering: the Box has no `backgroundColor`, only the attr prop,
-            * so mergeAttrsInRect (km-silvery.text-box-attr-props) layers the
-            * SGR on every cell in the row WITHOUT overwriting the text glyph /
-            * fg / bg underneath. */}
-          {bumpedEdge === "top" && effectiveRowsAbove === 0 && (
-            <Box
-              position="absolute"
-              top={0}
-              left={0}
-              right={0}
-              height={1}
-              overline
-            />
-          )}
-          {bumpedEdge === "bottom" && effectiveRowsAbove === scrollableRows && (
-            <Box
-              position="absolute"
-              top={trackHeight - 1}
-              left={0}
-              right={0}
-              height={1}
-              underline="single"
-              underlineColor="$muted"
-            />
-          )}
-        </>
+        <Box
+          position="absolute"
+          top={firstRow}
+          right={0}
+          width={1}
+          flexDirection="column"
+        >
+          {rows}
+        </Box>
       )
     })()}
+    {/* Overscroll indicator — spans the entire ListView width: a
+      * transparent SGR overlay on the first line (top) or the last
+      * visible line (bottom). Transient: the flash timer auto-hides
+      * after EDGE_BUMP_SHOW_MS, BUT we also gate on the scroll position
+      * still being at the corresponding edge. If the user scrolls away
+      * from the edge before the timer fires, the indicator vanishes
+      * immediately — it's meaningless when the edge line isn't on
+      * screen anymore.
+      *
+      * Rendered OUTSIDE the scrollbar branch because the scrollbar auto-
+      * hides on `isScrolling` and keyboard nav (j/k/ArrowDown/ArrowUp)
+      * doesn't currently flip `isScrolling`. The indicator has its own
+      * EDGE_BUMP_SHOW_MS lifecycle and must render regardless of the
+      * scrollbar's visibility.
+      *
+      * Edge asymmetry (top = overline, bottom = underline):
+      * SGR 53 (overline) draws the line ABOVE the character cell; SGR 4
+      * (underline) draws BELOW. The top indicator uses overline so the
+      * line sits against the very top of the first row — "you're bumped
+      * against the top" — instead of reading as "this row's content is
+      * underlined". The bottom indicator uses underline for the mirror
+      * reason. Bead: km-silvery.overline-attr.
+      *
+      * Rendering: the Box has no `backgroundColor`, only the attr prop,
+      * so mergeAttrsInRect (km-silvery.text-box-attr-props) layers the
+      * SGR on every cell in the row WITHOUT overwriting the text glyph /
+      * fg / bg underneath. */}
+    {bumpedEdge === "top" && effectiveRowsAbove === 0 && (
+      <Box position="absolute" top={0} left={0} right={0} height={1} overline />
+    )}
+    {bumpedEdge === "bottom" && effectiveRowsAbove === scrollableRows && (
+      <Box
+        position="absolute"
+        top={trackHeight - 1}
+        left={0}
+        right={0}
+        height={1}
+        underline="single"
+        underlineColor="$muted"
+      />
+    )}
     </Box>
   )
 }
