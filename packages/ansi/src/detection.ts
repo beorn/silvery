@@ -94,12 +94,16 @@ import type { ColorProvenance } from "./profile"
  * Both live on `profile.{caps,emulator}`.
  *
  * Renames from the old flat shape:
- * - `colorLevel` → `colorLevel` (matches the {@link ColorLevel} return type)
  * - `textSizingSupported` → `textSizing` (drops the verbose suffix)
  * - `underlineStyles: boolean` → `underlineStyles: readonly UnderlineStyle[]`
  *   so a terminal that supports curly but not dotted can report that precisely
  * - `colorForced` + `colorProvenance` moved INTO caps (they describe color
  *   resolution, which is caps-adjacent)
+ *
+ * Phase 7 briefly renamed `colorLevel` → `colorTier` on caps, then reverted
+ * in plateau-naming-polish (2026-04-23) because `level` was already the
+ * canonical vocabulary across the stack (Style.level, createStyle({ level }),
+ * pickColorLevel, Pipeline.ColorLevel, run({ colorLevel })). Alignment won.
  */
 export interface TerminalCaps {
   // -------------------------------------------------------------------------
@@ -119,8 +123,7 @@ export interface TerminalCaps {
   // Color (gradation)
   // -------------------------------------------------------------------------
 
-  /** Color support tier. See {@link ColorLevel}. Renamed from `colorLevel` in
-   * Phase 7 to match `hasColor()`'s return type and the usual "tier" parlance. */
+  /** Color support level. See {@link ColorLevel}. */
   readonly colorLevel: ColorLevel
   /**
    * Was the color tier forced by env vars (NO_COLOR / FORCE_COLOR) or a
