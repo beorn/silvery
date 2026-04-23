@@ -1706,36 +1706,26 @@ function ListViewInner<T>(
       * so mergeAttrsInRect (km-silvery.text-box-attr-props) layers the
       * SGR on every cell in the row WITHOUT overwriting the text glyph /
       * fg / bg underneath. */}
-    {/* Edge-bump indicator — overline at top, underline at bottom.
+    {/* Edge-bump indicator — a small 10-char pulsed line in the corner
+      * opposite the direction you pushed. Top-bump puts the line in the
+      * top-right; bottom-bump puts it in the bottom-right. Full-width
+      * lines were too busy and fought with row content. Corner placement
+      * is a peripheral-vision cue — visible enough to catch the eye,
+      * subtle enough not to overlay the reading area.
       *
-      * The render gate is purely `bumpedEdge !== null && isPulseOn`.
-      * We do NOT cross-check `effectiveRowsAbove` against the edge: that
-      * gate was flaky on startup-at-edge because the virtualizer's
-      * first-frame seed (cursor-index-based) can exceed scrollableRows
-      * and the integer/float equality drifted. The transient nature of
-      * the bump is already enforced by two independent clocks —
-      * EDGE_BUMP_SHOW_MS (500 ms auto-hide) + scrollbar-lifecycle sync
-      * (scheduleScrollbarHide clears on idle) — so the indicator is
-      * guaranteed to vanish quickly even if the user scrolls away from
-      * the edge mid-flash.
-      *
-      * Only the SGR overline/underline is drawn; no `bold` attribute
-      * because bold on a position="absolute" Box propagates to the text
-      * cells underneath (mergeAttrsInRect), making the row's text flash
-      * bold too. We want ONLY the line to pulse. */}
+      * Top uses SGR 53 (overline, draws line ABOVE the cell); bottom uses
+      * SGR 4 (underline, BELOW the cell). Against an inverted-bg chrome
+      * line (e.g. a status bar), the thin attr-line + $fg pulse is legible
+      * without bolding the text underneath. */}
     {bumpedEdge === "top" && isPulseOn && (
-      <Box position="absolute" top={0} left={0} right={0} height={1} overline />
+      <Box position="absolute" top={0} right={1} flexDirection="row">
+        <Text color="$fg">━━━━━━━━━━</Text>
+      </Box>
     )}
     {bumpedEdge === "bottom" && isPulseOn && (
-      <Box
-        position="absolute"
-        top={trackHeight - 1}
-        left={0}
-        right={0}
-        height={1}
-        underline="single"
-        underlineColor="$fg"
-      />
+      <Box position="absolute" top={trackHeight - 1} right={1} flexDirection="row">
+        <Text color="$fg">━━━━━━━━━━</Text>
+      </Box>
     )}
     </Box>
   )

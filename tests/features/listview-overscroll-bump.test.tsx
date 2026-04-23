@@ -43,15 +43,16 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
     // — cursor clamps, but intent is bottom overscroll.
     await app.press("j")
 
-    const scanUnderline = (): boolean => {
+    // Corner-line indicator: 10-char "━" string positioned in the corner.
+    const scanCornerLine = (): boolean => {
       for (let row = 0; row < 6; row++) {
         for (let col = 0; col < 30; col++) {
-          if (app.cell(col, row).underline === "single") return true
+          if (app.cell(col, row).char === "━") return true
         }
       }
       return false
     }
-    expect(scanUnderline()).toBe(true)
+    expect(scanCornerLine()).toBe(true)
   })
 
   test("pressing k at first item fires top overscroll indicator", async () => {
@@ -68,15 +69,15 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
 
     await app.press("k")
 
-    // Top indicator renders as overline on the first visible row (row 0).
-    let sawOverline = false
+    // Top indicator renders as 10-char "━" string in the top-right corner (row 0).
+    let sawDash = false
     for (let col = 0; col < 30; col++) {
-      if (app.cell(col, 0).overline === true) {
-        sawOverline = true
+      if (app.cell(col, 0).char === "━") {
+        sawDash = true
         break
       }
     }
-    expect(sawOverline).toBe(true)
+    expect(sawDash).toBe(true)
   })
 
   test("pressing j at mid-list (not at edge) does NOT fire bump", async () => {
@@ -93,17 +94,14 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
 
     await app.press("j")
 
-    // Neither edge indicator should be active — scan whole frame.
-    let sawUnderline = false
-    let sawOverline = false
+    // Neither edge indicator should be active — scan whole frame for the dash.
+    let sawDash = false
     for (let row = 0; row < 6; row++) {
       for (let col = 0; col < 30; col++) {
-        if (app.cell(col, row).underline === "single") sawUnderline = true
-        if (app.cell(col, row).overline === true) sawOverline = true
+        if (app.cell(col, row).char === "━") sawDash = true
       }
     }
-    expect(sawUnderline).toBe(false)
-    expect(sawOverline).toBe(false)
+    expect(sawDash).toBe(false)
   })
 
   test("ArrowDown after reaching last item fires bump (keyboard equivalence to j)", async () => {
@@ -118,17 +116,17 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
     }
     await app.press("ArrowDown") // One past — intent to overscroll.
 
-    let sawUnderline = false
+    let sawDash = false
     for (let row = 0; row < 6; row++) {
       for (let col = 0; col < 30; col++) {
-        if (app.cell(col, row).underline === "single") {
-          sawUnderline = true
+        if (app.cell(col, row).char === "━") {
+          sawDash = true
           break
         }
       }
-      if (sawUnderline) break
+      if (sawDash) break
     }
-    expect(sawUnderline).toBe(true)
+    expect(sawDash).toBe(true)
   })
 
   test("wheel-down when already at bottom fires bump on first event", async () => {
@@ -152,7 +150,7 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
     const scanUnderline = (): boolean => {
       for (let row = 0; row < 6; row++) {
         for (let col = 0; col < 30; col++) {
-          if (app.cell(col, row).underline === "single") return true
+          if (app.cell(col, row).char === "━") return true
         }
       }
       return false
@@ -175,14 +173,14 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
     // Starting cursor is already 0 → viewport flush-top. Negative delta = up.
     await app.wheel(5, 2, -1)
 
-    let sawOverline = false
+    let sawDash = false
     for (let col = 0; col < 30; col++) {
-      if (app.cell(col, 0).overline === true) {
-        sawOverline = true
+      if (app.cell(col, 0).char === "━") {
+        sawDash = true
         break
       }
     }
-    expect(sawOverline).toBe(true)
+    expect(sawDash).toBe(true)
   })
 
   test("overscroll indicator pulses on/off while active", async () => {
@@ -201,7 +199,7 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
     const scanUnderline = (): boolean => {
       for (let row = 0; row < 6; row++) {
         for (let col = 0; col < 30; col++) {
-          if (app.cell(col, row).underline === "single") return true
+          if (app.cell(col, row).char === "━") return true
         }
       }
       return false
@@ -243,16 +241,16 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
     // Now press `G` — asks for items.length-1, already there. No bump.
     await app.press("G")
 
-    let sawUnderline = false
+    let sawDash = false
     for (let row = 0; row < 6; row++) {
       for (let col = 0; col < 30; col++) {
-        if (app.cell(col, row).underline === "single") {
-          sawUnderline = true
+        if (app.cell(col, row).char === "━") {
+          sawDash = true
           break
         }
       }
-      if (sawUnderline) break
+      if (sawDash) break
     }
-    expect(sawUnderline).toBe(false)
+    expect(sawDash).toBe(false)
   })
 })
