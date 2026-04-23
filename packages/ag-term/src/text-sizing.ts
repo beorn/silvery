@@ -70,8 +70,25 @@ export function isPrivateUseArea(cp: number): boolean {
  * Check if text sizing is likely supported based on environment variables.
  * This is a fast synchronous check -- use detectTextSizingSupport() for
  * definitive detection via cursor position reports.
+ *
+ * Prefer the caps-aware form: pass `caps.textSizingSupported` if a
+ * {@link TerminalCaps} is already in scope. The `createTerminalProfile`
+ * detection in `@silvery/ansi/profile` already computes this flag with the
+ * canonical `TERM=xterm-kitty` check + version parse. The env-fallback path
+ * here (TERM_PROGRAM) survives for the one caller (create-app.tsx:1003) that
+ * runs without caps in some test paths.
+ *
+ * The plateau refactor (km-silvery.terminal-profile-plateau) prefers consumers
+ * reading caps over re-reading env. Passing caps turns this helper into a
+ * pass-through; leaving it unset uses the legacy env probe.
  */
-export function isTextSizingLikelySupported(): boolean {
+export function isTextSizingLikelySupported(caps?: {
+  readonly textSizingSupported?: boolean
+}): boolean {
+  // Prefer caps when supplied — profile.ts already made the authoritative
+  // decision via TERM=xterm-kitty + TERM_PROGRAM_VERSION parse.
+  if (caps?.textSizingSupported !== undefined) return caps.textSizingSupported
+
   const termProgram = process.env.TERM_PROGRAM?.toLowerCase() ?? ""
   const termVersion = process.env.TERM_PROGRAM_VERSION ?? ""
 

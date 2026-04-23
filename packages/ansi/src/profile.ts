@@ -292,7 +292,12 @@ export function detectTerminalCapsFromEnv(
 
   const isKitty = term === "xterm-kitty"
   const isITerm = program === "iTerm.app"
-  const isGhostty = program === "ghostty"
+  // TERM_PROGRAM is capitalized "Ghostty" (matches detectColorFromEnv and every
+  // other silvery comparison site). Pre-plateau lowercase comparison meant every
+  // Ghostty cap flag (kittyKeyboard, kittyGraphics, osc52, hyperlinks, …) was
+  // falsely false. Regression test in tests/profile.test.ts pins the full cap
+  // matrix so this can't drift again. See km-silvery.ghostty-case-sensitivity.
+  const isGhostty = program === "Ghostty"
   const isWezTerm = program === "WezTerm"
   const isAlacritty = program === "Alacritty"
   const isFoot = term === "foot" || term === "foot-extra"

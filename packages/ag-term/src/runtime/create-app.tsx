@@ -1000,7 +1000,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // For "auto": use heuristic first, probe to verify if heuristic says yes
   // For "probe": start disabled, probe async to determine
   // For true/false: use directly
-  const heuristicSupported = capsOption?.textSizingSupported ?? isTextSizingLikelySupported()
+  // Pass caps through so the helper prefers the profile's authoritative flag
+  // over its legacy env probe. When caps is present, this collapses to a
+  // direct read; when caps is missing (rare test path) the env probe kicks in.
+  const heuristicSupported = isTextSizingLikelySupported(capsOption)
   const shouldProbe =
     textSizingOption === "probe" || (textSizingOption === "auto" && heuristicSupported)
   // If we have a cached probe result, use it immediately instead of probing again

@@ -304,6 +304,42 @@ describe("contract: RunOptions.profile", () => {
     expect(profile.source).toBe("auto")
     expect(profile.colorTier).toBe("truecolor")
   })
+
+  test("contract: profile wins over caps + colorLevel supplied alongside (documents silent-wins)", async () => {
+    // Documents the run.tsx contract that `profile` supplied with `caps` and
+    // `colorLevel` silently ignores both — the profile wins. This is a
+    // "silent-wins" shape identical to the three plateau precursor bugs
+    // (6c4442ee, 48143ef0, 915b4bf9). Pinning it here prevents a future
+    // refactor from inverting the precedence without flagging this test.
+    //
+    // When we deprecate `caps` / `colorLevel` in favour of profile-only
+    // (km-silvery.plateau-deprecate-caps-field), this test flips from
+    // "documents silent-wins" to "asserts the deprecated fields are
+    // rejected / warned about".
+    using term = createTermless({ cols: 20, rows: 3 })
+    const profile = createTerminalProfile({
+      env: {},
+      stdout: { isTTY: false },
+      caps: { colorLevel: "256", kittyKeyboard: false },
+    })
+    const handle = await run(<Text>hi</Text>, term, {
+      profile,
+      caps: {
+        ...profile.caps,
+        colorLevel: "truecolor", // deliberately conflicts with profile
+        kittyKeyboard: true, // deliberately conflicts
+      },
+      colorLevel: "mono", // deliberately conflicts
+    })
+    await settle(80)
+    // The profile's shape is what reached the pipeline. If caps/colorLevel
+    // had silently won, we'd be asserting truecolor + kitty — this test would
+    // flip. Breaking this assertion is a red flag for precedence inversion.
+    expect(profile.caps.colorLevel).toBe("256")
+    expect(profile.caps.kittyKeyboard).toBe(false)
+    expect(profile.colorTier).toBe("256")
+    handle.unmount()
+  })
 })
 
 // ============================================================================
