@@ -1476,16 +1476,20 @@ function ListViewInner<T>(
             {rows}
           </Box>
           {/* Overscroll indicator — spans the entire ListView width: a
-            * full-row bg tint on the first line (top) or the last visible
-            * line (bottom). Transient: the flash timer auto-hides after
-            * EDGE_BUMP_SHOW_MS, BUT we also gate on the scroll position
-            * still being at the corresponding edge. If the user scrolls
-            * away from the edge before the timer fires, the indicator
-            * vanishes immediately — it's meaningless when the edge line
-            * isn't on screen anymore. Note on rendering: the bg tint
-            * overwrites the first/last rendered line's background (the
-            * Text inside it keeps its glyphs but loses its bg). Proper
-            * SGR-underline overlay tracked in km-silvery.text-box-attr-props. */}
+            * transparent SGR underline overlay on the first line (top) or
+            * the last visible line (bottom). Transient: the flash timer
+            * auto-hides after EDGE_BUMP_SHOW_MS, BUT we also gate on the
+            * scroll position still being at the corresponding edge. If the
+            * user scrolls away from the edge before the timer fires, the
+            * indicator vanishes immediately — it's meaningless when the
+            * edge line isn't on screen anymore.
+            *
+            * Rendering: the Box has no `backgroundColor`, only the `underline`
+            * attr prop, so mergeAttrsInRect (km-silvery.text-box-attr-props)
+            * layers an SGR underline on every cell in the row WITHOUT
+            * overwriting the text glyph / fg / bg underneath. The previous
+            * implementation used `backgroundColor="$muted"` which effectively
+            * overwrote the entire line's characters. */}
           {bumpedEdge === "top" && effectiveRowsAbove === 0 && (
             <Box
               position="absolute"
@@ -1493,7 +1497,8 @@ function ListViewInner<T>(
               left={0}
               right={0}
               height={1}
-              backgroundColor="$muted"
+              underline="single"
+              underlineColor="$muted"
             />
           )}
           {bumpedEdge === "bottom" && effectiveRowsAbove === scrollableRows && (
@@ -1503,7 +1508,8 @@ function ListViewInner<T>(
               left={0}
               right={0}
               height={1}
-              backgroundColor="$muted"
+              underline="single"
+              underlineColor="$muted"
             />
           )}
         </>
