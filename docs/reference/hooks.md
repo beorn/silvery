@@ -159,7 +159,7 @@ function StatusLine() {
 
   return (
     <Text>
-      {term.caps.colorTier ? term.green("OK") : "OK"}
+      {term.caps.colorLevel ? term.green("OK") : "OK"}
       {` ${term.cols}x${term.rows}`}
     </Text>
   )

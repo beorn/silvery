@@ -106,14 +106,14 @@ const DEFAULT_TEXT_SIZING_ENABLED = false
  * Set by runWithMeasurer() during pipeline execution, restored after.
  * When null, module-level functions use the lazy default measurer.
  */
-let _scopedMeasurer: WidthMeasurer | null = null
+let _scopedMeasurer: Measurer | null = null
 
 /**
  * Run a function with a specific measurer as the active scope.
  * Module-level convenience functions (graphemeWidth, displayWidth, etc.)
  * will use this measurer instead of the lazy default for the duration.
  */
-export function runWithMeasurer<T>(measurer: WidthMeasurer, fn: () => T): T {
+export function runWithMeasurer<T>(measurer: Measurer, fn: () => T): T {
   const prev = _scopedMeasurer
   _scopedMeasurer = measurer
   try {
@@ -139,7 +139,7 @@ export function isTextSizingEnabled(): boolean {
 
 /**
  * Width measurement functions scoped to specific terminal capabilities.
- * Created by createWidthMeasurer() from TerminalCaps.
+ * Created by createMeasurer() from TerminalCaps.
  */
 export interface Measurer {
   readonly maybeWideEmojis: boolean
@@ -154,9 +154,6 @@ export interface Measurer {
   sliceByWidthFromEnd(text: string, maxWidth: number): string
 }
 
-/** Backward-compatible alias for Measurer. */
-export type WidthMeasurer = Measurer
-
 /**
  * Strip OSC 8 hyperlink sequences before passing to slice-ansi.
  * slice-ansi doesn't understand OSC sequences and corrupts them.
@@ -170,7 +167,7 @@ function stripOsc8ForSlice(text: string): string {
  * Create a width measurer scoped to terminal capabilities.
  * Each measurer has its own caches (no shared global state).
  */
-export function createWidthMeasurer(
+export function createMeasurer(
   caps: { maybeWideEmojis?: boolean; textSizing?: boolean } = {},
 ): Measurer {
   const maybeWideEmojis = caps.maybeWideEmojis ?? true
@@ -268,9 +265,6 @@ export function createWidthMeasurer(
   return measurer
 }
 
-/** Alias for createWidthMeasurer. */
-export const createMeasurer = createWidthMeasurer
-
 // ============================================================================
 // Default Measurer (lazy singleton for module-level convenience functions)
 // ============================================================================
@@ -280,7 +274,7 @@ let _defaultMeasurer: Measurer | undefined
 /** Get the default measurer (lazy init, uses default caps). */
 function getDefaultMeasurer(): Measurer {
   if (!_defaultMeasurer) {
-    _defaultMeasurer = createWidthMeasurer()
+    _defaultMeasurer = createMeasurer()
   }
   return _defaultMeasurer
 }

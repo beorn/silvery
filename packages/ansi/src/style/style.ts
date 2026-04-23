@@ -153,16 +153,16 @@ const THEME_TOKENS = new Set([
 // Public API
 // =============================================================================
 
-/** Convert chalk numeric level (0-3) to {@link ColorTier}. */
-function fromChalkLevel(n: number): import("../types.ts").ColorTier {
+/** Convert chalk numeric level (0-3) to {@link ColorLevel}. */
+function fromChalkLevel(n: number): import("../types.ts").ColorLevel {
   if (n <= 0) return "mono"
   if (n === 1) return "ansi16"
   if (n === 2) return "256"
   return "truecolor"
 }
 
-/** Convert {@link ColorTier} to chalk numeric level (0-3). */
-function toChalkLevel(cl: import("../types.ts").ColorTier): number {
+/** Convert {@link ColorLevel} to chalk numeric level (0-3). */
+function toChalkLevel(cl: import("../types.ts").ColorLevel): number {
   if (cl === "mono") return 0
   if (cl === "ansi16") return 1
   if (cl === "256") return 2
@@ -192,13 +192,13 @@ function toChalkLevel(cl: import("../types.ts").ColorTier): number {
 export function createStyle(options?: StyleOptions): Style {
   // Mutable level ref — shared across all chains from this instance.
   // Post km-silvery.terminal-profile-plateau Phase 1: level is the canonical
-  // {@link ColorTier}, where `"mono"` is the no-color state (previously `null`).
+  // {@link ColorLevel}, where `"mono"` is the no-color state (previously `null`).
   // Post km-silvery.underline-on-style (Phase 6, 2026-04-23): `caps` also
   // lives on the ref — drives the extended-underline methods on the returned
   // Style. When options.caps is absent, the single `createTerminalProfile()`
   // call below populates both level and caps in one pass.
   const ref: {
-    level: import("../types.ts").ColorTier
+    level: import("../types.ts").ColorLevel
     theme: ThemeLike | undefined
     caps: { underlineStyles: boolean; underlineColor: boolean }
   } = {
@@ -219,7 +219,7 @@ export function createStyle(options?: StyleOptions): Style {
       // replaces the `detectColor` shim. Same semantics — env precedence
       // and TTY detection — but routed through the canonical entry point.
       const profile = createTerminalProfile({ stdout: process.stdout })
-      ref.level = profile.colorTier
+      ref.level = profile.colorLevel
       ref.caps = options?.caps ?? {
         // Phase 7: profile.caps.underlineStyles is a
         // `readonly UnderlineStyle[]`. Style's internal ref only needs a
@@ -244,7 +244,7 @@ export function createStyle(options?: StyleOptions): Style {
  *
  * @param level - Color level override. Auto-detected if omitted.
  */
-export function createPlainStyle(level?: import("../types.ts").ColorTier | null): Style {
+export function createPlainStyle(level?: import("../types.ts").ColorLevel | null): Style {
   return createStyle({ level })
 }
 
@@ -262,7 +262,7 @@ export const style: Style = createStyle()
 function createChainWithRef(
   state: ChainState,
   ref: {
-    level: import("../types.ts").ColorTier
+    level: import("../types.ts").ColorLevel
     theme: ThemeLike | undefined
     caps: { underlineStyles: boolean; underlineColor: boolean }
   },
@@ -550,7 +550,7 @@ function applyExtendedUnderline(
   text: string,
   name: "curly" | "dotted" | "dashed" | "double",
   ref: {
-    level: import("../types.ts").ColorTier
+    level: import("../types.ts").ColorLevel
     caps: { underlineStyles: boolean; underlineColor: boolean }
   },
 ): string {
@@ -568,7 +568,7 @@ function applyUnderlineColor(
   g: number,
   b: number,
   ref: {
-    level: import("../types.ts").ColorTier
+    level: import("../types.ts").ColorLevel
     caps: { underlineStyles: boolean; underlineColor: boolean }
   },
 ): string {
@@ -587,7 +587,7 @@ function applyStyledUnderline(
   name: import("../types.ts").UnderlineStyle,
   rgb: import("../types.ts").RGB,
   ref: {
-    level: import("../types.ts").ColorTier
+    level: import("../types.ts").ColorLevel
     caps: { underlineStyles: boolean; underlineColor: boolean }
   },
 ): string {

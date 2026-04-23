@@ -150,7 +150,7 @@ import {
 /**
  * Dark ANSI 16 theme — hex-valued, derived from the default dark scheme.
  * All token values are hex strings (no ANSI slot names).
- * Terminal rendering quantizes hex to 4-bit ANSI codes when colorTier === "ansi16".
+ * Terminal rendering quantizes hex to 4-bit ANSI codes when colorLevel === "ansi16".
  *
  * Sterling flat tokens (`bg-surface-subtle`, `fg-on-accent`, `border-focus`, …)
  * are baked in at construction — consumers can read either legacy fields or
@@ -161,7 +161,7 @@ export const ansi16DarkTheme: Theme = inlineSterlingTokens(_ansi16DarkTheme)
 /**
  * Light ANSI 16 theme — hex-valued, derived from the default light scheme.
  * All token values are hex strings (no ANSI slot names).
- * Terminal rendering quantizes hex to 4-bit ANSI codes when colorTier === "ansi16".
+ * Terminal rendering quantizes hex to 4-bit ANSI codes when colorLevel === "ansi16".
  *
  * Sterling flat tokens baked in at construction.
  */

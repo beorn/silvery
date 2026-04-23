@@ -14,7 +14,7 @@ await run(<App />, term)            // Pass to any runtime layer
 
 term.bold.red('hello')              // Styling (chalk-compatible)
 term.cols, term.rows                // Dimensions
-term.caps.cursor, term.caps.colorTier   // Capability detection
+term.caps.cursor, term.caps.colorLevel   // Capability detection
 ```
 
 The same `Term` works across all layers — you create it once and pass it wherever you need a terminal.

@@ -6,7 +6,7 @@
  */
 
 import type { Term, TerminalCaps } from "./ansi/index"
-import { createWidthMeasurer, type Measurer } from "./unicode"
+import { createMeasurer, type Measurer } from "./unicode"
 import { createOutputPhase } from "./pipeline/output-phase"
 import { setActiveColorLevel } from "./pipeline/state"
 import type { PipelineConfig } from "./pipeline"
@@ -29,7 +29,7 @@ export function withMeasurer(term: Term): MeasuredTerm {
   // caps is a structural superset of the measurer's input — name alignment
   // (maybeWideEmojis, textSizing) lets the whole caps object flow through.
   // Excess fields are ignored.
-  const measurer = createWidthMeasurer(caps ?? {})
+  const measurer = createMeasurer(caps ?? {})
 
   return Object.create(term, {
     maybeWideEmojis: { get: () => measurer.maybeWideEmojis, enumerable: true },
@@ -61,10 +61,10 @@ export function createPipeline(
   } = {},
 ): PipelineConfig {
   const { caps, measurer: explicitMeasurer } = options
-  // caps is a structural superset of createWidthMeasurer's input — the aligned
+  // caps is a structural superset of createMeasurer's input — the aligned
   // field names (`maybeWideEmojis`, `textSizing`) let it spread through as a
   // no-op. Excess caps fields are ignored.
-  const measurer = explicitMeasurer ?? createWidthMeasurer(caps ?? {})
+  const measurer = explicitMeasurer ?? createMeasurer(caps ?? {})
   const outputPhaseFn = createOutputPhase(
     caps
       ? {
@@ -73,17 +73,17 @@ export function createPipeline(
           // underline work?"), so we project the array length.
           underlineStyles: caps.underlineStyles.length > 0,
           underlineColor: caps.underlineColor,
-          colorTier: caps.colorTier,
+          colorLevel: caps.colorLevel,
         }
       : {},
     measurer,
   )
-  // Mirror colorTier into module-scoped theme state so render-helpers
+  // Mirror colorLevel into module-scoped theme state so render-helpers
   // (parseColor, getTextStyle) can dispatch on tier without access to
   // OutputContext. At mono tier ("none"), $tokens resolve to null fg/bg and
   // getTextStyle injects per-token SGR attrs from DEFAULT_MONO_ATTRS so apps
   // keep hierarchy (bold / dim / italic / underline / inverse) when color is
   // unavailable.
-  if (caps?.colorTier) setActiveColorLevel(caps.colorTier)
+  if (caps?.colorLevel) setActiveColorLevel(caps.colorLevel)
   return { measurer, outputPhaseFn }
 }

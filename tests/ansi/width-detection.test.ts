@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest"
 import {
   createWidthDetector,
-  createWidthMeasurer,
+  createMeasurer,
   DEFAULT_WIDTH_CONFIG,
   WidthMode,
   applyWidthConfig,
@@ -354,9 +354,9 @@ describe("applyWidthConfig", () => {
 
   it("detected config overrides width measurement via measurer", async () => {
     // Without emoji wide: text-presentation emoji = 1 cell
-    const narrow = createWidthMeasurer({ maybeWideEmojis: false })
+    const narrow = createMeasurer({ maybeWideEmojis: false })
     // With emoji wide: text-presentation emoji = 2 cells
-    const wide = createWidthMeasurer({ maybeWideEmojis: true })
+    const wide = createMeasurer({ maybeWideEmojis: true })
 
     // Warning sign (⚠) is a text-presentation emoji
     const warningSign = "\u26A0"
@@ -394,7 +394,7 @@ describe("width detection → measurer integration", () => {
     expect(updatedCaps.textSizing).toBe(true)
 
     // Create measurer from updated caps — map textSizing → textSizing
-    const measurer = createWidthMeasurer({
+    const measurer = createMeasurer({
       maybeWideEmojis: updatedCaps.maybeWideEmojis,
       textSizing: updatedCaps.textSizing,
     })
@@ -430,7 +430,7 @@ describe("width detection → measurer integration", () => {
 
     // DEC 1022=reset overrides the default
     expect(updatedCaps.maybeWideEmojis).toBe(false)
-    const measurer = createWidthMeasurer({ maybeWideEmojis: updatedCaps.maybeWideEmojis })
+    const measurer = createMeasurer({ maybeWideEmojis: updatedCaps.maybeWideEmojis })
     const warningSign = "\u26A0"
     expect(measurer.graphemeWidth(warningSign)).toBe(1)
   })
@@ -479,7 +479,7 @@ describe("width detection → measurer integration", () => {
     expect(updatedCaps.textSizing).toBe(false) // default privateUseWidth=1
 
     // Measurer should use the default wide emoji behavior
-    const measurer = createWidthMeasurer({
+    const measurer = createMeasurer({
       maybeWideEmojis: updatedCaps.maybeWideEmojis,
       textSizing: updatedCaps.textSizing,
     })
@@ -505,7 +505,7 @@ describe("width detection → measurer integration", () => {
     expect(updatedCaps.textSizing).toBe(false)
 
     // Create measurer from updated caps (same as createPipeline does internally)
-    const measurer = createWidthMeasurer({
+    const measurer = createMeasurer({
       maybeWideEmojis: updatedCaps.maybeWideEmojis,
       textSizing: updatedCaps.textSizing,
     })

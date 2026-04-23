@@ -76,7 +76,7 @@ export function runTermtest(options?: TermtestOptions): void {
   w.write(`  TERM: ${emulator.TERM || "(unknown)"}\n`)
   w.write(`  COLORTERM: ${process.env.COLORTERM || "(unset)"}\n`)
   w.write(
-    `  Detected: color=${caps.colorTier} maybe-dark=${caps.maybeDarkBackground} maybe-nerdfont=${caps.maybeNerdFont}\n`,
+    `  Detected: color=${caps.colorLevel} maybe-dark=${caps.maybeDarkBackground} maybe-nerdfont=${caps.maybeNerdFont}\n`,
   )
   w.write(
     `  Underline: styles=[${caps.underlineStyles.join(", ")}] color=${caps.underlineColor}\n`,

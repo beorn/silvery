@@ -31,7 +31,7 @@ If **no**, only append-only output works (use `renderString()`).
 term.caps.cursor // stdout.isTTY && TERM !== 'dumb'
 ```
 
-### 2. Color Level (`term.caps.colorTier`)
+### 2. Color Level (`term.caps.colorLevel`)
 
 What color codes does the terminal support?
 
@@ -45,7 +45,7 @@ What color codes does the terminal support?
 **Detection:**
 
 ```ts
-term.caps.colorTier // null | 'basic' | '256' | 'truecolor'
+term.caps.colorLevel // null | 'basic' | '256' | 'truecolor'
 ```
 
 ### 3. Input Capability (`term.caps.input`)
@@ -197,7 +197,7 @@ using term = createTerm({
 // Detection
 term.caps.cursor // boolean - can use cursor control?
 term.caps.input // boolean - can read keystrokes (raw mode)?
-term.caps.colorTier // null | 'basic' | '256' | 'truecolor'
+term.caps.colorLevel // null | 'basic' | '256' | 'truecolor'
 
 // Dimensions
 term.cols // number | undefined
@@ -247,7 +247,7 @@ function StatusLine({ status }: { status: string }) {
   const term = useTerm()
 
   // Same component, adapts to capabilities
-  const color = term.caps.colorTier ? "green" : undefined
+  const color = term.caps.colorLevel ? "green" : undefined
 
   return (
     <Box>

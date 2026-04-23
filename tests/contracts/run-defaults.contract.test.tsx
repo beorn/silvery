@@ -105,7 +105,7 @@ describe("contract: RunOptions.selection", () => {
 // Seed 2 — createTerminalProfile honors FORCE_COLOR
 // ============================================================================
 //
-// Docstring (createTerminalProfile): "Priority for the final colorTier
+// Docstring (createTerminalProfile): "Priority for the final colorLevel
 // (highest wins): 1. NO_COLOR env var [...] 2. FORCE_COLOR env var [...]"
 //
 // Regression history: pre-H6, `detectTerminalCaps()` had its own TERM/
@@ -121,32 +121,32 @@ describe("contract: createTerminalProfile env precedence", () => {
   test("contract: profile honors FORCE_COLOR=3 (truecolor)", () => {
     process.env.FORCE_COLOR = "3"
     const caps = createTerminalProfile().caps
-    expect(caps.colorTier).toBe("truecolor")
+    expect(caps.colorLevel).toBe("truecolor")
   })
 
   test("contract: profile honors FORCE_COLOR=2 (256)", () => {
     process.env.FORCE_COLOR = "2"
     const caps = createTerminalProfile().caps
-    expect(caps.colorTier).toBe("256")
+    expect(caps.colorLevel).toBe("256")
   })
 
   test("contract: profile honors FORCE_COLOR=1 (ansi16)", () => {
     process.env.FORCE_COLOR = "1"
     const caps = createTerminalProfile().caps
-    expect(caps.colorTier).toBe("ansi16")
+    expect(caps.colorLevel).toBe("ansi16")
   })
 
   test("contract: profile honors FORCE_COLOR=0 (mono)", () => {
     process.env.FORCE_COLOR = "0"
     const caps = createTerminalProfile().caps
-    expect(caps.colorTier).toBe("mono")
+    expect(caps.colorLevel).toBe("mono")
   })
 
   test("contract: NO_COLOR wins over FORCE_COLOR (documented precedence)", () => {
     process.env.NO_COLOR = "1"
     process.env.FORCE_COLOR = "3"
     const caps = createTerminalProfile().caps
-    expect(caps.colorTier).toBe("mono")
+    expect(caps.colorLevel).toBe("mono")
   })
 })
 
@@ -214,40 +214,40 @@ describe("contract: createTerminalProfile env precedence", () => {
   test("contract: createTerminalProfile honors FORCE_COLOR=3 (truecolor)", () => {
     process.env.FORCE_COLOR = "3"
     const profile = createTerminalProfile()
-    expect(profile.colorTier).toBe("truecolor")
-    expect(profile.caps.colorTier).toBe("truecolor")
+    expect(profile.colorLevel).toBe("truecolor")
+    expect(profile.caps.colorLevel).toBe("truecolor")
   })
 
   test("contract: createTerminalProfile honors FORCE_COLOR=0 (mono)", () => {
     process.env.FORCE_COLOR = "0"
     const profile = createTerminalProfile()
-    expect(profile.colorTier).toBe("mono")
+    expect(profile.colorLevel).toBe("mono")
   })
 
   test("contract: createTerminalProfile NO_COLOR wins over FORCE_COLOR", () => {
     process.env.NO_COLOR = "1"
     process.env.FORCE_COLOR = "3"
     const profile = createTerminalProfile()
-    expect(profile.colorTier).toBe("mono")
+    expect(profile.colorLevel).toBe("mono")
   })
 
-  test("contract: env wins over explicit colorOverride", () => {
+  test("contract: env wins over explicit colorLevel", () => {
     // Canonical divergence between silvery and a caller that forces truecolor:
     // the user's FORCE_COLOR=0 must still win. If this precedence ever flips,
     // `FORCE_COLOR=0 bun app` stops being a reliable escape hatch.
     process.env.FORCE_COLOR = "0"
-    const profile = createTerminalProfile({ colorOverride: "truecolor" })
-    expect(profile.colorTier).toBe("mono")
+    const profile = createTerminalProfile({ colorLevel: "truecolor" })
+    expect(profile.colorLevel).toBe("mono")
   })
 
-  test("contract: colorOverride wins over caps.colorTier (when env is silent)", () => {
+  test("contract: colorLevel wins over caps.colorLevel (when env is silent)", () => {
     const profile = createTerminalProfile({
       env: {}, // no env overrides
       stdout: { isTTY: false }, // non-TTY so auto would be mono
-      colorOverride: "256",
-      caps: { colorTier: "ansi16" },
+      colorLevel: "256",
+      caps: { colorLevel: "ansi16" },
     })
-    expect(profile.colorTier).toBe("256")
+    expect(profile.colorLevel).toBe("256")
   })
 
   test("contract: createTerminalProfile honors FORCE_COLOR (regression for 48143ef0)", () => {
@@ -258,7 +258,7 @@ describe("contract: createTerminalProfile env precedence", () => {
     // preserve the post-48143ef0 behaviour exactly.
     process.env.FORCE_COLOR = "3"
     const caps = createTerminalProfile().caps
-    expect(caps.colorTier).toBe("truecolor")
+    expect(caps.colorLevel).toBe("truecolor")
   })
 })
 
@@ -278,7 +278,7 @@ describe("contract: RunOptions.profile", () => {
     const profile = createTerminalProfile({
       env: {},
       stdout: { isTTY: false },
-      caps: { colorTier: "truecolor", kittyKeyboard: true },
+      caps: { colorLevel: "truecolor", kittyKeyboard: true },
     })
     const handle = await run(<Text>hi</Text>, term, { profile })
     await settle(80)
@@ -286,23 +286,23 @@ describe("contract: RunOptions.profile", () => {
     // pre-built profile had been ignored, run() would have rebuilt caps from
     // `term.caps` and the kitty flag would NOT be set on this non-TTY profile.
     expect(profile.caps.kittyKeyboard).toBe(true)
-    expect(profile.colorTier).toBe("truecolor")
+    expect(profile.colorLevel).toBe("truecolor")
     handle.unmount()
   })
 
   test("contract: profile with colorProvenance='override' triggers pre-quantize gate (options path)", () => {
     // This test pins the gate behaviour at the unit level — building the
-    // profile directly and asserting `colorForced` / `colorTier` lets us prove
+    // profile directly and asserting `colorForced` / `colorLevel` lets us prove
     // that probeTerminalProfile's `profile.caps.colorForced` branch will fire
     // without spinning up a full Termless harness.
     const profile = createTerminalProfile({
       env: {},
       stdout: { isTTY: false },
-      colorOverride: "256",
+      colorLevel: "256",
     })
     expect(profile.caps.colorProvenance).toBe("override")
     expect(profile.caps.colorForced).toBe(true)
-    expect(profile.colorTier).toBe("256")
+    expect(profile.colorLevel).toBe("256")
   })
 
   test("contract: profile with colorProvenance='auto' does NOT trigger pre-quantize gate", () => {
@@ -312,37 +312,37 @@ describe("contract: RunOptions.profile", () => {
     })
     expect(profile.caps.colorProvenance).toBe("auto")
     expect(profile.caps.colorForced).toBe(false)
-    expect(profile.colorTier).toBe("truecolor")
+    expect(profile.colorLevel).toBe("truecolor")
   })
 
-  test("contract: profile + caps/colorTier mixed — TS-level XOR blocks it, JS caller gets a runtime warning (profile still wins)", async () => {
+  test("contract: profile + caps/colorLevel mixed — TS-level XOR blocks it, JS caller gets a runtime warning (profile still wins)", async () => {
     // Phase 5 (/pro review 2026-04-23). The prior "silent-wins" semantics
-    // that supplying both fields ignored caps/colorTier was exactly the bug
+    // that supplying both fields ignored caps/colorLevel was exactly the bug
     // class the plateau was supposed to kill. Now:
     //   - TS callers: `RunOptions` is a type-level XOR — mixing is a compile
     //     error. That's the primary defence.
     //   - JS callers: `run()` emits a one-time console.warn documenting the
     //     migration path. Profile still wins (back-compat back-stop) but the
-    //     user is on notice that caps/colorTier will go away in 1.1.
+    //     user is on notice that caps/colorLevel will go away in 1.1.
     using term = createTermless({ cols: 20, rows: 3 })
     const profile = createTerminalProfile({
       env: {},
       stdout: { isTTY: false },
-      caps: { colorTier: "256", kittyKeyboard: false },
+      caps: { colorLevel: "256", kittyKeyboard: false },
     })
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
     // Reset the once-per-process warning latch so this test sees the warn.
     _resetRunOptionsWarningForTesting()
     // `as any` simulates a JS caller that smuggled both keys through (a TS
-    // caller would have failed to compile on `{ profile, caps, colorTier }`).
+    // caller would have failed to compile on `{ profile, caps, colorLevel }`).
     const badOptions = {
       profile,
       caps: {
         ...profile.caps,
-        colorTier: "truecolor",
+        colorLevel: "truecolor",
         kittyKeyboard: true,
       },
-      colorTier: "mono",
+      colorLevel: "mono",
     } as unknown as Parameters<typeof run>[2]
     const handle = await run(<Text>hi</Text>, term, badOptions)
     await settle(80)
@@ -351,9 +351,9 @@ describe("contract: RunOptions.profile", () => {
     expect(warnSpy.mock.calls[0]?.[0]).toContain("mutually exclusive")
     expect(warnSpy.mock.calls[0]?.[0]).toContain("createTerminalProfile")
     // Profile still wins — not truecolor, not kittyKeyboard, not mono.
-    expect(profile.caps.colorTier).toBe("256")
+    expect(profile.caps.colorLevel).toBe("256")
     expect(profile.caps.kittyKeyboard).toBe(false)
-    expect(profile.colorTier).toBe("256")
+    expect(profile.colorLevel).toBe("256")
     warnSpy.mockRestore()
     handle.unmount()
   })
@@ -370,7 +370,7 @@ describe("contract: RunOptions.profile", () => {
     // minimal-fixture JS-style call targeting the deprecation warning.
     const handle = await run(<Text>hi</Text>, term, {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      caps: { colorTier: "256", underlineStyles: [], underlineColor: false } as any,
+      caps: { colorLevel: "256", underlineStyles: [], underlineColor: false } as any,
     })
     await settle(80)
     expect(warnSpy).toHaveBeenCalled()
@@ -385,9 +385,9 @@ describe("contract: RunOptions.profile", () => {
 
   test("contract: run({ colorLevel }) alone emits the deprecation warning", async () => {
     // Legacy option field name — the RunOptions deprecation branch is still
-    // called `colorLevel` (not `colorTier`) even after Phase 7 renamed
+    // called `colorLevel` (not `colorLevel`) even after Phase 7 renamed
     // the caps field. Migration is via `profile: createTerminalProfile({
-    // colorOverride })` which uses the new vocabulary; the legacy field
+    // colorLevel })` which uses the new vocabulary; the legacy field
     // name stays for backward compat until 1.1 deletion.
     using term = createTermless({ cols: 20, rows: 3 })
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
@@ -400,7 +400,7 @@ describe("contract: RunOptions.profile", () => {
     expect(
       messages.some((m) => m.includes("run({ colorLevel })") && m.includes("deprecated")),
     ).toBe(true)
-    expect(messages.some((m) => m.includes("colorOverride"))).toBe(true)
+    expect(messages.some((m) => m.includes("colorLevel"))).toBe(true)
     warnSpy.mockRestore()
     handle.unmount()
   })
@@ -412,7 +412,7 @@ describe("contract: RunOptions.profile", () => {
     const profile = createTerminalProfile({
       env: {},
       stdout: { isTTY: false },
-      colorOverride: "256",
+      colorLevel: "256",
     })
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
     _resetRunOptionsWarningForTesting()
@@ -427,7 +427,7 @@ describe("contract: RunOptions.profile", () => {
           typeof m === "string" &&
           (m.includes("mutually exclusive") ||
             m.includes("run({ caps })") ||
-            m.includes("run({ colorTier })")),
+            m.includes("run({ colorLevel })")),
       )
     expect(phase5Warns).toEqual([])
     warnSpy.mockRestore()
@@ -450,6 +450,6 @@ describe("contract: RunOptions.profile", () => {
 // - `mode` — Default: "fullscreen"
 // - `suspendOnCtrlZ` — Default: true
 // - `exitOnCtrlC` — Default: true
-// - `colorTier` — auto-detect from caps (no explicit default, but documented as priority tail)
+// - `colorLevel` — auto-detect from caps (no explicit default, but documented as priority tail)
 //
 // See `RunOptions` in packages/ag-term/src/runtime/run.tsx for the full list.

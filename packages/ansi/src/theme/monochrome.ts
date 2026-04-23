@@ -2,7 +2,7 @@
  * Monochrome theme — per-token SGR attrs for terminals without color.
  *
  * When color is unavailable (NO_COLOR env, TERM=dumb, SILVERY_COLOR=mono,
- * OSC-queried ColorTier="mono"), silvery apps stay hierarchical via per-token
+ * OSC-queried ColorLevel="mono"), silvery apps stay hierarchical via per-token
  * SGR attrs: bold for emphasis, dim for muted, inverse for selection, italic
  * for info, underline for links.
  *

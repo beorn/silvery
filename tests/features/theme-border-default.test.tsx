@@ -60,7 +60,7 @@ describe("theme: Sterling flat tokens are present on every shipped Theme", () =>
     // No terminal attached in vitest — detectTheme falls back to the ANSI 16
     // theme derived from caps.darkBackground. The wrapper in @silvery/theme
     // must still run it through inlineSterlingTokens.
-    const theme = await detectTheme({ caps: { colorTier: "ansi16", darkBackground: true } })
+    const theme = await detectTheme({ caps: { colorLevel: "ansi16", darkBackground: true } })
     const t = theme as unknown as Record<string, string | undefined>
     expect(t["border-default"]).toBeTypeOf("string")
     expect(t["border-muted"]).toBeTypeOf("string")

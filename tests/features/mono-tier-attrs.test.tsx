@@ -1,7 +1,7 @@
 /**
  * Mono-tier SGR attrs — end-to-end regression.
  *
- * When `colorTier === "mono"` (NO_COLOR / TERM=dumb / SILVERY_COLOR=mono),
+ * When `colorLevel === "mono"` (NO_COLOR / TERM=dumb / SILVERY_COLOR=mono),
  * the render pipeline must:
  *
  *   1. Strip all colors. `$primary`, `$muted`, ..., `#FF0000`, `"red"` — all
@@ -225,12 +225,12 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
 // ============================================================================
 
 describe("output phase: mono tier strips fg/bg SGR codes", () => {
-  test("a cell with RGB fg emits no SGR color at colorTier=none", () => {
+  test("a cell with RGB fg emits no SGR color at colorLevel=none", () => {
     const buf = createBuffer(6, 1)
     // Write a cell with red fg — as if a user wrote color="#FF0000"
     buf.setCell(0, 0, { char: "X", fg: { r: 255, g: 0, b: 0 } })
 
-    const renderMono = createOutputPhase({ colorTier: "mono" })
+    const renderMono = createOutputPhase({ colorLevel: "mono" })
     const out = renderMono(null, buf, "fullscreen")
 
     // Must NOT contain a 38;2;... (truecolor fg) or 38;5;... (256) sequence
@@ -239,11 +239,11 @@ describe("output phase: mono tier strips fg/bg SGR codes", () => {
     expect(out).not.toMatch(/\x1b\[31m/)
   })
 
-  test("a cell with RGB bg emits no SGR bg color at colorTier=none", () => {
+  test("a cell with RGB bg emits no SGR bg color at colorLevel=none", () => {
     const buf = createBuffer(6, 1)
     buf.setCell(0, 0, { char: "X", bg: { r: 0, g: 128, b: 255 } })
 
-    const renderMono = createOutputPhase({ colorTier: "mono" })
+    const renderMono = createOutputPhase({ colorLevel: "mono" })
     const out = renderMono(null, buf, "fullscreen")
 
     expect(out).not.toMatch(/48;2;0;128;255/)
@@ -257,7 +257,7 @@ describe("output phase: mono tier strips fg/bg SGR codes", () => {
       attrs: { bold: true, inverse: true, underline: true, underlineStyle: "single" },
     })
 
-    const renderMono = createOutputPhase({ colorTier: "mono" })
+    const renderMono = createOutputPhase({ colorLevel: "mono" })
     const out = renderMono(null, buf, "fullscreen")
 
     // Bold = SGR 1, inverse = SGR 7, underline = SGR 4 or 4:1
@@ -271,7 +271,7 @@ describe("output phase: mono tier strips fg/bg SGR codes", () => {
     const buf = createBuffer(6, 1)
     buf.setCell(0, 0, { char: "X", fg: { r: 255, g: 0, b: 0 } })
 
-    const renderTruecolor = createOutputPhase({ colorTier: "truecolor" })
+    const renderTruecolor = createOutputPhase({ colorLevel: "truecolor" })
     const out = renderTruecolor(null, buf, "fullscreen")
 
     expect(out).toMatch(/38;2;255;0;0/)
@@ -283,7 +283,7 @@ describe("output phase: mono tier strips fg/bg SGR codes", () => {
 // ============================================================================
 
 describe("render pipeline: $token attrs reach the buffer at mono tier", () => {
-  // The default test renderer hardcodes its terminal to colorTier=truecolor,
+  // The default test renderer hardcodes its terminal to colorLevel=truecolor,
   // so we flip the global active color level to drive parseColor + getTextStyle
   // down the mono branch. The buffer we inspect via app.cell() captures the
   // Style that was written during the render phase — exactly what gets handed

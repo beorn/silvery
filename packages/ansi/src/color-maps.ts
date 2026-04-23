@@ -7,11 +7,11 @@
  * @see https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
  */
 
-import type { ColorTier } from "./types"
+import type { ColorLevel } from "./types"
 
-// Re-export so existing callers that do `import { ColorTier } from "./color-maps"`
+// Re-export so existing callers that do `import { ColorLevel } from "./color-maps"`
 // keep compiling after the canonical definition moved to `./types`.
-export type { ColorTier }
+export type { ColorLevel }
 
 // =============================================================================
 // SGR Code Constants
@@ -172,7 +172,7 @@ export function rgbToAnsi256(r: number, g: number, b: number): number {
  * throwing, since callers that get here with `"mono"` have already bypassed
  * the mono short-circuit.
  */
-export function fgFromRgb(r: number, g: number, b: number, tier: ColorTier): string {
+export function fgFromRgb(r: number, g: number, b: number, tier: ColorLevel): string {
   if (tier === "truecolor") return `38;2;${r};${g};${b}`
   if (tier === "256") return `38;5;${rgbToAnsi256(r, g, b)}`
   // ansi16 / mono: map to ANSI 16
@@ -184,7 +184,7 @@ export function fgFromRgb(r: number, g: number, b: number, tier: ColorTier): str
  * Generate SGR background code for an RGB color at the given color tier.
  * See {@link fgFromRgb} for tier handling.
  */
-export function bgFromRgb(r: number, g: number, b: number, tier: ColorTier): string {
+export function bgFromRgb(r: number, g: number, b: number, tier: ColorLevel): string {
   if (tier === "truecolor") return `48;2;${r};${g};${b}`
   if (tier === "256") return `48;5;${rgbToAnsi256(r, g, b)}`
   const idx = nearestAnsi16(r, g, b)
@@ -248,7 +248,7 @@ function parseHexLocal(hex: string): [number, number, number] | null {
   return [r, g, b]
 }
 
-// `ColorTier` is re-exported below from `./types` for backwards compatibility
+// `ColorLevel` is re-exported below from `./types` for backwards compatibility
 // with call sites that import it from `@silvery/ansi/color-maps`. The canonical
 // definition lives in `./types` so the ansi package has a single source of
 // truth for the 4-state color tier enum.
@@ -270,7 +270,7 @@ function parseHexLocal(hex: string): [number, number, number] | null {
  *
  * Returns the input unchanged if it cannot be parsed as a hex color.
  */
-export function quantizeHex(hex: string, tier: ColorTier): string {
+export function quantizeHex(hex: string, tier: ColorLevel): string {
   const rgb = parseHexLocal(hex)
   if (!rgb) return hex
   const [r, g, b] = rgb
@@ -337,12 +337,12 @@ function isHexLeaf(value: unknown): value is string {
  * - Does not freeze the returned object. Callers that want immutability
  *   should `Object.freeze()` (or deep-freeze) the result themselves.
  */
-export function pickColorLevel<T>(theme: T, tier: ColorTier): T {
+export function pickColorLevel<T>(theme: T, tier: ColorLevel): T {
   if (tier === "truecolor") return theme
   return pickColorLevelWalk(theme, tier)
 }
 
-function pickColorLevelWalk<T>(obj: T, tier: ColorTier): T {
+function pickColorLevelWalk<T>(obj: T, tier: ColorLevel): T {
   if (obj == null) return obj
   if (isHexLeaf(obj)) return quantizeHex(obj, tier) as unknown as T
   if (Array.isArray(obj)) {

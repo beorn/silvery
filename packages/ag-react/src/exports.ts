@@ -619,7 +619,7 @@ export type {
   SlotSource,
 } from "@silvery/theme"
 export { resolveThemeColor, deriveTheme, quantizeHex, pickColorLevel } from "@silvery/ansi"
-export type { Theme, AnsiPrimary, ColorTier } from "@silvery/ansi"
+export type { Theme, AnsiPrimary, ColorLevel } from "@silvery/ansi"
 export { generateTheme } from "@silvery/ansi"
 
 // =============================================================================
@@ -638,7 +638,7 @@ export type {
   Console as PatchedConsole,
   ConsoleCaptureOptions,
   ConsoleStats,
-  // `ColorTier` is also exported from `@silvery/ansi` above. Both exports
+  // `ColorLevel` is also exported from `@silvery/ansi` above. Both exports
   // point to the same canonical type; this comment documents the duplicate
   // for readers but the actual type only exports once (ag-term re-exports
   // from @silvery/ansi).
@@ -1061,11 +1061,9 @@ export type { StyledSegment } from "@silvery/ag-term/unicode"
 
 // Width measurer factory
 export {
-  createWidthMeasurer,
   createMeasurer,
   runWithMeasurer,
   type Measurer,
-  type WidthMeasurer,
 } from "@silvery/ag-term/unicode"
 
 // Measurer composition (term + measurement)

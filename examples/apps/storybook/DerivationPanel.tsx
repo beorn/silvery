@@ -22,7 +22,7 @@
 import React, { useMemo } from "react"
 import { Box, Text, Muted, Divider, Strong, Small } from "silvery"
 import type { SterlingTheme, SterlingDerivationStep } from "@silvery/theme"
-import { quantizeHex, type ColorTier } from "@silvery/ansi"
+import { quantizeHex, type ColorLevel } from "@silvery/ansi"
 import { hexToOklch, checkContrast, type OKLCH } from "@silvery/color"
 
 /** Convert a nested path like "accent.hover.bg" → flat "bg-accent-hover". */
@@ -88,7 +88,7 @@ export interface DerivationPanelProps {
    * both the derived truecolor hex (full precision) AND the quantized hex
    * a terminal at this tier would actually emit.
    */
-  tier?: ColorTier
+  tier?: ColorLevel
 }
 
 export function DerivationPanel({

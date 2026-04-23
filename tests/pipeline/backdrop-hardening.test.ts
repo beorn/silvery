@@ -361,7 +361,7 @@ describe("backdrop-hardening 5: split-core-plan", () => {
       includes: Array<{ rect: { x: number; y: number; width: number; height: number } }>
     }
     expect("kittyEnabled" in parsed).toBe(false)
-    expect("colorTier" in parsed).toBe(false)
+    expect("colorLevel" in parsed).toBe(false)
     expect(parsed.active).toBe(true)
     expect(parsed.amount).toBe(0.4)
     expect(parsed.includes).toHaveLength(1)

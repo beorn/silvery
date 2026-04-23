@@ -88,7 +88,7 @@ This is where OSC 66 text sizing, CUP cursor re-sync, and future workarounds liv
 **Architecture within @silvery/ag-term:**
 
 ```
-createTerminalProfile()  → { caps, colorTier, colorProvenance, ... }
+createTerminalProfile()  → { caps, colorLevel, colorProvenance, ... }
 capabilityDatabase       → what bugs does this terminal have?
 createOutputPhase(caps)  → apply workarounds during ANSI generation
 createMeasurer(caps)     → adjust width calculations

@@ -82,7 +82,7 @@ import type { TerminalCaps } from "../terminal-caps"
 export interface OutputCaps {
   readonly underlineStyles: boolean
   readonly underlineColor: boolean
-  readonly colorTier: TerminalCaps["colorTier"]
+  readonly colorLevel: TerminalCaps["colorLevel"]
 }
 
 // ============================================================================
@@ -116,7 +116,7 @@ const defaultContext: OutputContext = {
   caps: {
     underlineStyles: true,
     underlineColor: true,
-    colorTier: "truecolor",
+    colorLevel: "truecolor",
   },
   measurer: null,
   sgrCache: new Map(),
@@ -186,7 +186,7 @@ export function createOutputPhase(
     caps: {
       underlineStyles: caps.underlineStyles ?? true,
       underlineColor: caps.underlineColor ?? true,
-      colorTier: caps.colorTier ?? "truecolor",
+      colorLevel: caps.colorLevel ?? "truecolor",
     },
     measurer: measurer ?? null,
     sgrCache: new Map(),
@@ -639,7 +639,7 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
 
   // Foreground color — stripped at monochrome tier (hierarchy via attrs)
   if (!colorEquals(oldStyle.fg, newStyle.fg)) {
-    if (newStyle.fg === null || ctx.caps.colorTier === "mono") {
+    if (newStyle.fg === null || ctx.caps.colorLevel === "mono") {
       codes.push("39")
     } else {
       codes.push(fgColorCode(newStyle.fg))
@@ -648,7 +648,7 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
 
   // Background color — stripped at monochrome tier (hierarchy via attrs)
   if (!colorEquals(oldStyle.bg, newStyle.bg)) {
-    if (newStyle.bg === null || ctx.caps.colorTier === "mono") {
+    if (newStyle.bg === null || ctx.caps.colorLevel === "mono") {
       codes.push("49")
     } else {
       codes.push(bgColorCode(newStyle.bg))
@@ -2107,7 +2107,7 @@ function changesToAnsi(
 function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string {
   const fg = style.fg
   const bg = style.bg
-  const monoTier = ctx.caps.colorTier === "mono"
+  const monoTier = ctx.caps.colorLevel === "mono"
 
   // Collect all SGR codes into one combined sequence: \x1b[code1;code2;...m
   // This is more spec-compliant and produces fewer bytes than separate sequences.

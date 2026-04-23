@@ -5,7 +5,7 @@
  * Handles auto-detection of events from stdin, dimension defaults, etc.
  */
 
-import type { ColorTier, Term } from "./ansi/index"
+import type { ColorLevel, Term } from "./ansi/index"
 import { createTerminalProfile } from "@silvery/ansi"
 import { getInternalStreams } from "./runtime/term-internal"
 import type { Event, EventSource } from "@silvery/ag/types"
@@ -55,12 +55,12 @@ export interface TermDef {
   height?: number
 
   /**
-   * Color support (true=detect, false=mono, or specific {@link ColorTier}).
+   * Color support (true=detect, false=mono, or specific {@link ColorLevel}).
    *
    * `null` is accepted as a compat alias for `"mono"` (pre-terminal-profile-plateau
    * no-color spelling).
    */
-  colors?: boolean | ColorTier | null
+  colors?: boolean | ColorLevel | null
 
   // -------------------------------------------------------------------------
   // Input Configuration
@@ -125,7 +125,7 @@ export interface ResolvedTermDef {
   height: number
 
   /** Resolved color tier. `"mono"` = no colors. */
-  colors: ColorTier
+  colors: ColorLevel
 
   /** Event source (null = static mode) */
   events: AsyncIterable<Event> | null
@@ -188,7 +188,7 @@ export function resolveTermDef(def: TermDef): ResolvedTermDef {
 
   // Resolve colors. `false` / `null` → `"mono"` (no color). `true` or
   // undefined → auto-detect. Explicit tier passes through.
-  let colors: ColorTier
+  let colors: ColorLevel
   if (def.colors === true) {
     colors = detectColorLevel(def.stdout)
   } else if (def.colors === false || def.colors === null) {
@@ -234,11 +234,11 @@ export function resolveFromTerm(term: Term): ResolvedTermDef {
     stdout,
     width: term.cols ?? DEFAULT_WIDTH,
     height: term.rows ?? DEFAULT_HEIGHT,
-    // Post caps-restructure Phase 7: hasColor() is gone — read colorTier
-    // from the canonical profile. `ResolvedTermDef.colors: ColorTier`
+    // Post caps-restructure Phase 7: hasColor() is gone — read colorLevel
+    // from the canonical profile. `ResolvedTermDef.colors: ColorLevel`
     // already includes `"mono"` as the no-color state, so return the tier
-    // verbatim (no null coercion — `ColorTier` is the canonical spelling).
-    colors: term.profile.colorTier,
+    // verbatim (no null coercion — `ColorLevel` is the canonical spelling).
+    colors: term.profile.colorLevel,
     // Term instances always have interactive capabilities
     events: createInputEvents(stdin),
     isStatic: false,
@@ -255,8 +255,8 @@ export function resolveFromTerm(term: Term): ResolvedTermDef {
  * Phase 3 of km-silvery.terminal-profile-plateau: this is now a single-line
  * delegate into `createTerminalProfile` — no more local detection copy.
  */
-function detectColorLevel(stdout?: NodeJS.WriteStream): ColorTier {
-  return createTerminalProfile({ stdout: stdout ?? { isTTY: false } }).colorTier
+function detectColorLevel(stdout?: NodeJS.WriteStream): ColorLevel {
+  return createTerminalProfile({ stdout: stdout ?? { isTTY: false } }).colorLevel
 }
 
 // ============================================================================

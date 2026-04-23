@@ -39,7 +39,7 @@ function doRender(node: React.JSX.Element, options?: RenderToStringOptions): str
   // Post km-silvery.caps-restructure (Phase 7): hasColor() is deleted; read
   // the tier from term.caps. "mono" is the canonical no-color state (legacy
   // test expected the deleted `null` spelling).
-  const plain = term.caps.colorTier === "mono"
+  const plain = term.caps.colorLevel === "mono"
   const wrapped = React.createElement(TermContext.Provider, { value: term }, node)
 
   const bufferHeight = 24

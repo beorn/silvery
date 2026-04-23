@@ -15,22 +15,22 @@
  * @packageDocumentation
  */
 
-import { createStyle, createTerminalProfile, type Style, type ColorTier } from "@silvery/ansi"
+import { createStyle, createTerminalProfile, type Style, type ColorLevel } from "@silvery/ansi"
 
 // =============================================================================
-// Color tier conversion (chalk uses 0-3, silvery uses ColorTier)
+// Color tier conversion (chalk uses 0-3, silvery uses ColorLevel)
 // =============================================================================
 
 type ChalkLevel = 0 | 1 | 2 | 3
 
-function toChalkLevel(cl: ColorTier): ChalkLevel {
+function toChalkLevel(cl: ColorLevel): ChalkLevel {
   if (cl === "mono") return 0
   if (cl === "ansi16") return 1
   if (cl === "256") return 2
   return 3 // truecolor
 }
 
-function fromChalkLevel(level: ChalkLevel): ColorTier {
+function fromChalkLevel(level: ChalkLevel): ColorLevel {
   if (level === 0) return "mono"
   if (level === 1) return "ansi16"
   if (level === 2) return "256"
@@ -43,11 +43,11 @@ function fromChalkLevel(level: ChalkLevel): ColorTier {
 
 // Post km-silvery.plateau-delete-legacy-shims (H6): `createTerminalProfile`
 // is the canonical single-source-of-truth entry point, replacing the former
-// `detectColor()` shim. Its `colorTier` is the resolved tier through the
+// `detectColor()` shim. Its `colorLevel` is the resolved tier through the
 // full NO_COLOR > FORCE_COLOR > auto precedence chain.
-const detectedColor: ColorTier =
+const detectedColor: ColorLevel =
   typeof process !== "undefined" && process.stdout
-    ? createTerminalProfile({ stdout: process.stdout }).colorTier
+    ? createTerminalProfile({ stdout: process.stdout }).colorLevel
     : "mono"
 
 /**
@@ -109,7 +109,7 @@ export const supportsColorStderr: false | { level: ChalkLevel } = (() => {
   // stderr gets its own profile pass — a pipe may have different TTY state
   // than stdout (though in practice they track together). `createTerminalProfile`
   // accepts any `{ isTTY?: boolean }` structural shape.
-  const level = toChalkLevel(createTerminalProfile({ stdout: process.stderr }).colorTier)
+  const level = toChalkLevel(createTerminalProfile({ stdout: process.stderr }).colorLevel)
   return level === 0 ? false : { level }
 })()
 
@@ -177,7 +177,7 @@ export const colorNames = [...foregroundColorNames, ...backgroundColorNames] as 
 // Re-export detection utilities that chalk users often need.
 // Post H6 (km-silvery.plateau-delete-legacy-shims): `detectColor` is gone —
 // chalk users reach for `createTerminalProfile` instead (it's a one-shot
-// call that returns a full TerminalProfile, of which `colorTier` is one
+// call that returns a full TerminalProfile, of which `colorLevel` is one
 // field).
 export { createTerminalProfile, toChalkLevel, fromChalkLevel }
-export type { ColorTier, ChalkLevel }
+export type { ColorLevel, ChalkLevel }

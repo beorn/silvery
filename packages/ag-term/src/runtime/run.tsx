@@ -34,7 +34,7 @@ import type { Term } from "../ansi/term"
 import {
   createTerminalProfile,
   probeTerminalProfile,
-  type ColorTier,
+  type ColorLevel,
   type TerminalProfile,
 } from "@silvery/ansi"
 import { nord, catppuccinLatte } from "@silvery/theme/schemes"
@@ -228,10 +228,10 @@ export type RunOptionsProfileBranch =
        * - `"truecolor"` — 24-bit RGB (no quantization).
        *
        * @deprecated Use
-       * `profile: createTerminalProfile({ colorOverride: colorLevel })`
+       * `profile: createTerminalProfile({ colorLevel: colorLevel })`
        * instead. Will be removed in 1.1.
        */
-      colorLevel?: ColorTier
+      colorLevel?: ColorLevel
     }
 
 /**
@@ -372,7 +372,7 @@ export async function run(
     // Real terminal: full setup.
     //
     // One async call drives the whole detection pass: probeTerminalProfile
-    // bundles caps + colorTier + colorForced + theme into a single TerminalProfile,
+    // bundles caps + colorLevel + colorForced + theme into a single TerminalProfile,
     // applies the pre-quantize gate on its own, and lets the probe window be
     // a structural concern instead of a copy-pasted try/finally block.
     //
@@ -397,14 +397,14 @@ export async function run(
     // TS union narrows them to `never` on the opposite XOR branch, but the
     // runtime warning above already enforces mutual exclusion.
     const termOptsAny = termOptions as
-      | (Partial<RunOptionsCommon> & { profile?: TerminalProfile; colorLevel?: ColorTier })
+      | (Partial<RunOptionsCommon> & { profile?: TerminalProfile; colorLevel?: ColorLevel })
       | undefined
     let termProfile: TerminalProfile
     try {
       termProfile =
         termOptsAny?.profile ??
         (await probeTerminalProfile({
-          colorOverride: termOptsAny?.colorLevel,
+          colorLevel: termOptsAny?.colorLevel,
           caps: term.profile.caps,
           fallbackDark: nord,
           fallbackLight: catppuccinLatte,
@@ -467,7 +467,7 @@ export async function run(
     profile: profileOption,
     caps: capsOption,
     ...rest
-  } = optionsOrTerm as RunOptions & { caps?: TerminalCaps; colorLevel?: ColorTier }
+  } = optionsOrTerm as RunOptions & { caps?: TerminalCaps; colorLevel?: ColorLevel }
   const headless = rest.writable != null || (rest.cols != null && rest.rows != null && !rest.stdout)
   const runStdin = (rest.stdin ?? process.stdin) as NodeJS.ReadStream
   const runStdout = (rest.stdout ?? process.stdout) as NodeJS.WriteStream
@@ -484,9 +484,9 @@ export async function run(
     optsProfile =
       profileOption ??
       (headless
-        ? createTerminalProfile({ colorOverride: colorLevelOption, caps: capsOption })
+        ? createTerminalProfile({ colorLevel: colorLevelOption, caps: capsOption })
         : await probeTerminalProfile({
-            colorOverride: colorLevelOption,
+            colorLevel: colorLevelOption,
             caps: capsOption,
             fallbackDark: nord,
             fallbackLight: catppuccinLatte,
@@ -627,7 +627,7 @@ function warnIfMixedRunOptions(options: unknown): void {
     // eslint-disable-next-line no-console
     console.warn(
       "[silvery] run({ colorLevel }) is deprecated and will be removed in 1.1. " +
-        "Migrate to run({ profile: createTerminalProfile({ colorOverride: colorLevel }) }).",
+        "Migrate to run({ profile: createTerminalProfile({ colorLevel: colorLevel }) }).",
     )
   }
 }

@@ -60,7 +60,7 @@ process.stdout.write(enableMouse)
 import { createTerminalProfile } from "@silvery/ansi"
 
 const profile = createTerminalProfile()
-profile.colorTier // → "mono" | "ansi16" | "256" | "truecolor"
+profile.colorLevel // → "mono" | "ansi16" | "256" | "truecolor"
 profile.caps // → full TerminalCaps (unicode, cursor, underlineStyles, kittyKeyboard, …)
 profile.colorForced // → true if NO_COLOR / FORCE_COLOR pinned the tier
 profile.colorProvenance // → "env" | "override" | "caller-caps" | "auto"
@@ -68,7 +68,7 @@ profile.colorProvenance // → "env" | "override" | "caller-caps" | "auto"
 
 The `createTerminalProfile` factory is the single source of truth for
 terminal detection — it reads `process.env` exactly once and returns a
-frozen `{ caps, colorTier, … }` bundle. Every other API (styles, Term,
+frozen `{ caps, colorLevel, … }` bundle. Every other API (styles, Term,
 runtimes) accepts a caps / profile argument so nothing else re-probes env.
 Use `probeTerminalProfile()` for the async variant that bundles an
 OSC-detected `theme`.

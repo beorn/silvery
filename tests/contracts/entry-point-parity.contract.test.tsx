@@ -22,7 +22,7 @@
  * across *all* of them:
  *
  *   - Given an identical {@link TerminalProfile}, every entry point
- *     resolves caps to the same colorTier.
+ *     resolves caps to the same colorLevel.
  *   - Given the same React element + dims, every entry point produces the
  *     same plain-text buffer (ignoring ANSI styling differences that
  *     depend on the entry point's rendering mode).
@@ -70,7 +70,7 @@ const DIMS = { cols: 40, rows: 4 } as const
 /**
  * A deterministic profile used by every entry point. `env: {}` + non-TTY
  * stdout neutralise ambient environment so the resolved tier is purely
- * driven by `colorOverride`. The Ghostty caps fixture matches what run()'s
+ * driven by `colorLevel`. The Ghostty caps fixture matches what run()'s
  * options path would auto-detect in a modern terminal; pinning it here
  * ensures every entry point threads the same caps through.
  */
@@ -78,7 +78,7 @@ function makeProfile(tier: "truecolor" | "256" | "ansi16" | "mono"): TerminalPro
   return createTerminalProfile({
     env: {},
     stdout: { isTTY: false },
-    colorOverride: tier,
+    colorLevel: tier,
     // Post km-silvery.plateau-naming-polish: 2-layer profile — emulator carries
     // identity (program/version/TERM); caps carries protocol flags + `maybe*`
     // heuristic guesses.
@@ -156,35 +156,35 @@ afterEach(() => {
 })
 
 // ============================================================================
-// Parity invariant 1 — every entry point resolves caps.colorTier from a
+// Parity invariant 1 — every entry point resolves caps.colorLevel from a
 // shared profile the same way.
 // ============================================================================
 //
 // If one entry point re-detects caps from env while another honours the
-// profile, the three public plateau invariants (colorTier === caps.colorTier,
+// profile, the three public plateau invariants (colorLevel === caps.colorLevel,
 // colorForced correctly set, no second detection pass) collapse. Pinning
 // every surface to the same profile here is the smoke test that would have
 // caught the pre-Phase-4 case where run.tsx called createTerminalProfile
 // while create-app.tsx called detectTerminalCaps separately.
 
-describe("parity: caps.colorTier is sourced from the shared profile", () => {
+describe("parity: caps.colorLevel is sourced from the shared profile", () => {
   for (const tier of ["truecolor", "256", "ansi16", "mono"] as const) {
-    test(`parity: every entry point sees colorTier="${tier}" when the profile forces it`, async () => {
+    test(`parity: every entry point sees colorLevel="${tier}" when the profile forces it`, async () => {
       const profile = makeProfile(tier)
 
       // createTerm — the Term-paint path used by run() internally. The
       // term's caps view MUST equal the caps the profile carries.
       {
         const term = createTerm({ cols: DIMS.cols, rows: DIMS.rows, caps: profile.caps })
-        expect(term.caps.colorTier).toBe(tier)
-        expect(term.profile.caps.colorTier).toBe(tier)
+        expect(term.caps.colorLevel).toBe(tier)
+        expect(term.profile.caps.colorLevel).toBe(tier)
       }
 
       // createTermless — xterm.js-backed Term. It accepts explicit caps
-      // the same way; the colorTier must flow through untouched.
+      // the same way; the colorLevel must flow through untouched.
       {
         using term = createTermless({ cols: DIMS.cols, rows: DIMS.rows, caps: profile.caps })
-        expect(term.caps.colorTier).toBe(tier)
+        expect(term.caps.colorLevel).toBe(tier)
       }
 
       // render() — sync renderer. The resulting TextFrame width reflects
@@ -314,7 +314,7 @@ describe("parity: same element + dims produces the same plain text", () => {
 // Parity invariant 3 — the profile-only path is warning-free.
 // ============================================================================
 //
-// Phase 5 makes the legacy `caps` / `colorTier` options emit deprecation
+// Phase 5 makes the legacy `caps` / `colorLevel` options emit deprecation
 // warnings. Callers on the recommended path (`{ profile }`) must not see any
 // of those warnings — otherwise the migration story is a lie.
 
@@ -357,7 +357,7 @@ describe("parity: profile-only path emits no Phase 5 warnings", () => {
             typeof m === "string" &&
             (m.includes("mutually exclusive") ||
               m.includes("run({ caps })") ||
-              m.includes("run({ colorTier })")),
+              m.includes("run({ colorLevel })")),
         )
       expect(phase5Warns).toEqual([])
     } finally {

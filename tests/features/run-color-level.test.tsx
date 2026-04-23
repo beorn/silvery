@@ -1,5 +1,5 @@
 /**
- * `run({ colorTier })` — programmatic color-tier override.
+ * `run({ colorLevel })` — programmatic color-tier override.
  *
  * Covers:
  * - env-var precedence (NO_COLOR > FORCE_COLOR > option > auto-detect)
@@ -9,9 +9,9 @@
  *   theme pre-quantization (hex leaves reaching canonical 16-slot / 256-cube
  *   values) is covered by `packages/ansi/tests/pick-color-level.test.ts`.
  *
- * Post km-silvery.terminal-profile-plateau Phase 1: the `ColorTier ⇄ caps`
+ * Post km-silvery.terminal-profile-plateau Phase 1: the `ColorLevel ⇄ caps`
  * mapping helpers (`tierToCapsLevel`, `capsLevelToTier`) are gone — the two
- * spellings collapsed into one canonical `ColorTier`. The round-trip test
+ * spellings collapsed into one canonical `ColorLevel`. The round-trip test
  * is therefore also gone (trivially the identity).
  *
  * Strategy: use the `writable` option to capture raw ANSI. `run({ writable,
@@ -72,13 +72,13 @@ async function runCapturing(
   element: React.ReactElement,
   // Post Phase 7 the run() option name is still `colorLevel` (the option
   // belongs to RunOptions, not TerminalCaps — the caps field `colorLevel`
-  // renamed to `colorTier` is a separate surface). Keep the test wrapper
+  // renamed to `colorLevel` is a separate surface). Keep the test wrapper
   // spelling in sync with the public API.
   opts: { colorLevel?: "mono" | "ansi16" | "256" | "truecolor" } = {},
 ): Promise<string> {
   const sink = makeSink()
   let handle: RunHandle | undefined
-  // Exercising the `caps` / `colorTier` legacy branch on purpose — this
+  // Exercising the `caps` / `colorLevel` legacy branch on purpose — this
   // test suite pins the deprecated option's runtime behaviour until it's
   // deleted in 1.1. Swallow the once-per-process deprecation warning so the
   // vitest console-spy setup doesn't fail the test.
@@ -97,7 +97,7 @@ async function runCapturing(
         // live alongside protocol flags on caps.
         cursor: true,
         input: false,
-        colorTier: "truecolor",
+        colorLevel: "truecolor",
         colorForced: false,
         colorProvenance: "caller-caps",
         kittyKeyboard: false,
@@ -129,7 +129,7 @@ async function runCapturing(
 }
 
 // ============================================================================
-// End-to-end — caps.colorTier override observable in the ANSI stream
+// End-to-end — caps.colorLevel override observable in the ANSI stream
 // ============================================================================
 
 function Swatch({ hex }: { hex: string }) {
@@ -154,19 +154,19 @@ describe("run({ colorLevel }) — options path", () => {
     expect(ansi).toMatch(/\x1b\[[0-9;]*38;2;\d+;\d+;\d+/)
   })
 
-  test("colorTier: 'mono' strips inline hex → no color SGR at all", async () => {
+  test("colorLevel: 'mono' strips inline hex → no color SGR at all", async () => {
     const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "mono" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;5;/)
   })
 
-  test("colorTier: 'mono' strips $token colors → no color SGR at all", async () => {
+  test("colorLevel: 'mono' strips $token colors → no color SGR at all", async () => {
     const ansi = await runCapturing(<TokenSwatch />, { colorLevel: "mono" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;5;/)
   })
 
-  test("colorTier: 'truecolor' passes inline hex through unchanged", async () => {
+  test("colorLevel: 'truecolor' passes inline hex through unchanged", async () => {
     const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "truecolor" })
     // #88c0d0 = rgb(136, 192, 208)
     expect(ansi).toMatch(/\x1b\[[0-9;]*38;2;136;192;208/)
@@ -177,21 +177,21 @@ describe("run({ colorLevel }) — options path", () => {
 // Env-var precedence
 // ============================================================================
 
-describe("env-var precedence over colorTier option", () => {
-  test("NO_COLOR=1 wins over colorTier: 'truecolor' (→ mono)", async () => {
+describe("env-var precedence over colorLevel option", () => {
+  test("NO_COLOR=1 wins over colorLevel: 'truecolor' (→ mono)", async () => {
     process.env.NO_COLOR = "1"
     const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "truecolor" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;5;/)
   })
 
-  test("FORCE_COLOR=3 wins over colorTier: 'mono' (→ truecolor passes hex)", async () => {
+  test("FORCE_COLOR=3 wins over colorLevel: 'mono' (→ truecolor passes hex)", async () => {
     process.env.FORCE_COLOR = "3"
     const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "mono" })
     expect(ansi).toMatch(/\x1b\[[0-9;]*38;2;136;192;208/)
   })
 
-  test("FORCE_COLOR=0 wins over colorTier: 'truecolor' (→ mono)", async () => {
+  test("FORCE_COLOR=0 wins over colorLevel: 'truecolor' (→ mono)", async () => {
     process.env.FORCE_COLOR = "0"
     const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "truecolor" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)

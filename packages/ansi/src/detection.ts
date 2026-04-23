@@ -29,7 +29,7 @@
  * now routes through the profile factory instead.
  */
 
-import type { ColorTier, UnderlineStyle } from "./types"
+import type { ColorLevel, UnderlineStyle } from "./types"
 
 // Forward re-export — profile.ts defines ColorProvenance but caps consumers
 // want one import for everything they need.
@@ -64,7 +64,7 @@ import type { ColorProvenance } from "./profile"
 // `process.env` outside the profile factory, breaking the "one detection,
 // one profile" invariant. Call sites now use:
 //
-//   `createTerminalProfile({ stdout }).colorTier`        // color tier
+//   `createTerminalProfile({ stdout }).colorLevel`        // color tier
 //   `createTerminalProfile().caps.unicode`               // unicode
 //   `createTerminalProfile().caps.underlineStyles`       // extended underline
 //
@@ -94,7 +94,7 @@ import type { ColorProvenance } from "./profile"
  * Both live on `profile.{caps,emulator}`.
  *
  * Renames from the old flat shape:
- * - `colorLevel` → `colorTier` (matches the {@link ColorTier} return type)
+ * - `colorLevel` → `colorLevel` (matches the {@link ColorLevel} return type)
  * - `textSizingSupported` → `textSizing` (drops the verbose suffix)
  * - `underlineStyles: boolean` → `underlineStyles: readonly UnderlineStyle[]`
  *   so a terminal that supports curly but not dotted can report that precisely
@@ -119,12 +119,12 @@ export interface TerminalCaps {
   // Color (gradation)
   // -------------------------------------------------------------------------
 
-  /** Color support tier. See {@link ColorTier}. Renamed from `colorLevel` in
+  /** Color support tier. See {@link ColorLevel}. Renamed from `colorLevel` in
    * Phase 7 to match `hasColor()`'s return type and the usual "tier" parlance. */
-  readonly colorTier: ColorTier
+  readonly colorLevel: ColorLevel
   /**
    * Was the color tier forced by env vars (NO_COLOR / FORCE_COLOR) or a
-   * caller-supplied `colorOverride`? Equivalent to
+   * caller-supplied `colorLevel`? Equivalent to
    * `colorProvenance === "env" || colorProvenance === "override"` — exposed
    * as a precomputed boolean because that's the question every pre-quantize
    * gate in run.tsx / create-app.tsx actually asks.
@@ -135,7 +135,7 @@ export interface TerminalCaps {
    */
   readonly colorForced: boolean
   /**
-   * Which rung of the precedence chain resolved {@link colorTier}. Use
+   * Which rung of the precedence chain resolved {@link colorLevel}. Use
    * {@link colorForced} for the common "was the tier forced?" check; use this
    * enum only when the specific rung matters (e.g. diagnostics, theme
    * detection, debug output).
@@ -258,7 +258,7 @@ export function defaultCaps(): TerminalCaps {
   return {
     cursor: false,
     input: false,
-    colorTier: "truecolor",
+    colorLevel: "truecolor",
     colorForced: false,
     colorProvenance: "auto",
     unicode: true,

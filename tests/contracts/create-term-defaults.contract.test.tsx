@@ -14,7 +14,7 @@
  * Documented defaults this file pins:
  *   - Headless mode: no stdout or stdin wired
  *   - Headless mode: `term.caps` is always populated — `defaultCaps()` with
- *     `colorTier: 'mono'` (Phase 2 of km-silvery.terminal-profile-plateau
+ *     `colorLevel: 'mono'` (Phase 2 of km-silvery.terminal-profile-plateau
  *     made `Term.caps` non-optional across every constructor)
  *   - Node mode: caps delegate to `detectTerminalCaps()` — which honors
  *     FORCE_COLOR (seed 2 of the Phase 1 regression set)
@@ -64,11 +64,11 @@ describe("contract: createTerm({ cols, rows }) (headless)", () => {
     // non-optional. Headless Terms still do no I/O, but they now carry a
     // deterministic `defaultCaps()`-derived profile so callers can read
     // `term.caps.X` without a `?? detectTerminalCaps()` fallback. Headless
-    // defaults to `colorTier: 'mono'` to match `hasColor()` — tests wanting
-    // a richer profile pass `{ caps: { colorTier: 'truecolor' } }`.
+    // defaults to `colorLevel: 'mono'` to match `hasColor()` — tests wanting
+    // a richer profile pass `{ caps: { colorLevel: 'truecolor' } }`.
     const term = createTerm({ cols: 80, rows: 24 })
     expect(term.caps).toBeDefined()
-    expect(term.caps.colorTier).toBe("mono")
+    expect(term.caps.colorLevel).toBe("mono")
     expect(term.caps.unicode).toBe(false)
     expect(term.caps.mouse).toBe(false)
   })
@@ -80,9 +80,9 @@ describe("contract: createTerm({ cols, rows }) (headless)", () => {
     const term = createTerm({
       cols: 80,
       rows: 24,
-      caps: { colorTier: "truecolor", kittyKeyboard: true },
+      caps: { colorLevel: "truecolor", kittyKeyboard: true },
     })
-    expect(term.caps.colorTier).toBe("truecolor")
+    expect(term.caps.colorLevel).toBe("truecolor")
     expect(term.caps.kittyKeyboard).toBe(true)
   })
 })
@@ -95,7 +95,7 @@ describe("contract: createTerm({ cols, rows }) (headless)", () => {
 // itself (see run-defaults.contract.test.tsx). At the `createTerm()` layer,
 // the relevant default is: an `options.caps` override must win over auto-
 // detection. If that precedence ever flips, forced-tier tests (and `run()`'s
-// `colorTier` override path) break silently.
+// `colorLevel` override path) break silently.
 
 describe("contract: createTerm({ caps }) overrides detection", () => {
   test("contract: explicit caps override auto-detection (truecolor)", () => {
@@ -103,17 +103,17 @@ describe("contract: createTerm({ caps }) overrides detection", () => {
     // With explicit caps, the override must win regardless.
     process.env.FORCE_COLOR = "0"
     const term = createTerm({
-      caps: { colorTier: "truecolor" } as any,
+      caps: { colorLevel: "truecolor" } as any,
     })
-    expect(term.caps.colorTier).toBe("truecolor")
+    expect(term.caps.colorLevel).toBe("truecolor")
   })
 
   test("contract: explicit caps override auto-detection (mono)", () => {
     process.env.FORCE_COLOR = "3"
     const term = createTerm({
-      caps: { colorTier: "mono" } as any,
+      caps: { colorLevel: "mono" } as any,
     })
-    expect(term.caps.colorTier).toBe("mono")
+    expect(term.caps.colorLevel).toBe("mono")
   })
 })
 
@@ -135,7 +135,7 @@ describe("contract: createTerm({ caps }) overrides detection", () => {
 //      `false`) whenever the Term was built from an explicit caps object
 //      (every emulator/headless Term, plus Node Terms once their caps are
 //      populated). Env-level precedence (NO_COLOR / FORCE_COLOR /
-//      colorOverride) is applied at `run()` / `createApp()`, NOT during Term
+//      colorLevel) is applied at `run()` / `createApp()`, NOT during Term
 //      construction.
 
 describe("contract: Term owns its TerminalProfile (H15)", () => {
@@ -143,12 +143,12 @@ describe("contract: Term owns its TerminalProfile (H15)", () => {
     const term = createTerm({ cols: 80, rows: 24 })
     // Identity across the two views — no second detection pass is allowed to
     // produce a slightly different caps object.
-    expect(term.profile.caps.colorTier).toBe(term.caps.colorTier)
+    expect(term.profile.caps.colorLevel).toBe(term.caps.colorLevel)
     expect(term.profile.caps.unicode).toBe(term.caps.unicode)
     expect(term.profile.caps.mouse).toBe(term.caps.mouse)
     expect(term.profile.caps.bracketedPaste).toBe(term.caps.bracketedPaste)
     // The convenience alias on the profile mirrors the tier directly.
-    expect(term.profile.colorTier).toBe(term.caps.colorTier)
+    expect(term.profile.colorLevel).toBe(term.caps.colorLevel)
   })
 
   test('contract: headless term.profile.caps.colorProvenance === "caller-caps"', () => {
@@ -170,11 +170,11 @@ describe("contract: Term owns its TerminalProfile (H15)", () => {
     const term = createTerm({
       cols: 80,
       rows: 24,
-      caps: { colorTier: "truecolor", kittyKeyboard: true },
+      caps: { colorLevel: "truecolor", kittyKeyboard: true },
     })
-    expect(term.profile.caps.colorTier).toBe("truecolor")
+    expect(term.profile.caps.colorLevel).toBe("truecolor")
     expect(term.profile.caps.kittyKeyboard).toBe(true)
-    expect(term.profile.colorTier).toBe("truecolor")
+    expect(term.profile.colorLevel).toBe("truecolor")
     expect(term.profile.caps.colorProvenance).toBe("caller-caps")
     expect(term.profile.caps.colorForced).toBe(false)
   })

@@ -461,14 +461,8 @@ export {
 } from "./unicode"
 export type { StyledSegment } from "./unicode"
 
-// Width measurer factory
-export {
-  createWidthMeasurer,
-  createMeasurer,
-  runWithMeasurer,
-  type Measurer,
-  type WidthMeasurer,
-} from "./unicode"
+// Measurer factory
+export { createMeasurer, runWithMeasurer, type Measurer } from "./unicode"
 
 // Measurer composition (term + measurement)
 export { withMeasurer, createPipeline, type MeasuredTerm } from "./measurer"
@@ -535,7 +529,7 @@ export { createConsole } from "./ansi/index"
 export type {
   UnderlineStyle,
   RGB,
-  ColorTier,
+  ColorLevel,
   Color as AnsiColor,
   AnsiColorName,
   StyleOptions,

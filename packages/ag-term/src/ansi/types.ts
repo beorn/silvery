@@ -10,7 +10,7 @@
 // =============================================================================
 
 export type {
-  ColorTier,
+  ColorLevel,
   RGB,
   AnsiColorName,
   Color,
@@ -70,10 +70,10 @@ export interface CreateTermOptions {
 
   // Override auto-detection (for testing or forcing).
   //
-  // `color` accepts the canonical {@link ColorTier}. Legacy callers that
+  // `color` accepts the canonical {@link ColorLevel}. Legacy callers that
   // passed `null` (pre-terminal-profile-plateau no-color spelling) still
   // compile — the term factory normalizes `null` to `"mono"`.
-  color?: import("@silvery/ansi").ColorTier | null // override caps.colorTier
+  color?: import("@silvery/ansi").ColorLevel | null // override caps.colorLevel
   unicode?: boolean // override caps.unicode
   cursor?: boolean // override caps.cursor
 

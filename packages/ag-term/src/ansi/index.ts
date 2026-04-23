@@ -38,7 +38,7 @@ import type { Term } from "./term"
  * import { term } from '@silvery/ag-term'
  *
  * console.log(term.green('success'))
- * if (term.caps.colorTier) { ... }
+ * if (term.caps.colorLevel) { ... }
  * ```
  */
 let _lazyTerm: Term | undefined
@@ -72,7 +72,7 @@ export { createConsole } from "../runtime/devices/console"
 export type {
   UnderlineStyle,
   RGB,
-  ColorTier,
+  ColorLevel,
   Color,
   AnsiColorName,
   StyleOptions,

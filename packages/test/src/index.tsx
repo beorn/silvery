@@ -299,7 +299,7 @@ function sgrButtonByte(options?: TermlessMouseOptions): number {
  *
  * @example Override capabilities (defaults-contract tests)
  * ```tsx
- * using term = createTermless({ cols: 80, rows: 24, caps: { colorTier: '256' } })
+ * using term = createTermless({ cols: 80, rows: 24, caps: { colorLevel: '256' } })
  * ```
  *
  * Without a `caps` override, `term.caps` is populated from `defaultCaps()`

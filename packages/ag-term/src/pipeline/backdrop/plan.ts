@@ -65,18 +65,9 @@
 
 import { relativeLuminance } from "@silvery/color"
 import type { AgNode, Rect } from "@silvery/ag/types"
-import type { ColorTier } from "@silvery/ansi"
+export type { ColorLevel } from "@silvery/ansi"
+import type { ColorLevel } from "@silvery/ansi"
 import { type HexColor, normalizeHex } from "./color"
-
-/**
- * Terminal color tier for the backdrop pass.
- *
- * Re-export of the canonical {@link ColorTier} — kept under the historical
- * name for backwards-compat with external consumers of the backdrop module.
- * Post km-silvery.terminal-profile-plateau Phase 1 the local `"none"` alias
- * and the 3-state `AnsiColorLevel` alias are gone.
- */
-export type ColorLevel = ColorTier
 
 export interface BackdropOptions {
   /**

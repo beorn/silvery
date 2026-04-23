@@ -49,7 +49,7 @@ export function getActiveTheme(): Theme {
 /**
  * Color tier the render pipeline is targeting.
  *
- * Mirrors `TerminalCaps.colorTier` but lives in module state for the
+ * Mirrors `TerminalCaps.colorLevel` but lives in module state for the
  * render-helpers parseColor() / getTextStyle() functions, which don't have
  * access to the OutputContext or React props. Set by the runtime
  * (`createPipeline()` in `@silvery/ag-term/measurer.ts`) before the first
@@ -60,10 +60,10 @@ export function getActiveTheme(): Theme {
  * strikethrough) from `DEFAULT_MONO_ATTRS`. See `hub/silvery/design/v10-terminal/theme-system-v2-plan.md#p4`.
  *
  * Post km-silvery.terminal-profile-plateau Phase 1 this is an alias for the
- * canonical {@link ColorTier} — the `ActiveColorLevel` name is retained for
+ * canonical {@link ColorLevel} — the `ActiveColorLevel` name is retained for
  * backwards compat with consumers.
  */
-export type ActiveColorLevel = import("@silvery/ansi").ColorTier
+export type ActiveColorLevel = import("@silvery/ansi").ColorLevel
 
 let _activeColorLevel: ActiveColorLevel = "truecolor"
 

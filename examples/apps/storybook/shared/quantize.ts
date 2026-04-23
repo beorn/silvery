@@ -25,19 +25,19 @@
  * storybook-local implementation.
  */
 
-import { pickColorLevel, quantizeHex, type ColorTier } from "@silvery/ansi"
+import { pickColorLevel, quantizeHex, type ColorLevel } from "@silvery/ansi"
 import type { Theme as LegacyTheme } from "@silvery/ansi"
 import type { SterlingTheme } from "@silvery/theme"
 
 /** Quantize the legacy (silvery/ui) Theme. Returns a new object; inputs not mutated. */
-export function quantizeLegacyTheme(theme: LegacyTheme, tier: ColorTier): LegacyTheme {
+export function quantizeLegacyTheme(theme: LegacyTheme, tier: ColorLevel): LegacyTheme {
   return pickColorLevel(theme, tier)
 }
 
 /** Quantize the Sterling Theme (nested roles + flat tokens). */
-export function quantizeSterlingTheme(theme: SterlingTheme, tier: ColorTier): SterlingTheme {
+export function quantizeSterlingTheme(theme: SterlingTheme, tier: ColorLevel): SterlingTheme {
   return pickColorLevel(theme, tier)
 }
 
 export { pickColorLevel, quantizeHex }
-export type { ColorTier }
+export type { ColorLevel }

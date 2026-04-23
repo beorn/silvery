@@ -16,7 +16,7 @@
  *
  * Post km-silvery.caps-restructure (Phase 7, 2026-04-23): the legacy
  * `hasCursor()`/`hasInput()`/`hasColor()`/`hasUnicode()` methods are gone.
- * Callers read `term.caps.cursor`, `term.caps.input`, `term.caps.colorTier`,
+ * Callers read `term.caps.cursor`, `term.caps.input`, `term.caps.colorLevel`,
  * and `term.caps.unicode` directly — one source of truth.
  *
  * @example
@@ -40,7 +40,7 @@ import {
   type TerminalEmulator,
 } from "@silvery/ansi"
 import type {
-  ColorTier,
+  ColorLevel,
   CreateTermOptions,
   TermEmulator,
   TermEmulatorBackend,
@@ -260,7 +260,7 @@ export interface Term extends Disposable, StyleChain {
   // deleted — they duplicated fields already on `caps`. Callers read:
   //   term.caps.cursor
   //   term.caps.input
-  //   term.caps.colorTier
+  //   term.caps.colorLevel
   //   term.caps.unicode
   // -------------------------------------------------------------------------
 
@@ -283,7 +283,7 @@ export interface Term extends Disposable, StyleChain {
   readonly caps: TerminalCaps
 
   /**
-   * Fully-resolved {@link TerminalProfile} for this Term — `caps`, `colorTier`,
+   * Fully-resolved {@link TerminalProfile} for this Term — `caps`, `colorLevel`,
    * `colorForced`, and `colorProvenance` bundled into the single value
    * downstream consumers should pass through the pipeline.
    *
@@ -735,14 +735,14 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // `detectColor(stdout)` + `detectTerminalCaps()` pair.
   //
   // Term-construction precedence (differs from profile-factory defaults):
-  //   - `options.caps` present → caps base + `colorOverride` = caps.colorTier.
+  //   - `options.caps` present → caps base + `colorLevel` = caps.colorLevel.
   //     Treat explicit caps as a hard override that wins over env — a test
-  //     harness or adapter passing `caps: { colorTier: "truecolor" }` wants
+  //     harness or adapter passing `caps: { colorLevel: "truecolor" }` wants
   //     that tier regardless of what FORCE_COLOR / NO_COLOR say. This matches
   //     the legacy `detectTerminalCaps()` path which short-circuited on
   //     explicit caps.
-  //   - `options.color` (legacy `ColorTier | null`) → thread through
-  //     `colorOverride` so it participates in the normal precedence chain.
+  //   - `options.color` (legacy `ColorLevel | null`) → thread through
+  //     `colorLevel` so it participates in the normal precedence chain.
   //   - non-TTY Node terms → `defaultCaps()` base + no caller override.
   //   - TTY Node terms → full env-based auto-detection.
   const profileCapsBase: Partial<TerminalCaps> | undefined = options.caps
@@ -753,8 +753,8 @@ function createNodeTerm(options: CreateTermOptions): Term {
   const explicitColor =
     options.color === undefined ? undefined : (options.color ?? "mono")
   // Explicit caps override the env chain — tests and adapters that pass
-  // `caps: { colorTier: ... }` rely on the tier they specified. Promoting
-  // the caps tier into `colorOverride` mostly re-establishes that, but the
+  // `caps: { colorLevel: ... }` rely on the tier they specified. Promoting
+  // the caps tier into `colorLevel` mostly re-establishes that, but the
   // profile factory still lets NO_COLOR / FORCE_COLOR win over overrides
   // (that's the documented chain). So when caps is explicit, we build the
   // profile with `env: {}` to neutralize env precedence at the factory
@@ -765,13 +765,13 @@ function createNodeTerm(options: CreateTermOptions): Term {
         stdout,
         stdin,
         caps: options.caps,
-        colorOverride: explicitColor ?? options.caps.colorTier,
+        colorLevel: explicitColor ?? options.caps.colorLevel,
       })
     : createTerminalProfile({
         stdout,
         stdin,
         caps: profileCapsBase,
-        colorOverride: explicitColor,
+        colorLevel: explicitColor,
       })
 
   // Apply legacy `options.cursor` / `options.unicode` overrides to caps so
@@ -791,7 +791,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
       : baseProfile
 
   const detectedCaps: TerminalCaps = profile.caps
-  const cachedColor: ColorTier = profile.colorTier
+  const cachedColor: ColorLevel = profile.colorLevel
 
   // Create style instance with appropriate color level + caps. Caps drive
   // the extended-underline methods on Style (Phase 6 of the unicode
@@ -996,12 +996,12 @@ function createHeadlessTerm(
 
   // Headless Terms are declaratively mono/no-input but still publish a full
   // TerminalCaps so downstream code (pipeline, measurer) gets the guaranteed
-  // shape `Term.caps: TerminalCaps` promises. Default to `mono` colorTier;
+  // shape `Term.caps: TerminalCaps` promises. Default to `mono` colorLevel;
   // callers wanting a richer test surface can pass
-  // `{ caps: { colorTier: 'truecolor' } }` through createTermless.
+  // `{ caps: { colorLevel: 'truecolor' } }` through createTermless.
   const headlessCaps: TerminalCaps = {
     ...defaultCaps(),
-    colorTier: "mono",
+    colorLevel: "mono",
     unicode: false,
     mouse: false,
     bracketedPaste: false,

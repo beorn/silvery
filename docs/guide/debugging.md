@@ -151,7 +151,7 @@ The `source` field tells you how the scheme was determined:
 Sometimes auto-detection picks the wrong tier — a truecolor-capable
 terminal under-reports as `xterm-256color`, a CI runner reports no color
 but you want to force ANSI16, or you're sanity-checking an accessibility
-theme. Pass a pre-built profile with `colorOverride` to force the tier
+theme. Pass a pre-built profile with `colorLevel` to force the tier
 end-to-end:
 
 ```tsx
@@ -159,18 +159,18 @@ import { run } from "silvery/runtime"
 import { createTerminalProfile } from "@silvery/ansi"
 
 // Bypass under-reporting — force truecolor
-await run(<App />, { profile: createTerminalProfile({ colorOverride: "truecolor" }) })
+await run(<App />, { profile: createTerminalProfile({ colorLevel: "truecolor" }) })
 
 // Test the low-end look in a modern terminal
-await run(<App />, { profile: createTerminalProfile({ colorOverride: "ansi16" }) })
+await run(<App />, { profile: createTerminalProfile({ colorLevel: "ansi16" }) })
 
 // Accessibility / CI output — no colors, hierarchy via attrs
-await run(<App />, { profile: createTerminalProfile({ colorOverride: "mono" }) })
+await run(<App />, { profile: createTerminalProfile({ colorLevel: "mono" }) })
 ```
 
 Forcing the tier does two things:
 
-- Overrides `caps.colorTier` for the run — the pipeline sees the
+- Overrides `caps.colorLevel` for the run — the pipeline sees the
   requested tier end-to-end (mono attr fallback, SGR encoding, backdrop
   blend targets).
 - Pre-quantizes the active Theme via `pickColorLevel()` so every token
@@ -178,11 +178,11 @@ Forcing the tier does two things:
   `#000`/`#fff`).
 
 Priority (highest wins): `NO_COLOR` env → `FORCE_COLOR` env →
-`colorOverride` → auto-detect.
+`colorLevel` → auto-detect.
 
 > The older `run({ colorLevel })` shorthand still works but is
 > `@deprecated` (removal targeted for 1.1). Migrate call-sites to
-> `run({ profile: createTerminalProfile({ colorOverride }) })`.
+> `run({ profile: createTerminalProfile({ colorLevel }) })`.
 
 For advanced cases (pre-caching tier variants, showing multiple tiers in
 one process), `pickColorLevel(theme, level)` is exported from `silvery`:

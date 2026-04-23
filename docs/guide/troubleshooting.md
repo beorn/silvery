@@ -39,7 +39,7 @@
 
 ### Colors not appearing
 
-- Check `term.caps.colorTier` — returns `"mono"` if `NO_COLOR` is set or `TERM=dumb`.
+- Check `term.caps.colorLevel` — returns `"mono"` if `NO_COLOR` is set or `TERM=dumb`.
 - Verify `COLORTERM=truecolor` is set for true color support.
 - Some CI environments strip ANSI codes. Use `renderString(<App />, { plain: true })` for those.
 

@@ -44,7 +44,7 @@ import { renderPhase, clearBgConflictWarnings } from "./pipeline/render-phase"
 import {
   applyBackdrop,
   hasBackdropMarkers,
-  type ColorLevel as BackdropColorLevel,
+  type ColorLevel,
 } from "./pipeline/backdrop"
 import { CURSOR_RESTORE, CURSOR_SAVE, kittyDeleteAllScrimPlacements } from "@silvery/ansi"
 import { clearDirtyTracking, hasScrollDirty } from "@silvery/ag/dirty-tracking"
@@ -77,7 +77,7 @@ export interface CreateAgOptionsInternal {
    * Defaults to `"truecolor"` (OKLab blend). Set to `"ansi16"` at ANSI 16 tier
    * (SGR 2 dim) or `"mono"` to disable the pass entirely.
    */
-  colorLevel?: BackdropColorLevel
+  colorLevel?: ColorLevel
   /**
    * When true, the backdrop-fade pass emits Kitty graphics placements over
    * emoji / wide-char cells in the faded region so those glyphs visually
@@ -176,7 +176,7 @@ export interface CreateAgOptions {
    * Terminal color tier for the backdrop-fade pass. Defaults to `"truecolor"`.
    * See `pipeline/backdrop/` for tier semantics.
    */
-  colorLevel?: BackdropColorLevel
+  colorLevel?: ColorLevel
   /**
    * Whether the backdrop-fade pass may emit Kitty graphics placements for
    * emoji scrim. Defaults to an env heuristic (see `isKittyGraphicsEnabled`).
@@ -270,7 +270,7 @@ function isKittyGraphicsEnabledFromEnv(): boolean {
 
 export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
   const measurer = options?.measurer
-  const colorLevel: BackdropColorLevel = options?.colorLevel ?? "truecolor"
+  const colorLevel: ColorLevel = options?.colorLevel ?? "truecolor"
   // Kitty graphics: explicit option wins. Otherwise fall back to env heuristic
   // so the default behavior matches the terminal running the app without
   // callers needing to thread TerminalCaps through every site. Tests that

@@ -211,7 +211,7 @@ function TerminalCapsApp({
   // Terminal info header
   const termProgram = emulator.program || "(unknown)"
   const termType = emulator.TERM || "(unknown)"
-  const colorTier = caps.colorTier
+  const colorLevel = caps.colorLevel
 
   // Column width for alignment
   const colWidth = 38
@@ -223,7 +223,7 @@ function TerminalCapsApp({
       {/* Terminal emulator */}
       <Box paddingBottom={1}>
         <Muted>
-          Terminal: {termProgram} ({termType}) | Colors: {colorTier} | Background (guess):{" "}
+          Terminal: {termProgram} ({termType}) | Colors: {colorLevel} | Background (guess):{" "}
           {caps.maybeDarkBackground ? "dark" : "light"}
         </Muted>
       </Box>

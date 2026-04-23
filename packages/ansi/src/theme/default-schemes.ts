@@ -63,7 +63,7 @@ export const defaultLightScheme: ColorScheme = {
  * Dark ANSI 16 theme — hex-valued, derived from the default dark scheme.
  *
  * All token values are hex strings. Terminal rendering quantizes hex to
- * 4-bit ANSI codes at paint time when colorTier === "ansi16".
+ * 4-bit ANSI codes at paint time when colorLevel === "ansi16".
  */
 export const ansi16DarkTheme: Theme = deriveAnsi16Theme(defaultDarkScheme)
 
@@ -71,6 +71,6 @@ export const ansi16DarkTheme: Theme = deriveAnsi16Theme(defaultDarkScheme)
  * Light ANSI 16 theme — hex-valued, derived from the default light scheme.
  *
  * All token values are hex strings. Terminal rendering quantizes hex to
- * 4-bit ANSI codes at paint time when colorTier === "ansi16".
+ * 4-bit ANSI codes at paint time when colorLevel === "ansi16".
  */
 export const ansi16LightTheme: Theme = deriveAnsi16Theme(defaultLightScheme)

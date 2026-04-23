@@ -672,7 +672,7 @@ const _defaultCtxForReplay: OutputContext = {
   caps: {
     underlineStyles: true,
     underlineColor: true,
-    colorTier: "truecolor",
+    colorLevel: "truecolor",
   },
   measurer: null,
   sgrCache: new Map(),

@@ -2,7 +2,7 @@
  * ANSI 16 theme generation — derives a complete Theme from a primary color + dark/light.
  *
  * All token values are hex strings. Terminal rendering quantizes hex to 4-bit
- * ANSI codes at paint time when colorTier === "ansi16".
+ * ANSI codes at paint time when colorLevel === "ansi16".
  */
 
 import type { AnsiPrimary, Theme } from "@silvery/ansi"
@@ -24,7 +24,7 @@ function slotHex(name: string): string {
  *
  * All token values are hex strings (e.g. "#808000" for yellow).
  * Terminal rendering quantizes these to 4-bit ANSI codes at paint time
- * when colorTier === "ansi16".
+ * when colorLevel === "ansi16".
  */
 export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
   const primaryHex = slotHex(primary)

@@ -25,7 +25,7 @@ import {
   type TerminalCaps,
   type TerminalEmulator,
 } from "./detection"
-import type { ColorTier } from "./types"
+import type { ColorLevel } from "./types"
 import { detectTheme } from "./theme/detect"
 import type { DetectThemeOptions, ProbeInputOwner } from "./theme/detect"
 import type { Theme } from "./theme/types"
@@ -39,11 +39,11 @@ import { pickColorLevel } from "./color-maps"
  * or a caller-supplied caps object; their provenance is not tracked here.
  *
  * - `"env"` — `NO_COLOR` or `FORCE_COLOR` env var won.
- * - `"override"` — caller-supplied `colorOverride` won.
- * - `"caller-caps"` — `options.caps.colorTier` fallback won. Note this
+ * - `"override"` — caller-supplied `colorLevel` won.
+ * - `"caller-caps"` — `options.caps.colorLevel` fallback won. Note this
  *   conflates "pre-detected real caps the Term committed to" with
  *   "synthetically forced caps from a test fixture / user config"; callers
- *   that need to tell those apart pass `colorOverride` explicitly instead.
+ *   that need to tell those apart pass `colorLevel` explicitly instead.
  * - `"auto"` — env-based auto-detection (TERM/COLORTERM/TERM_PROGRAM) won.
  *
  * Consumers that only need "was the tier forced?" should read
@@ -58,12 +58,12 @@ export type ColorProvenance = "env" | "override" | "caller-caps" | "auto"
  * A fully-resolved view of the current terminal.
  *
  * Bundled intentionally — callers shouldn't mix and match detection sources.
- * `colorTier` mirrors `caps.colorTier`; it's exposed as a top-level field so
+ * `colorLevel` mirrors `caps.colorLevel`; it's exposed as a top-level field so
  * callers that only need the tier (e.g. `createStyle({ level })`) don't have
  * to reach into the caps object.
  *
  * **Immutability**: profiles are snapshot values — the whole plateau depends
- * on `colorTier === caps.colorTier` never drifting. Every field is
+ * on `colorLevel === caps.colorLevel` never drifting. Every field is
  * `readonly` at the type level, and `createTerminalProfile` freezes the
  * returned object (and its nested `caps`) in dev builds so accidental
  * mutation crashes loudly. Production builds skip the freeze to keep the
@@ -80,15 +80,15 @@ export interface TerminalProfile {
   /** Environment identity — what terminal IS this (program, version, TERM). */
   readonly emulator: TerminalEmulator
   /** Protocol-capability flags + low-confidence `maybe*` heuristics. Also
-   * carries `colorTier` / `colorForced` / `colorProvenance`. */
+   * carries `colorLevel` / `colorForced` / `colorProvenance`. */
   readonly caps: TerminalCaps
-  /** Convenience alias for `caps.colorTier`. Exposed as a top-level field
+  /** Convenience alias for `caps.colorLevel`. Exposed as a top-level field
    * because callers that only need the tier (e.g. `createStyle({ level })`)
    * shouldn't have to reach into the caps object. */
-  readonly colorTier: ColorTier
+  readonly colorLevel: ColorLevel
   /**
    * OSC-detected terminal theme, populated only when the profile was built via
-   * {@link probeTerminalProfile}. Pre-quantized to {@link colorTier} when the
+   * {@link probeTerminalProfile}. Pre-quantized to {@link colorLevel} when the
    * tier was {@link TerminalCaps.colorForced} so token hex values match what
    * the pipeline will actually emit.
    *
@@ -112,7 +112,7 @@ export function defaultProfile(): TerminalProfile {
   return {
     emulator: defaultEmulator(),
     caps,
-    colorTier: caps.colorTier,
+    colorLevel: caps.colorLevel,
   }
 }
 
@@ -157,14 +157,14 @@ export interface CreateTerminalProfileOptions {
    */
   stdin?: TerminalProfileStdin
   /**
-   * Explicit color tier override. Wins over `caps.colorTier` but NOT over
+   * Explicit color tier override. Wins over `caps.colorLevel` but NOT over
    * NO_COLOR / FORCE_COLOR env vars. `null` is accepted as an alias for
    * `"mono"` (pre-plateau no-color spelling).
    */
-  colorOverride?: ColorTier | null
+  colorLevel?: ColorLevel | null
   /**
    * Base capabilities. When provided, skips the env-based caps detection —
-   * the profile uses these as the starting point. `caps.colorTier` acts as
+   * the profile uses these as the starting point. `caps.colorLevel` acts as
    * the fallback tier (used only if env+override both decline to set one).
    *
    * Typical uses:
@@ -184,16 +184,16 @@ export interface CreateTerminalProfileOptions {
 /**
  * Build a {@link TerminalProfile} from the current environment.
  *
- * Priority for the final `colorTier` (highest wins):
+ * Priority for the final `colorLevel` (highest wins):
  *   1. `NO_COLOR` env var → `"mono"`
  *   2. `FORCE_COLOR` env var → `0/false → mono, 1 → ansi16, 2 → 256, 3 → truecolor`
- *   3. `options.colorOverride` (caller-supplied explicit tier)
- *   4. `options.caps.colorTier` (base caps' pre-detected tier)
+ *   3. `options.colorLevel` (caller-supplied explicit tier)
+ *   4. `options.caps.colorLevel` (base caps' pre-detected tier)
  *   5. Auto-detected tier from env (TERM, COLORTERM, TERM_PROGRAM, …)
  *
  * The env-var precedence (1 & 2) matches the existing `detectColor()` semantics
  * and is observed on every silvery entry point — tests pass with explicit
- * env vars even when a caller forces a tier via `colorOverride`.
+ * env vars even when a caller forces a tier via `colorLevel`.
  *
  * When `options.caps` is provided, the profile treats those as the base
  * capabilities and skips the env-based caps detection — only the color tier
@@ -207,14 +207,14 @@ export interface CreateTerminalProfileOptions {
  * ```ts
  * // Auto-detect from process.env + process.stdout
  * const profile = createTerminalProfile()
- * console.log(profile.colorTier) // "truecolor" on Ghostty
+ * console.log(profile.colorLevel) // "truecolor" on Ghostty
  *
  * // Force a tier (still honors NO_COLOR / FORCE_COLOR env precedence)
- * const forced = createTerminalProfile({ colorOverride: "256" })
+ * const forced = createTerminalProfile({ colorLevel: "256" })
  *
  * // Term path — base caps already detected, just resolve color tier.
  * const termProfile = createTerminalProfile({
- *   colorOverride: userColorLevel,
+ *   colorLevel: userColorLevel,
  *   caps: term.caps,
  * })
  *
@@ -222,7 +222,7 @@ export interface CreateTerminalProfileOptions {
  * const fake = createTerminalProfile({
  *   env: {},
  *   stdout: { isTTY: true },
- *   colorOverride: "truecolor",
+ *   colorLevel: "truecolor",
  * })
  * ```
  */
@@ -244,18 +244,18 @@ export function createTerminalProfile(
   const envTier = envColorTier(env)
 
   // Non-env caller override. Accepts `null` as the legacy no-color spelling.
-  const overrideTier: ColorTier | undefined =
-    options.colorOverride === null ? "mono" : (options.colorOverride ?? undefined)
+  const overrideTier: ColorLevel | undefined =
+    options.colorLevel === null ? "mono" : (options.colorLevel ?? undefined)
 
   // Pre-detected caps' color tier (used when caller passes full `caps` from a
   // Term constructor or test fixture).
-  const baseCapsTier = options.caps?.colorTier
+  const baseCapsTier = options.caps?.colorLevel
 
   // Precedence chain: env > override > base caps > env-based auto-detect.
   // Walk the rungs explicitly so we can record which one won — callers use
   // `caps.colorForced` to tell "forced tier" from "natural tier" and
   // `caps.colorProvenance` when the specific rung matters.
-  let resolvedTier: ColorTier
+  let resolvedTier: ColorLevel
   let colorProvenance: ColorProvenance
   if (envTier !== undefined) {
     resolvedTier = envTier
@@ -296,7 +296,7 @@ export function createTerminalProfile(
 
   const caps: TerminalCaps = {
     ...baseCaps,
-    colorTier: resolvedTier,
+    colorLevel: resolvedTier,
     colorForced: colorProvenance === "env" || colorProvenance === "override",
     colorProvenance,
     input: inputResolved,
@@ -305,7 +305,7 @@ export function createTerminalProfile(
   const profile: TerminalProfile = {
     emulator: baseEmulator,
     caps,
-    colorTier: resolvedTier,
+    colorLevel: resolvedTier,
   }
 
   return freezeProfileInDev(profile)
@@ -313,7 +313,7 @@ export function createTerminalProfile(
 
 /**
  * Freeze a profile (plus its nested caps / emulator) in dev builds so
- * `profile.colorTier === profile.caps.colorTier` and every other invariant
+ * `profile.colorLevel === profile.caps.colorLevel` and every other invariant
  * can't silently drift via direct mutation. Production builds skip the
  * freeze to keep the allocation cheap; the type-level `readonly` fields
  * already block TS-side writes.
@@ -396,13 +396,13 @@ export interface ProbeTerminalProfileOptions extends CreateTerminalProfileOption
  * ```ts
  * // Node entry point with TUI-safe probing.
  * const profile = await probeTerminalProfile({
- *   colorOverride: options.colorLevel,
+ *   colorLevel: options.colorLevel,
  *   caps: term.profile.caps,
  *   fallbackDark: nord,
  *   fallbackLight: catppuccinLatte,
  *   input: probeOwner, // structural InputOwner from @silvery/ag-term
  * })
- * // profile.caps, profile.colorTier, profile.caps.colorForced, profile.theme
+ * // profile.caps, profile.colorLevel, profile.caps.colorForced, profile.theme
  * ```
  *
  * @see createTerminalProfile — sync variant, no theme probe
@@ -411,7 +411,7 @@ export interface ProbeTerminalProfileOptions extends CreateTerminalProfileOption
 export async function probeTerminalProfile(
   options: ProbeTerminalProfileOptions = {},
 ): Promise<TerminalProfile> {
-  // Reuse the sync resolution for caps + colorTier + source — single source
+  // Reuse the sync resolution for caps + colorLevel + source — single source
   // of truth for the precedence chain. Only the theme bundling is new.
   const profile = createTerminalProfile(options)
 
@@ -434,7 +434,7 @@ export async function probeTerminalProfile(
   // inline. With the gate co-located with the profile factory, entry-point
   // branches collapse to one `await probeTerminalProfile(...)` call.
   const resolvedTheme = profile.caps.colorForced
-    ? pickColorLevel(theme, profile.colorTier)
+    ? pickColorLevel(theme, profile.colorLevel)
     : theme
 
   // Re-freeze: the sync factory already froze `profile`, but `{ ...profile,
@@ -455,7 +455,7 @@ export async function probeTerminalProfile(
 export function detectColorFromEnv(
   env: Record<string, string | undefined>,
   stdout: TerminalProfileStdout,
-): ColorTier {
+): ColorLevel {
   // NO_COLOR takes precedence (see https://no-color.org/)
   if (env.NO_COLOR !== undefined) return "mono"
 
@@ -511,7 +511,7 @@ export function detectColorFromEnv(
  */
 function envColorTier(
   env: Record<string, string | undefined>,
-): ColorTier | undefined {
+): ColorLevel | undefined {
   if (env.NO_COLOR !== undefined) return "mono"
   const force = env.FORCE_COLOR
   if (force !== undefined) {
@@ -541,7 +541,7 @@ export function detectTerminalProfileFromEnv(
   const noColor = env.NO_COLOR !== undefined
 
   const isAppleTerminal = program === "Apple_Terminal"
-  const colorTier: ColorTier = noColor ? "mono" : detectColorFromEnv(env, stdout)
+  const colorLevel: ColorLevel = noColor ? "mono" : detectColorFromEnv(env, stdout)
 
   const isKitty = TERM === "xterm-kitty"
   const isITerm = program === "iTerm.app"
@@ -610,7 +610,7 @@ export function detectTerminalProfileFromEnv(
   const caps: TerminalCaps = {
     cursor,
     input: false, // filled in by createTerminalProfile from stdin shape
-    colorTier,
+    colorLevel,
     colorForced: noColor || env.FORCE_COLOR !== undefined,
     colorProvenance: noColor || env.FORCE_COLOR !== undefined ? "env" : "auto",
     unicode,
@@ -634,7 +634,7 @@ export function detectTerminalProfileFromEnv(
   return {
     emulator,
     caps,
-    colorTier,
+    colorLevel,
   }
 }
 

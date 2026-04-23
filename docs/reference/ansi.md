@@ -34,18 +34,18 @@ Resolve the terminal profile (color tier + capability flags) in one call, respec
 import { createTerminalProfile } from "@silvery/ansi"
 
 const profile = createTerminalProfile()
-// profile.colorTier: "mono" | "ansi16" | "256" | "truecolor"
+// profile.colorLevel: "mono" | "ansi16" | "256" | "truecolor"
 // profile.colorForced: boolean (env or override displaced baseline)
 // profile.colorProvenance: "env" | "override" | "caller-caps" | "auto"
-// profile.caps: full TerminalCaps — colorTier, kittyKeyboard, osc52, …
+// profile.caps: full TerminalCaps — colorLevel, kittyKeyboard, osc52, …
 ```
 
 Precedence (highest wins):
 
 1. `NO_COLOR` env var -- forces `mono` ([no-color.org](https://no-color.org))
 2. `FORCE_COLOR` env var -- `0` = mono, `1` = ansi16, `2` = 256, `3` = truecolor
-3. Explicit `colorOverride` option (includes `null` alias for `mono`)
-4. `caps.colorTier` from caller-supplied partial caps
+3. Explicit `colorLevel` option (includes `null` alias for `mono`)
+4. `caps.colorLevel` from caller-supplied partial caps
 5. Auto-detect from `COLORTERM`, `TERM`, `TERM_PROGRAM`, CI vars — otherwise `ansi16` if TTY, `mono` if piped
 
 ### Color Tiers
@@ -95,7 +95,7 @@ Profiles are two-layer: `profile.emulator` carries identity (program/version/TER
 | --------------------- | -------------------------- | ---------------------------------------------- |
 | `cursor`              | `boolean`                  | Cursor control (TTY stdout + `TERM != dumb`)   |
 | `input`               | `boolean`                  | Raw keystroke input (TTY stdin + `setRawMode`) |
-| `colorTier`           | `ColorTier`                | `"mono"` / `"ansi16"` / `"256"` / `"truecolor"` |
+| `colorLevel`           | `ColorLevel`                | `"mono"` / `"ansi16"` / `"256"` / `"truecolor"` |
 | `colorForced`         | `boolean`                  | Env or override forced the tier                |
 | `colorProvenance`     | `ColorProvenance`          | Which rung resolved the tier                   |
 | `kittyKeyboard`       | `boolean`                  | Kitty keyboard protocol                        |

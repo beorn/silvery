@@ -2,7 +2,7 @@
  * Type definitions for the style system.
  */
 
-import type { ColorTier } from "../types.ts"
+import type { ColorLevel } from "../types.ts"
 import type { TerminalCaps } from "../detection.ts"
 
 /**
@@ -27,11 +27,11 @@ export interface StyleOptions {
   /**
    * Color tier override. Auto-detected from terminal if omitted.
    *
-   * Accepts the canonical {@link ColorTier} (`"mono" | "ansi16" | "256" | "truecolor"`).
+   * Accepts the canonical {@link ColorLevel} (`"mono" | "ansi16" | "256" | "truecolor"`).
    * `null` is accepted as a compat alias for `"mono"` — prior to
    * km-silvery.terminal-profile-plateau the no-color case was spelt `null`.
    */
-  level?: ColorTier | null
+  level?: ColorLevel | null
   /** Theme object for $token resolution. Any object with string-valued properties works. */
   theme?: ThemeLike | object
   /**

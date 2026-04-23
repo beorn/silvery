@@ -16,7 +16,7 @@ import { createTerminal } from "@termless/core"
 import { createXtermBackend } from "@termless/xtermjs"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
 import { createOutputPhase, outputPhase } from "@silvery/ag-term/pipeline/output-phase"
-import { createWidthMeasurer } from "@silvery/ag-term/unicode"
+import { createMeasurer } from "@silvery/ag-term/unicode"
 
 const COLS = 80
 const ROWS = 5
@@ -99,18 +99,18 @@ function writeString(
 
 /** Create output phase with text sizing ENABLED (Kitty-like) */
 function createOsc66EnabledOutputPhase() {
-  const measurer = createWidthMeasurer({ textSizing: true, maybeWideEmojis: true })
+  const measurer = createMeasurer({ textSizing: true, maybeWideEmojis: true })
   return createOutputPhase(
-    { underlineStyles: true, underlineColor: true, colorTier: "truecolor" },
+    { underlineStyles: true, underlineColor: true, colorLevel: "truecolor" },
     measurer,
   )
 }
 
 /** Create output phase with text sizing DISABLED (most terminals) */
 function createOsc66DisabledOutputPhase() {
-  const measurer = createWidthMeasurer({ textSizing: false, maybeWideEmojis: true })
+  const measurer = createMeasurer({ textSizing: false, maybeWideEmojis: true })
   return createOutputPhase(
-    { underlineStyles: true, underlineColor: true, colorTier: "truecolor" },
+    { underlineStyles: true, underlineColor: true, colorLevel: "truecolor" },
     measurer,
   )
 }

@@ -19,9 +19,9 @@
  *
  * Prior to km-silvery.terminal-profile-plateau this type went by three
  * different names with three different spellings for the no-color case
- * (`null`, `"none"`, `"mono"`). Canonicalized to `ColorTier` + `"mono"`.
+ * (`null`, `"none"`, `"mono"`). Canonicalized to `ColorLevel` + `"mono"`.
  */
-export type ColorTier = "mono" | "ansi16" | "256" | "truecolor"
+export type ColorLevel = "mono" | "ansi16" | "256" | "truecolor"
 
 /**
  * RGB color tuple for underline color.

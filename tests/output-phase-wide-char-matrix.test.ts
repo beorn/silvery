@@ -33,7 +33,7 @@ const CUP_REGEX = /\x1b\[(\d+);(\d+)H/g
 /** Create output phase with text sizing enabled (simulates Ghostty/Kitty) */
 function createTextSizedOutputPhase() {
   return createOutputPhase(
-    { underlineStyles: true, underlineColor: true, colorTier: "truecolor" },
+    { underlineStyles: true, underlineColor: true, colorLevel: "truecolor" },
     { graphemeWidth, textSizing: true },
   )
 }
