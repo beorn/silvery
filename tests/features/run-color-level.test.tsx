@@ -142,26 +142,26 @@ function TokenSwatch() {
   )
 }
 
-describe("run({ colorTier }) — options path", () => {
+describe("run({ colorLevel }) — options path", () => {
   test("default (no option) emits truecolor SGR for inline hex", async () => {
     const ansi = await runCapturing(<Swatch hex="#88c0d0" />)
     expect(ansi).toMatch(/\x1b\[[0-9;]*38;2;\d+;\d+;\d+/)
   })
 
   test("colorTier: 'mono' strips inline hex → no color SGR at all", async () => {
-    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorTier: "mono" })
+    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "mono" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;5;/)
   })
 
   test("colorTier: 'mono' strips $token colors → no color SGR at all", async () => {
-    const ansi = await runCapturing(<TokenSwatch />, { colorTier: "mono" })
+    const ansi = await runCapturing(<TokenSwatch />, { colorLevel: "mono" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;5;/)
   })
 
   test("colorTier: 'truecolor' passes inline hex through unchanged", async () => {
-    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorTier: "truecolor" })
+    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "truecolor" })
     // #88c0d0 = rgb(136, 192, 208)
     expect(ansi).toMatch(/\x1b\[[0-9;]*38;2;136;192;208/)
   })
@@ -174,20 +174,20 @@ describe("run({ colorTier }) — options path", () => {
 describe("env-var precedence over colorTier option", () => {
   test("NO_COLOR=1 wins over colorTier: 'truecolor' (→ mono)", async () => {
     process.env.NO_COLOR = "1"
-    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorTier: "truecolor" })
+    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "truecolor" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;5;/)
   })
 
   test("FORCE_COLOR=3 wins over colorTier: 'mono' (→ truecolor passes hex)", async () => {
     process.env.FORCE_COLOR = "3"
-    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorTier: "mono" })
+    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "mono" })
     expect(ansi).toMatch(/\x1b\[[0-9;]*38;2;136;192;208/)
   })
 
   test("FORCE_COLOR=0 wins over colorTier: 'truecolor' (→ mono)", async () => {
     process.env.FORCE_COLOR = "0"
-    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorTier: "truecolor" })
+    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "truecolor" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;5;/)
   })
@@ -195,7 +195,7 @@ describe("env-var precedence over colorTier option", () => {
   test("NO_COLOR wins over FORCE_COLOR=3 (→ mono)", async () => {
     process.env.NO_COLOR = "1"
     process.env.FORCE_COLOR = "3"
-    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorTier: "truecolor" })
+    const ansi = await runCapturing(<Swatch hex="#88c0d0" />, { colorLevel: "truecolor" })
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;2;/)
     expect(ansi).not.toMatch(/\x1b\[[0-9;]*38;5;/)
   })

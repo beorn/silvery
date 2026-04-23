@@ -36,7 +36,10 @@ function doRender(node: React.JSX.Element, options?: RenderToStringOptions): str
   const chalkHasColors = currentChalkLevel() > 0
   const colorLevel = chalkHasColors ? ("truecolor" as const) : null
   const term = createTerm({ color: colorLevel })
-  const plain = term.hasColor() === null
+  // Post km-silvery.caps-restructure (Phase 7): hasColor() is deleted; read
+  // the tier from term.caps. "mono" is the canonical no-color state (legacy
+  // test expected the deleted `null` spelling).
+  const plain = term.caps.colorTier === "mono"
   const wrapped = React.createElement(TermContext.Provider, { value: term }, node)
 
   const bufferHeight = 24
