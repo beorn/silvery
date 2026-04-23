@@ -731,10 +731,15 @@ export type { BracketedPasteResult } from "@silvery/ag-term/bracketed-paste"
 
 // OSC 52 clipboard support
 export {
+  // eslint-disable-next-line @typescript-eslint/no-deprecated -- barrel re-export of deprecated legacy helper; callers should prefer createOsc52Backend (also re-exported here)
   copyToClipboard,
   requestClipboard,
   parseClipboardResponse,
+  createOsc52Backend,
+  createInternalClipboardBackend,
+  createCompositeClipboard,
 } from "@silvery/ag-term/clipboard"
+export type { ClipboardBackend, ClipboardCapabilities } from "@silvery/ag-term/clipboard"
 
 // OSC 4 palette color query/set
 export {
