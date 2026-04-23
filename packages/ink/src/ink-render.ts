@@ -707,7 +707,7 @@ export function renderToString(
   // even when FORCE_COLOR=0, so we must respect chalk's runtime level
   const chalkHasColors = currentChalkLevel() > 0
   const colorLevel = chalkHasColors ? ("truecolor" as const) : null
-  const term = createTerm({ color: colorLevel })
+  const term = createTerm({ colorLevel: colorLevel })
   // Always render with color enabled (plain=false) so that embedded ANSI sequences
   // in text children are preserved in the buffer output. Ink preserves embedded ANSI
   // even when chalk has no color support — only chalk-applied style props are skipped

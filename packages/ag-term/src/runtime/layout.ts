@@ -87,7 +87,7 @@ export function layout(element: ReactElement, dims: Dims, options: LayoutOptions
   } as unknown as NodeJS.WriteStream
 
   // Create mock term for components that use useTerm()
-  const mockTerm = createTerm({ color: plain ? null : "truecolor" })
+  const mockTerm = createTerm({ colorLevel: plain ? null : "truecolor" })
 
   // Wrap with minimal contexts (no input handling needed)
   const wrapped = React.createElement(

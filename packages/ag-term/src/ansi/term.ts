@@ -741,8 +741,8 @@ function createNodeTerm(options: CreateTermOptions): Term {
   //     that tier regardless of what FORCE_COLOR / NO_COLOR say. This matches
   //     the legacy `detectTerminalCaps()` path which short-circuited on
   //     explicit caps.
-  //   - `options.color` (legacy `ColorLevel | null`) → thread through
-  //     `colorLevel` so it participates in the normal precedence chain.
+  //   - `options.colorLevel` (`ColorLevel | null`) → thread through
+  //     profile `colorLevel` so it participates in the normal precedence chain.
   //   - non-TTY Node terms → `defaultCaps()` base + no caller override.
   //   - TTY Node terms → full env-based auto-detection.
   const profileCapsBase: Partial<TerminalCaps> | undefined = options.caps
@@ -751,7 +751,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
       ? undefined // let profile factory run full env detection
       : defaultCaps() // non-TTY: deterministic defaults, skip env probe
   const explicitColor =
-    options.color === undefined ? undefined : (options.color ?? "mono")
+    options.colorLevel === undefined ? undefined : (options.colorLevel ?? "mono")
   // Explicit caps override the env chain — tests and adapters that pass
   // `caps: { colorLevel: ... }` rely on the tier they specified. Promoting
   // the caps tier into `colorLevel` mostly re-establishes that, but the

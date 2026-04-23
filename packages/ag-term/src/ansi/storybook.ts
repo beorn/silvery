@@ -25,7 +25,7 @@ import {
 // Force underline caps = true so the storybook always demonstrates
 // extended styles, regardless of the host terminal's detected caps.
 using term = createTerm({
-  color: "truecolor",
+  colorLevel: "truecolor",
   // Post Phase 7 (caps-restructure) underlineStyles is a `readonly
   // UnderlineStyle[]` — supply the full modern set so the storybook always
   // demonstrates extended styles regardless of the host terminal's detection.

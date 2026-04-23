@@ -936,7 +936,7 @@ async function renderAsync(
   if (!termOrDef) {
     // No term/def provided - static mode with defaults
     resolved = resolveTermDef({})
-    term = createTerm({ color: resolved.colors ?? undefined })
+    term = createTerm({ colorLevel: resolved.colors ?? undefined })
   } else if (isTerm(termOrDef)) {
     // Full Term instance provided
     resolved = resolveFromTerm(termOrDef)
@@ -947,7 +947,7 @@ async function renderAsync(
     term = createTerm({
       stdout: termOrDef.stdout,
       stdin: termOrDef.stdin,
-      color: resolved.colors ?? undefined,
+      colorLevel: resolved.colors ?? undefined,
     })
   } else {
     throw new Error("Invalid second argument: expected Term, TermDef, or undefined")
@@ -1134,7 +1134,7 @@ export function renderSync(
 
   if (!termOrDef) {
     resolved = resolveTermDef({})
-    term = createTerm({ color: resolved.colors ?? undefined })
+    term = createTerm({ colorLevel: resolved.colors ?? undefined })
   } else if (isTerm(termOrDef)) {
     resolved = resolveFromTerm(termOrDef)
     term = termOrDef
@@ -1143,7 +1143,7 @@ export function renderSync(
     term = createTerm({
       stdout: termOrDef.stdout,
       stdin: termOrDef.stdin,
-      color: resolved.colors ?? undefined,
+      colorLevel: resolved.colors ?? undefined,
     })
   } else {
     throw new Error("Invalid second argument: expected Term, TermDef, or undefined")

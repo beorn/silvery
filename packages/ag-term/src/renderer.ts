@@ -485,7 +485,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   } as unknown as NodeJS.WriteStream
 
   // Create mock term with the mock stdout so useWindowSize reads correct dimensions
-  const mockTerm = createTerm({ color: "truecolor", stdout: mockStdout })
+  const mockTerm = createTerm({ colorLevel: "truecolor", stdout: mockStdout })
 
   // Focus manager (tree-based focus system)
   const focusManager = createFocusManager()

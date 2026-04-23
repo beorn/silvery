@@ -68,14 +68,16 @@ export interface CreateTermOptions {
   stdout?: NodeJS.WriteStream
   stdin?: NodeJS.ReadStream
 
-  // Override auto-detection (for testing or forcing).
+  // Override auto-detection (for testing or forcing). Field names match
+  // the caps fields they override — passing `{ ...caps }` works as a
+  // partial spread.
   //
-  // `color` accepts the canonical {@link ColorLevel}. Legacy callers that
-  // passed `null` (pre-terminal-profile-plateau no-color spelling) still
-  // compile — the term factory normalizes `null` to `"mono"`.
-  color?: import("@silvery/ansi").ColorLevel | null // override caps.colorLevel
-  unicode?: boolean // override caps.unicode
-  cursor?: boolean // override caps.cursor
+  // `colorLevel` accepts the canonical {@link ColorLevel}. Legacy callers
+  // that passed `null` (pre-terminal-profile-plateau no-color spelling)
+  // still compile — the term factory normalizes `null` to `"mono"`.
+  colorLevel?: import("@silvery/ansi").ColorLevel | null
+  unicode?: boolean
+  cursor?: boolean
 
   // Terminal capabilities override
   caps?: Partial<TerminalCaps>
