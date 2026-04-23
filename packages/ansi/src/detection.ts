@@ -377,22 +377,26 @@ function detectMacOSDarkMode(): boolean {
 export function detectTerminalCaps(): TerminalCaps {
   const program = process.env.TERM_PROGRAM ?? ""
   const term = process.env.TERM ?? ""
-  const colorTerm = process.env.COLORTERM ?? ""
   const noColor = process.env.NO_COLOR !== undefined
 
   const isAppleTerminal = program === "Apple_Terminal"
 
-  let colorLevel: TerminalCaps["colorLevel"] = "none"
-  if (!noColor) {
-    if (isAppleTerminal) {
-      colorLevel = "256"
-    } else if (colorTerm === "truecolor" || colorTerm === "24bit") {
-      colorLevel = "truecolor"
-    } else if (term.includes("256color")) {
-      colorLevel = "256"
-    } else if (process.stdout?.isTTY) {
-      colorLevel = "basic"
-    }
+  // Delegate colour-level detection to the canonical `detectColor()` — it
+  // understands FORCE_COLOR, COLORTERM, TERM patterns (xterm-ghostty,
+  // xterm-kitty, wezterm), TERM_PROGRAM (iTerm.app / Ghostty / WezTerm),
+  // KITTY_WINDOW_ID, and CI fallbacks. Previously this block only checked
+  // COLORTERM and TERM-256 — so modern terminals that advertise via
+  // TERM_PROGRAM (e.g. Ghostty without COLORTERM set) fell through to
+  // "basic", and FORCE_COLOR was silently ignored at the caps layer.
+  const stdout = process.stdout as NodeJS.WriteStream | undefined
+  let colorLevel: TerminalCaps["colorLevel"]
+  if (noColor) {
+    colorLevel = "none"
+  } else if (stdout) {
+    const detected = detectColor(stdout)
+    colorLevel = detected === null ? "none" : detected === "basic" ? "basic" : detected
+  } else {
+    colorLevel = "none"
   }
 
   const isKitty = term === "xterm-kitty"

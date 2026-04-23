@@ -751,13 +751,14 @@ function ListViewInner<T>(
         const measureKey = wrappedGetKey ? wrappedGetKey(startIndex + i) : startIndex + i
 
         // In nav mode, wrap each item with hover/click handlers so that
-        // hovering moves the keyboard cursor and clicking confirms the selection.
-        // renderItem is responsible for its own mouse handlers when
-        // onItemHover/onItemClick are provided — the wrapper only adds nav
-        // defaults when renderItem doesn't handle it itself (passive mode).
+        // hovering moves the keyboard cursor and clicking confirms the
+        // selection. The wrapper is always added when nav is on and active
+        // — previously it was only added when the app provided
+        // onItemHover/onItemClick explicitly, which meant hover silently
+        // did nothing for apps that wanted the defaults.
         const rendered = renderItem(item, originalIndex, meta)
         const itemNode =
-          nav && active !== false && (onItemHover !== undefined || onItemClick !== undefined) ? (
+          nav && active !== false ? (
             <Box
               onMouseEnter={
                 onItemHover ? () => onItemHover(originalIndex) : () => moveTo(originalIndex)
