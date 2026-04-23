@@ -1096,6 +1096,107 @@ export class TerminalBuffer {
   }
 
   /**
+   * OR-combine SGR attribute bits into every cell in a rectangular region —
+   * WITHOUT modifying glyphs, fg, bg, wide flags, selectable flag, or any
+   * other per-cell state.
+   *
+   * This is the transparent-overlay primitive. It lets a Box (or any caller)
+   * layer an underline / strikethrough / bold / etc. onto existing content
+   * without overwriting what's underneath.
+   *
+   * Semantics:
+   * - `attrs.underlineStyle` (or `attrs.underline: true` via attrsToNumber)
+   *   REPLACES any existing underline style on each cell — 3-bit field, one
+   *   value wins. This matches CSS `text-decoration` overlay semantics where
+   *   a decoration container sets the decoration.
+   * - All other attr bits (bold/dim/italic/blink/inverse/hidden/strikethrough)
+   *   OR-in — existing attrs are preserved, new attrs add to them.
+   * - `underlineColor` is applied only when explicitly provided; otherwise
+   *   each cell keeps its existing underline color.
+   *
+   * Use cases:
+   * - Overscroll indicator: `<Box underline="single" position="absolute" />`
+   *   overlays an underline on the last row without touching the text.
+   * - Error squiggly across a paragraph: `<Box underline="curly">`.
+   * - Heading visual emphasis: `<Box underline="double">`.
+   *
+   * @param x      Left column (inclusive)
+   * @param y      Top row (inclusive)
+   * @param width  Region width
+   * @param height Region height
+   * @param attrs  Attributes to merge onto every cell
+   * @param underlineColor Optional underline color — when provided, replaces the
+   *   existing underlineColor on each cell. `null` clears it. `undefined`
+   *   leaves it untouched.
+   */
+  mergeAttrsInRect(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    attrs: CellAttrs,
+    underlineColor?: Color,
+  ): void {
+    const endX = Math.min(x + width, this.width)
+    const endY = Math.min(y + height, this.height)
+    const startX = Math.max(0, x)
+    const startY = Math.max(0, y)
+
+    if (startX >= endX || startY >= endY) return
+
+    const attrBits = attrsToNumber(attrs)
+    if (attrBits === 0 && underlineColor === undefined) return
+
+    // Separate the underline-style bits (bits 24-26) from the OR-in bits
+    // (bits 16-22 — bold, dim, italic, blink, inverse, hidden, strikethrough).
+    // Underline REPLACES rather than OR-combines so callers can request a
+    // specific style without accumulating with existing ones.
+    const UL_MASK = UNDERLINE_STYLE_MASK
+    const orInBits = attrBits & ~UL_MASK
+    const newUlBits = attrBits & UL_MASK
+    const setUnderline = newUlBits !== 0
+    const setUnderlineColor = underlineColor !== undefined
+
+    // Mark affected rows dirty
+    for (let cy = startY; cy < endY; cy++) {
+      this._dirtyRows[cy] = 1
+    }
+    if (this._minDirtyRow === -1 || startY < this._minDirtyRow) this._minDirtyRow = startY
+    if (endY - 1 > this._maxDirtyRow) this._maxDirtyRow = endY - 1
+
+    const hasTrueColorUl = setUnderlineColor && isTrueColor(underlineColor)
+    const trueColorUl = hasTrueColorUl
+      ? (underlineColor as { r: number; g: number; b: number })
+      : null
+
+    for (let cy = startY; cy < endY; cy++) {
+      const rowBase = cy * this.width
+      for (let cx = startX; cx < endX; cx++) {
+        const idx = rowBase + cx
+        const oldPacked = this.cells[idx]!
+
+        let newPacked = (oldPacked | orInBits) >>> 0
+        if (setUnderline) {
+          // Clear old underline bits, set new ones
+          newPacked = (((newPacked & ~UL_MASK) >>> 0) | newUlBits) >>> 0
+        }
+        this.cells[idx] = newPacked
+
+        if (setUnderlineColor) {
+          if (underlineColor === null) {
+            this.underlineColors.delete(idx)
+          } else if (hasTrueColorUl) {
+            this.underlineColors.set(idx, trueColorUl!)
+          } else {
+            // 256-color / palette index
+            this.underlineColors.set(idx, underlineColor!)
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Clear the buffer (fill with empty cells).
    */
   clear(): void {
