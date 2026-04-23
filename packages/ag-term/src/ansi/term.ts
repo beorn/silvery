@@ -993,6 +993,11 @@ function createBackendTerm(emulator: TermEmulator): Term {
   // sink. The owner still tracks state (`modes.mouse()`, etc.) for parity
   // with Node terms, but the emulator itself decides what to accept.
   const modes = createModes({ write: () => {}, stdin: HEADLESS_STDIN })
+  // Signals owner — emulator-backed terms share the host process so exit /
+  // SIGINT handlers remain meaningful. Construction is free (no process
+  // listeners until first on()), and the contract promises signals on every
+  // Term.
+  const signals = createSignals()
 
   const termBase = {
     hasCursor: () => true,
@@ -1004,6 +1009,7 @@ function createBackendTerm(emulator: TermEmulator): Term {
     stdin: process.stdin,
     size,
     modes,
+    signals,
     console: undefined as DeviceConsole | undefined,
     write: (str: string) => emulator.feed(str),
     writeLine: (str: string) => emulator.feed(str + "\n"),
@@ -1034,6 +1040,7 @@ function createBackendTerm(emulator: TermEmulator): Term {
       eq.dispose()
       controller.abort()
       subscribers.clear()
+      signals.dispose()
       modes[Symbol.dispose]()
       size[Symbol.dispose]()
       emulator.close().catch(() => {})

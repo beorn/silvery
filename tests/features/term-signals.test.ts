@@ -352,4 +352,25 @@ describe("createTerm exposes signals on the Term interface", () => {
     expect(calls).toEqual(["hit"])
     expect(term.signals.isDisposed).toBe(true)
   })
+
+  it("emulator-backed Term: term.signals is wired and disposed with the term", async () => {
+    // Dynamic import so the test degrades gracefully when @silvery/test isn't
+    // available (same pattern as term-paint.test.ts).
+    const testModule = await import("@silvery/test").catch(() => null as unknown as {
+      createTermless?: (opts: { cols: number; rows: number }) => Term
+    } | null)
+    if (!testModule?.createTermless) return
+    const term = testModule.createTermless({ cols: 40, rows: 10 })
+
+    expect(term.signals).toBeDefined()
+    expect(term.signals.isDisposed).toBe(false)
+
+    const calls: string[] = []
+    term.signals.on("SIGINT", () => { calls.push("emu") })
+    expect(term.signals.size).toBe(1)
+
+    term[Symbol.dispose]()
+    expect(calls).toEqual(["emu"])
+    expect(term.signals.isDisposed).toBe(true)
+  })
 })
