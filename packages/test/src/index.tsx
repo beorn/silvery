@@ -178,6 +178,93 @@ export function getActiveTermlessCount(): number {
   return pruneLiveTermless()
 }
 
+// ============================================================================
+// Mouse + clipboard ergonomic surface
+//
+// `createTermless()` returns a Term augmented with `.mouse` and `.clipboard`.
+// These remove the need for hand-rolled SGR byte strings and `(term as any)`
+// casts in tests — the first-class ergonomic API for mouse interactions.
+//
+// Tracking bead: km-silvery.expose-termless-mouse.
+// ============================================================================
+
+/** Modifier keys for synthetic mouse events (matches termless MouseModifiers). */
+export interface TermlessMouseModifiers {
+  ctrl?: boolean
+  shift?: boolean
+  alt?: boolean
+}
+
+/** Options for a mouse event (button + modifiers). */
+export interface TermlessMouseOptions extends TermlessMouseModifiers {
+  /** 0=left (default), 1=middle, 2=right */
+  button?: 0 | 1 | 2
+}
+
+/** Pixel-coordinate pair, 0-indexed. */
+export type TermlessPoint = [x: number, y: number]
+
+export interface TermlessMouse {
+  /** Fire a mousedown (press only — no release). */
+  down(x: number, y: number, options?: TermlessMouseOptions): Promise<void>
+  /** Fire a mouseup (release only — no press). */
+  up(x: number, y: number, options?: TermlessMouseOptions): Promise<void>
+  /** Fire a mouse move to (x,y). Stateless — no press implied. */
+  move(x: number, y: number, options?: TermlessMouseOptions): Promise<void>
+  /** Down then up at the same coordinate — a plain click, no drag. */
+  click(x: number, y: number, options?: TermlessMouseOptions): Promise<void>
+  /** Two consecutive clicks at the same coordinate. */
+  dblclick(x: number, y: number, options?: TermlessMouseOptions): Promise<void>
+  /**
+   * Drag from one cell to another with N intermediate moves. Dispatches
+   * `down(from)` → `move(...via)` → `move(to)` → `up(to)`. Waits briefly
+   * between steps so the event loop can process each before the next.
+   *
+   * @example drag(from: [5, 2], to: [20, 2]) // simple drag
+   * @example drag(from: [10, 0], to: [5, 0], via: [[20, 0]]) // forward then shrink back
+   */
+  drag(opts: {
+    from: TermlessPoint
+    to: TermlessPoint
+    via?: TermlessPoint[]
+    options?: TermlessMouseOptions
+    /** ms between dispatch steps. Default: 20 */
+    stepDelay?: number
+  }): Promise<void>
+  /** Fire a mouse wheel event at (x,y). Positive delta = scroll down. */
+  wheel(x: number, y: number, delta: number): Promise<void>
+}
+
+/** OSC 52 clipboard capture — every clipboard write during the Term's life. */
+export interface TermlessClipboard {
+  /** Last OSC 52 payload captured, or null if none. */
+  readonly last: string | null
+  /** All OSC 52 payloads captured, in order. */
+  readonly all: readonly string[]
+  /** Drop all captured payloads (useful between test phases). */
+  clear(): void
+}
+
+/** Term augmented with mouse + clipboard test helpers. */
+export interface TermlessTerm extends Term {
+  readonly mouse: TermlessMouse
+  readonly clipboard: TermlessClipboard
+}
+
+/** Default sleep between steps in `drag()`. Short enough to be fast, long
+ * enough for async event dispatch to flush. */
+const DEFAULT_DRAG_STEP_DELAY_MS = 20
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
+function sgrButtonByte(options?: TermlessMouseOptions): number {
+  let btn = options?.button ?? 0
+  if (options?.shift) btn += 4
+  if (options?.alt) btn += 8
+  if (options?.ctrl) btn += 16
+  return btn
+}
+
 /**
  * Create a Term backed by a termless xterm.js emulator for full ANSI testing.
  *
@@ -185,32 +272,33 @@ export function getActiveTermlessCount(): number {
  * handles the xterm.js backend import. Use with `run()` to render components
  * into a real terminal emulator in-process — no PTY, no timing issues.
  *
+ * The returned Term exposes two testing conveniences:
+ * - `term.mouse.*` — ergonomic mouse API (click, drag, down/up/move, wheel)
+ * - `term.clipboard` — OSC 52 capture (`term.clipboard.last`, `.all`)
+ *
  * **Always dispose with `using` or an explicit `term[Symbol.dispose]()`.**
  * Without disposal, each call leaks the xterm.js Terminal (~1 MB scrollback
  * per instance). This accumulated to 18-28 GB per vitest worker in CI before
  * `km-silvery.termless-memleak` was fixed.
  *
- * @example
+ * @example Mouse drag + clipboard capture
  * ```tsx
- * import { createTermless } from "@silvery/test"
- * import { run } from "@silvery/ag-term/runtime"
- * import "@termless/test/matchers"
+ * using term = createTermless({ cols: 40, rows: 10 })
+ * const handle = await run(<App />, term, { selection: true, mouse: true })
  *
- * test("renders correctly", async () => {
- *   using term = createTermless({ cols: 80, rows: 24 })
- *   const handle = await run(<App />, term)
+ * await term.mouse.drag({ from: [5, 2], to: [20, 2] })
+ * expect(term.clipboard.last).toContain("selected text")
+ * ```
  *
- *   expect(term.screen).toContainText("Hello")
- *   await handle.press("j")
- *   expect(term.screen).toContainText("Count: 1")
- *
- *   handle.unmount()
- * })
+ * @example Plain click
+ * ```tsx
+ * await term.mouse.click(10, 5)
+ * await term.mouse.click(10, 5, { shift: true })
  * ```
  */
 export function createTermless(
   dims: { cols: number; rows: number } = { cols: 80, rows: 24 },
-): Term {
+): TermlessTerm {
   // Lazy import — only loads xterm.js when createTermless is called
   const { createXtermBackend } = require("@termless/xtermjs") as {
     createXtermBackend: () => import("@silvery/ag-term").TermEmulatorBackend
@@ -232,7 +320,104 @@ export function createTermless(
     }
   }
 
-  return term
+  // --- Mouse surface ---
+  // Synthetic SGR (mode 1006) mouse injection, delegated to `sendInput` on the
+  // underlying Term. Coordinates are 0-indexed (matches silvery's internal
+  // convention); the SGR byte format is 1-indexed so we add 1 when writing.
+  const sendInput = (data: string) => {
+    ;(term as unknown as { sendInput: (s: string) => void }).sendInput(data)
+  }
+
+  const mouse: TermlessMouse = {
+    async down(x, y, options) {
+      const btn = sgrButtonByte(options)
+      sendInput(`\x1b[<${btn};${x + 1};${y + 1}M`)
+      await Promise.resolve()
+    },
+    async up(x, y, options) {
+      const btn = sgrButtonByte(options)
+      sendInput(`\x1b[<${btn};${x + 1};${y + 1}m`)
+      await Promise.resolve()
+    },
+    async move(x, y, options) {
+      const btn = 32 + sgrButtonByte(options)
+      sendInput(`\x1b[<${btn};${x + 1};${y + 1}M`)
+      await Promise.resolve()
+    },
+    async click(x, y, options) {
+      await mouse.down(x, y, options)
+      await mouse.up(x, y, options)
+    },
+    async dblclick(x, y, options) {
+      await mouse.click(x, y, options)
+      await mouse.click(x, y, options)
+    },
+    async drag({ from, to, via, options, stepDelay = DEFAULT_DRAG_STEP_DELAY_MS }) {
+      await mouse.down(from[0], from[1], options)
+      await sleep(stepDelay)
+      if (via) {
+        for (const [x, y] of via) {
+          await mouse.move(x, y, options)
+          await sleep(stepDelay)
+        }
+      }
+      await mouse.move(to[0], to[1], options)
+      await sleep(stepDelay)
+      await mouse.up(to[0], to[1], options)
+    },
+    async wheel(x, y, delta) {
+      // SGR wheel: button 64 = up (delta < 0), 65 = down (delta > 0).
+      const raw = delta < 0 ? 64 : 65
+      const count = Math.abs(delta) || 1
+      for (let i = 0; i < count; i++) {
+        sendInput(`\x1b[<${raw};${x + 1};${y + 1}M`)
+      }
+      await Promise.resolve()
+    },
+  }
+
+  // --- Clipboard capture (OSC 52) ---
+  // Every OSC 52 write eventually reaches the emulator via emulator.feed
+  // (termless runs inside the host process — the mock stdout forwards writes
+  // to the emulator). We wrap feed() to extract the payloads.
+  const clipboardPayloads: string[] = []
+  const emulator = (term as unknown as { _emulator?: { feed: (s: string) => void } })._emulator
+  if (emulator) {
+    const origFeed = emulator.feed.bind(emulator)
+    const OSC52_RE = /\x1b\]52;c;([A-Za-z0-9+/=]*)\x07/g
+    emulator.feed = (data: string) => {
+      OSC52_RE.lastIndex = 0
+      let match: RegExpExecArray | null
+      while ((match = OSC52_RE.exec(data)) !== null) {
+        try {
+          const decoded = globalThis.Buffer.from(match[1]!, "base64").toString("utf-8")
+          clipboardPayloads.push(decoded)
+        } catch {
+          // ignore malformed base64 — shouldn't happen in practice
+        }
+      }
+      origFeed(data)
+    }
+  }
+
+  const clipboard: TermlessClipboard = {
+    get last() {
+      return clipboardPayloads.length > 0
+        ? clipboardPayloads[clipboardPayloads.length - 1]!
+        : null
+    },
+    get all() {
+      return clipboardPayloads
+    },
+    clear() {
+      clipboardPayloads.length = 0
+    },
+  }
+
+  Object.defineProperty(term, "mouse", { value: mouse, enumerable: true })
+  Object.defineProperty(term, "clipboard", { value: clipboard, enumerable: true })
+
+  return term as TermlessTerm
 }
 
 // ============================================================================

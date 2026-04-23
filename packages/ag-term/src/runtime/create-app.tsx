@@ -99,6 +99,7 @@ import {
   findContainBoundary,
   selectionHitTest,
 } from "../mouse-events"
+import { setArmed } from "@silvery/ag/interactive-signals"
 import {
   enableKittyKeyboard,
   disableKittyKeyboard,
@@ -117,6 +118,7 @@ import {
   createTerminalSelectionState,
   terminalSelectionUpdate,
   extractText,
+  type SelectionScope,
 } from "@silvery/headless/selection"
 import { createSelectionBridge, type SelectionFeature } from "../features/selection"
 import {
@@ -1062,6 +1064,29 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // want mouse-without-selection pass `selection:false`.
   const selectionEnabled = selectionOption ?? mouseOption === true
   let selectionState = createTerminalSelectionState()
+
+  // --- Selection drag-vs-click state machine ---
+  //
+  //   idle     --mouseDown--> armed      (store anchor, NO selection started yet)
+  //   armed    --mouseMove(|Δ|>=1)--> dragging (dispatch start then extend)
+  //   armed    --mouseUp-->   idle       (plain click — click dispatches
+  //                                       normally, no selection created)
+  //   dragging --mouseMove--> dragging   (dispatch extend with current pos)
+  //   dragging --mouseUp-->   idle       (dispatch finish + OSC 52,
+  //                                       SUPPRESS subsequent onClick)
+  //
+  // `pendingSelectionDown` holds the armed anchor + scope between mousedown
+  // and the first move-past-threshold. It is null in every other state.
+  // `selectionState.selecting` is true only while dragging.
+  //
+  // Threshold: selection activates on the first move to a different cell
+  // than the anchor. Same-cell jitter (mouse reports at same (x,y)) stays
+  // in `armed` and ends as a plain click on mouseUp.
+  let pendingSelectionDown: {
+    col: number
+    row: number
+    scope: SelectionScope | null
+  } | null = null
 
   // --- Selection bridge ---
   // Listeners for the bridge's subscribe mechanism (used by useSelection)
@@ -2024,7 +2049,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       }
     }
 
-    // Selection: intercept mouse events
+    // Selection: intercept mouse events (drag-vs-click state machine)
+    //
+    // See the state-machine comment at the top of this function (near
+    // `pendingSelectionDown`). Summary:
+    //   down              → armed      (store anchor, no selection yet)
+    //   move past anchor  → dragging   (start + extend — first extend draws)
+    //   move              → dragging'  (extend — shrinks or grows)
+    //   up from dragging  → idle       (finish, OSC 52 copy, CONSUME event
+    //                                   so onClick/onSelect does NOT fire)
+    //   up from armed     → idle       (plain click — event propagates,
+    //                                   no selection created, no clipboard)
     if (selectionEnabled && event.event === "mouse" && event.data) {
       const mouseData = event.data as {
         button: number
@@ -2036,67 +2071,118 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Left button (button 0) drag for selection
       if (mouseData.button === 0) {
         if (mouseData.action === "down") {
-          // Clear any existing selection first, then start new
-          if (selectionState.range) {
+          // idle/dragging → armed. Clear any existing selection (visual
+          // feedback: old overlay disappears), then arm with the anchor.
+          // DO NOT call `start` — that would set `selecting: true` and a
+          // same-cell mouseUp would leave a 1-char range (Bug 3).
+          if (selectionState.range || selectionState.selecting) {
             const [cleared] = terminalSelectionUpdate({ type: "clear" }, selectionState)
             selectionState = cleared
+            notifySelectionListeners()
+            // Force full re-render to remove old overlay (overlay ANSI was
+            // written directly, incremental render won't overwrite it).
+            if (currentBuffer) {
+              runtime.invalidate()
+              currentBuffer = doRender()
+              runtime.render(currentBuffer)
+            }
           }
           // Resolve contain boundary from the node under the cursor.
-          // If the click lands inside a `userSelect="contain"` subtree, the selection
-          // range is clamped to that ancestor's scrollRect so drags can't leak into
-          // adjacent siblings. selectionHitTest uses the selection-aware walk
-          // (respects userSelect="none" subtrees) rather than pointer hit test.
+          // If the click lands inside a `userSelect="contain"` subtree, the
+          // selection range is clamped to that ancestor's scrollRect so drags
+          // can't leak into adjacent siblings. selectionHitTest uses the
+          // selection-aware walk (respects userSelect="none" subtrees) rather
+          // than pointer hit test.
           const agRoot = getContainerRoot(container)
           const hit = agRoot ? selectionHitTest(agRoot, mouseData.x, mouseData.y) : null
           const scope = hit ? findContainBoundary(hit) : null
-          const [next] = terminalSelectionUpdate(
-            { type: "start", col: mouseData.x, row: mouseData.y, scope },
-            selectionState,
-          )
-          selectionState = next
-          notifySelectionListeners()
-          // Force full re-render to clear old overlay (incremental render won't
-          // overwrite the inverse-video ANSI the overlay wrote directly to stdout)
-          if (currentBuffer) {
-            runtime.invalidate()
-            currentBuffer = doRender()
-            runtime.render(currentBuffer)
-            writeSelectionOverlay()
-          }
-          // Don't consume — let the component tree also handle mousedown (for click-to-focus etc.)
-        } else if (mouseData.action === "move" && selectionState.selecting) {
-          const [next] = terminalSelectionUpdate(
-            { type: "extend", col: mouseData.x, row: mouseData.y },
-            selectionState,
-          )
-          selectionState = next
-          notifySelectionListeners()
-          // Re-render overlay to show updated selection
-          if (currentBuffer) {
-            runtime.render(currentBuffer)
-            writeSelectionOverlay()
-          }
-          // Consume move events during selection — don't dispatch to component tree
-          return true
-        } else if (mouseData.action === "up" && selectionState.selecting) {
-          const [next] = terminalSelectionUpdate({ type: "finish" }, selectionState)
-          selectionState = next
-          notifySelectionListeners()
-
-          // Copy selected text via OSC 52
-          if (next.range && currentBuffer) {
-            const text = extractText(currentBuffer._buffer, next.range, { scope: next.scope })
-            if (text.length > 0) {
-              const base64 = globalThis.Buffer.from(text).toString("base64")
-              target.write(`\x1b]52;c;${base64}\x07`)
+          pendingSelectionDown = { col: mouseData.x, row: mouseData.y, scope }
+          // Don't consume — let the component tree handle mousedown
+          // (click-to-focus, onMouseDown handlers, etc.)
+        } else if (mouseData.action === "move") {
+          if (pendingSelectionDown) {
+            // armed → dragging (first move past threshold starts the drag).
+            // Threshold: different cell than anchor. Same-cell jitter stays
+            // in armed and ends as a plain click.
+            const dx = mouseData.x - pendingSelectionDown.col
+            const dy = mouseData.y - pendingSelectionDown.row
+            if (dx !== 0 || dy !== 0) {
+              const anchor = pendingSelectionDown
+              pendingSelectionDown = null
+              const [started] = terminalSelectionUpdate(
+                { type: "start", col: anchor.col, row: anchor.row, scope: anchor.scope },
+                selectionState,
+              )
+              const [extended] = terminalSelectionUpdate(
+                { type: "extend", col: mouseData.x, row: mouseData.y },
+                started,
+              )
+              selectionState = extended
+              notifySelectionListeners()
+              if (currentBuffer) {
+                runtime.render(currentBuffer)
+                writeSelectionOverlay()
+              }
+              // Consume move events during selection — don't dispatch to the
+              // component tree (prevents onMouseEnter from firing on every
+              // row under the drag, which would move ListView's cursor).
+              return true
             }
+            // Same-cell move — stay armed, don't consume (safe no-op).
+          } else if (selectionState.selecting) {
+            // dragging → dragging (extend with current pos; head follows
+            // the cursor regardless of direction, so selection shrinks on
+            // reverse drag — Bug 1 protection).
+            const [next] = terminalSelectionUpdate(
+              { type: "extend", col: mouseData.x, row: mouseData.y },
+              selectionState,
+            )
+            selectionState = next
+            notifySelectionListeners()
+            if (currentBuffer) {
+              runtime.render(currentBuffer)
+              writeSelectionOverlay()
+            }
+            return true
           }
-          // Re-render overlay with final selection
-          if (currentBuffer) {
-            runtime.render(currentBuffer)
-            writeSelectionOverlay()
+        } else if (mouseData.action === "up") {
+          if (selectionState.selecting) {
+            // dragging → idle. Finish selection, copy via OSC 52, and
+            // CONSUME the event so onClick/onSelect does NOT fire (Bug 2).
+            const [next] = terminalSelectionUpdate({ type: "finish" }, selectionState)
+            selectionState = next
+            pendingSelectionDown = null
+            notifySelectionListeners()
+
+            // Copy selected text via OSC 52
+            if (next.range && currentBuffer) {
+              const text = extractText(currentBuffer._buffer, next.range, { scope: next.scope })
+              if (text.length > 0) {
+                const base64 = globalThis.Buffer.from(text).toString("base64")
+                target.write(`\x1b]52;c;${base64}\x07`)
+              }
+            }
+            // Re-render overlay with final selection
+            if (currentBuffer) {
+              runtime.render(currentBuffer)
+              writeSelectionOverlay()
+            }
+            // Clear armed state on the mousedown target so the next
+            // interaction starts cleanly. We'd otherwise skip this because
+            // we're consuming the event (processMouseEvent won't run).
+            if (mouseEventState.mouseDownTarget) {
+              setArmed(mouseEventState.mouseDownTarget, false)
+              mouseEventState.mouseDownTarget = null
+            }
+            // Consume the mouseup — suppresses mouseup + click dispatch in
+            // processMouseEvent (which would otherwise fire ListView's
+            // onClick → onSelect, opening a detail view after a drag).
+            return true
           }
-          // Don't consume — let click handler run
+          // armed → idle (plain click). Clear the pending anchor and let
+          // the event flow through to processMouseEvent normally — the
+          // consumer's onClick/onSelect runs, no selection is created.
+          pendingSelectionDown = null
         }
       }
     }
