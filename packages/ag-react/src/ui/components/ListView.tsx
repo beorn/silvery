@@ -309,6 +309,14 @@ function ListViewInner<T>(
     [isControlled, items.length, onCursor],
   )
 
+  // Observe search bar state — while the bar is open, the app-wide
+  // SearchBindings consumes Enter for "next match". ListView must NOT also
+  // fire onSelect (which would open a detail pane or similar). Guarding on
+  // isActive keeps the two event consumers from firing together.
+  const searchCtx = useSearchOptional()
+  const searchActiveRef = useRef(false)
+  searchActiveRef.current = searchCtx?.isActive ?? false
+
   // Keyboard input for nav mode
   useInput(
     (input, key) => {
@@ -320,7 +328,7 @@ function ListViewInner<T>(
       else if (key.home) moveTo(0)
       else if (key.pageDown || (input === "d" && key.ctrl)) moveTo(cur + Math.floor(height / 2))
       else if (key.pageUp || (input === "u" && key.ctrl)) moveTo(cur - Math.floor(height / 2))
-      else if (key.return) onSelect?.(cur)
+      else if (key.return && !searchActiveRef.current) onSelect?.(cur)
     },
     { isActive: nav && active !== false },
   )
@@ -499,7 +507,6 @@ function ListViewInner<T>(
   // ── Surface / search registration ────────────────────────────────
   const textSurfaceRef = useRef<TextSurface | null>(null)
   const composedViewportRef = useRef<ComposedViewport | null>(null)
-  const searchCtx = useSearchOptional()
 
   // Stable refs for the effect closure to avoid re-running on every items change
   const itemsRef = useRef(items)
