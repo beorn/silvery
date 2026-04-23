@@ -61,6 +61,17 @@ export {
 } from "./detection"
 
 // =============================================================================
+// Terminal Profile (single source of truth — Phase 3 of terminal-profile-plateau)
+// =============================================================================
+
+export { createTerminalProfile, detectColorFromEnv, detectTerminalCapsFromEnv } from "./profile"
+export type {
+  TerminalProfile,
+  TerminalProfileStdout,
+  CreateTerminalProfileOptions,
+} from "./profile"
+
+// =============================================================================
 // SGR Codes
 // =============================================================================
 

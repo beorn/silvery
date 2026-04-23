@@ -27,6 +27,7 @@ import "@termless/test/matchers"
 import { Box, Text } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
 import { detectTerminalCaps } from "../../packages/ag-term/src/terminal-caps"
+import { createTerminalProfile } from "../../packages/ansi/src/profile"
 
 // ============================================================================
 // Env-var scaffolding — isolate each test from the ambient environment.
@@ -190,6 +191,66 @@ describe("contract: mouse drag-vs-click state machine", () => {
     expect(term.clipboard.last).not.toBeNull()
 
     handle.unmount()
+  })
+})
+
+// ============================================================================
+// Phase 3 — createTerminalProfile is the single source of truth
+// ============================================================================
+//
+// Phase 3 of km-silvery.terminal-profile-plateau collapsed `detectColor` +
+// `detectTerminalCaps` + `resolveColorTier` into `createTerminalProfile`.
+// `detectTerminalCaps()` is now a thin shim that delegates to the profile;
+// these tests pin the contract directly on the canonical entry point so the
+// shim can never drift from it.
+
+describe("contract: createTerminalProfile env precedence", () => {
+  test("contract: createTerminalProfile honors FORCE_COLOR=3 (truecolor)", () => {
+    process.env.FORCE_COLOR = "3"
+    const profile = createTerminalProfile()
+    expect(profile.colorTier).toBe("truecolor")
+    expect(profile.caps.colorLevel).toBe("truecolor")
+  })
+
+  test("contract: createTerminalProfile honors FORCE_COLOR=0 (mono)", () => {
+    process.env.FORCE_COLOR = "0"
+    const profile = createTerminalProfile()
+    expect(profile.colorTier).toBe("mono")
+  })
+
+  test("contract: createTerminalProfile NO_COLOR wins over FORCE_COLOR", () => {
+    process.env.NO_COLOR = "1"
+    process.env.FORCE_COLOR = "3"
+    const profile = createTerminalProfile()
+    expect(profile.colorTier).toBe("mono")
+  })
+
+  test("contract: env wins over explicit colorOverride", () => {
+    // Canonical divergence between silvery and a caller that forces truecolor:
+    // the user's FORCE_COLOR=0 must still win. If this precedence ever flips,
+    // `FORCE_COLOR=0 bun app` stops being a reliable escape hatch.
+    process.env.FORCE_COLOR = "0"
+    const profile = createTerminalProfile({ colorOverride: "truecolor" })
+    expect(profile.colorTier).toBe("mono")
+  })
+
+  test("contract: colorOverride wins over caps.colorLevel (when env is silent)", () => {
+    const profile = createTerminalProfile({
+      env: {}, // no env overrides
+      stdout: { isTTY: false }, // non-TTY so auto would be mono
+      colorOverride: "256",
+      caps: { colorLevel: "ansi16" },
+    })
+    expect(profile.colorTier).toBe("256")
+  })
+
+  test("contract: detectTerminalCaps() shim still honors FORCE_COLOR (regression for 48143ef0)", () => {
+    // Historical bug: detectTerminalCaps had its own TERM/COLORTERM switch and
+    // ignored FORCE_COLOR. Phase 3 routes it through createTerminalProfile.
+    // The shim must preserve the post-48143ef0 behaviour exactly.
+    process.env.FORCE_COLOR = "3"
+    const caps = detectTerminalCaps()
+    expect(caps.colorLevel).toBe("truecolor")
   })
 })
 

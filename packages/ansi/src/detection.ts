@@ -8,8 +8,15 @@
  * - Unicode support (can render unicode symbols)
  * - Extended underline support (curly, dotted, etc)
  * - Terminal capabilities profile (TerminalCaps)
+ *
+ * Env-aware color/caps detection now lives in {@link ./profile}. The
+ * `detectColor()` / `detectTerminalCaps()` exports here are thin shims that
+ * call into the profile module, preserving the public API.
+ *
+ * Phase 3 of `km-silvery.terminal-profile-plateau` — see `createTerminalProfile`.
  */
 
+import { detectColorFromEnv, detectTerminalCapsFromEnv } from "./profile"
 import type { ColorTier } from "./types"
 
 // =============================================================================
@@ -51,119 +58,23 @@ export function detectInput(stdin: NodeJS.ReadStream): boolean {
 // =============================================================================
 
 /**
- * Known CI environments that may not support colors well.
- */
-const CI_ENVS = [
-  "CI",
-  "GITHUB_ACTIONS",
-  "GITLAB_CI",
-  "JENKINS_URL",
-  "BUILDKITE",
-  "CIRCLECI",
-  "TRAVIS",
-]
-
-/**
  * Detect the color tier supported by the terminal.
  *
- * Returns a 4-state {@link ColorTier}:
- * - `"mono"` when no color (NO_COLOR, non-TTY without FORCE_COLOR, dumb term)
- * - `"ansi16"` for 4-bit / basic-color terminals
- * - `"256"` for xterm-256 terminals
- * - `"truecolor"` for 24-bit RGB terminals
+ * Returns a 4-state {@link ColorTier}. See {@link createTerminalProfile} for
+ * the canonical entry point; this is a shim kept for backward compatibility.
  *
  * Checks (in order):
  * 1. NO_COLOR env var — forces mono
  * 2. FORCE_COLOR env var — forces color tier
  * 3. COLORTERM=truecolor — truecolor support
- * 4. TERM patterns — detect from terminal type
+ * 4. TERM / TERM_PROGRAM / KITTY_WINDOW_ID / WT_SESSION — modern terminals
  * 5. CI detection — basic colors in CI
  */
 export function detectColor(stdout: NodeJS.WriteStream): ColorTier {
-  // NO_COLOR takes precedence (see https://no-color.org/)
-  if (process.env.NO_COLOR !== undefined) {
-    return "mono"
-  }
-
-  // FORCE_COLOR overrides detection
-  const forceColor = process.env.FORCE_COLOR
-  if (forceColor !== undefined) {
-    if (forceColor === "0" || forceColor === "false") return "mono"
-    if (forceColor === "1") return "ansi16"
-    if (forceColor === "2") return "256"
-    if (forceColor === "3") return "truecolor"
-    // Any other truthy value defaults to ansi16
-    return "ansi16"
-  }
-
-  // Non-TTY without FORCE_COLOR — no colors
-  if (!stdout.isTTY) {
-    return "mono"
-  }
-
-  // Dumb terminal
-  if (process.env.TERM === "dumb") {
-    return "mono"
-  }
-
-  // COLORTERM=truecolor indicates 24-bit support
-  const colorTerm = process.env.COLORTERM
-  if (colorTerm === "truecolor" || colorTerm === "24bit") {
-    return "truecolor"
-  }
-
-  // Check TERM for color hints
-  const term = process.env.TERM ?? ""
-
-  // Known truecolor terminals
-  if (
-    term.includes("truecolor") ||
-    term.includes("24bit") ||
-    term.includes("xterm-ghostty") ||
-    term.includes("xterm-kitty") ||
-    term.includes("wezterm")
-  ) {
-    return "truecolor"
-  }
-
-  // 256-color terminals
-  if (term.includes("256color") || term.includes("256")) {
-    return "256"
-  }
-
-  // Modern macOS terminals typically support truecolor
-  const termProgram = process.env.TERM_PROGRAM
-  if (termProgram === "iTerm.app" || termProgram === "Apple_Terminal") {
-    return termProgram === "iTerm.app" ? "truecolor" : "256"
-  }
-
-  // Ghostty, WezTerm, Kitty via TERM_PROGRAM
-  if (termProgram === "Ghostty" || termProgram === "WezTerm") {
-    return "truecolor"
-  }
-
-  // Kitty via env var
-  if (process.env.KITTY_WINDOW_ID) {
-    return "truecolor"
-  }
-
-  // xterm-color variants get basic colors
-  if (term.includes("xterm") || term.includes("color") || term.includes("ansi")) {
-    return "ansi16"
-  }
-
-  // CI environments usually support basic colors
-  if (CI_ENVS.some((env) => process.env[env] !== undefined)) {
-    return "ansi16"
-  }
-
-  // Windows Terminal (modern)
-  if (process.env.WT_SESSION) {
-    return "truecolor"
-  }
-
-  // Default: basic colors if TTY
-  return "ansi16"
+  return detectColorFromEnv(
+    process.env as Record<string, string | undefined>,
+    stdout,
+  )
 }
 
 // =============================================================================
@@ -345,117 +256,14 @@ export function defaultCaps(): TerminalCaps {
 }
 
 /**
- * Cached result of macOS dark mode detection.
- * Computed lazily on first access to avoid spawnSync at module load time.
- */
-let cachedMacOSDarkMode: boolean | undefined
-
-/**
- * Check if macOS is in dark mode by reading the system appearance preference.
- * Uses `defaults read -g AppleInterfaceStyle` — returns "Dark" when dark mode
- * is active, exits non-zero when light mode. ~2ms via spawnSync.
+ * Detect terminal capabilities from environment variables.
  *
- * Result is cached after first call to avoid repeated process spawns.
- */
-function detectMacOSDarkMode(): boolean {
-  if (cachedMacOSDarkMode !== undefined) return cachedMacOSDarkMode
-
-  try {
-    // Lazy import: child_process is Node.js-only and must not be loaded at
-    // module level so that browser bundles (canvas adapter) never pull it in.
-    const { spawnSync } = require("child_process") as typeof import("child_process")
-    const result = spawnSync("defaults", ["read", "-g", "AppleInterfaceStyle"], {
-      encoding: "utf-8",
-      timeout: 500,
-    })
-    cachedMacOSDarkMode = result.stdout?.trim() === "Dark"
-  } catch {
-    cachedMacOSDarkMode = false
-  }
-
-  return cachedMacOSDarkMode
-}
-
-/** Detect terminal capabilities from environment variables.
- * Synchronous. Minimal I/O: may run `defaults` on macOS for Apple_Terminal.
+ * Shim for backward compatibility — the real logic lives in
+ * {@link createTerminalProfile}. Synchronous. Minimal I/O: may run `defaults`
+ * on macOS for Apple_Terminal dark-mode detection (cached).
  */
 export function detectTerminalCaps(): TerminalCaps {
-  const program = process.env.TERM_PROGRAM ?? ""
-  const term = process.env.TERM ?? ""
-  const noColor = process.env.NO_COLOR !== undefined
-
-  const isAppleTerminal = program === "Apple_Terminal"
-
-  // Delegate tier detection to the canonical `detectColor()` — it
-  // understands FORCE_COLOR, COLORTERM, TERM patterns (xterm-ghostty,
-  // xterm-kitty, wezterm), TERM_PROGRAM (iTerm.app / Ghostty / WezTerm),
-  // KITTY_WINDOW_ID, and CI fallbacks. Previously this block only checked
-  // COLORTERM and TERM-256 — so modern terminals that advertise via
-  // TERM_PROGRAM (e.g. Ghostty without COLORTERM set) fell through to
-  // "ansi16", and FORCE_COLOR was silently ignored at the caps layer.
-  //
-  // Phase 1 of km-silvery.terminal-profile-plateau collapsed the null/none/mono
-  // spelling: `detectColor` now returns `ColorTier` directly (never null), and
-  // `TerminalCaps.colorLevel` shares that enum. No coercion lives here anymore.
-  const stdout = process.stdout as NodeJS.WriteStream | undefined
-  const colorLevel: ColorTier = noColor ? "mono" : stdout ? detectColor(stdout) : "mono"
-
-  const isKitty = term === "xterm-kitty"
-  const isITerm = program === "iTerm.app"
-  const isGhostty = program === "ghostty"
-  const isWezTerm = program === "WezTerm"
-  const isAlacritty = program === "Alacritty"
-  const isFoot = term === "foot" || term === "foot-extra"
-  const isModern = isKitty || isITerm || isGhostty || isWezTerm || isFoot
-
-  // Kitty v0.40+ supports OSC 66 text sizing
-  let isKittyWithTextSizing = false
-  if (isKitty) {
-    const version = process.env.TERM_PROGRAM_VERSION ?? ""
-    const parts = version.split(".")
-    const major = Number(parts[0]) || 0
-    const minor = Number(parts[1]) || 0
-    isKittyWithTextSizing = major > 0 || (major === 0 && minor >= 40)
-  }
-
-  let darkBackground = !isAppleTerminal
-  const colorFgBg = process.env.COLORFGBG
-  if (colorFgBg) {
-    const parts = colorFgBg.split(";")
-    const bg = parseInt(parts[parts.length - 1] ?? "", 10)
-    if (!isNaN(bg)) {
-      darkBackground = bg < 7
-    }
-  } else if (isAppleTerminal) {
-    darkBackground = detectMacOSDarkMode()
-  }
-
-  let nerdfont = isModern || isAlacritty
-  const nfEnv = process.env.NERDFONT
-  if (nfEnv === "0" || nfEnv === "false") nerdfont = false
-  else if (nfEnv === "1" || nfEnv === "true") nerdfont = true
-
-  const underlineExtensions = isModern || isAlacritty
-
-  return {
-    program,
-    term,
-    colorLevel,
-    kittyKeyboard: isKitty || isGhostty || isWezTerm || isFoot,
-    kittyGraphics: isKitty || isGhostty,
-    sixel: isFoot || isWezTerm,
-    osc52: isModern || isAlacritty,
-    hyperlinks: isModern || isAlacritty,
-    notifications: isITerm || isKitty,
-    bracketedPaste: true,
-    mouse: true,
-    syncOutput: isModern || isAlacritty,
-    unicode: true,
-    underlineStyles: underlineExtensions,
-    underlineColor: underlineExtensions,
-    textEmojiWide: !isAppleTerminal,
-    textSizingSupported: isKittyWithTextSizing, // Ghostty parses OSC 66 but doesn't render it (v1.3.0)
-    darkBackground,
-    nerdfont,
-  }
+  const env = process.env as Record<string, string | undefined>
+  const stdout = (process.stdout ?? { isTTY: false }) as NodeJS.WriteStream
+  return detectTerminalCapsFromEnv(env, stdout)
 }

@@ -6,6 +6,7 @@
  */
 
 import type { ColorTier, Term } from "./ansi/index"
+import { createTerminalProfile } from "@silvery/ansi"
 import { getInternalStreams } from "./runtime/term-internal"
 import type { Event, EventSource } from "@silvery/ag/types"
 
@@ -243,35 +244,11 @@ export function resolveFromTerm(term: Term): ResolvedTermDef {
 /**
  * Detect the color tier from a stdout stream.
  *
- * This is a small, self-contained probe used by `resolveTermDef()` — it
- * intentionally mirrors (without depending on) the canonical
- * `detectColor()` in `@silvery/ansi`. Phase 3 of km-silvery.terminal-profile-plateau
- * will collapse both into a single function.
+ * Phase 3 of km-silvery.terminal-profile-plateau: this is now a single-line
+ * delegate into `createTerminalProfile` — no more local detection copy.
  */
 function detectColorLevel(stdout?: NodeJS.WriteStream): ColorTier {
-  if (process.env.NO_COLOR !== undefined) return "mono"
-
-  if (process.env.FORCE_COLOR !== undefined) {
-    const level = Number.parseInt(process.env.FORCE_COLOR, 10)
-    if (level === 0) return "mono"
-    if (level === 1) return "ansi16"
-    if (level === 2) return "256"
-    if (level >= 3) return "truecolor"
-    return "ansi16"
-  }
-
-  if (process.env.COLORTERM === "truecolor" || process.env.COLORTERM === "24bit") {
-    return "truecolor"
-  }
-
-  if (!stdout?.isTTY) return "mono"
-
-  const term = process.env.TERM ?? ""
-  if (term.includes("256color") || term.includes("256")) {
-    return "256"
-  }
-
-  return "ansi16"
+  return createTerminalProfile({ stdout: stdout ?? { isTTY: false } }).colorTier
 }
 
 // ============================================================================

@@ -96,12 +96,21 @@ export {
   detectExtendedUnderline,
   detectTerminalCaps,
   defaultCaps,
+  createTerminalProfile,
   createBgModeDetector,
   parseBgModeResponse,
   ENABLE_BG_MODE_REPORTING,
   DISABLE_BG_MODE_REPORTING,
 } from "./detection"
-export type { TerminalCaps, BgModeDetector, BgModeDetectorOptions, BgMode } from "./detection"
+export type {
+  TerminalCaps,
+  TerminalProfile,
+  TerminalProfileStdout,
+  CreateTerminalProfileOptions,
+  BgModeDetector,
+  BgModeDetectorOptions,
+  BgMode,
+} from "./detection"
 
 // =============================================================================
 // Utilities

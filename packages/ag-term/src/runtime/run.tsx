@@ -31,8 +31,12 @@ import React, { type ReactElement } from "react"
 
 import { createApp } from "./create-app"
 import type { Term } from "../ansi/term"
-import { detectTerminalCaps } from "../terminal-caps"
-import { detectTheme, pickColorLevel, type ColorTier } from "@silvery/ansi"
+import {
+  createTerminalProfile,
+  detectTheme,
+  pickColorLevel,
+  type ColorTier,
+} from "@silvery/ansi"
 import { nord, catppuccinLatte } from "@silvery/theme/schemes"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
 import type { TerminalCaps } from "../terminal-caps"
@@ -309,15 +313,21 @@ export async function run(
 
     // Real terminal: full setup.
     // `term.caps` is guaranteed populated (Phase 2 of
-    // km-silvery.terminal-profile-plateau made it non-optional). No more
-    // `?? detectTerminalCaps()` fallback — the Term constructor already chose
-    // the right defaults for its backend.
-    const detectedCaps = term.caps
-    // Honor termOptions.colorLevel + env vars (same precedence as the options path).
-    const termTier = resolveColorTier(termOptions?.colorLevel, detectedCaps)
-    const caps: TerminalCaps = termTier
-      ? { ...detectedCaps, colorLevel: termTier }
-      : detectedCaps
+    // km-silvery.terminal-profile-plateau made it non-optional). Phase 3
+    // routes env-var overrides (NO_COLOR / FORCE_COLOR) and the
+    // `termOptions.colorLevel` override through `createTerminalProfile` —
+    // one detection function, one precedence chain.
+    const termProfile = createTerminalProfile({
+      colorOverride: termOptions?.colorLevel,
+      caps: term.caps,
+    })
+    const caps: TerminalCaps = termProfile.caps
+    // When the profile's resolved tier differs from the term's baseline, some
+    // env/option override displaced it — pre-quantize the OSC-detected theme
+    // below to that forced tier. When the tiers match, no quantization
+    // (preserves pre-Phase-3 "auto-detect path keeps theme unchanged" behavior).
+    const termForcedTier: ColorTier | undefined =
+      termProfile.colorTier !== term.caps.colorLevel ? termProfile.colorTier : undefined
     // Detect terminal colors via OSC — must happen before alt screen.
     // When colorLevel is forced, pre-quantize the detected theme.
     //
@@ -348,7 +358,7 @@ export async function run(
     } finally {
       probeOwner?.dispose()
     }
-    const resolvedTheme = termTier ? pickColorLevel(theme, termTier) : theme
+    const resolvedTheme = termForcedTier ? pickColorLevel(theme, termForcedTier) : theme
     const themed = <ThemeProvider theme={resolvedTheme}>{element}</ThemeProvider>
     const app = createApp(() => () => ({}))
     // Phase 8b: real-terminal Term adapter — createApp's option bag still takes
@@ -371,14 +381,27 @@ export async function run(
     return wrapHandle(handle)
   }
 
-  // Options path: auto-detect caps and derive defaults
+  // Options path: auto-detect caps and derive defaults.
+  // Phase 3 of km-silvery.terminal-profile-plateau: one `createTerminalProfile`
+  // call replaces the prior `detectTerminalCaps` + `resolveColorTier` trio.
+  // Env vars (NO_COLOR / FORCE_COLOR) > `options.colorLevel` > caller-supplied
+  // `options.caps.colorLevel` > auto-detect — see the profile docstring for
+  // the full precedence chain.
   const { mode, colorLevel: colorLevelOption, ...rest } = optionsOrTerm as RunOptions
-  const detectedCaps = rest.caps ?? detectTerminalCaps()
-  // Resolve effective tier (env wins over the user override, auto-detect loses).
-  const effectiveTier = resolveColorTier(colorLevelOption, detectedCaps)
-  const caps: TerminalCaps = effectiveTier
-    ? { ...detectedCaps, colorLevel: effectiveTier }
-    : detectedCaps
+  const optsProfile = createTerminalProfile({
+    colorOverride: colorLevelOption,
+    caps: rest.caps,
+  })
+  const caps: TerminalCaps = optsProfile.caps
+  // Forced tier for theme pre-quantization: any env override (NO_COLOR /
+  // FORCE_COLOR) or explicit `options.colorLevel` value. When absent, the
+  // theme passes through unchanged.
+  const effectiveTier: ColorTier | undefined =
+    process.env.NO_COLOR !== undefined ||
+    process.env.FORCE_COLOR !== undefined ||
+    colorLevelOption !== undefined
+      ? optsProfile.colorTier
+      : undefined
   const headless = rest.writable != null || (rest.cols != null && rest.rows != null && !rest.stdout)
   // Detect terminal colors via OSC — must happen before alt screen (skipped for headless).
   // When colorLevel is forced, pre-quantize the detected theme to the chosen tier so
@@ -420,41 +443,6 @@ export async function run(
     widthDetection: rest.widthDetection ?? "auto",
   })
   return wrapHandle(handle)
-}
-
-/**
- * Resolve the effective color tier, honoring env-var precedence.
- *
- * Priority (highest wins):
- *   1. `NO_COLOR` (any value) → "mono"
- *   2. `FORCE_COLOR` (0/false → "mono"; 1 → "ansi16"; 2 → "256"; 3 → "truecolor")
- *   3. Explicit `colorLevel` option
- *   4. `undefined` — caller keeps detected caps.colorLevel unchanged
- *
- * Returns `undefined` when nothing overrides auto-detection (callers keep
- * `detectedCaps` as-is).
- *
- * Post km-silvery.terminal-profile-plateau Phase 1: the `tierToCapsLevel` /
- * `capsLevelToTier` coercion shims are gone — `ColorTier` is used end-to-end
- * so no translation happens at the tier ⇄ caps.colorLevel boundary anymore.
- */
-function resolveColorTier(
-  optionTier: ColorTier | undefined,
-  _detectedCaps: TerminalCaps,
-): ColorTier | undefined {
-  // NO_COLOR wins over everything.
-  if (process.env.NO_COLOR !== undefined) return "mono"
-  // FORCE_COLOR wins over the option but not over NO_COLOR.
-  const force = process.env.FORCE_COLOR
-  if (force !== undefined) {
-    if (force === "0" || force === "false") return "mono"
-    if (force === "1") return "ansi16"
-    if (force === "2") return "256"
-    if (force === "3") return "truecolor"
-    // Unknown truthy FORCE_COLOR → ansi16 (mirrors @silvery/ansi detectColor)
-    return "ansi16"
-  }
-  return optionTier
 }
 
 /** Duck-type check: Term has the sub-owner umbrella (size + modes + signals).

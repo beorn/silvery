@@ -6,8 +6,14 @@ export {
   detectExtendedUnderline,
   detectTerminalCaps,
   defaultCaps,
+  createTerminalProfile,
 } from "@silvery/ansi"
-export type { TerminalCaps } from "@silvery/ansi"
+export type {
+  TerminalCaps,
+  TerminalProfile,
+  TerminalProfileStdout,
+  CreateTerminalProfileOptions,
+} from "@silvery/ansi"
 
 export {
   createBgModeDetector,
