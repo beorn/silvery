@@ -377,9 +377,9 @@ export interface DetectThemeOptions {
   /** Timeout per OSC query in ms (default 150). */
   timeoutMs?: number
   /** Terminal capabilities (from detectTerminalCaps). When provided:
-   * - colorLevel `"mono"` / `"ansi16"` skips OSC detection and returns ANSI 16 theme
+   * - colorTier `"mono"` / `"ansi16"` skips OSC detection and returns ANSI 16 theme
    * - darkBackground informs fallback selection when detection fails */
-  caps?: { colorLevel?: string; darkBackground?: boolean }
+  caps?: { colorTier?: string; darkBackground?: boolean }
   /** Optional InputOwner — routes OSC queries through the session's stdin
    * owner instead of directly mutating process.stdin raw mode. See
    * {@link ProbeColorsOptions.input}. */
@@ -387,8 +387,8 @@ export interface DetectThemeOptions {
 }
 
 export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme> {
-  const colorLevel = opts.caps?.colorLevel
-  if (colorLevel === "mono" || colorLevel === "ansi16") {
+  const colorTier = opts.caps?.colorTier
+  if (colorTier === "mono" || colorTier === "ansi16") {
     const isDark = opts.caps?.darkBackground ?? true
     return isDark ? ansi16DarkTheme : ansi16LightTheme
   }

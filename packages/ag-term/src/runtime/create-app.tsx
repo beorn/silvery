@@ -671,7 +671,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Phase 4 of km-silvery.terminal-profile-plateau: a caller-supplied
   // `profile` wins over `caps`. Both paths converge on `capsOption` — the
   // rest of initApp stays identical, so every existing code site that reads
-  // `capsOption?.textSizingSupported` / `capsOption?.kittyKeyboard` sees the
+  // `capsOption?.textSizing` / `capsOption?.kittyKeyboard` sees the
   // same shape whether caps came from `caps` or `profile.caps`.
   const capsOption = profileOption?.caps ?? capsOptionRaw
 
@@ -1000,10 +1000,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // For "auto": use caps flag first, probe to verify if caps says yes
   // For "probe": start disabled, probe async to determine
   // For true/false: use directly
-  // Post km-silvery.unicode-plateau Phase 2: read `caps.textSizingSupported`
+  // Post km-silvery.unicode-plateau Phase 2: read `caps.textSizing`
   // directly — profile.ts already computed the authoritative flag from
   // TERM=xterm-kitty + TERM_PROGRAM_VERSION. No second env probe.
-  const heuristicSupported = capsOption?.textSizingSupported ?? false
+  const heuristicSupported = capsOption?.textSizing ?? false
   const shouldProbe =
     textSizingOption === "probe" || (textSizingOption === "auto" && heuristicSupported)
   // Probe-cache fingerprint: program@version, derived from caps. Computed
@@ -1039,7 +1039,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   // Track effective caps — may be updated by width detection and text sizing probes
   let effectiveCaps = capsOption
-    ? { ...capsOption, textSizingSupported: textSizingEnabled }
+    ? { ...capsOption, textSizing: textSizingEnabled }
     : undefined
 
   // Create pipeline config from caps (scoped width measurer + output phase)
@@ -2654,7 +2654,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         if (probeResult.supported !== textSizingEnabled) {
           textSizingEnabled = probeResult.supported
           if (effectiveCaps) {
-            effectiveCaps = { ...effectiveCaps, textSizingSupported: textSizingEnabled }
+            effectiveCaps = { ...effectiveCaps, textSizing: textSizingEnabled }
             pipelineConfig = createPipeline({ caps: effectiveCaps })
             // Update runtime's output phase to use the new measurer
             runtime.setOutputPhaseFn(pipelineConfig.outputPhaseFn)
@@ -2729,7 +2729,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           const updatedCaps = applyWidthConfig(effectiveCaps, widthConfig)
           const capsChanged =
             updatedCaps.textEmojiWide !== effectiveCaps.textEmojiWide ||
-            updatedCaps.textSizingSupported !== effectiveCaps.textSizingSupported
+            updatedCaps.textSizing !== effectiveCaps.textSizing
           if (capsChanged) {
             effectiveCaps = updatedCaps
             pipelineConfig = createPipeline({ caps: effectiveCaps })

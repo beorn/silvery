@@ -302,7 +302,7 @@ describe("DEFAULT_WIDTH_CONFIG", () => {
 
 describe("applyWidthConfig", () => {
   it("maps emojiWidth=2 to textEmojiWide=true", () => {
-    const caps = { textEmojiWide: false, textSizingSupported: false, other: "preserved" }
+    const caps = { textEmojiWide: false, textSizing: false, other: "preserved" }
     const config: TerminalWidthConfig = {
       utf8: true,
       cjkWidth: 1,
@@ -315,7 +315,7 @@ describe("applyWidthConfig", () => {
   })
 
   it("maps emojiWidth=1 to textEmojiWide=false", () => {
-    const caps = { textEmojiWide: true, textSizingSupported: false }
+    const caps = { textEmojiWide: true, textSizing: false }
     const config: TerminalWidthConfig = {
       utf8: true,
       cjkWidth: 1,
@@ -326,8 +326,8 @@ describe("applyWidthConfig", () => {
     expect(result.textEmojiWide).toBe(false)
   })
 
-  it("maps privateUseWidth=2 to textSizingSupported=true", () => {
-    const caps = { textEmojiWide: true, textSizingSupported: false }
+  it("maps privateUseWidth=2 to textSizing=true", () => {
+    const caps = { textEmojiWide: true, textSizing: false }
     const config: TerminalWidthConfig = {
       utf8: true,
       cjkWidth: 1,
@@ -335,11 +335,11 @@ describe("applyWidthConfig", () => {
       privateUseWidth: 2,
     }
     const result = applyWidthConfig(caps, config)
-    expect(result.textSizingSupported).toBe(true)
+    expect(result.textSizing).toBe(true)
   })
 
-  it("maps privateUseWidth=1 to textSizingSupported=false", () => {
-    const caps = { textEmojiWide: true, textSizingSupported: true }
+  it("maps privateUseWidth=1 to textSizing=false", () => {
+    const caps = { textEmojiWide: true, textSizing: true }
     const config: TerminalWidthConfig = {
       utf8: true,
       cjkWidth: 1,
@@ -347,7 +347,7 @@ describe("applyWidthConfig", () => {
       privateUseWidth: 1,
     }
     const result = applyWidthConfig(caps, config)
-    expect(result.textSizingSupported).toBe(false)
+    expect(result.textSizing).toBe(false)
   })
 
   it("detected config overrides width measurement via measurer", async () => {
@@ -383,17 +383,17 @@ describe("width detection → measurer integration", () => {
     detector.dispose()
 
     // Start with default caps (emoji wide, no text sizing)
-    const defaultCaps = { textEmojiWide: true, textSizingSupported: false }
+    const defaultCaps = { textEmojiWide: true, textSizing: false }
     const updatedCaps = applyWidthConfig(defaultCaps, widthConfig)
 
     // Detection should have overridden: emoji → narrow, PUA → wide
     expect(updatedCaps.textEmojiWide).toBe(false) // emojiWidth=1 → textEmojiWide=false
-    expect(updatedCaps.textSizingSupported).toBe(true) // privateUseWidth=2 → textSizingSupported=true
+    expect(updatedCaps.textSizing).toBe(true) // privateUseWidth=2 → textSizing=true
 
-    // Create measurer from updated caps — map textSizingSupported → textSizingEnabled
+    // Create measurer from updated caps — map textSizing → textSizingEnabled
     const measurer = createWidthMeasurer({
       textEmojiWide: updatedCaps.textEmojiWide,
-      textSizingEnabled: updatedCaps.textSizingSupported,
+      textSizingEnabled: updatedCaps.textSizing,
     })
     expect(measurer.textEmojiWide).toBe(false)
     expect(measurer.textSizingEnabled).toBe(true)
@@ -422,7 +422,7 @@ describe("width detection → measurer integration", () => {
     detector.dispose()
 
     // Default caps assume emoji=wide
-    const caps = { textEmojiWide: true, textSizingSupported: false }
+    const caps = { textEmojiWide: true, textSizing: false }
     const updated = applyWidthConfig(caps, widthConfig)
 
     // DEC 1022=reset overrides the default
@@ -470,10 +470,10 @@ describe("width detection → measurer integration", () => {
     expect(widthConfig).toEqual(DEFAULT_WIDTH_CONFIG)
 
     // Applying defaults to default caps should be a no-op
-    const caps = { textEmojiWide: true, textSizingSupported: false }
+    const caps = { textEmojiWide: true, textSizing: false }
     const updated = applyWidthConfig(caps, widthConfig)
     expect(updated.textEmojiWide).toBe(true) // default emojiWidth=2 → wide
-    expect(updated.textSizingSupported).toBe(false) // default privateUseWidth=1 → not supported
+    expect(updated.textSizing).toBe(false) // default privateUseWidth=1 → not supported
 
     // Measurer should use the default wide emoji behavior
     const measurer = createWidthMeasurer(updated)
@@ -491,17 +491,17 @@ describe("width detection → measurer integration", () => {
     }
 
     // Start with default caps (emoji=wide)
-    const initialCaps = { textEmojiWide: true, textSizingSupported: false }
+    const initialCaps = { textEmojiWide: true, textSizing: false }
 
     // Apply width config — maps emoji=narrow to textEmojiWide=false
     const updatedCaps = applyWidthConfig(initialCaps, widthConfig)
     expect(updatedCaps.textEmojiWide).toBe(false)
-    expect(updatedCaps.textSizingSupported).toBe(false)
+    expect(updatedCaps.textSizing).toBe(false)
 
     // Create measurer from updated caps (same as createPipeline does internally)
     const measurer = createWidthMeasurer({
       textEmojiWide: updatedCaps.textEmojiWide,
-      textSizingEnabled: updatedCaps.textSizingSupported,
+      textSizingEnabled: updatedCaps.textSizing,
     })
     expect(measurer.textEmojiWide).toBe(false)
 

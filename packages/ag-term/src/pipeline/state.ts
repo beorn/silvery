@@ -49,7 +49,7 @@ export function getActiveTheme(): Theme {
 /**
  * Color tier the render pipeline is targeting.
  *
- * Mirrors `TerminalCaps.colorLevel` but lives in module state for the
+ * Mirrors `TerminalCaps.colorTier` but lives in module state for the
  * render-helpers parseColor() / getTextStyle() functions, which don't have
  * access to the OutputContext or React props. Set by the runtime
  * (`createPipeline()` in `@silvery/ag-term/measurer.ts`) before the first

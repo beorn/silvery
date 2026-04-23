@@ -234,9 +234,9 @@ export {
 
 // Post km-silvery.unicode-plateau Phase 2 (2026-04-23): the standalone
 // `isTextSizingLikelySupported()` env-reading heuristic is gone. The same
-// answer lives on `caps.textSizingSupported` — callers with a Term in
-// scope read `term.caps.textSizingSupported`; one-shot callers build a
-// profile via `createTerminalProfile().caps.textSizingSupported`.
+// answer lives on `caps.textSizing` — callers with a Term in
+// scope read `term.caps.textSizing`; one-shot callers build a
+// profile via `createTerminalProfile().caps.textSizing`.
 export {
   textSized,
   textScaled,

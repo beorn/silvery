@@ -27,7 +27,7 @@ export interface MeasuredTerm extends Term, Measurer {}
 export function withMeasurer(term: Term): MeasuredTerm {
   const caps = term.caps
   const measurer = createWidthMeasurer(
-    caps ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizingSupported } : {},
+    caps ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizing } : {},
   )
 
   return Object.create(term, {
@@ -62,7 +62,7 @@ export function createPipeline(
     explicitMeasurer ??
     createWidthMeasurer(
       caps
-        ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizingSupported }
+        ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizing }
         : {},
     )
   const outputPhaseFn = createOutputPhase(
@@ -70,17 +70,17 @@ export function createPipeline(
       ? {
           underlineStyles: caps.underlineStyles,
           underlineColor: caps.underlineColor,
-          colorLevel: caps.colorLevel,
+          colorTier: caps.colorTier,
         }
       : {},
     measurer,
   )
-  // Mirror colorLevel into module-scoped theme state so render-helpers
+  // Mirror colorTier into module-scoped theme state so render-helpers
   // (parseColor, getTextStyle) can dispatch on tier without access to
   // OutputContext. At mono tier ("none"), $tokens resolve to null fg/bg and
   // getTextStyle injects per-token SGR attrs from DEFAULT_MONO_ATTRS so apps
   // keep hierarchy (bold / dim / italic / underline / inverse) when color is
   // unavailable. See hub/silvery/design/v10-terminal/theme-system-v2-plan.md#p4.
-  if (caps?.colorLevel) setActiveColorLevel(caps.colorLevel)
+  if (caps?.colorTier) setActiveColorLevel(caps.colorTier)
   return { measurer, outputPhaseFn }
 }

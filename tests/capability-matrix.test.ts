@@ -101,7 +101,7 @@ function writeString(
 function createOsc66EnabledOutputPhase() {
   const measurer = createWidthMeasurer({ textSizingEnabled: true, textEmojiWide: true })
   return createOutputPhase(
-    { underlineStyles: true, underlineColor: true, colorLevel: "truecolor" },
+    { underlineStyles: true, underlineColor: true, colorTier: "truecolor" },
     measurer,
   )
 }
@@ -110,7 +110,7 @@ function createOsc66EnabledOutputPhase() {
 function createOsc66DisabledOutputPhase() {
   const measurer = createWidthMeasurer({ textSizingEnabled: false, textEmojiWide: true })
   return createOutputPhase(
-    { underlineStyles: true, underlineColor: true, colorLevel: "truecolor" },
+    { underlineStyles: true, underlineColor: true, colorTier: "truecolor" },
     measurer,
   )
 }

@@ -71,7 +71,7 @@ import type { TerminalCaps } from "../terminal-caps"
 // ============================================================================
 
 /** Output-phase capabilities type. */
-export type OutputCaps = Pick<TerminalCaps, "underlineStyles" | "underlineColor" | "colorLevel">
+export type OutputCaps = Pick<TerminalCaps, "underlineStyles" | "underlineColor" | "colorTier">
 
 // ============================================================================
 // Output Context (per-instance state, replaces module-level globals)
@@ -104,7 +104,7 @@ const defaultContext: OutputContext = {
   caps: {
     underlineStyles: true,
     underlineColor: true,
-    colorLevel: "truecolor",
+    colorTier: "truecolor",
   },
   measurer: null,
   sgrCache: new Map(),
@@ -174,7 +174,7 @@ export function createOutputPhase(
     caps: {
       underlineStyles: caps.underlineStyles ?? true,
       underlineColor: caps.underlineColor ?? true,
-      colorLevel: caps.colorLevel ?? "truecolor",
+      colorTier: caps.colorTier ?? "truecolor",
     },
     measurer: measurer ?? null,
     sgrCache: new Map(),
@@ -627,7 +627,7 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
 
   // Foreground color — stripped at monochrome tier (hierarchy via attrs)
   if (!colorEquals(oldStyle.fg, newStyle.fg)) {
-    if (newStyle.fg === null || ctx.caps.colorLevel === "mono") {
+    if (newStyle.fg === null || ctx.caps.colorTier === "mono") {
       codes.push("39")
     } else {
       codes.push(fgColorCode(newStyle.fg))
@@ -636,7 +636,7 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
 
   // Background color — stripped at monochrome tier (hierarchy via attrs)
   if (!colorEquals(oldStyle.bg, newStyle.bg)) {
-    if (newStyle.bg === null || ctx.caps.colorLevel === "mono") {
+    if (newStyle.bg === null || ctx.caps.colorTier === "mono") {
       codes.push("49")
     } else {
       codes.push(bgColorCode(newStyle.bg))
@@ -2095,7 +2095,7 @@ function changesToAnsi(
 function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string {
   const fg = style.fg
   const bg = style.bg
-  const monoTier = ctx.caps.colorLevel === "mono"
+  const monoTier = ctx.caps.colorTier === "mono"
 
   // Collect all SGR codes into one combined sequence: \x1b[code1;code2;...m
   // This is more spec-compliant and produces fewer bytes than separate sequences.

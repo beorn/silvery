@@ -145,19 +145,19 @@ function queryWidthMode(
  *
  * Maps DEC width modes to the existing TerminalCaps fields:
  * - emojiWidth=2 → textEmojiWide=true
- * - privateUseWidth=2 → textSizingSupported=true (PUA treated as 2-wide)
+ * - privateUseWidth=2 → textSizing=true (PUA treated as 2-wide)
  *
  * Returns a new caps object with the detected overrides applied.
  * CJK width and UTF-8 mode are informational — they don't yet map to
  * caps fields but are available in the TerminalWidthConfig for consumers.
  */
 export function applyWidthConfig<
-  T extends { textEmojiWide: boolean; textSizingSupported: boolean },
+  T extends { textEmojiWide: boolean; textSizing: boolean },
 >(caps: T, config: TerminalWidthConfig): T {
   return {
     ...caps,
     textEmojiWide: config.emojiWidth === 2,
-    textSizingSupported: config.privateUseWidth === 2,
+    textSizing: config.privateUseWidth === 2,
   }
 }
 

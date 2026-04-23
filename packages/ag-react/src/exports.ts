@@ -803,7 +803,7 @@ export { type PipelineConfig, type PipelineContext } from "@silvery/ag-term/pipe
 export { withRender, type RenderTerm } from "@silvery/ag-term/plugins/with-render"
 
 // Text sizing protocol (OSC 66) — PUA character width control.
-// Post unicode-plateau Phase 2: callers read `caps.textSizingSupported`
+// Post unicode-plateau Phase 2: callers read `caps.textSizing`
 // directly; the standalone heuristic that re-read env is gone.
 export {
   textSized,

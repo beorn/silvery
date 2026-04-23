@@ -188,8 +188,8 @@ function TerminalCapsApp({
     },
     {
       name: "OSC 66 Text Sizing",
-      status: caps.textSizingSupported ? "supported" : "not-supported",
-      detail: caps.textSizingSupported ? "supported" : "not supported",
+      status: caps.textSizing ? "supported" : "not-supported",
+      detail: caps.textSizing ? "supported" : "not supported",
     },
     {
       name: "OSC 5522 Advanced Clipboard",
@@ -207,7 +207,7 @@ function TerminalCapsApp({
   // Terminal info header
   const termProgram = caps.program || "(unknown)"
   const termType = caps.term || "(unknown)"
-  const colorLevel = caps.colorLevel
+  const colorTier = caps.colorTier
 
   // Column width for alignment
   const colWidth = 38
@@ -219,7 +219,7 @@ function TerminalCapsApp({
       {/* Terminal identity */}
       <Box paddingBottom={1}>
         <Muted>
-          Terminal: {termProgram} ({termType}) | Colors: {colorLevel} | Background:{" "}
+          Terminal: {termProgram} ({termType}) | Colors: {colorTier} | Background:{" "}
           {caps.darkBackground ? "dark" : "light"}
         </Muted>
       </Box>

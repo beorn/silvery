@@ -146,6 +146,10 @@ const DEFAULT_HEIGHT = 24
 
 /**
  * Check if a value is a Term instance (duck typing).
+ *
+ * Post km-silvery.caps-restructure Phase 7: the legacy hasCursor/hasInput/
+ * hasColor methods were removed — caps/profile/write/size are the canonical
+ * Term surface.
  */
 export function isTerm(value: unknown): value is Term {
   // Term can be a callable Proxy (typeof === 'function') or object
@@ -154,10 +158,10 @@ export function isTerm(value: unknown): value is Term {
   }
   const obj = value as Record<string, unknown>
   return (
-    typeof obj.hasCursor === "function" &&
-    typeof obj.hasInput === "function" &&
-    typeof obj.hasColor === "function" &&
-    typeof obj.write === "function"
+    typeof obj.caps === "object" &&
+    obj.caps !== null &&
+    typeof obj.write === "function" &&
+    typeof obj.size === "object"
   )
 }
 
@@ -166,9 +170,9 @@ export function isTerm(value: unknown): value is Term {
  */
 export function isTermDef(value: unknown): value is TermDef {
   if (!value || typeof value !== "object") return false
-  // TermDef doesn't have hasCursor method
+  // TermDef doesn't have a `caps` field — that's a Term-only marker.
   const obj = value as Record<string, unknown>
-  return typeof obj.hasCursor !== "function"
+  return obj.caps === undefined
 }
 
 /**
@@ -230,7 +234,10 @@ export function resolveFromTerm(term: Term): ResolvedTermDef {
     stdout,
     width: term.cols ?? DEFAULT_WIDTH,
     height: term.rows ?? DEFAULT_HEIGHT,
-    colors: term.hasColor(),
+    // Post caps-restructure Phase 7: hasColor() is gone — read colorTier
+    // from the canonical profile. "mono" means no color → legacy expected
+    // `null` (falsy), higher tiers expected the tier string.
+    colors: term.profile.colorTier === "mono" ? null : term.profile.colorTier,
     // Term instances always have interactive capabilities
     events: createInputEvents(stdin),
     isStatic: false,

@@ -45,7 +45,7 @@ function makeOutputContext(): OutputContext {
     caps: {
       underlineStyles: true,
       underlineColor: true,
-      colorLevel: "truecolor",
+      colorTier: "truecolor",
     },
     measurer: null,
     sgrCache: new Map(),

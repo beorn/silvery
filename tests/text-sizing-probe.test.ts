@@ -9,7 +9,7 @@
  * Post km-silvery.unicode-plateau Phase 2 (2026-04-23): this module reads
  * zero environment variables. Every test passes an explicit fingerprint
  * (or caps object) instead of mutating process.env — the module has no
- * ambient authority to exercise. The terminal-type → textSizingSupported
+ * ambient authority to exercise. The terminal-type → textSizing
  * mapping (Kitty ≥ 0.40 true, older Kitty false, Ghostty false, etc.)
  * lives in `createTerminalProfile` and is tested in
  * packages/ansi/tests/profile.test.ts.
