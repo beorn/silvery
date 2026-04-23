@@ -70,7 +70,11 @@ function makeSink() {
 
 async function runCapturing(
   element: React.ReactElement,
-  opts: { colorTier?: "mono" | "ansi16" | "256" | "truecolor" } = {},
+  // Post Phase 7 the run() option name is still `colorLevel` (the option
+  // belongs to RunOptions, not TerminalCaps — the caps field `colorLevel`
+  // renamed to `colorTier` is a separate surface). Keep the test wrapper
+  // spelling in sync with the public API.
+  opts: { colorLevel?: "mono" | "ansi16" | "256" | "truecolor" } = {},
 ): Promise<string> {
   const sink = makeSink()
   let handle: RunHandle | undefined
