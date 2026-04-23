@@ -25,7 +25,7 @@
 import React, { useState } from "react"
 import { Box, Text, H3, Muted, Kbd, render, useInput, useApp, type Key } from "silvery"
 import {
-  detectTerminalCaps,
+  createTerminalProfile,
   type TerminalCaps,
   createWidthDetector,
   type TerminalWidthConfig,
@@ -40,7 +40,7 @@ export const meta: ExampleMeta = {
   description: "Probe and display all supported terminal protocols",
   demo: true,
   features: [
-    "detectTerminalCaps()",
+    "createTerminalProfile()",
     "Mode 2031",
     "DEC 1020-1023",
     "OSC 66",
@@ -133,7 +133,7 @@ function TerminalCapsApp({
   }
 }) {
   const { exit } = useApp()
-  const [caps] = useState<TerminalCaps>(() => detectTerminalCaps())
+  const [caps] = useState<TerminalCaps>(() => createTerminalProfile().caps)
   const [colorScheme] = useState<BgMode>(initialProbes?.colorScheme ?? "unknown")
   const [widthConfig] = useState<TerminalWidthConfig | null>(initialProbes?.widthConfig ?? null)
   const [kittyDetected] = useState<boolean | null>(initialProbes?.kittyDetected ?? null)

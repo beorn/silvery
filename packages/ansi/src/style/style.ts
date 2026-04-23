@@ -15,7 +15,7 @@
  * ```
  */
 
-import { detectColor } from "../detection.ts"
+import { createTerminalProfile } from "../profile.ts"
 
 import {
   BG_COLORS,
@@ -182,7 +182,10 @@ export function createStyle(options?: StyleOptions): Style {
     ref.level = "mono"
   } else {
     try {
-      ref.level = detectColor(process.stdout)
+      // Post km-silvery.plateau-delete-legacy-shims (H6): profile factory
+      // replaces the `detectColor` shim. Same semantics — env precedence
+      // and TTY detection — but routed through the canonical entry point.
+      ref.level = createTerminalProfile({ stdout: process.stdout }).colorTier
     } catch {
       ref.level = "mono"
     }

@@ -88,15 +88,17 @@ export type {
 // Detection Functions
 // =============================================================================
 
+// Post km-silvery.plateau-delete-legacy-shims (H6): `detectColor` and
+// `detectTerminalCaps` deleted — use `createTerminalProfile()` (sync) or
+// `probeTerminalProfile()` (async with theme) instead.
 export {
   detectCursor,
   detectInput,
-  detectColor,
   detectUnicode,
   detectExtendedUnderline,
-  detectTerminalCaps,
   defaultCaps,
   createTerminalProfile,
+  probeTerminalProfile,
   createBgModeDetector,
   parseBgModeResponse,
   ENABLE_BG_MODE_REPORTING,
@@ -108,6 +110,7 @@ export type {
   TerminalProfileSource,
   TerminalProfileStdout,
   CreateTerminalProfileOptions,
+  ProbeTerminalProfileOptions,
   BgModeDetector,
   BgModeDetectorOptions,
   BgMode,

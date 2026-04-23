@@ -11,7 +11,7 @@ import {
   disableMouse as _disableMouse,
   enableKittyKeyboard as _enableKittyKeyboard,
   disableKittyKeyboard as _disableKittyKeyboard,
-  detectTerminalCaps,
+  createTerminalProfile,
   type TerminalCaps,
 } from "@silvery/ansi"
 
@@ -280,15 +280,15 @@ export function notifyKitty(message: string, opts?: { title?: string }): string 
  * - Others → BEL (audible/visual bell)
  *
  * Pass `caps` when a {@link TerminalCaps} is in scope (typically `term.caps`).
- * Without caps, falls back to {@link detectTerminalCaps} — the canonical
- * env-reading entry in `@silvery/ansi/profile`.
+ * Without caps, falls back to {@link createTerminalProfile} — the canonical
+ * single-source-of-truth entry in `@silvery/ansi/profile`.
  */
 export function notify(
   stdout: NodeJS.WriteStream,
   message: string,
   opts?: { title?: string; caps?: Pick<TerminalCaps, "program" | "term"> },
 ): void {
-  const caps = opts?.caps ?? detectTerminalCaps()
+  const caps = opts?.caps ?? createTerminalProfile().caps
   const termProgram = caps.program
   const term = caps.term
 

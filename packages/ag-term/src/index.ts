@@ -203,7 +203,18 @@ export { createKittyManager, type KittyManager, type KittyManagerOptions } from 
 // Terminal Capability Detection
 // =============================================================================
 
-export { detectTerminalCaps, defaultCaps, type TerminalCaps } from "./terminal-caps"
+// Post km-silvery.plateau-delete-legacy-shims (H6): `detectTerminalCaps`
+// deleted — the profile factory in @silvery/ansi is the canonical entry
+// point. Types remain available for consumers that destructure caps fields.
+export { defaultCaps, type TerminalCaps } from "./terminal-caps"
+export {
+  createTerminalProfile,
+  probeTerminalProfile,
+  type TerminalProfile,
+  type TerminalProfileSource,
+  type CreateTerminalProfileOptions,
+  type ProbeTerminalProfileOptions,
+} from "@silvery/ansi"
 
 // =============================================================================
 // Terminal Capability Visual Test
@@ -523,11 +534,11 @@ export type {
   CreateTermOptions,
 } from "./ansi/index"
 
-// Detection
+// Detection — narrow-scope probes (the broader caps/profile detection
+// routes through `createTerminalProfile` exported above).
 export {
   detectCursor,
   detectInput,
-  detectColor,
   detectUnicode,
   detectExtendedUnderline,
 } from "./ansi/index"

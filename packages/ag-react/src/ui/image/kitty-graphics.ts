@@ -15,7 +15,7 @@
  * - Images can be assigned an `i=<id>` for later deletion
  */
 
-import { detectTerminalCaps, type TerminalCaps } from "@silvery/ansi"
+import { createTerminalProfile, type TerminalCaps } from "@silvery/ansi"
 
 const APC_START = "\x1b_G"
 const ST = "\x1b\\"
@@ -106,10 +106,11 @@ export function deleteKittyImage(id: number): string {
  * Check if the current terminal likely supports the Kitty graphics protocol.
  *
  * Pass `caps` (from `term.caps` or a {@link TerminalCaps} fixture) when
- * available. Without caps, this falls back to {@link detectTerminalCaps} —
- * the canonical env-reading entry point in `@silvery/ansi/profile`. Direct
- * reads of terminal-signal env vars (TERM / TERM_PROGRAM / …) are banned
- * outside that module — see `scripts/lint-env-reads.ts`.
+ * available. Without caps, this falls back to {@link createTerminalProfile}
+ * — the canonical single-source-of-truth entry point in
+ * `@silvery/ansi/profile`. Direct reads of terminal-signal env vars
+ * (TERM / TERM_PROGRAM / …) are banned outside that module — see
+ * `scripts/lint-env-reads.ts`.
  *
  * For definitive detection, use a terminal query (send the graphics protocol
  * query and check for a response), but that requires async I/O.
@@ -121,7 +122,7 @@ export function deleteKittyImage(id: number): string {
 export function isKittyGraphicsSupported(
   caps?: Pick<TerminalCaps, "program" | "term">,
 ): boolean {
-  const resolved = caps ?? detectTerminalCaps()
+  const resolved = caps ?? createTerminalProfile().caps
   const term = resolved.term
   const termProgram = resolved.program
 

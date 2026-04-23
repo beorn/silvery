@@ -762,8 +762,23 @@ export {
   type KittyDetectResult,
 } from "@silvery/ag-term/kitty-detect"
 
-// Terminal capability detection
-export { detectTerminalCaps, defaultCaps, type TerminalCaps } from "@silvery/ag-term/terminal-caps"
+// Terminal profile — single source of truth for terminal detection.
+// Post km-silvery.plateau-delete-legacy-shims (H6 /big review 2026-04-23):
+// consumers no longer route through the `detectTerminalCaps` / `detectColor`
+// shims. They read `term.caps` / `term.profile` when a Term is in scope, or
+// call `createTerminalProfile()` / `probeTerminalProfile()` directly for
+// the one-shot detection case. `defaultCaps` stays as a public utility for
+// test fixtures that want a known-good caps object without env sniffing.
+export {
+  createTerminalProfile,
+  probeTerminalProfile,
+  defaultCaps,
+  type TerminalProfile,
+  type TerminalProfileSource,
+  type ProbeTerminalProfileOptions,
+  type CreateTerminalProfileOptions,
+} from "@silvery/ansi"
+export { type TerminalCaps } from "@silvery/ag-term/terminal-caps"
 
 // Terminal capability visual test
 export {

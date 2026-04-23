@@ -26,7 +26,6 @@ import "@termless/test/matchers"
 
 import { Box, Text } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
-import { detectTerminalCaps } from "../../packages/ag-term/src/terminal-caps"
 import { createTerminalProfile } from "../../packages/ansi/src/profile"
 
 // ============================================================================
@@ -100,46 +99,50 @@ describe("contract: RunOptions.selection", () => {
 })
 
 // ============================================================================
-// Seed 2 — detectTerminalCaps honors FORCE_COLOR
+// Seed 2 — createTerminalProfile honors FORCE_COLOR
 // ============================================================================
 //
-// Docstring: "Checks (in order): 1. NO_COLOR env var [...] 2. FORCE_COLOR env
-// var - forces color level [...]"
+// Docstring (createTerminalProfile): "Priority for the final colorTier
+// (highest wins): 1. NO_COLOR env var [...] 2. FORCE_COLOR env var [...]"
 //
-// Regression: detectTerminalCaps() had its own TERM/COLORTERM switch that
-// short-circuited before the canonical detectColor() helper. FORCE_COLOR was
-// silently ignored at the caps layer. Only run-color-level.test.tsx exercised
-// the runtime-level path; the helper itself was never tested with env vars.
+// Regression history: pre-H6, `detectTerminalCaps()` had its own TERM/
+// COLORTERM switch that short-circuited before the canonical detectColor()
+// helper. FORCE_COLOR was silently ignored at the caps layer. The shim is
+// now deleted (km-silvery.plateau-delete-legacy-shims) — callers route
+// through `createTerminalProfile()` which is the same code path this
+// contract exercises. Test names retain "caps honors FORCE_COLOR" framing
+// since that's the observable contract — we just reach it through the
+// canonical entry point.
 
-describe("contract: detectTerminalCaps env precedence", () => {
-  test("contract: detectTerminalCaps honors FORCE_COLOR=3 (truecolor)", () => {
+describe("contract: createTerminalProfile env precedence", () => {
+  test("contract: profile honors FORCE_COLOR=3 (truecolor)", () => {
     process.env.FORCE_COLOR = "3"
-    const caps = detectTerminalCaps()
+    const caps = createTerminalProfile().caps
     expect(caps.colorLevel).toBe("truecolor")
   })
 
-  test("contract: detectTerminalCaps honors FORCE_COLOR=2 (256)", () => {
+  test("contract: profile honors FORCE_COLOR=2 (256)", () => {
     process.env.FORCE_COLOR = "2"
-    const caps = detectTerminalCaps()
+    const caps = createTerminalProfile().caps
     expect(caps.colorLevel).toBe("256")
   })
 
-  test("contract: detectTerminalCaps honors FORCE_COLOR=1 (ansi16)", () => {
+  test("contract: profile honors FORCE_COLOR=1 (ansi16)", () => {
     process.env.FORCE_COLOR = "1"
-    const caps = detectTerminalCaps()
+    const caps = createTerminalProfile().caps
     expect(caps.colorLevel).toBe("ansi16")
   })
 
-  test("contract: detectTerminalCaps honors FORCE_COLOR=0 (mono)", () => {
+  test("contract: profile honors FORCE_COLOR=0 (mono)", () => {
     process.env.FORCE_COLOR = "0"
-    const caps = detectTerminalCaps()
+    const caps = createTerminalProfile().caps
     expect(caps.colorLevel).toBe("mono")
   })
 
   test("contract: NO_COLOR wins over FORCE_COLOR (documented precedence)", () => {
     process.env.NO_COLOR = "1"
     process.env.FORCE_COLOR = "3"
-    const caps = detectTerminalCaps()
+    const caps = createTerminalProfile().caps
     expect(caps.colorLevel).toBe("mono")
   })
 })
@@ -244,12 +247,14 @@ describe("contract: createTerminalProfile env precedence", () => {
     expect(profile.colorTier).toBe("256")
   })
 
-  test("contract: detectTerminalCaps() shim still honors FORCE_COLOR (regression for 48143ef0)", () => {
+  test("contract: createTerminalProfile honors FORCE_COLOR (regression for 48143ef0)", () => {
     // Historical bug: detectTerminalCaps had its own TERM/COLORTERM switch and
-    // ignored FORCE_COLOR. Phase 3 routes it through createTerminalProfile.
-    // The shim must preserve the post-48143ef0 behaviour exactly.
+    // ignored FORCE_COLOR. Phase 3 routed it through createTerminalProfile;
+    // H6 (km-silvery.plateau-delete-legacy-shims) deleted the
+    // detectTerminalCaps shim entirely. The canonical entry point must
+    // preserve the post-48143ef0 behaviour exactly.
     process.env.FORCE_COLOR = "3"
-    const caps = detectTerminalCaps()
+    const caps = createTerminalProfile().caps
     expect(caps.colorLevel).toBe("truecolor")
   })
 })

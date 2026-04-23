@@ -47,21 +47,24 @@ export {
 } from "./constants"
 
 // =============================================================================
-// Detection
+// Detection — narrow-scope probes only. Full caps/color detection is owned
+// by {@link ./profile} (`createTerminalProfile` / `probeTerminalProfile`).
+//
+// Post km-silvery.plateau-delete-legacy-shims (H6 /big review 2026-04-23):
+// `detectColor` and `detectTerminalCaps` are removed — every consumer now
+// routes through the profile factory instead.
 // =============================================================================
 
 export {
   detectCursor,
   detectInput,
-  detectColor,
   detectUnicode,
   detectExtendedUnderline,
-  detectTerminalCaps,
   defaultCaps,
 } from "./detection"
 
 // =============================================================================
-// Terminal Profile (single source of truth — Phase 3 of terminal-profile-plateau)
+// Terminal Profile — single source of truth for terminal detection.
 // =============================================================================
 
 export {

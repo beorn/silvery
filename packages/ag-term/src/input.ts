@@ -81,7 +81,9 @@ export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from
 // Terminal Capability Detection
 // =============================================================================
 
-export { detectTerminalCaps, type TerminalCaps } from "./terminal-caps"
+// Post km-silvery.plateau-delete-legacy-shims (H6): `detectTerminalCaps`
+// shim deleted — use `createTerminalProfile()` from the re-export below.
+export { createTerminalProfile, type TerminalCaps, type TerminalProfile } from "./terminal-caps"
 
 // =============================================================================
 // Bracketed Paste

@@ -17,7 +17,7 @@
  * - 'plain': Strip all ANSI codes
  */
 
-import { detectTerminalCaps, type TerminalCaps } from "@silvery/ansi"
+import { createTerminalProfile, type TerminalCaps } from "@silvery/ansi"
 import { stripAnsi } from "./unicode"
 
 // ============================================================================
@@ -64,10 +64,10 @@ export type ResolvedNonTTYMode = Exclude<NonTTYMode, "auto">
  *
  * Pass `caps` (from `term.caps` or a {@link TerminalCaps} fixture) when
  * available to avoid a redundant env read. Without caps, the TERM=dumb
- * check delegates to {@link detectTerminalCaps} — the canonical entry in
- * `@silvery/ansi/profile`. CI env vars remain read directly because they
- * are orthogonal to terminal capabilities (a CI runner's TTY status
- * doesn't describe what the terminal can render).
+ * check delegates to {@link createTerminalProfile} — the canonical single-
+ * source-of-truth entry in `@silvery/ansi/profile`. CI env vars remain
+ * read directly because they are orthogonal to terminal capabilities (a
+ * CI runner's TTY status doesn't describe what the terminal can render).
  */
 export function isTTY(
   stdout: NodeJS.WriteStream = process.stdout,
@@ -78,8 +78,8 @@ export function isTTY(
     return false
   }
 
-  // Check TERM=dumb via caps (preferred) or the canonical detector.
-  const term = caps?.term ?? detectTerminalCaps().term
+  // Check TERM=dumb via caps (preferred) or the canonical profile factory.
+  const term = caps?.term ?? createTerminalProfile().caps.term
   if (term === "dumb") {
     return false
   }

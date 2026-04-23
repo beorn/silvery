@@ -12,7 +12,7 @@
  * Compare output across terminals to build/verify profiles.
  */
 
-import { detectTerminalCaps } from "./terminal-caps"
+import { createTerminalProfile } from "@silvery/ansi"
 
 const ESC = "\x1b"
 const CSI = `${ESC}[`
@@ -62,7 +62,12 @@ export function runTermtest(options?: TermtestOptions): void {
   const filter = options?.sections
   const show = (s: TermtestSection) => !filter || filter.length === 0 || filter.includes(s)
 
-  const caps = detectTerminalCaps()
+  // Post km-silvery.plateau-delete-legacy-shims (H6): read caps through the
+  // canonical profile factory. termtest has no Term in scope (it's a CLI
+  // one-shot), so the zero-arg variant auto-detects from process.env /
+  // process.stdout — same behavior the deleted `detectTerminalCaps()` shim
+  // provided.
+  const caps = createTerminalProfile().caps
 
   w.write(`\n${sgr(1)}Terminal Capability Test${RESET}\n`)
   w.write(`  Program: ${caps.program || "(unknown)"}\n`)

@@ -42,10 +42,8 @@ import type { TextFrame } from "@silvery/ag/text-frame"
 import { outputPhase } from "../pipeline/output-phase"
 import {
   defaultCaps,
-  detectColor,
   detectCursor,
   detectInput,
-  detectTerminalCaps,
   detectUnicode,
 } from "./detection"
 import { createInputOwner, type InputOwner as Input } from "../runtime/input-owner"
@@ -719,29 +717,52 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // the canonical `"mono"` so downstream consumers only see ColorTier values.
   const cachedCursor = options.cursor ?? detectCursor(stdout)
   const cachedInput = detectInput(stdin)
-  const cachedColor: ColorTier =
-    options.color !== undefined
-      ? (options.color ?? "mono")
-      : detectColor(stdout)
   const cachedUnicode = options.unicode ?? detectUnicode()
 
-  // Detect terminal capabilities. Interactive (TTY) stdin goes through the
-  // env-aware detector; non-TTY Node terms fall back to `defaultCaps()` so
-  // `term.caps` is guaranteed populated regardless of stream shape. Callers
-  // can still override the whole profile or merge a partial via `options.caps`.
-  const detectedCaps: TerminalCaps = options.caps
-    ? { ...defaultCaps(), ...options.caps }
-    : stdin.isTTY
-      ? detectTerminalCaps()
-      : defaultCaps()
-
   // Fully-resolved TerminalProfile — the single value that flows through
-  // run() / createApp() for this Term's lifetime. Built from the caps we
-  // just committed to, so `profile.caps === detectedCaps` shape-wise and
-  // `profile.source === "caller-caps"`. Entry points no longer need to
-  // rebuild via `createTerminalProfile({ caps: term.caps })`.
-  // See km-silvery.plateau-term-owns-profile (H15 / /big review 2026-04-23).
-  const profile: TerminalProfile = createTerminalProfile({ caps: detectedCaps })
+  // run() / createApp() for this Term's lifetime. Post km-silvery.plateau-
+  // delete-legacy-shims (H6): this one call replaces the former
+  // `detectColor(stdout)` + `detectTerminalCaps()` pair.
+  //
+  // Term-construction precedence (differs from profile-factory defaults):
+  //   - `options.caps` present → caps base + `colorOverride` = caps.colorLevel.
+  //     Treat explicit caps as a hard override that wins over env — a test
+  //     harness or adapter passing `caps: { colorLevel: "truecolor" }` wants
+  //     that tier regardless of what FORCE_COLOR / NO_COLOR say. This matches
+  //     the legacy `detectTerminalCaps()` path which short-circuited on
+  //     explicit caps.
+  //   - `options.color` (legacy `ColorTier | null`) → thread through
+  //     `colorOverride` so it participates in the normal precedence chain.
+  //   - non-TTY Node terms → `defaultCaps()` base + no caller override.
+  //   - TTY Node terms → full env-based auto-detection.
+  const profileCapsBase: Partial<TerminalCaps> | undefined = options.caps
+    ? options.caps
+    : stdin.isTTY
+      ? undefined // let profile factory run full env detection
+      : defaultCaps() // non-TTY: deterministic defaults, skip env probe
+  const explicitColor =
+    options.color === undefined ? undefined : (options.color ?? "mono")
+  // Explicit caps override the env chain — tests and adapters that pass
+  // `caps: { colorLevel: ... }` rely on the tier they specified. Promoting
+  // the caps tier into `colorOverride` mostly re-establishes that, but the
+  // profile factory still lets NO_COLOR / FORCE_COLOR win over overrides
+  // (that's the documented chain). So when caps is explicit, we build the
+  // profile with `env: {}` to neutralize env precedence at the factory
+  // level — the caller's caps are authoritative for the Term's lifetime.
+  const profile: TerminalProfile = options.caps
+    ? createTerminalProfile({
+        env: {},
+        stdout,
+        caps: options.caps,
+        colorOverride: explicitColor ?? options.caps.colorLevel,
+      })
+    : createTerminalProfile({
+        stdout,
+        caps: profileCapsBase,
+        colorOverride: explicitColor,
+      })
+  const detectedCaps: TerminalCaps = profile.caps
+  const cachedColor: ColorTier = profile.colorTier
 
   // Create style instance with appropriate color level
   const styleInstance = createStyle({ level: cachedColor })

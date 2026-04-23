@@ -18,7 +18,7 @@
  * with a simple nearest-color palette approach.
  */
 
-import { detectTerminalCaps, type TerminalCaps } from "@silvery/ansi"
+import { createTerminalProfile, type TerminalCaps } from "@silvery/ansi"
 
 const DCS_START = "\x1bP"
 const ST = "\x1b\\"
@@ -164,10 +164,11 @@ export function encodeSixel(imageData: SixelImageData): string {
  * Check if the current terminal likely supports the Sixel protocol.
  *
  * Pass `caps` (from `term.caps` or a {@link TerminalCaps} fixture) when
- * available. Without caps, this falls back to {@link detectTerminalCaps} —
- * the canonical env-reading entry point in `@silvery/ansi/profile`. Direct
- * reads of terminal-signal env vars (TERM / TERM_PROGRAM / …) are banned
- * outside that module — see `scripts/lint-env-reads.ts`.
+ * available. Without caps, this falls back to {@link createTerminalProfile}
+ * — the canonical single-source-of-truth entry point in
+ * `@silvery/ansi/profile`. Direct reads of terminal-signal env vars
+ * (TERM / TERM_PROGRAM / …) are banned outside that module — see
+ * `scripts/lint-env-reads.ts`.
  *
  * For definitive detection, send a DA1 (Device Attributes) query and check
  * for "4" in the response, but that requires async I/O.
@@ -180,7 +181,7 @@ export function encodeSixel(imageData: SixelImageData): string {
 export function isSixelSupported(
   caps?: Pick<TerminalCaps, "program" | "term">,
 ): boolean {
-  const resolved = caps ?? detectTerminalCaps()
+  const resolved = caps ?? createTerminalProfile().caps
   const term = resolved.term
   const termProgram = resolved.program
 

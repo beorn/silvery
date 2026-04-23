@@ -42,16 +42,19 @@ const entries: EntryPoint[] = [
     expectNoReconciler: true,
   },
   {
+    // Post km-silvery.plateau-delete-legacy-shims (H6): `detectColor` is
+    // deleted. Tree-shaking target uses `createTerminalProfile` instead —
+    // same guarantee (terminal-only, no React bundle leaks).
     name: "@silvery/ag-term (selective)",
     specifier: "@silvery/ag-term",
-    importExpr: "{ createTerm, detectColor, stripAnsi }",
+    importExpr: "{ createTerm, createTerminalProfile, stripAnsi }",
     expectNoReact: true,
     expectNoReconciler: true,
   },
   {
     name: "@silvery/ag-term/ansi",
     specifier: "@silvery/ag-term/ansi",
-    importExpr: "{ createTerm, detectColor }",
+    importExpr: "{ createTerm, createTerminalProfile }",
     expectNoReact: true,
     expectNoReconciler: true,
   },

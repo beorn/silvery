@@ -1,22 +1,22 @@
 /**
- * Terminal capability detection.
+ * Narrow-scope terminal probes.
  *
  * Detects:
  * - Cursor control (can reposition cursor)
  * - Input capability (can read raw keystrokes)
- * - Color level (basic, 256, truecolor)
  * - Unicode support (can render unicode symbols)
  * - Extended underline support (curly, dotted, etc)
- * - Terminal capabilities profile (TerminalCaps)
  *
- * Env-aware color/caps detection now lives in {@link ./profile}. The
- * `detectColor()` / `detectTerminalCaps()` exports here are thin shims that
- * call into the profile module, preserving the public API.
+ * Broader caps/color detection is owned by {@link ./profile} — import
+ * `createTerminalProfile()` (sync) or `probeTerminalProfile()` (async with
+ * theme) for the canonical single-source-of-truth entry point.
  *
- * Phase 3 of `km-silvery.terminal-profile-plateau` — see `createTerminalProfile`.
+ * Post km-silvery.plateau-delete-legacy-shims (H6 /big review 2026-04-23):
+ * the `detectColor()` and `detectTerminalCaps()` shims are gone — every
+ * call site that asked "what's the color tier?" or "what's the full caps?"
+ * now routes through the profile factory instead.
  */
 
-import { detectColorFromEnv, detectTerminalCapsFromEnv } from "./profile"
 import type { ColorTier } from "./types"
 
 // =============================================================================
@@ -54,28 +54,15 @@ export function detectInput(stdin: NodeJS.ReadStream): boolean {
 }
 
 // =============================================================================
-// Color Detection
+// Color Detection — removed H6 of /big review 2026-04-23.
+//
+// `detectColor(stdout)` used to live here as a ColorTier probe. Call sites
+// that need "what tier does this stdout report?" now use:
+//   `createTerminalProfile({ stdout }).colorTier`
+// The profile factory handles the full NO_COLOR > FORCE_COLOR > auto chain
+// and returns a bundled {@link TerminalProfile} — the single source of
+// truth for every caps-or-color question.
 // =============================================================================
-
-/**
- * Detect the color tier supported by the terminal.
- *
- * Returns a 4-state {@link ColorTier}. See {@link createTerminalProfile} for
- * the canonical entry point; this is a shim kept for backward compatibility.
- *
- * Checks (in order):
- * 1. NO_COLOR env var — forces mono
- * 2. FORCE_COLOR env var — forces color tier
- * 3. COLORTERM=truecolor — truecolor support
- * 4. TERM / TERM_PROGRAM / KITTY_WINDOW_ID / WT_SESSION — modern terminals
- * 5. CI detection — basic colors in CI
- */
-export function detectColor(stdout: NodeJS.WriteStream): ColorTier {
-  return detectColorFromEnv(
-    process.env as Record<string, string | undefined>,
-    stdout,
-  )
-}
 
 // =============================================================================
 // Unicode Detection
@@ -255,15 +242,9 @@ export function defaultCaps(): TerminalCaps {
   }
 }
 
-/**
- * Detect terminal capabilities from environment variables.
- *
- * Shim for backward compatibility — the real logic lives in
- * {@link createTerminalProfile}. Synchronous. Minimal I/O: may run `defaults`
- * on macOS for Apple_Terminal dark-mode detection (cached).
- */
-export function detectTerminalCaps(): TerminalCaps {
-  const env = process.env as Record<string, string | undefined>
-  const stdout = (process.stdout ?? { isTTY: false }) as NodeJS.WriteStream
-  return detectTerminalCapsFromEnv(env, stdout)
-}
+// `detectTerminalCaps()` was removed in H6 of the /big review 2026-04-23.
+// Callers that want a full caps probe now use:
+//   `createTerminalProfile().caps`   // sync, env-based auto-detect
+//   `await probeTerminalProfile().caps`  // async, bundles theme too
+// Both entry points are exported from `@silvery/ansi` and re-exported
+// through `@silvery/ag-term` and `@silvery/ag-react`.
