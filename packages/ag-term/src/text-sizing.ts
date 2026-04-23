@@ -12,8 +12,16 @@
  * Protocol format:
  *   ESC ] 66 ; w=<width> ; <text> BEL
  *
+ * Post km-silvery.unicode-plateau Phase 2 (2026-04-23): this module reads
+ * ZERO environment variables. Capability detection lives entirely in
+ * `@silvery/ansi`'s `createTerminalProfile`. Consumers pass `TerminalCaps`
+ * (or an explicit fingerprint string for the probe cache) so the module is
+ * pure w.r.t. environment and browser/canvas targets aren't broken.
+ *
  * @see https://sw.kovidgoyal.net/kitty/text-sizing-protocol/
  */
+
+import type { TerminalCaps } from "@silvery/ansi"
 
 const OSC = "\x1b]"
 const ST = "\x07" // BEL terminator (more compatible than ESC \)
@@ -66,46 +74,29 @@ export function isPrivateUseArea(cp: number): boolean {
   )
 }
 
+// ============================================================================
+// Probe fingerprint + result cache
+// ============================================================================
+
 /**
- * Check if text sizing is likely supported based on environment variables.
- * This is a fast synchronous check -- use detectTextSizingSupport() for
- * definitive detection via cursor position reports.
- *
- * Prefer the caps-aware form: pass `caps.textSizingSupported` if a
- * {@link TerminalCaps} is already in scope. The `createTerminalProfile`
- * detection in `@silvery/ansi/profile` already computes this flag with the
- * canonical `TERM=xterm-kitty` check + version parse. The env-fallback path
- * here (TERM_PROGRAM) survives for the one caller (create-app.tsx:1003) that
- * runs without caps in some test paths.
- *
- * The plateau refactor (km-silvery.terminal-profile-plateau) prefers consumers
- * reading caps over re-reading env. Passing caps turns this helper into a
- * pass-through; leaving it unset uses the legacy env probe.
+ * Structural subset of {@link TerminalCaps} the fingerprint helper needs.
  */
-export function isTextSizingLikelySupported(caps?: {
-  readonly textSizingSupported?: boolean
-}): boolean {
-  // Prefer caps when supplied — profile.ts already made the authoritative
-  // decision via TERM=xterm-kitty + TERM_PROGRAM_VERSION parse.
-  if (caps?.textSizingSupported !== undefined) return caps.textSizingSupported
+export type FingerprintCaps = Pick<TerminalCaps, "program" | "version">
 
-  const termProgram = process.env.TERM_PROGRAM?.toLowerCase() ?? ""
-  const termVersion = process.env.TERM_PROGRAM_VERSION ?? ""
-
-  // Kitty v0.40+ supports OSC 66
-  if (termProgram === "kitty") {
-    const parts = termVersion.split(".")
-    const major = Number(parts[0]) || 0
-    const minor = Number(parts[1]) || 0
-    if (major > 0 || (major === 0 && minor >= 40)) return true
-  }
-
-  // Ghostty parses OSC 66 but does NOT render it (as of v1.3.0, March 2026).
-  // Wrapping text in OSC 66 causes Ghostty to swallow the content silently.
-  // Re-enable when Ghostty ships actual text sizing GUI support.
-  // if (termProgram === "ghostty") return true
-
-  return false
+/**
+ * Build a terminal fingerprint for cache keying. Combines `program` +
+ * `version` from the supplied caps to uniquely identify the terminal type.
+ * Different versions may add/remove OSC 66 support, so version is part of
+ * the key.
+ *
+ * Post unicode-plateau Phase 2: caps is required — the legacy env-reading
+ * variant is gone. Callers building fingerprints from a one-shot probe can
+ * use `createTerminalProfile().caps` upstream.
+ */
+export function getTerminalFingerprint(caps: FingerprintCaps): string {
+  const program = caps.program || "unknown"
+  const version = caps.version || "unknown"
+  return `${program}@${version}`
 }
 
 /** Result of text sizing probe */
@@ -122,28 +113,20 @@ export interface TextSizingProbeResult {
 const probeCache = new Map<string, TextSizingProbeResult>()
 
 /**
- * Get a terminal fingerprint for cache keying.
- * Combines TERM_PROGRAM + TERM_PROGRAM_VERSION to uniquely identify
- * the terminal type. Different versions may add/remove OSC 66 support.
+ * Get a cached probe result for the given fingerprint, if available.
  */
-export function getTerminalFingerprint(): string {
-  const program = process.env.TERM_PROGRAM ?? "unknown"
-  const version = process.env.TERM_PROGRAM_VERSION ?? "unknown"
-  return `${program}@${version}`
+export function getCachedProbeResult(fingerprint: string): TextSizingProbeResult | undefined {
+  return probeCache.get(fingerprint)
 }
 
 /**
- * Get a cached probe result for the current terminal, if available.
+ * Store a probe result in the cache for the given fingerprint.
  */
-export function getCachedProbeResult(): TextSizingProbeResult | undefined {
-  return probeCache.get(getTerminalFingerprint())
-}
-
-/**
- * Store a probe result in the cache for the current terminal.
- */
-export function setCachedProbeResult(result: TextSizingProbeResult): void {
-  probeCache.set(getTerminalFingerprint(), result)
+export function setCachedProbeResult(
+  fingerprint: string,
+  result: TextSizingProbeResult,
+): void {
+  probeCache.set(fingerprint, result)
 }
 
 /**
@@ -153,14 +136,24 @@ export function clearProbeCache(): void {
   probeCache.clear()
 }
 
+// ============================================================================
+// Async probe
+// ============================================================================
+
 /**
  * Detect terminal support for the text sizing protocol.
  * Uses cursor position reports (CPR) to check if OSC 66 advances the cursor
  * by the specified width.
  *
- * Results are cached by terminal fingerprint so the probe only runs once
- * per terminal type per process.
+ * Results are cached by fingerprint so the probe only runs once per terminal
+ * type per process.
  *
+ * @param write - Writer function (TUI output)
+ * @param read - Reader function (CPR response source)
+ * @param fingerprint - Cache key. Derived via {@link getTerminalFingerprint}
+ *   from `TerminalCaps`; callers inside a running session typically compute
+ *   it once from `term.profile.caps`.
+ * @param timeout - Per-probe timeout in ms (default 1000)
  * @returns Object with `supported` and `widthOnly` flags:
  * - supported=true, widthOnly=false: full support (scale + width)
  * - supported=true, widthOnly=true: width mode only
@@ -169,10 +162,11 @@ export function clearProbeCache(): void {
 export async function detectTextSizingSupport(
   write: (data: string) => void,
   read: () => Promise<string>,
+  fingerprint: string,
   timeout = 1000,
 ): Promise<TextSizingProbeResult> {
   // Check cache first
-  const cached = getCachedProbeResult()
+  const cached = getCachedProbeResult(fingerprint)
   if (cached !== undefined) return cached
 
   // Detection sequence:
@@ -198,17 +192,17 @@ export async function detectTextSizingSupport(
       // Column 3 means the space occupied 2 cells (col is 1-indexed, started at 1)
       if (col === 3) {
         const result: TextSizingProbeResult = { supported: true, widthOnly: false }
-        setCachedProbeResult(result)
+        setCachedProbeResult(fingerprint, result)
         return result
       }
     }
 
     const result: TextSizingProbeResult = { supported: false, widthOnly: false }
-    setCachedProbeResult(result)
+    setCachedProbeResult(fingerprint, result)
     return result
   } catch {
     const result: TextSizingProbeResult = { supported: false, widthOnly: false }
-    setCachedProbeResult(result)
+    setCachedProbeResult(fingerprint, result)
     return result
   }
 }

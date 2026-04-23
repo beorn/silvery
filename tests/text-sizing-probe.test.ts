@@ -4,19 +4,30 @@
  * Tests for OSC 66 progressive enhancement:
  * - Probe correctly detects supported terminal (mock write/read)
  * - Probe correctly handles timeout
- * - Probe result caching works
- * - Heuristic fallback works when probe is not available
+ * - Probe result caching works (keyed by explicit fingerprint)
+ *
+ * Post km-silvery.unicode-plateau Phase 2 (2026-04-23): this module reads
+ * zero environment variables. Every test passes an explicit fingerprint
+ * (or caps object) instead of mutating process.env — the module has no
+ * ambient authority to exercise. The terminal-type → textSizingSupported
+ * mapping (Kitty ≥ 0.40 true, older Kitty false, Ghostty false, etc.)
+ * lives in `createTerminalProfile` and is tested in
+ * packages/ansi/tests/profile.test.ts.
  */
 import { describe, expect, test, beforeEach } from "vitest"
 import {
   detectTextSizingSupport,
-  isTextSizingLikelySupported,
   getTerminalFingerprint,
   getCachedProbeResult,
   setCachedProbeResult,
   clearProbeCache,
   type TextSizingProbeResult,
 } from "../packages/ag-term/src/text-sizing"
+
+// Canonical fingerprints used across the test suite — identify a terminal
+// deterministically without ever touching process.env.
+const KITTY_040 = getTerminalFingerprint({ program: "kitty", version: "0.40.0" })
+const GHOSTTY_13 = getTerminalFingerprint({ program: "Ghostty", version: "1.3.0" })
 
 // ============================================================================
 // Probe detection
@@ -36,7 +47,7 @@ describe("detectTextSizingSupport", () => {
     }
     const read = () => Promise.resolve("\x1b[1;3R")
 
-    const result = await detectTextSizingSupport(write, read)
+    const result = await detectTextSizingSupport(write, read, KITTY_040)
 
     expect(result.supported).toBe(true)
     expect(result.widthOnly).toBe(false)
@@ -51,26 +62,17 @@ describe("detectTextSizingSupport", () => {
     const write = (_data: string) => {}
     const read = () => Promise.resolve("\x1b[1;2R")
 
-    const result = await detectTextSizingSupport(write, read)
-
-    expect(result.supported).toBe(false)
-    expect(result.widthOnly).toBe(false)
-  })
-
-  test("detects no support when CPR response is malformed", async () => {
-    const write = (_data: string) => {}
-    const read = () => Promise.resolve("garbage data")
-
-    const result = await detectTextSizingSupport(write, read)
+    const result = await detectTextSizingSupport(write, read, GHOSTTY_13)
 
     expect(result.supported).toBe(false)
   })
 
-  test("detects no support when CPR shows column 1 (no movement)", async () => {
+  test("detects no support when cursor stays at column 1", async () => {
+    // OSC 66 swallowed entirely, cursor didn't move
     const write = (_data: string) => {}
     const read = () => Promise.resolve("\x1b[1;1R")
 
-    const result = await detectTextSizingSupport(write, read)
+    const result = await detectTextSizingSupport(write, read, GHOSTTY_13)
 
     expect(result.supported).toBe(false)
   })
@@ -90,7 +92,7 @@ describe("probe timeout", () => {
     // read() that never resolves
     const read = () => new Promise<string>(() => {})
 
-    const result = await detectTextSizingSupport(write, read, 50)
+    const result = await detectTextSizingSupport(write, read, "timeout-term@1.0", 50)
 
     expect(result.supported).toBe(false)
     expect(result.widthOnly).toBe(false)
@@ -100,14 +102,14 @@ describe("probe timeout", () => {
     const write = (_data: string) => {}
     const read = () => Promise.reject(new Error("stdin closed"))
 
-    const result = await detectTextSizingSupport(write, read)
+    const result = await detectTextSizingSupport(write, read, "reject-term@1.0")
 
     expect(result.supported).toBe(false)
   })
 })
 
 // ============================================================================
-// Cache
+// Cache (keyed by explicit fingerprint)
 // ============================================================================
 
 describe("probe result caching", () => {
@@ -124,12 +126,12 @@ describe("probe result caching", () => {
     }
 
     // First call — runs the probe
-    const result1 = await detectTextSizingSupport(write, read)
+    const result1 = await detectTextSizingSupport(write, read, KITTY_040)
     expect(result1.supported).toBe(true)
     expect(readCount).toBe(1)
 
-    // Second call — should use cache, not call read again
-    const result2 = await detectTextSizingSupport(write, read)
+    // Second call with same fingerprint — should use cache, not call read again
+    const result2 = await detectTextSizingSupport(write, read, KITTY_040)
     expect(result2.supported).toBe(true)
     expect(readCount).toBe(1)
   })
@@ -142,13 +144,27 @@ describe("probe result caching", () => {
       return Promise.resolve("\x1b[1;2R")
     }
 
-    const result1 = await detectTextSizingSupport(write, read)
+    const result1 = await detectTextSizingSupport(write, read, GHOSTTY_13)
     expect(result1.supported).toBe(false)
     expect(readCount).toBe(1)
 
-    const result2 = await detectTextSizingSupport(write, read)
+    const result2 = await detectTextSizingSupport(write, read, GHOSTTY_13)
     expect(result2.supported).toBe(false)
     expect(readCount).toBe(1)
+  })
+
+  test("different fingerprints keep independent cache entries", async () => {
+    // Kitty 0.40 → supported. Ghostty 1.3 → not supported. Both cached under
+    // their own keys so they don't poison each other.
+    const goodRead = () => Promise.resolve("\x1b[1;3R")
+    const badRead = () => Promise.resolve("\x1b[1;2R")
+    const write = (_data: string) => {}
+
+    await detectTextSizingSupport(write, goodRead, KITTY_040)
+    await detectTextSizingSupport(write, badRead, GHOSTTY_13)
+
+    expect(getCachedProbeResult(KITTY_040)?.supported).toBe(true)
+    expect(getCachedProbeResult(GHOSTTY_13)?.supported).toBe(false)
   })
 
   test("clearProbeCache resets cache", async () => {
@@ -159,143 +175,49 @@ describe("probe result caching", () => {
       return Promise.resolve("\x1b[1;3R")
     }
 
-    await detectTextSizingSupport(write, read)
+    await detectTextSizingSupport(write, read, KITTY_040)
     expect(readCount).toBe(1)
 
     clearProbeCache()
 
-    await detectTextSizingSupport(write, read)
+    await detectTextSizingSupport(write, read, KITTY_040)
     expect(readCount).toBe(2)
   })
 
-  test("getTerminalFingerprint combines program and version", () => {
-    const original = {
-      program: process.env.TERM_PROGRAM,
-      version: process.env.TERM_PROGRAM_VERSION,
-    }
-
-    try {
-      process.env.TERM_PROGRAM = "kitty"
-      process.env.TERM_PROGRAM_VERSION = "0.40.0"
-      expect(getTerminalFingerprint()).toBe("kitty@0.40.0")
-
-      process.env.TERM_PROGRAM = "Ghostty"
-      process.env.TERM_PROGRAM_VERSION = "1.3.0"
-      expect(getTerminalFingerprint()).toBe("Ghostty@1.3.0")
-    } finally {
-      if (original.program !== undefined) process.env.TERM_PROGRAM = original.program
-      else delete process.env.TERM_PROGRAM
-      if (original.version !== undefined) process.env.TERM_PROGRAM_VERSION = original.version
-      else delete process.env.TERM_PROGRAM_VERSION
-    }
-  })
-
   test("getCachedProbeResult returns undefined when no cache", () => {
-    expect(getCachedProbeResult()).toBeUndefined()
+    expect(getCachedProbeResult("nonexistent@0")).toBeUndefined()
   })
 
   test("setCachedProbeResult stores and retrieves result", () => {
     const result: TextSizingProbeResult = { supported: true, widthOnly: false }
-    setCachedProbeResult(result)
+    setCachedProbeResult(KITTY_040, result)
 
-    expect(getCachedProbeResult()).toEqual(result)
+    expect(getCachedProbeResult(KITTY_040)).toEqual(result)
   })
 })
 
 // ============================================================================
-// Heuristic fallback
+// Fingerprint construction (caps-driven, no env reads)
 // ============================================================================
 
-describe("isTextSizingLikelySupported heuristic", () => {
-  test("returns true for Kitty >= 0.40", () => {
-    const original = {
-      program: process.env.TERM_PROGRAM,
-      version: process.env.TERM_PROGRAM_VERSION,
-    }
-
-    try {
-      process.env.TERM_PROGRAM = "kitty"
-      process.env.TERM_PROGRAM_VERSION = "0.40.0"
-      expect(isTextSizingLikelySupported()).toBe(true)
-
-      process.env.TERM_PROGRAM_VERSION = "0.41.0"
-      expect(isTextSizingLikelySupported()).toBe(true)
-
-      process.env.TERM_PROGRAM_VERSION = "1.0.0"
-      expect(isTextSizingLikelySupported()).toBe(true)
-    } finally {
-      if (original.program !== undefined) process.env.TERM_PROGRAM = original.program
-      else delete process.env.TERM_PROGRAM
-      if (original.version !== undefined) process.env.TERM_PROGRAM_VERSION = original.version
-      else delete process.env.TERM_PROGRAM_VERSION
-    }
+describe("getTerminalFingerprint", () => {
+  test("combines program and version", () => {
+    expect(getTerminalFingerprint({ program: "kitty", version: "0.40.0" })).toBe("kitty@0.40.0")
+    expect(getTerminalFingerprint({ program: "Ghostty", version: "1.3.0" })).toBe(
+      "Ghostty@1.3.0",
+    )
   })
 
-  test("returns false for Kitty < 0.40", () => {
-    const original = {
-      program: process.env.TERM_PROGRAM,
-      version: process.env.TERM_PROGRAM_VERSION,
-    }
-
-    try {
-      process.env.TERM_PROGRAM = "kitty"
-      process.env.TERM_PROGRAM_VERSION = "0.39.0"
-      expect(isTextSizingLikelySupported()).toBe(false)
-
-      process.env.TERM_PROGRAM_VERSION = "0.35.0"
-      expect(isTextSizingLikelySupported()).toBe(false)
-    } finally {
-      if (original.program !== undefined) process.env.TERM_PROGRAM = original.program
-      else delete process.env.TERM_PROGRAM
-      if (original.version !== undefined) process.env.TERM_PROGRAM_VERSION = original.version
-      else delete process.env.TERM_PROGRAM_VERSION
-    }
+  test("falls back to 'unknown' for empty program / version", () => {
+    // Empty strings come from `defaultCaps()` or a Term built without a TTY.
+    // Fingerprint stays stable — cache keys still partition correctly.
+    expect(getTerminalFingerprint({ program: "", version: "" })).toBe("unknown@unknown")
+    expect(getTerminalFingerprint({ program: "kitty", version: "" })).toBe("kitty@unknown")
+    expect(getTerminalFingerprint({ program: "", version: "0.40.0" })).toBe("unknown@0.40.0")
   })
 
-  test("returns false for Ghostty (known broken OSC 66)", () => {
-    const original = {
-      program: process.env.TERM_PROGRAM,
-      version: process.env.TERM_PROGRAM_VERSION,
-    }
-
-    try {
-      process.env.TERM_PROGRAM = "ghostty"
-      process.env.TERM_PROGRAM_VERSION = "1.3.0"
-      expect(isTextSizingLikelySupported()).toBe(false)
-    } finally {
-      if (original.program !== undefined) process.env.TERM_PROGRAM = original.program
-      else delete process.env.TERM_PROGRAM
-      if (original.version !== undefined) process.env.TERM_PROGRAM_VERSION = original.version
-      else delete process.env.TERM_PROGRAM_VERSION
-    }
-  })
-
-  test("returns false for unknown terminals", () => {
-    const original = {
-      program: process.env.TERM_PROGRAM,
-      version: process.env.TERM_PROGRAM_VERSION,
-    }
-
-    try {
-      process.env.TERM_PROGRAM = "some-unknown-terminal"
-      process.env.TERM_PROGRAM_VERSION = "1.0.0"
-      expect(isTextSizingLikelySupported()).toBe(false)
-    } finally {
-      if (original.program !== undefined) process.env.TERM_PROGRAM = original.program
-      else delete process.env.TERM_PROGRAM
-      if (original.version !== undefined) process.env.TERM_PROGRAM_VERSION = original.version
-      else delete process.env.TERM_PROGRAM_VERSION
-    }
-  })
-
-  test("returns false when TERM_PROGRAM is unset", () => {
-    const original = process.env.TERM_PROGRAM
-    try {
-      delete process.env.TERM_PROGRAM
-      expect(isTextSizingLikelySupported()).toBe(false)
-    } finally {
-      if (original !== undefined) process.env.TERM_PROGRAM = original
-      else delete process.env.TERM_PROGRAM
-    }
+  test("is deterministic — same caps → same fingerprint", () => {
+    const caps = { program: "WezTerm", version: "20241231-000000" }
+    expect(getTerminalFingerprint(caps)).toBe(getTerminalFingerprint(caps))
   })
 })

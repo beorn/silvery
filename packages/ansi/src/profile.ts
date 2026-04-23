@@ -471,6 +471,7 @@ export function detectTerminalCapsFromEnv(
   stdout: TerminalProfileStdout,
 ): TerminalCaps {
   const program = env.TERM_PROGRAM ?? ""
+  const version = env.TERM_PROGRAM_VERSION ?? ""
   const term = env.TERM ?? ""
   const noColor = env.NO_COLOR !== undefined
 
@@ -492,7 +493,6 @@ export function detectTerminalCapsFromEnv(
 
   let isKittyWithTextSizing = false
   if (isKitty) {
-    const version = env.TERM_PROGRAM_VERSION ?? ""
     const parts = version.split(".")
     const major = Number(parts[0]) || 0
     const minor = Number(parts[1]) || 0
@@ -535,6 +535,7 @@ export function detectTerminalCapsFromEnv(
   return {
     ...defaultCaps(),
     program,
+    version,
     term,
     colorLevel,
     kittyKeyboard: isKitty || isGhostty || isWezTerm || isFoot,

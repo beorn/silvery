@@ -69,9 +69,9 @@ import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCu
 import { createFocusEvent, dispatchFocusEvent } from "@silvery/ag/focus-events"
 import { createPipeline } from "../measurer"
 import {
-  isTextSizingLikelySupported,
   detectTextSizingSupport,
   getCachedProbeResult,
+  getTerminalFingerprint,
 } from "../text-sizing"
 import { createWidthDetector, applyWidthConfig } from "../ansi/width-detection"
 import {
@@ -997,17 +997,20 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       }
 
   // Resolve textSizing from caps + option
-  // For "auto": use heuristic first, probe to verify if heuristic says yes
+  // For "auto": use caps flag first, probe to verify if caps says yes
   // For "probe": start disabled, probe async to determine
   // For true/false: use directly
-  // Pass caps through so the helper prefers the profile's authoritative flag
-  // over its legacy env probe. When caps is present, this collapses to a
-  // direct read; when caps is missing (rare test path) the env probe kicks in.
-  const heuristicSupported = isTextSizingLikelySupported(capsOption)
+  // Post km-silvery.unicode-plateau Phase 2: read `caps.textSizingSupported`
+  // directly — profile.ts already computed the authoritative flag from
+  // TERM=xterm-kitty + TERM_PROGRAM_VERSION. No second env probe.
+  const heuristicSupported = capsOption?.textSizingSupported ?? false
   const shouldProbe =
     textSizingOption === "probe" || (textSizingOption === "auto" && heuristicSupported)
+  // Probe-cache fingerprint: program@version, derived from caps. Computed
+  // once so the initial cache check and the async-probe path share one key.
+  const probeFingerprint = getTerminalFingerprint(capsOption ?? { program: "", version: "" })
   // If we have a cached probe result, use it immediately instead of probing again
-  const cachedProbe = shouldProbe ? getCachedProbeResult() : undefined
+  const cachedProbe = shouldProbe ? getCachedProbeResult(probeFingerprint) : undefined
   let textSizingEnabled: boolean
   if (textSizingOption === true) {
     textSizingEnabled = true
@@ -2643,6 +2646,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         const probeResult = await detectTextSizingSupport(
           (data) => (output ? output.write(data) : stdout.write(data)),
           probeRead,
+          probeFingerprint,
           500, // Short timeout — probe should be fast
         )
 

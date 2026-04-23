@@ -495,6 +495,119 @@ describe("createTerminalProfile — caps.unicode env-sensitivity", () => {
 })
 
 // ============================================================================
+// caps.textSizingSupported + caps.version — migrated from the retired
+// isTextSizingLikelySupported env probe (unicode-plateau Phase 2, 2026-04-23).
+// ============================================================================
+
+describe("createTerminalProfile — caps.textSizingSupported (Kitty ≥ 0.40)", () => {
+  test("Kitty 0.40 on TERM=xterm-kitty: textSizingSupported true", () => {
+    const profile = createTerminalProfile({
+      env: {
+        TERM: "xterm-kitty",
+        TERM_PROGRAM: "kitty",
+        TERM_PROGRAM_VERSION: "0.40.0",
+      },
+      stdout: tty,
+    })
+    expect(profile.caps.textSizingSupported).toBe(true)
+  })
+
+  test("Kitty 0.41 on TERM=xterm-kitty: textSizingSupported true", () => {
+    const profile = createTerminalProfile({
+      env: {
+        TERM: "xterm-kitty",
+        TERM_PROGRAM: "kitty",
+        TERM_PROGRAM_VERSION: "0.41.0",
+      },
+      stdout: tty,
+    })
+    expect(profile.caps.textSizingSupported).toBe(true)
+  })
+
+  test("Kitty 1.0 on TERM=xterm-kitty: textSizingSupported true (major bump)", () => {
+    const profile = createTerminalProfile({
+      env: {
+        TERM: "xterm-kitty",
+        TERM_PROGRAM: "kitty",
+        TERM_PROGRAM_VERSION: "1.0.0",
+      },
+      stdout: tty,
+    })
+    expect(profile.caps.textSizingSupported).toBe(true)
+  })
+
+  test("Kitty 0.39 on TERM=xterm-kitty: textSizingSupported false (below threshold)", () => {
+    const profile = createTerminalProfile({
+      env: {
+        TERM: "xterm-kitty",
+        TERM_PROGRAM: "kitty",
+        TERM_PROGRAM_VERSION: "0.39.0",
+      },
+      stdout: tty,
+    })
+    expect(profile.caps.textSizingSupported).toBe(false)
+  })
+
+  test("Kitty 0.35 on TERM=xterm-kitty: textSizingSupported false", () => {
+    const profile = createTerminalProfile({
+      env: {
+        TERM: "xterm-kitty",
+        TERM_PROGRAM: "kitty",
+        TERM_PROGRAM_VERSION: "0.35.0",
+      },
+      stdout: tty,
+    })
+    expect(profile.caps.textSizingSupported).toBe(false)
+  })
+
+  test("Ghostty 1.3 on TERM=xterm-ghostty: textSizingSupported false (known broken OSC 66)", () => {
+    const profile = createTerminalProfile({
+      env: {
+        TERM: "xterm-ghostty",
+        TERM_PROGRAM: "Ghostty",
+        TERM_PROGRAM_VERSION: "1.3.0",
+      },
+      stdout: tty,
+    })
+    expect(profile.caps.textSizingSupported).toBe(false)
+  })
+
+  test("unknown terminal: textSizingSupported false", () => {
+    const profile = createTerminalProfile({
+      env: {
+        TERM_PROGRAM: "some-unknown-terminal",
+        TERM_PROGRAM_VERSION: "1.0.0",
+      },
+      stdout: tty,
+    })
+    expect(profile.caps.textSizingSupported).toBe(false)
+  })
+
+  test("TERM_PROGRAM unset: textSizingSupported false", () => {
+    const profile = createTerminalProfile({ env: {}, stdout: tty })
+    expect(profile.caps.textSizingSupported).toBe(false)
+  })
+})
+
+describe("createTerminalProfile — caps.version", () => {
+  test("caps.version mirrors TERM_PROGRAM_VERSION", () => {
+    const profile = createTerminalProfile({
+      env: { TERM_PROGRAM: "kitty", TERM_PROGRAM_VERSION: "0.40.0" },
+      stdout: tty,
+    })
+    expect(profile.caps.version).toBe("0.40.0")
+  })
+
+  test("caps.version is empty string when TERM_PROGRAM_VERSION unset", () => {
+    const profile = createTerminalProfile({
+      env: { TERM_PROGRAM: "kitty" },
+      stdout: tty,
+    })
+    expect(profile.caps.version).toBe("")
+  })
+})
+
+// ============================================================================
 // Internal helpers — detectColorFromEnv / detectTerminalCapsFromEnv
 // (exported-internal so test fixtures can drive them deterministically)
 // ============================================================================

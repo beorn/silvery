@@ -83,6 +83,11 @@ export function detectInput(stdin: NodeJS.ReadStream): boolean {
 export interface TerminalCaps {
   /** Terminal program name (from TERM_PROGRAM) */
   program: string
+  /** Terminal program version string (from TERM_PROGRAM_VERSION). Empty when
+   * the host doesn't advertise a version. Together with `program`, forms the
+   * `program@version` fingerprint used as the probe-cache key in
+   * `@silvery/ag-term/text-sizing`. See km-silvery.unicode-plateau Phase 2. */
+  version: string
   /** TERM value */
   term: string
   /** Color support tier. See {@link ColorTier}. */
@@ -129,6 +134,7 @@ export interface TerminalCaps {
 export function defaultCaps(): TerminalCaps {
   return {
     program: "",
+    version: "",
     term: "",
     colorLevel: "truecolor",
     kittyKeyboard: false,
