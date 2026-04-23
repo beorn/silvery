@@ -543,6 +543,23 @@ export interface AgNode {
   inlineRects?: Array<{ x: number; y: number; width: number; height: number }> | null
 
   /**
+   * Render-phase flag: "did this Box have an attr overlay (underline /
+   * strikethrough / etc.) applied in the previous frame?" Written by the
+   * render phase after `applyBoxAttrOverlay`. Read next frame to decide
+   * whether `stylePropsDirty` on the Box must escalate to `contentAreaAffected`
+   * (so the prev-frame merge-attr bits can be cleared via re-render).
+   *
+   * `mergeAttrsInRect` OR-combines — it can't clear bits. So when a Box's
+   * attr overlay goes away (true → false, or style change), the clone buffer
+   * still carries the old attr bits. This flag lets us detect the "had overlay
+   * in prev frame" case without storing prev props.
+   *
+   * Only meaningful for silvery-box nodes. Defaults to undefined / false.
+   * @internal
+   */
+  hadBoxAttrOverlay?: boolean
+
+  /**
    * Interactive state signals — written by pointer/selection/focus state machines,
    * read by theme/render for automatic styling (hover highlights, focus rings, etc.).
    *

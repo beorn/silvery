@@ -602,6 +602,36 @@ function renderNodeToBuffer(
         (cascade.contentAreaAffected || cascade.bgRefillNeeded)
       cascade = { ...cascade, bgOnlyChange: false, childrenNeedFreshRender }
     }
+
+    // Box attr-overlay safety: when stylePropsDirty on a silvery-box and the
+    // overlay is either PRESENT NOW or WAS present last frame, the cloned
+    // buffer may carry stale merged attrs. mergeAttrsInRect is OR-combining —
+    // it cannot clear bits on its own. Force contentAreaAffected so the region
+    // is cleared, children re-render fresh, and the merge applies the correct
+    // new attrs (which may be "none").
+    //
+    // `node.hadBoxAttrOverlay` is set at the end of applyBoxAttrOverlay when
+    // the Box had ANY overlay attr, so the next frame's stylePropsDirty knows
+    // the prev frame baked attrs into its cells.
+    //
+    // Gated to stylePropsDirty to avoid unnecessary cascades. Boxes that
+    // never had overlay (both current and prev frame) stay on the fast path.
+    if (
+      node.type === "silvery-box" &&
+      isDirty(node.dirtyBits, node.dirtyEpoch, STYLE_PROPS_BIT) &&
+      (mayHaveBoxAttrOverlay(props as BoxProps) || node.hadBoxAttrOverlay)
+    ) {
+      const contentRegionCleared =
+        (hasPrevBuffer || ancestorCleared) && !getEffectiveBg(props)
+      const childrenNeedFreshRender = hasPrevBuffer || ancestorCleared
+      cascade = {
+        ...cascade,
+        contentAreaAffected: true,
+        bgOnlyChange: false,
+        contentRegionCleared,
+        childrenNeedFreshRender,
+      }
+    }
     const { contentRegionCleared, skipBgFill, childrenNeedFreshRender } = cascade
 
     // DIAG: Per-node trace, cascade tracking, and cell debug
@@ -749,8 +779,12 @@ function renderNodeToBuffer(
     //
     // Gated to silvery-box so Text nodes keep using their existing style path
     // (attrs baked into cell writes during renderText).
+    //
+    // Sets `node.hadBoxAttrOverlay` so next frame's cascade can detect the
+    // "overlay was removed" case and trigger a clear.
     if (node.type === "silvery-box") {
-      applyBoxAttrOverlay(buffer, layout, props, scrollOffset, clipBounds)
+      const applied = applyBoxAttrOverlay(buffer, layout, props, scrollOffset, clipBounds)
+      node.hadBoxAttrOverlay = applied
     }
 
     // Outlines are NOT rendered here — the decoration phase (post-content)
@@ -1098,6 +1132,32 @@ function renderOwnContent(
 // ============================================================================
 
 /**
+ * Cheap check: is ANY attr-overlay prop present on this Box right now?
+ *
+ * Used by the cascade to decide whether `stylePropsDirty` on a silvery-box
+ * should escalate to `contentAreaAffected`. We can't reliably inspect the
+ * PREVIOUS frame's props from here, so we conservatively escalate whenever
+ * EITHER the current frame OR a neighbor frame might have had overlay.
+ * The single-call common case (Box with no attr overlay ever) stays on the
+ * fast path because this returns false both frames and the stylePropsDirty
+ * gate doesn't fire (stylePropsDirty requires a prop-change reconciler event,
+ * which won't happen for a Box that never had these props).
+ */
+function mayHaveBoxAttrOverlay(props: BoxProps): boolean {
+  return !!(
+    props.underline ||
+    props.underlineStyle ||
+    props.underlineColor ||
+    props.bold ||
+    props.dim ||
+    props.dimColor ||
+    props.italic ||
+    props.inverse ||
+    props.strikethrough
+  )
+}
+
+/**
  * Detect which attr props are active on a Box. Only returns the overlay
  * subset — attrs that benefit from merge-over-children semantics.
  *
@@ -1158,6 +1218,10 @@ function computeBoxAttrOverlay(
  * Apply a Box's attr overlay to its rect, respecting scroll offset and clip
  * bounds. Runs AFTER children render so attrs layer on top of content without
  * overwriting glyphs/fg/bg.
+ *
+ * @returns true when an overlay was actually applied — used by the caller to
+ * set `node.hadBoxAttrOverlay`, which next frame's cascade reads to detect
+ * overlay removal.
  */
 function applyBoxAttrOverlay(
   buffer: TerminalBuffer,
@@ -1165,9 +1229,9 @@ function applyBoxAttrOverlay(
   props: BoxProps,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
-): void {
+): boolean {
   const overlay = computeBoxAttrOverlay(props)
-  if (!overlay) return
+  if (!overlay) return false
 
   const x = layout.x
   const y = layout.y - scrollOffset
@@ -1179,20 +1243,21 @@ function applyBoxAttrOverlay(
   if (clipBounds) {
     const topClipped = Math.max(ry, clipBounds.top)
     const bottomClipped = Math.min(ry + rh, clipBounds.bottom)
-    if (topClipped >= bottomClipped) return
+    if (topClipped >= bottomClipped) return false
     ry = topClipped
     rh = bottomClipped - topClipped
 
     if (clipBounds.left !== undefined && clipBounds.right !== undefined) {
       const leftClipped = Math.max(rx, clipBounds.left)
       const rightClipped = Math.min(rx + rw, clipBounds.right)
-      if (leftClipped >= rightClipped) return
+      if (leftClipped >= rightClipped) return false
       rx = leftClipped
       rw = rightClipped - leftClipped
     }
   }
 
   buffer.mergeAttrsInRect(rx, ry, rw, rh, overlay.attrs, overlay.underlineColor)
+  return true
 }
 
 // ============================================================================
