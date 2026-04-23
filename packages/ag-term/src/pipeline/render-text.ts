@@ -228,15 +228,33 @@ function mergeStyleContext(parent: StyleContext, childProps: TextProps): StyleCo
   // with the raw keyword, which styleToAnsi then mapped to null (no fg SGR).
   const isInheritKeyword = childProps.color === "inherit" || childProps.color === "currentColor"
   const effectiveChildColor = isInheritKeyword ? parent.color : childProps.color
+
+  // Normalize unified `underline: boolean | UnderlineStyleName` on the child.
+  // `underlineStyle` (deprecated) wins when both are set; otherwise string form
+  // promotes to both underline=true AND underlineStyle=<name>.
+  const childUl = childProps.underline
+  const childUlStyle = (childProps as any).underlineStyle
+  let childUnderline: boolean | undefined
+  let childUnderlineStyle: string | false | undefined
+  if (childUlStyle !== undefined) {
+    childUnderline = childUlStyle === false ? false : true
+    childUnderlineStyle = childUlStyle
+  } else if (typeof childUl === "string") {
+    childUnderline = true
+    childUnderlineStyle = childUl
+  } else if (childUl !== undefined) {
+    childUnderline = childUl
+    childUnderlineStyle = undefined
+  }
+
   return {
     color: effectiveChildColor ?? parent.color,
     backgroundColor: childProps.backgroundColor ?? parent.backgroundColor,
     bold: childProps.bold ?? parent.bold,
     dim: childProps.dim ?? childProps.dimColor ?? parent.dim,
     italic: childProps.italic ?? parent.italic,
-    underline:
-      (childProps.underline ?? (childProps as any).underlineStyle) ? true : parent.underline,
-    underlineStyle: (childProps as any).underlineStyle ?? parent.underlineStyle,
+    underline: childUnderline ?? parent.underline,
+    underlineStyle: childUnderlineStyle ?? parent.underlineStyle,
     underlineColor: (childProps as any).underlineColor ?? parent.underlineColor,
     inverse: childProps.inverse ?? parent.inverse,
     strikethrough: childProps.strikethrough ?? parent.strikethrough,
@@ -1404,14 +1422,31 @@ export function renderText(
   // nested virtual <Text color="inherit"> children can resolve "inherit" /
   // "currentColor" back to the owner Text's color. Without this, virtual
   // children only see "{}" and keyword lookups produced no fg.
+  // Normalize unified `underline: boolean | UnderlineStyleName` prop.
+  // Precedence matches getTextStyle / AdapterStyleContext:
+  //   1. underlineStyle (deprecated) wins when set
+  //   2. underline: "string" → both boolean + style name
+  //   3. underline: true → boolean only (style name undefined)
+  let rootUnderline: boolean | undefined
+  let rootUnderlineStyle: string | false | undefined
+  if (props.underlineStyle !== undefined) {
+    rootUnderline = props.underlineStyle !== false
+    rootUnderlineStyle = props.underlineStyle
+  } else if (typeof props.underline === "string") {
+    rootUnderline = true
+    rootUnderlineStyle = props.underline
+  } else if (props.underline !== undefined) {
+    rootUnderline = props.underline
+  }
+
   const rootContext: StyleContext = {
     color: props.color,
     backgroundColor: props.backgroundColor,
     bold: props.bold,
     dim: props.dim || props.dimColor,
     italic: props.italic,
-    underline: !!(props.underline || props.underlineStyle),
-    underlineStyle: props.underlineStyle,
+    underline: rootUnderline,
+    underlineStyle: rootUnderlineStyle,
     underlineColor: props.underlineColor,
     inverse: props.inverse,
     strikethrough: props.strikethrough,
