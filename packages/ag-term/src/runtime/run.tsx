@@ -292,8 +292,8 @@ export async function run(
         stdin: mockStdin,
         stdout: termStdoutInternal, // Feeds emulator — protocol escapes reach the emulator
         guardOutput: false, // Don't monkeypatch process.stdout in test/emulator context
-        cols: term.cols ?? 80,
-        rows: term.rows ?? 24,
+        cols: term.size.cols(),
+        rows: term.size.rows(),
       })
       return wrapHandle(handle)
     }
@@ -345,8 +345,8 @@ export async function run(
       term,
       stdout: termStdout,
       stdin: termStdin,
-      cols: term.cols ?? undefined,
-      rows: term.rows ?? undefined,
+      cols: term.size.cols(),
+      rows: term.size.rows(),
       caps,
       alternateScreen: true,
       kitty: caps.kittyKeyboard,

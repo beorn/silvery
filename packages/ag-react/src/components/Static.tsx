@@ -85,7 +85,7 @@ export function Static<T>({ items, children, style }: StaticProps<T>): JSX.Eleme
 
   // In inline mode, promote new items to terminal scrollback
   if (promoteScrollback && isLayoutEngineInitialized()) {
-    const renderWidth = term?.cols ?? 80
+    const renderWidth = term?.size.cols() ?? 80
     const prevPromoted = promotedCountRef.current
 
     // Promote all rendered items that haven't been promoted yet

@@ -223,8 +223,8 @@ export function resolveFromTerm(term: Term): ResolvedTermDef {
   const { stdin, stdout } = getInternalStreams(term)
   return {
     stdout,
-    width: term.cols ?? DEFAULT_WIDTH,
-    height: term.rows ?? DEFAULT_HEIGHT,
+    width: term.size.cols(),
+    height: term.size.rows(),
     colors: term.hasColor(),
     // Term instances always have interactive capabilities
     events: createInputEvents(stdin),
