@@ -307,8 +307,12 @@ export async function run(
       return wrapHandle(handle)
     }
 
-    // Real terminal: full setup
-    const detectedCaps = term.caps ?? detectTerminalCaps()
+    // Real terminal: full setup.
+    // `term.caps` is guaranteed populated (Phase 2 of
+    // km-silvery.terminal-profile-plateau made it non-optional). No more
+    // `?? detectTerminalCaps()` fallback — the Term constructor already chose
+    // the right defaults for its backend.
+    const detectedCaps = term.caps
     // Honor termOptions.colorLevel + env vars (same precedence as the options path).
     const termTier = resolveColorTier(termOptions?.colorLevel, detectedCaps)
     const caps: TerminalCaps = termTier

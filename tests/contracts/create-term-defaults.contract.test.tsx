@@ -13,8 +13,10 @@
  *
  * Documented defaults this file pins:
  *   - Headless mode: no stdout or stdin wired
- *   - Headless mode: caps are computed (not null)
- *   - Node mode: caps delegate to `detectTerminalCaps()` — which now honors
+ *   - Headless mode: `term.caps` is always populated — `defaultCaps()` with
+ *     `colorLevel: 'mono'` (Phase 2 of km-silvery.terminal-profile-plateau
+ *     made `Term.caps` non-optional across every constructor)
+ *   - Node mode: caps delegate to `detectTerminalCaps()` — which honors
  *     FORCE_COLOR (seed 2 of the Phase 1 regression set)
  *
  * Seed row in this file: FORCE_COLOR flows through `createTerm()`'s default
@@ -57,14 +59,31 @@ describe("contract: createTerm({ cols, rows }) (headless)", () => {
     expect(term.rows).toBe(10)
   })
 
-  test("contract: headless term has caps: undefined (I/O-less — no detection)", () => {
-    // Headless Term deliberately has `caps: undefined` — it does no I/O, so
-    // there's no terminal to detect capabilities for. This is the documented
-    // shape (see packages/ag-term/src/ansi/term.ts:861). Pin it so nobody
-    // accidentally flips this to eager defaultCaps() — that would silently
-    // mask FORCE_COLOR handling at the run() level where caps are finalized.
+  test("contract: headless term has populated caps (Phase 2: always-on)", () => {
+    // Phase 2 of km-silvery.terminal-profile-plateau made `Term.caps`
+    // non-optional. Headless Terms still do no I/O, but they now carry a
+    // deterministic `defaultCaps()`-derived profile so callers can read
+    // `term.caps.X` without a `?? detectTerminalCaps()` fallback. Headless
+    // defaults to `colorLevel: 'mono'` to match `hasColor()` — tests wanting
+    // a richer profile pass `{ caps: { colorLevel: 'truecolor' } }`.
     const term = createTerm({ cols: 80, rows: 24 })
-    expect(term.caps).toBeUndefined()
+    expect(term.caps).toBeDefined()
+    expect(term.caps.colorLevel).toBe("mono")
+    expect(term.caps.unicode).toBe(false)
+    expect(term.caps.mouse).toBe(false)
+  })
+
+  test("contract: headless term accepts caps override", () => {
+    // `createTermless()` exposes `caps?: Partial<TerminalCaps>` via
+    // `createTerm({ cols, rows, caps })`. The override merges with
+    // `defaultCaps()` so callers only specify the fields they care about.
+    const term = createTerm({
+      cols: 80,
+      rows: 24,
+      caps: { colorLevel: "truecolor", kittyKeyboard: true },
+    })
+    expect(term.caps.colorLevel).toBe("truecolor")
+    expect(term.caps.kittyKeyboard).toBe(true)
   })
 })
 
@@ -86,7 +105,7 @@ describe("contract: createTerm({ caps }) overrides detection", () => {
     const term = createTerm({
       caps: { colorLevel: "truecolor" } as any,
     })
-    expect(term.caps?.colorLevel).toBe("truecolor")
+    expect(term.caps.colorLevel).toBe("truecolor")
   })
 
   test("contract: explicit caps override auto-detection (mono)", () => {
@@ -94,7 +113,7 @@ describe("contract: createTerm({ caps }) overrides detection", () => {
     const term = createTerm({
       caps: { colorLevel: "mono" } as any,
     })
-    expect(term.caps?.colorLevel).toBe("mono")
+    expect(term.caps.colorLevel).toBe("mono")
   })
 })
 

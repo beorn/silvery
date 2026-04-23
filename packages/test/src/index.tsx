@@ -134,7 +134,7 @@ await ensureDefaultLayoutEngine()
 // Termless — in-process terminal emulation for full ANSI testing
 // ============================================================================
 
-import { createTerm, type Term } from "@silvery/ag-term"
+import { createTerm, type Term, type TerminalCaps } from "@silvery/ag-term"
 
 /**
  * Live-termless tracker. Each `createTermless()` registers a WeakRef to the
@@ -295,9 +295,22 @@ function sgrButtonByte(options?: TermlessMouseOptions): number {
  * await term.mouse.click(10, 5)
  * await term.mouse.click(10, 5, { shift: true })
  * ```
+ *
+ * @example Override capabilities (defaults-contract tests)
+ * ```tsx
+ * using term = createTermless({ cols: 80, rows: 24, caps: { colorLevel: '256' } })
+ * ```
+ *
+ * Without a `caps` override, `term.caps` is populated from `defaultCaps()`
+ * (truecolor / unicode / mouse). Callers that want a specific terminal
+ * profile for a test — Apple_Terminal's lack of `textEmojiWide`, Kitty's
+ * `kittyKeyboard`, etc. — can pass a `Partial<TerminalCaps>` here.
  */
 export function createTermless(
-  dims: { cols: number; rows: number } = { cols: 80, rows: 24 },
+  dims: { cols: number; rows: number; caps?: Partial<TerminalCaps> } = {
+    cols: 80,
+    rows: 24,
+  },
 ): TermlessTerm {
   // Lazy import — only loads xterm.js when createTermless is called
   const { createXtermBackend } = require("@termless/xtermjs") as {

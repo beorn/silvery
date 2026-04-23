@@ -257,10 +257,17 @@ export interface Term extends Disposable, StyleChain {
 
   /**
    * Terminal capabilities profile.
-   * Detected when stdin is a TTY, undefined otherwise.
-   * Override via createTerm({ caps: { ... } }).
+   *
+   * Always populated — every Term constructor commits to a full TerminalCaps.
+   * Node-backed Terms with TTY stdin detect from the environment; non-TTY
+   * Node terms, headless Terms, and emulator-backed Terms use sensible
+   * deterministic defaults (`defaultCaps()` — truecolor, unicode, no kitty
+   * keyboard). Override via `createTerm({ caps: { … } })`.
+   *
+   * Post km-silvery.terminal-profile-plateau Phase 2 this is non-optional —
+   * callers no longer need `term.caps ?? detectTerminalCaps()` guards.
    */
-  readonly caps: TerminalCaps | undefined
+  readonly caps: TerminalCaps
 
   // -------------------------------------------------------------------------
   // Dimensions
@@ -591,15 +598,27 @@ function finalizeTerm(
  * ```
  */
 export function createTerm(options?: CreateTermOptions): Term
-export function createTerm(dims: { cols: number; rows: number }): Term
-export function createTerm(backend: TermEmulatorBackend, dims: { cols: number; rows: number }): Term
-export function createTerm(emulator: TermEmulator): Term
+export function createTerm(dims: {
+  cols: number
+  rows: number
+  caps?: Partial<TerminalCaps>
+}): Term
 export function createTerm(
-  first?: CreateTermOptions | { cols: number; rows: number } | TermEmulator | TermEmulatorBackend,
-  second?: { cols: number; rows: number },
+  backend: TermEmulatorBackend,
+  dims: { cols: number; rows: number; caps?: Partial<TerminalCaps> },
+): Term
+export function createTerm(emulator: TermEmulator, opts?: { caps?: Partial<TerminalCaps> }): Term
+export function createTerm(
+  first?:
+    | CreateTermOptions
+    | { cols: number; rows: number; caps?: Partial<TerminalCaps> }
+    | TermEmulator
+    | TermEmulatorBackend,
+  second?: { cols: number; rows: number; caps?: Partial<TerminalCaps> } | { caps?: Partial<TerminalCaps> },
 ): Term {
-  // Two-arg: createTerm(backend, { cols, rows }) — raw backend + dims
+  // Two-arg: createTerm(backend, { cols, rows, caps? }) — raw backend + dims
   if (second && first && isTermBackend(first)) {
+    const dims = second as { cols: number; rows: number; caps?: Partial<TerminalCaps> }
     // Lazy require — @termless/core is an optional dependency, only needed
     // for emulator backends. Using a variable prevents static analysis from
     // trying to resolve it at bundle/parse time.
@@ -611,16 +630,22 @@ export function createTerm(
         rows: number
       }) => TermEmulator
     }
-    const emulator = createTerminal({ backend: first as TermEmulatorBackend, ...second })
-    return createBackendTerm(emulator)
+    const emulator = createTerminal({
+      backend: first as TermEmulatorBackend,
+      cols: dims.cols,
+      rows: dims.rows,
+    })
+    return createBackendTerm(emulator, dims.caps)
   }
   // Detect terminal emulator (termless Terminal): has feed + screen
   if (first && isTermEmulator(first)) {
-    return createBackendTerm(first as TermEmulator)
+    const opts = second as { caps?: Partial<TerminalCaps> } | undefined
+    return createBackendTerm(first as TermEmulator, opts?.caps)
   }
   // Detect headless dims: has cols + rows but no stdout/stdin/color/caps
   if (first && isHeadlessDims(first)) {
-    return createHeadlessTerm(first as { cols: number; rows: number })
+    const dims = first as { cols: number; rows: number; caps?: Partial<TerminalCaps> }
+    return createHeadlessTerm({ cols: dims.cols, rows: dims.rows }, dims.caps)
   }
   return createNodeTerm((first as CreateTermOptions) ?? {})
 }
@@ -668,12 +693,15 @@ function createNodeTerm(options: CreateTermOptions): Term {
       : detectColor(stdout)
   const cachedUnicode = options.unicode ?? detectUnicode()
 
-  // Detect terminal capabilities (only when interactive)
-  const detectedCaps = options.caps
+  // Detect terminal capabilities. Interactive (TTY) stdin goes through the
+  // env-aware detector; non-TTY Node terms fall back to `defaultCaps()` so
+  // `term.caps` is guaranteed populated regardless of stream shape. Callers
+  // can still override the whole profile or merge a partial via `options.caps`.
+  const detectedCaps: TerminalCaps = options.caps
     ? { ...defaultCaps(), ...options.caps }
     : stdin.isTTY
       ? detectTerminalCaps()
-      : undefined
+      : defaultCaps()
 
   // Create style instance with appropriate color level
   const styleInstance = createStyle({ level: cachedColor })
@@ -850,7 +878,10 @@ const HEADLESS_STDIN: NodeJS.ReadStream = {
 } as unknown as NodeJS.ReadStream
 
 /** Create a headless terminal for testing — no I/O, fixed dimensions. */
-function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
+function createHeadlessTerm(
+  dims: { cols: number; rows: number },
+  capsOverride?: Partial<TerminalCaps>,
+): Term {
   let disposed = false
   let _frame: TextFrame | undefined
   const size = createFixedSize(dims)
@@ -863,12 +894,26 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
   // works in both contexts.
   const signals = createSignals()
 
+  // Headless Terms are declaratively mono/no-input but still publish a full
+  // TerminalCaps so downstream code (pipeline, measurer) gets the guaranteed
+  // shape `Term.caps: TerminalCaps` promises. Default to `mono` colorLevel
+  // to match `hasColor()`; callers wanting a richer test surface can pass
+  // `{ caps: { colorLevel: 'truecolor' } }` through createTermless.
+  const headlessCaps: TerminalCaps = {
+    ...defaultCaps(),
+    colorLevel: "mono",
+    unicode: false,
+    mouse: false,
+    bracketedPaste: false,
+    ...capsOverride,
+  }
+
   const termBase = {
     hasCursor: () => false,
     hasInput: () => false,
     hasColor: () => "mono" as ColorTier,
     hasUnicode: () => false,
-    caps: undefined as TerminalCaps | undefined,
+    caps: headlessCaps,
     size,
     modes,
     signals,
@@ -921,7 +966,7 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
 }
 
 /** Create a terminal backed by a termless emulator — real ANSI processing, screen/scrollback. */
-function createBackendTerm(emulator: TermEmulator): Term {
+function createBackendTerm(emulator: TermEmulator, capsOverride?: Partial<TerminalCaps>): Term {
   const { stdout, resizeListeners, updateDims } = createEmulatorStdout(
     (s) => emulator.feed(s),
     emulator.cols,
@@ -944,12 +989,22 @@ function createBackendTerm(emulator: TermEmulator): Term {
   // Term.
   const signals = createSignals()
 
+  // Emulator-backed terms (termless / xterm.js) render a known-capability
+  // virtual terminal: truecolor, unicode, mouse, bracketed paste. These are
+  // deterministic (no env sniffing), which is exactly what tests want.
+  // `defaultCaps()` already matches this shape — keep it as the base so any
+  // future default changes propagate without a second source of truth.
+  const emulatorCaps: TerminalCaps = {
+    ...defaultCaps(),
+    ...capsOverride,
+  }
+
   const termBase = {
     hasCursor: () => true,
     hasInput: () => true,
     hasColor: () => "truecolor" as ColorTier,
     hasUnicode: () => true,
-    caps: undefined as TerminalCaps | undefined,
+    caps: emulatorCaps,
     size,
     modes,
     signals,
