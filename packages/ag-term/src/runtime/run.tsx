@@ -36,6 +36,7 @@ import {
   detectTheme,
   pickColorLevel,
   type ColorTier,
+  type TerminalProfile,
 } from "@silvery/ansi"
 import { nord, catppuccinLatte } from "@silvery/theme/schemes"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
@@ -140,6 +141,20 @@ export interface RunOptions {
    * Default: auto-detected via detectTerminalCaps()
    */
   caps?: import("../terminal-caps.js").TerminalCaps
+  /**
+   * Pre-built {@link TerminalProfile}. When supplied, `run()` skips its own
+   * `createTerminalProfile()` call and uses this profile end-to-end — the
+   * profile's `caps` feed the pipeline, and the pre-quantize gate reads
+   * `profile.source` to decide whether the OSC-detected theme should be
+   * re-quantized. This is the Phase 4 single-source-of-truth entry point:
+   * callers that already built a profile (e.g. via a top-level bootstrap,
+   * a test harness, or a Term adapter) can pass it through without each
+   * entry point re-detecting caps + color tier.
+   *
+   * When supplied alongside `caps` or `colorLevel`, the profile wins — the
+   * other fields are silently ignored to avoid double-detection ambiguity.
+   */
+  profile?: TerminalProfile
   /**
    * Force the color tier end-to-end, bypassing auto-detection.
    *
@@ -316,18 +331,26 @@ export async function run(
     // km-silvery.terminal-profile-plateau made it non-optional). Phase 3
     // routes env-var overrides (NO_COLOR / FORCE_COLOR) and the
     // `termOptions.colorLevel` override through `createTerminalProfile` —
-    // one detection function, one precedence chain.
-    const termProfile = createTerminalProfile({
-      colorOverride: termOptions?.colorLevel,
-      caps: term.caps,
-    })
+    // one detection function, one precedence chain. Phase 4 lets callers
+    // bypass detection entirely by threading a `profile` through
+    // `termOptions`.
+    const termProfile: TerminalProfile =
+      termOptions?.profile ??
+      createTerminalProfile({
+        colorOverride: termOptions?.colorLevel,
+        caps: term.caps,
+      })
     const caps: TerminalCaps = termProfile.caps
-    // When the profile's resolved tier differs from the term's baseline, some
-    // env/option override displaced it — pre-quantize the OSC-detected theme
-    // below to that forced tier. When the tiers match, no quantization
-    // (preserves pre-Phase-3 "auto-detect path keeps theme unchanged" behavior).
+    // Pre-quantize the OSC-detected theme when the tier was *forced* — i.e.
+    // env vars (NO_COLOR / FORCE_COLOR) or an explicit `colorLevel` override
+    // displaced the terminal's natural tier. When the tier came from caps or
+    // auto-detect, the theme passes through unchanged.
+    // Phase 4: one boolean read on `profile.source` replaces the prior
+    // tier-comparison hack (`termProfile.colorTier !== term.caps.colorLevel`).
     const termForcedTier: ColorTier | undefined =
-      termProfile.colorTier !== term.caps.colorLevel ? termProfile.colorTier : undefined
+      termProfile.source === "env" || termProfile.source === "override"
+        ? termProfile.colorTier
+        : undefined
     // Detect terminal colors via OSC — must happen before alt screen.
     // When colorLevel is forced, pre-quantize the detected theme.
     //
@@ -371,6 +394,10 @@ export async function run(
       cols: term.cols ?? undefined,
       rows: term.rows ?? undefined,
       caps,
+      // Thread the resolved profile through so createApp's `profileOption`
+      // branch sees the same source-of-truth that run() already consulted.
+      // Phase 4 of km-silvery.terminal-profile-plateau.
+      profile: termProfile,
       alternateScreen: true,
       kitty: caps.kittyKeyboard,
       mouse: true,
@@ -386,20 +413,29 @@ export async function run(
   // call replaces the prior `detectTerminalCaps` + `resolveColorTier` trio.
   // Env vars (NO_COLOR / FORCE_COLOR) > `options.colorLevel` > caller-supplied
   // `options.caps.colorLevel` > auto-detect — see the profile docstring for
-  // the full precedence chain.
-  const { mode, colorLevel: colorLevelOption, ...rest } = optionsOrTerm as RunOptions
-  const optsProfile = createTerminalProfile({
-    colorOverride: colorLevelOption,
-    caps: rest.caps,
-  })
+  // the full precedence chain. Phase 4 also lets callers pass a pre-built
+  // `profile` to bypass detection entirely.
+  const {
+    mode,
+    colorLevel: colorLevelOption,
+    profile: profileOption,
+    ...rest
+  } = optionsOrTerm as RunOptions
+  const optsProfile: TerminalProfile =
+    profileOption ??
+    createTerminalProfile({
+      colorOverride: colorLevelOption,
+      caps: rest.caps,
+    })
   const caps: TerminalCaps = optsProfile.caps
-  // Forced tier for theme pre-quantization: any env override (NO_COLOR /
-  // FORCE_COLOR) or explicit `options.colorLevel` value. When absent, the
-  // theme passes through unchanged.
+  // Pre-quantize when the tier was forced (env override or explicit
+  // `colorLevel`). Phase 4 replaces the prior triple env-var read + option
+  // check with one `profile.source` lookup — same semantics, one source of
+  // truth. A caller-supplied `profile` whose `source` is already `"env"` or
+  // `"override"` triggers pre-quantization too (the profile tells us the
+  // resolution was forced upstream).
   const effectiveTier: ColorTier | undefined =
-    process.env.NO_COLOR !== undefined ||
-    process.env.FORCE_COLOR !== undefined ||
-    colorLevelOption !== undefined
+    optsProfile.source === "env" || optsProfile.source === "override"
       ? optsProfile.colorTier
       : undefined
   const headless = rest.writable != null || (rest.cols != null && rest.rows != null && !rest.stdout)
@@ -434,6 +470,10 @@ export async function run(
   const handle = await app.run(themed, {
     ...rest,
     caps,
+    // Thread the resolved profile through so createApp's `profileOption`
+    // branch sees the same source-of-truth that run() already consulted.
+    // Phase 4 of km-silvery.terminal-profile-plateau.
+    profile: optsProfile,
     alternateScreen: mode !== "inline",
     virtualInline: mode === "virtualInline",
     kitty: rest.kitty ?? caps.kittyKeyboard,

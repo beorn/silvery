@@ -398,6 +398,117 @@ describe("createTerminalProfile — caps shape", () => {
 // (exported-internal so test fixtures can drive them deterministically)
 // ============================================================================
 
+// ============================================================================
+// profile.source — which precedence rung won
+// ============================================================================
+//
+// Phase 4 of km-silvery.terminal-profile-plateau. The `source` field lets
+// entry-point callers tell "forced tier" from "natural tier" without comparing
+// the profile's tier against the base caps. Pin every rung so the
+// comparison-based gate in run.tsx stays behaviourally equivalent after
+// migrating to `profile.source === "env" || profile.source === "override"`.
+
+describe("createTerminalProfile — source attribution", () => {
+  test('NO_COLOR → source = "env"', () => {
+    const profile = createTerminalProfile({
+      env: { NO_COLOR: "1" },
+      stdout: tty,
+      colorOverride: "truecolor",
+      caps: { colorLevel: "truecolor" },
+    })
+    expect(profile.source).toBe("env")
+  })
+
+  test('FORCE_COLOR=3 → source = "env"', () => {
+    const profile = createTerminalProfile({
+      env: { FORCE_COLOR: "3" },
+      stdout: nonTty,
+    })
+    expect(profile.source).toBe("env")
+  })
+
+  test('FORCE_COLOR=0 with caller override → source = "env" (env still wins)', () => {
+    const profile = createTerminalProfile({
+      env: { FORCE_COLOR: "0" },
+      stdout: tty,
+      colorOverride: "truecolor",
+    })
+    expect(profile.source).toBe("env")
+  })
+
+  test('colorOverride with no env → source = "override"', () => {
+    const profile = createTerminalProfile({
+      env: {},
+      stdout: nonTty,
+      colorOverride: "truecolor",
+      caps: { colorLevel: "ansi16" },
+    })
+    expect(profile.source).toBe("override")
+  })
+
+  test('null colorOverride (legacy mono alias) → source = "override"', () => {
+    const profile = createTerminalProfile({
+      env: {},
+      stdout: tty,
+      colorOverride: null,
+    })
+    expect(profile.source).toBe("override")
+  })
+
+  test('caps.colorLevel fallback with no env / override → source = "caller-caps"', () => {
+    const profile = createTerminalProfile({
+      env: {},
+      stdout: nonTty,
+      caps: { colorLevel: "256" },
+    })
+    expect(profile.source).toBe("caller-caps")
+  })
+
+  test('full caps passed without override → source = "caller-caps"', () => {
+    const caps = {
+      ...defaultCaps(),
+      program: "Ghostty",
+      kittyKeyboard: true,
+      colorLevel: "truecolor" as const,
+    }
+    const profile = createTerminalProfile({
+      env: {},
+      stdout: nonTty,
+      caps,
+    })
+    expect(profile.source).toBe("caller-caps")
+  })
+
+  test('no env, no override, no caps → source = "auto"', () => {
+    const profile = createTerminalProfile({
+      env: { TERM: "xterm-ghostty" },
+      stdout: tty,
+    })
+    expect(profile.source).toBe("auto")
+    expect(profile.colorTier).toBe("truecolor")
+  })
+
+  test('non-TTY with no overrides → source = "auto" (mono)', () => {
+    const profile = createTerminalProfile({
+      env: {},
+      stdout: nonTty,
+    })
+    expect(profile.source).toBe("auto")
+    expect(profile.colorTier).toBe("mono")
+  })
+
+  test('source attribution matches precedence chain (env wins over override + caps)', () => {
+    const profile = createTerminalProfile({
+      env: { FORCE_COLOR: "1" },
+      stdout: tty,
+      colorOverride: "truecolor",
+      caps: { colorLevel: "256" },
+    })
+    expect(profile.source).toBe("env")
+    expect(profile.colorTier).toBe("ansi16") // FORCE_COLOR=1
+  })
+})
+
 describe("detectColorFromEnv", () => {
   test("NO_COLOR wins", () => {
     expect(detectColorFromEnv({ NO_COLOR: "1", FORCE_COLOR: "3" }, tty)).toBe("mono")

@@ -11,6 +11,7 @@ export {
 export type {
   TerminalCaps,
   TerminalProfile,
+  TerminalProfileSource,
   TerminalProfileStdout,
   CreateTerminalProfileOptions,
 } from "@silvery/ansi"

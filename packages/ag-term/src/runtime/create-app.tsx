@@ -391,6 +391,18 @@ export interface AppRunOptions {
    */
   caps?: import("../terminal-caps").TerminalCaps
   /**
+   * Pre-built {@link TerminalProfile} produced by `createTerminalProfile()`.
+   * When supplied, `caps` is read from `profile.caps` — the run pipeline
+   * uses the profile's caps directly, skipping any additional detection.
+   * Phase 4 of `km-silvery.terminal-profile-plateau` — lets `run()` /
+   * `createApp()` / `createTerminalProfile()` share one resolution pass.
+   *
+   * When both `caps` and `profile` are supplied, the profile wins. A
+   * caller who only has `caps` and not a profile can still pass `caps`
+   * directly — the pipeline behaves identically to pre-Phase-4.
+   */
+  profile?: import("@silvery/ansi").TerminalProfile
+  /**
    * Guard stdout/stderr in alt screen mode. When true (the default for
    * alternateScreen), intercepts process.stdout.write and process.stderr.write
    * so that only silvery's render pipeline can write to stdout. Non-silvery
@@ -646,7 +658,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     widthDetection: widthDetectionOption,
     focusReporting: focusReportingOption = false,
     selection: selectionOption,
-    caps: capsOption,
+    caps: capsOptionRaw,
+    profile: profileOption,
     guardOutput: guardOutputOption,
     Root: RootComponent,
     capabilityRegistry: capabilityRegistryOption,
@@ -654,6 +667,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     onResize: explicitOnResize,
     ...injectValues
   } = options
+
+  // Phase 4 of km-silvery.terminal-profile-plateau: a caller-supplied
+  // `profile` wins over `caps`. Both paths converge on `capsOption` — the
+  // rest of initApp stays identical, so every existing code site that reads
+  // `capsOption?.textSizingSupported` / `capsOption?.kittyKeyboard` sees the
+  // same shape whether caps came from `caps` or `profile.caps`.
+  const capsOption = profileOption?.caps ?? capsOptionRaw
 
   // Derive kitty mode for press(): use explicit kittyMode if set, otherwise
   // auto-enable when kitty protocol is active (so press() encodes modifier keys correctly)

@@ -15,6 +15,21 @@ import type { TerminalCaps } from "./detection"
 import type { ColorTier } from "./types"
 
 /**
+ * Which rung of the precedence chain resolved the profile's color tier.
+ *
+ * - `"env"` — `NO_COLOR` or `FORCE_COLOR` env var won.
+ * - `"override"` — caller-supplied `colorOverride` won.
+ * - `"caller-caps"` — `options.caps.colorLevel` fallback won.
+ * - `"auto"` — env-based auto-detection (TERM/COLORTERM/TERM_PROGRAM) won.
+ *
+ * Exposed so downstream callers (run.tsx, create-app.tsx) can ask "was this
+ * tier forced?" without re-comparing against the base caps. Phase 4 of
+ * km-silvery.terminal-profile-plateau uses it to decide whether the OSC-detected
+ * theme needs pre-quantization via {@link pickColorLevel}.
+ */
+export type TerminalProfileSource = "env" | "override" | "caller-caps" | "auto"
+
+/**
  * A fully-resolved view of the current terminal.
  *
  * Bundled intentionally — callers shouldn't mix and match detection sources.
@@ -29,6 +44,12 @@ export interface TerminalProfile {
   caps: TerminalCaps
   /** Convenience alias for `caps.colorLevel`. */
   colorTier: ColorTier
+  /**
+   * Which rung of the precedence chain resolved {@link colorTier}. Callers use
+   * this to decide whether the tier was forced (env/override) or derived from
+   * the terminal's natural capabilities (caller-caps/auto).
+   */
+  source: TerminalProfileSource
 }
 
 /**
@@ -137,9 +158,23 @@ export function createTerminalProfile(
   const baseCapsTier = options.caps?.colorLevel
 
   // Precedence chain: env > override > base caps > env-based auto-detect.
-  // `detectColorFromEnv` is called only when every earlier source declines.
-  const resolvedTier: ColorTier =
-    envTier ?? overrideTier ?? baseCapsTier ?? detectColorFromEnv(env, stdout)
+  // Walk the rungs explicitly so we can record which one won — callers use
+  // `profile.source` to tell "forced tier" from "natural tier".
+  let resolvedTier: ColorTier
+  let source: TerminalProfileSource
+  if (envTier !== undefined) {
+    resolvedTier = envTier
+    source = "env"
+  } else if (overrideTier !== undefined) {
+    resolvedTier = overrideTier
+    source = "override"
+  } else if (baseCapsTier !== undefined) {
+    resolvedTier = baseCapsTier
+    source = "caller-caps"
+  } else {
+    resolvedTier = detectColorFromEnv(env, stdout)
+    source = "auto"
+  }
 
   // When the caller supplied a caps base, use it as-is — don't re-detect every
   // flag from env (that would clobber backend-specific caps the Term already
@@ -153,6 +188,7 @@ export function createTerminalProfile(
   return {
     caps,
     colorTier: resolvedTier,
+    source,
   }
 }
 

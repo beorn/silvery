@@ -105,6 +105,7 @@ export {
 export type {
   TerminalCaps,
   TerminalProfile,
+  TerminalProfileSource,
   TerminalProfileStdout,
   CreateTerminalProfileOptions,
   BgModeDetector,

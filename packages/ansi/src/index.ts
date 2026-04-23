@@ -67,6 +67,7 @@ export {
 export { createTerminalProfile, detectColorFromEnv, detectTerminalCapsFromEnv } from "./profile"
 export type {
   TerminalProfile,
+  TerminalProfileSource,
   TerminalProfileStdout,
   CreateTerminalProfileOptions,
 } from "./profile"

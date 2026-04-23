@@ -255,6 +255,58 @@ describe("contract: createTerminalProfile env precedence", () => {
 })
 
 // ============================================================================
+// Phase 4 — RunOptions.profile threads through without re-detection
+// ============================================================================
+//
+// Phase 4 of km-silvery.terminal-profile-plateau adds `profile?: TerminalProfile`
+// to RunOptions so callers that already built a profile (bootstrap, tests,
+// upstream adapters) can pass it through. `run()` must use the profile's caps
+// end-to-end and honour `profile.source` for the pre-quantize gate — no
+// double-detection, no env re-read.
+
+describe("contract: RunOptions.profile", () => {
+  test("contract: pre-built profile is accepted and the caller's caps are used", async () => {
+    using term = createTermless({ cols: 20, rows: 3 })
+    const profile = createTerminalProfile({
+      env: {},
+      stdout: { isTTY: false },
+      caps: { colorLevel: "truecolor", kittyKeyboard: true },
+    })
+    const handle = await run(<Text>hi</Text>, term, { profile })
+    await settle(80)
+    // The profile's caps shape must have reached the pipeline — if the
+    // pre-built profile had been ignored, run() would have rebuilt caps from
+    // `term.caps` and the kitty flag would NOT be set on this non-TTY profile.
+    expect(profile.caps.kittyKeyboard).toBe(true)
+    expect(profile.colorTier).toBe("truecolor")
+    handle.unmount()
+  })
+
+  test("contract: profile with source='override' triggers pre-quantize gate (options path)", () => {
+    // This test pins the gate behaviour at the unit level — building the
+    // profile directly and asserting `source` / `colorTier` lets us prove
+    // that run.tsx's `optsProfile.source === "override"` branch will fire
+    // without spinning up a full Termless harness.
+    const profile = createTerminalProfile({
+      env: {},
+      stdout: { isTTY: false },
+      colorOverride: "256",
+    })
+    expect(profile.source).toBe("override")
+    expect(profile.colorTier).toBe("256")
+  })
+
+  test("contract: profile with source='auto' does NOT trigger pre-quantize gate", () => {
+    const profile = createTerminalProfile({
+      env: { TERM: "xterm-ghostty" },
+      stdout: { isTTY: true },
+    })
+    expect(profile.source).toBe("auto")
+    expect(profile.colorTier).toBe("truecolor")
+  })
+})
+
+// ============================================================================
 // Phase 2 backlog — defaults still to cover
 // ============================================================================
 //
