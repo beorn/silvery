@@ -31,7 +31,7 @@ import {
 import { enableFocusReporting, disableFocusReporting, parseFocusEvent } from "../focus-reporting"
 import type { Dims, Provider, ProviderEvent } from "./types"
 import { createSize, type Size } from "./devices/size"
-import { effect } from "@silvery/signals"
+import { watch } from "@silvery/signals"
 
 // ============================================================================
 // Input Splitting
@@ -231,18 +231,14 @@ export function createTermProvider(
 
   // Propagate size changes to provider subscribers. Size already coalesces
   // SIGWINCH bursts (16ms window) so every notification here carries the
-  // final geometry. The effect skips its first (seed) fire so subscribers
-  // only see *changes*, matching the old `size.subscribe(handler)` semantic.
-  let sizeSeeded = false
-  const unsubscribeSize = effect(() => {
-    const next = size.snapshot()
-    if (!sizeSeeded) {
-      sizeSeeded = true
-      return
-    }
-    state = { cols: next.cols, rows: next.rows }
-    listeners.forEach((l) => l(state))
-  })
+  // final geometry.
+  const unsubscribeSize = watch(
+    () => size.snapshot(),
+    (next) => {
+      state = { cols: next.cols, rows: next.rows }
+      listeners.forEach((l) => l(state))
+    },
+  )
 
   // Increase max listeners to avoid warnings in apps with many subscribers
   // (e.g., ScrollbackList items each using useTerm for reactive state)
@@ -339,21 +335,17 @@ export function createTermProvider(
       // SIGWINCH bursts within one 60Hz frame (see runtime/devices/size.ts
       // for the full rationale — bead: km-tui.tab-switch-layout-shift). The
       // provider just re-fires the coalesced geometry onto its event queue.
-      // Skip the first (seed) fire so only real resizes land in the queue.
-      let resizeSeeded = false
-      const unsubscribeResizeEvent = effect(() => {
-        const next = size.snapshot()
-        if (!resizeSeeded) {
-          resizeSeeded = true
-          return
-        }
-        queue.push({ type: "resize", data: { cols: next.cols, rows: next.rows } })
-        if (eventResolve) {
-          const resolve = eventResolve
-          eventResolve = null
-          resolve()
-        }
-      })
+      const unsubscribeResizeEvent = watch(
+        () => size.snapshot(),
+        (next) => {
+          queue.push({ type: "resize", data: { cols: next.cols, rows: next.rows } })
+          if (eventResolve) {
+            const resolve = eventResolve
+            eventResolve = null
+            resolve()
+          }
+        },
+      )
 
       // Enable bracketed paste for TTY input.
       // Note: focus reporting is NOT enabled here — it's controlled by the

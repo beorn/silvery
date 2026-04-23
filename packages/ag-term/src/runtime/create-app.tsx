@@ -47,7 +47,7 @@ import { tmpdir } from "node:os"
 import process from "node:process"
 import React, { createContext, useContext, useEffect, useRef, type ReactElement } from "react"
 import { type StateCreator, type StoreApi, createStore } from "@silvery/create/signal-store"
-import { effect } from "@silvery/signals"
+import { watch } from "@silvery/signals"
 
 import { createTerm } from "../ansi"
 import {
@@ -806,18 +806,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   if (!headless) {
     const termSize = injectedTerm?.size
     if (termSize) {
-      // Subscribe via effect; skip the seed fire so mockTermSubscribers only
-      // see real resizes.
-      let seeded = false
-      const stop = effect(() => {
-        const next = termSize.snapshot()
-        if (!seeded) {
-          seeded = true
-          return
-        }
-        currentDims = { cols: next.cols, rows: next.rows }
-        for (const listener of mockTermSubscribers) listener(currentDims)
-      })
+      // Change-only subscription: `watch` swallows the seed fire so
+      // mockTermSubscribers only see real resizes.
+      const stop = watch(
+        () => termSize.snapshot(),
+        (next) => {
+          currentDims = { cols: next.cols, rows: next.rows }
+          for (const listener of mockTermSubscribers) listener(currentDims)
+        },
+      )
       providerCleanups.push(stop)
     } else {
       const onStdoutResize = () => {
@@ -946,16 +943,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           // fall back to direct stdout "resize" for standalone callers.
           const termSize = injectedTerm?.size
           if (termSize) {
-            let seeded = false
-            return effect(() => {
-              const next = termSize.snapshot()
-              if (!seeded) {
-                seeded = true
-                return
-              }
-              currentDims = { cols: next.cols, rows: next.rows }
-              handler(currentDims)
-            })
+            return watch(
+              () => termSize.snapshot(),
+              (next) => {
+                currentDims = { cols: next.cols, rows: next.rows }
+                handler(currentDims)
+              },
+            )
           }
           const onResize = () => {
             currentDims = {
@@ -1669,6 +1663,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   if (shouldGuardOutput) {
     output = createOutput()
     output.activate()
+    // NOTE: if an injected Term's `term.console` was already capturing at
+    // this point, Output just overwrote its tap wrappers — entries logged
+    // during the alt-screen session won't land in Console until we ship
+    // the structural fix (one shared ConsoleRouter). Tracked in bead
+    // km-silvery.console-output-one-patcher.
   }
 
   // Assign pause/resume now that doRender and runtime are available.

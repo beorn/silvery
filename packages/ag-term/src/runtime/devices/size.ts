@@ -100,25 +100,36 @@ export function createSize(
   options: CreateSizeOptions = {},
 ): Size {
   const coalesceMs = options.coalesceMs ?? RESIZE_COALESCE_MS
+  // When callers override dims explicitly (tests, headless-emulator setup),
+  // their values are authoritative — we don't sync from stdout on install.
+  // When neither is overridden we treat stdout as truth and re-read on first
+  // access so any resize between construction and first read isn't lost.
+  const dimsOverridden = options.cols !== undefined || options.rows !== undefined
   const initialCols = options.cols ?? stdout.columns ?? 80
   const initialRows = options.rows ?? stdout.rows ?? 24
 
   // Writable signal owned privately — readers see it only through the
   // ReadSignal-shaped exports below. Consumers subscribe via
   // `effect(() => size.cols())` (or React's `useSignal(size.cols)`).
-  const _snapshot = signal<SizeSnapshot>({ cols: initialCols, rows: initialRows })
+  // Seed snapshot is frozen so external casts (`as any`) can't corrupt owner
+  // state silently. Every subsequent publish freezes a fresh object.
+  const _snapshot = signal<SizeSnapshot>(Object.freeze({ cols: initialCols, rows: initialRows }))
 
   let disposed = false
   let coalesceTimer: ReturnType<typeof setTimeout> | null = null
   let installed = false
 
+  /** Publish a new snapshot if the dims actually changed (equal-value guard). */
+  const publish = (cols: number, rows: number) => {
+    const prev = _snapshot()
+    if (prev.cols === cols && prev.rows === rows) return
+    _snapshot(Object.freeze({ cols, rows }))
+  }
+
   const flush = () => {
     coalesceTimer = null
     if (disposed) return
-    _snapshot({
-      cols: stdout.columns ?? 80,
-      rows: stdout.rows ?? 24,
-    })
+    publish(stdout.columns ?? initialCols, stdout.rows ?? initialRows)
   }
 
   const onResize = () => {
@@ -136,10 +147,21 @@ export function createSize(
   // createTerm() usages from chalk-compat call sites in km-tui/text/*)
   // pay zero listeners. Prevents the MaxListenersExceededWarning that
   // surfaced when every createTerm() eagerly wired one.
+  //
+  // Install-time resync: if the terminal resized between construction and
+  // this first read (no listener attached yet → missed event), re-read the
+  // live stdout dims and publish if they differ from the seed. Fixes the
+  // "first read returns stale value forever" bug flagged by Pro review.
+  //
+  // Skipped when the caller explicitly overrode dims — those options are
+  // authoritative (simulated sizes for tests, emulator setup).
   const ensureInstalled = () => {
     if (installed || disposed) return
     installed = true
     stdout.on("resize", onResize)
+    if (!dimsOverridden) {
+      publish(stdout.columns ?? initialCols, stdout.rows ?? initialRows)
+    }
   }
 
   // Plain arrow functions — the derivation (`.cols` / `.rows` field access)
@@ -185,7 +207,7 @@ export function createSize(
 export function createFixedSize(initial: SizeSnapshot): Size & {
   update(cols: number, rows: number): void
 } {
-  const _snapshot = signal<SizeSnapshot>(initial)
+  const _snapshot = signal<SizeSnapshot>(Object.freeze({ cols: initial.cols, rows: initial.rows }))
   let disposed = false
 
   const cols: ReadSignal<number> = () => _snapshot().cols
@@ -196,9 +218,11 @@ export function createFixedSize(initial: SizeSnapshot): Size & {
     cols,
     rows,
     snapshot,
-    update(cols: number, rows: number) {
+    update(nextCols: number, nextRows: number) {
       if (disposed) return
-      _snapshot({ cols, rows })
+      const prev = _snapshot()
+      if (prev.cols === nextCols && prev.rows === nextRows) return
+      _snapshot(Object.freeze({ cols: nextCols, rows: nextRows }))
     },
     [Symbol.dispose]() {
       if (disposed) return

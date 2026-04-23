@@ -32,19 +32,25 @@ export function useConsole(console: Console, debounceMs = 200): readonly Console
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null
+    const flush = () => {
+      timer = null
+      // Re-read at flush time — NOT at effect-fire time — so a burst of
+      // entries arriving during the debounce window still lands in the
+      // committed state. The earlier bug captured the entries array in
+      // closure when the timer was scheduled, which dropped the tail.
+      setEntries(console.entries())
+    }
     const stop = effect(() => {
-      const next = console.entries()
-      if (timer) return
-      timer = setTimeout(() => {
-        timer = null
-        setEntries(next)
-      }, debounceMs)
+      // Subscribe by reading. Value is ignored; the flush re-reads.
+      console.entries()
+      if (timer !== null) return
+      timer = setTimeout(flush, debounceMs)
     })
-    // Pick up entries that arrived before effect ran its seed read
+    // Pick up entries captured before the effect's seed read landed.
     setEntries(console.entries())
     return () => {
       stop()
-      if (timer) clearTimeout(timer)
+      if (timer !== null) clearTimeout(timer)
     }
   }, [console, debounceMs])
 

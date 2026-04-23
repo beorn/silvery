@@ -771,14 +771,33 @@ function createNodeTerm(options: CreateTermOptions): Term {
 
   let _frame: TextFrame | undefined
 
+  // Sub-owner storage declared up-front so `ownedWrite` below can reference
+  // `_output` in its closure. `_input` / `_output` are populated lazily by
+  // `getInput()` / `getOutput()`.
+  let _input: Input | null = null
+  let _output: Output | null = null
+
+  // Writer router: every silvery-owned ANSI write (modes toggles, term.write,
+  // probe queries via InputOwner) flows through this single function. When
+  // `Output` is active, foreign `stdout.write` is patched into a
+  // suppress/redirect sink, so owned writes MUST go through `output.write(...)`
+  // which bypasses the sink. When `Output` is inactive, the raw `stdout.write`
+  // is safe. Without this, any mode toggle or probe query after
+  // `output.activate()` goes to the patched `process.stdout.write` and can
+  // be dropped. Pro-review finding, 2026-04-22.
+  const ownedWrite = (s: string): boolean => {
+    const out = _output
+    if (out && out.active()) return out.write(s)
+    return stdout.write(s)
+  }
+
   // Lazy Input — constructed on first access. Owns stdin's raw mode + data
   // listener for the Term's lifetime. See km-silvery.term-sub-owners Phase 2.
   // Only available for TTY-backed Node terms; non-TTY callers get undefined.
-  let _input: Input | null = null
   const getInput = (): Input | undefined => {
     if (!stdin.isTTY) return undefined
     if (!_input) {
-      _input = createInputOwner(stdin, stdout, { writeStdout: (s) => stdout.write(s) })
+      _input = createInputOwner(stdin, stdout, { writeStdout: ownedWrite })
     }
     return _input
   }
@@ -788,7 +807,6 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // after protocol setup. See km-silvery.term-sub-owners Phase 3.
   // Only available when stdout is the real process.stdout (mocks + emulators
   // don't benefit from the global-patching guard).
-  let _output: Output | null = null
   const getOutput = (): Output | undefined => {
     if (stdout !== process.stdout) return undefined
     if (!_output) {
@@ -801,7 +819,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // screen, paste, kitty keyboard, mouse, focus reporting). Consolidates
   // the scattered enable*/disable* call sites. See Phase 4.
   const modes = createModes({
-    write: (s: string) => stdout.write(s),
+    write: ownedWrite,
     stdin,
   })
 
@@ -830,10 +848,10 @@ function createNodeTerm(options: CreateTermOptions): Term {
     signals,
     console: consoleOwner,
     write: (str: string) => {
-      stdout.write(str)
+      ownedWrite(str)
     },
     writeLine: (str: string) => {
-      stdout.write(str + "\n")
+      ownedWrite(str + "\n")
     },
     getState: (): TermState => getProvider().getState(),
     subscribe: (listener: (state: TermState) => void): (() => void) =>

@@ -271,17 +271,31 @@ describe("createSize: lazy install", () => {
     expect((stdout as EventEmitter).listenerCount("resize")).toBe(1)
   })
 
-  test("reads without resize events return the initial (construction-time) dims", () => {
-    // Without any resize the signal never advances, so reads reflect the
-    // snapshot captured at construction. Fine for chalk-compat style usages
-    // that don't care about mid-run resizes.
+  test("first read resyncs from live stdout — catches resize between construction and first read", () => {
+    // Pre-fix behaviour: first read returned the construction-time seed and
+    // stayed stale until the NEXT real resize event. Fixed by install-time
+    // resync — on first read, re-poll stdout and publish if it differs.
+    // See 2026-04-22 Pro review finding P0-2.
     const stdout = createMockStdout(80, 24)
     using size = createSize(stdout)
     ;(stdout as unknown as { columns: number }).columns = 132
     ;(stdout as unknown as { rows: number }).rows = 40
-    // No resize emitted — reads stay at the seeded initial.
-    expect(size.cols()).toBe(80)
-    expect(size.rows()).toBe(24)
+    // No resize event emitted — but first read installs the listener AND
+    // re-polls the live stdout, so we see the missed resize.
+    expect(size.cols()).toBe(132)
+    expect(size.rows()).toBe(40)
+  })
+
+  test("explicit options override disables install-time resync", () => {
+    // When the caller passes cols/rows options, those are authoritative and
+    // the first read must NOT overwrite them with live stdout values (tests
+    // and emulator setup depend on this).
+    const stdout = createMockStdout(100, 30)
+    using size = createSize(stdout, { cols: 200, rows: 60 })
+    ;(stdout as unknown as { columns: number }).columns = 132
+    ;(stdout as unknown as { rows: number }).rows = 40
+    expect(size.cols()).toBe(200)
+    expect(size.rows()).toBe(60)
   })
 })
 

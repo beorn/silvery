@@ -27,8 +27,17 @@
  * - Output's console patch is a sink (write to DEBUG_LOG or drop).
  * - Console's patch is a tap (record for later use AND optionally forward).
  *
- * Call order matters: activate Console *before* Output, so the tap records the
- * entry before Output's sink drops it. `restore()` them in reverse order.
+ * **Call order: Output first, then Console.** Last patch wins, so whichever
+ * owner wraps `console.log` last is the one user calls hit first. With Output
+ * first and Console second, `console.log(x)` hits Console's tap, Console
+ * records the entry, and (unless `suppress: true`) forwards to its captured
+ * "original" — which is Output's redirect wrapper. Net effect: tap fires for
+ * every call, and Output's DEBUG_LOG redirect still applies to non-silvery
+ * writes. Reversing the order (Console first, Output second) is the 2026-04-22
+ * pro-review bug: Output overwrites Console's wrapper and the tap never fires.
+ *
+ * `restore()` in the reverse order — Console first, then Output — to unwind
+ * the layering symmetrically.
  */
 
 import { signal, type ReadSignal } from "@silvery/signals"

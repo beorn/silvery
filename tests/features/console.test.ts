@@ -271,6 +271,38 @@ describe("createConsole", () => {
     stub.log("outside")
     expect(calls).toEqual([{ method: "log", args: ["outside"] }])
   })
+
+  test("correct layering order is Output first, Console second — so Console wraps on top", () => {
+    // Pro review 2026-04-22 finding P0-3: when Console's install() captures
+    // `originals` lazily on first install and reuses them on subsequent
+    // captures, the only way for Console's tap to coexist with another
+    // patcher (Output) is to capture LAST. Output patches first, then
+    // Console's capture() stores Output's wrapper as "original" and wraps
+    // it. User console.log → Console tap → forward to Output's redirect.
+    const { stub } = stubConsole()
+
+    // "Output first" — simulate a foreign patcher wrapping console.log.
+    const foreignOriginal = stub.log
+    const foreignCalls: unknown[][] = []
+    stub.log = ((...args: unknown[]) => {
+      foreignCalls.push(args)
+      foreignOriginal.call(stub, ...args)
+    }) as typeof stub.log
+
+    // "Console second" — capture now stores the foreign wrapper as the
+    // forward path. Forwarding (suppress:false) goes through the foreign
+    // wrapper, then the real stub.log.
+    owner = createConsole(stub)
+    owner.capture({ suppress: false })
+
+    stub.log("a")
+
+    expect(owner.entries()).toHaveLength(1)
+    expect(foreignCalls, "Console's forward runs through the foreign wrapper").toEqual([["a"]])
+
+    owner.restore()
+    stub.log = foreignOriginal
+  })
 })
 
 describe("term.console", () => {

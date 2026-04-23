@@ -150,12 +150,12 @@ Call this **after** `term.modes.altScreen(false)` so the replay lands in the pri
 
 `term.console` patches `console.*` as a **tap** — calls are recorded for later replay (and optionally forwarded).
 
-Call order matters:
+**Call order: Output first, then Console.** Last patch wins, so whichever owner wraps `console.log` last is the one `console.log("x")` hits first. With Output first and Console second, the user's call reaches Console's tap, Console records the entry, and (unless `suppress: true`) forwards to its captured "original" — which is Output's redirect wrapper. Tap fires for every call.
 
-1. `term.console.capture({ suppress: true })` — tap goes in first so the recorder sees every entry.
-2. `term.output.activate()` — sink goes in second; it only sees non-silvery stdout/stderr writes after the console has been tapped.
+1. `term.output.activate()` — Output installs its redirect-to-DEBUG_LOG wrapper on `console.log`.
+2. `term.console.capture({ suppress: true })` — Console captures Output's wrapper as its "original" and installs its tap wrapper on every console method.
 
-Restore in reverse: `term.output.deactivate()` then `term.console.restore()`.
+Restore in reverse: `term.console.restore()` first, then `term.output.deactivate()`.
 
 ## See also
 
