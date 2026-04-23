@@ -70,6 +70,7 @@ import { splitRawInput, parseKey } from "@silvery/ag/keys"
 import { isMouseSequence, parseMouseSequence } from "../mouse"
 import { parseFocusEvent } from "../focus-reporting"
 import { parseBracketedPaste } from "../bracketed-paste"
+import { STDIN_SYMBOL, STDOUT_SYMBOL } from "../runtime/term-internal"
 
 // Re-export Provider-related types for convenience
 export type { TermState, TermEvents } from "../runtime/term-provider"
@@ -841,8 +842,6 @@ function createNodeTerm(options: CreateTermOptions): Term {
     hasColor: () => cachedColor,
     hasUnicode: () => cachedUnicode,
     caps: detectedCaps,
-    stdout,
-    stdin,
     size,
     modes,
     signals,
@@ -876,6 +875,22 @@ function createNodeTerm(options: CreateTermOptions): Term {
       size[Symbol.dispose]()
     },
   }
+  // Raw streams live under private Symbol keys — invisible to Object.keys
+  // and unreachable via `(term as any).stdin`. Only `getInternalStreams()`
+  // from runtime/term-internal.ts can read them, and that module's import
+  // is restricted to silvery's runtime/ + ansi/ by the ownership lint.
+  Object.defineProperty(termBase, STDIN_SYMBOL, {
+    value: stdin,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  })
+  Object.defineProperty(termBase, STDOUT_SYMBOL, {
+    value: stdout,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  })
 
   return finalizeTerm(
     styleInstance,
@@ -928,8 +943,6 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
     hasColor: () => null as ColorLevel | null,
     hasUnicode: () => false,
     caps: undefined as TerminalCaps | undefined,
-    stdout: process.stdout,
-    stdin: process.stdin,
     size,
     modes,
     signals,
@@ -958,6 +971,20 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
       size[Symbol.dispose]()
     },
   }
+  // Headless exposes process.stdin/stdout under the same symbol-keyed slots
+  // so getInternalStreams() returns stable refs across Term variants.
+  Object.defineProperty(termBase, STDIN_SYMBOL, {
+    value: process.stdin,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  })
+  Object.defineProperty(termBase, STDOUT_SYMBOL, {
+    value: process.stdout,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  })
 
   return finalizeTerm(
     createStyle({ level: null }),
@@ -1005,8 +1032,6 @@ function createBackendTerm(emulator: TermEmulator): Term {
     hasColor: () => "truecolor" as ColorLevel | null,
     hasUnicode: () => true,
     caps: undefined as TerminalCaps | undefined,
-    stdout,
-    stdin: process.stdin,
     size,
     modes,
     signals,
@@ -1046,6 +1071,21 @@ function createBackendTerm(emulator: TermEmulator): Term {
       emulator.close().catch(() => {})
     },
   }
+  // Emulator-backed terms expose the mock stdout (feed-into-emulator) and
+  // the host's real stdin under the symbol slots so getInternalStreams()
+  // returns stable refs for run()'s legacy options-bag bridge.
+  Object.defineProperty(termBase, STDIN_SYMBOL, {
+    value: process.stdin,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  })
+  Object.defineProperty(termBase, STDOUT_SYMBOL, {
+    value: stdout,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  })
 
   return finalizeTerm(
     createStyle({ level: "truecolor" }),

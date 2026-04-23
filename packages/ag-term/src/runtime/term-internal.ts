@@ -3,28 +3,35 @@
  *
  * The public `Term` interface (`../ansi/term.ts`) deliberately omits
  * `stdin` / `stdout`: direct stream access is the leak vector that produced
- * the 2026-04-22 `wasRaw` race class. Sub-owners (`term.input`, `term.output`,
+ * the `wasRaw` race class. Sub-owners (`term.input`, `term.output`,
  * `term.modes`, etc.) are the supported surface for every consumer.
+ *
+ * At runtime, the raw streams are stored on the term's underlying object
+ * under two non-enumerable `Symbol` keys so external `as any` casts cannot
+ * reach them — only code that imports `STDIN_SYMBOL` / `STDOUT_SYMBOL` from
+ * this module can read them, and the module's import is restricted to
+ * silvery's own runtime/ and ansi/ directories by the ownership lint
+ * (`packages/km-infra/scripts/check-stdin-ownership.sh` in km).
  *
  * BUT: silvery's own `run()` adapter still has to thread raw streams into the
  * legacy `createApp.run()` option bag (`stdin: ReadStream`, `stdout: WriteStream`)
  * for the emulator + real-terminal paths. Until createApp grows a Term-aware
  * overload, this internal accessor is the single legitimate bridge.
- *
- * Usage is restricted to silvery's runtime/ directory by the lint rule
- * `packages/km-infra/scripts/check-stdin-ownership.sh` (km repo). External
- * callers that try to import this module can be flagged in CI.
- *
- * Bead: km-silvery.term-sub-owners (Phase 8b).
  */
 
 import type { Term } from "../ansi/term"
 
+/** Private symbol key for the raw stdin stream on a term's underlying object. */
+export const STDIN_SYMBOL: unique symbol = Symbol.for("silvery.internal.stdin")
+/** Private symbol key for the raw stdout stream on a term's underlying object. */
+export const STDOUT_SYMBOL: unique symbol = Symbol.for("silvery.internal.stdout")
+
 /**
  * Internal shape — silvery runtime adapters only. Every Term factory in
  * `term.ts` (createNodeTerm, createHeadlessTerm, createBackendTerm) attaches
- * these fields on the underlying termBase object; they're just hidden from
- * the public `Term` interface so user code can't reach for them.
+ * these symbol-keyed fields on the underlying termBase object; they're
+ * absent from the public `Term` interface AND from enumerable property
+ * inspection so user code can't reach them via `(term as any).stdin`.
  */
 export interface TermInternalStreams {
   readonly stdin: NodeJS.ReadStream
@@ -36,10 +43,13 @@ export interface TermInternalStreams {
  * adapters that bridge to legacy stream-based APIs (createApp.run()'s option
  * bag). User code MUST go through sub-owners — see the Term interface.
  *
- * The cast is safe: every Term factory in `ansi/term.ts` populates these
- * fields on the underlying object before `finalizeTerm` proxies the public
- * surface; they're absent from the public interface only by editorial choice.
+ * Each factory attaches the streams under `STDIN_SYMBOL` / `STDOUT_SYMBOL`
+ * as non-enumerable own properties on the underlying object.
  */
 export function getInternalStreams(term: Term): TermInternalStreams {
-  return term as unknown as TermInternalStreams
+  const obj = term as unknown as Record<symbol, unknown>
+  return {
+    stdin: obj[STDIN_SYMBOL] as NodeJS.ReadStream,
+    stdout: obj[STDOUT_SYMBOL] as NodeJS.WriteStream,
+  }
 }

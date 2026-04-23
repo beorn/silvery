@@ -42,10 +42,12 @@ function createChainProxy<T extends object>(currentStyle: Style, extra: T): Styl
       }
 
       if (typeof prop === "symbol") {
-        if (prop === Symbol.dispose) {
-          return (extra as Record<symbol, unknown>)[Symbol.dispose]
-        }
-        return undefined
+        // Symbol-keyed lookups always go to `extra` (the Term's underlying
+        // object). Handles Symbol.dispose as well as silvery's own private
+        // symbols (STDIN_SYMBOL / STDOUT_SYMBOL from term-internal.ts).
+        // The previous branch that special-cased only Symbol.dispose
+        // prevented getInternalStreams(term) from reading the hidden streams.
+        return (extra as Record<symbol, unknown>)[prop]
       }
 
       if (STYLE_METHODS.has(prop)) {
