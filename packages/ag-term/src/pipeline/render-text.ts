@@ -141,6 +141,7 @@ interface StyleContext {
   underline?: boolean
   underlineStyle?: string | false
   underlineColor?: string
+  overline?: boolean
   inverse?: boolean
   strikethrough?: boolean
 }
@@ -209,6 +210,7 @@ function styleToAnsi(style: StyleContext): string {
   }
   if (style.inverse) parts.push("7")
   if (style.strikethrough) parts.push("9")
+  if (style.overline) parts.push("53")
 
   if (parts.length === 0) {
     return ""
@@ -256,6 +258,7 @@ function mergeStyleContext(parent: StyleContext, childProps: TextProps): StyleCo
     underline: childUnderline ?? parent.underline,
     underlineStyle: childUnderlineStyle ?? parent.underlineStyle,
     underlineColor: (childProps as any).underlineColor ?? parent.underlineColor,
+    overline: (childProps as any).overline ?? parent.overline,
     inverse: childProps.inverse ?? parent.inverse,
     strikethrough: childProps.strikethrough ?? parent.strikethrough,
   }
@@ -1206,10 +1209,12 @@ export function mergeStyles(
       attrs.underlineStyle = overlayAttrs.underlineStyle ?? baseAttrs.underlineStyle ?? "single"
     }
     attrs.strikethrough = overlayAttrs.strikethrough || baseAttrs.strikethrough
+    attrs.overline = overlayAttrs.overline || baseAttrs.overline
   } else {
     attrs.underline = overlayAttrs.underline ?? baseAttrs.underline
     attrs.underlineStyle = overlayAttrs.underlineStyle ?? baseAttrs.underlineStyle
     attrs.strikethrough = overlayAttrs.strikethrough ?? baseAttrs.strikethrough
+    attrs.overline = overlayAttrs.overline ?? baseAttrs.overline
   }
 
   // Emphasis: OR if preserving
@@ -1448,6 +1453,7 @@ export function renderText(
     underline: rootUnderline,
     underlineStyle: rootUnderlineStyle,
     underlineColor: props.underlineColor,
+    overline: props.overline,
     inverse: props.inverse,
     strikethrough: props.strikethrough,
   }
@@ -1575,6 +1581,7 @@ export function renderText(
             dim: false,
             italic: false,
             underline: false,
+            overline: false,
             inverse: false,
             strikethrough: false,
             blink: false,

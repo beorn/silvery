@@ -2252,6 +2252,7 @@ export function styleToAnsiCodes(style: Style): string {
   // Use SGR 7 for inverse — lets the terminal correctly swap fg/bg
   if (style.attrs.inverse) result += "\x1b[7m"
   if (style.attrs.strikethrough) result += "\x1b[9m"
+  if (style.attrs.overline) result += "\x1b[53m"
 
   // Underline color (SGR 58)
   if (style.underlineColor !== null && style.underlineColor !== undefined) {
@@ -2337,6 +2338,10 @@ export function styleTransitionCodes(oldStyle: Style | null, newStyle: Style): s
   if (Boolean(oa.strikethrough) !== Boolean(na.strikethrough)) {
     result += na.strikethrough ? "\x1b[9m" : "\x1b[29m"
   }
+  // Overline (SGR 53/55)
+  if (Boolean(oa.overline) !== Boolean(na.overline)) {
+    result += na.overline ? "\x1b[53m" : "\x1b[55m"
+  }
 
   // Foreground color
   if (!colorEquals(oldStyle.fg, newStyle.fg)) {
@@ -2383,6 +2388,7 @@ export function styleResetCodes(style: Style): string {
   if (style.attrs.italic) result += "\x1b[23m"
   if (style.attrs.strikethrough) result += "\x1b[29m"
   if (style.attrs.inverse) result += "\x1b[27m"
+  if (style.attrs.overline) result += "\x1b[55m"
   // Colors
   if (style.bg !== null && !isDefaultBg(style.bg)) result += "\x1b[49m"
   if (style.fg !== null) result += "\x1b[39m"
