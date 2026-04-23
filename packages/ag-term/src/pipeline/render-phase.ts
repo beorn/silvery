@@ -742,6 +742,17 @@ function renderNodeToBuffer(
       )
     }
 
+    // Attribute overlay: when a Box has unified attr props (underline /
+    // strikethrough / etc.) that don't belong to the Text-node rendering path,
+    // apply them to every cell in the box rect AFTER children render. This is
+    // the transparent-overlay primitive (see buffer.mergeAttrsInRect).
+    //
+    // Gated to silvery-box so Text nodes keep using their existing style path
+    // (attrs baked into cell writes during renderText).
+    if (node.type === "silvery-box") {
+      applyBoxAttrOverlay(buffer, layout, props, scrollOffset, clipBounds)
+    }
+
     // Outlines are NOT rendered here — the decoration phase (post-content)
     // walks the tree independently and draws outlines for every node with
     // outlineStyle, using per-cell snapshots to clear prev positions next
@@ -1080,6 +1091,108 @@ function renderOwnContent(
   }
 
   return boxInheritedBg
+}
+
+// ============================================================================
+// Box Attr Overlay (transparent underline / strikethrough / etc.)
+// ============================================================================
+
+/**
+ * Detect which attr props are active on a Box. Only returns the overlay
+ * subset — attrs that benefit from merge-over-children semantics.
+ *
+ * bold / dim / italic / inverse / strikethrough / underline / underlineColor
+ * all qualify. Text color, bg color, and border-related props are handled
+ * elsewhere and are NOT attr-overlay props.
+ *
+ * Returns null when no overlay attrs are present (fast path — most Boxes).
+ */
+function computeBoxAttrOverlay(
+  props: BoxProps,
+): {
+  attrs: import("../buffer").CellAttrs
+  underlineColor: Color | undefined
+} | null {
+  // Resolve underline: accept `underline: boolean | UnderlineStyleName` and
+  // the legacy `underlineStyle: UnderlineStyle`. `underlineStyle` wins when
+  // both are set (matches getTextStyle() precedence).
+  let underlineStyle:
+    | Exclude<import("@silvery/ag/types").UnderlineStyle, false>
+    | undefined
+  if (props.underlineStyle !== undefined && props.underlineStyle !== false) {
+    underlineStyle = props.underlineStyle
+  } else if (typeof props.underline === "string") {
+    underlineStyle = props.underline
+  } else if (props.underline === true) {
+    underlineStyle = "single"
+  }
+  const hasUnderline = !!underlineStyle
+
+  const bold = !!props.bold
+  const dim = !!props.dim || !!props.dimColor
+  const italic = !!props.italic
+  const inverse = !!props.inverse
+  const strikethrough = !!props.strikethrough
+
+  if (!hasUnderline && !bold && !dim && !italic && !inverse && !strikethrough) {
+    // No overlay attrs — skip.
+    return null
+  }
+
+  const attrs: import("../buffer").CellAttrs = {
+    bold: bold || undefined,
+    dim: dim || undefined,
+    italic: italic || undefined,
+    inverse: inverse || undefined,
+    strikethrough: strikethrough || undefined,
+    underline: hasUnderline || undefined,
+    underlineStyle: hasUnderline ? underlineStyle : undefined,
+  }
+
+  const underlineColor = props.underlineColor ? parseColor(props.underlineColor) : undefined
+
+  return { attrs, underlineColor: underlineColor ?? undefined }
+}
+
+/**
+ * Apply a Box's attr overlay to its rect, respecting scroll offset and clip
+ * bounds. Runs AFTER children render so attrs layer on top of content without
+ * overwriting glyphs/fg/bg.
+ */
+function applyBoxAttrOverlay(
+  buffer: TerminalBuffer,
+  layout: NonNullable<AgNode["boxRect"]>,
+  props: BoxProps,
+  scrollOffset: number,
+  clipBounds: ClipBounds | undefined,
+): void {
+  const overlay = computeBoxAttrOverlay(props)
+  if (!overlay) return
+
+  const x = layout.x
+  const y = layout.y - scrollOffset
+  let rx = x
+  let rw = layout.width
+  let ry = y
+  let rh = layout.height
+
+  if (clipBounds) {
+    const topClipped = Math.max(ry, clipBounds.top)
+    const bottomClipped = Math.min(ry + rh, clipBounds.bottom)
+    if (topClipped >= bottomClipped) return
+    ry = topClipped
+    rh = bottomClipped - topClipped
+
+    if (clipBounds.left !== undefined && clipBounds.right !== undefined) {
+      const leftClipped = Math.max(rx, clipBounds.left)
+      const rightClipped = Math.min(rx + rw, clipBounds.right)
+      if (leftClipped >= rightClipped) return
+      rx = leftClipped
+      rw = rightClipped - leftClipped
+    }
+  }
+
+  buffer.mergeAttrsInRect(rx, ry, rw, rh, overlay.attrs, overlay.underlineColor)
 }
 
 // ============================================================================
