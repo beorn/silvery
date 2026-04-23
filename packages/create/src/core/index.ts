@@ -28,8 +28,8 @@
 // TEA Types (The Elm Architecture)
 // =============================================================================
 
-import type { FocusOrigin } from "../focus-manager.js"
-export type { FocusOrigin } from "../focus-manager.js"
+import type { FocusOrigin } from "@silvery/ag/focus-manager"
+export type { FocusOrigin } from "@silvery/ag/focus-manager"
 
 /**
  * The model type that silvery manages for focus state.
@@ -192,13 +192,13 @@ export function compose<Model, Msg>(...plugins: Plugin<Model, Msg>[]): Plugin<Mo
 // Focus Manager (pure, no React)
 // =============================================================================
 
-export { createFocusManager } from "../focus-manager.js"
+export { createFocusManager } from "@silvery/ag/focus-manager"
 export type {
   FocusManager,
   FocusManagerOptions,
   FocusChangeCallback,
   FocusSnapshot,
-} from "../focus-manager.js"
+} from "@silvery/ag/focus-manager"
 
 // =============================================================================
 // Focus Events (pure, no React)
@@ -209,8 +209,8 @@ export {
   createFocusEvent,
   dispatchKeyEvent,
   dispatchFocusEvent,
-} from "../focus-events.js"
-export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "../focus-events.js"
+} from "@silvery/ag/focus-events"
+export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "@silvery/ag/focus-events"
 
 // =============================================================================
 // Focus Queries (pure, no React)

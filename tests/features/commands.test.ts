@@ -3,7 +3,7 @@
  */
 import { describe, test, expect, vi } from "vitest"
 import { createCommandRegistry } from "@silvery/commands/create-command-registry"
-import { parseHotkey } from "@silvery/commands/keys"
+import { parseHotkey } from "@silvery/ag/keys"
 
 describe("createCommandRegistry", () => {
   test("creates registry from definition object", () => {

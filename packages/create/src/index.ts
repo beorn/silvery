@@ -57,13 +57,13 @@ export type {
   Rect,
 } from "./core"
 
-// Focus events
+// Focus events (canonical: @silvery/ag/focus-events)
 export {
   createKeyEvent,
   createFocusEvent,
   dispatchKeyEvent,
   dispatchFocusEvent,
-} from "./focus-events"
+} from "@silvery/ag/focus-events"
 
 // Focus queries (canonical: @silvery/ag/focus-queries)
 export {
@@ -150,10 +150,10 @@ export type {
 export { rectEqual } from "./types"
 
 // =============================================================================
-// Tree Utilities
+// Tree Utilities (canonical: @silvery/ag/tree-utils)
 // =============================================================================
 
-export { getAncestorPath, pointInRect } from "./tree-utils"
+export { getAncestorPath, pointInRect } from "@silvery/ag/tree-utils"
 
 // =============================================================================
 // Streams (AsyncIterable helpers)

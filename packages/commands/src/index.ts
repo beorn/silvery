@@ -29,5 +29,5 @@ export {
 // withKeybindings plugin
 export { withKeybindings, type WithKeybindingsOptions } from "./with-keybindings"
 
-// Key parsing
-export { parseHotkey } from "./keys"
+// Key parsing (canonical: @silvery/ag/keys)
+export { parseHotkey } from "@silvery/ag/keys"

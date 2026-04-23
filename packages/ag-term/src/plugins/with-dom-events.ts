@@ -41,7 +41,7 @@
  */
 
 import type { App } from "../app"
-import type { FocusManager } from "@silvery/create/focus-manager"
+import type { FocusManager } from "@silvery/ag/focus-manager"
 import {
   createMouseEventProcessor,
   processMouseEvent,

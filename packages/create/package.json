@@ -45,14 +45,6 @@
         "types": "./dist/effects.d.mts",
         "import": "./dist/effects.mjs"
       },
-      "./focus-events": {
-        "types": "./dist/focus-events.d.mts",
-        "import": "./dist/focus-events.mjs"
-      },
-      "./focus-manager": {
-        "types": "./dist/focus-manager.d.mts",
-        "import": "./dist/focus-manager.mjs"
-      },
       "./pipe": {
         "types": "./dist/pipe.d.mts",
         "import": "./dist/pipe.mjs"
@@ -136,8 +128,6 @@
       "src/create-app.tsx",
       "src/create-app-context.tsx",
       "src/effects.ts",
-      "src/focus-events.ts",
-      "src/focus-manager.ts",
       "src/pipe.ts",
       "src/plugins.ts",
       "src/signal-store.ts",

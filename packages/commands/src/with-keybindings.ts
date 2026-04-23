@@ -22,7 +22,7 @@
  */
 
 import type { AppWithCommands, KeybindingDef } from "./with-commands"
-import { parseHotkey } from "./keys"
+import { parseHotkey } from "@silvery/ag/keys"
 
 // =============================================================================
 // Types

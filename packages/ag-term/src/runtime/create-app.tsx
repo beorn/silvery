@@ -254,7 +254,7 @@ export interface EventHandlerContext<S> {
   set: StoreApi<S>["setState"]
   get: StoreApi<S>["getState"]
   /** The tree-based focus manager */
-  focusManager: import("@silvery/create/focus-manager").FocusManager
+  focusManager: import("@silvery/ag/focus-manager").FocusManager
   /** Convenience: focus a node by testID */
   focus(testID: string): void
   /** Activate a peer focus scope (saves/restores focus per scope) */

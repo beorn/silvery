@@ -76,11 +76,4 @@ describe("@silvery/create subpath exports", () => {
     const mod = await import("@silvery/create/with-app")
     expect(typeof mod.withApp).toBe("function")
   })
-
-  test("wildcard-covered .ts files resolve (e.g., focus-manager)", async () => {
-    const mod = (await import("@silvery/create/focus-manager")) as Record<string, unknown>
-    // focus-manager.ts re-exports from @silvery/ag/focus-manager — the
-    // public surface includes createFocusManager.
-    expect(typeof mod.createFocusManager).toBe("function")
-  })
 })

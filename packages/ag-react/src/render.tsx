@@ -314,7 +314,7 @@ function SilveryApp({
   handleExitRef.current = handleExit
 
   // Refs for focus manager and root getter — accessed inside input handler
-  const focusManagerRef = useRef<import("@silvery/create/focus-manager").FocusManager | null>(null)
+  const focusManagerRef = useRef<import("@silvery/ag/focus-manager").FocusManager | null>(null)
   const getRootRef = useRef(getRootProp)
   getRootRef.current = getRootProp
   const handleFocusCyclingRef = useRef(handleFocusCycling)

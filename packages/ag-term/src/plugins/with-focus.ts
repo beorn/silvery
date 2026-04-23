@@ -32,13 +32,13 @@ import {
   createFocusManager,
   type FocusManager,
   type FocusManagerOptions,
-} from "@silvery/create/focus-manager"
+} from "@silvery/ag/focus-manager"
 import {
   createFocusEvent,
   createKeyEvent,
   dispatchFocusEvent,
   dispatchKeyEvent,
-} from "@silvery/create/focus-events"
+} from "@silvery/ag/focus-events"
 import { parseHotkey, parseKey } from "@silvery/ag/keys"
 import { createSelectionFeature, type SelectionFeature } from "../features/selection"
 import { createCopyModeFeature, type CopyModeFeature } from "../features/copy-mode"

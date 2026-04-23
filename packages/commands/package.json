@@ -31,10 +31,6 @@
         "types": "./dist/create-command-registry.d.mts",
         "import": "./dist/create-command-registry.mjs"
       },
-      "./keys": {
-        "types": "./dist/keys.d.mts",
-        "import": "./dist/keys.mjs"
-      },
       "./with-commands": {
         "types": "./dist/with-commands.d.mts",
         "import": "./dist/with-commands.mjs"
@@ -48,14 +44,15 @@
   "scripts": {
     "build": "tsdown"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@silvery/ag": "0.19.2"
+  },
   "tsdown": {
     "clean": true,
     "dts": true,
     "entry": [
       "src/index.ts",
       "src/create-command-registry.ts",
-      "src/keys.ts",
       "src/with-commands.ts",
       "src/with-keybindings.ts"
     ],
