@@ -94,8 +94,6 @@ export type {
 export {
   detectCursor,
   detectInput,
-  detectUnicode,
-  detectExtendedUnderline,
   defaultCaps,
   createTerminalProfile,
   probeTerminalProfile,

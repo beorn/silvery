@@ -12,6 +12,7 @@
 
 import {
   createTerm,
+  createTerminalProfile,
   curlyUnderline,
   dottedUnderline,
   dashedUnderline,
@@ -19,7 +20,6 @@ import {
   underlineColor,
   styledUnderline,
   hyperlink,
-  detectExtendedUnderline,
   displayLength,
   stripAnsi,
 } from "./index"
@@ -51,8 +51,9 @@ section("Terminal Information")
 
 console.log(` TERM: ${process.env.TERM ?? "(not set)"}`)
 console.log(` TERM_PROGRAM: ${process.env.TERM_PROGRAM ?? "(not set)"}`)
+const storybookCaps = createTerminalProfile().caps
 console.log(
-  ` Extended underline support: ${detectExtendedUnderline() ? term.green("Yes") : term.red("No (fallback mode)")}`,
+  ` Extended underline support: ${storybookCaps.underlineStyles ? term.green("Yes") : term.red("No (fallback mode)")}`,
 )
 console.log()
 console.log(term.dim(" Note: This storybook forces extended mode for display."))

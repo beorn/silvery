@@ -1,15 +1,17 @@
 // Post km-silvery.plateau-delete-legacy-shims (H6 /big review 2026-04-23):
 // `detectColor` and `detectTerminalCaps` are removed — callers consume
 // `term.caps` / `term.profile` when a Term is in scope, or call
-// `createTerminalProfile()` / `probeTerminalProfile()` one-shot. The other
-// narrowly-scoped probes (cursor, input, unicode, extended underline) keep
-// their dedicated shims: each answers a single yes/no that the broader
-// profile factory doesn't subsume.
+// `createTerminalProfile()` / `probeTerminalProfile()` one-shot.
+//
+// Post km-silvery.unicode-plateau Phase 1 (2026-04-23): `detectUnicode` and
+// `detectExtendedUnderline` are removed too — their logic moved into the
+// profile factory. Consumers read `caps.unicode` / `caps.underlineStyles`
+// / `caps.underlineColor` directly. The only narrowly-scoped probes that
+// survive are cursor + input, which answer TTY-stream yes/no questions the
+// profile can't subsume.
 export {
   detectCursor,
   detectInput,
-  detectUnicode,
-  detectExtendedUnderline,
   defaultCaps,
   createTerminalProfile,
   probeTerminalProfile,

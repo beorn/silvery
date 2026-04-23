@@ -395,6 +395,106 @@ describe("createTerminalProfile — caps shape", () => {
 })
 
 // ============================================================================
+// caps.unicode — env-sensitive (regression: km-silvery.unicode-plateau Phase 1)
+// ============================================================================
+//
+// Before the unicode plateau, `detectTerminalCapsFromEnv` hardcoded
+// `unicode: true` and the real detection lived in a standalone `detectUnicode()`
+// helper that every consumer re-read env to call. The plateau refactor absorbed
+// the detection into the profile factory. These tests pin the absorbed
+// semantics so neither regression can reappear.
+
+describe("createTerminalProfile — caps.unicode env-sensitivity", () => {
+  test("empty env + non-TTY: unicode is false (conservative default)", () => {
+    const profile = createTerminalProfile({ env: {}, stdout: nonTty })
+    expect(profile.caps.unicode).toBe(false)
+  })
+
+  test("modern terminal (TERM_PROGRAM=Ghostty): unicode is true", () => {
+    const profile = createTerminalProfile({
+      env: { TERM_PROGRAM: "Ghostty" },
+      stdout: tty,
+    })
+    expect(profile.caps.unicode).toBe(true)
+  })
+
+  test("UTF-8 locale via LANG: unicode is true", () => {
+    const profile = createTerminalProfile({
+      env: { LANG: "en_US.UTF-8" },
+      stdout: nonTty,
+    })
+    expect(profile.caps.unicode).toBe(true)
+  })
+
+  test("UTF-8 locale via LC_ALL: unicode is true", () => {
+    const profile = createTerminalProfile({
+      env: { LC_ALL: "de_DE.utf8" },
+      stdout: nonTty,
+    })
+    expect(profile.caps.unicode).toBe(true)
+  })
+
+  test("Windows Terminal (WT_SESSION): unicode is true", () => {
+    const profile = createTerminalProfile({
+      env: { WT_SESSION: "some-session-id" },
+      stdout: tty,
+    })
+    expect(profile.caps.unicode).toBe(true)
+  })
+
+  test("Kitty window (KITTY_WINDOW_ID): unicode is true", () => {
+    const profile = createTerminalProfile({
+      env: { KITTY_WINDOW_ID: "1" },
+      stdout: tty,
+    })
+    expect(profile.caps.unicode).toBe(true)
+  })
+
+  test("GitHub Actions CI: unicode is true", () => {
+    const profile = createTerminalProfile({
+      env: { CI: "1", GITHUB_ACTIONS: "true" },
+      stdout: nonTty,
+    })
+    expect(profile.caps.unicode).toBe(true)
+  })
+
+  test("TERM=xterm-256color implies unicode via TERM family", () => {
+    const profile = createTerminalProfile({
+      env: { TERM: "xterm-256color" },
+      stdout: tty,
+    })
+    expect(profile.caps.unicode).toBe(true)
+  })
+
+  test("TERM=tmux-256color implies unicode (multiplexer)", () => {
+    const profile = createTerminalProfile({
+      env: { TERM: "tmux-256color" },
+      stdout: tty,
+    })
+    expect(profile.caps.unicode).toBe(true)
+  })
+
+  test("TERM=dumb + non-TTY: unicode is false", () => {
+    const profile = createTerminalProfile({
+      env: { TERM: "dumb" },
+      stdout: nonTty,
+    })
+    expect(profile.caps.unicode).toBe(false)
+  })
+
+  test("bare CI without GITHUB_ACTIONS: unicode defaults to false", () => {
+    // Legacy semantic: CI alone is NOT enough — we want the specific
+    // indicator. This pins the env-sensitivity so a drift that short-
+    // circuited on plain `CI` would fail the test.
+    const profile = createTerminalProfile({
+      env: { CI: "1" },
+      stdout: nonTty,
+    })
+    expect(profile.caps.unicode).toBe(false)
+  })
+})
+
+// ============================================================================
 // Internal helpers — detectColorFromEnv / detectTerminalCapsFromEnv
 // (exported-internal so test fixtures can drive them deterministically)
 // ============================================================================

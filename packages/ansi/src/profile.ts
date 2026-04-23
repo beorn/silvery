@@ -516,6 +516,20 @@ export function detectTerminalCapsFromEnv(
 
   const underlineExtensions = isModern || isAlacritty
 
+  // Unicode: modern terminals + explicit UTF-8 locales + Windows Terminal +
+  // CI runners we know emit UTF-8. Absorbed from the pre-plateau standalone
+  // `detectUnicode()` helper (km-silvery.unicode-plateau Phase 1) so caps is
+  // the single source of truth and every consumer reads `caps.unicode` rather
+  // than re-probing env. Default `false` matches the legacy helper's "unknown
+  // terminal → be safe" behavior.
+  const unicode =
+    isModern ||
+    env.WT_SESSION !== undefined ||
+    env.KITTY_WINDOW_ID !== undefined ||
+    utf8Locale(env) ||
+    termImpliesUnicode(term) ||
+    (env.CI !== undefined && env.GITHUB_ACTIONS !== undefined)
+
   // defaultCaps supplies the structural shape; we overwrite every dynamic field
   // explicitly so any future addition in defaultCaps gets a sensible default.
   return {
@@ -532,7 +546,7 @@ export function detectTerminalCapsFromEnv(
     bracketedPaste: true,
     mouse: true,
     syncOutput: isModern || isAlacritty,
-    unicode: true,
+    unicode,
     underlineStyles: underlineExtensions,
     underlineColor: underlineExtensions,
     textEmojiWide: !isAppleTerminal,
@@ -540,6 +554,28 @@ export function detectTerminalCapsFromEnv(
     darkBackground,
     nerdfont,
   }
+}
+
+/**
+ * Does `env.LANG` / `LC_ALL` / `LC_CTYPE` name a UTF-8 locale? Absorbed from
+ * the retired `detectUnicode()` helper.
+ */
+function utf8Locale(env: Record<string, string | undefined>): boolean {
+  const lang = (env.LANG ?? env.LC_ALL ?? env.LC_CTYPE ?? "").toLowerCase()
+  return lang.includes("utf-8") || lang.includes("utf8")
+}
+
+/**
+ * Does the `TERM` value imply a multiplexer / terminal family we know renders
+ * unicode correctly? Absorbed from the retired `detectUnicode()` helper.
+ */
+function termImpliesUnicode(term: string): boolean {
+  return (
+    term.includes("xterm") ||
+    term.includes("rxvt") ||
+    term.includes("screen") ||
+    term.includes("tmux")
+  )
 }
 
 // ============================================================================

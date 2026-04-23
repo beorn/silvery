@@ -55,13 +55,7 @@ export {
 // routes through the profile factory instead.
 // =============================================================================
 
-export {
-  detectCursor,
-  detectInput,
-  detectUnicode,
-  detectExtendedUnderline,
-  defaultCaps,
-} from "./detection"
+export { detectCursor, detectInput, defaultCaps } from "./detection"
 
 // =============================================================================
 // Terminal Profile — single source of truth for terminal detection.

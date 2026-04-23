@@ -4,12 +4,17 @@
  * Detects:
  * - Cursor control (can reposition cursor)
  * - Input capability (can read raw keystrokes)
- * - Unicode support (can render unicode symbols)
- * - Extended underline support (curly, dotted, etc)
  *
- * Broader caps/color detection is owned by {@link ./profile} — import
- * `createTerminalProfile()` (sync) or `probeTerminalProfile()` (async with
- * theme) for the canonical single-source-of-truth entry point.
+ * Broader caps/color/unicode/underline detection is owned by {@link ./profile} —
+ * import `createTerminalProfile()` (sync) or `probeTerminalProfile()` (async
+ * with theme) for the canonical single-source-of-truth entry point. Every
+ * TerminalCaps field is resolved there; consumers read `caps.unicode`,
+ * `caps.underlineStyles`, `caps.textEmojiWide`, etc. directly.
+ *
+ * Post km-silvery.unicode-plateau Phase 1: `detectUnicode()` and
+ * `detectExtendedUnderline()` are retired — their logic moved into
+ * {@link ./profile#detectTerminalCapsFromEnv} so the profile is the one and
+ * only env reader.
  *
  * Post km-silvery.plateau-delete-legacy-shims (H6 /big review 2026-04-23):
  * the `detectColor()` and `detectTerminalCaps()` shims are gone — every
@@ -55,118 +60,21 @@ export function detectInput(stdin: NodeJS.ReadStream): boolean {
 
 // =============================================================================
 // Color Detection — removed H6 of /big review 2026-04-23.
+// Unicode + Extended Underline Detection — removed unicode-plateau Phase 1.
 //
-// `detectColor(stdout)` used to live here as a ColorTier probe. Call sites
-// that need "what tier does this stdout report?" now use:
-//   `createTerminalProfile({ stdout }).colorTier`
-// The profile factory handles the full NO_COLOR > FORCE_COLOR > auto chain
-// and returns a bundled {@link TerminalProfile} — the single source of
-// truth for every caps-or-color question.
+// Historic helpers `detectColor(stdout)`, `detectUnicode()`, and
+// `detectExtendedUnderline()` used to live here. Every one of them re-read
+// `process.env` outside the profile factory, breaking the "one detection,
+// one profile" invariant. Call sites now use:
+//
+//   `createTerminalProfile({ stdout }).colorTier`        // color tier
+//   `createTerminalProfile().caps.unicode`               // unicode
+//   `createTerminalProfile().caps.underlineStyles`       // extended underline
+//
+// The profile factory handles the full NO_COLOR > FORCE_COLOR > auto chain,
+// the UTF-8 locale / CI / modern-terminal fan-out, and the isModern/isAlacritty
+// rules for extended underline — all from a single env read.
 // =============================================================================
-
-// =============================================================================
-// Unicode Detection
-// =============================================================================
-
-/**
- * Detect if terminal can render unicode symbols.
- * Based on TERM, locale, and known terminal apps.
- */
-export function detectUnicode(): boolean {
-  // CI environments - often UTF-8 capable but be conservative
-  if (process.env.CI) {
-    // GitHub Actions is UTF-8
-    if (process.env.GITHUB_ACTIONS) return true
-    // Other CI - check LANG
-  }
-
-  // Check locale for UTF-8
-  const lang = process.env.LANG ?? process.env.LC_ALL ?? process.env.LC_CTYPE ?? ""
-  if (lang.toLowerCase().includes("utf-8") || lang.toLowerCase().includes("utf8")) {
-    return true
-  }
-
-  // Windows Terminal
-  if (process.env.WT_SESSION) {
-    return true
-  }
-
-  // Modern terminal programs
-  const termProgram = process.env.TERM_PROGRAM ?? ""
-  if (["iTerm.app", "Ghostty", "WezTerm", "Apple_Terminal"].includes(termProgram)) {
-    return true
-  }
-
-  // Kitty
-  if (process.env.KITTY_WINDOW_ID) {
-    return true
-  }
-
-  // Check TERM for modern terminals
-  const term = process.env.TERM ?? ""
-  if (
-    term.includes("xterm") ||
-    term.includes("rxvt") ||
-    term.includes("screen") ||
-    term.includes("tmux")
-  ) {
-    return true
-  }
-
-  // Default: assume no unicode for safety
-  return false
-}
-
-// =============================================================================
-// Extended Underline Detection
-// =============================================================================
-
-/**
- * Known terminals with extended underline support.
- */
-const EXTENDED_UNDERLINE_TERMS = ["xterm-ghostty", "xterm-kitty", "wezterm", "xterm-256color"]
-
-/**
- * Known terminal programs with extended underline support.
- */
-const EXTENDED_UNDERLINE_PROGRAMS = ["Ghostty", "iTerm.app", "WezTerm"]
-
-/**
- * Detect if terminal supports extended underline styles.
- * (curly, dotted, dashed, double)
- *
- * Extended underlines use SGR 4:x (style) and SGR 58;2;r;g;b (color).
- * These are NOT supported by Terminal.app, which misinterprets them
- * as background colors causing visual artifacts.
- */
-export function detectExtendedUnderline(): boolean {
-  const term = process.env.TERM ?? ""
-  const termProgram = process.env.TERM_PROGRAM ?? ""
-
-  // Apple Terminal doesn't support extended underlines - check FIRST
-  // because it often sets TERM=xterm-256color which would otherwise match
-  if (termProgram === "Apple_Terminal") {
-    return false
-  }
-
-  // Check TERM variable for known modern terminals
-  if (EXTENDED_UNDERLINE_TERMS.some((t) => term.includes(t))) {
-    return true
-  }
-
-  // Check TERM_PROGRAM for known terminal applications
-  if (EXTENDED_UNDERLINE_PROGRAMS.some((p) => termProgram.includes(p))) {
-    return true
-  }
-
-  // Kitty sets KITTY_WINDOW_ID
-  if (process.env.KITTY_WINDOW_ID) {
-    return true
-  }
-
-  // Default to false for unknown terminals
-  return false
-}
 
 // =============================================================================
 // Terminal Capabilities Profile

@@ -40,12 +40,7 @@ import type { TerminalBuffer } from "../buffer"
 import { createTextFrame } from "../buffer"
 import type { TextFrame } from "@silvery/ag/text-frame"
 import { outputPhase } from "../pipeline/output-phase"
-import {
-  defaultCaps,
-  detectCursor,
-  detectInput,
-  detectUnicode,
-} from "./detection"
+import { defaultCaps, detectCursor, detectInput } from "./detection"
 import { createInputOwner, type InputOwner as Input } from "../runtime/input-owner"
 export type { Input }
 import { createOutput, type Output } from "../runtime/devices/output"
@@ -718,7 +713,8 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // the canonical `"mono"` so downstream consumers only see ColorTier values.
   const cachedCursor = options.cursor ?? detectCursor(stdout)
   const cachedInput = detectInput(stdin)
-  const cachedUnicode = options.unicode ?? detectUnicode()
+  // `cachedUnicode` is set after the profile is built below — profile.caps.unicode
+  // is the canonical answer (km-silvery.unicode-plateau Phase 1).
 
   // Fully-resolved TerminalProfile — the single value that flows through
   // run() / createApp() for this Term's lifetime. Post km-silvery.plateau-
@@ -764,6 +760,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
       })
   const detectedCaps: TerminalCaps = profile.caps
   const cachedColor: ColorTier = profile.colorTier
+  const cachedUnicode = options.unicode ?? profile.caps.unicode
 
   // Create style instance with appropriate color level
   const styleInstance = createStyle({ level: cachedColor })
