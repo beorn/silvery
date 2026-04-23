@@ -762,11 +762,16 @@ function createNodeTerm(options: CreateTermOptions): Term {
   const size = createSize(stdout)
 
   // Lazy Provider — only created when getState/subscribe/events is called.
-  // Shares the Term's Size owner so provider resize events match term.size.
+  // Shares the Term's Size + Input so resize events match term.size and
+  // key/mouse/paste/focus events match term.input.
   let provider: ReturnType<typeof createTermProvider> | null = null
   const getProvider = () => {
     if (!provider) {
-      provider = createTermProvider(stdin, stdout, { size, modes })
+      provider = createTermProvider(stdin, stdout, {
+        size,
+        modes,
+        input: _input ?? undefined,
+      })
     }
     return provider
   }
@@ -774,9 +779,9 @@ function createNodeTerm(options: CreateTermOptions): Term {
   let _frame: TextFrame | undefined
 
   // Sub-owner storage declared up-front so `ownedWrite` below can reference
-  // `_output` in its closure. `_input` / `_output` are populated lazily by
-  // `getInput()` / `getOutput()`.
-  let _input: Input | null = null
+  // `_output` in its closure. `_input` is constructed eagerly for TTY-backed
+  // terms (single stdin owner for the session's lifetime); `_output` is
+  // populated lazily by `getOutput()`.
   let _output: Output | null = null
 
   // Writer router: every silvery-owned ANSI write (modes toggles, term.write,
@@ -793,16 +798,25 @@ function createNodeTerm(options: CreateTermOptions): Term {
     return stdout.write(s)
   }
 
-  // Lazy Input — constructed on first access. Owns stdin's raw mode + data
-  // listener for the Term's lifetime. See km-silvery.term-sub-owners Phase 2.
-  // Only available for TTY-backed Node terms; non-TTY callers get undefined.
-  const getInput = (): Input | undefined => {
-    if (!stdin.isTTY) return undefined
-    if (!_input) {
-      _input = createInputOwner(stdin, stdout, { writeStdout: ownedWrite, modes })
-    }
-    return _input
-  }
+  // Modes owner — single authority for terminal protocol modes (raw, alt-
+  // screen, paste, kitty keyboard, mouse, focus reporting). Consolidates
+  // the scattered enable*/disable* call sites. See Phase 4. Declared before
+  // Input because Input routes raw-mode + bracketed-paste through modes.
+  const modes = createModes({
+    write: ownedWrite,
+    stdin,
+  })
+
+  // Eager Input — constructed at term creation for TTY-backed Node terms.
+  // Owns stdin's raw mode + data listener + bracketed-paste protocol for the
+  // Term's lifetime. Single stdin authority — no other code should call
+  // stdin.on("data", …) or stdin.setRawMode. Non-TTY backed terms (tests,
+  // piped stdin) get undefined; callers branch off `term.input` existence.
+  // See km-silvery.term-sub-owners Phase 2 + km-silvery.input-structured-events.
+  const _input: Input | null = stdin.isTTY
+    ? createInputOwner(stdin, stdout, { writeStdout: ownedWrite, modes })
+    : null
+  const getInput = (): Input | undefined => _input ?? undefined
 
   // Shared ConsoleRouter — the single patcher for console.*. Both Console
   // (tap) and Output (sink) register against it so activation order no
@@ -821,14 +835,6 @@ function createNodeTerm(options: CreateTermOptions): Term {
     }
     return _output
   }
-
-  // Modes owner — single authority for terminal protocol modes (raw, alt-
-  // screen, paste, kitty keyboard, mouse, focus reporting). Consolidates
-  // the scattered enable*/disable* call sites. See Phase 4.
-  const modes = createModes({
-    write: ownedWrite,
-    stdin,
-  })
 
   // Console owner — captures console.* during alt-screen rendering. Shares
   // the Term's ConsoleRouter so its tap lives on the same patch site as

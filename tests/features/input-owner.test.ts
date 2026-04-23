@@ -111,7 +111,9 @@ describe("InputOwner", () => {
 
   it("resolves a probe when parse returns a result", async () => {
     const { stdin, stdout, send, written } = createMockIO()
-    using owner = createInputOwner(stdin, stdout)
+    // enableBracketedPaste: false so the protocol bytes don't appear in the
+    // written-stream assertion (this test focuses on probe I/O only).
+    using owner = createInputOwner(stdin, stdout, { enableBracketedPaste: false })
 
     const probe = owner.probe<string>({
       query: "\x1b]11;?\x07",
@@ -196,20 +198,19 @@ describe("InputOwner", () => {
     const { stdin, stdout, send } = createMockIO()
     using owner = createInputOwner(stdin, stdout)
 
-    // Register a catch-all onData handler to absorb initial unrelated bytes.
-    const seen: string[] = []
-    owner.onData((c) => seen.push(c))
+    // Bytes arriving before any probe register go straight through the event
+    // parser. Use onKey to absorb them so the buffer drains.
+    const keys: string[] = []
+    owner.onKey((e) => keys.push(e.input))
 
-    // Unrelated bytes arrive; they go to onData (no probes yet).
-    send("garbage-prefix")
-    expect(seen).toEqual(["garbage-prefix"])
+    send("x")
+    expect(keys).toEqual(["x"])
 
-    // Now the terminal sends a response before we've even issued the probe.
-    // The InputOwner buffer will be empty (fanned out to onData), so this
-    // scenario tests a tighter case: response arrives AFTER probe registers
-    // but BEFORE parse would match.
+    // Now register a probe that matches a later chunk. The event parser
+    // respects probe priority — registered probes drain first, leftover bytes
+    // fall through to onKey.
     const p = owner.probe<number>({
-      query: "", // don't emit anything
+      query: "",
       parse: (acc) => {
         if (acc.includes("ready")) return { result: 42, consumed: acc.length }
         return null
@@ -221,31 +222,31 @@ describe("InputOwner", () => {
     expect(await p).toBe(42)
   })
 
-  it("fans out non-probe data to onData subscribers", async () => {
+  it("fans parsed bytes to onKey subscribers (non-probe data path)", async () => {
     const { stdin, stdout, send } = createMockIO()
     using owner = createInputOwner(stdin, stdout)
 
-    const chunks: string[] = []
-    const unsubscribe = owner.onData((chunk) => chunks.push(chunk))
+    const keys: string[] = []
+    const unsubscribe = owner.onKey((e) => keys.push(e.input))
 
-    send("hello")
-    send("world")
-    expect(chunks).toEqual(["hello", "world"])
+    send("a")
+    send("b")
+    expect(keys).toEqual(["a", "b"])
 
     unsubscribe()
-    send("ignored")
-    expect(chunks).toEqual(["hello", "world"])
+    send("c")
+    expect(keys).toEqual(["a", "b"])
   })
 
-  it("probe parse gets priority — onData only sees remainder", async () => {
+  it("probe parse gets priority — event parser only sees remainder", async () => {
     const { stdin, stdout, send } = createMockIO()
     using owner = createInputOwner(stdin, stdout)
 
-    const chunks: string[] = []
-    owner.onData((c) => chunks.push(c))
+    const keys: string[] = []
+    owner.onKey((e) => keys.push(e.input))
 
-    // Probe consumes "\x1b]11;...\x07" prefix; "keypress" remainder falls
-    // through to onData.
+    // Probe consumes "\x1b]11;...\x07" prefix; remainder "xy" falls through
+    // to the event parser and arrives as two key events.
     const probe = owner.probe<string>({
       query: "",
       parse: (acc) => {
@@ -258,10 +259,10 @@ describe("InputOwner", () => {
       timeoutMs: 500,
     })
 
-    send("\x1b]11;rgb:1a1a/1b1b/1c1c\x07keypress")
+    send("\x1b]11;rgb:1a1a/1b1b/1c1c\x07xy")
     const parsed = await probe
     expect(parsed).toBe("\x1b]11;rgb:1a1a/1b1b/1c1c\x07")
-    expect(chunks).toEqual(["keypress"])
+    expect(keys).toEqual(["x", "y"])
   })
 
   it("dispose resolves pending probes with null", async () => {
@@ -361,6 +362,7 @@ describe("InputOwner", () => {
     const { stdin, stdout } = createMockIO()
     const guarded: string[] = []
     using owner = createInputOwner(stdin, stdout, {
+      enableBracketedPaste: false,
       writeStdout: (data) => {
         guarded.push(typeof data === "string" ? data : String(data))
         return true

@@ -154,27 +154,27 @@ describe("InputOwner + probeColors integration", () => {
     const { stdin, stdout, deliver, dataHandlers } = createMockIO()
     using owner = createInputOwner(stdin, stdout)
 
-    // Subscribe to non-probe data — simulates term-provider's key listener
-    // registered alongside the owner.
-    const keyEvents: string[] = []
-    owner.onData((chunk) => keyEvents.push(chunk))
+    // Subscribe to typed key events — simulates the app listener registered
+    // alongside the owner.
+    const keys: string[] = []
+    owner.onKey((e) => keys.push(e.input))
 
     // Kick off probeColors — its OSC queries will be answered by the mock
     const probeP = probeColors({ input: owner, timeoutMs: 500 })
 
     // Before the mock answers, inject a keypress. The owner must NOT
-    // misattribute this to any probe parser — it should arrive on onData.
+    // misattribute this to any probe parser — it should arrive on onKey.
     deliver("j")
-    expect(keyEvents).toEqual(["j"])
+    expect(keys).toEqual(["j"])
 
     // Meanwhile the queued OSC responses land — probeColors still resolves.
     const detected = await probeP
     expect(detected).not.toBeNull()
     expect(detected!.bg).toBe("#262626")
 
-    // Another keypress after probe completed also routes to onData.
+    // Another keypress after probe completed also routes to onKey.
     deliver("k")
-    expect(keyEvents).toEqual(["j", "k"])
+    expect(keys).toEqual(["j", "k"])
 
     // dataHandlers on the mock still contains exactly 1 entry (the owner's).
     expect(dataHandlers.size).toBe(1)

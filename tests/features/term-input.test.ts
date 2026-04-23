@@ -24,7 +24,7 @@ describe("term.input — Phase 2 wire-up", () => {
     expect(term.input).toBeUndefined()
   })
 
-  test("Node term with TTY stdin has an input sub-owner with probe + onData", () => {
+  test("Node term with TTY stdin has an input sub-owner with probe + structured events", () => {
     // We can't easily test the real process.stdin (raw mode + listener
     // attachment has process-wide side effects), so simulate a TTY shape.
     // The InputOwner construction validates the contract.
@@ -51,7 +51,10 @@ describe("term.input — Phase 2 wire-up", () => {
     const term = createTerm({ stdin: fakeStdin, stdout: fakeStdout })
     expect(term.input).toBeDefined()
     expect(typeof term.input?.probe).toBe("function")
-    expect(typeof term.input?.onData).toBe("function")
+    expect(typeof term.input?.onKey).toBe("function")
+    expect(typeof term.input?.onMouse).toBe("function")
+    expect(typeof term.input?.onPaste).toBe("function")
+    expect(typeof term.input?.onFocus).toBe("function")
   })
 
   test("input is lazy — same instance across accesses", () => {
