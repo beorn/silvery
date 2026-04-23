@@ -320,10 +320,12 @@ const KINETIC_FRAME_MS = 16
 const RELEASE_TIMEOUT_MS = 60
 /** How long (ms) the scrollbar stays visible after the last scroll activity. */
 const SCROLLBAR_FADE_AFTER_MS = 800
-/** How long (ms) the edge-bump indicator shows after hitting a boundary. */
-const EDGE_BUMP_SHOW_MS = 500
-/** Pulse period for the edge-bump indicator (ms per half-cycle). Fast flash
- * so the line reads as movement — 50 ms toggle over 500 ms total = ~5 cycles. */
+/** How long (ms) the edge-bump indicator shows after hitting a boundary.
+ * 300 ms total — 3 full on/off cycles at 50 ms half-period. Any longer felt
+ * like the indicator was lingering; 2–3 s reports were the scrollbar-lifecycle
+ * sync keeping bumpedEdge alive past its own hide timer. */
+const EDGE_BUMP_SHOW_MS = 300
+/** Pulse period for the edge-bump indicator (ms per half-cycle). */
 const EDGE_BUMP_PULSE_MS = 50
 
 // =============================================================================
@@ -526,13 +528,21 @@ function ListViewInner<T>(
   // Flash the edge-bump indicator. Called when a scroll attempt was
   // clamped at a boundary — transient "you've hit the end" cue. NOT
   // called when the viewport merely rests at the edge without a push.
+  //
+  // IMPORTANT: the hide timer is NOT rescheduled on repeat bumps. If the user
+  // keeps scrolling against the edge (wheel events every ~30–50 ms), each
+  // event would otherwise reset the 300 ms timer, stretching the flash to
+  // several seconds. We want the flash bounded to EDGE_BUMP_SHOW_MS from the
+  // FIRST bump of a streak. The `bumpHideTimerRef.current !== null` guard
+  // means: if a hide timer is already scheduled, leave it alone.
   const flashEdgeBump = useCallback((edge: "top" | "bottom") => {
+    const alreadyActive = bumpHideTimerRef.current !== null
     setBumpedEdge(edge)
     // Reset the pulse phase so the flash starts visible — otherwise a new
     // bump arriving during the "off" phase of a prior bump would be invisible
     // until the next toggle.
-    setIsPulseOn(true)
-    if (bumpHideTimerRef.current !== null) clearTimeout(bumpHideTimerRef.current)
+    if (!alreadyActive) setIsPulseOn(true)
+    if (alreadyActive) return // don't reset the 300 ms fuse on repeat bumps
     bumpHideTimerRef.current = setTimeout(() => {
       setBumpedEdge(null)
       bumpHideTimerRef.current = null
