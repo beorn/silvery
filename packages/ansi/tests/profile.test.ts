@@ -17,7 +17,7 @@ import {
   detectColorFromEnv,
   detectTerminalProfileFromEnv,
 } from "../src/profile"
-import { defaultCaps } from "../src/detection"
+import { defaultCaps } from "../src/caps"
 
 const tty = { isTTY: true }
 const nonTty = { isTTY: false }

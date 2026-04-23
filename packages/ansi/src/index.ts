@@ -30,7 +30,7 @@
 // =============================================================================
 
 export type { ColorLevel, RGB, AnsiColorName, Color, UnderlineStyle, TerminalCaps } from "./types"
-export type { TerminalEmulator } from "./detection"
+export type { TerminalEmulator } from "./emulator"
 
 // =============================================================================
 // Constants
@@ -48,15 +48,23 @@ export {
 } from "./constants"
 
 // =============================================================================
-// Detection — narrow-scope probes only. Full caps/color detection is owned
-// by {@link ./profile} (`createTerminalProfile` / `probeTerminalProfile`).
+// Caps + Emulator defaults. Full caps/color detection is owned by
+// {@link ./profile} (`createTerminalProfile` / `probeTerminalProfile`) — these
+// are just the headless/unknown fallbacks used by the profile factory.
 //
 // Post km-silvery.plateau-delete-legacy-shims (H6 /big review 2026-04-23):
 // `detectColor` and `detectTerminalCaps` are removed — every consumer now
 // routes through the profile factory instead.
+//
+// Post km-silvery.plateau-finishing (2026-04-23): the file formerly known as
+// `detection.ts` was split into `caps.ts` + `emulator.ts` — its narrow-probe
+// docstring was the last vestige of a design that disappeared in the unicode
+// plateau; the filename didn't match what readers looking for `TerminalCaps`
+// expected.
 // =============================================================================
 
-export { defaultCaps, defaultEmulator } from "./detection"
+export { defaultCaps } from "./caps"
+export { defaultEmulator } from "./emulator"
 
 // =============================================================================
 // Terminal Profile — single source of truth for terminal detection.

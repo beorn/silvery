@@ -482,6 +482,7 @@ interface AdapterStyleContext {
   bold?: boolean
   dim?: boolean
   italic?: boolean
+  /** Underline as a boolean — style name (from `underline: "curly"` etc.) is stored in underlineStyle. */
   underline?: boolean
   underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed"
   underlineColor?: string
@@ -489,19 +490,47 @@ interface AdapterStyleContext {
   strikethrough?: boolean
 }
 
+/**
+ * Normalize the unified `underline: boolean | UnderlineStyleName` prop into
+ * the legacy `{ underline: boolean, underlineStyle: StyleName | undefined }`
+ * pair used by AdapterStyleContext. Used when reading child TextProps.
+ */
+function normalizeUnderlineProp(
+  underline: boolean | "single" | "double" | "curly" | "dotted" | "dashed" | undefined,
+  explicitStyle: "single" | "double" | "curly" | "dotted" | "dashed" | false | undefined,
+): { underline?: boolean; underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed" } {
+  const out: {
+    underline?: boolean
+    underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed"
+  } = {}
+  if (explicitStyle !== undefined && explicitStyle !== false) {
+    out.underline = true
+    out.underlineStyle = explicitStyle
+  } else if (typeof underline === "string") {
+    out.underline = true
+    out.underlineStyle = underline
+  } else if (underline !== undefined) {
+    out.underline = underline
+  }
+  return out
+}
+
 /** Merge child TextProps into parent style context. Child values override parent. */
 function mergeAdapterStyleContext(
   parent: AdapterStyleContext,
   childProps: TextProps,
 ): AdapterStyleContext {
+  const childUnderline = normalizeUnderlineProp(
+    childProps.underline,
+    childProps.underlineStyle as "single" | "double" | "curly" | "dotted" | "dashed" | undefined,
+  )
   return {
     color: childProps.color ?? parent.color,
     bold: childProps.bold ?? parent.bold,
     dim: childProps.dim ?? (childProps as any).dimColor ?? parent.dim,
     italic: childProps.italic ?? parent.italic,
-    underline: childProps.underline ?? parent.underline,
-    underlineStyle:
-      (childProps.underlineStyle as AdapterStyleContext["underlineStyle"]) ?? parent.underlineStyle,
+    underline: childUnderline.underline ?? parent.underline,
+    underlineStyle: childUnderline.underlineStyle ?? parent.underlineStyle,
     underlineColor: childProps.underlineColor ?? parent.underlineColor,
     inverse: childProps.inverse ?? parent.inverse,
     strikethrough: childProps.strikethrough ?? parent.strikethrough,
@@ -629,14 +658,19 @@ function renderText(
   const { x, width: layoutWidth } = layout
   const y = layout.y - scrollOffset
 
-  // Build root style context from the Text node's own props
+  // Build root style context from the Text node's own props.
+  // Normalize the unified `underline: boolean | UnderlineStyleName` prop.
+  const rootUnderline = normalizeUnderlineProp(
+    props.underline,
+    props.underlineStyle as "single" | "double" | "curly" | "dotted" | "dashed" | undefined,
+  )
   const rootContext: AdapterStyleContext = {
     color: props.color ?? undefined,
     bold: props.bold,
     dim: props.dim,
     italic: props.italic,
-    underline: props.underline,
-    underlineStyle: props.underlineStyle as AdapterStyleContext["underlineStyle"],
+    underline: rootUnderline.underline,
+    underlineStyle: rootUnderline.underlineStyle,
     underlineColor: props.underlineColor ?? undefined,
     inverse: props.inverse,
     strikethrough: props.strikethrough,

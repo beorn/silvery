@@ -19,12 +19,8 @@
  * too small to earn its own namespace and was collapsed in the naming polish.
  */
 
-import {
-  defaultCaps,
-  defaultEmulator,
-  type TerminalCaps,
-  type TerminalEmulator,
-} from "./detection"
+import { defaultCaps, type TerminalCaps } from "./caps"
+import { defaultEmulator, type TerminalEmulator } from "./emulator"
 import type { ColorLevel } from "./types"
 import { detectTheme } from "./theme/detect"
 import type { DetectThemeOptions, ProbeInputOwner } from "./theme/detect"

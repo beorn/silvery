@@ -298,11 +298,17 @@ function collectMonoAttrs(color: string | undefined, into: Set<MonoAttr>): void 
  * Get text style from props.
  */
 export function getTextStyle(props: TextProps): Style {
-  // Determine underline style: underlineStyle takes precedence over underline boolean
+  // Determine underline style. Precedence:
+  //   1. `underlineStyle` (deprecated, explicit)
+  //   2. `underline: "curly" | "double" | ...` (string form of the unified prop)
+  //   3. `underline: true` → "single"
+  //   4. `underline: false` / undefined → no underline
   let underlineStyle: UnderlineStyle | undefined
   if (props.underlineStyle !== undefined) {
     underlineStyle = props.underlineStyle
-  } else if (props.underline) {
+  } else if (typeof props.underline === "string") {
+    underlineStyle = props.underline
+  } else if (props.underline === true) {
     underlineStyle = "single"
   }
 
@@ -310,7 +316,7 @@ export function getTextStyle(props: TextProps): Style {
   let bold = props.bold
   let dim = props.dim || props.dimColor // dimColor is Ink compatibility alias
   let italic = props.italic
-  let underline = props.underline || !!underlineStyle
+  let underline = !!props.underline || !!underlineStyle
   let strikethrough = props.strikethrough
   let inverse = props.inverse
 

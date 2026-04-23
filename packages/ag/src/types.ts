@@ -204,6 +204,12 @@ export interface TestProps {
 export type UnderlineStyle = false | "single" | "double" | "curly" | "dotted" | "dashed"
 
 /**
+ * Named underline styles — the string half of `underline: boolean | UnderlineStyleName`.
+ * Excludes `false` so the boolean-or-string union doesn't have two falsy branches.
+ */
+export type UnderlineStyleName = Exclude<UnderlineStyle, false>
+
+/**
  * Style properties for text rendering.
  */
 export interface StyleProps {
@@ -228,11 +234,20 @@ export interface StyleProps {
    */
   dimColor?: boolean
   italic?: boolean
-  /** Enable underline. Use underlineStyle for style variants. */
-  underline?: boolean
   /**
-   * Underline style variant: 'single' | 'double' | 'curly' | 'dotted' | 'dashed'.
-   * Setting this implies underline=true. Takes precedence over underline prop.
+   * Enable underline. Accepts:
+   * - `true` — standard single underline (equivalent to `"single"`)
+   * - `false` — no underline
+   * - `"single" | "double" | "curly" | "dotted" | "dashed"` — specific style variant
+   *
+   * A style name is equivalent to setting `underline=true` with that style.
+   */
+  underline?: boolean | UnderlineStyleName
+  /**
+   * @deprecated Pass the style name directly to `underline` instead
+   * (e.g. `underline="curly"`). `underlineStyle` is retained for backwards
+   * compatibility and still takes precedence over `underline` when both are set.
+   * Will be removed in a future major.
    */
   underlineStyle?: UnderlineStyle
   /**
