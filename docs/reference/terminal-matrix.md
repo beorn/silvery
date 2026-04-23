@@ -126,10 +126,12 @@ Silvery detects capabilities synchronously from environment variables at startup
 | `NO_COLOR`     | Disable all color output when set                     |
 
 ```typescript
-import { detectTerminalCaps } from "@silvery/ag-term"
+import { createTerminalProfile } from "@silvery/ag-term"
 
-const caps = detectTerminalCaps()
+const profile = createTerminalProfile()
+const caps = profile.caps
 // caps.colorLevel, caps.kittyKeyboard, caps.osc52, etc.
+// profile.colorTier, profile.colorProvenance — resolved + attribution
 ```
 
 No I/O is performed -- detection is instant but limited to what env vars reveal. For runtime detection of specific protocols (like Kitty keyboard support), use:

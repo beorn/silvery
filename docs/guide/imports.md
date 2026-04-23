@@ -73,7 +73,7 @@ Low-level terminal primitives: buffer management, render pipeline, ANSI escape s
 ```ts
 import { createAg, outputPhase, createOutputPhase } from "@silvery/ag-term"
 import { displayWidth, wrapText, truncateText, splitGraphemes } from "@silvery/ag-term"
-import { ANSI, enableMouse, setCursorStyle, detectTerminalCaps } from "@silvery/ag-term"
+import { ANSI, enableMouse, setCursorStyle, createTerminalProfile } from "@silvery/ag-term"
 import { createTerm, term, patchConsole } from "@silvery/ag-term"
 import { HitRegistry, useHitRegion } from "@silvery/ag-term"
 import { createCanvasAdapter, createDOMAdapter } from "@silvery/ag-term"

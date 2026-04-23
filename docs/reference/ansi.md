@@ -26,44 +26,45 @@ yarn add @silvery/ansi
 
 :::
 
-## Color Detection
+## Terminal Profile
 
-Detect the color level supported by the current terminal, respecting `NO_COLOR` and `FORCE_COLOR`:
+Resolve the terminal profile (color tier + capability flags) in one call, respecting `NO_COLOR` and `FORCE_COLOR`:
 
 ```typescript
-import { detectColor } from "@silvery/ansi"
+import { createTerminalProfile } from "@silvery/ansi"
 
-const level = detectColor(process.stdout)
-// "truecolor" | "256" | "basic" | null
+const profile = createTerminalProfile()
+// profile.colorTier: "mono" | "ansi16" | "256" | "truecolor"
+// profile.colorForced: boolean (env or override displaced baseline)
+// profile.colorProvenance: "env" | "override" | "caller-caps" | "auto"
+// profile.caps: full TerminalCaps — colorLevel, kittyKeyboard, osc52, …
 ```
 
-Detection order:
+Precedence (highest wins):
 
-1. `NO_COLOR` env var -- forces no color ([no-color.org](https://no-color.org))
-2. `FORCE_COLOR` env var -- `0`/`false` = none, `1` = basic, `2` = 256, `3` = truecolor
-3. `COLORTERM=truecolor` or `24bit` -- truecolor
-4. `TERM` patterns -- `xterm-ghostty`, `xterm-kitty`, `256color`, etc.
-5. `TERM_PROGRAM` -- iTerm.app, Ghostty, WezTerm, Apple_Terminal
-6. CI environments -- GitHub Actions, GitLab CI, etc. get basic colors
-7. Default: basic colors if TTY, null if piped
+1. `NO_COLOR` env var -- forces `mono` ([no-color.org](https://no-color.org))
+2. `FORCE_COLOR` env var -- `0` = mono, `1` = ansi16, `2` = 256, `3` = truecolor
+3. Explicit `colorOverride` option (includes `null` alias for `mono`)
+4. `caps.colorLevel` from caller-supplied partial caps
+5. Auto-detect from `COLORTERM`, `TERM`, `TERM_PROGRAM`, CI vars — otherwise `ansi16` if TTY, `mono` if piped
 
-### Color Levels
+### Color Tiers
 
-| Level         | Colors | SGR Format         |
+| Tier          | Colors | SGR Format         |
 | ------------- | ------ | ------------------ |
-| `null`        | None   | No ANSI codes      |
-| `"basic"`     | 16     | `\x1b[31m` etc.    |
+| `"mono"`      | None   | No ANSI codes      |
+| `"ansi16"`    | 16     | `\x1b[31m` etc.    |
 | `"256"`       | 256    | `\x1b[38;5;Nm`     |
 | `"truecolor"` | 16M    | `\x1b[38;2;R;G;Bm` |
 
 ## Terminal Capability Detection
 
-Get a full profile of what the current terminal supports:
+`createTerminalProfile()` also resolves a full `TerminalCaps` — the structural capability bag every entry point threads through:
 
 ```typescript
-import { detectTerminalCaps } from "@silvery/ansi"
+import { createTerminalProfile } from "@silvery/ansi"
 
-const caps = detectTerminalCaps()
+const { caps } = createTerminalProfile()
 
 if (caps.kittyKeyboard) {
   /* use enhanced key reporting */
@@ -75,6 +76,8 @@ if (caps.underlineStyles) {
   /* use curly underlines for errors */
 }
 ```
+
+For async probe-based detection (adds `profile.theme`), use `probeTerminalProfile()`. Every entry point (`run`, `createApp().run()`, `render`, `createTerm`) accepts a pre-built `profile` option so the whole session flows from one resolved value.
 
 The `TerminalCaps` object includes:
 

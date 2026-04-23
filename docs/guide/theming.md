@@ -426,7 +426,7 @@ detector.subscribe((scheme) => {
 
 **Supported terminals:** Contour, foot, WezTerm (1.0+), and growing. Terminals that don't support Mode 2031 are handled gracefully via the timeout + fallback mechanism.
 
-The `darkBackground` field in `detectTerminalCaps()` still uses synchronous environment-variable heuristics and the macOS `defaults` command. The Mode 2031 detector is async and designed for apps that can wait for terminal responses at startup.
+The `darkBackground` field on `createTerminalProfile().caps` still uses synchronous environment-variable heuristics and the macOS `defaults` command. The Mode 2031 detector is async and designed for apps that can wait for terminal responses at startup.
 
 ## Debugging Themes
 
