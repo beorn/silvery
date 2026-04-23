@@ -288,16 +288,27 @@ const WHEEL_VELOCITY_WINDOW_MS = 150
 const SUSTAINED_SCROLL_THRESHOLD = 3
 
 /** Max absolute velocity (rows/sec). Caps momentum coast distance. */
-const KINETIC_MAX_VELOCITY = 40
+const KINETIC_MAX_VELOCITY = 80
 /** Momentum time constant (ms). */
 const KINETIC_TIME_CONSTANT_MS = 180
 /** Fraction of `v × τ` to use as momentum amplitude. <1 dampens coast without
  * needing to retune τ (which also affects decay shape). */
 const KINETIC_MOMENTUM_GAIN = 0.6
-/** Hard cap on coast distance (rows). Prevents accidental long slides on
- * high-velocity flicks; at our MAX_VELOCITY × τ × GAIN that's ≈ 4.3, so 10
- * is a generous ceiling that only clips outliers. */
-const KINETIC_MAX_COAST_ROWS = 10
+/** Hard cap on coast distance (rows). Raised from 10 → 30 for faster flick
+ * throughput — at MAX_VELOCITY=80 × τ=0.18 × GAIN=0.6 the uncapped amplitude
+ * is ≈ 8.6 rows, so 30 only clips the very-long-flick outliers while letting
+ * normal flicks coast their natural distance (≈ 4-9 rows).
+ *
+ * Per-flick acceleration: see `KINETIC_ACCEL_BOOST` — consecutive flicks in
+ * the same direction compound velocity (iOS-style), letting users reach
+ * arbitrary speeds by flicking repeatedly. */
+const KINETIC_MAX_COAST_ROWS = 30
+/** Velocity boost applied when a new flick begins while momentum is still
+ * active in the same direction (iOS-style compounding acceleration). Each
+ * subsequent same-direction flick adds `instant_v × BOOST` to the next
+ * momentum phase, capped by KINETIC_MAX_VELOCITY so runaway acceleration is
+ * impossible. */
+const KINETIC_ACCEL_BOOST = 1.6
 /** Stop the momentum animation after this many τ (6τ → within 0.25% of target). */
 const KINETIC_STOP_AFTER_TAU_MULTIPLES = 6
 /** Stop when remaining distance is below this (rows). Higher = snappier end
@@ -479,6 +490,10 @@ function ListViewInner<T>(
       kineticLoopRef.current = null
     }
     momentumRef.current = null
+    // Note: do NOT zero pendingBoostVelocityRef here — handleWheel captures
+    // residual velocity *before* calling stopKinetic, and enterMomentum
+    // consumes it. Zeroing here would defeat the compounding path. The
+    // reset happens naturally in enterMomentum after use.
   }, [])
 
   const clearReleaseTimer = useCallback(() => {
@@ -700,7 +715,12 @@ function ListViewInner<T>(
     const last = buf[buf.length - 1]!
     const spanMs = Math.max(1, last.t - first.t)
     const rawV = (netRows / spanMs) * 1000
-    const v = Math.max(-KINETIC_MAX_VELOCITY, Math.min(KINETIC_MAX_VELOCITY, rawV))
+    // Add any residual velocity captured from a prior coast we interrupted
+    // in the same direction (iOS-style acceleration). Clears after use.
+    const boost = pendingBoostVelocityRef.current
+    pendingBoostVelocityRef.current = 0
+    const compoundedV = rawV + boost
+    const v = Math.max(-KINETIC_MAX_VELOCITY, Math.min(KINETIC_MAX_VELOCITY, compoundedV))
     // Consume the buffer — it belongs to the gesture we're now animating.
     wheelBufferRef.current = []
     if (Math.abs(v) < 1) return
@@ -740,6 +760,13 @@ function ListViewInner<T>(
   // where the user is looking, not from row 0.
   const rowsAboveViewportRef = useRef(0)
 
+  // Residual velocity (rows/sec) captured from an in-flight momentum coast
+  // when a new wheel event interrupts it in the SAME direction. Used by
+  // `enterMomentum` to compound — each same-direction flick adds to the
+  // prior residual, giving iOS-style acceleration. Zeroed when the user
+  // reverses direction or when momentum ends naturally.
+  const pendingBoostVelocityRef = useRef(0)
+
   const handleWheel = useCallback(
     ({ deltaY }: { deltaY: number }) => {
       const maxRow = maxScrollRowRef.current
@@ -747,6 +774,31 @@ function ListViewInner<T>(
       const now = performance.now()
       const dir = Math.sign(deltaY) || 0
       if (dir === 0) return
+      // Capture the residual velocity from any in-flight momentum BEFORE we
+      // stop it. If the new flick is in the same direction, this residual
+      // compounds into the next momentum phase (iOS-style acceleration).
+      // Opposite direction → zero the boost; user is reversing, not
+      // accelerating.
+      const m = momentumRef.current
+      if (m !== null) {
+        const tau = KINETIC_TIME_CONSTANT_MS
+        const t = performance.now() - m.startTime
+        // Instantaneous velocity of the decay curve: v0 × exp(-t/τ), where
+        // v0 = amplitude / τ (seconds). Evaluate in rows/sec.
+        const decay = Math.exp(-t / tau)
+        const instantVRowsPerMs = (m.amplitude / tau) * decay
+        const instantVRowsPerSec = instantVRowsPerMs * 1000
+        const sameDir = Math.sign(instantVRowsPerSec) === dir
+        if (sameDir) {
+          pendingBoostVelocityRef.current += instantVRowsPerSec * KINETIC_ACCEL_BOOST
+          // Cap so runaway acceleration is impossible even under spam.
+          const cap = KINETIC_MAX_VELOCITY
+          if (pendingBoostVelocityRef.current > cap) pendingBoostVelocityRef.current = cap
+          else if (pendingBoostVelocityRef.current < -cap) pendingBoostVelocityRef.current = -cap
+        } else {
+          pendingBoostVelocityRef.current = 0
+        }
+      }
       // Cancel any in-flight momentum — user is actively driving again.
       stopKinetic()
       clearReleaseTimer()
