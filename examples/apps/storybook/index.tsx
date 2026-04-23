@@ -10,7 +10,8 @@
  */
 
 import React from "react"
-import { render, createTerm } from "silvery"
+import { createTerm } from "silvery"
+import { run } from "silvery/runtime"
 import type { ExampleMeta } from "../../_banner.tsx"
 import { App } from "./App.tsx"
 
@@ -29,15 +30,12 @@ export const meta: ExampleMeta = {
 
 export async function main(): Promise<void> {
   using term = createTerm()
-  // Enable SGR mouse tracking so trackpad/wheel events dispatch to the
-  // pane under the pointer (ComponentPreview, SchemeList, TokenTree).
-  // Without this, render() defaults to mouse:false and the terminal falls
-  // back to sending arrow keys for trackpad scroll — those go to the
-  // focused pane (SchemeList by default), which is why "the wheel always
-  // scrolls the picker" before this is set. `run()` defaults to mouse:true;
-  // render()'s default should probably follow — tracked in a separate bead.
-  const { waitUntilExit } = await render(<App />, term, { mouse: true })
-  await waitUntilExit()
+  // Use `run()` (not `render()`) so SGR mouse tracking is enabled — trackpad
+  // and wheel events dispatch to the pane under the pointer instead of
+  // falling back to arrow keys that always route to the focused pane.
+  // `render()` has no mouse plumbing at all; `run()` defaults mouse:true.
+  const handle = await run(<App />, term)
+  await handle.waitUntilExit()
 }
 
 // Auto-run when invoked directly (bun examples/apps/storybook/index.tsx)
