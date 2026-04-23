@@ -670,7 +670,9 @@ export function replayAnsiWithStyles(
 // Default context for replayAnsiWithStyles when called without ctx (by tests).
 const _defaultCtxForReplay: OutputContext = {
   caps: {
-    underlineStyles: true,
+    // Full per-style support — tests render at truecolor with all styles
+    // available. Narrower caps are exercised via createOutputPhase({...}).
+    underlineStyles: ["single", "double", "curly", "dotted", "dashed"],
     underlineColor: true,
     colorLevel: "truecolor",
   },

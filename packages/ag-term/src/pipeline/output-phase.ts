@@ -73,14 +73,68 @@ import type { TerminalCaps } from "../terminal-caps"
 /**
  * Output-phase capabilities type.
  *
- * Post km-silvery.caps-restructure (Phase 7, 2026-04-23): the consumer-facing
- * `underlineStyles` on TerminalCaps is a `readonly UnderlineStyle[]`. The
- * output phase only needs a boolean gate ("does any extended underline
- * work?"), so OutputCaps keeps the legacy boolean shape — callers project
- * from the array at construction via `caps.underlineStyles.length > 0`.
+ * Post km-silvery.text-box-attr-props (2026-04-23):
+ * `underlineStyles` is now the per-style set (not just a boolean), so the
+ * output phase can downgrade individual styles — e.g. `"curly"` requested on
+ * a terminal that only supports `"single"` emits plain `SGR 4` instead of
+ * the unsupported `4:3`.
+ *
+ * Accepts either form at construction for backwards compatibility:
+ * - `boolean` — back-compat shorthand. `true` = all styles supported
+ *   (modern terminals); `false` = only plain `SGR 4` works.
+ * - `readonly UnderlineStyle[]` — per-style granular set, matches
+ *   `TerminalCaps.underlineStyles` directly.
+ *
+ * Internally the output phase always sees the array form (resolved by the
+ * ctx factory). Consumers check per-style via the `supportsUnderlineStyle`
+ * helper, or check "any extended support" via `caps.underlineStyles.length > 0`.
  */
+export type OutputUnderlineStylesCap = boolean | readonly UnderlineStyle[]
+
+/** All five spelled-out underline styles — the full modern-terminal set. */
+const ALL_EXTENDED_UNDERLINE_STYLES: readonly UnderlineStyle[] = [
+  "single",
+  "double",
+  "curly",
+  "dotted",
+  "dashed",
+]
+
+/**
+ * Normalize a (boolean | array) underline-styles cap to the array form used
+ * by the output context.
+ */
+export function resolveUnderlineStylesCap(
+  cap: OutputUnderlineStylesCap | undefined,
+): readonly UnderlineStyle[] {
+  if (cap === undefined) return ALL_EXTENDED_UNDERLINE_STYLES
+  if (typeof cap === "boolean") {
+    return cap ? ALL_EXTENDED_UNDERLINE_STYLES : []
+  }
+  return cap
+}
+
+/**
+ * Check whether a requested underline style is in the resolved cap set.
+ * `"single"` is always supported (it's the base SGR 4), so this returns true
+ * for `"single"` regardless of the array contents.
+ */
+function supportsUnderlineStyle(
+  styles: readonly UnderlineStyle[],
+  requested: UnderlineStyle | undefined,
+): boolean {
+  if (!requested) return false
+  if (requested === "single") return true
+  return styles.includes(requested)
+}
+
 export interface OutputCaps {
-  readonly underlineStyles: boolean
+  /**
+   * Per-style underline support. Array form so the output phase can
+   * downgrade individual unsupported styles to plain SGR 4 (single).
+   * Empty array = plain SGR 4 only.
+   */
+  readonly underlineStyles: readonly UnderlineStyle[]
   readonly underlineColor: boolean
   readonly colorLevel: TerminalCaps["colorLevel"]
 }
@@ -114,7 +168,7 @@ export interface OutputContext {
 /** Default context used by bare outputPhase() calls (full capability support, no measurer). */
 const defaultContext: OutputContext = {
   caps: {
-    underlineStyles: true,
+    underlineStyles: ALL_EXTENDED_UNDERLINE_STYLES,
     underlineColor: true,
     colorLevel: "truecolor",
   },
@@ -172,11 +226,17 @@ function outputTextSizingEnabled(ctx: OutputContext): boolean {
 /**
  * Create a scoped output phase that uses specific terminal capabilities.
  *
- * @param caps - Terminal capabilities for SGR code generation
+ * @param caps - Terminal capabilities for SGR code generation. Accepts
+ *   `underlineStyles` as either a boolean (back-compat) or the per-style
+ *   array form; see {@link OutputUnderlineStylesCap}.
  * @param measurer - Width measurer for graphemeWidth/textSizing (avoids dual-module-loading issues)
  */
 export function createOutputPhase(
-  caps: Partial<OutputCaps>,
+  caps: {
+    underlineStyles?: OutputUnderlineStylesCap
+    underlineColor?: boolean
+    colorLevel?: TerminalCaps["colorLevel"]
+  },
   measurer?: OutputMeasurer,
 ): OutputPhaseFn {
   // Instance-scoped context — caps, measurer, and caches are all per-instance.
@@ -184,7 +244,7 @@ export function createOutputPhase(
   // No module-level globals are read or modified.
   const ctx: OutputContext = {
     caps: {
-      underlineStyles: caps.underlineStyles ?? true,
+      underlineStyles: resolveUnderlineStylesCap(caps.underlineStyles),
       underlineColor: caps.underlineColor ?? true,
       colorLevel: caps.colorLevel ?? "truecolor",
     },
@@ -603,24 +663,26 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
     codes.push(na.italic ? "3" : "23")
   }
 
-  // Underline: compare both underline flag and underlineStyle
+  // Underline: compare both underline flag and underlineStyle. Per-style
+  // capability downgrade — unsupported styles fall back to plain SGR 4
+  // (single) instead of silently emitting unsupported 4:x sequences.
   const oldUl = Boolean(oa.underline)
   const newUl = Boolean(na.underline)
   const oldUlStyle = oa.underlineStyle ?? false
   const newUlStyle = na.underlineStyle ?? false
   if (oldUl !== newUl || oldUlStyle !== newUlStyle) {
-    if (!ctx.caps.underlineStyles) {
-      // Terminal doesn't support SGR 4:x — fall back to simple SGR 4/24
-      codes.push(newUl || na.underlineStyle ? "4" : "24")
+    const effectiveStyle = supportsUnderlineStyle(ctx.caps.underlineStyles, na.underlineStyle)
+      ? na.underlineStyle
+      : newUl || na.underlineStyle
+        ? "single"
+        : undefined
+    const sgrSub = underlineStyleToSgr(effectiveStyle)
+    if (sgrSub !== null && sgrSub !== 0 && sgrSub !== 1) {
+      codes.push(`4:${sgrSub}`)
+    } else if (newUl || effectiveStyle) {
+      codes.push("4")
     } else {
-      const sgrSub = underlineStyleToSgr(na.underlineStyle)
-      if (sgrSub !== null && sgrSub !== 0) {
-        codes.push(`4:${sgrSub}`)
-      } else if (newUl) {
-        codes.push("4")
-      } else {
-        codes.push("24")
-      }
+      codes.push("24")
     }
   }
 
@@ -2128,16 +2190,18 @@ function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string 
   if (style.attrs.dim) codes.push("2")
   if (style.attrs.italic) codes.push("3")
 
-  // Underline: use SGR 4:x if style specified, otherwise simple SGR 4
-  if (!ctx.caps.underlineStyles) {
-    // Terminal doesn't support SGR 4:x — use simple SGR 4
-    if (style.attrs.underline || style.attrs.underlineStyle) codes.push("4")
-  } else {
-    const underlineStyle = style.attrs.underlineStyle
-    const sgrSubparam = underlineStyleToSgr(underlineStyle)
-    if (sgrSubparam !== null && sgrSubparam !== 0) {
+  // Underline: per-style capability downgrade. Requested style falls back to
+  // plain SGR 4 (single) when the terminal doesn't support that specific
+  // extended variant.
+  const requestedUl = style.attrs.underlineStyle
+  if (requestedUl || style.attrs.underline) {
+    const effectiveStyle = supportsUnderlineStyle(ctx.caps.underlineStyles, requestedUl)
+      ? requestedUl
+      : "single"
+    const sgrSubparam = underlineStyleToSgr(effectiveStyle)
+    if (sgrSubparam !== null && sgrSubparam !== 0 && sgrSubparam !== 1) {
       codes.push(`4:${sgrSubparam}`)
-    } else if (style.attrs.underline) {
+    } else {
       codes.push("4")
     }
   }

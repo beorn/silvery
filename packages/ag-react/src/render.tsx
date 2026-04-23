@@ -49,8 +49,21 @@ import {
   leaveAlternateScreen,
   enableKittyKeyboard,
   disableKittyKeyboard,
+  enableMouse,
+  disableMouse,
   resetWindowTitle,
 } from "@silvery/ag-term/output"
+import {
+  parseMouseSequence,
+  isMouseSequence,
+  type ParsedMouse,
+} from "@silvery/ag-term/mouse"
+import {
+  createMouseEventProcessor,
+  processMouseEvent,
+  updateKeyboardModifiers,
+  type MouseEventProcessorState,
+} from "@silvery/ag-term/mouse-events"
 import {
   createContainer,
   createFiberRoot,
@@ -132,6 +145,19 @@ export interface RenderOptions {
    * - 'yoga': Facebook's WASM-based flexbox (more mature)
    */
   layoutEngine?: LayoutEngineType
+  /**
+   * Enable SGR mouse tracking (modes 1003 + 1006) for click, scroll, wheel,
+   * and drag events. When enabled, parsed mouse events are dispatched through
+   * the DOM-style `onClick` / `onWheel` / `onMouseEnter` / `onMouseLeave` /
+   * `onMouseDown` / `onMouseUp` / `onMouseMove` handlers on `Box`, `Text`, and
+   * any component that takes mouse handler props.
+   *
+   * Mirrors `run()` — default `true`. Set `false` to opt out (for apps that
+   * want native terminal text selection, or for non-interactive renders).
+   *
+   * Default: `true` (when stdout is a TTY). `false` in non-TTY environments.
+   */
+  mouse?: boolean
 }
 
 /**
@@ -263,6 +289,15 @@ interface AppProps {
   getRoot?: () => import("@silvery/create/types").AgNode | null
   /** Handle Tab/Shift+Tab/Escape focus cycling (default: true) */
   handleFocusCycling?: boolean
+  /**
+   * Shared mouse event processor state. When provided, parsed SGR mouse
+   * sequences on stdin are dispatched through `processMouseEvent`, firing
+   * `onClick` / `onWheel` / `onMouseEnter` / `onMouseLeave` / etc. on the
+   * component tree. Construct once per instance via `createMouseEventProcessor`
+   * so modifier tracking (Kitty Super/Hyper) and hover state persist across
+   * events. When `undefined`, mouse sequences on stdin are ignored.
+   */
+  mouseState?: MouseEventProcessorState
 }
 
 /**
@@ -286,6 +321,7 @@ function SilveryApp({
   onScrollback,
   getRoot: getRootProp,
   handleFocusCycling = true,
+  mouseState,
 }: AppProps): ReactElement {
   // Child apply-chain BaseApp — the ChainAppContext surface for hooks
   // inside this render tree. Built once per instance, mirrors the
@@ -319,6 +355,12 @@ function SilveryApp({
   getRootRef.current = getRootProp
   const handleFocusCyclingRef = useRef(handleFocusCycling)
   handleFocusCyclingRef.current = handleFocusCycling
+
+  // Mouse processor state — held in ref so handleChunk closes over the ref,
+  // not the value. Undefined when mouse tracking is disabled; mouse CSI
+  // sequences on stdin are silently dropped in that case.
+  const mouseStateRef = useRef<MouseEventProcessorState | undefined>(mouseState)
+  mouseStateRef.current = mouseState
 
   // Stable input chunk handler — created once, never changes identity.
   // All mutable state is read via refs to avoid dependency cascade.
@@ -355,6 +397,25 @@ function SilveryApp({
         return
       }
 
+      // Mouse dispatch — SGR mouse sequences (mode 1006) arrive as single
+      // CSI chunks from splitRawInput. Detect + parse + dispatch through the
+      // DOM-style event processor, then consume (mouse sequences never fall
+      // through to parseKey / useInput, matching run() / createApp()).
+      const mstate = mouseStateRef.current
+      if (mstate && isMouseSequence(chunk)) {
+        const parsed = parseMouseSequence(chunk)
+        if (parsed) {
+          const root = getRootRef.current?.()
+          if (root) {
+            runWithDiscreteEvent(() => {
+              processMouseEvent(mstate, parsed, root)
+            })
+            reconciler.flushSyncWork()
+          }
+        }
+        return
+      }
+
       // Default Tab/Shift+Tab focus cycling and Escape blur.
       // Handled before dispatching to useInput handlers so it works
       // automatically when focusable components exist. Tab events are
@@ -384,6 +445,12 @@ function SilveryApp({
 
       // Parse the key and dispatch to the child chain.
       const [input, key] = parseKey(chunk)
+
+      // Update keyboard modifier state for mouse events. SGR mouse protocol
+      // can't report Super/Cmd or Hyper — Kitty keyboard fills the gap.
+      if (mstate) {
+        updateKeyboardModifiers(mstate, key)
+      }
 
       // All input handling runs at discrete priority so React commits
       // synchronously. Without this, concurrent mode defers the commit
@@ -482,6 +549,7 @@ class SilveryInstance {
   private readonly alternateScreen: boolean
   private readonly mode: RenderMode
   private readonly nonTTYMode: NonTTYMode
+  private readonly mouseEnabled: boolean
 
   private scheduler: RenderScheduler | null = null
   private cursorStore: CursorStore
@@ -497,6 +565,13 @@ class SilveryInstance {
   private resizeCleanup: (() => void) | null = null
   private signalCleanup: (() => void) | null = null
   private output: Output | null = null
+  /**
+   * Mouse event processor — `undefined` when mouse tracking is disabled
+   * (`mouse: false` or non-TTY). Created once per instance so hover tracking
+   * (`hoverPath`) and modifier state (`keyboardModifiers`) persist across
+   * events, matching the create-app.tsx pattern.
+   */
+  private mouseState: MouseEventProcessorState | undefined
 
   constructor(options: Required<Omit<RenderOptions, "layoutEngine">>) {
     log.debug?.("SilveryInstance constructor start")
@@ -509,6 +584,11 @@ class SilveryInstance {
     this.alternateScreen = options.alternateScreen
     this.mode = options.mode
     this.nonTTYMode = options.nonTTYMode
+    // Mouse defaults to `true` on TTY, `false` off-TTY. Explicit `false`
+    // always wins. Tracking SGR modes on a non-TTY stdout writes
+    // uninterpretable bytes into whatever the stream is (piped logs, test
+    // capture) so we guard on `isTTY` for the default.
+    this.mouseEnabled = options.mouse && this.stdout.isTTY
 
     // Set up exit promise
     this.exitPromise = new Promise<void>((resolve, reject) => {
@@ -529,6 +609,16 @@ class SilveryInstance {
     // Enable bracketed paste mode so pasted text is distinguishable from typing
     if (this.stdout.isTTY) {
       enableBracketedPaste(this.stdout)
+    }
+
+    // Enable SGR mouse tracking (modes 1003 + 1006) when requested. Matches
+    // the create-app.tsx / run() pattern: write the enable sequence after
+    // the other protocols are set up, and pair it with the matching disable
+    // in unmount(). Construct the mouse event processor BEFORE SilveryApp
+    // mounts so the first mouse sequence on stdin has somewhere to dispatch.
+    if (this.mouseEnabled) {
+      this.stdout.write(enableMouse())
+      this.mouseState = createMouseEventProcessor()
     }
 
     // Per-instance cursor state (replaces module-level globals)
@@ -603,6 +693,7 @@ class SilveryInstance {
           onResume={this.resume}
           onScrollback={this.handleScrollback}
           getRoot={() => (this.container ? getContainerRoot(this.container) : null)}
+          mouseState={this.mouseState}
         >
           {element}
         </SilveryApp>
@@ -672,8 +763,15 @@ class SilveryInstance {
       this.output = null
     }
 
-    // Disable Kitty keyboard protocol and bracketed paste before leaving
+    // Disable Kitty keyboard protocol, SGR mouse tracking, and bracketed
+    // paste before leaving. Order matches create-app.tsx cleanup: disable
+    // the protocols the terminal might still emit bytes for BEFORE we drop
+    // raw mode (subscribeToInput cleanup), so any queued release / mouse
+    // bytes are routed to /dev/null rather than the shell prompt.
     if (this.stdout.isTTY) {
+      if (this.mouseEnabled) {
+        this.stdout.write(disableMouse())
+      }
       disableBracketedPaste(this.stdout)
       this.stdout.write(disableKittyKeyboard())
     }
@@ -898,9 +996,19 @@ class SilveryInstance {
  * });
  * ```
  *
+ * @example Opt out of SGR mouse tracking (restore native terminal selection)
+ * ```tsx
+ * // mouse defaults to true when stdout is a TTY — pass false to restore
+ * // native copy/paste and terminal-level scrolling.
+ * await render(<App />, term, { mouse: false });
+ * ```
+ *
  * @param element - React element to render
  * @param termOrDef - Term instance, TermDef config, or omitted for static mode
- * @param options - Additional render options (merged with TermDef if provided)
+ * @param options - Additional render options (merged with TermDef if provided).
+ *   Notable flags: `mouse` (default `true` on TTY) enables SGR mouse 1003+1006
+ *   and wires wheel / click / drag / enter / leave events through the
+ *   component tree's `onWheel` / `onClick` / `onMouse*` handlers.
  * @returns RenderHandle - thenable for Instance, or use .run() for fluent API
  *
  * @example
@@ -1006,6 +1114,9 @@ async function renderImpl(
     alternateScreen: options.alternateScreen ?? mode === "fullscreen",
     mode,
     nonTTYMode: options.nonTTYMode ?? ("auto" as NonTTYMode),
+    // Mouse defaults to true (matches run()). SilveryInstance guards on
+    // `stdout.isTTY` before actually writing mouse-enable sequences.
+    mouse: options.mouse ?? true,
   }
 
   // Get or create instance for this stdout
@@ -1192,6 +1303,7 @@ export function renderSync(
     alternateScreen: mergedOptions.alternateScreen ?? mode === "fullscreen",
     mode,
     nonTTYMode: mergedOptions.nonTTYMode ?? ("auto" as NonTTYMode),
+    mouse: mergedOptions.mouse ?? true,
   }
 
   // Get or create instance for this stdout

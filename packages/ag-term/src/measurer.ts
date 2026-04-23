@@ -68,10 +68,10 @@ export function createPipeline(
   const outputPhaseFn = createOutputPhase(
     caps
       ? {
-          // Phase 7 turned underlineStyles into an array of supported styles;
-          // output-phase's gate still wants a boolean ("does any extended
-          // underline work?"), so we project the array length.
-          underlineStyles: caps.underlineStyles.length > 0,
+          // Post km-silvery.text-box-attr-props (2026-04-23): output phase
+          // performs per-style downgrade, so it wants the full per-style
+          // array here (not a boolean).
+          underlineStyles: caps.underlineStyles,
           underlineColor: caps.underlineColor,
           colorLevel: caps.colorLevel,
         }
