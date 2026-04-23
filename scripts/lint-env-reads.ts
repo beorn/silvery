@@ -53,29 +53,25 @@ const FORBIDDEN_ENV_VARS = [
  * Files allowed to read the forbidden env vars.
  *
  * - `packages/ansi/src/profile.ts` — the canonical detection entry point.
- * - `packages/ansi/src/detection.ts` — legacy shims that delegate to profile.ts
- *   (kept on the allowlist because its remaining env reads live in
- *   `detectUnicode` / `detectExtendedUnderline` / `detectCursor`, which are
- *   scheduled to migrate into the profile in a follow-up). Treat this as a
- *   narrow, documented exception — new reads here should be rejected in review.
+ *   Every terminal-signal env var flows through its `detectColorFromEnv` +
+ *   `detectTerminalCapsFromEnv`. All other files consume the resulting
+ *   `TerminalCaps` / `TerminalProfile`, never re-read env.
  * - `packages/ag-term/src/termtest.ts` — diagnostic CLI that *prints* the env
  *   to help users debug. Not a consumer.
  * - `packages/ag-term/src/ansi/storybook.ts` — standalone storybook script
  *   that *prints* the env. Not a consumer.
+ *
+ * Post km-silvery.unicode-plateau Phase 3 (2026-04-23): the allowlist shrunk.
+ * `packages/ansi/src/detection.ts` and `packages/ag-term/src/text-sizing.ts`
+ * used to be on the allowlist as narrow legacy exceptions (the former had
+ * `detectUnicode` / `detectExtendedUnderline`; the latter had an env-reading
+ * `isTextSizingLikelySupported` fallback). Phases 1-2 migrated that logic
+ * into the profile factory and both files are now pure caps-consumers.
  */
 const ALLOWED_FILES = new Set<string>([
   "packages/ansi/src/profile.ts",
-  "packages/ansi/src/detection.ts",
   "packages/ag-term/src/termtest.ts",
   "packages/ag-term/src/ansi/storybook.ts",
-  // `isTextSizingLikelySupported(caps?)` prefers caps; the env fallback is a
-  // documented LOOSER heuristic (TERM_PROGRAM="kitty" + version, vs the
-  // canonical `term === "xterm-kitty"` check used elsewhere). Production
-  // callers all pass caps — the env path exists for the one caller that
-  // runs without caps in test paths, and is pinned by tests/text-sizing-probe
-  // so semantics can't drift. See km-silvery.plateau-deprecate-text-sizing-env
-  // for the follow-up that removes this fallback after 1.0.
-  "packages/ag-term/src/text-sizing.ts",
   // The lint script itself mentions these patterns in docstrings / regex strings.
   "scripts/lint-env-reads.ts",
 ])

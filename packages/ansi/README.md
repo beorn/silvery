@@ -54,14 +54,24 @@ process.stdout.write(cursorTo(10, 5))
 process.stdout.write(enableMouse)
 ```
 
-### Color detection
+### Terminal profile (color + caps in one call)
 
 ```ts
-import { detectColor, detectTerminalCaps } from "@silvery/ansi"
+import { createTerminalProfile } from "@silvery/ansi"
 
-detectColor() // → 0 (none), 1 (16), 2 (256), 3 (truecolor)
-detectTerminalCaps() // → { color, unicode, cursor, input, extendedUnderline }
+const profile = createTerminalProfile()
+profile.colorTier // → "mono" | "ansi16" | "256" | "truecolor"
+profile.caps // → full TerminalCaps (unicode, cursor, underlineStyles, kittyKeyboard, …)
+profile.colorForced // → true if NO_COLOR / FORCE_COLOR pinned the tier
+profile.colorProvenance // → "env" | "override" | "caller-caps" | "auto"
 ```
+
+The `createTerminalProfile` factory is the single source of truth for
+terminal detection — it reads `process.env` exactly once and returns a
+frozen `{ caps, colorTier, … }` bundle. Every other API (styles, Term,
+runtimes) accepts a caps / profile argument so nothing else re-probes env.
+Use `probeTerminalProfile()` for the async variant that bundles an
+OSC-detected `theme`.
 
 ### Theme derivation
 
@@ -100,7 +110,7 @@ nearestAnsi16([255, 0, 0]) // → nearest 16-color index
 | Category             | Exports                                                                                     |
 | -------------------- | ------------------------------------------------------------------------------------------- |
 | **Style**            | `style`, `createStyle`, `createPlainStyle`, `createMixedStyle`                              |
-| **Detection**        | `detectColor`, `detectTerminalCaps`, `detectCursor`, `detectInput`, `detectUnicode`         |
+| **Detection**        | `createTerminalProfile`, `probeTerminalProfile`, `detectInput`, `defaultCaps`               |
 | **Terminal control** | `enterAltScreen`, `cursorTo`, `enableMouse`, `enableKittyKeyboard`, ...                     |
 | **SGR codes**        | `fgColorCode`, `bgColorCode`, `fgFromRgb`, `bgFromRgb`                                      |
 | **Color maps**       | `nearestAnsi16`, `rgbToAnsi256`, `ANSI_16_COLORS`                                           |

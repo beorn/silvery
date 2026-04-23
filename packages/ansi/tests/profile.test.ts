@@ -589,6 +589,34 @@ describe("createTerminalProfile — caps.textSizingSupported (Kitty ≥ 0.40)", 
   })
 })
 
+describe("createTerminalProfile — caps.cursor (absorbed from detectCursor)", () => {
+  test("TTY + regular TERM: cursor true", () => {
+    const profile = createTerminalProfile({
+      env: { TERM: "xterm-256color" },
+      stdout: tty,
+    })
+    expect(profile.caps.cursor).toBe(true)
+  })
+
+  test("non-TTY: cursor false (piped output)", () => {
+    const profile = createTerminalProfile({ env: {}, stdout: nonTty })
+    expect(profile.caps.cursor).toBe(false)
+  })
+
+  test("TTY + TERM=dumb: cursor false", () => {
+    const profile = createTerminalProfile({
+      env: { TERM: "dumb" },
+      stdout: tty,
+    })
+    expect(profile.caps.cursor).toBe(false)
+  })
+
+  test("TTY + no TERM: cursor true (assume modern terminal)", () => {
+    const profile = createTerminalProfile({ env: {}, stdout: tty })
+    expect(profile.caps.cursor).toBe(true)
+  })
+})
+
 describe("createTerminalProfile — caps.version", () => {
   test("caps.version mirrors TERM_PROGRAM_VERSION", () => {
     const profile = createTerminalProfile({

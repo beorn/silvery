@@ -546,11 +546,16 @@ export type {
 } from "./ansi/index"
 
 // Detection — narrow-scope probes (the broader caps/profile detection
-// routes through `createTerminalProfile` exported above). Post
-// unicode-plateau Phase 1 (2026-04-23): detectUnicode / detectExtendedUnderline
-// are gone; their logic lives inside the profile factory and callers read
-// `caps.unicode` / `caps.underlineStyles` / `caps.underlineColor` directly.
-export { detectCursor, detectInput } from "./ansi/index"
+// routes through `createTerminalProfile` exported above).
+//
+// Post unicode-plateau Phase 1 (2026-04-23): detectUnicode /
+// detectExtendedUnderline are gone; callers read caps.unicode /
+// caps.underlineStyles / caps.underlineColor directly.
+//
+// Post unicode-plateau Phase 3 (2026-04-23): detectCursor is gone too;
+// callers read caps.cursor. detectInput survives — it inspects the stdin
+// stream (setRawMode availability) rather than env.
+export { detectInput } from "./ansi/index"
 
 // Utilities
 export { ANSI_REGEX, displayLength } from "./ansi/index"

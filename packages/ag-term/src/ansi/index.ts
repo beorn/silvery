@@ -92,7 +92,6 @@ export type {
 // `detectTerminalCaps` deleted — use `createTerminalProfile()` (sync) or
 // `probeTerminalProfile()` (async with theme) instead.
 export {
-  detectCursor,
   detectInput,
   defaultCaps,
   createTerminalProfile,

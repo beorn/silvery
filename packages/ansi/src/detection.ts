@@ -25,22 +25,13 @@
 import type { ColorTier } from "./types"
 
 // =============================================================================
-// Cursor Detection
+// Cursor Detection — removed unicode-plateau Phase 3.
+//
+// `detectCursor(stdout)` used to live here. Its "isTTY + !dumb" signal is
+// now a TerminalCaps field — callers read `createTerminalProfile({stdout}).caps.cursor`
+// or `term.caps.cursor`. This drops the last env read outside the profile
+// factory in `@silvery/ansi`.
 // =============================================================================
-
-/**
- * Detect if terminal supports cursor control (repositioning).
- * Returns false for dumb terminals and piped output.
- */
-export function detectCursor(stdout: NodeJS.WriteStream): boolean {
-  // Not a TTY - no cursor control
-  if (!stdout.isTTY) return false
-
-  // Dumb terminal - no cursor control
-  if (process.env.TERM === "dumb") return false
-
-  return true
-}
 
 // =============================================================================
 // Input Detection
@@ -90,6 +81,10 @@ export interface TerminalCaps {
   version: string
   /** TERM value */
   term: string
+  /** Can the host reposition the cursor? True when the output stream is a
+   * TTY and `TERM` is not `"dumb"`. Absorbed from the standalone
+   * `detectCursor()` helper in unicode-plateau Phase 3. */
+  cursor: boolean
   /** Color support tier. See {@link ColorTier}. */
   colorLevel: ColorTier
   /** Kitty keyboard protocol supported */
@@ -136,6 +131,7 @@ export function defaultCaps(): TerminalCaps {
     program: "",
     version: "",
     term: "",
+    cursor: false,
     colorLevel: "truecolor",
     kittyKeyboard: false,
     kittyGraphics: false,

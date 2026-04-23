@@ -532,11 +532,17 @@ export function detectTerminalCapsFromEnv(
 
   // defaultCaps supplies the structural shape; we overwrite every dynamic field
   // explicitly so any future addition in defaultCaps gets a sensible default.
+  // Cursor control: same TTY + !dumb gate that the retired `detectCursor`
+  // helper used. Exposed on caps so every Term constructor + downstream
+  // consumer reads one source of truth instead of re-probing stdout/env.
+  const cursor = stdout.isTTY === true && term !== "dumb"
+
   return {
     ...defaultCaps(),
     program,
     version,
     term,
+    cursor,
     colorLevel,
     kittyKeyboard: isKitty || isGhostty || isWezTerm || isFoot,
     kittyGraphics: isKitty || isGhostty,

@@ -75,7 +75,7 @@ console.log(isTextSizingEnabled()) // false (default)
 | iTerm2    | --      | Not yet      |
 | Alacritty | --      | Not yet      |
 
-Use `isTextSizingLikelySupported()` for a fast synchronous env-var check, or `detectTextSizingSupport()` for definitive cursor-position-based detection.
+Read `createTerminalProfile().caps.textSizingSupported` for a fast synchronous caps check, or call `detectTextSizingSupport()` for definitive cursor-position-based detection.
 
 ## Font Scale (OSC 66 s= parameter)
 
@@ -145,13 +145,17 @@ isPrivateUseArea(0xe0b0) // true (Powerline separator)
 isPrivateUseArea(0x41) // false (ASCII 'A')
 ```
 
-### `isTextSizingLikelySupported(): boolean`
+### `createTerminalProfile().caps.textSizingSupported: boolean`
 
-Fast synchronous check based on `TERM_PROGRAM` and `TERM_PROGRAM_VERSION` environment variables. Returns `true` for Kitty v0.40+ and Ghostty.
+Fast synchronous check on the canonical terminal profile. The flag is computed from `TERM=xterm-kitty` + `TERM_PROGRAM_VERSION` parsing and returns `true` for Kitty v0.40+. (Ghostty's OSC 66 support is currently broken and reports `false` until a fix lands — see the notes in `detectTerminalCapsFromEnv`.)
 
-### `detectTextSizingSupport(write, read, timeout?): Promise<{ supported, widthOnly }>`
+### `getTerminalFingerprint(caps): string`
 
-Definitive detection using cursor position reports. Sends an OSC 66 test sequence and checks if the cursor advanced by the expected amount.
+Build a `program@version` cache key from `TerminalCaps`. Used together with `detectTextSizingSupport` so the probe result is cached per terminal type and doesn't re-run for the same terminal in the same process.
+
+### `detectTextSizingSupport(write, read, fingerprint, timeout?): Promise<{ supported, widthOnly }>`
+
+Definitive detection using cursor position reports. Sends an OSC 66 test sequence and checks if the cursor advanced by the expected amount. `fingerprint` keys the result cache — pass the same value from `getTerminalFingerprint(caps)` across probes in the same process.
 
 ### `createMeasurer(opts: { textSizingEnabled: boolean }): Measurer`
 
