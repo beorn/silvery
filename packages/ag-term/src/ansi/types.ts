@@ -73,9 +73,9 @@ export interface CreateTermOptions {
   // `color` accepts the canonical {@link ColorTier}. Legacy callers that
   // passed `null` (pre-terminal-profile-plateau no-color spelling) still
   // compile — the term factory normalizes `null` to `"mono"`.
-  color?: import("@silvery/ansi").ColorTier | null // override hasColor()
-  unicode?: boolean // override hasUnicode()
-  cursor?: boolean // override hasCursor()
+  color?: import("@silvery/ansi").ColorTier | null // override caps.colorTier
+  unicode?: boolean // override caps.unicode
+  cursor?: boolean // override caps.cursor
 
   // Terminal capabilities override
   caps?: Partial<TerminalCaps>

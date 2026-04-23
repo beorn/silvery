@@ -35,7 +35,7 @@ import { pickColorLevel } from "./color-maps"
  * Which rung of the precedence chain resolved the profile's color tier.
  *
  * Scoped specifically to **color tier** — not whole-profile provenance. Other
- * caps fields (unicode, kittyKeyboard, …) come from `detectTerminalCapsFromEnv`
+ * caps fields (unicode, kittyKeyboard, …) come from `detectTerminalProfileFromEnv`
  * or a caller-supplied caps object; their provenance is not tracked here.
  *
  * - `"env"` — `NO_COLOR` or `FORCE_COLOR` env var won.

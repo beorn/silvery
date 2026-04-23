@@ -20,8 +20,8 @@
  *
  * Post km-silvery.unicode-plateau Phase 1: `detectUnicode()` and
  * `detectExtendedUnderline()` are retired — their logic moved into
- * {@link ./profile#detectTerminalCapsFromEnv} so the profile is the one and
- * only env reader.
+ * {@link ./profile#detectTerminalProfileFromEnv} so the profile is the one
+ * and only env reader.
  *
  * Post km-silvery.plateau-delete-legacy-shims (H6 /big review 2026-04-23):
  * the `detectColor()` and `detectTerminalCaps()` shims are gone — every

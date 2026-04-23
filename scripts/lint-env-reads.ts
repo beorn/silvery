@@ -54,7 +54,7 @@ const FORBIDDEN_ENV_VARS = [
  *
  * - `packages/ansi/src/profile.ts` — the canonical detection entry point.
  *   Every terminal-signal env var flows through its `detectColorFromEnv` +
- *   `detectTerminalCapsFromEnv`. All other files consume the resulting
+ *   `detectTerminalProfileFromEnv`. All other files consume the resulting
  *   `TerminalCaps` / `TerminalProfile`, never re-read env.
  * - `packages/ag-term/src/termtest.ts` — diagnostic CLI that *prints* the env
  *   to help users debug. Not a consumer.
