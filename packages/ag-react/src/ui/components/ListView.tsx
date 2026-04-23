@@ -321,11 +321,10 @@ const RELEASE_TIMEOUT_MS = 60
 /** How long (ms) the scrollbar stays visible after the last scroll activity. */
 const SCROLLBAR_FADE_AFTER_MS = 800
 /** How long (ms) the edge-bump indicator shows after hitting a boundary. */
-const EDGE_BUMP_SHOW_MS = 900
+const EDGE_BUMP_SHOW_MS = 500
 /** Pulse period for the edge-bump indicator (ms per half-cycle). Fast flash
- * so the line reads as movement against static chrome. Total show ≈ 900 ms
- * produces ~4-5 on/off cycles — visible but not distracting. */
-const EDGE_BUMP_PULSE_MS = 110
+ * so the line reads as movement — 50 ms toggle over 500 ms total = ~5 cycles. */
+const EDGE_BUMP_PULSE_MS = 50
 
 // =============================================================================
 // Measurement
@@ -1688,21 +1687,27 @@ function ListViewInner<T>(
       * so mergeAttrsInRect (km-silvery.text-box-attr-props) layers the
       * SGR on every cell in the row WITHOUT overwriting the text glyph /
       * fg / bg underneath. */}
-    {/* Edge-bump indicator — overline at top, underline at bottom. Only
-      * the SGR overline/underline is drawn; no `bold` attribute because
-      * bold on a position="absolute" Box propagates to the text cells
-      * underneath (mergeAttrsInRect), making the row's text flash bold
-      * too. We want ONLY the line to pulse, not the content. Color
-      * defaults to fg for visibility against inverted chrome.
+    {/* Edge-bump indicator — overline at top, underline at bottom.
       *
-      * Render gate uses >=/<= (not strict ===) because on the first wheel
-      * event after startup-at-edge, `effectiveRowsAbove` can be a
-      * fractional seed (variable row heights, sub-row virtualizer offset)
-      * that rounds to scrollableRows but isn't exactly equal. */}
-    {bumpedEdge === "top" && effectiveRowsAbove <= 0 && isPulseOn && (
+      * The render gate is purely `bumpedEdge !== null && isPulseOn`.
+      * We do NOT cross-check `effectiveRowsAbove` against the edge: that
+      * gate was flaky on startup-at-edge because the virtualizer's
+      * first-frame seed (cursor-index-based) can exceed scrollableRows
+      * and the integer/float equality drifted. The transient nature of
+      * the bump is already enforced by two independent clocks —
+      * EDGE_BUMP_SHOW_MS (500 ms auto-hide) + scrollbar-lifecycle sync
+      * (scheduleScrollbarHide clears on idle) — so the indicator is
+      * guaranteed to vanish quickly even if the user scrolls away from
+      * the edge mid-flash.
+      *
+      * Only the SGR overline/underline is drawn; no `bold` attribute
+      * because bold on a position="absolute" Box propagates to the text
+      * cells underneath (mergeAttrsInRect), making the row's text flash
+      * bold too. We want ONLY the line to pulse. */}
+    {bumpedEdge === "top" && isPulseOn && (
       <Box position="absolute" top={0} left={0} right={0} height={1} overline />
     )}
-    {bumpedEdge === "bottom" && effectiveRowsAbove >= scrollableRows && isPulseOn && (
+    {bumpedEdge === "bottom" && isPulseOn && (
       <Box
         position="absolute"
         top={trackHeight - 1}
