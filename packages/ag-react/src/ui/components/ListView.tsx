@@ -320,13 +320,15 @@ const KINETIC_FRAME_MS = 16
 const RELEASE_TIMEOUT_MS = 60
 /** How long (ms) the scrollbar stays visible after the last scroll activity. */
 const SCROLLBAR_FADE_AFTER_MS = 800
-/** How long (ms) the edge-bump indicator shows after hitting a boundary.
- * 300 ms total — 3 full on/off cycles at 50 ms half-period. Any longer felt
- * like the indicator was lingering; 2–3 s reports were the scrollbar-lifecycle
- * sync keeping bumpedEdge alive past its own hide timer. */
+/** How long (ms) the edge-bump indicator shows after hitting a boundary. */
 const EDGE_BUMP_SHOW_MS = 300
 /** Pulse period for the edge-bump indicator (ms per half-cycle). */
 const EDGE_BUMP_PULSE_MS = 50
+/** Cooldown (ms) after a bump: further edge-pushes within this window do NOT
+ * re-fire the indicator. Without a cooldown, a continuous wheel gesture at the
+ * edge re-arms the 300 ms fuse on every wheel event, stuttering the flash for
+ * the duration of the gesture. One flash per gesture is the intended UX. */
+const EDGE_BUMP_COOLDOWN_MS = 1500
 
 // =============================================================================
 // Measurement
@@ -475,6 +477,7 @@ function ListViewInner<T>(
   // transient "you've hit the end" cue, NOT a permanent at-edge marker.
   const [bumpedEdge, setBumpedEdge] = useState<"top" | "bottom" | null>(null)
   const bumpHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const bumpCooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Pulse state — toggles every EDGE_BUMP_PULSE_MS while bumpedEdge is
   // active. The indicator Box renders only when isPulseOn is true, so the
   // line appears as a dim on/off flash. Against static chrome (e.g. an
@@ -536,17 +539,22 @@ function ListViewInner<T>(
   // FIRST bump of a streak. The `bumpHideTimerRef.current !== null` guard
   // means: if a hide timer is already scheduled, leave it alone.
   const flashEdgeBump = useCallback((edge: "top" | "bottom") => {
-    const alreadyActive = bumpHideTimerRef.current !== null
+    // Cooldown guard: one flash per gesture. If a bump fired within the
+    // cooldown window, subsequent pushes against the same edge are silenced.
+    // The cooldown timer is the single authoritative "can flash" gate.
+    if (bumpCooldownTimerRef.current !== null) return
     setBumpedEdge(edge)
-    // Reset the pulse phase so the flash starts visible — otherwise a new
-    // bump arriving during the "off" phase of a prior bump would be invisible
-    // until the next toggle.
-    if (!alreadyActive) setIsPulseOn(true)
-    if (alreadyActive) return // don't reset the 300 ms fuse on repeat bumps
+    setIsPulseOn(true)
+    if (bumpHideTimerRef.current !== null) clearTimeout(bumpHideTimerRef.current)
     bumpHideTimerRef.current = setTimeout(() => {
       setBumpedEdge(null)
       bumpHideTimerRef.current = null
     }, EDGE_BUMP_SHOW_MS)
+    // Arm the cooldown: blocks further flashes for EDGE_BUMP_COOLDOWN_MS.
+    // Exit cooldown by clearing the ref — next edge push after this fires.
+    bumpCooldownTimerRef.current = setTimeout(() => {
+      bumpCooldownTimerRef.current = null
+    }, EDGE_BUMP_COOLDOWN_MS)
   }, [])
 
   // Drive the dim on/off pulse while the bump indicator is active.
@@ -564,6 +572,7 @@ function ListViewInner<T>(
     clearReleaseTimer()
     if (scrollbarHideTimerRef.current !== null) clearTimeout(scrollbarHideTimerRef.current)
     if (bumpHideTimerRef.current !== null) clearTimeout(bumpHideTimerRef.current)
+    if (bumpCooldownTimerRef.current !== null) clearTimeout(bumpCooldownTimerRef.current)
   }, [stopKinetic, clearReleaseTimer])
 
   // Low-level cursor update — does NOT touch wheel/scroll state. Used by
