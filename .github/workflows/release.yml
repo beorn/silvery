@@ -23,7 +23,7 @@ jobs:
       - run: bun run build:all
       - uses: actions/setup-node@v4
         with:
-          node-version: "23"
+          node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
       # Pre-publish gate: real publish + install + import-probe through a
