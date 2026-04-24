@@ -196,13 +196,52 @@ export function setDisposeErrorSink(sink: DisposeErrorSink): void {
 // =============================================================================
 
 /**
+ * Minimal duck-typed shape `withScope` looks for to auto-wire host
+ * cancellation. Matches `term.signals.on(signal, fn)` (which returns
+ * `(() => void) & Disposable` post-Phase 2). Kept as a structural type
+ * so `@silvery/scope` doesn't have to depend on `@silvery/ag-term`.
+ */
+interface CancelSignalSource {
+  on(signal: "SIGINT" | "SIGTERM", fn: () => void): Disposable
+}
+
+interface WithScopeAppShape {
+  defer(fn: () => void): void
+  /** Optional — when present (e.g. composed after `withTerminal`),
+   *  withScope auto-wires SIGINT/SIGTERM to root-scope dispose. */
+  term?: { signals?: CancelSignalSource }
+}
+
+/**
  * Plugin that adds a root scope to the app. The scope is disposed when the
- * app is disposed. Host-specific cancellation wiring (SIGINT/SIGTERM/pagehide)
- * lives in `@silvery/ag-term` etc., not here.
+ * app exits. If the app already has a `term.signals` source (i.e. composed
+ * after `withTerminal`), SIGINT and SIGTERM also start root disposal —
+ * disposal failures flow through `reportDisposeError({ phase: "signal" })`.
+ *
+ * Web-host cancellation (`pagehide` / `beforeunload`) lives in the web
+ * runtime, not here.
  */
 export function withScope(name?: string) {
-  return <A extends { defer(fn: () => void): void }>(app: A) => {
+  return <A extends WithScopeAppShape>(app: A) => {
     const scope = createScope(name ?? "app")
+
+    const sigSrc = app.term?.signals
+    if (sigSrc) {
+      const onSignal = () => {
+        scope[Symbol.asyncDispose]().catch((error) =>
+          reportDisposeError(error, { phase: "signal", scope }),
+        )
+      }
+      // `scope.use()` requires `Symbol.asyncDispose`; the Disposable returned
+      // by `term.signals.on()` is sync-only, so we register cleanup via
+      // `defer()`. Calling `[Symbol.dispose]()` unregisters the handler
+      // without firing it.
+      const sigint = sigSrc.on("SIGINT", onSignal)
+      scope.defer(() => { sigint[Symbol.dispose]() })
+      const sigterm = sigSrc.on("SIGTERM", onSignal)
+      scope.defer(() => { sigterm[Symbol.dispose]() })
+    }
+
     app.defer(() => {
       scope[Symbol.asyncDispose]().catch((error) =>
         reportDisposeError(error, { phase: "app-exit", scope }),

@@ -16,6 +16,7 @@ import {
   reportDisposeError,
   setDisposeErrorSink,
   Scope,
+  withScope,
   type DisposeErrorContext,
   type DisposeErrorSink,
 } from "../src/index.js"
@@ -321,5 +322,160 @@ describe("integration", () => {
     expect(handle.path).toBe("/tmp/x")
     expect(order).toEqual([])
     // exits block → disposes
+  })
+})
+
+// =============================================================================
+// withScope plugin
+// =============================================================================
+
+type FakeApp = {
+  defer(fn: () => void | Promise<void>): void
+  flushDefer(): Promise<void>
+  term?: { signals?: { on(s: "SIGINT" | "SIGTERM", fn: () => void): Disposable } }
+}
+
+function createFakeApp(opts: { term?: FakeApp["term"] } = {}): FakeApp {
+  const deferred: Array<() => void | Promise<void>> = []
+  return {
+    term: opts.term,
+    defer(fn) { deferred.push(fn) },
+    async flushDefer() {
+      // Mirrors silvery's app-exit flush — LIFO.
+      for (const fn of deferred.reverse()) await fn()
+    },
+  }
+}
+
+function createFakeSignals() {
+  const handlers = new Map<"SIGINT" | "SIGTERM", Set<() => void>>()
+  return {
+    fire(sig: "SIGINT" | "SIGTERM") {
+      handlers.get(sig)?.forEach((fn) => fn())
+    },
+    handlerCount(sig: "SIGINT" | "SIGTERM") {
+      return handlers.get(sig)?.size ?? 0
+    },
+    api: {
+      on(sig: "SIGINT" | "SIGTERM", fn: () => void): Disposable {
+        if (!handlers.has(sig)) handlers.set(sig, new Set())
+        handlers.get(sig)!.add(fn)
+        return {
+          [Symbol.dispose]() { handlers.get(sig)?.delete(fn) },
+        }
+      },
+    },
+  }
+}
+
+describe("withScope", () => {
+  let capturedArgs: Array<{ error: unknown; context: DisposeErrorContext }>
+
+  beforeEach(() => {
+    capturedArgs = []
+    setDisposeErrorSink((error, context) => {
+      capturedArgs.push({ error, context })
+    })
+  })
+
+  afterEach(() => {
+    setDisposeErrorSink((error, context) => {
+      const name = context.scope?.name ?? "?"
+      console.error(`[scope dispose error] phase=${context.phase} scope=${name}`, error)
+    })
+  })
+
+  it("attaches a Scope to the app", () => {
+    const app = withScope("root")(createFakeApp())
+    expect(app.scope).toBeInstanceOf(Scope)
+    expect(app.scope.name).toBe("root")
+  })
+
+  it("disposes the scope on app exit (no signals wired)", async () => {
+    const app = withScope()(createFakeApp())
+    let disposed = 0
+    app.scope.defer(() => { disposed++ })
+    await app.flushDefer()
+    expect(disposed).toBe(1)
+  })
+
+  it("does not throw when no term.signals is present", () => {
+    const app = withScope()(createFakeApp())
+    expect(() => app.scope).not.toThrow()
+  })
+
+  it("wires SIGINT/SIGTERM when term.signals is present", () => {
+    const signals = createFakeSignals()
+    const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
+    expect(signals.handlerCount("SIGINT")).toBe(1)
+    expect(signals.handlerCount("SIGTERM")).toBe(1)
+    void app.scope
+  })
+
+  it("SIGINT fires root scope dispose", async () => {
+    const signals = createFakeSignals()
+    const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
+    let disposed = 0
+    app.scope.defer(() => { disposed++ })
+    signals.fire("SIGINT")
+    // dispose is fire-and-forget — yield once for the microtask
+    await new Promise((r) => setTimeout(r, 0))
+    expect(disposed).toBe(1)
+  })
+
+  it("SIGTERM fires root scope dispose", async () => {
+    const signals = createFakeSignals()
+    const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
+    let disposed = 0
+    app.scope.defer(() => { disposed++ })
+    signals.fire("SIGTERM")
+    await new Promise((r) => setTimeout(r, 0))
+    expect(disposed).toBe(1)
+  })
+
+  it("disposes the SIGINT/SIGTERM subscriptions when scope disposes", async () => {
+    const signals = createFakeSignals()
+    const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
+    expect(signals.handlerCount("SIGINT")).toBe(1)
+    expect(signals.handlerCount("SIGTERM")).toBe(1)
+    await app.scope[Symbol.asyncDispose]()
+    expect(signals.handlerCount("SIGINT")).toBe(0)
+    expect(signals.handlerCount("SIGTERM")).toBe(0)
+  })
+
+  it("dispose error from signal flows through reportDisposeError with phase: signal", async () => {
+    const signals = createFakeSignals()
+    const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
+    app.scope.defer(() => { throw new Error("teardown blew up") })
+    signals.fire("SIGINT")
+    await new Promise((r) => setTimeout(r, 0))
+    expect(capturedArgs).toHaveLength(1)
+    expect(capturedArgs[0]!.context.phase).toBe("signal")
+    expect((capturedArgs[0]!.error as Error).message).toBe("teardown blew up")
+  })
+
+  it("dispose error from app-exit flows through reportDisposeError with phase: app-exit", async () => {
+    const app = withScope()(createFakeApp())
+    app.scope.defer(() => { throw new Error("exit blew up") })
+    await app.flushDefer()
+    // wait for the catch to fire
+    await new Promise((r) => setTimeout(r, 0))
+    expect(capturedArgs).toHaveLength(1)
+    expect(capturedArgs[0]!.context.phase).toBe("app-exit")
+  })
+
+  it("idempotent — second SIGINT after dispose is a no-op", async () => {
+    const signals = createFakeSignals()
+    const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
+    let disposed = 0
+    app.scope.defer(() => { disposed++ })
+    signals.fire("SIGINT")
+    await new Promise((r) => setTimeout(r, 0))
+    expect(disposed).toBe(1)
+    // signal subscriptions are now gone (dispose unwires them via scope.use)
+    // re-firing has no effect because the handler has been removed
+    signals.fire("SIGINT")
+    await new Promise((r) => setTimeout(r, 0))
+    expect(disposed).toBe(1)
   })
 })
