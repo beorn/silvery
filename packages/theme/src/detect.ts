@@ -2,17 +2,20 @@
  * Terminal palette auto-detection — Sterling-aware wrapper around
  * `@silvery/ansi`'s `detectTheme`.
  *
- * `@silvery/ansi`'s `detectTheme` returns a legacy `Theme` without Sterling
- * flat tokens (`border-default`, `fg-muted`, `bg-surface-default`, …). Tokens
- * like `"$border-default"` would resolve to `undefined` and fall through to
- * `parseColor → null`, which paints as the terminal's default foreground
+ * `@silvery/ansi`'s `detectTheme` returns a minimal `Theme` shape without
+ * Sterling flat tokens (`border-default`, `fg-muted`, `bg-surface-default`, …).
+ * Tokens like `"$border-default"` would resolve to `undefined` and fall through
+ * to `parseColor → null`, which paints as the terminal's default foreground
  * (usually white-on-dark) — the canonical "borders look white" bug.
  *
  * This wrapper runs the detected / fallback theme through `inlineSterlingTokens`
  * so every shipped Theme is guaranteed to expose Sterling flat keys. This is
- * the canonical source of `detectTheme` for any consumer that uses Sterling
- * tokens (components, km-tui, silvery itself). The `@silvery/ansi` re-export
- * remains for callers that only touch the legacy Theme shape.
+ * the canonical source of `detectTheme` for every silvery consumer
+ * (components, km-tui, silvery itself, the terminal runtime). Never import
+ * `detectTheme` / `detectScheme` directly from `@silvery/ansi` at runtime —
+ * that path produces a partial shape (missing flat tokens) and is why
+ * `$bg-*` used to paint empty cells on the fallback branch (confidence=0).
+ * See tests/theme-flat-tokens-contract.test.ts.
  *
  * To use Nord/Catppuccin as fallback palettes (richer than the built-in
  * defaults), pass them via options:

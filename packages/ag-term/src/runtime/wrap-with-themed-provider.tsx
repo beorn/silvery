@@ -24,12 +24,15 @@
  */
 
 import React, { type ReactElement } from "react"
-import {
-  detectScheme,
-  type ColorScheme,
-  type DetectSchemeOptions,
-  type DetectSchemeResult,
-} from "@silvery/ansi"
+import type { ColorScheme } from "@silvery/ansi"
+// Sterling-aware detection: wraps @silvery/ansi's detectScheme and runs the
+// resulting Theme through `inlineSterlingTokens` so `$bg-surface-*`,
+// `$bg-accent-*`, `$border-*` etc. resolve to real hex values even on the
+// fallback path (confidence=0). Using @silvery/ansi's raw detectScheme here
+// was the source of the "31/32 bg tokens empty" symptom — the returned Theme
+// had no flat tokens, so every `$bg-*` token resolved to undefined → empty
+// string paint. See tests/theme-flat-tokens-contract.test.ts.
+import { detectScheme, type DetectSchemeOptions, type DetectSchemeResult } from "@silvery/theme"
 import { ThemeProvider, type ThemeTokens } from "@silvery/ag-react"
 import type { ActiveScheme } from "@silvery/ansi"
 import { createInputOwner } from "./input-owner"

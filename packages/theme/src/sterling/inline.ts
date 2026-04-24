@@ -1,17 +1,16 @@
 /**
- * Sterling flat-token inlining — internal helper that merges Sterling flat
- * tokens onto a legacy Theme. Replaces the removed public `augmentWithSterlingFlat`.
+ * Sterling flat-token inlining — merges Sterling flat tokens onto a Theme.
  *
  * Public consumers don't call this directly. It's invoked implicitly at theme
  * construction by:
  *   - packages/theme/src/schemes/index.ts  (every shipped default theme)
- *   - packages/ag-term/src/pipeline/state.ts  (pipeline fallback theme)
+ *   - packages/theme/src/detect.ts         (Sterling-aware detect* wrappers)
  *
- * Behavior mirrors the old `augmentWithSterlingFlat` exactly:
- *   - Preserves every legacy Theme field unchanged
+ * Behavior:
+ *   - Preserves every existing Theme field unchanged
  *   - Writes Sterling flat tokens (`bg-accent`, `fg-on-accent`, `border-focus`, …)
- *     only when the key isn't already present as a string
- *   - Not frozen (legacy consumers expect mutability in a few corners)
+ *     only when the key isn't already present as a string (so user pins win)
+ *   - Not frozen (theme overlays mutate in a few callers)
  *
  * A ColorScheme can be supplied for full fidelity. When omitted, Sterling
  * derives from a ColorScheme reconstructed from the theme's own palette —
@@ -20,21 +19,23 @@
  * This file is NOT exported from the `@silvery/theme` barrel.
  */
 
-import type { ColorScheme, Theme as LegacyTheme } from "@silvery/ansi"
+import type { ColorScheme, Theme } from "@silvery/ansi"
 import { deriveRoles } from "./derive.ts"
 import type { FlatToken } from "./types.ts"
 
 /**
- * Legacy Theme + Sterling flat tokens on the same object. Kept as a local
- * type alias; the public barrel no longer re-exports this shape.
+ * A Theme with Sterling flat tokens layered on. Every shipped Theme in
+ * @silvery/theme (builtin schemes + detect* wrappers) is inlined. Kept as a
+ * local type alias; the public barrel does not re-export this shape because
+ * `Theme` already accepts Sterling keys via index signature.
  */
-export type InlinedTheme = LegacyTheme & { [K in FlatToken]: string }
+export type InlinedTheme = Theme & { [K in FlatToken]: string }
 
 /**
- * Build a ColorScheme-shaped input from a legacy Theme when the original
+ * Build a ColorScheme-shaped input from a Theme when the original
  * scheme isn't available (hand-crafted themes, picker round-trips).
  */
-function schemeFromLegacy(theme: LegacyTheme): ColorScheme {
+function schemeFromTheme(theme: Theme): ColorScheme {
   const palette = theme.palette ?? []
   return {
     name: theme.name,
@@ -82,16 +83,16 @@ function isDark(hex: string): boolean {
 }
 
 /**
- * Write Sterling flat tokens onto a legacy Theme in-place and return the
- * augmented object. Mirrors the old `augmentWithSterlingFlat` semantics:
- * only sets a key if it's not already a string on the theme.
+ * Write Sterling flat tokens onto a Theme and return the augmented object.
+ * Sets a key only when it's not already a string on the theme (so author
+ * pins / palette-provided values win).
  *
  * When `scheme` is provided, Sterling derives directly from it (full fidelity).
  * Otherwise a scheme is reconstructed from the theme's palette (lossy on ANSI
  * slots but fine for Sterling's derivation surface).
  */
-export function inlineSterlingTokens(theme: LegacyTheme, scheme?: ColorScheme): InlinedTheme {
-  const src = scheme ?? schemeFromLegacy(theme)
+export function inlineSterlingTokens(theme: Theme, scheme?: ColorScheme): InlinedTheme {
+  const src = scheme ?? schemeFromTheme(theme)
   const { roles } = deriveRoles(src, { contrast: "auto-lift" })
 
   const out: Record<string, unknown> = { ...theme }
