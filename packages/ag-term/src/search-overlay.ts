@@ -236,8 +236,13 @@ export function renderSearchBarPlain(state: SearchState, cols: number): string {
  * Render the search bar as an ANSI string with inverse video wrapping.
  * Format: " / query  [2/15]" or " / query  [no matches]"
  *
- * Used by the legacy `renderSearchBarOverlay` path. Prefer the compose+apply
- * path via `applySearchBarToPaintBuffer` for new callers.
+ * Kept as a self-contained "give me the bar's ANSI representation" helper
+ * for tests and ad-hoc callers. The runtime paint path uses
+ * `renderSearchBarPlain` + `applySearchBarToPaintBuffer` (see
+ * `runtime/renderer.ts`) — buffer cells with the inverse attribute, not
+ * raw `\x1b[7m...\x1b[27m` past the buffer. Don't add new runtime callers
+ * of this function — they will reintroduce the
+ * km-silvery.delete-search-overlay-ansi bug class.
  */
 export function renderSearchBar(state: SearchState, cols: number): string {
   // Inverse video: ESC[7m ... ESC[27m
