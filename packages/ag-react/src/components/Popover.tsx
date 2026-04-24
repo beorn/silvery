@@ -206,23 +206,31 @@ function PopoverOverlay({
   // width minus edge margins on both sides.
   const maxWidth = Math.min(content.maxWidth ?? 48, Math.max(20, columns - EDGE_X * 2))
 
-  // Decide whether the popover fits below the anchor or needs to go above.
-  // We don't know the content's actual height — use a conservative guess
-  // (12 rows) as a placement heuristic. The true height is content-driven
-  // but the caller clamps via `maxHeight` below.
-  const guess = 12
+  // Placement heuristic:
+  // - Try BELOW first. If at least MIN_BELOW rows of space, place below.
+  //   The popover grows downward from `anchor.y + 1` and is clamped by
+  //   maxHeight.
+  // - Otherwise ABOVE. Use a modest content-height estimate (guess) so
+  //   the popover sits JUST above the anchor, not stretched to the top of
+  //   the screen. Previously we set top = anchor.y - spaceAbove, which
+  //   pinned the popover to the top edge when the anchor was near the
+  //   bottom — the user would see a disconnected overlay in the corner.
+  //   The actual content auto-sizes within maxHeight so the Box stays
+  //   compact; if it's shorter than the guess there's a small gap, which
+  //   is fine — the popover is still visibly tied to the hovered row.
+  const MIN_BELOW = 4
+  const guess = 10
   const spaceBelow = rows - anchor.y - 1 - EDGE_Y
   const spaceAbove = anchor.y - EDGE_Y
-  const placeAbove = spaceBelow < Math.min(guess, spaceAbove)
+  const placeAbove = spaceBelow < MIN_BELOW
 
   let top: number
   let maxHeight: number
   if (placeAbove) {
-    // Anchor at bottom of overlay; overlay stretches upward. Keep top >= EDGE_Y.
-    maxHeight = Math.max(4, spaceAbove)
-    top = Math.max(EDGE_Y, anchor.y - maxHeight)
+    const h = Math.min(guess, Math.max(4, spaceAbove))
+    top = Math.max(EDGE_Y, anchor.y - h)
+    maxHeight = anchor.y - top
   } else {
-    // Anchor at top of overlay; overlay stretches downward. Keep bottom <= rows - EDGE_Y.
     top = Math.min(anchor.y + 1, rows - EDGE_Y - 4)
     maxHeight = Math.max(4, rows - EDGE_Y - top)
   }
