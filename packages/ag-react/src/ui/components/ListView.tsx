@@ -1717,14 +1717,19 @@ function ListViewInner<T>(
       * SGR 4 (underline, BELOW the cell). Against an inverted-bg chrome
       * line (e.g. a status bar), the thin attr-line + $fg pulse is legible
       * without bolding the text underneath. */}
+    {/* Flush-to-edge block characters — ▔ (U+2594 UPPER ONE EIGHTH BLOCK)
+      * paints at the top of the cell, ▁ (U+2581 LOWER ONE EIGHTH BLOCK)
+      * at the bottom. Thicker than SGR overline/underline but visually
+      * positioned identically (flush to the cell edge), so the bump reads
+      * as "edge of viewport" not "middle of this row is highlighted". */}
     {bumpedEdge === "top" && isPulseOn && (
       <Box position="absolute" top={0} right={1} flexDirection="row">
-        <Text color="$fg">━━━━━━━━━━</Text>
+        <Text color="$fg">▔▔▔▔▔▔▔▔▔▔</Text>
       </Box>
     )}
     {bumpedEdge === "bottom" && isPulseOn && (
       <Box position="absolute" top={trackHeight - 1} right={1} flexDirection="row">
-        <Text color="$fg">━━━━━━━━━━</Text>
+        <Text color="$fg">▁▁▁▁▁▁▁▁▁▁</Text>
       </Box>
     )}
     </Box>
