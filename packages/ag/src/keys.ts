@@ -1146,6 +1146,21 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
     key.isModifierOnly = true
   }
 
+  // Trace every parsed key — enable with DEBUG=silvery:keys. The raw
+  // sequence + parsed name/modifiers lets you pinpoint why a keystroke
+  // isn't firing (terminal not in Kitty mode, modifier not parsed, etc.).
+  log.debug?.("parseKey", {
+    raw: typeof rawInput === "string" ? rawInput : rawInput.toString("hex"),
+    input,
+    name: keypress.name,
+    shift: key.shift,
+    ctrl: key.ctrl,
+    meta: key.meta,
+    super: key.super,
+    tab: key.tab,
+    kitty: keypress.isKittyProtocol ?? false,
+  })
+
   return [input, key]
 }
 
