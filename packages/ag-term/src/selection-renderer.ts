@@ -171,3 +171,99 @@ export function applySelectionToBuffer(
 // impossible with the compose+apply pattern above: selection styling lives
 // in the buffer cells, so the output diff engine tracks lifecycle (cells
 // that were styled last frame but aren't this frame get repainted).
+
+// ============================================================================
+// Search Highlight Composition (sibling of selection composition)
+// ============================================================================
+
+/**
+ * A single search-match highlight to apply on the painted buffer.
+ *
+ * The caller has already mapped the (scrollback-relative) match row into a
+ * screen row; this struct carries the result. `startCol` and `endCol` are
+ * inclusive column bounds, mirroring `SearchMatch` in `search-overlay.ts`.
+ *
+ * Sibling of the selection range — the rendering pipeline uses the same
+ * compose+apply pattern. See `composeSearchHighlightCells`.
+ */
+export interface SearchHighlight {
+  /** Screen row (0-indexed) where the highlight lands. */
+  screenRow: number
+  /** Inclusive start column. */
+  startCol: number
+  /** Inclusive end column. */
+  endCol: number
+}
+
+/**
+ * Compute search-highlight style changes for a list of highlight ranges.
+ *
+ * Returns a sparse list of cell changes (fg/bg only) — apply them with
+ * `applySelectionToBuffer` (the apply step is style-source-agnostic — it
+ * just sets fg/bg or toggles inverse on the cells you give it).
+ *
+ * Default behaviour mirrors the legacy `renderSearchHighlights` that wrote
+ * `\x1b[7m...\x1b[27m` past the buffer: cells with default fg/bg get the
+ * inverse-attr toggle (so the terminal handles the SGR 7 swap at display).
+ * Cells with explicit fg/bg get a direct fg↔bg swap. A theme can override
+ * with explicit `selectionFg` / `selectionBg` tokens.
+ *
+ * Tracking: km-silvery.delete-search-overlay-ansi
+ */
+export function composeSearchHighlightCells(
+  buffer: TerminalBuffer,
+  highlights: SearchHighlight[],
+  theme?: SelectionTheme,
+): SelectionCellChange[] {
+  if (highlights.length === 0) return []
+  const changes: SelectionCellChange[] = []
+
+  for (const h of highlights) {
+    const row = h.screenRow
+    if (row < 0 || row >= buffer.height) continue
+
+    const colStart = Math.max(0, h.startCol)
+    const colEnd = Math.min(buffer.width - 1, h.endCol)
+    if (colStart > colEnd) continue
+
+    for (let col = colStart; col <= colEnd; col++) {
+      // Skip continuation cells (second half of wide chars)
+      if (buffer.isCellContinuation(col, row)) continue
+
+      const cellFg = buffer.getCellFg(col, row)
+      const cellBg = buffer.getCellBg(col, row)
+
+      let newFg: Color
+      let newBg: Color
+      let inverseAttr = false
+
+      if (theme?.selectionBg != null) {
+        newFg = theme.selectionFg ?? cellFg
+        newBg = theme.selectionBg
+      } else if (cellFg == null && cellBg == null) {
+        // Default fg/bg on both: legacy SGR 7 toggle (matches the deleted
+        // `renderSearchHighlights` overlay's `\x1b[7m`).
+        newFg = cellFg
+        newBg = cellBg
+        inverseAttr = true
+      } else {
+        // Fallback: swap fg/bg (handles already-inverted content correctly).
+        newFg = cellBg
+        newBg = cellFg
+      }
+
+      changes.push({ col, row, fg: newFg, bg: newBg, inverseAttr })
+    }
+  }
+
+  return changes
+}
+
+// Legacy `renderSearchHighlights` (ANSI past the buffer) deleted in
+// km-silvery.delete-search-overlay-ansi. Same bug class as the deleted
+// `renderSelectionOverlay`: the canonical buffer never recorded the
+// inverse styling, so when `currentMatch` moved to a different position
+// (n/N navigation, query edit) the previously-highlighted cells stayed
+// inverse on screen until something else forced a row repaint. With
+// compose+apply the highlight lives in the painted clone's cells, so the
+// diff engine tracks lifecycle correctly.

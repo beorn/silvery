@@ -152,8 +152,8 @@ import {
   createSearchScrollback,
   pushToScrollback as pushToScrollbackFn,
   renderSearchBarOverlay as renderSearchBarOverlayFn,
-  renderSearchHighlights as renderSearchHighlightsFn,
   renderVirtualScrollbackView as renderVirtualScrollbackViewFn,
+  applySearchHighlightsToPaintBuffer as applySearchHighlightsToPaintBufferFn,
   applySelectionToPaintBuffer as applySelectionToPaintBufferFn,
 } from "./renderer"
 import { createBuffer as wrapBuffer } from "./create-buffer"
@@ -1995,20 +1995,34 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // `selectionEnabled` / `runtime` are by-reference, evaluated at call time.
   function paintFrame(): void {
     if (!currentBuffer) return
-    if (selectionEnabled && selectionState.range) {
+    const hasSelection = selectionEnabled && !!selectionState.range
+    const hasSearchHighlight = searchState.active && searchState.currentMatch >= 0
+    if (hasSelection || hasSearchHighlight) {
       const cloned = currentBuffer._buffer.clone()
       const paintBuf = wrapBuffer(cloned, currentBuffer.nodes, currentBuffer.overlay)
       // Force diff coverage — the clone starts with all rows clean, but
-      // selection styling will mutate cells. Mark all rows so diffBuffers
-      // does the per-cell pre-check (rowMetadataEquals/rowCharsEquals/
-      // rowExtrasEquals) and emits ANSI for any row that actually changed
-      // relative to runtime.prevBuffer.
+      // selection / search-highlight styling will mutate cells. Mark all
+      // rows so diffBuffers does the per-cell pre-check (rowMetadataEquals/
+      // rowCharsEquals/rowExtrasEquals) and emits ANSI for any row that
+      // actually changed relative to runtime.prevBuffer.
       cloned.markAllRowsDirty()
-      applySelectionToPaintBufferFn({
-        selectionEnabled,
-        selectionState,
-        paintBuffer: paintBuf,
-      })
+      // Apply search highlights FIRST so selection wins on overlap (drag
+      // over a search match should look "selected", not "found").
+      if (hasSearchHighlight) {
+        applySearchHighlightsToPaintBufferFn({
+          searchState,
+          scrollback,
+          virtualScrollOffset,
+          paintBuffer: paintBuf,
+        })
+      }
+      if (hasSelection) {
+        applySelectionToPaintBufferFn({
+          selectionEnabled,
+          selectionState,
+          paintBuffer: paintBuf,
+        })
+      }
       runtime.render(paintBuf)
     } else {
       runtime.render(currentBuffer)
@@ -2018,14 +2032,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     pushToScrollbackFn({ scrollback, currentBuffer: currentBuffer ?? null })
   const renderVirtualScrollbackView = (): void =>
     renderVirtualScrollbackViewFn({ scrollback, virtualScrollOffset, target })
-  const renderSearchHighlights = (): void =>
-    renderSearchHighlightsFn({
-      searchState,
-      scrollback,
-      virtualScrollOffset,
-      currentBuffer: currentBuffer ?? null,
-      target,
-    })
+  // Search highlights are folded into paintFrame() — they live on the paint
+  // clone's cells, not as ANSI past the buffer. See applySearchHighlightsToPaintBufferFn.
   const renderSearchBarOverlay = (): void => renderSearchBarOverlayFn({ searchState, target })
   const searchScrollback = createSearchScrollback(scrollback)
 
@@ -2541,17 +2549,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     inEventHandler = false
     const runtimeStart = performance.now()
-    // paintFrame() applies selection styling to a clone before runtime.render,
-    // so the diff engine sees selection state and repaints correctly when the
-    // selection grows / shrinks / moves.
+    // paintFrame() applies selection + search-highlight styling to a clone
+    // before runtime.render, so the diff engine sees overlay state and
+    // repaints correctly when selection grows / shrinks / moves and when
+    // the search currentMatch shifts.
     paintFrame()
     // Post-render: push to scrollback (uses currentBuffer's clean content),
-    // overlay scrollback view + search (still legacy ANSI-past-buffer).
+    // overlay scrollback view + search bar (bar still legacy ANSI-past-buffer
+    // pending Phase 2 of km-silvery.delete-search-overlay-ansi).
     pushToScrollback()
     if (virtualScrollOffset > 0) {
       renderVirtualScrollbackView()
     }
-    renderSearchHighlights()
     renderSearchBarOverlay()
     const runtimeMs = performance.now() - runtimeStart
     if (_perfLog) {

@@ -618,7 +618,9 @@ export {
 
 export {
   composeSelectionCells,
+  composeSearchHighlightCells,
   applySelectionToBuffer,
+  type SearchHighlight,
   type SelectionCellChange,
   type SelectionTheme,
 } from "./selection-renderer"

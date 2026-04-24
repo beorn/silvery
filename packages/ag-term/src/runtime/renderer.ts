@@ -26,7 +26,12 @@ import { createBuffer } from "./create-buffer"
 import { isAnyDirty } from "@silvery/ag/epoch"
 import { IncrementalRenderMismatchError } from "../scheduler"
 import { createSearchState, renderSearchBar, type SearchMatch } from "../search-overlay"
-import { applySelectionToBuffer, composeSelectionCells } from "../selection-renderer"
+import {
+  applySelectionToBuffer,
+  composeSearchHighlightCells,
+  composeSelectionCells,
+  type SearchHighlight,
+} from "../selection-renderer"
 import type { Buffer, Dims, RenderTarget } from "./types"
 import type { PipelineConfig } from "../pipeline"
 import type { createVirtualScrollback } from "../virtual-scrollback"
@@ -478,6 +483,64 @@ export function applySelectionToPaintBuffer(opts: SelectionPaintOptions): void {
   applySelectionToBuffer(paintBuffer._buffer, changes)
 }
 
+export interface SearchHighlightsPaintOptions {
+  searchState: SearchState
+  scrollback: Scrollback | null
+  virtualScrollOffset: number
+  /**
+   * Buffer to mutate with search-highlight styles. MUST be a clone of the
+   * post-render buffer — see `SelectionPaintOptions.paintBuffer` for the
+   * full rationale (preserves Ag's `_prevBuffer` invariant).
+   */
+  paintBuffer: Buffer
+}
+
+/**
+ * Apply the active search currentMatch highlight to a paint buffer in-place.
+ *
+ * Highlight becomes part of the painted buffer's cells (fg/bg swap by
+ * default) so the output-phase diff naturally tracks the highlight
+ * lifecycle: when `currentMatch` moves (n/N navigation or query edit),
+ * cells that were highlighted last frame but aren't this frame get
+ * repainted automatically.
+ *
+ * Replaces the legacy `renderSearchHighlights` which wrote inverse ANSI
+ * past the buffer — the diff engine had no record of those cells, so
+ * stale inverse pixels persisted until the next forced row repaint.
+ *
+ * Tracking: km-silvery.delete-search-overlay-ansi
+ */
+export function applySearchHighlightsToPaintBuffer(opts: SearchHighlightsPaintOptions): void {
+  const { searchState, scrollback, virtualScrollOffset, paintBuffer } = opts
+  if (!searchState.active || searchState.currentMatch < 0) return
+  const match = searchState.matches[searchState.currentMatch]
+  if (!match) return
+
+  const cols = paintBuffer._buffer.width
+  const rows = paintBuffer._buffer.height
+
+  // Map scrollback-relative row → screen row.
+  let screenRow: number
+  if (scrollback && virtualScrollOffset > 0) {
+    const totalLines = scrollback.totalLines
+    const firstVisibleLine = totalLines - virtualScrollOffset - rows
+    screenRow = match.row - firstVisibleLine
+  } else {
+    screenRow = match.row
+  }
+  if (screenRow < 0 || screenRow >= rows) return
+
+  const highlights: SearchHighlight[] = [
+    {
+      screenRow,
+      startCol: match.startCol,
+      endCol: Math.min(match.endCol, cols - 1),
+    },
+  ]
+  const changes = composeSearchHighlightCells(paintBuffer._buffer, highlights)
+  applySelectionToBuffer(paintBuffer._buffer, changes)
+}
+
 export interface PushToScrollbackOptions {
   scrollback: Scrollback | null
   currentBuffer: Buffer | null
@@ -515,45 +578,10 @@ export function renderVirtualScrollbackView(opts: VirtualScrollbackViewOptions):
   target.write(out)
 }
 
-export interface SearchHighlightsOptions {
-  searchState: SearchState
-  scrollback: Scrollback | null
-  virtualScrollOffset: number
-  currentBuffer: Buffer | null
-  target: RenderTarget
-}
-
-export function renderSearchHighlights(opts: SearchHighlightsOptions): void {
-  const { searchState, scrollback, virtualScrollOffset, currentBuffer, target } = opts
-  if (!searchState.active || searchState.currentMatch < 0) return
-  const match = searchState.matches[searchState.currentMatch]
-  if (!match) return
-
-  const dims = target.getDims()
-  // Calculate the screen row of the current match
-  let screenRow: number
-  if (scrollback && virtualScrollOffset > 0) {
-    const totalLines = scrollback.totalLines
-    const firstVisibleLine = totalLines - virtualScrollOffset - dims.rows
-    screenRow = match.row - firstVisibleLine
-  } else {
-    screenRow = match.row
-  }
-
-  if (screenRow < 0 || screenRow >= dims.rows) return
-
-  // Move to match position and render with inverse
-  let out = `\x1b[${screenRow + 1};${match.startCol + 1}H\x1b[7m`
-  for (let col = match.startCol; col <= match.endCol; col++) {
-    if (currentBuffer && virtualScrollOffset <= 0) {
-      out += currentBuffer._buffer.getCell(col, screenRow).char
-    } else {
-      out += searchState.query[col - match.startCol] ?? " "
-    }
-  }
-  out += "\x1b[27m"
-  target.write(out)
-}
+// Legacy `renderSearchHighlights` (ANSI past the buffer) deleted in
+// km-silvery.delete-search-overlay-ansi. The compose+apply path lives
+// in `applySearchHighlightsToPaintBuffer` above — highlights are stamped
+// into the painted clone's cells so the diff engine tracks lifecycle.
 
 export interface SearchBarOverlayOptions {
   searchState: SearchState
