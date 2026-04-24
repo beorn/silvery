@@ -206,45 +206,34 @@ function PopoverOverlay({
   // width minus edge margins on both sides.
   const maxWidth = Math.min(content.maxWidth ?? 48, Math.max(20, columns - EDGE_X * 2))
 
-  // Placement heuristic:
-  // - Try BELOW first. If at least MIN_BELOW rows of space, place below.
-  //   The popover grows downward from `anchor.y + 1` and is clamped by
-  //   maxHeight.
-  // - Otherwise ABOVE. Use a modest content-height estimate (guess) so
-  //   the popover sits JUST above the anchor, not stretched to the top of
-  //   the screen. Previously we set top = anchor.y - spaceAbove, which
-  //   pinned the popover to the top edge when the anchor was near the
-  //   bottom — the user would see a disconnected overlay in the corner.
-  //   The actual content auto-sizes within maxHeight so the Box stays
-  //   compact; if it's shorter than the guess there's a small gap, which
-  //   is fine — the popover is still visibly tied to the hovered row.
-  const MIN_BELOW = 4
-  const guess = 10
-  const spaceBelow = rows - anchor.y - 1 - EDGE_Y
-  const spaceAbove = anchor.y - EDGE_Y
-  const placeAbove = spaceBelow < MIN_BELOW
+  // Placement heuristic: flip to whichever side has more space. When
+  // placing ABOVE, anchor the popover from the viewport BOTTOM (using the
+  // `bottom` prop) so the popover's bottom edge sits one row above the
+  // hover target. This is critical — using `top = anchor.y - maxHeight`
+  // would pin a content-sized Box to the top of the screen (Box auto-
+  // sizes to content, so the gap to the anchor was huge). With `bottom`,
+  // the Box grows upward from near the anchor.
+  const spaceBelow = Math.max(0, rows - anchor.y - 1 - EDGE_Y)
+  const spaceAbove = Math.max(0, anchor.y - EDGE_Y)
+  const placeAbove = spaceAbove > spaceBelow
 
-  let top: number
-  let maxHeight: number
-  if (placeAbove) {
-    const h = Math.min(guess, Math.max(4, spaceAbove))
-    top = Math.max(EDGE_Y, anchor.y - h)
-    maxHeight = anchor.y - top
-  } else {
-    top = Math.min(anchor.y + 1, rows - EDGE_Y - 4)
-    maxHeight = Math.max(4, rows - EDGE_Y - top)
-  }
+  const maxHeight = Math.max(4, placeAbove ? spaceAbove : spaceBelow)
 
   // Horizontal clamp: prefer anchor.x but enforce both edge margins.
   let left = anchor.x
   if (left + maxWidth > columns - EDGE_X) left = columns - EDGE_X - maxWidth
   if (left < EDGE_X) left = EDGE_X
 
+  // Positional props — pass `top` OR `bottom`, never both. `top = anchor.y
+  // + 1` for below-anchor, `bottom = rows - anchor.y` for above-anchor
+  // (viewport-bottom distance that puts the popover bottom at anchor.y-1).
+  const placement = placeAbove ? { bottom: rows - anchor.y } : { top: anchor.y + 1 }
+
   return (
     <Box
       position="absolute"
-      marginTop={top}
-      marginLeft={left}
+      {...placement}
+      left={left}
       maxWidth={maxWidth}
       maxHeight={maxHeight}
       flexDirection="column"

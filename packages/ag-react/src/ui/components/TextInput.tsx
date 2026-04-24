@@ -59,6 +59,8 @@ export interface TextInputProps {
   prompt?: string
   /** Prompt color (default: "$fg-accent") */
   promptColor?: string
+  /** Render the prompt prefix in bold. */
+  promptBold?: boolean
   /** Text color */
   color?: string
   /** Cursor style: 'block' (inverse) or 'underline' */
@@ -106,6 +108,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     isActive: isActiveProp,
     prompt = "",
     promptColor = "$fg-accent",
+    promptBold = false,
     color,
     cursorStyle = "block",
     showUnderline = false,
@@ -233,7 +236,11 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
 
   const inputContent = (
     <Text color={color}>
-      {prompt && <Text color={promptColor}>{prompt}</Text>}
+      {prompt && (
+        <Text color={promptColor} bold={promptBold}>
+          {prompt}
+        </Text>
+      )}
       {showPlaceholder ? (
         // Placeholder uses the semantic $fg-muted token (overridable via
         // `placeholderColor`) rather than raw `dimColor`. SGR 2 has uneven
