@@ -475,6 +475,10 @@ function ListViewInner<T>(
   // on each frame otherwise.
   const itemCountRef = useRef(items.length)
   itemCountRef.current = items.length
+  // Cursor index mirrored into a ref so handleWheel can use it without
+  // recreating the callback on every cursor move (would thrash wheel state).
+  const activeCursorRef = useRef(0)
+  activeCursorRef.current = activeCursor
 
   const stopKinetic = useCallback(() => {
     if (kineticLoopRef.current !== null) {
@@ -775,16 +779,33 @@ function ListViewInner<T>(
       // Cancel any in-flight momentum — user is actively driving again.
       stopKinetic()
       clearReleaseTimer()
-      // First wheel event of a gesture seeds scrollRow from the virtualizer's
-      // current viewport-top rows. Clamped to [0, maxRow] because the
-      // virtualizer's `scrollOffsetRef` bootstraps at the cursor index,
-      // which can exceed maxRow (when cursor is near end of list). Without
-      // clamping, the first wheel would trigger a spurious edge-bump.
+      // First wheel event of a gesture — seed scrollRowFloat.
+      //
+      // Previously used Math.min(maxRow, rowsAboveViewportRef.current) which
+      // works for MOST cases but fails at startup when the cursor is pinned
+      // to the last item (km-logview follow-mode): the virtualizer's
+      // rowsAboveViewport can lag the cursor-based true position, so the
+      // seed comes in well below maxRow. First wheel-down then moves us
+      // FROM the seed value, never reaching the edge, and the overscroll
+      // indicator doesn't fire.
+      //
+      // Fix: if the cursor is pinned to an endpoint (first or last item),
+      // seed directly to the corresponding edge (0 or maxRow) regardless
+      // of rowsAboveViewport's lag. Otherwise fall back to the measured
+      // value.
       if (scrollRowFloatRef.current === null) {
-        scrollRowFloatRef.current = Math.max(
-          0,
-          Math.min(maxRow, rowsAboveViewportRef.current),
-        )
+        const cursorIdx = activeCursorRef.current
+        const lastIdx = itemCountRef.current - 1
+        if (cursorIdx >= lastIdx && lastIdx >= 0) {
+          scrollRowFloatRef.current = maxRow
+        } else if (cursorIdx <= 0) {
+          scrollRowFloatRef.current = 0
+        } else {
+          scrollRowFloatRef.current = Math.max(
+            0,
+            Math.min(maxRow, rowsAboveViewportRef.current),
+          )
+        }
       }
       lastWheelTimeRef.current = now
       // Trim buffer to window BEFORE consulting it.
