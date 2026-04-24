@@ -1,9 +1,23 @@
 /**
- * Tests for selection overlay rendering.
+ * Tests for selection rendering.
+ *
+ * The legacy `renderSelectionOverlay` ANSI-overlay function was deleted
+ * (see km-silvery.delete-render-selection-overlay) and replaced with
+ * `composeSelectionCells` + `applySelectionToBuffer`. Selection styling
+ * now lives in the painted buffer cells (so the diff engine can track
+ * lifecycle), not in ANSI written past the buffer.
+ *
+ * Comprehensive composeSelectionCells / applySelectionToBuffer behavior
+ * tests live in `tests/selection.test.ts` ("composeSelectionCells" + the
+ * applySelectionToBuffer test). These tests cover the row-coverage cases
+ * that used to be exercised by renderSelectionOverlay.
  */
 import { describe, test, expect } from "vitest"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
-import { renderSelectionOverlay } from "@silvery/ag-term/selection-renderer"
+import {
+  composeSelectionCells,
+  applySelectionToBuffer,
+} from "@silvery/ag-term/selection-renderer"
 import type { SelectionRange } from "@silvery/headless/selection"
 
 // ============================================================================
@@ -23,48 +37,43 @@ function createBufferWithText(lines: string[], width = 20): TerminalBuffer {
 }
 
 // ============================================================================
-// renderSelectionOverlay
+// composeSelectionCells — row-coverage parity with the deleted renderer
 // ============================================================================
 
-describe("renderSelectionOverlay", () => {
-  test("returns empty string for null selection", () => {
+describe("composeSelectionCells — row coverage", () => {
+  test("returns empty array for null selection", () => {
     const buf = createBufferWithText(["Hello"])
-    expect(renderSelectionOverlay(null, buf)).toBe("")
+    expect(composeSelectionCells(buf, null)).toEqual([])
   })
 
-  test("single-row selection emits inverse characters", () => {
+  test("single-row selection covers exactly the selected cells", () => {
     const buf = createBufferWithText(["Hello, World!"])
     const range: SelectionRange = {
       anchor: { col: 0, row: 0 },
       head: { col: 4, row: 0 },
     }
-    const output = renderSelectionOverlay(range, buf)
+    const changes = composeSelectionCells(buf, range)
 
-    // Should move cursor to row 1, col 1 (1-based)
-    expect(output).toContain("\x1b[1;1H")
-    // Should enable inverse
-    expect(output).toContain("\x1b[7m")
-    // Should contain the selected characters
-    expect(output).toContain("Hello")
-    // Should disable inverse
-    expect(output).toContain("\x1b[27m")
+    // Cells 0..4 inclusive.
+    expect(changes.map((c) => c.col).sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4])
+    expect(new Set(changes.map((c) => c.row))).toEqual(new Set([0]))
   })
 
-  test("multi-row selection covers all rows", () => {
+  test("multi-row selection covers all rows in range", () => {
     const buf = createBufferWithText(["First line", "Second line", "Third line"], 20)
     const range: SelectionRange = {
       anchor: { col: 6, row: 0 },
       head: { col: 5, row: 2 },
     }
-    const output = renderSelectionOverlay(range, buf)
+    const changes = composeSelectionCells(buf, range)
 
-    // Should have cursor moves for all 3 rows
-    expect(output).toContain("\x1b[1;7H") // Row 0, col 6 (1-based: row 1, col 7)
-    expect(output).toContain("\x1b[2;1H") // Row 1, col 0 (1-based: row 2, col 1)
-    expect(output).toContain("\x1b[3;1H") // Row 2, col 0 (1-based: row 3, col 1)
+    const rows = new Set(changes.map((c) => c.row))
+    expect(rows.has(0)).toBe(true)
+    expect(rows.has(1)).toBe(true)
+    expect(rows.has(2)).toBe(true)
   })
 
-  test("backward selection is normalized", () => {
+  test("backward selection is normalized (anchor/head order doesn't matter)", () => {
     const buf = createBufferWithText(["Hello"])
     const forwardRange: SelectionRange = {
       anchor: { col: 1, row: 0 },
@@ -75,28 +84,49 @@ describe("renderSelectionOverlay", () => {
       head: { col: 1, row: 0 },
     }
 
-    const forwardOutput = renderSelectionOverlay(forwardRange, buf)
-    const backwardOutput = renderSelectionOverlay(backwardRange, buf)
+    const forward = composeSelectionCells(buf, forwardRange)
+    const backward = composeSelectionCells(buf, backwardRange)
 
-    // Both should produce the same output
-    expect(forwardOutput).toBe(backwardOutput)
+    // Same set of cells affected.
+    expect(forward.map((c) => `${c.row},${c.col}`).sort()).toEqual(
+      backward.map((c) => `${c.row},${c.col}`).sort(),
+    )
   })
 
-  test("first row starts at startCol, middle rows at 0, last row ends at endCol", () => {
+  test("first row starts at startCol, middle rows full-width, last row ends at endCol", () => {
     const buf = createBufferWithText(["AAAAAAAAAA", "BBBBBBBBBB", "CCCCCCCCCC"], 10)
     const range: SelectionRange = {
       anchor: { col: 3, row: 0 },
       head: { col: 6, row: 2 },
     }
-    const output = renderSelectionOverlay(range, buf)
+    const changes = composeSelectionCells(buf, range)
 
-    // Row 0: from col 3 to end (cols 3-9 = 7 A's)
-    // Row 1: full row (cols 0-9 = 10 B's)
-    // Row 2: from col 0 to 6 (cols 0-6 = 7 C's)
-    // Count inverse enable/disable pairs (one per row)
-    const inverseEnables = output.split("\x1b[7m").length - 1
-    const inverseDisables = output.split("\x1b[27m").length - 1
-    expect(inverseEnables).toBe(3)
-    expect(inverseDisables).toBe(3)
+    // Row 0: cols 3..9 = 7 cells
+    // Row 1: full row = 10 cells
+    // Row 2: cols 0..6 = 7 cells
+    const row0 = changes.filter((c) => c.row === 0).length
+    const row1 = changes.filter((c) => c.row === 1).length
+    const row2 = changes.filter((c) => c.row === 2).length
+    expect(row0).toBe(7)
+    expect(row1).toBe(10)
+    expect(row2).toBe(7)
+  })
+
+  test("applying changes mutates the buffer cells (not just an ANSI string)", () => {
+    const buf = createBufferWithText(["Hello"])
+    buf.setCell(2, 0, { char: "l", fg: 4, bg: 7 })
+    const range: SelectionRange = {
+      anchor: { col: 2, row: 0 },
+      head: { col: 2, row: 0 },
+    }
+
+    const changes = composeSelectionCells(buf, range)
+    applySelectionToBuffer(buf, changes)
+
+    // fg/bg swap (legacy renderSelectionOverlay behavior preserved)
+    const cell = buf.getCell(2, 0)
+    expect(cell.fg).toBe(7)
+    expect(cell.bg).toBe(4)
+    expect(cell.char).toBe("l")
   })
 })

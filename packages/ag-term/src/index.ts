@@ -616,7 +616,12 @@ export {
   type SelectionGranularity,
 } from "@silvery/headless/selection"
 
-export { renderSelectionOverlay } from "./selection-renderer"
+export {
+  composeSelectionCells,
+  applySelectionToBuffer,
+  type SelectionCellChange,
+  type SelectionTheme,
+} from "./selection-renderer"
 export { extractHtml } from "./extract-html"
 
 // =============================================================================

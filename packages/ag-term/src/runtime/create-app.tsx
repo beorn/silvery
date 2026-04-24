@@ -154,8 +154,9 @@ import {
   renderSearchBarOverlay as renderSearchBarOverlayFn,
   renderSearchHighlights as renderSearchHighlightsFn,
   renderVirtualScrollbackView as renderVirtualScrollbackViewFn,
-  writeSelectionOverlay as writeSelectionOverlayFn,
+  applySelectionToPaintBuffer as applySelectionToPaintBufferFn,
 } from "./renderer"
+import { createBuffer as wrapBuffer } from "./create-buffer"
 
 const log = createLogger("silvery:app")
 
@@ -1427,7 +1428,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           isRendering = true
           try {
             currentBuffer = doRender()
-            runtime.render(currentBuffer)
+            paintFrame()
           } finally {
             isRendering = false
           }
@@ -1751,7 +1752,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       "=== RUNTIME.RENDER (initial) ===\n",
     )
   }
-  runtime.render(currentBuffer)
+  paintFrame()
   if (_perfLog) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("node:fs").appendFileSync(
@@ -1804,9 +1805,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // from a React effect cleanup during reconciliation).
       if (!isRendering) {
         currentBuffer = doRender()
-        runtime.render(currentBuffer)
+        paintFrame()
       }
-      // If isRendering is true, the outer doRender()/runtime.render() will
+      // If isRendering is true, the outer doRender()/paintFrame() will
       // handle the re-render after effects complete, with renderPaused=false.
     }
   }
@@ -1926,7 +1927,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             isRendering = true
             try {
               currentBuffer = doRender()
-              runtime.render(currentBuffer)
+              paintFrame()
             } finally {
               isRendering = false
             }
@@ -1945,7 +1946,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     isRendering = true
     try {
       currentBuffer = doRender()
-      runtime.render(currentBuffer)
+      paintFrame()
     } finally {
       isRendering = false
     }
@@ -1967,14 +1968,52 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Overlay helpers — thin wrappers over the pure functions in ./renderer.ts.
   // These bridge the closure state (currentBuffer, selectionState, scrollback,
   // virtualScrollOffset, searchState) into the pure functional API.
-  const writeSelectionOverlay = (): void =>
-    writeSelectionOverlayFn({
-      selectionEnabled,
-      selectionState,
-      currentBuffer: currentBuffer ?? null,
-      alternateScreen,
-      target,
-    })
+
+  /**
+   * Paint the current frame, baking selection-highlight styling into the
+   * buffer cells (when a selection is active) before handing off to runtime.
+   *
+   * Selection styling is applied to a CLONE of `currentBuffer`, never the
+   * canonical buffer itself. Mutating `currentBuffer` would pollute Ag's
+   * internal `_prevBuffer` reference (Ag uses the same buffer object for
+   * incremental render's clone-and-skip fast path — see pipeline/CLAUDE.md).
+   * Keeping the canonical buffer clean preserves the incremental invariant
+   * that fast-path-skipped subtrees carry forward CONTENT pixels, not
+   * accidental selection-colored ones.
+   *
+   * Replaces the legacy `runtime.render(currentBuffer) + writeSelectionOverlay()`
+   * sequence which wrote inverse ANSI past the buffer. That approach kept
+   * the buffer clean (good for Ag) but the diff engine couldn't track
+   * overlay-painted cells, so on shrink the stale inverse pixels would
+   * persist on screen.
+   *
+   * Tracking: km-silvery.delete-render-selection-overlay
+   */
+  // Function declaration (not arrow const) so it hoists to top-of-scope —
+  // the initial render at startup calls paintFrame BEFORE this point in
+  // source order. Closures over `currentBuffer` / `selectionState` /
+  // `selectionEnabled` / `runtime` are by-reference, evaluated at call time.
+  function paintFrame(): void {
+    if (!currentBuffer) return
+    if (selectionEnabled && selectionState.range) {
+      const cloned = currentBuffer._buffer.clone()
+      const paintBuf = wrapBuffer(cloned, currentBuffer.nodes, currentBuffer.overlay)
+      // Force diff coverage — the clone starts with all rows clean, but
+      // selection styling will mutate cells. Mark all rows so diffBuffers
+      // does the per-cell pre-check (rowMetadataEquals/rowCharsEquals/
+      // rowExtrasEquals) and emits ANSI for any row that actually changed
+      // relative to runtime.prevBuffer.
+      cloned.markAllRowsDirty()
+      applySelectionToPaintBufferFn({
+        selectionEnabled,
+        selectionState,
+        paintBuffer: paintBuf,
+      })
+      runtime.render(paintBuf)
+    } else {
+      runtime.render(currentBuffer)
+    }
+  }
   const pushToScrollback = (): void =>
     pushToScrollbackFn({ scrollback, currentBuffer: currentBuffer ?? null })
   const renderVirtualScrollbackView = (): void =>
@@ -2139,12 +2178,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const [cleared] = terminalSelectionUpdate({ type: "clear" }, selectionState)
             selectionState = cleared
             notifySelectionListeners()
-            // Force full re-render to remove old overlay (overlay ANSI was
-            // written directly, incremental render won't overwrite it).
+            // Force full re-render so the freshly cleared selection's
+            // styling is removed from screen. Without runtime.invalidate(),
+            // the diff might skip selection-styled cells if buffer content
+            // hasn't changed (selection was applied to a clone — runtime's
+            // prevBuffer holds the styled clone, currentBuffer is clean,
+            // diff would emit unstyled cells correctly — but invalidating
+            // is the safer/explicit path here matching the previous
+            // semantics).
             if (currentBuffer) {
               runtime.invalidate()
               currentBuffer = doRender()
-              runtime.render(currentBuffer)
+              paintFrame()
             }
           }
           // Resolve contain boundary from the node under the cursor.
@@ -2180,8 +2225,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               selectionState = extended
               notifySelectionListeners()
               if (currentBuffer) {
-                runtime.render(currentBuffer)
-                writeSelectionOverlay()
+                paintFrame()
               }
               // Consume move events during selection — don't dispatch to the
               // component tree (prevents onMouseEnter from firing on every
@@ -2200,8 +2244,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             selectionState = next
             notifySelectionListeners()
             if (currentBuffer) {
-              runtime.render(currentBuffer)
-              writeSelectionOverlay()
+              paintFrame()
             }
             return true
           }
@@ -2222,10 +2265,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 target.write(`\x1b]52;c;${base64}\x07`)
               }
             }
-            // Re-render overlay with final selection
+            // Re-render with final selection styling baked in
             if (currentBuffer) {
-              runtime.render(currentBuffer)
-              writeSelectionOverlay()
+              paintFrame()
             }
             // Clear armed state on the mousedown target so the next
             // interaction starts cleanly. We'd otherwise skip this because
@@ -2252,11 +2294,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       const [next] = terminalSelectionUpdate({ type: "clear" }, selectionState)
       selectionState = next
       notifySelectionListeners()
-      // Force full re-render to remove overlay
+      // Force full re-render. Selection just cleared, so paintFrame() goes
+      // through the no-selection branch — runtime.render writes unstyled
+      // cells, removing any prior selection styling from screen.
       if (currentBuffer) {
         runtime.invalidate()
         currentBuffer = doRender()
-        runtime.render(currentBuffer)
+        paintFrame()
       }
     }
 
@@ -2442,13 +2486,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       if (result === "flush") {
         pendingRerender = false
         currentBuffer = doRender()
-        runtime.render(currentBuffer)
+        paintFrame()
         // Flush effects so mounted components can set up refs
         await Promise.resolve()
         if (pendingRerender) {
           pendingRerender = false
           currentBuffer = doRender()
-          runtime.render(currentBuffer)
+          paintFrame()
         }
       }
     }
@@ -2497,13 +2541,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     inEventHandler = false
     const runtimeStart = performance.now()
-    runtime.render(currentBuffer)
-    // Post-render: push to scrollback, overlay selection/search
+    // paintFrame() applies selection styling to a clone before runtime.render,
+    // so the diff engine sees selection state and repaints correctly when the
+    // selection grows / shrinks / moves.
+    paintFrame()
+    // Post-render: push to scrollback (uses currentBuffer's clean content),
+    // overlay scrollback view + search (still legacy ANSI-past-buffer).
     pushToScrollback()
     if (virtualScrollOffset > 0) {
       renderVirtualScrollbackView()
     }
-    writeSelectionOverlay()
     renderSearchHighlights()
     renderSearchBarOverlay()
     const runtimeMs = performance.now() - runtimeStart
@@ -2678,7 +2725,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             isRendering = true
             try {
               currentBuffer = doRender()
-              runtime.render(currentBuffer)
+              paintFrame()
             } finally {
               isRendering = false
             }
@@ -2753,7 +2800,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               isRendering = true
               try {
                 currentBuffer = doRender()
-                runtime.render(currentBuffer)
+                paintFrame()
               } finally {
                 isRendering = false
               }
@@ -3047,7 +3094,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         currentBuffer._buffer.markAllRowsDirty()
       }
       inEventHandler = false
-      runtime.render(currentBuffer)
+      paintFrame()
       if (_perfSpan) checkBudget(input || rawKey, performance.now() - pressStart)
     },
 

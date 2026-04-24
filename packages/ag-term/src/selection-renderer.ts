@@ -33,12 +33,22 @@ export interface SelectionTheme {
 /**
  * A single cell change produced by selection composition.
  * Used as a sparse overlay — only cells within the selection range are affected.
+ *
+ * When `inverseAttr` is true, applying the change toggles the cell's inverse
+ * attribute (SGR 7) — this is the legacy parity fallback for cells with
+ * default fg/bg, where swapping null↔null would produce no visible change.
+ * The terminal handles the actual visual swap at display time.
+ *
+ * When `inverseAttr` is false (or absent), applying the change overwrites the
+ * cell's fg/bg directly — used for explicit theme tokens (selectionFg /
+ * selectionBg) or fallback fg/bg swap when both colors are non-null.
  */
 export interface SelectionCellChange {
   col: number
   row: number
   fg: Color
   bg: Color
+  inverseAttr?: boolean
 }
 
 // ============================================================================
@@ -95,19 +105,28 @@ export function composeSelectionCells(
 
       let newFg: Color
       let newBg: Color
+      let inverseAttr = false
 
       if (theme?.selectionBg != null) {
         // Use theme tokens
         newFg = theme.selectionFg ?? cellFg
         newBg = theme.selectionBg
+      } else if (cellFg == null && cellBg == null) {
+        // Default fg/bg on both: swapping null↔null is a no-op. Use the
+        // legacy SGR 7 inverse attribute toggle so the terminal flips fg/bg
+        // at display time. This matches the behavior of the deleted
+        // `renderSelectionOverlay` function (which wrote `\x1b[7m`) for the
+        // common case where rendered text uses default colors.
+        newFg = cellFg
+        newBg = cellBg
+        inverseAttr = true
       } else {
         // Fallback: swap fg/bg (handles already-inverted content correctly)
-        // If fg is null (default), use a visible fallback
         newFg = cellBg
         newBg = cellFg
       }
 
-      changes.push({ col, row, fg: newFg, bg: newBg })
+      changes.push({ col, row, fg: newFg, bg: newBg, inverseAttr })
     }
   }
 
@@ -129,60 +148,26 @@ export function applySelectionToBuffer(
 ): void {
   for (const change of changes) {
     const cell = buffer.getCell(change.col, change.row)
-    buffer.setCell(change.col, change.row, {
-      ...cell,
-      fg: change.fg,
-      bg: change.bg,
-    })
+    if (change.inverseAttr) {
+      // Toggle the inverse attr — terminal handles fg/bg swap at display.
+      // Used when both colors are default (null) so direct swap would no-op.
+      buffer.setCell(change.col, change.row, {
+        ...cell,
+        attrs: { ...cell.attrs, inverse: !cell.attrs.inverse },
+      })
+    } else {
+      buffer.setCell(change.col, change.row, {
+        ...cell,
+        fg: change.fg,
+        bg: change.bg,
+      })
+    }
   }
 }
 
-// ============================================================================
-// Legacy API (deprecated — kept for backwards compatibility)
-// ============================================================================
-
-/**
- * Generate ANSI sequences to render selection overlay (inverse video on selected cells).
- *
- * @deprecated Use composeSelectionCells + applySelectionToBuffer instead.
- * This approach re-emits characters with SGR 7m, which doesn't compose correctly
- * with existing cell styles. The new style composition approach modifies cell data
- * before the output phase, producing correct results.
- *
- * Deletion tracked: km-silvery.delete-render-selection-overlay
- */
-export function renderSelectionOverlay(
-  selection: SelectionRange | null,
-  buffer: TerminalBuffer,
-  mode: "fullscreen" | "inline" = "fullscreen",
-  scope?: SelectionScope | null,
-): string {
-  if (!selection) return ""
-
-  const { startRow, startCol, endRow, endCol } = normalizeRange(selection)
-  let out = ""
-
-  for (let row = startRow; row <= endRow; row++) {
-    let colStart = row === startRow ? startCol : 0
-    let colEnd = row === endRow ? endCol : buffer.width - 1
-    // Clip to contain scope on every row (see composeSelectionCells above).
-    if (scope) {
-      colStart = Math.max(colStart, scope.left)
-      colEnd = Math.min(colEnd, scope.right)
-    }
-
-    if (colStart > colEnd) continue
-
-    if (mode === "fullscreen") {
-      out += `\x1b[${row + 1};${colStart + 1}H`
-    }
-
-    out += "\x1b[7m"
-    for (let col = colStart; col <= colEnd; col++) {
-      out += buffer.getCell(col, row).char
-    }
-    out += "\x1b[27m"
-  }
-
-  return out
-}
+// Legacy `renderSelectionOverlay` (ANSI past the buffer) was deleted on
+// 2026-04-24 — see km-silvery.delete-render-selection-overlay. The visual
+// "selection only extends, never shrinks" bug class is structurally
+// impossible with the compose+apply pattern above: selection styling lives
+// in the buffer cells, so the output diff engine tracks lifecycle (cells
+// that were styled last frame but aren't this frame get repainted).

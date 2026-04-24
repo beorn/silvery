@@ -26,7 +26,7 @@ import { createBuffer } from "./create-buffer"
 import { isAnyDirty } from "@silvery/ag/epoch"
 import { IncrementalRenderMismatchError } from "../scheduler"
 import { createSearchState, renderSearchBar, type SearchMatch } from "../search-overlay"
-import { renderSelectionOverlay } from "../selection-renderer"
+import { applySelectionToBuffer, composeSelectionCells } from "../selection-renderer"
 import type { Buffer, Dims, RenderTarget } from "./types"
 import type { PipelineConfig } from "../pipeline"
 import type { createVirtualScrollback } from "../virtual-scrollback"
@@ -436,25 +436,46 @@ export function createRenderer(opts: RendererOptions): Renderer {
 // via a small options object.
 // ---------------------------------------------------------------------------
 
-export interface SelectionOverlayOptions {
+export interface SelectionPaintOptions {
   selectionEnabled: boolean
   selectionState: TerminalSelectionState
-  currentBuffer: Buffer | null
-  alternateScreen: boolean
-  target: RenderTarget
+  /**
+   * Buffer to mutate with selection styles. MUST be a clone of the post-render
+   * buffer — selection styles get baked into the buffer's cells so the diff
+   * engine sees them and naturally repaints when selection changes. Mutating
+   * the canonical Ag-tracked buffer would pollute Ag's `_prevBuffer`, breaking
+   * the incremental render's clone-and-fast-path-skip invariant (see
+   * pipeline/CLAUDE.md "Incremental Rendering Model").
+   */
+  paintBuffer: Buffer
 }
 
-export function writeSelectionOverlay(opts: SelectionOverlayOptions): void {
-  const { selectionEnabled, selectionState, currentBuffer, alternateScreen, target } = opts
-  if (!selectionEnabled || !selectionState.range || !currentBuffer) return
-  const mode = alternateScreen ? "fullscreen" : "inline"
-  const overlay = renderSelectionOverlay(
+/**
+ * Apply selection-highlight styles to a paint buffer in-place.
+ *
+ * Selection becomes part of the painted buffer's cells (fg/bg swap by
+ * default) so the output-phase diff naturally tracks selection lifecycle:
+ * when the selection shrinks or moves, cells that were styled last frame
+ * but aren't this frame get repainted automatically.
+ *
+ * Replaces the legacy `writeSelectionOverlay` which wrote inverse ANSI
+ * past the buffer — the diff engine had no record of those cells, so when
+ * the selection shrank, stale inverse pixels stayed on screen until the
+ * next forced full repaint.
+ *
+ * Tracking: km-silvery.delete-render-selection-overlay
+ */
+export function applySelectionToPaintBuffer(opts: SelectionPaintOptions): void {
+  const { selectionEnabled, selectionState, paintBuffer } = opts
+  if (!selectionEnabled || !selectionState.range) return
+  const changes = composeSelectionCells(
+    paintBuffer._buffer,
     selectionState.range,
-    currentBuffer._buffer,
-    mode,
+    undefined, // theme: fallback fg/bg swap (preserves legacy renderSelectionOverlay behavior)
+    false, // respectSelectableFlag: legacy overlay didn't filter — keep parity
     selectionState.scope,
   )
-  if (overlay) target.write(overlay)
+  applySelectionToBuffer(paintBuffer._buffer, changes)
 }
 
 export interface PushToScrollbackOptions {
