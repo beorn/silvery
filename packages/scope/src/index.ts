@@ -197,12 +197,13 @@ export function setDisposeErrorSink(sink: DisposeErrorSink): void {
 
 /**
  * Minimal duck-typed shape `withScope` looks for to auto-wire host
- * cancellation. Matches `term.signals.on(signal, fn)` (which returns
- * `(() => void) & Disposable` post-Phase 2). Kept as a structural type
- * so `@silvery/scope` doesn't have to depend on `@silvery/ag-term`.
+ * cancellation. Matches `term.signals.on(signal, fn)`, whose return value
+ * is both `Disposable` and `AsyncDisposable` so it can be registered
+ * directly with `Scope.use(...)`. Kept as a structural type so
+ * `@silvery/scope` doesn't have to depend on `@silvery/ag-term`.
  */
 interface CancelSignalSource {
-  on(signal: "SIGINT" | "SIGTERM", fn: () => void): Disposable
+  on(signal: "SIGINT" | "SIGTERM", fn: () => void): Disposable & AsyncDisposable
 }
 
 interface WithScopeAppShape {
@@ -232,14 +233,8 @@ export function withScope(name?: string) {
           reportDisposeError(error, { phase: "signal", scope }),
         )
       }
-      // `scope.use()` requires `Symbol.asyncDispose`; the Disposable returned
-      // by `term.signals.on()` is sync-only, so we register cleanup via
-      // `defer()`. Calling `[Symbol.dispose]()` unregisters the handler
-      // without firing it.
-      const sigint = sigSrc.on("SIGINT", onSignal)
-      scope.defer(() => { sigint[Symbol.dispose]() })
-      const sigterm = sigSrc.on("SIGTERM", onSignal)
-      scope.defer(() => { sigterm[Symbol.dispose]() })
+      scope.use(sigSrc.on("SIGINT", onSignal))
+      scope.use(sigSrc.on("SIGTERM", onSignal))
     }
 
     app.defer(() => {

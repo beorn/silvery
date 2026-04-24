@@ -332,7 +332,11 @@ describe("integration", () => {
 type FakeApp = {
   defer(fn: () => void | Promise<void>): void
   flushDefer(): Promise<void>
-  term?: { signals?: { on(s: "SIGINT" | "SIGTERM", fn: () => void): Disposable } }
+  term?: {
+    signals?: {
+      on(s: "SIGINT" | "SIGTERM", fn: () => void): Disposable & AsyncDisposable
+    }
+  }
 }
 
 function createFakeApp(opts: { term?: FakeApp["term"] } = {}): FakeApp {
@@ -357,11 +361,13 @@ function createFakeSignals() {
       return handlers.get(sig)?.size ?? 0
     },
     api: {
-      on(sig: "SIGINT" | "SIGTERM", fn: () => void): Disposable {
+      on(sig: "SIGINT" | "SIGTERM", fn: () => void): Disposable & AsyncDisposable {
         if (!handlers.has(sig)) handlers.set(sig, new Set())
         handlers.get(sig)!.add(fn)
+        const remove = () => { handlers.get(sig)?.delete(fn) }
         return {
-          [Symbol.dispose]() { handlers.get(sig)?.delete(fn) },
+          [Symbol.dispose]() { remove() },
+          [Symbol.asyncDispose]() { remove(); return Promise.resolve() },
         }
       },
     },

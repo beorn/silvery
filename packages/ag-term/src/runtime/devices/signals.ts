@@ -90,12 +90,13 @@ export interface SignalOnOptions {
 
 /**
  * Unregister function returned by `signals.on(...)`. Callable as a plain
- * function (backward-compat: `unregister()`) and also implements
- * `Symbol.dispose` (forward-compat: `using sub = signals.on(...)` or
- * `scope.use(signals.on(...))`). Both forms remove the handler from the
- * owner's registry without firing it.
+ * function (backward-compat: `unregister()`) and also implements both
+ * `Symbol.dispose` and `Symbol.asyncDispose` so it works with sync `using`,
+ * async `await using`, and `Scope` (which is `AsyncDisposableStack`-based
+ * and only accepts values with `Symbol.asyncDispose`). All three forms
+ * remove the handler from the owner's registry without firing it.
  */
-export type SignalUnregister = (() => void) & Disposable
+export type SignalUnregister = (() => void) & Disposable & AsyncDisposable
 
 /**
  * Signals sub-owner.
@@ -200,9 +201,17 @@ export function createSignals(opts: CreateSignalsOptions = {}): Signals {
    * `scope.use(signals.on(...))`.
    */
   function makeUnregister(fn: () => void): SignalUnregister {
+    // Attach both Symbol.dispose (sync `using`) and Symbol.asyncDispose
+    // (`await using` / `Scope.use(...)` — `AsyncDisposableStack` only
+    // accepts values with Symbol.asyncDispose). The unregister itself is
+    // synchronous; the async variant just resolves immediately.
     return Object.assign(fn, {
       [Symbol.dispose]() {
         fn()
+      },
+      [Symbol.asyncDispose]() {
+        fn()
+        return Promise.resolve()
       },
     })
   }
