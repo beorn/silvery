@@ -269,6 +269,70 @@ describe("SearchProvider", () => {
     await flush()
   })
 
+  test("shift+; inserts ':' into query (legacy-terminal text insertion)", async () => {
+    // Regression: SearchBindings used `input` for ctx.input() — but legacy-terminal
+    // parseKey() normalizes shifted punctuation (':' → ';' + key.shift=true) so that
+    // keybinding resolution matches "shift+;". For text insertion we must read the
+    // pre-normalization character from `key.text` instead. See keys.ts line 1120-1127.
+    const searchable = createMockSearchable({ searchResults: [] })
+    let ctx: SearchContextValue | null = null
+
+    function Registrar() {
+      const search = useSearch()
+      ctx = search
+      const unregRef = useRef<(() => void) | null>(null)
+      if (!unregRef.current) {
+        unregRef.current = search.registerSearchable("main", searchable)
+      }
+      return <Text>shift-test</Text>
+    }
+
+    const r = createRenderer({ cols: 40, rows: 3 })
+    const app = r(
+      <SearchProvider>
+        <Registrar />
+      </SearchProvider>,
+    )
+
+    // Open the search bar, then press ':' (shift+; on US QWERTY).
+    ctx!.open()
+    await flush()
+    await app.press(":")
+    await flush()
+
+    expect(ctx!.query).toBe(":")
+  })
+
+  test("shift+3 inserts '#' into query (legacy-terminal text insertion)", async () => {
+    // Same root cause as shift+; — verify across multiple shifted punctuation marks.
+    const searchable = createMockSearchable({ searchResults: [] })
+    let ctx: SearchContextValue | null = null
+
+    function Registrar() {
+      const search = useSearch()
+      ctx = search
+      const unregRef = useRef<(() => void) | null>(null)
+      if (!unregRef.current) {
+        unregRef.current = search.registerSearchable("main", searchable)
+      }
+      return <Text>shift-test</Text>
+    }
+
+    const r = createRenderer({ cols: 40, rows: 3 })
+    const app = r(
+      <SearchProvider>
+        <Registrar />
+      </SearchProvider>,
+    )
+
+    ctx!.open()
+    await flush()
+    await app.press("#")
+    await flush()
+
+    expect(ctx!.query).toBe("#")
+  })
+
   test("unregister removes searchable", async () => {
     const matches: SearchMatch[] = [{ row: 1, startCol: 0, endCol: 1 }]
     const reveal = vi.fn()

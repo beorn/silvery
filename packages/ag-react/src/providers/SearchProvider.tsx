@@ -367,7 +367,12 @@ function SearchBindings({ ctx }: { ctx: SearchContextValue }) {
         return
       }
       if (input && !key.ctrl && !key.meta) {
-        ctx.input(input)
+        // For text insertion, prefer key.text (the actual typed character) over
+        // input (the keybinding-normalized base key). Legacy terminals normalize
+        // shifted punctuation (':' → ';' + key.shift=true) so bindings like
+        // "shift+;" match; but the search query needs the character the user
+        // actually typed. See keys.ts:1120-1127 on KeyMeta.text.
+        ctx.input(key.text ?? input)
         return
       }
     },

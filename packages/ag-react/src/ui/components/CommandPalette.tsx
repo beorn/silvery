@@ -139,11 +139,14 @@ export function CommandPalette({
         return
       }
 
-      // Printable character
-      if (input && input >= " " && !key.ctrl && !key.meta) {
+      // Printable character — use key.text to preserve the actually-typed
+      // character (Shift+; → ':', Shift+3 → '#'). `input` is the normalized
+      // base key used for keybinding resolution. See keys.ts:1120-1127.
+      const char = key.text ?? input
+      if (char && char >= " " && !key.ctrl && !key.meta) {
         setQuery((prev) => {
           setSelectedIndex(0)
-          return prev + input
+          return prev + char
         })
       }
     },

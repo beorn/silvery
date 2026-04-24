@@ -586,10 +586,13 @@ export function useTextArea({
 
       // =================================================================
       // Character input with selection: replace selection
+      // Use key.text (actual typed char, e.g. ':' for Shift+;) rather than
+      // the keybinding-normalized `input` (';' for Shift+;). See keys.ts:1120-1127.
       // =================================================================
-      if (hasSelection && input.length >= 1 && input >= " ") {
+      const typedChar = key.text ?? input
+      if (hasSelection && typedChar.length >= 1 && typedChar >= " ") {
         stickyXRef.current = null
-        replaceSelectionWith(input)
+        replaceSelectionWith(typedChar)
         yankStateRef.current = null
         return
       }
