@@ -111,17 +111,21 @@ export function composeSelectionCells(
         // Use theme tokens
         newFg = theme.selectionFg ?? cellFg
         newBg = theme.selectionBg
-      } else if (cellFg == null && cellBg == null) {
-        // Default fg/bg on both: swapping null↔null is a no-op. Use the
-        // legacy SGR 7 inverse attribute toggle so the terminal flips fg/bg
-        // at display time. This matches the behavior of the deleted
-        // `renderSelectionOverlay` function (which wrote `\x1b[7m`) for the
-        // common case where rendered text uses default colors.
+      } else if (cellFg == null || cellBg == null) {
+        // Either side is default: a direct fg↔bg swap would lose the
+        // visible side (e.g. cellBg=panel-color + cellFg=null → swap
+        // produces fg=panel-color + bg=null, an invisible space).
+        // Use SGR 7 inverse toggle so the terminal flips fg/bg at display
+        // time using its own defaults for the unset side. This matches the
+        // legacy `renderSelectionOverlay` (`\x1b[7m`) behavior and renders
+        // trailing-whitespace cells inside bg-colored boxes as fully
+        // inversed alongside content cells.
         newFg = cellFg
         newBg = cellBg
         inverseAttr = true
       } else {
-        // Fallback: swap fg/bg (handles already-inverted content correctly)
+        // Both sides explicit: direct swap is safe and handles
+        // already-inverted content correctly.
         newFg = cellBg
         newBg = cellFg
       }
@@ -240,14 +244,17 @@ export function composeSearchHighlightCells(
       if (theme?.selectionBg != null) {
         newFg = theme.selectionFg ?? cellFg
         newBg = theme.selectionBg
-      } else if (cellFg == null && cellBg == null) {
-        // Default fg/bg on both: legacy SGR 7 toggle (matches the deleted
-        // `renderSearchHighlights` overlay's `\x1b[7m`).
+      } else if (cellFg == null || cellBg == null) {
+        // Either side is default: SGR 7 toggle so the terminal swaps using
+        // its own defaults for the unset side. Direct swap would lose the
+        // visible side (see same-shape comment in composeSelectionCells).
+        // Matches the deleted `renderSearchHighlights` overlay's `\x1b[7m`.
         newFg = cellFg
         newBg = cellBg
         inverseAttr = true
       } else {
-        // Fallback: swap fg/bg (handles already-inverted content correctly).
+        // Both sides explicit: direct swap handles already-inverted
+        // content correctly.
         newFg = cellBg
         newBg = cellFg
       }
