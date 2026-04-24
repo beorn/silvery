@@ -37,11 +37,15 @@ interface TextAreaHandle {
   clear: () => void
   getValue: () => string
   setValue: (value: string) => void
+  /** Set cursor position. Clamped to value length, scrolls to keep visible. */
+  setCursor: (offset: number) => void
   getSelection: () => TextAreaSelection | null
 }
 
 type TextAreaSelection = { start: number; end: number }
 ```
+
+`setCursor` is useful when you replace `value` and want the cursor at a specific offset (e.g. cursor-at-start after a swap-and-handoff). `setValue` always places the cursor at the end; pair it with `setCursor(0)` to land at the start instead.
 
 ## Keyboard Shortcuts
 

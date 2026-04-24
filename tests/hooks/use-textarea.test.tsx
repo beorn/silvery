@@ -217,4 +217,39 @@ describe("TextArea uses useTextArea", () => {
     // After first render, ref should be available
     // (Note: ref is assigned after render, so we need to check after the initial render)
   })
+
+  test("imperative handle exposes setCursor", () => {
+    const r = createRenderer({ cols: 40, rows: 10 })
+    const refHolder: { current: TextAreaHandle | null } = { current: null }
+
+    function TestApp() {
+      const ref = useRef<TextAreaHandle>(null)
+      // Capture the imperative handle via effect — refs are populated AFTER
+      // render, so reading `ref.current` directly during render is null.
+      React.useEffect(() => {
+        refHolder.current = ref.current
+      })
+      return (
+        <Box flexDirection="column" width={40}>
+          <TextArea ref={ref} height={3} defaultValue="hello world" />
+        </Box>
+      )
+    }
+
+    r(<TestApp />)
+
+    expect(refHolder.current).not.toBeNull()
+    expect(typeof refHolder.current!.setCursor).toBe("function")
+    expect(typeof refHolder.current!.setValue).toBe("function")
+    expect(typeof refHolder.current!.clear).toBe("function")
+    expect(typeof refHolder.current!.getValue).toBe("function")
+    expect(typeof refHolder.current!.getSelection).toBe("function")
+
+    // setCursor accepts an offset and does not throw. Out-of-range values are
+    // clamped (semantics inherited from useTextArea.setCursor).
+    expect(() => refHolder.current!.setCursor(0)).not.toThrow()
+    expect(() => refHolder.current!.setCursor(5)).not.toThrow()
+    expect(() => refHolder.current!.setCursor(99999)).not.toThrow()
+    expect(() => refHolder.current!.setCursor(-5)).not.toThrow()
+  })
 })

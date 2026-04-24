@@ -116,8 +116,10 @@ export interface TextAreaHandle {
   clear: () => void
   /** Get current value */
   getValue: () => string
-  /** Set value programmatically */
+  /** Set value programmatically (cursor moves to end) */
   setValue: (value: string) => void
+  /** Set cursor position (character offset). Clamped to value length, scrolls to keep visible. */
+  setCursor: (offset: number) => void
   /** Get the current selection range, or null if no selection */
   getSelection: () => import("./useTextArea").TextAreaSelection | null
 }
@@ -182,6 +184,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     clear: ta.clear,
     getValue: () => ta.value,
     setValue: ta.setValue,
+    setCursor: ta.setCursor,
     getSelection: ta.getSelection,
   }))
 
