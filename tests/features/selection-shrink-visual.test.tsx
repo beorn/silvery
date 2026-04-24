@@ -56,13 +56,22 @@ function SelectableContent() {
 }
 
 /**
- * Count how many cells on row 0 in [0..endCol) are inverse-painted.
- * Uses termless `term.cell(row, col).inverse`.
+ * Count how many cells on row `row` in [0..endCol) are highlighted by the
+ * selection. The selection-paint pipeline can mark a cell as highlighted in
+ * two ways (both produce the same user-visible "selected" state):
+ *  - `inverse` attribute (SGR 7 toggle) — used when no theme bg is set, or
+ *    in ANSI16 mode where the terminal handles the swap uniformly.
+ *  - explicit `bg` color — used when a selection theme bg is in effect
+ *    (current default: a uniform desaturated blue-grey so content cells
+ *    AND trailing whitespace get the same highlight, avoiding the two-tone
+ *    artifact in true-color modes).
+ * Either signal counts as "selected" for these tests.
  */
 function countInverseOnRow(term: ReturnType<typeof createTermless>, row: number, endCol: number) {
   let count = 0
   for (let c = 0; c < endCol; c++) {
-    if (term.cell(row, c).inverse) count++
+    const cell = term.cell(row, c)
+    if (cell.inverse || cell.bg !== null) count++
   }
   return count
 }
@@ -142,10 +151,11 @@ describe("selection — buffer-state architecture", () => {
 
     const inverseAfterSecond: number[] = []
     for (let c = 0; c < 40; c++) {
-      if (term.cell(0, c).inverse) inverseAfterSecond.push(c)
+      const cell = term.cell(0, c)
+      if (cell.inverse || cell.bg !== null) inverseAfterSecond.push(c)
     }
 
-    // Expect inverse cells inside [20, 28] only — none in [2, 10].
+    // Expect highlighted cells inside [20, 28] only — none in [2, 10].
     const stale = inverseAfterSecond.filter((c) => c >= 2 && c <= 10)
     expect(
       stale,

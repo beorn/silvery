@@ -102,9 +102,13 @@ describe("text selection (termless e2e)", { timeout: 10000 }, () => {
     mouseMove(term, 8, 0)
     await settle(300)
 
-    // Selection overlay should have written inverse video sequences
-    const hasInverse = rawChunks.some((s) => s.includes("\x1b[7m"))
-    expect(hasInverse).toBe(true)
+    // Selection should have written either SGR 7 inverse (legacy / no-theme
+    // path) or an explicit-bg SGR (\x1b[48...) when a uniform selection theme
+    // is in effect. Either signals that the selection rendered to the terminal.
+    const hasSelectionStyle = rawChunks.some(
+      (s) => s.includes("\x1b[7m") || s.includes("\x1b[48"),
+    )
+    expect(hasSelectionStyle).toBe(true)
 
     // Finish selection
     mouseUp(term, 8, 0)
@@ -250,8 +254,10 @@ describe("text selection (termless e2e)", { timeout: 10000 }, () => {
     mouseUp(term, 5, 0)
     await settle(200)
 
-    // Verify inverse was rendered (selection visible)
-    const hasInverseBeforeKey = rawChunks.some((s) => s.includes("\x1b[7m"))
+    // Verify selection styling was rendered (SGR 7 inverse OR explicit bg).
+    const hasInverseBeforeKey = rawChunks.some(
+      (s) => s.includes("\x1b[7m") || s.includes("\x1b[48"),
+    )
     expect(hasInverseBeforeKey).toBe(true)
 
     // Clear and press a key

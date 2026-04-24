@@ -474,13 +474,34 @@ export interface SelectionPaintOptions {
  *
  * Tracking: km-silvery.delete-render-selection-overlay
  */
+/**
+ * Default selection-highlight color — a desaturated blue-grey that reads as
+ * a uniform highlight across the full selection range, including trailing
+ * whitespace. Used until `$selectionbg` / `$selectionfg` theme tokens are
+ * plumbed through (tracked in km-silvery.selection-theme-tokens).
+ *
+ * Why a fixed color instead of the SGR-7 inverse-attr fallback:
+ * - Inverse works correctly for ANSI16 — the terminal swaps the 16-color
+ *   defaults uniformly, so content cells and trailing-whitespace cells look
+ *   identical.
+ * - In true-color / 256-color modes, inverse-on-explicit-rgb-cell and
+ *   inverse-on-default-cell render with visibly different shades (the
+ *   "lavender for blanks, grey for content" two-tone). An explicit bg
+ *   sidesteps that by giving every cell in the range the same background.
+ *
+ * Only `selectionBg` is set; `selectionFg` is left undefined so each cell
+ * keeps its original foreground (text stays legible) via
+ * `theme.selectionFg ?? cellFg` in composeSelectionCells.
+ */
+const DEFAULT_SELECTION_THEME = { selectionBg: { r: 68, g: 78, b: 109 } } as const
+
 export function applySelectionToPaintBuffer(opts: SelectionPaintOptions): void {
   const { selectionEnabled, selectionState, paintBuffer } = opts
   if (!selectionEnabled || !selectionState.range) return
   const changes = composeSelectionCells(
     paintBuffer._buffer,
     selectionState.range,
-    undefined, // theme: fallback fg/bg swap (preserves legacy renderSelectionOverlay behavior)
+    DEFAULT_SELECTION_THEME,
     false, // respectSelectableFlag: legacy overlay didn't filter — keep parity
     selectionState.scope,
   )
