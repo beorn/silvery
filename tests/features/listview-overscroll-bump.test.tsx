@@ -21,8 +21,8 @@ import { ListView, Text } from "@silvery/ag-react"
 
 const ITEMS = ["one", "two", "three", "four", "five", "six", "seven", "eight"]
 
-/** The corner-line indicator uses block chars ▔ (top) / ▁ (bottom). */
-const INDICATOR_GLYPHS = new Set(["▔", "▁"])
+/** The corner indicator uses half-block chars ▀ (top) / ▄ (bottom). */
+const INDICATOR_GLYPHS = new Set(["▀", "▄"])
 
 function hasIndicator(app: { cell: (col: number, row: number) => { char: string } }, cols = 30, rows = 6): boolean {
   for (let row = 0; row < rows; row++) {

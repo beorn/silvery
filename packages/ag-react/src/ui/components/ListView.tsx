@@ -1634,27 +1634,28 @@ function ListViewInner<T>(
         </Box>
       )
     })()}
-    {/* Overscroll indicator — 10-char block char in the right corner of
-      * the top or bottom row. Top uses ▔ (U+2594 UPPER ONE EIGHTH BLOCK,
-      * flush to the top of the cell); bottom uses ▁ (U+2581 LOWER ONE
-      * EIGHTH BLOCK, flush to the bottom). Color $muted matches the
-      * scrollbar thumb — same chrome vocabulary.
+    {/* Overscroll indicator — 10-char HALF-BLOCK in the right corner of
+      * the top or bottom row. Top uses ▀ (U+2580 UPPER HALF BLOCK,
+      * flush-top, 4/8 cell height); bottom uses ▄ (U+2584 LOWER HALF
+      * BLOCK, flush-bottom, 4/8 cell height). Half-block is the tallest
+      * symmetric edge-flush option in Unicode — there's no upper-quarter
+      * glyph, so going bigger than 1/8 means going to 1/2 directly.
+      * Color $muted matches the scrollbar thumb — same chrome vocabulary.
       *
-      * No animation — the indicator simply appears when bumpedEdge is set
-      * and disappears when the user leaves the edge or the scrollbar-idle
+      * No animation — indicator appears when bumpedEdge is set and
+      * disappears when the user leaves the edge or the scrollbar-idle
       * timer fires. The AT-EDGE RENDER GATE (effectiveRowsAbove checks)
-      * hides the indicator the moment the user scrolls away, even if
-      * bumpedEdge is still non-null. Rendered OUTSIDE the scrollbar
-      * branch so keyboard nav (which doesn't set isScrolling) still sees
-      * the bump. */}
+      * hides it the instant the user scrolls away, even if bumpedEdge is
+      * still non-null. Rendered OUTSIDE the scrollbar branch so keyboard
+      * nav (which doesn't flip isScrolling) still shows the bump. */}
     {bumpedEdge === "top" && effectiveRowsAbove <= 0 && (
       <Box position="absolute" top={0} right={1} flexDirection="row">
-        <Text color="$muted">▔▔▔▔▔▔▔▔▔▔</Text>
+        <Text color="$muted">▀▀▀▀▀▀▀▀▀▀</Text>
       </Box>
     )}
     {bumpedEdge === "bottom" && effectiveRowsAbove >= scrollableRows && (
       <Box position="absolute" top={trackHeight - 1} right={1} flexDirection="row">
-        <Text color="$muted">▁▁▁▁▁▁▁▁▁▁</Text>
+        <Text color="$muted">▄▄▄▄▄▄▄▄▄▄</Text>
       </Box>
     )}
     </Box>
