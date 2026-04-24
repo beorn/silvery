@@ -643,8 +643,19 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
         if (end === count && end - start < minWindowSize) {
           start = Math.max(0, end - minWindowSize)
         }
-        // Safety cap.
-        end = Math.min(end, start + maxRendered)
+        // Safety cap — bounds overscan/union expansion, NOT the cursor. The
+        // cap must never evict the CURSOR (scrollTo). Extrapolated anchors
+        // from scrollState (trailing-placeholder inference, etc.) must stay
+        // under the cap, otherwise a perpetually-visible trailing placeholder
+        // would expand the window frame over frame until count is reached.
+        //
+        // So: floor end at `cursor + 1` (only the declarative scrollTo), then
+        // cap at `start + maxRendered`.
+        const cursorFloor = scrollTo !== undefined
+          ? Math.max(0, Math.min(scrollTo, count - 1)) + 1
+          : 0
+        const cappedEnd = Math.max(cursorFloor, start + maxRendered)
+        end = Math.min(end, cappedEnd)
 
         const leadingSize = sumHeights(0, start, estimateHeight, gap, measuredHeights, getItemKey)
         const trailingSize = sumHeights(end, count, estimateHeight, gap, measuredHeights, getItemKey)
@@ -684,8 +695,14 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     if (end === count) {
       start = Math.max(0, end - minItems)
     }
-    // Safety cap.
-    end = Math.min(end, start + maxRendered)
+    // Safety cap — bounds overscan, NOT the cursor. When the viewport is
+    // tall enough that `minItems > maxRendered` the naive cap `end = min(end,
+    // start + maxRendered)` can clamp end BEFORE the cursor, leaving the Box
+    // unable to scroll to it → layout loop spins. Floor end at cursor+1.
+    // Note: `effectiveScrollOffset` IS the cursor on bootstrap (it's seeded
+    // from `scrollTo` on mount), so this bounds correctly.
+    const cappedEnd = Math.max(effectiveScrollOffset + 1, start + maxRendered)
+    end = Math.min(end, cappedEnd)
 
     // Placeholder sizes using measured heights when available; sumHeights
     // falls back to estimate for unmeasured items.
