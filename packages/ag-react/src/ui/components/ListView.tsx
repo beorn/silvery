@@ -320,13 +320,13 @@ const KINETIC_FRAME_MS = 16
 const RELEASE_TIMEOUT_MS = 60
 /** How long (ms) the scrollbar stays visible after the last scroll activity. */
 const SCROLLBAR_FADE_AFTER_MS = 800
-/** Per-half-cycle toggle for the initial attention flash. */
-const EDGE_BUMP_PULSE_MS = 100
-/** Number of on/off transitions during the attention flash. 2 = one blink
- * (on→off→on), then steady. Total flash time = 200 ms — near-imperceptible
- * subliminal motion cue. The steady phase after is what conveys "you're
- * at the edge"; the blink just catches peripheral vision once. */
-const EDGE_BUMP_FLASH_CYCLES = 2
+/** Total duration (ms) of the attention flash strobe. After this the
+ * indicator goes steady-on until the user scrolls away or the scrollbar
+ * idle-hides. */
+const EDGE_BUMP_TOTAL_MS = 200
+/** Per-toggle interval inside the strobe window. ~30ms = ~33 Hz — fast
+ * enough to read as a single rapid shimmer rather than distinct blinks. */
+const EDGE_BUMP_TOGGLE_MS = 30
 
 // =============================================================================
 // Measurement
@@ -475,6 +475,7 @@ function ListViewInner<T>(
   // transient "you've hit the end" cue, NOT a permanent at-edge marker.
   const [bumpedEdge, setBumpedEdge] = useState<"top" | "bottom" | null>(null)
   const flashIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const flashEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Pulse state — toggles every EDGE_BUMP_PULSE_MS while bumpedEdge is
   // active. The indicator Box renders only when isPulseOn is true, so the
   // line appears as a dim on/off flash. Against static chrome (e.g. an
@@ -522,6 +523,10 @@ function ListViewInner<T>(
         clearInterval(flashIntervalRef.current)
         flashIntervalRef.current = null
       }
+      if (flashEndTimerRef.current !== null) {
+        clearTimeout(flashEndTimerRef.current)
+        flashEndTimerRef.current = null
+      }
     }, SCROLLBAR_FADE_AFTER_MS)
   }, [])
 
@@ -543,27 +548,28 @@ function ListViewInner<T>(
   // flashIntervalRef). Repeat bumps AFTER the flash finishes re-fire only
   // if bumpedEdge has been cleared — i.e. user left the edge and came back.
   const flashEdgeBump = useCallback((edge: "top" | "bottom") => {
-    if (flashIntervalRef.current !== null) return // flash already in flight
+    // Rapid strobe for EDGE_BUMP_TOTAL_MS (200 ms), then steady ON.
+    // Two-timer model: one interval toggles fast; one setTimeout ends
+    // the strobe at T+TOTAL_MS by clearing the interval + forcing ON.
+    // The end-timer is authoritative — no way for the strobe to outrun
+    // its own 200 ms lease even if repeat bumps or reconciler re-runs
+    // stack new intervals on top.
     setBumpedEdge(edge)
     setIsPulseOn(true)
-    // Capture our interval id locally so the closure uses THIS interval's
-    // reference — not whatever flashIntervalRef.current might be at tick time
-    // if a subsequent flashEdgeBump ran. The guard above makes this defensive
-    // only, but defensive matters: 2-3s "stuck flashing" reports were caused
-    // by interval-id drift under React reconciler weirdness.
-    let intervalId: ReturnType<typeof setInterval> | null = null
-    let toggleCount = 0
-    intervalId = setInterval(() => {
-      toggleCount += 1
-      if (toggleCount >= EDGE_BUMP_FLASH_CYCLES) {
-        setIsPulseOn(true) // end of flash — steady ON
-        if (intervalId !== null) clearInterval(intervalId)
-        if (flashIntervalRef.current === intervalId) flashIntervalRef.current = null
-        return
-      }
+    // Clear any in-flight strobe. Repeat bumps restart cleanly.
+    if (flashIntervalRef.current !== null) clearInterval(flashIntervalRef.current)
+    if (flashEndTimerRef.current !== null) clearTimeout(flashEndTimerRef.current)
+    flashIntervalRef.current = setInterval(() => {
       setIsPulseOn((on) => !on)
-    }, EDGE_BUMP_PULSE_MS)
-    flashIntervalRef.current = intervalId
+    }, EDGE_BUMP_TOGGLE_MS)
+    flashEndTimerRef.current = setTimeout(() => {
+      if (flashIntervalRef.current !== null) {
+        clearInterval(flashIntervalRef.current)
+        flashIntervalRef.current = null
+      }
+      flashEndTimerRef.current = null
+      setIsPulseOn(true) // steady ON
+    }, EDGE_BUMP_TOTAL_MS)
   }, [])
 
   // Cleanup on unmount.
@@ -572,6 +578,7 @@ function ListViewInner<T>(
     clearReleaseTimer()
     if (scrollbarHideTimerRef.current !== null) clearTimeout(scrollbarHideTimerRef.current)
     if (flashIntervalRef.current !== null) clearInterval(flashIntervalRef.current)
+    if (flashEndTimerRef.current !== null) clearTimeout(flashEndTimerRef.current)
   }, [stopKinetic, clearReleaseTimer])
 
   // Low-level cursor update — does NOT touch wheel/scroll state. Used by
