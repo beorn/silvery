@@ -1514,7 +1514,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   const inputChainApp = withInputChain(pasteChainApp)
   const focusChainApp = withFocusChain({
     dispatchKey: (input, key) => {
-      const focusResult = handleFocusNavigation(input, key as Key, focusManager, container)
+      const focusResult = handleFocusNavigation(input, key as Key, focusManager, container, {
+        handleTabCycling: (options as { handleTabCycling?: boolean }).handleTabCycling ?? true,
+      })
       return focusResult === "consumed"
     },
     hasActiveFocus: () => focusManager.activeElement !== null,

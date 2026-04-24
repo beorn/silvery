@@ -149,6 +149,16 @@ export interface RunOptionsCommon {
    */
   focusReporting?: boolean
   /**
+   * Handle Tab / Shift+Tab as focus-cycling keystrokes. When `false`,
+   * Tab and Shift+Tab reach `useInput` instead of being consumed by the
+   * focus manager. Default: `true`.
+   *
+   * Apps with a single focusable (or none) benefit from disabling this —
+   * e.g. Claude-Code-style "Shift+Tab cycles permission mode" bindings
+   * where focus navigation isn't meaningful.
+   */
+  handleTabCycling?: boolean
+  /**
    * Handle Ctrl+Z by suspending the process. Default: true
    */
   suspendOnCtrlZ?: boolean

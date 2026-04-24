@@ -95,7 +95,10 @@ export function handleFocusNavigation(
   parsedKey: Key,
   focusManager: FocusManager,
   container: Container,
+  options: { handleTabCycling?: boolean } = {},
 ): "consumed" | "continue" {
+  const handleTabCycling = options.handleTabCycling ?? true
+
   // Dispatch key event to focused node (capture + bubble phases)
   if (focusManager.activeElement) {
     const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement)
@@ -109,14 +112,17 @@ export function handleFocusNavigation(
 
   const root = getContainerRoot(container)
 
-  // Tab: focus next (works even when nothing is focused — starts from first)
-  if (parsedKey.tab && !parsedKey.shift) {
+  // Tab: focus next (works even when nothing is focused — starts from first).
+  // Apps with only a single focusable (or none) can opt out via
+  // `handleTabCycling: false` so Tab / Shift+Tab reach useInput instead —
+  // common pattern for Claude-Code-style "shift+tab cycles permission mode"
+  // bindings where focus navigation isn't useful.
+  if (handleTabCycling && parsedKey.tab && !parsedKey.shift) {
     focusManager.focusNext(root)
     return "consumed"
   }
 
-  // Shift+Tab: focus previous (works even when nothing is focused — starts from last)
-  if (parsedKey.tab && parsedKey.shift) {
+  if (handleTabCycling && parsedKey.tab && parsedKey.shift) {
     focusManager.focusPrev(root)
     return "consumed"
   }
