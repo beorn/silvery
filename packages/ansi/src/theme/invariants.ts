@@ -100,11 +100,27 @@ interface Pair {
  * what `validateThemeInvariants` uses below.
  */
 const CONTRAST_PAIRS: Pair[] = [
-  // AA — body text and accent-on-surface pairs
+  // AA — fg on every co-occurring surface background. The full matrix matters
+  // because consumers compose `$fg` (text) freely on top of any surface bg
+  // (`$bg`, `$bg-surface-*`, `$bg-muted`). If any pair is uncovered, a theme
+  // can ship low-contrast text without tripping CI.
   { rule: "contrast:fg/bg", fg: "fg", bg: "bg", min: AA_RATIO },
+  { rule: "contrast:fg/bg-surface-default", fg: "fg", bg: "bg-surface-default", min: AA_RATIO },
   { rule: "contrast:fg/bg-surface-subtle", fg: "fg", bg: "bg-surface-subtle", min: AA_RATIO },
+  { rule: "contrast:fg/bg-surface-raised", fg: "fg", bg: "bg-surface-raised", min: AA_RATIO },
+  { rule: "contrast:fg/bg-surface-hover", fg: "fg", bg: "bg-surface-hover", min: AA_RATIO },
   { rule: "contrast:fg/bg-surface-overlay", fg: "fg", bg: "bg-surface-overlay", min: AA_RATIO },
+  { rule: "contrast:fg/bg-muted", fg: "fg", bg: "bg-muted", min: AA_RATIO },
+
+  // fg-muted at LARGE_RATIO (3:1) — Sterling derives it at the same floor,
+  // matching the original deemphasis contract. Tightening fg-muted to AA
+  // (4.5:1) across every surface is tracked in km-silvery.invariant-matrix-gaps;
+  // doing it here first would force catalog theme churn that's out of scope
+  // for the cursor-contrast fix.
+  { rule: "contrast:fg-muted/bg", fg: "fg-muted", bg: "bg", min: LARGE_RATIO },
   { rule: "contrast:fg-muted/bg-muted", fg: "fg-muted", bg: "bg-muted", min: LARGE_RATIO },
+
+  // AA — role-tinted text on default bg (accent, status)
   { rule: "contrast:fg-accent/bg", fg: "fg-accent", bg: "bg", min: AA_RATIO },
   { rule: "contrast:fg-error/bg", fg: "fg-error", bg: "bg", min: AA_RATIO },
   { rule: "contrast:fg-warning/bg", fg: "fg-warning", bg: "bg", min: AA_RATIO },

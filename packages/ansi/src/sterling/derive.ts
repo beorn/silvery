@@ -415,6 +415,11 @@ export function deriveRoles(
   // (AA-Large / UI), which is the accessibility minimum for non-body text.
   // Blend at 0.4 toward bg (less muted than 0.5 midpoint) so schemes with
   // low fg/bg contrast still clear the 3:1 floor.
+  //
+  // Tightening this to AA (and covering fg-muted on all surface backgrounds)
+  // is tracked in km-silvery.invariant-matrix-gaps — it's a larger design
+  // question: how much can muted be muted before it stops reading? Not
+  // on the critical path for the cursor-contrast fix.
   const mutedFg = guard(
     "muted.fg",
     "fg-muted",
@@ -496,6 +501,20 @@ export function deriveRoles(
   const border: BorderRole = { default: borderDefault, focus: borderFocus, muted: borderMuted }
 
   // ── Cursor ───────────────────────────────────────────────────────────────
+  //
+  // Terminal cursor colors are configured for a blinky 1-cell indicator,
+  // not a large selected-row surface. Many schemes ship `cursorText` /
+  // `cursorColor` pairs that fail WCAG AA when used as fg/bg of rendered
+  // text (Espresso: #999 on #d6d6d6 → 1.96:1). Guard both against each
+  // other and auto-lift the fg to AA. bg is pinned to the scheme value
+  // (the author-intended selected-row surface); fg is the one that adapts.
+  const cursorBgRaw = guard(
+    "cursor.bg",
+    "bg-cursor",
+    "scheme.cursorColor",
+    [scheme.cursorColor],
+    scheme.cursorColor,
+  )
   const cursor: CursorRole = {
     fg: guard(
       "cursor.fg",
@@ -503,14 +522,9 @@ export function deriveRoles(
       "scheme.cursorText",
       [scheme.cursorText],
       scheme.cursorText,
+      cursorBgRaw,
     ),
-    bg: guard(
-      "cursor.bg",
-      "bg-cursor",
-      "scheme.cursorColor",
-      [scheme.cursorColor],
-      scheme.cursorColor,
-    ),
+    bg: cursorBgRaw,
   }
 
   const roles: Roles = { accent, info, success, warning, error, muted, surface, border, cursor }
