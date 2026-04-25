@@ -216,7 +216,7 @@ Every "surface" comes as a `bg-X` background paired with `$fg` (text) or `$fg-on
 <Blockquote>pull quote</Blockquote>
 ```
 
-**Under the hood**: these resolve to `<Text variant="h1">` etc. against Sterling's `theme.variants` table. Apps extend the variant table via `<ThemeProvider tokens={{ variants: { hero: { color: "$brand", bold: true } } }}>`.
+**Under the hood**: these resolve to `<Text variant="h1">` etc. against Sterling's `theme.variants` table. Apps extend the variant table via <span v-pre>`<ThemeProvider tokens={{ variants: { hero: { color: "$brand", bold: true } } }}>`</span>.
 
 ## Decision tree, visualized
 
