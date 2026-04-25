@@ -59,14 +59,12 @@ describe("validateThemeInvariants — intentionally broken themes", () => {
   })
 
   it("detects selection visibility failure: bg-selected === bg (default)", () => {
-    // Sterling's `bg-selected` is the authoritative selection bg; the legacy
-    // `selectionbg` is the fallback for hand-authored themes. Override both
-    // to drive the visibility invariant past its `bg-selected ?? selectionbg`
-    // resolution chain.
+    // Sterling's `bg-selected` is the authoritative selection bg. The legacy
+    // `selectionbg` fallback was dropped in 0.21.0 (sterling-purge-legacy-tokens)
+    // — the visibility check reads `bg-selected` only.
     const broken: Theme = {
       ...deriveTheme(defaultDarkScheme),
-      "bg-selected": defaultDarkScheme.background,
-      selectionbg: defaultDarkScheme.background, // no ΔL
+      "bg-selected": defaultDarkScheme.background, // no ΔL
     } as never
     // Visibility is on by default — no opt-in needed.
     const { violations } = validateThemeInvariants(broken)
@@ -103,7 +101,6 @@ describe("validateThemeInvariants — intentionally broken themes", () => {
     const broken: Theme = {
       ...deriveTheme(defaultDarkScheme),
       "bg-selected": defaultDarkScheme.background,
-      selectionbg: defaultDarkScheme.background,
     } as never
     const { ok } = validateThemeInvariants(broken, { visibility: false })
     expect(ok).toBe(true)
@@ -136,12 +133,11 @@ describe("loadTheme — enforcement modes", () => {
 
   it("strict mode throws on an invalid Theme (validated via validateThemeInvariants)", () => {
     // This simulates what loadTheme's strict path does when invariants fail.
-    // Override both Sterling `bg-selected` AND legacy `selectionbg` since the
-    // visibility check resolves Sterling first.
+    // The visibility check reads Sterling's `bg-selected` only (legacy
+    // `selectionbg` fallback was dropped in 0.21.0).
     const badTheme = {
       ...deriveTheme(defaultDarkScheme),
       "bg-selected": defaultDarkScheme.background,
-      selectionbg: defaultDarkScheme.background,
     }
     const { ok, violations } = validateThemeInvariants(badTheme as never)
     expect(ok).toBe(false)

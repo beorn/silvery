@@ -188,16 +188,18 @@ describe("resolveThemeColor", () => {
   // Sterling flat tokens resolve via direct lookup — every shipped default
   // Theme carries them as first-class fields (see `@silvery/theme/schemes`).
   // The previous `LEGACY_ALIASES` translation layer (e.g. `fgmuted` → `muted`,
-  // `bgsurface` → `surfacebg`) was deleted in 0.18.1 as redundant.
+  // `bgsurface` → `surfacebg`) was deleted in 0.18.1 as redundant. The
+  // single-hex `selection` / `selectionbg` / `inverse` / `inversebg` / `link`
+  // legacy aliases were dropped from runtime emit in 0.21.0
+  // (sterling-purge-legacy-tokens) — consumers read Sterling flat tokens
+  // (`bg-selected`, `fg-on-selected`, `bg-inverse`, `fg-on-inverse`, `fg-link`).
   describe("Sterling flat tokens (direct lookup)", () => {
     const sterlingTheme = {
-      // Legacy roots — still present on every Theme
+      // Legacy roots still emitted by deriveTheme at runtime
       muted: "#8b8da2",
       surface: "#f8f8f2",
       popover: "#f8f8f2",
-      inverse: "#1a1a1a",
       cursor: "#282a36",
-      selection: "#f8f8f2",
       focusborder: "#bd93f9",
       inputborder: "#44475a",
       // Sterling flat tokens — baked in by inlineSterlingTokens at theme
@@ -213,6 +215,13 @@ describe("resolveThemeColor", () => {
       "fg-cursor": "#282a36",
       "border-focus": "#bd93f9",
       "border-default": "#44475a",
+      // Sterling-only roles (no legacy single-hex root) — these replace the
+      // dropped `selection` / `inverse` / `link` aliases.
+      "bg-selected": "#44475a",
+      "fg-on-selected": "#f8f8f2",
+      "bg-inverse": "#f8f8f2",
+      "fg-on-inverse": "#1a1a1a",
+      "fg-link": "#8be9fd",
     }
     it("$fg-muted resolves directly", () => {
       expect(resolveThemeColor("$fg-muted", sterlingTheme)).toBe("#8b8da2")
@@ -235,6 +244,21 @@ describe("resolveThemeColor", () => {
     it("$fg-on-accent resolves directly", () => {
       expect(resolveThemeColor("$fg-on-accent", sterlingTheme)).toBe("#000000")
     })
+    it("$bg-selected resolves directly (Sterling-owned, no legacy root)", () => {
+      expect(resolveThemeColor("$bg-selected", sterlingTheme)).toBe("#44475a")
+    })
+    it("$fg-on-selected resolves directly (Sterling-owned, no legacy root)", () => {
+      expect(resolveThemeColor("$fg-on-selected", sterlingTheme)).toBe("#f8f8f2")
+    })
+    it("$bg-inverse resolves directly (Sterling-owned, no legacy root)", () => {
+      expect(resolveThemeColor("$bg-inverse", sterlingTheme)).toBe("#f8f8f2")
+    })
+    it("$fg-on-inverse resolves directly (Sterling-owned, no legacy root)", () => {
+      expect(resolveThemeColor("$fg-on-inverse", sterlingTheme)).toBe("#1a1a1a")
+    })
+    it("$fg-link resolves directly (Sterling-owned, no legacy root)", () => {
+      expect(resolveThemeColor("$fg-link", sterlingTheme)).toBe("#8be9fd")
+    })
     it("legacy names still resolve via direct lookup", () => {
       expect(resolveThemeColor("$muted", sterlingTheme)).toBe("#8b8da2")
       expect(resolveThemeColor("$focusborder", sterlingTheme)).toBe("#bd93f9")
@@ -243,8 +267,6 @@ describe("resolveThemeColor", () => {
       // Removed in 0.18.1 — callers should switch to canonical Sterling forms.
       expect(resolveThemeColor("$bg-surface", sterlingTheme)).toBeUndefined()
       expect(resolveThemeColor("$bg-popover", sterlingTheme)).toBeUndefined()
-      expect(resolveThemeColor("$bg-inverse", sterlingTheme)).toBeUndefined()
-      expect(resolveThemeColor("$bg-selected", sterlingTheme)).toBeUndefined()
       expect(resolveThemeColor("$fg-selected", sterlingTheme)).toBeUndefined()
       expect(resolveThemeColor("$fg-disabled", sterlingTheme)).toBeUndefined()
       expect(resolveThemeColor("$border-input", sterlingTheme)).toBeUndefined()
