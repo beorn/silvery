@@ -1,3 +1,4 @@
+import React from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text, useCursor } from "silvery"
@@ -272,6 +273,64 @@ describe("useCursor", () => {
       </Box>,
     )
     expect(app.getCursorState()!.x).toBe(5)
+  })
+
+  test("cursor is set on the FIRST frame after a conditional mount (km-silvercode.cursor-startup-position)", () => {
+    // Regression: silvercode startup. At first paint, App's `focused`
+    // session is unresolved → CommandBox isn't rendered → no useCursor
+    // → cursor state is null → scheduler emits CURSOR_HIDE with no
+    // moveCursor, and the hardware cursor stays parked wherever the
+    // last buffer write ended (the side-panel quota bar). When the
+    // session resolves on a microtask and CommandBox mounts, the
+    // FIRST frame after mount must already include cursor state — if
+    // it doesn't, the cursor is invisible-but-mispositioned until the
+    // user types and triggers another render.
+    //
+    // The test mirrors the silvercode shape: an outer App that renders
+    // a sibling subtree always (the "side panel"), and conditionally
+    // mounts a cursor-using component (the "CommandBox") on rerender.
+    const render = createRenderer({ cols: 40, rows: 10 })
+
+    function CursorBox() {
+      // useCursor inside a Box → equivalent to TextArea's useCursor at
+      // (col=2, row=0) within its parent Box.
+      useCursor({ col: 2, row: 0 })
+      return (
+        <Box>
+          <Text>cmd</Text>
+        </Box>
+      )
+    }
+
+    function App({ mounted }: { mounted: boolean }) {
+      return (
+        <Box flexDirection="column">
+          <Text>side panel content</Text>
+          {mounted && <CursorBox />}
+        </Box>
+      )
+    }
+
+    // Initial render — CursorBox NOT mounted. Cursor state is null.
+    const app = render(<App mounted={false} />)
+    expect(app.getCursorState()).toBeNull()
+
+    // Conditional mount — exactly the silvercode "focused resolves on
+    // microtask → CommandBox mounts" path. The FIRST frame after this
+    // rerender MUST include cursor state, otherwise the scheduler will
+    // emit CURSOR_HIDE without a moveCursor and leave the hardware
+    // cursor parked at the previous paint's last cell.
+    app.rerender(<App mounted={true} />)
+    const cursor = app.getCursorState()
+    expect(cursor).not.toBeNull()
+    expect(cursor!.visible).toBe(true)
+    // useCursor reads NodeContext from the nearest ancestor — the
+    // outer column Box at (0, 0). Cursor lands at parentRect + (col=2,
+    // row=0) regardless of where CursorBox sits inside the column,
+    // matching the "cursor position uses parent Box's screen position"
+    // test's documented semantics.
+    expect(cursor!.x).toBe(2)
+    expect(cursor!.y).toBe(0)
   })
 
   test("cursor updates when both col and layout change", () => {

@@ -190,6 +190,22 @@ export class RenderScheduler {
   /** Resize listener cleanup */
   private resizeCleanup: (() => void) | null = null
 
+  /**
+   * Cursor-state listener cleanup.
+   *
+   * The scheduler subscribes to cursor-state changes so a re-render is
+   * triggered whenever `useCursor` (mounts / unmounts / moves) changes the
+   * store. Without this subscription, `setCursorState` calls that happen
+   * AFTER a render completes (e.g. on the second commit of a parent Box,
+   * when `NodeContext` finally propagates a non-null AgNode) leave the
+   * scheduler holding a stale (`null`) cursor state — the previous
+   * render emitted `CURSOR_HIDE` and no further render is triggered to
+   * emit `moveCursor + CURSOR_SHOW`. Result: the hardware cursor stays
+   * parked at the prior frame's last buffer write. See bead
+   * `km-silvercode.cursor-startup-position`.
+   */
+  private cursorCleanup: (() => void) | null = null
+
   /** Render statistics */
   private stats: RenderStats = {
     renderCount: 0,
@@ -224,6 +240,16 @@ export class RenderScheduler {
     this.mode = options.mode ?? "fullscreen"
     this.pipelineConfig = options.pipelineConfig
     this.getCursorState = options.cursorAccessors?.getCursorState ?? globalGetCursorState
+    // Subscribe to cursor-state changes so the scheduler re-renders when
+    // useCursor's store updates land between render frames. The
+    // `subscribeCursor` accessor was previously exported but never wired up
+    // — that gap is the root of km-silvercode.cursor-startup-position.
+    if (options.cursorAccessors) {
+      this.cursorCleanup = options.cursorAccessors.subscribeCursor(() => {
+        // Schedule (not force) — coalesces with concurrent React commits.
+        this.scheduleRender()
+      })
+    }
     this.writeOutput = options.writeOutput ?? ((data: string) => options.stdout.write(data))
     this.log = createLogger("silvery:scheduler") as unknown as Logger
 
@@ -438,6 +464,12 @@ export class RenderScheduler {
     if (this.resizeCleanup) {
       this.resizeCleanup()
       this.resizeCleanup = null
+    }
+
+    // Unsubscribe from cursor-state changes
+    if (this.cursorCleanup) {
+      this.cursorCleanup()
+      this.cursorCleanup = null
     }
 
     // In static mode, output the final frame on dispose
