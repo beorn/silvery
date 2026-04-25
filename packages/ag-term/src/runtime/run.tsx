@@ -258,6 +258,12 @@ export interface RunHandle {
   readonly root: import("@silvery/ag/types").AgNode
   /** Current terminal buffer (cell-level access) */
   readonly buffer: import("../buffer").TerminalBuffer | null
+  /**
+   * Root app scope — same value `useScope()` / `useAppScope()` resolve to
+   * inside the React tree. Disposed (LIFO) when the app unmounts or on
+   * SIGINT/SIGTERM. See `km-silvery.lifecycle-scope`.
+   */
+  readonly scope: import("@silvery/scope").Scope
   /** Wait until the app exits */
   waitUntilExit(): Promise<void>
   /** Unmount and cleanup */
@@ -558,6 +564,7 @@ function wrapHandle(handle: {
   readonly text: string
   readonly root: import("@silvery/ag/types").AgNode
   readonly buffer: import("../buffer").TerminalBuffer | null
+  readonly scope: import("@silvery/scope").Scope
   waitUntilExit(): Promise<void>
   unmount(): void
   [Symbol.dispose](): void
@@ -572,6 +579,9 @@ function wrapHandle(handle: {
     },
     get buffer() {
       return handle.buffer
+    },
+    get scope() {
+      return handle.scope
     },
     waitUntilExit: () => handle.waitUntilExit(),
     unmount: () => handle.unmount(),

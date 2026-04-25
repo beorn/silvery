@@ -64,6 +64,8 @@ import {
   TermContext,
 } from "@silvery/ag-react/context"
 import { SilveryErrorBoundary } from "@silvery/ag-react/error-boundary"
+import { ScopeProvider } from "@silvery/ag-react/ScopeProvider"
+import { createScope, reportDisposeError, type Scope } from "@silvery/scope"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 import { createFocusEvent, dispatchFocusEvent } from "@silvery/ag/focus-events"
@@ -450,6 +452,15 @@ export interface AppHandle<S> {
   readonly buffer: import("../buffer").TerminalBuffer | null
   /** Access to the Zustand store */
   readonly store: StoreApi<S>
+  /**
+   * Root app scope — all `useScope()` / `useAppScope()` reads at the app
+   * root resolve to this same value. Disposed (LIFO over `defer`/`use`
+   * registrations and any fiber-attached child scopes) when the app
+   * unmounts, on SIGINT/SIGTERM (via `term.signals` if a real Term is
+   * present), or when callers `await scope[Symbol.asyncDispose]()` it
+   * directly. See `km-silvery.lifecycle-scope`.
+   */
+  readonly scope: Scope
   /** Wait until the app exits */
   waitUntilExit(): Promise<void>
   /** Unmount and cleanup */
@@ -716,6 +727,22 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Initialize layout engine
   await ensureLayoutEngine()
 
+  // Root app scope (km-silvery.lifecycle-scope Phase 1).
+  //
+  // Owns every resource that should live for the duration of this app:
+  //   - components register child scopes via `useScopeEffect`
+  //   - host-config disposes fiber-attached scopes when subtrees unmount
+  //   - SIGINT/SIGTERM (when an injected Term exposes `term.signals`) start
+  //     root disposal — fire-and-forget, errors via `reportDisposeError`.
+  //
+  // The same value is exposed to React via both `ScopeContext` and
+  // `AppScopeContext` so `useScope()` and `useAppScope()` resolve to it
+  // when no inner provider is present. Disposal is wired into `cleanup()`
+  // below so it runs after React unmount but before terminal protocol
+  // cleanup — child scopes get a chance to release resources before we
+  // tear down stdin/stdout.
+  const appScope = createScope("app")
+
   // Create abort controller for cleanup
   const controller = new AbortController()
   const signal = controller.signal
@@ -782,6 +809,37 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       })
       providerCleanups.push(unsub)
     }
+  }
+
+  // Wire SIGINT/SIGTERM into root-scope disposal (km-silvery.lifecycle-scope).
+  //
+  // The terminal Term owns the actual `process.on(...)` registrations via
+  // `term.signals` — we just mediate one handler per signal that starts
+  // root-scope teardown. `term.signals.on(...)` returns a `SignalUnregister`
+  // which is `Disposable & AsyncDisposable`, so we adopt it into `appScope`
+  // and the unregister fires when the scope disposes (idempotent on a
+  // process exiting after a real signal). Skipped for headless because
+  // there's no real terminal for SIGINT to come from, and tests routinely
+  // create+dispose Terms in tight loops without wanting global handlers.
+  const effectiveTerm = injectedTerm ?? autoTerm
+  if (!headless && effectiveTerm?.signals) {
+    const onSignal = (): void => {
+      void appScope[Symbol.asyncDispose]().catch((error) =>
+        reportDisposeError(error, { phase: "signal", scope: appScope }),
+      )
+    }
+    appScope.use(
+      effectiveTerm.signals.on("SIGINT", onSignal, {
+        priority: 5,
+        name: "scope-root-sigint",
+      }),
+    )
+    appScope.use(
+      effectiveTerm.signals.on("SIGTERM", onSignal, {
+        priority: 5,
+        name: "scope-root-sigterm",
+      }),
+    )
   }
 
   // Categorize injected values
@@ -1227,12 +1285,27 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Unmount React tree first — this runs effect cleanups (clears intervals,
     // cancels subscriptions) before we tear down the infrastructure.
+    //
+    // Fiber teardown also disposes any per-fiber scopes attached via
+    // `attachNodeScope` (host-config) and any child scopes owned by
+    // `useScopeEffect`. After this step every component-owned resource
+    // should have started disposal.
     try {
       reconciler.updateContainerSync(null, fiberRoot, null, () => {})
       reconciler.flushSyncWork()
     } catch {
       // Ignore — component tree may already be partially torn down
     }
+
+    // Dispose the root app scope — runs every resource that registered
+    // through `useAppScope().use(...)` / `appScope.defer(...)` (LIFO),
+    // and cascades into any child scopes that haven't already disposed
+    // via fiber teardown above. Fire-and-forget: cleanup() is sync, so
+    // any async-disposer rejection routes through `reportDisposeError`
+    // (phase: "app-exit") instead of throwing into the caller.
+    void appScope[Symbol.asyncDispose]().catch((error) =>
+      reportDisposeError(error, { phase: "app-exit", scope: appScope }),
+    )
 
     // Unregister node removal hook
     setOnNodeRemoved(null)
@@ -1606,46 +1679,48 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   const cacheBackend = !alternateScreen ? "terminal" : virtualInlineOption ? "virtual" : "retain"
   const wrappedElement = (
     <SilveryErrorBoundary onError={recordBoundaryError}>
-      <CursorProvider store={cursorStore}>
-        <CacheBackendContext.Provider value={cacheBackend}>
-          <TermContext.Provider value={mockTerm}>
-            <StdoutContext.Provider
-              value={{
-                stdout: mockStdout,
-                write: () => {},
-                notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
-                promoteScrollback: (content: string, lines: number) =>
-                  runtime.promoteScrollback(content, lines),
-                resetInlineCursor: () => runtime.resetInlineCursor(),
-                getInlineCursorRow: () => runtime.getInlineCursorRow(),
-              }}
-            >
-              <StderrContext.Provider
+      <ScopeProvider scope={appScope} appScope={appScope}>
+        <CursorProvider store={cursorStore}>
+          <CacheBackendContext.Provider value={cacheBackend}>
+            <TermContext.Provider value={mockTerm}>
+              <StdoutContext.Provider
                 value={{
-                  stderr: process.stderr,
-                  write: (data: string) => {
-                    process.stderr.write(data)
-                  },
+                  stdout: mockStdout,
+                  write: () => {},
+                  notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
+                  promoteScrollback: (content: string, lines: number) =>
+                    runtime.promoteScrollback(content, lines),
+                  resetInlineCursor: () => runtime.resetInlineCursor(),
+                  getInlineCursorRow: () => runtime.getInlineCursorRow(),
                 }}
               >
-                <FocusManagerContext.Provider value={focusManager}>
-                  <RuntimeContext.Provider value={runtimeContextValue}>
-                    <ChainAppContext.Provider value={chainAppContextValue}>
-                      <CapabilityRegistryContext.Provider value={capabilityRegistry}>
-                        <Root>
-                          <StoreContext.Provider value={store as StoreApi<unknown>}>
-                            {element}
-                          </StoreContext.Provider>
-                        </Root>
-                      </CapabilityRegistryContext.Provider>
-                    </ChainAppContext.Provider>
-                  </RuntimeContext.Provider>
-                </FocusManagerContext.Provider>
-              </StderrContext.Provider>
-            </StdoutContext.Provider>
-          </TermContext.Provider>
-        </CacheBackendContext.Provider>
-      </CursorProvider>
+                <StderrContext.Provider
+                  value={{
+                    stderr: process.stderr,
+                    write: (data: string) => {
+                      process.stderr.write(data)
+                    },
+                  }}
+                >
+                  <FocusManagerContext.Provider value={focusManager}>
+                    <RuntimeContext.Provider value={runtimeContextValue}>
+                      <ChainAppContext.Provider value={chainAppContextValue}>
+                        <CapabilityRegistryContext.Provider value={capabilityRegistry}>
+                          <Root>
+                            <StoreContext.Provider value={store as StoreApi<unknown>}>
+                              {element}
+                            </StoreContext.Provider>
+                          </Root>
+                        </CapabilityRegistryContext.Provider>
+                      </ChainAppContext.Provider>
+                    </RuntimeContext.Provider>
+                  </FocusManagerContext.Provider>
+                </StderrContext.Provider>
+              </StdoutContext.Provider>
+            </TermContext.Provider>
+          </CacheBackendContext.Provider>
+        </CursorProvider>
+      </ScopeProvider>
     </SilveryErrorBoundary>
   )
 
@@ -2991,6 +3066,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     },
     get store() {
       return store
+    },
+    get scope() {
+      return appScope
     },
     waitUntilExit() {
       return exitPromise
