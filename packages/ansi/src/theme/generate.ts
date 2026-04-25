@@ -101,5 +101,5 @@ export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
 
     // ── Derived fields (brand, ring, state variants, variants) ───
     ...derived,
-  }
+  } as unknown as Theme
 }

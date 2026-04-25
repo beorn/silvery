@@ -7,31 +7,168 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Removed
+## 0.20.0 — Sterling is THE Theme (BREAKING)
 
-- **`@silvery/theme-detect` package killed.** It was always a thin re-export
-  shell of `@silvery/ansi` — zero unique code, zero external consumers. Its
-  surface is now sourced directly from the two packages that actually own it:
-  - **OSC probing → `@silvery/ansi`.** The probe primitive `probeColors` (raw
-    OSC 4/10/11 query → 22-slot `ColorScheme`) lives in `@silvery/ansi/theme`.
-    `detectTerminalScheme` is kept as a deprecated alias of `probeColors`.
-  - **Scheme + theme detection → `@silvery/theme`.** The full 4-layer cascade
-    (`detectScheme`, `detectSchemeTheme`) and the Sterling-aware `detectTheme`
-    are exported from `@silvery/theme`. All four wrappers run their result
-    through `inlineSterlingTokens` so flat keys like `border-default` always
-    resolve.
+Sterling becomes silvery's one-and-only `Theme` shape at the type level.
+`export type Theme = SterlingTheme` — every consumer that did dot-access on
+legacy single-hex role fields (`theme.primary`, `theme.errorfg`, `theme.bg`,
+…) needs to migrate. The 0.19.x window kept legacy fields resolvable so
+this is a planned, signposted step.
 
-  Migration:
+### What's breaking
 
-  ```diff
-  - import { detectTerminalScheme, detectScheme, detectTheme } from "@silvery/theme-detect"
-  + import { probeColors } from "@silvery/ansi"        // raw OSC probe
-  + import { detectScheme, detectTheme } from "@silvery/theme"  // Sterling-aware
-  ```
+- **The legacy `Theme` interface is gone.** It used to live in
+  `@silvery/ansi/theme/types.ts` with ~30 single-hex role fields
+  (`primary`, `primaryfg`, `accent`, `accentfg`, `errorfg`, `successfg`,
+  `warningfg`, `infofg`, `secondaryfg`, `cursor`, `cursorbg`, `selection`,
+  `selectionbg`, `inverse`, `inversebg`, `surface`, `surfacebg`, `popover`,
+  `popoverbg`, `mutedbg`, `border`, `inputborder`, `focusborder`, `link`,
+  `disabledfg`). It now re-exports Sterling's `Theme` from
+  `sterling/types.ts`. TypeScript errors instead of silent `any`.
 
-  The full re-export surface (fingerprinting, derivation, invariants,
-  monochrome, custom tokens) was already exported from `@silvery/ansi` —
-  drop the `-detect` suffix from the import path.
+- **Sterling Theme is the new shape.** Nested role objects are
+  authoritative (`theme.accent.bg`, `theme.surface.raised`,
+  `theme.cursor.fg`, `theme.selected.bg`, `theme.inverse.fgOn`,
+  `theme.link.fg`, `theme.muted.fg`, `theme.error.fg`, …) plus flat
+  hyphen-keys for token resolution (`theme["bg-accent"]`,
+  `theme["fg-on-error"]`, `theme["border-focus"]`, …).
+
+- **Root pair stays.** `theme.fg` and `theme.bg` are now first-class on
+  Sterling Theme (they were on the legacy interface too). Heavy JSX usage
+  (`color="$fg"`, `backgroundColor="$bg"`) keeps working at both type and
+  runtime levels. `bg` carries the same value as `bg-surface-default`.
+
+### What still works for the 0.20.x window
+
+The legacy `deriveTheme` path emits the legacy single-hex role fields at
+**runtime** (cast as `Theme` at the boundary). JSX consumers that resolve
+`$primary` / `$accent` / `$muted` / `$error` (etc.) keep rendering through
+`resolveToken`'s direct kebab lookup. The fields are not part of the
+`Theme` *type* — only TypeScript dot-access breaks. This buys teams time
+to migrate JSX `$token` references to the Sterling forms below.
+
+The transition is finite: legacy runtime emit will be deleted in 0.21.0
+(see `km-silvery.sterling-purge-legacy-tokens`).
+
+### Migration map
+
+Every legacy single-hex role field maps to a Sterling nested role
+property OR a Sterling flat token. Apply at TS dot-access sites; JSX
+`$token` references resolve until 0.21.0.
+
+#### Single-hex role fields → Sterling
+
+| Legacy field            | Sterling nested        | Sterling flat        |
+| ----------------------- | ---------------------- | -------------------- |
+| `theme.primary`         | `theme.accent.fg`      | `theme["fg-accent"]` |
+| `theme.primaryfg`       | `theme.accent.fgOn`    | `theme["fg-on-accent"]` |
+| `theme.accent`          | `theme.accent.fg`      | `theme["fg-accent"]` |
+| `theme.accentfg`        | `theme.accent.fgOn`    | `theme["fg-on-accent"]` |
+| `theme.secondary`       | `theme.muted.fg`       | `theme["fg-muted"]`  |
+| `theme.secondaryfg`     | `theme.muted.bg`       | `theme["bg-muted"]`  |
+| `theme.error`           | `theme.error.fg`       | `theme["fg-error"]`  |
+| `theme.errorfg`         | `theme.error.fgOn`     | `theme["fg-on-error"]` |
+| `theme.warning`         | `theme.warning.fg`     | `theme["fg-warning"]` |
+| `theme.warningfg`       | `theme.warning.fgOn`   | `theme["fg-on-warning"]` |
+| `theme.success`         | `theme.success.fg`     | `theme["fg-success"]` |
+| `theme.successfg`       | `theme.success.fgOn`   | `theme["fg-on-success"]` |
+| `theme.info`            | `theme.info.fg`        | `theme["fg-info"]`   |
+| `theme.infofg`          | `theme.info.fgOn`      | `theme["fg-on-info"]` |
+| `theme.cursor`          | `theme.cursor.fg`      | `theme["fg-cursor"]` |
+| `theme.cursorbg`        | `theme.cursor.bg`      | `theme["bg-cursor"]` |
+| `theme.selection`       | `theme.selected.fgOn`  | `theme["fg-on-selected"]` |
+| `theme.selectionbg`     | `theme.selected.bg`    | `theme["bg-selected"]` |
+| `theme.inverse`         | `theme.inverse.fgOn`   | `theme["fg-on-inverse"]` |
+| `theme.inversebg`       | `theme.inverse.bg`     | `theme["bg-inverse"]` |
+| `theme.surface`         | `theme.fg`             | `theme["fg"]`        |
+| `theme.surfacebg`       | `theme.surface.subtle` | `theme["bg-surface-subtle"]` |
+| `theme.popover`         | `theme.fg`             | `theme["fg"]`        |
+| `theme.popoverbg`       | `theme.surface.overlay` | `theme["bg-surface-overlay"]` |
+| `theme.muted`           | `theme.muted.fg`       | `theme["fg-muted"]`  |
+| `theme.mutedbg`         | `theme.muted.bg`       | `theme["bg-muted"]`  |
+| `theme.border`          | `theme.border.default` | `theme["border-default"]` |
+| `theme.inputborder`     | `theme.border.default` | `theme["border-default"]` |
+| `theme.focusborder`     | `theme.border.focus`   | `theme["border-focus"]` |
+| `theme.link`            | `theme.link.fg`        | `theme["fg-link"]`   |
+| `theme.disabledfg`      | `theme.muted.fg`       | `theme["fg-muted"]`  |
+
+#### `$token` → Sterling `$token` (JSX consumers)
+
+Same map applied as `$token` strings. The legacy `$tokens` keep resolving
+through `resolveToken`'s kebab lookup until 0.21.0; migrate now to
+unblock 0.21.0's strict-only mode.
+
+| Legacy `$token` | Sterling `$token`            |
+| --------------- | ---------------------------- |
+| `$primary`      | `$fg-accent`                 |
+| `$primaryfg`    | `$fg-on-accent`              |
+| `$accent`       | `$fg-accent`                 |
+| `$accentfg`     | `$fg-on-accent`              |
+| `$muted`        | `$fg-muted`                  |
+| `$mutedbg`      | `$bg-muted`                  |
+| `$secondary`    | `$fg-muted`                  |
+| `$error`        | `$fg-error`                  |
+| `$warning`      | `$fg-warning`                |
+| `$success`      | `$fg-success`                |
+| `$info`         | `$fg-info`                   |
+| `$inverse`      | `$fg-on-inverse`             |
+| `$inversebg`    | `$bg-inverse`                |
+| `$surface`      | `$fg` (text on default surface) |
+| `$surfacebg`    | `$bg-surface-subtle`         |
+| `$popover`      | `$fg`                        |
+| `$popoverbg`    | `$bg-surface-overlay`        |
+| `$selection`    | `$fg-on-selected`            |
+| `$selectionbg`  | `$bg-selected`               |
+| `$cursor`       | `$fg-cursor`                 |
+| `$cursorbg`     | `$bg-cursor`                 |
+| `$border`       | `$border-default`            |
+| `$inputborder`  | `$border-default`            |
+| `$focusborder`  | `$border-focus`              |
+| `$focusborder`  | `$border-focus`              |
+| `$link`         | `$fg-link`                   |
+| `$disabledfg`   | `$fg-muted`                  |
+| `$bg`           | unchanged (still resolves)   |
+| `$fg`           | unchanged (still resolves)   |
+
+### What landed
+
+- `sterling/types.ts`: Sterling Theme gains top-level `fg` and `bg`
+  string fields. Both passthrough scheme.foreground/scheme.background;
+  `bg` is also the same value as `bg-surface-default`. This eliminates
+  the gap that would have broken every `color="$fg"` / `backgroundColor="$bg"`
+  JSX site if Sterling had shipped without them.
+
+- `sterling/inline.ts` `inlineSterlingTokens`: `setIfAbsent("fg", …)` /
+  `setIfAbsent("bg", …)` from the source ColorScheme. Hand-crafted Themes
+  that pre-populate `fg`/`bg` keep their values; derived Themes get them
+  from scheme.
+
+- `theme/types.ts`: `export type Theme = SterlingTheme` (re-export).
+  The previous interface is gone.
+
+- `theme/derive.ts` `deriveTruecolorTheme` + `deriveAnsi16ThemeRaw`: cast
+  return as `Theme` at the boundary. The legacy single-hex fields keep
+  flowing into the runtime object so `theme["primary"]` etc. resolve
+  during the 0.20.x window.
+
+- `theme/generate.ts` (ANSI16) and `@silvery/theme/src/generate.ts`:
+  same boundary cast.
+
+- `ag-react/ThemeProvider.tsx`: `result.variants = …` assignment goes
+  through a structural-cast helper since `variants` is now `readonly`
+  on Sterling Theme. The mutation is local to a freshly-spread object,
+  not a frozen one.
+
+### Open follow-ups (post-0.20.0)
+
+- `km-silvery.sterling-borders-adaptive` (P2 BUG): `border-default` /
+  `border-muted` derive at fixed-alpha blends without contrast lift.
+  Default-dark / default-light fail the WCAG audit. Tracked separately.
+- `km-silvery.sterling-cursor-adaptive` (P2 BUG): cursor pair passes
+  scheme verbatim, missing `repairCursorBg` lift.
+- `km-silvery.sterling-purge-legacy-tokens` (P1): delete the legacy
+  runtime emit in 0.21.0. Requires every consumer to be on Sterling
+  `$tokens`.
 
 ## 0.19.2 — Republish with correct exports AND shipped dist
 

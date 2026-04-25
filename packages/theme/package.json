@@ -1,6 +1,6 @@
 {
   "name": "@silvery/theme",
-  "version": "0.19.2",
+  "version": "0.20.0",
   "private": true,
   "description": "Theming system with semantic color tokens for silvery (internal — use silvery/theme instead)",
   "license": "MIT",
@@ -51,8 +51,8 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ansi": "0.19.2",
-    "@silvery/color": "0.19.2"
+    "@silvery/ansi": "0.20.0",
+    "@silvery/color": "0.20.0"
   },
   "tsdown": {
     "clean": true,

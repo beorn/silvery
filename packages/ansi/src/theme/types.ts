@@ -79,108 +79,22 @@ export type AnsiColorName =
   | "brightCyan"
   | "brightWhite"
 
-export interface Theme {
-  name: string
-  // ── Root pair ────────────────────────────────────────────────────
-  bg: string
-  fg: string
-  // ── Surface pairs ────────────────────────────────────────────────
-  muted: string
-  mutedbg: string
-  surface: string
-  surfacebg: string
-  popover: string
-  popoverbg: string
-  inverse: string
-  inversebg: string
-  // ── Cursor + selection ───────────────────────────────────────────
-  cursor: string
-  cursorbg: string
-  selection: string
-  selectionbg: string
-  // ── Accents ──────────────────────────────────────────────────────
-  primary: string
-  primaryfg: string
-  secondary: string
-  secondaryfg: string
-  accent: string
-  accentfg: string
-  // ── Semantic states ──────────────────────────────────────────────
-  error: string
-  errorfg: string
-  warning: string
-  warningfg: string
-  success: string
-  successfg: string
-  info: string
-  infofg: string
-  // ── Borders + links ──────────────────────────────────────────────
-  border: string
-  inputborder: string
-  focusborder: string
-  link: string
-  disabledfg: string
-  palette: string[]
-
-  // Brand anchor (Apple system-color model) — THE app's identity. Auto-derives
-  // from scheme.primary; apps override via <ThemeProvider tokens={{ brand: "#…" }}>.
-  brand: string
-  /** Kebab key for $brand-hover. Hover lightness shift (+0.04L OKLCH). */
-  "brand-hover": string
-  /** Kebab key for $brand-active. Active lightness shift (+0.08L OKLCH). */
-  "brand-active": string
-
-  // State variants — hover (+0.04L) and active (+0.08L) shifts from base in OKLCH.
-  // Direction: dark themes brighten, light themes darken.
-  // Access via $primary-hover, $primary-active, $accent-hover, etc. in JSX.
-  /** Kebab key for $primary-hover. */
-  "primary-hover": string
-  /** Kebab key for $primary-active. */
-  "primary-active": string
-  /** Kebab key for $accent-hover. */
-  "accent-hover": string
-  /** Kebab key for $accent-active. */
-  "accent-active": string
-  /** Kebab key for $fg-hover. */
-  "fg-hover": string
-  /** Kebab key for $fg-active. */
-  "fg-active": string
-  /** Kebab key for $bg-selected-hover. */
-  "bg-selected-hover": string
-  /** Kebab key for $bg-surface-hover. */
-  "bg-surface-hover": string
-
-  // Categorical color ring — 8 harmonious hues for tags, chart series, calendar
-  // categories, priority levels, any color that's CATEGORICAL, not stateful.
-  // ensureContrast-adjusted against bg. Use $red, $orange, …, $pink in JSX.
-  //
-  // Distinguish from:
-  //   - $color0..$color15           — raw terminal ANSI (user's theme verbatim)
-  //   - $error/$warning/$success    — semantic state (communicates meaning)
-  //   - $brand                      — app identity anchor (one color)
-  red: string
-  orange: string
-  yellow: string
-  green: string
-  teal: string
-  blue: string
-  purple: string
-  pink: string
-
-  /**
-   * Named typography variants — resolved by `<Text variant="h1">`.
-   *
-   * Each variant is a bundle of visual defaults (color, bold, italic, dim,
-   * underlineStyle). Caller props always win over variant values — the variant
-   * is the *default*, not an override.
-   *
-   * Apps extend variants via:
-   * ```tsx
-   * <ThemeProvider tokens={{ variants: { hero: { color: "$brand", bold: true } } }}>
-   * ```
-   */
-  variants: Record<string, Variant>
-}
+/**
+ * `Theme` is Sterling's `Theme` (silvery 0.19.0 — Sterling is THE Theme).
+ *
+ * The shape: nested roles (`accent`, `muted`, `surface`, `border`, `cursor`,
+ * `selected`, `inverse`, `link`, plus the status roles `info`/`success`/
+ * `warning`/`error`) AND flat hyphen-keys (`bg-accent`, `fg-on-error`,
+ * `border-focus`, …) on the same object. See `sterling/types.ts` for the
+ * full type definition.
+ *
+ * Legacy single-hex role aliases (`theme.primary`, `theme.muted`,
+ * `theme.accent` as strings, `theme.primaryfg`, `theme.errorfg`, …) are no
+ * longer part of the type. They're emitted at runtime by the legacy
+ * `deriveTheme` paths during the 0.19.x window for consumers that haven't
+ * migrated; they will be removed in 0.20.0.
+ */
+export type { Theme } from "../sterling/types.ts"
 
 /**
  * Metadata describing how the active color scheme was determined.

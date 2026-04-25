@@ -116,6 +116,23 @@ const DIM = 3.0
 const FAINT = 1.5
 const CONTROL = 3.0
 
+/**
+ * Build a "raw" Theme with legacy single-hex role fields. The output is NOT a
+ * complete Sterling Theme — Sterling roles + flat tokens are layered on by
+ * `inlineSterlingTokens` at the end of `deriveTheme`. The cast at the bottom
+ * (`as unknown as Theme`) acknowledges the staged construction; the contract
+ * `deriveTheme()` returns a fully-shaped Sterling Theme is honored at the
+ * `deriveTheme` boundary, not here.
+ *
+ * Legacy fields (`primary`, `primaryfg`, `accent`, `accentfg`, `errorfg`,
+ * `successfg`, `warningfg`, `infofg`, `secondaryfg`, `focusborder`,
+ * `inputborder`, `disabledfg`, `mutedbg`, `surfacebg`, `popoverbg`, `inverse`,
+ * `inversebg`, `cursor`, `cursorbg`, `selection`, `selectionbg`, `link`,
+ * `secondary`, `border`) are emitted at runtime so app code that still uses
+ * `theme.primary` / `theme.errorfg` keeps working through the 0.19.x window.
+ * They are not part of the Sterling `Theme` type and will be removed in
+ * 0.20.0 (see `km-silvery.sterling-purge-legacy-tokens`).
+ */
 function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): Theme {
   const dark = p.dark ?? true
   const bg = p.background
@@ -239,7 +256,7 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
       p.brightWhite,
     ],
     ...derived,
-  }
+  } as unknown as Theme
 }
 
 export function deriveAnsi16Theme(p: ColorScheme): Theme {
@@ -323,7 +340,7 @@ function deriveAnsi16ThemeRaw(p: ColorScheme): Theme {
       p.brightWhite,
     ],
     ...derived,
-  }
+  } as unknown as Theme
 }
 
 /**

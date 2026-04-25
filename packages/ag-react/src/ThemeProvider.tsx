@@ -96,7 +96,9 @@ export function ThemeProvider({
       typeof t["variants"] === "object" &&
       !Array.isArray(t["variants"])
     ) {
-      result.variants = {
+      // Sterling 0.19.0 marks `variants` readonly; we're constructing a fresh
+      // theme object here (not mutating a frozen one), so the cast is safe.
+      ;(result as { variants: Theme["variants"] }).variants = {
         ...parent.variants,
         ...(t["variants"] as Record<string, unknown>),
       } as Theme["variants"]

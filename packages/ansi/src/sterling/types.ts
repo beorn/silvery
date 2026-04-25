@@ -308,6 +308,12 @@ export interface CategoricalHues {
  *   - categorical hues (`red`, `orange`, `yellow`, `green`, `teal`, `blue`,
  *     `purple`, `pink`) — hex strings for categorical UI
  *
+ * Root pair:
+ *   - `fg` — default text color (= `scheme.foreground`)
+ *   - `bg` — default canvas color (= `scheme.background`; same value as
+ *            `bg-surface-default` but exposed at the root for `$fg` / `$bg`
+ *            JSX consumers and convenience access)
+ *
  * The nested roles (`accent`, `muted`, `surface`, `border`, `cursor`, plus
  * the status roles `info`/`success`/`warning`/`error`) are authoritative for
  * stateful tokens. Legacy flat hex aliases for these roles (`theme.primary`,
@@ -322,6 +328,14 @@ export type Theme = FlatTokens &
     readonly derivationTrace?: DerivationTrace
     readonly variants: Record<string, Variant>
     readonly palette: readonly string[]
+    /** Default text color (= `scheme.foreground`). Heavily used as `$fg` in JSX. */
+    readonly fg: string
+    /**
+     * Default canvas color (= `scheme.background`). Same value as
+     * `bg-surface-default`; exposed at the root for `$bg` JSX consumers and
+     * convenience access.
+     */
+    readonly bg: string
   } & CategoricalHues
 
 /**

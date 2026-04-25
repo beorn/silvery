@@ -36,35 +36,61 @@ export type InlinedTheme = Theme & { [K in FlatToken]: string }
 /**
  * Build a ColorScheme-shaped input from a Theme when the original
  * scheme isn't available (hand-crafted themes, picker round-trips).
+ *
+ * Reads legacy single-hex hints (`theme.primary`, `theme.cursorbg`,
+ * `theme.selectionbg`, …) via bracket access — these survive at runtime in
+ * outputs from the legacy `deriveTheme` path during the 0.19.x window even
+ * though Sterling's `Theme` no longer types them. Falls back to Sterling
+ * nested fields (`theme.cursor.bg`, `theme.selected.bg`) when the legacy
+ * fields are absent (hand-crafted Sterling-only themes).
  */
 function schemeFromTheme(theme: Theme): ColorScheme {
   const palette = theme.palette ?? []
+  // Bracket-read legacy single-hex hints — present at runtime on every Theme
+  // produced by `deriveTheme` during the 0.19.x window. Sterling-only themes
+  // (post-0.20.0) won't have these, so fall back to the nested role colors.
+  const legacy = theme as unknown as Record<string, string | undefined>
+  const primary = legacy["primary"]
+  const accent = legacy["accent"]
+  const errorHex = (typeof legacy["error"] === "string" ? legacy["error"] : theme.error?.fg) ?? "#000000"
+  const successHex =
+    (typeof legacy["success"] === "string" ? legacy["success"] : theme.success?.fg) ?? "#000000"
+  const warningHex =
+    (typeof legacy["warning"] === "string" ? legacy["warning"] : theme.warning?.fg) ?? "#000000"
+  const infoHex = (typeof legacy["info"] === "string" ? legacy["info"] : theme.info?.fg) ?? "#000000"
+  const accentHex = accent ?? theme.accent?.fg ?? primary ?? "#000000"
+  const primaryHex = primary ?? theme.accent?.fg ?? "#000000"
+  const mutedHex = (typeof legacy["muted"] === "string" ? legacy["muted"] : theme.muted?.fg) ?? "#888888"
+  const cursorBg = legacy["cursorbg"] ?? theme.cursor?.bg ?? theme.bg
+  const cursorFg = legacy["cursor"] ?? theme.cursor?.fg ?? theme.fg
+  const selectionBg = legacy["selectionbg"] ?? theme.selected?.bg ?? theme.bg
+  const selectionFg = legacy["selection"] ?? theme.selected?.fgOn ?? theme.fg
   return {
     name: theme.name,
     dark: isDark(theme.bg),
-    primary: theme.primary,
+    primary: primaryHex,
     black: palette[0] ?? "#000000",
-    red: palette[1] ?? theme.error,
-    green: palette[2] ?? theme.success,
-    yellow: palette[3] ?? theme.warning,
-    blue: palette[4] ?? theme.primary,
-    magenta: palette[5] ?? theme.accent,
-    cyan: palette[6] ?? theme.info,
+    red: palette[1] ?? errorHex,
+    green: palette[2] ?? successHex,
+    yellow: palette[3] ?? warningHex,
+    blue: palette[4] ?? primaryHex,
+    magenta: palette[5] ?? accentHex,
+    cyan: palette[6] ?? infoHex,
     white: palette[7] ?? theme.fg,
-    brightBlack: palette[8] ?? theme.muted,
-    brightRed: palette[9] ?? theme.error,
-    brightGreen: palette[10] ?? theme.success,
-    brightYellow: palette[11] ?? theme.warning,
-    brightBlue: palette[12] ?? theme.primary,
-    brightMagenta: palette[13] ?? theme.accent,
-    brightCyan: palette[14] ?? theme.info,
+    brightBlack: palette[8] ?? mutedHex,
+    brightRed: palette[9] ?? errorHex,
+    brightGreen: palette[10] ?? successHex,
+    brightYellow: palette[11] ?? warningHex,
+    brightBlue: palette[12] ?? primaryHex,
+    brightMagenta: palette[13] ?? accentHex,
+    brightCyan: palette[14] ?? infoHex,
     brightWhite: palette[15] ?? theme.fg,
     foreground: theme.fg,
     background: theme.bg,
-    cursorColor: theme.cursorbg,
-    cursorText: theme.cursor,
-    selectionBackground: theme.selectionbg,
-    selectionForeground: theme.selection,
+    cursorColor: cursorBg,
+    cursorText: cursorFg,
+    selectionBackground: selectionBg,
+    selectionForeground: selectionFg,
   }
 }
 
@@ -184,6 +210,14 @@ export function inlineSterlingTokens(theme: Theme, scheme?: ColorScheme): Inline
   if (lnk) {
     setIfAbsent("fg-link", lnk.fg)
   }
+
+  // Root pair — `fg` / `bg` are exposed at the top level for `$fg` / `$bg`
+  // JSX consumers. They mirror `scheme.foreground` / `scheme.background`
+  // (`bg` is also the same value as `bg-surface-default`). Setting via
+  // setIfAbsent so any pre-populated value (legacy derive, hand-crafted theme)
+  // wins.
+  setIfAbsent("fg", src.foreground)
+  setIfAbsent("bg", src.background)
 
   return out as unknown as InlinedTheme
 }
