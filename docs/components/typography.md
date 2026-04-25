@@ -28,33 +28,33 @@ import {
 
 ## Headings
 
-| Component | Default Style     | Use For                                  |
-| --------- | ----------------- | ---------------------------------------- |
-| `<H1>`    | `$primary` + bold | Page title, maximum emphasis             |
-| `<H2>`    | `$accent` + bold  | Section heading, contrasts with H1       |
-| `<H3>`    | bold (no color)   | Group heading, stands out without accent |
+| Component | Default Style       | Use For                                  |
+| --------- | ------------------- | ---------------------------------------- |
+| `<H1>`    | `$fg-accent` + bold | Page title, maximum emphasis             |
+| `<H2>`    | `$fg-accent` + bold | Section heading                          |
+| `<H3>`    | bold (no color)     | Group heading, stands out without accent |
 
 ```tsx
-<H1>Settings</H1>                    // $primary + bold
-<H2>General</H2>                      // $accent + bold
+<H1>Settings</H1>                    // $fg-accent + bold
+<H2>General</H2>                      // $fg-accent + bold
 <H3>Appearance</H3>                   // bold
-<H1 color="$success">Panel A</H1>    // override color for differentiation
+<H1 color="$fg-success">Panel A</H1> // override color for differentiation
 ```
 
 ## Body Text
 
-| Component | Default Style     | Use For                         |
-| --------- | ----------------- | ------------------------------- |
-| `<P>`     | plain text        | Body text (semantic wrapper)    |
-| `<Lead>`  | `$muted` + italic | Introductory/lead text          |
-| `<Muted>` | `$muted`          | Secondary/supporting text       |
-| `<Small>` | `$muted` + dim    | Fine print, captions, footnotes |
+| Component | Default Style                     | Use For                         |
+| --------- | --------------------------------- | ------------------------------- |
+| `<P>`     | plain text                        | Body text (semantic wrapper)    |
+| `<Lead>`  | `$fg-muted` + italic              | Introductory/lead text          |
+| `<Muted>` | `$fg-muted`                       | Secondary/supporting text       |
+| `<Small>` | `$fg-muted` (pre-dimmed at truecolor) | Fine print, captions, footnotes |
 
 ```tsx
 <P>Use dark colors for the UI.</P>    // plain body text
-<Lead>Welcome to the app</Lead>       // $muted + italic
-<Muted>Requires restart</Muted>       // $muted
-<Small>Last updated 2 hours ago</Small> // $muted + dim
+<Lead>Welcome to the app</Lead>       // $fg-muted + italic
+<Muted>Requires restart</Muted>       // $fg-muted
+<Small>Last updated 2 hours ago</Small> // $fg-muted (pre-dimmed)
 ```
 
 ## Inline Emphasis
@@ -72,11 +72,11 @@ import {
 
 ## Code & Keys
 
-| Component     | Default Style         | Use For                 |
-| ------------- | --------------------- | ----------------------- |
-| `<Code>`      | `$mutedbg` background | Inline code             |
-| `<Kbd>`       | `$mutedbg` + bold     | Keyboard shortcut badge |
-| `<CodeBlock>` | `$border` left border | Multi-line code block   |
+| Component     | Default Style                | Use For                 |
+| ------------- | ---------------------------- | ----------------------- |
+| `<Code>`      | `$bg-muted` background       | Inline code             |
+| `<Kbd>`       | `$bg-muted` + bold           | Keyboard shortcut badge |
+| `<CodeBlock>` | `$border-default` left border | Multi-line code block  |
 
 ```tsx
 <Code>npm install silvery</Code>      // inline code
@@ -86,10 +86,10 @@ import {
 
 ## Block Elements
 
-| Component      | Default Style            | Use For         |
-| -------------- | ------------------------ | --------------- |
-| `<Blockquote>` | `$muted` border + italic | Quotations      |
-| `<HR>`         | `$border` dashes         | Horizontal rule |
+| Component      | Default Style                  | Use For         |
+| -------------- | ------------------------------ | --------------- |
+| `<Blockquote>` | `$fg-muted` border + italic    | Quotations      |
+| `<HR>`         | `$border-default` dashes        | Horizontal rule |
 
 ```tsx
 <Blockquote>Less is more.</Blockquote>

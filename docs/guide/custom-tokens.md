@@ -5,7 +5,7 @@ description: Extend silvery's theme with app-specific semantic tokens or brand c
 
 # Custom Tokens
 
-Silvery's built-in tokens (`$primary`, `$muted`, `$success`, …) cover semantic UI roles. For app-specific needs — priority levels, category colors, brand identity — define your own tokens via `defineTokens()`.
+Silvery's built-in [Sterling](/guide/sterling) tokens (`$fg-accent`, `$fg-muted`, `$fg-success`, `$bg-surface-raised`, …) cover semantic UI roles. For app-specific needs — priority levels, category colors, brand identity — define your own tokens via `defineTokens()`.
 
 ## Two kinds of custom tokens
 
@@ -49,7 +49,7 @@ Use for: logos, signature chrome, anything branded. Don't use for body text, sta
 
 - Every custom token key starts with `$`
 - Use `$<app>-<role>` namespacing to avoid conflicts when multiple packages define tokens
-- Don't reuse built-in token names (`$fg`, `$primary`, `$error`, etc.) — silvery throws
+- Don't reuse built-in token names (`$fg`, `$fg-accent`, `$fg-error`, etc.) — silvery throws
 
 ## Validation rules
 

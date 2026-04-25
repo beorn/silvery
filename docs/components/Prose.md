@@ -50,7 +50,7 @@ import { MarkdownView } from "./MarkdownView"
 
 ```tsx
 <Box flexDirection="row" gap={1}>
-  <Text bold color="$primary">●</Text>
+  <Text bold color="$fg-accent">●</Text>
   <Prose flexGrow={1}>
     <MarkdownView source={response} />
   </Prose>

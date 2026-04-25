@@ -247,35 +247,35 @@ Keybindings are a UI detail. Commands are the API. Build on commands; bind keys 
 
 Components express semantic intent — color, hierarchy, state — via **tokens and presets**. The token system decides the concrete rendering details: which hex value, which SGR attributes, which tier-appropriate fallback. Components never reach for raw rendering primitives (hex colors, ANSI escapes, or SGR modifiers like `dim` / `bold` / `italic` / `underline`).
 
-[`silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. ~33 semantic tokens and typography presets adapt to every terminal theme. 84 color schemes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, …) work automatically.
+[`silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. [Sterling](/guide/sterling) — silvery's canonical design system — derives nested roles + flat tokens (`$fg-accent`, `$fg-muted`, `$bg-surface-*`, `$border-focus`, …) plus typography presets that adapt to every terminal theme. 84 color schemes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, …) work automatically.
 
 ### Why not SGR in components
 
 Terminal SGR codes (`bold`, `dim`, `italic`, `underline`, `inverse`, `strikethrough`) have **uneven support** across emulators — `dim` does alpha-blending on some, intensity-reduction on others, nothing on older terminals. `bold` sometimes brightens color, sometimes only affects font weight. Writing these in components guarantees inconsistent results.
 
-Tokens avoid this. At truecolor, `$faint` resolves to a specific pre-dimmed hex — deterministic on any terminal. At ANSI 16 where we can't express intermediate intensities, the renderer emits SGR 2 as a necessary concession. Components never make that choice; derivation does.
+Tokens avoid this. At truecolor, `$fg-muted` resolves to a specific pre-dimmed hex — deterministic on any terminal. At ANSI 16 where we can't express intermediate intensities, the renderer emits SGR 2 as a necessary concession. Components never make that choice; derivation does.
 
 ::: tip ✨ Shiny
 
 ```tsx
 // Semantic tokens — adapt to any theme automatically
-<Text color="$primary">Selected item</Text>
-<Text color="$success">✓ Saved</Text>
-<Text color="$error">✗ Failed</Text>
-<Text color="$muted">Last modified 2h ago</Text>
-<Box borderColor="$border" borderStyle="round" />
+<Text color="$fg-accent">Selected item</Text>
+<Text color="$fg-success">✓ Saved</Text>
+<Text color="$fg-error">✗ Failed</Text>
+<Text color="$fg-muted">Last modified 2h ago</Text>
+<Box borderColor="$border-default" borderStyle="round" />
 
 // Typography presets — semantic intent, not manual attrs
-<H1>Page title</H1>         // $primary + bold (composed by preset)
+<H1>Page title</H1>         // $fg-accent + bold (composed by preset)
 <Strong>urgent</Strong>      // bold
 <Em>aside</Em>               // italic
-<Small>fine print</Small>    // $faint (pre-dimmed hex at truecolor)
-<Link>clickable</Link>       // $link + underline (composed by preset)
+<Small>fine print</Small>    // pre-dimmed $fg-muted at truecolor
+<Link>clickable</Link>       // $fg-link + underline (composed by preset)
 
 // Status indicators: shape + color (colorblind-safe)
-<Text color="$success">✓</Text>   // done
-<Text color="$muted">○</Text>     // pending
-<Text color="$error">✗</Text>     // failed
+<Text color="$fg-success">✓</Text>   // done
+<Text color="$fg-muted">○</Text>     // pending
+<Text color="$fg-error">✗</Text>     // failed
 ```
 
 :::
@@ -291,12 +291,12 @@ Tokens avoid this. At truecolor, `$faint` resolves to a specific pre-dimmed hex 
 console.log("\x1b[31;1mError\x1b[0m")
 
 // Raw SGR attrs in component code — unreliable across terminals
-<Text dimColor>Last modified 2h ago</Text>           // → use $muted or <Small>
+<Text dimColor>Last modified 2h ago</Text>           // → use $fg-muted or <Small>
 <Text bold underline>Warning</Text>                   // → use <H2> or semantic token
 <Text italic>aside</Text>                             // → use <Em>
 
 // Manual composition of tokens with attrs — double trouble
-<Text color="$muted" dimColor>Fine print</Text>       // → use <Small>
+<Text color="$fg-muted" dimColor>Fine print</Text>    // → use <Small>
 
 // Color-only status (colorblind users can't distinguish)
 <Text color="green">●</Text>  // done? pending? who knows without color

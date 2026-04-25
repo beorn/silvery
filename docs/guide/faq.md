@@ -21,7 +21,7 @@ faq:
   - q: "What terminal emulators does Silvery support?"
     a: "Silvery works with any terminal that supports basic ANSI escape sequences. Modern features like Kitty keyboard protocol, truecolor, synchronized output, and graphics are auto-detected at startup and enabled when available. Tested with Ghostty, Kitty, iTerm2, WezTerm, Alacritty, Windows Terminal, and others. See terminfo.dev for detailed compatibility data."
   - q: "How does theming work in Silvery?"
-    a: "Silvery ships 38 color palettes with semantic tokens ($primary, $success, $muted, $danger, etc.). Themes auto-detect the terminal's background color and adjust for WCAG-compliant contrast. Use ThemeProvider to set a palette, then reference tokens in your components. See the styling guide and theme explorer for details."
+    a: "Silvery ships 84 color palettes with Sterling — silvery's canonical design system. Sterling exposes nested role objects (theme.accent.bg, theme.surface.raised) plus flat hyphen-key tokens ($fg-accent, $fg-success, $fg-muted, $fg-error, $bg-surface-subtle, etc.). Themes auto-detect the terminal's palette via OSC queries and adjust for WCAG-compliant contrast via OKLCH auto-lift. Use ThemeProvider to set a palette, then reference tokens in your components. See the Sterling primer, styling guide, and theme explorer for details."
   - q: "Is Silvery production-ready?"
     a: "Silvery is actively developed and used in production by a complex TUI application with thousands of nodes, multiple views, and rich interactions. The API surface is stabilizing but may have breaking changes before 1.0. It ships with comprehensive tests, including property-invariant fuzz tests for the rendering pipeline."
   - q: "Does Silvery have TypeScript support?"
@@ -166,16 +166,16 @@ Auto-detected features include Kitty keyboard protocol, truecolor, synchronized 
 
 ## How does theming work in Silvery?
 
-Silvery ships 38 color palettes with semantic tokens:
+Silvery ships 84 color palettes with [Sterling](/guide/sterling) tokens:
 
 ```tsx
-<Box borderStyle="round" borderColor="$primary">
-  <Text color="$success">Saved</Text>
-  <Text color="$muted">Last updated 2 min ago</Text>
+<Box borderStyle="round" borderColor="$border-default">
+  <Text color="$fg-success">Saved</Text>
+  <Text color="$fg-muted">Last updated 2 min ago</Text>
 </Box>
 ```
 
-Themes auto-detect the terminal's background color (via OSC 11 query) and adjust for WCAG-compliant contrast. Use `ThemeProvider` to set a palette globally, or override per-component.
+Themes auto-detect the terminal's palette (via OSC 4 / 10 / 11 queries) and adjust for WCAG-compliant contrast via OKLCH auto-lift. Use `ThemeProvider` to set a palette globally, or override per-component.
 
 See the [styling guide](/guide/styling) for token reference and the [theme explorer](/themes) to preview all 84 color schemes.
 

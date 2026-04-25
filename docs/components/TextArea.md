@@ -25,8 +25,8 @@ import { TextArea } from "silvery"
 | `disabled`         | `boolean`                                 | --               | Ignore all input and dim text                            |
 | `maxLength`        | `number`                                  | --               | Maximum number of characters allowed                     |
 | `borderStyle`      | `string`                                  | --               | Border style (wraps input in bordered Box)               |
-| `borderColor`      | `string`                                  | `"$border"`      | Border color when unfocused                              |
-| `focusBorderColor` | `string`                                  | `"$focusborder"` | Border color when focused                                |
+| `borderColor`      | `string`                                  | `"$border-default"` | Border color when unfocused                           |
+| `focusBorderColor` | `string`                                  | `"$border-focus"`   | Border color when focused                             |
 | `testID`           | `string`                                  | --               | Test ID for focus system identification                  |
 | `onEdge`           | `(edge) => boolean`                       | --               | Fires when arrow key pressed AT buffer boundary          |
 

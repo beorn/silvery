@@ -27,8 +27,8 @@ import { TextInput } from "silvery"
 | `underlineWidth`   | `number`                  | `40`             | Underline width                                          |
 | `mask`             | `string`                  | --               | Mask character for passwords                             |
 | `borderStyle`      | `string`                  | --               | Border style (wraps input in bordered Box)               |
-| `borderColor`      | `string`                  | `"$border"`      | Border color when unfocused                              |
-| `focusBorderColor` | `string`                  | `"$focusborder"` | Border color when focused                                |
+| `borderColor`      | `string`                  | `"$border-default"` | Border color when unfocused                           |
+| `focusBorderColor` | `string`                  | `"$border-focus"`   | Border color when focused                             |
 | `testID`           | `string`                  | --               | Test ID for focus system identification                  |
 
 ### Ref: TextInputHandle

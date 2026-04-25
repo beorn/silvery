@@ -337,7 +337,7 @@ function Card({ item }) {
   return (
     <Box borderStyle="round" flexDirection="column">
       <Text bold>{width > 30 ? item.title : truncate(item.title, width - 4)}</Text>
-      {width > 50 && <Text color="$muted">{item.description}</Text>}
+      {width > 50 && <Text color="$fg-muted">{item.description}</Text>}
     </Box>
   )
 }

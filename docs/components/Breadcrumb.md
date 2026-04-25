@@ -25,7 +25,7 @@ interface BreadcrumbItem {
 
 ## Rendering
 
-The last item is rendered in bold `$fg` as the current location. Preceding items are rendered in `$muted`.
+The last item is rendered in bold `$fg` as the current location. Preceding items are rendered in `$fg-muted`.
 
 ## Usage
 

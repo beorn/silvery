@@ -1,8 +1,8 @@
-# Theming
+# Theming Reference
 
-Silvery provides a modern, progressively enhanced theme system with semantic color
-tokens. Themes work across terminal capability tiers — from ANSI 16 colors to
-full 24-bit truecolor — using the same token vocabulary.
+`$token` shorthand, special values, the `Box theme={…}` prop, `ThemeProvider`, and `useTheme()` — the React-side reference for working with [Sterling](/guide/sterling) themes in components.
+
+For the underlying type system (`Theme`, `ColorScheme`, `DesignSystem`, derivation rules), see the [@silvery/theme reference](/reference/theme). For day-to-day styling discipline, see the [Styling guide](/guide/styling).
 
 ## Setup
 
@@ -15,20 +15,20 @@ function App() {
   return (
     <ThemeProvider theme={defaultDarkTheme}>
       <Box borderStyle="single">
-        <Text color="$primary">Hello</Text>
-        <Text color="$muted">world</Text>
+        <Text color="$fg-accent">Hello</Text>
+        <Text color="$fg-muted">world</Text>
       </Box>
     </ThemeProvider>
   )
 }
 ```
 
-For themed subtrees (where the theme differs from the terminal), use `Box theme={}`:
+For themed subtrees (where the theme differs from the terminal), use `Box theme={…}`:
 
 ```tsx
 <Box theme={lightTheme} borderStyle="single">
   {/* All text auto-inherits $fg, bg auto-fills from theme.bg */}
-  <Text color="$primary">Themed content</Text>
+  <Text color="$fg-accent">Themed content</Text>
 </Box>
 ```
 
@@ -36,324 +36,272 @@ For themed subtrees (where the theme differs from the terminal), use `Box theme=
 
 ## $token Shorthand
 
-Any color prop on `Box` or `Text` that starts with `$` resolves against the active theme:
+Any color prop on `Box` or `Text` that starts with `$` resolves against the active theme. Sterling's flat hyphen-keys are the canonical surface; both kebab (`$fg-accent`) and camelCase (`$fgAccent`) forms work — hyphens are stripped before lookup.
 
-| Prop              | Components | Example                         |
-| ----------------- | ---------- | ------------------------------- |
-| `color`           | Box, Text  | `color="$primary"`              |
-| `backgroundColor` | Box, Text  | `backgroundColor="$surface-bg"` |
-| `borderColor`     | Box        | `borderColor="$separator"`      |
-| `outlineColor`    | Box        | `outlineColor="$focusring"`     |
+| Prop              | Components | Example                            |
+| ----------------- | ---------- | ---------------------------------- |
+| `color`           | Box, Text  | `color="$fg-accent"`               |
+| `backgroundColor` | Box, Text  | `backgroundColor="$bg-surface-raised"` |
+| `borderColor`     | Box        | `borderColor="$border-default"`    |
+| `outlineColor`    | Box        | `outlineColor="$border-focus"`     |
 
 Non-`$` values pass through unchanged (`color="red"`, `color="#ff0000"`).
 
-**Default border color**: When `borderStyle` or `outlineStyle` is set without an
-explicit color, the theme's `$separator` token is used automatically.
+**Default border color**: When `borderStyle` or `outlineStyle` is set without an explicit color, `$border-default` is used automatically. `<TextInput>` / `<TextArea>` upgrade to `$border-focus` on focus.
 
 ### Special Color Values
 
-| Value               | Description                                                                                                                                        |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `"inherit"`         | Skip color override, inherit from parent element. Useful for components with default colors (e.g., `<Link color="inherit">` to skip `$link` blue). |
-| `"mix(c1, c2, N%)"` | Blend c1 and c2 at N% ratio in sRGB space. Supports `$tokens`, named colors, and hex. Amount is 0-100% or 0.0-1.0.                                 |
-| `"$default"`        | Terminal's actual default background (SGR 49). Unlike `$bg`, this matches the user's terminal emulator setting exactly.                            |
+| Value               | Description                                                                                                                                          |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"inherit"`         | Skip color override, inherit from parent element. Useful for components with default colors (e.g., `<Link color="inherit">` to skip `$fg-link` blue). |
+| `"mix(c1, c2, N%)"` | Blend `c1` and `c2` at N% ratio. Supports `$tokens`, named colors, and hex. Amount is 0–100% or 0.0–1.0.                                              |
+| `"$default"`        | Terminal's actual default background (SGR 49). Unlike `$bg`, this matches the user's terminal emulator setting exactly.                              |
 
 ```tsx
-{
-  /* Link inherits parent color instead of defaulting to $link */
-}
-;<Text color="$error">
-  Error:{" "}
-  <Link color="inherit" href="...">
-    details
-  </Link>
+{/* Link inherits parent color instead of defaulting to $fg-link */}
+<Text color="$fg-error">
+  Error: <Link color="inherit" href="...">details</Link>
 </Text>
 
-{
-  /* Subtle tint using mix */
-}
-;<Box backgroundColor="mix($bg, $error, 15%)">
-  <Text color="$error">3 errors</Text>
+{/* Subtle tint using mix */}
+<Box backgroundColor="mix($bg, $fg-error, 15%)">
+  <Text color="$fg-error">3 errors</Text>
 </Box>
 ```
 
 ## Token Reference
 
-### Brand (3 tokens)
+### Root pair
 
-| Token      | Use                                          | ANSI 16 Dark | Truecolor Dark |
-| ---------- | -------------------------------------------- | ------------ | -------------- |
-| `$primary` | Brand tint, active indicators, headings      | yellow       | #EBCB8B        |
-| `$link`    | Hyperlinks, references                       | yellowBright | #ECCC90        |
-| `$control` | Interactive chrome, shortcuts, input borders | yellow       | #B8A06E        |
+| Token | Use                                                |
+| ----- | -------------------------------------------------- |
+| `$fg` | Default text color (= `scheme.foreground`)         |
+| `$bg` | Default canvas (= `scheme.background`)             |
 
-### Selection (3 tokens)
+### Surface
 
-| Token         | Use                                  | ANSI 16 Dark | Truecolor Dark |
-| ------------- | ------------------------------------ | ------------ | -------------- |
-| `$selected`   | Selection highlight background       | cyan         | #88C0D0        |
-| `$selectedfg` | Text on selected background          | black        | #2E3440        |
-| `$focusring`  | Keyboard focus outline (always blue) | blueBright   | #5E81AC        |
+| Token                   | Use                                          |
+| ----------------------- | -------------------------------------------- |
+| `$bg-surface-default`   | Same as `$bg` — the canvas                   |
+| `$bg-surface-subtle`    | Cards, list rows, subtle elevation           |
+| `$bg-surface-raised`    | Dialogs, modals, raised panels               |
+| `$bg-surface-overlay`   | Tooltips, dropdowns, overlays                |
+| `$bg-surface-hover`     | Surface hover state (+0.04L)                 |
 
-### Text (4 tokens)
+### Border
 
-| Token    | Use                                 | ANSI 16 Dark | Truecolor Dark |
-| -------- | ----------------------------------- | ------------ | -------------- |
-| `$text`  | Primary content — headings, body    | whiteBright  | #ECEFF4        |
-| `$text2` | Secondary — descriptions, metadata  | white        | #D8DEE9        |
-| `$text3` | Tertiary — timestamps, hints        | gray         | #7B88A1        |
-| `$text4` | Quaternary — ghost text, decorative | gray (+dim)  | #545E72        |
+| Token              | Use                                              |
+| ------------------ | ------------------------------------------------ |
+| `$border-default`  | Structural rules and dividers (1.5:1 contrast)   |
+| `$border-focus`    | Focus ring on inputs (3:1 WCAG 1.4.11 minimum)   |
+| `$border-muted`    | Faint subdivider                                 |
 
-### Surface (5 tokens)
+### Cursor
 
-| Token        | Use                                   | ANSI 16 Dark | Truecolor Dark |
-| ------------ | ------------------------------------- | ------------ | -------------- |
-| `$bg`        | Default background                    | (default)    | #2E3440        |
-| `$default`   | Terminal's actual default bg (SGR 49) | (terminal)   | (terminal)     |
-| `$surface`   | Dialogs, overlays, popovers           | black        | #3B4252        |
-| `$separator` | Dividers, borders, rules              | gray         | #4C566A        |
-| `$chromebg`  | Title bars, status bars (inverted bg) | whiteBright  | #ECEFF4        |
-| `$chromefg`  | Text on chrome areas (inverted fg)    | black        | #2E3440        |
+| Token         | Use                            |
+| ------------- | ------------------------------ |
+| `$fg-cursor`  | Glyph color under the cursor   |
+| `$bg-cursor`  | Cursor block/line color        |
 
-`$default` is special — it's not a color value from the theme, but an instruction to use the terminal's actual default background (SGR 49). Use it when you want an overlay to be opaque without hardcoding a specific color. Unlike `$bg` (which is a theme-derived approximation), `$default` matches whatever the user configured in their terminal emulator.
+### Muted
 
-### Status (3 tokens)
+| Token        | Use                                  |
+| ------------ | ------------------------------------ |
+| `$fg-muted`  | Secondary text — captions, hints     |
+| `$bg-muted`  | Subtle hover surface, code chips     |
 
-| Token      | Use                          | ANSI 16 Dark | Truecolor Dark |
-| ---------- | ---------------------------- | ------------ | -------------- |
-| `$error`   | Destructive, overdue, errors | redBright    | #BF616A        |
-| `$warning` | Caution, unsaved changes     | yellow       | #EBCB8B        |
-| `$success` | Positive, completed, saved   | greenBright  | #A3BE8C        |
+### Accent (the canonical interactive-text role)
+
+| Token                  | Use                                              |
+| ---------------------- | ------------------------------------------------ |
+| `$fg-accent`           | Brand emphasis text — headings, focus, links     |
+| `$bg-accent`           | Primary action button fill                       |
+| `$fg-on-accent`        | Text on `$bg-accent` (contrast-picked)           |
+| `$fg-accent-hover`     | Link hover state (+0.04L)                        |
+| `$bg-accent-hover`     | Surface hover on accent fill                     |
+| `$fg-accent-active`    | Pressed text (+0.08L)                            |
+| `$bg-accent-active`    | Pressed surface                                  |
+| `$border-accent`       | Border on accent-emphasized panels               |
+
+### Status (info / success / warning / error)
+
+Each status role has surface state (`bg-X-hover`, `bg-X-active`) but **no text-color hover** — text on a status role isn't a link.
+
+| Token                  | Use                                              |
+| ---------------------- | ------------------------------------------------ |
+| `$fg-info` / `$bg-info` / `$fg-on-info`            | Neutral info                          |
+| `$bg-info-hover` / `$bg-info-active`               | Surface state                         |
+| `$fg-success` / `$bg-success` / `$fg-on-success`   | Positive status                       |
+| `$bg-success-hover` / `$bg-success-active`         | Surface state                         |
+| `$fg-warning` / `$bg-warning` / `$fg-on-warning`   | Caution                               |
+| `$bg-warning-hover` / `$bg-warning-active`         | Surface state                         |
+| `$fg-error` / `$bg-error` / `$fg-on-error`         | Destructive / errors                  |
+| `$bg-error-hover` / `$bg-error-active`             | Surface state                         |
+
+### Selected
+
+| Token                | Use                                                       |
+| -------------------- | --------------------------------------------------------- |
+| `$bg-selected`       | Cursor row, mouse selection, search match highlight       |
+| `$fg-on-selected`    | Text on `$bg-selected` (contrast-picked)                  |
+| `$bg-selected-hover` | SelectList row hover (+0.04L on `$bg-selected`)           |
+
+### Inverse
+
+| Token            | Use                                                |
+| ---------------- | -------------------------------------------------- |
+| `$bg-inverse`    | Status bars, modal chrome, "you are here" bands    |
+| `$fg-on-inverse` | Text on `$bg-inverse` (contrast-picked)            |
+
+### Link
+
+| Token      | Use                                                                |
+| ---------- | ------------------------------------------------------------------ |
+| `$fg-link` | Hyperlink text — distinct from `$fg-accent` (often classic blue)   |
+
+### Categorical Hue Ring (8 tokens)
+
+Eight harmonious hues for tagging — contrast-adjusted per scheme so they look balanced everywhere. Prefer these over raw `$color*` for everyday categorization.
+
+```tsx
+<Text color="$red">urgent</Text>
+<Text color="$blue">research</Text>
+<Text color="$green">done</Text>
+<Text color="$purple">docs</Text>
+```
+
+Available: `$red`, `$orange`, `$yellow`, `$green`, `$teal`, `$blue`, `$purple`, `$pink`.
 
 ### Content Palette (16 indexed colors)
 
-For categorization — tags, calendar colors, chart series:
+For exact ANSI parity — syntax highlighters, git diff viewers:
 
 ```tsx
 <Text color="$color5">purple tag</Text>
 <Text color="$color1">red badge</Text>
 ```
 
-`$color0` through `$color15` map to the theme's `palette` array. At ANSI 16
-these are the standard terminal colors; at truecolor they are curated
-equal-weight hues designed for readability in both dark and light modes.
+`$color0` through `$color15` map to the theme's `palette` array. At ANSI 16 these are the standard terminal colors; at truecolor they are the curated 16-slot ANSI catalog from the scheme.
 
 ## Progressive Enhancement
 
-The same token vocabulary works across all terminal capability tiers:
+The same token vocabulary works across all terminal capability tiers — see [Capability Tiers](/guide/capability-tiers).
 
-### ANSI 16 (baseline — every terminal)
+### ANSI 16 (baseline)
 
-Each token maps to one of the 16 standard colors. Differentiation comes from
-the bright variants (e.g., `yellow` vs `yellowBright`) and the `dimColor`
-attribute. No color derivation is possible — all tokens are independent.
+Each token resolves to one of the 16 standard colors plus the bright variants. No blending or contrast adjustment is possible — Sterling falls back to direct ANSI name mapping. Differentiation comes from the bright variants (e.g., `yellow` vs `yellowBright`) and SGR attributes.
 
 ### 256-color
 
-Tokens can use the 216-color cube (indices 16–231) and the 24-shade gray ramp
-(indices 232–255). This enables 2-3 levels of tint/shade per hue.
+Truecolor hex values are downsampled to the nearest 256-cube color (indices 16–231) or the 24-shade gray ramp (indices 232–255).
 
 ### Truecolor (24-bit)
 
-Full derivation with contrast-aware adjustment. `deriveTheme()` starts from
-aesthetic blends/palette colors, then `ensureContrast()` adjusts lightness
-(preserving hue/saturation) when the result falls below the target ratio:
+Full Sterling derivation with OKLCH-native blends and contrast-aware auto-lift. See the [Sterling primer](/guide/sterling) for the role expansion and the [theme reference](/reference/theme#derivation-rules-truecolor) for the per-token derivation table.
 
-- `fg` = foreground ensured ≥ 4.5:1 against `popoverbg` (hardest surface)
-- `muted` = fg blended 40% toward bg, ensured ≥ 4.5:1 against `mutedbg`
-- `disabledfg` = fg blended 50% toward bg, ensured ≥ 3.0:1
-- `primary` = palette primary (or explicit seed), ensured ≥ 4.5:1 against bg
-- `secondary` = desaturated primary, ensured ≥ 4.5:1
-- `accent` = complement of primary, ensured ≥ 4.5:1
-- `error/warning/success/info` = palette accents, each ensured ≥ 4.5:1
-- `border` = bg blended 15% toward fg, ensured ≥ 1.5:1 (faint)
-- `inputborder` = bg blended 25% toward fg, ensured ≥ 3.0:1 (WCAG 1.4.11)
-- `selection` = palette selection fg, ensured ≥ 4.5:1 against selection bg
-- `cursor` = palette cursor text, ensured ≥ 4.5:1 against cursor bg
-- `inverse` = contrastFg (black or white) on blended inversebg
-- `surfacebg` / `popoverbg` = bg blended 5%/8% toward fg
+## ThemeProvider
 
-## generateTheme()
-
-Generate a complete ANSI 16 theme from a primary color:
+Wraps a subtree (or the whole app) and sets the React context that `useTheme()` reads. `Box theme={…}` handles pipeline-side resolution and surface fg/bg auto-fill — `ThemeProvider` is what hooks see.
 
 ```tsx
-import { generateTheme } from "@silvery/ag-term"
+import { ThemeProvider, defaultDarkTheme } from "silvery"
 
-const theme = generateTheme("cyan", true) // primary=cyan, dark=true
-const light = generateTheme("blue", false) // primary=blue, light mode
+<ThemeProvider theme={defaultDarkTheme}>
+  <App />
+</ThemeProvider>
 ```
 
-The function derives all 17 tokens from the primary color + dark/light preference:
+| Prop       | Type        | Default      | Description             |
+| ---------- | ----------- | ------------ | ----------------------- |
+| `theme`    | `Theme`     | **required** | Theme object to provide |
+| `children` | `ReactNode` | **required** | Child components        |
 
-- **Warm primaries** (yellow, red, magenta, green, white) get cyan as the
-  contrasting selection color
-- **Cool primaries** (cyan, blue) get yellow as the selection color
-- `focusring` is always blue (accessibility — must always be distinguishable)
-- `warning` equals `primary` (context always disambiguates via icons/labels)
-
-Available primaries: `yellow`, `cyan`, `magenta`, `green`, `red`, `blue`, `white`.
-
-## Creating Custom Themes
-
-Implement the `Theme` interface:
-
-```tsx
-import { type Theme, ThemeProvider } from "@silvery/ag-term"
-
-const myTheme: Theme = {
-  name: "my-theme",
-  dark: true,
-
-  primary: "#E0A526",
-  link: "#E5B34A",
-  control: "#B8871F",
-
-  selected: "#4A90D9",
-  selectedfg: "#1A1A1A",
-  focusring: "#4A90D9",
-
-  text: "#E8E8E8",
-  text2: "#C0C0C0",
-  text3: "#808080",
-  text4: "#505050",
-
-  bg: "#1A1A2E",
-  surface: "#242440",
-  separator: "#3A3A5A",
-
-  error: "#E74C3C",
-  warning: "#E0A526",
-  success: "#2ECC71",
-
-  palette: [
-    /* 16 content colors */
-  ],
-}
-```
-
-### Deriving Colors
-
-When building truecolor themes, derive related tokens from a base color to
-maintain visual harmony:
-
-```typescript
-// Lighten: mix toward white
-function lighten(hex: string, amount: number): string {
-  // Increase each RGB channel by amount% toward 255
-}
-
-// Darken: mix toward black
-function darken(hex: string, amount: number): string {
-  // Decrease each RGB channel by amount%
-}
-
-// Opacity: blend toward background
-function withOpacity(fg: string, bg: string, opacity: number): string {
-  // result = fg * opacity + bg * (1 - opacity)
-}
-
-// Contrast: pick black or white text for readability
-function contrastFg(bg: string): string {
-  // Calculate relative luminance (0.2126*R + 0.7152*G + 0.0722*B)
-  // Return dark text if luminance > 0.5, light text otherwise
-}
-```
-
-**Recommended derivation from a single accent hue:**
-
-| Token        | Algorithm                                            |
-| ------------ | ---------------------------------------------------- |
-| `link`       | `lighten(primary, 5%)`                               |
-| `control`    | `withOpacity(primary, bg, 0.7)`                      |
-| `selected`   | Pick contrasting hue, 30% over bg                    |
-| `selectedfg` | `contrastFg(selected)`                               |
-| `text2`      | `withOpacity(text, bg, 0.85)`                        |
-| `text3`      | `withOpacity(text, bg, 0.50)`                        |
-| `text4`      | `withOpacity(text, bg, 0.30)`                        |
-| `surface`    | `lighten(bg, 5%)` (dark) or `darken(bg, 3%)` (light) |
-| `separator`  | `withOpacity(text, bg, 0.20)`                        |
-| `chromebg`   | `text` (inverted: text color becomes background)     |
-| `chromefg`   | `bg` or `contrastFg(chromebg)` (dark on light)       |
-
-## Per-Subtree Theme Override
-
-Use the `theme` prop on `Box` to override `$token` resolution for an entire subtree:
-
-```tsx
-const dimmedTheme: Theme = { ...baseTheme, selected: "gray", selectedfg: "white" }
-
-<Box theme={dimmedTheme}>
-  {/* All $selected references here resolve to "gray" */}
-  <Text color="$selected">dimmed</Text>
-</Box>
-<Text color="$selected">normal</Text>
-```
-
-This works like CSS custom properties — the nearest ancestor `Box` with a `theme` prop
-determines token resolution for its descendants. Nested `theme` props cascade (innermost wins).
-When `theme` is `undefined`, tokens resolve against the root `ThemeProvider` theme.
-
-The override happens during the render phase tree walk (no React re-renders). Cost is ~2ns
-per `getActiveTheme()` call — negligible.
-
-## useTheme() Hook
+## useTheme()
 
 Read the current theme from any component:
 
 ```tsx
-import { useTheme } from "@silvery/ag-term"
+import { useTheme } from "silvery/theme"
 
 function StatusLine() {
   const theme = useTheme()
-  return <Text color={theme.dark ? "$text" : "$text2"}>Status</Text>
+  // Access via nested roles or flat keys — both reference the same hex
+  const accent = theme.accent.fg            // nested
+  const accentFlat = theme["fg-accent"]     // flat
+  return <Text color="$fg-accent">{theme.name}</Text>
 }
 ```
 
-Returns `ansi16DarkTheme` when no `ThemeProvider` is present.
+Returns `defaultDarkTheme` when no `ThemeProvider` is present.
 
-## resolveThemeColor()
+## Per-Subtree Theme Override (`Box theme={…}`)
 
-For advanced use cases, resolve tokens programmatically:
+Use the `theme` prop on `Box` to override `$token` resolution for an entire subtree:
 
 ```tsx
-import { resolveThemeColor } from "@silvery/ansi"
+import { sterling, catppuccinLatte } from "silvery/theme"
+
+const lightTheme = sterling.deriveFromScheme(catppuccinLatte)
+
+<Box theme={lightTheme}>
+  {/* All $tokens resolve against lightTheme here */}
+  <Text color="$fg-accent">Light context</Text>
+</Box>
+<Text color="$fg-accent">Default context</Text>
+```
+
+The override happens during the render-phase tree walk (no React re-renders). Cost is ~2ns per token resolution — negligible.
+
+`Box theme={…}` also auto-inherits `$fg` for descendant text and auto-fills `$bg` as the background. No explicit `color` / `backgroundColor` needed when the subtree is fully themed.
+
+## resolveToken()
+
+For advanced use cases, resolve `$tokens` programmatically:
+
+```tsx
+import { resolveToken } from "@silvery/ansi"
 import { useTheme } from "silvery/theme"
 
 function CustomComponent({ highlight }: { highlight?: string }) {
   const theme = useTheme()
-  const color = resolveThemeColor(highlight, theme) ?? theme.text
+  const color = resolveToken(highlight, theme) ?? theme.fg
   // ...
 }
 ```
 
-## Backward Compatibility
+See [`resolveToken`](/reference/theme#resolvetoken) for the full resolution rules.
 
-Old token names from v1 are aliased automatically:
+## Migration from pre-0.20.0
 
-| Old Token     | Resolves To  |
-| ------------- | ------------ |
-| `$accent`     | `$primary`   |
-| `$muted`      | `$text2`     |
-| `$raisedbg`   | `$surface`   |
-| `$background` | `$bg`        |
-| `$border`     | `$separator` |
+silvery 0.19.x had a flatter `Theme` interface with single-hex role fields (`theme.primary`, `theme.errorfg`, …). At 0.20.0 it's gone at the type level — `export type Theme = SterlingTheme`.
 
-These aliases allow gradual migration. New code should use the v2 token names.
+Legacy `$tokens` (`$primary`, `$muted`, `$selectionbg`, …) keep resolving through 0.20.x via `resolveToken`'s direct kebab lookup. Migrate during this window — they're removed in 0.21.0.
+
+The full migration map (both `$token` strings and TypeScript dot-access fields) lives in the [Sterling primer](/guide/sterling#migrating-from-pre-0-20-0).
 
 ## Built-in Themes
 
-| Name                | Tier      | Primary | Mode  |
-| ------------------- | --------- | ------- | ----- |
-| `ansi16DarkTheme`   | ANSI 16   | yellow  | dark  |
-| `ansi16LightTheme`  | ANSI 16   | blue    | light |
-| `defaultDarkTheme`  | Truecolor | #EBCB8B | dark  |
-| `defaultLightTheme` | Truecolor | #0056B3 | light |
+| Name                | Tier      | Mode  |
+| ------------------- | --------- | ----- |
+| `ansi16DarkTheme`   | ANSI 16   | dark  |
+| `ansi16LightTheme`  | ANSI 16   | light |
+| `defaultDarkTheme`  | Truecolor | dark  |
+| `defaultLightTheme` | Truecolor | light |
 
 Select by name at runtime:
 
 ```tsx
-import { getThemeByName } from "@silvery/ag-term"
+import { getThemeByName } from "silvery/theme"
 
-const theme = getThemeByName("dark-ansi16") // or "dark-truecolor", "light-ansi16", etc.
+const theme = getThemeByName("dark-ansi16")
+// or "dark-truecolor", "light-ansi16", "light-truecolor",
+// or any of the 84 bundled scheme names ("catppuccin-mocha", "nord", …)
 ```
+
+## Related
+
+- **[Sterling primer](/guide/sterling)** — design-system fundamentals: roles, flat tokens, derivation entry points, migration.
+- **[@silvery/theme reference](/reference/theme)** — type definitions, derivation rules, color utilities.
+- **[Theming guide](/guide/theming)** — using schemes, switching at runtime, custom themes.
+- **[Styling guide](/guide/styling)** — when to use which token, anti-patterns, contrast guarantees.
+- **[Token Taxonomy](/guide/token-taxonomy)** — the decision tree for picking the right token.

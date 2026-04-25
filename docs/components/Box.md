@@ -144,7 +144,7 @@ interface BoxHandle {
 
 // With outline (outside the box, no layout impact — draws in the gap between siblings)
 // Use for focus rings, hover highlights, selection indicators
-<Box outlineStyle="round" outlineColor="$primary">
+<Box outlineStyle="round" outlineColor="$border-focus">
   <Text>Content unchanged — outline draws in surrounding space</Text>
 </Box>
 

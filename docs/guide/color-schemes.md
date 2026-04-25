@@ -8,11 +8,16 @@ description: The 22-slot color scheme, theme derivation, and the 84+ bundled sch
 Silvery's color system is a two-layer architecture borrowed straight from terminal emulators:
 
 ```
-Layer 1:  ColorScheme   →  22 slots (16 ANSI + 6 semantic)  — what the terminal exposes
-Layer 2:  Theme         →  ~33 tokens ($primary, $muted, …) — what your UI code uses
+Layer 1:  ColorScheme   →  22 slots (16 ANSI + 6 semantic)        — what the terminal exposes
+Layer 2:  Theme         →  Sterling roles + flat hyphen-keys      — what your UI code uses
+                          ($fg-accent, $fg-muted, $bg-surface-*…)
 ```
 
-Every UI token you style with (`$primary`, `$muted`, `$success`, …) resolves back to a slot in the user's color scheme. When the terminal changes theme, tokens re-resolve automatically.
+Every UI token you style with (`$fg-accent`, `$fg-muted`, `$fg-success`, …) resolves back to a slot in the user's color scheme. When the terminal changes theme, tokens re-resolve automatically.
+
+::: info Sterling derivation
+silvery 0.20.0 ships [Sterling](/guide/sterling) as THE Theme. Layer 2 here is the Sterling-shaped object emitted by `sterling.deriveFromScheme(...)` — nested roles plus flat tokens on the same frozen object.
+:::
 
 ## The ColorScheme shape
 
@@ -56,32 +61,42 @@ Values are `#RRGGBB` hex strings. For ANSI-16-only terminals, tokens resolve to 
 
 ## Deriving a Theme from a scheme
 
-`deriveTheme(scheme)` computes the ~33 semantic tokens from the 22 slots. Every token resolves to a concrete value — no token is "theme-dependent" at render time.
+`sterling.deriveFromScheme(scheme)` computes the full Sterling Theme (nested roles + flat tokens) from the 22 slots. Every token resolves to a concrete value — no token is "theme-dependent" at render time.
 
 ```ts
-import { deriveTheme } from "silvery/theme"
-import { dracula } from "silvery/theme/schemes"
+import { sterling } from "silvery/theme"
+import { dracula } from "silvery/theme"
 
-const theme = deriveTheme(dracula)
-// theme.primary → "#BD93F9"
-// theme.muted → "#8B8DA2" (derived: blend of fg + bg)
-// theme.error → "#FF5555" (from dracula.red, AA-contrast verified)
+const theme = sterling.deriveFromScheme(dracula)
+// theme.accent.fg → "#BD93F9"
+// theme["fg-muted"] → "#8B8DA2" (derived: blend of fg + bg)
+// theme.error.fg → "#FF5555" (from dracula.red, AA-contrast verified)
+// theme["bg-surface-raised"] → ...
 ```
 
 Derivation is OKLCH-native throughout — blends, lightness adjustments, and hue rotations happen in the perceptually-uniform OKLCH color space. The result: tokens look visually balanced regardless of which scheme you start with.
 
-### Contrast auto-repair
+Sterling exposes five derivation entry points (`deriveFromScheme`, `deriveFromColor`, `deriveFromPair`, `deriveFromSchemeWithBrand`, `defaults`) — see the [Sterling primer](/guide/sterling#building-a-theme) for the full menu.
 
-`deriveTheme` runs `ensureContrast()` on every text/bg pair it builds with the project-tweaked thresholds (AA=4.5, DIM=3.0, FAINT=1.5, CONTROL=3.0). If a palette color is too close to the background, it gets L-shifted in OKLCH space (hue + chroma preserved) until it meets the target. Apps don't need to worry about contrast — tokens are always legible.
+### Contrast auto-lift
+
+Sterling's default `auto-lift` mode runs contrast checks on every core role pair (AA=4.5 for text, FAINT=1.5 for borders, CONTROL=3.0 for focus rings). If a palette color is too close to the background, it gets L-shifted in OKLCH space (hue + chroma preserved) until it meets the target. Apps don't need to worry about contrast — tokens are always legible.
+
+For tests, switch to `contrast: "strict"` to throw on AA failures rather than silently lifting:
+
+```ts
+const theme = sterling.deriveFromScheme(scheme, { contrast: "strict" })
+// Throws SterlingContrastError on AA failure of core role pairs.
+```
 
 ### Visibility repair
 
-`deriveTheme` also repairs selection + cursor visibility:
+Derivation also repairs selection + cursor visibility:
 
-- **selection** — `selectionbg` must differ from `bg` by ΔL ≥ 0.08 (OKLCH). Invisible selections get nudged.
-- **cursor** — `cursorbg` must differ from `bg` by ΔE ≥ 0.15 (OKLCH ΔE). Low-contrast cursors get pushed away from bg.
+- **selected** — `selected.bg` must differ from `bg` by ΔL ≥ 0.08 (OKLCH). Invisible selections get nudged.
+- **cursor** — `cursor.bg` must differ from `bg` by ΔE ≥ 0.15 (OKLCH ΔE). Low-contrast cursors get pushed away from bg.
 
-These are independent invariants — `ensureContrast` handles text pairs, but selection/cursor visibility are separate checks.
+These are independent invariants — auto-lift handles text pairs, but selection/cursor visibility are separate checks.
 
 ## The bundled catalog (84+ schemes)
 
@@ -121,11 +136,12 @@ export const myScheme: ColorScheme = {
 Use it:
 
 ```tsx
-import { ThemeProvider, deriveTheme } from "silvery/theme"
+import { ThemeProvider } from "silvery"
+import { sterling } from "silvery/theme"
 import { myScheme } from "./my-scheme"
 
-const theme = deriveTheme(myScheme)
-// or: loadTheme(myScheme, { enforce: "strict", wcag: true })  — build-time audit
+const theme = sterling.deriveFromScheme(myScheme)
+// For a strict build-time audit, use { contrast: "strict" } in tests.
 
 <ThemeProvider theme={theme}>
   <App />
@@ -174,7 +190,8 @@ Criteria: total OKLCH ΔE < 30 AND max per-slot ΔE < 8. Both must pass — the 
 
 ## Related
 
-- **[Token Taxonomy](./token-taxonomy)** — when to use `$brand` vs `$red` vs `$error` vs `$color1` vs `$primary`. The decision tree for every token category.
+- **[Sterling primer](./sterling)** — silvery's design system: roles, flat tokens, derivation entry points, full migration map.
+- **[Token Taxonomy](./token-taxonomy)** — when to use `$brand` vs `$red` vs `$fg-error` vs `$color1` vs `$fg-accent`. The decision tree for every token category.
 - [Capability Tiers](./capability-tiers) — truecolor / 256 / ANSI16 / mono degradation
 - [Custom Tokens](./custom-tokens) — extending the theme with app-specific semantic tokens
 - [Styling Guide](./styling) — using tokens in components

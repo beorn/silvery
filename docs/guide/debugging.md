@@ -123,10 +123,10 @@ Example output:
   ────────────────────────── ──────────── ────────────────────
   $fg                        #cdd6f4      none
   $bg                        #1e1e2e      none
-  $primary                   #cba6f7      bold
-  $muted                     #a6adc8      dim
-  $error                     #f38ba8      bold+inverse
-  $link                      #89b4fa      underline
+  $fg-accent                 #cba6f7      bold
+  $fg-muted                  #a6adc8      dim
+  $fg-error                  #f38ba8      bold+inverse
+  $fg-link                   #89b4fa      underline
   ...
 ```
 

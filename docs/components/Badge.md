@@ -21,13 +21,13 @@ All `TextProps` style props (color, bold, etc.) are also accepted. Explicit `col
 
 ### Variant Colors
 
-| Variant   | Token      |
-| --------- | ---------- |
-| `default` | `$fg`      |
-| `primary` | `$primary` |
-| `success` | `$success` |
-| `warning` | `$warning` |
-| `error`   | `$error`   |
+| Variant   | Token         |
+| --------- | ------------- |
+| `default` | `$fg`         |
+| `primary` | `$fg-accent`  |
+| `success` | `$fg-success` |
+| `warning` | `$fg-warning` |
+| `error`   | `$fg-error`   |
 
 ## Usage
 

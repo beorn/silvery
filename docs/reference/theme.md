@@ -1,12 +1,16 @@
 # Theme System
 
-The silvery theme system transforms a 22-color terminal palette into 33 semantic tokens for UI consumption. The pipeline flows in one direction:
+The silvery theme system transforms a 22-color terminal scheme into a Sterling-shaped `Theme` — nested role objects (`theme.accent`, `theme.surface`, …) plus flat hyphen-keys (`theme["bg-accent"]`, `theme["fg-on-error"]`, …) on the same frozen object. The pipeline flows in one direction:
 
 ```
-ColorScheme (22) → deriveTheme() → Theme (33) → resolveThemeColor() → ANSI output
+ColorScheme (22) → sterling.deriveFromScheme() → Theme (nested roles + flat tokens) → resolveToken() → ANSI output
 ```
 
-Components never reference raw colors directly. They use `$token` strings (`color="$primary"`) that resolve against the active theme at render time. This decouples UI code from any specific palette.
+Components never reference raw colors directly. They use `$token` strings (`color="$fg-accent"`) that resolve against the active theme at render time. This decouples UI code from any specific palette.
+
+::: info Sterling is THE Theme
+As of silvery 0.20.0, `export type Theme = SterlingTheme`. The legacy single-hex `Theme` interface is gone. See the [Sterling primer](/guide/sterling) for the full design-system surface and the [migration map](/guide/sterling#migrating-from-pre-0-20-0) if you're upgrading from 0.19.x.
+:::
 
 ## ColorScheme (22 Colors)
 
@@ -14,7 +18,7 @@ The universal terminal color format. Every modern terminal emulator uses this sh
 
 ### Fields
 
-**16 ANSI colors** (indices 0--15):
+**16 ANSI colors** (indices 0–15):
 
 | Field           | ANSI Index | Description    |
 | --------------- | ---------- | -------------- |
@@ -50,11 +54,11 @@ The universal terminal color format. Every modern terminal emulator uses this sh
 
 | Field     | Type      | Description                                            |
 | --------- | --------- | ------------------------------------------------------ |
-| `name`    | `string`  | Human-readable palette name                            |
-| `dark`    | `boolean` | Whether this is a dark palette                         |
-| `primary` | `string`  | Semantic primary accent override (hex, e.g. `#89b4fa`) |
+| `name`    | `string`  | Human-readable scheme name                             |
+| `dark`    | `boolean` | Whether this is a dark scheme                          |
+| `primary` | `string`  | Brand-anchor override (hex). Used by `accent` role.    |
 
-When `primary` is set, `deriveTheme()` uses it instead of inferring from ANSI slots. Builder APIs (`createTheme().primary()`, `quickTheme()`, `autoGenerateTheme()`) set this automatically. Built-in palettes leave it unset and rely on the default ANSI slot mapping.
+When `primary` is set, derivation uses it as the input for `theme.accent`. Otherwise the default ANSI slot mapping is used.
 
 ### Type Definition
 
@@ -92,261 +96,233 @@ interface ColorScheme {
 }
 ```
 
-## Theme (33 Semantic Tokens)
+## Theme (Sterling Shape)
 
-The `Theme` interface is what UI components consume. Every property name is **lowercase with no hyphens** (e.g., `surfacebg`, not `surface-bg`). All color values are hex strings in truecolor mode, or ANSI color names in ANSI 16 mode.
+The `Theme` type re-exports `SterlingTheme`. Every `Theme` is a frozen object that exposes the same hex leaves through two paths: nested roles (`theme.accent.bg`) and flat hyphen-keys (`theme["bg-accent"]`).
 
-### Pairing Conventions
+### Roles (nested form)
 
-Tokens follow two pairing conventions depending on their role:
+Programmatic access — typed, IDE-completable, structured:
 
-**Surface pairs** — `$name` is text, `$name-bg` is background:
+| Role       | Shape                                                                | Use for                                                          |
+| ---------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `accent`   | `{ fg, bg, fgOn, border, hover: { fg, bg }, active: { fg, bg } }`    | Brand emphasis, focus, primary action, interactive text          |
+| `info`     | `{ fg, bg, fgOn, hover: { bg }, active: { bg } }`                    | Neutral status                                                   |
+| `success`  | same as `info`                                                       | Positive status                                                  |
+| `warning`  | same as `info`                                                       | Caution                                                          |
+| `error`    | same as `info`                                                       | Errors / destructive                                             |
+| `muted`    | `{ fg, bg }`                                                         | Secondary text (`muted.fg`); subtle hover surface (`muted.bg`)   |
+| `surface`  | `{ default, subtle, raised, overlay, hover }`                        | Canvas + card stack                                              |
+| `border`   | `{ default, focus, muted }`                                          | Structural rules, focus ring, faint dividers                     |
+| `cursor`   | `{ fg, bg }`                                                         | Cursor color and the glyph under it                              |
+| `selected` | `{ bg, fgOn, hover: { bg } }`                                        | Cursor row, mouse selection, search match highlight              |
+| `inverse`  | `{ bg, fgOn }`                                                       | Status bars, modal chrome                                        |
+| `link`     | `{ fg }`                                                             | Hyperlink text (distinct from `accent`)                          |
 
-| Token pair                     | Purpose                          |
-| ------------------------------ | -------------------------------- |
-| `$muted` / `$muted-bg`         | Secondary text / hover surface   |
-| `$surface` / `$surface-bg`     | Elevated content text / bg       |
-| `$popover` / `$popover-bg`     | Floating content text / bg       |
-| `$inverse` / `$inverse-bg`     | Chrome area text / bg            |
-| `$cursor` / `$cursor-bg`       | Text under cursor / cursor color |
-| `$selection` / `$selection-bg` | Selected text / selection bg     |
+### Flat tokens (the `$token` resolution path)
 
-**Accent pairs** — `$name` is area background, `$name-fg` is text on that area:
+Same data, hyphen-keyed. Grammar: `prefix-role[-state]` or `prefix-on-role`.
 
-| Token pair                     | Purpose                   |
-| ------------------------------ | ------------------------- |
-| `$primary` / `$primary-fg`     | Brand accent area         |
-| `$secondary` / `$secondary-fg` | Alternate accent area     |
-| `$accent` / `$accent-fg`       | Attention/pop accent area |
-| `$error` / `$error-fg`         | Error/destructive area    |
-| `$warning` / `$warning-fg`     | Warning/caution area      |
-| `$success` / `$success-fg`     | Success/positive area     |
-| `$info` / `$info-fg`           | Neutral info area         |
+```
+Surface     bg-surface-default | bg-surface-subtle | bg-surface-raised
+            | bg-surface-overlay | bg-surface-hover
 
-**5 standalone tokens:**
+Border      border-default | border-focus | border-muted
 
-| Token          | Purpose                                       |
-| -------------- | --------------------------------------------- |
-| `$border`      | Structural dividers and borders               |
-| `$inputborder` | Interactive control borders (inputs, buttons) |
-| `$focusborder` | Focus ring (always blue for accessibility)    |
-| `$link`        | Hyperlinks                                    |
-| `$disabledfg`  | Disabled/placeholder text                     |
+Cursor      fg-cursor | bg-cursor
 
-**16 palette passthrough:** `$color0` through `$color15` map to the `palette` array.
+Muted       fg-muted | bg-muted
 
-### Complete Token Table
+Accent      fg-accent | bg-accent | fg-on-accent
+            | fg-accent-hover | bg-accent-hover
+            | fg-accent-active | bg-accent-active
+            | border-accent
 
-| Token           | Property      | Category   | Purpose                                   |
-| --------------- | ------------- | ---------- | ----------------------------------------- |
-| `$bg`           | `bg`          | Root       | Default background                        |
-| `$fg`           | `fg`          | Root       | Default text                              |
-| `$muted`        | `muted`       | Surface    | Secondary/muted text (~70% contrast)      |
-| `$muted-bg`     | `mutedbg`     | Surface    | Muted area background (hover state)       |
-| `$surface`      | `surface`     | Surface    | Text on elevated surface                  |
-| `$surface-bg`   | `surfacebg`   | Surface    | Elevated content area background          |
-| `$popover`      | `popover`     | Surface    | Text on floating content                  |
-| `$popover-bg`   | `popoverbg`   | Surface    | Floating content background               |
-| `$inverse`      | `inverse`     | Surface    | Text on chrome area                       |
-| `$inverse-bg`   | `inversebg`   | Surface    | Chrome area background (status/title bar) |
-| `$cursor`       | `cursor`      | Surface    | Text under cursor                         |
-| `$cursor-bg`    | `cursorbg`    | Surface    | Cursor color                              |
-| `$selection`    | `selection`   | Surface    | Text on selected items                    |
-| `$selection-bg` | `selectionbg` | Surface    | Selected items background                 |
-| `$primary`      | `primary`     | Accent     | Brand accent area                         |
-| `$primary-fg`   | `primaryfg`   | Accent     | Text on primary accent area               |
-| `$secondary`    | `secondary`   | Accent     | Alternate accent area                     |
-| `$secondary-fg` | `secondaryfg` | Accent     | Text on secondary accent area             |
-| `$accent`       | `accent`      | Accent     | Attention/pop accent area                 |
-| `$accent-fg`    | `accentfg`    | Accent     | Text on accent area                       |
-| `$error`        | `error`       | Accent     | Error/destructive area                    |
-| `$error-fg`     | `errorfg`     | Accent     | Text on error area                        |
-| `$warning`      | `warning`     | Accent     | Warning/caution area                      |
-| `$warning-fg`   | `warningfg`   | Accent     | Text on warning area                      |
-| `$success`      | `success`     | Accent     | Success/positive area                     |
-| `$success-fg`   | `successfg`   | Accent     | Text on success area                      |
-| `$info`         | `info`        | Accent     | Neutral info area                         |
-| `$info-fg`      | `infofg`      | Accent     | Text on info area                         |
-| `$border`       | `border`      | Standalone | Structural dividers                       |
-| `$inputborder`  | `inputborder` | Standalone | Interactive control borders               |
-| `$focusborder`  | `focusborder` | Standalone | Focus border (always blue)                |
-| `$link`         | `link`        | Standalone | Hyperlinks                                |
-| `$disabledfg`   | `disabledfg`  | Standalone | Disabled/placeholder text                 |
+Info        fg-info | bg-info | fg-on-info | bg-info-hover | bg-info-active
+Success     fg-success | bg-success | fg-on-success | bg-success-hover | bg-success-active
+Warning     fg-warning | bg-warning | fg-on-warning | bg-warning-hover | bg-warning-active
+Error       fg-error | bg-error | fg-on-error | bg-error-hover | bg-error-active
+
+Selected    bg-selected | fg-on-selected | bg-selected-hover
+
+Inverse     bg-inverse | fg-on-inverse
+
+Link        fg-link
+```
+
+`theme.accent.bg === theme["bg-accent"]` always — same string, two paths, no Proxy.
+
+### Root pair, palette, and metadata
+
+| Field             | Type                       | Description                                                                       |
+| ----------------- | -------------------------- | --------------------------------------------------------------------------------- |
+| `fg`              | `string`                   | Default text color (= `scheme.foreground`)                                        |
+| `bg`              | `string`                   | Default canvas (= `scheme.background` = `bg-surface-default`)                     |
+| `palette`         | `readonly string[]`        | 16-slot ANSI catalog used by `$color0` … `$color15`                               |
+| `red` … `pink`    | `string`                   | 8-slot categorical hue ring — contrast-adjusted (`$red`, `$orange`, `$yellow`, `$green`, `$teal`, `$blue`, `$purple`, `$pink`) |
+| `variants`        | `Record<string, Variant>`  | Typography preset bundles resolved by `<Text variant="…">`                        |
+| `name`            | `string \| undefined`      | Scheme display name (if derived from a named scheme)                              |
+| `mode`            | `"light" \| "dark"`        | Light or dark — determines auto-lift direction                                     |
+| `derivationTrace` | `DerivationTrace?`         | Per-token derivation record (only present when `{ trace: true }` was passed)      |
 
 ### Type Definition
 
 ```typescript
-interface Theme {
-  name: string
+import type { Theme } from "@silvery/theme"
 
-  // Root pair
-  bg: string
-  fg: string
+// Type-level: Theme = SterlingTheme = FlatTokens & Roles & { ...metadata } & CategoricalHues
+//
+// At runtime every Theme is frozen and double-populated — both nested roles
+// AND flat hyphen-keys reference the same string on the same object.
+```
 
-  // 6 surface pairs (base = text, *bg = background)
-  muted: string
-  mutedbg: string
-  surface: string
-  surfacebg: string
-  popover: string
-  popoverbg: string
-  inverse: string
-  inversebg: string
-  cursor: string
-  cursorbg: string
-  selection: string
-  selectionbg: string
+See [`Theme`](/guide/sterling#the-shape) in the Sterling primer for the full structural breakdown, or `packages/ansi/src/sterling/types.ts` for the source of truth.
 
-  // 7 accent pairs (base = area bg, *fg = text on area)
-  primary: string
-  primaryfg: string
-  secondary: string
-  secondaryfg: string
-  accent: string
-  accentfg: string
-  error: string
-  errorfg: string
-  warning: string
-  warningfg: string
-  success: string
-  successfg: string
-  info: string
-  infofg: string
+## Sterling DesignSystem
 
-  // 5 standalone tokens
-  border: string
-  inputborder: string
-  focusborder: string
-  link: string
-  disabledfg: string
+Sterling is exposed as the canonical `DesignSystem` value. All theme construction goes through it.
 
-  // 16 ANSI colors ($color0--$color15)
-  palette: string[]
+```typescript
+import { sterling } from "@silvery/theme"
+
+// Five derivation entry points
+sterling.deriveFromScheme(scheme, opts?)              // 22-color scheme → Theme
+sterling.deriveFromColor(color, opts?)                // single seed hex → Theme
+sterling.deriveFromPair(light, dark, opts?)           // → { light: Theme, dark: Theme }
+sterling.deriveFromSchemeWithBrand(scheme, brand, opts?)  // scheme + brand overlay → Theme
+sterling.defaults(mode?)                              // baseline Theme (no input)
+
+// Plus
+sterling.theme(partial?, opts?)                       // defaults + per-role overrides
+```
+
+### DeriveOptions
+
+```typescript
+interface DeriveOptions {
+  /** "auto-lift" (default) — OKLCH-shifts failing tokens. "strict" — throws on AA failure. */
+  contrast?: "auto-lift" | "strict"
+  /** If true, attach `derivationTrace` to the returned Theme. */
+  trace?: boolean
+  /** Per-token pins. Skips auto-adjustment for these specific tokens. */
+  pins?: Record<string, string>
+  /** Force light/dark inference. Default: from `scheme.dark` or WCAG luminance of bg. */
+  mode?: "light" | "dark"
 }
 ```
 
-## deriveTheme()
+Pins accept either nested or flat path syntax — `{ "accent.bg": "#5B8DEF" }` and `{ "bg-accent": "#5B8DEF" }` are equivalent.
 
-Transforms a 22-color `ColorScheme` into a 33-token `Theme`.
+### Contrast targets
 
-```typescript
-function deriveTheme(
-  palette: ColorScheme,
-  mode?: "truecolor" | "ansi16",
-  adjustments?: ThemeAdjustment[],
-): Theme
-```
+`auto-lift` mode shifts OKLCH lightness (preserving hue and chroma) until the target ratio is met:
 
-### Parameters
+| Target  | Ratio | Applied to                                                |
+| ------- | ----- | --------------------------------------------------------- |
+| AA      | 4.5:1 | Body text, muted text, accent / status fg, `fg-on-X`      |
+| FAINT   | 1.5:1 | `border-default` — faint structural element               |
+| CONTROL | 3.0:1 | `border-focus` — WCAG 1.4.11 non-text minimum             |
 
-| Parameter     | Type                      | Default       | Description                                         |
-| ------------- | ------------------------- | ------------- | --------------------------------------------------- |
-| `palette`     | `ColorScheme`             | required      | The 22-color terminal palette                       |
-| `mode`        | `"truecolor" \| "ansi16"` | `"truecolor"` | Derivation mode                                     |
-| `adjustments` | `ThemeAdjustment[]`       | `undefined`   | Optional array to collect contrast adjustments made |
+`strict` mode throws `SterlingContrastError` on AA failure of core role pairs. Use it in your test suite to catch palette regressions.
 
-### Truecolor Mode
+### Derivation rules (truecolor)
 
-The default mode. Uses blending and contrast-aware adjustment to produce rich, harmonious themes.
+Sterling uses a **blend-first-then-ensure** pattern: an initial blend sets the color's character from the scheme's aesthetic, then `ensureContrast()` only adjusts lightness if the ratio falls short.
 
-**Contrast targets** — minimums that `ensureContrast()` enforces. Most themes exceed them without adjustment:
+| Token                | Source                                                       | Contrast target |
+| -------------------- | ------------------------------------------------------------ | --------------- |
+| `fg`                 | `scheme.foreground` ensured against `bg-surface-overlay`     | AA              |
+| `accent.fg`          | `scheme.primary` (or yellow dark / blue light)               | AA              |
+| `accent.bg`          | derived from `accent.fg` for fill                            | —               |
+| `accent.fgOn`        | `contrastFg(accent.bg)` — black or white                     | —               |
+| `accent.hover.*`     | OKLCH ±0.04L from `accent.{fg,bg}`                           | —               |
+| `accent.active.*`    | OKLCH ±0.08L from `accent.{fg,bg}`                           | —               |
+| `accent.border`      | `accent.fg` lifted for border contrast                       | CONTROL         |
+| `error.fg`           | `scheme.red`                                                 | AA              |
+| `warning.fg`         | `scheme.yellow`                                              | AA              |
+| `success.fg`         | `scheme.green`                                               | AA              |
+| `info.fg`            | blend of `fg` and `accent.fg` at 50%                         | AA              |
+| `link.fg`            | `scheme.brightBlue` (dark) / `scheme.blue` (light)           | AA              |
+| `muted.fg`           | `fg` blended 40% toward `bg`                                 | AA              |
+| `muted.bg`           | `bg` blended 4% toward `fg`                                  | —               |
+| `surface.subtle`     | `bg` blended 5% toward `fg`                                  | —               |
+| `surface.raised`     | `bg` blended 8% toward `fg`                                  | —               |
+| `surface.overlay`    | `bg` blended 10% toward `fg`                                 | —               |
+| `surface.hover`      | OKLCH +0.04L from `surface.default`                          | —               |
+| `inverse.bg`         | `fg` blended 10% toward `bg`                                 | —               |
+| `inverse.fgOn`       | `contrastFg(inverse.bg)`                                     | —               |
+| `selected.bg`        | `scheme.selectionBackground` repaired for visibility (ΔL≥0.08) | —              |
+| `selected.fgOn`      | `scheme.selectionForeground` ensured against `selected.bg`   | AA              |
+| `cursor.bg`          | `scheme.cursorColor` repaired for visibility (ΔE≥0.15)       | —               |
+| `cursor.fg`          | `scheme.cursorText` ensured against `cursor.bg`              | AA              |
+| `border.default`     | `bg` blended 15% toward `fg`                                 | FAINT           |
+| `border.focus`       | same hue as `accent.fg`                                      | CONTROL         |
+| `border.muted`       | `bg` blended 8% toward `fg`                                  | —               |
+| `red` … `pink`       | scheme accents rotated through OKLCH; contrast-adjusted     | AA              |
 
-| Target  | Ratio | Applied to                                       | Rationale                           |
-| ------- | ----- | ------------------------------------------------ | ----------------------------------- |
-| AA      | 4.5:1 | Body text, muted text, accent-as-text, selection | WCAG AA for normal text             |
-| DIM     | 3.0:1 | Disabled text                                    | Intentionally dim but still visible |
-| FAINT   | 1.5:1 | Borders, structural dividers                     | Faint structural element            |
-| CONTROL | 3.0:1 | Input borders                                    | WCAG 1.4.11 non-text minimum        |
-
-**Derivation rules:**
-
-| Token         | Source                                            | Contrast target |
-| ------------- | ------------------------------------------------- | --------------- |
-| `fg`          | `palette.foreground` ensured against `popoverbg`  | AA (4.5:1)      |
-| `primary`     | `palette.primary` or yellow (dark) / blue (light) | AA (4.5:1)      |
-| `accent`      | Complement of `primary`                           | AA (4.5:1)      |
-| `secondary`   | Blend of `primary` and `accent` at 35%            | AA (4.5:1)      |
-| `error`       | `palette.red`                                     | AA (4.5:1)      |
-| `warning`     | `palette.yellow`                                  | AA (4.5:1)      |
-| `success`     | `palette.green`                                   | AA (4.5:1)      |
-| `info`        | Blend of `fg` and `accent` at 50%                 | AA (4.5:1)      |
-| `link`        | `brightBlue` (dark) / `blue` (light)              | AA (4.5:1)      |
-| `muted`       | `fg` blended 40% toward `bg`, against `mutedbg`   | AA (4.5:1)      |
-| `disabledfg`  | `fg` blended 50% toward `bg`                      | DIM (3.0:1)     |
-| `border`      | `bg` blended 15% toward `fg`                      | FAINT (1.5:1)   |
-| `inputborder` | `bg` blended 25% toward `fg`                      | CONTROL (3.0:1) |
-| `surfacebg`   | `bg` blended 5% toward `fg`                       | --              |
-| `popoverbg`   | `bg` blended 8% toward `fg`                       | --              |
-| `mutedbg`     | `bg` blended 4% toward `fg`                       | --              |
-| `inversebg`   | `fg` blended 10% toward `bg`                      | --              |
-| `inverse`     | `contrastFg(inversebg)` (black or white)          | --              |
-| `selection`   | `palette.selectionForeground`                     | AA (4.5:1)      |
-| `cursor`      | `palette.cursorText`                              | AA (4.5:1)      |
-| `focusborder` | Same as `link`                                    | --              |
-| `*fg` tokens  | `contrastFg(base)` (black or white)               | --              |
-
-The derivation uses a **blend-first-then-ensure** pattern: the initial blend sets the color's character from the palette's aesthetic, then `ensureContrast()` only adjusts lightness (preserving hue and saturation) if the ratio falls short.
-
-**Primary color inference:** When `palette.primary` is not set, the primary defaults to `palette.yellow` for dark themes and `palette.blue` for light themes. Set `palette.primary` explicitly to override this.
+**Primary inference:** when `scheme.primary` is not set, `accent` defaults to `scheme.yellow` (dark) or `scheme.blue` (light). Set `scheme.primary` explicitly to override.
 
 ### ANSI 16 Mode
 
-Direct mapping with no blending or hex math. Token values are ANSI color names rather than hex strings.
+For terminals limited to 16 colors, derivation uses direct ANSI name mapping. Token values are ANSI color names (e.g. `"yellow"`, `"redBright"`, `"gray"`) rather than hex strings. Two pre-derived themes ship: `ansi16DarkTheme`, `ansi16LightTheme`. They activate automatically when the detected color level is `ansi16`.
+
+### DerivationStep / Trace
+
+When the optional `trace: true` option is passed, every derivation step is recorded:
 
 ```typescript
-const theme = deriveTheme(palette, "ansi16")
-// theme.primary === palette.yellow (dark) or palette.blue (light)
-// theme.border === palette.brightBlack
-// theme.fg === palette.foreground
-```
-
-### ThemeAdjustment
-
-When the optional `adjustments` array is passed, `deriveTheme()` records every contrast adjustment it makes:
-
-```typescript
-interface ThemeAdjustment {
-  token: string // Token name (e.g. "primary", "muted")
-  from: string // Original color before adjustment
-  to: string // Adjusted color
-  against: string // Background used for contrast check
-  target: number // Target contrast ratio
-  ratioBefore: number // Contrast ratio before adjustment
-  ratioAfter: number // Contrast ratio after adjustment
+interface DerivationStep {
+  /** Token path (e.g. `"accent.hover.bg"` or flat `"bg-accent-hover"`). */
+  readonly token: string
+  /** Human-readable rule name (e.g. `"OKLCH +0.04L on accent.bg"`). */
+  readonly rule: string
+  /** Input hex(es) the rule operated on. */
+  readonly inputs: readonly string[]
+  /** Output hex. */
+  readonly output: string
+  /** If auto-lift adjusted this token, the original value before adjustment. */
+  readonly liftedFrom?: string
+  /** If pinned by scheme author, true. */
+  readonly pinned?: boolean
 }
+
+type DerivationTrace = readonly DerivationStep[]
 ```
 
-This is useful for debugging and for theme preview tooling.
+This is useful for the [Theme Explorer](/themes) and for debugging unexpected token values.
 
-## resolveThemeColor()
+## resolveToken()
 
-Resolves a `$token` string against a `Theme` object.
+Resolves a `$token` string against a `Theme` object. Both kebab and camelCase forms work; hyphens are stripped before lookup.
 
 ```typescript
-function resolveThemeColor(color: string | undefined, theme: Theme): string | undefined
-```
+import { resolveToken } from "@silvery/ansi"
 
-**Resolution rules:**
+resolveToken("$fg-accent", theme)        // theme["fg-accent"]
+resolveToken("$bg-surface-raised", theme) // theme["bg-surface-raised"]
+resolveToken("$color0", theme)            // theme.palette[0]
+resolveToken("$fg", theme)                // theme.fg
+resolveToken("#ff0000", theme)            // pass-through
+resolveToken("red", theme)                // pass-through (named CSS color)
+```
 
 | Input                     | Behavior                                | Example                      |
 | ------------------------- | --------------------------------------- | ---------------------------- |
-| `undefined`               | Returns `undefined`                     | --                           |
-| `"$primary"`              | Lookup `theme.primary`                  | `"#EBCB8B"`                  |
-| `"$surface-bg"`           | Strip hyphens, lookup `theme.surfacebg` | `"#323845"`                  |
-| `"$color0"`--`"$color15"` | Index into `theme.palette`              | `"#2E3440"`                  |
+| `undefined`               | Returns `undefined`                     | —                            |
+| `"$fg-accent"`            | Lookup `theme["fg-accent"]`             | `"#EBCB8B"`                  |
+| `"$bgAccent"`             | camelCase form — same lookup            | `"#EBCB8B"`                  |
+| `"$color0"`–`"$color15"`  | Index into `theme.palette`              | `"#2E3440"`                  |
 | `"#ff0000"`               | Pass through unchanged                  | `"#ff0000"`                  |
 | `"red"`                   | Pass through unchanged                  | `"red"`                      |
-| Unknown `$token`          | Pass through as-is                      | `"$unknown"` -> `"$unknown"` |
+| Unknown `$token`          | Pass through as-is                      | `"$unknown"` → `"$unknown"`  |
 
-Both `$surfacebg` and `$surface-bg` resolve identically — hyphens are stripped before lookup.
+## Built-in Schemes
 
-## Built-in Palettes
+`@silvery/theme` ships 84 color schemes covering popular terminal and editor color schemes.
 
-The `@silvery/theme` package ships 84 color schemes across 23 palette files, covering the most popular terminal and editor color schemes.
+### Scheme Families
 
-### Palette Families
-
-| Family      | Palettes                        | Count |
+| Family      | Schemes                         | Count |
 | ----------- | ------------------------------- | ----- |
 | Catppuccin  | mocha, frappe, macchiato, latte | 4     |
 | Nord        | nord                            | 1     |
@@ -372,36 +348,34 @@ The `@silvery/theme` package ships 84 color schemes across 23 palette files, cov
 | Edge        | dark, light                     | 2     |
 | Modus       | vivendi, operandi               | 2     |
 
-### Using Palettes
+### Using Schemes
 
 ```typescript
-import { builtinPalettes, getSchemeByName, deriveTheme } from "silvery/theme"
+import { sterling, builtinPalettes, getSchemeByName, nord, catppuccinMocha } from "silvery/theme"
 
-// List all palette names
+// List all scheme names
 const names = Object.keys(builtinPalettes)
-// ["catppuccin-mocha", "catppuccin-frappe", ..., "modus-operandi"]
 
 // Look up by name
-const palette = getSchemeByName("catppuccin-mocha")
-if (palette) {
-  const theme = deriveTheme(palette)
+const scheme = getSchemeByName("catppuccin-mocha")
+if (scheme) {
+  const theme = sterling.deriveFromScheme(scheme)
 }
 
-// Import a specific palette directly
-import { nord, catppuccinMocha } from "silvery/theme"
-const nordTheme = deriveTheme(nord)
+// Import directly
+const nordTheme = sterling.deriveFromScheme(nord)
 ```
 
 ### Pre-derived Themes
 
 Four themes ship pre-derived for instant use:
 
-| Export              | Palette          | Mode  | Primary |
-| ------------------- | ---------------- | ----- | ------- |
-| `defaultDarkTheme`  | Nord             | dark  | #EBCB8B |
-| `defaultLightTheme` | Catppuccin Latte | light | #1E66F5 |
-| `ansi16DarkTheme`   | (hardcoded)      | dark  | yellow  |
-| `ansi16LightTheme`  | (hardcoded)      | light | blue    |
+| Export              | Scheme           | Mode  |
+| ------------------- | ---------------- | ----- |
+| `defaultDarkTheme`  | Nord             | dark  |
+| `defaultLightTheme` | Catppuccin Latte | light |
+| `ansi16DarkTheme`   | (hardcoded)      | dark  |
+| `ansi16LightTheme`  | (hardcoded)      | light |
 
 ```typescript
 import {
@@ -412,102 +386,49 @@ import {
   getThemeByName,
 } from "silvery/theme"
 
-// Look up by name
-const theme = getThemeByName("dark-truecolor") // defaultDarkTheme
-const light = getThemeByName("light-ansi16") // ansi16LightTheme
-const catppuccin = getThemeByName("catppuccin-mocha") // derived on access
+const theme = getThemeByName("dark-truecolor")
+const light = getThemeByName("light-ansi16")
+const catppuccin = getThemeByName("catppuccin-mocha")
 ```
-
-## ANSI 16 Fallback
-
-Two hardcoded themes provide baseline support for terminals limited to 16 colors.
-
-### ansi16DarkTheme
-
-Token values are ANSI color names (e.g., `"yellow"`, `"whiteBright"`, `"gray"`) rather than hex strings. The `palette` array contains the 16 standard color names.
-
-Key mappings:
-
-- `primary` = `"yellow"`, `accent` = `"blueBright"`
-- `fg` = `"whiteBright"`, `muted` = `"white"`, `disabledfg` = `"gray"`
-- `border` / `inputborder` = `"gray"`, `focusborder` / `link` = `"blueBright"`
-- `error` = `"redBright"`, `success` = `"greenBright"`, `warning` = `"yellow"`
-
-### ansi16LightTheme
-
-Same structure, inverted for light backgrounds:
-
-- `primary` = `"blue"`, `accent` = `"cyan"`
-- `fg` = `"black"`, `muted` = `"blackBright"`, `disabledfg` = `"gray"`
-- `error` = `"red"`, `success` = `"green"`
-
-### When They Activate
-
-ANSI 16 themes are used when:
-
-- `deriveTheme(palette, "ansi16")` is called explicitly
-- The detected color level is `"ansi16"` (only 16 colors supported)
-- No palette detection is available and the application falls back to safe defaults
 
 ## Color Utilities
 
-Low-level functions for color manipulation, available from `silvery/theme` or `@silvery/theme`.
+Low-level color manipulation, available from `@silvery/color` (re-exported by `@silvery/theme` and `silvery/theme`).
 
 ### Blending and Manipulation
 
 ```typescript
 import { blend, brighten, darken, desaturate, complement } from "silvery/theme"
 
-blend("#2E3440", "#ECEFF4", 0.5) // midpoint between two colors
-brighten("#2E3440", 0.1) // 10% toward white
-darken("#ECEFF4", 0.1) // 10% toward black
-desaturate("#BF616A", 0.4) // reduce saturation by 40%
-complement("#EBCB8B") // 180-degree hue rotation
+blend("#2E3440", "#ECEFF4", 0.5)  // OKLCH midpoint
+brighten("#2E3440", 0.1)          // 10% lighter
+darken("#ECEFF4", 0.1)            // 10% darker
+desaturate("#BF616A", 0.4)        // reduce chroma 40%
+complement("#EBCB8B")             // 180-degree hue rotation
 ```
 
-| Function     | Signature                   | Description                                             |
-| ------------ | --------------------------- | ------------------------------------------------------- |
-| `blend`      | `(a, b, t) => string`       | Linear RGB blend. `t=0` returns `a`, `t=1` returns `b`. |
-| `brighten`   | `(color, amount) => string` | Blend toward white by `amount` (0--1).                  |
-| `darken`     | `(color, amount) => string` | Blend toward black by `amount` (0--1).                  |
-| `desaturate` | `(color, amount) => string` | Reduce saturation by `amount` (0--1) in HSL.            |
-| `complement` | `(color) => string`         | 180-degree hue rotation in HSL.                         |
-
-All functions accept hex strings (`#RRGGBB`). Non-hex inputs are returned unchanged.
+`@silvery/color` is OKLCH-native throughout: blends and lightness adjustments operate in the perceptually-uniform space.
 
 ### Contrast
 
 ```typescript
 import { contrastFg, checkContrast, ensureContrast } from "silvery/theme"
 
-contrastFg("#2E3440") // "#FFFFFF" (white text on dark bg)
-contrastFg("#ECEFF4") // "#000000" (black text on light bg)
-
-checkContrast("#FFFFFF", "#000000") // { ratio: 21, aa: true, aaa: true }
-checkContrast("#777777", "#888888") // { ratio: ~1.3, aa: false, aaa: false }
-
-ensureContrast("#FFAB91", "#FFFFFF", 4.5) // "#B35600" (darkened to meet AA)
-ensureContrast("#5C9FFF", "#1A1A2E", 4.5) // "#5C9FFF" (already passes)
+contrastFg("#2E3440")                       // "#FFFFFF"
+contrastFg("#ECEFF4")                       // "#000000"
+checkContrast("#FFFFFF", "#000000")         // { ratio: 21, aa: true, aaa: true }
+ensureContrast("#FFAB91", "#FFFFFF", 4.5)   // "#B35600" (darkened to meet AA)
 ```
 
-| Function         | Signature                              | Description                                                                      |
-| ---------------- | -------------------------------------- | -------------------------------------------------------------------------------- |
-| `contrastFg`     | `(bg) => "#000000" \| "#FFFFFF"`       | Pick black or white for readability on `bg`.                                     |
-| `checkContrast`  | `(fg, bg) => ContrastResult \| null`   | WCAG 2.1 contrast ratio with AA/AAA pass/fail.                                   |
-| `ensureContrast` | `(color, against, minRatio) => string` | Adjust lightness until the contrast target is met. Preserves hue and saturation. |
-
-`ensureContrast` uses binary search over lightness in HSL space. It returns the original color unchanged if the target is already met.
+`ensureContrast` uses binary search over OKLCH lightness; hue and chroma are preserved.
 
 ### Conversion
 
 ```typescript
 import { hexToRgb, rgbToHex, hexToHsl, hslToHex, rgbToHsl } from "silvery/theme"
 
-hexToRgb("#BF616A") // [191, 97, 106]
+hexToRgb("#BF616A")  // [191, 97, 106]
 rgbToHex(191, 97, 106) // "#BF616A"
-hexToHsl("#BF616A") // [354.3, 0.39, 0.56]
-hslToHex(354.3, 0.39, 0.56) // "#BF616A"
-rgbToHsl(191, 97, 106) // [354.3, 0.39, 0.56]
 ```
 
 ## Usage in Components
@@ -520,10 +441,10 @@ import { ThemeProvider, defaultDarkTheme, Box, Text } from "silvery"
 function App() {
   return (
     <ThemeProvider theme={defaultDarkTheme}>
-      <Text color="$primary">Deploy</Text>
-      <Text color="$muted">3 files changed</Text>
-      <Box backgroundColor="$surface-bg" borderStyle="single" borderColor="$border">
-        <Text color="$success">All tests passed</Text>
+      <Text color="$fg-accent">Deploy</Text>
+      <Text color="$fg-muted">3 files changed</Text>
+      <Box backgroundColor="$bg-surface-raised" borderStyle="single">
+        <Text color="$fg-success">All tests passed</Text>
       </Box>
     </ThemeProvider>
   )
@@ -549,8 +470,9 @@ import { useTheme } from "silvery/theme"
 
 function StatusLine() {
   const theme = useTheme()
-  const color = theme.primary // hex string
-  return <Text color="$primary">Status</Text>
+  const accent = theme.accent.fg          // nested
+  const accentFlat = theme["fg-accent"]   // flat — same string
+  return <Text color="$fg-accent">Status</Text>
 }
 ```
 
@@ -562,39 +484,28 @@ Use the `theme` prop on `Box` to override token resolution for a subtree:
 
 ```tsx
 <Box theme={lightTheme} borderStyle="single">
-  {/* All $token references resolve against lightTheme here */}
-  <Text color="$primary">Themed content</Text>
+  <Text color="$fg-accent">Themed content</Text>
 </Box>
 ```
 
-See the [Theming guide](/reference/theming) for more detail on `$token` shorthand, special values (`inherit`, `mix()`, `$default`), and backward-compatible aliases.
+See the [Theming guide](/guide/theming) for runtime swapping, brand overlays, and per-role pinning.
 
 ## Usage in CLI (@silvery/ansi)
 
-For non-React CLI output, use [`@silvery/ansi`](/reference/style) which provides the same theme token resolution without React:
+For non-React CLI output, [`@silvery/ansi`](/reference/style) provides the same theme token resolution without React.
 
-```typescript
-import { createStyle } from "@silvery/ansi"
-
-const s = createStyle({ theme })
-s.primary("deploy") // resolves theme.primary -> hex -> ANSI
-s.success("done") // resolves theme.success -> hex -> ANSI
-s.muted("(3 files)") // resolves theme.muted -> hex -> ANSI
-s.bold.red("error!") // standard chalk-compatible styling
-```
-
-## Custom Palettes
+## Custom Schemes
 
 ### Manual ColorScheme
 
-Create a `ColorScheme` object with all 22 required hex fields:
+Create a `ColorScheme` object with all 22 required hex fields and pass it to Sterling:
 
 ```typescript
-import { deriveTheme } from "silvery/theme"
+import { sterling } from "silvery/theme"
 import type { ColorScheme } from "silvery/theme"
 
-const myPalette: ColorScheme = {
-  name: "my-palette",
+const myScheme: ColorScheme = {
+  name: "my-scheme",
   dark: true,
   black: "#1a1b26",
   red: "#f7768e",
@@ -620,86 +531,23 @@ const myPalette: ColorScheme = {
   selectionForeground: "#c0caf5",
 }
 
-const theme = deriveTheme(myPalette)
+const theme = sterling.deriveFromScheme(myScheme)
 ```
 
-### Theme Builder
+### From minimal input
 
-The chainable builder API generates a full `ColorScheme` from minimal input:
-
-```typescript
-import { createTheme } from "silvery/theme"
-
-// From just a background color
-const theme = createTheme().bg("#1e1e2e").build()
-
-// With foreground and primary
-const theme = createTheme().bg("#1e1e2e").fg("#cdd6f4").primary("#89b4fa").build()
-
-// From a built-in preset with an override
-const theme = createTheme().preset("nord").primary("#A3BE8C").build()
-
-// Force dark/light mode
-const theme = createTheme().primary("#EBCB8B").dark().build()
-```
-
-Builder methods:
-
-| Method                | Description                     |
-| --------------------- | ------------------------------- |
-| `.bg(color)`          | Set background color            |
-| `.fg(color)`          | Set foreground color            |
-| `.primary(color)`     | Set primary accent color        |
-| `.accent(color)`      | Alias for `.primary()`          |
-| `.dark()`             | Force dark mode                 |
-| `.light()`            | Force light mode                |
-| `.color(name, value)` | Set any palette color by name   |
-| `.palette(p)`         | Set full palette at once        |
-| `.preset(name)`       | Load a built-in palette by name |
-| `.build()`            | Derive the final `Theme`        |
-
-### quickTheme()
-
-Create a theme from a single color:
+`fromColors()` generates a full scheme from 1–3 hex colors via OKLCH hue rotation:
 
 ```typescript
-import { quickTheme } from "silvery/theme"
+import { fromColors, sterling } from "silvery/theme"
 
-quickTheme("#818cf8") // indigo primary, dark mode (default)
-quickTheme("#818cf8", "light") // indigo primary, light mode
-quickTheme("blue") // named color, dark mode
-quickTheme("green", "dark") // named color, explicit dark
-```
-
-Supported named colors: `red`, `orange`, `yellow`, `green`, `teal`, `cyan`, `blue`, `purple`, `pink`, `magenta`, `white`.
-
-### autoGenerateTheme()
-
-Generate a complete theme from a single hex color with automatic palette derivation:
-
-```typescript
-import { autoGenerateTheme } from "silvery/theme"
-
-const theme = autoGenerateTheme("#5E81AC", "dark")
-const light = autoGenerateTheme("#E06C75", "light")
-```
-
-Uses HSL manipulation to derive complementary accents, surface ramps, and status colors from the primary.
-
-### fromColors()
-
-Generate a full `ColorScheme` from 1--3 hex colors:
-
-```typescript
-import { fromColors, deriveTheme } from "silvery/theme"
-
-const palette = fromColors({
+const scheme = fromColors({
   background: "#1e1e2e",
   foreground: "#cdd6f4",
   primary: "#89b4fa",
   dark: true,
 })
-const theme = deriveTheme(palette)
+const theme = sterling.deriveFromScheme(scheme)
 ```
 
 At minimum, provide `background` or `primary`. Missing colors are generated via surface ramps and hue rotation.
@@ -707,7 +555,7 @@ At minimum, provide `background` or `primary`. Missing colors are generated via 
 ## Data Flow
 
 ```
-Terminal palette file (Ghostty, Kitty, etc.)
+Terminal scheme file (Ghostty, Kitty, etc.)
            │
            ▼
     ┌──────────────┐
@@ -715,17 +563,26 @@ Terminal palette file (Ghostty, Kitty, etc.)
     │   (Layer 1)  │
     └──────┬───────┘
            │
-     deriveTheme()    contrast targets, blending, contrastFg()
-           │
+sterling.deriveFromScheme()    contrast targets, OKLCH blending,
+           │                   contrastFg, auto-lift, role expansion
            ▼
     ┌──────────────┐
-    │    Theme     │  33 semantic tokens — what UI consumes
-    │   (Layer 2)  │
+    │    Theme     │  Sterling: nested roles + flat hyphen-keys
+    │   (Layer 2)  │  on the same frozen object
     └──────┬───────┘
            │
-   resolveThemeColor()    "$primary" → "#EBCB8B"
+       resolveToken()    "$fg-accent" → theme["fg-accent"]
            │
-           ├──► Component props      color="$primary"
-           ├──► createStyle()        s.primary("text")
-           └──► Programmatic access  useTheme().primary
+           ├──► Component props      color="$fg-accent"
+           ├──► createStyle()        s["fg-accent"]("text")
+           └──► Programmatic access  useTheme().accent.fg
 ```
+
+## Related
+
+- **[Sterling primer](/guide/sterling)** — design-system fundamentals: roles, flat tokens, derivation entry points, full migration map.
+- **[Theming guide](/guide/theming)** — using schemes, switching at runtime, brand overlays, custom themes.
+- **[Theming reference](/reference/theming)** — `$token` shorthand on Box / Text, special values (`inherit`, `mix()`).
+- **[Styling guide](/guide/styling)** — when to use tokens vs letting components handle it.
+- **[Color Schemes guide](/guide/color-schemes)** — the 22-slot scheme model and the 84+ bundled schemes.
+- **[@silvery/ansi style reference](/reference/style)** — CLI styling API.

@@ -35,7 +35,7 @@ All `TextProps` style props (color, bold, etc.) are also accepted.
 <Spinner />
 <Spinner type="arc" label="Loading..." />
 <Spinner type="bounce" interval={120} />
-<Spinner color="$primary" label="Processing" />
+<Spinner color="$fg-accent" label="Processing" />
 ```
 
 ## See Also

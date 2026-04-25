@@ -68,7 +68,7 @@ import { Tabs, TabList, Tab, TabPanel } from "silvery"
 
 ## Rendering
 
-Active tab is bold with `$primary` color and underline. Inactive tabs use `$muted`. TabPanel only renders children when the corresponding tab is active.
+Active tab is bold with `$fg-accent` color and underline. Inactive tabs use `$fg-muted`. TabPanel only renders children when the corresponding tab is active.
 
 ## See Also
 

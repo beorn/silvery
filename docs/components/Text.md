@@ -62,9 +62,9 @@ interface TextHandle {
 <Text wrap="truncate">This long text will be truncated...</Text>
 <Text wrap="truncate-middle">Long...text</Text>
 
-// Semantic theme colors
-<Text color="$primary">Primary</Text>
-<Text color="$muted">Secondary info</Text>
+// Semantic theme colors (Sterling)
+<Text color="$fg-accent">Brand emphasis</Text>
+<Text color="$fg-muted">Secondary info</Text>
 ```
 
 ## See Also

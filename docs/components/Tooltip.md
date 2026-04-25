@@ -31,7 +31,7 @@ import { Tooltip } from "silvery"
 
 ## Rendering
 
-Tooltip text is rendered below the target in `$muted` with dimColor for subtlety.
+Tooltip text is rendered below the target in `$fg-muted` for subtlety.
 
 ## See Also
 

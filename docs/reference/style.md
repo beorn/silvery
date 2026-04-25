@@ -16,9 +16,10 @@ const s = createStyle()
 s.hex("#818cf8")("Indigo")
 s.bgYellow.black("Warning")
 
-// With theme
+// With theme — Sterling tokens (silvery 0.20+)
 const themed = createStyle({ theme })
-themed.primary("Deploy") // resolves $primary from theme
+themed["fg-accent"]("Deploy")  // resolves $fg-accent from theme
+themed["fg-error"]("Failed!")
 ```
 
 ## createStyle()
@@ -168,7 +169,7 @@ s.bgAnsi256(17)("Navy bg")
 
 ## Theme Token Resolution
 
-When a `theme` is provided to `createStyle()`, semantic token names resolve to their theme colors:
+When a `theme` is provided to `createStyle()`, [Sterling](/guide/sterling) `$tokens` resolve to their theme colors. Both kebab and camelCase forms work.
 
 ```typescript
 import { createStyle } from "@silvery/ansi"
@@ -176,33 +177,34 @@ import { defaultDarkTheme } from "silvery/theme"
 
 const s = createStyle({ theme: defaultDarkTheme })
 
-s.primary("Deploy") // resolves theme.primary -> hex -> ANSI
-s.error("Failed!") // resolves theme.error -> hex -> ANSI
-s.success("Passed") // resolves theme.success -> hex -> ANSI
-s.muted("(3 files)") // resolves theme.muted -> hex -> ANSI
-s.warning("Caution") // resolves theme.warning -> hex -> ANSI
-s.info("Note") // resolves theme.info -> hex -> ANSI
-s.link("https://...") // resolves theme.link + adds underline
-s.bold.primary("DEPLOY") // chain modifiers with tokens
+s["fg-accent"]("Deploy")          // resolves theme["fg-accent"] -> hex -> ANSI
+s["fg-error"]("Failed!")          // resolves theme["fg-error"]  -> hex -> ANSI
+s["fg-success"]("Passed")
+s["fg-muted"]("(3 files)")
+s["fg-warning"]("Caution")
+s["fg-info"]("Note")
+s["fg-link"]("https://...")        // resolves theme["fg-link"] + adds underline
+s.bold["fg-accent"]("DEPLOY")      // chain modifiers with tokens
 ```
 
 ### Available Tokens
 
-| Token       | Without theme (fallback)   | With theme                      |
-| ----------- | -------------------------- | ------------------------------- |
-| `primary`   | yellow (ANSI 33)           | `theme.primary` as hex          |
-| `secondary` | cyan (ANSI 36)             | `theme.secondary` as hex        |
-| `accent`    | magenta (ANSI 35)          | `theme.accent` as hex           |
-| `error`     | red (ANSI 31)              | `theme.error` as hex            |
-| `warning`   | yellow (ANSI 33)           | `theme.warning` as hex          |
-| `success`   | green (ANSI 32)            | `theme.success` as hex          |
-| `info`      | cyan (ANSI 36)             | `theme.info` as hex             |
-| `muted`     | dim (SGR 2)                | `theme.muted` as hex            |
-| `link`      | blue + underline (ANSI 34) | `theme.link` as hex + underline |
-| `border`    | gray (ANSI 90)             | `theme.border` as hex           |
-| `surface`   | white (ANSI 37)            | `theme.surface` as hex          |
+The `$token` resolver works on Sterling's flat hyphen-keys. The most common ones for CLI output:
 
-When no theme is provided, tokens fall back to standard ANSI codes. The `link` token always adds underline in addition to the color.
+| Token            | Without theme (fallback)   | With theme                          |
+| ---------------- | -------------------------- | ----------------------------------- |
+| `fg-accent`      | yellow (ANSI 33)           | `theme["fg-accent"]` as hex         |
+| `fg-error`       | red (ANSI 31)              | `theme["fg-error"]` as hex          |
+| `fg-warning`     | yellow (ANSI 33)           | `theme["fg-warning"]` as hex        |
+| `fg-success`     | green (ANSI 32)            | `theme["fg-success"]` as hex        |
+| `fg-info`        | cyan (ANSI 36)             | `theme["fg-info"]` as hex           |
+| `fg-muted`       | dim (SGR 2)                | `theme["fg-muted"]` as hex          |
+| `fg-link`        | blue + underline (ANSI 34) | `theme["fg-link"]` as hex + underline |
+| `border-default` | gray (ANSI 90)             | `theme["border-default"]` as hex    |
+| `fg`             | terminal default fg        | `theme.fg` as hex                   |
+| `bg`             | terminal default bg        | `theme.bg` as hex                   |
+
+For the complete flat-token list (selection, inverse, surface stack, status fills, accent state variants, etc.) see the [Sterling primer](/guide/sterling#flat-tokens). When no theme is provided, tokens fall back to standard ANSI codes.
 
 ### resolve()
 
@@ -211,10 +213,10 @@ Programmatically resolve a token to its hex value:
 ```typescript
 const s = createStyle({ theme })
 
-s.resolve("primary") // "#EBCB8B"
-s.resolve("$primary") // "#EBCB8B" ($ prefix also accepted)
-s.resolve("$color0") // theme.palette[0]
-s.resolve("$surface-bg") // theme.surfacebg (hyphens stripped)
+s.resolve("fg-accent")      // theme["fg-accent"]
+s.resolve("$fg-accent")     // same — $ prefix also accepted
+s.resolve("$color0")        // theme.palette[0]
+s.resolve("$bg-surface-raised") // theme["bg-surface-raised"]
 ```
 
 ## Color Level Detection and Degradation
@@ -272,14 +274,14 @@ This means you can pass a partial theme or any plain object:
 ```typescript
 const s = createStyle({
   theme: {
-    primary: "#818cf8",
-    error: "#f7768e",
-    success: "#9ece6a",
-  },
+    "fg-accent": "#818cf8",
+    "fg-error": "#f7768e",
+    "fg-success": "#9ece6a",
+  } as any, // or a real Sterling Theme
 })
 
-s.primary("Styled") // uses #818cf8
-s.warning("Warn") // falls back to yellow (ANSI 33) — not in theme
+s["fg-accent"]("Styled")  // uses #818cf8
+s["fg-warning"]("Warn")   // falls back to yellow (ANSI 33) — not in theme
 ```
 
 ## Template Literal Support
@@ -316,11 +318,11 @@ const s = createStyle({ theme: defaultDarkTheme })
 
 function statusLine(branch: string, files: number, errors: number) {
   const parts = [
-    s.primary(` ${branch} `),
-    s.muted(` ${files} files`),
-    errors > 0 ? s.error(` ${errors} errors`) : s.success(" clean"),
+    s["fg-accent"](` ${branch} `),
+    s["fg-muted"](` ${files} files`),
+    errors > 0 ? s["fg-error"](` ${errors} errors`) : s["fg-success"](" clean"),
   ]
-  return parts.join(s.muted(" | "))
+  return parts.join(s["fg-muted"](" | "))
 }
 ```
 

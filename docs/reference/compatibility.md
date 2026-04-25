@@ -198,7 +198,7 @@ These features have no Ink/Chalk equivalent:
 | Spatial focus         | `<FocusScope>` with arrow keys        |
 | Mouse events          | `onClick`, `onMouseDown`, `onWheel`   |
 | Command system        | `withCommands()`                      |
-| Theme tokens          | `color="$primary"`                    |
+| Theme tokens          | `color="$fg-accent"` (Sterling)       |
 | TextArea              | Built-in multi-line editing           |
 | 45+ components        | VirtualList, Table, ModalDialog, etc. |
 
