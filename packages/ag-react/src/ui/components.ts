@@ -148,6 +148,10 @@ export {
 } from "./components/Typography"
 export type { TypographyProps } from "./components/Typography"
 
+// Prose — text-wrapping container primitive (encapsulates flexShrink + minWidth chain)
+export { Prose } from "./components/Prose"
+export type { ProseProps, ProseHandle } from "./components/Prose"
+
 // Heading (OSC 66 text sizing)
 export { Heading } from "./components/Heading"
 export type { HeadingProps, HeadingLevel } from "./components/Heading"

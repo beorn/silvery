@@ -198,6 +198,10 @@ export type { TypographyProps } from "./ui/components"
 export { Heading } from "./ui/components"
 export type { HeadingProps, HeadingLevel } from "./ui/components"
 
+// Prose — text-wrapping container primitive (encapsulates flexShrink + minWidth chain)
+export { Prose } from "./ui/components"
+export type { ProseProps, ProseHandle } from "./ui/components"
+
 // Focusable Controls
 export { Toggle } from "./ui/components"
 export type { ToggleProps } from "./ui/components"
