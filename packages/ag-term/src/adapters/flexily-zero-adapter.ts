@@ -349,8 +349,15 @@ export class FlexilyZeroLayoutEngine implements LayoutEngine {
     MEASURE_MODE_AT_MOST: MEASURE_MODE_AT_MOST as MeasureModeValue,
   }
 
+  /** Defaults preset captured in closure — passed to every Node.create(). */
+  private readonly _defaults: "css" | "yoga" | undefined
+
+  constructor(defaults?: "css" | "yoga") {
+    this._defaults = defaults
+  }
+
   createNode(): LayoutNode {
-    return new FlexilyZeroNodeAdapter(FlexilyNode.create())
+    return new FlexilyZeroNodeAdapter(FlexilyNode.create({ defaults: this._defaults }))
   }
 
   get constants(): LayoutConstants {
@@ -369,7 +376,16 @@ export class FlexilyZeroLayoutEngine implements LayoutEngine {
 /**
  * Create a Flexily zero-allocation layout engine.
  * Unlike Yoga, Flexily doesn't require async initialization.
+ *
+ * @param defaults - Optional defaults preset for all Nodes created by this engine.
+ *   - `"css"` — `flexShrink: 1`, `alignContent: stretch` (browser-correct,
+ *     multi-target). Recommended for silvery (web/canvas/multi-target).
+ *   - `"yoga"` — `flexShrink: 0`, `alignContent: flex-start` (Yoga-compat).
+ *   - `undefined` — uses flexily's `DEFAULT_PRESET` (currently `"yoga"`).
+ *
+ *   Pass `"css"` to opt silvery into CSS-correct defaults without relying on
+ *   the global flexily DEFAULT_PRESET. Closure-captured (no module state).
  */
-export function createFlexilyZeroEngine(): FlexilyZeroLayoutEngine {
-  return new FlexilyZeroLayoutEngine()
+export function createFlexilyZeroEngine(defaults?: "css" | "yoga"): FlexilyZeroLayoutEngine {
+  return new FlexilyZeroLayoutEngine(defaults)
 }

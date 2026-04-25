@@ -8,8 +8,7 @@
  *
  * ## Why this exists
  *
- * Flexily defaults `flex-shrink` to 0, and silvery's reconciler does not apply
- * CSS §4.5's "overflow:hidden ⇒ flex-shrink:1" inference rule. Without
+ * Today, flexily defaults `flexShrink: 0` (Yoga semantics). Without
  * `flexShrink={1} minWidth={0}` on every box in the chain from a fixed-width
  * ancestor down to a `<Text wrap="wrap">`, an intermediate row/column measures
  * at `sum(children.maxContent)` and the wrappable Text receives that wide
@@ -19,6 +18,23 @@
  * threading these props through `MarkdownView` / `DetectionText` / `AssistantBlock`.
  * `<Prose>` is the named primitive so consumers don't need to remember the
  * incantation.
+ *
+ * ## After Phase 6 flip (`km-silvery.flexshrink-default`)
+ *
+ * When silvery (or flexily globally) flips to the `"css"` preset
+ * (`flexShrink: 1` default), `<Prose>` becomes optional typography sugar
+ * rather than a wrap-enablement chain. Consumers can then write:
+ *
+ * ```tsx
+ * <Box flexDirection="column">
+ *   <MarkdownView source={text} />
+ * </Box>
+ * ```
+ *
+ * and the wrap will work — `flexShrink: 1` is the new default, no chain
+ * incantation required. `<Prose>` will still earn its place as a named
+ * primitive that signals "this is long-form text" intent, but it stops being
+ * load-bearing for wrap correctness.
  *
  * ## Usage
  *
