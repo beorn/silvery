@@ -59,7 +59,12 @@ export function ProgressBar({
   label,
   color,
 }: ProgressBarProps): React.ReactElement {
-  // Only use layout feedback when width isn't explicitly provided
+  // LAYOUT_READ_AT_RENDER: progress bar repeats fill/empty characters across
+  // a resolved cell width. Like Divider, the auto-fill path needs the
+  // post-layout width to compute the string content; flex props can't
+  // express "expand to fill, then build a character string from the resolved
+  // cell count" without a new fill primitive (out of scope for Phase 5).
+  // Consumers may pass `width` to bypass this read entirely.
   const layoutRect = useBoxRect()
   const contentWidth = widthProp ? 0 : layoutRect.width
   const [bouncePos, setBouncePos] = useState(0)

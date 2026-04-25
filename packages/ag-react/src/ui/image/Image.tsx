@@ -99,6 +99,12 @@ export function Image({
   fallback = "[image]",
   protocol: preferredProtocol = "auto",
 }: ImageProps): JSX.Element {
+  // LAYOUT_READ_AT_RENDER: image rendering writes Kitty/Sixel escape
+  // sequences with explicit pixel/cell dimensions. The encoded image must
+  // match the reserved cell area exactly, so `width`/`height` need to be
+  // resolved before encoding — flex auto-sizing isn't enough because the
+  // pixel-to-cell ratio depends on the actual cell count. Consumers may
+  // pass `width`/`height` to skip the auto-fill read.
   const boxRect = useBoxRect()
   const stdoutCtx = useContext(StdoutContext)
   const imageIdRef = useRef<number | null>(null)

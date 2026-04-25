@@ -111,12 +111,100 @@ function buildHookRegex(): RegExp {
 }
 
 /**
+ * Decide whether a hook invocation is the callback form (post-layout, no
+ * stale-read class) or the snapshot form (the target of this lint).
+ *
+ * The Layout hooks have two overloads:
+ *   const rect = useBoxRect()                  // snapshot — render-time read
+ *   useBoxRect((rect) => onLayout(rect))       // callback — fires post-layout
+ *
+ * The callback form is the (b) class in the use-layout-rect-callers audit
+ * and is genuinely correct — already fires after layout, no stale-frame
+ * issue. We must skip it to avoid false positives on legitimate post-layout
+ * registration sites (e.g. useGridPosition, position registry callbacks).
+ *
+ * Heuristic: scan from the open paren on the first match line forward; if
+ * the call has a non-empty argument list, treat it as the callback form.
+ * Multi-line invocations are followed by reading subsequent lines until the
+ * matching close paren is found. Whitespace and comments inside the parens
+ * are ignored. Empty parens (`useBoxRect()`) are the snapshot form — flag.
+ *
+ * Note: only `useBoxRect`, `useScrollRect`, `useScreenRect` have the
+ * callback overload. `useFocus`, `useSelection`, and `useCursor` are
+ * always snapshot reads and are flagged unconditionally.
+ */
+const CALLBACK_CAPABLE_HOOKS = new Set<TargetHook>([
+  "useBoxRect",
+  "useScrollRect",
+  "useScreenRect",
+])
+
+function isCallbackForm(
+  hook: TargetHook,
+  lines: string[],
+  lineIdx: number,
+  openParenCol: number,
+): boolean {
+  if (!CALLBACK_CAPABLE_HOOKS.has(hook)) return false
+
+  // openParenCol is 1-based column of the opening `(`; convert to 0-based
+  // string index. Walk forward across lines until we either find any
+  // non-whitespace, non-comment character (callback form) or close the
+  // parens (snapshot form).
+  let row = lineIdx
+  let col = openParenCol // 0-based; openParenCol passed already as the index after `(`
+  let depth = 1
+  let inBlockComment = false
+
+  while (row < lines.length) {
+    const line = lines[row]!
+    while (col < line.length) {
+      const ch = line.charAt(col)
+      const next = line.charAt(col + 1)
+
+      if (inBlockComment) {
+        if (ch === "*" && next === "/") {
+          inBlockComment = false
+          col += 2
+          continue
+        }
+        col += 1
+        continue
+      }
+
+      if (ch === "/" && next === "/") break // line comment — go to next line
+      if (ch === "/" && next === "*") {
+        inBlockComment = true
+        col += 2
+        continue
+      }
+      if (ch === " " || ch === "\t") {
+        col += 1
+        continue
+      }
+      if (ch === ")") {
+        depth -= 1
+        if (depth === 0) return false // empty parens — snapshot form
+        col += 1
+        continue
+      }
+      // Any other character means there's an argument → callback form.
+      return true
+    }
+    row += 1
+    col = 0
+  }
+  // Unbalanced parens (parse error) — be conservative, treat as snapshot.
+  return false
+}
+
+/**
  * Filter rules: skip lines that are obviously not render-time reads.
  *
  * - import statements
  * - export statements
  * - JSDoc / inline comments
- * - lines tagged with the allowlist marker
+ * - lines tagged with the allowlist marker (same-line trailing comment)
  * - destructure-from-other-namespace (e.g. `something.useFocus(`)
  */
 function shouldSkipLine(line: string): boolean {
@@ -129,6 +217,33 @@ function shouldSkipLine(line: string): boolean {
   // existing `*` prefix only catches multi-line continuations.
   if (trimmed.startsWith("/**") || trimmed.startsWith("/*")) return true
   if (line.includes(ALLOWLIST_MARKER)) return true
+  return false
+}
+
+/**
+ * Detect an allowlist marker on any line in the immediately-preceding
+ * comment block (mirrors `eslint-disable-next-line` ergonomics). Walks
+ * backward from `lineIdx - 1` while the line is a comment (`//`, `*`,
+ * `/**`, `/*`); stops at the first non-comment / blank line. Returns true
+ * if any of those comment lines contain ALLOWLIST_MARKER.
+ *
+ * This is what the inline annotations on the four (c) callers use —
+ * a multi-line `// LAYOUT_READ_AT_RENDER: <reason>` block sits directly
+ * above the hook call. Same-line trailing comments are still honored by
+ * `shouldSkipLine` above.
+ */
+function hasPrecedingAllowlistComment(lines: string[], lineIdx: number): boolean {
+  for (let i = lineIdx - 1; i >= 0; i--) {
+    const line = lines[i]!
+    const trimmed = line.trimStart()
+    const isComment =
+      trimmed.startsWith("//") ||
+      trimmed.startsWith("*") ||
+      trimmed.startsWith("/**") ||
+      trimmed.startsWith("/*")
+    if (!isComment) return false
+    if (line.includes(ALLOWLIST_MARKER)) return true
+  }
   return false
 }
 
@@ -199,12 +314,19 @@ function scanFile(absPath: string, repoRoot: string): Violation[] {
     let m: RegExpExecArray | null
     while ((m = re.exec(line)) !== null) {
       if (isMethodAccess(line, m.index)) continue
+      const hook = m[1] as TargetHook
+      // The regex includes the trailing `(`; lastIndex points just past it.
+      // Convert lastIndex (1 past the open paren in the same line) to a
+      // 0-based column inside the parens for the callback-form heuristic.
+      const openParenInner = re.lastIndex
+      if (isCallbackForm(hook, lines, i, openParenInner)) continue
+      if (hasPrecedingAllowlistComment(lines, i)) continue
       results.push({
         file: rel,
         line: i + 1,
         col: m.index + 1,
         text: line.trim(),
-        hook: m[1] as TargetHook,
+        hook,
       })
     }
   }

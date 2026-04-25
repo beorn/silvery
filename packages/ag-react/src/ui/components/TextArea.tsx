@@ -156,6 +156,13 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   const { focused } = useFocusable()
   const isActive = isActiveProp ?? (testID ? focused : true)
 
+  // LAYOUT_READ_AT_RENDER: parentWidth feeds the soft-wrap math in
+  // useTextArea (wrapWidth → wrappedLines). The wrap calculation produces
+  // visible-line geometry that the layout engine consumes downstream — text
+  // wrap can't be expressed as a flex prop because the wrap algorithm runs
+  // inside the React component, not the layout engine. This is the canonical
+  // (c) caller per docs/audit/use-layout-rect-callers.md: TextArea is the
+  // primary text-wrap primitive; everything else routes through it.
   const { width: parentWidth } = useBoxRect()
 
   // When borderStyle is set, TextArea renders a Box with border + paddingX.

@@ -355,6 +355,7 @@ export default withMermaid(
             { text: "TextArea Design", link: "/guide/textarea-design" },
             { text: "Kitty Protocol", link: "/guide/kitty-protocol" },
             { text: "Layout Engine", link: "/guide/layout-engine" },
+            { text: "Layout as Output", link: "/guide/layout-as-output" },
             { text: "Layout Coordinates", link: "/guide/layout-coordinates" },
             { text: "CSS Alignment", link: "/guide/css-alignment" },
             { text: "ANSI Layering", link: "/guide/ansi-layering" },

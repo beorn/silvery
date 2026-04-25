@@ -44,6 +44,11 @@ export function Divider({
   title,
   width: widthProp,
 }: DividerProps): React.ReactElement {
+  // LAYOUT_READ_AT_RENDER: divider builds a string of repeated fill characters,
+  // which requires the parent's resolved cell width at render time. Without a
+  // dedicated "fill remaining row" layout primitive, this is genuinely (c) per
+  // the use-layout-rect-callers audit — the consumer may pass `width` to opt
+  // out, but the auto-fill path needs the post-layout width signal.
   const { width: contentWidth } = useBoxRect()
   const totalWidth = widthProp ?? (contentWidth > 0 ? contentWidth : DEFAULT_WIDTH)
 
