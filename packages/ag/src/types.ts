@@ -55,42 +55,56 @@ export function rectEqual(a: Rect | null, b: Rect | null): boolean {
 }
 
 // ============================================================================
-// Cursor Types (layout output — peer of boxRect/scrollRect/screenRect)
+// Caret Types (layout output — peer of boxRect/scrollRect/screenRect)
 // ============================================================================
 
 /**
- * Terminal cursor shape (DECSCUSR). Mirrors `@silvery/ag-term/output#CursorShape`
- * but lives at the framework-agnostic layer so AgNode props don't depend on
- * the terminal package.
+ * Terminal cursor shape (DECSCUSR).
+ *
+ * @deprecated Target-specific. Lives in core only as a back-compat alias for the
+ * `CursorOffset.shape` deprecation cycle (see {@link CursorOffset.shape}). The
+ * canonical home is `@silvery/ag-term/output#CursorShape`. Cross-target
+ * renderers (canvas / DOM) must not branch on this enum — instead, they read
+ * the focused-editable bit from `LayoutSignals` and map to whatever caret
+ * concept their target supports. Removed in the next cycle.
  *
  * Lower-case names match the DECSCUSR vocabulary: `block` (steady #2),
- * `underline` (steady #4), `bar` (steady #6). The blinking variants are
- * controlled by the terminal default — components only declare the shape.
+ * `underline` (steady #4), `bar` (steady #6).
  */
 export type CursorShape = "block" | "underline" | "bar"
 
 /**
- * Component-relative cursor position declared as a Box prop.
+ * Component-relative caret position declared as a Box prop.
  *
  * When set on a Box, the layout phase computes the absolute terminal
  * coordinates by adding the parent's `scrollRect` + the box's border + padding
  * + this offset. The result is exposed via `LayoutSignals.cursorRect` and read
- * by the scheduler's cursor-suffix emission.
+ * by the scheduler's cursor-suffix emission. The caret naming reflects the
+ * cross-target nature: in the terminal it manifests as the hardware cursor,
+ * but on canvas/DOM targets it's the text-input caret rectangle.
  *
- * This is the "cursor as layout output" path — it bypasses the React effect
+ * This is the "caret as layout output" path — it bypasses the React effect
  * chain entirely (`useCursor` → `useScrollRect` → `setCursorState`) so the
- * very first frame after mount emits the correct cursor positioning ANSI.
- * See bead `km-silvery.view-as-layout-output` (Phase 2) and
- * `km-silvercode.cursor-startup-position`.
+ * very first frame after mount emits the correct caret positioning ANSI.
+ * See bead `km-silvery.view-as-layout-output` (Phase 2),
+ * `km-silvery.cursor-invariants`, and `km-silvercode.cursor-startup-position`.
  */
 export interface CursorOffset {
   /** Column offset within the box's content area (0-indexed) */
   col: number
   /** Row offset within the box's content area (0-indexed) */
   row: number
-  /** Whether the cursor should be visible. Default: true */
+  /** Whether the caret should be visible. Default: true */
   visible?: boolean
-  /** Terminal cursor shape (DECSCUSR). Default: terminal default */
+  /**
+   * Terminal cursor shape (DECSCUSR).
+   *
+   * @deprecated Target-specific — DO NOT use in new code. The terminal layer
+   * (`@silvery/ag-term`) derives the shape from focus + editable state at
+   * scheduler/output time via the caretStyle map. Cross-target consumers
+   * (canvas / DOM) ignore this field. Accepted for one cycle for back-compat;
+   * removed in the next major. See `km-silvery.cursor-invariants` invariant 6.
+   */
   shape?: CursorShape
 }
 
@@ -433,20 +447,27 @@ export interface BoxProps
   overflowIndicator?: boolean
 
   /**
-   * Component-relative cursor position. When set, the layout phase computes
+   * Component-relative caret position. When set, the layout phase computes
    * absolute terminal coordinates (border + padding + offset relative to the
    * box's `scrollRect`) and writes them to `LayoutSignals.cursorRect`. The
-   * scheduler reads this value to emit cursor positioning ANSI on the very
+   * scheduler reads this value to emit caret positioning ANSI on the very
    * first frame after mount — bypassing the React effect chain that
    * `useCursor` relies on.
    *
-   * This is the "cursor as layout output" path. The legacy `useCursor` hook
+   * This is the "caret as layout output" path. The legacy `useCursor` hook
    * remains as a back-compat wrapper but its signal-effect bridge is unsafe
    * across conditional mounts (see `km-silvercode.cursor-startup-position`).
    *
-   * Last-writer-wins across nodes: terminals have one hardware cursor, so
-   * setting `visible: true` on multiple nodes resolves to the deepest visible
-   * cursor in tree order.
+   * **Precedence across nodes** (locked by `km-silvery.cursor-invariants` #1):
+   * 1. Focused-editable wins — a Box that is `focused` AND has visible
+   *    `cursorOffset` always beats a non-focused declarer.
+   * 2. Otherwise deepest-in-paint-order (post-order tree walk) wins.
+   * 3. Otherwise null.
+   *
+   * **Clipping** (invariant #4): if the caret falls outside the nearest
+   * `overflow="scroll"` / `"hidden"` ancestor's visible region, it is hidden
+   * (no caret ANSI emitted, signal returns null). Caret rect at the exact
+   * clip edge is treated as visible.
    */
   cursorOffset?: CursorOffset
 

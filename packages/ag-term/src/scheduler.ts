@@ -28,6 +28,7 @@ import {
   type CursorAccessors,
 } from "@silvery/ag-react/hooks/useCursor"
 import { findActiveCursorRect, type CursorRect } from "@silvery/ag/layout-signals"
+import { findActiveCursorNode, resolveCaretStyle } from "./caret-style"
 import { copyToClipboard as copyToClipboardImpl } from "./clipboard"
 import { ANSI, notify as notifyTerminal, setCursorStyle, resetCursorStyle } from "./output"
 import type { PipelineConfig } from "./pipeline"
@@ -640,11 +641,17 @@ export class RenderScheduler {
       // Cursor source priority — see resolveActiveCursor():
       //   1. Layout-output cursor (BoxProps.cursorOffset → cursorRect signal)
       //   2. Cursor store (legacy useCursor() / Ink-compat path)
+      //
+      // Caret shape (DECSCUSR) is resolved at the terminal layer via
+      // `resolveCaretStyle` — the framework-agnostic core no longer carries
+      // a target-specific enum. See `km-silvery.cursor-invariants` invariant 6.
       let cursorSuffix = ""
       if (this.nonTTYMode === "tty") {
         const cursor = this.resolveActiveCursor()
         if (cursor && cursor.visible) {
-          const shapeSeq = cursor.shape ? setCursorStyle(cursor.shape) : resetCursorStyle()
+          const activeNode = findActiveCursorNode(this.root)
+          const resolvedShape = resolveCaretStyle(activeNode, cursor.shape)
+          const shapeSeq = resolvedShape ? setCursorStyle(resolvedShape) : resetCursorStyle()
           cursorSuffix = ANSI.moveCursor(cursor.x, cursor.y) + shapeSeq + ANSI.CURSOR_SHOW
         } else {
           cursorSuffix = ANSI.CURSOR_HIDE

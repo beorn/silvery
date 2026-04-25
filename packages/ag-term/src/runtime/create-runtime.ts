@@ -26,6 +26,7 @@ import { takeUntil } from "@silvery/create/streams"
 import { diff } from "./diff"
 import type { Buffer, Dims, Event, Runtime, RuntimeOptions } from "./types"
 import { findActiveCursorRect } from "@silvery/ag/layout-signals"
+import { findActiveCursorNode, resolveCaretStyle } from "../caret-style"
 import { ANSI, setCursorStyle, resetCursorStyle } from "../output"
 
 // =============================================================================
@@ -286,7 +287,11 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       if (mode === "fullscreen") {
         const cursor = findActiveCursorRect(buffer.nodes)
         if (cursor && cursor.visible) {
-          const shapeSeq = cursor.shape ? setCursorStyle(cursor.shape) : resetCursorStyle()
+          // Caret shape is target-specific — derive at the terminal layer
+          // (invariant 6 of `km-silvery.cursor-invariants`).
+          const activeNode = findActiveCursorNode(buffer.nodes)
+          const resolvedShape = resolveCaretStyle(activeNode, cursor.shape)
+          const shapeSeq = resolvedShape ? setCursorStyle(resolvedShape) : resetCursorStyle()
           patch += ANSI.moveCursor(cursor.x, cursor.y) + shapeSeq + ANSI.CURSOR_SHOW
         } else {
           patch += ANSI.CURSOR_HIDE

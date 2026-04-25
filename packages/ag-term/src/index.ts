@@ -127,6 +127,12 @@ export {
 export type { CursorShape, MouseCursorShape } from "./output"
 
 // =============================================================================
+// Caret Style — target-specific cursor shape mapping (invariant 6)
+// =============================================================================
+
+export { resolveCaretStyle, findActiveCursorNode } from "./caret-style"
+
+// =============================================================================
 // Bracketed Paste
 // =============================================================================
 
