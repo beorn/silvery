@@ -129,8 +129,28 @@ export interface ListViewProps<T> {
   /** Array of items to render */
   items: T[]
 
-  /** Height of the viewport in rows */
-  height: number
+  /**
+   * Height of the viewport in rows.
+   *
+   * When provided: ListView pixel-virtualises against this height — measures
+   * each item, computes a precise visible window, and renders only those
+   * items (plus `overscan` slack on each side).
+   *
+   * When omitted: ListView is **height-independent**. It renders as
+   * `flex-grow=1 overflow=scroll` and uses **index-window virtualisation**:
+   * a window of `[cursor - overscan, cursor + overscan]` items renders, and
+   * the parent's `overflow=scroll` clips what doesn't fit. No pixel-windowing
+   * means no `useBoxRect`-derived first-frame zero-read class — wrap and
+   * layout settle on the first paint.
+   *
+   * Most lists are smaller than `2 × overscan` items and effectively render
+   * unvirtualised in this mode. The trade-off: an arbitrarily long list with
+   * the cursor far from a hot region renders up to `2 × overscan + 1` items
+   * regardless of how many actually fit in the viewport. Default overscan is
+   * 50, so the upper bound is ~101 rendered items — well within React + the
+   * pipeline's comfort zone.
+   */
+  height?: number
 
   /** Estimated height of each item in rows (fixed or per-index function). Default: 1 */
   estimateHeight?: number | ((index: number) => number)
@@ -240,6 +260,14 @@ export interface ListViewHandle {
 
 const DEFAULT_ESTIMATE_HEIGHT = 1
 const DEFAULT_OVERSCAN = 5
+/**
+ * Index-window overscan — used in height-independent mode (`height` prop
+ * omitted). Generously sized so that most lists render every item and the
+ * "virtualised" branch never produces a user-visible cliff. The trade-off
+ * is a ~101-item upper bound on simultaneously-rendered items in this
+ * mode, which is well within React + pipeline budget.
+ */
+const DEFAULT_INDEX_WINDOW_OVERSCAN = 50
 const DEFAULT_MAX_RENDERED = 100
 const DEFAULT_SCROLL_PADDING = 2
 
@@ -375,7 +403,7 @@ function ListViewInner<T>(
     estimateHeight = DEFAULT_ESTIMATE_HEIGHT,
     renderItem,
     scrollTo: scrollToProp,
-    overscan = DEFAULT_OVERSCAN,
+    overscan: overscanProp,
     maxRendered = DEFAULT_MAX_RENDERED,
     scrollPadding = DEFAULT_SCROLL_PADDING,
     overflowIndicator,
@@ -400,6 +428,20 @@ function ListViewInner<T>(
   }: ListViewProps<T>,
   ref: React.ForwardedRef<ListViewHandle>,
 ): React.ReactElement {
+  // ── Height-independent mode (Phase 3 of km-silvery.view-as-layout-output) ──
+  //
+  // When `height` is omitted, ListView lets flex propagate the actual
+  // viewport height (parent owns the constraint via `flex-grow=1
+  // overflow=scroll`) and switches to **index-window virtualisation** —
+  // render `[cursor - overscan, cursor + overscan + 1)` items, no
+  // pixel-windowing, no first-render zero-read class.
+  //
+  // The pixel-mode path (`height` provided) is unchanged — existing tests
+  // and callers that still want a fixed-height viewport keep working.
+  const isHeightIndependent = height === undefined
+  const overscan =
+    overscanProp ?? (isHeightIndependent ? DEFAULT_INDEX_WINDOW_OVERSCAN : DEFAULT_OVERSCAN)
+
   // ── Term context for cache capture width ─────────────────────────
   const term = useContext(TermContext)
 
@@ -913,7 +955,16 @@ function ListViewInner<T>(
   const searchActiveRef = useRef(false)
   searchActiveRef.current = searchCtx?.isActive ?? false
 
-  // Keyboard input for nav mode
+  // Keyboard input for nav mode.
+  //
+  // PageUp/PageDown and Ctrl-D/Ctrl-U use a "page step" — half the visible
+  // viewport when `height` is known. In height-independent mode (no
+  // `height`), the visible row count isn't measurable from inside ListView,
+  // so we fall back to half the index-window overscan as a sensible page
+  // step (≈ 25 items by default, comparable to a typical viewport).
+  const pageStep = isHeightIndependent
+    ? Math.max(1, Math.floor(overscan / 2))
+    : Math.max(1, Math.floor((height as number) / 2))
   useInput(
     (input, key) => {
       if (!nav) return
@@ -922,8 +973,8 @@ function ListViewInner<T>(
       else if (input === "k" || key.upArrow) moveTo(cur - 1)
       else if (input === "G" || key.end) moveTo(items.length - 1)
       else if (key.home) moveTo(0)
-      else if (key.pageDown || (input === "d" && key.ctrl)) moveTo(cur + Math.floor(height / 2))
-      else if (key.pageUp || (input === "u" && key.ctrl)) moveTo(cur - Math.floor(height / 2))
+      else if (key.pageDown || (input === "d" && key.ctrl)) moveTo(cur + pageStep)
+      else if (key.pageUp || (input === "u" && key.ctrl)) moveTo(cur - pageStep)
       else if (key.return && !searchActiveRef.current) onSelect?.(cur)
     },
     { isActive: nav && active !== false },
@@ -1103,6 +1154,22 @@ function ListViewInner<T>(
   // correctly map `scrollState.lastVisibleChild` back to a virtual item.
   const trailingExtraChildren = listFooter != null && listFooter !== false ? 1 : 0
 
+  // In height-independent mode we still call `useVirtualizer` so that the
+  // measurement cache, `scrollToItem`, and the cache/search pipelines keep
+  // working — but we override its window with our own index-window below
+  // and never render leading/trailing pixel placeholders. Pass a synthetic
+  // viewport height that's "tall enough" to cover the index window so the
+  // virtualizer's bookkeeping doesn't think nothing fits.
+  const virtualizerEstimateAsNumber =
+    typeof adjustedEstimateHeight === "number"
+      ? adjustedEstimateHeight
+      : adjustedEstimateHeight(0)
+  const syntheticViewportHeight =
+    (overscan * 2 + 1) * (Math.max(1, virtualizerEstimateAsNumber) + gap)
+  const virtualizerViewportHeight = isHeightIndependent
+    ? syntheticViewportHeight
+    : (height as number)
+
   const {
     range,
     leadingHeight,
@@ -1116,7 +1183,7 @@ function ListViewInner<T>(
   } = useVirtualizer({
     count: activeItems.length,
     estimateHeight: adjustedEstimateHeight,
-    viewportHeight: height,
+    viewportHeight: virtualizerViewportHeight,
     scrollTo: adjustedScrollTo,
     scrollPadding,
     overscan,
@@ -1128,6 +1195,28 @@ function ListViewInner<T>(
     containerNode,
     trailingExtraChildren,
   })
+
+  // Index-window override for height-independent mode: render
+  // `[cursor - overscan, cursor + overscan + 1)` items. Leading/trailing
+  // placeholders are zero so flex propagates the natural content height
+  // and the parent's `overflow=scroll` clips. Unlike pixel virtualisation,
+  // this never has a first-render zero-read and is robust to wrapped
+  // content of any height.
+  const cursorAnchor = Math.max(0, Math.min(activeItems.length - 1, scrollOffset))
+  const indexWindowStart = isHeightIndependent
+    ? Math.max(0, cursorAnchor - overscan)
+    : range.startIndex
+  const indexWindowEnd = isHeightIndependent
+    ? Math.min(activeItems.length, cursorAnchor + overscan + 1)
+    : range.endIndex
+  const effectiveStartIndex = indexWindowStart
+  const effectiveEndIndex = indexWindowEnd
+  const effectiveLeadingHeight = isHeightIndependent ? 0 : leadingHeight
+  const effectiveTrailingHeight = isHeightIndependent ? 0 : trailingHeight
+  const effectiveHiddenBefore = isHeightIndependent ? indexWindowStart : hiddenBefore
+  const effectiveHiddenAfter = isHeightIndependent
+    ? Math.max(0, activeItems.length - indexWindowEnd)
+    : hiddenAfter
 
   // ── Surface / search registration ────────────────────────────────
   const textSurfaceRef = useRef<TextSurface | null>(null)
@@ -1279,11 +1368,15 @@ function ListViewInner<T>(
     return searchCtx.registerSearchable(searchableId, searchable)
   }, [searchConfig, searchCtx, searchableId])
 
-  // Compute composed viewport when history is active
+  // Compute composed viewport when history is active. In height-independent
+  // mode the synthetic viewport height is used — the consumer of
+  // `composedViewport` is the (currently unused, ref-only) virtual
+  // scrollback path; passing `virtualizerViewportHeight` keeps it
+  // internally consistent with `useVirtualizer` above.
   if (cacheMode === "virtual" && cacheBuffer) {
     composedViewportRef.current = composeViewport({
       history: cacheBuffer,
-      viewportHeight: height,
+      viewportHeight: virtualizerViewportHeight,
       scrollOffset: 0, // At tail by default; scroll offset would come from external state
     })
   }
@@ -1317,7 +1410,18 @@ function ListViewInner<T>(
 
   // ── Empty state ─────────────────────────────────────────────────
   if (activeItems.length === 0) {
-    return (
+    return isHeightIndependent ? (
+      <Box
+        flexDirection="column"
+        flexGrow={1}
+        flexShrink={1}
+        minWidth={0}
+        minHeight={0}
+        width={width}
+      >
+        {/* Empty - nothing to render */}
+      </Box>
+    ) : (
       <Box flexDirection="column" height={height} width={width}>
         {/* Empty - nothing to render */}
       </Box>
@@ -1325,7 +1429,8 @@ function ListViewInner<T>(
   }
 
   // ── Render ──────────────────────────────────────────────────────
-  const { startIndex, endIndex } = range
+  const startIndex = effectiveStartIndex
+  const endIndex = effectiveEndIndex
   const visibleItems = activeItems.slice(startIndex, endIndex)
 
   // STRICT invariant: virtualizer's leadingHeight must equal
@@ -1343,7 +1448,11 @@ function ListViewInner<T>(
   // form only holds when overscan doesn't pull `start` back (scrollOffset=0 or
   // viewport at count-end). We instead check the always-true internal
   // consistency invariant — any violation points to a virtualizer math bug.
-  if (process?.env?.SILVERY_STRICT) {
+  // STRICT invariant only applies in pixel-virtualisation mode. In
+  // height-independent mode we explicitly override `leadingHeight` to 0 and
+  // window items by index — the placeholder math the invariant guards
+  // doesn't run.
+  if (!isHeightIndependent && process?.env?.SILVERY_STRICT) {
     const strict = process.env.SILVERY_STRICT
     const shouldThrow = strict === "2"
     const expectedLeading = sumHeights(
@@ -1372,7 +1481,7 @@ function ListViewInner<T>(
   // viewport directly in row space. If we kept passing scrollTo too, the
   // layout phase's edge-based scroll would snap viewport back to the
   // cursor whenever the cursor drifted off-screen, undoing the wheel.
-  const hasTopPlaceholder = leadingHeight > 0
+  const hasTopPlaceholder = effectiveLeadingHeight > 0
   const currentScrollTarget =
     adjustedScrollTo !== undefined
       ? Math.max(0, Math.min(adjustedScrollTo, activeItems.length - 1))
@@ -1407,7 +1516,14 @@ function ListViewInner<T>(
   // offset above the first visible item — this is exactly what a browser
   // scrollbar uses, so tall items before the viewport correctly push the
   // thumb further down than short ones.
-  const trackHeight = Math.max(1, height)
+  // Scrollbar geometry uses the explicit `height` prop. In
+  // height-independent mode the actual rendered height is decided by the
+  // parent flex container (and only known after layout) — we don't render a
+  // scrollbar overlay here. Use a synthetic non-zero `trackHeight` so the
+  // math below stays divide-safe; `showScrollbar` is hard-gated to false
+  // for the height-independent path so nothing of this geometry actually
+  // renders.
+  const trackHeight = Math.max(1, height ?? 1)
   // Stable total-content height for THUMB SIZE: item count × estimate
   // (ignores the measurement cache) — TanStack Virtual / react-window
   // convention. A measurement-sum-based total would shrink/grow the thumb
@@ -1471,14 +1587,34 @@ function ListViewInner<T>(
   // unused here because showScrollbar is only true after wheel activity,
   // during which scrollbarFrac is always fresh.
   // effectiveRowsAbove is consumed below by the edge-bump render gate.
-  const showScrollbar = isScrolling && thumbHeight > 0 && thumbHeight < trackHeight
+  // Scrollbar overlay is gated on a known viewport height. In
+  // height-independent mode we skip it — the parent's flex layout owns the
+  // viewport size and a future iteration could subscribe to layout-signals
+  // for a flex-aware scrollbar.
+  const showScrollbar =
+    !isHeightIndependent && isScrolling && thumbHeight > 0 && thumbHeight < trackHeight
+
+  // Outer wrapper + inner scroll container.
+  //
+  // - Pixel-virtualisation mode (height set): outer + inner both pin
+  //   `height={height}`, exactly the prior behaviour.
+  // - Height-independent mode (height undefined): outer + inner both
+  //   `flex-grow=1 flex-shrink=1 minHeight=0` so flex propagates the
+  //   parent's available height; inner keeps `overflow="scroll"` so
+  //   content beyond the viewport clips naturally.
+  const outerSizing = isHeightIndependent
+    ? { flexGrow: 1, flexShrink: 1, minWidth: 0, minHeight: 0 }
+    : { height }
+  const innerSizing = isHeightIndependent
+    ? { flexGrow: 1, flexShrink: 1, minWidth: 0, minHeight: 0 }
+    : { height }
 
   return (
-    <Box position="relative" flexDirection="column" height={height} width={width}>
+    <Box position="relative" flexDirection="column" {...outerSizing} width={width}>
     <Box
       ref={boxHandleRef}
       flexDirection="column"
-      height={height}
+      {...innerSizing}
       width={width}
       overflow="scroll"
       scrollTo={boxScrollTo}
@@ -1494,8 +1630,12 @@ function ListViewInner<T>(
        * `hiddenAbove` is incremented by that count (→ `▲N` shows real items).
        * Without this, the ▲N indicator would always say `1` while many items
        * are actually above the render window. */}
-      {leadingHeight > 0 && (
-        <Box height={leadingHeight} flexShrink={0} representsItems={hiddenBefore} />
+      {effectiveLeadingHeight > 0 && (
+        <Box
+          height={effectiveLeadingHeight}
+          flexShrink={0}
+          representsItems={effectiveHiddenBefore}
+        />
       )}
 
       {/* Render visible items with height measurement */}
@@ -1578,8 +1718,12 @@ function ListViewInner<T>(
        * See leading placeholder above for why `representsItems` is set — the
        * trailing version covers `hiddenAfter` (= count - endIndex) items that
        * are beyond the render window on the bottom side. */}
-      {trailingHeight > 0 && (
-        <Box height={trailingHeight} flexShrink={0} representsItems={hiddenAfter} />
+      {effectiveTrailingHeight > 0 && (
+        <Box
+          height={effectiveTrailingHeight}
+          flexShrink={0}
+          representsItems={effectiveHiddenAfter}
+        />
       )}
     </Box>
     {/* Scrollbar overlay — absolute-positioned on the right edge so it
@@ -1679,16 +1823,18 @@ function ListViewInner<T>(
       * hides it the instant the user scrolls away, even if bumpedEdge is
       * still non-null. Rendered OUTSIDE the scrollbar branch so keyboard
       * nav (which doesn't flip isScrolling) still shows the bump. */}
-    {bumpedEdge === "top" && effectiveRowsAbove <= 0 && (
+    {!isHeightIndependent && bumpedEdge === "top" && effectiveRowsAbove <= 0 && (
       <Box position="absolute" top={0} right={1} flexDirection="row">
         <Text color="$muted">▀▀▀▀▀▀▀▀▀▀</Text>
       </Box>
     )}
-    {bumpedEdge === "bottom" && effectiveRowsAbove >= scrollableRows && (
-      <Box position="absolute" top={trackHeight - 1} right={1} flexDirection="row">
-        <Text color="$muted">▄▄▄▄▄▄▄▄▄▄</Text>
-      </Box>
-    )}
+    {!isHeightIndependent &&
+      bumpedEdge === "bottom" &&
+      effectiveRowsAbove >= scrollableRows && (
+        <Box position="absolute" top={trackHeight - 1} right={1} flexDirection="row">
+          <Text color="$muted">▄▄▄▄▄▄▄▄▄▄</Text>
+        </Box>
+      )}
     </Box>
   )
 }
