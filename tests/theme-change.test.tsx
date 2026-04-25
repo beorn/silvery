@@ -14,32 +14,27 @@ import { Box, Text } from "@silvery/ag-react"
 import { ansi16DarkTheme, ansi16LightTheme, type Theme } from "@silvery/ansi"
 
 // Two themes with clearly different accent/muted colors for assertions.
-// Tests below use Sterling flat tokens in JSX; the inlineSterlingTokens shim
-// populates Sterling keys from the legacy palette by default, but explicit
-// overrides on the Sterling keys win — that's what these themes pin.
+// Tests below use Sterling flat tokens in JSX; pinning the flat keys is what
+// drives the visible difference. Spread `as Record<string, unknown>` because
+// Sterling Theme's nested role objects (`muted: MutedRole`, etc.) make a
+// plain-object literal too restrictive for partial overrides.
 const themeA = {
   ...ansi16DarkTheme,
   name: "theme-a",
-  primary: "#ff0000", // legacy alias
-  primaryfg: "#ffffff",
-  muted: "#888888",
-  "bg-accent": "#ff0000", // red — Sterling flat token (added at runtime via inlineSterlingTokens)
+  "bg-accent": "#ff0000", // red
   "fg-on-accent": "#ffffff",
   "fg-accent": "#ff0000",
   "fg-muted": "#888888",
-} satisfies Theme & Record<string, unknown>
+} as unknown as Theme
 
 const themeB = {
   ...ansi16DarkTheme,
   name: "theme-b",
-  primary: "#00ff00", // legacy alias
-  primaryfg: "#000000",
-  muted: "#cccccc",
-  "bg-accent": "#00ff00", // green — Sterling flat token (added at runtime via inlineSterlingTokens)
+  "bg-accent": "#00ff00", // green
   "fg-on-accent": "#000000",
   "fg-accent": "#00ff00",
   "fg-muted": "#cccccc",
-} satisfies Theme & Record<string, unknown>
+} as unknown as Theme
 
 describe("theme change rendering", () => {
   test("theme prop change marks bgDirty and re-renders affected node", () => {

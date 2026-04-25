@@ -50,18 +50,31 @@ function tok(theme: Theme, key: string): string {
 }
 
 /**
- * Assert accent-family contrast using legacy Theme fields (`theme.primary`,
- * `theme.primaryfg`, `theme.accent`). Used for tests that exercise
- * `quickTheme` / `createTheme` / `autoGenerateTheme` — these return plain
- * `deriveTheme` output without Sterling flat keys baked in.
- *
- * Legacy field migration to Sterling flat keys is tracked under
- * `km-silvery.sterling-2e-interior-migration` Phase D (builder inlining).
+ * Assert accent-family contrast using Sterling flat tokens (`fg-accent`,
+ * `fg-on-accent`, `bg-accent`). Sterling 0.20.0 made these the canonical
+ * surface; reads via bracket access since flat keys contain hyphens.
  */
-function assertLegacyAccentContrast(theme: Theme) {
-  expect(ratio(theme.primary, theme.bg)).toBeGreaterThanOrEqual(AA - 0.01)
-  expect(ratio(theme.primaryfg, theme.primary)).toBeGreaterThanOrEqual(AA - 0.01)
-  expect(ratio(theme.accent, theme.bg)).toBeGreaterThanOrEqual(AA - 0.01)
+function assertAccentContrast(theme: Theme) {
+  const t = theme as unknown as Record<string, string>
+  // fg-accent (text) on bg (canvas)
+  expect(ratio(t["fg-accent"]!, theme.bg)).toBeGreaterThanOrEqual(AA - 0.01)
+  // fg-on-accent (text-on-fill) on bg-accent (filled accent surface)
+  expect(ratio(t["fg-on-accent"]!, t["bg-accent"]!)).toBeGreaterThanOrEqual(AA - 0.01)
+}
+
+/** Resolve `theme["fg-accent"]` via bracket access (Sterling flat key). */
+function fgAccent(theme: Theme): string {
+  return (theme as unknown as Record<string, string>)["fg-accent"]!
+}
+
+/** Resolve `theme["bg-accent"]` via bracket access (Sterling flat key). */
+function bgAccent(theme: Theme): string {
+  return (theme as unknown as Record<string, string>)["bg-accent"]!
+}
+
+/** Resolve `theme["fg-on-accent"]` via bracket access (Sterling flat key). */
+function fgOnAccent(theme: Theme): string {
+  return (theme as unknown as Record<string, string>)["fg-on-accent"]!
 }
 
 /**
@@ -133,49 +146,47 @@ describe("checkContrast", () => {
 
 // ── Semantic accent propagation ──────────────────────────────────────
 //
-// These tests exercise the legacy Theme field surface (`theme.primary`,
-// `theme.primaryfg`, `theme.accent`) because the builders they call
-// (`quickTheme`, `createTheme`, `autoGenerateTheme`) return plain
-// `deriveTheme` output without Sterling flat tokens inlined.
-//
-// Migration to Sterling-inlined builder output is tracked under
-// `km-silvery.sterling-2e-interior-migration` Phase D.
+// These tests exercise the canonical Sterling accent surface
+// (`fg-accent` / `fg-on-accent` / `bg-accent`) — the builders they call
+// (`quickTheme`, `createTheme`, `autoGenerateTheme`) flow through
+// `deriveTheme` + `inlineSterlingTokens` so the flat keys are present.
 
 describe("semantic accent propagation", () => {
   it("quickTheme('blue') uses blue as accent, not yellow", () => {
     const theme = quickTheme("blue", "dark")
     // Should be blue-ish, not yellow-ish
-    const hsl = checkContrast(theme.primary, "#000000") // just to confirm it's valid
+    const accent = fgAccent(theme)
+    const hsl = checkContrast(accent, "#000000") // just to confirm it's valid
     expect(hsl).not.toBeNull()
-    // Blue primary should NOT be the default yellow (#EBCB8B)
-    expect(theme.primary).not.toBe("#EBCB8B")
-    assertLegacyAccentContrast(theme)
+    // Blue accent should NOT be the default yellow (#EBCB8B)
+    expect(accent).not.toBe("#EBCB8B")
+    assertAccentContrast(theme)
   })
 
   it("quickTheme('red') uses red as accent", () => {
     const theme = quickTheme("red", "dark")
-    assertLegacyAccentContrast(theme)
+    assertAccentContrast(theme)
   })
 
   it("createTheme().primary('#FF0000').build() uses red accent", () => {
     const theme = createTheme().primary("#FF0000").dark().build()
-    // Primary should be the input color (or contrast-adjusted version of it)
+    // Accent should be the input color (or contrast-adjusted version of it)
     // It should NOT be yellow
-    expect(theme.primary).not.toBe("#EBCB8B")
-    assertLegacyAccentContrast(theme)
+    expect(fgAccent(theme)).not.toBe("#EBCB8B")
+    assertAccentContrast(theme)
   })
 
   it("createTheme().preset('nord').primary('#A3BE8C').build() uses green accent", () => {
     const theme = createTheme().preset("nord").primary("#A3BE8C").build()
     // Should use the green override, not Nord's default yellow
-    expect(theme.primary).not.toBe("#EBCB8B")
-    assertLegacyAccentContrast(theme)
+    expect(fgAccent(theme)).not.toBe("#EBCB8B")
+    assertAccentContrast(theme)
   })
 
   it("autoGenerateTheme preserves accent through derivation", () => {
     const theme = autoGenerateTheme("#5E81AC", "dark")
     // Accent should be contrast-adjusted version of input blue
-    assertLegacyAccentContrast(theme)
+    assertAccentContrast(theme)
   })
 
   it("autoGenerateTheme meets contrast guarantees", () => {
@@ -183,8 +194,8 @@ describe("semantic accent propagation", () => {
     for (const color of ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"]) {
       for (const mode of ["dark", "light"] as const) {
         const theme = autoGenerateTheme(color, mode)
-        expect(ratio(theme.primary, theme.bg)).toBeGreaterThanOrEqual(AA - 0.01)
-        expect(ratio(theme.primaryfg, theme.primary)).toBeGreaterThanOrEqual(AA - 0.01)
+        expect(ratio(fgAccent(theme), theme.bg)).toBeGreaterThanOrEqual(AA - 0.01)
+        expect(ratio(fgOnAccent(theme), bgAccent(theme))).toBeGreaterThanOrEqual(AA - 0.01)
       }
     }
   })
@@ -195,8 +206,8 @@ describe("semantic accent propagation", () => {
     // It should be derived from p.yellow (Nord yellow = #EBCB8B)
     // The exact color may be adjusted by ensureContrast, but it should
     // be yellow-ish, not blue or red
-    expect(nord.primary).toBeDefined()
-    assertLegacyAccentContrast(nord)
+    expect(fgAccent(nord)).toBeDefined()
+    assertAccentContrast(nord)
   })
 })
 
