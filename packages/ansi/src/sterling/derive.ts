@@ -42,12 +42,13 @@ import type {
   DeepPartial,
   DeriveOptions,
   DerivationStep,
-  InteractiveRole,
+  DisabledRole,
   InverseRole,
   LinkRole,
   MutedRole,
   Roles,
   SelectedRole,
+  StatusRole,
   SurfaceRole,
   Theme,
   Variant,
@@ -675,6 +676,48 @@ export function deriveRoles(
   )
   const link: LinkRole = { fg: linkFg }
 
+  // ── Disabled ─────────────────────────────────────────────────────────────
+  //
+  // Composite-based derivation: simulate alpha-over-surface, baked to a solid
+  // hex. Disabled is a NEUTRAL family — sourced from the base interface
+  // tokens (`fg`, `border-default`) rather than from accent/status, so a
+  // disabled control reads as "absent / inactive" not as a muted error.
+  //
+  //   fg-disabled    = composite(fg              @ 0.38, bg-surface-default)
+  //                    clamped to ≥3:1 contrast vs bg-surface-default
+  //   border-disabled = composite(border-default @ 0.24, bg-surface-default)
+  //   bg-disabled    = composite(border-default @ 0.12, bg-surface-default)
+  //
+  // The 3:1 floor on fg-disabled matches WCAG 1.4.3 Level AA-Large for
+  // non-essential text — disabled labels are deemphasized but must remain
+  // legible. Below 3:1 they read as missing content, which IS a negative
+  // surprise.
+  const fgDisabledRaw = blend(surfaceDefault, fg, 0.38)
+  const fgDisabled = guard(
+    "disabled.fg",
+    "fg-disabled",
+    "composite(fg @ 0.38, surface.default), ≥3:1",
+    [fg, surfaceDefault],
+    fgDisabledRaw,
+    surfaceDefault,
+    3.0,
+  )
+  const borderDisabled = guard(
+    "disabled.border",
+    "border-disabled",
+    "composite(border-default @ 0.24, surface.default)",
+    [borderDefault, surfaceDefault],
+    blend(surfaceDefault, borderDefault, 0.24),
+  )
+  const bgDisabled = guard(
+    "disabled.bg",
+    "bg-disabled",
+    "composite(border-default @ 0.12, surface.default)",
+    [borderDefault, surfaceDefault],
+    blend(surfaceDefault, borderDefault, 0.12),
+  )
+  const disabled: DisabledRole = { fg: fgDisabled, bg: bgDisabled, border: borderDisabled }
+
   const roles: Roles = {
     accent,
     info,
@@ -688,6 +731,7 @@ export function deriveRoles(
     selected,
     inverse,
     link,
+    disabled,
   }
 
   return { roles, mode, trace, violations }
@@ -772,7 +816,7 @@ function buildInteractive(
   opts: DeriveOptions,
   trace: DerivationStep[],
   violations: ContrastViolation[],
-): InteractiveRole {
+): StatusRole {
   const pins = opts.pins
   const contrast = opts.contrast ?? "auto-lift"
   const bg = scheme.background

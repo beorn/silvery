@@ -48,18 +48,18 @@ describe("Badge tone surface", () => {
     })
   }
 
-  test("legacy variant prop still works", () => {
-    const app = render(<Badge label="legacy" variant="success" />)
+  test("deprecated tone prop still works (one-cycle alias)", () => {
+    const app = render(<Badge label="legacy" tone="success" />)
     expect(colorOf("legacy", app)).toBe("$fg-success")
   })
 
-  test("tone wins over variant when both are set", () => {
-    const app = render(<Badge label="both" tone="error" variant="success" />)
+  test("variant wins over deprecated tone when both are set (Option B)", () => {
+    const app = render(<Badge label="both" variant="error" tone="success" />)
     expect(colorOf("both", app)).toBe("$fg-error")
   })
 
-  test("explicit color prop overrides tone mapping", () => {
-    const app = render(<Badge label="override" tone="error" color="#ff00ff" />)
+  test("explicit color prop overrides variant mapping", () => {
+    const app = render(<Badge label="override" variant="error" color="#ff00ff" />)
     expect(colorOf("override", app)).toBe("#ff00ff")
   })
 })

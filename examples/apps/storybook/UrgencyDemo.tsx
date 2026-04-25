@@ -2,12 +2,12 @@
  * UrgencyDemo — urgency-is-not-a-token demo section.
  *
  * Feature 4/5 of the full storybook. Rendered as a section inside the
- * COMPONENTS middle pane. Same tone="error" on three different components,
+ * COMPONENTS middle pane. Same variant="error" on three different components,
  * three different urgency levels:
  *
- *   <InlineAlert tone="error" />    LOW urgency — passive in-flow message
- *   <Banner tone="error" />         MEDIUM — dismissible top-of-page call
- *   <Alert tone="error" />          HIGH — blocking modal that interrupts flow
+ *   <InlineAlert variant="error" />    LOW urgency — passive in-flow message
+ *   <Banner variant="error" />         MEDIUM — dismissible top-of-page call
+ *   <Alert variant="error" />          HIGH — blocking modal that interrupts flow
  *
  * Zero `priority` / `urgency` / `severity` prop involved. Urgency is carried
  * by component CHOICE + position + content, never by a Theme token.
@@ -84,7 +84,7 @@ export function UrgencyDemo(): React.ReactElement {
           level="low"
           levelLabel="low"
           annotation="in-flow · passive"
-          component={<InlineAlert tone="error">Type-check failed in src/app.ts</InlineAlert>}
+          component={<InlineAlert variant="error">Type-check failed in src/app.ts</InlineAlert>}
         />
 
         <UrgencyRow
@@ -92,7 +92,7 @@ export function UrgencyDemo(): React.ReactElement {
           levelLabel="medium"
           annotation="above-the-fold · dismissible"
           component={
-            <Banner tone="error" onDismiss={() => {}} width={60}>
+            <Banner variant="error" onDismiss={() => {}} width={60}>
               Connection lost — retrying…
             </Banner>
           }
@@ -103,12 +103,12 @@ export function UrgencyDemo(): React.ReactElement {
           levelLabel="high"
           annotation="blocking · interrupts flow"
           component={
-            <Alert tone="error" open onClose={() => {}} width={60}>
+            <Alert variant="error" open onClose={() => {}} width={60}>
               <Alert.Title>Delete workspace?</Alert.Title>
               <Alert.Body>This removes 3 projects and cannot be undone.</Alert.Body>
               <Alert.Actions>
-                <Button label="Delete" tone="destructive" onPress={() => {}} />
-                <Button label="Cancel" tone="accent" onPress={() => {}} />
+                <Button label="Delete" variant="destructive" onPress={() => {}} />
+                <Button label="Cancel" variant="accent" onPress={() => {}} />
               </Alert.Actions>
             </Alert>
           }

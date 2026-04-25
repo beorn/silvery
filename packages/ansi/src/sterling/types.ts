@@ -48,8 +48,10 @@ export interface StatePair {
  * A status role — fg, bg, and `fgOn` (text color to draw when rendering ON
  * a filled bg of this role). State variants apply to SURFACE (bg) only;
  * text-color state variants are reserved for link-like roles (`accent`).
+ *
+ * Used for the four status families: `info`, `success`, `warning`, `error`.
  */
-export interface InteractiveRole {
+export interface StatusRole {
   /** Foreground hex — use for text/icon in this role. */
   readonly fg: string
   /** Background hex — use as fill for emphasis. */
@@ -63,8 +65,15 @@ export interface InteractiveRole {
 }
 
 /**
+ * @deprecated Renamed to `StatusRole` for clarity (the family lacks the
+ * `fg.hover/active` interaction states the old name implied). The alias is
+ * retained for one cycle so external consumers don't break on rename.
+ */
+export type InteractiveRole = StatusRole
+
+/**
  * Accent — the canonical link-like interactive-text role. Has everything
- * `InteractiveRole` does PLUS a focus-ring border AND `fg.hover` /
+ * `StatusRole` does PLUS a focus-ring border AND `fg.hover` /
  * `fg.active` text-color state variants (link hover treatments).
  */
 export interface AccentRole {
@@ -142,6 +151,25 @@ export interface LinkRole {
   readonly fg: string
 }
 
+/**
+ * Disabled role — neutral, deemphasized treatment for unavailable controls
+ * (read-only inputs, disabled buttons, inactive menu items). Composite-derived
+ * from the base interface tokens (`fg-default` / `border-default`) over
+ * `bg-surface-default`, NOT from accent/status families — disabled is meant
+ * to read as "absent / inactive", not as a muted error/success/etc.
+ *
+ * Derivation (per design-system.md §"Disabled derivation"):
+ *   - `fg-disabled    = composite(fg-default     @ 0.38, bg-surface-default)`
+ *     clamped to ≥3:1 contrast vs `bg-surface-default`
+ *   - `border-disabled = composite(border-default @ 0.24, bg-surface-default)`
+ *   - `bg-disabled    = composite(border-default @ 0.12, bg-surface-default)`
+ */
+export interface DisabledRole {
+  readonly fg: string
+  readonly bg: string
+  readonly border: string
+}
+
 // ── Roles (the nested form) ────────────────────────────────────────────────
 
 /**
@@ -150,10 +178,10 @@ export interface LinkRole {
  */
 export interface Roles {
   readonly accent: AccentRole
-  readonly info: InteractiveRole
-  readonly success: InteractiveRole
-  readonly warning: InteractiveRole
-  readonly error: InteractiveRole
+  readonly info: StatusRole
+  readonly success: StatusRole
+  readonly warning: StatusRole
+  readonly error: StatusRole
   readonly muted: MutedRole
   readonly surface: SurfaceRole
   readonly border: BorderRole
@@ -161,6 +189,7 @@ export interface Roles {
   readonly selected: SelectedRole
   readonly inverse: InverseRole
   readonly link: LinkRole
+  readonly disabled: DisabledRole
 }
 
 // ── Flat form (the user-facing string-keyed surface) ───────────────────────
@@ -231,6 +260,19 @@ export type FlatToken =
   | "fg-on-inverse"
   // Link — hyperlink text color
   | "fg-link"
+  // Disabled — neutral deemphasis for unavailable controls
+  | "fg-disabled"
+  | "bg-disabled"
+  | "border-disabled"
+  // Backdrop — modal scrim (the dimming layer behind a modal/dialog).
+  // Distinct from `bg-surface-overlay` (the popover/tooltip CARD bg).
+  | "bg-backdrop"
+  // Default surfaces — explicit public tokens for the unstyled canvas.
+  // Same values as `theme.fg` / `theme.bg` / `bg-surface-default`, exposed
+  // as flat tokens so consumers can write `$fg-default` / `$bg-default`
+  // without reaching for `theme.fg` directly.
+  | "fg-default"
+  | "bg-default"
 
 /** The flat projection — every FlatToken maps to a hex string. */
 export type FlatTokens = {

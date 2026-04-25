@@ -264,16 +264,32 @@ export type {
   AlertActionsProps,
 } from "./ui/components"
 
-// Shared tone surface (ToneKey + resolvers) — building block for tone-bearing
-// components. Apps writing their own tone components can reuse these helpers.
+// Shared variant surface (Variant + resolvers) — building block for
+// variant-bearing components. Apps writing their own variant components can
+// reuse these helpers. Renamed from `tone` 2026-04-25 (Option B); deprecated
+// `tone*` aliases retained one cycle.
 export {
+  variantFillTokens,
+  variantSubtleTokens,
+  variantFgToken,
+  variantIcon,
+  VARIANT_ICONS,
+  // Deprecated aliases:
   toneFillTokens,
   toneSubtleTokens,
   toneFgToken,
   toneIcon,
   TONE_ICONS,
 } from "./ui/components"
-export type { ToneKey, ToneFillTokens, ToneSubtleTokens } from "./ui/components"
+export type {
+  Variant,
+  VariantFillTokens,
+  VariantSubtleTokens,
+  // Deprecated aliases:
+  ToneKey,
+  ToneFillTokens,
+  ToneSubtleTokens,
+} from "./ui/components"
 
 // Command Palette
 export { CommandPalette } from "./ui/components"

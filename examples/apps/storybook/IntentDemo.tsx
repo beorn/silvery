@@ -4,17 +4,17 @@
  * Feature 3/5 of the full storybook. Rendered as a section inside the
  * COMPONENTS middle pane. Documents Sterling decision D1:
  *
- *   error         = status semantic  (tone="error" — "this IS an error")
- *   destructive   = action intent    (tone="destructive" — "this does harm")
+ *   error         = status semantic  (variant="error" — "this IS an error")
+ *   destructive   = action intent    (variant="destructive" — "this does harm")
  *
  * At the Theme layer, `destructive` has no token of its own — it ALIASES to
  * the `error` palette. That's the whole point: intent is a component-level
  * concept; the Theme stays status-only.
  *
  * Three buttons:
- *   [Error tone]    tone="error"         → error.bg / error.fgOn   (status)
- *   [Delete]        tone="destructive"   → same pixels, different intent
- *   [Delete]        tone="error"  ⚠      → BAD — linted anti-pattern
+ *   [Error tone]    variant="error"         → error.bg / error.fgOn   (status)
+ *   [Delete]        variant="destructive"   → same pixels, different intent
+ *   [Delete]        variant="error"  ⚠      → BAD — linted anti-pattern
  *
  * This demo eats its own dog food: uses the real silvery `<Button>` with
  * the `tone` prop shipped in `km-silvery.ui-button-tone`, not a locally
@@ -89,23 +89,23 @@ export function IntentDemo(): React.ReactElement {
 
       <Box flexDirection="column" gap={1}>
         <IntentRow
-          button={<Button label="Error tone" tone="error" onPress={() => {}} />}
-          code='<Button tone="error">Error tone</Button>'
+          button={<Button label="Error tone" variant="error" onPress={() => {}} />}
+          code='<Button variant="error">Error tone</Button>'
           annotation="status — displays an error state"
           annotationTone="success"
         />
         <IntentRow
-          button={<Button label="Delete" tone="destructive" onPress={() => {}} />}
-          code='<Button tone="destructive">Delete</Button>'
+          button={<Button label="Delete" variant="destructive" onPress={() => {}} />}
+          code='<Button variant="destructive">Delete</Button>'
           annotation="intent — same pixels, different meaning"
           annotationTone="success"
         />
         <IntentRow
-          button={<Button label="Delete" tone="error" onPress={() => {}} />}
-          code='<Button tone="error">Delete</Button>'
+          button={<Button label="Delete" variant="error" onPress={() => {}} />}
+          code='<Button variant="error">Delete</Button>'
           annotation="BAD — action labelled with status tone"
           annotationTone="error"
-          warning='use tone="destructive" for actions; reserve "error" for status'
+          warning='use variant="destructive" for actions; reserve "error" for status'
         />
       </Box>
 

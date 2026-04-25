@@ -23,26 +23,30 @@
 import React from "react"
 import { Box, type BoxProps } from "../../components/Box"
 import { Text } from "../../components/Text"
-import { type ToneKey, toneFgToken, toneIcon } from "./_tone"
+import { type Variant, variantFgToken, variantIcon } from "./_variant"
 
 // =============================================================================
 // Types
 // =============================================================================
 
+/** Status variants accepted by `<InlineAlert>`. */
+export type InlineAlertVariant = "info" | "success" | "warning" | "error"
+
 export interface InlineAlertProps extends Omit<BoxProps, "children"> {
   /**
-   * Sterling tone. `destructive` aliases to `error` at the component layer.
-   * Defaults to `info` — the neutral "heads up" tone for low-urgency
-   * messages.
+   * Sterling status variant. Defaults to `info` — the neutral "heads up"
+   * variant for low-urgency messages.
    */
-  tone?: ToneKey
+  variant?: InlineAlertVariant
+  /** @deprecated Use `variant`. Retained one cycle. */
+  tone?: Variant
   /** Message content (text or React nodes). */
   children: React.ReactNode
-  /** Whether to render the tone icon prefix (default: true). */
+  /** Whether to render the variant icon prefix (default: true). */
   showIcon?: boolean
   /**
-   * Override the default tone icon glyph. Defaults to the shared
-   * `TONE_ICONS` mapping (same as Toast).
+   * Override the default variant icon glyph. Defaults to the shared
+   * `VARIANT_ICONS` mapping (same as Toast).
    */
   icon?: string
 }
@@ -52,21 +56,23 @@ export interface InlineAlertProps extends Omit<BoxProps, "children"> {
 // =============================================================================
 
 /**
- * Inline low-urgency tone message.
+ * Inline low-urgency status message.
  *
  * Pick `<InlineAlert>` when the message is passive context a user can read
  * or ignore without interrupting their task. Escalate to `<Banner>` or
  * `<Alert>` when the message demands action or blocks flow.
  */
 export function InlineAlert({
-  tone = "info",
+  variant,
+  tone,
   children,
   showIcon = true,
   icon,
   ...boxProps
 }: InlineAlertProps): React.ReactElement {
-  const color = toneFgToken(tone)
-  const glyph = icon ?? toneIcon(tone)
+  const effectiveVariant: Variant = (variant ?? tone ?? "info") as Variant
+  const color = variantFgToken(effectiveVariant)
+  const glyph = icon ?? variantIcon(effectiveVariant)
 
   return (
     <Box flexDirection="row" gap={1} {...boxProps}>

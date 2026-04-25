@@ -31,18 +31,25 @@ import React from "react"
 import { useInput } from "../../hooks/useInput"
 import { Box, type BoxProps } from "../../components/Box"
 import { Text } from "../../components/Text"
-import { type ToneKey, toneSubtleTokens, toneIcon } from "./_tone"
+import { type Variant, variantSubtleTokens, variantIcon } from "./_variant"
 
 // =============================================================================
 // Types
 // =============================================================================
 
+/**
+ * Status variants accepted by `<Banner>`. Banners convey state, not action
+ * — destructive/accent variants belong on `<Button>` instead.
+ */
+export type BannerVariant = "info" | "success" | "warning" | "error"
+
 export interface BannerProps extends Omit<BoxProps, "children"> {
   /**
-   * Sterling tone. `destructive` aliases to `error` at the component layer.
-   * Defaults to `info` — the neutral banner tone.
+   * Sterling status variant. Defaults to `info` — the neutral banner variant.
    */
-  tone?: ToneKey
+  variant?: BannerVariant
+  /** @deprecated Use `variant`. Retained one cycle. */
+  tone?: Variant
   /** Banner content. */
   children: React.ReactNode
   /**
@@ -53,9 +60,9 @@ export interface BannerProps extends Omit<BoxProps, "children"> {
   onDismiss?: () => void
   /** Label for the dismiss affordance (default: "dismiss ×"). */
   dismissLabel?: React.ReactNode
-  /** Whether to render the tone icon prefix (default: true). */
+  /** Whether to render the variant icon prefix (default: true). */
   showIcon?: boolean
-  /** Override the default tone icon glyph. */
+  /** Override the default variant icon glyph. */
   icon?: string
 }
 
@@ -71,7 +78,8 @@ export interface BannerProps extends Omit<BoxProps, "children"> {
  * respect the explicit width.
  */
 export function Banner({
-  tone = "info",
+  variant,
+  tone,
   children,
   onDismiss,
   dismissLabel = "dismiss ×",
@@ -79,8 +87,9 @@ export function Banner({
   icon,
   ...boxProps
 }: BannerProps): React.ReactElement {
-  const tokens = toneSubtleTokens(tone)
-  const glyph = icon ?? toneIcon(tone)
+  const effectiveVariant: Variant = (variant ?? tone ?? "info") as Variant
+  const tokens = variantSubtleTokens(effectiveVariant)
+  const glyph = icon ?? variantIcon(effectiveVariant)
 
   // Escape dismisses when a handler is supplied. Scoped to the component via
   // `useInput`'s default active scope; apps that render a Banner outside a

@@ -85,18 +85,18 @@ function TextInputPreview({
 
 /** A single Alert-like inline box. Uses semantic tokens for bg + on-bg text. */
 function AlertBox({
-  tone,
+  variant,
   icon,
   title,
   body,
 }: {
-  tone: "error" | "warning" | "success" | "info" | "accent"
+  variant: "error" | "warning" | "success" | "info" | "accent"
   icon: string
   title: string
   body: string
 }) {
-  const bgToken = `$${tone}`
-  const fgToken = `$${tone}fg` // legacy `fg-on-*` alias in @silvery/ansi
+  const bgToken = `$${variant}`
+  const fgToken = `$${variant}fg` // legacy `fg-on-*` alias in @silvery/ansi
   return (
     <Box borderStyle="single" borderColor={bgToken} paddingX={1} flexDirection="column" width={46}>
       <Box gap={1}>
@@ -110,7 +110,7 @@ function AlertBox({
       </Small>
       <Box marginTop={0}>
         <Box backgroundColor={bgToken} paddingX={1}>
-          <Text color={fgToken}>on-{tone} surface</Text>
+          <Text color={fgToken}>on-{variant} surface</Text>
         </Box>
       </Box>
     </Box>
@@ -222,21 +222,21 @@ export function ComponentPreview({ schemeName, mode }: ComponentPreviewProps): R
           </Small>
           <Box flexDirection="column" gap={1}>
             <AlertBox
-              tone="error"
+              variant="error"
               icon="✗"
               title="Build failed"
               body="Type-check caught 2 errors in src/app.ts"
             />
             <AlertBox
-              tone="warning"
+              variant="warning"
               icon="⚠"
               title="Deprecated API"
               body="useInput(...) deprecated — migrate to useKey"
             />
-            <AlertBox tone="success" icon="✓" title="Tests passed" body="143 specs green in 2.4s" />
-            <AlertBox tone="info" icon="ℹ" title="Tip" body="Press ? for keyboard shortcuts" />
+            <AlertBox variant="success" icon="✓" title="Tests passed" body="143 specs green in 2.4s" />
+            <AlertBox variant="info" icon="ℹ" title="Tip" body="Press ? for keyboard shortcuts" />
             <AlertBox
-              tone="accent"
+              variant="accent"
               icon="◆"
               title="Accent surface"
               body="Primary call-to-action surface"

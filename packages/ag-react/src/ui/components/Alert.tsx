@@ -38,32 +38,44 @@ import { useInput } from "../../hooks/useInput"
 import { Box, type BoxProps } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { ModalDialog } from "./ModalDialog"
-import { type ToneKey, toneFgToken, toneIcon } from "./_tone"
+import { type Variant, variantFgToken, variantIcon } from "./_variant"
 
 // =============================================================================
 // Types
 // =============================================================================
+
+/**
+ * Status variants accepted by `<Alert>`. Action intents (`destructive`,
+ * `accent`) are excluded — for action emphasis, use `<Button variant="...">`
+ * inside `<Alert.Actions>` instead.
+ */
+export type AlertVariant = "info" | "success" | "warning" | "error"
 
 export interface AlertProps extends Omit<
   BoxProps,
   "children" | "flexDirection" | "width" | "height"
 > {
   /**
-   * Sterling tone. `destructive` aliases to `error` at the component layer.
-   * Defaults to `error` — the prototypical high-urgency case (destructive
-   * confirmation, fatal error). Callers ask for `warning` / `info` / `success`
-   * when the modal conveys those tones instead.
+   * Sterling status variant. Defaults to `error` — the prototypical
+   * high-urgency case (destructive confirmation, fatal error). Callers ask
+   * for `warning` / `info` / `success` when the modal conveys those tones
+   * instead.
+   *
+   * Note: action-intent variants (`destructive`, `accent`) belong on
+   * `<Button>` inside `<Alert.Actions>`, not on `<Alert>` itself.
    */
-  tone?: ToneKey
+  variant?: AlertVariant
+  /** @deprecated Use `variant`. Retained one cycle. Accepts the broader Variant union for back-compat. */
+  tone?: Variant
   /** Whether the alert is open. Render nothing when `false`. */
   open?: boolean
   /** Called when the user dismisses (Escape key). */
   onClose?: () => void
   /** Alert content — compose `<Alert.Title>`, `<Alert.Body>`, `<Alert.Actions>`. */
   children: React.ReactNode
-  /** Whether to render the tone icon in the title (default: true). */
+  /** Whether to render the variant icon in the title (default: true). */
   showIcon?: boolean
-  /** Override the default tone icon glyph. */
+  /** Override the default variant icon glyph. */
   icon?: string
   /** Dialog width (default: passed through to ModalDialog, which snaps to content). */
   width?: number | string
@@ -117,7 +129,8 @@ function AlertActions({ children }: AlertActionsProps): React.ReactElement {
  * modal reads as the matching status (error / warning / success / info).
  */
 function AlertRoot({
-  tone = "error",
+  variant,
+  tone,
   open = true,
   onClose,
   children,
@@ -126,8 +139,11 @@ function AlertRoot({
   width,
   ...boxProps
 }: AlertProps): React.ReactElement | null {
-  const fgToken = toneFgToken(tone)
-  const glyph = icon ?? toneIcon(tone)
+  // `variant` wins over deprecated `tone`. Default `error` (prototypical
+  // high-urgency Alert).
+  const effectiveVariant: Variant = (variant ?? tone ?? "error") as Variant
+  const fgToken = variantFgToken(effectiveVariant)
+  const glyph = icon ?? variantIcon(effectiveVariant)
 
   useInput(
     (_input, key) => {

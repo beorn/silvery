@@ -30,13 +30,13 @@ import { Text } from "../../components/Text"
 // =============================================================================
 
 /**
- * Toast tone — Sterling statuses plus the `destructive` intent alias. Phase 2b
- * adds `accent` and `destructive` to the surface; `default` stays for plain
- * notifications that don't carry semantic meaning.
+ * Toast variant — Sterling statuses plus the `destructive` intent alias.
+ * Phase 2b adds `accent` and `destructive` to the surface; `default` stays
+ * for plain notifications that don't carry semantic meaning.
  *
  * `destructive` resolves to `error` (see design-system.md §"Intent vs role");
- * apps write `tone="destructive"` when the toast announces a destructive action
- * and `tone="error"` when something failed.
+ * apps write `variant="destructive"` when the toast announces a destructive
+ * action and `variant="error"` when something failed.
  */
 export type ToastVariant =
   | "default"

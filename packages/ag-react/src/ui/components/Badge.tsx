@@ -3,8 +3,8 @@
  *
  * A small inline label for status display.
  *
- * Tone surface (Sterling Phase 2b):
- *   - `error` | `warning` | `success` | `info` — status tones (what's happening)
+ * Variant surface (Sterling Phase 2b):
+ *   - `error` | `warning` | `success` | `info` — status variants (what's happening)
  *   - `accent` — emphasis / brand (preferred over legacy `primary`)
  *   - `destructive` — intent alias for `error` (semantic correctness without
  *     palette sprawl; see design-system.md §"Intent vs role")
@@ -13,9 +13,9 @@
  *
  * Usage:
  * ```tsx
- * <Badge label="Active" tone="success" />
- * <Badge label="Delete" tone="destructive" />
- * <Badge label="New" tone="accent" />
+ * <Badge label="Active" variant="success" />
+ * <Badge label="Delete" variant="destructive" />
+ * <Badge label="New" variant="accent" />
  * <Badge label="Custom" color="magenta" />
  * ```
  */
@@ -28,11 +28,11 @@ import type { TextProps } from "../../components/Text"
 // =============================================================================
 
 /**
- * Tone values — Sterling statuses plus the `destructive` intent alias.
+ * Variant values — Sterling statuses plus the `destructive` intent alias.
  * `primary` stays as a legacy synonym for `accent` while km-tui finishes
  * migrating; it resolves to the same Sterling token.
  */
-export type BadgeTone =
+export type BadgeVariant =
   | "default"
   | "accent"
   | "error"
@@ -42,17 +42,20 @@ export type BadgeTone =
   | "destructive"
   | "primary"
 
+/** @deprecated Use `BadgeVariant`. Retained one cycle. */
+export type BadgeTone = BadgeVariant
+
 export interface BadgeProps extends Omit<TextProps, "children"> {
   /** Badge text */
   label: string
   /**
-   * Sterling tone. Accepts status roles (`error`/`warning`/`success`/`info`),
+   * Sterling variant. Accepts status roles (`error`/`warning`/`success`/`info`),
    * the accent emphasis role, or the `destructive` intent alias. Legacy
    * `primary` stays as a synonym during Phase 2b/2c.
    */
-  tone?: BadgeTone
-  /** Legacy alias for `tone`. Prefer `tone`. */
-  variant?: BadgeTone
+  variant?: BadgeVariant
+  /** @deprecated Use `variant`. Kept for one cycle. */
+  tone?: BadgeVariant
 }
 
 // =============================================================================
@@ -60,10 +63,10 @@ export interface BadgeProps extends Omit<TextProps, "children"> {
 // =============================================================================
 
 /**
- * Tone → Sterling flat token mapping. `destructive` aliases to `error` per
+ * Variant → Sterling flat token mapping. `destructive` aliases to `error` per
  * D1 (intent lives at the component layer, not as a Theme field).
  */
-const TONE_COLORS: Record<BadgeTone, string> = {
+const VARIANT_COLORS: Record<BadgeVariant, string> = {
   default: "$fg",
   accent: "$fg-accent",
   primary: "$fg-accent",
@@ -78,10 +81,10 @@ const TONE_COLORS: Record<BadgeTone, string> = {
 // Component
 // =============================================================================
 
-export function Badge({ label, tone, variant, color, ...rest }: BadgeProps): React.ReactElement {
-  // `tone` wins over legacy `variant` when both are set.
-  const effectiveTone: BadgeTone = tone ?? variant ?? "default"
-  const resolvedColor = color ?? TONE_COLORS[effectiveTone]
+export function Badge({ label, variant, tone, color, ...rest }: BadgeProps): React.ReactElement {
+  // `variant` wins over deprecated `tone` when both are set.
+  const effectiveVariant: BadgeVariant = variant ?? tone ?? "default"
+  const resolvedColor = color ?? VARIANT_COLORS[effectiveVariant]
 
   return (
     <Text color={resolvedColor} bold {...rest}>

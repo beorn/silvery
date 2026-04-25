@@ -70,4 +70,13 @@ export const STERLING_FLAT_TOKENS: readonly FlatToken[] = [
   "fg-on-inverse",
   // Link — hyperlink text color
   "fg-link",
+  // Disabled — neutral deemphasis for unavailable controls
+  "fg-disabled",
+  "bg-disabled",
+  "border-disabled",
+  // Backdrop — modal/dialog scrim (distinct from bg-surface-overlay)
+  "bg-backdrop",
+  // Default surfaces — explicit public aliases for the unstyled canvas
+  "fg-default",
+  "bg-default",
 ]

@@ -188,15 +188,30 @@ export type {
   AlertActionsProps,
 } from "./components/Alert"
 
-// Shared tone surface — ToneKey union and resolver helpers.
+// Shared variant surface — Variant union and resolver helpers (renamed from
+// `tone` 2026-04-25). Old `tone*` aliases remain available for one cycle.
 export {
+  variantFillTokens,
+  variantSubtleTokens,
+  variantFgToken,
+  variantIcon,
+  VARIANT_ICONS,
+  // Deprecated aliases (one-cycle compatibility):
   toneFillTokens,
   toneSubtleTokens,
   toneFgToken,
   toneIcon,
   TONE_ICONS,
-} from "./components/_tone"
-export type { ToneKey, ToneFillTokens, ToneSubtleTokens } from "./components/_tone"
+} from "./components/_variant"
+export type {
+  Variant,
+  VariantFillTokens,
+  VariantSubtleTokens,
+  // Deprecated aliases:
+  ToneKey,
+  ToneFillTokens,
+  ToneSubtleTokens,
+} from "./components/_variant"
 
 // Command Palette
 export { CommandPalette } from "./components/CommandPalette"

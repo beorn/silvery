@@ -21,6 +21,7 @@
  * Theme construction `deriveTheme`/`loadTheme` handle this automatically.
  */
 
+import { blend } from "@silvery/color"
 import type { ColorScheme, Theme } from "../theme/types.ts"
 import { deriveRoles } from "./derive.ts"
 import type { FlatToken } from "./types.ts"
@@ -218,6 +219,13 @@ export function inlineSterlingTokens(theme: Theme, scheme?: ColorScheme): Inline
     setIfAbsent("fg-link", lnk.fg)
   }
 
+  const dis = roles.disabled
+  if (dis) {
+    setIfAbsent("fg-disabled", dis.fg)
+    setIfAbsent("bg-disabled", dis.bg)
+    setIfAbsent("border-disabled", dis.border)
+  }
+
   // Root pair — `fg` / `bg` are exposed at the top level for `$fg` / `$bg`
   // JSX consumers. They mirror `scheme.foreground` / `scheme.background`
   // (`bg` is also the same value as `bg-surface-default`). Setting via
@@ -225,6 +233,19 @@ export function inlineSterlingTokens(theme: Theme, scheme?: ColorScheme): Inline
   // wins.
   setIfAbsent("fg", src.foreground)
   setIfAbsent("bg", src.background)
+
+  // Public default tokens — explicit flat aliases for the unstyled canvas.
+  // Same values as `theme.fg` / `theme.bg`, exposed so consumers can write
+  // `$fg-default` / `$bg-default` without reaching for `theme.fg` directly.
+  setIfAbsent("fg-default", src.foreground)
+  setIfAbsent("bg-default", src.background)
+
+  // Backdrop — modal/dialog scrim. Composite-derived from canvas bg with a
+  // 40 % toward-black push, baked solid (TUI has no alpha; web target can
+  // emit the actual rgba layer separately). Distinct from `bg-surface-overlay`
+  // (which is the popover/tooltip CARD bg). Per design-system.md
+  // §"Backdrop derivation".
+  setIfAbsent("bg-backdrop", blend(src.background, "#000000", 0.4))
 
   return out as unknown as InlinedTheme
 }
