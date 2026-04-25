@@ -3,8 +3,8 @@
  *
  * When color is unavailable (NO_COLOR env, TERM=dumb, SILVERY_COLOR=mono,
  * OSC-queried ColorLevel="mono"), silvery apps stay hierarchical via per-token
- * SGR attrs: bold for emphasis, dim for muted, inverse for selection, italic
- * for info, underline for links.
+ * SGR attrs: bold for emphasis, dim for muted, inverse for `$bg-selected` and
+ * `$bg-inverse`, italic for info, underline for `$fg-link`.
  *
  * This is Option B from the design spec — state-colored content gets genuine
  * distinguishability without color (not just "stripped"). Error, warning, and
@@ -61,7 +61,6 @@ export const DEFAULT_MONO_ATTRS: MonochromeAttrs = {
   disabledfg: ["dim"], // clearly inactive
   surface: [],
   popover: [],
-  inverse: ["inverse"],
 
   // Brand / accent emphasis
   primary: ["bold"], // brand emphasis
@@ -84,13 +83,10 @@ export const DEFAULT_MONO_ATTRS: MonochromeAttrs = {
   infofg: [],
 
   // Interactive chrome
-  link: ["underline"], // hyperlinks: underlined even in mono
   focusborder: ["bold"],
   inputborder: [],
 
-  // Selection / cursor — explicit inverse so they're visible
-  selection: [],
-  selectionbg: ["inverse"],
+  // Cursor
   cursor: [],
 
   // Sterling flat tokens — paired with their legacy-attr equivalents so that
@@ -137,6 +133,15 @@ export const DEFAULT_MONO_ATTRS: MonochromeAttrs = {
   "border-muted": [],
   "fg-cursor": [],
   "bg-cursor": [],
+  // Sterling flat tokens for selection / inverse / link (replaced legacy
+  // `selection` / `selectionbg` / `inverse` / `inversebg` / `link` keys in
+  // 0.21.0 — sterling-purge-legacy-tokens).
+  "bg-selected": ["inverse"],
+  "fg-on-selected": [],
+  "bg-selected-hover": ["inverse"],
+  "bg-inverse": ["inverse"],
+  "fg-on-inverse": [],
+  "fg-link": ["underline"],
 }
 
 /**

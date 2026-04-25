@@ -36,16 +36,16 @@ describe("deriveMonochromeTheme", () => {
     expect(DEFAULT_MONO_ATTRS.error).toEqual(expect.arrayContaining<MonoAttr>(["bold", "inverse"]))
   })
 
-  it("link has underline attr (standard monochrome convention)", () => {
-    expect(DEFAULT_MONO_ATTRS.link).toEqual(["underline"])
+  it("fg-link has underline attr (standard monochrome convention)", () => {
+    expect(DEFAULT_MONO_ATTRS["fg-link"]).toEqual(["underline"])
   })
 
   it("muted gets dim attr", () => {
     expect(DEFAULT_MONO_ATTRS.muted).toEqual(["dim"])
   })
 
-  it("selectionbg uses inverse (visible without color)", () => {
-    expect(DEFAULT_MONO_ATTRS.selectionbg).toEqual(["inverse"])
+  it("bg-selected uses inverse (visible without color)", () => {
+    expect(DEFAULT_MONO_ATTRS["bg-selected"]).toEqual(["inverse"])
   })
 
   it("structural backgrounds have no attrs", () => {

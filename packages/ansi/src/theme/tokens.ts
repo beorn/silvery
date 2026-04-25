@@ -33,20 +33,17 @@ export type StandardThemeToken =
   // Surfaces — legacy roots (Sterling variants live as $bg-surface-default etc.)
   | "$surface"
   | "$popover"
-  | "$inverse"
   // Muted + disabled
   | "$muted"
   | "$fg-muted"
   | "$mutedbg"
   | "$bg-muted"
   | "$disabledfg"
-  // Cursor + selection
+  // Cursor
   | "$cursor"
   | "$fg-cursor"
   | "$cursorbg"
   | "$bg-cursor"
-  | "$selection"
-  | "$selectionbg"
   // Accents + their fg
   | "$primary"
   | "$primaryfg"
@@ -68,14 +65,13 @@ export type StandardThemeToken =
   | "$info"
   | "$infofg"
   | "$fg-on-info"
-  // Borders + links
+  // Borders
   | "$border"
   | "$inputborder"
   | "$focusborder"
   | "$border-focus"
   | "$border-default"
-  | "$link"
-  // Sterling flat — surface/border/accent variants baked in by every shipped Theme
+  // Sterling flat — surface/border/accent/inverse/selected/link variants baked in by every shipped Theme
   | "$bg-surface-default"
   | "$bg-surface-subtle"
   | "$bg-surface-raised"
@@ -83,6 +79,11 @@ export type StandardThemeToken =
   | "$fg-accent"
   | "$bg-accent"
   | "$border-accent"
+  | "$bg-inverse"
+  | "$fg-on-inverse"
+  | "$bg-selected"
+  | "$fg-on-selected"
+  | "$fg-link"
   // State variants — hover/active lightness shifts (dark: +L, light: -L)
   | "$primary-hover"
   | "$primary-active"

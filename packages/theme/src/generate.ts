@@ -95,7 +95,6 @@ export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
     border: slotHex("gray"),
     inputborder: slotHex("gray"),
     focusborder: slotHex(dark ? "blueBright" : "blue"),
-    link: slotHex("blueBright"),
     disabledfg: slotHex("gray"),
 
     // ── Palette ──────────────────────────────────────────────────

@@ -13,22 +13,20 @@
  *   - `$primary` → bold
  *   - `$muted` → dim
  *   - `$error` → bold + inverse
- *   - `$link` → underline
+ *   - `$fg-link` → underline
+ *   - `$bg-selected` → inverse
  *   - Non-token hex `"#FF0000"` → no color, no attrs (pass-through)
  *   - Realistic 50+ node fixture — compounding / cascade safety under STRICT
  *
  * Bead: km-silvery.mono-tier-wiring
  * Spec: hub/silvery/design/v10-terminal/theme-system-v2-plan.md#p4
  *
- * NOTE (Sterling sweep — km-silvery.sterling-tests-legacy-sweep, 2026-04-20):
- * This file deliberately retains legacy `$primary` / `$muted` / `$error` /
- * `$success` / `$warning` / `$info` / `$selectionbg` tokens. The tests assert
- * the legacy `DEFAULT_MONO_ATTRS` keying — `$primary → ["bold"]`,
- * `$muted → ["dim"]`, etc. Sterling tokens (`$fg-accent`, `$fg-muted`, …) have
- * different attr mappings (`fg-accent → ["italic","bold"]`) and are covered by
- * `packages/ansi/tests/monochrome.test.ts`. When 0.20.0 drops the legacy
- * `DEFAULT_MONO_ATTRS` keys, retire this file rather than mechanically
- * renaming — the Sterling-keyed tests already cover the equivalent logic.
+ * NOTE (Sterling sweep — sterling-purge-legacy-tokens, 0.21.0):
+ * Legacy `$selectionbg` / `$link` tokens were dropped from `DEFAULT_MONO_ATTRS`.
+ * This file now exercises the Sterling-keyed equivalents (`$bg-selected`,
+ * `$fg-link`) alongside the still-valid legacy semantic tokens (`$primary`,
+ * `$muted`, `$error`, …). Sterling-flat-keyed coverage also lives in
+ * `packages/ansi/tests/monochrome.test.ts`.
  */
 
 import React from "react"
@@ -93,9 +91,9 @@ describe("parseColor: monochrome tier", () => {
     })
   })
 
-  test("$link resolves to null", () => {
+  test("$fg-link resolves to null", () => {
     withMonoTier(() => {
-      expect(parseColor("$link")).toBeNull()
+      expect(parseColor("$fg-link")).toBeNull()
     })
   })
 
@@ -147,9 +145,9 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
     })
   })
 
-  test("$link → underline", () => {
+  test("$fg-link → underline", () => {
     withMonoTier(() => {
-      const style = getTextStyle({ color: "$link" })
+      const style = getTextStyle({ color: "$fg-link" })
       expect(style.fg).toBeNull()
       expect(style.attrs.underline).toBe(true)
       expect(style.attrs.underlineStyle).toBe("single")
@@ -199,12 +197,11 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
     })
   })
 
-  test("$selectionbg → inverse", () => {
+  test("$bg-selected → inverse", () => {
     withMonoTier(() => {
-      // selectionbg → ["inverse"] in DEFAULT_MONO_ATTRS. The Primer-style
-      // alias `$bg-selected` was removed in 0.18.1 — the canonical legacy
-      // key still resolves via direct lookup.
-      const style = getTextStyle({ backgroundColor: "$selectionbg" })
+      // bg-selected → ["inverse"] in DEFAULT_MONO_ATTRS. The legacy
+      // `$selectionbg` alias was removed in 0.21.0 (sterling-purge-legacy-tokens).
+      const style = getTextStyle({ backgroundColor: "$bg-selected" })
       expect(style.attrs.inverse).toBe(true)
     })
   })
@@ -335,9 +332,9 @@ describe("render pipeline: $token attrs reach the buffer at mono tier", () => {
     }
   })
 
-  test("<Text color='$link'> renders underlined cells", () => {
+  test("<Text color='$fg-link'> renders underlined cells", () => {
     const render = createRenderer({ cols: 10, rows: 1 })
-    const app = render(<Text color="$link">CLICK</Text>)
+    const app = render(<Text color="$fg-link">CLICK</Text>)
 
     for (let i = 0; i < 5; i++) {
       const c = app.cell(i, 0)
@@ -390,7 +387,7 @@ describe("mono tier: realistic 50+ node fixture (STRICT compounding safety)", ()
         <Text color="$warning">Warning: heads up</Text>
         <Text color="$success">Success!</Text>
         <Text color="$info">Info note</Text>
-        <Text color="$link">https://silvery.dev</Text>
+        <Text color="$fg-link">https://silvery.dev</Text>
         {Array.from({ length: rows }).map((_, r) => (
           <Box key={r} flexDirection="row" gap={1}>
             {Array.from({ length: cols }).map((_, c) => {

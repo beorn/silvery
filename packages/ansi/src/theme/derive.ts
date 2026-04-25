@@ -126,12 +126,13 @@ const CONTROL = 3.0
  *
  * Legacy fields (`primary`, `primaryfg`, `accent`, `accentfg`, `errorfg`,
  * `successfg`, `warningfg`, `infofg`, `secondaryfg`, `focusborder`,
- * `inputborder`, `disabledfg`, `mutedbg`, `surfacebg`, `popoverbg`, `inverse`,
- * `inversebg`, `cursor`, `cursorbg`, `selection`, `selectionbg`, `link`,
- * `secondary`, `border`) are emitted at runtime so app code that still uses
- * `theme.primary` / `theme.errorfg` keeps working through the 0.19.x window.
- * They are not part of the Sterling `Theme` type and will be removed in
- * 0.20.0 (see `km-silvery.sterling-purge-legacy-tokens`).
+ * `inputborder`, `disabledfg`, `mutedbg`, `surfacebg`, `popoverbg`, `cursor`,
+ * `cursorbg`, `secondary`, `border`) are still emitted at runtime so app code
+ * that still uses `theme.primary` / `theme.errorfg` keeps working. The selection
+ * / inverse / link aliases (`inverse`, `inversebg`, `selection`, `selectionbg`,
+ * `link`) were dropped in 0.21.0 (sterling-purge-legacy-tokens) — consumers must
+ * read Sterling's flat tokens (`bg-selected`, `fg-on-selected`, `bg-inverse`,
+ * `fg-on-inverse`, `fg-link`).
  */
 function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): Theme {
   const dark = p.dark ?? true
@@ -165,7 +166,8 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
   const warning = ensure("warning", p.yellow, bg, AA)
   const success = ensure("success", p.green, bg, AA)
   const info = ensure("info", blend(fg, accent, 0.5), bg, AA)
-  const link = ensure("link", dark ? p.brightBlue : p.blue, bg, AA)
+  // Sterling owns link styling via roles.link.fg → flat $fg-link. The legacy
+  // single-hex `link` field was dropped in 0.21.0 (sterling-purge-legacy-tokens).
 
   // Categorical color ring — 8 harmonious hues for tagging / chart series /
   // categories. ensureContrast-adjusted against bg.
@@ -184,9 +186,11 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
   const inputborder = ensure("inputborder", blend(bg, p.foreground, 0.25), bg, CONTROL)
   // Repair selection visibility — nudge selectionbg L away from bg until ΔL ≥ threshold.
   // Preserves hue + chroma. For ultra-subtle themes (one-light, serendipity-morning, etc.)
-  // this shifts the selection ~0.05 L while keeping the aesthetic.
+  // this shifts the selection ~0.05 L while keeping the aesthetic. The repaired
+  // value feeds Sterling's `bg-selected-hover` derivation; the literal selection
+  // surface ships as Sterling's `bg-selected` (legacy `selectionbg` was dropped
+  // in 0.21.0 — sterling-purge-legacy-tokens).
   const selectionBg = repairSelectionBg(p.selectionBackground, bg)
-  const selection = ensure("selection", p.selectionForeground, selectionBg, AA)
 
   // Repair cursor visibility — nudge cursorbg ΔE away from bg (OKLCH).
   const cursorBgRepaired = repairCursorBg(p.cursorColor, bg)
@@ -212,12 +216,8 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
     surfacebg,
     popover: fg,
     popoverbg,
-    inverse: contrastFg(blend(fg, bg, 0.1)),
-    inversebg: blend(fg, bg, 0.1),
     cursor,
     cursorbg: cursorBgRepaired,
-    selection,
-    selectionbg: selectionBg,
     primary,
     primaryfg: contrastFg(primary),
     secondary,
@@ -234,8 +234,10 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
     infofg: contrastFg(info),
     border,
     inputborder,
-    focusborder: link,
-    link,
+    // Sterling owns link/selection/inverse styling via roles → flat tokens
+    // (`fg-link`, `bg-selected`, `fg-on-selected`, `bg-inverse`, `fg-on-inverse`).
+    // Legacy single-hex aliases were dropped in 0.21.0.
+    focusborder: ensure("focusborder", dark ? p.brightBlue : p.blue, bg, AA),
     disabledfg,
     palette: [
       p.black,
@@ -296,12 +298,8 @@ function deriveAnsi16ThemeRaw(p: ColorScheme): Theme {
     surfacebg: p.black,
     popover: p.foreground,
     popoverbg: p.black,
-    inverse: p.black,
-    inversebg: p.brightWhite,
     cursor: p.cursorText,
     cursorbg: p.cursorColor,
-    selection: p.selectionForeground,
-    selectionbg: p.selectionBackground,
     primary: primaryColor,
     primaryfg: p.black,
     secondary: p.magenta,
@@ -319,7 +317,9 @@ function deriveAnsi16ThemeRaw(p: ColorScheme): Theme {
     border: p.brightBlack,
     inputborder: p.brightBlack,
     focusborder: dark ? p.brightBlue : p.blue,
-    link: dark ? p.brightBlue : p.blue,
+    // Sterling supplies link/selection/inverse via roles → flat tokens.
+    // (Legacy `link`, `selection`, `selectionbg`, `inverse`, `inversebg` were
+    // dropped in 0.21.0 — sterling-purge-legacy-tokens.)
     disabledfg: p.brightBlack,
     palette: [
       p.black,

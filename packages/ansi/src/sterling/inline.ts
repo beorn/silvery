@@ -37,18 +37,17 @@ export type InlinedTheme = Theme & { [K in FlatToken]: string }
  * Build a ColorScheme-shaped input from a Theme when the original
  * scheme isn't available (hand-crafted themes, picker round-trips).
  *
- * Reads legacy single-hex hints (`theme.primary`, `theme.cursorbg`,
- * `theme.selectionbg`, …) via bracket access — these survive at runtime in
- * outputs from the legacy `deriveTheme` path during the 0.19.x window even
- * though Sterling's `Theme` no longer types them. Falls back to Sterling
- * nested fields (`theme.cursor.bg`, `theme.selected.bg`) when the legacy
- * fields are absent (hand-crafted Sterling-only themes).
+ * Reads legacy single-hex hints that the legacy `deriveTheme` path still
+ * emits (`theme.primary`, `theme.accent`, `theme.cursorbg`, …) via bracket
+ * access. Selection / inverse / link aliases were dropped in 0.21.0 — pulls
+ * those from Sterling's nested role objects (`theme.selected.bg`,
+ * `theme.inverse.bg`, `theme.link.fg`).
  */
 function schemeFromTheme(theme: Theme): ColorScheme {
   const palette = theme.palette ?? []
-  // Bracket-read legacy single-hex hints — present at runtime on every Theme
-  // produced by `deriveTheme` during the 0.19.x window. Sterling-only themes
-  // (post-0.20.0) won't have these, so fall back to the nested role colors.
+  // Bracket-read legacy single-hex hints — primary / accent / cursor still
+  // emit at runtime on every Theme produced by `deriveTheme`. Sterling-only
+  // themes (hand-authored, no `deriveTheme` pass) fall back to nested roles.
   const legacy = theme as unknown as Record<string, string | undefined>
   const primary = legacy["primary"]
   const accent = legacy["accent"]
@@ -63,8 +62,10 @@ function schemeFromTheme(theme: Theme): ColorScheme {
   const mutedHex = (typeof legacy["muted"] === "string" ? legacy["muted"] : theme.muted?.fg) ?? "#888888"
   const cursorBg = legacy["cursorbg"] ?? theme.cursor?.bg ?? theme.bg
   const cursorFg = legacy["cursor"] ?? theme.cursor?.fg ?? theme.fg
-  const selectionBg = legacy["selectionbg"] ?? theme.selected?.bg ?? theme.bg
-  const selectionFg = legacy["selection"] ?? theme.selected?.fgOn ?? theme.fg
+  // Selection comes from Sterling's nested `selected` role only (legacy
+  // `selectionbg` / `selection` aliases removed in 0.21.0).
+  const selectionBg = theme.selected?.bg ?? theme.bg
+  const selectionFg = theme.selected?.fgOn ?? theme.fg
   return {
     name: theme.name,
     dark: isDark(theme.bg),

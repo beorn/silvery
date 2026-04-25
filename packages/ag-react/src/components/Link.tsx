@@ -74,7 +74,7 @@ export interface LinkProps extends Omit<TextProps, "children"> {
 export function Link({
   href,
   children,
-  color = "$link",
+  color = "$fg-link",
   variant = "arm-on-cmd-hover",
   onClick,
   onMouseEnter,

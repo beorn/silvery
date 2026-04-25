@@ -5,24 +5,28 @@
  * ColorScheme. This validates the derived Theme object.
  */
 
-/** All 33 required semantic token keys on Theme (excludes `name` and `palette`). */
+/**
+ * Required semantic token keys on Theme (excludes `name` and `palette`).
+ *
+ * Sterling owns selection / inverse / link styling via flat tokens
+ * (`bg-selected`, `fg-on-selected`, `bg-inverse`, `fg-on-inverse`, `fg-link`)
+ * baked in by `inlineSterlingTokens`. The legacy single-hex aliases
+ * (`selection`, `selectionbg`, `inverse`, `inversebg`, `link`) were removed
+ * in 0.21.0 (sterling-purge-legacy-tokens).
+ */
 export const THEME_TOKEN_KEYS: readonly string[] = [
   // Root pair
   "bg",
   "fg",
-  // 6 surface pairs (base = text, *bg = background)
+  // Surface pairs (base = text, *bg = background)
   "muted",
   "mutedbg",
   "surface",
   "surfacebg",
   "popover",
   "popoverbg",
-  "inverse",
-  "inversebg",
   "cursor",
   "cursorbg",
-  "selection",
-  "selectionbg",
   // 7 accent pairs (base = area bg, *fg = text on area)
   "primary",
   "primaryfg",
@@ -38,11 +42,10 @@ export const THEME_TOKEN_KEYS: readonly string[] = [
   "successfg",
   "info",
   "infofg",
-  // 5 standalone tokens
+  // Standalone tokens
   "border",
   "inputborder",
   "focusborder",
-  "link",
   "disabledfg",
 ] as const
 

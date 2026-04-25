@@ -1,6 +1,6 @@
 {
   "name": "@silvery/create",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": true,
   "description": "App composition and state management for silvery",
   "license": "MIT",
@@ -111,13 +111,13 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ag": "0.20.0",
-    "@silvery/ag-react": "0.20.0",
-    "@silvery/ag-term": "0.20.0",
-    "@silvery/commands": "0.20.0",
-    "@silvery/headless": "0.20.0",
-    "@silvery/ink": "0.20.0",
-    "@silvery/test": "0.20.0",
+    "@silvery/ag": "0.21.0",
+    "@silvery/ag-react": "0.21.0",
+    "@silvery/ag-term": "0.21.0",
+    "@silvery/commands": "0.21.0",
+    "@silvery/headless": "0.21.0",
+    "@silvery/ink": "0.21.0",
+    "@silvery/test": "0.21.0",
     "alien-signals": "^3.1.2"
   },
   "tsdown": {

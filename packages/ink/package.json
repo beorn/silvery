@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ink",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": true,
   "description": "Ink and Chalk API compatibility layer (not published separately)",
   "license": "MIT",
@@ -48,9 +48,9 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ag-react": "0.20.0",
-    "@silvery/ag-term": "0.20.0",
-    "@silvery/ansi": "0.20.0"
+    "@silvery/ag-react": "0.21.0",
+    "@silvery/ag-term": "0.21.0",
+    "@silvery/ansi": "0.21.0"
   },
   "tsdown": {
     "clean": true,

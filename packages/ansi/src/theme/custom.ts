@@ -80,12 +80,8 @@ const RESERVED_KEYS = new Set<string>([
   "surfacebg",
   "popover",
   "popoverbg",
-  "inverse",
-  "inversebg",
   "cursor",
   "cursorbg",
-  "selection",
-  "selectionbg",
   "primary",
   "primaryfg",
   "secondary",
@@ -103,7 +99,6 @@ const RESERVED_KEYS = new Set<string>([
   "border",
   "inputborder",
   "focusborder",
-  "link",
   "disabledfg",
   "palette",
   "name",
@@ -119,6 +114,12 @@ const RESERVED_KEYS = new Set<string>([
   "fg-active",
   "bg-selected-hover",
   "bg-surface-hover",
+  // Sterling flat selection / inverse / link tokens (replaced legacy aliases in 0.21.0)
+  "bg-selected",
+  "fg-on-selected",
+  "bg-inverse",
+  "fg-on-inverse",
+  "fg-link",
 ])
 
 function stripSigil(key: string): string {

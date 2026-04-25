@@ -1,6 +1,6 @@
 {
   "name": "silvery",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "React for modern terminal apps — powerful apps, polished UIs, proudly terminal",
   "keywords": [
     "ansi",
@@ -102,8 +102,8 @@
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.3",
-    "@silvery/color": "0.20.0",
-    "@silvery/commander": "0.20.0",
+    "@silvery/color": "0.21.0",
+    "@silvery/commander": "0.21.0",
     "css-select": "^7.0.0",
     "css-what": "^8.0.0",
     "loggily": "0.6.0",

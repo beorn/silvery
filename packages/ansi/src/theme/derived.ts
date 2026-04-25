@@ -30,7 +30,7 @@ export const DEFAULT_VARIANTS: Record<string, Variant> = {
   "fine-print": { color: "$muted", dim: true },
   strong: { bold: true },
   em: { italic: true },
-  link: { color: "$link", underlineStyle: "single" },
+  link: { color: "$fg-link", underlineStyle: "single" },
   key: { color: "$accent", bold: true },
   code: { backgroundColor: "$mutedbg" },
   kbd: { backgroundColor: "$mutedbg", color: "$accent", bold: true },

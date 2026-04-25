@@ -227,15 +227,15 @@ export function validateThemeInvariants(
 
   if (checkVisibility) {
     // Sterling ships `bg-selected` + `bg-cursor` as first-class flat tokens
-    // (since the sterling-selection-tokens work landed). The legacy fallback
-    // to `selectionbg` / `cursorbg` is retained for hand-authored Themes that
-    // don't flow through `inlineSterlingTokens` and for the 0.19.x transition
-    // window — both paths get purged in 0.20.0 (sterling-purge-legacy-tokens).
+    // baked in by `inlineSterlingTokens`. `bg-cursor` falls back to legacy
+    // `cursorbg` (still emitted by `deriveTheme` for hand-authored themes
+    // that haven't migrated). The legacy `selectionbg` fallback was dropped
+    // in 0.21.0 (sterling-purge-legacy-tokens) — every Theme has Sterling
+    // tokens inlined.
     const themeAny = theme as unknown as Record<string, string | undefined>
-    const selectionBg = themeAny["bg-selected"] ?? themeAny["selectionbg"] ?? ""
+    const selectionBg = themeAny["bg-selected"] ?? ""
     const cursorBg = themeAny["bg-cursor"] ?? themeAny["cursorbg"] ?? ""
-    // Prefer Sterling key in violation tokens/messages when populated.
-    const selectionKey = themeAny["bg-selected"] !== undefined ? "bg-selected" : "selectionbg"
+    const selectionKey = "bg-selected"
     const cursorKey = themeAny["bg-cursor"] !== undefined ? "bg-cursor" : "cursorbg"
 
     // Selection visibility — ΔL ≥ 0.08 between selection bg and bg (so highlight is distinguishable)

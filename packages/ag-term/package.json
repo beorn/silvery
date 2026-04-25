@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ag-term",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": true,
   "description": "Terminal rendering target for silvery (internal — use silvery instead)",
   "license": "MIT",
@@ -369,16 +369,16 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ag": "0.20.0",
-    "@silvery/ag-react": "0.20.0",
-    "@silvery/ansi": "0.20.0",
-    "@silvery/color": "0.20.0",
-    "@silvery/create": "0.20.0",
-    "@silvery/headless": "0.20.0",
-    "@silvery/scope": "0.20.0",
-    "@silvery/signals": "0.20.0",
-    "@silvery/test": "0.20.0",
-    "@silvery/theme": "0.20.0",
+    "@silvery/ag": "0.21.0",
+    "@silvery/ag-react": "0.21.0",
+    "@silvery/ansi": "0.21.0",
+    "@silvery/color": "0.21.0",
+    "@silvery/create": "0.21.0",
+    "@silvery/headless": "0.21.0",
+    "@silvery/scope": "0.21.0",
+    "@silvery/signals": "0.21.0",
+    "@silvery/test": "0.21.0",
+    "@silvery/theme": "0.21.0",
     "flexily": "0.5.2"
   },
   "tsdown": {

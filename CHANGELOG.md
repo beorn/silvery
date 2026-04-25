@@ -7,6 +7,66 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## 0.21.0 — Purge legacy selection / inverse / link runtime emit (BREAKING)
+
+Companion to 0.20.0 ("Sterling is THE Theme"). 0.20.0 removed the legacy
+fields from the Theme **type**; this release removes them from the runtime
+emit. Consumers reading `theme.selectionbg` / `theme.selection` /
+`theme.inverse` / `theme.inversebg` / `theme.link` via bracket access
+(escaping the type system) at runtime will now see `undefined`.
+
+### What's breaking
+
+- `deriveTruecolorTheme`, `deriveAnsi16ThemeRaw`, and `generateTheme` no
+  longer write `selection`, `selectionbg`, `inverse`, `inversebg`, or
+  `link` fields onto the returned Theme. Sterling's flat tokens
+  (`bg-selected`, `fg-on-selected`, `bg-selected-hover`, `bg-inverse`,
+  `fg-on-inverse`, `fg-link`) are the canonical surface — every Theme has
+  them via `inlineSterlingTokens`.
+- `theme/invariants.ts` visibility check drops the
+  `themeAny["bg-selected"] ?? themeAny["selectionbg"]` fallback chain —
+  Sterling tokens are always present, so the fallback was dead.
+- `validate-theme.ts` and `theme/custom.ts` no longer recognize the legacy
+  field names. Validating a hand-authored Theme that still uses them
+  will flag them as `extra`.
+- `monochrome.ts` legacy mappings for `selection`, `selectionbg`,
+  `inverse`, `inversebg`, `link` are gone. Sterling flat-token mappings
+  (`bg-selected`, `fg-on-selected`, `bg-inverse`, `fg-on-inverse`,
+  `fg-link`) remain.
+- `sterling/inline.ts` `schemeFromTheme` reads only Sterling's nested
+  `selected` role; the `legacy["selectionbg"] ?? theme.selected?.bg`
+  fallback is removed.
+- `theme/derived.ts` Theme interface drops the legacy fields.
+
+### Migration
+
+```ts
+// Removed in 0.21.0 → Sterling equivalents
+theme.selectionbg → theme["bg-selected"]
+theme.selection   → theme["fg-on-selected"]
+theme.inversebg   → theme["bg-inverse"]
+theme.inverse     → theme["fg-on-inverse"]
+theme.link        → theme["fg-link"]
+```
+
+Or via the nested role objects:
+
+```ts
+theme.selected.bg       // bg-selected
+theme.selected.fgOn     // fg-on-selected
+theme.selected.hover.bg // bg-selected-hover
+theme.inverse.bg        // bg-inverse
+theme.inverse.fgOn      // fg-on-inverse
+theme.link.fg           // fg-link
+```
+
+`scheme.selectionBackground` / `scheme.selectionForeground` remain on the
+**input** `ColorScheme` type — only the derived `Theme` was purged.
+
+### Tracked under
+
+- `km-silvery.sterling-purge-legacy-tokens`
+
 ## 0.20.0 — Sterling is THE Theme (BREAKING)
 
 Sterling becomes silvery's one-and-only `Theme` shape at the type level.
