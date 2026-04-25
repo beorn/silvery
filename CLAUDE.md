@@ -325,6 +325,26 @@ CSS flexbox via Flexily. Let the layout engine compute positions and sizes.
 
 `useBoxRect()` gives synchronous access to a component's size during render — no effects, no 0x0 flash.
 
+### CSS-correct defaults
+
+silvery uses CSS-correct flex defaults (`flexShrink: 1`, `alignContent: stretch`,
+plus CSS §4.5 flex-item auto min-size). This matches browser flexbox semantics —
+the same code lays out the same way in a browser, on canvas, and in the
+terminal. **You don't need to thread `flexShrink={1} minWidth={0}` through wrap
+chains** — that ceremony was required under the historical Yoga-flavored
+defaults and is no longer load-bearing. `<Prose>` is now optional typography
+sugar rather than a wrap-enablement primitive.
+
+The Yoga preset is reachable from flexily directly (`createFlexily({ defaults: "yoga" })`)
+for projects that want drop-in Yoga compatibility. silvery's Ink-compat layer
+(`@silvery/ink`) uses Yoga semantics internally to match Ink behavior; that's
+the only internal user of the Yoga preset. Consumers building silvery apps
+should not need to think about presets.
+
+See [vendor/flexily/docs/guide/yoga-divergences.md](../flexily/docs/guide/yoga-divergences.md)
+for the full divergence list and beads `km-silvery.flexshrink-flip-silvery-only` +
+`km-flexily.auto-min-size-flex-items` for the migration history.
+
 ## Testing
 
 Three levels, from fast to full-fidelity:
