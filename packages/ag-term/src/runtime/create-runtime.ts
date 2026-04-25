@@ -25,6 +25,8 @@ import { createOutputPhase } from "../pipeline/output-phase"
 import { takeUntil } from "@silvery/create/streams"
 import { diff } from "./diff"
 import type { Buffer, Dims, Event, Runtime, RuntimeOptions } from "./types"
+import { findActiveCursorRect } from "@silvery/ag/layout-signals"
+import { ANSI, setCursorStyle, resetCursorStyle } from "../output"
 
 // =============================================================================
 // Event Channel - unified async iterable for all internal events
@@ -268,6 +270,27 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       // keeps the output phase's cursor tracking intact.
       if (buffer.overlay && buffer.overlay.length > 0) {
         patch += buffer.overlay
+      }
+
+      // Cursor positioning suffix. In fullscreen mode the post-frame terminal
+      // cursor must land at the active textarea/textinput (or be hidden).
+      // Layout-output cursors (BoxProps.cursorOffset → cursorRect signal —
+      // Phase 2 of `km-silvery.view-as-layout-output`) are read from the AgNode
+      // tree exposed via `buffer.nodes`. Fixes
+      // `km-silvercode.cursor-startup-position`: the createApp render path
+      // previously emitted no cursor ANSI at all, so the hardware cursor
+      // stayed wherever the last buffer-cell write landed.
+      //
+      // Inline mode skips this — `inlineCursorSuffix` (in output-phase.ts)
+      // already positions the cursor inside the diff output.
+      if (mode === "fullscreen") {
+        const cursor = findActiveCursorRect(buffer.nodes)
+        if (cursor && cursor.visible) {
+          const shapeSeq = cursor.shape ? setCursorStyle(cursor.shape) : resetCursorStyle()
+          patch += ANSI.moveCursor(cursor.x, cursor.y) + shapeSeq + ANSI.CURSOR_SHOW
+        } else {
+          patch += ANSI.CURSOR_HIDE
+        }
       }
 
       // Debug: capture raw ANSI output that's actually written to the terminal

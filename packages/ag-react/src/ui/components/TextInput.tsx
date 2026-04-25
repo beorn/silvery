@@ -31,7 +31,6 @@ import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { useReadline } from "./useReadline"
 import { useFocusable } from "../../hooks/useFocusable"
-import { useCursor } from "../../hooks/useCursor"
 import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
 
 // =============================================================================
@@ -199,7 +198,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   const showPlaceholder = !value && placeholder
 
   // Always show visual cursor (inverse/underline). When active, the hardware
-  // cursor is also positioned via useCursor() for terminal blink support.
+  // cursor is also positioned via the `cursorOffset` Box prop for terminal blink support.
   const cursorEl =
     cursorStyle === "underline" ? (
       <Text underline>{displayAtCursor}</Text>
@@ -207,19 +206,17 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
       <Text inverse>{displayAtCursor}</Text>
     )
 
-  // Compute border+padding offset for cursor positioning.
-  // useCursor reads scrollRect from the parent's NodeContext, but the text
-  // content is rendered inside this component's Box (which may have border
-  // and padding). We must add those offsets so the terminal cursor aligns
-  // with the text content area.
-  const borderColOffset = borderStyleProp ? 2 : 0 // border-left(1) + paddingX-left(1)
-  const borderRowOffset = borderStyleProp ? 1 : 0 // border-top(1)
-
-  useCursor({
-    col: prompt.length + displayBeforeCursor.length + borderColOffset,
-    row: borderRowOffset,
+  // Cursor positioning — declared as a Box prop so the layout phase resolves
+  // absolute terminal coordinates synchronously before the scheduler emits
+  // cursor ANSI. See bead `km-silvery.view-as-layout-output` (Phase 2). The
+  // outer Box's border+padding offsets are applied automatically by
+  // `computeCursorRect` — this component only declares the content-area
+  // relative position.
+  const cursorOffset = {
+    col: prompt.length + displayBeforeCursor.length,
+    row: 0,
     visible: isActive,
-  })
+  }
 
   // Click-to-position: map mouse click to cursor offset
   const handleMouseDown = useCallback(
@@ -280,6 +277,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
         borderStyle={borderStyleProp as any}
         borderColor={isActive ? focusBorderColor : borderColorProp}
         paddingX={1}
+        cursorOffset={cursorOffset}
         onMouseDown={handleMouseDown}
       >
         {inputContent}
@@ -289,7 +287,13 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   }
 
   return (
-    <Box focusable testID={testID} flexDirection="column" onMouseDown={handleMouseDown}>
+    <Box
+      focusable
+      testID={testID}
+      flexDirection="column"
+      cursorOffset={cursorOffset}
+      onMouseDown={handleMouseDown}
+    >
       {inputContent}
       {showUnderline && <Text color="$border-default">{"─".repeat(underlineWidth)}</Text>}
     </Box>

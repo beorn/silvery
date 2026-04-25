@@ -37,6 +37,7 @@ import {
 } from "./buffer"
 import { type Screenshotter, createScreenshotter } from "./screenshot"
 import { keyToAnsi, keyToKittyAnsi, parseHotkey } from "@silvery/ag/keys"
+import { findActiveCursorRect } from "@silvery/ag/layout-signals"
 import { updateKeyboardModifiers } from "./mouse-events"
 import type { ParsedMouse } from "./mouse"
 import { createMouseEventProcessor, processMouseEvent } from "./mouse-events"
@@ -643,6 +644,22 @@ export function buildApp(options: AppOptions): App {
     },
 
     getCursorState() {
+      // Layout-output cursor takes priority over the legacy store. After
+      // Phase 2 of `km-silvery.view-as-layout-output`, TextArea / TextInput
+      // declare cursor position as a Box prop (`cursorOffset`) which the
+      // layout phase resolves into `LayoutSignals.cursorRect`. The store
+      // remains as a fallback for Ink-compat consumers + the deprecated
+      // `useCursor` hook.
+      const root = getContainer()
+      const layoutCursor = findActiveCursorRect(root)
+      if (layoutCursor) {
+        return {
+          x: layoutCursor.x,
+          y: layoutCursor.y,
+          visible: layoutCursor.visible,
+          shape: layoutCursor.shape,
+        }
+      }
       return options.getCursorState?.() ?? null
     },
   }

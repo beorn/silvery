@@ -32,7 +32,7 @@
  */
 
 import { signal } from "@silvery/signals"
-import type { AgNode, Rect } from "./types"
+import type { AgNode, BoxProps, CursorShape, Rect } from "./types"
 
 // ============================================================================
 // Types
@@ -81,6 +81,33 @@ export interface ScrollStateSnapshot {
 }
 
 /**
+ * Cursor rect — absolute terminal coordinates of the cursor declared on a
+ * Box via `cursorOffset`, computed during the layout phase as the peer of
+ * `scrollRect` / `screenRect` / `boxRect`.
+ *
+ * Width/height are always 1 (the cursor occupies a single cell). The
+ * `visible` flag is a separate property because layout still computes the
+ * coordinates even when the cursor is hidden — that lets toggling
+ * `visible` re-emit the cursor without re-running layout.
+ */
+export interface CursorRect {
+  /** Absolute terminal X column (0-indexed) */
+  readonly x: number
+  /** Absolute terminal Y row (0-indexed) */
+  readonly y: number
+  /** Whether the cursor should be visible on this frame. */
+  readonly visible: boolean
+  /** Optional terminal cursor shape (DECSCUSR). */
+  readonly shape?: CursorShape
+}
+
+function cursorRectEqual(a: CursorRect | null, b: CursorRect | null): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  return a.x === b.x && a.y === b.y && a.visible === b.visible && a.shape === b.shape
+}
+
+/**
  * All reactive signals for an AgNode.
  *
  * Combined rect signals (layout outputs) + node signals (content/state).
@@ -91,6 +118,19 @@ export interface LayoutSignals {
   readonly boxRect: WritableSignal<Rect | null>
   readonly scrollRect: WritableSignal<Rect | null>
   readonly screenRect: WritableSignal<Rect | null>
+
+  /**
+   * Absolute terminal coordinates of the cursor declared by this node's
+   * `BoxProps.cursorOffset`. Null when the node has no cursorOffset prop, or
+   * before the first layout pass populates `scrollRect`.
+   *
+   * Phase 2 of `km-silvery.view-as-layout-output` — the scheduler reads this
+   * signal (rather than `cursorStore.getCursorState()`) to emit cursor
+   * positioning ANSI. Because layout phase runs synchronously before each
+   * render, the very first frame after mount sees the correct cursor — no
+   * effect-chain stale-read on conditional mounts.
+   */
+  readonly cursorRect: WritableSignal<CursorRect | null>
 
   // Scroll state for overflow="scroll" containers (null otherwise, or until
   // first layout pass). Peer of rect signals — synced by syncRectSignals.
@@ -120,6 +160,7 @@ export function getLayoutSignals(node: AgNode): LayoutSignals {
       boxRect: signal<Rect | null>(node.boxRect),
       scrollRect: signal<Rect | null>(node.scrollRect),
       screenRect: signal<Rect | null>(node.screenRect),
+      cursorRect: signal<CursorRect | null>(computeCursorRect(node)),
       scrollState: signal<ScrollStateSnapshot | null>(snapshotScrollState(node)),
       textContent: signal<string | undefined>(node.textContent),
       focused: signal<boolean>(node.interactiveState?.focused ?? false),
@@ -127,6 +168,38 @@ export function getLayoutSignals(node: AgNode): LayoutSignals {
     signalMap.set(node, s)
   }
   return s
+}
+
+/**
+ * Compute the absolute cursor rect for a node based on its `cursorOffset`
+ * prop and current `scrollRect`. Mirrors the math `useCursor` performs at
+ * effect time — but lifted into the layout phase so the value is available
+ * synchronously before scheduler emit.
+ *
+ * Returns null when the node has no `cursorOffset` prop OR when `scrollRect`
+ * is not yet populated (pre-layout).
+ */
+export function computeCursorRect(node: AgNode): CursorRect | null {
+  const props = node.props as BoxProps | undefined
+  const offset = props?.cursorOffset
+  if (!offset) return null
+  const scroll = node.scrollRect
+  if (!scroll) return null
+
+  // Border + padding offsets (mirrors useCursor.ts:171-180). When present,
+  // border adds 1 cell, padding values are taken with the same precedence as
+  // the layout engine: paddingX / paddingY > padding shorthand.
+  const padLeft = props.paddingLeft ?? props.paddingX ?? props.padding ?? 0
+  const padTop = props.paddingTop ?? props.paddingY ?? props.padding ?? 0
+  const borderLeft = props.borderStyle ? 1 : 0
+  const borderTop = props.borderStyle ? 1 : 0
+
+  return {
+    x: scroll.x + borderLeft + padLeft + offset.col,
+    y: scroll.y + borderTop + padTop + offset.row,
+    visible: offset.visible !== false,
+    shape: offset.shape,
+  }
 }
 
 /**
@@ -187,12 +260,29 @@ export function hasLayoutSignals(node: AgNode): boolean {
  * Reference-equality check prevents unnecessary downstream updates.
  */
 export function syncRectSignals(node: AgNode): void {
-  const s = signalMap.get(node)
+  // For cursor-bearing nodes, allocate signals lazily so the scheduler walk
+  // (`findActiveCursorRect`) sees them via `getLayoutSignals`. Without this,
+  // a node that ONLY uses `cursorOffset` (no useBoxRect / useScrollRect
+  // consumers) would never have signals allocated, and the cursor would
+  // never reach the scheduler. This is the prop-as-output equivalent of
+  // `useCursor`'s former `useScrollRect` subscription.
+  const props = (node.props as BoxProps | undefined) ?? undefined
+  const hasCursorOffset = !!props?.cursorOffset
+  const s = hasCursorOffset ? getLayoutSignals(node) : signalMap.get(node)
   if (!s) return
 
   if (node.boxRect !== s.boxRect()) s.boxRect(node.boxRect)
   if (node.scrollRect !== s.scrollRect()) s.scrollRect(node.scrollRect)
   if (node.screenRect !== s.screenRect()) s.screenRect(node.screenRect)
+
+  // Sync cursorRect — peer of the other rect signals, computed from the
+  // node's `cursorOffset` BoxProp + scrollRect. Only nodes with
+  // `cursorOffset` have a non-null cursorRect; clearing back to null when
+  // the prop is removed is handled by `computeCursorRect` returning null.
+  const nextCursorRect = computeCursorRect(node)
+  if (!cursorRectEqual(nextCursorRect, s.cursorRect())) {
+    s.cursorRect(nextCursorRect)
+  }
 
   // Sync scrollState signal — projects AgNode.scrollState (layout-phase's
   // pixel-space truth) into a reactive snapshot. `useScrollState` consumers
@@ -206,6 +296,47 @@ export function syncRectSignals(node: AgNode): void {
   if (!scrollStateEqual(nextScrollState, s.scrollState())) {
     s.scrollState(nextScrollState)
   }
+}
+
+// ============================================================================
+// Active cursor lookup (for scheduler)
+// ============================================================================
+
+/**
+ * Walk the tree and find the active cursor rect — the deepest visible
+ * cursor declared via `BoxProps.cursorOffset`. Returns null when no node
+ * has a visible cursor.
+ *
+ * Visited in tree order (depth-first, post-order). The deepest match wins
+ * because cursor is "last writer wins" by convention — a TextArea inside a
+ * Modal should win over a TextInput in the underlying form. Tree-order
+ * stability gives this property without needing tie-breaker fields.
+ *
+ * Called by the scheduler before emitting cursor positioning ANSI (replaces
+ * the legacy `cursorStore.getCursorState()` lookup). Walking is O(N) but
+ * only checks `props.cursorOffset` per node — no per-node signal access
+ * unless a cursor exists. For trees without any cursor consumers, returns
+ * null after a single tree traversal.
+ */
+export function findActiveCursorRect(root: AgNode): CursorRect | null {
+  let result: CursorRect | null = null
+
+  function walk(node: AgNode): void {
+    for (const child of node.children) {
+      walk(child)
+    }
+    const props = node.props as BoxProps | undefined
+    if (!props?.cursorOffset) return
+    const s = signalMap.get(node)
+    const rect = s ? s.cursorRect() : computeCursorRect(node)
+    if (rect && rect.visible) {
+      // Last write wins — accept the latest (deepest in post-order) match.
+      result = rect
+    }
+  }
+
+  walk(root)
+  return result
 }
 
 /**

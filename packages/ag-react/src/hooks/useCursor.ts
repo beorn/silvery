@@ -158,6 +158,25 @@ export function resetCursorState(): void {
  *
  * Uses CursorContext if a CursorProvider is present (per-instance isolation).
  * Falls back to module-level globals otherwise (backward compat).
+ *
+ * @deprecated Phase 2 of `km-silvery.view-as-layout-output` migrated cursor
+ * positioning from a React-effect-chain (`useCursor` → `useScrollRect` →
+ * `setCursorState`) to a layout-output prop (`<Box cursorOffset={…}>`). The
+ * prop path resolves absolute coordinates synchronously during the layout
+ * phase, so the very first frame after a conditional mount emits correct
+ * cursor ANSI — fixing `km-silvercode.cursor-startup-position` end-to-end.
+ *
+ * Migrate consumers by deleting the `useCursor({col, row, visible})` call
+ * and adding `cursorOffset={{col, row, visible}}` to the surrounding Box. The
+ * layout phase applies border + padding offsets automatically, so consumers
+ * no longer need to add `borderColOffset` / `borderRowOffset` manually.
+ *
+ * This hook remains as a back-compat wrapper that writes to the cursor
+ * store; the scheduler still reads the store as a fallback when no
+ * `cursorOffset` prop is set on any node. Slated for deletion once all
+ * in-tree consumers migrate (TextArea + TextInput already migrated; Ink
+ * compat goes through the store directly and is unaffected). See bead
+ * `km-silvery.delete-cursor-globals`.
  */
 export function useCursor(position: CursorPosition): void {
   const { col, row, visible = true, shape } = position

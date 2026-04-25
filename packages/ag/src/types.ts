@@ -55,6 +55,46 @@ export function rectEqual(a: Rect | null, b: Rect | null): boolean {
 }
 
 // ============================================================================
+// Cursor Types (layout output — peer of boxRect/scrollRect/screenRect)
+// ============================================================================
+
+/**
+ * Terminal cursor shape (DECSCUSR). Mirrors `@silvery/ag-term/output#CursorShape`
+ * but lives at the framework-agnostic layer so AgNode props don't depend on
+ * the terminal package.
+ *
+ * Lower-case names match the DECSCUSR vocabulary: `block` (steady #2),
+ * `underline` (steady #4), `bar` (steady #6). The blinking variants are
+ * controlled by the terminal default — components only declare the shape.
+ */
+export type CursorShape = "block" | "underline" | "bar"
+
+/**
+ * Component-relative cursor position declared as a Box prop.
+ *
+ * When set on a Box, the layout phase computes the absolute terminal
+ * coordinates by adding the parent's `scrollRect` + the box's border + padding
+ * + this offset. The result is exposed via `LayoutSignals.cursorRect` and read
+ * by the scheduler's cursor-suffix emission.
+ *
+ * This is the "cursor as layout output" path — it bypasses the React effect
+ * chain entirely (`useCursor` → `useScrollRect` → `setCursorState`) so the
+ * very first frame after mount emits the correct cursor positioning ANSI.
+ * See bead `km-silvery.view-as-layout-output` (Phase 2) and
+ * `km-silvercode.cursor-startup-position`.
+ */
+export interface CursorOffset {
+  /** Column offset within the box's content area (0-indexed) */
+  col: number
+  /** Row offset within the box's content area (0-indexed) */
+  row: number
+  /** Whether the cursor should be visible. Default: true */
+  visible?: boolean
+  /** Terminal cursor shape (DECSCUSR). Default: terminal default */
+  shape?: CursorShape
+}
+
+// ============================================================================
 // Interactive State Types
 // ============================================================================
 
@@ -391,6 +431,24 @@ export interface BoxProps
    * Only applies when overflow='scroll'.
    */
   overflowIndicator?: boolean
+
+  /**
+   * Component-relative cursor position. When set, the layout phase computes
+   * absolute terminal coordinates (border + padding + offset relative to the
+   * box's `scrollRect`) and writes them to `LayoutSignals.cursorRect`. The
+   * scheduler reads this value to emit cursor positioning ANSI on the very
+   * first frame after mount — bypassing the React effect chain that
+   * `useCursor` relies on.
+   *
+   * This is the "cursor as layout output" path. The legacy `useCursor` hook
+   * remains as a back-compat wrapper but its signal-effect bridge is unsafe
+   * across conditional mounts (see `km-silvercode.cursor-startup-position`).
+   *
+   * Last-writer-wins across nodes: terminals have one hardware cursor, so
+   * setting `visible: true` on multiple nodes resolves to the deepest visible
+   * cursor in tree order.
+   */
+  cursorOffset?: CursorOffset
 
   /**
    * Virtualization-internal: set only by virtual list placeholders (e.g.

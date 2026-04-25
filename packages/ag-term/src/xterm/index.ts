@@ -62,6 +62,7 @@ import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
 import { catppuccinMocha } from "@silvery/theme/schemes"
 import { deriveTheme, type Theme } from "@silvery/ansi"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
+import { findActiveCursorRect } from "@silvery/ag/layout-signals"
 
 /** Default theme for xterm.js rendering — Catppuccin Mocha (dark). */
 let cachedXtermTheme: Theme | null = null
@@ -451,8 +452,11 @@ export function renderToXterm(
       terminal.write(result.output)
     }
 
-    // Emit cursor position after render (useCursor stores state, we emit ANSI)
-    const cursor = cursorStore.accessors.getCursorState()
+    // Emit cursor position after render. Layout-output cursor (via
+    // BoxProps.cursorOffset → cursorRect signal) takes priority over the
+    // legacy cursor store — see Phase 2 of `km-silvery.view-as-layout-output`.
+    const layoutCursor = findActiveCursorRect(root)
+    const cursor = layoutCursor ?? cursorStore.accessors.getCursorState()
     if (cursor?.visible) {
       // Move cursor to absolute position and show it
       terminal.write(`\x1b[${cursor.y + 1};${cursor.x + 1}H\x1b[?25h`)

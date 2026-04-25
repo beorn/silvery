@@ -46,7 +46,6 @@
 import { forwardRef, useCallback, useImperativeHandle, useRef } from "react"
 import { useBoxRect } from "../../hooks/useLayout"
 import { useFocusable } from "../../hooks/useFocusable"
-import { useCursor } from "../../hooks/useCursor"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { useTextArea } from "./useTextArea"
@@ -231,24 +230,38 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
       }
     : {}
 
-  // Compute border+padding offset for cursor positioning.
-  // useCursor reads scrollRect from the parent's NodeContext, but the text
-  // content is rendered inside this component's Box (which may have border
-  // and padding). We must add those offsets so the terminal cursor aligns
-  // with the text content area.
-  const borderColOffset = borderStyleProp ? 2 : 0 // border-left(1) + paddingX-left(1)
-  const borderRowOffset = borderStyleProp ? 1 : 0 // border-top(1)
-
-  // Hide hardware cursor when selection is active (cursor shown as part of selection rendering)
-  useCursor({
-    col: ta.cursorCol + borderColOffset,
-    row: ta.visibleCursorRow + borderRowOffset,
+  // Cursor positioning — declared as a Box prop (`cursorOffset`) so the
+  // layout phase resolves the absolute terminal coordinates synchronously
+  // before the scheduler emits the cursor ANSI. This avoids the React-effect
+  // chain that the legacy `useCursor` hook used (`useScrollRect` →
+  // `useLayoutEffect` → `setCursorState`), which produced stale-null reads
+  // on the very first frame after a conditional mount. See bead
+  // `km-silvery.view-as-layout-output` (Phase 2).
+  //
+  // Border + padding offsets here are intentionally absent — the layout
+  // phase pulls them from `borderStyle` / `padding*` on the same Box and
+  // applies them automatically (see `computeCursorRect` in
+  // `@silvery/ag/layout-signals`). Components only declare the
+  // content-area-relative cursor position.
+  //
+  // Hide hardware cursor when selection is active (cursor is shown as part
+  // of selection rendering).
+  const cursorOffset = {
+    col: ta.cursorCol,
+    row: ta.visibleCursorRow,
     visible: isActive && !disabled && !ta.selection,
-  })
+  }
 
   if (showPlaceholder) {
     return (
-      <Box focusable testID={testID} flexDirection="column" height={height} {...borderProps}>
+      <Box
+        focusable
+        testID={testID}
+        flexDirection="column"
+        height={height}
+        cursorOffset={cursorOffset}
+        {...borderProps}
+      >
         <Text color="$fg-muted">{placeholder}</Text>
       </Box>
     )
@@ -261,6 +274,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
       key={ta.scrollOffset}
       flexDirection="column"
       height={height}
+      cursorOffset={cursorOffset}
       {...borderProps}
       onMouseDown={handleMouseDown}
     >

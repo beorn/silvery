@@ -27,6 +27,7 @@ import {
   getCursorState as globalGetCursorState,
   type CursorAccessors,
 } from "@silvery/ag-react/hooks/useCursor"
+import { findActiveCursorRect, type CursorRect } from "@silvery/ag/layout-signals"
 import { copyToClipboard as copyToClipboardImpl } from "./clipboard"
 import { ANSI, notify as notifyTerminal, setCursorStyle, resetCursorStyle } from "./output"
 import type { PipelineConfig } from "./pipeline"
@@ -506,6 +507,37 @@ export class RenderScheduler {
   }
 
   /**
+   * Resolve the active cursor for this frame.
+   *
+   * Priority:
+   *   1. Layout-output cursor (BoxProps.cursorOffset → LayoutSignals.cursorRect).
+   *      Set synchronously by the layout phase, so available on the very first
+   *      frame after mount — no React-effect-chain stale read.
+   *   2. Cursor store (legacy useCursor() / Ink-compat setCursorPosition()).
+   *      Falls back here when no node declares a layout-output cursor.
+   *
+   * Returns null when no active cursor in either path.
+   *
+   * The shape is identical between paths so callers (cursor suffix emission,
+   * inline-mode pipeline cursor) treat them uniformly.
+   */
+  private resolveActiveCursor(): CursorRect | null {
+    const layoutCursor = findActiveCursorRect(this.root)
+    if (layoutCursor) return layoutCursor
+
+    const storeCursor = this.getCursorState()
+    if (!storeCursor) return null
+    // Project store CursorState into CursorRect shape (visible defaults to
+    // true on the store side; we keep it explicit here for clarity).
+    return {
+      x: storeCursor.x,
+      y: storeCursor.y,
+      visible: storeCursor.visible !== false,
+      shape: storeCursor.shape,
+    }
+  }
+
+  /**
    * Execute the actual render.
    */
   private doRender(): void {
@@ -529,13 +561,21 @@ export class RenderScheduler {
       // Run render pipeline
       const scrollbackOffset = this.scrollbackOffset
       this.scrollbackOffset = 0 // Consume the offset
-      // For inline mode, pass cursor state into the pipeline so the output
-      // phase can position the real terminal cursor at the useCursor() location.
-      const inlineCursor = this.mode === "inline" ? this.getCursorState() : undefined
       const measurer = this.pipelineConfig?.measurer
+      // Inline cursor is resolved AFTER layout below — the layout-output path
+      // (BoxProps.cursorOffset → cursorRect signal) requires layout to have
+      // run. The legacy store fallback used to be resolved pre-layout, but
+      // that path doesn't depend on layout state either, so deferring is safe.
+      let inlineCursor: { x: number; y: number; visible: boolean; shape?: CursorRect["shape"] } | null | undefined
       const doRender = () => {
         const ag = createAg(this.root, { measurer })
         ag.layout({ cols: width, rows: height })
+        if (this.mode === "inline") {
+          const c = this.resolveActiveCursor()
+          // Output phase expects the legacy CursorState shape. CursorRect is a
+          // structural superset (same fields), so a direct assign is safe.
+          inlineCursor = c
+        }
         const { buffer, overlay } = ag.render({ prevBuffer: this.prevBuffer })
 
         const start = performance.now()
@@ -550,7 +590,7 @@ export class RenderScheduler {
             this.mode === "inline"
               ? (this.size?.rows() ?? this.stdout.rows ?? 24)
               : undefined,
-            inlineCursor,
+            inlineCursor ?? undefined,
           )
         } catch (e) {
           if (e instanceof Error) {
@@ -596,10 +636,14 @@ export class RenderScheduler {
       // Build cursor control suffix (position + show/hide).
       // This goes after rendered content so the terminal cursor lands
       // at the right spot after painting.
+      //
+      // Cursor source priority — see resolveActiveCursor():
+      //   1. Layout-output cursor (BoxProps.cursorOffset → cursorRect signal)
+      //   2. Cursor store (legacy useCursor() / Ink-compat path)
       let cursorSuffix = ""
       if (this.nonTTYMode === "tty") {
-        const cursor = this.getCursorState()
-        if (cursor?.visible) {
+        const cursor = this.resolveActiveCursor()
+        if (cursor && cursor.visible) {
           const shapeSeq = cursor.shape ? setCursorStyle(cursor.shape) : resetCursorStyle()
           cursorSuffix = ANSI.moveCursor(cursor.x, cursor.y) + shapeSeq + ANSI.CURSOR_SHOW
         } else {
