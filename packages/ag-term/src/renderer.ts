@@ -54,6 +54,12 @@ import { IncrementalRenderMismatchError } from "./scheduler.js"
 import type { RenderPhaseStats } from "./pipeline/types"
 import { debugTree } from "@silvery/test/debug"
 import { createLogger } from "loggily"
+// Side-effect import: arms `@silvery/ag`'s wrap-measurer registry with the
+// terminal grapheme-aware adapter. Importing renderer.ts (via createRenderer
+// in tests, or run() in production) now means soft-wrap-aware
+// computeSelectionFragments without further wiring. See bead
+// km-silvery.softwrap-selection-fragments.
+import "./runtime/wrap-measurer-registration"
 
 const log = createLogger("silvery:render")
 

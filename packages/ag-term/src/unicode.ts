@@ -786,6 +786,205 @@ export function getActiveLineHeight(): number {
 }
 
 /**
+ * One per-visual-line slice produced by `wrapTextWithOffsets`. The offsets
+ * are character indices into the *original* input text, so callers can
+ * align selection ranges, syntax highlighting, or any per-cell decoration
+ * onto the wrapped layout without re-running the wrap algorithm.
+ *
+ * Convention: `endOffset` is exclusive — `text === source.slice(start, end)`
+ * for hard wraps. Soft wraps that swallow a whitespace boundary keep the
+ * boundary char inside the offset window (so consecutive `endOffset`s
+ * advance past the swallowed character) but omit it from `text` — see the
+ * comment block in `wrapTextWithOffsets` for rationale.
+ */
+export interface WrapTextSlice {
+  readonly text: string
+  readonly startOffset: number
+  readonly endOffset: number
+}
+
+/**
+ * Wrap text and return offset-tagged slices — one per visual line.
+ *
+ * This is the offset-aware sibling of `wrapText`. It implements the same
+ * word-boundary algorithm as `wrapTextWithMeasurer` but tracks grapheme
+ * indices into the source so the geometry layer (`computeSelectionFragments`
+ * in `@silvery/ag`) can project a selection range onto each visual row
+ * without ambiguity.
+ *
+ * **No newline preservation, no trim**: the contract is "one paragraph in,
+ * one slice list out." Callers split on `\n` themselves and walk
+ * paragraphs through this helper. That keeps the offset mapping simple —
+ * paragraph-relative slices translate to source offsets via a single
+ * paragraph-start addition. The geometry layer needs neither trim nor
+ * newline handling; existing `wrapText` keeps both for the rendering path.
+ *
+ * **Boundary-character handling**: when a soft wrap drops a boundary
+ * (space/hyphen) — e.g. `"hello world"` at width 5 produces visible lines
+ * `["hello", "world"]` — the next slice's `startOffset` advances past the
+ * dropped char so visual-line indices remain in source-position lockstep.
+ * This means `text.length <= endOffset - startOffset` for soft-wrapped
+ * lines (selection-range arithmetic uses the offsets, not the slice
+ * length).
+ *
+ * Returns `[]` for empty text. Returns a single-slice passthrough for text
+ * that fits in `width` without wrapping. Width `<= 0` is treated as
+ * "don't wrap" (single passthrough slice) — callers receive geometry they
+ * can project onto a clipped/zero-width content rect without a divide-by-zero.
+ */
+export function wrapTextWithOffsets(text: string, width: number): WrapTextSlice[] {
+  if (text.length === 0) return []
+  if (width <= 0) {
+    // Edge case: caller gave us a non-positive width (clipped content rect,
+    // pre-layout). Don't wrap; emit one passthrough so downstream offset
+    // math doesn't have to special-case empty arrays.
+    return [{ text, startOffset: 0, endOffset: text.length }]
+  }
+
+  const measurer = _scopedMeasurer
+  const gWidthFn = measurer ? measurer.graphemeWidth.bind(measurer) : graphemeWidth
+
+  // ANSI-aware grapheme split — zero-width tokens flow through with the
+  // previous visible grapheme so they don't disturb the offset count.
+  const graphemes = splitGraphemesAnsiAware(text)
+
+  // Pre-compute each grapheme's source offset (start index in `text`).
+  // `splitGraphemesAnsiAware` preserves all bytes, so offsets are simply
+  // running cumulative lengths.
+  const grapheneOffsets: number[] = new Array(graphemes.length)
+  {
+    let pos = 0
+    for (let i = 0; i < graphemes.length; i++) {
+      grapheneOffsets[i] = pos
+      pos += graphemes[i]!.length
+    }
+  }
+
+  const out: WrapTextSlice[] = []
+  let currentLine = ""
+  let currentWidth = 0
+  let lineStartGraphemeIdx = 0
+
+  // Last word-boundary break point inside the current line.
+  let lastBreakIndex = -1 // char position within currentLine
+  let lastBreakWidth = 0
+  let lastBreakGraphemeIdx = -1 // index into `graphemes` AFTER the break
+
+  function pushLine(endGraphemeIdx: number): void {
+    // endGraphemeIdx is the FIRST grapheme that does NOT belong to this
+    // line. The slice covers source [lineStartOffset, breakOffset).
+    const startOffset = grapheneOffsets[lineStartGraphemeIdx] ?? text.length
+    const endOffset =
+      endGraphemeIdx < graphemes.length
+        ? (grapheneOffsets[endGraphemeIdx] ?? text.length)
+        : text.length
+    out.push({ text: currentLine, startOffset, endOffset })
+  }
+
+  for (let i = 0; i < graphemes.length; i++) {
+    const grapheme = graphemes[i]!
+    const gWidth = gWidthFn(grapheme)
+
+    // Zero-width: append without consuming visible width. Boundary
+    // tracking is unaffected — these chars belong to the surrounding
+    // grapheme cluster.
+    if (gWidth === 0) {
+      currentLine += grapheme
+      continue
+    }
+
+    if (isWordBoundary(grapheme)) {
+      // Boundary char: include if it fits, mark as break point.
+      if (currentWidth + gWidth <= width) {
+        currentLine += grapheme
+        currentWidth += gWidth
+        if (grapheme !== " " || !isBreakBeforeOperatorWith(graphemes, i, gWidthFn)) {
+          lastBreakIndex = currentLine.length
+          lastBreakWidth = currentWidth
+          lastBreakGraphemeIdx = i + 1
+        }
+        continue
+      }
+      // Boundary char doesn't fit: break BEFORE it; the boundary is
+      // swallowed (consumed as the break). The next slice's startOffset
+      // jumps past it, so source coverage stays monotone.
+      if (currentLine) {
+        pushLine(i) // line ends just before the boundary
+      }
+      currentLine = ""
+      currentWidth = 0
+      // Skip the boundary character itself — start the next line from i+1.
+      lineStartGraphemeIdx = i + 1
+      lastBreakIndex = -1
+      lastBreakWidth = 0
+      lastBreakGraphemeIdx = -1
+      continue
+    } else if (canBreakAnywhere(grapheme)) {
+      // CJK: can break before this character. Mark and fall through to
+      // the overflow check (CJK chars themselves are visible).
+      lastBreakIndex = currentLine.length
+      lastBreakWidth = currentWidth
+      lastBreakGraphemeIdx = i
+    }
+
+    if (currentWidth + gWidth > width) {
+      if (lastBreakIndex > 0 && lastBreakGraphemeIdx >= 0) {
+        // Word-boundary wrap: rewind to last break point.
+        const savedLine = currentLine
+        currentLine = savedLine.slice(0, lastBreakIndex)
+        pushLine(lastBreakGraphemeIdx)
+        // Reset; rewind the loop counter so the rewind-target grapheme is
+        // re-processed at the start of the next line.
+        lineStartGraphemeIdx = lastBreakGraphemeIdx
+        i = lastBreakGraphemeIdx - 1
+        currentLine = ""
+        currentWidth = 0
+        lastBreakIndex = -1
+        lastBreakWidth = 0
+        lastBreakGraphemeIdx = -1
+      } else {
+        // No break point: hard char wrap. Push the current line, start a
+        // new one with this grapheme.
+        if (currentLine) {
+          pushLine(i)
+        }
+        lineStartGraphemeIdx = i
+        currentLine = grapheme
+        currentWidth = gWidth
+        lastBreakIndex = -1
+        lastBreakWidth = 0
+        lastBreakGraphemeIdx = -1
+      }
+    } else {
+      currentLine += grapheme
+      currentWidth += gWidth
+    }
+  }
+
+  // Trailing content: push as the final line.
+  if (currentLine || lineStartGraphemeIdx < graphemes.length) {
+    pushLine(graphemes.length)
+  }
+
+  // Single-slice passthrough? Tell the caller "no wrap happened" by
+  // returning empty — matches the WrapMeasurer contract documented in
+  // `@silvery/ag/wrap-measurer`. The caller (geometry layer) synthesizes a
+  // single passthrough slice from the source itself, avoiding an
+  // allocation for the (very common) "fits in one line" case.
+  if (out.length === 1 && out[0]!.startOffset === 0 && out[0]!.endOffset === text.length) {
+    return []
+  }
+
+  // Suppress unused-variable warning — `lastBreakWidth` is part of the
+  // bookkeeping triple that mirrors `wrapTextWithMeasurer`, kept for
+  // symmetry / future re-use even though this offset-only variant doesn't
+  // read it back.
+  void lastBreakWidth
+
+  return out
+}
+
+/**
  * Wrap text using an explicit measurer for grapheme width calculations.
  * When measurer is undefined, falls back to the module-level graphemeWidth.
  */

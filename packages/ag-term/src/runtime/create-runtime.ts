@@ -28,6 +28,12 @@ import type { Buffer, Dims, Event, Runtime, RuntimeOptions } from "./types"
 import { findActiveCursorRect } from "@silvery/ag/layout-signals"
 import { findActiveCursorNode, resolveCaretStyle } from "../caret-style"
 import { ANSI, setCursorStyle, resetCursorStyle } from "../output"
+// Side-effect import: install the terminal wrap-measurer adapter into
+// `@silvery/ag`'s registry the moment a runtime is constructed. The
+// registration itself is idempotent (see ./wrap-measurer-registration.ts);
+// re-import here keeps the production `createRuntime` path armed even
+// when callers bypass `runtime/index.ts`.
+import "./wrap-measurer-registration"
 
 // =============================================================================
 // Event Channel - unified async iterable for all internal events

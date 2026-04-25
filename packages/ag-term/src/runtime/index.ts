@@ -63,6 +63,18 @@ export {
 export { layout, layoutSync, ensureLayoutEngine, type LayoutOptions } from "./layout"
 export { diff, render, type DiffMode } from "./diff"
 
+// Wrap-measurer registration — installs the terminal grapheme-aware
+// `wrapTextWithOffsets` into `@silvery/ag`'s Option-B registry at module
+// load. The side-effect import is what arms `computeSelectionFragments`
+// for soft-wrap-aware selection geometry; the named exports are for tests
+// that need to toggle the registration to exercise the `\n`-only fallback.
+export {
+  installTerminalWrapMeasurer,
+  uninstallTerminalWrapMeasurer,
+  restoreDefaultWrapMeasurer,
+  isTerminalWrapMeasurerInstalled,
+} from "./wrap-measurer-registration"
+
 // Buffer helper
 export { createBuffer } from "./create-buffer"
 

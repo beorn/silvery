@@ -160,3 +160,11 @@ export {
   type ScrollStateSnapshot,
   type CursorRect,
 } from "./layout-signals"
+
+// Wrap-measurer registry (Option B — runtime-supplied wrap geometry)
+export {
+  setWrapMeasurer,
+  getWrapMeasurer,
+  type WrapMeasurer,
+  type WrapSlice,
+} from "./wrap-measurer"

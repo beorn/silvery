@@ -34,6 +34,7 @@
 import { signal } from "@silvery/signals"
 import type { AgNode, BoxProps, CursorShape, Rect, SelectionIntent } from "./types"
 import { rectEqual } from "./types"
+import { getWrapMeasurer, type WrapSlice } from "./wrap-measurer"
 
 // ============================================================================
 // Types
@@ -418,50 +419,6 @@ function collectSelectionText(node: AgNode): string {
 }
 
 /**
- * Map a 0-based character offset into a multi-line string to its
- * `(lineIndex, columnInLine)` position. Splits on `\n` only — wrap-aware
- * mapping (soft wrap at the content-rect width) awaits a registered wrap
- * measurer in `@silvery/ag` (Phase 4c overlay-anchor work). v1 covers
- * embedded-newline selections, which is the common case for editable
- * components.
- */
-function offsetToLineCol(text: string, offset: number): { line: number; col: number } {
-  let line = 0
-  let lineStart = 0
-  // Clamp to safe bounds — `from`/`to` may exceed text.length on rapid
-  // edits between layout passes; clamp instead of crash.
-  const clamped = Math.max(0, Math.min(offset, text.length))
-  for (let i = 0; i < clamped; i++) {
-    if (text.charCodeAt(i) === 10 /* \n */) {
-      line++
-      lineStart = i + 1
-    }
-  }
-  return { line, col: clamped - lineStart }
-}
-
-/**
- * Compute the visual length (column count) of a specific logical line in
- * `text`. Used to size the right edge of multi-line fragments. v1 uses raw
- * character count (one char = one column); wide-character / grapheme
- * awareness arrives with the wrap measurer.
- */
-function lineLengthAt(text: string, lineIndex: number): number {
-  let line = 0
-  let lineStart = 0
-  for (let i = 0; i < text.length; i++) {
-    if (text.charCodeAt(i) === 10 /* \n */) {
-      if (line === lineIndex) return i - lineStart
-      line++
-      lineStart = i + 1
-    }
-  }
-  // Last line (no trailing newline).
-  if (line === lineIndex) return text.length - lineStart
-  return 0
-}
-
-/**
  * Compute the geometric fragments for a node's `selectionIntent` — the list
  * of rectangles (one per visual line spanned) that the selection renderer
  * should paint with highlight bg this frame.
@@ -471,7 +428,7 @@ function lineLengthAt(text: string, lineIndex: number): number {
  *   collapsed (`from === to`), or when the content rect is unavailable
  *   (pre-layout / clipped to zero size).
  * - `[Rect]` for a single-visual-line selection.
- * - `[Rect, Rect, ...]` for multi-line selections (split on embedded `\n`).
+ * - `[Rect, Rect, ...]` for multi-line selections (split per visual line).
  *
  * **Geometry** (mirrors text-editor / ProseMirror conventions):
  * - First line: from `(content.x + fromCol, content.y + fromLine)` to the
@@ -482,15 +439,16 @@ function lineLengthAt(text: string, lineIndex: number): number {
  * Coordinates are absolute terminal cells, matching `cursorRect`'s
  * coordinate space. Width is in cells (one rect per visual line).
  *
- * **Wrap-spanning gap (v1)**: only `\n`-separated lines produce multi-line
- * fragments. Soft-wrapped text (e.g., a long paragraph that the renderer
- * breaks into multiple visual lines) currently produces one wide rectangle
- * — the highlight will visually span the wrap correctly because the
- * underlying buffer wraps too, but the rectangle won't be split into
- * per-visual-line entries. Wrap-aware fragmentation requires registering a
- * wrap measurer in `@silvery/ag` so this function can call back into
- * `wrapText` without inverting the layering. Tracked at
- * `km-silvery.overlay-anchor-system` (Phase 4c).
+ * **Soft-wrap awareness (Option B)**: when a wrap measurer is registered
+ * via `setWrapMeasurer({ wrapText })` AND the content rect width is known,
+ * this function splits on the measurer's per-visual-line slices — a
+ * 60-char paragraph wrapped at width 20 produces 3 fragments rather than
+ * one wide rectangle. The terminal runtime (`@silvery/ag-term`) registers
+ * its grapheme-aware `wrapText` at startup; pure `@silvery/ag` consumers
+ * (no terminal) fall back to `\n`-only splitting which preserves the
+ * pre-Option-B behavior bit-for-bit. See `wrap-measurer.ts` for the
+ * registry contract. Closes Phase 4b deferred wrap-spanning (bead
+ * `km-silvery.softwrap-selection-fragments`).
  */
 export function computeSelectionFragments(node: AgNode): readonly Rect[] {
   const props = node.props as (BoxProps & { selectionIntent?: SelectionIntent }) | undefined
@@ -504,56 +462,140 @@ export function computeSelectionFragments(node: AgNode): readonly Rect[] {
   const text = collectSelectionText(node)
   if (text.length === 0) return EMPTY_FRAGMENTS
 
-  const start = offsetToLineCol(text, intent.from)
-  const end = offsetToLineCol(text, intent.to)
+  // Build the per-visual-line slice list. Two paths:
+  //   (a) Wrap measurer registered AND content width is known → walk every
+  //       paragraph (split on `\n`) through the measurer to get
+  //       grapheme-correct soft-wrap slices. The measurer returns []
+  //       for paragraphs that fit unchanged; we fabricate a single-slice
+  //       passthrough in that case so the downstream loop has uniform
+  //       input.
+  //   (b) No measurer (or width <=0) → `\n`-only split, preserving the
+  //       pre-Option-B behavior bit-for-bit. Pure-`@silvery/ag` unit tests
+  //       hit this branch.
+  const measurer = getWrapMeasurer()
+  const visualLines: VisualLine[] =
+    measurer !== null && content.width > 0
+      ? buildVisualLinesWithMeasurer(text, content.width, measurer.wrapText)
+      : buildVisualLinesNewlineOnly(text)
 
-  // Single-line fast path — the common case.
-  if (start.line === end.line) {
-    const width = Math.max(0, end.col - start.col)
-    if (width === 0) return EMPTY_FRAGMENTS
-    return [
-      {
-        x: content.x + start.col,
-        y: content.y + start.line,
-        width,
-        height: 1,
-      },
-    ]
-  }
-
-  // Multi-line: first partial line, optional middle full-width lines, last
-  // partial line. Each fragment is one row tall; coordinates are absolute.
+  // Selection range projected onto each visual line. Each line either
+  // contributes one rect (clamped to its slice window) or zero (selection
+  // doesn't overlap that line).
   const fragments: Rect[] = []
-  // First line: from start.col to end-of-line.
-  const firstLineLen = lineLengthAt(text, start.line)
-  const firstWidth = Math.max(0, firstLineLen - start.col)
-  if (firstWidth > 0) {
+  for (let i = 0; i < visualLines.length; i++) {
+    const line = visualLines[i]!
+    // Skip lines entirely before the selection start.
+    if (line.endOffset <= intent.from) continue
+    // Stop once we pass the selection end. (Lines are in order.)
+    if (line.startOffset >= intent.to) break
+
+    const localFrom = Math.max(0, intent.from - line.startOffset)
+    const localTo = Math.min(line.text.length, intent.to - line.startOffset)
+    const width = Math.max(0, localTo - localFrom)
+    if (width === 0) continue
+
     fragments.push({
-      x: content.x + start.col,
-      y: content.y + start.line,
-      width: firstWidth,
+      x: content.x + localFrom,
+      y: content.y + i,
+      width,
       height: 1,
     })
   }
-  // Middle lines: full content width.
-  for (let line = start.line + 1; line < end.line; line++) {
-    fragments.push({
-      x: content.x,
-      y: content.y + line,
-      width: content.width,
-      height: 1,
-    })
-  }
-  // Last line: from start-of-line to end.col.
-  if (end.col > 0) {
-    fragments.push({
-      x: content.x,
-      y: content.y + end.line,
-      width: end.col,
-      height: 1,
-    })
-  }
+
   return fragments.length === 0 ? EMPTY_FRAGMENTS : fragments
+}
+
+/**
+ * One visual line in the canonical fragment-builder format: the visible
+ * text plus the original-text offsets that produced it. Used by both
+ * the wrap-measurer path and the `\n`-only fallback so the projection
+ * loop in `computeSelectionFragments` is uniform.
+ */
+interface VisualLine {
+  readonly text: string
+  readonly startOffset: number
+  readonly endOffset: number
+}
+
+/**
+ * Walk paragraphs (split on `\n`) through the registered wrap measurer to
+ * produce per-visual-line slices. When a paragraph fits within the width
+ * unchanged, the measurer returns `[]` — we synthesize a single-slice
+ * passthrough so the downstream loop sees uniform input.
+ *
+ * Maintains the invariant that visual-line offsets are monotone and cover
+ * the full input (including the `\n` terminator counted as a zero-width
+ * boundary so cross-paragraph selections stay aligned).
+ */
+function buildVisualLinesWithMeasurer(
+  text: string,
+  width: number,
+  wrapText: (text: string, maxWidth: number) => readonly WrapSlice[],
+): VisualLine[] {
+  const out: VisualLine[] = []
+  // Walk paragraphs. We re-scan the source string ourselves (rather than
+  // calling `text.split('\n')`) because we need per-paragraph offsets to
+  // translate measurer offsets (which are paragraph-local) into source
+  // offsets (which are what selectionIntent.from/to use).
+  let paraStart = 0
+  for (let i = 0; i <= text.length; i++) {
+    const isEnd = i === text.length
+    const isNewline = !isEnd && text.charCodeAt(i) === 10 /* \n */
+    if (!isEnd && !isNewline) continue
+
+    const para = text.slice(paraStart, i)
+    const slices = wrapText(para, width)
+    if (slices.length === 0) {
+      // Measurer signaled "no wrap needed" — passthrough the paragraph as
+      // one visual line. Empty paragraphs (consecutive `\n`) also land here
+      // and produce a zero-length line, which keeps line indexing aligned.
+      out.push({
+        text: para,
+        startOffset: paraStart,
+        endOffset: paraStart + para.length,
+      })
+    } else {
+      for (const slice of slices) {
+        out.push({
+          text: slice.text,
+          startOffset: paraStart + slice.startOffset,
+          endOffset: paraStart + slice.endOffset,
+        })
+      }
+    }
+
+    // Advance past the `\n` terminator. The newline cell is not its own
+    // visual line — it's the boundary between paragraphs — so we just bump
+    // `paraStart` to the next paragraph and let the loop continue.
+    paraStart = i + 1
+  }
+  return out
+}
+
+/**
+ * Fallback: split on `\n` only. Preserves pre-Option-B geometry exactly so
+ * unit tests that exercise the framework-only layer (no terminal Term
+ * registered) keep passing without changes.
+ *
+ * The `endOffset` of each line is the position of the `\n` (or `text.length`
+ * for the trailing line) — this matches the convention used by
+ * `buildVisualLinesWithMeasurer`, where the newline is a zero-width
+ * paragraph boundary rather than a visual line of its own.
+ */
+function buildVisualLinesNewlineOnly(text: string): VisualLine[] {
+  const out: VisualLine[] = []
+  let lineStart = 0
+  for (let i = 0; i <= text.length; i++) {
+    if (i === text.length || text.charCodeAt(i) === 10 /* \n */) {
+      out.push({
+        text: text.slice(lineStart, i),
+        startOffset: lineStart,
+        endOffset: i,
+      })
+      lineStart = i + 1
+    }
+  }
+  return out
 }
 
 /**
