@@ -344,6 +344,22 @@ app.press("j")
 expect(app.text).toContain("▶ Second item")
 ```
 
+**Pin root width/height when testing full-app layouts.** `createRenderer({cols, rows})` passes `cols`/`rows` as the *available* size to `calculateLayout()` — it does NOT set `root.style.width/height`. Production silvercode uses `<Screen>` which pins both from the terminal. Without that pin, `column → row → <Text wrap=wrap>` chains correctly collapse to `height=1` via CSS max-content sizing (a row's intrinsic cross size is its tallest child's max-content height, and a wrappable Text at unconstrained width is exactly 1 line tall). Tests look broken; production isn't.
+
+For full-app fixtures, mirror `<Screen>`:
+
+```tsx
+const TOTAL_COLS = 160, TOTAL_ROWS = 30
+const render = createRenderer({ cols: TOTAL_COLS, rows: TOTAL_ROWS })
+const app = render(
+  <Box width={TOTAL_COLS} height={TOTAL_ROWS} flexDirection="row">
+    {/* component under test */}
+  </Box>,
+)
+```
+
+Counter-example (the misdiagnosis trap): `tests/features/wrap-nested-flexgrow.test.tsx` has a `.skip`-ed test that documents the antipattern. The wrap bug filed as `km-silvery.wrap-measurement` was this artifact, not a flexily defect.
+
 ### createTermless -- full ANSI, real terminal emulator
 
 Integration tests through xterm.js. Tests the full 5-phase pipeline including ANSI output. ~50ms/op.
