@@ -172,3 +172,6 @@ export {
   type WrapMeasurer,
   type WrapSlice,
 } from "./wrap-measurer"
+
+// Overlay/anchor placement (Phase 4c — overlay-anchor v1)
+export { placeFloating } from "./place-floating"
