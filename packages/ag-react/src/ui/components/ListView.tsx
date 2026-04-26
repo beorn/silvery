@@ -1909,6 +1909,15 @@ function ListViewInner<T>(
     ),
   )
   const totalRows = totalRowsMeasured
+  // Overflow detection for the scrollbar VISIBILITY GATE: take the maximum
+  // of estimate-based and measurement-based totals. Estimate alone misses
+  // overflow when items are taller than `estimateHeight` (silvercode shape:
+  // multi-line AssistantBlocks with default estimate=1 hide overflow even
+  // when content is 5× the viewport). Measured alone would cause a false
+  // negative on the very first paint before any measurements arrive.
+  // Using the max keeps the visibility gate honest in both cases while
+  // leaving thumb SIZE driven by the stable estimate (no jitter).
+  const totalRowsForOverflow = Math.max(totalRowsStable, totalRowsMeasured)
   // Auto-flash the scrollbar when item count grows — gives the user a
   // brief "your relative position just shifted" cue (e.g. new chat messages
   // arriving while reading the tail). Comparing item count rather than
@@ -1934,6 +1943,17 @@ function ListViewInner<T>(
     if (grew) {
       setIsScrolling(true)
       scheduleScrollbarHide()
+      // Stale-bump cleanup. A `bumpedEdge` set by a prior wheel/keyboard
+      // overscroll attempt is bound to the boundary as it was THEN. Once
+      // items append, the boundary moved — `scrollableRows` leaps ahead
+      // while `rowsAboveViewport` lags one layout cycle behind, and the
+      // at-edge render gate (`effectiveRowsAbove >= scrollableRows`)
+      // toggles between true/false on each commit until the cursor
+      // catches up. That manifests as a flickering bottom indicator
+      // during streaming chat append. Clearing on append removes the
+      // stale cue — the user has new content to see, the "you hit the
+      // end" cue from before is no longer accurate.
+      setBumpedEdge(null)
     }
     prevItemCountRef.current = activeItems.length
 
@@ -1997,10 +2017,20 @@ function ListViewInner<T>(
     measuredHeights,
     wrappedGetKey,
   )
-  const thumbHeight =
-    totalRowsStable > trackHeight
-      ? Math.max(1, Math.floor((trackHeight * trackHeight) / totalRowsStable))
-      : 0
+  // Thumb size uses `totalRowsStable` (estimate-based) for jitter-free
+  // sizing — see TanStack-convention rationale above. The visibility gate,
+  // however, is driven by `totalRowsForOverflow` (max of estimate +
+  // measured) so the scrollbar appears even when items are taller than
+  // `estimateHeight`. When measurement reveals overflow that the estimate
+  // missed, we still render — but pin the thumb to the smallest visible
+  // size (1) rather than letting the estimate-derived size go to zero.
+  const overflowing = totalRowsForOverflow > trackHeight
+  const thumbHeight = overflowing
+    ? Math.max(
+        1,
+        Math.floor((trackHeight * trackHeight) / Math.max(totalRowsStable, trackHeight + 1)),
+      )
+    : 0
   const scrollableRows = Math.max(1, totalRows - trackHeight)
   const trackRemainder = trackHeight - thumbHeight
   // When the user is wheel-driving, derive thumb from our own `scrollRow`
