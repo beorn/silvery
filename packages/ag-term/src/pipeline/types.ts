@@ -84,6 +84,14 @@ export interface RenderPhaseStats {
   // Normal container diagnostics
   normalChildrenRepaint: number
   normalRepaintReason: string
+  /**
+   * Count of children force-rendered because an earlier first-pass sibling's
+   * boxRect overlapped them. CSS paint order requires later siblings to win
+   * at any overlap; on incremental renders the earlier sibling's painting
+   * destroys the later sibling's pixels in the cloned buffer, so the later
+   * sibling must repaint even when its own dirty flags are clean.
+   */
+  siblingOverlapForced: number
   // Cascade diagnostics
   cascadeMinDepth: number
   cascadeNodes: string

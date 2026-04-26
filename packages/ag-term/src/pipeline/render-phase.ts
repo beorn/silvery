@@ -249,6 +249,7 @@ const _renderPhaseStats: RenderPhaseStats = {
   scrollClearReason: "",
   normalChildrenRepaint: 0,
   normalRepaintReason: "",
+  siblingOverlapForced: 0,
   cascadeMinDepth: 999,
   cascadeNodes: "",
   _noopSkip: 0,
@@ -1782,23 +1783,95 @@ function renderNormalChildren(
   // first pass may have overwritten their pixels in the cloned buffer.
   let hasAbsoluteChildren = false
 
-  // First pass: render normal-flow children (skip sticky + absolute), track dirty state
+  // Sibling-overlap dirtying. CSS paint order is DOM order: sibling N's
+  // pixels appear ON TOP of sibling N-1's pixels at any overlap. Fresh
+  // renders preserve this naturally because every child paints. Incremental
+  // renders break it when sibling N is clean (skipped) but sibling N-1
+  // re-renders — sibling N-1's painting wipes sibling N's pixels in the
+  // cloned buffer, and the (skipped) sibling N never restores them.
+  //
+  // The fix: pre-scan the first-pass children. Any child whose rect
+  // intersects an EARLIER first-pass child that will re-render must also
+  // re-render. We propagate this forward in a single linear pass: if child
+  // i will render, every later j>i with overlapping rect is forced to
+  // render too. (Transitive: if j is forced and k>j overlaps j, k is also
+  // forced — handled by checking all earlier-rendered indices.)
+  //
+  // Real-world repro: km-tui Board layout where the column container
+  // (overflow="scroll" with bottom scroll indicator at row N) ends up 1
+  // row taller than its allotted space. The column's row N overlaps the
+  // bottom-bar's row N. On cursor move, only the column re-renders; its
+  // scroll indicator overwrites the bottom-bar's "MEM 📋 NNN" text without
+  // the bottom-bar repainting to restore it. STRICT_OUTPUT mismatches at
+  // (col, N) char='M' vs ' '. See bead km-all.fix-sweep-strict-cluster.
+  const firstPassChildren: AgNode[] = []
   for (const child of node.children) {
     const childProps = child.props as BoxProps
     if (childProps.position === "absolute") {
       hasAbsoluteChildren = true
-      continue // Skip — rendered in third pass
-    }
-    if (hasStickyChildren && childProps.position === "sticky") {
-      continue // Skip — rendered in second pass
-    }
-
-    // Phase 4: dirty set pre-check — skip clean subtrees without function call overhead.
-    // The existing canSkipEntireSubtree inside renderNodeToBuffer is preserved as
-    // the second line of defense for edge cases the pre-check doesn't cover.
-    if (canSkipChildSubtree(child, childHasPrev, childAncestorLayoutChanged)) {
       continue
     }
+    if (hasStickyChildren && childProps.position === "sticky") {
+      continue
+    }
+    firstPassChildren.push(child)
+  }
+
+  // Determine which children are "going to render" (skip-path miss) and
+  // forward-propagate force-render to overlapping later siblings.
+  const willRender: boolean[] = firstPassChildren.map((child) =>
+    !canSkipChildSubtree(child, childHasPrev, childAncestorLayoutChanged),
+  )
+  // Only do overlap propagation when we have prev buffer state (otherwise
+  // the canSkipChildSubtree check returns false for everything anyway and
+  // the forward propagation is a no-op).
+  if (childHasPrev) {
+    // The "paint extent" of a child is the union of its boxRect with any
+    // descendant boxRect that overflows it. Using boxRect alone misses the
+    // case where a deeper descendant (e.g. a column inside a board) extends
+    // beyond its parent's rect into a great-aunt's territory. We compute
+    // paint extent lazily and only for children that will render — clean
+    // skipped children don't need the walk.
+    for (let i = 0; i < firstPassChildren.length; i++) {
+      if (!willRender[i]) continue
+      const childI = firstPassChildren[i]!
+      const ei = computeSubtreePaintExtent(childI)
+      if (!ei || ei.width <= 0 || ei.height <= 0) continue
+      for (let j = i + 1; j < firstPassChildren.length; j++) {
+        if (willRender[j]) continue
+        // Use the later sibling's boxRect (cheap) for the receiver side —
+        // any descendant of j inside its boxRect is at risk of being
+        // overwritten by i's paint extent. Descendants of j that overflow
+        // j wouldn't be at the row painted by i unless they're also inside
+        // ei — and our recursion-from-i covers any descendant of j that ALSO
+        // happens to fall within ei. We don't need j's full subtree extent.
+        const rj = firstPassChildren[j]!.boxRect
+        if (!rj || rj.width <= 0 || rj.height <= 0) continue
+        const overlapX = ei.x < rj.x + rj.width && rj.x < ei.x + ei.width
+        const overlapY = ei.y < rj.y + rj.height && rj.y < ei.y + ei.height
+        if (overlapX && overlapY) {
+          willRender[j] = true
+          if (instr.enabled) instr.stats.siblingOverlapForced++
+        }
+      }
+    }
+  }
+
+  // First pass: render normal-flow children in DOM order.
+  for (let i = 0; i < firstPassChildren.length; i++) {
+    if (!willRender[i]) continue
+    const child = firstPassChildren[i]!
+
+    // For overlap-forced children (clean by their own flags but overlapped
+    // by an earlier-rendered sibling) we must NOT trust the cloned buffer
+    // at their position — the earlier sibling has just painted there.
+    // Treat them like a fresh render at their position: hasPrevBuffer=false,
+    // ancestorCleared=false. This matches the second/third-pass treatment
+    // for sticky/absolute children, which face the same situation.
+    const ownDirty = !canSkipChildSubtree(child, childHasPrev, childAncestorLayoutChanged)
+    const overlapForced = !ownDirty
+    const useChildHasPrev = overlapForced ? false : childHasPrev
+    const useChildAncestorCleared = overlapForced ? false : childAncestorCleared
 
     renderNodeToBuffer(
       child,
@@ -1806,8 +1879,8 @@ function renderNormalChildren(
       {
         scrollOffset,
         clipBounds: effectiveClipBounds,
-        hasPrevBuffer: childHasPrev,
-        ancestorCleared: childAncestorCleared,
+        hasPrevBuffer: useChildHasPrev,
+        ancestorCleared: useChildAncestorCleared,
         bufferIsCloned,
         ancestorLayoutChanged: childAncestorLayoutChanged,
         inheritedBg,
@@ -1892,6 +1965,47 @@ function renderNormalChildren(
       )
     }
   }
+}
+
+// ============================================================================
+// Subtree Paint Extent
+// ============================================================================
+
+/**
+ * Compute the screen-space rectangle that bounds every paint within this
+ * subtree. Used by sibling-overlap detection in renderNormalChildren so
+ * that a descendant overflowing its ancestor still triggers force-repaint
+ * of any later sibling at the painted row.
+ *
+ * Returns the union of `node.boxRect` with the recursive paint extent of
+ * each child whose `boxRect` is set. Returns null if `node.boxRect` is
+ * unset (e.g. abandoned subtree). Skipping descendants without a boxRect
+ * is safe because they never paint.
+ *
+ * Cost: O(N) per call where N is the subtree's node count. Only called
+ * for first-pass children that will render AND only when their parent has
+ * a prev buffer (i.e. real incremental render frames). Skipped children
+ * never trigger the walk.
+ */
+function computeSubtreePaintExtent(node: AgNode): NonNullable<AgNode["boxRect"]> | null {
+  const own = node.boxRect
+  if (!own) return null
+  let minX = own.x
+  let minY = own.y
+  let maxX = own.x + own.width
+  let maxY = own.y + own.height
+  const children = node.children
+  if (children) {
+    for (const child of children) {
+      const sub = computeSubtreePaintExtent(child)
+      if (!sub) continue
+      if (sub.x < minX) minX = sub.x
+      if (sub.y < minY) minY = sub.y
+      if (sub.x + sub.width > maxX) maxX = sub.x + sub.width
+      if (sub.y + sub.height > maxY) maxY = sub.y + sub.height
+    }
+  }
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
 // ============================================================================

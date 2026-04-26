@@ -295,6 +295,22 @@ function applySgrParams(params: string, sgr: SgrState): void {
       }
     } else if (n === 49) {
       sgr.bg = null
+    } else if (n === 58) {
+      // Underline color — semicolon-form (legacy): "58;5;N" (256-color) or
+      // "58;2;r;g;b" (RGB). The colon-form ("58:5:N", "58:2:r:g:b") is handled
+      // by the colon-detection branch above. We don't track underline color in
+      // styled cells, but we MUST consume the sub-parameters here — otherwise
+      // the next param ("2" or "5") will be re-interpreted as standalone SGR
+      // 2 (dim) or 5 (blink), corrupting the cell style. The bug surfaced as
+      // STRICT_OUTPUT mismatches with `dim: true vs false` at border cells
+      // following links/tag refs that emit `58;2;r;g;b` underline color.
+      if (parts[i + 1] === "5") {
+        i += 2
+      } else if (parts[i + 1] === "2") {
+        i += 4
+      }
+    } else if (n === 59) {
+      // Default underline color — no sub-params, nothing to track.
     } else if (n >= 90 && n <= 97) {
       // Bright fg
       sgr.fg = n - 90 + 8
