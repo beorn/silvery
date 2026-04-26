@@ -388,6 +388,7 @@ export function resolveNodeDraggable(node: AgNode | null): boolean {
 const EVENT_HANDLER_MAP: Record<string, string & keyof MouseEventProps> = {
   click: "onClick",
   dblclick: "onDoubleClick",
+  tripleclick: "onTripleClick",
   mousedown: "onMouseDown",
   mouseup: "onMouseUp",
   mousemove: "onMouseMove",
@@ -439,63 +440,106 @@ export function dispatchMouseEvent(event: SilveryMouseEvent): void {
 }
 
 // ============================================================================
-// Double-Click Detection
+// Click-Count Detection (single / double / triple)
 // ============================================================================
 
-export interface DoubleClickState {
+/**
+ * Click-count state tracker.
+ *
+ * Counts up to 3 consecutive clicks within `MULTI_CLICK_TIME_MS` and
+ * `MULTI_CLICK_DISTANCE` cells of each other on the same button. After
+ * count reaches 3, the next click resets to 1 (matching DOM behavior:
+ * `MouseEvent.detail` increments to 3, then a new click chain starts).
+ *
+ * `DoubleClickState` is kept as a backwards-compatible alias.
+ */
+export interface ClickCountState {
   lastClickTime: number
   lastClickX: number
   lastClickY: number
   lastClickButton: number
+  /** Number of consecutive clicks in the current chain (1, 2, or 3). */
+  count: number
 }
 
-export function createDoubleClickState(): DoubleClickState {
+/** @deprecated Use `ClickCountState` instead — kept as an alias for callers
+ *  that haven't migrated to the count-based API. */
+export type DoubleClickState = ClickCountState
+
+export function createClickCountState(): ClickCountState {
   return {
     lastClickTime: 0,
     lastClickX: -999,
     lastClickY: -999,
     lastClickButton: -1,
+    count: 0,
   }
 }
 
-const DOUBLE_CLICK_TIME_MS = 300
-const DOUBLE_CLICK_DISTANCE = 2
+/** @deprecated Use `createClickCountState()` instead. */
+export const createDoubleClickState = createClickCountState
+
+const MULTI_CLICK_TIME_MS = 300
+const MULTI_CLICK_DISTANCE = 2
 
 /**
- * Check if a click qualifies as a double-click, given the previous click state.
- * Updates the state for the next check.
- * Returns true if this is a double-click.
+ * Determine the consecutive-click count for the current click.
+ *
+ * Returns 1 for a fresh click, 2 for a double-click, 3 for a triple-click.
+ * Subsequent clicks restart the chain at 1.
+ *
+ * Updates `state` so the next call sees the right history.
+ */
+export function checkClickCount(
+  state: ClickCountState,
+  x: number,
+  y: number,
+  button: number,
+  now: number = Date.now(),
+): 1 | 2 | 3 {
+  const timeDelta = now - state.lastClickTime
+  const dx = Math.abs(x - state.lastClickX)
+  const dy = Math.abs(y - state.lastClickY)
+  const sameButton = button === state.lastClickButton
+  const inChain =
+    sameButton &&
+    timeDelta <= MULTI_CLICK_TIME_MS &&
+    dx <= MULTI_CLICK_DISTANCE &&
+    dy <= MULTI_CLICK_DISTANCE
+
+  let count: 1 | 2 | 3
+  if (!inChain || state.count >= 3) {
+    count = 1
+  } else if (state.count === 1) {
+    count = 2
+  } else {
+    count = 3
+  }
+
+  state.lastClickTime = now
+  state.lastClickX = x
+  state.lastClickY = y
+  state.lastClickButton = button
+  state.count = count
+
+  return count
+}
+
+/**
+ * Check if a click qualifies as a double-click. Backwards-compatible
+ * wrapper around `checkClickCount`.
+ *
+ * @deprecated Use `checkClickCount` and inspect the returned count
+ *   (`=== 2` for dblclick, `=== 3` for tripleclick).
  */
 export function checkDoubleClick(
-  state: DoubleClickState,
+  state: ClickCountState,
   x: number,
   y: number,
   button: number,
   now: number = Date.now(),
 ): boolean {
-  const timeDelta = now - state.lastClickTime
-  const dx = Math.abs(x - state.lastClickX)
-  const dy = Math.abs(y - state.lastClickY)
-  const sameButton = button === state.lastClickButton
-
-  const isDouble =
-    sameButton &&
-    timeDelta <= DOUBLE_CLICK_TIME_MS &&
-    dx <= DOUBLE_CLICK_DISTANCE &&
-    dy <= DOUBLE_CLICK_DISTANCE
-
-  // Update state
-  state.lastClickTime = now
-  state.lastClickX = x
-  state.lastClickY = y
-  state.lastClickButton = button
-
-  // If double-click, reset so triple-click doesn't register as another double
-  if (isDouble) {
-    state.lastClickTime = 0
-  }
-
-  return isDouble
+  return checkClickCount(state, x, y, button, now) === 2
 }
 
 // ============================================================================
@@ -674,16 +718,32 @@ export function processMouseEvent(
     // is the nearest common ancestor. For simplicity, we fire click on the up target
     // if mousedown was on the same target or a descendant.
     if (state.mouseDownTarget) {
+      // Resolve the multi-click count BEFORE creating the event so we can
+      // attach `detail` (DOM `MouseEvent.detail` convention).
+      const count = checkClickCount(state.doubleClick, x, y, parsed.button)
       const clickEvent = createMouseEvent("click", x, y, target, parsed, state.keyboardModifiers)
+      ;(clickEvent as { detail?: 1 | 2 | 3 }).detail = count
       dispatchMouseEvent(clickEvent)
       if (clickEvent.defaultPrevented) defaultPrevented = true
 
-      // Check for double-click
-      const isDouble = checkDoubleClick(state.doubleClick, x, y, parsed.button)
-      if (isDouble) {
+      if (count >= 2) {
         const dblEvent = createMouseEvent("dblclick", x, y, target, parsed, state.keyboardModifiers)
+        ;(dblEvent as { detail?: 1 | 2 | 3 }).detail = 2
         dispatchMouseEvent(dblEvent)
         if (dblEvent.defaultPrevented) defaultPrevented = true
+      }
+      if (count === 3) {
+        const tripleEvent = createMouseEvent(
+          "tripleclick",
+          x,
+          y,
+          target,
+          parsed,
+          state.keyboardModifiers,
+        )
+        ;(tripleEvent as { detail?: 1 | 2 | 3 }).detail = 3
+        dispatchMouseEvent(tripleEvent)
+        if (tripleEvent.defaultPrevented) defaultPrevented = true
       }
     }
 

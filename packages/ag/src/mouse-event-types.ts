@@ -35,12 +35,23 @@ export interface SilveryMouseEvent {
   type:
     | "click"
     | "dblclick"
+    | "tripleclick"
     | "mousedown"
     | "mouseup"
     | "mousemove"
     | "mouseenter"
     | "mouseleave"
     | "wheel"
+  /**
+   * Click count for `click` / `dblclick` / `tripleclick` events
+   * (mirrors DOM `MouseEvent.detail`).
+   *
+   * - 1 on a fresh click (`type === "click"`)
+   * - 2 on a double-click (`type === "dblclick"`)
+   * - 3 on a triple-click (`type === "tripleclick"`)
+   * - undefined on non-click events
+   */
+  detail?: 1 | 2 | 3
   /** Stop event from bubbling to parent nodes */
   stopPropagation(): void
   /** Prevent default behavior */
@@ -70,6 +81,9 @@ export interface SilveryWheelEvent extends SilveryMouseEvent {
 export interface MouseEventProps {
   onClick?: (event: SilveryMouseEvent) => void
   onDoubleClick?: (event: SilveryMouseEvent) => void
+  /** Triple-click handler — fires after `onDoubleClick` when the user
+   *  produces a third click within 300ms / 2 cells of the first two. */
+  onTripleClick?: (event: SilveryMouseEvent) => void
   onMouseDown?: (event: SilveryMouseEvent) => void
   onMouseUp?: (event: SilveryMouseEvent) => void
   onMouseMove?: (event: SilveryMouseEvent) => void

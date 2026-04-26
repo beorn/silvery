@@ -28,6 +28,8 @@ export {
   dispatchMouseEvent,
   processMouseEvent,
   createMouseEventProcessor,
+  checkClickCount,
+  createClickCountState,
   checkDoubleClick,
   createDoubleClickState,
   computeEnterLeave,
@@ -35,6 +37,8 @@ export {
   type SilveryWheelEvent,
   type MouseEventProcessorOptions,
   type MouseEventProcessorState,
+  type ClickCountState,
+  type DoubleClickState,
 } from "./mouse-events"
 
 // =============================================================================
