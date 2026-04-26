@@ -151,11 +151,22 @@ export function handleFocusNavigation(
   if (parsedKey.escape) {
     if (focusManager.scopeStack.length > 0) {
       const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
-      focusManager.exitScope()
+      // Only pop scopes that correspond to a focusable Box in the tree (entered
+      // via Enter on an element with `focusScope` + `testID`). Apps may push
+      // virtual scopes onto the stack to drive their own inputMode routing
+      // (e.g. km-tui's dialog-guard pushes `dialog:datePrompt` as the canonical
+      // "what mode are we in" signal); those virtual scopes have no Box backing
+      // and the app handles Escape itself via keybindings. Auto-popping them
+      // here would silently break the app's Escape handler — observed as
+      // "Escape closes the focus scope but the dialog UI stays open" because
+      // `withFocusChain` short-circuits the keybinding lane on `consumed`. See
+      // km-otm6c (regression of km-qaco9).
       const scopeNode = findByTestID(root, scopeId)
-      if (scopeNode) {
-        focusManager.focus(scopeNode, "keyboard")
+      if (!scopeNode) {
+        return "continue"
       }
+      focusManager.exitScope()
+      focusManager.focus(scopeNode, "keyboard")
       return "consumed"
     }
   }

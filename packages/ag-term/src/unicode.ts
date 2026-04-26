@@ -1452,6 +1452,10 @@ export interface StyledSegment {
    */
   underlineStyle?: UnderlineStyle
   inverse?: boolean
+  /** Strikethrough (SGR 9 on, SGR 29 off). */
+  strikethrough?: boolean
+  /** Overline (SGR 53 on, SGR 55 off). */
+  overline?: boolean
   bgOverride?: boolean // Set when BG_OVERRIDE_CODE (9999) is present
   /**
    * OSC 8 hyperlink URL.
@@ -1731,6 +1735,10 @@ export function parseAnsiText(text: string): StyledSegment[] {
         case 7:
           currentStyle.inverse = true
           break
+        case 9:
+          // SGR 9 - strikethrough on
+          currentStyle.strikethrough = true
+          break
         case 22:
           currentStyle.bold = false
           currentStyle.dim = false
@@ -1745,6 +1753,10 @@ export function parseAnsiText(text: string): StyledSegment[] {
           break
         case 27:
           currentStyle.inverse = false
+          break
+        case 29:
+          // SGR 29 - strikethrough off
+          currentStyle.strikethrough = false
           break
         case 30:
         case 31:
@@ -1809,6 +1821,14 @@ export function parseAnsiText(text: string): StyledSegment[] {
         }
         case 49:
           currentStyle.bg = null // Default background
+          break
+        case 53:
+          // SGR 53 - overline on
+          currentStyle.overline = true
+          break
+        case 55:
+          // SGR 55 - overline off
+          currentStyle.overline = false
           break
         case 58: {
           // Underline color: 58;5;N (256 color) or 58;2;r;g;b (true color)

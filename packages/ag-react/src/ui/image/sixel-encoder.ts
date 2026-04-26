@@ -19,6 +19,7 @@
  */
 
 import { createTerminalProfile, type TerminalCaps } from "@silvery/ansi"
+import UPNG from "upng-js"
 
 const DCS_START = "\x1bP"
 const ST = "\x1b\\"
@@ -33,6 +34,60 @@ export interface SixelImageData {
   height: number
   /** RGBA pixel data (4 bytes per pixel: R, G, B, A), row-major order */
   data: Uint8Array
+}
+
+/**
+ * Decode a PNG buffer into RGBA pixel data suitable for {@link encodeSixel}.
+ *
+ * The Sixel protocol cannot transmit PNG directly (unlike Kitty's `f=100`),
+ * so terminals that fall back to Sixel need raw RGBA pixels. This helper
+ * uses upng-js — a small (~30 KB) pure-JS PNG decoder with one tiny
+ * dependency (pako) — to bridge PNG → RGBA.
+ *
+ * Returns `null` if the buffer is not a valid PNG. Callers should fall back
+ * to a text placeholder in that case.
+ *
+ * Supports all PNG flavors UPNG handles: 8/16-bit depth, RGB/RGBA/grayscale/
+ * palette, interlaced. Animated PNGs (APNG) collapse to the first frame —
+ * Sixel itself is single-frame.
+ *
+ * @example
+ * ```ts
+ * import { readFileSync } from "fs"
+ * import { decodePngToRgba, encodeSixel } from "./sixel-encoder"
+ *
+ * const png = readFileSync("photo.png")
+ * const rgba = decodePngToRgba(png)
+ * if (rgba) {
+ *   process.stdout.write(encodeSixel(rgba))
+ * }
+ * ```
+ */
+export function decodePngToRgba(pngData: Buffer | Uint8Array): SixelImageData | null {
+  try {
+    // upng-js accepts ArrayBuffer or Uint8Array. Slice to the exact byte
+    // range so we don't accidentally feed a larger backing buffer.
+    const view =
+      pngData instanceof Uint8Array
+        ? pngData
+        : new Uint8Array(pngData as ArrayBufferLike)
+    const ab = view.buffer.slice(
+      view.byteOffset,
+      view.byteOffset + view.byteLength,
+    ) as ArrayBuffer
+
+    const decoded = UPNG.decode(ab)
+    const frames = UPNG.toRGBA8(decoded)
+    if (frames.length === 0) return null
+
+    return {
+      width: decoded.width,
+      height: decoded.height,
+      data: new Uint8Array(frames[0]!),
+    }
+  } catch {
+    return null
+  }
 }
 
 /**

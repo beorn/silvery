@@ -185,6 +185,50 @@ describe("diffBuffers", () => {
     expect(changedPositions).toContain("3,0")
   })
 
+  test("wide->shifted-wide must not double-emit the new wide at x+1 (regression)", () => {
+    // Regression: incremental render duplicated the new wide char when the
+    // previous frame had a wide char at column N and the next frame has a
+    // wide char shifted to column N+1.
+    //
+    // Prev row (cols 33..36): a 🛒_  — wide 🛒 at 34, continuation at 35
+    // Next row (cols 33..36): a e 🇯🇵 — narrow e at 34, wide 🇯🇵 at 35, continuation at 36
+    //
+    // Old behavior (broken): at x=34 the wide->narrow detection also pushed a
+    // change at x+1=35 reading next[35]. The normal scan at x=35 ALSO pushed
+    // a change there. changesToAnsi then emitted the new wide char twice.
+    const prev = new TerminalBuffer(40, 1)
+    const next = new TerminalBuffer(40, 1)
+
+    prev.setCell(33, 0, { char: "a" })
+    prev.setCell(34, 0, { char: "\u{1F6D2}", wide: true })
+    prev.setCell(35, 0, { char: "", continuation: true })
+
+    next.setCell(33, 0, { char: "a" })
+    next.setCell(34, 0, { char: "e" })
+    next.setCell(35, 0, { char: "\u{1F1EF}\u{1F1F5}", wide: true })
+    next.setCell(36, 0, { char: "", continuation: true })
+
+    const result = diffBuffers(prev, next)
+
+    // Each (x,y) position must appear at most once in the change pool.
+    const counts = new Map<string, number>()
+    for (let i = 0; i < result.count; i++) {
+      const c = result.pool[i]!
+      const key = `${c.x},${c.y}`
+      counts.set(key, (counts.get(key) ?? 0) + 1)
+    }
+    for (const [pos, count] of counts) {
+      expect.soft(count, `position ${pos} emitted ${count} times`).toBe(1)
+    }
+
+    // (35,0) — the new wide char — must be present exactly once.
+    expect(counts.get("35,0")).toBe(1)
+    // (34,0) — narrow 'e' replacing prev wide head — must be present.
+    expect(counts.get("34,0")).toBe(1)
+    // (36,0) — new wide's continuation, was a regular space before — must be present.
+    expect(counts.get("36,0")).toBe(1)
+  })
+
   test("width growth — new right strip", () => {
     const prev = new TerminalBuffer(3, 2)
     const next = new TerminalBuffer(5, 2) // 2 columns wider

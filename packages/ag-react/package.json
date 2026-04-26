@@ -239,7 +239,8 @@
     "@silvery/create": "0.21.0",
     "@silvery/headless": "0.21.0",
     "@silvery/scope": "0.21.0",
-    "@silvery/theme": "0.21.0"
+    "@silvery/theme": "0.21.0",
+    "upng-js": "^2.1.0"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"

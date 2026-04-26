@@ -77,7 +77,7 @@ describe("nested Text style propagation", () => {
     expect(cell.attrs.underlineStyle).toBe("dashed")
   })
 
-  test.skip("strikethrough propagates through nested Text", () => {
+  test("strikethrough propagates through nested Text", () => {
     const app = render(
       <Text wrap="truncate">
         normal <Text strikethrough>struck nested</Text> normal
@@ -85,6 +85,29 @@ describe("nested Text style propagation", () => {
     )
     const cell = findCell(app, "s", "struck nested")
     expect(cell.attrs.strikethrough).toBe(true)
+  })
+
+  test("overline propagates through nested Text", () => {
+    const app = render(
+      <Text wrap="truncate">
+        normal <Text overline>over nested</Text> normal
+      </Text>,
+    )
+    const cell = findCell(app, "o", "over nested")
+    expect(cell.attrs.overline).toBe(true)
+  })
+
+  test("strikethrough resets after nested Text ends", () => {
+    const app = render(
+      <Text wrap="truncate">
+        before <Text strikethrough>struck</Text> after
+      </Text>,
+    )
+    const struckCell = findCell(app, "s", "struck")
+    expect(struckCell.attrs.strikethrough).toBe(true)
+
+    const afterCell = findCell(app, "a", "after")
+    expect(afterCell.attrs.strikethrough).toBeFalsy()
   })
 
   test("underlineColor propagates through nested Text", () => {

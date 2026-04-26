@@ -159,7 +159,22 @@ export function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffRes
         // next are ' '). Without this explicit change, changesToAnsi skips
         // x+1 and the terminal retains the wide char remnant, causing
         // cursor drift.
-        if (x + 1 < width && prev.isCellWide(x, y) && !next.isCellWide(x, y)) {
+        //
+        // Skip when the next column already triggers its own change (next[x+1]
+        // is itself a wide char or a continuation cell that differs from prev):
+        // the normal scan at x+1 will emit it. Pushing here too would produce a
+        // duplicate change at the same (x+1, y) position. changesToAnsi sorts
+        // by position and processes both entries, emitting the wide char twice
+        // (regression: km-silvery.wide-char-incr-render — wide char at column
+        // N in prev frame, shifted to column N+1 in next frame produced
+        // '🇯🇵🇯🇵' instead of ' 🇯🇵').
+        if (
+          x + 1 < width &&
+          prev.isCellWide(x, y) &&
+          !next.isCellWide(x, y) &&
+          !next.isCellWide(x + 1, y) &&
+          !next.isCellContinuation(x + 1, y)
+        ) {
           writeCellChange(diffPool[changeCount]!, x + 1, y, next)
           changeCount++
         }

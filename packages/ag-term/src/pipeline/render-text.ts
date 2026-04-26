@@ -1285,6 +1285,8 @@ function mergeAnsiStyle(
     overlayAttrs.underlineStyle = segment.underlineStyle as UnderlineStyle
   }
   if (segment.inverse !== undefined) overlayAttrs.inverse = segment.inverse
+  if (segment.strikethrough !== undefined) overlayAttrs.strikethrough = segment.strikethrough
+  if (segment.overline !== undefined) overlayAttrs.overline = segment.overline
 
   // Use mergeStyles for consistent category-based merging
   const merged = mergeStyles(

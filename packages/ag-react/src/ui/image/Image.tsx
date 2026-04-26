@@ -31,7 +31,7 @@ import { type JSX, useContext, useEffect, useMemo, useRef } from "react"
 import { StdoutContext } from "../../context"
 import { useBoxRect } from "../../hooks/useLayout"
 import { encodeKittyImage, isKittyGraphicsSupported, deleteKittyImage } from "./kitty-graphics"
-import { isSixelSupported } from "./sixel-encoder"
+import { decodePngToRgba, encodeSixel, isSixelSupported } from "./sixel-encoder"
 
 // ============================================================================
 // Types
@@ -147,16 +147,14 @@ export function Image({
       })
       write(seq)
     } else if (activeProtocol === "sixel") {
-      // For Sixel, we would need the decoded pixel data.
-      // Since we receive PNG, and decoding PNG requires a library,
-      // Sixel rendering from raw PNG is deferred. The Kitty protocol
-      // can transmit PNG directly (f=100), but Sixel cannot.
-      // For now, Sixel only works if src is already decoded pixel data.
-      // This is a known limitation noted in the module docs.
-      //
-      // If someone passes a Buffer that's already RGBA pixel data
-      // (not PNG), this would need a flag. For now, Sixel falls through
-      // to fallback when src is PNG.
+      // Sixel cannot transmit PNG directly (unlike Kitty's f=100), so we
+      // decode PNG → RGBA via upng-js, then hand off to encodeSixel().
+      // Decode failures (malformed PNG) leave the reserved space blank
+      // rather than tearing the screen with garbled escape sequences.
+      const rgba = decodePngToRgba(pngData)
+      if (rgba) {
+        write(encodeSixel(rgba))
+      }
     }
   }, [pngData, stdoutCtx, activeProtocol, effectiveWidth, effectiveHeight])
 

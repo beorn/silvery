@@ -333,11 +333,7 @@ describe("run.tsx useInput release filtering", () => {
 // ============================================================================
 
 describe("Term.sendInput (production event pipeline)", () => {
-  // Skip: sendInput flows through the async event loop (processEventBatch) which
-  // doesn't use act(). In test environments (IS_REACT_ACT_ENVIRONMENT=true),
-  // React won't flush useSyncExternalStore updates arriving outside act().
-  // Works in production (no act() requirement) and in bun -e (no IS_REACT_ACT_ENVIRONMENT).
-  test.skip("sendInput with Kitty modifier-only key updates useModifierKeys", async () => {
+  test("sendInput with Kitty modifier-only key updates useModifierKeys", async () => {
     function App() {
       const mods = useModifierKeys()
       return <Text>super={String(mods.super)}</Text>
@@ -359,7 +355,7 @@ describe("Term.sendInput (production event pipeline)", () => {
     }
   })
 
-  test.skip("sendInput modifier release clears state", async () => {
+  test("sendInput modifier release clears state", async () => {
     function App() {
       const mods = useModifierKeys()
       return <Text>super={String(mods.super)}</Text>

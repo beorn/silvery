@@ -8,7 +8,7 @@
 export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "./kitty-graphics"
 export type { KittyImageOptions } from "./kitty-graphics"
 
-export { encodeSixel, isSixelSupported } from "./sixel-encoder"
+export { encodeSixel, decodePngToRgba, isSixelSupported } from "./sixel-encoder"
 export type { SixelImageData } from "./sixel-encoder"
 
 export { Image } from "./Image"
