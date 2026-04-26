@@ -297,8 +297,15 @@ describe("render-phase-adapter text wrapping", () => {
   })
 
   test("text truncates with wrap='truncate'", () => {
+    // Spec-correct measureFunc reports naturalWidth as both min-content and
+    // max-content for non-wrappable Text (km-silvery.text-intrinsic-vs-render).
+    // Under CSS preset, the implied minimum is naturalWidth \u2014 the Text won't
+    // shrink to fit a 10-col Box at intrinsic-sizing time. The container
+    // needs overflow="hidden" to opt into auto-min-size = 0 (CSS \u00a74.5
+    // container-side rule), letting the Text shrink to layout.width = 10
+    // and the paint phase apply the ellipsis.
     const buffer = renderViaAdapter(
-      <Box width={10} height={3}>
+      <Box width={10} height={3} overflow="hidden">
         <Text wrap="truncate">Hello world this is long</Text>
       </Box>,
       20,

@@ -19,6 +19,7 @@ import { createKittyManager } from "@silvery/ag-term"
 import { renderSync, type Instance } from "@silvery/ag-react/render"
 import { render as silveryTestRender } from "@silvery/ag-term/renderer"
 import { setInkStrictValidation } from "@silvery/ag-react/reconciler/host-config"
+import { setInkCompatTextMeasure } from "@silvery/ag-react/reconciler/nodes"
 import { renderStringSync } from "@silvery/ag-react/render-string"
 import {
   isLayoutEngineInitialized,
@@ -107,6 +108,12 @@ export function render(
   // Enable Ink-compatible strict validation (text must be inside <Text>,
   // <Box> cannot be inside <Text>)
   setInkStrictValidation(true)
+  // Enable the Ink-flavored Text measureFunc shim. Ink semantics conflate
+  // intrinsic Text width with render-time clipping; silvery's default is
+  // CSS-correct (separate intrinsic vs paint). The shim restores the
+  // conflation so Ink-compat consumers don't see Text overflowing parent
+  // Boxes. See `setInkCompatTextMeasure` for the architectural rationale.
+  setInkCompatTextMeasure(true)
 
   // Ensure layout engine is initialized synchronously.
   // For Yoga, call initInkCompat() before render() to async-init the engine.
@@ -674,6 +681,11 @@ function renderInteractiveMode(
  * Also respects SILVERY_ENGINE env var.
  */
 export async function initInkCompat(engine?: "flexily" | "yoga"): Promise<void> {
+  // Restore Ink's conflated intrinsic-vs-render Text measurement. Consumers
+  // calling initInkCompat() declare Ink semantics; silvery's default
+  // measureFunc is CSS-correct and would let Text overflow parent Boxes
+  // under Yoga preset (flexShrink:0). See `setInkCompatTextMeasure`.
+  setInkCompatTextMeasure(true)
   await ensureDefaultLayoutEngine(engine)
 }
 
@@ -699,6 +711,10 @@ export function renderToString(
 
   // Enable Ink-compatible strict validation so raw text outside <Text> throws
   setInkStrictValidation(true)
+  // Restore Ink's conflated intrinsic-vs-render Text measurement (see render()
+  // for details). renderToString runs the same Text components through the
+  // same reconciler, so it needs the same shim.
+  setInkCompatTextMeasure(true)
 
   if (!isLayoutEngineInitialized()) {
     setLayoutEngine(createFlexilyZeroEngine())

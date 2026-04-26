@@ -13,6 +13,7 @@ import {
 import { createFlexilyZeroEngineForInkCompat } from "../../../../packages/ag-term/src/adapters/flexily-zero-adapter"
 import { createTerm } from "../../../../packages/ag-term/src/ansi"
 import { TermContext } from "../../../../packages/ag-react/src/context"
+import { setInkCompatTextMeasure } from "../../../../packages/ag-react/src/reconciler/nodes"
 import { currentChalkLevel, restoreColonFormatSGR } from "../../../../packages/ink/src/ink"
 import { stripAnsi } from "../../../../packages/ag-term/src/unicode"
 import chalk, { supportsColor } from "@silvery/ink/chalk"
@@ -27,12 +28,19 @@ let engineReady = false
 async function ensureEngine(): Promise<void> {
   if (engineReady || isLayoutEngineInitialized()) {
     engineReady = true
+    // Ink-compat tests need the conflated intrinsic-vs-render Text measureFunc
+    // even when the engine was initialized elsewhere — silvery's CSS-correct
+    // default would let <Text wrap="truncate"> overflow its parent <Box>
+    // under Yoga preset (flexShrink:0).
+    setInkCompatTextMeasure(true)
     return
   }
   // Ink-compat tests use Yoga preset (alignContent:flex-start, no auto-min-size)
   // to match Ink/Yoga semantics. Production silvery uses CSS preset by default;
   // the ForInkCompat factory is the only sanctioned Yoga-flavored escape hatch.
   setLayoutEngine(createFlexilyZeroEngineForInkCompat())
+  // Match Ink's Text measureFunc semantics (see render-to-string.ts comment).
+  setInkCompatTextMeasure(true)
   engineReady = true
 }
 

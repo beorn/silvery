@@ -45,6 +45,40 @@ export { measureStats }
 import { syncRectSignals } from "@silvery/ag/layout-signals"
 
 // ============================================================================
+// Ink-compat Text measureFunc shim
+// ============================================================================
+//
+// Silvery's Text measureFunc reports CSS-correct intrinsic sizes:
+//   - non-wrappable Text (wrap=truncate*|clip|false) reports natural width
+//     as both min-content and max-content. Truncation is a paint-phase
+//     concern (handled by render-text.ts:formatTextLines reading layout.width).
+//
+// Ink's historical behavior conflates intrinsic measurement with render-time
+// clipping: <Box width={N}><Text wrap="truncate">...</Text></Box> measures
+// the Text as `min(naturalWidth, N)` so the parent Box "feels" like it
+// constrained the child. Yoga-preset flex layout (Ink-compat) has
+// flexShrink:0 + min:0, so without this clamp, Text overflows the Box.
+//
+// We preserve Ink semantics behind a module-level flag toggled by
+// `initInkCompat()` (see `@silvery/ink/ink-render.ts`). When enabled, the
+// non-wrappable branch falls back to the old `min(lineWidth, maxWidth)`
+// clamp at intrinsic-sizing time. Spec-correct silvery code (the default)
+// stays untouched.
+//
+// Tracking bead: km-silvery.text-intrinsic-vs-render.
+let inkCompatTextMeasure = false
+
+/**
+ * Enable the Ink-compat Text measureFunc shim. Called by `initInkCompat()`
+ * when consumers import from `@silvery/ink`. Idempotent.
+ *
+ * @internal
+ */
+export function setInkCompatTextMeasure(enabled: boolean): void {
+  inkCompatTextMeasure = enabled
+}
+
+// ============================================================================
 // Node Creation
 // ============================================================================
 
@@ -143,7 +177,28 @@ export function createNode(
       const maxWidth =
         widthMode === "undefined" || Number.isNaN(width) ? Number.POSITIVE_INFINITY : width
 
-      // Check if text will be truncated (not wrapped) — affects height calculation
+      // Wrap mode classification — separates intrinsic-sizing semantics
+      // (CSS-aligned) from paint-time clipping (handled by
+      // render-text.ts:formatTextLines reading layout.width).
+      //
+      // CSS analogy for non-wrappable text (wrap="truncate*" / "clip" / false):
+      //   white-space: nowrap → min-content == max-content == naturalWidth
+      //   (no wrap opportunities; the line is one unbreakable token at
+      //   intrinsic-sizing time). Truncation/clipping moves to the paint
+      //   phase: render-text.ts applies the ellipsis or hard-clip at
+      //   layout.width.
+      //
+      // CSS analogy for wrappable text (wrap="wrap" / "even" / undefined)
+      // and word-break: break-all (wrap="hard"):
+      //   min-content < max-content. Today this measureFunc reports the
+      //   AT_MOST-constrained wrap result for both queries, which matches
+      //   max-content for unconstrained queries and the post-wrap width
+      //   under per-child constraints. A future Phase 2 introduces a
+      //   distinct min-content protocol — see bead
+      //   km-silvery.text-intrinsic-vs-render.
+      //
+      // Reference: pro review 2026-04-26 (GPT-5.4 Pro + Kimi K2.6) and
+      // bead km-silvery.text-intrinsic-vs-render.
       const { wrap } = node.props as TextProps
       const isTruncate =
         wrap === "truncate" ||
@@ -153,8 +208,7 @@ export function createNode(
         wrap === "clip" ||
         wrap === false
       // Hard wrap: character-level wrapping, not word-aware. Each line that
-      // exceeds maxWidth is sliced into chunks of exactly maxWidth. Intrinsic
-      // width is maxWidth (since hard-wrapped lines fill the available width).
+      // exceeds maxWidth is sliced into chunks of exactly maxWidth.
       const isHardWrap = wrap === "hard"
 
       // Calculate actual dimensions based on wrapping
@@ -172,16 +226,20 @@ export function createNode(
       for (const line of lines) {
         measureStats.displayWidthCalls++
         const lineWidth = dw(line)
-        if (isTruncate || lineWidth <= maxWidth) {
+        if (isTruncate) {
+          // Non-wrappable text: report natural width as both min-content and
+          // max-content. Paint-time clipping in render-text.ts uses
+          // layout.width to truncate. Returning min(lineWidth, maxWidth) here
+          // would lie about intrinsic size and force CSS auto-min-size to
+          // collapse padded-text columns to the available width.
           totalHeight += lh
-          actualWidth = Math.max(
-            actualWidth,
-            isTruncate ? Math.min(lineWidth, maxWidth) : lineWidth,
-          )
+          actualWidth = Math.max(actualWidth, lineWidth)
         } else if (isHardWrap) {
-          // Character-level hard wrap: ceil(lineWidth / maxWidth) lines.
-          // Guard: when maxWidth is not finite (unconstrained), treat as 1 line.
-          if (Number.isFinite(maxWidth) && maxWidth > 0) {
+          if (lineWidth <= maxWidth) {
+            totalHeight += lh
+            actualWidth = Math.max(actualWidth, lineWidth)
+          } else if (Number.isFinite(maxWidth) && maxWidth > 0) {
+            // Character-level hard wrap: ceil(lineWidth / maxWidth) lines.
             totalHeight += Math.ceil(lineWidth / maxWidth) * lh
             actualWidth = Math.max(actualWidth, maxWidth)
           } else {
@@ -189,10 +247,16 @@ export function createNode(
             actualWidth = Math.max(actualWidth, lineWidth)
           }
         } else {
-          const wrapped = wt(line, maxWidth, false, true)
-          totalHeight += wrapped.length * lh
-          for (const wl of wrapped) {
-            actualWidth = Math.max(actualWidth, dw(wl))
+          // Wrappable text (wrap, even, undefined).
+          if (lineWidth <= maxWidth) {
+            totalHeight += lh
+            actualWidth = Math.max(actualWidth, lineWidth)
+          } else {
+            const wrapped = wt(line, maxWidth, false, true)
+            totalHeight += wrapped.length * lh
+            for (const wl of wrapped) {
+              actualWidth = Math.max(actualWidth, dw(wl))
+            }
           }
         }
       }
@@ -208,9 +272,20 @@ export function createNode(
         resultHeight = Math.min(resultHeight, height)
       }
 
-      // Cache and return result
+      // Final width:
+      //   - non-wrappable: natural width as-is (no maxWidth clamp — render
+      //     phase clips at paint time). Under the Ink-compat shim, fall
+      //     back to `min(actualWidth, maxWidth)` to preserve Ink's
+      //     conflated intrinsic-vs-render semantics.
+      //   - wrappable / hard: clamp to maxWidth so flex distribution sees
+      //     post-wrap width (e.g. wrapped "Hello world" at width=6 reports
+      //     width=5, the longest wrapped line).
+      const resultWidth =
+        isTruncate && !inkCompatTextMeasure
+          ? actualWidth
+          : Math.min(actualWidth, maxWidth)
       const result = {
-        width: Math.min(actualWidth, maxWidth),
+        width: resultWidth,
         height: resultHeight,
       }
       measureCache.set(cacheKey, result)
