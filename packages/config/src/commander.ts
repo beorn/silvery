@@ -51,14 +51,29 @@ export interface MountConfigOpts {
  * - `config <key>=<value>` → set value
  * - `config --unset <key>` / `--list` / `--get-regexp <pat>` / `--edit` → flag verbs
  */
+/**
+ * Accept either a Config directly OR a factory that resolves one lazily.
+ *
+ * The factory form is essential for apps where the config depends on per-
+ * invocation state (e.g. `km`'s `--repo <path>` or cwd-based discovery): the
+ * Config must be loaded INSIDE the action callback, not at registration time.
+ * Apps with a single global config (silvercode) can keep passing the Config
+ * directly.
+ */
+export type ConfigOrFactory = Config | (() => Config | Promise<Config>)
+
 export function mountConfigCommand(
   program: CommanderLike,
-  config: Config,
+  configOrFactory: ConfigOrFactory,
   opts: MountConfigOpts = {},
 ): void {
   const allowRawWrite = opts.allowRawWrite ?? true
   const allowMutation = opts.allowRegistryMutation ?? true
   const registries = opts.registries ?? {}
+
+  async function getConfig(): Promise<Config> {
+    return typeof configOrFactory === "function" ? await configOrFactory() : configOrFactory
+  }
 
   const cmd = program.command("config [args...]").description("get/set config values and manage named entries")
 
@@ -71,6 +86,7 @@ export function mountConfigCommand(
     const rawArgs = (actionArgs[0] ?? []) as string[]
     const options = (actionArgs[1] ?? {}) as Record<string, unknown>
     const args = rawArgs
+    const config = await getConfig()
 
     if (options.edit) {
       await runEditor(config)
@@ -81,7 +97,7 @@ export function mountConfigCommand(
       await config.save()
       return
     }
-    if (options.list || (args.length === 0 && options["getRegexp"] === undefined)) {
+    if (options.list || (args.length === 0)) {
       const pattern = typeof options["getRegexp"] === "string" ? (options["getRegexp"] as string) : undefined
       const list = pattern
         ? config.list().filter((e) => new RegExp(pattern).test(e.key))
