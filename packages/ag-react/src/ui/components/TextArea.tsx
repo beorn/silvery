@@ -136,6 +136,27 @@ export interface TextAreaProps {
    * Not fired when Shift is held (shift+arrow extends selection instead).
    */
   onEdge?: (edge: "top" | "bottom" | "left" | "right") => boolean
+  /**
+   * Foreground color for body text (rendered Text rows).
+   *
+   * Accepts any silvery theme token (e.g. `"$fg-muted"`, `"$primary"`) or
+   * raw color string. Cursor row, selection, and placeholder rendering are
+   * unaffected — cursor block/underline still uses `inverse`/`underline`,
+   * selection still uses `inverse`, and placeholder text stays at its own
+   * `$fg-muted` token.
+   *
+   * Useful for composite editors (e.g. silvercode's stacked queue + command
+   * TextAreas) where the unfocused widget should dim its body text to
+   * indicate which side owns focus.
+   */
+  color?: string
+  /**
+   * Shortcut for `color="$fg-muted"`. Mutually exclusive with `color` —
+   * if both are set, `color` wins.
+   *
+   * @default false
+   */
+  dim?: boolean
 }
 
 /** Selection range as [start, end) character offsets */
@@ -179,9 +200,14 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     testID,
     onEdge,
     wrap = "soft",
+    color: bodyColorProp,
+    dim,
   },
   ref,
 ) {
+  // Body color resolution: explicit `color` wins over `dim`; `dim` is a
+  // shortcut for `$fg-muted`. Falls through to undefined (default fg).
+  const bodyColor = bodyColorProp ?? (dim ? "$fg-muted" : undefined)
   // Focus system integration: prop overrides hook.
   // When testID is set, the component participates in the focus tree and
   // isActive derives from focus state. Without testID, default to true
@@ -352,7 +378,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
           const after = wl.line.slice(selEnd)
 
           return (
-            <Text key={absoluteRow}>
+            <Text key={absoluteRow} color={bodyColor}>
               {before}
               <Text inverse>
                 {selected || (selEnd === wl.line.length && isCursorRow ? " " : "")}
@@ -366,7 +392,11 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         // Composite editors (e.g. queue + command box in silvercode) use this
         // to keep exactly ONE visible caret across two stacked TextAreas.
         if (!isCursorRow || (!isActive && !showInactiveCursor)) {
-          return <Text key={absoluteRow}>{wl.line || " "}</Text>
+          return (
+            <Text key={absoluteRow} color={bodyColor}>
+              {wl.line || " "}
+            </Text>
+          )
         }
 
         const beforeCursor = wl.line.slice(0, ta.cursorCol)
@@ -383,7 +413,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         )
 
         return (
-          <Text key={absoluteRow}>
+          <Text key={absoluteRow} color={bodyColor}>
             {beforeCursor}
             {cursorEl}
             {afterCursor}

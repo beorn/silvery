@@ -42,6 +42,8 @@ const [value, setValue] = useState("")
 | `focusBorderColor` | `string`                                  | `"$focusborder"` | Border color when focused                       |
 | `testID`           | `string`                                  | —                | Test ID for focus system identification         |
 | `wrap`             | `"soft" \| "off"`                         | `"soft"`         | Soft-wrap long logical lines (default) or keep them on a single visual row |
+| `color`            | `string`                                  | —                | Foreground color for body text (e.g., `"$fg-muted"`) |
+| `dim`              | `boolean`                                 | `false`          | Shortcut for `color="$fg-muted"` — body text dims to muted |
 
 ### Ref Handle (TextAreaHandle)
 
