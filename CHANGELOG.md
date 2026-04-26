@@ -7,17 +7,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed — recursive intrinsic min-content (via flexily)
+
+silvery now consumes flexily's recursive `Node.getMinContent(direction)`, so
+`Box` wrappers around `<Text wrap="wrap">` are layout-transparent for
+intrinsic sizing — the row's auto-min reflects the wrappable Text's longest
+unbreakable token, not its full natural width. Consumers no longer need to
+thread `flexShrink={1} minWidth={0}` through every wrapper in a wrap chain
+for typical layouts. `<Prose>` survives as optional typography sugar rather
+than a wrap-enablement primitive.
+
+`minWidth={0}` remains the canonical CSS escape hatch for two cases that
+recursive min-content can't help with: non-wrappable Text (`wrap="truncate"
+| "clip" | false`, where min-content == max-content == naturalWidth), and
+containers narrower than their longest unbreakable word.
+
 ### BREAKING — `<TextArea>` `height` prop dropped, replaced with `fieldSizing` / `rows` / `minRows` / `maxRows`
 
 `<TextArea>` no longer accepts the `height: number` prop. The replacement
 is a CSS-`field-sizing`-aligned API that ships chat-input behavior by
 default and removes the need to hand-roll wrap math in consumers.
 
-| Old usage                                           | New usage                                          |
-| --------------------------------------------------- | -------------------------------------------------- |
-| `<TextArea height={N} />`                           | `<TextArea fieldSizing="fixed" rows={N} />`        |
-| Hand-rolled `height={Math.min(N, lines.length)}`    | `<TextArea maxRows={N} />` (default content mode)  |
-| Chat input where `height` tracked content           | `<TextArea />` — defaults are chat-input           |
+| Old usage                                        | New usage                                         |
+| ------------------------------------------------ | ------------------------------------------------- |
+| `<TextArea height={N} />`                        | `<TextArea fieldSizing="fixed" rows={N} />`       |
+| Hand-rolled `height={Math.min(N, lines.length)}` | `<TextArea maxRows={N} />` (default content mode) |
+| Chat input where `height` tracked content        | `<TextArea />` — defaults are chat-input          |
 
 Defaults: `fieldSizing="content"`, `minRows=1`, `maxRows=8`. Drop in a
 `<TextArea />` with no sizing props and you get a chat-style auto-grow
@@ -72,12 +87,12 @@ theme.link        → theme["fg-link"]
 Or via the nested role objects:
 
 ```ts
-theme.selected.bg       // bg-selected
-theme.selected.fgOn     // fg-on-selected
+theme.selected.bg // bg-selected
+theme.selected.fgOn // fg-on-selected
 theme.selected.hover.bg // bg-selected-hover
-theme.inverse.bg        // bg-inverse
-theme.inverse.fgOn      // fg-on-inverse
-theme.link.fg           // fg-link
+theme.inverse.bg // bg-inverse
+theme.inverse.fgOn // fg-on-inverse
+theme.link.fg // fg-link
 ```
 
 `scheme.selectionBackground` / `scheme.selectionForeground` remain on the
@@ -124,7 +139,7 @@ The legacy `deriveTheme` path emits the legacy single-hex role fields at
 **runtime** (cast as `Theme` at the boundary). JSX consumers that resolve
 `$primary` / `$accent` / `$muted` / `$error` (etc.) keep rendering through
 `resolveToken`'s direct kebab lookup. The fields are not part of the
-`Theme` *type* — only TypeScript dot-access breaks. This buys teams time
+`Theme` _type_ — only TypeScript dot-access breaks. This buys teams time
 to migrate JSX `$token` references to the Sterling forms below.
 
 The transition is finite: legacy runtime emit will be deleted in 0.21.0
@@ -138,39 +153,39 @@ property OR a Sterling flat token. Apply at TS dot-access sites; JSX
 
 #### Single-hex role fields → Sterling
 
-| Legacy field            | Sterling nested        | Sterling flat        |
-| ----------------------- | ---------------------- | -------------------- |
-| `theme.primary`         | `theme.accent.fg`      | `theme["fg-accent"]` |
-| `theme.primaryfg`       | `theme.accent.fgOn`    | `theme["fg-on-accent"]` |
-| `theme.accent`          | `theme.accent.fg`      | `theme["fg-accent"]` |
-| `theme.accentfg`        | `theme.accent.fgOn`    | `theme["fg-on-accent"]` |
-| `theme.secondary`       | `theme.muted.fg`       | `theme["fg-muted"]`  |
-| `theme.secondaryfg`     | `theme.muted.bg`       | `theme["bg-muted"]`  |
-| `theme.error`           | `theme.error.fg`       | `theme["fg-error"]`  |
-| `theme.errorfg`         | `theme.error.fgOn`     | `theme["fg-on-error"]` |
-| `theme.warning`         | `theme.warning.fg`     | `theme["fg-warning"]` |
-| `theme.warningfg`       | `theme.warning.fgOn`   | `theme["fg-on-warning"]` |
-| `theme.success`         | `theme.success.fg`     | `theme["fg-success"]` |
-| `theme.successfg`       | `theme.success.fgOn`   | `theme["fg-on-success"]` |
-| `theme.info`            | `theme.info.fg`        | `theme["fg-info"]`   |
-| `theme.infofg`          | `theme.info.fgOn`      | `theme["fg-on-info"]` |
-| `theme.cursor`          | `theme.cursor.fg`      | `theme["fg-cursor"]` |
-| `theme.cursorbg`        | `theme.cursor.bg`      | `theme["bg-cursor"]` |
-| `theme.selection`       | `theme.selected.fgOn`  | `theme["fg-on-selected"]` |
-| `theme.selectionbg`     | `theme.selected.bg`    | `theme["bg-selected"]` |
-| `theme.inverse`         | `theme.inverse.fgOn`   | `theme["fg-on-inverse"]` |
-| `theme.inversebg`       | `theme.inverse.bg`     | `theme["bg-inverse"]` |
-| `theme.surface`         | `theme.fg`             | `theme["fg"]`        |
-| `theme.surfacebg`       | `theme.surface.subtle` | `theme["bg-surface-subtle"]` |
-| `theme.popover`         | `theme.fg`             | `theme["fg"]`        |
-| `theme.popoverbg`       | `theme.surface.overlay` | `theme["bg-surface-overlay"]` |
-| `theme.muted`           | `theme.muted.fg`       | `theme["fg-muted"]`  |
-| `theme.mutedbg`         | `theme.muted.bg`       | `theme["bg-muted"]`  |
-| `theme.border`          | `theme.border.default` | `theme["border-default"]` |
-| `theme.inputborder`     | `theme.border.default` | `theme["border-default"]` |
-| `theme.focusborder`     | `theme.border.focus`   | `theme["border-focus"]` |
-| `theme.link`            | `theme.link.fg`        | `theme["fg-link"]`   |
-| `theme.disabledfg`      | `theme.muted.fg`       | `theme["fg-muted"]`  |
+| Legacy field        | Sterling nested         | Sterling flat                 |
+| ------------------- | ----------------------- | ----------------------------- |
+| `theme.primary`     | `theme.accent.fg`       | `theme["fg-accent"]`          |
+| `theme.primaryfg`   | `theme.accent.fgOn`     | `theme["fg-on-accent"]`       |
+| `theme.accent`      | `theme.accent.fg`       | `theme["fg-accent"]`          |
+| `theme.accentfg`    | `theme.accent.fgOn`     | `theme["fg-on-accent"]`       |
+| `theme.secondary`   | `theme.muted.fg`        | `theme["fg-muted"]`           |
+| `theme.secondaryfg` | `theme.muted.bg`        | `theme["bg-muted"]`           |
+| `theme.error`       | `theme.error.fg`        | `theme["fg-error"]`           |
+| `theme.errorfg`     | `theme.error.fgOn`      | `theme["fg-on-error"]`        |
+| `theme.warning`     | `theme.warning.fg`      | `theme["fg-warning"]`         |
+| `theme.warningfg`   | `theme.warning.fgOn`    | `theme["fg-on-warning"]`      |
+| `theme.success`     | `theme.success.fg`      | `theme["fg-success"]`         |
+| `theme.successfg`   | `theme.success.fgOn`    | `theme["fg-on-success"]`      |
+| `theme.info`        | `theme.info.fg`         | `theme["fg-info"]`            |
+| `theme.infofg`      | `theme.info.fgOn`       | `theme["fg-on-info"]`         |
+| `theme.cursor`      | `theme.cursor.fg`       | `theme["fg-cursor"]`          |
+| `theme.cursorbg`    | `theme.cursor.bg`       | `theme["bg-cursor"]`          |
+| `theme.selection`   | `theme.selected.fgOn`   | `theme["fg-on-selected"]`     |
+| `theme.selectionbg` | `theme.selected.bg`     | `theme["bg-selected"]`        |
+| `theme.inverse`     | `theme.inverse.fgOn`    | `theme["fg-on-inverse"]`      |
+| `theme.inversebg`   | `theme.inverse.bg`      | `theme["bg-inverse"]`         |
+| `theme.surface`     | `theme.fg`              | `theme["fg"]`                 |
+| `theme.surfacebg`   | `theme.surface.subtle`  | `theme["bg-surface-subtle"]`  |
+| `theme.popover`     | `theme.fg`              | `theme["fg"]`                 |
+| `theme.popoverbg`   | `theme.surface.overlay` | `theme["bg-surface-overlay"]` |
+| `theme.muted`       | `theme.muted.fg`        | `theme["fg-muted"]`           |
+| `theme.mutedbg`     | `theme.muted.bg`        | `theme["bg-muted"]`           |
+| `theme.border`      | `theme.border.default`  | `theme["border-default"]`     |
+| `theme.inputborder` | `theme.border.default`  | `theme["border-default"]`     |
+| `theme.focusborder` | `theme.border.focus`    | `theme["border-focus"]`       |
+| `theme.link`        | `theme.link.fg`         | `theme["fg-link"]`            |
+| `theme.disabledfg`  | `theme.muted.fg`        | `theme["fg-muted"]`           |
 
 #### `$token` → Sterling `$token` (JSX consumers)
 
@@ -178,37 +193,37 @@ Same map applied as `$token` strings. The legacy `$tokens` keep resolving
 through `resolveToken`'s kebab lookup until 0.21.0; migrate now to
 unblock 0.21.0's strict-only mode.
 
-| Legacy `$token` | Sterling `$token`            |
-| --------------- | ---------------------------- |
-| `$primary`      | `$fg-accent`                 |
-| `$primaryfg`    | `$fg-on-accent`              |
-| `$accent`       | `$fg-accent`                 |
-| `$accentfg`     | `$fg-on-accent`              |
-| `$muted`        | `$fg-muted`                  |
-| `$mutedbg`      | `$bg-muted`                  |
-| `$secondary`    | `$fg-muted`                  |
-| `$error`        | `$fg-error`                  |
-| `$warning`      | `$fg-warning`                |
-| `$success`      | `$fg-success`                |
-| `$info`         | `$fg-info`                   |
-| `$inverse`      | `$fg-on-inverse`             |
-| `$inversebg`    | `$bg-inverse`                |
+| Legacy `$token` | Sterling `$token`               |
+| --------------- | ------------------------------- |
+| `$primary`      | `$fg-accent`                    |
+| `$primaryfg`    | `$fg-on-accent`                 |
+| `$accent`       | `$fg-accent`                    |
+| `$accentfg`     | `$fg-on-accent`                 |
+| `$muted`        | `$fg-muted`                     |
+| `$mutedbg`      | `$bg-muted`                     |
+| `$secondary`    | `$fg-muted`                     |
+| `$error`        | `$fg-error`                     |
+| `$warning`      | `$fg-warning`                   |
+| `$success`      | `$fg-success`                   |
+| `$info`         | `$fg-info`                      |
+| `$inverse`      | `$fg-on-inverse`                |
+| `$inversebg`    | `$bg-inverse`                   |
 | `$surface`      | `$fg` (text on default surface) |
-| `$surfacebg`    | `$bg-surface-subtle`         |
-| `$popover`      | `$fg`                        |
-| `$popoverbg`    | `$bg-surface-overlay`        |
-| `$selection`    | `$fg-on-selected`            |
-| `$selectionbg`  | `$bg-selected`               |
-| `$cursor`       | `$fg-cursor`                 |
-| `$cursorbg`     | `$bg-cursor`                 |
-| `$border`       | `$border-default`            |
-| `$inputborder`  | `$border-default`            |
-| `$focusborder`  | `$border-focus`              |
-| `$focusborder`  | `$border-focus`              |
-| `$link`         | `$fg-link`                   |
-| `$disabledfg`   | `$fg-muted`                  |
-| `$bg`           | unchanged (still resolves)   |
-| `$fg`           | unchanged (still resolves)   |
+| `$surfacebg`    | `$bg-surface-subtle`            |
+| `$popover`      | `$fg`                           |
+| `$popoverbg`    | `$bg-surface-overlay`           |
+| `$selection`    | `$fg-on-selected`               |
+| `$selectionbg`  | `$bg-selected`                  |
+| `$cursor`       | `$fg-cursor`                    |
+| `$cursorbg`     | `$bg-cursor`                    |
+| `$border`       | `$border-default`               |
+| `$inputborder`  | `$border-default`               |
+| `$focusborder`  | `$border-focus`                 |
+| `$focusborder`  | `$border-focus`                 |
+| `$link`         | `$fg-link`                      |
+| `$disabledfg`   | `$fg-muted`                     |
+| `$bg`           | unchanged (still resolves)      |
+| `$fg`           | unchanged (still resolves)      |
 
 ### What landed
 

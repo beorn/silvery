@@ -15,9 +15,9 @@ React framework for modern terminal UIs. Layout feedback, incremental rendering,
 const wasRaw = stdin.isRaw
 if (!wasRaw) stdin.setRawMode(true)
 try {
-  await someAsyncWork()  // any other code path can run here
+  await someAsyncWork() // any other code path can run here
 } finally {
-  if (!wasRaw) stdin.setRawMode(false)  // ← undoes whatever ran during the await
+  if (!wasRaw) stdin.setRawMode(false) // ← undoes whatever ran during the await
 }
 ```
 
@@ -27,11 +27,11 @@ try {
 
 **File layout** — sub-owners live under `packages/ag-term/src/runtime/devices/`:
 
-- `devices/output.ts` — `Output` (stdout / stderr / console.* sink during alt screen)
+- `devices/output.ts` — `Output` (stdout / stderr / console.\* sink during alt screen)
 - `devices/modes.ts` — `Modes` (raw mode, alt screen, bracketed paste, Kitty keyboard, mouse, focus reporting)
 - `devices/size.ts` — `Size` (alien-signals-backed cols/rows with 16 ms resize coalescing)
 - `devices/signals.ts` — `Signals` (topologically-ordered SIGINT/SIGTERM/exit handler scope)
-- `devices/console.ts` — `Console` (console.* tap + replay, complementary to `Output`'s sink)
+- `devices/console.ts` — `Console` (console.\* tap + replay, complementary to `Output`'s sink)
 - `runtime/input-owner.ts` — `Input` (InputOwner — single stdin mediator; file lives one level up for legacy reasons and may move to `devices/` later)
 
 `Term` wires them as `readonly input | output | console: … | undefined` (undefined on headless / emulator-backed terms) and `readonly modes | size: …` (always present — headless gets a no-op variant).
@@ -328,12 +328,20 @@ CSS flexbox via Flexily. Let the layout engine compute positions and sizes.
 ### CSS-correct defaults
 
 silvery uses CSS-correct flex defaults (`flexShrink: 1`, `alignContent: stretch`,
-plus CSS §4.5 flex-item auto min-size). This matches browser flexbox semantics —
-the same code lays out the same way in a browser, on canvas, and in the
-terminal. **You don't need to thread `flexShrink={1} minWidth={0}` through wrap
-chains** — that ceremony was required under the historical Yoga-flavored
-defaults and is no longer load-bearing. `<Prose>` is now optional typography
-sugar rather than a wrap-enablement primitive.
+plus CSS §4.5 flex-item auto min-size with recursive intrinsic min-content
+through container nodes). This matches browser flexbox semantics — the same
+code lays out the same way in a browser, on canvas, and in the terminal.
+**You don't need to thread `flexShrink={1} minWidth={0}` through wrap
+chains for typical layouts** — that ceremony was required under historical
+Yoga-flavored defaults and is no longer load-bearing for `<Text wrap="wrap">`
+inside `<Box>` wrappers when the container width exceeds the longest
+unbreakable word. `<Prose>` is optional typography sugar rather than a
+wrap-enablement primitive.
+
+**`minWidth={0}` is still the canonical CSS escape hatch** for two cases:
+
+1. **Non-wrappable Text** (`wrap="truncate" | "clip" | false`): `min-content == max-content == naturalWidth`, so a Box wrapping a long truncate-Text still pins the row at the Text's natural width. Add `minWidth={0}` on the Box (or on the Text itself via `TextFlexItemProps`) to let the row shrink past natural width and let truncation kick in.
+2. **Containers narrower than the longest unbreakable word**: when the parent might be smaller than `Box(<Text wrap="wrap">)`'s recursive min-content (longest token), add `minWidth={0}` to opt out of the auto-min floor entirely.
 
 The Yoga preset is reachable from flexily directly (`createFlexily({ defaults: "yoga" })`)
 for projects that want drop-in Yoga compatibility. silvery's Ink-compat layer
@@ -363,12 +371,13 @@ app.press("j")
 expect(app.text).toContain("▶ Second item")
 ```
 
-**Pin root width/height when testing full-app layouts.** `createRenderer({cols, rows})` passes `cols`/`rows` as the *available* size to `calculateLayout()` — it does NOT set `root.style.width/height`. Production silvercode uses `<Screen>` which pins both from the terminal. Without that pin, `column → row → <Text wrap=wrap>` chains correctly collapse to `height=1` via CSS max-content sizing (a row's intrinsic cross size is its tallest child's max-content height, and a wrappable Text at unconstrained width is exactly 1 line tall). Tests look broken; production isn't.
+**Pin root width/height when testing full-app layouts.** `createRenderer({cols, rows})` passes `cols`/`rows` as the _available_ size to `calculateLayout()` — it does NOT set `root.style.width/height`. Production silvercode uses `<Screen>` which pins both from the terminal. Without that pin, `column → row → <Text wrap=wrap>` chains correctly collapse to `height=1` via CSS max-content sizing (a row's intrinsic cross size is its tallest child's max-content height, and a wrappable Text at unconstrained width is exactly 1 line tall). Tests look broken; production isn't.
 
 For full-app fixtures, mirror `<Screen>`:
 
 ```tsx
-const TOTAL_COLS = 160, TOTAL_ROWS = 30
+const TOTAL_COLS = 160,
+  TOTAL_ROWS = 30
 const render = createRenderer({ cols: TOTAL_COLS, rows: TOTAL_ROWS })
 const app = render(
   <Box width={TOTAL_COLS} height={TOTAL_ROWS} flexDirection="row">
