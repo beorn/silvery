@@ -78,6 +78,12 @@ export type {
 } from "./ui/components"
 export { HorizontalVirtualList } from "./ui/components"
 export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from "./ui/components"
+
+// HeightModel — Fenwick-backed predicted-height source.
+// Phase 1 of `km-silvery.listview-heightmodel-unify`: semi-public scaffolding
+// so tests can import it; ListView is rewired in Phase 2 (separate bead).
+export { createHeightModel } from "./ui/components/list-view/height-model"
+export type { HeightModel, HeightModelOptions } from "./ui/components/list-view/height-model"
 export { SplitView } from "./ui/components"
 export type { SplitViewProps } from "./ui/components"
 export type { LayoutNode as SplitLayoutNode } from "@silvery/ag-term/pane-manager"
@@ -1095,11 +1101,7 @@ export {
 export type { StyledSegment } from "@silvery/ag-term/unicode"
 
 // Width measurer factory
-export {
-  createMeasurer,
-  runWithMeasurer,
-  type Measurer,
-} from "@silvery/ag-term/unicode"
+export { createMeasurer, runWithMeasurer, type Measurer } from "@silvery/ag-term/unicode"
 
 // Measurer composition (term + measurement)
 export { withMeasurer, createPipeline, type MeasuredTerm } from "@silvery/ag-term/measurer"
