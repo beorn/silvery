@@ -239,8 +239,12 @@ export function createOutput(
       `deactivated (suppressed ${suppressedCount} stdout, redirected ${redirectedCount} stderr)`,
     )
 
-    // Flush buffered stderr through the original
+    // Flush buffered stderr through the original. Headed with a separator
+    // so the operator can distinguish replayed log output from anything
+    // that ran AFTER the alt-screen restored. Suppressed when there's
+    // nothing to replay (no header on a clean run).
     if (origStderrWrite && stderrBuffer.length > 0) {
+      origStderrWrite(`\n— silvery: replaying ${stderrBuffer.length} captured stderr/console line(s) —\n`)
       for (const line of stderrBuffer) {
         origStderrWrite(line)
       }

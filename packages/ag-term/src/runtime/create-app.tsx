@@ -1839,8 +1839,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Activate output owner after protocol setup and initial render are done.
   // This intercepts process.stdout/stderr writes so that only silvery's
   // render pipeline can write to stdout — all other writes are suppressed
-  // (stdout) or redirected to DEBUG_LOG (stderr).
-  if (shouldGuardOutput) {
+  // (stdout) or redirected to DEBUG_LOG (stderr) or BUFFERED for replay
+  // on exit (the foolproof default — bead km-silvery.console-hygiene-default).
+  //
+  // Capture model:
+  //   - DEBUG_LOG set       → mirror stderr/console writes to that file
+  //   - DEBUG_LOG unset     → buffer stderr/console writes; replay to the
+  //                           normal terminal on exit so the operator sees
+  //                           what was logged (no silent drop, no sidecar
+  //                           file by default)
+  //   - SILVERY_NO_CAPTURE  → opt out for debugging, leave streams as-is
+  if (shouldGuardOutput && process.env.SILVERY_NO_CAPTURE !== "1") {
     // Prefer the injected Term's Output sub-owner (single writer per
     // resource). Fall back to constructing a local one when no Term is
     // injected or the Term has no Output (headless / emulator backends).
@@ -1852,7 +1861,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       output = createOutput()
       ownsOutput = true
     }
-    output.activate()
+    // Default: buffer-and-replay when DEBUG_LOG isn't set. The buffer
+    // flushes to the original stderr on deactivate(), so the operator
+    // sees the captured output on exit instead of silently losing it.
+    output.activate({ bufferStderr: !process.env.DEBUG_LOG })
   }
 
   // Assign pause/resume now that doRender and runtime are available.
@@ -1869,7 +1881,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       if (alternateScreen) stdout.write(enterAlternateScreen())
       renderPaused = false
       // Re-activate the output owner (deactivated during pause)
-      if (shouldGuardOutput && output) output.activate()
+      if (shouldGuardOutput && output) output.activate({ bufferStderr: !process.env.DEBUG_LOG })
       // Reset diff state so next render outputs a full frame.
       // The screen was cleared when entering console mode, so
       // incremental diffing would produce an incomplete frame.

@@ -9,20 +9,14 @@
  *   bunx silvery doctor              — check terminal capabilities
  *   bunx silvery --help              — show usage help
  *
- * Console hygiene for alt-screen examples:
- *   - LOG_LEVEL defaults to "error" so loggily info/debug doesn't emit
- *     into the alt-screen UI.
- *   - DEBUG defaults to empty so the `debug` npm package (used internally
- *     for silvery:perf etc.) stays silent unless explicitly enabled.
- *   - If the user sets DEBUG_LOG=path, debug output goes to that file
- *     instead of stderr (matches the km-cli / silvercode pattern).
- *
- * This guard runs BEFORE any silvery import so debug()'s module-load-time
- * cache of process.stderr.write gets a sane default. Per-app foolproofing
- * (km-silvery.console-hygiene-default) is the long-term framework fix.
+ * Console hygiene: silvery's run() now activates Output with bufferStderr
+ * by default (km-silvery.console-hygiene-default). debug() / console.foo
+ * / raw stderr writes are buffered during alt-screen and replayed to the
+ * normal terminal on exit. No per-CLI guard needed; loggily's LOG_LEVEL
+ * still defaults to a sane value so info/debug don't fire when nothing
+ * is listening.
  */
 if (!process.env.LOG_LEVEL) process.env.LOG_LEVEL = "error"
-if (process.env.DEBUG === undefined) process.env.DEBUG = ""
 
 // =============================================================================
 // ANSI helpers (no deps — must work before anything is imported)
