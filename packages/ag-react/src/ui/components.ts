@@ -222,6 +222,19 @@ export type { TooltipProps } from "./components/Tooltip"
 export { Skeleton } from "./components/Skeleton"
 export type { SkeletonProps } from "./components/Skeleton"
 
+// Accordion / Collapsible
+export { Accordion } from "./components/Accordion"
+export type { AccordionProps } from "./components/Accordion"
+
+// LineNumber gutter primitive
+export { LineNumber } from "./components/LineNumber"
+export type { LineNumberProps } from "./components/LineNumber"
+
+// Diff renderer (unified / side-by-side; v0 — no syntax highlighting,
+// follow-up via Code + tree-sitter)
+export { Diff } from "./components/Diff"
+export type { DiffProps, DiffHunk, DiffLine, DiffMode } from "./components/Diff"
+
 // =============================================================================
 // Position Registry (2D Grid Virtualization)
 // =============================================================================

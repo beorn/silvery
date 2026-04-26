@@ -306,6 +306,19 @@ export type { TooltipProps } from "./ui/components"
 export { Skeleton } from "./ui/components"
 export type { SkeletonProps } from "./ui/components"
 
+// Accordion / Collapsible
+export { Accordion } from "./ui/components"
+export type { AccordionProps } from "./ui/components"
+
+// LineNumber gutter primitive
+export { LineNumber } from "./ui/components"
+export type { LineNumberProps } from "./ui/components"
+
+// Diff renderer (unified / side-by-side; v0 — no syntax highlighting,
+// follow-up via Code + tree-sitter)
+export { Diff } from "./ui/components"
+export type { DiffProps, DiffHunk, DiffLine, DiffMode } from "./ui/components"
+
 // Image Component
 export { Image } from "./ui/image/index"
 export type { ImageProps } from "./ui/image/index"
