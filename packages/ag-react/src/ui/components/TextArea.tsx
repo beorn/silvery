@@ -105,6 +105,21 @@ export interface TextAreaProps {
   /** Test ID for focus system identification */
   testID?: string
   /**
+   * Wrapping policy for long logical lines.
+   *
+   * - `"soft"` (default) — soft-wrap at the parent's content width. A long
+   *   single-line input flows into multiple visual rows; height grows up to
+   *   the configured `height`. This matches modern chat / messaging input
+   *   conventions and the cross-platform / web target.
+   * - `"off"` — disable wrap. Long lines stay on a single visual row; the
+   *   buffer scrolls horizontally as the cursor moves. Use this for
+   *   terminal-style single-row prompts (REPLs, command lines) where wrap
+   *   is undesirable.
+   *
+   * @default "soft"
+   */
+  wrap?: "soft" | "off"
+  /**
    * Called when an arrow key is pressed AT the buffer boundary (where the key
    * would otherwise be a no-op or clamp). Enables cross-widget focus handoff
    * for composite editors.
@@ -162,6 +177,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     focusBorderColor = "$border-focus",
     testID,
     onEdge,
+    wrap = "soft",
   },
   ref,
 ) {
@@ -186,6 +202,12 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   // border (1+1) and padding (1+1) to get the actual content area width.
   const contentWidth = borderStyleProp ? Math.max(1, parentWidth - 4) : parentWidth
 
+  // wrap="off" disables soft-wrap by passing a very large wrapWidth. The
+  // wrap algorithm only breaks when a logical line exceeds wrapWidth; at
+  // ~10^6 cols, no realistic input wraps. Buffer scrolls horizontally as
+  // the cursor moves (CSS overflow on the parent flex line).
+  const effectiveWrapWidth = wrap === "off" ? 1_000_000 : contentWidth
+
   const ta = useTextArea({
     value: controlledValue,
     defaultValue,
@@ -194,7 +216,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     submitKey,
     isActive,
     height,
-    wrapWidth: contentWidth,
+    wrapWidth: effectiveWrapWidth,
     scrollMargin,
     disabled,
     maxLength,

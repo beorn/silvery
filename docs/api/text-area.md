@@ -41,6 +41,7 @@ const [value, setValue] = useState("")
 | `borderColor`      | `string`                                  | `"$border"`      | Border color when unfocused                     |
 | `focusBorderColor` | `string`                                  | `"$focusborder"` | Border color when focused                       |
 | `testID`           | `string`                                  | —                | Test ID for focus system identification         |
+| `wrap`             | `"soft" \| "off"`                         | `"soft"`         | Soft-wrap long logical lines (default) or keep them on a single visual row |
 
 ### Ref Handle (TextAreaHandle)
 
