@@ -38,6 +38,10 @@ export type {
   CursorOffset,
   CursorShape,
   SelectionIntent,
+  AnchorEdge,
+  AnchorRef,
+  Decoration,
+  Placement,
 } from "./types"
 
 // Keys

@@ -160,6 +160,130 @@ export interface SelectionIntent {
 }
 
 // ============================================================================
+// Overlay / Anchor Types (Phase 4c — overlay-anchor v1)
+// ============================================================================
+
+/**
+ * Edge of an anchor's content rect that a decoration can attach to. Mirrors
+ * CSS Anchor Positioning's edge vocabulary. `"center"` is reserved for v2
+ * (centerline placement modes); v1 only emits the four cardinal-edge rects.
+ *
+ * Used by the placement algorithm in `placeFloating` to decide WHERE on the
+ * anchor's bounding rect to start measuring from.
+ */
+export type AnchorEdge = "top" | "bottom" | "left" | "right"
+
+/**
+ * Twelve-placement vocabulary for floating decorations relative to an anchor
+ * rect. The first segment names the side of the anchor the floating element
+ * lives on; the second segment names the alignment along the perpendicular
+ * axis (start, center, end). Mirrors Floating UI / Popper.js's vocabulary so
+ * apps moving between targets can carry placement intent verbatim.
+ *
+ * v1 is **fixed-placement only** — the placement string maps deterministically
+ * to a rect via `placeFloating`. Collision-aware auto-flip + auto-shift are
+ * out of scope (v2). Apps that need flip behavior should detect overflow
+ * themselves and pick a different placement.
+ */
+export type Placement =
+  | "top-start"
+  | "top-center"
+  | "top-end"
+  | "bottom-start"
+  | "bottom-center"
+  | "bottom-end"
+  | "left-start"
+  | "left-center"
+  | "left-end"
+  | "right-start"
+  | "right-center"
+  | "right-end"
+
+/**
+ * Declarative overlay attached to a Box. The substrate v1 shipped here covers
+ * three kinds — popover, tooltip, highlight — that share the "decoration
+ * derived from semantic intent during layout" shape. Caret / focus / selection
+ * keep their dedicated BoxProps (`cursorOffset`, `focused`, `selectionIntent`)
+ * for ergonomic + back-compat reasons; everything else routes through
+ * `decorations`.
+ *
+ * **`kind`** drives the geometry computation:
+ *   - `"popover"` and `"tooltip"`: anchor-relative placement via
+ *     `placeFloating(anchorRect, size, placement)`. The `placement` field is
+ *     required (no implicit default — apps must say where they want it).
+ *     `content` is opaque to the substrate — the renderer owns rendering.
+ *   - `"highlight"`: a rect-list output describing visible-line fragments
+ *     within the owning Box's content area. v1 ships only the bounding rect;
+ *     soft-wrap aware fragmentation is implemented in the same way as
+ *     `selectionFragments` (Phase 4b) and arrives in v2 once the find/replace
+ *     match-highlight first consumer ships.
+ *
+ * **`id`** is app-chosen, must be unique within a frame, and stable across
+ * re-renders (consumers may key React-side state off it).
+ *
+ * Coordinate space is the same absolute terminal-cell space used by every
+ * other rect signal (`cursorRect`, `selectionFragments`, etc.).
+ *
+ * **Out of scope for v1** (deferred to v2):
+ *   - Generic `kind: "custom"` extension hook
+ *   - Auto-flip / collision-aware placement
+ *   - Z-index / paint-order overrides (paint order is fixed: caret > focus >
+ *     selection > decorations > anchors)
+ *
+ * See `hub/silvery/design/overlay-anchor-system.md` for the design context.
+ */
+export type Decoration =
+  | {
+      kind: "popover"
+      id: string
+      /** Anchor target by id, looked up via `findAnchor(root, anchorId)`. */
+      anchorId?: string
+      placement?: Placement
+      /** Intrinsic size for the floating rect (cells). Required for placement math. */
+      size?: { width: number; height: number }
+      /** Optional perpendicular offset from the anchor edge (cells). */
+      offset?: number
+      /** Renderer-owned content. The substrate doesn't inspect this. */
+      content?: unknown
+    }
+  | {
+      kind: "tooltip"
+      id: string
+      anchorId?: string
+      placement?: Placement
+      size?: { width: number; height: number }
+      offset?: number
+      content?: unknown
+    }
+  | {
+      kind: "highlight"
+      id: string
+      /**
+       * Highlight rect within the owning Box's content area, expressed in the
+       * Box's local content-relative coordinates (origin = contentRect.{x,y},
+       * size in cells). v1 emits one rect; soft-wrap fragmentation lands in
+       * v2 alongside the find/replace consumer.
+       */
+      rect?: { x: number; y: number; width: number; height: number }
+    }
+
+/**
+ * Layout-anchor identifier — names this Box as a lookup target so other
+ * Boxes' decorations can reference it via `Decoration.anchorId`.
+ *
+ * The id is app-chosen, must be unique within a tree, and stable enough across
+ * re-renders to survive React reconciliation without identity churn (use a
+ * literal string from props, not a `useId()` value, unless you persist it).
+ *
+ * Anchors are recorded into a tree-scoped map at the end of layout phase by
+ * `findAnchor(root, id)`. The map's value is the Box's `contentRect` (full
+ * inner area) — placement math then derives edge rects via `placeFloating`.
+ */
+export interface AnchorRef {
+  id: string
+}
+
+// ============================================================================
 // Interactive State Types
 // ============================================================================
 
@@ -598,6 +722,50 @@ export interface BoxProps
    * Migrate to `selectionIntent={…}` to opt into the layout-output path.
    */
   selectionIntent?: SelectionIntent
+
+  /**
+   * Names this Box as a layout-anchor lookup target. Other Boxes' decorations
+   * can reference the id via `Decoration.anchorId` and the substrate resolves
+   * the position via `findAnchor(root, id)`.
+   *
+   * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1). The
+   * registered rect is the Box's `contentRect` (border + padding excluded);
+   * edge-specific rects are derived by `placeFloating` at consumption time.
+   *
+   * Pass a string for the simple case (`anchorRef="dropdown-trigger"`) or an
+   * AnchorRef object if a future v2 wants to extend with edge metadata.
+   *
+   * **Stability**: ids should be stable across re-renders — React reconciler
+   * preserves the AgNode identity, but registering a new id per render makes
+   * `findAnchor` flap and breaks decoration layout. Use a literal string from
+   * props, not a `useId()` value, unless persisted.
+   */
+  anchorRef?: string | AnchorRef
+
+  /**
+   * Declarative overlays attached to this Box — popovers, tooltips,
+   * highlights. Each entry is resolved into a geometric `DecorationRect` in
+   * `LayoutSignals.decorationRects` during layout phase, and aggregated into
+   * the per-frame `OverlayLayer` artifact returned alongside `term.frame`.
+   *
+   * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
+   *
+   * **Paint order** is fixed (no z-index): caret > focus > selection >
+   * decorations > anchors. Within `decorations` itself, list order determines
+   * paint order (later entries paint on top of earlier ones).
+   *
+   * **Anchor lookup**: popover/tooltip kinds reference an `anchorId`; the
+   * substrate calls `findAnchor(root, id)` at layout time. If the anchor
+   * isn't found this frame, the decoration emits an empty rect list (the
+   * renderer skips it). This is the v1 fixed-placement contract — collision
+   * detection and auto-flip are deferred to v2.
+   *
+   * **Stable identity**: pass a memoized array if React's referential equality
+   * matters for downstream consumers; the substrate itself recomputes
+   * decoration rects every layout pass, so referential identity isn't load-
+   * bearing on the substrate side.
+   */
+  decorations?: readonly Decoration[]
 
   /**
    * Virtualization-internal: set only by virtual list placeholders (e.g.
