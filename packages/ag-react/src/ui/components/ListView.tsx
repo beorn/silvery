@@ -2097,11 +2097,29 @@ function ListViewInner<T>(
   const trackHeight = isHeightIndependent
     ? Math.max(1, viewportSize?.h ?? 0)
     : Math.max(1, height ?? 1)
-  // Stable total-content height for THUMB SIZE: item count × estimate
-  // (ignores the measurement cache) — TanStack Virtual / react-window
-  // convention. A measurement-sum-based total would shrink/grow the thumb
-  // as the user scrolls into unmeasured items, producing a visible resize
-  // jitter that's more distracting than a slight inaccuracy.
+  // Total-content height for THUMB SIZE.
+  //
+  // Original strategy was item-count × estimate (TanStack convention) on the
+  // theory that measurement-sum-based totals jitter as the user scrolls into
+  // unmeasured items.
+  //
+  // Failure mode (silvercode bead km-silvery.listview-thumb-too-big-when-items-tall):
+  // when items are systematically TALLER than the estimate (chat with multi-
+  // line assistant messages: estimate=1, actual ~10-50 rows), `estimate × N`
+  // underestimates total content by 10-50×. The thumb computes `track²/total`
+  // and ends up nearly the size of the track even though the user only sees
+  // ~5% of content. Anti-fix.
+  //
+  // The jitter concern only applies when measurement reveals items SHORTER
+  // than estimate. Estimate=1 makes that impossible (nothing measures shorter
+  // than 1 row). For chat-shaped lists, measurement is monotonically
+  // increasing as items render → the thumb shrinks smoothly toward truth as
+  // measurement catches up, with no oscillation.
+  //
+  // Resolution: use `max(stable, measured)` for thumb size — same shape the
+  // visibility gate already uses. Estimate-correct lists keep their stable
+  // thumb. Lists with under-estimated items get the accurate (measurement-
+  // based) thumb without jitter.
   //
   // `estimateAsNumber` folds function-estimates into an average by sampling
   // index 0; for uniform-height lists this is exact, and for variable-height
@@ -2269,18 +2287,18 @@ function ListViewInner<T>(
   // avgMeasured / estimate per index, plus inter-item gap accounting).
   const rowsAboveViewport =
     heightModel.prefixSum(scrollOffset) + Math.max(0, scrollOffset - 1) * gap
-  // Thumb size uses `totalRowsStable` (estimate-based) for jitter-free
-  // sizing — see TanStack-convention rationale above. The visibility gate,
-  // however, is driven by `totalRowsForOverflow` (max of estimate +
-  // measured) so the scrollbar appears even when items are taller than
-  // `estimateHeight`. When measurement reveals overflow that the estimate
-  // missed, we still render — but pin the thumb to the smallest visible
-  // size (1) rather than letting the estimate-derived size go to zero.
+  // Thumb size uses `max(stable, measured)` (same shape as the visibility
+  // gate above). For estimate-correct lists this collapses to the stable
+  // value; for lists whose actual content is taller than the estimate
+  // (silvercode chat: estimate=1, actual ~10-50 rows per assistant block)
+  // the measured total dominates and the thumb shrinks toward truth.
+  // Bead: km-silvery.listview-thumb-too-big-when-items-tall.
+  const totalRowsForThumb = Math.max(totalRowsStable, totalRowsMeasured)
   const overflowing = totalRowsForOverflow > trackHeight
   const thumbHeight = overflowing
     ? Math.max(
         1,
-        Math.floor((trackHeight * trackHeight) / Math.max(totalRowsStable, trackHeight + 1)),
+        Math.floor((trackHeight * trackHeight) / Math.max(totalRowsForThumb, trackHeight + 1)),
       )
     : 0
   // SCROLL CAP — `scrollRow` is clamped to [0, scrollableRows] in wheel +
