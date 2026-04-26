@@ -75,6 +75,21 @@ export interface TextAreaProps {
   height: number
   /** Cursor style: 'block' (inverse) or 'underline' */
   cursorStyle?: "block" | "underline"
+  /**
+   * When the TextArea is inactive (`isActive === false`), render an
+   * inverse/underline "fake cursor" on the cursor row so the caret position
+   * stays visible.
+   *
+   * Default: `true` — preserves the historical behaviour where unfocused
+   * inputs show a cell highlight at their last cursor position.
+   *
+   * Set to `false` for composite editors with two stacked TextAreas (e.g.
+   * the queue + command box in silvercode) — the active widget owns the
+   * real hardware cursor, and the inactive widget should not render a
+   * second visible caret. Without this opt-out the user sees TWO blinking
+   * cursors at once.
+   */
+  showInactiveCursor?: boolean
   /** Number of context lines to keep visible above/below cursor when scrolling (default: 1) */
   scrollMargin?: number
   /** When true, ignore all input and dim the text */
@@ -138,6 +153,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     isActive: isActiveProp,
     height,
     cursorStyle = "block",
+    showInactiveCursor = true,
     scrollMargin = 1,
     disabled,
     maxLength,
@@ -323,7 +339,10 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
           )
         }
 
-        if (!isCursorRow) {
+        // Inactive + opted-out: render the row plainly with no caret highlight.
+        // Composite editors (e.g. queue + command box in silvercode) use this
+        // to keep exactly ONE visible caret across two stacked TextAreas.
+        if (!isCursorRow || (!isActive && !showInactiveCursor)) {
           return <Text key={absoluteRow}>{wl.line || " "}</Text>
         }
 
