@@ -181,3 +181,6 @@ export {
 
 // Overlay/anchor placement (Phase 4c — overlay-anchor v1)
 export { placeFloating } from "./place-floating"
+
+// OverlayLayer per-frame artifact (Phase 4c — overlay-anchor v1)
+export { collectOverlayLayer, type OverlayLayer } from "./overlay-layer"
