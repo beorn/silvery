@@ -64,6 +64,7 @@ Access via `useRef<TextAreaHandle>()`:
 | `Ctrl+Shift+Arrow`         | Word-wise selection            |
 | `Ctrl+A`                   | Select all text                |
 | `Ctrl+E`                   | End of line                    |
+| `Ctrl+P` / `Ctrl+N`        | Up / Down line (Emacs aliases) |
 | `Home` / `End`             | Beginning/end of line          |
 | `Alt+B` / `Alt+F`          | Move by word                   |
 | `Ctrl+W` / `Alt+Backspace` | Kill word backward             |

@@ -28,6 +28,7 @@
  * - Ctrl+Shift+Arrow: Word-wise selection
  * - Ctrl+A: Select all text
  * - Ctrl+E: End of line
+ * - Ctrl+P / Ctrl+N: Up / Down line (Emacs aliases for arrow keys)
  * - Home/End: Beginning/end of line
  * - Alt+B/F: Move by word (wraps across lines)
  * - Ctrl+W, Alt+Backspace: Delete word backwards (kill ring)
@@ -457,8 +458,18 @@ export function useTextArea({
       // =================================================================
       // Multi-line: Up/Down with stickyX (non-shift: collapse selection)
       // onEdge fires when at the top/bottom row (where the arrow would clamp).
+      //
+      // Ctrl-P aliases Up; Ctrl-N aliases Down. These are the classic Emacs
+      // line-nav bindings. They live here (not in readline-ops) because
+      // readline-ops is single-line and these need wrapped-line geometry.
+      // The aliases mirror the arrow path exactly — including onEdge handoff
+      // — so cross-widget focus handoff (silvercode queue ↔ command box)
+      // works for keyboard-driven users who never touch the arrow keys.
       // =================================================================
-      if (key.upArrow) {
+      const ctrlP = key.ctrl && !key.shift && !key.meta && input === "p"
+      const ctrlN = key.ctrl && !key.shift && !key.meta && input === "n"
+
+      if (key.upArrow || ctrlP) {
         if (cRow > 0) {
           const targetX = stickyXRef.current ?? cCol
           stickyXRef.current = targetX
@@ -481,7 +492,7 @@ export function useTextArea({
         return
       }
 
-      if (key.downArrow) {
+      if (key.downArrow || ctrlN) {
         if (cRow < lines.length - 1) {
           const targetX = stickyXRef.current ?? cCol
           stickyXRef.current = targetX

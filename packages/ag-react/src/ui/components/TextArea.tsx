@@ -29,6 +29,7 @@
  * - Ctrl+Shift+Arrow: Word-wise selection
  * - Ctrl+A: Select all text
  * - Ctrl+E: End of line
+ * - Ctrl+P / Ctrl+N: Up / Down line (Emacs aliases for arrow keys)
  * - Home/End: Beginning/end of line
  * - Alt+B/F: Move by word (wraps across lines)
  * - Ctrl+W, Alt+Backspace: Delete word backwards (kill ring)
