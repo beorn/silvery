@@ -20,7 +20,7 @@ import {
   DESC_OVERFLOW_BIT,
 } from "@silvery/ag/epoch"
 import { getBorderSize, getPadding } from "./helpers"
-import { syncRectSignals } from "@silvery/ag/layout-signals"
+import { syncDecorationRects, syncRectSignals } from "@silvery/ag/layout-signals"
 
 const log = createLogger("silvery:layout")
 
@@ -391,6 +391,17 @@ export function notifyLayoutSubscribers(node: AgNode): void {
   // Recurse to children
   for (const child of node.children) {
     notifyLayoutSubscribers(child)
+  }
+
+  // After every node's rect signals (including anchorRect) are populated,
+  // run a second pass at the ROOT to resolve `decorations`. The two-pass
+  // shape is required because decoration resolution calls
+  // `findAnchor(root, id)`, which needs every anchorRect populated for the
+  // current frame. A single recursive pass would let a popover declared
+  // shallow in the tree miss an anchor declared deeper. Phase 4c of
+  // `km-silvery.view-as-layout-output` (overlay-anchor v1).
+  if (node.parent === null) {
+    syncDecorationRects(node)
   }
 }
 

@@ -153,16 +153,22 @@ export {
   syncRectSignals,
   syncTextContentSignal,
   syncFocusedSignal,
+  syncDecorationRects,
   computeContentRect,
   computeCursorRect,
   computeFocusedNodeId,
   computeSelectionFragments,
+  computeAnchorRect,
+  computeDecorationRects,
   findActiveCursorRect,
   findActiveFocusedNodeId,
   findActiveSelectionFragments,
+  findActiveDecorationRects,
+  findAnchor,
   type LayoutSignals,
   type ScrollStateSnapshot,
   type CursorRect,
+  type DecorationRect,
 } from "./layout-signals"
 
 // Wrap-measurer registry (Option B — runtime-supplied wrap geometry)

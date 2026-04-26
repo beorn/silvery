@@ -32,9 +32,19 @@
  */
 
 import { signal } from "@silvery/signals"
-import type { AgNode, BoxProps, CursorShape, Rect, SelectionIntent } from "./types"
+import type {
+  AgNode,
+  AnchorEdge,
+  AnchorRef,
+  BoxProps,
+  CursorShape,
+  Decoration,
+  Rect,
+  SelectionIntent,
+} from "./types"
 import { rectEqual } from "./types"
 import { getWrapMeasurer, type WrapSlice } from "./wrap-measurer"
+import { placeFloating } from "./place-floating"
 
 // ============================================================================
 // Types
@@ -151,6 +161,13 @@ function selectionFragmentsEqual(
 const EMPTY_FRAGMENTS: readonly Rect[] = Object.freeze([])
 
 /**
+ * Stable empty-decorations sentinel — `decorationRects` defaults to this when
+ * a node has no `decorations` BoxProp. Same reference-stability story as
+ * `EMPTY_FRAGMENTS`.
+ */
+const EMPTY_DECORATION_RECTS: readonly DecorationRect[] = Object.freeze([])
+
+/**
  * All reactive signals for an AgNode.
  *
  * Combined rect signals (layout outputs) + node signals (content/state).
@@ -230,9 +247,64 @@ export interface LayoutSignals {
   // first layout pass). Peer of rect signals — synced by syncRectSignals.
   readonly scrollState: WritableSignal<ScrollStateSnapshot | null>
 
+  /**
+   * Geometric output of `BoxProps.anchorRef` — the rect that other Boxes'
+   * decorations resolve to when they reference this anchor by id. The
+   * registered rect is the Box's `contentRect` (border + padding excluded);
+   * edge-specific rects are derived by `placeFloating` at consumption time.
+   *
+   * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1) — peer
+   * of `cursorRect`/`focusedNodeId`/`selectionFragments`. The tree-walk
+   * lookup `findAnchor(root, id)` reads this signal (and falls back to
+   * `computeAnchorRect` for nodes without signals).
+   *
+   * Null when:
+   *   - the node has no `anchorRef` BoxProp, OR
+   *   - `contentRect` is unavailable (pre-layout / clipped to zero size).
+   */
+  readonly anchorRect: WritableSignal<Rect | null>
+
+  /**
+   * Geometric output of `BoxProps.decorations` — the resolved per-decoration
+   * rect list this frame. Each entry carries the source kind, id, and rects
+   * (popover/tooltip → one rect at the placed position; highlight → one rect
+   * within the owning Box's content area).
+   *
+   * v1 emits one rect per decoration. The list mirrors the BoxProp's order so
+   * paint order is deterministic. When an anchor lookup fails (popover/tooltip
+   * with no matching `anchorRef`), the entry's `rects` is empty — the
+   * renderer skips it.
+   *
+   * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
+   */
+  readonly decorationRects: WritableSignal<readonly DecorationRect[]>
+
   // Node state (synced from reconciler + focus manager)
   readonly textContent: WritableSignal<string | undefined>
   readonly focused: WritableSignal<boolean>
+}
+
+/**
+ * Geometric output of one `Decoration` entry — the resolved rects for paint
+ * time, plus the source kind/id so the renderer can dispatch by kind.
+ *
+ * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
+ *
+ * v1 emits one rect per decoration. Soft-wrap aware highlight fragmentation
+ * (multiple rects per highlight) is deferred to v2 — same path as
+ * `selectionFragments` once the find/replace consumer ships.
+ *
+ * `rects` may be empty when an anchor lookup failed (popover/tooltip with a
+ * missing `anchorId`); consumers SHOULD skip empty entries rather than
+ * paint a 0×0 rect.
+ */
+export interface DecorationRect {
+  /** Decoration kind from the source `Decoration` entry. */
+  readonly kind: Decoration["kind"]
+  /** Stable id from the source `Decoration` entry. */
+  readonly id: string
+  /** Resolved rects in absolute terminal cell space. May be empty. */
+  readonly rects: readonly Rect[]
 }
 
 // ============================================================================
@@ -259,6 +331,8 @@ export function getLayoutSignals(node: AgNode): LayoutSignals {
       focusedNodeId: signal<string | null>(computeFocusedNodeId(node)),
       selectionFragments: signal<readonly Rect[]>(computeSelectionFragments(node)),
       scrollState: signal<ScrollStateSnapshot | null>(snapshotScrollState(node)),
+      anchorRect: signal<Rect | null>(computeAnchorRect(node)),
+      decorationRects: signal<readonly DecorationRect[]>(EMPTY_DECORATION_RECTS),
       textContent: signal<string | undefined>(node.textContent),
       focused: signal<boolean>(node.interactiveState?.focused ?? false),
     }
@@ -364,6 +438,239 @@ export function computeFocusedNodeId(node: AgNode): string | null {
   if (typeof props.id === "string" && props.id.length > 0) return props.id
   if (typeof props.testID === "string" && props.testID.length > 0) return props.testID
   return "__focused__"
+}
+
+// ============================================================================
+// Anchor rect (Phase 4c — overlay-anchor v1)
+// ============================================================================
+
+/**
+ * Resolve the `anchorRef` BoxProp into a string id. Accepts the shorthand
+ * `anchorRef="my-id"` and the structured `anchorRef={{ id: "my-id" }}` form.
+ *
+ * Returns `null` when no anchorRef is present, or when the prop is malformed
+ * (empty id string). Apps that need stable anchor identity should always pass
+ * a non-empty string.
+ */
+function resolveAnchorId(node: AgNode): string | null {
+  const props = node.props as BoxProps | undefined
+  const ref = props?.anchorRef
+  if (!ref) return null
+  if (typeof ref === "string") return ref.length > 0 ? ref : null
+  // Structured form: AnchorRef object with `id` field.
+  const ar = ref as AnchorRef
+  if (typeof ar.id === "string" && ar.id.length > 0) return ar.id
+  return null
+}
+
+/**
+ * Compute the anchor rect for a Box that declares `anchorRef`. The registered
+ * rect is the Box's `contentRect` — the inner area inside border + padding
+ * — which is the canonical origin for placement math. Edge-specific rects
+ * (top/bottom/left/right) are derived by `placeFloating` at consumption time
+ * rather than baked into the registry.
+ *
+ * Returns `null` when:
+ *   - the node has no `anchorRef` BoxProp (or it's empty), OR
+ *   - `contentRect` is unavailable (pre-layout / clipped to zero size).
+ *
+ * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
+ */
+export function computeAnchorRect(node: AgNode): Rect | null {
+  const id = resolveAnchorId(node)
+  if (id === null) return null
+  return computeContentRect(node)
+}
+
+/**
+ * Walk the tree and find the rect for an anchor by id. Returns `null` when
+ * no Box declares `anchorRef` with a matching id, or when the matching Box's
+ * `contentRect` is unavailable this frame (pre-layout / clipped).
+ *
+ * **Optional `edge` parameter** — when supplied, returns a 1-cell-thick rect
+ * along the requested edge of the anchor (`top`, `bottom`, `left`, `right`).
+ * Convenience for callers that want to draw against a specific edge without
+ * threading the full content rect through `placeFloating`. Without `edge`,
+ * returns the full content rect.
+ *
+ * **Walk order**: post-order (deepest-first). If two anchors share an id —
+ * the contract says they shouldn't, but the substrate doesn't enforce
+ * uniqueness — the deeper / later-rendered one wins. This matches the
+ * deepest-wins precedence used by cursor and focus walks.
+ *
+ * Per-node cost: one `props.anchorRef` check + one signal lookup (or one
+ * direct compute when no signal is allocated). Trees with no anchors return
+ * `null` after a single traversal.
+ *
+ * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
+ */
+export function findAnchor(
+  root: AgNode,
+  id: string,
+  edge?: AnchorEdge,
+): Rect | null {
+  let result: Rect | null = null
+
+  function walk(node: AgNode): void {
+    for (const child of node.children) {
+      walk(child)
+    }
+    const nodeId = resolveAnchorId(node)
+    if (nodeId !== id) return
+    const s = signalMap.get(node)
+    const rect = s ? s.anchorRect() : computeAnchorRect(node)
+    if (rect) {
+      // Last-write-wins (deepest in post-order).
+      result = rect
+    }
+  }
+
+  walk(root)
+
+  if (result === null || edge === undefined) return result
+
+  // Slice the requested edge into a 1-cell-thick rect. Coordinates are
+  // absolute, mirroring `cursorRect` / `selectionFragments` conventions.
+  const r: Rect = result
+  switch (edge) {
+    case "top":
+      return { x: r.x, y: r.y, width: r.width, height: 1 }
+    case "bottom":
+      return { x: r.x, y: r.y + Math.max(0, r.height - 1), width: r.width, height: 1 }
+    case "left":
+      return { x: r.x, y: r.y, width: 1, height: r.height }
+    case "right":
+      return { x: r.x + Math.max(0, r.width - 1), y: r.y, width: 1, height: r.height }
+  }
+}
+
+// ============================================================================
+// Decoration rects (Phase 4c — overlay-anchor v1)
+// ============================================================================
+
+/**
+ * Compute the resolved decoration rects for a node based on its `decorations`
+ * BoxProp. Each entry produces one `DecorationRect` whose `rects` may be empty
+ * when an anchor lookup fails.
+ *
+ * **Behavior by kind**:
+ *   - `popover` / `tooltip`: requires `anchorId` + `placement` + `size`. The
+ *     anchor rect is looked up via `findAnchor(root, anchorId)`; if found and
+ *     all required fields are present, `placeFloating` produces the placed
+ *     rect. Missing anchor or missing required fields → empty rect list.
+ *   - `highlight`: the `rect` field, if present, is translated from
+ *     content-relative coordinates into absolute terminal coordinates by
+ *     adding the owning Box's `contentRect.{x, y}`. Missing rect or no
+ *     contentRect → empty rect list.
+ *
+ * **Per-frame**: this runs in the layout-phase notify pass, so anchor rects
+ * are populated for the same frame. Anchors declared deeper in the tree
+ * resolve correctly because the function takes the root tree as input rather
+ * than relying on a separately-built map.
+ *
+ * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
+ */
+export function computeDecorationRects(
+  node: AgNode,
+  root: AgNode,
+): readonly DecorationRect[] {
+  const props = node.props as BoxProps | undefined
+  const decos = props?.decorations
+  if (!decos || decos.length === 0) return EMPTY_DECORATION_RECTS
+
+  const out: DecorationRect[] = []
+  const content = computeContentRect(node)
+
+  for (const d of decos) {
+    if (d.kind === "popover" || d.kind === "tooltip") {
+      // Floating decoration — requires anchor + placement + size.
+      if (!d.anchorId || !d.placement || !d.size) {
+        out.push({ kind: d.kind, id: d.id, rects: [] })
+        continue
+      }
+      const anchor = findAnchor(root, d.anchorId)
+      if (!anchor) {
+        out.push({ kind: d.kind, id: d.id, rects: [] })
+        continue
+      }
+      const placed = placeFloating(anchor, d.size, d.placement)
+      out.push({ kind: d.kind, id: d.id, rects: [placed] })
+    } else if (d.kind === "highlight") {
+      if (!d.rect || !content) {
+        out.push({ kind: d.kind, id: d.id, rects: [] })
+        continue
+      }
+      // Highlight rect is content-relative; translate to absolute coords.
+      out.push({
+        kind: d.kind,
+        id: d.id,
+        rects: [
+          {
+            x: content.x + d.rect.x,
+            y: content.y + d.rect.y,
+            width: d.rect.width,
+            height: d.rect.height,
+          },
+        ],
+      })
+    }
+  }
+
+  return out.length === 0 ? EMPTY_DECORATION_RECTS : out
+}
+
+/**
+ * Per-field equality on a list of `DecorationRect`. Used to skip
+ * `decorationRects` signal writes when nothing changed — mirrors the
+ * `selectionFragmentsEqual` pattern.
+ */
+function decorationRectsEqual(
+  a: readonly DecorationRect[],
+  b: readonly DecorationRect[],
+): boolean {
+  if (a === b) return true
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    const ai = a[i]!
+    const bi = b[i]!
+    if (ai.kind !== bi.kind) return false
+    if (ai.id !== bi.id) return false
+    if (ai.rects.length !== bi.rects.length) return false
+    for (let j = 0; j < ai.rects.length; j++) {
+      if (!rectEqual(ai.rects[j] ?? null, bi.rects[j] ?? null)) return false
+    }
+  }
+  return true
+}
+
+/**
+ * Walk the tree and collect every resolved decoration rect. Concatenated in
+ * tree order (post-order — same shape as `findActiveSelectionFragments`).
+ *
+ * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
+ *
+ * Per-node cost: one `props.decorations` check + one signal lookup. Trees
+ * with no decorations return `[]` after a single traversal.
+ */
+export function findActiveDecorationRects(
+  root: AgNode,
+): readonly DecorationRect[] {
+  const out: DecorationRect[] = []
+
+  function walk(node: AgNode): void {
+    for (const child of node.children) {
+      walk(child)
+    }
+    const props = node.props as BoxProps | undefined
+    if (props?.decorations && props.decorations.length > 0) {
+      const s = signalMap.get(node)
+      const rects = s ? s.decorationRects() : computeDecorationRects(node, root)
+      for (const r of rects) out.push(r)
+    }
+  }
+
+  walk(root)
+  return out
 }
 
 // ============================================================================
@@ -668,8 +975,16 @@ export function syncRectSignals(node: AgNode): void {
   const hasCursorOffset = !!props?.cursorOffset
   const hasFocused = !!props?.focused
   const hasSelectionIntent = !!props?.selectionIntent
+  // anchorRef + decorations follow the same lazy-allocation rule as
+  // cursorOffset/focused/selectionIntent: a node that ONLY uses anchorRef
+  // (no useBoxRect / useScrollRect consumers) must still get signals
+  // allocated so `findAnchor` / `findActiveDecorationRects` see it via
+  // `getLayoutSignals`. Without this, anchored popovers wouldn't reach the
+  // overlay layer until the first useScrollRect subscriber happens to mount.
+  const hasAnchorRef = !!props?.anchorRef
+  const hasDecorations = !!(props?.decorations && props.decorations.length > 0)
   const s =
-    hasCursorOffset || hasFocused || hasSelectionIntent
+    hasCursorOffset || hasFocused || hasSelectionIntent || hasAnchorRef || hasDecorations
       ? getLayoutSignals(node)
       : signalMap.get(node)
   if (!s) return
@@ -724,6 +1039,18 @@ export function syncRectSignals(node: AgNode): void {
     s.selectionFragments(nextFragments)
   }
 
+  // Sync anchorRect — Phase 4c peer of the rect signals. Driven by
+  // `node.props.anchorRef` + `contentRect`; null when the prop is absent or
+  // the content rect collapses. Mirrors invariant 2 (prop-change recompute):
+  // toggling `anchorRef` clears/reinstates the rect in the same frame.
+  // `decorationRects` is NOT synced here — it requires the root tree for
+  // anchor lookups and is synced in a second pass below
+  // (syncDecorationRects). See `syncRectSignals` JSDoc.
+  const nextAnchorRect = computeAnchorRect(node)
+  if (!rectEqual(nextAnchorRect, s.anchorRect())) {
+    s.anchorRect(nextAnchorRect)
+  }
+
   // Sync scrollState signal — projects AgNode.scrollState (layout-phase's
   // pixel-space truth) into a reactive snapshot. `useScrollState` consumers
   // re-render only when a field changes, not on every layout pass.
@@ -736,6 +1063,50 @@ export function syncRectSignals(node: AgNode): void {
   if (!scrollStateEqual(nextScrollState, s.scrollState())) {
     s.scrollState(nextScrollState)
   }
+}
+
+/**
+ * Second-pass sync for `decorationRects` — must run AFTER `syncRectSignals`
+ * has populated every anchor rect this frame, because decoration resolution
+ * calls `findAnchor(root, id)` and needs the freshest anchor rects.
+ *
+ * Walks the tree, recomputes per-node decoration rects, and writes the signal
+ * only when the result differs (per-field equality via `decorationRectsEqual`).
+ *
+ * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
+ *
+ * Per-node cost: one `props.decorations` length check (zero-allocation
+ * short-circuit) + one signal lookup + one decoration recompute when present.
+ * Trees without decorations pay only the prop check at every node.
+ */
+export function syncDecorationRects(root: AgNode): void {
+  function walk(node: AgNode): void {
+    const props = node.props as BoxProps | undefined
+    const hasDecorations = !!(props?.decorations && props.decorations.length > 0)
+    if (hasDecorations) {
+      // Lazy-allocate signals for decoration-bearing nodes (mirrors the
+      // anchorRef/cursorOffset/focused/selectionIntent rule in
+      // syncRectSignals). Without this, decoration-only Boxes never get
+      // their rects published.
+      const s = getLayoutSignals(node)
+      const next = computeDecorationRects(node, root)
+      if (!decorationRectsEqual(next, s.decorationRects())) {
+        s.decorationRects(next)
+      }
+    } else {
+      // Clear any previously-allocated signal back to the empty sentinel so
+      // removing the prop drops decorations on the same frame (mirrors
+      // selectionFragments invariant 2).
+      const s = signalMap.get(node)
+      if (s && s.decorationRects().length > 0) {
+        s.decorationRects(EMPTY_DECORATION_RECTS)
+      }
+    }
+    for (const child of node.children) {
+      walk(child)
+    }
+  }
+  walk(root)
 }
 
 // ============================================================================
