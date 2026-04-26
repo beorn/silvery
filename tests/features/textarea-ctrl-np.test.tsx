@@ -28,7 +28,12 @@ function CursorProbe({
 }) {
   return (
     <Box flexDirection="column" width={40}>
-      <TextArea defaultValue={defaultValue} height={height} onEdge={onEdge} />
+      <TextArea
+        defaultValue={defaultValue}
+        fieldSizing="fixed"
+        rows={height}
+        onEdge={onEdge}
+      />
     </Box>
   )
 }

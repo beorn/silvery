@@ -790,7 +790,41 @@ export interface BoxProps
 /**
  * Props for Text component.
  */
-export interface TextProps extends StyleProps, TestProps, MouseEventProps {
+/**
+ * Flex item subset of FlexboxProps — the props that make sense on a leaf
+ * (Text). Box accepts the full FlexboxProps; Text only accepts the props
+ * that affect how it participates as a flex item (sizing, growth, shrink)
+ * — not props that affect how it lays out its non-existent children
+ * (flexDirection, justifyContent, alignItems, gap, ...).
+ *
+ * This is the canonical CSS escape hatch: instead of wrapping Text in a
+ * Box to apply `flexShrink={0}` or `minWidth={0}`, set them directly on
+ * the Text. See bead km-silvery.text-intrinsic-vs-render.
+ */
+export interface TextFlexItemProps {
+  /** CSS `flex-grow` — proportion of free positive space along main axis. */
+  flexGrow?: number
+  /** CSS `flex-shrink` — proportion of negative free space along main axis. */
+  flexShrink?: number
+  /** CSS `flex-basis` — initial main-size before grow/shrink distribution. */
+  flexBasis?: number | string
+  /** Cross-axis self-alignment override. */
+  alignSelf?: "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
+  /** CSS `min-width` — floor for shrink distribution. */
+  minWidth?: number | string
+  /** CSS `min-height`. */
+  minHeight?: number | string
+  /** CSS `max-width` — ceiling for grow distribution. */
+  maxWidth?: number | string
+  /** CSS `max-height`. */
+  maxHeight?: number | string
+}
+
+export interface TextProps
+  extends StyleProps,
+    TextFlexItemProps,
+    TestProps,
+    MouseEventProps {
   children?: React.ReactNode
   wrap?:
     | "wrap"

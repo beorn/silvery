@@ -21,7 +21,7 @@ describe("TextArea cursor position", () => {
     function App() {
       return (
         <Box>
-          <TextArea defaultValue="X" height={3} />
+          <TextArea defaultValue="X" fieldSizing="fixed" rows={3} />
         </Box>
       )
     }
@@ -47,7 +47,7 @@ describe("TextArea cursor position", () => {
     function App() {
       return (
         <Box>
-          <TextArea defaultValue="X" height={3} borderStyle="single" />
+          <TextArea defaultValue="X" fieldSizing="fixed" rows={1} borderStyle="single" />
         </Box>
       )
     }
@@ -76,7 +76,7 @@ describe("TextArea cursor position", () => {
     function App() {
       return (
         <Box>
-          <TextArea defaultValue="Hello" height={3} borderStyle="single" />
+          <TextArea defaultValue="Hello" fieldSizing="fixed" rows={1} borderStyle="single" />
         </Box>
       )
     }
@@ -105,7 +105,7 @@ describe("TextArea cursor position", () => {
         <Box flexDirection="column" padding={1}>
           <Box borderStyle="single" flexDirection="column">
             <Box paddingX={1}>
-              <TextArea defaultValue="X" height={3} />
+              <TextArea defaultValue="X" fieldSizing="fixed" rows={3} />
             </Box>
           </Box>
         </Box>
@@ -145,7 +145,12 @@ describe("TextArea cursor position", () => {
     function App() {
       return (
         <Box>
-          <TextArea defaultValue={"A".repeat(16) + "B"} height={5} borderStyle="single" />
+          <TextArea
+            defaultValue={"A".repeat(16) + "B"}
+            fieldSizing="fixed"
+            rows={5}
+            borderStyle="single"
+          />
         </Box>
       )
     }

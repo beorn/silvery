@@ -35,7 +35,12 @@ function CursorProbe({
 }) {
   return (
     <Box flexDirection="column" width={40}>
-      <TextArea defaultValue={defaultValue} height={height} onEdge={onEdge} />
+      <TextArea
+        defaultValue={defaultValue}
+        fieldSizing="fixed"
+        rows={height}
+        onEdge={onEdge}
+      />
     </Box>
   )
 }
@@ -75,9 +80,7 @@ describe("TextArea onEdge", () => {
     const app = r(<CursorProbe defaultValue="hello" onEdge={onEdge} />)
 
     // Move cursor to the start.
-    await app.press("ctrl+a") // ctrl+a in TextArea = select-all (cursor moves to end via select-all path).
-    // Use Home to go to start of line instead.
-    await app.press("Home")
+    await app.press("ctrl+a") // ctrl+a in TextArea = beginning of wrapped line (emacs/readline).
     expect(onEdge).not.toHaveBeenCalled()
 
     await app.press("ArrowLeft") // at offset 0 — fires onEdge("left")

@@ -161,7 +161,7 @@ describe("TextArea click-to-position", () => {
     const render = createRenderer({ cols: 40, rows: 10 })
     const app = render(
       <Box width={40}>
-        <TextArea defaultValue={"hello\nworld"} height={5} />
+        <TextArea defaultValue={"hello\nworld"} fieldSizing="fixed" rows={5} />
       </Box>,
     )
     expect(app.text).toContain("hello")
@@ -172,7 +172,7 @@ describe("TextArea click-to-position", () => {
     const render = createRenderer({ cols: 40, rows: 10 })
     const app = render(
       <Box width={40}>
-        <TextArea defaultValue={"line1\nline2\nline3"} height={5} />
+        <TextArea defaultValue={"line1\nline2\nline3"} fieldSizing="fixed" rows={5} />
       </Box>,
     )
     expect(app.text).toContain("line1")
@@ -184,7 +184,7 @@ describe("TextArea click-to-position", () => {
     const render = createRenderer({ cols: 40, rows: 10 })
     const app = render(
       <Box width={40}>
-        <TextArea defaultValue={"abc\ndef"} height={5} borderStyle="round" />
+        <TextArea defaultValue={"abc\ndef"} fieldSizing="fixed" rows={5} borderStyle="round" />
       </Box>,
     )
     expect(app.text).toContain("abc")
@@ -291,7 +291,7 @@ describe("useTextArea setCursor via TextArea", () => {
       const [value] = useState("hello\nworld\nfoo bar")
       return (
         <Box width={40}>
-          <TextArea value={value} height={5} />
+          <TextArea value={value} fieldSizing="fixed" rows={5} />
         </Box>
       )
     }

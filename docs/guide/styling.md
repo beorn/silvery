@@ -728,6 +728,31 @@ Sterling is OKLCH-native throughout: blends, lightness adjustments, and contrast
 - **Progressive enhancement**: Same vocabulary works ANSI 16 → 256 → truecolor.
 - **Vibrancy/saturation**: Apple-style super-saturated colors don't translate to terminals. Pick a truecolor scheme with vivid palette colors (Catppuccin, Tokyo Night) — the scheme does the heavy lifting, not your component code.
 
+## CSS Sizing Mappings
+
+silvery components mirror CSS sizing properties so the same code lays out the same way in a terminal, on canvas, and in the browser.
+
+### `field-sizing` — `<TextArea>` auto-grow
+
+CSS [`field-sizing`](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizing) controls whether a form control sizes to its content. silvery's `<TextArea>` exposes the same two values:
+
+| CSS                        | silvery prop                              | Behavior                                  |
+| -------------------------- | ----------------------------------------- | ----------------------------------------- |
+| `field-sizing: content`    | `<TextArea fieldSizing="content" />`      | Height tracks content, clamped between `minRows` and `maxRows`. Default. |
+| `field-sizing: fixed`      | `<TextArea fieldSizing="fixed" rows={N} />` | Height stays at `rows` regardless of content. |
+
+`<TextArea rows={N}>` mirrors HTML's `<textarea rows={N}>`. silvery adds `minRows` / `maxRows` for the auto-grow range — the cross-platform / web-target convention for chat inputs.
+
+```tsx
+// Chat input — defaults are minRows=1, maxRows=8
+<TextArea value={msg} onChange={setMsg} onSubmit={send} />
+
+// Fixed-height code editor pane
+<TextArea value={code} fieldSizing="fixed" rows={16} />
+```
+
+**Don't compute wrap math in your consumer.** A common anti-pattern is calling `useBoxRect` + `countVisualLines` to derive a `height={N}` for `<TextArea>`. Use `fieldSizing` / `minRows` / `maxRows` instead — the component knows about wrap, scroll, and clamping. Hand-rolled height math drifts from the wrap algorithm under width changes and IME input.
+
 ## See Also
 
 - **[Sterling](/guide/sterling)** — silvery's canonical design system: roles, flat tokens, derivation entry points, full migration map.

@@ -619,7 +619,15 @@ export const hostConfig = {
     // Apply layout-affecting prop changes
     if (layoutChanged) {
       if (instance.layoutNode) {
-        applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)
+        if (instance.type === "silvery-text") {
+          applyTextFlexItemProps(
+            instance.layoutNode,
+            newProps as TextProps,
+            oldProps as TextProps,
+          )
+        } else {
+          applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)
+        }
         instance.layoutNode.markDirty()
       }
     }

@@ -27,7 +27,7 @@ describe("TextArea wrap default", () => {
     function App() {
       return (
         <Box width={10}>
-          <TextArea defaultValue={"a".repeat(30)} height={5} />
+          <TextArea defaultValue={"a".repeat(30)} fieldSizing="fixed" rows={5} />
         </Box>
       )
     }
@@ -51,7 +51,7 @@ describe("TextArea wrap default", () => {
     function App() {
       return (
         <Box width={10}>
-          <TextArea defaultValue={"x".repeat(25)} height={5} />
+          <TextArea defaultValue={"x".repeat(25)} fieldSizing="fixed" rows={5} />
         </Box>
       )
     }
@@ -73,7 +73,7 @@ describe("TextArea wrap default", () => {
     function App() {
       return (
         <Box width={10}>
-          <TextArea defaultValue={"a".repeat(30)} height={3} wrap="off" />
+          <TextArea defaultValue={"a".repeat(30)} fieldSizing="fixed" rows={3} wrap="off" />
         </Box>
       )
     }

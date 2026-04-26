@@ -28,7 +28,8 @@ describe("TextArea Shift+Enter", () => {
             onSubmit={(v) => {
               submitted = v
             }}
-            height={4}
+            fieldSizing="fixed"
+            rows={4}
           />
         </Box>
       )
@@ -56,7 +57,8 @@ describe("TextArea Shift+Enter", () => {
             onSubmit={(v) => {
               submitted = v
             }}
-            height={4}
+            fieldSizing="fixed"
+            rows={4}
           />
         </Box>
       )

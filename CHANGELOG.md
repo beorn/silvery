@@ -7,6 +7,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### BREAKING — `<TextArea>` `height` prop dropped, replaced with `fieldSizing` / `rows` / `minRows` / `maxRows`
+
+`<TextArea>` no longer accepts the `height: number` prop. The replacement
+is a CSS-`field-sizing`-aligned API that ships chat-input behavior by
+default and removes the need to hand-roll wrap math in consumers.
+
+| Old usage                                           | New usage                                          |
+| --------------------------------------------------- | -------------------------------------------------- |
+| `<TextArea height={N} />`                           | `<TextArea fieldSizing="fixed" rows={N} />`        |
+| Hand-rolled `height={Math.min(N, lines.length)}`    | `<TextArea maxRows={N} />` (default content mode)  |
+| Chat input where `height` tracked content           | `<TextArea />` — defaults are chat-input           |
+
+Defaults: `fieldSizing="content"`, `minRows=1`, `maxRows=8`. Drop in a
+`<TextArea />` with no sizing props and you get a chat-style auto-grow
+input out of the box. `fieldSizing="fixed"` mirrors HTML
+`<textarea rows={N}>`.
+
+`useTextArea(...)` (the headless hook) still takes `height: number` —
+consumers calling it directly choose the viewport height themselves.
+
 ## 0.21.0 — Purge legacy selection / inverse / link runtime emit (BREAKING)
 
 Companion to 0.20.0 ("Sterling is THE Theme"). 0.20.0 removed the legacy

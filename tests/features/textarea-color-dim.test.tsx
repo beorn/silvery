@@ -22,7 +22,7 @@ describe("TextArea color/dim props", () => {
     function App() {
       return (
         <Box>
-          <TextArea defaultValue="hello" height={3} color="$fg-muted" isActive={false} />
+          <TextArea defaultValue="hello" fieldSizing="fixed" rows={3} color="$fg-muted" isActive={false} />
         </Box>
       )
     }
@@ -42,7 +42,7 @@ describe("TextArea color/dim props", () => {
     function Default() {
       return (
         <Box>
-          <TextArea defaultValue="hello" height={3} isActive={false} />
+          <TextArea defaultValue="hello" fieldSizing="fixed" rows={3} isActive={false} />
         </Box>
       )
     }
@@ -59,7 +59,7 @@ describe("TextArea color/dim props", () => {
     function App() {
       return (
         <Box>
-          <TextArea defaultValue="hello" height={3} dim isActive={false} />
+          <TextArea defaultValue="hello" fieldSizing="fixed" rows={3} dim isActive={false} />
         </Box>
       )
     }
@@ -73,7 +73,7 @@ describe("TextArea color/dim props", () => {
     function MutedExplicit() {
       return (
         <Box>
-          <TextArea defaultValue="hello" height={3} color="$fg-muted" isActive={false} />
+          <TextArea defaultValue="hello" fieldSizing="fixed" rows={3} color="$fg-muted" isActive={false} />
         </Box>
       )
     }
@@ -92,7 +92,8 @@ describe("TextArea color/dim props", () => {
         <Box>
           <TextArea
             defaultValue=""
-            height={3}
+            fieldSizing="fixed"
+            rows={3}
             placeholder="type here"
             color="$primary"
             isActive={false}

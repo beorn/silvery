@@ -19,7 +19,10 @@ import { TextArea } from "silvery"
 | `submitKey`        | `"ctrl+enter" \| "enter" \| "meta+enter"` | `"ctrl+enter"`   | Key to trigger submit                                    |
 | `placeholder`      | `string`                                  | `""`             | Placeholder text when empty                              |
 | `isActive`         | `boolean`                                 | --               | Whether input is focused/active (overrides focus system) |
-| `height`           | `number`                                  | **required**     | Visible height in rows                                   |
+| `fieldSizing`      | `"content" \| "fixed"`                    | `"content"`      | CSS field-sizing analog — auto-grow with content vs fixed |
+| `rows`             | `number`                                  | `1`              | Visible row count in `"fixed"` mode                      |
+| `minRows`          | `number`                                  | `1`              | Minimum rows in `"content"` mode                         |
+| `maxRows`          | `number`                                  | `8`              | Maximum rows in `"content"` mode (scrolls beyond)        |
 | `cursorStyle`      | `"block" \| "underline"`                  | `"block"`        | Cursor style                                             |
 | `scrollMargin`     | `number`                                  | `1`              | Context lines above/below cursor when scrolling          |
 | `disabled`         | `boolean`                                 | --               | Ignore all input and dim text                            |
@@ -68,17 +71,35 @@ type TextAreaSelection = { start: number; end: number }
 | Ctrl+T                 | Transpose characters              |
 | PageUp/PageDown        | Scroll by viewport height         |
 
+## Sizing — `field-sizing` API
+
+TextArea mirrors the CSS [`field-sizing`](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizing) property. `"content"` (default) auto-grows with input clamped between `minRows` and `maxRows`; `"fixed"` keeps the widget at exactly `rows` regardless of content.
+
+| Old usage                              | New usage                                            |
+| -------------------------------------- | ---------------------------------------------------- |
+| `<TextArea height={N} />`              | `<TextArea fieldSizing="fixed" rows={N} />`         |
+| Hand-rolled `height={Math.min(N, lines.length)}` | `<TextArea maxRows={N} />` (default content mode)   |
+| Chat input where `height` tracked content | `<TextArea />` (defaults are chat-input)            |
+
 ## Usage
 
 ```tsx
 const [value, setValue] = useState('')
 
+// Defaults give chat-input behavior — auto-grows 1..8 rows.
 <TextArea
   value={value}
   onChange={setValue}
   onSubmit={(val) => console.log('Submitted:', val)}
-  height={10}
   placeholder="Type here..."
+/>
+
+// Fixed-height editor pane.
+<TextArea
+  value={value}
+  onChange={setValue}
+  fieldSizing="fixed"
+  rows={10}
 />
 ```
 
@@ -115,7 +136,8 @@ return (
       value={topValue}
       onChange={setTopValue}
       isActive={focused === "top"}
-      height={5}
+      fieldSizing="fixed"
+      rows={5}
       onEdge={(edge) => {
         if (edge === "bottom") {
           setFocused("bot")
@@ -129,7 +151,8 @@ return (
       value={botValue}
       onChange={setBotValue}
       isActive={focused === "bot"}
-      height={5}
+      fieldSizing="fixed"
+      rows={5}
       onEdge={(edge) => {
         if (edge === "top") {
           setFocused("top")

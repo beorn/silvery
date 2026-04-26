@@ -158,7 +158,7 @@ describe("TextArea uses useTextArea", () => {
     const r = createRenderer({ cols: 40, rows: 10 })
 
     function TestApp() {
-      return <TextArea height={5} placeholder="Type here..." />
+      return <TextArea fieldSizing="fixed" rows={5} placeholder="Type here..." />
     }
 
     const app = r(<TestApp />)
@@ -172,7 +172,7 @@ describe("TextArea uses useTextArea", () => {
       // Wrap in a row so TextArea gets width from the parent
       return (
         <Box width={40}>
-          <TextArea height={5} defaultValue="hello" />
+          <TextArea fieldSizing="fixed" rows={5} defaultValue="hello" />
         </Box>
       )
     }
@@ -190,7 +190,7 @@ describe("TextArea uses useTextArea", () => {
       const [value, setValue] = useState("initial")
       return (
         <Box flexDirection="column">
-          <TextArea height={3} value={value} onChange={setValue} />
+          <TextArea fieldSizing="fixed" rows={3} value={value} onChange={setValue} />
         </Box>
       )
     }
@@ -208,7 +208,7 @@ describe("TextArea uses useTextArea", () => {
       handle = ref.current
       return (
         <Box flexDirection="column">
-          <TextArea ref={ref} height={3} defaultValue="test value" />
+          <TextArea ref={ref} fieldSizing="fixed" rows={3} defaultValue="test value" />
         </Box>
       )
     }
@@ -231,7 +231,7 @@ describe("TextArea uses useTextArea", () => {
       })
       return (
         <Box flexDirection="column" width={40}>
-          <TextArea ref={ref} height={3} defaultValue="hello world" />
+          <TextArea ref={ref} fieldSizing="fixed" rows={3} defaultValue="hello world" />
         </Box>
       )
     }

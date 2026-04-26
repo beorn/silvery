@@ -18,10 +18,12 @@ function App() {
   const [value, setValue] = useState("")
 
   return (
-    <TextArea value={value} onChange={setValue} height={5} placeholder="Type your message..." />
+    <TextArea value={value} onChange={setValue} placeholder="Type your message..." />
   )
 }
 ```
+
+The defaults (`fieldSizing="content"`, `minRows=1`, `maxRows=8`) give a chat-input that grows with content. For a fixed-height editor pane use `fieldSizing="fixed" rows={N}`.
 
 ## Motivation
 
@@ -65,8 +67,14 @@ interface TextAreaProps {
   placeholder?: string
   /** Whether input is focused/active (overrides focus system) */
   isActive?: boolean
-  /** Visible height in rows (required) */
-  height: number
+  /** CSS field-sizing analog. Default: "content". */
+  fieldSizing?: "content" | "fixed"
+  /** Visible row count in "fixed" mode (mirrors HTML <textarea rows>). Default: 1. */
+  rows?: number
+  /** Minimum visible rows in "content" mode. Default: 1. */
+  minRows?: number
+  /** Maximum visible rows in "content" mode (scrolls beyond). Default: 8. */
+  maxRows?: number
   /** Cursor style: 'block' (inverse) or 'underline' */
   cursorStyle?: "block" | "underline"
   /** Number of context lines to keep visible above/below cursor when scrolling (default: 1) */
@@ -85,7 +93,8 @@ interface TextAreaProps {
 ```tsx
 const [text, setText] = useState("")
 
-<TextArea value={text} onChange={setText} height={5} />
+// Defaults give chat-input behavior — auto-grows 1..8 rows.
+<TextArea value={text} onChange={setText} />
 ```
 
 ### Chat Input Example
@@ -96,7 +105,6 @@ const [message, setMessage] = useState("")
 <TextArea
   value={message}
   onChange={setMessage}
-  height={3}
   placeholder="Type a message..."
   submitKey="enter"
   onSubmit={(msg) => {
@@ -113,7 +121,7 @@ Note: `submitKey="enter"` means Enter submits, Shift+Enter inserts newline. This
 ```tsx
 const [code, setCode] = useState("")
 
-<TextArea value={code} onChange={setCode} height={10} submitKey="ctrl+enter" />
+<TextArea value={code} onChange={setCode} fieldSizing="fixed" rows={10} submitKey="ctrl+enter" />
 ```
 
 ## Visual Design

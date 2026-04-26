@@ -10,16 +10,37 @@
  * Includes full readline-style editing: word movement, word kill, kill ring
  * (yank/cycle), and character transpose -- shared with TextInput via readline-ops.
  *
+ * ## Sizing — CSS `field-sizing` analog
+ *
+ * Two sizing modes, mirroring the CSS `field-sizing` property:
+ *
+ * - **`fieldSizing="content"` (default)** — the TextArea grows with its
+ *   content, clamped between `minRows` and `maxRows`. This is the modern
+ *   chat / messaging input convention. Empty input is `minRows` tall;
+ *   typing additional lines grows the widget up to `maxRows`; beyond that
+ *   the buffer scrolls. Default `minRows={1}`, `maxRows={8}` — drop in a
+ *   `<TextArea />` with no props and you get a chat input out of the box.
+ *
+ * - **`fieldSizing="fixed"`** — the TextArea is exactly `rows` tall
+ *   regardless of content. Equivalent to the HTML `<textarea rows={N}>`
+ *   attribute. Use when the surrounding layout demands a stable height
+ *   (e.g. a code editor pane, a form field with a designed footprint).
+ *
+ * Visual line counting respects soft wrap: a single long logical line that
+ * wraps to multiple visual rows counts as multiple rows toward `minRows`
+ * and `maxRows`. `wrap="off"` disables soft wrap; the buffer scrolls
+ * horizontally instead.
+ *
  * Usage:
  * ```tsx
- * const [value, setValue] = useState('')
- * <TextArea
- *   value={value}
- *   onChange={setValue}
- *   onSubmit={(val) => console.log('Submitted:', val)}
- *   height={10}
- *   placeholder="Type here..."
- * />
+ * // Chat input — defaults to fieldSizing=content, minRows=1, maxRows=8
+ * <TextArea value={value} onChange={setValue} onSubmit={send} />
+ *
+ * // Code editor — fixed 16 rows
+ * <TextArea value={code} onChange={setCode} fieldSizing="fixed" rows={16} />
+ *
+ * // Compose box — grows up to 12 rows then scrolls
+ * <TextArea value={msg} onChange={setMsg} maxRows={12} />
  * ```
  *
  * Supported shortcuts:
@@ -27,7 +48,8 @@
  * - Shift+Arrow: Extend selection
  * - Shift+Home/End: Select to line boundaries
  * - Ctrl+Shift+Arrow: Word-wise selection
- * - Ctrl+A: Select all text
+ * - Ctrl+A: Beginning of wrapped line (emacs/readline)
+ * - Cmd+A: Select all (Kitty keyboard protocol only)
  * - Ctrl+E: End of line
  * - Ctrl+P / Ctrl+N: Up / Down line (Emacs aliases for arrow keys)
  * - Home/End: Beginning/end of line
@@ -50,6 +72,7 @@ import { useFocusable } from "../../hooks/useFocusable"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { useTextArea } from "./useTextArea"
+import { getWrappedLines } from "@silvery/create/text-cursor"
 import type { WrappedLine } from "@silvery/create/text-cursor"
 import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
 
@@ -72,8 +95,38 @@ export interface TextAreaProps {
   placeholder?: string
   /** Whether input is focused/active (overrides focus system) */
   isActive?: boolean
-  /** Visible height in rows (required) */
-  height: number
+  /**
+   * CSS `field-sizing` analog. Controls how the TextArea computes its
+   * visible row count.
+   *
+   * - `"content"` (default) — height grows with content, clamped between
+   *   `minRows` and `maxRows`. Modern chat-input behavior.
+   * - `"fixed"` — height is exactly `rows`, regardless of content.
+   *
+   * @default "content"
+   */
+  fieldSizing?: "fixed" | "content"
+  /**
+   * Number of visible rows in `fieldSizing="fixed"` mode. Mirrors the HTML
+   * `<textarea rows>` attribute. Ignored in `"content"` mode.
+   *
+   * @default 1
+   */
+  rows?: number
+  /**
+   * Minimum visible rows in `fieldSizing="content"` mode. Empty input
+   * still occupies this many rows. Ignored in `"fixed"` mode.
+   *
+   * @default 1
+   */
+  minRows?: number
+  /**
+   * Maximum visible rows in `fieldSizing="content"` mode. Beyond this the
+   * buffer scrolls. Ignored in `"fixed"` mode.
+   *
+   * @default 8
+   */
+  maxRows?: number
   /** Cursor style: 'block' (inverse) or 'underline' */
   cursorStyle?: "block" | "underline"
   /**
@@ -110,8 +163,8 @@ export interface TextAreaProps {
    *
    * - `"soft"` (default) — soft-wrap at the parent's content width. A long
    *   single-line input flows into multiple visual rows; height grows up to
-   *   the configured `height`. This matches modern chat / messaging input
-   *   conventions and the cross-platform / web target.
+   *   `maxRows` (or `rows` in fixed mode). This matches modern chat /
+   *   messaging input conventions and the cross-platform / web target.
    * - `"off"` — disable wrap. Long lines stay on a single visual row; the
    *   buffer scrolls horizontally as the cursor moves. Use this for
    *   terminal-style single-row prompts (REPLs, command lines) where wrap
@@ -188,7 +241,10 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     submitKey = "ctrl+enter",
     placeholder = "",
     isActive: isActiveProp,
-    height,
+    fieldSizing = "content",
+    rows = 1,
+    minRows = 1,
+    maxRows = 8,
     cursorStyle = "block",
     showInactiveCursor = true,
     scrollMargin = 1,
@@ -235,6 +291,25 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   // the cursor moves (CSS overflow on the parent flex line).
   const effectiveWrapWidth = wrap === "off" ? 1_000_000 : contentWidth
 
+  // ─────────────────────────────────────────────────────────────────────
+  // Resolve the visible row count from the CSS-style sizing props.
+  //
+  // - "fixed" mode is straightforward: `rows`.
+  // - "content" mode counts visual lines for the *current* value (after
+  //   the hook runs) then clamps between `minRows` and `maxRows`.
+  //
+  // The hook needs a `height` for scroll-clamp + PageUp/Down. We pass the
+  // upper bound (`rows` for fixed mode, `maxRows` for content mode) — a
+  // value that does NOT depend on `parentWidth`, so it stays stable
+  // across the layout-feedback re-render. If we threaded a width-derived
+  // height into the hook, the box height would oscillate between the
+  // pre-layout (parentWidth=0) and post-layout values, leaving stale
+  // paint in the buffer.
+  // ─────────────────────────────────────────────────────────────────────
+  const lo = Math.max(1, minRows)
+  const hi = Math.max(lo, maxRows)
+  const upperBoundRows = fieldSizing === "fixed" ? Math.max(1, rows) : hi
+
   const ta = useTextArea({
     value: controlledValue,
     defaultValue,
@@ -242,13 +317,29 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     onSubmit,
     submitKey,
     isActive,
-    height,
+    height: upperBoundRows,
     wrapWidth: effectiveWrapWidth,
     scrollMargin,
     disabled,
     maxLength,
     onEdge,
   })
+
+  // Now that the hook has resolved the live value + wrappedLines for the
+  // current wrapWidth, compute the actual visible row count. In fixed
+  // mode this is just `rows`; in content mode we clamp the wrapped-line
+  // count between minRows and maxRows.
+  const visibleLineCount =
+    fieldSizing === "fixed"
+      ? Math.max(1, rows)
+      : Math.min(hi, Math.max(lo, ta.wrappedLines.length))
+
+  // The Box that holds the TextArea content sets `height` as the OUTER
+  // box height (border-box). When `borderStyle` is set we add 2 rows for
+  // the top + bottom borders so the content area is exactly
+  // `visibleLineCount` rows tall — matching the historical contract where
+  // the caller's `height` was the outer height including border.
+  const outerHeight = borderStyleProp ? visibleLineCount + 2 : visibleLineCount
 
   // Imperative handle
   useImperativeHandle(ref, () => ({
@@ -330,7 +421,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         focusable
         testID={testID}
         flexDirection="column"
-        height={height}
+        height={outerHeight}
         cursorOffset={cursorOffset}
         {...borderProps}
       >
@@ -339,18 +430,24 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     )
   }
 
+  // The hook hands back `visibleLines` sliced by its own `height` (the
+  // upper bound). In content mode we want only `visibleLineCount` rows on
+  // screen, so trim down to the resolved viewport size. The slice starts
+  // at the same scrollOffset; we just clamp the tail.
+  const renderedLines = ta.visibleLines.slice(0, visibleLineCount)
+
   return (
     <Box
       focusable
       testID={testID}
       key={ta.scrollOffset}
       flexDirection="column"
-      height={height}
+      height={outerHeight}
       cursorOffset={cursorOffset}
       {...borderProps}
       onMouseDown={handleMouseDown}
     >
-      {ta.visibleLines.map((wl, i) => {
+      {renderedLines.map((wl, i) => {
         const absoluteRow = ta.scrollOffset + i
         const isCursorRow = absoluteRow === ta.cursorRow
         const lineStart = wl.startOffset

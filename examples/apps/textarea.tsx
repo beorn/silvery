@@ -110,7 +110,8 @@ export function NoteEditor() {
               value={value}
               onChange={setValue}
               onSubmit={handleSubmit}
-              height={16}
+              fieldSizing="fixed"
+              rows={16}
               isActive={focusIndex === 0}
             />
           </Box>

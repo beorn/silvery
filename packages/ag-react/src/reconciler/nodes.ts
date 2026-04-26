@@ -113,6 +113,11 @@ export function createNode(
   // Apply initial flexbox props to layout node
   if (type === "silvery-box") {
     applyBoxProps(layoutNode, props as BoxProps)
+  } else if (type === "silvery-text") {
+    // Text is a leaf flex item — apply the FlexboxProps subset declared by
+    // TextFlexItemProps (flexGrow/flexShrink/flexBasis/alignSelf + min/max
+    // dimensions). See `TextFlexItemProps` in @silvery/ag/types.
+    applyTextFlexItemProps(layoutNode, props as TextProps)
   }
 
   // Set up measure function for text nodes
@@ -381,6 +386,101 @@ export function createVirtualTextNode(props: TextProps): AgNode {
 // ============================================================================
 // Layout Property Application
 // ============================================================================
+
+/**
+ * Apply TextFlexItemProps to a Text node's layout node.
+ *
+ * Text is a leaf flex item — it accepts the subset of FlexboxProps that
+ * affect how it participates as a flex item (sizing, growth, shrink),
+ * not the props that affect how it lays out children. This is the
+ * canonical CSS escape hatch: use `flexShrink={0}` to keep a Text rigid,
+ * or `minWidth={0}` to let it shrink fully under a tight parent.
+ *
+ * See `TextFlexItemProps` in @silvery/ag/types.
+ */
+export function applyTextFlexItemProps(
+  layoutNode: LayoutNode,
+  props: TextProps,
+  oldProps?: TextProps,
+): void {
+  const c = getConstants()
+  const wasRemoved = (prop: keyof TextProps): boolean =>
+    oldProps?.[prop] !== undefined && props[prop] === undefined
+
+  if (props.flexGrow !== undefined) {
+    layoutNode.setFlexGrow(props.flexGrow)
+  } else if (wasRemoved("flexGrow")) {
+    layoutNode.setFlexGrow(0)
+  }
+
+  if (props.flexShrink !== undefined) {
+    layoutNode.setFlexShrink(props.flexShrink)
+  } else if (wasRemoved("flexShrink")) {
+    layoutNode.setFlexShrink(1)
+  }
+
+  if (props.flexBasis !== undefined) {
+    if (typeof props.flexBasis === "string" && props.flexBasis.endsWith("%")) {
+      layoutNode.setFlexBasisPercent(Number.parseFloat(props.flexBasis))
+    } else if (props.flexBasis === "auto") {
+      layoutNode.setFlexBasisAuto()
+    } else if (typeof props.flexBasis === "number") {
+      layoutNode.setFlexBasis(props.flexBasis)
+    }
+  } else if (wasRemoved("flexBasis")) {
+    layoutNode.setFlexBasisAuto()
+  }
+
+  if (props.alignSelf !== undefined) {
+    if (props.alignSelf === "auto") {
+      layoutNode.setAlignSelf(c.ALIGN_AUTO)
+    } else {
+      layoutNode.setAlignSelf(alignToConstant(props.alignSelf))
+    }
+  } else if (wasRemoved("alignSelf")) {
+    layoutNode.setAlignSelf(c.ALIGN_AUTO)
+  }
+
+  if (props.minWidth !== undefined) {
+    if (typeof props.minWidth === "string" && props.minWidth.endsWith("%")) {
+      layoutNode.setMinWidthPercent(Number.parseFloat(props.minWidth))
+    } else if (typeof props.minWidth === "number") {
+      layoutNode.setMinWidth(props.minWidth)
+    }
+  } else if (wasRemoved("minWidth")) {
+    layoutNode.setMinWidth(0)
+  }
+
+  if (props.minHeight !== undefined) {
+    if (typeof props.minHeight === "string" && props.minHeight.endsWith("%")) {
+      layoutNode.setMinHeightPercent(Number.parseFloat(props.minHeight))
+    } else if (typeof props.minHeight === "number") {
+      layoutNode.setMinHeight(props.minHeight)
+    }
+  } else if (wasRemoved("minHeight")) {
+    layoutNode.setMinHeight(0)
+  }
+
+  if (props.maxWidth !== undefined) {
+    if (typeof props.maxWidth === "string" && props.maxWidth.endsWith("%")) {
+      layoutNode.setMaxWidthPercent(Number.parseFloat(props.maxWidth))
+    } else if (typeof props.maxWidth === "number") {
+      layoutNode.setMaxWidth(props.maxWidth)
+    }
+  } else if (wasRemoved("maxWidth")) {
+    layoutNode.setMaxWidth(Number.POSITIVE_INFINITY)
+  }
+
+  if (props.maxHeight !== undefined) {
+    if (typeof props.maxHeight === "string" && props.maxHeight.endsWith("%")) {
+      layoutNode.setMaxHeightPercent(Number.parseFloat(props.maxHeight))
+    } else if (typeof props.maxHeight === "number") {
+      layoutNode.setMaxHeight(props.maxHeight)
+    }
+  } else if (wasRemoved("maxHeight")) {
+    layoutNode.setMaxHeight(Number.POSITIVE_INFINITY)
+  }
+}
 
 /**
  * Apply BoxProps to a layout node.

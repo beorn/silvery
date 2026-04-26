@@ -21,12 +21,18 @@
  * }
  * ```
  *
+ * `height` here is the *resolved* viewport row count for scroll math. The
+ * public TextArea component computes this from its CSS-style sizing props
+ * (`fieldSizing` / `rows` / `minRows` / `maxRows`) and passes it down. If
+ * you're calling `useTextArea` directly, you choose the height yourself.
+ *
  * Supported shortcuts (same as TextArea component):
  * - Arrow keys: Move cursor (clears selection)
  * - Shift+Arrow: Extend selection
  * - Shift+Home/End: Select to line boundaries
  * - Ctrl+Shift+Arrow: Word-wise selection
- * - Ctrl+A: Select all text
+ * - Ctrl+A: Beginning of wrapped line (emacs/readline)
+ * - Cmd+A: Select all (Kitty keyboard protocol only)
  * - Ctrl+E: End of line
  * - Ctrl+P / Ctrl+N: Up / Down line (Emacs aliases for arrow keys)
  * - Home/End: Beginning/end of line
@@ -352,9 +358,13 @@ export function useTextArea({
       }
 
       // =================================================================
-      // Ctrl+A: Select all
+      // Cmd+A (key.super): Select all (browser convention).
+      // Only fires under Kitty keyboard protocol — legacy terminals don't
+      // forward Cmd-modified keystrokes to the app at all. Ctrl+A is the
+      // emacs/readline beginning-of-line binding (handled below alongside
+      // Home), matching TextInput / useReadline.
       // =================================================================
-      if (key.ctrl && input === "a") {
+      if (key.super && input === "a") {
         stickyXRef.current = null
         setSelectionAnchor(0)
         selectionAnchorRef.current = 0
@@ -554,9 +564,10 @@ export function useTextArea({
 
       // =================================================================
       // Multi-line: Home/End (beginning/end of wrapped line)
-      // Note: Ctrl+A is now select-all, Ctrl+E still goes to end of line
+      // Ctrl+A and Ctrl+E mirror Home/End (emacs/readline convention,
+      // matching TextInput). Cmd+A above handles select-all.
       // =================================================================
-      if (key.home) {
+      if (key.home || (key.ctrl && input === "a")) {
         stickyXRef.current = null
         const currentLine = lines[cRow]
         if (currentLine) moveCursor(currentLine.startOffset, value, false)
