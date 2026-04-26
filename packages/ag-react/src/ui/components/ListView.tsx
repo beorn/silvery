@@ -290,6 +290,38 @@ export interface ListViewProps<T> {
   virtualizationThreshold?: number
 
   /**
+   * Chat-style "stick to the end" auto-follow. When `true` and the viewport
+   * is at the bottom of the list, items appended at the tail trigger an
+   * auto-scroll so the new tail stays in view. When the user scrolls up
+   * (away from the bottom), auto-follow is disabled — the viewport stays
+   * put as items are appended. When the user returns to the bottom,
+   * auto-follow resumes.
+   *
+   * "At bottom" is computed as scroll-position dependent:
+   *   - In cursor-following mode (no wheel activity, scrollRow null): the
+   *     cursor key is at or past `items.length - 1`.
+   *   - After wheel activity (scrollRow set): scrollRow ≥ maxScrollRow.
+   *
+   * Pair with `onAtBottomChange` to render a sticky-toggle UI or overscroll
+   * indicator. Default: `false`.
+   */
+  stickyBottom?: boolean
+
+  /**
+   * Fires when the viewport transitions between "at bottom" and
+   * "scrolled away". Receives `true` when the viewport reaches the bottom
+   * (auto-follow active), `false` when the user scrolls away from the
+   * bottom (auto-follow paused).
+   *
+   * Edge-triggered — only fires on transitions, not on every render. The
+   * initial mount fires once with the resolved at-bottom state. Use this to
+   * render an "↓ jump to latest" button, a sticky-mode indicator, or to
+   * mirror the auto-follow state into external store. No call when
+   * `stickyBottom` is unset and the viewport never enters auto-follow mode.
+   */
+  onAtBottomChange?: (atBottom: boolean) => void
+
+  /**
    * Maximum total estimated row count for the rendered window in `"index"`
    * mode. The window expands until either `maxRendered` (item budget) or
    * this value (row budget) is exhausted — whichever comes first.
@@ -514,6 +546,8 @@ function ListViewInner<T>(
     virtualization: virtualizationProp,
     virtualizationThreshold = DEFAULT_VIRTUALIZATION_THRESHOLD,
     maxEstimatedRows = DEFAULT_MAX_ESTIMATED_ROWS,
+    stickyBottom = false,
+    onAtBottomChange,
   }: ListViewProps<T>,
   ref: React.ForwardedRef<ListViewHandle>,
 ): React.ReactElement {
@@ -1882,14 +1916,73 @@ function ListViewInner<T>(
   // ramp-up where height grows as items are measured but no content was
   // actually added. Same auto-hide timer as wheel events.
   const prevItemCountRef = useRef(activeItems.length)
+  // Sticky-bottom + atBottom transition tracking.
+  //
+  // `prevAtBottomRef` records the at-bottom state from the prior commit so
+  // we can fire `onAtBottomChange` only on transitions (edge-triggered).
+  // `prevMaxScrollRowRef` records the prior maxScrollRow so we can detect
+  // "user was sitting at maxRow and items just grew" — the trigger for
+  // sticky auto-follow.
+  //
+  // Initialised to a sentinel so the first effect run unconditionally
+  // emits the initial at-bottom value to onAtBottomChange.
+  const prevAtBottomRef = useRef<boolean | null>(null)
+  const prevMaxScrollRowRef = useRef<number | null>(null)
   useEffect(() => {
-    const prev = prevItemCountRef.current
-    if (activeItems.length > prev) {
+    const prevCount = prevItemCountRef.current
+    const grew = activeItems.length > prevCount
+    if (grew) {
       setIsScrolling(true)
       scheduleScrollbarHide()
     }
     prevItemCountRef.current = activeItems.length
-  }, [activeItems.length, scheduleScrollbarHide])
+
+    // Compute current "at bottom" state.
+    //
+    // In cursor-following mode (scrollRow === null), at-bottom is implied
+    // when the cursor key is at the last item (the chat default). In
+    // wheel-driving mode (scrollRow !== null), it's a direct comparison
+    // against maxScrollRow with a 1-row tolerance for sub-row drift.
+    const maxRow = maxScrollRowRef.current
+    const lastIdx = activeItems.length - 1
+    const atBottomCursor =
+      scrollRow === null && (!nav || activeCursor >= lastIdx)
+    const atBottomScroll = scrollRow !== null && scrollRow >= maxRow - 0.5
+    const atBottom = atBottomCursor || atBottomScroll
+
+    // Sticky auto-follow: if items grew while the user was at the bottom in
+    // wheel-driving mode, advance scrollRow to the new maxRow so the
+    // appended tail stays in view. The cursor-following mode auto-follows
+    // for free via `cursorKey={items.length - 1}` → scrollTo logic.
+    if (
+      stickyBottom &&
+      grew &&
+      scrollRow !== null &&
+      prevMaxScrollRowRef.current !== null &&
+      prevAtBottomRef.current === true
+    ) {
+      // Snap float ref to the new max as well so wheel + scrollbar stay
+      // consistent with the viewport.
+      scrollRowFloatRef.current = maxRow
+      setScrollRow(maxRow)
+    }
+    prevMaxScrollRowRef.current = maxRow
+
+    // Edge-triggered transition callback. Fires on the initial commit
+    // unconditionally (sentinel `null`) and on every subsequent change.
+    if (onAtBottomChange && prevAtBottomRef.current !== atBottom) {
+      onAtBottomChange(atBottom)
+    }
+    prevAtBottomRef.current = atBottom
+  }, [
+    activeItems.length,
+    scheduleScrollbarHide,
+    scrollRow,
+    activeCursor,
+    nav,
+    stickyBottom,
+    onAtBottomChange,
+  ])
   // Rows scrolled past the viewport top — the exact measurement a browser
   // uses for scrollbar position. `leadingHeight` from the virtualizer is
   // `sumHeights(0, startIndex)` where startIndex = scrollOffset − overscan,
