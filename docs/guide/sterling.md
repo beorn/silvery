@@ -30,40 +30,40 @@ import { sterling } from "@silvery/theme"
 const theme = sterling.deriveFromScheme(myScheme)
 
 // Nested roles — programmatic access
-theme.accent.bg            // "#5B8DEF"
-theme.accent.hover.bg      // "#6498F6"
-theme.surface.raised       // "#3B4252"
-theme.cursor.fg            // "#E5E9F0"
+theme.accent.bg // "#5B8DEF"
+theme.accent.hover.bg // "#6498F6"
+theme.surface.raised // "#3B4252"
+theme.cursor.fg // "#E5E9F0"
 
 // Flat hyphen keys — token resolution path (used by `$tokens` in JSX)
-theme["bg-accent"]         // "#5B8DEF" — same string as theme.accent.bg
-theme["bg-accent-hover"]   // "#6498F6" — same string as theme.accent.hover.bg
+theme["bg-accent"] // "#5B8DEF" — same string as theme.accent.bg
+theme["bg-accent-hover"] // "#6498F6" — same string as theme.accent.hover.bg
 theme["bg-surface-raised"] // "#3B4252"
-theme["fg-cursor"]         // "#E5E9F0"
+theme["fg-cursor"] // "#E5E9F0"
 
 // Root pair — the heavy-traffic JSX hooks
-theme.fg                   // = scheme.foreground
-theme.bg                   // = scheme.background = theme["bg-surface-default"]
+theme.fg // = scheme.foreground
+theme.bg // = scheme.background = theme["bg-surface-default"]
 ```
 
 Both paths are real fields on the same object — there is no Proxy. `theme.accent.bg === theme["bg-accent"]` always.
 
 ### Roles
 
-| Role          | Shape                                                                          | Use for                                                          |
-| ------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| `accent`      | `{ fg, bg, fgOn, border, hover: { fg, bg }, active: { fg, bg } }`              | Brand emphasis, focus, primary action, interactive text          |
-| `info`        | `{ fg, bg, fgOn, hover: { bg }, active: { bg } }`                              | Neutral status                                                   |
-| `success`     | same as info                                                                   | Positive status                                                  |
-| `warning`     | same as info                                                                   | Caution                                                          |
-| `error`       | same as info                                                                   | Errors / destructive                                              |
-| `muted`       | `{ fg, bg }`                                                                   | Secondary text (`muted.fg`); subtle hover surface (`muted.bg`)   |
-| `surface`     | `{ default, subtle, raised, overlay, hover }`                                  | Canvas + card stack (default → subtle → raised → overlay)        |
-| `border`      | `{ default, focus, muted }`                                                    | Structural rules, focus ring, faint dividers                     |
-| `cursor`      | `{ fg, bg }`                                                                   | Cursor color and the glyph under it                              |
-| `selected`    | `{ bg, fgOn, hover: { bg } }`                                                  | Cursor row, mouse selection, search match highlight              |
-| `inverse`     | `{ bg, fgOn }`                                                                 | Status bars, modal chrome — the "you are here" inverse band      |
-| `link`        | `{ fg }`                                                                       | Hyperlink text (distinct from `accent` if you want classic blue) |
+| Role       | Shape                                                             | Use for                                                          |
+| ---------- | ----------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `accent`   | `{ fg, bg, fgOn, border, hover: { fg, bg }, active: { fg, bg } }` | Brand emphasis, focus, primary action, interactive text          |
+| `info`     | `{ fg, bg, fgOn, hover: { bg }, active: { bg } }`                 | Neutral status                                                   |
+| `success`  | same as info                                                      | Positive status                                                  |
+| `warning`  | same as info                                                      | Caution                                                          |
+| `error`    | same as info                                                      | Errors / destructive                                             |
+| `muted`    | `{ fg, bg }`                                                      | Secondary text (`muted.fg`); subtle hover surface (`muted.bg`)   |
+| `surface`  | `{ default, subtle, raised, overlay, hover }`                     | Canvas + card stack (default → subtle → raised → overlay)        |
+| `border`   | `{ default, focus, muted }`                                       | Structural rules, focus ring, faint dividers                     |
+| `cursor`   | `{ fg, bg }`                                                      | Cursor color and the glyph under it                              |
+| `selected` | `{ bg, fgOn, hover: { bg } }`                                     | Cursor row, mouse selection, search match highlight              |
+| `inverse`  | `{ bg, fgOn }`                                                    | Status bars, modal chrome — the "you are here" inverse band      |
+| `link`     | `{ fg }`                                                          | Hyperlink text (distinct from `accent` if you want classic blue) |
 
 Status roles only carry **surface** state (`hover.bg`, `active.bg`). They don't carry text-color hover variants — text on a status role isn't a link, so `fg-error-hover` would be a category error. `accent` is the only role with `fg.hover` / `fg.active`, because it _is_ a link-like role.
 
@@ -179,9 +179,9 @@ Pins use either nested or flat path syntax — they're equivalent:
 ```ts
 sterling.deriveFromScheme(scheme, {
   pins: {
-    "accent.bg": "#5B8DEF",         // nested
-    "fg-on-error": "#FFFFFF",       // flat
-    "error.fg": "#bf616a",          // nested
+    "accent.bg": "#5B8DEF", // nested
+    "fg-on-error": "#FFFFFF", // flat
+    "error.fg": "#bf616a", // nested
   },
 })
 ```
@@ -212,7 +212,11 @@ interface DesignSystem {
   theme(partial?: DeepPartial<Theme>, opts?: DeriveOptions): Theme
   deriveFromScheme(scheme: ColorScheme, opts?: DeriveOptions): Theme
   deriveFromColor(color: string, opts?: DeriveOptions & { mode?: "light" | "dark" }): Theme
-  deriveFromPair(light: ColorScheme, dark: ColorScheme, opts?: DeriveOptions): { light: Theme; dark: Theme }
+  deriveFromPair(
+    light: ColorScheme,
+    dark: ColorScheme,
+    opts?: DeriveOptions,
+  ): { light: Theme; dark: Theme }
   deriveFromSchemeWithBrand(scheme: ColorScheme, brand: string, opts?: DeriveOptions): Theme
 }
 ```
@@ -229,65 +233,65 @@ JSX `$token` references keep resolving through the 0.20.x window via `resolveTok
 
 ### `$token` migration map
 
-| Legacy `$token` | Sterling `$token`               |
-| --------------- | ------------------------------- |
-| `$primary`      | `$fg-accent`                    |
-| `$primaryfg`    | `$fg-on-accent`                 |
-| `$accent`       | `$fg-accent`                    |
-| `$accentfg`     | `$fg-on-accent`                 |
-| `$muted`        | `$fg-muted`                     |
-| `$mutedbg`      | `$bg-muted`                     |
-| `$secondary`    | `$fg-muted`                     |
-| `$error`        | `$fg-error`                     |
-| `$warning`      | `$fg-warning`                   |
-| `$success`      | `$fg-success`                   |
-| `$info`         | `$fg-info`                      |
-| `$inverse`      | `$fg-on-inverse`                |
-| `$inversebg`    | `$bg-inverse`                   |
-| `$surface`      | `$fg`                           |
-| `$surfacebg`    | `$bg-surface-subtle`            |
-| `$popover`      | `$fg`                           |
-| `$popoverbg`    | `$bg-surface-overlay`           |
-| `$selection`    | `$fg-on-selected`               |
-| `$selectionbg`  | `$bg-selected`                  |
-| `$cursor`       | `$fg-cursor`                    |
-| `$cursorbg`     | `$bg-cursor`                    |
-| `$border`       | `$border-default`               |
-| `$inputborder`  | `$border-default`               |
-| `$focusborder`  | `$border-focus`                 |
-| `$link`         | `$fg-link`                      |
-| `$disabledfg`   | `$fg-muted`                     |
-| `$bg`           | unchanged (still resolves)      |
-| `$fg`           | unchanged (still resolves)      |
+| Legacy `$token` | Sterling `$token`          |
+| --------------- | -------------------------- |
+| `$primary`      | `$fg-accent`               |
+| `$primaryfg`    | `$fg-on-accent`            |
+| `$accent`       | `$fg-accent`               |
+| `$accentfg`     | `$fg-on-accent`            |
+| `$muted`        | `$fg-muted`                |
+| `$mutedbg`      | `$bg-muted`                |
+| `$secondary`    | `$fg-muted`                |
+| `$error`        | `$fg-error`                |
+| `$warning`      | `$fg-warning`              |
+| `$success`      | `$fg-success`              |
+| `$info`         | `$fg-info`                 |
+| `$inverse`      | `$fg-on-inverse`           |
+| `$inversebg`    | `$bg-inverse`              |
+| `$surface`      | `$fg`                      |
+| `$surfacebg`    | `$bg-surface-subtle`       |
+| `$popover`      | `$fg`                      |
+| `$popoverbg`    | `$bg-surface-overlay`      |
+| `$selection`    | `$fg-on-selected`          |
+| `$selectionbg`  | `$bg-selected`             |
+| `$cursor`       | `$fg-cursor`               |
+| `$cursorbg`     | `$bg-cursor`               |
+| `$border`       | `$border-default`          |
+| `$inputborder`  | `$border-default`          |
+| `$focusborder`  | `$border-focus`            |
+| `$link`         | `$fg-link`                 |
+| `$disabledfg`   | `$fg-muted`                |
+| `$bg`           | unchanged (still resolves) |
+| `$fg`           | unchanged (still resolves) |
 
 ### Dot-access migration map
 
 For TypeScript code that read fields off `Theme` directly:
 
-| Legacy field        | Sterling nested            | Sterling flat                  |
-| ------------------- | -------------------------- | ------------------------------ |
-| `theme.primary`     | `theme.accent.fg`          | `theme["fg-accent"]`           |
-| `theme.primaryfg`   | `theme.accent.fgOn`        | `theme["fg-on-accent"]`        |
-| `theme.accent`      | `theme.accent.fg`          | `theme["fg-accent"]`           |
-| `theme.error`       | `theme.error.fg`           | `theme["fg-error"]`            |
-| `theme.errorfg`     | `theme.error.fgOn`         | `theme["fg-on-error"]`         |
-| `theme.warning`     | `theme.warning.fg`         | `theme["fg-warning"]`          |
-| `theme.success`     | `theme.success.fg`         | `theme["fg-success"]`          |
-| `theme.info`        | `theme.info.fg`            | `theme["fg-info"]`             |
-| `theme.cursor`      | `theme.cursor.fg`          | `theme["fg-cursor"]`           |
-| `theme.cursorbg`    | `theme.cursor.bg`          | `theme["bg-cursor"]`           |
-| `theme.selection`   | `theme.selected.fgOn`      | `theme["fg-on-selected"]`      |
-| `theme.selectionbg` | `theme.selected.bg`        | `theme["bg-selected"]`         |
-| `theme.inverse`     | `theme.inverse.fgOn`       | `theme["fg-on-inverse"]`       |
-| `theme.inversebg`   | `theme.inverse.bg`         | `theme["bg-inverse"]`          |
-| `theme.surfacebg`   | `theme.surface.subtle`     | `theme["bg-surface-subtle"]`   |
-| `theme.popoverbg`   | `theme.surface.overlay`    | `theme["bg-surface-overlay"]`  |
-| `theme.muted`       | `theme.muted.fg`           | `theme["fg-muted"]`            |
-| `theme.mutedbg`     | `theme.muted.bg`           | `theme["bg-muted"]`            |
-| `theme.border`      | `theme.border.default`     | `theme["border-default"]`      |
-| `theme.focusborder` | `theme.border.focus`       | `theme["border-focus"]`        |
-| `theme.link`        | `theme.link.fg`            | `theme["fg-link"]`             |
-| `theme.disabledfg`  | `theme.muted.fg`           | `theme["fg-muted"]`            |
+| Legacy field        | Sterling nested         | Sterling flat                 |
+| ------------------- | ----------------------- | ----------------------------- |
+| `theme.primary`     | `theme.accent.fg`       | `theme["fg-accent"]`          |
+| `theme.primaryfg`   | `theme.accent.fgOn`     | `theme["fg-on-accent"]`       |
+| `theme.accent`      | `theme.accent.fg`       | `theme["fg-accent"]`          |
+| `theme.error`       | `theme.error.fg`        | `theme["fg-error"]`           |
+| `theme.errorfg`     | `theme.error.fgOn`      | `theme["fg-on-error"]`        |
+| `theme.warning`     | `theme.warning.fg`      | `theme["fg-warning"]`         |
+| `theme.success`     | `theme.success.fg`      | `theme["fg-success"]`         |
+| `theme.info`        | `theme.info.fg`         | `theme["fg-info"]`            |
+| `theme.cursor`      | `theme.cursor.fg`       | `theme["fg-cursor"]`          |
+| `theme.cursorbg`    | `theme.cursor.bg`       | `theme["bg-cursor"]`          |
+| `theme.selection`   | `theme.selected.fgOn`   | `theme["fg-on-selected"]`     |
+| `theme.selectionbg` | `theme.selected.bg`     | `theme["bg-selected"]`        |
+| `theme.inverse`     | `theme.inverse.fgOn`    | `theme["fg-on-inverse"]`      |
+| `theme.inversebg`   | `theme.inverse.bg`      | `theme["bg-inverse"]`         |
+| `theme.surfacebg`   | `theme.surface.subtle`  | `theme["bg-surface-subtle"]`  |
+| `theme.popoverbg`   | `theme.surface.overlay` | `theme["bg-surface-overlay"]` |
+| `theme.muted`       | `theme.muted.fg`        | `theme["fg-muted"]`           |
+| `theme.mutedbg`     | `theme.muted.bg`        | `theme["bg-muted"]`           |
+| `theme.border`      | `theme.border.default`  | `theme["border-default"]`     |
+| `theme.focusborder` | `theme.border.focus`    | `theme["border-focus"]`       |
+| `theme.link`        | `theme.link.fg`         | `theme["fg-link"]`            |
+| `theme.disabledfg`  | `theme.muted.fg`        | `theme["fg-muted"]`           |
 
 ## Related
 

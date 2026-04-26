@@ -60,7 +60,10 @@ export interface ScrollRegionConfig {
  */
 export function supportsScrollRegions(
   /** Structural emulator — `{ program, TERM }` is all this helper reads. */
-  emulator?: { program: string; TERM: string },
+  emulator?: {
+    program: string
+    TERM: string
+  },
 ): boolean {
   const resolved = emulator ?? createTerminalProfile().emulator
   const term = resolved.TERM

@@ -93,12 +93,12 @@ Each branch below explains when it's the right answer.
 
 Status roles ship a full surface pair plus contrast-picked text-on-fill:
 
-| Status text   | Status fill   | Text on fill        | Use for                    |
-| ------------- | ------------- | ------------------- | -------------------------- |
-| `$fg-error`   | `$bg-error`   | `$fg-on-error`      | danger, validation errors  |
-| `$fg-warning` | `$bg-warning` | `$fg-on-warning`    | caution, deprecations      |
-| `$fg-success` | `$bg-success` | `$fg-on-success`    | completions, confirmations |
-| `$fg-info`    | `$bg-info`    | `$fg-on-info`       | neutral info, tips         |
+| Status text   | Status fill   | Text on fill     | Use for                    |
+| ------------- | ------------- | ---------------- | -------------------------- |
+| `$fg-error`   | `$bg-error`   | `$fg-on-error`   | danger, validation errors  |
+| `$fg-warning` | `$bg-warning` | `$fg-on-warning` | caution, deprecations      |
+| `$fg-success` | `$bg-success` | `$fg-on-success` | completions, confirmations |
+| `$fg-info`    | `$bg-info`    | `$fg-on-info`    | neutral info, tips         |
 
 Plus `bg-X-hover` and `bg-X-active` for interactive surfaces. Note that text on a status role doesn't carry hover variants — `fg-error-hover` would be a category error (text on a status role isn't a link). For interactive text-color hover, use `$fg-accent-hover`.
 
@@ -112,12 +112,12 @@ Plus `bg-X-hover` and `bg-X-active` for interactive surfaces. Note that text on 
 
 ### Root + text hierarchy
 
-| Token                    | Meaning                                                    |
-| ------------------------ | ---------------------------------------------------------- |
-| `$fg`                    | Default body text                                          |
-| `$bg`                    | Default background                                         |
-| `$fg-muted`              | Secondary text (captions, hints, disabled)                 |
-| `$fg-on-inverse`         | Text on `$bg-inverse` (status bars, modal chrome)          |
+| Token            | Meaning                                           |
+| ---------------- | ------------------------------------------------- |
+| `$fg`            | Default body text                                 |
+| `$bg`            | Default background                                |
+| `$fg-muted`      | Secondary text (captions, hints, disabled)        |
+| `$fg-on-inverse` | Text on `$bg-inverse` (status bars, modal chrome) |
 
 Sterling collapses pre-0.20 `$muted` / `$secondary` / `$disabledfg` / `$faint` onto a single role: `$fg-muted`. The `<Small>` typography preset emits a pre-dimmed variant for fine print.
 
@@ -135,45 +135,45 @@ Every "surface" comes as a `bg-X` background paired with `$fg` (text) or `$fg-on
 </Box>
 ```
 
-| Surface                    | Use                                  |
-| -------------------------- | ------------------------------------ |
-| `$bg` / `$fg`              | Default root canvas                  |
-| `$bg-surface-subtle`       | Cards, list rows                     |
-| `$bg-surface-raised`       | Dialogs, modals, raised panels       |
-| `$bg-surface-overlay`      | Tooltips, dropdowns, overlays        |
+| Surface                          | Use                            |
+| -------------------------------- | ------------------------------ |
+| `$bg` / `$fg`                    | Default root canvas            |
+| `$bg-surface-subtle`             | Cards, list rows               |
+| `$bg-surface-raised`             | Dialogs, modals, raised panels |
+| `$bg-surface-overlay`            | Tooltips, dropdowns, overlays  |
 | `$bg-inverse` / `$fg-on-inverse` | Status bars, footers           |
-| `$bg-muted` / `$fg`        | Inline muted chips, code            |
+| `$bg-muted` / `$fg`              | Inline muted chips, code       |
 
 ### Accent (the canonical interactive role)
 
-| Token                | Meaning                                                                                |
-| -------------------- | -------------------------------------------------------------------------------------- |
-| `$fg-accent`         | Brand emphasis text — headings, links, focus indicators, nav highlights                |
-| `$bg-accent`         | Primary action button fill                                                             |
-| `$fg-on-accent`      | Text on `$bg-accent` (contrast-picked)                                                 |
-| `$fg-accent-hover`   | Text-color hover (link hover) — Sterling's only role with `fg.hover` / `fg.active`     |
-| `$bg-accent-hover`   | Surface hover on accent fill                                                           |
-| `$border-accent`     | Accent-emphasized borders (focus rings, etc.)                                          |
+| Token              | Meaning                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| `$fg-accent`       | Brand emphasis text — headings, links, focus indicators, nav highlights            |
+| `$bg-accent`       | Primary action button fill                                                         |
+| `$fg-on-accent`    | Text on `$bg-accent` (contrast-picked)                                             |
+| `$fg-accent-hover` | Text-color hover (link hover) — Sterling's only role with `fg.hover` / `fg.active` |
+| `$bg-accent-hover` | Surface hover on accent fill                                                       |
+| `$border-accent`   | Accent-emphasized borders (focus rings, etc.)                                      |
 
 **`$fg-accent` vs `$brand`?** `$fg-accent` is the _scheme's_ canonical interactive color (derives from `scheme.primary`). `$brand` is the _app's_ identity. Apps that want their brand to dominate pin `$brand`; apps that want to blend in let `$brand` default to `$fg-accent`.
 
 ### Borders + links
 
-| Token              | Meaning                                                                   |
-| ------------------ | ------------------------------------------------------------------------- |
-| `$border-default`  | Default structural border — faint, not prominent (1.5:1 contrast target). |
-| `$border-focus`    | Focused input border (3:1 WCAG 1.4.11).                                   |
-| `$border-muted`    | Faint subdivider for dense layouts                                        |
-| `$fg-link`         | Hyperlink color — distinct from `$fg-accent` (often classic blue)         |
+| Token             | Meaning                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| `$border-default` | Default structural border — faint, not prominent (1.5:1 contrast target). |
+| `$border-focus`   | Focused input border (3:1 WCAG 1.4.11).                                   |
+| `$border-muted`   | Faint subdivider for dense layouts                                        |
+| `$fg-link`        | Hyperlink color — distinct from `$fg-accent` (often classic blue)         |
 
 ### Selection + cursor
 
-| Token             | Meaning                                                                   |
-| ----------------- | ------------------------------------------------------------------------- |
-| `$bg-selected`    | Cursor row, mouse selection, search match highlight                       |
-| `$fg-on-selected` | Text on `$bg-selected` (contrast-picked)                                  |
-| `$bg-cursor`      | Cursor block/line color                                                   |
-| `$fg-cursor`      | Glyph color under the cursor                                              |
+| Token             | Meaning                                             |
+| ----------------- | --------------------------------------------------- |
+| `$bg-selected`    | Cursor row, mouse selection, search match highlight |
+| `$fg-on-selected` | Text on `$bg-selected` (contrast-picked)            |
+| `$bg-cursor`      | Cursor block/line color                             |
+| `$fg-cursor`      | Glyph color under the cursor                        |
 
 ## 5. Raw ANSI palette — `$color0`–`$color15`
 

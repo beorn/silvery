@@ -152,9 +152,7 @@ export default withMermaid(
       nav: [
         {
           text: "Getting Started",
-          items: [
-            { text: "Quick Start", link: "/getting-started/quick-start" },
-          ],
+          items: [{ text: "Quick Start", link: "/getting-started/quick-start" }],
         },
         { text: "The Silvery Way", link: "/guide/the-silvery-way" },
         {
@@ -218,9 +216,7 @@ export default withMermaid(
       sidebar: [
         {
           text: "Getting Started",
-          items: [
-            { text: "Quick Start", link: "/getting-started/quick-start" },
-          ],
+          items: [{ text: "Quick Start", link: "/getting-started/quick-start" }],
         },
         {
           text: "The Silvery Way",

@@ -222,9 +222,7 @@ export interface CreateTerminalProfileOptions {
  * })
  * ```
  */
-export function createTerminalProfile(
-  options: CreateTerminalProfileOptions = {},
-): TerminalProfile {
+export function createTerminalProfile(options: CreateTerminalProfileOptions = {}): TerminalProfile {
   const env = options.env ?? (process.env as Record<string, string | undefined>)
   const stdout: TerminalProfileStdout =
     options.stdout ?? (process.stdout as unknown as TerminalProfileStdout)
@@ -287,8 +285,7 @@ export function createTerminalProfile(
   // their `input` flag (if set); otherwise derive from stdin. Keeping this
   // as a separate overlay avoids confusing the env-probe path.
   const inputResolved =
-    options.caps?.input ??
-    (stdin?.isTTY === true && typeof stdin.setRawMode === "function")
+    options.caps?.input ?? (stdin?.isTTY === true && typeof stdin.setRawMode === "function")
 
   const caps: TerminalCaps = {
     ...baseCaps,
@@ -429,9 +426,7 @@ export async function probeTerminalProfile(
   // Pre-quantize when the tier was forced — same gate run.tsx applied
   // inline. With the gate co-located with the profile factory, entry-point
   // branches collapse to one `await probeTerminalProfile(...)` call.
-  const resolvedTheme = profile.caps.colorForced
-    ? pickColorLevel(theme, profile.colorLevel)
-    : theme
+  const resolvedTheme = profile.caps.colorForced ? pickColorLevel(theme, profile.colorLevel) : theme
 
   // Re-freeze: the sync factory already froze `profile`, but `{ ...profile,
   // theme }` creates a fresh object that's not frozen. The theme-bundled
@@ -505,9 +500,7 @@ export function detectColorFromEnv(
  * env override applies. Used by {@link createTerminalProfile} to enforce that
  * env always beats caller-supplied overrides.
  */
-function envColorTier(
-  env: Record<string, string | undefined>,
-): ColorLevel | undefined {
+function envColorTier(env: Record<string, string | undefined>): ColorLevel | undefined {
   if (env.NO_COLOR !== undefined) return "mono"
   const force = env.FORCE_COLOR
   if (force !== undefined) {

@@ -10,11 +10,11 @@ Single authority for terminal protocol modes, exposed as reactive signals. Owns 
 import type { Signal } from "@silvery/signals"
 
 interface Modes extends Disposable {
-  readonly rawMode:        Signal<boolean>
-  readonly altScreen:      Signal<boolean>
+  readonly rawMode: Signal<boolean>
+  readonly altScreen: Signal<boolean>
   readonly bracketedPaste: Signal<boolean>
-  readonly kittyKeyboard:  Signal<number | false>
-  readonly mouse:          Signal<boolean>
+  readonly kittyKeyboard: Signal<number | false>
+  readonly mouse: Signal<boolean>
   readonly focusReporting: Signal<boolean>
 }
 ```
@@ -40,10 +40,10 @@ term.modes.rawMode(true)
 Same-value writes are no-ops. alien-signals compares the new value against the current value and does not notify dependents when they match, so `modes.altScreen(true)` twice produces one enable sequence, and asking the enabled state after the second call still returns `true`:
 
 ```ts
-modes.altScreen(true)   // emits CSI ? 1049 h
-modes.altScreen(true)   // no-op — alien-signals equality
-modes.altScreen()       // true
-modes.altScreen(false)  // emits CSI ? 1049 l
+modes.altScreen(true) // emits CSI ? 1049 h
+modes.altScreen(true) // no-op — alien-signals equality
+modes.altScreen() // true
+modes.altScreen(false) // emits CSI ? 1049 l
 ```
 
 ## Subscribing

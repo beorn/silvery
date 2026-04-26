@@ -18,10 +18,7 @@
  */
 
 import { describe, expect, test } from "vitest"
-import {
-  createTermless,
-  getActiveTermlessCount,
-} from "../../packages/test/src/index.js"
+import { createTermless, getActiveTermlessCount } from "../../packages/test/src/index.js"
 
 // ============================================================================
 // Dimensions default — 80 × 24

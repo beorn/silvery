@@ -52,13 +52,7 @@ const WAVE_2: ColumnSpec[] = [
 
 function Card({ title }: { title: string }) {
   return (
-    <Box
-      borderStyle="round"
-      flexDirection="column"
-      paddingX={1}
-      minHeight={3}
-      flexShrink={0}
-    >
+    <Box borderStyle="round" flexDirection="column" paddingX={1} minHeight={3} flexShrink={0}>
       <Text>{title}</Text>
     </Box>
   )
@@ -89,12 +83,7 @@ function Board({ columns }: { columns: ColumnSpec[] }) {
   // Mirror km's BoardView chain: outer bg Box → flex row with overflow
   // → column wrappers (flexShrink={0} to pin widths) → Column with bg.
   return (
-    <Box
-      flexDirection="column"
-      width={120}
-      height={20}
-      backgroundColor="#111111"
-    >
+    <Box flexDirection="column" width={120} height={20} backgroundColor="#111111">
       <Box flexDirection="row" flexGrow={1} overflow="hidden">
         {columns.map((col) => (
           <React.Fragment key={col.id}>
@@ -143,9 +132,7 @@ describe("km-silvery.layout-churn-leaks-pixels", () => {
         const a = app.cell(x, y)
         const b = fresh.cell(x, y)
         if (a.char !== b.char) {
-          mismatches.push(
-            `(${x},${y}): incremental='${a.char}' fresh='${b.char}'`,
-          )
+          mismatches.push(`(${x},${y}): incremental='${a.char}' fresh='${b.char}'`)
         }
       }
     }
@@ -175,9 +162,7 @@ describe("km-silvery.layout-churn-leaks-pixels", () => {
         const a = app.cell(x, y)
         const b = fresh.cell(x, y)
         if (a.char !== b.char) {
-          mismatches.push(
-            `(${x},${y}): incremental='${a.char}' fresh='${b.char}'`,
-          )
+          mismatches.push(`(${x},${y}): incremental='${a.char}' fresh='${b.char}'`)
         }
       }
     }

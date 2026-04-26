@@ -153,11 +153,7 @@ describe("overlay-anchor v1: SILVERY_STRICT=2 fixture", () => {
     const root = getRoot(app)
     const anchor = findAnchor(root, "anchor-target")
     expect(anchor).not.toBeNull()
-    const expected = placeFloating(
-      anchor!,
-      { width: 6, height: 3 },
-      "bottom-start",
-    )
+    const expected = placeFloating(anchor!, { width: 6, height: 3 }, "bottom-start")
 
     const decorations = findActiveDecorationRects(root)
     expect(decorations).toHaveLength(1)

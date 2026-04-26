@@ -26,10 +26,10 @@ const [value, setValue] = useState("")
 
 TextArea mirrors the CSS [`field-sizing`](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizing) property. The two modes are:
 
-| Mode                 | Visible row count                                         | Use case                            |
-| -------------------- | --------------------------------------------------------- | ----------------------------------- |
-| `"content"` (default) | `clamp(minRows, wrappedLines, maxRows)`                   | Chat / messaging input — auto-grow  |
-| `"fixed"`            | exactly `rows`                                            | Code editor pane, designed footprint |
+| Mode                  | Visible row count                       | Use case                             |
+| --------------------- | --------------------------------------- | ------------------------------------ |
+| `"content"` (default) | `clamp(minRows, wrappedLines, maxRows)` | Chat / messaging input — auto-grow   |
+| `"fixed"`             | exactly `rows`                          | Code editor pane, designed footprint |
 
 In content mode the widget expands as the user types, capped at `maxRows`. Beyond that the buffer scrolls. Visual line counting respects soft wrap — a long single logical line that wraps to multiple visual rows counts toward `minRows`/`maxRows`.
 
@@ -46,40 +46,40 @@ In content mode the widget expands as the user types, capped at `maxRows`. Beyon
 
 ## Props
 
-| Prop               | Type                                      | Default          | Description                                     |
-| ------------------ | ----------------------------------------- | ---------------- | ----------------------------------------------- |
-| `value`            | `string`                                  | —                | Current value (controlled mode)                 |
-| `defaultValue`     | `string`                                  | `""`             | Initial value (uncontrolled mode)               |
-| `onChange`         | `(value: string) => void`                 | —                | Called when value changes                       |
-| `onSubmit`         | `(value: string) => void`                 | —                | Called on submit key combo                      |
-| `submitKey`        | `"ctrl+enter" \| "enter" \| "meta+enter"` | `"ctrl+enter"`   | Key to trigger submit                           |
-| `placeholder`      | `string`                                  | `""`             | Placeholder text when empty                     |
-| `isActive`         | `boolean`                                 | —                | Override focus system for input capture         |
-| `fieldSizing`      | `"content" \| "fixed"`                    | `"content"`      | CSS field-sizing analog — auto-grow vs fixed    |
-| `rows`             | `number`                                  | `1`              | Visible row count in `"fixed"` mode (mirrors HTML `<textarea rows>`) |
-| `minRows`          | `number`                                  | `1`              | Minimum visible rows in `"content"` mode        |
-| `maxRows`          | `number`                                  | `8`              | Maximum visible rows in `"content"` mode (scrolls beyond) |
-| `cursorStyle`      | `"block" \| "underline"`                  | `"block"`        | Visual cursor style when unfocused              |
-| `scrollMargin`     | `number`                                  | `1`              | Context lines above/below cursor when scrolling |
-| `disabled`         | `boolean`                                 | —                | Ignore input and dim text                       |
-| `maxLength`        | `number`                                  | —                | Maximum characters allowed                      |
-| `borderStyle`      | `string`                                  | —                | Border style (e.g., `"round"`, `"single"`)      |
-| `borderColor`      | `string`                                  | `"$border"`      | Border color when unfocused                     |
-| `focusBorderColor` | `string`                                  | `"$focusborder"` | Border color when focused                       |
-| `testID`           | `string`                                  | —                | Test ID for focus system identification         |
+| Prop               | Type                                      | Default          | Description                                                                |
+| ------------------ | ----------------------------------------- | ---------------- | -------------------------------------------------------------------------- |
+| `value`            | `string`                                  | —                | Current value (controlled mode)                                            |
+| `defaultValue`     | `string`                                  | `""`             | Initial value (uncontrolled mode)                                          |
+| `onChange`         | `(value: string) => void`                 | —                | Called when value changes                                                  |
+| `onSubmit`         | `(value: string) => void`                 | —                | Called on submit key combo                                                 |
+| `submitKey`        | `"ctrl+enter" \| "enter" \| "meta+enter"` | `"ctrl+enter"`   | Key to trigger submit                                                      |
+| `placeholder`      | `string`                                  | `""`             | Placeholder text when empty                                                |
+| `isActive`         | `boolean`                                 | —                | Override focus system for input capture                                    |
+| `fieldSizing`      | `"content" \| "fixed"`                    | `"content"`      | CSS field-sizing analog — auto-grow vs fixed                               |
+| `rows`             | `number`                                  | `1`              | Visible row count in `"fixed"` mode (mirrors HTML `<textarea rows>`)       |
+| `minRows`          | `number`                                  | `1`              | Minimum visible rows in `"content"` mode                                   |
+| `maxRows`          | `number`                                  | `8`              | Maximum visible rows in `"content"` mode (scrolls beyond)                  |
+| `cursorStyle`      | `"block" \| "underline"`                  | `"block"`        | Visual cursor style when unfocused                                         |
+| `scrollMargin`     | `number`                                  | `1`              | Context lines above/below cursor when scrolling                            |
+| `disabled`         | `boolean`                                 | —                | Ignore input and dim text                                                  |
+| `maxLength`        | `number`                                  | —                | Maximum characters allowed                                                 |
+| `borderStyle`      | `string`                                  | —                | Border style (e.g., `"round"`, `"single"`)                                 |
+| `borderColor`      | `string`                                  | `"$border"`      | Border color when unfocused                                                |
+| `focusBorderColor` | `string`                                  | `"$focusborder"` | Border color when focused                                                  |
+| `testID`           | `string`                                  | —                | Test ID for focus system identification                                    |
 | `wrap`             | `"soft" \| "off"`                         | `"soft"`         | Soft-wrap long logical lines (default) or keep them on a single visual row |
-| `color`            | `string`                                  | —                | Foreground color for body text (e.g., `"$fg-muted"`) |
-| `dim`              | `boolean`                                 | `false`          | Shortcut for `color="$fg-muted"` — body text dims to muted |
+| `color`            | `string`                                  | —                | Foreground color for body text (e.g., `"$fg-muted"`)                       |
+| `dim`              | `boolean`                                 | `false`          | Shortcut for `color="$fg-muted"` — body text dims to muted                 |
 
 ### Migrating from `height`
 
 The legacy `height` prop has been removed. Pick the new sizing prop based on the original intent:
 
-| Old usage                              | New usage                                            |
-| -------------------------------------- | ---------------------------------------------------- |
-| `<TextArea height={N} />`              | `<TextArea fieldSizing="fixed" rows={N} />`         |
-| Hand-rolled `height={Math.min(N, lines.length)}` | `<TextArea maxRows={N} />` (default content mode)   |
-| Chat input where `height` tracked content | `<TextArea />` (defaults are chat-input)            |
+| Old usage                                        | New usage                                         |
+| ------------------------------------------------ | ------------------------------------------------- |
+| `<TextArea height={N} />`                        | `<TextArea fieldSizing="fixed" rows={N} />`       |
+| Hand-rolled `height={Math.min(N, lines.length)}` | `<TextArea maxRows={N} />` (default content mode) |
+| Chat input where `height` tracked content        | `<TextArea />` (defaults are chat-input)          |
 
 ### Ref Handle (TextAreaHandle)
 

@@ -43,11 +43,11 @@ If raw mode is already set when the owner is constructed (e.g. a pre-session pro
 
 Issue a terminal query, accumulate response bytes into the shared buffer, run `parse` on each chunk, resolve with the first match.
 
-| Option       | Type                                           | Meaning                                                               |
-| ------------ | ---------------------------------------------- | --------------------------------------------------------------------- |
-| `query`      | `string`                                       | Bytes to write to stdout. `""` for pure-listen probes.                |
-| `parse`      | `(acc: string) => { result; consumed } \| null` | Return `null` until the buffer is parseable.                          |
-| `timeoutMs`  | `number`                                       | Resolves with `null` if no match arrives within this window.          |
+| Option      | Type                                            | Meaning                                                      |
+| ----------- | ----------------------------------------------- | ------------------------------------------------------------ |
+| `query`     | `string`                                        | Bytes to write to stdout. `""` for pure-listen probes.       |
+| `parse`     | `(acc: string) => { result; consumed } \| null` | Return `null` until the buffer is parseable.                 |
+| `timeoutMs` | `number`                                        | Resolves with `null` if no match arrives within this window. |
 
 ### OSC query pattern
 

@@ -114,8 +114,7 @@ export function AIChat({
                 // scrollback. "auto" resolves to "terminal" via cacheBackend
                 // context when the runtime is in inline mode.
                 mode: "auto" as const,
-                isCacheable: (_ex: unknown, index: number) =>
-                  index < state.exchanges.length - 1,
+                isCacheable: (_ex: unknown, index: number) => index < state.exchanges.length - 1,
               }
             : undefined
         }

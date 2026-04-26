@@ -75,13 +75,7 @@ const ROWS = 30
 
 function SkeletonCard({ width }: { width: number }) {
   return (
-    <Box
-      borderStyle="round"
-      flexDirection="column"
-      paddingX={1}
-      minHeight={3}
-      flexShrink={0}
-    >
+    <Box borderStyle="round" flexDirection="column" paddingX={1} minHeight={3} flexShrink={0}>
       <Text>{"░".repeat(width)}</Text>
     </Box>
   )
@@ -89,13 +83,7 @@ function SkeletonCard({ width }: { width: number }) {
 
 function Card({ title }: { title: string }) {
   return (
-    <Box
-      borderStyle="round"
-      flexDirection="column"
-      paddingX={1}
-      minHeight={3}
-      flexShrink={0}
-    >
+    <Box borderStyle="round" flexDirection="column" paddingX={1} minHeight={3} flexShrink={0}>
       <Text>· {title}</Text>
     </Box>
   )
@@ -143,12 +131,7 @@ function Board({ columns }: { columns: ColumnSpec[] }) {
   // fit exactly 4 columns; 5+ overflow horizontally.
   const hasOverflow = columns.length > 4
   return (
-    <Box
-      flexDirection="column"
-      width={COLS}
-      height={ROWS}
-      backgroundColor="#111111"
-    >
+    <Box flexDirection="column" width={COLS} height={ROWS} backgroundColor="#111111">
       <Text>BOARD</Text>
       <Box flexDirection="row" flexGrow={1} overflow="hidden">
         {columns.map((col) => (
@@ -292,7 +275,9 @@ describe("km-silvery.layout-churn-leaks-pixels — staged hydration", () => {
       const belowHasV = /│/.test(below)
       const hereLooksLikeBorder = /───────/.test(here) && !/│/.test(here)
       if (aboveHasV && belowHasV && hereLooksLikeBorder) {
-        stale.push(`row ${y}: dash sandwich between vertical-edge rows: '${here.trim().slice(0, 80)}'`)
+        stale.push(
+          `row ${y}: dash sandwich between vertical-edge rows: '${here.trim().slice(0, 80)}'`,
+        )
       }
     }
     expect(stale, `mid-card separator dashes:\n  ${stale.join("\n  ")}`).toEqual([])

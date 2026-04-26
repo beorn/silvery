@@ -252,10 +252,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
         consecSameRef.current += 1
         consecOppRef.current = 0
       } else {
-        if (
-          consecSameRef.current >= SUSTAINED_SCROLL_THRESHOLD &&
-          consecOppRef.current === 0
-        ) {
+        if (consecSameRef.current >= SUSTAINED_SCROLL_THRESHOLD && consecOppRef.current === 0) {
           consecOppRef.current = 1
           return
         }

@@ -270,9 +270,7 @@ function main(): void {
   // scripts/lint-env-reads.ts → <repo>/scripts/<file>
   const repoRoot = resolve(import.meta.dirname, "..")
 
-  const files: string[] = opts.paths
-    ? opts.paths.map((p) => resolve(repoRoot, p))
-    : walk(repoRoot)
+  const files: string[] = opts.paths ? opts.paths.map((p) => resolve(repoRoot, p)) : walk(repoRoot)
 
   const violations: Violation[] = []
   for (const f of files) {

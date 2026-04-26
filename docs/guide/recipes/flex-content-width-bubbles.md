@@ -11,12 +11,7 @@ The first instinct is to put every bubble in a full-width row, give the bubble `
 ```tsx
 // ❌ Does NOT shrink to content. Bubble stays at `maxWidth`.
 <Box flexDirection="row" justifyContent={isUser ? "flex-end" : "flex-start"}>
-  <Box
-    flexShrink={1}
-    maxWidth={60}
-    borderStyle="round"
-    padding={1}
-  >
+  <Box flexShrink={1} maxWidth={60} borderStyle="round" padding={1}>
     <Text>{message}</Text>
   </Box>
 </Box>
@@ -32,11 +27,7 @@ Make the bubble a **column** (not a row child) with `alignItems` controlling the
 
 ```tsx
 // ✅ Bubble hugs its content; the column anchors it to the correct side.
-<Box
-  flexDirection="column"
-  alignItems={isUser ? "flex-end" : "flex-start"}
-  maxWidth={60}
->
+<Box flexDirection="column" alignItems={isUser ? "flex-end" : "flex-start"} maxWidth={60}>
   <Box borderStyle="round" padding={1} backgroundColor={isUser ? "$primaryBg" : "$surfaceBg"}>
     <Text wrap="wrap">{message}</Text>
   </Box>

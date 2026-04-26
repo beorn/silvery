@@ -15,10 +15,7 @@
 import EventEmitter from "node:events"
 import { describe, test, expect } from "vitest"
 import { effect } from "@silvery/signals"
-import {
-  createSize,
-  createFixedSize,
-} from "../../packages/ag-term/src/runtime/devices/size"
+import { createSize, createFixedSize } from "../../packages/ag-term/src/runtime/devices/size"
 
 // ============================================================================
 // Helpers

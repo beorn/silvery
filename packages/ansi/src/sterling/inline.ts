@@ -52,15 +52,18 @@ function schemeFromTheme(theme: Theme): ColorScheme {
   const legacy = theme as unknown as Record<string, string | undefined>
   const primary = legacy["primary"]
   const accent = legacy["accent"]
-  const errorHex = (typeof legacy["error"] === "string" ? legacy["error"] : theme.error?.fg) ?? "#000000"
+  const errorHex =
+    (typeof legacy["error"] === "string" ? legacy["error"] : theme.error?.fg) ?? "#000000"
   const successHex =
     (typeof legacy["success"] === "string" ? legacy["success"] : theme.success?.fg) ?? "#000000"
   const warningHex =
     (typeof legacy["warning"] === "string" ? legacy["warning"] : theme.warning?.fg) ?? "#000000"
-  const infoHex = (typeof legacy["info"] === "string" ? legacy["info"] : theme.info?.fg) ?? "#000000"
+  const infoHex =
+    (typeof legacy["info"] === "string" ? legacy["info"] : theme.info?.fg) ?? "#000000"
   const accentHex = accent ?? theme.accent?.fg ?? primary ?? "#000000"
   const primaryHex = primary ?? theme.accent?.fg ?? "#000000"
-  const mutedHex = (typeof legacy["muted"] === "string" ? legacy["muted"] : theme.muted?.fg) ?? "#888888"
+  const mutedHex =
+    (typeof legacy["muted"] === "string" ? legacy["muted"] : theme.muted?.fg) ?? "#888888"
   const cursorBg = legacy["cursorbg"] ?? theme.cursor?.bg ?? theme.bg
   const cursorFg = legacy["cursor"] ?? theme.cursor?.fg ?? theme.fg
   // Selection comes from Sterling's nested `selected` role only (legacy

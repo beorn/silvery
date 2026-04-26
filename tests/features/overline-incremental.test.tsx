@@ -95,9 +95,7 @@ function ScaleFixture({ rows, selectedId }: { rows: Row[]; selectedId: number })
           key={row.id}
           id={`row-${row.id}`}
           overline={row.id === selectedId || row.emphasis === "overline" || row.emphasis === "both"}
-          underline={
-            row.emphasis === "underline" || row.emphasis === "both" ? "single" : false
-          }
+          underline={row.emphasis === "underline" || row.emphasis === "both" ? "single" : false}
         >
           <Text>
             {String(row.id).padStart(2, "0")} {row.label}
@@ -282,9 +280,7 @@ describe("feature: overscroll indicator shape — height=1 overline Box over scr
           <Text>row 0</Text>
           <Text>row 1</Text>
           <Text>row 2</Text>
-          {showTop && (
-            <Box position="absolute" top={0} left={0} right={0} height={1} overline />
-          )}
+          {showTop && <Box position="absolute" top={0} left={0} right={0} height={1} overline />}
         </Box>
       )
     }

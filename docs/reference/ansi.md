@@ -83,37 +83,37 @@ Profiles are two-layer: `profile.emulator` carries identity (program/version/TER
 
 `profile.emulator` (`TerminalEmulator`):
 
-| Property  | Type     | Description                                        |
-| --------- | -------- | -------------------------------------------------- |
-| `program` | `string` | Terminal program name (from `TERM_PROGRAM`)        |
+| Property  | Type     | Description                                            |
+| --------- | -------- | ------------------------------------------------------ |
+| `program` | `string` | Terminal program name (from `TERM_PROGRAM`)            |
 | `version` | `string` | Terminal program version (from `TERM_PROGRAM_VERSION`) |
-| `TERM`    | `string` | Value of the `TERM` env var                        |
+| `TERM`    | `string` | Value of the `TERM` env var                            |
 
 `profile.caps` (`TerminalCaps`):
 
-| Property              | Type                       | Description                                    |
-| --------------------- | -------------------------- | ---------------------------------------------- |
-| `cursor`              | `boolean`                  | Cursor control (TTY stdout + `TERM != dumb`)   |
-| `input`               | `boolean`                  | Raw keystroke input (TTY stdin + `setRawMode`) |
-| `colorLevel`           | `ColorLevel`                | `"mono"` / `"ansi16"` / `"256"` / `"truecolor"` |
-| `colorForced`         | `boolean`                  | Env or override forced the tier                |
-| `colorProvenance`     | `ColorProvenance`          | Which rung resolved the tier                   |
-| `kittyKeyboard`       | `boolean`                  | Kitty keyboard protocol                        |
-| `kittyGraphics`       | `boolean`                  | Kitty graphics protocol (inline images)        |
-| `sixel`               | `boolean`                  | Sixel graphics                                 |
-| `osc52`               | `boolean`                  | OSC 52 clipboard access                        |
-| `hyperlinks`          | `boolean`                  | OSC 8 hyperlinks                               |
-| `notifications`       | `boolean`                  | OSC 9/99 notifications                         |
-| `bracketedPaste`      | `boolean`                  | Bracketed paste mode                           |
-| `mouse`               | `boolean`                  | SGR mouse tracking                             |
-| `syncOutput`          | `boolean`                  | Synchronized output (DEC 2026)                 |
-| `unicode`             | `boolean`                  | Unicode/emoji support                          |
-| `underlineStyles`     | `readonly UnderlineStyle[]`| Supported SGR 4:x styles (empty = SGR 4 only)  |
-| `underlineColor`      | `boolean`                  | SGR 58 underline color                         |
-| `textSizing`          | `boolean`                  | OSC 66 text sizing (Kitty 0.40+)               |
-| `maybeDarkBackground` | `boolean`                  | Guess: dark background likely (env sniff)       |
-| `maybeNerdFont`       | `boolean`                  | Guess: Nerd Font likely installed              |
-| `maybeWideEmojis`     | `boolean`                  | Guess: text-presentation emoji render at 2 cells |
+| Property              | Type                        | Description                                      |
+| --------------------- | --------------------------- | ------------------------------------------------ |
+| `cursor`              | `boolean`                   | Cursor control (TTY stdout + `TERM != dumb`)     |
+| `input`               | `boolean`                   | Raw keystroke input (TTY stdin + `setRawMode`)   |
+| `colorLevel`          | `ColorLevel`                | `"mono"` / `"ansi16"` / `"256"` / `"truecolor"`  |
+| `colorForced`         | `boolean`                   | Env or override forced the tier                  |
+| `colorProvenance`     | `ColorProvenance`           | Which rung resolved the tier                     |
+| `kittyKeyboard`       | `boolean`                   | Kitty keyboard protocol                          |
+| `kittyGraphics`       | `boolean`                   | Kitty graphics protocol (inline images)          |
+| `sixel`               | `boolean`                   | Sixel graphics                                   |
+| `osc52`               | `boolean`                   | OSC 52 clipboard access                          |
+| `hyperlinks`          | `boolean`                   | OSC 8 hyperlinks                                 |
+| `notifications`       | `boolean`                   | OSC 9/99 notifications                           |
+| `bracketedPaste`      | `boolean`                   | Bracketed paste mode                             |
+| `mouse`               | `boolean`                   | SGR mouse tracking                               |
+| `syncOutput`          | `boolean`                   | Synchronized output (DEC 2026)                   |
+| `unicode`             | `boolean`                   | Unicode/emoji support                            |
+| `underlineStyles`     | `readonly UnderlineStyle[]` | Supported SGR 4:x styles (empty = SGR 4 only)    |
+| `underlineColor`      | `boolean`                   | SGR 58 underline color                           |
+| `textSizing`          | `boolean`                   | OSC 66 text sizing (Kitty 0.40+)                 |
+| `maybeDarkBackground` | `boolean`                   | Guess: dark background likely (env sniff)        |
+| `maybeNerdFont`       | `boolean`                   | Guess: Nerd Font likely installed                |
+| `maybeWideEmojis`     | `boolean`                   | Guess: text-presentation emoji render at 2 cells |
 
 `maybe*` fields are heuristic guesses based on env-var sniffing — not protocol-verified facts. The prefix makes the uncertainty visible inline.
 

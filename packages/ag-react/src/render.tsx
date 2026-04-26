@@ -53,11 +53,7 @@ import {
   disableMouse,
   resetWindowTitle,
 } from "@silvery/ag-term/output"
-import {
-  parseMouseSequence,
-  isMouseSequence,
-  type ParsedMouse,
-} from "@silvery/ag-term/mouse"
+import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/ag-term/mouse"
 import {
   createMouseEventProcessor,
   processMouseEvent,

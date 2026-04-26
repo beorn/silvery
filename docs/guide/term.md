@@ -29,14 +29,14 @@ Sub-owners fix the class of bug, not the symptom. Each one owns exactly one reso
 
 Each sub-owner is a field on `Term`. They are constructed lazily (cheap — no syscalls, no ANSI until you write a signal or call a setter), share the Term's dispose lifetime, and expose their state as alien-signals (callable getters — `modes.altScreen()`, `size.cols()`, `output.active()`, `console.capturing()`) plus imperative mutators where applicable. `Symbol.dispose` restores everything the owner activated.
 
-| Sub-owner         | Owns                                                          | Reference                     |
-| ----------------- | ------------------------------------------------------------- | ----------------------------- |
-| `term.input`      | stdin raw mode, the single `data` listener, probe responses   | [term.input](/api/term-input) |
-| `term.output`     | stdout, stderr, and `console.*` during the alt-screen session | [term.output](/api/term-output) |
-| `term.modes`      | Raw mode, alt screen, bracketed paste, Kitty, mouse, focus    | [term.modes](/api/term-modes) |
-| `term.size`       | Terminal cols/rows — live, reactive, coalesced on resize      | [term.size](/api/term-size)   |
-| `term.signals`    | `SIGINT`/`SIGTERM`/`SIGTSTP`/`exit` handler scope             | [term.signals](/api/term-signals) |
-| `term.console`    | `console.log/info/warn/error/debug` capture + replay          | [term.console](/api/term-console) |
+| Sub-owner      | Owns                                                          | Reference                         |
+| -------------- | ------------------------------------------------------------- | --------------------------------- |
+| `term.input`   | stdin raw mode, the single `data` listener, probe responses   | [term.input](/api/term-input)     |
+| `term.output`  | stdout, stderr, and `console.*` during the alt-screen session | [term.output](/api/term-output)   |
+| `term.modes`   | Raw mode, alt screen, bracketed paste, Kitty, mouse, focus    | [term.modes](/api/term-modes)     |
+| `term.size`    | Terminal cols/rows — live, reactive, coalesced on resize      | [term.size](/api/term-size)       |
+| `term.signals` | `SIGINT`/`SIGTERM`/`SIGTSTP`/`exit` handler scope             | [term.signals](/api/term-signals) |
+| `term.console` | `console.log/info/warn/error/debug` capture + replay          | [term.console](/api/term-console) |
 
 `term.input`, `term.output`, and `term.console` are `undefined` on Terms that don't own a real terminal (headless test terms, emulator-backed terms). The others are always present.
 

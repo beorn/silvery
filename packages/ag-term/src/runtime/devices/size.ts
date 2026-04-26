@@ -95,10 +95,7 @@ export interface CreateSizeOptions {
  * coalesce timer. Subsequent reads still work — the last known cols/rows
  * remain in the signal.
  */
-export function createSize(
-  stdout: NodeJS.WriteStream,
-  options: CreateSizeOptions = {},
-): Size {
+export function createSize(stdout: NodeJS.WriteStream, options: CreateSizeOptions = {}): Size {
   const coalesceMs = options.coalesceMs ?? RESIZE_COALESCE_MS
   // When callers override dims explicitly (tests, headless-emulator setup),
   // their values are authoritative — we don't sync from stdout on install.

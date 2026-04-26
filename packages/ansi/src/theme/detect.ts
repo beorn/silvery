@@ -211,10 +211,7 @@ const RGB_BODY_RE = /rgb:([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,
  * first matching response in the buffer and the byte count to consume
  * (the end of that response, so leading garbage is cleared as well).
  */
-function parseOscColor(
-  acc: string,
-  oscCode: number,
-): { result: string; consumed: number } | null {
+function parseOscColor(acc: string, oscCode: number): { result: string; consumed: number } | null {
   const prefix = `${ESC}]${oscCode};`
   const prefixIdx = acc.indexOf(prefix)
   if (prefixIdx === -1) return null

@@ -51,11 +51,7 @@ describe("ListView flex-mode scrollbar", () => {
     const app = render(
       <Box width={COLS} height={ROWS} flexDirection="column">
         <Box flexGrow={1} flexShrink={1} minHeight={0}>
-          <ListView
-            items={items}
-            nav
-            renderItem={(item) => <Text>{item}</Text>}
-          />
+          <ListView items={items} nav renderItem={(item) => <Text>{item}</Text>} />
         </Box>
       </Box>,
     )
@@ -79,11 +75,7 @@ describe("ListView flex-mode scrollbar", () => {
       return (
         <Box width={COLS} height={ROWS} flexDirection="column">
           <Box flexGrow={1} flexShrink={1} minHeight={0}>
-            <ListView
-              items={items}
-              nav
-              renderItem={(item) => <Text>{item}</Text>}
-            />
+            <ListView items={items} nav renderItem={(item) => <Text>{item}</Text>} />
           </Box>
         </Box>
       )

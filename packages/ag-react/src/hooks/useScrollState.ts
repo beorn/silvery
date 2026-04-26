@@ -43,10 +43,7 @@
 
 import { useLayoutEffect, useReducer, useRef } from "react"
 import { effect } from "@silvery/signals"
-import {
-  getLayoutSignals,
-  type ScrollStateSnapshot,
-} from "@silvery/ag/layout-signals"
+import { getLayoutSignals, type ScrollStateSnapshot } from "@silvery/ag/layout-signals"
 import type { AgNode } from "@silvery/ag/types"
 
 export type { ScrollStateSnapshot } from "@silvery/ag/layout-signals"
@@ -58,9 +55,7 @@ type ScrollStateCallback = (state: ScrollStateSnapshot | null) => void
  * state changes. Returns `null` before the first layout pass, for non-scroll
  * containers, or when `node` is `null`/`undefined`.
  */
-export function useScrollState(
-  node: AgNode | null | undefined,
-): ScrollStateSnapshot | null
+export function useScrollState(node: AgNode | null | undefined): ScrollStateSnapshot | null
 
 /**
  * Callback: invoked after layout syncs signals, never triggers a React
@@ -68,10 +63,7 @@ export function useScrollState(
  * reactive form to coordinate window math; components wanting to observe
  * scroll position for side-effects should use callback form).
  */
-export function useScrollState(
-  node: AgNode | null | undefined,
-  callback: ScrollStateCallback,
-): void
+export function useScrollState(node: AgNode | null | undefined, callback: ScrollStateCallback): void
 
 export function useScrollState(
   node: AgNode | null | undefined,

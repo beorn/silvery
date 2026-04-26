@@ -31,10 +31,7 @@ import React from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
-import {
-  findActiveDecorationRects,
-  getLayoutSignals,
-} from "@silvery/ag/layout-signals"
+import { findActiveDecorationRects, getLayoutSignals } from "@silvery/ag/layout-signals"
 import type { AgNode, BoxProps, Decoration } from "@silvery/ag/types"
 
 function getRoot(app: ReturnType<ReturnType<typeof createRenderer>>): AgNode {

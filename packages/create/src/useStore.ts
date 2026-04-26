@@ -16,11 +16,7 @@
 import { useCallback, useSyncExternalStore } from "react"
 import type { DefinedPlugin, OpOf, PluginOps } from "./definePlugin.ts"
 
-export interface PluginHandle<
-  Name extends string,
-  State,
-  Ops extends PluginOps<State>,
-> {
+export interface PluginHandle<Name extends string, State, Ops extends PluginOps<State>> {
   readonly state: State
   readonly dispatch: (op: OpOf<Name, Ops>) => void
 }
@@ -30,11 +26,9 @@ export interface PluginHandle<
  * dispatch }` — enough to render + dispatch from the same hook. No
  * per-plugin bridge file required.
  */
-export function useStore<
-  Name extends string,
-  State,
-  Ops extends PluginOps<State>,
->(plugin: DefinedPlugin<Name, State, Ops>): PluginHandle<Name, State, Ops> {
+export function useStore<Name extends string, State, Ops extends PluginOps<State>>(
+  plugin: DefinedPlugin<Name, State, Ops>,
+): PluginHandle<Name, State, Ops> {
   const subscribe = useCallback((listener: () => void) => plugin.subscribe(listener), [plugin])
   const state = useSyncExternalStore(subscribe, plugin.getState, plugin.getState)
   return { state, dispatch: plugin.dispatch.bind(plugin) }

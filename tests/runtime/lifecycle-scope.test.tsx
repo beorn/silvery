@@ -28,11 +28,7 @@ import { describe, expect, test } from "vitest"
 import { createTermless } from "@silvery/test"
 import { Box, Text } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
-import {
-  type Scope,
-  setDisposeErrorSink,
-  type DisposeErrorContext,
-} from "@silvery/scope"
+import { type Scope, setDisposeErrorSink, type DisposeErrorContext } from "@silvery/scope"
 import { useScope, useAppScope, useScopeEffect } from "@silvery/ag-react/hooks"
 
 const settle = (ms = 50) => new Promise((r) => setTimeout(r, ms))

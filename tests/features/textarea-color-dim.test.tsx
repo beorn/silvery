@@ -22,7 +22,13 @@ describe("TextArea color/dim props", () => {
     function App() {
       return (
         <Box>
-          <TextArea defaultValue="hello" fieldSizing="fixed" rows={3} color="$fg-muted" isActive={false} />
+          <TextArea
+            defaultValue="hello"
+            fieldSizing="fixed"
+            rows={3}
+            color="$fg-muted"
+            isActive={false}
+          />
         </Box>
       )
     }
@@ -73,7 +79,13 @@ describe("TextArea color/dim props", () => {
     function MutedExplicit() {
       return (
         <Box>
-          <TextArea defaultValue="hello" fieldSizing="fixed" rows={3} color="$fg-muted" isActive={false} />
+          <TextArea
+            defaultValue="hello"
+            fieldSizing="fixed"
+            rows={3}
+            color="$fg-muted"
+            isActive={false}
+          />
         </Box>
       )
     }

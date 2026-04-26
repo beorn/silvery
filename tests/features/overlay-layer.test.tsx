@@ -217,14 +217,10 @@ describe("OverlayLayer property: cross-check holds across random fixtures", () =
             id="dynamic"
             focused={fixture.hasFocus}
             cursorOffset={
-              fixture.hasCursor
-                ? { col: fixture.cursorCol, row: 0, visible: true }
-                : undefined
+              fixture.hasCursor ? { col: fixture.cursorCol, row: 0, visible: true } : undefined
             }
             selectionIntent={
-              fixture.hasSelection
-                ? { from: fixture.selFrom, to: fixture.selTo }
-                : undefined
+              fixture.hasSelection ? { from: fixture.selFrom, to: fixture.selTo } : undefined
             }
             decorations={decorations}
             width={10}

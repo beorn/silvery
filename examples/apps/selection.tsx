@@ -150,7 +150,7 @@ function ItemRow({
         <Text
           bold={isCursor}
           color={isCursor ? "$fg-accent" : isSelected ? "$fg-accent" : "$text"}
-          color={(!isSelected && !isCursor) ? "$muted" : undefined}
+          color={!isSelected && !isCursor ? "$muted" : undefined}
         >
           {item.label}
         </Text>

@@ -197,7 +197,7 @@ function KeysTab({ kittySupported }: { kittySupported: boolean }) {
         ) : (
           <Box flexDirection="column" overflow="scroll" scrollTo={events.length - 1}>
             {events.map((e, i) => (
-              <Text key={e.index} color={(i < events.length - 1) ? "$muted" : undefined}>
+              <Text key={e.index} color={i < events.length - 1 ? "$muted" : undefined}>
                 <Text color="$fg-muted">#{String(e.index).padStart(3)}</Text>{" "}
                 {formatKeyEventSummary(e)}
               </Text>
@@ -459,7 +459,7 @@ function MouseTab() {
         ) : (
           <Box flexDirection="column" overflow="scroll" scrollTo={events.length - 1}>
             {events.map((e, i) => (
-              <Text key={e.index} color={(i < events.length - 1) ? "$muted" : undefined}>
+              <Text key={e.index} color={i < events.length - 1 ? "$muted" : undefined}>
                 <Small>{e.timestamp}</Small>{" "}
                 <Text color={e.action.startsWith("scroll") ? "$fg-accent" : "$fg-accent"} bold>
                   {e.action}
@@ -583,7 +583,7 @@ function ClipboardTab() {
           <H2>History</H2>
           <Box flexDirection="column" overflow="scroll" scrollTo={history.length - 1}>
             {history.map((h, i) => (
-              <Text key={i} color={(i < history.length - 1) ? "$muted" : undefined}>
+              <Text key={i} color={i < history.length - 1 ? "$muted" : undefined}>
                 <Small>{h.time}</Small>{" "}
                 <Text
                   color={
@@ -687,7 +687,7 @@ function FocusTab() {
         ) : (
           <Box flexDirection="column" overflow="scroll" scrollTo={events.length - 1}>
             {events.map((e, i) => (
-              <Text key={e.index} color={(i < events.length - 1) ? "$muted" : undefined}>
+              <Text key={e.index} color={i < events.length - 1 ? "$muted" : undefined}>
                 <Small>{e.timestamp}</Small>{" "}
                 <Text color={e.focused ? "$fg-success" : "$fg-error"} bold>
                   {e.focused ? "focus-in " : "focus-out"}

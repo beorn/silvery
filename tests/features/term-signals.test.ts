@@ -103,9 +103,15 @@ describe("createSignals — signal delivery", () => {
     const signals = createSignals({ process: proc })
 
     const calls: string[] = []
-    signals.on("SIGINT", () => { calls.push("a") })
-    signals.on("SIGINT", () => { calls.push("b") })
-    signals.on("SIGTERM", () => { calls.push("t") })
+    signals.on("SIGINT", () => {
+      calls.push("a")
+    })
+    signals.on("SIGINT", () => {
+      calls.push("b")
+    })
+    signals.on("SIGTERM", () => {
+      calls.push("t")
+    })
 
     proc.emitSignal("SIGINT")
     expect(calls).toEqual(["a", "b"])
@@ -152,9 +158,27 @@ describe("createSignals — dispose order", () => {
     const signals = createSignals({ process: proc })
 
     const calls: string[] = []
-    signals.on("SIGINT", () => { calls.push("mid") }, { priority: 10 })
-    signals.on("SIGINT", () => { calls.push("late") }, { priority: 20 })
-    signals.on("SIGINT", () => { calls.push("early") }, { priority: 0 })
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("mid")
+      },
+      { priority: 10 },
+    )
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("late")
+      },
+      { priority: 20 },
+    )
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("early")
+      },
+      { priority: 0 },
+    )
 
     signals.dispose()
     expect(calls).toEqual(["early", "mid", "late"])
@@ -165,15 +189,33 @@ describe("createSignals — dispose order", () => {
     const signals = createSignals({ process: proc })
 
     const calls: string[] = []
-    signals.on("SIGINT", () => { calls.push("flush-logs") }, {
-      name: "flush-logs",
-      after: ["close-db"], // must run AFTER close-db
-    })
-    signals.on("SIGTERM", () => { calls.push("close-db") }, { name: "close-db" })
-    signals.on("exit", () => { calls.push("restore-terminal") }, {
-      name: "restore-terminal",
-      after: ["flush-logs"], // must run AFTER flush-logs
-    })
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("flush-logs")
+      },
+      {
+        name: "flush-logs",
+        after: ["close-db"], // must run AFTER close-db
+      },
+    )
+    signals.on(
+      "SIGTERM",
+      () => {
+        calls.push("close-db")
+      },
+      { name: "close-db" },
+    )
+    signals.on(
+      "exit",
+      () => {
+        calls.push("restore-terminal")
+      },
+      {
+        name: "restore-terminal",
+        after: ["flush-logs"], // must run AFTER flush-logs
+      },
+    )
 
     signals.dispose()
     expect(calls).toEqual(["close-db", "flush-logs", "restore-terminal"])
@@ -185,9 +227,27 @@ describe("createSignals — dispose order", () => {
 
     const calls: string[] = []
     // A before B
-    signals.on("SIGINT", () => { calls.push("A") }, { name: "A", before: ["B"] })
-    signals.on("SIGINT", () => { calls.push("B") }, { name: "B" })
-    signals.on("SIGINT", () => { calls.push("C") }, { name: "C", after: ["B"] })
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("A")
+      },
+      { name: "A", before: ["B"] },
+    )
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("B")
+      },
+      { name: "B" },
+    )
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("C")
+      },
+      { name: "C", after: ["B"] },
+    )
 
     signals.dispose()
     expect(calls).toEqual(["A", "B", "C"])
@@ -198,16 +258,28 @@ describe("createSignals — dispose order", () => {
     const signals = createSignals({ process: proc })
 
     const calls: string[] = []
-    signals.on("SIGINT", () => { calls.push("X") }, {
-      name: "X",
-      before: ["Y"],
-      priority: 5,
-    })
-    signals.on("SIGINT", () => { calls.push("Y") }, {
-      name: "Y",
-      before: ["X"], // cycle
-      priority: 10,
-    })
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("X")
+      },
+      {
+        name: "X",
+        before: ["Y"],
+        priority: 5,
+      },
+    )
+    signals.on(
+      "SIGINT",
+      () => {
+        calls.push("Y")
+      },
+      {
+        name: "Y",
+        before: ["X"], // cycle
+        priority: 10,
+      },
+    )
 
     // Must not throw — dispose in the face of a dev bug still tears down.
     expect(() => signals.dispose()).not.toThrow()
@@ -225,11 +297,15 @@ describe("createSignals — error isolation", () => {
     })
 
     const calls: string[] = []
-    signals.on("SIGINT", () => { calls.push("a") })
+    signals.on("SIGINT", () => {
+      calls.push("a")
+    })
     signals.on("SIGINT", () => {
       throw new Error("boom")
     })
-    signals.on("SIGINT", () => { calls.push("c") })
+    signals.on("SIGINT", () => {
+      calls.push("c")
+    })
 
     signals.dispose()
     expect(calls).toEqual(["a", "c"])
@@ -328,7 +404,9 @@ describe("createSignals — Symbol.dispose", () => {
     const calls: string[] = []
     {
       using signals = createSignals({ process: proc })
-      signals.on("SIGINT", () => { calls.push("cleanup") })
+      signals.on("SIGINT", () => {
+        calls.push("cleanup")
+      })
       expect(calls).toEqual([])
     } // <- Symbol.dispose fires here
 
@@ -430,7 +508,9 @@ describe("createTerm exposes signals on the Term interface", () => {
     expect(term.signals.isDisposed).toBe(false)
 
     const calls: string[] = []
-    term.signals.on("SIGINT", () => { calls.push("hit") })
+    term.signals.on("SIGINT", () => {
+      calls.push("hit")
+    })
     expect(term.signals.size).toBe(1)
 
     term[Symbol.dispose]()
@@ -441,9 +521,12 @@ describe("createTerm exposes signals on the Term interface", () => {
   it("emulator-backed Term: term.signals is wired and disposed with the term", async () => {
     // Dynamic import so the test degrades gracefully when @silvery/test isn't
     // available (same pattern as term-paint.test.ts).
-    const testModule = await import("@silvery/test").catch(() => null as unknown as {
-      createTermless?: (opts: { cols: number; rows: number }) => Term
-    } | null)
+    const testModule = await import("@silvery/test").catch(
+      () =>
+        null as unknown as {
+          createTermless?: (opts: { cols: number; rows: number }) => Term
+        } | null,
+    )
     if (!testModule?.createTermless) return
     const term = testModule.createTermless({ cols: 40, rows: 10 })
 
@@ -451,7 +534,9 @@ describe("createTerm exposes signals on the Term interface", () => {
     expect(term.signals.isDisposed).toBe(false)
 
     const calls: string[] = []
-    term.signals.on("SIGINT", () => { calls.push("emu") })
+    term.signals.on("SIGINT", () => {
+      calls.push("emu")
+    })
     expect(term.signals.size).toBe(1)
 
     term[Symbol.dispose]()

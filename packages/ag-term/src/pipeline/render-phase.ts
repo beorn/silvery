@@ -621,8 +621,7 @@ function renderNodeToBuffer(
       isDirty(node.dirtyBits, node.dirtyEpoch, STYLE_PROPS_BIT) &&
       (mayHaveBoxAttrOverlay(props as BoxProps) || node.hadBoxAttrOverlay)
     ) {
-      const contentRegionCleared =
-        (hasPrevBuffer || ancestorCleared) && !getEffectiveBg(props)
+      const contentRegionCleared = (hasPrevBuffer || ancestorCleared) && !getEffectiveBg(props)
       const childrenNeedFreshRender = hasPrevBuffer || ancestorCleared
       cascade = {
         ...cascade,
@@ -1166,18 +1165,14 @@ function mayHaveBoxAttrOverlay(props: BoxProps): boolean {
  *
  * Returns null when no overlay attrs are present (fast path — most Boxes).
  */
-function computeBoxAttrOverlay(
-  props: BoxProps,
-): {
+function computeBoxAttrOverlay(props: BoxProps): {
   attrs: import("../buffer").CellAttrs
   underlineColor: Color | undefined
 } | null {
   // Resolve underline: accept `underline: boolean | UnderlineStyleName` and
   // the legacy `underlineStyle: UnderlineStyle`. `underlineStyle` wins when
   // both are set (matches getTextStyle() precedence).
-  let underlineStyle:
-    | Exclude<import("@silvery/ag/types").UnderlineStyle, false>
-    | undefined
+  let underlineStyle: Exclude<import("@silvery/ag/types").UnderlineStyle, false> | undefined
   if (props.underlineStyle !== undefined && props.underlineStyle !== false) {
     underlineStyle = props.underlineStyle
   } else if (typeof props.underline === "string") {

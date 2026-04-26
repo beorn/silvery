@@ -43,11 +43,11 @@ import {
 
 ## Body Text
 
-| Component | Default Style                     | Use For                         |
-| --------- | --------------------------------- | ------------------------------- |
-| `<P>`     | plain text                        | Body text (semantic wrapper)    |
-| `<Lead>`  | `$fg-muted` + italic              | Introductory/lead text          |
-| `<Muted>` | `$fg-muted`                       | Secondary/supporting text       |
+| Component | Default Style                         | Use For                         |
+| --------- | ------------------------------------- | ------------------------------- |
+| `<P>`     | plain text                            | Body text (semantic wrapper)    |
+| `<Lead>`  | `$fg-muted` + italic                  | Introductory/lead text          |
+| `<Muted>` | `$fg-muted`                           | Secondary/supporting text       |
 | `<Small>` | `$fg-muted` (pre-dimmed at truecolor) | Fine print, captions, footnotes |
 
 ```tsx
@@ -72,11 +72,11 @@ import {
 
 ## Code & Keys
 
-| Component     | Default Style                | Use For                 |
-| ------------- | ---------------------------- | ----------------------- |
-| `<Code>`      | `$bg-muted` background       | Inline code             |
-| `<Kbd>`       | `$bg-muted` + bold           | Keyboard shortcut badge |
-| `<CodeBlock>` | `$border-default` left border | Multi-line code block  |
+| Component     | Default Style                 | Use For                 |
+| ------------- | ----------------------------- | ----------------------- |
+| `<Code>`      | `$bg-muted` background        | Inline code             |
+| `<Kbd>`       | `$bg-muted` + bold            | Keyboard shortcut badge |
+| `<CodeBlock>` | `$border-default` left border | Multi-line code block   |
 
 ```tsx
 <Code>npm install silvery</Code>      // inline code
@@ -86,10 +86,10 @@ import {
 
 ## Block Elements
 
-| Component      | Default Style                  | Use For         |
-| -------------- | ------------------------------ | --------------- |
-| `<Blockquote>` | `$fg-muted` border + italic    | Quotations      |
-| `<HR>`         | `$border-default` dashes        | Horizontal rule |
+| Component      | Default Style               | Use For         |
+| -------------- | --------------------------- | --------------- |
+| `<Blockquote>` | `$fg-muted` border + italic | Quotations      |
+| `<HR>`         | `$border-default` dashes    | Horizontal rule |
 
 ```tsx
 <Blockquote>Less is more.</Blockquote>
@@ -143,4 +143,3 @@ The `color` prop overrides the default semantic color, useful for panel differen
 <H1 color="$success">Success Panel</H1>
 <H1 color="$warning">Warning Panel</H1>
 ```
-

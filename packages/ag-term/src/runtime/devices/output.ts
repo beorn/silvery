@@ -78,10 +78,7 @@ export interface OutputOptions {
  * private router — the behaviour is identical, but Console's tap cannot
  * share the patch site.
  */
-export function createOutput(
-  defaultOptions?: OutputOptions,
-  router?: ConsoleRouter,
-): Output {
+export function createOutput(defaultOptions?: OutputOptions, router?: ConsoleRouter): Output {
   let disposed = false
   // Reactive `active` — internal writes from activate/deactivate only.
   // Exposed read-only via the `active` ReadSignal on the public Output shape.
@@ -197,8 +194,7 @@ export function createOutput(
       })
       // Tap: every call gets appended to stderrBuffer + counted.
       const unregisterBufferTap = _router.registerTap((call) => {
-        const str =
-          call.args.map((a) => (typeof a === "string" ? a : String(a))).join(" ") + "\n"
+        const str = call.args.map((a) => (typeof a === "string" ? a : String(a))).join(" ") + "\n"
         redirectedCount++
         stderrBuffer.push(str)
       })
@@ -244,7 +240,9 @@ export function createOutput(
     // that ran AFTER the alt-screen restored. Suppressed when there's
     // nothing to replay (no header on a clean run).
     if (origStderrWrite && stderrBuffer.length > 0) {
-      origStderrWrite(`\n— silvery: replaying ${stderrBuffer.length} captured stderr/console line(s) —\n`)
+      origStderrWrite(
+        `\n— silvery: replaying ${stderrBuffer.length} captured stderr/console line(s) —\n`,
+      )
       for (const line of stderrBuffer) {
         origStderrWrite(line)
       }

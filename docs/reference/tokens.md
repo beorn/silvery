@@ -47,20 +47,20 @@ Not every family supports every channel — the asymmetry is intentional and
 type-enforced. Status roles do not support `fg.hover` / `fg.active` because
 text on a status (e.g. `fg-error`) is a label, not an interactive link.
 
-| Family | fg | bg | fgOn | border | hover.fg | hover.bg | active.fg | active.bg |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| accent | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| info / success / warning / error (status) | ✓ | ✓ | ✓ | – | – | ✓ | – | ✓ |
-| muted | ✓ | ✓ | – | – | – | – | – | – |
-| surface | – | ✓ | – | – | – | ✓ | – | – |
-| border | – | – | – | ✓ | – | – | – | – |
-| cursor | ✓ | ✓ | – | – | – | – | – | – |
-| selected | – | ✓ | ✓ | – | – | ✓ | – | – |
-| inverse | – | ✓ | ✓ | – | – | – | – | – |
-| link | ✓ | – | – | – | – | – | – | – |
-| disabled | ✓ | ✓ | – | ✓ | – | – | – | – |
-| backdrop | – | ✓ | – | – | – | – | – | – |
-| default | ✓ | ✓ | – | – | – | – | – | – |
+| Family                                    | fg  | bg  | fgOn | border | hover.fg | hover.bg | active.fg | active.bg |
+| ----------------------------------------- | :-: | :-: | :--: | :----: | :------: | :------: | :-------: | :-------: |
+| accent                                    |  ✓  |  ✓  |  ✓   |   ✓    |    ✓     |    ✓     |     ✓     |     ✓     |
+| info / success / warning / error (status) |  ✓  |  ✓  |  ✓   |   –    |    –     |    ✓     |     –     |     ✓     |
+| muted                                     |  ✓  |  ✓  |  –   |   –    |    –     |    –     |     –     |     –     |
+| surface                                   |  –  |  ✓  |  –   |   –    |    –     |    ✓     |     –     |     –     |
+| border                                    |  –  |  –  |  –   |   ✓    |    –     |    –     |     –     |     –     |
+| cursor                                    |  ✓  |  ✓  |  –   |   –    |    –     |    –     |     –     |     –     |
+| selected                                  |  –  |  ✓  |  ✓   |   –    |    –     |    ✓     |     –     |     –     |
+| inverse                                   |  –  |  ✓  |  ✓   |   –    |    –     |    –     |     –     |     –     |
+| link                                      |  ✓  |  –  |  –   |   –    |    –     |    –     |     –     |     –     |
+| disabled                                  |  ✓  |  ✓  |  –   |   ✓    |    –     |    –     |     –     |     –     |
+| backdrop                                  |  –  |  ✓  |  –   |   –    |    –     |    –     |     –     |     –     |
+| default                                   |  ✓  |  ✓  |  –   |   –    |    –     |    –     |     –     |     –     |
 
 ## Asymmetric Surprise principle
 
@@ -76,131 +76,130 @@ for the full rule.
 
 ### Default (canvas)
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-default` | `#ECEFF4` | 10.84:1 | AA 4.5:1 | Unstyled body text — explicit alias for `theme.fg`. | = scheme.foreground; lifted to AA against bg. | Stable across all tiers. |
-| `bg-default` | `#2E3440` | 1.00:1 | — | Unstyled canvas — explicit alias for `theme.bg`. | = scheme.background, verbatim. | Stable across all tiers. |
+| Token        | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                             | Derivation                                    | Tier notes               |
+| ------------ | ---------- | --------------- | -------- | --------------------------------------------------- | --------------------------------------------- | ------------------------ |
+| `fg-default` | `#ECEFF4`  | 10.84:1         | AA 4.5:1 | Unstyled body text — explicit alias for `theme.fg`. | = scheme.foreground; lifted to AA against bg. | Stable across all tiers. |
+| `bg-default` | `#2E3440`  | 1.00:1          | —        | Unstyled canvas — explicit alias for `theme.bg`.    | = scheme.background, verbatim.                | Stable across all tiers. |
 
 ### Surface
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `bg-surface-default` | `#2E3440` | 1.00:1 | — | The canvas — body bg of every screen. Same value as `bg-default`. | = scheme.background, verbatim. | Stable across all tiers (truecolor → ansi16 → mono). |
-| `bg-surface-subtle` | `#363C48` | 1.13:1 | — | Subtle elevation tier — sidebars, secondary regions. | blend(bg, fg, 0.05); auto-lifted to keep fg AA-readable. | Often collapses to surface.default in ANSI16 — renderer compensates with non-color cues. |
-| `bg-surface-raised` | `#3B414D` | 1.22:1 | — | Raised elevation — cards, panels above the canvas. | blend(bg, fg, 0.08); auto-lifted to keep fg AA-readable. | May collapse to subtle in low-tier modes. |
-| `bg-surface-overlay` | `#424853` | 1.36:1 | — | Overlay surface — popovers, tooltips, menus (NOT modal backdrop). | blend(bg, fg, 0.12); auto-lifted to keep fg AA-readable. | Distinct from `bg-backdrop` (the modal scrim). |
-| `bg-surface-hover` | `#3E4450` | 1.28:1 | — | Hover wash for surfaces (default-row hover, etc.). | blend(bg, fg, 0.10); auto-lifted to keep fg AA-readable. | Renderer may fall back to inverse cue in ansi16. |
+| Token                | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                                           | Derivation                                               | Tier notes                                                                               |
+| -------------------- | ---------- | --------------- | -------- | ----------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `bg-surface-default` | `#2E3440`  | 1.00:1          | —        | The canvas — body bg of every screen. Same value as `bg-default`. | = scheme.background, verbatim.                           | Stable across all tiers (truecolor → ansi16 → mono).                                     |
+| `bg-surface-subtle`  | `#363C48`  | 1.13:1          | —        | Subtle elevation tier — sidebars, secondary regions.              | blend(bg, fg, 0.05); auto-lifted to keep fg AA-readable. | Often collapses to surface.default in ANSI16 — renderer compensates with non-color cues. |
+| `bg-surface-raised`  | `#3B414D`  | 1.22:1          | —        | Raised elevation — cards, panels above the canvas.                | blend(bg, fg, 0.08); auto-lifted to keep fg AA-readable. | May collapse to subtle in low-tier modes.                                                |
+| `bg-surface-overlay` | `#424853`  | 1.36:1          | —        | Overlay surface — popovers, tooltips, menus (NOT modal backdrop). | blend(bg, fg, 0.12); auto-lifted to keep fg AA-readable. | Distinct from `bg-backdrop` (the modal scrim).                                           |
+| `bg-surface-hover`   | `#3E4450`  | 1.28:1          | —        | Hover wash for surfaces (default-row hover, etc.).                | blend(bg, fg, 0.10); auto-lifted to keep fg AA-readable. | Renderer may fall back to inverse cue in ansi16.                                         |
 
 ### Border
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `border-default` | `#767D88` | 3.01:1 | AA-Large 3:1 | Default rule line, card borders, separators. | blend(bg, fg, 0.18); auto-lifted to ≥3:1 vs bg. | May collapse with border-focus in ansi16; renderer can use bold/double-line. |
-| `border-focus` | `#8AAFDD` | 5.51:1 | AA 4.5:1 | Focus ring color (active input, focused button). | = accent.bg, ensure-AA against bg. | Distinct from border-default in ≥80/84 palettes at ansi16. |
-| `border-muted` | `#484F5B` | 1.51:1 | FAINT 1.5:1 | Faint structural divider — backgrounded sections, less emphasis. | blend(bg, fg, 0.10); lifted to ≥1.5:1. | Faintest border tier; intentionally low contrast. |
+| Token            | Hex (Nord) | Ratio vs canvas | Contract     | Purpose                                                          | Derivation                                      | Tier notes                                                                   |
+| ---------------- | ---------- | --------------- | ------------ | ---------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------- |
+| `border-default` | `#767D88`  | 3.01:1          | AA-Large 3:1 | Default rule line, card borders, separators.                     | blend(bg, fg, 0.18); auto-lifted to ≥3:1 vs bg. | May collapse with border-focus in ansi16; renderer can use bold/double-line. |
+| `border-focus`   | `#8AAFDD`  | 5.51:1          | AA 4.5:1     | Focus ring color (active input, focused button).                 | = accent.bg, ensure-AA against bg.              | Distinct from border-default in ≥80/84 palettes at ansi16.                   |
+| `border-muted`   | `#484F5B`  | 1.51:1          | FAINT 1.5:1  | Faint structural divider — backgrounded sections, less emphasis. | blend(bg, fg, 0.10); lifted to ≥1.5:1.          | Faintest border tier; intentionally low contrast.                            |
 
 ### Muted
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-muted` | `#9A9FA7` | 4.69:1 | AA-Large 3:1 | Deemphasized text — captions, secondary metadata. | blend(fg, bg, 0.4); ≥3:1 against bg-muted. | Stable in ansi16 (uses bright-black slot). |
-| `bg-muted` | `#3B414D` | 1.22:1 | — | Code blocks, kbd chips, deemphasized fills. | blend(bg, fg, 0.08). | May collapse with surface-subtle in ansi16. |
+| Token      | Hex (Nord) | Ratio vs canvas | Contract     | Purpose                                           | Derivation                                 | Tier notes                                  |
+| ---------- | ---------- | --------------- | ------------ | ------------------------------------------------- | ------------------------------------------ | ------------------------------------------- |
+| `fg-muted` | `#9A9FA7`  | 4.69:1          | AA-Large 3:1 | Deemphasized text — captions, secondary metadata. | blend(fg, bg, 0.4); ≥3:1 against bg-muted. | Stable in ansi16 (uses bright-black slot).  |
+| `bg-muted` | `#3B414D`  | 1.22:1          | —            | Code blocks, kbd chips, deemphasized fills.       | blend(bg, fg, 0.08).                       | May collapse with surface-subtle in ansi16. |
 
 ### Accent (link-like, full state matrix)
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-accent` | `#8AAFDD` | 5.51:1 | AA 4.5:1 | Brand-derived accent text (selected items, primary indicators). | = scheme.primary; lifted to AA against bg. | Maps to scheme.brightBlue / scheme.blue in ansi16. |
-| `bg-accent` | `#8AAFDD` | 5.51:1 | — | Accent fill — primary buttons, selected surface. | = scheme.primary, ensure-AA-readable for fgOn. | Renderer keeps a coloured cell at every tier. |
-| `fg-on-accent` | `#2E3440` | 1.00:1 | AA 4.5:1 | Foreground when drawing text ON `bg-accent` (button labels). | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg-accent. | Pre-quantization pick; rare ansi16 misses caught by collision test. |
-| `fg-accent-hover` | `#7EA2D0` | 4.74:1 | AA 4.5:1 | Hover text color for link-like accent elements. | OKLCH ±0.04L on accent.fg (sign tracks scheme dark/light). | Often collapses to fg-accent in ansi16. |
-| `bg-accent-hover` | `#7EA2D0` | 4.74:1 | — | Hover fill for accent surfaces. | OKLCH ±0.04L on accent.bg. | Often collapses to bg-accent in ansi16. |
-| `fg-accent-active` | `#7A9ECB` | 4.51:1 | AA 4.5:1 | Pressed/active text color for accent elements. | OKLCH ±0.08L on accent.fg. | Collapses to fg-accent in low tiers. |
-| `bg-accent-active` | `#7296C3` | 4.08:1 | — | Pressed/active fill for accent surfaces. | OKLCH ±0.08L on accent.bg. | Collapses to bg-accent in low tiers. |
-| `border-accent` | `#8AAFDD` | 5.51:1 | AA 4.5:1 | Accent-tinted border (focus rings, primary cards). | = accent.bg, ensure-AA against bg. | Same value as border-focus. |
+| Token              | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                                         | Derivation                                                                | Tier notes                                                          |
+| ------------------ | ---------- | --------------- | -------- | --------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `fg-accent`        | `#8AAFDD`  | 5.51:1          | AA 4.5:1 | Brand-derived accent text (selected items, primary indicators). | = scheme.primary; lifted to AA against bg.                                | Maps to scheme.brightBlue / scheme.blue in ansi16.                  |
+| `bg-accent`        | `#8AAFDD`  | 5.51:1          | —        | Accent fill — primary buttons, selected surface.                | = scheme.primary, ensure-AA-readable for fgOn.                            | Renderer keeps a coloured cell at every tier.                       |
+| `fg-on-accent`     | `#2E3440`  | 1.00:1          | AA 4.5:1 | Foreground when drawing text ON `bg-accent` (button labels).    | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg-accent. | Pre-quantization pick; rare ansi16 misses caught by collision test. |
+| `fg-accent-hover`  | `#7EA2D0`  | 4.74:1          | AA 4.5:1 | Hover text color for link-like accent elements.                 | OKLCH ±0.04L on accent.fg (sign tracks scheme dark/light).                | Often collapses to fg-accent in ansi16.                             |
+| `bg-accent-hover`  | `#7EA2D0`  | 4.74:1          | —        | Hover fill for accent surfaces.                                 | OKLCH ±0.04L on accent.bg.                                                | Often collapses to bg-accent in ansi16.                             |
+| `fg-accent-active` | `#7A9ECB`  | 4.51:1          | AA 4.5:1 | Pressed/active text color for accent elements.                  | OKLCH ±0.08L on accent.fg.                                                | Collapses to fg-accent in low tiers.                                |
+| `bg-accent-active` | `#7296C3`  | 4.08:1          | —        | Pressed/active fill for accent surfaces.                        | OKLCH ±0.08L on accent.bg.                                                | Collapses to bg-accent in low tiers.                                |
+| `border-accent`    | `#8AAFDD`  | 5.51:1          | AA 4.5:1 | Accent-tinted border (focus rings, primary cards).              | = accent.bg, ensure-AA against bg.                                        | Same value as border-focus.                                         |
 
 ### Info (status)
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-info` | `#8AAFDD` | 5.51:1 | AA 4.5:1 | Info status text. | scheme.primary (info mirrors accent's seed). | Seeds from the matching ANSI palette slot. |
-| `bg-info` | `#8AAFDD` | 5.51:1 | — | Info fill — alerts, badges. | scheme.primary (info mirrors accent's seed). | Distinct from siblings in ALL 84 palettes (collision test). |
-| `fg-on-info` | `#2E3440` | 1.00:1 | AA 4.5:1 | Foreground when drawing text ON `bg-info`. | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg. | Pre-quantization pick. |
-| `bg-info-hover` | `#7EA2D0` | 4.74:1 | — | Hover fill for info surfaces. | OKLCH ±0.04L on bg-info. | Often collapses with bg in ansi16. |
-| `bg-info-active` | `#7296C3` | 4.08:1 | — | Pressed/active fill for info surfaces. | OKLCH ±0.08L on bg-info. | Collapses to bg in low tiers. |
+| Token            | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                    | Derivation                                                         | Tier notes                                                  |
+| ---------------- | ---------- | --------------- | -------- | ------------------------------------------ | ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `fg-info`        | `#8AAFDD`  | 5.51:1          | AA 4.5:1 | Info status text.                          | scheme.primary (info mirrors accent's seed).                       | Seeds from the matching ANSI palette slot.                  |
+| `bg-info`        | `#8AAFDD`  | 5.51:1          | —        | Info fill — alerts, badges.                | scheme.primary (info mirrors accent's seed).                       | Distinct from siblings in ALL 84 palettes (collision test). |
+| `fg-on-info`     | `#2E3440`  | 1.00:1          | AA 4.5:1 | Foreground when drawing text ON `bg-info`. | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg. | Pre-quantization pick.                                      |
+| `bg-info-hover`  | `#7EA2D0`  | 4.74:1          | —        | Hover fill for info surfaces.              | OKLCH ±0.04L on bg-info.                                           | Often collapses with bg in ansi16.                          |
+| `bg-info-active` | `#7296C3`  | 4.08:1          | —        | Pressed/active fill for info surfaces.     | OKLCH ±0.08L on bg-info.                                           | Collapses to bg in low tiers.                               |
 
 ### Success (status)
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-success` | `#A3BE8C` | 6.13:1 | AA 4.5:1 | Success status text. | scheme.green. | Seeds from the matching ANSI palette slot. |
-| `bg-success` | `#A3BE8C` | 6.13:1 | — | Success fill — alerts, badges. | scheme.green. | Distinct from siblings in ALL 84 palettes (collision test). |
-| `fg-on-success` | `#2E3440` | 1.00:1 | AA 4.5:1 | Foreground when drawing text ON `bg-success`. | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg. | Pre-quantization pick. |
-| `bg-success-hover` | `#97B180` | 5.30:1 | — | Hover fill for success surfaces. | OKLCH ±0.04L on bg-success. | Often collapses with bg in ansi16. |
-| `bg-success-active` | `#8BA574` | 4.60:1 | — | Pressed/active fill for success surfaces. | OKLCH ±0.08L on bg-success. | Collapses to bg in low tiers. |
+| Token               | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                       | Derivation                                                         | Tier notes                                                  |
+| ------------------- | ---------- | --------------- | -------- | --------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `fg-success`        | `#A3BE8C`  | 6.13:1          | AA 4.5:1 | Success status text.                          | scheme.green.                                                      | Seeds from the matching ANSI palette slot.                  |
+| `bg-success`        | `#A3BE8C`  | 6.13:1          | —        | Success fill — alerts, badges.                | scheme.green.                                                      | Distinct from siblings in ALL 84 palettes (collision test). |
+| `fg-on-success`     | `#2E3440`  | 1.00:1          | AA 4.5:1 | Foreground when drawing text ON `bg-success`. | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg. | Pre-quantization pick.                                      |
+| `bg-success-hover`  | `#97B180`  | 5.30:1          | —        | Hover fill for success surfaces.              | OKLCH ±0.04L on bg-success.                                        | Often collapses with bg in ansi16.                          |
+| `bg-success-active` | `#8BA574`  | 4.60:1          | —        | Pressed/active fill for success surfaces.     | OKLCH ±0.08L on bg-success.                                        | Collapses to bg in low tiers.                               |
 
 ### Warning (status)
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-warning` | `#EBCB8B` | 8.00:1 | AA 4.5:1 | Warning status text. | scheme.yellow. | Seeds from the matching ANSI palette slot. |
-| `bg-warning` | `#EBCB8B` | 8.00:1 | — | Warning fill — alerts, badges. | scheme.yellow. | Distinct from siblings in ALL 84 palettes (collision test). |
-| `fg-on-warning` | `#2E3440` | 1.00:1 | AA 4.5:1 | Foreground when drawing text ON `bg-warning`. | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg. | Pre-quantization pick. |
-| `bg-warning-hover` | `#D7B878` | 6.55:1 | — | Hover fill for warning surfaces. | OKLCH ±0.04L on bg-warning. | Often collapses with bg in ansi16. |
-| `bg-warning-active` | `#CAAB6C` | 5.68:1 | — | Pressed/active fill for warning surfaces. | OKLCH ±0.08L on bg-warning. | Collapses to bg in low tiers. |
+| Token               | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                       | Derivation                                                         | Tier notes                                                  |
+| ------------------- | ---------- | --------------- | -------- | --------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `fg-warning`        | `#EBCB8B`  | 8.00:1          | AA 4.5:1 | Warning status text.                          | scheme.yellow.                                                     | Seeds from the matching ANSI palette slot.                  |
+| `bg-warning`        | `#EBCB8B`  | 8.00:1          | —        | Warning fill — alerts, badges.                | scheme.yellow.                                                     | Distinct from siblings in ALL 84 palettes (collision test). |
+| `fg-on-warning`     | `#2E3440`  | 1.00:1          | AA 4.5:1 | Foreground when drawing text ON `bg-warning`. | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg. | Pre-quantization pick.                                      |
+| `bg-warning-hover`  | `#D7B878`  | 6.55:1          | —        | Hover fill for warning surfaces.              | OKLCH ±0.04L on bg-warning.                                        | Often collapses with bg in ansi16.                          |
+| `bg-warning-active` | `#CAAB6C`  | 5.68:1          | —        | Pressed/active fill for warning surfaces.     | OKLCH ±0.08L on bg-warning.                                        | Collapses to bg in low tiers.                               |
 
 ### Error (status)
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-error` | `#E17F87` | 4.51:1 | AA 4.5:1 | Error status text. | scheme.red. | Seeds from the matching ANSI palette slot. |
-| `bg-error` | `#BF616A` | 3.05:1 | — | Error fill — alerts, badges. | scheme.red. | Distinct from siblings in ALL 84 palettes (collision test). |
-| `fg-on-error` | `#000000` | 1.68:1 | AA 4.5:1 | Foreground when drawing text ON `bg-error`. | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg. | Pre-quantization pick. |
-| `bg-error-hover` | `#B2555F` | 2.59:1 | — | Hover fill for error surfaces. | OKLCH ±0.04L on bg-error. | Often collapses with bg in ansi16. |
-| `bg-error-active` | `#A44953` | 2.17:1 | — | Pressed/active fill for error surfaces. | OKLCH ±0.08L on bg-error. | Collapses to bg in low tiers. |
+| Token             | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                     | Derivation                                                         | Tier notes                                                  |
+| ----------------- | ---------- | --------------- | -------- | ------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `fg-error`        | `#E17F87`  | 4.51:1          | AA 4.5:1 | Error status text.                          | scheme.red.                                                        | Seeds from the matching ANSI palette slot.                  |
+| `bg-error`        | `#BF616A`  | 3.05:1          | —        | Error fill — alerts, badges.                | scheme.red.                                                        | Distinct from siblings in ALL 84 palettes (collision test). |
+| `fg-on-error`     | `#000000`  | 1.68:1          | AA 4.5:1 | Foreground when drawing text ON `bg-error`. | contrast-pick(scheme.fg / scheme.bg / black / white) for AA on bg. | Pre-quantization pick.                                      |
+| `bg-error-hover`  | `#B2555F`  | 2.59:1          | —        | Hover fill for error surfaces.              | OKLCH ±0.04L on bg-error.                                          | Often collapses with bg in ansi16.                          |
+| `bg-error-active` | `#A44953`  | 2.17:1          | —        | Pressed/active fill for error surfaces.     | OKLCH ±0.08L on bg-error.                                          | Collapses to bg in low tiers.                               |
 
 ### Selected
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `bg-selected` | `#4C566A` | 1.69:1 | — | Cursor row / mouse-selection / search-match highlight surface. | = scheme.selectionBackground; ΔL-repaired to ≥0.08 vs bg. | ΔL-repaired so the selection bar stays visible after quantization. |
-| `fg-on-selected` | `#ECEFF4` | 10.84:1 | AA 4.5:1 | Text drawn on the selection bar. | = scheme.selectionForeground; lifted to AA on bg-selected. | Pre-quantization pick. |
-| `bg-selected-hover` | `#5D677C` | 2.20:1 | — | Hover variant of the selection bar (SelectList row hover). | OKLCH +0.04L on bg-selected. | Often collapses to bg-selected in ansi16. |
+| Token               | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                                        | Derivation                                                 | Tier notes                                                         |
+| ------------------- | ---------- | --------------- | -------- | -------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| `bg-selected`       | `#4C566A`  | 1.69:1          | —        | Cursor row / mouse-selection / search-match highlight surface. | = scheme.selectionBackground; ΔL-repaired to ≥0.08 vs bg.  | ΔL-repaired so the selection bar stays visible after quantization. |
+| `fg-on-selected`    | `#ECEFF4`  | 10.84:1         | AA 4.5:1 | Text drawn on the selection bar.                               | = scheme.selectionForeground; lifted to AA on bg-selected. | Pre-quantization pick.                                             |
+| `bg-selected-hover` | `#5D677C`  | 2.20:1          | —        | Hover variant of the selection bar (SelectList row hover).     | OKLCH +0.04L on bg-selected.                               | Often collapses to bg-selected in ansi16.                          |
 
 ### Inverse
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `bg-inverse` | `#D7DAE0` | 8.92:1 | — | Inverse-band surface — status bar, modal chrome. | blend(bg, fg, 0.85) (heavily fg-tinted bg). | Stable; high-contrast band. |
-| `fg-on-inverse` | `#2E3440` | 1.00:1 | AA 4.5:1 | Text on the inverse band. | contrast-pick for AA on bg-inverse. | Pre-quantization pick. |
+| Token           | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                          | Derivation                                  | Tier notes                  |
+| --------------- | ---------- | --------------- | -------- | ------------------------------------------------ | ------------------------------------------- | --------------------------- |
+| `bg-inverse`    | `#D7DAE0`  | 8.92:1          | —        | Inverse-band surface — status bar, modal chrome. | blend(bg, fg, 0.85) (heavily fg-tinted bg). | Stable; high-contrast band. |
+| `fg-on-inverse` | `#2E3440`  | 1.00:1          | AA 4.5:1 | Text on the inverse band.                        | contrast-pick for AA on bg-inverse.         | Pre-quantization pick.      |
 
 ### Link
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-link` | `#8AAFDD` | 5.51:1 | AA 4.5:1 | Hyperlink text color (distinct from accent). | = scheme.brightBlue (dark mode) / scheme.blue (light); ensure-AA on bg. | Apps that want link === accent can pin `link.fg` to `$fg-accent`. |
+| Token     | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                      | Derivation                                                              | Tier notes                                                        |
+| --------- | ---------- | --------------- | -------- | -------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `fg-link` | `#8AAFDD`  | 5.51:1          | AA 4.5:1 | Hyperlink text color (distinct from accent). | = scheme.brightBlue (dark mode) / scheme.blue (light); ensure-AA on bg. | Apps that want link === accent can pin `link.fg` to `$fg-accent`. |
 
 ### Cursor
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-cursor` | `#2E3440` | 1.00:1 | AA 4.5:1 | Text color drawn ON cursor.bg (the cursor cell text). | = scheme.cursorText, lifted to AA against (repaired) cursor.bg. | Tier-stable — cursor visibility cares about ΔE not L. |
-| `bg-cursor` | `#ECEFF4` | 10.84:1 | — | Cursor cell background — the blink target. | = scheme.cursorColor, repaired to ΔE ≥ 0.15 vs bg-surface-default. | ΔE-repaired so it stays visible after quantization. |
+| Token       | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                               | Derivation                                                         | Tier notes                                            |
+| ----------- | ---------- | --------------- | -------- | ----------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------- |
+| `fg-cursor` | `#2E3440`  | 1.00:1          | AA 4.5:1 | Text color drawn ON cursor.bg (the cursor cell text). | = scheme.cursorText, lifted to AA against (repaired) cursor.bg.    | Tier-stable — cursor visibility cares about ΔE not L. |
+| `bg-cursor` | `#ECEFF4`  | 10.84:1         | —        | Cursor cell background — the blink target.            | = scheme.cursorColor, repaired to ΔE ≥ 0.15 vs bg-surface-default. | ΔE-repaired so it stays visible after quantization.   |
 
 ### Disabled (neutral)
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `fg-disabled` | `#777D88` | 3.02:1 | AA-Large 3:1 | Text on disabled controls — read-only inputs, inactive items. | composite(fg @ 0.38, bg-surface-default); clamped to ≥3:1. | Neutral hue (sourced from fg, not status); rarely collapses. |
-| `bg-disabled` | `#363C48` | 1.13:1 | — | Disabled control surface — disabled buttons, inactive chips. | composite(border-default @ 0.12, bg-surface-default). | Faint surface; renderer may fall back to italic on text. |
-| `border-disabled` | `#3E4550` | 1.29:1 | FAINT 1.5:1 | Disabled control border — read-only input frames. | composite(border-default @ 0.24, bg-surface-default). | Sits between border-muted and border-default; subtle. |
+| Token             | Hex (Nord) | Ratio vs canvas | Contract     | Purpose                                                       | Derivation                                                 | Tier notes                                                   |
+| ----------------- | ---------- | --------------- | ------------ | ------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------ |
+| `fg-disabled`     | `#777D88`  | 3.02:1          | AA-Large 3:1 | Text on disabled controls — read-only inputs, inactive items. | composite(fg @ 0.38, bg-surface-default); clamped to ≥3:1. | Neutral hue (sourced from fg, not status); rarely collapses. |
+| `bg-disabled`     | `#363C48`  | 1.13:1          | —            | Disabled control surface — disabled buttons, inactive chips.  | composite(border-default @ 0.12, bg-surface-default).      | Faint surface; renderer may fall back to italic on text.     |
+| `border-disabled` | `#3E4550`  | 1.29:1          | FAINT 1.5:1  | Disabled control border — read-only input frames.             | composite(border-default @ 0.24, bg-surface-default).      | Sits between border-muted and border-default; subtle.        |
 
 ### Backdrop (modal scrim)
 
-| Token | Hex (Nord) | Ratio vs canvas | Contract | Purpose | Derivation | Tier notes |
-|---|---|---|---|---|---|---|
-| `bg-backdrop` | `#12151B` | 1.46:1 | — | Modal/dialog scrim — the dimming layer drawn BEHIND a modal. | composite(black @ 0.40, bg-default); baked solid for TUI. | May collapse to bg-default on pure-black themes; renderer adds dim/border fallback. |
-
+| Token         | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                                      | Derivation                                                | Tier notes                                                                          |
+| ------------- | ---------- | --------------- | -------- | ------------------------------------------------------------ | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `bg-backdrop` | `#12151B`  | 1.46:1          | —        | Modal/dialog scrim — the dimming layer drawn BEHIND a modal. | composite(black @ 0.40, bg-default); baked solid for TUI. | May collapse to bg-default on pure-black themes; renderer adds dim/border fallback. |
 
 ## See also
 

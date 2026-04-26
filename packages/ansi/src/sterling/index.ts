@@ -53,11 +53,7 @@ export { deriveTheme, deriveRoles, mergePartial } from "./derive.ts"
 export { inlineSterlingTokens } from "./inline.ts"
 export type { InlinedTheme } from "./inline.ts"
 export { STERLING_FLAT_TOKENS } from "./flat-tokens.ts"
-export {
-  PUBLIC_TOKENS,
-  FAMILY_ORDER,
-  groupTokensByFamily,
-} from "./token-manifest.ts"
+export { PUBLIC_TOKENS, FAMILY_ORDER, groupTokensByFamily } from "./token-manifest.ts"
 export type { TokenManifestEntry } from "./token-manifest.ts"
 export { defaultScheme } from "./defaults.ts"
 export { WCAG_AA, autoLift, checkAA, ContrastError, type ContrastViolation } from "./contrast.ts"

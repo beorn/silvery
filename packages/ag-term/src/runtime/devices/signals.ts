@@ -45,7 +45,12 @@
  */
 
 /** Process signal / lifecycle event the owner understands. */
-export type SignalName = NodeJS.Signals | "exit" | "beforeExit" | "uncaughtException" | "unhandledRejection"
+export type SignalName =
+  | NodeJS.Signals
+  | "exit"
+  | "beforeExit"
+  | "uncaughtException"
+  | "unhandledRejection"
 
 /** Options per registration. */
 export interface SignalOnOptions {
@@ -116,7 +121,11 @@ export interface Signals extends Disposable {
    * `process.on(signal, …)` listener; subsequent registrations reuse it.
    * `dispose()` removes the shared listener.
    */
-  on(signal: SignalName, handler: () => void | Promise<void>, opts?: SignalOnOptions): SignalUnregister
+  on(
+    signal: SignalName,
+    handler: () => void | Promise<void>,
+    opts?: SignalOnOptions,
+  ): SignalUnregister
 
   /**
    * Synchronous teardown. Runs every registered handler (with `onDispose:

@@ -17,9 +17,7 @@ import { TextArea } from "silvery"
 function App() {
   const [value, setValue] = useState("")
 
-  return (
-    <TextArea value={value} onChange={setValue} placeholder="Type your message..." />
-  )
+  return <TextArea value={value} onChange={setValue} placeholder="Type your message..." />
 }
 ```
 

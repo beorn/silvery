@@ -25,10 +25,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import { run } from "../../packages/ag-term/src/runtime/run"
 import { Box, Text } from "../../src/index.js"
-import {
-  checkClickCount,
-  createClickCountState,
-} from "../../packages/ag-term/src/mouse-events"
+import { checkClickCount, createClickCountState } from "../../packages/ag-term/src/mouse-events"
 
 const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms))
 

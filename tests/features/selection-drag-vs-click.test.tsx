@@ -146,12 +146,7 @@ describe("Bug 1 — drag-select shrinks on reverse direction", () => {
       "row-3 delta content line",
     ]
     const handle = await run(
-      <ListView
-        nav
-        height={6}
-        items={items}
-        renderItem={(item) => <Text>{item}</Text>}
-      />,
+      <ListView nav height={6} items={items} renderItem={(item) => <Text>{item}</Text>} />,
       term,
       { selection: true, mouse: true } as any,
     )

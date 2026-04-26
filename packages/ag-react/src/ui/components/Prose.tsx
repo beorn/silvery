@@ -88,13 +88,5 @@ export const Prose = forwardRef(function Prose(
 ): JSX.Element {
   // flexDirection / flexShrink / minWidth are spread first so caller props
   // can override (e.g. row layout, no-shrink for fixed-width prose blocks).
-  return (
-    <Box
-      flexDirection="column"
-      flexShrink={1}
-      minWidth={0}
-      {...props}
-      ref={ref}
-    />
-  )
+  return <Box flexDirection="column" flexShrink={1} minWidth={0} {...props} ref={ref} />
 })

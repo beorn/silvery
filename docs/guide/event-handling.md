@@ -400,14 +400,14 @@ const {
 
 ### When to use which
 
-| Need                                  | Use                                                       |
-| ------------------------------------- | --------------------------------------------------------- |
-| Simple focus tracking (Ink-compat API) | `useFocus({ id })`                                       |
-| Focus origin ("keyboard" vs "mouse")  | `useFocusable()`                                          |
-| Parent knows if descendants focused   | `useFocusWithin()`                                        |
-| Control focus from anywhere           | `useFocusManager()`                                       |
-| Focus scopes (dialogs, modals)        | `<Box focusScope>` + `activateScope()`                    |
-| Spatial navigation (grid layouts)     | `focusManager.focusDirection("up"/"down"/"left"/"right")` |
+| Need                                   | Use                                                       |
+| -------------------------------------- | --------------------------------------------------------- |
+| Simple focus tracking (Ink-compat API) | `useFocus({ id })`                                        |
+| Focus origin ("keyboard" vs "mouse")   | `useFocusable()`                                          |
+| Parent knows if descendants focused    | `useFocusWithin()`                                        |
+| Control focus from anywhere            | `useFocusManager()`                                       |
+| Focus scopes (dialogs, modals)         | `<Box focusScope>` + `activateScope()`                    |
+| Spatial navigation (grid layouts)      | `focusManager.focusDirection("up"/"down"/"left"/"right")` |
 
 ## See Also
 

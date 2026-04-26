@@ -238,9 +238,12 @@ describe("useScopeEffect", () => {
     const scopes: Scope[] = []
 
     function Probe({ dep }: { dep: number }): React.ReactElement {
-      useScopeEffect((scope) => {
-        scopes.push(scope)
-      }, [dep])
+      useScopeEffect(
+        (scope) => {
+          scopes.push(scope)
+        },
+        [dep],
+      )
       return <Text>probe</Text>
     }
 
@@ -385,9 +388,7 @@ describe("useScopeEffect", () => {
     for (let i = 0; i < 3; i++) await Promise.resolve()
 
     // Look for the cleanup-boom specifically — scope dispose itself succeeds.
-    const cleanupErrors = sink.captured.filter(
-      (c) => (c.error as Error).message === "cleanup-boom",
-    )
+    const cleanupErrors = sink.captured.filter((c) => (c.error as Error).message === "cleanup-boom")
     expect(cleanupErrors.length).toBe(1)
     expect(cleanupErrors[0]!.context.phase).toBe("react-unmount")
 

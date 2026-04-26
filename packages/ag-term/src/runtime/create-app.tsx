@@ -1106,9 +1106,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // probes. Heuristic fields (`maybeWideEmojis` etc.) live on caps now (post
   // km-silvery.plateau-naming-polish), so width detection toggles them
   // directly on the same object.
-  let effectiveCaps = capsOption
-    ? { ...capsOption, textSizing: textSizing }
-    : undefined
+  let effectiveCaps = capsOption ? { ...capsOption, textSizing: textSizing } : undefined
 
   // Create pipeline config from caps (scoped width measurer + output phase).
   // Use `let` because the pipeline may be recreated after a probe changes
@@ -1586,9 +1584,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Bridge resize notifications into the baseMockTerm.size signal, so any
   // `useTerm(t => t.size.cols())` consumer re-renders on resize. The headless
   // Term's size is a `createFixedSize` with an `update(cols, rows)` method.
-  const mockSizeUpdate = (baseMockTerm.size as unknown as {
-    update?: (cols: number, rows: number) => void
-  }).update
+  const mockSizeUpdate = (
+    baseMockTerm.size as unknown as {
+      update?: (cols: number, rows: number) => void
+    }
+  ).update
   if (mockSizeUpdate) {
     mockTermSubscribers.add((next) => mockSizeUpdate(next.cols, next.rows))
   }

@@ -45,6 +45,9 @@ describe("Sterling backdrop token", () => {
     }
     // Pure-black-bg themes will always collapse. Allowlist to keep growing
     // requires a follow-up bead; for now bound at the current observed count.
-    expect(collapses.length, `${collapses.length} palettes collapse: ${collapses.join(", ")}`).toBeLessThanOrEqual(8)
+    expect(
+      collapses.length,
+      `${collapses.length} palettes collapse: ${collapses.join(", ")}`,
+    ).toBeLessThanOrEqual(8)
   })
 })

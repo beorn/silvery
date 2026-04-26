@@ -30,8 +30,8 @@ const TRACE_ENV = "SILVERY_SCOPE_TRACE"
 
 function envEnabled(): boolean {
   try {
-    return !!(globalThis as { process?: { env?: Record<string, string | undefined> } })
-      .process?.env?.[TRACE_ENV]
+    return !!(globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+      ?.env?.[TRACE_ENV]
   } catch {
     return false
   }

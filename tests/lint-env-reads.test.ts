@@ -63,10 +63,7 @@ describe("lint-env-reads", () => {
   })
 
   test("detects a deliberate process.env.COLORTERM read via dynamic access", () => {
-    const violatingSrc = [
-      'export const colorterm = process.env["COLORTERM"] ?? ""',
-      "",
-    ].join("\n")
+    const violatingSrc = ['export const colorterm = process.env["COLORTERM"] ?? ""', ""].join("\n")
     const stamp = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
     const dir = join(REPO_ROOT, "packages", "ag-term", "src", `__lint_fixture_${stamp}__`)
     const file = join(dir, "dynamic-leak.ts")
@@ -90,9 +87,9 @@ describe("lint-env-reads", () => {
     writeFileSync(
       file,
       [
-        '// Test file is allowed to manipulate env.',
-        'export const t = process.env.TERM_PROGRAM',
-        '',
+        "// Test file is allowed to manipulate env.",
+        "export const t = process.env.TERM_PROGRAM",
+        "",
       ].join("\n"),
       "utf-8",
     )

@@ -31,8 +31,8 @@ interface Console extends Disposable {
 }
 
 interface ConsoleCaptureOptions {
-  suppress?: boolean   // default false — forward to original console after capture
-  capture?: boolean    // default true — buffer entries in memory (set false for count-only)
+  suppress?: boolean // default false — forward to original console after capture
+  capture?: boolean // default true — buffer entries in memory (set false for count-only)
 }
 ```
 
@@ -81,9 +81,9 @@ if (!term.console) {
 Starts patching. The patch records each call into the entry buffer (when `capture: true`, the default), updates `stats`, and — unless `suppress: true` — forwards to the original `console.*` method.
 
 ```ts
-term.console.capture({ suppress: true })           // buffer + suppress (TUI use)
-term.console.capture({ suppress: false })          // buffer + forward (debug)
-term.console.capture({ capture: false })           // count-only, no memory growth
+term.console.capture({ suppress: true }) // buffer + suppress (TUI use)
+term.console.capture({ suppress: false }) // buffer + forward (debug)
+term.console.capture({ capture: false }) // count-only, no memory growth
 ```
 
 `suppress: true` is the canonical TUI use — no entries escape to the alt screen, but you still have the buffer for post-exit replay. `capture: false` is for long-running sessions where you only care about warning / error badges; `getStats()` still reports counts but `entries()` returns an empty frozen array.

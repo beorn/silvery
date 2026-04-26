@@ -10,21 +10,21 @@ import { ModalDialog, formatTitleWithHotkey } from "silvery"
 
 ## Props
 
-| Prop          | Type                                     | Default      | Description                                             |
-| ------------- | ---------------------------------------- | ------------ | ------------------------------------------------------- |
-| `children`    | `ReactNode`                              | **required** | Dialog content                                          |
-| `title`       | `string`                                 | --           | Dialog title (rendered bold in titleColor)              |
-| `titleColor`  | `string`                                 | `"$fg-accent"` | Title color override                                  |
-| `titleAlign`  | `"center" \| "flex-start" \| "flex-end"` | `"center"`   | Title alignment                                         |
-| `hotkey`      | `string`                                 | --           | Toggle hotkey character (renders `[X]` prefix in title) |
-| `titleRight`  | `ReactNode`                              | --           | Content on the right side of the title bar              |
-| `borderColor` | `string`                                 | `"$border-default"` | Border color (focus ring uses `$border-focus`)   |
-| `width`       | `number`                                 | --           | Dialog width                                            |
-| `height`      | `number`                                 | --           | Dialog height (auto-height if omitted)                  |
-| `footer`      | `ReactNode`                              | --           | Footer hint text (dimColor at bottom)                   |
-| `footerAlign` | `"center" \| "flex-start" \| "flex-end"` | `"center"`   | Footer alignment                                        |
-| `onClose`     | `() => void`                             | --           | Called when ESC is pressed                              |
-| `focusScope`  | `boolean`                                | `true`       | Whether to create a focus scope                         |
+| Prop          | Type                                     | Default             | Description                                             |
+| ------------- | ---------------------------------------- | ------------------- | ------------------------------------------------------- |
+| `children`    | `ReactNode`                              | **required**        | Dialog content                                          |
+| `title`       | `string`                                 | --                  | Dialog title (rendered bold in titleColor)              |
+| `titleColor`  | `string`                                 | `"$fg-accent"`      | Title color override                                    |
+| `titleAlign`  | `"center" \| "flex-start" \| "flex-end"` | `"center"`          | Title alignment                                         |
+| `hotkey`      | `string`                                 | --                  | Toggle hotkey character (renders `[X]` prefix in title) |
+| `titleRight`  | `ReactNode`                              | --                  | Content on the right side of the title bar              |
+| `borderColor` | `string`                                 | `"$border-default"` | Border color (focus ring uses `$border-focus`)          |
+| `width`       | `number`                                 | --                  | Dialog width                                            |
+| `height`      | `number`                                 | --                  | Dialog height (auto-height if omitted)                  |
+| `footer`      | `ReactNode`                              | --                  | Footer hint text (dimColor at bottom)                   |
+| `footerAlign` | `"center" \| "flex-start" \| "flex-end"` | `"center"`          | Footer alignment                                        |
+| `onClose`     | `() => void`                             | --                  | Called when ESC is pressed                              |
+| `focusScope`  | `boolean`                                | `true`              | Whether to create a focus scope                         |
 
 ## Helper: formatTitleWithHotkey
 

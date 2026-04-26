@@ -54,23 +54,31 @@ Any color prop starting with `$` resolves against the active theme. This is the 
 ### Surfaces and Backgrounds
 
 ```tsx
-{/* Subtle elevation — cards, list rows */}
-<Box backgroundColor="$bg-surface-subtle">
+{
+  /* Subtle elevation — cards, list rows */
+}
+;<Box backgroundColor="$bg-surface-subtle">
   <Text>Card content</Text>
 </Box>
 
-{/* Raised elevation — dialogs, modals */}
-<Box backgroundColor="$bg-surface-raised" borderStyle="single">
+{
+  /* Raised elevation — dialogs, modals */
+}
+;<Box backgroundColor="$bg-surface-raised" borderStyle="single">
   <Text>Dialog content</Text>
 </Box>
 
-{/* Overlay elevation — tooltips, dropdowns */}
-<Box backgroundColor="$bg-surface-overlay">
+{
+  /* Overlay elevation — tooltips, dropdowns */
+}
+;<Box backgroundColor="$bg-surface-overlay">
   <Text>Menu item</Text>
 </Box>
 
-{/* Status bar / chrome */}
-<Box backgroundColor="$bg-inverse">
+{
+  /* Status bar / chrome */
+}
+;<Box backgroundColor="$bg-inverse">
   <Text color="$fg-on-inverse"> main 3 files Ln 42 </Text>
 </Box>
 ```
@@ -80,23 +88,31 @@ Any color prop starting with `$` resolves against the active theme. This is the 
 For tokens with `bg-X` fill, use the matching `fg-on-X` for guaranteed-contrast text:
 
 ```tsx
-{/* Primary action — accent fill */}
-<Box backgroundColor="$bg-accent">
+{
+  /* Primary action — accent fill */
+}
+;<Box backgroundColor="$bg-accent">
   <Text color="$fg-on-accent">Deploy</Text>
 </Box>
 
-{/* Error banner */}
-<Box backgroundColor="$bg-error">
+{
+  /* Error banner */
+}
+;<Box backgroundColor="$bg-error">
   <Text color="$fg-on-error">Build failed: missing dependency</Text>
 </Box>
 
-{/* Success badge */}
-<Box backgroundColor="$bg-success">
+{
+  /* Success badge */
+}
+;<Box backgroundColor="$bg-success">
   <Text color="$fg-on-success"> PASS </Text>
 </Box>
 
-{/* Cursor row / selection */}
-<Box backgroundColor="$bg-selected">
+{
+  /* Cursor row / selection */
+}
+;<Box backgroundColor="$bg-selected">
   <Text color="$fg-on-selected"> active line </Text>
 </Box>
 ```
@@ -208,7 +224,7 @@ The fastest way to get a unique theme — provide one hex color and Sterling gen
 ```typescript
 import { sterling } from "silvery/theme"
 
-const theme = sterling.deriveFromColor("#818cf8")                // dark mode (default)
+const theme = sterling.deriveFromColor("#818cf8") // dark mode (default)
 const light = sterling.deriveFromColor("#818cf8", { mode: "light" })
 ```
 
@@ -299,8 +315,8 @@ If auto-lift is adjusting a token you want untouched, pin it explicitly. Pins ac
 ```typescript
 const theme = sterling.deriveFromScheme(myScheme, {
   pins: {
-    "accent.bg": "#5B8DEF",       // nested
-    "fg-on-error": "#FFFFFF",     // flat
+    "accent.bg": "#5B8DEF", // nested
+    "fg-on-error": "#FFFFFF", // flat
   },
 })
 ```
@@ -366,8 +382,8 @@ import {
   getThemeByName,
 } from "silvery/theme"
 
-const theme = getThemeByName("dark-truecolor")    // defaultDarkTheme
-const light = getThemeByName("light-ansi16")      // ansi16LightTheme
+const theme = getThemeByName("dark-truecolor") // defaultDarkTheme
+const light = getThemeByName("light-ansi16") // ansi16LightTheme
 const catppuccin = getThemeByName("catppuccin-mocha") // derived on access
 ```
 

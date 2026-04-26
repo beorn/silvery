@@ -24,10 +24,7 @@ import type { MatchRange } from "@silvery/ag-term/search-overlay"
 import { Text } from "../../src/components/Text"
 import { ListView } from "../../src/ui/components/ListView"
 import type { ListItemMeta } from "../../src/ui/components/ListView"
-import {
-  SearchProvider,
-  useSearch,
-} from "../../src/providers/SearchProvider"
+import { SearchProvider, useSearch } from "../../src/providers/SearchProvider"
 import type { SearchContextValue } from "../../src/providers/SearchProvider"
 
 // ============================================================================

@@ -78,9 +78,7 @@ export function runTermtest(options?: TermtestOptions): void {
   w.write(
     `  Detected: color=${caps.colorLevel} maybe-dark=${caps.maybeDarkBackground} maybe-nerdfont=${caps.maybeNerdFont}\n`,
   )
-  w.write(
-    `  Underline: styles=[${caps.underlineStyles.join(", ")}] color=${caps.underlineColor}\n`,
-  )
+  w.write(`  Underline: styles=[${caps.underlineStyles.join(", ")}] color=${caps.underlineColor}\n`)
   w.write(`  Maybe wide emojis: ${caps.maybeWideEmojis}\n`)
 
   if (show("sgr")) {

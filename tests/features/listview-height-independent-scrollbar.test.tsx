@@ -94,11 +94,7 @@ describe("ListView height-independent — scrollbar with multi-line items", () =
     const app = render(
       <Box width={COLS} height={ROWS} flexDirection="column">
         <Box flexGrow={1} flexShrink={1} minHeight={0}>
-          <ListView
-            items={items}
-            nav
-            renderItem={(idx) => <MultiLineItem idx={idx} />}
-          />
+          <ListView items={items} nav renderItem={(idx) => <MultiLineItem idx={idx} />} />
         </Box>
       </Box>,
     )

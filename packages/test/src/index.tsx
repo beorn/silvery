@@ -415,9 +415,7 @@ export function createTermless(
 
   const clipboard: TermlessClipboard = {
     get last() {
-      return clipboardPayloads.length > 0
-        ? clipboardPayloads[clipboardPayloads.length - 1]!
-        : null
+      return clipboardPayloads.length > 0 ? clipboardPayloads[clipboardPayloads.length - 1]! : null
     },
     get all() {
       return clipboardPayloads

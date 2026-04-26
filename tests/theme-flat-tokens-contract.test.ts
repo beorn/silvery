@@ -71,19 +71,31 @@ function assertAllFlatTokensPopulated(themeName: string, theme: Record<string, u
 
 describe("contract: Sterling flat tokens populated in shipped themes", () => {
   it("ansi16DarkTheme has every flat token as a non-empty string", () => {
-    assertAllFlatTokensPopulated("ansi16DarkTheme", ansi16DarkTheme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "ansi16DarkTheme",
+      ansi16DarkTheme as unknown as Record<string, unknown>,
+    )
   })
 
   it("ansi16LightTheme has every flat token as a non-empty string", () => {
-    assertAllFlatTokensPopulated("ansi16LightTheme", ansi16LightTheme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "ansi16LightTheme",
+      ansi16LightTheme as unknown as Record<string, unknown>,
+    )
   })
 
   it("defaultDarkTheme has every flat token as a non-empty string", () => {
-    assertAllFlatTokensPopulated("defaultDarkTheme", defaultDarkTheme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "defaultDarkTheme",
+      defaultDarkTheme as unknown as Record<string, unknown>,
+    )
   })
 
   it("defaultLightTheme has every flat token as a non-empty string", () => {
-    assertAllFlatTokensPopulated("defaultLightTheme", defaultLightTheme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "defaultLightTheme",
+      defaultLightTheme as unknown as Record<string, unknown>,
+    )
   })
 
   it("every builtin theme has every flat token populated", () => {
@@ -105,20 +117,29 @@ describe("contract: Sterling flat tokens populated through every detection path"
     // the pure-fallback branch. This is the exact path the user's "31/32 empty"
     // symptom came from — it must produce a Sterling-baked theme.
     const theme = await detectThemeSterling()
-    assertAllFlatTokensPopulated("detectTheme(sterling, no-tty fallback)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "detectTheme(sterling, no-tty fallback)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/theme detectScheme (no TTY → confidence=0 fallback) returns a fully-populated theme", async () => {
     const { theme, source, confidence } = await detectSchemeSterling()
     expect(source).toBe("fallback")
     expect(confidence).toBe(0)
-    assertAllFlatTokensPopulated("detectScheme(sterling, fallback)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "detectScheme(sterling, fallback)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/theme detectScheme with explicit override returns a fully-populated theme", async () => {
     const { theme, source } = await detectSchemeSterling({ override: defaultDarkScheme })
     expect(source).toBe("override")
-    assertAllFlatTokensPopulated("detectScheme(sterling, override)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "detectScheme(sterling, override)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("silvery runtime (wrap-with-themed-provider) produces a Sterling-baked theme", async () => {
@@ -128,10 +149,7 @@ describe("contract: Sterling flat tokens populated through every detection path"
     // file exists and compiles (it's covered by the path-agnostic tests above).
     const runtimeSource = await import("node:fs").then((fs) =>
       fs.promises.readFile(
-        new URL(
-          "../packages/ag-term/src/runtime/wrap-with-themed-provider.tsx",
-          import.meta.url,
-        ),
+        new URL("../packages/ag-term/src/runtime/wrap-with-themed-provider.tsx", import.meta.url),
         "utf-8",
       ),
     )
@@ -148,47 +166,71 @@ describe("contract: @silvery/ansi entry points all produce Sterling-baked themes
 
   it("deriveTheme(defaultDarkScheme) produces every flat token", () => {
     const theme = deriveThemeAnsi(defaultDarkScheme)
-    assertAllFlatTokensPopulated("deriveTheme(defaultDarkScheme)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "deriveTheme(defaultDarkScheme)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("deriveTheme(defaultLightScheme) produces every flat token", () => {
     const theme = deriveThemeAnsi(defaultLightScheme)
-    assertAllFlatTokensPopulated("deriveTheme(defaultLightScheme)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "deriveTheme(defaultLightScheme)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("loadTheme(defaultDarkScheme) produces every flat token", () => {
     const theme = loadThemeAnsi(defaultDarkScheme)
-    assertAllFlatTokensPopulated("loadTheme(defaultDarkScheme)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "loadTheme(defaultDarkScheme)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("deriveAnsi16Theme(defaultDarkScheme) produces every flat token", () => {
     const theme = deriveAnsi16ThemeAnsi(defaultDarkScheme)
-    assertAllFlatTokensPopulated("deriveAnsi16Theme(defaultDarkScheme)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "deriveAnsi16Theme(defaultDarkScheme)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/ansi detectTheme (no TTY → fallback) produces every flat token", async () => {
     // Exact path the user's "31/32 empty bg tokens" bug came from. Must
     // resolve even from the bare @silvery/ansi import path now.
     const theme = await detectThemeAnsi()
-    assertAllFlatTokensPopulated("@silvery/ansi detectTheme (fallback)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "@silvery/ansi detectTheme (fallback)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/ansi detectScheme (no TTY → fallback) produces every flat token", async () => {
     const { theme, source, confidence } = await detectSchemeAnsi()
     expect(source).toBe("fallback")
     expect(confidence).toBe(0)
-    assertAllFlatTokensPopulated("@silvery/ansi detectScheme (fallback)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "@silvery/ansi detectScheme (fallback)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/ansi detectSchemeTheme (fallback) produces every flat token", async () => {
     const theme = await detectSchemeThemeAnsi()
-    assertAllFlatTokensPopulated("@silvery/ansi detectSchemeTheme (fallback)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "@silvery/ansi detectSchemeTheme (fallback)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/ansi detectScheme with explicit override produces every flat token", async () => {
     const { theme, source } = await detectSchemeAnsi({ override: defaultDarkScheme })
     expect(source).toBe("override")
-    assertAllFlatTokensPopulated("@silvery/ansi detectScheme (override)", theme as unknown as Record<string, unknown>)
+    assertAllFlatTokensPopulated(
+      "@silvery/ansi detectScheme (override)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 })
 
@@ -222,21 +264,33 @@ describe("contract: user's specific 246×122 complaint — explicit bg tokens al
 
   it("deriveTheme(defaultDarkScheme): all user-reported bg tokens resolve", () => {
     const theme = deriveThemeAnsi(defaultDarkScheme)
-    assertReportedTokensPopulated("deriveTheme(defaultDarkScheme)", theme as unknown as Record<string, unknown>)
+    assertReportedTokensPopulated(
+      "deriveTheme(defaultDarkScheme)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/ansi detectTheme fallback: all user-reported bg tokens resolve", async () => {
     const theme = await detectThemeAnsi()
-    assertReportedTokensPopulated("@silvery/ansi detectTheme (fallback)", theme as unknown as Record<string, unknown>)
+    assertReportedTokensPopulated(
+      "@silvery/ansi detectTheme (fallback)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/ansi detectScheme fallback: all user-reported bg tokens resolve", async () => {
     const { theme } = await detectSchemeAnsi()
-    assertReportedTokensPopulated("@silvery/ansi detectScheme (fallback)", theme as unknown as Record<string, unknown>)
+    assertReportedTokensPopulated(
+      "@silvery/ansi detectScheme (fallback)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 
   it("@silvery/theme detectTheme fallback: all user-reported bg tokens resolve", async () => {
     const theme = await detectThemeSterling()
-    assertReportedTokensPopulated("@silvery/theme detectTheme (fallback)", theme as unknown as Record<string, unknown>)
+    assertReportedTokensPopulated(
+      "@silvery/theme detectTheme (fallback)",
+      theme as unknown as Record<string, unknown>,
+    )
   })
 })

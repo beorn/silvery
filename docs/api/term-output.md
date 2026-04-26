@@ -96,12 +96,12 @@ Idempotent. Safe to call before `dispose()`, which will re-call it.
 
 ## Suppression vs redirection
 
-| Stream          | While active                                   | Where it goes                                                |
-| --------------- | ---------------------------------------------- | ------------------------------------------------------------ |
-| stdout (foreign) | **Suppressed**                                 | Dropped — `suppressedCount++`, preview logged at debug level |
-| stdout (silvery) | **Passes through**                             | Real terminal (via saved original `write`)                   |
-| stderr (any)    | **Redirected**                                 | `stderrLog` file, `bufferStderr`, or dropped                 |
-| console.\*      | **Redirected**                                 | Same sink as stderr                                          |
+| Stream           | While active       | Where it goes                                                |
+| ---------------- | ------------------ | ------------------------------------------------------------ |
+| stdout (foreign) | **Suppressed**     | Dropped — `suppressedCount++`, preview logged at debug level |
+| stdout (silvery) | **Passes through** | Real terminal (via saved original `write`)                   |
+| stderr (any)     | **Redirected**     | `stderrLog` file, `bufferStderr`, or dropped                 |
+| console.\*       | **Redirected**     | Same sink as stderr                                          |
 
 Foreign stdout is silently dropped because any external library printing to stdout during alt-screen would corrupt the rendered frame. If the app needs a chatter channel, point `DEBUG_LOG=/tmp/debug.log` at a file and stderr + console writes land there.
 
@@ -115,6 +115,6 @@ Call order matters: `term.console.capture()` first, then `term.output.activate()
 
 ## See also
 
-- [term.console](/api/term-console) — console.* capture + replay
+- [term.console](/api/term-console) — console.\* capture + replay
 - [term.modes](/api/term-modes) — protocol-mode setup (called before `activate`)
 - [Term — the I/O umbrella](/guide/term)

@@ -203,9 +203,7 @@ describe("probe result caching", () => {
 describe("getTerminalFingerprint", () => {
   test("combines program and version", () => {
     expect(getTerminalFingerprint({ program: "kitty", version: "0.40.0" })).toBe("kitty@0.40.0")
-    expect(getTerminalFingerprint({ program: "Ghostty", version: "1.3.0" })).toBe(
-      "Ghostty@1.3.0",
-    )
+    expect(getTerminalFingerprint({ program: "Ghostty", version: "1.3.0" })).toBe("Ghostty@1.3.0")
   })
 
   test("falls back to 'unknown' for empty program / version", () => {

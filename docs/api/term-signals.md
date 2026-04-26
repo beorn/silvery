@@ -15,20 +15,16 @@ type SignalName =
   | "unhandledRejection"
 
 interface SignalOnOptions {
-  priority?: number          // lower runs first; default 0
-  name?: string              // required if you want before/after to reference this
-  before?: string[]          // handler names that must run AFTER this one
-  after?: string[]           // handler names that must run BEFORE this one
-  onDispose?: boolean        // also run on dispose() (default: true)
-  onSignal?: boolean         // run when the signal is delivered (default: true)
+  priority?: number // lower runs first; default 0
+  name?: string // required if you want before/after to reference this
+  before?: string[] // handler names that must run AFTER this one
+  after?: string[] // handler names that must run BEFORE this one
+  onDispose?: boolean // also run on dispose() (default: true)
+  onSignal?: boolean // run when the signal is delivered (default: true)
 }
 
 interface Signals extends Disposable {
-  on(
-    signal: SignalName,
-    handler: () => void | Promise<void>,
-    opts?: SignalOnOptions,
-  ): () => void
+  on(signal: SignalName, handler: () => void | Promise<void>, opts?: SignalOnOptions): () => void
   dispose(): void
   readonly isDisposed: boolean
   readonly size: number
@@ -55,16 +51,16 @@ Two complementary mechanisms:
 
 Lower runs first. Default `0`. Rule of thumb:
 
-| Priority | Use for                                              |
-| -------- | ---------------------------------------------------- |
-| `0`–`9`  | App-level cleanup (close DB, cancel pending work)    |
-| `10`–`19`| Runtime cleanup (stop schedulers, drain queues)      |
-| `20`–`29`| Terminal cleanup (restore modes, leave alt screen)   |
-| `30+`    | Emergency / last-ditch                               |
+| Priority  | Use for                                            |
+| --------- | -------------------------------------------------- |
+| `0`–`9`   | App-level cleanup (close DB, cancel pending work)  |
+| `10`–`19` | Runtime cleanup (stop schedulers, drain queues)    |
+| `20`–`29` | Terminal cleanup (restore modes, leave alt screen) |
+| `30+`     | Emergency / last-ditch                             |
 
 ```ts
-term.signals.on("SIGINT", () => closeDb(),         { priority: 5,  name: "close-db" })
-term.signals.on("SIGINT", () => stopScheduler(),   { priority: 10, name: "stop-sched" })
+term.signals.on("SIGINT", () => closeDb(), { priority: 5, name: "close-db" })
+term.signals.on("SIGINT", () => stopScheduler(), { priority: 10, name: "stop-sched" })
 term.signals.on("SIGINT", () => term.modes.dispose(), { priority: 20, name: "modes-off" })
 ```
 
@@ -75,8 +71,8 @@ On `SIGINT`, handlers run in the order `close-db → stop-sched → modes-off`.
 Reference handler `name`s. Take precedence over `priority`.
 
 ```ts
-term.signals.on("SIGTERM", saveState,   { name: "save-state" })
-term.signals.on("SIGTERM", flushLogs,   { name: "flush-logs", after: ["save-state"] })
+term.signals.on("SIGTERM", saveState, { name: "save-state" })
+term.signals.on("SIGTERM", flushLogs, { name: "flush-logs", after: ["save-state"] })
 term.signals.on("SIGTERM", closeServer, { name: "close-server", before: ["save-state"] })
 ```
 
@@ -92,8 +88,14 @@ import { createSignals } from "@silvery/ag-term/runtime"
 const onError = vi.fn()
 using signals = createSignals({ onError })
 
-signals.on("SIGINT", () => { throw new Error("boom") }, { name: "broken" })
-signals.on("SIGINT", () => recordOk(),                  { name: "ok" })
+signals.on(
+  "SIGINT",
+  () => {
+    throw new Error("boom")
+  },
+  { name: "broken" },
+)
+signals.on("SIGINT", () => recordOk(), { name: "ok" })
 
 process.emit("SIGINT")
 // onError called once with { name: "broken", signal: "SIGINT" }

@@ -820,11 +820,7 @@ export interface TextFlexItemProps {
   maxHeight?: number | string
 }
 
-export interface TextProps
-  extends StyleProps,
-    TextFlexItemProps,
-    TestProps,
-    MouseEventProps {
+export interface TextProps extends StyleProps, TextFlexItemProps, TestProps, MouseEventProps {
   children?: React.ReactNode
   wrap?:
     | "wrap"

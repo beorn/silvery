@@ -182,13 +182,8 @@ const DEFAULT_MAX_RENDERED = 100
  * may be 6 rows at width=40. Caching height by id alone produces stale
  * values after a pane resize.
  */
-export function makeMeasureKey(
-  itemKey: string | number,
-  viewportWidth?: number,
-): string {
-  return viewportWidth === undefined
-    ? String(itemKey)
-    : `${itemKey}:${viewportWidth}`
+export function makeMeasureKey(itemKey: string | number, viewportWidth?: number): string {
+  return viewportWidth === undefined ? String(itemKey) : `${itemKey}:${viewportWidth}`
 }
 
 /** Get item height for a specific index, checking measured cache first.
@@ -286,14 +281,7 @@ export function sumHeights(
   // Slow path: per-item lookup (checks measurement cache, falls back to avg measured or estimate)
   let total = 0
   for (let i = startIndex; i < endIndex; i++) {
-    total += getHeight(
-      i,
-      estimateHeight,
-      measuredHeights,
-      getItemKey,
-      avgMeasured,
-      viewportWidth,
-    )
+    total += getHeight(i, estimateHeight, measuredHeights, getItemKey, avgMeasured, viewportWidth)
   }
   return total + gapTotal
 }
@@ -536,10 +524,8 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   //
   // Extracted outside useMemo so the memo dependency list is just primitives
   // (no new object allocation per render).
-  const ssFirstVisibleChild =
-    hasSteadyState && scrollState ? scrollState.firstVisibleChild : -1
-  const ssLastVisibleChild =
-    hasSteadyState && scrollState ? scrollState.lastVisibleChild : -1
+  const ssFirstVisibleChild = hasSteadyState && scrollState ? scrollState.firstVisibleChild : -1
+  const ssLastVisibleChild = hasSteadyState && scrollState ? scrollState.lastVisibleChild : -1
 
   // Calculate virtualization window.
   // Depends on measurementVersion to recompute placeholders when measurements arrive.
@@ -703,9 +689,8 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
         //
         // So: floor end at `cursor + 1` (only the declarative scrollTo), then
         // cap at `start + maxRendered`.
-        const cursorFloor = scrollTo !== undefined
-          ? Math.max(0, Math.min(scrollTo, count - 1)) + 1
-          : 0
+        const cursorFloor =
+          scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, count - 1)) + 1 : 0
         const cappedEnd = Math.max(cursorFloor, start + maxRendered)
         end = Math.min(end, cappedEnd)
 

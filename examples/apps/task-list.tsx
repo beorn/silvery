@@ -114,7 +114,7 @@ function TaskItem({
             {checkbox} {task.title}{" "}
           </Text>
         ) : (
-          <Text strikethrough={task.completed} color={(task.completed) ? "$muted" : undefined}>
+          <Text strikethrough={task.completed} color={task.completed ? "$muted" : undefined}>
             {checkbox} {task.title}
           </Text>
         )}{" "}

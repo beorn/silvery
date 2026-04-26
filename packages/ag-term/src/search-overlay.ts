@@ -110,10 +110,7 @@ export function searchUpdate(
       // still cycle through matches after the bar closes — that's the
       // whole point of 'search then step through' (less / vim idiom).
       // A subsequent `open` starts a fresh query and wipes matches.
-      return [
-        { ...state, active: false, query: "", cursorPosition: 0 },
-        [{ type: "render" }],
-      ]
+      return [{ ...state, active: false, query: "", cursorPosition: 0 }, [{ type: "render" }]]
 
     case "input": {
       const query =

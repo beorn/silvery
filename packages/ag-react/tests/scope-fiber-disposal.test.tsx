@@ -22,20 +22,12 @@
 
 import React, { forwardRef, useImperativeHandle, useRef } from "react"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
-import {
-  createScope,
-  setDisposeErrorSink,
-  type DisposeErrorContext,
-} from "@silvery/scope"
+import { createScope, setDisposeErrorSink, type DisposeErrorContext } from "@silvery/scope"
 import type { AgNode } from "@silvery/ag/types"
 import { createRenderer } from "@silvery/test"
 import { Box } from "../src/components/Box"
 import { Text } from "../src/components/Text"
-import {
-  attachNodeScope,
-  detachNodeScope,
-  getNodeScope,
-} from "../src/reconciler/host-config"
+import { attachNodeScope, detachNodeScope, getNodeScope } from "../src/reconciler/host-config"
 
 // ---------------------------------------------------------------------------
 // Error-sink capture — keep dispose errors out of vitest's stderr stream
@@ -65,15 +57,16 @@ interface NodeProbeHandle {
   getNode(): AgNode | null
 }
 
-const NodeProbe = forwardRef<NodeProbeHandle, { children?: React.ReactNode }>(
-  function NodeProbe({ children }, ref) {
-    const innerRef = useRef<{ getNode(): AgNode | null }>(null)
-    useImperativeHandle(ref, () => ({
-      getNode: () => innerRef.current?.getNode() ?? null,
-    }))
-    return <Box ref={innerRef}>{children}</Box>
-  },
-)
+const NodeProbe = forwardRef<NodeProbeHandle, { children?: React.ReactNode }>(function NodeProbe(
+  { children },
+  ref,
+) {
+  const innerRef = useRef<{ getNode(): AgNode | null }>(null)
+  useImperativeHandle(ref, () => ({
+    getNode: () => innerRef.current?.getNode() ?? null,
+  }))
+  return <Box ref={innerRef}>{children}</Box>
+})
 
 // ---------------------------------------------------------------------------
 // attach / get / detach round-trip
@@ -119,9 +112,7 @@ describe("attachNodeScope / getNodeScope / detachNodeScope", () => {
     const b = createScope("b")
     const node: AgNode = makeFakeNode()
     attachNodeScope(node, a)
-    expect(() => attachNodeScope(node, b)).toThrow(
-      /already has a different scope attached/,
-    )
+    expect(() => attachNodeScope(node, b)).toThrow(/already has a different scope attached/)
   })
 })
 
@@ -213,9 +204,7 @@ describe("reconciler fiber-scope disposal", () => {
 
     // Find the dispose-boom in captured errors; other errors may also fire
     // (e.g. unrelated cleanup) but ours must be there with the right phase.
-    const matches = sink.captured.filter(
-      (c) => (c.error as Error).message === "dispose-boom",
-    )
+    const matches = sink.captured.filter((c) => (c.error as Error).message === "dispose-boom")
     expect(matches.length).toBe(1)
     expect(matches[0]!.context.phase).toBe("react-unmount")
     expect(matches[0]!.context.scope).toBe(scope)

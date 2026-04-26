@@ -15,7 +15,7 @@ import { createRenderer } from "@silvery/test"
 import { Box, TextArea } from "@silvery/ag-react"
 
 describe("TextArea Shift+Enter", () => {
-  test("Shift+Enter inserts newline when submitKey=\"enter\"", async () => {
+  test('Shift+Enter inserts newline when submitKey="enter"', async () => {
     let submitted: string | null = null
     function App() {
       const [value, setValue] = useState("")
@@ -44,7 +44,7 @@ describe("TextArea Shift+Enter", () => {
     expect(app.text).toContain("yo")
   })
 
-  test("plain Enter still submits when submitKey=\"enter\"", async () => {
+  test('plain Enter still submits when submitKey="enter"', async () => {
     let submitted: string | null = null
     function App() {
       const [value, setValue] = useState("")

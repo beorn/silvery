@@ -45,10 +45,7 @@ export type ScopeEffectSetup = (scope: Scope) => ScopeEffectCleanup
  * to `scope.use(...)` on another scope or store it in a long-lived ref; it
  * is disposed as soon as the effect re-runs or the component unmounts.
  */
-export function useScopeEffect(
-  setup: ScopeEffectSetup,
-  deps: DependencyList,
-): void {
+export function useScopeEffect(setup: ScopeEffectSetup, deps: DependencyList): void {
   const parent = useScope()
 
   // `parent` is read from context, so referencing it as a dep is redundant

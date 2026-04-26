@@ -56,11 +56,7 @@ describe("cursorOffset prop (Phase 2: cursor as layout output)", () => {
     function App() {
       return (
         <Box flexDirection="column" padding={1}>
-          <Box
-            borderStyle="round"
-            paddingX={1}
-            cursorOffset={{ col: 2, row: 0, visible: true }}
-          >
+          <Box borderStyle="round" paddingX={1} cursorOffset={{ col: 2, row: 0, visible: true }}>
             <Text>abc</Text>
           </Box>
         </Box>
@@ -109,11 +105,7 @@ describe("cursorOffset prop (Phase 2: cursor as layout output)", () => {
             <Text>outer</Text>
           </Box>
           <Box flexDirection="column" padding={1}>
-            <Box
-              borderStyle="round"
-              paddingX={1}
-              cursorOffset={{ col: 5, row: 0, visible: true }}
-            >
+            <Box borderStyle="round" paddingX={1} cursorOffset={{ col: 5, row: 0, visible: true }}>
               <Text>deeper</Text>
             </Box>
           </Box>
@@ -154,11 +146,7 @@ describe("cursorOffset prop (Phase 2: cursor as layout output)", () => {
           </Box>
           {/* Bottom command region — cursor lives here, conditionally */}
           {showCursor ? (
-            <Box
-              borderStyle="round"
-              paddingX={1}
-              cursorOffset={{ col: 4, row: 0, visible: true }}
-            >
+            <Box borderStyle="round" paddingX={1} cursorOffset={{ col: 4, row: 0, visible: true }}>
               <Text>{">"} command</Text>
             </Box>
           ) : (

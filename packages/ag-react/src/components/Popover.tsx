@@ -24,7 +24,15 @@
  * bead detail peek). Owning this at the framework level removes three copies.
  */
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
 import { Box } from "./Box"
 import { useHover } from "../hooks/useHover"
@@ -116,7 +124,10 @@ export function PopoverProvider({ children }: { children: React.ReactNode }): Re
 
   useEffect(() => clearHide, [clearHide])
 
-  const value = useMemo<PopoverCtxValue>(() => ({ show, hide, cancelHide }), [show, hide, cancelHide])
+  const value = useMemo<PopoverCtxValue>(
+    () => ({ show, hide, cancelHide }),
+    [show, hide, cancelHide],
+  )
 
   return (
     <PopoverCtx.Provider value={value}>

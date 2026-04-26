@@ -133,11 +133,7 @@ function buildHookRegex(): RegExp {
  * callback overload. `useFocus`, `useSelection`, and `useCursor` are
  * always snapshot reads and are flagged unconditionally.
  */
-const CALLBACK_CAPABLE_HOOKS = new Set<TargetHook>([
-  "useBoxRect",
-  "useScrollRect",
-  "useScreenRect",
-])
+const CALLBACK_CAPABLE_HOOKS = new Set<TargetHook>(["useBoxRect", "useScrollRect", "useScreenRect"])
 
 function isCallbackForm(
   hook: TargetHook,
@@ -402,9 +398,7 @@ function main(): void {
 
   const repoRoot = resolve(import.meta.dirname, "..")
 
-  const files: string[] = opts.paths
-    ? opts.paths.map((p) => resolve(repoRoot, p))
-    : walk(repoRoot)
+  const files: string[] = opts.paths ? opts.paths.map((p) => resolve(repoRoot, p)) : walk(repoRoot)
 
   const violations: Violation[] = []
   for (const f of files) {
@@ -436,16 +430,12 @@ function main(): void {
   console.error(
     `\nTarget hooks (read layout state at render time):\n  ${TARGET_HOOKS.map((h) => h + "()").join(", ")}\n`,
   )
-  console.error(
-    `Suppress per-line with the comment marker: ${ALLOWLIST_MARKER} <reason>\n`,
-  )
+  console.error(`Suppress per-line with the comment marker: ${ALLOWLIST_MARKER} <reason>\n`)
   for (const v of violations) {
     console.error(`  ${v.file}:${v.line}:${v.col}  ${v.hook}()`)
     console.error(`    ${v.text}`)
   }
-  console.error(
-    `\n${violations.length} violation(s).${opts.strict ? "" : " (warn-only — exit 0)"}`,
-  )
+  console.error(`\n${violations.length} violation(s).${opts.strict ? "" : " (warn-only — exit 0)"}`)
   process.exit(opts.strict && violations.length > 0 ? 1 : 0)
 }
 

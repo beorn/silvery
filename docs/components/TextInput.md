@@ -10,26 +10,26 @@ import { TextInput } from "silvery"
 
 ## Props
 
-| Prop               | Type                      | Default          | Description                                              |
-| ------------------ | ------------------------- | ---------------- | -------------------------------------------------------- |
-| `value`            | `string`                  | --               | Current value (controlled mode)                          |
-| `defaultValue`     | `string`                  | `""`             | Initial value (uncontrolled mode)                        |
-| `onChange`         | `(value: string) => void` | --               | Called when value changes                                |
-| `onSubmit`         | `(value: string) => void` | --               | Called when Enter is pressed                             |
-| `onEOF`            | `() => void`              | --               | Called on Ctrl+D with empty input                        |
-| `placeholder`      | `string`                  | `""`             | Placeholder text when empty                              |
-| `isActive`         | `boolean`                 | --               | Whether input is focused/active (overrides focus system) |
-| `prompt`           | `string`                  | `""`             | Prompt prefix (e.g., "$ " or "> ")                       |
-| `promptColor`      | `string`                  | `"$control"`     | Prompt color                                             |
-| `color`            | `string`                  | --               | Text color                                               |
-| `cursorStyle`      | `"block" \| "underline"`  | `"block"`        | Cursor style                                             |
-| `showUnderline`    | `boolean`                 | `false`          | Show underline below input                               |
-| `underlineWidth`   | `number`                  | `40`             | Underline width                                          |
-| `mask`             | `string`                  | --               | Mask character for passwords                             |
-| `borderStyle`      | `string`                  | --               | Border style (wraps input in bordered Box)               |
-| `borderColor`      | `string`                  | `"$border-default"` | Border color when unfocused                           |
-| `focusBorderColor` | `string`                  | `"$border-focus"`   | Border color when focused                             |
-| `testID`           | `string`                  | --               | Test ID for focus system identification                  |
+| Prop               | Type                      | Default             | Description                                              |
+| ------------------ | ------------------------- | ------------------- | -------------------------------------------------------- |
+| `value`            | `string`                  | --                  | Current value (controlled mode)                          |
+| `defaultValue`     | `string`                  | `""`                | Initial value (uncontrolled mode)                        |
+| `onChange`         | `(value: string) => void` | --                  | Called when value changes                                |
+| `onSubmit`         | `(value: string) => void` | --                  | Called when Enter is pressed                             |
+| `onEOF`            | `() => void`              | --                  | Called on Ctrl+D with empty input                        |
+| `placeholder`      | `string`                  | `""`                | Placeholder text when empty                              |
+| `isActive`         | `boolean`                 | --                  | Whether input is focused/active (overrides focus system) |
+| `prompt`           | `string`                  | `""`                | Prompt prefix (e.g., "$ " or "> ")                       |
+| `promptColor`      | `string`                  | `"$control"`        | Prompt color                                             |
+| `color`            | `string`                  | --                  | Text color                                               |
+| `cursorStyle`      | `"block" \| "underline"`  | `"block"`           | Cursor style                                             |
+| `showUnderline`    | `boolean`                 | `false`             | Show underline below input                               |
+| `underlineWidth`   | `number`                  | `40`                | Underline width                                          |
+| `mask`             | `string`                  | --                  | Mask character for passwords                             |
+| `borderStyle`      | `string`                  | --                  | Border style (wraps input in bordered Box)               |
+| `borderColor`      | `string`                  | `"$border-default"` | Border color when unfocused                              |
+| `focusBorderColor` | `string`                  | `"$border-focus"`   | Border color when focused                                |
+| `testID`           | `string`                  | --                  | Test ID for focus system identification                  |
 
 ### Ref: TextInputHandle
 

@@ -31,9 +31,7 @@ export function ExampleBanner({ meta, controls, theme, children }: Props) {
       <Box flexDirection="column" flexGrow={1}>
         {/* One-line header: dimmed to not compete with example UI */}
         <Box paddingX={1} gap={1}>
-          <Text color="$fg-warning">
-            {"▸ silvery"}
-          </Text>
+          <Text color="$fg-warning">{"▸ silvery"}</Text>
           <Strong>{meta.name}</Strong>
           <Muted>— {meta.description}</Muted>
         </Box>

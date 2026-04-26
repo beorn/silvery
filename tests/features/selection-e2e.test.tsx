@@ -105,9 +105,7 @@ describe("text selection (termless e2e)", { timeout: 10000 }, () => {
     // Selection should have written either SGR 7 inverse (legacy / no-theme
     // path) or an explicit-bg SGR (\x1b[48...) when a uniform selection theme
     // is in effect. Either signals that the selection rendered to the terminal.
-    const hasSelectionStyle = rawChunks.some(
-      (s) => s.includes("\x1b[7m") || s.includes("\x1b[48"),
-    )
+    const hasSelectionStyle = rawChunks.some((s) => s.includes("\x1b[7m") || s.includes("\x1b[48"))
     expect(hasSelectionStyle).toBe(true)
 
     // Finish selection

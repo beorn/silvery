@@ -218,10 +218,7 @@ export function checkNoBlankGap(f: ListViewFixture, a: RenderAnalysis): Invarian
  *   (2b) Last item visible → ▼ must be 0. First item visible → ▲ must be 0.
  *   (2c) Overall: ▲N + ▼N ≥ ceil(hidden/2). Catches "stuck at 1 for N>>1".
  */
-export function checkOverflowCountAccuracy(
-  f: ListViewFixture,
-  a: RenderAnalysis,
-): InvariantResult {
+export function checkOverflowCountAccuracy(f: ListViewFixture, a: RenderAnalysis): InvariantResult {
   const hiddenCount = f.items.length - a.visibleIndices.size
   const totalContent = f.items.reduce((s, x) => s + x.height, 0)
   const fits = totalContent <= f.viewport
@@ -356,10 +353,7 @@ export function checkVirtualizerScrollAgreement(
  * architectural invariant is the load-bearing one — if it breaks, the other
  * invariants become symptom-only guards.
  */
-export function checkAllInvariants(
-  f: ListViewFixture,
-  a: RenderAnalysis,
-): InvariantResult | null {
+export function checkAllInvariants(f: ListViewFixture, a: RenderAnalysis): InvariantResult | null {
   for (const check of [
     checkVirtualizerScrollAgreement,
     checkNoBlankGap,

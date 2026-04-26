@@ -20,8 +20,7 @@ import { Box, Text, ListView } from "../../src/index.js"
 
 const settle = (ms = 60) => new Promise((r) => setTimeout(r, ms))
 
-const makeItems = (n: number) =>
-  Array.from({ length: n }, (_, i) => `Item ${i + 1}`)
+const makeItems = (n: number) => Array.from({ length: n }, (_, i) => `Item ${i + 1}`)
 
 function StickyChat(props: {
   items: string[]
@@ -176,9 +175,19 @@ describe("ListView onAtBottomChange callback", () => {
     expect(transitions[initialCount - 1]).toBe(true)
 
     // Re-render with new items at the bottom — atBottom stays true → no new emit.
-    app.rerender(<StickyChat items={makeItems(11)} onAtBottomChange={(atBottom) => transitions.push(atBottom)} />)
+    app.rerender(
+      <StickyChat
+        items={makeItems(11)}
+        onAtBottomChange={(atBottom) => transitions.push(atBottom)}
+      />,
+    )
     await settle(100)
-    app.rerender(<StickyChat items={makeItems(12)} onAtBottomChange={(atBottom) => transitions.push(atBottom)} />)
+    app.rerender(
+      <StickyChat
+        items={makeItems(12)}
+        onAtBottomChange={(atBottom) => transitions.push(atBottom)}
+      />,
+    )
     await settle(100)
 
     // No additional transition emissions because atBottom remained true.

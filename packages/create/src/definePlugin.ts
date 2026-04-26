@@ -92,11 +92,7 @@ export type OpOf<Name extends string, Ops extends PluginOps<any>> = {
 export type PluginKeys<Ops extends PluginOps<any>> = Partial<Record<string, keyof Ops & string>>
 
 /** Input passed to `definePlugin({...})`. */
-export interface DefinePluginInput<
-  Name extends string,
-  State,
-  Ops extends PluginOps<State>,
-> {
+export interface DefinePluginInput<Name extends string, State, Ops extends PluginOps<State>> {
   readonly name: Name
   readonly state: State
   readonly ops: Ops
@@ -107,11 +103,7 @@ export interface DefinePluginInput<
  * The plugin handle returned by `definePlugin`. A Zustand-shape store
  * enriched with metadata (`name`, `keys`) and typed op helpers.
  */
-export interface DefinedPlugin<
-  Name extends string,
-  State,
-  Ops extends PluginOps<State>,
-> {
+export interface DefinedPlugin<Name extends string, State, Ops extends PluginOps<State>> {
   readonly name: Name
   readonly initialState: State
   readonly keys: PluginKeys<Ops>
@@ -143,11 +135,9 @@ export interface DefinedPlugin<
  *  3. Preserves reference identity on no-op dispatches so
  *     `useSyncExternalStore` doesn't force a spurious commit.
  */
-export function definePlugin<
-  const Name extends string,
-  State,
-  const Ops extends PluginOps<State>,
->(spec: DefinePluginInput<Name, State, Ops>): DefinedPlugin<Name, State, Ops> {
+export function definePlugin<const Name extends string, State, const Ops extends PluginOps<State>>(
+  spec: DefinePluginInput<Name, State, Ops>,
+): DefinedPlugin<Name, State, Ops> {
   const { name, state: initial, ops, keys = {} } = spec
   const opNames = Object.keys(ops) as (keyof Ops & string)[]
 

@@ -45,7 +45,8 @@ export function deriveTheme(
   mode: "ansi16" | "truecolor" = "truecolor",
   adjustments?: ThemeAdjustment[],
 ): Theme {
-  const theme = mode === "ansi16" ? deriveAnsi16ThemeRaw(palette) : deriveTruecolorTheme(palette, adjustments)
+  const theme =
+    mode === "ansi16" ? deriveAnsi16ThemeRaw(palette) : deriveTruecolorTheme(palette, adjustments)
   return inlineSterlingTokens(theme, palette)
 }
 

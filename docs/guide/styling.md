@@ -14,29 +14,29 @@ Migrating from silvery 0.19.x? Legacy `$tokens` (`$primary`, `$muted`, `$selecti
 
 Most Silvery components already use the correct semantic colors by default. **The best color code is no color code.**
 
-| Component              | What's automatic                                                              |
-| ---------------------- | ----------------------------------------------------------------------------- |
-| `<Text>`               | `$fg` text color                                                              |
-| `<TextInput>`          | `$border-default` → `$border-focus` on focus, prompt, cursor                  |
-| `<TextArea>`           | `$border-default` → `$border-focus` on focus                                  |
-| `<ModalDialog>`        | `$bg-surface-raised` bg, `$border-default` border, `$fg-accent` title         |
-| `<CommandPalette>`     | `$bg-surface-raised` bg, `$border-default` border                             |
-| `<Toast>`              | `$bg-surface-raised` bg, `$border-default` border                             |
-| `<SelectList>`         | `$bg-selected` / `$fg-on-selected` for selection, `$fg-muted` for disabled   |
-| `<Badge>`              | Variant colors: `$fg-success`, `$fg-error`, `$fg-warning`, `$fg-accent`       |
-| `<ErrorBoundary>`      | `$fg-error` border                                                            |
-| `<Divider>`            | `$border-default` for line character                                          |
-| `<ProgressBar>`        | `$fg-muted` for empty portion                                                 |
-| `<Spinner>`            | `$fg`                                                                         |
-| `<Button>`             | inverse (`$bg-inverse` / `$fg-on-inverse`) when focused/active                |
-| `<H1>`, `<H2>`, `<H3>` | `$fg-accent` / `$fg-accent` / `$fg` + bold (variant table)                   |
-| `<Muted>`              | `$fg-muted` text                                                              |
-| `<Small>`              | `$fg-muted` (pre-dimmed at truecolor)                                         |
-| `<Lead>`               | `italic` text                                                                 |
-| `<Code>`               | `$bg-muted` background                                                        |
-| `<Blockquote>`         | `$fg-muted` border + italic                                                   |
-| `<P>`                  | body text (semantic wrapper)                                                  |
-| `<LI>`                 | `•` bullet + indented content                                                 |
+| Component              | What's automatic                                                           |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `<Text>`               | `$fg` text color                                                           |
+| `<TextInput>`          | `$border-default` → `$border-focus` on focus, prompt, cursor               |
+| `<TextArea>`           | `$border-default` → `$border-focus` on focus                               |
+| `<ModalDialog>`        | `$bg-surface-raised` bg, `$border-default` border, `$fg-accent` title      |
+| `<CommandPalette>`     | `$bg-surface-raised` bg, `$border-default` border                          |
+| `<Toast>`              | `$bg-surface-raised` bg, `$border-default` border                          |
+| `<SelectList>`         | `$bg-selected` / `$fg-on-selected` for selection, `$fg-muted` for disabled |
+| `<Badge>`              | Variant colors: `$fg-success`, `$fg-error`, `$fg-warning`, `$fg-accent`    |
+| `<ErrorBoundary>`      | `$fg-error` border                                                         |
+| `<Divider>`            | `$border-default` for line character                                       |
+| `<ProgressBar>`        | `$fg-muted` for empty portion                                              |
+| `<Spinner>`            | `$fg`                                                                      |
+| `<Button>`             | inverse (`$bg-inverse` / `$fg-on-inverse`) when focused/active             |
+| `<H1>`, `<H2>`, `<H3>` | `$fg-accent` / `$fg-accent` / `$fg` + bold (variant table)                 |
+| `<Muted>`              | `$fg-muted` text                                                           |
+| `<Small>`              | `$fg-muted` (pre-dimmed at truecolor)                                      |
+| `<Lead>`               | `italic` text                                                              |
+| `<Code>`               | `$bg-muted` background                                                     |
+| `<Blockquote>`         | `$fg-muted` border + italic                                                |
+| `<P>`                  | body text (semantic wrapper)                                               |
+| `<LI>`                 | `•` bullet + indented content                                              |
 
 ::: tip ✨ Shiny
 
@@ -228,20 +228,20 @@ Every surface background has a matching text token. Set both or set neither — 
 `<Box theme={t}>` auto-inherits `$fg` for all descendant text AND auto-fills `$bg` as the background. No explicit `color` or `backgroundColor` props needed — just set `theme` and layout props on the same Box.
 :::
 
-| Background              | Text               | Use for                              |
-| ----------------------- | ------------------ | ------------------------------------ |
-| `$bg`                   | `$fg`              | Default app background               |
-| `$bg-surface-subtle`    | `$fg`              | Cards, subtle elevation              |
-| `$bg-surface-raised`    | `$fg`              | Dialogs, modals, raised panels       |
-| `$bg-surface-overlay`   | `$fg`              | Tooltips, dropdowns, overlays        |
-| `$bg-inverse`           | `$fg-on-inverse`   | Status bars, title bars              |
-| `$bg-muted`             | `$fg`              | Hover highlights, muted chips        |
-| `$bg-selected`          | `$fg-on-selected`  | Cursor row, mouse selection          |
-| `$bg-accent`            | `$fg-on-accent`    | Primary action buttons               |
-| `$bg-error`             | `$fg-on-error`     | Destructive buttons, error banners   |
-| `$bg-success`           | `$fg-on-success`   | Success badges                       |
-| `$bg-warning`           | `$fg-on-warning`   | Warning banners                      |
-| `$bg-info`              | `$fg-on-info`      | Informational chrome                 |
+| Background            | Text              | Use for                            |
+| --------------------- | ----------------- | ---------------------------------- |
+| `$bg`                 | `$fg`             | Default app background             |
+| `$bg-surface-subtle`  | `$fg`             | Cards, subtle elevation            |
+| `$bg-surface-raised`  | `$fg`             | Dialogs, modals, raised panels     |
+| `$bg-surface-overlay` | `$fg`             | Tooltips, dropdowns, overlays      |
+| `$bg-inverse`         | `$fg-on-inverse`  | Status bars, title bars            |
+| `$bg-muted`           | `$fg`             | Hover highlights, muted chips      |
+| `$bg-selected`        | `$fg-on-selected` | Cursor row, mouse selection        |
+| `$bg-accent`          | `$fg-on-accent`   | Primary action buttons             |
+| `$bg-error`           | `$fg-on-error`    | Destructive buttons, error banners |
+| `$bg-success`         | `$fg-on-success`  | Success badges                     |
+| `$bg-warning`         | `$fg-on-warning`  | Warning banners                    |
+| `$bg-info`            | `$fg-on-info`     | Informational chrome               |
 
 ::: tip ✨ Shiny
 
@@ -337,14 +337,14 @@ Sterling collapses the legacy `$primary` / `$accent` distinction onto a single r
 
 For **app-specific identity** (your logo, signature chrome) use `$brand` — defined separately so apps can pin a fixed color without overriding scheme-derived `$fg-accent`. See [Token Taxonomy](/guide/token-taxonomy#app-identity-brand).
 
-| Good use                                   | Why `$fg-accent`         |
-| ------------------------------------------ | ------------------------ |
-| Heading titles                             | Maximum emphasis         |
-| Active tab / focus indicator               | "You are here"           |
-| Notification count                         | Urgent but not an error  |
-| "New" / "Beta" badge                       | Attention, not status    |
-| Search match highlight                     | Temporary emphasis       |
-| Primary action button (`$bg-accent` fill)  | Call to action           |
+| Good use                                  | Why `$fg-accent`        |
+| ----------------------------------------- | ----------------------- |
+| Heading titles                            | Maximum emphasis        |
+| Active tab / focus indicator              | "You are here"          |
+| Notification count                        | Urgent but not an error |
+| "New" / "Beta" badge                      | Attention, not status   |
+| Search match highlight                    | Temporary emphasis      |
+| Primary action button (`$bg-accent` fill) | Call to action          |
 
 ::: tip ✨ Shiny
 
@@ -377,11 +377,11 @@ If you can't explain why this element needs accent emphasis, you probably want `
 
 Three border roles exist — `border-default` (structural), `border-focus` (focus ring), `border-muted` (faint subdivider) — and **components handle the transitions automatically**. You just set `borderStyle`.
 
-| Role             | Token             | Applied by                              |
-| ---------------- | ----------------- | --------------------------------------- |
-| Structural       | `$border-default` | Box (automatic default)                 |
-| Focus ring       | `$border-focus`   | TextInput, TextArea (automatic on focus)|
-| Faint divider    | `$border-muted`   | Subtle dividers in dense layouts        |
+| Role          | Token             | Applied by                               |
+| ------------- | ----------------- | ---------------------------------------- |
+| Structural    | `$border-default` | Box (automatic default)                  |
+| Focus ring    | `$border-focus`   | TextInput, TextArea (automatic on focus) |
+| Faint divider | `$border-muted`   | Subtle dividers in dense layouts         |
 
 ::: tip ✨ Shiny
 
@@ -552,13 +552,17 @@ Available state-aware tokens:
 Blend two colors with `mix(color1, color2, amount)`:
 
 ```tsx
-{/* Subtle blue hover tint over dark background */}
-<Box backgroundColor="mix($bg, $fg-link, 10%)">
+{
+  /* Subtle blue hover tint over dark background */
+}
+;<Box backgroundColor="mix($bg, $fg-link, 10%)">
   <Text>Hover state</Text>
 </Box>
 
-{/* 50/50 blend of two theme colors */}
-<Text color="mix($fg-accent, $fg-link, 50%)">Blended</Text>
+{
+  /* 50/50 blend of two theme colors */
+}
+;<Text color="mix($fg-accent, $fg-link, 50%)">Blended</Text>
 ```
 
 Supports theme tokens (`$bg`, `$fg-link`, …), named colors (`red`, `blue`), and hex (`#ff0000`). Amount is 0-100% or 0.0-1.0.
@@ -688,35 +692,35 @@ useEffect(() => { const t = setInterval(() => setFade(f => Math.min(f + 0.1, 0.7
 
 ### Smell Summary
 
-| Smell                                                   | What it means                                                                                |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `color="$fg"`                                           | Writing the default — remove it                                                              |
-| `color="red"` or `"#hex"`                               | Hardcoded — use a `$token`                                                                   |
-| Status tokens (`$fg-success`, `$fg-error`) for headings | Status colors imply meaning — use `$fg-accent` / `$fg` for hierarchy                          |
-| `borderColor={focused ? ... : ...}`                     | Manual focus switching — let the component handle it                                         |
-| `backgroundColor` without matching `fg-on-X`            | Unpaired status/inverse/accent surface — add the contrast-picked text token                  |
-| `$fg-success` / `$fg-error` without icon or label       | Color-only status — add redundant text signal                                                |
-| `$fg-success` on a structural border for decoration     | Misused status — use `$border-default` or `$fg-accent`                                        |
-| `$color0`–`$color15` for UI chrome                      | Palette is for data categorization only                                                      |
-| `$primary` / `$muted` / `$selectionbg`                  | Legacy `$tokens` — migrate to Sterling (`$fg-accent`, `$fg-muted`, `$bg-selected`, …)        |
-| Specifying colors a component already handles           | Fighting the framework — remove and trust defaults                                           |
-| Hardcoded hex for a tinted surface                      | Use `mix($bg, $token, N%)` — adapts to any theme                                             |
-| `<Link>` inside a colored container using `$fg-link`    | Use `color="inherit"` — inherits from the parent instead of forcing blue                     |
+| Smell                                                   | What it means                                                                         |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `color="$fg"`                                           | Writing the default — remove it                                                       |
+| `color="red"` or `"#hex"`                               | Hardcoded — use a `$token`                                                            |
+| Status tokens (`$fg-success`, `$fg-error`) for headings | Status colors imply meaning — use `$fg-accent` / `$fg` for hierarchy                  |
+| `borderColor={focused ? ... : ...}`                     | Manual focus switching — let the component handle it                                  |
+| `backgroundColor` without matching `fg-on-X`            | Unpaired status/inverse/accent surface — add the contrast-picked text token           |
+| `$fg-success` / `$fg-error` without icon or label       | Color-only status — add redundant text signal                                         |
+| `$fg-success` on a structural border for decoration     | Misused status — use `$border-default` or `$fg-accent`                                |
+| `$color0`–`$color15` for UI chrome                      | Palette is for data categorization only                                               |
+| `$primary` / `$muted` / `$selectionbg`                  | Legacy `$tokens` — migrate to Sterling (`$fg-accent`, `$fg-muted`, `$bg-selected`, …) |
+| Specifying colors a component already handles           | Fighting the framework — remove and trust defaults                                    |
+| Hardcoded hex for a tinted surface                      | Use `mix($bg, $token, N%)` — adapts to any theme                                      |
+| `<Link>` inside a colored container using `$fg-link`    | Use `color="inherit"` — inherits from the parent instead of forcing blue              |
 
 ### Contrast Guarantees
 
 Sterling's `auto-lift` derivation ensures minimum contrast ratios on the core role pairs. If a token already meets the target, it's returned unchanged. If not, OKLCH lightness is shifted (preserving hue and chroma) until the target is met.
 
-| Token class                                                            | Target ratio | Rationale                                          |
-| ---------------------------------------------------------------------- | ------------ | -------------------------------------------------- |
-| Body text (`$fg`) on all surfaces (`$bg`, `$bg-surface-*`)             | 4.5:1 (AA)   | Primary text must be readable everywhere           |
-| Muted text (`$fg-muted`) on `$bg` and `$bg-muted`                      | 4.5:1 (AA)   | Secondary text must be readable                    |
-| Accent / status fg on `$bg`                                            | 4.5:1 (AA)   | Colored text on root background                    |
-| `$fg-on-accent` / `$fg-on-error` / etc. on their `$bg-X`               | 4.5:1 (AA)   | Contrast-picked black or white                     |
-| Selected text on `$bg-selected`                                        | 4.5:1 (AA)   | Selected text must be readable                     |
-| Cursor text on `$bg-cursor`                                            | 4.5:1 (AA)   | Text under cursor must be readable                 |
-| `$border-default` on `$bg`                                             | 1.5:1        | Faint structural dividers — visible, not prominent |
-| `$border-focus` on `$bg`                                               | 3.0:1        | WCAG 1.4.11 non-text minimum for controls          |
+| Token class                                                | Target ratio | Rationale                                          |
+| ---------------------------------------------------------- | ------------ | -------------------------------------------------- |
+| Body text (`$fg`) on all surfaces (`$bg`, `$bg-surface-*`) | 4.5:1 (AA)   | Primary text must be readable everywhere           |
+| Muted text (`$fg-muted`) on `$bg` and `$bg-muted`          | 4.5:1 (AA)   | Secondary text must be readable                    |
+| Accent / status fg on `$bg`                                | 4.5:1 (AA)   | Colored text on root background                    |
+| `$fg-on-accent` / `$fg-on-error` / etc. on their `$bg-X`   | 4.5:1 (AA)   | Contrast-picked black or white                     |
+| Selected text on `$bg-selected`                            | 4.5:1 (AA)   | Selected text must be readable                     |
+| Cursor text on `$bg-cursor`                                | 4.5:1 (AA)   | Text under cursor must be readable                 |
+| `$border-default` on `$bg`                                 | 1.5:1        | Faint structural dividers — visible, not prominent |
+| `$border-focus` on `$bg`                                   | 3.0:1        | WCAG 1.4.11 non-text minimum for controls          |
 
 Sterling is OKLCH-native throughout: blends, lightness adjustments, and contrast lifts all happen in the perceptually-uniform space.
 
@@ -736,10 +740,10 @@ silvery components mirror CSS sizing properties so the same code lays out the sa
 
 CSS [`field-sizing`](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizing) controls whether a form control sizes to its content. silvery's `<TextArea>` exposes the same two values:
 
-| CSS                        | silvery prop                              | Behavior                                  |
-| -------------------------- | ----------------------------------------- | ----------------------------------------- |
-| `field-sizing: content`    | `<TextArea fieldSizing="content" />`      | Height tracks content, clamped between `minRows` and `maxRows`. Default. |
-| `field-sizing: fixed`      | `<TextArea fieldSizing="fixed" rows={N} />` | Height stays at `rows` regardless of content. |
+| CSS                     | silvery prop                                | Behavior                                                                 |
+| ----------------------- | ------------------------------------------- | ------------------------------------------------------------------------ |
+| `field-sizing: content` | `<TextArea fieldSizing="content" />`        | Height tracks content, clamped between `minRows` and `maxRows`. Default. |
+| `field-sizing: fixed`   | `<TextArea fieldSizing="fixed" rows={N} />` | Height stays at `rows` regardless of content.                            |
 
 `<TextArea rows={N}>` mirrors HTML's `<textarea rows={N}>`. silvery adds `minRows` / `maxRows` for the auto-grow range — the cross-platform / web-target convention for chat inputs.
 

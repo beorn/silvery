@@ -247,11 +247,7 @@ describe("ListView — flex sibling coexistence", () => {
 
     const app = r(
       <Box flexDirection="column" height={rows} width="100%">
-        <ListView
-          items={items}
-          height={5}
-          renderItem={(item) => <Text>{item.title}</Text>}
-        />
+        <ListView items={items} height={5} renderItem={(item) => <Text>{item.title}</Text>} />
         <Box flexShrink={0} height={1} width="100%">
           <Text>FOOTER-ROW</Text>
         </Box>

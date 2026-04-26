@@ -14,13 +14,7 @@
 // underline helpers are methods on Term/Style. We force a truecolor Term
 // below with underline caps forced true — the storybook demonstrates all
 // extended styles regardless of the host terminal's actual capability.
-import {
-  createTerm,
-  createTerminalProfile,
-  hyperlink,
-  displayLength,
-  stripAnsi,
-} from "./index"
+import { createTerm, createTerminalProfile, hyperlink, displayLength, stripAnsi } from "./index"
 
 // Force underline caps = true so the storybook always demonstrates
 // extended styles, regardless of the host terminal's detected caps.
@@ -121,7 +115,9 @@ subsection("Curly with colors (like spell-check)")
 
 console.log(` Spelling error: ${term.styledUnderline("curly", [255, 0, 0], "teh")} → the`)
 console.log(` Grammar issue:  ${term.styledUnderline("curly", [0, 128, 255], "alot")} → a lot`)
-console.log(` Style warning:  ${term.styledUnderline("curly", [0, 180, 0], "very unique")} → unique`)
+console.log(
+  ` Style warning:  ${term.styledUnderline("curly", [0, 180, 0], "very unique")} → unique`,
+)
 console.log()
 
 subsection("Dotted with colors (embedded content)")
@@ -133,7 +129,9 @@ console.log()
 subsection("Dashed with colors (drafts/tentative)")
 
 console.log(` Draft:     ${term.styledUnderline("dashed", [128, 128, 128], "WIP: New feature")}`)
-console.log(` Tentative: ${term.styledUnderline("dashed", [169, 169, 169], "Maybe: Refactor auth")}`)
+console.log(
+  ` Tentative: ${term.styledUnderline("dashed", [169, 169, 169], "Maybe: Refactor auth")}`,
+)
 
 // =============================================================================
 // Hyperlinks

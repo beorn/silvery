@@ -13,11 +13,11 @@ how to migrate code that historically read layout rects at render time.
 
 Three phases, each consuming the previous one's output:
 
-| Phase             | Consumes              | Produces                              |
-| ----------------- | --------------------- | ------------------------------------- |
-| **Render** (React) | props, state          | semantic tree (Box / Text / signals)  |
-| **Layout** (Flexily) | semantic tree         | geometry (rects, cursor, focus, scroll) |
-| **Output** (ANSI / DOM) | geometry           | painted frame                         |
+| Phase                   | Consumes      | Produces                                |
+| ----------------------- | ------------- | --------------------------------------- |
+| **Render** (React)      | props, state  | semantic tree (Box / Text / signals)    |
+| **Layout** (Flexily)    | semantic tree | geometry (rects, cursor, focus, scroll) |
+| **Output** (ANSI / DOM) | geometry      | painted frame                           |
 
 The pattern is borrowed wholesale from the browser pipeline (DOM →
 layout/style → paint), Yoga's `onLayout` callbacks, AppKit/TextKit's
@@ -36,14 +36,14 @@ Six layout outputs are exposed as **declarative props on Box** (or as
 signals consumed by the scheduler/renderer). Component authors set them;
 the layout engine resolves them; the scheduler/renderer consumes them:
 
-| Signal              | Declared via                              | Consumed by                                       |
-| ------------------- | ----------------------------------------- | ------------------------------------------------- |
-| `boxRect`           | (computed from flex / width / height)     | layout-signals → component callbacks (post-layout) |
-| `scrollRect`        | (computed from scroll containers)         | scrolling, position registries                     |
-| `screenRect`        | (computed including sticky clamping)      | mouse hit-testing, alt-screen output               |
-| `cursorRect`        | `<Box cursorOffset={{ col, row, visible }}>` | output phase (DECSCUSR + cursor positioning)      |
-| `focusedNodeId`     | `<Box focused={true}>`                    | input dispatch, focus-aware overlays              |
-| `selectionFragments` | `<Box selectionIntent={...}>`             | render phase (selection paint walk)               |
+| Signal               | Declared via                                 | Consumed by                                        |
+| -------------------- | -------------------------------------------- | -------------------------------------------------- |
+| `boxRect`            | (computed from flex / width / height)        | layout-signals → component callbacks (post-layout) |
+| `scrollRect`         | (computed from scroll containers)            | scrolling, position registries                     |
+| `screenRect`         | (computed including sticky clamping)         | mouse hit-testing, alt-screen output               |
+| `cursorRect`         | `<Box cursorOffset={{ col, row, visible }}>` | output phase (DECSCUSR + cursor positioning)       |
+| `focusedNodeId`      | `<Box focused={true}>`                       | input dispatch, focus-aware overlays               |
+| `selectionFragments` | `<Box selectionIntent={...}>`                | render phase (selection paint walk)                |
 
 You don't read these in render. You declare them, and the layout engine
 makes them available post-layout to the consumers that need them.
@@ -56,7 +56,7 @@ If you wrote:
 
 ```tsx
 function MyBox() {
-  const { width } = useBoxRect()  // ⚠ stale-frame zero on first mount
+  const { width } = useBoxRect() // ⚠ stale-frame zero on first mount
   return <Text>{"─".repeat(width)}</Text>
 }
 ```
@@ -188,12 +188,12 @@ The view-as-layout-output substrate is the foundation for silvery's
 multi-target ambition. Each of the six signals maps cleanly to a
 target-specific paint operation:
 
-| Signal              | Terminal                                | Canvas                            | DOM                                      |
-| ------------------- | --------------------------------------- | --------------------------------- | ---------------------------------------- |
-| `boxRect`           | cell coordinates                        | pixel rect                        | `getBoundingClientRect()`                |
-| `cursorRect`        | DECSCUSR + cursor position              | drawn caret bitmap                | CSS `caret-color` + `<input>` focus      |
-| `focusedNodeId`     | route input events                      | dispatch keyboard listener        | DOM `focus` / `blur` / `tabindex`        |
-| `selectionFragments` | inverse-paint cell ranges              | filled rect overlays              | `::selection` pseudo + `Range` API       |
+| Signal               | Terminal                   | Canvas                     | DOM                                 |
+| -------------------- | -------------------------- | -------------------------- | ----------------------------------- |
+| `boxRect`            | cell coordinates           | pixel rect                 | `getBoundingClientRect()`           |
+| `cursorRect`         | DECSCUSR + cursor position | drawn caret bitmap         | CSS `caret-color` + `<input>` focus |
+| `focusedNodeId`      | route input events         | dispatch keyboard listener | DOM `focus` / `blur` / `tabindex`   |
+| `selectionFragments` | inverse-paint cell ranges  | filled rect overlays       | `::selection` pseudo + `Range` API  |
 
 A silvery component author writes the same `<Box cursorOffset>` /
 `<Box focused>` / `<Box selectionIntent>` code regardless of target. The

@@ -552,8 +552,7 @@ export class RenderScheduler {
       const width = this.size?.cols() ?? this.stdout.columns ?? 80
       // Inline mode: use NaN height so layout engine auto-sizes to content.
       // Fullscreen mode: use terminal rows as the constraint.
-      const height =
-        this.mode === "inline" ? NaN : (this.size?.rows() ?? this.stdout.rows ?? 24)
+      const height = this.mode === "inline" ? NaN : (this.size?.rows() ?? this.stdout.rows ?? 24)
 
       log.debug?.(
         `render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`,
@@ -567,7 +566,10 @@ export class RenderScheduler {
       // (BoxProps.cursorOffset → cursorRect signal) requires layout to have
       // run. The legacy store fallback used to be resolved pre-layout, but
       // that path doesn't depend on layout state either, so deferring is safe.
-      let inlineCursor: { x: number; y: number; visible: boolean; shape?: CursorRect["shape"] } | null | undefined
+      let inlineCursor:
+        | { x: number; y: number; visible: boolean; shape?: CursorRect["shape"] }
+        | null
+        | undefined
       const doRender = () => {
         const ag = createAg(this.root, { measurer })
         ag.layout({ cols: width, rows: height })
@@ -588,9 +590,7 @@ export class RenderScheduler {
             buffer,
             this.mode,
             scrollbackOffset,
-            this.mode === "inline"
-              ? (this.size?.rows() ?? this.stdout.rows ?? 24)
-              : undefined,
+            this.mode === "inline" ? (this.size?.rows() ?? this.stdout.rows ?? 24) : undefined,
             inlineCursor ?? undefined,
           )
         } catch (e) {

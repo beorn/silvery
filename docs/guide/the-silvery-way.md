@@ -391,15 +391,15 @@ try {
 
 Silvery objects that support `using`:
 
-| Object                                      | What it cleans up                                |
-| ------------------------------------------- | ------------------------------------------------ |
-| `createTerm()`                              | Restores terminal mode, cursor, alternate screen |
-| `render()` / `app.run()`                    | Unmounts React tree, stops event loop            |
-| `createScope()`                             | Cancels child tasks, clears timers               |
-| `createEditContext()`                       | Releases input layer bindings                    |
+| Object                                       | What it cleans up                                  |
+| -------------------------------------------- | -------------------------------------------------- |
+| `createTerm()`                               | Restores terminal mode, cursor, alternate screen   |
+| `render()` / `app.run()`                     | Unmounts React tree, stops event loop              |
+| `createScope()`                              | Cancels child tasks, clears timers                 |
+| `createEditContext()`                        | Releases input layer bindings                      |
 | `term.console.capture()` (on `createTerm()`) | Restores original console methods via term dispose |
-| `Spinner` / `ProgressBar` / `MultiProgress` | Stops animation, clears interval                 |
-| `createScreenshot()`                        | Closes screenshot file handle                    |
+| `Spinner` / `ProgressBar` / `MultiProgress`  | Stops animation, clears interval                   |
+| `createScreenshot()`                         | Closes screenshot file handle                      |
 
 The pattern extends to your own code — any factory that returns `{ [Symbol.dispose]() { ... } }` works with `using`. Silvery's plugin composition (`pipe()`, `withScope()`) uses the same mechanism internally.
 

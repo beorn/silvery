@@ -38,12 +38,12 @@ For themed subtrees (where the theme differs from the terminal), use `Box theme=
 
 Any color prop on `Box` or `Text` that starts with `$` resolves against the active theme. Sterling's flat hyphen-keys are the canonical surface; both kebab (`$fg-accent`) and camelCase (`$fgAccent`) forms work — hyphens are stripped before lookup.
 
-| Prop              | Components | Example                            |
-| ----------------- | ---------- | ---------------------------------- |
-| `color`           | Box, Text  | `color="$fg-accent"`               |
+| Prop              | Components | Example                                |
+| ----------------- | ---------- | -------------------------------------- |
+| `color`           | Box, Text  | `color="$fg-accent"`                   |
 | `backgroundColor` | Box, Text  | `backgroundColor="$bg-surface-raised"` |
-| `borderColor`     | Box        | `borderColor="$border-default"`    |
-| `outlineColor`    | Box        | `outlineColor="$border-focus"`     |
+| `borderColor`     | Box        | `borderColor="$border-default"`        |
+| `outlineColor`    | Box        | `outlineColor="$border-focus"`         |
 
 Non-`$` values pass through unchanged (`color="red"`, `color="#ff0000"`).
 
@@ -51,20 +51,27 @@ Non-`$` values pass through unchanged (`color="red"`, `color="#ff0000"`).
 
 ### Special Color Values
 
-| Value               | Description                                                                                                                                          |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Value               | Description                                                                                                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `"inherit"`         | Skip color override, inherit from parent element. Useful for components with default colors (e.g., `<Link color="inherit">` to skip `$fg-link` blue). |
 | `"mix(c1, c2, N%)"` | Blend `c1` and `c2` at N% ratio. Supports `$tokens`, named colors, and hex. Amount is 0–100% or 0.0–1.0.                                              |
-| `"$default"`        | Terminal's actual default background (SGR 49). Unlike `$bg`, this matches the user's terminal emulator setting exactly.                              |
+| `"$default"`        | Terminal's actual default background (SGR 49). Unlike `$bg`, this matches the user's terminal emulator setting exactly.                               |
 
 ```tsx
-{/* Link inherits parent color instead of defaulting to $fg-link */}
-<Text color="$fg-error">
-  Error: <Link color="inherit" href="...">details</Link>
+{
+  /* Link inherits parent color instead of defaulting to $fg-link */
+}
+;<Text color="$fg-error">
+  Error:{" "}
+  <Link color="inherit" href="...">
+    details
+  </Link>
 </Text>
 
-{/* Subtle tint using mix */}
-<Box backgroundColor="mix($bg, $fg-error, 15%)">
+{
+  /* Subtle tint using mix */
+}
+;<Box backgroundColor="mix($bg, $fg-error, 15%)">
   <Text color="$fg-error">3 errors</Text>
 </Box>
 ```
@@ -73,91 +80,91 @@ Non-`$` values pass through unchanged (`color="red"`, `color="#ff0000"`).
 
 ### Root pair
 
-| Token | Use                                                |
-| ----- | -------------------------------------------------- |
-| `$fg` | Default text color (= `scheme.foreground`)         |
-| `$bg` | Default canvas (= `scheme.background`)             |
+| Token | Use                                        |
+| ----- | ------------------------------------------ |
+| `$fg` | Default text color (= `scheme.foreground`) |
+| `$bg` | Default canvas (= `scheme.background`)     |
 
 ### Surface
 
-| Token                   | Use                                          |
-| ----------------------- | -------------------------------------------- |
-| `$bg-surface-default`   | Same as `$bg` — the canvas                   |
-| `$bg-surface-subtle`    | Cards, list rows, subtle elevation           |
-| `$bg-surface-raised`    | Dialogs, modals, raised panels               |
-| `$bg-surface-overlay`   | Tooltips, dropdowns, overlays                |
-| `$bg-surface-hover`     | Surface hover state (+0.04L)                 |
+| Token                 | Use                                |
+| --------------------- | ---------------------------------- |
+| `$bg-surface-default` | Same as `$bg` — the canvas         |
+| `$bg-surface-subtle`  | Cards, list rows, subtle elevation |
+| `$bg-surface-raised`  | Dialogs, modals, raised panels     |
+| `$bg-surface-overlay` | Tooltips, dropdowns, overlays      |
+| `$bg-surface-hover`   | Surface hover state (+0.04L)       |
 
 ### Border
 
-| Token              | Use                                              |
-| ------------------ | ------------------------------------------------ |
-| `$border-default`  | Structural rules and dividers (1.5:1 contrast)   |
-| `$border-focus`    | Focus ring on inputs (3:1 WCAG 1.4.11 minimum)   |
-| `$border-muted`    | Faint subdivider                                 |
+| Token             | Use                                            |
+| ----------------- | ---------------------------------------------- |
+| `$border-default` | Structural rules and dividers (1.5:1 contrast) |
+| `$border-focus`   | Focus ring on inputs (3:1 WCAG 1.4.11 minimum) |
+| `$border-muted`   | Faint subdivider                               |
 
 ### Cursor
 
-| Token         | Use                            |
-| ------------- | ------------------------------ |
-| `$fg-cursor`  | Glyph color under the cursor   |
-| `$bg-cursor`  | Cursor block/line color        |
+| Token        | Use                          |
+| ------------ | ---------------------------- |
+| `$fg-cursor` | Glyph color under the cursor |
+| `$bg-cursor` | Cursor block/line color      |
 
 ### Muted
 
-| Token        | Use                                  |
-| ------------ | ------------------------------------ |
-| `$fg-muted`  | Secondary text — captions, hints     |
-| `$bg-muted`  | Subtle hover surface, code chips     |
+| Token       | Use                              |
+| ----------- | -------------------------------- |
+| `$fg-muted` | Secondary text — captions, hints |
+| `$bg-muted` | Subtle hover surface, code chips |
 
 ### Accent (the canonical interactive-text role)
 
-| Token                  | Use                                              |
-| ---------------------- | ------------------------------------------------ |
-| `$fg-accent`           | Brand emphasis text — headings, focus, links     |
-| `$bg-accent`           | Primary action button fill                       |
-| `$fg-on-accent`        | Text on `$bg-accent` (contrast-picked)           |
-| `$fg-accent-hover`     | Link hover state (+0.04L)                        |
-| `$bg-accent-hover`     | Surface hover on accent fill                     |
-| `$fg-accent-active`    | Pressed text (+0.08L)                            |
-| `$bg-accent-active`    | Pressed surface                                  |
-| `$border-accent`       | Border on accent-emphasized panels               |
+| Token               | Use                                          |
+| ------------------- | -------------------------------------------- |
+| `$fg-accent`        | Brand emphasis text — headings, focus, links |
+| `$bg-accent`        | Primary action button fill                   |
+| `$fg-on-accent`     | Text on `$bg-accent` (contrast-picked)       |
+| `$fg-accent-hover`  | Link hover state (+0.04L)                    |
+| `$bg-accent-hover`  | Surface hover on accent fill                 |
+| `$fg-accent-active` | Pressed text (+0.08L)                        |
+| `$bg-accent-active` | Pressed surface                              |
+| `$border-accent`    | Border on accent-emphasized panels           |
 
 ### Status (info / success / warning / error)
 
 Each status role has surface state (`bg-X-hover`, `bg-X-active`) but **no text-color hover** — text on a status role isn't a link.
 
-| Token                  | Use                                              |
-| ---------------------- | ------------------------------------------------ |
-| `$fg-info` / `$bg-info` / `$fg-on-info`            | Neutral info                          |
-| `$bg-info-hover` / `$bg-info-active`               | Surface state                         |
-| `$fg-success` / `$bg-success` / `$fg-on-success`   | Positive status                       |
-| `$bg-success-hover` / `$bg-success-active`         | Surface state                         |
-| `$fg-warning` / `$bg-warning` / `$fg-on-warning`   | Caution                               |
-| `$bg-warning-hover` / `$bg-warning-active`         | Surface state                         |
-| `$fg-error` / `$bg-error` / `$fg-on-error`         | Destructive / errors                  |
-| `$bg-error-hover` / `$bg-error-active`             | Surface state                         |
+| Token                                            | Use                  |
+| ------------------------------------------------ | -------------------- |
+| `$fg-info` / `$bg-info` / `$fg-on-info`          | Neutral info         |
+| `$bg-info-hover` / `$bg-info-active`             | Surface state        |
+| `$fg-success` / `$bg-success` / `$fg-on-success` | Positive status      |
+| `$bg-success-hover` / `$bg-success-active`       | Surface state        |
+| `$fg-warning` / `$bg-warning` / `$fg-on-warning` | Caution              |
+| `$bg-warning-hover` / `$bg-warning-active`       | Surface state        |
+| `$fg-error` / `$bg-error` / `$fg-on-error`       | Destructive / errors |
+| `$bg-error-hover` / `$bg-error-active`           | Surface state        |
 
 ### Selected
 
-| Token                | Use                                                       |
-| -------------------- | --------------------------------------------------------- |
-| `$bg-selected`       | Cursor row, mouse selection, search match highlight       |
-| `$fg-on-selected`    | Text on `$bg-selected` (contrast-picked)                  |
-| `$bg-selected-hover` | SelectList row hover (+0.04L on `$bg-selected`)           |
+| Token                | Use                                                 |
+| -------------------- | --------------------------------------------------- |
+| `$bg-selected`       | Cursor row, mouse selection, search match highlight |
+| `$fg-on-selected`    | Text on `$bg-selected` (contrast-picked)            |
+| `$bg-selected-hover` | SelectList row hover (+0.04L on `$bg-selected`)     |
 
 ### Inverse
 
-| Token            | Use                                                |
-| ---------------- | -------------------------------------------------- |
-| `$bg-inverse`    | Status bars, modal chrome, "you are here" bands    |
-| `$fg-on-inverse` | Text on `$bg-inverse` (contrast-picked)            |
+| Token            | Use                                             |
+| ---------------- | ----------------------------------------------- |
+| `$bg-inverse`    | Status bars, modal chrome, "you are here" bands |
+| `$fg-on-inverse` | Text on `$bg-inverse` (contrast-picked)         |
 
 ### Link
 
-| Token      | Use                                                                |
-| ---------- | ------------------------------------------------------------------ |
-| `$fg-link` | Hyperlink text — distinct from `$fg-accent` (often classic blue)   |
+| Token      | Use                                                              |
+| ---------- | ---------------------------------------------------------------- |
+| `$fg-link` | Hyperlink text — distinct from `$fg-accent` (often classic blue) |
 
 ### Categorical Hue Ring (8 tokens)
 
@@ -206,7 +213,7 @@ Wraps a subtree (or the whole app) and sets the React context that `useTheme()` 
 ```tsx
 import { ThemeProvider, defaultDarkTheme } from "silvery"
 
-<ThemeProvider theme={defaultDarkTheme}>
+;<ThemeProvider theme={defaultDarkTheme}>
   <App />
 </ThemeProvider>
 ```
@@ -226,8 +233,8 @@ import { useTheme } from "silvery/theme"
 function StatusLine() {
   const theme = useTheme()
   // Access via nested roles or flat keys — both reference the same hex
-  const accent = theme.accent.fg            // nested
-  const accentFlat = theme["fg-accent"]     // flat
+  const accent = theme.accent.fg // nested
+  const accentFlat = theme["fg-accent"] // flat
   return <Text color="$fg-accent">{theme.name}</Text>
 }
 ```

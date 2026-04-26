@@ -45,7 +45,9 @@ describe("trace (default — disabled)", () => {
   it("creating + disposing a disposable() value leaves no trace entries", () => {
     const before = getTraceSnapshot().length
     let disposed = false
-    const d = disposable({ x: 1 }, (_) => { disposed = true })
+    const d = disposable({ x: 1 }, (_) => {
+      disposed = true
+    })
     expect(getTraceSnapshot().length).toBe(before)
     d[Symbol.dispose]()
     expect(disposed).toBe(true)

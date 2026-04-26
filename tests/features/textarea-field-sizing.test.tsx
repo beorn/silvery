@@ -26,7 +26,7 @@ describe("TextArea fieldSizing", () => {
   // fieldSizing="fixed"
   // ──────────────────────────────────────────────────────────────────────
 
-  test("fieldSizing=\"fixed\" rows={3} renders exactly 3 visible rows regardless of content", () => {
+  test('fieldSizing="fixed" rows={3} renders exactly 3 visible rows regardless of content', () => {
     const r = createRenderer({ cols: 40, rows: 10 })
 
     function App() {
@@ -52,17 +52,13 @@ describe("TextArea fieldSizing", () => {
     // because the widget has the room.
   })
 
-  test("fieldSizing=\"fixed\" rows={1} stays a single row even with multi-line content", async () => {
+  test('fieldSizing="fixed" rows={1} stays a single row even with multi-line content', async () => {
     const r = createRenderer({ cols: 40, rows: 10 })
 
     function App() {
       return (
         <Box width={40}>
-          <TextArea
-            defaultValue={"line1\nline2\nline3"}
-            fieldSizing="fixed"
-            rows={1}
-          />
+          <TextArea defaultValue={"line1\nline2\nline3"} fieldSizing="fixed" rows={1} />
         </Box>
       )
     }
@@ -82,7 +78,7 @@ describe("TextArea fieldSizing", () => {
   // fieldSizing="content"
   // ──────────────────────────────────────────────────────────────────────
 
-  test("fieldSizing=\"content\" minRows=1 maxRows=8 — single-line input occupies 1 row", () => {
+  test('fieldSizing="content" minRows=1 maxRows=8 — single-line input occupies 1 row', () => {
     const r = createRenderer({ cols: 40, rows: 10 })
 
     function App() {
@@ -100,7 +96,7 @@ describe("TextArea fieldSizing", () => {
     expect(cursor!.y).toBe(0)
   })
 
-  test("fieldSizing=\"content\" — 5-line input renders 5 visible rows", () => {
+  test('fieldSizing="content" — 5-line input renders 5 visible rows', () => {
     const r = createRenderer({ cols: 40, rows: 20 })
 
     function App() {
@@ -126,7 +122,7 @@ describe("TextArea fieldSizing", () => {
     expect(cursor!.y).toBe(4)
   })
 
-  test("fieldSizing=\"content\" — 12-line input clamps to 8 visible rows", async () => {
+  test('fieldSizing="content" — 12-line input clamps to 8 visible rows', async () => {
     const r = createRenderer({ cols: 40, rows: 20 })
 
     const lines = Array.from({ length: 12 }, (_, i) => `line${i + 1}`).join("\n")
@@ -152,7 +148,7 @@ describe("TextArea fieldSizing", () => {
     expect(app.text).not.toContain("line1\n") // scrolled off
   })
 
-  test("fieldSizing=\"content\" — minRows clamps small content up", () => {
+  test('fieldSizing="content" — minRows clamps small content up', () => {
     const r = createRenderer({ cols: 40, rows: 10 })
 
     function App() {

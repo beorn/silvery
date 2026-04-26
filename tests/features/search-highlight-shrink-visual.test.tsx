@@ -91,8 +91,14 @@ describe("composeSearchHighlightCells", () => {
     ]
     const changes = composeSearchHighlightCells(buf, highlights)
 
-    const row0 = changes.filter((c) => c.row === 0).map((c) => c.col).sort((a, b) => a - b)
-    const row1 = changes.filter((c) => c.row === 1).map((c) => c.col).sort((a, b) => a - b)
+    const row0 = changes
+      .filter((c) => c.row === 0)
+      .map((c) => c.col)
+      .sort((a, b) => a - b)
+    const row1 = changes
+      .filter((c) => c.row === 1)
+      .map((c) => c.col)
+      .sort((a, b) => a - b)
     expect(row0).toEqual([0, 1, 2])
     expect(row1).toEqual([5, 6, 7, 8])
   })

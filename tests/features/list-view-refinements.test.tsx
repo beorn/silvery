@@ -302,7 +302,9 @@ describe("Refinement 4: row-budget cap (maxEstimatedRows)", () => {
     // The rendered count is bounded by (rowBudget / estimateHeight) =
     // 200 / 5 = 40 — not the 50-item budget.
     const renderedCount = countRendered(text, 100)
-    expect(renderedCount, `rendered count = ${renderedCount}, expected ≤ 50`).toBeLessThanOrEqual(50)
+    expect(renderedCount, `rendered count = ${renderedCount}, expected ≤ 50`).toBeLessThanOrEqual(
+      50,
+    )
     // The window contains the cursor + neighborhood up to budget.
     expect(text).toContain("Item 50")
   })

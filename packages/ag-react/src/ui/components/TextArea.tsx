@@ -330,9 +330,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   // mode this is just `rows`; in content mode we clamp the wrapped-line
   // count between minRows and maxRows.
   const visibleLineCount =
-    fieldSizing === "fixed"
-      ? Math.max(1, rows)
-      : Math.min(hi, Math.max(lo, ta.wrappedLines.length))
+    fieldSizing === "fixed" ? Math.max(1, rows) : Math.min(hi, Math.max(lo, ta.wrappedLines.length))
 
   // The Box that holds the TextArea content sets `height` as the OUTER
   // box height (border-box). When `borderStyle` is set we add 2 rows for

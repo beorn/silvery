@@ -138,7 +138,10 @@ describe("sterling.deriveFromScheme — shape", () => {
       const oBg = hexToOklch(theme["bg-surface-default"])
       if (!oSel || !oBg) return // ANSI-named palettes shouldn't reach here, but guard
       const dL = Math.abs(oSel.L - oBg.L)
-      expect(dL, `${name}: bg-selected (${theme["bg-selected"]}) too close to bg (${theme["bg-surface-default"]})`).toBeGreaterThanOrEqual(0.08)
+      expect(
+        dL,
+        `${name}: bg-selected (${theme["bg-selected"]}) too close to bg (${theme["bg-surface-default"]})`,
+      ).toBeGreaterThanOrEqual(0.08)
     },
   )
 

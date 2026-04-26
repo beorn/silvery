@@ -73,7 +73,8 @@ export const PUBLIC_TOKENS: readonly TokenManifestEntry[] = [
     purpose: "Subtle elevation tier — sidebars, secondary regions.",
     derivation: "blend(bg, fg, 0.05); auto-lifted to keep fg AA-readable.",
     contrast: NA,
-    tierNotes: "Often collapses to surface.default in ANSI16 — renderer compensates with non-color cues.",
+    tierNotes:
+      "Often collapses to surface.default in ANSI16 — renderer compensates with non-color cues.",
   },
   {
     flat: "bg-surface-raised",
@@ -425,7 +426,8 @@ export const PUBLIC_TOKENS: readonly TokenManifestEntry[] = [
     purpose: "Modal/dialog scrim — the dimming layer drawn BEHIND a modal.",
     derivation: "composite(black @ 0.40, bg-default); baked solid for TUI.",
     contrast: NA,
-    tierNotes: "May collapse to bg-default on pure-black themes; renderer adds dim/border fallback.",
+    tierNotes:
+      "May collapse to bg-default on pure-black themes; renderer adds dim/border fallback.",
   },
 
   // ── Default (canvas, explicit) ──────────────────────────────────────────

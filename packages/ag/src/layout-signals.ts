@@ -139,10 +139,7 @@ function cursorRectEqual(a: CursorRect | null, b: CursorRect | null): boolean {
  * "no fragments" state — the equality path treats `[]` and `[]` as equal
  * by length-zero, so collapsed/no-selection nodes don't churn the signal.
  */
-function selectionFragmentsEqual(
-  a: readonly Rect[],
-  b: readonly Rect[],
-): boolean {
+function selectionFragmentsEqual(a: readonly Rect[], b: readonly Rect[]): boolean {
   if (a === b) return true
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {
@@ -504,11 +501,7 @@ export function computeAnchorRect(node: AgNode): Rect | null {
  *
  * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
  */
-export function findAnchor(
-  root: AgNode,
-  id: string,
-  edge?: AnchorEdge,
-): Rect | null {
+export function findAnchor(root: AgNode, id: string, edge?: AnchorEdge): Rect | null {
   let result: Rect | null = null
 
   function walk(node: AgNode): void {
@@ -570,10 +563,7 @@ export function findAnchor(
  *
  * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
  */
-export function computeDecorationRects(
-  node: AgNode,
-  root: AgNode,
-): readonly DecorationRect[] {
+export function computeDecorationRects(node: AgNode, root: AgNode): readonly DecorationRect[] {
   const props = node.props as BoxProps | undefined
   const decos = props?.decorations
   if (!decos || decos.length === 0) return EMPTY_DECORATION_RECTS
@@ -624,10 +614,7 @@ export function computeDecorationRects(
  * `decorationRects` signal writes when nothing changed — mirrors the
  * `selectionFragmentsEqual` pattern.
  */
-function decorationRectsEqual(
-  a: readonly DecorationRect[],
-  b: readonly DecorationRect[],
-): boolean {
+function decorationRectsEqual(a: readonly DecorationRect[], b: readonly DecorationRect[]): boolean {
   if (a === b) return true
   if (a.length !== b.length) return false
   for (let i = 0; i < a.length; i++) {
@@ -652,9 +639,7 @@ function decorationRectsEqual(
  * Per-node cost: one `props.decorations` check + one signal lookup. Trees
  * with no decorations return `[]` after a single traversal.
  */
-export function findActiveDecorationRects(
-  root: AgNode,
-): readonly DecorationRect[] {
+export function findActiveDecorationRects(root: AgNode): readonly DecorationRect[] {
   const out: DecorationRect[] = []
 
   function walk(node: AgNode): void {
@@ -929,10 +914,7 @@ function snapshotScrollState(node: AgNode): ScrollStateSnapshot | null {
 }
 
 /** Per-field equality check for ScrollStateSnapshot (skips allocation). */
-function scrollStateEqual(
-  a: ScrollStateSnapshot | null,
-  b: ScrollStateSnapshot | null,
-): boolean {
+function scrollStateEqual(a: ScrollStateSnapshot | null, b: ScrollStateSnapshot | null): boolean {
   if (a === b) return true
   if (!a || !b) return false
   return (

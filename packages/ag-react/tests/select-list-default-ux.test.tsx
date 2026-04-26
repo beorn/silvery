@@ -260,9 +260,7 @@ describe("SelectList regression: single onSelect per click", () => {
     const onSelect = vi.fn()
     const onItemClick = vi.fn()
     const render = createRenderer({ cols: 40, rows: 10 })
-    const app = render(
-      <SelectList items={OPTIONS} onSelect={onSelect} onItemClick={onItemClick} />,
-    )
+    const app = render(<SelectList items={OPTIONS} onSelect={onSelect} onItemClick={onItemClick} />)
 
     await app.click(0, 2)
 

@@ -246,10 +246,7 @@ export function ExchangeItem({
   return (
     <Box flexDirection="column">
       <Text>
-        <Text
-          bold
-          color={hasOperations && !pulse && phase !== "done" ? "$muted" : bulletColor}
-        >
+        <Text bold color={hasOperations && !pulse && phase !== "done" ? "$muted" : bulletColor}>
           {"●"}
         </Text>
         {phase === "thinking" ? (

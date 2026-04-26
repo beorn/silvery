@@ -41,11 +41,7 @@ export { useDispose, type UseDisposeOptions } from "./useDispose"
 // Scope — structured-concurrency lifetime ownership (Phase 1)
 export { useScope } from "./useScope"
 export { useAppScope } from "./useAppScope"
-export {
-  useScopeEffect,
-  type ScopeEffectCleanup,
-  type ScopeEffectSetup,
-} from "./useScopeEffect"
+export { useScopeEffect, type ScopeEffectCleanup, type ScopeEffectSetup } from "./useScopeEffect"
 
 // Stdio
 export { useStdout, type UseStdoutResult } from "./useStdout"

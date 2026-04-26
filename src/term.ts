@@ -47,11 +47,7 @@ export type { MouseEventProps } from "@silvery/ag/mouse-event-types"
 // Mouse parsing (SGR mode 1006 / X10 / any-event)
 // -----------------------------------------------------------------------------
 
-export {
-  parseMouseSequence,
-  isMouseSequence,
-  type ParsedMouse,
-} from "@silvery/ag-term/mouse"
+export { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/ag-term/mouse"
 
 // -----------------------------------------------------------------------------
 // Term — terminal abstraction

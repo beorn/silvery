@@ -33,12 +33,7 @@ import {
   ALL_RECONCILER_BITS,
 } from "@silvery/ag/epoch"
 import { classifyPropChanges } from "./helpers"
-import {
-  applyBoxProps,
-  applyTextFlexItemProps,
-  createNode,
-  createVirtualTextNode,
-} from "./nodes"
+import { applyBoxProps, applyTextFlexItemProps, createNode, createVirtualTextNode } from "./nodes"
 import { createLogger } from "loggily"
 import { warnOnce, _resetWarnOnceForTesting } from "@silvery/ansi"
 
@@ -625,11 +620,7 @@ export const hostConfig = {
     if (layoutChanged) {
       if (instance.layoutNode) {
         if (instance.type === "silvery-text") {
-          applyTextFlexItemProps(
-            instance.layoutNode,
-            newProps as TextProps,
-            oldProps as TextProps,
-          )
+          applyTextFlexItemProps(instance.layoutNode, newProps as TextProps, oldProps as TextProps)
         } else {
           applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)
         }

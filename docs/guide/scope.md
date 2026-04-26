@@ -26,10 +26,7 @@ await using scope = createScope("app")
 
 // Register a child process. `disposable` wraps it with a Symbol.dispose
 // hook so scope.use() can claim ownership.
-const proc = scope.use(disposable(
-  child_process.spawn("claude"),
-  (p) => p.kill("SIGTERM"),
-))
+const proc = scope.use(disposable(child_process.spawn("claude"), (p) => p.kill("SIGTERM")))
 
 // Register a cleanup callback directly.
 scope.defer(() => console.log("scope disposing"))
@@ -66,10 +63,7 @@ import { createScope } from "@silvery/scope"
 
 async function importVault(path: string): Promise<Manifest> {
   await using scope = createScope("import")
-  const watcher = scope.use(disposable(
-    fs.watch(path),
-    (w) => w.close(),
-  ))
+  const watcher = scope.use(disposable(fs.watch(path), (w) => w.close()))
   // ... do work, watcher is alive
   return manifest
   // scope disposes here — watcher.close() runs automatically
@@ -86,14 +80,14 @@ Inside a React component, when a resource lives as long as the component is moun
 import { useScopeEffect } from "@silvery/ag-react"
 
 function FileWatcher({ path }: { path: string }) {
-  useScopeEffect((scope) => {
-    const watcher = scope.use(disposable(
-      fs.watch(path),
-      (w) => w.close(),
-    ))
+  useScopeEffect(
+    (scope) => {
+      const watcher = scope.use(disposable(fs.watch(path), (w) => w.close()))
 
-    watcher.on("change", () => console.log("file changed"))
-  }, [path])
+      watcher.on("change", () => console.log("file changed"))
+    },
+    [path],
+  )
 
   return <Text>watching {path}</Text>
 }
@@ -107,7 +101,7 @@ If you need a synchronous cleanup before the scope tears down — e.g. to act on
 useScopeEffect((scope) => {
   const sub = scope.use(eventBus.subscribe(handle))
   return () => {
-    sub.notifyShuttingDown()  // sync hook before scope disposes the sub
+    sub.notifyShuttingDown() // sync hook before scope disposes the sub
   }
 }, [])
 ```
@@ -122,16 +116,10 @@ When you have a value that isn't already `Disposable` and you want to register i
 import { disposable } from "@silvery/scope"
 
 // Sync cleanup
-const proc = scope.use(disposable(
-  child_process.spawn("claude"),
-  (p) => p.kill("SIGTERM"),
-))
+const proc = scope.use(disposable(child_process.spawn("claude"), (p) => p.kill("SIGTERM")))
 
 // Async cleanup — TS picks the async overload from the return type
-const conn = scope.use(disposable(
-  await db.connect(),
-  async (c) => await c.close(),
-))
+const conn = scope.use(disposable(await db.connect(), async (c) => await c.close()))
 ```
 
 `disposable` attaches both `Symbol.dispose` and `Symbol.asyncDispose` so the value can be claimed by `using`, `await using`, or `scope.use(...)` interchangeably. The static type narrows based on the cleanup signature: a `(v) => void` cleanup yields `T & Disposable`; a `(v) => Promise<void>` cleanup yields `T & AsyncDisposable`.
@@ -215,8 +203,8 @@ import { withTerminal } from "@silvery/create"
 
 const app = pipe(
   createApp(store),
-  withTerminal(process),  // provides term.signals
-  withScope("app"),       // wires SIGINT/SIGTERM → root-scope dispose
+  withTerminal(process), // provides term.signals
+  withScope("app"), // wires SIGINT/SIGTERM → root-scope dispose
   // ...
 )
 
@@ -314,7 +302,9 @@ No `defer` needed — the fetch self-cancels when the scope disposes.
 
 ```ts
 const proc = child_process.spawn("claude", args)
-proc.on("exit", () => { /* ... */ })
+proc.on("exit", () => {
+  /* ... */
+})
 
 process.on("SIGINT", () => proc.kill("SIGTERM"))
 process.on("exit", () => proc.kill("SIGKILL"))
@@ -326,10 +316,7 @@ The kill is wired in two places, the parent-process abort path is hand-built, an
 ::: tip ✨ Shiny
 
 ```ts
-const proc = scope.use(disposable(
-  child_process.spawn("claude", args),
-  (p) => p.kill("SIGTERM"),
-))
+const proc = scope.use(disposable(child_process.spawn("claude", args), (p) => p.kill("SIGTERM")))
 ```
 
 The disposer fires when the scope disposes — from unmount, from signal, from app exit. If the scope is the root app scope (via `withScope`), SIGINT and SIGTERM both flow into this same disposer. If the scope is a `useScopeEffect` child, unmounting the component kills the process.
@@ -337,14 +324,13 @@ The disposer fires when the scope disposes — from unmount, from signal, from a
 For escalation (SIGTERM → SIGKILL after a timeout), build it inside the disposer:
 
 ```ts
-const proc = scope.use(disposable(
-  child_process.spawn("claude", args),
-  async (p) => {
+const proc = scope.use(
+  disposable(child_process.spawn("claude", args), async (p) => {
     p.kill("SIGTERM")
     await new Promise((resolve) => setTimeout(resolve, 5000))
     if (!p.killed) p.kill("SIGKILL")
-  },
-))
+  }),
+)
 ```
 
 The async overload of `disposable` accepts a `Promise<void>` cleanup; `scope[Symbol.asyncDispose]()` awaits it.
@@ -368,10 +354,7 @@ The `close()` call is far from the `watch()` call, hard to find on review, and e
 ::: tip ✨ Shiny
 
 ```ts
-const watcher = scope.use(disposable(
-  fs.watch(path),
-  (w) => w.close(),
-))
+const watcher = scope.use(disposable(fs.watch(path), (w) => w.close()))
 watcher.on("change", onChange)
 ```
 
@@ -387,8 +370,7 @@ function Search({ query }: { query: string }) {
   useEffect(() => {
     const controller = new AbortController()
 
-    fetch(`/search?q=${query}`, { signal: controller.signal })
-      .then(handleResults)
+    fetch(`/search?q=${query}`, { signal: controller.signal }).then(handleResults)
 
     return () => controller.abort()
   }, [query])
@@ -402,10 +384,12 @@ You're hand-managing a controller that exists exclusively to abort on cleanup. E
 
 ```tsx
 function Search({ query }: { query: string }) {
-  useScopeEffect((scope) => {
-    fetch(`/search?q=${query}`, { signal: scope.signal })
-      .then(handleResults)
-  }, [query])
+  useScopeEffect(
+    (scope) => {
+      fetch(`/search?q=${query}`, { signal: scope.signal }).then(handleResults)
+    },
+    [query],
+  )
 }
 ```
 
@@ -434,7 +418,7 @@ What it does:
 
 1. **Creates a root scope** named `"app"` (or whatever you pass).
 2. **Disposes on app exit** — registers an `app.defer(...)` callback that calls `scope[Symbol.asyncDispose]()`. Disposal errors flow through `reportDisposeError({ phase: "app-exit", scope })`.
-3. **Wires SIGINT and SIGTERM** if the app already has a `term.signals` source (i.e. it's composed *after* `withTerminal`). Both signals trigger root-scope dispose; failures flow through `reportDisposeError({ phase: "signal", scope })`.
+3. **Wires SIGINT and SIGTERM** if the app already has a `term.signals` source (i.e. it's composed _after_ `withTerminal`). Both signals trigger root-scope dispose; failures flow through `reportDisposeError({ phase: "signal", scope })`.
 4. **Adds `app.scope`** — the root scope is now available on the app object as `app.scope`. `<ScopeProvider>` (rendered automatically by the React-bridge runtime) makes it available to descendants via `useScope()` and `useAppScope()`.
 
 Compose order matters. `withScope()` looks for `app.term?.signals` at compose time — if `withTerminal` hasn't run yet, signal wiring is silently skipped (the scope still disposes on normal exit). Put `withTerminal` before `withScope` if you want signal teardown.
@@ -453,8 +437,8 @@ Inside React, three hooks read the scope from context:
 import { useScope, useAppScope, useScopeEffect } from "@silvery/ag-react"
 
 function Component() {
-  const scope = useScope()       // nearest — child of app, or of an enclosing provider
-  const app = useAppScope()       // root — always app.scope from withScope()
+  const scope = useScope() // nearest — child of app, or of an enclosing provider
+  const app = useAppScope() // root — always app.scope from withScope()
 
   useScopeEffect((own) => {
     // `own` is a child of `scope`, owned by this effect.
@@ -538,7 +522,7 @@ To force the at-exit report manually (useful for one-off diagnostics):
 ```ts
 import { reportTraceLeaks } from "@silvery/scope"
 
-reportTraceLeaks()  // logs and returns the count
+reportTraceLeaks() // logs and returns the count
 ```
 
 ### Routing dispose errors
@@ -576,7 +560,7 @@ Calling `scope.use(...)`, `scope.defer(...)`, `scope.child(...)`, or `scope[Symb
 ```tsx
 function App() {
   const scope = useScope()
-  const proc = scope.use(disposable(spawn("claude"), (p) => p.kill()))  // ← during render
+  const proc = scope.use(disposable(spawn("claude"), (p) => p.kill())) // ← during render
   return <Text>pid {proc.pid}</Text>
 }
 ```
@@ -602,14 +586,14 @@ function App() {
 The acquisition runs after commit. The scope is owned by the effect, so re-running the effect (deps change, unmount) disposes the previous `proc` first.
 :::
 
-`useScope()` itself is fine during render — it's a pure context read. `scope.signal` is fine to read and pass to APIs (it's just a property access). What's forbidden is *acquiring* into the scope during render.
+`useScope()` itself is fine during render — it's a pure context read. `scope.signal` is fine to read and pass to APIs (it's just a property access). What's forbidden is _acquiring_ into the scope during render.
 
 ### `Scope.move()` throws
 
-`AsyncDisposableStack.move()` returns a fresh stack containing all the inherited disposers, leaving the original empty. On a plain stack that's a useful "transfer ownership" primitive. On `Scope` it would silently lose the `signal`, `name`, and child registry — the new stack is *not* a `Scope`. Rather than corrupt invariants, `Scope.move()` throws.
+`AsyncDisposableStack.move()` returns a fresh stack containing all the inherited disposers, leaving the original empty. On a plain stack that's a useful "transfer ownership" primitive. On `Scope` it would silently lose the `signal`, `name`, and child registry — the new stack is _not_ a `Scope`. Rather than corrupt invariants, `Scope.move()` throws.
 
 ```ts
-scope.move()  // TypeError: Scope.move() is not supported — create a new scope and re-register resources explicitly
+scope.move() // TypeError: Scope.move() is not supported — create a new scope and re-register resources explicitly
 ```
 
 If you need to relocate ownership, create a new scope and register resources on it explicitly. The use case is rare — you almost always want a child scope instead.
@@ -623,7 +607,7 @@ If you need to relocate ownership, create a new scope and register resources on 
 ```ts
 const child = parent.child("worker")
 parent.defer(async () => {
-  await child[Symbol.asyncDispose]()  // ← parent already disposes children first
+  await child[Symbol.asyncDispose]() // ← parent already disposes children first
   await someOtherCleanup()
 })
 ```
@@ -641,7 +625,7 @@ parent.defer(async () => {
 // `child` will be disposed first by the cascade, before `someOtherCleanup` runs.
 ```
 
-If you need a specific ordering — e.g. flush a buffer to the child before the child closes — register the flush on the *child*, not the parent:
+If you need a specific ordering — e.g. flush a buffer to the child before the child closes — register the flush on the _child_, not the parent:
 
 ```ts
 const child = parent.child("worker")
@@ -649,7 +633,7 @@ child.defer(async () => await flushBuffer())
 // flushBuffer runs as part of child disposal, before parent's user disposers.
 ```
 
-Disposing a child *early* (before its parent disposes) is fine — the child detaches itself from the parent's child set on completion. That's the use case for nested `await using` inside a longer-lived parent scope.
+Disposing a child _early_ (before its parent disposes) is fine — the child detaches itself from the parent's child set on completion. That's the use case for nested `await using` inside a longer-lived parent scope.
 
 ### `SuppressedError` aggregates multi-throw
 
@@ -687,7 +671,7 @@ const app = pipe(
   createApp(store),
   withTerminal(process),
   withReact(<App />),
-  withScope("app"),  // root scope; SIGINT/SIGTERM/exit → root.dispose()
+  withScope("app"), // root scope; SIGINT/SIGTERM/exit → root.dispose()
 )
 
 await app.run()
@@ -697,34 +681,37 @@ await app.run()
 function Workspace({ path }: { path: string }) {
   const [data, setData] = useState<Data>()
 
-  useScopeEffect((scope) => {
-    // 1. Spawn a worker; killed on dispose.
-    const proc = scope.use(disposable(
-      child_process.spawn("worker", [path]),
-      (p) => p.kill("SIGTERM"),
-    ))
+  useScopeEffect(
+    (scope) => {
+      // 1. Spawn a worker; killed on dispose.
+      const proc = scope.use(
+        disposable(child_process.spawn("worker", [path]), (p) => p.kill("SIGTERM")),
+      )
 
-    // 2. Watch the file; closed on dispose.
-    const watcher = scope.use(disposable(
-      fs.watch(path),
-      (w) => w.close(),
-    ))
-    watcher.on("change", () => proc.send({ type: "reload" }))
+      // 2. Watch the file; closed on dispose.
+      const watcher = scope.use(disposable(fs.watch(path), (w) => w.close()))
+      watcher.on("change", () => proc.send({ type: "reload" }))
 
-    // 3. Cancel the fetch if the scope aborts (Ctrl+C, unmount, signal).
-    fetch(`/data?path=${path}`, { signal: scope.signal })
-      .then((r) => r.json())
-      .then(setData)
-      .catch((e) => {
-        if (e.name !== "AbortError") throw e
-      })
+      // 3. Cancel the fetch if the scope aborts (Ctrl+C, unmount, signal).
+      fetch(`/data?path=${path}`, { signal: scope.signal })
+        .then((r) => r.json())
+        .then(setData)
+        .catch((e) => {
+          if (e.name !== "AbortError") throw e
+        })
 
-    // 4. Clear the timeout via defer.
-    const timeoutId = setTimeout(() => setData({ kind: "timeout" }), 30_000)
-    scope.defer(() => clearTimeout(timeoutId))
-  }, [path])
+      // 4. Clear the timeout via defer.
+      const timeoutId = setTimeout(() => setData({ kind: "timeout" }), 30_000)
+      scope.defer(() => clearTimeout(timeoutId))
+    },
+    [path],
+  )
 
-  return <Text>workspace {path} — {data?.summary ?? "loading"}</Text>
+  return (
+    <Text>
+      workspace {path} — {data?.summary ?? "loading"}
+    </Text>
+  )
 }
 ```
 

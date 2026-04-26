@@ -25,11 +25,7 @@ import { runWithMeasurer } from "../unicode"
 import { createBuffer } from "./create-buffer"
 import { isAnyDirty } from "@silvery/ag/epoch"
 import { IncrementalRenderMismatchError } from "../scheduler"
-import {
-  createSearchState,
-  renderSearchBarPlain,
-  type SearchMatch,
-} from "../search-overlay"
+import { createSearchState, renderSearchBarPlain, type SearchMatch } from "../search-overlay"
 import {
   applySelectionToBuffer,
   composeSearchHighlightCells,

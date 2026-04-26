@@ -91,11 +91,7 @@ describe("ListView height-independent — scroll cap with tall items", () => {
     const app = render(
       <Box width={COLS} height={ROWS} flexDirection="column">
         <Box flexGrow={1} flexShrink={1} minHeight={0}>
-          <ListView
-            items={items}
-            nav
-            renderItem={(idx) => <MultiLineItem idx={idx} />}
-          />
+          <ListView items={items} nav renderItem={(idx) => <MultiLineItem idx={idx} />} />
         </Box>
       </Box>,
     )
@@ -129,11 +125,7 @@ describe("ListView height-independent — scroll cap with tall items", () => {
       return (
         <Box width={COLS} height={ROWS} flexDirection="column">
           <Box flexGrow={1} flexShrink={1} minHeight={0}>
-            <ListView
-              items={items}
-              nav
-              renderItem={(idx) => <MultiLineItem idx={idx} />}
-            />
+            <ListView items={items} nav renderItem={(idx) => <MultiLineItem idx={idx} />} />
           </Box>
         </Box>
       )
@@ -211,11 +203,7 @@ describe("ListView height-independent — scroll cap with tall items", () => {
     const app = render(
       <Box width={COLS} height={ROWS} flexDirection="column">
         <Box flexGrow={1} flexShrink={1} minHeight={0}>
-          <ListView
-            items={items}
-            nav
-            renderItem={(idx) => <Text>item {idx}</Text>}
-          />
+          <ListView items={items} nav renderItem={(idx) => <Text>item {idx}</Text>} />
         </Box>
       </Box>,
     )
@@ -237,11 +225,7 @@ describe("ListView height-independent — scroll cap with tall items", () => {
     const app = render(
       <Box width={COLS} height={ROWS} flexDirection="column">
         <Box flexGrow={1} flexShrink={1} minHeight={0}>
-          <ListView
-            items={[] as number[]}
-            nav
-            renderItem={(idx) => <Text>item {idx}</Text>}
-          />
+          <ListView items={[] as number[]} nav renderItem={(idx) => <Text>item {idx}</Text>} />
         </Box>
       </Box>,
     )

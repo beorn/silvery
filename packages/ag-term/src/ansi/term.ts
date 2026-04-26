@@ -56,12 +56,7 @@ import { createInputOwner, type InputOwner as Input } from "../runtime/input-own
 export type { Input }
 import { createOutput, type Output } from "../runtime/devices/output"
 export type { Output }
-import {
-  createFixedSize,
-  createSize,
-  type Size,
-  type SizeSnapshot,
-} from "../runtime/devices/size"
+import { createFixedSize, createSize, type Size, type SizeSnapshot } from "../runtime/devices/size"
 export type { Size, SizeSnapshot }
 import { createModes, type Modes } from "../runtime/devices/modes"
 export type { Modes }
@@ -645,11 +640,7 @@ function finalizeTerm(
  * ```
  */
 export function createTerm(options?: CreateTermOptions): Term
-export function createTerm(dims: {
-  cols: number
-  rows: number
-  caps?: Partial<TerminalCaps>
-}): Term
+export function createTerm(dims: { cols: number; rows: number; caps?: Partial<TerminalCaps> }): Term
 export function createTerm(
   backend: TermEmulatorBackend,
   dims: { cols: number; rows: number; caps?: Partial<TerminalCaps> },
@@ -661,7 +652,9 @@ export function createTerm(
     | { cols: number; rows: number; caps?: Partial<TerminalCaps> }
     | TermEmulator
     | TermEmulatorBackend,
-  second?: { cols: number; rows: number; caps?: Partial<TerminalCaps> } | { caps?: Partial<TerminalCaps> },
+  second?:
+    | { cols: number; rows: number; caps?: Partial<TerminalCaps> }
+    | { caps?: Partial<TerminalCaps> },
 ): Term {
   // Two-arg: createTerm(backend, { cols, rows, caps? }) — raw backend + dims
   if (second && first && isTermBackend(first)) {

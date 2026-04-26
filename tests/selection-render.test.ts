@@ -14,10 +14,7 @@
  */
 import { describe, test, expect } from "vitest"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
-import {
-  composeSelectionCells,
-  applySelectionToBuffer,
-} from "@silvery/ag-term/selection-renderer"
+import { composeSelectionCells, applySelectionToBuffer } from "@silvery/ag-term/selection-renderer"
 import type { SelectionRange } from "@silvery/headless/selection"
 
 // ============================================================================

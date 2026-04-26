@@ -18,7 +18,7 @@ s.bgYellow.black("Warning")
 
 // With theme — Sterling tokens (silvery 0.20+)
 const themed = createStyle({ theme })
-themed["fg-accent"]("Deploy")  // resolves $fg-accent from theme
+themed["fg-accent"]("Deploy") // resolves $fg-accent from theme
 themed["fg-error"]("Failed!")
 ```
 
@@ -46,10 +46,10 @@ interface StyleOptions {
 }
 ```
 
-| Option  | Type                                      | Default       | Description                                     |
-| ------- | ----------------------------------------- | ------------- | ----------------------------------------------- |
+| Option  | Type                                       | Default       | Description                                     |
+| ------- | ------------------------------------------ | ------------- | ----------------------------------------------- |
 | `level` | `"truecolor" \| "256" \| "ansi16" \| null` | auto-detected | Color support level. `null` disables all color. |
-| `theme` | `ThemeLike`                               | `undefined`   | Theme object for token resolution               |
+| `theme` | `ThemeLike`                                | `undefined`   | Theme object for token resolution               |
 
 When `level` is omitted, `createStyle()` auto-detects from `process.stdout`, respecting `NO_COLOR` and `FORCE_COLOR` environment variables.
 
@@ -177,32 +177,32 @@ import { defaultDarkTheme } from "silvery/theme"
 
 const s = createStyle({ theme: defaultDarkTheme })
 
-s["fg-accent"]("Deploy")          // resolves theme["fg-accent"] -> hex -> ANSI
-s["fg-error"]("Failed!")          // resolves theme["fg-error"]  -> hex -> ANSI
+s["fg-accent"]("Deploy") // resolves theme["fg-accent"] -> hex -> ANSI
+s["fg-error"]("Failed!") // resolves theme["fg-error"]  -> hex -> ANSI
 s["fg-success"]("Passed")
 s["fg-muted"]("(3 files)")
 s["fg-warning"]("Caution")
 s["fg-info"]("Note")
-s["fg-link"]("https://...")        // resolves theme["fg-link"] + adds underline
-s.bold["fg-accent"]("DEPLOY")      // chain modifiers with tokens
+s["fg-link"]("https://...") // resolves theme["fg-link"] + adds underline
+s.bold["fg-accent"]("DEPLOY") // chain modifiers with tokens
 ```
 
 ### Available Tokens
 
 The `$token` resolver works on Sterling's flat hyphen-keys. The most common ones for CLI output:
 
-| Token            | Without theme (fallback)   | With theme                          |
-| ---------------- | -------------------------- | ----------------------------------- |
-| `fg-accent`      | yellow (ANSI 33)           | `theme["fg-accent"]` as hex         |
-| `fg-error`       | red (ANSI 31)              | `theme["fg-error"]` as hex          |
-| `fg-warning`     | yellow (ANSI 33)           | `theme["fg-warning"]` as hex        |
-| `fg-success`     | green (ANSI 32)            | `theme["fg-success"]` as hex        |
-| `fg-info`        | cyan (ANSI 36)             | `theme["fg-info"]` as hex           |
-| `fg-muted`       | dim (SGR 2)                | `theme["fg-muted"]` as hex          |
+| Token            | Without theme (fallback)   | With theme                            |
+| ---------------- | -------------------------- | ------------------------------------- |
+| `fg-accent`      | yellow (ANSI 33)           | `theme["fg-accent"]` as hex           |
+| `fg-error`       | red (ANSI 31)              | `theme["fg-error"]` as hex            |
+| `fg-warning`     | yellow (ANSI 33)           | `theme["fg-warning"]` as hex          |
+| `fg-success`     | green (ANSI 32)            | `theme["fg-success"]` as hex          |
+| `fg-info`        | cyan (ANSI 36)             | `theme["fg-info"]` as hex             |
+| `fg-muted`       | dim (SGR 2)                | `theme["fg-muted"]` as hex            |
 | `fg-link`        | blue + underline (ANSI 34) | `theme["fg-link"]` as hex + underline |
-| `border-default` | gray (ANSI 90)             | `theme["border-default"]` as hex    |
-| `fg`             | terminal default fg        | `theme.fg` as hex                   |
-| `bg`             | terminal default bg        | `theme.bg` as hex                   |
+| `border-default` | gray (ANSI 90)             | `theme["border-default"]` as hex      |
+| `fg`             | terminal default fg        | `theme.fg` as hex                     |
+| `bg`             | terminal default bg        | `theme.bg` as hex                     |
 
 For the complete flat-token list (selection, inverse, surface stack, status fills, accent state variants, etc.) see the [Sterling primer](/guide/sterling#flat-tokens). When no theme is provided, tokens fall back to standard ANSI codes.
 
@@ -213,9 +213,9 @@ Programmatically resolve a token to its hex value:
 ```typescript
 const s = createStyle({ theme })
 
-s.resolve("fg-accent")      // theme["fg-accent"]
-s.resolve("$fg-accent")     // same — $ prefix also accepted
-s.resolve("$color0")        // theme.palette[0]
+s.resolve("fg-accent") // theme["fg-accent"]
+s.resolve("$fg-accent") // same — $ prefix also accepted
+s.resolve("$color0") // theme.palette[0]
 s.resolve("$bg-surface-raised") // theme["bg-surface-raised"]
 ```
 
@@ -227,7 +227,7 @@ s.resolve("$bg-surface-raised") // theme["bg-surface-raised"]
 | ------------- | ----------------- | ----------------------------------------- |
 | `"truecolor"` | 16 million colors | `38;2;R;G;B` — exact color                |
 | `"256"`       | 256 colors        | `38;5;N` — nearest in 6x6x6 cube          |
-| `"ansi16"`     | 16 colors         | `30`--`37` / `90`--`97` — nearest ANSI    |
+| `"ansi16"`    | 16 colors         | `30`--`37` / `90`--`97` — nearest ANSI    |
 | `null`        | No color          | All styling stripped, plain text returned |
 
 The degradation from truecolor to 256 uses the 6x6x6 color cube (indices 16--231) and the 24-shade gray ramp (indices 232--255). The degradation from 256 to basic uses Euclidean distance in RGB space against the standard ANSI 16 color values.
@@ -280,8 +280,8 @@ const s = createStyle({
   } as any, // or a real Sterling Theme
 })
 
-s["fg-accent"]("Styled")  // uses #818cf8
-s["fg-warning"]("Warn")   // falls back to yellow (ANSI 33) — not in theme
+s["fg-accent"]("Styled") // uses #818cf8
+s["fg-warning"]("Warn") // falls back to yellow (ANSI 33) — not in theme
 ```
 
 ## Template Literal Support
@@ -325,4 +325,3 @@ function statusLine(branch: string, files: number, errors: number) {
   return parts.join(s["fg-muted"](" | "))
 }
 ```
-

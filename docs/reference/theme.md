@@ -52,11 +52,11 @@ The universal terminal color format. Every modern terminal emulator uses this sh
 
 **Optional metadata:**
 
-| Field     | Type      | Description                                            |
-| --------- | --------- | ------------------------------------------------------ |
-| `name`    | `string`  | Human-readable scheme name                             |
-| `dark`    | `boolean` | Whether this is a dark scheme                          |
-| `primary` | `string`  | Brand-anchor override (hex). Used by `accent` role.    |
+| Field     | Type      | Description                                         |
+| --------- | --------- | --------------------------------------------------- |
+| `name`    | `string`  | Human-readable scheme name                          |
+| `dark`    | `boolean` | Whether this is a dark scheme                       |
+| `primary` | `string`  | Brand-anchor override (hex). Used by `accent` role. |
 
 When `primary` is set, derivation uses it as the input for `theme.accent`. Otherwise the default ANSI slot mapping is used.
 
@@ -104,20 +104,20 @@ The `Theme` type re-exports `SterlingTheme`. Every `Theme` is a frozen object th
 
 Programmatic access — typed, IDE-completable, structured:
 
-| Role       | Shape                                                                | Use for                                                          |
-| ---------- | -------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `accent`   | `{ fg, bg, fgOn, border, hover: { fg, bg }, active: { fg, bg } }`    | Brand emphasis, focus, primary action, interactive text          |
-| `info`     | `{ fg, bg, fgOn, hover: { bg }, active: { bg } }`                    | Neutral status                                                   |
-| `success`  | same as `info`                                                       | Positive status                                                  |
-| `warning`  | same as `info`                                                       | Caution                                                          |
-| `error`    | same as `info`                                                       | Errors / destructive                                             |
-| `muted`    | `{ fg, bg }`                                                         | Secondary text (`muted.fg`); subtle hover surface (`muted.bg`)   |
-| `surface`  | `{ default, subtle, raised, overlay, hover }`                        | Canvas + card stack                                              |
-| `border`   | `{ default, focus, muted }`                                          | Structural rules, focus ring, faint dividers                     |
-| `cursor`   | `{ fg, bg }`                                                         | Cursor color and the glyph under it                              |
-| `selected` | `{ bg, fgOn, hover: { bg } }`                                        | Cursor row, mouse selection, search match highlight              |
-| `inverse`  | `{ bg, fgOn }`                                                       | Status bars, modal chrome                                        |
-| `link`     | `{ fg }`                                                             | Hyperlink text (distinct from `accent`)                          |
+| Role       | Shape                                                             | Use for                                                        |
+| ---------- | ----------------------------------------------------------------- | -------------------------------------------------------------- |
+| `accent`   | `{ fg, bg, fgOn, border, hover: { fg, bg }, active: { fg, bg } }` | Brand emphasis, focus, primary action, interactive text        |
+| `info`     | `{ fg, bg, fgOn, hover: { bg }, active: { bg } }`                 | Neutral status                                                 |
+| `success`  | same as `info`                                                    | Positive status                                                |
+| `warning`  | same as `info`                                                    | Caution                                                        |
+| `error`    | same as `info`                                                    | Errors / destructive                                           |
+| `muted`    | `{ fg, bg }`                                                      | Secondary text (`muted.fg`); subtle hover surface (`muted.bg`) |
+| `surface`  | `{ default, subtle, raised, overlay, hover }`                     | Canvas + card stack                                            |
+| `border`   | `{ default, focus, muted }`                                       | Structural rules, focus ring, faint dividers                   |
+| `cursor`   | `{ fg, bg }`                                                      | Cursor color and the glyph under it                            |
+| `selected` | `{ bg, fgOn, hover: { bg } }`                                     | Cursor row, mouse selection, search match highlight            |
+| `inverse`  | `{ bg, fgOn }`                                                    | Status bars, modal chrome                                      |
+| `link`     | `{ fg }`                                                          | Hyperlink text (distinct from `accent`)                        |
 
 ### Flat tokens (the `$token` resolution path)
 
@@ -154,16 +154,16 @@ Link        fg-link
 
 ### Root pair, palette, and metadata
 
-| Field             | Type                       | Description                                                                       |
-| ----------------- | -------------------------- | --------------------------------------------------------------------------------- |
-| `fg`              | `string`                   | Default text color (= `scheme.foreground`)                                        |
-| `bg`              | `string`                   | Default canvas (= `scheme.background` = `bg-surface-default`)                     |
-| `palette`         | `readonly string[]`        | 16-slot ANSI catalog used by `$color0` … `$color15`                               |
-| `red` … `pink`    | `string`                   | 8-slot categorical hue ring — contrast-adjusted (`$red`, `$orange`, `$yellow`, `$green`, `$teal`, `$blue`, `$purple`, `$pink`) |
-| `variants`        | `Record<string, Variant>`  | Typography preset bundles resolved by `<Text variant="…">`                        |
-| `name`            | `string \| undefined`      | Scheme display name (if derived from a named scheme)                              |
-| `mode`            | `"light" \| "dark"`        | Light or dark — determines auto-lift direction                                     |
-| `derivationTrace` | `DerivationTrace?`         | Per-token derivation record (only present when `{ trace: true }` was passed)      |
+| Field             | Type                      | Description                                                                                                                    |
+| ----------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `fg`              | `string`                  | Default text color (= `scheme.foreground`)                                                                                     |
+| `bg`              | `string`                  | Default canvas (= `scheme.background` = `bg-surface-default`)                                                                  |
+| `palette`         | `readonly string[]`       | 16-slot ANSI catalog used by `$color0` … `$color15`                                                                            |
+| `red` … `pink`    | `string`                  | 8-slot categorical hue ring — contrast-adjusted (`$red`, `$orange`, `$yellow`, `$green`, `$teal`, `$blue`, `$purple`, `$pink`) |
+| `variants`        | `Record<string, Variant>` | Typography preset bundles resolved by `<Text variant="…">`                                                                     |
+| `name`            | `string \| undefined`     | Scheme display name (if derived from a named scheme)                                                                           |
+| `mode`            | `"light" \| "dark"`       | Light or dark — determines auto-lift direction                                                                                 |
+| `derivationTrace` | `DerivationTrace?`        | Per-token derivation record (only present when `{ trace: true }` was passed)                                                   |
 
 ### Type Definition
 
@@ -217,11 +217,11 @@ Pins accept either nested or flat path syntax — `{ "accent.bg": "#5B8DEF" }` a
 
 `auto-lift` mode shifts OKLCH lightness (preserving hue and chroma) until the target ratio is met:
 
-| Target  | Ratio | Applied to                                                |
-| ------- | ----- | --------------------------------------------------------- |
-| AA      | 4.5:1 | Body text, muted text, accent / status fg, `fg-on-X`      |
-| FAINT   | 1.5:1 | `border-default` — faint structural element               |
-| CONTROL | 3.0:1 | `border-focus` — WCAG 1.4.11 non-text minimum             |
+| Target  | Ratio | Applied to                                           |
+| ------- | ----- | ---------------------------------------------------- |
+| AA      | 4.5:1 | Body text, muted text, accent / status fg, `fg-on-X` |
+| FAINT   | 1.5:1 | `border-default` — faint structural element          |
+| CONTROL | 3.0:1 | `border-focus` — WCAG 1.4.11 non-text minimum        |
 
 `strict` mode throws `SterlingContrastError` on AA failure of core role pairs. Use it in your test suite to catch palette regressions.
 
@@ -229,36 +229,36 @@ Pins accept either nested or flat path syntax — `{ "accent.bg": "#5B8DEF" }` a
 
 Sterling uses a **blend-first-then-ensure** pattern: an initial blend sets the color's character from the scheme's aesthetic, then `ensureContrast()` only adjusts lightness if the ratio falls short.
 
-| Token                | Source                                                       | Contrast target |
-| -------------------- | ------------------------------------------------------------ | --------------- |
-| `fg`                 | `scheme.foreground` ensured against `bg-surface-overlay`     | AA              |
-| `accent.fg`          | `scheme.primary` (or yellow dark / blue light)               | AA              |
-| `accent.bg`          | derived from `accent.fg` for fill                            | —               |
-| `accent.fgOn`        | `contrastFg(accent.bg)` — black or white                     | —               |
-| `accent.hover.*`     | OKLCH ±0.04L from `accent.{fg,bg}`                           | —               |
-| `accent.active.*`    | OKLCH ±0.08L from `accent.{fg,bg}`                           | —               |
-| `accent.border`      | `accent.fg` lifted for border contrast                       | CONTROL         |
-| `error.fg`           | `scheme.red`                                                 | AA              |
-| `warning.fg`         | `scheme.yellow`                                              | AA              |
-| `success.fg`         | `scheme.green`                                               | AA              |
-| `info.fg`            | blend of `fg` and `accent.fg` at 50%                         | AA              |
-| `link.fg`            | `scheme.brightBlue` (dark) / `scheme.blue` (light)           | AA              |
-| `muted.fg`           | `fg` blended 40% toward `bg`                                 | AA              |
-| `muted.bg`           | `bg` blended 4% toward `fg`                                  | —               |
-| `surface.subtle`     | `bg` blended 5% toward `fg`                                  | —               |
-| `surface.raised`     | `bg` blended 8% toward `fg`                                  | —               |
-| `surface.overlay`    | `bg` blended 10% toward `fg`                                 | —               |
-| `surface.hover`      | OKLCH +0.04L from `surface.default`                          | —               |
-| `inverse.bg`         | `fg` blended 10% toward `bg`                                 | —               |
-| `inverse.fgOn`       | `contrastFg(inverse.bg)`                                     | —               |
-| `selected.bg`        | `scheme.selectionBackground` repaired for visibility (ΔL≥0.08) | —              |
-| `selected.fgOn`      | `scheme.selectionForeground` ensured against `selected.bg`   | AA              |
-| `cursor.bg`          | `scheme.cursorColor` repaired for visibility (ΔE≥0.15)       | —               |
-| `cursor.fg`          | `scheme.cursorText` ensured against `cursor.bg`              | AA              |
-| `border.default`     | `bg` blended 15% toward `fg`                                 | FAINT           |
-| `border.focus`       | same hue as `accent.fg`                                      | CONTROL         |
-| `border.muted`       | `bg` blended 8% toward `fg`                                  | —               |
-| `red` … `pink`       | scheme accents rotated through OKLCH; contrast-adjusted     | AA              |
+| Token             | Source                                                         | Contrast target |
+| ----------------- | -------------------------------------------------------------- | --------------- |
+| `fg`              | `scheme.foreground` ensured against `bg-surface-overlay`       | AA              |
+| `accent.fg`       | `scheme.primary` (or yellow dark / blue light)                 | AA              |
+| `accent.bg`       | derived from `accent.fg` for fill                              | —               |
+| `accent.fgOn`     | `contrastFg(accent.bg)` — black or white                       | —               |
+| `accent.hover.*`  | OKLCH ±0.04L from `accent.{fg,bg}`                             | —               |
+| `accent.active.*` | OKLCH ±0.08L from `accent.{fg,bg}`                             | —               |
+| `accent.border`   | `accent.fg` lifted for border contrast                         | CONTROL         |
+| `error.fg`        | `scheme.red`                                                   | AA              |
+| `warning.fg`      | `scheme.yellow`                                                | AA              |
+| `success.fg`      | `scheme.green`                                                 | AA              |
+| `info.fg`         | blend of `fg` and `accent.fg` at 50%                           | AA              |
+| `link.fg`         | `scheme.brightBlue` (dark) / `scheme.blue` (light)             | AA              |
+| `muted.fg`        | `fg` blended 40% toward `bg`                                   | AA              |
+| `muted.bg`        | `bg` blended 4% toward `fg`                                    | —               |
+| `surface.subtle`  | `bg` blended 5% toward `fg`                                    | —               |
+| `surface.raised`  | `bg` blended 8% toward `fg`                                    | —               |
+| `surface.overlay` | `bg` blended 10% toward `fg`                                   | —               |
+| `surface.hover`   | OKLCH +0.04L from `surface.default`                            | —               |
+| `inverse.bg`      | `fg` blended 10% toward `bg`                                   | —               |
+| `inverse.fgOn`    | `contrastFg(inverse.bg)`                                       | —               |
+| `selected.bg`     | `scheme.selectionBackground` repaired for visibility (ΔL≥0.08) | —               |
+| `selected.fgOn`   | `scheme.selectionForeground` ensured against `selected.bg`     | AA              |
+| `cursor.bg`       | `scheme.cursorColor` repaired for visibility (ΔE≥0.15)         | —               |
+| `cursor.fg`       | `scheme.cursorText` ensured against `cursor.bg`                | AA              |
+| `border.default`  | `bg` blended 15% toward `fg`                                   | FAINT           |
+| `border.focus`    | same hue as `accent.fg`                                        | CONTROL         |
+| `border.muted`    | `bg` blended 8% toward `fg`                                    | —               |
+| `red` … `pink`    | scheme accents rotated through OKLCH; contrast-adjusted        | AA              |
 
 **Primary inference:** when `scheme.primary` is not set, `accent` defaults to `scheme.yellow` (dark) or `scheme.blue` (light). Set `scheme.primary` explicitly to override.
 
@@ -298,23 +298,23 @@ Resolves a `$token` string against a `Theme` object. Both kebab and camelCase fo
 ```typescript
 import { resolveToken } from "@silvery/ansi"
 
-resolveToken("$fg-accent", theme)        // theme["fg-accent"]
+resolveToken("$fg-accent", theme) // theme["fg-accent"]
 resolveToken("$bg-surface-raised", theme) // theme["bg-surface-raised"]
-resolveToken("$color0", theme)            // theme.palette[0]
-resolveToken("$fg", theme)                // theme.fg
-resolveToken("#ff0000", theme)            // pass-through
-resolveToken("red", theme)                // pass-through (named CSS color)
+resolveToken("$color0", theme) // theme.palette[0]
+resolveToken("$fg", theme) // theme.fg
+resolveToken("#ff0000", theme) // pass-through
+resolveToken("red", theme) // pass-through (named CSS color)
 ```
 
-| Input                     | Behavior                                | Example                      |
-| ------------------------- | --------------------------------------- | ---------------------------- |
-| `undefined`               | Returns `undefined`                     | —                            |
-| `"$fg-accent"`            | Lookup `theme["fg-accent"]`             | `"#EBCB8B"`                  |
-| `"$bgAccent"`             | camelCase form — same lookup            | `"#EBCB8B"`                  |
-| `"$color0"`–`"$color15"`  | Index into `theme.palette`              | `"#2E3440"`                  |
-| `"#ff0000"`               | Pass through unchanged                  | `"#ff0000"`                  |
-| `"red"`                   | Pass through unchanged                  | `"red"`                      |
-| Unknown `$token`          | Pass through as-is                      | `"$unknown"` → `"$unknown"`  |
+| Input                    | Behavior                     | Example                     |
+| ------------------------ | ---------------------------- | --------------------------- |
+| `undefined`              | Returns `undefined`          | —                           |
+| `"$fg-accent"`           | Lookup `theme["fg-accent"]`  | `"#EBCB8B"`                 |
+| `"$bgAccent"`            | camelCase form — same lookup | `"#EBCB8B"`                 |
+| `"$color0"`–`"$color15"` | Index into `theme.palette`   | `"#2E3440"`                 |
+| `"#ff0000"`              | Pass through unchanged       | `"#ff0000"`                 |
+| `"red"`                  | Pass through unchanged       | `"red"`                     |
+| Unknown `$token`         | Pass through as-is           | `"$unknown"` → `"$unknown"` |
 
 ## Built-in Schemes
 
@@ -400,11 +400,11 @@ Low-level color manipulation, available from `@silvery/color` (re-exported by `@
 ```typescript
 import { blend, brighten, darken, desaturate, complement } from "silvery/theme"
 
-blend("#2E3440", "#ECEFF4", 0.5)  // OKLCH midpoint
-brighten("#2E3440", 0.1)          // 10% lighter
-darken("#ECEFF4", 0.1)            // 10% darker
-desaturate("#BF616A", 0.4)        // reduce chroma 40%
-complement("#EBCB8B")             // 180-degree hue rotation
+blend("#2E3440", "#ECEFF4", 0.5) // OKLCH midpoint
+brighten("#2E3440", 0.1) // 10% lighter
+darken("#ECEFF4", 0.1) // 10% darker
+desaturate("#BF616A", 0.4) // reduce chroma 40%
+complement("#EBCB8B") // 180-degree hue rotation
 ```
 
 `@silvery/color` is OKLCH-native throughout: blends and lightness adjustments operate in the perceptually-uniform space.
@@ -414,10 +414,10 @@ complement("#EBCB8B")             // 180-degree hue rotation
 ```typescript
 import { contrastFg, checkContrast, ensureContrast } from "silvery/theme"
 
-contrastFg("#2E3440")                       // "#FFFFFF"
-contrastFg("#ECEFF4")                       // "#000000"
-checkContrast("#FFFFFF", "#000000")         // { ratio: 21, aa: true, aaa: true }
-ensureContrast("#FFAB91", "#FFFFFF", 4.5)   // "#B35600" (darkened to meet AA)
+contrastFg("#2E3440") // "#FFFFFF"
+contrastFg("#ECEFF4") // "#000000"
+checkContrast("#FFFFFF", "#000000") // { ratio: 21, aa: true, aaa: true }
+ensureContrast("#FFAB91", "#FFFFFF", 4.5) // "#B35600" (darkened to meet AA)
 ```
 
 `ensureContrast` uses binary search over OKLCH lightness; hue and chroma are preserved.
@@ -427,7 +427,7 @@ ensureContrast("#FFAB91", "#FFFFFF", 4.5)   // "#B35600" (darkened to meet AA)
 ```typescript
 import { hexToRgb, rgbToHex, hexToHsl, hslToHex, rgbToHsl } from "silvery/theme"
 
-hexToRgb("#BF616A")  // [191, 97, 106]
+hexToRgb("#BF616A") // [191, 97, 106]
 rgbToHex(191, 97, 106) // "#BF616A"
 ```
 
@@ -470,8 +470,8 @@ import { useTheme } from "silvery/theme"
 
 function StatusLine() {
   const theme = useTheme()
-  const accent = theme.accent.fg          // nested
-  const accentFlat = theme["fg-accent"]   // flat — same string
+  const accent = theme.accent.fg // nested
+  const accentFlat = theme["fg-accent"] // flat — same string
   return <Text color="$fg-accent">Status</Text>
 }
 ```

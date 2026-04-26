@@ -47,10 +47,9 @@ describe("Sterling token manifest", () => {
         cursor = (cursor as Record<string, unknown>)[seg]
       }
       const flatValue = (theme as unknown as Record<string, unknown>)[entry.flat]
-      expect(
-        cursor,
-        `${entry.flat} (path=${entry.path}) — nested form should equal flat`,
-      ).toBe(flatValue)
+      expect(cursor, `${entry.flat} (path=${entry.path}) — nested form should equal flat`).toBe(
+        flatValue,
+      )
     }
   })
 

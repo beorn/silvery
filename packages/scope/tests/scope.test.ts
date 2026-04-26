@@ -68,10 +68,14 @@ describe("Scope.child cascade", () => {
   it("disposes children before running user disposer stack", async () => {
     const order: string[] = []
     const parent = createScope("p")
-    parent.defer(() => { order.push("parent-defer") })
+    parent.defer(() => {
+      order.push("parent-defer")
+    })
 
     const child = parent.child("c")
-    child.defer(() => { order.push("child-defer") })
+    child.defer(() => {
+      order.push("child-defer")
+    })
 
     await parent[Symbol.asyncDispose]()
     expect(order).toEqual(["child-defer", "parent-defer"])
@@ -82,11 +86,17 @@ describe("Scope.child cascade", () => {
     const parent = createScope("p")
 
     const a = parent.child("a")
-    a.defer(() => { order.push("a") })
+    a.defer(() => {
+      order.push("a")
+    })
     const b = parent.child("b")
-    b.defer(() => { order.push("b") })
+    b.defer(() => {
+      order.push("b")
+    })
     const c = parent.child("c")
-    c.defer(() => { order.push("c") })
+    c.defer(() => {
+      order.push("c")
+    })
 
     await parent[Symbol.asyncDispose]()
     expect(order).toEqual(["c", "b", "a"])
@@ -97,7 +107,9 @@ describe("Scope.child cascade", () => {
     const parent = createScope("p")
 
     const a = parent.child("a")
-    a.defer(() => { order.push("a") })
+    a.defer(() => {
+      order.push("a")
+    })
     const b = parent.child("b")
     b.defer(() => {
       order.push("b-throws")
@@ -157,8 +169,12 @@ describe("early child disposal releases parent reference", () => {
     const a = parent.child("a")
     const b = parent.child("b")
     const order: string[] = []
-    a.defer(() => { order.push("a") })
-    b.defer(() => { order.push("b") })
+    a.defer(() => {
+      order.push("a")
+    })
+    b.defer(() => {
+      order.push("b")
+    })
 
     // Dispose b early: b's defer fires once, order = ["b"]
     await b[Symbol.asyncDispose]()
@@ -179,7 +195,9 @@ describe("[Symbol.asyncDispose] idempotence", () => {
   it("second dispose is a no-op", async () => {
     let count = 0
     const scope = createScope("a")
-    scope.defer(() => { count++ })
+    scope.defer(() => {
+      count++
+    })
     await scope[Symbol.asyncDispose]()
     await scope[Symbol.asyncDispose]()
     expect(count).toBe(1)
@@ -216,7 +234,9 @@ describe("Scope.move()", () => {
 describe("disposable()", () => {
   it("sync overload attaches Symbol.dispose", () => {
     let disposed = false
-    const d = disposable({ id: 1 }, (_) => { disposed = true })
+    const d = disposable({ id: 1 }, (_) => {
+      disposed = true
+    })
     expect(typeof d[Symbol.dispose]).toBe("function")
     d[Symbol.dispose]()
     expect(disposed).toBe(true)
@@ -243,7 +263,11 @@ describe("disposable()", () => {
   it("works with scope.use() for lifecycle attachment", async () => {
     const scope = createScope("a")
     let disposed = false
-    const d = scope.use(disposable({ ok: true }, () => { disposed = true }))
+    const d = scope.use(
+      disposable({ ok: true }, () => {
+        disposed = true
+      }),
+    )
     expect(d.ok).toBe(true)
     expect(disposed).toBe(false)
     await scope[Symbol.asyncDispose]()
@@ -288,9 +312,7 @@ describe("reportDisposeError", () => {
     setDisposeErrorSink(() => {
       throw new Error("sink broke")
     })
-    expect(() =>
-      reportDisposeError(new Error("original"), { phase: "manual" }),
-    ).not.toThrow()
+    expect(() => reportDisposeError(new Error("original"), { phase: "manual" })).not.toThrow()
   })
 })
 
@@ -304,7 +326,9 @@ describe("integration", () => {
     {
       await using scope = createScope("outer")
       scope.use(disposable({ k: "a" }, () => order.push("a")))
-      scope.defer(() => { order.push("defer") })
+      scope.defer(() => {
+        order.push("defer")
+      })
       scope.use(disposable({ k: "b" }, () => order.push("b")))
     }
     // LIFO: b, defer, a
@@ -314,7 +338,9 @@ describe("integration", () => {
   it("explicit parameter pattern works for non-component code", async () => {
     const order: string[] = []
     function open(scope: Scope, _path: string) {
-      scope.defer(() => { order.push("closed") })
+      scope.defer(() => {
+        order.push("closed")
+      })
       return { path: _path }
     }
     await using scope = createScope("test")
@@ -343,7 +369,9 @@ function createFakeApp(opts: { term?: FakeApp["term"] } = {}): FakeApp {
   const deferred: Array<() => void | Promise<void>> = []
   return {
     term: opts.term,
-    defer(fn) { deferred.push(fn) },
+    defer(fn) {
+      deferred.push(fn)
+    },
     async flushDefer() {
       // Mirrors silvery's app-exit flush — LIFO.
       for (const fn of deferred.reverse()) await fn()
@@ -364,10 +392,17 @@ function createFakeSignals() {
       on(sig: "SIGINT" | "SIGTERM", fn: () => void): Disposable & AsyncDisposable {
         if (!handlers.has(sig)) handlers.set(sig, new Set())
         handlers.get(sig)!.add(fn)
-        const remove = () => { handlers.get(sig)?.delete(fn) }
+        const remove = () => {
+          handlers.get(sig)?.delete(fn)
+        }
         return {
-          [Symbol.dispose]() { remove() },
-          [Symbol.asyncDispose]() { remove(); return Promise.resolve() },
+          [Symbol.dispose]() {
+            remove()
+          },
+          [Symbol.asyncDispose]() {
+            remove()
+            return Promise.resolve()
+          },
         }
       },
     },
@@ -400,7 +435,9 @@ describe("withScope", () => {
   it("disposes the scope on app exit (no signals wired)", async () => {
     const app = withScope()(createFakeApp())
     let disposed = 0
-    app.scope.defer(() => { disposed++ })
+    app.scope.defer(() => {
+      disposed++
+    })
     await app.flushDefer()
     expect(disposed).toBe(1)
   })
@@ -422,7 +459,9 @@ describe("withScope", () => {
     const signals = createFakeSignals()
     const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
     let disposed = 0
-    app.scope.defer(() => { disposed++ })
+    app.scope.defer(() => {
+      disposed++
+    })
     signals.fire("SIGINT")
     // dispose is fire-and-forget — yield once for the microtask
     await new Promise((r) => setTimeout(r, 0))
@@ -433,7 +472,9 @@ describe("withScope", () => {
     const signals = createFakeSignals()
     const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
     let disposed = 0
-    app.scope.defer(() => { disposed++ })
+    app.scope.defer(() => {
+      disposed++
+    })
     signals.fire("SIGTERM")
     await new Promise((r) => setTimeout(r, 0))
     expect(disposed).toBe(1)
@@ -452,7 +493,9 @@ describe("withScope", () => {
   it("dispose error from signal flows through reportDisposeError with phase: signal", async () => {
     const signals = createFakeSignals()
     const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
-    app.scope.defer(() => { throw new Error("teardown blew up") })
+    app.scope.defer(() => {
+      throw new Error("teardown blew up")
+    })
     signals.fire("SIGINT")
     await new Promise((r) => setTimeout(r, 0))
     expect(capturedArgs).toHaveLength(1)
@@ -462,7 +505,9 @@ describe("withScope", () => {
 
   it("dispose error from app-exit flows through reportDisposeError with phase: app-exit", async () => {
     const app = withScope()(createFakeApp())
-    app.scope.defer(() => { throw new Error("exit blew up") })
+    app.scope.defer(() => {
+      throw new Error("exit blew up")
+    })
     await app.flushDefer()
     // wait for the catch to fire
     await new Promise((r) => setTimeout(r, 0))
@@ -474,7 +519,9 @@ describe("withScope", () => {
     const signals = createFakeSignals()
     const app = withScope()(createFakeApp({ term: { signals: signals.api } }))
     let disposed = 0
-    app.scope.defer(() => { disposed++ })
+    app.scope.defer(() => {
+      disposed++
+    })
     signals.fire("SIGINT")
     await new Promise((r) => setTimeout(r, 0))
     expect(disposed).toBe(1)

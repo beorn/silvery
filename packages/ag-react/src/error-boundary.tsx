@@ -194,8 +194,7 @@ export class SilveryErrorBoundary extends Component<
               "silvery-text",
               {
                 backgroundColor: line === origin.line ? "red" : undefined,
-                color:
-                  line === origin.line ? "white" : line !== origin.line ? "$muted" : undefined,
+                color: line === origin.line ? "white" : line !== origin.line ? "$muted" : undefined,
               },
               `${lineNum}:`,
             ),

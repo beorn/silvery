@@ -345,7 +345,7 @@ function LevelToggles({
             <Text
               color={active ? LEVEL_COLORS[level] : "$fg-muted"}
               bold={active}
-              color={(!active) ? "$muted" : undefined}
+              color={!active ? "$muted" : undefined}
               strikethrough={!active}
             >
               {LEVEL_BADGES[level]}

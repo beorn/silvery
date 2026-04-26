@@ -48,14 +48,16 @@ describe("aichat inline bugs", { timeout: 15000 }, () => {
   let term: Term
   let handle: RunHandle
 
-  async function setup(opts: {
-    mode?: "inline" | "fullscreen"
-    autoStart?: boolean
-    fastMode?: boolean
-    cols?: number
-    rows?: number
-    focusReporting?: boolean
-  } = {}) {
+  async function setup(
+    opts: {
+      mode?: "inline" | "fullscreen"
+      autoStart?: boolean
+      fastMode?: boolean
+      cols?: number
+      rows?: number
+      focusReporting?: boolean
+    } = {},
+  ) {
     const {
       mode = "inline",
       autoStart = false,
@@ -93,11 +95,10 @@ describe("aichat inline bugs", { timeout: 15000 }, () => {
     // scrollback — ListView keeps all exchanges addressable and the intro is
     // the first item. Even after mount's doAdvance chains through the first
     // agent response, the intro exchange must remain in the render tree.
-    handle = await run(
-      <AIChat script={SCRIPT} autoStart={false} fastMode={true} />,
-      term,
-      { mode: "inline", focusReporting: true },
-    )
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term, {
+      mode: "inline",
+      focusReporting: true,
+    })
     await settle(300)
 
     // Check both screen and scrollback — in inline mode with a long session,

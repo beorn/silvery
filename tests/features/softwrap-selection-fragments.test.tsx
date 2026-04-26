@@ -24,10 +24,7 @@ import React from "react"
 import { describe, test, expect, beforeEach, afterEach, afterAll } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
-import {
-  computeSelectionFragments,
-  findActiveSelectionFragments,
-} from "@silvery/ag/layout-signals"
+import { computeSelectionFragments, findActiveSelectionFragments } from "@silvery/ag/layout-signals"
 import { setWrapMeasurer, getWrapMeasurer } from "@silvery/ag/wrap-measurer"
 import {
   installTerminalWrapMeasurer,

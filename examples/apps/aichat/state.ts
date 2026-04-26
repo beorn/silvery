@@ -246,10 +246,7 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
           // agent response rather than freezing on "Session complete". The
           // user can still Ctrl-D out; double-Ctrl-D in useKeyBindings
           // handles true exit.
-          return [
-            { ...state, offScript: true },
-            [fx.delay(1200, { type: "respondRandom" })],
-          ]
+          return [{ ...state, offScript: true }, [fx.delay(1200, { type: "respondRandom" })]]
         }
         return doAdvance(state)
       }

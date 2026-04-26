@@ -58,11 +58,7 @@ export const term: Term = new Proxy({} as Term, {
 })
 
 export type { Output, OutputOptions } from "../runtime/devices/output"
-export type {
-  Console,
-  ConsoleCaptureOptions,
-  ConsoleStats,
-} from "../runtime/devices/console"
+export type { Console, ConsoleCaptureOptions, ConsoleStats } from "../runtime/devices/console"
 export { createConsole } from "../runtime/devices/console"
 
 // =============================================================================

@@ -25,10 +25,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 
 import { Box, Text } from "../../src/index.js"
-import {
-  run,
-  _resetRunOptionsWarningForTesting,
-} from "../../packages/ag-term/src/runtime/run"
+import { run, _resetRunOptionsWarningForTesting } from "../../packages/ag-term/src/runtime/run"
 import { createTerminalProfile } from "../../packages/ansi/src/profile"
 
 // ============================================================================
@@ -375,9 +372,7 @@ describe("contract: RunOptions.profile", () => {
     await settle(80)
     expect(warnSpy).toHaveBeenCalled()
     const messages = warnSpy.mock.calls.map((c) => c[0] as string)
-    expect(messages.some((m) => m.includes("run({ caps })") && m.includes("deprecated"))).toBe(
-      true,
-    )
+    expect(messages.some((m) => m.includes("run({ caps })") && m.includes("deprecated"))).toBe(true)
     expect(messages.some((m) => m.includes("createTerminalProfile"))).toBe(true)
     warnSpy.mockRestore()
     handle.unmount()

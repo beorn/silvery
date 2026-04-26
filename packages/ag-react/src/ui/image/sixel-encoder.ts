@@ -178,9 +178,7 @@ export function encodeSixel(imageData: SixelImageData): string {
  *
  * @returns `true` if the terminal likely supports Sixel
  */
-export function isSixelSupported(
-  emulator?: { program: string; TERM: string },
-): boolean {
+export function isSixelSupported(emulator?: { program: string; TERM: string }): boolean {
   const resolved = emulator ?? createTerminalProfile().emulator
   const term = resolved.TERM
   const termProgram = resolved.program

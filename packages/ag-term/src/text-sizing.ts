@@ -127,10 +127,7 @@ export function getCachedProbeResult(fingerprint: string): TextSizingProbeResult
 /**
  * Store a probe result in the cache for the given fingerprint.
  */
-export function setCachedProbeResult(
-  fingerprint: string,
-  result: TextSizingProbeResult,
-): void {
+export function setCachedProbeResult(fingerprint: string, result: TextSizingProbeResult): void {
   probeCache.set(fingerprint, result)
 }
 

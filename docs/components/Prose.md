@@ -47,7 +47,7 @@ Other flex props (`flexShrink: 1`, `alignContent: stretch`, auto min-size) come 
 import { Prose } from "silvery"
 import { MarkdownView } from "./MarkdownView"
 
-<Prose>
+;<Prose>
   <MarkdownView source={longMarkdown} />
 </Prose>
 ```
@@ -65,7 +65,9 @@ import { MarkdownView } from "./MarkdownView"
 
 ```tsx
 <Box flexDirection="row" gap={1}>
-  <Text bold color="$fg-accent">●</Text>
+  <Text bold color="$fg-accent">
+    ●
+  </Text>
   <Prose flexGrow={1}>
     <MarkdownView source={response} />
   </Prose>

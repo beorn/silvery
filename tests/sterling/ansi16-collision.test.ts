@@ -84,10 +84,7 @@ describe("Sterling ANSI16 quantization collisions", () => {
         collisions.push(name)
       }
     }
-    expect(
-      collisions.length,
-      `border collisions: ${collisions.join(", ")}`,
-    ).toBeLessThanOrEqual(15)
+    expect(collisions.length, `border collisions: ${collisions.join(", ")}`).toBeLessThanOrEqual(15)
   })
 
   test("bg-backdrop vs bg-default collision rate documented under ANSI16", () => {

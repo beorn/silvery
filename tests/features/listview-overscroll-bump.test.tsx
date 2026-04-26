@@ -24,7 +24,11 @@ const ITEMS = ["one", "two", "three", "four", "five", "six", "seven", "eight"]
 /** The corner indicator uses half-block chars ▀ (top) / ▄ (bottom). */
 const INDICATOR_GLYPHS = new Set(["▀", "▄"])
 
-function hasIndicator(app: { cell: (col: number, row: number) => { char: string } }, cols = 30, rows = 6): boolean {
+function hasIndicator(
+  app: { cell: (col: number, row: number) => { char: string } },
+  cols = 30,
+  rows = 6,
+): boolean {
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       if (INDICATOR_GLYPHS.has(app.cell(col, row).char)) return true
@@ -33,7 +37,11 @@ function hasIndicator(app: { cell: (col: number, row: number) => { char: string 
   return false
 }
 
-function hasIndicatorOnRow(app: { cell: (col: number, row: number) => { char: string } }, row: number, cols = 30): boolean {
+function hasIndicatorOnRow(
+  app: { cell: (col: number, row: number) => { char: string } },
+  row: number,
+  cols = 30,
+): boolean {
   for (let col = 0; col < cols; col++) {
     if (INDICATOR_GLYPHS.has(app.cell(col, row).char)) return true
   }
@@ -56,7 +64,13 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
   test("pressing k at first item fires top overscroll indicator", async () => {
     const render = createRenderer({ cols: 30, rows: 6 })
     const app = render(
-      <ListView items={ITEMS} height={4} nav cursor={0} renderItem={(item) => <Text>{item}</Text>} />,
+      <ListView
+        items={ITEMS}
+        height={4}
+        nav
+        cursor={0}
+        renderItem={(item) => <Text>{item}</Text>}
+      />,
     )
     await app.press("k")
     expect(hasIndicatorOnRow(app, 0)).toBe(true)
@@ -65,7 +79,13 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
   test("pressing j at mid-list (not at edge) does NOT fire bump", async () => {
     const render = createRenderer({ cols: 30, rows: 6 })
     const app = render(
-      <ListView items={ITEMS} height={4} nav cursor={2} renderItem={(item) => <Text>{item}</Text>} />,
+      <ListView
+        items={ITEMS}
+        height={4}
+        nav
+        cursor={2}
+        renderItem={(item) => <Text>{item}</Text>}
+      />,
     )
     await app.press("j")
     expect(hasIndicator(app)).toBe(false)

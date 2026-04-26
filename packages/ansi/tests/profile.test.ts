@@ -888,10 +888,7 @@ describe("detectTerminalProfileFromEnv", () => {
   })
 
   test("NERDFONT=0 disables nerdfont override", () => {
-    const profile = detectTerminalProfileFromEnv(
-      { TERM_PROGRAM: "iTerm.app", NERDFONT: "0" },
-      tty,
-    )
+    const profile = detectTerminalProfileFromEnv({ TERM_PROGRAM: "iTerm.app", NERDFONT: "0" }, tty)
     expect(profile.caps.maybeNerdFont).toBe(false)
   })
 })
@@ -1064,7 +1061,7 @@ describe("createTerminalProfile — contract", () => {
 //   3. The precedence chain + color provenance match the sync factory.
 
 describe("probeTerminalProfile — contract", () => {
-  test('contract: probeTheme: false returns a profile without theme (sync-equivalent)', async () => {
+  test("contract: probeTheme: false returns a profile without theme (sync-equivalent)", async () => {
     // When probeTheme is explicitly disabled, the async variant must produce
     // exactly what createTerminalProfile would have — same caps, same tier,
     // same colorProvenance, no theme field. This lets callers unify on one
@@ -1080,7 +1077,7 @@ describe("probeTerminalProfile — contract", () => {
     expect(profile.theme).toBeUndefined()
   })
 
-  test('contract: probeTheme: true on mono tier returns a canned theme (no OSC probe)', async () => {
+  test("contract: probeTheme: true on mono tier returns a canned theme (no OSC probe)", async () => {
     // detectTheme short-circuits mono/ansi16 to the built-in ANSI-16 themes,
     // so this test runs to completion even in non-TTY Vitest environments
     // where an OSC probe would time out. The profile.theme field must be
@@ -1099,7 +1096,7 @@ describe("probeTerminalProfile — contract", () => {
     expect(typeof profile.theme).toBe("object")
   })
 
-  test('contract: probeTheme: true on ansi16 tier returns a canned theme', async () => {
+  test("contract: probeTheme: true on ansi16 tier returns a canned theme", async () => {
     const profile = await probeTerminalProfile({
       env: { FORCE_COLOR: "1" },
       stdout: tty,

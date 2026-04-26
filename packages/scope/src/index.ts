@@ -98,7 +98,9 @@ export class Scope extends AsyncDisposableStack {
 
     if (errors.length === 1) throw errors[0]
     if (errors.length > 1) {
-      throw errors.reduce((suppressed, e) => new SuppressedError(e, suppressed, "multiple dispose errors"))
+      throw errors.reduce(
+        (suppressed, e) => new SuppressedError(e, suppressed, "multiple dispose errors"),
+      )
     }
   }
 
@@ -140,14 +142,8 @@ export function disposable<T extends object>(
   value: T,
   dispose: (v: T) => Promise<void>,
 ): T & AsyncDisposable
-export function disposable<T extends object>(
-  value: T,
-  dispose: (v: T) => void,
-): T & Disposable
-export function disposable(
-  value: object,
-  dispose: (v: object) => void | Promise<void>,
-): object {
+export function disposable<T extends object>(value: T, dispose: (v: T) => void): T & Disposable
+export function disposable(value: object, dispose: (v: object) => void | Promise<void>): object {
   _trackCreate(value, "disposable")
   // Attach both symbol methods so either `using` or `await using` works.
   // The caller's overload selects the static type; runtime accepts both.
