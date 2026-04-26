@@ -1,55 +1,85 @@
 /**
- * Tests for @silvery/scope — structured concurrency.
+ * @silvery/scope — outer-surface smoke tests.
+ *
+ * Verifies the published `@silvery/scope` package barrel resolves and the
+ * core entry points (`createScope`, `withScope`, `Scope`, `disposable`,
+ * `reportDisposeError`) work end-to-end via the package import path.
+ *
+ * Comprehensive coverage of cascade, idempotence, multi-throw aggregation,
+ * disposable() overloads, error sink, and SIGINT/SIGTERM wiring lives in
+ * `packages/scope/tests/scope.test.ts`. This file guards against barrel /
+ * exports drift — if the package's `exports` map regresses, this file fails
+ * before the internal suite is even reached.
  */
-import { describe, test, expect } from "vitest"
-import { createScope, withScope, type Scope } from "@silvery/scope"
 
-describe("createScope", () => {
-  test("creates scope with name and signal", () => {
+import { describe, expect, test } from "vitest"
+import {
+  createScope,
+  disposable,
+  reportDisposeError,
+  Scope,
+  setDisposeErrorSink,
+  withScope,
+} from "@silvery/scope"
+
+// =============================================================================
+// createScope — public surface
+// =============================================================================
+
+describe("createScope (public surface)", () => {
+  test("returns a Scope with name + AbortSignal + defer", async () => {
     const scope = createScope("test")
+    expect(scope).toBeInstanceOf(Scope)
     expect(scope.name).toBe("test")
     expect(scope.signal).toBeInstanceOf(AbortSignal)
-    expect(scope.cancelled).toBe(false)
-    scope[Symbol.dispose]()
+    expect(scope.signal.aborted).toBe(false)
+    await scope[Symbol.asyncDispose]()
   })
 
-  test("default name is 'scope'", () => {
+  test("defaults name to undefined when omitted", async () => {
     const scope = createScope()
-    expect(scope.name).toBe("scope")
-    scope[Symbol.dispose]()
+    expect(scope.name).toBeUndefined()
+    await scope[Symbol.asyncDispose]()
   })
 
-  test("dispose cancels signal", () => {
+  test("asyncDispose aborts the signal", async () => {
     const scope = createScope()
     expect(scope.signal.aborted).toBe(false)
-    scope[Symbol.dispose]()
+    await scope[Symbol.asyncDispose]()
     expect(scope.signal.aborted).toBe(true)
-    expect(scope.cancelled).toBe(true)
   })
 
-  test("dispose is idempotent", () => {
+  test("asyncDispose is idempotent (runs deferred work once)", async () => {
     let count = 0
     const scope = createScope()
-    scope.defer(() => count++)
-    scope[Symbol.dispose]()
-    scope[Symbol.dispose]()
+    scope.defer(() => {
+      count++
+    })
+    await scope[Symbol.asyncDispose]()
+    await scope[Symbol.asyncDispose]()
     expect(count).toBe(1)
   })
 
-  test("defer runs cleanups in reverse order", () => {
+  test("defer runs cleanups in LIFO order", async () => {
     const order: number[] = []
     const scope = createScope()
-    scope.defer(() => order.push(1))
-    scope.defer(() => order.push(2))
-    scope.defer(() => order.push(3))
-    scope[Symbol.dispose]()
+    scope.defer(() => {
+      order.push(1)
+    })
+    scope.defer(() => {
+      order.push(2)
+    })
+    scope.defer(() => {
+      order.push(3)
+    })
+    await scope[Symbol.asyncDispose]()
     expect(order).toEqual([3, 2, 1])
   })
 
-  test("using syntax works", () => {
+  test("await using syntax disposes on block exit", async () => {
     let disposed = false
     {
-      using scope = createScope()
+      await using scope = createScope()
       scope.defer(() => {
         disposed = true
       })
@@ -58,134 +88,145 @@ describe("createScope", () => {
   })
 })
 
-describe("child scopes", () => {
-  test("child inherits parent cancellation", () => {
+// =============================================================================
+// child scopes — public surface
+// =============================================================================
+
+describe("child scopes (public surface)", () => {
+  test("child signal aborts when parent disposes", async () => {
     const parent = createScope("parent")
     const child = parent.child("child")
-    expect(child.cancelled).toBe(false)
-    parent[Symbol.dispose]()
-    expect(child.cancelled).toBe(true)
+    expect(child.signal.aborted).toBe(false)
+    await parent[Symbol.asyncDispose]()
+    expect(child.signal.aborted).toBe(true)
   })
 
-  test("child has default name", () => {
+  test("child stores its own name verbatim", async () => {
     const parent = createScope("app")
-    const child = parent.child()
-    expect(child.name).toBe("app:child")
-    parent[Symbol.dispose]()
+    const child = parent.child("child")
+    expect(child.name).toBe("child")
+    await parent[Symbol.asyncDispose]()
   })
 
-  test("child disposal does not affect parent", () => {
+  test("child disposal does not abort the parent", async () => {
     const parent = createScope("parent")
     const child = parent.child("child")
-    child[Symbol.dispose]()
-    expect(child.cancelled).toBe(true)
-    expect(parent.cancelled).toBe(false)
-    parent[Symbol.dispose]()
+    await child[Symbol.asyncDispose]()
+    expect(child.signal.aborted).toBe(true)
+    expect(parent.signal.aborted).toBe(false)
+    await parent[Symbol.asyncDispose]()
   })
 
-  test("already-cancelled parent creates cancelled child", () => {
+  test("creating a child of an already-disposed parent throws ReferenceError", async () => {
     const parent = createScope()
-    parent[Symbol.dispose]()
-    const child = parent.child()
-    expect(child.cancelled).toBe(true)
+    await parent[Symbol.asyncDispose]()
+    expect(() => parent.child()).toThrow(ReferenceError)
   })
 })
 
-describe("sleep", () => {
-  test("resolves after timeout", async () => {
-    const scope = createScope()
-    const start = Date.now()
-    await scope.sleep(50)
-    expect(Date.now() - start).toBeGreaterThanOrEqual(40)
-    scope[Symbol.dispose]()
+// =============================================================================
+// disposable() helper — public surface
+// =============================================================================
+
+describe("disposable() (public surface)", () => {
+  test("sync overload attaches Symbol.dispose", () => {
+    let disposed = false
+    using d = disposable({ id: 1 }, () => {
+      disposed = true
+    })
+    expect(d.id).toBe(1)
+    void d
+    expect(disposed).toBe(false)
+    // exits block → disposes
   })
 
-  test("rejects on cancellation", async () => {
+  test("registers cleanly with scope.use()", async () => {
+    let disposed = false
     const scope = createScope()
-    const promise = scope.sleep(10000)
-    scope[Symbol.dispose]()
-    await expect(promise).rejects.toThrow("Scope cancelled")
-  })
-
-  test("rejects immediately if already cancelled", async () => {
-    const scope = createScope()
-    scope[Symbol.dispose]()
-    await expect(scope.sleep(100)).rejects.toThrow("Scope cancelled")
+    scope.use(
+      disposable({ ok: true }, () => {
+        disposed = true
+      }),
+    )
+    await scope[Symbol.asyncDispose]()
+    expect(disposed).toBe(true)
   })
 })
 
-describe("timeout", () => {
-  test("runs function after delay", async () => {
-    const scope = createScope()
-    let called = false
-    scope.timeout(50, () => {
-      called = true
-    })
-    await new Promise((r) => setTimeout(r, 100))
-    expect(called).toBe(true)
-    scope[Symbol.dispose]()
-  })
+// =============================================================================
+// reportDisposeError — public surface
+// =============================================================================
 
-  test("cancel prevents execution", async () => {
-    const scope = createScope()
-    let called = false
-    const cancel = scope.timeout(100, () => {
-      called = true
+describe("reportDisposeError (public surface)", () => {
+  test("routes errors through the configured sink", () => {
+    const captured: Array<{ error: unknown; phase: string }> = []
+    setDisposeErrorSink((error, context) => {
+      captured.push({ error, phase: context.phase })
     })
-    cancel()
-    await new Promise((r) => setTimeout(r, 150))
-    expect(called).toBe(false)
-    scope[Symbol.dispose]()
-  })
-
-  test("scope disposal cancels pending timeouts", async () => {
-    const scope = createScope()
-    let called = false
-    scope.timeout(100, () => {
-      called = true
-    })
-    scope[Symbol.dispose]()
-    await new Promise((r) => setTimeout(r, 150))
-    expect(called).toBe(false)
+    try {
+      const err = new Error("boom")
+      const scope = createScope("a")
+      reportDisposeError(err, { phase: "react-unmount", scope })
+      expect(captured).toHaveLength(1)
+      expect(captured[0]!.error).toBe(err)
+      expect(captured[0]!.phase).toBe("react-unmount")
+    } finally {
+      // Restore default to avoid leaking the test sink across files.
+      setDisposeErrorSink((error, context) => {
+        const name = context.scope?.name ?? "?"
+        console.error(`[scope dispose error] phase=${context.phase} scope=${name}`, error)
+      })
+    }
   })
 })
 
-describe("withScope plugin", () => {
-  test("adds scope to app", () => {
-    const app = {
-      defer(_fn: () => void) {},
-      [Symbol.dispose]() {},
-    }
-    const enhanced = withScope("my-app")(app)
-    expect(enhanced.scope).toBeDefined()
-    expect(enhanced.scope.name).toBe("my-app")
-    expect(enhanced.scope.cancelled).toBe(false)
+// =============================================================================
+// withScope plugin — public surface
+// =============================================================================
+
+type FakeApp = {
+  defer(fn: () => void | Promise<void>): void
+  flushDefer(): Promise<void>
+}
+
+function createFakeApp(): FakeApp {
+  const deferred: Array<() => void | Promise<void>> = []
+  return {
+    defer(fn) {
+      deferred.push(fn)
+    },
+    async flushDefer() {
+      for (const fn of deferred.reverse()) await fn()
+    },
+  }
+}
+
+describe("withScope (public surface)", () => {
+  test("attaches a Scope to the app", () => {
+    const app = withScope("my-app")(createFakeApp())
+    expect(app.scope).toBeInstanceOf(Scope)
+    expect(app.scope.name).toBe("my-app")
+    expect(app.scope.signal.aborted).toBe(false)
   })
 
-  test("scope disposed when app disposes", () => {
-    const deferred: (() => void)[] = []
-    const app = {
-      defer(fn: () => void) {
-        deferred.push(fn)
-      },
-      [Symbol.dispose]() {
-        for (const fn of deferred) fn()
-      },
-    }
-    const enhanced = withScope()(app)
-    expect(enhanced.scope.cancelled).toBe(false)
-    enhanced[Symbol.dispose]()
-    expect(enhanced.scope.cancelled).toBe(true)
+  test("scope is disposed when the app's defer queue runs", async () => {
+    const app = withScope()(createFakeApp())
+    let disposed = false
+    app.scope.defer(() => {
+      disposed = true
+    })
+    expect(app.scope.signal.aborted).toBe(false)
+    await app.flushDefer()
+    // app-exit dispose is fire-and-forget — yield once for the microtask
+    await new Promise((r) => setTimeout(r, 0))
+    expect(disposed).toBe(true)
+    expect(app.scope.signal.aborted).toBe(true)
   })
 
-  test("preserves existing app properties", () => {
-    const app = {
-      customProp: 42,
-      defer(_fn: () => void) {},
-      [Symbol.dispose]() {},
-    }
-    const enhanced = withScope()(app)
+  test("preserves existing app properties on the enhanced object", () => {
+    const base = createFakeApp()
+    const enhanced = withScope()(Object.assign(base, { customProp: 42 }))
     expect(enhanced.customProp).toBe(42)
-    expect(enhanced.scope).toBeDefined()
+    expect(enhanced.scope).toBeInstanceOf(Scope)
   })
 })
