@@ -12,8 +12,20 @@
 
 /**
  * Measure mode determines how the width/height constraint should be interpreted.
+ *
+ * - "undefined": no constraint — return max-content (natural unconstrained size).
+ * - "at-most":   constrain to at most `width`/`height`. Used for Yoga/CSS
+ *                shrink-wrap and for cross-axis sizing in column/row layouts.
+ * - "exactly":   exactly `width`/`height` — used when a definite size has
+ *                been resolved.
+ * - "min-content": flexily-only extension. Asks the measurer for its
+ *                CSS min-content size — longest unbreakable token for
+ *                wrappable text, naturalWidth for non-wrappable. Used by
+ *                CSS §4.5 auto-min-size derivation. Measurers that don't
+ *                recognize this mode should treat it as "at-most" with
+ *                width/height = 0 (the conservative fallback).
  */
-export type MeasureMode = "undefined" | "exactly" | "at-most"
+export type MeasureMode = "undefined" | "exactly" | "at-most" | "min-content"
 
 /**
  * Measure function callback for intrinsic sizing.

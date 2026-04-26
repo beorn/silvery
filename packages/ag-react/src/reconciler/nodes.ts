@@ -173,9 +173,18 @@ export function createNode(
 
       // Calculate text dimensions
       const lines = text.split("\n")
-      // Treat NaN width the same as unconstrained (can happen with auto-sized parents)
+      // Treat NaN width the same as unconstrained (can happen with auto-sized parents).
+      // The flexily-only "min-content" mode is treated as "AT_MOST 0" for the
+      // wrap branch: any wrap opportunity floors at the longest unbreakable
+      // word; non-wrappable text returns naturalWidth (the isTruncate branch
+      // ignores maxWidth at intrinsic-sizing time).
+      const isMinContentQuery = widthMode === "min-content"
       const maxWidth =
-        widthMode === "undefined" || Number.isNaN(width) ? Number.POSITIVE_INFINITY : width
+        widthMode === "undefined" || Number.isNaN(width)
+          ? Number.POSITIVE_INFINITY
+          : isMinContentQuery
+            ? 0
+            : width
 
       // Wrap mode classification — separates intrinsic-sizing semantics
       // (CSS-aligned) from paint-time clipping (handled by
@@ -235,7 +244,13 @@ export function createNode(
           totalHeight += lh
           actualWidth = Math.max(actualWidth, lineWidth)
         } else if (isHardWrap) {
-          if (lineWidth <= maxWidth) {
+          if (isMinContentQuery) {
+            // Hard-wrap min-content: any character can break, so min = 1
+            // cell (or 0 for an empty line). Height is 1 — actual layout
+            // computes wrapped height at the allocated width.
+            totalHeight += lh
+            actualWidth = Math.max(actualWidth, lineWidth > 0 ? 1 : 0)
+          } else if (lineWidth <= maxWidth) {
             totalHeight += lh
             actualWidth = Math.max(actualWidth, lineWidth)
           } else if (Number.isFinite(maxWidth) && maxWidth > 0) {
@@ -246,8 +261,28 @@ export function createNode(
             totalHeight += lh
             actualWidth = Math.max(actualWidth, lineWidth)
           }
+        } else if (isMinContentQuery) {
+          // Wrappable min-content: longest unbreakable token width.
+          // CSS min-content for wrappable text is the longest token that
+          // cannot be broken at a wrap opportunity (whitespace, hyphens).
+          // We approximate by splitting on whitespace and taking the
+          // widest non-empty token. This matches what `wrapText` would
+          // produce at the smallest stable wrap width — but computing it
+          // directly avoids the character-wrap collapse you'd get if you
+          // called `wrapText(line, 1, ...)`.
+          let longestWord = 0
+          for (const word of line.split(/\s+/)) {
+            if (!word) continue
+            const w = dw(word)
+            if (w > longestWord) longestWord = w
+          }
+          // Height at min-content: a single line per source line. Actual
+          // wrapped height is computed when the layout pass measures with
+          // the assigned width.
+          totalHeight += lh
+          actualWidth = Math.max(actualWidth, longestWord)
         } else {
-          // Wrappable text (wrap, even, undefined).
+          // Wrappable text (wrap, even, undefined) under exact/at-most/undefined.
           if (lineWidth <= maxWidth) {
             totalHeight += lh
             actualWidth = Math.max(actualWidth, lineWidth)
@@ -273,6 +308,9 @@ export function createNode(
       }
 
       // Final width:
+      //   - min-content query: return actualWidth as-is — the maxWidth
+      //     clamp would zero out the longest-word answer (we set
+      //     maxWidth=0 above for the min-content protocol).
       //   - non-wrappable: natural width as-is (no maxWidth clamp — render
       //     phase clips at paint time). Under the Ink-compat shim, fall
       //     back to `min(actualWidth, maxWidth)` to preserve Ink's
@@ -280,8 +318,9 @@ export function createNode(
       //   - wrappable / hard: clamp to maxWidth so flex distribution sees
       //     post-wrap width (e.g. wrapped "Hello world" at width=6 reports
       //     width=5, the longest wrapped line).
-      const resultWidth =
-        isTruncate && !inkCompatTextMeasure
+      const resultWidth = isMinContentQuery
+        ? actualWidth
+        : isTruncate && !inkCompatTextMeasure
           ? actualWidth
           : Math.min(actualWidth, maxWidth)
       const result = {

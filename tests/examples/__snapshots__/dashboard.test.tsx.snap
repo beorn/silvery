@@ -47,12 +47,8 @@ exports[`dashboard snapshot > full render at 137x40 matches snapshot > dashboard
 `;
 
 exports[`dashboard snapshot > narrow layout at 80x40 matches snapshot > dashboard-80x40 1`] = `
-"Silvery TUI system monitor showcase devbox-01┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄14:27 UTC [h]hel
-
-
-
-
-
+"Silvery system     devbox-01┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄14:27 UTC [h]help [1]cpu [2]mem
+TUI    monitor                                 [3]net [p]proc [/]filter [q]quit
 ╭─────────────────────────────────────────────╮ ╭──────────────────────────────╮
 │  CPU / Compute                  10 logical  │ │  Memory             32 GiB   │
 │ Total 67% ████████████████░░░░░░░░Load 4.21 3.│8RAM 23.7 / 32.0 GiB 74% ██████
@@ -77,14 +73,18 @@ exports[`dashboard snapshot > narrow layout at 80x40 matches snapshot > dashboar
 ╰─────────────────────────────────────────────╯ ╰──────────────────────────────╯
 ╭──────────────────────────────────────────────────────────────────────────────╮
 │  Processes                                                   sorted by CPU%  │
-│    PID NAME                                                            CPU%↓
+│    NAME                                              STATUS                  │
+│ PID                                    CPU%↓MEM%MEM         TIME  IO     THR │
 │ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄                           │
-│  31842 bun dev --hot src/server.ts                                     94.2%
-│  27114 node /usr/bin/vite --host                                       71.4%
-│    918 postgres: checkpointer                                          12.8%
-│   1023 Code Helper (Renderer)                                           9.6%
-│   2241 docker-desktop                                                   8.9%
-│   1542 redis-server *:6379                                              6.7%
-│    612 tailscaled --tun=userspace-networking                            5.4%
-│  33210 bun test --watch                                                 4.2%"
+│      bun dev --hot src/server.ts                    Running                  │
+│ 31842                                94.2%3.8%1.22G        01:42:1724M/s 18  │
+│      node /usr/bin/vite --host                      Running                  │
+│ 27114                                71.4%2.2%716M         00:18:0912M/s 26  │
+│    postgres: checkpointer                           Sleep                    │
+│ 918                                   12.8%1.4%448M       19:22:413.1M/s 27  │
+│     Code Helper (Renderer)                          Sleep                    │
+│ 1023                                  9.6%4.8%1.53G       07:13:511.2M/s 44  │
+│     docker-desktop                                 Running                   │
+│ 2241                                  8.9%6.3%2.01G       11:08:049.4M/s 61  │
+│     redis-server *:6379                             Sleep                    │"
 `;

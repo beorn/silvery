@@ -42,6 +42,7 @@ import {
   JUSTIFY_SPACE_EVENLY,
   MEASURE_MODE_AT_MOST,
   MEASURE_MODE_EXACTLY,
+  MEASURE_MODE_MIN_CONTENT,
   MEASURE_MODE_UNDEFINED,
   OVERFLOW_HIDDEN,
   OVERFLOW_SCROLL,
@@ -126,6 +127,7 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   private measureModeToString(mode: number): MeasureMode {
     if (mode === MEASURE_MODE_EXACTLY) return "exactly"
     if (mode === MEASURE_MODE_AT_MOST) return "at-most"
+    if (mode === MEASURE_MODE_MIN_CONTENT) return "min-content"
     return "undefined"
   }
 
