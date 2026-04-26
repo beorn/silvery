@@ -246,10 +246,24 @@ export interface TermlessClipboard {
   clear(): void
 }
 
-/** Term augmented with mouse + clipboard test helpers. */
+/**
+ * Term augmented with mouse + clipboard test helpers.
+ *
+ * `createTermless()` always returns an emulator-backed term, so `screen`,
+ * `scrollback`, and `cell()` are guaranteed defined here (the `Term`
+ * interface marks them optional because non-emulator-backed Terms — Node
+ * stdout, headless — don't have them). Narrowing them to required removes
+ * the need for `!` non-null assertions at every test callsite.
+ */
 export interface TermlessTerm extends Term {
   readonly mouse: TermlessMouse
   readonly clipboard: TermlessClipboard
+  readonly screen: NonNullable<Term["screen"]>
+  readonly scrollback: NonNullable<Term["scrollback"]>
+  cell(
+    row: number,
+    col: number,
+  ): { readonly fg: unknown; readonly bg: unknown; readonly char: string }
 }
 
 /** Default sleep between steps in `drag()`. Short enough to be fast, long
