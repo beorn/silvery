@@ -380,6 +380,30 @@ export interface ListViewProps<T> {
 export interface ListViewHandle {
   /** Imperatively scroll to a specific item index */
   scrollToItem(index: number): void
+  /**
+   * Imperatively scroll the viewport by `rows` rows. Positive scrolls down
+   * (further into the list), negative scrolls up. Clamped to
+   * `[0, maxScrollRow]`. Seeds from the current measured viewport position
+   * the first time it's called in a wheel-style gesture (mirrors the wheel
+   * handler's seed logic). Does NOT move the cursor; this is viewport-only.
+   *
+   * Calling `scrollBy` disengages `follow="end"` auto-follow until the
+   * caller explicitly calls `scrollToBottom()` (or the user wheels back to
+   * the bottom edge — same semantics as the wheel handler).
+   */
+  scrollBy(rows: number): void
+  /**
+   * Imperatively scroll to the top of the list (row 0). Disengages
+   * `follow="end"` auto-follow.
+   */
+  scrollToTop(): void
+  /**
+   * Imperatively scroll to the bottom of the list (row maxScrollRow). When
+   * the ListView has `follow="end"` set, this also re-arms the auto-follow
+   * snap so subsequent appends keep the tail visible — mirrors the
+   * "user wheels back to the bottom" semantics.
+   */
+  scrollToBottom(): void
   /** Get the history buffer (if history.mode === "virtual") */
   getHistoryBuffer(): HistoryBuffer | null
   /** Get the composed viewport (if history.mode === "virtual") */
@@ -1870,12 +1894,68 @@ function ListViewInner<T>(
   }
 
   // ── Ref ───────────────────────────────────────────────────────────
-  // Wrap scrollToItem to accept original indices (before virtual adjustment)
+  // Wrap scrollToItem to accept original indices (before virtual adjustment).
+  //
+  // `scrollBy` / `scrollToTop` / `scrollToBottom` operate on the row-space
+  // viewport position (NOT cursor index). They mirror the wheel handler's
+  // mutation pattern: seed `scrollRowFloatRef` if null, clamp to the
+  // current `maxScrollRowRef.current`, then push through `setScrollRow` so
+  // the inner Box's `scrollOffset` reflects the new position. Cursor is
+  // untouched — same "mouse follows hover, keyboard moves focus"
+  // separation the wheel handler enforces.
   useImperativeHandle(
     ref,
     () => ({
       scrollToItem(index: number) {
         scrollToItem(Math.max(0, index - unmountedCount))
+      },
+      scrollBy(rows: number) {
+        const maxRow = maxScrollRowRef.current
+        if (maxRow <= 0) return
+        // Seed from measured viewport position the first time we're called
+        // (or the first time after a moveTo() reset scrollRowFloatRef to
+        // null). Mirrors the wheel-seed logic so keyboard scroll picks up
+        // exactly where the user is looking.
+        if (scrollRowFloatRef.current === null) {
+          const cursorIdx = activeCursorRef.current
+          const lastIdx = itemCountRef.current - 1
+          if (cursorIdx >= lastIdx && lastIdx >= 0) {
+            scrollRowFloatRef.current = maxRow
+          } else if (cursorIdx <= 0) {
+            scrollRowFloatRef.current = 0
+          } else {
+            scrollRowFloatRef.current = Math.max(
+              0,
+              Math.min(maxRow, rowsAboveViewportRef.current),
+            )
+          }
+        }
+        const prev = scrollRowFloatRef.current
+        const next = Math.max(0, Math.min(maxRow, prev + rows))
+        if (next === prev) return
+        scrollRowFloatRef.current = next
+        const rendered = Math.round(next)
+        setScrollRow((prevInt) => (prevInt === rendered ? prevInt : rendered))
+        // Calling scrollBy means the user is taking explicit control of
+        // the viewport — clear any pending follow="end" snap so the
+        // viewport doesn't jump back to the tail on next render.
+        pendingFollowSnapRef.current = false
+      },
+      scrollToTop() {
+        scrollRowFloatRef.current = 0
+        setScrollRow(0)
+        pendingFollowSnapRef.current = false
+      },
+      scrollToBottom() {
+        const maxRow = maxScrollRowRef.current
+        scrollRowFloatRef.current = maxRow
+        setScrollRow(maxRow)
+        // Re-arm follow="end" auto-follow — on the next render the
+        // pending-snap path takes over and subsequent appends keep the
+        // tail visible. No-op when `follow !== "end"`.
+        if (resolvedFollow === "end") {
+          pendingFollowSnapRef.current = true
+        }
       },
       getHistoryBuffer(): HistoryBuffer | null {
         return cacheBufferRef.current
@@ -1884,7 +1964,7 @@ function ListViewInner<T>(
         return composedViewportRef.current
       },
     }),
-    [scrollToItem, unmountedCount],
+    [scrollToItem, unmountedCount, resolvedFollow],
   )
 
   // ── Mouse wheel handler ─────────────────────────────────────────
