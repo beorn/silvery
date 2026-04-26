@@ -173,6 +173,7 @@ export function ComponentPreview({ schemeName, mode }: ComponentPreviewProps): R
       borderColor="$border-default"
       overflow="scroll"
       overflowIndicator
+      userSelect="contain"
       scrollOffset={scrollOffset}
       onWheel={onWheel}
     >
@@ -217,37 +218,41 @@ export function ComponentPreview({ schemeName, mode }: ComponentPreviewProps): R
 
         <Divider />
 
-        {/* Alert demos — one per status variant */}
+        {/* Alert demos — one per status variant. Two columns: 3 left, 2 right. */}
         <Box flexDirection="column" gap={0}>
           <Small>
             <Muted>ALERTS</Muted>
           </Small>
-          <Box flexDirection="column" gap={0}>
-            <AlertBox
-              variant="error"
-              icon="✗"
-              title="Build failed"
-              body="Type-check caught 2 errors in src/app.ts"
-            />
-            <AlertBox
-              variant="warning"
-              icon="⚠"
-              title="Deprecated API"
-              body="useInput(...) deprecated — migrate to useKey"
-            />
-            <AlertBox
-              variant="success"
-              icon="✓"
-              title="Tests passed"
-              body="143 specs green in 2.4s"
-            />
-            <AlertBox variant="info" icon="ℹ" title="Tip" body="Press ? for keyboard shortcuts" />
-            <AlertBox
-              variant="accent"
-              icon="◆"
-              title="Accent surface"
-              body="Primary call-to-action surface"
-            />
+          <Box flexDirection="row" gap={1} flexWrap="wrap" alignItems="flex-start">
+            <Box flexDirection="column" gap={0}>
+              <AlertBox
+                variant="error"
+                icon="✗"
+                title="Build failed"
+                body="Type-check caught 2 errors in src/app.ts"
+              />
+              <AlertBox
+                variant="warning"
+                icon="⚠"
+                title="Deprecated API"
+                body="useInput(...) deprecated — migrate to useKey"
+              />
+              <AlertBox
+                variant="success"
+                icon="✓"
+                title="Tests passed"
+                body="143 specs green in 2.4s"
+              />
+            </Box>
+            <Box flexDirection="column" gap={0}>
+              <AlertBox variant="info" icon="ℹ" title="Tip" body="Press ? for keyboard shortcuts" />
+              <AlertBox
+                variant="accent"
+                icon="◆"
+                title="Accent surface"
+                body="Primary call-to-action surface"
+              />
+            </Box>
           </Box>
         </Box>
 

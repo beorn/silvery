@@ -260,9 +260,7 @@ export function App(): React.ReactElement {
 
   const header = (
     <Box paddingX={1} gap={1}>
-      <Text color="$fg-accent">
-        ▸ silvery
-      </Text>
+      <Text color="$fg-accent">▸ silvery</Text>
       <Strong>Sterling Storybook</Strong>
       <Muted>— interactive design-system explorer</Muted>
       <Muted>·</Muted>
@@ -322,7 +320,7 @@ export function App(): React.ReactElement {
             focused={focus === "schemes"}
           />
           {middle}
-          <Box flexDirection="column">
+          <Box flexDirection="column" userSelect="contain">
             <TokenTree
               theme={sterlingTheme}
               cursorIndex={tokenCursor}

@@ -18,17 +18,7 @@
  */
 
 import React, { useMemo, useState } from "react"
-import {
-  Box,
-  Text,
-  Muted,
-  Strong,
-  Divider,
-  Kbd,
-  useInput,
-  useBoxRect,
-  type Key,
-} from "silvery"
+import { Box, Text, Muted, Strong, Divider, Kbd, useInput, useBoxRect, type Key } from "silvery"
 import { sterling, type SterlingTheme } from "@silvery/theme"
 import type { ColorScheme } from "@silvery/ansi"
 import { quantizeSterlingTheme } from "./shared/quantize.ts"
@@ -118,11 +108,13 @@ export function PaletteGallery({
   })
 
   return (
-    <Box flexDirection="column" flexGrow={1} padding={0}>
+    <Box flexDirection="column" flexGrow={1} padding={0} userSelect="contain">
       <Box paddingX={1} gap={1}>
         <Text color="$fg-accent">▸ silvery</Text>
         <Strong>Palette Gallery</Strong>
-        <Muted>— all {rows.length} schemes, current tier: {tier}</Muted>
+        <Muted>
+          — all {rows.length} schemes, current tier: {tier}
+        </Muted>
       </Box>
       <Divider />
       <Box paddingX={1} gap={2} marginBottom={0}>
@@ -149,25 +141,30 @@ export function PaletteGallery({
           const idx = visibleStart + i
           const isCursor = idx === cursor
           const isActive = idx === activeIndex
-          return (
-            <PaletteRow
-              key={row.name}
-              row={row}
-              isCursor={isCursor}
-              isActive={isActive}
-            />
-          )
+          return <PaletteRow key={row.name} row={row} isCursor={isCursor} isActive={isActive} />
         })}
       </Box>
       <Divider />
       <Box paddingX={1} gap={1}>
-        <Muted><Kbd>j/k</Kbd> move</Muted>
-        <Muted><Kbd>J/K</Kbd> ±10</Muted>
-        <Muted><Kbd>g/G</Kbd> top/bottom</Muted>
-        <Muted><Kbd>Enter</Kbd> select</Muted>
-        <Muted><Kbd>p</Kbd> / <Kbd>Esc</Kbd> back</Muted>
+        <Muted>
+          <Kbd>j/k</Kbd> move
+        </Muted>
+        <Muted>
+          <Kbd>J/K</Kbd> ±10
+        </Muted>
+        <Muted>
+          <Kbd>g/G</Kbd> top/bottom
+        </Muted>
+        <Muted>
+          <Kbd>Enter</Kbd> select
+        </Muted>
+        <Muted>
+          <Kbd>p</Kbd> / <Kbd>Esc</Kbd> back
+        </Muted>
         <Muted>·</Muted>
-        <Muted>{cursor + 1}/{rows.length}</Muted>
+        <Muted>
+          {cursor + 1}/{rows.length}
+        </Muted>
       </Box>
     </Box>
   )
@@ -216,10 +213,14 @@ function PaletteRow({ row, isCursor, isActive }: PaletteRowProps): React.ReactEl
       <Box>
         <Box backgroundColor={surfaceBg} paddingX={1}>
           <Text color={fgDefault}>The </Text>
-          <Text color={accentBg} bold>quick</Text>
+          <Text color={accentBg} bold>
+            quick
+          </Text>
           <Text color={fgDefault}> brown </Text>
           <Box backgroundColor={accentBg} paddingX={1}>
-            <Text color={fgOnAccent} bold>jumps</Text>
+            <Text color={fgOnAccent} bold>
+              jumps
+            </Text>
           </Box>
         </Box>
       </Box>

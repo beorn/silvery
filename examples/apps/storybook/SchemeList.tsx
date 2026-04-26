@@ -24,8 +24,18 @@ export function SchemeList({
   onSelect,
   focused,
 }: SchemeListProps): React.ReactElement {
+  // Pane is width=22 (1 border + 1 padding + 2 indicator + label + 1 padding + 1 border).
+  // That leaves 16 columns for the label. Truncate longer names with a middle ellipsis
+  // so prefix + suffix stay readable instead of wrapping into the next row.
+  const MAX_LABEL = 16
+  const truncate = (name: string): string => {
+    if (name.length <= MAX_LABEL) return name
+    const head = Math.ceil((MAX_LABEL - 1) / 2)
+    const tail = Math.floor((MAX_LABEL - 1) / 2)
+    return `${name.slice(0, head)}…${name.slice(name.length - tail)}`
+  }
   const items: SelectOption[] = useMemo(
-    () => schemes.map((name) => ({ label: name, value: name })),
+    () => schemes.map((name) => ({ label: truncate(name), value: name })),
     [schemes],
   )
 
@@ -37,6 +47,7 @@ export function SchemeList({
       width={22}
       borderStyle="single"
       borderColor={focused ? "$fg-accent" : "$border-default"}
+      userSelect="contain"
     >
       <Box paddingX={1}>
         <Text bold color="$fg-accent">

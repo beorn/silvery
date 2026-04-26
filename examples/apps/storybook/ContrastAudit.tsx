@@ -135,6 +135,7 @@ export function ContrastAudit({ theme, schemeName }: ContrastAuditProps): React.
       borderColor="$fg-warning"
       overflow="scroll"
       overflowIndicator
+      userSelect="contain"
     >
       <Box paddingX={1} gap={1}>
         <Text bold color="$fg-warning">

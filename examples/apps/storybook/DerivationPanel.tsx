@@ -96,7 +96,13 @@ export interface DerivationPanelProps {
  * 256 / ansi16 / mono) so the quantization collapse is visible at a
  * glance, no toggling required. Highlights the active tier.
  */
-function TierLadder({ hex, activeTier }: { hex: string; activeTier: ColorLevel }): React.ReactElement {
+function TierLadder({
+  hex,
+  activeTier,
+}: {
+  hex: string
+  activeTier: ColorLevel
+}): React.ReactElement {
   const TIERS: readonly ColorLevel[] = ["truecolor", "256", "ansi16", "mono"]
   return (
     <Box flexDirection="column" gap={0}>

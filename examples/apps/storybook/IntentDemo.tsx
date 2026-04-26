@@ -59,7 +59,9 @@ function IntentRow({
         <Box gap={1} alignItems="flex-start">
           <Text color="$fg-warning">⚠</Text>
           <Small>
-            <Text color="$fg-warning" wrap="wrap">{warning}</Text>
+            <Text color="$fg-warning" wrap="wrap">
+              {warning}
+            </Text>
           </Small>
         </Box>
       ) : null}
@@ -127,9 +129,11 @@ export function IntentDemo(): React.ReactElement {
         </Box>
         <Small>
           <Muted>
-            Component libraries classify actions; the Theme classifies surfaces. Aliasing
-            destructive → error keeps the Theme minimal (no action taxonomy leaking into color
-            tokens) while letting component APIs speak intent.
+            <Text wrap="wrap">
+              Component libraries classify actions; the Theme classifies surfaces. Aliasing
+              destructive → error keeps the Theme minimal (no action taxonomy leaking into color
+              tokens) while letting component APIs speak intent.
+            </Text>
           </Muted>
         </Small>
       </Box>

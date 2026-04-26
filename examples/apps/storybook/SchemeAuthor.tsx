@@ -234,6 +234,7 @@ export function SchemeAuthor({
       borderColor="$fg-accent"
       overflow="scroll"
       overflowIndicator
+      userSelect="contain"
     >
       <Box paddingX={1} gap={1}>
         <Text bold color="$fg-accent">
