@@ -235,6 +235,16 @@ export type { LineNumberProps } from "./components/LineNumber"
 export { Diff } from "./components/Diff"
 export type { DiffProps, DiffHunk, DiffLine, DiffMode } from "./components/Diff"
 
+// Animation primitives (built on useAnimation)
+export { AnimatedNumber } from "./components/AnimatedNumber"
+export type { AnimatedNumberProps } from "./components/AnimatedNumber"
+export { TextShimmer } from "./components/TextShimmer"
+export type { TextShimmerProps } from "./components/TextShimmer"
+export { TextReveal } from "./components/TextReveal"
+export type { TextRevealProps } from "./components/TextReveal"
+export { TimeToFirstDraw } from "./components/TimeToFirstDraw"
+export type { TimeToFirstDrawProps } from "./components/TimeToFirstDraw"
+
 // =============================================================================
 // Position Registry (2D Grid Virtualization)
 // =============================================================================

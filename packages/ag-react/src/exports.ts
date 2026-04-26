@@ -319,6 +319,16 @@ export type { LineNumberProps } from "./ui/components"
 export { Diff } from "./ui/components"
 export type { DiffProps, DiffHunk, DiffLine, DiffMode } from "./ui/components"
 
+// Animation primitives (built on useAnimation)
+export { AnimatedNumber } from "./ui/components"
+export type { AnimatedNumberProps } from "./ui/components"
+export { TextShimmer } from "./ui/components"
+export type { TextShimmerProps } from "./ui/components"
+export { TextReveal } from "./ui/components"
+export type { TextRevealProps } from "./ui/components"
+export { TimeToFirstDraw } from "./ui/components"
+export type { TimeToFirstDrawProps } from "./ui/components"
+
 // Image Component
 export { Image } from "./ui/image/index"
 export type { ImageProps } from "./ui/image/index"
