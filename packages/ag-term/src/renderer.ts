@@ -577,8 +577,14 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // outside act() boundaries may be dropped.
   // Max iterations for singlePassLayout mode. Normally 1-2 passes, but resize
   // can need 3+ (pass 0 stale zustand + pass 1 updated dims + pass 2+ layout
-  // feedback stabilization). Matches classic path's cap of 5.
-  const MAX_SINGLE_PASS_ITERATIONS = 5
+  // feedback stabilization). Bumped to 15 to accommodate multi-stage layout
+  // feedback chains (e.g. cursor moves trigger scroll, scroll triggers
+  // virtualizer window shifts, virtualizer shifts trigger measurement
+  // re-runs). Classic path keeps cap of 5 — single-pass needs more headroom
+  // because each iteration is one runPipeline + flushSyncWork pass and
+  // multiple layers of useLayoutEffect can compound (e.g. Tab focus +
+  // fold-state cascade can chain 8+ commits in km-tui board).
+  const MAX_SINGLE_PASS_ITERATIONS = 15
 
   /** Run the full pipeline: layout + render + output phase. */
   function runPipeline(

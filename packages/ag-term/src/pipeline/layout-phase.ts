@@ -667,11 +667,40 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
   // callers should toggle scrollTo off and on, or use an imperative API.
   const scrollToChanged = prevScrollTo !== scrollTo
 
+  // "Same intent" recovery: even when scrollToChanged is false, fire ensure-
+  // visible if the cached offset has the target COMPLETELY off-screen. This
+  // happens during multi-pass layout convergence — the first pass sets offset
+  // based on partial measurements (small contentHeight), then later passes
+  // grow contentHeight as items measure, leaving the cached offset clamped
+  // far away from the now-correctly-positioned target. Without this recovery,
+  // the offset stays stuck and STRICT invariants (scrollTo target intersects
+  // viewport) fire correctly-detected violations.
+  //
+  // Conservative: only re-fires when target has NO intersection with the raw
+  // viewport. Partial visibility (target grew, target.bottom > visibleBottom
+  // but target.top < visibleBottom) is left alone — that's the
+  // "click-to-expand should not yank viewport" guarantee.
+  let targetCompletelyOffscreen = false
+  if (
+    !scrollToChanged &&
+    scrollTo !== undefined &&
+    scrollTo >= 0 &&
+    scrollTo < childPositions.length
+  ) {
+    const target = childPositions.find((c) => c.index === scrollTo)
+    if (target && target.top !== target.bottom) {
+      const visTop = scrollOffset
+      const visBottom = scrollOffset + viewportHeight
+      const intersects = target.bottom > visTop && target.top < visBottom
+      if (!intersects) targetCompletelyOffscreen = true
+    }
+  }
+
   if (
     scrollTo !== undefined &&
     scrollTo >= 0 &&
     scrollTo < childPositions.length &&
-    scrollToChanged
+    (scrollToChanged || targetCompletelyOffscreen)
   ) {
     // Find the target child
     const target = childPositions.find((c) => c.index === scrollTo)
