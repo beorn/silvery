@@ -167,6 +167,8 @@ import {
   notePassCommit,
   recordPassCause,
   printPassHistogram,
+  appendHistogramJson,
+  resetPassHistogram,
   isInstrumentEnabled,
 } from "./pass-cause"
 
@@ -1322,10 +1324,21 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Log keypress performance summary before teardown (only emits when TRACE was active)
     logExitSummary()
 
-    // Pass-cause histogram (only emits when SILVERY_INSTRUMENT=1; no-op otherwise).
-    // Aggregated across the lifetime of this app instance.
+    // Pass-cause histogram (only emits when SILVERY_INSTRUMENT=1; no-op
+    // otherwise). Aggregates across the lifetime of this app instance.
+    //
+    // - SILVERY_INSTRUMENT_FILE set: append a JSON record per app teardown.
+    //   Suitable for vitest worker threads where `process.on("exit")` may
+    //   not fire (each test still produces a teardown via app cleanup).
+    // - SILVERY_INSTRUMENT_PRINT=1: also emit the formatted text summary
+    //   (to stderr by default; to file if SILVERY_INSTRUMENT_FILE is set).
+    //
+    // Reset after emission so the next app's histogram doesn't double-count.
     if (isInstrumentEnabled()) {
-      printPassHistogram()
+      const file = process.env.SILVERY_INSTRUMENT_FILE
+      if (file) appendHistogramJson(file)
+      if (process.env.SILVERY_INSTRUMENT_PRINT === "1") printPassHistogram()
+      resetPassHistogram()
     }
 
     // Unmount React tree first — this runs effect cleanups (clears intervals,
