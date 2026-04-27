@@ -41,61 +41,56 @@ import { createLogger, type ConditionalLogger, type Stage, type Event } from "lo
 /**
  * Categories of feedback edges that can trigger an extra render/layout pass.
  *
- * Categorised after a dual-pro review (GPT-5.4 + Kimi K2.6, 2026-04-26):
+ * The taxonomy is **constrained to categories with a real producer path** in
+ * the silvery pipeline. The C3a v2 enum scaffolded 14 prospective categories
+ * after a dual-pro review (GPT-5.4 + Kimi K2.6, 2026-04-26); C3b's audit
+ * confirmed 9 of those had no production emitter and were either subsumed
+ * by an existing category or required a feature silvery does not have
+ * (font fallback, async images, decoration loops). Those are removed —
+ * keeping unused enum members bloats the discriminated-union and signals
+ * "we expect to emit this" when no path will.
  *
  * Subscriber feedback (genuine pass causes):
  * - layout-invalidate: rect signal value changed AND a subscriber consumed
  *   it (gated on `hasLayoutSignals(node)` — see notifyLayoutSubscribers).
  *
- * Measure-phase feedback (text/intrinsic-size loops):
- * - wrap-reflow: width/viewport-dependent line breaking changed text size.
- * - intrinsic-shrinkwrap: fit-content / snug-content / min-content sizing
- *   changed parent dimensions.
- * - font-metrics-changed: cell metrics / font fallback / theme density
- *   altered glyph widths.
+ * Measure-phase feedback:
+ * - intrinsic-shrinkwrap: fit-content / snug-content sizing changed parent
+ *   dimensions across passes (the binary-search-then-resize edge).
  *
  * Layout side-effects:
  * - scrollto-settle: scrollTo prop change forced an offset adjustment.
  * - sticky-resettle: sticky child offsets caused another pass.
- * - decoration-remap: anchored decorations changed measure inputs.
- * - focus-scroll-into-view: focus manager fired a programmatic scroll.
  *
- * Async / external metadata:
- * - async-image-size: late-arriving image dimensions invalidated layout.
- * - theme-metric-changed: theme tokens affecting space/cell-size/border
- *   thickness changed mid-frame.
- *
- * Convergence-loop / external triggers (depth-0; not feedback per se):
+ * Convergence-loop root triggers (depth-0; not feedback per se):
  * - viewport-resize: terminal dims changed; treated as a root trigger.
- * - resize-resettle: extra pass attributable to resize side-effects
- *   (rewrap, reclamp, sticky recompute) AFTER the initial viewport-resize.
  *
- * Catch-alls:
- * - viewport-dependent: post-layout viewport-dependent computation (legacy).
- * - text-measurement-feedback: legacy bucket; prefer the split categories.
+ * Catch-all:
  * - unknown: pass committed React work but no specific cause was emitted.
+ *   Should always be 0 in steady-state — non-zero count signals a missing
+ *   PassCause category or a pure-React feedback loop the pipeline isn't
+ *   aware of.
+ *
+ * Removed (no producer path; either deletion or subsumed by existing
+ * category — see hub/silvery/design/convergence-bounds.md for the audit):
+ * - wrap-reflow: subsumed by intrinsic-shrinkwrap (silvery wraps inside
+ *   computeSnugContentWidth, no separate producer)
+ * - font-metrics-changed: terminals have fixed cell width, no font fallback
+ * - decoration-remap: useDecorations subscribers fire as layout-invalidate
+ * - focus-scroll-into-view: programmatic scroll already fires scrollto-settle
+ * - async-image-size: silvery's Kitty graphics protocol sets dims at register
+ *   time, not lazy
+ * - theme-metric-changed: setState path, not a within-frame loop
+ * - resize-resettle: rect changes after resize already fire as layout-invalidate
+ * - viewport-dependent: legacy bucket replaced by viewport-resize
+ * - text-measurement-feedback: legacy bucket replaced by intrinsic-shrinkwrap
  */
 export type PassCause =
-  // Subscriber-observed rect changes (gated to actual subscribers)
   | "layout-invalidate"
-  // Measure-phase feedback
-  | "wrap-reflow"
   | "intrinsic-shrinkwrap"
-  | "font-metrics-changed"
-  // Layout side-effects
   | "scrollto-settle"
   | "sticky-resettle"
-  | "decoration-remap"
-  | "focus-scroll-into-view"
-  // Async / external
-  | "async-image-size"
-  | "theme-metric-changed"
-  // Root triggers (depth-0)
   | "viewport-resize"
-  | "resize-resettle"
-  // Legacy / coarse
-  | "text-measurement-feedback"
-  | "viewport-dependent"
   | "unknown"
 
 /** Phase that produced the feedback edge. */
@@ -459,4 +454,108 @@ export function printPassHistogram(): void {
 export function appendHistogramJson(file: string): void {
   if (!instrumentEnabled) return
   passAggregator.appendJson(file)
+}
+
+// =============================================================================
+// Bounded-convergence (C3b)
+// =============================================================================
+
+/**
+ * Per-cause convergence bound: maximum extra passes (beyond the initial pass)
+ * each PassCause category can structurally trigger before settling. Each
+ * bound is an invariant of how the cause works in the pipeline — not a
+ * histogram observation — and the math is documented in
+ * `hub/silvery/design/convergence-bounds.md`.
+ *
+ * Empirical baseline (C3a v3 corpus, 105 termless app teardowns,
+ * 11 538 records): no test reached pass 1+. The structural ceiling matches:
+ * sum(PASS_CAUSE_BOUNDS) = 0, plus 1 initial pass + 1 settle pass = MAX=2.
+ *
+ * Why every cause's bound is 0:
+ * - layout-invalidate: when a subscriber re-renders, the new layout produces
+ *   the SAME rects (idempotent given same input) so the second
+ *   notifyLayoutSubscribers reports no change. The settle pass drains the
+ *   subscribers' commits; it doesn't seed new feedback.
+ * - intrinsic-shrinkwrap: measurement is content-deterministic; same tree
+ *   produces same shrunkWidth / fitContentHeight on the next pass.
+ * - scrollto-settle: prevScrollTo === scrollTo guard prevents the same intent
+ *   from re-firing; the recovery edge is a one-shot "target moved offscreen".
+ * - sticky-resettle: stickyChildren is recomputed deterministically from
+ *   layout positions — once layout is stable, sticky offsets are stable.
+ * - viewport-resize: dim-change is a depth-0 root trigger, not a feedback
+ *   edge. Once the new dims are observed, no further resize fires.
+ * - unknown: any non-zero unknown count is a regression to surface, not
+ *   budget to consume.
+ *
+ * The total convergence ceiling = 1 (initial) + 1 (settle) + sum of per-cause
+ * bounds. Per the v3 corpus and the audit above, the per-cause bounds are
+ * ALL 0 — each cause is satisfied within the single settle pass. Total = 2.
+ */
+export const PASS_CAUSE_BOUNDS: Readonly<Record<PassCause, number>> = {
+  "layout-invalidate": 0,
+  "intrinsic-shrinkwrap": 0,
+  "scrollto-settle": 0,
+  "sticky-resettle": 0,
+  "viewport-resize": 0,
+  unknown: 0,
+} as const
+
+/**
+ * Total convergence bound: 1 (initial) + 1 (one settle pass) + sum of
+ * PASS_CAUSE_BOUNDS = 2. Replaces the historical magic constants
+ * `MAX_SINGLE_PASS_ITERATIONS = 15`, `MAX_LAYOUT_ITERATIONS = 5`,
+ * `MAX_EFFECT_FLUSHES = 5`, and `maxFlushes = 5` in the renderer's
+ * convergence loops. Empirical envelope was pass 0 → 1; structural ceiling
+ * matches.
+ */
+export const MAX_CONVERGENCE_PASSES =
+  1 + // initial pass
+  1 + // canonical settle pass — drains subscriber commits within the settle
+  PASS_CAUSE_BOUNDS["layout-invalidate"] +
+  PASS_CAUSE_BOUNDS["intrinsic-shrinkwrap"] +
+  PASS_CAUSE_BOUNDS["scrollto-settle"] +
+  PASS_CAUSE_BOUNDS["sticky-resettle"] +
+  PASS_CAUSE_BOUNDS["viewport-resize"] +
+  PASS_CAUSE_BOUNDS.unknown
+
+/**
+ * Loops that wrap their iterations in the bound assertion. Used as the
+ * `loopName` argument to `assertBoundedConvergence` so an over-budget
+ * regression names the offending loop.
+ */
+export type ConvergenceLoopName =
+  | "single-pass"
+  | "classic"
+  | "effect-flush"
+  | "production-flush"
+
+/**
+ * Assert the convergence loop did not exceed MAX_CONVERGENCE_PASSES.
+ * Called from the renderer's loops + create-app's processEventBatch flush
+ * loop. No-op outside SILVERY_STRICT — the loop bound itself is the
+ * production safety net.
+ *
+ * STRICT=2: throws with a per-cause breakdown so a regression names the
+ *   responsible edge instead of just "exhausted N iterations".
+ * STRICT=1: emits a stderr warning with the same breakdown.
+ */
+export function assertBoundedConvergence(
+  passCount: number,
+  loopName: ConvergenceLoopName,
+): void {
+  if (passCount <= MAX_CONVERGENCE_PASSES) return
+  const strict = process?.env?.SILVERY_STRICT
+  if (!strict) return
+  const h = getPassHistogram()
+  const breakdown = h.byCause
+    .map((e) => `${e.cause}=${e.count}(bound=${PASS_CAUSE_BOUNDS[e.cause]})`)
+    .join(", ")
+  const msg =
+    `convergence bound exceeded in ${loopName}: ${passCount} passes ran ` +
+    `but MAX_CONVERGENCE_PASSES=${MAX_CONVERGENCE_PASSES}. ` +
+    `Per-cause breakdown: ${breakdown || "(no records — INSTRUMENT off)"}. ` +
+    `Either a feedback edge broke its per-cause invariant, or a new edge ` +
+    `needs a PassCause category in pass-cause.ts.`
+  if (strict === "2") throw new Error(msg)
+  process.stderr.write(`[silvery] ${msg}\n`)
 }

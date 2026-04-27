@@ -60,6 +60,8 @@ import {
   beginPass,
   notePassCommit,
   recordPassCause,
+  assertBoundedConvergence,
+  MAX_CONVERGENCE_PASSES,
   INSTRUMENT,
 } from "./runtime/pass-cause"
 // Side-effect import: arms `@silvery/ag`'s wrap-measurer registry with the
@@ -582,16 +584,22 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // calls from layout notifications are properly captured by React's scheduler.
   // With IS_REACT_ACT_ENVIRONMENT=true (set by silvery/testing), state updates
   // outside act() boundaries may be dropped.
-  // Max iterations for singlePassLayout mode. Normally 1-2 passes, but resize
-  // can need 3+ (pass 0 stale zustand + pass 1 updated dims + pass 2+ layout
-  // feedback stabilization). Bumped to 15 to accommodate multi-stage layout
-  // feedback chains (e.g. cursor moves trigger scroll, scroll triggers
-  // virtualizer window shifts, virtualizer shifts trigger measurement
-  // re-runs). Classic path keeps cap of 5 — single-pass needs more headroom
-  // because each iteration is one runPipeline + flushSyncWork pass and
-  // multiple layers of useLayoutEffect can compound (e.g. Tab focus +
-  // fold-state cascade can chain 8+ commits in km-tui board).
-  const MAX_SINGLE_PASS_ITERATIONS = 15
+  // Convergence bound — see `pass-cause.ts:MAX_CONVERGENCE_PASSES`. Replaces
+  // four prior magic constants (single-pass=15, classic=5, effect-flush=5,
+  // production-flush=5) with a single value derived from PASS_CAUSE_BOUNDS.
+  //
+  // The C3a v3 corpus (105 termless app teardowns / 11 538 pass-cause
+  // records) showed the observed envelope was pass 0 → 1; the structural
+  // ceiling derived in `pass-cause.ts:PASS_CAUSE_BOUNDS` matches at
+  // MAX = 1 (initial) + 1 (settle) = 2.
+  //
+  // When a loop exceeds the bound, `assertBoundedConvergence` surfaces a
+  // per-PassCause breakdown in STRICT mode — a regression in pipeline
+  // determinism (a new feedback edge that breaks the per-cause invariants)
+  // fails loudly with attribution rather than silently consuming a 15-pass
+  // safety margin.
+  //
+  // See hub/silvery/design/convergence-bounds.md for the convergence theorem.
 
   /** Run the full pipeline: layout + render + output phase. */
   function runPipeline(
@@ -663,7 +671,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       // dimensions, pass 2 for layout feedback from pass 1).
       let singlePassCount = 0
       if (INSTRUMENT) beginConvergenceLoop()
-      for (let pass = 0; pass < MAX_SINGLE_PASS_ITERATIONS; pass++) {
+      for (let pass = 0; pass < MAX_CONVERGENCE_PASSES; pass++) {
         hadReactCommit = false
         singlePassCount++
         if (INSTRUMENT) beginPass(pass)
@@ -733,7 +741,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         // and signal sync via recordPassCause().
         if (INSTRUMENT) {
           notePassCommit(pass)
-          if (pass === MAX_SINGLE_PASS_ITERATIONS - 1) {
+          if (pass === MAX_CONVERGENCE_PASSES - 1) {
             // Loop will exit but committed work is still pending — surface as
             // unknown so the histogram doesn't undercount the loop tail.
             recordPassCause({ cause: "unknown", detail: "single-pass-exhaustion" })
@@ -741,13 +749,10 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         }
       }
 
-      if (hadReactCommit && singlePassCount >= MAX_SINGLE_PASS_ITERATIONS) {
-        if (process.env.SILVERY_STRICT) {
-          log.warn?.(
-            `singlePassLayout exhausted ${MAX_SINGLE_PASS_ITERATIONS} iterations ` +
-              `with pending React commit — output may be stale`,
-          )
-        }
+      // Convergence bound check — STRICT-gated assertion with per-cause
+      // breakdown. See pass-cause.ts:assertBoundedConvergence.
+      if (hadReactCommit && singlePassCount >= MAX_CONVERGENCE_PASSES) {
+        assertBoundedConvergence(singlePassCount, "single-pass")
       }
 
       // When multiple passes ran, the final buffer's dirty rows only cover
@@ -757,12 +762,13 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         buffer.markAllRowsDirty()
       }
     } else {
-      // Classic multi-pass layout stabilization loop
-      const MAX_LAYOUT_ITERATIONS = 5
+      // Classic multi-pass layout stabilization loop. Same convergence bound
+      // as singlePassLayout — the loops differ in flush timing, not in the
+      // number of feedback edges they need to drain. See pass-cause.ts.
       let iterationCount = 0
 
       if (INSTRUMENT) beginConvergenceLoop()
-      for (let iteration = 0; iteration < MAX_LAYOUT_ITERATIONS; iteration++) {
+      for (let iteration = 0; iteration < MAX_CONVERGENCE_PASSES; iteration++) {
         hadReactCommit = false
         iterationCount++
         if (INSTRUMENT) beginPass(iteration)
@@ -824,19 +830,14 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         if (!hadReactCommit) break
         if (INSTRUMENT) {
           notePassCommit(iteration)
-          if (iteration === MAX_LAYOUT_ITERATIONS - 1) {
+          if (iteration === MAX_CONVERGENCE_PASSES - 1) {
             recordPassCause({ cause: "unknown", detail: "classic-exhaustion" })
           }
         }
       }
 
-      if (hadReactCommit && iterationCount >= MAX_LAYOUT_ITERATIONS) {
-        if (process.env.SILVERY_STRICT) {
-          log.warn?.(
-            `classic layout loop exhausted ${MAX_LAYOUT_ITERATIONS} iterations ` +
-              `with pending React commit — output may be stale`,
-          )
-        }
+      if (hadReactCommit && iterationCount >= MAX_CONVERGENCE_PASSES) {
+        assertBoundedConvergence(iterationCount, "classic")
       }
 
       // When multiple iterations ran, the final buffer's dirty rows only cover
@@ -1066,10 +1067,14 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // In tests, we use act(flushSyncWork) as the synchronous equivalent.
     let doRenderCount = 1
     if (instance.singlePassLayout) {
-      const MAX_EFFECT_FLUSHES = 5
+      // Effect-flush convergence: same MAX_CONVERGENCE_PASSES bound as the
+      // single-pass loop. Each flush iteration is a feedback edge of the
+      // same PassCause categories — the bound is structural, not loop-specific.
+      let flushCount = 0
       if (INSTRUMENT) beginConvergenceLoop()
-      for (let flush = 0; flush < MAX_EFFECT_FLUSHES; flush++) {
+      for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
         hadReactCommit = false
+        flushCount = flush + 1
         if (INSTRUMENT) beginPass(flush)
         withActEnvironment(() => {
           act(() => {
@@ -1079,13 +1084,16 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         if (!hadReactCommit) break
         if (INSTRUMENT) {
           notePassCommit(flush)
-          if (flush === MAX_EFFECT_FLUSHES - 1) {
+          if (flush === MAX_CONVERGENCE_PASSES - 1) {
             recordPassCause({ cause: "unknown", detail: "effect-flush-exhaustion" })
           }
         }
         // React committed new work from effects — re-render
         newFrame = doRender()
         doRenderCount++
+      }
+      if (flushCount >= MAX_CONVERGENCE_PASSES && hadReactCommit) {
+        assertBoundedConvergence(flushCount, "effect-flush")
       }
     }
 

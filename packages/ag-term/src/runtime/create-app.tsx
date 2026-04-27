@@ -169,6 +169,8 @@ import {
   printPassHistogram,
   appendHistogramJson,
   resetPassHistogram,
+  assertBoundedConvergence,
+  MAX_CONVERGENCE_PASSES,
   INSTRUMENT,
 } from "./pass-cause"
 
@@ -2822,10 +2824,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // The await drains the microtask queue so React's internally-queued
     // effect flush runs. Since inEventHandler=true, any setState from
     // effects just sets pendingRerender (no microtask render).
+    //
+    // Bound: MAX_CONVERGENCE_PASSES — see pass-cause.ts. Same convergence
+    // structure as the renderer's loops; replaces the prior magic 5.
     let flushCount = 0
-    const maxFlushes = 5
     if (INSTRUMENT) beginConvergenceLoop()
-    while (flushCount < maxFlushes) {
+    while (flushCount < MAX_CONVERGENCE_PASSES) {
       if (INSTRUMENT) beginPass(flushCount)
       await Promise.resolve() // Drain microtask queue → passive effects flush
       if (!pendingRerender) break
@@ -2833,7 +2837,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       isRendering = true
       if (INSTRUMENT) {
         notePassCommit(flushCount)
-        if (flushCount === maxFlushes - 1) {
+        if (flushCount === MAX_CONVERGENCE_PASSES - 1) {
           recordPassCause({ cause: "unknown", detail: "production-flush-exhaustion" })
         }
       }
@@ -2843,6 +2847,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         isRendering = false
       }
       flushCount++
+    }
+    if (flushCount >= MAX_CONVERGENCE_PASSES && pendingRerender) {
+      assertBoundedConvergence(flushCount, "production-flush")
     }
 
     // The render phase's dirty rows are relative to the Ag's internal prevBuffer.
@@ -3390,10 +3397,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Flush deferred re-renders from effects.
       // await drains microtask queue → React passive effects flush.
       // Since inEventHandler=true, setState from effects just flags
-      // pendingRerender (no microtask render).
+      // pendingRerender (no microtask render). Bound: MAX_CONVERGENCE_PASSES.
       let flushCount = 0
-      const maxFlushes = 5
-      while (flushCount < maxFlushes) {
+      while (flushCount < MAX_CONVERGENCE_PASSES) {
         await Promise.resolve()
         if (!pendingRerender) break
         pendingRerender = false

@@ -104,6 +104,9 @@ export {
   appendHistogramJson,
   getPassAggregator,
   createPassCauseAggregator,
+  PASS_CAUSE_BOUNDS,
+  MAX_CONVERGENCE_PASSES,
+  assertBoundedConvergence,
 } from "./runtime/pass-cause"
 export type {
   PassCause,
@@ -112,6 +115,7 @@ export type {
   PassHistogramEntry,
   PassCauseAggregator,
   ProducerPhase,
+  ConvergenceLoopName,
 } from "./runtime/pass-cause"
 
 // =============================================================================

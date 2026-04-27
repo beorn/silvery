@@ -166,8 +166,10 @@ export function createRenderer(opts: RendererOptions): Renderer {
           opts.runtime.invalidate()
           if (INSTRUMENT) {
             // viewport-resize is a depth-0 root trigger, not a feedback edge.
-            // It still gets recorded so the histogram can reason about
-            // resize-driven extra passes (resize-resettle) downstream.
+            // It's recorded so the histogram shows resize-driven cascades; any
+            // follow-on rect changes attribute as `layout-invalidate` (not as
+            // a separate `resize-resettle` category — that was removed in C3b
+            // because it was structurally subsumed).
             recordPassCause({
               cause: "viewport-resize",
               edge: widthChanged && heightChanged ? "wh" : widthChanged ? "w" : "h",
