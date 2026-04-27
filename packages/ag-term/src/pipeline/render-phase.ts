@@ -25,6 +25,7 @@ import { renderBox, renderScrollIndicators, getEffectiveBg } from "./render-box"
 import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
+import { createFrameSink, type RenderSink } from "./render-sink"
 import { pushContextTheme, popContextTheme } from "./state"
 import type { Theme } from "@silvery/ansi"
 // cascade-predicates is the imperative oracle — used for STRICT verification
@@ -123,7 +124,9 @@ export function renderPhase(
 
   // Default: root is selectable (userSelect defaults to "text").
   // renderNodeToBuffer will override per-node as it traverses.
-  buffer.setSelectableMode(true)
+  // Phase 2 Step 4d: route post-state ops through sink.
+  const phaseSink: RenderSink = createFrameSink(buffer)
+  phaseSink.setSelectableMode(true)
 
   // Restore cells under previous-frame outlines BEFORE content rendering.
   // Outlines draw OUTSIDE their owning node into the parent's pixel space,
@@ -425,18 +428,22 @@ function renderNodeToBuffer(
   const props = node.props as BoxProps & TextProps
 
   // Resolve userSelect for SELECTABLE_FLAG stamping.
+  // Phase 2 Step 4d: setSelectableMode writes route through sink as
+  // post-state ops. The READ (getSelectableMode) is an intra-frame
+  // buffer read that Phase 2 Step 6 will eliminate.
+  const nodeSink: RenderSink = createFrameSink(buffer)
   const prevSelectableMode = buffer.getSelectableMode()
   const userSelect = props.userSelect
   if (userSelect === "none") {
-    buffer.setSelectableMode(false)
+    nodeSink.setSelectableMode(false)
   } else if (userSelect === "text" || userSelect === "contain") {
-    buffer.setSelectableMode(true)
+    nodeSink.setSelectableMode(true)
   }
 
   // Skip display="none" nodes
   if (props.display === "none") {
     clearDirtyFlags(node)
-    buffer.setSelectableMode(prevSelectableMode)
+    nodeSink.setSelectableMode(prevSelectableMode)
     return
   }
 
@@ -445,7 +452,7 @@ function renderNodeToBuffer(
   // flags intact so they render correctly when scrolled into view.
   const screenY = layout.y - scrollOffset
   if (screenY >= buffer.height || screenY + layout.height <= 0) {
-    buffer.setSelectableMode(prevSelectableMode)
+    nodeSink.setSelectableMode(prevSelectableMode)
     return
   }
 
@@ -517,7 +524,7 @@ function renderNodeToBuffer(
       }
     }
     clearDirtyFlags(node)
-    buffer.setSelectableMode(prevSelectableMode)
+    nodeSink.setSelectableMode(prevSelectableMode)
     return
   }
   if (instr.enabled) {
@@ -799,7 +806,7 @@ function renderNodeToBuffer(
     // Pop per-subtree theme override (after ALL child passes including absolute/sticky)
     if (nodeTheme) popContextTheme()
     // Restore parent's selectable mode
-    buffer.setSelectableMode(prevSelectableMode)
+    nodeSink.setSelectableMode(prevSelectableMode)
   }
 }
 
@@ -985,11 +992,19 @@ function executeRegionClearing(
   threadedInheritedBg: NodeRenderState["inheritedBg"],
   hasPrevBuffer: boolean,
 ): void {
+  // Route cleanup-helper writes through a RenderSink so the seam declares
+  // "clear" intent at emission time. With BufferSink this is behavior-
+  // equivalent to direct buffer mutation; swapping in PlanSink (Phase 2
+  // Step 7) would make these ops land in cleanupOps unconditionally.
+  // (km-silvery.paint-clear-invariant Phase 2 Step 4a.)
+  const sink: RenderSink = createFrameSink(buffer)
+
   if (contentRegionCleared) {
     if (instrumentEnabled) stats.clearOps++
     clearNodeRegion(
       node,
       buffer,
+      sink,
       layout,
       scrollOffset,
       clipBounds,
@@ -1022,6 +1037,7 @@ function executeRegionClearing(
     clearExcessArea(
       node,
       buffer,
+      sink,
       layout,
       scrollOffset,
       clipBounds,
@@ -1039,6 +1055,7 @@ function executeRegionClearing(
     clearDescendantOverflowRegions(
       node,
       buffer,
+      sink,
       layout,
       scrollOffset,
       clipBounds,
@@ -1125,7 +1142,10 @@ function renderOwnContent(
       const effectiveBg = style.bg !== null ? style.bg : (textInheritedBg ?? null)
       const { x, width, height } = layout
       const y = layout.y - nodeState.scrollOffset
-      buffer.restyleRegion(x, y, width, height, {
+      // Phase 2 Step 4d: text style-only fast path → sink.emitRestyleRegion
+      // (paint op — restyles existing cells in place).
+      const ownContentSink: RenderSink = createFrameSink(buffer)
+      ownContentSink.emitRestyleRegion(x, y, width, height, {
         fg: style.fg,
         bg: effectiveBg,
         underlineColor: style.underlineColor ?? null,
@@ -1263,7 +1283,10 @@ function applyBoxAttrOverlay(
     }
   }
 
-  buffer.mergeAttrsInRect(rx, ry, rw, rh, overlay.attrs, overlay.underlineColor)
+  // Phase 2 Step 4d: box attr overlay → sink.emitMergeAttrs (overlay op,
+  // applied AFTER paint so existing cells are merged in place).
+  const overlaySink: RenderSink = createFrameSink(buffer)
+  overlaySink.emitMergeAttrs(rx, ry, rw, rh, overlay.attrs, overlay.underlineColor)
   return true
 }
 
@@ -1576,7 +1599,13 @@ function renderScrollContainerChildren(
     )
   }
 
-  // Apply the plan: buffer shift, viewport clear, or sticky force refresh
+  // Apply the plan: buffer shift, viewport clear, or sticky force refresh.
+  // Phase 2 Step 4d: scroll-tier ops route through sink.
+  //   - Tier 1 shift: scrollRegion is a TRANSFER (shifts prev pixels);
+  //     leading indicator-row clears are CLEANUP (clear stale indicator).
+  //   - Tier 2 clear: viewport clear is CLEANUP.
+  //   - stickyForceRefresh: viewport pre-clear (CLEANUP).
+  const scrollSink: RenderSink = createFrameSink(buffer)
   const scrollDelta = ss.offset - (ss.prevOffset ?? ss.offset)
   if (tier === "shift" && clearHeight > 0) {
     // Clear scroll indicator rows before shifting to prevent stale indicator
@@ -1586,27 +1615,24 @@ function renderScrollContainerChildren(
       const topIndicatorY = clearY
       const bottomIndicatorY = clearY + clearHeight - 1
       if (ss.prevOffset != null && ss.prevOffset > 0) {
-        buffer.fill(contentX, topIndicatorY, contentWidth, 1, { char: " ", bg: plan.clearBg })
+        scrollSink.emitClearRect(contentX, topIndicatorY, contentWidth, 1, plan.clearBg)
       }
-      buffer.fill(contentX, bottomIndicatorY, contentWidth, 1, { char: " ", bg: plan.clearBg })
+      scrollSink.emitClearRect(contentX, bottomIndicatorY, contentWidth, 1, plan.clearBg)
     }
-    buffer.scrollRegion(contentX, clearY, contentWidth, clearHeight, scrollDelta, {
+    scrollSink.emitScrollRegion(contentX, clearY, contentWidth, clearHeight, scrollDelta, {
       char: " ",
       bg: plan.clearBg,
     })
   }
 
   if (tier === "clear" && clearHeight > 0) {
-    buffer.fill(contentX, clearY, contentWidth, clearHeight, {
-      char: " ",
-      bg: plan.clearBg,
-    })
+    scrollSink.emitClearRect(contentX, clearY, contentWidth, clearHeight, plan.clearBg)
   }
 
   // Tier 3 with sticky: clear viewport to null bg (matches fresh render state)
   // before re-rendering all items, so the sticky second pass works correctly.
   if (stickyForceRefresh && clearHeight > 0) {
-    buffer.fill(contentX, clearY, contentWidth, clearHeight, { char: " ", bg: null })
+    scrollSink.emitClearRect(contentX, clearY, contentWidth, clearHeight, null)
   }
 
   // Propagate ancestor layout change to scroll container children.
@@ -1806,7 +1832,9 @@ function renderNormalChildren(
       }
     }
     if (clearW > 0 && clearH > 0) {
-      buffer.fill(clearX, clearY, clearW, clearH, { char: " ", bg: null })
+      // Phase 2 Step 4d: sticky-force-refresh viewport pre-clear (CLEANUP).
+      const stickySink: RenderSink = createFrameSink(buffer)
+      stickySink.emitClearRect(clearX, clearY, clearW, clearH, null)
     }
   }
 
@@ -2301,6 +2329,7 @@ function computeChildClipBounds(
 function clearDescendantOverflowRegions(
   node: AgNode,
   buffer: TerminalBuffer,
+  sink: RenderSink,
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
@@ -2315,6 +2344,7 @@ function clearDescendantOverflowRegions(
   _clearDescendantOverflow(
     node.children,
     buffer,
+    sink,
     nodeLeft,
     nodeTop,
     nodeRight,
@@ -2328,6 +2358,7 @@ function clearDescendantOverflowRegions(
 function _clearDescendantOverflow(
   children: readonly AgNode[],
   buffer: TerminalBuffer,
+  sink: RenderSink,
   nodeLeft: number,
   nodeTop: number,
   nodeRight: number,
@@ -2350,10 +2381,13 @@ function _clearDescendantOverflow(
         const overflowTop = Math.max(prevTop, clipBounds?.top ?? 0)
         const overflowBottom = Math.min(prevBottom, clipBounds?.bottom ?? buffer.height)
         if (overflowWidth > 0 && overflowBottom > overflowTop) {
-          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, {
-            char: " ",
-            bg: clearBg,
-          })
+          sink.emitClearRect(
+            overflowX,
+            overflowTop,
+            overflowWidth,
+            overflowBottom - overflowTop,
+            clearBg,
+          )
         }
       }
       // Clear overflow below the ancestor
@@ -2363,10 +2397,13 @@ function _clearDescendantOverflow(
         const overflowX = Math.max(prev.x, clipBounds?.left ?? 0)
         const overflowWidth = Math.min(prevRight, clipBounds?.right ?? buffer.width) - overflowX
         if (overflowWidth > 0 && overflowBottom > overflowTop) {
-          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, {
-            char: " ",
-            bg: clearBg,
-          })
+          sink.emitClearRect(
+            overflowX,
+            overflowTop,
+            overflowWidth,
+            overflowBottom - overflowTop,
+            clearBg,
+          )
         }
       }
       // Clear overflow to the left of the ancestor
@@ -2376,10 +2413,13 @@ function _clearDescendantOverflow(
         const overflowTop = Math.max(prevTop, clipBounds?.top ?? 0)
         const overflowBottom = Math.min(prevBottom, clipBounds?.bottom ?? buffer.height)
         if (overflowWidth > 0 && overflowBottom > overflowTop) {
-          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, {
-            char: " ",
-            bg: clearBg,
-          })
+          sink.emitClearRect(
+            overflowX,
+            overflowTop,
+            overflowWidth,
+            overflowBottom - overflowTop,
+            clearBg,
+          )
         }
       }
       // Clear overflow above the ancestor
@@ -2389,10 +2429,13 @@ function _clearDescendantOverflow(
         const overflowX = Math.max(prev.x, clipBounds?.left ?? 0)
         const overflowWidth = Math.min(prevRight, clipBounds?.right ?? buffer.width) - overflowX
         if (overflowWidth > 0 && overflowBottom > overflowTop) {
-          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, {
-            char: " ",
-            bg: clearBg,
-          })
+          sink.emitClearRect(
+            overflowX,
+            overflowTop,
+            overflowWidth,
+            overflowBottom - overflowTop,
+            clearBg,
+          )
         }
       }
     }
@@ -2401,6 +2444,7 @@ function _clearDescendantOverflow(
       _clearDescendantOverflow(
         child.children,
         buffer,
+        sink,
         nodeLeft,
         nodeTop,
         nodeRight,
@@ -2423,6 +2467,7 @@ function _clearDescendantOverflow(
 function clearNodeRegion(
   node: AgNode,
   buffer: TerminalBuffer,
+  sink: RenderSink,
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
@@ -2480,14 +2525,11 @@ function clearNodeRegion(
       _cellDbg2.log.push(msg)
       cellLog.debug?.(msg)
     }
-    buffer.fill(clearX, clearY, clearWidth, clearHeight, {
-      char: " ",
-      bg: clearBg,
-    })
+    sink.emitClearRect(clearX, clearY, clearWidth, clearHeight, clearBg)
   }
 
   // Delegate excess area clearing to shared helper
-  clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged, inherited)
+  clearExcessArea(node, buffer, sink, layout, scrollOffset, clipBounds, layoutChanged, inherited)
 }
 
 /**
@@ -2510,6 +2552,7 @@ function clearNodeRegion(
 function clearExcessArea(
   node: AgNode,
   buffer: TerminalBuffer,
+  sink: RenderSink,
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
@@ -2603,7 +2646,7 @@ function clearExcessArea(
     }
     if (excessWidth > 0) {
       clippedFill(
-        buffer,
+        sink,
         excessX,
         excessWidth,
         prevScreenY,
@@ -2623,7 +2666,7 @@ function clearExcessArea(
       bottomWidth = Math.max(0, clipRectRight - layout.x)
     }
     clippedFill(
-      buffer,
+      sink,
       layout.x,
       bottomWidth,
       screenY + layout.height,
@@ -2637,7 +2680,7 @@ function clearExcessArea(
 
 /** Fill a rectangular region, clipping to clipBounds and an outer bottom limit. */
 function clippedFill(
-  buffer: TerminalBuffer,
+  sink: RenderSink,
   x: number,
   width: number,
   top: number,
@@ -2664,6 +2707,6 @@ function clippedFill(
   }
   const height = clippedBottom - clippedTop
   if (height > 0 && clippedWidth > 0) {
-    buffer.fill(clippedX, clippedTop, clippedWidth, height, { char: " ", bg })
+    sink.emitClearRect(clippedX, clippedTop, clippedWidth, height, bg)
   }
 }

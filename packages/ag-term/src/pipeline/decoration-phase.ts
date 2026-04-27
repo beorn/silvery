@@ -37,6 +37,7 @@ import type { BoxProps, AgNode } from "@silvery/ag/types"
 import { getBorderSize, getPadding } from "./helpers"
 import { renderOutline, getEffectiveBg } from "./render-box"
 import { parseColor } from "./render-helpers"
+import { createFrameSink, type RenderSink } from "./render-sink"
 import type { ClipBounds } from "./types"
 
 /**
@@ -55,14 +56,20 @@ export interface OutlineCellSnapshot {
  * state. Called at the start of each incremental render, before the content
  * phase, on the cloned buffer. No-op when there are no previous snapshots
  * (fresh render or no outlines last frame).
+ *
+ * Phase 2 Step 5: cell restorations and snapshot reset both route through
+ * the sink (setCell + setOutlineSnapshots post-state). The plan-shape now
+ * captures all outline-snapshot mutations.
  */
 export function clearPreviousOutlines(buffer: TerminalBuffer): void {
   const snapshots = buffer.outlineSnapshots
   if (!snapshots || snapshots.length === 0) return
+  const sink: RenderSink = createFrameSink(buffer)
   for (const snap of snapshots) {
-    buffer.setCell(snap.x, snap.y, snap.cell)
+    sink.emitSetCell(snap.x, snap.y, snap.cell)
   }
-  buffer.outlineSnapshots = []
+  // Reset snapshots through the sink so the plan-shape captures it.
+  sink.setOutlineSnapshots([])
 }
 
 /**
@@ -73,11 +80,17 @@ export function clearPreviousOutlines(buffer: TerminalBuffer): void {
  * incremental). Mirrors `renderNodeToBuffer`'s state threading for scroll
  * offsets, clip bounds, and inherited background — but does nothing except
  * visit the tree and draw outlines.
+ *
+ * Phase 2 Step 5: snapshots stored via sink.setOutlineSnapshots (post-state
+ * op). The walk still pushes into a local array because outline drawing
+ * needs the latest snapshot list to be pin-set after every node; only the
+ * final assignment routes through the sink.
  */
 export function renderDecorationPass(buffer: TerminalBuffer, root: AgNode): void {
   const snapshots: OutlineCellSnapshot[] = []
-  walk(root, buffer, 0, undefined, { color: null }, snapshots)
-  buffer.outlineSnapshots = snapshots
+  const sink: RenderSink = createFrameSink(buffer)
+  walk(root, buffer, sink, 0, undefined, { color: null }, snapshots)
+  sink.setOutlineSnapshots(snapshots)
 }
 
 /**
@@ -88,6 +101,7 @@ export function renderDecorationPass(buffer: TerminalBuffer, root: AgNode): void
 function walk(
   node: AgNode,
   buffer: TerminalBuffer,
+  sink: RenderSink,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
   inheritedBg: { color: Color },
@@ -110,7 +124,7 @@ function walk(
   // Off-screen viewport clipping — mirrors renderNodeToBuffer. Keeps the
   // walker cheap: large scroll containers with many hidden children return
   // early for any node entirely outside the visible window.
-  if (y >= buffer.height || y + layout.height <= 0) return
+  if (y >= sink.height || y + layout.height <= 0) return
 
   // Compute the effective background the outline should inherit from this
   // box — matches the `boxInheritedBg` calculation in renderOwnContent.
@@ -140,7 +154,8 @@ function walk(
       layout.height,
       props,
       clipBounds,
-      buffer,
+      sink.width,
+      sink.height,
     )
     for (const pos of positions) {
       // Snapshot the cell BEFORE the outline overwrites it.
@@ -148,6 +163,7 @@ function walk(
     }
     renderOutline(
       buffer,
+      sink,
       layout.x,
       y,
       layout.width,
@@ -178,7 +194,7 @@ function walk(
       const cp = child.props as BoxProps
       if (cp.position === "sticky") continue
       if (i < ss.firstVisibleChild || i > ss.lastVisibleChild) continue
-      walk(child, buffer, ss.offset, childClip, childInheritedBg, snapshots)
+      walk(child, buffer, sink, ss.offset, childClip, childInheritedBg, snapshots)
     }
     // Sticky children: rendered at their computed sticky offset.
     if (ss.stickyChildren) {
@@ -186,7 +202,7 @@ function walk(
         const child = node.children[sticky.index]
         if (!child) continue
         const stickyOffset = sticky.naturalTop - sticky.renderOffset
-        walk(child, buffer, stickyOffset, childClip, childInheritedBg, snapshots)
+        walk(child, buffer, sink, stickyOffset, childClip, childInheritedBg, snapshots)
       }
     }
   } else {
@@ -195,7 +211,7 @@ function walk(
         ? computeChildClip(layout, props, clipBounds, scrollOffset, clipX, clipY)
         : clipBounds
     for (const child of node.children) {
-      walk(child, buffer, scrollOffset, childClip, childInheritedBg, snapshots)
+      walk(child, buffer, sink, scrollOffset, childClip, childInheritedBg, snapshots)
     }
   }
 }
@@ -217,7 +233,8 @@ function collectOutlineCells(
   height: number,
   props: BoxProps,
   clipBounds: ClipBounds | undefined,
-  buffer: TerminalBuffer,
+  bufferWidth: number,
+  bufferHeight: number,
 ): { x: number; y: number }[] {
   const out: { x: number; y: number }[] = []
   const ox = x - 1
@@ -226,13 +243,13 @@ function collectOutlineCells(
   const oh = height + 2
 
   const isRowVisible = (row: number): boolean => {
-    if (!clipBounds) return row >= 0 && row < buffer.height
-    return row >= clipBounds.top && row < clipBounds.bottom && row < buffer.height
+    if (!clipBounds) return row >= 0 && row < bufferHeight
+    return row >= clipBounds.top && row < clipBounds.bottom && row < bufferHeight
   }
   const isColVisible = (col: number): boolean => {
     if (clipBounds?.left === undefined || clipBounds.right === undefined)
-      return col >= 0 && col < buffer.width
-    return col >= clipBounds.left && col < clipBounds.right && col < buffer.width
+      return col >= 0 && col < bufferWidth
+    return col >= clipBounds.left && col < clipBounds.right && col < bufferWidth
   }
 
   const showTop = props.outlineTop !== false
@@ -243,10 +260,10 @@ function collectOutlineCells(
   // Top row
   if (showTop && isRowVisible(oy)) {
     if (showLeft && isColVisible(ox)) out.push({ x: ox, y: oy })
-    for (let col = ox + 1; col < ox + ow - 1 && col < buffer.width; col++) {
+    for (let col = ox + 1; col < ox + ow - 1 && col < bufferWidth; col++) {
       if (isColVisible(col)) out.push({ x: col, y: oy })
     }
-    if (showRight && ox + ow - 1 < buffer.width && isColVisible(ox + ow - 1)) {
+    if (showRight && ox + ow - 1 < bufferWidth && isColVisible(ox + ow - 1)) {
       out.push({ x: ox + ow - 1, y: oy })
     }
   }
@@ -257,7 +274,7 @@ function collectOutlineCells(
   for (let row = sideStart; row < sideEnd; row++) {
     if (!isRowVisible(row)) continue
     if (showLeft && isColVisible(ox)) out.push({ x: ox, y: row })
-    if (showRight && ox + ow - 1 < buffer.width && isColVisible(ox + ow - 1)) {
+    if (showRight && ox + ow - 1 < bufferWidth && isColVisible(ox + ow - 1)) {
       out.push({ x: ox + ow - 1, y: row })
     }
   }
@@ -266,10 +283,10 @@ function collectOutlineCells(
   const bottomY = oy + oh - 1
   if (showBottom && isRowVisible(bottomY)) {
     if (showLeft && isColVisible(ox)) out.push({ x: ox, y: bottomY })
-    for (let col = ox + 1; col < ox + ow - 1 && col < buffer.width; col++) {
+    for (let col = ox + 1; col < ox + ow - 1 && col < bufferWidth; col++) {
       if (isColVisible(col)) out.push({ x: col, y: bottomY })
     }
-    if (showRight && ox + ow - 1 < buffer.width && isColVisible(ox + ow - 1)) {
+    if (showRight && ox + ow - 1 < bufferWidth && isColVisible(ox + ow - 1)) {
       out.push({ x: ox + ow - 1, y: bottomY })
     }
   }
