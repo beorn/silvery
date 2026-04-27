@@ -61,7 +61,12 @@ describe("ai-chat example (in-process termless)", { timeout: 15000 }, () => {
 
   beforeAll(async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term, {
+      // AIChat has a single focusable (the TextInput). Disable focus tab-cycling
+      // so Tab reaches useKeyBindings's fillOrSubmit handler — matches main()
+      // in examples/apps/aichat/index.tsx.
+      handleTabCycling: false,
+    })
     // On mount, the intro system exchange is shown and the demo waits for
     // user input (bead km-silvery.inline-bugs bug 4 — mount no longer
     // auto-advances). Type a short message then Enter to submit, which

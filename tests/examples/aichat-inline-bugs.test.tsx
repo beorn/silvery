@@ -75,7 +75,15 @@ describe("aichat inline bugs", { timeout: 15000 }, () => {
         inline={mode === "inline"}
       />,
       term,
-      { mode, focusReporting },
+      {
+        mode,
+        focusReporting,
+        // AIChat has a single focusable (the TextInput). Disable focus tab-cycling
+        // so Tab reaches useKeyBindings's fillOrSubmit handler — matches main()
+        // in examples/apps/aichat/index.tsx. Without this, Tab is consumed by
+        // handleFocusNavigation before useKeyBindings.fillOrSubmit runs.
+        handleTabCycling: false,
+      },
     )
     await settle()
   }
@@ -98,6 +106,7 @@ describe("aichat inline bugs", { timeout: 15000 }, () => {
     handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term, {
       mode: "inline",
       focusReporting: true,
+      handleTabCycling: false,
     })
     await settle(300)
 
