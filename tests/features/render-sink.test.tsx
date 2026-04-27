@@ -75,7 +75,7 @@ describe("RenderSink", () => {
     sink.emitSetCell(0, 1, { char: "A" })
     sink.emitPaintFill(5, 1, 5, 1, { bg: 2 })
     sink.emitFillBg(0, 2, 10, 1, 3)
-    sink.emitRestyleRegion(0, 3, 10, 1, { fg: 4 })
+    sink.emitRestyleRegion(0, 3, 10, 1, { fg: 4, bg: null, attrs: {} })
     sink.emitMergeAttrs(0, 3, 10, 1, { bold: true })
     sink.setSelectableMode(true)
     sink.setRowMeta(4, { softWrapped: true })

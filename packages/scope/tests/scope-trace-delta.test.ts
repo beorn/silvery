@@ -44,7 +44,7 @@ describe("reportScopeDelta", () => {
   it("emits no output for a balanced scope (post=0)", () => {
     reportScopeDelta("balanced", 3, 0)
     // post=0 means everything disposed — no leak signal regardless of trace state.
-    const traceCalls = consoleErrorSpy.mock.calls.filter((c) =>
+    const traceCalls = consoleErrorSpy.mock.calls.filter((c: unknown[]) =>
       typeof c[0] === "string" && c[0].includes("close-delta"),
     )
     expect(traceCalls).toHaveLength(0)

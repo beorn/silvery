@@ -457,8 +457,8 @@ describe("render-plan-commit parity (Phase 1)", () => {
     expect(validPlan.cleanupOps.length).toBe(1)
     expect(validPlan.paintOps.length).toBe(1)
 
-    // @ts-expect-error — clearRect is a ClearOp, not assignable to PaintOp.
     const _badPaint: PaintOp = {
+      // @ts-expect-error — clearRect is a ClearOp, not assignable to PaintOp.
       kind: "clearRect",
       x: 0,
       y: 0,
@@ -468,8 +468,13 @@ describe("render-plan-commit parity (Phase 1)", () => {
     }
     void _badPaint
 
-    // @ts-expect-error — setCell is a PaintOp, not assignable to ClearOp.
-    const _badClear: ClearOp = { kind: "setCell", x: 0, y: 0, cell: {} }
+    const _badClear: ClearOp = {
+      // @ts-expect-error — setCell is a PaintOp, not assignable to ClearOp.
+      kind: "setCell",
+      x: 0,
+      y: 0,
+      cell: {},
+    }
     void _badClear
   })
 

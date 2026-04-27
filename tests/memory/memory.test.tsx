@@ -262,7 +262,7 @@ describe("handle counter: fuzz — random create/dispose orderings", () => {
     for (let i = 0; i < 30; i++) {
       const scopeIdx = Math.floor(rng() * scopes.length)
       const scope = scopes[scopeIdx]
-      if (!scope.disposed) {
+      if (scope && !scope.disposed) {
         const factory = rng() > 0.5 ? TickH : RuntimeH
         scope.adoptHandle(factory.create())
         totalCreated++
