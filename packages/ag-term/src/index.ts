@@ -102,12 +102,16 @@ export {
   formatPassHistogram,
   printPassHistogram,
   appendHistogramJson,
+  getPassAggregator,
+  createPassCauseAggregator,
 } from "./runtime/pass-cause"
 export type {
   PassCause,
   PassCauseRecord,
   PassHistogram,
   PassHistogramEntry,
+  PassCauseAggregator,
+  ProducerPhase,
 } from "./runtime/pass-cause"
 
 // =============================================================================

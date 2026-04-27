@@ -1,5 +1,5 @@
 /**
- * pass-cause.ts — Renderer feedback-edge instrumentation.
+ * pass-cause.ts — Renderer feedback-edge instrumentation, loggily-native.
  *
  * Captures the cause of each render/layout pass beyond pass 1. The convergence
  * loop in `renderer.ts` (singlePassLayout / classic) and `create-app.tsx`
@@ -11,31 +11,41 @@
  * originating identity (node id, signal name, etc.) so we can answer "what
  * keeps the loop alive?". The data feeds C3b (bounded-convergence) — once we
  * know which feedback edges dominate, we can replace MAX_SINGLE_PASS_ITERATIONS
- * with attributed bounds (e.g. "scrollto-settle bounded to 1 extra pass" +
- * "text-measurement-feedback bounded to 0 extra passes by construction").
+ * with attributed bounds.
  *
- * Default behaviour (SILVERY_INSTRUMENT unset): all functions are inert
- * no-ops. The dispatch checks `instrumentEnabled` once per call and short-
- * circuits — the hot path pays at most one boolean read per emit point.
+ * ## Design (post dual-pro review, 2026-04-26)
+ *
+ * Pass-causes are CATEGORICAL events, not duration spans. Both GPT-5.4 Pro
+ * and Kimi K2.6 converged on:
+ *
+ * - Use `log.debug?.("pass", { cause, edge, nodeId, producerPhase })` —
+ *   not `log.span()`. Spans imply duration; a pass-cause is instantaneous
+ *   and would log spurious 0ms entries that pollute traces.
+ * - Aggregate via a custom pipeline Stage that captures `LogEvent.props`,
+ *   not via loggily's MetricsCollector (which is duration-only).
+ * - Default-off via `DEBUG=silvery:passes` (or `LOG_LEVEL=debug` for the
+ *   namespace) — loggily's idiomatic gate for log events.
+ * - For tests: the aggregator stage is composable; tests can inspect
+ *   the singleton or build a fresh logger with their own stage.
+ *
+ * The `INSTRUMENT` constant remains as a hot-path safety gate so emit
+ * sites pay no cost when the env var is unset (JS engines fold the
+ * `if (INSTRUMENT)` block; loggily's `?.` adds a second layer of
+ * level-based filtering that drops debug events at info/warn level).
  *
  * Tracking: km-silvery.renderer-feedback-trace
  */
 
+import { createLogger, type ConditionalLogger, type Stage, type Event } from "loggily"
+
 /**
  * Categories of feedback edges that can trigger an extra render/layout pass.
  *
- * Categorised after a dual-pro review (GPT-5.4 + Kimi K2.6, 2026-04-26)
- * which pointed out the original enum conflated:
- * 1. external-trigger PassRootCauses (e.g. resize) with internal
- *    PassFeedbackCauses (e.g. wrap-reflow caused by a resize),
- * 2. raw rect-signal sync (volume metric) with subscriber-observed
- *    rect changes (which actually cause React commits).
- *
- * Categories are split per the review:
+ * Categorised after a dual-pro review (GPT-5.4 + Kimi K2.6, 2026-04-26):
  *
  * Subscriber feedback (genuine pass causes):
  * - layout-invalidate: rect signal value changed AND a subscriber consumed
- *   it (gated on `hasRectSubscriber(node)` — see notifyLayoutSubscribers).
+ *   it (gated on `hasLayoutSignals(node)` — see notifyLayoutSubscribers).
  *
  * Measure-phase feedback (text/intrinsic-size loops):
  * - wrap-reflow: width/viewport-dependent line breaking changed text size.
@@ -48,6 +58,7 @@
  * - scrollto-settle: scrollTo prop change forced an offset adjustment.
  * - sticky-resettle: sticky child offsets caused another pass.
  * - decoration-remap: anchored decorations changed measure inputs.
+ * - focus-scroll-into-view: focus manager fired a programmatic scroll.
  *
  * Async / external metadata:
  * - async-image-size: late-arriving image dimensions invalidated layout.
@@ -60,17 +71,14 @@
  *   (rewrap, reclamp, sticky recompute) AFTER the initial viewport-resize.
  *
  * Catch-alls:
- * - viewport-dependent: post-layout viewport-dependent computation (legacy
- *   bucket, retained for compatibility — most cases now route to
- *   wrap-reflow or intrinsic-shrinkwrap).
- * - text-measurement-feedback: legacy bucket retained for back-compat;
- *   prefer wrap-reflow / intrinsic-shrinkwrap / font-metrics-changed.
+ * - viewport-dependent: post-layout viewport-dependent computation (legacy).
+ * - text-measurement-feedback: legacy bucket; prefer the split categories.
  * - unknown: pass committed React work but no specific cause was emitted.
  */
 export type PassCause =
   // Subscriber-observed rect changes (gated to actual subscribers)
   | "layout-invalidate"
-  // Measure-phase feedback (split per dual-pro review)
+  // Measure-phase feedback
   | "wrap-reflow"
   | "intrinsic-shrinkwrap"
   | "font-metrics-changed"
@@ -82,7 +90,7 @@ export type PassCause =
   // Async / external
   | "async-image-size"
   | "theme-metric-changed"
-  // Root triggers (depth-0; not feedback)
+  // Root triggers (depth-0)
   | "viewport-resize"
   | "resize-resettle"
   // Legacy / coarse
@@ -90,10 +98,7 @@ export type PassCause =
   | "viewport-dependent"
   | "unknown"
 
-/**
- * Phase that produced the feedback edge — useful for separating
- * "what schedule produced this" from "what edge it represents".
- */
+/** Phase that produced the feedback edge. */
 export type ProducerPhase =
   | "measure"
   | "layout"
@@ -108,244 +113,340 @@ export type ProducerPhase =
 
 export interface PassCauseRecord {
   cause: PassCause
-  /** Optional originating node id (or other stable identity). */
+  /** Originating node id (or other stable identity). */
   nodeId?: string | number
-  /** Optional edge name (e.g. signal name, prop name). */
+  /** Edge name (e.g. signal name, prop name). */
   edge?: string
-  /** Pipeline phase that produced the feedback (where the edge fired). */
+  /** Pipeline phase that produced the feedback. */
   producerPhase?: ProducerPhase
-  /** Optional free-form detail (kept short — not for prose). */
+  /** Free-form detail (kept short — not for prose). */
   detail?: string
 }
 
 export interface PassHistogramEntry {
   cause: PassCause
   count: number
-  /** Top contributing edges (signal/prop names) sorted by count desc. */
   topEdges: { edge: string; count: number }[]
-  /** Top contributing node ids sorted by count desc. */
   topNodes: { nodeId: string | number; count: number }[]
 }
 
 export interface PassHistogram {
-  /** Total `recordPassCause` calls captured. */
   totalRecords: number
-  /** Per-pass-index counts (index 0 = "pass cause for transition pass-0 → pass-1"). */
   perPass: number[]
-  /** Per-cause aggregates with top edges/nodes. */
   byCause: PassHistogramEntry[]
 }
 
 /**
- * Module-level constant — evaluated once at import time so all hot-path
- * call sites that wrap their emits in `if (INSTRUMENT)` short-circuit
- * via branch prediction without function-call overhead. JS engines
- * (V8, JSC, Bun) are extremely good at constant-folding `if (false)`
- * around object-literal allocations.
+ * Module-level instrumentation gate. Constant so JS engines can fold the
+ * `if (INSTRUMENT) { ... }` blocks at every emit site out of the hot path.
  *
- * Do NOT export this; export the function `isInstrumentEnabled()` for
- * non-hot-path callers, and import `INSTRUMENT` directly in hot paths
- * (renderer.ts, layout-phase.ts).
+ * Mapping to loggily:
+ * - SILVERY_INSTRUMENT=1 implies LOG_LEVEL=debug + DEBUG=silvery:passes
+ *   for the silvery:passes namespace, so the loggily pipeline accepts
+ *   debug-level events (default level is info, which would drop them).
+ *
+ * The two gates compose:
+ * - INSTRUMENT controls the silvery side (emit-call evaluation, prop
+ *   allocation).
+ * - DEBUG/LOG_LEVEL controls the loggily side (which sinks/stages see
+ *   the event).
  */
 export const INSTRUMENT = process.env.SILVERY_INSTRUMENT === "1"
 const instrumentEnabled = INSTRUMENT
-
-interface AggregateState {
-  records: PassCauseRecord[]
-  perPass: number[]
-}
-
-/** Active pass-index for the current convergence loop (0-indexed). */
-let currentPassIndex = 0
-/**
- * Records-count snapshot at the start of the current pass. Used by
- * notePassCommit to detect "pass N committed but no cause was attributed
- * during pass N" — that's the unknown bucket. Without this counter the
- * unknown emission would have to live at every possible commit-causing
- * call site (impractical), so we infer unknown at the loop level.
- */
-let recordsAtPassStart = 0
-let aggregate: AggregateState = { records: [], perPass: [] }
 
 /** True when the SILVERY_INSTRUMENT env var is set to "1". */
 export function isInstrumentEnabled(): boolean {
   return instrumentEnabled
 }
 
+// =============================================================================
+// Aggregator — captures categorical pass-cause data from log events.
+// =============================================================================
+
+interface AggregatorState {
+  records: PassCauseRecord[]
+  perPass: number[]
+}
+
 /**
- * Reset the pass-cause tracker for a fresh convergence loop. Called at the top
- * of `doRender()`'s convergence loop (singlePassLayout/classic) and the
- * production processEventBatch flush loop.
+ * Pipeline-stage-shaped aggregator. The `stage` is attached to a loggily
+ * pipeline; it captures `pass` events emitted under the `silvery:passes`
+ * namespace into its categorical store.
+ *
+ * Tests can construct fresh aggregators and attach them to test loggers;
+ * the module's default singleton `passAggregator` is what production
+ * (and the vitest setup) uses.
+ */
+export interface PassCauseAggregator {
+  /** Loggily pipeline stage — attach to logger config to capture events. */
+  readonly stage: Stage
+  /** Snapshot the current histogram. */
+  getHistogram(): PassHistogram
+  /** Format histogram as a human-readable summary. */
+  formatSummary(): string
+  /** Clear all captured records. */
+  reset(): void
+  /** Record a per-pass-index commit (so we know convergence depth). */
+  notePassCommit(passIndex: number): void
+  /** Mark the start of a pass (used for unknown synthesis). */
+  beginPass(passIndex: number): void
+  /** Reset before a fresh convergence loop. */
+  beginConvergenceLoop(): void
+  /** Append a JSON snapshot to a file (test-runner exit hook). */
+  appendJson(file: string): void
+}
+
+export function createPassCauseAggregator(): PassCauseAggregator {
+  let state: AggregatorState = { records: [], perPass: [] }
+  let recordsAtPassStart = 0
+
+  const stage: Stage = (event: Event): Event => {
+    // We only care about silvery:passes log events with message="pass".
+    if (event.kind !== "log") return event
+    if (event.namespace !== "silvery:passes") return event
+    if (event.message !== "pass") return event
+    const props = event.props as Partial<PassCauseRecord> | undefined
+    if (!props?.cause) return event
+    state.records.push({
+      cause: props.cause,
+      nodeId: props.nodeId,
+      edge: props.edge,
+      producerPhase: props.producerPhase,
+      detail: props.detail,
+    })
+    return event
+  }
+
+  function getHistogram(): PassHistogram {
+    const byCauseMap = new Map<
+      PassCause,
+      {
+        count: number
+        edges: Map<string, number>
+        nodes: Map<string | number, number>
+      }
+    >()
+    for (const r of state.records) {
+      let entry = byCauseMap.get(r.cause)
+      if (!entry) {
+        entry = { count: 0, edges: new Map(), nodes: new Map() }
+        byCauseMap.set(r.cause, entry)
+      }
+      entry.count += 1
+      if (r.edge) entry.edges.set(r.edge, (entry.edges.get(r.edge) ?? 0) + 1)
+      if (r.nodeId !== undefined) {
+        entry.nodes.set(r.nodeId, (entry.nodes.get(r.nodeId) ?? 0) + 1)
+      }
+    }
+    const byCause: PassHistogramEntry[] = []
+    for (const [cause, entry] of byCauseMap) {
+      const topEdges = [...entry.edges.entries()]
+        .map(([edge, count]) => ({ edge, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8)
+      const topNodes = [...entry.nodes.entries()]
+        .map(([nodeId, count]) => ({ nodeId, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8)
+      byCause.push({ cause, count: entry.count, topEdges, topNodes })
+    }
+    byCause.sort((a, b) => b.count - a.count)
+    return {
+      totalRecords: state.records.length,
+      perPass: state.perPass.slice(),
+      byCause,
+    }
+  }
+
+  function formatSummary(): string {
+    const h = getHistogram()
+    if (h.totalRecords === 0) return "pass-cause histogram: no extra passes recorded"
+    const lines: string[] = []
+    lines.push(`pass-cause histogram: ${h.totalRecords} extra-pass causes`)
+    if (h.perPass.length > 0) {
+      const perPassLine = h.perPass
+        .map((c, i) => (c > 0 ? `pass${i}=${c}` : null))
+        .filter((s) => s !== null)
+        .join(" ")
+      if (perPassLine) lines.push(`  per-pass commits: ${perPassLine}`)
+    }
+    for (const entry of h.byCause) {
+      const pct = ((entry.count / h.totalRecords) * 100).toFixed(1)
+      lines.push(`  ${entry.cause}: ${entry.count} (${pct}%)`)
+      if (entry.topEdges.length > 0) {
+        lines.push(
+          "    edges: " + entry.topEdges.map((e) => `${e.edge}×${e.count}`).join(", "),
+        )
+      }
+      if (entry.topNodes.length > 0) {
+        lines.push(
+          "    nodes: " + entry.topNodes.map((n) => `${n.nodeId}×${n.count}`).join(", "),
+        )
+      }
+    }
+    return lines.join("\n")
+  }
+
+  function reset(): void {
+    state = { records: [], perPass: [] }
+    recordsAtPassStart = 0
+  }
+
+  function notePassCommit(passIndex: number): void {
+    while (state.perPass.length <= passIndex) state.perPass.push(0)
+    state.perPass[passIndex] = (state.perPass[passIndex] ?? 0) + 1
+    // If no specific cause was emitted between beginPass and notePassCommit,
+    // synthesize an "unknown" record. This converts "no data for this pass"
+    // into observable signal — C3b can read the unknown count to know
+    // whether the enum is missing categories for some commit-causing edge.
+    if (state.records.length === recordsAtPassStart) {
+      state.records.push({
+        cause: "unknown",
+        detail: `pass-${passIndex}-uncategorized-commit`,
+      })
+    }
+  }
+
+  function beginPass(_passIndex: number): void {
+    recordsAtPassStart = state.records.length
+  }
+
+  function beginConvergenceLoop(): void {
+    recordsAtPassStart = state.records.length
+  }
+
+  function appendJson(file: string): void {
+    const h = getHistogram()
+    if (h.totalRecords === 0) return
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs") as typeof import("node:fs")
+    fs.appendFileSync(file, JSON.stringify(h) + "\n")
+  }
+
+  return {
+    stage,
+    getHistogram,
+    formatSummary,
+    reset,
+    notePassCommit,
+    beginPass,
+    beginConvergenceLoop,
+    appendJson,
+  }
+}
+
+// =============================================================================
+// Module-singleton logger + aggregator.
+// =============================================================================
+//
+// Wired together at module load. The logger's pipeline includes:
+//   - level: debug for the silvery:passes namespace
+//   - the aggregator stage (which captures categorical data)
+//
+// Default behaviour (SILVERY_INSTRUMENT unset): the aggregator stage is
+// still wired in but no events ever reach it because emit sites are gated
+// by INSTRUMENT.
+//
+// When SILVERY_INSTRUMENT=1, emit sites call `passLog.debug?.("pass", ...)`
+// and loggily's pipeline routes the event through the aggregator stage.
+
+const passAggregator = createPassCauseAggregator()
+
+/** The singleton aggregator — used by tests and tooling to read counts. */
+export function getPassAggregator(): PassCauseAggregator {
+  return passAggregator
+}
+
+/**
+ * Pass-cause logger. Namespace `silvery:passes`. Default level is `debug` so
+ * recordPassCause's `?.` short-circuits except when the env enables debug.
+ *
+ * The aggregator stage is always attached — it's a no-op when no events
+ * arrive, and the INSTRUMENT gate at emit sites prevents events when the
+ * env var is unset.
+ */
+const passLog: ConditionalLogger = createLogger("silvery:passes", [
+  // When SILVERY_INSTRUMENT=1, raise this namespace's level to debug so
+  // emit sites' `?.debug` calls actually dispatch.
+  { level: instrumentEnabled ? "debug" : "info" },
+  passAggregator.stage,
+])
+
+// =============================================================================
+// Public API — back-compat shape preserved so existing call sites in
+// renderer.ts / layout-phase.ts / measure-phase.ts / runtime/renderer.ts /
+// runtime/create-app.tsx don't need to change.
+// =============================================================================
+
+/**
+ * Reset the per-loop pass-index tracker. Called at the top of each
+ * convergence loop in renderer.ts / runtime/create-app.tsx.
  */
 export function beginConvergenceLoop(): void {
   if (!instrumentEnabled) return
-  currentPassIndex = 0
-  recordsAtPassStart = aggregate.records.length
+  passAggregator.beginConvergenceLoop()
 }
 
-/**
- * Mark the start of pass N. Called at the top of each iteration of the
- * convergence loop. `passIndex` is 0-based.
- */
+/** Mark the start of pass N (0-based). */
 export function beginPass(passIndex: number): void {
   if (!instrumentEnabled) return
-  currentPassIndex = passIndex
-  recordsAtPassStart = aggregate.records.length
+  passAggregator.beginPass(passIndex)
 }
 
 /**
- * Record that a feedback edge fired during the current pass. The cause will
- * be attributed to the *next* pass (the pass it triggers) when it actually
- * runs. Cheap: appends to an array.
+ * Record that a feedback edge fired during the current pass.
  *
- * Call sites should use the cause that best describes WHY the next pass is
- * needed. When in doubt prefer "layout-invalidate" with the signal name as
- * `edge`, or "unknown" if the trigger is genuinely opaque.
+ * Emits via loggily — `passLog.debug?.("pass", record)` — so that the
+ * aggregator stage receives the event and the rest of the pipeline can
+ * see it (DEBUG=silvery:passes prints to console, etc.).
  */
 export function recordPassCause(record: PassCauseRecord): void {
   if (!instrumentEnabled) return
-  // Stamp pass-index of the *triggering* pass so readers can compute
-  // "pass N's commit caused pass N+1".
-  aggregate.records.push(record)
+  passLog.debug?.("pass", record as unknown as Record<string, unknown>)
 }
 
 /**
- * Mark that pass N committed React work that will require pass N+1. Bumps the
- * per-pass-index counter so the histogram can show "how many passes had
- * extra-pass causes attributed to them?" alongside the cause breakdown.
- *
- * If no specific PassCause was emitted between the matching `beginPass(N)`
- * and this call, an "unknown" record is synthesized. This guarantees that
- * every committed pass is attributed to *something* — without this, passes
- * caused by non-layout React state changes (a setState unrelated to layout
- * signals) would leave the histogram silent and inflate "the categories I
- * have are sufficient" with false negatives.
+ * Mark that pass N committed React work that will require pass N+1.
+ * Bumps the per-pass-index counter and synthesizes an "unknown" record
+ * if no specific cause was emitted during pass N.
  */
 export function notePassCommit(passIndex: number): void {
   if (!instrumentEnabled) return
-  while (aggregate.perPass.length <= passIndex) {
-    aggregate.perPass.push(0)
-  }
-  aggregate.perPass[passIndex] = (aggregate.perPass[passIndex] ?? 0) + 1
-
-  // If no specific cause was emitted during this pass, synthesize an unknown
-  // record. This converts "I have no data for this pass" into observable
-  // signal — C3b can read the unknown count to know whether the enum is
-  // missing categories.
-  if (aggregate.records.length === recordsAtPassStart) {
-    aggregate.records.push({
-      cause: "unknown",
-      detail: `pass-${passIndex}-uncategorized-commit`,
-    })
-  }
+  passAggregator.notePassCommit(passIndex)
 }
 
-/**
- * Returns a snapshot of the current pass-cause histogram. Aggregates over all
- * convergence loops since the last `resetPassHistogram()`.
- */
+/** Snapshot the current pass-cause histogram. */
 export function getPassHistogram(): PassHistogram {
   if (!instrumentEnabled) {
     return { totalRecords: 0, perPass: [], byCause: [] }
   }
-  const byCauseMap = new Map<
-    PassCause,
-    {
-      count: number
-      edges: Map<string, number>
-      nodes: Map<string | number, number>
-    }
-  >()
-  for (const r of aggregate.records) {
-    let entry = byCauseMap.get(r.cause)
-    if (!entry) {
-      entry = { count: 0, edges: new Map(), nodes: new Map() }
-      byCauseMap.set(r.cause, entry)
-    }
-    entry.count += 1
-    if (r.edge) entry.edges.set(r.edge, (entry.edges.get(r.edge) ?? 0) + 1)
-    if (r.nodeId !== undefined) {
-      entry.nodes.set(r.nodeId, (entry.nodes.get(r.nodeId) ?? 0) + 1)
-    }
-  }
-  const byCause: PassHistogramEntry[] = []
-  for (const [cause, entry] of byCauseMap) {
-    const topEdges = [...entry.edges.entries()]
-      .map(([edge, count]) => ({ edge, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8)
-    const topNodes = [...entry.nodes.entries()]
-      .map(([nodeId, count]) => ({ nodeId, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 8)
-    byCause.push({ cause, count: entry.count, topEdges, topNodes })
-  }
-  byCause.sort((a, b) => b.count - a.count)
-  return {
-    totalRecords: aggregate.records.length,
-    perPass: aggregate.perPass.slice(),
-    byCause,
-  }
+  return passAggregator.getHistogram()
 }
 
-/** Clear all captured records. Test runner setup hook. */
+/** Clear all captured records. */
 export function resetPassHistogram(): void {
-  aggregate = { records: [], perPass: [] }
-  currentPassIndex = 0
+  passAggregator.reset()
+}
+
+/** Format the histogram as a one-screen text summary. */
+export function formatPassHistogram(_h?: PassHistogram): string {
+  return passAggregator.formatSummary()
 }
 
 /**
- * Format the histogram as a one-screen text summary. Stable for diffing in
- * markdown reports.
- */
-export function formatPassHistogram(h: PassHistogram = getPassHistogram()): string {
-  if (h.totalRecords === 0) {
-    return "pass-cause histogram: no extra passes recorded"
-  }
-  const lines: string[] = []
-  lines.push(`pass-cause histogram: ${h.totalRecords} extra-pass causes`)
-  if (h.perPass.length > 0) {
-    lines.push(
-      "  per-pass commits: " +
-        h.perPass
-          .map((c, i) => (c > 0 ? `pass${i}=${c}` : null))
-          .filter((s) => s !== null)
-          .join(" "),
-    )
-  }
-  for (const entry of h.byCause) {
-    const pct = ((entry.count / h.totalRecords) * 100).toFixed(1)
-    lines.push(`  ${entry.cause}: ${entry.count} (${pct}%)`)
-    if (entry.topEdges.length > 0) {
-      lines.push(
-        "    edges: " + entry.topEdges.map((e) => `${e.edge}×${e.count}`).join(", "),
-      )
-    }
-    if (entry.topNodes.length > 0) {
-      lines.push(
-        "    nodes: " + entry.topNodes.map((n) => `${n.nodeId}×${n.count}`).join(", "),
-      )
-    }
-  }
-  return lines.join("\n")
-}
-
-/**
- * Print histogram to stderr (test runner / app teardown). No-op if disabled.
+ * Print histogram to stderr (test runner / app teardown). No-op if
+ * instrumentation is disabled or no records exist.
  *
- * In test environments where stdout/stderr are intercepted, prefer writing
- * the histogram to a file via SILVERY_INSTRUMENT_FILE — `printPassHistogram`
- * checks for it and writes there instead of stderr.
+ * In test environments where stdout/stderr are intercepted, write to
+ * SILVERY_INSTRUMENT_FILE instead.
  */
 export function printPassHistogram(): void {
   if (!instrumentEnabled) return
-  const h = getPassHistogram()
+  const h = passAggregator.getHistogram()
   if (h.totalRecords === 0) return
-  const formatted = formatPassHistogram(h)
+  const formatted = passAggregator.formatSummary()
   const file = process.env.SILVERY_INSTRUMENT_FILE
   if (file) {
-    // Use require because top-level fs import was avoided to keep module
-    // lazy; this branch only fires when the env var is explicitly set.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require("node:fs") as typeof import("node:fs")
     fs.appendFileSync(file, "\n" + formatted + "\n")
@@ -354,24 +455,8 @@ export function printPassHistogram(): void {
   process.stderr.write("\n" + formatted + "\n")
 }
 
-/**
- * Append a JSON-serialized histogram snapshot to a file. Used by the test
- * runner's `process.on("exit")` hook to emit a single aggregated record per
- * test run. JSON form is stable for downstream tooling (C3b's analysis).
- */
+/** Append a JSON snapshot to a file (vitest exit hook). */
 export function appendHistogramJson(file: string): void {
   if (!instrumentEnabled) return
-  const h = getPassHistogram()
-  if (h.totalRecords === 0) return
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const fs = require("node:fs") as typeof import("node:fs")
-  fs.appendFileSync(file, JSON.stringify(h) + "\n")
-}
-
-/**
- * Internal: read current pass index. Used by emit sites that want to attach
- * the triggering pass to a record post-hoc.
- */
-export function _currentPassIndex(): number {
-  return currentPassIndex
+  passAggregator.appendJson(file)
 }
