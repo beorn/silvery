@@ -96,7 +96,7 @@ export {
   beginConvergenceLoop,
   beginPass,
   notePassCommit,
-  recordPassCause,
+  logPass,
   getPassHistogram,
   resetPassHistogram,
   formatPassHistogram,
@@ -108,6 +108,7 @@ export {
   MAX_CONVERGENCE_PASSES,
   MAX_CLASSIC_LOOP_ITERATIONS,
   assertBoundedConvergence,
+  getPassLog,
 } from "./runtime/pass-cause"
 export type {
   PassCause,

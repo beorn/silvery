@@ -34,7 +34,7 @@ import {
   type SelectionTheme,
 } from "../selection-renderer"
 import { hexToRgb } from "../pipeline/backdrop/color"
-import { INSTRUMENT, recordPassCause } from "./pass-cause"
+import { INSTRUMENT, logPass } from "./pass-cause"
 import type { Buffer, Dims, RenderTarget } from "./types"
 import type { PipelineConfig } from "../pipeline"
 import type { createVirtualScrollback } from "../virtual-scrollback"
@@ -170,7 +170,7 @@ export function createRenderer(opts: RendererOptions): Renderer {
             // follow-on rect changes attribute as `layout-invalidate` (not as
             // a separate `resize-resettle` category — that was removed in C3b
             // because it was structurally subsumed).
-            recordPassCause({
+            logPass({
               cause: "viewport-resize",
               edge: widthChanged && heightChanged ? "wh" : widthChanged ? "w" : "h",
               producerPhase: "renderer",

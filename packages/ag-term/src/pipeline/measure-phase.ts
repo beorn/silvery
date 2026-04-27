@@ -16,7 +16,7 @@ import {
 import { buildTextAnalysis, shrinkwrapWidth } from "./pretext"
 import { getBorderSize, getPadding } from "./helpers"
 import type { PipelineContext } from "./types"
-import { INSTRUMENT, recordPassCause } from "../runtime/pass-cause"
+import { INSTRUMENT, logPass } from "../runtime/pass-cause"
 
 /**
  * Handle fit-content nodes by measuring their intrinsic content size.
@@ -77,7 +77,7 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
           // Width changed since last frame's layout — this measure-phase pass
           // produced a different intrinsic size. That's a feedback edge: a
           // subsequent layout pass will use the new constraint.
-          recordPassCause({
+          logPass({
             cause: "intrinsic-shrinkwrap",
             edge: "snug-content:width",
             producerPhase: "measure",
@@ -90,7 +90,7 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
         const prevHeight = node.boxRect?.height
         node.layoutNode.setHeight(intrinsicSize.height)
         if (INSTRUMENT && prevHeight !== undefined && prevHeight !== intrinsicSize.height) {
-          recordPassCause({
+          logPass({
             cause: "intrinsic-shrinkwrap",
             edge: "fit-content:height",
             producerPhase: "measure",

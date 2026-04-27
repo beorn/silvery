@@ -21,19 +21,28 @@
  * - Use `log.debug?.("pass", { cause, edge, nodeId, producerPhase })` —
  *   not `log.span()`. Spans imply duration; a pass-cause is instantaneous
  *   and would log spurious 0ms entries that pollute traces.
- * - Aggregate via a custom pipeline Stage that captures `LogEvent.props`,
- *   not via loggily's MetricsCollector (which is duration-only).
- * - Default-off via `DEBUG=silvery:passes` (or `LOG_LEVEL=debug` for the
- *   namespace) — loggily's idiomatic gate for log events.
- * - For tests: the aggregator stage is composable; tests can inspect
- *   the singleton or build a fresh logger with their own stage.
+ * - Aggregate via a custom pipeline `Stage` that captures `LogEvent.props`.
+ *   The `Stage` type is part of loggily's public API (`loggily/index.ts`
+ *   re-exports it from `./pipeline.js`) — it's the framework's intended
+ *   extension point for non-duration aggregation.
+ * - Do NOT use `loggily/metrics`. `MetricsCollector` is intentionally
+ *   duration-only: `recordSpan(data)` only sees `{name, durationMs}`,
+ *   props are dropped at the collector boundary, and `summary()` returns
+ *   `"name: N spans, mean=Xms, p50=Yms"`. For pass-causes the durations
+ *   would all be ~0ms, and we would lose the edge/node breakdown that
+ *   C3b consumes.
+ * - Emit on a parent + child sub-namespace (`silvery:passes` and
+ *   `silvery:passes:<cause>`) so `DEBUG=silvery:passes:layout-invalidate`
+ *   filters by cause without losing the canonical histogram (which reads
+ *   from the parent-namespace stage).
+ * - Default-off via the silvery-side `SILVERY_INSTRUMENT=1` constant-fold
+ *   gate (zero overhead when unset). Setting it also sets the loggily
+ *   `LOG_LEVEL=debug` for `silvery:passes` (see logger setup below).
+ * - For tests: the aggregator stage is composable; tests can call
+ *   `createPassCauseAggregator()` for a fresh aggregator and pass
+ *   `.stage` into a test-local `createLogger("silvery:passes", ...)`.
  *
- * The `INSTRUMENT` constant remains as a hot-path safety gate so emit
- * sites pay no cost when the env var is unset (JS engines fold the
- * `if (INSTRUMENT)` block; loggily's `?.` adds a second layer of
- * level-based filtering that drops debug events at info/warn level).
- *
- * Tracking: km-silvery.renderer-feedback-trace
+ * Tracking: km-silvery.renderer-feedback-trace, km-silvery.feedback-trace-loggily
  */
 
 import { createLogger, type ConditionalLogger, type Stage, type Event } from "loggily"
@@ -65,11 +74,13 @@ import { createLogger, type ConditionalLogger, type Stage, type Event } from "lo
  * Convergence-loop root triggers (depth-0; not feedback per se):
  * - viewport-resize: terminal dims changed; treated as a root trigger.
  *
- * Catch-all:
- * - unknown: pass committed React work but no specific cause was emitted.
- *   Should always be 0 in steady-state — non-zero count signals a missing
- *   PassCause category or a pure-React feedback loop the pipeline isn't
- *   aware of.
+ * Synthesized catch-all:
+ * - unknown: pass committed React work but no specific cause was emitted
+ *   (synthesized by `notePassCommit`). Observed at 0.006% of records in
+ *   the v2/v3 baseline corpus, confirming the enum is essentially
+ *   exhaustive for the wired emit sites. Should always be 0 in
+ *   steady-state — non-zero count signals a missing PassCause category
+ *   or a pure-React feedback loop the pipeline isn't aware of.
  *
  * Removed (no producer path; either deletion or subsumed by existing
  * category — see hub/silvery/design/convergence-bounds.md for the audit):
@@ -149,6 +160,17 @@ export interface PassHistogram {
 export const INSTRUMENT = process.env.SILVERY_INSTRUMENT === "1"
 const instrumentEnabled = INSTRUMENT
 
+// Note on env-var mapping: an earlier draft auto-set DEBUG=silvery:passes
+// when SILVERY_INSTRUMENT=1 for one-switch UX, but that broke ~4 vendor
+// tests in `box-in-text-warning` / `input-owner` that intercept
+// `console.warn`. Setting DEBUG globally appears to interact with how
+// silvery routes warn output through the dev-debug pipeline. Keep the two
+// switches independent: SILVERY_INSTRUMENT controls the silvery-side gate
+// (no overhead when off); DEBUG=silvery:passes (or :<cause>) controls the
+// loggily-side filter when the user wants to additionally pipe events to
+// console. The aggregator stage doesn't need DEBUG to be set — it's
+// always wired into the pipeline.
+
 /** True when the SILVERY_INSTRUMENT env var is set to "1". */
 export function isInstrumentEnabled(): boolean {
   return instrumentEnabled
@@ -196,9 +218,16 @@ export function createPassCauseAggregator(): PassCauseAggregator {
   let recordsAtPassStart = 0
 
   const stage: Stage = (event: Event): Event => {
-    // We only care about silvery:passes log events with message="pass".
+    // Match parent (`silvery:passes`) and child (`silvery:passes:<cause>`)
+    // namespaces — emit happens on the child namespace so that
+    // `DEBUG=silvery:passes:layout-invalidate` filters by cause.
     if (event.kind !== "log") return event
-    if (event.namespace !== "silvery:passes") return event
+    if (
+      event.namespace !== "silvery:passes" &&
+      !event.namespace.startsWith("silvery:passes:")
+    ) {
+      return event
+    }
     if (event.message !== "pass") return event
     const props = event.props as Partial<PassCauseRecord> | undefined
     if (!props?.cause) return event
@@ -353,19 +382,41 @@ export function getPassAggregator(): PassCauseAggregator {
 }
 
 /**
- * Pass-cause logger. Namespace `silvery:passes`. Default level is `debug` so
- * recordPassCause's `?.` short-circuits except when the env enables debug.
+ * Pass-cause loggers. Parent namespace is `silvery:passes`. Each cause gets
+ * a child namespace `silvery:passes:<cause>` so users can filter at any
+ * granularity:
+ *   DEBUG=silvery:passes                    → all causes
+ *   DEBUG=silvery:passes:layout-invalidate  → only layout-invalidate
+ *   DEBUG=silvery:passes:scrollto-settle    → only scrollto-settle
+ *
+ * Both the parent and every child share the same pipeline (level + the
+ * aggregator stage). Children are cached on first use to avoid logger
+ * construction in the hot path.
  *
  * The aggregator stage is always attached — it's a no-op when no events
  * arrive, and the INSTRUMENT gate at emit sites prevents events when the
  * env var is unset.
  */
-const passLog: ConditionalLogger = createLogger("silvery:passes", [
+const passLogConfig = [
   // When SILVERY_INSTRUMENT=1, raise this namespace's level to debug so
   // emit sites' `?.debug` calls actually dispatch.
-  { level: instrumentEnabled ? "debug" : "info" },
+  { level: instrumentEnabled ? "debug" : "info" } as const,
   passAggregator.stage,
+] as const
+
+const passLog: ConditionalLogger = createLogger("silvery:passes", [
+  ...passLogConfig,
 ])
+
+const childLoggers = new Map<PassCause, ConditionalLogger>()
+function loggerForCause(cause: PassCause): ConditionalLogger {
+  let child = childLoggers.get(cause)
+  if (!child) {
+    child = createLogger(`silvery:passes:${cause}`, [...passLogConfig])
+    childLoggers.set(cause, child)
+  }
+  return child
+}
 
 // =============================================================================
 // Public API — back-compat shape preserved so existing call sites in
@@ -391,13 +442,23 @@ export function beginPass(passIndex: number): void {
 /**
  * Record that a feedback edge fired during the current pass.
  *
- * Emits via loggily — `passLog.debug?.("pass", record)` — so that the
- * aggregator stage receives the event and the rest of the pipeline can
- * see it (DEBUG=silvery:passes prints to console, etc.).
+ * Emits on the per-cause child namespace so that
+ * `DEBUG=silvery:passes:<cause>` filters by cause; the aggregator stage
+ * captures both parent and child events into the canonical histogram.
  */
-export function recordPassCause(record: PassCauseRecord): void {
+export function logPass(record: PassCauseRecord): void {
   if (!instrumentEnabled) return
-  passLog.debug?.("pass", record as unknown as Record<string, unknown>)
+  const log = loggerForCause(record.cause)
+  log.debug?.("pass", record as unknown as Record<string, unknown>)
+}
+
+/**
+ * Re-export of the parent-namespace logger for callers that need to emit
+ * generic `silvery:passes`-namespaced messages (e.g. tooling that reads
+ * DEBUG=silvery:passes for an aggregate trace).
+ */
+export function getPassLog(): ConditionalLogger {
+  return passLog
 }
 
 /**

@@ -46,7 +46,7 @@ describe("bounded-convergence: per-cause bound model", () => {
   test("PassCause type contains exactly the 6 audited categories (no scaffolding)", () => {
     // C3b audited the C3a v2 14-category enum; 9 categories were removed
     // because they had no production emit path. The remaining 6 each have
-    // at least one recordPassCause site in the pipeline.
+    // at least one logPass site in the pipeline.
     const causeCount = Object.keys(PASS_CAUSE_BOUNDS).length
     expect(causeCount).toBe(6)
   })

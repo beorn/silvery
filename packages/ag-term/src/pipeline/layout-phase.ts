@@ -25,7 +25,7 @@ import {
   syncRectSignals,
   hasLayoutSignals,
 } from "@silvery/ag/layout-signals"
-import { recordPassCause, INSTRUMENT } from "../runtime/pass-cause"
+import { logPass, INSTRUMENT } from "../runtime/pass-cause"
 
 const log = createLogger("silvery:layout")
 
@@ -34,7 +34,7 @@ const log = createLogger("silvery:layout")
  * Prefers explicit identity props (testid / id / name / nodeId) and falls
  * back to type. Keeps the histogram readable without paying a Map lookup
  * per node when SILVERY_INSTRUMENT is unset (call site is gated by the
- * inert no-op in `recordPassCause`).
+ * inert no-op in `logPass`).
  */
 function nodeIdent(node: AgNode): string {
   const props = node.props as Record<string, unknown> | undefined
@@ -429,7 +429,7 @@ export function notifyLayoutSubscribers(node: AgNode): void {
       if (observed) {
         const ident = nodeIdent(node)
         if (contentChanged) {
-          recordPassCause({
+          logPass({
             cause: "layout-invalidate",
             edge: "boxRect",
             nodeId: ident,
@@ -437,7 +437,7 @@ export function notifyLayoutSubscribers(node: AgNode): void {
           })
         }
         if (screenChanged) {
-          recordPassCause({
+          logPass({
             cause: "layout-invalidate",
             edge: "scrollRect",
             nodeId: ident,
@@ -445,7 +445,7 @@ export function notifyLayoutSubscribers(node: AgNode): void {
           })
         }
         if (renderChanged) {
-          recordPassCause({
+          logPass({
             cause: "layout-invalidate",
             edge: "screenRect",
             nodeId: ident,
@@ -782,7 +782,7 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
       // in turn may invalidate rect signals for descendants. Attribute to
       // the originating scrollTo prop so C3b can bound this edge.
       if (INSTRUMENT) {
-        recordPassCause({
+        logPass({
           cause: "scrollto-settle",
           edge: targetCompletelyOffscreen ? "scrollTo:recovery" : "scrollTo:newIntent",
           nodeId: nodeIdent(node),
@@ -1295,7 +1295,7 @@ export function stickyPhase(root: AgNode): void {
       if (INSTRUMENT) {
         // Sticky child offsets changed since last frame — the parent is now
         // marked dirty and a follow-on layout pass will reflow children.
-        recordPassCause({
+        logPass({
           cause: "sticky-resettle",
           edge: "stickyChildren",
           nodeId: nodeIdent(node),
