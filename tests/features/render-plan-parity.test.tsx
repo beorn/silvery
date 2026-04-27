@@ -43,6 +43,7 @@ import { renderPhase } from "@silvery/ag-term/pipeline/render-phase"
 import {
   commitPlan,
   RecordingBuffer,
+  type RenderPlan,
   wrapPrevBufferForRecording,
 } from "@silvery/ag-term/pipeline/render-plan"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
@@ -186,6 +187,146 @@ describe("render-plan-commit parity (Phase 1)", () => {
         `plan/commit path diverges from legacy renderer:\n${formatMismatch(mismatchVsLegacy)}`,
       )
     }
+  })
+
+  test("parity check is sensitive: mutating the plan breaks parity", () => {
+    // Sensitivity / anti-parity guard. If we drop or corrupt one op in the
+    // plan, the replay must DIVERGE from the recorded buffer. Without this
+    // test, "compareBuffers returns null" might be a tautology where both
+    // sides hit the same code path. This test proves the comparison has
+    // real teeth: when we deliberately introduce a divergence, it fires.
+    const cols = 5
+    const rows = 5
+    const mounted = mountScene(<Scene frame="a" />, cols, rows)
+    const frame1 = renderPhase(mounted.root, null)
+
+    reconciler.updateContainerSync(<Scene frame="b" />, mounted.fiberRoot, null, null)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mounted.root, cols, rows)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mounted.root, cols, rows)
+
+    const wrappedPrev = wrapPrevBufferForRecording(frame1.clone())
+    const recordedOut = renderPhase(mounted.root, wrappedPrev) as RecordingBuffer
+    const plan = recordedOut.toPlan()
+
+    // Drop every other op — guarantees divergence somewhere.
+    const corruptedOps = plan.ops.filter((_, i) => i % 2 === 0)
+    expect(corruptedOps.length).toBeLessThan(plan.ops.length)
+    const corruptedPlan = { width: plan.width, height: plan.height, ops: corruptedOps }
+
+    const replayed = frame1.clone()
+    commitPlan(replayed, corruptedPlan)
+    const mismatch = compareBuffers(replayed, recordedOut)
+    expect(mismatch, "dropping ops must produce a buffer divergence — parity check is otherwise vacuous").not.toBeNull()
+  })
+
+  test("scrollbar-shrink-with-sibling-bg: both paths produce the SAME correct output", () => {
+    // The exact bug shape from km-silvery.ai-chat-incremental-mismatch
+    // that silvery 168b4989 fixed at runtime: an absolute-positioned
+    // scrollbar shrinks while a normal-flow sibling gains backgroundColor
+    // over the vacated cells. Before the fix, clearExcessArea stomped the
+    // sibling's freshly-painted bg with the scrollbar's inherited bg
+    // (null). After the fix, the hasPrevBuffer guard skips clearExcessArea
+    // for the shrunken scrollbar's second-pass render.
+    //
+    // This test runs the legacy path AND the plan/commit path against the
+    // exact frame transition that triggered the bug, and asserts that BOTH
+    // produce the cell that the fresh render produces — i.e., the scrollbar
+    // does NOT stomp the sibling row's bg under either path. This is the
+    // claim that matters for shipping the substrate: the new path doesn't
+    // re-introduce the bug the runtime guard fixed.
+    const cols = 5
+    const rows = 5
+
+    const mountA = mountScene(<Scene frame="a" />, cols, rows)
+    const frame1 = renderPhase(mountA.root, null)
+    reconciler.updateContainerSync(<Scene frame="b" />, mountA.fiberRoot, null, null)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mountA.root, cols, rows)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mountA.root, cols, rows)
+
+    // Legacy path: incremental render with frame1 as prev.
+    const legacyOut = renderPhase(mountA.root, frame1.clone())
+
+    // Plan/commit path: same scene, recorded prev wrapper, replay onto
+    // a fresh clone of frame1.
+    const mountB = mountScene(<Scene frame="a" />, cols, rows)
+    renderPhase(mountB.root, null) // seed prev (epoch parity)
+    reconciler.updateContainerSync(<Scene frame="b" />, mountB.fiberRoot, null, null)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mountB.root, cols, rows)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mountB.root, cols, rows)
+    const wrappedPrev = wrapPrevBufferForRecording(frame1.clone())
+    const recorded = renderPhase(mountB.root, wrappedPrev) as RecordingBuffer
+    const replayed = frame1.clone()
+    commitPlan(replayed, recorded.toPlan())
+
+    // Fresh render is the oracle (no incremental pixels at all).
+    const mountC = mountScene(<Scene frame="b" />, cols, rows)
+    const freshOut = renderPhase(mountC.root, null)
+
+    // The vacated scrollbar cell at (col=4, row=4) is the exact cell the
+    // bug stomped. Under fresh render, its bg comes from the sibling
+    // row4's backgroundColor="red". Under both incremental paths, the
+    // scrollbar's clearExcessArea must NOT have stomped it.
+    const freshCell = freshOut.getCell(4, 4)
+    const legacyCell = legacyOut.getCell(4, 4)
+    const replayedCell = replayed.getCell(4, 4)
+
+    // sanity: fresh render at the bug-cell has the sibling's bg.
+    // We don't assert the exact color (test framework theme normalization
+    // varies), but assert legacy + plan/commit both match fresh.
+    expect(legacyCell.bg).toEqual(freshCell.bg)
+    expect(replayedCell.bg).toEqual(freshCell.bg)
+    expect(legacyCell.char).toEqual(freshCell.char)
+    expect(replayedCell.char).toEqual(freshCell.char)
+  })
+
+  test("type-level safety: @ts-expect-error documents what the type DOES and does NOT prevent", () => {
+    // What the Phase 1 type DOES prevent (structural):
+    //   - RenderPlan.ops is `readonly RenderOp[]` — TypeScript rejects
+    //     in-place plan mutation by consumers.
+    //   - clearExcessArea is unexported from render-phase.ts — consumers
+    //     of the new path cannot import it. Pre-Phase-1, this was already
+    //     true; the new path inherits the existing module boundary.
+    //
+    // What the Phase 1 type does NOT prevent (ceremonial gaps to close
+    // in Phase 2/3 — documented here so we have a moving target):
+    //   - Constructing arbitrary ops and feeding them to commitPlan.
+    //     commitPlan applies ops in emission order; nothing in the type
+    //     forces clears-before-paints. Phase 2 will tighten this by
+    //     bucketing ops at type level (e.g. ClearOp[] + PaintOp[] + …).
+    //   - Calling buffer.fill() / buffer.setCell() directly outside the
+    //     plan/commit substrate. That's what the existing renderer does.
+    //     The type doesn't (and can't, in Phase 1) prevent this — Phase 2
+    //     will gate buffer mutation behind a private helper.
+    const plan: RenderPlan = { width: 1, height: 1, ops: [] }
+
+    // @ts-expect-error — readonly ops array rejects mutation.
+    plan.ops.push({ kind: "fillBg", x: 0, y: 0, width: 1, height: 1, bg: null })
+
+    // Compile-checked: clearExcessArea is not exported, so this import
+    // fails to resolve. The // @ts-expect-error fires at the import site
+    // when the directive is on the import line.
+    // (Cannot @ts-expect-error a package import path easily; the
+    // structural prevention is the missing export, not a type error.)
+
+    // Demonstrates the Phase-1 ceremonial gap: a consumer CAN forge a
+    // malformed plan because RenderOp is structurally typed. This compiles
+    // — it should not, post-Phase-2.
+    const malformedPlan: RenderPlan = {
+      width: 1,
+      height: 1,
+      ops: [
+        { kind: "setCell", x: 0, y: 0, cell: { char: "X" } },
+        // Paint-then-clear: nothing in the type forbids this ordering.
+        { kind: "fillBg", x: 0, y: 0, width: 1, height: 1, bg: null },
+      ],
+    }
+    expect(malformedPlan.ops.length).toBe(2)
   })
 
   test("plan ops are non-empty and commit accepts the plan", () => {
