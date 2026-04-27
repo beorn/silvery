@@ -104,17 +104,35 @@ const cachedAnalysis: { rows: DirtyRowSummary[]; rowCount: number } = {
 }
 
 // ============================================================================
-// Cost estimator constants — see design doc §4.
+// Cost estimator constants — see design doc §4 of
+// hub/silvery/design/v05-layout/hybrid-output.md.
+//
+// These are byte-cost estimates for the emission paths:
+//
+//   scatter:  dirty * PER_CELL_SCATTER
+//   runs:     runCount * RUN_PREAMBLE + dirty * PER_CELL_IN_RUN
+//   whole:    ROW_PREAMBLE + width * PER_CELL_IN_ROW
+//
+// The scatter per-cell cost includes a cursor jump (CUP ≈ 6-8 bytes) plus a
+// short SGR transition plus the char itself, amortized to 12 bytes/cell.
+//
+// Run preamble = 1 CUP (~6 bytes) + 1 SGR transition (~4 bytes) per run
+// boundary, totaling ~10 bytes/run. Within a run the cursor auto-advances,
+// so the per-cell cost drops to ~2 bytes (char only, occasional SGR amortized).
+//
+// Whole-row preamble = 1 CUP to (y, 0) ≈ 8 bytes (slightly more than a same-
+// row CUF because it also resets the column). Per-cell-in-row mirrors the
+// run path since the cursor auto-advances and SGRs amortize across the row.
 // ============================================================================
 
-/** Per-cell amortized cost in scatter mode (CUP + char). */
-const PER_CELL_SCATTER = 8
-/** One CUP per run preamble. */
-const RUN_PREAMBLE = 6
+/** Per-cell amortized cost in scatter mode (CUP + SGR + char). */
+const PER_CELL_SCATTER = 12
+/** Cost of one cursor jump + SGR transition per run preamble. */
+const RUN_PREAMBLE = 10
 /** Per-cell cost inside a run (relies on auto-advance). */
 const PER_CELL_IN_RUN = 2
-/** One CUP per whole-row preamble. */
-const ROW_PREAMBLE = 6
+/** Cost of one absolute CUP to (y, 0) per whole-row preamble. */
+const ROW_PREAMBLE = 8
 /** Per-cell cost inside a whole-row emission. */
 const PER_CELL_IN_ROW = 2
 

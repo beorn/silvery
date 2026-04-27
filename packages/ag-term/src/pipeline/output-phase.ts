@@ -47,6 +47,25 @@ const DEBUG_OUTPUT = !!_env.SILVERY_DEBUG_OUTPUT
 const FULL_RENDER = !!_env.SILVERY_FULL_RENDER
 const DEBUG_CAPTURE = !!_env.SILVERY_DEBUG_CAPTURE
 const CAPTURE_RAW = !!_env.SILVERY_CAPTURE_RAW
+/**
+ * Phase 3 hybrid-output feature flag. When set (`SILVERY_HYBRID_OUTPUT=1`)
+ * and the render path can call into the new emitters (fullscreen mode +
+ * buffer available), `changesToAnsi` dispatches per-row through
+ * `analyzeRowDensity` + `pickEmissionMode` and the three mode-specific
+ * emitters in `output-modes.ts`. Off by default during the soak period —
+ * see `hub/silvery/design/v05-layout/hybrid-output.md` §8 (rollout plan).
+ *
+ * Read at call time (not module-load time) so integration tests can toggle
+ * the flag without forcing module re-import. The cost is one `process.env`
+ * lookup per frame, dominated by the surrounding diff/emit work.
+ *
+ * Inline mode is intentionally excluded in this phase — see design doc R4.
+ */
+function isHybridOutputEnabled(): boolean {
+  return (
+    (typeof process !== "undefined" ? process.env.SILVERY_HYBRID_OUTPUT : undefined) === "1"
+  )
+}
 let _debugFrameCount = 0
 let _captureRawFrameCount = 0
 
@@ -1859,6 +1878,14 @@ function bufferToAnsi(
 // ============================================================================
 
 import { diffBuffers } from "./diff-buffers"
+import { analyzeRowDensity, pickEmissionMode } from "./output-density"
+import {
+  type OutputEmitState,
+  createOutputEmitState,
+  emitRuns,
+  emitScatter,
+  emitWholeRow,
+} from "./output-modes"
 
 /** Result from changesToAnsi: ANSI output string and final cursor position. */
 interface ChangesResult {
@@ -1900,6 +1927,101 @@ function sortPoolByPosition(pool: CellChange[], count: number): void {
   }
 }
 
+// ============================================================================
+// Phase 3 — hybrid output dispatch (SILVERY_HYBRID_OUTPUT=1)
+//
+// Module-scoped emit state, reused across frames so cross-row cursor and
+// style transitions stay zero-allocation. Only one fullscreen renderer reads
+// from this at a time, mirroring the existing module-level `denseRowCell` /
+// `wideCharLookupCell` discipline. Inline mode is intentionally not wired —
+// it has its own per-frame cursor arithmetic.
+// ============================================================================
+
+const hybridEmitState: OutputEmitState = createOutputEmitState({ isInline: false })
+
+/**
+ * Per-row analyze→pick→emit dispatch for fullscreen incremental renders.
+ *
+ * Pre-conditions:
+ * - `pool` is sorted by `(y, x)` (the caller `changesToAnsi` already sorted).
+ * - `buffer` is the current `next` buffer; the emitters use it to read main
+ *   cells for orphan continuations and to fill whole-row spans.
+ * - `ctx.mode === "fullscreen"`.
+ *
+ * Outputs the same terminal-state-equivalent ANSI as the legacy emitter; the
+ * STRICT verifier compares cell grids, not bytes (see design doc §6).
+ */
+function hybridChangesToAnsi(
+  pool: CellChange[],
+  count: number,
+  ctx: OutputContext,
+  buffer: TerminalBuffer,
+): ChangesResult {
+  // Reset emit state. Pool is reused across frames; we never carry cursor
+  // tracking from a previous render because `changesToAnsi` is only entered
+  // from `outputPhase` after the cursor is implicitly known to be at an
+  // arbitrary terminal position. Each render emits its own absolute CUP for
+  // the first cell, just like the legacy path's `cursorY === -1` branch.
+  hybridEmitState.output = ""
+  hybridEmitState.cursorX = -1
+  hybridEmitState.cursorY = -1
+  hybridEmitState.prevY = -1
+  hybridEmitState.lastEmittedX = -1
+  hybridEmitState.lastEmittedY = -1
+  hybridEmitState.currentStyle = null
+  hybridEmitState.currentHyperlink = undefined
+  hybridEmitState.startLine = 0
+  hybridEmitState.isInline = false
+
+  const analysis = analyzeRowDensity(pool, count, buffer.width)
+
+  // Telemetry — design doc §11 open question 5. Mode counts surface via
+  // SILVERY_INSTRUMENT=1 so we can tune the estimator from real workloads.
+  const acc = (globalThis as any).__silvery_bench_output_detail
+  if (acc) {
+    acc.hybridFrames = (acc.hybridFrames ?? 0) + 1
+    acc.hybridRows = (acc.hybridRows ?? 0) + analysis.rowCount
+    acc.modeCounts = acc.modeCounts ?? { wholeRow: 0, runLength: 0, scatter: 0 }
+  }
+
+  for (let r = 0; r < analysis.rowCount; r++) {
+    const summary = analysis.rows[r]!
+    const mode = pickEmissionMode(summary, buffer.width)
+
+    if (acc) {
+      if (mode === "whole-row") acc.modeCounts.wholeRow++
+      else if (mode === "run-length") acc.modeCounts.runLength++
+      else acc.modeCounts.scatter++
+    }
+
+    switch (mode) {
+      case "whole-row":
+        emitWholeRow(summary, buffer, ctx, hybridEmitState)
+        break
+      case "run-length":
+        emitRuns(summary, pool, buffer, ctx, hybridEmitState)
+        break
+      case "scatter":
+        emitScatter(summary, pool, buffer, ctx, hybridEmitState)
+        break
+    }
+  }
+
+  // Final teardown — match the legacy path's end-of-stream behavior:
+  // close any open hyperlink and reset SGR so the terminal returns to a
+  // known-clean state.
+  if (hybridEmitState.currentHyperlink) {
+    hybridEmitState.output += "\x1b]8;;\x1b\\"
+    hybridEmitState.currentHyperlink = undefined
+  }
+  if (hybridEmitState.currentStyle) {
+    hybridEmitState.output += "\x1b[0m"
+    hybridEmitState.currentStyle = null
+  }
+
+  return { output: hybridEmitState.output, finalY: hybridEmitState.cursorY }
+}
+
 /**
  * Convert cell changes to optimized ANSI output.
  *
@@ -1930,6 +2052,22 @@ function changesToAnsi(
 
   // Sort by position for optimal cursor movement (in-place, no allocation)
   sortPoolByPosition(pool, count)
+
+  // ========================================================================
+  // Phase 3 hybrid output dispatch (SILVERY_HYBRID_OUTPUT=1).
+  //
+  // When the feature flag is on AND the render path supplies enough state
+  // (fullscreen mode + buffer present), delegate to the per-row
+  // analyze→pick→emit pipeline in output-density.ts + output-modes.ts.
+  // Falls back to the legacy in-line implementation otherwise.
+  //
+  // Inline mode is excluded: the inline path uses relative cursor arithmetic
+  // (\x1b[nA/nB + \r) and a per-frame `startLine` window that the new
+  // emitters don't yet model. See design doc R4 (rollout plan §8).
+  // ========================================================================
+  if (mode === "fullscreen" && buffer && isHybridOutputEnabled()) {
+    return hybridChangesToAnsi(pool, count, ctx, buffer)
+  }
 
   // ========================================================================
   // Hybrid emission: analyze per-row density and choose strategy per row.

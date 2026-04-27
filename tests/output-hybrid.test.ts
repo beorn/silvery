@@ -214,37 +214,39 @@ describe("pickEmissionMode", () => {
   })
 
   test("estimator picks run-length over scatter for multi-run sparse", () => {
-    // 8 cells in 3 runs on width-200 row.
-    // scatterCost = 8*8 = 64
-    // runCost     = 3*6 + 8*2 = 34
-    // wholeCost   = 6 + 200*2 = 406
+    // 8 cells in 3 runs on width-200 row (canonical design-doc constants).
+    //   scatterCost = 8*12 = 96
+    //   runCost     = 3*10 + 8*2 = 46
+    //   wholeCost   = 8 + 200*2 = 408
     // → run-length
     expect(pickEmissionMode(summary({ dirty: 8, runCount: 3 }), 200)).toBe("run-length")
   })
 
   test("estimator picks scatter when runs are very fragmented", () => {
     // 5 cells in 5 runs (every cell is its own run) on width-200.
-    // scatterCost = 5*8 = 40
-    // runCost     = 5*6 + 5*2 = 40
-    // wholeCost   = 6 + 200*2 = 406
-    // Tie → run-length wins (favors lower preamble overhead in many cells).
-    // To get scatter, we need MORE runs than dirty justifies — but runs <= dirty.
-    // So this test verifies tie-break behavior.
+    //   scatterCost = 5*12 = 60
+    //   runCost     = 5*10 + 5*2 = 60
+    //   wholeCost   = 8 + 200*2 = 408
+    // Tie between scatter and run-length → run-length wins (less per-cell
+    // bookkeeping). To force scatter, runs would have to exceed dirty — not
+    // possible since runCount <= dirty. This test guards the tie-break shape.
     const mode = pickEmissionMode(summary({ dirty: 5, runCount: 5 }), 200)
     expect(["scatter", "run-length"]).toContain(mode)
   })
 
   test("estimator picks whole-row for high-density wide rows", () => {
     // 30 cells in 10 runs on width-80 (dirty * 2 = 60 < 80, not fast-path).
-    // scatterCost = 30*8 = 240
-    // runCost     = 10*6 + 30*2 = 120
-    // wholeCost   = 6 + 80*2 = 166
-    // → run-length (cheapest)
+    //   scatterCost = 30*12 = 360
+    //   runCost     = 10*10 + 30*2 = 160
+    //   wholeCost   = 8 + 80*2 = 168
+    // → run-length (cheapest by 8 bytes)
     expect(pickEmissionMode(summary({ dirty: 30, runCount: 10 }), 80)).toBe("run-length")
 
     // 35 cells in 20 runs on width-80.
-    // scatterCost = 280; runCost = 120+70=190; wholeCost=166
-    // → whole-row
+    //   scatterCost = 35*12 = 420
+    //   runCost     = 20*10 + 35*2 = 270
+    //   wholeCost   = 8 + 80*2 = 168
+    // → whole-row (cheapest)
     expect(pickEmissionMode(summary({ dirty: 35, runCount: 20 }), 80)).toBe("whole-row")
   })
 })
