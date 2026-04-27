@@ -147,6 +147,10 @@ export {
 // Time/tick sources
 export { createTick, createFrameTick, createSecondTick, createAdaptiveTick } from "./tick"
 
+// Scope-aware tick (km-silvery.scope-resource-ownership Phase 1).
+// Demonstrates the opaque-branded-handle + per-scope-accounting pattern.
+export { createScopedTick, type TickHandle } from "./scoped-tick"
+
 // Stream helpers (re-export from streams module)
 export {
   merge,

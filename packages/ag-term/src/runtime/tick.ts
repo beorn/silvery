@@ -15,6 +15,13 @@
  * @param signal Optional AbortSignal to stop the tick source
  * @returns AsyncIterable that yields tick numbers (0, 1, 2, ...)
  *
+ * @deprecated REMOVING in km-silvery.scope-resource-ownership Phase 2.
+ *   Migrate to `createScopedTick(scope, intervalMs)` from `./scoped-tick.ts` —
+ *   the scoped variant returns an opaque branded handle, requires a `Scope`
+ *   token at the type level, and is auto-disposed when the scope closes.
+ *   The optional `signal` parameter here means callers can forget to wire
+ *   cancellation; the scoped form makes lifetime non-optional by construction.
+ *
  * @example
  * ```typescript
  * const controller = new AbortController()

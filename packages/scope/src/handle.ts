@@ -139,12 +139,11 @@ export function defineHandle<K extends string>(kind: K) {
 
 /**
  * Internal — readable shape used by `Scope.adoptHandle()` to register handles
- * without depending on `Handle<B>`'s opaque type. Anything with a kind tag
- * + the dispose symbols qualifies.
+ * without depending on `Handle<B>`'s opaque type. Anything with the
+ * async-dispose symbol qualifies; `Handle<B>` extends `AsyncDisposable` so
+ * it satisfies this shape.
  */
-export interface RegistrableHandle {
-  readonly [Symbol.asyncDispose]: () => Promise<void>
-}
+export type RegistrableHandle = AsyncDisposable
 
 /** Read the kind label off a handle. Returns `"unknown"` if not branded. */
 export function getHandleKind(handle: object): string {
