@@ -81,22 +81,19 @@ export function withReact(element: ReactElement) {
     const newAg = createAg(reconcilerRoot, { measurer: undefined })
     ;(app as any).ag = newAg
 
-    // Minimal runtime context for useExit — trimmed to lifecycle only.
-    const runtimeValue: RuntimeContextValue = {
-      exit() {
-        // Guard against double-unmount: useExit may fire, then app.defer
-        // (Symbol.dispose) also fires from the host. Both arrive here.
-        // The reconciler is idempotent on null updates and the helper's
-        // layoutNode.free is wrapped in try/catch, but skipping the
-        // redundant work is cleaner than relying on that.
-        if (!mounted) return
-        mounted = false
-        // Synchronous unmount + container scrub. The async path leaks
-        // useLayoutEffect cleanups + the captured `app` graph through
-        // FiberRoot.containerInfo.onRender — see unmountFiberRoot doc.
-        unmountFiberRoot(fiberRoot, container)
-      },
+    // Synchronous unmount + container scrub. Idempotent — useExit and the
+    // host's Symbol.dispose both arrive here on a clean exit, and the
+    // reconciler is also idempotent on null updates, but skipping the
+    // redundant work is cleaner than relying on those defenses. See
+    // unmountFiberRoot doc for why the async path leaks.
+    const tearDown = (): void => {
+      if (!mounted) return
+      mounted = false
+      unmountFiberRoot(fiberRoot, container)
     }
+
+    // Minimal runtime context for useExit — trimmed to lifecycle only.
+    const runtimeValue: RuntimeContextValue = { exit: tearDown }
 
     // Wrap element with context providers
     const wrapped = React.createElement(
@@ -117,13 +114,9 @@ export function withReact(element: ReactElement) {
     reconciler.updateContainerSync(wrapped, fiberRoot, null, null)
     reconciler.flushSyncWork()
 
-    // Register cleanup. Guarded against double-unmount when useExit
-    // already fired before the host dispose.
-    app.defer(() => {
-      if (!mounted) return
-      mounted = false
-      unmountFiberRoot(fiberRoot, container)
-    })
+    // Register cleanup — same `tearDown` so a useExit-then-dispose sequence
+    // doesn't double-unmount.
+    app.defer(tearDown)
 
     return { ...app, ag: newAg, element, focusManager } as A & {
       readonly element: ReactElement
