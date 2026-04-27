@@ -67,6 +67,7 @@ import {
   reconciler,
   runWithDiscreteEvent,
   setOnNodeRemoved,
+  unmountFiberRoot,
 } from "./reconciler"
 import { renderStringSync } from "./render-string"
 import { RenderScheduler } from "@silvery/ag-term/scheduler"
@@ -806,8 +807,13 @@ class SilveryInstance {
     // Without this, the process hangs after exit() in inline mode.
     if (typeof stdin.unref === "function") stdin.unref()
 
-    if (this.fiberRoot) {
-      reconciler.updateContainer(null, this.fiberRoot, null, () => {})
+    if (this.fiberRoot && this.container) {
+      // Sync unmount + container scrub. The async path on a ConcurrentRoot
+      // leaks useLayoutEffect cleanups (signal-effect disposers in
+      // useBoxRect/useBoxMetrics survive past unmount) and the FiberRoot
+      // keeps the Container.onRender closure alive — which holds a
+      // reference back to `this`. See unmountFiberRoot doc.
+      unmountFiberRoot(this.fiberRoot, this.container)
     }
 
     // Dispose scheduler

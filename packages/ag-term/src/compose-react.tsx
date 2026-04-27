@@ -28,6 +28,7 @@ import {
   createFiberRoot,
   getContainerRoot,
   reconciler,
+  unmountFiberRoot,
 } from "@silvery/ag-react/reconciler"
 import { TermContext, RuntimeContext, FocusManagerContext } from "@silvery/ag-react/context"
 import type { RuntimeContextValue } from "@silvery/ag-react/context"
@@ -84,7 +85,10 @@ export function withReact(element: ReactElement) {
     const runtimeValue: RuntimeContextValue = {
       exit() {
         mounted = false
-        reconciler.updateContainer(null, fiberRoot, null, () => {})
+        // Synchronous unmount + container scrub. The async path leaks
+        // useLayoutEffect cleanups + the captured `app` graph through
+        // FiberRoot.containerInfo.onRender — see unmountFiberRoot doc.
+        unmountFiberRoot(fiberRoot, container)
       },
     }
 
@@ -110,7 +114,7 @@ export function withReact(element: ReactElement) {
     // Register cleanup
     app.defer(() => {
       mounted = false
-      reconciler.updateContainer(null, fiberRoot, null, () => {})
+      unmountFiberRoot(fiberRoot, container)
     })
 
     return { ...app, ag: newAg, element, focusManager } as A & {

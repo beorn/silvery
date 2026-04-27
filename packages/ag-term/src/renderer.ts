@@ -41,6 +41,7 @@ import {
   createFiberRoot,
   getContainerRoot,
   reconciler,
+  releaseContainer,
   setOnNodeRemoved,
 } from "@silvery/ag-react/reconciler"
 
@@ -94,44 +95,6 @@ function pruneAndCountActiveRenders(): number {
     }
   }
   return count
-}
-
-/**
- * Scrub a Container so it can't keep its RenderInstance alive after unmount.
- *
- * The FiberRoot retains its `containerInfo` (our `Container`) for some time
- * after `updateContainerSync(null, …)` even with `flushSyncWork()`. The
- * Container's `onRender` callback closes over the entire `RenderInstance`,
- * so without breaking that closure the instance + frames + prev buffers stay
- * reachable across mount/unmount cycles in tests.
- *
- * `clearContainer()` already removes children + frees their layout nodes
- * during the React commit; this function additionally null-scrubs the root
- * AgNode and frees its layout node so the per-cycle retention bottoms out.
- */
-function releaseContainer(container: ReturnType<typeof createContainer>): void {
-  // Break FiberRoot → containerInfo → onRender → RenderInstance retention.
-  container.onRender = () => {}
-
-  const root = container.root
-  root.children = []
-  root.parent = null
-  root.boxRect = null
-  root.scrollRect = null
-  root.screenRect = null
-  root.prevLayout = null
-  root.prevScrollRect = null
-  root.prevScreenRect = null
-
-  if (root.layoutNode) {
-    try {
-      root.layoutNode.free()
-    } catch {
-      // best-effort; layout node may already have been released by the
-      // host-config clearContainer / removeChild path during commit.
-    }
-    root.layoutNode = null
-  }
 }
 
 /**

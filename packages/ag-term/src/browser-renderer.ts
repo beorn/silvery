@@ -15,6 +15,7 @@ import {
   createFiberRoot,
   getContainerRoot,
   reconciler,
+  unmountFiberRoot,
 } from "@silvery/ag-react/reconciler"
 import type { RenderAdapter, RenderBuffer } from "./render-adapter"
 import { setRenderAdapter } from "./render-adapter"
@@ -131,7 +132,10 @@ export function createBrowserRenderer<TBuffer extends RenderBuffer>(
   doRender()
 
   const unmount = (): void => {
-    reconciler.updateContainer(null, fiberRoot, null, () => {})
+    // Sync unmount + container scrub so useLayoutEffect cleanups commit
+    // and FiberRoot.containerInfo.onRender doesn't pin the enclosing
+    // closure (currentBuffer + currentElement). See unmountFiberRoot doc.
+    unmountFiberRoot(fiberRoot, container)
     onUnmount?.()
   }
 
@@ -176,7 +180,10 @@ export function renderOnce<TBuffer extends RenderBuffer>(
 
   const { buffer } = executeRenderAdapter(root, width, height, null)
 
-  reconciler.updateContainer(null, fiberRoot, null, () => {})
+  // One-shot path: still use the sync unmount + scrub even though the
+  // function returns immediately. Keeps cleanup deterministic so
+  // useLayoutEffect-style teardown runs before we hand the buffer back.
+  unmountFiberRoot(fiberRoot, container)
 
   return buffer as TBuffer
 }

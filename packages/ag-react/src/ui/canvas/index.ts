@@ -39,6 +39,7 @@ import {
   reconciler,
   runWithDiscreteEvent,
   setOnNodeRemoved,
+  unmountFiberRoot,
 } from "../../reconciler/index"
 import {
   ChainAppContext,
@@ -576,7 +577,9 @@ export function renderCanvasOnce(
   const execute = () => executeRenderAdapter(root, cols, rows, null)
   const { buffer } = onceMeasurer ? runWithMeasurer(onceMeasurer, execute) : execute()
 
-  reconciler.updateContainer(null, fiberRoot, null, () => {})
+  // Sync unmount + container scrub so useLayoutEffect cleanups commit and
+  // the FiberRoot doesn't pin the closed-over container/root.
+  unmountFiberRoot(fiberRoot, container)
 
   return buffer as CanvasRenderBuffer
 }
