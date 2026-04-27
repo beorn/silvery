@@ -38,6 +38,38 @@ try {
 
 **Still banned**: calling `stdin.setRawMode` / `stdin.on("data", …)` / `stdout.write(…)` directly from app or runtime code. If the sub-owners don't cover what you need, grow the sub-owner — don't punch through it.
 
+## Anti-pattern: async reconciler unmount on `ConcurrentRoot`
+
+**Never write this code in silvery.** It looks like the React-reconciler default. It leaks the entire host across every mount/unmount cycle.
+
+```ts
+// ❌ TARNISHED — leaks layout-effect cleanups + Container.onRender retention
+reconciler.updateContainer(null, fiberRoot, null, () => {})
+```
+
+**Why it breaks**: `createFiberRoot` creates a `ConcurrentRoot` (mode 1). React's async `updateContainer(null, …)` does **not** run `useLayoutEffect` cleanups synchronously on a ConcurrentRoot. That keeps `useBoxRect` / `useBoxMetrics` signal-effect disposers pending past unmount; signal subscriptions stay live; the React tree stays reachable; the `FiberRoot` keeps a `containerInfo` pointer to our `Container`; `Container.onRender` closes over the enclosing render-instance graph. Net: every host (test renderer, ag-react render class, withReact plugin, browser/canvas one-shot) leaks across cycles. 200 mount/unmount cycles in `tests/memory/memory.test.tsx` overshot a 15 MB budget by 2.5×.
+
+**The structural fix is `unmountFiberRoot`** from `@silvery/ag-react/reconciler`:
+
+```ts
+import { unmountFiberRoot } from "@silvery/ag-react/reconciler"
+
+// ✅ SILVERY — sync unmount + container scrub in one call
+unmountFiberRoot(fiberRoot, container)
+```
+
+`unmountFiberRoot` does three things, in order:
+
+1. `reconciler.updateContainerSync(null, fiberRoot, null, null)` — mount/rerender already use the sync path; unmount must match for layout-effect cleanups to commit before the call returns.
+2. `reconciler.flushSyncWork()` — drains the work queue. After this returns, every `useLayoutEffect` cleanup has run.
+3. `releaseContainer(container)` — nulls `Container.onRender`, scrubs the root `AgNode` (children, parent, boxRect, scrollRect, screenRect, prevLayout, prevScrollRect, prevScreenRect), and frees the root layout node. Breaks the `FiberRoot → containerInfo → onRender → enclosing-host` retention chain so the host can be GC'd.
+
+The two helpers live next to `createContainer` / `createFiberRoot` in [`packages/ag-react/src/reconciler/index.ts`](packages/ag-react/src/reconciler/index.ts) — see the docstrings for the full rationale.
+
+**Banned writers**: any new render entry point. The grep gate at [`scripts/lint-no-async-unmount.ts`](scripts/lint-no-async-unmount.ts) fails CI on any `reconciler.updateContainer(null, …)` outside tests.
+
+**Verification**: `tests/memory/memory.test.tsx` and `tests/memory/production-paths.test.tsx` cycle each public render entry 200× and assert <15 MB heap growth. `tests/memory/heap-snapshot.test.tsx` writes a V8 heap snapshot after cycles and asserts no `FiberRootNode` retainers reach back to a host instance — the gold-standard proof.
+
 ## Mandatory: New Props Require Tests
 
 **Every new prop in `packages/ag/src/types.ts` (BoxProps, TextProps, etc.) MUST have at least one test in `tests/` that exercises it through the render pipeline at SILVERY_STRICT=2.**
