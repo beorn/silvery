@@ -24,6 +24,10 @@
  */
 
 import { _trackCreate, _trackDispose } from "./trace.js"
+import {
+  adoptHandle as _adoptHandle,
+  type RegistrableHandle,
+} from "./handle.js"
 
 // =============================================================================
 // Scope
@@ -63,6 +67,18 @@ export class Scope extends AsyncDisposableStack {
   /** Create a child scope. Child's signal aborts when this scope's signal does. */
   child(name?: string): Scope {
     return new Scope(this, name)
+  }
+
+  /**
+   * Adopt an opaque {@link Handle} (from `defineHandle()`) into this scope's
+   * ownership registry. The handle is added to the inherited disposer stack
+   * (LIFO disposal) and tracked separately so {@link assertScopeBalance}
+   * can detect leaked handles per-scope without depending on global GC.
+   *
+   * See `./handle.ts` for the brand-+-registry pattern.
+   */
+  adoptHandle(handle: RegistrableHandle): void {
+    _adoptHandle(this, handle)
   }
 
   /**
@@ -249,3 +265,18 @@ export function withScope(name?: string) {
     return { ...app, scope } as A & { readonly scope: Scope }
   }
 }
+
+// =============================================================================
+// Handle re-exports — opaque branded handles + per-scope ownership registry
+// =============================================================================
+
+export {
+  defineHandle,
+  type Handle,
+  type RegistrableHandle,
+  type LeakedHandle,
+  LeakedHandlesError,
+  getAdoptedHandles,
+  getHandleKind,
+  assertScopeBalance,
+} from "./handle.js"
