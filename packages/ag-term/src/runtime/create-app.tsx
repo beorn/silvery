@@ -150,7 +150,14 @@ import { createOutput, type Output } from "./devices/output"
 import { createModes } from "./devices/modes"
 import type { Term } from "../ansi/term"
 import { perfLog, checkBudget, logExitSummary, startTracking } from "./perf"
-import { createLogger } from "loggily"
+import {
+  addWriter,
+  createFileWriter,
+  createLogger,
+  getLogLevel,
+  setLogLevel,
+  type LogLevel,
+} from "loggily"
 import {
   createRenderer,
   createSearchScrollback,
@@ -175,6 +182,7 @@ import {
 } from "./pass-cause"
 
 const log = createLogger("silvery:app")
+const traceLog = createLogger("silvery:trace")
 
 // ============================================================================
 // Feature-detection flags — hoisted to module scope.
@@ -1018,6 +1026,29 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     providerCleanups.push(() => {
       if (_origStdoutWrite) stdout.write = _origStdoutWrite
     })
+
+    // Pipe `silvery:trace`-namespaced loggily records to the trace log file.
+    // Filters by namespace literal in the formatted line so other silvery
+    // namespaces (silvery:app, silvery:render, etc.) don't pollute the file.
+    // Auto-lowers global log level to "debug" when above, so traceLog.debug?.()
+    // banner records actually emit; restored on cleanup.
+    const traceFileWriter = createFileWriter("/tmp/silvery-trace.log")
+    const unsubscribeTraceWriter = addWriter((formatted, _level) => {
+      if (formatted.includes("silvery:trace")) {
+        traceFileWriter.write(formatted)
+      }
+    })
+    const _prevLogLevel: LogLevel = getLogLevel()
+    if (_prevLogLevel !== "trace" && _prevLogLevel !== "debug") {
+      setLogLevel("debug")
+    }
+    providerCleanups.push(() => {
+      unsubscribeTraceWriter()
+      traceFileWriter.close()
+      if (_prevLogLevel !== "trace" && _prevLogLevel !== "debug") {
+        setLogLevel(_prevLogLevel)
+      }
+    })
   }
 
   // Create render target
@@ -1816,16 +1847,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   // Initial render
   if (_ansiTrace) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("node:fs").appendFileSync("/tmp/silvery-trace.log", "=== INITIAL RENDER ===\n")
+    traceLog.debug?.("=== INITIAL RENDER ===")
   }
   currentBuffer = doRender()
 
   // Enter alternate screen if requested, then clear and hide cursor
   if (!headless) {
     if (_ansiTrace) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require("node:fs").appendFileSync("/tmp/silvery-trace.log", "=== ALT SCREEN + CLEAR ===\n")
+      traceLog.debug?.("=== ALT SCREEN + CLEAR ===")
     }
     if (alternateScreen) {
       // Route through modes so the owner tracks state for race-free dispose.
