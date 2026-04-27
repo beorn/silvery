@@ -150,6 +150,7 @@ export function renderPhase(
       ancestorLayoutChanged: false,
       inheritedBg: { color: null, ancestorRect: null },
       inheritedFg: null,
+      selectableMode: true,
     },
     ctx,
   )
@@ -429,14 +430,19 @@ function renderNodeToBuffer(
 
   // Resolve userSelect for SELECTABLE_FLAG stamping.
   // Phase 2 Step 4d: setSelectableMode writes route through sink as
-  // post-state ops. The READ (getSelectableMode) is an intra-frame
-  // buffer read that Phase 2 Step 6 will eliminate.
+  // post-state ops. Phase 2 Step 6 / paint-clear-l5-final Step 1a:
+  // the previous mode is now threaded via `nodeState.selectableMode`
+  // instead of read from buffer state — eliminates an intra-frame
+  // buffer read so the PlanSink can eventually stand alone.
   const nodeSink: RenderSink = createFrameSink(buffer)
-  const prevSelectableMode = buffer.getSelectableMode()
+  const prevSelectableMode = nodeState.selectableMode
   const userSelect = props.userSelect
+  let currentSelectableMode = prevSelectableMode
   if (userSelect === "none") {
+    currentSelectableMode = false
     nodeSink.setSelectableMode(false)
   } else if (userSelect === "text" || userSelect === "contain") {
+    currentSelectableMode = true
     nodeSink.setSelectableMode(true)
   }
 
@@ -746,11 +752,13 @@ function renderNodeToBuffer(
           ? parseColor(nodeTheme.fg)
           : nodeState.inheritedFg
 
-    // Render children — pass inherited bg/fg so children don't walk the parent chain
+    // Render children — pass inherited bg/fg/selectableMode so children
+    // don't walk the parent chain or read buffer state.
     const childState: NodeRenderState = {
       ...nodeState,
       inheritedBg: childInheritedBg,
       inheritedFg: childInheritedFg,
+      selectableMode: currentSelectableMode,
     }
     if (isScrollContainer) {
       renderScrollContainerChildren(
@@ -1481,6 +1489,7 @@ function renderScrollContainerChildren(
     ancestorLayoutChanged,
     inheritedBg,
     inheritedFg,
+    selectableMode,
   } = nodeState
   const instr = resolveInstrumentation(ctx)
   const layout = node.boxRect
@@ -1701,6 +1710,7 @@ function renderScrollContainerChildren(
         ancestorLayoutChanged: childAncestorLayoutChanged,
         inheritedBg,
         inheritedFg,
+        selectableMode,
       },
       ctx,
     )
@@ -1743,6 +1753,7 @@ function renderScrollContainerChildren(
           ancestorLayoutChanged: childAncestorLayoutChanged,
           inheritedBg,
           inheritedFg,
+          selectableMode,
         },
         ctx,
       )
@@ -1772,6 +1783,7 @@ function renderNormalChildren(
     ancestorLayoutChanged,
     inheritedBg,
     inheritedFg,
+    selectableMode,
   } = nodeState
   const instr = resolveInstrumentation(ctx)
   const layout = node.boxRect
@@ -1990,6 +2002,7 @@ function renderNormalChildren(
         ancestorLayoutChanged: childAncestorLayoutChanged,
         inheritedBg,
         inheritedFg,
+        selectableMode,
       },
       ctx,
     )
@@ -2028,6 +2041,7 @@ function renderNormalChildren(
           ancestorLayoutChanged: childAncestorLayoutChanged,
           inheritedBg,
           inheritedFg,
+          selectableMode,
         },
         ctx,
       )
@@ -2065,6 +2079,7 @@ function renderNormalChildren(
           ancestorLayoutChanged: childAncestorLayoutChanged,
           inheritedBg,
           inheritedFg,
+          selectableMode,
         },
         ctx,
       )

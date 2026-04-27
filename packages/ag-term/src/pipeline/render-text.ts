@@ -990,16 +990,16 @@ function renderGraphemes(
     }
 
     // Determine background color for this cell.
-    // Priority: 1) Text's own bg, 2) inherited bg from ancestor Box, 3) buffer read (legacy fallback).
+    // Priority: 1) Text's own bg, 2) inherited bg from ancestor Box, 3) null.
     // Using inherited bg instead of getCellBg decouples text rendering from buffer state,
     // which is critical for incremental rendering: the cloned buffer may have stale bg
     // at positions outside the parent's bg-filled region (e.g., overflow text).
+    // Phase 2 Step 6 / paint-clear-l5-final Step 1b: the legacy `getCellBg`
+    // fallback is removed. All in-walk callers (renderText) thread inheritedBg
+    // explicitly; external callers (scroll indicators in render-box.ts) pass
+    // `style.bg` directly so they never reach the inheritedBg branch.
     const existingBg =
-      style.bg !== null
-        ? style.bg
-        : inheritedBg !== undefined
-          ? inheritedBg
-          : buffer.getCellBg(col, y)
+      style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : null
 
     // Wide character at the boundary: the continuation cell would overflow
     // into an adjacent container. Replace with a space to match terminal
@@ -1039,11 +1039,7 @@ function renderGraphemes(
 
     if (width === 2 && col + 1 < sink.width) {
       const existingBg2 =
-        style.bg !== null
-          ? style.bg
-          : inheritedBg !== undefined
-            ? inheritedBg
-            : buffer.getCellBg(col + 1, y)
+        style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : null
       sink.emitSetCell(col + 1, y, {
         char: "",
         fg: style.fg,
@@ -1103,8 +1099,11 @@ function renderAnsiTextLineReturn(
     const style = mergeAnsiStyle(baseStyle, segment)
 
     // Detect background conflict: chalk.bg* overwrites existing silvery background
-    // Check both: 1) Text's own backgroundColor, 2) Parent Box's bg already in buffer
-    // Skip if segment has bgOverride flag (explicit opt-out via ansi.bgOverride)
+    // Check both: 1) Text's own backgroundColor, 2) inherited bg from ancestor Box.
+    // Skip if segment has bgOverride flag (explicit opt-out via ansi.bgOverride).
+    // Phase 2 Step 6 / paint-clear-l5-final Step 1b: the diagnostic now uses
+    // `inheritedBg` (threaded from the render walk) instead of `buffer.getCellBg`,
+    // matching the rendered-output bg priority chain (style.bg → inheritedBg → null).
     const effectiveBgConflictMode = ctx?.bgConflictMode ?? getBgConflictMode()
     if (
       effectiveBgConflictMode !== "ignore" &&
@@ -1112,8 +1111,8 @@ function renderAnsiTextLineReturn(
       segment.bg !== undefined &&
       segment.bg !== null
     ) {
-      // Check if there's an existing background (from Text prop or parent Box fill)
-      const existingBufBg = col < sink.width ? buffer.getCellBg(col, y) : null
+      // Check if there's an existing background (from Text prop or ancestor Box).
+      const existingBufBg = inheritedBg !== undefined ? inheritedBg : null
       const hasExistingBg = baseStyle.bg !== null || existingBufBg !== null
 
       if (hasExistingBg) {
