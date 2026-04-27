@@ -72,6 +72,42 @@ interface HandleMetadata {
 }
 const metadata = new WeakMap<object, HandleMetadata>()
 
+// =============================================================================
+// Deterministic handle counter — C1 L5 invariant
+// =============================================================================
+
+/**
+ * Global count of handles currently alive (created but not yet disposed).
+ * Incremented in `defineHandle().create()`, decremented once on first
+ * dispose (idempotent). WeakSet alone cannot give a count; this integer
+ * counter is the parallel deterministic accounting layer.
+ *
+ * Used by tests to assert structural lifecycle invariants without GC:
+ *   - After dispose-all: `getActiveHandleCount() === 0`
+ *   - During N creates: `getActiveHandleCount() === N`
+ *
+ * Not per-scope (use `getAdoptedHandles(scope)` for per-scope accounting).
+ */
+let _activeHandleCount = 0
+
+/**
+ * Return the number of handles currently alive (created but not disposed).
+ * Deterministic — no GC required. Zero after all handles in a scope have
+ * been disposed.
+ *
+ * @example
+ * ```ts
+ * const scope = createScope("test")
+ * const tick = createScopedTick(scope, 16)
+ * expect(getActiveHandleCount()).toBeGreaterThanOrEqual(1)
+ * await scope[Symbol.asyncDispose]()
+ * expect(getActiveHandleCount()).toBe(0)
+ * ```
+ */
+export function getActiveHandleCount(): number {
+  return _activeHandleCount
+}
+
 /** True iff `value` was minted by `defineHandle(...).create(...)`. */
 export function isBrandedHandle(value: unknown): value is object {
   return typeof value === "object" && value !== null && branded.has(value)
@@ -166,12 +202,20 @@ export function defineHandle<K extends string>(kind: K) {
       // / `hasOwnProperty` surface to spoof.
       const handle = Object.create(null) as Record<PropertyKey, unknown>
 
+      // Idempotent dispose guard — prevents the counter from double-decrementing
+      // if both the scope wrapper AND a manual [Symbol.asyncDispose]() call fire.
+      let _disposed = false
+
       // Disposal symbols are non-writable / non-configurable / non-enumerable
       // so a consumer cannot overwrite or delete them after `freeze`. The
       // `freeze` at the bottom is belt-and-braces — both layers refuse
       // overwrite.
       Object.defineProperty(handle, Symbol.asyncDispose, {
         value: async () => {
+          if (!_disposed) {
+            _disposed = true
+            _activeHandleCount--
+          }
           await dispose()
         },
         enumerable: false,
@@ -180,6 +224,10 @@ export function defineHandle<K extends string>(kind: K) {
       })
       Object.defineProperty(handle, Symbol.dispose, {
         value: () => {
+          if (!_disposed) {
+            _disposed = true
+            _activeHandleCount--
+          }
           void dispose()
         },
         enumerable: false,
@@ -189,6 +237,7 @@ export function defineHandle<K extends string>(kind: K) {
 
       branded.add(handle)
       metadata.set(handle, { kind })
+      _activeHandleCount++
 
       // NOTE: factory-supplied surface (e.g. TickHandle.iterable) must be
       // attached by the consuming factory BEFORE Object.freeze runs at the

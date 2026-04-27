@@ -310,6 +310,7 @@ export {
   defineHandle,
   finaliseHandle,
   isBrandedHandle,
+  getActiveHandleCount,
   type Handle,
   type RegistrableHandle,
   type LeakedHandle,

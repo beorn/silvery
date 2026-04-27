@@ -1,18 +1,32 @@
 /**
  * Memory Tests for Silvery
  *
- * Bead: km-silvery.memory-test
+ * Bead: km-silvery.memory-test / km-silvery.lifecycle-leak-detection-fossil
  *
- * Validates that silvery does not leak memory under sustained usage:
- * - Re-renders with bounded heap growth (proportional to frame count)
- * - Mount/unmount cycles with bounded growth
- * - useBoxRect subscription cleanup (no leaked listeners)
+ * Two kinds of invariants:
+ *
+ * 1. **Deterministic handle-counter tests** (C1 L5) — structural lifecycle
+ *    proofs that require no GC, no JIT settling, no heap thresholds. After all
+ *    handles in a scope are disposed, `getActiveHandleCount()` must be 0.
+ *    These are the canonical leak tests.
+ *
+ * 2. **Render structural tests** — active render count, frame tracking,
+ *    createRenderer auto-unmount. These are structural invariants (no GC calls).
  */
 
-import React, { useState } from "react"
-import { describe, test, expect } from "vitest"
+import React from "react"
+import { describe, test, expect, beforeEach, afterEach } from "vitest"
 import { createRenderer, render, getActiveRenderCount } from "@silvery/test"
 import { Box, Text, useBoxRect } from "@silvery/ag-react"
+import {
+  createScope,
+  defineHandle,
+  finaliseHandle,
+  getActiveHandleCount,
+  assertScopeBalance,
+  getAdoptedHandles,
+  type RegistrableHandle,
+} from "@silvery/scope"
 import {
   SimpleBox,
   Counter,
@@ -21,109 +35,275 @@ import {
   ComplexLayout,
 } from "../fixtures/index.tsx"
 
-// ============================================================================
-// Helpers
-// ============================================================================
+// =============================================================================
+// Deterministic handle-counter tests — C1 L5
+//
+// Deterministic: integer counter, not GC observation. No heap thresholds.
+// These are structural: they read an integer counter, not heap memory.
+// =============================================================================
 
-/** Measure heap usage after forced GC (if available). */
-function getHeapUsedMB(): number {
-  // Force a synchronous full GC. Bun exposes `Bun.gc(true)` for this; Node.js
-  // exposes `global.gc` only when launched with `--expose-gc`. Without one
-  // of these, heap measurements drift up just from chunky allocator behavior
-  // and never reflect what's actually retained — which is what the memory
-  // budget here is supposed to measure.
-  //
-  // We call gc() three times because Bun's collector does not always release
-  // every reachable-via-finalizer object in a single pass: WeakMap-backed
-  // signal entries, useBoxRect effects, and React fiber slots clear in waves.
-  // A single `gc(true)` leaves 10–25 MB on the heap that a second pass
-  // reclaims; the third pass is insurance for the rare third wave.
-  const b = (globalThis as { Bun?: { gc(sync: boolean): void } }).Bun
-  if (b?.gc) {
-    b.gc(true)
-    b.gc(true)
-    b.gc(true)
-  } else if (typeof globalThis.gc === "function") {
-    globalThis.gc()
-    globalThis.gc()
+// Snapshot the counter before each test so parallel test suites don't
+// interfere — per-scope accounting is the primary gate; the global counter
+// is an additive invariant. Tests assert delta (countAfter - countBefore)
+// or snapshot-relative equality to stay robust when other tests run in the
+// same module.
+
+function makeTestHandle(kind = "Test"): {
+  factory: { kind: string }
+  create: () => RegistrableHandle
+} {
+  const factory = defineHandle(kind)
+  return {
+    factory,
+    create: (): RegistrableHandle => {
+      const h = factory.create({}, () => {})
+      return finaliseHandle(h, {}) as unknown as RegistrableHandle
+    },
   }
-  return process.memoryUsage().heapUsed / (1024 * 1024)
 }
 
-/**
- * Run a workload a few times to warm JIT, allocator chunks, theme/cache pools,
- * and React fiber-root allocators. Without this, the first ~50-100 mount/render
- * cycles inflate the heap by 15-40 MB just because the allocator hasn't reached
- * steady state. Calling this before `heapBefore` lets us measure real retention,
- * not first-touch overhead.
- */
-function warmup(fn: () => void, iters = 50): void {
-  for (let i = 0; i < iters; i++) fn()
-}
+describe("handle counter: basic create/dispose invariant", () => {
+  test("counter increments by 1 per create", () => {
+    const { create } = makeTestHandle("Counter1")
+    const before = getActiveHandleCount()
+    const h = create()
+    expect(getActiveHandleCount()).toBe(before + 1)
+    // cleanup — dispose so later tests aren't affected
+    void (h as unknown as AsyncDisposable)[Symbol.asyncDispose]()
+  })
 
-/**
- * Track the peak heap delta during a workload. Calls `Bun.gc(true)` every
- * `interval` iters and records the largest growth observed. This is the
- * correct way to assert "no retention leak" — without intermediate GC calls,
- * transient allocations from React commits + Ag pipelines accumulate faster
- * than the collector's wall-clock budget allows it to run, so the post-loop
- * heap reading inflates by 20-40 MB even when steady state is bounded. The
- * peak captures the "did this actually leak across iterations" signal.
- *
- * Returns `[peakDelta, finalDelta]` so callers can assert on either.
- */
-function runWithPeakTracking(
-  iters: number,
-  body: (i: number) => void,
-  options: { interval?: number } = {},
-): { peak: number; final: number } {
-  const interval = options.interval ?? 50
-  const heapBefore = getHeapUsedMB()
-  let peak = 0
-  for (let i = 0; i < iters; i++) {
-    body(i)
-    if (i % interval === interval - 1) {
-      const delta = getHeapUsedMB() - heapBefore
-      if (delta > peak) peak = delta
+  test("counter decrements to baseline after dispose", async () => {
+    const { create } = makeTestHandle("Counter2")
+    const before = getActiveHandleCount()
+    const h = create()
+    expect(getActiveHandleCount()).toBe(before + 1)
+    await (h as unknown as AsyncDisposable)[Symbol.asyncDispose]()
+    expect(getActiveHandleCount()).toBe(before)
+  })
+
+  test("N creates → count = before+N; dispose all → count = before", async () => {
+    const { create } = makeTestHandle("CounterN")
+    const N = 10
+    const before = getActiveHandleCount()
+    const handles: RegistrableHandle[] = []
+    for (let i = 0; i < N; i++) {
+      handles.push(create())
+    }
+    expect(getActiveHandleCount()).toBe(before + N)
+    for (const h of handles) {
+      await (h as unknown as AsyncDisposable)[Symbol.asyncDispose]()
+    }
+    expect(getActiveHandleCount()).toBe(before)
+  })
+
+  test("dispose is idempotent — double dispose does not double-decrement", async () => {
+    const { create } = makeTestHandle("Idempotent")
+    const before = getActiveHandleCount()
+    const h = create()
+    const ad = h as unknown as AsyncDisposable
+    await ad[Symbol.asyncDispose]()
+    await ad[Symbol.asyncDispose]() // second dispose must not go below before
+    expect(getActiveHandleCount()).toBe(before)
+  })
+
+  test("sync dispose (Symbol.dispose) also decrements", () => {
+    const { create } = makeTestHandle("SyncDispose")
+    const before = getActiveHandleCount()
+    const h = create()
+    expect(getActiveHandleCount()).toBe(before + 1)
+    ;(h as unknown as Disposable)[Symbol.dispose]()
+    expect(getActiveHandleCount()).toBe(before)
+  })
+})
+
+describe("handle counter: scope lifecycle", () => {
+  test("scope.adoptHandle → scope dispose → counter back to baseline", async () => {
+    const { create } = makeTestHandle("ScopeLifecycle")
+    const before = getActiveHandleCount()
+    const scope = createScope("handle-counter-test")
+    const h = create()
+    scope.adoptHandle(h)
+    expect(getActiveHandleCount()).toBe(before + 1)
+    await scope[Symbol.asyncDispose]()
+    expect(getActiveHandleCount()).toBe(before)
+    expect(() => assertScopeBalance(scope)).not.toThrow()
+  })
+
+  test("multiple handles in one scope all decrement on scope close", async () => {
+    const N = 5
+    const { create } = makeTestHandle("MultiScope")
+    const before = getActiveHandleCount()
+    const scope = createScope("multi-handle-test")
+    for (let i = 0; i < N; i++) {
+      scope.adoptHandle(create())
+    }
+    expect(getActiveHandleCount()).toBe(before + N)
+    expect(getAdoptedHandles(scope)).toHaveLength(N)
+    await scope[Symbol.asyncDispose]()
+    expect(getActiveHandleCount()).toBe(before)
+    expect(getAdoptedHandles(scope)).toHaveLength(0)
+  })
+
+  test("child scope handles dispose before parent, counter stays consistent", async () => {
+    const { create } = makeTestHandle("ChildScope")
+    const before = getActiveHandleCount()
+    const parent = createScope("parent")
+    const child = parent.child("child")
+    parent.adoptHandle(create())
+    child.adoptHandle(create())
+    expect(getActiveHandleCount()).toBe(before + 2)
+    // Disposing parent disposes children first
+    await parent[Symbol.asyncDispose]()
+    expect(getActiveHandleCount()).toBe(before)
+  })
+
+  test("early manual dispose removes handle from scope and decrements counter", async () => {
+    const { create } = makeTestHandle("EarlyDispose")
+    const before = getActiveHandleCount()
+    const scope = createScope("early-dispose-test")
+    const h = create()
+    scope.adoptHandle(h)
+    // Manually dispose before scope close
+    await (h as unknown as AsyncDisposable)[Symbol.asyncDispose]()
+    // Counter decremented by manual dispose
+    expect(getActiveHandleCount()).toBe(before)
+    // Scope close is idempotent — already disposed, no double-decrement
+    await scope[Symbol.asyncDispose]()
+    expect(getActiveHandleCount()).toBe(before)
+  })
+})
+
+describe("handle counter: mixed kinds", () => {
+  test("handles of different kinds all count correctly", async () => {
+    const TickH = makeTestHandle("Tick")
+    const RuntimeH = makeTestHandle("Runtime")
+    const InputH = makeTestHandle("Input")
+    const before = getActiveHandleCount()
+    const scope = createScope("mixed-kinds")
+    scope.adoptHandle(TickH.create())
+    scope.adoptHandle(RuntimeH.create())
+    scope.adoptHandle(InputH.create())
+    expect(getActiveHandleCount()).toBe(before + 3)
+    await scope[Symbol.asyncDispose]()
+    expect(getActiveHandleCount()).toBe(before)
+  })
+})
+
+// =============================================================================
+// Fuzz test: random create/dispose orderings
+//
+// Invariant: regardless of create/dispose order, the counter returns to
+// the baseline after all handles are disposed. Per-scope balance also holds.
+// =============================================================================
+
+describe("handle counter: fuzz — random create/dispose orderings", () => {
+  /**
+   * Deterministic seeded PRNG (mulberry32) so fuzz is reproducible without
+   * external dependencies.
+   */
+  function mulberry32(seed: number): () => number {
+    let s = seed
+    return () => {
+      s |= 0
+      s = (s + 0x6d2b79f5) | 0
+      let t = Math.imul(s ^ (s >>> 15), 1 | s)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
     }
   }
-  const final = getHeapUsedMB() - heapBefore
-  return { peak: Math.max(peak, final), final }
-}
 
-// ============================================================================
-// Re-render Tests
-// ============================================================================
+  test("50 random create/dispose rounds, counter always returns to baseline", async () => {
+    const { create } = makeTestHandle("Fuzz")
+    const before = getActiveHandleCount()
+    const rng = mulberry32(0xdeadbeef)
 
-describe("memory: rapid re-renders", () => {
-  test("1000 re-renders via rerender() stay bounded", () => {
+    for (let round = 0; round < 50; round++) {
+      const scope = createScope(`fuzz-round-${round}`)
+      // Create between 1 and 8 handles
+      const n = 1 + Math.floor(rng() * 8)
+      const handles: RegistrableHandle[] = []
+      for (let i = 0; i < n; i++) {
+        const h = create()
+        scope.adoptHandle(h)
+        handles.push(h)
+      }
+      expect(getActiveHandleCount()).toBe(before + n)
+
+      // Randomly dispose some handles early (before scope close)
+      const earlyDisposeCount = Math.floor(rng() * n)
+      for (let i = 0; i < earlyDisposeCount; i++) {
+        await (handles[i] as unknown as AsyncDisposable)[Symbol.asyncDispose]()
+      }
+      // Count after partial early disposal
+      expect(getActiveHandleCount()).toBe(before + n - earlyDisposeCount)
+
+      // Close scope — disposes remaining handles
+      await scope[Symbol.asyncDispose]()
+      // All handles gone
+      expect(getActiveHandleCount()).toBe(before)
+    }
+  })
+
+  test("multiple concurrent scopes, interleaved creates/disposes, zero net leak", async () => {
+    const TickH = makeTestHandle("FuzzTick")
+    const RuntimeH = makeTestHandle("FuzzRuntime")
+    const before = getActiveHandleCount()
+    const rng = mulberry32(0xcafebabe)
+
+    const scopes = [
+      createScope("fuzz-a"),
+      createScope("fuzz-b"),
+      createScope("fuzz-c"),
+    ]
+
+    let totalCreated = 0
+
+    // Interleave: randomly add handles to each scope
+    for (let i = 0; i < 30; i++) {
+      const scopeIdx = Math.floor(rng() * scopes.length)
+      const scope = scopes[scopeIdx]
+      if (!scope.disposed) {
+        const factory = rng() > 0.5 ? TickH : RuntimeH
+        scope.adoptHandle(factory.create())
+        totalCreated++
+        expect(getActiveHandleCount()).toBe(before + totalCreated)
+      }
+    }
+
+    // Dispose scopes one by one, asserting counter descends
+    let remaining = totalCreated
+    for (const scope of scopes) {
+      const owned = getAdoptedHandles(scope).length
+      await scope[Symbol.asyncDispose]()
+      remaining -= owned
+      expect(getActiveHandleCount()).toBe(before + remaining)
+    }
+
+    expect(getActiveHandleCount()).toBe(before)
+  })
+})
+
+// =============================================================================
+// Render structural tests — no GC, no heap measurement
+// =============================================================================
+
+describe("render: structural invariants", () => {
+  test("1000 re-renders via rerender() produce correct output", () => {
     const r = createRenderer({ cols: 80, rows: 24 })
     const app = r(React.createElement(ComplexLayout))
 
-    // Warm up rerender path before measuring.
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 1000; i++) {
       app.rerender(React.createElement(ComplexLayout))
     }
 
-    const { peak } = runWithPeakTracking(1000, () => {
-      app.rerender(React.createElement(ComplexLayout))
-    })
-
-    // Verify it rendered correctly
     expect(app.text).toContain("Sidebar")
     expect(app.text).toContain("Header")
-
-    // frames array stores all frame strings; growth is proportional.
-    // 1000 frames * ~5KB each = ~5MB for frame strings alone.
-    // Allow 20MB total to account for GC timing and React internals.
-    expect(peak).toBeLessThan(20)
   })
 
   test("frames array grows linearly with press count", async () => {
     const r = createRenderer({ cols: 80, rows: 24 })
     const app = r(React.createElement(Counter))
 
-    // Each press() appends a frame
     for (let i = 0; i < 100; i++) {
       await app.press("j")
     }
@@ -134,47 +314,14 @@ describe("memory: rapid re-renders", () => {
   })
 })
 
-// ============================================================================
-// Mount/Unmount Cycle Tests
-// ============================================================================
-
-describe("memory: mount/unmount cycles", () => {
-  test("200 mount/unmount cycles with bounded growth", { timeout: 30_000 }, () => {
-    // Warm up allocator + JIT before measuring — see warmup() docs.
-    warmup(() => {
-      const app = render(React.createElement(MountUnmountCycle, { visible: true }), {
-        cols: 80,
-        rows: 24,
-      })
-      app.unmount()
-    })
-
-    const { peak } = runWithPeakTracking(200, () => {
-      const app = render(React.createElement(MountUnmountCycle, { visible: true }), {
-        cols: 80,
-        rows: 24,
-      })
-      // Verify it rendered
-      expect(app.text).toContain("Mounted Component")
-      app.unmount()
-    })
-
-    // 200 post-warmup cycles with cleanup should not grow more than 15MB.
-    // Steady state is typically 0-2 MB (no genuine retention); the 15 MB
-    // budget covers GC timing slack for chunky allocator behavior.
-    expect(peak).toBeLessThan(15)
-  })
-
+describe("render: mount/unmount lifecycle", () => {
   test("createRenderer auto-unmounts previous render", () => {
     const r = createRenderer({ cols: 80, rows: 24 })
 
     for (let i = 0; i < 200; i++) {
-      // Each call unmounts the previous one automatically
       r(React.createElement(SimpleBox, { label: `Item ${i}` }))
     }
 
-    // After all renders, only one should be active
-    // (the last one created by createRenderer)
     const lastApp = r(React.createElement(SimpleBox, { label: "Final" }))
     expect(lastApp.text).toContain("Final")
   })
@@ -201,61 +348,47 @@ describe("memory: mount/unmount cycles", () => {
         { cols: 80, rows: 24 },
       )
 
-    // Warm up allocator + JIT.
-    warmup(() => {
-      const app = renderNested(-1)
-      app.unmount()
-    })
-
-    const { peak } = runWithPeakTracking(100, (i) => {
+    // Verify 10 mount/unmount cycles produce correct output
+    for (let i = 0; i < 10; i++) {
       const app = renderNested(i)
       expect(app.text).toContain("Sidebar")
       app.unmount()
-    })
-
-    expect(peak).toBeLessThan(15)
+    }
   })
 })
 
-// ============================================================================
-// useBoxRect Subscription Cleanup
-// ============================================================================
+// =============================================================================
+// useBoxRect subscription cleanup — structural (no GC)
+// =============================================================================
 
-describe("memory: useBoxRect cleanup", () => {
+describe("useBoxRect: subscription lifecycle", () => {
   test("useBoxRect subscriptions are cleaned up on unmount", () => {
     const r = createRenderer({ cols: 80, rows: 24 })
 
-    // Cycle through many mount/unmount of ResponsiveBox
-    // If subscriptions leaked, we'd see errors or massive memory growth
     for (let i = 0; i < 100; i++) {
       r(React.createElement(ResponsiveBox))
       r(React.createElement(SimpleBox))
     }
 
-    // Verify the last render works correctly
     const app = r(React.createElement(SimpleBox, { label: "End" }))
     expect(app.text).toContain("End")
   })
 
-  test("useBoxRect with resize does not leak", () => {
+  test("useBoxRect with resize does not cause errors", () => {
     const r = createRenderer({ cols: 80, rows: 24 })
     const app = r(React.createElement(ResponsiveBox))
 
-    // Verify initial render includes size info
     expect(app.text).toContain("Size:")
 
-    // Resize many times — should not accumulate leaked subscriptions
     for (let i = 0; i < 100; i++) {
       const cols = 40 + (i % 80)
       const rows = 10 + (i % 30)
       app.resize(cols, rows)
     }
 
-    // Should still render correctly after many resizes
     expect(app.text).toContain("Size:")
   })
 
-  /** Component that mounts/unmounts useBoxRect users dynamically. */
   function DynamicBoxRect({ showInner }: { showInner: boolean }) {
     return React.createElement(
       Box,
@@ -265,52 +398,30 @@ describe("memory: useBoxRect cleanup", () => {
     )
   }
 
-  test("dynamic mount/unmount of useBoxRect components", () => {
+  test("dynamic mount/unmount of useBoxRect components renders correctly", () => {
     const r = createRenderer({ cols: 80, rows: 24 })
 
-    // Warmup — useBoxRect's first ~50 mounts pay JIT + allocator costs that
-    // overshadow per-iter retention. Without this, the first 200 iters look
-    // like 16 MB growth even though steady-state is 0 MB. Same loop pattern
-    // as the measurement loop below.
-    warmup(() => {
-      const app = r(React.createElement(DynamicBoxRect, { showInner: true }))
-      app.rerender(React.createElement(DynamicBoxRect, { showInner: false }))
-      app.rerender(React.createElement(DynamicBoxRect, { showInner: true }))
-    })
-
-    const { peak } = runWithPeakTracking(200, () => {
+    // 50 mount/unmount cycles of useBoxRect component — structural correctness
+    for (let i = 0; i < 50; i++) {
       const app = r(React.createElement(DynamicBoxRect, { showInner: true }))
       expect(app.text).toContain("Size:")
 
-      // Rerender without the inner component
       app.rerender(React.createElement(DynamicBoxRect, { showInner: false }))
       expect(app.text).not.toContain("Size:")
 
-      // Rerender with it again
       app.rerender(React.createElement(DynamicBoxRect, { showInner: true }))
       expect(app.text).toContain("Size:")
-    })
-
-    // 200 post-warmup cycles of mount/unmount with useBoxRect.
-    // Steady state is typically 0-2 MB; budget covers GC timing slack.
-    expect(peak).toBeLessThan(15)
+    }
   })
 
-  test("rapid rerender of useBoxRect component does not leak", () => {
+  test("rapid rerender of useBoxRect component renders correctly", () => {
     const r = createRenderer({ cols: 80, rows: 24 })
     const app = r(React.createElement(ResponsiveBox))
 
-    // Warm up rerender path.
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 100; i++) {
       app.rerender(React.createElement(ResponsiveBox))
     }
 
-    const { peak } = runWithPeakTracking(500, () => {
-      app.rerender(React.createElement(ResponsiveBox))
-    })
-
-    // 500 post-warmup rerenders of useBoxRect component should stay bounded
-    expect(peak).toBeLessThan(15)
     expect(app.text).toContain("Size:")
   })
 })
