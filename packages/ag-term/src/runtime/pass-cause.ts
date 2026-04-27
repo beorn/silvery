@@ -94,6 +94,14 @@ interface AggregateState {
 
 /** Active pass-index for the current convergence loop (0-indexed). */
 let currentPassIndex = 0
+/**
+ * Records-count snapshot at the start of the current pass. Used by
+ * notePassCommit to detect "pass N committed but no cause was attributed
+ * during pass N" — that's the unknown bucket. Without this counter the
+ * unknown emission would have to live at every possible commit-causing
+ * call site (impractical), so we infer unknown at the loop level.
+ */
+let recordsAtPassStart = 0
 let aggregate: AggregateState = { records: [], perPass: [] }
 
 /** True when the SILVERY_INSTRUMENT env var is set to "1". */
@@ -109,6 +117,7 @@ export function isInstrumentEnabled(): boolean {
 export function beginConvergenceLoop(): void {
   if (!instrumentEnabled) return
   currentPassIndex = 0
+  recordsAtPassStart = aggregate.records.length
 }
 
 /**
@@ -118,6 +127,7 @@ export function beginConvergenceLoop(): void {
 export function beginPass(passIndex: number): void {
   if (!instrumentEnabled) return
   currentPassIndex = passIndex
+  recordsAtPassStart = aggregate.records.length
 }
 
 /**
@@ -140,6 +150,13 @@ export function recordPassCause(record: PassCauseRecord): void {
  * Mark that pass N committed React work that will require pass N+1. Bumps the
  * per-pass-index counter so the histogram can show "how many passes had
  * extra-pass causes attributed to them?" alongside the cause breakdown.
+ *
+ * If no specific PassCause was emitted between the matching `beginPass(N)`
+ * and this call, an "unknown" record is synthesized. This guarantees that
+ * every committed pass is attributed to *something* — without this, passes
+ * caused by non-layout React state changes (a setState unrelated to layout
+ * signals) would leave the histogram silent and inflate "the categories I
+ * have are sufficient" with false negatives.
  */
 export function notePassCommit(passIndex: number): void {
   if (!instrumentEnabled) return
@@ -147,6 +164,17 @@ export function notePassCommit(passIndex: number): void {
     aggregate.perPass.push(0)
   }
   aggregate.perPass[passIndex] = (aggregate.perPass[passIndex] ?? 0) + 1
+
+  // If no specific cause was emitted during this pass, synthesize an unknown
+  // record. This converts "I have no data for this pass" into observable
+  // signal — C3b can read the unknown count to know whether the enum is
+  // missing categories.
+  if (aggregate.records.length === recordsAtPassStart) {
+    aggregate.records.push({
+      cause: "unknown",
+      detail: `pass-${passIndex}-uncategorized-commit`,
+    })
+  }
 }
 
 /**
