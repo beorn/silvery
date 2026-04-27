@@ -54,6 +54,22 @@ export interface PopoverContent {
   body: React.ReactNode
   /** Max width in columns. Default: 48. */
   maxWidth?: number
+  /**
+   * Drop the round border and revert padding to 0. Default: false (border + paddingX={1}).
+   * Use for popovers whose body provides its own chrome / framing.
+   */
+  borderless?: boolean
+  /**
+   * Anchor flush to the cursor row (no `+1` row gap below). Default: false
+   * (one-row gap below the cursor when placing below; no effect when placing above).
+   */
+  flushTop?: boolean
+  /**
+   * Horizontal offset added to the anchor column. Positive shifts the popover
+   * right of the cursor, leaving the left side of nearby lines visible /
+   * hoverable. Default: 0.
+   */
+  anchorOffsetX?: number
 }
 
 interface PopoverState {
@@ -230,15 +246,21 @@ function PopoverOverlay({
 
   const maxHeight = Math.max(4, placeAbove ? spaceAbove : spaceBelow)
 
-  // Horizontal clamp: prefer anchor.x but enforce both edge margins.
-  let left = anchor.x
+  // Horizontal clamp: prefer anchor.x + offset but enforce both edge margins.
+  let left = anchor.x + (content.anchorOffsetX ?? 0)
   if (left + maxWidth > columns - EDGE_X) left = columns - EDGE_X - maxWidth
   if (left < EDGE_X) left = EDGE_X
 
-  // Positional props — pass `top` OR `bottom`, never both. `top = anchor.y
-  // + 1` for below-anchor, `bottom = rows - anchor.y` for above-anchor
-  // (viewport-bottom distance that puts the popover bottom at anchor.y-1).
-  const placement = placeAbove ? { bottom: rows - anchor.y } : { top: anchor.y + 1 }
+  // Positional props — pass `top` OR `bottom`, never both. Below-anchor
+  // gets `top = anchor.y + 1` for a 1-row gap by default; `flushTop: true`
+  // drops the gap so the popover sits directly on the anchor row. Above-
+  // anchor: `bottom = rows - anchor.y`.
+  const belowTop = (content.flushTop ?? false) ? anchor.y : anchor.y + 1
+  const placement = placeAbove ? { bottom: rows - anchor.y } : { top: belowTop }
+
+  // Borderless mode drops the round border and the inner padding so the
+  // body's own chrome owns the framing. Default keeps today's surface.
+  const borderless = content.borderless ?? false
 
   return (
     <Box
@@ -248,10 +270,10 @@ function PopoverOverlay({
       maxWidth={maxWidth}
       maxHeight={maxHeight}
       flexDirection="column"
-      borderStyle="round"
-      borderColor="$fg-muted"
+      borderStyle={borderless ? undefined : "round"}
+      borderColor={borderless ? undefined : "$fg-muted"}
       backgroundColor="$bg-surface-overlay"
-      paddingX={1}
+      paddingX={borderless ? 0 : 1}
       onMouseEnter={(e: SilveryMouseEvent) => {
         e.stopPropagation()
         onEnter()
