@@ -155,7 +155,15 @@ export async function main() {
       fastMode={args.includes("--fast")}
       inline={mode === "inline"}
     />,
-    { mode: mode as "inline" | "fullscreen", focusReporting: true },
+    {
+      mode: mode as "inline" | "fullscreen",
+      focusReporting: true,
+      // AIChat has a single focusable (the TextInput). Disable focus tab-cycling
+      // so Tab reaches useKeyBindings's fillOrSubmit handler instead of being
+      // consumed by focusManager.focusNext (which would re-focus the same
+      // TextInput as a no-op).
+      handleTabCycling: false,
+    },
   )
   await handle.waitUntilExit()
 }

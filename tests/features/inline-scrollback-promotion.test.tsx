@@ -64,12 +64,16 @@ async function runInlineWithShellPrompt(
   // Capture shell content before app starts
   const preAppScreen = term.screen!.getText()
 
-  // Use the Options path with inline mode (same code path as real app)
+  // Use the Options path with inline mode (same code path as real app).
+  // handleTabCycling: false matches AIChat's run() options — without it,
+  // Tab is consumed by focusManager.focusNext before reaching
+  // useKeyBindings's fillOrSubmit handler, so the script never advances.
   const handle = await run(element, {
     mode: "inline",
     writable: { write: (s: string) => emulator.feed(s) },
     cols: dims.cols,
     rows: dims.rows,
+    handleTabCycling: false,
   })
 
   return { term, handle }
