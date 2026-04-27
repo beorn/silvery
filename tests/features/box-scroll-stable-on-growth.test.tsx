@@ -187,4 +187,51 @@ describe("Box overflow=scroll: viewport stays pinned on visible-child growth", (
     app.rerender(<App scrollTo={0} />)
     expect(stripAnsi((app as any).text)).toContain("Row 0")
   })
+
+  test("same-intent recovery: target completely off-screen re-fires ensure-visible", () => {
+    // Regression for `km-silvery.listview-resize-scroll-target` (and the
+    // listview-scroll-properties.fuzz INV-2 violations). Mirrors the
+    // multi-pass layout convergence pattern that the f7adc32b fix addresses:
+    //
+    //   1. Mount with a pinned scrollTo near the END of a long list.
+    //      Cached offset places the target at the bottom of the viewport.
+    //   2. Resize the container to a SMALLER height with scrollTo unchanged.
+    //      contentHeight grows relative to viewport, the cached offset is
+    //      now clamped far above the target — target is COMPLETELY off-
+    //      screen even though scrollTo didn't change.
+    //
+    // Before the recovery fix, `scrollToChanged===false` blocked ensure-
+    // visible from firing, leaving the target invisible and tripping the
+    // STRICT invariant `scrollTo target index=N does not intersect viewport`.
+    //
+    // The conservative recovery fires only when intersection is zero —
+    // partial visibility (the click-to-expand case) still leaves the
+    // viewport pinned.
+    const render = createRenderer({ cols: 30, rows: 30 })
+
+    const ITEMS = 50
+    function App({ height }: { height: number }) {
+      return (
+        <Box overflow="scroll" height={height} scrollTo={ITEMS - 1} flexDirection="column">
+          {Array.from({ length: ITEMS }, (_, i) => (
+            <Box key={i} height={1} flexShrink={0}>
+              <Text>Row {i}</Text>
+            </Box>
+          ))}
+        </Box>
+      )
+    }
+
+    // Mount with viewport height=20. scrollTo=49 (last item) — fires
+    // ensure-visible on mount (prevScrollTo=undefined → scrollToChanged=true).
+    const app = render(<App height={20} />)
+    expect(stripAnsi((app as any).text)).toContain("Row 49")
+
+    // Shrink viewport to 5. scrollTo unchanged at 49. Without the recovery
+    // branch, the cached offset is preserved — but with viewport=5 the
+    // visible window stops well short of row 49, leaving it off-screen.
+    // The recovery must re-fire ensure-visible so row 49 is visible.
+    app.rerender(<App height={5} />)
+    expect(stripAnsi((app as any).text)).toContain("Row 49")
+  })
 })
