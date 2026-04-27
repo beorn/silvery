@@ -161,6 +161,14 @@ import {
   applySelectionToPaintBuffer as applySelectionToPaintBufferFn,
 } from "./renderer"
 import { createBuffer as wrapBuffer } from "./create-buffer"
+import {
+  beginConvergenceLoop,
+  beginPass,
+  notePassCommit,
+  recordPassCause,
+  printPassHistogram,
+  isInstrumentEnabled,
+} from "./pass-cause"
 
 const log = createLogger("silvery:app")
 
@@ -1313,6 +1321,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Log keypress performance summary before teardown (only emits when TRACE was active)
     logExitSummary()
+
+    // Pass-cause histogram (only emits when SILVERY_INSTRUMENT=1; no-op otherwise).
+    // Aggregated across the lifetime of this app instance.
+    if (isInstrumentEnabled()) {
+      printPassHistogram()
+    }
 
     // Unmount React tree first — this runs effect cleanups (clears intervals,
     // cancels subscriptions) before we tear down the infrastructure.
@@ -2797,11 +2811,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // effects just sets pendingRerender (no microtask render).
     let flushCount = 0
     const maxFlushes = 5
+    beginConvergenceLoop()
     while (flushCount < maxFlushes) {
+      beginPass(flushCount)
       await Promise.resolve() // Drain microtask queue → passive effects flush
       if (!pendingRerender) break
       pendingRerender = false
       isRendering = true
+      notePassCommit(flushCount)
+      if (flushCount === maxFlushes - 1) {
+        recordPassCause({ cause: "unknown", detail: "production-flush-exhaustion" })
+      }
       try {
         currentBuffer = doRender()
       } finally {

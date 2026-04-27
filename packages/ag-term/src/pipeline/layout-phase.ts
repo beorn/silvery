@@ -21,8 +21,26 @@ import {
 } from "@silvery/ag/epoch"
 import { getBorderSize, getPadding } from "./helpers"
 import { syncDecorationRects, syncRectSignals } from "@silvery/ag/layout-signals"
+import { recordPassCause } from "../runtime/pass-cause"
 
 const log = createLogger("silvery:layout")
+
+/**
+ * Stable-ish identity string for an AgNode used by pass-cause records.
+ * Prefers explicit identity props (testid / id / name / nodeId) and falls
+ * back to type. Keeps the histogram readable without paying a Map lookup
+ * per node when SILVERY_INSTRUMENT is unset (call site is gated by the
+ * inert no-op in `recordPassCause`).
+ */
+function nodeIdent(node: AgNode): string {
+  const props = node.props as Record<string, unknown> | undefined
+  const ident =
+    (props?.["testid"] as string | undefined) ??
+    (props?.["id"] as string | undefined) ??
+    (props?.["name"] as string | undefined) ??
+    (props?.["nodeId"] as string | undefined)
+  return ident ? `${node.type}#${ident}` : node.type
+}
 
 /**
  * Run Yoga layout calculation and propagate dimensions to all nodes.
@@ -383,6 +401,22 @@ export function notifyLayoutSubscribers(node: AgNode): void {
   const contentChanged = !rectEqual(node.prevLayout, node.boxRect)
   const screenChanged = !rectEqual(node.prevScrollRect, node.scrollRect)
   const renderChanged = !rectEqual(node.prevScreenRect, node.screenRect)
+
+  // Pass-cause emit: when a rect signal value actually changes, useBoxRect
+  // / useScrollRect subscribers may forceUpdate(), which the convergence
+  // loop sees as `hadReactCommit` and answers with another pass. The signal
+  // name is the feedback-edge identity that C3b will need to bound. No-op
+  // when SILVERY_INSTRUMENT is unset.
+  if (contentChanged) {
+    recordPassCause({ cause: "layout-invalidate", edge: "boxRect", nodeId: nodeIdent(node) })
+  }
+  if (screenChanged) {
+    recordPassCause({ cause: "layout-invalidate", edge: "scrollRect", nodeId: nodeIdent(node) })
+  }
+  if (renderChanged) {
+    recordPassCause({ cause: "layout-invalidate", edge: "screenRect", nodeId: nodeIdent(node) })
+  }
+
   // Sync rect values into alien-signals (for signal-based hooks).
   // Always sync — even when no rect changed — because the signal may
   // have been created after the last sync (lazy initialization).
@@ -705,6 +739,15 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
     // Find the target child
     const target = childPositions.find((c) => c.index === scrollTo)
     if (target) {
+      // scrollTo settle: an offset adjustment may shift child layout, which
+      // in turn may invalidate rect signals for descendants. Attribute to
+      // the originating scrollTo prop so C3b can bound this edge.
+      recordPassCause({
+        cause: "scrollto-settle",
+        edge: targetCompletelyOffscreen ? "scrollTo:recovery" : "scrollTo:newIntent",
+        nodeId: nodeIdent(node),
+        detail: `target=${scrollTo}`,
+      })
       // Calculate current visible range, accounting for indicator reserve.
       // The effective visible height is reduced by indicatorReserve so the
       // scrollTo target is fully visible ABOVE the overflow indicator row.
