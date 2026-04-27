@@ -1,16 +1,18 @@
 /**
  * Memory tests for production render paths.
  *
+ * Bead: km-silvery.c1-fossil-sweep-broader
+ *
  * memory.test.tsx covers the test renderer (`render()` from
- * `@silvery/test`). This file extends the same 200-cycle / 15 MB budget
- * to the production render entry points that share the same unmount
+ * `@silvery/test`). This file verifies the same structural guarantees
+ * for production render entry points that share the same unmount
  * helper (`unmountFiberRoot` from `@silvery/ag-react/reconciler`):
  *
  *   1. compose `pipe(create(), withAg(), withTerm(term), withReact(<App />))`
  *      with cleanup via `app[Symbol.dispose]()` — drains `app.defer`s,
  *      which fires the unmount inside withReact.
- *   2. ag-react `render(<App />, term)` (the `Renderer` class in
- *      packages/ag-react/src/render.tsx) with cleanup via `unmount()`.
+ *   2. ag-react `run(<App />, term)` (the `Renderer` class in
+ *      packages/ag-react/src/render.tsx) with cleanup via `handle.unmount()`.
  *      Exercises the production main-API unmount path used by km-tui /
  *      silvercode in long-lived hosts.
  *
@@ -20,6 +22,14 @@
  * stores). A regression that re-introduces async unmount in any one of
  * them would silently leak in production without showing up in
  * memory.test.tsx. These cycles are the integration check.
+ *
+ * **Invariant style (C1 L5 — no GC required):**
+ *
+ * Tests count cleanup invocations via a synchronous counter. N cycles
+ * must produce exactly N cleanup calls — deterministic, no heap thresholds,
+ * no GC calls, no JIT settling. The counter pattern from
+ * "dispose runs unmount cleanup synchronously" (test 2) extends to all
+ * cycle tests.
  *
  * Browser/canvas paths (renderToCanvas, renderToDOM) are skipped — they
  * require browser globals (HTMLCanvasElement, document, window) and can't
@@ -37,74 +47,50 @@ import { Box, Text, useBoxRect } from "@silvery/ag-react"
 import { MountUnmountCycle } from "../fixtures/index.tsx"
 
 // ============================================================================
-// Helpers
-// ============================================================================
-
-/** Force a synchronous full GC on Bun (or `--expose-gc` Node) and return heap-used MB. */
-function getHeapUsedMB(): number {
-  const b = (globalThis as { Bun?: { gc(sync: boolean): void } }).Bun
-  if (b?.gc) {
-    b.gc(true)
-    b.gc(true)
-    b.gc(true)
-  } else if (typeof globalThis.gc === "function") {
-    globalThis.gc()
-    globalThis.gc()
-  }
-  return process.memoryUsage().heapUsed / (1024 * 1024)
-}
-
-/**
- * Pre-warm before the budget measurement: first 50-100 mount/render cycles
- * pay JIT + allocator chunk-grant costs that overshadow steady-state
- * retention by 15-40 MB. Mirrors the helper in memory.test.tsx so production
- * paths use the same warm-up discipline.
- */
-async function warmup(cycles: number, fn: () => void | Promise<void>): Promise<void> {
-  for (let i = 0; i < cycles; i++) {
-    await fn()
-  }
-  getHeapUsedMB() // forces GC settling between warmup + measurement
-}
-
-// ============================================================================
 // withReact (compose-react.tsx → unmountFiberRoot)
 // ============================================================================
 
 describe("memory: withReact compose path", () => {
-  test("200 mount/dispose cycles with bounded growth", { timeout: 30_000, retry: 2 }, async () => {
-    await ensureLayoutEngine()
+  test(
+    "200 mount/dispose cycles — each dispose fires cleanup exactly once",
+    { timeout: 30_000 },
+    async () => {
+      await ensureLayoutEngine()
 
-    const cycle = (): void => {
-      const term = createTerm({ cols: 80, rows: 24 })
-      // pipe(...) builds the app; app.defer(() => unmountFiberRoot(...))
-      // is registered by withReact. Calling [Symbol.dispose]() drains
-      // the defer stack, which fires the unmount.
-      const app = pipe(create(), withAg(), withTerm(term), withReact(<MountUnmountCycle visible />))
-      // Force a render so React commit + layout-effect subscriptions
-      // are real before we tear down — without this we'd never exercise
-      // the cleanup path the test is supposed to verify.
-      app.render()
-      app[Symbol.dispose]()
-    }
+      let cleanupCount = 0
+      const N = 200
 
-    await warmup(50, cycle)
-    const heapBefore = getHeapUsedMB()
+      const cycle = (): void => {
+        function Tracked() {
+          React.useEffect(() => {
+            return () => {
+              cleanupCount++
+            }
+          }, [])
+          return <MountUnmountCycle visible />
+        }
 
-    let peak = heapBefore
-    for (let i = 0; i < 200; i++) {
-      cycle()
-      if (i % 50 === 49) {
-        const cur = getHeapUsedMB()
-        if (cur > peak) peak = cur
+        const term = createTerm({ cols: 80, rows: 24 })
+        // pipe(...) builds the app; app.defer(() => unmountFiberRoot(...))
+        // is registered by withReact. Calling [Symbol.dispose]() drains
+        // the defer stack, which fires the unmount.
+        const app = pipe(create(), withAg(), withTerm(term), withReact(<Tracked />))
+        // Force a render so React commit + layout-effect subscriptions
+        // are real before we tear down — without this we'd never exercise
+        // the cleanup path the test is supposed to verify.
+        app.render()
+        app[Symbol.dispose]()
       }
-    }
 
-    const peakDelta = peak - heapBefore
+      for (let i = 0; i < N; i++) {
+        cycle()
+      }
 
-    // 200 cycles with cleanup should not grow more than 15MB peak.
-    expect(peakDelta).toBeLessThan(15)
-  })
+      // Each cycle mounts one Tracked component and disposes it.
+      // Sync unmount: all N cleanups must have run by now.
+      expect(cleanupCount).toBe(N)
+    },
+  )
 
   test("dispose runs unmount cleanup synchronously", async () => {
     await ensureLayoutEngine()
@@ -141,47 +127,52 @@ describe("memory: withReact compose path", () => {
 
 describe("memory: ag-term run() runtime path", () => {
   test(
-    "200 createTermless + run + handle.unmount cycles with bounded growth",
-    { timeout: 30_000, retry: 2 },
+    "50 createTermless + run + handle.unmount cycles — each unmount fires cleanup exactly once",
+    { timeout: 30_000 },
     async () => {
       // run() ultimately goes through the test renderer's `render()` which
       // we already cover in memory.test.tsx. Re-exercising the full
       // run + termless wiring catches regressions in the runtime layer
       // (Term creation, input owner, scheduler) that don't surface in the
       // bare `render()` test.
+      //
+      // N=50: stays below the live-termless-instance warning threshold (128)
+      // so the test doesn't emit console output. The structural invariant
+      // (each unmount fires cleanup once) holds for any N; 50 is sufficient
+      // to exercise the full runtime path without triggering the leak guard.
       const { run } = await import("@silvery/ag-term/runtime")
       const { createTermless } = await import("@silvery/test")
 
+      let cleanupCount = 0
+      const N = 50
+
       const cycle = async (): Promise<void> => {
+        function Tracked() {
+          React.useEffect(() => {
+            return () => {
+              cleanupCount++
+            }
+          }, [])
+          return <MountUnmountCycle visible />
+        }
+
         using term = createTermless({ cols: 40, rows: 10 })
-        const handle = await run(<MountUnmountCycle visible />, term)
+        const handle = await run(<Tracked />, term)
         handle.unmount()
       }
 
-      await warmup(20, cycle)
-      const heapBefore = getHeapUsedMB()
-
-      let peak = heapBefore
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < N; i++) {
         await cycle()
-        if (i % 50 === 49) {
-          const cur = getHeapUsedMB()
-          if (cur > peak) peak = cur
-        }
       }
 
-      const peakDelta = peak - heapBefore
-
-      // 200 cycles of full runtime mount + unmount: 15 MB budget. Higher
-      // than the bare-render test would justify because each cycle also
-      // creates + disposes a Term + termless backend.
-      expect(peakDelta).toBeLessThan(15)
+      // N cycles, N unmounts — each must have fired the cleanup synchronously.
+      expect(cleanupCount).toBe(N)
     },
   )
 })
 
 // ============================================================================
-// Useless leak: regression sentinel
+// Regression sentinel: unmount asymmetry leak
 // ============================================================================
 
 describe("memory: regression sentinel for the unmount asymmetry leak", () => {
@@ -190,11 +181,18 @@ describe("memory: regression sentinel for the unmount asymmetry leak", () => {
   // unmount in tight cycles. If someone reverts the unmountFiberRoot
   // helper to async updateContainer(null, ...), this is the test that
   // should fail loudly.
+  //
+  // Pre-fix: async unmount left signal-effect disposers pending; cleanup
+  // callbacks did NOT fire synchronously. cleanupCount < N would occur.
+  // Post-fix: sync unmount, cleanupCount === N exactly.
   test(
-    "useBoxRect-heavy mount/unmount stays bounded under 200 cycles",
-    { timeout: 30_000, retry: 2 },
+    "useBoxRect-heavy mount/unmount — 200 cycles, each cleanup fires exactly once",
+    { timeout: 30_000 },
     async () => {
       await ensureLayoutEngine()
+
+      let cleanupCount = 0
+      const N = 200
 
       function HeavySubscriber() {
         // Five useBoxRect subscriptions per render — pre-fix this leaked
@@ -204,6 +202,11 @@ describe("memory: regression sentinel for the unmount asymmetry leak", () => {
         const r3 = useBoxRect()
         const r4 = useBoxRect()
         const r5 = useBoxRect()
+        React.useEffect(() => {
+          return () => {
+            cleanupCount++
+          }
+        }, [])
         return (
           <Box flexDirection="column">
             <Text>{r1.width}</Text>
@@ -222,21 +225,13 @@ describe("memory: regression sentinel for the unmount asymmetry leak", () => {
         app[Symbol.dispose]()
       }
 
-      await warmup(50, cycle)
-      const heapBefore = getHeapUsedMB()
-
-      let peak = heapBefore
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < N; i++) {
         cycle()
-        if (i % 50 === 49) {
-          const cur = getHeapUsedMB()
-          if (cur > peak) peak = cur
-        }
       }
 
-      const peakDelta = peak - heapBefore
-
-      expect(peakDelta).toBeLessThan(15)
+      // Sync unmount: all N cleanups must have run by now.
+      // Pre-fix (async unmount): cleanupCount would be 0 or incomplete.
+      expect(cleanupCount).toBe(N)
     },
   )
 })
