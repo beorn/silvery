@@ -16,6 +16,7 @@ import {
 import { buildTextAnalysis, shrinkwrapWidth } from "./pretext"
 import { getBorderSize, getPadding } from "./helpers"
 import type { PipelineContext } from "./types"
+import { INSTRUMENT, recordPassCause } from "../runtime/pass-cause"
 
 /**
  * Handle fit-content nodes by measuring their intrinsic content size.
@@ -70,11 +71,32 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
         const shrunkWidth = computeSnugContentWidth(node, intrinsicSize.width, ctx)
         // setMaxWidth caps the snug-content box at the binary-searched width.
         // Flexily's UNIT_SNUG_CONTENT handles the shrink-wrap + available clamping.
+        const prevWidth = node.boxRect?.width
         node.layoutNode.setMaxWidth(shrunkWidth)
+        if (INSTRUMENT && prevWidth !== undefined && prevWidth !== shrunkWidth) {
+          // Width changed since last frame's layout — this measure-phase pass
+          // produced a different intrinsic size. That's a feedback edge: a
+          // subsequent layout pass will use the new constraint.
+          recordPassCause({
+            cause: "intrinsic-shrinkwrap",
+            edge: "snug-content:width",
+            producerPhase: "measure",
+            detail: `${prevWidth}→${shrunkWidth}`,
+          })
+        }
       }
       if (isHeightFitContent) {
         const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth)
+        const prevHeight = node.boxRect?.height
         node.layoutNode.setHeight(intrinsicSize.height)
+        if (INSTRUMENT && prevHeight !== undefined && prevHeight !== intrinsicSize.height) {
+          recordPassCause({
+            cause: "intrinsic-shrinkwrap",
+            edge: "fit-content:height",
+            producerPhase: "measure",
+            detail: `${prevHeight}→${intrinsicSize.height}`,
+          })
+        }
       }
     }
   })

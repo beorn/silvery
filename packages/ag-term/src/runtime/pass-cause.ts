@@ -24,26 +24,87 @@
 /**
  * Categories of feedback edges that can trigger an extra render/layout pass.
  *
- * - text-measurement-feedback: measure-phase produced a constraint that
- *   required a re-layout (e.g. fit-content binary-search shrink-wrap).
- * - viewport-dependent: a computation depends on the post-layout viewport
- *   (e.g. virtualizer window, scroll-container content extent).
- * - scrollto-settle: a `scrollTo` prop change required the layout pass to
- *   adjust scroll offset, which may shift child layout.
- * - resize-resettle: terminal dims changed mid-batch; layout was re-run with
- *   the new constraints.
- * - layout-invalidate: a layout signal (boxRect, scrollRect, screenRect, etc.)
- *   value changed, firing useBoxRect / useScrollRect subscribers that
- *   committed React state.
- * - unknown: pass cause could not be attributed to a more specific category.
+ * Categorised after a dual-pro review (GPT-5.4 + Kimi K2.6, 2026-04-26)
+ * which pointed out the original enum conflated:
+ * 1. external-trigger PassRootCauses (e.g. resize) with internal
+ *    PassFeedbackCauses (e.g. wrap-reflow caused by a resize),
+ * 2. raw rect-signal sync (volume metric) with subscriber-observed
+ *    rect changes (which actually cause React commits).
+ *
+ * Categories are split per the review:
+ *
+ * Subscriber feedback (genuine pass causes):
+ * - layout-invalidate: rect signal value changed AND a subscriber consumed
+ *   it (gated on `hasRectSubscriber(node)` — see notifyLayoutSubscribers).
+ *
+ * Measure-phase feedback (text/intrinsic-size loops):
+ * - wrap-reflow: width/viewport-dependent line breaking changed text size.
+ * - intrinsic-shrinkwrap: fit-content / snug-content / min-content sizing
+ *   changed parent dimensions.
+ * - font-metrics-changed: cell metrics / font fallback / theme density
+ *   altered glyph widths.
+ *
+ * Layout side-effects:
+ * - scrollto-settle: scrollTo prop change forced an offset adjustment.
+ * - sticky-resettle: sticky child offsets caused another pass.
+ * - decoration-remap: anchored decorations changed measure inputs.
+ *
+ * Async / external metadata:
+ * - async-image-size: late-arriving image dimensions invalidated layout.
+ * - theme-metric-changed: theme tokens affecting space/cell-size/border
+ *   thickness changed mid-frame.
+ *
+ * Convergence-loop / external triggers (depth-0; not feedback per se):
+ * - viewport-resize: terminal dims changed; treated as a root trigger.
+ * - resize-resettle: extra pass attributable to resize side-effects
+ *   (rewrap, reclamp, sticky recompute) AFTER the initial viewport-resize.
+ *
+ * Catch-alls:
+ * - viewport-dependent: post-layout viewport-dependent computation (legacy
+ *   bucket, retained for compatibility — most cases now route to
+ *   wrap-reflow or intrinsic-shrinkwrap).
+ * - text-measurement-feedback: legacy bucket retained for back-compat;
+ *   prefer wrap-reflow / intrinsic-shrinkwrap / font-metrics-changed.
+ * - unknown: pass committed React work but no specific cause was emitted.
  */
 export type PassCause =
+  // Subscriber-observed rect changes (gated to actual subscribers)
+  | "layout-invalidate"
+  // Measure-phase feedback (split per dual-pro review)
+  | "wrap-reflow"
+  | "intrinsic-shrinkwrap"
+  | "font-metrics-changed"
+  // Layout side-effects
+  | "scrollto-settle"
+  | "sticky-resettle"
+  | "decoration-remap"
+  | "focus-scroll-into-view"
+  // Async / external
+  | "async-image-size"
+  | "theme-metric-changed"
+  // Root triggers (depth-0; not feedback)
+  | "viewport-resize"
+  | "resize-resettle"
+  // Legacy / coarse
   | "text-measurement-feedback"
   | "viewport-dependent"
-  | "scrollto-settle"
-  | "resize-resettle"
-  | "layout-invalidate"
   | "unknown"
+
+/**
+ * Phase that produced the feedback edge — useful for separating
+ * "what schedule produced this" from "what edge it represents".
+ */
+export type ProducerPhase =
+  | "measure"
+  | "layout"
+  | "scroll"
+  | "sticky"
+  | "scrollrect"
+  | "decoration"
+  | "content"
+  | "output"
+  | "renderer"
+  | "react-effect"
 
 export interface PassCauseRecord {
   cause: PassCause
@@ -51,6 +112,8 @@ export interface PassCauseRecord {
   nodeId?: string | number
   /** Optional edge name (e.g. signal name, prop name). */
   edge?: string
+  /** Pipeline phase that produced the feedback (where the edge fired). */
+  producerPhase?: ProducerPhase
   /** Optional free-form detail (kept short — not for prose). */
   detail?: string
 }

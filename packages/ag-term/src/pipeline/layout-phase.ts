@@ -20,7 +20,11 @@ import {
   DESC_OVERFLOW_BIT,
 } from "@silvery/ag/epoch"
 import { getBorderSize, getPadding } from "./helpers"
-import { syncDecorationRects, syncRectSignals } from "@silvery/ag/layout-signals"
+import {
+  syncDecorationRects,
+  syncRectSignals,
+  hasLayoutSignals,
+} from "@silvery/ag/layout-signals"
 import { recordPassCause, INSTRUMENT } from "../runtime/pass-cause"
 
 const log = createLogger("silvery:layout")
@@ -402,24 +406,52 @@ export function notifyLayoutSubscribers(node: AgNode): void {
   const screenChanged = !rectEqual(node.prevScrollRect, node.scrollRect)
   const renderChanged = !rectEqual(node.prevScreenRect, node.screenRect)
 
-  // Pass-cause emit: when a rect signal value actually changes, useBoxRect
-  // / useScrollRect subscribers may forceUpdate(), which the convergence
-  // loop sees as `hadReactCommit` and answers with another pass.
+  // Pass-cause emit: when a rect signal value actually changes AND a
+  // subscriber is present (signals lazily allocate via getLayoutSignals
+  // when useBoxRect/useScrollRect mount), useSyncExternalStore consumers
+  // can forceUpdate(), which the convergence loop sees as `hadReactCommit`
+  // and answers with another pass.
+  //
+  // The hasLayoutSignals(node) gate is the dual-pro-recommended fix for
+  // the "99.83% layout-invalidate noise" problem: an unsubscribed rect
+  // sync is bookkeeping volume, not a feedback edge. Without this gate
+  // the bucket buries every other category. With this gate the histogram
+  // measures actual subscriber-driven feedback that bounded-convergence
+  // (C3b) needs to bound.
   //
   // Gated on INSTRUMENT (module-level constant) so V8/JSC fold the entire
-  // block out of the hot path when SILVERY_INSTRUMENT is unset. nodeIdent()
-  // and the record-object allocations only run under the gate.
+  // block out of the hot path when SILVERY_INSTRUMENT is unset.
   if (INSTRUMENT) {
     if (contentChanged || screenChanged || renderChanged) {
-      const ident = nodeIdent(node)
-      if (contentChanged) {
-        recordPassCause({ cause: "layout-invalidate", edge: "boxRect", nodeId: ident })
-      }
-      if (screenChanged) {
-        recordPassCause({ cause: "layout-invalidate", edge: "scrollRect", nodeId: ident })
-      }
-      if (renderChanged) {
-        recordPassCause({ cause: "layout-invalidate", edge: "screenRect", nodeId: ident })
+      // hasLayoutSignals returns true iff getLayoutSignals(node) was
+      // called previously — which happens lazily on first subscriber.
+      const observed = hasLayoutSignals(node)
+      if (observed) {
+        const ident = nodeIdent(node)
+        if (contentChanged) {
+          recordPassCause({
+            cause: "layout-invalidate",
+            edge: "boxRect",
+            nodeId: ident,
+            producerPhase: "layout",
+          })
+        }
+        if (screenChanged) {
+          recordPassCause({
+            cause: "layout-invalidate",
+            edge: "scrollRect",
+            nodeId: ident,
+            producerPhase: "layout",
+          })
+        }
+        if (renderChanged) {
+          recordPassCause({
+            cause: "layout-invalidate",
+            edge: "screenRect",
+            nodeId: ident,
+            producerPhase: "layout",
+          })
+        }
       }
     }
   }
@@ -754,6 +786,7 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
           cause: "scrollto-settle",
           edge: targetCompletelyOffscreen ? "scrollTo:recovery" : "scrollTo:newIntent",
           nodeId: nodeIdent(node),
+          producerPhase: "scroll",
           detail: `target=${scrollTo}`,
         })
       }
@@ -1258,6 +1291,17 @@ export function stickyPhase(root: AgNode): void {
         node.dirtyEpoch = epoch
       } else {
         node.dirtyBits |= SUBTREE_BIT
+      }
+      if (INSTRUMENT) {
+        // Sticky child offsets changed since last frame — the parent is now
+        // marked dirty and a follow-on layout pass will reflow children.
+        recordPassCause({
+          cause: "sticky-resettle",
+          edge: "stickyChildren",
+          nodeId: nodeIdent(node),
+          producerPhase: "sticky",
+          detail: `${prev?.length ?? 0}→${next?.length ?? 0}`,
+        })
       }
     }
   })
