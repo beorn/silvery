@@ -25,6 +25,7 @@ import { renderBox, renderScrollIndicators, getEffectiveBg } from "./render-box"
 import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
+import { BufferSink, type RenderSink } from "./render-sink"
 import { pushContextTheme, popContextTheme } from "./state"
 import type { Theme } from "@silvery/ansi"
 // cascade-predicates is the imperative oracle — used for STRICT verification
@@ -985,11 +986,19 @@ function executeRegionClearing(
   threadedInheritedBg: NodeRenderState["inheritedBg"],
   hasPrevBuffer: boolean,
 ): void {
+  // Route cleanup-helper writes through a RenderSink so the seam declares
+  // "clear" intent at emission time. With BufferSink this is behavior-
+  // equivalent to direct buffer mutation; swapping in PlanSink (Phase 2
+  // Step 7) would make these ops land in cleanupOps unconditionally.
+  // (km-silvery.paint-clear-invariant Phase 2 Step 4a.)
+  const sink: RenderSink = new BufferSink(buffer)
+
   if (contentRegionCleared) {
     if (instrumentEnabled) stats.clearOps++
     clearNodeRegion(
       node,
       buffer,
+      sink,
       layout,
       scrollOffset,
       clipBounds,
@@ -1022,6 +1031,7 @@ function executeRegionClearing(
     clearExcessArea(
       node,
       buffer,
+      sink,
       layout,
       scrollOffset,
       clipBounds,
@@ -1039,6 +1049,7 @@ function executeRegionClearing(
     clearDescendantOverflowRegions(
       node,
       buffer,
+      sink,
       layout,
       scrollOffset,
       clipBounds,
@@ -2301,6 +2312,7 @@ function computeChildClipBounds(
 function clearDescendantOverflowRegions(
   node: AgNode,
   buffer: TerminalBuffer,
+  sink: RenderSink,
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
@@ -2315,6 +2327,7 @@ function clearDescendantOverflowRegions(
   _clearDescendantOverflow(
     node.children,
     buffer,
+    sink,
     nodeLeft,
     nodeTop,
     nodeRight,
@@ -2328,6 +2341,7 @@ function clearDescendantOverflowRegions(
 function _clearDescendantOverflow(
   children: readonly AgNode[],
   buffer: TerminalBuffer,
+  sink: RenderSink,
   nodeLeft: number,
   nodeTop: number,
   nodeRight: number,
@@ -2350,10 +2364,13 @@ function _clearDescendantOverflow(
         const overflowTop = Math.max(prevTop, clipBounds?.top ?? 0)
         const overflowBottom = Math.min(prevBottom, clipBounds?.bottom ?? buffer.height)
         if (overflowWidth > 0 && overflowBottom > overflowTop) {
-          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, {
-            char: " ",
-            bg: clearBg,
-          })
+          sink.emitClearRect(
+            overflowX,
+            overflowTop,
+            overflowWidth,
+            overflowBottom - overflowTop,
+            clearBg,
+          )
         }
       }
       // Clear overflow below the ancestor
@@ -2363,10 +2380,13 @@ function _clearDescendantOverflow(
         const overflowX = Math.max(prev.x, clipBounds?.left ?? 0)
         const overflowWidth = Math.min(prevRight, clipBounds?.right ?? buffer.width) - overflowX
         if (overflowWidth > 0 && overflowBottom > overflowTop) {
-          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, {
-            char: " ",
-            bg: clearBg,
-          })
+          sink.emitClearRect(
+            overflowX,
+            overflowTop,
+            overflowWidth,
+            overflowBottom - overflowTop,
+            clearBg,
+          )
         }
       }
       // Clear overflow to the left of the ancestor
@@ -2376,10 +2396,13 @@ function _clearDescendantOverflow(
         const overflowTop = Math.max(prevTop, clipBounds?.top ?? 0)
         const overflowBottom = Math.min(prevBottom, clipBounds?.bottom ?? buffer.height)
         if (overflowWidth > 0 && overflowBottom > overflowTop) {
-          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, {
-            char: " ",
-            bg: clearBg,
-          })
+          sink.emitClearRect(
+            overflowX,
+            overflowTop,
+            overflowWidth,
+            overflowBottom - overflowTop,
+            clearBg,
+          )
         }
       }
       // Clear overflow above the ancestor
@@ -2389,10 +2412,13 @@ function _clearDescendantOverflow(
         const overflowX = Math.max(prev.x, clipBounds?.left ?? 0)
         const overflowWidth = Math.min(prevRight, clipBounds?.right ?? buffer.width) - overflowX
         if (overflowWidth > 0 && overflowBottom > overflowTop) {
-          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, {
-            char: " ",
-            bg: clearBg,
-          })
+          sink.emitClearRect(
+            overflowX,
+            overflowTop,
+            overflowWidth,
+            overflowBottom - overflowTop,
+            clearBg,
+          )
         }
       }
     }
@@ -2401,6 +2427,7 @@ function _clearDescendantOverflow(
       _clearDescendantOverflow(
         child.children,
         buffer,
+        sink,
         nodeLeft,
         nodeTop,
         nodeRight,
@@ -2423,6 +2450,7 @@ function _clearDescendantOverflow(
 function clearNodeRegion(
   node: AgNode,
   buffer: TerminalBuffer,
+  sink: RenderSink,
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
@@ -2480,14 +2508,11 @@ function clearNodeRegion(
       _cellDbg2.log.push(msg)
       cellLog.debug?.(msg)
     }
-    buffer.fill(clearX, clearY, clearWidth, clearHeight, {
-      char: " ",
-      bg: clearBg,
-    })
+    sink.emitClearRect(clearX, clearY, clearWidth, clearHeight, clearBg)
   }
 
   // Delegate excess area clearing to shared helper
-  clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged, inherited)
+  clearExcessArea(node, buffer, sink, layout, scrollOffset, clipBounds, layoutChanged, inherited)
 }
 
 /**
@@ -2510,6 +2535,7 @@ function clearNodeRegion(
 function clearExcessArea(
   node: AgNode,
   buffer: TerminalBuffer,
+  sink: RenderSink,
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
@@ -2603,7 +2629,7 @@ function clearExcessArea(
     }
     if (excessWidth > 0) {
       clippedFill(
-        buffer,
+        sink,
         excessX,
         excessWidth,
         prevScreenY,
@@ -2623,7 +2649,7 @@ function clearExcessArea(
       bottomWidth = Math.max(0, clipRectRight - layout.x)
     }
     clippedFill(
-      buffer,
+      sink,
       layout.x,
       bottomWidth,
       screenY + layout.height,
@@ -2637,7 +2663,7 @@ function clearExcessArea(
 
 /** Fill a rectangular region, clipping to clipBounds and an outer bottom limit. */
 function clippedFill(
-  buffer: TerminalBuffer,
+  sink: RenderSink,
   x: number,
   width: number,
   top: number,
@@ -2664,6 +2690,6 @@ function clippedFill(
   }
   const height = clippedBottom - clippedTop
   if (height > 0 && clippedWidth > 0) {
-    buffer.fill(clippedX, clippedTop, clippedWidth, height, { char: " ", bg })
+    sink.emitClearRect(clippedX, clippedTop, clippedWidth, height, bg)
   }
 }
