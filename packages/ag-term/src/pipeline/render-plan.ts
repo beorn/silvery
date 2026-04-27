@@ -2,19 +2,42 @@
  * Phase 1 of paint-clear-invariant recast (km-silvery.paint-clear-invariant).
  *
  * Render plan + commit substrate. The render phase produces an ordered list
- * of buffer mutations (`RenderOp[]`) and `commitPlan` applies them against a
- * fresh prevBuffer clone in a deterministic priority order: bg fills → clears
- * → cell paints → decoration. Phase 1 is flag-gated under SILVERY_RENDER_PLAN
- * and proves the substrate against the existing imperative renderer through a
- * capture-and-replay parity test. Phase 2 will rewrite renderers to emit ops
- * directly; Phase 3 will delete clearExcessArea's hasPrevBuffer guard
- * (silvery 168b4989) because the call site that needs it can no longer be
- * reached.
+ * of buffer mutations (`RenderOp[]`) and `commitPlan` replays them into a
+ * fresh prevBuffer clone. Phase 1 is opt-in via SILVERY_RENDER_PLAN and is
+ * proven against the existing imperative renderer by a capture-and-replay
+ * parity test. Phase 2 rewrites renderers to emit ops directly; Phase 3
+ * deletes clearExcessArea's hasPrevBuffer guard (silvery 168b4989) once the
+ * call site that needs it is unreachable.
  *
- * Design doc: hub/silvery/design/render-plan-commit.md (in km workspace).
+ * REVIEW STATUS (pro/Kimi K2.6 — see km-silvery.paint-clear-invariant bead +
+ * /tmp/llm-cc081a9a-review-this-phase-1-ig4f.txt). Both reviewers
+ * independently flagged that:
+ *
+ *   1. The structural fix is a plan SHAPE (transfer / cleanup / paint /
+ *      overlay / post-state), NOT a global op-kind priority. The current
+ *      `COMMIT_PRIORITY` map is a transitional helper used by Phase 1 tests
+ *      only — Phase 2 must replace it with a sectioned RenderPlan.
+ *   2. `fill` MUST split into `clearRect` + `paintFill` (destructive vs
+ *      constructive) before Phase 2 ships. Otherwise the priority bucket
+ *      reintroduces the sibling-stomp at commit time.
+ *   3. `scrollRegion` is a transfer of prev pixels and runs FIRST, not last.
+ *      Fixed in COMMIT_PRIORITY below.
+ *   4. `setSelectableMode` is hidden mutable buffer state — encode into
+ *      each cell op or use scoped segments instead of a global pre-bucket.
+ *   5. `outlineSnapshots` is non-cell buffer state that survives across
+ *      frames; it must move to a `RenderPostState` section (or off the
+ *      buffer entirely). Phase 1 captures it implicitly via the recorder's
+ *      backing buffer; Phase 2 must capture it explicitly.
+ *   6. Intra-frame buffer reads (`getCellBg`, dirty rows, outlineSnapshots
+ *      reads) are the real Phase 2 blocker — every read site must be
+ *      audited and converted to derive from node state / op stream before
+ *      the renderer can emit ops without a backing buffer.
+ *
+ * Design doc: hub/silvery/design/render-plan-commit.md (in km workspace,
+ * not bundled with vendor package). Review notes preserved in the bead.
  */
 
-import type { Cell, Color, Style } from "../buffer"
+import type { Cell, CellAttrs, Color, Style } from "../buffer"
 import { TerminalBuffer } from "../buffer"
 
 export type RenderOp =
@@ -53,6 +76,15 @@ export type RenderOp =
       clearCell?: Partial<Cell>
     }
   | { kind: "setSelectableMode"; selectable: boolean }
+  | {
+      kind: "mergeAttrsInRect"
+      x: number
+      y: number
+      width: number
+      height: number
+      attrs: CellAttrs
+      underlineColor?: Color
+    }
   | { kind: "setRowMeta"; row: number; softWrapped?: boolean; lastContentCol?: number }
 
 export interface RenderPlan {
@@ -61,24 +93,57 @@ export interface RenderPlan {
   readonly ops: readonly RenderOp[]
 }
 
+// Phase 2 commit-priority intent. **NOT** the right model on its own — see
+// pro/Kimi review notes in the bead km-silvery.paint-clear-invariant +
+// /tmp/llm-cc081a9a-review-this-phase-1-ig4f.txt. The structural fix is a
+// plan SHAPE (transfer / cleanup / paint / overlay / post-state), not a
+// global op-kind priority. This map exists so `commitPlanByPriority` has
+// deterministic behaviour for tests and so the comment trail makes the
+// intended transitions visible to the next implementer.
+//
+// Critical corrections from review (do NOT skip when wiring Phase 2):
+//   - `fill` must SPLIT into `clearRect` (destructive, runs before bg) and
+//     `paintFill` (constructive, runs with content). Single-kind `fill`
+//     reintroduces the sibling-stomp at commit time.
+//   - `scrollRegion` is a transfer of prev-frame pixels and MUST run before
+//     any paint into the shifted region. It belongs early, not late.
+//   - `fillBg` is opaque background paint (sibling z-layer); it is NOT
+//     "lowest layer paint everywhere" — later siblings can legitimately
+//     cover earlier siblings' overflow text. Within bucket, plan order
+//     decides; do not assume all bg goes first globally.
+//   - `setSelectableMode` is hidden mutable buffer state; Phase 2 must
+//     encode selectability into each cell op or use scoped segments
+//     instead of a global pre-bucket.
+//   - `mergeAttrsInRect` (Box attr overlay: bold/underline/strikethrough)
+//     is NOT yet recorded by RecordingBuffer — silent divergence risk.
+//
+// Phase 2 should replace this map with a `RenderPlan` SHAPE that has named
+// sections (transferOps / cleanupOps / paintOps / overlayOps / postState).
+// The current map is kept for the transitional `commitPlanByPriority`
+// helper used by tests.
 const COMMIT_PRIORITY: Record<RenderOp["kind"], number> = {
-  // Mode toggles must precede all writes inside their region (they
-  // configure the trailing fill/setCell calls). Apply in plan order.
+  // 0: configure buffer for subsequent writes (TODO Phase 2: encode into
+  // each cell op so this isn't hidden state).
   setSelectableMode: 0,
-  // Background-only fills are the lowest visual layer (covers stale clone
-  // pixels) — apply before content writes that overlay them.
-  fillBg: 1,
-  // Region clears and bg fills happen via `fill()` with space chars; they
-  // share the same z as content paints in the imperative path. We keep
-  // them in plan-emission order to preserve fidelity in Phase 1 and let
-  // Phase 2 split clear vs paint with separate kinds.
+  // 1: shift existing prev-frame pixels before any new write to the
+  // shifted region (Tier 1 scroll containers).
+  scrollRegion: 1,
+  // 2: clears (currently bundled into `fill` — Phase 2 splits this into
+  // a dedicated `clearRect` kind). Until then `commitPlanByPriority`
+  // applies `fill` ops in plan order, which is NOT a structural fix.
   fill: 2,
-  setCell: 3,
-  restyleRegion: 4,
-  scrollRegion: 5,
-  // Row metadata is book-keeping that travels with the cells it
-  // describes; apply after writes.
-  setRowMeta: 6,
+  // 3: opaque background paint. WITHIN the bucket, plan order decides —
+  // do not globally pre-paint all bg before all content.
+  fillBg: 3,
+  // 4: content (text, borders, individual cell writes).
+  setCell: 4,
+  // 5: restyle existing cells (depends on cells already being written).
+  restyleRegion: 5,
+  // 6: attribute overlay (Box bold/underline/strikethrough). Merges into
+  // existing cells so it depends on cells being written first.
+  mergeAttrsInRect: 6,
+  // 7: book-keeping that travels with cells.
+  setRowMeta: 7,
 }
 
 /**
@@ -167,6 +232,27 @@ export class RecordingBuffer extends TerminalBuffer {
   override setSelectableMode(selectable: boolean): void {
     super.setSelectableMode(selectable)
     if (this.recording) this.ops.push({ kind: "setSelectableMode", selectable })
+  }
+
+  override mergeAttrsInRect(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    attrs: CellAttrs,
+    underlineColor?: Color,
+  ): void {
+    super.mergeAttrsInRect(x, y, width, height, attrs, underlineColor)
+    if (this.recording)
+      this.ops.push({
+        kind: "mergeAttrsInRect",
+        x,
+        y,
+        width,
+        height,
+        attrs: { ...attrs },
+        underlineColor,
+      })
   }
 
   override setRowMeta(
@@ -340,6 +426,9 @@ function applyOp(buffer: TerminalBuffer, op: RenderOp): void {
     case "setSelectableMode":
       buffer.setSelectableMode(op.selectable)
       return
+    case "mergeAttrsInRect":
+      buffer.mergeAttrsInRect(op.x, op.y, op.width, op.height, op.attrs, op.underlineColor)
+      return
     case "setRowMeta": {
       const meta: { softWrapped?: boolean; lastContentCol?: number } = {}
       if (op.softWrapped !== undefined) meta.softWrapped = op.softWrapped
@@ -360,6 +449,305 @@ export function isRenderPlanEnabled(): boolean {
     typeof process !== "undefined" ? process.env : undefined
   const v = env?.SILVERY_RENDER_PLAN
   return v !== undefined && v !== "" && v !== "0" && v.toLowerCase() !== "false"
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 Step 1: sectioned RenderPlan
+// ---------------------------------------------------------------------------
+//
+// Per pro/Kimi review (2026-04-27), the structural fix is a plan SHAPE that
+// separates stale-prev cleanup from final-frame paint. Wrong-order paint
+// becomes unrepresentable when the commit step routes ops by SECTION, not
+// by op kind:
+//
+//   transfer → cleanup → paint → overlay → postState
+//
+// The bucketed types below encode this at the type level: `ClearOp[]` and
+// `PaintOp[]` are distinct types, so a renderer cannot put a clear into the
+// paint bucket or vice versa — the type system rejects it. This is the L4
+// quality target for km-silvery.paint-clear-invariant.
+//
+// Phase 2 Step 1 (this commit) lands the types + a classifier from flat
+// `RenderOp[]` → `SectionedRenderPlan` + a `commitSectionedPlan` that
+// applies in the structural order. The classifier uses heuristics that hold
+// for the CURRENT renderer (every `buffer.fill` in the pipeline writes
+// space chars and is therefore a clear). Phase 2 Step 2 introduces a
+// `RenderSink` interface so renderers emit explicitly-classified ops
+// instead of going through the heuristic — closes the residual ceremony in
+// the classifier.
+
+/**
+ * A clear (destructive cleanup) op. Lives in `cleanupOps`. Removes stale
+ * pixels from the prev-frame clone before any final-frame paint covers
+ * them. The structural property is "all clears commit before any paints"
+ * — the commit step enforces this by section ordering, regardless of the
+ * order in which the renderer emitted them.
+ */
+export type ClearOp =
+  | { kind: "clearRect"; x: number; y: number; width: number; height: number; bg: Color }
+  | {
+      kind: "clearCells"
+      x: number
+      y: number
+      width: number
+      height: number
+      cell: Partial<Cell>
+    }
+
+/**
+ * A paint (constructive content) op. Lives in `paintOps`. WITHIN this
+ * section, plan-emission order preserves CSS paint order so later
+ * siblings can legitimately cover earlier siblings' overflow text.
+ */
+export type PaintOp =
+  | { kind: "setCell"; x: number; y: number; cell: Partial<Cell> }
+  | { kind: "fillBg"; x: number; y: number; width: number; height: number; bg: Color }
+  | {
+      kind: "paintFill"
+      x: number
+      y: number
+      width: number
+      height: number
+      cell: Partial<Cell>
+    }
+  | {
+      kind: "restyleRegion"
+      x: number
+      y: number
+      width: number
+      height: number
+      style: Style
+    }
+
+/**
+ * A transfer op. Lives in `transferOps`. Shifts existing prev-frame
+ * pixels (e.g. scroll Tier 1 buffer-shift). Runs FIRST so subsequent
+ * paints into the shifted region land on the right cells.
+ */
+export type TransferOp = {
+  kind: "scrollRegion"
+  x: number
+  y: number
+  width: number
+  height: number
+  delta: number
+  clearCell?: Partial<Cell>
+}
+
+/**
+ * An overlay op. Lives in `overlayOps`. Applied AFTER paint — Box attr
+ * overlays (bold/underline/strikethrough) merge into existing cells, so
+ * those cells must already be written.
+ */
+export type OverlayOp = {
+  kind: "mergeAttrsInRect"
+  x: number
+  y: number
+  width: number
+  height: number
+  attrs: CellAttrs
+  underlineColor?: Color
+}
+
+/**
+ * Buffer book-keeping that survives across frames or that must be in
+ * place before any cell write within a row. `setSelectableMode` is a
+ * mode toggle; per pro review it's hidden mutable state that should
+ * eventually be encoded into each cell op (Phase 2 Step 2). For Phase 2
+ * Step 1 we capture it as post-state because in the current renderer
+ * the toggle pattern is `setSelectableMode(true) at root, then false
+ * during traversal of overlays` — predictable and applied last in the
+ * commit by inspection.
+ */
+export type PostStateOp =
+  | { kind: "setRowMeta"; row: number; softWrapped?: boolean; lastContentCol?: number }
+  | { kind: "setSelectableMode"; selectable: boolean }
+
+/**
+ * Sectioned RenderPlan — the L4 target for km-silvery.paint-clear-invariant.
+ *
+ * Each section is a typed list, so the type system rejects mixing kinds.
+ * Commit applies sections in fixed order:
+ *
+ *   1. transferOps      — shift prev pixels (scroll Tier 1)
+ *   2. cleanupOps       — destructive clears (excess, overflow, viewport)
+ *   3. paintOps         — final-frame content (bg fills, text, borders)
+ *   4. overlayOps       — attr overlays (merge into existing cells)
+ *   5. postStateOps     — row metadata, selectable mode
+ *
+ * Wrong-order sibling-stomp becomes unrepresentable: a `ClearOp` cannot
+ * end up in `paintOps`. The plan-shape itself is the invariant.
+ */
+export interface SectionedRenderPlan {
+  readonly width: number
+  readonly height: number
+  readonly transferOps: readonly TransferOp[]
+  readonly cleanupOps: readonly ClearOp[]
+  readonly paintOps: readonly PaintOp[]
+  readonly overlayOps: readonly OverlayOp[]
+  readonly postStateOps: readonly PostStateOp[]
+}
+
+/**
+ * Classify a flat `RenderPlan` (Phase 1 substrate) into a sectioned plan.
+ *
+ * Phase 2 Step 1 transitional helper. The classifier uses heuristics that
+ * hold for the CURRENT silvery renderer:
+ *
+ *   - `fill` with `char === " "` (or undefined, which defaults to space)
+ *     classifies as `clearCells` (cleanup). Verified by audit: every
+ *     `buffer.fill` call site in render-phase.ts and render-box.ts uses
+ *     space chars or omits the char entirely. There are no
+ *     `buffer.fill(...,{ char: 'X' })` paint sites.
+ *   - `fillBg` always classifies as `fillBg` paint (opaque sibling bg).
+ *   - `setCell` always classifies as `setCell` paint.
+ *   - `restyleRegion` always classifies as paint (it's text restyle).
+ *   - `scrollRegion` always classifies as transfer.
+ *   - `mergeAttrsInRect` always classifies as overlay.
+ *   - `setSelectableMode` and `setRowMeta` classify as postState.
+ *
+ * Phase 2 Step 2 introduces an explicit `RenderSink` interface so the
+ * renderer marks intent at emission time, eliminating the classifier
+ * entirely. The current heuristic is sound for shipping the substrate
+ * but the dependency on "fill char is always space" is fragile — adding
+ * a paint-fill site somewhere would silently misclassify it as a clear.
+ * The unit tests pin this property so a future change can't slip past.
+ */
+export function classifyPlan(flat: RenderPlan): SectionedRenderPlan {
+  const transferOps: TransferOp[] = []
+  const cleanupOps: ClearOp[] = []
+  const paintOps: PaintOp[] = []
+  const overlayOps: OverlayOp[] = []
+  const postStateOps: PostStateOp[] = []
+
+  for (const op of flat.ops) {
+    switch (op.kind) {
+      case "scrollRegion":
+        transferOps.push(op)
+        break
+      case "fill": {
+        // Heuristic: space char => clear; otherwise paint. See classifier
+        // doc comment + tests/features/render-plan-parity.test.tsx for
+        // the audit that justifies this.
+        const ch = op.cell.char
+        if (ch === undefined || ch === " ") {
+          cleanupOps.push({
+            kind: "clearCells",
+            x: op.x,
+            y: op.y,
+            width: op.width,
+            height: op.height,
+            cell: op.cell,
+          })
+        } else {
+          paintOps.push({
+            kind: "paintFill",
+            x: op.x,
+            y: op.y,
+            width: op.width,
+            height: op.height,
+            cell: op.cell,
+          })
+        }
+        break
+      }
+      case "fillBg":
+      case "setCell":
+      case "restyleRegion":
+        paintOps.push(op)
+        break
+      case "mergeAttrsInRect":
+        overlayOps.push(op)
+        break
+      case "setRowMeta":
+      case "setSelectableMode":
+        postStateOps.push(op)
+        break
+    }
+  }
+
+  return {
+    width: flat.width,
+    height: flat.height,
+    transferOps,
+    cleanupOps,
+    paintOps,
+    overlayOps,
+    postStateOps,
+  }
+}
+
+/**
+ * Apply a sectioned plan to a target buffer in structural order:
+ * transfer → cleanup → paint → overlay → postState. Within each section,
+ * ops apply in plan-emission order (which preserves CSS paint order for
+ * paintOps: later sibling bg can legitimately cover earlier sibling
+ * overflow text).
+ *
+ * This is the L4 commit path: wrong-order sibling-stomp is unrepresentable
+ * by construction because a `ClearOp` cannot end up in `paintOps` — the
+ * type system rejects it.
+ */
+export function commitSectionedPlan(target: TerminalBuffer, plan: SectionedRenderPlan): void {
+  if (target.width !== plan.width || target.height !== plan.height) {
+    throw new Error(
+      `commitSectionedPlan: buffer dimensions ${target.width}x${target.height} ` +
+        `do not match plan ${plan.width}x${plan.height}`,
+    )
+  }
+  for (const op of plan.transferOps) applyTransfer(target, op)
+  for (const op of plan.cleanupOps) applyClear(target, op)
+  for (const op of plan.paintOps) applyPaint(target, op)
+  for (const op of plan.overlayOps) applyOverlay(target, op)
+  for (const op of plan.postStateOps) applyPostState(target, op)
+}
+
+function applyTransfer(buffer: TerminalBuffer, op: TransferOp): void {
+  buffer.scrollRegion(op.x, op.y, op.width, op.height, op.delta, op.clearCell ?? {})
+}
+
+function applyClear(buffer: TerminalBuffer, op: ClearOp): void {
+  if (op.kind === "clearRect") {
+    buffer.fill(op.x, op.y, op.width, op.height, { char: " ", bg: op.bg })
+  } else {
+    buffer.fill(op.x, op.y, op.width, op.height, op.cell)
+  }
+}
+
+function applyPaint(buffer: TerminalBuffer, op: PaintOp): void {
+  switch (op.kind) {
+    case "setCell":
+      buffer.setCell(op.x, op.y, op.cell)
+      return
+    case "fillBg":
+      buffer.fillBg(op.x, op.y, op.width, op.height, op.bg)
+      return
+    case "paintFill":
+      buffer.fill(op.x, op.y, op.width, op.height, op.cell)
+      return
+    case "restyleRegion":
+      buffer.restyleRegion(op.x, op.y, op.width, op.height, op.style)
+      return
+  }
+}
+
+function applyOverlay(buffer: TerminalBuffer, op: OverlayOp): void {
+  buffer.mergeAttrsInRect(op.x, op.y, op.width, op.height, op.attrs, op.underlineColor)
+}
+
+function applyPostState(buffer: TerminalBuffer, op: PostStateOp): void {
+  switch (op.kind) {
+    case "setSelectableMode":
+      buffer.setSelectableMode(op.selectable)
+      return
+    case "setRowMeta": {
+      const meta: { softWrapped?: boolean; lastContentCol?: number } = {}
+      if (op.softWrapped !== undefined) meta.softWrapped = op.softWrapped
+      if (op.lastContentCol !== undefined) meta.lastContentCol = op.lastContentCol
+      buffer.setRowMeta(op.row, meta)
+      return
+    }
+  }
 }
 
 /**

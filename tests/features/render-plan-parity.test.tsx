@@ -41,7 +41,11 @@ import {
 } from "@silvery/ag-term/pipeline"
 import { renderPhase } from "@silvery/ag-term/pipeline/render-phase"
 import {
+  classifyPlan,
+  type ClearOp,
   commitPlan,
+  commitSectionedPlan,
+  type PaintOp,
   RecordingBuffer,
   type RenderPlan,
   wrapPrevBufferForRecording,
@@ -327,6 +331,146 @@ describe("render-plan-commit parity (Phase 1)", () => {
       ],
     }
     expect(malformedPlan.ops.length).toBe(2)
+  })
+
+  test("Phase 2: classifyPlan + commitSectionedPlan reproduces buffer", () => {
+    // Phase 2 Step 1: prove the sectioned plan substrate. Take a
+    // captured Phase 1 plan, classify it into sections, commit by section
+    // (transfer → cleanup → paint → overlay → postState), and assert the
+    // resulting buffer matches the legacy renderer's output cell-for-cell.
+    //
+    // This is the L4 substrate test: clearOps and paintOps are distinct
+    // types, so the type system itself rejects mixing them. Wrong-order
+    // sibling-stomp becomes unrepresentable.
+    const cols = 5
+    const rows = 5
+    const mountA = mountScene(<Scene frame="a" />, cols, rows)
+    const frame1 = renderPhase(mountA.root, null)
+    reconciler.updateContainerSync(<Scene frame="b" />, mountA.fiberRoot, null, null)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mountA.root, cols, rows)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mountA.root, cols, rows)
+
+    // Legacy path: incremental render on a clone of frame1.
+    const legacyOut = renderPhase(mountA.root, frame1.clone())
+
+    // Sectioned plan path: capture flat plan, classify, commit by section.
+    const mountB = mountScene(<Scene frame="a" />, cols, rows)
+    renderPhase(mountB.root, null)
+    reconciler.updateContainerSync(<Scene frame="b" />, mountB.fiberRoot, null, null)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mountB.root, cols, rows)
+    reconciler.flushSyncWork()
+    runLayoutPhases(mountB.root, cols, rows)
+    const wrappedPrev = wrapPrevBufferForRecording(frame1.clone())
+    const recorded = renderPhase(mountB.root, wrappedPrev) as RecordingBuffer
+    const flat = recorded.toPlan()
+    const sectioned = classifyPlan(flat)
+
+    // Section invariants.
+    expect(sectioned.width).toBe(cols)
+    expect(sectioned.height).toBe(rows)
+    // Cleanup ops should exist (excess area / clearNodeRegion fires for
+    // the shrunken absolute scrollbar).
+    expect(sectioned.cleanupOps.length).toBeGreaterThan(0)
+    // Paint ops should exist (text + bg fills).
+    expect(sectioned.paintOps.length).toBeGreaterThan(0)
+    // Total op count preserved across classification.
+    const totalSectioned =
+      sectioned.transferOps.length +
+      sectioned.cleanupOps.length +
+      sectioned.paintOps.length +
+      sectioned.overlayOps.length +
+      sectioned.postStateOps.length
+    expect(totalSectioned).toBe(flat.ops.length)
+
+    // Commit by section into a fresh prev clone.
+    const replayed = frame1.clone()
+    commitSectionedPlan(replayed, sectioned)
+
+    const mismatch = compareBuffers(replayed, legacyOut)
+    if (mismatch) {
+      throw new Error(
+        `commitSectionedPlan diverges from legacy renderer:\n${formatMismatch(mismatch)}`,
+      )
+    }
+  })
+
+  test("Phase 2: classifier audit — every fill in current renderer uses space char", () => {
+    // The classifier heuristic ('fill with space char' = clear,
+    // otherwise paint) holds only because EVERY buffer.fill call site in
+    // the current renderer uses a space char (or omits char, which
+    // defaults to space). This test pins that audit: if a future change
+    // adds a buffer.fill with a non-space char, this test will catch it
+    // and force a reclassification decision.
+    //
+    // See classifyPlan() for the heuristic + audit reference.
+    const cols = 10
+    const rows = 6
+    // Heterogeneous scene: bg fills, borders, text, attr overlays.
+    const { root } = mountScene(
+      <Box flexDirection="column" backgroundColor="blue" width={cols} height={rows}>
+        <Box borderStyle="single">
+          <Text bold>hello</Text>
+        </Box>
+        <Text>plain</Text>
+      </Box>,
+      cols,
+      rows,
+    )
+
+    const seed = new TerminalBuffer(cols, rows)
+    const wrapped = wrapPrevBufferForRecording(seed)
+    const recorded = renderPhase(root, wrapped) as RecordingBuffer
+    const flat = recorded.toPlan()
+
+    // Audit: every `fill` op in the captured plan must have char === " "
+    // or char === undefined. If any has a non-space char, the classifier
+    // would misclassify it as a paint when the renderer intended it as a
+    // bg paint (or vice versa) — Phase 2 Step 2 is needed before the
+    // sectioned plan can be the default.
+    for (const op of flat.ops) {
+      if (op.kind === "fill") {
+        const ch = op.cell.char
+        expect(ch === undefined || ch === " ", `unexpected non-space fill char: ${ch}`).toBe(true)
+      }
+    }
+  })
+
+  test("Phase 2: type-level safety — sectioned types reject ClearOp in paintOps", () => {
+    // The L4 structural property: a ClearOp cannot live in paintOps and
+    // a PaintOp cannot live in cleanupOps. The type system enforces this.
+    // This test demonstrates the prevention: the // @ts-expect-error
+    // fires at compile time, proving the structural invariant.
+    const validPlan = {
+      width: 1,
+      height: 1,
+      transferOps: [] as const,
+      cleanupOps: [
+        { kind: "clearRect" as const, x: 0, y: 0, width: 1, height: 1, bg: null },
+      ],
+      paintOps: [{ kind: "setCell" as const, x: 0, y: 0, cell: { char: "X" } }],
+      overlayOps: [] as const,
+      postStateOps: [] as const,
+    }
+    expect(validPlan.cleanupOps.length).toBe(1)
+    expect(validPlan.paintOps.length).toBe(1)
+
+    // @ts-expect-error — clearRect is a ClearOp, not assignable to PaintOp.
+    const _badPaint: PaintOp = {
+      kind: "clearRect",
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      bg: null,
+    }
+    void _badPaint
+
+    // @ts-expect-error — setCell is a PaintOp, not assignable to ClearOp.
+    const _badClear: ClearOp = { kind: "setCell", x: 0, y: 0, cell: {} }
+    void _badClear
   })
 
   test("plan ops are non-empty and commit accepts the plan", () => {
