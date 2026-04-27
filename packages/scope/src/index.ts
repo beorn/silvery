@@ -23,9 +23,10 @@
  * @packageDocumentation
  */
 
-import { _trackCreate, _trackDispose } from "./trace.js"
+import { _trackCreate, _trackDispose, reportScopeDelta } from "./trace.js"
 import {
   adoptHandle as _adoptHandle,
+  getAdoptedHandles as _getAdoptedHandles,
   isBrandedHandle as _isBrandedHandle,
   type RegistrableHandle,
 } from "./handle.js"
@@ -105,10 +106,19 @@ export class Scope extends AsyncDisposableStack {
   /**
    * Dispose children first, then the inherited user disposer stack.
    * Collects errors across the tree and surfaces them as `SuppressedError`.
+   *
+   * When `SILVERY_SCOPE_TRACE=1`, prints a per-scope handle-delta to
+   * stderr if any adopted handles remained undisposed after the inherited
+   * stack ran (km-silvery.lifecycle-leak-detection Phase 2).
    */
   override async [Symbol.asyncDispose](): Promise<void> {
     if (this.disposed) return
     const errors: unknown[] = []
+
+    // Snapshot pre-close handle count for the trace diagnostic. WeakMap
+    // lookup is O(1) and only allocates a list on demand, so this is
+    // ~free even when tracing is off.
+    const preCount = _getAdoptedHandles(this).length
 
     // 1. Dispose children first, most-recent first
     const children = [...this.#children].reverse()
@@ -127,6 +137,11 @@ export class Scope extends AsyncDisposableStack {
     } catch (e) {
       errors.push(e)
     }
+
+    // Handle-delta diagnostic — prints when SILVERY_SCOPE_TRACE=1 AND
+    // adopted handles remain undisposed. No output on balanced close.
+    const postCount = _getAdoptedHandles(this).length
+    reportScopeDelta(this.name, preCount, postCount)
 
     // 3. Remove self from parent so early disposal releases the reference
     if (this.#parent) this.#parent.#children.delete(this)
@@ -303,3 +318,15 @@ export {
   getHandleKind,
   assertScopeBalance,
 } from "./handle.js"
+
+// =============================================================================
+// Trace re-exports — diagnostic helpers for SILVERY_SCOPE_TRACE
+// =============================================================================
+
+export {
+  isTraceEnabled,
+  getTraceSnapshot,
+  reportTraceLeaks,
+  reportScopeDelta,
+  type TraceEntry,
+} from "./trace.js"

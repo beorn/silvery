@@ -106,6 +106,26 @@ export function reportTraceLeaks(): number {
   return count
 }
 
+/**
+ * Print a per-scope handle-delta diagnostic at scope close. Called from
+ * `Scope[Symbol.asyncDispose]()` AFTER the inherited stack drains. Per
+ * km-silvery.lifecycle-leak-detection Phase 2: previously the trace only
+ * fired at process exit, which left in-test scope-close leaks invisible
+ * until the worker terminated.
+ *
+ * `pre` and `post` are snapshot counts of `getAdoptedHandles(scope).length`
+ * before and after scope-close. The delta is reported to stderr when
+ * tracing is enabled and the scope did NOT balance.
+ */
+export function reportScopeDelta(scopeName: string | undefined, pre: number, post: number): void {
+  if (!traceEnabled) return
+  if (post === 0) return // balanced — no signal
+  const label = scopeName ? `Scope(${scopeName})` : "Scope"
+  console.error(
+    `[silvery:scope:trace] ${label} close-delta: ${pre} adopted → ${post} undisposed (${pre - post} disposed cleanly)`,
+  )
+}
+
 // At-exit hook — fire-and-log. Only when tracing is enabled.
 // Note: `process.on("exit", …)` is the one signal handler that escapes
 // `term.signals` — at exit time the term-owner is already disposed, so
