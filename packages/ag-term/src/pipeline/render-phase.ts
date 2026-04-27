@@ -678,6 +678,7 @@ function renderNodeToBuffer(
       instr.enabled,
       instr.stats,
       nodeState.inheritedBg,
+      hasPrevBuffer,
     )
 
     // Determine if this node's own content (border, bg, text) needs repainting.
@@ -982,6 +983,7 @@ function executeRegionClearing(
   instrumentEnabled: boolean,
   stats: RenderPhaseStats,
   threadedInheritedBg: NodeRenderState["inheritedBg"],
+  hasPrevBuffer: boolean,
 ): void {
   if (contentRegionCleared) {
     if (instrumentEnabled) stats.clearOps++
@@ -994,19 +996,29 @@ function executeRegionClearing(
       layoutChanged,
       threadedInheritedBg,
     )
-  } else if (bufferIsCloned && layoutChanged && node.prevLayout) {
+  } else if (bufferIsCloned && layoutChanged && node.prevLayout && hasPrevBuffer) {
     // Even when contentRegionCleared is false, a shrinking node needs its excess
-    // area cleared. Key scenario: absolute-positioned overlays (e.g., search dialog)
-    // that shrink while normal-flow siblings are dirty -- forceRepaint sets
-    // hasPrevBuffer=false + ancestorCleared=false, making contentRegionCleared=false,
-    // but the cloned buffer still has stale pixels from the old larger layout.
-    // Also applies to nodes WITH backgroundColor: renderBox fills only the NEW
-    // (smaller) region, leaving stale pixels in the excess area.
+    // area cleared. Key scenario: nodes WITH backgroundColor that shrink —
+    // renderBox fills only the NEW (smaller) region, leaving stale pixels in
+    // the excess area beyond the new bounds.
     //
     // Gated on bufferIsCloned: on a fresh buffer (e.g., multi-pass resize where
     // dimensions changed between passes), there are no stale pixels to clear.
     // Without this guard, clearExcessArea writes inherited bg into cells that
     // doFreshRender leaves as default, causing STRICT mismatches.
+    //
+    // Gated on hasPrevBuffer: when hasPrevBuffer=false, the node is rendering
+    // fresh — typically a second-pass absolute/sticky child or a first-pass
+    // child with childrenNeedFreshRender cascade. In both cases, the
+    // PARENT has already handled cleanup of stale pixels:
+    //   - First-pass cascade: parent's clearNodeRegion covered the parent's
+    //     full rect (including the child's prev rect inside it).
+    //   - Second-pass absolute: absoluteChildMutated triggered parent's full
+    //     repaint AND normal-flow siblings re-rendered into the prev-overlay
+    //     area. Excess clearing here would corrupt those fresh sibling pixels
+    //     with this node's inherited bg (e.g., scrollbar shrink overwriting
+    //     newly-painted user-row bg at column 118 — see
+    //     km-silvery.ai-chat-incremental-mismatch).
     clearExcessArea(
       node,
       buffer,

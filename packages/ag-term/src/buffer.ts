@@ -877,6 +877,22 @@ export class TerminalBuffer {
 
     if (startX >= endX || startY >= endY) return
 
+    // Write trap for SILVERY_STRICT mismatch diagnosis (fill path)
+    const trap = (globalThis as any).__silvery_write_trap
+    if (
+      trap &&
+      trap.x >= startX &&
+      trap.x < endX &&
+      trap.y >= startY &&
+      trap.y < endY
+    ) {
+      const stack = new Error().stack?.split("\n").slice(1, 6).join("\n") ?? ""
+      const ch = cell.char ?? " "
+      trap.log.push(
+        `  FILL char="${ch}" fg=${cell.fg ?? "null"} bg=${cell.bg ?? "null"} rect=(${x},${y},${width},${height})\n${stack}`,
+      )
+    }
+
     // Resolve cell properties once (instead of per-cell in setCell)
     const char = cell.char ?? " "
     const fg = cell.fg ?? null

@@ -207,7 +207,22 @@ export function createRenderer(opts: RendererOptions): Renderer {
     // The Ag manages prevBuffer internally for incremental rendering.
     // Output phase is NOT run here — the runtime handles it separately.
     _ag.layout(dims)
+    // STRICT diagnostic: when SILVERY_STRICT_TRAP=x,y is set, record all writes
+    // to the target cell during incremental render too.
+    const strictTrapEnv = process.env.SILVERY_STRICT_TRAP
+    let strictTrap: { x: number; y: number; log: string[] } | undefined
+    if (opts.strictMode && strictTrapEnv) {
+      const [tx, ty] = strictTrapEnv.split(",").map((n) => parseInt(n, 10))
+      if (!isNaN(tx as number) && !isNaN(ty as number)) {
+        strictTrap = { x: tx as number, y: ty as number, log: [] }
+        ;(globalThis as any).__silvery_write_trap = strictTrap
+      }
+    }
     const agResult = _ag.render()
+    if (strictTrap) {
+      ;(globalThis as any).__silvery_write_trap = null
+      ;(globalThis as any).__silvery_strict_incremental_trap = strictTrap
+    }
     const { buffer: termBuffer, prevBuffer: agPrevBuffer } = agResult
     const overlay = agResult.overlay
     _lastTermBuffer = termBuffer
@@ -311,9 +326,18 @@ export function createRenderer(opts: RendererOptions): Renderer {
               }
             ).__silvery_write_trap = null
             if (trap.log.length > 0) {
-              trapInfo = `\nWRITE TRAP (${trap.log.length} writes to (${x},${y})):\n${trap.log.join("\n")}\n`
+              trapInfo = `\nFRESH WRITE TRAP (${trap.log.length} writes to (${x},${y})):\n${trap.log.join("\n")}\n`
             } else {
-              trapInfo = `\nWRITE TRAP: NO WRITES to (${x},${y})\n`
+              trapInfo = `\nFRESH WRITE TRAP: NO WRITES to (${x},${y})\n`
+            }
+            // Also include INCREMENTAL trap captured during the failing render
+            const incrementalTrap = (globalThis as { __silvery_strict_incremental_trap?: { x: number; y: number; log: string[] } }).__silvery_strict_incremental_trap
+            if (incrementalTrap && incrementalTrap.x === x && incrementalTrap.y === y) {
+              if (incrementalTrap.log.length > 0) {
+                trapInfo = `\nINCREMENTAL WRITE TRAP (${incrementalTrap.log.length} writes to (${x},${y})):\n${incrementalTrap.log.join("\n")}\n` + trapInfo
+              } else {
+                trapInfo = `\nINCREMENTAL WRITE TRAP: NO WRITES to (${x},${y})\n` + trapInfo
+              }
             }
             const incText = bufferToText(termBuffer)
             const freshText = bufferToText(freshBuffer)
