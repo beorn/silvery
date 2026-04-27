@@ -161,6 +161,16 @@ import {
   applySelectionToPaintBuffer as applySelectionToPaintBufferFn,
 } from "./renderer"
 import { createBuffer as wrapBuffer } from "./create-buffer"
+import {
+  beginConvergenceLoop,
+  beginPass,
+  notePassCommit,
+  recordPassCause,
+  printPassHistogram,
+  appendHistogramJson,
+  resetPassHistogram,
+  INSTRUMENT,
+} from "./pass-cause"
 
 const log = createLogger("silvery:app")
 
@@ -1313,6 +1323,23 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Log keypress performance summary before teardown (only emits when TRACE was active)
     logExitSummary()
+
+    // Pass-cause histogram (only emits when SILVERY_INSTRUMENT=1; no-op
+    // otherwise). Aggregates across the lifetime of this app instance.
+    //
+    // - SILVERY_INSTRUMENT_FILE set: append a JSON record per app teardown.
+    //   Suitable for vitest worker threads where `process.on("exit")` may
+    //   not fire (each test still produces a teardown via app cleanup).
+    // - SILVERY_INSTRUMENT_PRINT=1: also emit the formatted text summary
+    //   (to stderr by default; to file if SILVERY_INSTRUMENT_FILE is set).
+    //
+    // Reset after emission so the next app's histogram doesn't double-count.
+    if (INSTRUMENT) {
+      const file = process.env.SILVERY_INSTRUMENT_FILE
+      if (file) appendHistogramJson(file)
+      if (process.env.SILVERY_INSTRUMENT_PRINT === "1") printPassHistogram()
+      resetPassHistogram()
+    }
 
     // Unmount React tree first — this runs effect cleanups (clears intervals,
     // cancels subscriptions) before we tear down the infrastructure.
@@ -2797,11 +2824,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // effects just sets pendingRerender (no microtask render).
     let flushCount = 0
     const maxFlushes = 5
+    if (INSTRUMENT) beginConvergenceLoop()
     while (flushCount < maxFlushes) {
+      if (INSTRUMENT) beginPass(flushCount)
       await Promise.resolve() // Drain microtask queue → passive effects flush
       if (!pendingRerender) break
       pendingRerender = false
       isRendering = true
+      if (INSTRUMENT) {
+        notePassCommit(flushCount)
+        if (flushCount === maxFlushes - 1) {
+          recordPassCause({ cause: "unknown", detail: "production-flush-exhaustion" })
+        }
+      }
       try {
         currentBuffer = doRender()
       } finally {
