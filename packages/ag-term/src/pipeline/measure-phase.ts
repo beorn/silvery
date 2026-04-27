@@ -15,7 +15,43 @@ import {
 } from "./prepared-text"
 import { buildTextAnalysis, shrinkwrapWidth } from "./pretext"
 import { getBorderSize, getPadding } from "./helpers"
+import { recordPassCause, INSTRUMENT } from "../runtime/pass-cause"
 import type { PipelineContext } from "./types"
+
+/**
+ * Cross-pass cache of the last shrunk snug-content width per node. Used by
+ * the pass-cause instrumentation to detect "this frame's measurement
+ * diverged from last frame's" — that's the text-measurement-feedback edge:
+ * content that affects snug width changed (e.g. text content swap, font
+ * substitution), so any layout that depended on the prior width must
+ * re-settle in the next pass.
+ *
+ * WeakMap keeps the cache lifecycle tied to the node. Both maps are gated
+ * behind INSTRUMENT so the default-off path pays nothing.
+ */
+const lastShrunkWidth: WeakMap<AgNode, number> = new WeakMap()
+/**
+ * Cross-pass cache of the last fit-content height per node. Same shape as
+ * lastShrunkWidth — emits text-measurement-feedback when this frame's
+ * intrinsic height differs from the prior frame's.
+ */
+const lastFitHeight: WeakMap<AgNode, number> = new WeakMap()
+
+/**
+ * Stable-ish identity string for an AgNode used by pass-cause records.
+ * Mirrors layout-phase.ts:nodeIdent — duplicated here to avoid an internal
+ * cross-file import for a 6-line helper. INSTRUMENT-gated at the call site
+ * so this only runs when SILVERY_INSTRUMENT=1.
+ */
+function nodeIdent(node: AgNode): string {
+  const props = node.props as Record<string, unknown> | undefined
+  const ident =
+    (props?.["testid"] as string | undefined) ??
+    (props?.["id"] as string | undefined) ??
+    (props?.["name"] as string | undefined) ??
+    (props?.["nodeId"] as string | undefined)
+  return ident ? `${node.type}#${ident}` : node.type
+}
 
 /**
  * Handle fit-content nodes by measuring their intrinsic content size.
@@ -68,12 +104,42 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
         // Fit-snug: find the narrowest width that keeps the same line count.
         // Binary search for tightest width on top of Flexily's native fit-content.
         const shrunkWidth = computeSnugContentWidth(node, intrinsicSize.width, ctx)
+        // Pass-cause emit: snug-content width changed across passes. The binary
+        // search is internally bounded by O(log2(intrinsicSize.width)) per
+        // computeSnugContentWidth call; the cross-pass bound is **1 extra
+        // pass** — measurement is deterministic given input, so once content
+        // is stable, the next pass yields the same shrunkWidth and emits
+        // nothing.
+        if (INSTRUMENT) {
+          const prev = lastShrunkWidth.get(node)
+          if (prev !== undefined && prev !== shrunkWidth) {
+            recordPassCause({
+              cause: "text-measurement-feedback",
+              edge: "snugContentWidth",
+              nodeId: nodeIdent(node),
+              detail: `${prev}->${shrunkWidth}`,
+            })
+          }
+          lastShrunkWidth.set(node, shrunkWidth)
+        }
         // setMaxWidth caps the snug-content box at the binary-searched width.
         // Flexily's UNIT_SNUG_CONTENT handles the shrink-wrap + available clamping.
         node.layoutNode.setMaxWidth(shrunkWidth)
       }
       if (isHeightFitContent) {
         const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth)
+        if (INSTRUMENT) {
+          const prev = lastFitHeight.get(node)
+          if (prev !== undefined && prev !== intrinsicSize.height) {
+            recordPassCause({
+              cause: "text-measurement-feedback",
+              edge: "fitContentHeight",
+              nodeId: nodeIdent(node),
+              detail: `${prev}->${intrinsicSize.height}`,
+            })
+          }
+          lastFitHeight.set(node, intrinsicSize.height)
+        }
         node.layoutNode.setHeight(intrinsicSize.height)
       }
     }

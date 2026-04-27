@@ -44,6 +44,7 @@ import { renderPhase, clearBgConflictWarnings } from "./pipeline/render-phase"
 import { applyBackdrop, hasBackdropMarkers, type ColorLevel } from "./pipeline/backdrop"
 import { CURSOR_RESTORE, CURSOR_SAVE, kittyDeleteAllScrimPlacements } from "@silvery/ansi"
 import { clearDirtyTracking, hasScrollDirty } from "@silvery/ag/dirty-tracking"
+import { recordPassCause, INSTRUMENT } from "./runtime/pass-cause"
 import type { PipelineContext } from "./pipeline/types"
 
 const log = createLogger("silvery:render")
@@ -302,6 +303,21 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     const prevRootLayout = root.boxRect
     const dimensionsChanged =
       prevRootLayout && (prevRootLayout.width !== cols || prevRootLayout.height !== rows)
+
+    // Pass-cause emit: terminal dims changed mid-pipeline. The previous frame's
+    // layout was sized for old dims, but this frame's layout uses new dims —
+    // any rect signals that depended on viewport size will now fire in
+    // notifyLayoutSubscribers, causing one settle pass. By construction,
+    // resize-resettle is bounded to **1 extra pass**: pass N reads stale dims,
+    // pass N+1 reads fresh dims, then layout-invalidate edges drain.
+    if (INSTRUMENT && dimensionsChanged) {
+      recordPassCause({
+        cause: "resize-resettle",
+        edge: "rootDims",
+        detail: `${prevRootLayout?.width}x${prevRootLayout?.height} -> ${cols}x${rows}`,
+      })
+    }
+
     if (!dimensionsChanged && !root.layoutNode?.isDirty() && !hasScrollDirty()) {
       log.debug?.("layout: skipped (Flexily clean, no scrollDirty, dimensions unchanged)")
       // Even when the full layout phase is skipped, style-only changes

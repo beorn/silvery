@@ -998,11 +998,9 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
   // Mark node dirty if scroll offset or visible range changed (for incremental rendering)
   // Without this, renderPhase would skip the container and children would
   // remain at their old pixel positions in the cloned buffer
-  if (
-    scrollOffset !== prevOffset ||
-    firstVisible !== prevFirstVisible ||
-    lastVisible !== prevLastVisible
-  ) {
+  const visibleRangeChanged =
+    firstVisible !== prevFirstVisible || lastVisible !== prevLastVisible
+  if (scrollOffset !== prevOffset || visibleRangeChanged) {
     const epoch = getRenderEpoch()
     if (node.dirtyEpoch !== epoch) {
       node.dirtyBits = SUBTREE_BIT
@@ -1010,6 +1008,24 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
     } else {
       node.dirtyBits |= SUBTREE_BIT
     }
+  }
+
+  // Pass-cause emit: visible-range shifted post-layout. Virtualizer consumers
+  // (`useScrollState`/`useVirtualizer`) read scrollState's firstVisibleChild
+  // / lastVisibleChild and re-render when the window changes — that re-render
+  // mounts/unmounts items, requiring one settle pass to re-layout. By
+  // construction, viewport-dependent is bounded to **1 extra pass** per
+  // window shift: pass N picks new visible range, pass N+1 lays out the new
+  // items. Emit only when the window actually shifted (offset-only changes
+  // don't trigger virtualizer re-renders — useScrollState's per-field equality
+  // check filters them out).
+  if (INSTRUMENT && visibleRangeChanged) {
+    recordPassCause({
+      cause: "viewport-dependent",
+      edge: "visibleRange",
+      nodeId: nodeIdent(node),
+      detail: `[${prevFirstVisible},${prevLastVisible}] -> [${firstVisible},${lastVisible}]`,
+    })
   }
 
   // Store scroll state (preserve previous offset and visible range for incremental rendering)
