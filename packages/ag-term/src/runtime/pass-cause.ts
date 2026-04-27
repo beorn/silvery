@@ -73,7 +73,19 @@ export interface PassHistogram {
   byCause: PassHistogramEntry[]
 }
 
-const instrumentEnabled = process.env.SILVERY_INSTRUMENT === "1"
+/**
+ * Module-level constant — evaluated once at import time so all hot-path
+ * call sites that wrap their emits in `if (INSTRUMENT)` short-circuit
+ * via branch prediction without function-call overhead. JS engines
+ * (V8, JSC, Bun) are extremely good at constant-folding `if (false)`
+ * around object-literal allocations.
+ *
+ * Do NOT export this; export the function `isInstrumentEnabled()` for
+ * non-hot-path callers, and import `INSTRUMENT` directly in hot paths
+ * (renderer.ts, layout-phase.ts).
+ */
+export const INSTRUMENT = process.env.SILVERY_INSTRUMENT === "1"
+const instrumentEnabled = INSTRUMENT
 
 interface AggregateState {
   records: PassCauseRecord[]

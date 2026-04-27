@@ -60,6 +60,7 @@ import {
   beginPass,
   notePassCommit,
   recordPassCause,
+  INSTRUMENT,
 } from "./runtime/pass-cause"
 // Side-effect import: arms `@silvery/ag`'s wrap-measurer registry with the
 // terminal grapheme-aware adapter. Importing renderer.ts (via createRenderer
@@ -661,11 +662,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       // resize can need 3 (pass 0 with stale zustand, pass 1 with updated
       // dimensions, pass 2 for layout feedback from pass 1).
       let singlePassCount = 0
-      beginConvergenceLoop()
+      if (INSTRUMENT) beginConvergenceLoop()
       for (let pass = 0; pass < MAX_SINGLE_PASS_ITERATIONS; pass++) {
         hadReactCommit = false
         singlePassCount++
-        beginPass(pass)
+        if (INSTRUMENT) beginPass(pass)
         let renderError: Error | null = null
         let carryForwardBuffer: TerminalBuffer | undefined
         withActEnvironment(() => {
@@ -730,11 +731,13 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         // histogram can show "how many passes had extra-pass causes attributed
         // to them?". Specific cause records are emitted by the pipeline phases
         // and signal sync via recordPassCause().
-        notePassCommit(pass)
-        if (pass === MAX_SINGLE_PASS_ITERATIONS - 1) {
-          // Loop will exit but committed work is still pending — surface as
-          // unknown so the histogram doesn't undercount the loop tail.
-          recordPassCause({ cause: "unknown", detail: "single-pass-exhaustion" })
+        if (INSTRUMENT) {
+          notePassCommit(pass)
+          if (pass === MAX_SINGLE_PASS_ITERATIONS - 1) {
+            // Loop will exit but committed work is still pending — surface as
+            // unknown so the histogram doesn't undercount the loop tail.
+            recordPassCause({ cause: "unknown", detail: "single-pass-exhaustion" })
+          }
         }
       }
 
@@ -758,11 +761,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       const MAX_LAYOUT_ITERATIONS = 5
       let iterationCount = 0
 
-      beginConvergenceLoop()
+      if (INSTRUMENT) beginConvergenceLoop()
       for (let iteration = 0; iteration < MAX_LAYOUT_ITERATIONS; iteration++) {
         hadReactCommit = false
         iterationCount++
-        beginPass(iteration)
+        if (INSTRUMENT) beginPass(iteration)
 
         // Run the render pipeline inside act() so that forceUpdate/setState
         // from notifyLayoutSubscribers (Phase 2.7) are properly captured.
@@ -819,9 +822,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         // If React didn't commit any new work from layout notifications,
         // the layout is stable — no more iterations needed.
         if (!hadReactCommit) break
-        notePassCommit(iteration)
-        if (iteration === MAX_LAYOUT_ITERATIONS - 1) {
-          recordPassCause({ cause: "unknown", detail: "classic-exhaustion" })
+        if (INSTRUMENT) {
+          notePassCommit(iteration)
+          if (iteration === MAX_LAYOUT_ITERATIONS - 1) {
+            recordPassCause({ cause: "unknown", detail: "classic-exhaustion" })
+          }
         }
       }
 
@@ -1062,19 +1067,21 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     let doRenderCount = 1
     if (instance.singlePassLayout) {
       const MAX_EFFECT_FLUSHES = 5
-      beginConvergenceLoop()
+      if (INSTRUMENT) beginConvergenceLoop()
       for (let flush = 0; flush < MAX_EFFECT_FLUSHES; flush++) {
         hadReactCommit = false
-        beginPass(flush)
+        if (INSTRUMENT) beginPass(flush)
         withActEnvironment(() => {
           act(() => {
             reconciler.flushSyncWork()
           })
         })
         if (!hadReactCommit) break
-        notePassCommit(flush)
-        if (flush === MAX_EFFECT_FLUSHES - 1) {
-          recordPassCause({ cause: "unknown", detail: "effect-flush-exhaustion" })
+        if (INSTRUMENT) {
+          notePassCommit(flush)
+          if (flush === MAX_EFFECT_FLUSHES - 1) {
+            recordPassCause({ cause: "unknown", detail: "effect-flush-exhaustion" })
+          }
         }
         // React committed new work from effects — re-render
         newFrame = doRender()

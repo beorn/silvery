@@ -91,6 +91,7 @@ export type { DOMAdapterConfig } from "./adapters/dom-adapter"
 // =============================================================================
 
 export {
+  INSTRUMENT,
   isInstrumentEnabled,
   beginConvergenceLoop,
   beginPass,

@@ -169,7 +169,7 @@ import {
   printPassHistogram,
   appendHistogramJson,
   resetPassHistogram,
-  isInstrumentEnabled,
+  INSTRUMENT,
 } from "./pass-cause"
 
 const log = createLogger("silvery:app")
@@ -1334,7 +1334,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     //   (to stderr by default; to file if SILVERY_INSTRUMENT_FILE is set).
     //
     // Reset after emission so the next app's histogram doesn't double-count.
-    if (isInstrumentEnabled()) {
+    if (INSTRUMENT) {
       const file = process.env.SILVERY_INSTRUMENT_FILE
       if (file) appendHistogramJson(file)
       if (process.env.SILVERY_INSTRUMENT_PRINT === "1") printPassHistogram()
@@ -2824,16 +2824,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // effects just sets pendingRerender (no microtask render).
     let flushCount = 0
     const maxFlushes = 5
-    beginConvergenceLoop()
+    if (INSTRUMENT) beginConvergenceLoop()
     while (flushCount < maxFlushes) {
-      beginPass(flushCount)
+      if (INSTRUMENT) beginPass(flushCount)
       await Promise.resolve() // Drain microtask queue → passive effects flush
       if (!pendingRerender) break
       pendingRerender = false
       isRendering = true
-      notePassCommit(flushCount)
-      if (flushCount === maxFlushes - 1) {
-        recordPassCause({ cause: "unknown", detail: "production-flush-exhaustion" })
+      if (INSTRUMENT) {
+        notePassCommit(flushCount)
+        if (flushCount === maxFlushes - 1) {
+          recordPassCause({ cause: "unknown", detail: "production-flush-exhaustion" })
+        }
       }
       try {
         currentBuffer = doRender()
