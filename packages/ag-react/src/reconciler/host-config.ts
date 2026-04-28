@@ -91,7 +91,19 @@ export function setOnNodeRemoved(callback: ((removedNode: AgNode) => void) | nul
 // even if the dispose was already kicked off; the dispose itself keeps the
 // scope alive for the duration of the teardown via its own closures.
 
-const nodeScopes = new WeakMap<AgNode, Scope>()
+// Module-instance-shared via globalThis so duplicate module copies (e.g. when
+// tests import host-config relatively while the renderer imports it through
+// the @silvery/ag-react/reconciler symlink) all see the same per-node scope
+// table. Without this, two module copies hold two independent WeakMaps and
+// fiber-scope disposal silently no-ops because the dispose path's WeakMap is
+// not the one the consumer attached to.
+const NODE_SCOPES_KEY = Symbol.for("@silvery/ag-react/reconciler/nodeScopes")
+type NodeScopesRegistry = WeakMap<AgNode, Scope>
+const nodeScopes: NodeScopesRegistry =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- globalThis registry
+  (globalThis as any)[NODE_SCOPES_KEY] ??
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ((globalThis as any)[NODE_SCOPES_KEY] = new WeakMap<AgNode, Scope>())
 
 /**
  * Attach a fiber-local scope to a host instance. Called from `useScope` /
@@ -136,7 +148,7 @@ export function detachNodeScope(node: AgNode): Scope | undefined {
  * dispose promise resolves — this prevents a re-entrant render from
  * observing a partially torn-down tree with live scope slots.
  */
-function disposeSubtreeScopes(node: AgNode): void {
+export function disposeSubtreeScopes(node: AgNode): void {
   // Detach first, dispose second — so an exception in dispose doesn't
   // leave the slot pointing at a half-disposed scope.
   const scope = nodeScopes.get(node)

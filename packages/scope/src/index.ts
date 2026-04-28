@@ -225,10 +225,22 @@ export interface DisposeErrorContext {
 
 export type DisposeErrorSink = (error: unknown, context: DisposeErrorContext) => void
 
-let currentSink: DisposeErrorSink = (error, context) => {
+// Sink stored on globalThis so duplicate @silvery/scope module copies (e.g.
+// when a test imports the package via a relative path while the runtime
+// imports it via the symlinked node_modules path) share the same sink. Without
+// this, `setDisposeErrorSink(testSink)` from the test only mutates one copy's
+// `currentSink`; the renderer's `reportDisposeError` resolves the other
+// copy's `currentSink` (still the default console-error sink) and the test
+// captures nothing. Bead: km-silvery.scope-phase-1.
+const SINK_KEY = Symbol.for("@silvery/scope/disposeErrorSink")
+const defaultSink: DisposeErrorSink = (error, context) => {
   const name = context.scope?.name ?? "?"
+  // eslint-disable-next-line no-console
   console.error(`[scope dispose error] phase=${context.phase} scope=${name}`, error)
 }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- globalThis registry
+const sinkHost: any = globalThis
+if (!sinkHost[SINK_KEY]) sinkHost[SINK_KEY] = { sink: defaultSink }
 
 /**
  * Report a disposal failure from a fire-and-forget context (React unmount,
@@ -236,7 +248,7 @@ let currentSink: DisposeErrorSink = (error, context) => {
  */
 export function reportDisposeError(error: unknown, context: DisposeErrorContext): void {
   try {
-    currentSink(error, context)
+    sinkHost[SINK_KEY].sink(error, context)
   } catch {
     // sink must never throw — swallow to keep the teardown path alive
   }
@@ -244,7 +256,7 @@ export function reportDisposeError(error: unknown, context: DisposeErrorContext)
 
 /** Override the global disposal-error sink (e.g. fail-fast in tests). */
 export function setDisposeErrorSink(sink: DisposeErrorSink): void {
-  currentSink = sink
+  sinkHost[SINK_KEY].sink = sink
 }
 
 // =============================================================================

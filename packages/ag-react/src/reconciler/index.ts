@@ -12,7 +12,7 @@
 // @ts-expect-error - react-reconciler has no type declarations
 import Reconciler from "react-reconciler"
 import type { AgNode } from "@silvery/ag/types"
-import { type Container, hostConfig } from "./host-config"
+import { type Container, disposeSubtreeScopes, hostConfig } from "./host-config"
 import { createRootNode } from "./nodes"
 
 // Re-export only what's needed by render.tsx and testing/index.tsx
@@ -25,6 +25,7 @@ export {
   attachNodeScope,
   detachNodeScope,
   getNodeScope,
+  disposeSubtreeScopes,
 } from "./host-config"
 
 // ============================================================================
@@ -115,6 +116,20 @@ export function unmountFiberRoot(fiberRoot: any, container: Container): void {
  * unmount through the reconciler and just need the post-commit scrub.
  */
 export function releaseContainer(container: Container): void {
+  // Dispose any fiber-local scopes still attached to nodes in the tree.
+  // Required because `updateContainerSync(null, fiberRoot, …)` on a
+  // ConcurrentRoot does NOT route the unmount through the host-config
+  // `removeChild*` / `clearContainer` paths in current react-reconciler
+  // (0.33+) — those fire only for keyed-deletion reconciliations during a
+  // mounted re-render, not for full-tree unmount. Without this walk, scopes
+  // attached via `useScope()` / `useScopeEffect()` survive the unmount
+  // because the per-node WeakMap entry stays reachable from
+  // `container.root.children` until the line below clears it. Per the
+  // design contract (hub/silvery/design/lifecycle-scope.md): "Disposal is
+  // unavoidable — there is no path that swallows the slot without
+  // disposing." Bead: km-silvery.scope-phase-1.
+  disposeSubtreeScopes(container.root)
+
   // Break FiberRoot → containerInfo → onRender → enclosing-instance retention.
   container.onRender = () => {}
 
