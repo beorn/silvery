@@ -13,7 +13,11 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    "./chalk": "./src/chalk.ts",
+    "./ink": "./src/ink.ts",
+    "./with-ink": "./src/with-ink.ts",
+    "./with-ink-cursor": "./src/with-ink-cursor.ts",
+    "./with-ink-focus": "./src/with-ink-focus.ts"
   },
   "publishConfig": {
     "access": "public",

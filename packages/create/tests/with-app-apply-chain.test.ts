@@ -43,9 +43,9 @@ describe("withApp() preserves app reference for dispatch closure", () => {
     // Dispatch through the enhanced app. If withApp() had spread to a fresh
     // object, BaseApp.dispatch's closure would point to the pre-spread app
     // and skip our wrapper.
-    enhanced.dispatch({ kind: "test.op", payload: 42 })
+    enhanced.dispatch({ type: "test.op", payload: 42 })
 
     expect(calls).toHaveLength(1)
-    expect(calls[0]).toEqual({ kind: "test.op", payload: 42 })
+    expect(calls[0]).toEqual({ type: "test.op", payload: 42 })
   })
 })
