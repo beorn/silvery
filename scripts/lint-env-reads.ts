@@ -94,6 +94,13 @@ const IGNORED_DIRS = new Set<string>([
   "examples",
   "benchmarks",
   ".vitepress",
+  // `.claude/worktrees/` materializes isolated copies of the repo for parallel
+  // agent runs (`bun worktree create <bead>` in km). Those copies legitimately
+  // contain in-flight code, including env reads under review elsewhere.
+  // Scanning them produces a 100% false-positive rate under multi-agent
+  // workflows. Excluding the whole `.claude/` dir also covers `skills/`,
+  // which is workflow tooling, not silvery source.
+  ".claude",
 ])
 
 /** Files to skip within allowed code. */

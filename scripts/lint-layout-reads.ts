@@ -90,6 +90,11 @@ const IGNORED_DIRS = new Set<string>([
   "benchmarks",
   ".vitepress",
   "tests", // tests intentionally read snapshots to assert layout outputs
+  // `.claude/worktrees/` materializes isolated copies of the repo for parallel
+  // agent runs (`bun worktree create <bead>` in km). Scanning them produces
+  // false positives from sibling agents' in-flight code. Excluding the whole
+  // `.claude/` dir also covers `skills/`, which is workflow tooling.
+  ".claude",
 ])
 
 const IGNORED_FILE_SUFFIXES = [".d.ts", ".d.mts", ".map"]
