@@ -24,14 +24,16 @@
  *      Fixed in COMMIT_PRIORITY below.
  *   4. `setSelectableMode` is hidden mutable buffer state — encode into
  *      each cell op or use scoped segments instead of a global pre-bucket.
- *   5. `outlineSnapshots` is non-cell buffer state that survives across
- *      frames; it must move to a `RenderPostState` section (or off the
- *      buffer entirely). Phase 1 captures it implicitly via the recorder's
- *      backing buffer; Phase 2 must capture it explicitly.
- *   6. Intra-frame buffer reads (`getCellBg`, dirty rows, outlineSnapshots
- *      reads) are the real Phase 2 blocker — every read site must be
- *      audited and converted to derive from node state / op stream before
- *      the renderer can emit ops without a backing buffer.
+ *   5. `outlineSnapshots` was non-cell buffer state surviving across
+ *      frames. Phase 2 Step 5 (paint-clear-l5-step5-outline-snapshots)
+ *      hoisted them onto `RenderPostState` (see render-post-state.ts);
+ *      the buffer is now a pure cell store. The PostStateOp survives in
+ *      the plan-shape for parity capture but writes through to the
+ *      orchestrator's carrier, not the buffer.
+ *   6. Intra-frame buffer reads (`getCellBg`, dirty rows) are the real
+ *      Phase 2 blocker — every read site must be audited and converted
+ *      to derive from node state / op stream before the renderer can
+ *      emit ops without a backing buffer.
  *
  * Design doc: hub/silvery/design/render-plan-commit.md (in km workspace,
  * not bundled with vendor package). Review notes preserved in the bead.
@@ -150,8 +152,8 @@ const COMMIT_PRIORITY: Record<RenderOp["kind"], number> = {
  * Recording proxy around a real `TerminalBuffer`. Forwards every mutating
  * call to the underlying buffer and appends a corresponding `RenderOp` to
  * `ops`. Reads pass through unchanged so the existing render-phase code
- * (which does read its own writes through `getCellBg`, dirty rows,
- * outlineSnapshots, etc.) sees a fully-functional buffer.
+ * (which does read its own writes through `getCellBg`, dirty rows, etc.)
+ * sees a fully-functional buffer.
  *
  * Phase 1 uses the recorder so we can run the existing renderer unchanged
  * and still capture a `RenderPlan` for the parity test. Phase 2 will
@@ -179,13 +181,7 @@ export class RecordingBuffer extends TerminalBuffer {
     if (this.recording) this.ops.push({ kind: "setCell", x, y, cell: cloneCellPatch(cell) })
   }
 
-  override fill(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void {
+  override fill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
     super.fill(x, y, width, height, cell)
     if (this.recording)
       this.ops.push({ kind: "fill", x, y, width, height, cell: cloneCellPatch(cell) })
@@ -196,13 +192,7 @@ export class RecordingBuffer extends TerminalBuffer {
     if (this.recording) this.ops.push({ kind: "fillBg", x, y, width, height, bg })
   }
 
-  override restyleRegion(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: Style,
-  ): void {
+  override restyleRegion(x: number, y: number, width: number, height: number, style: Style): void {
     super.restyleRegion(x, y, width, height, style)
     if (this.recording)
       this.ops.push({ kind: "restyleRegion", x, y, width, height, style: { ...style } })
@@ -255,10 +245,7 @@ export class RecordingBuffer extends TerminalBuffer {
       })
   }
 
-  override setRowMeta(
-    row: number,
-    meta: { softWrapped?: boolean; lastContentCol?: number },
-  ): void {
+  override setRowMeta(row: number, meta: { softWrapped?: boolean; lastContentCol?: number }): void {
     super.setRowMeta(row, meta)
     if (this.recording) this.ops.push({ kind: "setRowMeta", row, ...meta })
   }
@@ -350,10 +337,10 @@ function copyBufferState(dst: TerminalBuffer, src: TerminalBuffer): void {
     const meta = src.getRowMeta(y)
     dst.setRowMeta(y, { softWrapped: meta.softWrapped, lastContentCol: meta.lastContentCol })
   }
-  // Outline snapshots travel with the buffer; reuse the array directly
-  // since snapshot entries are immutable once captured (matches the
-  // shallow copy in TerminalBuffer.clone).
-  dst.outlineSnapshots = [...src.outlineSnapshots]
+  // Phase 2 Step 5 of paint-clear-invariant L5 retired
+  // `buffer.outlineSnapshots`; cross-frame outline state lives on
+  // `RenderPostState` (see render-post-state.ts), owned by `createAg`.
+  // No buffer-side state to copy here.
 }
 
 /**
@@ -576,12 +563,17 @@ export type PostStateOp =
   | { kind: "setRowMeta"; row: number; softWrapped?: boolean; lastContentCol?: number }
   | { kind: "setSelectableMode"; selectable: boolean }
   | {
-      // Outline snapshots — non-cell buffer state captured during the
-      // decoration pass so the next frame can restore the under-cells
-      // before drawing the new outlines (see decoration-phase.ts).
-      // Phase 2 Step 5: hoisted out of `buffer.outlineSnapshots` direct
-      // mutation onto the sink so the plan-shape captures all the
-      // surviving-across-frames state without buffer-side reach-around.
+      // Outline snapshots — cells captured during the decoration pass so
+      // the next frame can restore the under-cells before drawing the new
+      // outlines (see decoration-phase.ts).
+      //
+      // Phase 2 Step 5 (paint-clear-l5-step5-outline-snapshots) hoisted
+      // the authoritative storage off the buffer onto `RenderPostState`
+      // (render-post-state.ts), owned by `createAg`. The op is preserved
+      // in the plan-shape so PlanSink captures outline-snapshot intent
+      // for parity tests; `applyPostState` treats it as a no-op (the
+      // parity replay buffer is throwaway and the postState is owned
+      // by the orchestrator).
       kind: "setOutlineSnapshots"
       snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>
     }
@@ -779,7 +771,15 @@ function applyPostState(buffer: TerminalBuffer, op: PostStateOp): void {
       return
     }
     case "setOutlineSnapshots":
-      buffer.outlineSnapshots = op.snapshots.slice()
+      // Phase 2 Step 5 of paint-clear-invariant L5: outline snapshots no
+      // longer live on `TerminalBuffer`. The authoritative carrier is
+      // `RenderPostState` (see render-post-state.ts), owned by `createAg`
+      // and written directly by `renderDecorationPass`. The sectioned
+      // plan still captures `setOutlineSnapshots` ops in `postStateOps`
+      // for parity tests (the captured plan must include every emission)
+      // but the parity replay buffer is throwaway, so applying the op
+      // here is a no-op. If a future test wants to inspect snapshot ops
+      // from a plan, iterate `plan.postStateOps` directly.
       return
   }
 }

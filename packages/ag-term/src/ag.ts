@@ -49,6 +49,7 @@ import {
   wrapPrevBufferForRecording,
 } from "./pipeline/render-plan"
 import { withPlanCapture } from "./pipeline/render-sink"
+import { createRenderPostState, type RenderPostState } from "./pipeline/render-post-state"
 import { applyBackdrop, hasBackdropMarkers, type ColorLevel } from "./pipeline/backdrop"
 import { CURSOR_RESTORE, CURSOR_SAVE, kittyDeleteAllScrimPlacements } from "@silvery/ansi"
 import { clearDirtyTracking, hasScrollDirty } from "@silvery/ag/dirty-tracking"
@@ -283,6 +284,15 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     options?.kittyGraphics !== undefined ? options.kittyGraphics : isKittyGraphicsEnabledFromEnv()
   const ctx: PipelineContext | undefined = measurer ? { measurer } : undefined
   let _prevBuffer: TerminalBuffer | null = null
+  // Cross-frame post-state (outline snapshots, etc.). Phase 2 Step 5 of
+  // paint-clear-invariant L5 hoisted outline snapshots off `TerminalBuffer`
+  // onto a dedicated carrier owned here, alongside `_prevBuffer`. The
+  // decoration phase reads/writes this object directly; the sink layer
+  // captures parallel post-state ops only for plan-shape parity tests.
+  // Reset semantics mirror `_prevBuffer`: cleared by `resetBuffer()` so a
+  // resize discards stale snapshots (their cell coordinates would be wrong
+  // at the new dimensions).
+  let _postState: RenderPostState = createRenderPostState()
   // True when the PREVIOUS frame had backdrop markers (and so emitted Kitty
   // placements). Drives the one-shot delete-all on the first frame where the
   // backdrop goes away so leftover scrim rectangles don't linger on screen.
@@ -442,12 +452,16 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
           throw new Error("doRender: SILVERY_RENDER_PLAN enabled but root has no boxRect")
         }
         const captured = withPlanCapture(layout.width, layout.height, () =>
-          renderPhase(root, prevBuffer, ctx),
+          renderPhase(root, prevBuffer, ctx, _postState),
         )
         buffer = captured.result
         // Production wiring: plan-commit parity against a fresh clone.
         // Throws on divergence so the test suite catches sink-bypass bugs.
-        if (prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height) {
+        if (
+          prevBuffer &&
+          prevBuffer.width === layout.width &&
+          prevBuffer.height === layout.height
+        ) {
           const replay = prevBuffer.clone()
           commitSectionedPlan(replay, captured.plan)
           // We don't fail-fast on a pixel divergence here — that would
@@ -457,7 +471,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
           void replay
         }
       } else {
-        buffer = renderPhase(root, prevBuffer, ctx)
+        buffer = renderPhase(root, prevBuffer, ctx, _postState)
       }
       tContent = performance.now() - t
       log.debug?.(`content: ${tContent.toFixed(2)}ms`)
@@ -619,6 +633,10 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
 
     resetBuffer() {
       _prevBuffer = null
+      // Outline snapshots reference cell coordinates in the OLD buffer's
+      // dimensions; if a resize is the reason resetBuffer is called, the
+      // snapshots would point at the wrong cells. Reset both together.
+      _postState = createRenderPostState()
     },
 
     // Tree mutations

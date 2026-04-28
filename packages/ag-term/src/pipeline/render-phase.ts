@@ -26,6 +26,7 @@ import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
 import { createFrameSink, type RenderSink } from "./render-sink"
+import { type RenderPostState, createRenderPostState } from "./render-post-state"
 import { pushContextTheme, popContextTheme } from "./state"
 import type { Theme } from "@silvery/ansi"
 // cascade-predicates is the imperative oracle — used for STRICT verification
@@ -70,12 +71,21 @@ const cellLog = createLogger("silvery:content:cell")
  *
  * @param root The root SilveryNode
  * @param prevBuffer Previous buffer for incremental rendering (optional)
+ * @param ctx Pipeline context (instrumentation, measurer)
+ * @param postState Cross-frame post-state carrier (outline snapshots, etc.).
+ *   Owned by `createAg`; passed in here rather than read from the buffer so
+ *   the decoration phase can run against either a BufferSink-mutated buffer
+ *   or a PlanSink-committed buffer (Phase 2 Step 5 of paint-clear-invariant L5).
+ *   When omitted (legacy callers), a fresh empty post-state is used per call —
+ *   correct for fresh renders, but means outline cleanup is lost across frames
+ *   if the caller doesn't hold the post-state externally.
  * @returns A TerminalBuffer with the rendered content
  */
 export function renderPhase(
   root: AgNode,
   prevBuffer?: TerminalBuffer | null,
   ctx?: PipelineContext,
+  postState: RenderPostState = createRenderPostState(),
 ): TerminalBuffer {
   const layout = root.boxRect
   if (!layout) {
@@ -146,10 +156,11 @@ export function renderPhase(
   // Outlines draw OUTSIDE their owning node into the parent's pixel space,
   // so they don't fit the per-node cascade. We treat them as a separate
   // decoration pass: clear prev positions here, redraw new positions after
-  // the content phase below. The snapshots were captured when we drew the
-  // previous frame and travel with the cloned buffer. No-op for fresh
-  // buffers (no snapshots on a newly constructed TerminalBuffer).
-  clearPreviousOutlines(buffer)
+  // the content phase below. The snapshots live on the `postState` carrier
+  // (Phase 2 Step 5 of paint-clear-invariant L5) — they no longer travel
+  // with the cloned buffer. No-op when the carrier holds an empty list
+  // (fresh render, or no outlines on the previous frame).
+  clearPreviousOutlines(buffer, postState)
 
   const t1 = instr.enabled ? performance.now() : 0
   renderNodeToBuffer(
@@ -174,8 +185,10 @@ export function renderPhase(
   // Decoration phase: draw outlines AFTER content rendering. Walks the full
   // tree (O(N)) independent of dirty flags — outlines are idempotent per
   // frame and cheap to redraw (~5000 cells at worst). Populates fresh
-  // snapshots on the buffer for the next frame's `clearPreviousOutlines`.
-  renderDecorationPass(buffer, root)
+  // snapshots on the `postState` carrier for the next frame's
+  // `clearPreviousOutlines` (Phase 2 Step 5 — snapshots no longer live on
+  // the buffer).
+  renderDecorationPass(buffer, root, postState)
 
   if (instr.enabled) {
     emitRenderPhaseStats(instr.stats, instr.nodeTrace, instr.nodeTraceEnabled, tClone, tRender)
@@ -1360,12 +1373,7 @@ function checkOverlappingAbsoluteSibling(node: AgNode, scrollRect: Rect): boolea
     const r = sib.boxRect
     if (!r) continue
     // AABB overlap test (half-open intervals).
-    if (
-      r.x < sRight &&
-      r.x + r.width > sLeft &&
-      r.y < sBottom &&
-      r.y + r.height > sTop
-    ) {
+    if (r.x < sRight && r.x + r.width > sLeft && r.y < sBottom && r.y + r.height > sTop) {
       return true
     }
   }
@@ -1970,8 +1978,8 @@ function renderNormalChildren(
 
   // Determine which children are "going to render" (skip-path miss) and
   // forward-propagate force-render to overlapping later siblings.
-  const willRender: boolean[] = firstPassChildren.map((child) =>
-    !canSkipChildSubtree(child, childHasPrev, childAncestorLayoutChanged),
+  const willRender: boolean[] = firstPassChildren.map(
+    (child) => !canSkipChildSubtree(child, childHasPrev, childAncestorLayoutChanged),
   )
   // Only do overlap propagation when we have prev buffer state (otherwise
   // the canSkipChildSubtree check returns false for everything anyway and

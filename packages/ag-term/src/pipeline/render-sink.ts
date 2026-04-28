@@ -31,16 +31,19 @@
  *     decoration-phase.ts must route through the sink. Estimated 50-100
  *     call sites. Each call site requires intent review (clear vs
  *     paint vs transfer).
- *   - Outline snapshots — non-cell buffer state surviving across frames.
- *     Phase 2 must move it into `RenderPostState` (or off the buffer
- *     entirely). The current `outlineSnapshots` array on TerminalBuffer
- *     is mutated directly by decoration-phase.ts; the sink doesn't yet
- *     have a method for it.
- *   - Intra-frame buffer reads (`getCellBg`, dirty rows, snapshot reads)
- *     are unaffected by the sink — the renderer still reads from the
- *     working buffer. The PlanSink papers over this by also writing to
- *     a backing buffer for reads. Phase 2 Step 4 audits and eliminates
- *     these reads.
+ *   - Intra-frame buffer reads (`getCellBg`, dirty rows) are unaffected
+ *     by the sink — the renderer still reads from the working buffer.
+ *     The PlanSink papers over this by also writing to a backing buffer
+ *     for reads. Phase 2 Step 6 audits and eliminates these reads.
+ *
+ * COMPLETED IN STEP 5 (paint-clear-l5-step5-outline-snapshots):
+ *   - Outline snapshots no longer live on `TerminalBuffer`. They moved to
+ *     `RenderPostState` (see render-post-state.ts), owned by `createAg`
+ *     and threaded through `renderPhase(root, prev, ctx, postState)`.
+ *     The `setOutlineSnapshots` sink method survives so the plan-shape
+ *     can capture outline-snapshot intent for parity tests, but the
+ *     BufferSink implementation is now a no-op — the buffer no longer
+ *     carries cross-frame state.
  */
 
 import type { Cell, CellAttrs, Color, Style } from "../buffer"
@@ -102,26 +105,14 @@ export interface RenderSink {
    * `clearNodeRegion`, `clearExcessArea`, `clearDescendantOverflowRegions`,
    * scroll viewport clears.
    */
-  emitClearRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    bg: Color,
-  ): void
+  emitClearRect(x: number, y: number, width: number, height: number, bg: Color): void
 
   /**
    * Generalized clear with an explicit cell shape. Kept as an escape
    * hatch for clear sites that need attrs/fg too (rare; most clears use
    * `emitClearRect`). Lives in `cleanupOps`.
    */
-  emitClearCells(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void
+  emitClearCells(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void
 
   // -- paint ops ------------------------------------------------------------
 
@@ -137,13 +128,7 @@ export interface RenderSink {
    * Lives in `paintOps`. Distinct from `emitClearCells` (same buffer
    * mutation, different intent).
    */
-  emitPaintFill(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void
+  emitPaintFill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void
 
   /**
    * Paint just the bg without disturbing existing chars (cell-style
@@ -156,13 +141,7 @@ export interface RenderSink {
    * Restyle existing cells in `rect` (fg / attrs only — bg via fillBg).
    * Used by the text style-only fast path. Lives in `paintOps`.
    */
-  emitRestyleRegion(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: Style,
-  ): void
+  emitRestyleRegion(x: number, y: number, width: number, height: number, style: Style): void
 
   // -- overlay ops ----------------------------------------------------------
 
@@ -185,21 +164,23 @@ export interface RenderSink {
   /**
    * Row metadata (soft-wrap, last content col). Lives in `postStateOps`.
    */
-  setRowMeta(
-    row: number,
-    meta: { softWrapped?: boolean; lastContentCol?: number },
-  ): void
+  setRowMeta(row: number, meta: { softWrapped?: boolean; lastContentCol?: number }): void
 
   /**
-   * Outline snapshots — non-cell buffer state captured during the
-   * decoration pass so the next frame can restore the under-cells before
-   * drawing the new outlines. Lives in `postStateOps`. Phase 2 Step 5
-   * hoists this off `buffer.outlineSnapshots` direct mutation onto the
-   * sink so the plan-shape captures all surviving-across-frames state.
+   * Outline snapshots — cross-frame state captured during the decoration
+   * pass so the next frame can restore the under-cells before drawing the
+   * new outlines. Lives in `postStateOps` for plan-shape capture.
+   *
+   * Step 5 of paint-clear-invariant L5 retired the buffer-side storage:
+   * the authoritative snapshot list now lives on `RenderPostState` (see
+   * render-post-state.ts), owned by `createAg` and mutated directly by
+   * `renderDecorationPass` / `clearPreviousOutlines`. This sink method is
+   * retained for plan capture only — `BufferSink.setOutlineSnapshots` is
+   * a no-op, `PlanSink.setOutlineSnapshots` records the op for parity
+   * tests, and the parity replay path treats the op as informational
+   * (the parity buffer is throwaway, so no carrier mutation is needed).
    */
-  setOutlineSnapshots(
-    snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>,
-  ): void
+  setOutlineSnapshots(snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>): void
 }
 
 /**
@@ -233,23 +214,11 @@ export class BufferSink implements RenderSink {
     this.buffer.scrollRegion(x, y, width, height, delta, clearCell)
   }
 
-  emitClearRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    bg: Color,
-  ): void {
+  emitClearRect(x: number, y: number, width: number, height: number, bg: Color): void {
     this.buffer.fill(x, y, width, height, { char: " ", bg })
   }
 
-  emitClearCells(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void {
+  emitClearCells(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
     this.buffer.fill(x, y, width, height, cell)
   }
 
@@ -257,13 +226,7 @@ export class BufferSink implements RenderSink {
     this.buffer.setCell(x, y, cell)
   }
 
-  emitPaintFill(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void {
+  emitPaintFill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
     this.buffer.fill(x, y, width, height, cell)
   }
 
@@ -271,13 +234,7 @@ export class BufferSink implements RenderSink {
     this.buffer.fillBg(x, y, width, height, bg)
   }
 
-  emitRestyleRegion(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: Style,
-  ): void {
+  emitRestyleRegion(x: number, y: number, width: number, height: number, style: Style): void {
     this.buffer.restyleRegion(x, y, width, height, style)
   }
 
@@ -292,17 +249,19 @@ export class BufferSink implements RenderSink {
     this.buffer.mergeAttrsInRect(x, y, width, height, attrs, underlineColor)
   }
 
-  setRowMeta(
-    row: number,
-    meta: { softWrapped?: boolean; lastContentCol?: number },
-  ): void {
+  setRowMeta(row: number, meta: { softWrapped?: boolean; lastContentCol?: number }): void {
     this.buffer.setRowMeta(row, meta)
   }
 
-  setOutlineSnapshots(
-    snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>,
-  ): void {
-    this.buffer.outlineSnapshots = snapshots.slice()
+  setOutlineSnapshots(_snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>): void {
+    // Phase 2 Step 5 of paint-clear-invariant L5 retired
+    // `buffer.outlineSnapshots`. Snapshots now live on the `RenderPostState`
+    // carrier owned by `createAg` and are written directly by
+    // `renderDecorationPass` / `clearPreviousOutlines` (see
+    // decoration-phase.ts). The sink op is preserved in the API so the
+    // PlanSink path can still capture outline-snapshot intent for parity
+    // tests, but the BufferSink side is now a no-op — the buffer no longer
+    // carries this state.
   }
 }
 
@@ -347,24 +306,12 @@ export class TeeSink implements RenderSink {
     this.secondary.emitScrollRegion(x, y, width, height, delta, clearCell)
   }
 
-  emitClearRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    bg: Color,
-  ): void {
+  emitClearRect(x: number, y: number, width: number, height: number, bg: Color): void {
     this.primary.emitClearRect(x, y, width, height, bg)
     this.secondary.emitClearRect(x, y, width, height, bg)
   }
 
-  emitClearCells(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void {
+  emitClearCells(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
     this.primary.emitClearCells(x, y, width, height, cell)
     this.secondary.emitClearCells(x, y, width, height, cell)
   }
@@ -374,13 +321,7 @@ export class TeeSink implements RenderSink {
     this.secondary.emitSetCell(x, y, cell)
   }
 
-  emitPaintFill(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void {
+  emitPaintFill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
     this.primary.emitPaintFill(x, y, width, height, cell)
     this.secondary.emitPaintFill(x, y, width, height, cell)
   }
@@ -390,13 +331,7 @@ export class TeeSink implements RenderSink {
     this.secondary.emitFillBg(x, y, width, height, bg)
   }
 
-  emitRestyleRegion(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: Style,
-  ): void {
+  emitRestyleRegion(x: number, y: number, width: number, height: number, style: Style): void {
     this.primary.emitRestyleRegion(x, y, width, height, style)
     this.secondary.emitRestyleRegion(x, y, width, height, style)
   }
@@ -413,17 +348,12 @@ export class TeeSink implements RenderSink {
     this.secondary.emitMergeAttrs(x, y, width, height, attrs, underlineColor)
   }
 
-  setRowMeta(
-    row: number,
-    meta: { softWrapped?: boolean; lastContentCol?: number },
-  ): void {
+  setRowMeta(row: number, meta: { softWrapped?: boolean; lastContentCol?: number }): void {
     this.primary.setRowMeta(row, meta)
     this.secondary.setRowMeta(row, meta)
   }
 
-  setOutlineSnapshots(
-    snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>,
-  ): void {
+  setOutlineSnapshots(snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>): void {
     this.primary.setOutlineSnapshots(snapshots)
     this.secondary.setOutlineSnapshots(snapshots)
   }
@@ -536,23 +466,11 @@ export class PlanSink implements RenderSink {
     })
   }
 
-  emitClearRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    bg: Color,
-  ): void {
+  emitClearRect(x: number, y: number, width: number, height: number, bg: Color): void {
     this.cleanupOps.push({ kind: "clearRect", x, y, width, height, bg })
   }
 
-  emitClearCells(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void {
+  emitClearCells(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
     this.cleanupOps.push({ kind: "clearCells", x, y, width, height, cell })
   }
 
@@ -560,13 +478,7 @@ export class PlanSink implements RenderSink {
     this.paintOps.push({ kind: "setCell", x, y, cell })
   }
 
-  emitPaintFill(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void {
+  emitPaintFill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
     this.paintOps.push({ kind: "paintFill", x, y, width, height, cell })
   }
 
@@ -574,13 +486,7 @@ export class PlanSink implements RenderSink {
     this.paintOps.push({ kind: "fillBg", x, y, width, height, bg })
   }
 
-  emitRestyleRegion(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: Style,
-  ): void {
+  emitRestyleRegion(x: number, y: number, width: number, height: number, style: Style): void {
     this.paintOps.push({ kind: "restyleRegion", x, y, width, height, style })
   }
 
@@ -603,16 +509,11 @@ export class PlanSink implements RenderSink {
     })
   }
 
-  setRowMeta(
-    row: number,
-    meta: { softWrapped?: boolean; lastContentCol?: number },
-  ): void {
+  setRowMeta(row: number, meta: { softWrapped?: boolean; lastContentCol?: number }): void {
     this.postStateOps.push({ kind: "setRowMeta", row, ...meta })
   }
 
-  setOutlineSnapshots(
-    snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>,
-  ): void {
+  setOutlineSnapshots(snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>): void {
     this.postStateOps.push({ kind: "setOutlineSnapshots", snapshots: snapshots.slice() })
   }
 

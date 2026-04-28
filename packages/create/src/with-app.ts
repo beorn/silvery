@@ -109,6 +109,13 @@ export function withApp() {
       },
     }
 
-    return { ...app, ...appExt } as A & AppWithApp
+    // Object.assign mutates the existing app — preserves the reference
+    // captured by `BaseApp.dispatch`'s closure. Object spread (`{...app,
+    // ...appExt}`) creates a fresh object: any plugin composed AFTER
+    // `withApp()` that captures `app.apply` and reassigns it on the post-
+    // spread object writes to a DIFFERENT reference than dispatch reads
+    // from, so the plugin's apply wrapper never fires when an op flows
+    // through `dispatch()`. Bead: km-silvery.with-app-spread-bug.
+    return Object.assign(app, appExt) as A & AppWithApp
   }
 }
