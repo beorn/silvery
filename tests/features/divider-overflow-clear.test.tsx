@@ -37,11 +37,20 @@ import { Box, Text } from "silvery"
 const COLS = 80
 const ROWS = 20
 
+// PaneDivider pattern: fill cross-axis with repeated unbreakable chars under a
+// pinned main-axis size. CSS §4.5 auto-min-size applies recursively to the
+// inner Box (`flexGrow=1 flexShrink=1` defaults to `min-*: auto`) AND to the
+// Text node — both of which would otherwise pin to the longest unbreakable
+// token's width (200 cells). `minWidth={0}` / `minHeight={0}` is the canonical
+// CSS escape hatch on both the inner Box and the Text, per silvery's
+// "Containers narrower than the longest unbreakable word" rule. Without it,
+// the divider's wrap-Text overflows past its parent's pinned size and bleeds
+// glyphs into sibling regions on a CSS-correct fresh render.
 function VDivider(): React.ReactElement {
   return (
     <Box flexShrink={0} flexGrow={0} flexBasis={1} width={1} flexDirection="column">
-      <Box flexGrow={1} flexShrink={1}>
-        <Text color="cyan" wrap="wrap">
+      <Box flexGrow={1} flexShrink={1} minWidth={0} minHeight={0}>
+        <Text color="cyan" wrap="wrap" minWidth={0}>
           {"│".repeat(200)}
         </Text>
       </Box>
@@ -52,8 +61,8 @@ function VDivider(): React.ReactElement {
 function HDivider(): React.ReactElement {
   return (
     <Box flexShrink={0} flexGrow={0} flexBasis={1} height={1} flexDirection="row">
-      <Box flexGrow={1} flexShrink={1}>
-        <Text color="magenta" wrap="wrap">
+      <Box flexGrow={1} flexShrink={1} minWidth={0} minHeight={0}>
+        <Text color="magenta" wrap="wrap" minHeight={0}>
           {"─".repeat(400)}
         </Text>
       </Box>
