@@ -37,13 +37,13 @@ describe("Box flexDirection prop change on rerender", () => {
 
     const app = r(<App direction="row" />)
     // Row layout: A on left, B on right, both row 0
-    expect(stripAnsi(app.lines[0])).toMatch(/A.*B/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/A.*B/)
 
     app.rerender(<App direction="column" />)
     // Column layout: A on row 0, B somewhere below row 0 (parent height 6, two equal children → row 3)
-    expect(stripAnsi(app.lines[0])).toMatch(/^A/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/^A/)
     // B must NOT be on row 0 anymore
-    expect(stripAnsi(app.lines[0])).not.toMatch(/B/)
+    expect(stripAnsi(app.lines[0]!)).not.toMatch(/B/)
     // B should appear in a later row
     const bRow = app.lines.findIndex((l, i) => i > 0 && stripAnsi(l).startsWith("B"))
     expect(bRow).toBeGreaterThan(0)
@@ -66,12 +66,12 @@ describe("Box flexDirection prop change on rerender", () => {
     )
 
     const app = r(<App direction="column" />)
-    expect(stripAnsi(app.lines[0])).toMatch(/^A/)
-    expect(stripAnsi(app.lines[0])).not.toMatch(/B/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/^A/)
+    expect(stripAnsi(app.lines[0]!)).not.toMatch(/B/)
 
     app.rerender(<App direction="row" />)
     // Row layout: A and B on the same row 0
-    expect(stripAnsi(app.lines[0])).toMatch(/A.*B/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/A.*B/)
   })
 
   test("split-renderer pattern (SplitRenderer-shaped wrapper) updates direction", () => {
@@ -98,11 +98,11 @@ describe("Box flexDirection prop change on rerender", () => {
     )
 
     const app = r(<SplitRenderer direction="row" />)
-    expect(stripAnsi(app.lines[0])).toMatch(/session-A.*session-B/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/session-A.*session-B/)
 
     app.rerender(<SplitRenderer direction="column" />)
-    expect(stripAnsi(app.lines[0])).toMatch(/session-A/)
-    expect(stripAnsi(app.lines[0])).not.toMatch(/session-B/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/session-A/)
+    expect(stripAnsi(app.lines[0]!)).not.toMatch(/session-B/)
     const bRow = app.lines.findIndex(
       (l, i) => i > 0 && stripAnsi(l).startsWith("session-B"),
     )
@@ -157,7 +157,7 @@ describe("Box flexDirection prop change on rerender", () => {
     // Start with a single leaf "A"
     const treeLeaf: Tree = { kind: "leaf", id: "A" }
     const app = r(<App tree={treeLeaf} />)
-    expect(stripAnsi(app.lines[0])).toMatch(/A/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/A/)
 
     // Split into row [A, B]
     const treeRow: Tree = {
@@ -169,7 +169,7 @@ describe("Box flexDirection prop change on rerender", () => {
       ],
     }
     app.rerender(<App tree={treeRow} />)
-    expect(stripAnsi(app.lines[0])).toMatch(/A.*B/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/A.*B/)
 
     // Same split, but flip to column (the prop-change-on-reused-node sequence)
     const treeCol: Tree = {
@@ -181,8 +181,8 @@ describe("Box flexDirection prop change on rerender", () => {
       ],
     }
     app.rerender(<App tree={treeCol} />)
-    expect(stripAnsi(app.lines[0])).toMatch(/^A/)
-    expect(stripAnsi(app.lines[0])).not.toMatch(/B/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/^A/)
+    expect(stripAnsi(app.lines[0]!)).not.toMatch(/B/)
     const bRow = app.lines.findIndex(
       (l, i) => i > 0 && stripAnsi(l).startsWith("B"),
     )
@@ -206,15 +206,15 @@ describe("Box flexDirection prop change on rerender", () => {
     )
 
     const app = r(<App direction="row" />)
-    expect(stripAnsi(app.lines[0])).toMatch(/A.*B/)
+    expect(stripAnsi(app.lines[0]!)).toMatch(/A.*B/)
 
     for (let i = 0; i < 4; i++) {
       app.rerender(<App direction="column" />)
-      expect(stripAnsi(app.lines[0])).toMatch(/^A/)
-      expect(stripAnsi(app.lines[0])).not.toMatch(/B/)
+      expect(stripAnsi(app.lines[0]!)).toMatch(/^A/)
+      expect(stripAnsi(app.lines[0]!)).not.toMatch(/B/)
 
       app.rerender(<App direction="row" />)
-      expect(stripAnsi(app.lines[0])).toMatch(/A.*B/)
+      expect(stripAnsi(app.lines[0]!)).toMatch(/A.*B/)
     }
   })
 })

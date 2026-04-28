@@ -1170,7 +1170,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // earlier doRender calls are invisible to callers using outputPhase to diff
     // against an older prevBuffer. Mark all rows dirty for correctness.
     if (incremental && doRenderCount > 1 && instance.prevBuffer) {
-      instance.prevBuffer.markAllRowsDirty()
+      instance.prevBuffer!.markAllRowsDirty()
     }
 
     const t2 = performance.now()
@@ -1368,7 +1368,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     }
 
     if (incremental && doRenderCount > 1 && instance.prevBuffer) {
-      instance.prevBuffer.markAllRowsDirty()
+      instance.prevBuffer!.markAllRowsDirty()
     }
 
     instance.frames.push(newFrame)
