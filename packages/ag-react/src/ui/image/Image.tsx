@@ -138,6 +138,14 @@ export function Image({
   // the +1 on box rect's 0-indexed coords) to land it inside the
   // reserved Box. Without this, silvery's render leaves the cursor at
   // the bottom-right of the buffer and the image spills off-screen.
+  //
+  // On dep-change re-emission (boxRect or dimensions changed across a
+  // re-render), DELETE the previous Kitty image before placing a new
+  // one. Without this, every layout-cascade re-render leaves a stacked
+  // copy of the image at the prior cell coords (Kitty z=1 keeps them
+  // all above the text layer), giving the user-visible "doubled" /
+  // "tripled" image effect during startup. The cleanup-on-unmount
+  // effect below only fires at component teardown, not per re-emit.
   useEffect(() => {
     if (!pngData || !stdoutCtx || !activeProtocol) return
     if (effectiveWidth <= 0 || effectiveHeight <= 0) return
@@ -146,10 +154,14 @@ export function Image({
     const moveCursor = `\x1b[${boxRect.y + 1};${boxRect.x + 1}H`
 
     if (activeProtocol === "kitty") {
+      const id = imageIdRef.current
+      // Delete prior placement (no-op if this is the first emission —
+      // Kitty silently ignores deletes for unknown ids).
+      if (id != null) write(deleteKittyImage(id))
       const seq = encodeKittyImage(pngData, {
         width: effectiveWidth,
         height: effectiveHeight,
-        id: imageIdRef.current ?? undefined,
+        id: id ?? undefined,
       })
       write(moveCursor + seq)
     } else if (activeProtocol === "sixel") {
@@ -157,6 +169,8 @@ export function Image({
       // decode PNG → RGBA via upng-js, then hand off to encodeSixel().
       // Decode failures (malformed PNG) leave the reserved space blank
       // rather than tearing the screen with garbled escape sequences.
+      // Sixel has no per-image-id delete; rely on the cell-buffer
+      // overwrite from the next paintFrame to clear the stale image.
       const rgba = decodePngToRgba(pngData)
       if (rgba) {
         write(moveCursor + encodeSixel(rgba))
