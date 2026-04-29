@@ -146,12 +146,32 @@ export function isKittyGraphicsSupported(emulator?: { program: string; TERM: str
 
 /**
  * Build the Kitty graphics protocol parameter string for the first chunk.
+ *
+ * Important: `KittyImageOptions.width` / `.height` are documented as
+ * "terminal columns" / "terminal rows" — i.e. CELL counts. The Kitty
+ * protocol uses `c=N` / `r=M` for cell-based display sizing, NOT `s=` /
+ * `v=` (those are SOURCE PIXEL dimensions, used only for raw RGB
+ * uploads with f=24/32). Sending `s=`/`v=` with f=100 (PNG) leaves
+ * display sizing to the PNG's native pixel dimensions, which on a
+ * 1536×1024 asset blows up to ~192×64 cells and effectively disappears
+ * off-screen. Use `c=`/`r=` so the terminal scales the PNG into the
+ * reserved cell viewport.
  */
 function buildParams(opts: KittyImageOptions | undefined, more: 0 | 1): string {
-  const parts = [`a=T`, `f=100`, `m=${more}`]
+  // `z=1` puts the image above the default text layer (z=0) so silvery's
+  // per-frame cell paints (which write spaces with default attrs over
+  // the reserved Box area) don't visually obscure the image. Without
+  // z>0 the image is technically present but immediately overdrawn by
+  // the text layer on every frame.
+  // `C=1` keeps the cursor parked — the protocol places the image
+  // relative to the current cursor position, but moves the cursor by
+  // the image's cell size after placing. We position the cursor
+  // explicitly via CSI before each placement; C=1 prevents post-place
+  // cursor drift from messing with subsequent silvery render writes.
+  const parts = [`a=T`, `f=100`, `m=${more}`, `z=1`, `C=1`]
 
-  if (opts?.width != null) parts.push(`s=${opts.width}`)
-  if (opts?.height != null) parts.push(`v=${opts.height}`)
+  if (opts?.width != null) parts.push(`c=${opts.width}`)
+  if (opts?.height != null) parts.push(`r=${opts.height}`)
   if (opts?.id != null) parts.push(`i=${opts.id}`)
 
   return parts.join(",")

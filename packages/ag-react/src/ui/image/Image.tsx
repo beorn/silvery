@@ -132,12 +132,18 @@ export function Image({
     imageIdRef.current = nextImageId++
   }
 
-  // Write image escape sequences after render
+  // Write image escape sequences after render. Both Kitty and Sixel
+  // place the image at the CURRENT cursor position, so we prepend a
+  // CSI cursor-positioning escape (CSI row;col H — 1-indexed, hence
+  // the +1 on box rect's 0-indexed coords) to land it inside the
+  // reserved Box. Without this, silvery's render leaves the cursor at
+  // the bottom-right of the buffer and the image spills off-screen.
   useEffect(() => {
     if (!pngData || !stdoutCtx || !activeProtocol) return
     if (effectiveWidth <= 0 || effectiveHeight <= 0) return
 
     const { write } = stdoutCtx
+    const moveCursor = `\x1b[${boxRect.y + 1};${boxRect.x + 1}H`
 
     if (activeProtocol === "kitty") {
       const seq = encodeKittyImage(pngData, {
@@ -145,7 +151,7 @@ export function Image({
         height: effectiveHeight,
         id: imageIdRef.current ?? undefined,
       })
-      write(seq)
+      write(moveCursor + seq)
     } else if (activeProtocol === "sixel") {
       // Sixel cannot transmit PNG directly (unlike Kitty's f=100), so we
       // decode PNG → RGBA via upng-js, then hand off to encodeSixel().
@@ -153,10 +159,10 @@ export function Image({
       // rather than tearing the screen with garbled escape sequences.
       const rgba = decodePngToRgba(pngData)
       if (rgba) {
-        write(encodeSixel(rgba))
+        write(moveCursor + encodeSixel(rgba))
       }
     }
-  }, [pngData, stdoutCtx, activeProtocol, effectiveWidth, effectiveHeight])
+  }, [pngData, stdoutCtx, activeProtocol, effectiveWidth, effectiveHeight, boxRect.x, boxRect.y])
 
   // Cleanup: delete Kitty image on unmount
   useEffect(() => {

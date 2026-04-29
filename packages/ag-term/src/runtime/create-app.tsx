@@ -1845,13 +1845,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   })
   const doRender = renderer.doRender
 
-  // Initial render
-  if (_ansiTrace) {
-    traceLog.debug?.("=== INITIAL RENDER ===")
-  }
-  currentBuffer = doRender()
-
-  // Enter alternate screen if requested, then clear and hide cursor
+  // Enter alternate screen FIRST (before the initial render) so that React
+  // effects fired during reconcile (e.g., <Image>'s useEffect writing Kitty
+  // graphics escapes) land on the alt screen rather than the main screen
+  // and then get wiped when alt-screen entry clears its buffer.
+  //
+  // Sequence: alt-screen ON → clear → first doRender (effects write to alt
+  // screen, surviving subsequent cell paints because Kitty/Sixel images
+  // live above the text layer with z>=0) → paintFrame writes the buffer.
   if (!headless) {
     if (_ansiTrace) {
       traceLog.debug?.("=== ALT SCREEN + CLEAR ===")
@@ -1864,6 +1865,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       stdout.write("\x1b[2J\x1b[H")
     }
     stdout.write("\x1b[?25l")
+  }
+
+  // Initial render — must run AFTER alt-screen entry so reconciler effects
+  // (Image, Static, etc.) write to the correct screen surface.
+  if (_ansiTrace) {
+    traceLog.debug?.("=== INITIAL RENDER ===")
+  }
+  currentBuffer = doRender()
+
+  if (!headless) {
 
     // Kitty keyboard protocol — all paths go through the Modes owner so state
     // is tracked for race-free teardown.
