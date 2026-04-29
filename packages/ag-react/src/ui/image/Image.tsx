@@ -27,7 +27,7 @@
  */
 
 import { readFileSync } from "node:fs"
-import { type JSX, useContext, useEffect, useMemo, useRef } from "react"
+import { type JSX, useContext, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import { StdoutContext } from "../../context"
 import { useBoxRect } from "../../hooks/useLayout"
 import { encodeKittyImage, isKittyGraphicsSupported, deleteKittyImage } from "./kitty-graphics"
@@ -146,7 +146,14 @@ export function Image({
   // all above the text layer), giving the user-visible "doubled" /
   // "tripled" image effect during startup. The cleanup-on-unmount
   // effect below only fires at component teardown, not per re-emit.
-  useEffect(() => {
+  //
+  // useLayoutEffect (not useEffect): fires synchronously during the
+  // React commit phase, BEFORE silvery's paintFrame writes the cell
+  // buffer. With z=1 the image ends up above paintFrame's spaces, no
+  // visible "blank then image" flicker. Using useEffect, the order was
+  // paintFrame (blank cells visible) → useEffect (image appears) — the
+  // user reported "small/partial then full" flicker which is this gap.
+  useLayoutEffect(() => {
     if (!pngData || !stdoutCtx || !activeProtocol) return
     if (effectiveWidth <= 0 || effectiveHeight <= 0) return
     // Gate on a measured boxRect — flexily emits a (0, 0, 0×0) rect on
