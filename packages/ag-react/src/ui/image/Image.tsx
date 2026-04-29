@@ -149,6 +149,14 @@ export function Image({
   useEffect(() => {
     if (!pngData || !stdoutCtx || !activeProtocol) return
     if (effectiveWidth <= 0 || effectiveHeight <= 0) return
+    // Gate on a measured boxRect — flexily emits a (0, 0, 0×0) rect on
+    // the first render before layout has assigned the host node a
+    // position. If we don't gate, the placement uses cursor (0, 0) and
+    // the image briefly flashes at the top-left corner of the alt
+    // screen until the next render's effect deletes it and emits at
+    // the real position. boxRect.width > 0 is the canonical "I've been
+    // measured" predicate (same gate <MeasuredBox> uses).
+    if (boxRect.width <= 0) return
 
     const { write } = stdoutCtx
     const moveCursor = `\x1b[${boxRect.y + 1};${boxRect.x + 1}H`

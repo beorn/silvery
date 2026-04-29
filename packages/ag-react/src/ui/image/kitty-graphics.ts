@@ -99,7 +99,10 @@ export function encodeKittyImage(pngData: Buffer, opts?: KittyImageOptions): str
  * ```
  */
 export function deleteKittyImage(id: number): string {
-  return `${APC_START}a=d,d=i,i=${id}${ST}`
+  // `q=2` suppresses the OK/error response — see buildParams comment
+  // for placement. Same rationale: silvery's input parser treats the
+  // response bytes as typed characters; the delete is fire-and-forget.
+  return `${APC_START}a=d,d=i,i=${id},q=2${ST}`
 }
 
 /**
@@ -168,7 +171,14 @@ function buildParams(opts: KittyImageOptions | undefined, more: 0 | 1): string {
   // the image's cell size after placing. We position the cursor
   // explicitly via CSI before each placement; C=1 prevents post-place
   // cursor drift from messing with subsequent silvery render writes.
-  const parts = [`a=T`, `f=100`, `m=${more}`, `z=1`, `C=1`]
+  // `q=2` suppresses BOTH OK and error responses from the terminal.
+  // Without this, Kitty sends `\x1b_Gi=N;OK\x1b\\` (one envelope per
+  // image command) back on stdin. silvery's input parser doesn't know
+  // about Kitty graphics responses — it interprets the bytes as typed
+  // characters and they end up in whatever TextInput holds focus
+  // ("garbage" like `_Gi=2;OK\_Gi=1;OK\` in the command box). We don't
+  // use the response anyway — placement is fire-and-forget.
+  const parts = [`a=T`, `f=100`, `m=${more}`, `z=1`, `C=1`, `q=2`]
 
   if (opts?.width != null) parts.push(`c=${opts.width}`)
   if (opts?.height != null) parts.push(`r=${opts.height}`)
