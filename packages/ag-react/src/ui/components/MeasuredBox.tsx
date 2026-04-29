@@ -1,20 +1,28 @@
 /**
- * MeasuredBox — render-prop wrapper that exposes its own measured rect.
+ * MeasuredBox — render-prop wrapper that defers rendering its children
+ * until its own measured rect is known.
  *
- * Solves the width=0 flash: components that need to know their host's
- * measured size have historically rolled `useBoxRect() + width > 0 ? … : …`
- * by hand. MeasuredBox makes that pattern a one-liner.
+ * Wraps the recurring "I need to know my own width before I render" pattern
+ * that comes up for responsive content (banners, tables, ASCII art that
+ * truncates at host width). Eliminates the explicit
+ * `useBoxRect() + width > 0 ? <Inner/> : null` dance.
  *
  * ```tsx
- * <MeasuredBox flexDirection="column" alignItems="center">
+ * <MeasuredBox width="100%" flexDirection="column" alignItems="center">
  *   {({ width }) => <Banner availableWidth={width} />}
  * </MeasuredBox>
  * ```
  *
  * Internals: the outer `<Box>` always renders (it's the node being
- * measured); `useBoxRect()` reads its size; children are rendered only when
- * `width > 0 && height > 0`. Plain ReactNode children are also deferred
- * until measurement is available.
+ * measured); `useBoxRect()` reads its size. On the first paint the rect
+ * is `{0,0,0,0}` and `MeasuredBox` renders nothing. After layout commits,
+ * the second paint delivers the real rect to the render function.
+ *
+ * Sizing the outer box: MeasuredBox is just a Box — it sizes by the same
+ * rules as `<Box>`. Pass an explicit `width`/`height`, `flexGrow`, or
+ * `width="100%"` (when the parent has a definite cross-axis size). A
+ * MeasuredBox without sizing inside an `alignItems="center"` parent can't
+ * grow past zero with no children, so it never measures.
  *
  * Source: bead km-silvery.measuredbox-primitive.
  */
@@ -44,12 +52,14 @@ export function MeasuredBox({ children, ...boxProps }: MeasuredBoxProps): React.
 }
 
 /**
- * Inner consumer that calls `useBoxRect()` against the parent Box. Lives in
- * its own component because `useBoxRect` reads the *enclosing* node, so it
- * needs to be a child of the Box being measured — not the Box itself.
+ * Inner consumer that reads its enclosing Box's rect. Lives in its own
+ * component so `useBoxRect()` reads the outer Box (the node we want to
+ * measure) rather than the box being constructed.
  *
- * STAGE 1 — failing-test stub: render unconditionally so the test fails at
- * the "no width=0 frame" assertion, not at the import.
+ * Returns null until measurement is available — width > 0 is the gate
+ * (height can legitimately be 0 along main axis without children, but
+ * width comes from the cross-axis decision Yoga makes from parent and
+ * outer-Box props, so it's a reliable signal that layout has committed).
  */
 function MeasuredInner({
   children,
@@ -57,6 +67,7 @@ function MeasuredInner({
   children: MeasuredBoxRenderFn | React.ReactNode
 }): React.ReactElement | null {
   const rect = useBoxRect()
+  if (rect.width <= 0) return null
   if (typeof children === "function") {
     return <>{(children as MeasuredBoxRenderFn)({ width: rect.width, height: rect.height })}</>
   }

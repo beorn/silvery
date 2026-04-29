@@ -24,11 +24,9 @@ describe("MeasuredBox", () => {
     }
 
     const app = r(
-      <Box width={50} height={3}>
-        <MeasuredBox flexDirection="column" alignItems="center">
-          {({ width }) => <Probe width={width} />}
-        </MeasuredBox>
-      </Box>,
+      <MeasuredBox width={50} height={3} flexDirection="column" alignItems="center">
+        {({ width }) => <Probe width={width} />}
+      </MeasuredBox>,
     )
 
     // The Probe must NEVER be called with width=0.
@@ -41,7 +39,8 @@ describe("MeasuredBox", () => {
       expect(frame).not.toMatch(/w=0\b/)
     }
 
-    // Final visible text contains the real width.
+    // Final visible text contains the real width (50 since alignItems=center
+    // doesn't constrain main-axis when MeasuredBox has explicit width=50).
     expect(app.text).toContain("w=50")
   })
 
@@ -74,19 +73,17 @@ describe("MeasuredBox", () => {
     let renderPropWidth = -1
 
     const app = r(
-      <Box width={30} height={4}>
-        <MeasuredBox flexDirection="column">
-          {({ width }) => {
-            renderPropWidth = width
-            return (
-              <>
-                <HookProbe />
-                <Text>render-prop-w={width}</Text>
-              </>
-            )
-          }}
-        </MeasuredBox>
-      </Box>,
+      <MeasuredBox width={30} height={4} flexDirection="column">
+        {({ width }) => {
+          renderPropWidth = width
+          return (
+            <>
+              <HookProbe />
+              <Text>render-prop-w={width}</Text>
+            </>
+          )
+        }}
+      </MeasuredBox>,
     )
 
     expect(useBoxRectWidth).toBeGreaterThan(0)
@@ -104,11 +101,9 @@ describe("MeasuredBox", () => {
     }
 
     const app = r(
-      <Box width={20} height={3}>
-        <MeasuredBox flexDirection="column">
-          <Tracker />
-        </MeasuredBox>
-      </Box>,
+      <MeasuredBox width={20} height={3} flexDirection="column">
+        <Tracker />
+      </MeasuredBox>,
     )
 
     // Plain children mount once measurement is available.
