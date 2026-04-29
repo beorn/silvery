@@ -103,6 +103,15 @@ export { debugTree, type DebugTreeOptions } from "./debug"
 // Re-export buffer comparison utilities
 export { compareBuffers, formatMismatch, type BufferMismatch } from "./compare-buffers"
 
+// Re-export frame-recorder API (per-paint TextFrame snapshots over time).
+export {
+  recordFrames,
+  type FrameRecording,
+  type FrameRecordable,
+  type CellChange,
+  type TransientPredicate,
+} from "./frame-recorder"
+
 // Re-export render API
 export {
   render,
