@@ -2466,22 +2466,34 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           // than pointer hit test.
           const agRoot = getContainerRoot(container)
           const hit = agRoot ? selectionHitTest(agRoot, mouseData.x, mouseData.y) : null
-          const scope = hit ? findContainBoundary(hit) : null
-          // Resolve click-count for THIS mousedown (1=fresh, 2=double-click,
-          // 3=triple-click). Used by the up branch to decide whether to
-          // dispatch startWord / startLine, and by the move branch to pick
-          // the drag granularity (word / line snapping).
-          const clickCount = checkClickCount(
-            selectionClickCount,
-            mouseData.x,
-            mouseData.y,
-            mouseData.button,
-          )
-          pendingSelectionDown = {
-            col: mouseData.x,
-            row: mouseData.y,
-            scope,
-            clickCount,
+          // No selectable hit target — the click landed in a
+          // `userSelect="none"` subtree (scrollbar, toolbar buttons,
+          // etc.). Don't arm a selection drag: a subsequent mousemove
+          // would otherwise start a drag from this anchor and steal
+          // the gesture from the component's own onMouseDown/move
+          // handlers (the click-and-drag scrollbar is the canonical
+          // case — its move handlers fire alongside the selection
+          // drag, and the selection paint overlays the scroll UX).
+          if (hit === null) {
+            pendingSelectionDown = null
+          } else {
+            const scope = findContainBoundary(hit)
+            // Resolve click-count for THIS mousedown (1=fresh, 2=double-
+            // click, 3=triple-click). Used by the up branch to decide
+            // whether to dispatch startWord / startLine, and by the
+            // move branch to pick the drag granularity.
+            const clickCount = checkClickCount(
+              selectionClickCount,
+              mouseData.x,
+              mouseData.y,
+              mouseData.button,
+            )
+            pendingSelectionDown = {
+              col: mouseData.x,
+              row: mouseData.y,
+              scope,
+              clickCount,
+            }
           }
           // Don't consume — let the component tree handle mousedown
           // (click-to-focus, onMouseDown handlers, etc.)

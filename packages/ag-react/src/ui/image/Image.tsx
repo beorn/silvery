@@ -213,13 +213,12 @@ function ImagePlacement({
       const id = imageIdRef.current
       if (id == null) return
       const srcChanged = transmittedSrcRef.current !== pngData
-      const hadPriorPlacement = placedSizeRef.current !== null
 
       if (srcChanged) {
         // Cold path: transmit the PNG once. If we had a prior placement
         // for an OLD src under the same id, drop the entire stored
         // image first so the terminal doesn't keep stale bytes around.
-        if (hadPriorPlacement) write(deleteKittyImage(id))
+        if (placedSizeRef.current !== null) write(deleteKittyImage(id))
         const seq = encodeKittyImage(pngData, {
           width: effectiveWidth,
           height: effectiveHeight,
@@ -228,16 +227,14 @@ function ImagePlacement({
         })
         write(seq)
         transmittedSrcRef.current = pngData
-      } else if (hadPriorPlacement) {
-        // Warm path: PNG bytes are already stored. Clear the old
-        // placement so we don't stack copies, then re-place at the
-        // new cursor position with the (possibly new) c=/r= dims.
-        write(deleteKittyPlacement(id))
       }
 
-      // Emit cursor-position + place. One write so the terminal sees
-      // the position-then-place pair atomically with no intermediate
-      // paint.
+      // Position cursor + (re-)place. Kitty's protocol replaces an
+      // existing placement when (image_id, placement_id) match, so
+      // a move on every scroll tick is just one APC packet — no
+      // delete-then-place gap that otherwise produces a visible
+      // flicker frame between the prior placement vanishing and the
+      // new one rendering at the updated coords.
       write(
         moveCursor +
           placeKittyImage({ id, width: effectiveWidth, height: effectiveHeight }),
