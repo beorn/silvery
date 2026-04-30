@@ -44,6 +44,8 @@ import { sumHeights, useVirtualizer } from "../../hooks/useVirtualizer"
 import { makeMeasureKey } from "../../hooks/useVirtualizer"
 import { useScrollState } from "../../hooks/useScrollState"
 import { useInput } from "../../hooks/useInput"
+import { useHover } from "../../hooks/useHover"
+import type { SilveryMouseEvent } from "@silvery/ag/mouse-event-types"
 import { Box, type BoxHandle } from "../../components/Box"
 import { Text } from "../../components/Text"
 import type { AgNode } from "@silvery/ag/types"
@@ -1158,6 +1160,39 @@ function ListViewInner<T>(
       stopKinetic,
       syncScrollbarFrac,
     ],
+  )
+
+  // Set the viewport position from a fractional 0..1 value. Used by
+  // scrollbar click-to-position (click the track at frac=0.6 → snap
+  // viewport to 60% of the way through the content) and the
+  // scroll-to-bottom floating button (frac=1).
+  //
+  // - clamps frac to [0, 1]
+  // - kills any in-flight kinetic momentum (user is taking explicit control)
+  // - clears `pendingFollowSnapRef` UNLESS we landed at the end (then
+  //   re-arm follow="end" so subsequent appends keep the tail visible)
+  const scrollToFrac = useCallback(
+    (frac: number) => {
+      const maxRow = maxScrollRowRef.current
+      if (maxRow <= 0) return
+      const clampedFrac = Math.max(0, Math.min(1, frac))
+      const target = clampedFrac * maxRow
+      stopKinetic()
+      clearReleaseTimer()
+      scrollRowFloatRef.current = target
+      const rendered = Math.round(target)
+      setScrollRow((prev) => (prev === rendered ? prev : rendered))
+      // At the end? Re-arm follow="end" so streaming appends stay visible.
+      // Anywhere else: cancel pending snap so the viewport doesn't jump.
+      if (clampedFrac >= 1 - 1 / Math.max(1, maxRow) && resolvedFollow === "end") {
+        pendingFollowSnapRef.current = true
+      } else {
+        pendingFollowSnapRef.current = false
+      }
+      setIsScrolling(true)
+      scheduleScrollbarHide()
+    },
+    [clearReleaseTimer, resolvedFollow, scheduleScrollbarHide, stopKinetic],
   )
 
   // Observe search bar state — while the bar is open, the app-wide
@@ -2509,6 +2544,22 @@ function ListViewInner<T>(
           const firstRow = Math.floor(thumbTopFloat)
           const lastRow = Math.min(trackHeight - 1, Math.ceil(thumbBottomFloat) - 1)
           const EIGHTHS = "▁▂▃▄▅▆▇█"
+          // Click-on-track: convert click row → frac of track. Center the
+          // thumb on the click position so a click at row Y in the track
+          // jumps the viewport so the thumb's middle lands at Y. Without
+          // the centering, a click on the lower half of a fully-scrolled
+          // track would always land just shy of the bottom (frac=lastRow/
+          // trackHeight, never quite 1).
+          const handleTrackClick = (e: SilveryMouseEvent): void => {
+            const node = e.currentTarget
+            const rect = node.screenRect ?? node.boxRect
+            if (!rect || rect.height <= 0) return
+            const relativeY = e.clientY - rect.y
+            const centeredY = relativeY - thumbHeight / 2
+            const denom = Math.max(1, trackHeight - thumbHeight)
+            scrollToFrac(centeredY / denom)
+            e.stopPropagation()
+          }
           // Epsilon compare for fractional edges — a floating-point near-equal
           // shouldn't render a partial glyph.
           const EPS = 0.001
@@ -2551,15 +2602,25 @@ function ListViewInner<T>(
               )
             }
           }
-          // Edge-bump indicator — a transient cue that fires only when a
-          // scroll attempt was clamped at a boundary. Renders as a thin
-          // full-width line at the TOP edge of the first visible row (top
-          // bump) or the BOTTOM edge of the last visible row (bottom bump):
-          // Bar paints the full ListView width (left/right:0) using a bg-only
-          // Box — no Text child — so cell characters beneath are preserved.
+          // The full-height interactive track wraps the thumb. Clicks
+          // anywhere on the track snap the viewport via `scrollToFrac`.
+          // The thumb itself is rendered as an absolutely-positioned
+          // child of the track so a click on the thumb body still
+          // resolves to a track-relative y (and is roughly idempotent —
+          // clicks on the thumb keep it under the cursor).
           return (
-            <Box position="absolute" top={firstRow} right={0} width={1} flexDirection="column">
-              {rows}
+            <Box
+              position="absolute"
+              top={0}
+              right={0}
+              width={1}
+              height={trackHeight}
+              flexDirection="column"
+              onClick={handleTrackClick}
+            >
+              <Box position="absolute" top={firstRow} right={0} width={1} flexDirection="column">
+                {rows}
+              </Box>
             </Box>
           )
         })()}
@@ -2587,6 +2648,61 @@ function ListViewInner<T>(
           <Text color="$muted">▄▄▄▄▄▄▄▄▄▄</Text>
         </Box>
       )}
+      {/* Scroll-to-bottom floating button — chat-style affordance that
+       * surfaces when the user is more than one viewport above the end
+       * (i.e. has scrolled away from streaming content). Click snaps the
+       * viewport to the bottom and re-arms `follow="end"` auto-follow.
+       *
+       * Only meaningful for chat-style auto-follow lists (`follow="end"`):
+       * for plain navigation lists, pulling the user back to the tail
+       * isn't necessarily what they want, so we keep the affordance
+       * scoped to the case where it's a clear UX win. */}
+      {resolvedFollow === "end" &&
+        scrollableRows > 0 &&
+        scrollableRows - effectiveRowsAbove > trackHeight && (
+          <ScrollToBottomButton onClick={() => scrollToFrac(1)} />
+        )}
+    </Box>
+  )
+}
+
+/**
+ * Floating "Scroll to latest" button.
+ *
+ * Shown as a centered overlay at the bottom of a ListView when the user
+ * is more than one viewport-height away from the end (chat-style "you've
+ * scrolled away from streaming content" cue).
+ *
+ * Visual states:
+ *   - Idle: rounded pill, $mutedbg background, $muted text
+ *   - Armed (hover): inverse — $primary background, $bg text — the macOS
+ *     "active button" affordance
+ */
+function ScrollToBottomButton({ onClick }: { onClick: () => void }): React.ReactElement {
+  const { isHovered, onMouseEnter, onMouseLeave } = useHover()
+  const bg = isHovered ? "$primary" : "$mutedbg"
+  const fg = isHovered ? "$bg" : "$muted"
+  return (
+    <Box
+      position="absolute"
+      bottom={1}
+      left={0}
+      right={0}
+      flexDirection="row"
+      justifyContent="center"
+      pointerEvents="none"
+    >
+      <Box
+        flexDirection="row"
+        paddingX={1}
+        backgroundColor={bg}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onClick={onClick}
+        pointerEvents="auto"
+      >
+        <Text color={fg}>↓ Latest</Text>
+      </Box>
     </Box>
   )
 }

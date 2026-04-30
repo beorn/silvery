@@ -51,7 +51,7 @@ function countActions(stream: string): { transmit: number; place: number } {
 }
 
 /** Drive a position change via state — useEffect bumps the offset N times. */
-function MovingImage({ moves }: { moves: number }): JSX.Element {
+function MovingImage({ moves }: { moves: number }): React.ReactElement {
   const [step, setStep] = useState(0)
   useEffect(() => {
     if (step >= moves) return
