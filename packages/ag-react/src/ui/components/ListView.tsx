@@ -2639,6 +2639,11 @@ function ListViewInner<T>(
           // The thumb itself renders as an absolutely-positioned child
           // of the track so clicks on the thumb body resolve to a
           // track-relative y identically to clicks on empty track.
+          //
+          // `userSelect="none"` prevents silvery's selection feature
+          // from intercepting the mousedown — without it, the click
+          // would start a text-selection drag and our handlers would
+          // never see the event.
           return (
             <Box
               position="absolute"
@@ -2647,6 +2652,7 @@ function ListViewInner<T>(
               width={1}
               height={trackHeight}
               flexDirection="column"
+              userSelect="none"
               onMouseDown={handleTrackMouseDown}
               onMouseMove={handleTrackMouseMove}
               onMouseUp={handleTrackMouseUp}
@@ -2726,10 +2732,14 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }): React.React
       justifyContent="center"
       pointerEvents="none"
     >
+      {/* `userSelect="none"` blocks silvery's selection feature from
+       * eating the mousedown — without it, clicking the button starts
+       * a text-selection drag instead of firing onClick. */}
       <Box
         flexDirection="row"
         paddingX={1}
         backgroundColor={bg}
+        userSelect="none"
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onClick={onClick}

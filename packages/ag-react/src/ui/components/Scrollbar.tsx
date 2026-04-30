@@ -175,6 +175,11 @@ export function Scrollbar({
       width={1}
       height={trackHeight}
       flexDirection="column"
+      // `userSelect="none"` prevents silvery's selection feature from
+      // intercepting the mousedown — without it, clicking on the
+      // scrollbar starts a text-selection drag and our handlers never
+      // fire.
+      userSelect="none"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
