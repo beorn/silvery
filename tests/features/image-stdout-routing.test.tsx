@@ -20,7 +20,7 @@
 import React from "react"
 import { describe, expect, test } from "vitest"
 import { createTermless } from "@silvery/test"
-import { Box, Image, Text } from "../../src/index.js"
+import { Box, Image, Text, encodeKittyImage, placeKittyImage } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
 import { getInternalStreams } from "../../packages/ag-term/src/runtime/term-internal"
 import "@termless/test/matchers"
@@ -39,6 +39,40 @@ const APC_OPEN = "\x1b_G"
 const APC_CLOSE = "\x1b\\"
 
 describe("Image: StdoutContext.write routes escapes to the terminal", () => {
+  test("Kitty encoder supports z-index, pixel offsets, source crop, and virtual placement", () => {
+    const transmitted = encodeKittyImage(TINY_PNG, {
+      id: 7,
+      width: 11,
+      height: 5,
+      zIndex: -1,
+      pixelOffset: { x: 3, y: 4 },
+      sourceRect: { x: 2, y: 1, width: 9, height: 8 },
+      virtualPlacement: true,
+    })
+    const placed = placeKittyImage({
+      id: 7,
+      placementId: 2,
+      width: 11,
+      height: 5,
+      zIndex: -1,
+      pixelOffset: { x: 3, y: 4 },
+      sourceRect: { x: 2, y: 1, width: 9, height: 8 },
+      virtualPlacement: true,
+    })
+
+    for (const seq of [transmitted, placed]) {
+      expect(seq).toContain("z=-1")
+      expect(seq).toContain("X=3")
+      expect(seq).toContain("Y=4")
+      expect(seq).toContain("x=2")
+      expect(seq).toContain("y=1")
+      expect(seq).toContain("w=9")
+      expect(seq).toContain("h=8")
+      expect(seq).toContain("U=1")
+    }
+    expect(placed).toContain("p=2")
+  })
+
   test("Kitty graphics APC envelope reaches the terminal output", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
 
@@ -77,6 +111,39 @@ describe("Image: StdoutContext.write routes escapes to the terminal", () => {
     handle.unmount()
   })
 
+  test("Kitty graphics escapes are flushed after the frame paint", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+
+    const writes: string[] = []
+    const internal = getInternalStreams(term).stdout as unknown as {
+      write: (s: string | Uint8Array) => boolean
+    }
+    const orig = internal.write.bind(internal)
+    internal.write = (s: string | Uint8Array) => {
+      writes.push(typeof s === "string" ? s : Buffer.from(s).toString("utf8"))
+      return orig(s)
+    }
+
+    const handle = await run(
+      <Box flexDirection="column">
+        <Text>before-image</Text>
+        <Image src={TINY_PNG} width={10} height={4} protocol="kitty" />
+      </Box>,
+      term,
+    )
+    await settle(150)
+
+    const firstFrameIndex = writes.findIndex((w) => w.includes("before-image"))
+    const firstKittyIndex = writes.findIndex((w) => w.includes(APC_OPEN))
+    expect(firstFrameIndex, "rendered text frame should be written").toBeGreaterThanOrEqual(0)
+    expect(firstKittyIndex, "Kitty APC should be written").toBeGreaterThanOrEqual(0)
+    expect(firstKittyIndex, "Kitty APC should be flushed after the frame paint").toBeGreaterThan(
+      firstFrameIndex,
+    )
+
+    handle.unmount()
+  })
+
   test("Kitty graphics cursor position uses the image slot inside scroll panes", async () => {
     using term = createTermless({ cols: 80, rows: 12 })
 
@@ -110,6 +177,67 @@ describe("Image: StdoutContext.write routes escapes to the terminal", () => {
     expect(all, "image should emit at row 3, col 34 after the preceding scroll content").toContain(
       "\x1b[3;34H",
     )
+
+    handle.unmount()
+  })
+
+  test("Kitty graphics writes preserve the app cursor while placing images", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+
+    const writes: string[] = []
+    const internal = getInternalStreams(term).stdout as unknown as {
+      write: (s: string | Uint8Array) => boolean
+    }
+    const orig = internal.write.bind(internal)
+    internal.write = (s: string | Uint8Array) => {
+      writes.push(typeof s === "string" ? s : Buffer.from(s).toString("utf8"))
+      return orig(s)
+    }
+
+    const handle = await run(
+      <Box flexDirection="column" padding={1}>
+        <Image src={TINY_PNG} width={10} height={4} protocol="kitty" />
+      </Box>,
+      term,
+    )
+    await settle(150)
+
+    const all = writes.join("")
+    expect(all, "placement write should be captured").toContain("a=p")
+    expect(all, "placement should hide cursor before moving to image slot").toContain("\x1b[?25l")
+    expect(all, "placement should save cursor before moving to image slot").toContain("\x1b7")
+    expect(all, "placement should restore cursor after the APC packet").toContain("\x1b8")
+    expect(all, "placement should restore cursor visibility").toContain("\x1b[?25h")
+
+    handle.unmount()
+  })
+
+  test("Kitty graphics clips partially scrolled-off top images instead of deleting them", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+
+    const writes: string[] = []
+    const internal = getInternalStreams(term).stdout as unknown as {
+      write: (s: string | Uint8Array) => boolean
+    }
+    const orig = internal.write.bind(internal)
+    internal.write = (s: string | Uint8Array) => {
+      writes.push(typeof s === "string" ? s : Buffer.from(s).toString("utf8"))
+      return orig(s)
+    }
+
+    const handle = await run(
+      <Box flexDirection="column" height={3} overflow="scroll" scrollOffset={1}>
+        <Image src={TINY_PNG} width={10} height={4} protocol="kitty" />
+        <Text>below</Text>
+      </Box>,
+      term,
+    )
+    await settle(150)
+
+    const all = writes.join("")
+    expect(all, "partially visible image should still be placed at top row").toContain("\x1b[1;1H")
+    expect(all, "visible rows should be clipped to the viewport remainder").toContain("r=3")
+    expect(all, "partial clipping should not delete the still-visible placement").not.toContain("a=d,d=i")
 
     handle.unmount()
   })

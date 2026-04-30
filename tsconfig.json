@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2024",
     "lib": ["ESNext", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "strict": true,
     "esModuleInterop": true,
@@ -35,6 +36,6 @@
       "@silvery/ink/*": ["./packages/ink/src/*"]
     }
   },
-  "include": ["src", "packages/*/src"],
+  "include": ["src", "packages/*/src", "../termless/src/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

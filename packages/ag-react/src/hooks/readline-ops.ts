@@ -240,7 +240,7 @@ export function handleReadlineKey(
   // Regular Character Input
   // =========================================================================
 
-  // Cmd/Super, Ctrl, Meta, Alt — all modifier-gated keystrokes other than
+  // Cmd/Super, Ctrl, Meta (Alt/Option) — all modifier-gated keystrokes other than
   // pure Shift are app-level shortcuts owned by the host (command palette,
   // save, quit, permission-inbox toggle, etc.). Never treat them as text
   // insertion — drop them so the parent useInput listeners further up the
@@ -257,7 +257,7 @@ export function handleReadlineKey(
   // host apps to hack around it with microtask strip-trailing-letter
   // workarounds. Repro: silvercode's Ctrl+O binding used to insert "o"
   // into the command input every toggle.
-  if (key.super || key.ctrl || key.meta || key.alt) {
+  if (key.super || key.ctrl || key.meta) {
     return null
   }
 

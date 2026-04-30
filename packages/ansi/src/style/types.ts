@@ -3,7 +3,6 @@
  */
 
 import type { ColorLevel } from "../types.ts"
-import type { TerminalCaps } from "../detection.ts"
 
 /**
  * Structural subset of {@link TerminalCaps} the extended-underline methods on

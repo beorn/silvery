@@ -7,8 +7,8 @@
  *
  * Since terminal images are escape-sequence-based and don't fit the cell
  * buffer model, the component reserves visual space with a Box of the
- * requested dimensions and uses `useEffect` to write image data directly
- * to stdout after render.
+ * requested dimensions and writes image data directly to stdout during
+ * commit.
  *
  * @example
  * ```tsx
@@ -39,6 +39,11 @@ import {
   deleteKittyPlacement,
   placeKittyImage,
 } from "./kitty-graphics"
+import {
+  computeVisibleImagePlacement,
+  planKittyImagePlacement,
+  withCursorPreserved,
+} from "./image-placement"
 import { decodePngToRgba, encodeSixel, isSixelSupported } from "./sixel-encoder"
 
 // ============================================================================
@@ -58,6 +63,21 @@ export interface ImageProps {
   fallback?: string
   /** Which protocol to use. Default: "auto" (tries Kitty, then Sixel, then fallback) */
   protocol?: ImageProtocol
+  /** Kitty placement id. Defaults to 1. */
+  placementId?: number
+  /** Kitty z-index. Defaults to 1 so images render above reserved cells. */
+  zIndex?: number
+  /** Kitty sub-cell pixel offset inside the first cell. */
+  pixelOffset?: { readonly x?: number; readonly y?: number }
+  /** Kitty source crop rectangle in image pixels. */
+  sourceRect?: {
+    readonly x?: number
+    readonly y?: number
+    readonly width?: number
+    readonly height?: number
+  }
+  /** Kitty virtual placement flag for Unicode placeholder rendering. */
+  virtualPlacement?: boolean
 }
 
 // ============================================================================
@@ -95,8 +115,8 @@ let nextImageId = 1
  * The component operates in two phases:
  * 1. **Layout phase**: Renders a Box that reserves the visual space
  *    (filled with spaces so the cell buffer has the right dimensions).
- * 2. **Effect phase**: After render, writes the image escape sequence
- *    directly to stdout, positioned over the reserved space.
+ * 2. **Commit phase**: Writes the image escape sequence directly to stdout,
+ *    positioned over the reserved space.
  *
  * When image protocols are not available, the fallback text is shown instead.
  */
@@ -106,6 +126,11 @@ export function Image({
   height: requestedHeight,
   fallback = "[image]",
   protocol: preferredProtocol = "auto",
+  placementId,
+  zIndex,
+  pixelOffset,
+  sourceRect,
+  virtualPlacement,
 }: ImageProps): JSX.Element {
   const parentRect = useBoxRect()
   const effectiveWidth = requestedWidth ?? parentRect.width
@@ -119,10 +144,21 @@ export function Image({
         height={effectiveHeight}
         fallback={fallback}
         protocol={preferredProtocol}
+        placementId={placementId}
+        zIndex={zIndex}
+        pixelOffset={pixelOffset}
+        sourceRect={sourceRect}
+        virtualPlacement={virtualPlacement}
       />
     </Box>
   )
 }
+
+type ImagePlacementProps = Omit<
+  Required<ImageProps>,
+  "placementId" | "zIndex" | "pixelOffset" | "sourceRect" | "virtualPlacement"
+> &
+  Pick<ImageProps, "placementId" | "zIndex" | "pixelOffset" | "sourceRect" | "virtualPlacement">
 
 function ImagePlacement({
   src,
@@ -130,7 +166,12 @@ function ImagePlacement({
   height: effectiveHeight,
   fallback,
   protocol: preferredProtocol,
-}: Required<ImageProps>): JSX.Element {
+  placementId,
+  zIndex,
+  pixelOffset,
+  sourceRect,
+  virtualPlacement,
+}: ImagePlacementProps): JSX.Element {
   // LAYOUT_READ_AT_RENDER: image rendering writes Kitty/Sixel escape
   // sequences with explicit pixel/cell dimensions. The encoded image must
   // match the reserved cell area exactly, so `width`/`height` need to be
@@ -145,11 +186,6 @@ function ImagePlacement({
   // already-stored image via `a=p` instead of re-encoding the full
   // base64 blob — eliminating the visible flicker on scroll re-emit.
   const transmittedSrcRef = useRef<Buffer | null>(null)
-  // Tracks the dimensions the image was last placed at. If only x/y
-  // change, we can re-place without re-transmitting; if width/height
-  // change, the stored image's display sizing also needs updating
-  // (placeKittyImage carries new c=/r=, so re-place is still enough).
-  const placedSizeRef = useRef<{ width: number; height: number } | null>(null)
   // Tracks the last emitted (x, y, w, h). Re-place is skipped when
   // every coordinate matches what's already on screen — the layout
   // engine fires `useScreenRect` updates on every commit even when
@@ -159,9 +195,13 @@ function ImagePlacement({
   // micro-stutter / "the image jumps around" because each
   // re-place momentarily races with whatever else is being drawn
   // at that location.
-  const lastEmittedRef = useRef<{ x: number; y: number; width: number; height: number } | null>(
-    null,
-  )
+  const lastEmittedRef = useRef<{
+    x: number
+    y: number
+    width: number
+    height: number
+    placementKey: string
+  } | null>(null)
 
   // Resolve image data
   const pngData = useMemo(() => {
@@ -173,6 +213,8 @@ function ImagePlacement({
       return null
     }
   }, [src])
+
+  const decodedImage = useMemo(() => (pngData ? decodePngToRgba(pngData) : null), [pngData])
 
   // Detect protocol support
   const activeProtocol = useMemo(() => detectProtocol(preferredProtocol), [preferredProtocol])
@@ -218,56 +260,42 @@ function ImagePlacement({
     // measured" predicate (same gate <MeasuredBox> uses).
     if (boxRect.width <= 0) return
 
-    // Visibility gate — skip emission when the image is wholly off-
-    // screen or scrolled past a viewport boundary. screenRect on a
-    // node scrolled OUT of its parent's overflow container can be
-    // negative (rows above the viewport) or extend past the
-    // terminal's last row; firing the CSI cursor-position escape
-    // with a bogus row number sends Kitty's `a=p` to whatever the
-    // terminal interprets as that coordinate (often row 0/1, the
-    // top-left of the screen). User-visible: the image appears to
-    // teleport to the top, then snap back when it scrolls back into
-    // view.
-    //
-    // Detection: any negative coordinate, OR the image's bounding
-    // box extends fully past the bottom of the terminal. We only
-    // emit when the image's footprint at least partially intersects
-    // a sane on-screen region. When the image is fully off-screen
-    // and we had a prior placement, delete it so the terminal isn't
-    // left with a stale image at the old position.
-    const imageOffscreen =
-      boxRect.y + effectiveHeight <= 0 ||
-      boxRect.x + effectiveWidth <= 0 ||
-      boxRect.x < 0 ||
-      boxRect.y < 0
-    if (imageOffscreen) {
-      if (activeProtocol === "kitty" && placedSizeRef.current !== null) {
-        const id = imageIdRef.current
-        if (id != null) {
-          stdoutCtx.write(deleteKittyPlacement(id))
-        }
-        placedSizeRef.current = null
-        lastEmittedRef.current = null
-      }
-      return
-    }
-
-    const { write } = stdoutCtx
-    const moveCursor = `\x1b[${boxRect.y + 1};${boxRect.x + 1}H`
+    const write = stdoutCtx.writeAfterFrame ?? stdoutCtx.write
 
     if (activeProtocol === "kitty") {
       const id = imageIdRef.current
       if (id == null) return
-      const srcChanged = transmittedSrcRef.current !== pngData
 
-      if (srcChanged) {
+      const srcChanged = transmittedSrcRef.current !== pngData
+      const plan = planKittyImagePlacement({
+        rect: { x: boxRect.x, y: boxRect.y, width: effectiveWidth, height: effectiveHeight },
+        imagePixels: decodedImage,
+        sourceRect,
+        pixelOffset,
+        placementId,
+        zIndex,
+        virtualPlacement,
+        previousPlacement: lastEmittedRef.current,
+        srcChanged,
+      })
+
+      if (plan.kind === "noop") return
+
+      if (plan.kind === "delete-placement") {
+        const id = imageIdRef.current
+        if (id != null) {
+          write(withCursorPreserved(deleteKittyPlacement(id, placementId)))
+        }
+        lastEmittedRef.current = null
+        return
+      }
+
+      if (plan.transmit) {
         // Cold path: transmit the PNG once. If we had a prior placement
         // for an OLD src under the same id, drop the entire stored
         // image first so the terminal doesn't keep stale bytes around.
-        if (placedSizeRef.current !== null) write(deleteKittyImage(id))
+        if (plan.deleteImageBeforeTransmit) write(deleteKittyImage(id))
         const seq = encodeKittyImage(pngData, {
-          width: effectiveWidth,
-          height: effectiveHeight,
           id,
           transmitOnly: true,
         })
@@ -275,22 +303,8 @@ function ImagePlacement({
         transmittedSrcRef.current = pngData
       }
 
-      // Skip the re-place when the position + dimensions exactly
-      // match what's already on screen. The layout engine can fire
-      // `useScreenRect` updates on commits that didn't actually
-      // change the box's position (resize coalescing, descendant
-      // re-renders); without this gate, every chat tick re-emits
-      // the same Kitty `a=p` packet — visually a stutter as the
-      // terminal repaints the same image at the same location while
-      // the surrounding cell buffer is being overdrawn.
-      const last = lastEmittedRef.current
-      const positionUnchanged =
-        last !== null &&
-        last.x === boxRect.x &&
-        last.y === boxRect.y &&
-        last.width === effectiveWidth &&
-        last.height === effectiveHeight
-      if (positionUnchanged && !srcChanged) return
+      const visible = plan.placement
+      const moveCursor = `\x1b[${visible.y + 1};${visible.x + 1}H`
 
       // Position cursor + (re-)place. Kitty's protocol replaces an
       // existing placement when (image_id, placement_id) match, so
@@ -298,15 +312,37 @@ function ImagePlacement({
       // delete-then-place gap that otherwise produces a visible
       // flicker frame between the prior placement vanishing and the
       // new one rendering at the updated coords.
-      write(moveCursor + placeKittyImage({ id, width: effectiveWidth, height: effectiveHeight }))
-      placedSizeRef.current = { width: effectiveWidth, height: effectiveHeight }
+      write(
+        withCursorPreserved(
+          moveCursor +
+            placeKittyImage({
+              id,
+              width: visible.width,
+              height: visible.height,
+              placementId,
+              zIndex,
+              pixelOffset: visible.pixelOffset,
+              sourceRect: visible.sourceRect,
+              virtualPlacement,
+            }),
+        ),
+      )
       lastEmittedRef.current = {
-        x: boxRect.x,
-        y: boxRect.y,
-        width: effectiveWidth,
-        height: effectiveHeight,
+        x: visible.x,
+        y: visible.y,
+        width: visible.width,
+        height: visible.height,
+        placementKey: plan.placementKey,
       }
     } else if (activeProtocol === "sixel") {
+      const visible = computeVisibleImagePlacement({
+        rect: { x: boxRect.x, y: boxRect.y, width: effectiveWidth, height: effectiveHeight },
+        imagePixels: decodedImage,
+        sourceRect,
+        pixelOffset,
+      })
+      if (!visible) return
+      const moveCursor = `\x1b[${visible.y + 1};${visible.x + 1}H`
       // Sixel cannot transmit PNG directly (unlike Kitty's f=100), so we
       // decode PNG → RGBA via upng-js, then hand off to encodeSixel().
       // Decode failures (malformed PNG) leave the reserved space blank
@@ -315,10 +351,25 @@ function ImagePlacement({
       // overwrite from the next paintFrame to clear the stale image.
       const rgba = decodePngToRgba(pngData)
       if (rgba) {
-        write(moveCursor + encodeSixel(rgba))
+        write(withCursorPreserved(moveCursor + encodeSixel(rgba)))
       }
     }
-  }, [pngData, stdoutCtx, activeProtocol, effectiveWidth, effectiveHeight, boxRect.x, boxRect.y])
+  }, [
+    pngData,
+    stdoutCtx,
+    activeProtocol,
+    effectiveWidth,
+    effectiveHeight,
+    placementId,
+    zIndex,
+    pixelOffset,
+    sourceRect,
+    virtualPlacement,
+    boxRect.x,
+    boxRect.y,
+    boxRect.width,
+    decodedImage,
+  ])
 
   // Cleanup: delete Kitty image on unmount
   useEffect(() => {
@@ -326,7 +377,8 @@ function ImagePlacement({
     if (activeProtocol !== "kitty" || id == null || !stdoutCtx) return
 
     return () => {
-      stdoutCtx.write(deleteKittyImage(id))
+      const write = stdoutCtx.writeAfterFrame ?? stdoutCtx.write
+      write(withCursorPreserved(deleteKittyImage(id)))
     }
   }, [activeProtocol, stdoutCtx])
 

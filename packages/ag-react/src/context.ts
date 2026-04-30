@@ -48,6 +48,13 @@ export interface StdoutContextValue {
   /** Write to stdout */
   write: (data: string) => void
   /**
+   * Queue bytes to be written immediately after the current rendered frame.
+   * Escape-sequence components such as terminal images use this so their
+   * placements land after the cell buffer paint instead of racing it during
+   * React layout effects.
+   */
+  writeAfterFrame?: (data: string) => void
+  /**
    * Notify the scheduler that lines were written to stdout externally.
    * Used by useScrollback to report lines written between renders so that
    * inline mode cursor positioning accounts for the displacement.

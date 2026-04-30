@@ -43,6 +43,19 @@ export interface KittyImageOptions {
    * blob on every position change otherwise produces.
    */
   transmitOnly?: boolean
+  /** Z-index stacking order. Defaults to 1 so images remain above reserved cells. */
+  zIndex?: number
+  /** Pixel offset inside the first cell. Kitty keys: X/Y. */
+  pixelOffset?: { readonly x?: number; readonly y?: number }
+  /** Source rectangle in image pixels. Kitty keys: x/y/w/h. */
+  sourceRect?: {
+    readonly x?: number
+    readonly y?: number
+    readonly width?: number
+    readonly height?: number
+  }
+  /** Create a virtual placement for a Unicode placeholder. Kitty key: U=1. */
+  virtualPlacement?: boolean
 }
 
 /** Options for {@link placeKittyImage}. */
@@ -61,6 +74,19 @@ export interface KittyPlaceOptions {
    * {@link deleteKittyPlacement}.
    */
   placementId?: number
+  /** Z-index stacking order. Defaults to 1 so images remain above reserved cells. */
+  zIndex?: number
+  /** Pixel offset inside the first cell. Kitty keys: X/Y. */
+  pixelOffset?: { readonly x?: number; readonly y?: number }
+  /** Source rectangle in image pixels. Kitty keys: x/y/w/h. */
+  sourceRect?: {
+    readonly x?: number
+    readonly y?: number
+    readonly width?: number
+    readonly height?: number
+  }
+  /** Create a virtual placement for a Unicode placeholder. Kitty key: U=1. */
+  virtualPlacement?: boolean
 }
 
 /**
@@ -180,9 +206,17 @@ export function deleteKittyPlacement(id: number, placementId: number = 1): strin
  */
 export function placeKittyImage(opts: KittyPlaceOptions): string {
   const placementId = opts.placementId ?? 1
-  const parts = [`a=p`, `i=${opts.id}`, `p=${placementId}`, `z=1`, `C=1`, `q=2`]
+  const parts = [
+    `a=p`,
+    `i=${opts.id}`,
+    `p=${placementId}`,
+    `z=${formatIntParam("zIndex", opts.zIndex ?? 1)}`,
+    `C=1`,
+    `q=2`,
+  ]
   if (opts.width != null) parts.push(`c=${opts.width}`)
   if (opts.height != null) parts.push(`r=${opts.height}`)
+  appendPlacementParams(parts, opts)
   return `${APC_START}${parts.join(",")};${ST}`
 }
 
@@ -264,13 +298,65 @@ function buildParams(opts: KittyImageOptions | undefined, more: 0 | 1): string {
   // via `placeKittyImage` (typically because the image moves and they
   // want to avoid re-transmitting the base64 bytes on every move).
   const action = opts?.transmitOnly ? `a=t` : `a=T`
-  const parts = [action, `f=100`, `m=${more}`, `z=1`, `C=1`, `q=2`]
+  const parts = [
+    action,
+    `f=100`,
+    `m=${more}`,
+    `z=${formatIntParam("zIndex", opts?.zIndex ?? 1)}`,
+    `C=1`,
+    `q=2`,
+  ]
 
   if (opts?.width != null) parts.push(`c=${opts.width}`)
   if (opts?.height != null) parts.push(`r=${opts.height}`)
   if (opts?.id != null) parts.push(`i=${opts.id}`)
+  if (opts) appendPlacementParams(parts, opts)
 
   return parts.join(",")
+}
+
+function appendPlacementParams(
+  parts: string[],
+  opts: Pick<KittyImageOptions, "pixelOffset" | "sourceRect" | "virtualPlacement">,
+): void {
+  if (opts.pixelOffset?.x != null) {
+    parts.push(`X=${formatNonNegativeIntParam("pixelOffset.x", opts.pixelOffset.x)}`)
+  }
+  if (opts.pixelOffset?.y != null) {
+    parts.push(`Y=${formatNonNegativeIntParam("pixelOffset.y", opts.pixelOffset.y)}`)
+  }
+  if (opts.sourceRect?.x != null) {
+    parts.push(`x=${formatNonNegativeIntParam("sourceRect.x", opts.sourceRect.x)}`)
+  }
+  if (opts.sourceRect?.y != null) {
+    parts.push(`y=${formatNonNegativeIntParam("sourceRect.y", opts.sourceRect.y)}`)
+  }
+  if (opts.sourceRect?.width != null) {
+    parts.push(`w=${formatPositiveIntParam("sourceRect.width", opts.sourceRect.width)}`)
+  }
+  if (opts.sourceRect?.height != null) {
+    parts.push(`h=${formatPositiveIntParam("sourceRect.height", opts.sourceRect.height)}`)
+  }
+  if (opts.virtualPlacement) parts.push("U=1")
+}
+
+function formatIntParam(name: string, value: number): number {
+  if (!Number.isInteger(value)) throw new Error(`kitty graphics ${name} must be an integer`)
+  return value
+}
+
+function formatNonNegativeIntParam(name: string, value: number): number {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`kitty graphics ${name} must be a non-negative integer`)
+  }
+  return value
+}
+
+function formatPositiveIntParam(name: string, value: number): number {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`kitty graphics ${name} must be a positive integer`)
+  }
+  return value
 }
 
 /**

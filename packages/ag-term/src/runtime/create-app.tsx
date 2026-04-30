@@ -1120,6 +1120,25 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         },
       }
 
+  const postPaintWrites: string[] = []
+  const writeOutOfBand = (data: string): void => {
+    if (headless) return
+    if (output) {
+      output.write(data)
+    } else {
+      stdout.write(data)
+    }
+  }
+  const queuePostPaintWrite = (data: string): void => {
+    if (headless) return
+    postPaintWrites.push(data)
+  }
+  const flushPostPaintWrites = (): void => {
+    if (postPaintWrites.length === 0) return
+    const writes = postPaintWrites.splice(0)
+    for (const data of writes) writeOutOfBand(data)
+  }
+
   // Resolve textSizing from caps + option
   // For "auto": use caps flag first, probe to verify if caps says yes
   // For "probe": start disabled, probe async to determine
@@ -1806,12 +1825,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                   write: headless
                     ? () => {}
                     : (data: string) => {
-                        if (output) {
-                          output.write(data)
-                        } else {
-                          stdout.write(data)
-                        }
+                        writeOutOfBand(data)
                       },
+                  writeAfterFrame: headless ? () => {} : queuePostPaintWrite,
                   notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
                   promoteScrollback: (content: string, lines: number) =>
                     runtime.promoteScrollback(content, lines),
@@ -2285,6 +2301,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     } else {
       runtime.render(currentBuffer)
     }
+    flushPostPaintWrites()
   }
   const pushToScrollback = (): void =>
     pushToScrollbackFn({ scrollback, currentBuffer: currentBuffer ?? null })

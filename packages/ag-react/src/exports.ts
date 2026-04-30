@@ -352,8 +352,14 @@ export { Image } from "./ui/image/index"
 export type { ImageProps } from "./ui/image/index"
 
 // Image Protocol Encoders
-export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "./ui/image/index"
-export type { KittyImageOptions } from "./ui/image/index"
+export {
+  encodeKittyImage,
+  deleteKittyImage,
+  deleteKittyPlacement,
+  placeKittyImage,
+  isKittyGraphicsSupported,
+} from "./ui/image/index"
+export type { KittyImageOptions, KittyPlaceOptions } from "./ui/image/index"
 export { encodeSixel, isSixelSupported } from "./ui/image/index"
 export type { SixelImageData } from "./ui/image/index"
 
