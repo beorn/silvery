@@ -45,6 +45,40 @@ describe("Image placement planning", () => {
     })
   })
 
+  test("clips the right and bottom edges to the viewport", () => {
+    expect(
+      computeVisibleImagePlacement({
+        rect: { x: 8, y: 3, width: 5, height: 4 },
+        imagePixels: { width: 100, height: 80 },
+        viewport: { width: 10, height: 5 },
+      }),
+    ).toEqual({
+      x: 8,
+      y: 3,
+      width: 2,
+      height: 2,
+      sourceRect: { x: 0, y: 0, width: 40, height: 40 },
+    })
+  })
+
+  test("returns null when the whole placement is below or right of the viewport", () => {
+    expect(
+      computeVisibleImagePlacement({
+        rect: { x: 10, y: 0, width: 5, height: 4 },
+        imagePixels: { width: 100, height: 80 },
+        viewport: { width: 10, height: 5 },
+      }),
+    ).toBeNull()
+
+    expect(
+      computeVisibleImagePlacement({
+        rect: { x: 0, y: 5, width: 5, height: 4 },
+        imagePixels: { width: 100, height: 80 },
+        viewport: { width: 10, height: 5 },
+      }),
+    ).toBeNull()
+  })
+
   test("returns null only when the whole placement is above or left of the viewport", () => {
     expect(
       computeVisibleImagePlacement({
@@ -122,6 +156,24 @@ describe("Image placement planning", () => {
           y: -4,
           width: 10,
           height: 1,
+          placementKey: "old",
+        },
+        srcChanged: false,
+      }),
+    ).toEqual({ kind: "delete-placement" })
+  })
+
+  test("plans deletion when a previously placed image moves below the viewport", () => {
+    expect(
+      planKittyImagePlacement({
+        rect: { x: 0, y: 10, width: 10, height: 5 },
+        imagePixels: { width: 100, height: 50 },
+        viewport: { width: 80, height: 10 },
+        previousPlacement: {
+          x: 0,
+          y: 8,
+          width: 10,
+          height: 2,
           placementKey: "old",
         },
         srcChanged: false,

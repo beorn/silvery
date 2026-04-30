@@ -48,6 +48,12 @@ export interface StdoutContextValue {
   /** Write to stdout */
   write: (data: string) => void
   /**
+   * Queue a typed terminal artifact to be flushed after the current rendered
+   * frame. Prefer this over raw writeAfterFrame for protocol-owned render
+   * artifacts such as terminal images.
+   */
+  queueFrameArtifact?: (artifact: TerminalFrameArtifact) => void
+  /**
    * Queue bytes to be written immediately after the current rendered frame.
    * Escape-sequence components such as terminal images use this so their
    * placements land after the cell buffer paint instead of racing it during
@@ -85,6 +91,14 @@ export interface StdoutContextValue {
  * Used by useStdout() hook.
  */
 export const StdoutContext = createContext<StdoutContextValue | null>(null)
+
+export type TerminalFrameArtifact =
+  | {
+      readonly kind: "terminal-sequence"
+      readonly owner: string
+      readonly sequence: string
+      readonly zIndex?: number
+    }
 
 export interface StderrContextValue {
   /** Standard error stream */

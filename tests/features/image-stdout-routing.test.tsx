@@ -19,7 +19,7 @@
 
 import React from "react"
 import { describe, expect, test } from "vitest"
-import { createTermless } from "@silvery/test"
+import { createTermless, waitFor } from "@silvery/test"
 import { Box, Image, Text, encodeKittyImage, placeKittyImage } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
 import { getInternalStreams } from "../../packages/ag-term/src/runtime/term-internal"
@@ -240,5 +240,66 @@ describe("Image: StdoutContext.write routes escapes to the terminal", () => {
     expect(all, "partial clipping should not delete the still-visible placement").not.toContain("a=d,d=i")
 
     handle.unmount()
+  })
+
+  test("Kitty graphics clips images at the terminal bottom edge", async () => {
+    using term = createTermless({ cols: 40, rows: 5 })
+
+    const writes: string[] = []
+    const internal = getInternalStreams(term).stdout as unknown as {
+      write: (s: string | Uint8Array) => boolean
+    }
+    const orig = internal.write.bind(internal)
+    internal.write = (s: string | Uint8Array) => {
+      writes.push(typeof s === "string" ? s : Buffer.from(s).toString("utf8"))
+      return orig(s)
+    }
+
+    const handle = await run(
+      <Box flexDirection="column">
+        <Text>one</Text>
+        <Text>two</Text>
+        <Text>three</Text>
+        <Text>four</Text>
+        <Image src={TINY_PNG} width={10} height={4} protocol="kitty" />
+      </Box>,
+      term,
+    )
+
+    await waitFor(() => writes.join("").includes("r=1"))
+    const all = writes.join("")
+    expect(all, "image should still be placed at the last visible row").toContain("\x1b[5;1H")
+    expect(all, "visible image rows should be clipped at terminal bottom").toContain("r=1")
+
+    handle.unmount()
+  })
+
+  test("Kitty graphics delete sequence is emitted on unmount", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+
+    const writes: string[] = []
+    const internal = getInternalStreams(term).stdout as unknown as {
+      write: (s: string | Uint8Array) => boolean
+    }
+    const orig = internal.write.bind(internal)
+    internal.write = (s: string | Uint8Array) => {
+      writes.push(typeof s === "string" ? s : Buffer.from(s).toString("utf8"))
+      return orig(s)
+    }
+
+    const handle = await run(
+      <Box flexDirection="column">
+        <Image src={TINY_PNG} width={10} height={4} protocol="kitty" />
+      </Box>,
+      term,
+    )
+    await waitFor(() => writes.join("").includes("a=p"))
+
+    writes.length = 0
+    handle.unmount()
+
+    await waitFor(() => writes.join("").includes("a=d,d=i"))
+    const all = writes.join("")
+    expect(all, "unmount should delete the stored Kitty image").toContain("a=d,d=i")
   })
 })

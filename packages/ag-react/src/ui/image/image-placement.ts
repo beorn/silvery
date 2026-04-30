@@ -22,6 +22,11 @@ export type ImagePixelOffset = {
   readonly y?: number
 }
 
+export type ImageViewport = {
+  readonly width: number
+  readonly height: number
+}
+
 export type VisibleImagePlacement = {
   readonly x: number
   readonly y: number
@@ -64,19 +69,24 @@ export function computeVisibleImagePlacement({
   imagePixels,
   sourceRect,
   pixelOffset,
+  viewport,
 }: {
   readonly rect: ImageCellRect
   readonly imagePixels?: ImagePixelSize | null
   readonly sourceRect?: ImageSourceRect
   readonly pixelOffset?: ImagePixelOffset
+  readonly viewport?: ImageViewport | null
 }): VisibleImagePlacement | null {
   if (rect.width <= 0 || rect.height <= 0) return null
   if (rect.x + rect.width <= 0 || rect.y + rect.height <= 0) return null
+  if (viewport && (rect.x >= viewport.width || rect.y >= viewport.height)) return null
 
   const leftClip = Math.max(0, -rect.x)
   const topClip = Math.max(0, -rect.y)
-  const visibleWidth = rect.width - leftClip
-  const visibleHeight = rect.height - topClip
+  const rightClip = viewport ? Math.max(0, rect.x + rect.width - viewport.width) : 0
+  const bottomClip = viewport ? Math.max(0, rect.y + rect.height - viewport.height) : 0
+  const visibleWidth = rect.width - leftClip - rightClip
+  const visibleHeight = rect.height - topClip - bottomClip
   if (visibleWidth <= 0 || visibleHeight <= 0) return null
 
   const placement: VisibleImagePlacement = {
@@ -87,7 +97,7 @@ export function computeVisibleImagePlacement({
     ...(pixelOffset ? { pixelOffset } : {}),
   }
 
-  if (!imagePixels || (topClip === 0 && leftClip === 0)) {
+  if (!imagePixels || (topClip === 0 && leftClip === 0 && rightClip === 0 && bottomClip === 0)) {
     return sourceRect ? { ...placement, sourceRect } : placement
   }
 
@@ -136,6 +146,7 @@ export function planKittyImagePlacement({
   imagePixels,
   sourceRect,
   pixelOffset,
+  viewport,
   placementId,
   zIndex,
   virtualPlacement,
@@ -146,13 +157,14 @@ export function planKittyImagePlacement({
   readonly imagePixels?: ImagePixelSize | null
   readonly sourceRect?: ImageSourceRect
   readonly pixelOffset?: ImagePixelOffset
+  readonly viewport?: ImageViewport | null
   readonly placementId?: number
   readonly zIndex?: number
   readonly virtualPlacement?: boolean
   readonly previousPlacement: PreviousImagePlacement | null
   readonly srcChanged: boolean
 }): KittyImagePlacementPlan {
-  const placement = computeVisibleImagePlacement({ rect, imagePixels, sourceRect, pixelOffset })
+  const placement = computeVisibleImagePlacement({ rect, imagePixels, sourceRect, pixelOffset, viewport })
   if (!placement) return previousPlacement ? { kind: "delete-placement" } : { kind: "noop" }
 
   const placementKey = imagePlacementKey({

@@ -7,8 +7,7 @@
  *
  * Since terminal images are escape-sequence-based and don't fit the cell
  * buffer model, the component reserves visual space with a Box of the
- * requested dimensions and writes image data directly to stdout during
- * commit.
+ * requested dimensions and queues typed terminal artifacts after layout.
  *
  * @example
  * ```tsx
@@ -115,8 +114,8 @@ let nextImageId = 1
  * The component operates in two phases:
  * 1. **Layout phase**: Renders a Box that reserves the visual space
  *    (filled with spaces so the cell buffer has the right dimensions).
- * 2. **Commit phase**: Writes the image escape sequence directly to stdout,
- *    positioned over the reserved space.
+ * 2. **Commit phase**: Queues terminal image artifacts positioned over the
+ *    reserved space.
  *
  * When image protocols are not available, the fallback text is shown instead.
  */
@@ -180,6 +179,9 @@ function ImagePlacement({
   // pass `width`/`height` to skip the auto-fill read.
   const boxRect = useScreenRect()
   const stdoutCtx = useContext(StdoutContext)
+  const viewportWidth = stdoutCtx?.stdout.columns || Number.POSITIVE_INFINITY
+  const viewportHeight = stdoutCtx?.stdout.rows || Number.POSITIVE_INFINITY
+  const viewport = stdoutCtx ? { width: viewportWidth, height: viewportHeight } : null
   const imageIdRef = useRef<number | null>(null)
   // Tracks the PNG data the image was last *transmitted* with. While this
   // matches the current `pngData`, position changes can re-place the
@@ -260,7 +262,19 @@ function ImagePlacement({
     // measured" predicate (same gate <MeasuredBox> uses).
     if (boxRect.width <= 0) return
 
-    const write = stdoutCtx.writeAfterFrame ?? stdoutCtx.write
+    const write = (data: string, artifact?: { readonly owner: string; readonly zIndex?: number }) => {
+      if (stdoutCtx.queueFrameArtifact && artifact) {
+        stdoutCtx.queueFrameArtifact({
+          kind: "terminal-sequence",
+          owner: artifact.owner,
+          zIndex: artifact.zIndex,
+          sequence: data,
+        })
+        return
+      }
+      const fallbackWrite = stdoutCtx.writeAfterFrame ?? stdoutCtx.write
+      fallbackWrite(data)
+    }
 
     if (activeProtocol === "kitty") {
       const id = imageIdRef.current
@@ -272,6 +286,7 @@ function ImagePlacement({
         imagePixels: decodedImage,
         sourceRect,
         pixelOffset,
+        viewport,
         placementId,
         zIndex,
         virtualPlacement,
@@ -284,7 +299,10 @@ function ImagePlacement({
       if (plan.kind === "delete-placement") {
         const id = imageIdRef.current
         if (id != null) {
-          write(withCursorPreserved(deleteKittyPlacement(id, placementId)))
+          write(withCursorPreserved(deleteKittyPlacement(id, placementId)), {
+            owner: "image:kitty:delete-placement",
+            zIndex,
+          })
         }
         lastEmittedRef.current = null
         return
@@ -294,12 +312,14 @@ function ImagePlacement({
         // Cold path: transmit the PNG once. If we had a prior placement
         // for an OLD src under the same id, drop the entire stored
         // image first so the terminal doesn't keep stale bytes around.
-        if (plan.deleteImageBeforeTransmit) write(deleteKittyImage(id))
+        if (plan.deleteImageBeforeTransmit) {
+          write(deleteKittyImage(id), { owner: "image:kitty:delete-image", zIndex })
+        }
         const seq = encodeKittyImage(pngData, {
           id,
           transmitOnly: true,
         })
-        write(seq)
+        write(seq, { owner: "image:kitty:transmit", zIndex })
         transmittedSrcRef.current = pngData
       }
 
@@ -326,6 +346,7 @@ function ImagePlacement({
               virtualPlacement,
             }),
         ),
+        { owner: "image:kitty:place", zIndex },
       )
       lastEmittedRef.current = {
         x: visible.x,
@@ -340,6 +361,7 @@ function ImagePlacement({
         imagePixels: decodedImage,
         sourceRect,
         pixelOffset,
+        viewport,
       })
       if (!visible) return
       const moveCursor = `\x1b[${visible.y + 1};${visible.x + 1}H`
@@ -351,7 +373,10 @@ function ImagePlacement({
       // overwrite from the next paintFrame to clear the stale image.
       const rgba = decodePngToRgba(pngData)
       if (rgba) {
-        write(withCursorPreserved(moveCursor + encodeSixel(rgba)))
+        write(withCursorPreserved(moveCursor + encodeSixel(rgba)), {
+          owner: "image:sixel:place",
+          zIndex,
+        })
       }
     }
   }, [
@@ -368,6 +393,8 @@ function ImagePlacement({
     boxRect.x,
     boxRect.y,
     boxRect.width,
+    viewportWidth,
+    viewportHeight,
     decodedImage,
   ])
 
@@ -377,8 +404,9 @@ function ImagePlacement({
     if (activeProtocol !== "kitty" || id == null || !stdoutCtx) return
 
     return () => {
-      const write = stdoutCtx.writeAfterFrame ?? stdoutCtx.write
-      write(withCursorPreserved(deleteKittyImage(id)))
+      // Cleanup may run during unmount with no following paintFrame, so this
+      // must bypass the frame-artifact queue and write immediately.
+      stdoutCtx.write(withCursorPreserved(deleteKittyImage(id)))
     }
   }, [activeProtocol, stdoutCtx])
 

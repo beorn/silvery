@@ -62,6 +62,7 @@ import {
   StdoutContext,
   StderrContext,
   TermContext,
+  type TerminalFrameArtifact,
 } from "@silvery/ag-react/context"
 import { SilveryErrorBoundary } from "@silvery/ag-react/error-boundary"
 import { ScopeProvider } from "@silvery/ag-react/ScopeProvider"
@@ -1121,6 +1122,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       }
 
   const postPaintWrites: string[] = []
+  const frameArtifacts: TerminalFrameArtifact[] = []
   const writeOutOfBand = (data: string): void => {
     if (headless) return
     if (output) {
@@ -1133,7 +1135,22 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (headless) return
     postPaintWrites.push(data)
   }
+  const queueFrameArtifact = (artifact: TerminalFrameArtifact): void => {
+    if (headless) return
+    frameArtifacts.push(artifact)
+  }
   const flushPostPaintWrites = (): void => {
+    if (frameArtifacts.length > 0) {
+      const artifacts = frameArtifacts.splice(0)
+      artifacts.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
+      for (const artifact of artifacts) {
+        switch (artifact.kind) {
+          case "terminal-sequence":
+            writeOutOfBand(artifact.sequence)
+            break
+        }
+      }
+    }
     if (postPaintWrites.length === 0) return
     const writes = postPaintWrites.splice(0)
     for (const data of writes) writeOutOfBand(data)
@@ -1827,6 +1844,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                     : (data: string) => {
                         writeOutOfBand(data)
                       },
+                  queueFrameArtifact: headless ? () => {} : queueFrameArtifact,
                   writeAfterFrame: headless ? () => {} : queuePostPaintWrite,
                   notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
                   promoteScrollback: (content: string, lines: number) =>
