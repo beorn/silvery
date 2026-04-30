@@ -218,6 +218,40 @@ function ImagePlacement({
     // measured" predicate (same gate <MeasuredBox> uses).
     if (boxRect.width <= 0) return
 
+    // Visibility gate — skip emission when the image is wholly off-
+    // screen or scrolled past a viewport boundary. screenRect on a
+    // node scrolled OUT of its parent's overflow container can be
+    // negative (rows above the viewport) or extend past the
+    // terminal's last row; firing the CSI cursor-position escape
+    // with a bogus row number sends Kitty's `a=p` to whatever the
+    // terminal interprets as that coordinate (often row 0/1, the
+    // top-left of the screen). User-visible: the image appears to
+    // teleport to the top, then snap back when it scrolls back into
+    // view.
+    //
+    // Detection: any negative coordinate, OR the image's bounding
+    // box extends fully past the bottom of the terminal. We only
+    // emit when the image's footprint at least partially intersects
+    // a sane on-screen region. When the image is fully off-screen
+    // and we had a prior placement, delete it so the terminal isn't
+    // left with a stale image at the old position.
+    const imageOffscreen =
+      boxRect.y + effectiveHeight <= 0 ||
+      boxRect.x + effectiveWidth <= 0 ||
+      boxRect.x < 0 ||
+      boxRect.y < 0
+    if (imageOffscreen) {
+      if (activeProtocol === "kitty" && placedSizeRef.current !== null) {
+        const id = imageIdRef.current
+        if (id != null) {
+          stdoutCtx.write(deleteKittyPlacement(id))
+        }
+        placedSizeRef.current = null
+        lastEmittedRef.current = null
+      }
+      return
+    }
+
     const { write } = stdoutCtx
     const moveCursor = `\x1b[${boxRect.y + 1};${boxRect.x + 1}H`
 
