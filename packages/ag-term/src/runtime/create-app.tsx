@@ -100,6 +100,8 @@ import {
   updateKeyboardModifiers,
   findContainBoundary,
   selectionHitTest,
+  hitTest,
+  resolveUserSelect,
   createClickCountState,
   checkClickCount,
 } from "../mouse-events"
@@ -2465,7 +2467,29 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           // selection-aware walk (respects userSelect="none" subtrees) rather
           // than pointer hit test.
           const agRoot = getContainerRoot(container)
-          const hit = agRoot ? selectionHitTest(agRoot, mouseData.x, mouseData.y) : null
+          // Two hit tests run here:
+          //   1. `hitTest` — pointer-event z-ordered hit (absolute
+          //      children sit on top of in-flow siblings). Used to
+          //      detect "did the click land inside a userSelect=none
+          //      overlay?" — the overlay should block selection from
+          //      reaching whatever in-flow content is behind it.
+          //   2. `selectionHitTest` — selection-aware DFS (skips
+          //      userSelect=none subtrees but doesn't z-order, so an
+          //      absolute non-selectable overlay does NOT block
+          //      in-flow text behind it on its own). Used to find the
+          //      contain boundary for the selection scope.
+          //
+          // The pointer-target gate is what fixes "click on scrollbar /
+          // floating button still creates a selection" — the
+          // selectionHitTest alone descends behind the absolute overlay
+          // and finds in-flow text to anchor the drag on.
+          const pointerTarget = agRoot ? hitTest(agRoot, mouseData.x, mouseData.y) : null
+          const pointerBlocksSelection =
+            pointerTarget !== null && resolveUserSelect(pointerTarget) === "none"
+          const hit =
+            !pointerBlocksSelection && agRoot
+              ? selectionHitTest(agRoot, mouseData.x, mouseData.y)
+              : null
           // No selectable hit target — the click landed in a
           // `userSelect="none"` subtree (scrollbar, toolbar buttons,
           // etc.). Don't arm a selection drag: a subsequent mousemove

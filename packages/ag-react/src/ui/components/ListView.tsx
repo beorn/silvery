@@ -1078,6 +1078,34 @@ function ListViewInner<T>(
         consecSameRef.current = 0
         consecOppRef.current = 0
       }
+      // Edge-clamp jitter filter — when the user is sustained-pushing
+      // INTO an edge (anchor at 0 with sustainedDir=-1, or at maxRow
+      // with sustainedDir=+1), aggressively drop any opposite-direction
+      // event regardless of `consecSame`. Trackpad inertia bounces
+      // produce spurious reverse events at the edge: the user has
+      // clearly committed to "scroll past the edge," and the bounce
+      // should not be treated as an intentional reversal.
+      //
+      // Without this, repeated wheel-up at the top edge with one
+      // bounce produces visible scroll-row oscillation between 0 and
+      // 1 — the bounce slips through the standard
+      // `consecSame >= SUSTAINED_SCROLL_THRESHOLD` gate (which only
+      // activates after 3 same-direction events) and applies as a
+      // real reversal, jumping anchor from 0 to 1, then the next
+      // genuine wheel-up pulls it back to 0. Bead:
+      // km-silvery.scroll-top-edge-oscillation.
+      const anchor = scrollRowFloatRef.current ?? 0
+      const sustainedDir = sustainedDirRef.current
+      const atTopWithUpwardSustained = anchor <= 0 && sustainedDir === -1
+      const atBottomWithDownwardSustained = anchor >= maxRow && sustainedDir === 1
+      const atSustainedEdge = atTopWithUpwardSustained || atBottomWithDownwardSustained
+      if (atSustainedEdge && dir !== sustainedDir) {
+        wheelLog.debug?.(
+          `wheel edge-jitter-filtered deltaY=${deltaY.toFixed(2)} anchor=${anchor.toFixed(2)} sustainedDir=${sustainedDir}`,
+        )
+        return
+      }
+
       // Directional coalescing — drop a single opposite event during a
       // sustained scroll (trackpad jitter filter). Two consecutive opposite
       // events always commit.
@@ -2739,6 +2767,18 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }): React.React
   const { isHovered, onMouseEnter, onMouseLeave } = useHover()
   const bg = isHovered ? "$primary" : "$mutedbg"
   const fg = isHovered ? "$bg" : "$muted"
+  // The outer wrapper is the bottom-row centering container. We do
+  // NOT set `pointerEvents="none"` on it — silvery's hit test skips
+  // the entire subtree of a `pointerEvents="none"` absolute node, so
+  // the inner button's `pointerEvents="auto"` was never reached and
+  // the click vanished into the chat content behind. With the wrapper
+  // hittable (default "auto"), clicks land on either the button (which
+  // fires onClick) or the empty centering space (which the userSelect
+  // gate below blocks from arming a selection).
+  //
+  // `userSelect="none"` on the wrapper means clicks anywhere in the
+  // bottom row treat the area as non-selectable — no surprise text-
+  // selection start when the user grazes near the button.
   return (
     <Box
       position="absolute"
@@ -2747,20 +2787,15 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }): React.React
       right={0}
       flexDirection="row"
       justifyContent="center"
-      pointerEvents="none"
+      userSelect="none"
     >
-      {/* `userSelect="none"` blocks silvery's selection feature from
-       * eating the mousedown — without it, clicking the button starts
-       * a text-selection drag instead of firing onClick. */}
       <Box
         flexDirection="row"
         paddingX={1}
         backgroundColor={bg}
-        userSelect="none"
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onClick={onClick}
-        pointerEvents="auto"
       >
         <Text color={fg}>↓ Latest</Text>
       </Box>

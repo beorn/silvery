@@ -29,6 +29,7 @@
 import { type JSX, useCallback, useRef } from "react"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
+import { useHover } from "../../hooks/useHover"
 import type { SilveryMouseEvent } from "@silvery/ag/mouse-event-types"
 
 export interface ScrollbarProps {
@@ -68,6 +69,11 @@ export function Scrollbar({
   // Drag state — true between mousedown and mouseup/leave so move
   // events keep the thumb glued to the cursor only while held.
   const draggingRef = useRef(false)
+
+  // Hover state for the track. The thumb brightens when armed
+  // (cursor over the track) so the user gets the macOS-style "this
+  // is interactive" affordance before they click.
+  const { isHovered, onMouseEnter, onMouseLeave } = useHover()
 
   // Geometry: thumb size is proportional to the visible-vs-total ratio.
   // Floor at 1 so a single-row sliver still draws.
@@ -136,6 +142,15 @@ export function Scrollbar({
   const firstRow = Math.floor(thumbTopFloat)
   const lastRow = Math.min(trackHeight - 1, Math.ceil(thumbBottomFloat) - 1)
 
+  // Armed/hover thumb tone — brighter when the cursor is over the
+  // track or actively dragging. The `$primary` swap matches the
+  // macOS-style "this is interactive" affordance and signals the
+  // user can start a drag.
+  const armed = isHovered || draggingRef.current
+  const thumbColor = armed ? "$primary" : "$muted"
+  const thumbBg = armed ? "$primary" : "$muted"
+  const fracInverseFg = armed ? "$bg" : "$bg"
+
   const rows: JSX.Element[] = []
   for (let r = firstRow; r <= lastRow; r++) {
     const isFirst = r === firstRow
@@ -146,7 +161,7 @@ export function Scrollbar({
       const portion = 1 - (thumbTopFloat - firstRow)
       const idx = Math.max(0, Math.round(portion * 8) - 1)
       rows.push(
-        <Text key={r} color="$muted">
+        <Text key={r} color={thumbColor}>
           {EIGHTHS[idx]!}
         </Text>,
       )
@@ -154,13 +169,13 @@ export function Scrollbar({
       const portion = thumbBottomFloat - lastRow
       const idx = Math.max(0, Math.round((1 - portion) * 8) - 1)
       rows.push(
-        <Text key={r} color="$bg" backgroundColor="$muted">
+        <Text key={r} color={fracInverseFg} backgroundColor={thumbBg}>
           {EIGHTHS[idx]!}
         </Text>,
       )
     } else {
       rows.push(
-        <Text key={r} color="$muted" backgroundColor="$muted">
+        <Text key={r} color={thumbColor} backgroundColor={thumbBg}>
           █
         </Text>,
       )
@@ -183,7 +198,23 @@ export function Scrollbar({
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={(e) => {
+        // End drag if cursor leaves the track — without a global
+        // mouse-capture mechanism (silvery's DragFeature requires
+        // withDomEvents which createApp consumers don't have),
+        // mousemove only fires while over this 1-column track. If
+        // we let the drag stay armed past leave, a subsequent
+        // mouseUp elsewhere would never reach us and the drag
+        // would hang. Trade-off: the user has to keep their cursor
+        // in the rightmost column while dragging — restart-the-drag
+        // is the recovery if they drift out. A future enhancement
+        // (km-silvery.scrollbar-global-drag-capture) would route
+        // through a runtime-level mouse listener so the user can
+        // drift outside the track without losing the grip.
+        handleMouseUp(e)
+        onMouseLeave(e)
+      }}
     >
       <Box position="absolute" top={firstRow} right={0} width={1} flexDirection="column">
         {rows}
