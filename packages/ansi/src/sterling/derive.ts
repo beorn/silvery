@@ -454,7 +454,7 @@ export function deriveRoles(
   //
   // Surface backgrounds carry body text (`fg`) at AA. The base seeds are
   // small blends toward `fg` (subtle elevation cues) — on most schemes the
-  // 0.05 / 0.08 / 0.10 / 0.12 nudge is small enough that `fg` still clears
+  // 0.03 / 0.08 / 0.10 / 0.12 nudge is small enough that `fg` still clears
   // 4.5:1, but a few light schemes (tokyo-night-day, everforest-light,
   // material-light) land at ~4.07-4.31:1 once the bg is shifted halfway
   // toward fg. Auto-lift via `guard(... fgForSurfaceLift, AA)` pushes the
@@ -482,18 +482,18 @@ export function deriveRoles(
   const surfaceSubtle = guard(
     "surface.subtle",
     "bg-surface-subtle",
-    "blend(bg, fg, 0.05)",
+    "blend(bg, fg, 0.03)",
     [bg, fg],
-    blend(bg, fg, 0.05),
+    blend(bg, fg, 0.03),
     fgForSurfaceLift,
     WCAG_AA,
   )
   const surfaceRaised = guard(
     "surface.raised",
     "bg-surface-raised",
-    "blend(bg, fg, 0.08)",
+    "blend(bg, fg, 0.10)",
     [bg, fg],
-    blend(bg, fg, 0.08),
+    blend(bg, fg, 0.10),
     fgForSurfaceLift,
     WCAG_AA,
   )

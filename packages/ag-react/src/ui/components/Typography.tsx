@@ -185,14 +185,13 @@ export function Kbd({ children, color, ...rest }: TypographyProps) {
 // Block Elements
 // ============================================================================
 
-/** Blockquote — │ border in $fg-muted + italic content. Wrapped text stays indented. */
+/** Blockquote — padded muted quotation block. Wrapped text stays indented. */
 export function Blockquote({ children, color }: TypographyProps) {
   return (
-    <Box>
-      <Text color={color ?? "$fg-muted"}>│ </Text>
-      <Box flexShrink={1}>
-        <Text italic>{children}</Text>
-      </Box>
+    <Box flexDirection="column" paddingX={1}>
+      <Text color={color ?? "$fg-muted"} italic wrap="wrap">
+        {children}
+      </Text>
     </Box>
   )
 }

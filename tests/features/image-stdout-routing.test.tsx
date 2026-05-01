@@ -91,7 +91,7 @@ describe("Image: StdoutContext.write routes escapes to the terminal", () => {
     handle.unmount()
   })
 
-  test("Kitty graphics escapes are flushed after the frame paint", async () => {
+  test("Kitty graphics escapes are followed by the frame cursor suffix", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
 
     const handle = await run(
@@ -106,10 +106,14 @@ describe("Image: StdoutContext.write routes escapes to the terminal", () => {
     const writes = term.out.getChunks()
     const firstFrameIndex = writes.findIndex((w) => w.includes("before-image"))
     const firstKittyIndex = writes.findIndex((w) => w.includes(APC_OPEN))
+    const cursorAfterKittyIndex = writes.findIndex((w, i) => i > firstKittyIndex && w.includes("\x1b[?25"))
     expect(firstFrameIndex, "rendered text frame should be written").toBeGreaterThanOrEqual(0)
     expect(firstKittyIndex, "Kitty APC should be written").toBeGreaterThanOrEqual(0)
-    expect(firstKittyIndex, "Kitty APC should be flushed after the frame paint").toBeGreaterThan(
+    expect(firstKittyIndex, "Kitty APC is queued by layout effects and flushed after frame paint").toBeGreaterThan(
       firstFrameIndex,
+    )
+    expect(cursorAfterKittyIndex, "frame cursor suffix should be re-applied after Kitty APC writes").toBeGreaterThan(
+      firstKittyIndex,
     )
 
     handle.unmount()

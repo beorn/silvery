@@ -8,11 +8,9 @@
  *
  * Semantics:
  *   - `usePopoverHandlers(content)` returns mouse-enter / mouse-leave handlers.
- *     Spread them on any host element (Box or Text). Enter starts a dwell
- *     timer (`HOVER_SHOW_DELAY_MS`); if the cursor stays, the popover shows at
- *     the element's position. Leave cancels any pending show and schedules a
- *     hide with a grace window (`HIDE_DELAY_MS`) so the cursor can transit
- *     into the popover itself without flicker.
+ *     The default trigger is `cmd-hover`: the pointer must be over the anchor
+ *     and Cmd/Super must be held. Pass `{ trigger: "hover" }` for plain-hover
+ *     surfaces.
  *   - The popover overlay re-cancels the hide on mouse-enter (so you can
  *     actually read / interact with the content) and re-triggers it on leave.
  *   - Overlay is positioned via `position="absolute"` with marginTop /
@@ -37,6 +35,7 @@ import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
 import { Box } from "./Box"
 import { useHover } from "../hooks/useHover"
 import { useKineticScroll } from "../hooks/useKineticScroll"
+import { lastModifierState, useModifierKeys } from "../hooks/useModifierKeys"
 import { useWindowSize } from "../hooks/useWindowSize"
 
 // -----------------------------------------------------------------------------
@@ -56,8 +55,9 @@ export interface PopoverContent {
   /** Max width in columns. Default: 48. */
   maxWidth?: number
   /**
-   * Drop the round border and revert padding to 0. Default: false (border + paddingX={1}).
-   * Use for popovers whose body provides its own chrome / framing.
+   * Drop the round border. Default: true. Borderless popovers keep body
+   * padding (2 columns left/right, 1 row top/bottom) so they read as a
+   * lightweight overlay instead of a framed modal.
    */
   borderless?: boolean
   /**
@@ -73,6 +73,13 @@ export interface PopoverContent {
   anchorOffsetX?: number
 }
 
+export type PopoverTrigger = "cmd-hover" | "hover"
+
+export interface PopoverHandlerOptions {
+  /** Default: "cmd-hover". */
+  trigger?: PopoverTrigger
+}
+
 interface PopoverState {
   content: PopoverContent | null
   anchor: PopoverAnchor | null
@@ -80,7 +87,7 @@ interface PopoverState {
 
 interface PopoverCtxValue {
   show(content: PopoverContent, anchor: PopoverAnchor): void
-  hide(): void
+  hide(options?: { immediate?: boolean }): void
   /** Cancel a pending hide — call when mouse enters the popover itself. */
   cancelHide(): void
 }
@@ -127,8 +134,12 @@ export function PopoverProvider({ children }: { children: React.ReactNode }): Re
     [clearHide],
   )
 
-  const hide = useCallback(() => {
+  const hide = useCallback((options?: { immediate?: boolean }) => {
     clearHide()
+    if (options?.immediate) {
+      setState({ content: null, anchor: null })
+      return
+    }
     hideTimerRef.current = setTimeout(() => {
       hideTimerRef.current = null
       setState({ content: null, anchor: null })
@@ -160,20 +171,31 @@ export function PopoverProvider({ children }: { children: React.ReactNode }): Re
 
 /**
  * Returns `{ isHovered, onMouseEnter, onMouseLeave }` for a hover target that
- * also shows a popover after dwell. `isHovered` is true from the moment the
- * cursor enters the element (no dwell) — callers use it to "arm" the element
- * with a hover background so the user sees it's interactive. The popover
- * shows after `HOVER_SHOW_DELAY_MS` of dwell and hides on leave with a grace
- * window so the cursor can transit into the popover itself without flicker.
+ * can show a popover after dwell. `isHovered` is true from the moment the
+ * cursor enters the element (no dwell) — callers use it to highlight
+ * interactive rows. The default `cmd-hover` trigger requires both hover and
+ * Cmd/Super; plain-hover consumers must opt in with `{ trigger: "hover" }`.
  */
-export function usePopoverHandlers(content: PopoverContent): {
+export function usePopoverHandlers(content: PopoverContent, options?: PopoverHandlerOptions): {
   isHovered: boolean
   onMouseEnter: (e: SilveryMouseEvent) => void
   onMouseLeave: (e: SilveryMouseEvent) => void
 } {
   const popover = usePopover()
   const hover = useHover()
+  const trigger = options?.trigger ?? "cmd-hover"
+  const requiresCmd = trigger === "cmd-hover"
+  const { super: cmdHeld } = useModifierKeys({ enabled: requiresCmd && hover.isHovered })
   const pendingShowRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const anchorRef = useRef<PopoverAnchor | null>(null)
+  const hoverRef = useRef(false)
+  const cmdHeldRef = useRef(false)
+
+  useEffect(() => {
+    cmdHeldRef.current = cmdHeld
+  }, [cmdHeld])
+
+  const isArmed = useCallback(() => trigger === "hover" || cmdHeldRef.current || lastModifierState.super, [trigger])
 
   const clearPending = useCallback(() => {
     if (pendingShowRef.current) {
@@ -182,23 +204,61 @@ export function usePopoverHandlers(content: PopoverContent): {
     }
   }, [])
 
-  const onMouseEnter = useCallback(
-    (e: SilveryMouseEvent) => {
-      hover.onMouseEnter(e)
+  const scheduleShow = useCallback(
+    (anchor: PopoverAnchor) => {
       if (!popover) return
-      // `e` is pooled — capture coords eagerly.
-      const anchor = { x: e.clientX, y: e.clientY }
       clearPending()
       pendingShowRef.current = setTimeout(() => {
         pendingShowRef.current = null
+        if (!hoverRef.current) return
+        if (anchorRef.current !== anchor) return
+        if (!isArmed()) return
         popover.show(content, anchor)
       }, HOVER_SHOW_DELAY_MS)
     },
-    [hover, popover, content, clearPending],
+    [popover, content, clearPending, isArmed],
+  )
+
+  useEffect(() => {
+    if (!popover) return
+    if (!hoverRef.current || !hover.isHovered) {
+      clearPending()
+      popover.hide()
+      return
+    }
+    const anchor = anchorRef.current
+    if (isArmed() && anchor) {
+      scheduleShow(anchor)
+      return
+    }
+    if (trigger === "hover") clearPending()
+    popover.hide()
+  }, [cmdHeld, hover.isHovered, popover, scheduleShow, clearPending, isArmed, trigger])
+
+  useEffect(() => {
+    return () => {
+      clearPending()
+      popover?.hide()
+    }
+  }, [clearPending, popover])
+
+  const onMouseEnter = useCallback(
+    (e: SilveryMouseEvent) => {
+      hover.onMouseEnter(e)
+      hoverRef.current = true
+      // `e` is pooled — capture coords eagerly.
+      const anchor = { x: e.clientX, y: e.clientY }
+      anchorRef.current = anchor
+      if (!popover) return
+      scheduleShow(anchor)
+    },
+    [hover, popover, scheduleShow, trigger],
   )
   const onMouseLeave = useCallback(
     (e: SilveryMouseEvent) => {
       hover.onMouseLeave(e)
+      hoverRef.current = false
+      anchorRef.current = null
       if (!popover) return
       clearPending()
       popover.hide()
@@ -263,9 +323,12 @@ function PopoverOverlay({
   const belowTop = (content.flushTop ?? false) ? anchor.y : anchor.y + 1
   const placement = placeAbove ? { bottom: rows - anchor.y } : { top: belowTop }
 
-  // Borderless mode drops the round border and the inner padding so the
-  // body's own chrome owns the framing. Default keeps today's surface.
-  const borderless = content.borderless ?? false
+  // Borderless is the default popup chrome: no frame, still padded.
+  // Callers can opt back into the old framed surface with borderless:false.
+  const borderless = content.borderless ?? true
+  const paddingX = borderless ? 2 : 1
+  const paddingY = borderless ? 1 : 0
+  const bodyMaxWidth = Math.max(1, maxWidth - paddingX * 2)
 
   return (
     <Box
@@ -281,7 +344,8 @@ function PopoverOverlay({
       borderStyle={borderless ? undefined : "round"}
       borderColor={borderless ? undefined : "$fg-muted"}
       backgroundColor="$bg-surface-overlay"
-      paddingX={borderless ? 0 : 1}
+      paddingX={paddingX}
+      paddingY={paddingY}
       onMouseEnter={(e: SilveryMouseEvent) => {
         e.stopPropagation()
         onEnter()
@@ -295,7 +359,9 @@ function PopoverOverlay({
         e.stopPropagation()
       }}
     >
-      {content.body}
+      <Box flexDirection="column" maxWidth={bodyMaxWidth} minWidth={0} overflow="hidden">
+        {content.body}
+      </Box>
     </Box>
   )
 }

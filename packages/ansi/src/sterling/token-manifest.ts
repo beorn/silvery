@@ -71,7 +71,7 @@ export const PUBLIC_TOKENS: readonly TokenManifestEntry[] = [
     family: "surface",
     axis: "bg",
     purpose: "Subtle elevation tier — sidebars, secondary regions.",
-    derivation: "blend(bg, fg, 0.05); auto-lifted to keep fg AA-readable.",
+    derivation: "blend(bg, fg, 0.03); auto-lifted to keep fg AA-readable.",
     contrast: NA,
     tierNotes:
       "Often collapses to surface.default in ANSI16 — renderer compensates with non-color cues.",
@@ -82,7 +82,7 @@ export const PUBLIC_TOKENS: readonly TokenManifestEntry[] = [
     family: "surface",
     axis: "bg",
     purpose: "Raised elevation — cards, panels above the canvas.",
-    derivation: "blend(bg, fg, 0.08); auto-lifted to keep fg AA-readable.",
+    derivation: "blend(bg, fg, 0.10); auto-lifted to keep fg AA-readable.",
     contrast: NA,
     tierNotes: "May collapse to subtle in low-tier modes.",
   },

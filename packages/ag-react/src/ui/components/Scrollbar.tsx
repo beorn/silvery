@@ -26,11 +26,10 @@
  * fits) so the consumer doesn't have to gate manually.
  */
 
-import { type JSX, useCallback, useEffect, useRef } from "react"
+import { type JSX, useCallback, useRef, useState } from "react"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { useHover } from "../../hooks/useHover"
-import { useTerm } from "../../hooks/useTerm"
 import type { SilveryMouseEvent } from "@silvery/ag/mouse-event-types"
 
 export interface ScrollbarProps {
@@ -73,18 +72,12 @@ export function Scrollbar({
   // the listening node; we route through `term.input.onMouse` for
   // a global capture so vertical drags survive horizontal drift).
   const draggingRef = useRef(false)
+  const [isDragging, setIsDragging] = useState(false)
   // Track screen rect captured at mousedown — the global mouse
   // handler converts the live cursor row to a frac using these
   // bounds without having to query the AgNode tree from inside an
   // input-owner callback.
   const trackRectRef = useRef<{ y: number; height: number } | null>(null)
-  // Hold the active unsubscribe so the drag's global listener can
-  // be torn down without waiting for component unmount (e.g., when
-  // src/scrollableRows changes mid-drag).
-  const unsubscribeRef = useRef<(() => void) | null>(null)
-
-  const term = useTerm()
-
   // Hover state for the track. The thumb brightens when armed
   // (cursor over the track) so the user gets the macOS-style "this
   // is interactive" affordance before they click.
@@ -114,11 +107,8 @@ export function Scrollbar({
 
   const stopDrag = useCallback(() => {
     draggingRef.current = false
+    setIsDragging(false)
     trackRectRef.current = null
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current()
-      unsubscribeRef.current = null
-    }
   }, [])
 
   const handleMouseDown = useCallback(
@@ -127,37 +117,16 @@ export function Scrollbar({
       const rect = node.screenRect ?? node.boxRect
       if (!rect || rect.height <= 0) return
       draggingRef.current = true
+      setIsDragging(true)
       trackRectRef.current = { y: rect.y, height: rect.height }
       onScrollOffsetChange(offsetFromClickY(e.clientY, rect.y))
       e.stopPropagation()
-
-      // Subscribe to global mouse events for drag tracking. Per-node
-      // onMouseMove only fires while cursor is over THIS Box; with
-      // a 1-col track that breaks any horizontal drift. The runtime's
-      // input owner sees every parsed mouse event regardless of the
-      // hit target, so we route through it for the duration of the
-      // drag.
-      const input = term.input
-      if (!input) return
-      unsubscribeRef.current?.()
-      unsubscribeRef.current = input.onMouse((mouseEvent) => {
-        if (!draggingRef.current) return
-        if (mouseEvent.action === "move") {
-          const trackRect = trackRectRef.current
-          if (!trackRect) return
-          onScrollOffsetChange(offsetFromClickY(mouseEvent.y, trackRect.y))
-        } else if (mouseEvent.action === "up") {
-          stopDrag()
-        }
-      })
     },
-    [offsetFromClickY, onScrollOffsetChange, stopDrag, term],
+    [offsetFromClickY, onScrollOffsetChange],
   )
 
-  // Keep the per-node move/up handlers as a fallback when term.input
-  // is unavailable (headless/test contexts that don't wire an input
-  // owner). They still drive the drag while the cursor stays over
-  // the track.
+  // `mouseCapture` on the track makes these handlers receive move/up for the
+  // whole press, even when the cursor leaves the one-column hit box.
   const handleMouseMove = useCallback(
     (e: SilveryMouseEvent) => {
       if (!draggingRef.current) return
@@ -176,17 +145,6 @@ export function Scrollbar({
     },
     [stopDrag],
   )
-
-  // Belt-and-suspenders: tear down the global subscription on
-  // unmount so a component swap mid-drag doesn't leak the listener.
-  useEffect(() => {
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current()
-        unsubscribeRef.current = null
-      }
-    }
-  }, [])
 
   // Don't render when content fits, when track is too small, or when
   // the consumer hides us.
@@ -209,7 +167,7 @@ export function Scrollbar({
   // track or actively dragging. The `$primary` swap matches the
   // macOS-style "this is interactive" affordance and signals the
   // user can start a drag.
-  const armed = isHovered || draggingRef.current
+  const armed = isHovered || isDragging
   const thumbColor = armed ? "$primary" : "$muted"
   const thumbBg = armed ? "$primary" : "$muted"
   const fracInverseFg = armed ? "$bg" : "$bg"
@@ -258,6 +216,7 @@ export function Scrollbar({
       // scrollbar starts a text-selection drag and our handlers never
       // fire.
       userSelect="none"
+      mouseCapture
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

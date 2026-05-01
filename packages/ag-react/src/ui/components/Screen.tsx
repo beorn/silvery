@@ -49,6 +49,28 @@ function getTermDims(): { width: number; height: number } {
   }
 }
 
+const resizeSubscribers = new Set<() => void>()
+let resizeListenerInstalled = false
+
+function notifyResizeSubscribers(): void {
+  for (const subscriber of resizeSubscribers) subscriber()
+}
+
+function subscribeResize(subscriber: () => void): () => void {
+  resizeSubscribers.add(subscriber)
+  if (!resizeListenerInstalled) {
+    process.stdout.on("resize", notifyResizeSubscribers)
+    resizeListenerInstalled = true
+  }
+  return () => {
+    resizeSubscribers.delete(subscriber)
+    if (resizeSubscribers.size === 0 && resizeListenerInstalled) {
+      process.stdout.off("resize", notifyResizeSubscribers)
+      resizeListenerInstalled = false
+    }
+  }
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -64,10 +86,8 @@ export function Screen({ children, flexDirection = "column" }: ScreenProps): Rea
 
   useEffect(() => {
     const onResize = () => setDims(getTermDims())
-    process.stdout.on("resize", onResize)
-    return () => {
-      process.stdout.off("resize", onResize)
-    }
+    onResize()
+    return subscribeResize(onResize)
   }, [])
 
   return (

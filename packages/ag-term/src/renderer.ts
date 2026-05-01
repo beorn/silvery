@@ -65,6 +65,7 @@ import {
   MAX_CLASSIC_LOOP_ITERATIONS,
   INSTRUMENT,
 } from "./runtime/pass-cause"
+import { ALL_RECONCILER_BITS, getRenderEpoch } from "@silvery/ag/epoch"
 // Side-effect import: arms `@silvery/ag`'s wrap-measurer registry with the
 // terminal grapheme-aware adapter. Importing renderer.ts (via createRenderer
 // in tests, or run() in production) now means soft-wrap-aware
@@ -73,6 +74,11 @@ import {
 import "./runtime/wrap-measurer-registration"
 
 const log = createLogger("silvery:render")
+
+function invalidateRootAfterLayoutFeedback(root: ReturnType<typeof getContainerRoot>): void {
+  root.dirtyBits = ALL_RECONCILER_BITS
+  root.dirtyEpoch = getRenderEpoch()
+}
 
 // ============================================================================
 // Defensive Guards
@@ -786,6 +792,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           multiPassConverged = true
           break
         }
+        invalidateRootAfterLayoutFeedback(getContainerRoot(instance.container))
         // Pass N committed React work — pass N+1 will run. Record so the
         // histogram can show "how many passes had extra-pass causes attributed
         // to them?". Specific cause records are emitted by the pipeline phases
@@ -884,6 +891,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           multiPassConverged = true
           break
         }
+        invalidateRootAfterLayoutFeedback(getContainerRoot(instance.container))
         if (INSTRUMENT) {
           notePassCommit(iteration)
           if (iteration === MAX_CLASSIC_LOOP_ITERATIONS - 1) {

@@ -257,7 +257,7 @@ function computeSnugContentWidth(
     }
   }
 
-  // Shrinkwrap the content, then add overhead back
+  // Shrinkwrap the content, then add overhead back.
   return shrinkwrapWidth(analysis, contentWidth) + overhead
 }
 

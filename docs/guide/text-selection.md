@@ -1,6 +1,6 @@
 # Text Selection
 
-Silvery captures all mouse events via DECSET 1003, which kills native terminal text selection. Silvery's text selection system restores that capability — and goes further with contain boundaries, semantic copy, and vim-style copy-mode.
+Silvery captures all mouse events via DECSET 1003, which kills native terminal text selection. Silvery's text selection system restores that capability — and goes further with document-aware selection, contain boundaries, semantic copy, and vim-style copy-mode.
 
 ## How It's Activated
 
@@ -66,6 +66,25 @@ function App() {
 | `text`    | Force selectable, even if parent is `none`.                       |
 | `contain` | Selectable, but selection range cannot escape this node's bounds. |
 
+## Document-Aware Selection
+
+Mouse selection operates over the AgNode tree by default, not as a raw
+screen-buffer rectangle. On each drag update, Silvery resolves the selectable
+ancestor chain for the drag anchor and the current focus point, then uses their
+nearest common selectable ancestor as the active scope.
+
+That gives browser-like behavior in structured terminal apps:
+
+- Drag inside a prompt bubble: selection stays inside that bubble.
+- Drag from the prompt into the surrounding turn: selection expands to the turn.
+- Drag across turns or panes: selection expands to their common content surface.
+- Hold Shift while dragging: bypass document scopes and use raw buffer-wide selection.
+
+This document-aware scope is the default for ordinary selectable content. Use
+`userSelect="none"` for chrome that should not participate, and
+`userSelect="contain"` only when you want a CSS-style hard boundary that the
+selection cannot escape.
+
 ### Common Patterns
 
 | Surface            | `userSelect` | Why                                        |
@@ -82,7 +101,7 @@ function App() {
 
 ### Basic Drag
 
-Click and drag to select text. The selection highlight follows your mouse across lines, respecting `userSelect` boundaries.
+Click and drag to select text. The selection highlight follows your mouse across lines, resolving through the document tree and respecting `userSelect` boundaries.
 
 ```
 mousedown → set anchor point
@@ -105,19 +124,18 @@ By default, selection persists after mouseup — you must explicitly copy with `
 
 For tmux-style auto-copy on mouseup, configure the `SelectionFeature` via `withDomEvents()` options (or use the legacy `useTerminalSelection({ copyOnSelect: true })` hook).
 
-## Alt+Drag Override
+## Shift+Drag Buffer Selection
 
-When Silvery captures mouse events, native terminal selection is unavailable. Alt+drag is the escape hatch — hold Alt and drag to force text selection, regardless of `userSelect` settings.
+When Silvery captures mouse events, native terminal selection is unavailable. Shift+drag is the escape hatch for raw buffer-wide selection. It bypasses document-aware scopes and `userSelect="none"` hit gating, so users can still select exactly what they see on screen.
 
 ```
-Alt + mousedown → always starts text selection
-                  ignores userSelect="none"
-                  ignores draggable
+Shift + drag → raw terminal-buffer selection
+               ignores document selection scopes
+               ignores userSelect="none"
 ```
 
-When a user tries to drag on a `userSelect="none"` element without Alt, a transient hint appears: "Hold Alt to select text".
-
-The modifier key is configurable via the `SelectionFeature` options (default is Alt).
+`userSelect="contain"` remains a hard boundary for normal document-aware drags.
+Shift+drag is the deliberate override for terminal-style selection.
 
 ## Contain Boundaries
 
@@ -151,7 +169,7 @@ When boundaries are nested, the **innermost `contain` wins**:
 </Box>
 ```
 
-Selection started in the inner container is scoped to the inner container, even though the outer container also has `contain`.
+Selection started in the inner container is scoped to the inner container, even though the outer container also has `contain`. This is different from ordinary document-aware selection: ordinary selectable ancestors can expand to a common parent during drag, while `contain` is a hard CSS-style clamp.
 
 ### Independence from Overflow
 
@@ -194,12 +212,13 @@ Copy-mode shares the selection range with mouse selection. If you start a mouse 
 
 ## How It Works
 
-Selection operates at the **buffer layer**, not the component layer. Components never re-render for selection changes.
+Selection operates with **component-tree scopes over buffer coordinates**. Components never re-render for selection changes; the runtime uses the AgNode tree to choose a scope, then the headless selection machine stores buffer coordinates.
 
 1. **Render phase**: Each cell gets a `SELECTABLE_FLAG` (bit 31) based on resolved `userSelect`
-2. **Mouse/keyboard input**: Updates a `SelectionRange` (anchor + head coordinates)
-3. **Style composition**: Selected cells get highlight styling before diff/output
-4. **Output**: Normal diff renderer outputs the composed cells — one pass, no overlay
+2. **Mouse input**: Resolves the anchor/focus AgNode chains and chooses the nearest common selectable ancestor, unless Shift requests raw buffer selection
+3. **Selection machine**: Updates a `SelectionRange` (anchor + head coordinates) clamped to the active scope
+4. **Style composition**: Selected cells get highlight styling before diff/output
+5. **Output**: Normal diff renderer outputs the composed cells — one pass, no overlay
 
 This means selection composes correctly with existing cell styles, wide characters, and find highlights — all handled by the normal renderer.
 

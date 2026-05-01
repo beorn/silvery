@@ -80,7 +80,7 @@ function hasBump(
 }
 
 describe("ListView height-independent — scrollbar with multi-line items", () => {
-  test("renders scrollbar after wheel-scroll when content overflows via tall items", async () => {
+  test("renders scrollbar when content overflows via tall items", async () => {
     const COLS = 60
     const ROWS = 20
     // 12 items × 8 rows each = 96 content rows in a 20-row viewport.
@@ -99,11 +99,13 @@ describe("ListView height-independent — scrollbar with multi-line items", () =
       </Box>,
     )
 
-    // Pre-scroll: idle, no scrollbar.
-    expect(findThumbCell(app, COLS, ROWS)).toBeNull()
+    // Overflowing scrollbars are visible while idle so they can show hover and
+    // armed states before the user starts dragging.
+    expect(findThumbCell(app, COLS, ROWS)).not.toBeNull()
 
     // Wheel-scroll once — content overflows (48 rows in 20-row viewport),
-    // scrollbar SHOULD render. Before fix: didn't because totalRowsStable
+    // scrollbar should remain rendered. Before the height-independent fix, it
+    // didn't because totalRowsStable
     // (= 6 items × 2 = 12) ≤ trackHeight (20) → thumbHeight = 0.
     await app.wheel(5, ROWS / 2, 1)
     const thumb = findThumbCell(app, COLS, ROWS)

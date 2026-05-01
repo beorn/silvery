@@ -23,6 +23,10 @@ import type { MouseEventProps } from "./mouse-event-types"
  * - "none": not selectable
  * - "text": force selectable (overrides parent "none")
  * - "contain": selectable, but selection cannot escape this node's bounds
+ *
+ * Mouse selection is document/tree-aware by default: the active scope is the
+ * nearest common selectable ancestor of the drag anchor and focus. `contain`
+ * keeps its CSS meaning as an explicit hard boundary.
  */
 export type UserSelect = "auto" | "none" | "text" | "contain"
 
@@ -608,6 +612,17 @@ export interface BoxProps
    * is draggable, not its children.
    */
   draggable?: boolean
+
+  /**
+   * Capture pointer-style mouse events after mousedown.
+   *
+   * When true, a mousedown inside this node makes subsequent mousemove and
+   * mouseup events for that press bubble from this node even if the cursor
+   * leaves its one-cell hit box. Hover enter/leave still follows the real
+   * cursor target. This is the terminal equivalent of pointer capture for
+   * narrow draggable controls such as scrollbars.
+   */
+  mouseCapture?: boolean
 
   onLayout?: (layout: Rect) => void
 

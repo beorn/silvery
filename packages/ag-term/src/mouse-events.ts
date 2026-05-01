@@ -365,6 +365,47 @@ export function findContainBoundary(node: AgNode): SelectionScope | null {
   return null
 }
 
+export interface SelectionBoundary {
+  node: AgNode
+  scope: SelectionScope
+  hardContain: boolean
+}
+
+function nodeSelectionScope(node: AgNode): SelectionScope | null {
+  const rect = node.scrollRect
+  if (!rect) return null
+  return {
+    top: rect.y,
+    bottom: rect.y + rect.height - 1,
+    left: rect.x,
+    right: rect.x + rect.width - 1,
+  }
+}
+
+/**
+ * Return the selectable document-ancestor chain for a node, nearest first.
+ *
+ * This is the DOM-like selection path: ordinary selectable nodes create
+ * semantic selection regions, while `userSelect="contain"` marks a CSS-style
+ * hard containment boundary that selection must not escape.
+ */
+export function findSelectionBoundaries(node: AgNode): SelectionBoundary[] {
+  const boundaries: SelectionBoundary[] = []
+  let current: AgNode | null = node
+  while (current) {
+    const resolved = resolveUserSelect(current)
+    if (resolved !== "none") {
+      const scope = nodeSelectionScope(current)
+      if (scope) {
+        const props = current.props as { userSelect?: UserSelect }
+        boundaries.push({ node: current, scope, hardContain: props.userSelect === "contain" })
+      }
+    }
+    current = current.parent
+  }
+  return boundaries
+}
+
 // ============================================================================
 // Draggable Resolution
 // ============================================================================
@@ -600,6 +641,8 @@ export interface MouseEventProcessorState {
   hoverPath: AgNode[]
   /** Whether the left button is currently down (for click detection) */
   mouseDownTarget: AgNode | null
+  /** Optional ancestor that captures move/up for the active mouse press. */
+  mouseCaptureTarget: AgNode | null
   /** Optional focus manager for click-to-focus */
   focusManager?: FocusManager
   /** Modifier state from Kitty keyboard events, merged into mouse events */
@@ -619,10 +662,21 @@ export function createMouseEventProcessor(
     doubleClick: createDoubleClickState(),
     hoverPath: [],
     mouseDownTarget: null,
+    mouseCaptureTarget: null,
     focusManager: options?.focusManager,
     keyboardModifiers: { super: false, hyper: false, capsLock: false, numLock: false },
     lastClickPrevented: false,
   }
+}
+
+function findMouseCaptureTarget(node: AgNode | null): AgNode | null {
+  let current = node
+  while (current) {
+    const props = current.props as { mouseCapture?: boolean }
+    if (props.mouseCapture === true) return current
+    current = current.parent
+  }
+  return null
 }
 
 /**
@@ -696,6 +750,7 @@ export function processMouseEvent(
 
   if (action === "down") {
     state.mouseDownTarget = target
+    state.mouseCaptureTarget = findMouseCaptureTarget(target)
 
     // Set armed state on the target node
     setArmed(target, true)
@@ -712,6 +767,7 @@ export function processMouseEvent(
     dispatchMouseEvent(event)
     if (event.defaultPrevented) defaultPrevented = true
   } else if (action === "up") {
+    const dispatchTarget = state.mouseCaptureTarget ?? target
     // Clear armed state on the mousedown target
     if (state.mouseDownTarget) {
       setArmed(state.mouseDownTarget, false)
@@ -721,7 +777,7 @@ export function processMouseEvent(
     // `lastClickPrevented` after dispatch see only this dispatch's signal.
     state.lastClickPrevented = false
 
-    const event = createMouseEvent("mouseup", x, y, target, parsed, state.keyboardModifiers)
+    const event = createMouseEvent("mouseup", x, y, dispatchTarget, parsed, state.keyboardModifiers)
     dispatchMouseEvent(event)
 
     // Click = mouseup on the same node (or ancestor) where mousedown happened
@@ -732,7 +788,7 @@ export function processMouseEvent(
       // Resolve the multi-click count BEFORE creating the event so we can
       // attach `detail` (DOM `MouseEvent.detail` convention).
       const count = checkClickCount(state.doubleClick, x, y, parsed.button)
-      const clickEvent = createMouseEvent("click", x, y, target, parsed, state.keyboardModifiers)
+      const clickEvent = createMouseEvent("click", x, y, dispatchTarget, parsed, state.keyboardModifiers)
       ;(clickEvent as { detail?: 1 | 2 | 3 }).detail = count
       dispatchMouseEvent(clickEvent)
       if (clickEvent.defaultPrevented) {
@@ -741,7 +797,7 @@ export function processMouseEvent(
       }
 
       if (count >= 2) {
-        const dblEvent = createMouseEvent("dblclick", x, y, target, parsed, state.keyboardModifiers)
+        const dblEvent = createMouseEvent("dblclick", x, y, dispatchTarget, parsed, state.keyboardModifiers)
         ;(dblEvent as { detail?: 1 | 2 | 3 }).detail = 2
         dispatchMouseEvent(dblEvent)
         if (dblEvent.defaultPrevented) {
@@ -754,7 +810,7 @@ export function processMouseEvent(
           "tripleclick",
           x,
           y,
-          target,
+          dispatchTarget,
           parsed,
           state.keyboardModifiers,
         )
@@ -768,8 +824,10 @@ export function processMouseEvent(
     }
 
     state.mouseDownTarget = null
+    state.mouseCaptureTarget = null
   } else if (action === "move") {
-    const event = createMouseEvent("mousemove", x, y, target, parsed, state.keyboardModifiers)
+    const dispatchTarget = state.mouseCaptureTarget ?? target
+    const event = createMouseEvent("mousemove", x, y, dispatchTarget, parsed, state.keyboardModifiers)
     dispatchMouseEvent(event)
 
     // Compute enter/leave transitions

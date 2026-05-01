@@ -94,17 +94,19 @@ import {
   type NamespacedEvent,
 } from "./event-handlers"
 import { keyToAnsi, keyToKittyAnsi, isModifierOnlyEvent } from "@silvery/ag/keys"
+import { findActiveCursorRect } from "@silvery/ag/layout-signals"
 import { parseKey, type Key } from "./keys"
 import { ensureLayoutEngine } from "./layout"
 import {
   createMouseEventProcessor,
   updateKeyboardModifiers,
-  findContainBoundary,
+  findSelectionBoundaries,
   selectionHitTest,
   hitTest,
   resolveUserSelect,
   createClickCountState,
   checkClickCount,
+  type SelectionBoundary,
 } from "../mouse-events"
 import { setArmed } from "@silvery/ag/interactive-signals"
 import {
@@ -1139,18 +1141,45 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (headless) return
     frameArtifacts.push(artifact)
   }
-  const flushPostPaintWrites = (): void => {
+  const restoreFrameCursor = (): void => {
+    if (!currentBuffer) return
+    const cursor = findActiveCursorRect(currentBuffer.nodes)
+    if (cursor && cursor.visible) {
+      writeOutOfBand(`\x1b[${cursor.y + 1};${cursor.x + 1}H\x1b[?25h`)
+    } else {
+      writeOutOfBand("\x1b[?25l")
+    }
+  }
+  const flushFrameArtifacts = (phase: "pre-paint" | "post-paint"): boolean => {
+    let flushed = false
     if (frameArtifacts.length > 0) {
-      const artifacts = frameArtifacts.splice(0)
+      const selected = frameArtifacts.filter((artifact) =>
+        phase === "pre-paint"
+          ? artifact.kind === "terminal-sequence" && artifact.owner.startsWith("image:kitty:")
+          : !(artifact.kind === "terminal-sequence" && artifact.owner.startsWith("image:kitty:")),
+      )
+      if (selected.length > 0) {
+        const selectedSet = new Set(selected)
+        for (let i = frameArtifacts.length - 1; i >= 0; i--) {
+          if (selectedSet.has(frameArtifacts[i]!)) frameArtifacts.splice(i, 1)
+        }
+      }
+      const artifacts = selected
       artifacts.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0))
       for (const artifact of artifacts) {
         switch (artifact.kind) {
           case "terminal-sequence":
             writeOutOfBand(artifact.sequence)
+            flushed = true
             break
         }
       }
     }
+    return flushed
+  }
+  const flushPostPaintWrites = (): void => {
+    const flushedPostPaintArtifacts = flushFrameArtifacts("post-paint")
+    if (flushedPostPaintArtifacts) restoreFrameCursor()
     if (postPaintWrites.length === 0) return
     const writes = postPaintWrites.splice(0)
     for (const data of writes) writeOutOfBand(data)
@@ -1279,7 +1308,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let pendingSelectionDown: {
     col: number
     row: number
-    scope: SelectionScope | null
+    boundaries: SelectionBoundary[]
+    forceBufferSelection: boolean
     /** Click-count this mousedown belongs to (1, 2, or 3).
      *  Determines what action to dispatch on the corresponding mouseUp:
      *  1 → no selection (plain click), 2 → startWord, 3 → startLine.
@@ -1299,6 +1329,35 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     scope: SelectionScope | null
     clickCount: 2 | 3
   } | null = null
+  let activeSelectionBoundaries: SelectionBoundary[] = []
+  let activeForceBufferSelection = false
+
+  function hardContainScope(boundaries: readonly SelectionBoundary[]): SelectionScope | null {
+    return boundaries.find((boundary) => boundary.hardContain)?.scope ?? null
+  }
+
+  function nearestCommonSelectionScope(
+    anchorBoundaries: readonly SelectionBoundary[],
+    focusBoundaries: readonly SelectionBoundary[],
+  ): SelectionScope | null {
+    const focusNodes = new Set(focusBoundaries.map((boundary) => boundary.node))
+    return anchorBoundaries.find((boundary) => focusNodes.has(boundary.node))?.scope ?? null
+  }
+
+  function selectionScopeForFocus(
+    anchorBoundaries: readonly SelectionBoundary[],
+    x: number,
+    y: number,
+    forceBufferSelection: boolean,
+  ): SelectionScope | null {
+    if (forceBufferSelection) return null
+    const hardScope = hardContainScope(anchorBoundaries)
+    if (hardScope) return hardScope
+    const agRoot = getContainerRoot(container)
+    const focusHit = agRoot ? selectionHitTest(agRoot, x, y) : null
+    if (!focusHit) return null
+    return nearestCommonSelectionScope(anchorBoundaries, findSelectionBoundaries(focusHit))
+  }
   // Click-count tracker dedicated to selection (separate from
   // mouseEventState.doubleClick which drives onDoubleClick / onTripleClick
   // dispatch on the component tree). Updated on every mousedown so we
@@ -2281,6 +2340,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     const hasSelection = selectionEnabled && !!selectionState.range
     const hasSearchHighlight = searchState.active && searchState.currentMatch >= 0
     const hasSearchBar = searchState.active
+    flushFrameArtifacts("pre-paint")
     if (hasSelection || hasSearchHighlight || hasSearchBar) {
       const cloned = currentBuffer._buffer.clone()
       const paintBuf = wrapBuffer(cloned, currentBuffer.nodes, currentBuffer.overlay)
@@ -2466,6 +2526,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         x: number
         y: number
         action: string
+        shift?: boolean
       }
 
       // Left button (button 0) drag for selection
@@ -2478,6 +2539,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           if (selectionState.range || selectionState.selecting) {
             const [cleared] = terminalSelectionUpdate({ type: "clear" }, selectionState)
             selectionState = cleared
+            activeSelectionBoundaries = []
+            activeForceBufferSelection = false
             notifySelectionListeners()
             // Force full re-render so the freshly cleared selection's
             // styling is removed from screen. Without runtime.invalidate(),
@@ -2531,10 +2594,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           // handlers (the click-and-drag scrollbar is the canonical
           // case — its move handlers fire alongside the selection
           // drag, and the selection paint overlays the scroll UX).
-          if (hit === null) {
+          const forceBufferSelection = mouseData.shift === true
+          if (hit === null && !forceBufferSelection) {
             pendingSelectionDown = null
           } else {
-            const scope = findContainBoundary(hit)
+            const boundaries = hit ? findSelectionBoundaries(hit) : []
             // Resolve click-count for THIS mousedown (1=fresh, 2=double-
             // click, 3=triple-click). Used by the up branch to decide
             // whether to dispatch startWord / startLine, and by the
@@ -2548,7 +2612,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             pendingSelectionDown = {
               col: mouseData.x,
               row: mouseData.y,
-              scope,
+              boundaries,
+              forceBufferSelection,
               clickCount,
             }
           }
@@ -2564,6 +2629,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             if (dx !== 0 || dy !== 0) {
               const anchor = pendingSelectionDown
               pendingSelectionDown = null
+              activeSelectionBoundaries = anchor.boundaries
+              activeForceBufferSelection = anchor.forceBufferSelection
+              const scope = selectionScopeForFocus(
+                anchor.boundaries,
+                mouseData.x,
+                mouseData.y,
+                anchor.forceBufferSelection,
+              )
               // Pick the start action based on the click chain that armed
               // this drag:
               //   1 → start  (character-granular drag)
@@ -2579,7 +2652,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                     type: "startWord",
                     col: anchor.col,
                     row: anchor.row,
-                    scope: anchor.scope,
+                    scope,
                     buffer: currentBuffer._buffer,
                   },
                   selectionState,
@@ -2590,14 +2663,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                     type: "startLine",
                     col: anchor.col,
                     row: anchor.row,
-                    scope: anchor.scope,
+                    scope,
                     buffer: currentBuffer._buffer,
                   },
                   selectionState,
                 )
               } else {
                 ;[started] = terminalSelectionUpdate(
-                  { type: "start", col: anchor.col, row: anchor.row, scope: anchor.scope },
+                  { type: "start", col: anchor.col, row: anchor.row, scope },
                   selectionState,
                 )
               }
@@ -2607,6 +2680,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                   col: mouseData.x,
                   row: mouseData.y,
                   buffer: currentBuffer?._buffer,
+                  scope,
                 },
                 started,
               )
@@ -2627,12 +2701,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             // reverse drag — Bug 1 protection).
             // Buffer is forwarded so word / line granularity drags snap
             // the head to the right boundary on every move.
+            const scope = selectionScopeForFocus(
+              activeSelectionBoundaries,
+              mouseData.x,
+              mouseData.y,
+              activeForceBufferSelection,
+            )
             const [next] = terminalSelectionUpdate(
               {
                 type: "extend",
                 col: mouseData.x,
                 row: mouseData.y,
                 buffer: currentBuffer?._buffer,
+                scope,
               },
               selectionState,
             )
@@ -2650,6 +2731,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const [next] = terminalSelectionUpdate({ type: "finish" }, selectionState)
             selectionState = next
             pendingSelectionDown = null
+            activeSelectionBoundaries = []
+            activeForceBufferSelection = false
             notifySelectionListeners()
 
             // Copy selected text via OSC 52
@@ -2670,6 +2753,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             if (mouseEventState.mouseDownTarget) {
               setArmed(mouseEventState.mouseDownTarget, false)
               mouseEventState.mouseDownTarget = null
+              mouseEventState.mouseCaptureTarget = null
             }
             // Consume the mouseup — suppresses mouseup + click dispatch in
             // processMouseEvent (which would otherwise fire ListView's
@@ -2707,14 +2791,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               pendingAutoSelect = {
                 col: anchor.col,
                 row: anchor.row,
-                scope: anchor.scope,
+                scope: selectionScopeForFocus(
+                  anchor.boundaries,
+                  anchor.col,
+                  anchor.row,
+                  anchor.forceBufferSelection,
+                ),
                 clickCount: anchor.clickCount,
               }
-              // Don't consume — let the click event reach the component
-              // tree so onDoubleClick / onTripleClick handlers fire. The
-              // auto-select is applied (or skipped) below based on the
-              // dispatch's defaultPrevented signal.
             }
+            // Don't consume — let the click event reach the component
+            // tree so onDoubleClick / onTripleClick handlers fire. The
+            // auto-select is applied (or skipped) below based on the
+            // dispatch's defaultPrevented signal.
           }
         }
       }
@@ -2724,6 +2813,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (selectionEnabled && event.type === "term:key" && selectionState.range) {
       const [next] = terminalSelectionUpdate({ type: "clear" }, selectionState)
       selectionState = next
+      activeSelectionBoundaries = []
+      activeForceBufferSelection = false
       notifySelectionListeners()
       // Force full re-render. Selection just cleared, so paintFrame() goes
       // through the no-selection branch — runtime.render writes unstyled

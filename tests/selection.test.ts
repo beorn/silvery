@@ -25,6 +25,7 @@ import {
   resolveUserSelect,
   selectionHitTest,
   findContainBoundary,
+  findSelectionBoundaries,
 } from "@silvery/ag-term/mouse-events"
 import type { AgNode, Rect } from "@silvery/ag/types"
 
@@ -145,6 +146,19 @@ describe("terminalSelectionUpdate", () => {
     )
 
     expect(next.range!.head).toEqual({ col: 15, row: 5 })
+  })
+
+  test("extend can drop contain scope when drag leaves the contained box", () => {
+    const scope: SelectionScope = { top: 0, bottom: 5, left: 5, right: 15 }
+    const [state] = terminalSelectionUpdate(
+      { type: "start", col: 8, row: 2, scope },
+      createTerminalSelectionState(),
+    )
+    const [next] = terminalSelectionUpdate({ type: "extend", col: 30, row: 8, scope: null }, state)
+
+    expect(next.scope).toBeNull()
+    expect(next.range!.anchor).toEqual({ col: 8, row: 2 })
+    expect(next.range!.head).toEqual({ col: 30, row: 8 })
   })
 
   test("defaults: source=mouse, granularity=char, scope=null", () => {
@@ -724,6 +738,84 @@ describe("findContainBoundary", () => {
     } as unknown as AgNode
 
     expect(findContainBoundary(node)).toBeNull()
+  })
+})
+
+// ============================================================================
+// findSelectionBoundaries
+// ============================================================================
+
+describe("findSelectionBoundaries", () => {
+  test("returns document ancestors nearest first", () => {
+    const root = {
+      type: "silvery-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 80, height: 24 },
+    } as unknown as AgNode
+    const turn = {
+      type: "silvery-box",
+      props: {},
+      children: [],
+      parent: root,
+      layoutNode: {} as any,
+      scrollRect: { x: 2, y: 4, width: 60, height: 8 },
+    } as unknown as AgNode
+    const prompt = {
+      type: "silvery-box",
+      props: {},
+      children: [],
+      parent: turn,
+      layoutNode: {} as any,
+      scrollRect: { x: 20, y: 5, width: 30, height: 3 },
+    } as unknown as AgNode
+    root.children = [turn]
+    turn.children = [prompt]
+
+    const boundaries = findSelectionBoundaries(prompt)
+
+    expect(boundaries.map((boundary) => boundary.node)).toEqual([prompt, turn, root])
+    expect(boundaries.map((boundary) => boundary.scope)).toEqual([
+      { top: 5, bottom: 7, left: 20, right: 49 },
+      { top: 4, bottom: 11, left: 2, right: 61 },
+      { top: 0, bottom: 23, left: 0, right: 79 },
+    ])
+    expect(boundaries.some((boundary) => boundary.hardContain)).toBe(false)
+  })
+
+  test("marks explicit contain as a hard boundary", () => {
+    const root = {
+      type: "silvery-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 80, height: 24 },
+    } as unknown as AgNode
+    const modal = {
+      type: "silvery-box",
+      props: { userSelect: "contain" },
+      children: [],
+      parent: root,
+      layoutNode: {} as any,
+      scrollRect: { x: 10, y: 3, width: 40, height: 10 },
+    } as unknown as AgNode
+    const text = {
+      type: "silvery-text",
+      props: {},
+      children: [],
+      parent: modal,
+      layoutNode: {} as any,
+      scrollRect: { x: 12, y: 5, width: 20, height: 1 },
+    } as unknown as AgNode
+    root.children = [modal]
+    modal.children = [text]
+
+    const boundaries = findSelectionBoundaries(text)
+
+    expect(boundaries.map((boundary) => boundary.hardContain)).toEqual([false, true, false])
   })
 })
 

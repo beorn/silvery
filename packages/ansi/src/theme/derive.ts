@@ -157,7 +157,7 @@ function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): 
     return result
   }
 
-  const surfacebg = blend(bg, p.foreground, 0.05)
+  const surfacebg = blend(bg, p.foreground, 0.03)
   const popoverbg = blend(bg, p.foreground, 0.08)
   const fg = ensure("fg", p.foreground, popoverbg, AA)
   const primary = ensure("primary", p.primary ?? (dark ? p.yellow : p.blue), bg, AA)

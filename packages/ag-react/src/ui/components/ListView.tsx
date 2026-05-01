@@ -45,9 +45,9 @@ import { makeMeasureKey } from "../../hooks/useVirtualizer"
 import { useScrollState } from "../../hooks/useScrollState"
 import { useInput } from "../../hooks/useInput"
 import { useHover } from "../../hooks/useHover"
-import type { SilveryMouseEvent } from "@silvery/ag/mouse-event-types"
 import { Box, type BoxHandle } from "../../components/Box"
 import { Text } from "../../components/Text"
+import { Scrollbar } from "./Scrollbar"
 import type { AgNode } from "@silvery/ag/types"
 import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { renderStringSync } from "../../render-string"
@@ -1211,13 +1211,6 @@ function ListViewInner<T>(
       syncScrollbarFrac,
     ],
   )
-
-  // True while the user is mid-drag on the scrollbar thumb (mousedown
-  // not yet matched by mouseup or mouseleave). Drives `onMouseMove`'s
-  // decision to keep the thumb glued to the cursor — without this,
-  // moves would fire constantly while the cursor passes over the
-  // track without intent.
-  const scrollbarDraggingRef = useRef(false)
 
   // Set the viewport position from a fractional 0..1 value. Used by
   // scrollbar click-to-position (click the track at frac=0.6 → snap
@@ -2442,20 +2435,15 @@ function ListViewInner<T>(
   // closure with stable identity).
   maxScrollRowRef.current = scrollableRows
   rowsAboveViewportRef.current = rowsAboveViewport
-  // Thumb position is driven by `scrollbarFrac` (0..1) below — a float state
-  // that's updated on every wheel/momentum step via syncScrollbarFrac, so the
-  // thumb slides at 1/8-row precision even while the content viewport
-  // (row-integer) hasn't advanced. Content clamp lives in `handleWheel` +
-  // `momentumStep` (scrollRow clamped to [0, maxRow], momentum amplitude
-  // pre-clamped — no rubber-band overshoot). `effectiveRowsAbove` remains
-  // unused here because showScrollbar is only true after wheel activity,
-  // during which scrollbarFrac is always fresh.
-  // effectiveRowsAbove is consumed below by the edge-bump render gate.
+  // Content clamp lives in `handleWheel` + `momentumStep` (scrollRow clamped
+  // to [0, maxRow], momentum amplitude pre-clamped — no rubber-band overshoot).
+  // `effectiveRowsAbove` drives the shared Scrollbar overlay and the edge-bump
+  // render gate.
   // Scrollbar overlay is enabled in both pinned-height and height-independent
   // (flex) modes. In flex mode `trackHeight` comes from the inner Box's
   // measured rect (via `viewportSize.h`), so until first layout we don't
   // render anything (thumbHeight ≥ trackHeight short-circuits below).
-  const showScrollbar = isScrolling && thumbHeight > 0 && thumbHeight < trackHeight
+  const showScrollbar = thumbHeight > 0 && thumbHeight < trackHeight
 
   // Outer wrapper + inner scroll container.
   //
@@ -2590,143 +2578,15 @@ function ListViewInner<T>(
           />
         )}
       </Box>
-      {/* Scrollbar overlay — absolute-positioned on the right edge so it
-       * doesn't steal a column from content. Track is implicit (transparent);
-       * only the thumb draws. The thumb renders via eighth-block Unicode
-       * glyphs so its vertical position slides at 1/8-row precision even when
-       * the content viewport (row-integer) hasn't advanced.
-       *
-       * Corner stops are short horizontal bracket lines extending LEFT from
-       * the scrollbar column at the top and bottom of the track — a visual
-       * cue where the track ends, appearing/hiding with the same auto-hide
-       * timer as the thumb. */}
-      {showScrollbar &&
-        (() => {
-          // Snap near-1 frac to exactly 1 so the thumb reaches the track end.
-          // The setScrollbarFrac threshold (Math.abs < 0.001) can leave frac at
-          // 0.9999… which then propagates through the float math as a thumb
-          // that's 0.008 rows short of the track bottom — visible as a 1-cell
-          // gap because the fractional-bottom branch renders a partial block
-          // instead of "█".
-          const frac = scrollbarFrac > 0.999 ? 1 : scrollbarFrac < 0.001 ? 0 : scrollbarFrac
-          const thumbTopFloat = frac * trackRemainder
-          const thumbBottomFloat = thumbTopFloat + thumbHeight
-          const firstRow = Math.floor(thumbTopFloat)
-          const lastRow = Math.min(trackHeight - 1, Math.ceil(thumbBottomFloat) - 1)
-          const EIGHTHS = "▁▂▃▄▅▆▇█"
-          // Track interaction: click-to-position + drag-while-held.
-          //
-          // - `onMouseDown`: snap to click position (centered on click row
-          //   so the thumb's middle lands under the cursor) AND arm the
-          //   drag-tracking flag.
-          // - `onMouseMove` (only fires while cursor is over the track,
-          //   which is what we want — leaving the column ends the drag
-          //   gracefully): if armed, update scroll continuously so the
-          //   thumb tracks the cursor.
-          // - `onMouseUp` / `onMouseLeave`: end the drag.
-          //
-          // Centering: a click at row Y aims to put the thumb's middle
-          // at Y. Without the half-thumb subtraction, a click at the
-          // very bottom of the track lands frac = (trackHeight-1) /
-          // (trackHeight-thumbHeight) — never quite 1.
-          const fracFromY = (clientY: number, trackTopY: number): number => {
-            const relativeY = clientY - trackTopY
-            const centeredY = relativeY - thumbHeight / 2
-            const denom = Math.max(1, trackHeight - thumbHeight)
-            return centeredY / denom
-          }
-          const handleTrackMouseDown = (e: SilveryMouseEvent): void => {
-            const node = e.currentTarget
-            const rect = node.screenRect ?? node.boxRect
-            if (!rect || rect.height <= 0) return
-            scrollbarDraggingRef.current = true
-            scrollToFrac(fracFromY(e.clientY, rect.y))
-            e.stopPropagation()
-          }
-          const handleTrackMouseMove = (e: SilveryMouseEvent): void => {
-            if (!scrollbarDraggingRef.current) return
-            const node = e.currentTarget
-            const rect = node.screenRect ?? node.boxRect
-            if (!rect || rect.height <= 0) return
-            scrollToFrac(fracFromY(e.clientY, rect.y))
-            e.stopPropagation()
-          }
-          const handleTrackMouseUp = (_e: SilveryMouseEvent): void => {
-            scrollbarDraggingRef.current = false
-          }
-          // Epsilon compare for fractional edges — a floating-point near-equal
-          // shouldn't render a partial glyph.
-          const EPS = 0.001
-          const rows: React.ReactNode[] = []
-          for (let r = firstRow; r <= lastRow; r++) {
-            const isFirst = r === firstRow
-            const isLast = r === lastRow
-            const fractionalTop = isFirst && Math.abs(thumbTopFloat - firstRow) > EPS
-            const fractionalBottom = isLast && Math.abs(thumbBottomFloat - (lastRow + 1)) > EPS
-            if (fractionalTop) {
-              // Portion of this cell filled (from the bottom). Use lower-N-eighths
-              // glyphs which paint a bar rising from the bottom of the cell.
-              const portion = 1 - (thumbTopFloat - firstRow)
-              const idx = Math.max(0, Math.round(portion * 8) - 1)
-              const glyph = EIGHTHS[idx]!
-              rows.push(
-                <Text key={r} color="$muted">
-                  {glyph}
-                </Text>,
-              )
-            } else if (fractionalBottom) {
-              // Portion of this cell filled (from the top). The lower-N-eighths
-              // glyph family only fills from the bottom, so we invert: render a
-              // lower-(8-N) glyph with swapped colors — track below the thumb,
-              // thumb above.
-              const portion = thumbBottomFloat - lastRow
-              const idx = Math.max(0, Math.round((1 - portion) * 8) - 1)
-              const glyph = EIGHTHS[idx]!
-              rows.push(
-                <Text key={r} color="$bg" backgroundColor="$muted">
-                  {glyph}
-                </Text>,
-              )
-            } else {
-              // Fully-filled thumb row.
-              rows.push(
-                <Text key={r} color="$muted" backgroundColor="$muted">
-                  █
-                </Text>,
-              )
-            }
-          }
-          // The full-height interactive track wraps the thumb. The
-          // mousedown/move/up triple drives both click-to-position
-          // (mousedown alone) and drag-while-held (continuous moves).
-          // The thumb itself renders as an absolutely-positioned child
-          // of the track so clicks on the thumb body resolve to a
-          // track-relative y identically to clicks on empty track.
-          //
-          // `userSelect="none"` prevents silvery's selection feature
-          // from intercepting the mousedown — without it, the click
-          // would start a text-selection drag and our handlers would
-          // never see the event.
-          return (
-            <Box
-              position="absolute"
-              top={0}
-              right={0}
-              width={1}
-              height={trackHeight}
-              flexDirection="column"
-              userSelect="none"
-              onMouseDown={handleTrackMouseDown}
-              onMouseMove={handleTrackMouseMove}
-              onMouseUp={handleTrackMouseUp}
-              onMouseLeave={handleTrackMouseUp}
-            >
-              <Box position="absolute" top={firstRow} right={0} width={1} flexDirection="column">
-                {rows}
-              </Box>
-            </Box>
-          )
-        })()}
+      {showScrollbar && (
+        <Scrollbar
+          trackHeight={trackHeight}
+          scrollableRows={scrollableRows}
+          scrollOffset={effectiveRowsAbove}
+          onScrollOffsetChange={(offset) => scrollToFrac(scrollableRows > 0 ? offset / scrollableRows : 0)}
+          visible={isScrolling}
+        />
+      )}
       {/* Overscroll indicator — 10-char HALF-BLOCK in the right corner of
        * the top or bottom row. Top uses ▀ (U+2580 UPPER HALF BLOCK,
        * flush-top, 4/8 cell height); bottom uses ▄ (U+2584 LOWER HALF

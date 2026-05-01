@@ -13,8 +13,9 @@
 
 import React, { useState } from "react"
 import { describe, expect, test, vi } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, createTermless } from "@silvery/test"
 import { Box, Scrollbar, Text } from "../../src/index.js"
+import { run } from "../../packages/ag-term/src/runtime/run"
 
 describe("Scrollbar", () => {
   test("renders nothing when scrollableRows is 0 (content fits)", () => {
@@ -123,5 +124,43 @@ describe("Scrollbar", () => {
     const render = createRenderer({ cols: 20, rows: 10 })
     const app = render(<Container />)
     expect(app.text).toContain("off:0")
+  })
+
+  test("termless drag release away from the track clears active chrome", async () => {
+    using term = createTermless({ cols: 20, rows: 10 })
+
+    function Container(): React.ReactElement {
+      const [offset, setOffset] = useState(0)
+      return (
+        <Box width={20} height={10} position="relative">
+          <Text>off:{Math.round(offset)}</Text>
+          <Scrollbar
+            trackHeight={10}
+            scrollableRows={30}
+            scrollOffset={offset}
+            onScrollOffsetChange={setOffset}
+          />
+        </Box>
+      )
+    }
+
+    const handle = await run(<Container />, term, { mouse: true, selection: false })
+    await new Promise((r) => setTimeout(r, 50))
+
+    const idleBg = term.cell(0, 19).bg
+    await term.mouse.down(19, 0)
+    await new Promise((r) => setTimeout(r, 50))
+    const draggingBg = term.cell(0, 19).bg
+    expect(draggingBg).not.toEqual(idleBg)
+
+    await term.mouse.move(5, 8)
+    await new Promise((r) => setTimeout(r, 50))
+    await term.mouse.up(5, 8)
+    await new Promise((r) => setTimeout(r, 50))
+
+    for (let row = 0; row < 10; row++) {
+      expect(term.cell(row, 19).bg).not.toEqual(draggingBg)
+    }
+    handle.unmount()
   })
 })

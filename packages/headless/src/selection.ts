@@ -27,8 +27,9 @@ export interface SelectionRange {
 }
 
 /**
- * Rectangular boundary for contain-scoped selection.
- * Derived from the nearest `userSelect="contain"` ancestor's scrollRect.
+ * Rectangular boundary for scoped selection.
+ * Derived by the runtime from the active document-selection ancestor's
+ * scrollRect, or from a `userSelect="contain"` hard boundary.
  */
 export interface SelectionScope {
   top: number
@@ -47,7 +48,7 @@ export interface TerminalSelectionState {
   source: "mouse" | "keyboard" | null
   /** Current selection granularity */
   granularity: SelectionGranularity
-  /** Contain boundary — selection range is clamped to this rect */
+  /** Active document/contain boundary — selection range is clamped to this rect */
   scope: SelectionScope | null
 }
 
@@ -75,7 +76,7 @@ export type SelectionAction =
       scope?: SelectionScope | null
       source?: "mouse" | "keyboard"
     }
-  | { type: "extend"; col: number; row: number; buffer?: TerminalBuffer }
+  | { type: "extend"; col: number; row: number; buffer?: TerminalBuffer; scope?: SelectionScope | null }
   | { type: "finish" }
   | { type: "clear" }
 
@@ -274,6 +275,7 @@ export function terminalSelectionUpdate(
 
     case "extend": {
       if (!state.selecting) return [state, []]
+      const scope = "scope" in action ? (action.scope ?? null) : state.scope
       const extended = extendByGranularity(
         action.col,
         action.row,
@@ -281,11 +283,12 @@ export function terminalSelectionUpdate(
         state.granularity,
         action.buffer,
       )
-      const head = clampToScope(extended.col, extended.row, state.scope)
+      const head = clampToScope(extended.col, extended.row, scope)
       return [
         {
           ...state,
           range: { anchor: state.range!.anchor, head },
+          scope,
           selecting: true,
         },
         [{ type: "render" }],
@@ -333,10 +336,9 @@ export interface ExtractTextOptions {
   /** Row metadata for soft-wrap handling and precise trailing space trimming */
   rowMetadata?: readonly RowMetadata[]
   /**
-   * Contain scope. When set, every row's col range is clamped to
-   * `[scope.left, scope.right]` so the extracted text cannot include cells
-   * outside the `userSelect="contain"` ancestor's rect — even across the
-   * interior rows of a multi-row selection.
+   * Active selection scope. When set, every row's col range is clamped to
+   * `[scope.left, scope.right]` so extracted text cannot include cells outside
+   * the document-selection region or `userSelect="contain"` boundary.
    */
   scope?: SelectionScope | null
 }

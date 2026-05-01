@@ -357,6 +357,22 @@ CSS flexbox via Flexily. Let the layout engine compute positions and sizes.
 
 `useBoxRect()` gives synchronous access to a component's size during render — no effects, no 0x0 flash.
 
+### Responsive breakpoints
+
+Silvery already has a responsive-token system. Use `useResponsiveValue()` before inventing breakpoint logic.
+
+Default breakpoint thresholds are terminal columns:
+
+- `xs`: 30
+- `sm`: 60
+- `md`: 90
+- `lg`: 120
+- `xl`: 150
+
+`useResponsiveValue()` resolves from the global terminal width (`term.size.cols()`), which is right for app chrome such as side panels, command bars, and global navigation. For content that lives inside split panes, cards, or document surfaces, prefer container-scoped resolution from the component's measured width (`useBoxRect()`) using the same breakpoint vocabulary and thresholds. A half-width pane in a 220-column terminal should not behave like an `xl` surface.
+
+When designing new layout primitives, expose responsive values using the existing shape (`{ default, xs, sm, md, lg, xl }`) and share the resolver rather than creating a second breakpoint vocabulary.
+
 ### CSS-correct defaults
 
 silvery uses CSS-correct flex defaults (`flexShrink: 1`, `alignContent: stretch`,
