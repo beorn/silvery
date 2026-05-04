@@ -48,6 +48,10 @@ export interface HeightModel {
   setEstimate(estimate: (index: number) => number): void
   /** Sum of effective heights for indices [0, index). O(log n). */
   prefixSum(index: number): number
+  /** Top row for the item at `index`, including inter-item gaps. O(log n). */
+  rowOfIndex(index: number): number
+  /** Item index whose row range contains or precedes `row`. O(log n). */
+  indexAtRow(row: number): number | null
   /**
    * Sum of all effective heights + (n-1) * gap. O(log n).
    * For an empty model returns 0.
@@ -137,6 +141,30 @@ export function createHeightModel(opts: HeightModelOptions): HeightModel {
     return fenwickPrefix(self.tree, index)
   }
 
+  function rowOfIndex(index: number): number {
+    const clamped = Math.max(0, Math.min(index, self.itemCount))
+    return prefixSum(clamped) + Math.max(0, clamped - 1) * self.gap
+  }
+
+  function indexAtRow(row: number): number | null {
+    if (self.itemCount <= 0) return null
+    const target = Math.max(0, row)
+    let lo = 0
+    let hi = self.itemCount - 1
+    let best = 0
+    while (lo <= hi) {
+      const mid = Math.floor((lo + hi) / 2)
+      const top = rowOfIndex(mid)
+      if (top <= target) {
+        best = mid
+        lo = mid + 1
+      } else {
+        hi = mid - 1
+      }
+    }
+    return best
+  }
+
   function totalRows(): number {
     if (self.itemCount === 0) return 0
     const heightSum = fenwickPrefix(self.tree, self.itemCount)
@@ -175,6 +203,8 @@ export function createHeightModel(opts: HeightModelOptions): HeightModel {
     setMeasured,
     setEstimate,
     prefixSum,
+    rowOfIndex,
+    indexAtRow,
     totalRows,
     update,
     get itemCount() {

@@ -79,6 +79,32 @@ describe("HeightModel", () => {
     expect(m2.totalRows()).toBe(36)
   })
 
+  test("rowOfIndex includes inter-item gaps", () => {
+    const m = createHeightModel({ itemCount: 4, estimate: (i) => i + 1, gap: 2 })
+    // heights [1, 2, 3, 4], two-row gaps between items.
+    expect(m.rowOfIndex(0)).toBe(0)
+    expect(m.rowOfIndex(1)).toBe(1)
+    expect(m.rowOfIndex(2)).toBe(1 + 2 + 2)
+    expect(m.rowOfIndex(3)).toBe(1 + 2 + 3 + 2 + 2)
+    expect(m.rowOfIndex(99)).toBe(m.totalRows())
+  })
+
+  test("indexAtRow returns the item at or before a row", () => {
+    const m = createHeightModel({ itemCount: 4, estimate: (i) => i + 1, gap: 2 })
+    expect(m.indexAtRow(-1)).toBe(0)
+    expect(m.indexAtRow(0)).toBe(0)
+    expect(m.indexAtRow(1)).toBe(1)
+    expect(m.indexAtRow(4)).toBe(1)
+    expect(m.indexAtRow(5)).toBe(2)
+    expect(m.indexAtRow(11)).toBe(3)
+    expect(m.indexAtRow(999)).toBe(3)
+  })
+
+  test("indexAtRow is null for an empty model", () => {
+    const m = createHeightModel({ itemCount: 0, estimate: () => 1, gap: 0 })
+    expect(m.indexAtRow(0)).toBeNull()
+  })
+
   test("resize grow — new indices use current estimate", () => {
     const m = createHeightModel({ itemCount: 3, estimate: () => 4, gap: 0 })
     m.setMeasured(1, 10)

@@ -99,9 +99,9 @@ describe("ListView height-independent — scrollbar with multi-line items", () =
       </Box>,
     )
 
-    // Overflowing scrollbars are visible while idle so they can show hover and
-    // armed states before the user starts dragging.
-    expect(findThumbCell(app, COLS, ROWS)).not.toBeNull()
+    // Scrollbars use macOS/iOS-style visibility: hidden while idle, shown
+    // during scroll activity.
+    expect(findThumbCell(app, COLS, ROWS)).toBeNull()
 
     // Wheel-scroll once — content overflows (48 rows in 20-row viewport),
     // scrollbar should remain rendered. Before the height-independent fix, it

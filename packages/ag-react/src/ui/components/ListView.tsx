@@ -52,6 +52,7 @@ import type { AgNode } from "@silvery/ag/types"
 import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { renderStringSync } from "../../render-string"
 import { createHeightModel, type HeightModel } from "./list-view/height-model"
+import { useScrollAnchoring } from "./list-view/use-scroll-anchoring"
 import { createHistoryBuffer, createHistoryItem } from "@silvery/ag-term/history-buffer"
 import type { HistoryBuffer } from "@silvery/ag-term/history-buffer"
 import { createListDocument } from "@silvery/ag-term/list-document"
@@ -332,6 +333,17 @@ export interface ListViewProps<T> {
    * overscroll indicator. Default: `"none"`.
    */
   follow?: FollowPolicy
+
+  /**
+   * Preserve the current visible content position across item/content height
+   * changes. This is browser-style scroll anchoring for lists: when rows above
+   * the viewport grow, shrink, insert, or disappear, ListView keeps the same
+   * top visible logical item at the same screen row.
+   *
+   * Default: `true`. Set to `false` for raw log/timeline/animation surfaces
+   * where content changes should intentionally move the viewport.
+   */
+  maintainVisibleContentPosition?: boolean
 
   /**
    * @deprecated Use `follow="end"` instead. `stickyBottom={true}` is
@@ -627,6 +639,7 @@ function ListViewInner<T>(
     virtualizationThreshold = DEFAULT_VIRTUALIZATION_THRESHOLD,
     maxEstimatedRows = DEFAULT_MAX_ESTIMATED_ROWS,
     follow,
+    maintainVisibleContentPosition = true,
     stickyBottom = false,
     onAtBottomChange,
   }: ListViewProps<T>,
@@ -671,6 +684,8 @@ function ListViewInner<T>(
   // `scrollTo` resolution further down can read it.
   const pendingFollowSnapRef = useRef<boolean>(false)
   const followInitialisedRef = useRef<boolean>(false)
+  const prevAtBottomRef = useRef<boolean | null>(null)
+  const prevMaxScrollRowRef = useRef<number | null>(null)
   if (!followInitialisedRef.current) {
     followInitialisedRef.current = true
     pendingFollowSnapRef.current = resolvedFollow === "end"
@@ -850,6 +865,7 @@ function ListViewInner<T>(
         flashEdgeBump("top")
       }
       setCursorSilently(next)
+      scrollAnchoring.suppressOnce()
       scrollRowFloatRef.current = null
       setScrollRow(null)
       wheelBufferRef.current = []
@@ -1184,6 +1200,7 @@ function ListViewInner<T>(
       if (dir > 0 && nextFloat >= maxRow) flashEdgeBump("bottom")
       else if (dir < 0 && nextFloat <= 0) flashEdgeBump("top")
       scrollRowFloatRef.current = nextFloat
+      scrollAnchoring.suppressOnce()
       syncScrollbarFrac()
       const rendered = Math.round(nextFloat)
       setScrollRow((prevInt) => (prevInt === rendered ? prevInt : rendered))
@@ -1230,6 +1247,7 @@ function ListViewInner<T>(
       stopKinetic()
       clearReleaseTimer()
       scrollRowFloatRef.current = target
+      scrollAnchoring.suppressOnce()
       const rendered = Math.round(target)
       setScrollRow((prev) => (prev === rendered ? prev : rendered))
       // At the end? Re-arm follow="end" so streaming appends stay visible.
@@ -1772,9 +1790,7 @@ function ListViewInner<T>(
   //                          + max(0, n-end-1)*gap
   //                        = (sum of heights[end..n)) + (n-end-1)*gap
   const totalGapAccount = Math.max(0, activeItems.length - 1) * gap
-  const indexLeadingSpacer = usingIndexWindow
-    ? heightModel.prefixSum(indexWindowStart) + Math.max(0, indexWindowStart - 1) * gap
-    : 0
+  const indexLeadingSpacer = usingIndexWindow ? heightModel.rowOfIndex(indexWindowStart) : 0
   const indexTrailingSpacer = usingIndexWindow
     ? heightModel.totalRows() -
       heightModel.prefixSum(indexWindowEnd) -
@@ -2015,6 +2031,7 @@ function ListViewInner<T>(
         const next = Math.max(0, Math.min(maxRow, prev + rows))
         if (next === prev) return
         scrollRowFloatRef.current = next
+        scrollAnchoring.suppressOnce()
         const rendered = Math.round(next)
         setScrollRow((prevInt) => (prevInt === rendered ? prevInt : rendered))
         // Calling scrollBy means the user is taking explicit control of
@@ -2024,12 +2041,14 @@ function ListViewInner<T>(
       },
       scrollToTop() {
         scrollRowFloatRef.current = 0
+        scrollAnchoring.suppressOnce()
         setScrollRow(0)
         pendingFollowSnapRef.current = false
       },
       scrollToBottom() {
         const maxRow = maxScrollRowRef.current
         scrollRowFloatRef.current = maxRow
+        scrollAnchoring.suppressOnce()
         setScrollRow(maxRow)
         // Re-arm follow="end" auto-follow — on the next render the
         // pending-snap path takes over and subsequent appends keep the
@@ -2056,26 +2075,6 @@ function ListViewInner<T>(
   // drives wheel acceleration; closed-form exponential decay runs during
   // the momentum phase. See `handleWheel` + `enterMomentum` above.
   const onWheel = handleWheel
-
-  // ── Empty state ─────────────────────────────────────────────────
-  if (activeItems.length === 0) {
-    return isHeightIndependent ? (
-      <Box
-        flexDirection="column"
-        flexGrow={1}
-        flexShrink={1}
-        minWidth={0}
-        minHeight={0}
-        width={width}
-      >
-        {/* Empty - nothing to render */}
-      </Box>
-    ) : (
-      <Box flexDirection="column" height={height} width={width}>
-        {/* Empty - nothing to render */}
-      </Box>
-    )
-  }
 
   // ── Render ──────────────────────────────────────────────────────
   const startIndex = effectiveStartIndex
@@ -2146,8 +2145,6 @@ function ListViewInner<T>(
   const selectedIndexInSlice = currentScrollTarget - startIndex
   const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length
   const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice
-  const boxScrollTo =
-    scrollRow !== null ? undefined : isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined
 
   // Scrollbar geometry — indexed on ROW (vertical position), not item#.
   // Item-indexed thumb jumps erratically when item heights vary, because
@@ -2239,8 +2236,6 @@ function ListViewInner<T>(
   //
   // Initialised to a sentinel so the first effect run unconditionally
   // emits the initial at-bottom value to onAtBottomChange.
-  const prevAtBottomRef = useRef<boolean | null>(null)
-  const prevMaxScrollRowRef = useRef<number | null>(null)
   // `pendingFollowSnapRef` is declared earlier (next to `resolvedFollow`)
   // because `scrollTo` resolution reads it before this effect block.
   // Snapshot the row-space measurements that the effect needs. The
@@ -2383,8 +2378,7 @@ function ListViewInner<T>(
   // lags the thumb behind the content. Query HeightModel directly — same
   // semantics as the prior `sumHeights(0, scrollOffset, …)` (measured /
   // avgMeasured / estimate per index, plus inter-item gap accounting).
-  const rowsAboveViewport =
-    heightModel.prefixSum(scrollOffset) + Math.max(0, scrollOffset - 1) * gap
+  const rowsAboveViewport = heightModel.rowOfIndex(scrollOffset)
   // Thumb size uses `max(stable, measured)` (same shape as the visibility
   // gate above). For estimate-correct lists this collapses to the stable
   // value; for lists whose actual content is taller than the estimate
@@ -2427,14 +2421,48 @@ function ListViewInner<T>(
   // Bead: km-silvery.listview-scroll-overshoot (regression from 8c63cfb9).
   const scrollableRows = Math.max(0, totalRowsMeasured - trackHeight)
   const trackRemainder = trackHeight - thumbHeight
-  // When the user is wheel-driving, derive thumb from our own `scrollRow`
-  // (exact row offset). Otherwise use the virtualizer's measurement-based
-  // `rowsAboveViewport` (keyboard-following mode).
-  const effectiveRowsAbove = scrollRow !== null ? scrollRow : rowsAboveViewport
   // Keep refs fresh for the wheel / momentum callbacks (captured via
   // closure with stable identity).
   maxScrollRowRef.current = scrollableRows
   rowsAboveViewportRef.current = rowsAboveViewport
+
+  const keyForActiveIndex = useCallback(
+    (index: number): string | number | null => {
+      const item = activeItems[index]
+      if (item === undefined) return null
+      return getKey ? getKey(item, index + unmountedCount) : index + unmountedCount
+    },
+    [activeItems, getKey, unmountedCount],
+  )
+  const applyAnchoredTopRow = useCallback((row: number) => {
+    scrollRowFloatRef.current = row
+    const rendered = Math.round(row)
+    setScrollRow((prev) => (prev === rendered ? prev : rendered))
+  }, [])
+  const baseTopRow = scrollRow !== null ? scrollRow : rowsAboveViewport
+  const scrollAnchoring = useScrollAnchoring({
+    enabled: maintainVisibleContentPosition,
+    model: heightModel,
+    keyAtIndex: keyForActiveIndex,
+    itemCount: activeItems.length,
+    currentTopRow: baseTopRow,
+    maxTopRow: scrollableRows,
+    followOwnsViewport:
+      resolvedFollow === "end" &&
+      (pendingFollowSnapRef.current || prevAtBottomRef.current === true),
+    onApplyTopRow: applyAnchoredTopRow,
+  })
+  const renderScrollRow = scrollAnchoring.maintainedTopRow ?? scrollRow
+  // When the user is wheel-driving, derive thumb from our own row offset.
+  // Otherwise use the virtualizer's measurement-based `rowsAboveViewport`.
+  const effectiveRowsAbove = renderScrollRow !== null ? renderScrollRow : rowsAboveViewport
+  const boxScrollTo =
+    renderScrollRow !== null
+      ? undefined
+      : isSelectedInSlice
+        ? Math.max(0, scrollToIndex)
+        : undefined
+
   // Content clamp lives in `handleWheel` + `momentumStep` (scrollRow clamped
   // to [0, maxRow], momentum amplitude pre-clamped — no rubber-band overshoot).
   // `effectiveRowsAbove` drives the shared Scrollbar overlay and the edge-bump
@@ -2469,7 +2497,7 @@ function ListViewInner<T>(
         width={width}
         overflow="scroll"
         scrollTo={boxScrollTo}
-        scrollOffset={scrollRow ?? undefined}
+        scrollOffset={renderScrollRow ?? undefined}
         overflowIndicator={overflowIndicator}
         onWheel={onWheel}
         onLayout={handleContainerLayout}
@@ -2583,7 +2611,9 @@ function ListViewInner<T>(
           trackHeight={trackHeight}
           scrollableRows={scrollableRows}
           scrollOffset={effectiveRowsAbove}
-          onScrollOffsetChange={(offset) => scrollToFrac(scrollableRows > 0 ? offset / scrollableRows : 0)}
+          onScrollOffsetChange={(offset) =>
+            scrollToFrac(scrollableRows > 0 ? offset / scrollableRows : 0)
+          }
           visible={isScrolling}
         />
       )}
