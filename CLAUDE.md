@@ -70,6 +70,23 @@ The two helpers live next to `createContainer` / `createFiberRoot` in [`packages
 
 **Verification**: `tests/memory/memory.test.tsx` and `tests/memory/production-paths.test.tsx` cycle each public render entry 200× and assert <15 MB heap growth. `tests/memory/heap-snapshot.test.tsx` writes a V8 heap snapshot after cycles and asserts no `FiberRootNode` retainers reach back to a host instance — the gold-standard proof.
 
+## Mandatory: SILVERY_STRICT is the only knob
+
+`SILVERY_STRICT` is the canonical truth-of-render gate. It accepts a comma-separated list of numeric tiers (`1`, `2`, `3`) and check slugs (`canary`, `incremental`, `residue`, …). Per-check skip via `!slug`. Every runtime check fires under this one env var.
+
+**The contract is: no other `SILVERY_*` enable env vars.** Adding a new check means adding a slug + a tier in `packages/ag-term/src/strict-mode.ts` — never a new env var. The umbrella behavior (`bun run test:fast` sets `SILVERY_STRICT=1` by default) means every new check ships protected at zero developer-friction cost.
+
+```bash
+SILVERY_STRICT=1                # tier 1 — all canonical checks
+SILVERY_STRICT=2                # tier 2 — tier 1 + every-action invariants
+SILVERY_STRICT=canary           # only this one check (debugging isolate)
+SILVERY_STRICT=1,!canary        # tier 1 minus canary (per-test escape hatch)
+```
+
+Orthogonal axes (different *backend*, not different *check*) keep their own env vars: `SILVERY_STRICT_TERMINAL=vt100|xterm|ghostty|all`, `SILVERY_STRICT_ACCUMULATE=1`, `SILVERY_INSTRUMENT=1`. The boundary is: same check, different verifier → orthogonal var; new check → new slug under `SILVERY_STRICT`.
+
+Built-in slugs: `incremental` (tier 1, the historical incremental≡fresh check), `canary` (tier 1, degenerate-frame-after-first-render). See [`docs/guide/debugging.md`](docs/guide/debugging.md) for the full table and [`packages/ag-term/src/strict-mode.ts`](packages/ag-term/src/strict-mode.ts) for the `isStrictEnabled(slug, minTier)` helper.
+
 ## Mandatory: New Props Require Tests
 
 **Every new prop in `packages/ag/src/types.ts` (BoxProps, TextProps, etc.) MUST have at least one test in `tests/` that exercises it through the render pipeline at SILVERY_STRICT=2.**

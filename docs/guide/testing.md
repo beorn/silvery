@@ -36,9 +36,43 @@ The test suite is organized by domain:
 | `examples-cursor.test.tsx`      | 9     | Cursor positioning tests                                              |
 | `non-tty.test.tsx`              | 9     | Non-TTY output handling                                               |
 
+## Strictness — one knob
+
+Silvery ships with a single canonical truth-of-render gate: **`SILVERY_STRICT`**. Every runtime check (incremental ≡ fresh, degenerate-frame canary, future invariants) fires under this one env var. The contract:
+
+```bash
+SILVERY_STRICT=1                # tier 1 — all canonical checks
+SILVERY_STRICT=2                # tier 2 — tier 1 + every-action invariants (slower)
+SILVERY_STRICT=canary           # only the degenerate-frame canary (debugging isolate)
+SILVERY_STRICT=residue,canary   # combine specific checks without a full tier
+SILVERY_STRICT=1,!canary        # tier 1 minus the canary (per-test skip with `!` prefix)
+```
+
+**Design rule: no other `SILVERY_*` enable env vars.** Adding new checks doesn't add new env vars; they pick a slug + a tier and inherit. `bun run test:fast` (sets `SILVERY_STRICT=1` by default) gets every new check at zero developer-friction cost.
+
+See the full debugging reference at [debugging.md](./debugging.md#silvery_strict--the-canonical-truth-of-render-gate).
+
 ## Using createRenderer
 
 The `createRenderer` function creates a render function with auto-cleanup between tests. Each call returns an `App` instance with locators, keyboard input, and text inspection.
+
+### Pin root width and height when testing full apps
+
+`createRenderer({cols, rows})` passes dimensions as the *available* size to layout — it does **not** set `root.style.width/height`. Without a width/height pin, full-app fixtures collapse to a one-row title-bar frame. Wrap the tree in `<Screen>` (production root) or `<Box width={cols} height={rows}>`:
+
+```tsx
+const TOTAL_COLS = 360, TOTAL_ROWS = 120
+const render = createRenderer({ cols: TOTAL_COLS, rows: TOTAL_ROWS })
+const app = render(
+  <Box width={TOTAL_COLS} height={TOTAL_ROWS} flexDirection="row">
+    {/* component under test */}
+  </Box>,
+)
+```
+
+The framework's degenerate-frame canary catches this misconfiguration when running under `SILVERY_STRICT`. It throws with a diagnostic pointing at this section. Per-test opt-out for legitimate empty-state tests: `SILVERY_STRICT=1,!canary`.
+
+**Geometry tiering**: 360×120 (or close) for full-app helpers; 80×24 stays the default for narrow component fixtures. Width-sensitive bugs at 13 columns × ~110 rows of content only manifest at user-realistic geometries.
 
 ### Basic Usage
 

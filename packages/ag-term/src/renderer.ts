@@ -30,6 +30,7 @@ import {
   setLayoutEngine,
 } from "./layout-engine.js"
 import { createAg, createRenderPostState, type RenderPostState } from "./ag.js"
+import { isStrictEnabled } from "./strict-mode.js"
 import { outputPhase } from "./pipeline/output-phase.js"
 import {
   CURSOR_SAVE as _CURSOR_SAVE,
@@ -1049,38 +1050,30 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Degenerate-frame canary
+  // Degenerate-frame canary  (SILVERY_STRICT slug: "canary")
   // ─────────────────────────────────────────────────────────────────────────
   //
   // After the initial render settles, measure the painted-cell ratio. A
-  // healthy full-app render at any non-trivial geometry paints tens of
-  // thousands of cells. A misconfigured root that omits a `<Screen>` /
+  // healthy full-app render at any non-trivial geometry paints thousands
+  // of cells. A misconfigured root that omits a `<Screen>` /
   // `<Box width height>` wrapper collapses the entire tree to ~one row
   // (the title bar) — at 360×120 that's ~360 of 43,200 cells, < 1%.
   //
-  // `render()` is the headless-only entry — `run()` drives a live TTY where
-  // an empty initial frame is legitimate (loading spinner, no content yet).
-  // Skip when:
-  //   - SILVERY_FRAME_CANARY_OFF=1 (escape hatch for empty-state path tests)
-  //   - The buffer is tiny (cols * rows < 200 — nothing meaningful to gate)
-  //
   // The canary only fires when the buffer is large enough that a real-app
-  // frame is expected: cols * rows >= CANARY_MIN_BUFFER_CELLS. Many silvery
-  // unit tests deliberately render small components (e.g. 60x6 isolated
-  // Boxes) where a low painted ratio is meaningful and intentional. The
-  // canary's purpose is full-app harnesses that ALSO use big buffers — so
-  // gating by buffer size is the cleanest separator and avoids false
-  // positives across the existing test suite.
+  // frame is expected (cols × rows >= CANARY_MIN_BUFFER_CELLS). Smaller
+  // buffers are unit-test fixtures where low paint ratio is meaningful.
   //
-  // SILVERY_STRICT_FRAME_CANARY=1: throw with diagnostic.
-  // Default: emit a `silvery:render` debug log line (visible via DEBUG=silvery:render).
-  //   We deliberately do NOT use console.warn here — many silvery unit tests
-  //   intentionally render small components inside large buffers, and km's
-  //   vitest setup treats any console.warn as a hard failure.
-  // SILVERY_FRAME_CANARY_OFF=1: full bypass (empty-state path tests).
+  // Strictness: gated by the canonical SILVERY_STRICT contract — fires
+  // whenever `SILVERY_STRICT` includes tier ≥ 1 OR the explicit slug
+  // "canary". Per-test opt-out: `SILVERY_STRICT=1,!canary`.
+  // No new SILVERY_* env vars. See packages/ag-term/src/strict-mode.ts.
+  //
+  // Default (SILVERY_STRICT unset / "0"): emit a `silvery:render` debug
+  // log line. `console.warn` is deliberately NOT used because km's vitest
+  // setup treats any console.warn as a hard test failure.
   //
   // Bead: @km/silvery/render-degenerate-frame-canary.
-  if (instance.prevBuffer && process.env.SILVERY_FRAME_CANARY_OFF !== "1") {
+  if (instance.prevBuffer) {
     const bufW = instance.prevBuffer.width
     const bufH = instance.prevBuffer.height
     const totalCells = bufW * bufH
@@ -1096,12 +1089,13 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           `wrapper). createRenderer({cols, rows}) passes dimensions as the AVAILABLE ` +
           `size to layout, but does NOT set root.style.width/height — wrap the tree ` +
           `in <Box width={cols} height={rows}> or <Screen>. ` +
-          `Bypass with SILVERY_FRAME_CANARY_OFF=1 if this is intentional. ` +
+          `Per-test opt-out: SILVERY_STRICT=1,!canary. ` +
           `See @km/silvery/render-degenerate-frame-canary.`
-        const strict =
-          process.env.SILVERY_STRICT_FRAME_CANARY &&
-          process.env.SILVERY_STRICT_FRAME_CANARY !== "0"
-        if (strict) {
+        // Tier 2 — surfaces a punch list of harness defects without
+        // blocking tier-1 (back-compat). Promotes to tier 1 once the
+        // existing test suite is clean. Explicit slug "canary" or
+        // tier ≥ 2 fires the throw; tier 1 alone emits debug-log.
+        if (isStrictEnabled("canary", 2)) {
           throw new Error(msg)
         } else {
           log.debug?.(msg)

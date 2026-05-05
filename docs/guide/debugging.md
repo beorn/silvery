@@ -2,14 +2,34 @@
 
 Canonical reference for debugging rendering issues. All other docs link here instead of duplicating.
 
-## Environment Variables
+## SILVERY_STRICT — the canonical truth-of-render gate
 
-### Verification Modes
+`SILVERY_STRICT` is the single env var that turns on runtime verification. It accepts a comma-separated list where each entry is either a **numeric tier** or a **check slug**. Empty / unset / `"0"` → off.
 
 ```bash
-# Buffer-level: incremental render phase must produce same buffer as fresh render
-SILVERY_STRICT=1 bun run app
+SILVERY_STRICT=1                # tier 1 — all canonical checks
+SILVERY_STRICT=2                # tier 2 — tier 1 + every-action invariants (paranoid; slower)
+SILVERY_STRICT=canary           # only the degenerate-frame canary
+SILVERY_STRICT=residue,canary   # combine specific checks without going full-tier
+SILVERY_STRICT=1,!canary        # tier 1 minus the canary (per-check skip with `!` prefix)
+```
 
+**Design contract: no other `SILVERY_*` enable env vars.** New checks pick a slug + a tier and inherit the umbrella. `bun run test:fast` (sets `SILVERY_STRICT=1` by default) gets every new check without env config changes. See [`packages/ag-term/src/strict-mode.ts`](https://github.com/beorn/silvery/blob/main/packages/ag-term/src/strict-mode.ts) for the `isStrictEnabled(slug, minTier)` helper.
+
+### Built-in checks (slugs)
+
+| Slug          | Tier | What it catches                                                                                |
+| ------------- | ---- | ---------------------------------------------------------------------------------------------- |
+| `incremental` | 1    | Incremental render phase produces the same buffer as a fresh redraw (the historical STRICT=1)  |
+| `canary`      | 2    | Degenerate frame: large buffer (≥ 4000 cells) where < 5% of cells are painted after first render — usually means the root component has no `<Screen>` or `<Box width height>` wrapper. **Filed at tier 2** so it surfaces the punch-list of broken harnesses during `test:strictest` cadence runs without blocking `test:fast`. Promote to tier 1 once the suite is clean. |
+
+More checks land here as the framework hardens. Each new check publishes its slug + tier in this table.
+
+### Orthogonal axes (not part of the strict gate)
+
+These are independent verification dimensions, not strict checks. They compose with `SILVERY_STRICT` but don't subsume it.
+
+```bash
 # ANSI-level: verify output via internal VT100 parser (fast, same process)
 SILVERY_STRICT_TERMINAL=vt100 bun run app
 
@@ -31,9 +51,9 @@ SILVERY_STRICT_ACCUMULATE=1 bun run app
 
 **Notes:**
 
-- `SILVERY_STRICT=1` → enables buffer-level check AND vt100 output verification
 - `SILVERY_STRICT_TERMINAL=all` → shorthand for `vt100,xterm,ghostty`
 - These terminal verification modes use [Termless](https://termless.dev) backends internally
+- These remain as separate env vars because they pick a *backend*, not a *check* — orthogonal dimension
 
 ### Diagnostics
 
@@ -87,7 +107,9 @@ The scheduler auto-enables instrumentation for the STRICT comparison render. No 
 
 | Mode                      | Catches                                                                                                   | Misses                                                                                                   |
 | ------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `STRICT`                  | Render phase bugs (wrong dirty flag evaluation, skipped nodes, wrong region clearing, scroll tier errors) | Output phase bugs, terminal interpretation bugs                                                          |
+| `STRICT=1` (`incremental` + `canary`) | Render phase bugs (wrong dirty flag evaluation, skipped nodes, wrong region clearing, scroll tier errors) + degenerate-frame test harness misconfiguration | Output phase bugs, terminal interpretation bugs                                                          |
+| `STRICT=2`                | Tier 1 + every-action invariants (cursor visibility, border integrity)                                                                                     | Same as tier 1 for output/terminal bugs                                                                  |
+| `STRICT=canary`           | Just the degenerate-frame canary (debugging isolate)                                                                                                       | All other render bugs                                                                                    |
 | `STRICT_TERMINAL=vt100`   | changesToAnsi bugs where our parser disagrees with our generator (style transitions, cursor arithmetic)   | Bugs where parser and generator agree but real terminals disagree (pending-wrap, `\x1b[K` in wrap state) |
 | `STRICT_TERMINAL=xterm`   | Terminal interpretation bugs (xterm.js-specific: OSC 66, wide char cursor, buffer overflow)               | Ghostty-specific bugs, bugs requiring accumulated state                                                  |
 | `STRICT_TERMINAL=ghostty` | Ghostty-specific terminal interpretation bugs                                                             | xterm.js-specific bugs                                                                                   |
