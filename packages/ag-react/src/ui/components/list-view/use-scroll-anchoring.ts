@@ -134,6 +134,19 @@ function resolveMaintainedTopRow({
   if (index < 0) return null
 
   const desiredTopRow = model.rowOfIndex(index) + anchor.offsetWithinItem
+
+  // No-overflow guard: when there's nothing to scroll (`maxTopRow = 0`),
+  // anchoring has no work to do. Returning a clamped value here would
+  // overwrite the caller's authoritative scrollTo with 0 — observed during
+  // the pre-measurement → measured transition where the heightModel briefly
+  // reports `totalRows < viewportHeight` (estimate=3 × N < viewport),
+  // making `scrollableRows = 0` even though real content overflows. The
+  // anchor's `desiredTopRow` (computed from the prior frame) gets clamped
+  // to 0 and applied via `setScrollRow(0)`, which then suppresses the
+  // declarative `scrollTo` prop in subsequent renders.
+  // Bead: km-silvery.listview-scrollto-anchoring-stomp.
+  if (maxTopRow <= 0) return null
+
   const clamped = Math.max(0, Math.min(maxTopRow, desiredTopRow))
   return Math.abs(clamped - currentTopRow) > toleranceRows ? clamped : null
 }
