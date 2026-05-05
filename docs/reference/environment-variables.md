@@ -13,18 +13,32 @@ These variables enable automatic correctness checking. They add overhead and are
 
 ### SILVERY_STRICT
 
-Buffer-level verification that incremental rendering matches a fresh render.
+The canonical truth-of-render gate. Single env var that enables every runtime check (incremental ≡ fresh, degenerate-frame canary, sentinel-compare residue, future invariants).
 
-|             |                                                          |
-| ----------- | -------------------------------------------------------- |
-| **Values**  | `1`, `true` to enable; `0`, `false`, or unset to disable |
-| **Default** | Disabled                                                 |
-
-After every frame, re-renders the entire tree from scratch and compares cell-by-cell against the incremental result. Throws `IncrementalRenderMismatchError` on any difference. This is the primary invariant check for the render pipeline.
+|             |                                                                                                                                                          |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Values**  | Comma-separated list of numeric tiers (`1`, `2`, `3`) and check slugs (`incremental`, `canary`, `residue`). `!slug` skips a check. `0` / unset disables. |
+| **Default** | Disabled                                                                                                                                                 |
 
 ```bash
-SILVERY_STRICT=1 bun run app
+SILVERY_STRICT=1                # tier 1 — incremental ≡ fresh check (back-compat)
+SILVERY_STRICT=2                # tier 2 — tier 1 + canary + residue + every-action invariants
+SILVERY_STRICT=canary           # only the degenerate-frame canary (debugging isolate)
+SILVERY_STRICT=residue,canary   # combine specific checks without going full-tier
+SILVERY_STRICT=2,!canary        # tier 2 minus canary (per-test escape hatch)
 ```
+
+**Built-in checks (slugs):**
+
+| Slug          | Tier | What it catches                                                                                                                                                                                       |
+| ------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `incremental` | 1    | Incremental render phase produces the same buffer as a fresh redraw (the historical STRICT=1).                                                                                                        |
+| `canary`      | 2    | Degenerate frame: large buffer (≥ 4000 cells) where < 5% of cells are painted after first render — usually means the root component has no `<Screen>` or `<Box width height>` wrapper.                |
+| `residue`     | 2    | Stale-prev-cell carry-over: poisons the prev buffer with a sentinel, runs the regular incremental render, then compares against a fresh-from-zero render. Catches cyan-strip-class residue bugs.    |
+
+**Design contract: no other `SILVERY_*` enable env vars.** New checks pick a slug + a tier and inherit the umbrella. `bun run test:fast` (which sets `SILVERY_STRICT=1` by default) gets every new check without env config changes.
+
+When any check fires, throws `IncrementalRenderMismatchError` with diagnostic context (cell coordinates, prev / incremental / fresh values, render-phase stats).
 
 ### SILVERY_STRICT_TERMINAL
 
