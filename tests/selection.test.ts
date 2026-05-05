@@ -785,6 +785,52 @@ describe("findSelectionBoundaries", () => {
     expect(boundaries.some((boundary) => boundary.hardContain)).toBe(false)
   })
 
+  test("skips zero-area scrollRects (e.g. virtual text children with inlineRects)", () => {
+    // Regression: virtual <Text> children carry inlineRects for hit testing
+    // but have a placeholder scrollRect of {0,0,0,0}. If findSelectionBoundaries
+    // includes that as a scope, the resulting `nearestCommonSelectionScope`
+    // collapses every double/triple-click to (0,0) via clampToScope, silently
+    // breaking word/line selection. (See click-granularity.test.tsx.)
+    const root = {
+      type: "silvery-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 40, height: 10 },
+    } as unknown as AgNode
+    const text = {
+      type: "silvery-text",
+      props: {},
+      children: [],
+      parent: root,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 24, height: 1 },
+    } as unknown as AgNode
+    // Virtual inline text child — has inlineRects, scrollRect is zero-area.
+    const virtualInline = {
+      type: "silvery-text",
+      props: {},
+      children: [],
+      parent: text,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 0, height: 0 },
+      inlineRects: [{ x: 0, y: 0, width: 24, height: 1 }],
+    } as unknown as AgNode
+    root.children = [text]
+    text.children = [virtualInline]
+
+    const boundaries = findSelectionBoundaries(virtualInline)
+
+    // The virtual inline child must NOT contribute a scope — only its
+    // ancestors with real geometry should.
+    expect(boundaries.map((boundary) => boundary.node)).toEqual([text, root])
+    expect(boundaries.map((boundary) => boundary.scope)).toEqual([
+      { top: 0, bottom: 0, left: 0, right: 23 },
+      { top: 0, bottom: 9, left: 0, right: 39 },
+    ])
+  })
+
   test("marks explicit contain as a hard boundary", () => {
     const root = {
       type: "silvery-root",

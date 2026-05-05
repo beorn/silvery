@@ -374,6 +374,13 @@ export interface SelectionBoundary {
 function nodeSelectionScope(node: AgNode): SelectionScope | null {
   const rect = node.scrollRect
   if (!rect) return null
+  // Reject degenerate (zero-area) rects. Virtual text children expose
+  // `inlineRects` for hit testing but carry a placeholder scrollRect of
+  // {0,0,0,0}; treating that as a selection scope would produce
+  // {top:0, bottom:-1, left:0, right:-1} and clamp every selection
+  // anchor/head to (0,0) — silently breaking double/triple-click word
+  // selection that goes through `clampToScope`.
+  if (rect.width <= 0 || rect.height <= 0) return null
   return {
     top: rect.y,
     bottom: rect.y + rect.height - 1,
