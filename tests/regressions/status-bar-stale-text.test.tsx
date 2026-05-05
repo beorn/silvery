@@ -155,7 +155,7 @@ describe("regression: status bar stale text (km-silvery.aichat-incr)", () => {
                   paddingX={2}
                   paddingY={1}
                 >
-                  <Text width="100%">{label}</Text>
+                  <Text>{label}</Text>
                 </Box>
               </Box>
             </Box>
@@ -203,7 +203,7 @@ describe("regression: status bar stale text (km-silvery.aichat-incr)", () => {
                     paddingX={2}
                     paddingY={1}
                   >
-                    <Text width="100%">ok</Text>
+                    <Text>ok</Text>
                   </Box>
                 </Box>
               </Box>
