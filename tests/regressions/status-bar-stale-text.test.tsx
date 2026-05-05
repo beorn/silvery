@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { describe, test, expect, afterEach } from "vitest"
 import { createRenderer, createTermless } from "@silvery/test"
-import { Box, Text } from "silvery"
+import { Box, Text, useBoxRect, useHover } from "silvery"
 import { run, type RunHandle } from "../../packages/ag-term/src/runtime/run"
 
 const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms))
@@ -127,5 +127,106 @@ describe("regression: status bar stale text (km-silvery.aichat-incr)", () => {
       handle.unmount()
       delete (globalThis as any).__testSetCount
     }
+  })
+
+  test("flex gutters with right-aligned background stay in incremental/fresh parity on hover", async () => {
+    function FlexGutterBubble({ label, width = 14 }: { label: string; width?: number }) {
+      const hover = useHover()
+      return (
+        <Box width={132} height={4} flexDirection="column">
+          <Box
+            flexDirection="row"
+            width="100%"
+            minWidth={0}
+            onMouseEnter={hover.onMouseEnter}
+            onMouseLeave={hover.onMouseLeave}
+          >
+            <Box flexGrow={1} flexBasis={0} flexShrink={1} minWidth={1} />
+            <Box flexDirection="column" width={88} maxWidth={88} flexShrink={1} minWidth={0}>
+              <Box flexDirection="column" width="100%" flexShrink={1} minWidth={0}>
+                <Box
+                  flexDirection="row"
+                  alignSelf="flex-end"
+                  width={width}
+                  maxWidth={58}
+                  flexShrink={0}
+                  minWidth={0}
+                  backgroundColor="$bg-surface-raised"
+                  paddingX={2}
+                  paddingY={1}
+                >
+                  <Text width="100%">{label}</Text>
+                </Box>
+              </Box>
+            </Box>
+            <Box flexGrow={1} flexBasis={0} flexShrink={1} minWidth={1} />
+          </Box>
+        </Box>
+      )
+    }
+
+    const render = createRenderer({ cols: 132, rows: 4 })
+    const app = render(<FlexGutterBubble label="right edge" />)
+    const row = app.lines.findIndex((line) => line.includes("right edge"))
+    const col = app.lines[row]!.indexOf("right edge")
+
+    await app.hover(col, row)
+    render(<FlexGutterBubble label="right edge" />)
+
+    expect(app.lines[row]).toContain("right edge")
+  })
+
+  test("useBoxRect-delayed flex gutters paint right-aligned background padding", () => {
+    function MeasuredFlexGutterBubble() {
+      const rect = useBoxRect()
+      const available = Math.round(rect.width)
+      if (available <= 0) {
+        return <Box flexDirection="column" width="100%" />
+      }
+
+      return (
+        <Box flexDirection="row" width="100%" minWidth={0}>
+          <Box flexGrow={1} flexBasis={0} flexShrink={1} minWidth={1} />
+          <Box flexDirection="column" width={88} maxWidth={88} flexShrink={1} minWidth={0}>
+            <Box flexDirection="row" width="100%" minWidth={0}>
+              <Box flexGrow={1} flexBasis={0} flexShrink={1} minWidth={1} />
+              <Box flexDirection="column" width={88} maxWidth={88} flexShrink={1} minWidth={0}>
+                <Box flexDirection="column" width="100%" flexShrink={1} minWidth={0}>
+                  <Box
+                    flexDirection="row"
+                    alignSelf="flex-end"
+                    width={6}
+                    maxWidth={58}
+                    flexShrink={0}
+                    minWidth={0}
+                    backgroundColor="$bg-surface-raised"
+                    paddingX={2}
+                    paddingY={1}
+                  >
+                    <Text width="100%">ok</Text>
+                  </Box>
+                </Box>
+              </Box>
+              <Box flexGrow={1} flexBasis={0} flexShrink={1} minWidth={1} />
+            </Box>
+          </Box>
+          <Box flexGrow={1} flexBasis={0} flexShrink={1} minWidth={1} />
+        </Box>
+      )
+    }
+
+    const render = createRenderer({ cols: 96, rows: 3 })
+    const app = render(
+      <Box width={96} height={3} flexDirection="column">
+        <MeasuredFlexGutterBubble />
+      </Box>,
+    )
+
+    const row = app.lines.findIndex((line) => line.includes("ok"))
+    expect(row, app.text).toBeGreaterThanOrEqual(0)
+    const col = app.lines[row]!.indexOf("ok")
+    expect(app.lines[row]).toContain("ok")
+    expect(app.cell(col - 2, row).bg).toEqual({ r: 61, g: 67, b: 79 })
+    expect(app.cell(col + 3, row).bg).toEqual({ r: 61, g: 67, b: 79 })
   })
 })

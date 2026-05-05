@@ -27,7 +27,7 @@ import {
 } from "@silvery/ag/epoch"
 import { getLayoutEngine } from "./layout-engine"
 import type { TextFrame } from "@silvery/ag/text-frame"
-import { type TerminalBuffer, createTextFrame } from "./buffer"
+import { TerminalBuffer, createTextFrame } from "./buffer"
 import { runWithMeasurer, type Measurer } from "./unicode"
 import { measurePhase } from "./pipeline/measure-phase"
 import {
@@ -484,16 +484,13 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       // outline snapshot capture / dirty-row inspection) AND a frame-shared
       // PlanSink that builds the SectionedRenderPlan in lock-step.
       //
-      // After the walk, the plan is committed onto a fresh clone of the
-      // prev buffer and the result is compared against the BufferSink
-      // output. Any divergence indicates a renderer that mutates without
-      // going through the sink seam — that's the diagnostic that motivates
-      // the L4 invariant.
-      //
-      // The BufferSink-mutated buffer is the AUTHORITATIVE result for the
-      // frame. The plan-committed buffer is parity-only until Phase 2 Step 6
-      // eliminates intra-frame buffer reads — at which point the PlanSink
-      // path can stand alone and the BufferSink path can be deleted.
+      // After the walk, the sectioned plan is committed onto a fresh frame
+      // buffer and becomes the authoritative result. The BufferSink-mutated
+      // buffer remains the read substrate during the walk so renderers that
+      // still need intra-frame reads keep working, but final pixels now use
+      // the structural order: transfer → cleanup → paint → overlay →
+      // post-state. That makes cleanup/paint interleaving bugs
+      // unrepresentable at the frame boundary.
       if (isRenderPlanEnabled()) {
         const layout = root.boxRect
         if (!layout) {
@@ -502,22 +499,13 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
         const captured = withPlanCapture(layout.width, layout.height, () =>
           renderPhase(root, prevBuffer, ctx, postState),
         )
-        buffer = captured.result
-        // Production wiring: plan-commit parity against a fresh clone.
-        // Throws on divergence so the test suite catches sink-bypass bugs.
-        if (
-          prevBuffer &&
-          prevBuffer.width === layout.width &&
-          prevBuffer.height === layout.height
-        ) {
-          const replay = prevBuffer.clone()
-          commitSectionedPlan(replay, captured.plan)
-          // We don't fail-fast on a pixel divergence here — that would
-          // brick production. The substrate test
-          // (vendor/silvery/tests/features/render-plan-production.test.tsx)
-          // verifies the parity. Phase 3 deletes the dual path.
-          void replay
-        }
+        void captured.result
+        const replay =
+          prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
+            ? prevBuffer.clone()
+            : new TerminalBuffer(layout.width, layout.height)
+        commitSectionedPlan(replay, captured.plan)
+        buffer = replay
       } else {
         buffer = renderPhase(root, prevBuffer, ctx, postState)
       }
