@@ -22,6 +22,7 @@ SILVERY_STRICT=1,!canary        # tier 1 minus the canary (per-check skip with `
 | ------------- | ---- | ---------------------------------------------------------------------------------------------- |
 | `incremental` | 1    | Incremental render phase produces the same buffer as a fresh redraw (the historical STRICT=1)  |
 | `canary`      | 2    | Degenerate frame: large buffer (≥ 4000 cells) where < 5% of cells are painted after first render — usually means the root component has no `<Screen>` or `<Box width height>` wrapper. **Filed at tier 2** so it surfaces the punch-list of broken harnesses during `test:strictest` cadence runs without blocking `test:fast`. Promote to tier 1 once the suite is clean. |
+| `residue`     | 2    | Stale-prev-cell carry-over: poisons the prev buffer with a sentinel (rgb(254, 0, 254) "þ"), runs the regular incremental render against it, then compares against a fresh-from-zero render. Any cell that retains the sentinel exposes "incremental cascade trusted prev pixels but no paint op covered them" — the cyan-strip residue class. **Tier 2** because of the cost (one extra render-phase pass + cloned buffer per frame). The plain `incremental` check at tier 1 only catches divergences in CHANGED cells; stale carry-over often passes that check because the prev pixel happens to coincide with what fresh would paint. |
 
 More checks land here as the framework hardens. Each new check publishes its slug + tier in this table.
 

@@ -31,6 +31,11 @@ import {
 } from "./layout-engine.js"
 import { createAg, createRenderPostState, type RenderPostState } from "./ag.js"
 import { isStrictEnabled } from "./strict-mode.js"
+import {
+  isResidueStrictEnabled,
+  poisonBufferWithSentinel,
+  verifyNoResidueLeak,
+} from "./pipeline/strict-residue.js"
 import { outputPhase } from "./pipeline/output-phase.js"
 import {
   CURSOR_SAVE as _CURSOR_SAVE,
@@ -989,6 +994,62 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             })
           }
         }
+      }
+
+      // SILVERY_STRICT residue check (slug "residue", tier 2+).
+      //
+      // The incremental≡fresh comparison above catches divergences in cells
+      // whose VALUES differ, but it cannot catch the "stale carry-over"
+      // class — where a cell from frame N-1 happens to coincide with what
+      // fresh would paint, so cell-equality holds even though no paint op
+      // covered it under incremental. The cyan-strip residue (P1, bead
+      // @km/silvery/render-no-stale-residue-invariant) was exactly this
+      // shape.
+      //
+      // The sentinel-compare check exposes it: clone the prev buffer,
+      // poison every cell with a color/char no theme produces, run the
+      // pipeline against the poisoned clone, then compare against a
+      // fresh-from-zeroed-buffer render. Any cell that still carries the
+      // sentinel after incremental ran reveals stale carry-over.
+      //
+      // Cost: one extra render-phase pass + a cloned buffer per frame.
+      // Default SILVERY_STRICT=1 does NOT enable this — it is tier 2.
+      // See packages/ag-term/src/pipeline/strict-residue.ts for the
+      // sentinel choice and full rationale.
+      if (
+        instance.prevBuffer &&
+        instance.renderCount > 1 &&
+        multiPassConverged &&
+        isResidueStrictEnabled()
+      ) {
+        const root2 = getContainerRoot(instance.container)
+        // Snapshot the REAL prev before poisoning the clone — required
+        // for verifyNoResidueLeak to distinguish "cascade skipped because
+        // prev was already correct" (no bug) from "cascade skipped but
+        // prev was wrong" (cyan-strip class).
+        const realPrev = instance.prevBuffer.clone()
+        const poisonedPrev = instance.prevBuffer.clone()
+        poisonBufferWithSentinel(poisonedPrev)
+        // Render against the sentinel-poisoned prev. `fresh: true` swaps
+        // the postState carrier so the production cross-frame snapshots
+        // are not consumed or stomped. We do NOT update instance.prevBuffer
+        // / prevPaintedBuffer — this is a verification-only pass.
+        const sentinelResult = runPipeline(
+          root2,
+          instance.columns,
+          instance.rows,
+          poisonedPrev,
+          {
+            skipLayoutNotifications: true,
+            skipScrollStateUpdates: true,
+            fresh: true,
+          },
+        )
+        // Fresh-from-zero baseline. doFreshRenderFull already passes
+        // prevBuffer=null and a throwaway postState — this is the
+        // "all pipeline state reset" reference.
+        const { buffer: freshFromZero } = doFreshRenderFull()
+        verifyNoResidueLeak(realPrev, sentinelResult.buffer, freshFromZero, instance.renderCount)
       }
     }
 
