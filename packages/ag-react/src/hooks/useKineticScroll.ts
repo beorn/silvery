@@ -153,6 +153,13 @@ export interface UseKineticScrollOptions {
    */
   enableSameDirCompounding?: boolean
   /**
+   * When true, synthesize a momentum coast after a wheel stream stops.
+   * Default true for backwards compatibility. Set false when the input
+   * source already emits inertial wheel events, such as terminal SGR mouse
+   * wheels and browser trackpads.
+   */
+  enableMomentum?: boolean
+  /**
    * Fired when wheel or momentum motion is clamped at an edge. Used by
    * ListView to surface an edge-bump indicator. Fires for both directions
    * separately even on repeated bumps; consumers should debounce as needed.
@@ -242,6 +249,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
     maxCoastRows = DEFAULT_KINETIC_MAX_COAST_ROWS,
     wheelMultiplier = 1.0,
     enableSameDirCompounding = false,
+    enableMomentum = true,
     enableElasticEdges = false,
     enableInputCadenceDetection = false,
     onEdgeReached,
@@ -601,14 +609,19 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
       if (isDiscrete) {
         wheelBufferRef.current = []
         pendingBoostVelocityRef.current = 0
-      } else {
+      } else if (enableMomentum) {
         scheduleRelease()
+      } else {
+        wheelGestureFilterRef.current.release()
+        wheelBufferRef.current = []
+        pendingBoostVelocityRef.current = 0
       }
     },
     [
       clearReleaseTimer,
       enableElasticEdges,
       enableInputCadenceDetection,
+      enableMomentum,
       enableSameDirCompounding,
       maxVelocity,
       scheduleRelease,

@@ -157,6 +157,8 @@ export interface VirtualizerResult {
    * `${itemKey}:${width}` strings (or just `String(itemKey)` when width is
    * omitted). */
   measuredHeights: ReadonlyMap<string, number>
+  /** Monotonic counter incremented whenever an item measurement changes. */
+  measurementVersion: number
 }
 
 // =============================================================================
@@ -184,6 +186,29 @@ const DEFAULT_MAX_RENDERED = 100
  */
 export function makeMeasureKey(itemKey: string | number, viewportWidth?: number): string {
   return viewportWidth === undefined ? String(itemKey) : `${itemKey}:${viewportWidth}`
+}
+
+function measuredHeightValuesForWidth(
+  measuredHeights: ReadonlyMap<string, number>,
+  viewportWidth?: number,
+): number[] {
+  if (viewportWidth === undefined) return [...measuredHeights.values()]
+  const suffix = `:${viewportWidth}`
+  const values: number[] = []
+  for (const [key, height] of measuredHeights) {
+    if (key.endsWith(suffix)) values.push(height)
+  }
+  return values
+}
+
+export function averageMeasuredHeightForWidth(
+  measuredHeights: ReadonlyMap<string, number> | undefined,
+  viewportWidth?: number,
+): number | undefined {
+  if (!measuredHeights || measuredHeights.size === 0) return undefined
+  const values = measuredHeightValuesForWidth(measuredHeights, viewportWidth)
+  if (values.length === 0) return undefined
+  return values.reduce((sum, height) => sum + height, 0) / values.length
 }
 
 /** Get item height for a specific index, checking measured cache first.
@@ -218,17 +243,13 @@ export function calcAverageHeight(
   count: number,
   estimateHeight: number | ((index: number) => number),
   measuredHeights?: ReadonlyMap<string, number>,
+  viewportWidth?: number,
 ): number {
   if (count === 0) return 1
 
   // If we have measurements, compute average from them (more accurate)
-  if (measuredHeights && measuredHeights.size > 0) {
-    let total = 0
-    for (const h of measuredHeights.values()) {
-      total += h
-    }
-    return total / measuredHeights.size
-  }
+  const avgMeasured = averageMeasuredHeightForWidth(measuredHeights, viewportWidth)
+  if (avgMeasured !== undefined) return avgMeasured
 
   if (typeof estimateHeight === "number") return estimateHeight
 
@@ -270,13 +291,7 @@ export function sumHeights(
   // Compute average measured height once for use as fallback for unmeasured items.
   // This is more accurate than the original estimate for items outside the render window.
   let avgMeasured: number | undefined
-  if (measuredHeights && measuredHeights.size > 0) {
-    let measuredTotal = 0
-    for (const h of measuredHeights.values()) {
-      measuredTotal += h
-    }
-    avgMeasured = measuredTotal / measuredHeights.size
-  }
+  avgMeasured = averageMeasuredHeightForWidth(measuredHeights, viewportWidth)
 
   // Slow path: per-item lookup (checks measurement cache, falls back to avg measured or estimate)
   let total = 0
@@ -425,7 +440,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
 
   // Calculate average item height for estimating visible count.
   // Uses measured heights when available for more accurate estimation.
-  const avgHeight = calcAverageHeight(count, estimateHeight, measuredHeights)
+  const avgHeight = calcAverageHeight(count, estimateHeight, measuredHeights, viewportWidth)
   // Use ceil to match rendering behavior: items that partially overflow
   // the viewport are still rendered (clipped by overflow="hidden").
   const estimatedVisibleCount = Math.max(1, Math.ceil(viewportHeight / (avgHeight + gap)))
@@ -868,5 +883,6 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     getKey,
     measureItem,
     measuredHeights,
+    measurementVersion,
   }
 }

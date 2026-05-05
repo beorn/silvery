@@ -172,6 +172,33 @@ describe("scroll offset dirty propagation (km-rpv0n)", () => {
     expect(text).toContain("Bottom")
   })
 
+  test("fractional scrollOffset is normalized to a terminal row", () => {
+    const render = createRenderer({ cols: 30, rows: 10 })
+
+    function App({ offset }: { offset: number }) {
+      return (
+        <Box flexDirection="column" height={10}>
+          <Text>Top</Text>
+          <Box overflow="scroll" height={5} scrollOffset={offset} flexDirection="column">
+            {Array.from({ length: 20 }, (_, i) => (
+              <Box key={i}>
+                <Text>Line {i}</Text>
+              </Box>
+            ))}
+          </Box>
+          <Text>Bottom</Text>
+        </Box>
+      )
+    }
+
+    const app = render(<App offset={2.6} />)
+    const text = stripAnsi(app.text)
+    expect(text).toContain("Line 3")
+    expect(text).not.toContain("Line 2")
+    expect(text).toContain("Top")
+    expect(text).toContain("Bottom")
+  })
+
   test("scroll offset change with backgroundColor triggers correct repaint", () => {
     const render = createRenderer({ cols: 30, rows: 10 })
 

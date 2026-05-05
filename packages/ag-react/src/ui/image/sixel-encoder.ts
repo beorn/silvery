@@ -18,6 +18,8 @@
  * with a simple nearest-color palette approach.
  */
 
+/// <reference path="./upng-js.d.ts" />
+
 import { createTerminalProfile, type TerminalCaps } from "@silvery/ansi"
 import UPNG from "upng-js"
 
@@ -34,6 +36,11 @@ export interface SixelImageData {
   height: number
   /** RGBA pixel data (4 bytes per pixel: R, G, B, A), row-major order */
   data: Uint8Array
+}
+
+type DecodedPng = {
+  width: number
+  height: number
 }
 
 /**
@@ -71,7 +78,7 @@ export function decodePngToRgba(pngData: Buffer | Uint8Array): SixelImageData | 
       pngData instanceof Uint8Array ? pngData : new Uint8Array(pngData as ArrayBufferLike)
     const ab = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength) as ArrayBuffer
 
-    const decoded = UPNG.decode(ab)
+    const decoded = UPNG.decode(ab) as DecodedPng
     const frames = UPNG.toRGBA8(decoded)
     if (frames.length === 0) return null
 

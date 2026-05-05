@@ -53,10 +53,38 @@ function renderList(
   )
 }
 
+function renderWrappingList(
+  items: Item[],
+  ref: React.RefObject<ListViewHandle | null>,
+): React.ReactElement {
+  return (
+    <Box flexDirection="column" flexGrow={1} minHeight={0}>
+      <ListView<Item>
+        ref={ref}
+        items={items}
+        estimateHeight={1}
+        getKey={(item) => item.id}
+        renderItem={(item) => (
+          <Box flexDirection="column" width="100%" flexShrink={0}>
+            <Text wrap="wrap">
+              {item.title} alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi
+              omicron pi rho sigma tau upsilon phi chi psi omega
+            </Text>
+          </Box>
+        )}
+      />
+    </Box>
+  )
+}
+
 function visibleLines(text: string): string[] {
   return stripAnsi(text)
     .split("\n")
     .filter((line) => line.trim().length > 0)
+}
+
+function visibleItemId(line: string): string {
+  return line.match(/Item \d+/)?.[0] ?? ""
 }
 
 describe("ListView maintainVisibleContentPosition", () => {
@@ -181,5 +209,26 @@ describe("ListView maintainVisibleContentPosition", () => {
     app.rerender(renderList(expanded, listRef))
 
     expect(visibleLines(app.text)[0]).toContain("Item 10")
+  })
+
+  test("preserves the top visible keyed item when viewport width reflows wrapped rows", () => {
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 90, rows: 14 })
+    const initial = makeItems(50)
+    const app = r(renderWrappingList(initial, listRef))
+
+    app.rerender(renderWrappingList(initial, listRef))
+    act(() => {
+      listRef.current!.scrollBy(42)
+    })
+    app.rerender(renderWrappingList(initial, listRef))
+
+    const before = visibleItemId(visibleLines(app.text)[0] ?? "")
+    expect(before).not.toBe("")
+
+    app.resize(130, 14)
+    app.rerender(renderWrappingList(initial, listRef))
+
+    expect(visibleItemId(visibleLines(app.text)[0] ?? "")).toBe(before)
   })
 })

@@ -40,7 +40,11 @@ import React, {
   useRef,
   useState,
 } from "react"
-import { averageMeasuredHeightForWidth, sumHeights, useVirtualizer } from "../../hooks/useVirtualizer"
+import {
+  averageMeasuredHeightForWidth,
+  sumHeights,
+  useVirtualizer,
+} from "../../hooks/useVirtualizer"
 import { makeMeasureKey } from "../../hooks/useVirtualizer"
 import { useScrollState } from "../../hooks/useScrollState"
 import { useInput } from "../../hooks/useInput"
@@ -70,6 +74,7 @@ import { computeMatchRanges } from "@silvery/ag-term/search-overlay"
 import { createLogger } from "loggily"
 
 const wheelLog = createLogger("silvery:wheel")
+const listLog = createLogger("silvery:listview")
 
 // =============================================================================
 // Types
@@ -661,7 +666,11 @@ function ListViewInner<T>(
   const prevAtBottomRef = useRef<boolean | null>(null)
   const prevMaxScrollRowRef = useRef<number | null>(null)
   const prevTotalRowsRef = useRef<number | null>(null)
+  const prevMeasuredCountRef = useRef<number | null>(null)
+  const prevTailMeasuredHeightRef = useRef<number | null>(null)
   const prevViewportWidthRef = useRef<number | null>(null)
+  const followWidthReflowRef = useRef<boolean>(false)
+  const prevResolvedFollowRef = useRef<FollowPolicy>(resolvedFollow)
   const followActiveRef = useRef<boolean>(resolvedFollow === "end")
   if (!followInitialisedRef.current) {
     followInitialisedRef.current = true
@@ -724,6 +733,26 @@ function ListViewInner<T>(
   // gesture so `scrollRow` flips from null → integer. Reset to null by
   // `moveTo` when the cursor takes over.
   const isWheelDrivenRef = useRef(false)
+  const wheelGestureActiveRef = useRef(false)
+  const wheelGestureActiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const markWheelGestureActive = useCallback(() => {
+    wheelGestureActiveRef.current = true
+    if (wheelGestureActiveTimerRef.current !== null)
+      clearTimeout(wheelGestureActiveTimerRef.current)
+    wheelGestureActiveTimerRef.current = setTimeout(() => {
+      wheelGestureActiveRef.current = false
+      wheelGestureActiveTimerRef.current = null
+    }, SCROLLBAR_FADE_AFTER_MS)
+  }, [])
+
+  useEffect(
+    () => () => {
+      if (wheelGestureActiveTimerRef.current !== null)
+        clearTimeout(wheelGestureActiveTimerRef.current)
+    },
+    [],
+  )
 
   const flashEdgeBump = useCallback((edge: "top" | "bottom") => {
     setBumpedEdge(edge)
@@ -736,6 +765,7 @@ function ListViewInner<T>(
     maxCoastRows: 30,
     wheelMultiplier,
     enableSameDirCompounding: true,
+    enableMomentum: false,
     enableElasticEdges,
     enableInputCadenceDetection,
     getInitialFloat: () => {
@@ -810,10 +840,11 @@ function ListViewInner<T>(
       if (maxRow <= 0) return
       if (event.deltaY < 0) followActiveRef.current = false
       isWheelDrivenRef.current = true
+      markWheelGestureActive()
       scrollAnchoring.suppressOnce()
       physics.onWheel(event)
     },
-    [physics],
+    [markWheelGestureActive, physics],
   )
 
   // Set the viewport position from a fractional 0..1 value. Used by
@@ -1256,6 +1287,31 @@ function ListViewInner<T>(
       }
     }
 
+    // When row-space scrolling owns the viewport (`scrollRow`), trust the
+    // row-space height model over child-index layout mapping. This matters
+    // when the first visible child is an opaque leading placeholder: child
+    // mapping can only say "somewhere before the previous window", while
+    // the explicit row offset identifies the item that should be rendered at
+    // the viewport edge. Without this, expanding a disclosure near the tail
+    // can leave the viewport looking at blank spacer above the rendered
+    // window.
+    const followDisengageRow =
+      prevResolvedFollowRef.current === "end" && resolvedFollow !== "end" && scrollRow === null
+        ? (innerScrollState?.offset ?? heightModel.rowOfIndex(scrollOffset))
+        : null
+    const rowAnchorTop = scrollRow !== null ? scrollRow : followDisengageRow
+    if (rowAnchorTop !== null) {
+      const rowAnchorViewportHeight = isHeightIndependent
+        ? Math.max(1, viewportSize?.h ?? 1)
+        : Math.max(1, height ?? 1)
+      const firstByRow = heightModel.indexAtRow(rowAnchorTop)
+      const lastByRow = heightModel.indexAtRow(rowAnchorTop + rowAnchorViewportHeight - 1)
+      if (firstByRow !== null) {
+        viewportFirstItem = firstByRow
+        viewportLastItem = Math.max(firstByRow, lastByRow ?? firstByRow)
+      }
+    }
+
     // Cursor extends the viewport-anchored window: it must stay
     // renderable even when the user has scrolled far from it. But if the
     // cursor is far from the viewport, we don't render its neighborhood
@@ -1294,6 +1350,9 @@ function ListViewInner<T>(
     // Shrink toward the anchor so we keep items closest to the visible
     // viewport. The cursor must remain inside the window.
     const cursorInWindow = (s: number, e: number): boolean => cursorAnchor >= s && cursorAnchor < e
+    const requiredInWindow = (s: number, e: number, keepCursor: boolean): boolean =>
+      anchorFirst >= s && anchorLast < e && (!keepCursor || cursorInWindow(s, e))
+    const keepCursor = cursorInWindow(start, end)
 
     while (end - start > budgetItem || rowsForRange(start, end) > budgetRow) {
       if (end - start <= 1) break
@@ -1309,9 +1368,11 @@ function ListViewInner<T>(
       } else {
         nextStart = start + 1
       }
-      // Don't trim across the cursor — keep cursor renderable.
-      if (cursorInWindow(start, end) && !cursorInWindow(nextStart, nextEnd)) {
-        // Trim the OTHER side instead.
+      // Don't trim across the viewport anchor or cursor. The viewport
+      // anchor is the user-visible position; the cursor is just the
+      // keyboard-selection contract.
+      if (!requiredInWindow(nextStart, nextEnd, keepCursor)) {
+        // Trim the OTHER side instead if that preserves the required range.
         if (nextStart !== start) {
           nextStart = start
           nextEnd = end - 1
@@ -1319,7 +1380,7 @@ function ListViewInner<T>(
           nextEnd = end
           nextStart = start + 1
         }
-        if (!cursorInWindow(nextStart, nextEnd)) break // stuck — exit
+        if (!requiredInWindow(nextStart, nextEnd, keepCursor)) break // stuck — exit
       }
       start = nextStart
       end = nextEnd
@@ -1800,6 +1861,12 @@ function ListViewInner<T>(
   // Using the max keeps the visibility gate honest in both cases while
   // leaving thumb SIZE driven by the stable estimate (no jitter).
   const totalRowsForOverflow = Math.max(totalRowsStable, totalRowsMeasured)
+  const tailMeasuredHeight = (() => {
+    const tailIndex = activeItems.length - 1
+    if (tailIndex < 0) return undefined
+    const baseKey = wrappedGetKey ? wrappedGetKey(tailIndex) : tailIndex
+    return measuredHeights.get(makeMeasureKey(baseKey, viewportSize?.w))
+  })()
   // Auto-flash the scrollbar when item count grows — gives the user a
   // brief "your relative position just shifted" cue (e.g. new chat messages
   // arriving while reading the tail). Comparing item count rather than
@@ -1824,7 +1891,7 @@ function ListViewInner<T>(
   // `rowsAboveViewportRef` via mutable refs — safe under React
   // concurrent rendering because both refs are written synchronously
   // during the SAME render that schedules the effect.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const prevCount = prevItemCountRef.current
     const grew = activeItems.length > prevCount
     if (grew) {
@@ -1866,10 +1933,17 @@ function ListViewInner<T>(
     const totalContentRows = heightModel.totalRows()
     const computedAtEnd = bottomRow >= totalContentRows - 0.5
     const prevTotalRows = prevTotalRowsRef.current
-    const rowsChanged =
-      prevTotalRows !== null && Math.abs(totalRowsMeasured - prevTotalRows) > 0.5
-    const rowsChangedFromStableMeasurements =
-      rowsChanged && measuredHeights.size >= activeItems.length
+    const rowsChanged = prevTotalRows !== null && Math.abs(totalRowsMeasured - prevTotalRows) > 0.5
+    const rowsShrank = prevTotalRows !== null && totalRowsMeasured < prevTotalRows - 0.5
+    const prevMeasuredCount = prevMeasuredCountRef.current
+    const rowsChangedFromNewMeasurements =
+      rowsChanged && prevMeasuredCount !== null && measuredHeights.size !== prevMeasuredCount
+    const prevTailMeasuredHeight = prevTailMeasuredHeightRef.current
+    const tailMeasuredHeightChanged =
+      prevTailMeasuredHeight !== null &&
+      tailMeasuredHeight !== undefined &&
+      Math.abs(tailMeasuredHeight - prevTailMeasuredHeight) > 0.5
+    const rowsChangedFromTailMeasurement = rowsChanged && tailMeasuredHeightChanged
 
     // Auto-follow: when `follow="end"` is engaged, snap scrollRow to
     // maxRow when:
@@ -1889,6 +1963,9 @@ function ListViewInner<T>(
       viewportSize?.w !== undefined &&
       viewportSize.w > 0 &&
       viewportSize.w !== prevViewportWidth
+    const widthReflowActive = followWidthReflowRef.current || viewportWidthChanged
+    const rowsChangedBeforeViewportTracked =
+      rowsChanged && prevViewportWidth === null && scrollRow !== null
     // Gate the snap on a *measured viewport* — avoids snapping during
     // the first render where `trackHeight` falls back to 1
     // (viewportSize not yet measured) and `scrollableRows` collapses
@@ -1920,11 +1997,20 @@ function ListViewInner<T>(
       viewportReady &&
       maxRow > 0 &&
       !userScrolledAway &&
-      (pendingSnap || ((grew || rowsChangedFromStableMeasurements) && wasAtEndPrev))
+      (pendingSnap ||
+        ((grew ||
+          rowsShrank ||
+          rowsChangedFromNewMeasurements ||
+          rowsChangedFromTailMeasurement ||
+          (rowsChanged && widthReflowActive) ||
+          rowsChangedBeforeViewportTracked ||
+          viewportWidthChanged) &&
+          wasAtEndPrev))
     if (shouldSnap) {
+      const targetRow = Math.round(maxRow)
       isWheelDrivenRef.current = true
-      physics.setScrollFloat(maxRow)
-      setScrollRow(maxRow)
+      physics.setScrollFloat(targetRow)
+      setScrollRow(targetRow)
       pendingFollowSnapRef.current = false
       followActiveRef.current = true
     } else if (
@@ -1942,6 +2028,10 @@ function ListViewInner<T>(
     }
     prevMaxScrollRowRef.current = maxRow
     prevTotalRowsRef.current = totalRowsMeasured
+    prevMeasuredCountRef.current = measuredHeights.size
+    prevTailMeasuredHeightRef.current = tailMeasuredHeight ?? null
+    if (viewportWidthChanged) followWidthReflowRef.current = true
+    else if (widthReflowActive && !rowsChanged) followWidthReflowRef.current = false
     if ((viewportSize?.w ?? 0) > 0) prevViewportWidthRef.current = viewportSize!.w
 
     // When we're snapping, the post-snap state IS at-end — even though
@@ -1973,6 +2063,7 @@ function ListViewInner<T>(
     // path, where the first commit has size=0 (maxRow=0, snap deferred)
     // and a later commit has size=N (maxRow=real, snap fires).
     measuredHeights.size,
+    tailMeasuredHeight,
     totalRowsMeasured,
     // `viewportSize.h` makes the effect re-run when the viewport
     // becomes measurable — gates the follow="end" first-paint snap on
@@ -1992,6 +2083,9 @@ function ListViewInner<T>(
   // semantics as the prior `sumHeights(0, scrollOffset, …)` (measured /
   // avgMeasured / estimate per index, plus inter-item gap accounting).
   const rowsAboveViewport = heightModel.rowOfIndex(scrollOffset)
+  const followDisengagedThisRender =
+    prevResolvedFollowRef.current === "end" && resolvedFollow !== "end" && scrollRow === null
+  const followDisengageTopRow = rowsAboveViewportRef.current
   // Thumb size uses `max(stable, measured)` (same shape as the visibility
   // gate above). For estimate-correct lists this collapses to the stable
   // value; for lists whose actual content is taller than the estimate
@@ -2032,7 +2126,7 @@ function ListViewInner<T>(
   // no spurious overscroll bump on a list whose content fits.
   //
   // Bead: km-silvery.listview-scroll-overshoot (regression from 8c63cfb9).
-  const scrollableRows = Math.max(0, totalRowsMeasured - trackHeight)
+  const scrollableRows = Math.max(0, Math.round(totalRowsMeasured - trackHeight))
   const trackRemainder = trackHeight - thumbHeight
   // Keep refs fresh for the wheel / momentum callbacks (captured via
   // closure with stable identity).
@@ -2062,7 +2156,11 @@ function ListViewInner<T>(
   )
   const baseTopRow = scrollRow !== null ? scrollRow : rowsAboveViewport
   const scrollAnchoring = useScrollAnchoring({
-    enabled: maintainVisibleContentPosition,
+    // During an actual wheel gesture, row-space scrolling is the
+    // authoritative viewport position. Visible-content anchoring is still
+    // allowed for non-wheel reflows (for example expanding a disclosure at
+    // the tail), but not while wheel/momentum tail frames are settling.
+    enabled: maintainVisibleContentPosition && !wheelGestureActiveRef.current,
     model: heightModel,
     keyAtIndex: keyForActiveIndex,
     itemCount: activeItems.length,
@@ -2070,10 +2168,33 @@ function ListViewInner<T>(
     maxTopRow: scrollableRows,
     followOwnsViewport:
       resolvedFollow === "end" &&
-      (pendingFollowSnapRef.current || prevAtBottomRef.current === true),
+      (followActiveRef.current || pendingFollowSnapRef.current || prevAtBottomRef.current === true),
     onApplyTopRow: applyAnchoredTopRow,
   })
-  const renderScrollRow = scrollAnchoring.maintainedTopRow ?? scrollRow
+  useLayoutEffect(() => {
+    const previous = prevResolvedFollowRef.current
+    prevResolvedFollowRef.current = resolvedFollow
+    if (previous === resolvedFollow) return
+
+    if (resolvedFollow === "end") {
+      pendingFollowSnapRef.current = true
+      followActiveRef.current = true
+      return
+    }
+
+    if (previous === "end") {
+      const targetRow = Math.max(0, Math.min(scrollableRows, Math.round(followDisengageTopRow)))
+      pendingFollowSnapRef.current = false
+      followActiveRef.current = false
+      isWheelDrivenRef.current = true
+      physics.nudgeScrollFloat(targetRow)
+      setScrollRow((prev) => (prev === targetRow ? prev : targetRow))
+    }
+  }, [followDisengageTopRow, physics, resolvedFollow, scrollableRows])
+  const renderScrollRow =
+    scrollAnchoring.maintainedTopRow ??
+    (followDisengagedThisRender ? followDisengageTopRow : null) ??
+    scrollRow
   // When the user is wheel-driving, derive thumb from our own row offset.
   // Otherwise use the virtualizer's measurement-based `rowsAboveViewport`.
   const effectiveRowsAbove = renderScrollRow !== null ? renderScrollRow : rowsAboveViewport
@@ -2093,6 +2214,112 @@ function ListViewInner<T>(
   // measured rect (via `viewportSize.h`), so until first layout we don't
   // render anything (thumbHeight ≥ trackHeight short-circuits below).
   const showScrollbar = scrollbar && thumbHeight > 0 && thumbHeight < trackHeight
+  const lastListLogKey = useRef("")
+  useEffect(() => {
+    const key = [
+      items.length,
+      activeItems.length,
+      visibleItems.length,
+      resolvedVirtualization,
+      resolvedFollow,
+      viewportSize?.w ?? 0,
+      viewportSize?.h ?? 0,
+      startIndex,
+      endIndex,
+      effectiveStartIndex,
+      effectiveEndIndex,
+      effectiveLeadingHeight,
+      effectiveTrailingHeight,
+      effectiveHiddenBefore,
+      effectiveHiddenAfter,
+      scrollRow ?? "null",
+      renderScrollRow ?? "null",
+      rowsAboveViewport,
+      scrollableRows,
+      trackHeight,
+      totalRowsMeasured,
+      totalRowsStable,
+      totalRowsForOverflow,
+      measuredHeights.size,
+      showScrollbar,
+      pendingFollowSnapRef.current,
+      followActiveRef.current,
+      prevAtBottomRef.current,
+      containerNode ? 1 : 0,
+    ].join(":")
+    if (key === lastListLogKey.current) return
+    lastListLogKey.current = key
+    listLog.debug?.("listview state", {
+      itemCount: items.length,
+      activeCount: activeItems.length,
+      visibleCount: visibleItems.length,
+      virtualization: resolvedVirtualization,
+      follow: resolvedFollow,
+      heightIndependent: isHeightIndependent,
+      viewport: viewportSize,
+      width,
+      rangeStart: range.startIndex,
+      rangeEnd: range.endIndex,
+      startIndex,
+      endIndex,
+      effectiveStartIndex,
+      effectiveEndIndex,
+      effectiveLeadingHeight,
+      effectiveTrailingHeight,
+      effectiveHiddenBefore,
+      effectiveHiddenAfter,
+      scrollOffset,
+      scrollRow,
+      renderScrollRow,
+      rowsAboveViewport,
+      effectiveRowsAbove,
+      scrollableRows,
+      trackHeight,
+      totalRowsMeasured,
+      totalRowsStable,
+      totalRowsForOverflow,
+      measuredCount: measuredHeights.size,
+      avgMeasuredHeight,
+      showScrollbar,
+      pendingFollowSnap: pendingFollowSnapRef.current,
+      followActive: followActiveRef.current,
+      prevAtBottom: prevAtBottomRef.current,
+      hasContainerNode: containerNode !== null,
+    })
+  }, [
+    activeItems.length,
+    avgMeasuredHeight,
+    containerNode,
+    effectiveEndIndex,
+    effectiveHiddenAfter,
+    effectiveHiddenBefore,
+    effectiveLeadingHeight,
+    effectiveRowsAbove,
+    effectiveStartIndex,
+    effectiveTrailingHeight,
+    endIndex,
+    isHeightIndependent,
+    items.length,
+    measuredHeights.size,
+    range.endIndex,
+    range.startIndex,
+    renderScrollRow,
+    resolvedFollow,
+    resolvedVirtualization,
+    rowsAboveViewport,
+    scrollOffset,
+    scrollRow,
+    scrollableRows,
+    showScrollbar,
+    startIndex,
+    totalRowsForOverflow,
+    totalRowsMeasured,
+    totalRowsStable,
+    trackHeight,
+    viewportSize,
+    visibleItems.length,
+    width,
+  ])
 
   // Outer wrapper + inner scroll container.
   //

@@ -223,12 +223,11 @@ export function placeKittyImage(opts: KittyPlaceOptions): string {
 /**
  * Check if the current terminal likely supports the Kitty graphics protocol.
  *
- * Pass `caps` (from `term.caps` or a {@link TerminalCaps} fixture) when
- * available. Without caps, this falls back to {@link createTerminalProfile}
- * — the canonical single-source-of-truth entry point in
- * `@silvery/ansi/profile`. Direct reads of terminal-signal env vars
- * (TERM / TERM_PROGRAM / …) are banned outside that module — see
- * `scripts/lint-env-reads.ts`.
+ * Pass a profile or caps fixture when available. Without one, this falls
+ * back to {@link createTerminalProfile} — the canonical single-source-of-
+ * truth entry point in `@silvery/ansi/profile`. Direct reads of terminal-
+ * signal env vars (TERM / TERM_PROGRAM / …) are banned outside that module
+ * — see `scripts/lint-env-reads.ts`.
  *
  * For definitive detection, use a terminal query (send the graphics protocol
  * query and check for a response), but that requires async I/O.
@@ -237,10 +236,23 @@ export function placeKittyImage(opts: KittyPlaceOptions): string {
  *
  * @returns `true` if the terminal likely supports Kitty graphics
  */
-export function isKittyGraphicsSupported(emulator?: { program: string; TERM: string }): boolean {
-  const resolved = emulator ?? createTerminalProfile().emulator
+export function isKittyGraphicsSupported(
+  profile?:
+    | {
+        readonly caps?: Pick<TerminalCaps, "kittyGraphics">
+        readonly emulator?: { program: string; TERM: string }
+      }
+    | { program: string; TERM: string },
+): boolean {
+  if (profile === undefined) return createTerminalProfile().caps.kittyGraphics
+  if ("caps" in profile && profile.caps) return profile.caps.kittyGraphics
+
+  const resolved = isEmulator(profile) ? profile : profile.emulator
+  if (!resolved) return false
   const term = resolved.TERM
   const termProgram = resolved.program
+
+  if (term === "dumb") return false
 
   // Kitty terminal
   if (term === "xterm-kitty" || termProgram === "kitty") return true
@@ -256,6 +268,12 @@ export function isKittyGraphicsSupported(emulator?: { program: string; TERM: str
   if (termProgram === "konsole") return true
 
   return false
+}
+
+function isEmulator(value: unknown): value is { program: string; TERM: string } {
+  if (value === null || typeof value !== "object") return false
+  const maybe = value as { program?: unknown; TERM?: unknown }
+  return typeof maybe.program === "string" && typeof maybe.TERM === "string"
 }
 
 // ============================================================================

@@ -6,6 +6,8 @@
  * and our custom terminal node tree.
  */
 
+/// <reference path="../react-reconciler.d.ts" />
+
 import { createContext } from "react"
 import {
   DefaultEventPriority,

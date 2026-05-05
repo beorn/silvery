@@ -42,6 +42,40 @@ function nodeIdent(node: AgNode): string {
   return ident ? `${node.type}#${ident}` : node.type
 }
 
+function nodePath(node: AgNode): string {
+  const path: string[] = []
+  let current: AgNode | null = node
+  while (current) {
+    path.push(nodeIdent(current))
+    current = current.parent
+  }
+  return path.reverse().join(" > ")
+}
+
+function layoutPropsForLog(node: AgNode): Record<string, unknown> {
+  const props = (node.props ?? {}) as Record<string, unknown>
+  return {
+    width: props.width,
+    maxWidth: props.maxWidth,
+    minWidth: props.minWidth,
+    flexGrow: props.flexGrow,
+    flexShrink: props.flexShrink,
+    flexBasis: props.flexBasis,
+    alignSelf: props.alignSelf,
+    position: props.position,
+    overflow: props.overflow,
+    borderStyle: props.borderStyle,
+    padding: props.padding,
+    paddingLeft: props.paddingLeft,
+    paddingRight: props.paddingRight,
+  }
+}
+
+function normalizeScrollOffset(offset: number): number {
+  if (!Number.isFinite(offset)) return 0
+  return Math.round(offset)
+}
+
 /**
  * Run Yoga layout calculation and propagate dimensions to all nodes.
  *
@@ -527,14 +561,27 @@ export function strictLayoutOverflowCheck(root: AgNode): void {
         if (child.boxRect.width > parentInnerWidth) {
           const childId = (childProps as any).id ?? child.type
           const parentId = (parentProps as any).id ?? node.type
+          const detail = {
+            child: nodeIdent(child),
+            parent: nodeIdent(node),
+            childPath: nodePath(child),
+            childBox: child.boxRect,
+            parentBox: node.boxRect,
+            parentInnerWidth,
+            border,
+            padding,
+            childProps: layoutPropsForLog(child),
+            parentProps: layoutPropsForLog(node),
+          }
           const msg =
             `[SILVERY_STRICT] Layout overflow: child "${childId}" width ${child.boxRect.width} ` +
             `exceeds parent "${parentId}" inner width ${parentInnerWidth} ` +
-            `(parent box: ${node.boxRect.width}, border: ${border.left}+${border.right}, padding: ${padding.left}+${padding.right})`
+            `(parent box: ${node.boxRect.width}, border: ${border.left}+${border.right}, padding: ${padding.left}+${padding.right}, path: ${detail.childPath})`
 
           if (shouldThrow) {
             throw new Error(msg)
           } else {
+            log.debug?.("layout overflow", detail)
             console.warn(msg)
           }
         }
@@ -841,6 +888,7 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
 
   // Clamp to valid range — applies to both scrollTo and explicit scrollOffset.
   // Without this, explicit scrollOffset can scroll past content into blank space.
+  scrollOffset = normalizeScrollOffset(scrollOffset)
   scrollOffset = Math.max(0, scrollOffset)
   scrollOffset = Math.min(scrollOffset, Math.max(0, contentHeight - viewportHeight))
 

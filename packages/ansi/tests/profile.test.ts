@@ -995,6 +995,19 @@ describe("detectTerminalProfileFromEnv — terminal matrix", () => {
     expect(profile.caps.osc52).toBe(false)
     expect(profile.caps.hyperlinks).toBe(false)
   })
+
+  test("TERM=dumb suppresses stale terminal-program graphics caps", () => {
+    const profile = detectTerminalProfileFromEnv(
+      { TERM: "dumb", TERM_PROGRAM: "Ghostty", TERM_PROGRAM_VERSION: "1.3.0" },
+      tty,
+    )
+    expect(profile.emulator.program).toBe("Ghostty")
+    expect(profile.caps.cursor).toBe(false)
+    expect(profile.caps.kittyKeyboard).toBe(false)
+    expect(profile.caps.kittyGraphics).toBe(false)
+    expect(profile.caps.sixel).toBe(false)
+    expect(profile.caps.syncOutput).toBe(false)
+  })
 })
 
 // ============================================================================

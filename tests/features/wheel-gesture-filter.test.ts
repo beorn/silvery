@@ -16,13 +16,23 @@ describe("WheelGestureFilter", () => {
     expect(deltas(filter.process({ t: 116, deltaY: 1 }))).toEqual([1])
   })
 
-  test("confirms reversal after two consecutive opposite samples", () => {
+  test("requires three consecutive opposite samples after a sustained stream", () => {
     const filter = createWheelGestureFilter()
 
     for (let i = 0; i < 5; i++) filter.process({ t: i * 16, deltaY: 1 })
 
     expect(deltas(filter.process({ t: 100, deltaY: -1 }))).toEqual([])
-    expect(deltas(filter.process({ t: 116, deltaY: -1 }))).toEqual([-1, -1])
+    expect(deltas(filter.process({ t: 116, deltaY: -1 }))).toEqual([])
+    expect(deltas(filter.process({ t: 132, deltaY: -1 }))).toEqual([-1, -1, -1])
+  })
+
+  test("confirms reversal after two opposite samples for a short stream", () => {
+    const filter = createWheelGestureFilter()
+
+    filter.process({ t: 0, deltaY: 1 })
+
+    expect(deltas(filter.process({ t: 16, deltaY: -1 }))).toEqual([])
+    expect(deltas(filter.process({ t: 32, deltaY: -1 }))).toEqual([-1, -1])
   })
 
   test("release drops an unresolved pending opposite sample", () => {

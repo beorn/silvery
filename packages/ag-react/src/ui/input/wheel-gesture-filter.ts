@@ -16,7 +16,7 @@ type PendingState = {
   phase: "pending"
   original: StreamingState
   pendingDir: WheelGestureDirection
-  pending: WheelGestureSample
+  pending: WheelGestureSample[]
   lastEventTime: number
 }
 
@@ -45,11 +45,11 @@ const directionOf = (deltaY: number): WheelGestureDirection | 0 => {
  *
  * A single opposite-direction wheel sample is ambiguous on trackpads: it may
  * be native inertia bounce, or it may be the start of an intentional reversal.
- * The filter therefore buffers the first opposite sample and waits for the
- * next sample to disambiguate:
- * - next sample matches the pending direction: replay both and reverse
+ * The filter therefore buffers opposite samples and waits for enough
+ * consecutive evidence to disambiguate:
+ * - enough samples match the pending direction: replay them and reverse
  * - next sample returns to the original direction: drop pending, apply current
- * - release timeout with pending sample: drop pending as a lone tail sample
+ * - release timeout with pending samples: drop them as an inertia tail
  */
 export class WheelGestureFilter {
   #state: WheelGestureState = { phase: "idle" }
@@ -83,16 +83,30 @@ export class WheelGestureFilter {
           phase: "pending",
           original: this.#state,
           pendingDir: dir,
-          pending: sample,
+          pending: [sample],
           lastEventTime: sample.t,
         }
         return []
 
       case "pending":
         if (dir === this.#state.pendingDir) {
-          const pending = this.#state.pending
-          this.#state = { phase: "streaming", dir, eventCount: 2, lastEventTime: sample.t }
-          return [pending, sample]
+          const pending = [...this.#state.pending, sample]
+          const required = this.#state.original.eventCount >= 3 ? 3 : 2
+          if (pending.length < required) {
+            this.#state = {
+              ...this.#state,
+              pending,
+              lastEventTime: sample.t,
+            }
+            return []
+          }
+          this.#state = {
+            phase: "streaming",
+            dir,
+            eventCount: pending.length,
+            lastEventTime: sample.t,
+          }
+          return pending
         }
         {
           const original = this.#state.original

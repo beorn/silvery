@@ -102,7 +102,7 @@ describe("ListView: scroll-to-top edge stability", () => {
       await app.wheel(5, 6, -1)
     }
     const samples: number[] = [firstVisibleItemNumber(app.text)]
-    for (const delta of [1, -1, 1, -1]) {
+    for (const delta of [1, 1, -1, 1, 1, -1]) {
       await settle(220)
       await app.wheel(5, 6, delta)
       samples.push(firstVisibleItemNumber(app.text))
@@ -114,5 +114,32 @@ describe("ListView: scroll-to-top edge stability", () => {
         `viewport bounced downward during alternating wheel tail. Samples: ${JSON.stringify(samples)}`,
       ).toBeLessThanOrEqual(samples[i - 1]!)
     }
+  })
+
+  test("wheel burst does not keep moving after input stops", async () => {
+    const render = createRenderer({ cols: 30, rows: 12 })
+    const items = makeItems(220)
+    const app = render(
+      <Box flexDirection="column" height={12} width={30}>
+        <ListView
+          items={items}
+          height={12}
+          follow="end"
+          renderItem={(label) => <Text>{label}</Text>}
+        />
+      </Box>,
+    )
+    await settle()
+
+    for (let i = 0; i < 8; i++) {
+      await app.wheel(5, 6, -1)
+    }
+    const afterWheel = firstVisibleItemNumber(app.text)
+
+    await settle(250)
+    expect(
+      firstVisibleItemNumber(app.text),
+      "ListView should not synthesize a post-wheel coast",
+    ).toBe(afterWheel)
   })
 })

@@ -545,7 +545,8 @@ export function detectTerminalProfileFromEnv(
   const isWezTerm = programLower === "wezterm"
   const isAlacritty = programLower === "alacritty"
   const isFoot = TERM === "foot" || TERM === "foot-extra"
-  const isModern = isKitty || isITerm || isGhostty || isWezTerm || isFoot
+  const isDumb = TERM === "dumb"
+  const isModern = !isDumb && (isKitty || isITerm || isGhostty || isWezTerm || isFoot)
 
   let isKittyWithTextSizing = false
   if (isKitty) {
@@ -570,7 +571,7 @@ export function detectTerminalProfileFromEnv(
   if (nfEnv === "0" || nfEnv === "false") maybeNerdFont = false
   else if (nfEnv === "1" || nfEnv === "true") maybeNerdFont = true
 
-  const underlineExtensions = isModern || isAlacritty
+  const underlineExtensions = isModern || (!isDumb && isAlacritty)
   // Phase 7 semantic upgrade: underlineStyles is now an array of supported
   // SGR 4:x styles (was a single boolean). Modern terminals + Alacritty get
   // the full modern set; others get an empty list ("stick to SGR 4").
@@ -586,10 +587,10 @@ export function detectTerminalProfileFromEnv(
   // terminal → be safe" behavior.
   const unicode =
     isModern ||
-    env.WT_SESSION !== undefined ||
+    (!isDumb && env.WT_SESSION !== undefined) ||
     env.KITTY_WINDOW_ID !== undefined ||
     utf8Locale(env) ||
-    termImpliesUnicode(TERM) ||
+    (!isDumb && termImpliesUnicode(TERM)) ||
     (env.CI !== undefined && env.GITHUB_ACTIONS !== undefined)
 
   // Cursor control: same TTY + !dumb gate that the retired `detectCursor`
@@ -613,15 +614,15 @@ export function detectTerminalProfileFromEnv(
     // iTerm2, xterm extended). Per-terminal overrides can flip this off.
     overline: underlineExtensions,
     textSizing: isKittyWithTextSizing,
-    kittyKeyboard: isKitty || isGhostty || isWezTerm || isFoot,
+    kittyKeyboard: !isDumb && (isKitty || isGhostty || isWezTerm || isFoot),
     bracketedPaste: true,
     mouse: true,
-    kittyGraphics: isKitty || isGhostty,
-    sixel: isFoot || isWezTerm,
-    osc52: isModern || isAlacritty,
-    hyperlinks: isModern || isAlacritty,
+    kittyGraphics: !isDumb && (isKitty || isGhostty),
+    sixel: !isDumb && (isFoot || isWezTerm),
+    osc52: isModern || (!isDumb && isAlacritty),
+    hyperlinks: isModern || (!isDumb && isAlacritty),
     notifications: isITerm || isKitty,
-    syncOutput: isModern || isAlacritty,
+    syncOutput: isModern || (!isDumb && isAlacritty),
     maybeDarkBackground,
     maybeNerdFont,
     maybeWideEmojis: !isAppleTerminal,

@@ -50,6 +50,66 @@ function FollowEndChat(props: {
   )
 }
 
+function WrappingFollowEndChat({ tail }: { tail: string }) {
+  return (
+    <Box flexDirection="column" height={6} width="100%">
+      <ListView
+        items={["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf", `TAIL ${tail}`]}
+        height={6}
+        follow="end"
+        getKey={(item) => item.split(" ")[0] ?? item}
+        renderItem={(label) => (
+          <Box flexDirection="column" width="100%" flexShrink={0}>
+            <Text wrap="wrap">{label}</Text>
+          </Box>
+        )}
+      />
+    </Box>
+  )
+}
+
+function FlexWrappingFollowEndChat({ tail }: { tail: string }) {
+  return (
+    <Box flexDirection="column" width="100%" height="100%">
+      <ListView
+        items={[...Array.from({ length: 35 }, (_, i) => `Item ${i + 1} short`), `TAIL ${tail}`]}
+        follow="end"
+        getKey={(item) => item}
+        renderItem={(label) => (
+          <Box flexDirection="column" width="100%" flexShrink={0}>
+            <Text wrap="wrap">{label}</Text>
+          </Box>
+        )}
+      />
+    </Box>
+  )
+}
+
+function DisclosureFollowChat({ expanded }: { expanded: boolean }) {
+  return (
+    <Box flexDirection="column" height={6} width={40}>
+      <ListView
+        items={["context", "command"]}
+        height={6}
+        follow={expanded ? "none" : "end"}
+        getKey={(item) => item}
+        renderItem={(label) =>
+          label === "command" ? (
+            <Box flexDirection="column">
+              <Text>$ printf long-output</Text>
+              {expanded
+                ? Array.from({ length: 12 }, (_, i) => <Text key={i}>output {i}</Text>)
+                : null}
+            </Box>
+          ) : (
+            <Text>{label}</Text>
+          )
+        }
+      />
+    </Box>
+  )
+}
+
 describe('ListView follow="end"', () => {
   test("initial mount lands at bottom (no cursorKey required)", async () => {
     const render = createRenderer({ cols: 30, rows: 8 })
@@ -191,6 +251,68 @@ describe('ListView follow="end"', () => {
     // boolean (defined) and correctly reflect the row state.
     const last = transitions[transitions.length - 1]
     expect(typeof last).toBe("boolean")
+  })
+
+  test("keeps following the end when the measured tail item grows", async () => {
+    const render = createRenderer({ cols: 32, rows: 8 })
+    const shortTail = "short TAIL-END"
+    const longTail =
+      "long tail wraps across enough rows that its bottom used to slide below the viewport while follow end stayed pinned to the old max row TAIL-END"
+    const app = render(<WrappingFollowEndChat tail={shortTail} />)
+    await settle()
+    expect(app.text).toContain("TAIL-END")
+
+    app.rerender(<WrappingFollowEndChat tail={longTail} />)
+    await settle()
+
+    expect(app.text).toContain("TAIL-END")
+  })
+
+  test("keeps following the end when viewport width reflows wrapped rows", async () => {
+    const render = createRenderer({ cols: 52, rows: 8 })
+    const tail = "tail wraps differently when the side panel changes width TAIL-END"
+    const app = render(<WrappingFollowEndChat tail={tail} />)
+    await settle()
+    expect(app.text).toContain("TAIL-END")
+
+    app.resize(32, 8)
+    app.rerender(<WrappingFollowEndChat tail={tail} />)
+    await settle()
+
+    expect(app.text).toContain("TAIL-END")
+  })
+
+  test("keeps following the end in flex-height mode when viewport width reflows wrapped rows", async () => {
+    const render = createRenderer({ cols: 52, rows: 12 })
+    const tail =
+      "tail wraps differently when the side panel changes width and must remain visible TAIL-END"
+    const app = render(<FlexWrappingFollowEndChat tail={tail} />)
+    await settle()
+    expect(app.text).toContain("TAIL-END")
+
+    app.resize(32, 12)
+    app.rerender(<FlexWrappingFollowEndChat tail={tail} />)
+    await settle()
+
+    expect(app.text).toContain("TAIL-END")
+  })
+
+  test("disengaging follow preserves the visible row when the tail expands", async () => {
+    const render = createRenderer({ cols: 40, rows: 8 })
+    const app = render(<DisclosureFollowChat expanded={false} />)
+    await settle()
+    const beforeRows = app.text.split("\n")
+    const beforeCommandRow = beforeRows.findIndex((line) => line.includes("$ printf long-output"))
+    expect(beforeCommandRow, app.text).toBeGreaterThanOrEqual(0)
+
+    app.rerender(<DisclosureFollowChat expanded />)
+    await settle()
+
+    const afterRows = app.text.split("\n")
+    const afterCommandRow = afterRows.findIndex((line) => line.includes("$ printf long-output"))
+    expect(afterCommandRow, app.text).toBe(beforeCommandRow)
+    expect(app.text).toContain("output 0")
+    expect(app.text).not.toContain("output 11")
   })
 })
 

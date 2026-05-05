@@ -226,10 +226,10 @@ describe("useKineticScroll — input cadence detection", () => {
       apiRef.current!.onWheel({ deltaY: 1 })
     }
     await settle()
-    expect(
-      apiRef.current!.scrollFloat,
-      "continuous cadence stays at 1-row-per-event",
-    ).toBeCloseTo(6, 5)
+    expect(apiRef.current!.scrollFloat, "continuous cadence stays at 1-row-per-event").toBeCloseTo(
+      6,
+      5,
+    )
   })
 
   test("cadence detection disabled by default — old behaviour preserved", async () => {
@@ -246,5 +246,23 @@ describe("useKineticScroll — input cadence detection", () => {
     // Without the flag, large gaps don't switch to discrete mode — both
     // events apply 1 row.
     expect(apiRef.current!.scrollFloat).toBe(2)
+  })
+})
+
+describe("useKineticScroll — optional momentum", () => {
+  test("enableMomentum=false does not synthesize post-wheel motion", async () => {
+    const apiRef: HarnessRef = { current: null }
+    const r = createRenderer({ cols: 30, rows: 8 })
+    r(<TestHarness apiRef={apiRef} options={{ maxScroll: 1000, enableMomentum: false }} />)
+    await settle()
+
+    for (let i = 0; i < 8; i++) {
+      apiRef.current!.onWheel({ deltaY: 1 })
+    }
+    await settle()
+    const afterWheel = apiRef.current!.scrollFloat
+
+    await settle(250)
+    expect(apiRef.current!.scrollFloat, "no synthetic coast after release").toBe(afterWheel)
   })
 })
