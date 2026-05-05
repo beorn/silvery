@@ -542,6 +542,27 @@ export class TerminalBuffer {
   // --------------------------------------------------------------------------
 
   /**
+   * Count cells that are not default-empty.
+   *
+   * A cell is "painted" iff any of these differs from default-empty:
+   *   - char !== " "
+   *   - packed metadata is non-zero (any fg, bg, attr, wide/cont/truecolor flag)
+   *
+   * Used by the degenerate-frame canary in `render()` (renderer.ts) and by
+   * test helpers that want to assert a fixture renders meaningful content.
+   *
+   * O(W*H) — single pass over the packed Uint32Array + chars array.
+   */
+  countPaintedCells(): number {
+    let n = 0
+    const len = this.cells.length
+    for (let i = 0; i < len; i++) {
+      if (this.cells[i]! !== 0 || this.chars[i]! !== " ") n++
+    }
+    return n
+  }
+
+  /**
    * Get just the character at a cell position (no object allocation).
    * Returns " " for out-of-bounds positions.
    */

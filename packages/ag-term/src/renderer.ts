@@ -1048,6 +1048,68 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     console.log("[silvery] Initial render:", output)
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Degenerate-frame canary
+  // ─────────────────────────────────────────────────────────────────────────
+  //
+  // After the initial render settles, measure the painted-cell ratio. A
+  // healthy full-app render at any non-trivial geometry paints tens of
+  // thousands of cells. A misconfigured root that omits a `<Screen>` /
+  // `<Box width height>` wrapper collapses the entire tree to ~one row
+  // (the title bar) — at 360×120 that's ~360 of 43,200 cells, < 1%.
+  //
+  // `render()` is the headless-only entry — `run()` drives a live TTY where
+  // an empty initial frame is legitimate (loading spinner, no content yet).
+  // Skip when:
+  //   - SILVERY_FRAME_CANARY_OFF=1 (escape hatch for empty-state path tests)
+  //   - The buffer is tiny (cols * rows < 200 — nothing meaningful to gate)
+  //
+  // The canary only fires when the buffer is large enough that a real-app
+  // frame is expected: cols * rows >= CANARY_MIN_BUFFER_CELLS. Many silvery
+  // unit tests deliberately render small components (e.g. 60x6 isolated
+  // Boxes) where a low painted ratio is meaningful and intentional. The
+  // canary's purpose is full-app harnesses that ALSO use big buffers — so
+  // gating by buffer size is the cleanest separator and avoids false
+  // positives across the existing test suite.
+  //
+  // SILVERY_STRICT_FRAME_CANARY=1: throw with diagnostic.
+  // Default: emit a `silvery:render` debug log line (visible via DEBUG=silvery:render).
+  //   We deliberately do NOT use console.warn here — many silvery unit tests
+  //   intentionally render small components inside large buffers, and km's
+  //   vitest setup treats any console.warn as a hard failure.
+  // SILVERY_FRAME_CANARY_OFF=1: full bypass (empty-state path tests).
+  //
+  // Bead: @km/silvery/render-degenerate-frame-canary.
+  if (instance.prevBuffer && process.env.SILVERY_FRAME_CANARY_OFF !== "1") {
+    const bufW = instance.prevBuffer.width
+    const bufH = instance.prevBuffer.height
+    const totalCells = bufW * bufH
+    const CANARY_MIN_BUFFER_CELLS = 4000 // ≈ 80×50 — anything smaller is a unit-test fixture
+    if (totalCells >= CANARY_MIN_BUFFER_CELLS) {
+      const painted = instance.prevBuffer.countPaintedCells()
+      const ratio = painted / totalCells
+      if (ratio < 0.05) {
+        const msg =
+          `silvery: degenerate frame after first render — only ${painted} of ${totalCells} cells ` +
+          `painted (${(ratio * 100).toFixed(2)}%) at ${bufW}x${bufH}. ` +
+          `Likely cause: the root component does not pin width/height (no <Screen> ` +
+          `wrapper). createRenderer({cols, rows}) passes dimensions as the AVAILABLE ` +
+          `size to layout, but does NOT set root.style.width/height — wrap the tree ` +
+          `in <Box width={cols} height={rows}> or <Screen>. ` +
+          `Bypass with SILVERY_FRAME_CANARY_OFF=1 if this is intentional. ` +
+          `See @km/silvery/render-degenerate-frame-canary.`
+        const strict =
+          process.env.SILVERY_STRICT_FRAME_CANARY &&
+          process.env.SILVERY_STRICT_FRAME_CANARY !== "0"
+        if (strict) {
+          throw new Error(msg)
+        } else {
+          log.debug?.(msg)
+        }
+      }
+    }
+  }
+
   // Set up stdin bridge: forward external stdin data to the renderer's input
   let stdinOnReadable: (() => void) | undefined
   if (stdinStream) {
