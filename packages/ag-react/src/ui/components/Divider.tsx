@@ -22,8 +22,14 @@ import { Text } from "../../components/Text"
 export interface DividerProps {
   /** Character to repeat (default: "─") */
   char?: string
+  /** Color for the repeated divider character. Defaults to "$border-default". */
+  color?: string
   /** Title text centered in divider */
   title?: string
+  /** Color for the centered title. Defaults to inherited foreground. */
+  titleColor?: string
+  /** Whether the centered title is bold. Defaults to true. */
+  titleBold?: boolean
   /** Width (default: 100% via useBoxRect) */
   width?: number
 }
@@ -41,7 +47,10 @@ const DEFAULT_WIDTH = 40
 
 export function Divider({
   char = DEFAULT_CHAR,
+  color = "$border-default",
   title,
+  titleColor,
+  titleBold = true,
   width: widthProp,
 }: DividerProps): React.ReactElement {
   // LAYOUT_READ_AT_RENDER: divider builds a string of repeated fill characters,
@@ -55,7 +64,7 @@ export function Divider({
   if (!title) {
     return (
       <Box>
-        <Text color="$border-default">{char.repeat(totalWidth)}</Text>
+        <Text color={color}>{char.repeat(totalWidth)}</Text>
       </Box>
     )
   }
@@ -68,9 +77,11 @@ export function Divider({
 
   return (
     <Box>
-      <Text color="$border-default">{char.repeat(leftLen)}</Text>
-      <Text bold>{titleWithPad}</Text>
-      <Text color="$border-default">{char.repeat(rightLen)}</Text>
+      <Text color={color}>{char.repeat(leftLen)}</Text>
+      <Text color={titleColor} bold={titleBold}>
+        {titleWithPad}
+      </Text>
+      <Text color={color}>{char.repeat(rightLen)}</Text>
     </Box>
   )
 }
