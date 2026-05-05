@@ -217,6 +217,9 @@ export interface ListViewProps<T> {
   /** Show overflow indicators (▲N/▼N). Default: false */
   overflowIndicator?: boolean
 
+  /** Show scroll chrome when content overflows or bumps an edge. Default: true */
+  scrollbar?: boolean
+
   /** Key extractor (defaults to index) */
   getKey?: (item: T, index: number) => string | number
 
@@ -617,6 +620,7 @@ function ListViewInner<T>(
     maxRendered = DEFAULT_MAX_RENDERED,
     scrollPadding = DEFAULT_SCROLL_PADDING,
     overflowIndicator,
+    scrollbar = true,
     getKey,
     width,
     gap = 0,
@@ -2471,7 +2475,7 @@ function ListViewInner<T>(
   // (flex) modes. In flex mode `trackHeight` comes from the inner Box's
   // measured rect (via `viewportSize.h`), so until first layout we don't
   // render anything (thumbHeight ≥ trackHeight short-circuits below).
-  const showScrollbar = thumbHeight > 0 && thumbHeight < trackHeight
+  const showScrollbar = scrollbar && thumbHeight > 0 && thumbHeight < trackHeight
 
   // Outer wrapper + inner scroll container.
   //
@@ -2631,12 +2635,12 @@ function ListViewInner<T>(
        * hides it the instant the user scrolls away, even if bumpedEdge is
        * still non-null. Rendered OUTSIDE the scrollbar branch so keyboard
        * nav (which doesn't flip isScrolling) still shows the bump. */}
-      {bumpedEdge === "top" && effectiveRowsAbove <= 0 && (
+      {scrollbar && bumpedEdge === "top" && effectiveRowsAbove <= 0 && (
         <Box position="absolute" top={0} right={1} flexDirection="row">
           <Text color="$muted">▀▀▀▀▀▀▀▀▀▀</Text>
         </Box>
       )}
-      {bumpedEdge === "bottom" && effectiveRowsAbove >= scrollableRows && (
+      {scrollbar && bumpedEdge === "bottom" && effectiveRowsAbove >= scrollableRows && (
         <Box position="absolute" top={trackHeight - 1} right={1} flexDirection="row">
           <Text color="$muted">▄▄▄▄▄▄▄▄▄▄</Text>
         </Box>

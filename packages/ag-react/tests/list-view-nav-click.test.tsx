@@ -11,6 +11,7 @@ import React from "react"
 import { describe, test, expect, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { ListView } from "../src/ui/components/ListView"
+import { Box } from "../src/components/Box"
 import { Text } from "../src/components/Text"
 
 const ITEMS = ["apple", "banana", "cherry", "durian"]
@@ -76,5 +77,27 @@ describe("ListView nav mode: default click handler", () => {
 
     expect(onCursor).toHaveBeenCalledWith(2)
     expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  test("scrollbar=false suppresses overflow scroll chrome during navigation", async () => {
+    const render = createRenderer({ cols: 24, rows: 5 })
+    const app = render(
+      <Box width={24} height={5}>
+        <ListView
+          items={Array.from({ length: 20 }, (_, i) => `item ${i}`)}
+          height={3}
+          nav
+          active
+          scrollbar={false}
+          renderItem={(item) => <Text>{item}</Text>}
+        />
+      </Box>,
+    )
+
+    await app.press("ArrowUp")
+    for (let i = 0; i < 8; i++) await app.press("ArrowDown")
+
+    expect(app.lines.slice(0, 3).some((line) => /[█▀▄]$/.test(line))).toBe(false)
+    expect(app.text).not.toContain("▀▀▀")
   })
 })
