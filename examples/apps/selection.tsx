@@ -147,16 +147,14 @@ function ItemRow({
           <Text color="$fg-accent">│</Text>{" "}
         </Text>
       ) : (
-          <Text
-            bold={isCursor}
-            color={isCursor ? "$fg-accent" : isSelected ? "$fg-accent" : "$muted"}
-          >
+        <Text
+          bold={isCursor}
+          color={isCursor ? "$fg-accent" : isSelected ? "$fg-accent" : "$muted"}
+        >
           {item.label}
         </Text>
       )}
-      <Text color="$muted">
-        {anchorMark}
-      </Text>
+      <Text color="$muted">{anchorMark}</Text>
     </Box>
   )
 }
@@ -328,9 +326,7 @@ function SelectionDemo() {
       <StatusBar sel={sel} />
 
       <Box marginTop={1} flexDirection="column">
-        <Text color="$muted">
-          nodes=[{sel?.nodes.join(", ") ?? ""}]
-        </Text>
+        <Text color="$muted">nodes=[{sel?.nodes.join(", ") ?? ""}]</Text>
       </Box>
     </Box>
   )

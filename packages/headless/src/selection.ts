@@ -76,7 +76,13 @@ export type SelectionAction =
       scope?: SelectionScope | null
       source?: "mouse" | "keyboard"
     }
-  | { type: "extend"; col: number; row: number; buffer?: TerminalBuffer; scope?: SelectionScope | null }
+  | {
+      type: "extend"
+      col: number
+      row: number
+      buffer?: TerminalBuffer
+      scope?: SelectionScope | null
+    }
   | { type: "finish" }
   | { type: "clear" }
 

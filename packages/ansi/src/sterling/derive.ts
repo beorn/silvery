@@ -493,7 +493,7 @@ export function deriveRoles(
     "bg-surface-raised",
     "blend(bg, fg, 0.10)",
     [bg, fg],
-    blend(bg, fg, 0.10),
+    blend(bg, fg, 0.1),
     fgForSurfaceLift,
     WCAG_AA,
   )

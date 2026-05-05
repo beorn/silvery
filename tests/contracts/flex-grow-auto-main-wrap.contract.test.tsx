@@ -45,8 +45,9 @@ describe("contract: flexGrow in auto main axis with wrapped text", () => {
                 </Bullet>
                 <Bullet>Targeted command padding test passed.</Bullet>
                 <Bullet>
-                  npx tsc --noEmit --incremental false --pretty false still fails on existing unrelated
-                  repo-wide TypeScript errors, mostly in agent-harness/vendor silvery plus StatusGlyph.tsx error.
+                  npx tsc --noEmit --incremental false --pretty false still fails on existing
+                  unrelated repo-wide TypeScript errors, mostly in agent-harness/vendor silvery plus
+                  StatusGlyph.tsx error.
                 </Bullet>
               </Box>
             </Box>
@@ -62,6 +63,8 @@ describe("contract: flexGrow in auto main axis with wrapped text", () => {
     expect(next).not.toBeNull()
     expect(prose!.height).toBeGreaterThanOrEqual(8)
     expect(next!.y).toBeGreaterThanOrEqual(prose!.y + prose!.height)
-    expect(app.lines.find((line) => line.includes("StatusGlyph") && line.includes("NEXT"))).toBeUndefined()
+    expect(
+      app.lines.find((line) => line.includes("StatusGlyph") && line.includes("NEXT")),
+    ).toBeUndefined()
   })
 })

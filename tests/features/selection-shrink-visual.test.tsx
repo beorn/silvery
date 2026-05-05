@@ -152,7 +152,8 @@ describe("selection — buffer-state architecture", () => {
     const inverseAfterSecond: number[] = []
     for (let c = 0; c < 40; c++) {
       const cell = term.cell(0, c)
-      if (Boolean((cell as { inverse?: boolean }).inverse) || cell.bg !== null) inverseAfterSecond.push(c)
+      if (Boolean((cell as { inverse?: boolean }).inverse) || cell.bg !== null)
+        inverseAfterSecond.push(c)
     }
 
     // Expect highlighted cells inside [20, 28] only — none in [2, 10].

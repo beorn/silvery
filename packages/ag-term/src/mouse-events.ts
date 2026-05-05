@@ -788,7 +788,14 @@ export function processMouseEvent(
       // Resolve the multi-click count BEFORE creating the event so we can
       // attach `detail` (DOM `MouseEvent.detail` convention).
       const count = checkClickCount(state.doubleClick, x, y, parsed.button)
-      const clickEvent = createMouseEvent("click", x, y, dispatchTarget, parsed, state.keyboardModifiers)
+      const clickEvent = createMouseEvent(
+        "click",
+        x,
+        y,
+        dispatchTarget,
+        parsed,
+        state.keyboardModifiers,
+      )
       ;(clickEvent as { detail?: 1 | 2 | 3 }).detail = count
       dispatchMouseEvent(clickEvent)
       if (clickEvent.defaultPrevented) {
@@ -797,7 +804,14 @@ export function processMouseEvent(
       }
 
       if (count >= 2) {
-        const dblEvent = createMouseEvent("dblclick", x, y, dispatchTarget, parsed, state.keyboardModifiers)
+        const dblEvent = createMouseEvent(
+          "dblclick",
+          x,
+          y,
+          dispatchTarget,
+          parsed,
+          state.keyboardModifiers,
+        )
         ;(dblEvent as { detail?: 1 | 2 | 3 }).detail = 2
         dispatchMouseEvent(dblEvent)
         if (dblEvent.defaultPrevented) {
@@ -827,7 +841,14 @@ export function processMouseEvent(
     state.mouseCaptureTarget = null
   } else if (action === "move") {
     const dispatchTarget = state.mouseCaptureTarget ?? target
-    const event = createMouseEvent("mousemove", x, y, dispatchTarget, parsed, state.keyboardModifiers)
+    const event = createMouseEvent(
+      "mousemove",
+      x,
+      y,
+      dispatchTarget,
+      parsed,
+      state.keyboardModifiers,
+    )
     dispatchMouseEvent(event)
 
     // Compute enter/leave transitions

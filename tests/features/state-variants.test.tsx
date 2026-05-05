@@ -102,7 +102,10 @@ describe("Sterling state tokens resolve in JSX", () => {
 
   test("token override sticks to theme['fg-accent-hover']", () => {
     const overrideColor = "#abcdef"
-    const mergedTheme = { ...deriveTheme(catppuccinMocha, "truecolor"), "fg-accent-hover": overrideColor }
+    const mergedTheme = {
+      ...deriveTheme(catppuccinMocha, "truecolor"),
+      "fg-accent-hover": overrideColor,
+    }
     const expected = hexToRgbTest(overrideColor)
     const app = render(
       <Box theme={mergedTheme} width={10} height={1}>

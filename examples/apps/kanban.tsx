@@ -93,11 +93,7 @@ const tagColors: Record<string, string> = {
 
 function Tag({ name }: { name: string }) {
   const color = tagColors[name] ?? "$fg-muted"
-  return (
-    <Text color={color}>
-      #{name}
-    </Text>
-  )
+  return <Text color={color}>#{name}</Text>
 }
 
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }) {
