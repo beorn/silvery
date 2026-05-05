@@ -26,6 +26,11 @@ import { Box, ListView, Text } from "../../src/index.js"
 
 const settle = (ms = 50): Promise<void> => new Promise((r) => setTimeout(r, ms))
 const makeItems = (n: number): string[] => Array.from({ length: n }, (_, i) => `Item ${i + 1}`)
+const firstVisibleItemNumber = (text: string): number => {
+  const firstLine = text.split("\n").find((line) => line.trim().length > 0) ?? ""
+  const match = /Item (\d+)/.exec(firstLine)
+  return match ? Number(match[1]) : -1
+}
 
 describe("ListView: scroll-to-top edge stability", () => {
   test("after wheeling up to the top under follow=end, scrollRow does not oscillate", async () => {
@@ -71,5 +76,43 @@ describe("ListView: scroll-to-top edge stability", () => {
       `top-row content oscillated across observation window. Samples: ${JSON.stringify(samples)}`,
     ).toBe(1)
     expect(samples[0]).toContain("Item 1")
+  })
+
+  test("idle-spaced alternating wheel tail does not bounce the viewport back and forth", async () => {
+    const render = createRenderer({ cols: 30, rows: 12 })
+    const items = makeItems(220)
+    const app = render(
+      <Box flexDirection="column" height={12} width={30}>
+        <ListView
+          items={items}
+          height={12}
+          follow="end"
+          renderItem={(label) => <Text>{label}</Text>}
+        />
+      </Box>,
+    )
+    await settle()
+
+    // Build a sustained upward gesture from the tail, then feed the
+    // problematic shape from /tmp/sc-scroll.log: one-row alternating events
+    // spaced far enough apart that the velocity buffer has emptied. Healthy
+    // filtering may keep moving upward or pause, but it must not render
+    // +1/-1/+1/-1 bounce by letting a lone bounce seed a new gesture.
+    for (let i = 0; i < 10; i++) {
+      await app.wheel(5, 6, -1)
+    }
+    const samples: number[] = [firstVisibleItemNumber(app.text)]
+    for (const delta of [1, -1, 1, -1]) {
+      await settle(220)
+      await app.wheel(5, 6, delta)
+      samples.push(firstVisibleItemNumber(app.text))
+    }
+
+    for (let i = 1; i < samples.length; i++) {
+      expect(
+        samples[i],
+        `viewport bounced downward during alternating wheel tail. Samples: ${JSON.stringify(samples)}`,
+      ).toBeLessThanOrEqual(samples[i - 1]!)
+    }
   })
 })

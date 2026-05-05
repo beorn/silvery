@@ -53,6 +53,7 @@ import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { renderStringSync } from "../../render-string"
 import { createHeightModel, type HeightModel } from "./list-view/height-model"
 import { useScrollAnchoring } from "./list-view/use-scroll-anchoring"
+import { useKineticScroll, SCROLLBAR_FADE_AFTER_MS } from "../../hooks/useKineticScroll"
 import { createHistoryBuffer, createHistoryItem } from "@silvery/ag-term/history-buffer"
 import type { HistoryBuffer } from "@silvery/ag-term/history-buffer"
 import { createListDocument } from "@silvery/ag-term/list-document"
@@ -392,6 +393,18 @@ export interface ListViewProps<T> {
    * the React + pipeline budget healthy.
    */
   maxEstimatedRows?: number
+
+  /**
+   * User-facing scroll-speed multiplier. Multiplies per-notch wheel
+   * displacement; velocity and momentum coast scale linearly through the
+   * physics buffer. Default 1.0.
+   *
+   * Comparable to Lenis's `wheelMultiplier`, VS Code's
+   * `editor.mouseWheelScrollSensitivity`, or macOS trackpad-tracking
+   * speed. Surface as a per-app theme override or user setting if you
+   * want to expose scroll tuning.
+   */
+  wheelMultiplier?: number
 }
 
 export interface ListViewHandle {
@@ -460,94 +473,16 @@ const DEFAULT_MAX_ESTIMATED_ROWS = 200
  * `meta.matchRanges` don't see phantom changes each frame. */
 const EMPTY_MATCH_RANGES: readonly MatchRange[] = Object.freeze([])
 
-// ── Scroll physics: windowed event buffer + iOS momentum ───────────────
+// Scroll physics live in `useKineticScroll` (single source of truth).
+// ListView delegates wheel handling, momentum, and the gesture filter
+// to the hook; on top it adds cursor coupling, anchoring, and an
+// edge-bump indicator that sits in row-space rather than pixel-space.
 //
-// Wheel phase (user actively scrolling). Each wheel event:
-//   - dt since last event → acceleration factor (fast gesture → bigger step)
-//   - immediate row step for responsiveness
-//   - event pushed into a time-windowed ring buffer (last ~150ms of events)
-//
-// Momentum phase (no wheel events for RELEASE_TIMEOUT_MS). Velocity is
-// computed as `sum(signedRows) / spanMs` over the buffer — a net-
-// displacement estimate that is structurally robust to:
-//   - single-event OS inertia tail (small minority in the sum → negligible)
-//   - single-event trackpad jitter (same)
-//   - mid-flick sign noise (EMA-smoothed scalars drifted; the buffer sums)
-// No velocity threshold, no sign-flip checks, no preserve-across-momentum
-// gymnastics — dominant direction wins structurally.
-//
-// Closed-form decay (Ariya-Hidayat / UIScrollView shape):
-//   amplitude = velocity × τ     // total coast distance
-//   target    = pos + amplitude
-//   pos(t)    = start + amplitude × (1 − exp(−t / τ))
-//   stop when t > 6τ or within STOP_DISTANCE rows of target
-
-/** Rows moved per wheel event. Constant — event *frequency* already encodes
- * speed (a fast trackpad stream = many rows/sec naturally); per-event
- * inverse-dt acceleration double-amplifies fast streams and bakes the
- * amplification into momentum velocity. Keep this at 1 per pro's review
- * ("remove per-event acceleration — test this first"). */
-const WHEEL_STEP_ROWS = 1
-/** Rolling window for velocity estimation. Long enough to average over OS
- * inertia tail (~50ms), short enough that intentional reversal commits
- * within human reaction time (~150-200ms). */
-const WHEEL_VELOCITY_WINDOW_MS = 150
-/** After this many consecutive same-direction events, the scroll is
- * "sustained" and a single lone opposite event is treated as trackpad
- * noise and dropped. macOS trackpads occasionally emit one reversed event
- * during steady gestures — visible as a 1-row hop back. Two consecutive
- * opposite events always commit (a real reversal). */
-/**
- * After this many same-direction wheel events, a single opposite-
- * direction event is treated as trackpad inertia jitter and dropped.
- * Two consecutive opposite events still commit as a real reversal.
- *
- * Was 3; lowered to 1 (2026-04-29) — the higher threshold let the
- * first stray reverse event slip through during a sustained scroll,
- * which manifested as visible 1-row oscillation when the user was
- * approaching an edge or driving fast enough that trackpad inertia
- * fired bounce-back events. With threshold=1, ANY established
- * direction (1+ same-dir events) protects against single-event
- * reversals — genuine reversals just need 2 events to commit, which
- * is consistent with how a deliberate user reverse looks (a flick
- * followed by another flick in the new direction). Bead:
- * km-silvery.scroll-top-edge-oscillation.
- */
-const SUSTAINED_SCROLL_THRESHOLD = 1
-
-/** Max absolute velocity (rows/sec). Caps momentum coast distance. */
-const KINETIC_MAX_VELOCITY = 80
-/** Momentum time constant (ms). */
-const KINETIC_TIME_CONSTANT_MS = 180
-/** Fraction of `v × τ` to use as momentum amplitude. <1 dampens coast without
- * needing to retune τ (which also affects decay shape). */
-const KINETIC_MOMENTUM_GAIN = 0.6
-/** Hard cap on coast distance (rows). Raised from 10 → 30 for faster flick
- * throughput — at MAX_VELOCITY=80 × τ=0.18 × GAIN=0.6 the uncapped amplitude
- * is ≈ 8.6 rows, so 30 only clips the very-long-flick outliers while letting
- * normal flicks coast their natural distance (≈ 4-9 rows).
- *
- * Per-flick acceleration: see `KINETIC_ACCEL_BOOST` — consecutive flicks in
- * the same direction compound velocity (iOS-style), letting users reach
- * arbitrary speeds by flicking repeatedly. */
-const KINETIC_MAX_COAST_ROWS = 30
-/** Velocity boost applied when a new flick begins while momentum is still
- * active in the same direction (iOS-style compounding acceleration). Each
- * subsequent same-direction flick adds `instant_v × BOOST` to the next
- * momentum phase, capped by KINETIC_MAX_VELOCITY so runaway acceleration is
- * impossible. */
-const KINETIC_ACCEL_BOOST = 1.6
-/** Stop the momentum animation after this many τ (6τ → within 0.25% of target). */
-const KINETIC_STOP_AFTER_TAU_MULTIPLES = 6
-/** Stop when remaining distance is below this (rows). Higher = snappier end
- * because sub-row animation is invisible in a discrete TUI. */
-const KINETIC_STOP_DISTANCE = 1.5
-/** Animation loop period in ms — 60Hz sampling of the closed-form curve. */
-const KINETIC_FRAME_MS = 16
-/** Wait this long with no wheel events before entering momentum phase. */
-const RELEASE_TIMEOUT_MS = 60
-/** How long (ms) the scrollbar stays visible after the last scroll activity. */
-const SCROLLBAR_FADE_AFTER_MS = 800
+// The hook owns: windowed velocity buffer, closed-form exponential
+// decay, direction-confirmation filter, optional same-direction
+// compounding, and the wheel→momentum two-phase loop. See its docstring
+// for the physics. SCROLLBAR_FADE_AFTER_MS is re-exported here so
+// the keyboard-edge-bump path can match the scrollbar's idle timeout.
 
 // =============================================================================
 // Measurement
@@ -642,6 +577,7 @@ function ListViewInner<T>(
     virtualization: virtualizationProp,
     virtualizationThreshold = DEFAULT_VIRTUALIZATION_THRESHOLD,
     maxEstimatedRows = DEFAULT_MAX_ESTIMATED_ROWS,
+    wheelMultiplier = 1.0,
     follow,
     maintainVisibleContentPosition = true,
     stickyBottom = false,
@@ -714,123 +650,84 @@ function ListViewInner<T>(
   // offset of the viewport's top edge — passed to Box as `scrollOffset`
   // (row-precise, not item-"ensure-visible"). Null means "not
   // wheel-scrolling, let nav's scrollTo follow the cursor".
-  // `scrollRowFloatRef` is the sub-row accumulator used by the kinetic
-  // loop; the rendered `scrollRow` is always an integer.
   //
-  // `isScrolling` controls the scrollbar thumb visibility; a setTimeout
-  // hides it SCROLLBAR_FADE_AFTER_MS after the last wheel activity.
+  // `useKineticScroll` owns the physics (windowed buffer, exponential
+  // decay momentum, gesture filter, optional same-direction compounding).
+  // ListView mirrors the hook's outputs into existing render state so the
+  // null-sentinel semantic and edge-bump indicator continue to work.
   const [scrollRow, setScrollRow] = useState<number | null>(null)
-  const [isScrolling, setIsScrolling] = useState(false)
-  // Fractional position in the scrollable track (0..1) used only by the
-  // scrollbar to render at sub-row precision via eighth-block glyphs. The
-  // content viewport is row-integer (passed to Box.scrollOffset); this
-  // state tracks the same scroll progress at float precision so the thumb
-  // can glide 1/8 of a row at a time even when the content hasn't
-  // advanced to the next integer row yet.
-  const [scrollbarFrac, setScrollbarFrac] = useState(0)
-  const scrollRowFloatRef = useRef<number | null>(null)
-  // Windowed event buffer — each entry is { t: timestamp ms, rows: signed
-  // row delta }. Trimmed to the last WHEEL_VELOCITY_WINDOW_MS on every
-  // event. At release, velocity = sum(rows) / span — a net-displacement
-  // estimate that structurally rejects tail/jitter noise without
-  // per-event heuristics.
-  const wheelBufferRef = useRef<Array<{ t: number; rows: number }>>([])
-  const lastWheelTimeRef = useRef(0)
-  // Directional coalescing — trackpad jitter filter.
-  //   sustainedDirRef:   dominant direction in the current streak (-1, 0, +1)
-  //   consecSameRef:     count of consecutive events in sustainedDir
-  //   consecOppRef:      count of consecutive opposite events (0 = armed)
-  // Once consecSameRef ≥ SUSTAINED_SCROLL_THRESHOLD the filter is active: a
-  // lone opposite event is dropped and consecOppRef becomes 1 (armed). The
-  // NEXT opposite event (before the gesture pauses) commits — legitimate
-  // reversals always go through within 2 events. Reset by moveTo() and
-  // when the buffer empties after trim (gesture boundary / pause).
-  const sustainedDirRef = useRef(0)
-  const consecSameRef = useRef(0)
-  const consecOppRef = useRef(0)
-  // Momentum phase (closed-form exponential decay) state. Populated on
-  // release; `null` means "no momentum animation in flight".
-  const momentumRef = useRef<{
-    startPos: number
-    amplitude: number
-    startTime: number
-  } | null>(null)
-  const kineticLoopRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const releaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const scrollbarHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Edge-bump indicator: flips to "top" or "bottom" when a wheel / momentum
-  // step would have scrolled past the boundary. Renders as a steady corner
-  // tick while the viewport is AT the edge; cleared by leaving the edge or
-  // by the scrollbar-idle timer. No flash / strobe — an earlier version had
-  // a time-bounded flash but every attempt leaked timer state across React
-  // re-renders and produced "stuck flashing" reports. The indicator simply
-  // appearing in one frame IS the attention-grab; no animation needed.
+  // step is clamped at a boundary. Renders as a steady corner tick while
+  // the viewport is AT the edge; cleared by leaving the edge or by the
+  // scrollbar-idle timer. No flash / strobe — an earlier version had a
+  // time-bounded flash but every attempt leaked timer state across React
+  // re-renders and produced "stuck flashing" reports. The indicator
+  // simply appearing in one frame IS the attention-grab; no animation
+  // needed.
   const [bumpedEdge, setBumpedEdge] = useState<"top" | "bottom" | null>(null)
-  // Latest item count — the wheel/kinetic paths close over a stale items.length
-  // on each frame otherwise.
+  // Latest item count — the wheel/kinetic seed callback closes over a
+  // stale items.length on each frame otherwise.
   const itemCountRef = useRef(items.length)
   itemCountRef.current = items.length
-  // Cursor index mirrored into a ref so handleWheel can use it without
-  // recreating the callback on every cursor move (would thrash wheel state).
+  // Cursor index mirrored into a ref so the seed callback uses the
+  // current cursor without re-creating the kinetic-scroll hook on every
+  // cursor move.
   const activeCursorRef = useRef(0)
   activeCursorRef.current = activeCursor
+  // Max scroll row tracked via a ref because `scrollableRows` is computed
+  // post-render (after `useVirtualizer` runs); the hook reads the latest
+  // value through a getter at wheel/momentum time.
+  const maxScrollRowRef = useRef(0)
+  // Best-effort viewport seed for first-wheel-after-cursor-move. The
+  // virtualizer's measurement is consumed via `rowsAboveViewport`; the
+  // ref is updated every render below.
+  const rowsAboveViewportRef = useRef(0)
+  // Mark the viewport as wheel-driven on the first wheel event of a
+  // gesture so `scrollRow` flips from null → integer. Reset to null by
+  // `moveTo` when the cursor takes over.
+  const isWheelDrivenRef = useRef(false)
 
-  const stopKinetic = useCallback(() => {
-    if (kineticLoopRef.current !== null) {
-      clearInterval(kineticLoopRef.current)
-      kineticLoopRef.current = null
-    }
-    momentumRef.current = null
-    // Note: do NOT zero pendingBoostVelocityRef here — handleWheel captures
-    // residual velocity *before* calling stopKinetic, and enterMomentum
-    // consumes it. Zeroing here would defeat the compounding path. The
-    // reset happens naturally in enterMomentum after use.
-  }, [])
-
-  const clearReleaseTimer = useCallback(() => {
-    if (releaseTimerRef.current !== null) {
-      clearTimeout(releaseTimerRef.current)
-      releaseTimerRef.current = null
-    }
-  }, [])
-
-  const scheduleScrollbarHide = useCallback(() => {
-    if (scrollbarHideTimerRef.current !== null) {
-      clearTimeout(scrollbarHideTimerRef.current)
-    }
-    scrollbarHideTimerRef.current = setTimeout(() => {
-      setIsScrolling(false)
-      scrollbarHideTimerRef.current = null
-      // Scrollbar-lifecycle sync: tie the overscroll indicator to the same
-      // idle signal as the scrollbar. When wheel/momentum activity quiesces
-      // and the scrollbar fades out, any lingering bump indicator is cleared
-      // too — the user has stopped scrolling, so the "you hit the end" cue
-      // should not outlive the scrollbar. Keyboard-triggered bumps don't
-      // touch `isScrolling`, so they fall through to their own 600 ms timer.
-      // Scrollbar auto-hides after idle → overscroll indicator goes with it.
-      // The user has stopped scrolling; the "you hit the end" cue is stale.
-      setBumpedEdge(null)
-    }, SCROLLBAR_FADE_AFTER_MS)
-  }, [])
-
-  // Show the edge-bump indicator. Called when a scroll attempt was clamped
-  // at a boundary. The indicator stays visible (at-edge render gate) until
-  // the user scrolls away OR the scrollbar-idle timer fires. No flash /
-  // strobe — plain appear-and-stay. Prior animated-flash designs couldn't
-  // survive React reconciler re-runs cleanly (see bumpedEdge comment above).
   const flashEdgeBump = useCallback((edge: "top" | "bottom") => {
     setBumpedEdge(edge)
   }, [])
 
-  // Cleanup on unmount.
-  useEffect(
-    () => () => {
-      stopKinetic()
-      clearReleaseTimer()
-      if (scrollbarHideTimerRef.current !== null) clearTimeout(scrollbarHideTimerRef.current)
+  const physics = useKineticScroll({
+    maxScroll: () => maxScrollRowRef.current,
+    initialOffset: 0,
+    maxVelocity: 80,
+    maxCoastRows: 30,
+    wheelMultiplier,
+    enableSameDirCompounding: true,
+    getInitialFloat: () => {
+      // Cursor pinned to an endpoint? Seed straight to that edge so the
+      // overscroll indicator fires immediately and rowsAboveViewport's
+      // measurement-lag at startup doesn't hide the bump.
+      const cursorIdx = activeCursorRef.current
+      const lastIdx = itemCountRef.current - 1
+      const maxRow = maxScrollRowRef.current
+      if (cursorIdx >= lastIdx && lastIdx >= 0) return maxRow
+      if (cursorIdx <= 0) return 0
+      return Math.max(0, Math.min(maxRow, rowsAboveViewportRef.current))
     },
-    [stopKinetic, clearReleaseTimer],
-  )
+    onEdgeReached: flashEdgeBump,
+    onScroll: (offset) => {
+      // Mirror the hook's offset into render state, but ONLY once
+      // wheel-driving has flipped the sentinel — anchoring's
+      // nudgeScrollFloat must NOT pretend to be a fresh user wheel.
+      if (!isWheelDrivenRef.current) return
+      setScrollRow((prev) => (prev === offset ? prev : offset))
+    },
+  })
+  const isScrolling = physics.isScrolling
+  const scrollbarFrac = physics.scrollFrac
+
+  // Scrollbar-lifecycle sync: when wheel/momentum activity quiesces
+  // (`isScrolling` falls), clear any lingering bump indicator. The user
+  // has stopped scrolling; the "you hit the end" cue is stale once the
+  // scrollbar has faded.
+  useEffect(() => {
+    if (!isScrolling) setBumpedEdge(null)
+  }, [isScrolling])
 
   // Low-level cursor update — does NOT touch wheel/scroll state. Used by
   // the hover path (where content scrolling under a stationary mouse
@@ -845,392 +742,37 @@ function ListViewInner<T>(
   )
 
   // Keyboard / programmatic cursor move — snaps viewport back to cursor.
-  // Kills any in-flight wheel/momentum animation and release timer.
+  // Kills any in-flight wheel/momentum animation and arms the seed
+  // callback so the next wheel event re-anchors from the new cursor.
   const moveTo = useCallback(
     (next: number) => {
       // Intent-based edge-bump: compare REQUESTED position against current
-      // bounds (before clamping). If the user pressed j/ArrowDown at the last
-      // item, `next` exceeds items.length-1 even though the cursor will clamp
-      // to the same value — that's an intent to move past the edge, and we
-      // flash the bottom indicator. Mirror for top.
-      //
-      // Using `cursor`-current (not `next`) as the "from" is critical:
-      // setCursorSilently runs NEXT and mutates, so we must read the prior
-      // cursor position here. The `cursorRef` indirection would also work; a
-      // direct snapshot of `activeCursor` is fine because React guarantees
-      // this callback re-binds when activeCursor changes.
-      //
-      // Bead: km-silvery.overline-attr (intent-based overscroll detection;
-      // factored out to km-silvery.overscroll-bump-at-edge for the wheel +
-      // kinetic-loop cases that remain follow-up).
-      if (next > items.length - 1 && items.length > 0) {
-        flashEdgeBump("bottom")
-      } else if (next < 0 && items.length > 0) {
-        flashEdgeBump("top")
-      }
+      // bounds (before clamping). Pressing j/ArrowDown at the last item
+      // exceeds items.length-1 — that's intent to move past the edge.
+      // Bead: km-silvery.overline-attr.
+      if (next > items.length - 1 && items.length > 0) flashEdgeBump("bottom")
+      else if (next < 0 && items.length > 0) flashEdgeBump("top")
       setCursorSilently(next)
       scrollAnchoring.suppressOnce()
-      scrollRowFloatRef.current = null
+      isWheelDrivenRef.current = false
       setScrollRow(null)
-      wheelBufferRef.current = []
-      lastWheelTimeRef.current = 0
-      sustainedDirRef.current = 0
-      consecSameRef.current = 0
-      consecOppRef.current = 0
-      stopKinetic()
-      clearReleaseTimer()
+      physics.reset()
     },
-    [clearReleaseTimer, flashEdgeBump, items.length, setCursorSilently, stopKinetic],
+    [flashEdgeBump, items.length, physics, setCursorSilently],
   )
 
-  // Max row offset the viewport can have — pre-computed per render below.
-  // Populated before this callback fires because React closures capture the
-  // render-scope `maxScrollRowRef` which tracks the latest value.
-  const maxScrollRowRef = useRef(0)
-
-  // Push the fractional scroll position (0..1) into scrollbar state. Called
-  // any time scrollRowFloatRef changes so the scrollbar thumb can render
-  // at sub-row precision via eighth-block glyphs.
-  const syncScrollbarFrac = useCallback(() => {
-    const maxRow = maxScrollRowRef.current
-    const float = scrollRowFloatRef.current
-    const frac = maxRow > 0 && float !== null ? float / maxRow : 0
-    setScrollbarFrac((prev) => {
-      const next = Math.max(0, Math.min(1, frac))
-      return Math.abs(prev - next) < 0.001 ? prev : next
-    })
-  }, [])
-
-  // Closed-form momentum sample — evaluates the exponential decay curve at
-  // absolute time t relative to release, returns false when the animation
-  // should terminate.
-  //
-  //   pos(t) = start + amplitude × (1 − exp(−t / τ))
-  //
-  // Where amplitude is the pre-clamped distance to the final target and
-  // start is the release-time row offset. Stops at t > 6τ, within
-  // KINETIC_STOP_DISTANCE of target, or at either edge.
-  const momentumStep = useCallback((): boolean => {
-    const m = momentumRef.current
-    if (m === null) return false
-    const maxRow = maxScrollRowRef.current
-    const tau = KINETIC_TIME_CONSTANT_MS
-    const t = performance.now() - m.startTime
-    if (t >= tau * KINETIC_STOP_AFTER_TAU_MULTIPLES) return false
-    const decay = Math.exp(-t / tau)
-    const remaining = m.amplitude * decay
-    if (Math.abs(remaining) < KINETIC_STOP_DISTANCE) return false
-    let pos = m.startPos + m.amplitude * (1 - decay)
-    // Hard clamp at edges — zero-remaining terminates. Flash the
-    // edge-bump indicator so the user sees why momentum stopped early.
-    if (pos <= 0) {
-      scrollRowFloatRef.current = 0
-      syncScrollbarFrac()
-      setScrollRow(0)
-      flashEdgeBump("top")
-      return false
-    }
-    if (pos >= maxRow) {
-      scrollRowFloatRef.current = maxRow
-      syncScrollbarFrac()
-      setScrollRow(maxRow)
-      flashEdgeBump("bottom")
-      return false
-    }
-    scrollRowFloatRef.current = pos
-    syncScrollbarFrac()
-    const rendered = Math.round(pos)
-    setScrollRow((prev) => (prev === rendered ? prev : rendered))
-    return true
-  }, [flashEdgeBump, syncScrollbarFrac])
-
-  const startMomentum = useCallback(() => {
-    if (kineticLoopRef.current !== null) return
-    // Keep scrollbar visible for the duration of the coast — refresh the
-    // hide timer each frame. Without this, scrollbar fades mid-coast on
-    // long flicks (hide timer fires before momentum ends).
-    setIsScrolling(true)
-    scheduleScrollbarHide()
-    kineticLoopRef.current = setInterval(() => {
-      if (!momentumStep()) {
-        stopKinetic()
-        return
-      }
-      // Refresh hide timer so scrollbar stays visible through the coast.
-      scheduleScrollbarHide()
-    }, KINETIC_FRAME_MS)
-  }, [momentumStep, scheduleScrollbarHide, stopKinetic])
-
-  // Transition from user-driven wheel to closed-form momentum phase.
-  //
-  // Velocity comes from the windowed event buffer as a net-displacement
-  // estimate over the last WHEEL_VELOCITY_WINDOW_MS:
-  //   v = Σ(signedRows) / (windowSpanMs / 1000)
-  //
-  // Structurally robust to:
-  //   - OS inertia tail: tiny opposite-direction events contribute their
-  //     real (small) weight to the sum — the flick body dominates.
-  //   - Trackpad jitter: same story, per-event noise averages out.
-  //   - Intentional reversal: if the user genuinely reverses, the window
-  //     fills with opposite events within ~100-150ms, the sum flips, and
-  //     the next release fires in the new direction.
-  const enterMomentum = useCallback(() => {
-    const now = performance.now()
-    const buf = wheelBufferRef.current
-    // Trim stale entries.
-    while (buf.length > 0 && now - buf[0]!.t > WHEEL_VELOCITY_WINDOW_MS) buf.shift()
-    if (buf.length < 2) {
-      wheelBufferRef.current = []
-      return
-    }
-    const netRows = buf.reduce((s, e) => s + e.rows, 0)
-    // Span = first-to-last event time — NOT `now − first.t`. The release
-    // timer fires ~60ms after the last event; using `now` systematically
-    // dilutes velocity by that idle gap (pro review diagnosis).
-    const first = buf[0]!
-    const last = buf[buf.length - 1]!
-    const spanMs = Math.max(1, last.t - first.t)
-    const rawV = (netRows / spanMs) * 1000
-    // Add any residual velocity captured from a prior coast we interrupted
-    // in the same direction (iOS-style acceleration). Clears after use.
-    const boost = pendingBoostVelocityRef.current
-    pendingBoostVelocityRef.current = 0
-    const compoundedV = rawV + boost
-    const v = Math.max(-KINETIC_MAX_VELOCITY, Math.min(KINETIC_MAX_VELOCITY, compoundedV))
-    // Consume the buffer — it belongs to the gesture we're now animating.
-    wheelBufferRef.current = []
-    if (Math.abs(v) < 1) return
-    const maxRow = maxScrollRowRef.current
-    if (maxRow <= 0) return
-    const startPos = scrollRowFloatRef.current ?? 0
-    // amplitude = v × τ × gain, then hard-capped to MAX_COAST_ROWS to
-    // prevent runaway coast on peak-velocity flicks.
-    const rawAmplitude = v * (KINETIC_TIME_CONSTANT_MS / 1000) * KINETIC_MOMENTUM_GAIN
-    const amplitude = Math.max(
-      -KINETIC_MAX_COAST_ROWS,
-      Math.min(KINETIC_MAX_COAST_ROWS, rawAmplitude),
-    )
-    const rawTarget = startPos + amplitude
-    const clampedTarget = Math.max(0, Math.min(maxRow, rawTarget))
-    momentumRef.current = {
-      startPos,
-      amplitude: clampedTarget - startPos,
-      startTime: performance.now(),
-    }
-    wheelLog.debug?.(
-      `momentum start v=${v.toFixed(1)} netRows=${netRows.toFixed(2)} spanMs=${spanMs.toFixed(0)} startPos=${startPos.toFixed(2)} amplitude=${(clampedTarget - startPos).toFixed(2)} target=${clampedTarget.toFixed(2)}`,
-    )
-    startMomentum()
-  }, [startMomentum])
-
-  const scheduleRelease = useCallback(() => {
-    clearReleaseTimer()
-    releaseTimerRef.current = setTimeout(() => {
-      releaseTimerRef.current = null
-      enterMomentum()
-    }, RELEASE_TIMEOUT_MS)
-  }, [clearReleaseTimer, enterMomentum])
-
-  // Seed the row-space scroll state from the current viewport position —
-  // run on the first wheel event of a gesture so momentum picks up from
-  // where the user is looking, not from row 0.
-  const rowsAboveViewportRef = useRef(0)
-
-  // Residual velocity (rows/sec) captured from an in-flight momentum coast
-  // when a new wheel event interrupts it in the SAME direction. Used by
-  // `enterMomentum` to compound — each same-direction flick adds to the
-  // prior residual, giving iOS-style acceleration. Zeroed when the user
-  // reverses direction or when momentum ends naturally.
-  const pendingBoostVelocityRef = useRef(0)
-
+  // Wheel events drive the kinetic-scroll hook. ListView wraps the hook's
+  // onWheel only to plumb the layout-anchor suppression into the same
+  // moment as the displacement and to flip the wheel-driven sentinel.
   const handleWheel = useCallback(
-    ({ deltaY }: { deltaY: number }) => {
+    (event: { deltaY: number }) => {
       const maxRow = maxScrollRowRef.current
       if (maxRow <= 0) return
-      const now = performance.now()
-      const dir = Math.sign(deltaY) || 0
-      if (dir === 0) return
-      // Capture the residual velocity from any in-flight momentum BEFORE we
-      // stop it. If the new flick is in the same direction, this residual
-      // compounds into the next momentum phase (iOS-style acceleration).
-      // Opposite direction → zero the boost; user is reversing, not
-      // accelerating.
-      const m = momentumRef.current
-      if (m !== null) {
-        const tau = KINETIC_TIME_CONSTANT_MS
-        const t = performance.now() - m.startTime
-        // Instantaneous velocity of the decay curve: v0 × exp(-t/τ), where
-        // v0 = amplitude / τ (seconds). Evaluate in rows/sec.
-        const decay = Math.exp(-t / tau)
-        const instantVRowsPerMs = (m.amplitude / tau) * decay
-        const instantVRowsPerSec = instantVRowsPerMs * 1000
-        const sameDir = Math.sign(instantVRowsPerSec) === dir
-        if (sameDir) {
-          pendingBoostVelocityRef.current += instantVRowsPerSec * KINETIC_ACCEL_BOOST
-          // Cap so runaway acceleration is impossible even under spam.
-          const cap = KINETIC_MAX_VELOCITY
-          if (pendingBoostVelocityRef.current > cap) pendingBoostVelocityRef.current = cap
-          else if (pendingBoostVelocityRef.current < -cap) pendingBoostVelocityRef.current = -cap
-        } else {
-          pendingBoostVelocityRef.current = 0
-        }
-      }
-      // Cancel any in-flight momentum — user is actively driving again.
-      stopKinetic()
-      clearReleaseTimer()
-      // First wheel event of a gesture — seed scrollRowFloat.
-      //
-      // Previously used Math.min(maxRow, rowsAboveViewportRef.current) which
-      // works for MOST cases but fails at startup when the cursor is pinned
-      // to the last item (km-logview follow-mode): the virtualizer's
-      // rowsAboveViewport can lag the cursor-based true position, so the
-      // seed comes in well below maxRow. First wheel-down then moves us
-      // FROM the seed value, never reaching the edge, and the overscroll
-      // indicator doesn't fire.
-      //
-      // Fix: if the cursor is pinned to an endpoint (first or last item),
-      // seed directly to the corresponding edge (0 or maxRow) regardless
-      // of rowsAboveViewport's lag. Otherwise fall back to the measured
-      // value.
-      if (scrollRowFloatRef.current === null) {
-        const cursorIdx = activeCursorRef.current
-        const lastIdx = itemCountRef.current - 1
-        if (cursorIdx >= lastIdx && lastIdx >= 0) {
-          scrollRowFloatRef.current = maxRow
-        } else if (cursorIdx <= 0) {
-          scrollRowFloatRef.current = 0
-        } else {
-          scrollRowFloatRef.current = Math.max(0, Math.min(maxRow, rowsAboveViewportRef.current))
-        }
-      }
-      lastWheelTimeRef.current = now
-      // Trim buffer to window BEFORE consulting it.
-      const buf = wheelBufferRef.current
-      while (buf.length > 0 && now - buf[0]!.t > WHEEL_VELOCITY_WINDOW_MS) buf.shift()
-      // Gesture boundary: if trim emptied the buffer, the previous streak
-      // ended (> WINDOW_MS since last event). Reset directional coalescing.
-      if (buf.length === 0) {
-        sustainedDirRef.current = 0
-        consecSameRef.current = 0
-        consecOppRef.current = 0
-      }
-      // Edge-clamp jitter filter — when the user is sustained-pushing
-      // INTO an edge (anchor at 0 with sustainedDir=-1, or at maxRow
-      // with sustainedDir=+1), aggressively drop any opposite-direction
-      // event regardless of `consecSame`. Trackpad inertia bounces
-      // produce spurious reverse events at the edge: the user has
-      // clearly committed to "scroll past the edge," and the bounce
-      // should not be treated as an intentional reversal.
-      //
-      // Without this, repeated wheel-up at the top edge with one
-      // bounce produces visible scroll-row oscillation between 0 and
-      // 1 — the bounce slips through the standard
-      // `consecSame >= SUSTAINED_SCROLL_THRESHOLD` gate (which only
-      // activates after 3 same-direction events) and applies as a
-      // real reversal, jumping anchor from 0 to 1, then the next
-      // genuine wheel-up pulls it back to 0. Bead:
-      // km-silvery.scroll-top-edge-oscillation.
-      const anchor = scrollRowFloatRef.current ?? 0
-      const sustainedDir = sustainedDirRef.current
-      // Half-cell tolerance — the anchor can carry a fractional value
-      // (e.g. 0.3 from a partial kinetic decay step) even when the
-      // user is at the top edge for all visual purposes. A strict
-      // `<= 0` check missed those cases and let the trackpad bounce
-      // jitter through. `< 1` covers the entire first row at top
-      // (and `> maxRow - 1` mirrors at bottom).
-      const atTopWithUpwardSustained = anchor < 1 && sustainedDir === -1
-      const atBottomWithDownwardSustained = anchor > maxRow - 1 && sustainedDir === 1
-      const atSustainedEdge = atTopWithUpwardSustained || atBottomWithDownwardSustained
-      if (atSustainedEdge && dir !== sustainedDir) {
-        wheelLog.debug?.(
-          `wheel edge-jitter-filtered deltaY=${deltaY.toFixed(2)} anchor=${anchor.toFixed(2)} sustainedDir=${sustainedDir}`,
-        )
-        return
-      }
-
-      // Directional coalescing — drop a single opposite event during a
-      // sustained scroll (trackpad jitter filter). Two consecutive opposite
-      // events always commit.
-      if (sustainedDirRef.current === 0) {
-        sustainedDirRef.current = dir
-        consecSameRef.current = 1
-        consecOppRef.current = 0
-      } else if (dir === sustainedDirRef.current) {
-        consecSameRef.current += 1
-        consecOppRef.current = 0
-      } else {
-        // Opposite direction.
-        if (consecSameRef.current >= SUSTAINED_SCROLL_THRESHOLD && consecOppRef.current === 0) {
-          // First lone opposite during sustained scroll — noise. Drop
-          // entirely: no displacement, no buffer contribution, no
-          // scrollbar pulse, no edge-bump flash.
-          consecOppRef.current = 1
-          wheelLog.debug?.(
-            `wheel jitter-filtered deltaY=${deltaY.toFixed(2)} sustainedDir=${sustainedDirRef.current} consecSame=${consecSameRef.current}`,
-          )
-          return
-        }
-        // Either no sustained streak yet, or second opposite in a row — a
-        // real reversal. Commit the new direction.
-        sustainedDirRef.current = dir
-        consecSameRef.current = 1
-        consecOppRef.current = 0
-      }
-      // Apply immediate displacement. No per-event acceleration — event
-      // frequency already encodes speed. No opposite-to-buffer suppression
-      // — that was a heuristic fix for a symptom of the (now-fixed) bug
-      // where suppressed events corrupted buffer velocity.
-      const prev = scrollRowFloatRef.current
-      const rawNext = prev + dir * WHEEL_STEP_ROWS
-      let nextFloat = rawNext
-      if (nextFloat < 0) nextFloat = 0
-      else if (nextFloat > maxRow) nextFloat = maxRow
-      const appliedRows = nextFloat - prev
-      // Intent-based edge-bump — fire whenever the user pushed past the edge,
-      // including the "already at edge, push further" case that the strict
-      // `<` / `>` comparison missed. The request is `dir * WHEEL_STEP_ROWS`;
-      // whenever that request is non-zero AND the clamped result is flush
-      // against the corresponding edge, the indicator fires.
-      //
-      // Why: previously the formula was `rawNext > maxRow` (strict), so when
-      // a user started with the viewport already at the bottom (prev = maxRow)
-      // and wheel-scrolled down, rawNext = maxRow + 1 DID fire — but when the
-      // seeded prev was fractionally below maxRow (e.g. maxRow - 0.3) and step
-      // = 1, rawNext = maxRow + 0.7 fired. The trouble case was any path where
-      // rawNext landed EXACTLY at maxRow (never strictly past it) — no bump.
-      // Matching the keyboard intent model (moveTo), we now treat "pushed AND
-      // ended at the edge" as overscroll intent regardless of transition
-      // shape.
-      if (dir > 0 && nextFloat >= maxRow) flashEdgeBump("bottom")
-      else if (dir < 0 && nextFloat <= 0) flashEdgeBump("top")
-      scrollRowFloatRef.current = nextFloat
+      isWheelDrivenRef.current = true
       scrollAnchoring.suppressOnce()
-      syncScrollbarFrac()
-      const rendered = Math.round(nextFloat)
-      setScrollRow((prevInt) => (prevInt === rendered ? prevInt : rendered))
-      // Push APPLIED rows (not intended) into the buffer — edge-clamped
-      // events and the rare zero-motion event contribute their real
-      // contribution to velocity, not a synthetic one.
-      if (appliedRows !== 0) {
-        buf.push({ t: now, rows: appliedRows })
-      }
-      wheelLog.debug?.(
-        `wheel deltaY=${deltaY.toFixed(2)} applied=${appliedRows.toFixed(2)} anchorFloat=${nextFloat.toFixed(2)} buf=[${buf.length} events, netRows=${buf.reduce((s, e) => s + e.rows, 0).toFixed(1)}]`,
-      )
-      // Scrollbar on — auto-hide refreshes on each event.
-      setIsScrolling(true)
-      scheduleScrollbarHide()
-      // After a short pause, roll buffer into momentum.
-      scheduleRelease()
+      physics.onWheel(event)
     },
-    [
-      clearReleaseTimer,
-      flashEdgeBump,
-      scheduleRelease,
-      scheduleScrollbarHide,
-      stopKinetic,
-      syncScrollbarFrac,
-    ],
+    [physics],
   )
 
   // Set the viewport position from a fractional 0..1 value. Used by
@@ -1248,23 +790,18 @@ function ListViewInner<T>(
       if (maxRow <= 0) return
       const clampedFrac = Math.max(0, Math.min(1, frac))
       const target = clampedFrac * maxRow
-      stopKinetic()
-      clearReleaseTimer()
-      scrollRowFloatRef.current = target
       scrollAnchoring.suppressOnce()
-      const rendered = Math.round(target)
-      setScrollRow((prev) => (prev === rendered ? prev : rendered))
+      isWheelDrivenRef.current = true
+      physics.setScrollFloat(target)
+      setScrollRow(Math.round(target))
       // At the end? Re-arm follow="end" so streaming appends stay visible.
-      // Anywhere else: cancel pending snap so the viewport doesn't jump.
       if (clampedFrac >= 1 - 1 / Math.max(1, maxRow) && resolvedFollow === "end") {
         pendingFollowSnapRef.current = true
       } else {
         pendingFollowSnapRef.current = false
       }
-      setIsScrolling(true)
-      scheduleScrollbarHide()
     },
-    [clearReleaseTimer, resolvedFollow, scheduleScrollbarHide, stopKinetic],
+    [physics, resolvedFollow],
   )
 
   // Observe search bar state — while the bar is open, the app-wide
@@ -2001,12 +1538,11 @@ function ListViewInner<T>(
   // Wrap scrollToItem to accept original indices (before virtual adjustment).
   //
   // `scrollBy` / `scrollToTop` / `scrollToBottom` operate on the row-space
-  // viewport position (NOT cursor index). They mirror the wheel handler's
-  // mutation pattern: seed `scrollRowFloatRef` if null, clamp to the
-  // current `maxScrollRowRef.current`, then push through `setScrollRow` so
-  // the inner Box's `scrollOffset` reflects the new position. Cursor is
-  // untouched — same "mouse follows hover, keyboard moves focus"
-  // separation the wheel handler enforces.
+  // viewport position (NOT cursor index). They drive the kinetic-scroll
+  // hook's float position directly via `physics.setScrollFloat` and flip
+  // `isWheelDrivenRef` so `scrollRow` reflects the wheel-mode integer.
+  // Cursor is untouched — same "mouse follows hover, keyboard moves
+  // focus" separation the wheel handler enforces.
   useImperativeHandle(
     ref,
     () => ({
@@ -2016,43 +1552,42 @@ function ListViewInner<T>(
       scrollBy(rows: number) {
         const maxRow = maxScrollRowRef.current
         if (maxRow <= 0) return
-        // Seed from measured viewport position the first time we're called
-        // (or the first time after a moveTo() reset scrollRowFloatRef to
-        // null). Mirrors the wheel-seed logic so keyboard scroll picks up
-        // exactly where the user is looking.
-        if (scrollRowFloatRef.current === null) {
-          const cursorIdx = activeCursorRef.current
-          const lastIdx = itemCountRef.current - 1
-          if (cursorIdx >= lastIdx && lastIdx >= 0) {
-            scrollRowFloatRef.current = maxRow
-          } else if (cursorIdx <= 0) {
-            scrollRowFloatRef.current = 0
-          } else {
-            scrollRowFloatRef.current = Math.max(0, Math.min(maxRow, rowsAboveViewportRef.current))
-          }
-        }
-        const prev = scrollRowFloatRef.current
-        const next = Math.max(0, Math.min(maxRow, prev + rows))
-        if (next === prev) return
-        scrollRowFloatRef.current = next
+        // Seed from the kinetic-scroll's known position when wheel-driven;
+        // otherwise compute a cursor-aware seed mirroring the wheel-seed
+        // logic so keyboard scroll picks up exactly where the user is
+        // looking.
+        const seed = isWheelDrivenRef.current
+          ? physics.scrollFloat
+          : (() => {
+              const cursorIdx = activeCursorRef.current
+              const lastIdx = itemCountRef.current - 1
+              if (cursorIdx >= lastIdx && lastIdx >= 0) return maxRow
+              if (cursorIdx <= 0) return 0
+              return Math.max(0, Math.min(maxRow, rowsAboveViewportRef.current))
+            })()
+        const next = Math.max(0, Math.min(maxRow, seed + rows))
+        if (next === seed) return
         scrollAnchoring.suppressOnce()
-        const rendered = Math.round(next)
-        setScrollRow((prevInt) => (prevInt === rendered ? prevInt : rendered))
+        isWheelDrivenRef.current = true
+        physics.setScrollFloat(next)
+        setScrollRow(Math.round(next))
         // Calling scrollBy means the user is taking explicit control of
         // the viewport — clear any pending follow="end" snap so the
         // viewport doesn't jump back to the tail on next render.
         pendingFollowSnapRef.current = false
       },
       scrollToTop() {
-        scrollRowFloatRef.current = 0
         scrollAnchoring.suppressOnce()
+        isWheelDrivenRef.current = true
+        physics.setScrollFloat(0)
         setScrollRow(0)
         pendingFollowSnapRef.current = false
       },
       scrollToBottom() {
         const maxRow = maxScrollRowRef.current
-        scrollRowFloatRef.current = maxRow
         scrollAnchoring.suppressOnce()
+        isWheelDrivenRef.current = true
+        physics.setScrollFloat(maxRow)
         setScrollRow(maxRow)
         // Re-arm follow="end" auto-follow — on the next render the
         // pending-snap path takes over and subsequent appends keep the
@@ -2068,16 +1603,16 @@ function ListViewInner<T>(
         return composedViewportRef.current
       },
     }),
-    [scrollToItem, unmountedCount, resolvedFollow],
+    [physics, scrollToItem, unmountedCount, resolvedFollow],
   )
 
   // ── Mouse wheel handler ─────────────────────────────────────────
   // Wheel over the list scrolls its viewport with iOS-style kinetic
   // momentum (mouse follows hover, keyboard moves focus). Cursor is
   // untouched by scrolling. Any subsequent keyboard cursor move snaps the
-  // viewport back to the cursor via `moveTo`. Physics: inter-event dt
-  // drives wheel acceleration; closed-form exponential decay runs during
-  // the momentum phase. See `handleWheel` + `enterMomentum` above.
+  // viewport back to the cursor via `moveTo`. Physics live in
+  // `useKineticScroll`; ListView's `handleWheel` is a thin wrapper that
+  // pipes layout-anchor suppression alongside delegation to the hook.
   const onWheel = handleWheel
 
   // ── Render ──────────────────────────────────────────────────────
@@ -2251,8 +1786,7 @@ function ListViewInner<T>(
     const prevCount = prevItemCountRef.current
     const grew = activeItems.length > prevCount
     if (grew) {
-      setIsScrolling(true)
-      scheduleScrollbarHide()
+      physics.flashScrollbar()
       // Stale-bump cleanup. A `bumpedEdge` set by a prior wheel/keyboard
       // overscroll attempt is bound to the boundary as it was THEN. Once
       // items append, the boundary moved — `scrollableRows` leaps ahead
@@ -2332,7 +1866,8 @@ function ListViewInner<T>(
       !userScrolledAway &&
       (pendingSnap || (grew && wasAtEndPrev))
     if (shouldSnap) {
-      scrollRowFloatRef.current = maxRow
+      isWheelDrivenRef.current = true
+      physics.setScrollFloat(maxRow)
       setScrollRow(maxRow)
       pendingFollowSnapRef.current = false
     }
@@ -2355,7 +1890,7 @@ function ListViewInner<T>(
     prevAtBottomRef.current = atBottom
   }, [
     activeItems.length,
-    scheduleScrollbarHide,
+    physics,
     scrollRow,
     activeCursor,
     nav,
@@ -2419,8 +1954,8 @@ function ListViewInner<T>(
   //   cosmetic issue; an overshoot into empty space is severe.
   //
   // Floor at 0 (not 1) so when content fits, `maxRow = 0` and
-  // `handleWheel` / `enterMomentum` early-return — no spurious overscroll
-  // bump on a list whose content fits.
+  // `handleWheel` early-returns and the kinetic-scroll hook bails out —
+  // no spurious overscroll bump on a list whose content fits.
   //
   // Bead: km-silvery.listview-scroll-overshoot (regression from 8c63cfb9).
   const scrollableRows = Math.max(0, totalRowsMeasured - trackHeight)
@@ -2438,11 +1973,19 @@ function ListViewInner<T>(
     },
     [activeItems, getKey, unmountedCount],
   )
-  const applyAnchoredTopRow = useCallback((row: number) => {
-    scrollRowFloatRef.current = row
-    const rendered = Math.round(row)
-    setScrollRow((prev) => (prev === rendered ? prev : rendered))
-  }, [])
+  const applyAnchoredTopRow = useCallback(
+    (row: number) => {
+      // Preserve wheel/momentum gesture state — anchoring reflow nudges
+      // the float in response to layout shifts and must NOT look like a
+      // new gesture (which would reset the direction-confirmation filter
+      // and let inertia bounces seed false reversals).
+      isWheelDrivenRef.current = true
+      physics.nudgeScrollFloat(row)
+      const rendered = Math.round(row)
+      setScrollRow((prev) => (prev === rendered ? prev : rendered))
+    },
+    [physics],
+  )
   const baseTopRow = scrollRow !== null ? scrollRow : rowsAboveViewport
   const scrollAnchoring = useScrollAnchoring({
     enabled: maintainVisibleContentPosition,
@@ -2467,8 +2010,8 @@ function ListViewInner<T>(
         ? Math.max(0, scrollToIndex)
         : undefined
 
-  // Content clamp lives in `handleWheel` + `momentumStep` (scrollRow clamped
-  // to [0, maxRow], momentum amplitude pre-clamped — no rubber-band overshoot).
+  // Content clamp lives in the kinetic-scroll hook (scrollRow clamped to
+  // [0, maxRow], momentum amplitude pre-clamped — no rubber-band overshoot).
   // `effectiveRowsAbove` drives the shared Scrollbar overlay and the edge-bump
   // render gate.
   // Scrollbar overlay is enabled in both pinned-height and height-independent
