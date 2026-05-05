@@ -106,15 +106,19 @@ describe("Image: StdoutContext.write routes escapes to the terminal", () => {
     const writes = term.out.getChunks()
     const firstFrameIndex = writes.findIndex((w) => w.includes("before-image"))
     const firstKittyIndex = writes.findIndex((w) => w.includes(APC_OPEN))
-    const cursorAfterKittyIndex = writes.findIndex((w, i) => i > firstKittyIndex && w.includes("\x1b[?25"))
+    const cursorAfterKittyIndex = writes.findIndex(
+      (w, i) => i > firstKittyIndex && w.includes("\x1b[?25"),
+    )
     expect(firstFrameIndex, "rendered text frame should be written").toBeGreaterThanOrEqual(0)
     expect(firstKittyIndex, "Kitty APC should be written").toBeGreaterThanOrEqual(0)
-    expect(firstKittyIndex, "Kitty APC is queued by layout effects and flushed after frame paint").toBeGreaterThan(
-      firstFrameIndex,
-    )
-    expect(cursorAfterKittyIndex, "frame cursor suffix should be re-applied after Kitty APC writes").toBeGreaterThan(
+    expect(
       firstKittyIndex,
-    )
+      "Kitty APC is queued by layout effects and flushed after frame paint",
+    ).toBeGreaterThan(firstFrameIndex)
+    expect(
+      cursorAfterKittyIndex,
+      "frame cursor suffix should be re-applied after Kitty APC writes",
+    ).toBeGreaterThan(firstKittyIndex)
 
     handle.unmount()
   })
@@ -182,7 +186,9 @@ describe("Image: StdoutContext.write routes escapes to the terminal", () => {
     const all = term.out.getText()
     expect(all, "partially visible image should still be placed at top row").toContain("\x1b[1;1H")
     expect(all, "visible rows should be clipped to the viewport remainder").toContain("r=3")
-    expect(all, "partial clipping should not delete the still-visible placement").not.toContain("a=d,d=i")
+    expect(all, "partial clipping should not delete the still-visible placement").not.toContain(
+      "a=d,d=i",
+    )
 
     handle.unmount()
   })

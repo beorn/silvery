@@ -262,7 +262,10 @@ function ImagePlacement({
     // measured" predicate (same gate <MeasuredBox> uses).
     if (boxRect.width <= 0) return
 
-    const write = (data: string, artifact?: { readonly owner: string; readonly zIndex?: number }) => {
+    const write = (
+      data: string,
+      artifact?: { readonly owner: string; readonly zIndex?: number },
+    ) => {
       if (stdoutCtx.queueFrameArtifact && artifact) {
         stdoutCtx.queueFrameArtifact({
           kind: "terminal-sequence",

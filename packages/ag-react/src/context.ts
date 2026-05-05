@@ -92,13 +92,12 @@ export interface StdoutContextValue {
  */
 export const StdoutContext = createContext<StdoutContextValue | null>(null)
 
-export type TerminalFrameArtifact =
-  | {
-      readonly kind: "terminal-sequence"
-      readonly owner: string
-      readonly sequence: string
-      readonly zIndex?: number
-    }
+export type TerminalFrameArtifact = {
+  readonly kind: "terminal-sequence"
+  readonly owner: string
+  readonly sequence: string
+  readonly zIndex?: number
+}
 
 export interface StderrContextValue {
   /** Standard error stream */

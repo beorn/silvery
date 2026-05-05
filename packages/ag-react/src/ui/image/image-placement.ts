@@ -164,7 +164,13 @@ export function planKittyImagePlacement({
   readonly previousPlacement: PreviousImagePlacement | null
   readonly srcChanged: boolean
 }): KittyImagePlacementPlan {
-  const placement = computeVisibleImagePlacement({ rect, imagePixels, sourceRect, pixelOffset, viewport })
+  const placement = computeVisibleImagePlacement({
+    rect,
+    imagePixels,
+    sourceRect,
+    pixelOffset,
+    viewport,
+  })
   if (!placement) return previousPlacement ? { kind: "delete-placement" } : { kind: "noop" }
 
   const placementKey = imagePlacementKey({
