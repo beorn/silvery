@@ -37,7 +37,11 @@ describe("Popover Cmd hover", () => {
   })
 
   test("stays open after the dwell timer while Cmd is still held", async () => {
-    const render = createRenderer({ cols: 80, rows: 10, kittyMode: true })
+    // `autoRender: true` is required so the setTimeout-driven `popover.show`
+    // setState in the Provider triggers a doRender via the React commit hook
+    // — without it the React tree updates but the buffer is never repainted,
+    // and `app.text` keeps returning the pre-show snapshot.
+    const render = createRenderer({ cols: 80, rows: 10, kittyMode: true, autoRender: true })
     const app = render(
       <PopoverProvider>
         <HoverTarget />
