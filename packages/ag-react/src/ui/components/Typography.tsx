@@ -185,13 +185,19 @@ export function Kbd({ children, color, ...rest }: TypographyProps) {
 // Block Elements
 // ============================================================================
 
-/** Blockquote — padded muted quotation block. Wrapped text stays indented. */
+/** Blockquote — `│` prefix in `$fg-muted` plus italic muted body. The
+ * left bar is the conventional markdown quote indicator and lets wrapped
+ * lines stay visually nested under the same prefix. */
 export function Blockquote({ children, color }: TypographyProps) {
+  const muted = color ?? "$fg-muted"
   return (
-    <Box flexDirection="column" paddingX={1}>
-      <Text color={color ?? "$fg-muted"} italic wrap="wrap">
-        {children}
-      </Text>
+    <Box>
+      <Text color={muted}>│ </Text>
+      <Box flexShrink={1}>
+        <Text color={muted} italic wrap="wrap">
+          {children}
+        </Text>
+      </Box>
     </Box>
   )
 }
