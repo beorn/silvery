@@ -40,7 +40,7 @@ import React, {
   useRef,
   useState,
 } from "react"
-import { sumHeights, useVirtualizer } from "../../hooks/useVirtualizer"
+import { averageMeasuredHeightForWidth, sumHeights, useVirtualizer } from "../../hooks/useVirtualizer"
 import { makeMeasureKey } from "../../hooks/useVirtualizer"
 import { useScrollState } from "../../hooks/useScrollState"
 import { useInput } from "../../hooks/useInput"
@@ -405,6 +405,37 @@ export interface ListViewProps<T> {
    * want to expose scroll tuning.
    */
   wheelMultiplier?: number
+
+  /**
+   * How imperative scrolls (scrollToItem / scrollBy / scrollToTop /
+   * scrollToBottom on the ref handle) move the viewport. Default
+   * `"instant"` — backward-compatible jump. `"smooth"` runs a cubic
+   * ease-out animation (~250ms); user wheel input cancels mid-animation.
+   * The declarative `scrollTo` prop is unaffected (it's typically driven
+   * by cursor follow, where smooth animation would fight the keyboard).
+   *
+   * Mirrors the DOM `ScrollOptions.behavior` API.
+   */
+  scrollBehavior?: "instant" | "smooth"
+
+  /**
+   * Allow scroll position to overshoot past the edge with diminishing
+   * resistance, then spring back on release. Mirrors iOS rubber-band
+   * scrolling. Default `false`. The rendered integer offset still clamps
+   * to `[0, maxScroll]`, so the visible effect at row resolution is
+   * limited; the physics layer is real (momentum decays naturally
+   * instead of clipping at the wall) and benefits canvas/web targets.
+   */
+  enableElasticEdges?: boolean
+
+  /**
+   * Discriminate trackpad (continuous) vs mouse-wheel (discrete) input
+   * by inter-event cadence. When a stream looks like discrete mouse-wheel
+   * clicks (≥50ms gaps + |deltaY|≤1), each event jumps multiple rows
+   * with no momentum coast. Trackpad streams keep smooth physics.
+   * Default `false` — opt in after profiling on real mouse hardware.
+   */
+  enableInputCadenceDetection?: boolean
 }
 
 export interface ListViewHandle {
@@ -578,6 +609,9 @@ function ListViewInner<T>(
     virtualizationThreshold = DEFAULT_VIRTUALIZATION_THRESHOLD,
     maxEstimatedRows = DEFAULT_MAX_ESTIMATED_ROWS,
     wheelMultiplier = 1.0,
+    scrollBehavior = "instant",
+    enableElasticEdges = false,
+    enableInputCadenceDetection = false,
     follow,
     maintainVisibleContentPosition = true,
     stickyBottom = false,
@@ -626,9 +660,13 @@ function ListViewInner<T>(
   const followInitialisedRef = useRef<boolean>(false)
   const prevAtBottomRef = useRef<boolean | null>(null)
   const prevMaxScrollRowRef = useRef<number | null>(null)
+  const prevTotalRowsRef = useRef<number | null>(null)
+  const prevViewportWidthRef = useRef<number | null>(null)
+  const followActiveRef = useRef<boolean>(resolvedFollow === "end")
   if (!followInitialisedRef.current) {
     followInitialisedRef.current = true
     pendingFollowSnapRef.current = resolvedFollow === "end"
+    followActiveRef.current = resolvedFollow === "end"
   }
 
   // ── Term context for cache capture width ─────────────────────────
@@ -698,6 +736,8 @@ function ListViewInner<T>(
     maxCoastRows: 30,
     wheelMultiplier,
     enableSameDirCompounding: true,
+    enableElasticEdges,
+    enableInputCadenceDetection,
     getInitialFloat: () => {
       // Cursor pinned to an endpoint? Seed straight to that edge so the
       // overscroll indicator fires immediately and rowsAboveViewport's
@@ -768,6 +808,7 @@ function ListViewInner<T>(
     (event: { deltaY: number }) => {
       const maxRow = maxScrollRowRef.current
       if (maxRow <= 0) return
+      if (event.deltaY < 0) followActiveRef.current = false
       isWheelDrivenRef.current = true
       scrollAnchoring.suppressOnce()
       physics.onWheel(event)
@@ -1114,12 +1155,7 @@ function ListViewInner<T>(
   // original estimate diverges from actual heights). When no
   // measurements have arrived yet, this is undefined and we fall back to
   // the original estimate.
-  let avgMeasuredHeight: number | undefined
-  if (measuredHeights.size > 0) {
-    let total = 0
-    for (const h of measuredHeights.values()) total += h
-    avgMeasuredHeight = total / measuredHeights.size
-  }
+  const avgMeasuredHeight = averageMeasuredHeightForWidth(measuredHeights, viewportSize?.w)
 
   // Build the effective-height estimator. This mirrors the per-item
   // resolution that `sumHeights` performs internally: measured cache
@@ -1569,31 +1605,37 @@ function ListViewInner<T>(
         if (next === seed) return
         scrollAnchoring.suppressOnce()
         isWheelDrivenRef.current = true
-        physics.setScrollFloat(next)
+        if (scrollBehavior === "smooth") physics.animateToFloat(next)
+        else physics.setScrollFloat(next)
         setScrollRow(Math.round(next))
         // Calling scrollBy means the user is taking explicit control of
         // the viewport — clear any pending follow="end" snap so the
         // viewport doesn't jump back to the tail on next render.
         pendingFollowSnapRef.current = false
+        followActiveRef.current = false
       },
       scrollToTop() {
         scrollAnchoring.suppressOnce()
         isWheelDrivenRef.current = true
-        physics.setScrollFloat(0)
+        if (scrollBehavior === "smooth") physics.animateToFloat(0)
+        else physics.setScrollFloat(0)
         setScrollRow(0)
         pendingFollowSnapRef.current = false
+        followActiveRef.current = false
       },
       scrollToBottom() {
         const maxRow = maxScrollRowRef.current
         scrollAnchoring.suppressOnce()
         isWheelDrivenRef.current = true
-        physics.setScrollFloat(maxRow)
+        if (scrollBehavior === "smooth") physics.animateToFloat(maxRow)
+        else physics.setScrollFloat(maxRow)
         setScrollRow(maxRow)
         // Re-arm follow="end" auto-follow — on the next render the
         // pending-snap path takes over and subsequent appends keep the
         // tail visible. No-op when `follow !== "end"`.
         if (resolvedFollow === "end") {
           pendingFollowSnapRef.current = true
+          followActiveRef.current = true
         }
       },
       getHistoryBuffer(): HistoryBuffer | null {
@@ -1603,7 +1645,7 @@ function ListViewInner<T>(
         return composedViewportRef.current
       },
     }),
-    [physics, scrollToItem, unmountedCount, resolvedFollow],
+    [physics, scrollBehavior, scrollToItem, unmountedCount, resolvedFollow],
   )
 
   // ── Mouse wheel handler ─────────────────────────────────────────
@@ -1823,6 +1865,11 @@ function ListViewInner<T>(
     const bottomRow = topRow + trackHeight
     const totalContentRows = heightModel.totalRows()
     const computedAtEnd = bottomRow >= totalContentRows - 0.5
+    const prevTotalRows = prevTotalRowsRef.current
+    const rowsChanged =
+      prevTotalRows !== null && Math.abs(totalRowsMeasured - prevTotalRows) > 0.5
+    const rowsChangedFromStableMeasurements =
+      rowsChanged && measuredHeights.size >= activeItems.length
 
     // Auto-follow: when `follow="end"` is engaged, snap scrollRow to
     // maxRow when:
@@ -1834,8 +1881,14 @@ function ListViewInner<T>(
     //      visible regardless of whether scrollRow was previously null
     //      (the legacy gate required wheel-driving mode — follow="end"
     //      owns the viewport unconditionally while atEnd holds).
-    const wasAtEndPrev = prevAtBottomRef.current === true
+    const wasAtEndPrev = prevAtBottomRef.current === true || followActiveRef.current
     const pendingSnap = pendingFollowSnapRef.current
+    const prevViewportWidth = prevViewportWidthRef.current
+    const viewportWidthChanged =
+      prevViewportWidth !== null &&
+      viewportSize?.w !== undefined &&
+      viewportSize.w > 0 &&
+      viewportSize.w !== prevViewportWidth
     // Gate the snap on a *measured viewport* — avoids snapping during
     // the first render where `trackHeight` falls back to 1
     // (viewportSize not yet measured) and `scrollableRows` collapses
@@ -1858,20 +1911,38 @@ function ListViewInner<T>(
     // maxRow by a few rows due to the in-flight grow).
     const prevMaxRow = prevMaxScrollRowRef.current
     const userScrolledAway =
-      scrollRow !== null && prevMaxRow !== null && scrollRow < prevMaxRow - 0.5
+      !followActiveRef.current &&
+      scrollRow !== null &&
+      prevMaxRow !== null &&
+      scrollRow < prevMaxRow - 0.5
     const shouldSnap =
       resolvedFollow === "end" &&
       viewportReady &&
       maxRow > 0 &&
       !userScrolledAway &&
-      (pendingSnap || (grew && wasAtEndPrev))
+      (pendingSnap || ((grew || rowsChangedFromStableMeasurements) && wasAtEndPrev))
     if (shouldSnap) {
       isWheelDrivenRef.current = true
       physics.setScrollFloat(maxRow)
       setScrollRow(maxRow)
       pendingFollowSnapRef.current = false
+      followActiveRef.current = true
+    } else if (
+      resolvedFollow === "end" &&
+      viewportWidthChanged &&
+      wasAtEndPrev &&
+      !userScrolledAway &&
+      prevTotalRows !== null
+    ) {
+      const desiredTopRow = topRow + (totalRowsMeasured - prevTotalRows)
+      const clampedTopRow = Math.max(0, Math.min(maxRow, desiredTopRow))
+      isWheelDrivenRef.current = true
+      physics.nudgeScrollFloat(clampedTopRow)
+      setScrollRow(Math.round(clampedTopRow))
     }
     prevMaxScrollRowRef.current = maxRow
+    prevTotalRowsRef.current = totalRowsMeasured
+    if ((viewportSize?.w ?? 0) > 0) prevViewportWidthRef.current = viewportSize!.w
 
     // When we're snapping, the post-snap state IS at-end — even though
     // the scrollRow we read above is stale (the previous frame's value,
@@ -1881,6 +1952,7 @@ function ListViewInner<T>(
     // doubling the callback emission rate. Bead:
     // `km-silvery.listview-followpolicy-split`.
     const atBottom = shouldSnap ? true : computedAtEnd
+    followActiveRef.current = resolvedFollow === "end" && (followActiveRef.current || atBottom)
 
     // Edge-triggered transition callback. Fires on the initial commit
     // unconditionally (sentinel `null`) and on every subsequent change.
@@ -1901,11 +1973,13 @@ function ListViewInner<T>(
     // path, where the first commit has size=0 (maxRow=0, snap deferred)
     // and a later commit has size=N (maxRow=real, snap fires).
     measuredHeights.size,
+    totalRowsMeasured,
     // `viewportSize.h` makes the effect re-run when the viewport
     // becomes measurable — gates the follow="end" first-paint snap on
     // a real `trackHeight` (without this, trackHeight=1 fallback fires
     // a phantom snap before viewport is known).
     viewportSize?.h,
+    viewportSize?.w,
     isHeightIndependent,
     heightModel,
     onAtBottomChange,
