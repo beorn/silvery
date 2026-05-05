@@ -530,30 +530,57 @@ export function replayAnsiWithStyles(
     // the column count of the base character.
     let grapheme = ""
     let advance = 0
+    // First-codepoint kind tracking — required for UAX #29 GB12/GB13
+    // (regional indicators only pair with another RI; they MUST NOT extend
+    // a non-RI base character). Also used to gate variation-selector and
+    // skin-tone modifier absorption to graphemes that started with a
+    // codepoint capable of taking that modifier — otherwise these can
+    // glue onto e.g. an ASCII space and form a 3-column "space + flag"
+    // cluster, which then writes 2 cells over the wrong columns and
+    // leaves stale prev pixels at cx+1 and cx+2.
+    let firstCpIsRegionalIndicator = false
+    let firstCpIsEmojiBase = false
 
     // Extract the initial codepoint
+    let firstCp: number
     const code0 = ansi.charCodeAt(i)
     if (code0 >= 0xd800 && code0 <= 0xdbff && i + 1 < ansi.length) {
       const low = ansi.charCodeAt(i + 1)
       if (low >= 0xdc00 && low <= 0xdfff) {
         grapheme = ansi[i]! + ansi[i + 1]!
         advance = 2
+        firstCp = ((code0 - 0xd800) << 10) + (low - 0xdc00) + 0x10000
       } else {
         grapheme = ansi[i]!
         advance = 1
+        firstCp = code0
       }
     } else {
       grapheme = ansi[i]!
       advance = 1
+      firstCp = code0
+    }
+    firstCpIsRegionalIndicator = firstCp >= 0x1f1e6 && firstCp <= 0x1f1ff
+    // Conservative emoji-base set: any codepoint that's already wide or
+    // pictographic. We use graphemeWidth(>=2) || the well-known emoji
+    // ranges. Skin-tone / VS-16 only meaningfully extend these.
+    if (firstCp >= 0x1f000) {
+      firstCpIsEmojiBase = true
+    } else if (firstCp >= 0x2600 && firstCp <= 0x27bf) {
+      // Misc Symbols + Dingbats (☀, ✈, etc.)
+      firstCpIsEmojiBase = true
     }
 
     // Absorb combining/extending codepoints that follow:
     // ZWJ (U+200D), variation selectors (U+FE0E-FE0F), combining marks
     // (U+0300-036F, U+20D0-20FF, U+1AB0-1AFF, U+FE20-FE2F), skin tone
-    // modifiers (U+1F3FB-1F3FF), regional indicators (U+1F1E6-1F1FF),
-    // enclosing keycap (U+20E3), and tag sequences (U+E0020-E007F).
+    // modifiers (U+1F3FB-1F3FF), regional indicators (U+1F1E6-1F1FF —
+    // GATED: only when the first codepoint is itself an RI, and at most
+    // ONE more RI per UAX #29 GB12/GB13), enclosing keycap (U+20E3), and
+    // tag sequences (U+E0020-E007F).
     {
       let j = i + advance
+      let absorbedRiCount = 0
       while (j < ansi.length) {
         const c = ansi.charCodeAt(j)
         // Decode the codepoint at j (handle surrogates)
@@ -572,24 +599,70 @@ export function replayAnsiWithStyles(
           cpLen = 1
         }
 
-        if (
-          cp === 0x200d || // ZWJ
-          cp === 0xfe0e ||
-          cp === 0xfe0f || // Variation selectors
+        // Truly-zero-width modifiers — always safe to absorb. These do
+        // not start new graphemes regardless of base.
+        const isCombiningMark =
           (cp >= 0x0300 && cp <= 0x036f) || // Combining diacritical marks
           (cp >= 0x20d0 && cp <= 0x20ff) || // Combining marks for symbols
           (cp >= 0x1ab0 && cp <= 0x1aff) || // Combining diacritical extended
           (cp >= 0xfe20 && cp <= 0xfe2f) || // Combining half marks
-          cp === 0x20e3 || // Combining enclosing keycap
-          (cp >= 0x1f3fb && cp <= 0x1f3ff) || // Skin tone modifiers
-          (cp >= 0x1f1e6 && cp <= 0x1f1ff) || // Regional indicator symbols
-          (cp >= 0xe0020 && cp <= 0xe007f) || // Tags
-          cp === 0xe0001 // Language tag begin
-        ) {
+          cp === 0x20e3 // Combining enclosing keycap
+        if (cp === 0x200d || isCombiningMark) {
           grapheme += ansi.slice(j, j + cpLen)
           advance += cpLen
           j += cpLen
           continue
+        }
+
+        // Variation selectors and skin-tone modifiers only extend an
+        // emoji-capable base. Without this gate, U+FE0F glues onto
+        // arbitrary preceding ASCII and inflates grapheme width.
+        if (cp === 0xfe0e || cp === 0xfe0f) {
+          if (firstCpIsEmojiBase) {
+            grapheme += ansi.slice(j, j + cpLen)
+            advance += cpLen
+            j += cpLen
+            continue
+          }
+          break
+        }
+        if (cp >= 0x1f3fb && cp <= 0x1f3ff) {
+          if (firstCpIsEmojiBase) {
+            grapheme += ansi.slice(j, j + cpLen)
+            advance += cpLen
+            j += cpLen
+            continue
+          }
+          break
+        }
+
+        // Tag sequences — only after an emoji base.
+        if ((cp >= 0xe0020 && cp <= 0xe007f) || cp === 0xe0001) {
+          if (firstCpIsEmojiBase) {
+            grapheme += ansi.slice(j, j + cpLen)
+            advance += cpLen
+            j += cpLen
+            continue
+          }
+          break
+        }
+
+        // Regional indicators — UAX #29 GB12/GB13. An RI may extend a
+        // grapheme ONLY when the grapheme started with an RI AND no
+        // additional RI has been absorbed yet (a flag is exactly two
+        // RIs; a third RI begins a new flag). This was the source of the
+        // "🇺🇸 written at col N renders at col N-1" bug: previously, any
+        // RI absorbed onto whatever preceded it (e.g., ' ' + RI + RI →
+        // grapheme " 🇺🇸" of width 3, smearing one column to the left).
+        if (cp >= 0x1f1e6 && cp <= 0x1f1ff) {
+          if (firstCpIsRegionalIndicator && absorbedRiCount === 0) {
+            grapheme += ansi.slice(j, j + cpLen)
+            advance += cpLen
+            j += cpLen
+            absorbedRiCount++
+            continue
+          }
+          break
         }
 
         // After ZWJ, absorb the next codepoint (the ZWJ target)
