@@ -229,4 +229,22 @@ describe("regression: status bar stale text (km-silvery.aichat-incr)", () => {
     expect(app.cell(col - 2, row).bg).toEqual({ r: 61, g: 67, b: 79 })
     expect(app.cell(col + 3, row).bg).toEqual({ r: 61, g: 67, b: 79 })
   })
+
+  test("sectioned render plan snapshots mutable cell patches before replay", () => {
+    function AbsoluteLabel() {
+      return (
+        <Box width={20} height={3} position="relative">
+          <Box position="absolute" top={1} right={1}>
+            <Text>text</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const render = createRenderer({ cols: 20, rows: 3 })
+    const app = render(<AbsoluteLabel />)
+
+    expect(app.text).toContain("text")
+    expect(app.text).not.toContain("tttt")
+  })
 })

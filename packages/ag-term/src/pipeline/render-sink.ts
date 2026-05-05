@@ -57,6 +57,20 @@ import type {
   TransferOp,
 } from "./render-plan"
 
+function cloneCellPatch(cell: Partial<Cell>): Partial<Cell> {
+  const out: Partial<Cell> = { ...cell }
+  if (cell.attrs) out.attrs = { ...cell.attrs }
+  return out
+}
+
+function cloneCell(cell: Cell): Cell {
+  return { ...cell, attrs: { ...cell.attrs } }
+}
+
+function cloneStyle(style: Style): Style {
+  return { ...style, attrs: { ...style.attrs } }
+}
+
 /**
  * The renderer's emission target. Each method classifies the intent of
  * the operation; the implementation decides what to do with it
@@ -462,7 +476,7 @@ export class PlanSink implements RenderSink {
       width,
       height,
       delta,
-      clearCell,
+      clearCell: clearCell ? cloneCellPatch(clearCell) : undefined,
     })
   }
 
@@ -471,15 +485,15 @@ export class PlanSink implements RenderSink {
   }
 
   emitClearCells(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
-    this.cleanupOps.push({ kind: "clearCells", x, y, width, height, cell })
+    this.cleanupOps.push({ kind: "clearCells", x, y, width, height, cell: cloneCellPatch(cell) })
   }
 
   emitSetCell(x: number, y: number, cell: Partial<Cell>): void {
-    this.paintOps.push({ kind: "setCell", x, y, cell })
+    this.paintOps.push({ kind: "setCell", x, y, cell: cloneCellPatch(cell) })
   }
 
   emitPaintFill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
-    this.paintOps.push({ kind: "paintFill", x, y, width, height, cell })
+    this.paintOps.push({ kind: "paintFill", x, y, width, height, cell: cloneCellPatch(cell) })
   }
 
   emitFillBg(x: number, y: number, width: number, height: number, bg: Color): void {
@@ -487,7 +501,7 @@ export class PlanSink implements RenderSink {
   }
 
   emitRestyleRegion(x: number, y: number, width: number, height: number, style: Style): void {
-    this.paintOps.push({ kind: "restyleRegion", x, y, width, height, style })
+    this.paintOps.push({ kind: "restyleRegion", x, y, width, height, style: cloneStyle(style) })
   }
 
   emitMergeAttrs(
@@ -504,7 +518,7 @@ export class PlanSink implements RenderSink {
       y,
       width,
       height,
-      attrs,
+      attrs: { ...attrs },
       underlineColor,
     })
   }
@@ -514,7 +528,10 @@ export class PlanSink implements RenderSink {
   }
 
   setOutlineSnapshots(snapshots: ReadonlyArray<{ x: number; y: number; cell: Cell }>): void {
-    this.postStateOps.push({ kind: "setOutlineSnapshots", snapshots: snapshots.slice() })
+    this.postStateOps.push({
+      kind: "setOutlineSnapshots",
+      snapshots: snapshots.map((snapshot) => ({ ...snapshot, cell: cloneCell(snapshot.cell) })),
+    })
   }
 
   /**
