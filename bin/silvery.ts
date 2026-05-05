@@ -11,13 +11,18 @@ import { fileURLToPath } from "node:url"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+function readPackageJson(path: string): { name?: string; version?: string } {
+  const value: unknown = JSON.parse(readFileSync(path, "utf8"))
+  return value && typeof value === "object" ? (value as { name?: string; version?: string }) : {}
+}
+
 function findPackageRoot(startDir: string): string {
   let dir = startDir
   for (let i = 0; i < 10; i++) {
     const pkg = join(dir, "package.json")
     if (existsSync(pkg)) {
       try {
-        const json = JSON.parse(readFileSync(pkg, "utf8"))
+        const json = readPackageJson(pkg)
         if (json.name === "silvery") return dir
       } catch {}
     }
@@ -32,7 +37,7 @@ const root = findPackageRoot(__dirname)
 const args = process.argv.slice(2)
 
 if (args.includes("--version") || args.includes("-v")) {
-  const pkg = JSON.parse(readFileSync(resolve(root, "package.json"), "utf8"))
+  const pkg = readPackageJson(resolve(root, "package.json"))
   console.log(`silvery ${pkg.version}`)
   process.exit(0)
 }

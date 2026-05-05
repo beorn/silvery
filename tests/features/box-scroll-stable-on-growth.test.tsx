@@ -30,8 +30,8 @@ import { createRenderer, stripAnsi } from "@silvery/test"
 import { Box, Text } from "silvery"
 
 // Find the y-coordinate (row index) of the first cell containing a needle.
-function findRowOf(app: ReturnType<typeof createRenderer>, needle: string): number {
-  const text = stripAnsi((app as any).text as string)
+function findRowOf(app: { text: string }, needle: string): number {
+  const text = stripAnsi(app.text)
   const lines = text.split("\n")
   return lines.findIndex((l) => l.includes(needle))
 }

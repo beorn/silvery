@@ -94,7 +94,7 @@ const tagColors: Record<string, string> = {
 function Tag({ name }: { name: string }) {
   const color = tagColors[name] ?? "$fg-muted"
   return (
-    <Text color={color} color="$muted">
+    <Text color={color}>
       #{name}
     </Text>
   )

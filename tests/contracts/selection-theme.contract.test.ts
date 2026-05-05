@@ -50,7 +50,7 @@ function makePaintBuffer(text: string, width = 20) {
   for (let x = 0; x < text.length && x < width; x++) {
     buf.setCell(x, 0, { char: text[x]!, fg: null, bg: null })
   }
-  return createBuffer(buf, null, undefined)
+  return createBuffer(buf, null as never, undefined)
 }
 
 function selectionState(startCol: number, endCol: number): TerminalSelectionState {

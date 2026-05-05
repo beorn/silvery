@@ -282,8 +282,12 @@ describe("useScopeEffect", () => {
 
     function Probe(): React.ReactElement {
       useScopeEffect((scope) => {
-        scope.defer(() => events.push("scope-defer"))
-        return () => events.push("user-cleanup")
+        scope.defer(() => {
+          events.push("scope-defer")
+        })
+        return () => {
+          events.push("user-cleanup")
+        }
       }, [])
       return <Text>probe</Text>
     }
@@ -312,7 +316,9 @@ describe("useScopeEffect", () => {
     function Probe(): React.ReactElement {
       useScopeEffect((scope) => {
         child = scope
-        scope.defer(() => deferCalls.push("child-defer"))
+        scope.defer(() => {
+          deferCalls.push("child-defer")
+        })
       }, [])
       return <Text>probe</Text>
     }

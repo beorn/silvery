@@ -10,6 +10,7 @@
  */
 
 import type { Color, TerminalBuffer } from "./buffer"
+import { parseColor } from "./pipeline/render-helpers"
 import {
   type SelectionRange,
   type SelectionScope,
@@ -23,11 +24,13 @@ import {
 /**
  * Selection theme tokens. If provided, these override the fallback fg/bg swap.
  */
+export type SelectionColor = Color | string
+
 export interface SelectionTheme {
   /** Foreground color for selected text */
-  selectionFg?: Color
+  selectionFg?: SelectionColor
   /** Background color for selected text */
-  selectionBg?: Color
+  selectionBg?: SelectionColor
 }
 
 /**
@@ -46,9 +49,15 @@ export interface SelectionTheme {
 export interface SelectionCellChange {
   col: number
   row: number
-  fg: Color
-  bg: Color
+  fg: SelectionColor
+  bg: SelectionColor
   inverseAttr?: boolean
+}
+
+function normalizeSelectionColor(color: SelectionColor | undefined): Color | undefined {
+  if (color === undefined) return undefined
+  if (typeof color === "string") return parseColor(color)
+  return color
 }
 
 // ============================================================================
@@ -103,8 +112,8 @@ export function composeSelectionCells(
       const cellFg = buffer.getCellFg(col, row)
       const cellBg = buffer.getCellBg(col, row)
 
-      let newFg: Color
-      let newBg: Color
+      let newFg: SelectionColor
+      let newBg: SelectionColor
       let inverseAttr = false
 
       if (theme?.selectionBg != null) {
@@ -162,8 +171,8 @@ export function applySelectionToBuffer(
     } else {
       buffer.setCell(change.col, change.row, {
         ...cell,
-        fg: change.fg,
-        bg: change.bg,
+        fg: normalizeSelectionColor(change.fg) ?? null,
+        bg: normalizeSelectionColor(change.bg) ?? null,
       })
     }
   }
@@ -237,8 +246,8 @@ export function composeSearchHighlightCells(
       const cellFg = buffer.getCellFg(col, row)
       const cellBg = buffer.getCellBg(col, row)
 
-      let newFg: Color
-      let newBg: Color
+      let newFg: SelectionColor
+      let newBg: SelectionColor
       let inverseAttr = false
 
       if (theme?.selectionBg != null) {

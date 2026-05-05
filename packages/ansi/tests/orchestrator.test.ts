@@ -117,13 +117,13 @@ describe("detectSchemeTheme — shortcut", () => {
     const theme = await detectSchemeTheme({ override: defaultDarkScheme })
     expect(theme).toBeDefined()
     expect(theme.fg).toBeDefined()
-    expect(theme.primary).toBeDefined()
+    expect(theme["fg-accent"]).toBeDefined()
   })
 
   it("override forwarding works", async () => {
     const custom: ColorScheme = { ...defaultDarkScheme, primary: "#FF5500" }
     const theme = await detectSchemeTheme({ override: custom })
-    // Primary came from the override (OKLCH-adjusted for contrast, but within 10 hue degrees)
-    expect(theme.primary).toMatch(/^#[0-9A-Fa-f]{6}$/)
+    // Accent came from the override (OKLCH-adjusted for contrast, but within 10 hue degrees)
+    expect(theme["fg-accent"]).toMatch(/^#[0-9A-Fa-f]{6}$/)
   })
 })

@@ -13,6 +13,7 @@ import { createRenderer } from "@silvery/test"
 import { defaultDarkScheme, deriveTheme } from "@silvery/ansi"
 
 const defaultTheme = deriveTheme(defaultDarkScheme)
+const defaultThemeRecord = defaultTheme as unknown as Record<string, string>
 
 function Capture({ onTheme }: { onTheme: (t: unknown) => void }) {
   const theme = React.useContext(ThemeContext)
@@ -29,7 +30,7 @@ describe("ThemeProvider — v2 tokens API", () => {
         <Capture onTheme={(t) => (captured = t)} />
       </ThemeProvider>,
     )
-    expect((captured as Record<string, unknown>).primary).toBe(defaultTheme.primary)
+    expect((captured as Record<string, unknown>)["fg-accent"]).toBe(defaultThemeRecord["fg-accent"])
   })
 
   it("tokens prop — sparse merge over parent", () => {
@@ -37,15 +38,15 @@ describe("ThemeProvider — v2 tokens API", () => {
     const render = createRenderer({ cols: 20, rows: 2 })
     render(
       <ThemeProvider theme={defaultTheme}>
-        <ThemeProvider tokens={{ primary: "#FF00FF" } as never}>
+        <ThemeProvider tokens={{ "fg-accent": "#FF00FF" } as never}>
           <Capture onTheme={(t) => (captured = t)} />
         </ThemeProvider>
       </ThemeProvider>,
     )
     const c = captured as Record<string, string>
-    expect(c.primary).toBe("#FF00FF") // overridden
-    expect(c.fg).toBe(defaultTheme.fg) // inherited from parent
-    expect(c.bg).toBe(defaultTheme.bg) // inherited from parent
+    expect(c["fg-accent"]).toBe("#FF00FF") // overridden
+    expect(c.fg).toBe(defaultThemeRecord.fg) // inherited from parent
+    expect(c.bg).toBe(defaultThemeRecord.bg) // inherited from parent
   })
 
   it("tokens prop — custom tokens live alongside standard", () => {
@@ -62,7 +63,7 @@ describe("ThemeProvider — v2 tokens API", () => {
     expect(c["priority-p0"]).toBe("#E53935")
     expect(c["app-brand"]).toBe("#5B8DEF")
     // Standard tokens still inherited
-    expect(c.primary).toBe(defaultTheme.primary)
+    expect(c["fg-accent"]).toBe(defaultThemeRecord["fg-accent"])
   })
 
   it("legacy theme prop still works", () => {
@@ -73,14 +74,14 @@ describe("ThemeProvider — v2 tokens API", () => {
         <Capture onTheme={(t) => (captured = t)} />
       </ThemeProvider>,
     )
-    expect((captured as Record<string, unknown>).primary).toBe(defaultTheme.primary)
+    expect((captured as Record<string, unknown>)["fg-accent"]).toBe(defaultThemeRecord["fg-accent"])
   })
 
   it("passing both tokens and theme throws", () => {
     const render = createRenderer({ cols: 20, rows: 2 })
     expect(() =>
       render(
-        <ThemeProvider tokens={{ primary: "#F00" } as never} theme={defaultTheme}>
+        <ThemeProvider tokens={{ "fg-accent": "#F00" } as never} theme={defaultTheme}>
           <Capture onTheme={() => {}} />
         </ThemeProvider>,
       ),

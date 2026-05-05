@@ -80,7 +80,7 @@ describe("defineTokens — validation", () => {
 describe("resolveCustomToken — tier-aware lookup", () => {
   const registry = defineTokens({
     "$priority-p0": { derive: (s) => s.brightRed },
-    "$priority-p1": { derive: (_s, t) => blend(t.warning, t.bg, 0.2) },
+    "$priority-p1": { derive: (_s, t) => blend(t["fg-warning"], t.bg, 0.2) },
     "$km-brand": { rgb: "#5B8DEF", ansi16: "brightBlue", attrs: ["bold"] },
   })
 
@@ -123,7 +123,7 @@ describe("resolveCustomToken — tier-aware lookup", () => {
 
 describe("resolveCustomToken — derive accepts both scheme and theme", () => {
   const registry = defineTokens({
-    $combo: { derive: (s, t) => blend(s.foreground, t.muted, 0.5) },
+    $combo: { derive: (s, t) => blend(s.foreground, t["fg-muted"], 0.5) },
   })
 
   it("derive function receives both arguments", () => {

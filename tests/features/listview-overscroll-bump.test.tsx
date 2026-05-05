@@ -68,7 +68,7 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
         items={ITEMS}
         height={4}
         nav
-        cursor={0}
+        cursorKey={0}
         renderItem={(item) => <Text>{item}</Text>}
       />,
     )
@@ -83,7 +83,7 @@ describe("ListView overscroll bump — already-at-edge intent", () => {
         items={ITEMS}
         height={4}
         nav
-        cursor={2}
+        cursorKey={2}
         renderItem={(item) => <Text>{item}</Text>}
       />,
     )

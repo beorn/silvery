@@ -210,7 +210,7 @@ const prioritySymbols: Record<string, { symbol: string; color: string }> = {
 function Tag({ name }: { name: string }) {
   const color = tagColors[name] ?? "$fg-muted"
   return (
-    <Text color={color} color="$muted">
+    <Text color={color}>
       #{name}
     </Text>
   )
@@ -294,10 +294,10 @@ function StatusBar({ focusedId }: { focusedId: string | null }) {
 
   return (
     <Box paddingX={1} gap={2}>
-      <Text color="$fg-muted" color="$muted">
+      <Text color="$muted">
         ←↑↓→/hjkl navigate
       </Text>
-      <Text color="$fg-muted" color="$muted">
+      <Text color="$muted">
         q quit
       </Text>
       {focusedCard && (

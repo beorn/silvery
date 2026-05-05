@@ -112,6 +112,7 @@ async function runCapturing(
         mouse: false,
         syncOutput: false,
         unicode: true,
+        overline: true,
         underlineStyles: ["double", "curly", "dotted", "dashed"],
         underlineColor: true,
         textSizing: false,

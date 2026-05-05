@@ -40,7 +40,7 @@ import React from "react"
 import { describe, test, expect } from "vitest"
 import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
-import { run } from "../../packages/ag-term/src/runtime/run"
+import { run, type RunOptions } from "../../packages/ag-term/src/runtime/run"
 import { Box, Text } from "../../src/index.js"
 
 const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms))
@@ -71,7 +71,7 @@ function countInverseOnRow(term: ReturnType<typeof createTermless>, row: number,
   let count = 0
   for (let c = 0; c < endCol; c++) {
     const cell = term.cell(row, c)
-    if (cell.inverse || cell.bg !== null) count++
+    if (Boolean((cell as { inverse?: boolean }).inverse) || cell.bg !== null) count++
   }
   return count
 }
@@ -83,7 +83,7 @@ describe("selection — buffer-state architecture", () => {
     const handle = await run(<SelectableContent />, term, {
       selection: true,
       mouse: true,
-    } as Parameters<typeof run>[2])
+    } as Partial<RunOptions>)
     await settle()
 
     // Drag a selection across cols 5..15 on row 0.
@@ -134,7 +134,7 @@ describe("selection — buffer-state architecture", () => {
     const handle = await run(<SelectableContent />, term, {
       selection: true,
       mouse: true,
-    } as Parameters<typeof run>[2])
+    } as Partial<RunOptions>)
     await settle()
 
     // First drag: cols 2..10 on row 0.
@@ -152,7 +152,7 @@ describe("selection — buffer-state architecture", () => {
     const inverseAfterSecond: number[] = []
     for (let c = 0; c < 40; c++) {
       const cell = term.cell(0, c)
-      if (cell.inverse || cell.bg !== null) inverseAfterSecond.push(c)
+      if (Boolean((cell as { inverse?: boolean }).inverse) || cell.bg !== null) inverseAfterSecond.push(c)
     }
 
     // Expect highlighted cells inside [20, 28] only — none in [2, 10].

@@ -25,7 +25,11 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 
 import { Box, Text } from "../../src/index.js"
-import { run, _resetRunOptionsWarningForTesting } from "../../packages/ag-term/src/runtime/run"
+import {
+  run,
+  _resetRunOptionsWarningForTesting,
+  type RunOptions,
+} from "../../packages/ag-term/src/runtime/run"
 import { createTerminalProfile } from "../../packages/ansi/src/profile"
 
 // ============================================================================
@@ -340,7 +344,7 @@ describe("contract: RunOptions.profile", () => {
         kittyKeyboard: true,
       },
       colorLevel: "mono",
-    } as unknown as Parameters<typeof run>[2]
+    } as unknown as Partial<RunOptions>
     const handle = await run(<Text>hi</Text>, term, badOptions)
     await settle(80)
     // Warning fired with the expected migration hint.

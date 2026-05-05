@@ -45,12 +45,12 @@ function assertAllHex(theme: Theme, label: string): void {
 }
 
 describe("Theme objects carry pure hex values (no ANSI slot name strings)", () => {
-  test("ansi16DarkTheme.primary is hex", () => {
-    expect(HEX_RE.test(ansi16DarkTheme.primary)).toBe(true)
+  test("ansi16DarkTheme fg-accent is hex", () => {
+    expect(HEX_RE.test(ansi16DarkTheme["fg-accent"])).toBe(true)
   })
 
-  test("ansi16LightTheme.primary is hex", () => {
-    expect(HEX_RE.test(ansi16LightTheme.primary)).toBe(true)
+  test("ansi16LightTheme fg-accent is hex", () => {
+    expect(HEX_RE.test(ansi16LightTheme["fg-accent"])).toBe(true)
   })
 
   test("ansi16DarkTheme — all color fields are hex", () => {

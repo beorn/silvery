@@ -43,8 +43,9 @@ function makeBuffer(width: number, height: number, lines: string[]): TerminalBuf
 function makeOutputContext(): OutputContext {
   return {
     caps: {
-      underlineStyles: true,
+      underlineStyles: ["single", "double", "curly", "dotted", "dashed"],
       underlineColor: true,
+      overline: true,
       colorLevel: "truecolor",
     },
     measurer: null,

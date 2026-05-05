@@ -43,7 +43,7 @@ describe("probe → fingerprint → loadTheme — end-to-end (synthetic input)",
 
     const theme = loadTheme(match!.scheme, { enforce: "strict" })
     expect(theme.fg).toBeDefined()
-    expect(theme.primary).toBeDefined()
+    expect(theme["fg-accent"]).toBeDefined()
   })
 
   it("loadTheme with wcag: true passes for default-dark", () => {

@@ -19,6 +19,8 @@ import { Box, TextArea } from "silvery"
 // Helpers
 // ============================================================================
 
+type Edge = "top" | "bottom" | "left" | "right"
+
 /**
  * Uncontrolled TextArea wrapper. Uses `defaultValue` (not `value`) so the
  * cursor starts at `defaultValue.length` (end of buffer) — useTextArea seeds
@@ -46,7 +48,7 @@ function CursorProbe({
 
 describe("TextArea onEdge", () => {
   test("Up at first row fires onEdge('top')", async () => {
-    const onEdge = vi.fn(() => false)
+    const onEdge = vi.fn<(edge: Edge) => boolean>(() => false)
     const r = createRenderer({ cols: 40, rows: 10 })
     // Two-line content, cursor starts at end (offset = full length, which is on row 1).
     // Press Up to move to row 0 first.
@@ -60,7 +62,7 @@ describe("TextArea onEdge", () => {
   })
 
   test("Down at last row fires onEdge('bottom')", async () => {
-    const onEdge = vi.fn(() => false)
+    const onEdge = vi.fn<(edge: Edge) => boolean>(() => false)
     const r = createRenderer({ cols: 40, rows: 10 })
     // Cursor starts at end of "line2" (row 1, last row).
     const app = r(<CursorProbe defaultValue={"line1\nline2"} onEdge={onEdge} />)
@@ -70,7 +72,7 @@ describe("TextArea onEdge", () => {
   })
 
   test("Left at offset 0 fires onEdge('left')", async () => {
-    const onEdge = vi.fn(() => false)
+    const onEdge = vi.fn<(edge: Edge) => boolean>(() => false)
     const r = createRenderer({ cols: 40, rows: 10 })
     const app = r(<CursorProbe defaultValue="hello" onEdge={onEdge} />)
 
@@ -83,7 +85,7 @@ describe("TextArea onEdge", () => {
   })
 
   test("Right at end-of-buffer fires onEdge('right')", async () => {
-    const onEdge = vi.fn(() => false)
+    const onEdge = vi.fn<(edge: Edge) => boolean>(() => false)
     const r = createRenderer({ cols: 40, rows: 10 })
     // Cursor starts at end ("hello".length = 5).
     const app = r(<CursorProbe defaultValue="hello" onEdge={onEdge} />)
@@ -97,7 +99,7 @@ describe("TextArea onEdge", () => {
     // keep cursor in place either way (clamped), so we focus on Left at offset 0
     // where consume-vs-fallthrough is observable in the *number of calls*.
     let consume = true
-    const onEdge = vi.fn(() => consume)
+    const onEdge = vi.fn<(edge: Edge) => boolean>(() => consume)
     const r = createRenderer({ cols: 40, rows: 10 })
     const app = r(<CursorProbe defaultValue="abc" onEdge={onEdge} />)
 
@@ -143,7 +145,7 @@ describe("TextArea onEdge", () => {
   })
 
   test("Shift+arrow at boundary does NOT fire onEdge (selection extension)", async () => {
-    const onEdge = vi.fn(() => true)
+    const onEdge = vi.fn<(edge: Edge) => boolean>(() => true)
     const r = createRenderer({ cols: 40, rows: 10 })
     const app = r(<CursorProbe defaultValue="hello" onEdge={onEdge} />)
 
@@ -167,7 +169,7 @@ describe("TextArea onEdge", () => {
   })
 
   test("Up at row > 0 does NOT fire onEdge (normal cursor movement)", async () => {
-    const onEdge = vi.fn(() => false)
+    const onEdge = vi.fn<(edge: Edge) => boolean>(() => false)
     const r = createRenderer({ cols: 40, rows: 10 })
     const app = r(<CursorProbe defaultValue={"line1\nline2\nline3"} onEdge={onEdge} />)
 

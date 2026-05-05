@@ -25,7 +25,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { createScope, setDisposeErrorSink, type DisposeErrorContext } from "@silvery/scope"
 import type { AgNode } from "@silvery/ag/types"
 import { createRenderer } from "@silvery/test"
-import { Box } from "../src/components/Box"
+import { Box, type BoxHandle } from "../src/components/Box"
 import { Text } from "../src/components/Text"
 import { attachNodeScope, detachNodeScope, getNodeScope } from "../src/reconciler/host-config"
 
@@ -61,7 +61,7 @@ const NodeProbe = forwardRef<NodeProbeHandle, { children?: React.ReactNode }>(fu
   { children },
   ref,
 ) {
-  const innerRef = useRef<{ getNode(): AgNode | null }>(null)
+  const innerRef = useRef<BoxHandle>(null)
   useImperativeHandle(ref, () => ({
     getNode: () => innerRef.current?.getNode() ?? null,
   }))

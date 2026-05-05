@@ -112,8 +112,12 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
         // (Inside React, this is fine because the effect of registering on
         // a *root scope* is observed only by the test, not by render.)
         queueMicrotask(() => {
-          root.defer(() => order.push("first-registered"))
-          root.defer(() => order.push("second-registered"))
+          root.defer(() => {
+            order.push("first-registered")
+          })
+          root.defer(() => {
+            order.push("second-registered")
+          })
         })
         return true
       })
@@ -147,7 +151,9 @@ describe("createApp/run wires @silvery/scope as the app root scope", () => {
     function Owner(): React.ReactElement {
       useScopeEffect((scope) => {
         child = scope
-        scope.defer(() => events.push("child-defer"))
+        scope.defer(() => {
+          events.push("child-defer")
+        })
       }, [])
       return <Text>owner</Text>
     }
