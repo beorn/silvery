@@ -118,6 +118,7 @@ export function usePopover(): PopoverCtxValue | null {
 export function PopoverProvider({ children }: { children: React.ReactNode }): React.ReactElement {
   const [state, setState] = useState<PopoverState>({ content: null, anchor: null })
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const overlayHoveredRef = useRef(false)
 
   const clearHide = useCallback(() => {
     if (hideTimerRef.current) {
@@ -128,27 +129,43 @@ export function PopoverProvider({ children }: { children: React.ReactNode }): Re
 
   const show = useCallback(
     (content: PopoverContent, anchor: PopoverAnchor) => {
+      if (overlayHoveredRef.current) return
       clearHide()
       setState({ content, anchor })
     },
     [clearHide],
   )
 
-  const hide = useCallback((options?: { immediate?: boolean }) => {
-    clearHide()
-    if (options?.immediate) {
-      setState({ content: null, anchor: null })
-      return
-    }
-    hideTimerRef.current = setTimeout(() => {
-      hideTimerRef.current = null
-      setState({ content: null, anchor: null })
-    }, HIDE_DELAY_MS)
-  }, [clearHide])
+  const hide = useCallback(
+    (options?: { immediate?: boolean }) => {
+      clearHide()
+      if (options?.immediate) {
+        overlayHoveredRef.current = false
+        setState({ content: null, anchor: null })
+        return
+      }
+      if (overlayHoveredRef.current) return
+      hideTimerRef.current = setTimeout(() => {
+        hideTimerRef.current = null
+        setState({ content: null, anchor: null })
+      }, HIDE_DELAY_MS)
+    },
+    [clearHide],
+  )
 
   const cancelHide = useCallback(() => {
     clearHide()
   }, [clearHide])
+
+  const onOverlayEnter = useCallback(() => {
+    overlayHoveredRef.current = true
+    clearHide()
+  }, [clearHide])
+
+  const onOverlayLeave = useCallback(() => {
+    overlayHoveredRef.current = false
+    hide()
+  }, [hide])
 
   useEffect(() => clearHide, [clearHide])
 
@@ -160,7 +177,7 @@ export function PopoverProvider({ children }: { children: React.ReactNode }): Re
   return (
     <PopoverCtx.Provider value={value}>
       {children}
-      <PopoverOverlay state={state} onEnter={cancelHide} onLeave={hide} />
+      <PopoverOverlay state={state} onEnter={onOverlayEnter} onLeave={onOverlayLeave} />
     </PopoverCtx.Provider>
   )
 }
@@ -176,7 +193,10 @@ export function PopoverProvider({ children }: { children: React.ReactNode }): Re
  * interactive rows. The default `cmd-hover` trigger requires both hover and
  * Cmd/Super; plain-hover consumers must opt in with `{ trigger: "hover" }`.
  */
-export function usePopoverHandlers(content: PopoverContent, options?: PopoverHandlerOptions): {
+export function usePopoverHandlers(
+  content: PopoverContent,
+  options?: PopoverHandlerOptions,
+): {
   isHovered: boolean
   onMouseEnter: (e: SilveryMouseEvent) => void
   onMouseLeave: (e: SilveryMouseEvent) => void
@@ -195,7 +215,10 @@ export function usePopoverHandlers(content: PopoverContent, options?: PopoverHan
     cmdHeldRef.current = cmdHeld
   }, [cmdHeld])
 
-  const isArmed = useCallback(() => trigger === "hover" || cmdHeldRef.current || lastModifierState.super, [trigger])
+  const isArmed = useCallback(
+    () => trigger === "hover" || cmdHeldRef.current || lastModifierState.super,
+    [trigger],
+  )
 
   const clearPending = useCallback(() => {
     if (pendingShowRef.current) {
