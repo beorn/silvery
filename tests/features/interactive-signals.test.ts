@@ -10,7 +10,7 @@
  * - Focus tracking via focus manager
  */
 
-import { describe, test, expect } from "vitest"
+import { describe, test, expect, vi } from "vitest"
 import type { AgNode, BoxProps } from "../../packages/ag/src/types"
 import { INITIAL_EPOCH } from "../../packages/ag/src/epoch"
 import {
@@ -36,13 +36,17 @@ import type { ParsedMouse } from "../../packages/ag-term/src/mouse"
 /** Create a minimal AgNode stub for interactive signal tests. */
 function stubNode(
   id: string,
-  opts?: { children?: AgNode[]; rect?: { x: number; y: number; width: number; height: number } },
+  opts?: {
+    children?: AgNode[]
+    mouseCapture?: boolean
+    rect?: { x: number; y: number; width: number; height: number }
+  },
 ): AgNode {
   const children = opts?.children ?? []
   const rect = opts?.rect ?? null
   const node: AgNode = {
     type: "silvery-box",
-    props: { testID: id, focusable: true } as BoxProps,
+    props: { testID: id, focusable: true, mouseCapture: opts?.mouseCapture } as BoxProps,
     children,
     parent: null,
     layoutNode: {} as any,
@@ -73,10 +77,23 @@ function makeParsedMouse(
     x,
     y,
     button,
+    coordinateMode: "cell",
     ctrl: false,
     meta: false,
     shift: false,
   }
+}
+
+function createMouseTree(options?: { childMouseCapture?: boolean }) {
+  const child = stubNode("child", {
+    mouseCapture: options?.childMouseCapture,
+    rect: { x: 5, y: 5, width: 10, height: 5 },
+  })
+  const root = stubNode("root", {
+    children: [child],
+    rect: { x: 0, y: 0, width: 80, height: 24 },
+  })
+  return { child, root, state: createMouseEventProcessor() }
 }
 
 // ============================================================================
@@ -183,12 +200,7 @@ describe("clearInteractiveState", () => {
 
 describe("hover tracking via processMouseEvent", () => {
   test("mouseenter sets hovered=true, mouseleave sets hovered=false", () => {
-    const child = stubNode("child", { rect: { x: 5, y: 5, width: 10, height: 5 } })
-    const root = stubNode("root", {
-      children: [child],
-      rect: { x: 0, y: 0, width: 80, height: 24 },
-    })
-    const state = createMouseEventProcessor()
+    const { child, root, state } = createMouseTree()
 
     // Move into child — triggers mouseenter
     processMouseEvent(state, makeParsedMouse("move", 7, 7), root)
@@ -198,6 +210,17 @@ describe("hover tracking via processMouseEvent", () => {
     processMouseEvent(state, makeParsedMouse("move", 0, 0), root)
     expect(child.interactiveState?.hovered).toBe(false)
   })
+
+  test("moving outside the hit tree clears hover state", () => {
+    const { child, root, state } = createMouseTree()
+
+    processMouseEvent(state, makeParsedMouse("move", 7, 7), root)
+    expect(child.interactiveState?.hovered).toBe(true)
+
+    processMouseEvent(state, makeParsedMouse("move", 90, 30), root)
+    expect(child.interactiveState?.hovered).toBe(false)
+    expect(state.hoverPath).toEqual([])
+  })
 })
 
 // ============================================================================
@@ -206,12 +229,7 @@ describe("hover tracking via processMouseEvent", () => {
 
 describe("armed tracking via processMouseEvent", () => {
   test("mousedown sets armed=true, mouseup clears it", () => {
-    const child = stubNode("child", { rect: { x: 5, y: 5, width: 10, height: 5 } })
-    const root = stubNode("root", {
-      children: [child],
-      rect: { x: 0, y: 0, width: 80, height: 24 },
-    })
-    const state = createMouseEventProcessor()
+    const { child, root, state } = createMouseTree()
 
     // Mouse down on child
     processMouseEvent(state, makeParsedMouse("down", 7, 7), root)
@@ -220,6 +238,63 @@ describe("armed tracking via processMouseEvent", () => {
     // Mouse up on child
     processMouseEvent(state, makeParsedMouse("up", 7, 7), root)
     expect(child.interactiveState?.armed).toBe(false)
+  })
+
+  test("dragging a captured press outside the hit tree releases armed state after a grace period", () => {
+    vi.useFakeTimers()
+    try {
+      const { child, root, state } = createMouseTree({ childMouseCapture: true })
+
+      processMouseEvent(state, makeParsedMouse("down", 7, 7), root)
+      expect(child.interactiveState?.armed).toBe(true)
+
+      processMouseEvent(state, makeParsedMouse("move", 90, 30), root)
+      vi.advanceTimersByTime(1_999)
+      expect(child.interactiveState?.armed).toBe(true)
+
+      vi.advanceTimersByTime(1)
+      expect(child.interactiveState?.armed).toBe(false)
+      expect(state.mouseDownTarget).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("re-entering the hit tree cancels the captured-press release grace timer", () => {
+    vi.useFakeTimers()
+    try {
+      const { child, root, state } = createMouseTree({ childMouseCapture: true })
+
+      processMouseEvent(state, makeParsedMouse("down", 7, 7), root)
+      processMouseEvent(state, makeParsedMouse("move", 90, 30), root)
+      vi.advanceTimersByTime(1_500)
+      processMouseEvent(state, makeParsedMouse("move", 7, 7), root)
+      vi.advanceTimersByTime(1_000)
+
+      expect(child.interactiveState?.armed).toBe(true)
+      expect(state.mouseDownTarget).toBe(child)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("captured-press grace release dispatches mouseup with an up native action", () => {
+    vi.useFakeTimers()
+    try {
+      const { child, root, state } = createMouseTree({ childMouseCapture: true })
+      const nativeActions: ParsedMouse["action"][] = []
+      ;(child.props as BoxProps).onMouseUp = (event) => {
+        nativeActions.push((event.nativeEvent as ParsedMouse).action)
+      }
+
+      processMouseEvent(state, makeParsedMouse("down", 7, 7), root)
+      processMouseEvent(state, makeParsedMouse("move", 90, 30), root)
+      vi.advanceTimersByTime(2_000)
+
+      expect(nativeActions).toEqual(["up"])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

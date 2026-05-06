@@ -780,6 +780,10 @@ function findMouseCaptureTarget(node: AgNode | null): AgNode | null {
 
 const MOUSE_CAPTURE_OUTSIDE_GRACE_MS = 2000
 
+function mouseUpParsed(parsed: ParsedMouse): ParsedMouse {
+  return parsed.action === "up" ? parsed : { ...parsed, action: "up" }
+}
+
 /**
  * Update keyboard modifier state from a parsed key event.
  * Call this for every keyboard event so mouse events can include accurate modifiers.
@@ -808,12 +812,10 @@ export function updateKeyboardModifiers(
   }
 }
 
-function releaseMousePress(
-  state: MouseEventProcessorState,
-  parsed: ParsedMouse,
-): boolean {
+function releaseMousePress(state: MouseEventProcessorState, parsed: ParsedMouse): boolean {
   let defaultPrevented = false
   const dispatchTarget = state.mouseCaptureTarget
+  const releaseParsed = mouseUpParsed(parsed)
   cancelOutsideCaptureRelease(state)
 
   if (state.mouseDownTarget) {
@@ -823,10 +825,10 @@ function releaseMousePress(
   if (dispatchTarget) {
     const event = createMouseEvent(
       "mouseup",
-      parsed.x,
-      parsed.y,
+      releaseParsed.x,
+      releaseParsed.y,
       dispatchTarget,
-      parsed,
+      releaseParsed,
       state.keyboardModifiers,
     )
     dispatchMouseEvent(event)
@@ -847,24 +849,18 @@ function cancelOutsideCaptureRelease(state: MouseEventProcessorState): void {
   state.outsideCaptureReleaseMouse = null
 }
 
-function scheduleOutsideCaptureRelease(
-  state: MouseEventProcessorState,
-  parsed: ParsedMouse,
-): void {
+function scheduleOutsideCaptureRelease(state: MouseEventProcessorState, parsed: ParsedMouse): void {
   state.outsideCaptureReleaseMouse = parsed
   if (state.outsideCaptureReleaseTimer !== null) return
 
   state.outsideCaptureReleaseTimer = setTimeout(() => {
-    const releaseMouse = state.outsideCaptureReleaseMouse ?? parsed
-    releaseMousePress(state, releaseMouse)
-    clearHoverPath(state, releaseMouse)
+    const outsideMouse = state.outsideCaptureReleaseMouse ?? parsed
+    releaseMousePress(state, outsideMouse)
+    clearHoverPath(state, outsideMouse)
   }, MOUSE_CAPTURE_OUTSIDE_GRACE_MS)
 }
 
-function clearHoverPath(
-  state: MouseEventProcessorState,
-  parsed: ParsedMouse,
-): void {
+function clearHoverPath(state: MouseEventProcessorState, parsed: ParsedMouse): void {
   for (const node of state.hoverPath.slice().reverse()) {
     setHovered(node, false)
     const leaveEvent = createMouseEvent(
