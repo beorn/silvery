@@ -748,12 +748,6 @@ function ListViewInner<T>(
   // gesture so `scrollRow` flips from null → integer. Reset to null by
   // `moveTo` when the cursor takes over.
   const isWheelDrivenRef = useRef(false)
-  // Trackpad/wheel scrolling keeps row-space ownership after kinetic motion
-  // settles. Otherwise late measurement anchoring can pull toward a stale
-  // visible anchor and make the tail of a flick appear to reverse direction.
-  // Imperative scroll APIs still get their normal one-frame suppression and
-  // then resume visible-content anchoring.
-  const wheelScrollOwnsViewportRef = useRef(false)
   const activeScrollDirectionRef = useRef<"up" | "down" | null>(null)
   const wheelGestureActiveRef = useRef(false)
   const wheelGestureActiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -848,7 +842,6 @@ function ListViewInner<T>(
       setCursorSilently(next)
       scrollAnchoring.suppressOnce()
       isWheelDrivenRef.current = false
-      wheelScrollOwnsViewportRef.current = false
       setScrollRow(null)
       physics.reset()
     },
@@ -865,7 +858,6 @@ function ListViewInner<T>(
       if (event.deltaY < 0) followActiveRef.current = false
       activeScrollDirectionRef.current = event.deltaY < 0 ? "up" : "down"
       isWheelDrivenRef.current = true
-      wheelScrollOwnsViewportRef.current = true
       markWheelGestureActive()
       scrollAnchoring.suppressOnce()
       physics.onWheel(event)
@@ -1780,7 +1772,6 @@ function ListViewInner<T>(
         if (next === seed) return
         scrollAnchoring.suppressOnce()
         isWheelDrivenRef.current = true
-        wheelScrollOwnsViewportRef.current = false
         if (scrollBehavior === "smooth") physics.animateToFloat(next)
         else physics.setScrollFloat(next)
         setScrollRow(Math.round(next))
@@ -1793,7 +1784,6 @@ function ListViewInner<T>(
       scrollToTop() {
         scrollAnchoring.suppressOnce()
         isWheelDrivenRef.current = true
-        wheelScrollOwnsViewportRef.current = false
         if (scrollBehavior === "smooth") physics.animateToFloat(0)
         else physics.setScrollFloat(0)
         setScrollRow(0)
@@ -1804,7 +1794,6 @@ function ListViewInner<T>(
         const maxRow = maxScrollRowRef.current
         scrollAnchoring.suppressOnce()
         isWheelDrivenRef.current = true
-        wheelScrollOwnsViewportRef.current = false
         if (scrollBehavior === "smooth") physics.animateToFloat(maxRow)
         else physics.setScrollFloat(maxRow)
         setScrollRow(maxRow)
