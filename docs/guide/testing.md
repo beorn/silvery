@@ -58,10 +58,11 @@ The `createRenderer` function creates a render function with auto-cleanup betwee
 
 ### Pin root width and height when testing full apps
 
-`createRenderer({cols, rows})` passes dimensions as the *available* size to layout — it does **not** set `root.style.width/height`. Without a width/height pin, full-app fixtures collapse to a one-row title-bar frame. Wrap the tree in `<Screen>` (production root) or `<Box width={cols} height={rows}>`:
+`createRenderer({cols, rows})` passes dimensions as the _available_ size to layout — it does **not** set `root.style.width/height`. Without a width/height pin, full-app fixtures collapse to a one-row title-bar frame. Wrap the tree in `<Screen>` (production root) or `<Box width={cols} height={rows}>`:
 
 ```tsx
-const TOTAL_COLS = 360, TOTAL_ROWS = 120
+const TOTAL_COLS = 360,
+  TOTAL_ROWS = 120
 const render = createRenderer({ cols: TOTAL_COLS, rows: TOTAL_ROWS })
 const app = render(
   <Box width={TOTAL_COLS} height={TOTAL_ROWS} flexDirection="row">

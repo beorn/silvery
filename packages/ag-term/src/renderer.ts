@@ -1034,17 +1034,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         // the postState carrier so the production cross-frame snapshots
         // are not consumed or stomped. We do NOT update instance.prevBuffer
         // / prevPaintedBuffer — this is a verification-only pass.
-        const sentinelResult = runPipeline(
-          root2,
-          instance.columns,
-          instance.rows,
-          poisonedPrev,
-          {
-            skipLayoutNotifications: true,
-            skipScrollStateUpdates: true,
-            fresh: true,
-          },
-        )
+        const sentinelResult = runPipeline(root2, instance.columns, instance.rows, poisonedPrev, {
+          skipLayoutNotifications: true,
+          skipScrollStateUpdates: true,
+          fresh: true,
+        })
         // Fresh-from-zero baseline. doFreshRenderFull already passes
         // prevBuffer=null and a throwaway postState — this is the
         // "all pipeline state reset" reference.

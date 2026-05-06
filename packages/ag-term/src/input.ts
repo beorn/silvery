@@ -15,7 +15,12 @@
 // Mouse Parsing (SGR modes 1006 and 1016)
 // =============================================================================
 
-export { parseMouseSequence, isMouseSequence, type ParseMouseOptions, type ParsedMouse } from "./mouse"
+export {
+  parseMouseSequence,
+  isMouseSequence,
+  type ParseMouseOptions,
+  type ParsedMouse,
+} from "./mouse"
 
 // =============================================================================
 // Mouse Events (DOM-level)

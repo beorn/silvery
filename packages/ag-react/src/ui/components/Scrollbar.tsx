@@ -157,13 +157,7 @@ export function Scrollbar({
       onScrollOffsetChange(offsetFromPointerY(e.y, geometry), { dragActive: true })
       e.stopPropagation()
     },
-    [
-      offsetFromPointerY,
-      onScrollOffsetChange,
-      thumbBottomFloat,
-      thumbHeight,
-      thumbTopFloat,
-    ],
+    [offsetFromPointerY, onScrollOffsetChange, thumbBottomFloat, thumbHeight, thumbTopFloat],
   )
 
   // `mouseCapture` on the track makes these handlers receive move/up for the

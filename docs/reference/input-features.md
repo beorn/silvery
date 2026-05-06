@@ -226,19 +226,19 @@ or unusual font fallback may need component-specific hit testing.
 
 #### ParsedMouse Fields
 
-| Field    | Type                                  | Description                                         |
-| -------- | ------------------------------------- | --------------------------------------------------- |
-| `button` | `number`                              | 0=left, 1=middle, 2=right                           |
-| `x`      | `number`                              | Silvery layout X coordinate. Terminal cells; fractional in SGR-Pixels mode. |
-| `y`      | `number`                              | Silvery layout Y coordinate. Terminal cells; fractional in SGR-Pixels mode. |
-| `clientX` | `number \| undefined`               | Physical pixel X coordinate in SGR-Pixels mode.     |
-| `clientY` | `number \| undefined`               | Physical pixel Y coordinate in SGR-Pixels mode.     |
-| `coordinateMode` | `"cell" \| "pixel"`          | Whether the protocol coordinates were cell or pixel units. |
-| `action` | `"down" \| "up" \| "move" \| "wheel"` | Event action                                        |
-| `delta`  | `number`                              | Scroll: -1=up, +1=down (only for `action: "wheel"`) |
-| `shift`  | `boolean`                             | ⇧ Shift was held                                    |
-| `meta`   | `boolean`                             | ⌥ Alt/Meta was held                                 |
-| `ctrl`   | `boolean`                             | ⌃ Ctrl was held                                     |
+| Field            | Type                                  | Description                                                                 |
+| ---------------- | ------------------------------------- | --------------------------------------------------------------------------- |
+| `button`         | `number`                              | 0=left, 1=middle, 2=right                                                   |
+| `x`              | `number`                              | Silvery layout X coordinate. Terminal cells; fractional in SGR-Pixels mode. |
+| `y`              | `number`                              | Silvery layout Y coordinate. Terminal cells; fractional in SGR-Pixels mode. |
+| `clientX`        | `number \| undefined`                 | Physical pixel X coordinate in SGR-Pixels mode.                             |
+| `clientY`        | `number \| undefined`                 | Physical pixel Y coordinate in SGR-Pixels mode.                             |
+| `coordinateMode` | `"cell" \| "pixel"`                   | Whether the protocol coordinates were cell or pixel units.                  |
+| `action`         | `"down" \| "up" \| "move" \| "wheel"` | Event action                                                                |
+| `delta`          | `number`                              | Scroll: -1=up, +1=down (only for `action: "wheel"`)                         |
+| `shift`          | `boolean`                             | ⇧ Shift was held                                                            |
+| `meta`           | `boolean`                             | ⌥ Alt/Meta was held                                                         |
+| `ctrl`           | `boolean`                             | ⌃ Ctrl was held                                                             |
 
 #### Unified Modifier Tracking
 

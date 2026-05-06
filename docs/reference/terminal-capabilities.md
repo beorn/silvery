@@ -580,10 +580,10 @@ await run(<App />, {
 
 Silvery enables these mouse modes together:
 
-| Mode         | Sequence     | Description                                      |
-| ------------ | ------------ | ------------------------------------------------ |
-| All motion   | `CSI ?1003h` | Clicks, drags, wheel, and hover motion           |
-| SGR encoding | `CSI ?1006h` | Extended cell-coordinate format                  |
+| Mode         | Sequence     | Description                                             |
+| ------------ | ------------ | ------------------------------------------------------- |
+| All motion   | `CSI ?1003h` | Clicks, drags, wheel, and hover motion                  |
+| SGR encoding | `CSI ?1006h` | Extended cell-coordinate format                         |
 | SGR-Pixels   | `CSI ?1016h` | Optional pixel-coordinate format for sub-cell precision |
 
 On cleanup, Silvery disables `1016`, `1006`, and `1003` in reverse order. Disabling `1016` is harmless even when it was never enabled.

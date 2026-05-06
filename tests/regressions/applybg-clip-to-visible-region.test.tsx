@@ -58,7 +58,6 @@ describe("regression: applyBgSegmentsToLine clips bg paint to parent's visible r
         const bg = cell.bg
         if (!bg) continue
         const isCyan = (() => {
-          if (typeof bg === "string") return bg.toLowerCase().includes("cyan")
           if (typeof bg === "object" && bg && "r" in bg) {
             const o = bg as { r: number; g: number; b: number }
             return o.g > o.r && o.b > o.r

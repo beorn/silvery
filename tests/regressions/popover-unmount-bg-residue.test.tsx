@@ -239,7 +239,17 @@ describe("regression: popover-unmount bg residue", () => {
   // Same shape, but the unmount sequence interleaves several content updates
   // (mirrors a hover-chain: anchor changes → content fetched → dismiss).
   test("km-shape popover unmounts cleanly through anchor + content churn", () => {
-    function App({ open, top, left, lines }: { open: boolean; top: number; left: number; lines: number }) {
+    function App({
+      open,
+      top,
+      left,
+      lines,
+    }: {
+      open: boolean
+      top: number
+      left: number
+      lines: number
+    }) {
       return (
         <Box flexDirection="column" width={82} height={75}>
           {Array.from({ length: 73 }, (_, i) => (

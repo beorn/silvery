@@ -852,7 +852,11 @@ function createNodeTerm(options: CreateTermOptions): Term {
   const getInput = (): Input | undefined => {
     if (!stdin.isTTY) return undefined
     if (!_input) {
-      _input = createInputOwner(stdin, stdout, { writeStdout: ownedWrite, modes, mouse: options.mouse })
+      _input = createInputOwner(stdin, stdout, {
+        writeStdout: ownedWrite,
+        modes,
+        mouse: options.mouse,
+      })
     }
     return _input
   }

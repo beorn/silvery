@@ -30,11 +30,11 @@ SILVERY_STRICT=2,!canary        # tier 2 minus canary (per-test escape hatch)
 
 **Built-in checks (slugs):**
 
-| Slug          | Tier | What it catches                                                                                                                                                                                       |
-| ------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `incremental` | 1    | Incremental render phase produces the same buffer as a fresh redraw (the historical STRICT=1).                                                                                                        |
-| `canary`      | 2    | Degenerate frame: large buffer (≥ 4000 cells) where < 5% of cells are painted after first render — usually means the root component has no `<Screen>` or `<Box width height>` wrapper.                |
-| `residue`     | 2    | Stale-prev-cell carry-over: poisons the prev buffer with a sentinel, runs the regular incremental render, then compares against a fresh-from-zero render. Catches cyan-strip-class residue bugs.    |
+| Slug          | Tier | What it catches                                                                                                                                                                                  |
+| ------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `incremental` | 1    | Incremental render phase produces the same buffer as a fresh redraw (the historical STRICT=1).                                                                                                   |
+| `canary`      | 2    | Degenerate frame: large buffer (≥ 4000 cells) where < 5% of cells are painted after first render — usually means the root component has no `<Screen>` or `<Box width height>` wrapper.           |
+| `residue`     | 2    | Stale-prev-cell carry-over: poisons the prev buffer with a sentinel, runs the regular incremental render, then compares against a fresh-from-zero render. Catches cyan-strip-class residue bugs. |
 
 **Design contract: no other `SILVERY_*` enable env vars.** New checks pick a slug + a tier and inherit the umbrella. `bun run test:fast` (which sets `SILVERY_STRICT=1` by default) gets every new check without env config changes.
 

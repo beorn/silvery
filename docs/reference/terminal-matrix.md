@@ -25,19 +25,19 @@ For comprehensive, feature-by-feature terminal compatibility data beyond what Si
 
 ## Column Descriptions
 
-| Column     | Protocol/Standard | Description                                                |
-| ---------- | ----------------- | ---------------------------------------------------------- |
-| Colors     | SGR               | Color depth: 24-bit (truecolor), 256, 16 (basic), or none  |
-| Kitty KB   | CSI > u           | Kitty keyboard protocol for unambiguous key identification |
-| Kitty Gfx  | APC G             | Kitty graphics protocol for inline image display           |
-| Sixel      | DCS q             | Sixel graphics for inline image display                    |
-| OSC 52     | OSC 52            | Clipboard access (works over SSH)                          |
-| Hyperlinks | OSC 8             | Clickable hyperlinks in terminal output                    |
-| Notify     | OSC 9/99          | Desktop notifications (OSC 9 = iTerm2, OSC 99 = Kitty)     |
-| Paste      | DEC 2004          | Bracketed paste mode (distinguish pasted from typed input) |
+| Column     | Protocol/Standard  | Description                                                   |
+| ---------- | ------------------ | ------------------------------------------------------------- |
+| Colors     | SGR                | Color depth: 24-bit (truecolor), 256, 16 (basic), or none     |
+| Kitty KB   | CSI > u            | Kitty keyboard protocol for unambiguous key identification    |
+| Kitty Gfx  | APC G              | Kitty graphics protocol for inline image display              |
+| Sixel      | DCS q              | Sixel graphics for inline image display                       |
+| OSC 52     | OSC 52             | Clipboard access (works over SSH)                             |
+| Hyperlinks | OSC 8              | Clickable hyperlinks in terminal output                       |
+| Notify     | OSC 9/99           | Desktop notifications (OSC 9 = iTerm2, OSC 99 = Kitty)        |
+| Paste      | DEC 2004           | Bracketed paste mode (distinguish pasted from typed input)    |
 | Mouse      | SGR 1003/1006/1016 | SGR mouse tracking (click, drag, scroll); optional SGR-Pixels |
-| Sync       | DEC 2026          | Synchronized output (batch rendering to prevent tearing)   |
-| Unicode    | -                 | Unicode and emoji rendering                                |
+| Sync       | DEC 2026           | Synchronized output (batch rendering to prevent tearing)      |
+| Unicode    | -                  | Unicode and emoji rendering                                   |
 
 ## Terminal Details
 
