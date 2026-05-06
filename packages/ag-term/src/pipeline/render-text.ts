@@ -548,10 +548,23 @@ function applyBgSegmentsToLine(
   lineCharEnd: number,
   bgSegments: BgSegment[],
   ctx?: PipelineContext,
+  maxCol?: number,
+  minCol?: number,
 ): void {
   if (bgSegments.length === 0) return
   const sink: RenderSink = createFrameSink(buffer)
   if (y < 0 || y >= sink.height) return
+
+  // Clip horizontally to the parent's visible region. Without this, bg paint
+  // walks the full natural-flow width of the line — which, when the Text node
+  // is laid out wider than the visible parent (e.g. wrap=wrap inside an
+  // overflow=hidden card narrower than the text's natural width), produces
+  // bg cells past the parent's right border into the empty area beyond the
+  // card. The chars themselves are clipped by renderGraphemes's rightEdge
+  // check, leaving bg cells with empty content — the cyan-strip residue.
+  // See bead km-silvery.render-light-blue-bg-strip-residue Round 11.
+  const rightClip = maxCol !== undefined ? Math.min(maxCol, sink.width) : sink.width
+  const leftClip = minCol !== undefined ? Math.max(minCol, 0) : 0
 
   // Reusable cell for readCellInto to avoid per-character allocation
   const bgCell = createMutableCell()
@@ -582,22 +595,29 @@ function applyBgSegmentsToLine(
 
       const displayOffset = col - x
       if (displayOffset >= relStart && displayOffset < relEnd) {
-        // This character is within the bg segment -- set bg on its cells.
-        // Use readCellInto to avoid allocating a new Cell per iteration.
-        // Note: this is a paint (bg overlay on existing chars). The read
-        // is an intra-frame buffer read that Phase 2 Step 6 will eliminate.
-        buffer.readCellInto(col, y, bgCell)
-        bgCell.bg = seg.bg
-        sink.emitSetCell(col, y, bgCell)
-        if (gWidth === 2 && col + 1 < sink.width) {
-          buffer.readCellInto(col + 1, y, bgCell)
+        // Clip to the parent's visible region: skip cells past rightClip
+        // or before leftClip. This keeps bg paint aligned with what
+        // renderGraphemes actually writes — preventing bg leaks past the
+        // visible boundary in overflow=hidden / clipped-text scenarios.
+        if (col < rightClip && col >= leftClip) {
+          // This character is within the bg segment -- set bg on its cells.
+          // Use readCellInto to avoid allocating a new Cell per iteration.
+          // Note: this is a paint (bg overlay on existing chars). The read
+          // is an intra-frame buffer read that Phase 2 Step 6 will eliminate.
+          buffer.readCellInto(col, y, bgCell)
           bgCell.bg = seg.bg
-          sink.emitSetCell(col + 1, y, bgCell)
+          sink.emitSetCell(col, y, bgCell)
+          if (gWidth === 2 && col + 1 < sink.width && col + 1 < rightClip) {
+            buffer.readCellInto(col + 1, y, bgCell)
+            bgCell.bg = seg.bg
+            sink.emitSetCell(col + 1, y, bgCell)
+          }
         }
       }
 
       col += gWidth
       if (col - x >= relEnd) break
+      if (col >= rightClip) break
     }
   }
 }
@@ -1611,9 +1631,13 @@ export function renderText(
     // Apply background segments from nested Text elements to the buffer.
     // This happens after renderTextLine so the bg is applied to cells
     // that already have the correct character/fg/attrs written.
+    // Pass maxCol/minCol so bg paint clips to the same visible region as
+    // renderGraphemes — without this, bg leaks past the parent's
+    // overflow=hidden border into the empty area beyond the card (the
+    // cyan-strip residue bug, km-silvery.render-light-blue-bg-strip-residue).
     if (bgSegments.length > 0 && lineIdx < lineOffsets.length) {
       const { start, end } = lineOffsets[lineIdx]!
-      applyBgSegmentsToLine(buffer, x, lineY, line, start, end, bgSegments, ctx)
+      applyBgSegmentsToLine(buffer, x, lineY, line, start, end, bgSegments, ctx, maxCol, minCol)
     }
   }
 

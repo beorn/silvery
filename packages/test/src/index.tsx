@@ -100,6 +100,11 @@ export { keyToAnsi, keyToKittyAnsi, CODE_TO_KEY } from "@silvery/ag/keys"
 // Re-export debug utilities
 export { debugTree, type DebugTreeOptions } from "./debug"
 
+// Diagnostic theme for pipeline regression tests — every distinct token
+// resolves to a distinct visible color. Use to catch phantom bg paints
+// that would be invisible under themes where tokens collapse to canvas.
+export { diagnosticTheme, diagnosticScheme } from "./diagnostic-theme"
+
 // Re-export buffer comparison utilities
 export { compareBuffers, formatMismatch, type BufferMismatch } from "./compare-buffers"
 
