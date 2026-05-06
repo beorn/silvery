@@ -145,7 +145,6 @@ describe("run() with createTermless()", () => {
       textSizing: false,
       widthDetection: false,
       focusReporting: false,
-      guardOutput: false,
     })
 
     expect(handle.text).toContain("viewport=120x40")

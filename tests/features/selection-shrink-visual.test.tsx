@@ -58,9 +58,9 @@ function SelectableContent() {
 function SelectableTextWithWideLayout() {
   return (
     <Box flexDirection="column">
-      <Text width={30} wrap={false}>
-        Selectable
-      </Text>
+      <Box width={30}>
+        <Text wrap={false}>Selectable</Text>
+      </Box>
     </Box>
   )
 }
@@ -71,9 +71,9 @@ function SelectableRowWithMarkerGutter() {
       <Box width={4}>
         <Text>•</Text>
       </Box>
-      <Text width={30} wrap={false}>
-        Selectable
-      </Text>
+      <Box width={30}>
+        <Text wrap={false}>Selectable</Text>
+      </Box>
     </Box>
   )
 }

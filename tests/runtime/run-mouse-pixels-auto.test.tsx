@@ -56,7 +56,6 @@ describe("run() SGR-Pixels mouse default", () => {
       stdin,
       stdout,
       profile: createTerminalProfile(),
-      guardOutput: false,
       mouse: true,
     })
 
