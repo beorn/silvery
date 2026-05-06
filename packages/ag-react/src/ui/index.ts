@@ -27,6 +27,15 @@
 export * from "./types.js"
 export * from "./cli/index.js"
 export * from "./wrappers/index.js"
+export * from "./progress/index.js"
 
 // Note: React components should be imported from "./react/index"
-// to avoid requiring React as a dependency for CLI-only usage
+// to avoid requiring React as a dependency for CLI-only usage. The
+// `progress/*` barrel above is CLI-only (uses `cli/*` primitives), so
+// it's safe to include here without dragging React in.
+//
+// Why the explicit re-export: package.json maps `./ui/*` to
+// `./src/ui/*/index.ts` as a glob, which Bun honors but vitest's
+// resolver does not — consumers importing `@silvery/ag-react/ui/progress`
+// fail to load under vitest. Re-exporting from the parent barrel here
+// gives consumers a single import path that works in both environments.
