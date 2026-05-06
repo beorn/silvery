@@ -85,6 +85,16 @@ function Panel() {
 `flexGrow` fills space. `padding`/`paddingX` for internal spacing. `gap` between children. `justifyContent="flex-end"` pins to bottom. `useBoxRect()` for responsive adaptation.
 :::
 
+::: warning ⚠ Keep layout decisions idempotent
+
+`useBoxRect()` reads measurements during render. Silvery runs measure → layout → React render in a bounded convergence loop, so a layout decision driven off a measurement must produce the *same* decision on the next pass. A naive width-driven binary toggle (`width >= 90 ? <Wide/> : <Narrow/>`) flips back and forth at the boundary when the two branches contribute different widths to the parent — and a single resize from a terminal multiplexer is often a burst of `SIGWINCH` events, each one re-entering the loop.
+
+Two safe patterns:
+
+- **Bucket the measurement.** Use [`useResponsiveValue()`](/api/use-responsive-value) (or your own zone classifier with hysteresis at the boundary) so the decision branches on a small stable set, not the raw `width`.
+- **Observe without driving render.** `useBoxRect((rect) => ...)` is the callback form — no re-render, ideal for hot paths, registries, and debug overlays.
+:::
+
 ::: danger 🩶 Tarnished
 
 ```tsx

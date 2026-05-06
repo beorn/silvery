@@ -579,6 +579,31 @@ AutoLocator methods: `resolve()`, `resolveAll()`, `count()`, `textContent()`, `g
 
 **Specifying default colors** — Components already use correct colors. Don't write `<Text color="$fg">` or `<SelectList color="$primary">`.
 
+**Non-idempotent layout decisions in `useBoxRect`** — silvery's renderer runs measure → layout → React render in a bounded convergence loop (capped at `MAX_CONVERGENCE_PASSES`). A render that *reads* `useBoxRect()` and *changes its own subtree's contribution to layout* is fine when the next pass sees the same rect bucket and produces the same decision; it's a feedback loop when the second pass measures a different bucket and flips the decision back. The convergence cap stops the loop from running forever, but the visible churn during the burst is the bug.
+
+The textbook trap is a width-driven binary toggle whose two branches have different widths (sidebar mounts above width N, unmounts below) and whose boundary lives near a frequently-measured value. Multi-`SIGWINCH` bursts from terminal multiplexers (several resize events in a few hundred ms per workspace switch) make this trivially reproducible: each burst element re-enters layout, and the toggle ping-pongs.
+
+```tsx
+// Wrong: structural branch on raw measurement, no hysteresis.
+function Panel() {
+  const { width } = useBoxRect()
+  return width >= 90 ? <Wide/> : <Narrow/>   // flips at the boundary
+}
+
+// Right: bucket into a stable zone with debounce/hysteresis at the boundary.
+const zone = useResponsiveValue<Zone>({ default: "default", sm: "sm", md: "md", lg: "lg" })
+const stableZone = useDebouncedValue(zone, 250)  // burst-resistant
+return stableZone === "lg" ? <Wide/> : <Narrow/>
+
+// Right (callback form): observe without driving render.
+useBoxRect((rect) => registerSize(id, rect))     // zero re-renders
+```
+
+Two safe patterns; mixing them in one component is what bites:
+
+1. **Observation** — `useBoxRect((rect) => ...)` callback form. Subscribes to layout signals without re-rendering. The right choice for registries, debug overlays, and any "side-channel" use of the rect.
+2. **Bucketed decisions** — read a measurement, classify into a small stable set (`useResponsiveValue` is the canonical bucketer), and branch on the zone, never the raw width. Add hysteresis (a small debounce on the zone) when the boundary crossing causes a structural mount/unmount whose two branches contribute different widths to the parent — otherwise a measurement near the boundary will ping-pong under bursty resizes.
+
 ---
 
 ## Central Abstraction: Term

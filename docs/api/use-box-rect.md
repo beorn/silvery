@@ -2,16 +2,11 @@
 
 Returns the computed dimensions of the component's content area — width, height, and position. Components use this to adapt to their available space during render.
 
-::: info Note
-`
-:::
+Two call signatures: a **reactive** form that re-renders the component on every rect change, and a **callback** form that observes without triggering React updates. Pick deliberately — see [Layout decisions vs. observation](#layout-decisions-vs-observation).
 
 ## Import
 
 ```tsx
-import { useBoxRect } from "silvery"
-
-// Deprecated alias (still works)
 import { useBoxRect } from "silvery"
 ```
 
@@ -177,6 +172,54 @@ function ProportionalColumns() {
   )
 }
 ```
+
+## Layout decisions vs. observation
+
+Silvery's renderer runs **measure → layout → React render** in a bounded convergence loop. A component that reads `useBoxRect()` and renders something whose width feeds back into the parent's layout participates in that loop. The convergence cap stops it from running forever, but the visible churn during a burst is the bug. There are two valid patterns; pick deliberately.
+
+### 1. Observation — use the callback form
+
+If you only need the rect to update an external registry, register a position for cross-component navigation, or feed a debug overlay, use the callback form. It subscribes to the layout signal without re-rendering the component.
+
+```tsx
+function Card({ id }: { id: string }) {
+  useBoxRect((rect) => positionRegistry.set(id, rect))
+  return <Box>...</Box>
+}
+```
+
+This is the right choice for hot paths like large lists. Re-rendering on every rect change there is prohibitive; the callback form has zero re-render cost.
+
+### 2. Bucketed decisions — classify, don't compare raw widths
+
+When the rect drives a layout decision, route the measurement through a small stable set of zones rather than branching on raw width. [`useResponsiveValue()`](/api/use-responsive-value) is the canonical bucketer. Decisions branch on the zone (`"sm" | "md" | "lg"`), so two consecutive renders that measure 89 and 91 columns both resolve to the same `"md"` zone and produce the same tree.
+
+```tsx
+const zone = useResponsiveValue<Zone>({
+  default: "default", sm: "sm", md: "md", lg: "lg",
+})
+return zone === "lg" ? <Wide /> : <Narrow />
+```
+
+Add **hysteresis** when the zone boundary triggers a structural change (mounting/unmounting a subtree, toggling a panel) and the two branches contribute different widths to the parent — otherwise a measurement near the boundary will ping-pong, especially under bursty resizes from terminal multiplexers that fire several `SIGWINCH`s per workspace switch. A small debounce on the zone (e.g. 200–300 ms before the new zone "settles") lets the layout converge before the structural change re-enters the loop.
+
+### The trap
+
+The trap is a width-driven binary structural toggle whose two branches have different widths and whose boundary lives at a frequently-measured value. Each pass measures, picks the *other* branch, re-measures, picks the *first* branch.
+
+```tsx
+// Wrong — binary structural toggle on raw width
+function Panel() {
+  const { width } = useBoxRect()
+  if (width >= 90) return <Wide />   // contributes 80 cols
+  return <Narrow />                  // contributes 60 cols
+  // Wide unmounts → parent measures 60 → "<90" → renders Narrow
+  // Narrow renders → siblings give Panel more space → "≥90" → renders Wide
+  // Loop until convergence cap or accidental settle.
+}
+```
+
+The fix is one of the two patterns above. The natural choice for "panel mounts above width N" is bucketing with hysteresis at the boundary.
 
 ## Comparison with Ink
 

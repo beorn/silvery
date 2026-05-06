@@ -191,6 +191,16 @@ function useCallbackRect(
  *
  * On first render (reactive form), returns `{ x: 0, y: 0, width: 0, height: 0 }`.
  * After layout completes, automatically re-renders with actual dimensions.
+ *
+ * **Layout decisions must be idempotent.** The renderer runs measure → layout →
+ * render in a bounded convergence loop, so a component that reads the reactive
+ * form and renders something whose width feeds back into the parent's layout
+ * must produce the same decision on the next pass. Branching on raw width
+ * (e.g. `width >= 90 ? <Wide/> : <Narrow/>`) at a structural mount/unmount
+ * boundary will ping-pong under bursty resizes; route the measurement through
+ * `useResponsiveValue()` (or a debounced zone) instead. For pure observation
+ * (registries, debug overlays), prefer the callback form. See the API doc
+ * "Layout decisions vs. observation" section.
  */
 export function useBoxRect(): Rect
 export function useBoxRect(callback: RectCallback): void
