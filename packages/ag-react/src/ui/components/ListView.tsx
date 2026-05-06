@@ -1311,14 +1311,11 @@ function ListViewInner<T>(
   const anchoringEnabled = shouldApplyVisibleContentAnchoring({
     maintainVisibleContentPosition,
     followOwnsViewport: followPinnedTopRow !== null,
-    rowScrollOwnsViewport: scrollRow !== null && wheelScrollOwnsViewportRef.current,
   })
   const scrollAnchoring = useScrollAnchoring({
-    // Wheel/trackpad scroll keeps row-space ownership until the cursor or an
-    // imperative API takes over, because post-gesture measurement changes must
-    // not pull against a stale visible-content anchor. Imperative scroll APIs
-    // use `suppressOnce()` for their displacement frame, then re-enable normal
-    // visible-content anchoring.
+    // Wheel/trackpad gestures keep their active direction threaded into
+    // anchoring so measurement churn may preserve visible content without
+    // reversing the user's scroll direction.
     enabled: anchoringEnabled,
     model: heightModel,
     keyAtIndex: keyForActiveIndex,

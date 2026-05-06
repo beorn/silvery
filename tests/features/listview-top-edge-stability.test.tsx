@@ -31,6 +31,21 @@ const firstVisibleItemNumber = (text: string): number => {
   const match = /Item (\d+)/.exec(firstLine)
   return match ? Number(match[1]) : -1
 }
+const makeVariableItems = (n: number): { label: string; rows: number }[] =>
+  Array.from({ length: n }, (_, i) => ({
+    label: `Item ${i + 1}`,
+    rows: i < Math.floor(n * 0.6) ? 2 : 7,
+  }))
+
+function VariableItem({ item }: { item: { label: string; rows: number } }): React.ReactElement {
+  return (
+    <Box flexDirection="column">
+      {Array.from({ length: item.rows }, (_, row) => (
+        <Text key={row}>{row === 0 ? item.label : "detail"}</Text>
+      ))}
+    </Box>
+  )
+}
 
 describe("ListView: scroll-to-top edge stability", () => {
   test("after wheeling up to the top under follow=end, scrollRow does not oscillate", async () => {
@@ -141,5 +156,36 @@ describe("ListView: scroll-to-top edge stability", () => {
       firstVisibleItemNumber(app.text),
       "ListView should not synthesize a post-wheel coast",
     ).toBe(afterWheel)
+  })
+
+  test("active wheel-up over newly measured variable-height rows does not reverse visible direction", async () => {
+    const render = createRenderer({ cols: 40, rows: 18 })
+    const items = makeVariableItems(154)
+    const app = render(
+      <Box flexDirection="column" height={18} width={40}>
+        <ListView
+          items={items}
+          follow="end"
+          wheelMultiplier={30}
+          renderItem={(item) => <VariableItem item={item} />}
+        />
+      </Box>,
+    )
+    await settle(80)
+
+    const samples: number[] = []
+    for (let i = 0; i < 36; i++) {
+      await app.wheel(5, 9, -1)
+      await settle(20)
+      const visible = firstVisibleItemNumber(app.text)
+      if (visible > 0) samples.push(visible)
+    }
+
+    for (let i = 1; i < samples.length; i++) {
+      expect(
+        samples[i],
+        `wheel-up viewport reversed direction under measurement churn. Samples: ${JSON.stringify(samples)}`,
+      ).toBeLessThanOrEqual(samples[i - 1]!)
+    }
   })
 })

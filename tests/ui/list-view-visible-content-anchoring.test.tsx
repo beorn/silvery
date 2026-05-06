@@ -154,24 +154,22 @@ describe("ListView maintainVisibleContentPosition", () => {
     ).toBe(250)
   })
 
-  test("visible-content anchoring does not override row-space scroll while it owns the viewport", () => {
+  test("visible-content anchoring applies while row-space scroll owns the viewport", () => {
     expect(
       shouldApplyVisibleContentAnchoring({
         maintainVisibleContentPosition: true,
         followOwnsViewport: false,
-        rowScrollOwnsViewport: true,
-      }),
-    ).toBe(false)
-  })
-
-  test("visible-content anchoring applies when row-space scroll does not own the viewport", () => {
-    expect(
-      shouldApplyVisibleContentAnchoring({
-        maintainVisibleContentPosition: true,
-        followOwnsViewport: false,
-        rowScrollOwnsViewport: false,
       }),
     ).toBe(true)
+  })
+
+  test("visible-content anchoring does not apply while follow owns the viewport", () => {
+    expect(
+      shouldApplyVisibleContentAnchoring({
+        maintainVisibleContentPosition: true,
+        followOwnsViewport: true,
+      }),
+    ).toBe(false)
   })
 
   test("viewport anchor resolves from the previously rendered visible line", () => {

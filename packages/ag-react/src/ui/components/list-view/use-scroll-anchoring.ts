@@ -51,13 +51,11 @@ export function resolveRowsAboveViewport({
 export function shouldApplyVisibleContentAnchoring({
   maintainVisibleContentPosition,
   followOwnsViewport,
-  rowScrollOwnsViewport,
 }: {
   maintainVisibleContentPosition: boolean
   followOwnsViewport: boolean
-  rowScrollOwnsViewport: boolean
 }): boolean {
-  return maintainVisibleContentPosition && !followOwnsViewport && !rowScrollOwnsViewport
+  return maintainVisibleContentPosition && !followOwnsViewport
 }
 
 const DEFAULT_TOLERANCE_ROWS = 0.5
