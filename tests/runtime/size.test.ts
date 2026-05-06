@@ -4,7 +4,7 @@
  * Verifies the alien-signals-backed Size owner:
  *  - Initializes from stdout.columns / stdout.rows (with fallbacks).
  *  - Exposes reactive cols / rows / snapshot as callable ReadSignals.
- *  - Coalesces burst resize events within the 16ms window.
+ *  - Coalesces burst resize events via a trailing-edge debounce.
  *  - `effect(() => size.cols())` fires once per coalesced change.
  *  - First read installs the resize listener lazily.
  *  - Dispose stops listening and clears any pending coalesce timer.
@@ -41,6 +41,15 @@ const setDims = (stdout: NodeJS.WriteStream, cols: number, rows: number) => {
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
 /**
+ * Test-friendly factory: shortens the trailing-edge debounce so the existing
+ * coalescing tests can complete in tens of milliseconds rather than waiting
+ * for the production default (200 ms). The trailing-edge contract is the
+ * same at any window size — only the latency changes.
+ */
+const mkSize = (stdout: NodeJS.WriteStream, opts?: { cols?: number; rows?: number }) =>
+  createSize(stdout, { coalesceMs: 16, ...(opts ?? {}) })
+
+/**
  * Subscribe to a size's coalesced resizes via `effect()`, skipping the seed
  * fire so the returned array contains only *changes* (matching the old
  * `size.subscribe(handler)` semantic).
@@ -69,7 +78,7 @@ function observeChanges(size: ReturnType<typeof createSize>): {
 describe("createSize: initialization", () => {
   test("reads cols/rows from stdout at construction", () => {
     const stdout = createMockStdout(132, 40)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
     expect(size.cols()).toBe(132)
     expect(size.rows()).toBe(40)
     expect(size.snapshot()).toEqual({ cols: 132, rows: 40 })
@@ -77,7 +86,7 @@ describe("createSize: initialization", () => {
 
   test("falls back to 80x24 when stdout dims are zero", () => {
     const stdout = createMockStdout(0, 0)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
     expect(size.cols()).toBe(80)
     expect(size.rows()).toBe(24)
   })
@@ -86,7 +95,7 @@ describe("createSize: initialization", () => {
     const stdout = createMockStdout(0, 0)
     ;(stdout as unknown as { columns: number }).columns = undefined as unknown as number
     ;(stdout as unknown as { rows: number }).rows = undefined as unknown as number
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
     expect(size.cols()).toBe(80)
     expect(size.rows()).toBe(24)
   })
@@ -102,7 +111,7 @@ describe("createSize: initialization", () => {
 describe("createSize: resize coalescing", () => {
   test("single resize fires effect with final dims", async () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
 
     const { changes, stop } = observeChanges(size)
 
@@ -118,7 +127,7 @@ describe("createSize: resize coalescing", () => {
 
   test("burst of 3 resizes within 16ms coalesces to ONE notification", async () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
 
     const { changes, stop } = observeChanges(size)
 
@@ -140,7 +149,7 @@ describe("createSize: resize coalescing", () => {
 
   test("zero-dimension resize events keep the last valid dimensions", async () => {
     const stdout = createMockStdout(120, 40)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
 
     const { changes, stop } = observeChanges(size)
 
@@ -161,7 +170,7 @@ describe("createSize: resize coalescing", () => {
 
   test("two resizes separated by > coalesce window produce two notifications", async () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
 
     const { changes, stop } = observeChanges(size)
 
@@ -192,9 +201,57 @@ describe("createSize: resize coalescing", () => {
     stop()
   })
 
+  test("trailing-edge debounce: late event during coalesce window resets the timer", async () => {
+    // Trailing-edge contract: every event resets the pending timer, so the
+    // flush only fires after `coalesceMs` of silence. Two events 30 ms apart
+    // with a 50 ms window would have produced TWO publishes under a leading-
+    // edge design (each event >16 ms apart, each starts its own timer); under
+    // trailing-edge they collapse to ONE publish carrying the second event's
+    // value.
+    const stdout = createMockStdout(80, 24)
+    using size = createSize(stdout, { coalesceMs: 50 })
+
+    const { changes, stop } = observeChanges(size)
+
+    setDims(stdout, 100, 30)
+    await sleep(30) // < window — event below resets the timer
+    setDims(stdout, 110, 32)
+    await sleep(100) // wait past the new window
+
+    expect(changes.length).toBe(1)
+    expect(changes[0]).toEqual({ cols: 110, rows: 32 })
+
+    stop()
+  })
+
+  test("cmux-style burst (4 events at 80 ms intervals over ~300 ms) collapses to ONE publish", async () => {
+    // Real-world repro: a cmux workspace switch fires 4–6 SIGWINCHs at
+    // ~80 ms intervals carrying intermediate widths (e.g. 81→113→126→94).
+    // The 200 ms production default debounce window must absorb the entire
+    // burst into a single publish carrying the final geometry.
+    const stdout = createMockStdout(80, 24)
+    using size = createSize(stdout) // production default coalesceMs
+
+    const { changes, stop } = observeChanges(size)
+
+    setDims(stdout, 81, 24)
+    await sleep(80)
+    setDims(stdout, 113, 24)
+    await sleep(80)
+    setDims(stdout, 126, 24)
+    await sleep(80)
+    setDims(stdout, 94, 24)
+    await sleep(300) // wait past the trailing-edge window
+
+    expect(changes.length).toBe(1)
+    expect(changes[0]).toEqual({ cols: 94, rows: 24 })
+
+    stop()
+  }, 2000)
+
   test("multiple effects all receive the coalesced resize", async () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
 
     const a = observeChanges(size)
     const b = observeChanges(size)
@@ -212,7 +269,7 @@ describe("createSize: resize coalescing", () => {
 
   test("stopping the effect halts future notifications", async () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
 
     const { changes, stop } = observeChanges(size)
 
@@ -230,7 +287,7 @@ describe("createSize: resize coalescing", () => {
 describe("createSize: reactive effect subscription", () => {
   test("effect(() => size.cols()) fires on coalesced resize", async () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
 
     const observed: number[] = []
     const stop = effect(() => {
@@ -250,7 +307,7 @@ describe("createSize: reactive effect subscription", () => {
 
   test("effect reads of size.rows and size.snapshot stay in sync", async () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
 
     const rowsLog: number[] = []
     const snapLog: Array<{ cols: number; rows: number }> = []
@@ -280,7 +337,7 @@ describe("createSize: lazy install", () => {
   // createTerm() eagerly wired one.
   test("no listener is installed at construction", () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
     expect((stdout as EventEmitter).listenerCount("resize")).toBe(0)
     // First read installs.
     size.cols()
@@ -289,7 +346,7 @@ describe("createSize: lazy install", () => {
 
   test("subsequent reads do not stack listeners", () => {
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
     size.cols()
     size.rows()
     size.snapshot()
@@ -302,7 +359,7 @@ describe("createSize: lazy install", () => {
     // resync — on first read, re-poll stdout and publish if it differs.
     // See 2026-04-22 Pro review finding P0-2.
     const stdout = createMockStdout(80, 24)
-    using size = createSize(stdout)
+    using size = mkSize(stdout)
     ;(stdout as unknown as { columns: number }).columns = 132
     ;(stdout as unknown as { rows: number }).rows = 40
     // No resize event emitted — but first read installs the listener AND
@@ -327,7 +384,7 @@ describe("createSize: lazy install", () => {
 describe("createSize: dispose", () => {
   test("dispose removes the resize listener when installed", () => {
     const stdout = createMockStdout(80, 24)
-    const size = createSize(stdout)
+    const size = mkSize(stdout)
     size.cols() // installs the listener
     expect((stdout as EventEmitter).listenerCount("resize")).toBe(1)
     size[Symbol.dispose]()
@@ -336,14 +393,14 @@ describe("createSize: dispose", () => {
 
   test("dispose is idempotent", () => {
     const stdout = createMockStdout(80, 24)
-    const size = createSize(stdout)
+    const size = mkSize(stdout)
     size[Symbol.dispose]()
     expect(() => size[Symbol.dispose]()).not.toThrow()
   })
 
   test("dispose clears pending coalesce timer", async () => {
     const stdout = createMockStdout(80, 24)
-    const size = createSize(stdout)
+    const size = mkSize(stdout)
 
     const { changes, stop } = observeChanges(size)
 

@@ -10,9 +10,15 @@
  * Resize coalescing: multiplexers (tmux, cmux, Ghostty tabs) can fire
  * multiple SIGWINCH bursts in rapid succession as the PTY re-syncs. Without
  * coalescing, each event triggers a full re-layout at an intermediate size,
- * producing visible multi-phase layout shift. The owner coalesces bursts
- * within one 60Hz frame (~16ms) into a single update carrying the final
- * geometry. Discrete resizes spaced further apart pass through normally.
+ * producing visible multi-phase layout shift. The owner uses a **trailing-edge
+ * debounce**: every incoming SIGWINCH resets a 200 ms timer, and the snapshot
+ * publishes only after `coalesceMs` of silence. A four-event burst at ~80 ms
+ * intervals (the observed cmux pattern) collapses to one published snapshot
+ * carrying the final geometry. Discrete resizes spaced further apart than
+ * `coalesceMs` pass through individually. The cost is a small per-resize
+ * latency — fine for "settle after the workspace switch" but perceptible for
+ * a continuous drag-resize; consumers that want zero-latency live preview
+ * pass `coalesceMs: 0`.
  *
  * ## API shape
  *
@@ -68,8 +74,14 @@ export interface Size extends Disposable {
   readonly snapshot: ReadSignal<SizeSnapshot>
 }
 
-/** One 60Hz frame — long enough to absorb PTY re-sync bursts, short enough to feel immediate. */
-const RESIZE_COALESCE_MS = 16
+/**
+ * Trailing-edge debounce window. Long enough to absorb a multiplexer SIGWINCH
+ * burst (cmux fires 4–6 events at ~80 ms intervals across ~300 ms during a
+ * workspace switch); short enough to feel like settle, not lag, for a discrete
+ * resize. Tests can shorten this via `coalesceMs`; consumers that want every
+ * resize event published synchronously pass `coalesceMs: 0`.
+ */
+const RESIZE_COALESCE_MS = 200
 const DEFAULT_COLS = 80
 const DEFAULT_ROWS = 24
 
@@ -82,8 +94,11 @@ export interface CreateSizeOptions {
   /** Override initial rows (default: `stdout.rows || 24`). */
   rows?: number
   /**
-   * Coalescing window in ms. Defaults to 16 (one 60Hz frame).
-   * Set to 0 to disable coalescing (test scenarios).
+   * Trailing-edge debounce window in ms. Defaults to 200. Every incoming
+   * `resize` event resets the timer; the snapshot publishes only after
+   * `coalesceMs` of silence. Set to 0 to disable coalescing entirely (each
+   * `resize` publishes synchronously) — useful in test scenarios where the
+   * harness already controls timing.
    */
   coalesceMs?: number
 }
@@ -144,7 +159,13 @@ export function createSize(stdout: NodeJS.WriteStream, options: CreateSizeOption
       flush()
       return
     }
-    if (coalesceTimer !== null) return
+    // Trailing-edge debounce: every event resets the pending timer so a burst
+    // of SIGWINCHs settles to a single publish carrying the *final* geometry.
+    // Replaces the prior first-edge-then-flush design which let bursts wider
+    // than the coalesce window leak every intermediate value (cmux's ~80 ms
+    // inter-event spacing escaped the 16 ms window and produced 4–6 publishes
+    // per workspace switch).
+    if (coalesceTimer !== null) clearTimeout(coalesceTimer)
     coalesceTimer = setTimeout(flush, coalesceMs)
   }
 
