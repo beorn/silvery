@@ -173,4 +173,118 @@ describe("regression: popover-unmount bg residue", () => {
       `overlay-bg residue (${after.count}) at ${JSON.stringify(after.coords)}`,
     ).toBe(0)
   })
+
+  // Mirrors km-tui Popover.tsx exactly — marginTop/marginLeft (not top/left),
+  // maxWidth/maxHeight (not concrete width/height), overflow="scroll",
+  // userSelect="contain", and a dynamic content body that affects intrinsic
+  // dimensions on each mount. The capture (82×75 Ghostty) shows residue at
+  // row 17 cols 65–78 — replicate those exact dims.
+  test("absolute child with km Popover prop shape (marginTop+maxWidth+overflow=scroll)", () => {
+    function App({ open, contentLines }: { open: boolean; contentLines: number }) {
+      return (
+        <Box flexDirection="column" width={82} height={75}>
+          {Array.from({ length: 73 }, (_, i) => (
+            <Box key={i} flexDirection="row">
+              <Text>line {i}</Text>
+            </Box>
+          ))}
+          {open ? (
+            <Box
+              position="absolute"
+              marginTop={17}
+              marginLeft={65}
+              maxWidth={14}
+              maxHeight={30}
+              flexDirection="column"
+              borderStyle="round"
+              borderColor="white"
+              backgroundColor={POPOVER_HEX}
+              paddingX={1}
+              overflow="scroll"
+              scrollOffset={0}
+              userSelect="contain"
+            >
+              {Array.from({ length: contentLines }, (_, i) => (
+                <Text key={i}>line {i}</Text>
+              ))}
+            </Box>
+          ) : null}
+        </Box>
+      )
+    }
+
+    const r = createRenderer({ cols: 82, rows: 75 })
+    const app = r(<App open={true} contentLines={3} />)
+
+    const overlayBg = dominantBg(app)
+    expect(overlayBg, "expected overlay bg in open frame").not.toBeNull()
+    if (!overlayBg) return
+
+    const open = countCellsWithBg(app, overlayBg)
+    expect(open.count, "overlay should paint when open").toBeGreaterThan(0)
+
+    // Two-step: first re-mount with different content (causes layout shift),
+    // then unmount. The two-step matches real-world hover chain (preview
+    // updates with metadata, then dismiss).
+    app.rerender(<App open={true} contentLines={5} />)
+    app.rerender(<App open={false} contentLines={5} />)
+
+    const after = countCellsWithBg(app, overlayBg)
+    expect(
+      after.count,
+      `km-shape popover residue: ${after.count} cells at ${JSON.stringify(after.coords)}`,
+    ).toBe(0)
+  })
+
+  // Same shape, but the unmount sequence interleaves several content updates
+  // (mirrors a hover-chain: anchor changes → content fetched → dismiss).
+  test("km-shape popover unmounts cleanly through anchor + content churn", () => {
+    function App({ open, top, left, lines }: { open: boolean; top: number; left: number; lines: number }) {
+      return (
+        <Box flexDirection="column" width={82} height={75}>
+          {Array.from({ length: 73 }, (_, i) => (
+            <Box key={i} flexDirection="row">
+              <Text>row {i}</Text>
+            </Box>
+          ))}
+          {open ? (
+            <Box
+              position="absolute"
+              marginTop={top}
+              marginLeft={left}
+              maxWidth={14}
+              maxHeight={30}
+              flexDirection="column"
+              borderStyle="round"
+              backgroundColor={POPOVER_HEX}
+              paddingX={1}
+              overflow="scroll"
+              userSelect="contain"
+            >
+              {Array.from({ length: lines }, (_, i) => (
+                <Text key={i}>l {i}</Text>
+              ))}
+            </Box>
+          ) : null}
+        </Box>
+      )
+    }
+
+    const r = createRenderer({ cols: 82, rows: 75 })
+    const app = r(<App open={true} top={17} left={65} lines={2} />)
+    const overlayBg = dominantBg(app)
+    if (!overlayBg) return
+
+    // Hover chain: position changes, content grows, then dismiss
+    app.rerender(<App open={true} top={17} left={65} lines={4} />)
+    app.rerender(<App open={true} top={18} left={64} lines={6} />)
+    app.rerender(<App open={true} top={17} left={65} lines={3} />)
+    app.rerender(<App open={false} top={17} left={65} lines={3} />)
+
+    const after = countCellsWithBg(app, overlayBg)
+    expect(
+      after.count,
+      `hover-chain residue: ${after.count} cells at ${JSON.stringify(after.coords)}`,
+    ).toBe(0)
+  })
 })
