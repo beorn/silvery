@@ -588,7 +588,7 @@ describe("selectionHitTest", () => {
 
     // pointerEvents=none but userSelect=text — should be found by selection but not pointer
     const pointerNone: AgNode = {
-      type: "silvery-box",
+      type: "silvery-text",
       props: { pointerEvents: "none", userSelect: "text" },
       children: [],
       parent: root,
@@ -606,11 +606,12 @@ describe("selectionHitTest", () => {
       subtreeDirty: false,
       childrenDirty: false,
       hidden: false,
+      textContent: "0123456789\n0123456789\n0123456789\n0123456789\n0123456789",
     } as unknown as AgNode
 
     // userSelect=none — should NOT be found by selection but IS by pointer
     const nonSelectable: AgNode = {
-      type: "silvery-box",
+      type: "silvery-text",
       props: { userSelect: "none" },
       children: [],
       parent: root,
@@ -628,11 +629,12 @@ describe("selectionHitTest", () => {
       subtreeDirty: false,
       childrenDirty: false,
       hidden: false,
+      textContent: "0123456789\n0123456789\n0123456789\n0123456789\n0123456789",
     } as unknown as AgNode
 
     // Normal selectable node
     const selectable: AgNode = {
-      type: "silvery-box",
+      type: "silvery-text",
       props: { userSelect: "text" },
       children: [],
       parent: root,
@@ -650,6 +652,7 @@ describe("selectionHitTest", () => {
       subtreeDirty: false,
       childrenDirty: false,
       hidden: false,
+      textContent: "0123456789\n0123456789\n0123456789\n0123456789\n0123456789",
     } as unknown as AgNode
 
     root.children = [pointerNone, nonSelectable, selectable]
@@ -666,14 +669,88 @@ describe("selectionHitTest", () => {
     const { root } = makeTree()
     // Point at (15, 2) is in the nonSelectable node area
     const hit = selectionHitTest(root, 15, 2)
-    // Should fall through to root since nonSelectable blocks selection
-    expect(hit).not.toHaveProperty("props.userSelect", "none")
+    // Semantic text selection should not fall back to a layout ancestor.
+    expect(hit).toBeNull()
   })
 
   test("selectionHitTest finds explicitly selectable node", () => {
     const { root, selectable } = makeTree()
     const hit = selectionHitTest(root, 25, 2)
     expect(hit).toBe(selectable)
+  })
+
+  test("selectionHitTest ignores blank layout space inside selectable boxes", () => {
+    const root: AgNode = {
+      type: "silvery-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 40, height: 5 },
+    } as unknown as AgNode
+    const box: AgNode = {
+      type: "silvery-box",
+      props: {},
+      children: [],
+      parent: root,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 40, height: 5 },
+    } as unknown as AgNode
+    const text: AgNode = {
+      type: "silvery-text",
+      props: {},
+      children: [],
+      parent: box,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 20, height: 1 },
+      textContent: "Hello",
+    } as unknown as AgNode
+    root.children = [box]
+    box.children = [text]
+
+    expect(selectionHitTest(root, 2, 0)).toBe(text)
+    expect(selectionHitTest(root, 10, 0)).toBe(text)
+    expect(selectionHitTest(root, 2, 2)).toBeNull()
+  })
+
+  test("selectionHitTest falls through same-row empty layout children to text siblings", () => {
+    const root: AgNode = {
+      type: "silvery-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 40, height: 3 },
+    } as unknown as AgNode
+    const row: AgNode = {
+      type: "silvery-box",
+      props: {},
+      children: [],
+      parent: root,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 40, height: 1 },
+    } as unknown as AgNode
+    const marker: AgNode = {
+      type: "silvery-box",
+      props: {},
+      children: [],
+      parent: row,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 4, height: 1 },
+    } as unknown as AgNode
+    const text: AgNode = {
+      type: "silvery-text",
+      props: {},
+      children: [],
+      parent: row,
+      layoutNode: {} as any,
+      scrollRect: { x: 4, y: 0, width: 20, height: 1 },
+      textContent: "Selectable text",
+    } as unknown as AgNode
+    root.children = [row]
+    row.children = [marker, text]
+
+    expect(selectionHitTest(root, 1, 0)).toBe(text)
   })
 })
 
@@ -806,6 +883,7 @@ describe("findSelectionBoundaries", () => {
       parent: root,
       layoutNode: {} as any,
       scrollRect: { x: 0, y: 0, width: 24, height: 1 },
+      textContent: "abcdefghijklmnopqrstuvwx",
     } as unknown as AgNode
     // Virtual inline text child — has inlineRects, scrollRect is zero-area.
     const virtualInline = {
@@ -855,6 +933,7 @@ describe("findSelectionBoundaries", () => {
       parent: modal,
       layoutNode: {} as any,
       scrollRect: { x: 12, y: 5, width: 20, height: 1 },
+      textContent: "contained",
     } as unknown as AgNode
     root.children = [modal]
     modal.children = [text]
@@ -862,6 +941,31 @@ describe("findSelectionBoundaries", () => {
     const boundaries = findSelectionBoundaries(text)
 
     expect(boundaries.map((boundary) => boundary.hardContain)).toEqual([false, true, false])
+  })
+
+  test("text boundary scope follows rendered text, not the full layout width", () => {
+    const root = {
+      type: "silvery-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 80, height: 24 },
+    } as unknown as AgNode
+    const text = {
+      type: "silvery-text",
+      props: {},
+      children: [],
+      parent: root,
+      layoutNode: {} as any,
+      scrollRect: { x: 3, y: 2, width: 30, height: 1 },
+      textContent: "Hello",
+    } as unknown as AgNode
+    root.children = [text]
+
+    const boundaries = findSelectionBoundaries(text)
+
+    expect(boundaries[0]?.scope).toEqual({ top: 2, bottom: 2, left: 3, right: 7 })
   })
 })
 

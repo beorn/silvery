@@ -13,8 +13,9 @@
 
 import React from "react"
 import { describe, expect, test } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, createTermless } from "@silvery/test"
 import { Box, ListView, Text } from "../../src/index.js"
+import { run } from "../../packages/ag-term/src/runtime/run"
 
 const settle = (ms = 50): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
@@ -79,5 +80,29 @@ describe("ListView: scroll-to-latest floating button", () => {
     await settle(150)
 
     expect(app.text).not.toContain("↓ Latest")
+  })
+
+  test("scrollbar thumb can be click-dragged in a ListView with default selection enabled", async () => {
+    using term = createTermless({ cols: 30, rows: 8 })
+    const handle = await run(
+      <Box flexDirection="column" height={8} width={30}>
+        <ListView items={makeItems(80)} height={8} renderItem={(label) => <Text>{label}</Text>} />
+      </Box>,
+      term,
+      { mouse: true },
+    )
+    await settle()
+
+    expect(term.screen.getText()).toContain("Item 1")
+
+    await term.mouse.down(29, 0)
+    await settle()
+    await term.mouse.move(29, 6)
+    await settle()
+    await term.mouse.up(29, 6)
+    await settle()
+
+    expect(term.screen.getText()).not.toContain("Item 1")
+    handle.unmount()
   })
 })

@@ -38,7 +38,7 @@ export interface SixelImageData {
   data: Uint8Array
 }
 
-type DecodedPng = {
+type DecodedImage = Parameters<typeof UPNG.toRGBA8>[0] & {
   width: number
   height: number
 }
@@ -78,7 +78,7 @@ export function decodePngToRgba(pngData: Buffer | Uint8Array): SixelImageData | 
       pngData instanceof Uint8Array ? pngData : new Uint8Array(pngData as ArrayBufferLike)
     const ab = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength) as ArrayBuffer
 
-    const decoded = UPNG.decode(ab) as DecodedPng
+    const decoded = UPNG.decode(ab) as DecodedImage
     const frames = UPNG.toRGBA8(decoded)
     if (frames.length === 0) return null
 

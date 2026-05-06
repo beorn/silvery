@@ -37,7 +37,7 @@ When the user presses Ctrl+Z:
 - Raw mode (stdin)
 - Alternate screen buffer (DEC mode 1049)
 - Cursor visibility (DEC mode 25)
-- Mouse tracking (modes 1000, 1002, 1006)
+- Mouse tracking (modes 1003, 1006, optional 1016 SGR-Pixels)
 - Kitty keyboard protocol (with original flags)
 - Bracketed paste (DEC mode 2004)
 - SGR attributes (reset on suspend, not restored — redraw handles this)

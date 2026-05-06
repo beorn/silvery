@@ -365,8 +365,8 @@ export function createTermless(
   }
 
   // --- Mouse surface ---
-  // Synthetic SGR (mode 1006) mouse injection, delegated to `sendInput` on the
-  // underlying Term. Coordinates are 0-indexed (matches silvery's internal
+  // Synthetic SGR cell-mode mouse injection, delegated to `sendInput` on the
+  // underlying Term. Coordinates are 0-indexed (matches Silvery's internal
   // convention); the SGR byte format is 1-indexed so we add 1 when writing.
   const sendInput = (data: string) => {
     ;(term as unknown as { sendInput: (s: string) => void }).sendInput(data)

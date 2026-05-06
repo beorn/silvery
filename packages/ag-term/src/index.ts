@@ -399,10 +399,15 @@ export { HitRegistry, resetHitRegionIdCounter, Z_INDEX } from "./hit-registry-co
 export type { HitTarget, HitRegion } from "./hit-registry-core"
 
 // =============================================================================
-// Mouse Parsing (SGR mode 1006)
+// Mouse Parsing (SGR modes 1006 and 1016)
 // =============================================================================
 
-export { parseMouseSequence, isMouseSequence, type ParsedMouse } from "./mouse"
+export {
+  parseMouseSequence,
+  isMouseSequence,
+  type ParseMouseOptions,
+  type ParsedMouse,
+} from "./mouse"
 
 // =============================================================================
 // Mouse Events (DOM-level)

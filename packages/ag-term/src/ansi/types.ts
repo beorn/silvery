@@ -24,6 +24,7 @@ export type {
 
 import type { Color } from "@silvery/ansi"
 import type { TerminalCaps } from "@silvery/ansi"
+import type { ParseMouseOptions } from "../mouse"
 
 /**
  * Style options for term.style() method.
@@ -81,6 +82,9 @@ export interface CreateTermOptions {
 
   // Terminal capabilities override
   caps?: Partial<TerminalCaps>
+
+  /** Mouse parser options for terminal-backed input owners. */
+  mouse?: ParseMouseOptions
 }
 
 // =============================================================================

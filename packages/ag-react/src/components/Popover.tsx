@@ -270,7 +270,7 @@ export function usePopoverHandlers(
       hover.onMouseEnter(e)
       hoverRef.current = true
       // `e` is pooled — capture coords eagerly.
-      const anchor = { x: e.clientX, y: e.clientY }
+      const anchor = { x: e.x, y: e.y }
       anchorRef.current = anchor
       if (!popover) return
       scheduleShow(anchor)

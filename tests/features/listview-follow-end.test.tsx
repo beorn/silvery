@@ -22,8 +22,9 @@
 
 import React from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, createTermless } from "@silvery/test"
 import { Box, Text, ListView } from "../../src/index.js"
+import { run } from "../../packages/ag-term/src/runtime/run"
 
 const settle = (ms = 60) => new Promise((r) => setTimeout(r, ms))
 
@@ -146,6 +147,24 @@ describe('ListView follow="end"', () => {
     app.rerender(<FollowEndChat items={makeItems(21)} />)
     await settle()
     expect(app.text).not.toContain("Item 21")
+  })
+
+  test("dragging the bottom scrollbar thumb disengages follow=end while held", async () => {
+    using term = createTermless({ cols: 30, rows: 8 })
+    const handle = await run(<FollowEndChat items={makeItems(30)} />, term, {
+      mouse: true,
+      selection: false,
+    })
+    await settle()
+    expect(term.screen).toContainText("Item 30")
+
+    await term.mouse.down(29, 5)
+    await settle()
+    await term.mouse.move(29, 1)
+    await settle()
+
+    expect(term.screen).not.toContainText("Item 30")
+    handle.unmount()
   })
 
   test("scrolling back to bottom resumes auto-follow", async () => {
@@ -292,6 +311,7 @@ describe('ListView follow="end"', () => {
 
     app.resize(32, 12)
     app.rerender(<FlexWrappingFollowEndChat tail={tail} />)
+    expect(app.text).toContain("TAIL-END")
     await settle()
 
     expect(app.text).toContain("TAIL-END")

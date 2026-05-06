@@ -29,8 +29,9 @@
 
 import React from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, createTermless } from "@silvery/test"
 import { Box, ListView, Text } from "@silvery/ag-react"
+import { run } from "../../packages/ag-term/src/runtime/run"
 
 const THUMB_EIGHTHS = new Set(["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"])
 const BUMP_GLYPHS = new Set(["▀", "▄"])
@@ -64,6 +65,19 @@ function findThumbCell(
     if (THUMB_EIGHTHS.has(app.cell(col, r).char)) return { col, row: r }
   }
   return null
+}
+
+function findThumbBottomRow(
+  app: { cell: (col: number, row: number) => { char: string } },
+  cols: number,
+  rows: number,
+): number {
+  const col = cols - 1
+  let bottom = -1
+  for (let r = 0; r < rows; r++) {
+    if (THUMB_EIGHTHS.has(app.cell(col, r).char)) bottom = r
+  }
+  return bottom
 }
 
 function hasBump(
@@ -110,6 +124,65 @@ describe("ListView height-independent — scrollbar with multi-line items", () =
     await app.wheel(5, ROWS / 2, 1)
     const thumb = findThumbCell(app, COLS, ROWS)
     expect(thumb).not.toBeNull()
+  })
+
+  test("thumb reaches the track bottom after wheel-scrolling tall content to the end", async () => {
+    const COLS = 60
+    const ROWS = 20
+    const items = Array.from({ length: 18 }, (_, i) => i)
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(
+      <Box width={COLS} height={ROWS} flexDirection="column">
+        <Box flexGrow={1} flexShrink={1} minHeight={0}>
+          <ListView
+            items={items}
+            nav
+            getKey={(idx) => idx}
+            renderItem={(idx) => <MultiLineItem idx={idx} />}
+          />
+        </Box>
+      </Box>,
+    )
+
+    for (let i = 0; i < 160; i++) await app.wheel(5, ROWS / 2, 1)
+
+    expect(app.text).toContain("line 1 of item 17")
+    expect(findThumbBottomRow(app, COLS, ROWS)).toBeGreaterThanOrEqual(ROWS - 2)
+  })
+
+  test("dragging the thumb to the bottom row keeps the thumb at the bottom while held", async () => {
+    using term = createTermless({ cols: 60, rows: 20 })
+    const items = Array.from({ length: 18 }, (_, i) => i)
+    const handle = await run(
+      <Box width={60} height={20} flexDirection="column">
+        <Box flexGrow={1} flexShrink={1} minHeight={0}>
+          <ListView
+            items={items}
+            nav
+            getKey={(idx) => idx}
+            renderItem={(idx) => <MultiLineItem idx={idx} />}
+          />
+        </Box>
+      </Box>,
+      term,
+      { mouse: true, selection: false },
+    )
+    await new Promise((r) => setTimeout(r, 50))
+
+    await term.mouse.move(59, 0)
+    await new Promise((r) => setTimeout(r, 50))
+    await term.mouse.down(59, 0)
+    await new Promise((r) => setTimeout(r, 50))
+    await term.mouse.move(59, 19)
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(term.screen).toContainText("line 1 of item 17")
+    let bottom = -1
+    for (let row = 0; row < 20; row++) {
+      if (THUMB_EIGHTHS.has(term.cell(row, 59).char)) bottom = row
+    }
+    expect(bottom).toBeGreaterThanOrEqual(18)
+    handle.unmount()
   })
 })
 

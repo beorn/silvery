@@ -35,7 +35,7 @@ For comprehensive, feature-by-feature terminal compatibility data beyond what Si
 | Hyperlinks | OSC 8             | Clickable hyperlinks in terminal output                    |
 | Notify     | OSC 9/99          | Desktop notifications (OSC 9 = iTerm2, OSC 99 = Kitty)     |
 | Paste      | DEC 2004          | Bracketed paste mode (distinguish pasted from typed input) |
-| Mouse      | SGR 1006          | SGR mouse tracking (click, drag, scroll)                   |
+| Mouse      | SGR 1003/1006/1016 | SGR mouse tracking (click, drag, scroll); optional SGR-Pixels |
 | Sync       | DEC 2026          | Synchronized output (batch rendering to prevent tearing)   |
 | Unicode    | -                 | Unicode and emoji rendering                                |
 

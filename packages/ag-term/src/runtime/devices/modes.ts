@@ -6,7 +6,7 @@
  *   - alternate screen buffer (DEC private mode 1049)
  *   - bracketed paste (DEC private mode 2004)
  *   - Kitty keyboard protocol (CSI > flags u / CSI < u)
- *   - mouse tracking (modes 1003 + 1006)
+ *   - mouse tracking (modes 1003 + 1006, optional 1016 SGR-Pixels)
  *   - focus reporting (DEC private mode 1004)
  *
  * ## Why
@@ -100,6 +100,8 @@ export const KittyFlags = {
  */
 export type ModeName = "rawMode" | "altScreen" | "bracketedPaste" | "mouse" | "focusReporting"
 
+export type MouseTrackingMode = boolean | "pixel"
+
 /**
  * Terminal protocol modes sub-owner.
  *
@@ -140,8 +142,8 @@ export interface Modes extends Disposable {
    */
   readonly kittyKeyboard: Signal<number | false>
 
-  /** SGR mouse tracking (xterm modes 1003 + 1006). */
-  readonly mouse: Signal<boolean>
+  /** SGR mouse tracking (xterm modes 1003 + 1006, or 1003 + 1006 + 1016). */
+  readonly mouse: Signal<MouseTrackingMode>
 
   /** Focus-in / focus-out reporting (DEC 1004). */
   readonly focusReporting: Signal<boolean>
@@ -191,7 +193,7 @@ export function createModes(opts: CreateModesOptions): Modes {
   const altScreen = signal<boolean>(false)
   const bracketedPaste = signal<boolean>(false)
   const kittyKeyboard = signal<number | false>(false)
-  const mouse = signal<boolean>(false)
+  const mouse = signal<MouseTrackingMode>(false)
   const focusReporting = signal<boolean>(false)
 
   // Track which modes this owner ever activated. Dispose only restores those,
@@ -290,7 +292,7 @@ export function createModes(opts: CreateModesOptions): Modes {
     if (disposed && !disposing) return
     if (on) touchedMouse = true
     try {
-      write(on ? enableMouse() : disableMouse())
+      write(on ? enableMouse({ pixels: on === "pixel" }) : disableMouse())
     } catch {
       // Terminal may already be gone
     }
@@ -346,18 +348,17 @@ export function createModes(opts: CreateModesOptions): Modes {
     stopFocusEffect()
   }
 
-  // Map ModeName → the matching boolean signal. Used by `enable()` to avoid
-  // a switch with six nearly-identical arms.
-  const booleanModes: Record<ModeName, Signal<boolean>> = {
-    rawMode,
-    altScreen,
-    bracketedPaste,
-    mouse,
-    focusReporting,
-  }
-
   function enable(name: ModeName): Disposable {
-    const sig = booleanModes[name]
+    const sig =
+      name === "rawMode"
+        ? rawMode
+        : name === "altScreen"
+          ? altScreen
+          : name === "bracketedPaste"
+            ? bracketedPaste
+            : name === "mouse"
+              ? mouse
+              : focusReporting
     const prior = sig()
     sig(true)
     let disposed = false

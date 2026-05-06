@@ -120,7 +120,7 @@ Blessed first, Silvery second. Features marked "core" are built into the framewo
 
 | Feature                   | Blessed                                                    | Silvery                                                                        |
 | ------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| **Mouse**                 | SGR (?1006), URxvt (?1015), and X10 protocols              | SGR 1006 (large coordinates, precise tracking, drag, wheel)                    |
+| **Mouse**                 | SGR (?1006), URxvt (?1015), and X10 protocols              | SGR 1003/1006 with optional 1016 SGR-Pixels (precise tracking, drag, wheel)    |
 | **Event model**           | EventEmitter with bubbling (cancel via `return false`)     | DOM-style bubbling, `stopPropagation`, input layering                          |
 | **Input isolation**       | Manual state checking in every handler                     | `InputLayerProvider` — modal dialogs consume input automatically               |
 | **Focus system**          | Widget-level `.focus()`                                    | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin` |

@@ -434,7 +434,7 @@ const SHIFT_CODES = new Set([
 
 const CTRL_CODES = new Set(["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "[6^", "[7^", "[8^"])
 
-const META_KEY_CODE_RE = /^(?:\x1b)([a-zA-Z0-9])$/
+const META_KEY_CODE_RE = /^(?:\x1b)([\x20-\x7e])$/
 const FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/
 
 /**

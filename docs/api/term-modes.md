@@ -109,7 +109,7 @@ term.modes.kittyKeyboard(
 
 ### `mouse`
 
-SGR mouse tracking — xterm modes 1003 (all motion + clicks) and 1006 (SGR encoding). Produces precise button + modifier reports.
+SGR mouse tracking — xterm modes 1003 (all motion + clicks) and 1006 (SGR encoding), or `"pixel"` for 1003 + 1006 + 1016 (SGR-Pixels). Cell mode produces integer Silvery layout `x`/`y`; pixel mode produces fractional layout `x`/`y` and physical `clientX`/`clientY`.
 
 ### `focusReporting`
 

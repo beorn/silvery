@@ -285,7 +285,7 @@ Ink provides tab-order focus with `useFocus()` — components register in a flat
 
 ### Mouse Support
 
-Silvery implements SGR mouse protocol (mode 1006) with DOM-style event handling:
+Silvery implements SGR mouse protocol (modes 1003/1006, with automatic 1016 SGR-Pixels upgrade when terminal cell metrics are available) with DOM-style event handling:
 
 ```tsx
 // Silvery: DOM-style mouse events

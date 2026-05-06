@@ -55,6 +55,29 @@ function SelectableContent() {
   )
 }
 
+function SelectableTextWithWideLayout() {
+  return (
+    <Box flexDirection="column">
+      <Text width={30} wrap={false}>
+        Selectable
+      </Text>
+    </Box>
+  )
+}
+
+function SelectableRowWithMarkerGutter() {
+  return (
+    <Box flexDirection="row" width={40}>
+      <Box width={4}>
+        <Text>•</Text>
+      </Box>
+      <Text width={30} wrap={false}>
+        Selectable
+      </Text>
+    </Box>
+  )
+}
+
 /**
  * Count how many cells on row `row` in [0..endCol) are highlighted by the
  * selection. The selection-paint pipeline can mark a cell as highlighted in
@@ -77,6 +100,48 @@ function countInverseOnRow(term: ReturnType<typeof createTermless>, row: number,
 }
 
 describe("selection — buffer-state architecture", () => {
+  test("dragging from a same-row marker gutter selects the text sibling", async () => {
+    using term = createTermless({ cols: 40, rows: 5 })
+
+    const handle = await run(<SelectableRowWithMarkerGutter />, term, {
+      selection: true,
+      mouse: true,
+    } as Partial<RunOptions>)
+    await settle()
+    term.clipboard.clear()
+
+    await term.mouse.drag({ from: [1, 0], to: [13, 0] })
+    await settle(200)
+
+    expect(term.clipboard.last).toBe("Selectable")
+
+    handle.unmount()
+  })
+
+  test("dragging into trailing layout space does not select blank cells", async () => {
+    using term = createTermless({ cols: 40, rows: 5 })
+
+    const handle = await run(<SelectableTextWithWideLayout />, term, {
+      selection: true,
+      mouse: true,
+    } as Partial<RunOptions>)
+    await settle()
+
+    await term.mouse.drag({ from: [0, 0], to: [25, 0] })
+    await settle(200)
+
+    const highlighted: number[] = []
+    for (let c = 0; c < 40; c++) {
+      const cell = term.cell(0, c)
+      if (Boolean((cell as { inverse?: boolean }).inverse) || cell.bg !== null) highlighted.push(c)
+    }
+
+    expect(highlighted.length).toBeGreaterThan(0)
+    expect(Math.max(...highlighted)).toBeLessThan("Selectable".length)
+
+    handle.unmount()
+  })
+
   test("active selection: visible cells AND underlying buffer cells reflect inversion", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
 

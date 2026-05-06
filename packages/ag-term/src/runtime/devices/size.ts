@@ -70,6 +70,8 @@ export interface Size extends Disposable {
 
 /** One 60Hz frame — long enough to absorb PTY re-sync bursts, short enough to feel immediate. */
 const RESIZE_COALESCE_MS = 16
+const DEFAULT_COLS = 80
+const DEFAULT_ROWS = 24
 
 /**
  * Options for `createSize`.
@@ -84,6 +86,10 @@ export interface CreateSizeOptions {
    * Set to 0 to disable coalescing (test scenarios).
    */
   coalesceMs?: number
+}
+
+function validDimension(value: number | undefined, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback
 }
 
 /**
@@ -102,8 +108,10 @@ export function createSize(stdout: NodeJS.WriteStream, options: CreateSizeOption
   // When neither is overridden we treat stdout as truth and re-read on first
   // access so any resize between construction and first read isn't lost.
   const dimsOverridden = options.cols !== undefined || options.rows !== undefined
-  const initialCols = options.cols ?? stdout.columns ?? 80
-  const initialRows = options.rows ?? stdout.rows ?? 24
+  const initialCols =
+    options.cols !== undefined ? options.cols : validDimension(stdout.columns, DEFAULT_COLS)
+  const initialRows =
+    options.rows !== undefined ? options.rows : validDimension(stdout.rows, DEFAULT_ROWS)
 
   // Writable signal owned privately — readers see it only through the
   // ReadSignal-shaped exports below. Consumers subscribe via
@@ -126,7 +134,8 @@ export function createSize(stdout: NodeJS.WriteStream, options: CreateSizeOption
   const flush = () => {
     coalesceTimer = null
     if (disposed) return
-    publish(stdout.columns ?? initialCols, stdout.rows ?? initialRows)
+    const prev = _snapshot()
+    publish(validDimension(stdout.columns, prev.cols), validDimension(stdout.rows, prev.rows))
   }
 
   const onResize = () => {
@@ -157,7 +166,8 @@ export function createSize(stdout: NodeJS.WriteStream, options: CreateSizeOption
     installed = true
     stdout.on("resize", onResize)
     if (!dimsOverridden) {
-      publish(stdout.columns ?? initialCols, stdout.rows ?? initialRows)
+      const prev = _snapshot()
+      publish(validDimension(stdout.columns, prev.cols), validDimension(stdout.rows, prev.rows))
     }
   }
 

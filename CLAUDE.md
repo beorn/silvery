@@ -83,7 +83,7 @@ SILVERY_STRICT=canary           # only this one check (debugging isolate)
 SILVERY_STRICT=1,!canary        # tier 1 minus canary (per-test escape hatch)
 ```
 
-Orthogonal axes (different *backend*, not different *check*) keep their own env vars: `SILVERY_STRICT_TERMINAL=vt100|xterm|ghostty|all`, `SILVERY_STRICT_ACCUMULATE=1`, `SILVERY_INSTRUMENT=1`. The boundary is: same check, different verifier → orthogonal var; new check → new slug under `SILVERY_STRICT`.
+Orthogonal axes (different _backend_, not different _check_) keep their own env vars: `SILVERY_STRICT_TERMINAL=vt100|xterm|ghostty|all`, `SILVERY_STRICT_ACCUMULATE=1`, `SILVERY_INSTRUMENT=1`. The boundary is: same check, different verifier → orthogonal var; new check → new slug under `SILVERY_STRICT`.
 
 Built-in slugs: `incremental` (tier 1, the historical incremental≡fresh check), `canary` (tier 1, degenerate-frame-after-first-render). See [`docs/guide/debugging.md`](docs/guide/debugging.md) for the full table and [`packages/ag-term/src/strict-mode.ts`](packages/ag-term/src/strict-mode.ts) for the `isStrictEnabled(slug, minTier)` helper.
 
@@ -224,6 +224,44 @@ All available from `import { ... } from "silvery"`. They handle keyboard, mouse,
 ```
 
 Use the built-in components — don't reimplement keyboard navigation, scroll handling, or selection theming.
+
+## Text Selection Architecture
+
+When debugging mouse text selection, do not treat it as raw terminal-buffer
+selection. Silvery has semantic selection machinery, and regressions usually
+live at the boundary between AgNode hit testing, scope resolution, and
+cell/fragment painting.
+
+Start with [Text Selection](docs/guide/text-selection.md), then inspect these
+files:
+
+- `packages/ag-term/src/runtime/create-app.tsx` — mouse drag state machine,
+  scope choice, OSC 52 copy.
+- `packages/ag-term/src/mouse-events.ts` — `selectionHitTest()`,
+  `findSelectionBoundaries()`, `userSelect` semantics.
+- `packages/headless/src/selection.ts` — headless range state, copy extraction,
+  selectable-cell filtering.
+- `packages/ag-term/src/selection-renderer.ts` — selection highlight composition.
+- `packages/ag/src/types.ts` — `selectionIntent` public prop.
+- `packages/ag/src/layout-signals.ts` — `computeSelectionFragments()` and
+  `findActiveSelectionFragments()`.
+- `packages/ag-term/src/runtime/wrap-measurer-registration.ts` — terminal
+  wrap measurer for soft-wrap-aware fragments.
+
+Key tests:
+
+- `tests/features/selection-drag-vs-click.test.tsx`
+- `tests/features/selection-shrink-visual.test.tsx`
+- `tests/features/selection-fragments.test.tsx`
+- `tests/features/softwrap-selection-fragments.test.tsx`
+- `tests/selection.test.ts`
+
+If a report says selection is scoped correctly but highlights/copies blank
+layout space, do not work around it in the app layout. Check whether
+`selectionHitTest()` is returning a broad layout Box for blank space, whether
+the nearest-common-scope calculation is widening unexpectedly, and whether the
+mouse/runtime path is still using the semantic selection data that used to
+prevent rectangular blank-cell selection.
 
 ## Styling
 

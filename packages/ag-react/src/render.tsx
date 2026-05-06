@@ -53,7 +53,12 @@ import {
   disableMouse,
   resetWindowTitle,
 } from "@silvery/ag-term/output"
-import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/ag-term/mouse"
+import {
+  parseMouseSequence,
+  isMouseSequence,
+  type ParseMouseOptions,
+  type ParsedMouse,
+} from "@silvery/ag-term/mouse"
 import {
   createMouseEventProcessor,
   processMouseEvent,
@@ -143,9 +148,10 @@ export interface RenderOptions {
    */
   layoutEngine?: LayoutEngineType
   /**
-   * Enable SGR mouse tracking (modes 1003 + 1006) for click, scroll, wheel,
-   * and drag events. When enabled, parsed mouse events are dispatched through
-   * the DOM-style `onClick` / `onWheel` / `onMouseEnter` / `onMouseLeave` /
+   * Enable SGR mouse tracking (modes 1003 + 1006, or 1003 + 1006 + 1016 when
+   * pixel parse options are provided) for click, scroll, wheel, and drag
+   * events. When enabled, parsed mouse events are dispatched through the
+   * DOM-style `onClick` / `onWheel` / `onMouseEnter` / `onMouseLeave` /
    * `onMouseDown` / `onMouseUp` / `onMouseMove` handlers on `Box`, `Text`, and
    * any component that takes mouse handler props.
    *
@@ -154,7 +160,7 @@ export interface RenderOptions {
    *
    * Default: `true` (when stdout is a TTY). `false` in non-TTY environments.
    */
-  mouse?: boolean
+  mouse?: boolean | ParseMouseOptions
 }
 
 /**
@@ -295,6 +301,8 @@ interface AppProps {
    * events. When `undefined`, mouse sequences on stdin are ignored.
    */
   mouseState?: MouseEventProcessorState
+  /** Parser options for SGR mouse sequences. */
+  mouseParseOptions?: ParseMouseOptions
 }
 
 /**
@@ -319,6 +327,7 @@ function SilveryApp({
   getRoot: getRootProp,
   handleFocusCycling = true,
   mouseState,
+  mouseParseOptions,
 }: AppProps): ReactElement {
   // Child apply-chain BaseApp — the ChainAppContext surface for hooks
   // inside this render tree. Built once per instance, mirrors the
@@ -358,6 +367,8 @@ function SilveryApp({
   // sequences on stdin are silently dropped in that case.
   const mouseStateRef = useRef<MouseEventProcessorState | undefined>(mouseState)
   mouseStateRef.current = mouseState
+  const mouseParseOptionsRef = useRef<ParseMouseOptions | undefined>(mouseParseOptions)
+  mouseParseOptionsRef.current = mouseParseOptions
 
   // Stable input chunk handler — created once, never changes identity.
   // All mutable state is read via refs to avoid dependency cascade.
@@ -394,13 +405,13 @@ function SilveryApp({
         return
       }
 
-      // Mouse dispatch — SGR mouse sequences (mode 1006) arrive as single
+      // Mouse dispatch — SGR mouse sequences arrive as single
       // CSI chunks from splitRawInput. Detect + parse + dispatch through the
       // DOM-style event processor, then consume (mouse sequences never fall
       // through to parseKey / useInput, matching run() / createApp()).
       const mstate = mouseStateRef.current
       if (mstate && isMouseSequence(chunk)) {
-        const parsed = parseMouseSequence(chunk)
+        const parsed = parseMouseSequence(chunk, mouseParseOptionsRef.current)
         if (parsed) {
           const root = getRootRef.current?.()
           if (root) {
@@ -547,6 +558,7 @@ class SilveryInstance {
   private readonly mode: RenderMode
   private readonly nonTTYMode: NonTTYMode
   private readonly mouseEnabled: boolean
+  private readonly mouseParseOptions: ParseMouseOptions | undefined
 
   private scheduler: RenderScheduler | null = null
   private cursorStore: CursorStore
@@ -585,7 +597,9 @@ class SilveryInstance {
     // always wins. Tracking SGR modes on a non-TTY stdout writes
     // uninterpretable bytes into whatever the stream is (piped logs, test
     // capture) so we guard on `isTTY` for the default.
-    this.mouseEnabled = options.mouse && this.stdout.isTTY
+    this.mouseParseOptions = typeof options.mouse === "object" ? options.mouse : undefined
+    this.mouseEnabled =
+      (options.mouse === true || this.mouseParseOptions != null) && this.stdout.isTTY
 
     // Set up exit promise
     this.exitPromise = new Promise<void>((resolve, reject) => {
@@ -608,13 +622,13 @@ class SilveryInstance {
       enableBracketedPaste(this.stdout)
     }
 
-    // Enable SGR mouse tracking (modes 1003 + 1006) when requested. Matches
+    // Enable SGR mouse tracking (modes 1003 + 1006, optional 1016) when requested. Matches
     // the create-app.tsx / run() pattern: write the enable sequence after
     // the other protocols are set up, and pair it with the matching disable
     // in unmount(). Construct the mouse event processor BEFORE SilveryApp
     // mounts so the first mouse sequence on stdin has somewhere to dispatch.
     if (this.mouseEnabled) {
-      this.stdout.write(enableMouse())
+      this.stdout.write(enableMouse({ pixels: this.mouseParseOptions?.coordinateMode === "pixel" }))
       this.mouseState = createMouseEventProcessor()
     }
 
@@ -691,6 +705,7 @@ class SilveryInstance {
           onScrollback={this.handleScrollback}
           getRoot={() => (this.container ? getContainerRoot(this.container) : null)}
           mouseState={this.mouseState}
+          mouseParseOptions={this.mouseParseOptions}
         >
           {element}
         </SilveryApp>
@@ -1008,9 +1023,10 @@ class SilveryInstance {
  * @param element - React element to render
  * @param termOrDef - Term instance, TermDef config, or omitted for static mode
  * @param options - Additional render options (merged with TermDef if provided).
- *   Notable flags: `mouse` (default `true` on TTY) enables SGR mouse 1003+1006
- *   and wires wheel / click / drag / enter / leave events through the
- *   component tree's `onWheel` / `onClick` / `onMouse*` handlers.
+ *   Notable flags: `mouse` (default `true` on TTY) enables SGR mouse 1003+1006,
+ *   or 1003+1006+1016 when pixel parse options are provided, and wires wheel /
+ *   click / drag / enter / leave events through the component tree's `onWheel`
+ *   / `onClick` / `onMouse*` handlers.
  * @returns RenderHandle - thenable for Instance, or use .run() for fluent API
  *
  * @example

@@ -40,8 +40,9 @@ import {
 import { nord, catppuccinLatte } from "@silvery/theme/schemes"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
 import type { TerminalCaps } from "../terminal-caps"
-import { createInputOwner } from "./input-owner"
+import { createInputOwner, type InputOwner } from "./input-owner"
 import { getInternalStreams } from "./term-internal"
+import type { ParseMouseOptions } from "../mouse"
 
 // Re-export types from keys.ts
 export type { Key, InputHandler } from "./keys"
@@ -100,13 +101,14 @@ export interface RunOptionsCommon {
    */
   kitty?: boolean | number
   /**
-   * Enable SGR mouse tracking (mode 1006) for click, scroll, and drag events.
+   * Enable SGR mouse tracking for click, scroll, and drag events. `true` probes
+   * terminal cell metrics and enables SGR-Pixels when the probe succeeds.
    * When enabled, native text selection requires holding Shift (or Option on macOS)
    * and native terminal scrolling is disabled.
    * Default: `true` in fullscreen mode, `false` in inline mode (where content
    * lives in terminal scrollback and natural scrolling is expected).
    */
-  mouse?: boolean
+  mouse?: boolean | ParseMouseOptions
   /**
    * Enable buffer-level text selection via mouse drag.
    * When enabled, left-mouse-drag selects text and mouse-up copies the
@@ -420,6 +422,7 @@ export async function run(
       | (Partial<RunOptionsCommon> & { profile?: TerminalProfile; colorLevel?: ColorLevel })
       | undefined
     let termProfile: TerminalProfile
+    let termMouseOption: boolean | ParseMouseOptions
     try {
       termProfile =
         termOptsAny?.profile ??
@@ -430,6 +433,7 @@ export async function run(
           fallbackLight: catppuccinLatte,
           ...(probeOwner ? { input: probeOwner } : {}),
         }))
+      termMouseOption = await resolveMouseOption(probeOwner, termOptions?.mouse, true)
     } finally {
       probeOwner?.dispose()
     }
@@ -461,7 +465,7 @@ export async function run(
       profile: termProfile,
       alternateScreen: true,
       kitty: caps.kittyKeyboard,
-      mouse: true,
+      mouse: termMouseOption,
       focusReporting: true,
       textSizing: "auto",
       widthDetection: "auto",
@@ -500,6 +504,7 @@ export async function run(
       ? createInputOwner(runStdin, runStdout, { retainRawModeOnDispose: true })
       : null
   let optsProfile: TerminalProfile
+  let optsMouseOption: boolean | ParseMouseOptions
   try {
     optsProfile =
       profileOption ??
@@ -512,6 +517,7 @@ export async function run(
             fallbackLight: catppuccinLatte,
             ...(optsProbeOwner ? { input: optsProbeOwner } : {}),
           }))
+    optsMouseOption = await resolveMouseOption(optsProbeOwner, rest.mouse, mode !== "inline")
   } finally {
     optsProbeOwner?.dispose()
   }
@@ -536,7 +542,7 @@ export async function run(
     alternateScreen: mode !== "inline",
     virtualInline: mode === "virtualInline",
     kitty: rest.kitty ?? caps.kittyKeyboard,
-    mouse: rest.mouse ?? mode !== "inline",
+    mouse: optsMouseOption,
     focusReporting: rest.focusReporting ?? mode !== "inline",
     textSizing: rest.textSizing ?? "auto",
     widthDetection: rest.widthDetection ?? "auto",
@@ -616,6 +622,83 @@ function wrapHandle(handle: {
  */
 let mixedRunOptionsWarned = false
 let deprecatedCapsWarned = false
+
+const TEXT_AREA_PIXELS_RE = /\x1b\[4;(\d+);(\d+)t/
+const TEXT_AREA_CELLS_RE = /\x1b\[8;(\d+);(\d+)t/
+
+async function resolveMouseOption(
+  probeOwner: InputOwner | null,
+  requested: boolean | ParseMouseOptions | undefined,
+  defaultEnabled: boolean,
+): Promise<boolean | ParseMouseOptions> {
+  const resolved = requested ?? defaultEnabled
+  if (resolved !== true) return resolved
+
+  const cellSize = await probeMouseCellSize(probeOwner)
+  return cellSize ? { coordinateMode: "pixel", cellSize } : true
+}
+
+async function probeMouseCellSize(
+  probeOwner: InputOwner | null,
+): Promise<{ width: number; height: number } | null> {
+  if (!probeOwner) return null
+
+  const pixels = await probeOwner.probe({
+    query: "\x1b[14t",
+    timeoutMs: 120,
+    parse: (acc) => {
+      const match = TEXT_AREA_PIXELS_RE.exec(acc)
+      if (!match) return null
+      return {
+        result: {
+          height: Number(match[1]),
+          width: Number(match[2]),
+        },
+        consumed: match.index + match[0].length,
+      }
+    },
+  })
+  if (!pixels) return null
+
+  const cells = await probeOwner.probe({
+    query: "\x1b[18t",
+    timeoutMs: 120,
+    parse: (acc) => {
+      const match = TEXT_AREA_CELLS_RE.exec(acc)
+      if (!match) return null
+      return {
+        result: {
+          rows: Number(match[1]),
+          cols: Number(match[2]),
+        },
+        consumed: match.index + match[0].length,
+      }
+    },
+  })
+  if (!cells) return null
+  if (!isSanePositive(pixels.width) || !isSanePositive(pixels.height)) return null
+  if (!isSanePositive(cells.cols) || !isSanePositive(cells.rows)) return null
+
+  const width = pixels.width / cells.cols
+  const height = pixels.height / cells.rows
+  if (!isSaneCellSize(width, height)) return null
+  return { width, height }
+}
+
+function isSanePositive(value: number): boolean {
+  return Number.isFinite(value) && value > 0
+}
+
+function isSaneCellSize(width: number, height: number): boolean {
+  return (
+    Number.isFinite(width) &&
+    Number.isFinite(height) &&
+    width >= 1 &&
+    height >= 1 &&
+    width <= 100 &&
+    height <= 200
+  )
+}
 
 function warnIfMixedRunOptions(options: unknown): void {
   if (options == null || typeof options !== "object") return

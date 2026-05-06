@@ -92,11 +92,10 @@ describe("Refinement 1: width-keyed measurement cache", () => {
     const getKey = (i: number) => keys[i]!
     // At width=80: sum = 6
     expect(sumHeights(0, 3, 99, 0, cache, getKey, 80)).toBe(6)
-    // At a never-measured width=40: avgMeasured fallback (avg = 2).
-    // calcAverageHeight returns 2 (avg of measurements regardless of
-    // width); per-item lookup misses on width=40, falls back to avg.
+    // At a never-measured width=40: per-item lookup misses and the
+    // width-specific average is unavailable, so it falls back to estimate.
     const totalAt40 = sumHeights(0, 3, 99, 0, cache, getKey, 40)
-    expect(totalAt40).toBe(6) // 3 × avg(2) = 6 (not 3 × 99)
+    expect(totalAt40).toBe(297)
   })
 
   test("ListView re-measures after viewport width changes (round-trip)", () => {

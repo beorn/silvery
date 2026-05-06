@@ -78,6 +78,19 @@ function SelectableContent() {
   )
 }
 
+function sendSgrPixelMouse(
+  term: ReturnType<typeof createTermless>,
+  button: number,
+  clientX: number,
+  clientY: number,
+  action: "down" | "move" | "up",
+) {
+  const suffix = action === "up" ? "m" : "M"
+  ;(term as unknown as { sendInput: (input: string) => void }).sendInput(
+    `\x1b[<${button};${clientX + 1};${clientY + 1}${suffix}`,
+  )
+}
+
 // ============================================================================
 // Bug 1 — drag-select shrinks when mouse reverses direction
 // ============================================================================
@@ -168,6 +181,49 @@ describe("Bug 1 — drag-select shrinks on reverse direction", () => {
       expect(clipboard).not.toContain("row-1")
       expect(clipboard).not.toContain("row-2")
     }
+
+    handle.unmount()
+  })
+
+  test("e2e: SGR-Pixels fractional coordinates select integer buffer cells", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+    const handle = await run(<SelectableContent />, term, {
+      mouse: { coordinateMode: "pixel", cellSize: { width: 10, height: 20 } },
+    } as any)
+    await settle()
+    term.clipboard.clear()
+
+    // Halfway through cell (0,0) to halfway through cell (10,0).
+    // The public mouse event keeps fractional cell x/y, but the terminal
+    // buffer selection range must be integer cell coordinates.
+    sendSgrPixelMouse(term, 0, 5, 10, "down")
+    await settle(50)
+    sendSgrPixelMouse(term, 32, 105, 10, "move")
+    await settle(50)
+    sendSgrPixelMouse(term, 0, 105, 10, "up")
+    await settle(200)
+
+    expect(term.clipboard.last).toBe("Hello World")
+
+    handle.unmount()
+  })
+
+  test("e2e: SGR-Pixels movement inside the same cell remains a click", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+    const handle = await run(<SelectableContent />, term, {
+      mouse: { coordinateMode: "pixel", cellSize: { width: 10, height: 20 } },
+    } as any)
+    await settle()
+    term.clipboard.clear()
+
+    sendSgrPixelMouse(term, 0, 52, 10, "down")
+    await settle(50)
+    sendSgrPixelMouse(term, 32, 57, 15, "move")
+    await settle(50)
+    sendSgrPixelMouse(term, 0, 57, 15, "up")
+    await settle(200)
+
+    expect(term.clipboard.last).toBeNull()
 
     handle.unmount()
   })

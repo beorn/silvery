@@ -160,13 +160,13 @@ export function EditContextDisplay({
       const lines = wrappedLinesRef.current
       const scroll = scrollRefForClick.current
 
-      const relativeY = e.clientY - rect.y
+      const relativeY = e.y - rect.y
       const row = relativeY + scroll
       const clampedRow = Math.min(Math.max(0, row), lines.length - 1)
       const wl = lines[clampedRow]
       if (!wl) return
 
-      const relativeX = e.clientX - rect.x
+      const relativeX = e.x - rect.x
       const col = Math.min(Math.max(0, relativeX), wl.line.length)
       const offset = Math.min(Math.max(0, wl.startOffset + col), value.length)
       onCursorClick(offset)

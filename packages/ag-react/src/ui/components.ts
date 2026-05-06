@@ -21,6 +21,9 @@ export type {
 
 export { Scrollbar } from "./components/Scrollbar"
 export type { ScrollbarProps } from "./components/Scrollbar"
+export { ScrollArea } from "./components/ScrollArea"
+export { useScrollController } from "./components/ScrollArea"
+export type { ScrollAreaProps, ScrollController } from "./components/ScrollArea"
 
 export { ListView } from "./components/ListView"
 export type {

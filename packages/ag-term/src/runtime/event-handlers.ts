@@ -206,6 +206,7 @@ export function dispatchMouseEventToTree(
       button: mouseData.button,
       x: mouseData.x,
       y: mouseData.y,
+      coordinateMode: "cell",
       action: mouseData.action as "down" | "up" | "move" | "wheel",
       delta: mouseData.delta,
       shift: mouseData.shift,

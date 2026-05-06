@@ -12,7 +12,7 @@
  * - Raw mode (stdin)
  * - Alternate screen buffer (DEC private mode 1049)
  * - Cursor visibility (DEC private mode 25)
- * - Mouse tracking (modes 1000, 1002, 1006)
+ * - Mouse tracking (modes 1003, 1006, optional 1016 SGR-Pixels)
  * - Kitty keyboard protocol (CSI > flags u / CSI < u)
  * - Bracketed paste (DEC private mode 2004)
  * - SGR attributes (reset via CSI 0 m)
@@ -63,6 +63,7 @@ export interface TerminalState {
   alternateScreen: boolean
   cursorHidden: boolean
   mouseEnabled: boolean
+  mousePixels: boolean
   kittyEnabled: boolean
   kittyFlags: number
   bracketedPaste: boolean
@@ -83,7 +84,7 @@ export interface TerminalState {
 export function captureTerminalState(opts: {
   alternateScreen?: boolean
   cursorHidden?: boolean
-  mouse?: boolean
+  mouse?: boolean | "pixel"
   kitty?: boolean
   kittyFlags?: number
   bracketedPaste?: boolean
@@ -94,7 +95,8 @@ export function captureTerminalState(opts: {
     rawMode: opts.rawMode ?? true,
     alternateScreen: opts.alternateScreen ?? false,
     cursorHidden: opts.cursorHidden ?? true,
-    mouseEnabled: opts.mouse ?? false,
+    mouseEnabled: opts.mouse === true || opts.mouse === "pixel",
+    mousePixels: opts.mouse === "pixel",
     kittyEnabled: opts.kitty ?? false,
     kittyFlags: opts.kittyFlags ?? 11, // DISAMBIGUATE(1) | REPORT_EVENTS(2) | REPORT_ALL_KEYS(8)
     bracketedPaste: opts.bracketedPaste ?? false,
@@ -254,7 +256,7 @@ export function resumeTerminalState(
   }
 
   if (state.mouseEnabled) {
-    sequences.push(enableMouse())
+    sequences.push(enableMouse({ pixels: state.mousePixels }))
   }
 
   if (state.bracketedPaste) {

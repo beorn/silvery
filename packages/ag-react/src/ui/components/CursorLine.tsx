@@ -62,7 +62,7 @@ export function CursorLine({
       if (!onCursorClick || e.button !== 0) return
       const rect = e.currentTarget.scrollRect
       if (!rect) return
-      const relativeX = e.clientX - rect.x
+      const relativeX = e.x - rect.x
       const offset = Math.min(Math.max(0, relativeX), totalLength)
       onCursorClick(offset)
     },

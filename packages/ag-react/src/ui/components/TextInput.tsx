@@ -224,7 +224,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
       if (e.button !== 0) return
       const rect = e.currentTarget.scrollRect
       if (!rect) return
-      const relativeX = e.clientX - rect.x - prompt.length
+      const relativeX = e.x - rect.x - prompt.length
       const newCursor = Math.max(0, Math.min(relativeX, value.length))
       readline.setValueWithCursor(value, newCursor)
     },

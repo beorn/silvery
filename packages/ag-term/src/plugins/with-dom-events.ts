@@ -26,7 +26,7 @@
  * function Button() {
  *   return (
  *     <Box onClick={(e) => {
- *       console.log('clicked at', e.clientX, e.clientY)
+ *       console.log('clicked at', e.x, e.y)
  *       e.stopPropagation()
  *     }}>
  *       <Text>Click me</Text>
@@ -162,7 +162,16 @@ export function withDomEvents(
               const root = target.getContainer()
               processMouseEvent(
                 mouseState,
-                { button, x, y, action: "down", shift: false, meta: false, ctrl: false },
+                {
+                  button,
+                  x,
+                  y,
+                  coordinateMode: "cell",
+                  action: "down",
+                  shift: false,
+                  meta: false,
+                  ctrl: false,
+                },
                 root,
               )
             }
@@ -178,7 +187,16 @@ export function withDomEvents(
               const root = target.getContainer()
               processMouseEvent(
                 mouseState,
-                { button, x, y, action: "up", shift: false, meta: false, ctrl: false },
+                {
+                  button,
+                  x,
+                  y,
+                  coordinateMode: "cell",
+                  action: "up",
+                  shift: false,
+                  meta: false,
+                  ctrl: false,
+                },
                 root,
               )
             }
@@ -200,6 +218,7 @@ export function withDomEvents(
               button,
               x,
               y,
+              coordinateMode: "cell" as const,
               action: "down" as const,
               shift: false,
               meta: false,
@@ -234,6 +253,7 @@ export function withDomEvents(
                   button: 0,
                   x,
                   y,
+                  coordinateMode: "cell",
                   action: "wheel",
                   delta,
                   shift: false,

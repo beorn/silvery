@@ -75,7 +75,14 @@ describe("createSize: initialization", () => {
     expect(size.snapshot()).toEqual({ cols: 132, rows: 40 })
   })
 
-  test("falls back to 80x24 when stdout dims are zero/missing", () => {
+  test("falls back to 80x24 when stdout dims are zero", () => {
+    const stdout = createMockStdout(0, 0)
+    using size = createSize(stdout)
+    expect(size.cols()).toBe(80)
+    expect(size.rows()).toBe(24)
+  })
+
+  test("falls back to 80x24 when stdout dims are missing", () => {
     const stdout = createMockStdout(0, 0)
     ;(stdout as unknown as { columns: number }).columns = undefined as unknown as number
     ;(stdout as unknown as { rows: number }).rows = undefined as unknown as number
@@ -127,6 +134,27 @@ describe("createSize: resize coalescing", () => {
     expect(changes[0]).toEqual({ cols: 120, rows: 35 })
     expect(size.cols()).toBe(120)
     expect(size.rows()).toBe(35)
+
+    stop()
+  })
+
+  test("zero-dimension resize events keep the last valid dimensions", async () => {
+    const stdout = createMockStdout(120, 40)
+    using size = createSize(stdout)
+
+    const { changes, stop } = observeChanges(size)
+
+    setDims(stdout, 0, 0)
+    await sleep(50)
+
+    expect(changes).toEqual([])
+    expect(size.snapshot()).toEqual({ cols: 120, rows: 40 })
+
+    setDims(stdout, 100, 30)
+    await sleep(50)
+
+    expect(changes).toEqual([{ cols: 100, rows: 30 }])
+    expect(size.snapshot()).toEqual({ cols: 100, rows: 30 })
 
     stop()
   })

@@ -262,7 +262,7 @@ Silvery ships with full support for modern terminal protocols that resolve the l
 
 1. **Kitty keyboard protocol** — Enables full modifier detection (Ctrl+Shift, Super, Hyper), key release events, and unambiguous key identification. Auto-enabled by `run()`. See [Kitty Protocol](/guide/kitty-protocol).
 2. **Bracketed paste mode** — Distinguishes pasted text from typed input. Built into the runtime with `usePaste()` hook.
-3. **Mouse input** — Click, drag, and scroll events via SGR protocol (mode 1006). Auto-enabled by `run()`. Set `mouse: false` to restore native copy/paste. Components receive DOM-style `onClick`, `onWheel`, etc.
+3. **Mouse input** — Click, drag, and scroll events via SGR protocol (modes 1003/1006, upgraded to 1016 SGR-Pixels when `run()` can probe terminal cell metrics). Auto-enabled by `run()`. Set `mouse: false` to restore native copy/paste. Components receive DOM-style `onClick`, `onWheel`, etc.
 4. **Focus events** — Detect when the terminal gains/loses focus via the focus system and `useFocusable()` hook. Auto-enabled by `run()`.
 
 All features are auto-enabled by `run()` and gracefully degrade in unsupported terminals. Pass `false` to opt out.

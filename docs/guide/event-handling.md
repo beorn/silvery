@@ -53,6 +53,17 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 | `onKeyDown`        | `SilveryKeyEvent`   | Yes                 |
 | `onKeyDownCapture` | `SilveryKeyEvent`   | Yes (capture phase) |
 
+Mouse event coordinates use Silvery layout space:
+
+- `event.x` / `event.y` are comparable to `Rect.x` / `Rect.y`. In terminal renderers they are terminal-cell coordinates and may be fractional when SGR-Pixels mode is active.
+- `event.clientX` / `event.clientY` are physical pixel coordinates when the backend can provide them. They are optional in cell-only terminal mouse mode.
+
+SGR-Pixels is a precision upgrade for Silvery layout coordinates, not a promise
+of glyph-accurate hit testing. It assumes a uniform terminal cell grid and a
+runtime-probed cell size. Components that render custom pixel geometry, inline
+graphics, or terminal-side transformed text should provide their own hit testing
+or stay with cell-mode mouse input for that region.
+
 ## `withCommands()` — Named Serializable Actions
 
 Turns input into named, serializable commands. Keys and clicks resolve to commands; commands produce actions.

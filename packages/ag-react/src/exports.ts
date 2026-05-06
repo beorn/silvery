@@ -74,6 +74,9 @@ export { MeasuredBox } from "./ui/components"
 export type { MeasuredBoxProps, MeasuredBoxRect, MeasuredBoxRenderFn } from "./ui/components"
 export { Scrollbar } from "./ui/components"
 export type { ScrollbarProps } from "./ui/components"
+export { ScrollArea } from "./ui/components"
+export { useScrollController } from "./ui/components"
+export type { ScrollAreaProps, ScrollController } from "./ui/components"
 export { Console } from "./ui/components"
 export { ListView } from "./ui/components"
 export type {
@@ -1029,8 +1032,13 @@ export type {
 } from "@silvery/ag/types"
 export type { HitTarget, HitRegion } from "@silvery/ag-term/hit-registry"
 
-// Mouse parsing (SGR mode 1006)
-export { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/ag-term/mouse"
+// Mouse parsing (SGR modes 1006 and 1016)
+export {
+  parseMouseSequence,
+  isMouseSequence,
+  type ParseMouseOptions,
+  type ParsedMouse,
+} from "@silvery/ag-term/mouse"
 
 // Mouse events (DOM-level)
 export {

@@ -43,7 +43,12 @@
 
 import { createLogger } from "loggily"
 import { type Key, parseKey } from "./keys"
-import { isMouseSequence, parseMouseSequence, type ParsedMouse } from "../mouse"
+import {
+  isMouseSequence,
+  parseMouseSequence,
+  type ParseMouseOptions,
+  type ParsedMouse,
+} from "../mouse"
 import { parseBracketedPaste } from "../bracketed-paste"
 import { parseFocusEvent } from "../focus-reporting"
 import type { Modes } from "./devices/modes"
@@ -189,6 +194,11 @@ export interface InputOwnerOptions {
    * that don't want any protocol bytes written to stdout.
    */
   enableBracketedPaste?: boolean
+  /**
+   * Mouse coordinate parser options. Use this when the terminal has been put
+   * into SGR-Pixels mode 1016 and cell metrics are known.
+   */
+  mouse?: ParseMouseOptions
 }
 
 interface ProbeEntry {
@@ -378,7 +388,7 @@ export function createInputOwner(
       return
     }
     if (isMouseSequence(raw)) {
-      const mouse = parseMouseSequence(raw)
+      const mouse = parseMouseSequence(raw, options.mouse)
       if (mouse) {
         fire(mouseHandlers, mouse)
         return

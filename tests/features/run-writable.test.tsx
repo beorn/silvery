@@ -6,10 +6,11 @@
  */
 
 import React, { useEffect, useState } from "react"
+import { EventEmitter } from "node:events"
 import { describe, test, expect, afterEach } from "vitest"
 import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
-import { Box, Text } from "../../src/index.js"
+import { Box, Text, useTerm } from "../../src/index.js"
 import { run, useInput, type RunHandle } from "../../packages/ag-term/src/runtime/run"
 import { useRuntime } from "../../src/index.js"
 
@@ -32,6 +33,35 @@ function Counter() {
       <Text>Count: {count}</Text>
     </Box>
   )
+}
+
+function ViewportProbe() {
+  const { cols, rows } = useTerm((term) => term.size.snapshot())
+  return <Text>{`viewport=${cols}x${rows}`}</Text>
+}
+
+function createFakeStream(cols = 120, rows = 40): NodeJS.WriteStream & NodeJS.ReadStream {
+  const stream = new EventEmitter() as NodeJS.WriteStream & NodeJS.ReadStream
+  stream.columns = cols
+  stream.rows = rows
+  stream.isTTY = true
+  stream.isRaw = false
+  stream.write = () => true
+  stream.read = () => null
+  stream.resume = () => stream
+  stream.pause = () => stream
+  stream.setRawMode = (mode: boolean) => {
+    stream.isRaw = mode
+    return stream
+  }
+  stream.setEncoding = () => stream
+  return stream
+}
+
+function resizeStream(stdout: NodeJS.WriteStream, cols: number, rows: number): void {
+  stdout.columns = cols
+  stdout.rows = rows
+  stdout.emit("resize")
 }
 
 // ============================================================================
@@ -101,6 +131,34 @@ describe("run() with createTermless()", () => {
     await handle.press("Escape")
     // App should have exited cleanly
     await handle.waitUntilExit()
+  })
+
+  test("auto-created term ignores transient zero-dimension focus resize", async () => {
+    const stdout = createFakeStream(120, 40)
+    const stdin = createFakeStream(120, 40)
+    const handle = await run(<ViewportProbe />, {
+      cols: 120,
+      rows: 40,
+      stdout,
+      stdin,
+      mode: "fullscreen",
+      textSizing: false,
+      widthDetection: false,
+      focusReporting: false,
+      guardOutput: false,
+    })
+
+    expect(handle.text).toContain("viewport=120x40")
+
+    resizeStream(stdout, 0, 0)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(handle.text).toContain("viewport=120x40")
+
+    resizeStream(stdout, 100, 30)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(handle.text).toContain("viewport=100x30")
+
+    handle.unmount()
   })
 })
 

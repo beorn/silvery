@@ -1,5 +1,5 @@
 /**
- * SGR mouse event parsing (mode 1006).
+ * SGR mouse event parsing (mode 1006) and SGR-Pixels parsing (mode 1016).
  *
  * SGR format: CSI < button;x;y M (press) or CSI < button;x;y m (release)
  *
@@ -13,15 +13,27 @@
  */
 
 /**
- * Parsed mouse event from SGR mouse protocol (mode 1006).
+ * Parsed mouse event from SGR mouse protocol.
  */
 export interface ParsedMouse {
   /** Mouse button: 0=left, 1=middle, 2=right */
   button: number
-  /** Column (0-indexed) */
+  /**
+   * Silvery layout X coordinate, in terminal cells.
+   * Integer in SGR 1006 mode; fractional when parsed from SGR-Pixels 1016.
+   */
   x: number
-  /** Row (0-indexed) */
+  /**
+   * Silvery layout Y coordinate, in terminal cells.
+   * Integer in SGR 1006 mode; fractional when parsed from SGR-Pixels 1016.
+   */
   y: number
+  /** Physical pixel X coordinate, present only for SGR-Pixels 1016. */
+  clientX?: number
+  /** Physical pixel Y coordinate, present only for SGR-Pixels 1016. */
+  clientY?: number
+  /** Coordinate mode used by the parser. */
+  coordinateMode: "cell" | "pixel"
   /** Event action */
   action: "down" | "up" | "move" | "wheel"
   /** Wheel delta: -1 for up, +1 for down */
@@ -36,18 +48,30 @@ export interface ParsedMouse {
 
 const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/
 
+export interface ParseMouseOptions {
+  coordinateMode?: "cell" | "pixel"
+  cellSize?: { width: number; height: number }
+}
+
 /**
  * Parse an SGR mouse sequence.
  *
  * @returns ParsedMouse or null if not a valid mouse sequence
  */
-export function parseMouseSequence(input: string): ParsedMouse | null {
+export function parseMouseSequence(input: string, options?: ParseMouseOptions): ParsedMouse | null {
   const m = SGR_MOUSE_RE.exec(input)
   if (!m) return null
 
   const raw = parseInt(m[1]!)
-  const x = parseInt(m[2]!) - 1 // 1-indexed → 0-indexed
-  const y = parseInt(m[3]!) - 1
+  const rawX = parseInt(m[2]!) - 1 // 1-indexed → 0-indexed
+  const rawY = parseInt(m[3]!) - 1
+  const coordinateMode = options?.coordinateMode ?? "cell"
+  const cellWidth = Math.max(1, options?.cellSize?.width ?? 1)
+  const cellHeight = Math.max(1, options?.cellSize?.height ?? 1)
+  const x = coordinateMode === "pixel" ? rawX / cellWidth : rawX
+  const y = coordinateMode === "pixel" ? rawY / cellHeight : rawY
+  const clientX = coordinateMode === "pixel" ? rawX : undefined
+  const clientY = coordinateMode === "pixel" ? rawY : undefined
   const terminator = m[4]!
 
   const shift = !!(raw & 4)
@@ -62,6 +86,9 @@ export function parseMouseSequence(input: string): ParsedMouse | null {
       button: 0,
       x,
       y,
+      ...(clientX === undefined ? {} : { clientX }),
+      ...(clientY === undefined ? {} : { clientY }),
+      coordinateMode,
       action: "wheel",
       delta: wheelButton === 0 ? -1 : 1,
       shift,
@@ -72,7 +99,18 @@ export function parseMouseSequence(input: string): ParsedMouse | null {
 
   const button = raw & 3
   const action = motion ? "move" : terminator === "M" ? "down" : "up"
-  return { button, x, y, action, shift, meta, ctrl }
+  return {
+    button,
+    x,
+    y,
+    ...(clientX === undefined ? {} : { clientX }),
+    ...(clientY === undefined ? {} : { clientY }),
+    coordinateMode,
+    action,
+    shift,
+    meta,
+    ctrl,
+  }
 }
 
 const SGR_MOUSE_TEST_RE = /^\x1b\[<\d+;\d+;\d+[Mm]$/

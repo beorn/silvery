@@ -16,10 +16,22 @@ import type { AgNode } from "./types"
  * Synthetic mouse event, mirroring React.MouseEvent / DOM MouseEvent.
  */
 export interface SilveryMouseEvent {
-  /** Terminal column (0-indexed) */
-  clientX: number
-  /** Terminal row (0-indexed) */
-  clientY: number
+  /**
+   * Silvery layout X coordinate, comparable to Rect.x.
+   * In terminal renderers this is measured in terminal cells and may be
+   * fractional when SGR-Pixels mouse mode is active.
+   */
+  x: number
+  /**
+   * Silvery layout Y coordinate, comparable to Rect.y.
+   * In terminal renderers this is measured in terminal cells and may be
+   * fractional when SGR-Pixels mouse mode is active.
+   */
+  y: number
+  /** Physical pixel X coordinate when the backend provides one. */
+  clientX?: number
+  /** Physical pixel Y coordinate when the backend provides one. */
+  clientY?: number
   /** Mouse button: 0=left, 1=middle, 2=right */
   button: number
   /** Modifier keys */

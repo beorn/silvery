@@ -14,9 +14,10 @@ import type { FocusManager } from "@silvery/ag/focus-manager"
 import { findFocusableAncestor } from "@silvery/ag/focus-queries"
 import type { ParsedMouse } from "./mouse"
 import { getAncestorPath, pointInRect } from "@silvery/ag/tree-utils"
-import type { AgNode, Rect, UserSelect } from "@silvery/ag/types"
+import type { AgNode, Rect, TextProps, UserSelect } from "@silvery/ag/types"
 import type { SelectionScope } from "@silvery/headless/selection"
 import { setHovered, setArmed } from "@silvery/ag/interactive-signals"
+import { displayWidthAnsi, wrapText } from "./unicode"
 
 // Re-export canonical types from ag (avoid duplicate type definitions)
 export type { SilveryMouseEvent, SilveryWheelEvent } from "@silvery/ag/mouse-event-types"
@@ -62,8 +63,10 @@ export function createMouseEvent(
 
   return {
     type,
-    clientX: x,
-    clientY: y,
+    x,
+    y,
+    clientX: parsed.clientX,
+    clientY: parsed.clientY,
     button: parsed.button,
     altKey: parsed.meta,
     ctrlKey: parsed.ctrl,
@@ -298,6 +301,15 @@ export function resolveUserSelect(node: AgNode): "none" | "text" | "contain" {
  * - Respects userSelect (a node with userSelect="none" is not a selection target)
  */
 export function selectionHitTest(node: AgNode, x: number, y: number): AgNode | null {
+  return selectionHitTestInner(node, x, y, true)
+}
+
+function selectionHitTestInner(
+  node: AgNode,
+  x: number,
+  y: number,
+  allowRowFallback: boolean,
+): AgNode | null {
   const rect = node.scrollRect
   if (!rect) return null
 
@@ -315,13 +327,19 @@ export function selectionHitTest(node: AgNode, x: number, y: number): AgNode | n
   // DFS: check children in reverse order (last child = top z-order)
   for (let i = node.children.length - 1; i >= 0; i--) {
     const child = node.children[i]!
+    const childRect = child.scrollRect
     if (clips) {
-      const childRect = child.scrollRect
       if (childRect && !pointInRect(x, y, rect)) {
         continue
       }
     }
-    const hit = selectionHitTest(child, x, y)
+    if (childRect && pointInRect(x, y, childRect)) {
+      if (resolveUserSelect(child) === "none") return null
+      const hit = selectionHitTestInner(child, x, y, false)
+      if (hit) return hit
+      continue
+    }
+    const hit = selectionHitTestInner(child, x, y, false)
     if (hit) return hit
   }
 
@@ -337,7 +355,11 @@ export function selectionHitTest(node: AgNode, x: number, y: number): AgNode | n
     }
   }
 
-  return node
+  if (node.type === "silvery-text") {
+    return pointHitsRenderedTextRow(node, y) ? node : null
+  }
+
+  return allowRowFallback ? findTextNodeOnRow(node, y) : null
 }
 
 /**
@@ -381,12 +403,76 @@ function nodeSelectionScope(node: AgNode): SelectionScope | null {
   // anchor/head to (0,0) — silently breaking double/triple-click word
   // selection that goes through `clampToScope`.
   if (rect.width <= 0 || rect.height <= 0) return null
+  if (node.type === "silvery-text") {
+    const textBounds = renderedTextBounds(node)
+    if (textBounds === null) return null
+    return {
+      top: rect.y,
+      bottom: rect.y + textBounds.height - 1,
+      left: rect.x,
+      right: rect.x + textBounds.width - 1,
+    }
+  }
+
   return {
     top: rect.y,
     bottom: rect.y + rect.height - 1,
     left: rect.x,
     right: rect.x + rect.width - 1,
   }
+}
+
+function collectText(node: AgNode): string {
+  if (node.type === "silvery-text" && node.textContent !== undefined) return node.textContent
+  let out = ""
+  for (const child of node.children) out += collectText(child)
+  return out
+}
+
+function renderedTextLines(node: AgNode): string[] {
+  const rect = node.scrollRect
+  if (!rect || rect.width <= 0) return []
+  const text = collectText(node)
+  if (text.length === 0) return []
+  const props = node.props as TextProps
+  const wrap = props.wrap
+  const shouldWrap =
+    wrap !== false && wrap !== "truncate" && wrap !== "truncate-end" && wrap !== "clip"
+  return shouldWrap ? wrapText(text, rect.width, true, false) : text.split("\n")
+}
+
+function renderedTextBounds(node: AgNode): { width: number; height: number } | null {
+  const rect = node.scrollRect
+  if (!rect || rect.width <= 0 || rect.height <= 0) return null
+  const lines = renderedTextLines(node)
+  if (lines.length === 0) return null
+  let maxWidth = 0
+  for (const line of lines) {
+    maxWidth = Math.max(maxWidth, Math.min(rect.width, displayWidthAnsi(line)))
+  }
+  if (maxWidth <= 0) return null
+  return { width: maxWidth, height: Math.min(rect.height, lines.length) }
+}
+
+function pointHitsRenderedTextRow(node: AgNode, y: number): boolean {
+  const rect = node.scrollRect
+  if (!rect) return false
+  const row = y - rect.y
+  if (row < 0 || row >= rect.height) return false
+  const lines = renderedTextLines(node)
+  const line = lines[row]
+  if (line === undefined) return false
+  const lineWidth = Math.min(rect.width, displayWidthAnsi(line))
+  return lineWidth > 0
+}
+
+function findTextNodeOnRow(node: AgNode, y: number): AgNode | null {
+  for (let i = node.children.length - 1; i >= 0; i--) {
+    const child = node.children[i]!
+    const hit = findTextNodeOnRow(child, y)
+    if (hit) return hit
+  }
+  return node.type === "silvery-text" && pointHitsRenderedTextRow(node, y) ? node : null
 }
 
 /**
@@ -650,6 +736,10 @@ export interface MouseEventProcessorState {
   mouseDownTarget: AgNode | null
   /** Optional ancestor that captures move/up for the active mouse press. */
   mouseCaptureTarget: AgNode | null
+  /** Grace timer for captured drags that briefly leave the terminal bounds. */
+  outsideCaptureReleaseTimer: ReturnType<typeof setTimeout> | null
+  /** Last no-target mouse event observed while the grace timer is armed. */
+  outsideCaptureReleaseMouse: ParsedMouse | null
   /** Optional focus manager for click-to-focus */
   focusManager?: FocusManager
   /** Modifier state from Kitty keyboard events, merged into mouse events */
@@ -670,6 +760,8 @@ export function createMouseEventProcessor(
     hoverPath: [],
     mouseDownTarget: null,
     mouseCaptureTarget: null,
+    outsideCaptureReleaseTimer: null,
+    outsideCaptureReleaseMouse: null,
     focusManager: options?.focusManager,
     keyboardModifiers: { super: false, hyper: false, capsLock: false, numLock: false },
     lastClickPrevented: false,
@@ -685,6 +777,8 @@ function findMouseCaptureTarget(node: AgNode | null): AgNode | null {
   }
   return null
 }
+
+const MOUSE_CAPTURE_OUTSIDE_GRACE_MS = 2000
 
 /**
  * Update keyboard modifier state from a parsed key event.
@@ -712,6 +806,78 @@ export function updateKeyboardModifiers(
       `keyboardModifiers.super: ${prevSuper} → ${state.keyboardModifiers.super} (key.super=${key.super}, eventType=${key.eventType})`,
     )
   }
+}
+
+function releaseMousePress(
+  state: MouseEventProcessorState,
+  parsed: ParsedMouse,
+): boolean {
+  let defaultPrevented = false
+  const dispatchTarget = state.mouseCaptureTarget
+  cancelOutsideCaptureRelease(state)
+
+  if (state.mouseDownTarget) {
+    setArmed(state.mouseDownTarget, false)
+  }
+
+  if (dispatchTarget) {
+    const event = createMouseEvent(
+      "mouseup",
+      parsed.x,
+      parsed.y,
+      dispatchTarget,
+      parsed,
+      state.keyboardModifiers,
+    )
+    dispatchMouseEvent(event)
+    defaultPrevented = event.defaultPrevented
+  }
+
+  state.lastClickPrevented = false
+  state.mouseDownTarget = null
+  state.mouseCaptureTarget = null
+  return defaultPrevented
+}
+
+function cancelOutsideCaptureRelease(state: MouseEventProcessorState): void {
+  if (state.outsideCaptureReleaseTimer !== null) {
+    clearTimeout(state.outsideCaptureReleaseTimer)
+  }
+  state.outsideCaptureReleaseTimer = null
+  state.outsideCaptureReleaseMouse = null
+}
+
+function scheduleOutsideCaptureRelease(
+  state: MouseEventProcessorState,
+  parsed: ParsedMouse,
+): void {
+  state.outsideCaptureReleaseMouse = parsed
+  if (state.outsideCaptureReleaseTimer !== null) return
+
+  state.outsideCaptureReleaseTimer = setTimeout(() => {
+    const releaseMouse = state.outsideCaptureReleaseMouse ?? parsed
+    releaseMousePress(state, releaseMouse)
+    clearHoverPath(state, releaseMouse)
+  }, MOUSE_CAPTURE_OUTSIDE_GRACE_MS)
+}
+
+function clearHoverPath(
+  state: MouseEventProcessorState,
+  parsed: ParsedMouse,
+): void {
+  for (const node of state.hoverPath.slice().reverse()) {
+    setHovered(node, false)
+    const leaveEvent = createMouseEvent(
+      "mouseleave",
+      parsed.x,
+      parsed.y,
+      node,
+      parsed,
+      state.keyboardModifiers,
+    )
+    dispatchMouseEvent(leaveEvent)
+  }
+  state.hoverPath = []
 }
 
 /**
@@ -752,9 +918,25 @@ export function processMouseEvent(
       `move x=${x} y=${y} target=${nodeType}#${nodeId} enterAncestor=${enterAncestor || "none"} entered=${entered.length} prevPath=${state.hoverPath.length}`,
     )
   }
-  if (!target) return false
   let defaultPrevented = false
-
+  if (target) {
+    cancelOutsideCaptureRelease(state)
+  }
+  if (!target) {
+    if (action === "move") {
+      if (state.mouseCaptureTarget) {
+        scheduleOutsideCaptureRelease(state, parsed)
+      } else {
+        defaultPrevented = releaseMousePress(state, parsed)
+      }
+      clearHoverPath(state, parsed)
+      return defaultPrevented
+    }
+    if (action === "up") {
+      defaultPrevented = releaseMousePress(state, parsed)
+    }
+    return defaultPrevented
+  }
   if (action === "down") {
     state.mouseDownTarget = target
     state.mouseCaptureTarget = findMouseCaptureTarget(target)

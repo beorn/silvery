@@ -108,6 +108,7 @@ import {
   checkClickCount,
   type SelectionBoundary,
 } from "../mouse-events"
+import type { ParseMouseOptions } from "../mouse"
 import { setArmed } from "@silvery/ag/interactive-signals"
 import {
   enableKittyKeyboard,
@@ -353,11 +354,13 @@ export interface AppRunOptions {
    */
   kitty?: boolean | number
   /**
-   * Enable SGR mouse tracking (mode 1006).
-   * When true, enables mouse events and disables on cleanup.
+   * Enable SGR mouse tracking.
+   * - `true`: xterm all-motion SGR cell mode (1003 + 1006).
+   * - `{ coordinateMode: "pixel", cellSize }`: SGR-Pixels mode
+   *   (1003 + 1006 + 1016) with fractional Silvery layout coordinates.
    * Default: false
    */
-  mouse?: boolean
+  mouse?: boolean | ParseMouseOptions
   /**
    * Enable virtual inline mode: alt screen with virtual scrollback buffer.
    * Provides scrollable history + search (Ctrl+F) while using fullscreen rendering.
@@ -706,6 +709,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     onResize: explicitOnResize,
     ...injectValues
   } = options
+  const mouseParseOptions = typeof mouseOption === "object" ? mouseOption : undefined
+  const mouseTrackingEnabled = mouseOption === true || mouseParseOptions != null
 
   // Phase 4 of km-silvery.terminal-profile-plateau: a caller-supplied
   // `profile` wins over `caps`. Both paths converge on `capsOption` — the
@@ -838,7 +843,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           setEncoding: () => {},
         } as unknown as NodeJS.ReadStream)
       : stdin
-    autoTerm = createTerm({ stdin: termStdin, stdout: termStdout })
+    autoTerm = createTerm({ stdin: termStdin, stdout: termStdout, mouse: mouseParseOptions })
     providers.term = autoTerm as unknown as Provider<unknown, Record<string, unknown>>
     providerCleanups.push(() => autoTerm![Symbol.dispose]())
 
@@ -942,7 +947,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // pipeline. Otherwise fall back to direct stdout "resize" events for
   // standalone callers. See km-silvery.term-sub-owners Phase 5.
   if (!headless) {
-    const termSize = injectedTerm?.size
+    const termSize = effectiveTerm?.size
     if (termSize) {
       // Change-only subscription: `watch` swallows the seed fire so
       // mockTermSubscribers only see real resizes.
@@ -1070,6 +1075,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     })
   }
 
+  // SILVERY_CAPTURE_OUTPUT: append every emitted frame to a file for ANSI
+  // post-mortem analysis. Same contract as scheduler.ts so callers using
+  // createApp().run() (km, etc.) get parity with run() consumers.
+  const _captureFile = process.env.SILVERY_CAPTURE_OUTPUT
+  let _captureFrame = 0
+
   // Create render target
   const target: RenderTarget = headless
     ? {
@@ -1087,6 +1098,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               `TARGET.write: ${frame.length} bytes (paused=${renderPaused})\n`,
             )
           }
+          if (_captureFile) {
+            _captureFrame += 1
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const fs = require("node:fs")
+            fs.appendFileSync(
+              _captureFile,
+              `--- FRAME ${_captureFrame} (${Buffer.byteLength(frame)} bytes) ---\n`,
+            )
+            fs.appendFileSync(_captureFile, frame)
+            fs.appendFileSync(_captureFile, "\n")
+          }
           if (!renderPaused) {
             if (output) {
               output.write(frame)
@@ -1101,7 +1123,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         onResize(handler: (dims: Dims) => void): () => void {
           // Prefer the injected Term's Size owner (coalesced) when present;
           // fall back to direct stdout "resize" for standalone callers.
-          const termSize = injectedTerm?.size
+          const termSize = effectiveTerm?.size
           if (termSize) {
             return watch(
               () => termSize.snapshot(),
@@ -1279,7 +1301,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // documented default is "true when mouse is enabled" — the old `?? false`
   // made every consumer set selection:true manually.) Callers that really
   // want mouse-without-selection pass `selection:false`.
-  const selectionEnabled = selectionOption ?? mouseOption === true
+  const selectionEnabled = selectionOption ?? mouseTrackingEnabled
   let selectionState = createTerminalSelectionState()
 
   // --- Selection drag-vs-click state machine ---
@@ -1332,6 +1354,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let activeSelectionBoundaries: SelectionBoundary[] = []
   let activeForceBufferSelection = false
 
+  function selectionCellFromPointer(x: number, y: number): { col: number; row: number } {
+    return {
+      col: Math.max(0, Math.floor(x)),
+      row: Math.max(0, Math.floor(y)),
+    }
+  }
+
   function hardContainScope(boundaries: readonly SelectionBoundary[]): SelectionScope | null {
     return boundaries.find((boundary) => boundary.hardContain)?.scope ?? null
   }
@@ -1355,7 +1384,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (hardScope) return hardScope
     const agRoot = getContainerRoot(container)
     const focusHit = agRoot ? selectionHitTest(agRoot, x, y) : null
-    if (!focusHit) return null
+    if (!focusHit) return anchorBoundaries[0]?.scope ?? null
     return nearestCommonSelectionScope(anchorBoundaries, findSelectionBoundaries(focusHit))
   }
   // Click-count tracker dedicated to selection (separate from
@@ -1559,7 +1588,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // cleanup is more robust than tracking enable/disable state.
       const sequences = [
         "\x1b[?1004l", // Disable focus reporting
-        disableMouse(), // Disable SGR mouse tracking (modes 1003, 1006)
+        disableMouse(), // Disable SGR mouse tracking (modes 1003, 1006, optional 1016)
         disableKittyKeyboard(), // Pop Kitty keyboard protocol
         "\x1b[?2004l", // Disable bracketed paste
         "\x1b[0m", // Reset SGR attributes
@@ -2093,8 +2122,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     }
 
     // Mouse tracking
-    if (mouseOption) {
-      modes.mouse(true)
+    if (mouseTrackingEnabled) {
+      modes.mouse(mouseParseOptions?.coordinateMode === "pixel" ? "pixel" : true)
       mouseEnabled = true
     }
 
@@ -2599,19 +2628,20 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             pendingSelectionDown = null
           } else {
             const boundaries = hit ? findSelectionBoundaries(hit) : []
+            const anchorCell = selectionCellFromPointer(mouseData.x, mouseData.y)
             // Resolve click-count for THIS mousedown (1=fresh, 2=double-
             // click, 3=triple-click). Used by the up branch to decide
             // whether to dispatch startWord / startLine, and by the
             // move branch to pick the drag granularity.
             const clickCount = checkClickCount(
               selectionClickCount,
-              mouseData.x,
-              mouseData.y,
+              anchorCell.col,
+              anchorCell.row,
               mouseData.button,
             )
             pendingSelectionDown = {
-              col: mouseData.x,
-              row: mouseData.y,
+              col: anchorCell.col,
+              row: anchorCell.row,
               boundaries,
               forceBufferSelection,
               clickCount,
@@ -2621,11 +2651,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           // (click-to-focus, onMouseDown handlers, etc.)
         } else if (mouseData.action === "move") {
           if (pendingSelectionDown) {
+            const pointerCell = selectionCellFromPointer(mouseData.x, mouseData.y)
             // armed → dragging (first move past threshold starts the drag).
             // Threshold: different cell than anchor. Same-cell jitter stays
             // in armed and ends as a plain click.
-            const dx = mouseData.x - pendingSelectionDown.col
-            const dy = mouseData.y - pendingSelectionDown.row
+            const dx = pointerCell.col - pendingSelectionDown.col
+            const dy = pointerCell.row - pendingSelectionDown.row
             if (dx !== 0 || dy !== 0) {
               const anchor = pendingSelectionDown
               pendingSelectionDown = null
@@ -2677,8 +2708,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               const [extended] = terminalSelectionUpdate(
                 {
                   type: "extend",
-                  col: mouseData.x,
-                  row: mouseData.y,
+                  col: pointerCell.col,
+                  row: pointerCell.row,
                   buffer: currentBuffer?._buffer,
                   scope,
                 },
@@ -2701,6 +2732,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             // reverse drag — Bug 1 protection).
             // Buffer is forwarded so word / line granularity drags snap
             // the head to the right boundary on every move.
+            const pointerCell = selectionCellFromPointer(mouseData.x, mouseData.y)
             const scope = selectionScopeForFocus(
               activeSelectionBoundaries,
               mouseData.x,
@@ -2710,8 +2742,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const [next] = terminalSelectionUpdate(
               {
                 type: "extend",
-                col: mouseData.x,
-                row: mouseData.y,
+                col: pointerCell.col,
+                row: pointerCell.row,
                 buffer: currentBuffer?._buffer,
                 scope,
               },
@@ -2935,7 +2967,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const state = captureTerminalState({
               alternateScreen,
               cursorHidden: true,
-              mouse: mouseEnabled,
+              mouse: mouseEnabled
+                ? mouseParseOptions?.coordinateMode === "pixel"
+                  ? "pixel"
+                  : true
+                : false,
               kitty: kittyEnabled,
               kittyFlags,
               bracketedPaste: true,

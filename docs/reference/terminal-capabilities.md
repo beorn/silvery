@@ -552,31 +552,41 @@ useInput((input, key) => {
 
 Unsupported terminals ignore the enable sequence — no error, no side effects.
 
-## Mouse Protocol (SGR 1006)
+## Mouse Protocol (SGR 1006, Optional SGR-Pixels 1016)
 
-Silvery supports SGR mouse tracking for click, drag, scroll, and motion events.
+Silvery supports SGR mouse tracking for click, drag, scroll, and motion events. `run()` enables mouse input by default in fullscreen mode, probes terminal cell metrics, and upgrades to SGR-Pixels mode (`1016`) when the probe succeeds. If the probe fails, Silvery falls back to cell-coordinate SGR mode.
 
 ### Auto-Enable/Disable
 
 Mouse tracking is **enabled by default** in `run()`. When active, the terminal captures mouse events and native text selection (copy/paste) requires holding Shift (or Option on macOS in some terminals).
 
 ```typescript
-// Mouse is on by default — click, scroll, and drag events just work
+// Mouse is on by default. In fullscreen mode, run() auto-probes cell size and
+// enables SGR-Pixels when the terminal reports sane metrics.
 await run(<App />)
 
 // Disable to restore native copy/paste behavior
 await run(<App />, { mouse: false })
+
+// Force SGR-Pixels for fractional Silvery layout coordinates when you already
+// have trusted terminal cell metrics.
+await run(<App />, {
+  mouse: {
+    coordinateMode: "pixel",
+    cellSize: { width: 8, height: 16 },
+  },
+})
 ```
 
-Silvery enables three mouse modes together:
+Silvery enables these mouse modes together:
 
-| Mode            | Sequence     | Description                           |
-| --------------- | ------------ | ------------------------------------- |
-| X10 basic       | `CSI ?1000h` | Button press events                   |
-| Button tracking | `CSI ?1002h` | Press + drag motion                   |
-| SGR encoding    | `CSI ?1006h` | Extended format (no 223-column limit) |
+| Mode         | Sequence     | Description                                      |
+| ------------ | ------------ | ------------------------------------------------ |
+| All motion   | `CSI ?1003h` | Clicks, drags, wheel, and hover motion           |
+| SGR encoding | `CSI ?1006h` | Extended cell-coordinate format                  |
+| SGR-Pixels   | `CSI ?1016h` | Optional pixel-coordinate format for sub-cell precision |
 
-On cleanup, all three are disabled in reverse order.
+On cleanup, Silvery disables `1016`, `1006`, and `1003` in reverse order. Disabling `1016` is harmless even when it was never enabled.
 
 ### SGR Sequence Format
 
@@ -585,7 +595,24 @@ CSI < button;column;row M     (press/motion)
 CSI < button;column;row m     (release)
 ```
 
-Column and row are 1-indexed in the protocol, parsed to 0-indexed by `parseMouseSequence()`.
+Column and row are 1-indexed in `1006` mode and parsed to 0-indexed Silvery layout `x`/`y`. In `1016` mode, the same fields contain pixels; `parseMouseSequence()` stores those as `clientX`/`clientY` and derives fractional layout `x`/`y` using the provided cell size.
+
+### SGR-Pixels Limitations
+
+SGR-Pixels conversion assumes the interactive surface maps to a uniform terminal
+cell grid. Silvery treats `event.x`/`event.y` as **layout coordinates**,
+comparable to `Rect.x`/`Rect.y`; they are not glyph-bounding-box coordinates.
+
+This is appropriate for layout-owned surfaces such as scrollbars, panes, lists,
+buttons, and ordinary terminal text. It is not a complete model for terminal
+features that can visually diverge from a simple grid, such as double-width or
+double-height line modes, terminal text-sizing extensions, inline graphics, or
+terminal-specific font fallback/ligature behavior.
+
+Use SGR-Pixels only when the terminal cell size is known from a runtime probe or
+an equivalent trusted source. `run()` handles this automatically for `mouse:
+true`. If the probe fails or the region uses custom pixel geometry, prefer SGR
+cell coordinates or component-specific hit testing.
 
 ### Parsing
 
@@ -595,7 +622,7 @@ import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/
 // Quick check
 if (isMouseSequence(rawInput)) {
   const event = parseMouseSequence(rawInput)
-  // event: { button: 0, x: 9, y: 4, action: "down", shift: false, meta: false, ctrl: false }
+  // event: { button: 0, x: 9, y: 4, coordinateMode: "cell", action: "down", ... }
 }
 ```
 

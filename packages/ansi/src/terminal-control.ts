@@ -129,6 +129,7 @@ export function setTitle(title: string): string {
  * - **1003** (any-event tracking): Reports ALL mouse motion — clicks, drags, AND hover.
  *   This is what makes onMouseEnter/onMouseLeave work. Without it, only clicks are reported.
  * - **1006** (SGR encoding): Decimal coordinates with no 223-column limit.
+ * - **1016** (SGR-Pixels): Optional pixel coordinates in the same SGR shape.
  *
  * WARNING: Do NOT replace 1003 with 1000+1002. The xterm mouse modes form a hierarchy:
  *   1000 = clicks only
@@ -137,15 +138,20 @@ export function setTitle(title: string): string {
  * Mode 1003 supersedes 1000 and 1002. Using 1000+1002 instead of 1003 silently
  * disables hover — onMouseEnter/onMouseLeave stop firing with no error.
  */
-export function enableMouse(): string {
-  return `${CSI}?1003h${CSI}?1006h`
+export interface MouseModeOptions {
+  /** Enable xterm SGR-Pixels mode 1016 in addition to 1003/1006. */
+  pixels?: boolean
+}
+
+export function enableMouse(options: MouseModeOptions = {}): string {
+  return `${CSI}?1003h${CSI}?1006h${options.pixels ? `${CSI}?1016h` : ""}`
 }
 
 /**
  * Disable mouse tracking. Disables in reverse order of enabling.
  */
 export function disableMouse(): string {
-  return `${CSI}?1006l${CSI}?1003l`
+  return `${CSI}?1016l${CSI}?1006l${CSI}?1003l`
 }
 
 /**

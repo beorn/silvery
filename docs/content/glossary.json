@@ -498,7 +498,7 @@
   {
     "term": "SGR mouse",
     "href": "/guide/event-handling",
-    "tooltip": "Extended mouse protocol (mode 1006) — reports coordinates beyond column 223, supports press/release/drag/wheel events."
+    "tooltip": "Extended mouse protocol (mode 1006, optionally 1016 SGR-Pixels) — supports press/release/drag/wheel events and sub-cell precision when pixel mode is active."
   },
   {
     "term": "Kitty keyboard",

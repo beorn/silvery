@@ -169,20 +169,29 @@ Unsupported terminals safely ignore the protocol sequences.
 
 ## Mouse Events
 
-### SGR Mouse Protocol (Mode 1006)
+### SGR Mouse Protocol (Modes 1003 + 1006, Optional 1016)
 
-Silvery supports SGR mouse tracking for click, drag, scroll, and motion events with modifier detection.
+Silvery supports SGR mouse tracking for click, drag, scroll, and motion events with modifier detection. `run()` enables mouse input by default in fullscreen mode, probes terminal cell metrics, and upgrades to SGR-Pixels mode (`1016`) when the probe succeeds. If the probe fails, Silvery falls back to cell-coordinate SGR mode.
 
 #### Enabling in Your App
 
 Mouse tracking is enabled by default in `run()`. When active, native text selection (copy/paste) requires holding Shift (or Option on macOS).
 
 ```tsx
-// Mouse is on by default
+// Mouse is on by default. In fullscreen mode, run() auto-probes cell size and
+// enables SGR-Pixels when the terminal reports sane metrics.
 await run(<App />)
 
 // Disable to restore native copy/paste behavior
 await run(<App />, { mouse: false })
+
+// Force SGR-Pixels when you already have trusted terminal cell metrics
+await run(<App />, {
+  mouse: {
+    coordinateMode: "pixel",
+    cellSize: { width: 8, height: 16 },
+  },
+})
 ```
 
 #### Mouse Event Handling
@@ -194,16 +203,37 @@ import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/
 
 // Manual parsing (runtime handles this automatically)
 const event = parseMouseSequence("\x1b[<0;10;5M")
-// → { button: 0, x: 9, y: 4, action: "down", shift: false, meta: false, ctrl: false }
+// → { button: 0, x: 9, y: 4, coordinateMode: "cell", action: "down", ... }
+
+const pixelEvent = parseMouseSequence("\x1b[<32;101;141M", {
+  coordinateMode: "pixel",
+  cellSize: { width: 8, height: 16 },
+})
+// → { x: 12.5, y: 8.75, clientX: 100, clientY: 140, coordinateMode: "pixel", ... }
 ```
+
+SGR-Pixels conversion should use a runtime-probed cell size, not a hardcoded
+guess. `run()` does that probe automatically for `mouse: true`; the example
+above uses simple numbers only to show the coordinate mapping. A larger terminal
+font, zoom level, or line height changes the cell size and therefore changes the
+pixel-to-layout conversion.
+
+The conversion also assumes a uniform terminal grid. `event.x`/`event.y` are
+Silvery layout coordinates, not glyph bounds. They are reliable for layout-owned
+surfaces like scrollbars and ordinary grid text, but terminal-side visual
+features such as double-height lines, text-sizing extensions, inline graphics,
+or unusual font fallback may need component-specific hit testing.
 
 #### ParsedMouse Fields
 
 | Field    | Type                                  | Description                                         |
 | -------- | ------------------------------------- | --------------------------------------------------- |
 | `button` | `number`                              | 0=left, 1=middle, 2=right                           |
-| `x`      | `number`                              | Column (0-indexed)                                  |
-| `y`      | `number`                              | Row (0-indexed)                                     |
+| `x`      | `number`                              | Silvery layout X coordinate. Terminal cells; fractional in SGR-Pixels mode. |
+| `y`      | `number`                              | Silvery layout Y coordinate. Terminal cells; fractional in SGR-Pixels mode. |
+| `clientX` | `number \| undefined`               | Physical pixel X coordinate in SGR-Pixels mode.     |
+| `clientY` | `number \| undefined`               | Physical pixel Y coordinate in SGR-Pixels mode.     |
+| `coordinateMode` | `"cell" \| "pixel"`          | Whether the protocol coordinates were cell or pixel units. |
 | `action` | `"down" \| "up" \| "move" \| "wheel"` | Event action                                        |
 | `delta`  | `number`                              | Scroll: -1=up, +1=down (only for `action: "wheel"`) |
 | `shift`  | `boolean`                             | ⇧ Shift was held                                    |

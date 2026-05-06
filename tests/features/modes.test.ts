@@ -170,7 +170,7 @@ describe("createModes — kittyKeyboard", () => {
 })
 
 describe("createModes — mouse", () => {
-  it("emits SGR mouse enable (1003+1006) / disable (1006l+1003l)", () => {
+  it("emits SGR mouse enable (1003+1006) / disable (1016l+1006l+1003l)", () => {
     const { stdin } = createMockStdin()
     const { write, writes } = createRecordingWrite()
     const modes = createModes({ write, stdin })
@@ -181,8 +181,18 @@ describe("createModes — mouse", () => {
     expect(modes.mouse()).toBe(true)
 
     modes.mouse(false)
-    expect(writes.at(-1)).toBe("\x1b[?1006l\x1b[?1003l")
+    expect(writes.at(-1)).toBe("\x1b[?1016l\x1b[?1006l\x1b[?1003l")
     expect(modes.mouse()).toBe(false)
+  })
+
+  it("emits SGR-Pixels enable when mouse mode is pixel", () => {
+    const { stdin } = createMockStdin()
+    const { write, writes } = createRecordingWrite()
+    const modes = createModes({ write, stdin })
+
+    modes.mouse("pixel")
+    expect(writes.at(-1)).toBe("\x1b[?1003h\x1b[?1006h\x1b[?1016h")
+    expect(modes.mouse()).toBe("pixel")
   })
 })
 
