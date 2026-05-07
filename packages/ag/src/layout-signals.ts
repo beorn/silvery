@@ -172,9 +172,28 @@ const EMPTY_DECORATION_RECTS: readonly DecorationRect[] = Object.freeze([])
  */
 export interface LayoutSignals {
   // Layout rects (synced after layout + scroll + sticky phases)
+  //
+  // Two-tier model:
+  // - `boxRect` / `scrollRect` / `screenRect` are PIPELINE signals — written
+  //   every layout pass via `syncRectSignals`. They are read internally by
+  //   the renderer (incremental cascade, decoration phase, scroll math) and
+  //   are NOT consumed directly by React hooks. Mid-batch updates are part
+  //   of how the convergence loop reaches a fixed point.
+  // - `boxRectCommitted` / `scrollRectCommitted` / `screenRectCommitted` are
+  //   the SUBSCRIBER signals — written only at event-batch commit boundaries
+  //   via `commitLayoutSnapshot`. React hooks (`useBoxRect()` /
+  //   `useScrollRect()` / `useScreenRect()`) subscribe to these and see a
+  //   value that is invariant across every convergence pass within one
+  //   batch. forceUpdate fires at most once per batch — there is no
+  //   feedback edge between read and re-render.
+  //
+  // See `commitLayoutSnapshot` below and `useBoxRect` in @silvery/ag-react.
   readonly boxRect: WritableSignal<Rect | null>
   readonly scrollRect: WritableSignal<Rect | null>
   readonly screenRect: WritableSignal<Rect | null>
+  readonly boxRectCommitted: WritableSignal<Rect | null>
+  readonly scrollRectCommitted: WritableSignal<Rect | null>
+  readonly screenRectCommitted: WritableSignal<Rect | null>
 
   /**
    * Content-box rect — `boxRect` minus border and padding (CSS content area).
@@ -323,6 +342,12 @@ export function getLayoutSignals(node: AgNode): LayoutSignals {
       boxRect: signal<Rect | null>(node.boxRect),
       scrollRect: signal<Rect | null>(node.scrollRect),
       screenRect: signal<Rect | null>(node.screenRect),
+      // Committed signals seed identically to in-flight so the first
+      // synchronous read (before any layout pass) sees consistent values.
+      // After the first commit boundary, they advance independently per pass.
+      boxRectCommitted: signal<Rect | null>(node.boxRect),
+      scrollRectCommitted: signal<Rect | null>(node.scrollRect),
+      screenRectCommitted: signal<Rect | null>(node.screenRect),
       contentRect: signal<Rect | null>(computeContentRect(node)),
       cursorRect: signal<CursorRect | null>(computeCursorRect(node)),
       focusedNodeId: signal<string | null>(computeFocusedNodeId(node)),
@@ -1082,6 +1107,58 @@ export function syncDecorationRects(root: AgNode): void {
       const s = signalMap.get(node)
       if (s && s.decorationRects().length > 0) {
         s.decorationRects(EMPTY_DECORATION_RECTS)
+      }
+    }
+    for (const child of node.children) {
+      walk(child)
+    }
+  }
+  walk(root)
+}
+
+// ============================================================================
+// Commit boundary — promote in-flight rects to committed
+// ============================================================================
+
+/**
+ * Promote the in-flight rect signals (`boxRect` / `scrollRect` / `screenRect`)
+ * to their committed counterparts (`boxRectCommitted` / etc.). Reactive
+ * `useBoxRect()` / `useScrollRect()` / `useScreenRect()` consumers subscribe
+ * to the committed signals — calling this advances them by one frame.
+ *
+ * Called by the runtime ONCE per event-batch commit, after the convergence
+ * loop has fully drained. Within a single batch, multiple convergence passes
+ * may write the in-flight signals (callback-form observers fire each time),
+ * but the committed signals advance only here. That's what lets a render
+ * which both READS `useBoxRect()` and WRITES a layout-affecting prop converge
+ * in one pass: the read returns the same value across every pass in the
+ * batch, so the write is idempotent.
+ *
+ * Reference equality on the underlying alien-signal write means a no-op
+ * commit (same rect as last frame) does not fire any subscribers — steady
+ * state pays no cost.
+ *
+ * The walker visits only nodes that already have allocated `LayoutSignals`
+ * (i.e. nodes with at least one consumer); a tree with no rect subscribers
+ * pays only the WeakMap probe per node.
+ *
+ * See bead `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+ */
+export function commitLayoutSnapshot(root: AgNode): void {
+  function walk(node: AgNode): void {
+    const s = signalMap.get(node)
+    if (s) {
+      const nextBox = s.boxRect()
+      if (!rectEqual(nextBox, s.boxRectCommitted())) {
+        s.boxRectCommitted(nextBox)
+      }
+      const nextScroll = s.scrollRect()
+      if (!rectEqual(nextScroll, s.scrollRectCommitted())) {
+        s.scrollRectCommitted(nextScroll)
+      }
+      const nextScreen = s.screenRect()
+      if (!rectEqual(nextScreen, s.screenRectCommitted())) {
+        s.screenRectCommitted(nextScreen)
       }
     }
     for (const child of node.children) {

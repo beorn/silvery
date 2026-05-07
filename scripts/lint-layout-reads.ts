@@ -116,20 +116,16 @@ function buildHookRegex(): RegExp {
 }
 
 /**
- * Decide whether a hook invocation is the callback form (post-layout, no
- * stale-read class) or the snapshot form (the target of this lint).
+ * Decide whether a hook invocation has a non-empty argument list — used to
+ * tell the legacy `useFocus(id)` / `useCursor(opts)` overloads apart from
+ * the no-arg layout-rect hooks.
  *
- * The Layout hooks have two overloads:
- *   const rect = useBoxRect()                  // snapshot — render-time read
- *   useBoxRect((rect) => onLayout(rect))       // callback — fires post-layout
- *
- * The callback form is the (b) class in the use-layout-rect-callers audit
- * and is genuinely correct — already fires after layout, no stale-frame
- * issue. We must skip it to avoid false positives on legitimate post-layout
- * registration sites (e.g. useGridPosition, position registry callbacks).
+ * Layout-rect hooks are now zero-argument only (deferred semantics — see
+ * `vendor/silvery/packages/ag-react/src/hooks/useLayout.ts`):
+ *   const rect = useBoxRect()                  // canonical
  *
  * Heuristic: scan from the open paren on the first match line forward; if
- * the call has a non-empty argument list, treat it as the callback form.
+ * the call has a non-empty argument list, treat it as a non-rect overload.
  * Multi-line invocations are followed by reading subsequent lines until the
  * matching close paren is found. Whitespace and comments inside the parens
  * are ignored. Empty parens (`useBoxRect()`) are the snapshot form — flag.

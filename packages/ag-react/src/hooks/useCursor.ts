@@ -217,22 +217,32 @@ export function useCursor(position: CursorPosition): void {
   contentOffsetXRef.current = contentOffsetX
   contentOffsetYRef.current = contentOffsetY
 
-  // Called synchronously during layout (useLayoutEffect) whenever
-  // the component's screen position changes.
-  useScrollRect(
-    useCallback((rect) => {
-      lastRectRef.current = rect
-      if (!visibleRef.current) {
-        return
-      }
-      setRef.current({
-        x: rect.x + contentOffsetXRef.current + colRef.current,
-        y: rect.y + contentOffsetYRef.current + rowRef.current,
-        visible: true,
-        shape: shapeRef.current,
-      })
-    }, []),
-  )
+  // useScrollRect returns the deferred (committed) rect — one frame late
+  // vs the in-flight layout, idempotent across convergence passes. The
+  // useEffect below reads it and pushes the cursor position to the store.
+  // Same observable result as the previous callback form, except the
+  // cursor lands on the new position one frame after a layout change
+  // (matches the semantics every other reactive layout consumer now sees
+  // post the deferred-only switch).
+  //
+  // Skip when there's no NodeContext — useScrollRect returns the empty
+  // sentinel `{0,0,0,0}` in that case, and the test contract for `useCursor`
+  // outside a Box parent requires the cursor store to stay untouched.
+  const scrollRect = useScrollRect()
+  const hasNode = node != null
+  useEffect(() => {
+    if (!hasNode) return
+    lastRectRef.current = scrollRect
+    if (!visibleRef.current) {
+      return
+    }
+    setRef.current({
+      x: scrollRect.x + contentOffsetXRef.current + colRef.current,
+      y: scrollRect.y + contentOffsetYRef.current + rowRef.current,
+      visible: true,
+      shape: shapeRef.current,
+    })
+  }, [hasNode, scrollRect.x, scrollRect.y, scrollRect.width, scrollRect.height, scrollRect])
 
   // When col/row/shape change without a layout change, update cursor
   // position from the last known screen rect. This handles the common case

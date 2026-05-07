@@ -30,6 +30,7 @@ import {
   setLayoutEngine,
 } from "./layout-engine.js"
 import { createAg, createRenderPostState, type RenderPostState } from "./ag.js"
+import { commitLayoutSnapshot } from "@silvery/ag/layout-signals"
 import { isStrictEnabled } from "./strict-mode.js"
 import {
   isResidueStrictEnabled,
@@ -435,7 +436,25 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         if (!instance.mounted || instance.rendering || inRenderCycle) return
         inRenderCycle = true
         try {
-          const newFrame = doRender()
+          // settleAfterCommit isn't in scope at module init order — fall
+          // back to inline commit + one extra pass. Same shape as the
+          // closure version below.
+          let newFrame = doRender()
+          const root = getContainerRoot(instance.container)
+          hadReactCommit = false
+          withActEnvironment(() => {
+            act(() => {
+              commitLayoutSnapshot(root)
+            })
+            if (hadReactCommit) {
+              act(() => {
+                reconciler.flushSyncWork()
+              })
+            }
+          })
+          if (hadReactCommit) {
+            newFrame = doRender()
+          }
           instance.frames.push(newFrame)
           onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
         } finally {
@@ -1084,6 +1103,48 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     instance.rendering = false
   }
 
+  /**
+   * Promote in-flight rect signals to their committed peers, then drain any
+   * resulting React work with one more `doRender()` if needed.
+   *
+   * Reactive `useBoxRect()` / `useScrollRect()` / `useScreenRect()` hooks
+   * read the COMMITTED rect signals (stable across all convergence passes
+   * within one batch). Calling `commitLayoutSnapshot` advances them by one
+   * frame, which may fire `effect()` callbacks that trigger React
+   * `forceUpdate`s. Those forceUpdates need to land before the test
+   * driver's caller observes the frame — otherwise the first frame would
+   * show the empty-rect fallback for any reactive layout consumer.
+   *
+   * The settle pass is bounded to ONE doRender. Any in-flight rect changes
+   * produced by it are intentionally NOT committed in this batch — they
+   * belong to the next event boundary (one-frame-late contract).
+   *
+   * See bead `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+   */
+  function settleAfterCommit(prevOutput: string): string {
+    const root = getContainerRoot(instance.container)
+    let scheduled = false
+    hadReactCommit = false
+    withActEnvironment(() => {
+      act(() => {
+        commitLayoutSnapshot(root)
+      })
+      // act() flushes scheduled work; if commit fired effect → forceUpdate,
+      // hadReactCommit was set during the inner act(). If anything still
+      // pending, flush once more.
+      if (hadReactCommit) {
+        act(() => {
+          reconciler.flushSyncWork()
+        })
+        scheduled = true
+      }
+    })
+    if (!scheduled) return prevOutput
+    // One settle pass — re-render with the new committed values. Do NOT
+    // re-commit; further in-flight changes defer to the next batch.
+    return doRender()
+  }
+
   // Execute the render pipeline.
   // The initial render always uses the multi-pass stabilization loop regardless
   // of singlePassLayout, because hooks like useBoxRect need multiple passes
@@ -1094,7 +1155,13 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // (sendInput/press) to match production's processEventBatch path.
   const savedSinglePass = instance.singlePassLayout
   instance.singlePassLayout = false
-  const output = doRender()
+  let output = doRender()
+  // Commit boundary for the initial render. Reactive useBoxRect/useScrollRect/
+  // useScreenRect hooks subscribed during this render see the seeded committed
+  // signal (often null/zero) on first read; promoting in-flight → committed
+  // here fires their effects so the next render reads real rects. See bead
+  // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+  output = settleAfterCommit(output)
   instance.singlePassLayout = savedSinglePass
 
   instance.frames.push(output)
@@ -1284,6 +1351,17 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       }
     }
 
+    // Commit boundary — promote in-flight rect signals to committed peers,
+    // then settle any forceUpdate-driven re-renders with one more pass.
+    // Reactive useBoxRect/useScrollRect/useScreenRect consumers see one
+    // stable value across the whole sendInput cycle. See bead
+    // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+    const settled = settleAfterCommit(newFrame)
+    if (settled !== newFrame) {
+      newFrame = settled
+      doRenderCount++
+    }
+
     // When multiple doRender() calls ran (layout feedback, effects), the final
     // buffer's dirty rows only cover the LAST call's writes. Rows changed in
     // earlier doRender calls are invisible to callers using outputPhase to diff
@@ -1331,7 +1409,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     } finally {
       instance.rendering = false
     }
-    const newFrame = doRender()
+    const newFrame = settleAfterCommit(doRender())
     instance.frames.push(newFrame)
     onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
     if (debug) {
@@ -1419,7 +1497,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         fn()
       })
     })
-    const newFrame = doRender()
+    const newFrame = settleAfterCommit(doRender())
     instance.frames.push(newFrame)
     onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
   }
@@ -1484,6 +1562,13 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         newFrame = doRender()
         doRenderCount++
       }
+    }
+
+    // Commit boundary — see `settleAfterCommit` JSDoc.
+    const settled = settleAfterCommit(newFrame)
+    if (settled !== newFrame) {
+      newFrame = settled
+      doRenderCount++
     }
 
     const prevBufferForDirtying = instance.prevBuffer as TerminalBuffer | null

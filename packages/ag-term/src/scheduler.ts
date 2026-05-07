@@ -27,7 +27,11 @@ import {
   getCursorState as globalGetCursorState,
   type CursorAccessors,
 } from "@silvery/ag-react/hooks/useCursor"
-import { findActiveCursorRect, type CursorRect } from "@silvery/ag/layout-signals"
+import {
+  commitLayoutSnapshot,
+  findActiveCursorRect,
+  type CursorRect,
+} from "@silvery/ag/layout-signals"
 import { findActiveCursorNode, resolveCaretStyle } from "./caret-style"
 import { copyToClipboard as copyToClipboardImpl } from "./clipboard"
 import { ANSI, notify as notifyTerminal, setCursorStyle, resetCursorStyle } from "./output"
@@ -721,6 +725,17 @@ export class RenderScheduler {
 
       // Save buffer for next diff
       this.prevBuffer = buffer
+
+      // Commit boundary — promote in-flight rect signals (just written by
+      // ag.layout above) to their committed peers. Reactive
+      // useBoxRect/useScrollRect/useScreenRect consumers subscribe to
+      // committed and will fire `forceUpdate` here if a rect changed,
+      // causing React to schedule a re-render that the scheduler picks up
+      // via the next store.subscribe → scheduleRender cycle. Within this
+      // single doRender pass the committed value is invariant, so a
+      // render that branches on useBoxRect cannot ping-pong.
+      // See bead `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+      commitLayoutSnapshot(this.root)
 
       // SILVERY_STRICT: compare incremental render against fresh render
       const strictEnv = process.env.SILVERY_STRICT

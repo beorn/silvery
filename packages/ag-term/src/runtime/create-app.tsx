@@ -1732,6 +1732,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           isRendering = true
           try {
             currentBuffer = doRender()
+            // Commit boundary — see processEventBatch path for full
+            // rationale. Promotes in-flight rect signals to committed,
+            // firing forceUpdate on reactive useBoxRect/useScrollRect/
+            // useScreenRect consumers if rects changed. The microtask
+            // re-render below picks up the resulting React work; further
+            // rect changes produced by it defer to the next commit.
+            renderer.commitLayout()
+            if (pendingRerender) {
+              pendingRerender = false
+              currentBuffer = doRender()
+              pendingRerender = false
+            }
             paintFrame()
           } finally {
             isRendering = false
@@ -2140,6 +2152,42 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     )
   }
   paintFrame()
+  // Initial-render commit loop: drive the deferred-rect convergence to a
+  // fixed point before the first user event arrives. Each iteration:
+  //   1. commitLayoutSnapshot promotes in-flight rects to committed.
+  //   2. Reactive useBoxRect/useScrollRect/useScreenRect subscribers may
+  //      forceUpdate.
+  //   3. await drains microtasks so React processes those forceUpdates.
+  //   4. If pendingRerender, doRender + paintFrame, then loop.
+  //
+  // Bounded by MAX_CONVERGENCE_PASSES — multi-layer-measurement trees
+  // (e.g. MeasuredBox inside a flex container that also reads useBoxRect)
+  // need one iteration per layer to settle. Steady state converges in 1.
+  //
+  // The first paintFrame above already happened — this loop adds at most
+  // (depth of useBoxRect chains) extra paints, all converging on the
+  // settled layout. Per-event renders use a single settle (see
+  // processEventBatch / press) because in-batch idempotence already
+  // guarantees single-layer convergence; the initial render is the one
+  // place where multi-layer chains genuinely need a few iterations.
+  //
+  // See bead `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+  let initCommitLoops = 0
+  while (initCommitLoops < MAX_CONVERGENCE_PASSES) {
+    renderer.commitLayout()
+    await Promise.resolve()
+    if (!pendingRerender) break
+    pendingRerender = false
+    isRendering = true
+    try {
+      currentBuffer = doRender()
+    } finally {
+      isRendering = false
+    }
+    pendingRerender = false
+    paintFrame()
+    initCommitLoops++
+  }
   if (_perfLog) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("node:fs").appendFileSync(
@@ -2298,6 +2346,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             isRendering = true
             try {
               currentBuffer = doRender()
+              // Commit boundary for this standalone render — same as the
+              // processEventBatch path. See bead
+              // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+              renderer.commitLayout()
+              if (pendingRerender) {
+                pendingRerender = false
+                currentBuffer = doRender()
+                pendingRerender = false
+              }
               paintFrame()
             } finally {
               isRendering = false
@@ -2317,6 +2374,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     isRendering = true
     try {
       currentBuffer = doRender()
+      // Commit boundary — see processEventBatch path for full rationale.
+      renderer.commitLayout()
+      if (pendingRerender) {
+        pendingRerender = false
+        currentBuffer = doRender()
+        pendingRerender = false
+      }
       paintFrame()
     } finally {
       isRendering = false
@@ -3148,6 +3212,37 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       assertBoundedConvergence(flushCount, "production-flush")
     }
 
+    // Commit boundary for deferred `useBoxRect()` / `useScrollRect()` /
+    // `useScreenRect()` reactive consumers. Promotes in-flight rect signals
+    // (written by every layout pass within the convergence loop) to their
+    // committed peers (read by reactive subscribers). Within the loop above
+    // every pass saw the SAME committed value, so a render that branches on
+    // useBoxRect can't form a feedback edge with the loop. Now — at the
+    // batch boundary — we advance committed by one frame; subscribers fire
+    // forceUpdate exactly once per genuine layout change, and the resulting
+    // render runs in EXACTLY ONE additional pass below (it cannot reopen
+    // the convergence loop because committed == in-flight after this call).
+    // See bead `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+    renderer.commitLayout()
+    if (pendingRerender) {
+      // The commit fired a useBoxRect/useScrollRect/useScreenRect reactive
+      // subscriber → forceUpdate → React queued a re-render. Drain it once;
+      // do NOT loop again — any further in-flight rect changes produced by
+      // this final pass intentionally defer to the next event batch (the
+      // "one-frame-late" contract).
+      pendingRerender = false
+      isRendering = true
+      try {
+        await Promise.resolve()
+        currentBuffer = doRender()
+      } finally {
+        isRendering = false
+      }
+      // Discard any further pendingRerender flag set during this final pass —
+      // honoring it would cascade right back into a feedback loop.
+      pendingRerender = false
+    }
+
     // The render phase's dirty rows are relative to the Ag's internal prevBuffer.
     // But runtime.render() diffs against its own prevBuffer, which may differ
     // when: (a) multiple doRender calls shifted the Ag's prevBuffer ahead, or
@@ -3705,6 +3800,23 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         } finally {
           isRendering = false
         }
+        flushCount++
+      }
+      // Commit boundary — see processEventBatch (≈line 3160) for full
+      // rationale. Promotes in-flight rect signals to committed; reactive
+      // useBoxRect/useScrollRect/useScreenRect consumers see one stable
+      // value across all passes within this press cycle.
+      renderer.commitLayout()
+      if (pendingRerender) {
+        pendingRerender = false
+        isRendering = true
+        try {
+          await Promise.resolve()
+          currentBuffer = doRender()
+        } finally {
+          isRendering = false
+        }
+        pendingRerender = false
         flushCount++
       }
       // Mark all rows dirty — same safety net as processEventBatch (line 2443).

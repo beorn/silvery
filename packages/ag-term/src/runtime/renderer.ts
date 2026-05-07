@@ -24,6 +24,7 @@ import { createAg, type Ag } from "../ag"
 import { runWithMeasurer } from "../unicode"
 import { createBuffer } from "./create-buffer"
 import { isAnyDirty } from "@silvery/ag/epoch"
+import { commitLayoutSnapshot } from "@silvery/ag/layout-signals"
 import { IncrementalRenderMismatchError } from "../scheduler"
 import { createSearchState, renderSearchBarPlain, type SearchMatch } from "../search-overlay"
 import {
@@ -96,6 +97,19 @@ export interface Renderer {
   isIncrementalOff(): boolean
   /** Forcibly reset the internal Ag instance — called on alt-screen switches / resume. */
   resetAg(): void
+  /**
+   * Promote in-flight rect signals to their committed peers via
+   * `commitLayoutSnapshot`. Reactive `useBoxRect()` / `useScrollRect()` /
+   * `useScreenRect()` consumers read the committed signals; calling this
+   * advances them by one frame and may fire `effect()` callbacks that
+   * trigger React `forceUpdate`s.
+   *
+   * The runtime calls this exactly once per event-batch commit boundary —
+   * AFTER the in-flight convergence loop has drained — so reactive consumers
+   * see one stable value across every pass within a batch. See bead
+   * `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+   */
+  commitLayout(): void
 }
 
 /**
@@ -465,6 +479,15 @@ export function createRenderer(opts: RendererOptions): Renderer {
     return buf
   }
 
+  function commitLayout(): void {
+    // No-op when Ag hasn't been initialized yet (no render has run). Any
+    // attempt to walk the tree before the first layout is harmless but
+    // pointless — there are no committed signals to advance.
+    if (!_ag) return
+    const rootNode = getContainerRoot(opts.container)
+    commitLayoutSnapshot(rootNode)
+  }
+
   return {
     doRender,
     renderCount: () => _renderCount,
@@ -476,6 +499,7 @@ export function createRenderer(opts: RendererOptions): Renderer {
       _ag = null
       _lastTermBuffer = null
     },
+    commitLayout,
   }
 }
 
@@ -594,7 +618,7 @@ export function applySelectionToPaintBuffer(opts: SelectionPaintOptions): void {
     paintBuffer._buffer,
     selectionState.range,
     selectionTheme,
-    false, // respectSelectableFlag: legacy overlay didn't filter — keep parity
+    true,
     selectionState.scope,
   )
   applySelectionToBuffer(paintBuffer._buffer, changes)
@@ -782,7 +806,10 @@ export function createSearchScrollback(
     for (const lineIdx of matchingLines) {
       const rows = scrollback.getVisibleRows(scrollback.totalLines - lineIdx - 1, 1)
       const line = rows[0] ?? ""
-      const plain = line.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "")
+      const plain = line.replace(
+        new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*[a-zA-Z]`, "g"),
+        "",
+      )
       let col = plain.toLowerCase().indexOf(lowerQuery)
       while (col !== -1) {
         matches.push({ row: lineIdx, startCol: col, endCol: col + query.length - 1 })

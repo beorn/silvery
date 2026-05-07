@@ -571,6 +571,7 @@ export {
   type ResponsiveValues,
   type UseResponsiveValueOptions,
 } from "./hooks/useResponsiveValue"
+export { useResponsiveBoxProps, type Responsive } from "./hooks/useResponsiveBoxProps"
 export { useWindowSize } from "./hooks/useWindowSize"
 export { useHover } from "./hooks/useHover"
 export type { UseHoverReturn } from "./hooks/useHover"
