@@ -35,25 +35,22 @@ Use `useScreenRect()` when you need the **actual paint position** on the termina
 ```tsx
 function Card({ id, onLayout }) {
   // Register the card's screen position so arrow-key navigation
-  // can find "the card visually closest to row N"
-  useScreenRect((rect) => onLayout(id, rect.y))
+  // can find "the card visually closest to row N". useEffect runs
+  // after each commit boundary; the rect is the deferred (committed)
+  // value, idempotent across convergence passes.
+  const rect = useScreenRect()
+  useEffect(() => {
+    onLayout(id, rect.y)
+  }, [id, rect.y])
   return <Box>...</Box>
 }
 ```
 
-## Reactive vs callback
+## Deferred semantics
 
-Each hook has two call signatures:
+Each hook returns the rect as of the most recent event-batch commit boundary. Within one batch, every render sees the same value — so a render that branches on the rect (responsive layout, sized children) is structurally idempotent and can't form a feedback loop with the renderer's convergence loop.
 
-```tsx
-// Reactive — re-renders when the rect changes
-const rect = useBoxRect()
-
-// Callback — zero re-renders, the callback fires after layout
-useBoxRect((rect) => register(id, rect))
-```
-
-Use the reactive form for components that need to render differently based on their size. Use the callback form for hot paths — large lists, position registries, and anywhere re-rendering on every layout change would be prohibitive.
+The cost is **one frame late on mount**: the first paint shows `{0,0,0,0}`, and the measured rect arrives one batch later. For application-level responsive layout where this flash is visible, prefer [`useResponsiveBoxProps`](/api/use-responsive-box-props) — it reads the global viewport directly with no layout-pass dependency.
 
 ## Why the distinction exists — sticky nodes
 

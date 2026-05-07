@@ -78,23 +78,25 @@ Use `width="100%"`, `flexGrow={1}`, or explicit `width={N}` props on the
 parent Box. Flexily resolves them; the renderer uses the resolved cell
 width. No `useBoxRect()` call needed.
 
-### "I was reading rect for hit-test / position registry" → use callback form
+### "I was reading rect for hit-test / position registry" → use the deferred reactive form + useEffect
 
 If you need a rect to register a position with a coordinator (mouse
-hit-test, scroll anchor, drag target), use the **callback form** of
-`useBoxRect` / `useScrollRect`. The callback fires **after** layout
-resolves, so there's no stale-frame class:
+hit-test, scroll anchor, drag target), read the deferred (committed)
+rect via `useBoxRect()` / `useScrollRect()` and publish via `useEffect`.
+The committed rect advances at each event-batch commit boundary —
+idempotent across convergence passes, one frame late on mount:
 
 ```tsx
-useScrollRect((rect) => {
+const rect = useScrollRect()
+useEffect(() => {
   registry.register(myId, rect)
-})
+}, [myId, rect.x, rect.y, rect.width, rect.height])
 ```
 
-The callback form is the canonical post-layout registration pattern —
-already correct, no migration needed. The lint rule
-`scripts/lint-layout-reads.ts` skips callback-form invocations
-automatically.
+This is the canonical post-layout registration pattern under deferred
+semantics. The lint rule `scripts/lint-layout-reads.ts` accepts the
+zero-argument reactive form unconditionally — there's no stale-frame
+class to lint against.
 
 ### "I genuinely need width during render (text wrap, image fit)" → annotate
 
@@ -128,13 +130,16 @@ disguise; the annotation is the audit trail.
 ## Why this is the way
 
 **Stale-frame reads.** The historical pattern — `useBoxRect()` returning
-a snapshot of the prior frame's rect at render time — produces a
-first-frame zero read across conditional mounts. The same effect-chain
-bug class repeatedly broke cursor positioning before Phase 2 of the
-migration. Components that mounted conditionally would read `width: 0`
-on first render, render zero-width content, then re-render on the next
-layout pass with the correct width — a visible flicker / jank on the
-first frame.
+the in-flight rect at render time — produced a first-frame zero read
+across conditional mounts and could form a feedback loop with the
+renderer's convergence loop when components branched on the rect. Both
+classes were fixed by switching to deferred (committed) semantics:
+`useBoxRect()` now returns the value as of the most recent event-batch
+commit boundary, invariant across every convergence pass within one
+batch. The first paint still shows the empty-rect fallback (one frame
+late on mount), and the measured value arrives on the next batch — the
+same number of paints as before, with the feedback loop eliminated by
+construction.
 
 **Phase separation.** Treating geometry as an output of layout (rather
 than as state that components thread back into render) makes the data
@@ -168,14 +173,14 @@ bun scripts/lint-layout-reads.ts --json     # machine-readable
 
 What it flags:
 
-- `useBoxRect()`, `useScrollRect()`, `useScreenRect()` — empty-paren
-  snapshot form (callback form is skipped)
 - `useCursor()`, `useFocus()`, `useSelection()` — replaced by Box props
   (`cursorOffset`, `focused`, `selectionIntent`) in Phases 2, 4a, 4b
 
 What it skips:
 
-- Callback form: `useBoxRect((rect) => ...)` — fires post-layout
+- `useBoxRect()` / `useScrollRect()` / `useScreenRect()` — under deferred
+  semantics there's no stale-frame class to lint against; the reads
+  are batch-invariant and feedback-loop-free
 - Hook implementations themselves (`packages/ag-react/src/hooks/`)
 - Test files (`tests/**` are exempt by convention — tests intentionally
   read snapshots to assert layout outputs)

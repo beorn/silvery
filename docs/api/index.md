@@ -47,13 +47,17 @@ Everything you need to build terminal UIs with Silvery.
 
 ## Hooks
 
-| Hook                            | Description                                                              |
-| ------------------------------- | ------------------------------------------------------------------------ |
-| [useBoxRect](/api/use-box-rect) | Get component dimensions during render — container queries for terminals |
-| [useInput](/api/use-input)      | Handle keyboard and mouse input                                          |
-| [useApp](/api/use-app)          | Access the app instance (exit, rerender)                                 |
-| [useStdout](/api/use-stdout)    | Access stdout for raw writes                                             |
-| [Focus Hooks](/api/use-focus)   | Focus management (useFocusable, useFocusScope)                           |
+| Hook                                                   | Description                                                             |
+| ------------------------------------------------------ | ----------------------------------------------------------------------- |
+| [useBoxRect](/api/use-box-rect)                        | Read the current Box's committed rect (border-box minus padding/border) |
+| [useScrollRect](/api/use-scroll-rect)                  | Scroll-adjusted rect — pre-sticky clamping                              |
+| [useScreenRect](/api/use-screen-rect)                  | Actual paint position on the terminal screen                            |
+| [useResponsiveBoxProps](/api/use-responsive-box-props) | Declarative responsive `<Box>` prop spread (canonical primitive)        |
+| [useResponsiveValue](/api/use-responsive-value)        | Pick any value (string, enum, callback) by viewport breakpoint          |
+| [useInput](/api/use-input)                             | Handle keyboard and mouse input                                         |
+| [useApp](/api/use-app)                                 | Access the app instance (exit, rerender)                                |
+| [useStdout](/api/use-stdout)                           | Access stdout for raw writes                                            |
+| [Focus Hooks](/api/use-focus)                          | Focus management (useFocusable, useFocusScope)                          |
 
 ## Term sub-owners
 

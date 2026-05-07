@@ -579,30 +579,27 @@ AutoLocator methods: `resolve()`, `resolveAll()`, `count()`, `textContent()`, `g
 
 **Specifying default colors** — Components already use correct colors. Don't write `<Text color="$fg">` or `<SelectList color="$primary">`.
 
-**Non-idempotent layout decisions in `useBoxRect`** — silvery's renderer runs measure → layout → React render in a bounded convergence loop (capped at `MAX_CONVERGENCE_PASSES`). A render that *reads* `useBoxRect()` and *changes its own subtree's contribution to layout* is fine when the next pass sees the same rect bucket and produces the same decision; it's a feedback loop when the second pass measures a different bucket and flips the decision back. The convergence cap stops the loop from running forever, but the visible churn during the burst is the bug.
+**Reading `useBoxRect()` and writing layout-affecting props is structurally safe.** The reactive layout hooks (`useBoxRect()` / `useScrollRect()` / `useScreenRect()`) return the **committed** rect — the value as of the most recent event-batch commit boundary. Within a single batch the returned rect is invariant across every convergence pass, so a render that reads the rect and writes a layout-affecting prop based on it produces the same output every pass. The convergence loop terminates in one pass; no feedback edge can form by construction.
 
-The textbook trap is a width-driven binary toggle whose two branches have different widths (sidebar mounts above width N, unmounts below) and whose boundary lives near a frequently-measured value. Multi-`SIGWINCH` bursts from terminal multiplexers (several resize events in a few hundred ms per workspace switch) make this trivially reproducible: each burst element re-enters layout, and the toggle ping-pongs.
+**Use `useResponsiveBoxProps` for responsive layout.** It's the canonical primitive — pass a flat `Partial<BoxProps>` or a `{ default, xs?, sm?, md?, lg?, xl? }` mobile-first cascade and spread into a `<Box>`:
 
 ```tsx
-// Wrong: structural branch on raw measurement, no hysteresis.
+// Canonical: declarative responsive layout, no measurement reads at all.
+const layout = useResponsiveBoxProps({
+  default: { flexDirection: "column", padding: 1 },
+  md: { flexDirection: "row", padding: 2 },
+  lg: { padding: 3 },          // inherits flexDirection: "row" from md
+})
+return <Box {...layout}>{children}</Box>
+
+// Also fine: read the committed rect and branch on it.
 function Panel() {
   const { width } = useBoxRect()
-  return width >= 90 ? <Wide/> : <Narrow/>   // flips at the boundary
+  return width >= 90 ? <Wide/> : <Narrow/>   // safe — committed rect is batch-invariant
 }
-
-// Right: bucket into a stable zone with debounce/hysteresis at the boundary.
-const zone = useResponsiveValue<Zone>({ default: "default", sm: "sm", md: "md", lg: "lg" })
-const stableZone = useDebouncedValue(zone, 250)  // burst-resistant
-return stableZone === "lg" ? <Wide/> : <Narrow/>
-
-// Right (callback form): observe without driving render.
-useBoxRect((rect) => registerSize(id, rect))     // zero re-renders
 ```
 
-Two safe patterns; mixing them in one component is what bites:
-
-1. **Observation** — `useBoxRect((rect) => ...)` callback form. Subscribes to layout signals without re-rendering. The right choice for registries, debug overlays, and any "side-channel" use of the rect.
-2. **Bucketed decisions** — read a measurement, classify into a small stable set (`useResponsiveValue` is the canonical bucketer), and branch on the zone, never the raw width. Add hysteresis (a small debounce on the zone) when the boundary crossing causes a structural mount/unmount whose two branches contribute different widths to the parent — otherwise a measurement near the boundary will ping-pong under bursty resizes.
+A note on multi-layer measurement chains (e.g. `<MeasuredBox>` wrapping a child that itself reads `useBoxRect`): each layer settles in one event batch. A two-layer chain shows the empty-rect fallback on its first paint and the measured layout on the second; that's the deferred contract, not a regression. Use `useResponsiveBoxProps` to avoid measurement chains entirely.
 
 ---
 

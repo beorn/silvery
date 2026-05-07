@@ -29,7 +29,7 @@ Layout and reactivity are handled by two separate systems with a one-way sync br
 
 **@silvery/ag** (framework-agnostic signals) exposes layout results as reactive signals. After Flexily completes layout, `syncRectSignals()` copies node rects into writable signals (`boxRect`, `scrollRect`, `screenRect`). Similarly, `syncTextContentSignal()` and `syncFocusedSignal()` bridge reconciler and focus mutations into signals. Signals are WeakMap-backed and lazily created — nodes without subscribers pay no cost.
 
-**@silvery/ag-react** bridges signals to React. `useSignal(signal)` subscribes to any alien-signal and triggers re-renders on change. Semantic hooks (`useBoxRect()`, `useScreenRect()`, `useScrollRect()`) use signals internally but expose a simple `Rect` return value with optional callback form for zero-rerender hot paths.
+**@silvery/ag-react** bridges signals to React. `useSignal(signal)` subscribes to any alien-signal and triggers re-renders on change. Semantic layout hooks (`useBoxRect()`, `useScreenRect()`, `useScrollRect()`) read the **committed** rect signal — the value as of the most recent event-batch commit boundary, invariant across every convergence pass within one batch. The runtime calls `commitLayoutSnapshot(root)` at each batch's commit boundary to advance the committed signals; reactive consumers see one stable value per batch and can't form feedback loops with the convergence loop. Use [`useResponsiveBoxProps`](/api/use-responsive-box-props) for declarative responsive layout (no measurement reads).
 
 ```
 Layer 0: alien-signals (signal, computed, effect)       — pure reactive primitives

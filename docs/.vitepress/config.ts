@@ -165,6 +165,7 @@ export default withMermaid(
             { text: "Building an App", link: "/guides/terminal-apps" },
             { text: "State Management", link: "/guides/state-management" },
             { text: "Layouts", link: "/guide/layouts" },
+            { text: "Responsive Layout", link: "/guide/responsive-layout" },
             { text: "Styling", link: "/guide/styling" },
             { text: "Sterling", link: "/guide/sterling" },
             { text: "Theming", link: "/guide/theming" },
@@ -230,6 +231,7 @@ export default withMermaid(
             { text: "Building an App", link: "/guides/terminal-apps" },
             { text: "State Management", link: "/guides/state-management" },
             { text: "Layouts", link: "/guide/layouts" },
+            { text: "Responsive Layout", link: "/guide/responsive-layout" },
             { text: "Styling", link: "/guide/styling" },
             { text: "Sterling", link: "/guide/sterling" },
             { text: "Theming", link: "/guide/theming" },
@@ -288,6 +290,7 @@ export default withMermaid(
               collapsed: false,
               items: [
                 { text: "useBoxRect", link: "/api/use-box-rect" },
+                { text: "useResponsiveBoxProps", link: "/api/use-responsive-box-props" },
                 { text: "useInput", link: "/api/use-input" },
                 { text: "useApp", link: "/api/use-app" },
                 { text: "useStdout", link: "/api/use-stdout" },

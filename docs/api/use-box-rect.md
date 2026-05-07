@@ -2,7 +2,9 @@
 
 Returns the computed dimensions of the component's content area — width, height, and position. Components use this to adapt to their available space during render.
 
-Two call signatures: a **reactive** form that re-renders the component on every rect change, and a **callback** form that observes without triggering React updates. Pick deliberately — see [Layout decisions vs. observation](#layout-decisions-vs-observation).
+The hook returns the **committed** rect: the value as of the most recent event-batch commit boundary. Within a single batch the returned rect is invariant across every convergence pass; React renders see one stable value per batch. After the batch's commit boundary fires, the next batch sees the new value.
+
+This is the structural fix for the "render reads useBoxRect AND writes a layout-affecting prop based on it" feedback loop. A render that branches on the read value produces the same output every pass, so the convergence loop terminates in one pass — no feedback edge can form by construction.
 
 ## Import
 
@@ -26,7 +28,11 @@ function SizedBox() {
 }
 ```
 
-## Return Value
+## Signature
+
+```ts
+function useBoxRect(): Rect
+```
 
 | Property | Type     | Description                        |
 | -------- | -------- | ---------------------------------- |
@@ -35,62 +41,36 @@ function SizedBox() {
 | `x`      | `number` | X position from terminal left edge |
 | `y`      | `number` | Y position from terminal top edge  |
 
-## First Render Behavior
+## First Render Behavior — one frame late by design
 
-On the first render, dimensions are `{ width: 0, height: 0, x: 0, y: 0 }`. This happens because:
-
-1. **First render**: React renders component structure
-2. **Layout phase**: Layout engine computes dimensions
-3. **Second render**: Components re-render with actual dimensions
-
-Both renders happen before the first terminal paint, so this is usually invisible.
-
-### Handling Zero Dimensions
-
-If your component breaks on `width=0`, add a guard:
+On the first render, `useBoxRect()` returns `{ width: 0, height: 0, x: 0, y: 0 }`. After the first commit boundary, the hook re-renders with the measured dimensions. Both renders happen before the first paint reaches the terminal in the typical case, so the empty-rect frame is invisible — but components that build on top of measurement (e.g. a banner that picks an ASCII-art tier from the available width) may show their fallback for one frame on mount.
 
 ```tsx
 function Header() {
   const { width } = useBoxRect()
 
-  if (width === 0) return null // Or a loading state
+  if (width === 0) return null // skip the empty-rect frame
 
   return <Text>{"=".repeat(width)}</Text>
 }
 ```
 
-Or handle it in your rendering logic:
-
-```tsx
-function ProgressBar({ progress }: { progress: number }) {
-  const { width } = useBoxRect()
-
-  // Safe even when width=0
-  const filled = Math.floor(width * progress)
-  const empty = Math.max(0, width - filled)
-
-  return (
-    <Text>
-      {"#".repeat(filled)}
-      {"-".repeat(empty)}
-    </Text>
-  )
-}
-```
+For components that need same-frame measurements (e.g. an `Image` that publishes Kitty escape sequences positioned at the host node's rect), use a layout effect with `useAgNode()` to read `node.boxRect` directly — that's the in-flight value, written every layout pass. This is recommended only for leaf primitives in the silvery framework itself.
 
 ## Examples
 
-### Responsive Layout
+### Responsive Layout — prefer `useResponsiveBoxProps`
+
+For responsive layout decisions, use [`useResponsiveBoxProps`](/api/use-responsive-box-props) — it's declarative, batch-invariant, and never reads measured rects:
 
 ```tsx
-function ResponsiveBox() {
-  const { width } = useBoxRect()
-
-  // Stack vertically on narrow terminals
-  const direction = width < 60 ? "column" : "row"
-
+function ResponsiveBox({ children }: { children: React.ReactNode }) {
+  const layout = useResponsiveBoxProps({
+    default: { flexDirection: "column" },
+    md: { flexDirection: "row" },
+  })
   return (
-    <Box flexDirection={direction}>
+    <Box {...layout}>
       <Box flexGrow={1}>
         <Text>Panel 1</Text>
       </Box>
@@ -101,6 +81,23 @@ function ResponsiveBox() {
   )
 }
 ```
+
+When the breakpoint logic genuinely depends on a measured rect (not the global terminal width), branching on `useBoxRect()` is safe under deferred semantics:
+
+```tsx
+function ResponsiveCard() {
+  const { width } = useBoxRect()
+  const direction = width < 60 ? "column" : "row"
+  return (
+    <Box flexDirection={direction}>
+      <Box flexGrow={1}><Text>Panel 1</Text></Box>
+      <Box flexGrow={1}><Text>Panel 2</Text></Box>
+    </Box>
+  )
+}
+```
+
+The committed rect is invariant within a batch, so the render produces the same output every convergence pass — the historical "ping-pong at boundary" anti-pattern is impossible by construction.
 
 ### Centered Text
 
@@ -173,54 +170,6 @@ function ProportionalColumns() {
 }
 ```
 
-## Layout decisions vs. observation
-
-Silvery's renderer runs **measure → layout → React render** in a bounded convergence loop. A component that reads `useBoxRect()` and renders something whose width feeds back into the parent's layout participates in that loop. The convergence cap stops it from running forever, but the visible churn during a burst is the bug. There are two valid patterns; pick deliberately.
-
-### 1. Observation — use the callback form
-
-If you only need the rect to update an external registry, register a position for cross-component navigation, or feed a debug overlay, use the callback form. It subscribes to the layout signal without re-rendering the component.
-
-```tsx
-function Card({ id }: { id: string }) {
-  useBoxRect((rect) => positionRegistry.set(id, rect))
-  return <Box>...</Box>
-}
-```
-
-This is the right choice for hot paths like large lists. Re-rendering on every rect change there is prohibitive; the callback form has zero re-render cost.
-
-### 2. Bucketed decisions — classify, don't compare raw widths
-
-When the rect drives a layout decision, route the measurement through a small stable set of zones rather than branching on raw width. [`useResponsiveValue()`](/api/use-responsive-value) is the canonical bucketer. Decisions branch on the zone (`"sm" | "md" | "lg"`), so two consecutive renders that measure 89 and 91 columns both resolve to the same `"md"` zone and produce the same tree.
-
-```tsx
-const zone = useResponsiveValue<Zone>({
-  default: "default", sm: "sm", md: "md", lg: "lg",
-})
-return zone === "lg" ? <Wide /> : <Narrow />
-```
-
-Add **hysteresis** when the zone boundary triggers a structural change (mounting/unmounting a subtree, toggling a panel) and the two branches contribute different widths to the parent — otherwise a measurement near the boundary will ping-pong, especially under bursty resizes from terminal multiplexers that fire several `SIGWINCH`s per workspace switch. A small debounce on the zone (e.g. 200–300 ms before the new zone "settles") lets the layout converge before the structural change re-enters the loop.
-
-### The trap
-
-The trap is a width-driven binary structural toggle whose two branches have different widths and whose boundary lives at a frequently-measured value. Each pass measures, picks the *other* branch, re-measures, picks the *first* branch.
-
-```tsx
-// Wrong — binary structural toggle on raw width
-function Panel() {
-  const { width } = useBoxRect()
-  if (width >= 90) return <Wide />   // contributes 80 cols
-  return <Narrow />                  // contributes 60 cols
-  // Wide unmounts → parent measures 60 → "<90" → renders Narrow
-  // Narrow renders → siblings give Panel more space → "≥90" → renders Wide
-  // Loop until convergence cap or accidental settle.
-}
-```
-
-The fix is one of the two patterns above. The natural choice for "panel mounts above width N" is bucketing with hysteresis at the boundary.
-
 ## Comparison with Ink
 
 **Ink**: No way to get dimensions. Must calculate and pass width manually.
@@ -275,3 +224,10 @@ function Column() {
   // Use width for truncation, responsive behavior, etc.
 }
 ```
+
+## See also
+
+- [`useScrollRect`](/api/use-scroll-rect) — scroll-adjusted position (pre-sticky clamping)
+- [`useScreenRect`](/api/use-screen-rect) — actual paint position on the terminal screen
+- [`useResponsiveBoxProps`](/api/use-responsive-box-props) — declarative responsive layout primitive
+- [`useResponsiveValue`](/api/use-responsive-value) — for non-Box-prop responsive values

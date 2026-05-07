@@ -60,7 +60,7 @@ You'll spend a week reimplementing what [`SelectList`](/guides/components#select
 
 ## 2. Think in Flexbox
 
-Silvery uses CSS flexbox via [Flexily](/guide/layout-engine) — same mental model as web development. Let the layout engine compute positions and sizes. Components know their own size via `useBoxRect()` — synchronous, during render, no effects, no 0×0 flash.
+Silvery uses CSS flexbox via [Flexily](/guide/layout-engine) — same mental model as web development. Let the layout engine compute positions and sizes. For responsive layout, reach for [`useResponsiveBoxProps`](/api/use-responsive-box-props) (declarative, no measurement reads). When you genuinely need a component's measured size, [`useBoxRect()`](/api/use-box-rect) returns the deferred (committed) rect — invariant across every convergence pass within one event batch, so layout decisions can't form feedback loops.
 
 ::: tip ✨ Shiny
 
@@ -75,24 +75,30 @@ Silvery uses CSS flexbox via [Flexily](/guide/layout-engine) — same mental mod
   <Footer />
 </Box>
 
-// Responsive layout — adapt to available space
+// Responsive layout — declarative, no measurement reads.
+function AppShell({ sidebar, main }) {
+  const layout = useResponsiveBoxProps({
+    default: { flexDirection: "column" },
+    md: { flexDirection: "row" },
+  })
+  return <Box {...layout}><Sidebar />{main}</Box>
+}
+
+// Measured-rect decisions — when the parent's measured size is the input.
 function Panel() {
-  const rect = useBoxRect()
-  return rect.width < 40 ? <Compact /> : <Full />
+  const { width } = useBoxRect()           // committed rect, batch-invariant
+  return width < 40 ? <Compact /> : <Full />
 }
 ```
 
-`flexGrow` fills space. `padding`/`paddingX` for internal spacing. `gap` between children. `justifyContent="flex-end"` pins to bottom. `useBoxRect()` for responsive adaptation.
+`flexGrow` fills space. `padding`/`paddingX` for internal spacing. `gap` between children. `justifyContent="flex-end"` pins to bottom. `useResponsiveBoxProps` for global-viewport responsive layout. `useBoxRect()` when the decision depends on the parent's measured size.
 :::
 
-::: warning ⚠ Keep layout decisions idempotent
+::: tip ⚠ Reading layout on mount
 
-`useBoxRect()` reads measurements during render. Silvery runs measure → layout → React render in a bounded convergence loop, so a layout decision driven off a measurement must produce the *same* decision on the next pass. A naive width-driven binary toggle (`width >= 90 ? <Wide/> : <Narrow/>`) flips back and forth at the boundary when the two branches contribute different widths to the parent — and a single resize from a terminal multiplexer is often a burst of `SIGWINCH` events, each one re-entering the loop.
+The reactive layout hooks (`useBoxRect`, `useScrollRect`, `useScreenRect`) return the COMMITTED rect — the value as of the most recent event-batch commit. On the very first render the rect is `{0,0,0,0}`; the measured value arrives one batch later. For layout decisions that need to be correct on the first paint, prefer `useResponsiveBoxProps` — it reads the global viewport directly, no layout-pass dependency.
 
-Two safe patterns:
-
-- **Bucket the measurement.** Use [`useResponsiveValue()`](/api/use-responsive-value) (or your own zone classifier with hysteresis at the boundary) so the decision branches on a small stable set, not the raw `width`.
-- **Observe without driving render.** `useBoxRect((rect) => ...)` is the callback form — no re-render, ideal for hot paths, registries, and debug overlays.
+For framework primitives that must publish positioned terminal escapes on the same frame the host node lays out (e.g. `Image` writing Kitty graphics escapes), read `node.boxRect` from `useAgNode()` inside a `useLayoutEffect`. That's the in-flight value, written every layout pass. This is recommended only for leaf primitives in silvery itself, not application code.
 :::
 
 ::: danger 🩶 Tarnished
@@ -113,7 +119,7 @@ Two safe patterns:
 If you're doing arithmetic with widths, you're fighting the layout engine instead of using it.
 :::
 
-→ [Layout engine](/guide/layout-engine) · [useBoxRect](/api/use-box-rect) · [Box](/api/box) · [Layout examples](/examples/layout)
+→ [Layout engine](/guide/layout-engine) · [Responsive layout](/guide/responsive-layout) · [useBoxRect](/api/use-box-rect) · [useResponsiveBoxProps](/api/use-responsive-box-props) · [Box](/api/box) · [Layout examples](/examples/layout)
 
 ## 3. Let the Framework Scroll
 
