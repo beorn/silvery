@@ -93,7 +93,7 @@ export function withReact(element: ReactElement) {
     }
 
     // Minimal runtime context for useExit — trimmed to lifecycle only.
-    const runtimeValue: RuntimeContextValue = { exit: tearDown }
+    const runtimeValue: RuntimeContextValue = { exit: tearDown, panic: tearDown }
 
     // Wrap element with context providers
     const wrapped = React.createElement(

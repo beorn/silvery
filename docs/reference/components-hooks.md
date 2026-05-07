@@ -100,10 +100,11 @@ This is a quick-reference index of all Silvery components and hooks. For detaile
 
 ### App Lifecycle
 
-| Hook                         | Description              | API  |
-| ---------------------------- | ------------------------ | ---- |
-| [useApp](/api/use-app)       | App-level methods (exit) | Core |
-| [useStdout](/api/use-stdout) | stdout stream access     | Core |
+| Hook                         | Description                       | API  |
+| ---------------------------- | --------------------------------- | ---- |
+| [useApp](/api/use-app)       | App-level methods (exit, panic)   | Core |
+| usePanic                     | Fatal diagnostics after TUI exit  | Core |
+| [useStdout](/api/use-stdout) | stdout stream access              | Core |
 
 ### Animation
 

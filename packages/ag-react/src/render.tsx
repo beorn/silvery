@@ -28,6 +28,7 @@ import {
   ChainAppContext,
   FocusManagerContext,
   RuntimeContext,
+  type PanicOptions,
   type RuntimeContextValue,
   StdoutContext,
   StderrContext,
@@ -285,6 +286,7 @@ interface AppProps {
   /** The raw stdout stream (for StdoutContext.stdout) — still NodeJS.WriteStream for now */
   stdout: NodeJS.WriteStream
   onExit: (error?: Error) => void
+  onPanic?: (reason: unknown, options?: PanicOptions) => void
   onPause?: () => void
   onResume?: () => void
   onScrollback?: (lines: number) => void
@@ -321,6 +323,7 @@ function SilveryApp({
   stdoutWrite,
   stdout,
   onExit,
+  onPanic,
   onPause,
   onResume,
   onScrollback,
@@ -343,6 +346,17 @@ function SilveryApp({
       onExit(error)
     },
     [onExit],
+  )
+  const handlePanic = useCallback(
+    (reason: unknown, options?: PanicOptions) => {
+      if (onPanic) {
+        onPanic(reason, options)
+        return
+      }
+      if (options?.exitCode !== undefined) process.exitCode = options.exitCode
+      onExit(reason instanceof Error ? reason : new Error(String(reason)))
+    },
+    [onExit, onPanic],
   )
 
   // Mutable refs for values accessed inside the input handler.
@@ -500,10 +514,11 @@ function SilveryApp({
   const runtimeContextValue = useMemo<RuntimeContextValue>(
     () => ({
       exit: handleExit,
+      panic: handlePanic,
       pause: onPause,
       resume: onResume,
     }),
-    [handleExit, onPause, onResume],
+    [handleExit, handlePanic, onPause, onResume],
   )
 
   // ChainAppContext — canonical subscription surface for ag-react hooks.
@@ -700,6 +715,7 @@ class SilveryInstance {
           }}
           stdout={this.stdout}
           onExit={this.handleExit}
+          onPanic={this.handlePanic}
           onPause={this.pause}
           onResume={this.resume}
           onScrollback={this.handleScrollback}
@@ -883,6 +899,15 @@ class SilveryInstance {
     }
 
     this.unmount()
+  }
+
+  /**
+   * Handle panic.
+   */
+  private handlePanic = (reason: unknown, options?: PanicOptions): void => {
+    if (options?.exitCode !== undefined) process.exitCode = options.exitCode
+    const error = reason instanceof Error ? reason : new Error(String(reason))
+    this.handleExit(error)
   }
 
   /**

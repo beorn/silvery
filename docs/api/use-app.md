@@ -1,22 +1,27 @@
 # useApp
 
-Access app-level controls like exiting the application.
+Access app-level controls like exiting the application or panicking to the real terminal.
 
 ## Import
 
 ```tsx
-import { useApp } from "silvery"
+import { useApp, usePanic } from "silvery"
 ```
+
+`usePanic()` returns the same `panic` function directly.
 
 ## Usage
 
 ```tsx
 function App() {
-  const { exit } = useApp()
+  const { exit, panic } = useApp()
 
   useInput((input) => {
     if (input === "q") {
       exit()
+    }
+    if (input === "P") {
+      panic("provider invariant failed", { title: "my-app" })
     }
   })
 
@@ -26,11 +31,14 @@ function App() {
 
 ## Return Value
 
-| Property | Type                      | Description          |
-| -------- | ------------------------- | -------------------- |
-| `exit`   | `(error?: Error) => void` | Exit the application |
+| Property | Type                                                        | Description                                                                 |
+| -------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `exit`   | `(error?: Error) => void`                                   | Exit the application                                                        |
+| `panic`  | `(reason: unknown, options?: PanicOptions) => void`         | Exit, restore terminal state, then print a copyable diagnostic to `stderr`  |
 
 The `exit` function accepts an optional `Error` argument. When called with an error, the app indicates it exited due to a failure.
+
+Use `panic` for fatal diagnostics that must survive fullscreen/alt-screen teardown. Silvery restores raw mode, leaves alt-screen, then prints the message on the regular terminal screen.
 
 ## Examples
 
@@ -69,6 +77,24 @@ function CriticalOperation() {
   }, [])
 
   return <Text>Running...</Text>
+}
+```
+
+### Panic to Regular Screen
+
+```tsx
+function FatalInvariant({ sessionId }: { sessionId: string }) {
+  const { panic } = useApp()
+
+  useEffect(() => {
+    panic(new Error("subagent activity invariant failed"), {
+      title: "silvercode",
+      details: [`session ${sessionId}`],
+      exitCode: 1,
+    })
+  }, [panic, sessionId])
+
+  return <Text>Loading...</Text>
 }
 ```
 

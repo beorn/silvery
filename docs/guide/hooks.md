@@ -178,10 +178,11 @@ Access app-level controls.
 import { useApp } from "silvery"
 
 function App() {
-  const { exit } = useApp()
+  const { exit, panic } = useApp()
 
   useInput((input) => {
     if (input === "q") exit()
+    if (input === "P") panic("fatal provider invariant", { title: "my-app" })
   })
 
   return <Text>Press q to quit</Text>
@@ -190,9 +191,10 @@ function App() {
 
 ### Return Value
 
-| Property | Type                      | Description  |
-| -------- | ------------------------- | ------------ |
-| `exit`   | `(error?: Error) => void` | Exit the app |
+| Property | Type                                                | Description                                                                |
+| -------- | --------------------------------------------------- | -------------------------------------------------------------------------- |
+| `exit`   | `(error?: Error) => void`                           | Exit the app                                                               |
+| `panic`  | `(reason: unknown, options?: PanicOptions) => void` | Restore the terminal, then print a copyable fatal diagnostic to `stderr`   |
 
 ## useStdout
 

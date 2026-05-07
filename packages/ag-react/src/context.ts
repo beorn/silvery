@@ -145,9 +145,26 @@ export interface BaseRuntimeEvents {
  * surface below.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface PanicOptions {
+  /**
+   * Prefix for the copyable terminal diagnostic.
+   *
+   * Example: `{ title: "silvercode" }` prints `silvercode: <message>`.
+   */
+  title?: string
+  /** Additional context lines printed below the panic summary. */
+  details?: string | ReadonlyArray<string>
+  /** Process exit code to set. Default: 1. */
+  exitCode?: number
+}
+
+export type PanicHandler = (reason: unknown, options?: PanicOptions) => void
+
 export interface RuntimeContextValue<_E extends BaseRuntimeEvents = BaseRuntimeEvents> {
   /** Exit the application with optional error. */
   exit: (error?: Error) => void
+  /** Exit the application and print a copyable diagnostic after terminal cleanup. */
+  panic: PanicHandler
   /** Pause rendering output (used by console suspend). */
   pause?: () => void
   /** Resume rendering after a pause. Forces a full redraw. */

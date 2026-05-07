@@ -580,6 +580,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // `chain.events`.
   const runtimeValue: RuntimeContextValue = {
     exit: handleExit,
+    panic: (reason) => handleExit(reason instanceof Error ? reason : new Error(String(reason))),
   }
 
   // Wrap element with contexts

@@ -11,7 +11,7 @@
  */
 
 import { useContext } from "react"
-import { RuntimeContext } from "../context"
+import { RuntimeContext, type PanicHandler } from "../context"
 
 // ============================================================================
 // Types
@@ -24,6 +24,11 @@ export interface UseAppResult {
    * No-op in static mode.
    */
   exit: (error?: Error) => void
+  /**
+   * Exit the application and print a copyable diagnostic after terminal cleanup.
+   * No-op in static mode.
+   */
+  panic: PanicHandler
   /**
    * Pause rendering output (for screen switching). Input still works.
    * Returns undefined if not supported.
@@ -39,6 +44,7 @@ export interface UseAppResult {
 // No-op fallback for static mode
 const staticResult: UseAppResult = {
   exit: () => {},
+  panic: () => {},
 }
 
 // ============================================================================
@@ -75,6 +81,7 @@ export function useApp(): UseAppResult {
 
   return {
     exit: rt.exit,
+    panic: rt.panic,
     pause: rt.pause,
     resume: rt.resume,
   }

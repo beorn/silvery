@@ -421,6 +421,7 @@ export function renderToCanvas(
     // RuntimeContext — trimmed to `exit()` only.
     runtimeContextValue = {
       exit: handleExit,
+      panic: (reason) => handleExit(reason instanceof Error ? reason : new Error(String(reason))),
     }
   }
 

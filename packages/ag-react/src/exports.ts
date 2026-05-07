@@ -492,6 +492,7 @@ export { useInput } from "./hooks/useInput"
  */
 export { useApp } from "./hooks/useApp"
 export { useExit } from "./hooks/useExit"
+export { usePanic } from "./hooks/usePanic"
 export { useDispose, type UseDisposeOptions } from "./hooks/useDispose"
 
 // Scope — structured-concurrency lifetime ownership (Phase 1)
@@ -674,6 +675,8 @@ export {
 } from "./context"
 export type {
   CacheBackend,
+  PanicHandler,
+  PanicOptions,
   RuntimeContextValue,
   BaseRuntimeEvents,
   CapabilityLookup,

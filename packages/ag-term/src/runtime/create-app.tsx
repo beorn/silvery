@@ -58,6 +58,7 @@ import {
   type ChainAppContextValue,
   FocusManagerContext,
   RuntimeContext,
+  type PanicOptions,
   type RuntimeContextValue,
   StdoutContext,
   StderrContext,
@@ -493,6 +494,8 @@ export interface AppHandle<S> {
   readonly scope: Scope
   /** Wait until the app exits */
   waitUntilExit(): Promise<void>
+  /** Exit fullscreen, restore terminal state, and print a copyable diagnostic to stderr */
+  panic(reason: unknown, options?: PanicOptions): void
   /** Unmount and cleanup */
   unmount(): void
   /** Dispose (alias for unmount) — enables `using` */
@@ -1288,6 +1291,75 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       `React render error caught by SilveryErrorBoundary: ${error.message}${dumpPath ? ` (dump: ${dumpPath})` : ""}`,
     )
   }
+
+  type PanicReport = {
+    title: string
+    message: string
+    details: ReadonlyArray<string>
+    dumpPath?: string
+  }
+
+  const panicReports: PanicReport[] = []
+  let panicReportsFlushed = false
+
+  function normalizePanicReason(reason: unknown): { message: string; stack?: string } {
+    if (reason instanceof Error) {
+      return { message: reason.message || reason.name || "panic", stack: reason.stack }
+    }
+    if (typeof reason === "string") return { message: reason }
+    try {
+      return { message: JSON.stringify(reason) ?? String(reason) }
+    } catch {
+      return { message: String(reason) }
+    }
+  }
+
+  function normalizePanicDetails(details: PanicOptions["details"]): ReadonlyArray<string> {
+    if (details === undefined) return []
+    if (typeof details === "string") return [details]
+    return details
+  }
+
+  function recordPanic(reason: unknown, options: PanicOptions = {}): void {
+    const { message, stack } = normalizePanicReason(reason)
+    const title = options.title?.trim() || "silvery"
+    let dumpPath: string | undefined
+    if (stack) {
+      try {
+        dumpPath = `${tmpdir()}/silvery-panic-${Date.now()}.txt`
+        writeFileSync(dumpPath, `${message}\n\n${stack}\n`)
+      } catch {
+        // Best-effort: panic must still restore the terminal and print a summary.
+      }
+    }
+    panicReports.push({
+      title,
+      message,
+      details: normalizePanicDetails(options.details),
+      dumpPath,
+    })
+    process.exitCode = options.exitCode ?? 1
+  }
+
+  function flushPanicReports(): void {
+    if (panicReportsFlushed || panicReports.length === 0) return
+    panicReportsFlushed = true
+    try {
+      const lines: string[] = [""]
+      for (const report of panicReports) {
+        lines.push(
+          `${report.title}: ${report.message}${report.dumpPath ? ` (dump: ${report.dumpPath})` : ""}`,
+        )
+        for (const detail of report.details) {
+          lines.push(`  ${detail}`)
+        }
+      }
+      lines.push("")
+      process.stderr.write(lines.join("\n"))
+    } catch {
+      // Best-effort — stderr may already be torn down
+    }
+  }
   // Track protocol state for cleanup and suspend/resume
   let kittyEnabled = false
   const defaultKittyFlags =
@@ -1686,6 +1758,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Dispose runtime
     runtime[Symbol.dispose]()
 
+    // Flush explicit app panics after terminal cleanup so the diagnostic lands
+    // on the normal screen instead of disappearing with alt-screen contents.
+    flushPanicReports()
+
     // Flush any React render errors caught by SilveryErrorBoundary to stderr.
     // The boundary renders them inside the alt screen — once we leave alt
     // screen the message is gone. Print here so the user actually sees what
@@ -1708,7 +1784,73 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     }
   }
 
-  let exit: () => void // eslint-disable-line prefer-const -- forward declaration, assigned once at L1403
+  // Exit promise
+  let exitResolve: () => void
+  let exitResolved = false
+  const exitPromise = new Promise<void>((resolve) => {
+    exitResolve = () => {
+      if (!exitResolved) {
+        exitResolved = true
+        resolve()
+      }
+    }
+  })
+
+  // Now define exit function (needs exitResolve and cleanup)
+  //
+  // When called from within the event pump (key handler returns "exit"),
+  // we send protocol disable sequences immediately but defer the full
+  // cleanup (drain + raw mode) to the pump's finally block. This gives
+  // the event loop time to receive late-arriving bytes (e.g., Kitty
+  // keyboard release events) before we hand stdin back to the shell.
+  //
+  // When called from outside the pump (signal handler, direct call),
+  // we do sync cleanup immediately (best-effort).
+  const exit = () => {
+    if (shouldExit) return // Already exiting
+    shouldExit = true
+
+    // Immediately disable protocols that generate async responses.
+    // This is the earliest possible moment — before the terminal
+    // sends any more events in response to the exit key.
+    if (!headless && stdout.isTTY) {
+      const earlyDisable = [
+        disableKittyKeyboard(), // Stop Kitty release events
+        disableMouse(), // Stop mouse events
+        "\x1b[?1004l", // Stop focus reporting
+      ].join("")
+      try {
+        writeSync((stdout as unknown as { fd: number }).fd, earlyDisable)
+      } catch {
+        try {
+          stdout.write(earlyDisable)
+        } catch {
+          /* terminal may be gone */
+        }
+      }
+    }
+
+    controller.abort()
+
+    // If we're inside the event pump, defer cleanup — the pump's
+    // finally block will call cleanupAfterDrain() with an async drain.
+    // If we're outside (signal handler, etc.), do sync cleanup now.
+    if (!inEventHandler) {
+      cleanup()
+      exitResolve()
+    }
+    // else: pump's finally block handles cleanup + exitResolve
+  }
+
+  const panicApp = (reason: unknown, options?: PanicOptions) => {
+    recordPanic(reason, options)
+    if (cleanedUp) {
+      flushPanicReports()
+      exitResolve()
+      return
+    }
+    exit()
+  }
 
   // Create SilveryNode container.
   // onRender fires during React's resetAfterCommit — inside the commit phase.
@@ -1908,6 +2050,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // `ChainAppContext.events` (withCustomEvents).
   const runtimeContextValue: RuntimeContextValue = {
     exit: () => exit(),
+    panic: (reason, options) => panicApp(reason, options),
   }
 
   // Wrap element with all required providers
@@ -2230,65 +2373,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // handle the re-render after effects complete, with renderPaused=false.
     }
   }
-
-  // Exit promise
-  let exitResolve: () => void
-  let exitResolved = false
-  const exitPromise = new Promise<void>((resolve) => {
-    exitResolve = () => {
-      if (!exitResolved) {
-        exitResolved = true
-        resolve()
-      }
-    }
-  })
-
-  // Now define exit function (needs exitResolve and cleanup)
-  //
-  // When called from within the event pump (key handler returns "exit"),
-  // we send protocol disable sequences immediately but defer the full
-  // cleanup (drain + raw mode) to the pump's finally block. This gives
-  // the event loop time to receive late-arriving bytes (e.g., Kitty
-  // keyboard release events) before we hand stdin back to the shell.
-  //
-  // When called from outside the pump (signal handler, direct call),
-  // we do sync cleanup immediately (best-effort).
-  exit = () => {
-    if (shouldExit) return // Already exiting
-    shouldExit = true
-
-    // Immediately disable protocols that generate async responses.
-    // This is the earliest possible moment — before the terminal
-    // sends any more events in response to the exit key.
-    if (!headless && stdout.isTTY) {
-      const earlyDisable = [
-        disableKittyKeyboard(), // Stop Kitty release events
-        disableMouse(), // Stop mouse events
-        "\x1b[?1004l", // Stop focus reporting
-      ].join("")
-      try {
-        writeSync((stdout as unknown as { fd: number }).fd, earlyDisable)
-      } catch {
-        try {
-          stdout.write(earlyDisable)
-        } catch {
-          /* terminal may be gone */
-        }
-      }
-    }
-
-    controller.abort()
-
-    // If we're inside the event pump, defer cleanup — the pump's
-    // finally block will call cleanupAfterDrain() with an async drain.
-    // If we're outside (signal handler, etc.), do sync cleanup now.
-    if (!inEventHandler) {
-      cleanup()
-      exitResolve()
-    }
-    // else: pump's finally block handles cleanup + exitResolve
-  }
-  runtimeContextValue.exit = exit
 
   // Frame listeners for async iteration
   let frameResolve: ((buffer: Buffer) => void) | null = null
@@ -3694,6 +3778,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     },
     waitUntilExit() {
       return exitPromise
+    },
+    panic(reason: unknown, options?: PanicOptions) {
+      panicApp(reason, options)
     },
     unmount() {
       exit()

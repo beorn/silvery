@@ -48,7 +48,7 @@
  */
 
 import type React from "react"
-import { useCallback, useId, useMemo, useRef } from "react"
+import { useCallback, useContext, useId, useMemo, useRef } from "react"
 import { ChainAppContext, RuntimeContext, type RuntimeContextValue } from "../context"
 import type { Key } from "../hooks/useInput"
 import { keyToName } from "@silvery/ag/keys"
@@ -149,14 +149,18 @@ export function InputBoundary({
   // hooks. Identical shape to the root `chainAppContextValue` in create-app.
   const chainAppContextValue = useMemo(() => toChainAppContextValue(childApp), [childApp])
 
-  // RuntimeContext retains a minimal handle — only `exit` (no-op inside
-  // the boundary). Custom app events use the child chain's events store
-  // (`chain.events.emit / on` via ChainAppContext).
+  const parentRuntime = useContext(RuntimeContext)
+
+  // RuntimeContext retains a minimal handle. `exit` is a no-op inside the
+  // boundary, but `panic` remains process-wide and should reach the root.
+  // Custom app events use the child chain's events store (`chain.events.emit /
+  // on` via ChainAppContext).
   const runtimeContextValue = useMemo<RuntimeContextValue>(
     () => ({
       exit: () => {},
+      panic: parentRuntime?.panic ?? (() => {}),
     }),
-    [],
+    [parentRuntime],
   )
 
   return (

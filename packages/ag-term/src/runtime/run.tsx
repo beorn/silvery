@@ -31,6 +31,7 @@ import React, { type ReactElement } from "react"
 
 import { createApp } from "./create-app"
 import type { Term } from "../ansi/term"
+import type { PanicOptions } from "@silvery/ag-react/context"
 import {
   createTerminalProfile,
   probeTerminalProfile,
@@ -268,6 +269,8 @@ export interface RunHandle {
   readonly scope: import("@silvery/scope").Scope
   /** Wait until the app exits */
   waitUntilExit(): Promise<void>
+  /** Exit fullscreen, restore terminal state, and print a copyable diagnostic to stderr */
+  panic(reason: unknown, options?: PanicOptions): void
   /** Unmount and cleanup */
   unmount(): void
   /** Dispose (alias for unmount) — enables `using` */
@@ -284,6 +287,8 @@ export interface RunHandle {
 // run.tsx has zero hook implementations. See km-silvery.zero-hooks-run.
 export { useInput, type UseInputOptions } from "@silvery/ag-react/hooks/useInput"
 export { useExit } from "@silvery/ag-react/hooks/useExit"
+export { usePanic } from "@silvery/ag-react/hooks/usePanic"
+export type { PanicOptions } from "@silvery/ag-react/context"
 export {
   usePasteCallback as usePaste,
   type PasteCallback as PasteHandler,
@@ -572,6 +577,7 @@ function wrapHandle(handle: {
   readonly buffer: import("../buffer").TerminalBuffer | null
   readonly scope: import("@silvery/scope").Scope
   waitUntilExit(): Promise<void>
+  panic(reason: unknown, options?: PanicOptions): void
   unmount(): void
   [Symbol.dispose](): void
   press(key: string): Promise<void>
@@ -590,6 +596,7 @@ function wrapHandle(handle: {
       return handle.scope
     },
     waitUntilExit: () => handle.waitUntilExit(),
+    panic: (reason: unknown, options?: PanicOptions) => handle.panic(reason, options),
     unmount: () => handle.unmount(),
     [Symbol.dispose]: () => handle[Symbol.dispose](),
     press: (key: string) => handle.press(key),

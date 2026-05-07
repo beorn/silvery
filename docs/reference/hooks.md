@@ -133,10 +133,11 @@ Access app-level controls:
 import { useApp } from "@silvery/ag-term"
 
 function App() {
-  const { exit } = useApp()
+  const { exit, panic } = useApp()
 
   useInput((input) => {
     if (input === "q") exit()
+    if (input === "P") panic("fatal provider invariant", { title: "my-app" })
   })
 }
 ```
