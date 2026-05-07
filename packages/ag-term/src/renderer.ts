@@ -1209,31 +1209,39 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // processEventBatch pattern (create-app.tsx). Production does:
     // doRender → await Promise.resolve() → check pendingRerender → repeat.
     // In tests we use act(flushSyncWork) as the synchronous equivalent.
-    // Bound = MAX_CONVERGENCE_PASSES (2, structural).
+    //
+    // Only runs when the caller opted into a tight cap (cap <=
+    // MAX_CONVERGENCE_PASSES). With wider caps (legacy multi-iteration
+    // stabilization), doRender's internal loop already absorbs the
+    // feedback in its own iterations — running the outer flush in
+    // addition would consume microtasks the test fixture timeline
+    // depends on (e.g. controller event ordering in chat-stability).
     let doRenderCount = 1
-    let flushCount = 0
-    if (INSTRUMENT) beginConvergenceLoop()
-    for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
-      hadReactCommit = false
-      flushCount = flush + 1
-      if (INSTRUMENT) beginPass(flush)
-      withActEnvironment(() => {
-        act(() => {
-          reconciler.flushSyncWork()
+    if (instance.maxLayoutPasses <= MAX_CONVERGENCE_PASSES) {
+      let flushCount = 0
+      if (INSTRUMENT) beginConvergenceLoop()
+      for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
+        hadReactCommit = false
+        flushCount = flush + 1
+        if (INSTRUMENT) beginPass(flush)
+        withActEnvironment(() => {
+          act(() => {
+            reconciler.flushSyncWork()
+          })
         })
-      })
-      if (!hadReactCommit) break
-      if (INSTRUMENT) {
-        notePassCommit(flush)
-        if (flush === MAX_CONVERGENCE_PASSES - 1) {
-          logPass({ cause: "unknown", detail: "effect-flush-exhaustion" })
+        if (!hadReactCommit) break
+        if (INSTRUMENT) {
+          notePassCommit(flush)
+          if (flush === MAX_CONVERGENCE_PASSES - 1) {
+            logPass({ cause: "unknown", detail: "effect-flush-exhaustion" })
+          }
         }
+        newFrame = doRender()
+        doRenderCount++
       }
-      newFrame = doRender()
-      doRenderCount++
-    }
-    if (flushCount >= MAX_CONVERGENCE_PASSES && hadReactCommit) {
-      assertBoundedConvergence(flushCount, "effect-flush", MAX_CONVERGENCE_PASSES)
+      if (flushCount >= MAX_CONVERGENCE_PASSES && hadReactCommit) {
+        assertBoundedConvergence(flushCount, "effect-flush", MAX_CONVERGENCE_PASSES)
+      }
     }
 
     // Commit boundary — promote in-flight rect signals to committed peers,
@@ -1412,22 +1420,21 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // Drain any remaining React effects after resize. Resize is a worst
     // case for layout-subscriber feedback (the multi-pass cascade in
     // doRender's internal loop may exit with React still dirty from a
-    // late subscriber notify). Mirror the post-doRender drain that
-    // `sendInput` uses for keypresses: flushSyncWork until React
-    // quiesces, calling doRender between drains so the captured buffer
-    // reflects the FINAL React tree state. (km-yej6 column-resize-
-    // incremental-mismatch.)
+    // late subscriber notify). Same gate as sendInput's effect-flush
+    // (only runs at tight caps; wider caps already absorb in doRender).
     let doRenderCount = 1
-    for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
-      hadReactCommit = false
-      withActEnvironment(() => {
-        act(() => {
-          reconciler.flushSyncWork()
+    if (instance.maxLayoutPasses <= MAX_CONVERGENCE_PASSES) {
+      for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
+        hadReactCommit = false
+        withActEnvironment(() => {
+          act(() => {
+            reconciler.flushSyncWork()
+          })
         })
-      })
-      if (!hadReactCommit) break
-      newFrame = doRender()
-      doRenderCount++
+        if (!hadReactCommit) break
+        newFrame = doRender()
+        doRenderCount++
+      }
     }
 
     // Commit boundary — see `settleAfterCommit` JSDoc.
