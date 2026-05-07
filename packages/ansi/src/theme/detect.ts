@@ -186,10 +186,8 @@ export async function probeColors(
     }
     if (fg) {
       palette.cursorColor = fg
-      palette.selectionForeground = fg
     }
     if (bg) palette.cursorText = bg
-    if (ansi[4]) palette.selectionBackground = ansi[4]
 
     return { fg, bg, ansi, dark, palette }
   } finally {
@@ -340,10 +338,8 @@ async function probeColorsViaOwner(
   }
   if (fg) {
     palette.cursorColor = fg
-    palette.selectionForeground = fg
   }
   if (bg) palette.cursorText = bg
-  if (ansi[4]) palette.selectionBackground = ansi[4]
 
   // If nothing came back at all, the host is probably non-responsive —
   // surface null so the caller can fall through to fingerprinting.
