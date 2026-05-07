@@ -28,15 +28,41 @@ function createMockStdout(): { writable: NodeJS.WriteStream; written: string[] }
   return { writable, written }
 }
 
-function createMockStdin(): NodeJS.ReadStream {
+type MockStdin = NodeJS.ReadStream & {
+  armLateInput(data: string): void
+  readonly readLog: string[]
+  readonly rawModes: boolean[]
+}
+
+function createMockStdin(): MockStdin {
+  const pending: string[] = []
+  const readLog: string[] = []
+  const rawModes: boolean[] = []
+  let lateInput: string | null = null
   const stdin = {
     isTTY: true,
     isRaw: false,
     fd: 0,
-    setRawMode(_raw: boolean) {
+    armLateInput(data: string) {
+      lateInput = data
+    },
+    get readLog() {
+      return readLog
+    },
+    get rawModes() {
+      return rawModes
+    },
+    setRawMode(raw: boolean) {
+      rawModes.push(raw)
+      stdin.isRaw = raw
       return stdin
     },
     resume() {
+      if (lateInput !== null) {
+        const data = lateInput
+        lateInput = null
+        setTimeout(() => pending.push(data), 5)
+      }
       return stdin
     },
     pause() {
@@ -46,7 +72,9 @@ function createMockStdin(): NodeJS.ReadStream {
       return stdin
     },
     read() {
-      return null
+      const next = pending.shift() ?? null
+      if (next !== null) readLog.push(next)
+      return next
     },
     on: () => stdin,
     off: () => stdin,
@@ -56,7 +84,7 @@ function createMockStdin(): NodeJS.ReadStream {
     addListener: () => stdin,
     listenerCount: () => 0,
     listeners: () => [],
-  } as unknown as NodeJS.ReadStream
+  } as unknown as MockStdin
   return stdin
 }
 
@@ -151,5 +179,28 @@ describe("panic()", () => {
     expect(visible).toContain("silvercode: subagent invariant failed")
     expect(visible).toContain("session f9eb64dc-d982-4a46-9a8e-da5fd882ac5f")
     expect(process.exitCode).toBe(42)
+  })
+
+  test("panic drains late terminal input before resolving", async () => {
+    const { writable: stdout } = createMockStdout()
+    const stdin = createMockStdin()
+    const handle = await run(<Text>ready</Text>, {
+      cols: 40,
+      rows: 10,
+      stdout,
+      stdin,
+      guardOutput: true,
+      kitty: false,
+      textSizing: false,
+      widthDetection: false,
+    } as never)
+
+    const lateMousePacket = "\x1b[<35;707;1511M"
+    stdin.armLateInput(lateMousePacket)
+    handle.panic("boom", { title: "silvercode" })
+    await handle.waitUntilExit()
+
+    expect(stdin.readLog).toContain(lateMousePacket)
+    expect(stdin.rawModes.at(-1)).toBe(false)
   })
 })

@@ -1360,6 +1360,52 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Best-effort — stderr may already be torn down
     }
   }
+
+  function disableInteractiveProtocolsEarly(): void {
+    if (headless || !stdout.isTTY) return
+    const earlyDisable = [
+      disableKittyKeyboard(), // Stop Kitty release events
+      disableMouse(), // Stop mouse events
+      "\x1b[?1004l", // Stop focus reporting
+    ].join("")
+    try {
+      writeSync((stdout as unknown as { fd: number }).fd, earlyDisable)
+    } catch {
+      try {
+        stdout.write(earlyDisable)
+      } catch {
+        /* terminal may be gone */
+      }
+    }
+  }
+
+  function drainBufferedStdinBytes(): void {
+    if (headless || !stdin.isTTY) return
+    try {
+      stdin.resume()
+      while (stdin.read() !== null) {
+        /* discard Node-buffered data */
+      }
+      stdin.pause()
+    } catch {
+      // Drain failed — best-effort, continue cleanup
+    }
+  }
+
+  async function drainLateStdinBytes(delayMs = 15): Promise<void> {
+    if (headless || !stdin.isTTY) return
+    try {
+      stdin.removeAllListeners("data")
+      stdin.resume()
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+      while (stdin.read() !== null) {
+        /* discard late arrivals */
+      }
+      stdin.pause()
+    } catch {
+      // Best-effort — continue cleanup
+    }
+  }
   // Track protocol state for cleanup and suspend/resume
   let kittyEnabled = false
   const defaultKittyFlags =
@@ -1683,23 +1729,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           }
         }
 
-        // Step 3: Drain in-flight stdin bytes. The terminal may have already
-        // queued events (Kitty release, mouse moves) before processing our
-        // disable sequences. Read and discard them so they don't leak to shell.
-        //
-        // Known limitation: stdin.read() only gets Node's internal buffer.
-        // Late-arriving bytes (Kitty release of 'q') in the kernel TTY buffer
-        // may leak to the shell as garbled text (e.g., "3;1:3u").
-        // See bead km-silvery.exit-kitty-leak for investigation.
-        try {
-          stdin.resume()
-          while (stdin.read() !== null) {
-            /* discard Node-buffered data */
-          }
-          stdin.pause()
-        } catch {
-          // Drain failed — best-effort, continue cleanup
-        }
       } else {
         try {
           stdout.write(sequences)
@@ -1707,6 +1736,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           /* terminal may be gone */
         }
       }
+      // Step 3: Drain in-flight stdin bytes. The terminal may have already
+      // queued events (Kitty release, mouse moves) before processing our
+      // disable sequences. Read and discard them so they don't leak to shell.
+      drainBufferedStdinBytes()
 
       // Step 4: Disable raw mode
       try {
@@ -1813,22 +1846,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Immediately disable protocols that generate async responses.
     // This is the earliest possible moment — before the terminal
     // sends any more events in response to the exit key.
-    if (!headless && stdout.isTTY) {
-      const earlyDisable = [
-        disableKittyKeyboard(), // Stop Kitty release events
-        disableMouse(), // Stop mouse events
-        "\x1b[?1004l", // Stop focus reporting
-      ].join("")
-      try {
-        writeSync((stdout as unknown as { fd: number }).fd, earlyDisable)
-      } catch {
-        try {
-          stdout.write(earlyDisable)
-        } catch {
-          /* terminal may be gone */
-        }
-      }
-    }
+    disableInteractiveProtocolsEarly()
 
     controller.abort()
 
@@ -1849,7 +1867,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       exitResolve()
       return
     }
-    exit()
+    if (shouldExit) return
+    if (inEventHandler) {
+      exit()
+      return
+    }
+    shouldExit = true
+    disableInteractiveProtocolsEarly()
+    controller.abort()
+    void (async () => {
+      await drainLateStdinBytes()
+      cleanup()
+      exitResolve()
+    })()
   }
 
   // Create SilveryNode container.
