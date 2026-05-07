@@ -49,8 +49,8 @@
  * @packageDocumentation
  */
 
-/// <reference path="./jsx.d.ts" />
-/// <reference path="./react-reconciler.d.ts" />
+// Module declarations live in ./jsx.d.ts and ./react-reconciler.d.ts
+// (picked up via tsconfig `include` glob).
 
 // =============================================================================
 // Components
@@ -1144,6 +1144,7 @@ export {
   splitGraphemes,
   graphemeCount,
   graphemeWidth,
+  readTerminalGrapheme,
   // Character detection
   isWideGrapheme,
   isZeroWidthGrapheme,
@@ -1165,6 +1166,7 @@ export {
 } from "@silvery/ag-term/unicode"
 
 export type { StyledSegment } from "@silvery/ag-term/unicode"
+export type { TerminalGrapheme } from "@silvery/ag-term/unicode"
 
 // Width measurer factory
 export { createMeasurer, runWithMeasurer, type Measurer } from "@silvery/ag-term/unicode"

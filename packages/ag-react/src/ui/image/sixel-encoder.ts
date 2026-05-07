@@ -18,7 +18,8 @@
  * with a simple nearest-color palette approach.
  */
 
-/// <reference path="./upng-js.d.ts" />
+// Module declarations for "upng-js" live in ./upng-js.d.ts
+// (picked up via tsconfig `include` glob).
 
 import { createTerminalProfile, type TerminalCaps } from "@silvery/ansi"
 import UPNG from "upng-js"

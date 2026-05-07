@@ -6,7 +6,8 @@
  * and our custom terminal node tree.
  */
 
-/// <reference path="../react-reconciler.d.ts" />
+// Module declarations for "react-reconciler/constants.js" live in ../react-reconciler.d.ts
+// (picked up via tsconfig `include` glob).
 
 import { createContext } from "react"
 import {
