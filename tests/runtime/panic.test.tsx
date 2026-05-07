@@ -29,7 +29,7 @@ function createMockStdout(): { writable: NodeJS.WriteStream; written: string[] }
 }
 
 type MockStdin = NodeJS.ReadStream & {
-  armLateInput(data: string): void
+  armLateInput(data: string, delayMs?: number): void
   readonly readLog: string[]
   readonly rawModes: boolean[]
 }
@@ -38,13 +38,12 @@ function createMockStdin(): MockStdin {
   const pending: string[] = []
   const readLog: string[] = []
   const rawModes: boolean[] = []
-  let lateInput: string | null = null
   const stdin = {
     isTTY: true,
     isRaw: false,
     fd: 0,
-    armLateInput(data: string) {
-      lateInput = data
+    armLateInput(data: string, delayMs = 5) {
+      setTimeout(() => pending.push(data), delayMs)
     },
     get readLog() {
       return readLog
@@ -58,11 +57,6 @@ function createMockStdin(): MockStdin {
       return stdin
     },
     resume() {
-      if (lateInput !== null) {
-        const data = lateInput
-        lateInput = null
-        setTimeout(() => pending.push(data), 5)
-      }
       return stdin
     },
     pause() {
@@ -149,7 +143,7 @@ describe("panic()", () => {
       details: "subagent activity invariant failed",
       exitCode: 42,
     })
-    await settle()
+    await handle.waitUntilExit()
 
     const visible = stderr.join("")
     expect(written.join("")).toContain("\x1b[?1049l")
@@ -195,12 +189,12 @@ describe("panic()", () => {
       widthDetection: false,
     } as never)
 
-    const lateMousePacket = "\x1b[<35;707;1511M"
-    stdin.armLateInput(lateMousePacket)
+    const lateModeReplies = "\x1b[?1021;0$y\x1b[?1022;0$y\x1b[?1023;0$y"
+    stdin.armLateInput(lateModeReplies, 35)
     handle.panic("boom", { title: "silvercode" })
     await handle.waitUntilExit()
 
-    expect(stdin.readLog).toContain(lateMousePacket)
+    expect(stdin.readLog).toContain(lateModeReplies)
     expect(stdin.rawModes.at(-1)).toBe(false)
   })
 })

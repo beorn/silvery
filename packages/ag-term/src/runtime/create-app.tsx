@@ -204,6 +204,7 @@ const traceLog = createLogger("silvery:trace")
 // ============================================================================
 const ENV = typeof process !== "undefined" ? process.env : undefined
 const NO_INCREMENTAL = ENV?.SILVERY_NO_INCREMENTAL === "1"
+const PANIC_STDIN_DRAIN_MS = 75
 const STRICT_MODE = (() => {
   const v = ENV?.SILVERY_STRICT
   return !!v && v !== "0" && v !== "false"
@@ -1820,6 +1821,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Exit promise
   let exitResolve: () => void
   let exitResolved = false
+  let panicExitRequested = false
   const exitPromise = new Promise<void>((resolve) => {
     exitResolve = () => {
       if (!exitResolved) {
@@ -1868,6 +1870,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       return
     }
     if (shouldExit) return
+    panicExitRequested = true
     if (inEventHandler) {
       exit()
       return
@@ -1876,7 +1879,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     disableInteractiveProtocolsEarly()
     controller.abort()
     void (async () => {
-      await drainLateStdinBytes()
+      await drainLateStdinBytes(PANIC_STDIN_DRAIN_MS)
       cleanup()
       exitResolve()
     })()
@@ -3745,7 +3748,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           stdin.removeAllListeners("data")
           stdin.resume()
           // Let the event loop tick to deliver kernel-buffered bytes
-          await new Promise((resolve) => setTimeout(resolve, 15))
+          await new Promise((resolve) => setTimeout(resolve, panicExitRequested ? PANIC_STDIN_DRAIN_MS : 15))
           // Drain whatever arrived
           while (stdin.read() !== null) {
             /* discard late arrivals */
