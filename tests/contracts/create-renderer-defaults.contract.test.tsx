@@ -17,7 +17,7 @@
  *     fast-path reuse conditions are met
  *   - Instance reuse: when safe, the same `App` is returned across calls
  *     (see km-silvery.renderer-reuse for the motivating regression)
- *   - `PerRenderOptions` (`incremental`, `singlePassLayout`, `kittyMode`)
+ *   - `PerRenderOptions` (`incremental`, `maxLayoutPasses`, `kittyMode`)
  *     must force a fresh mount when they conflict with baseOpts
  *
  * These contracts are independent of terminal caps / profile / `Term` —
@@ -136,10 +136,10 @@ describe("contract: createRenderer auto-cleanup", () => {
     const app1 = render(<Text>first</Text>)
     expect(app1.text).toContain("first")
 
-    // Flip `singlePassLayout` — this conflicts with baseOpts and forces a
-    // fresh mount per `canReuseInstance()`. app2 must be a different App
+    // Override `maxLayoutPasses` — this conflicts with baseOpts and forces
+    // a fresh mount per `canReuseInstance()`. app2 must be a different App
     // than app1, and app1 must have been unmounted.
-    const app2 = render(<Text>second</Text>, { singlePassLayout: true })
+    const app2 = render(<Text>second</Text>, { maxLayoutPasses: 5 })
     expect(app2).not.toBe(app1)
     expect(app2.text).toContain("second")
     app2.unmount()
@@ -161,7 +161,7 @@ describe("contract: createRenderer auto-cleanup", () => {
 })
 
 // ============================================================================
-// PerRenderOptions — incremental/singlePassLayout/kittyMode overrides
+// PerRenderOptions — incremental/maxLayoutPasses/kittyMode overrides
 // ============================================================================
 //
 // Regression shape: per-render overrides MUST force a fresh mount when they
@@ -179,10 +179,10 @@ describe("contract: createRenderer per-render overrides", () => {
     app2.unmount()
   })
 
-  test("contract: overriding singlePassLayout forces fresh mount", () => {
+  test("contract: overriding maxLayoutPasses forces fresh mount", () => {
     const render = createRenderer({ cols: 20, rows: 3 })
     const app1 = render(<Text>one</Text>)
-    const app2 = render(<Text>two</Text>, { singlePassLayout: true })
+    const app2 = render(<Text>two</Text>, { maxLayoutPasses: 5 })
     expect(app2).not.toBe(app1)
     app2.unmount()
   })

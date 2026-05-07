@@ -18,7 +18,7 @@ import { describe, test, expect } from "vitest"
 import {
   PASS_CAUSE_BOUNDS,
   MAX_CONVERGENCE_PASSES,
-  MAX_CLASSIC_LOOP_ITERATIONS,
+  INITIAL_RENDER_MAX_PASSES,
   assertBoundedConvergence,
   type PassCause,
   type ConvergenceLoopName,
@@ -58,12 +58,11 @@ describe("bounded-convergence: per-cause bound model", () => {
     expect(MAX_CONVERGENCE_PASSES).toBe(2)
   })
 
-  test("MAX_CLASSIC_LOOP_ITERATIONS = 5 (legacy interleaved layout+effects loop)", () => {
-    // Classic loop interleaves runPipeline + flushSyncWork, so it absorbs
-    // both subscriber feedback AND layout-vs-React stabilisation.
-    // Virtualizer + scroll convergence on heterogeneous-height lists
-    // genuinely needs 3-4 iterations.
-    expect(MAX_CLASSIC_LOOP_ITERATIONS).toBe(5)
+  test("INITIAL_RENDER_MAX_PASSES = 5 (initial render needs wider cap for hook subscription)", () => {
+    // Initial render of a fresh fiber root needs hooks like useBoxRect to
+    // subscribe → layout → forceUpdate → re-render before the first frame
+    // is stable. Used exclusively at first-render time in the test renderer.
+    expect(INITIAL_RENDER_MAX_PASSES).toBe(5)
   })
 
   test("MAX_CONVERGENCE_PASSES is dramatically tighter than the prior magic constants", () => {
@@ -113,60 +112,43 @@ describe("bounded-convergence: assertion behaviour", () => {
     }
   }
 
-  function boundFor(loop: ConvergenceLoopName): number {
-    return loop === "classic" ? MAX_CLASSIC_LOOP_ITERATIONS : MAX_CONVERGENCE_PASSES
-  }
-
   test("at-bound passCount does not assert (boundary is inclusive of the bound)", () => {
     withStrict("2", () => {
-      const loops: ConvergenceLoopName[] = [
-        "single-pass",
-        "classic",
-        "effect-flush",
-        "production-flush",
-      ]
+      const loops: ConvergenceLoopName[] = ["layout-pass", "effect-flush", "production-flush"]
       for (const loop of loops) {
-        expect(() => assertBoundedConvergence(boundFor(loop), loop)).not.toThrow()
+        expect(() => assertBoundedConvergence(MAX_CONVERGENCE_PASSES, loop, MAX_CONVERGENCE_PASSES)).not.toThrow()
       }
     })
   })
 
   test("STRICT=2 throws when passCount exceeds the bound", () => {
     withStrict("2", () => {
-      const loops: ConvergenceLoopName[] = [
-        "single-pass",
-        "classic",
-        "effect-flush",
-        "production-flush",
-      ]
+      const loops: ConvergenceLoopName[] = ["layout-pass", "effect-flush", "production-flush"]
       for (const loop of loops) {
-        expect(() => assertBoundedConvergence(boundFor(loop) + 1, loop)).toThrow(
-          new RegExp(`convergence bound exceeded in ${loop}`),
-        )
+        expect(() =>
+          assertBoundedConvergence(MAX_CONVERGENCE_PASSES + 1, loop, MAX_CONVERGENCE_PASSES),
+        ).toThrow(new RegExp(`convergence bound exceeded in ${loop}`))
       }
     })
   })
 
-  test("classic loop has a wider bound than single-pass", () => {
-    // Classic loop's higher bound is intentional — see MAX_CLASSIC_LOOP_ITERATIONS
-    // JSDoc. A passCount of MAX_CONVERGENCE_PASSES + 1 must NOT throw for
-    // classic because that's still within its bound.
+  test("caller-supplied cap controls the bound (test renderer can opt into wider caps)", () => {
+    // Tests that legitimately need stabilization across multiple iterations
+    // (e.g. legacy multi-iteration scrollable virtualization) can pass a
+    // higher cap explicitly via createRenderer({ maxLayoutPasses: 5 }).
     withStrict("2", () => {
-      expect(() => assertBoundedConvergence(MAX_CONVERGENCE_PASSES + 1, "classic")).not.toThrow()
-      // ...but the same passCount throws for single-pass.
-      expect(() => assertBoundedConvergence(MAX_CONVERGENCE_PASSES + 1, "single-pass")).toThrow(
-        /single-pass/,
-      )
+      expect(() => assertBoundedConvergence(5, "layout-pass", 5)).not.toThrow()
+      expect(() => assertBoundedConvergence(6, "layout-pass", 5)).toThrow(/layout-pass/)
     })
   })
 
   test("STRICT unset is a no-op even when the bound is exceeded", () => {
     withStrict(undefined, () => {
       expect(() =>
-        assertBoundedConvergence(MAX_CONVERGENCE_PASSES + 100, "single-pass"),
+        assertBoundedConvergence(MAX_CONVERGENCE_PASSES + 100, "layout-pass", MAX_CONVERGENCE_PASSES),
       ).not.toThrow()
       expect(() =>
-        assertBoundedConvergence(MAX_CLASSIC_LOOP_ITERATIONS + 100, "classic"),
+        assertBoundedConvergence(INITIAL_RENDER_MAX_PASSES + 100, "layout-pass", INITIAL_RENDER_MAX_PASSES),
       ).not.toThrow()
     })
   })

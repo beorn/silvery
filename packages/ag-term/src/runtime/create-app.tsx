@@ -3209,7 +3209,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       flushCount++
     }
     if (flushCount >= MAX_CONVERGENCE_PASSES && pendingRerender) {
-      assertBoundedConvergence(flushCount, "production-flush")
+      assertBoundedConvergence(flushCount, "production-flush", MAX_CONVERGENCE_PASSES)
     }
 
     // Commit boundary for deferred `useBoxRect()` / `useScrollRect()` /

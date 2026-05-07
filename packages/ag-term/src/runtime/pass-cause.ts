@@ -585,44 +585,38 @@ export const MAX_CONVERGENCE_PASSES =
   PASS_CAUSE_BOUNDS.unknown
 
 /**
- * Classic-loop bound: 5 iterations, mirroring the prior MAX_LAYOUT_ITERATIONS.
- * The classic loop interleaves runPipeline + flushSyncWork in each iteration,
- * so it absorbs both subscriber feedback AND layout-vs-React stabilisation
- * in one drain. The historical 5 is empirical — virtualizer + scroll
- * convergence on heterogeneous-height lists genuinely needs 3-4 iterations
- * before useScrollState's window matches calculateScrollState's output.
+ * Initial-render pass cap. The first render of a fresh fiber root needs a
+ * wider cap than the production-derived MAX_CONVERGENCE_PASSES because hooks
+ * like useBoxRect must subscribe → layout → forceUpdate → re-render before
+ * the first frame is stable. This cap is the test renderer's only
+ * non-MAX_CONVERGENCE_PASSES bound — used exclusively at first-render time
+ * (renderer.ts initial-render block).
  *
- * This is exported as a separate constant (rather than overloading
- * MAX_CONVERGENCE_PASSES) so the bound model stays honest about the
- * structural difference between the two loop shapes.
+ * Production's create-app.tsx doesn't need this because the initial render
+ * runs once and the first user-visible frame comes after the event loop
+ * starts.
  */
-export const MAX_CLASSIC_LOOP_ITERATIONS = 5
+export const INITIAL_RENDER_MAX_PASSES = 5
 
 /**
  * Loops that wrap their iterations in the bound assertion. Used as the
  * `loopName` argument to `assertBoundedConvergence` so an over-budget
  * regression names the offending loop.
  */
-export type ConvergenceLoopName = "single-pass" | "classic" | "effect-flush" | "production-flush"
-
-/** Map a loop name to its bound. */
-function boundFor(loopName: ConvergenceLoopName): number {
-  return loopName === "classic" ? MAX_CLASSIC_LOOP_ITERATIONS : MAX_CONVERGENCE_PASSES
-}
+export type ConvergenceLoopName = "layout-pass" | "effect-flush" | "production-flush"
 
 /**
- * Assert the convergence loop did not exceed MAX_CONVERGENCE_PASSES.
- * Called from the renderer's loops + create-app's processEventBatch flush
- * loop. No-op outside SILVERY_STRICT — the loop bound itself is the
- * production safety net.
+ * Assert the convergence loop did not exceed its cap. Called from the
+ * renderer's loops + create-app's processEventBatch flush loop. No-op
+ * outside SILVERY_STRICT — the loop bound itself is the production
+ * safety net.
  *
  * STRICT=2: throws with a per-cause breakdown so a regression names the
  *   responsible edge instead of just "exhausted N iterations".
  * STRICT=1: emits a stderr warning with the same breakdown.
  */
-export function assertBoundedConvergence(passCount: number, loopName: ConvergenceLoopName): void {
-  const bound = boundFor(loopName)
-  if (passCount <= bound) return
+export function assertBoundedConvergence(passCount: number, loopName: ConvergenceLoopName, cap: number): void {
+  if (passCount <= cap) return
   const strict = process?.env?.SILVERY_STRICT
   if (!strict) return
   const h = getPassHistogram()
@@ -631,7 +625,7 @@ export function assertBoundedConvergence(passCount: number, loopName: Convergenc
     .join(", ")
   const msg =
     `convergence bound exceeded in ${loopName}: ${passCount} passes ran ` +
-    `but ${loopName === "classic" ? "MAX_CLASSIC_LOOP_ITERATIONS" : "MAX_CONVERGENCE_PASSES"}=${bound}. ` +
+    `but cap=${cap} (default MAX_CONVERGENCE_PASSES=${MAX_CONVERGENCE_PASSES}). ` +
     `Per-cause breakdown: ${breakdown || "(no records — INSTRUMENT off)"}. ` +
     `Either a feedback edge broke its per-cause invariant, or a new edge ` +
     `needs a PassCause category in pass-cause.ts.`

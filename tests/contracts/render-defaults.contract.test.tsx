@@ -19,7 +19,7 @@
  *   - `incremental` → true
  *   - `debug` → false
  *   - `autoRender` → false
- *   - `singlePassLayout` → false
+ *   - `maxLayoutPasses` → MAX_CONVERGENCE_PASSES (2)
  */
 
 import React from "react"
@@ -147,7 +147,7 @@ describe("contract: render() accepts all defaults", () => {
 // ============================================================================
 //
 // - `autoRender` — default: false (async React commits do NOT auto-render)
-// - `singlePassLayout` — default: false (stabilization loop runs)
+// - `maxLayoutPasses` — default: MAX_CONVERGENCE_PASSES = 2 (production-derived structural bound)
 // - `kittyMode` — default: false (press() uses standard ANSI encoding)
 // - `layoutEngine` — default: current global engine
 // - `onFrame` / `onBufferReady` — undefined by default (no callbacks fired)

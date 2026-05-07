@@ -7,6 +7,38 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed — `singlePassLayout` flag → `maxLayoutPasses` number (test renderer)
+
+The `singlePassLayout?: boolean` flag on `RenderOptions` /
+`PerRenderOptions` is replaced with `maxLayoutPasses?: number` — the
+actual underlying mechanism the caller is bounding. The two
+structurally-identical loop bodies in the test renderer (single-pass
+with cap=2, classic with cap=5) are unified into ONE bounded
+layout-pass loop with a single cap parameter.
+
+Default cap = `MAX_CONVERGENCE_PASSES` (2 — production-derived
+structural bound: 1 initial + 1 settle for measurement feedback).
+Tests that depend on multi-iteration stabilization can opt into a
+higher cap via `maxLayoutPasses: 5` (mirrors the legacy classic
+loop's behavior).
+
+| Old usage                                     | New usage                                                                                                |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `createRenderer({ singlePassLayout: true })`  | drop entirely (now default)                                                                              |
+| `createRenderer({ singlePassLayout: false })` | `createRenderer({ maxLayoutPasses: 5 })` if multi-iteration stabilization is genuinely needed; else drop |
+
+`MAX_CLASSIC_LOOP_ITERATIONS` is removed. The new
+`INITIAL_RENDER_MAX_PASSES` (= 5) is used internally for the first
+render of a fresh fiber root, where hooks like `useBoxRect` need
+multiple passes to subscribe → layout → forceUpdate → re-render before
+the first frame is stable.
+
+`assertBoundedConvergence(passCount, loopName, cap)` now takes the cap
+explicitly so each call site documents which bound applies.
+`ConvergenceLoopName` collapses from `"single-pass" | "classic" |
+"effect-flush" | "production-flush"` to `"layout-pass" | "effect-flush"
+| "production-flush"`.
+
 ### Changed — recursive intrinsic min-content (via flexily)
 
 silvery now consumes flexily's recursive `Node.getMinContent(direction)`, so

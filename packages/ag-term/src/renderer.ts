@@ -69,7 +69,7 @@ import {
   logPass,
   assertBoundedConvergence,
   MAX_CONVERGENCE_PASSES,
-  MAX_CLASSIC_LOOP_ITERATIONS,
+  INITIAL_RENDER_MAX_PASSES,
   INSTRUMENT,
 } from "./runtime/pass-cause"
 import { ALL_RECONCILER_BITS, getRenderEpoch } from "@silvery/ag/epoch"
@@ -155,20 +155,22 @@ export interface RenderOptions {
   /** Use Kitty keyboard protocol encoding for press(). When true, press() uses keyToKittyAnsi. */
   kittyMode?: boolean
   /**
-   * Use production-like single-pass layout in doRender().
+   * Maximum layout-pass iterations per render. Each pass: runPipeline +
+   * flushSyncWork. Loop exits when no React commit happens (converged) or
+   * when the cap is reached.
    *
-   * When false (default), doRender() runs a synchronous layout stabilization
-   * loop (up to 5 iterations) that re-runs runPipeline whenever React
-   * commits new work from layout notifications (useBoxRect, etc.).
+   * Default: `MAX_CONVERGENCE_PASSES` (2 — production-derived structural
+   * bound: 1 initial + 1 settle for measurement feedback).
    *
-   * When true, doRender() does a single runPipeline call (matching
-   * production's create-app.tsx behavior). Layout feedback effects are
-   * flushed via a separate act()/flushSyncWork() loop after doRender(),
-   * mimicking production's processEventBatch flush pattern.
+   * Tests that depend on multi-iteration stabilization (e.g. legacy
+   * scrollable-list virtualization that previously relied on the classic
+   * 5-iteration loop) can opt into a higher cap via `maxLayoutPasses: 5`.
    *
-   * Use this to make tests exercise the same rendering pipeline as production.
+   * See pass-cause.ts:MAX_CONVERGENCE_PASSES for the structural derivation
+   * and bead `@km/silvery/renderer-convergence-by-design` for the convergence
+   * theorem.
    */
-  singlePassLayout?: boolean
+  maxLayoutPasses?: number
   /**
    * Auto-render on async React commits (e.g., setTimeout → setState).
    *
@@ -304,8 +306,8 @@ interface RenderInstance {
   incremental: boolean
   /** Render count for SILVERY_STRICT checking (skip first render) */
   renderCount: number
-  /** Use production-like single-pass layout (no stabilization loop) */
-  singlePassLayout: boolean
+  /** Max layout-pass iterations per render. See RenderOptions.maxLayoutPasses. */
+  maxLayoutPasses: number
   /**
    * True when the PREVIOUS frame emitted Kitty scrim placements. Drives the
    * one-shot `a=d` delete-all on the first frame where the backdrop goes away.
@@ -330,7 +332,7 @@ function isStore(arg: unknown): arg is Store {
     !("layoutEngine" in obj) &&
     !("debug" in obj) &&
     !("incremental" in obj) &&
-    !("singlePassLayout" in obj) &&
+    !("maxLayoutPasses" in obj) &&
     !("autoRender" in obj) &&
     !("onFrame" in obj) &&
     !("kittyMode" in obj) &&
@@ -369,7 +371,9 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // Incremental rendering is enabled by default for all renders
   // Store mode also supports incremental - the RenderInstance tracks prevBuffer
   const incremental = storeMode ? true : (optsOrStore.incremental ?? true)
-  const singlePassLayout = storeMode ? false : (optsOrStore.singlePassLayout ?? false)
+  const maxLayoutPasses = storeMode
+    ? MAX_CONVERGENCE_PASSES
+    : (optsOrStore.maxLayoutPasses ?? MAX_CONVERGENCE_PASSES)
   const kittyMode = storeMode ? false : (optsOrStore.kittyMode ?? false)
   const autoRender = storeMode ? false : (optsOrStore.autoRender ?? false)
   const onFrame = storeMode ? undefined : optsOrStore.onFrame
@@ -410,7 +414,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     debug,
     incremental,
     renderCount: 0,
-    singlePassLayout,
+    maxLayoutPasses,
     kittyActive: false,
   }
 
@@ -729,214 +733,100 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // on a stable state. (km-yej6 column-resize-incremental-mismatch.)
     let multiPassConverged = false
 
-    if (instance.singlePassLayout) {
-      // Production-matching single-pass: one runPipeline, no stabilization
-      // loop. This matches create-app.tsx doRender() which does a single
-      // reconcile + pipeline pass. Layout feedback effects (useBoxRect
-      // etc.) are NOT re-run within this doRender — they're flushed by the
-      // caller (sendInput) in a separate loop, matching production's
-      // processEventBatch flush pattern.
-      //
-      // IMPORTANT: Do NOT flush sync work here. runPipeline fires
-      // notifyLayoutSubscribers (Phase 2.7) which may call forceUpdate().
-      // If we flushed that commit here, the pipeline output would still
-      // reflect the pre-forceUpdate state. Instead, let the sendInput
-      // flush loop detect the pending commit and call doRender() again
-      // with the updated React tree.
-      // Single-pass: run runPipeline once, then flush any pending React
-      // work from layout notifications. If React committed new work, run
-      // additional passes to stabilize. Normally 1-2 passes suffice, but
-      // resize can need 3 (pass 0 with stale zustand, pass 1 with updated
-      // dimensions, pass 2 for layout feedback from pass 1).
-      let singlePassCount = 0
-      if (INSTRUMENT) beginConvergenceLoop()
-      for (let pass = 0; pass < MAX_CONVERGENCE_PASSES; pass++) {
-        hadReactCommit = false
-        singlePassCount++
-        if (INSTRUMENT) beginPass(pass)
-        let renderError: Error | null = null
-        let carryForwardBuffer: TerminalBuffer | undefined
-        withActEnvironment(() => {
-          act(() => {
-            const root = getContainerRoot(instance.container)
-            try {
-              const result = runPipeline(
-                root,
-                instance.columns,
-                instance.rows,
-                incremental ? instance.prevBuffer : null,
-              )
-              output = result.output
-              buffer = result.buffer
-              carryForwardBuffer = result.carryForwardBuffer
-              incrementalOverlay = result.overlay
-            } catch (e) {
-              // STRICT output verification may throw from the output phase.
-              // The render phase buffer is still valid and attached to the
-              // error — extract it so lastBuffer() returns the correct frame.
-              renderError = e as Error
-              const attachedBuffer = (e as any)?.__silvery_buffer
-              if (attachedBuffer) {
-                buffer = attachedBuffer
-                carryForwardBuffer = attachedBuffer
-              }
+    // Unified bounded layout-pass loop. Each pass: runPipeline +
+    // flushSyncWork. Loop exits when no React commit happened (converged)
+    // or when the cap is reached. Default cap = MAX_CONVERGENCE_PASSES (2,
+    // production-derived structural bound). Tests can opt into higher caps
+    // via RenderOptions.maxLayoutPasses for legacy multi-iteration
+    // stabilization needs.
+    //
+    // IMPORTANT: do NOT flush sync work here as part of the same act block.
+    // runPipeline fires notifyLayoutSubscribers (Phase 2.7) which may call
+    // forceUpdate(). If we flushed inside the same act, the pipeline
+    // output would still reflect the pre-forceUpdate state. Flush in a
+    // separate act after each pass, then loop if hadReactCommit.
+    let passCount = 0
+    const cap = instance.maxLayoutPasses
+    if (INSTRUMENT) beginConvergenceLoop()
+    for (let pass = 0; pass < cap; pass++) {
+      hadReactCommit = false
+      passCount++
+      if (INSTRUMENT) beginPass(pass)
+      let renderError: Error | null = null
+      let carryForwardBuffer: TerminalBuffer | undefined
+      withActEnvironment(() => {
+        act(() => {
+          const root = getContainerRoot(instance.container)
+          try {
+            const result = runPipeline(
+              root,
+              instance.columns,
+              instance.rows,
+              incremental ? instance.prevBuffer : null,
+            )
+            output = result.output
+            buffer = result.buffer
+            carryForwardBuffer = result.carryForwardBuffer
+            incrementalOverlay = result.overlay
+          } catch (e) {
+            // STRICT output verification may throw from the output phase.
+            // The render phase buffer is still valid and attached to the
+            // error — extract it so lastBuffer() returns the correct frame.
+            renderError = e as Error
+            const attachedBuffer = (e as any)?.__silvery_buffer
+            if (attachedBuffer) {
+              buffer = attachedBuffer
+              carryForwardBuffer = attachedBuffer
             }
-            // Always update prevBuffer when a new buffer was produced,
-            // even if the output phase threw. The buffer from renderPhase
-            // is correct; the STRICT verification exception is a diagnostic that
-            // should not corrupt incremental rendering state.
-            //
-            // Carry forward the PRE-fade buffer so the next frame's incremental
-            // render starts from unfaded cells. Without this, backdrop-fade
-            // compounds across frames.
-            if (buffer) {
-              // `prevBuffer` = pre-fade — carried into next frame's renderPhase.
-              // `prevPaintedBuffer` = post-fade — what the output phase diffs against.
-              instance.prevBuffer = carryForwardBuffer ?? buffer
-              instance.prevPaintedBuffer = buffer
-            }
-            instance.renderCount++
-            onBufferReady?.(output, buffer, getRootContentHeight())
-          })
-          if (!hadReactCommit) {
-            act(() => {
-              reconciler.flushSyncWork()
-            })
           }
+          // Always update prevBuffer when a new buffer was produced, even
+          // if output phase threw. Carry forward PRE-fade buffer for
+          // renderPhase incremental clone; track POST-fade buffer for
+          // output-phase diff.
+          if (buffer) {
+            instance.prevBuffer = carryForwardBuffer ?? buffer
+            instance.prevPaintedBuffer = buffer
+          }
+          instance.renderCount++
+          onBufferReady?.(output, buffer, getRootContentHeight())
         })
-        // Re-throw non-diagnostic errors. IncrementalRenderMismatchError from
-        // STRICT output verification is diagnostic — the buffer was saved above, and
-        // the render-phase STRICT check below will detect real mismatches.
-        // Propagating diagnostic throws would crash sendInput() callers.
-        if (renderError) {
-          if (!((renderError as Error) instanceof IncrementalRenderMismatchError)) {
-            throw renderError
-          }
-        }
+        // Flush any React work scheduled during runPipeline (e.g. from
+        // useSyncExternalStore updates triggered by Phase 2.7 callbacks).
         if (!hadReactCommit) {
-          multiPassConverged = true
-          break
-        }
-        invalidateRootAfterLayoutFeedback(getContainerRoot(instance.container))
-        // Pass N committed React work — pass N+1 will run. Record so the
-        // histogram can show "how many passes had extra-pass causes attributed
-        // to them?". Specific cause records are emitted by the pipeline phases
-        // and signal sync via logPass().
-        if (INSTRUMENT) {
-          notePassCommit(pass)
-          if (pass === MAX_CONVERGENCE_PASSES - 1) {
-            // Loop will exit but committed work is still pending — surface as
-            // unknown so the histogram doesn't undercount the loop tail.
-            logPass({ cause: "unknown", detail: "single-pass-exhaustion" })
-          }
-        }
-      }
-
-      // Convergence bound check — STRICT-gated assertion with per-cause
-      // breakdown. See pass-cause.ts:assertBoundedConvergence.
-      if (hadReactCommit && singlePassCount >= MAX_CONVERGENCE_PASSES) {
-        assertBoundedConvergence(singlePassCount, "single-pass")
-      }
-
-      // When multiple passes ran, the final buffer's dirty rows only cover
-      // the LAST pass's render phase writes. Mark all rows dirty so the
-      // output phase does a full diff scan.
-      if (incremental && buffer && singlePassCount > 1) {
-        buffer.markAllRowsDirty()
-      }
-    } else {
-      // Classic multi-pass layout stabilization loop. Bound:
-      // MAX_CLASSIC_LOOP_ITERATIONS (5), wider than MAX_CONVERGENCE_PASSES
-      // because the classic loop interleaves runPipeline + flushSyncWork
-      // in each iteration — it absorbs subscriber feedback AND
-      // layout-vs-React stabilisation in one drain. See pass-cause.ts.
-      let iterationCount = 0
-
-      if (INSTRUMENT) beginConvergenceLoop()
-      for (let iteration = 0; iteration < MAX_CLASSIC_LOOP_ITERATIONS; iteration++) {
-        hadReactCommit = false
-        iterationCount++
-        if (INSTRUMENT) beginPass(iteration)
-
-        // Run the render pipeline inside act() so that forceUpdate/setState
-        // from notifyLayoutSubscribers (Phase 2.7) are properly captured.
-        let classicRenderError: Error | null = null
-        let carryForwardBuffer: TerminalBuffer | undefined
-        withActEnvironment(() => {
           act(() => {
-            const root = getContainerRoot(instance.container)
-            try {
-              const result = runPipeline(
-                root,
-                instance.columns,
-                instance.rows,
-                incremental ? instance.prevBuffer : null,
-              )
-              output = result.output
-              buffer = result.buffer
-              carryForwardBuffer = result.carryForwardBuffer
-              incrementalOverlay = result.overlay
-            } catch (e) {
-              classicRenderError = e as Error
-              const attachedBuffer = (e as any)?.__silvery_buffer
-              if (attachedBuffer) {
-                buffer = attachedBuffer
-                carryForwardBuffer = attachedBuffer
-              }
-            }
-            if (buffer) {
-              // Carry forward PRE-fade buffer for renderPhase incremental clone;
-              // track POST-fade buffer for output-phase diff.
-              instance.prevBuffer = carryForwardBuffer ?? buffer
-              instance.prevPaintedBuffer = buffer
-            }
-            instance.renderCount++
-            onBufferReady?.(output, buffer, getRootContentHeight())
+            reconciler.flushSyncWork()
           })
-          // Flush any React work scheduled during runPipeline (e.g. from
-          // useSyncExternalStore updates triggered by Phase 2.7 callbacks).
-          // Without this, external store changes from layout notification callbacks
-          // (Phase 2.7) won't be committed until after doRender returns, causing
-          // stale text in the buffer (e.g. breadcrumb showing old cursor position).
-          if (!hadReactCommit) {
-            act(() => {
-              reconciler.flushSyncWork()
-            })
-          }
-        })
-        if (classicRenderError) {
-          if (!((classicRenderError as Error) instanceof IncrementalRenderMismatchError)) {
-            throw classicRenderError
-          }
         }
-
-        // If React didn't commit any new work from layout notifications,
-        // the layout is stable — no more iterations needed.
-        if (!hadReactCommit) {
-          multiPassConverged = true
-          break
-        }
-        invalidateRootAfterLayoutFeedback(getContainerRoot(instance.container))
-        if (INSTRUMENT) {
-          notePassCommit(iteration)
-          if (iteration === MAX_CLASSIC_LOOP_ITERATIONS - 1) {
-            logPass({ cause: "unknown", detail: "classic-exhaustion" })
-          }
+      })
+      // Re-throw non-diagnostic errors. IncrementalRenderMismatchError
+      // from STRICT output verification is diagnostic.
+      if (renderError) {
+        if (!((renderError as Error) instanceof IncrementalRenderMismatchError)) {
+          throw renderError
         }
       }
-
-      if (hadReactCommit && iterationCount >= MAX_CLASSIC_LOOP_ITERATIONS) {
-        assertBoundedConvergence(iterationCount, "classic")
+      if (!hadReactCommit) {
+        multiPassConverged = true
+        break
       }
-
-      // When multiple iterations ran, the final buffer's dirty rows only cover
-      // the LAST iteration's render phase writes. Rows changed in earlier
-      // iterations but not the last are invisible to diffBuffers' dirty row
-      // scan, causing those rows to be skipped → garbled output. Mark all rows
-      // dirty so the output phase does a full diff scan.
-      if (incremental && buffer && iterationCount > 1) {
-        buffer.markAllRowsDirty()
+      invalidateRootAfterLayoutFeedback(getContainerRoot(instance.container))
+      if (INSTRUMENT) {
+        notePassCommit(pass)
+        if (pass === cap - 1) {
+          logPass({ cause: "unknown", detail: "layout-pass-exhaustion" })
+        }
       }
+    }
+
+    if (hadReactCommit && passCount >= cap) {
+      assertBoundedConvergence(passCount, "layout-pass", cap)
+    }
+
+    // When multiple passes ran, the final buffer's dirty rows only cover
+    // the LAST pass's render phase writes. Mark all rows dirty so the
+    // output phase does a full diff scan.
+    if (incremental && buffer && passCount > 1) {
+      buffer.markAllRowsDirty()
     }
 
     // SILVERY_STRICT: Compare incremental vs fresh on every render (like scheduler)
@@ -1146,15 +1036,15 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   }
 
   // Execute the render pipeline.
-  // The initial render always uses the multi-pass stabilization loop regardless
-  // of singlePassLayout, because hooks like useBoxRect need multiple passes
-  // to stabilize (subscribe → layout → forceUpdate → re-render). This matches
+  // The initial render uses a wider pass cap (5) regardless of the caller's
+  // maxLayoutPasses, because hooks like useBoxRect need multiple passes to
+  // stabilize (subscribe → layout → forceUpdate → re-render). This matches
   // production where the initial render runs once and the first user-visible
-  // frame comes after the event loop starts. For tests, we need the initial
-  // state to be stable. singlePassLayout only affects subsequent renders
+  // frame comes after the event loop starts. For tests we need the initial
+  // state to be stable. The caller's cap takes effect for subsequent renders
   // (sendInput/press) to match production's processEventBatch path.
-  const savedSinglePass = instance.singlePassLayout
-  instance.singlePassLayout = false
+  const savedCap = instance.maxLayoutPasses
+  instance.maxLayoutPasses = INITIAL_RENDER_MAX_PASSES
   let output = doRender()
   // Commit boundary for the initial render. Reactive useBoxRect/useScrollRect/
   // useScreenRect hooks subscribed during this render see the seeded committed
@@ -1162,7 +1052,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // here fires their effects so the next render reads real rects. See bead
   // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
   output = settleAfterCommit(output)
-  instance.singlePassLayout = savedSinglePass
+  instance.maxLayoutPasses = savedCap
 
   instance.frames.push(output)
   onFrame?.(output, instance.prevBuffer!, getRootContentHeight())
@@ -1315,40 +1205,35 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // doRender() handles SILVERY_STRICT checking internally
     let newFrame = doRender()
 
-    // In single-pass mode, flush effects after doRender() — matching
-    // production's processEventBatch pattern (lines 1107-1118 of create-app.tsx).
-    // Production does: doRender → await Promise.resolve() → check pendingRerender → repeat.
-    // In tests, we use act(flushSyncWork) as the synchronous equivalent.
+    // Effect-flush after doRender() — matching production's
+    // processEventBatch pattern (create-app.tsx). Production does:
+    // doRender → await Promise.resolve() → check pendingRerender → repeat.
+    // In tests we use act(flushSyncWork) as the synchronous equivalent.
+    // Bound = MAX_CONVERGENCE_PASSES (2, structural).
     let doRenderCount = 1
-    if (instance.singlePassLayout) {
-      // Effect-flush convergence: same MAX_CONVERGENCE_PASSES bound as the
-      // single-pass loop. Each flush iteration is a feedback edge of the
-      // same PassCause categories — the bound is structural, not loop-specific.
-      let flushCount = 0
-      if (INSTRUMENT) beginConvergenceLoop()
-      for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
-        hadReactCommit = false
-        flushCount = flush + 1
-        if (INSTRUMENT) beginPass(flush)
-        withActEnvironment(() => {
-          act(() => {
-            reconciler.flushSyncWork()
-          })
+    let flushCount = 0
+    if (INSTRUMENT) beginConvergenceLoop()
+    for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
+      hadReactCommit = false
+      flushCount = flush + 1
+      if (INSTRUMENT) beginPass(flush)
+      withActEnvironment(() => {
+        act(() => {
+          reconciler.flushSyncWork()
         })
-        if (!hadReactCommit) break
-        if (INSTRUMENT) {
-          notePassCommit(flush)
-          if (flush === MAX_CONVERGENCE_PASSES - 1) {
-            logPass({ cause: "unknown", detail: "effect-flush-exhaustion" })
-          }
+      })
+      if (!hadReactCommit) break
+      if (INSTRUMENT) {
+        notePassCommit(flush)
+        if (flush === MAX_CONVERGENCE_PASSES - 1) {
+          logPass({ cause: "unknown", detail: "effect-flush-exhaustion" })
         }
-        // React committed new work from effects — re-render
-        newFrame = doRender()
-        doRenderCount++
       }
-      if (flushCount >= MAX_CONVERGENCE_PASSES && hadReactCommit) {
-        assertBoundedConvergence(flushCount, "effect-flush")
-      }
+      newFrame = doRender()
+      doRenderCount++
+    }
+    if (flushCount >= MAX_CONVERGENCE_PASSES && hadReactCommit) {
+      assertBoundedConvergence(flushCount, "effect-flush", MAX_CONVERGENCE_PASSES)
     }
 
     // Commit boundary — promote in-flight rect signals to committed peers,
@@ -1524,44 +1409,25 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // Re-render at new dimensions
     let newFrame = doRender()
 
-    // Drain any remaining React effects (matches the sendInput drain loop in
-    // singlePass mode — see line ~1200). Resize at production-like
-    // singlePassLayout=true is a worst-case for layout-subscriber feedback:
-    //
-    //   1. Pass 0 of doRender's internal multi-pass: prevRootLayout is OLD
-    //      dims (e.g. 160x45). dimensionsChanged=true. yoga calculates fresh.
-    //      `useBoxRect` subscribers are notified with NEW rects.
-    //   2. React commits the subscriber re-renders. Components like
-    //      `<Card columnHeight={cardAreaHeight} />` receive new props
-    //      derived from the new useBoxRect values. Reconciler dirties yoga.
-    //   3. Pass 1 of doRender's internal multi-pass: yoga dirty → recalculates.
-    //      But notify may fire AGAIN with second-order rect changes.
-    //   4. MAX_CONVERGENCE_PASSES=2 → loop exits. Yoga still dirty for the
-    //      pending subscriber update from pass 1.
-    //
-    // The fresh STRICT comparison runs calculateLayout(), draining the dirty
-    // bit. If the calculation produces a DIFFERENT layout than pass 1
-    // captured (because fresh sees post-pass-1 React state), the
-    // comparison fails. (km-yej6 column-resize-incremental-mismatch.)
-    //
-    // Mirror the post-doRender drain that `sendInput` uses for keypresses:
-    // flushSyncWork until React quiesces, calling doRender between drains
-    // so the captured buffer reflects the FINAL React tree state.
+    // Drain any remaining React effects after resize. Resize is a worst
+    // case for layout-subscriber feedback (the multi-pass cascade in
+    // doRender's internal loop may exit with React still dirty from a
+    // late subscriber notify). Mirror the post-doRender drain that
+    // `sendInput` uses for keypresses: flushSyncWork until React
+    // quiesces, calling doRender between drains so the captured buffer
+    // reflects the FINAL React tree state. (km-yej6 column-resize-
+    // incremental-mismatch.)
     let doRenderCount = 1
-    if (instance.singlePassLayout) {
-      for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
-        hadReactCommit = false
-        withActEnvironment(() => {
-          act(() => {
-            reconciler.flushSyncWork()
-          })
+    for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
+      hadReactCommit = false
+      withActEnvironment(() => {
+        act(() => {
+          reconciler.flushSyncWork()
         })
-        if (!hadReactCommit) break
-        // React committed new work from effects — re-render at the same
-        // (already-applied) dimensions to capture the post-effect tree.
-        newFrame = doRender()
-        doRenderCount++
-      }
+      })
+      if (!hadReactCommit) break
+      newFrame = doRender()
+      doRenderCount++
     }
 
     // Commit boundary — see `settleAfterCommit` JSDoc.
@@ -1647,8 +1513,8 @@ export function createStore(options: StoreOptions = {}): Store {
 export interface PerRenderOptions {
   /** Enable incremental rendering for this render. */
   incremental?: boolean
-  /** Use production-like single-pass layout. See RenderOptions.singlePassLayout. */
-  singlePassLayout?: boolean
+  /** Max layout-pass iterations per render. See RenderOptions.maxLayoutPasses. */
+  maxLayoutPasses?: number
   /** Use Kitty keyboard protocol encoding for press(). */
   kittyMode?: boolean
 }
@@ -1670,7 +1536,7 @@ export interface PerRenderOptions {
  * Reuse is skipped (forcing fresh mount) when:
  * - The previous instance has been unmounted (rerender would throw)
  * - Per-render overrides are supplied that conflict with baseOpts
- *   (e.g., flipping `incremental`, `singlePassLayout`, or `kittyMode`)
+ *   (e.g., flipping `incremental`, `maxLayoutPasses`, or `kittyMode`)
  * - The base options are a Store (store-mode renders manage their own
  *   lifecycle and we conservatively force a fresh mount)
  *
@@ -1749,7 +1615,7 @@ export function createRenderer(
  */
 function canReuseInstance(
   overrides: PerRenderOptions | undefined,
-  baseOpts: { incremental?: boolean; singlePassLayout?: boolean; kittyMode?: boolean },
+  baseOpts: { incremental?: boolean; maxLayoutPasses?: number; kittyMode?: boolean },
 ): boolean {
   if (!overrides) return true
   if (
@@ -1759,8 +1625,8 @@ function canReuseInstance(
     return false
   }
   if (
-    overrides.singlePassLayout !== undefined &&
-    overrides.singlePassLayout !== (baseOpts.singlePassLayout ?? false)
+    overrides.maxLayoutPasses !== undefined &&
+    overrides.maxLayoutPasses !== baseOpts.maxLayoutPasses
   ) {
     return false
   }

@@ -106,7 +106,7 @@ export {
   createPassCauseAggregator,
   PASS_CAUSE_BOUNDS,
   MAX_CONVERGENCE_PASSES,
-  MAX_CLASSIC_LOOP_ITERATIONS,
+  INITIAL_RENDER_MAX_PASSES,
   assertBoundedConvergence,
   getPassLog,
 } from "./runtime/pass-cause"

@@ -81,7 +81,8 @@ describe("resize multi-pass STRICT", () => {
   test("singlePass resize completes without throwing under STRICT", () => {
     // singlePassLayout: true matches production scheduler / km-tui driver,
     // where the resize-feedback bug originally surfaced.
-    const r = createRenderer({ cols: 80, rows: 30, incremental: true, singlePassLayout: true })
+    // Default maxLayoutPasses (= MAX_CONVERGENCE_PASSES = 2) matches production.
+    const r = createRenderer({ cols: 80, rows: 30, incremental: true })
     const app = r(<App items={ITEMS} />)
 
     // Pre-fix: the internal STRICT check (in doRender) threw
@@ -95,7 +96,7 @@ describe("resize multi-pass STRICT", () => {
   })
 
   test("singlePass zoom-in/zoom-out roundtrip completes without throwing under STRICT", () => {
-    const r = createRenderer({ cols: 160, rows: 45, incremental: true, singlePassLayout: true })
+    const r = createRenderer({ cols: 160, rows: 45, incremental: true })
     const app = r(<App items={ITEMS} />)
 
     // Sequence mirrors apps/km-tui/tests/resize-garble.slow.test.ts

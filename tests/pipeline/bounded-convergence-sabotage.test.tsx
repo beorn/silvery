@@ -28,7 +28,7 @@ import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
 import {
   MAX_CONVERGENCE_PASSES,
-  MAX_CLASSIC_LOOP_ITERATIONS,
+  INITIAL_RENDER_MAX_PASSES,
 } from "@silvery/ag-term/runtime/pass-cause"
 
 /**
@@ -135,6 +135,6 @@ describe("bounded-convergence: sabotage (real feedback loop)", () => {
   test("MAX bounds match the documented values", () => {
     // Sanity: the bound consts haven't drifted from the design doc.
     expect(MAX_CONVERGENCE_PASSES).toBe(2)
-    expect(MAX_CLASSIC_LOOP_ITERATIONS).toBe(5)
+    expect(INITIAL_RENDER_MAX_PASSES).toBe(5)
   })
 })
