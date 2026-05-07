@@ -377,8 +377,83 @@ function _hasChildPositionChanged(node: AgNode): boolean {
 }
 
 /**
- * Check if any descendant was overflowing THIS node's rect and had its layout change.
- * Recursive: follows subtreeDirty paths for efficiency.
+ * Lightweight `getEffectiveBg` for the layout phase. Mirrors the
+ * production helper in `render-box.ts` (Sterling-aware: `bg-surface-default`
+ * → legacy `bg`). Inlined here to avoid a layout→render-box import cycle.
+ *
+ * The render phase still uses its own `getEffectiveBg` for the cascade
+ * formulas; this duplicate exists ONLY so the layout phase can flag
+ * "bg-bearing descendant moved/shrank" without dragging render-box into
+ * the layout module graph.
+ */
+function _layoutGetEffectiveBg(props: BoxProps): string | undefined {
+  if (props.backgroundColor) return props.backgroundColor as string
+  const theme = props.theme as Record<string, unknown> | undefined
+  if (theme) {
+    const sterlingBg = theme["bg-surface-default"]
+    if (typeof sterlingBg === "string") return sterlingBg
+    const legacyBg = theme["bg"]
+    if (typeof legacyBg === "string") return legacyBg
+  }
+  return undefined
+}
+
+/**
+ * True iff `prev` has any cells NOT covered by `cur` (shrink, move, or any
+ * combination thereof). This is the "bg residue" predicate: cells the
+ * painter occupied before but doesn't occupy now. Equivalent to
+ * `prev \ cur ≠ ∅`.
+ */
+function _prevHasResidueOutside(
+  prev: Rect,
+  cur: { x: number; y: number; width: number; height: number },
+): boolean {
+  return (
+    prev.x < cur.x ||
+    prev.y < cur.y ||
+    prev.x + prev.width > cur.x + cur.width ||
+    prev.y + prev.height > cur.y + cur.height
+  )
+}
+
+/**
+ * Check if any descendant was overflowing THIS node's rect and had its layout
+ * change OR if any bg-bearing descendant shrank/moved within this node's rect
+ * (leaving stale bg residue inside).
+ *
+ * Two related cases:
+ *
+ *   1. **Outside-overflow** (original): descendant's prev rect extended
+ *      BEYOND `node`'s current rect. The descendant either grew past
+ *      `node`'s edge before and shrank back inside, or moved out and back —
+ *      either way `node`'s border/padding cells outside the descendant's
+ *      new rect carry stale pixels.
+ *
+ *   2. **Inside-bg-residue** (added 2026-05-07, bead
+ *      @km/silvery/incremental-bg-residue-shrink-move): descendant has
+ *      `effectiveBg` AND its prev rect has cells NOT covered by its
+ *      current rect (any shrink/move). The painter's prev paint covered
+ *      those cells with its bg; on this frame nothing in the painter's
+ *      subtree paints them. If those cells are within `node`'s rect,
+ *      `node` must clear them via its own `clearNodeRegion` (when
+ *      transparent) or `renderBox` fill (when bg-bearing). Without this
+ *      flag, `node`'s contentAreaAffected may be FALSE — the painter's
+ *      `clearExcessArea` SKIPS due to the position-change guard, and
+ *      `node`'s fast-path-with-subtreeDirty doesn't trigger any cleanup.
+ *      The cell carries forward bg from the prev frame indefinitely.
+ *
+ *      Why on `node` and not just the immediate parent: the residue
+ *      cells must be covered by SOME ancestor that clears or fills.
+ *      The closest transparent ancestor that contains the residue cells
+ *      must clear them; if every ancestor up to a bg-bearing one is
+ *      transparent, that bg-bearing ancestor's renderBox fill suffices.
+ *      Setting the flag at every ancestor whose rect contains residue
+ *      cells guarantees coverage regardless of where the bg-break is.
+ *
+ * Recursive: follows subtreeDirty paths for efficiency. Returns early on
+ * first match. Performance: only runs when subtreeDirty (matches the
+ * `_hasAbsoluteChildMutated` guard); for typical UI updates the search
+ * touches < 10 nodes before terminating.
  */
 function _hasDescendantOverflowChanged(node: AgNode, rect: Rect): boolean {
   return _checkDescendantOverflow(
@@ -400,6 +475,7 @@ function _checkDescendantOverflow(
   for (const child of children) {
     if (child.prevLayout && isCurrentEpoch(child.layoutChangedThisFrame)) {
       const prev = child.prevLayout
+      // Case 1: prev extended outside `node`'s current rect.
       if (
         prev.x + prev.width > nodeRight ||
         prev.y + prev.height > nodeBottom ||
@@ -407,6 +483,33 @@ function _checkDescendantOverflow(
         prev.y < nodeTop
       ) {
         return true
+      }
+      // Case 2: bg-bearing descendant shrank/moved within `node`'s rect,
+      // leaving residue cells that nothing in its subtree will repaint.
+      // The intersection of (prev \ cur) with `node`'s rect is the residue
+      // inside `node`. We over-approximate with `prev \ cur ≠ ∅` AND
+      // `descendant has effectiveBg` — if any residue cell is inside
+      // `node`, we must flag.
+      if (child.boxRect) {
+        const props = child.props as BoxProps
+        if (
+          _layoutGetEffectiveBg(props) !== undefined &&
+          _prevHasResidueOutside(prev, child.boxRect)
+        ) {
+          // Residue exists somewhere in `prev \ cur`. Check if any of it
+          // intersects `node`'s rect. Since `prev` is the painter's old
+          // rect (which was within or overlapping `node` last frame),
+          // and `node`'s current rect contains the painter's CURRENT
+          // rect (or at least overlaps it), the residue is almost always
+          // inside `node`. Use the conservative test: prev ∩ node ≠ ∅.
+          const ix1 = Math.max(prev.x, nodeLeft)
+          const iy1 = Math.max(prev.y, nodeTop)
+          const ix2 = Math.min(prev.x + prev.width, nodeRight)
+          const iy2 = Math.min(prev.y + prev.height, nodeBottom)
+          if (ix2 > ix1 && iy2 > iy1) {
+            return true
+          }
+        }
       }
     }
     if (isDirty(child.dirtyBits, child.dirtyEpoch, SUBTREE_BIT) && child.children !== undefined) {
