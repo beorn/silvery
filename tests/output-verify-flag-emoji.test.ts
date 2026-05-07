@@ -143,6 +143,35 @@ describe("replayAnsiWithStyles regional-indicator handling (UAX #29 GB12/GB13)",
     expect(screen[0]![0]!.char.charCodeAt(0)).toBe(0x20)
   })
 
+  test("variation selector U+FE0F extends text-presentation arrow emoji", () => {
+    // U+2194 is outside the older Misc Symbols / Dingbats gate but is
+    // still a valid text-presentation emoji base. A real Silvercode
+    // STRICT_OUTPUT replay rendered the VS16 as its own cell after ↔️.
+    const prev = new TerminalBuffer(COLS, ROWS)
+    writeText(prev, 0, 0, "abc     def")
+    prev.resetDirtyRows()
+
+    const next = prev.clone()
+    writeText(next, 0, 0, "abc ↔️  def")
+
+    const initialAnsi = outputPhase(null, prev, "fullscreen")
+    const incrAnsi = outputPhase(prev, next, "fullscreen")
+    const freshAnsi = outputPhase(null, next, "fullscreen")
+
+    const incr = replayAnsiWithStyles(COLS, ROWS, initialAnsi + incrAnsi)
+    const fresh = replayAnsiWithStyles(COLS, ROWS, freshAnsi)
+
+    for (let cx = 0; cx < 12; cx++) {
+      expect(incr[0]![cx]!.char, `col ${cx}`).toBe(fresh[0]![cx]!.char)
+    }
+    expect(fresh[0]![4]!.char).toBe("↔️")
+    expect(fresh[0]![5]!.char).toBe(" ")
+    expect(fresh[0]![6]!.char).toBe(" ")
+    expect(incr[0]![4]!.char).toBe("↔️")
+    expect(incr[0]![5]!.char).toBe(" ")
+    expect(incr[0]![6]!.char).toBe(" ")
+  })
+
   test("incremental render matches fresh through verifyOutputEquivalence (vt100)", () => {
     // End-to-end verification: this is what SILVERY_STRICT=1 actually
     // runs. Before the fix, this test would throw an

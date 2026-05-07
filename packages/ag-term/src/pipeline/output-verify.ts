@@ -12,7 +12,7 @@
 
 import type { TerminalBuffer } from "../buffer"
 import { IncrementalRenderMismatchError } from "../errors"
-import { graphemeWidth } from "../unicode"
+import { graphemeWidth, isTextPresentationEmoji } from "../unicode"
 import { createLogger } from "loggily"
 import type { OutputContext } from "./output-phase"
 
@@ -561,13 +561,15 @@ export function replayAnsiWithStyles(
       firstCp = code0
     }
     firstCpIsRegionalIndicator = firstCp >= 0x1f1e6 && firstCp <= 0x1f1ff
-    // Conservative emoji-base set: any codepoint that's already wide or
-    // pictographic. We use graphemeWidth(>=2) || the well-known emoji
-    // ranges. Skin-tone / VS-16 only meaningfully extend these.
+    // Conservative emoji-base set: emoji-presentation codepoints plus
+    // text-presentation emoji such as ↔, ™, and ❤️ bases. Skin-tone /
+    // VS-16 only meaningfully extend these.
     if (firstCp >= 0x1f000) {
       firstCpIsEmojiBase = true
     } else if (firstCp >= 0x2600 && firstCp <= 0x27bf) {
       // Misc Symbols + Dingbats (☀, ✈, etc.)
+      firstCpIsEmojiBase = true
+    } else if (isTextPresentationEmoji(grapheme)) {
       firstCpIsEmojiBase = true
     }
 
