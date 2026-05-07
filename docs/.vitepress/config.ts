@@ -290,7 +290,10 @@ export default withMermaid(
               collapsed: false,
               items: [
                 { text: "useBoxRect", link: "/api/use-box-rect" },
+                { text: "useScrollRect", link: "/api/use-scroll-rect" },
+                { text: "useScreenRect", link: "/api/use-screen-rect" },
                 { text: "useResponsiveBoxProps", link: "/api/use-responsive-box-props" },
+                { text: "useResponsiveValue", link: "/api/use-responsive-value" },
                 { text: "useInput", link: "/api/use-input" },
                 { text: "useApp", link: "/api/use-app" },
                 { text: "useStdout", link: "/api/use-stdout" },
