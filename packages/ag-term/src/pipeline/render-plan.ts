@@ -642,7 +642,9 @@ export interface SectionedRenderPlan {
  *   - `setCell`, `restyleRegion` → paint.
  *   - `scrollRegion` → transfer.
  *   - `mergeAttrsInRect` → overlay.
- *   - `setSelectableMode`, `setRowMeta` → postState.
+ *   - `setRowMeta` → postState.
+ *   - `setSelectableMode` is ignored by the classifier because production
+ *     sectioned plans encode selectability on cell-writing ops.
  */
 export function classifyPlan(flat: RenderPlan): SectionedRenderPlan {
   const transferOps: TransferOp[] = []
@@ -691,8 +693,12 @@ export function classifyPlan(flat: RenderPlan): SectionedRenderPlan {
         overlayOps.push(op)
         break
       case "setRowMeta":
-      case "setSelectableMode":
         postStateOps.push(op)
+        break
+      case "setSelectableMode":
+        // The sectioned plan encodes selectability per cell write. Legacy
+        // flat-plan capture still records this toggle for `commitPlan`, but
+        // the classifier cannot safely section hidden mutable state.
         break
     }
   }
@@ -734,27 +740,37 @@ export function commitSectionedPlan(target: TerminalBuffer, plan: SectionedRende
 }
 
 function applyTransfer(buffer: TerminalBuffer, op: TransferOp): void {
-  buffer.scrollRegion(op.x, op.y, op.width, op.height, op.delta, op.clearCell ?? {})
+  withSelectableMode(buffer, op.selectable, () => {
+    buffer.scrollRegion(op.x, op.y, op.width, op.height, op.delta, op.clearCell ?? {})
+  })
 }
 
 function applyClear(buffer: TerminalBuffer, op: ClearOp): void {
   if (op.kind === "clearRect") {
-    buffer.fill(op.x, op.y, op.width, op.height, { char: " ", bg: op.bg })
+    withSelectableMode(buffer, op.selectable, () => {
+      buffer.fill(op.x, op.y, op.width, op.height, { char: " ", bg: op.bg })
+    })
   } else {
-    buffer.fill(op.x, op.y, op.width, op.height, op.cell)
+    withSelectableMode(buffer, op.cell.selectable, () => {
+      buffer.fill(op.x, op.y, op.width, op.height, op.cell)
+    })
   }
 }
 
 function applyPaint(buffer: TerminalBuffer, op: PaintOp): void {
   switch (op.kind) {
     case "setCell":
-      buffer.setCell(op.x, op.y, op.cell)
+      withSelectableMode(buffer, op.cell.selectable, () => {
+        buffer.setCell(op.x, op.y, op.cell)
+      })
       return
     case "fillBg":
       buffer.fillBg(op.x, op.y, op.width, op.height, op.bg)
       return
     case "paintFill":
-      buffer.fill(op.x, op.y, op.width, op.height, op.cell)
+      withSelectableMode(buffer, op.cell.selectable, () => {
+        buffer.fill(op.x, op.y, op.width, op.height, op.cell)
+      })
       return
     case "restyleRegion":
       buffer.restyleRegion(op.x, op.y, op.width, op.height, op.style)
@@ -768,9 +784,6 @@ function applyOverlay(buffer: TerminalBuffer, op: OverlayOp): void {
 
 function applyPostState(buffer: TerminalBuffer, op: PostStateOp): void {
   switch (op.kind) {
-    case "setSelectableMode":
-      buffer.setSelectableMode(op.selectable)
-      return
     case "setRowMeta": {
       const meta: { softWrapped?: boolean; lastContentCol?: number } = {}
       if (op.softWrapped !== undefined) meta.softWrapped = op.softWrapped
@@ -789,6 +802,24 @@ function applyPostState(buffer: TerminalBuffer, op: PostStateOp): void {
       // here is a no-op. If a future test wants to inspect snapshot ops
       // from a plan, iterate `plan.postStateOps` directly.
       return
+  }
+}
+
+function withSelectableMode(
+  buffer: TerminalBuffer,
+  selectable: boolean | undefined,
+  fn: () => void,
+): void {
+  if (selectable === undefined) {
+    fn()
+    return
+  }
+  const prev = buffer.getSelectableMode()
+  buffer.setSelectableMode(selectable)
+  try {
+    fn()
+  } finally {
+    buffer.setSelectableMode(prev)
   }
 }
 

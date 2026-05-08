@@ -56,12 +56,10 @@ describe("RenderSink", () => {
     direct.setRowMeta(3, { softWrapped: true })
     sink.setRowMeta(3, { softWrapped: true })
 
-    // setSelectableMode is no longer a sink op — Smell #4 from the
-    // 2026-04-27 dual-pro review (Gemini 3 Pro). Renderers call
-    // buffer.setSelectableMode directly so the buffer state machine
-    // doesn't get sectioned away from the cells it stamps.
+    // setSelectableMode is a sink mode, not a post-state plan op. BufferSink
+    // forwards to TerminalBuffer; PlanSink stores it on each cell-writing op.
     direct.setSelectableMode(true)
-    viaSink.setSelectableMode(true)
+    sink.setSelectableMode(true)
     direct.setCell(0, 4, { char: "C" })
     sink.emitSetCell(0, 4, { char: "C" })
 
@@ -81,9 +79,9 @@ describe("RenderSink", () => {
     sink.emitFillBg(0, 2, 10, 1, 3)
     sink.emitRestyleRegion(0, 3, 10, 1, { fg: 4, bg: null, attrs: {} })
     sink.emitMergeAttrs(0, 3, 10, 1, { bold: true })
-    // setSelectableMode is no longer a sink op (Smell #4) — buffer state
-    // machine, not a sectioned plan op. setRowMeta is the only postStateOp.
+    sink.setSelectableMode(true)
     sink.setRowMeta(4, { softWrapped: true })
+    sink.emitSetCell(2, 4, { char: "S" })
 
     const plan = sink.toPlan()
 
@@ -94,7 +92,7 @@ describe("RenderSink", () => {
     expect(plan.cleanupOps[0]?.kind).toBe("clearRect")
     expect(plan.cleanupOps[1]?.kind).toBe("clearCells")
 
-    expect(plan.paintOps).toHaveLength(4)
+    expect(plan.paintOps).toHaveLength(5)
     expect(plan.paintOps[0]?.kind).toBe("setCell")
     expect(plan.paintOps[1]?.kind).toBe("paintFill")
     expect(plan.paintOps[2]?.kind).toBe("fillBg")
@@ -102,6 +100,9 @@ describe("RenderSink", () => {
 
     expect(plan.overlayOps).toHaveLength(1)
     expect(plan.overlayOps[0]?.kind).toBe("mergeAttrsInRect")
+
+    expect(plan.paintOps[4]?.kind).toBe("setCell")
+    expect(plan.paintOps[4]?.cell.selectable).toBe(true)
 
     expect(plan.postStateOps).toHaveLength(1)
     expect(plan.postStateOps[0]?.kind).toBe("setRowMeta")
@@ -124,13 +125,12 @@ describe("RenderSink", () => {
     function emitTo(sink: BufferSink | PlanSink): void {
       // Non-overlapping regions: paint cells in row 0, clear region in
       // row 4, paint bg in row 5, set cells + overlay in row 1.
-      // Smell #4 (Gemini 3 Pro): setSelectableMode is no longer a sink op.
-      // For PlanSink we don't need it; for BufferSink the buffer state
-      // machine is buffer-level, not sink-level.
       // Row 0: text content.
+      sink.setSelectableMode(true)
       for (let i = 0; i < 5; i++) {
         sink.emitSetCell(i, 0, { char: String.fromCharCode(65 + i), fg: 3, bg: 1 })
       }
+      sink.setSelectableMode(false)
       // Row 1: text content + overlay (bold attr merges into existing
       // cells, applied after paint so cells exist).
       for (let i = 0; i < 5; i++) {
@@ -160,6 +160,8 @@ describe("RenderSink", () => {
         `PlanSink + commitSectionedPlan diverges from BufferSink direct path:\n${formatMismatch(mismatch)}`,
       )
     }
+    expect(replayed.isCellSelectable(0, 0)).toBe(true)
+    expect(replayed.isCellSelectable(0, 1)).toBe(false)
   })
 
   test("PlanSink: section ordering is structural — clears before paints, regardless of emission order", () => {
