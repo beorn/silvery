@@ -75,6 +75,7 @@ import { useTextArea } from "./useTextArea"
 import { getWrappedLines } from "@silvery/create/text-cursor"
 import type { WrappedLine } from "@silvery/create/text-cursor"
 import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
+import type { CursorShape } from "@silvery/ag/types"
 
 // =============================================================================
 // Types
@@ -127,8 +128,13 @@ export interface TextAreaProps {
    * @default 8
    */
   maxRows?: number
-  /** Cursor style: 'block' (inverse) or 'underline' */
+  /** Inactive fake-cursor style: 'block' (inverse) or 'underline'. */
   cursorStyle?: "block" | "underline"
+  /**
+   * Explicit hardware cursor shape for the active TextArea. When unset, the
+   * terminal layer derives its focused-editable default.
+   */
+  cursorShape?: CursorShape
   /**
    * When the TextArea is inactive (`isActive === false`), render an
    * inverse/underline "fake cursor" on the cursor row so the caret position
@@ -246,6 +252,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     minRows = 1,
     maxRows = 8,
     cursorStyle = "block",
+    cursorShape,
     showInactiveCursor = true,
     scrollMargin = 1,
     disabled,
@@ -411,6 +418,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     col: ta.cursorCol,
     row: ta.visibleCursorRow,
     visible: isActive && !disabled && !ta.selection,
+    shape: cursorShape,
   }
 
   if (showPlaceholder) {
