@@ -649,8 +649,8 @@ export function isWordBoundary(grapheme: string): boolean {
 /**
  * Check if a grapheme is a *soft* break point inside a token — a separator
  * that paths and identifiers commonly use, so the wrap algorithm can split
- * `.claude/skills/{claim,do}/SKILL.md` at a `/` instead of either letting
- * it overflow or hard-character-wrapping mid-word.
+ * `.claude/skills/{claim,do}/SKILL.md` at a `/` (or `,`) instead of either
+ * letting it overflow or hard-character-wrapping mid-word.
  *
  * Soft break points are SECONDARY: the wrap algorithm prefers true word
  * boundaries (`isWordBoundary`) and only falls back to soft breaks when no
@@ -658,10 +658,18 @@ export function isWordBoundary(grapheme: string): boolean {
  * keeps the boundary character with its left context — `path/` on one
  * line, `to` on the next — which matches how readers visually parse paths.
  *
- * The set is deliberately conservative: filesystem path separators (`/`,
- * `\`), namespace/scope separators (`.`, `:`), and identifier joins (`_`).
- * Characters like `=`, `?`, `&`, `,` are excluded — they're more often
- * structural punctuation that shouldn't be split in the middle of text.
+ * The set is deliberately conservative:
+ *  - filesystem path separators (`/`, `\`)
+ *  - namespace / scope separators (`.`, `:`)
+ *  - identifier joins (`_`)
+ *  - list separators (`,`)
+ *
+ * Brackets/parens (`{ } [ ] ( )`) are EXCLUDED because they pair —
+ * breaking after `(` would orphan the opening delimiter from its
+ * matching close. The CSS spec does the same. Operator characters
+ * (`= ? & |`) are also excluded — they're either part of structural
+ * punctuation (URL query strings, expressions) or already handled by
+ * `isBreakBeforeOperatorWith` for orphan suppression.
  */
 export function isSoftBreakPoint(grapheme: string): boolean {
   return (
@@ -669,7 +677,8 @@ export function isSoftBreakPoint(grapheme: string): boolean {
     grapheme === "\\" ||
     grapheme === "." ||
     grapheme === "_" ||
-    grapheme === ":"
+    grapheme === ":" ||
+    grapheme === ","
   )
 }
 

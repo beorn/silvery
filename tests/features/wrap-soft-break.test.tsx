@@ -29,8 +29,14 @@ import { Box, Text } from "@silvery/ag-react"
 
 describe("wrapText: soft break inside long tokens", () => {
   test("path wraps at / separators when too wide", () => {
+    // At width 14, the LATEST-fitting soft-break wins per algorithm:
+    // `.claude/skills/{claim,` fits at 22 cols, breaking the path so far
+    // would exceed 14, so the algorithm rewinds to the last fitting
+    // soft-break inside [0..14] which is `.claude/`. Same logic applies
+    // to subsequent line: `skills/{claim,` (14 chars exactly) fits, so
+    // `,` wins over the earlier `/` after `skills`.
     const lines = wrapText(".claude/skills/{claim,do}/SKILL.md", 14, true, false)
-    expect(lines).toEqual([".claude/", "skills/", "{claim,do}/", "SKILL.md"])
+    expect(lines).toEqual([".claude/", "skills/{claim,", "do}/SKILL.md"])
   })
 
   test("absolute path wraps at /", () => {
@@ -96,6 +102,39 @@ describe("wrapText: soft break inside long tokens", () => {
     const joined = lines.join("").replace(/ /g, "")
     const sourceCondensed = text.replace(/ /g, "")
     expect(joined).toBe(sourceCondensed)
+  })
+
+  test("comma separator: `{claim,do}` wraps at , when no / fits", () => {
+    // When the available width is narrower than `{claim,do}` (10 chars)
+    // and the only break opportunity inside is the `,`, the algorithm
+    // breaks AFTER it: `{claim,` + `do}`.
+    const lines = wrapText("{claim,do}", 7, true, false)
+    expect(lines).toEqual(["{claim,", "do}"])
+  })
+
+  test("user-reported exact token: .claude/skills/{claim,do}/SKILL.md", () => {
+    // The literal token from the screenshot. Must wrap inside any width
+    // ≥ 10 (roughly the longest atomic segment between separators).
+    const token = ".claude/skills/{claim,do}/SKILL.md"
+    for (const width of [12, 16, 20, 24, 28, 30, 33]) {
+      const lines = wrapText(token, width, true, false)
+      for (const line of lines) {
+        expect(line.length, `width ${width}: line "${line}" exceeds budget`).toBeLessThanOrEqual(width)
+      }
+    }
+  })
+
+  test("user-reported full body line at narrow card width", () => {
+    // Narrower repro of the screenshot: a paragraph containing the path
+    // at the card width visible in the screenshot (~30 cols inner).
+    const text =
+      "Reference incident: 33245818f feat(markdown): collectSigilLinks emits @mention and +project rows accidentally absorbed @agent/0..9.md, @agent.md, .gitignore, .claude/skills/{claim,do}/SKILL.md from a tribe peer (myself, this session)"
+    for (const width of [28, 30, 33, 34, 36]) {
+      const lines = wrapText(text, width, true, false)
+      for (const line of lines) {
+        expect(line.length, `width ${width}: line "${line}" exceeds budget`).toBeLessThanOrEqual(width)
+      }
+    }
   })
 })
 
