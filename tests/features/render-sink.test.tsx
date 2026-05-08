@@ -101,8 +101,10 @@ describe("RenderSink", () => {
     expect(plan.overlayOps).toHaveLength(1)
     expect(plan.overlayOps[0]?.kind).toBe("mergeAttrsInRect")
 
-    expect(plan.paintOps[4]?.kind).toBe("setCell")
-    expect(plan.paintOps[4]?.cell.selectable).toBe(true)
+    const selectableOp = plan.paintOps[4]
+    expect(selectableOp?.kind).toBe("setCell")
+    if (selectableOp?.kind !== "setCell") throw new Error("expected selectable setCell op")
+    expect(selectableOp.cell.selectable).toBe(true)
 
     expect(plan.postStateOps).toHaveLength(1)
     expect(plan.postStateOps[0]?.kind).toBe("setRowMeta")
