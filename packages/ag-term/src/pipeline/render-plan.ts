@@ -42,15 +42,17 @@
 import type { Cell, CellAttrs, Color, Style } from "../buffer"
 import { TerminalBuffer } from "../buffer"
 
+export type SelectableCellPatch = Partial<Cell> & { selectable?: boolean }
+
 export type RenderOp =
-  | { kind: "setCell"; x: number; y: number; cell: Partial<Cell> }
+  | { kind: "setCell"; x: number; y: number; cell: SelectableCellPatch }
   | {
       kind: "fill"
       x: number
       y: number
       width: number
       height: number
-      cell: Partial<Cell>
+      cell: SelectableCellPatch
     }
   | {
       kind: "fillBg"
@@ -75,7 +77,7 @@ export type RenderOp =
       width: number
       height: number
       delta: number
-      clearCell?: Partial<Cell>
+      clearCell?: SelectableCellPatch
     }
   | { kind: "setSelectableMode"; selectable: boolean }
   | {
@@ -263,8 +265,8 @@ export class RecordingBuffer extends TerminalBuffer {
   }
 }
 
-function cloneCellPatch(cell: Partial<Cell>): Partial<Cell> {
-  const out: Partial<Cell> = { ...cell }
+function cloneCellPatch(cell: SelectableCellPatch): SelectableCellPatch {
+  const out: SelectableCellPatch = { ...cell }
   if (cell.attrs) out.attrs = { ...cell.attrs }
   return out
 }
@@ -484,14 +486,22 @@ export function isRenderPlanEnabled(): boolean {
  * order in which the renderer emitted them.
  */
 export type ClearOp =
-  | { kind: "clearRect"; x: number; y: number; width: number; height: number; bg: Color }
+  | {
+      kind: "clearRect"
+      x: number
+      y: number
+      width: number
+      height: number
+      bg: Color
+      selectable?: boolean
+    }
   | {
       kind: "clearCells"
       x: number
       y: number
       width: number
       height: number
-      cell: Partial<Cell>
+      cell: SelectableCellPatch
     }
 
 /**
@@ -500,7 +510,7 @@ export type ClearOp =
  * siblings can legitimately cover earlier siblings' overflow text.
  */
 export type PaintOp =
-  | { kind: "setCell"; x: number; y: number; cell: Partial<Cell> }
+  | { kind: "setCell"; x: number; y: number; cell: SelectableCellPatch }
   | { kind: "fillBg"; x: number; y: number; width: number; height: number; bg: Color }
   | {
       kind: "paintFill"
@@ -508,7 +518,7 @@ export type PaintOp =
       y: number
       width: number
       height: number
-      cell: Partial<Cell>
+      cell: SelectableCellPatch
     }
   | {
       kind: "restyleRegion"
@@ -531,7 +541,8 @@ export type TransferOp = {
   width: number
   height: number
   delta: number
-  clearCell?: Partial<Cell>
+  clearCell?: SelectableCellPatch
+  selectable?: boolean
 }
 
 /**
