@@ -1576,17 +1576,25 @@ export function renderText(
       clipBounds && "left" in clipBounds && clipBounds.left !== undefined
         ? clipBounds.left
         : undefined
-    const endCol = renderTextLineReturn(
-      buffer,
-      x,
-      lineY,
-      line,
-      style,
-      maxCol,
-      inheritedBg,
-      ctx,
-      minCol,
-    )
+    const lineTextForSelection = hasAnsi(line) ? stripAnsiForBg(line) : line
+    const lineSelectable = nodeState.selectableMode && /\S/.test(lineTextForSelection)
+    let endCol: number
+    sink.setSelectableMode(lineSelectable)
+    try {
+      endCol = renderTextLineReturn(
+        buffer,
+        x,
+        lineY,
+        line,
+        style,
+        maxCol,
+        inheritedBg,
+        ctx,
+        minCol,
+      )
+    } finally {
+      sink.setSelectableMode(false)
+    }
 
     // Clear remaining cells after text to end of layout width (clipped).
     // When text content shrinks (e.g., breadcrumb changes from long to short path),
@@ -1637,7 +1645,12 @@ export function renderText(
     // cyan-strip residue bug, km-silvery.render-light-blue-bg-strip-residue).
     if (bgSegments.length > 0 && lineIdx < lineOffsets.length) {
       const { start, end } = lineOffsets[lineIdx]!
-      applyBgSegmentsToLine(buffer, x, lineY, line, start, end, bgSegments, ctx, maxCol, minCol)
+      sink.setSelectableMode(lineSelectable)
+      try {
+        applyBgSegmentsToLine(buffer, x, lineY, line, start, end, bgSegments, ctx, maxCol, minCol)
+      } finally {
+        sink.setSelectableMode(false)
+      }
     }
   }
 

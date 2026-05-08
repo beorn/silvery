@@ -621,19 +621,6 @@ export function applySelectionToPaintBuffer(opts: SelectionPaintOptions): void {
     true,
     selectionState.scope,
   )
-  if (process.env.SILVERY_SELECTION_DEBUG === "1") {
-    const { startRow, startCol, endRow, endCol } = selectionState.range
-      ? {
-          startRow: Math.min(selectionState.range.anchor.row, selectionState.range.head.row),
-          startCol: Math.min(selectionState.range.anchor.col, selectionState.range.head.col),
-          endRow: Math.max(selectionState.range.anchor.row, selectionState.range.head.row),
-          endCol: Math.max(selectionState.range.anchor.col, selectionState.range.head.col),
-        }
-      : { startRow: 0, startCol: 0, endRow: 0, endCol: 0 }
-    process.stderr.write(
-      `selection paint changes=${changes.length} sample=${String(paintBuffer._buffer.isCellSelectable(startCol, startRow))}:${String(paintBuffer._buffer.isCellSelectable(endCol, endRow))}\n`,
-    )
-  }
   applySelectionToBuffer(paintBuffer._buffer, changes)
 }
 

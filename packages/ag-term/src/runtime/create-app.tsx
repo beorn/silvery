@@ -2553,11 +2553,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     flushFrameArtifacts("pre-paint")
     if (hasSelection || hasSearchHighlight || hasSearchBar) {
       const cloned = currentBuffer._buffer.clone()
-      if (process.env.SILVERY_SELECTION_DEBUG === "1" && selectionState.range) {
-        process.stderr.write(
-          `selection original sample=${String(currentBuffer._buffer.isCellSelectable(selectionState.range.anchor.col, selectionState.range.anchor.row))}:${String(currentBuffer._buffer.isCellSelectable(selectionState.range.head.col, selectionState.range.head.row))}\n`,
-        )
-      }
       const paintBuf = wrapBuffer(cloned, currentBuffer.nodes, currentBuffer.overlay)
       // Force diff coverage — the clone starts with all rows clean, but
       // selection / search-highlight / search-bar styling will mutate cells.
@@ -2801,11 +2796,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             !pointerBlocksSelection && agRoot
               ? selectionHitTest(agRoot, mouseData.x, mouseData.y)
               : null
-          if (process.env.SILVERY_SELECTION_DEBUG === "1") {
-            process.stderr.write(
-              `selection down x=${mouseData.x} y=${mouseData.y} target=${pointerTarget?.type ?? "null"} targetSelect=${pointerTarget ? resolveUserSelect(pointerTarget) : "null"} hit=${hit?.type ?? "null"} hitSelect=${hit ? resolveUserSelect(hit) : "null"} block=${String(pointerBlocksSelection)}\n`,
-            )
-          }
           // No selectable hit target — the click landed in a
           // `userSelect="none"` subtree (scrollbar, toolbar buttons,
           // etc.). Don't arm a selection drag: a subsequent mousemove
@@ -2849,11 +2839,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const dx = pointerCell.col - pendingSelectionDown.col
             const dy = pointerCell.row - pendingSelectionDown.row
             if (dx !== 0 || dy !== 0) {
-              if (process.env.SILVERY_SELECTION_DEBUG === "1") {
-                process.stderr.write(
-                  `selection start from=${pendingSelectionDown.col},${pendingSelectionDown.row} to=${pointerCell.col},${pointerCell.row}\n`,
-                )
-              }
               const anchor = pendingSelectionDown
               pendingSelectionDown = null
               activeSelectionBoundaries = anchor.boundaries
@@ -2912,9 +2897,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 started,
               )
               selectionState = extended
-              if (process.env.SILVERY_SELECTION_DEBUG === "1") {
-                process.stderr.write(`selection started range=${JSON.stringify(selectionState.range)} scope=${JSON.stringify(scope)}\n`)
-              }
               notifySelectionListeners()
               if (currentBuffer) {
                 paintFrame()
@@ -2949,9 +2931,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               selectionState,
             )
             selectionState = next
-            if (process.env.SILVERY_SELECTION_DEBUG === "1") {
-              process.stderr.write(`selection extend range=${JSON.stringify(selectionState.range)}\n`)
-            }
             notifySelectionListeners()
             if (currentBuffer) {
               paintFrame()

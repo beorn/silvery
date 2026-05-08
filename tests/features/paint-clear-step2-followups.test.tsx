@@ -203,6 +203,28 @@ describe("paint-clear Step 2 follow-ups (regression suite)", () => {
     expect(buffer.isCellSelectable(0, 5)).toBe(true)
   })
 
+  test("Task 4: SELECTABLE_FLAG marks text-bearing cells, not padding or spacer rows", () => {
+    const cols = 20
+    const rows = 4
+
+    function Scene() {
+      return (
+        <Box width={cols} height={rows} flexDirection="column" backgroundColor="blue">
+          <Text>Hello</Text>
+          <Text>{"   "}</Text>
+        </Box>
+      )
+    }
+
+    const mounted = mountScene(<Scene />, cols, rows)
+    const buffer = renderPhase(mounted.root, null)
+
+    expect(buffer.isCellSelectable(0, 0)).toBe(true)
+    expect(buffer.isCellSelectable(4, 0)).toBe(true)
+    expect(buffer.isCellSelectable(5, 0)).toBe(false)
+    expect(buffer.isCellSelectable(0, 1)).toBe(false)
+  })
+
   // ============================================================================
   // Task 3: clearNodeRegion / clearExcessArea decoupling — incremental shrink
   // ============================================================================

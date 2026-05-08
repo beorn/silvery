@@ -233,6 +233,25 @@ export interface RenderSink {
 export class BufferSink implements RenderSink {
   constructor(private readonly buffer: TerminalBuffer) {}
 
+  private withSelectableMode(selectable: boolean | undefined, fn: () => void): void {
+    if (selectable === undefined) {
+      fn()
+      return
+    }
+    const next = selectable
+    const prev = this.buffer.getSelectableMode()
+    if (prev === next) {
+      fn()
+      return
+    }
+    this.buffer.setSelectableMode(next)
+    try {
+      fn()
+    } finally {
+      this.buffer.setSelectableMode(prev)
+    }
+  }
+
   get width(): number {
     return this.buffer.width
   }
@@ -247,24 +266,39 @@ export class BufferSink implements RenderSink {
     height: number,
     delta: number,
     clearCell: Partial<Cell> = {},
+    selectable?: boolean,
   ): void {
-    this.buffer.scrollRegion(x, y, width, height, delta, clearCell)
+    this.withSelectableMode(selectable, () => this.buffer.scrollRegion(x, y, width, height, delta, clearCell))
   }
 
-  emitClearRect(x: number, y: number, width: number, height: number, bg: Color): void {
-    this.buffer.fill(x, y, width, height, { char: " ", bg })
+  emitClearRect(x: number, y: number, width: number, height: number, bg: Color, selectable?: boolean): void {
+    this.withSelectableMode(selectable, () => this.buffer.fill(x, y, width, height, { char: " ", bg }))
   }
 
-  emitClearCells(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
-    this.buffer.fill(x, y, width, height, cell)
+  emitClearCells(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    cell: Partial<Cell>,
+    selectable?: boolean,
+  ): void {
+    this.withSelectableMode(selectable, () => this.buffer.fill(x, y, width, height, cell))
   }
 
-  emitSetCell(x: number, y: number, cell: Partial<Cell>): void {
-    this.buffer.setCell(x, y, cell)
+  emitSetCell(x: number, y: number, cell: Partial<Cell>, selectable?: boolean): void {
+    this.withSelectableMode(selectable, () => this.buffer.setCell(x, y, cell))
   }
 
-  emitPaintFill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
-    this.buffer.fill(x, y, width, height, cell)
+  emitPaintFill(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    cell: Partial<Cell>,
+    selectable?: boolean,
+  ): void {
+    this.withSelectableMode(selectable, () => this.buffer.fill(x, y, width, height, cell))
   }
 
   emitFillBg(x: number, y: number, width: number, height: number, bg: Color): void {
@@ -342,29 +376,44 @@ export class TeeSink implements RenderSink {
     height: number,
     delta: number,
     clearCell?: Partial<Cell>,
+    selectable?: boolean,
   ): void {
-    this.primary.emitScrollRegion(x, y, width, height, delta, clearCell)
-    this.secondary.emitScrollRegion(x, y, width, height, delta, clearCell)
+    this.primary.emitScrollRegion(x, y, width, height, delta, clearCell, selectable)
+    this.secondary.emitScrollRegion(x, y, width, height, delta, clearCell, selectable)
   }
 
-  emitClearRect(x: number, y: number, width: number, height: number, bg: Color): void {
-    this.primary.emitClearRect(x, y, width, height, bg)
-    this.secondary.emitClearRect(x, y, width, height, bg)
+  emitClearRect(x: number, y: number, width: number, height: number, bg: Color, selectable?: boolean): void {
+    this.primary.emitClearRect(x, y, width, height, bg, selectable)
+    this.secondary.emitClearRect(x, y, width, height, bg, selectable)
   }
 
-  emitClearCells(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
-    this.primary.emitClearCells(x, y, width, height, cell)
-    this.secondary.emitClearCells(x, y, width, height, cell)
+  emitClearCells(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    cell: Partial<Cell>,
+    selectable?: boolean,
+  ): void {
+    this.primary.emitClearCells(x, y, width, height, cell, selectable)
+    this.secondary.emitClearCells(x, y, width, height, cell, selectable)
   }
 
-  emitSetCell(x: number, y: number, cell: Partial<Cell>): void {
-    this.primary.emitSetCell(x, y, cell)
-    this.secondary.emitSetCell(x, y, cell)
+  emitSetCell(x: number, y: number, cell: Partial<Cell>, selectable?: boolean): void {
+    this.primary.emitSetCell(x, y, cell, selectable)
+    this.secondary.emitSetCell(x, y, cell, selectable)
   }
 
-  emitPaintFill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
-    this.primary.emitPaintFill(x, y, width, height, cell)
-    this.secondary.emitPaintFill(x, y, width, height, cell)
+  emitPaintFill(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    cell: Partial<Cell>,
+    selectable?: boolean,
+  ): void {
+    this.primary.emitPaintFill(x, y, width, height, cell, selectable)
+    this.secondary.emitPaintFill(x, y, width, height, cell, selectable)
   }
 
   emitFillBg(x: number, y: number, width: number, height: number, bg: Color): void {
@@ -501,6 +550,7 @@ export class PlanSink implements RenderSink {
     height: number,
     delta: number,
     clearCell?: Partial<Cell>,
+    selectable?: boolean,
   ): void {
     this.transferOps.push({
       kind: "scrollRegion",
@@ -510,37 +560,51 @@ export class PlanSink implements RenderSink {
       height,
       delta,
       clearCell: clearCell ? cloneCellPatch(clearCell) : undefined,
-      selectable: this.selectableMode,
+      selectable: selectable ?? this.selectableMode,
     })
   }
 
-  emitClearRect(x: number, y: number, width: number, height: number, bg: Color): void {
-    this.cleanupOps.push({ kind: "clearRect", x, y, width, height, bg, selectable: this.selectableMode })
+  emitClearRect(x: number, y: number, width: number, height: number, bg: Color, selectable?: boolean): void {
+    this.cleanupOps.push({ kind: "clearRect", x, y, width, height, bg, selectable: selectable ?? this.selectableMode })
   }
 
-  emitClearCells(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
+  emitClearCells(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    cell: Partial<Cell>,
+    selectable?: boolean,
+  ): void {
     this.cleanupOps.push({
       kind: "clearCells",
       x,
       y,
       width,
       height,
-      cell: this.selectableCell(cell),
+      cell: this.selectableCell(cell, selectable),
     })
   }
 
-  emitSetCell(x: number, y: number, cell: Partial<Cell>): void {
-    this.paintOps.push({ kind: "setCell", x, y, cell: this.selectableCell(cell) })
+  emitSetCell(x: number, y: number, cell: Partial<Cell>, selectable?: boolean): void {
+    this.paintOps.push({ kind: "setCell", x, y, cell: this.selectableCell(cell, selectable) })
   }
 
-  emitPaintFill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
+  emitPaintFill(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    cell: Partial<Cell>,
+    selectable?: boolean,
+  ): void {
     this.paintOps.push({
       kind: "paintFill",
       x,
       y,
       width,
       height,
-      cell: this.selectableCell(cell),
+      cell: this.selectableCell(cell, selectable),
     })
   }
 
@@ -586,8 +650,8 @@ export class PlanSink implements RenderSink {
     this.selectableMode = selectable
   }
 
-  private selectableCell(cell: Partial<Cell>): SelectableCellPatch {
-    return { ...cloneCellPatch(cell), selectable: this.selectableMode }
+  private selectableCell(cell: Partial<Cell>, selectable: boolean | undefined): SelectableCellPatch {
+    return { ...cloneCellPatch(cell), selectable: selectable ?? this.selectableMode }
   }
 
   /**

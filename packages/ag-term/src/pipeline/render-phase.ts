@@ -141,12 +141,10 @@ export function renderPhase(
   // PlanSink-authoritative a signature change rather than a multi-site refactor.
   const frameSink: RenderSink = createFrameSink(buffer)
 
-  // Default: root is selectable (userSelect defaults to "text").
-  // renderNodeToBuffer will override per-node as it traverses.
-  // Selectable mode is routed through the sink. BufferSink still mutates the
-  // buffer mode directly; PlanSink snapshots the value onto each cell-writing
-  // op so sectioned replay preserves SELECTABLE_FLAG bits.
-  frameSink.setSelectableMode(true)
+  // Default selection state is semantic, not a blanket paint mode: root
+  // userSelect defaults to "text", but only text-rendering operations stamp
+  // SELECTABLE_FLAG. Box backgrounds, padding, and cleanup writes stay
+  // structural and non-selectable.
 
   // Restore cells under previous-frame outlines BEFORE content rendering.
   // Outlines draw OUTSIDE their owning node into the parent's pixel space,
@@ -568,11 +566,13 @@ function renderNodeToBuffer(
   let currentSelectableMode = prevSelectableMode
   if (userSelect === "none") {
     currentSelectableMode = false
-    sink.setSelectableMode(false)
   } else if (userSelect === "text" || userSelect === "contain") {
     currentSelectableMode = true
-    sink.setSelectableMode(true)
   }
+  const currentNodeState: NodeRenderState =
+    currentSelectableMode === prevSelectableMode
+      ? nodeState
+      : { ...nodeState, selectableMode: currentSelectableMode }
 
   // Push per-subtree theme override (if this Box has a theme prop).
   // Placed after all early returns and fast-path skip — only active during
@@ -751,7 +751,7 @@ function renderNodeToBuffer(
         sink,
         layout,
         props,
-        nodeState,
+        currentNodeState,
         skipBgFill,
         instr.enabled,
         instr.stats,
@@ -786,7 +786,7 @@ function renderNodeToBuffer(
     // Render children — pass inherited bg/fg/selectableMode so children
     // don't walk the parent chain or read buffer state.
     const childState: NodeRenderState = {
-      ...nodeState,
+      ...currentNodeState,
       inheritedBg: childInheritedBg,
       inheritedFg: childInheritedFg,
       selectableMode: currentSelectableMode,
@@ -846,8 +846,6 @@ function renderNodeToBuffer(
   } finally {
     // Pop per-subtree theme override (after ALL child passes including absolute/sticky)
     if (nodeTheme) popContextTheme()
-    // Restore parent's selectable mode after this subtree.
-    sink.setSelectableMode(prevSelectableMode)
   }
 }
 
