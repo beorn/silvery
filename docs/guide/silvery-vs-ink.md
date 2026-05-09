@@ -28,6 +28,7 @@ The biggest differences at a glance:
 - **Community** — ~1.3M npm weekly downloads, 50+ third-party packages, used in production since 2017. Silvery is newer and has a smaller community.
 - **Accessibility** — Ink has `aria-role`, `aria-label`, `aria-state`, and `useIsScreenReaderEnabled`. Silvery has basic support.
 - **Documentation** — Ink's README and community examples are extensive. Silvery's docs site is growing.
+- **Cold-render performance for tiny + deeply-nested trees** — Ink's `renderToString` is ~1.07× faster on small flat lists and ~1.65–1.94× faster on deeply-nested trees (20–50 levels), where Yoga WASM's per-node layout speed is hard to beat. Silvery is faster on cold render once the tree gets non-trivial; see [Cold render](#cold-render-one-shot-rendertostring) below.
 
 **What's the same:** React 19, `Box`/`Text`/`useInput`, flexbox layout, `Static`, `useFocus`, `usePaste`, `useAnimation`, `useWindowSize`, Kitty keyboard, synchronized output (DEC 2026), alternate screen, concurrent mode, Suspense. Most Ink code works with an import change.
 
@@ -138,6 +139,26 @@ The 15–20× advantage comes from Silvery's pipeline making full use of `React.
 | Memo'd kanban 5×20           | **17.0×**         |
 | Memo'd kanban 5×50           | **26.7×**         |
 
+### Cold render (one-shot `renderToString`)
+
+A separate axis from mounted rerender — both frameworks render a tree from scratch into a string with no prior frame to diff against. Ink's `renderToString` and Silvery's `createRenderer` (reused) are compared directly with the same React tree and identical terminal dimensions.
+
+| Scenario                              | Faster  | Ratio      |
+| ------------------------------------- | ------- | ---------- |
+| Flat list — 10 items (small)          | Ink     | 1.07×      |
+| Flat list — 100 items (80×24)         | Silvery | 1.17–1.40× |
+| Flat list — 100 items (200×60)        | Silvery | 1.77×      |
+| Styled list — 100 items               | Silvery | 1.37×      |
+| Kanban 5×10 (80×24)                   | Silvery | 1.08×      |
+| Kanban 5×20 (200×60)                  | Silvery | 1.40×      |
+| Deep tree — 20 levels                 | Ink     | 1.65×      |
+| Deep tree — 50 levels                 | Ink     | 1.94×      |
+| Reused renderer rerender (cursor 100) | Silvery | 1.13×      |
+
+**Read the table honestly:** Ink is faster on small flat lists and deeply-nested trees — Yoga WASM's per-node layout is genuinely fast. Silvery is faster on the rest, with the gap widening as the tree grows. The mounted-rerender numbers above (5–27×) come from Silvery's dirty-tracking pipeline skipping clean nodes entirely on subsequent frames; this section measures the cold-start case where dirty tracking can't help. Both numbers are useful — pick whichever matches your workload.
+
+_Snapshot: M5 Max, 2026-04-09. Ratios are bench duration ratios (Ink ms ÷ Silvery ms or vice-versa). Reproduce: `bun run bench` from the silvery package root._
+
 ### Output efficiency
 
 Silvery emits **10–20× less output** (much more for large trees) to the terminal than Ink's line-level diff on incremental updates. Cell-level buffer diff + relative cursor addressing.
@@ -153,13 +174,14 @@ Silvery emits **10–20× less output** (much more for large trees) to the termi
 ### Methodology
 
 - **Tooling**: vitest bench with warmup + automatic iteration count
-- **Ink config**: `debug: true` (synchronous rendering — both frameworks render every frame). `debug: false` uses Ink's throttle which batches frames, making the comparison unfair
+- **Ink config (mounted)**: `debug: true` (synchronous rendering — both frameworks render every frame). `debug: false` uses Ink's throttle which batches frames, making the comparison unfair
+- **Cold render**: Ink's `renderToString` (one-shot) vs Silvery's `createRenderer` (reused — amortizes buffer allocation). Different shapes by design; the cold-render table measures throughput, not cold-start cost
 - **Silvery**: `@silvery/test` `createRenderer` uses the same production render core — headless, no test-only code paths
 - **I/O**: Both use mocked stdout — no real terminal I/O is measured
 - **STRICT mode** disabled (`SILVERY_STRICT=0`)
 - **Fair comparison**: Mounted scenarios keep both frameworks' React trees mounted and call `rerender()` with identical prop changes
 - **Runtime**: Bun (both frameworks). Node.js results pending — expected to show similar ratios
-- **Reproduce**: `bun run bench`
+- **Reproduce**: `bun run bench` from the silvery package root
 
 ## Compatibility
 
