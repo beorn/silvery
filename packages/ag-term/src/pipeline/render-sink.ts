@@ -48,6 +48,7 @@
 
 import type { CellAttrs, CellPatch, Color, Style } from "../buffer"
 import { TerminalBuffer } from "../buffer"
+import { assertCellInsideBorderedRect } from "../strict-bordered-rect.js"
 import type {
   ClearOp,
   OverlayOp,
@@ -279,6 +280,12 @@ export class BufferSink implements RenderSink {
   }
 
   emitSetCell(x: number, y: number, cell: CellPatch, selectable?: boolean): void {
+    // STRICT bordered-rect-clip (tier 2): assert this single-cell paint
+    // stays inside the nearest bordered ancestor's inner content rect.
+    // No-op when SILVERY_STRICT does not include the slug; cheap O(1)
+    // gate read otherwise. See strict-bordered-rect.ts for the full
+    // contract and the per-renderer-call memoization.
+    assertCellInsideBorderedRect(x, y, { char: cell.char, fg: cell.fg, bg: cell.bg })
     this.buffer.setCell(x, y, this.selectableCell(cell, selectable))
   }
 

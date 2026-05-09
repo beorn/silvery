@@ -26,6 +26,11 @@ import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
 import { createFrameSink, type RenderSink } from "./render-sink"
+import {
+  popRenderingNode,
+  pushRenderingNode,
+  resetBorderedRectClipCache,
+} from "../strict-bordered-rect.js"
 import { type RenderPostState, createRenderPostState } from "./render-post-state"
 import { pushContextTheme, popContextTheme } from "./state"
 import type { Theme } from "@silvery/ansi"
@@ -745,20 +750,31 @@ function renderNodeToBuffer(
         ? nodeState.inheritedBg.color
         : undefined
     if (needsOwnRepaint) {
-      renderOwnContent(
-        node,
-        buffer,
-        sink,
-        layout,
-        props,
-        currentNodeState,
-        skipBgFill,
-        instr.enabled,
-        instr.stats,
-        ctx,
-        cascade.bgOnlyChange,
-        useTextStyleFastPath,
-      )
+      // STRICT bordered-rect-clip: track which AgNode is currently
+      // emitting cells so the BufferSink hook can resolve "the nearest
+      // bordered ancestor" when SILVERY_STRICT=bordered-rect-clip is set.
+      // Stack discipline mirrors withPlanCapture in render-sink.ts.
+      pushRenderingNode(node)
+      resetBorderedRectClipCache()
+      try {
+        renderOwnContent(
+          node,
+          buffer,
+          sink,
+          layout,
+          props,
+          currentNodeState,
+          skipBgFill,
+          instr.enabled,
+          instr.stats,
+          ctx,
+          cascade.bgOnlyChange,
+          useTextStyleFastPath,
+        )
+      } finally {
+        popRenderingNode()
+        resetBorderedRectClipCache()
+      }
     }
 
     // Compute inherited bg/fg for children. If this node sets backgroundColor,
