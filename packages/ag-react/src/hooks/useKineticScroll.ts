@@ -210,6 +210,17 @@ export interface UseKineticScrollResult {
   /** Imperatively set the float scroll position (sub-row precision).
    * Cancels any in-flight kinetic. */
   setScrollFloat: (float: number) => void
+  /**
+   * Read the latest float scroll position synchronously from the internal
+   * ref. `scrollFloat` (the React state) only reflects the value after a
+   * re-render — when callers fire several `setScrollFloat` / `scrollBy`
+   * calls in a row WITHOUT yielding to React (e.g. ListView's imperative
+   * `scrollBy(±1)` driven by burst keyboard input), seeding the next call
+   * from `scrollFloat` would read a stale value and the increments would
+   * collapse. Use this for any seed-and-increment loop that needs to see
+   * its own previous write before React commits.
+   */
+  getScrollFloat: () => number
   /** Reset all wheel/momentum state. Used by ListView when the cursor
    * moves via keyboard — kills momentum and arms `getInitialFloat` to
    * reseed from the cursor on the next wheel event. */
@@ -713,6 +724,8 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
     [clearReleaseTimer, readMaxScroll, startAnimationLoop, stopKinetic, updatePosition],
   )
 
+  const getScrollFloat = useCallback(() => scrollFloatRef.current, [])
+
   return {
     scrollOffset,
     scrollFloat,
@@ -721,6 +734,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
     isScrolling,
     setScrollOffset,
     setScrollFloat,
+    getScrollFloat,
     nudgeScrollFloat,
     reset,
     flashScrollbar,

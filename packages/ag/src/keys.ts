@@ -301,6 +301,29 @@ export function keyToAnsi(key: string): string {
     return `\x1b[1;${mod}${ARROW_SUFFIX[mainKey]}`
   }
 
+  // Modified ~-terminated nav keys (PageUp/PageDown/Insert/Delete) ->
+  // xterm-style CSI number;modifier ~ sequences. Without this, the bare
+  // "\x1b[5~" / "\x1b[6~" sequences from KEY_MAP carry no Shift modifier
+  // and parseKeypress decodes them as `pageUp:true, shift:false` —
+  // breaking app bindings like silvercode's Shift+PageUp transcript
+  // scroll, which only fires when `key.shift` is true.
+  // Bead: @km/silvery/keyToAnsi-shift-pageup-pagedown-encoding.
+  const TILDE_KEY_NUMBER: Record<string, number> = {
+    PageUp: 5,
+    PageDown: 6,
+    Insert: 2,
+    Delete: 3,
+  }
+  if (modifiers.length > 0 && mainKey in TILDE_KEY_NUMBER) {
+    let mod = 1
+    if (modifiers.includes("Shift")) mod += 1
+    if (modifiers.includes("Alt") || modifiers.includes("Meta")) mod += 2
+    if (modifiers.includes("Control")) mod += 4
+    if (modifiers.includes("Super")) mod += 8
+    if (modifiers.includes("Hyper")) mod += 16
+    return `\x1b[${TILDE_KEY_NUMBER[mainKey]};${mod}~`
+  }
+
   // Look up base key in map
   const base = KEY_MAP[mainKey]
   if (base !== undefined && base !== null) return base

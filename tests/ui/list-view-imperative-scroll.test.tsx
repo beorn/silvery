@@ -132,6 +132,33 @@ describe("ListView imperative scroll API", () => {
     expect(stripAnsi(app.text)).toContain("Item 49")
   })
 
+  test("burst scrollBy(-1) calls without re-render compose — each call sees its own previous write", () => {
+    // Regression for @km/silvercode/transcript-scroll-broken: under
+    // `follow="end"`, App-level Shift+Up bursts dispatch many scrollBy(-1)
+    // calls within a single React tick. If `scrollBy` seeds from the
+    // React-state `physics.scrollFloat`, every call in the burst reads the
+    // same stale value and the increments collapse to a single-row scroll.
+    // The fix routes the seed through `getScrollFloat()` (ref-current).
+    const items = makeItems(60)
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 40, rows: 10 })
+    const app = r(renderList(items, listRef, { follow: "end" }))
+    // follow="end" → tail visible initially.
+    expect(stripAnsi(app.text)).toContain("Item 59")
+
+    // 15 consecutive scrollBy(-1) inside ONE act — no React commit
+    // between them. Without the ref-current seed fix, only the first call
+    // would move the viewport.
+    act(() => {
+      for (let i = 0; i < 15; i++) listRef.current!.scrollBy(-1)
+    })
+    app.rerender(renderList(items, listRef, { follow: "end" }))
+    const after = stripAnsi(app.text)
+    // 15 rows up from the tail must hide the very last items.
+    expect(after).not.toContain("Item 59")
+    expect(after).not.toContain("Item 58")
+  })
+
   test('scrollToBottom re-engages follow="end" auto-follow on subsequent appends', () => {
     let items = makeItems(20)
     const listRef = React.createRef<ListViewHandle>()

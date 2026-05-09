@@ -1758,9 +1758,14 @@ function ListViewInner<T>(
         // Seed from the kinetic-scroll's known position when wheel-driven;
         // otherwise compute a cursor-aware seed mirroring the wheel-seed
         // logic so keyboard scroll picks up exactly where the user is
-        // looking.
+        // looking. Use `getScrollFloat()` (ref-current) instead of the
+        // React-state `scrollFloat` so a burst of imperative scrollBy
+        // calls (e.g. App-level Shift+Up dispatched 15 times before any
+        // re-render) sees its own previous writes — otherwise every call
+        // in the burst would seed from the same stale state and the
+        // increments would collapse to a single-row scroll.
         const seed = isWheelDrivenRef.current
-          ? physics.scrollFloat
+          ? physics.getScrollFloat()
           : (() => {
               const cursorIdx = activeCursorRef.current
               const lastIdx = itemCountRef.current - 1
