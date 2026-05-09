@@ -49,6 +49,50 @@ import type { FrameCell } from "@silvery/ag/text-frame"
 /**
  * App interface - unified return type from render()
  */
+/**
+ * Fluent chain of App actions. Each action method returns `ChainableApp`
+ * — a `PromiseLike<App>` that exposes the same action methods so calls
+ * can be composed without explicit `await` between every step.
+ *
+ * ```ts
+ * await app.keyDown("Super").hover(x, y).keyUp("Super")
+ * ```
+ *
+ * The returned chain `.then`-s into the App, so existing `await
+ * app.action(...)` calls continue to receive the App instance — the
+ * change is purely additive at the call site.
+ *
+ * Bead: @km/silvery/fluent-chain-actions.
+ */
+export interface ChainableApp extends PromiseLike<App> {
+  press(key: string): ChainableApp
+  keyDown(key: string): ChainableApp
+  keyUp(key: string): ChainableApp
+  pressSequence(...keys: string[]): ChainableApp
+  type(text: string): ChainableApp
+  click(
+    x: number,
+    y: number,
+    options?: { button?: number; shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
+  ): ChainableApp
+  doubleClick(
+    x: number,
+    y: number,
+    options?: { button?: number; shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
+  ): ChainableApp
+  hover(
+    x: number,
+    y: number,
+    options?: { shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
+  ): ChainableApp
+  wheel(
+    x: number,
+    y: number,
+    delta: number,
+    options?: { shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
+  ): ChainableApp
+}
+
 export interface App {
   // === Content/Document Perspective ===
 
@@ -85,10 +129,10 @@ export interface App {
   /** Get locator by CSS-style selector */
   locator(selector: string): AutoLocator
 
-  // === Actions (return this for chaining) ===
+  // === Actions (return ChainableApp for fluent composition) ===
 
   /** Send a key press (uses keyToAnsi internally) */
-  press(key: string): Promise<this>
+  press(key: string): ChainableApp
 
   /**
    * Send a key DOWN event without auto-release. Useful for held-modifier
@@ -102,7 +146,7 @@ export interface App {
    * For a single press+release event (the common case) use `press()`. Bead:
    * @km/silvery/keydown-keyup-test-primitives.
    */
-  keyDown(key: string): Promise<this>
+  keyDown(key: string): ChainableApp
 
   /**
    * Send a key UP event. Pairs with `keyDown(key)`. Drops the implicit
@@ -110,34 +154,34 @@ export interface App {
    * modifier tracker) so subsequent events run without the modifier
    * asserted. Bead: @km/silvery/keydown-keyup-test-primitives.
    */
-  keyUp(key: string): Promise<this>
+  keyUp(key: string): ChainableApp
 
   /** Send multiple key presses */
-  pressSequence(...keys: string[]): Promise<this>
+  pressSequence(...keys: string[]): ChainableApp
 
   /** Type text input */
-  type(text: string): Promise<this>
+  type(text: string): ChainableApp
 
   /** Simulate a mouse click at (x, y) terminal coordinates */
   click(
     x: number,
     y: number,
     options?: { button?: number; shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
-  ): Promise<this>
+  ): ChainableApp
 
   /** Simulate a double-click at (x, y) terminal coordinates */
   doubleClick(
     x: number,
     y: number,
     options?: { button?: number; shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
-  ): Promise<this>
+  ): ChainableApp
 
   /** Simulate a mouse move/hover at (x, y) terminal coordinates */
   hover(
     x: number,
     y: number,
     options?: { shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
-  ): Promise<this>
+  ): ChainableApp
 
   /** Simulate a mouse wheel event at (x, y) with delta (-1=up, +1=down) */
   wheel(
@@ -145,7 +189,7 @@ export interface App {
     y: number,
     delta: number,
     options?: { shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
-  ): Promise<this>
+  ): ChainableApp
 
   /** Resize the virtual terminal and re-render. Only available in test renderer. */
   resize(cols: number, rows: number): void
@@ -391,208 +435,225 @@ export function buildApp(options: AppOptions): App {
 
     // === Actions ===
 
-    async press(key: string): Promise<App> {
-      // Update keyboard modifier state so subsequent mouse events have accurate metaKey etc.
-      const hotkey = parseHotkey(key)
-      updateKeyboardModifiers(mouseState, {
-        super: hotkey.super,
-        hyper: hotkey.hyper,
-        eventType: "press",
-      })
-      const sequence = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
-      sendInput(sequence)
-      // Allow microtask to flush for test synchronization
-      await Promise.resolve()
-      return app
+    press(key: string): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          const hotkey = parseHotkey(key)
+          updateKeyboardModifiers(mouseState, {
+            super: hotkey.super,
+            hyper: hotkey.hyper,
+            eventType: "press",
+          })
+          const sequence = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
+          sendInput(sequence)
+          await Promise.resolve()
+          return app
+        })(),
+      )
     },
 
-    async keyDown(key: string): Promise<App> {
-      // Held-state press — same modifier-tracker update as press() but
-      // emits an explicit Kitty `:1` (press) event-type and does NOT
-      // auto-release. Pairs with keyUp(). Modifier-only keys must use
-      // kittyMode (legacy ANSI can't represent Super/Cmd alone).
-      // Bead: @km/silvery/keydown-keyup-test-primitives.
-      const hotkey = parseHotkey(key)
-      updateKeyboardModifiers(mouseState, {
-        super: hotkey.super || keyIsModifier(key, "Super"),
-        hyper: hotkey.hyper || keyIsModifier(key, "Hyper"),
-        eventType: "press",
-      })
-      const baseSeq = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
-      sendInput(injectKittyEventType(baseSeq, 1))
-      await Promise.resolve()
-      return app
+    keyDown(key: string): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          const hotkey = parseHotkey(key)
+          updateKeyboardModifiers(mouseState, {
+            super: hotkey.super || keyIsModifier(key, "Super"),
+            hyper: hotkey.hyper || keyIsModifier(key, "Hyper"),
+            eventType: "press",
+          })
+          const baseSeq = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
+          sendInput(injectKittyEventType(baseSeq, 1))
+          await Promise.resolve()
+          return app
+        })(),
+      )
     },
 
-    async keyUp(key: string): Promise<App> {
-      // Release counterpart to keyDown. Drops modifier state and emits
-      // an explicit Kitty `:3` (release) event-type so input-store
-      // modifier trackers (useModifierKeys) see the release event.
-      // Bead: @km/silvery/keydown-keyup-test-primitives.
-      const hotkey = parseHotkey(key)
-      updateKeyboardModifiers(mouseState, {
-        super: false,
-        hyper: false,
-        eventType: "release",
-      })
-      const baseSeq = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
-      sendInput(injectKittyEventType(baseSeq, 3))
-      void hotkey
-      await Promise.resolve()
-      return app
+    keyUp(key: string): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          const hotkey = parseHotkey(key)
+          updateKeyboardModifiers(mouseState, {
+            super: false,
+            hyper: false,
+            eventType: "release",
+          })
+          const baseSeq = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
+          sendInput(injectKittyEventType(baseSeq, 3))
+          void hotkey
+          await Promise.resolve()
+          return app
+        })(),
+      )
     },
 
-    async pressSequence(...keys: string[]): Promise<App> {
-      for (const key of keys) {
-        await app.press(key)
-      }
-      return app
+    pressSequence(...keys: string[]): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          for (const key of keys) {
+            await app.press(key)
+          }
+          return app
+        })(),
+      )
     },
 
-    async type(text: string): Promise<App> {
-      for (const char of text) {
-        sendInput(char)
-      }
-      await Promise.resolve()
-      return app
+    type(text: string): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          for (const char of text) {
+            sendInput(char)
+          }
+          await Promise.resolve()
+          return app
+        })(),
+      )
     },
 
-    async click(
+    click(
       x: number,
       y: number,
       options?: { button?: number; shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
-    ): Promise<App> {
-      const button = options?.button ?? 0
-      // cmd is an alias for setting keyboard-tracked Super (Cmd on macOS)
-      if (options?.cmd) mouseState.keyboardModifiers.super = true
-      const doClick = () => {
-        const parsed: ParsedMouse = {
-          button,
-          x,
-          y,
-          coordinateMode: "cell",
-          action: "down",
-          shift: options?.shift ?? false,
-          meta: options?.meta ?? false,
-          ctrl: options?.ctrl ?? false,
-        }
-        processMouseEvent(mouseState, parsed, getContainer())
-        const upParsed: ParsedMouse = { ...parsed, action: "up" }
-        processMouseEvent(mouseState, upParsed, getContainer())
-      }
-      if (actAndRender) {
-        actAndRender(doClick)
-      } else {
-        doClick()
-      }
-      // Reset keyboard modifier override after click
-      if (options?.cmd) mouseState.keyboardModifiers.super = false
-      await Promise.resolve()
-      return app
+    ): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          const button = options?.button ?? 0
+          // cmd is an alias for setting keyboard-tracked Super (Cmd on macOS)
+          if (options?.cmd) mouseState.keyboardModifiers.super = true
+          const doClick = () => {
+            const parsed: ParsedMouse = {
+              button,
+              x,
+              y,
+              coordinateMode: "cell",
+              action: "down",
+              shift: options?.shift ?? false,
+              meta: options?.meta ?? false,
+              ctrl: options?.ctrl ?? false,
+            }
+            processMouseEvent(mouseState, parsed, getContainer())
+            const upParsed: ParsedMouse = { ...parsed, action: "up" }
+            processMouseEvent(mouseState, upParsed, getContainer())
+          }
+          if (actAndRender) {
+            actAndRender(doClick)
+          } else {
+            doClick()
+          }
+          if (options?.cmd) mouseState.keyboardModifiers.super = false
+          await Promise.resolve()
+          return app
+        })(),
+      )
     },
 
-    async doubleClick(
+    doubleClick(
       x: number,
       y: number,
       options?: { button?: number; shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
-    ): Promise<App> {
-      const button = options?.button ?? 0
-      if (options?.cmd) mouseState.keyboardModifiers.super = true
-      const doDblClick = () => {
-        const baseParsed: ParsedMouse = {
-          button,
-          x,
-          y,
-          coordinateMode: "cell",
-          action: "down",
-          shift: options?.shift ?? false,
-          meta: options?.meta ?? false,
-          ctrl: options?.ctrl ?? false,
-        }
-        // First click
-        processMouseEvent(mouseState, baseParsed, getContainer())
-        processMouseEvent(mouseState, { ...baseParsed, action: "up" }, getContainer())
-        // Second click (triggers double-click detection)
-        processMouseEvent(mouseState, baseParsed, getContainer())
-        processMouseEvent(mouseState, { ...baseParsed, action: "up" }, getContainer())
-      }
-      if (actAndRender) {
-        actAndRender(doDblClick)
-      } else {
-        doDblClick()
-      }
-      if (options?.cmd) mouseState.keyboardModifiers.super = false
-      await Promise.resolve()
-      return app
+    ): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          const button = options?.button ?? 0
+          if (options?.cmd) mouseState.keyboardModifiers.super = true
+          const doDblClick = () => {
+            const baseParsed: ParsedMouse = {
+              button,
+              x,
+              y,
+              coordinateMode: "cell",
+              action: "down",
+              shift: options?.shift ?? false,
+              meta: options?.meta ?? false,
+              ctrl: options?.ctrl ?? false,
+            }
+            processMouseEvent(mouseState, baseParsed, getContainer())
+            processMouseEvent(mouseState, { ...baseParsed, action: "up" }, getContainer())
+            processMouseEvent(mouseState, baseParsed, getContainer())
+            processMouseEvent(mouseState, { ...baseParsed, action: "up" }, getContainer())
+          }
+          if (actAndRender) {
+            actAndRender(doDblClick)
+          } else {
+            doDblClick()
+          }
+          if (options?.cmd) mouseState.keyboardModifiers.super = false
+          await Promise.resolve()
+          return app
+        })(),
+      )
     },
 
-    async hover(
+    hover(
       x: number,
       y: number,
       options?: { shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
-    ): Promise<App> {
-      // cmd is an alias for setting keyboard-tracked Super (Cmd on macOS)
-      // for the duration of the hover — same hack as click/doubleClick. Lets
-      // tests assert Cmd-hover behaviour (e.g. silvercode tool-call image
-      // popovers) without writing Kitty CSI u modifier-press bytes through
-      // app.stdin. See bead @km/silvery/hover-wheel-modifier-options-parity.
-      if (options?.cmd) mouseState.keyboardModifiers.super = true
-      const doHover = () => {
-        const parsed: ParsedMouse = {
-          button: 0,
-          x,
-          y,
-          coordinateMode: "cell",
-          action: "move",
-          shift: options?.shift ?? false,
-          meta: options?.meta ?? false,
-          ctrl: options?.ctrl ?? false,
-        }
-        processMouseEvent(mouseState, parsed, getContainer())
-      }
-      if (actAndRender) {
-        actAndRender(doHover)
-      } else {
-        doHover()
-      }
-      if (options?.cmd) mouseState.keyboardModifiers.super = false
-      await Promise.resolve()
-      return app
+    ): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          // cmd is an alias for setting keyboard-tracked Super (Cmd on macOS)
+          // for the duration of the hover — same hack as click/doubleClick.
+          // Bead: @km/silvery/hover-wheel-modifier-options-parity.
+          if (options?.cmd) mouseState.keyboardModifiers.super = true
+          const doHover = () => {
+            const parsed: ParsedMouse = {
+              button: 0,
+              x,
+              y,
+              coordinateMode: "cell",
+              action: "move",
+              shift: options?.shift ?? false,
+              meta: options?.meta ?? false,
+              ctrl: options?.ctrl ?? false,
+            }
+            processMouseEvent(mouseState, parsed, getContainer())
+          }
+          if (actAndRender) {
+            actAndRender(doHover)
+          } else {
+            doHover()
+          }
+          if (options?.cmd) mouseState.keyboardModifiers.super = false
+          await Promise.resolve()
+          return app
+        })(),
+      )
     },
 
-    async wheel(
+    wheel(
       x: number,
       y: number,
       delta: number,
       options?: { shift?: boolean; meta?: boolean; ctrl?: boolean; cmd?: boolean },
-    ): Promise<App> {
-      // Same modifier-options handling as click/hover — cmd flips
-      // keyboardModifiers.super for the duration of the wheel event so
-      // Cmd-wheel scroll handlers see the modifier as held. Bead:
-      // @km/silvery/hover-wheel-modifier-options-parity.
-      if (options?.cmd) mouseState.keyboardModifiers.super = true
-      const doWheel = () => {
-        const parsed: ParsedMouse = {
-          button: 0,
-          x,
-          y,
-          coordinateMode: "cell",
-          action: "wheel",
-          delta,
-          shift: options?.shift ?? false,
-          meta: options?.meta ?? false,
-          ctrl: options?.ctrl ?? false,
-        }
-        processMouseEvent(mouseState, parsed, getContainer())
-      }
-      if (actAndRender) {
-        actAndRender(doWheel)
-      } else {
-        doWheel()
-      }
-      if (options?.cmd) mouseState.keyboardModifiers.super = false
-      await Promise.resolve()
-      return app
+    ): ChainableApp {
+      return makeChain(
+        (async (): Promise<App> => {
+          // Bead: @km/silvery/hover-wheel-modifier-options-parity.
+          if (options?.cmd) mouseState.keyboardModifiers.super = true
+          const doWheel = () => {
+            const parsed: ParsedMouse = {
+              button: 0,
+              x,
+              y,
+              coordinateMode: "cell",
+              action: "wheel",
+              delta,
+              shift: options?.shift ?? false,
+              meta: options?.meta ?? false,
+              ctrl: options?.ctrl ?? false,
+            }
+            processMouseEvent(mouseState, parsed, getContainer())
+          }
+          if (actAndRender) {
+            actAndRender(doWheel)
+          } else {
+            doWheel()
+          }
+          if (options?.cmd) mouseState.keyboardModifiers.super = false
+          await Promise.resolve()
+          return app
+        })(),
+      )
     },
 
     resize(cols: number, rows: number): void {
@@ -758,6 +819,34 @@ export function buildApp(options: AppOptions): App {
   }
 
   return app
+}
+
+/**
+ * Wrap a `Promise<App>` in a `ChainableApp` — a thenable that exposes
+ * the action methods so consumers can compose without explicit `await`
+ * between every step:
+ *
+ *   await app.keyDown("Super").hover(x, y).keyUp("Super")
+ *
+ * Each chained method returns a new `ChainableApp` whose backing promise
+ * `.then`s into the previous step + the new action. The terminal `await`
+ * resolves the entire chain to the underlying `App`.
+ *
+ * Bead: @km/silvery/fluent-chain-actions.
+ */
+function makeChain(p: Promise<App>): ChainableApp {
+  return {
+    press: (key) => makeChain(p.then((a) => a.press(key))),
+    keyDown: (key) => makeChain(p.then((a) => a.keyDown(key))),
+    keyUp: (key) => makeChain(p.then((a) => a.keyUp(key))),
+    pressSequence: (...keys) => makeChain(p.then((a) => a.pressSequence(...keys))),
+    type: (text) => makeChain(p.then((a) => a.type(text))),
+    click: (x, y, options) => makeChain(p.then((a) => a.click(x, y, options))),
+    doubleClick: (x, y, options) => makeChain(p.then((a) => a.doubleClick(x, y, options))),
+    hover: (x, y, options) => makeChain(p.then((a) => a.hover(x, y, options))),
+    wheel: (x, y, delta, options) => makeChain(p.then((a) => a.wheel(x, y, delta, options))),
+    then: (onFulfilled, onRejected) => p.then(onFulfilled, onRejected),
+  }
 }
 
 /**

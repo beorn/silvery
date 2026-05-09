@@ -42,8 +42,13 @@
 export interface CommandableApp {
   /** Full rendered text (no ANSI codes) — used by getState() for AI introspection */
   readonly text: string
-  /** Send a key press — used by withKeybindings to intercept and route to commands */
-  press(key: string): Promise<unknown>
+  /**
+   * Send a key press — used by withKeybindings to intercept and route to
+   * commands. Returns a `PromiseLike` (covers both `Promise<unknown>` and
+   * `ChainableApp` from @silvery/ag-term/app post-fluent-chain). Bead:
+   * @km/silvery/fluent-chain-actions.
+   */
+  press(key: string): PromiseLike<unknown>
 }
 
 /**
