@@ -107,7 +107,7 @@
     "@silvery/color": "0.21.0",
     "@silvery/commander": "0.21.0",
     "css-select": "^7.0.0",
-    "flexily": "0.7.0",
+    "flexily": "0.7.1",
     "css-what": "^8.0.0",
     "loggily": "^0.8.0",
     "react-reconciler": "^0.33.0",

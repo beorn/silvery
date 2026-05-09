@@ -379,7 +379,7 @@
     "@silvery/signals": "0.21.0",
     "@silvery/test": "0.21.0",
     "@silvery/theme": "0.21.0",
-    "flexily": "0.7.0"
+    "flexily": "0.7.1"
   },
   "tsdown": {
     "clean": true,
