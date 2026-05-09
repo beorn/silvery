@@ -420,6 +420,22 @@ export interface AppRunOptions {
    */
   selection?: boolean
   /**
+   * Auto-copy selection to clipboard on mouse-up.
+   *
+   * When `selection` is active, the runtime fires OSC 52 with the
+   * finalized selection text on every drag-finish and on double / triple
+   * click. Inside tmux that writes to tmux's own paste buffer (use
+   * `set -g set-clipboard on` to forward to the host clipboard); over
+   * SSH the host terminal consumes the same OSC 52 directly.
+   *
+   * Set to `false` to suppress the auto-copy — selection still
+   * highlights and copy-mode `y` still copies on demand. Useful for
+   * apps that prefer explicit copy gestures only.
+   *
+   * Default: true (when selection is enabled).
+   */
+  copyOnSelect?: boolean
+  /**
    * Terminal capabilities for width measurement and output suppression.
    * When provided, configures the render pipeline to use these caps
    * (scoped width measurer + output phase). Typically from term.caps.
@@ -704,6 +720,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     widthDetection: widthDetectionOption,
     focusReporting: focusReportingOption = false,
     selection: selectionOption,
+    copyOnSelect: copyOnSelectOption,
     caps: capsOptionRaw,
     profile: profileOption,
     guardOutput: guardOutputOption,
@@ -1421,6 +1438,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // made every consumer set selection:true manually.) Callers that really
   // want mouse-without-selection pass `selection:false`.
   const selectionEnabled = selectionOption ?? mouseTrackingEnabled
+  // copyOnSelect inherits "auto-copy on selection finish" from the
+  // documented default (true when selection is enabled). Setting this
+  // to false keeps selection highlighting + copy-mode yank but
+  // suppresses the OSC 52 emission on drag-finish / double / triple
+  // click. Pairs with the contract test in
+  // `tests/contracts/run-defaults.contract.test.tsx`.
+  const copyOnSelectEnabled = (copyOnSelectOption ?? true) && selectionEnabled
   let selectionState = createTerminalSelectionState()
 
   // --- Selection drag-vs-click state machine ---
@@ -1729,7 +1753,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             /* terminal may be gone */
           }
         }
-
       } else {
         try {
           stdout.write(sequences)
@@ -2948,8 +2971,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             activeForceBufferSelection = false
             notifySelectionListeners()
 
-            // Copy selected text via OSC 52
-            if (next.range && currentBuffer) {
+            // Copy selected text via OSC 52 — gated on copyOnSelect.
+            if (copyOnSelectEnabled && next.range && currentBuffer) {
               const text = extractText(currentBuffer._buffer, next.range, { scope: next.scope })
               if (text.length > 0) {
                 const base64 = globalThis.Buffer.from(text).toString("base64")
@@ -3082,8 +3105,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         const [finished] = terminalSelectionUpdate({ type: "finish" }, next)
         selectionState = finished
         notifySelectionListeners()
-        // Copy via OSC 52, mirroring the drag-finish branch above.
-        if (finished.range) {
+        // Copy via OSC 52, mirroring the drag-finish branch above —
+        // gated on copyOnSelect.
+        if (copyOnSelectEnabled && finished.range) {
           const text = extractText(currentBuffer._buffer, finished.range, {
             scope: finished.scope,
           })
@@ -3748,7 +3772,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           stdin.removeAllListeners("data")
           stdin.resume()
           // Let the event loop tick to deliver kernel-buffered bytes
-          await new Promise((resolve) => setTimeout(resolve, panicExitRequested ? PANIC_STDIN_DRAIN_MS : 15))
+          await new Promise((resolve) =>
+            setTimeout(resolve, panicExitRequested ? PANIC_STDIN_DRAIN_MS : 15),
+          )
           // Drain whatever arrived
           while (stdin.read() !== null) {
             /* discard late arrivals */

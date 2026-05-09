@@ -103,6 +103,63 @@ describe("contract: RunOptions.selection", () => {
 })
 
 // ============================================================================
+// copyOnSelect — auto-copy on mouse-up gates OSC 52 emission
+// ============================================================================
+//
+// Docstring (RunOptions.copyOnSelect): "When `selection` is active, the
+// runtime emits OSC 52 with the finalized selection text on every drag-finish
+// and on double / triple click. [...] Set to `false` to suppress auto-copy
+// — selection still highlights and copy-mode `y` still copies on demand.
+// [...] Default: true (when selection is enabled)."
+//
+// The contract has two halves: the default-on path (drag → clipboard write)
+// is already covered by the `selection` contract above. These tests pin the
+// inverse — `copyOnSelect: false` suppresses OSC 52 even though selection is
+// active, while `selection: false` suppresses it for the (different) reason
+// that selection itself never starts.
+
+describe("contract: RunOptions.copyOnSelect", () => {
+  test("contract: copyOnSelect: false suppresses OSC 52 on drag-finish", async () => {
+    using term = createTermless({ cols: 40, rows: 5 })
+
+    // mouse + selection on (so highlighting still happens), but auto-copy
+    // is explicitly disabled. The contract: drag-finish must NOT emit
+    // OSC 52, even though the selection itself is non-empty.
+    const handle = await run(<SelectableContent />, term, {
+      mouse: true,
+      copyOnSelect: false,
+    })
+    await settle()
+    term.clipboard.clear()
+
+    await term.mouse.drag({ from: [0, 0], to: [10, 0] })
+    await settle(200)
+
+    expect(term.clipboard.last).toBeNull()
+    expect(term.clipboard.all).toHaveLength(0)
+
+    handle.unmount()
+  })
+
+  test("contract: copyOnSelect omitted defaults to true (drag emits OSC 52)", async () => {
+    using term = createTermless({ cols: 40, rows: 5 })
+
+    // copyOnSelect deliberately omitted — must behave as `true` per the
+    // documented default.
+    const handle = await run(<SelectableContent />, term, { mouse: true })
+    await settle()
+    term.clipboard.clear()
+
+    await term.mouse.drag({ from: [0, 0], to: [10, 0] })
+    await settle(200)
+
+    expect(term.clipboard.last).not.toBeNull()
+
+    handle.unmount()
+  })
+})
+
+// ============================================================================
 // Seed 2 — createTerminalProfile honors FORCE_COLOR
 // ============================================================================
 //

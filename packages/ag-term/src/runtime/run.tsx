@@ -120,6 +120,22 @@ export interface RunOptionsCommon {
    */
   selection?: boolean
   /**
+   * Auto-copy selection to clipboard on mouse-up.
+   *
+   * When `selection` is active, the runtime emits OSC 52 with the
+   * finalized selection text on every drag-finish and on double / triple
+   * click. Inside tmux that writes to tmux's own paste buffer (use
+   * `set -g set-clipboard on` to forward to the host clipboard); over
+   * SSH the host terminal consumes the same OSC 52 directly.
+   *
+   * Set to `false` to suppress auto-copy — selection still highlights
+   * and copy-mode `y` still copies on demand. Useful for apps that
+   * prefer explicit copy gestures only.
+   *
+   * Default: true (when selection is enabled).
+   */
+  copyOnSelect?: boolean
+  /**
    * Render mode:
    * - `"fullscreen"` — alt screen buffer (default)
    * - `"inline"` — scrollback-compatible, no alt screen

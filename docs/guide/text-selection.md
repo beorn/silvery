@@ -153,9 +153,24 @@ Both use the existing double-click detection (300ms window, 2-cell threshold) ex
 
 ### Copy Behavior
 
-By default, selection persists after mouseup — you must explicitly copy with `y` or your app's copy command. This avoids clipboard spam from accidental selections.
+By default, the runtime emits OSC 52 with the finalized selection text on every drag-finish and on double / triple click — equivalent to the "copy on select" behavior in iTerm, modern Terminal.app, Ghostty, and Claude Code's NO_FLICKER mode. The same OSC 52 path covers both contexts:
 
-For tmux-style auto-copy on mouseup, configure the `SelectionFeature` via `withDomEvents()` options (or use the legacy `useTerminalSelection({ copyOnSelect: true })` hook).
+- **Inside tmux** the sequence writes to tmux's own paste buffer. To forward to the host clipboard, set `set -g set-clipboard on` in your `.tmux.conf`.
+- **Over SSH (or directly in the host terminal)** the OSC 52 reaches the terminal emulator and writes to the system clipboard.
+
+The drag-vs-click threshold (a different cell than the mousedown anchor) prevents OSC 52 emissions on plain clicks — a single-character selection from a stray click never reaches the clipboard.
+
+To suppress auto-copy without losing selection highlighting, pass `copyOnSelect: false` to `run()` / `createApp()`:
+
+```tsx
+import { run } from "silvery/runtime"
+
+await run(<App />, { mouse: true, copyOnSelect: false })
+// ↳ selection still highlights, but mouse-up does not write the clipboard.
+//   Copy-mode `y` and `term.clipboard.copy()` still work on demand.
+```
+
+This is useful for apps that prefer explicit copy gestures only — for example, a viewer that uses selection ranges for in-app navigation without leaking text to the system clipboard.
 
 ## Shift+Drag Buffer Selection
 
