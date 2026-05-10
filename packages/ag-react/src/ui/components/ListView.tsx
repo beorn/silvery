@@ -37,9 +37,12 @@ import React, {
   useImperativeHandle,
   useLayoutEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from "react"
+import { effect as signalEffect } from "@silvery/signals"
+import { getLayoutSignals } from "@silvery/ag/layout-signals"
 import {
   averageMeasuredHeightForWidth,
   sumHeights,
@@ -52,7 +55,7 @@ import { useHover } from "../../hooks/useHover"
 import { Box, type BoxHandle } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { Scrollbar } from "./Scrollbar"
-import type { AgNode } from "@silvery/ag/types"
+import type { AgNode, Rect } from "@silvery/ag/types"
 import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { renderStringSync } from "../../render-string"
 import { createHeightModel, type HeightModel } from "./list-view/height-model"
@@ -80,6 +83,25 @@ import { createLogger } from "loggily"
 
 const wheelLog = createLogger("silvery:wheel")
 const listLog = createLogger("silvery:listview")
+
+/**
+ * Project a committed boxRect to the rounded `{w, h}` shape that ListView's
+ * downstream math consumes. Mirrors the prior `setOuterViewportSize` /
+ * `setViewportSize` `onLayout` callback bodies bit-for-bit so the
+ * useState→signals migration is layout-equivalent.
+ *
+ * Returns `null` for `null` input (Box not yet mounted / pre-commit) and
+ * for the all-zeros first-paint placeholder (preserves the prior
+ * "viewport not yet measured" sentinel that downstream `?? null` /
+ * `?? 0` fallbacks key off).
+ */
+function rectToSize(rect: Rect | null): { w: number; h: number } | null {
+  if (!rect) return null
+  const w = rect.width > 0 ? Math.round(rect.width) : 0
+  const h = rect.height > 0 ? Math.round(rect.height) : 0
+  if (w === 0 && h === 0) return null
+  return { w, h }
+}
 
 // =============================================================================
 // Types
@@ -1110,34 +1132,103 @@ function ListViewInner<T>(
   // Scroll container AgNode — captured after mount so useVirtualizer can
   // subscribe to layout-phase's scrollState signal. Until the Box mounts
   // (first render), this is null and useVirtualizer uses bootstrap mode.
+  //
+  // Outer Box AgNode — captured after mount so we can read its committed
+  // boxRect signal synchronously during render. The outer Box's rect drives
+  // `outerViewportHeight` in height-independent mode.
+  const outerBoxHandleRef = useRef<BoxHandle>(null)
   const boxHandleRef = useRef<BoxHandle>(null)
   const [containerNode, setContainerNode] = useState<AgNode | null>(null)
-  // Viewport width and height tracked via the inner Box's onLayout. Width is
-  // forwarded to `useVirtualizer({ viewportWidth })` so the measurement
-  // cache invalidates on pane resize. Height is used in height-independent
-  // mode to size the row budget against the actually-visible viewport.
-  const [outerViewportSize, setOuterViewportSize] = useState<{ w: number; h: number } | null>(null)
-  const [viewportSize, setViewportSize] = useState<{ w: number; h: number } | null>(null)
+  const [outerNode, setOuterNode] = useState<AgNode | null>(null)
   useLayoutEffect(() => {
     const node = boxHandleRef.current?.getNode() ?? null
     setContainerNode(node)
+    const outer = outerBoxHandleRef.current?.getNode() ?? null
+    setOuterNode(outer)
   }, [])
-  const handleOuterLayout = useCallback((rect: { width: number; height: number }) => {
-    const w = rect.width > 0 ? Math.round(rect.width) : 0
-    const h = rect.height > 0 ? Math.round(rect.height) : 0
-    setOuterViewportSize((prev) => {
-      if (prev && prev.w === w && prev.h === h) return prev
-      return { w, h }
+
+  // Subscribe to the COMMITTED boxRect signals on both Box nodes so the
+  // component re-renders at event-batch commit boundaries (not mid-batch).
+  // Within a single batch the committed signal is invariant across every
+  // convergence pass — so a render that BOTH reads the rect AND writes a
+  // layout-affecting prop based on it converges in one pass instead of the
+  // 3+ passes the prior `useState` + `onLayout` chain required.
+  //
+  // See bead `@km/silvery/listview-layout-signals-from-getlayoutsignals` and
+  // `@km/silvery/use-deferred-box-rect-and-post-commit-observers` for the
+  // committed-signal contract.
+  const [, forceRectUpdate] = useReducer((x: number) => x + 1, 0)
+  const prevOuterRectRef = useRef<Rect | null>(null)
+  const prevInnerRectRef = useRef<Rect | null>(null)
+  // Synchronous bootstrap: when the AgNode is captured, seed prevRectRef
+  // with the committed value so the first post-mount render sees the
+  // measurement that landed on the same batch as `setOuterNode` /
+  // `setContainerNode`. Without this, the first render reads `null` and the
+  // signalEffect below has to fire forceUpdate to advance to the real value
+  // — that's an extra commit, defeating the whole point of using committed
+  // signals (which are invariant within a batch).
+  if (outerNode && prevOuterRectRef.current === null) {
+    const seed = getLayoutSignals(outerNode).boxRectCommitted()
+    if (seed) prevOuterRectRef.current = seed
+  }
+  if (containerNode && prevInnerRectRef.current === null) {
+    const seed = getLayoutSignals(containerNode).boxRectCommitted()
+    if (seed) prevInnerRectRef.current = seed
+  }
+  useLayoutEffect(() => {
+    if (!outerNode) return
+    const signals = getLayoutSignals(outerNode)
+    return signalEffect(() => {
+      const next = signals.boxRectCommitted()
+      const prev = prevOuterRectRef.current
+      if (
+        prev?.x !== next?.x ||
+        prev?.y !== next?.y ||
+        prev?.width !== next?.width ||
+        prev?.height !== next?.height
+      ) {
+        prevOuterRectRef.current = next
+        forceRectUpdate()
+      }
     })
-  }, [])
-  const handleContainerLayout = useCallback((rect: { width: number; height: number }) => {
-    const w = rect.width > 0 ? Math.round(rect.width) : 0
-    const h = rect.height > 0 ? Math.round(rect.height) : 0
-    setViewportSize((prev) => {
-      if (prev && prev.w === w && prev.h === h) return prev
-      return { w, h }
+  }, [outerNode])
+  useLayoutEffect(() => {
+    if (!containerNode) return
+    const signals = getLayoutSignals(containerNode)
+    return signalEffect(() => {
+      const next = signals.boxRectCommitted()
+      const prev = prevInnerRectRef.current
+      if (
+        prev?.x !== next?.x ||
+        prev?.y !== next?.y ||
+        prev?.width !== next?.width ||
+        prev?.height !== next?.height
+      ) {
+        prevInnerRectRef.current = next
+        forceRectUpdate()
+      }
     })
-  }, [])
+  }, [containerNode])
+
+  // Synchronous read of the COMMITTED rect during render. Returns null
+  // when the Box hasn't mounted yet OR when its first commit boundary has
+  // not landed yet — downstream code falls back to `height` / sentinel
+  // values (mirrors the prior `outerViewportSize === null` branch).
+  //
+  // Memoized to keep object identity stable across renders that read the
+  // same width/height — downstream effects that include `viewportSize` /
+  // `outerViewportSize` in their deps array would otherwise re-fire on
+  // every parent render. The `prevOuterRectRef` / `prevInnerRectRef`
+  // current values are written from the signal-effect subscription above,
+  // so reading their width/height here advances the memo only when the
+  // committed rect actually changes.
+  const outerRect = prevOuterRectRef.current
+  const innerRect = prevInnerRectRef.current
+  const outerViewportSize = useMemo(
+    () => rectToSize(outerRect),
+    [outerRect?.width, outerRect?.height],
+  )
+  const viewportSize = useMemo(() => rectToSize(innerRect), [innerRect?.width, innerRect?.height])
   const outerViewportHeight = isHeightIndependent
     ? Math.max(1, outerViewportSize?.h ?? viewportSize?.h ?? 0)
     : Math.max(1, height ?? 1)
@@ -2461,11 +2552,11 @@ function ListViewInner<T>(
 
   return (
     <Box
+      ref={outerBoxHandleRef}
       position="relative"
       flexDirection="column"
       {...outerSizing}
       width={width}
-      onLayout={handleOuterLayout}
     >
       <Box
         ref={boxHandleRef}
@@ -2477,7 +2568,6 @@ function ListViewInner<T>(
         scrollOffset={renderScrollRow ?? undefined}
         overflowIndicator={overflowIndicator}
         onWheel={onWheel}
-        onLayout={handleContainerLayout}
       >
         {/* Leading placeholder for virtual height.
          *
