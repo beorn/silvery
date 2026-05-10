@@ -2401,27 +2401,36 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       "=== RUNTIME.RENDER (initial) ===\n",
     )
   }
-  paintFrame()
-  // Initial-render commit loop: drive the deferred-rect convergence to a
-  // fixed point before the first user event arrives. Each iteration:
+  // Settle the deferred-rect convergence BEFORE the first user-visible
+  // paintFrame. Each iteration:
   //   1. commitLayoutSnapshot promotes in-flight rects to committed.
   //   2. Reactive useBoxRect/useScrollRect/useScreenRect subscribers may
   //      forceUpdate.
   //   3. await drains microtasks so React processes those forceUpdates.
-  //   4. If pendingRerender, doRender + paintFrame, then loop.
+  //   4. If pendingRerender, doRender, then loop.
   //
   // Bounded by MAX_CONVERGENCE_PASSES — multi-layer-measurement trees
   // (e.g. MeasuredBox inside a flex container that also reads useBoxRect)
   // need one iteration per layer to settle. Steady state converges in 1.
   //
-  // The first paintFrame above already happened — this loop adds at most
-  // (depth of useBoxRect chains) extra paints, all converging on the
-  // settled layout. Per-event renders use a single settle (see
-  // processEventBatch / press) because in-batch idempotence already
-  // guarantees single-layer convergence; the initial render is the one
-  // place where multi-layer chains genuinely need a few iterations.
+  // Per-event renders use a single settle (see processEventBatch / press)
+  // because in-batch idempotence already guarantees single-layer
+  // convergence; the initial render is the one place where multi-layer
+  // chains genuinely need a few iterations.
   //
-  // See bead `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+  // **Why settle BEFORE the first paintFrame** (Phase 1b of the
+  // layout-feedback-regression-epic): the deferred-only useBoxRect
+  // contract returns 0 on first render and the measured rect on the next
+  // commit boundary. If paintFrame fires BEFORE the commit loop runs, the
+  // first user-visible frame paints with zero rects, then a second frame
+  // snaps to the settled layout — that's the visible "first-frame zero,
+  // second-frame snap" flicker (scrollbar-invisible-on-first-paint,
+  // codeblock-not-centered-then-reflow, AutoFit-snaps-to-fallback). The
+  // test renderer settles before publishing its frame; production must do
+  // the same so live behavior matches what unit tests assert.
+  //
+  // See bead `@km/silvery/runtime-settle-before-first-paint` and
+  // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
   let initCommitLoops = 0
   while (initCommitLoops < MAX_CONVERGENCE_PASSES) {
     renderer.commitLayout()
@@ -2435,9 +2444,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       isRendering = false
     }
     pendingRerender = false
-    paintFrame()
     initCommitLoops++
   }
+  paintFrame()
   if (_perfLog) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("node:fs").appendFileSync(
