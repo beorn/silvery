@@ -96,6 +96,8 @@ export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from "./
 // so tests can import it; ListView is rewired in Phase 2 (separate bead).
 export { createHeightModel } from "./ui/components/list-view/height-model"
 export type { HeightModel, HeightModelOptions } from "./ui/components/list-view/height-model"
+// Pure index-window helpers — extracted from ListView for unit-testability.
+export { computeIndexTrailingSpacer } from "./ui/components/list-view/index-window"
 export { SplitView } from "./ui/components"
 export type { SplitViewProps } from "./ui/components"
 export type { LayoutNode as SplitLayoutNode } from "@silvery/ag-term/pane-manager"

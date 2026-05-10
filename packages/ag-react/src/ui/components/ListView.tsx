@@ -56,6 +56,7 @@ import type { AgNode } from "@silvery/ag/types"
 import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { renderStringSync } from "../../render-string"
 import { createHeightModel, type HeightModel } from "./list-view/height-model"
+import { computeIndexTrailingSpacer } from "./list-view/index-window"
 import {
   resolveRowsAboveViewport,
   shouldApplyVisibleContentAnchoring,
@@ -1533,13 +1534,13 @@ function ListViewInner<T>(
   //   sumHeights(end, n)   = (totalRows - prefixSum(end) - (n-1)*gap)
   //                          + max(0, n-end-1)*gap
   //                        = (sum of heights[end..n)) + (n-end-1)*gap
-  const totalGapAccount = Math.max(0, activeItems.length - 1) * gap
   const indexLeadingSpacer = usingIndexWindow ? heightModel.rowOfIndex(indexWindowStart) : 0
+  // Trailing spacer math is delegated to a pure helper so the
+  // (totalRows - prefixSum - totalGapAccount + trailingInternalGaps) algebra
+  // is unit-testable. The helper also clamps to >= 0 — Yoga rejects negative
+  // height props, and tiny negatives from rounding can otherwise leak in.
   const indexTrailingSpacer = usingIndexWindow
-    ? heightModel.totalRows() -
-      heightModel.prefixSum(indexWindowEnd) -
-      totalGapAccount +
-      Math.max(0, activeItems.length - indexWindowEnd - 1) * gap
+    ? computeIndexTrailingSpacer(heightModel, indexWindowEnd, activeItems.length, gap)
     : 0
 
   // Effective values used by the render path. In "measured" mode (pixel),
