@@ -350,16 +350,44 @@ function sgrButtonByte(options?: TermlessMouseOptions): number {
  * `kittyKeyboard`, etc. — can pass a `Partial<TerminalCaps>` here.
  */
 export function createTermless(
-  dims: { cols: number; rows: number; caps?: Partial<TerminalCaps> } = {
+  dims: { cols: number; rows: number; caps?: Partial<TerminalCaps>; backend?: "xterm" | "ghostty" | "ghostty-native" } = {
     cols: 80,
     rows: 24,
   },
 ): TermlessTerm {
-  // Lazy import — only loads xterm.js when createTermless is called
-  const { createXtermBackend } = require("@termless/xtermjs") as {
-    createXtermBackend: () => import("@silvery/ag-term").TermEmulatorBackend
+  // Backend selection (env-overridable):
+  //   xterm           — xterm.js (default; fast, well-tested)
+  //   ghostty         — Ghostty WASM (closest to real Ghostty.app rendering)
+  //   ghostty-native  — Ghostty via Zig native binding (truest fidelity)
+  //
+  // TERMLESS_BACKEND env var globally overrides; per-call `backend` arg
+  // overrides the env. `initGhostty()` MUST have been awaited before any
+  // ghostty-backed `createTermless` call (preferred from a vitest setup).
+  const envBackend = (typeof process !== "undefined" ? process.env.TERMLESS_BACKEND : undefined) as
+    | "xterm"
+    | "ghostty"
+    | "ghostty-native"
+    | undefined
+  const choice = dims.backend ?? envBackend ?? "xterm"
+
+  let backend: import("@silvery/ag-term").TermEmulatorBackend
+  if (choice === "ghostty") {
+    const { createGhosttyBackend } = require("@termless/ghostty") as {
+      createGhosttyBackend: () => import("@silvery/ag-term").TermEmulatorBackend
+    }
+    backend = createGhosttyBackend()
+  } else if (choice === "ghostty-native") {
+    const { createGhosttyNativeBackend } = require("@termless/ghostty-native") as {
+      createGhosttyNativeBackend: () => import("@silvery/ag-term").TermEmulatorBackend
+    }
+    backend = createGhosttyNativeBackend()
+  } else {
+    const { createXtermBackend } = require("@termless/xtermjs") as {
+      createXtermBackend: () => import("@silvery/ag-term").TermEmulatorBackend
+    }
+    backend = createXtermBackend()
   }
-  const term = createTerm(createXtermBackend(), dims)
+  const term = createTerm(backend, dims)
 
   // Track this instance for leak detection
   liveTermlessInstances.add(new WeakRef(term))
