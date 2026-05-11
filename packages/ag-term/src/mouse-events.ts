@@ -568,22 +568,6 @@ export function dispatchMouseEvent(event: SilveryMouseEvent): void {
 
   // Bubble phase: fire from target up to root
   const path = getAncestorPath(event.target)
-  // TEMP-INSTRUMENT — log the ancestor path for wheel events so we can
-  // diagnose where it goes when no onWheel handler is found. Bead:
-  // @km/silvery/useboxrect-refactor-incomplete-tracking.
-  if (event.type === "wheel") {
-    let handlerCount = 0
-    const pathSummary: string[] = []
-    for (const node of path) {
-      const has = (node.props as Record<string, unknown>)[handlerProp] !== undefined
-      if (has) handlerCount++
-      const id = (node.props as Record<string, unknown>).id ?? ""
-      pathSummary.push(`${node.type}#${id}${has ? "*" : ""}`)
-    }
-    mouseLog.info?.(
-      `dispatchWheel x=${event.x} y=${event.y} target=${event.target.type} pathLen=${path.length} handlers=${handlerCount} path=${pathSummary.slice(0, 12).join("/")}`,
-    )
-  }
   for (const node of path) {
     if (event.propagationStopped) break
 
