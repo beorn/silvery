@@ -113,6 +113,7 @@ import {
   checkClickCount,
   type SelectionBoundary,
 } from "../mouse-events"
+import { createClsMonitor } from "./cls-monitor"
 import type { ParseMouseOptions } from "../mouse"
 import { setArmed } from "@silvery/ag/interactive-signals"
 import {
@@ -1659,6 +1660,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Mouse event processor for DOM-level dispatch (with click-to-focus)
   const mouseEventState = createMouseEventProcessor({ focusManager })
 
+  // Layout-shift (CLS) monitor — runs post-paintFrame to detect
+  // unstable layout (rect changes without scroll/resize cause) and
+  // unreasonable sizes (degenerate / overflows-terminal). Gated by
+  // `DEBUG=silvery:cls` for per-shift logs; `warn` channel always
+  // active for size violations + reflow storms. Bead:
+  // @km/silvery/layout-shift-instrumentation-cls.
+  const clsMonitor = createClsMonitor()
+
   // Cleanup function - idempotent, can be called from exit() or finally
   const cleanup = () => {
     if (cleanedUp) return
@@ -2029,6 +2038,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             // place. Idempotent when nothing changed.
             // Bead: @km/silvercode/sticky-hover-residue.
             refreshHoverPath(mouseEventState, container.root)
+            // CLS instrumentation — post-commit layout-shift detection.
+            // Gated by `DEBUG=silvery:cls`; cheap when disabled (single
+            // method-armed check). The microtask path is post-paint
+            // commits driven by setState / async settlement (NOT
+            // scroll/resize) — so no scroll/resize suppression here.
+            // Bead: @km/silvery/layout-shift-instrumentation-cls.
+            const clsDims = target.getDims()
+            clsMonitor.onCommit(container.root, clsDims.cols, clsDims.rows, false)
           } finally {
             isRendering = false
           }
