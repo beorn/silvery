@@ -362,7 +362,7 @@ export async function run(
     // the Term path has the same profile-vs-caps conflict.
     if (termOptions) warnIfMixedRunOptions(termOptions)
     const emulator = (term as unknown as Record<string, unknown>)._emulator as
-      | { feed(data: string): void }
+      | { feed(data: string): void; backend?: EmulatorBackend }
       | undefined
 
     // Emulator-backed term: non-headless mode with stdout routing to emulator.
@@ -416,6 +416,22 @@ export async function run(
       const termMode = termOptions?.mode
       const altScreen = termMode === "inline" ? false : true
 
+      // Probe-mode parity with the real-PTY branch. In-process CSI 14t/18t
+      // probe via the underlying backend's feed/onResponse pair, so emulator-
+      // backed Terms (createTermless + co.) reach SGR-Pixels (1016) mode
+      // automatically when the backend answers the probes. Without this,
+      // every emulator-backed test silently exercises cell-mode SGR (1003+1006)
+      // even though real terminals (Ghostty, xterm.js in VSCode, etc.) answer
+      // 14t/18t and silvery's real-PTY path upgrades to 1016.
+      //
+      // Mirrors `resolveMouseOption` (run.tsx, real-PTY branch) but adapted
+      // for in-process feed+onResponse instead of stdin probe-owner. See
+      // @km/silvery/run-emulator-probe-mouse-mode-parity for the design.
+      const emulatorMouseOption = await resolveEmulatorMouseOption(
+        emulator,
+        termOptions?.mouse,
+      )
+
       const app = createApp(() => () => ({}))
       // Phase 8b: createApp.run() still wants raw streams. Use the internal
       // accessor — public Term interface no longer exposes them.
@@ -428,6 +444,7 @@ export async function run(
         guardOutput: false, // Don't monkeypatch process.stdout in test/emulator context
         cols: term.cols ?? 80,
         rows: term.rows ?? 24,
+        mouse: emulatorMouseOption,
       })
       return wrapHandle(handle)
     }
@@ -785,4 +802,108 @@ function warnIfMixedRunOptions(options: unknown): void {
 export function _resetRunOptionsWarningForTesting(): void {
   mixedRunOptionsWarned = false
   deprecatedCapsWarned = false
+}
+
+// ============================================================================
+// Emulator-branch mouse probe (parity with real-PTY resolveMouseOption)
+// ============================================================================
+
+/**
+ * Duck-type of the termless `TerminalBackend`'s probe surface. We don't import
+ * `@termless/core` here — `ag-term` doesn't depend on it. The two methods we
+ * need are the canonical interface every backend implements.
+ */
+interface EmulatorBackend {
+  feed(data: Uint8Array): void
+  onResponse?: ((data: Uint8Array) => void) | undefined
+}
+
+/**
+ * Emulator-branch counterpart to `resolveMouseOption`. The real-PTY branch
+ * runs the probe via a transient `InputOwner` bound to stdin/stdout; the
+ * emulator branch has no PTY, but the underlying backend exposes the same
+ * 14t/18t window-op responses through `feed()` + `onResponse`.
+ *
+ * Contract:
+ *
+ *  - `requested === false` → pass through (caller opt-out wins).
+ *  - `requested` is a `ParseMouseOptions` object → pass through (explicit
+ *    caller override beats auto-probe; same as real-PTY branch).
+ *  - `requested` is `true` or `undefined` → probe 14t+18t. On success,
+ *    return `{ coordinateMode: "pixel", cellSize }`. On failure (no backend,
+ *    no response, insane values), fall back to `true` (cell-mode SGR).
+ *
+ * Why this exists: closes the silent fidelity gap between emulator-backed
+ * tests (createTermless) and real terminals. Real terminals (Ghostty, xterm.js
+ * in VSCode, etc.) answer 14t/18t so silvery's real-PTY path upgrades to
+ * SGR-Pixels mode (1016). Termless backends now answer the same probes
+ * (companion bead `@km/all/.../window-op-probes-14t-18t`), but the emulator
+ * branch wasn't consuming the response — so every termless test exercised
+ * cell-mode SGR exclusively. See `@km/silvery/run-emulator-probe-mouse-mode-parity`.
+ */
+async function resolveEmulatorMouseOption(
+  emulator: { backend?: EmulatorBackend } | undefined,
+  requested: boolean | ParseMouseOptions | undefined,
+): Promise<boolean | ParseMouseOptions> {
+  // Explicit opt-out — caller intent wins, no probe.
+  if (requested === false) return false
+  // Caller passed an explicit ParseMouseOptions — pass through unchanged.
+  if (typeof requested === "object" && requested !== null) return requested
+
+  const cellSize = await probeEmulatorMouseCellSize(emulator)
+  return cellSize ? { coordinateMode: "pixel", cellSize } : true
+}
+
+async function probeEmulatorMouseCellSize(
+  emulator: { backend?: EmulatorBackend } | undefined,
+): Promise<{ width: number; height: number } | null> {
+  const backend = emulator?.backend
+  if (!backend || typeof backend.feed !== "function") return null
+
+  // Capture probe responses. The 14t intercept in the xterm backend fires
+  // synchronously inside feed() (see vendor termless xtermjs backend.ts);
+  // the 18t response is generated by xterm.js's parser during the writeSync
+  // call, also synchronous. The microtask drain below is defensive — any
+  // backend that defers onResponse to a microtask still works.
+  const responses: string[] = []
+  const priorOnResponse = backend.onResponse
+  backend.onResponse = (data: Uint8Array) => {
+    try {
+      responses.push(new TextDecoder().decode(data))
+    } catch {
+      // Defensive: a backend could in principle hand us non-UTF8 bytes.
+      // The two responses we want (CSI 4;h;w t / CSI 8;r;c t) are pure ASCII.
+    }
+    // Forward to whatever was wired before us — must not break existing
+    // routing (e.g., the term provider's input layer).
+    priorOnResponse?.(data)
+  }
+
+  try {
+    backend.feed(new TextEncoder().encode("\x1b[14t\x1b[18t"))
+    // Drain the microtask queue, then a macrotask, in case a backend defers.
+    await Promise.resolve()
+    await new Promise<void>((r) => setTimeout(r, 0))
+  } finally {
+    backend.onResponse = priorOnResponse
+  }
+
+  const combined = responses.join("")
+  const pixelsMatch = TEXT_AREA_PIXELS_RE.exec(combined)
+  if (!pixelsMatch) return null
+  const cellsMatch = TEXT_AREA_CELLS_RE.exec(combined)
+  if (!cellsMatch) return null
+
+  const pixelH = Number(pixelsMatch[1])
+  const pixelW = Number(pixelsMatch[2])
+  const rows = Number(cellsMatch[1])
+  const cols = Number(cellsMatch[2])
+
+  if (!isSanePositive(pixelW) || !isSanePositive(pixelH)) return null
+  if (!isSanePositive(cols) || !isSanePositive(rows)) return null
+
+  const width = pixelW / cols
+  const height = pixelH / rows
+  if (!isSaneCellSize(width, height)) return null
+  return { width, height }
 }

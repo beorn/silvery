@@ -412,27 +412,84 @@ export function createTermless(
   }
 
   // --- Mouse surface ---
-  // Synthetic SGR cell-mode mouse injection, delegated to `sendInput` on the
-  // underlying Term. Coordinates are 0-indexed (matches Silvery's internal
-  // convention); the SGR byte format is 1-indexed so we add 1 when writing.
+  // Synthetic SGR mouse injection, delegated to `sendInput` on the
+  // underlying Term. Test authors call `mouse.click(x, y)` etc. with CELL
+  // coordinates (0-indexed, matching Silvery's internal convention); the
+  // byte format is 1-indexed at the wire.
+  //
+  // Coordinate-mode dispatch (post @km/silvery/run-emulator-probe-mouse-mode-parity):
+  //
+  // silvery's emulator-branch now probes CSI 14t / 18t at boot and upgrades
+  // to SGR-Pixels (1016) when the backend answers. The xterm backend
+  // synthesizes a 14t response of `rows × CELL_H_PX × cols × CELL_W_PX`
+  // (CELL_W_PX = 8, CELL_H_PX = 17 — typical Iosevka/JetBrains Mono cell at
+  // 12pt 96 DPI). When silvery is in pixel mode the parser divides incoming
+  // SGR coordinates by `cellSize` to recover cell coords. So mouse.click
+  // must encode cell `(cx, cy)` as pixel `(cx * W, cy * H)` — the top-left
+  // of the cell — so the parser's `rawX / cellW` lands cleanly on cell `cx`.
+  //
+  // Mode is detected by scanning `term.out.getText()` for the SGR-Pixels
+  // enable sequence (`\x1b[?1016h`). The result is cached after the first
+  // mouse call once silvery has emitted its first frame.
   const sendInput = (data: string) => {
     ;(term as unknown as { sendInput: (s: string) => void }).sendInput(data)
+  }
+
+  // Match the xterm-js backend's synthesized 14t metrics. Kept in sync with
+  // vendor/termless/packages/xtermjs/src/backend.ts (CELL_W_PX / CELL_H_PX).
+  // Both backends ghostty / ghostty-native use the same defaults for their
+  // synthesized 14t. If those ever diverge, expose the metrics via
+  // `term.caps` and read them here instead.
+  const PIXEL_CELL_W = 8
+  const PIXEL_CELL_H = 17
+
+  const SGR_PIXELS_ENABLE = "\x1b[?1016h"
+  let cachedPixelMode: boolean | null = null
+  const out = (term as unknown as { out?: { getText(): string } }).out
+  function isPixelMode(): boolean {
+    if (cachedPixelMode !== null) return cachedPixelMode
+    if (!out) return false
+    const written = out.getText()
+    // Latches once observed — silvery enables the mode at boot and doesn't
+    // toggle it during a test session.
+    if (written.includes(SGR_PIXELS_ENABLE)) {
+      cachedPixelMode = true
+      return true
+    }
+    return false
+  }
+
+  function encodeCoord(cellX: number, cellY: number): { sgrX: number; sgrY: number } {
+    if (isPixelMode()) {
+      // Top-left of cell — silvery's parser computes cellX = rawX / cellW
+      // as a float; downstream hit-testing floors to land on a cell. Using
+      // (cellX * W, cellY * H) maps cleanly to exactly cell (cellX, cellY)
+      // without fractional ambiguity at the boundary.
+      const pixelX = cellX * PIXEL_CELL_W
+      const pixelY = cellY * PIXEL_CELL_H
+      // SGR coordinates are 1-indexed at the wire.
+      return { sgrX: pixelX + 1, sgrY: pixelY + 1 }
+    }
+    return { sgrX: cellX + 1, sgrY: cellY + 1 }
   }
 
   const mouse: TermlessMouse = {
     async down(x, y, options) {
       const btn = sgrButtonByte(options)
-      sendInput(`\x1b[<${btn};${x + 1};${y + 1}M`)
+      const { sgrX, sgrY } = encodeCoord(x, y)
+      sendInput(`\x1b[<${btn};${sgrX};${sgrY}M`)
       await Promise.resolve()
     },
     async up(x, y, options) {
       const btn = sgrButtonByte(options)
-      sendInput(`\x1b[<${btn};${x + 1};${y + 1}m`)
+      const { sgrX, sgrY } = encodeCoord(x, y)
+      sendInput(`\x1b[<${btn};${sgrX};${sgrY}m`)
       await Promise.resolve()
     },
     async move(x, y, options) {
       const btn = 32 + sgrButtonByte(options)
-      sendInput(`\x1b[<${btn};${x + 1};${y + 1}M`)
+      const { sgrX, sgrY } = encodeCoord(x, y)
+      sendInput(`\x1b[<${btn};${sgrX};${sgrY}M`)
       await Promise.resolve()
     },
     async click(x, y, options) {
@@ -460,8 +517,9 @@ export function createTermless(
       // SGR wheel: button 64 = up (delta < 0), 65 = down (delta > 0).
       const raw = delta < 0 ? 64 : 65
       const count = Math.abs(delta) || 1
+      const { sgrX, sgrY } = encodeCoord(x, y)
       for (let i = 0; i < count; i++) {
-        sendInput(`\x1b[<${raw};${x + 1};${y + 1}M`)
+        sendInput(`\x1b[<${raw};${sgrX};${sgrY}M`)
       }
       await Promise.resolve()
     },
