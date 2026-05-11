@@ -80,37 +80,39 @@ describe("contract: createRenderer respects MAX_CONVERGENCE_PASSES on first pain
 
 describe("contract: waitForLayoutStable drains additional commits", () => {
   test("contract: waitForLayoutStable resolves and exposes post-convergence text", async () => {
-    // Build a component that needs an extra commit beyond the initial render
-    // to reach steady state. A setTimeout in useEffect is the canonical
-    // way to schedule a deferred React commit that the renderer's auto-render
-    // path catches — but for this contract we use createRenderer's autoRender
-    // flag is OFF by default, so the deferred state is observable only after
-    // waitForLayoutStable cycles through the pending React work.
-    //
-    // We use a useState + microtask pattern: the initial render shows
-    // "pending"; after a microtask + setState, the next commit shows "ready".
+    // Build a component whose post-convergence state needs an extra event-
+    // loop turn beyond initial render. A useEffect callback that schedules
+    // a microtask + setState is the canonical async-commit shape — passive
+    // effects fire after initial render completes; the resulting setState
+    // schedules React work that is NOT drained by the initial-render
+    // bounded settle, but IS drained by waitForLayoutStable's microtask +
+    // flushSyncWork loop.
     function DeferredText(): React.ReactElement {
       const [phase, setPhase] = useState("pending")
       useEffect(() => {
-        // Schedule a state change via microtask — picked up by
-        // waitForLayoutStable's drain loop, not by initial render's bounded
-        // settle.
+        // Microtask + setState — the work pattern that test consumers
+        // typically wait on via `await new Promise(r => setTimeout(r, 0))`.
+        // waitForLayoutStable should drain this in a structured way.
         queueMicrotask(() => setPhase("ready"))
       }, [])
       return <Text>{phase}</Text>
     }
 
-    const render = createRenderer({ cols: 80, rows: 24, autoRender: true })
+    // autoRender NOT enabled — we want the user's `waitForLayoutStable`
+    // call to be the EXPLICIT primitive that drains the deferred state.
+    // If autoRender were on, the test wouldn't exercise the primitive.
+    const render = createRenderer({ cols: 80, rows: 24 })
     const app = render(<DeferredText />)
 
-    // Before waitForLayoutStable, the deferred commit hasn't run yet.
-    // Note: createRenderer doesn't auto-render on async commits without
-    // `autoRender: true`. The initial render captured "pending"; the
-    // microtask hasn't fired in this synchronous turn.
+    // Initial render captures "pending"; the useEffect callback may have
+    // fired (passive effects flush at act exit) but its queueMicrotask
+    // is still queued. Without explicit drain, the next assertion sees
+    // pre-microtask state.
     expect(app.text).toContain("pending")
 
     // After waitForLayoutStable, the microtask has drained, setState has
-    // committed, and the next render shows "ready".
+    // committed, the next render reflects the new tree, and the buffer
+    // shows "ready".
     await app.waitForLayoutStable()
     expect(app.text).toContain("ready")
 
@@ -175,10 +177,12 @@ describe("contract: waitForLayoutStable bounds infinite-feedback gracefully", ()
     await app.waitForLayoutStable({ timeoutMs: 30, maxPasses: 10 })
     const elapsed = performance.now() - start
 
-    // Resolves — no throw. Bounded by the smaller of timeoutMs / maxPasses.
-    // 50ms is a generous upper bound that comfortably absorbs CI variance
-    // while still proving we didn't run unbounded.
-    expect(elapsed).toBeLessThan(50)
+    // Resolves — no throw. The exact elapsed time is jittery in full-suite
+    // runs (worker contention can push a 30ms-budgeted wait to 60-80ms),
+    // so we assert a generous upper bound that proves the method DID
+    // return rather than running unbounded. The contract is "best effort
+    // within budget"; the budget is advisory, not load-bearing.
+    expect(elapsed).toBeLessThan(200)
     app.unmount()
   })
 })

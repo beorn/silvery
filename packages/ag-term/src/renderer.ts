@@ -1075,22 +1075,46 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     let lastFrame = instance.frames[instance.frames.length - 1] ?? ""
     for (let pass = 0; pass < maxPasses; pass++) {
       if (performance.now() - start >= timeoutMs) return
-      // Drain microtask queue so async React work (passive effects, signal
-      // effects scheduled via queueMicrotask) gets a chance to set state
-      // before we test for convergence.
-      await Promise.resolve()
       if (!instance.mounted) return
-      // Run a commit-boundary + flush cycle. settleAfterCommit promotes
-      // in-flight rect signals to committed and flushes any resulting
-      // React work. Returns the prior output unchanged when nothing
-      // committed — meaning the tree is stable.
+
+      // Drain any pending async React work in an act() boundary. Async
+      // microtasks (useEffect → queueMicrotask → setState) need to fire
+      // INSIDE act() so React's scheduler commits the resulting state
+      // updates synchronously rather than warning and deferring.
+      //
+      // `act(async () => { await Promise.resolve() })` is the canonical
+      // React-testing pattern: drains microtasks + flushes passive
+      // effects + commits scheduled state updates, all under the act
+      // boundary. Without the async act wrapper, setState calls inside
+      // microtasks are warned and dropped under IS_REACT_ACT_ENVIRONMENT.
+      // (IS_REACT_ACT_ENVIRONMENT is set globally by `@silvery/test`'s
+      // top-level await, so no withActEnvironment wrapper is required.)
       hadReactCommit = false
-      const next = settleAfterCommit(lastFrame)
-      if (next === lastFrame && !hadReactCommit) {
-        // Stable: no commit fired during the boundary, and the settle
-        // pass had nothing to render. Layout is at a fixed point.
-        // Also verify no node remains epoch-dirty — a render could have
-        // run without flipping hadReactCommit if no React state mutated.
+      instance.rendering = true
+      try {
+        await act(async () => {
+          await Promise.resolve()
+        })
+      } finally {
+        instance.rendering = false
+      }
+      const reactCommittedThisPass = hadReactCommit
+
+      // If React committed, re-render to materialize the new tree into
+      // the buffer. Then run the commit-boundary settle for any reactive
+      // useBoxRect / useScrollRect / useScreenRect cascades.
+      let next = lastFrame
+      if (reactCommittedThisPass) {
+        next = doRender()
+      }
+      // commitLayoutSnapshot + flush — promotes in-flight rect signals
+      // to committed and drains any resulting forceUpdate cascade. Same
+      // pattern sendInput / resizeFn use after their bounded loops.
+      next = settleAfterCommit(next)
+      if (!reactCommittedThisPass && next === lastFrame && !hadReactCommit) {
+        // Stable: nothing committed during microtask drain, nothing fired
+        // in the commit-boundary settle. Verify no node remains
+        // epoch-dirty as a final correctness check.
         try {
           const root = getContainerRoot(instance.container)
           if (root && !isAnyDirty(root.dirtyBits, root.dirtyEpoch)) return
@@ -1099,9 +1123,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         }
         return
       }
-      lastFrame = next
-      instance.frames.push(next)
-      onFrame?.(next, instance.prevBuffer!, getRootContentHeight())
+      if (next !== lastFrame) {
+        lastFrame = next
+        instance.frames.push(next)
+        onFrame?.(next, instance.prevBuffer!, getRootContentHeight())
+      }
     }
     // Budget exhausted — the app didn't converge in the cap. Resolve
     // anyway (per the contract — best effort within budget). The
