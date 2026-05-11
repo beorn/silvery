@@ -1194,13 +1194,21 @@ function ListViewInner<T>(
   // signalEffect below has to fire forceUpdate to advance to the real value
   // — that's an extra commit, defeating the whole point of using committed
   // signals (which are invariant within a batch).
+  // Reject degenerate seeds — `{width: 0, height: 0}` is the absence of
+  // information, not a valid measurement. If we cached it here, the
+  // signalEffect below would see `prev=null, next={0,0}` on render 2,
+  // accept the {0,0} as authoritative, and then on render 3 (when the real
+  // value arrives) the diff would never trigger because the in-flight
+  // comparison happens against the {0,0}-seeded prev. Bead:
+  // @km/silvery/useboxrect-refactor-incomplete-tracking (Kimi K2.6's
+  // observation in the 2026-05-11 /pro review).
   if (outerNode && prevOuterRectRef.current === null) {
     const seed = getLayoutSignals(outerNode).boxRectCommitted()
-    if (seed) prevOuterRectRef.current = seed
+    if (seed && seed.width > 0 && seed.height > 0) prevOuterRectRef.current = seed
   }
   if (containerNode && prevInnerRectRef.current === null) {
     const seed = getLayoutSignals(containerNode).boxRectCommitted()
-    if (seed) prevInnerRectRef.current = seed
+    if (seed && seed.width > 0 && seed.height > 0) prevInnerRectRef.current = seed
   }
   useLayoutEffect(() => {
     if (!outerNode) return
@@ -2438,7 +2446,31 @@ function ListViewInner<T>(
   // Scrollbar overlay is enabled in both pinned-height and height-independent
   // (flex) modes. In flex mode the track comes from the outer Box, while
   // the content viewport can be shorter by `viewportBottomInset`.
-  const showScrollbar = scrollbar && thumbHeight > 0 && thumbHeight < trackHeight
+  //
+  // First-frame resilience — deferred-only `useBoxRect` returns
+  // `{width: 0, height: 0}` until layout commits, leaving
+  // `outerViewportHeight = max(1, 0) = 1` → `trackHeight = 1` →
+  // `thumbHeight = max(1, ...) = 1` → the strict gate `thumbHeight <
+  // trackHeight` fails (1 < 1 = false). The scrollbar is hidden on first
+  // paint even though content clearly overflows. In real-Ghostty resume
+  // (single-batch event load = 2 passes = bug visible) this is the
+  // user-reported scroll cluster — see bead
+  // `@km/silvery/useboxrect-refactor-incomplete-tracking`.
+  //
+  // `viewportKnown` distinguishes "viewport not yet measured" from
+  // "viewport truly is 1 row tall." A real terminal is at least 2 rows;
+  // `trackHeight >= 2` is the safe lower bound for "measured." When the
+  // viewport is unknown AND content is overflowing, we render a placeholder
+  // scrollbar (full-length thumb on a 1-row track) — the next commit
+  // tightens the gate to the strict `thumbHeight < trackHeight` check
+  // when `trackHeight` is real.
+  //
+  // Gemini 3 Pro's concern about phantom scrollbars on legitimately tiny
+  // lists is mitigated by the `overflowing &&` conjunction — phantoms
+  // can't fire on lists where overflow is false.
+  const viewportKnown = trackHeight >= 2
+  const showScrollbar =
+    scrollbar && overflowing && (viewportKnown ? thumbHeight > 0 && thumbHeight < trackHeight : true)
   const lastListLogKey = useRef("")
   useEffect(() => {
     const key = [
