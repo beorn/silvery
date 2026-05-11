@@ -363,17 +363,22 @@ export const hostConfig = {
     if (type === "silvery-text" && hostContext.isInsideText) {
       return createVirtualTextNode(props as TextProps)
     }
-    // TEMP-INSTRUMENT — log when a silvery-box is created WITH onWheel
-    // so we can verify reconciler is preserving the prop. Bead:
-    // @km/silvery/useboxrect-refactor-incomplete-tracking.
-    if (type === "silvery-box" && (props as Record<string, unknown>).onWheel !== undefined) {
-      const keys = Object.keys(props as object).sort().join(",")
-      // Use process.stderr to bypass loggily entirely — we know this fires
-      // during initial create and should appear regardless of LOG_LEVEL.
-      try {
-        process.stderr.write(`[reconcile-instrument] createInstance silvery-box WITH onWheel — keys=${keys}\n`)
-      } catch {
-        // ignore
+    // TEMP-INSTRUMENT — log every silvery-box createInstance, with
+    // identifying flags for overflow=scroll boxes (where onWheel matters most).
+    // Bead: @km/silvery/useboxrect-refactor-incomplete-tracking.
+    if (type === "silvery-box") {
+      const p = props as Record<string, unknown>
+      const isScrollBox = p.overflow === "scroll"
+      const hasOnWheel = p.onWheel !== undefined
+      if (isScrollBox || hasOnWheel) {
+        const keys = Object.keys(props as object).sort().join(",")
+        try {
+          process.stderr.write(
+            `[reconcile-instrument] createInstance silvery-box overflow=${String(p.overflow)} onWheel=${hasOnWheel} keys=${keys}\n`,
+          )
+        } catch {
+          // ignore
+        }
       }
     }
     return createNode(type, props)
