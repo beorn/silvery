@@ -186,10 +186,27 @@ export function Scrollbar({
     [stopDrag],
   )
 
-  // Don't render when content fits or when track is too small. When the
-  // consumer passes `visible={false}`, keep the track's hit box mounted so
-  // hovering the scrollbar column can reveal the thumb.
-  if (scrollableRows <= 0 || thumbHeight <= 0 || thumbHeight >= trackHeight) {
+  // Don't render when content fits. When the consumer passes
+  // `visible={false}`, keep the track's hit box mounted so hovering the
+  // scrollbar column can reveal the thumb.
+  //
+  // First-frame resilience: when `trackHeight <= 1` (the parent's
+  // boxRectCommitted hasn't measured a real height yet) AND
+  // `scrollableRows > 0` (consumer asserts overflow), we still render a
+  // 1-cell placeholder thumb. The deferred-only useBoxRect contract
+  // means the parent's first paint reads height=0 → trackHeight=1, but
+  // the consumer's heightModel already knows there's overflow. The
+  // strict `thumbHeight >= trackHeight` bail used to hide the scrollbar
+  // for the entire first paint of every height-independent layout, even
+  // when overflow was obvious from item count. Bead:
+  // @km/silvery/useboxrect-refactor-incomplete-tracking — the original
+  // ListView-side `showScrollbar` gate addressed half this; the
+  // Scrollbar component's own bail was the second blocker.
+  if (scrollableRows <= 0 || thumbHeight <= 0) {
+    return null
+  }
+  const trackKnown = trackHeight >= 2
+  if (trackKnown && thumbHeight >= trackHeight) {
     return null
   }
   const showThumb = visible || isTrackHovered || isDragging
