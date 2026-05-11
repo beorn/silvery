@@ -68,6 +68,21 @@ const STORM_PATH_WINDOW_MS = 500
 const STORM_PATH_THRESHOLD = 3
 const STORM_COMMIT_THRESHOLD = 5
 
+/** Data-* attributes treated as identity tokens for CLS path resolution.
+ *  Any component carrying one of these in its props is named in the
+ *  layout-shift log even without an explicit `id` / `data-testid`. The
+ *  list is intentionally broad so anonymous app-level boxes (cards,
+ *  chat blocks, code containers, table grids) show up by role instead
+ *  of collapsing to a generic "box" entry. */
+const IDENTITY_DATA_KEYS = [
+  "data-view",
+  "data-block",
+  "data-component",
+  "data-card-id",
+  "data-pane",
+  "data-role",
+] as const
+
 interface ShiftRecord {
   path: string
   prev: Rect | null
@@ -126,28 +141,33 @@ export function createClsMonitor(): ClsMonitor {
 
   function nodePath(node: AgNode): string {
     // CSS-selector-style identity chain. Walk ancestors, keep ONLY
-    // nodes with an `id` / `data-testid` (rendered as `#name`); the
-    // unidentified intermediate `silvery-box` chains drop out. The
-    // leaf always renders even if untagged (as its bare type minus
-    // the `silvery-` prefix). Joins with ` > ` like a CSS descendant
-    // selector. Bead: @km/silvery/layout-shift-instrumentation-cls
-    // user feedback 2026-05-11: paths were "silvery-root/silvery-box/
-    // silvery-box#main/..." which is the full-chain — switch to
-    // "#main > #bottom-bar > ... > text#watcher-status".
+    // nodes carrying a recognized identity prop (rendered as `#name`
+    // or `[data-*=value]`); the unidentified intermediate
+    // `silvery-box` chains drop out. The leaf always renders even
+    // if untagged (as its bare type minus the `silvery-` prefix).
+    // Joins with ` > ` like a CSS descendant selector. Bead:
+    // @km/silvery/layout-shift-instrumentation-cls user feedback
+    // 2026-05-11: paths were "silvery-root/silvery-box/silvery-box
+    // #main/..." which is the full-chain — switch to "#main >
+    // #bottom-bar > ... > text#watcher-status".
+    //
+    // Identity hierarchy (first non-empty wins):
+    //   1. `id`                     → `#name`
+    //   2. `data-testid`            → `#name` (test identity)
+    //   3. `data-view`              → `[data-view=name]` (km-tui board roles)
+    //   4. `data-block` / `-component` / `-card-id` → `[data-...=name]`
+    //
+    // When none present, the node is treated as a transparent
+    // wrapper and skipped (unless it's the leaf).
     const parts: string[] = []
     let n: AgNode | null = node
     let depth = 0
     let isLeaf = true
     while (n && depth < 20) {
-      const props = n.props as { id?: string; "data-testid"?: string }
-      const key = props.id ?? props["data-testid"]
-      if (key) {
-        // Tagged ancestor — emit `#name`. Type prefix only when
-        // disambiguation matters (text inside a same-named box
-        // would be ambiguous as `#foo`; the leaf token shows
-        // type when it isn't a plain box).
+      const tag = identityTag(n)
+      if (tag !== null) {
         const typeTag = n.type === "silvery-box" ? "" : `${typeShort(n.type)}`
-        parts.push(`${typeTag}#${key}`)
+        parts.push(`${typeTag}${tag}`)
       } else if (isLeaf) {
         // Leaf without id — emit the bare type so the log still
         // names what shifted.
@@ -159,6 +179,27 @@ export function createClsMonitor(): ClsMonitor {
       depth++
     }
     return parts.reverse().join(" > ")
+  }
+
+  /** Resolve a node's identity tag for CLS paths. Returns null when no
+   *  recognised identity prop is set — the node is then treated as a
+   *  transparent wrapper. */
+  function identityTag(node: AgNode): string | null {
+    const props = node.props as Record<string, unknown>
+    const id = props.id
+    if (typeof id === "string" && id.length > 0) return `#${id}`
+    const testid = props["data-testid"]
+    if (typeof testid === "string" && testid.length > 0) return `#${testid}`
+    // Common data-* identity props from km/silvercode/silvery apps. Anything
+    // that names the component's role qualifies — we treat them all as
+    // equivalent identity sources so anonymous boxes wearing a `data-block`
+    // (or similar) get a real path token. The selector form ([data-x=y])
+    // matches CSS for the read-back-to-code experience.
+    for (const key of IDENTITY_DATA_KEYS) {
+      const v = props[key]
+      if (typeof v === "string" && v.length > 0) return `[${key}=${v}]`
+    }
+    return null
   }
 
   function typeShort(type: string): string {
@@ -220,7 +261,13 @@ export function createClsMonitor(): ClsMonitor {
     return false
   }
 
-  function walk(node: AgNode, cols: number, rows: number, suppressShift: boolean, commitShifts: ShiftRecord[]): void {
+  function walk(
+    node: AgNode,
+    cols: number,
+    rows: number,
+    suppressShift: boolean,
+    commitShifts: ShiftRecord[],
+  ): void {
     if (!node.screenRect) {
       for (const child of node.children) walk(child, cols, rows, suppressShift, commitShifts)
       return
@@ -233,7 +280,8 @@ export function createClsMonitor(): ClsMonitor {
         // First-time-measurement transitions don't count as shifts —
         // those are the deferred-only useBoxRect contract working as
         // designed (0,0 seed → real rect on next commit).
-        const isFirstMeasure = prev.width === 0 && prev.height === 0 && next.width > 0 && next.height > 0
+        const isFirstMeasure =
+          prev.width === 0 && prev.height === 0 && next.width > 0 && next.height > 0
         // Virtual inline text children always have {0,0,0,0} or
         // size-zero rects (they don't own layout — they inherit
         // position from their parent silvery-box). Their "shifts"
@@ -250,7 +298,12 @@ export function createClsMonitor(): ClsMonitor {
     for (const child of node.children) walk(child, cols, rows, suppressShift, commitShifts)
   }
 
-  function onCommit(root: AgNode | null, cols: number, rows: number, scrollOrResize: boolean): void {
+  function onCommit(
+    root: AgNode | null,
+    cols: number,
+    rows: number,
+    scrollOrResize: boolean,
+  ): void {
     // Cheap gate: opt-in via DEBUG=silvery:cls or SILVERY_INSTRUMENT=cls.
     if (!enabled) return
     if (!root) return
