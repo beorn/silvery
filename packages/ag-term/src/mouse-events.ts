@@ -759,6 +759,12 @@ export interface MouseEventProcessorState {
    *  component tree consumed the click. Reset to false at the start of each
    *  mouseup dispatch. */
   lastClickPrevented: boolean
+  /** Last observed pointer coordinates (terminal cells). Updated on every
+   *  mouse event so consumers can re-hit-test after layout changes — e.g.
+   *  scroll-wheel events that reposition content under a stationary cursor.
+   *  null means the pointer has left the terminal bounds (clearHoverPath
+   *  ran) or no mouse event has arrived yet. */
+  lastPointer: { x: number; y: number } | null
 }
 
 export function createMouseEventProcessor(
@@ -774,6 +780,7 @@ export function createMouseEventProcessor(
     focusManager: options?.focusManager,
     keyboardModifiers: { super: false, hyper: false, capsLock: false, numLock: false },
     lastClickPrevented: false,
+    lastPointer: null,
   }
 }
 
@@ -883,6 +890,66 @@ function clearHoverPath(state: MouseEventProcessorState, parsed: ParsedMouse): v
     dispatchMouseEvent(leaveEvent)
   }
   state.hoverPath = []
+  // Pointer has left the terminal bounds — refreshHoverPath becomes a
+  // no-op until a fresh in-bounds event arrives.
+  state.lastPointer = null
+}
+
+/**
+ * Re-resolve the hover path at the last known pointer coordinates and
+ * dispatch enter/leave for any nodes that changed. Use after a layout
+ * change that didn't come from a mouse event — most importantly:
+ *
+ *   - Wheel scrolls (content shifts under a stationary cursor)
+ *   - Async content arrival (transcript leaf appended, list re-flowed)
+ *   - Programmatic re-layout (resize, theme switch)
+ *
+ * Without this, hover bg / hover-armed popovers stick to whatever AgNode
+ * was under the cursor when the last mouse event fired, even after the
+ * tree under that coordinate changed. Symptoms: persistent hover bg on
+ * rows that have scrolled out from under the pointer; popover targets
+ * arming on rows the cursor isn't over anymore.
+ *
+ * Idempotent — when nothing changed, no events fire and `state.hoverPath`
+ * stays identity-equal. Safe to call every render commit.
+ *
+ * Bead: @km/silvercode/sticky-hover-residue.
+ */
+export function refreshHoverPath(state: MouseEventProcessorState, root: AgNode): void {
+  if (state.lastPointer === null) return
+  // Don't override an active capture (drag in progress) — the dragger
+  // owns the move/up routing until release.
+  if (state.mouseCaptureTarget) return
+  const { x, y } = state.lastPointer
+  const target = hitTest(root, x, y)
+  const newPath = target ? getAncestorPath(target) : []
+  const { entered, left } = computeEnterLeave(state.hoverPath, newPath)
+  if (entered.length === 0 && left.length === 0) return
+  // Synthesize a `move`-shaped ParsedMouse so the mouseenter/mouseleave
+  // events carry sane button/action metadata. Subscribers that key off
+  // event.type (mouseenter/leave) — the typical case — don't care about
+  // the underlying button value.
+  const synthetic: ParsedMouse = {
+    x,
+    y,
+    button: 0,
+    action: "move",
+    coordinateMode: "cell",
+    shift: false,
+    meta: false,
+    ctrl: false,
+  }
+  for (const node of left) {
+    setHovered(node, false)
+    const ev = createMouseEvent("mouseleave", x, y, node, synthetic, state.keyboardModifiers)
+    dispatchMouseEvent(ev)
+  }
+  for (const node of entered.reverse()) {
+    setHovered(node, true)
+    const ev = createMouseEvent("mouseenter", x, y, node, synthetic, state.keyboardModifiers)
+    dispatchMouseEvent(ev)
+  }
+  state.hoverPath = newPath
 }
 
 /**
@@ -901,6 +968,11 @@ export function processMouseEvent(
   root: AgNode,
 ): boolean {
   const { x, y, action } = parsed
+  // Track last pointer coords so refreshHoverPath() can re-hit-test after
+  // layout changes (e.g. wheel scrolls content under a stationary cursor;
+  // async state arrival shifts rows). Cleared in clearHoverPath when the
+  // pointer leaves the terminal bounds.
+  state.lastPointer = { x, y }
   const target = hitTest(root, x, y)
   if (action === "move") {
     const nodeType = target?.type ?? "null"

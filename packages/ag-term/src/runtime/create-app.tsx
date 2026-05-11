@@ -107,6 +107,7 @@ import {
   findSelectionBoundaries,
   selectionHitTest,
   hitTest,
+  refreshHoverPath,
   resolveUserSelect,
   createClickCountState,
   checkClickCount,
@@ -2018,6 +2019,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               pendingRerender = false
             }
             paintFrame()
+            // Re-resolve hover at the last known pointer coordinates so
+            // content that scrolled / shifted under a stationary cursor
+            // gets proper mouseenter/mouseleave dispatch. Without this,
+            // hover bg sticks to whatever AgNode was under the pointer
+            // when the last mouse event fired — symptom: wheel scrolls
+            // the list, the previously-hovered row scrolls away, but
+            // its hover-bg remains painted on the new row that took its
+            // place. Idempotent when nothing changed.
+            // Bead: @km/silvercode/sticky-hover-residue.
+            refreshHoverPath(mouseEventState, container.root)
           } finally {
             isRendering = false
           }
