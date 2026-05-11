@@ -580,8 +580,17 @@ export function dispatchMouseEvent(event: SilveryMouseEvent): void {
       const id = (node.props as Record<string, unknown>).id ?? ""
       pathSummary.push(`${node.type}#${id}${has ? "*" : ""}`)
     }
+    const targetText = (() => {
+      const c = (event.target.props as Record<string, unknown>).children
+      if (typeof c === "string") return c.slice(0, 80)
+      if (Array.isArray(c)) {
+        const first = c.find((x): x is string => typeof x === "string")
+        if (first) return first.slice(0, 80)
+      }
+      return event.target.textContent?.slice(0, 80) ?? ""
+    })()
     mouseLog.warn?.(
-      `dispatchWheel x=${event.x} y=${event.y} target=${event.target.type} pathLen=${path.length} handlers=${handlerCount}`,
+      `dispatchWheel x=${event.x} y=${event.y} target=${event.target.type} pathLen=${path.length} handlers=${handlerCount} targetText=${JSON.stringify(targetText)}`,
     )
     // Log the full path in chunks so it fits readability. Show top 6
     // (root-most) and bottom 6 (target-most) so we know what the wheel
