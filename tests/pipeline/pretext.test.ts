@@ -170,4 +170,93 @@ describe("optimalWrap", () => {
     expect(joined).toContain("foo")
     expect(joined).toContain("bar")
   })
+
+  // Helper: strip ANSI escapes for visual-content assertions.
+  const ANSI_RE = /\x1b\[[0-9;:?]*[A-Za-z]/g
+  const stripAnsi = (s: string) => s.replace(ANSI_RE, "")
+
+  describe("ANSI-aware line breaks (regression)", () => {
+    // Bug: optimalWrap's leading-whitespace skip loop bailed on the first
+    // ANSI token (w===0), leaving any post-ANSI whitespace as a line-start
+    // slug. The trailing-side skip was correctly symmetric (skipped both
+    // w===0 AND whitespace), but the leading-side didn't — so a wrap
+    // landing right before [ANSI-on][ ][word] left " word" at column 0.
+    // The fix makes the leading-side symmetric, AND preserves any
+    // ANSI tokens scanned past as a styling prefix so the line still
+    // renders with the correct color/attributes.
+    // See @km/silvery/pretext-leading-whitespace-leaks-after-ansi.
+    const ON = "\x1b[33m" // yellow fg
+    const OFF = "\x1b[39m" // reset fg
+
+    test("no leading-space slug when ANSI token + space precede line content", () => {
+      // The canonical buggy pattern: when the wrap candidate falls at the
+      // ANSI token's position, the next line begins with [ANSI][ ][word].
+      // Before the fix, the leading-side skip hit the ANSI (w===0), broke
+      // out, and emitted "[ANSI] word" — visible content starts with " ".
+      // After the fix: leading-side skips past both ANSI and whitespace,
+      // re-prepending the ANSI as a styling prefix. Visible content starts
+      // with "bar" at column 0; styling survives.
+      const text = `foo ${ON} bar`
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      const lines = optimalWrap(text, analysis, 4)
+      expect(lines.length).toBeGreaterThan(1)
+      const barLine = lines.find((l) => stripAnsi(l).includes("bar"))!
+      expect(barLine).toBeDefined()
+      // Visible content of the "bar" line starts at column 0, no slug.
+      expect(stripAnsi(barLine).startsWith(" ")).toBe(false)
+      expect(stripAnsi(barLine).startsWith("\t")).toBe(false)
+      expect(stripAnsi(barLine)).toBe("bar")
+      // Styling carried forward: the line still begins with the ANSI prefix.
+      expect(barLine.startsWith(ON)).toBe(true)
+    })
+
+    test("no leading-space slug for multi-ANSI [ON]X[OFF][ ][word] pattern", () => {
+      // Stress: two ANSI tokens (ON + OFF) followed by space at line-start.
+      // The leading-side must skip past BOTH tokens AND the trailing space.
+      const text = `foo ${ON}${OFF} bar`
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      const lines = optimalWrap(text, analysis, 4)
+      expect(lines.length).toBeGreaterThan(1)
+      const barLine = lines.find((l) => stripAnsi(l).includes("bar"))!
+      expect(barLine).toBeDefined()
+      expect(stripAnsi(barLine).startsWith(" ")).toBe(false)
+      expect(stripAnsi(barLine)).toBe("bar")
+    })
+
+    test("no leading whitespace across many widths for ANSI-laden text", () => {
+      // The fix makes the leading-side symmetric with the trailing-side
+      // (which already skipped both whitespace AND zero-width ANSI tokens).
+      // No emitted line should begin with visible whitespace, regardless of
+      // where the optimal-wrap break candidate lands.
+      const text = `alpha ${ON}beta${OFF} gamma ${ON} delta ${OFF} epsilon zeta`
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      for (const w of [5, 6, 7, 8, 10, 12, 14]) {
+        const lines = optimalWrap(text, analysis, w)
+        for (const line of lines) {
+          const visible = stripAnsi(line)
+          expect(
+            visible.startsWith(" ") || visible.startsWith("\t"),
+            `width=${w} produces leading whitespace: ${JSON.stringify(visible)}`,
+          ).toBe(false)
+        }
+      }
+    })
+
+    test("bead repro: sigil-styled tokens don't produce line-start slugs", () => {
+      // Variant of the bead's actual content. With the fix, no wrapped line
+      // begins with visible whitespace regardless of where the wrap lands.
+      const text = `bun km view ${ON}@agent${OFF} cursor j/k/Enter through ${ON}@agent/3${OFF} cards`
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      for (let w = 10; w <= 24; w++) {
+        const lines = optimalWrap(text, analysis, w)
+        for (const line of lines) {
+          const visible = stripAnsi(line)
+          expect(
+            visible.startsWith(" ") || visible.startsWith("\t"),
+            `width=${w} produces leading whitespace: ${JSON.stringify(visible)}`,
+          ).toBe(false)
+        }
+      }
+    })
+  })
 })

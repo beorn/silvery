@@ -458,6 +458,9 @@ export function optimalWrap(text: string, analysis: TextAnalysis, width: number 
   const { graphemes, widths } = analysis
   const lines: string[] = []
   let lineStart = 0
+  // ANSI tokens scanned past while skipping leading whitespace on the next
+  // line — carried forward so the styling re-establishes at column 0.
+  let pendingAnsiPrefix = ""
 
   for (const bp of breaks) {
     // Trim trailing whitespace (skip zero-width ANSI tokens)
@@ -475,13 +478,25 @@ export function optimalWrap(text: string, analysis: TextAnalysis, width: number 
       }
       break
     }
-    lines.push(graphemes.slice(lineStart, lineEnd).join(""))
+    lines.push(pendingAnsiPrefix + graphemes.slice(lineStart, lineEnd).join(""))
+    pendingAnsiPrefix = ""
 
-    // Skip leading whitespace on next line (skip ANSI tokens)
+    // Skip leading whitespace AND zero-width ANSI tokens at line start.
+    // Without skipping ANSI, a wrap landing after [ANSI-on][word][ANSI-off]
+    // would leave the post-ANSI space as a line-start slug. Symmetric with
+    // the trailing-side skip above. ANSI tokens scanned past are preserved
+    // as pendingAnsiPrefix so the next line's styling is re-established at
+    // column 0 (dropping them would lose color/attributes).
     lineStart = bp
     while (lineStart < graphemes.length) {
       const g = graphemes[lineStart]!
+      const w = widths[lineStart]!
       if (g === " " || g === "\t") {
+        lineStart++
+        continue
+      }
+      if (w === 0) {
+        pendingAnsiPrefix += g
         lineStart++
         continue
       }
@@ -491,7 +506,13 @@ export function optimalWrap(text: string, analysis: TextAnalysis, width: number 
 
   // Last line
   if (lineStart < graphemes.length) {
-    lines.push(graphemes.slice(lineStart).join(""))
+    lines.push(pendingAnsiPrefix + graphemes.slice(lineStart).join(""))
+  } else if (pendingAnsiPrefix !== "") {
+    // No content after the last break, but we have stashed ANSI tokens —
+    // append them to the last emitted line so styling state isn't lost.
+    if (lines.length > 0) {
+      lines[lines.length - 1] = lines[lines.length - 1]! + pendingAnsiPrefix
+    }
   }
 
   return lines
