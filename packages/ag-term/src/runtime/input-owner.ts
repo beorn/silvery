@@ -390,9 +390,21 @@ export function createInputOwner(
     if (isMouseSequence(raw)) {
       const mouse = parseMouseSequence(raw, options.mouse)
       if (mouse) {
+        // Action-specific debug — silvery:input-owner only logs the
+        // less-frequent wheel and click actions to avoid drowning move
+        // streams. Use `silvery:input-owner` namespace for live capture.
+        // Bead: @km/silvercode/trackpad-wheel-not-scrolling.
+        if (mouse.action === "wheel" || mouse.action === "down" || mouse.action === "up") {
+          log?.debug?.(
+            `parsed mouse: action=${mouse.action} button=${mouse.button} x=${mouse.x} y=${mouse.y} delta=${mouse.delta ?? 0} bytes=${JSON.stringify(raw)}`,
+          )
+        }
         fire(mouseHandlers, mouse)
         return
       }
+      // Mouse sequence detected but failed to parse — log raw bytes so
+      // we can spot terminal-specific formats the parser doesn't handle.
+      log?.warn?.(`mouse sequence failed to parse: ${JSON.stringify(raw)}`)
     }
     const [input, key] = parseKey(raw)
     fire(keyHandlers, { input, key })

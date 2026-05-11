@@ -59,6 +59,15 @@ export function createMouseEvent(
     mouseLog.debug?.(
       `createMouseEvent(${type}) metaKey=${metaKey} keyboardMods.super=${keyboardMods?.super}`,
     )
+  } else if (type === "wheel") {
+    const targetId = (target.props as Record<string, unknown>).id ?? ""
+    mouseLog.debug?.(
+      `createMouseEvent(wheel) x=${x} y=${y} delta=${parsed.delta ?? 0} target=${target.type}#${targetId}`,
+    )
+  } else if (type === "mouseup") {
+    mouseLog.debug?.(
+      `createMouseEvent(mouseup) x=${x} y=${y} button=${parsed.button}`,
+    )
   }
 
   return {
