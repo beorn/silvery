@@ -103,7 +103,7 @@
     "bench:compare": "cd benchmarks && bun run bench:compare"
   },
   "dependencies": {
-    "@chenglou/pretext": "^0.0.3",
+    "@chenglou/pretext": "^0.0.7",
     "@silvery/color": "0.21.0",
     "@silvery/commander": "0.21.0",
     "css-select": "^7.0.0",
