@@ -285,6 +285,26 @@ export interface RunHandle {
   readonly scope: import("@silvery/scope").Scope
   /** Wait until the app exits */
   waitUntilExit(): Promise<void>
+  /**
+   * Drain additional commit / layout cycles until layout reports stable
+   * (no pending React commit, no dirty layout nodes) OR a budget cap is
+   * reached (default 20 passes / 50ms wall clock).
+   *
+   * The default frame exposed by `run()` matches what production silvery
+   * commits on first paint — bounded by `MAX_CONVERGENCE_PASSES`. Tests
+   * asserting layout that needs more passes to settle call this method
+   * to explicitly wait for full convergence:
+   *
+   * ```ts
+   * const handle = await run(<App />, term)
+   * await handle.waitForLayoutStable()
+   * expect(term.screen).toContainText("Item 1")
+   * ```
+   *
+   * Resolves without throwing when the cap is reached. Bead:
+   * `@km/silvery/test-harness-convergence-cap-parity`.
+   */
+  waitForLayoutStable(opts?: { timeoutMs?: number; maxPasses?: number }): Promise<void>
   /** Exit fullscreen, restore terminal state, and print a copyable diagnostic to stderr */
   panic(reason: unknown, options?: PanicOptions): void
   /** Unmount and cleanup */
@@ -593,6 +613,7 @@ function wrapHandle(handle: {
   readonly buffer: import("../buffer").TerminalBuffer | null
   readonly scope: import("@silvery/scope").Scope
   waitUntilExit(): Promise<void>
+  waitForLayoutStable(opts?: { timeoutMs?: number; maxPasses?: number }): Promise<void>
   panic(reason: unknown, options?: PanicOptions): void
   unmount(): void
   [Symbol.dispose](): void
@@ -612,6 +633,8 @@ function wrapHandle(handle: {
       return handle.scope
     },
     waitUntilExit: () => handle.waitUntilExit(),
+    waitForLayoutStable: (opts?: { timeoutMs?: number; maxPasses?: number }) =>
+      handle.waitForLayoutStable(opts),
     panic: (reason: unknown, options?: PanicOptions) => handle.panic(reason, options),
     unmount: () => handle.unmount(),
     [Symbol.dispose]: () => handle[Symbol.dispose](),
