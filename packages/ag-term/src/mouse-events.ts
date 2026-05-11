@@ -580,7 +580,7 @@ export function dispatchMouseEvent(event: SilveryMouseEvent): void {
       const id = (node.props as Record<string, unknown>).id ?? ""
       pathSummary.push(`${node.type}#${id}${has ? "*" : ""}`)
     }
-    mouseLog.info?.(
+    mouseLog.warn?.(
       `dispatchWheel x=${event.x} y=${event.y} target=${event.target.type} pathLen=${path.length} handlers=${handlerCount}`,
     )
     // Log the full path in chunks so it fits readability. Show top 6
@@ -588,14 +588,14 @@ export function dispatchMouseEvent(event: SilveryMouseEvent): void {
     // hit-tested INTO and what the top of the tree looks like.
     const head = pathSummary.slice(0, 6).join("/")
     const tail = pathSummary.slice(-6).join("/")
-    mouseLog.info?.(`dispatchWheel path-head=${head}`)
-    mouseLog.info?.(`dispatchWheel path-tail=${tail}`)
+    mouseLog.warn?.(`dispatchWheel path-head=${head}`)
+    mouseLog.warn?.(`dispatchWheel path-tail=${tail}`)
     // Log every node's prop keys (just keys, not values) so we can see
     // which ones DO have onWheel and what other props they expose.
     for (let i = 0; i < Math.min(path.length, 15); i++) {
       const node = path[i]!
       const keys = Object.keys(node.props as object).sort().join(",")
-      mouseLog.info?.(`dispatchWheel path[${i}] type=${node.type} keys=${keys}`)
+      mouseLog.warn?.(`dispatchWheel path[${i}] type=${node.type} keys=${keys}`)
     }
   }
   for (const node of path) {
