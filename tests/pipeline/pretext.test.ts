@@ -334,4 +334,155 @@ describe("optimalWrap", () => {
       expect(offIdx).toBeLessThan(resetIdx)
     })
   })
+
+  describe("wrap-quality penalties (orphans, widows, hyphen compounds)", () => {
+    // Repro from @km/silvery/pretext-wrap-quality-orphans-and-widows.
+    // The DP minimizes squared raggedness, which is necessary but not
+    // sufficient. Single-word lines and breaks inside short hyphenated
+    // compounds are visually painful even when mathematically optimal
+    // under leftover². The penalties below tax these specific shapes.
+
+    test("does not orphan 'hover' on its own line (cmd-hover case)", () => {
+      // The bead repro: at card-style widths, the title wrapped to leave
+      // "hover" alone on L3. After the orphan penalty, the DP should
+      // prefer breaking before "(cmd-hover" so the compound stays intact.
+      const text = "Click on commands does nothing in live TUI (cmd-hover also no-op)"
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      // Sweep widths that produce visible orphans without the fix.
+      for (let w = 22; w <= 30; w++) {
+        const lines = optimalWrap(text, analysis, w)
+        for (let i = 0; i < lines.length - 1; i++) {
+          // Non-final lines should not be a single short word like "hover".
+          const stripped = stripAnsi(lines[i]!).trim()
+          expect(
+            stripped,
+            `width=${w} line ${i} orphaned "${stripped}" (full wrap: ${JSON.stringify(lines)})`,
+          ).not.toBe("hover")
+        }
+      }
+    })
+
+    test("does not split the cmd-hover compound across lines", () => {
+      // The hyphen penalty should keep `cmd-hover` intact: no non-final
+      // line should end with `cmd-` (i.e. the hyphen-suffix shape) for
+      // typical card widths. Combined with the orphan penalty above, this
+      // pins the user-facing requirement: visible wrap quality, not
+      // mathematical "optimum-by-leftover²".
+      const text = "Click on commands does nothing in live TUI (cmd-hover also no-op) #bug"
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      for (let w = 18; w <= 32; w++) {
+        const lines = optimalWrap(text, analysis, w)
+        for (let i = 0; i < lines.length - 1; i++) {
+          const stripped = stripAnsi(lines[i]!).trimEnd()
+          // The compound `cmd-hover` must not split: no line ending with
+          // `cmd-` (the hyphen-trailing shape from the bead repro).
+          expect(
+            stripped.endsWith("cmd-"),
+            `width=${w} line ${i} broke cmd-hover compound: "${stripped}" (full wrap: ${JSON.stringify(lines)})`,
+          ).toBe(false)
+        }
+      }
+    })
+
+    test("does not split the no-op compound across lines", () => {
+      // Repro variant at wider widths: without the hyphen penalty,
+      // `no-op` splits to `no-` + `op)`. With penalty, stays as `no-op)`.
+      const text = "Click on commands does nothing in live TUI (cmd-hover also no-op) #bug"
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      for (let w = 18; w <= 32; w++) {
+        const lines = optimalWrap(text, analysis, w)
+        for (let i = 0; i < lines.length - 1; i++) {
+          const stripped = stripAnsi(lines[i]!).trimEnd()
+          expect(
+            stripped.endsWith("no-"),
+            `width=${w} line ${i} broke no-op compound: "${stripped}" (full wrap: ${JSON.stringify(lines)})`,
+          ).toBe(false)
+        }
+      }
+    })
+
+    test("does not orphan 'document' (auto-scaffold em-dash case)", () => {
+      const text = "km init should NOT auto-scaffold @agent/0..9 — document as primer example instead"
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      for (let w = 22; w <= 32; w++) {
+        const lines = optimalWrap(text, analysis, w)
+        for (let i = 0; i < lines.length - 1; i++) {
+          const stripped = stripAnsi(lines[i]!).trim()
+          expect(
+            stripped,
+            `width=${w} line ${i} orphaned "${stripped}" (full wrap: ${JSON.stringify(lines)})`,
+          ).not.toBe("document")
+        }
+      }
+    })
+
+    test("no non-final line is a single short token (< 8 visible chars)", () => {
+      // Generalize: the orphan penalty should keep non-final lines from
+      // being just one stranded word for typical English titles. Last
+      // line is naturally short and exempt.
+      const text = "Click on commands does nothing in live TUI (cmd-hover also no-op)"
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      for (let w = 22; w <= 30; w++) {
+        const lines = optimalWrap(text, analysis, w)
+        for (let i = 0; i < lines.length - 1; i++) {
+          const stripped = stripAnsi(lines[i]!).trim()
+          const tokens = stripped.split(/\s+/).filter((t) => t.length > 0)
+          // Non-final 1-token line is fine if the token itself is long
+          // (URLs, long IDs) — but a short single token IS an orphan.
+          if (tokens.length === 1 && tokens[0]!.length < 8) {
+            throw new Error(
+              `width=${w} line ${i} stranded single short token "${stripped}" (full wrap: ${JSON.stringify(lines)})`,
+            )
+          }
+        }
+      }
+    })
+
+    test("preserves all text content in the orphan-fixed wraps", () => {
+      // Regression guard: the orphan penalty must not drop content. Joining
+      // adjacent lines preserves the inter-line whitespace removed by the
+      // wrapper — except for hyphen breaks, where the trailing "-" stays
+      // glued to the next line's leading word (a wrap inside `cmd-hover`
+      // emits `cmd-` + `hover`, not `cmd-` + ` hover`).
+      const texts = [
+        "Click on commands does nothing in live TUI (cmd-hover also no-op)",
+        "km init should NOT auto-scaffold @agent/0..9 — document as primer example instead",
+      ]
+      for (const text of texts) {
+        const analysis = buildTextAnalysis(text, graphemeWidth)
+        for (let w = 22; w <= 32; w++) {
+          const lines = optimalWrap(text, analysis, w)
+          // Glue adjacent lines: insert " " between non-hyphenated pairs,
+          // "" between a hyphen-ending line and the next.
+          let recovered = stripAnsi(lines[0] ?? "")
+          for (let k = 1; k < lines.length; k++) {
+            const prev = stripAnsi(lines[k - 1]!)
+            const next = stripAnsi(lines[k]!)
+            const sep = prev.endsWith("-") ? "" : " "
+            recovered += sep + next
+          }
+          recovered = recovered.replace(/\s+/g, " ").trim()
+          const original = text.replace(/\s+/g, " ").trim()
+          expect(recovered, `width=${w} content lost: ${JSON.stringify(lines)}`).toBe(original)
+        }
+      }
+    })
+
+    test("still breaks at hyphen when alternative is worse", () => {
+      // The hyphen penalty is gentle (250) so it can be overridden by a
+      // much-worse-raggedness alternative. Verify the DP still uses the
+      // hyphen break when forced (very narrow widths where no whitespace
+      // break fits the long compound).
+      const text = "see-this-very-long-hyphenated-compound-word here"
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      const lines = optimalWrap(text, analysis, 10)
+      // At width 10, the compound MUST break — verify the wrap completes
+      // without falling back to overflowing greedy lines.
+      expect(lines.length).toBeGreaterThan(1)
+      // All non-final lines should fit within width.
+      for (let i = 0; i < lines.length - 1; i++) {
+        expect(stripAnsi(lines[i]!).length, `width=10 line ${i} too wide`).toBeLessThanOrEqual(10)
+      }
+    })
+  })
 })

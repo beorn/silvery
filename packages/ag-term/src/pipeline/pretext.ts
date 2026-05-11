@@ -267,6 +267,105 @@ export function knuthPlassBreaks(analysis: TextAnalysis, width: number | WidthFn
   return allBreaks
 }
 
+// ============================================================================
+// Wrap-quality penalties
+// ============================================================================
+
+/**
+ * Minimum visible-character count for a non-final line before the
+ * orphan penalty kicks in. A "token" here is loosely "the visible width
+ * of the line"; the penalty is tuned for terminal card widths (≈20-40
+ * cols), where any line under 8 cols is visually a stranded fragment.
+ */
+const ORPHAN_MIN_WIDTH = 8
+
+/** Penalty (added to leftover²) for a non-final line below ORPHAN_MIN_WIDTH. */
+const ORPHAN_PENALTY = 500
+
+/**
+ * Threshold for a hyphenated compound to count as "short" on either side.
+ * Breaking inside `cmd-hover` (3-5 split) or `auto-` (4 chars left, 9
+ * chars right of the hyphen) reads worse than letting the compound
+ * stay intact. Penalty is gentler than the orphan penalty because
+ * breaking after a hyphen IS sometimes the right call (long compounds,
+ * narrow widths).
+ */
+const HYPHEN_COMPOUND_MIN_SIDE = 5
+
+/** Penalty (added to leftover²) for a break inside a short hyphenated compound. */
+const HYPHEN_COMPOUND_PENALTY = 250
+
+/**
+ * Score the *quality* of a non-final wrapped line.
+ *
+ * Knuth-Plass's classic cost (leftover²) gives the line layout a global
+ * raggedness optimum but doesn't know about typographical taboos —
+ * single-word "hover" lines, breaks inside short hyphenated compounds
+ * like `cmd-hover`, etc. The penalty is added to the squared-leftover
+ * cost and tuned so it dominates *only* when the alternative is visually
+ * better; if the alternative has worse raggedness, the leftover²
+ * differential will still pick the better wrap.
+ *
+ * Parameters:
+ * - `lineStart` — grapheme index where the line begins (a break candidate)
+ * - `lineEnd`   — grapheme index where the next line begins (a break candidate)
+ * - `trimEnd`   — `lineEnd` after trailing whitespace/ANSI trim (= visible end)
+ */
+function wrapQualityPenalty(
+  analysis: TextAnalysis,
+  lineStart: number,
+  lineEnd: number,
+  trimEnd: number,
+): number {
+  let penalty = 0
+  const { cumWidths, graphemes } = analysis
+
+  // Orphan/widow penalty: tax non-final lines whose visible content is
+  // narrower than ORPHAN_MIN_WIDTH. Width is measured between lineStart
+  // and trimEnd (= line content without trailing whitespace). This pushes
+  // the DP to prefer "TUI" + "(cmd-hover also no-op)" over
+  // "TUI (cmd-" + "hover" + "also no-op)" when both fit.
+  const visibleWidth = cumWidths[trimEnd]! - cumWidths[lineStart]!
+  if (visibleWidth < ORPHAN_MIN_WIDTH) {
+    penalty += ORPHAN_PENALTY
+  }
+
+  // Hyphen-compound penalty: when the break point lands AFTER a hyphen
+  // (graphemes[lineEnd - 1] === '-'), inspect the compound that hyphen
+  // belongs to and tax breaks that produce short halves on either side.
+  //
+  // Compound left half: scan backward from the hyphen, stopping at the
+  // previous word boundary or compound separator. Compound right half:
+  // scan forward from `lineEnd` (= position after the hyphen) until the
+  // next word boundary. If either half is shorter than
+  // HYPHEN_COMPOUND_MIN_SIDE, apply the penalty.
+  if (lineEnd > 0 && graphemes[lineEnd - 1] === "-") {
+    // Left-half length: count non-boundary graphemes immediately before the hyphen.
+    let leftLen = 0
+    for (let k = lineEnd - 2; k >= 0; k--) {
+      const g = graphemes[k]!
+      if (g === " " || g === "\t" || g === "-" || g === "\n") break
+      leftLen++
+      if (leftLen >= HYPHEN_COMPOUND_MIN_SIDE) break
+    }
+
+    // Right-half length: count non-boundary graphemes immediately after the hyphen.
+    let rightLen = 0
+    for (let k = lineEnd; k < graphemes.length; k++) {
+      const g = graphemes[k]!
+      if (g === " " || g === "\t" || g === "-" || g === "\n") break
+      rightLen++
+      if (rightLen >= HYPHEN_COMPOUND_MIN_SIDE) break
+    }
+
+    if (leftLen < HYPHEN_COMPOUND_MIN_SIDE || rightLen < HYPHEN_COMPOUND_MIN_SIDE) {
+      penalty += HYPHEN_COMPOUND_PENALTY
+    }
+  }
+
+  return penalty
+}
+
 /** DP for a single paragraph (no newlines). Constant-width fast path. */
 function knuthPlassForParagraph(
   analysis: TextAnalysis,
@@ -317,7 +416,13 @@ function knuthPlassForParagraph(
       if (lineWidth > width) break // too wide, skip wider candidates
 
       const leftover = width - lineWidth
-      const lineCost = j === n - 1 ? 0 : leftover * leftover
+      const isLastLine = j === n - 1
+      let lineCost = isLastLine ? 0 : leftover * leftover
+
+      if (!isLastLine) {
+        lineCost += wrapQualityPenalty(analysis, lineStart, lineEnd, trimEnd)
+      }
+
       const totalCost = lineCost + cost[j]!
 
       if (totalCost < cost[i]!) {
@@ -412,7 +517,13 @@ function knuthPlassForParagraphPerLine(
       if (lineWidth > allowedWidth) continue
 
       const leftover = allowedWidth - lineWidth
-      const lineCost = i === n - 1 ? 0 : leftover * leftover
+      const isLastLine = i === n - 1
+      let lineCost = isLastLine ? 0 : leftover * leftover
+
+      if (!isLastLine) {
+        lineCost += wrapQualityPenalty(analysis, lineStart, lineEnd, trimEnd)
+      }
+
       const totalCost = f[j]! + lineCost
 
       if (totalCost < f[i]!) {
