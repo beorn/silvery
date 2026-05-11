@@ -263,6 +263,23 @@ export interface ListViewProps<T> {
   /** Show scroll chrome when content overflows or bumps an edge. Default: true */
   scrollbar?: boolean
 
+  /**
+   * Scrollbar visibility policy:
+   * - `"auto"` — visible during scroll, fades out after `SCROLLBAR_FADE_AFTER_MS` (legacy default).
+   * - `"always"` — visible whenever content overflows, even when idle. Mirrors
+   *   the scrollbar idiom users expect from streaming-content surfaces (chat
+   *   transcripts, log viewers) where "is there content above/below?" is a
+   *   first-class question and the answer should not require a wheel event
+   *   to surface.
+   * - `"hidden"` — never visible (track stays mounted for hover-reveal).
+   *
+   * Default `"auto"` for compatibility. Streaming-content callers (chat
+   * transcripts) should pass `"always"`.
+   *
+   * Bead: @km/silvercode/trackpad-scrolling-no-scrollbar.
+   */
+  scrollbarVisibility?: "auto" | "always" | "hidden"
+
   /** Key extractor (defaults to index) */
   getKey?: (item: T, index: number) => string | number
 
@@ -630,6 +647,7 @@ function ListViewInner<T>(
     scrollPadding = DEFAULT_SCROLL_PADDING,
     overflowIndicator,
     scrollbar = true,
+    scrollbarVisibility = "auto",
     getKey,
     width,
     gap = 0,
@@ -2673,7 +2691,7 @@ function ListViewInner<T>(
           />
         )}
       </Box>
-      {showScrollbar && (
+      {showScrollbar && scrollbarVisibility !== "hidden" && (
         <Scrollbar
           trackHeight={trackHeight}
           scrollableRows={scrollableRows}
@@ -2683,7 +2701,7 @@ function ListViewInner<T>(
               rearmFollowAtEnd: !meta?.dragActive,
             })
           }
-          visible={isScrolling}
+          visible={scrollbarVisibility === "always" ? true : isScrolling}
         />
       )}
       {/* Overscroll indicator — 10-char HALF-BLOCK in the right corner of
