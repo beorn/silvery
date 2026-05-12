@@ -1223,8 +1223,17 @@ export function wrapTextWithMeasurer(
       if (currentWidth + gWidth > width) {
         if (lastBreakIndex > 0) {
           // We have a valid hard break point - use it.
-          let lineToAdd = currentLine.slice(0, lastBreakIndex)
-          if (trim) lineToAdd = lineToAdd.trimEnd()
+          // Unconditional `trimEnd()`: `lastBreakIndex` points just past
+          // the word-boundary grapheme so the slice INCLUDES the trailing
+          // boundary character (typically a space). The next line's
+          // `lastBreakGraphemeIndex` already skips past it, so keeping the
+          // trailing space here double-counts the boundary — when this
+          // wrapped line is rendered inside a Box with `backgroundColor`
+          // (common for body cards), the trailing space paints as visible
+          // chrome. `trim` controls only continuation-line LEADING-space
+          // skipping; trailing whitespace from the rewind boundary always
+          // drops. @km/tui/softwrap-leading-space-on-wrap.
+          const lineToAdd = currentLine.slice(0, lastBreakIndex).trimEnd()
           lines.push(lineToAdd)
           isFirstLineOfParagraph = false
 
@@ -1247,8 +1256,9 @@ export function wrapTextWithMeasurer(
           // becomes `path/` + `to`). Used only when no hard break fits on
           // the current line — paths and identifiers wrap at separators
           // instead of either overflowing or doing mid-word char wrap.
-          let lineToAdd = currentLine.slice(0, lastSoftBreakIndex)
-          if (trim) lineToAdd = lineToAdd.trimEnd()
+          // Trailing whitespace dropped unconditionally — see hard-break
+          // branch above for rationale.
+          const lineToAdd = currentLine.slice(0, lastSoftBreakIndex).trimEnd()
           lines.push(lineToAdd)
           isFirstLineOfParagraph = false
 

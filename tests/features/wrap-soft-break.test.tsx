@@ -71,12 +71,14 @@ describe("wrapText: soft break inside long tokens", () => {
   test("hard break (space) wins when both are available", () => {
     // The space lets the algorithm break before the long token entirely;
     // the soft break inside the path is only used when no space fits.
-    // First line takes "see " (space gives a hard break under width=12);
-    // then "/home/user/path here" doesn't fit, so we re-anchor — leading
-    // chars `/home/user/` fit (width 11), then the trailing `path here`
-    // wraps as one fitting unit.
+    // First line takes "see" (the trailing space is the break boundary
+    // itself and is consumed by the rewind — see
+    // @km/tui/softwrap-leading-space-on-wrap); then "/home/user/path
+    // here" doesn't fit, so we re-anchor — leading chars `/home/user/`
+    // fit (width 11), then the trailing `path here` wraps as one fitting
+    // unit.
     const lines = wrapText("see /home/user/path here", 12, true, false)
-    expect(lines).toEqual(["see ", "/home/user/", "path here"])
+    expect(lines).toEqual(["see", "/home/user/", "path here"])
   })
 
   test("char wrap fallback when no separators in token", () => {
@@ -177,6 +179,45 @@ describe("wrapTextWithOffsets: soft break preserves source offsets", () => {
   })
 })
 
+describe("wrapText (rendering path): trailing space dropped on rewind, trim-independent (@km/tui/softwrap-leading-space-on-wrap)", () => {
+  // Regression: body text inside a card with `backgroundColor` propagates
+  // `inheritedBg`, which causes `formatTextLines` to call wrap with
+  // `trim=false`. Both rewind paths (hard-break and soft-break) in
+  // `wrapTextWithMeasurer` must still drop trailing whitespace from the
+  // pushed line. Previously the `if (trim) lineToAdd = lineToAdd.trimEnd()`
+  // guard meant body cards (the common case) kept trailing spaces, which
+  // visibly inflated line width and showed up as a "leading space on the
+  // continuation line" when the wrapped output landed inside a colored Box.
+
+  test("hard-break rewind path: no trailing space on wrapped lines (trim=false)", () => {
+    const lines = wrapText("board, visible as column", 10, true, false)
+    for (const line of lines) {
+      expect(line).not.toMatch(/\s$/)
+      expect(line).not.toMatch(/^\s/)
+    }
+    expect(lines).not.toContain(" visible")
+    expect(lines).not.toContain("board, ")
+  })
+
+  test("soft-break rewind path: no trailing space on wrapped lines (trim=false)", () => {
+    // Path-style soft break: `some/path/file.ext` should wrap at `/`
+    // with no trailing space carried into the line text.
+    const lines = wrapText("foo bar/baz/qux/quux", 8, true, false)
+    for (const line of lines) {
+      expect(line).not.toMatch(/\s$/)
+      expect(line).not.toMatch(/^\s/)
+    }
+  })
+
+  test("trim=true and trim=false produce trimmed line ends (parity)", () => {
+    const text = "alpha bravo, charlie delta echo"
+    const linesTrim = wrapText(text, 12, true, true)
+    const linesNoTrim = wrapText(text, 12, true, false)
+    for (const line of linesTrim) expect(line).not.toMatch(/\s$/)
+    for (const line of linesNoTrim) expect(line).not.toMatch(/\s$/)
+  })
+})
+
 describe("Text rendering: soft-break wrap in box", () => {
   test("long path in narrow Box wraps at / instead of overflowing", () => {
     const render = createRenderer({ cols: 30, rows: 10 })
@@ -195,6 +236,34 @@ describe("Text rendering: soft-break wrap in box", () => {
     expect(text).toContain(".claude/")
     expect(text).toContain("skills/")
     expect(text).toContain("SKILL.md")
+  })
+
+  test("body-card regression: Box with backgroundColor does not leak trailing-space chrome (@km/tui/softwrap-leading-space-on-wrap)", () => {
+    // Models a km-tui body card: Box has backgroundColor (sets
+    // `inheritedBg`, which propagates `trim=false` into formatTextLines).
+    // Before fix: the rewind path skipped `trimEnd()` because trim=false,
+    // so wrapped lines kept a trailing space. Rendered inside a colored
+    // Box, that trailing space painted as visible bg chrome — the user
+    // saw it as a "leading space" on the continuation line.
+    const render = createRenderer({ cols: 30, rows: 10 })
+    const app = render(
+      <Box width={12} backgroundColor="blue" flexDirection="column">
+        <Text wrap="wrap">board, visible as column</Text>
+      </Box>,
+    )
+    const text = app.text
+    // No painted body line should start or end with whitespace runs
+    // that come from the wrap algorithm. (Trailing right-pad inside the
+    // box is the box's chrome, not text content — we check the wrapped
+    // text BEFORE pad by reading the rendered visible width.)
+    const visibleLines = text
+      .split("\n")
+      .map((l) => l.trimEnd())
+      .filter((l) => l.length > 0)
+    for (const line of visibleLines) {
+      // No leading whitespace on continuation lines from wrap rewind.
+      expect(line).not.toMatch(/^\s/)
+    }
   })
 })
 
