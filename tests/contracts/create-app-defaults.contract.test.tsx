@@ -87,6 +87,124 @@ describe("contract: createApp AppRunOptions.selection", () => {
 })
 
 // ============================================================================
+// Seed — panicOnRenderError defaults to "auto" → no panic in test env
+// ============================================================================
+//
+// `AppRunOptions.panicOnRenderError` docstring says:
+//   - `true`: always panic on render errors.
+//   - `false`: never panic.
+//   - `"auto"` (default): panic in non-test environments, capture-and-resume
+//     in tests.
+//
+// The test environment is detected via NODE_ENV === "test" / VITEST /
+// __vitest_worker__. Since these tests run under vitest, the auto-detect
+// MUST resolve to "false" (no panic) — otherwise the existing test
+// infrastructure that intentionally renders broken components would exit
+// the test runner. This contract pins that behavior.
+
+function ThrowOnMount(): React.ReactElement {
+  throw new Error("contract: defaults synthetic render error")
+}
+
+function createMockStdoutForPanicContract() {
+  const written: string[] = []
+  const writable = {
+    write(data: string | Uint8Array) {
+      written.push(typeof data === "string" ? data : Buffer.from(data).toString("utf8"))
+      return true
+    },
+    isTTY: true,
+    columns: 40,
+    rows: 5,
+    fd: -1,
+    on: () => writable,
+    off: () => writable,
+    once: () => writable,
+    emit: () => true,
+    removeListener: () => writable,
+    addListener: () => writable,
+  } as unknown as NodeJS.WriteStream
+  return { writable, written }
+}
+
+function createMockStdinForPanicContract(): NodeJS.ReadStream {
+  const stdin = {
+    isTTY: true,
+    isRaw: false,
+    fd: 0,
+    setRawMode(raw: boolean) {
+      stdin.isRaw = raw
+      return stdin
+    },
+    resume() {
+      return stdin
+    },
+    pause() {
+      return stdin
+    },
+    setEncoding() {
+      return stdin
+    },
+    read() {
+      return null
+    },
+    on: () => stdin,
+    off: () => stdin,
+    once: () => stdin,
+    removeListener: () => stdin,
+    removeAllListeners: () => stdin,
+    addListener: () => stdin,
+    listenerCount: () => 0,
+    listeners: () => [],
+  } as unknown as NodeJS.ReadStream
+  return stdin
+}
+
+describe("contract: AppRunOptions.panicOnRenderError", () => {
+  test('contract: default ("auto") does NOT panic in vitest environment', async () => {
+    // Bun gotcha: assigning undefined doesn't clear process.exitCode. Use 0.
+    const origExitCode = process.exitCode
+    process.exitCode = 0
+
+    const origStderrWrite = process.stderr.write
+    const origStdoutWrite = process.stdout.write
+    try {
+      process.stderr.write = (() => true) as typeof process.stderr.write
+      process.stdout.write = (() => true) as typeof process.stdout.write
+
+      const { writable: stdout } = createMockStdoutForPanicContract()
+      // panicOnRenderError omitted — must default to "auto" → resolve to
+      // false in vitest, so the render error is captured by
+      // SilveryErrorBoundary and the process is not exited.
+      const handle = await run(<ThrowOnMount />, {
+        cols: 40,
+        rows: 5,
+        stdout,
+        stdin: createMockStdinForPanicContract(),
+        guardOutput: true,
+        kitty: false,
+        textSizing: false,
+        widthDetection: false,
+      } as never)
+
+      await new Promise((resolve) => setTimeout(resolve, 60))
+
+      // The contract: in a test environment, the default ("auto") MUST NOT
+      // trigger panicApp. If it did, process.exitCode would have flipped to
+      // 1 from recordPanic.
+      expect(process.exitCode).not.toBe(1)
+
+      handle.unmount()
+      await new Promise((resolve) => setTimeout(resolve, 30))
+    } finally {
+      process.stderr.write = origStderrWrite
+      process.stdout.write = origStdoutWrite
+      process.exitCode = origExitCode
+    }
+  })
+})
+
+// ============================================================================
 // Phase 2 backlog — createApp-specific defaults still to cover
 // ============================================================================
 //

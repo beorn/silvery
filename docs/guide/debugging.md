@@ -227,6 +227,65 @@ const themes = {
 (names, `$tokens`, numbers, booleans) pass through unchanged. Idempotent
 per tier; `truecolor` is an identity no-op.
 
+## Auto-panic on render error
+
+When a React component throws during render and the error escapes every
+error boundary, silvery's runtime intercepts it via the reconciler's
+`onCaughtError` / `onUncaughtError` hooks and runs the panic path:
+
+1. **Restore the terminal** — exit alt-screen, disable raw mode, tear down
+   Kitty keyboard / mouse / focus reporting protocols. Returns the
+   user's normal scrollback.
+2. **Dump to stderr on the NORMAL screen** — message, stack, and the
+   React component stack land in stderr after the alt screen has been
+   restored, so the user can copy / paste / screenshot the failure (the
+   alt-screen would otherwise discard it on exit).
+3. **`process.exitCode = 1`** — non-zero exit makes CI / scripts notice.
+
+`run()` and `createApp().run()` register this for you automatically via
+the `panicOnRenderError` option:
+
+```ts
+run(<App />, {
+  // panicOnRenderError defaults to "auto"
+})
+
+run(<App />, {
+  panicOnRenderError: true,   // always panic — never capture
+})
+
+run(<App />, {
+  panicOnRenderError: false,  // never panic — boundary captures, app continues
+})
+
+run(<App />, {
+  panicOnRenderError: "auto", // panic in non-test envs, capture in tests (default)
+})
+```
+
+**Test-mode detection.** "auto" resolves via three independent checks —
+`process.env.NODE_ENV === "test"`, `process.env.VITEST`, and
+`globalThis.__vitest_worker__`. Any one triggers capture mode so the
+existing test infrastructure (which intentionally renders broken
+components in invariant-violation / error-boundary tests) keeps working
+without an explicit opt-out.
+
+**Process-level crashes.** When auto-panic is active, silvery also
+registers `process.on("uncaughtException", panicApp)` and
+`process.on("unhandledRejection", panicApp)` so non-React crashes get
+the same restore-and-stderr-dump treatment instead of leaving the
+terminal in alt-screen with raw mode on. Both handlers are removed on
+shutdown so subsequent runs in the same process (e.g. test re-mounts) do
+not accumulate listeners.
+
+**What still gets recorded under capture mode.** When
+`panicOnRenderError` resolves to `false`, the
+`SilveryErrorBoundary.onError={recordBoundaryError}` path still runs —
+the error is written to a temp dump file
+(`/tmp/silvery-render-error-<timestamp>.txt`) and flushed to stderr on
+the next clean cleanup. Useful for capturing diagnostics from tests that
+deliberately exercise error paths.
+
 ## Diagnostic Workflow
 
 1. **Start with STRICT**: `SILVERY_STRICT=1 bun vitest run ...` catches any incremental vs fresh render divergence immediately.
