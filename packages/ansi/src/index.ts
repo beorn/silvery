@@ -274,7 +274,12 @@ export { KNOWN_VARIANTS } from "./theme/tokens"
 // =============================================================================
 
 export { probeColors, detectTerminalScheme, detectTheme } from "./theme/detect"
-export type { DetectedScheme, DetectThemeOptions, ProbeColorsOptions, ProbeInputOwner } from "./theme/detect"
+export type {
+  DetectedScheme,
+  DetectThemeOptions,
+  ProbeColorsOptions,
+  ProbeInputOwner,
+} from "./theme/detect"
 
 // =============================================================================
 // OSC Protocol — Terminal color queries

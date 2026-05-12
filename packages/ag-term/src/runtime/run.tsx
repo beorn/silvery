@@ -427,10 +427,7 @@ export async function run(
       // Mirrors `resolveMouseOption` (run.tsx, real-PTY branch) but adapted
       // for in-process feed+onResponse instead of stdin probe-owner. See
       // @km/silvery/run-emulator-probe-mouse-mode-parity for the design.
-      const emulatorMouseOption = await resolveEmulatorMouseOption(
-        emulator,
-        termOptions?.mouse,
-      )
+      const emulatorMouseOption = await resolveEmulatorMouseOption(emulator, termOptions?.mouse)
 
       const app = createApp(() => () => ({}))
       // Phase 8b: createApp.run() still wants raw streams. Use the internal

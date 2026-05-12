@@ -50,9 +50,7 @@ return <Banner />
 ```ts
 function useResponsiveValue<T>(map: Responsive<T>): T
 
-type Responsive<T> =
-  | T
-  | ({ default: T } & Partial<Record<Breakpoint, T>>)
+type Responsive<T> = T | ({ default: T } & Partial<Record<Breakpoint, T>>)
 ```
 
 A flat `T` is returned as-is. A `{ default, xs?, sm?, md?, lg?, xl? }` cascade resolves mobile-first: take the largest breakpoint at or below the current width that has a defined value, else fall back to `default`.
@@ -61,13 +59,13 @@ A flat `T` is returned as-is. A `{ default, xs?, sm?, md?, lg?, xl? }` cascade r
 
 Default thresholds (terminal columns):
 
-| Token  | Width |
-| ------ | ----- |
-| `xs`   | 30    |
-| `sm`   | 60    |
-| `md`   | 90    |
-| `lg`   | 120   |
-| `xl`   | 150   |
+| Token | Width |
+| ----- | ----- |
+| `xs`  | 30    |
+| `sm`  | 60    |
+| `md`  | 90    |
+| `lg`  | 120   |
+| `xl`  | 150   |
 
 Customize per call via the second argument:
 

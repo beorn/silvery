@@ -276,7 +276,9 @@ export function createSize(stdout: NodeJS.WriteStream, options: CreateSizeOption
   }
 
   const onResize = () => {
-    logSize(`onResize fired: stdout=${stdout.columns}x${stdout.rows} disposed=${disposed} coalesceMs=${coalesceMs}`)
+    logSize(
+      `onResize fired: stdout=${stdout.columns}x${stdout.rows} disposed=${disposed} coalesceMs=${coalesceMs}`,
+    )
     if (disposed) return
     if (coalesceMs === 0) {
       flush()

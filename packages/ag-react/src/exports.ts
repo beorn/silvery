@@ -413,7 +413,11 @@ export { useBoxRectInFlight, useScrollRectInFlight, useScreenRectInFlight } from
  * rect drives an imperative side effect (cursor store update, registry
  * write, ANSI emission) and no render path needs to reflect the rect.
  */
-export { useOnBoxRectCommitted, useOnScrollRectCommitted, useOnScreenRectCommitted } from "./hooks/useLayout"
+export {
+  useOnBoxRectCommitted,
+  useOnScrollRectCommitted,
+  useOnScreenRectCommitted,
+} from "./hooks/useLayout"
 
 /**
  * Kinetic wheel scrolling for any scrollable Box. Attach the returned

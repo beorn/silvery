@@ -623,7 +623,11 @@ export type ConvergenceLoopName = "layout-pass" | "effect-flush" | "production-f
  *   responsible edge instead of just "exhausted N iterations".
  * STRICT=1: emits a stderr warning with the same breakdown.
  */
-export function assertBoundedConvergence(passCount: number, loopName: ConvergenceLoopName, cap: number): void {
+export function assertBoundedConvergence(
+  passCount: number,
+  loopName: ConvergenceLoopName,
+  cap: number,
+): void {
   if (passCount <= cap) return
   const strict = process?.env?.SILVERY_STRICT
   if (!strict) return

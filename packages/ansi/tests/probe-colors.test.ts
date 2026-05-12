@@ -35,7 +35,9 @@ function fakeProbeInputOwner(colors: {
       } else if (query.includes(`${ESC}]11;?`)) {
         acc = oscColorResponse(11, colors.bg)
       } else if (query.includes(`${ESC}]4;`)) {
-        acc = colors.ansi.map((color, index) => `${ESC}]4;${index};${hexToOscRgb(color)}${BEL}`).join("")
+        acc = colors.ansi
+          .map((color, index) => `${ESC}]4;${index};${hexToOscRgb(color)}${BEL}`)
+          .join("")
       }
       const parsed = parse(acc)
       return parsed?.result ?? null

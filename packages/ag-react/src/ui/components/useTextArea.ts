@@ -729,10 +729,13 @@ export function useTextArea({
       : null
 
   const totalLineCount = Math.max(wrappedLines.length, cursorRow + 1)
-  const visibleLines = Array.from({ length: Math.max(0, Math.min(height, totalLineCount - scrollOffset)) }, (_, i) => {
-    const row = scrollOffset + i
-    return wrappedLines[row] ?? { line: "", startOffset: value.length }
-  })
+  const visibleLines = Array.from(
+    { length: Math.max(0, Math.min(height, totalLineCount - scrollOffset)) },
+    (_, i) => {
+      const row = scrollOffset + i
+      return wrappedLines[row] ?? { line: "", startOffset: value.length }
+    },
+  )
 
   const clear = useCallback(() => {
     updateValue("", 0)

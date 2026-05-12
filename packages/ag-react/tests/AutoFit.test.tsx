@@ -415,11 +415,7 @@ describe("AutoFit — align prop", () => {
   // its width on every commit. With a 5-char content + parent width=80,
   // the snap target is lane=10; if centering works, the visible Box's
   // screen-x should be ≈ (80 - 10) / 2 = 35.
-  function ScreenXProbe({
-    record,
-  }: {
-    record: (screenX: number, width: number) => void
-  }) {
+  function ScreenXProbe({ record }: { record: (screenX: number, width: number) => void }) {
     const visible = useAutoFitVisible()
     const rect = useScreenRect()
     React.useEffect(() => {

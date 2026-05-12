@@ -19,7 +19,11 @@ import { Box, PopoverProvider, Text, useModifierKeys, usePopoverHandlers } from 
 
 const settle = (ms = 60) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
-function ModifierProbe({ onChange }: { onChange: (v: { super: boolean }) => void }): React.ReactElement {
+function ModifierProbe({
+  onChange,
+}: {
+  onChange: (v: { super: boolean }) => void
+}): React.ReactElement {
   const mods = useModifierKeys({ enabled: true })
   React.useEffect(() => {
     onChange({ super: mods.super })
@@ -85,5 +89,4 @@ describe("app.keyDown / app.keyUp — modifier state lifecycle", () => {
 
     await app.keyUp("Super")
   })
-
 })

@@ -116,7 +116,9 @@ describe("bounded-convergence: assertion behaviour", () => {
     withStrict("2", () => {
       const loops: ConvergenceLoopName[] = ["layout-pass", "effect-flush", "production-flush"]
       for (const loop of loops) {
-        expect(() => assertBoundedConvergence(MAX_CONVERGENCE_PASSES, loop, MAX_CONVERGENCE_PASSES)).not.toThrow()
+        expect(() =>
+          assertBoundedConvergence(MAX_CONVERGENCE_PASSES, loop, MAX_CONVERGENCE_PASSES),
+        ).not.toThrow()
       }
     })
   })
@@ -145,10 +147,18 @@ describe("bounded-convergence: assertion behaviour", () => {
   test("STRICT unset is a no-op even when the bound is exceeded", () => {
     withStrict(undefined, () => {
       expect(() =>
-        assertBoundedConvergence(MAX_CONVERGENCE_PASSES + 100, "layout-pass", MAX_CONVERGENCE_PASSES),
+        assertBoundedConvergence(
+          MAX_CONVERGENCE_PASSES + 100,
+          "layout-pass",
+          MAX_CONVERGENCE_PASSES,
+        ),
       ).not.toThrow()
       expect(() =>
-        assertBoundedConvergence(INITIAL_RENDER_MAX_PASSES + 100, "layout-pass", INITIAL_RENDER_MAX_PASSES),
+        assertBoundedConvergence(
+          INITIAL_RENDER_MAX_PASSES + 100,
+          "layout-pass",
+          INITIAL_RENDER_MAX_PASSES,
+        ),
       ).not.toThrow()
     })
   })

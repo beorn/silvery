@@ -31,7 +31,9 @@ import { describe, expect, test } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
 
-type MouseHandlerArgs = Parameters<NonNullable<import("@silvery/ag/types").BoxProps["onMouseMove"]>>[0]
+type MouseHandlerArgs = Parameters<
+  NonNullable<import("@silvery/ag/types").BoxProps["onMouseMove"]>
+>[0]
 
 describe("app.hover modifier options", () => {
   test("forwards shift/meta/ctrl flags to onMouseMove handler", async () => {

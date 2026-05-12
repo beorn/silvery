@@ -373,7 +373,9 @@ describe("optimalWrap", () => {
         const ons = (all.match(/\x1b\[34m/g) ?? []).length
         const offs = (all.match(/\x1b\[39m/g) ?? []).length
         expect(ons, `width=${w} lost ANSI-on tokens (had ${sourceOns}, got ${ons})`).toBe(sourceOns)
-        expect(offs, `width=${w} lost ANSI-off tokens (had ${sourceOffs}, got ${offs})`).toBe(sourceOffs)
+        expect(offs, `width=${w} lost ANSI-off tokens (had ${sourceOffs}, got ${offs})`).toBe(
+          sourceOffs,
+        )
       }
     })
 
@@ -394,7 +396,10 @@ describe("optimalWrap", () => {
       const resetIdx = wordLine.indexOf(RESET)
       expect(onIdx, `line ${JSON.stringify(wordLine)} missing ON token`).toBeGreaterThanOrEqual(0)
       expect(offIdx, `line ${JSON.stringify(wordLine)} missing OFF token`).toBeGreaterThanOrEqual(0)
-      expect(resetIdx, `line ${JSON.stringify(wordLine)} missing RESET token`).toBeGreaterThanOrEqual(0)
+      expect(
+        resetIdx,
+        `line ${JSON.stringify(wordLine)} missing RESET token`,
+      ).toBeGreaterThanOrEqual(0)
       expect(onIdx).toBeLessThan(offIdx)
       expect(offIdx).toBeLessThan(resetIdx)
     })
@@ -467,7 +472,8 @@ describe("optimalWrap", () => {
     })
 
     test("does not orphan 'document' (auto-scaffold em-dash case)", () => {
-      const text = "km init should NOT auto-scaffold @agent/0..9 — document as primer example instead"
+      const text =
+        "km init should NOT auto-scaffold @agent/0..9 — document as primer example instead"
       const analysis = buildTextAnalysis(text, graphemeWidth)
       for (let w = 22; w <= 32; w++) {
         const lines = optimalWrap(text, analysis, w)

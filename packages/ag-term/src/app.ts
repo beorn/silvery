@@ -381,10 +381,7 @@ export interface AppOptions {
    * Drain commit / layout cycles until stable (test renderer only).
    * See {@link App.waitForLayoutStable} for the contract.
    */
-  waitForLayoutStable?: (opts?: {
-    timeoutMs?: number
-    maxPasses?: number
-  }) => Promise<void>
+  waitForLayoutStable?: (opts?: { timeoutMs?: number; maxPasses?: number }) => Promise<void>
 }
 
 /**
@@ -956,7 +953,13 @@ function keyIsModifier(key: string, target: "Super" | "Hyper"): boolean {
   const parts = key.split("+")
   const last = parts[parts.length - 1]?.toLowerCase() ?? ""
   if (target === "Super") {
-    return last === "super" || last === "cmd" || last === "command" || last === "leftsuper" || last === "rightsuper"
+    return (
+      last === "super" ||
+      last === "cmd" ||
+      last === "command" ||
+      last === "leftsuper" ||
+      last === "rightsuper"
+    )
   }
   return last === "hyper" || last === "lefthyper" || last === "righthyper"
 }

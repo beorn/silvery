@@ -556,7 +556,11 @@ function knuthPlassForParagraphPerLine(
  * for per-line widths (e.g. line 0 narrowed by a top-right pill, lines 1+
  * full width — CSS-float-equivalent layouts).
  */
-export function optimalWrap(text: string, analysis: TextAnalysis, width: number | WidthFn): string[] {
+export function optimalWrap(
+  text: string,
+  analysis: TextAnalysis,
+  width: number | WidthFn,
+): string[] {
   const breaks = knuthPlassBreaks(analysis, width)
   // For greedy fallback, use line-0 width as the conservative single value
   const fallbackWidth = typeof width === "function" ? width(0) : width

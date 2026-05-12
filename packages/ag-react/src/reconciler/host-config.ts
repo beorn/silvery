@@ -785,7 +785,8 @@ export const hostConfig = {
     // Disabled by default in production by setting the env var to 0 or
     // unsetting it; budget is opt-in. Set `SILVERY_RENDER_BUDGET_MS=500`
     // (or any positive number) during dev to enable.
-    const budgetEnv = typeof process !== "undefined" ? process.env.SILVERY_RENDER_BUDGET_MS : undefined
+    const budgetEnv =
+      typeof process !== "undefined" ? process.env.SILVERY_RENDER_BUDGET_MS : undefined
     const budget = budgetEnv !== undefined ? Number(budgetEnv) : 0
     if (budget > 0 && Number.isFinite(budget)) {
       const start = performance.now()

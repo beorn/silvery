@@ -216,7 +216,11 @@ interface AssertCellOpts {
  *
  * Throws `BorderedRectClipError` on violation.
  */
-export function assertCellInsideBorderedRect(x: number, y: number, opts: AssertCellOpts = {}): void {
+export function assertCellInsideBorderedRect(
+  x: number,
+  y: number,
+  opts: AssertCellOpts = {},
+): void {
   if (!isBorderedRectClipEnabled()) return
   const node = peekRenderingNode()
   if (!node) return

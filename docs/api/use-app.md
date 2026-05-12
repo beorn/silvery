@@ -31,10 +31,10 @@ function App() {
 
 ## Return Value
 
-| Property | Type                                                        | Description                                                                 |
-| -------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `exit`   | `(error?: Error) => void`                                   | Exit the application                                                        |
-| `panic`  | `(reason: unknown, options?: PanicOptions) => void`         | Exit, restore terminal state, then print a copyable diagnostic to `stderr`  |
+| Property | Type                                                | Description                                                                |
+| -------- | --------------------------------------------------- | -------------------------------------------------------------------------- |
+| `exit`   | `(error?: Error) => void`                           | Exit the application                                                       |
+| `panic`  | `(reason: unknown, options?: PanicOptions) => void` | Exit, restore terminal state, then print a copyable diagnostic to `stderr` |
 
 The `exit` function accepts an optional `Error` argument. When called with an error, the app indicates it exited due to a failure.
 

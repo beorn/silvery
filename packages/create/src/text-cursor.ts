@@ -51,7 +51,12 @@ export function cursorToRowCol(
   measurer?: Measurer,
 ): { row: number; col: number } {
   if (wrapWidth <= 0) return { row: 0, col: 0 }
-  return cursorToRowColFromLines(getWrappedLines(text, wrapWidth, measurer), cursor, wrapWidth, measurer)
+  return cursorToRowColFromLines(
+    getWrappedLines(text, wrapWidth, measurer),
+    cursor,
+    wrapWidth,
+    measurer,
+  )
 }
 
 /** Internal: compute row/col from pre-computed wrapped lines. */

@@ -1,6 +1,6 @@
 # useScrollRect
 
-Returns the **scroll-adjusted position** of the component, *before* sticky clamping. For non-sticky nodes this equals [`useScreenRect`](/api/use-screen-rect). For sticky nodes (`position="sticky"`), the scroll-rect reflects where the node would be without sticky adjustment — so it can go off-screen (negative y, etc.) when scrolled past.
+Returns the **scroll-adjusted position** of the component, _before_ sticky clamping. For non-sticky nodes this equals [`useScreenRect`](/api/use-screen-rect). For sticky nodes (`position="sticky"`), the scroll-rect reflects where the node would be without sticky adjustment — so it can go off-screen (negative y, etc.) when scrolled past.
 
 Like [`useBoxRect`](/api/use-box-rect), this hook returns the **committed** rect: the value as of the most recent event-batch commit boundary, invariant across every convergence pass within a batch.
 

@@ -2470,7 +2470,9 @@ function ListViewInner<T>(
   // can't fire on lists where overflow is false.
   const viewportKnown = trackHeight >= 2
   const showScrollbar =
-    scrollbar && overflowing && (viewportKnown ? thumbHeight > 0 && thumbHeight < trackHeight : true)
+    scrollbar &&
+    overflowing &&
+    (viewportKnown ? thumbHeight > 0 && thumbHeight < trackHeight : true)
   const lastListLogKey = useRef("")
   useEffect(() => {
     const key = [

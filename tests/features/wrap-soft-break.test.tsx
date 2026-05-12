@@ -121,7 +121,9 @@ describe("wrapText: soft break inside long tokens", () => {
     for (const width of [12, 16, 20, 24, 28, 30, 33]) {
       const lines = wrapText(token, width, true, false)
       for (const line of lines) {
-        expect(line.length, `width ${width}: line "${line}" exceeds budget`).toBeLessThanOrEqual(width)
+        expect(line.length, `width ${width}: line "${line}" exceeds budget`).toBeLessThanOrEqual(
+          width,
+        )
       }
     }
   })
@@ -134,7 +136,9 @@ describe("wrapText: soft break inside long tokens", () => {
     for (const width of [28, 30, 33, 34, 36]) {
       const lines = wrapText(text, width, true, false)
       for (const line of lines) {
-        expect(line.length, `width ${width}: line "${line}" exceeds budget`).toBeLessThanOrEqual(width)
+        expect(line.length, `width ${width}: line "${line}" exceeds budget`).toBeLessThanOrEqual(
+          width,
+        )
       }
     }
   })
@@ -154,9 +158,7 @@ describe("wrapTextWithOffsets: soft break preserves source offsets", () => {
     expect(slices[0]!.startOffset).toBe(0)
     // Slices must monotonically advance through the source.
     for (let i = 1; i < slices.length; i++) {
-      expect(slices[i]!.startOffset).toBeGreaterThanOrEqual(
-        slices[i - 1]!.endOffset,
-      )
+      expect(slices[i]!.startOffset).toBeGreaterThanOrEqual(slices[i - 1]!.endOffset)
     }
   })
 

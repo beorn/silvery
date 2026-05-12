@@ -15,7 +15,11 @@ import type { ColorScheme, ProbeInputOwner } from "@silvery/ansi"
 const ESC = "\x1b"
 const BEL = "\x07"
 
-function fakeProbeInputOwner(colors: { fg: string; bg: string; ansi?: readonly string[] }): ProbeInputOwner {
+function fakeProbeInputOwner(colors: {
+  fg: string
+  bg: string
+  ansi?: readonly string[]
+}): ProbeInputOwner {
   return {
     async probe({ query, parse }) {
       let acc = ""
@@ -24,7 +28,9 @@ function fakeProbeInputOwner(colors: { fg: string; bg: string; ansi?: readonly s
       } else if (query.includes(`${ESC}]11;?`)) {
         acc = oscColorResponse(11, colors.bg)
       } else if (query.includes(`${ESC}]4;`) && colors.ansi) {
-        acc = colors.ansi.map((color, index) => `${ESC}]4;${index};${hexToOscRgb(color)}${BEL}`).join("")
+        acc = colors.ansi
+          .map((color, index) => `${ESC}]4;${index};${hexToOscRgb(color)}${BEL}`)
+          .join("")
       }
       const parsed = parse(acc)
       return parsed?.result ?? null

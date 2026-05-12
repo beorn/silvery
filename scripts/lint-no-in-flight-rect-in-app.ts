@@ -160,7 +160,9 @@ function main(): number {
   }
 
   if (violations.length === 0) {
-    console.log("✓ No app-side imports of useBoxRectInFlight / useScrollRectInFlight / useScreenRectInFlight")
+    console.log(
+      "✓ No app-side imports of useBoxRectInFlight / useScrollRectInFlight / useScreenRectInFlight",
+    )
     return 0
   }
 
@@ -173,8 +175,12 @@ function main(): number {
   }
   console.error("")
   console.error("Use the deferred form (`useBoxRect()` / `useScrollRect()` / `useScreenRect()`) or")
-  console.error("the responsive primitives (`useResponsiveBoxProps()` / `useResponsiveValue()`) in app code.")
-  console.error("If a silvery internal needs first-paint measurement, add the file to ALLOWED_FILES")
+  console.error(
+    "the responsive primitives (`useResponsiveBoxProps()` / `useResponsiveValue()`) in app code.",
+  )
+  console.error(
+    "If a silvery internal needs first-paint measurement, add the file to ALLOWED_FILES",
+  )
   console.error("in scripts/lint-no-in-flight-rect-in-app.ts.")
   return 1
 }

@@ -588,14 +588,14 @@ AutoLocator methods: `resolve()`, `resolveAll()`, `count()`, `textContent()`, `g
 const layout = useResponsiveBoxProps({
   default: { flexDirection: "column", padding: 1 },
   md: { flexDirection: "row", padding: 2 },
-  lg: { padding: 3 },          // inherits flexDirection: "row" from md
+  lg: { padding: 3 }, // inherits flexDirection: "row" from md
 })
 return <Box {...layout}>{children}</Box>
 
 // Also fine: read the committed rect and branch on it.
 function Panel() {
   const { width } = useBoxRect()
-  return width >= 90 ? <Wide/> : <Narrow/>   // safe — committed rect is batch-invariant
+  return width >= 90 ? <Wide /> : <Narrow /> // safe — committed rect is batch-invariant
 }
 ```
 

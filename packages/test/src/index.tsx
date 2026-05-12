@@ -350,7 +350,12 @@ function sgrButtonByte(options?: TermlessMouseOptions): number {
  * `kittyKeyboard`, etc. — can pass a `Partial<TerminalCaps>` here.
  */
 export function createTermless(
-  dims: { cols: number; rows: number; caps?: Partial<TerminalCaps>; backend?: "xterm" | "ghostty" | "ghostty-native" } = {
+  dims: {
+    cols: number
+    rows: number
+    caps?: Partial<TerminalCaps>
+    backend?: "xterm" | "ghostty" | "ghostty-native"
+  } = {
     cols: 80,
     rows: 24,
   },

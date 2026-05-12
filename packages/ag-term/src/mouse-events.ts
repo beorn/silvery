@@ -65,9 +65,7 @@ export function createMouseEvent(
       `createMouseEvent(wheel) x=${x} y=${y} delta=${parsed.delta ?? 0} target=${target.type}#${targetId}`,
     )
   } else if (type === "mouseup") {
-    mouseLog.debug?.(
-      `createMouseEvent(mouseup) x=${x} y=${y} button=${parsed.button}`,
-    )
+    mouseLog.debug?.(`createMouseEvent(mouseup) x=${x} y=${y} button=${parsed.button}`)
   }
 
   return {

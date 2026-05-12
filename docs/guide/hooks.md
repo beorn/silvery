@@ -191,10 +191,10 @@ function App() {
 
 ### Return Value
 
-| Property | Type                                                | Description                                                                |
-| -------- | --------------------------------------------------- | -------------------------------------------------------------------------- |
-| `exit`   | `(error?: Error) => void`                           | Exit the app                                                               |
-| `panic`  | `(reason: unknown, options?: PanicOptions) => void` | Restore the terminal, then print a copyable fatal diagnostic to `stderr`   |
+| Property | Type                                                | Description                                                              |
+| -------- | --------------------------------------------------- | ------------------------------------------------------------------------ |
+| `exit`   | `(error?: Error) => void`                           | Exit the app                                                             |
+| `panic`  | `(reason: unknown, options?: PanicOptions) => void` | Restore the terminal, then print a copyable fatal diagnostic to `stderr` |
 
 ## useStdout
 

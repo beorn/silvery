@@ -90,8 +90,12 @@ function ResponsiveCard() {
   const direction = width < 60 ? "column" : "row"
   return (
     <Box flexDirection={direction}>
-      <Box flexGrow={1}><Text>Panel 1</Text></Box>
-      <Box flexGrow={1}><Text>Panel 2</Text></Box>
+      <Box flexGrow={1}>
+        <Text>Panel 1</Text>
+      </Box>
+      <Box flexGrow={1}>
+        <Text>Panel 2</Text>
+      </Box>
     </Box>
   )
 }

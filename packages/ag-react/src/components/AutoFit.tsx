@@ -240,12 +240,7 @@ export function AutoFit({ children, lanes, align = "start" }: AutoFitProps): Rea
   return (
     <Box flexDirection="column" width="100%" minWidth={0}>
       {phantom}
-      <Box
-        width="100%"
-        maxWidth={chosenLane}
-        minWidth={0}
-        alignSelf={visibleAlignSelf}
-      >
+      <Box width="100%" maxWidth={chosenLane} minWidth={0} alignSelf={visibleAlignSelf}>
         <AutoFitVisibleContext.Provider value={true}>{children}</AutoFitVisibleContext.Provider>
       </Box>
     </Box>

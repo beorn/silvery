@@ -173,12 +173,7 @@ describe("SCR2 — resize-taller paints the new rows (does NOT reproduce in mini
     const app = render(
       <Box width="100%" height="100%" flexDirection="column">
         <Box flexGrow={1} flexShrink={1} minHeight={0}>
-          <ListView
-            items={items}
-            nav
-            getKey={(s) => s}
-            renderItem={(s) => <Text>{s}</Text>}
-          />
+          <ListView items={items} nav getKey={(s) => s} renderItem={(s) => <Text>{s}</Text>} />
         </Box>
       </Box>,
     )

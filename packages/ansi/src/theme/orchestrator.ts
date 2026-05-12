@@ -189,11 +189,7 @@ export async function detectScheme(opts: DetectSchemeOptions = {}): Promise<Dete
   for (const field of COLOR_SCHEME_FIELDS) {
     const probed = (detected.palette as Record<string, unknown>)[field]
     slotSources[field] =
-      typeof probed === "string"
-        ? "probed"
-        : field in derivedSlots
-          ? "derived"
-          : "fallback"
+      typeof probed === "string" ? "probed" : field in derivedSlots ? "derived" : "fallback"
   }
 
   // Confidence heuristic: proportion of slots that were probed (of the 18 trackable: fg + bg + 16 ansi)
@@ -227,10 +223,7 @@ function deriveMissingSlotsFromProbe(probed: Partial<ColorScheme>): Partial<Colo
   ) {
     out.selectionBackground = blend(probed.background, probed.foreground, 0.16)
   }
-  if (
-    typeof probed.foreground === "string" &&
-    typeof probed.selectionForeground !== "string"
-  ) {
+  if (typeof probed.foreground === "string" && typeof probed.selectionForeground !== "string") {
     out.selectionForeground = probed.foreground
   }
   return out

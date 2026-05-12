@@ -45,11 +45,7 @@
  */
 
 import type { BoxProps } from "@silvery/ag/types"
-import {
-  type Breakpoint,
-  type ResponsiveValues,
-  useResponsiveValue,
-} from "./useResponsiveValue"
+import { type Breakpoint, type ResponsiveValues, useResponsiveValue } from "./useResponsiveValue"
 
 /** A responsive-or-flat value of T. Either a plain T or a `{ default, xs?, sm?, ... }` cascade. */
 export type Responsive<T> = T | ResponsiveValues<T>

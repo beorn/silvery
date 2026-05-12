@@ -19,7 +19,7 @@ function ResponsiveLayout({ children }: { children: React.ReactNode }) {
   const layout = useResponsiveBoxProps({
     default: { flexDirection: "column", padding: 1 },
     md: { flexDirection: "row", padding: 2 },
-    lg: { padding: 3 },          // inherits flexDirection: "row" from md
+    lg: { padding: 3 }, // inherits flexDirection: "row" from md
   })
   return <Box {...layout}>{children}</Box>
 }
@@ -41,21 +41,19 @@ The cascade above resolves to:
 ```ts
 type Responsive<T> = T | ResponsiveValues<T>
 
-function useResponsiveBoxProps(
-  map: Responsive<Partial<BoxProps>>,
-): Partial<BoxProps>
+function useResponsiveBoxProps(map: Responsive<Partial<BoxProps>>): Partial<BoxProps>
 ```
 
 The hook is reactive on viewport-size changes — same backing store as [`useResponsiveValue`](/api/use-responsive-value). Default breakpoint thresholds (terminal columns) are `xs=30`, `sm=60`, `md=90`, `lg=120`, `xl=150`.
 
 ## When to use which primitive
 
-| Need                                                          | Use                                  |
-| ------------------------------------------------------------- | ------------------------------------ |
-| Spread a Box-prop bag based on viewport width                 | `useResponsiveBoxProps`              |
-| Pick a non-Box-prop value (string, enum, callback)            | `useResponsiveValue`                 |
-| Read the **measured** rect of the current Box                 | `useBoxRect`                         |
-| Position something on the screen relative to scroll / sticky  | `useScrollRect` / `useScreenRect`    |
+| Need                                                         | Use                               |
+| ------------------------------------------------------------ | --------------------------------- |
+| Spread a Box-prop bag based on viewport width                | `useResponsiveBoxProps`           |
+| Pick a non-Box-prop value (string, enum, callback)           | `useResponsiveValue`              |
+| Read the **measured** rect of the current Box                | `useBoxRect`                      |
+| Position something on the screen relative to scroll / sticky | `useScrollRect` / `useScreenRect` |
 
 ## Examples
 

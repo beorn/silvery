@@ -13,11 +13,11 @@ silvery uses Bootstrap/Tailwind/Polaris-style mobile-first breakpoints:
 | Breakpoint | Default threshold (terminal columns) |
 | ---------- | ------------------------------------ |
 | `default`  | applies below `xs`                   |
-| `xs`       | ≥ 30                                  |
-| `sm`       | ≥ 60                                  |
-| `md`       | ≥ 90                                  |
-| `lg`       | ≥ 120                                 |
-| `xl`       | ≥ 150                                 |
+| `xs`       | ≥ 30                                 |
+| `sm`       | ≥ 60                                 |
+| `md`       | ≥ 90                                 |
+| `lg`       | ≥ 120                                |
+| `xl`       | ≥ 150                                |
 
 Each breakpoint is **cumulative** — a `lg` value applies at `lg` and `xl` unless `xl` overrides it. Specifying `default` is mandatory; every other breakpoint is optional.
 
@@ -80,8 +80,12 @@ function ResponsiveCard() {
   const direction = width < 60 ? "column" : "row"
   return (
     <Box flexDirection={direction}>
-      <Box flexGrow={1}><Text>Panel 1</Text></Box>
-      <Box flexGrow={1}><Text>Panel 2</Text></Box>
+      <Box flexGrow={1}>
+        <Text>Panel 1</Text>
+      </Box>
+      <Box flexGrow={1}>
+        <Text>Panel 2</Text>
+      </Box>
     </Box>
   )
 }
@@ -101,14 +105,16 @@ Under the deferred contract this can't happen. But the canonical fix for the pat
 // Old anti-pattern (works under deferred semantics, but flashes on mount):
 function Panel() {
   const { width } = useBoxRect()
-  return width >= 90 ? <WithSidebar/> : <NoSidebar/>
+  return width >= 90 ? <WithSidebar /> : <NoSidebar />
 }
 
 // Canonical:
 function Panel() {
   const layout = useResponsiveBoxProps({
-    default: {},          // no sidebar by default
-    md: { /* sidebar visible */ },
+    default: {}, // no sidebar by default
+    md: {
+      /* sidebar visible */
+    },
   })
   // ... render driven by `layout` spread ...
 }

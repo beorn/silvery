@@ -3984,10 +3984,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     waitUntilExit() {
       return exitPromise
     },
-    async waitForLayoutStable(opts?: {
-      timeoutMs?: number
-      maxPasses?: number
-    }): Promise<void> {
+    async waitForLayoutStable(opts?: { timeoutMs?: number; maxPasses?: number }): Promise<void> {
       // Drain additional commit / layout cycles until stable OR cap.
       //
       // Implementation note: production's processEventBatch runs its own
