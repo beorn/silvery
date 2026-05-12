@@ -38,6 +38,41 @@ export {
 export const reconciler = Reconciler(hostConfig)
 
 /**
+ * Error-info shape passed to {@link ReconcilerErrorHandlers} hooks. Matches
+ * the `errorInfo` argument react-reconciler 0.33 supplies to its
+ * `onUncaughtError` / `onCaughtError` / `onRecoverableError` callbacks.
+ */
+export interface ReconcilerErrorInfo {
+  componentStack: string
+  // onCaughtError adds this; optional on the others.
+  errorBoundary?: unknown
+}
+
+/**
+ * Required handler set passed to {@link createFiberRoot}. Plumbed through
+ * react-reconciler so every host can route render errors into its own panic /
+ * test / re-throw path.
+ *
+ * - `onUncaughtError`: fires when a component throws during render and the
+ *   error escapes ALL boundaries (including silvery's internal
+ *   `SilveryErrorBoundary`). The canonical panic site.
+ * - `onCaughtError`: fires when an error boundary catches a render error.
+ *   Useful for diagnostics; not always fatal.
+ * - `onRecoverableError`: fires for recoverable cases (aborted transitions,
+ *   hydration recoveries). Best-effort logging only.
+ *
+ * Required (not optional) at this internal level — every caller must pass
+ * handlers so silent swallowing is structurally impossible. The high-level
+ * public API (`silvery/runtime` `run()` + `createApp().run()`) provides
+ * sensible defaults; see `panicOnRenderError` in `AppRunOptions`.
+ */
+export interface ReconcilerErrorHandlers {
+  onUncaughtError(error: unknown, errorInfo: ReconcilerErrorInfo): void
+  onCaughtError(error: unknown, errorInfo: ReconcilerErrorInfo): void
+  onRecoverableError(error: unknown, errorInfo: ReconcilerErrorInfo): void
+}
+
+/**
  * Create a container for rendering.
  */
 export function createContainer(onRender: () => void): Container {
@@ -47,8 +82,15 @@ export function createContainer(onRender: () => void): Container {
 
 /**
  * Create a React fiber root for a container (wraps the 10-argument reconciler call).
+ *
+ * `handlers` is required — the reconciler's three error hooks must always be
+ * wired to *something*. Pass no-ops only when re-throwing the error from a
+ * non-altscreen renderer is the right behavior; pass a panic-routing handler
+ * when running in altscreen (alt-screen overlays would otherwise hide the
+ * stack). See `vendor/silvery/packages/ag-term/src/runtime/create-app.tsx`
+ * for the canonical wiring.
  */
-export function createFiberRoot(container: Container) {
+export function createFiberRoot(container: Container, handlers: ReconcilerErrorHandlers) {
   return reconciler.createContainer(
     container,
     1, // ConcurrentRoot
@@ -56,9 +98,9 @@ export function createFiberRoot(container: Container) {
     false, // isStrictMode
     null, // concurrentUpdatesByDefaultOverride
     "", // identifierPrefix
-    () => {}, // onUncaughtError
-    () => {}, // onCaughtError
-    () => {}, // onRecoverableError
+    handlers.onUncaughtError,
+    handlers.onCaughtError,
+    handlers.onRecoverableError,
     null, // onDefaultTransitionIndicator
   )
 }

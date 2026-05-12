@@ -468,7 +468,17 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     }
   })
 
-  instance.fiberRoot = createFiberRoot(instance.container)
+  // Test renderer path — no altscreen. Re-throw uncaught errors so vitest sees
+  // them through the standard test runner. Tests that intentionally render
+  // broken components catch via `expect(...).toThrow` or vitest's own
+  // unhandled-error machinery.
+  instance.fiberRoot = createFiberRoot(instance.container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
 
   /**
    * Get the content extent of the root node's children (for buffer padding trimming).

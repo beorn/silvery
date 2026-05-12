@@ -94,7 +94,15 @@ export function createBrowserRenderer<TBuffer extends RenderBuffer>(
   })
 
   const root = getContainerRoot(container)
-  const fiberRoot = createFiberRoot(container)
+  // Browser renderer: no altscreen — re-throw uncaught errors so the host's
+  // error reporter (browser devtools) sees them.
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
 
   let currentBuffer: RenderBuffer | null = null
   let currentElement: ReactElement = element
@@ -173,7 +181,15 @@ export function renderOnce<TBuffer extends RenderBuffer>(
 ): TBuffer {
   const container = createContainer(() => {})
   const root = getContainerRoot(container)
-  const fiberRoot = createFiberRoot(container)
+  // One-shot static render: re-throw uncaught errors so the caller sees the
+  // failure synchronously.
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
 
   reconciler.updateContainerSync(element, fiberRoot, null, null)
   reconciler.flushSyncWork()

@@ -311,7 +311,15 @@ export function renderToCanvas(
   })
 
   const root = getContainerRoot(container)
-  const fiberRoot = createFiberRoot(container)
+  // Canvas host (browser): no altscreen. Re-throw uncaught errors so browser
+  // devtools / canvas error overlay sees them.
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
 
   let currentBuffer: RenderBuffer | null = null
   let currentElement: ReactElement = element
@@ -431,7 +439,7 @@ export function renderToCanvas(
     const themed = React.createElement(ThemeProvider, { theme, children: withCursor })
 
     if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue)
-      return themed
+      {return themed}
     return React.createElement(
       FocusManagerContext.Provider,
       { value: focusManager },
@@ -570,7 +578,15 @@ export function renderCanvasOnce(
 
   const container = createContainer(() => {})
   const root = getContainerRoot(container)
-  const fiberRoot = createFiberRoot(container)
+  // One-shot canvas render: re-throw uncaught errors so the caller sees the
+  // failure synchronously.
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
 
   reconciler.updateContainerSync(element, fiberRoot, null, null)
   reconciler.flushSyncWork()

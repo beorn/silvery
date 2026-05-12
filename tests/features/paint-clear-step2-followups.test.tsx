@@ -57,7 +57,13 @@ function mountScene(element: React.ReactElement, cols: number, rows: number) {
   ensureLayoutEngine()
   const container = createContainer(() => {})
   const root = getContainerRoot(container)
-  const fiberRoot = createFiberRoot(container)
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
   reconciler.updateContainerSync(element, fiberRoot, null, null)
   reconciler.flushSyncWork()
   runLayoutPhases(root, cols, rows)

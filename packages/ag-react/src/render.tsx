@@ -668,8 +668,16 @@ class SilveryInstance {
       this.scheduler?.scheduleRender()
     })
 
-    // Create the React fiber root
-    this.fiberRoot = createFiberRoot(this.container)
+    // Create the React fiber root. The Ink-compatible render class is the
+    // legacy host (no panic infra) — re-throw uncaught errors so existing
+    // app-level `process.on("uncaughtException", …)` handlers see them.
+    this.fiberRoot = createFiberRoot(this.container, {
+      onUncaughtError: (error) => {
+        throw error
+      },
+      onCaughtError: () => {},
+      onRecoverableError: () => {},
+    })
 
     // Set up scheduler — route render output through the owner when active
     this.scheduler = new RenderScheduler({

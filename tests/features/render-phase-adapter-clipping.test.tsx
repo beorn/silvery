@@ -44,7 +44,13 @@ function renderViaAdapter(
 
   const container = createContainer(() => {})
   const root = getContainerRoot(container)
-  const fiberRoot = createFiberRoot(container)
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
 
   reconciler.updateContainerSync(element, fiberRoot, null, null)
   reconciler.flushSyncWork()

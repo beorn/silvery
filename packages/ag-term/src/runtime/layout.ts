@@ -70,8 +70,15 @@ export function layout(element: ReactElement, dims: Dims, options: LayoutOptions
   // Create container for React reconciliation
   const container = createContainer(() => {})
 
-  // Create fiber root
-  const fiberRoot = createFiberRoot(container)
+  // Create fiber root. One-shot layout — no altscreen, no panic infra. Re-throw
+  // uncaught errors so the caller surfaces them synchronously.
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
 
   // Create minimal mock stdout for components that use useStdout
   const mockStdout = {

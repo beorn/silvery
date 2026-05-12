@@ -271,7 +271,16 @@ export function renderToXterm(
   })
 
   const root = getContainerRoot(container)
-  const fiberRoot = createFiberRoot(container)
+  // Xterm host (canvas / browser dev path): no altscreen, no panic infra.
+  // Re-throw uncaught errors so the host's normal error reporter sees them
+  // (browser devtools / canvas error overlay) instead of silently swallowing.
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error) => {
+      throw error
+    },
+    onCaughtError: () => {},
+    onRecoverableError: () => {},
+  })
 
   let currentBuffer: RenderBuffer | null = null
   let currentElement: ReactElement = element
@@ -410,7 +419,7 @@ export function renderToXterm(
     })
 
     if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue)
-      return themed
+      {return themed}
     return React.createElement(
       FocusManagerContext.Provider,
       { value: focusManager },

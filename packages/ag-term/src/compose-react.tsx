@@ -74,7 +74,16 @@ export function withReact(element: ReactElement) {
       }
     })
 
-    const fiberRoot = createFiberRoot(container)
+    // withReact is a pipe()-composed plugin path; the panic-aware altscreen
+    // host (create-app.tsx) is the canonical caller. Re-throw render errors so
+    // the host process / outer error handler can decide what to do.
+    const fiberRoot = createFiberRoot(container, {
+      onUncaughtError: (error) => {
+        throw error
+      },
+      onCaughtError: () => {},
+      onRecoverableError: () => {},
+    })
 
     // Replace ag with one backed by the reconciler's root node
     const reconcilerRoot = getContainerRoot(container)

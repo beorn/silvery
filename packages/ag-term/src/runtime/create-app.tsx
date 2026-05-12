@@ -85,6 +85,7 @@ import {
   createFiberRoot,
   getContainerRoot,
   reconciler,
+  type ReconcilerErrorInfo,
   setOnNodeRemoved,
 } from "@silvery/ag-react/reconciler"
 import { map, merge, takeUntil } from "@silvery/create/streams"
@@ -479,6 +480,40 @@ export interface AppRunOptions {
    * hooks like useSelection() can discover interaction features.
    */
   capabilityRegistry?: import("@silvery/ag-react/context").CapabilityLookup
+  /**
+   * Auto-panic on React render errors that escape every error boundary.
+   *
+   * When enabled, an uncaught React render error (e.g. a hook violation,
+   * a throw in render, an unhandled exception in an event handler) flows
+   * through the reconciler's `onUncaughtError` hook directly into
+   * `panicApp()`, which:
+   *
+   *   1. Restores the terminal (exits alt screen, disables raw mode,
+   *      tears down Kitty / mouse / focus reporting).
+   *   2. Writes the error message + stack to stderr on the NORMAL screen
+   *      (not in an alt-screen overlay where the user can't copy/paste).
+   *   3. Sets `process.exitCode = 1`.
+   *
+   * When enabled, silvery also auto-registers
+   * `process.on("uncaughtException", panicApp)` and
+   * `process.on("unhandledRejection", panicApp)` so non-React crashes get
+   * the same panic dump. Both handlers are removed on app shutdown so
+   * subsequent runs in the same process (e.g. test re-mounts) don't
+   * accumulate listeners.
+   *
+   * Modes:
+   * - `true`: always panic on render errors.
+   * - `false`: never panic — uncaught errors fall through to
+   *   silvery's `SilveryErrorBoundary` and are recorded via
+   *   `recordBoundaryError` (flushed to stderr on shutdown). This is the
+   *   test-friendly behavior.
+   * - `"auto"` (default): panic in non-test environments, capture-and-resume
+   *   in tests. The test-environment detector reads `NODE_ENV === "test"`,
+   *   `VITEST`, and `globalThis.__vitest_worker__`.
+   *
+   * @default "auto"
+   */
+  panicOnRenderError?: boolean | "auto"
   /** Providers and plain values to inject */
   [key: string]: unknown
 }
@@ -730,8 +765,21 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     capabilityRegistry: capabilityRegistryOption,
     writable: explicitWritable,
     onResize: explicitOnResize,
+    panicOnRenderError: panicOnRenderErrorOption = "auto",
     ...injectValues
   } = options
+
+  // Detect test environments where the existing test infrastructure
+  // intentionally renders broken components (e.g. invariant-violation
+  // assertions, error-boundary tests). In those environments the default
+  // ("auto") should NOT auto-exit the process — the boundary still records
+  // the error for diagnostics.
+  const isTestEnv =
+    process.env.NODE_ENV === "test" ||
+    process.env.VITEST !== undefined ||
+    typeof (globalThis as { __vitest_worker__?: unknown }).__vitest_worker__ !== "undefined"
+  const resolvedPanicMode =
+    panicOnRenderErrorOption === "auto" ? !isTestEnv : panicOnRenderErrorOption
   const mouseParseOptions = typeof mouseOption === "object" ? mouseOption : undefined
   const mouseTrackingEnabled = mouseOption === true || mouseParseOptions != null
 
@@ -1639,6 +1687,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (cleanedUp) return
     cleanedUp = true
 
+    // Unregister auto-panic handlers. Idempotent — these are only registered
+    // when resolvedPanicMode is true; calling removeListener with a handler
+    // that wasn't registered is a no-op.
+    if (resolvedPanicMode) {
+      try {
+        process.off("uncaughtException", panicUncaughtExceptionHandler)
+        process.off("unhandledRejection", panicUnhandledRejectionHandler)
+      } catch {
+        // Best-effort — process may already be tearing down.
+      }
+    }
+
     // Log keypress performance summary before teardown (only emits when TRACE was active)
     logExitSummary()
 
@@ -2002,8 +2062,96 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     }
   })
 
-  // Create React fiber root
-  const fiberRoot = createFiberRoot(container)
+  // Create React fiber root with error-routing handlers.
+  //
+  // ## How the React error path actually reaches us
+  //
+  // Silvery's tree is always wrapped in `SilveryErrorBoundary` (see the
+  // `<SilveryErrorBoundary onError={recordBoundaryError}>` wrap below).
+  // Because of that, when a component throws during render, React's error
+  // routing is:
+  //
+  //   componentDidCatch → boundary recovers → React calls `onCaughtError`
+  //
+  // `onUncaughtError` only fires when an error escapes EVERY boundary —
+  // which, in silvery, only happens if the boundary itself throws or
+  // someone consciously bypasses it. So `onCaughtError` is our canonical
+  // panic site for normal render errors.
+  //
+  // ## Routing under auto-panic
+  //
+  // When auto-panic is enabled, both hooks route to `panicApp`:
+  //   1. `panicApp` restores the terminal (alt-screen exit, raw mode off,
+  //      Kitty / mouse / focus reporting torn down) BEFORE any stderr
+  //      write.
+  //   2. It flushes the panic report to stderr on the NORMAL screen so the
+  //      user can copy/paste/screenshot the message + stack — no
+  //      alt-screen overlay swallowing the error.
+  //   3. It sets `process.exitCode = 1` and resolves the exit waiter.
+  //
+  // When auto-panic is disabled (test environments, explicit opt-out),
+  // both hooks no-op — the boundary's `recordBoundaryError` records the
+  // error to the panic queue (flushed to stderr on cleanup), and the
+  // boundary renders its rich error overlay in the alt screen. This is
+  // the existing test-friendly behavior.
+  //
+  // ## onRecoverableError
+  //
+  // Fires for recoverable cases (aborted transitions, hydration
+  // recoveries). Not fatal — best-effort log without flipping the exit
+  // code.
+  const buildPanicDetails = (error: unknown, info?: ReconcilerErrorInfo): string[] | undefined => {
+    const details: string[] = []
+    if (error instanceof Error && error.stack) {
+      details.push(error.stack)
+    }
+    if (info?.componentStack) {
+      details.push(`component stack:${info.componentStack}`)
+    }
+    return details.length > 0 ? details : undefined
+  }
+  const fiberRoot = createFiberRoot(container, {
+    onUncaughtError: (error, info) => {
+      if (!resolvedPanicMode) return
+      panicApp(error, {
+        title: "react: uncaught render error",
+        details: buildPanicDetails(error, info),
+      })
+    },
+    onCaughtError: (error, info) => {
+      if (!resolvedPanicMode) return
+      // The SilveryErrorBoundary will recover and try to render its
+      // overlay — but we panic first, so the user sees the error on
+      // the normal screen with full stack instead of a swallowed
+      // alt-screen overlay.
+      panicApp(error, {
+        title: "react: render error caught by boundary",
+        details: buildPanicDetails(error, info),
+      })
+    },
+    onRecoverableError: (error) => {
+      if (error instanceof Error) {
+        log.debug?.(`React recoverable error: ${error.message}`)
+      }
+    },
+  })
+
+  // When auto-panic is enabled, route process-level crashes through panicApp
+  // so non-React exceptions get the same terminal-restore + stderr-dump
+  // treatment. Idempotent: removed on cleanup so test re-mounts / repeated
+  // run() calls in the same process don't accumulate listeners.
+  const panicUncaughtExceptionHandler = (error: Error) => {
+    panicApp(error, { title: "uncaughtException" })
+  }
+  const panicUnhandledRejectionHandler = (reason: unknown) => {
+    panicApp(reason instanceof Error ? reason : new Error(String(reason)), {
+      title: "unhandledRejection",
+    })
+  }
+  if (resolvedPanicMode) {
+    process.on("uncaughtException", panicUncaughtExceptionHandler)
+    process.on("unhandledRejection", panicUnhandledRejectionHandler)
+  }
 
   // Track current buffer for text access
   let currentBuffer: Buffer
