@@ -1012,7 +1012,15 @@ export function wrapTextWithOffsets(text: string, width: number): WrapTextSlice[
       if (lastBreakIndex > 0 && lastBreakGraphemeIdx >= 0) {
         // Word-boundary wrap: rewind to last break point.
         const savedLine = currentLine
-        currentLine = savedLine.slice(0, lastBreakIndex)
+        // `lastBreakIndex` points just past the boundary grapheme, so the
+        // slice INCLUDES the trailing word-boundary char (typically a
+        // space). The next slice's `startOffset` already skips that
+        // boundary, but the boundary still lives in `text`. Drop trailing
+        // whitespace from the text so callers see clean line content
+        // (parity with `wrapTextWithMeasurer`'s `trimEnd()`). Non-space
+        // boundaries (hyphen, etc.) are not whitespace and pass through
+        // untouched. @km/tui/softwrap-leading-space-on-wrap.
+        currentLine = savedLine.slice(0, lastBreakIndex).trimEnd()
         pushLine(lastBreakGraphemeIdx)
         // Reset; rewind the loop counter so the rewind-target grapheme is
         // re-processed at the start of the next line.

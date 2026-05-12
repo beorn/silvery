@@ -157,6 +157,24 @@ describe("wrapTextWithOffsets: soft break preserves source offsets", () => {
       )
     }
   })
+
+  test("word-boundary wrap rewind drops trailing space from slice text (@km/tui/softwrap-leading-space-on-wrap)", () => {
+    // When a wrap occurs mid-word, the algorithm rewinds to the last
+    // fitting word boundary. The trailing space at that boundary lives
+    // in `currentLine` but is the boundary character itself — the next
+    // slice's `startOffset` already jumps past it. The slice `text`
+    // must match: no trailing space (parity with `wrapTextWithMeasurer`
+    // which calls `trimEnd()` in trim mode).
+    const slices = wrapTextWithOffsets("board, visible as column", 10)
+    // Width 10 forces a break after "board,". The space at position 6
+    // is the last word boundary — the next slice must NOT start with it,
+    // and the prior slice must NOT end with it.
+    expect(slices.map((s) => s.text)).not.toContain(" visible")
+    for (const s of slices) {
+      expect(s.text).not.toMatch(/^\s/)
+      expect(s.text).not.toMatch(/\s$/)
+    }
+  })
 })
 
 describe("Text rendering: soft-break wrap in box", () => {
