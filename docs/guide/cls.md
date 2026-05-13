@@ -183,7 +183,7 @@ The whole stack is ~450 LOC; the test suite is ~600 LOC (19 unit on pure math, 1
 
 ## Related
 
-- [`@silvery/test`](/api/test) — capture API (`beginCLSCapture`, `endCLSCapture`, types)
+- `@silvery/test` — capture API (`beginCLSCapture`, `endCLSCapture`, types); see the "Quick start" + "Capture API" sections above for usage
 - [SILVERY_STRICT contract](/guide/debugging#silvery_strict) — umbrella env var, slug taxonomy
 - [`@km/silvery/termless-realism-parity`](https://github.com/beorn/km/blob/main/%40km/silvery/termless-realism-parity.md) — sibling bead, mount production tree for CLS evidence to be valid
 - Web Vitals CLS — the design inspiration: [web.dev/articles/cls](https://web.dev/articles/cls)
