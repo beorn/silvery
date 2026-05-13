@@ -76,22 +76,24 @@ import type {
 /**
  * Capabilities advertised by the flexily-zero adapter.
  *
- * All flags start `false` at A0.0.5 — they flip as A0.1 / A0.2 / A0.3 land the
- * underlying primitives. The hook substrate at flexily SHA `7f23101` (Phase A0.0
- * spike) is internal-only and not yet a public capability worth advertising.
+ * Four flags flipped at A0.1 (engine-native CQ resolution shipped at vendor/flexily
+ * `46141e9`): containerQueries, containSize, containerQueryUnits, childStyleMutation.
  *
- * - `containerQueries` / `containSize` / `containerQueryUnits` / `childStyleMutation`
- *   → flipped to `true` by Phase A0.1 (engine-native CQ resolution)
- * - `fitWidth`           → flipped by Phase A0.2 (single-pass lane snap)
- * - `styleMathFunctions` → flipped by Phase A0.3 (late-bound min/max/clamp)
+ * - `containerQueries`     → A0.1 ✓ — Pass 1 freezeQuerySize + Pass 2 ancestor walk
+ * - `containSize`          → A0.1 ✓ — Phase 9 inline-axis shrink-wrap gate
+ * - `containerQueryUnits`  → A0.1 ✓ — UNIT_CQI / UNIT_CQMIN parsed and resolved
+ * - `childStyleMutation`   → A0.1 ✓ — setContainerQueryStyle hook (A0.0 substrate)
+ * - `fitWidth`             → A0.2 (single-pass lane snap)
+ * - `styleMathFunctions`   → A0.3 (late-bound min/max/clamp, contract in
+ *   vendor/flexily/docs/two-phase-layout.md)
  */
 const FLEXILY_CAPABILITIES: EngineCapabilities = Object.freeze({
-  containerQueries: false, // → A0.1
-  containSize: false, // → A0.1
-  containerQueryUnits: false, // → A0.1
+  containerQueries: true, // ✓ A0.1
+  containSize: true, // ✓ A0.1
+  containerQueryUnits: true, // ✓ A0.1
   fitWidth: false, // → A0.2
   styleMathFunctions: false, // → A0.3
-  childStyleMutation: false, // → A0.1 (vendor/flexily 7f23101 substrate is internal-only)
+  childStyleMutation: true, // ✓ A0.1
 })
 
 // ============================================================================

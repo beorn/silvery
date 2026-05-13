@@ -53,16 +53,19 @@ const ALL_TRUE: EngineCapabilities = Object.freeze({
 })
 
 describe("[A0.0.5] Layout engine capability model", () => {
-  test("flexily-zero adapter declares all capabilities false at A0.0.5 (flipped by A0.1+)", () => {
+  test("flexily-zero adapter declares A0.1-shipped capabilities true, A0.2/A0.3 still false", () => {
     const engine = createFlexilyZeroEngine()
 
     expect(engine.capabilities).toBeDefined()
-    expect(engine.capabilities.containerQueries).toBe(false)
-    expect(engine.capabilities.containSize).toBe(false)
-    expect(engine.capabilities.containerQueryUnits).toBe(false)
+    // ✓ A0.1 shipped — see vendor/flexily/docs/two-phase-layout.md
+    expect(engine.capabilities.containerQueries).toBe(true)
+    expect(engine.capabilities.containSize).toBe(true)
+    expect(engine.capabilities.containerQueryUnits).toBe(true)
+    expect(engine.capabilities.childStyleMutation).toBe(true)
+    // → A0.2 (fitWidth single-pass lane snap)
     expect(engine.capabilities.fitWidth).toBe(false)
+    // → A0.3 (math functions, late-bound per the contract doc)
     expect(engine.capabilities.styleMathFunctions).toBe(false)
-    expect(engine.capabilities.childStyleMutation).toBe(false)
   })
 
   test("capabilities object is frozen (no mutation after adapter creation)", () => {
