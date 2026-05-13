@@ -256,6 +256,16 @@ class YogaNodeAdapter implements LayoutNode {
     this.node.setOverflow(overflow as Overflow)
   }
 
+  // Container queries (A0.1) — yoga does NOT support these primitives. The
+  // setters are no-ops; user-level guards via requireCapability("containerQueries", ...)
+  // at the React layer throw at first paint when consumers ask for CQ on yoga.
+  setContainerType(_containerType: number): void {
+    // no-op (yoga has no CQ support; capability is false)
+  }
+  setContainSize(_value: boolean): void {
+    // no-op (yoga has no contain:size; capability is false)
+  }
+
   // Aspect Ratio
   setAspectRatio(value: number): void {
     this.node.setAspectRatio(value)

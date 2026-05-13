@@ -6,7 +6,7 @@
 
 import { createLogger } from "loggily"
 import type { LayoutNode } from "@silvery/ag/layout-types"
-import { getConstants, getLayoutEngine } from "@silvery/ag-term/layout-engine"
+import { getConstants, getLayoutEngine, requireCapability } from "@silvery/ag-term/layout-engine"
 import { collectPlainTextSkipHidden as collectNodeTextContent } from "@silvery/ag-term/pipeline/collect-text"
 import {
   type BoxProps,
@@ -800,6 +800,34 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
     }
   } else if (wasRemoved("overflow") || wasRemoved("overflowX") || wasRemoved("overflowY")) {
     layoutNode.setOverflow(c.OVERFLOW_VISIBLE)
+  }
+
+  // Container queries (A0.1) — wired only when the active engine advertises the
+  // capability. Under yoga, `requireCapability` throws at first paint with the
+  // one-line fix (SILVERY_ENGINE=flexily). Phase 1 contains inline-size only;
+  // `containerName` is reserved for forward-compat (matcher arrives in Phase A).
+  //
+  // The numeric mapping mirrors flexily's CONTAINER_TYPE_NORMAL=0 / INLINE_SIZE=1.
+  // Hardcoded at this seam to avoid widening LayoutConstants for two values that
+  // don't roundtrip through yoga (yoga has no equivalent).
+  if (props.containerType !== undefined) {
+    requireCapability("containerQueries", "<Box containerType>")
+    layoutNode.setContainerType(props.containerType === "inline-size" ? 1 : 0)
+  } else if (wasRemoved("containerType")) {
+    layoutNode.setContainerType(0)
+  }
+  if (props.containSize !== undefined) {
+    requireCapability("containSize", "<Box containSize>")
+    layoutNode.setContainSize(props.containSize)
+  } else if (wasRemoved("containSize")) {
+    layoutNode.setContainSize(false)
+  }
+  // containerQueries — substrate prop, no engine wiring yet. The Phase A
+  // silvery-layer matcher will read this prop on the React side, not push it
+  // into the layout engine. We DO surface a capability check so consumers under
+  // yoga get the same one-line-fix error shape as the other CQ primitives.
+  if (props.containerQueries !== undefined) {
+    requireCapability("containerQueries", "<Box containerQueries>")
   }
 
   // Border (affects layout - 1 cell per border side in terminal mode).

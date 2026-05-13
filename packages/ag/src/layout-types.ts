@@ -108,6 +108,17 @@ export interface LayoutNode {
   // Aspect Ratio
   setAspectRatio(value: number): void
 
+  // Container queries (A0.1) — only implemented by adapters that advertise the
+  // `containerQueries` / `containSize` capabilities (flexily today; yoga never).
+  // Adapters without the capability MUST implement these as no-ops; the
+  // user-facing throw fires at the React layer via `requireCapability` before
+  // these methods are called in production. Defining the methods on the
+  // interface keeps consumers branch-free.
+  /** CSS container-type. Maps to flexily's CONTAINER_TYPE_NORMAL | CONTAINER_TYPE_INLINE_SIZE. */
+  setContainerType(containerType: number): void
+  /** CSS contain: size. True = block intrinsic propagation on the inline axis. */
+  setContainSize(value: boolean): void
+
   // Layout calculation
   calculateLayout(width: number, height: number, direction?: number): void
 

@@ -273,6 +273,14 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
     this.node.setOverflow(overflow)
   }
 
+  // Container queries (A0.1) — flexily supports both; advertised via FLEXILY_CAPABILITIES.
+  setContainerType(containerType: number): void {
+    this.node.setContainerType(containerType)
+  }
+  setContainSize(value: boolean): void {
+    this.node.setContainSize(value)
+  }
+
   // Aspect Ratio
   setAspectRatio(value: number): void {
     this.node.setAspectRatio(value)

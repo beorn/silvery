@@ -801,6 +801,82 @@ export interface BoxProps
    * @internal
    */
   representsItems?: number
+
+  // ==========================================================================
+  // Container Queries (A0.1)
+  // ==========================================================================
+  // Maps to CSS `container-type` / `contain: size` / `@container` rules. Phase 1
+  // ships inline-size queries only. Block-size + named containers arrive later.
+  //
+  // Engine requirement: cqi resolution + the inter-pass mutation hook are
+  // flexily-only — under yoga, `containerQueries` / `containSize` / cqi units
+  // throw at first paint via `requireCapability`. Switch via SILVERY_ENGINE=flexily.
+
+  /**
+   * Declare this Box as a container-query container (A0.1).
+   *
+   * Descendants' `cqi` / `cqmin` values resolve against this Box's frozen
+   * inline-size, captured during layout Pass 1. Combined with `containSize`,
+   * this Box's inline-size is invariant under children's CQ branch flips.
+   *
+   * `"inline-size"` — equivalent to CSS `container-type: inline-size`. Maps to
+   *   `flexily.CONTAINER_TYPE_INLINE_SIZE` at the engine layer.
+   * `"normal"` — opt out (default). Phase 1 supports only the two values.
+   */
+  containerType?: "normal" | "inline-size"
+
+  /**
+   * Enable CSS `contain: size` on this Box (A0.1).
+   *
+   * When true, children's intrinsic sizes do not propagate into this Box's
+   * inline-size. Required pairing with `containerType: "inline-size"` for a
+   * sound CQ container — without it, child sizes feed back into container
+   * size and break the two-phase invariance guarantee. The dev-mode
+   * `intrinsic-leak` assertion throws on the unsound configuration.
+   *
+   * Phase 1 contains inline-size only.
+   */
+  containSize?: boolean
+
+  /**
+   * Container name (CSS `container-name`) — referenced by `@container <name>`
+   * queries. Phase 1 is informational only (single anonymous container per
+   * subtree); named-container resolution arrives with the silvery-layer CQ
+   * matcher.
+   */
+  containerName?: string
+
+  /**
+   * Container-query branches — declarative responsive styling against this
+   * Box's frozen inline-size (A0.1 substrate). Phase 1 ships the engine hook;
+   * the matcher that interprets `containerQueries` and applies branch styles
+   * to children lands as part of Phase A (silvery layer).
+   *
+   * Until the matcher ships, the prop is reserved for forward-compat — passing
+   * it does not yet apply branch styles. Use cqi units directly for now.
+   */
+  containerQueries?: readonly ContainerQueryBranch[]
+}
+
+/**
+ * A container-query branch (A0.1 substrate; matcher in Phase A).
+ *
+ * Matches against the container's frozen inline-size. Phase 1 supports
+ * width-based conditions only.
+ */
+export interface ContainerQueryBranch {
+  /** Match when container inline-size is at least this many cells. */
+  readonly minWidth?: number
+  /** Match when container inline-size is at most this many cells. */
+  readonly maxWidth?: number
+  /** Match when container inline-size equals this many cells. */
+  readonly width?: number
+  /**
+   * Branch styles applied to descendants when this condition matches. Subset
+   * of `BoxProps` / `TextProps` style fields; full schema arrives with the
+   * matcher.
+   */
+  readonly apply: Record<string, unknown>
 }
 
 /**
