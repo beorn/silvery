@@ -157,21 +157,25 @@ Pairs with [`@km/silvery/termless-realism-parity`](https://github.com/beorn/km/b
 
 ## How it works under the hood
 
-1. **Pipeline hook** ([`packages/ag-term/src/pipeline/layout-phase.ts`](https://github.com/beorn/silvery/blob/main/packages/ag-term/src/pipeline/layout-phase.ts)): inside `propagateLayout`, immediately after `node.boxRect = rect`, a single call to `getActiveCLSRecorder()?.recordRect(...)` records the transition. The optional chain short-circuits when no capture is active — zero overhead in the common case. `Date.now()` runs only when a capture is in flight.
+CLS is a one-monitor / two-consumer architecture: a single `ClsMonitor` per `App` is the source of truth for shift detection; production-time logging and test-time capture both pull from it.
 
-2. **Active recorder registry** ([`packages/ag/src/cls-active.ts`](https://github.com/beorn/silvery/blob/main/packages/ag/src/cls-active.ts)): a module-level slot holds the currently-active `CLSRecorder`. `setActiveCLSRecorder(r)` registers; `clearActiveCLSRecorder()` clears. `setActiveCLSRecorder` throws on double-set so two parallel captures can't silently share the pipeline hook.
+1. **ClsMonitor** ([`packages/ag-term/src/runtime/cls-monitor.ts`](https://github.com/beorn/silvery/blob/main/packages/ag-term/src/runtime/cls-monitor.ts)): the single per-`App` recorder. Owns the storm-detector path-history, the test-time session-shift buffer, the active classifier, and the `clsEnabled()` gate (true under `DEBUG=silvery:cls` / `SILVERY_INSTRUMENT=cls`, OR while a capture is active). `onCommit(root, cols, rows, scrollOrResize)` walks the tree post-commit reading **`node.screenRect`** (post-scroll, sticky-aware — the only rect domain that catches scroll-induced + sticky-element flicker; the pre-scroll `boxRect` path was the consolidation history's bug).
 
-3. **Recorder state machine** ([`packages/ag/src/cls-recorder.ts`](https://github.com/beorn/silvery/blob/main/packages/ag/src/cls-recorder.ts)): per-instance `CLSRecorder` with `beginCapture` / `recordRect` / `endCapture` / `cancelCapture` / `peekShifts`. Drops null rects (first paint, unmount) and equal-rect transitions. Strict bracketing — double-begin throws.
+2. **Renderer commit boundary** ([`packages/ag-term/src/renderer.ts`](https://github.com/beorn/silvery/blob/main/packages/ag-term/src/renderer.ts)): each `render()` instantiates `createClsMonitor()` and passes it via `buildApp({ clsMonitor })`. `doRender` calls `clsMonitor.onCommit(...)` after every pipeline-convergence pass settles — this is the canonical commit-window boundary, the same place where outline-decoration carries cross-frame snapshots.
 
-4. **Pure math** ([`packages/ag/src/cls.ts`](https://github.com/beorn/silvery/blob/main/packages/ag/src/cls.ts)): types (`LayoutShift`, `CLSReport`, `ReflowReason`) + `computeShiftScore` (max-area × euclidean-distance) + `aggregateReport` + `aggregateUnexpectedScore`. No React, no signals, no AgNode dependency — pure rect-diff.
+3. **Test-time capture** (`ClsMonitor.beginCapture` / `endCapture` / `cancelCapture`): the test-facing API. `beginCapture(classifier?)` opens a session-shift buffer and overrides the default `"unexpected"` reason-labeling. Subsequent `onCommit` walks push shifts into the buffer (skipping commits with `scrollOrResize=true` — user-action motion is not unexpected flicker). `endCapture()` aggregates into a `CLSReport`, applies `assertNoUnexpectedShifts` (the `SILVERY_STRICT=cls` umbrella gate), and clears state.
 
-5. **Strict gate** ([`packages/ag-term/src/strict-cls.ts`](https://github.com/beorn/silvery/blob/main/packages/ag-term/src/strict-cls.ts)): `assertNoUnexpectedShifts(report)` honors `SILVERY_STRICT=cls` via the umbrella contract. `endCLSCapture()` calls it unconditionally — no-op when the slug is off.
+4. **Production-time logging** (`onCommit`'s env-gated path): when `DEBUG=silvery:cls` or `SILVERY_INSTRUMENT=cls` is set, the same walk feeds storm-detection (per-path window thresholds + per-commit count thresholds), size-invariant warnings (negative / overflowing / zero-area-with-content rects), and per-shift `silvery:cls` debug logs. Independent of capture state — production observability and test assertions never interfere.
 
-The whole stack is ~700 LOC; the test suite is ~800 LOC (Phase 1: 19 unit, Phase 2: 15 unit, Phase 3+4: integration with strict + active, Phase 6: 8 integration via `createRenderer`).
+5. **Pure math** ([`packages/ag/src/cls.ts`](https://github.com/beorn/silvery/blob/main/packages/ag/src/cls.ts)): types (`LayoutShift`, `CLSReport`, `ReflowReason`, `ReasonClassifier`) + `computeShiftScore` (max-area × euclidean-distance) + `aggregateReport` + `aggregateUnexpectedScore` + `defaultClassifier`. No React, no signals, no AgNode dependency — pure rect-diff. Imported by both `ClsMonitor` and consumers building custom classifiers.
+
+6. **Strict gate** ([`packages/ag-term/src/strict-cls.ts`](https://github.com/beorn/silvery/blob/main/packages/ag-term/src/strict-cls.ts)): `assertNoUnexpectedShifts(report)` honors `SILVERY_STRICT=cls` via the umbrella contract. Called from `ClsMonitor.endCapture()` unconditionally — no-op when the slug is off.
+
+The whole stack is ~450 LOC; the test suite is ~600 LOC (19 unit on pure math, 11 on ClsMonitor capture state machine, 8 end-to-end through `createRenderer`, 4 screenRect-domain regression).
 
 ## Limitations
 
-- **Single-process capture**. Two parallel captures on different App instances in one process is not supported — `setActiveCLSRecorder` throws on double-set.
+- **Single capture per `App`**. `beginCapture` throws on double-begin. Two `App` instances coexisting in one process each have their own `ClsMonitor` — captures are independent.
 - **Wall-clock timestamps**. `frameTimestamp` uses `Date.now()` — not monotonic. Use `peekShifts()` if you need to correlate with a monotonic clock.
 - **No partial-overlap weighting**. A 5×5 block that moves 10 cells scores the same regardless of how much the from/to rects overlap. Web CLS treats partial overlap differently; we don't.
 - **Resize without move is not a shift**. A block that grows in place (`{0,0,2,2}` → `{0,0,4,4}`) scores 0 — same top-left position, zero euclidean distance. Detect resize separately via dimension diffs if you care about that signal.
