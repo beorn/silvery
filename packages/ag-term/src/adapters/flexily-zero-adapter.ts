@@ -50,12 +50,20 @@ import {
   POSITION_TYPE_ABSOLUTE,
   POSITION_TYPE_RELATIVE,
   POSITION_TYPE_STATIC,
-  UNIT_CQI,
-  UNIT_CQMIN,
   WRAP_NO_WRAP,
   WRAP_WRAP,
   WRAP_WRAP_REVERSE,
 } from "flexily"
+
+// Flexily UNIT_CQI / UNIT_CQMIN constants. Hardcoded at this seam rather than
+// imported from "flexily" because the published flexily@0.7.1 does not export
+// them yet — A0.2's export-bump (vendor/flexily commit fb61a79) hasn't shipped
+// to npm. Constants are stable per Phase 1 of @km/silvery/responsive-layout-
+// architecture-reframe; same shape as the CONTAINER_TYPE_INLINE_SIZE=1 hardcode
+// in applyBoxProps. When flexily 0.7.2+ ships with the new exports, this can be
+// replaced with a named import.
+const UNIT_CQI = 6
+const UNIT_CQMIN = 7
 
 import type { FitWidthLane, LayoutNode, MeasureFunc, MeasureMode } from "@silvery/ag/layout-types"
 import type {
