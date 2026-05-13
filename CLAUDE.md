@@ -410,7 +410,42 @@ CSS flexbox via Flexily. Let the layout engine compute positions and sizes.
 </Box>
 ```
 
-`useBoxRect()` gives synchronous access to a component's size during render — no effects, no 0x0 flash.
+### The three-primitive responsive contract (A0 substrate, shipped)
+
+For container-relative responsive design, silvery exposes three engine-native primitives. **Use these instead of `useBoxRect()` + manual measurement.** The measurement-then-React-rerender dance that pre-A0 consumers needed is what produced the "snap-left" flash class of bugs.
+
+1. **`containerType` + `containSize`** — declare a Box as a CSS container-query container. Phase 1 supports `"inline-size"`.
+
+   ```tsx
+   <Box containerType="inline-size" containSize>
+     {children}  // cqi values inside resolve against this Box's inline-size
+   </Box>
+   ```
+
+2. **`fitWidth`** — single-pass lane snap. Replaces `<AutoFit>` entirely.
+
+   ```tsx
+   <Box fitWidth={[80, 120, "100cqi"]}>
+     {children}  // Box snaps to smallest lane ≥ children's max-content
+   </Box>
+   ```
+
+3. **`cqi` / `cqmin` units + `min()` / `max()` / `clamp()`** — late-bound, evaluated against the container's frozen inline-size. Use `max(N, ...cqi)` to prevent cqi collapse-to-zero in small containers.
+
+   ```tsx
+   // padding scales with container width but never collapses below 1 cell
+   <Box paddingLeft="max(1, 2cqi)">…</Box>
+   ```
+
+**Engine requirement**: all three primitives are `flexily`-only — under `yoga`, they throw at first paint with a one-line fix (`SILVERY_ENGINE=flexily`). See `@silvery/ag-term/layout-engine`'s `requireCapability` and the `EngineCapabilities` interface.
+
+**Reference**: the two-phase layout contract that makes these primitives sound is documented in `vendor/flexily/docs/two-phase-layout.md`. The dragon bead `@km/silvery/responsive-layout-architecture-reframe` has the full Phase A0 / A / B / C plan.
+
+### Escape hatch: `useBoxRect()` (formerly the default — now reserved for last-resort cases)
+
+`useBoxRect()` still exists as the imperative escape valve when no declarative primitive covers the need. **Prefer the three primitives above** — they avoid the measure → React-rerender → re-layout round-trip that causes visible flash. Reach for `useBoxRect()` only when you need to read a measured size into JavaScript control flow (animation, autoscroll thresholds, etc.), not for size-driven layout decisions.
+
+Phase A of the responsive-layout reframe renames `useBoxRect` to `useBoxRectDangerously` with a lint rule + path-fence — track in the dragon bead.
 
 ### Responsive breakpoints
 
