@@ -14,7 +14,7 @@
 
 import React from "react"
 import { describe, test, expect } from "vitest"
-import { createTermless } from "@silvery/test"
+import { createTermless, type TermlessTerm } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/ag-term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/ag-term/src/runtime/run"
@@ -26,21 +26,16 @@ import { Box, Text } from "../../src/index.js"
 
 const settle = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
-/**
- * Send SGR mouse event (mode 1006).
- * Format: \x1b[<button;x;y;M (press/move) or \x1b[<button;x;y;m (release)
- * x,y are 1-indexed.
- */
 function mouseDown(term: Term, x: number, y: number, button = 0) {
-  ;(term as any).sendInput(`\x1b[<${button};${x + 1};${y + 1}M`)
+  void (term as TermlessTerm).mouse.down(x, y, { button: button as 0 | 1 | 2 })
 }
 
 function mouseMove(term: Term, x: number, y: number, button = 0) {
-  ;(term as any).sendInput(`\x1b[<${button + 32};${x + 1};${y + 1}M`)
+  void (term as TermlessTerm).mouse.move(x, y, { button: button as 0 | 1 | 2 })
 }
 
 function mouseUp(term: Term, x: number, y: number, button = 0) {
-  ;(term as any).sendInput(`\x1b[<${button};${x + 1};${y + 1}m`)
+  void (term as TermlessTerm).mouse.up(x, y, { button: button as 0 | 1 | 2 })
 }
 
 // ============================================================================

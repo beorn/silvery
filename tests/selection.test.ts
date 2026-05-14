@@ -24,6 +24,8 @@ import {
 import {
   resolveUserSelect,
   selectionHitTest,
+  nearestSelectableCellFromPoint,
+  resolveSelectionAnchorFromPoint,
   findContainBoundary,
   findSelectionBoundaries,
 } from "@silvery/ag-term/mouse-events"
@@ -759,6 +761,193 @@ describe("selectionHitTest", () => {
     row.children = [marker, text]
 
     expect(selectionHitTest(root, 1, 0)).toBe(text)
+  })
+
+  test("selectionHitTest treats empty rendered text rows as selectable line positions", () => {
+    const root: AgNode = {
+      type: "silvery-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 40, height: 4 },
+    } as unknown as AgNode
+    const text: AgNode = {
+      type: "silvery-text",
+      props: {},
+      children: [],
+      parent: root,
+      layoutNode: {} as any,
+      scrollRect: { x: 0, y: 0, width: 20, height: 3 },
+      textContent: "Alpha\n\nOmega",
+    } as unknown as AgNode
+    root.children = [text]
+
+    expect(selectionHitTest(root, 2, 1)).toBe(text)
+    expect(selectionHitTest(root, 2, 3)).toBeNull()
+  })
+
+  test("nearestSelectableCellFromPoint snaps blank container cells to rendered text", () => {
+    const buf = new TerminalBuffer(12, 4)
+    for (let col = 1; col <= 5; col++) {
+      buf.setCell(col, 1, { char: "Hello"[col - 1]!, selectable: true })
+    }
+
+    const rect: Rect = { x: 0, y: 0, width: 10, height: 3 }
+
+    expect(nearestSelectableCellFromPoint(buf, rect, 3, 1)).toEqual({ col: 3, row: 1 })
+    expect(nearestSelectableCellFromPoint(buf, rect, 0, 1)).toEqual({ col: 1, row: 1 })
+    expect(nearestSelectableCellFromPoint(buf, rect, 3, 0)).toEqual({ col: 1, row: 1 })
+    expect(nearestSelectableCellFromPoint(buf, rect, 3, 2)).toEqual({ col: 5, row: 1 })
+    expect(nearestSelectableCellFromPoint(buf, { x: 6, y: 0, width: 3, height: 3 }, 7, 1)).toBeNull()
+  })
+})
+
+// ============================================================================
+// resolveSelectionAnchorFromPoint
+// ============================================================================
+
+describe("resolveSelectionAnchorFromPoint", () => {
+  function makeNode(
+    type: string,
+    rect: Rect,
+    props: Record<string, unknown> = {},
+    textContent?: string,
+  ): AgNode {
+    return {
+      type,
+      props,
+      children: [],
+      parent: null,
+      layoutNode: {} as any,
+      scrollRect: rect,
+      boxRect: rect,
+      screenRect: rect,
+      textContent,
+    } as unknown as AgNode
+  }
+
+  function attach(parent: AgNode, ...children: AgNode[]): void {
+    parent.children = children
+    for (const child of children) child.parent = parent
+  }
+
+  function selectableBuffer(text: string, row: number, col = 0, width = 40, height = 8): TerminalBuffer {
+    const buffer = new TerminalBuffer(width, height)
+    for (let i = 0; i < text.length; i++) {
+      buffer.setCell(col + i, row, { char: text[i]!, selectable: true })
+    }
+    return buffer
+  }
+
+  test("returns the semantic text node and cell for an exact glyph hit", () => {
+    const root = makeNode("silvery-root", { x: 0, y: 0, width: 40, height: 8 })
+    const text = makeNode("silvery-text", { x: 2, y: 1, width: 5, height: 1 }, {}, "Hello")
+    attach(root, text)
+
+    const resolved = resolveSelectionAnchorFromPoint({
+      root,
+      buffer: null,
+      x: 3,
+      y: 1,
+    })
+
+    expect(resolved?.node).toBe(text)
+    expect(resolved?.cell).toEqual({ col: 3, row: 1 })
+    expect(resolved?.downCell).toEqual({ col: 3, row: 1 })
+    expect(resolved?.boundaries.map((boundary) => boundary.node)).toEqual([text, root])
+    expect(resolved?.forceBufferSelection).toBe(false)
+  })
+
+  test("treats empty rendered text rows as document anchors", () => {
+    const root = makeNode("silvery-root", { x: 0, y: 0, width: 40, height: 8 })
+    const text = makeNode("silvery-text", { x: 0, y: 0, width: 20, height: 3 }, {}, "Alpha\n\nOmega")
+    attach(root, text)
+
+    const resolved = resolveSelectionAnchorFromPoint({
+      root,
+      buffer: null,
+      x: 3,
+      y: 1,
+    })
+
+    expect(resolved?.node).toBe(text)
+    expect(resolved?.cell).toEqual({ col: 3, row: 1 })
+  })
+
+  test("snaps blank padding inside a text-containing container to the nearest selectable cell", () => {
+    const root = makeNode("silvery-root", { x: 0, y: 0, width: 40, height: 8 })
+    const box = makeNode("silvery-box", { x: 0, y: 0, width: 20, height: 4 })
+    const text = makeNode("silvery-text", { x: 2, y: 1, width: 5, height: 1 }, {}, "Hello")
+    attach(root, box)
+    attach(box, text)
+
+    const resolved = resolveSelectionAnchorFromPoint({
+      root,
+      buffer: selectableBuffer("Hello", 1, 2),
+      x: 10,
+      y: 3,
+    })
+
+    expect(resolved?.node).toBe(text)
+    expect(resolved?.cell).toEqual({ col: 6, row: 1 })
+    expect(resolved?.downCell).toEqual({ col: 10, row: 3 })
+  })
+
+  test("returns null when the top pointer target is userSelect=none", () => {
+    const root = makeNode("silvery-root", { x: 0, y: 0, width: 40, height: 8 })
+    const text = makeNode("silvery-text", { x: 0, y: 0, width: 20, height: 1 }, {}, "Selectable")
+    const overlay = makeNode("silvery-box", { x: 0, y: 0, width: 20, height: 1 }, { userSelect: "none" })
+    attach(root, text, overlay)
+
+    expect(
+      resolveSelectionAnchorFromPoint({
+        root,
+        buffer: selectableBuffer("Selectable", 0),
+        x: 3,
+        y: 0,
+      }),
+    ).toBeNull()
+  })
+
+  test("forceBufferSelection bypasses userSelect=none and returns a buffer anchor", () => {
+    const root = makeNode("silvery-root", { x: 0, y: 0, width: 40, height: 8 })
+    const overlay = makeNode("silvery-box", { x: 0, y: 0, width: 20, height: 1 }, { userSelect: "none" })
+    attach(root, overlay)
+
+    const resolved = resolveSelectionAnchorFromPoint({
+      root,
+      buffer: selectableBuffer("Selectable", 0),
+      x: 3,
+      y: 0,
+      forceBufferSelection: true,
+    })
+
+    expect(resolved).toMatchObject({
+      node: null,
+      cell: { col: 3, row: 0 },
+      downCell: { col: 3, row: 0 },
+      boundaries: [],
+      forceBufferSelection: true,
+    })
+  })
+
+  test("returns contain boundaries with the selected node", () => {
+    const root = makeNode("silvery-root", { x: 0, y: 0, width: 40, height: 8 })
+    const contained = makeNode("silvery-box", { x: 1, y: 1, width: 20, height: 4 }, { userSelect: "contain" })
+    const text = makeNode("silvery-text", { x: 2, y: 2, width: 5, height: 1 }, {}, "Hello")
+    attach(root, contained)
+    attach(contained, text)
+
+    const resolved = resolveSelectionAnchorFromPoint({
+      root,
+      buffer: null,
+      x: 3,
+      y: 2,
+    })
+
+    expect(resolved?.node).toBe(text)
+    expect(resolved?.boundaries.some((boundary) => boundary.node === contained && boundary.hardContain)).toBe(true)
   })
 })
 
