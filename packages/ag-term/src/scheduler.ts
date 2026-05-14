@@ -15,6 +15,7 @@
 import { appendFileSync } from "node:fs"
 import { type Logger, createLogger } from "loggily"
 import { type BytesOutMonitor, createBytesOutMonitor } from "./bytes-out-monitor"
+import { type MemMonitor, createMemMonitor } from "./mem-monitor"
 import { isStrictEnabled } from "./strict-mode"
 import { type TerminalBuffer, bufferToText, cellEquals } from "./buffer"
 import { buildMismatchContext, formatMismatchContext } from "@silvery/test/debug-mismatch"
@@ -182,6 +183,12 @@ export class RenderScheduler {
    * `docs/lessons/cmux-pty-buffer-firehose.md`.
    */
   private bytesOutMonitor: BytesOutMonitor | null = null
+  /**
+   * In-process heap-poll monitor — backs `SILVERY_STRICT=mem`. Sibling of
+   * `bytesOutMonitor`; samples `process.memoryUsage()` on its own 30s
+   * interval. See `mem-monitor.ts`.
+   */
+  private memMonitor: MemMonitor | null = null
   private log: Logger
 
   /** Previous buffer for diffing */
@@ -282,6 +289,11 @@ export class RenderScheduler {
     // Opt out per session with SILVERY_STRICT=1,!bytes_out.
     if (isStrictEnabled("bytes_out", 1)) {
       this.bytesOutMonitor = createBytesOutMonitor()
+    }
+    // mem is a tier-1 strict slug — in-process heap-poll sibling of
+    // bytes_out. Opt out per session with SILVERY_STRICT=1,!mem.
+    if (isStrictEnabled("mem", 1)) {
+      this.memMonitor = createMemMonitor()
     }
     this.log = createLogger("silvery:scheduler") as unknown as Logger
 
@@ -512,6 +524,12 @@ export class RenderScheduler {
     if (this.bytesOutMonitor) {
       this.bytesOutMonitor.dispose()
       this.bytesOutMonitor = null
+    }
+
+    // Stop the mem heap-poll monitor (if active).
+    if (this.memMonitor) {
+      this.memMonitor.dispose()
+      this.memMonitor = null
     }
 
     // In static mode, output the final frame on dispose
