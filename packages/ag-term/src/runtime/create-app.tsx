@@ -827,11 +827,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // auto-enable when kitty protocol is active (so press() encodes modifier keys correctly)
   const useKittyMode = explicitKittyMode ?? !!kittyOption
 
+  const stdout = explicitStdout ?? process.stdout
   const headless =
     (explicitCols != null && explicitRows != null && !explicitStdout) || explicitWritable != null
-  const cols = explicitCols ?? process.stdout.columns ?? 80
-  const rows = explicitRows ?? process.stdout.rows ?? 24
-  const stdout = explicitStdout ?? process.stdout
+  const cols = explicitCols ?? stdout.columns ?? 80
+  const rows = explicitRows ?? stdout.rows ?? 24
 
   // If the caller passed `term` (from run()'s Term path), its `modes` sub-owner
   // is the single authority for protocol mode toggles — raw, alt-screen, paste,
@@ -1276,9 +1276,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     let flushed = false
     if (frameArtifacts.length > 0) {
       const selected = frameArtifacts.filter((artifact) =>
-        phase === "pre-paint"
-          ? artifact.kind === "terminal-sequence" && artifact.owner.startsWith("image:kitty:")
-          : !(artifact.kind === "terminal-sequence" && artifact.owner.startsWith("image:kitty:")),
+        phase === "post-paint" ? artifact.kind === "terminal-sequence" : false,
       )
       if (selected.length > 0) {
         const selectedSet = new Set(selected)
@@ -2482,8 +2480,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   //
   // Sequence: output.activate() → alt-screen ON → clear → cursor hide →
   // first doRender (effects write to alt screen, surviving subsequent
-  // cell paints because Kitty/Sixel images live above the text layer
-  // with z>=0) → paintFrame writes the buffer.
+  // cell paints after the text frame so terminal graphics are not
+  // immediately overwritten by the frame's reserved cells.
   //
   // Capture model (Output owner):
   //   - DEBUG_LOG set       → mirror stderr/console writes to that file
@@ -3528,6 +3526,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         const { focused } = event.data as { focused: boolean }
         chainApp.dispatch({ type: "term:focus", focused })
         chainApp.drainEffects()
+        if (focused && alternateScreen) {
+          runtime.invalidate({ clearScreen: true })
+        }
         // withTerminalChain is an observer — fan out to the chain
         // focusEvents store so useTerminalFocused / useModifierKeys
         // subscribers see the transition.

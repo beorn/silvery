@@ -117,7 +117,7 @@ export interface Runtime {
   addScrollbackLines(lines: number): void
 
   /** Reset diff state so next render outputs a full frame */
-  invalidate(): void
+  invalidate(options?: { clearScreen?: boolean }): void
 
   /** Update the output phase function (e.g., after text sizing probe changes measurer) */
   setOutputPhaseFn(fn: RuntimeOptions["outputPhaseFn"]): void

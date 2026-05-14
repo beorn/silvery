@@ -18,7 +18,7 @@
 import React, { useEffect, useState } from "react"
 import { describe, expect, test } from "vitest"
 import { createTermless } from "@silvery/test"
-import { Box, Image } from "../../src/index.js"
+import { Box, Image, Text } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
 import { getInternalStreams } from "../../packages/ag-term/src/runtime/term-internal"
 
@@ -32,10 +32,11 @@ const TINY_PNG = Buffer.from(
 
 const settle = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
-/** Count APC envelopes whose first param matches /a=([Ttp])/. */
-function countActions(stream: string): { transmit: number; place: number } {
+/** Count APC envelopes whose first param matches /a=([TtpdD])/. */
+function countActions(stream: string): { transmit: number; place: number; delete: number } {
   let transmit = 0
   let place = 0
+  let deleteCount = 0
   // APC opener \x1b_G ... terminator \x1b\\.
   const re = /\x1b_G([^\x1b]*)\x1b\\/g
   let m: RegExpExecArray | null
@@ -45,9 +46,9 @@ function countActions(stream: string): { transmit: number; place: number } {
     const a = /(?:^|,)a=([TtpdD])/.exec(params)?.[1]
     if (a === "T" || a === "t") transmit++
     else if (a === "p") place++
-    // 'd' = delete actions: not counted as either; permitted between moves.
+    else if (a === "d" || a === "D") deleteCount++
   }
-  return { transmit, place }
+  return { transmit, place, delete: deleteCount }
 }
 
 /** Drive a position change via state — useEffect bumps the offset N times. */
@@ -66,6 +67,22 @@ function MovingImage({ moves }: { moves: number }): React.ReactElement {
         <Box key={i} height={1} width={20} />
       ))}
       <Image src={TINY_PNG} width={10} height={4} protocol="kitty" />
+    </Box>
+  )
+}
+
+/** Re-render sibling text without moving or resizing the image. */
+function StableImageWithUnrelatedTicks({ ticks }: { ticks: number }): React.ReactElement {
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    if (tick >= ticks) return
+    const t = setTimeout(() => setTick((s) => s + 1), 20)
+    return () => clearTimeout(t)
+  }, [tick, ticks])
+  return (
+    <Box flexDirection="column">
+      <Image src={TINY_PNG} width={10} height={4} protocol="kitty" />
+      <Text>tick {tick}</Text>
     </Box>
   )
 }
@@ -98,6 +115,33 @@ describe("Image: scrolling/moving does not re-transmit the PNG", () => {
       counts.place,
       "image should be re-placed without re-transmission",
     ).toBeGreaterThanOrEqual(2)
+    expect(counts.delete, "moving a live image should not delete the stored image").toBe(0)
+
+    handle.unmount()
+  })
+
+  test("stable images are not re-placed on unrelated rerenders", async () => {
+    using term = createTermless({ cols: 40, rows: 24 })
+
+    const writes: string[] = []
+    const internal = getInternalStreams(term).stdout as unknown as {
+      write: (s: string | Uint8Array) => boolean
+    }
+    const orig = internal.write.bind(internal)
+    internal.write = (s: string | Uint8Array) => {
+      writes.push(typeof s === "string" ? s : Buffer.from(s).toString("utf8"))
+      return orig(s)
+    }
+
+    const handle = await run(<StableImageWithUnrelatedTicks ticks={3} />, term)
+    await settle(200)
+
+    const all = writes.join("")
+    const counts = countActions(all)
+
+    expect(counts.transmit, "PNG should be transmitted exactly once").toBe(1)
+    expect(counts.place, "unchanged image placement should not be re-emitted").toBe(1)
+    expect(counts.delete, "stable live image should not be deleted before unmount").toBe(0)
 
     handle.unmount()
   })

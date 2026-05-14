@@ -24,8 +24,9 @@
  * ```
  */
 
-import { useState, useEffect, type ReactNode, type ReactElement } from "react"
+import { type ReactNode, type ReactElement } from "react"
 import { Box } from "../../components/Box"
+import { useWindowSize } from "../../hooks/useWindowSize"
 
 // =============================================================================
 // Types
@@ -38,60 +39,18 @@ export interface ScreenProps {
   flexDirection?: "row" | "column" | "row-reverse" | "column-reverse"
 }
 
-// =============================================================================
-// Helpers
-// =============================================================================
-
-function getTermDims(): { width: number; height: number } {
-  return {
-    width: process.stdout.columns ?? 80,
-    height: process.stdout.rows ?? 24,
-  }
-}
-
-const resizeSubscribers = new Set<() => void>()
-let resizeListenerInstalled = false
-
-function notifyResizeSubscribers(): void {
-  for (const subscriber of resizeSubscribers) subscriber()
-}
-
-function subscribeResize(subscriber: () => void): () => void {
-  resizeSubscribers.add(subscriber)
-  if (!resizeListenerInstalled) {
-    process.stdout.on("resize", notifyResizeSubscribers)
-    resizeListenerInstalled = true
-  }
-  return () => {
-    resizeSubscribers.delete(subscriber)
-    if (resizeSubscribers.size === 0 && resizeListenerInstalled) {
-      process.stdout.off("resize", notifyResizeSubscribers)
-      resizeListenerInstalled = false
-    }
-  }
-}
-
-// =============================================================================
-// Component
-// =============================================================================
-
 /**
  * Fullscreen root component.
  *
  * Provides a Box that fills the entire terminal. Tracks terminal resize
- * events to stay in sync with the actual terminal dimensions.
+ * events through the Term size owner so resize bursts share the same
+ * coalesced geometry as the runtime pipeline.
  */
 export function Screen({ children, flexDirection = "column" }: ScreenProps): ReactElement {
-  const [dims, setDims] = useState(getTermDims)
-
-  useEffect(() => {
-    const onResize = () => setDims(getTermDims())
-    onResize()
-    return subscribeResize(onResize)
-  }, [])
+  const { columns, rows } = useWindowSize()
 
   return (
-    <Box width={dims.width} height={dims.height} flexDirection={flexDirection}>
+    <Box width={columns} height={rows} flexDirection={flexDirection}>
       {children}
     </Box>
   )

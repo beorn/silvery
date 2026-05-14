@@ -280,6 +280,16 @@ export interface ListViewProps<T> {
    */
   scrollbarVisibility?: "auto" | "always" | "hidden"
 
+  /**
+   * Briefly reveal an auto-hidden scrollbar when the item count grows.
+   *
+   * Default true for live lists where appended content should advertise
+   * newly-available scrollback. Resume/startup replay callers can disable this
+   * so an already-overflowed loaded transcript stays quiet until the user
+   * scrolls or hovers the scrollbar column.
+   */
+  flashScrollbarOnItemCountGrow?: boolean
+
   /** Key extractor (defaults to index) */
   getKey?: (item: T, index: number) => string | number
 
@@ -648,6 +658,7 @@ function ListViewInner<T>(
     overflowIndicator,
     scrollbar = true,
     scrollbarVisibility = "auto",
+    flashScrollbarOnItemCountGrow = true,
     getKey,
     width,
     gap = 0,
@@ -2142,6 +2153,10 @@ function ListViewInner<T>(
   // flashed and `scrollbarVisibility="auto"` consumers would have to wheel
   // or click before the chrome appeared. Bead:
   // @km/silvercode/trackpad-scrolling-no-scrollbar.
+  //
+  // Callers that load an already-overflowed transcript during startup can set
+  // `flashScrollbarOnItemCountGrow={false}` to keep the mounted track quiet
+  // until real user scroll/hover input.
   const prevItemCountRef = useRef(0)
   // Follow-end + atBottom transition tracking.
   //
@@ -2164,7 +2179,7 @@ function ListViewInner<T>(
     const prevCount = prevItemCountRef.current
     const grew = activeItems.length > prevCount
     if (grew) {
-      physics.flashScrollbar()
+      if (flashScrollbarOnItemCountGrow) physics.flashScrollbar()
       // Stale-bump cleanup. A `bumpedEdge` set by a prior wheel/keyboard
       // overscroll attempt is bound to the boundary as it was THEN. Once
       // items append, the boundary moved — `scrollableRows` leaps ahead
@@ -2336,6 +2351,7 @@ function ListViewInner<T>(
     prevAtBottomRef.current = atBottom
   }, [
     activeItems.length,
+    flashScrollbarOnItemCountGrow,
     physics,
     scrollRow,
     activeCursor,

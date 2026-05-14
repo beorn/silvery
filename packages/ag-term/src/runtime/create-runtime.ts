@@ -158,6 +158,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 
   // Track previous buffer for diffing
   let prevBuffer: Buffer | null = null
+  let renderedOnce = false
+  let lastRenderDims: Dims | null = null
+  let clearNextFullscreenRender = false
 
   // Scrollback offset tracking (inline mode only)
   let scrollbackOffset = 0
@@ -172,6 +175,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   let unsubscribeResize: (() => void) | undefined
   if (target.onResize) {
     unsubscribeResize = target.onResize((dims) => {
+      if (mode === "fullscreen") {
+        clearNextFullscreenRender = true
+      }
       eventChannel.push({ type: "resize", cols: dims.cols, rows: dims.rows })
     })
   }
@@ -257,7 +263,13 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       // desynchronizes prevBuffer from actual terminal state (ghost pixel garble).
       const offset = scrollbackOffset
       scrollbackOffset = 0 // Consume the offset
-      const termRows = target.getDims().rows
+      const targetDims = target.getDims()
+      const termRows = targetDims.rows
+      const targetDimsChanged =
+        lastRenderDims !== null &&
+        (lastRenderDims.cols !== targetDims.cols || lastRenderDims.rows !== targetDims.rows)
+      const clearFullscreen =
+        mode === "fullscreen" && renderedOnce && (clearNextFullscreenRender || targetDimsChanged)
 
       // Use scoped output phase if provided (threads measurer/caps correctly),
       // otherwise fall back to raw diff() for backwards compatibility
@@ -304,6 +316,10 @@ export function createRuntime(options: RuntimeOptions): Runtime {
         }
       }
 
+      if (clearFullscreen) {
+        patch = ANSI.SYNC_BEGIN + "\x1b[2J\x1b[H" + patch + ANSI.SYNC_END
+      }
+
       // Debug: capture raw ANSI output that's actually written to the terminal
       if (process.env.SILVERY_CAPTURE_RAW) {
         try {
@@ -314,6 +330,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 
       // Write to target
       target.write(patch)
+      lastRenderDims = { cols: targetDims.cols, rows: targetDims.rows }
+      renderedOnce = true
+      clearNextFullscreenRender = false
     },
 
     addScrollbackLines(lines: number): void {
@@ -321,8 +340,11 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       scrollbackOffset += lines
     },
 
-    invalidate(): void {
+    invalidate(options?: { clearScreen?: boolean }): void {
       prevBuffer = null
+      if (options?.clearScreen && mode === "fullscreen") {
+        clearNextFullscreenRender = true
+      }
     },
 
     setOutputPhaseFn(fn: RuntimeOptions["outputPhaseFn"]): void {

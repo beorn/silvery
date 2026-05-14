@@ -31,6 +31,7 @@ import { StdoutContext } from "../../context"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { useBoxRect, useScreenRect } from "../../hooks/useLayout"
+import { useWindowSize } from "../../hooks/useWindowSize"
 import {
   encodeKittyImage,
   isKittyGraphicsSupported,
@@ -43,6 +44,7 @@ import {
   planKittyImagePlacement,
   withCursorPreserved,
 } from "./image-placement"
+import type { VisibleImagePlacement } from "./image-placement"
 import { decodePngToRgba, encodeSixel, isSixelSupported } from "./sixel-encoder"
 
 // ============================================================================
@@ -107,6 +109,46 @@ function detectProtocol(preferred: ImageProtocol): "kitty" | "sixel" | null {
 
 /** Incrementing image ID counter for Kitty protocol */
 let nextImageId = 1
+
+const KITTY_PLACEHOLDER = String.fromCodePoint(0x10eeee)
+const KITTY_PLACEHOLDER_DIACRITICS = [
+  0x0305, 0x030d, 0x030e, 0x0310, 0x0312, 0x033d, 0x033e, 0x033f, 0x0346, 0x034a, 0x034b, 0x034c,
+  0x0350, 0x0351, 0x0352, 0x0357, 0x035b, 0x0363, 0x0364, 0x0365, 0x0366, 0x0367, 0x0368, 0x0369,
+  0x036a, 0x036b, 0x036c, 0x036d, 0x036e, 0x036f, 0x0483, 0x0484, 0x0485, 0x0486, 0x0487, 0x0592,
+  0x0593, 0x0594, 0x0595, 0x0597, 0x0598, 0x0599, 0x059c, 0x059d, 0x059e, 0x059f, 0x05a0, 0x05a1,
+  0x05a8, 0x05a9, 0x05ab, 0x05ac, 0x05af, 0x05c4, 0x0610, 0x0611, 0x0612, 0x0613, 0x0614, 0x0615,
+  0x0616, 0x0617, 0x0657, 0x0658,
+].map((codepoint) => String.fromCodePoint(codepoint))
+
+function canRenderKittyPlaceholder({
+  id,
+  width,
+  height,
+}: {
+  readonly id: number | null
+  readonly width: number
+  readonly height: number
+}): boolean {
+  return (
+    id !== null &&
+    id > 0 &&
+    id <= 255 &&
+    width > 0 &&
+    height > 0 &&
+    width <= KITTY_PLACEHOLDER_DIACRITICS.length &&
+    height <= KITTY_PLACEHOLDER_DIACRITICS.length
+  )
+}
+
+function kittyPlaceholderText(width: number, height: number): string {
+  return Array.from({ length: height }, (_, row) =>
+    Array.from(
+      { length: width },
+      (_, col) =>
+        KITTY_PLACEHOLDER + KITTY_PLACEHOLDER_DIACRITICS[row]! + KITTY_PLACEHOLDER_DIACRITICS[col]!,
+    ).join(""),
+  ).join("\n")
+}
 
 /**
  * Renders a bitmap image in the terminal.
@@ -179,9 +221,8 @@ function ImagePlacement({
   // pass `width`/`height` to skip the auto-fill read.
   const boxRect = useScreenRect()
   const stdoutCtx = useContext(StdoutContext)
-  const viewportWidth = stdoutCtx?.stdout.columns || Number.POSITIVE_INFINITY
-  const viewportHeight = stdoutCtx?.stdout.rows || Number.POSITIVE_INFINITY
-  const viewport = stdoutCtx ? { width: viewportWidth, height: viewportHeight } : null
+  const { columns: viewportWidth, rows: viewportHeight } = useWindowSize()
+  const viewport = { width: viewportWidth, height: viewportHeight }
   const imageIdRef = useRef<number | null>(null)
   // Tracks the PNG data the image was last *transmitted* with. While this
   // matches the current `pngData`, position changes can re-place the
@@ -297,6 +338,38 @@ function ImagePlacement({
         srcChanged,
       })
 
+      const placeVisible = (visible: VisibleImagePlacement, placementKey: string): void => {
+        const moveCursor = `\x1b[${visible.y + 1};${visible.x + 1}H`
+
+        // Position cursor + (re-)place. Kitty's protocol replaces an
+        // existing placement when (image_id, placement_id) match, so
+        // re-placing the same stored image after each text frame is a
+        // small APC packet, not a full PNG retransmission.
+        write(
+          withCursorPreserved(
+            moveCursor +
+              placeKittyImage({
+                id,
+                width: visible.width,
+                height: visible.height,
+                placementId,
+                zIndex,
+                pixelOffset: visible.pixelOffset,
+                sourceRect: visible.sourceRect,
+                virtualPlacement,
+              }),
+          ),
+          { owner: "image:kitty:place", zIndex },
+        )
+        lastEmittedRef.current = {
+          x: visible.x,
+          y: visible.y,
+          width: visible.width,
+          height: visible.height,
+          placementKey,
+        }
+      }
+
       if (plan.kind === "noop") return
 
       if (plan.kind === "delete-placement") {
@@ -327,37 +400,7 @@ function ImagePlacement({
       }
 
       const visible = plan.placement
-      const moveCursor = `\x1b[${visible.y + 1};${visible.x + 1}H`
-
-      // Position cursor + (re-)place. Kitty's protocol replaces an
-      // existing placement when (image_id, placement_id) match, so
-      // a move on every scroll tick is just one APC packet — no
-      // delete-then-place gap that otherwise produces a visible
-      // flicker frame between the prior placement vanishing and the
-      // new one rendering at the updated coords.
-      write(
-        withCursorPreserved(
-          moveCursor +
-            placeKittyImage({
-              id,
-              width: visible.width,
-              height: visible.height,
-              placementId,
-              zIndex,
-              pixelOffset: visible.pixelOffset,
-              sourceRect: visible.sourceRect,
-              virtualPlacement,
-            }),
-        ),
-        { owner: "image:kitty:place", zIndex },
-      )
-      lastEmittedRef.current = {
-        x: visible.x,
-        y: visible.y,
-        width: visible.width,
-        height: visible.height,
-        placementKey: plan.placementKey,
-      }
+      placeVisible(visible, plan.placementKey)
     } else if (activeProtocol === "sixel") {
       const visible = computeVisibleImagePlacement({
         rect: { x: boxRect.x, y: boxRect.y, width: effectiveWidth, height: effectiveHeight },
@@ -396,6 +439,7 @@ function ImagePlacement({
     boxRect.x,
     boxRect.y,
     boxRect.width,
+    boxRect.height,
     viewportWidth,
     viewportHeight,
     decodedImage,
@@ -416,6 +460,24 @@ function ImagePlacement({
   // If no protocol or no image data, render fallback text
   if (!activeProtocol || !pngData) {
     return <Text>{fallback}</Text>
+  }
+
+  const placeholderImageId = imageIdRef.current
+  if (
+    activeProtocol === "kitty" &&
+    virtualPlacement &&
+    placeholderImageId !== null &&
+    canRenderKittyPlaceholder({
+      id: placeholderImageId,
+      width: effectiveWidth,
+      height: effectiveHeight,
+    })
+  ) {
+    return (
+      <Text color={`ansi256(${placeholderImageId})`}>
+        {kittyPlaceholderText(effectiveWidth, effectiveHeight)}
+      </Text>
+    )
   }
 
   // Reserve visual space with an empty box.

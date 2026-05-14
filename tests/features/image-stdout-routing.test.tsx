@@ -171,6 +171,26 @@ describe("Image: StdoutContext.write routes escapes to the terminal", () => {
     handle.unmount()
   })
 
+  test("Kitty virtual placements render Unicode placeholders in the text frame", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+
+    const handle = await run(
+      <Box flexDirection="column" padding={1}>
+        <Image src={TINY_PNG} width={4} height={2} protocol="kitty" virtualPlacement />
+      </Box>,
+      term,
+    )
+    await expect(term.out).toContainOutput("U=1", { timeout: 500 })
+
+    const all = term.out.getText()
+    expect(all, "virtual placement command should be emitted").toContain("U=1")
+    expect(all, "placeholder text should anchor the image to the cell buffer").toContain(
+      String.fromCodePoint(0x10eeee),
+    )
+
+    handle.unmount()
+  })
+
   test("Kitty graphics clips partially scrolled-off top images instead of deleting them", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
 

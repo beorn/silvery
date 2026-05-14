@@ -387,7 +387,7 @@ export interface Term extends Disposable, StyleChain {
    * `term.size.cols()` / `term.size.rows()` / `term.size.snapshot()` read the
    * current value and, inside `computed` / `effect`, subscribe to changes.
    * The first read installs the stdout `resize` listener; SIGWINCH bursts
-   * coalesce to one notification per 16ms frame (one 60Hz frame).
+   * coalesce through the Size owner's 200ms trailing debounce.
    *
    * Replaces direct `process.stdout.columns` / `stdout.rows` reads — those
    * return stale snapshots under concurrent resize and scatter coalescing
@@ -802,7 +802,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
   })
 
   // Size owner — single source of truth for cols/rows. Subscribes to stdout's
-  // `resize` event with 16ms coalescing so burst SIGWINCH from tmux/cmux/
+  // `resize` event with trailing-edge coalescing so burst SIGWINCH from tmux/cmux/
   // Ghostty tab switches collapses to one notification. Constructed eagerly
   // so term.size and term.cols/rows are valid for any consumer.
   // See km-silvery.term-sub-owners Phase 5.

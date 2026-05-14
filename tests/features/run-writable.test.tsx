@@ -10,9 +10,12 @@ import { EventEmitter } from "node:events"
 import { describe, test, expect, afterEach } from "vitest"
 import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
-import { Box, Text, useTerm } from "../../src/index.js"
+import { Box, Screen, Text, useTerm, useWindowSize } from "../../src/index.js"
 import { run, useInput, type RunHandle } from "../../packages/ag-term/src/runtime/run"
 import { useRuntime } from "../../src/index.js"
+
+const waitForResize = () => new Promise((resolve) => setTimeout(resolve, 250))
+const waitInsideResizeWindow = () => new Promise((resolve) => setTimeout(resolve, 50))
 
 // ============================================================================
 // Test Component
@@ -38,6 +41,15 @@ function Counter() {
 function ViewportProbe() {
   const { cols, rows } = useTerm((term) => term.size.snapshot())
   return <Text>{`viewport=${cols}x${rows}`}</Text>
+}
+
+function ScreenViewportProbe() {
+  const { columns, rows } = useWindowSize()
+  return (
+    <Screen>
+      <Text>{`screen=${columns}x${rows}`}</Text>
+    </Screen>
+  )
 }
 
 function createFakeStream(cols = 120, rows = 40): NodeJS.WriteStream & NodeJS.ReadStream {
@@ -109,8 +121,8 @@ describe("run() with createTermless()", () => {
 
     // Resize to wider terminal
     term.resize!(80, 10)
-    // Wait for re-render
-    await new Promise((r) => setTimeout(r, 50))
+    // term.size publishes resize after the 200ms trailing debounce.
+    await waitForResize()
 
     expect(term.screen).toContainText("Counter")
     expect(term.screen).toContainText("Count: 0")
@@ -150,12 +162,47 @@ describe("run() with createTermless()", () => {
     expect(handle.text).toContain("viewport=120x40")
 
     resizeStream(stdout, 0, 0)
-    await new Promise((r) => setTimeout(r, 50))
+    await waitForResize()
     expect(handle.text).toContain("viewport=120x40")
 
     resizeStream(stdout, 100, 30)
-    await new Promise((r) => setTimeout(r, 50))
+    await waitForResize()
     expect(handle.text).toContain("viewport=100x30")
+
+    handle.unmount()
+  })
+
+  test("Screen sees only final coalesced width during resize burst", async () => {
+    const stdout = createFakeStream(120, 40)
+    const stdin = createFakeStream(120, 40)
+    const handle = await run(<ScreenViewportProbe />, {
+      cols: 120,
+      rows: 40,
+      stdout,
+      stdin,
+      mode: "fullscreen",
+      textSizing: false,
+      widthDetection: false,
+      focusReporting: false,
+    })
+
+    expect(handle.text).toContain("screen=120x40")
+
+    resizeStream(stdout, 90, 40)
+    await waitInsideResizeWindow()
+    expect(handle.text).toContain("screen=120x40")
+    expect(handle.text).not.toContain("screen=90x40")
+
+    resizeStream(stdout, 70, 40)
+    await waitInsideResizeWindow()
+    expect(handle.text).toContain("screen=120x40")
+    expect(handle.text).not.toContain("screen=70x40")
+
+    resizeStream(stdout, 150, 40)
+    await waitForResize()
+    expect(handle.text).toContain("screen=150x40")
+    expect(handle.text).not.toContain("screen=90x40")
+    expect(handle.text).not.toContain("screen=70x40")
 
     handle.unmount()
   })

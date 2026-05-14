@@ -155,8 +155,9 @@ export {
 
 // Configure React to recognize this as a testing environment for act() support
 // This suppresses the "testing environment not configured" warning
-// @ts-expect-error - React internal flag for testing environments
-globalThis.IS_REACT_ACT_ENVIRONMENT = true
+;(
+  globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+).IS_REACT_ACT_ENVIRONMENT = true
 
 // Initialize default layout engine via top-level await.
 // This ensures render()/createRenderer() work immediately after import.
@@ -166,7 +167,12 @@ await ensureDefaultLayoutEngine()
 // Termless — in-process terminal emulation for full ANSI testing
 // ============================================================================
 
-import { createTerm, type Term, type TerminalCaps } from "@silvery/ag-term"
+import {
+  createTerm,
+  type Term,
+  type TerminalCaps,
+  type TermEmulatorBackend,
+} from "@silvery/ag-term"
 import { warnOnce } from "@silvery/ansi"
 
 /**
@@ -285,6 +291,21 @@ export interface TermlessOutput {
   clear(): void
 }
 
+export interface TermlessReflowResidue {
+  /** Visible marker injected by the residue simulator when an app repaints without ED2. */
+  readonly marker: string
+  /**
+   * Arm the residue simulator for the next terminal write. Resizes arm this
+   * automatically; call this to model cmux workspace/alt-screen restoration
+   * that reflows the terminal without changing dimensions.
+   */
+  arm(): void
+  /** Disarm the simulator without requiring a clear. */
+  clear(): void
+  /** Whether the next non-clearing write will inject the marker. */
+  readonly armed: boolean
+}
+
 /**
  * Term augmented with mouse + clipboard test helpers.
  *
@@ -298,6 +319,7 @@ export interface TermlessTerm extends Term {
   readonly mouse: TermlessMouse
   readonly clipboard: TermlessClipboard
   readonly out: TermlessOutput
+  readonly reflowResidue?: TermlessReflowResidue
   readonly screen: NonNullable<Term["screen"]>
   readonly scrollback: NonNullable<Term["scrollback"]>
   cell(
@@ -311,6 +333,68 @@ export interface TermlessTerm extends Term {
 const DEFAULT_DRAG_STEP_DELAY_MS = 20
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
+const DEFAULT_REFLOW_RESIDUE_MARKER = "CMUX-REFLOW-RESIDUE"
+
+function withReflowResidue(
+  backend: TermEmulatorBackend,
+  marker = DEFAULT_REFLOW_RESIDUE_MARKER,
+): { backend: TermEmulatorBackend; residue: TermlessReflowResidue } {
+  let armed = false
+  const encoder = new TextEncoder()
+  const decoder = new TextDecoder()
+
+  const residue: TermlessReflowResidue = {
+    marker,
+    arm() {
+      armed = true
+    },
+    clear() {
+      armed = false
+    },
+    get armed() {
+      return armed
+    },
+  }
+
+  const wrapped = Object.create(backend) as TermEmulatorBackend
+  Object.defineProperties(wrapped, {
+    name: {
+      get() {
+        return `${backend.name}+reflow-residue`
+      },
+    },
+    init: {
+      value(opts: { cols: number; rows: number; scrollbackLimit?: number }) {
+        backend.init(opts)
+      },
+    },
+    destroy: {
+      value() {
+        backend.destroy()
+      },
+    },
+    feed: {
+      value(data: Uint8Array) {
+        const text = decoder.decode(data)
+        const cleared = text.includes("\x1b[2J")
+        if (cleared) armed = false
+        backend.feed(data)
+        if (armed && !cleared) {
+          backend.feed(encoder.encode(`\x1b[H${marker}`))
+        }
+      },
+    },
+    resize: {
+      value(cols: number, rows: number) {
+        backend.resize(cols, rows)
+        armed = true
+      },
+    },
+  })
+
+  return { backend: wrapped, residue }
+}
 
 function sgrButtonByte(options?: TermlessMouseOptions): number {
   let btn = options?.button ?? 0
@@ -367,6 +451,7 @@ export function createTermless(
     rows: number
     caps?: Partial<TerminalCaps>
     backend?: "xterm" | "ghostty" | "ghostty-native"
+    reflowResidue?: boolean | { marker?: string }
   } = {
     cols: 80,
     rows: 24,
@@ -412,6 +497,15 @@ export function createTermless(
         `For a custom backend, call createTerm(backend, dims) directly.`,
     )
   }
+
+  let reflowResidue: TermlessReflowResidue | undefined
+  if (dims.reflowResidue) {
+    const marker = typeof dims.reflowResidue === "object" ? dims.reflowResidue.marker : undefined
+    const wrapped = withReflowResidue(backend, marker)
+    backend = wrapped.backend
+    reflowResidue = wrapped.residue
+  }
+
   const term = createTerm(backend, dims)
 
   // Track this instance for leak detection
@@ -580,6 +674,9 @@ export function createTermless(
 
   Object.defineProperty(term, "mouse", { value: mouse, enumerable: true })
   Object.defineProperty(term, "clipboard", { value: clipboard, enumerable: true })
+  if (reflowResidue) {
+    Object.defineProperty(term, "reflowResidue", { value: reflowResidue, enumerable: true })
+  }
 
   return term as TermlessTerm
 }

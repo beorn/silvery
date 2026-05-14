@@ -554,8 +554,21 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     },
   } as unknown as NodeJS.WriteStream
 
-  // Create mock term with the mock stdout so useWindowSize reads correct dimensions
-  const mockTerm = createTerm({ colorLevel: "truecolor", stdout: mockStdout })
+  // Create a fixed-dimension mock term so useWindowSize reads the renderer's
+  // viewport synchronously. Using a node-style stdout-backed Term here would
+  // trail resize events through Size's production SIGWINCH coalescer, causing
+  // tests to paint once at the new outer buffer size with stale term.size,
+  // then repaint ~200ms later with the final width. Production's app event
+  // loop receives resize events from the coalesced Term size owner, so the
+  // test renderer should update both dimensions in one explicit resize step.
+  const mockTerm = createTerm({
+    cols: instance.columns,
+    rows: instance.rows,
+    caps: { colorLevel: "truecolor" },
+  })
+  const updateMockTermSize = (
+    mockTerm.size as typeof mockTerm.size & { update?: (cols: number, rows: number) => void }
+  ).update
 
   // Focus manager (tree-based focus system)
   const focusManager = createFocusManager()
@@ -1535,6 +1548,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     instance.rows = newRows
     mockStdout.columns = newCols
     mockStdout.rows = newRows
+    updateMockTermSize?.(newCols, newRows)
     // Emit resize event so component-level listeners (e.g., ScrollbackView's
     // width tracking) fire before the render, matching real terminal behavior.
     stdoutEmitter.emit("resize")

@@ -112,14 +112,15 @@ describe("useResponsiveValue — overrides", () => {
 })
 
 describe("useResponsiveValue — reactivity", () => {
-  // term.size coalesces resize events with a ~16ms timer (RESIZE_COALESCE_MS).
+  // term.size coalesces resize events with a 200ms trailing debounce
+  // (RESIZE_COALESCE_MS).
   // After resize() schedules the coalesce, we wait past the timer + flush
   // microtasks (deferred useBoxRect's signal commit happens at a microtask
   // boundary) and then force a fresh paint via rerender() — the test renderer
   // doesn't auto-flush React commits to the buffer (autoRender: false) the
   // way production runs do.
   const waitForResize = async () => {
-    await new Promise((r) => setTimeout(r, 50))
+    await new Promise((r) => setTimeout(r, 250))
     for (let i = 0; i < 3; i++) await Promise.resolve()
   }
 
