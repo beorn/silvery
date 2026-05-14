@@ -18,6 +18,7 @@ import type { AgNode, Rect, TextProps, UserSelect } from "@silvery/ag/types"
 import type { SelectionScope } from "@silvery/headless/selection"
 import { setHovered, setArmed } from "@silvery/ag/interactive-signals"
 import { displayWidthAnsi, wrapText } from "./unicode"
+import type { TerminalBuffer } from "./buffer"
 
 // Re-export canonical types from ag (avoid duplicate type definitions)
 export type { SilveryMouseEvent, SilveryWheelEvent } from "@silvery/ag/mouse-event-types"
@@ -311,6 +312,178 @@ export function selectionHitTest(node: AgNode, x: number, y: number): AgNode | n
   return selectionHitTestInner(node, x, y, true)
 }
 
+export interface SelectionCell {
+  col: number
+  row: number
+}
+
+export interface SelectionAnchorFromPointOptions {
+  root: AgNode | null
+  buffer: TerminalBuffer | null
+  x: number
+  y: number
+  forceBufferSelection?: boolean
+}
+
+export interface SelectionAnchorResolution {
+  /** Semantic document node selected by the point, or null for raw buffer selection. */
+  node: AgNode | null
+  /** Cell used as the selection anchor after document/padding snapping. */
+  cell: SelectionCell
+  /** Original pointer-down cell, before nearest-text snapping. */
+  downCell: SelectionCell
+  /** Document/contain boundaries for the selected node, nearest first. */
+  boundaries: SelectionBoundary[]
+  /** True when Shift/raw terminal selection bypasses document scopes. */
+  forceBufferSelection: boolean
+}
+
+interface SelectableRow {
+  row: number
+  first: number
+  last: number
+  nearest: number
+}
+
+function selectionCellFromPoint(x: number, y: number): SelectionCell {
+  return {
+    col: Math.max(0, Math.floor(x)),
+    row: Math.max(0, Math.floor(y)),
+  }
+}
+
+/**
+ * Find the nearest selectable rendered-text cell inside a container rect.
+ *
+ * This is the terminal-target equivalent of the browser's
+ * caretPositionFromPoint behavior for text-containing boxes: a mousedown in
+ * padding or interior whitespace can still start text selection by snapping to
+ * nearby rendered text, while genuinely text-free containers return null.
+ */
+export function nearestSelectableCellFromPoint(
+  buffer: TerminalBuffer,
+  rect: Rect,
+  x: number,
+  y: number,
+): SelectionCell | null {
+  if (rect.width <= 0 || rect.height <= 0) return null
+
+  const left = Math.max(0, Math.floor(rect.x))
+  const right = Math.min(buffer.width - 1, Math.ceil(rect.x + rect.width) - 1)
+  const top = Math.max(0, Math.floor(rect.y))
+  const bottom = Math.min(buffer.height - 1, Math.ceil(rect.y + rect.height) - 1)
+  if (left > right || top > bottom) return null
+
+  const pointerCol = Math.max(0, Math.floor(x))
+  const pointerRow = Math.max(0, Math.floor(y))
+  const rows: SelectableRow[] = []
+
+  for (let row = top; row <= bottom; row++) {
+    let first = -1
+    let last = -1
+    let nearest = -1
+    let nearestDistance = Number.POSITIVE_INFINITY
+
+    for (let col = left; col <= right; col++) {
+      if (!buffer.isCellSelectable(col, row)) continue
+      if (first === -1) first = col
+      last = col
+
+      const distance = Math.abs(col - pointerCol)
+      if (distance < nearestDistance) {
+        nearest = col
+        nearestDistance = distance
+      }
+    }
+
+    if (first !== -1) rows.push({ row, first, last, nearest })
+  }
+
+  if (rows.length === 0) return null
+
+  const firstRow = rows[0]!
+  const lastRow = rows[rows.length - 1]!
+  const sameRow = rows.find((candidate) => candidate.row === pointerRow)
+  if (sameRow) {
+    if (pointerCol < sameRow.first) return { col: sameRow.first, row: sameRow.row }
+    if (pointerCol > sameRow.last) return { col: Math.min(right, sameRow.last + 1), row: sameRow.row }
+    return { col: sameRow.nearest, row: sameRow.row }
+  }
+
+  if (pointerRow < firstRow.row) return { col: firstRow.first, row: firstRow.row }
+  if (pointerRow > lastRow.row) return { col: lastRow.last, row: lastRow.row }
+
+  for (let i = 0; i < rows.length; i++) {
+    const candidate = rows[i]!
+    if (candidate.row > pointerRow) return { col: candidate.first, row: candidate.row }
+  }
+
+  return { col: lastRow.last, row: lastRow.row }
+}
+
+/**
+ * Resolve the semantic selection anchor for a terminal pointer position.
+ *
+ * This is the single owner for mousedown selection semantics:
+ * - exact selectable glyph / empty rendered line hits
+ * - `userSelect="none"` pointer targets that block document selection
+ * - nearest rendered text-cell fallback from blank padding inside text containers
+ * - `userSelect="contain"` / document boundary discovery
+ * - Shift/raw buffer selection that bypasses document scopes
+ */
+export function resolveSelectionAnchorFromPoint(
+  options: SelectionAnchorFromPointOptions,
+): SelectionAnchorResolution | null {
+  const { root, buffer, x, y } = options
+  const forceBufferSelection = options.forceBufferSelection === true
+  const downCell = selectionCellFromPoint(x, y)
+  let anchorCell = downCell
+
+  if (!root) {
+    return forceBufferSelection
+      ? {
+          node: null,
+          cell: anchorCell,
+          downCell,
+          boundaries: [],
+          forceBufferSelection,
+        }
+      : null
+  }
+
+  const pointerTarget = hitTest(root, x, y)
+  const pointerBlocksSelection = pointerTarget !== null && resolveUserSelect(pointerTarget) === "none"
+  let selectedNode = !pointerBlocksSelection ? selectionHitTest(root, x, y) : null
+
+  if (selectedNode === null && !forceBufferSelection && !pointerBlocksSelection && pointerTarget !== null && buffer) {
+    let current: AgNode | null = pointerTarget
+    while (current && selectedNode === null) {
+      const rect = current.scrollRect
+      const nearest = rect ? nearestSelectableCellFromPoint(buffer, rect, x, y) : null
+      if (!nearest) {
+        current = current.parent
+        continue
+      }
+      const nearestHit = selectionHitTest(root, nearest.col, nearest.row)
+      if (nearestHit) {
+        anchorCell = nearest
+        selectedNode = nearestHit
+      }
+      current = current.parent
+    }
+  }
+
+  if (selectedNode === null && !forceBufferSelection) return null
+
+  return {
+    node: selectedNode,
+    cell: anchorCell,
+    downCell,
+    boundaries: selectedNode ? findSelectionBoundaries(selectedNode) : [],
+    forceBufferSelection,
+  }
+}
+
 function selectionHitTestInner(
   node: AgNode,
   x: number,
@@ -467,10 +640,7 @@ function pointHitsRenderedTextRow(node: AgNode, y: number): boolean {
   const row = y - rect.y
   if (row < 0 || row >= rect.height) return false
   const lines = renderedTextLines(node)
-  const line = lines[row]
-  if (line === undefined) return false
-  const lineWidth = Math.min(rect.width, displayWidthAnsi(line))
-  return lineWidth > 0
+  return lines[row] !== undefined
 }
 
 function findTextNodeOnRow(node: AgNode, y: number): AgNode | null {
