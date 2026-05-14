@@ -171,6 +171,17 @@ describe("unicode: emoji", () => {
     expect(graphemeWidth("\u2764\uFE0F")).toBe(2) // ❤️ (with variation selector)
   })
 
+  test("text variation selectors do not share width cache with bare emoji bases", () => {
+    // U+FE0E requests text presentation. The bare base is treated as
+    // modern-terminal emoji width, but the text-presentation cluster stays
+    // one cell wide. These two orders caught a cache keyed only by codepoint.
+    expect(graphemeWidth("\u23F8")).toBe(2) // ⏸
+    expect(graphemeWidth("\u23F8\uFE0E")).toBe(1) // ⏸︎
+
+    expect(graphemeWidth("\u23F9\uFE0E")).toBe(1) // ⏹︎
+    expect(graphemeWidth("\u23F9")).toBe(2) // ⏹
+  })
+
   test("isLikelyEmoji detects emoji", () => {
     expect(isLikelyEmoji("\u{1F600}")).toBe(true)
     expect(isLikelyEmoji("\u{1F680}")).toBe(true)

@@ -361,17 +361,21 @@ export function isTextPresentationEmoji(grapheme: string): boolean {
   const cp = grapheme.codePointAt(0)
   if (cp === undefined) return false
 
-  // Check cache
-  const cached = textPresentationEmojiCache.get(cp)
-  if (cached !== undefined) return cached
-
   // Multi-codepoint graphemes (with VS16, ZWJ, etc.) are already handled
   // correctly by string-width. Only check single-codepoint graphemes.
+  //
+  // Important: this gate must run before the codepoint cache. U+FE0E
+  // text-presentation clusters such as "⏸︎" share the same first codepoint
+  // as bare "⏸", but have different width semantics. Caching by base
+  // codepoint for multi-codepoint clusters makes width depend on call order.
   const singleChar = String.fromCodePoint(cp)
   if (singleChar.length !== grapheme.length) {
-    textPresentationEmojiCache.set(cp, false)
     return false
   }
+
+  // Check cache for single-codepoint graphemes only.
+  const cached = textPresentationEmojiCache.get(cp)
+  if (cached !== undefined) return cached
 
   // Must be Extended_Pictographic but NOT Emoji_Presentation
   const isExtPict = TEXT_PRESENTATION_EMOJI_REGEX.test(grapheme)

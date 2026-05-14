@@ -172,6 +172,34 @@ describe("replayAnsiWithStyles regional-indicator handling (UAX #29 GB12/GB13)",
     expect(incr[0]![6]!.char).toBe(" ")
   })
 
+  test("text variation selector U+FE0E keeps pause icon one-cell during mode-label repaint", () => {
+    // User repro, 2026-05-14: clicking Silvercode's Codex "execute mode"
+    // row repainted "» execute mode" to "⏸︎ plan mode on". The replay
+    // verifier measured the VS15 cluster as width 2 after checking the bare
+    // U+23F8 base, skipped the spacer column, and left stale "execute" text.
+    const prev = new TerminalBuffer(COLS, ROWS)
+    writeText(prev, 0, 0, "\u00BB execute mode")
+    prev.resetDirtyRows()
+
+    const next = prev.clone()
+    for (let cx = 0; cx < 20; cx++) next.setCell(cx, 0, { char: " ", fg: null })
+    writeText(next, 0, 0, "\u23F8\uFE0E plan mode on")
+
+    const initialAnsi = outputPhase(null, prev, "fullscreen")
+    const incrAnsi = outputPhase(prev, next, "fullscreen")
+    const freshAnsi = outputPhase(null, next, "fullscreen")
+
+    const incr = replayAnsiWithStyles(COLS, ROWS, initialAnsi + incrAnsi)
+    const fresh = replayAnsiWithStyles(COLS, ROWS, freshAnsi)
+
+    for (let cx = 0; cx < 20; cx++) {
+      expect(incr[0]![cx]!.char, `col ${cx}`).toBe(fresh[0]![cx]!.char)
+    }
+    expect(incr[0]![0]!.char).toBe("\u23F8\uFE0E")
+    expect(incr[0]![1]!.char).toBe(" ")
+    expect(incr[0]![2]!.char).toBe("p")
+  })
+
   test("incremental render matches fresh through verifyOutputEquivalence (vt100)", () => {
     // End-to-end verification: this is what SILVERY_STRICT=1 actually
     // runs. Before the fix, this test would throw an
