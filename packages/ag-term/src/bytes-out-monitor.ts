@@ -27,6 +27,15 @@
  */
 import { createLogger, type ConditionalLogger } from "loggily"
 
+/**
+ * Minimal logger surface the monitor depends on. Lets tests pass a small
+ * mock without satisfying the full ConditionalLogger interface.
+ */
+export interface BytesOutLogger {
+  warn?: (msg: string | (() => string), data?: unknown) => void
+  error?: (msg: string | (() => string), data?: unknown) => void
+}
+
 const NS = "silvery:bytes_out"
 
 const FRAME_HISTORY = 100
@@ -59,8 +68,8 @@ export interface BytesOutMonitorOptions {
   skipHeapSnapshot?: boolean
   /** TEST: snapshot output directory. Production is `/tmp`. */
   snapshotDir?: string
-  /** TEST: logger override. */
-  logger?: ConditionalLogger
+  /** TEST: logger override (minimal warn/error surface; full ConditionalLogger also accepted). */
+  logger?: BytesOutLogger | ConditionalLogger
   /** TEST: clock override. */
   now?: () => number
   /** TEST: heap-snapshot writer override. */

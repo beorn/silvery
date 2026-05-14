@@ -21,6 +21,13 @@
  */
 import { createLogger, type ConditionalLogger } from "loggily"
 
+/** Minimal logger surface — tests can pass a partial mock. */
+export interface MemMonitorLogger {
+  info?: (msg: string | (() => string), data?: unknown) => void
+  warn?: (msg: string | (() => string), data?: unknown) => void
+  error?: (msg: string | (() => string), data?: unknown) => void
+}
+
 const NS = "silvery:mem"
 
 const SAMPLE_INTERVAL_MS = 30_000
@@ -37,8 +44,8 @@ interface MemSample {
 }
 
 export interface MemMonitorOptions {
-  /** TEST: logger override. */
-  logger?: ConditionalLogger
+  /** TEST: logger override (minimal info/warn/error surface). */
+  logger?: MemMonitorLogger | ConditionalLogger
   /** TEST: clock override. */
   now?: () => number
   /** TEST: memoryUsage override. */
@@ -151,8 +158,9 @@ export function createMemMonitor(options: MemMonitorOptions = {}): MemMonitor {
   if (!manual) {
     interval = setInterval(tick, SAMPLE_INTERVAL_MS)
     // Don't keep the process alive just for memory sampling.
-    if (typeof (interval as { unref?: () => unknown }).unref === "function") {
-      ;(interval as { unref: () => unknown }).unref()
+    const maybeUnref = interval as unknown as { unref?: () => unknown }
+    if (typeof maybeUnref.unref === "function") {
+      maybeUnref.unref()
     }
   }
 
