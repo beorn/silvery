@@ -24,8 +24,18 @@ SILVERY_STRICT=1,!canary        # tier 1 minus the canary (per-check skip with `
 | `canary`             | 2    | Degenerate frame: large buffer (≥ 4000 cells) where < 5% of cells are painted after first render — usually means the root component has no `<Screen>` or `<Box width height>` wrapper. **Filed at tier 2** so it surfaces the punch-list of broken harnesses during `test:strictest` cadence runs without blocking `test:fast`. Promote to tier 1 once the suite is clean.                                                                                                                                                                                                                                                                |
 | `residue`            | 2    | Stale-prev-cell carry-over: poisons the prev buffer with a sentinel (rgb(254, 0, 254) "þ"), runs the regular incremental render against it, then compares against a fresh-from-zero render. Any cell that retains the sentinel exposes "incremental cascade trusted prev pixels but no paint op covered them" — the cyan-strip residue class. **Tier 2** because of the cost (one extra render-phase pass + cloned buffer per frame). The plain `incremental` check at tier 1 only catches divergences in CHANGED cells; stale carry-over often passes that check because the prev pixel happens to coincide with what fresh would paint. |
 | `bordered-rect-clip` | 2    | Cell painted outside the nearest bordered-Box ancestor's inner content rect. Catches overflowing `<Text>` inside a `<Box borderStyle="…">` that lacks `overflow="hidden"` — text spills past the border or bleeds into siblings. Skipped automatically when the bordered ancestor has `overflow="hidden"` (the existing `computeChildClipBounds` path already enforces correctness). Suggested fix surfaces in the diagnostic: add `overflow="hidden"` on the box, or `wrap="truncate"` on the text.                                                                                                                                      |
+| `bytes_out`          | 1    | Render-out throughput monitor. WARN @ sustained 1 MB/s × 10s; PANIC @ 100 MB/s × 2s. PANIC emits `v8.writeHeapSnapshot()` + frame summaries; WARN emits frame summaries only. Fixed thresholds in code — no env knobs. Activates with the other tier-1 checks under `SILVERY_STRICT=1` (the same default `bun run test:fast` uses); opt out per session with `SILVERY_STRICT=1,!bytes_out`. Catches render-output firehoses that fill the pty parent's scrollback (cmux/tmux/iTerm) while the TUI's own `process.memoryUsage()` looks healthy — see the sibling lesson `docs/lessons/cmux-pty-buffer-firehose.md` in km. |
 
 More checks land here as the framework hardens. Each new check publishes its slug + tier in this table.
+
+### Convention: observability instruments live at tier 1
+
+Some slugs are **observability instruments** (`bytes_out`, future `mem`) rather than canonical verification checks — they probe runtime behavior rather than gate render correctness. They still live at **tier 1** so they're automatic under `SILVERY_STRICT=1`. Diagnostics that require remembering ad-hoc env vars don't get used; tier-1 inclusion means the instrument is there when the firehose actually happens, with no extra invocation step. Per-session opt-out is `SILVERY_STRICT=1,!bytes_out`.
+
+Two design rules that follow from this convention:
+
+1. **Fixed thresholds in code.** No `SILVERY_<X>_<Y>` env knobs for tuning. If the threshold is wrong, file a bead and we change the constant. Knobs we don't remember = checks that don't fire.
+2. **Cheap by default.** The instrument's per-write cost must stay negligible (~one monotonic clock read + a small ring-buffer write) so tier-1 inclusion doesn't measurably slow `test:fast`.
 
 ### Orthogonal axes (not part of the strict gate)
 
@@ -93,6 +103,7 @@ SILVERY_INSTRUMENT=1 bun run app
 | `silvery:content:trace` | Per-node trace entries (skip/render decisions)    |
 | `silvery:content:cell`  | Per-cell debug (node coverage at target coords)   |
 | `silvery:measure`       | Measure phase debug (text measurement calls)      |
+| `silvery:bytes_out`     | Render-output throughput monitor (WARN/PANIC events, frame summaries) |
 | `@silvery/ag-react`     | React reconciler pipeline spans                   |
 
 ### Enriched STRICT Errors

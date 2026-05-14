@@ -85,7 +85,7 @@ SILVERY_STRICT=1,!canary        # tier 1 minus canary (per-test escape hatch)
 
 Orthogonal axes (different _backend_, not different _check_) keep their own env vars: `SILVERY_STRICT_TERMINAL=vt100|xterm|ghostty|all`, `SILVERY_STRICT_ACCUMULATE=1`, `SILVERY_INSTRUMENT=1`. The boundary is: same check, different verifier → orthogonal var; new check → new slug under `SILVERY_STRICT`.
 
-Built-in slugs: `incremental` (tier 1, the historical incremental≡fresh check), `canary` (tier 1, degenerate-frame-after-first-render). See [`docs/guide/debugging.md`](docs/guide/debugging.md) for the full table and [`packages/ag-term/src/strict-mode.ts`](packages/ag-term/src/strict-mode.ts) for the `isStrictEnabled(slug, minTier)` helper.
+Built-in slugs: `incremental` (tier 1, the historical incremental≡fresh check), `canary` (tier 1, degenerate-frame-after-first-render), `bytes_out` (tier 1, render-out throughput monitor — WARN @ 1 MB/s × 10s, PANIC @ 100 MB/s × 2s, fixed thresholds, opt out with `SILVERY_STRICT=1,!bytes_out`). Observability instruments (`bytes_out`, future `mem`) live at tier 1 too — diagnostics that need ad-hoc env vars don't get used. See [`docs/guide/debugging.md`](docs/guide/debugging.md) for the full table and the tier-1 observability convention, and [`packages/ag-term/src/strict-mode.ts`](packages/ag-term/src/strict-mode.ts) for the `isStrictEnabled(slug, minTier)` helper.
 
 ## Mandatory: New Props Require Tests
 

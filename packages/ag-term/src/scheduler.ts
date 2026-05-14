@@ -14,6 +14,8 @@
 
 import { appendFileSync } from "node:fs"
 import { type Logger, createLogger } from "loggily"
+import { type BytesOutMonitor, createBytesOutMonitor } from "./bytes-out-monitor"
+import { isStrictEnabled } from "./strict-mode"
 import { type TerminalBuffer, bufferToText, cellEquals } from "./buffer"
 import { buildMismatchContext, formatMismatchContext } from "@silvery/test/debug-mismatch"
 import {
@@ -173,6 +175,13 @@ export class RenderScheduler {
   private nonTTYMode: ResolvedMode
   private outputTransformer: (content: string, prevLineCount: number) => string
   private writeOutput: (data: string) => boolean
+  /**
+   * Render-output throughput monitor — backs `SILVERY_STRICT=bytes_out`.
+   * Constructed lazily, only when the slug is active, so the no-op path
+   * has zero overhead. See `bytes-out-monitor.ts` +
+   * `docs/lessons/cmux-pty-buffer-firehose.md`.
+   */
+  private bytesOutMonitor: BytesOutMonitor | null = null
   private log: Logger
 
   /** Previous buffer for diffing */
@@ -269,6 +278,11 @@ export class RenderScheduler {
       })
     }
     this.writeOutput = options.writeOutput ?? ((data: string) => options.stdout.write(data))
+    // bytes_out is a tier-1 strict slug (auto under SILVERY_STRICT=1).
+    // Opt out per session with SILVERY_STRICT=1,!bytes_out.
+    if (isStrictEnabled("bytes_out", 1)) {
+      this.bytesOutMonitor = createBytesOutMonitor()
+    }
     this.log = createLogger("silvery:scheduler") as unknown as Logger
 
     // Resolve non-TTY mode based on environment
@@ -492,6 +506,12 @@ export class RenderScheduler {
     if (this.cursorCleanup) {
       this.cursorCleanup()
       this.cursorCleanup = null
+    }
+
+    // Stop the bytes_out throughput monitor (if active).
+    if (this.bytesOutMonitor) {
+      this.bytesOutMonitor.dispose()
+      this.bytesOutMonitor = null
     }
 
     // In static mode, output the final frame on dispose
@@ -721,6 +741,13 @@ export class RenderScheduler {
         }
 
         this.writeOutput(fullOutput)
+        // bytes_out instrumentation — record AFTER write so the monitor
+        // accounts for what actually left the process. Fixed thresholds
+        // (1 MB/s WARN × 10s, 100 MB/s PANIC × 2s) in `bytes-out-monitor.ts`.
+        this.bytesOutMonitor?.recordWrite(
+          this.stats.renderCount,
+          Buffer.byteLength(fullOutput),
+        )
       }
 
       // Save buffer for next diff
