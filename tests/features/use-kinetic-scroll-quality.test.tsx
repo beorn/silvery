@@ -291,6 +291,45 @@ describe("useKineticScroll — input cadence detection", () => {
     expect(apiRef.current!.scrollFloat, "burst eventually drains in full").toBe(16)
   })
 
+  test("smoothWheelPackets does not freeze if timers are starved between real-time packet groups", async () => {
+    const apiRef: HarnessRef = { current: null }
+    const r = createRenderer({ cols: 30, rows: 8 })
+    r(
+      <TestHarness
+        apiRef={apiRef}
+        options={{
+          maxScroll: 1000,
+          enableInputCadenceDetection: true,
+          enableMomentum: false,
+          smoothWheelPackets: true,
+        }}
+      />,
+    )
+    await settle()
+
+    for (let i = 0; i < 12; i++) {
+      apiRef.current!.onWheel({ deltaY: 1 })
+    }
+    expect(apiRef.current!.getScrollFloat(), "first packet group consumes one frame budget").toBe(4)
+
+    const start = performance.now()
+    while (performance.now() - start < 25) {
+      // Simulate a busy render/logging turn: wall-clock time advances, but the
+      // setTimeout-based smooth-drain callback cannot run yet.
+    }
+
+    for (let i = 0; i < 12; i++) {
+      apiRef.current!.onWheel({ deltaY: 1 })
+    }
+    expect(
+      apiRef.current!.getScrollFloat(),
+      "next real-time packet group should move immediately, not wait for the starved drain timer",
+    ).toBe(8)
+
+    await settle(150)
+    expect(apiRef.current!.scrollFloat, "both packet groups eventually drain in full").toBe(24)
+  })
+
   test("cadence detection disabled by default — old behaviour preserved", async () => {
     const apiRef: HarnessRef = { current: null }
     const r = createRenderer({ cols: 30, rows: 8 })
