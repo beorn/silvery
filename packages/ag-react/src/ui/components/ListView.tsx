@@ -1420,6 +1420,14 @@ function ListViewInner<T>(
     snapshotAvgMeasuredHeight: activeWheelAvgMeasuredHeightRef.current,
     liveAvgMeasuredHeight,
   })
+  const heightModelVersion = [
+    activeItems.length,
+    measurementVersion,
+    viewportSize?.w ?? 0,
+    gap,
+    avgMeasuredHeight ?? "unmeasured",
+    virtualizerEstimateAsNumber,
+  ].join(":")
 
   // Build the effective-height estimator. This mirrors the per-item
   // resolution that `sumHeights` performs internally: measured cache
@@ -1519,6 +1527,7 @@ function ListViewInner<T>(
     activeScrollDirection: wheelGestureActiveRef.current ? activeScrollDirectionRef.current : null,
     maxActiveCorrectionRows: activeAnchorCorrectionBudgetRows,
     maxOppositeActiveCorrectionRows: oppositeActiveAnchorCorrectionBudgetRows,
+    modelVersion: heightModelVersion,
     onApplyTopRow: applyAnchoredTopRow,
   })
   const followDisengagedThisRender =

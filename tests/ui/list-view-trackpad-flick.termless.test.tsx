@@ -64,11 +64,61 @@ const USER_LOG_SINGLE_UP_FLICK_PACKETS: TermlessTrackpadFlickProfile = {
   ],
 }
 
+const USER_LOG_DENSE_UP_FLICK_PACKETS: TermlessTrackpadFlickProfile = {
+  x: 128,
+  y: 49,
+  direction: "up",
+  coordinateMode: "pixel",
+  cellSize: { width: 14, height: 26 },
+  packets: [
+    { atMs: 0, count: 4, direction: "up" },
+    { atMs: 36, count: 19, direction: "up" },
+    { atMs: 76, count: 7, direction: "up" },
+    { atMs: 76, count: 1, direction: "down" },
+    { atMs: 76, count: 20, direction: "up" },
+    { atMs: 109, count: 2, direction: "up" },
+    { atMs: 110, count: 17, direction: "up" },
+    { atMs: 140, count: 12, direction: "up" },
+    { atMs: 206, count: 28, direction: "up" },
+    { atMs: 244, count: 15, direction: "up" },
+    { atMs: 284, count: 11, direction: "up" },
+    { atMs: 316, count: 6, direction: "up" },
+    { atMs: 347, count: 8, direction: "up" },
+    { atMs: 377, count: 6, direction: "up" },
+    { atMs: 407, count: 3, direction: "up" },
+    { atMs: 436, count: 1, direction: "up" },
+    { atMs: 437, count: 3, direction: "up" },
+    { atMs: 535, count: 10, direction: "up" },
+    { atMs: 564, count: 2, direction: "up" },
+    { atMs: 593, count: 2, direction: "up" },
+    { atMs: 622, count: 1, direction: "up" },
+    { atMs: 652, count: 2, direction: "up" },
+    { atMs: 680, count: 1, direction: "up" },
+    { atMs: 708, count: 1, direction: "up" },
+    { atMs: 737, count: 1, direction: "up" },
+    { atMs: 832, count: 2, direction: "up" },
+    { atMs: 861, count: 1, direction: "up" },
+    { atMs: 888, count: 1, direction: "up" },
+    { atMs: 972, count: 1, direction: "up" },
+    { atMs: 1055, count: 1, direction: "up" },
+    { atMs: 1144, count: 1, direction: "up" },
+    { atMs: 1318, count: 1, direction: "up" },
+  ],
+}
+
 function makeVariableRows(count: number): RowItem[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `row-${index}`,
     label: `Line ${String(index).padStart(4, "0")}`,
     height: index % 13 === 0 ? 14 : index % 5 === 0 ? 8 : 2 + (index % 4),
+  }))
+}
+
+function makeUniformRows(count: number): RowItem[] {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `uniform-row-${index}`,
+    label: `Line ${String(index).padStart(4, "0")}`,
+    height: 1,
   }))
 }
 
@@ -142,6 +192,23 @@ function upwardReversals(samples: readonly { label: string; oldest: number | nul
     prev = { label: sample.label, oldest: sample.oldest }
   }
   return reversals
+}
+
+function longestUnchangedOldestRun(samples: readonly { oldest: number | null }[]): number {
+  let longest = 0
+  let current = 0
+  let previous: number | null = null
+  for (const sample of samples) {
+    if (sample.oldest === null) continue
+    if (previous !== null && sample.oldest === previous) {
+      current++
+      longest = Math.max(longest, current)
+    } else {
+      current = 0
+    }
+    previous = sample.oldest
+  }
+  return longest
 }
 
 describe("ListView trackpad flick replay through termless", () => {
@@ -316,6 +383,57 @@ describe("ListView trackpad flick replay through termless", () => {
         upwardReversals(samples),
         samples.map((sample) => `${sample.label}:${sample.oldest}`).join(", "),
       ).toEqual([])
+    } finally {
+      handle.unmount()
+    }
+  }, 20_000)
+
+  test("keeps advancing during a dense captured upward flick over stable row heights", async () => {
+    using term = createTermless({ cols: 302, rows: 117 })
+    const listRef = React.createRef<ListViewHandle>()
+    const items = makeUniformRows(1271)
+    const handle: RunHandle = await run(<FlickList items={items} listRef={listRef} />, term, {
+      mouse: true,
+    })
+    try {
+      await settle(120)
+      act(() => {
+        listRef.current?.scrollToBottom()
+      })
+      await settle(120)
+
+      const samples: { label: string; oldest: number | null; eventCount: number }[] = [
+        { label: "initial", oldest: oldestVisibleLine(term.screen.getText()), eventCount: 0 },
+      ]
+      const result = await term.mouse.trackpadFlick(USER_LOG_DENSE_UP_FLICK_PACKETS, {
+        afterGroup(group) {
+          samples.push({
+            label: `packet-${group.atMs}`,
+            oldest: oldestVisibleLine(term.screen.getText()),
+            eventCount: group.eventCount,
+          })
+        },
+      })
+      await settle(1000)
+      samples.push({
+        label: "settled",
+        oldest: oldestVisibleLine(term.screen.getText()),
+        eventCount: result.eventCount,
+      })
+
+      const initial = samples[0]?.oldest
+      const settled = samples.at(-1)?.oldest
+      expect(result.eventCount).toBe(191)
+      expect(initial).not.toBeNull()
+      expect(settled).not.toBeNull()
+      expect(
+        initial! - settled!,
+        samples.map((sample) => `${sample.label}@${sample.eventCount}:${sample.oldest}`).join(", "),
+      ).toBeGreaterThanOrEqual(90)
+      expect(
+        longestUnchangedOldestRun(samples),
+        samples.map((sample) => `${sample.label}@${sample.eventCount}:${sample.oldest}`).join(", "),
+      ).toBeLessThanOrEqual(5)
     } finally {
       handle.unmount()
     }

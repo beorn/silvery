@@ -326,6 +326,35 @@ describe("ListView maintainVisibleContentPosition", () => {
     ).toBeNull()
   })
 
+  test("active wheel rejects stale anchor corrections when the height model did not change", () => {
+    // Latest live silvercode trace: the kinetic row moved up by the frame
+    // budget (`currentTopRow=4624`), but the preserved anchor from the
+    // previous frame still resolved to 4628. With no height-model change,
+    // that is not measurement correction; it is a stale anchor cancelling
+    // explicit wheel motion.
+    expect(
+      resolveDirectionalMaintainedTopRow({
+        row: 4628,
+        currentTopRow: 4624,
+        activeScrollDirection: "up",
+        toleranceRows: 0.5,
+        maxOppositeActiveCorrectionRows: 4,
+        allowActiveAnchorCorrection: false,
+      }),
+    ).toBeNull()
+
+    expect(
+      resolveDirectionalMaintainedTopRow({
+        row: 4620,
+        currentTopRow: 4624,
+        activeScrollDirection: "up",
+        toleranceRows: 0.5,
+        maxActiveCorrectionRows: 28,
+        allowActiveAnchorCorrection: false,
+      }),
+    ).toBeNull()
+  })
+
   test("active wheel clamps same-direction measurement jumps to the frame budget", () => {
     // Reproduces the 2026-05-15 silvercode log shape: while the user was
     // actively scrolling up, newly mounted row measurements moved the

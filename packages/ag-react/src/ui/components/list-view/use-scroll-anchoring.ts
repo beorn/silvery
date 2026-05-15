@@ -12,6 +12,7 @@ export interface ScrollAnchoringOptions {
   activeScrollDirection?: "up" | "down" | null
   maxActiveCorrectionRows?: number
   maxOppositeActiveCorrectionRows?: number
+  modelVersion?: unknown
   onApplyTopRow: (row: number) => void
   toleranceRows?: number
 }
@@ -94,15 +95,25 @@ export function useScrollAnchoring({
   activeScrollDirection = null,
   maxActiveCorrectionRows,
   maxOppositeActiveCorrectionRows,
+  modelVersion,
   onApplyTopRow,
   toleranceRows = DEFAULT_TOLERANCE_ROWS,
 }: ScrollAnchoringOptions): ScrollAnchoringController {
   const anchorRef = useRef<VisibleContentAnchor | null>(null)
+  const anchorModelVersionRef = useRef<unknown>(modelVersion)
   const suppressRef = useRef(false)
 
   const currentAnchor = anchorAtRow(model, keyAtIndex, currentTopRow)
+  // During active wheel input the top row is expected to change every frame.
+  // A previous-frame anchor only gets to override that motion when the
+  // height model changed; otherwise it is stale and cancels explicit scroll.
+  const modelChangedSinceAnchor =
+    modelVersion === undefined || !Object.is(anchorModelVersionRef.current, modelVersion)
   const rawMaintainedTopRow =
-    enabled && !suppressRef.current && !followOwnsViewport
+    enabled &&
+    !suppressRef.current &&
+    !followOwnsViewport &&
+    (activeScrollDirection === null || modelChangedSinceAnchor)
       ? resolveMaintainedTopRow({
           anchor: anchorRef.current,
           keyAtIndex,
@@ -125,22 +136,26 @@ export function useScrollAnchoring({
   useLayoutEffect(() => {
     if (!enabled || suppressRef.current) {
       anchorRef.current = currentAnchor
+      anchorModelVersionRef.current = modelVersion
       suppressRef.current = false
       return
     }
 
     if (followOwnsViewport) {
       anchorRef.current = currentAnchor
+      anchorModelVersionRef.current = modelVersion
       return
     }
 
     if (maintainedTopRow !== null) {
       onApplyTopRow(maintainedTopRow)
       anchorRef.current = anchorAtRow(model, keyAtIndex, maintainedTopRow)
+      anchorModelVersionRef.current = modelVersion
       return
     }
 
     anchorRef.current = currentAnchor
+    anchorModelVersionRef.current = modelVersion
   }, [
     currentAnchor,
     enabled,
@@ -148,6 +163,7 @@ export function useScrollAnchoring({
     keyAtIndex,
     maintainedTopRow,
     model,
+    modelVersion,
     onApplyTopRow,
   ])
 
@@ -165,6 +181,7 @@ export function resolveDirectionalMaintainedTopRow({
   activeScrollDirection,
   maxActiveCorrectionRows,
   maxOppositeActiveCorrectionRows,
+  allowActiveAnchorCorrection,
   toleranceRows,
 }: {
   row: number | null
@@ -172,9 +189,11 @@ export function resolveDirectionalMaintainedTopRow({
   activeScrollDirection: "up" | "down" | null
   maxActiveCorrectionRows?: number
   maxOppositeActiveCorrectionRows?: number
+  allowActiveAnchorCorrection?: boolean
   toleranceRows: number
 }): number | null {
   if (row === null || activeScrollDirection === null) return row
+  if (allowActiveAnchorCorrection === false) return null
   if (activeScrollDirection === "up" && row > currentTopRow + toleranceRows) {
     if (
       maxOppositeActiveCorrectionRows !== undefined &&
