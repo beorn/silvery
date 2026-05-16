@@ -50,7 +50,11 @@ export interface ActiveScrollWindowInput {
   startIndex: number
   endIndex: number
   previousStartIndex: number
+  previousEndIndex?: number
+  anchorFirstIndex?: number
+  anchorLastIndex?: number
   activeScrollDirection: "up" | "down" | null
+  edgeBufferItems?: number
 }
 
 export interface ActiveScrollWindowResult {
@@ -63,8 +67,48 @@ export function resolveActiveScrollWindow({
   startIndex,
   endIndex,
   previousStartIndex,
+  previousEndIndex,
+  anchorFirstIndex,
+  anchorLastIndex,
   activeScrollDirection,
+  edgeBufferItems = 4,
 }: ActiveScrollWindowInput): ActiveScrollWindowResult {
+  const previousEnd = previousEndIndex ?? previousStartIndex
+  const previousWindowKnown =
+    previousEndIndex !== undefined && previousEndIndex > previousStartIndex
+  const anchorKnown = anchorFirstIndex !== undefined && anchorLastIndex !== undefined
+  const previousWindowStillCoversAnchor =
+    previousWindowKnown &&
+    anchorKnown &&
+    anchorFirstIndex >= previousStartIndex &&
+    anchorLastIndex < previousEnd
+  const canKeepPreviousStartForUp =
+    previousWindowStillCoversAnchor && anchorFirstIndex > previousStartIndex + edgeBufferItems
+  const canKeepPreviousStartForDown =
+    previousWindowStillCoversAnchor && anchorLastIndex < previousEnd - edgeBufferItems
+
+  if (
+    activeScrollDirection === "up" &&
+    startIndex < previousStartIndex &&
+    canKeepPreviousStartForUp
+  ) {
+    return {
+      startIndex: previousStartIndex,
+      endIndex: Math.max(endIndex, previousEnd),
+      clamped: true,
+    }
+  }
+  if (
+    activeScrollDirection === "down" &&
+    startIndex > previousStartIndex &&
+    canKeepPreviousStartForDown
+  ) {
+    return {
+      startIndex: previousStartIndex,
+      endIndex: Math.max(endIndex, previousEnd),
+      clamped: true,
+    }
+  }
   if (activeScrollDirection === "up" && startIndex > previousStartIndex) {
     return {
       startIndex: previousStartIndex,

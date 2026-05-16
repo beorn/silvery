@@ -821,8 +821,10 @@ function ListViewInner<T>(
   const scrollActivityActiveRef = useRef(false)
   const liveAvgMeasuredHeightRef = useRef<number | undefined>(undefined)
   const activeWheelAvgMeasuredHeightRef = useRef<number | undefined>(undefined)
+  const [, rerenderOnWheelGestureIdle] = useReducer((value: number) => value + 1, 0)
 
   const markWheelGestureActive = useCallback(() => {
+    const wasActive = wheelGestureActiveRef.current
     if (
       !wheelGestureActiveRef.current &&
       (!isWheelDrivenRef.current ||
@@ -841,11 +843,15 @@ function ListViewInner<T>(
         wheelGestureActiveTimerRef.current = setTimeout(checkForIdle, SCROLLBAR_FADE_AFTER_MS)
         return
       }
-      wheelGestureActiveRef.current = false
+      if (wheelGestureActiveRef.current) {
+        wheelGestureActiveRef.current = false
+        rerenderOnWheelGestureIdle()
+      }
       activeScrollDirectionRef.current = null
       wheelGestureActiveTimerRef.current = null
     }
     wheelGestureActiveTimerRef.current = setTimeout(checkForIdle, SCROLLBAR_FADE_AFTER_MS)
+    if (!wasActive) rerenderOnWheelGestureIdle()
   }, [])
 
   useEffect(
@@ -1644,6 +1650,8 @@ function ListViewInner<T>(
   const indexEstAsNumber =
     typeof adjustedEstimateHeight === "number" ? adjustedEstimateHeight : adjustedEstimateHeight(0)
   const safeEstHeight = Math.max(1, indexEstAsNumber)
+  let viewportAnchorFirst = cursorAnchor
+  let viewportAnchorLast = cursorAnchor
 
   if (resolvedVirtualization === "index") {
     // Try to derive a viewport-anchor item index from layout-phase's
@@ -1727,6 +1735,8 @@ function ListViewInner<T>(
     // — just keep cursor itself in the rendered slice.
     const anchorFirst = viewportFirstItem ?? cursorAnchor
     const anchorLast = viewportLastItem ?? cursorAnchor
+    viewportAnchorFirst = anchorFirst
+    viewportAnchorLast = anchorLast
 
     let start = Math.max(0, anchorFirst - overscan)
     let end = Math.min(activeItems.length, anchorLast + overscan + 1)
@@ -1817,6 +1827,9 @@ function ListViewInner<T>(
       startIndex: indexWindowStart,
       endIndex: indexWindowEnd,
       previousStartIndex: indexWindowPrevRef.current.startIndex,
+      previousEndIndex: indexWindowPrevRef.current.endIndex,
+      anchorFirstIndex: viewportAnchorFirst,
+      anchorLastIndex: viewportAnchorLast,
       activeScrollDirection: activeScrollDirectionRef.current,
     })
     indexWindowStart = monotonicWindow.startIndex

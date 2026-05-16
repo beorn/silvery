@@ -25,6 +25,7 @@ import {
   shouldApplyVisibleContentAnchoring,
   resolveViewportAnchor,
 } from "../../packages/ag-react/src/ui/components/list-view/use-scroll-anchoring"
+import { resolveActiveScrollWindow } from "../../packages/ag-react/src/ui/components/list-view/scroll-authority"
 import { createHeightModel } from "../../packages/ag-react/src/ui/components/list-view/height-model"
 
 interface Item {
@@ -408,6 +409,52 @@ describe("ListView maintainVisibleContentPosition", () => {
         maxActiveCorrectionRows: budget,
       }),
     ).toBe(4612)
+  })
+
+  test("active upward scroll keeps the rendered window stable while the anchor has buffer", () => {
+    // Reproduces the latest silvercode flick-tail failure: renderScrollRow
+    // moved upward, but the offscreen overscan start shifted 831 -> 830.
+    // The newly mounted offscreen item had a real height different from the
+    // frozen estimate, so the visible transcript moved downward by two lines.
+    expect(
+      resolveActiveScrollWindow({
+        startIndex: 830,
+        endIndex: 888,
+        previousStartIndex: 831,
+        previousEndIndex: 889,
+        anchorFirstIndex: 856,
+        anchorLastIndex: 863,
+        activeScrollDirection: "up",
+      }),
+    ).toEqual({ startIndex: 831, endIndex: 889, clamped: true })
+  })
+
+  test("active upward scroll advances the window when the anchor reaches the buffer edge", () => {
+    expect(
+      resolveActiveScrollWindow({
+        startIndex: 830,
+        endIndex: 888,
+        previousStartIndex: 831,
+        previousEndIndex: 889,
+        anchorFirstIndex: 834,
+        anchorLastIndex: 842,
+        activeScrollDirection: "up",
+      }),
+    ).toEqual({ startIndex: 830, endIndex: 888, clamped: false })
+  })
+
+  test("active downward scroll keeps the rendered window stable while the anchor has buffer", () => {
+    expect(
+      resolveActiveScrollWindow({
+        startIndex: 832,
+        endIndex: 890,
+        previousStartIndex: 831,
+        previousEndIndex: 889,
+        anchorFirstIndex: 856,
+        anchorLastIndex: 863,
+        activeScrollDirection: "down",
+      }),
+    ).toEqual({ startIndex: 831, endIndex: 890, clamped: true })
   })
 
   test("wheel-driven viewport freezes the unmeasured-row fallback average until ownership resets", () => {
