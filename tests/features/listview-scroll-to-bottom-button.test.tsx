@@ -11,15 +11,32 @@
  *      viewport accordingly.
  */
 
-import React from "react"
+import React, { act } from "react"
 import { describe, expect, test } from "vitest"
 import { createRenderer, createTermless } from "@silvery/test"
 import { Box, ListView, Text } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
 
-const settle = (ms = 50): Promise<void> => new Promise((r) => setTimeout(r, ms))
+const settle = async (ms = 50): Promise<void> => {
+  await act(async () => {
+    await new Promise<void>((r) => setTimeout(r, ms))
+  })
+}
 
 const makeItems = (n: number): string[] => Array.from({ length: n }, (_, i) => `Item ${i + 1}`)
+
+async function waitForText(
+  app: { readonly text: string },
+  needle: string,
+  timeoutMs = 2000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (app.text.includes(needle)) return
+    await settle(50)
+  }
+  throw new Error(`timed out waiting for ${JSON.stringify(needle)}\n${app.text}`)
+}
 
 describe("ListView: scroll-to-latest floating button", () => {
   test("button is hidden initially when at end (follow=end auto-snap)", async () => {
@@ -41,8 +58,8 @@ describe("ListView: scroll-to-latest floating button", () => {
     expect(app.text).toContain("Item 40")
   })
 
-  test("button surfaces after scrolling >1 viewport-height away from end", async () => {
-    const render = createRenderer({ cols: 30, rows: 8 })
+  test("button surfaces only after scrolling idles >1 viewport-height away from end", async () => {
+    const render = createRenderer({ cols: 30, rows: 8, autoRender: true })
     const app = render(
       <Box flexDirection="column" height={8} width={30}>
         <ListView
@@ -62,7 +79,9 @@ describe("ListView: scroll-to-latest floating button", () => {
     }
     await settle(150)
 
-    expect(app.text).toContain("↓ Latest")
+    expect(app.text).not.toContain("↓ Latest")
+
+    await waitForText(app, "↓ Latest")
   })
 
   test("button is suppressed for plain nav lists (follow !== end)", async () => {

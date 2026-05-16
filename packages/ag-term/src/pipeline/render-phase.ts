@@ -1351,13 +1351,14 @@ function applyBoxAttrOverlay(
 // ============================================================================
 
 /**
- * Check whether any sibling of this scroll container is an absolute-positioned
- * Box whose rect overlaps with the scroll container's rect.
+ * Check whether any transparent sibling of this scroll container is an
+ * absolute-positioned Box whose rect overlaps with the scroll container's rect.
  *
- * This matters for Tier 1 (buffer shift) safety: when a sibling absolute child
- * paints into our rect (e.g., ListView's scrollbar thumb at col=width-1), the
- * shift would smear those pixels along with the content. STRICT detects the
- * resulting incremental-vs-fresh divergence.
+ * This matters for Tier 1 (buffer shift) safety: when a transparent sibling
+ * absolute child paints into our rect (e.g., an overlay glyph at col=width-1),
+ * the shift would smear those pixels along with the content. Opaque absolute
+ * siblings are safe because the normal third pass always re-renders absolute
+ * children after the scroll container and repaints their whole rect.
  *
  * O(siblings) — typically 1-3 siblings under common parents (ListView outer
  * Box has scroll container + scrollbar + edge-bump indicator). Returns false
@@ -1376,6 +1377,7 @@ function checkOverlappingAbsoluteSibling(node: AgNode, scrollRect: Rect): boolea
     if (sib === node) continue
     const sp = sib.props as BoxProps | undefined
     if (sp?.position !== "absolute") continue
+    if (getEffectiveBg(sp)) continue
     const r = sib.boxRect
     if (!r) continue
     // AABB overlap test (half-open intervals).
@@ -1442,8 +1444,8 @@ export interface ScrollPlan {
  * Three-tier strategy:
  * 1. **shift**: Only scroll offset changed, no sticky children. Buffer contents
  *    shifted by scroll delta; only newly visible edges re-render.
- * 2. **clear**: Children restructured, visible range changed with scroll, or
- *    parent region changed. Entire viewport cleared and all children re-render.
+ * 2. **clear**: Children restructured, sticky/overlaid scroll, or parent region
+ *    changed. Entire viewport cleared and all children re-render.
  * 3. **subtree-only**: Only some descendants changed. Children use hasPrevBuffer=true
  *    and skip via fast-path if clean. With sticky children, forces all first-pass
  *    items to re-render (stickyForceRefresh).
@@ -1466,13 +1468,15 @@ export function planScrollRender(inputs: ScrollPlanInputs): ScrollPlan {
   // Unsafe with sticky children (sticky second pass overwrites shifted pixels).
   // Unsafe with overlapping absolute siblings (the shift would smear their
   // pixels along with content — common case: ListView scrollbar thumb).
+  // Safe with visibleRangeChanged: the shift moves existing pixels, while the
+  // per-child pass below force-renders newly exposed children whose previous
+  // rect was outside the old viewport.
   const scrollOnly =
     hasPrevBuffer &&
     scrollOffsetChanged &&
     !childrenDirty &&
     !childrenNeedFreshRender &&
     !hasStickyChildren &&
-    !visibleRangeChanged &&
     !hasOverlappingAbsoluteSibling
 
   // Tier 2: Full viewport clear -- children restructured, scroll+sticky, or parent changed.

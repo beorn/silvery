@@ -248,6 +248,10 @@ export function Scrollbar({
       width={1}
       height={trackHeight}
       flexDirection="column"
+      // Own the whole scrollbar column, including rows without a thumb. This
+      // keeps scroll fast-path shifts from smearing old thumb pixels while
+      // preserving the content layout width.
+      backgroundColor="$bg"
       // `userSelect="none"` prevents silvery's selection feature from
       // intercepting the mousedown — without it, clicking on the
       // scrollbar starts a text-selection drag and our handlers never

@@ -104,6 +104,29 @@ describe("ListView — basic rendering", () => {
   })
 })
 
+describe("ListView — scrollbar overlay", () => {
+  test("owns the rightmost column for scrollbar chrome", () => {
+    const items = makeItems(20)
+    const r = createRenderer({ cols: 40, rows: 6 })
+    const app = r(
+      <ListView
+        items={items}
+        height={6}
+        width={40}
+        scrollbar
+        scrollbarVisibility="always"
+        virtualization="none"
+        renderItem={() => <Text>{"x".repeat(40)}</Text>}
+        getKey={(item) => item.id}
+      />,
+    )
+
+    for (let row = 0; row < 6; row++) {
+      expect(app.cell(39, row).char).not.toBe("x")
+    }
+  })
+})
+
 // ============================================================================
 // ListView — Overflow Indicators
 // ============================================================================

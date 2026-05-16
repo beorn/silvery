@@ -2582,6 +2582,11 @@ function ListViewInner<T>(
     scrollbar &&
     overflowing &&
     (viewportKnown ? thumbHeight > 0 && thumbHeight < trackHeight : true)
+  const shouldOfferScrollToBottomButton =
+    resolvedFollow === "end" &&
+    scrollableRows > 0 &&
+    scrollableRows - effectiveRowsAbove > contentViewportHeight
+  const showScrollToBottomButton = shouldOfferScrollToBottomButton && !isScrolling
   const lastListLogKey = useRef("")
   useEffect(() => {
     const key = [
@@ -2622,6 +2627,7 @@ function ListViewInner<T>(
       totalRowsForOverflow,
       measuredHeights.size,
       showScrollbar,
+      showScrollToBottomButton,
       pendingFollowSnapRef.current,
       followActiveRef.current,
       prevAtBottomRef.current,
@@ -2673,6 +2679,7 @@ function ListViewInner<T>(
       measuredCount: measuredHeights.size,
       avgMeasuredHeight,
       showScrollbar,
+      showScrollToBottomButton,
       pendingFollowSnap: pendingFollowSnapRef.current,
       followActive: followActiveRef.current,
       prevAtBottom: prevAtBottomRef.current,
@@ -2712,6 +2719,7 @@ function ListViewInner<T>(
     scrollRow,
     scrollableRows,
     showScrollbar,
+    showScrollToBottomButton,
     startIndex,
     totalRowsForOverflow,
     totalRowsMeasured,
@@ -2908,11 +2916,9 @@ function ListViewInner<T>(
        * for plain navigation lists, pulling the user back to the tail
        * isn't necessarily what they want, so we keep the affordance
        * scoped to the case where it's a clear UX win. */}
-      {resolvedFollow === "end" &&
-        scrollableRows > 0 &&
-        scrollableRows - effectiveRowsAbove > contentViewportHeight && (
-          <ScrollToBottomButton onClick={() => scrollToFrac(1)} />
-        )}
+      {showScrollToBottomButton && (
+        <ScrollToBottomButton onClick={() => scrollToFrac(1)} onWheel={handleWheel} />
+      )}
     </Box>
   )
 }
@@ -2929,7 +2935,13 @@ function ListViewInner<T>(
  *   - Armed (hover): inverse — $primary background, $bg text — the macOS
  *     "active button" affordance
  */
-function ScrollToBottomButton({ onClick }: { onClick: () => void }): React.ReactElement {
+function ScrollToBottomButton({
+  onClick,
+  onWheel,
+}: {
+  onClick: () => void
+  onWheel: (event: { deltaY: number }) => void
+}): React.ReactElement {
   const { isHovered, onMouseEnter, onMouseLeave } = useHover()
   const bg = isHovered ? "$primary" : "$mutedbg"
   const fg = isHovered ? "$bg" : "$muted"
@@ -2954,6 +2966,7 @@ function ScrollToBottomButton({ onClick }: { onClick: () => void }): React.React
       flexDirection="row"
       justifyContent="center"
       userSelect="none"
+      onWheel={onWheel}
     >
       <Box
         flexDirection="row"

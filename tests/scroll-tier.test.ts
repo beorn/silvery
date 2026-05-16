@@ -61,9 +61,9 @@ describe("scroll tier planner — tier selection", () => {
       expected: "clear",
     },
     {
-      name: "scroll + visibleRangeChanged -> clear (not shift)",
+      name: "scroll + visibleRangeChanged -> shift when children are stable",
       overrides: { hasPrevBuffer: true, scrollOffsetChanged: true, visibleRangeChanged: true },
-      expected: "clear",
+      expected: "shift",
     },
 
     // Tier 3: subtree-only
