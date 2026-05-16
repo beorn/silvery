@@ -6,7 +6,7 @@
  * calls or 50ms bucket approximations.
  */
 
-import React, { act } from "react"
+import React, { act, useState } from "react"
 import { describe, expect, test } from "vitest"
 import {
   createTermless,
@@ -106,6 +106,15 @@ const USER_LOG_DENSE_UP_FLICK_PACKETS: TermlessTrackpadFlickProfile = {
   ],
 }
 
+const SYNTHETIC_BURST_THEN_IDLE_UP_FLICK: TermlessTrackpadFlickProfile = {
+  x: 40,
+  y: 76,
+  direction: "up",
+  coordinateMode: "pixel",
+  cellSize: { width: 8, height: 17 },
+  packets: [{ atMs: 0, count: 240, direction: "up" }],
+}
+
 function makeVariableRows(count: number): RowItem[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `row-${index}`,
@@ -161,6 +170,24 @@ function FlickList({
       />
     </Box>
   )
+}
+
+function MutableHeightFlickList({
+  listRef,
+  mutateRef,
+}: {
+  listRef: React.RefObject<ListViewHandle | null>
+  mutateRef: React.RefObject<(() => void) | null>
+}): React.ReactElement {
+  const [expandedAbove, setExpandedAbove] = useState(false)
+  mutateRef.current = () => setExpandedAbove(true)
+  const items = Array.from({ length: 900 }, (_, index) => ({
+    id: `mutable-row-${index}`,
+    label: `Line ${String(index).padStart(4, "0")}`,
+    height: expandedAbove && index < 700 ? 2 : 1,
+  }))
+
+  return <FlickList items={items} listRef={listRef} />
 }
 
 function visibleLineNumbers(text: string): number[] {
@@ -364,6 +391,53 @@ describe("ListView trackpad flick replay through termless", () => {
           .map((sample) => `${sample.label}@${sample.eventCount}:${sample.newest}`)
           .join(", "),
       ).toBeLessThanOrEqual(8)
+    } finally {
+      handle.unmount()
+    }
+  }, 20_000)
+
+  test("keeps upward direction active while a burst backlog drains across idle handoff", async () => {
+    using term = createTermless({ cols: 302, rows: 117 })
+    const listRef = React.createRef<ListViewHandle>()
+    const mutateRef = React.createRef<(() => void) | null>()
+    const handle: RunHandle = await run(
+      <MutableHeightFlickList listRef={listRef} mutateRef={mutateRef} />,
+      term,
+      {
+        mouse: true,
+      },
+    )
+    try {
+      await settle(120)
+      act(() => {
+        listRef.current?.scrollToBottom()
+      })
+      await settle(120)
+
+      await term.mouse.trackpadFlick(SYNTHETIC_BURST_THEN_IDLE_UP_FLICK)
+      await settle(850)
+      const beforeMutation = oldestVisibleLine(term.screen.getText())
+
+      act(() => {
+        mutateRef.current?.()
+      })
+      const tailSamples: { label: string; oldest: number | null }[] = []
+      for (let i = 0; i < 12; i++) {
+        await settle(20)
+        tailSamples.push({ label: `tail-${i}`, oldest: oldestVisibleLine(term.screen.getText()) })
+      }
+      const afterMutation = tailSamples.at(-1)?.oldest ?? null
+
+      expect(beforeMutation).not.toBeNull()
+      expect(afterMutation).not.toBeNull()
+      expect(
+        afterMutation!,
+        `upward flick reversed during smooth-drain idle handoff: before=${beforeMutation} after=${afterMutation}`,
+      ).toBeLessThanOrEqual(beforeMutation! + 1)
+      expect(
+        upwardReversals([{ label: "before-mutation", oldest: beforeMutation }, ...tailSamples]),
+        tailSamples.map((sample) => `${sample.label}:${sample.oldest}`).join(", "),
+      ).toEqual([])
     } finally {
       handle.unmount()
     }

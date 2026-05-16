@@ -809,6 +809,7 @@ function ListViewInner<T>(
   const committingWheelScrollRef = useRef(false)
   const wheelGestureActiveRef = useRef(false)
   const wheelGestureActiveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const scrollActivityActiveRef = useRef(false)
   const liveAvgMeasuredHeightRef = useRef<number | undefined>(undefined)
   const activeWheelAvgMeasuredHeightRef = useRef<number | undefined>(undefined)
 
@@ -826,11 +827,16 @@ function ListViewInner<T>(
     if (wheelGestureActiveTimerRef.current !== null) {
       clearTimeout(wheelGestureActiveTimerRef.current)
     }
-    wheelGestureActiveTimerRef.current = setTimeout(() => {
+    const checkForIdle = () => {
+      if (scrollActivityActiveRef.current) {
+        wheelGestureActiveTimerRef.current = setTimeout(checkForIdle, SCROLLBAR_FADE_AFTER_MS)
+        return
+      }
       wheelGestureActiveRef.current = false
       activeScrollDirectionRef.current = null
       wheelGestureActiveTimerRef.current = null
-    }, SCROLLBAR_FADE_AFTER_MS)
+    }
+    wheelGestureActiveTimerRef.current = setTimeout(checkForIdle, SCROLLBAR_FADE_AFTER_MS)
   }, [])
 
   useEffect(
@@ -888,7 +894,7 @@ function ListViewInner<T>(
     },
   })
   const isScrolling = physics.isScrolling
-  const scrollbarFrac = physics.scrollFrac
+  scrollActivityActiveRef.current = isScrolling
 
   // Scrollbar-lifecycle sync: when wheel/momentum activity quiesces
   // (`isScrolling` falls), clear any lingering bump indicator. The user
@@ -2214,7 +2220,6 @@ function ListViewInner<T>(
   // the thumb is mildly imprecise in size but doesn't jitter.
   const estimateAsNumber = typeof estimateHeight === "number" ? estimateHeight : estimateHeight(0)
   const totalRowsStable = Math.max(1, activeItems.length * (estimateAsNumber + gap))
-  const totalRows = totalRowsMeasured
   // Overflow detection for the scrollbar VISIBILITY GATE: take the maximum
   // of estimate-based and measurement-based totals. Estimate alone misses
   // overflow when items are taller than `estimateHeight` (silvercode shape:
@@ -2527,7 +2532,6 @@ function ListViewInner<T>(
   // no spurious overscroll bump on a list whose content fits.
   //
   // Bead: km-silvery.listview-scroll-overshoot (regression from 8c63cfb9).
-  const trackRemainder = trackHeight - thumbHeight
   // Keep refs fresh for the wheel / momentum callbacks (captured via
   // closure with stable identity).
   maxScrollRowRef.current = scrollableRows
