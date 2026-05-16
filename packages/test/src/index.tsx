@@ -532,6 +532,8 @@ export interface TermlessTerm extends Term {
   ): { readonly fg: unknown; readonly bg: unknown; readonly char: string }
 }
 
+type TermlessBackendChoice = "xterm" | "ghostty" | "ghostty-native"
+
 /** Default sleep between steps in `drag()`. Short enough to be fast, long
  * enough for async event dispatch to flush. */
 const DEFAULT_DRAG_STEP_DELAY_MS = 20
@@ -539,6 +541,21 @@ const DEFAULT_DRAG_STEP_DELAY_MS = 20
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
 const DEFAULT_REFLOW_RESIDUE_MARKER = "CMUX-REFLOW-RESIDUE"
+
+function strictTerminalRequestsGhostty(value: string | undefined): boolean {
+  const normalized = value?.toLowerCase().trim()
+  if (!normalized) return false
+  if (normalized === "all" || normalized === "both") return true
+  return normalized
+    .split(",")
+    .map((part) => part.trim())
+    .includes("ghostty")
+}
+
+function inferBackendFromStrictTerminal(): TermlessBackendChoice | undefined {
+  if (typeof process === "undefined") return undefined
+  return strictTerminalRequestsGhostty(process.env.SILVERY_STRICT_TERMINAL) ? "ghostty" : undefined
+}
 
 function withReflowResidue(
   backend: TermEmulatorBackend,
@@ -654,7 +671,7 @@ export function createTermless(
     cols: number
     rows: number
     caps?: Partial<TerminalCaps>
-    backend?: "xterm" | "ghostty" | "ghostty-native"
+    backend?: TermlessBackendChoice
     reflowResidue?: boolean | { marker?: string }
   } = {
     cols: 80,
@@ -670,13 +687,16 @@ export function createTermless(
   // overrides the env. Unknown values throw immediately — no silent fallback
   // to xterm. `initGhostty()` MUST have been awaited before any ghostty-
   // backed `createTermless` call (preferred from a vitest setup).
+  // SILVERY_STRICT_TERMINAL=ghostty/all is a lower-precedence inference:
+  // strict terminal verification should exercise the same Ghostty backend
+  // end-to-end unless the caller or suite explicitly chose otherwise.
   //
   // Note: this is a thin wrapper over `createTerm(backend, dims)`, which
   // already accepts any TermEmulatorBackend. Pass a custom backend by
   // calling `createTerm(myBackend, dims)` directly — the named choices
   // here are just the bundled backends.
   const envBackend = typeof process !== "undefined" ? process.env.TERMLESS_BACKEND : undefined
-  const choice = dims.backend ?? envBackend ?? "xterm"
+  const choice = dims.backend ?? envBackend ?? inferBackendFromStrictTerminal() ?? "xterm"
 
   let backend: import("@silvery/ag-term").TermEmulatorBackend
   if (choice === "ghostty") {
@@ -952,7 +972,8 @@ export function createTermless(
   const emulator = (term as unknown as { _emulator?: { feed: (s: string) => void } })._emulator
   if (emulator) {
     const origFeed = emulator.feed.bind(emulator)
-    const OSC52_RE = /\x1b\]52;c;([A-Za-z0-9+/=]*)\x07/g
+    // eslint-disable-next-line no-control-regex -- OSC 52 is framed by ESC and BEL bytes.
+    const OSC52_RE = new RegExp("\\x1b\\]52;c;([A-Za-z0-9+/=]*)\\x07", "g")
     emulator.feed = (data: string) => {
       OSC52_RE.lastIndex = 0
       let match: RegExpExecArray | null

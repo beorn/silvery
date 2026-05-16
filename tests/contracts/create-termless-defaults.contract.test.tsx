@@ -17,8 +17,30 @@
  * pin the API shape even when the behavior is "obvious".
  */
 
-import { describe, expect, test } from "vitest"
+import { createRequire } from "node:module"
+import { afterEach, beforeAll, describe, expect, test } from "vitest"
 import { createTermless, getActiveTermlessCount } from "../../packages/test/src/index.js"
+
+const requireForGhostty = createRequire(import.meta.url)
+const originalTermlessBackend = process.env.TERMLESS_BACKEND
+const originalStrictTerminal = process.env.SILVERY_STRICT_TERMINAL
+
+function backendName(term: unknown): string | undefined {
+  return (term as { _emulator?: { backend?: { name?: string } } })._emulator?.backend?.name
+}
+
+afterEach(() => {
+  if (originalTermlessBackend === undefined) {
+    delete process.env.TERMLESS_BACKEND
+  } else {
+    process.env.TERMLESS_BACKEND = originalTermlessBackend
+  }
+  if (originalStrictTerminal === undefined) {
+    delete process.env.SILVERY_STRICT_TERMINAL
+  } else {
+    process.env.SILVERY_STRICT_TERMINAL = originalStrictTerminal
+  }
+})
 
 // ============================================================================
 // Dimensions default — 80 × 24
@@ -66,6 +88,47 @@ describe("contract: createTermless surface", () => {
     expect(Array.isArray(term.clipboard.all)).toBe(true)
     expect(term.clipboard.all).toHaveLength(0)
     expect(typeof term.clipboard.clear).toBe("function")
+  })
+})
+
+// ============================================================================
+// Backend selection — STRICT ghostty means end-to-end ghostty unless overridden.
+// ============================================================================
+
+// @termless-backend: ghostty
+describe("contract: createTermless backend selection", () => {
+  beforeAll(async () => {
+    const { initGhostty } = requireForGhostty(
+      "@termless/ghostty",
+    ) as typeof import("@termless/ghostty")
+    await initGhostty()
+  })
+
+  test("contract: SILVERY_STRICT_TERMINAL=ghostty implies the ghostty backend", () => {
+    delete process.env.TERMLESS_BACKEND
+    process.env.SILVERY_STRICT_TERMINAL = "ghostty"
+
+    using term = createTermless({ cols: 20, rows: 5 })
+
+    expect(backendName(term)).toBe("ghostty")
+  })
+
+  test("contract: TERMLESS_BACKEND remains the explicit suite-level override", () => {
+    process.env.TERMLESS_BACKEND = "xterm"
+    process.env.SILVERY_STRICT_TERMINAL = "ghostty"
+
+    using term = createTermless({ cols: 20, rows: 5 })
+
+    expect(backendName(term)).toBe("xterm")
+  })
+
+  test("contract: per-call backend remains the strongest override", () => {
+    process.env.TERMLESS_BACKEND = "ghostty"
+    process.env.SILVERY_STRICT_TERMINAL = "ghostty"
+
+    using term = createTermless({ cols: 20, rows: 5, backend: "xterm" })
+
+    expect(backendName(term)).toBe("xterm")
   })
 })
 
