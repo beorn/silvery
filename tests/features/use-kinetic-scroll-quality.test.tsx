@@ -408,8 +408,8 @@ describe("useKineticScroll — input cadence detection", () => {
     const afterInput = apiRef.current!.getScrollFloat()
     expect(
       afterInput,
-      "captured input should own at least half the motion; old fixed-budget smoothing deferred most of this flick until after release",
-    ).toBeGreaterThanOrEqual(98)
+      "captured input should own most motion; smaller catch-up caps deferred too much of this flick until after release",
+    ).toBeGreaterThanOrEqual(120)
 
     await settle(220)
     const final = apiRef.current!.scrollFloat

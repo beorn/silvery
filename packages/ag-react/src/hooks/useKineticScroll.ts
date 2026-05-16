@@ -86,9 +86,10 @@ const RELEASE_TIMEOUT_MS = 60
  * coupled to the hand, then drain any backlog with a wall-clock deadline so
  * slow render turns cannot synthesize a long post-input coast. */
 const SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME = 4
-/** Keep catch-up below the "visible jump" range for small terminal
- * viewports while still letting starved trackpad bursts catch up. */
-const SMOOTH_WHEEL_MAX_CATCHUP_ROWS_PER_FRAME = 9
+/** Let starved bursts catch up enough that post-input drain never dominates
+ * the flick, while the adaptive frame budget keeps observed viewport shifts
+ * below the jump threshold. */
+const SMOOTH_WHEEL_MAX_CATCHUP_ROWS_PER_FRAME = 12
 /** Active input gets a shorter deadline than post-input drain so backlog
  * cannot build up and then become the fastest part of the flick tail. */
 const SMOOTH_WHEEL_ACTIVE_DRAIN_DEADLINE_MS = 64
