@@ -117,8 +117,10 @@ describe("useBoxRectInFlight / useOnBoxRectCommitted", () => {
 
     // The callback fired at least once with the measured (non-zero) rect.
     expect(observedRects.length).toBeGreaterThan(0)
-    expect(observedRects[observedRects.length - 1].width).toBe(30)
-    expect(observedRects[observedRects.length - 1].height).toBeGreaterThan(0)
+    const lastObservedRect = observedRects[observedRects.length - 1]
+    if (!lastObservedRect) throw new Error("expected at least one observed rect")
+    expect(lastObservedRect.width).toBe(30)
+    expect(lastObservedRect.height).toBeGreaterThan(0)
   })
 })
 
@@ -273,7 +275,9 @@ describe("useScreenRectInFlight / useOnScreenRectCommitted", () => {
     // Observer must render strictly fewer times than the deferred-peer.
     expect(pushToRenderCount).toBeLessThan(peerRenderCount)
     expect(externalSink.length).toBeGreaterThan(0)
-    expect(externalSink[externalSink.length - 1].x).toBe(0)
+    const lastExternalRect = externalSink[externalSink.length - 1]
+    if (!lastExternalRect) throw new Error("expected at least one external sink rect")
+    expect(lastExternalRect.x).toBe(0)
   })
 })
 
@@ -307,7 +311,9 @@ describe("integration: in-flight + observer can coexist", () => {
     expect(inFlightWidthSeen).toBe(25)
     // The observer fired on the commit boundary too.
     expect(observerRects.length).toBeGreaterThan(0)
-    expect(observerRects[observerRects.length - 1].width).toBe(25)
+    const lastObserverRect = observerRects[observerRects.length - 1]
+    if (!lastObserverRect) throw new Error("expected at least one observer rect")
+    expect(lastObserverRect.width).toBe(25)
     // The component rendered a small finite number of times — the in-flight
     // form may settle through multiple convergence passes, but it does not
     // diverge.
