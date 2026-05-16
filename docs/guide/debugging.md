@@ -92,6 +92,9 @@ TRACE=silvery:render DEBUG_LOG=/tmp/silvery.log bun run app
 # Measure phase debug (text measurement calls)
 DEBUG=silvery:measure DEBUG_LOG=/tmp/silvery.log bun run app
 
+# Component lifecycle stream (mount/update/unmount with compact identifying props)
+DEBUG=silvery:mount DEBUG_LOG=/tmp/silvery.log bun run app
+
 # Instrumentation counters (enables stats collection, also exposed on globalThis)
 SILVERY_INSTRUMENT=1 bun run app
 ```
@@ -105,6 +108,7 @@ SILVERY_INSTRUMENT=1 bun run app
 | `silvery:content:trace` | Per-node trace entries (skip/render decisions)    |
 | `silvery:content:cell`  | Per-cell debug (node coverage at target coords)   |
 | `silvery:measure`       | Measure phase debug (text measurement calls)      |
+| `silvery:mount`         | Component lifecycle stream: mount/update/unmount with compact identifying props |
 | `silvery:bytes_out`     | Render-output throughput monitor (WARN/PANIC events, frame summaries) |
 | `silvery:mem`           | In-process heap poll (30s `process.memoryUsage()` samples + WARN on doubling) |
 | `@silvery/ag-react`     | React reconciler pipeline spans                   |

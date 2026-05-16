@@ -2757,6 +2757,7 @@ function ListViewInner<T>(
     >
       <Box
         ref={boxHandleRef}
+        data-component="ListView"
         flexDirection="column"
         {...innerSizing}
         width={width}

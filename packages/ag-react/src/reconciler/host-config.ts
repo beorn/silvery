@@ -41,6 +41,107 @@ import { createLogger } from "loggily"
 import { warnOnce, _resetWarnOnceForTesting } from "@silvery/ansi"
 
 const log = createLogger("silvery:reconciler")
+const mountLog = createLogger("silvery:mount")
+
+const DEBUG_PROP_NAMES = [
+  "id",
+  "testID",
+  "data-component",
+  "display",
+  "position",
+  "flexDirection",
+  "width",
+  "height",
+  "minWidth",
+  "minHeight",
+  "flexGrow",
+  "flexShrink",
+  "overflow",
+  "overflowX",
+  "overflowY",
+  "overflowIndicator",
+  "scrollTo",
+  "scrollOffset",
+  "scrollbar",
+  "scrollbarVisibility",
+  "follow",
+  "onWheel",
+  "onClick",
+  "onMouseDown",
+  "onMouseUp",
+  "onMouseMove",
+] as const
+
+function hostTypeLabel(type: AgNodeType): string {
+  if (type === "silvery-box") return "Box"
+  if (type === "silvery-text") return "Text"
+  return type
+}
+
+function getDebugComponentName(node: AgNode): string {
+  const props = node.props as Record<string, unknown>
+  const explicitName = props["data-component"]
+  if (typeof explicitName === "string" && explicitName.length > 0) return explicitName
+
+  const base = hostTypeLabel(node.type)
+  const testID = props.testID
+  if (typeof testID === "string" && testID.length > 0) return `${base}#${testID}`
+
+  const id = props.id
+  if (typeof id === "string" && id.length > 0) return `${base}#${id}`
+
+  return base
+}
+
+function summarizeDebugProp(value: unknown): unknown {
+  if (typeof value === "function") return true
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value
+  }
+  return undefined
+}
+
+function summarizeDebugProps(props: Record<string, unknown>): Record<string, unknown> {
+  const summary: Record<string, unknown> = {}
+  for (const key of DEBUG_PROP_NAMES) {
+    const value = summarizeDebugProp(props[key])
+    if (value !== undefined) summary[key] = value
+  }
+  for (const key of Object.keys(props)) {
+    if (!key.startsWith("data-") || key === "data-component") continue
+    const value = summarizeDebugProp(props[key])
+    if (value !== undefined) summary[key] = value
+  }
+  return summary
+}
+
+function logNodeLifecycle(event: "mount" | "update" | "unmount", node: AgNode): void {
+  const props = node.props as Record<string, unknown>
+  const component = getDebugComponentName(node)
+  const text = node.textContent
+  mountLog.debug?.(`${event} ${component}`, {
+    event,
+    component,
+    type: node.type,
+    props: summarizeDebugProps(props),
+    propKeys: Object.keys(props)
+      .filter((key) => key !== "children")
+      .sort(),
+    ...(text ? { text: text.length > 80 ? `${text.slice(0, 77)}...` : text } : {}),
+  })
+}
+
+function logUnmountSubtree(node: AgNode): void {
+  logNodeLifecycle("unmount", node)
+  for (const child of node.children) {
+    logUnmountSubtree(child)
+  }
+}
 
 /**
  * Normalize Ink intrinsic element types to Silvery equivalents.
@@ -361,9 +462,13 @@ export const hostConfig = {
 
     // Nested text nodes become "virtual" - no layout node
     if (type === "silvery-text" && hostContext.isInsideText) {
-      return createVirtualTextNode(props as TextProps)
+      const node = createVirtualTextNode(props as TextProps)
+      logNodeLifecycle("mount", node)
+      return node
     }
-    return createNode(type, props)
+    const node = createNode(type, props)
+    logNodeLifecycle("mount", node)
+    return node
   },
 
   createTextInstance(text: string, _rootContainer: unknown, hostContext: HostContext): AgNode {
@@ -392,6 +497,7 @@ export const hostConfig = {
       textContent: text,
       isRawText: true,
     }
+    logNodeLifecycle("mount", node)
     return node
   },
 
@@ -469,6 +575,7 @@ export const hostConfig = {
     if (index !== -1) {
       // Notify focus manager before detaching (needs parent chain intact for subtree check)
       onNodeRemovedCallback?.(child)
+      logUnmountSubtree(child)
       // Dispose any fiber-local scopes in the doomed subtree. Must happen
       // before we splice — disposeSubtreeScopes walks `child.children`,
       // and we want the walk to see the same tree the focus manager just
@@ -499,6 +606,7 @@ export const hostConfig = {
     if (index !== -1) {
       // Notify focus manager before detaching
       onNodeRemovedCallback?.(child)
+      logUnmountSubtree(child)
       disposeSubtreeScopes(child)
       container.root.children.splice(index, 1)
       if (container.root.layoutNode && child.layoutNode) {
@@ -722,6 +830,7 @@ export const hostConfig = {
     }
 
     instance.props = newProps
+    logNodeLifecycle("update", instance)
 
     // Only mark subtree/ancestor dirty when visual changes were detected.
     // Data attributes (data-*), event handlers, and other non-visual props
@@ -820,6 +929,7 @@ export const hostConfig = {
     // Notify focus manager before clearing — any child subtree may contain focus
     for (const child of container.root.children) {
       onNodeRemovedCallback?.(child)
+      logUnmountSubtree(child)
     }
     // Dispose any fiber-local scopes in the cleared subtrees, plus any
     // attached to the root itself (withScope-style root scopes attach
