@@ -41,8 +41,11 @@
  *
  * - REGRESSION 240×117 (short-first-tall-later, scrollTo=0): PASS on HEAD —
  *   the body-card-clamp + forward-walk fixes cover this shape.
- * - REGRESSION 240×117 scrollTo=last: FAIL on HEAD — phantom ▼1 when cursor
- *   is on the last item. This is `km-silvery.virtualized-overflow-indicator-counts`.
+ * - REGRESSION 240×117 scrollTo=last: PASS on HEAD — guards the historical
+ *   phantom ▼1 when the cursor is on the last item.
+ * - FUZZ seed scrollTo=5 in variable-height list: PASS on HEAD — explicit
+ *   scrollTo row-anchors instead of barely revealing the target at bottom.
+ * - FUZZ seed scrollTo=last oversized item: PASS on HEAD — no phantom ▼1.
  * - REGRESSION 200×120 (short-first-tall-later): PASS on HEAD (size matches
  *   the shape verified by existing listview-variable-heights tests).
  *
@@ -89,7 +92,7 @@ describe("ListView scroll-contract: seeded regressions", () => {
 
   test("REGRESSION 240×117 scrollTo=last: phantom ▼1 when cursor on last item", () => {
     // 50 items, 30 short × h=3 + 20 tall × h=20 = 490 rows.
-    // scrollTo=49 (cursor on last item) → ▼ MUST be 0. Currently renders ▼1.
+    // scrollTo=49 (cursor on last item) → ▼ MUST be 0.
     //
     // Root cause (traced): layout-phase's calculateScrollState counts the
     // trailing placeholder Box as a "partially-visible bottom child" even
@@ -97,7 +100,7 @@ describe("ListView scroll-contract: seeded regressions", () => {
     // should come from virtualizer's hiddenAfter (= count - endIndex), not
     // from the placeholder Box's position.
     //
-    // Expected on HEAD: FAIL (INV-2b). Guards the fix for bead
+    // Guards the fix for bead
     // `km-silvery.virtualized-overflow-indicator-counts`.
     const items = buildItems(50, (i) => (i < 30 ? 3 : 20), "r3")
 
@@ -107,6 +110,55 @@ describe("ListView scroll-contract: seeded regressions", () => {
       rows: 117,
       viewport: 115,
       scrollTo: 49,
+      estimateHeight: 4,
+    }
+    const analysis = renderFixture(fixture)
+    const violation = checkAllInvariants(fixture, analysis)
+
+    expect(
+      violation,
+      violation ? `${violation.message}\n\n${dumpViewport(fixture, analysis)}` : "ok",
+    ).toBeNull()
+  })
+
+  test("REGRESSION fuzz seed: scrollTo inside variable-height list anchors near viewport top", () => {
+    // Counterexample from listview-scroll-properties.fuzz.tsx:
+    // seed=-1071789314, tuple [40,24,10,"random",0,0.5].
+    // Before the fix, scrollTo=5 is merely revealed at the viewport bottom:
+    // the first rendered card top lands at y=20 in a 22-row viewport.
+    const heights = [7, 19, 15, 20, 22, 3, 11, 23, 26, 15]
+    const items = buildItems(heights.length, (i) => heights[i]!, "fz")
+
+    const fixture: ListViewFixture = {
+      items,
+      cols: 40,
+      rows: 24,
+      viewport: 22,
+      scrollTo: 5,
+      estimateHeight: 4,
+    }
+    const analysis = renderFixture(fixture)
+    const violation = checkAllInvariants(fixture, analysis)
+
+    expect(
+      violation,
+      violation ? `${violation.message}\n\n${dumpViewport(fixture, analysis)}` : "ok",
+    ).toBeNull()
+  })
+
+  test("REGRESSION fuzz seed: oversized last item has no phantom hidden-below count", () => {
+    // Counterexample exposed after explicit scrollTo switched to row-space
+    // anchoring: the last oversized item is visible, but Box lacked the
+    // scrollTo child identity it uses to suppress a phantom ▼1.
+    const heights = [3, 3, 3, 3, 3, 23, 30, 28, 31, 32]
+    const items = buildItems(heights.length, (i) => heights[i]!, "f")
+
+    const fixture: ListViewFixture = {
+      items,
+      cols: 40,
+      rows: 10,
+      viewport: 8,
+      scrollTo: 9,
       estimateHeight: 4,
     }
     const analysis = renderFixture(fixture)

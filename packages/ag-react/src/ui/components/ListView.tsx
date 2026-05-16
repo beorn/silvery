@@ -1530,10 +1530,25 @@ function ListViewInner<T>(
     modelVersion: heightModelVersion,
     onApplyTopRow: applyAnchoredTopRow,
   })
+  // Explicit `scrollTo` prop means "place this item at the viewport
+  // anchor" rather than Box's child-index "ensure visible somewhere"
+  // behavior. Keyboard/nav cursor-follow and follow=end keep their
+  // edge-based semantics through `boxScrollTo` below.
+  const declarativeScrollRow =
+    scrollToProp !== undefined && adjustedScrollTo !== undefined && activeItems.length > 0
+      ? Math.max(
+          0,
+          Math.min(
+            scrollableRows,
+            heightModel.rowOfIndex(Math.max(0, Math.min(adjustedScrollTo, activeItems.length - 1))),
+          ),
+        )
+      : null
   const followDisengagedThisRender =
     prevResolvedFollowRef.current === "end" && resolvedFollow !== "end" && scrollRow === null
   const followDisengageTopRow = rowsAboveViewportRef.current
   const renderScrollRow =
+    declarativeScrollRow ??
     followPinnedTopRow ??
     scrollAnchoring.maintainedTopRow ??
     (followDisengagedThisRender ? followDisengageTopRow : null) ??
@@ -2541,12 +2556,13 @@ function ListViewInner<T>(
   // When the user is wheel-driving, derive thumb from our own row offset.
   // Otherwise use the virtualizer's measurement-based `rowsAboveViewport`.
   const effectiveRowsAbove = renderScrollRow !== null ? renderScrollRow : rowsAboveViewport
+  const selectedBoxScrollTo = isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined
   const boxScrollTo =
-    renderScrollRow !== null
-      ? undefined
-      : isSelectedInSlice
-        ? Math.max(0, scrollToIndex)
-        : undefined
+    declarativeScrollRow !== null
+      ? selectedBoxScrollTo
+      : renderScrollRow !== null
+        ? undefined
+        : selectedBoxScrollTo
 
   // Content clamp lives in the kinetic-scroll hook (scrollRow clamped to
   // [0, maxRow], momentum amplitude pre-clamped — no rubber-band overshoot).
@@ -2619,6 +2635,7 @@ function ListViewInner<T>(
       activeScrollDirectionRef.current ?? "null",
       activeAnchorCorrectionBudgetRows ?? "null",
       scrollAnchoring.maintainedTopRow ?? "null",
+      declarativeScrollRow ?? "null",
       isScrolling ? 1 : 0,
       scrollableRows,
       trackHeight,
@@ -2665,6 +2682,7 @@ function ListViewInner<T>(
       activeScrollDirection: activeScrollDirectionRef.current,
       activeAnchorCorrectionBudgetRows,
       maintainedTopRow: scrollAnchoring.maintainedTopRow,
+      declarativeScrollRow,
       kineticScrolling: isScrolling,
       virtualizerRowsAboveViewport,
       scrollRow,
@@ -2715,6 +2733,7 @@ function ListViewInner<T>(
     resolvedVirtualization,
     rowsAboveViewport,
     scrollAnchoring.maintainedTopRow,
+    declarativeScrollRow,
     scrollOffset,
     scrollRow,
     scrollableRows,
