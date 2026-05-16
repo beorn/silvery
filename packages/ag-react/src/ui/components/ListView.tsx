@@ -1543,13 +1543,16 @@ function ListViewInner<T>(
   // anchor" rather than Box's child-index "ensure visible somewhere"
   // behavior. Keyboard/nav cursor-follow and follow=end keep their
   // edge-based semantics through `boxScrollTo` below.
+  const topOverflowIndicatorReserve = overflowIndicator ? 1 : 0
   const declarativeScrollRow =
     scrollToProp !== undefined && adjustedScrollTo !== undefined && activeItems.length > 0
       ? Math.max(
           0,
           Math.min(
             scrollableRows,
-            heightModel.rowOfIndex(Math.max(0, Math.min(adjustedScrollTo, activeItems.length - 1))),
+            heightModel.rowOfIndex(
+              Math.max(0, Math.min(adjustedScrollTo, activeItems.length - 1)),
+            ) - topOverflowIndicatorReserve,
           ),
         )
       : null

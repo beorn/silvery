@@ -79,12 +79,18 @@ describe("ListView scrollTo={undefined} freezes the viewport", () => {
     const app = render(<FixedList scrollTo={10} />)
 
     const before = findListViewNodeFromText(app, "r-10")
-    expect(before?.props).toMatchObject({ scrollTo: expect.any(Number) })
+    expect(before?.props).toMatchObject({
+      scrollOffset: expect.any(Number),
+      scrollTo: undefined,
+    })
 
     app.rerender(<FixedList scrollTo={undefined} />)
 
     const after = findListViewNodeFromText(app, "r-10")
-    expect(after?.props).toMatchObject({ scrollTo: undefined })
+    expect(after?.props).toMatchObject({
+      scrollOffset: undefined,
+      scrollTo: undefined,
+    })
   })
 
   test("transition scrollTo: number → undefined preserves the row offset of every visible card", () => {
