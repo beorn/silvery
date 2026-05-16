@@ -61,6 +61,7 @@ import { renderStringSync } from "../../render-string"
 import { createHeightModel, type HeightModel } from "./list-view/height-model"
 import { computeIndexTrailingSpacer, mapChildIndexToItem } from "./list-view/index-window"
 import {
+  resolveActiveScrollWindow,
   resolveListViewBoxScrollTo,
   resolveListViewRenderScrollRow,
 } from "./list-view/scroll-authority"
@@ -1604,6 +1605,7 @@ function ListViewInner<T>(
   // Compute the index window for "index" virtualization mode.
   let indexWindowStart: number
   let indexWindowEnd: number
+  let activeScrollWindowClamped = false
   const indexEstAsNumber =
     typeof adjustedEstimateHeight === "number" ? adjustedEstimateHeight : adjustedEstimateHeight(0)
   const safeEstHeight = Math.max(1, indexEstAsNumber)
@@ -1768,6 +1770,23 @@ function ListViewInner<T>(
     // "measured" — pixel-mode virtualisation, use the virtualizer's window.
     indexWindowStart = range.startIndex
     indexWindowEnd = range.endIndex
+  }
+
+  if (
+    resolvedVirtualization === "index" &&
+    wheelGestureActiveRef.current &&
+    activeScrollDirectionRef.current !== null &&
+    indexWindowPrevRef.current.endIndex > indexWindowPrevRef.current.startIndex
+  ) {
+    const monotonicWindow = resolveActiveScrollWindow({
+      startIndex: indexWindowStart,
+      endIndex: indexWindowEnd,
+      previousStartIndex: indexWindowPrevRef.current.startIndex,
+      activeScrollDirection: activeScrollDirectionRef.current,
+    })
+    indexWindowStart = monotonicWindow.startIndex
+    indexWindowEnd = monotonicWindow.endIndex
+    activeScrollWindowClamped = monotonicWindow.clamped
   }
 
   // Capture this frame's window structure for next frame's viewport
@@ -2650,6 +2669,7 @@ function ListViewInner<T>(
       declarativeScrollRow ?? "null",
       scrollAuthority,
       boxScrollTo ?? "null",
+      activeScrollWindowClamped ? 1 : 0,
       isScrolling ? 1 : 0,
       scrollableRows,
       trackHeight,
@@ -2701,6 +2721,7 @@ function ListViewInner<T>(
       declarativeScrollRow,
       scrollAuthority,
       boxScrollTo,
+      activeScrollWindowClamped,
       kineticScrolling: isScrolling,
       virtualizerRowsAboveViewport,
       scrollRow,
@@ -2754,6 +2775,7 @@ function ListViewInner<T>(
     rowsAboveViewport,
     scrollAnchoring.maintainedTopRow,
     scrollAuthority,
+    activeScrollWindowClamped,
     declarativeScrollRow,
     boxScrollTo,
     scrollOffset,

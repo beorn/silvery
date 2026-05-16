@@ -45,3 +45,39 @@ export function resolveListViewBoxScrollTo({
 }): number | undefined {
   return renderScrollRow !== null ? undefined : selectedBoxScrollTo
 }
+
+export interface ActiveScrollWindowInput {
+  startIndex: number
+  endIndex: number
+  previousStartIndex: number
+  activeScrollDirection: "up" | "down" | null
+}
+
+export interface ActiveScrollWindowResult {
+  startIndex: number
+  endIndex: number
+  clamped: boolean
+}
+
+export function resolveActiveScrollWindow({
+  startIndex,
+  endIndex,
+  previousStartIndex,
+  activeScrollDirection,
+}: ActiveScrollWindowInput): ActiveScrollWindowResult {
+  if (activeScrollDirection === "up" && startIndex > previousStartIndex) {
+    return {
+      startIndex: previousStartIndex,
+      endIndex: Math.max(endIndex, previousStartIndex + 1),
+      clamped: true,
+    }
+  }
+  if (activeScrollDirection === "down" && startIndex < previousStartIndex) {
+    return {
+      startIndex: previousStartIndex,
+      endIndex: Math.max(endIndex, previousStartIndex + 1),
+      clamped: true,
+    }
+  }
+  return { startIndex, endIndex, clamped: false }
+}

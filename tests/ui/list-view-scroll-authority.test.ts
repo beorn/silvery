@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 import {
+  resolveActiveScrollWindow,
   resolveListViewBoxScrollTo,
   resolveListViewRenderScrollRow,
 } from "../../packages/ag-react/src/ui/components/list-view/scroll-authority"
@@ -48,5 +49,28 @@ describe("ListView scroll authority", () => {
         selectedBoxScrollTo: 7,
       }),
     ).toBe(7)
+  })
+
+  test("active upward flick keeps virtual window start monotonic", () => {
+    const latestLogStarts = [
+      1218, 1217, 1216, 1215, 1214, 1213, 1212, 1212, 1210, 1209, 1208, 1210, 1207,
+    ]
+    const resolved: number[] = []
+    let previousStartIndex = latestLogStarts[0]!
+
+    for (const startIndex of latestLogStarts) {
+      const window = resolveActiveScrollWindow({
+        startIndex,
+        endIndex: 1271,
+        previousStartIndex,
+        activeScrollDirection: "up",
+      })
+      resolved.push(window.startIndex)
+      previousStartIndex = window.startIndex
+    }
+
+    expect(resolved).toEqual([
+      1218, 1217, 1216, 1215, 1214, 1213, 1212, 1212, 1210, 1209, 1208, 1208, 1207,
+    ])
   })
 })

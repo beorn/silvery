@@ -106,6 +106,48 @@ const USER_LOG_DENSE_UP_FLICK_PACKETS: TermlessTrackpadFlickProfile = {
   ],
 }
 
+const USER_LOG_20260516_UP_FLICK_PACKETS: TermlessTrackpadFlickProfile = {
+  x: 189.07142857142858,
+  y: 59,
+  direction: "up",
+  coordinateMode: "pixel",
+  cellSize: { width: 14, height: 26 },
+  packets: [
+    { atMs: 0, count: 3, direction: "up" },
+    { atMs: 1, count: 9, direction: "up" },
+    { atMs: 44, count: 10, direction: "up" },
+    { atMs: 44, count: 1, direction: "down" },
+    { atMs: 44, count: 11, direction: "up" },
+    { atMs: 89, count: 5, direction: "up" },
+    { atMs: 90, count: 25, direction: "up" },
+    { atMs: 129, count: 17, direction: "up" },
+    { atMs: 160, count: 10, direction: "up" },
+    { atMs: 161, count: 5, direction: "up" },
+    { atMs: 200, count: 20, direction: "up" },
+    { atMs: 239, count: 12, direction: "up" },
+    { atMs: 282, count: 12, direction: "up" },
+    { atMs: 283, count: 3, direction: "up" },
+    { atMs: 322, count: 8, direction: "up" },
+    { atMs: 372, count: 10, direction: "up" },
+    { atMs: 407, count: 6, direction: "up" },
+    { atMs: 446, count: 4, direction: "up" },
+    { atMs: 483, count: 6, direction: "up" },
+    { atMs: 522, count: 2, direction: "up" },
+    { atMs: 560, count: 2, direction: "up" },
+    { atMs: 599, count: 3, direction: "up" },
+    { atMs: 633, count: 1, direction: "up" },
+    { atMs: 670, count: 1, direction: "up" },
+    { atMs: 706, count: 1, direction: "up" },
+    { atMs: 742, count: 1, direction: "up" },
+    { atMs: 777, count: 1, direction: "up" },
+    { atMs: 826, count: 1, direction: "up" },
+    { atMs: 884, count: 1, direction: "up" },
+    { atMs: 933, count: 1, direction: "up" },
+    { atMs: 1087, count: 1, direction: "up" },
+    { atMs: 1247, count: 1, direction: "up" },
+  ],
+}
+
 const SYNTHETIC_BURST_THEN_IDLE_UP_FLICK: TermlessTrackpadFlickProfile = {
   x: 40,
   y: 76,
@@ -461,6 +503,43 @@ describe("ListView trackpad flick replay through termless", () => {
         { label: "initial", oldest: oldestVisibleLine(term.screen.getText()) },
       ]
       await term.mouse.trackpadFlick(USER_LOG_SINGLE_UP_FLICK_PACKETS, {
+        afterGroup(group) {
+          samples.push({
+            label: `packet-${group.atMs}`,
+            oldest: oldestVisibleLine(term.screen.getText()),
+          })
+        },
+      })
+      await settle(1000)
+      samples.push({ label: "settled", oldest: oldestVisibleLine(term.screen.getText()) })
+
+      expect(
+        upwardReversals(samples),
+        samples.map((sample) => `${sample.label}:${sample.oldest}`).join(", "),
+      ).toEqual([])
+    } finally {
+      handle.unmount()
+    }
+  }, 20_000)
+
+  test("does not reverse the top visible line during the latest captured upward flick", async () => {
+    using term = createTermless({ cols: 363, rows: 123 })
+    const listRef = React.createRef<ListViewHandle>()
+    const items = makeVariableRows(1271)
+    const handle: RunHandle = await run(<FlickList items={items} listRef={listRef} />, term, {
+      mouse: true,
+    })
+    try {
+      await settle(120)
+      act(() => {
+        listRef.current?.scrollToBottom()
+      })
+      await settle(120)
+
+      const samples: { label: string; oldest: number | null }[] = [
+        { label: "initial", oldest: oldestVisibleLine(term.screen.getText()) },
+      ]
+      await term.mouse.trackpadFlick(USER_LOG_20260516_UP_FLICK_PACKETS, {
         afterGroup(group) {
           samples.push({
             label: `packet-${group.atMs}`,
