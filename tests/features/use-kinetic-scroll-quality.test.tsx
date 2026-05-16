@@ -379,6 +379,47 @@ describe("useKineticScroll — input cadence detection", () => {
     )
   })
 
+  test("smoothWheelPackets does not speed up after a starved captured flick releases", async () => {
+    const apiRef: HarnessRef = { current: null }
+    const r = createRenderer({ cols: 30, rows: 8 })
+    r(
+      <TestHarness
+        apiRef={apiRef}
+        options={{
+          maxScroll: 1000,
+          enableInputCadenceDetection: true,
+          enableMomentum: false,
+          smoothWheelPackets: true,
+        }}
+      />,
+    )
+    await settle()
+
+    const groups = [
+      1, 1, 11, 42, 26, 9, 22, 18, 10, 2, 15, 3, 6, 7, 6, 3, 3, 2, 1, 2, 1, 1, 2, 1, 1,
+    ]
+    for (const events of groups) {
+      for (let i = 0; i < events; i++) {
+        apiRef.current!.onWheel({ deltaY: 1 })
+      }
+      busyWait(8)
+    }
+
+    const afterInput = apiRef.current!.getScrollFloat()
+    expect(
+      afterInput,
+      "captured input should not be mostly deferred until after release",
+    ).toBeGreaterThanOrEqual(90)
+
+    await settle(220)
+    const final = apiRef.current!.scrollFloat
+    expect(final).toBe(196)
+    expect(
+      final - afterInput,
+      "post-input drain should not dominate the input-owned motion",
+    ).toBeLessThanOrEqual(afterInput + 8)
+  })
+
   test("cadence detection disabled by default — old behaviour preserved", async () => {
     const apiRef: HarnessRef = { current: null }
     const r = createRenderer({ cols: 30, rows: 8 })

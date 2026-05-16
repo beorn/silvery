@@ -86,7 +86,12 @@ const RELEASE_TIMEOUT_MS = 60
  * coupled to the hand, then drain any backlog with a wall-clock deadline so
  * slow render turns cannot synthesize a long post-input coast. */
 const SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME = 4
-const SMOOTH_WHEEL_MAX_CATCHUP_ROWS_PER_FRAME = 24
+/** Keep catch-up below the "visible jump" range for small terminal
+ * viewports while still letting starved trackpad bursts catch up. */
+const SMOOTH_WHEEL_MAX_CATCHUP_ROWS_PER_FRAME = 8
+/** Active input gets a shorter deadline than post-input drain so backlog
+ * cannot build up and then become the fastest part of the flick tail. */
+const SMOOTH_WHEEL_ACTIVE_DRAIN_DEADLINE_MS = 64
 const SMOOTH_WHEEL_POST_INPUT_DRAIN_DEADLINE_MS = 120
 /** Scrollbar auto-hide delay after the last scroll activity. */
 export const SCROLLBAR_FADE_AFTER_MS = 800
@@ -303,6 +308,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
   const wheelGestureFilterRef = useRef(createWheelGestureFilter())
   const smoothWheelRowsRef = useRef(0)
   const smoothWheelFrameRowsRef = useRef(0)
+  const smoothWheelFrameBudgetRowsRef = useRef(SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME)
   const smoothWheelFrameStartedAtRef = useRef(0)
   const smoothWheelLastInputAtRef = useRef(0)
   const smoothWheelDrainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -452,24 +458,50 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
     [enableElasticEdges, readMaxScroll, updatePosition],
   )
 
-  const refreshSmoothWheelFrameBudget = useCallback((now: number) => {
-    if (
-      smoothWheelFrameStartedAtRef.current === 0 ||
-      now - smoothWheelFrameStartedAtRef.current >= KINETIC_FRAME_MS
-    ) {
-      smoothWheelFrameStartedAtRef.current = now
-      smoothWheelFrameRowsRef.current = 0
-    }
-  }, [])
+  const adaptiveSmoothWheelFrameRows = useCallback(
+    (pending: number, now: number, deadlineMs: number): number => {
+      const absPending = Math.abs(pending)
+      if (absPending < 0.001) return 0
+      const lastInputAt = smoothWheelLastInputAtRef.current || now
+      const remainingDeadlineMs = Math.max(
+        KINETIC_FRAME_MS,
+        deadlineMs - Math.max(0, now - lastInputAt),
+      )
+      const remainingFrames = Math.max(1, Math.ceil(remainingDeadlineMs / KINETIC_FRAME_MS))
+      return Math.max(
+        SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME,
+        Math.min(SMOOTH_WHEEL_MAX_CATCHUP_ROWS_PER_FRAME, Math.ceil(absPending / remainingFrames)),
+      )
+    },
+    [],
+  )
+
+  const refreshSmoothWheelFrameBudget = useCallback(
+    (now: number, pending: number) => {
+      if (
+        smoothWheelFrameStartedAtRef.current === 0 ||
+        now - smoothWheelFrameStartedAtRef.current >= KINETIC_FRAME_MS
+      ) {
+        smoothWheelFrameStartedAtRef.current = now
+        smoothWheelFrameRowsRef.current = 0
+        smoothWheelFrameBudgetRowsRef.current = adaptiveSmoothWheelFrameRows(
+          pending,
+          now,
+          SMOOTH_WHEEL_ACTIVE_DRAIN_DEADLINE_MS,
+        )
+      }
+    },
+    [adaptiveSmoothWheelFrameRows],
+  )
 
   const smoothWheelImmediateRows = useCallback(
     (pending: number, now: number): number => {
       const absPending = Math.abs(pending)
       if (absPending < 0.001) return 0
-      refreshSmoothWheelFrameBudget(now)
+      refreshSmoothWheelFrameBudget(now, pending)
       const remainingFrameBudget = Math.max(
         0,
-        SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME - smoothWheelFrameRowsRef.current,
+        smoothWheelFrameBudgetRowsRef.current - smoothWheelFrameRowsRef.current,
       )
       if (remainingFrameBudget <= 0) return 0
       const rowsThisFrame = Math.min(absPending, remainingFrameBudget)
@@ -479,28 +511,22 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
     [refreshSmoothWheelFrameBudget],
   )
 
-  const smoothWheelCatchupRows = useCallback((pending: number): number => {
-    const absPending = Math.abs(pending)
-    if (absPending < 0.001) return 0
-    const now = performance.now()
-    const lastInputAt = smoothWheelLastInputAtRef.current || now
-    const remainingDeadlineMs = Math.max(
-      KINETIC_FRAME_MS,
-      SMOOTH_WHEEL_POST_INPUT_DRAIN_DEADLINE_MS - Math.max(0, now - lastInputAt),
-    )
-    const remainingFrames = Math.max(1, Math.ceil(remainingDeadlineMs / KINETIC_FRAME_MS))
-    const adaptiveRows = Math.ceil(absPending / remainingFrames)
-    const rowsThisFrame = Math.min(
-      absPending,
-      Math.max(
-        SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME,
-        Math.min(SMOOTH_WHEEL_MAX_CATCHUP_ROWS_PER_FRAME, adaptiveRows),
-      ),
-    )
-    smoothWheelFrameStartedAtRef.current = now
-    smoothWheelFrameRowsRef.current = Math.min(SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME, rowsThisFrame)
-    return Math.sign(pending) * rowsThisFrame
-  }, [])
+  const smoothWheelCatchupRows = useCallback(
+    (pending: number): number => {
+      const absPending = Math.abs(pending)
+      if (absPending < 0.001) return 0
+      const now = performance.now()
+      const rowsThisFrame = Math.min(
+        absPending,
+        adaptiveSmoothWheelFrameRows(pending, now, SMOOTH_WHEEL_POST_INPUT_DRAIN_DEADLINE_MS),
+      )
+      smoothWheelFrameStartedAtRef.current = now
+      smoothWheelFrameBudgetRowsRef.current = rowsThisFrame
+      smoothWheelFrameRowsRef.current = rowsThisFrame
+      return Math.sign(pending) * rowsThisFrame
+    },
+    [adaptiveSmoothWheelFrameRows],
+  )
 
   const drainSmoothWheelRows = useCallback(() => {
     smoothWheelDrainTimerRef.current = null
@@ -533,6 +559,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
     clearSmoothWheelDrain()
     smoothWheelRowsRef.current = 0
     smoothWheelFrameRowsRef.current = 0
+    smoothWheelFrameBudgetRowsRef.current = SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME
     smoothWheelFrameStartedAtRef.current = 0
     smoothWheelLastInputAtRef.current = 0
   }, [clearSmoothWheelDrain])
