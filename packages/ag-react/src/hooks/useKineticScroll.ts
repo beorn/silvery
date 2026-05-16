@@ -88,7 +88,7 @@ const RELEASE_TIMEOUT_MS = 60
 const SMOOTH_WHEEL_IMMEDIATE_ROWS_PER_FRAME = 4
 /** Keep catch-up below the "visible jump" range for small terminal
  * viewports while still letting starved trackpad bursts catch up. */
-const SMOOTH_WHEEL_MAX_CATCHUP_ROWS_PER_FRAME = 8
+const SMOOTH_WHEEL_MAX_CATCHUP_ROWS_PER_FRAME = 9
 /** Active input gets a shorter deadline than post-input drain so backlog
  * cannot build up and then become the fastest part of the flick tail. */
 const SMOOTH_WHEEL_ACTIVE_DRAIN_DEADLINE_MS = 64
