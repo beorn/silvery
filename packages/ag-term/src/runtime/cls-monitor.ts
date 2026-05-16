@@ -96,6 +96,10 @@ interface ShiftRecord {
   path: string
   prev: Rect | null
   next: Rect | null
+  /** Milliseconds since the previous shift for this path; null for the
+   *  first observed shift. Included in `silvery:cls` debug logs so quick
+   *  reflows can be diagnosed without reconstructing timing offline. */
+  dtMs: number | null
 }
 
 interface PathHistory {
@@ -105,6 +109,10 @@ interface PathHistory {
   /** Set of (kind, key) sentinels already fired — once-per-pair to avoid
    *  spamming. Reset when the path settles (no shift for > 2s). */
   firedKinds: Set<string>
+  /** Most recent shift timestamp for this path, used for per-shift dt logs. */
+  lastShiftAt: number | null
+  /** True while the current timestamp window is already above the storm threshold. */
+  inStorm: boolean
 }
 
 export interface ClsMonitor {
@@ -172,7 +180,7 @@ export function createClsMonitor(): ClsMonitor {
   function ensureHistory(path: string): PathHistory {
     let h = pathHistory.get(path)
     if (h === undefined) {
-      h = { ts: [], firedKinds: new Set() }
+      h = { ts: [], firedKinds: new Set(), lastShiftAt: null, inStorm: false }
       pathHistory.set(path, h)
     }
     return h
@@ -255,10 +263,15 @@ export function createClsMonitor(): ClsMonitor {
 
   function recordShift(rec: ShiftRecord, now: number): boolean {
     const h = ensureHistory(rec.path)
+    rec.dtMs = h.lastShiftAt === null ? null : now - h.lastShiftAt
+    h.lastShiftAt = now
     h.ts.push(now)
     // Trim to window.
     while (h.ts.length > 0 && h.ts[0]! < now - STORM_PATH_WINDOW_MS) h.ts.shift()
-    return h.ts.length >= STORM_PATH_THRESHOLD
+    const inStorm = h.ts.length >= STORM_PATH_THRESHOLD
+    const justEnteredStorm = inStorm && !h.inStorm
+    h.inStorm = inStorm
+    return justEnteredStorm
   }
 
   function fireOnce(path: string, key: string): boolean {
@@ -343,7 +356,7 @@ export function createClsMonitor(): ClsMonitor {
           (prev.width === 0 || prev.height === 0) &&
           (next.width === 0 || next.height === 0)
         if (!isFirstMeasure && !isInlineTextNoise) {
-          commitShifts.push({ path: nodePath(node), prev, next })
+          commitShifts.push({ path: nodePath(node), prev, next, dtMs: null })
         }
       }
     }
@@ -402,7 +415,7 @@ export function createClsMonitor(): ClsMonitor {
     for (const rec of commitShifts) {
       const stormForPath = recordShift(rec, now)
       if (stormForPath) stormPaths++
-      log.debug?.("shift", { path: rec.path, prev: rec.prev, next: rec.next })
+      log.debug?.("shift", { path: rec.path, prev: rec.prev, next: rec.next, dtMs: rec.dtMs })
     }
     if (stormPaths > 0) {
       log.warn?.("reflow-storm-per-path", {

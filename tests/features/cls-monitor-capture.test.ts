@@ -18,19 +18,31 @@ import { createClsMonitor } from "@silvery/ag-term/runtime/cls-monitor"
 import { UnexpectedLayoutShiftError } from "@silvery/ag-term/strict-cls"
 import { resetStrictCache } from "@silvery/ag-term/strict-mode"
 import type { AgNode, Rect } from "@silvery/ag/types"
+import {
+  addWriter,
+  getDebugFilter,
+  getLogLevel,
+  setDebugFilter,
+  setLogLevel,
+  setSuppressConsole,
+  type Event,
+  type LogEvent,
+  type LogLevel,
+} from "loggily"
 
 // Minimal AgNode fake — only the fields cls-monitor's walk reads.
 // Avoids pulling in the full reconciler for state-machine unit tests.
 function fakeNode(opts: {
   type?: string
   id?: string
+  props?: Record<string, unknown>
   prevRect?: Rect | null
   rect?: Rect | null
   children?: ReturnType<typeof fakeNode>[]
 }): AgNode {
   const node = {
     type: opts.type ?? "silvery-box",
-    props: opts.id ? { id: opts.id } : {},
+    props: opts.props ?? (opts.id ? { id: opts.id } : {}),
     parent: null as AgNode | null,
     prevScreenRect: opts.prevRect ?? null,
     screenRect: opts.rect ?? null,
@@ -46,6 +58,43 @@ afterEach(() => {
   delete process.env.SILVERY_STRICT
   resetStrictCache()
 })
+
+function withClsLogging<T>(run: (events: LogEvent[]) => T): T {
+  const prevInstrument = process.env.SILVERY_INSTRUMENT
+  const prevDebugFilter = getDebugFilter()
+  const prevLogLevel: LogLevel = getLogLevel()
+  const events: LogEvent[] = []
+  process.env.SILVERY_INSTRUMENT = "cls"
+  setDebugFilter(["silvery:cls"])
+  setLogLevel("debug")
+  setSuppressConsole(true)
+  const unsubscribe = addWriter(
+    { ns: "silvery:cls", level: "debug" },
+    (_formatted: string, _level: string, _namespace: string, event: Event) => {
+      if (event.kind === "log") events.push(event)
+    },
+  )
+  try {
+    return run(events)
+  } finally {
+    unsubscribe()
+    if (prevInstrument === undefined) delete process.env.SILVERY_INSTRUMENT
+    else process.env.SILVERY_INSTRUMENT = prevInstrument
+    setDebugFilter(prevDebugFilter)
+    setLogLevel(prevLogLevel)
+    setSuppressConsole(false)
+  }
+}
+
+function primeMonitor(m: ReturnType<typeof createClsMonitor>): void {
+  const primer = fakeNode({
+    type: "silvery-root",
+    id: "root",
+    rect: { x: 0, y: 0, width: 80, height: 24 },
+    children: [],
+  })
+  m.onCommit(primer, 80, 24, false)
+}
 
 describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
   test("beginCapture → endCapture returns empty report when no shifts", () => {
@@ -286,5 +335,126 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
       if (prevDebug !== undefined) process.env.DEBUG = prevDebug
       if (prevInstrument !== undefined) process.env.SILVERY_INSTRUMENT = prevInstrument
     }
+  })
+})
+
+describe("ClsMonitor production diagnostics (layout-shift instrumentation bead)", () => {
+  test("DEBUG-gated shift log includes path, rects, and per-path dt", () => {
+    withClsLogging((events) => {
+      const m = createClsMonitor()
+      primeMonitor(m)
+
+      const root = fakeNode({
+        type: "silvery-root",
+        id: "root",
+        rect: { x: 0, y: 0, width: 80, height: 24 },
+        children: [
+          fakeNode({
+            type: "silvery-box",
+            id: "movable",
+            prevRect: { x: 0, y: 0, width: 10, height: 1 },
+            rect: { x: 3, y: 0, width: 10, height: 1 },
+          }),
+        ],
+      })
+      m.onCommit(root, 80, 24, false)
+
+      const shift = events.find((event) => event.message === "shift")
+      expect(shift?.props).toMatchObject({
+        prev: { x: 0, y: 0, width: 10, height: 1 },
+        next: { x: 3, y: 0, width: 10, height: 1 },
+      })
+      expect(String(shift?.props?.path)).toContain("movable")
+      expect(shift?.props).toHaveProperty("dtMs")
+    })
+  })
+
+  test("per-path quick-reflow storm emits one warning for one continuous storm", () => {
+    withClsLogging((events) => {
+      const m = createClsMonitor()
+      primeMonitor(m)
+
+      for (let i = 0; i < 6; i++) {
+        const root = fakeNode({
+          type: "silvery-root",
+          id: "root",
+          rect: { x: 0, y: 0, width: 80, height: 24 },
+          children: [
+            fakeNode({
+              type: "silvery-box",
+              id: "stormy",
+              prevRect: { x: i, y: 0, width: 10, height: 1 },
+              rect: { x: i + 1, y: 0, width: 10, height: 1 },
+            }),
+          ],
+        })
+        m.onCommit(root, 80, 24, false)
+      }
+
+      const stormWarnings = events.filter((event) => event.message === "reflow-storm-per-path")
+      expect(stormWarnings).toHaveLength(1)
+      expect(stormWarnings[0]?.props).toMatchObject({
+        stormPaths: 1,
+        threshold: 3,
+      })
+    })
+  })
+
+  test("size sentinels warn for zero-area visible content and terminal overflow", () => {
+    withClsLogging((events) => {
+      const m = createClsMonitor()
+      const root = fakeNode({
+        type: "silvery-root",
+        id: "root",
+        rect: { x: 0, y: 0, width: 80, height: 24 },
+        children: [
+          fakeNode({
+            type: "silvery-box",
+            id: "collapsed",
+            rect: { x: 0, y: 0, width: 0, height: 1 },
+            children: [
+              fakeNode({
+                type: "silvery-text",
+                rect: { x: 0, y: 0, width: 0, height: 0 },
+              }),
+            ],
+          }),
+          fakeNode({
+            type: "silvery-box",
+            id: "overflowing",
+            rect: { x: 0, y: 0, width: 120, height: 1 },
+          }),
+        ],
+      })
+      m.onCommit(root, 80, 24, false)
+
+      expect(events.some((event) => event.message === "zero-area-with-content")).toBe(true)
+      expect(events.some((event) => event.message === "rect-overflows-terminal")).toBe(true)
+    })
+  })
+
+  test("scroll-driven shifts are suppressed from production shift logs", () => {
+    withClsLogging((events) => {
+      const m = createClsMonitor()
+      primeMonitor(m)
+
+      const root = fakeNode({
+        type: "silvery-root",
+        id: "root",
+        rect: { x: 0, y: 0, width: 80, height: 24 },
+        children: [
+          fakeNode({
+            type: "silvery-box",
+            id: "scrolled",
+            prevRect: { x: 0, y: 10, width: 10, height: 1 },
+            rect: { x: 0, y: 2, width: 10, height: 1 },
+          }),
+        ],
+      })
+      m.onCommit(root, 80, 24, true)
+
+      expect(events.some((event) => event.message === "shift")).toBe(false)
+      expect(events.some((event) => event.message === "reflow-storm-per-path")).toBe(false)
+    })
   })
 })
