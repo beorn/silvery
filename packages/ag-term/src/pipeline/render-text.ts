@@ -1507,7 +1507,12 @@ export function renderText(
       lineCount = (plainText.match(/\n/g)?.length ?? 0) + 1
       setCachedPlainText(node, plainText, lineCount)
     }
-    maxDisplayWidth = (width + 1) * lineCount
+    // Keep enough overflow to prove the line needs ellipsizing. `width + 1`
+    // works for ASCII, but wide graphemes can slice back to exactly `width`
+    // before formatTextLines runs, making CJK overflow look like exact-fit
+    // text. Terminal graphemes are at most two cells wide here, so +2 keeps
+    // one extra visible grapheme without collecting unbounded hidden content.
+    maxDisplayWidth = (width + 2) * lineCount
   }
 
   // --- PreparedText cache: Level 1 (collected styled text) ---

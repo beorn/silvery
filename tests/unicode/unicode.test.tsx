@@ -152,6 +152,42 @@ describe("unicode: CJK truncation", () => {
     expect(text.length).toBeGreaterThan(0)
   })
 
+  test("CJK truncate keeps ellipsis when pre-collection lands on exact width", () => {
+    const r = createRenderer({ cols: 20, rows: 3 })
+    const app = r(
+      React.createElement(
+        Box,
+        { width: 10, borderStyle: "single" },
+        React.createElement(
+          Text,
+          { wrap: "truncate", minWidth: 0 },
+          "\u65E5\u672C\u8A9E\u30C6\u30AD\u30B9\u30C8",
+        ),
+      ),
+    )
+
+    expect(app.text).toContain("\u65E5\u672C\u8A9E\u2026")
+    expect(app.text).not.toContain("\u65E5\u672C\u8A9E\u30C6")
+  })
+
+  test("CJK truncate does not ellipsize exact-fit text", () => {
+    const r = createRenderer({ cols: 20, rows: 3 })
+    const app = r(
+      React.createElement(
+        Box,
+        { width: 12, borderStyle: "single" },
+        React.createElement(
+          Text,
+          { wrap: "truncate", minWidth: 0 },
+          "\u3053\u3093\u306B\u3061\u306F",
+        ),
+      ),
+    )
+
+    expect(app.text).toContain("\u3053\u3093\u306B\u3061\u306F")
+    expect(app.text).not.toContain("\u2026")
+  })
+
   test("splitGraphemes segments CJK correctly", () => {
     const graphemes = splitGraphemes("\u4F60\u597D")
     expect(graphemes).toEqual(["\u4F60", "\u597D"])

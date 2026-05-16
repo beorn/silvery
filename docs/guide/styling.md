@@ -181,6 +181,10 @@ Variants are theme tokens — `h1`, `h2`, `h3`, `body`, `body-muted`, `fine-prin
 Apps extend the variant table via <span v-pre>`<ThemeProvider tokens={{ variants: { hero: { color: "$brand", bold: true } } }}>`</span>. Caller props always win over the variant (`<Text variant="h1" color="$fg-success">` overrides color, keeps bold).
 :::
 
+::: tip ✨ Shiny — Let `<Text wrap="truncate">` own ellipsis
+For fixed-width labels, titles, status bars, and table cells, pass `wrap="truncate"` (or `truncate-start` / `truncate-middle`) and let the text renderer ellipsize against the actual laid-out container. It is ANSI-aware, wide-character-aware, and only adds `…` when content overflows; exact-fit text remains unchanged. Leading-edge / bidi-aware ellipsis direction is future work tracked by `@km/silvery/text-truncate-i18n-and-strictness`.
+:::
+
 → [Typography reference](/components/typography) · [Text reference](/api/text) · [Theme tokens](/reference/theming#token-reference)
 
 ## 3. Use Tokens for Meaning, Not Decoration
