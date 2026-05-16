@@ -232,6 +232,8 @@ export interface TermlessMouseModifiers {
   ctrl?: boolean
   shift?: boolean
   alt?: boolean
+  /** SGR mouse uses the same modifier bit for Meta and Alt. */
+  meta?: boolean
 }
 
 /** Options for a mouse event (button + modifiers). */
@@ -286,6 +288,20 @@ export interface TermlessTrackpadFlickProfile {
   cellSize?: TermlessMouseCellSize
   settleMs?: number
   packets: readonly TermlessTrackpadFlickPacket[]
+}
+
+export interface TermlessWheelOptions extends TermlessMouseModifiers {
+  /** Horizontal wheel delta. Negative = left, positive = right. */
+  deltaX?: number
+  /** Vertical wheel delta. Negative = up, positive = down. */
+  deltaY?: number
+  /** Compatibility alias for vertical wheel delta. */
+  lines?: number
+  /** Delay between repeated reports. Default: 8ms, matching ~120Hz trackpad cadence. */
+  cadenceMs?: number
+  /** Coordinate mode for encoded SGR reports. Defaults to auto-detect. */
+  coordinateMode?: TermlessMouseCoordinateMode
+  cellSize?: TermlessMouseCellSize
 }
 
 export interface TermlessTrackpadFlickGroup {
@@ -466,8 +482,13 @@ export interface TermlessMouse {
     /** ms between dispatch steps. Default: 20 */
     stepDelay?: number
   }): Promise<void>
-  /** Fire a mouse wheel event at (x,y). Positive delta = scroll down. */
-  wheel(x: number, y: number, delta: number): Promise<void>
+  /** Fire mouse wheel events at (x,y). Positive vertical delta = scroll down. */
+  wheel(
+    x: number,
+    y: number,
+    deltaOrOptions: number | TermlessWheelOptions,
+    options?: TermlessWheelOptions,
+  ): Promise<void>
   /**
    * Replay a real trackpad-style wheel gesture: timestamped packet groups,
    * optional SGR-Pixels coordinates, and many wheel reports in one stdin chunk.
@@ -537,6 +558,7 @@ type TermlessBackendChoice = "xterm" | "ghostty" | "ghostty-native"
 /** Default sleep between steps in `drag()`. Short enough to be fast, long
  * enough for async event dispatch to flush. */
 const DEFAULT_DRAG_STEP_DELAY_MS = 20
+const DEFAULT_WHEEL_CADENCE_MS = 8
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
@@ -617,12 +639,15 @@ function withReflowResidue(
   return { backend: wrapped, residue }
 }
 
-function sgrButtonByte(options?: TermlessMouseOptions): number {
-  let btn = options?.button ?? 0
+function applyMouseModifierBits(btn: number, options?: TermlessMouseModifiers): number {
   if (options?.shift) btn += 4
-  if (options?.alt) btn += 8
+  if (options?.alt || options?.meta) btn += 8
   if (options?.ctrl) btn += 16
   return btn
+}
+
+function sgrButtonByte(options?: TermlessMouseOptions): number {
+  return applyMouseModifierBits(options?.button ?? 0, options)
 }
 
 /**
@@ -899,13 +924,36 @@ export function createTermless(
       await sleep(stepDelay)
       await mouse.up(to[0], to[1], options)
     },
-    async wheel(x, y, delta) {
-      // SGR wheel: button 64 = up (delta < 0), 65 = down (delta > 0).
-      const raw = delta < 0 ? 64 : 65
-      const count = Math.abs(delta) || 1
-      const { sgrX, sgrY } = encodeCoord(x, y)
-      sendInput(Array.from({ length: count }, () => `\x1b[<${raw};${sgrX};${sgrY}M`).join(""))
-      await Promise.resolve()
+    async wheel(x, y, deltaOrOptions, maybeOptions) {
+      const options = typeof deltaOrOptions === "number" ? maybeOptions : deltaOrOptions
+      const deltaX =
+        typeof deltaOrOptions === "number" ? (options?.deltaX ?? 0) : (deltaOrOptions.deltaX ?? 0)
+      const deltaY =
+        typeof deltaOrOptions === "number"
+          ? deltaOrOptions
+          : (deltaOrOptions.deltaY ?? deltaOrOptions.lines ?? 0)
+      const { sgrX, sgrY } = encodeCoord(x, y, {
+        coordinateMode: options?.coordinateMode,
+        cellSize: options?.cellSize,
+      })
+      const reports: string[] = []
+      const appendReports = (baseButton: number, count: number) => {
+        const button = applyMouseModifierBits(baseButton, options)
+        for (let i = 0; i < count; i++) reports.push(`\x1b[<${button};${sgrX};${sgrY}M`)
+      }
+
+      const horizontalCount = Math.max(0, Math.floor(Math.abs(deltaX)))
+      if (horizontalCount > 0) appendReports(deltaX < 0 ? 66 : 67, horizontalCount)
+
+      const verticalCount = Math.max(0, Math.floor(Math.abs(deltaY)))
+      if (verticalCount > 0) appendReports(deltaY < 0 ? 64 : 65, verticalCount)
+
+      const cadenceMs = options?.cadenceMs ?? DEFAULT_WHEEL_CADENCE_MS
+      for (let index = 0; index < reports.length; index++) {
+        sendInput(reports[index]!)
+        await Promise.resolve()
+        if (cadenceMs > 0 && index < reports.length - 1) await sleep(cadenceMs)
+      }
     },
     async trackpadFlick(profile, options) {
       const groups = groupTrackpadPackets(profile.packets)

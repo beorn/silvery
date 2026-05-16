@@ -29,6 +29,14 @@ function backendName(term: unknown): string | undefined {
   return (term as { _emulator?: { backend?: { name?: string } } })._emulator?.backend?.name
 }
 
+function captureSendInput(term: unknown): string[] {
+  const chunks: string[] = []
+  ;(term as { sendInput: (data: string) => void }).sendInput = (data: string) => {
+    chunks.push(data)
+  }
+  return chunks
+}
+
 afterEach(() => {
   if (originalTermlessBackend === undefined) {
     delete process.env.TERMLESS_BACKEND
@@ -88,6 +96,41 @@ describe("contract: createTermless surface", () => {
     expect(Array.isArray(term.clipboard.all)).toBe(true)
     expect(term.clipboard.all).toHaveLength(0)
     expect(typeof term.clipboard.clear).toBe("function")
+  })
+})
+
+// ============================================================================
+// Mouse wheel bytes — match real SGR wheel axes, modifiers, and cadence control.
+// ============================================================================
+
+describe("contract: createTermless mouse wheel bytes", () => {
+  test("contract: object-form wheel emits horizontal SGR buttons with modifier bits", async () => {
+    using term = createTermless({ cols: 20, rows: 5 })
+    const chunks = captureSendInput(term)
+    const wheel = term.mouse.wheel as unknown as (
+      x: number,
+      y: number,
+      options: { deltaX: number; deltaY: number; shift: boolean; ctrl: boolean; cadenceMs: number },
+    ) => Promise<void>
+
+    await wheel(2, 3, { deltaX: -2, deltaY: 1, shift: true, ctrl: true, cadenceMs: 0 })
+
+    expect(chunks.join("")).toBe("\x1b[<86;3;4M\x1b[<86;3;4M\x1b[<85;3;4M")
+  })
+
+  test("contract: legacy numeric wheel accepts modifier bits and cadence override", async () => {
+    using term = createTermless({ cols: 20, rows: 5 })
+    const chunks = captureSendInput(term)
+    const wheel = term.mouse.wheel as unknown as (
+      x: number,
+      y: number,
+      delta: number,
+      options: { alt: boolean; cadenceMs: number },
+    ) => Promise<void>
+
+    await wheel(1, 2, -2, { alt: true, cadenceMs: 0 })
+
+    expect(chunks.join("")).toBe("\x1b[<72;2;3M\x1b[<72;2;3M")
   })
 })
 
