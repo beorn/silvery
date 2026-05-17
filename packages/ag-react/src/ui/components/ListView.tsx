@@ -560,9 +560,8 @@ export interface ListViewProps<T> {
    * clicks (≥50ms gaps + |deltaY|≤1), each event jumps multiple rows
    * with no momentum coast. Trackpad streams keep smooth physics.
    * Default `false` — opt in for real interactive surfaces after profiling
-   * the input backend. Continuous packet bursts are preserved as input
-   * signal; ListView frame-paces rendering without dropping packets or
-   * adding a long synthetic tail.
+   * the input backend. Trackpad packets apply immediately; if the terminal
+   * batches 50 reports into one turn, all 50 reports still count as input.
    */
   enableInputCadenceDetection?: boolean
 }
@@ -856,7 +855,6 @@ function ListViewInner<T>(
   // virtualizer's measurement is consumed via `rowsAboveViewport`; the
   // ref is updated every render below.
   const rowsAboveViewportRef = useRef(0)
-  const contentViewportHeightRef = useRef(0)
   // Mark the viewport as wheel-driven on the first wheel event of a
   // gesture so `scrollRow` flips from null → integer. Reset to null by
   // `moveTo` when the cursor takes over.
@@ -924,12 +922,6 @@ function ListViewInner<T>(
     enableMomentum: false,
     enableElasticEdges,
     enableInputCadenceDetection,
-    smoothWheelPackets: enableInputCadenceDetection,
-    smoothWheelMaxRowsPerFrame: () => {
-      const viewportRows = contentViewportHeightRef.current
-      if (!Number.isFinite(viewportRows) || viewportRows <= 0) return 4
-      return Math.max(6, Math.min(12, Math.ceil(viewportRows * 0.1)))
-    },
     getInitialFloat: () => {
       // Cursor pinned to an endpoint? Seed straight to that edge so the
       // overscroll indicator fires immediately and rowsAboveViewport's
@@ -2787,7 +2779,6 @@ function ListViewInner<T>(
   // closure with stable identity).
   maxScrollRowRef.current = scrollableRows
   rowsAboveViewportRef.current = rowsAboveViewport
-  contentViewportHeightRef.current = contentViewportHeight
 
   useLayoutEffect(() => {
     const previous = prevResolvedFollowRef.current
