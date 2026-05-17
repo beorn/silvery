@@ -71,6 +71,11 @@ import {
   resolveListViewRenderScrollRow,
 } from "./list-view/scroll-authority"
 import {
+  createContentGeometry,
+  resolveScrollPositionTop,
+  type ScrollPosition,
+} from "./list-view/scroll-position"
+import {
   resolveActiveAnchorCorrectionBudgetRows,
   resolveActiveScrollMeasuredHeightFallback,
   resolveRowsAboveViewport,
@@ -1583,6 +1588,10 @@ function ListViewInner<T>(
     },
     [activeItems, getKey, unmountedCount],
   )
+  const contentGeometry = useMemo(
+    () => createContentGeometry({ model: heightModel, keyAtIndex: keyForActiveIndex }),
+    [heightModel, heightModelVersion, keyForActiveIndex],
+  )
   const applyAnchoredTopRow = useCallback(
     (row: number) => {
       // Preserve wheel/momentum gesture state — anchoring reflow nudges
@@ -1598,24 +1607,37 @@ function ListViewInner<T>(
   )
   const followOwnsViewport =
     resolvedFollow === "end" && (followActiveRef.current || pendingFollowSnapRef.current)
-  const followPinnedTopRow = followOwnsViewport ? scrollableRows : null
+  const followPosition: ScrollPosition = { kind: "end" }
+  const followPinnedTopRow = followOwnsViewport
+    ? resolveScrollPositionTop(followPosition, contentGeometry, {
+        height: contentViewportHeight,
+      }).topRow
+    : null
   // Explicit `scrollTo` prop means "place this item at the viewport
   // anchor" rather than Box's child-index "ensure visible somewhere"
   // behavior. Keyboard/nav cursor-follow and follow=end keep their
   // edge-based semantics through `boxScrollTo` below.
   const topOverflowIndicatorReserve = overflowIndicator ? 1 : 0
-  const declarativeScrollRow =
+  const declarativeScrollPosition: ScrollPosition | null =
     scrollToProp !== undefined && adjustedScrollTo !== undefined && activeItems.length > 0
-      ? Math.max(
-          0,
-          Math.min(
-            scrollableRows,
-            heightModel.rowOfIndex(
-              Math.max(0, Math.min(adjustedScrollTo, activeItems.length - 1)),
-            ) - topOverflowIndicatorReserve,
-          ),
-        )
+      ? (() => {
+          const targetIndex = Math.max(0, Math.min(adjustedScrollTo, activeItems.length - 1))
+          const key = keyForActiveIndex(targetIndex)
+          return key === null
+            ? null
+            : {
+                kind: "anchored",
+                point: { key, offset: 0 },
+                pin: { kind: "offset", value: topOverflowIndicatorReserve, unit: "axis" },
+              }
+        })()
       : null
+  const declarativeScrollRow =
+    declarativeScrollPosition === null
+      ? null
+      : resolveScrollPositionTop(declarativeScrollPosition, contentGeometry, {
+          height: contentViewportHeight,
+        }).topRow
   const baseTopRow =
     declarativeScrollRow ??
     followPinnedTopRow ??
@@ -1639,11 +1661,9 @@ function ListViewInner<T>(
     // anchoring should not become an extra high-speed scroll authority
     // during active wheel input.
     enabled: anchoringEnabled,
-    model: heightModel,
-    keyAtIndex: keyForActiveIndex,
-    itemCount: activeItems.length,
+    geometry: contentGeometry,
     currentTopRow: baseTopRow,
-    maxTopRow: scrollableRows,
+    viewportHeight: contentViewportHeight,
     followOwnsViewport: false,
     activeScrollDirection: wheelScrollStabilizing ? activeScrollDirectionRef.current : null,
     maxActiveCorrectionRows: activeAnchorCorrectionBudgetRows,
@@ -2622,7 +2642,11 @@ function ListViewInner<T>(
     const shouldTrackActiveBottom =
       !shouldSnap && viewportReady && maxRow > 0 && activeDownwardScrollReachedPreviousEnd
     if (shouldSnap) {
-      const targetRow = Math.round(maxRow)
+      const targetRow = Math.round(
+        resolveScrollPositionTop({ kind: "end" }, contentGeometry, {
+          height: contentViewportHeight,
+        }).topRow,
+      )
       isWheelDrivenRef.current = true
       activeWheelAvgMeasuredHeightRef.current = undefined
       physics.setScrollFloat(targetRow)
@@ -2630,7 +2654,11 @@ function ListViewInner<T>(
       pendingFollowSnapRef.current = false
       followActiveRef.current = true
     } else if (shouldTrackActiveBottom) {
-      const targetRow = Math.round(maxRow)
+      const targetRow = Math.round(
+        resolveScrollPositionTop({ kind: "end" }, contentGeometry, {
+          height: contentViewportHeight,
+        }).topRow,
+      )
       isWheelDrivenRef.current = true
       physics.setScrollFloat(targetRow)
       setScrollRow(targetRow)
@@ -2704,6 +2732,7 @@ function ListViewInner<T>(
     viewportSize?.w,
     isHeightIndependent,
     heightModel,
+    contentGeometry,
     onAtBottomChange,
   ])
   // Thumb size uses `max(stable, measured)` (same shape as the visibility
@@ -2780,7 +2809,7 @@ function ListViewInner<T>(
   const effectiveRowsAbove = renderScrollRow !== null ? renderScrollRow : rowsAboveViewport
   const selectedBoxScrollTo = isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined
   const boxScrollTo = resolveListViewBoxScrollTo({
-    renderScrollRow,
+    scrollAuthority,
     selectedBoxScrollTo,
   })
 

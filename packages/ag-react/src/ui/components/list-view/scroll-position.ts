@@ -75,9 +75,7 @@ export function createContentGeometry<K extends Key = Key>({
 
   function itemHeight(index: number): number {
     if (index < 0 || index >= model.itemCount) return 0
-    const top = model.rowOfIndex(index)
-    const nextTop = index + 1 < model.itemCount ? model.rowOfIndex(index + 1) : model.totalRows()
-    return Math.max(0, nextTop - top)
+    return Math.max(0, model.prefixSum(index + 1) - model.prefixSum(index))
   }
 
   function anchorAtRow(row: number): AnchorPoint<K> | null {
@@ -85,7 +83,10 @@ export function createContentGeometry<K extends Key = Key>({
     if (index === null) return null
     const key = keyAtIndex(index)
     if (key === null) return null
-    return clampAnchorPoint({ key, offset: Math.max(0, row - model.rowOfIndex(index)) }, itemHeight(index))
+    return clampAnchorPoint(
+      { key, offset: Math.max(0, row - model.rowOfIndex(index)) },
+      itemHeight(index),
+    )
   }
 
   function maxTopRow(viewportHeight: number): number {
@@ -202,7 +203,10 @@ export function resolveScrollPositionTop<K extends Key>(
 
   const fallbackTopRow = viewport.fallbackTopRow ?? 0
   const clampedFallbackTopRow = clampTopRow(fallbackTopRow, geometry.maxTopRow(viewport.height))
-  const fallbackPoint = reseedAnchorFromFallbackTop({ geometry, fallbackTopRow: clampedFallbackTopRow })
+  const fallbackPoint = reseedAnchorFromFallbackTop({
+    geometry,
+    fallbackTopRow: clampedFallbackTopRow,
+  })
   return {
     topRow: clampedFallbackTopRow,
     position:

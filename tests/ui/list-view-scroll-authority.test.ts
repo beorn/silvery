@@ -21,7 +21,7 @@ describe("ListView scroll authority", () => {
     })
   })
 
-  test("declarative row-space scroll does not also delegate to Box scrollTo", () => {
+  test("declarative row-space scroll keeps Box child identity for hidden-count math", () => {
     const resolved = resolveListViewRenderScrollRow({
       declarativeScrollRow: 42,
       followPinnedTopRow: null,
@@ -36,16 +36,25 @@ describe("ListView scroll authority", () => {
     })
     expect(
       resolveListViewBoxScrollTo({
-        renderScrollRow: resolved.row,
+        scrollAuthority: resolved.authority,
+        selectedBoxScrollTo: 7,
+      }),
+    ).toBe(7)
+  })
+
+  test("suppresses Box scrollTo while wheel row-space owns the viewport", () => {
+    expect(
+      resolveListViewBoxScrollTo({
+        scrollAuthority: "wheel-row",
         selectedBoxScrollTo: 7,
       }),
     ).toBeUndefined()
   })
 
-  test("falls back to Box scrollTo only when row-space has no owner", () => {
+  test("falls back to Box scrollTo when layout owns the viewport", () => {
     expect(
       resolveListViewBoxScrollTo({
-        renderScrollRow: null,
+        scrollAuthority: "layout",
         selectedBoxScrollTo: 7,
       }),
     ).toBe(7)

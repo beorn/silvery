@@ -17,14 +17,17 @@ import {
   type ListViewProps,
 } from "../../packages/ag-react/src/ui/components/ListView"
 import {
-  captureViewportAnchor,
   resolveRowsAboveViewport,
   resolveDirectionalMaintainedTopRow,
   resolveActiveAnchorCorrectionBudgetRows,
   resolveActiveScrollMeasuredHeightFallback,
   shouldApplyVisibleContentAnchoring,
-  resolveViewportAnchor,
 } from "../../packages/ag-react/src/ui/components/list-view/use-scroll-anchoring"
+import {
+  captureAnchorAtViewportY,
+  createContentGeometry,
+  resolveScrollPositionTop,
+} from "../../packages/ag-react/src/ui/components/list-view/scroll-position"
 import {
   resolveActiveLeadingSpacer,
   resolveActiveScrollWindow,
@@ -246,15 +249,18 @@ describe("ListView maintainVisibleContentPosition", () => {
       gap: 0,
       estimate: (index) => (index === 1 ? 4 : 1),
     })
-    const anchor = captureViewportAnchor({
-      model: before,
-      keyAtIndex: (index) => `item-${index}`,
+    const anchor = captureAnchorAtViewportY({
+      geometry: createContentGeometry({
+        model: before,
+        keyAtIndex: (index) => `item-${index}`,
+      }),
       viewportTopRow: 5,
+      viewportY: 0,
     })
 
     expect(anchor).toEqual({
       key: "item-2",
-      offsetWithinItem: 0,
+      offset: 0,
     })
 
     const after = createHeightModel({
@@ -264,13 +270,14 @@ describe("ListView maintainVisibleContentPosition", () => {
     })
 
     expect(
-      resolveViewportAnchor({
-        anchor,
-        model: after,
-        keyToIndex: new Map(Array.from({ length: 6 }, (_, index) => [`item-${index}`, index])),
-        viewportHeight: 3,
-        maxTopRow: 9,
-      }),
+      resolveScrollPositionTop(
+        { kind: "anchored", point: anchor!, pin: { kind: "top" } },
+        createContentGeometry({
+          model: after,
+          keyAtIndex: (index) => `item-${index}`,
+        }),
+        { height: 3 },
+      ).topRow,
     ).toBe(8)
   })
 
@@ -282,13 +289,14 @@ describe("ListView maintainVisibleContentPosition", () => {
     })
 
     expect(
-      resolveViewportAnchor({
-        anchor: { key: "__end__", offsetWithinItem: 0 },
-        model,
-        keyToIndex: new Map(),
-        viewportHeight: 8,
-        maxTopRow: 22,
-      }),
+      resolveScrollPositionTop(
+        { kind: "end" },
+        createContentGeometry({
+          model,
+          keyAtIndex: (index) => `item-${index}`,
+        }),
+        { height: 8 },
+      ).topRow,
     ).toBe(22)
   })
 

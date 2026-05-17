@@ -1,13 +1,18 @@
 import { useLayoutEffect, useRef } from "react"
 import type { HeightModel } from "./height-model"
+import {
+  captureAnchorAtViewportY,
+  resolveScrollPositionTop,
+  type AnchorPoint,
+  type ContentGeometry,
+  type Key,
+} from "./scroll-position"
 
 export interface ScrollAnchoringOptions {
   enabled: boolean
-  model: HeightModel
-  keyAtIndex: (index: number) => string | number | null
-  itemCount: number
+  geometry: ContentGeometry
   currentTopRow: number
-  maxTopRow: number
+  viewportHeight: number
   followOwnsViewport: boolean
   activeScrollDirection?: "up" | "down" | null
   maxActiveCorrectionRows?: number
@@ -22,10 +27,7 @@ export interface ScrollAnchoringController {
   suppressOnce(): void
 }
 
-export interface VisibleContentAnchor {
-  key: string | number
-  offsetWithinItem: number
-}
+export type VisibleContentAnchor = AnchorPoint<Key>
 
 export function resolveRowsAboveViewport({
   virtualization,
@@ -64,8 +66,6 @@ export function shouldApplyVisibleContentAnchoring({
 }
 
 const DEFAULT_TOLERANCE_ROWS = 0.5
-const END_ANCHOR_KEY = "__end__"
-
 export function resolveActiveAnchorCorrectionBudgetRows(contentViewportHeight: number): number {
   void contentViewportHeight
   return 0
@@ -89,11 +89,9 @@ export function resolveActiveScrollMeasuredHeightFallback({
 
 export function useScrollAnchoring({
   enabled,
-  model,
-  keyAtIndex,
-  itemCount,
+  geometry,
   currentTopRow,
-  maxTopRow,
+  viewportHeight,
   followOwnsViewport,
   activeScrollDirection = null,
   maxActiveCorrectionRows,
@@ -106,7 +104,7 @@ export function useScrollAnchoring({
   const anchorModelVersionRef = useRef<unknown>(modelVersion)
   const suppressRef = useRef(false)
 
-  const currentAnchor = anchorAtRow(model, keyAtIndex, currentTopRow)
+  const currentAnchor = anchorAtRow(geometry, currentTopRow)
   // During active wheel input the top row is expected to change every frame.
   // A previous-frame anchor only gets to override that motion when the
   // height model changed; otherwise it is stale and cancels explicit scroll.
@@ -119,11 +117,9 @@ export function useScrollAnchoring({
     (activeScrollDirection === null || modelChangedSinceAnchor)
       ? resolveMaintainedTopRow({
           anchor: anchorRef.current,
-          keyAtIndex,
-          itemCount,
-          model,
+          geometry,
           currentTopRow,
-          maxTopRow,
+          viewportHeight,
           toleranceRows,
         })
       : null
@@ -152,7 +148,7 @@ export function useScrollAnchoring({
 
     if (maintainedTopRow !== null) {
       onApplyTopRow(maintainedTopRow)
-      anchorRef.current = anchorAtRow(model, keyAtIndex, maintainedTopRow)
+      anchorRef.current = anchorAtRow(geometry, maintainedTopRow)
       anchorModelVersionRef.current = modelVersion
       return
     }
@@ -163,9 +159,8 @@ export function useScrollAnchoring({
     currentAnchor,
     enabled,
     followOwnsViewport,
-    keyAtIndex,
+    geometry,
     maintainedTopRow,
-    model,
     modelVersion,
     onApplyTopRow,
   ])
@@ -207,83 +202,24 @@ export function resolveDirectionalMaintainedTopRow({
   return row
 }
 
-function anchorAtRow(
-  model: HeightModel,
-  keyAtIndex: (index: number) => string | number | null,
-  row: number,
-): VisibleContentAnchor | null {
-  return captureViewportAnchor({ model, keyAtIndex, viewportTopRow: row })
-}
-
-export function captureViewportAnchor({
-  model,
-  keyAtIndex,
-  viewportTopRow,
-}: {
-  model: HeightModel
-  keyAtIndex: (index: number) => string | number | null
-  viewportTopRow: number
-}): VisibleContentAnchor | null {
-  const index = model.indexAtRow(viewportTopRow)
-  if (index === null) return null
-  const key = keyAtIndex(index)
-  if (key === null) return null
-  return {
-    key,
-    offsetWithinItem: Math.max(0, viewportTopRow - model.rowOfIndex(index)),
-  }
-}
-
-export function resolveViewportAnchor({
-  anchor,
-  model,
-  keyToIndex,
-  viewportHeight,
-  maxTopRow,
-}: {
-  anchor: VisibleContentAnchor | null
-  model: HeightModel
-  keyToIndex: ReadonlyMap<string | number, number>
-  viewportHeight: number
-  maxTopRow: number
-}): number | null {
-  if (anchor === null) return null
-
-  if (anchor.key === END_ANCHOR_KEY) {
-    return Math.max(0, Math.min(maxTopRow, model.totalRows() - viewportHeight))
-  }
-
-  const index = keyToIndex.get(anchor.key)
-  if (index === undefined) return null
-
-  const desiredTopRow = model.rowOfIndex(index) + anchor.offsetWithinItem
-  return Math.max(0, Math.min(maxTopRow, desiredTopRow))
+function anchorAtRow(geometry: ContentGeometry, row: number): VisibleContentAnchor | null {
+  return captureAnchorAtViewportY({ geometry, viewportTopRow: row, viewportY: 0 })
 }
 
 function resolveMaintainedTopRow({
   anchor,
-  keyAtIndex,
-  itemCount,
-  model,
+  geometry,
   currentTopRow,
-  maxTopRow,
+  viewportHeight,
   toleranceRows,
 }: {
   anchor: VisibleContentAnchor | null
-  keyAtIndex: (index: number) => string | number | null
-  itemCount: number
-  model: HeightModel
+  geometry: ContentGeometry
   currentTopRow: number
-  maxTopRow: number
+  viewportHeight: number
   toleranceRows: number
 }): number | null {
   if (anchor === null) return null
-
-  const keyToIndex = new Map<string | number, number>()
-  for (let i = 0; i < itemCount; i++) {
-    const key = keyAtIndex(i)
-    if (key !== null) keyToIndex.set(key, i)
-  }
 
   // No-overflow guard: when there's nothing to scroll (`maxTopRow = 0`),
   // anchoring has no work to do. Returning a clamped value here would
@@ -295,15 +231,13 @@ function resolveMaintainedTopRow({
   // to 0 and applied via `setScrollRow(0)`, which then suppresses the
   // declarative `scrollTo` prop in subsequent renders.
   // Bead: km-silvery.listview-scrollto-anchoring-stomp.
+  const maxTopRow = geometry.maxTopRow(viewportHeight)
   if (maxTopRow <= 0) return null
 
-  const clamped = resolveViewportAnchor({
-    anchor,
-    model,
-    keyToIndex,
-    viewportHeight: Math.max(1, model.totalRows() - maxTopRow),
-    maxTopRow,
-  })
-  if (clamped === null) return null
-  return Math.abs(clamped - currentTopRow) > toleranceRows ? clamped : null
+  const resolved = resolveScrollPositionTop(
+    { kind: "anchored", point: anchor, pin: { kind: "top" } },
+    geometry,
+    { height: viewportHeight },
+  )
+  return Math.abs(resolved.topRow - currentTopRow) > toleranceRows ? resolved.topRow : null
 }

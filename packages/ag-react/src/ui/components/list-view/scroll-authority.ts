@@ -37,13 +37,15 @@ export function resolveListViewRenderScrollRow({
 }
 
 export function resolveListViewBoxScrollTo({
-  renderScrollRow,
+  scrollAuthority,
   selectedBoxScrollTo,
 }: {
-  renderScrollRow: number | null
+  scrollAuthority: ListViewScrollAuthority
   selectedBoxScrollTo: number | undefined
 }): number | undefined {
-  return renderScrollRow !== null ? undefined : selectedBoxScrollTo
+  return scrollAuthority === "declarative-row" || scrollAuthority === "layout"
+    ? selectedBoxScrollTo
+    : undefined
 }
 
 export interface ActiveScrollWindowInput {

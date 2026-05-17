@@ -97,24 +97,6 @@ export {
   shouldFreezeHeightModelForWheel,
 } from "./ui/components/list-view/height-model"
 export type { HeightModel, HeightModelOptions } from "./ui/components/list-view/height-model"
-export {
-  captureAnchorAtViewportY,
-  clampAnchorPoint,
-  computeViewportTopFromAnchor,
-  createContentGeometry,
-  reseedAnchorFromFallbackTop,
-  resolvePinOffset,
-  resolveScrollPositionTop,
-} from "./ui/components/list-view/scroll-position"
-export type {
-  AnchorPoint,
-  ContentGeometry,
-  ContentGeometryOptions,
-  Pin,
-  ResolvedScrollPosition,
-  ScrollPosition,
-  ViewportSpec,
-} from "./ui/components/list-view/scroll-position"
 // Pure index-window helpers — extracted from ListView for unit-testability.
 export {
   computeIndexTrailingSpacer,
