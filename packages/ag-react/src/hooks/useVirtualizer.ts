@@ -64,7 +64,7 @@
  * The hook is headless — it doesn't render anything. Consumers decide what
  * to do with the visible range.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { AgNode } from "@silvery/ag/types"
 import { useScrollState } from "./useScrollState"
 
@@ -127,6 +127,13 @@ export interface VirtualizerConfig {
    * for non-wrapping content). Default: undefined.
    */
   viewportWidth?: number
+  /**
+   * Record measured item heights without immediately bumping
+   * `measurementVersion`. This is for active wheel/trackpad gestures: the
+   * cache stays warm, but window/placeholder recomputation waits until the
+   * gesture settles so measurement feedback cannot steal frame budget.
+   */
+  deferMeasurementUpdates?: boolean
 }
 
 export interface VirtualizerResult {
@@ -347,6 +354,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     containerNode,
     trailingExtraChildren = 0,
     viewportWidth,
+    deferMeasurementUpdates = false,
   } = config
 
   // ── Measurement cache ─────────────────────────────────────────────
@@ -357,6 +365,23 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   const measuredHeightsRef = useRef<Map<string, number>>(new Map())
   // Counter to trigger re-computation when measurements change
   const [measurementVersion, setMeasurementVersion] = useState(0)
+  const deferMeasurementUpdatesRef = useRef(deferMeasurementUpdates)
+  const pendingMeasurementUpdateRef = useRef(false)
+  deferMeasurementUpdatesRef.current = deferMeasurementUpdates
+
+  const scheduleMeasurementUpdate = useCallback(() => {
+    if (deferMeasurementUpdatesRef.current) {
+      pendingMeasurementUpdateRef.current = true
+      return
+    }
+    setMeasurementVersion((v) => v + 1)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (deferMeasurementUpdates || !pendingMeasurementUpdateRef.current) return
+    pendingMeasurementUpdateRef.current = false
+    setMeasurementVersion((v) => v + 1)
+  }, [deferMeasurementUpdates])
 
   const measureItem = useCallback(
     (key: string | number, height: number, width?: number): boolean => {
@@ -368,10 +393,10 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       // Schedule a re-render so placeholder sizes update with new measurements.
       // This is batched by React — multiple measureItem calls in the same
       // layout effect produce a single re-render.
-      setMeasurementVersion((v) => v + 1)
+      scheduleMeasurementUpdate()
       return true
     },
-    [],
+    [scheduleMeasurementUpdate],
   )
 
   const measuredHeights = measuredHeightsRef.current

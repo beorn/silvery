@@ -683,10 +683,12 @@ const EMPTY_MATCH_RANGES: readonly MatchRange[] = Object.freeze([])
 function MeasuredItem({
   itemKey,
   measureItem,
+  measureLayout,
   children,
 }: {
   itemKey: string | number
   measureItem: (key: string | number, height: number, width?: number) => boolean
+  measureLayout: boolean
   children: React.ReactNode
 }): React.ReactElement {
   // Use a ref to always have the latest key/measureItem without re-subscribing.
@@ -711,7 +713,7 @@ function MeasuredItem({
   // The Box inherits the parent's column layout direction and doesn't
   // constrain the child — it simply provides a node for measurement.
   return (
-    <Box flexDirection="column" flexShrink={0} onLayout={handleLayout}>
+    <Box flexDirection="column" flexShrink={0} onLayout={measureLayout ? handleLayout : undefined}>
       {children}
     </Box>
   )
@@ -1437,6 +1439,14 @@ function ListViewInner<T>(
   const virtualizerViewportHeight = isHeightIndependent
     ? syntheticViewportHeight
     : (height as number)
+  const wheelDrivenMeasuredHeightSnapshotActive =
+    isWheelDrivenRef.current && !followActiveRef.current && !pendingFollowSnapRef.current
+  const wheelScrollStabilizing =
+    wheelGestureActiveRef.current ||
+    (wheelDrivenMeasuredHeightSnapshotActive &&
+      scrollRow !== null &&
+      activeScrollDirectionRef.current !== null)
+  const measureRenderedItems = !(isHeightIndependent && wheelScrollStabilizing)
 
   const {
     range,
@@ -1467,6 +1477,7 @@ function ListViewInner<T>(
     // width so heights captured at width=80 don't leak into a width=40
     // re-render (wrapped content's height is width-dependent).
     viewportWidth: viewportSize?.w,
+    deferMeasurementUpdates: !measureRenderedItems,
   })
 
   // ── HeightModel — canonical height-math source ────────────────────
@@ -1510,13 +1521,6 @@ function ListViewInner<T>(
   // the original estimate.
   const liveAvgMeasuredHeight = averageMeasuredHeightForWidth(measuredHeights, viewportSize?.w)
   liveAvgMeasuredHeightRef.current = liveAvgMeasuredHeight
-  const wheelDrivenMeasuredHeightSnapshotActive =
-    isWheelDrivenRef.current && !followActiveRef.current && !pendingFollowSnapRef.current
-  const wheelScrollStabilizing =
-    wheelGestureActiveRef.current ||
-    (wheelDrivenMeasuredHeightSnapshotActive &&
-      scrollRow !== null &&
-      activeScrollDirectionRef.current !== null)
   const avgMeasuredHeight = resolveActiveScrollMeasuredHeightFallback({
     wheelGestureActive: wheelScrollStabilizing,
     wheelDriven: wheelDrivenMeasuredHeightSnapshotActive,
@@ -3199,7 +3203,11 @@ function ListViewInner<T>(
 
           return (
             <React.Fragment key={key}>
-              <MeasuredItem itemKey={measureKey} measureItem={measureItem}>
+              <MeasuredItem
+                itemKey={measureKey}
+                measureItem={measureItem}
+                measureLayout={measureRenderedItems}
+              >
                 {itemNode}
               </MeasuredItem>
               {!isLast && renderSeparator && renderSeparator()}
