@@ -234,6 +234,29 @@ describe("Refinement 3: viewport-anchored windowing", () => {
     ).toBe(1271)
   })
 
+  test("tail fill does not shrink at the same scroll row", () => {
+    // Follow-up live silvercode trace 2026-05-17 10:54: after the first
+    // tail-fill patch, the rendered window alternated between `end=1271`
+    // and `end=1241` while `scrollRow=4372` stayed constant. That turns a
+    // blank-gap fix into a visible stop/start oscillation. A window that was
+    // expanded to cover the tail must remain expanded until row-space moves
+    // in the active scroll direction.
+    expect(
+      resolveTrailingSpacerFillEnd({
+        endIndex: 1241,
+        previousEndIndex: 1271,
+        itemCount: 1271,
+        viewportHeight: 118,
+        overscan: 50,
+        trailingSpacerVisible: false,
+        rowSpaceAtEnd: false,
+        activeScrollDirection: "up",
+        renderScrollRow: 4372,
+        previousRenderScrollRow: 4372,
+      }),
+    ).toBe(1271)
+  })
+
   test("cursor stays renderable when far from viewport (defensive constraint)", () => {
     // Cursor at 500, viewport not yet established (first frame). The
     // window falls back to cursor ± overscan. Cursor's neighborhood is

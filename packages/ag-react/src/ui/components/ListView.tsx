@@ -1964,6 +1964,9 @@ function ListViewInner<T>(
       overscan,
       trailingSpacerVisible: trailingSpacerVisibleBeforeRowEnd,
       rowSpaceAtEnd: !rowSpaceIsBeforeEnd(renderScrollRow, scrollableRows),
+      activeScrollDirection: activeScrollDirectionRef.current,
+      renderScrollRow,
+      previousRenderScrollRow,
     })
     if (filledEnd !== indexWindowEnd) {
       indexWindowEnd = filledEnd

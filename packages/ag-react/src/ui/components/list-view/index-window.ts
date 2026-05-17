@@ -58,6 +58,9 @@ export interface ResolveTrailingSpacerFillEndInput {
   overscan: number
   trailingSpacerVisible: boolean
   rowSpaceAtEnd: boolean
+  activeScrollDirection?: "up" | "down" | null
+  renderScrollRow?: number | null
+  previousRenderScrollRow?: number | null
 }
 
 /**
@@ -78,14 +81,52 @@ export function resolveTrailingSpacerFillEnd({
   overscan,
   trailingSpacerVisible,
   rowSpaceAtEnd,
+  activeScrollDirection,
+  renderScrollRow,
+  previousRenderScrollRow,
 }: ResolveTrailingSpacerFillEndInput): number {
-  if (!trailingSpacerVisible || rowSpaceAtEnd || itemCount <= 0) {
-    return Math.max(0, Math.min(endIndex, itemCount))
+  const clampedEnd = Math.max(0, Math.min(endIndex, itemCount))
+  if (rowSpaceAtEnd || itemCount <= 0) {
+    return clampedEnd
   }
-  const baseEnd = Math.max(endIndex, previousEndIndex)
+
+  const previousEnd = Math.max(0, Math.min(previousEndIndex, itemCount))
+  if (
+    previousEnd > clampedEnd &&
+    !rowMovedInActiveDirection({
+      activeScrollDirection,
+      renderScrollRow,
+      previousRenderScrollRow,
+    })
+  ) {
+    return previousEnd
+  }
+
+  if (!trailingSpacerVisible) {
+    return clampedEnd
+  }
+  const baseEnd = Math.max(clampedEnd, previousEnd)
   if (baseEnd >= itemCount) return itemCount
   const fillItems = Math.max(1, Math.ceil(viewportHeight), Math.ceil(overscan))
-  return Math.max(endIndex, Math.min(itemCount, baseEnd + fillItems))
+  return Math.max(clampedEnd, Math.min(itemCount, baseEnd + fillItems))
+}
+
+function rowMovedInActiveDirection({
+  activeScrollDirection,
+  renderScrollRow,
+  previousRenderScrollRow,
+}: {
+  activeScrollDirection?: "up" | "down" | null
+  renderScrollRow?: number | null
+  previousRenderScrollRow?: number | null
+}): boolean {
+  if (activeScrollDirection === undefined || activeScrollDirection === null) return true
+  if (renderScrollRow == null || previousRenderScrollRow == null) return true
+  const toleranceRows = 0.01
+  if (activeScrollDirection === "up") {
+    return renderScrollRow < previousRenderScrollRow - toleranceRows
+  }
+  return renderScrollRow > previousRenderScrollRow + toleranceRows
 }
 
 /**
