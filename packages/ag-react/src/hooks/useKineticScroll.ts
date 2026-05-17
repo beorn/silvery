@@ -23,6 +23,10 @@
  *
  * - Each wheel event: apply immediate `wheelMultiplier` rows of displacement;
  *   push applied displacement into a rolling buffer of the last ~150ms.
+ *   Continuous trackpad streams can use `continuousWheelMultiplier` as a
+ *   separate row scale when terminal wheel reports are row-quantized too
+ *   coarsely. Every packet still contributes immediately; this is not a
+ *   frame budget or delayed drain.
  * - No per-event inverse-dt acceleration — event frequency itself encodes
  *   speed (fast trackpad = many events = fast scroll naturally).
  * - Direction-confirmation filter (`WheelGestureFilter`) drops a single
@@ -150,6 +154,19 @@ export interface UseKineticScrollOptions {
    */
   wheelMultiplier?: number
   /**
+   * Per-packet row scale for cadence-classified continuous input
+   * (trackpads). Defaults to `wheelMultiplier`.
+   *
+   * Terminal SGR wheel reports only carry direction, not pixel deltas.
+   * Some terminals emit many reports for one physical trackpad gesture; on
+   * row-based surfaces, treating each report as a whole row makes a single
+   * render frame jump dozens of rows. This option keeps the full packet
+   * signal but maps each continuous packet to a smaller row quantum.
+   * Discrete mouse-wheel clicks continue to use `wheelMultiplier` plus the
+   * discrete-step multiplier.
+   */
+  continuousWheelMultiplier?: number
+  /**
    * When true, a new same-direction wheel flick that interrupts an in-flight
    * momentum coast adds the residual instantaneous velocity to the next
    * momentum phase. Pure additive carryover — no multiplier — capped by
@@ -273,6 +290,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
     maxVelocity = DEFAULT_KINETIC_MAX_VELOCITY,
     maxCoastRows = DEFAULT_KINETIC_MAX_COAST_ROWS,
     wheelMultiplier = 1.0,
+    continuousWheelMultiplier = wheelMultiplier,
     enableSameDirCompounding = false,
     enableMomentum = true,
     enableElasticEdges = false,
@@ -615,9 +633,10 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
       const samples = wheelGestureFilterRef.current.process({ t: now, deltaY })
       if (samples.length === 0) return
       const isDiscrete = enableInputCadenceDetection && cadenceModeRef.current === "discrete"
+      const isContinuous = enableInputCadenceDetection && cadenceModeRef.current === "continuous"
       const stepRows = isDiscrete
         ? WHEEL_STEP_ROWS * wheelMultiplier * DISCRETE_STEP_MULTIPLIER
-        : WHEEL_STEP_ROWS * wheelMultiplier
+        : WHEEL_STEP_ROWS * (isContinuous ? continuousWheelMultiplier : wheelMultiplier)
 
       // Capture the residual velocity from any in-flight momentum BEFORE we
       // stop it. Same direction → carryover (additive). Opposite → zero.
@@ -678,6 +697,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
       scheduleRelease,
       scheduleScrollbarHide,
       stopKinetic,
+      continuousWheelMultiplier,
       wheelMultiplier,
     ],
   )
@@ -760,13 +780,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
       }
       startAnimationLoop()
     },
-    [
-      clearReleaseTimer,
-      readMaxScroll,
-      startAnimationLoop,
-      stopKinetic,
-      updatePosition,
-    ],
+    [clearReleaseTimer, readMaxScroll, startAnimationLoop, stopKinetic, updatePosition],
   )
 
   const getScrollFloat = useCallback(() => scrollFloatRef.current, [])

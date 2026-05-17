@@ -288,9 +288,11 @@ function makeIdleHandoffRows(count: number): RowItem[] {
 function FlickList({
   items,
   listRef,
+  continuousWheelMultiplier,
 }: {
   items: readonly RowItem[]
   listRef: React.RefObject<ListViewHandle | null>
+  continuousWheelMultiplier?: number
 }): React.ReactElement {
   return (
     <Box flexDirection="column" flexGrow={1} minHeight={0}>
@@ -302,6 +304,7 @@ function FlickList({
         follow="end"
         virtualization="index"
         enableInputCadenceDetection
+        continuousWheelMultiplier={continuousWheelMultiplier}
         viewportBottomInset={5}
         scrollbarVisibility="always"
         renderItem={(item) => (
@@ -378,6 +381,17 @@ function longestUnchangedOldestRun(samples: readonly { oldest: number | null }[]
     previous = sample.oldest
   }
   return longest
+}
+
+function largestOldestStep(samples: readonly { oldest: number | null }[]): number {
+  let largest = 0
+  let previous: number | null = null
+  for (const sample of samples) {
+    if (sample.oldest === null) continue
+    if (previous !== null) largest = Math.max(largest, Math.abs(sample.oldest - previous))
+    previous = sample.oldest
+  }
+  return largest
 }
 
 function layoutInvalidateEdgeCount(edge: string): number {
@@ -712,6 +726,69 @@ describe("ListView trackpad flick replay through termless", () => {
         longestUnchangedOldestRun(samples),
         samples.map((sample) => `${sample.label}@${sample.eventCount}:${sample.oldest}`).join(", "),
       ).toBeLessThanOrEqual(5)
+    } finally {
+      handle.unmount()
+    }
+  }, 20_000)
+
+  test("calibrates continuous trackpad packets so captured flicks do not jump whole screens", async () => {
+    using term = createTermless({ cols: 302, rows: 117 })
+    const listRef = React.createRef<ListViewHandle>()
+    const items = makeUniformRows(1271)
+    const handle: RunHandle = await run(
+      <FlickList items={items} listRef={listRef} continuousWheelMultiplier={0.2} />,
+      term,
+      {
+        mouse: true,
+      },
+    )
+    try {
+      await settle(120)
+      act(() => {
+        listRef.current?.scrollToBottom()
+      })
+      await settle(120)
+
+      const samples: { label: string; oldest: number | null; eventCount: number }[] = [
+        { label: "initial", oldest: oldestVisibleLine(term.screen.getText()), eventCount: 0 },
+      ]
+      const result = await term.mouse.trackpadFlick(USER_LOG_20260517_SLIP_UP_FLICK_PACKETS, {
+        afterGroup(group) {
+          samples.push({
+            label: `packet-${group.atMs}`,
+            oldest: oldestVisibleLine(term.screen.getText()),
+            eventCount: group.eventCount,
+          })
+        },
+      })
+      await settle(300)
+      samples.push({
+        label: "settled",
+        oldest: oldestVisibleLine(term.screen.getText()),
+        eventCount: result.eventCount,
+      })
+
+      const initial = samples[0]?.oldest
+      const settled = samples.at(-1)?.oldest
+      expect(result.eventCount).toBe(203)
+      expect(initial).not.toBeNull()
+      expect(settled).not.toBeNull()
+      expect(
+        initial! - settled!,
+        samples.map((sample) => `${sample.label}@${sample.eventCount}:${sample.oldest}`).join(", "),
+      ).toBeGreaterThanOrEqual(30)
+      expect(
+        initial! - settled!,
+        samples.map((sample) => `${sample.label}@${sample.eventCount}:${sample.oldest}`).join(", "),
+      ).toBeLessThanOrEqual(70)
+      expect(
+        largestOldestStep(samples),
+        samples.map((sample) => `${sample.label}@${sample.eventCount}:${sample.oldest}`).join(", "),
+      ).toBeLessThanOrEqual(15)
+      expect(
+        upwardReversals(samples),
+        samples.map((sample) => `${sample.label}@${sample.eventCount}:${sample.oldest}`).join(", "),
+      ).toEqual([])
     } finally {
       handle.unmount()
     }

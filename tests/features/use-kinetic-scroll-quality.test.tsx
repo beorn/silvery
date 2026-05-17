@@ -242,6 +242,36 @@ describe("useKineticScroll — input cadence detection", () => {
     )
   })
 
+  test("continuous cadence can use a fractional per-packet row scale without buffering", async () => {
+    const apiRef: HarnessRef = { current: null }
+    const r = createRenderer({ cols: 30, rows: 8 })
+    r(
+      <TestHarness
+        apiRef={apiRef}
+        options={{
+          maxScroll: 1000,
+          enableInputCadenceDetection: true,
+          enableMomentum: false,
+          continuousWheelMultiplier: 0.2,
+        }}
+      />,
+    )
+    await settle()
+
+    for (let i = 0; i < 16; i++) {
+      apiRef.current!.onWheel({ deltaY: 1 })
+    }
+
+    await settle(5)
+    expect(
+      apiRef.current!.getScrollFloat(),
+      "every packet contributes immediately, but continuous SGR packets are sub-row quanta",
+    ).toBeCloseTo(4, 5)
+
+    await settle(90)
+    expect(apiRef.current!.scrollFloat, "no delayed drain or catch-up tail").toBeCloseTo(4, 5)
+  })
+
   test("continuous cadence keeps inertial tail from becoming discrete jumps", async () => {
     const apiRef: HarnessRef = { current: null }
     const r = createRenderer({ cols: 30, rows: 8 })
@@ -303,7 +333,9 @@ describe("useKineticScroll — input cadence detection", () => {
     expect(settled, "no delayed drain after the burst").toBe(16)
 
     await settle(90)
-    expect(apiRef.current!.scrollFloat, "no extra synthetic tail after the OS packet stream").toBe(settled)
+    expect(apiRef.current!.scrollFloat, "no extra synthetic tail after the OS packet stream").toBe(
+      settled,
+    )
   })
 
   test("smoothWheelPackets ignores legacy frame-budget options", async () => {

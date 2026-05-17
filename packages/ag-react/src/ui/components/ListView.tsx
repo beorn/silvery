@@ -541,6 +541,17 @@ export interface ListViewProps<T> {
   wheelMultiplier?: number
 
   /**
+   * Row scale for cadence-classified continuous wheel streams (trackpads).
+   * Defaults to `wheelMultiplier`.
+   *
+   * Terminal SGR wheel packets carry direction only. For trackpad streams
+   * that emit many packets for a single physical flick, this maps each
+   * packet to a smaller row quantum without dropping or delaying packets.
+   * Discrete mouse wheels still use `wheelMultiplier`.
+   */
+  continuousWheelMultiplier?: number
+
+  /**
    * How imperative scrolls (scrollToItem / scrollBy / scrollToTop /
    * scrollToBottom on the ref handle) move the viewport. Default
    * `"instant"` — backward-compatible jump. `"smooth"` runs a cubic
@@ -748,6 +759,7 @@ function ListViewInner<T>(
     virtualizationThreshold = DEFAULT_VIRTUALIZATION_THRESHOLD,
     maxEstimatedRows = DEFAULT_MAX_ESTIMATED_ROWS,
     wheelMultiplier = 1.0,
+    continuousWheelMultiplier,
     scrollBehavior = "instant",
     enableElasticEdges = false,
     enableInputCadenceDetection = false,
@@ -780,6 +792,7 @@ function ListViewInner<T>(
   const resolvedVirtualization: VirtualizationStrategy =
     virtualizationProp ??
     (items.length <= virtualizationThreshold ? "none" : isHeightIndependent ? "index" : "measured")
+  const resolvedContinuousWheelMultiplier = continuousWheelMultiplier ?? wheelMultiplier
 
   // ── Resolved follow policy ──────────────────────────────────────
   //
@@ -926,6 +939,7 @@ function ListViewInner<T>(
     maxVelocity: 80,
     maxCoastRows: 30,
     wheelMultiplier,
+    continuousWheelMultiplier: resolvedContinuousWheelMultiplier,
     enableSameDirCompounding: true,
     enableMomentum: false,
     enableElasticEdges,
@@ -2885,6 +2899,8 @@ function ListViewInner<T>(
       visibleItems.length,
       resolvedVirtualization,
       resolvedFollow,
+      wheelMultiplier,
+      resolvedContinuousWheelMultiplier,
       outerViewportSize?.h ?? 0,
       viewportSize?.w ?? 0,
       viewportSize?.h ?? 0,
@@ -2946,6 +2962,8 @@ function ListViewInner<T>(
       visibleCount: visibleItems.length,
       virtualization: resolvedVirtualization,
       follow: resolvedFollow,
+      wheelMultiplier,
+      continuousWheelMultiplier: resolvedContinuousWheelMultiplier,
       heightIndependent: isHeightIndependent,
       outerViewport: outerViewportSize,
       viewport: viewportSize,
