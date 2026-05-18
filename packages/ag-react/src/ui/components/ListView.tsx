@@ -1447,14 +1447,19 @@ function ListViewInner<T>(
   const virtualizerViewportHeight = isHeightIndependent
     ? syntheticViewportHeight
     : (height as number)
-  const wheelDrivenMeasuredHeightSnapshotActive =
-    isWheelDrivenRef.current && !followActiveRef.current && !pendingFollowSnapRef.current
-  const wheelScrollStabilizing =
-    wheelGestureActiveRef.current ||
-    (wheelDrivenMeasuredHeightSnapshotActive &&
-      scrollRow !== null &&
-      activeScrollDirectionRef.current !== null)
-  const measureRenderedItems = !(isHeightIndependent && wheelScrollStabilizing)
+  const wheelInputActive = wheelGestureActiveRef.current
+  // "Input active" is the physical packet window. "Viewport owned" lasts
+  // longer: after a flick, the row-space viewport must keep rejecting
+  // measurement corrections that would visibly reverse the scroll.
+  const wheelViewportOwned =
+    isWheelDrivenRef.current &&
+    !followActiveRef.current &&
+    !pendingFollowSnapRef.current &&
+    scrollRow !== null &&
+    activeScrollDirectionRef.current !== null
+  const wheelMeasurementSnapshotActive = wheelInputActive || wheelViewportOwned
+  const wheelDirectionGuardActive = wheelInputActive || wheelViewportOwned
+  const measureRenderedItems = !(isHeightIndependent && wheelMeasurementSnapshotActive)
 
   const {
     range,
@@ -1530,8 +1535,8 @@ function ListViewInner<T>(
   const liveAvgMeasuredHeight = averageMeasuredHeightForWidth(measuredHeights, viewportSize?.w)
   liveAvgMeasuredHeightRef.current = liveAvgMeasuredHeight
   const avgMeasuredHeight = resolveActiveScrollMeasuredHeightFallback({
-    wheelGestureActive: wheelScrollStabilizing,
-    wheelDriven: wheelDrivenMeasuredHeightSnapshotActive,
+    wheelGestureActive: wheelInputActive,
+    wheelDriven: wheelViewportOwned,
     snapshotAvgMeasuredHeight: activeWheelAvgMeasuredHeightRef.current,
     liveAvgMeasuredHeight,
   })
@@ -1571,7 +1576,7 @@ function ListViewInner<T>(
   const viewportWidthForHeightModel = viewportSize?.w ?? null
   const previousHeightModelConfig = heightModelConfigRef.current
   const freezeHeightModelForWheel = shouldFreezeHeightModelForWheel({
-    wheelGestureActive: wheelScrollStabilizing,
+    wheelGestureActive: wheelMeasurementSnapshotActive,
     itemCount: activeItems.length,
     currentItemCount: heightModel.itemCount,
     gap,
@@ -1596,7 +1601,11 @@ function ListViewInner<T>(
   }
 
   const innerScrollState = useScrollState(containerNode ?? null)
-  const totalRowsMeasured = Math.max(1, heightModel.totalRows())
+  const layoutContentRows =
+    innerScrollState !== null && innerScrollState.contentHeight > 0
+      ? innerScrollState.contentHeight
+      : 0
+  const totalRowsMeasured = Math.max(1, heightModel.totalRows(), layoutContentRows)
   const scrollableRows = Math.max(0, Math.round(totalRowsMeasured - contentViewportHeight))
   const virtualizerRowsAboveViewport = heightModel.rowOfIndex(scrollOffset)
   const layoutOwnsRowBaseline =
@@ -1676,10 +1685,10 @@ function ListViewInner<T>(
   const anchoringEnabled = shouldApplyVisibleContentAnchoring({
     maintainVisibleContentPosition,
     followOwnsViewport: followPinnedTopRow !== null,
-    wheelGestureActive: wheelScrollStabilizing,
+    wheelGestureActive: wheelMeasurementSnapshotActive,
   })
   const activeAnchorCorrectionBudgetRows =
-    wheelScrollStabilizing && activeScrollDirectionRef.current !== null
+    wheelDirectionGuardActive && activeScrollDirectionRef.current !== null
       ? resolveActiveAnchorCorrectionBudgetRows(contentViewportHeight)
       : undefined
   const oppositeActiveAnchorCorrectionBudgetRows =
@@ -1696,7 +1705,7 @@ function ListViewInner<T>(
     currentTopRow: baseTopRow,
     viewportHeight: contentViewportHeight,
     followOwnsViewport: false,
-    activeScrollDirection: wheelScrollStabilizing ? activeScrollDirectionRef.current : null,
+    activeScrollDirection: wheelDirectionGuardActive ? activeScrollDirectionRef.current : null,
     maxActiveCorrectionRows: activeAnchorCorrectionBudgetRows,
     maxOppositeActiveCorrectionRows: oppositeActiveAnchorCorrectionBudgetRows,
     modelVersion: heightModelVersion,
@@ -1936,7 +1945,7 @@ function ListViewInner<T>(
 
   if (
     resolvedVirtualization === "index" &&
-    wheelScrollStabilizing &&
+    wheelDirectionGuardActive &&
     activeScrollDirectionRef.current !== null &&
     indexWindowPrevRef.current.endIndex > indexWindowPrevRef.current.startIndex
   ) {
@@ -2056,7 +2065,7 @@ function ListViewInner<T>(
   let indexLeadingSpacerCarryRows = 0
   if (
     usingIndexWindow &&
-    wheelScrollStabilizing &&
+    wheelDirectionGuardActive &&
     activeScrollDirectionRef.current !== null &&
     renderScrollRow !== null &&
     indexWindowPrevRef.current.renderScrollRow !== null
@@ -2971,7 +2980,9 @@ function ListViewInner<T>(
       anchoringEnabled ? 1 : 0,
       wheelGestureActiveRef.current ? 1 : 0,
       freezeHeightModelForWheel ? 1 : 0,
-      wheelScrollStabilizing ? 1 : 0,
+      wheelInputActive ? 1 : 0,
+      wheelMeasurementSnapshotActive ? 1 : 0,
+      wheelDirectionGuardActive ? 1 : 0,
       activeScrollDirectionRef.current ?? "null",
       activeAnchorCorrectionBudgetRows ?? "null",
       oppositeActiveAnchorCorrectionBudgetRows ?? "null",
@@ -3036,7 +3047,9 @@ function ListViewInner<T>(
       anchoringEnabled,
       wheelGestureActive: wheelGestureActiveRef.current,
       heightModelFrozenForWheel: freezeHeightModelForWheel,
-      wheelScrollStabilizing,
+      wheelInputActive,
+      wheelMeasurementSnapshotActive,
+      wheelDirectionGuardActive,
       activeScrollDirection: activeScrollDirectionRef.current,
       activeAnchorCorrectionBudgetRows,
       oppositeActiveAnchorCorrectionBudgetRows,
@@ -3124,7 +3137,9 @@ function ListViewInner<T>(
     trackHeight,
     trailingSpacerVisibleBeforeRowEnd,
     viewportSize,
-    wheelScrollStabilizing,
+    wheelInputActive,
+    wheelMeasurementSnapshotActive,
+    wheelDirectionGuardActive,
     visibleItems.length,
     virtualizerRowsAboveViewport,
     width,
