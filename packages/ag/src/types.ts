@@ -184,10 +184,9 @@ export type AnchorEdge = "top" | "bottom" | "left" | "right"
  * axis (start, center, end). Mirrors Floating UI / Popper.js's vocabulary so
  * apps moving between targets can carry placement intent verbatim.
  *
- * v1 is **fixed-placement only** — the placement string maps deterministically
- * to a rect via `placeFloating`. Collision-aware auto-flip + auto-shift are
- * out of scope (v2). Apps that need flip behavior should detect overflow
- * themselves and pick a different placement.
+ * The placement string maps deterministically to a rect via `placeFloating`.
+ * Collision-aware auto-flip + auto-shift are layered on top by
+ * `resolveFloatingPlacement` and opt in via `Decoration.collisionStrategy`.
  */
 export type Placement =
   | "top-start"
@@ -202,6 +201,18 @@ export type Placement =
   | "right-start"
   | "right-center"
   | "right-end"
+
+/**
+ * Collision policy for floating overlays. Mirrors the common Floating UI /
+ * Popper progression while staying terminal-cell deterministic:
+ *
+ * - `"none"`: preserve the requested placement even if it overflows.
+ * - `"flip"`: try the opposite side when the requested side overflows.
+ * - `"shift"`: keep the requested side, but clamp the rect inside the boundary.
+ * - `"flip-then-shift"`: flip if that improves the side-axis overflow, then clamp.
+ * - `"hide"`: emit no rect when the requested placement cannot fit.
+ */
+export type CollisionStrategy = "none" | "flip" | "shift" | "flip-then-shift" | "hide"
 
 /**
  * Declarative overlay attached to a Box. The substrate v1 shipped here covers
@@ -230,7 +241,6 @@ export type Placement =
  *
  * **Out of scope for v1** (deferred to v2):
  *   - Generic `kind: "custom"` extension hook
- *   - Auto-flip / collision-aware placement
  *   - Z-index / paint-order overrides (paint order is fixed: caret > focus >
  *     selection > decorations > anchors)
  *
@@ -245,8 +255,12 @@ export type Decoration =
       placement?: Placement
       /** Intrinsic size for the floating rect (cells). Required for placement math. */
       size?: { width: number; height: number }
-      /** Optional perpendicular offset from the anchor edge (cells). */
+      /** Optional gap along the placement axis (cells). */
       offset?: number
+      /** Optional offset along the alignment axis (cells). */
+      alignOffset?: number
+      /** Optional viewport collision policy. Default: "none". */
+      collisionStrategy?: CollisionStrategy
       /** Renderer-owned content. The substrate doesn't inspect this. */
       content?: unknown
     }
@@ -257,6 +271,8 @@ export type Decoration =
       placement?: Placement
       size?: { width: number; height: number }
       offset?: number
+      alignOffset?: number
+      collisionStrategy?: CollisionStrategy
       content?: unknown
     }
   | {
@@ -773,8 +789,8 @@ export interface BoxProps
    * **Anchor lookup**: popover/tooltip kinds reference an `anchorId`; the
    * substrate calls `findAnchor(root, id)` at layout time. If the anchor
    * isn't found this frame, the decoration emits an empty rect list (the
-   * renderer skips it). This is the v1 fixed-placement contract — collision
-   * detection and auto-flip are deferred to v2.
+   * renderer skips it). By default placement is fixed; opt into viewport
+   * collision handling with `collisionStrategy`.
    *
    * **Stable identity**: pass a memoized array if React's referential equality
    * matters for downstream consumers; the substrate itself recomputes

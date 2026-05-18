@@ -153,6 +153,88 @@ describe("invariant 1: decoration entries produce expected rects", () => {
     //   y = anchor.y - target.height = 1 - 2 = -1
     expect(all[0]!.rects[0]).toEqual({ x: 5, y: -1, width: 6, height: 2 })
   })
+
+  test("popover applies offset and alignOffset during layout", () => {
+    const render = createRenderer({ cols: 60, rows: 20 })
+    const decorations: Decoration[] = [
+      {
+        kind: "popover",
+        id: "offset",
+        anchorId: "btn",
+        placement: "bottom-start",
+        size: { width: 6, height: 2 },
+        offset: 2,
+        alignOffset: 3,
+      },
+    ]
+    const app = render(
+      <Box padding={1}>
+        <Box anchorRef="btn" width={10} height={3}>
+          <Text>btn</Text>
+        </Box>
+        <Box decorations={decorations}>
+          <Text>host</Text>
+        </Box>
+      </Box>,
+    )
+    const all = findActiveDecorationRects(getRoot(app))
+    // Anchor (1, 1, 10, 3); bottom-start base is (1, 4).
+    // offset=2 moves down to y=6; alignOffset=3 moves right to x=4.
+    expect(all[0]!.rects[0]).toEqual({ x: 4, y: 6, width: 6, height: 2 })
+  })
+
+  test("popover collisionStrategy=flip-then-shift stays inside root viewport", () => {
+    const render = createRenderer({ cols: 20, rows: 10 })
+    const decorations: Decoration[] = [
+      {
+        kind: "popover",
+        id: "collision",
+        anchorId: "edge",
+        placement: "bottom-end",
+        size: { width: 8, height: 3 },
+        alignOffset: 6,
+        collisionStrategy: "flip-then-shift",
+      },
+    ]
+    const app = render(
+      <Box width={20} height={10}>
+        <Box marginTop={8} marginLeft={14} anchorRef="edge" width={4} height={1}>
+          <Text>btn</Text>
+        </Box>
+        <Box decorations={decorations}>
+          <Text>host</Text>
+        </Box>
+      </Box>,
+    )
+    const all = findActiveDecorationRects(getRoot(app))
+    expect(all[0]!.rects[0]).toEqual({ x: 12, y: 5, width: 8, height: 3 })
+  })
+
+  test("popover collisionStrategy=hide emits an empty rect list when overflowing", () => {
+    const render = createRenderer({ cols: 20, rows: 10 })
+    const decorations: Decoration[] = [
+      {
+        kind: "popover",
+        id: "hidden",
+        anchorId: "edge",
+        placement: "bottom-start",
+        size: { width: 8, height: 3 },
+        collisionStrategy: "hide",
+      },
+    ]
+    const app = render(
+      <Box width={20} height={10}>
+        <Box marginTop={8} marginLeft={1} anchorRef="edge" width={4} height={1}>
+          <Text>btn</Text>
+        </Box>
+        <Box decorations={decorations}>
+          <Text>host</Text>
+        </Box>
+      </Box>,
+    )
+    const all = findActiveDecorationRects(getRoot(app))
+    expect(all[0]!.rects).toHaveLength(0)
+  })
 })
 
 // ============================================================================

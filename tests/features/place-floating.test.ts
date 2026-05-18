@@ -11,7 +11,7 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { placeFloating } from "@silvery/ag/place-floating"
+import { placeFloating, resolveFloatingPlacement } from "@silvery/ag/place-floating"
 import type { Rect } from "@silvery/ag/types"
 
 // Anchor: a 10x4 rect at (20, 10). Choosing odd dimensions vs target width
@@ -199,5 +199,103 @@ describe("placeFloating: properties", () => {
     const a = placeFloating(ANCHOR, TARGET, "bottom-center")
     const b = placeFloating(ANCHOR, TARGET, "bottom-center")
     expect(a).toEqual(b)
+  })
+})
+
+// ============================================================================
+// Offsets + collision handling
+// ============================================================================
+
+describe("placeFloating: offsets", () => {
+  test("offset adds a gap along the placement axis", () => {
+    expectRect(placeFloating(ANCHOR, TARGET, "bottom-start", { offset: 2 }), {
+      x: 20,
+      y: 16,
+      width: 6,
+      height: 2,
+    })
+    expectRect(placeFloating(ANCHOR, TARGET, "left-start", { offset: 3 }), {
+      x: 11,
+      y: 10,
+      width: 6,
+      height: 2,
+    })
+  })
+
+  test("alignOffset nudges along the alignment axis", () => {
+    expectRect(placeFloating(ANCHOR, TARGET, "top-center", { alignOffset: -2 }), {
+      x: 20,
+      y: 8,
+      width: 6,
+      height: 2,
+    })
+    expectRect(placeFloating(ANCHOR, TARGET, "right-center", { alignOffset: 3 }), {
+      x: 30,
+      y: 14,
+      width: 6,
+      height: 2,
+    })
+  })
+})
+
+describe("resolveFloatingPlacement: collision strategies", () => {
+  const boundary: Rect = { x: 0, y: 0, width: 30, height: 15 }
+
+  test("none preserves overflowing requested placement", () => {
+    const result = resolveFloatingPlacement(ANCHOR, TARGET, "bottom-start", {
+      boundary,
+      collisionStrategy: "none",
+    })
+    expect(result).not.toBeNull()
+    expect(result!.rect).toEqual({ x: 20, y: 14, width: 6, height: 2 })
+    expect(result!.placement).toBe("bottom-start")
+    expect(result!.flipped).toBe(false)
+    expect(result!.shifted).toBe(false)
+  })
+
+  test("flip uses the opposite side when it reduces side overflow", () => {
+    const result = resolveFloatingPlacement(ANCHOR, TARGET, "bottom-start", {
+      boundary,
+      collisionStrategy: "flip",
+    })
+    expect(result).not.toBeNull()
+    expect(result!.rect).toEqual({ x: 20, y: 8, width: 6, height: 2 })
+    expect(result!.placement).toBe("top-start")
+    expect(result!.flipped).toBe(true)
+    expect(result!.shifted).toBe(false)
+  })
+
+  test("shift clamps the requested rect inside the boundary", () => {
+    const result = resolveFloatingPlacement(ANCHOR, TARGET, "bottom-end", {
+      boundary,
+      collisionStrategy: "shift",
+      alignOffset: 10,
+    })
+    expect(result).not.toBeNull()
+    expect(result!.rect).toEqual({ x: 24, y: 13, width: 6, height: 2 })
+    expect(result!.placement).toBe("bottom-end")
+    expect(result!.flipped).toBe(false)
+    expect(result!.shifted).toBe(true)
+  })
+
+  test("flip-then-shift flips first, then clamps cross-axis overflow", () => {
+    const result = resolveFloatingPlacement(ANCHOR, TARGET, "bottom-end", {
+      boundary,
+      collisionStrategy: "flip-then-shift",
+      alignOffset: 10,
+    })
+    expect(result).not.toBeNull()
+    expect(result!.rect).toEqual({ x: 24, y: 8, width: 6, height: 2 })
+    expect(result!.placement).toBe("top-end")
+    expect(result!.flipped).toBe(true)
+    expect(result!.shifted).toBe(true)
+  })
+
+  test("hide returns null when the requested rect overflows", () => {
+    const result = resolveFloatingPlacement(ANCHOR, TARGET, "bottom-start", {
+      boundary,
+      collisionStrategy: "hide",
+    })
+    expect(result).toBeNull()
   })
 })

@@ -44,7 +44,7 @@ import type {
 } from "./types"
 import { rectEqual } from "./types"
 import { getWrapMeasurer, type WrapSlice } from "./wrap-measurer"
-import { placeFloating } from "./place-floating"
+import { resolveFloatingPlacement } from "./place-floating"
 
 // ============================================================================
 // Types
@@ -661,8 +661,13 @@ export function computeDecorationRects(node: AgNode, root: AgNode): readonly Dec
         out.push({ kind: d.kind, id: d.id, rects: [] })
         continue
       }
-      const placed = placeFloating(anchor, d.size, d.placement)
-      out.push({ kind: d.kind, id: d.id, rects: [placed] })
+      const placed = resolveFloatingPlacement(anchor, d.size, d.placement, {
+        offset: d.offset,
+        alignOffset: d.alignOffset,
+        collisionStrategy: d.collisionStrategy,
+        boundary: root.boxRect,
+      })
+      out.push({ kind: d.kind, id: d.id, rects: placed ? [placed.rect] : [] })
     } else if (d.kind === "highlight") {
       if (!d.rect || !content) {
         out.push({ kind: d.kind, id: d.id, rects: [] })

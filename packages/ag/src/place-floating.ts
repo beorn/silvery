@@ -9,14 +9,12 @@
  * no canvas, no terminal — just rects → rect. Mirrors Floating UI / Popper.js
  * vocabulary so apps moving between targets carry placement intent verbatim.
  *
- * v1 is **fixed-placement only**:
+ * `placeFloating` is **fixed-placement only**:
  *   - The result is deterministic given (anchor, size, placement).
  *   - No collision detection, no auto-flip, no auto-shift. Apps that need flip
- *     behavior should detect overflow themselves and pick a different
- *     placement.
- *   - No `offset` is applied to the cardinal-edge axis here; callers can
- *     thread `Decoration.offset` through and add it post-hoc if they want a
- *     gap between anchor and target.
+ *     behavior use `resolveFloatingPlacement`.
+ *   - `offset` and `alignOffset` are simple deterministic nudges, not collision
+ *     handling.
  *
  * **Placement vocabulary**:
  *
@@ -49,7 +47,94 @@
  *                        center centers along the Y axis.
  */
 
-import type { Placement, Rect } from "./types"
+import type { CollisionStrategy, Placement, Rect } from "./types"
+
+export interface FloatingPlacementOptions {
+  /** Gap along the placement axis, in cells. Default: 0. */
+  offset?: number
+  /** Nudge along the alignment axis, in cells. Default: 0. */
+  alignOffset?: number
+}
+
+export interface FloatingCollisionOptions extends FloatingPlacementOptions {
+  /** Boundary rect used for collision handling. Usually the viewport/root rect. */
+  boundary?: Rect | null
+  /** Collision policy. Default: "none". */
+  collisionStrategy?: CollisionStrategy
+}
+
+export interface FloatingPlacementResult {
+  /** Final rect. Width/height always equal the requested target size. */
+  rect: Rect
+  /** Final placement after any flip. */
+  placement: Placement
+  /** True when collision handling used the opposite side. */
+  flipped: boolean
+  /** True when collision handling clamped the rect inside the boundary. */
+  shifted: boolean
+}
+
+type Side = "top" | "bottom" | "left" | "right"
+type Align = "start" | "center" | "end"
+
+function splitPlacement(placement: Placement): { side: Side; align: Align } {
+  const dashIdx = placement.indexOf("-")
+  return {
+    side: placement.slice(0, dashIdx) as Side,
+    align: placement.slice(dashIdx + 1) as Align,
+  }
+}
+
+function oppositePlacement(placement: Placement): Placement {
+  const { side, align } = splitPlacement(placement)
+  const opposite: Record<Side, Side> = {
+    top: "bottom",
+    bottom: "top",
+    left: "right",
+    right: "left",
+  }
+  return `${opposite[side]}-${align}` as Placement
+}
+
+function rectFitsWithin(rect: Rect, boundary: Rect): boolean {
+  return (
+    rect.x >= boundary.x &&
+    rect.y >= boundary.y &&
+    rect.x + rect.width <= boundary.x + boundary.width &&
+    rect.y + rect.height <= boundary.y + boundary.height
+  )
+}
+
+function clampAxis(value: number, min: number, max: number): number {
+  if (max < min) return min
+  return Math.min(max, Math.max(min, value))
+}
+
+function shiftIntoBoundary(rect: Rect, boundary: Rect): Rect {
+  return {
+    x: clampAxis(rect.x, boundary.x, boundary.x + boundary.width - rect.width),
+    y: clampAxis(rect.y, boundary.y, boundary.y + boundary.height - rect.height),
+    width: rect.width,
+    height: rect.height,
+  }
+}
+
+function rectEqual(a: Rect, b: Rect): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+}
+
+function sideOverflow(rect: Rect, boundary: Rect, side: Side): number {
+  switch (side) {
+    case "top":
+      return Math.max(0, boundary.y - rect.y)
+    case "bottom":
+      return Math.max(0, rect.y + rect.height - (boundary.y + boundary.height))
+    case "left":
+      return Math.max(0, boundary.x - rect.x)
+    case "right":
+      return Math.max(0, rect.x + rect.width - (boundary.x + boundary.width))
+  }
+}
 
 /**
  * Compute the absolute rect at which a floating decoration should be painted
@@ -75,6 +160,7 @@ export function placeFloating(
   anchor: Rect,
   target: { width: number; height: number },
   placement: Placement,
+  options: FloatingPlacementOptions = {},
 ): Rect {
   const { x: ax, y: ay, width: aw, height: ah } = anchor
   const tw = target.width
@@ -82,9 +168,7 @@ export function placeFloating(
 
   // Decompose the placement into side + alignment. The 12 placements split
   // into 4 sides × 3 alignments; we resolve each axis independently.
-  const dashIdx = placement.indexOf("-")
-  const side = placement.slice(0, dashIdx) as "top" | "bottom" | "left" | "right"
-  const align = placement.slice(dashIdx + 1) as "start" | "center" | "end"
+  const { side, align } = splitPlacement(placement)
 
   let x = 0
   let y = 0
@@ -106,5 +190,71 @@ export function placeFloating(
     else y = ay + Math.round((ah - th) / 2)
   }
 
+  const offset = options.offset ?? 0
+  const alignOffset = options.alignOffset ?? 0
+  if (side === "top") y -= offset
+  else if (side === "bottom") y += offset
+  else if (side === "left") x -= offset
+  else x += offset
+
+  if (side === "top" || side === "bottom") x += alignOffset
+  else y += alignOffset
+
   return { x, y, width: tw, height: th }
+}
+
+/**
+ * Resolve a floating rect with optional viewport collision handling.
+ *
+ * This is the collision-aware peer of `placeFloating`. The fixed-placement
+ * helper remains intentionally simple and deterministic; this function adds
+ * the behavior needed by declarative popovers/tooltips: gap offsets, alignment
+ * nudges, side flipping, viewport shifting, and hide-on-overflow.
+ */
+export function resolveFloatingPlacement(
+  anchor: Rect,
+  target: { width: number; height: number },
+  placement: Placement,
+  options: FloatingCollisionOptions = {},
+): FloatingPlacementResult | null {
+  const boundary = options.boundary ?? null
+  const strategy = options.collisionStrategy ?? "none"
+  const requested = placeFloating(anchor, target, placement, options)
+  if (!boundary || strategy === "none") {
+    return { rect: requested, placement, flipped: false, shifted: false }
+  }
+  if (strategy === "hide") {
+    return rectFitsWithin(requested, boundary)
+      ? { rect: requested, placement, flipped: false, shifted: false }
+      : null
+  }
+
+  let finalPlacement = placement
+  let rect = requested
+  let flipped = false
+
+  if (strategy === "flip" || strategy === "flip-then-shift") {
+    const side = splitPlacement(placement).side
+    const requestedSideOverflow = sideOverflow(requested, boundary, side)
+    if (requestedSideOverflow > 0) {
+      const candidatePlacement = oppositePlacement(placement)
+      const candidate = placeFloating(anchor, target, candidatePlacement, options)
+      const candidateSide = splitPlacement(candidatePlacement).side
+      const candidateSideOverflow = sideOverflow(candidate, boundary, candidateSide)
+      if (candidateSideOverflow < requestedSideOverflow) {
+        finalPlacement = candidatePlacement
+        rect = candidate
+        flipped = true
+      }
+    }
+  }
+
+  let shifted = false
+  if (strategy === "shift" || strategy === "flip-then-shift") {
+    const shiftedRect = shiftIntoBoundary(rect, boundary)
+    shifted = !rectEqual(shiftedRect, rect)
+    rect = shiftedRect
+  }
+
+  return { rect, placement: finalPlacement, flipped, shifted }
 }

@@ -32,7 +32,7 @@ The rule for component authors:
 
 ## What this means for component authors
 
-Six layout outputs are exposed as **declarative props on Box** (or as
+Eight layout outputs are exposed as **declarative props on Box** (or as
 signals consumed by the scheduler/renderer). Component authors set them;
 the layout engine resolves them; the scheduler/renderer consumes them:
 
@@ -44,9 +44,40 @@ the layout engine resolves them; the scheduler/renderer consumes them:
 | `cursorRect`         | `<Box cursorOffset={{ col, row, visible }}>` | output phase (DECSCUSR + cursor positioning)       |
 | `focusedNodeId`      | `<Box focused={true}>`                       | input dispatch, focus-aware overlays               |
 | `selectionFragments` | `<Box selectionIntent={...}>`                | render phase (selection paint walk)                |
+| `anchorRect`         | `<Box anchorRef="trigger">`                  | anchored overlays, tooltips, menus                 |
+| `decorationRects`    | `<Box decorations={[...]}>`                  | overlay layer, cross-target decoration renderers   |
 
 You don't read these in render. You declare them, and the layout engine
 makes them available post-layout to the consumers that need them.
+
+For anchored overlays, declare a stable anchor id on the trigger and a
+decoration on the owner that needs the geometry:
+
+```tsx
+<Box anchorRef="session-menu">
+  <Text>Sessions</Text>
+</Box>
+<Box
+  decorations={[
+    {
+      kind: "popover",
+      id: "session-menu-popover",
+      anchorId: "session-menu",
+      placement: "bottom-start",
+      size: { width: 32, height: 8 },
+      offset: 1,
+      collisionStrategy: "flip-then-shift",
+    },
+  ]}
+/>
+```
+
+`placement` is deterministic (`placeFloating`). `offset` adds a gap along
+the placement axis, `alignOffset` nudges along the alignment axis, and
+`collisionStrategy` opts into viewport-aware flip/shift/hide behavior during
+the layout-signal pass. The geometry is resolved in the same frame as the
+anchor rect; component code does not call `useBoxRect()` to position the
+overlay.
 
 ## Migration patterns
 
@@ -199,6 +230,7 @@ target-specific paint operation:
 | `cursorRect`         | DECSCUSR + cursor position | drawn caret bitmap         | CSS `caret-color` + `<input>` focus |
 | `focusedNodeId`      | route input events         | dispatch keyboard listener | DOM `focus` / `blur` / `tabindex`   |
 | `selectionFragments` | inverse-paint cell ranges  | filled rect overlays       | `::selection` pseudo + `Range` API  |
+| `decorationRects`    | overlay cell ranges        | floating overlay rects     | CSS anchor-positioned popovers      |
 
 A silvery component author writes the same `<Box cursorOffset>` /
 `<Box focused>` / `<Box selectionIntent>` code regardless of target. The
