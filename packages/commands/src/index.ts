@@ -11,6 +11,23 @@
 
 // Command registry
 export {
+  command,
+  defineCommands,
+  flattenCommandTree,
+  isCommandNode,
+  resolveInvocation,
+  type Availability,
+  type CommandMetadata,
+  type CommandNode,
+  type CommandTree,
+  type FlattenedCommand,
+  type Invocation,
+  type ParamSchema,
+  type ParseParamSchema,
+  type StandardParamSchema,
+} from "./command-tree"
+
+export {
   createCommandRegistry,
   type CommandDefInput,
   type CommandDefs,
