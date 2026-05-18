@@ -82,6 +82,7 @@ import {
 import {
   computeIndexTrailingSpacer,
   mapChildIndexToItem,
+  resolveRetainedIndexWindow,
   resolveTrailingSpacerFillEnd,
 } from "./list-view/index-window"
 import {
@@ -1810,9 +1811,22 @@ function ListViewInner<T>(
   const indexEstAsNumber =
     typeof adjustedEstimateHeight === "number" ? adjustedEstimateHeight : adjustedEstimateHeight(0)
   const safeEstHeight = Math.max(1, indexEstAsNumber)
+  const rowsForIndexRange = (s: number, e: number): number => {
+    if (e <= s) return 0
+    // Cheap approximation: use measured heights if any have been
+    // captured for the cache, otherwise estimate. Avoids the full
+    // prefix-sum query inside the budget loop.
+    if (measuredHeights.size === 0) return (e - s) * safeEstHeight
+    // Phase 2: query HeightModel — O(log n) prefix difference matches
+    // the prior `sumHeights(s, e, …)` semantics (measured /
+    // avgMeasured / estimate per index, plus (count-1) inter-item gap).
+    const m = e - s
+    return heightModel.prefixSum(e) - heightModel.prefixSum(s) + Math.max(0, m - 1) * gap
+  }
   let viewportAnchorFirst = cursorAnchor
   let viewportAnchorLast = cursorAnchor
   let trailingSpacerVisibleBeforeRowEnd = false
+  let retainedIndexWindow = false
 
   if (resolvedVirtualization === "index") {
     // Try to derive a viewport-anchor item index from layout-phase's
@@ -1914,20 +1928,6 @@ function ListViewInner<T>(
     const budgetRow = Math.max(safeEstHeight, maxEstimatedRows)
     const budgetItem = Math.max(1, maxRendered)
 
-    // Estimate row count for [start, end).
-    const rowsForRange = (s: number, e: number): number => {
-      if (e <= s) return 0
-      // Cheap approximation: use measured heights if any have been
-      // captured for the cache, otherwise estimate. Avoids the full
-      // prefix-sum query inside the budget loop.
-      if (measuredHeights.size === 0) return (e - s) * safeEstHeight
-      // Phase 2: query HeightModel — O(log n) prefix difference matches
-      // the prior `sumHeights(s, e, …)` semantics (measured /
-      // avgMeasured / estimate per index, plus (count-1) inter-item gap).
-      const m = e - s
-      return heightModel.prefixSum(e) - heightModel.prefixSum(s) + Math.max(0, m - 1) * gap
-    }
-
     // Shrink the window from BOTH ends until both budgets are satisfied.
     // Shrink toward the anchor so we keep items closest to the visible
     // viewport. The cursor must remain inside the window.
@@ -1936,7 +1936,7 @@ function ListViewInner<T>(
       anchorFirst >= s && anchorLast < e && (!keepCursor || cursorInWindow(s, e))
     const keepCursor = cursorInWindow(start, end)
 
-    while (end - start > budgetItem || rowsForRange(start, end) > budgetRow) {
+    while (end - start > budgetItem || rowsForIndexRange(start, end) > budgetRow) {
       if (end - start <= 1) break
       // Decide which end to trim. Prefer trimming the side farther from
       // the anchor + cursor.
@@ -2065,6 +2065,32 @@ function ListViewInner<T>(
         }
       }
     }
+  }
+
+  if (resolvedVirtualization === "index") {
+    const retainDuringActiveScroll =
+      wheelGestureActiveRef.current || isScrolling || physics.isAnimating
+    const retentionItemBudget = Math.min(
+      activeItems.length,
+      Math.max(maxRendered, Math.ceil(maxRendered * 2)),
+    )
+    const retentionRowBudget = Math.max(maxEstimatedRows, Math.ceil(maxEstimatedRows * 2))
+    const maxRetainedGapItems = Math.max(overscan, Math.ceil(contentViewportHeight / safeEstHeight))
+    const retainedWindow = resolveRetainedIndexWindow({
+      startIndex: indexWindowStart,
+      endIndex: indexWindowEnd,
+      previousStartIndex: indexWindowPrevRef.current.startIndex,
+      previousEndIndex: indexWindowPrevRef.current.endIndex,
+      itemCount: activeItems.length,
+      retain: retainDuringActiveScroll,
+      maxGapItems: maxRetainedGapItems,
+      maxRetainedItems: retentionItemBudget,
+      maxRetainedRows: retentionRowBudget,
+      rowsForRange: rowsForIndexRange,
+    })
+    indexWindowStart = retainedWindow.startIndex
+    indexWindowEnd = retainedWindow.endIndex
+    retainedIndexWindow = retainedWindow.retained
   }
 
   // Capture this frame's window structure for next frame's viewport
@@ -3063,6 +3089,7 @@ function ListViewInner<T>(
       scrollAuthority,
       boxScrollTo ?? "null",
       gestureScrollWindowClamped ? 1 : 0,
+      retainedIndexWindow ? 1 : 0,
       trailingSpacerVisibleBeforeRowEnd ? 1 : 0,
       isScrolling ? 1 : 0,
       scrollableRows,
@@ -3129,6 +3156,7 @@ function ListViewInner<T>(
       scrollAuthority,
       boxScrollTo,
       gestureScrollWindowClamped,
+      retainedIndexWindow,
       trailingSpacerVisibleBeforeRowEnd,
       kineticScrolling: isScrolling,
       virtualizerRowsAboveViewport,
@@ -3188,6 +3216,7 @@ function ListViewInner<T>(
     viewportOffsetWithinWindowRows,
     resolvedFollow,
     resolvedVirtualization,
+    retainedIndexWindow,
     rowsAboveViewport,
     scrollAnchoring.maintainedTopRow,
     scrollAuthority,

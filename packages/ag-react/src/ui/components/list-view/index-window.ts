@@ -63,6 +63,90 @@ export interface ResolveTrailingSpacerFillEndInput {
   previousRenderScrollRow?: number | null
 }
 
+export interface ResolveRetainedIndexWindowInput {
+  startIndex: number
+  endIndex: number
+  previousStartIndex: number
+  previousEndIndex: number
+  itemCount: number
+  retain: boolean
+  maxGapItems: number
+  maxRetainedItems: number
+  maxRetainedRows: number
+  rowsForRange(startIndex: number, endIndex: number): number
+}
+
+export interface RetainedIndexWindow {
+  startIndex: number
+  endIndex: number
+  retained: boolean
+}
+
+/**
+ * Keep recently-mounted trailing index-window items alive during active wheel scrolling.
+ *
+ * This is intentionally a render-window policy, not scroll physics: no input
+ * is smoothed, capped, dropped, or delayed. We only avoid remounting content
+ * just below the current window when the previous and current windows are
+ * close enough to be represented as one contiguous slice.
+ *
+ * The leading edge is deliberately immutable. Changing `startIndex` changes
+ * the leading spacer height, which can move the visible anchor during active
+ * wheel input. Retention is allowed only on the trailing edge until ListView
+ * has a separate off-flow retained subtree.
+ */
+export function resolveRetainedIndexWindow({
+  startIndex,
+  endIndex,
+  previousStartIndex,
+  previousEndIndex,
+  itemCount,
+  retain,
+  maxGapItems,
+  maxRetainedItems,
+  maxRetainedRows,
+  rowsForRange,
+}: ResolveRetainedIndexWindowInput): RetainedIndexWindow {
+  const currentStart = clampIndex(startIndex, itemCount)
+  const currentEnd = Math.max(currentStart, clampIndex(endIndex, itemCount))
+  if (!retain || previousEndIndex <= previousStartIndex || currentEnd <= currentStart) {
+    return { startIndex: currentStart, endIndex: currentEnd, retained: false }
+  }
+
+  const previousStart = clampIndex(previousStartIndex, itemCount)
+  const previousEnd = Math.max(previousStart, clampIndex(previousEndIndex, itemCount))
+  if (previousEnd <= currentEnd) {
+    return { startIndex: currentStart, endIndex: currentEnd, retained: false }
+  }
+
+  const gap = currentEnd < previousStart ? previousStart - currentEnd : 0
+  if (gap > Math.max(0, maxGapItems)) {
+    return { startIndex: currentStart, endIndex: currentEnd, retained: false }
+  }
+
+  const start = currentStart
+  let end = Math.max(currentEnd, previousEnd)
+  const itemBudget = Math.max(currentEnd - currentStart, Math.floor(maxRetainedItems))
+  const rowBudget = Math.max(rowsForRange(currentStart, currentEnd), Math.floor(maxRetainedRows))
+
+  while (end - start > itemBudget || rowsForRange(start, end) > rowBudget) {
+    const canTrimEnd = end > currentEnd
+    if (!canTrimEnd) break
+    end--
+  }
+
+  return {
+    startIndex: start,
+    endIndex: end,
+    retained: start !== currentStart || end !== currentEnd,
+  }
+}
+
+function clampIndex(index: number, itemCount: number): number {
+  if (!Number.isFinite(index)) return 0
+  return Math.max(0, Math.min(Math.floor(index), Math.max(0, itemCount)))
+}
+
 /**
  * Extend the rendered tail when layout proves the viewport has reached the
  * trailing spacer before row-space says the list is at the bottom.

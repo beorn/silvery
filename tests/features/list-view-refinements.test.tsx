@@ -30,7 +30,10 @@ import {
   makeMeasureKey,
   sumHeights,
 } from "../../packages/ag-react/src/hooks/useVirtualizer"
-import { resolveTrailingSpacerFillEnd } from "../../packages/ag-react/src/ui/components/list-view/index-window"
+import {
+  resolveRetainedIndexWindow,
+  resolveTrailingSpacerFillEnd,
+} from "../../packages/ag-react/src/ui/components/list-view/index-window"
 
 // ============================================================================
 // Helpers
@@ -215,6 +218,74 @@ describe("Refinement 2: scroll spacers preserve virtual scroll extent", () => {
 // ============================================================================
 
 describe("Refinement 3: viewport-anchored windowing", () => {
+  test("active scroll retention keeps overlapping trailing items mounted", () => {
+    const retained = resolveRetainedIndexWindow({
+      startIndex: 20,
+      endIndex: 55,
+      previousStartIndex: 40,
+      previousEndIndex: 70,
+      itemCount: 100,
+      retain: true,
+      maxGapItems: 10,
+      maxRetainedItems: 80,
+      maxRetainedRows: 80,
+      rowsForRange: (start, end) => end - start,
+    })
+
+    expect(retained).toEqual({ startIndex: 20, endIndex: 70, retained: true })
+  })
+
+  test("active scroll retention trims trailing old-only items but preserves the current window", () => {
+    const retained = resolveRetainedIndexWindow({
+      startIndex: 20,
+      endIndex: 50,
+      previousStartIndex: 40,
+      previousEndIndex: 100,
+      itemCount: 100,
+      retain: true,
+      maxGapItems: 10,
+      maxRetainedItems: 45,
+      maxRetainedRows: 45,
+      rowsForRange: (start, end) => end - start,
+    })
+
+    expect(retained).toEqual({ startIndex: 20, endIndex: 65, retained: true })
+  })
+
+  test("active scroll retention never changes the leading edge", () => {
+    const retained = resolveRetainedIndexWindow({
+      startIndex: 50,
+      endIndex: 80,
+      previousStartIndex: 0,
+      previousEndIndex: 70,
+      itemCount: 100,
+      retain: true,
+      maxGapItems: 10,
+      maxRetainedItems: 100,
+      maxRetainedRows: 100,
+      rowsForRange: (start, end) => end - start,
+    })
+
+    expect(retained).toEqual({ startIndex: 50, endIndex: 80, retained: false })
+  })
+
+  test("active scroll retention is disabled for distant windows", () => {
+    const retained = resolveRetainedIndexWindow({
+      startIndex: 80,
+      endIndex: 90,
+      previousStartIndex: 10,
+      previousEndIndex: 20,
+      itemCount: 100,
+      retain: true,
+      maxGapItems: 10,
+      maxRetainedItems: 100,
+      maxRetainedRows: 100,
+      rowsForRange: (start, end) => end - start,
+    })
+
+    expect(retained).toEqual({ startIndex: 80, endIndex: 90, retained: false })
+  })
+
   test("visible trailing spacer before row-space bottom extends the rendered tail", () => {
     // Live silvercode trace 2026-05-17: row-space said the viewport was
     // hundreds of rows before the bottom, but layout had already scrolled
