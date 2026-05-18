@@ -500,12 +500,9 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
       }
       continuousAccelLastTickTimeRef.current = now
 
-      if (dt < CONTINUOUS_ACCEL_MIN_INTERVAL_MS) {
-        return 1
-      }
-
+      const effectiveDt = Math.max(CONTINUOUS_ACCEL_MIN_INTERVAL_MS, dt)
       const intervals = continuousAccelIntervalsRef.current
-      intervals.push(dt)
+      intervals.push(effectiveDt)
       if (intervals.length > CONTINUOUS_ACCEL_HISTORY_SIZE) intervals.shift()
 
       const avgInterval = intervals.reduce((sum, value) => sum + value, 0) / intervals.length

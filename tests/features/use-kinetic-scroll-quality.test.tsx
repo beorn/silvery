@@ -328,7 +328,7 @@ describe("useKineticScroll — input cadence detection", () => {
     )
   })
 
-  test("same-turn continuous packets preserve packet mass without self-acceleration", async () => {
+  test("same-turn continuous packets clamp to the minimum cadence for acceleration", async () => {
     const apiRef: HarnessRef = { current: null }
     const r = createRenderer({ cols: 30, rows: 8 })
     r(
@@ -352,8 +352,12 @@ describe("useKineticScroll — input cadence detection", () => {
     const afterBurst = apiRef.current!.getScrollFloat()
     expect(
       afterBurst,
-      "same-turn packets are real input, but queued delivery must not manufacture extra speed",
-    ).toBeCloseTo(1 + 31 * 0.435, 3)
+      "same-turn packets are real input and should not lose acceleration just because stdin was batched",
+    ).toBeGreaterThan(35)
+    expect(
+      afterBurst,
+      "acceleration stays bounded by the configured multiplier",
+    ).toBeLessThanOrEqual(1 + 31 * 0.435 * 3)
   })
 
   test("continuous cadence keeps inertial tail from becoming discrete jumps", async () => {
