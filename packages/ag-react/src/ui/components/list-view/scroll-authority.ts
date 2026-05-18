@@ -48,6 +48,49 @@ export function resolveListViewBoxScrollTo({
     : undefined
 }
 
+export interface GestureRenderScrollViolationInput {
+  gestureDirection: "up" | "down" | null
+  previousRenderScrollRow: number | null
+  renderScrollRow: number | null
+  toleranceRows?: number
+}
+
+export interface GestureRenderScrollViolation {
+  gestureDirection: "up" | "down"
+  previousRenderScrollRow: number
+  renderScrollRow: number
+  deltaRows: number
+  toleranceRows: number
+}
+
+export function detectGestureRenderScrollViolation({
+  gestureDirection,
+  previousRenderScrollRow,
+  renderScrollRow,
+  toleranceRows = 0.01,
+}: GestureRenderScrollViolationInput): GestureRenderScrollViolation | null {
+  if (
+    gestureDirection === null ||
+    previousRenderScrollRow === null ||
+    renderScrollRow === null ||
+    !Number.isFinite(previousRenderScrollRow) ||
+    !Number.isFinite(renderScrollRow)
+  )
+    return null
+
+  const deltaRows = renderScrollRow - previousRenderScrollRow
+  const movedOpposite =
+    gestureDirection === "up" ? deltaRows > toleranceRows : deltaRows < -toleranceRows
+  if (!movedOpposite) return null
+  return {
+    gestureDirection,
+    previousRenderScrollRow,
+    renderScrollRow,
+    deltaRows,
+    toleranceRows,
+  }
+}
+
 export interface GestureScrollWindowInput {
   startIndex: number
   endIndex: number

@@ -21,6 +21,19 @@
  *
  * ## Physics
  *
+ * Invariants for user input:
+ *
+ * - Never drop wheel packets to make rendering easier. Terminal packets are
+ *   lossy/row-quantized, but each accepted packet is still valid user or OS
+ *   inertia signal. Rendering code must keep up or expose latency; physics
+ *   must not hide backlog by discarding input.
+ * - Never sacrifice physics accuracy to "smooth things out". Smoothing belongs
+ *   in the renderer's frame cadence and in the virtualized-list geometry
+ *   invariants, not in caps/backlogs that change the user's motion.
+ * - Fast-scroll render optimizations may skip expensive detail for rows that
+ *   fly past too quickly to inspect, but they must not alter the input time
+ *   series or the row accumulator.
+ *
  * - Each wheel event: apply immediate `wheelMultiplier` rows of displacement;
  *   push applied displacement into a rolling buffer of the last ~150ms.
  *   Continuous trackpad streams can use `continuousWheelMultiplier` as a

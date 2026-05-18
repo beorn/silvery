@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 import {
+  detectGestureRenderScrollViolation,
   resolveGestureScrollWindow,
   resolveListViewBoxScrollTo,
   resolveListViewRenderScrollRow,
@@ -81,5 +82,73 @@ describe("ListView scroll authority", () => {
     expect(resolved).toEqual([
       1218, 1217, 1216, 1215, 1214, 1213, 1212, 1212, 1210, 1209, 1208, 1208, 1207,
     ])
+  })
+
+  test("detects render scroll moving opposite an upward wheel gesture", () => {
+    expect(
+      detectGestureRenderScrollViolation({
+        gestureDirection: "up",
+        previousRenderScrollRow: 4,
+        renderScrollRow: 8,
+      }),
+    ).toMatchObject({
+      gestureDirection: "up",
+      previousRenderScrollRow: 4,
+      renderScrollRow: 8,
+      deltaRows: 4,
+    })
+  })
+
+  test("allows render scroll to move with an upward wheel gesture", () => {
+    expect(
+      detectGestureRenderScrollViolation({
+        gestureDirection: "up",
+        previousRenderScrollRow: 4,
+        renderScrollRow: 2,
+      }),
+    ).toBeNull()
+  })
+
+  test("detects render scroll moving opposite a downward wheel gesture", () => {
+    expect(
+      detectGestureRenderScrollViolation({
+        gestureDirection: "down",
+        previousRenderScrollRow: 8,
+        renderScrollRow: 4,
+      }),
+    ).toMatchObject({
+      gestureDirection: "down",
+      previousRenderScrollRow: 8,
+      renderScrollRow: 4,
+      deltaRows: -4,
+    })
+  })
+
+  test("allows tiny render-scroll rounding drift during a wheel gesture", () => {
+    expect(
+      detectGestureRenderScrollViolation({
+        gestureDirection: "up",
+        previousRenderScrollRow: 4,
+        renderScrollRow: 4.005,
+        toleranceRows: 0.01,
+      }),
+    ).toBeNull()
+  })
+
+  test("ignores incomplete render-scroll samples", () => {
+    expect(
+      detectGestureRenderScrollViolation({
+        gestureDirection: null,
+        previousRenderScrollRow: 4,
+        renderScrollRow: 8,
+      }),
+    ).toBeNull()
+    expect(
+      detectGestureRenderScrollViolation({
+        gestureDirection: "up",
+        previousRenderScrollRow: Number.NaN,
+        renderScrollRow: 8,
+      }),
+    ).toBeNull()
   })
 })

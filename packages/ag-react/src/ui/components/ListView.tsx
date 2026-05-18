@@ -5,6 +5,21 @@
  * with VirtualList's navigation (keyboard, mouse wheel, cursor state) into
  * a single component.
  *
+ * Scroll authority invariants:
+ * - During an active wheel gesture, `renderScrollRow` is the only viewport
+ *   motion authority. Follow-end, declarative scroll, visible-content
+ *   anchoring, and layout readback may hand off before/after the gesture,
+ *   but must not compete during it.
+ * - The mounted index window and spacer rows are derived from the active row
+ *   authority and the gesture's height geometry. They must not become a
+ *   second authority that moves visible content opposite the gesture.
+ * - `viewportOffsetWithinWindowRows = renderScrollRow - effectiveLeadingHeight`
+ *   is window-relative diagnostic data, not an authority. It may change as
+ *   the mounted slice shifts; `renderScrollRow` is the monotone row-space
+ *   signal that drives the viewport.
+ *
+ * Bead: @km/code/15284-transcript-scroll-jumps-up-down/15330-phase-4-live-transcript-layout-stability
+ *
  * @example
  * ```tsx
  * // Passive (parent controls scroll)
@@ -70,6 +85,7 @@ import {
   resolveTrailingSpacerFillEnd,
 } from "./list-view/index-window"
 import {
+  detectGestureRenderScrollViolation,
   resolveGestureScrollWindow,
   resolveListViewBoxScrollTo,
   resolveListViewRenderScrollRow,
@@ -1769,6 +1785,7 @@ function ListViewInner<T>(
     hasInterstitial: boolean
     leadingHeight: number
     renderScrollRow: number | null
+    gestureDirection: "up" | "down" | null
   }>({
     startIndex: 0,
     endIndex: 0,
@@ -1776,6 +1793,7 @@ function ListViewInner<T>(
     hasInterstitial: false,
     leadingHeight: 0,
     renderScrollRow: null,
+    gestureDirection: null,
   })
 
   const cursorAnchor = Math.max(0, Math.min(activeItems.length - 1, scrollOffset))
@@ -2112,6 +2130,49 @@ function ListViewInner<T>(
     : usingNoVirtualization
       ? 0
       : hiddenAfter
+  const viewportOffsetWithinWindowRows =
+    renderScrollRow === null ? null : renderScrollRow - effectiveLeadingHeight
+  const currentWindowGestureDirection = wheelDirectionGuardActive
+    ? gestureDirectionRef.current
+    : null
+  const previousIndexWindow = indexWindowPrevRef.current
+  const previousRenderScrollRow =
+    currentWindowGestureDirection !== null &&
+    previousIndexWindow.gestureDirection === currentWindowGestureDirection &&
+    previousIndexWindow.renderScrollRow !== null
+      ? previousIndexWindow.renderScrollRow
+      : null
+  const renderScrollViolation = detectGestureRenderScrollViolation({
+    gestureDirection: currentWindowGestureDirection,
+    previousRenderScrollRow,
+    renderScrollRow,
+  })
+  if (renderScrollViolation !== null && process?.env?.SILVERY_STRICT) {
+    const msg =
+      `[SILVERY_STRICT] ListView renderScrollRow moved opposite active ` +
+      `${renderScrollViolation.gestureDirection} gesture`
+    if (process.env.SILVERY_STRICT === "2") throw new Error(msg)
+    listLog.warn?.(msg, {
+      previousRenderScrollRow: renderScrollViolation.previousRenderScrollRow,
+      renderScrollRow: renderScrollViolation.renderScrollRow,
+      deltaRows: renderScrollViolation.deltaRows,
+      toleranceRows: renderScrollViolation.toleranceRows,
+      viewportOffsetWithinWindowRows,
+      previousViewportOffsetWithinWindowRows:
+        previousIndexWindow.renderScrollRow === null
+          ? null
+          : previousIndexWindow.renderScrollRow - previousIndexWindow.leadingHeight,
+      effectiveLeadingHeight,
+      previousLeadingHeight: previousIndexWindow.leadingHeight,
+      startIndex: indexWindowStart,
+      previousStartIndex: previousIndexWindow.startIndex,
+      endIndex: indexWindowEnd,
+      previousEndIndex: previousIndexWindow.endIndex,
+      scrollRow,
+      scrollAuthority,
+      gestureScrollWindowClamped,
+    })
+  }
 
   // Update prev-window ref AFTER computing the spacer sums (so the
   // hasLeadingSpacer flag matches what's about to render).
@@ -2125,6 +2186,7 @@ function ListViewInner<T>(
     hasInterstitial: renderSeparator !== undefined || gap > 0,
     leadingHeight: effectiveLeadingHeight,
     renderScrollRow,
+    gestureDirection: currentWindowGestureDirection,
   }
 
   // ── Surface / search registration ────────────────────────────────
@@ -2437,7 +2499,15 @@ function ListViewInner<T>(
         `sumHeights(0, startIndex=${range.startIndex})=${expectedLeading} ` +
         `(scrollOffset=${scrollOffset}, count=${activeItems.length})`
       if (shouldThrow) throw new Error(msg)
-      else console.warn(msg)
+      else {
+        listLog.warn?.(msg, {
+          leadingHeight,
+          expectedLeading,
+          startIndex: range.startIndex,
+          scrollOffset,
+          count: activeItems.length,
+        })
+      }
     }
   }
 
@@ -2970,6 +3040,7 @@ function ListViewInner<T>(
       effectiveHiddenAfter,
       scrollRow ?? "null",
       renderScrollRow ?? "null",
+      viewportOffsetWithinWindowRows ?? "null",
       rowsAboveViewport,
       virtualizerRowsAboveViewport,
       innerScrollState?.offset ?? "null",
@@ -3058,6 +3129,7 @@ function ListViewInner<T>(
       virtualizerRowsAboveViewport,
       scrollRow,
       renderScrollRow,
+      viewportOffsetWithinWindowRows,
       rowsAboveViewport,
       effectiveRowsAbove,
       scrollableRows,
@@ -3108,6 +3180,7 @@ function ListViewInner<T>(
     range.endIndex,
     range.startIndex,
     renderScrollRow,
+    viewportOffsetWithinWindowRows,
     resolvedFollow,
     resolvedVirtualization,
     rowsAboveViewport,
