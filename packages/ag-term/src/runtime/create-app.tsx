@@ -4021,6 +4021,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         // 10, or OS auto-repeat buffering "jjjjj...") coalesce into ONE
         // render cycle instead of N.
         //
+        // Wheel streams are different from key-repeat bursts: terminal
+        // trackpads can keep producing packets while the user is actively
+        // moving. Waiting for the queue to become stable before rendering
+        // makes the viewport lag behind the fingers. For wheel batches we do
+        // one event-loop yield to collect already-ready packets, then render
+        // immediately; later packets form the next frame.
+        //
         // Safety: bounded by maxDrainSpins to prevent pathological stalls
         // if an event source is producing faster than we can drain. Under
         // realistic auto-repeat (30-60 keys/sec), events arrive in a short
@@ -4030,14 +4037,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         const yieldToEventLoop = () => new Promise<void>((resolve) => setImmediate(resolve))
         // First mandatory yield — lets events already in-flight land.
         await yieldToEventLoop()
-        let prevLen = eventQueue.length
-        while (drainSpins < maxDrainSpins) {
-          // eslint-disable-next-line no-await-in-loop -- intentional: sequential yields drain the async iterator pipeline
-          await yieldToEventLoop()
-          const curLen = eventQueue.length
-          if (curLen === prevLen) break
-          prevLen = curLen
-          drainSpins++
+        const wheelBatch = eventQueue.some(isWheelEvent)
+        if (!wheelBatch) {
+          let prevLen = eventQueue.length
+          while (drainSpins < maxDrainSpins) {
+            // eslint-disable-next-line no-await-in-loop -- intentional: sequential yields drain the async iterator pipeline
+            await yieldToEventLoop()
+            const curLen = eventQueue.length
+            if (curLen === prevLen) break
+            prevLen = curLen
+            drainSpins++
+          }
         }
         if (_perfLog) {
           // eslint-disable-next-line @typescript-eslint/no-require-imports
