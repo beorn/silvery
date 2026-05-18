@@ -45,23 +45,43 @@ const DEFAULT_WIDTH = 40
 // Component
 // =============================================================================
 
-export function Divider({
-  char = DEFAULT_CHAR,
-  color = "$border-default",
+function DividerRule({
+  color,
+  flexGrow = 1,
+}: {
+  color: string
+  flexGrow?: number
+}): React.ReactElement {
+  return (
+    <Box
+      height={1}
+      flexGrow={flexGrow}
+      flexShrink={1}
+      minWidth={0}
+      borderStyle="single"
+      borderColor={color}
+      borderLeft={false}
+      borderRight={false}
+      borderBottom={false}
+    />
+  )
+}
+
+function StringDivider({
+  char,
+  color,
   title,
   titleColor,
-  titleBold = true,
-  width: widthProp,
-}: DividerProps): React.ReactElement {
-  // LAYOUT_READ_AT_RENDER: divider builds a string of repeated fill characters,
-  // which requires the parent's resolved cell width at render time. Without a
-  // dedicated "fill remaining row" layout primitive, this is genuinely (c) per
-  // the use-layout-rect-callers audit — the consumer may pass `width` to opt
-  // out, but the auto-fill path needs the post-layout width signal. It uses
-  // a dimensions-only read so scroll-position changes do not re-render it.
-  const { width: contentWidth } = useBoxSize()
-  const totalWidth = widthProp ?? (contentWidth > 0 ? contentWidth : DEFAULT_WIDTH)
-
+  titleBold,
+  totalWidth,
+}: {
+  char: string
+  color: string
+  title?: string
+  titleColor?: string
+  titleBold: boolean
+  totalWidth: number
+}): React.ReactElement {
   if (!title) {
     return (
       <Box>
@@ -84,5 +104,88 @@ export function Divider({
       </Text>
       <Text color={color}>{char.repeat(rightLen)}</Text>
     </Box>
+  )
+}
+
+function MeasuredStringDivider({
+  char,
+  color,
+  title,
+  titleColor,
+  titleBold,
+}: {
+  char: string
+  color: string
+  title?: string
+  titleColor?: string
+  titleBold: boolean
+}): React.ReactElement {
+  // LAYOUT_READ_AT_RENDER: custom divider characters still build a string of
+  // repeated fill characters, which requires the parent's resolved cell width
+  // at render time. The default "─" path uses flex border fillers instead, so
+  // common dividers do not subscribe to layout size.
+  const { width: contentWidth } = useBoxSize()
+  const totalWidth = contentWidth > 0 ? contentWidth : DEFAULT_WIDTH
+  return (
+    <StringDivider
+      char={char}
+      color={color}
+      title={title}
+      titleColor={titleColor}
+      titleBold={titleBold}
+      totalWidth={totalWidth}
+    />
+  )
+}
+
+export function Divider({
+  char = DEFAULT_CHAR,
+  color = "$border-default",
+  title,
+  titleColor,
+  titleBold = true,
+  width: widthProp,
+}: DividerProps): React.ReactElement {
+  if (widthProp === undefined && char === DEFAULT_CHAR) {
+    if (!title) {
+      return (
+        <Box width="100%" flexDirection="row" flexShrink={0} minWidth={0}>
+          <DividerRule color={color} />
+        </Box>
+      )
+    }
+
+    return (
+      <Box width="100%" flexDirection="row" alignItems="center" flexShrink={0} minWidth={0}>
+        <DividerRule color={color} />
+        <Text color={titleColor} bold={titleBold} flexShrink={0}>
+          {` ${title} `}
+        </Text>
+        <DividerRule color={color} />
+      </Box>
+    )
+  }
+
+  if (widthProp !== undefined) {
+    return (
+      <StringDivider
+        char={char}
+        color={color}
+        title={title}
+        titleColor={titleColor}
+        titleBold={titleBold}
+        totalWidth={widthProp}
+      />
+    )
+  }
+
+  return (
+    <MeasuredStringDivider
+      char={char}
+      color={color}
+      title={title}
+      titleColor={titleColor}
+      titleBold={titleBold}
+    />
   )
 }

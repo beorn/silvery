@@ -15,7 +15,7 @@ import {
 } from "@silvery/test"
 import { run, type RunHandle } from "../../packages/ag-term/src/runtime/run"
 import { getPassHistogram, resetPassHistogram } from "../../packages/ag-term/src/runtime/pass-cause"
-import { Box, ListView, Text } from "../../src/index"
+import { Box, Divider, ListView, Text } from "../../src/index"
 import type { ListViewHandle } from "../../packages/ag-react/src/ui/components/ListView"
 
 interface RowItem {
@@ -394,6 +394,41 @@ function FixedHeightFlickList({
         scrollbarVisibility="always"
         renderItem={(item) => (
           <Box height={item.height} flexShrink={0}>
+            <Text>{item.label}</Text>
+          </Box>
+        )}
+      />
+    </Box>
+  )
+}
+
+function DividerChromeFlickList({
+  items,
+  listRef,
+}: {
+  items: readonly RowItem[]
+  listRef: React.RefObject<ListViewHandle | null>
+}): React.ReactElement {
+  return (
+    <Box flexDirection="column" flexGrow={1} minHeight={0}>
+      <ListView<RowItem>
+        ref={listRef}
+        items={[...items]}
+        estimateHeight={2}
+        getKey={(item) => item.id}
+        follow="end"
+        virtualization="index"
+        enableInputCadenceDetection
+        viewportBottomInset={5}
+        scrollbarVisibility="always"
+        renderItem={(item, index) => (
+          <Box flexDirection="column" flexShrink={0}>
+            <Divider
+              title={`Session ${String(index).padStart(4, "0")}`}
+              color="$border-default"
+              titleColor="$fg-muted"
+              titleBold={false}
+            />
             <Text>{item.label}</Text>
           </Box>
         )}
@@ -1069,6 +1104,48 @@ describe("ListView trackpad flick replay through termless", () => {
             )
             .join(" | "),
         ).toBeLessThanOrEqual(80)
+      } finally {
+        handle.unmount()
+      }
+    },
+    20_000,
+  )
+
+  test.skipIf(process.env.SILVERY_INSTRUMENT !== "1")(
+    "keeps auto-width transcript dividers from creating boxSize storms during a flick",
+    async () => {
+      using term = createTermless({ cols: 302, rows: 117 })
+      const listRef = React.createRef<ListViewHandle>()
+      const items = makeUniformRows(120)
+      const handle: RunHandle = await run(
+        <DividerChromeFlickList items={items} listRef={listRef} />,
+        term,
+        { mouse: true },
+      )
+      try {
+        await settle(120)
+        act(() => {
+          listRef.current?.scrollToBottom()
+        })
+        await settle(120)
+
+        resetPassHistogram()
+        const startedAt = performance.now()
+        await term.mouse.trackpadFlick(SYNTHETIC_BURST_THEN_IDLE_UP_FLICK)
+        await settle(300)
+        const elapsedMs = performance.now() - startedAt
+
+        const boxSizeInvalidates = layoutInvalidateEdgeCount("boxSize")
+        expect(
+          boxSizeInvalidates,
+          getPassHistogram()
+            .byCause.map(
+              (entry) =>
+                `${entry.cause}: ${entry.topEdges.map((edge) => `${edge.edge}=${edge.count}`).join(", ")}`,
+            )
+            .join(" | "),
+        ).toBeLessThanOrEqual(80)
+        expect(elapsedMs).toBeLessThan(9_000)
       } finally {
         handle.unmount()
       }
