@@ -33,35 +33,43 @@ Most apps import everything from `silvery`:
 import { Box, Text, render, useBoxRect, useInput, createTerm } from "silvery"
 ```
 
-### Layered Imports
+### Power-User Imports
 
-For fine-grained control, import from scoped packages:
+Use the public `silvery/*` subpaths before reaching for implementation packages:
 
 ```tsx
-// Terminal-specific APIs
-import { createTerm, Pipeline } from "@silvery/ag-term"
+// Interactive app runtime
+import { run, createApp, useApp } from "silvery/runtime"
 
-// React reconciler and hooks
-import { Box, Text, useBoxRect } from "@silvery/ag-react"
+// Terminal-specific APIs
+import { createTerm, parseMouseSequence } from "silvery/term"
+
+// Theme system
+import { sterling, type SterlingTheme } from "silvery/theme"
+
+// UI subpackages
+import { Spinner, ProgressBar } from "silvery/ui/cli"
+```
+
+For framework authors and custom renderers, import from scoped packages:
+
+```tsx
+// Core renderer packages
+import { createAg, type AgNode } from "@silvery/ag"
+import { createTermProvider } from "@silvery/ag-term/runtime"
 
 // TEA state management
 import { createSlice, createStore } from "@silvery/create"
 
-// Theme system
-import { createTheme, presetTheme } from "@silvery/theme"
-
 // Testing
 import { createRenderer } from "@silvery/test"
-
-// UI components
-import { Spinner, ProgressBar, Table } from "@silvery/ag-react/ui"
 ```
 
 ### Runtime Entry Points
 
 ```tsx
 // High-level app framework
-import { run, createApp, useApp } from "@silvery/ag-term/runtime"
+import { run, createApp, useApp } from "silvery/runtime"
 
 // Ink-compatible API
 import { Box, Text, render } from "silvery/ink"
@@ -72,7 +80,7 @@ import chalk from "silvery/chalk"
 
 ## `silvery` (Umbrella)
 
-Re-exports everything from `@silvery/ag-react`. This is the primary import for most applications.
+Re-exports the application-facing surface from `@silvery/ag-react`. This is the primary import for most applications.
 
 **Components**: Box, Text, Newline, Spacer, Static, Transform, TextInput, TextArea, SelectList, Toggle, Button, Spinner, ProgressBar, Table, Badge, Divider, VirtualList, VirtualView, Console, Image, Link, Form, FormField, Toast, CommandPalette, TreeView, Breadcrumb, Tabs, TabList, Tab, TabPanel, Tooltip, Skeleton, ErrorBoundary, ModalDialog, PickerDialog, PickerList, SplitView, ThemeProvider.
 
@@ -90,21 +98,21 @@ Key exports: `createTerm`, `Pipeline`, buffer utilities, ANSI helpers, terminal 
 
 React reconciler adapted for terminal rendering. Provides the component model, hooks, and reconciliation logic.
 
-## `@silvery/ag-react/ui`
+## `silvery/ui`
 
-Component library with 45+ components plus CLI progress utilities.
+Public UI subpath for component-family utilities that are not always needed by the top-level app surface.
 
 **CLI mode** (no React needed):
 
 ```ts
-import { Spinner, ProgressBar } from "@silvery/ag-react/ui/cli"
+import { Spinner, ProgressBar } from "silvery/ui/cli"
 const stop = Spinner.start("Loading...")
 ```
 
 **Wrapper utilities**:
 
 ```ts
-import { withSpinner, withProgress } from "@silvery/ag-react/ui/wrappers"
+import { withSpinner, withProgress } from "silvery/ui/wrappers"
 const data = await withSpinner(fetchData(), "Loading...")
 ```
 

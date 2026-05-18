@@ -14,8 +14,8 @@ Standard React. Perfect for local UI state — form fields, toggles, hover state
 
 ```tsx
 import { useState } from "react"
-import { run, useInput } from "@silvery/ag-term/runtime"
 import { Text } from "silvery"
+import { run, useInput } from "silvery/runtime"
 
 function Counter() {
   const [count, setCount] = useState(0)
@@ -40,8 +40,8 @@ State lives inside a component. Input handling is a function call. Both invisibl
 `createApp()` is a [Zustand](https://github.com/pmndrs/zustand) middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call.
 
 ```tsx
-import { createApp, useApp } from "@silvery/ag-term/runtime"
 import { Box, Text } from "silvery"
+import { createApp, useApp } from "silvery/runtime"
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, max))
 

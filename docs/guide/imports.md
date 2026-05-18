@@ -45,28 +45,40 @@ import { Ink, render as inkRender } from "silvery/ink" // Ink API compatibility
 import chalk from "silvery/chalk" // Chalk API compatibility
 ```
 
-### `@silvery/ag-react` -- reconciler, components, hooks, render
+### `silvery` -- components, hooks, render
 
-The main package. Contains the React reconciler, all built-in components, hooks, and render functions. This is what `silvery` re-exports.
+The app-facing package. Use this for components, hooks, render functions, theming, focus helpers, and most terminal-aware React APIs.
 
 ```tsx
-import { Box, Text, render, renderSync, renderStatic } from "@silvery/ag-react"
-import { useInput, useApp, useBoxRect, useFocusable } from "@silvery/ag-react"
-import { TextInput, TextArea, ModalDialog, SelectList } from "@silvery/ag-react"
-import { VirtualList, ScrollbackView, SplitView, Table } from "@silvery/ag-react"
-import { ThemeProvider, useTheme, defaultDarkTheme } from "@silvery/ag-react"
-import { createTerm, term, patchConsole } from "@silvery/ag-react"
-import { createTermEditContext, useEditContext } from "@silvery/ag-react"
+import { Box, Text, render, renderSync, renderStatic } from "silvery"
+import { useInput, useApp, useBoxRect, useFocusable } from "silvery"
+import { TextInput, TextArea, ModalDialog, SelectList } from "silvery"
+import { ListView, ScrollbackView, SplitView, Table } from "silvery"
+import { ThemeProvider, useTheme, defaultDarkTheme } from "silvery"
+import { createTerm, term, createConsole } from "silvery"
+import { createTermEditContext, useEditContext } from "silvery"
 ```
 
-Deep imports for subsets:
+Runtime entry points live under `silvery/runtime`:
 
 ```ts
-import { useBoxRect, useFocusable } from "@silvery/ag-react/hooks"
-import { createReconciler } from "@silvery/ag-react/reconciler"
+import { run, createApp, useApp } from "silvery/runtime"
 ```
 
-### `@silvery/ag-term` -- terminal buffer, pipeline, ANSI, unicode
+### Scoped packages -- framework authors and low-level tooling
+
+Reach for scoped packages when you are building silvery itself, a custom renderer, or a tool that intentionally depends on a narrow implementation layer.
+
+#### `@silvery/ag-react` -- reconciler internals
+
+React reconciler and host implementation. Most apps should import its exports through `silvery`.
+
+```tsx
+import { createReconciler } from "@silvery/ag-react/reconciler"
+import { unmountFiberRoot } from "@silvery/ag-react/reconciler"
+```
+
+#### `@silvery/ag-term` -- terminal buffer, pipeline, ANSI, unicode
 
 Low-level terminal primitives: buffer management, render pipeline, ANSI escape sequences, input parsing, unicode text utilities, and render adapters (terminal, canvas, DOM).
 
@@ -94,34 +106,33 @@ import { outputPhase, createOutputPhase } from "@silvery/ag-term/pipeline"
 import { withDiagnostics, VirtualTerminal, compareBuffers } from "@silvery/ag-term/toolbelt"
 ```
 
-### `@silvery/ag-term/runtime` -- app runtime
+### `silvery/runtime` -- app runtime
 
 The runtime layer for interactive terminal applications:
 
 ```ts
-import { run } from "@silvery/ag-term/runtime"
-import { createTermProvider } from "@silvery/ag-term/runtime"
+import { run, createApp, useInput, useApp } from "silvery/runtime"
 ```
 
-### `@silvery/ag-react/ui` -- higher-level UI components
+### `silvery/ui` -- higher-level UI utilities
 
-Component library used by `@silvery/ag-react`. Most components are re-exported through `@silvery/ag-react`, so direct imports are only needed for non-React CLI usage or accessing sub-modules.
+Most React components are re-exported through `silvery`. Use `silvery/ui/*` for non-React CLI utilities or specialized submodules.
 
 ```ts
 // CLI spinners and progress bars (no React dependency)
-import { Spinner, ProgressBar, MultiProgress } from "@silvery/ag-react/ui/cli"
+import { Spinner, ProgressBar, MultiProgress } from "silvery/ui/cli"
 
 // Fluent task API
-import { task, tasks, steps } from "@silvery/ag-react/ui/progress"
+import { task, tasks, steps } from "silvery/ui/progress"
 
-// React components (prefer importing from @silvery/ag-react instead)
-import { Spinner, ProgressBar } from "@silvery/ag-react/ui/react"
+// React components (prefer importing from silvery instead)
+import { Spinner, ProgressBar } from "silvery/ui/react"
 
 // Other sub-modules
-import { TextInput, Select } from "@silvery/ag-react/ui/input"
-import { Skeleton, Badge } from "@silvery/ag-react/ui/display"
-import { useAnimation, easings } from "@silvery/ag-react/ui/animation"
-import { wrapAnsi } from "@silvery/ag-react/ui/ansi"
+import { TextInput, Select } from "silvery/ui/input"
+import { Skeleton, Badge } from "silvery/ui/display"
+import { useAnimation, easings } from "silvery/ui/animation"
+import { wrapAnsi } from "silvery/ui/ansi"
 ```
 
 ### `@silvery/create` -- app composition _(coming soon)_
@@ -134,7 +145,7 @@ Semantic color tokens, built-in themes, theme generation and detection.
 
 ```ts
 import { defaultDarkTheme, defaultLightTheme, generateTheme, detectTheme } from "@silvery/theme"
-import { ThemeProvider } from "@silvery/ag-react"
+import { ThemeProvider } from "silvery"
 import { useTheme } from "@silvery/theme"
 import type { Theme } from "@silvery/theme"
 ```

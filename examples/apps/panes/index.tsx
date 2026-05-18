@@ -8,8 +8,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react"
-import { Box, Text, ListView } from "silvery"
-import { SearchProvider, SearchBar, useSearch } from "@silvery/ag-react"
+import { Box, Text, ListView, SearchProvider, SearchBar, useSearch } from "silvery"
 import { run, useInput, type Key } from "silvery/runtime"
 import type { ExampleMeta } from "../../_banner.js"
 import { SCRIPT } from "../aichat/script.js"

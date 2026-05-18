@@ -5,7 +5,7 @@
 Returns the content area dimensions (excluding padding and borders) of the nearest Box ancestor.
 
 ```tsx
-import { useBoxRect } from "@silvery/ag-term"
+import { useBoxRect } from "silvery"
 
 function ResponsiveCard() {
   const { width, height, x, y } = useBoxRect()
@@ -20,7 +20,7 @@ Components know their size _during_ render, not after — no post-layout effects
 Returns the absolute screen position and dimensions.
 
 ```tsx
-import { useScrollRect } from "@silvery/ag-term"
+import { useScrollRect } from "silvery"
 
 function Tooltip() {
   const { x, y, width, height } = useScrollRect()
@@ -33,7 +33,7 @@ function Tooltip() {
 Registers a keyboard input handler. Return `"exit"` to exit the app.
 
 ```tsx
-import { useInput, type Key } from "@silvery/ag-term/runtime"
+import { useInput, type Key } from "silvery/runtime"
 
 function App() {
   useInput((input: string, key: Key) => {
@@ -82,7 +82,7 @@ interface Key {
 **Modifier symbols**: Use macOS symbols in `parseHotkey()` for concise hotkey definitions:
 
 ```tsx
-import { parseHotkey, matchHotkey } from "@silvery/ag-term"
+import { parseHotkey, matchHotkey } from "silvery"
 
 const save = parseHotkey("⌘s")
 const palette = parseHotkey("⌃⇧p")
@@ -130,7 +130,7 @@ The `onRelease` callback receives the same `(input, key)` arguments as the main 
 Access app-level controls:
 
 ```tsx
-import { useApp } from "@silvery/ag-term"
+import { useApp } from "silvery/runtime"
 
 function App() {
   const { exit, panic } = useApp()
@@ -153,7 +153,7 @@ const cursor = useApp((s) => s.cursor)
 Access terminal capabilities and styling:
 
 ```tsx
-import { useTerm } from "@silvery/ag-term"
+import { useTerm } from "silvery"
 
 function StatusLine() {
   const term = useTerm()
@@ -174,7 +174,7 @@ Makes a component focusable within the tree-based focus system. Reads focus stat
 The component must have a `testID` prop and `focusable` on its Box ancestor. Optionally set `autoFocus` for initial focus on mount.
 
 ```tsx
-import { useFocusable } from "@silvery/ag-term"
+import { useFocusable } from "silvery"
 
 function FocusablePanel() {
   const { focused, focus, blur, focusOrigin } = useFocusable()
@@ -198,7 +198,7 @@ function FocusablePanel() {
 Returns `true` if focus is anywhere within a subtree. Walks from the focused node up to check if it passes through the given `testID`.
 
 ```tsx
-import { useFocusWithin } from "@silvery/ag-term"
+import { useFocusWithin } from "silvery"
 
 function Sidebar() {
   const hasFocus = useFocusWithin("sidebar")
@@ -216,7 +216,7 @@ function Sidebar() {
 Ink-compatible wrapper around `useFocusable`. Returns `{ isFocused }` instead of `{ focused }`.
 
 ```tsx
-import { useFocus } from "@silvery/ag-term"
+import { useFocus } from "silvery"
 
 function FocusableItem() {
   const { isFocused } = useFocus()
@@ -241,7 +241,7 @@ For new code, prefer `useFocusable()` which returns richer state (`focused`, `fo
 Ink-compatible wrapper around `useFocusManager`. Provides the same API shape as Ink's `useFocusManager`.
 
 ```tsx
-import { useInkFocusManager } from "@silvery/ag-term"
+import { useInkFocusManager } from "silvery"
 
 function Navigation() {
   const { focusNext, focusPrevious } = useInkFocusManager()
@@ -270,7 +270,7 @@ For new code, prefer `useFocusManager()` which returns the full Silvery focus ma
 Receives bracketed paste events. Only available in the `run()` runtime (Layer 2).
 
 ```tsx
-import { usePaste } from "@silvery/ag-term/runtime"
+import { usePaste } from "silvery/runtime"
 
 function Editor() {
   usePaste((text) => {
@@ -286,7 +286,7 @@ The handler receives the full pasted text as a single string, rather than indivi
 For the `render()` API (Layer 1), use the `onPaste` option on `useInput` instead:
 
 ```tsx
-import { useInput } from "@silvery/ag-term"
+import { useInput } from "silvery"
 
 useInput(handler, {
   onPaste: (text) => insertText(text),
@@ -298,7 +298,7 @@ useInput(handler, {
 Drive a 0-to-1 animation over a duration with easing. Targets ~30fps (33ms interval) since terminals don't benefit from higher refresh rates.
 
 ```tsx
-import { useAnimation } from "@silvery/ag-term"
+import { useAnimation } from "silvery"
 
 function FadeIn({ children }) {
   const { value, isAnimating, reset } = useAnimation({
@@ -330,7 +330,7 @@ function FadeIn({ children }) {
 Smoothly interpolate between numeric values. When the target changes, animates from the current position to the new target. If the target changes mid-animation, restarts from the current interpolated position.
 
 ```tsx
-import { useAnimatedTransition } from "@silvery/ag-term"
+import { useAnimatedTransition } from "silvery"
 
 function ScrollOffset({ target }) {
   const smooth = useAnimatedTransition(target, { duration: 200, easing: "easeOut" })
@@ -351,7 +351,7 @@ Returns the current interpolated `number`. On first render, returns the target v
 Run a callback on a fixed interval. Uses a ref for the callback to avoid stale closures (Dan Abramov's pattern). The callback is NOT called on mount -- only on subsequent ticks.
 
 ```tsx
-import { useInterval } from "@silvery/ag-term"
+import { useInterval } from "silvery"
 
 function Clock() {
   const [time, setTime] = useState(Date.now())
@@ -403,7 +403,7 @@ Push frozen items to terminal scrollback. Tracks a contiguous frozen prefix — 
 Pair with VirtualList's `virtualized` prop for the complete experience.
 
 ```tsx
-import { useScrollback } from "@silvery/ag-term"
+import { useScrollback } from "silvery"
 
 const frozenCount = useScrollback(items, {
   frozen: (item) => item.complete,
@@ -443,7 +443,7 @@ When `markers: true`, each frozen item is bracketed with OSC 133 prompt/command 
 Track which modifier keys (Cmd, Ctrl, Alt, Shift) are currently held. Works out of the box — Silvery's default Kitty flags enable modifier-only key reporting, so Cmd hold is detected without any configuration.
 
 ```tsx
-import { useModifierKeys } from "@silvery/ag-react"
+import { useModifierKeys } from "silvery"
 
 function ModifierDisplay() {
   const { super: cmdHeld, ctrl, alt, shift } = useModifierKeys()
@@ -483,7 +483,7 @@ function HoverTarget() {
 Set the terminal mouse cursor shape via OSC 22. Resets to default on unmount or when the shape changes to null/undefined. Supported by Ghostty, Kitty (>=0.33), foot, WezTerm (partial). Terminals that don't support OSC 22 safely ignore it.
 
 ```tsx
-import { useMouseCursor } from "@silvery/ag-react"
+import { useMouseCursor } from "silvery"
 
 function DraggableHandle() {
   const [hovered, setHovered] = useState(false)

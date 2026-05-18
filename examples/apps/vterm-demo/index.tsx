@@ -5,8 +5,7 @@
  */
 
 import React, { useState, useEffect } from "react"
-import { Box, Text, ListView, useWindowSize } from "silvery"
-import { SearchProvider, SearchBar } from "@silvery/ag-react"
+import { Box, Text, ListView, useWindowSize, SearchProvider, SearchBar } from "silvery"
 import { run, useInput, type Key } from "silvery/runtime"
 import type { ExampleMeta } from "../../_banner.js"
 import { SCRIPT } from "../aichat/script.js"
