@@ -13,7 +13,7 @@ function wheelUpBurst(x: number, y: number, count: number): string {
 }
 
 describe("runtime wheel coalescing", () => {
-  test("same-chunk SGR wheel burst dispatches as frame-sized distance-preserving wheel events", async () => {
+  test("same-chunk SGR wheel burst dispatches as one immediate distance-preserving wheel event", async () => {
     using term = createTermless({ cols: 24, rows: 6 })
     const wheelDeltas: number[] = []
     const wheelTimestamps: Array<number | undefined> = []
@@ -43,12 +43,45 @@ describe("runtime wheel coalescing", () => {
 
     handle.unmount()
 
-    expect(wheelDeltas).toEqual([-4, -4, -4])
-    expect(wheelTimestamps).toHaveLength(3)
+    expect(wheelDeltas).toEqual([-12])
+    expect(wheelTimestamps).toHaveLength(1)
     expect(wheelTimestamps.every((timestamp) => Number.isFinite(timestamp))).toBe(true)
-    expect(wheelBatchIds).toHaveLength(3)
+    expect(wheelBatchIds).toHaveLength(1)
     expect(new Set(wheelBatchIds).size).toBe(1)
     expect(wheelBatchIds[0]).toBeGreaterThan(0)
+  })
+
+  test("same-chunk SGR wheel burst does not create delayed intermediate renders", async () => {
+    using term = createTermless({ cols: 24, rows: 6 })
+    const committedCounts: number[] = []
+
+    function App(): React.ReactElement {
+      const [count, setCount] = useState(0)
+      useEffect(() => {
+        committedCounts.push(count)
+      }, [count])
+      return (
+        <Box
+          width={24}
+          height={6}
+          onWheel={(event) => setCount((prev) => prev + Math.abs(event.deltaY))}
+        >
+          <Text>count={count}</Text>
+        </Box>
+      )
+    }
+
+    const handle = await run(<App />, term, { mouse: true, selection: false })
+    await settle()
+
+    ;(term as unknown as { sendInput(data: string): void }).sendInput(wheelUpBurst(2, 0, 12))
+    await settle()
+
+    handle.unmount()
+
+    expect(committedCounts).toContain(12)
+    expect(committedCounts).not.toContain(4)
+    expect(committedCounts).not.toContain(8)
   })
 
   test("separate terminal input batches preserve wheel cadence", async () => {

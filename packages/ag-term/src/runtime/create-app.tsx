@@ -242,19 +242,6 @@ function inputBatchIdForMouseEvent(event: NamespacedEvent): number | undefined {
   return (event.data as { inputBatchId?: number } | undefined)?.inputBatchId
 }
 
-/**
- * Maximum raw wheel packets from one terminal input batch to process in one
- * render frame.
- *
- * Terminal trackpads can deliver a large packet burst in one stdin read after
- * the JS thread was busy. Treating that whole read as one frame preserves
- * input mass but collapses the visual path into a 40+ row jump. Splitting the
- * already-buffered batch into small render chunks keeps latency bounded
- * (packets are already in-memory) while giving the terminal intermediate
- * frames to paint.
- */
-const MAX_WHEEL_EVENTS_PER_RENDER_BATCH = 4
-
 function takeNextFrameBatch(events: NamespacedEvent[]): NamespacedEvent[] {
   const firstMouseIndex = events.findIndex(isMouseEvent)
   if (firstMouseIndex === -1) return events.splice(0)
@@ -265,12 +252,10 @@ function takeNextFrameBatch(events: NamespacedEvent[]): NamespacedEvent[] {
 
   const inputBatchId = inputBatchIdForMouseEvent(first)
   let count = 1
-  const wheelBatch = isWheelEvent(first)
   while (count < events.length) {
     const next = events[count]!
     if (!isMouseEvent(next)) break
     if (inputBatchIdForMouseEvent(next) !== inputBatchId) break
-    if (wheelBatch && isWheelEvent(next) && count >= MAX_WHEEL_EVENTS_PER_RENDER_BATCH) break
     count++
   }
   return events.splice(0, count)
