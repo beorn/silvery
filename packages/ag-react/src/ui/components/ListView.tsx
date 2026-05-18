@@ -1339,19 +1339,24 @@ function ListViewInner<T>(
     setOuterNode(outer)
   }, [])
 
-  // Subscribe to the COMMITTED boxRect signals on both Box nodes so the
+  // Subscribe to the COMMITTED size of both Box nodes so the
   // component re-renders at event-batch commit boundaries (not mid-batch).
   // Within a single batch the committed signal is invariant across every
-  // convergence pass — so a render that BOTH reads the rect AND writes a
+  // convergence pass — so a render that BOTH reads the size AND writes a
   // layout-affecting prop based on it converges in one pass instead of the
   // 3+ passes the prior `useState` + `onLayout` chain required.
+  //
+  // Only width/height are used downstream. Subscribing to full `boxRect`
+  // wakes ListView when its viewport merely moves on screen (y-only shifts
+  // while scrolling or parent chrome relayouts); the dimensions-only
+  // observation keeps those frames out of React.
   //
   // See bead `@km/silvery/listview-layout-signals-from-getlayoutsignals` and
   // `@km/silvery/use-deferred-box-rect-and-post-commit-observers` for the
   // committed-signal contract.
-  const [, forceRectUpdate] = useReducer((x: number) => x + 1, 0)
-  const prevOuterRectRef = useRef<Rect | null>(null)
-  const prevInnerRectRef = useRef<Rect | null>(null)
+  const [, forceSizeUpdate] = useReducer((x: number) => x + 1, 0)
+  const prevOuterSizeRef = useRef<{ w: number; h: number } | null>(null)
+  const prevInnerSizeRef = useRef<{ w: number; h: number } | null>(null)
   // Synchronous bootstrap: when the AgNode is captured, seed prevRectRef
   // with the committed value so the first post-mount render sees the
   // measurement that landed on the same batch as `setOuterNode` /
@@ -1367,72 +1372,54 @@ function ListViewInner<T>(
   // comparison happens against the {0,0}-seeded prev. Bead:
   // @km/silvery/useboxrect-refactor-incomplete-tracking (Kimi K2.6's
   // observation in the 2026-05-11 /pro review).
-  if (outerNode && prevOuterRectRef.current === null) {
-    markObservedLayoutSignal(outerNode, "boxRect")
-    const seed = getLayoutSignals(outerNode).boxRectCommitted()
-    if (seed && seed.width > 0 && seed.height > 0) prevOuterRectRef.current = seed
+  if (outerNode && prevOuterSizeRef.current === null) {
+    markObservedLayoutSignal(outerNode, "boxSize")
+    const seed = rectToSize(getLayoutSignals(outerNode).boxRectCommitted())
+    if (seed) prevOuterSizeRef.current = seed
   }
-  if (containerNode && prevInnerRectRef.current === null) {
-    markObservedLayoutSignal(containerNode, "boxRect")
-    const seed = getLayoutSignals(containerNode).boxRectCommitted()
-    if (seed && seed.width > 0 && seed.height > 0) prevInnerRectRef.current = seed
+  if (containerNode && prevInnerSizeRef.current === null) {
+    markObservedLayoutSignal(containerNode, "boxSize")
+    const seed = rectToSize(getLayoutSignals(containerNode).boxRectCommitted())
+    if (seed) prevInnerSizeRef.current = seed
   }
   useLayoutEffect(() => {
     if (!outerNode) return
-    markObservedLayoutSignal(outerNode, "boxRect")
+    markObservedLayoutSignal(outerNode, "boxSize")
     const signals = getLayoutSignals(outerNode)
     return signalEffect(() => {
-      const next = signals.boxRectCommitted()
-      const prev = prevOuterRectRef.current
-      if (
-        prev?.x !== next?.x ||
-        prev?.y !== next?.y ||
-        prev?.width !== next?.width ||
-        prev?.height !== next?.height
-      ) {
-        prevOuterRectRef.current = next
-        forceRectUpdate()
+      const next = rectToSize(signals.boxRectCommitted())
+      const prev = prevOuterSizeRef.current
+      if (prev?.w !== next?.w || prev?.h !== next?.h) {
+        prevOuterSizeRef.current = next
+        forceSizeUpdate()
       }
     })
   }, [outerNode])
   useLayoutEffect(() => {
     if (!containerNode) return
-    markObservedLayoutSignal(containerNode, "boxRect")
+    markObservedLayoutSignal(containerNode, "boxSize")
     const signals = getLayoutSignals(containerNode)
     return signalEffect(() => {
-      const next = signals.boxRectCommitted()
-      const prev = prevInnerRectRef.current
-      if (
-        prev?.x !== next?.x ||
-        prev?.y !== next?.y ||
-        prev?.width !== next?.width ||
-        prev?.height !== next?.height
-      ) {
-        prevInnerRectRef.current = next
-        forceRectUpdate()
+      const next = rectToSize(signals.boxRectCommitted())
+      const prev = prevInnerSizeRef.current
+      if (prev?.w !== next?.w || prev?.h !== next?.h) {
+        prevInnerSizeRef.current = next
+        forceSizeUpdate()
       }
     })
   }, [containerNode])
 
-  // Synchronous read of the COMMITTED rect during render. Returns null
+  // Synchronous read of the COMMITTED size during render. Returns null
   // when the Box hasn't mounted yet OR when its first commit boundary has
   // not landed yet — downstream code falls back to `height` / sentinel
   // values (mirrors the prior `outerViewportSize === null` branch).
   //
   // Memoized to keep object identity stable across renders that read the
   // same width/height — downstream effects that include `viewportSize` /
-  // `outerViewportSize` in their deps array would otherwise re-fire on
-  // every parent render. The `prevOuterRectRef` / `prevInnerRectRef`
-  // current values are written from the signal-effect subscription above,
-  // so reading their width/height here advances the memo only when the
-  // committed rect actually changes.
-  const outerRect = prevOuterRectRef.current
-  const innerRect = prevInnerRectRef.current
-  const outerViewportSize = useMemo(
-    () => rectToSize(outerRect),
-    [outerRect?.width, outerRect?.height],
-  )
-  const viewportSize = useMemo(() => rectToSize(innerRect), [innerRect?.width, innerRect?.height])
+  // `outerViewportSize` in their deps array would otherwise re-fire on every
+  // parent render. The refs are only replaced when width/height changes.
+  const outerViewportSize = prevOuterSizeRef.current
+  const viewportSize = prevInnerSizeRef.current
   const outerViewportHeight = isHeightIndependent
     ? Math.max(1, outerViewportSize?.h ?? viewportSize?.h ?? 0)
     : Math.max(1, height ?? 1)

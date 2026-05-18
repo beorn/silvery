@@ -420,6 +420,35 @@ function MutableHeightFlickList({
   return <FlickList items={items} listRef={listRef} />
 }
 
+function MovingViewportFlickList({
+  listRef,
+  moveRef,
+}: {
+  listRef: React.RefObject<ListViewHandle | null>
+  moveRef: React.RefObject<(() => void) | null>
+}): React.ReactElement {
+  const [top, setTop] = useState(1)
+  moveRef.current = () => setTop((value) => (value === 1 ? 5 : 1))
+  const items = makeUniformRows(160)
+
+  return (
+    <Box position="relative" width={80} height={32}>
+      <Box position="absolute" top={top} left={0} width={80} height={20}>
+        <ListView<RowItem>
+          ref={listRef}
+          items={[...items]}
+          height={18}
+          estimateHeight={1}
+          getKey={(item) => item.id}
+          follow="end"
+          virtualization="index"
+          renderItem={(item) => <Text>{item.label}</Text>}
+        />
+      </Box>
+    </Box>
+  )
+}
+
 function visibleLineNumbers(text: string): number[] {
   const numbers: number[] = []
   for (const match of text.matchAll(/Line\s+(\d+)/g)) {
@@ -1071,6 +1100,47 @@ describe("ListView trackpad flick replay through termless", () => {
             )
             .join(" | "),
         ).toBeLessThanOrEqual(60)
+      } finally {
+        handle.unmount()
+      }
+    },
+    20_000,
+  )
+
+  test.skipIf(process.env.SILVERY_INSTRUMENT !== "1")(
+    "does not emit boxRect invalidations when only the viewport y position changes",
+    async () => {
+      using term = createTermless({ cols: 100, rows: 40 })
+      const listRef = React.createRef<ListViewHandle>()
+      const moveRef = React.createRef<(() => void) | null>()
+      const handle: RunHandle = await run(
+        <MovingViewportFlickList listRef={listRef} moveRef={moveRef} />,
+        term,
+        { mouse: true },
+      )
+      try {
+        await settle(120)
+        act(() => {
+          listRef.current?.scrollToBottom()
+        })
+        await settle(120)
+
+        resetPassHistogram()
+        act(() => {
+          moveRef.current?.()
+        })
+        await settle(120)
+
+        const boxRectInvalidates = layoutInvalidateEdgeCount("boxRect")
+        expect(
+          boxRectInvalidates,
+          getPassHistogram()
+            .byCause.map(
+              (entry) =>
+                `${entry.cause}: ${entry.topEdges.map((edge) => `${edge.edge}=${edge.count}`).join(", ")}`,
+            )
+            .join(" | "),
+        ).toBe(0)
       } finally {
         handle.unmount()
       }
