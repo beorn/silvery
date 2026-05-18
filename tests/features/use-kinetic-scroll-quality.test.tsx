@@ -291,9 +291,9 @@ describe("useKineticScroll — input cadence detection", () => {
 
     for (let i = 0; i < 12; i++) {
       apiRef.current!.onWheel({ deltaY: 1 })
+      await settle(8)
     }
 
-    await settle(5)
     const afterInput = apiRef.current!.getScrollFloat()
     expect(
       afterInput,
@@ -363,6 +363,37 @@ describe("useKineticScroll — input cadence detection", () => {
       apiRef.current!.getScrollFloat(),
       "a filtered bounce must not turn deliberate slow packets into low-gain trackpad quanta",
     ).toBeGreaterThan(30)
+  })
+
+  test("coalesced continuous bursts preserve packet mass without burst-wide over-acceleration", async () => {
+    const apiRef: HarnessRef = { current: null }
+    const r = createRenderer({ cols: 30, rows: 8 })
+    r(
+      <TestHarness
+        apiRef={apiRef}
+        options={{
+          maxScroll: 1000,
+          enableInputCadenceDetection: true,
+          enableMomentum: false,
+          continuousWheelMultiplier: 0.435,
+          continuousWheelAcceleration: 3,
+        }}
+      />,
+    )
+    await settle()
+
+    apiRef.current!.onWheel({ deltaY: 1 })
+    await settle(10)
+    apiRef.current!.onWheel({ deltaY: 1 })
+    await settle(80)
+    apiRef.current!.onWheel({ deltaY: 60 })
+
+    const afterBurst = apiRef.current!.getScrollFloat()
+    expect(afterBurst, "coalesced packets still move the viewport").toBeGreaterThan(25)
+    expect(
+      afterBurst,
+      "one cadence acceleration sample must not multiply every packet in a coalesced burst",
+    ).toBeLessThan(32)
   })
 
   test("smoothWheelPackets applies same-turn trackpad bursts immediately", async () => {

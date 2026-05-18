@@ -493,15 +493,16 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
 
       const last = continuousAccelLastTickTimeRef.current
       const dt = last > 0 ? now - last : Number.POSITIVE_INFINITY
-      continuousAccelLastTickTimeRef.current = now
       if (!Number.isFinite(dt) || dt > CONTINUOUS_ACCEL_STREAK_TIMEOUT_MS) {
+        continuousAccelLastTickTimeRef.current = now
         continuousAccelIntervalsRef.current = []
         return 1
       }
+      if (dt < CONTINUOUS_ACCEL_MIN_INTERVAL_MS) return 1
+      continuousAccelLastTickTimeRef.current = now
 
-      const interval = Math.max(CONTINUOUS_ACCEL_MIN_INTERVAL_MS, dt)
       const intervals = continuousAccelIntervalsRef.current
-      intervals.push(interval)
+      intervals.push(dt)
       if (intervals.length > CONTINUOUS_ACCEL_HISTORY_SIZE) intervals.shift()
 
       const avgInterval = intervals.reduce((sum, value) => sum + value, 0) / intervals.length
@@ -704,7 +705,7 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
       for (const sample of samples) {
         const sampleDir = Math.sign(sample.deltaY) || 0
         if (sampleDir === 0) continue
-        const sampleMagnitude = Math.max(1, Math.abs(sample.deltaY))
+        const sampleMagnitude = Math.max(1, Math.floor(Math.abs(sample.deltaY)))
         // Cadence-based mode classification only sees samples accepted by
         // WheelGestureFilter. A one-packet opposite-direction inertia bounce is
         // intentionally filtered; letting it update cadence turns slow sparse
@@ -730,24 +731,26 @@ export function useKineticScroll(options: UseKineticScrollOptions = {}): UseKine
           }
           lastWheelTimeRef.current = sample.t
         }
-        const isDiscrete = enableInputCadenceDetection && cadenceModeRef.current === "discrete"
-        const isContinuous = enableInputCadenceDetection && cadenceModeRef.current === "continuous"
-        if (isDiscrete) acceptedDiscrete = true
-        if (isContinuous) acceptedContinuous = true
-        if (!isContinuous) resetContinuousAcceleration()
-        const continuousAccelerationMultiplier = isContinuous
-          ? resolveContinuousAccelerationMultiplier(sample.t, sampleDir < 0 ? -1 : 1)
-          : 1
-        const stepRows =
-          sampleMagnitude *
-          (isDiscrete
+        let appliedSampleRows = 0
+        for (let unit = 0; unit < sampleMagnitude; unit++) {
+          const isDiscrete = enableInputCadenceDetection && cadenceModeRef.current === "discrete"
+          const isContinuous =
+            enableInputCadenceDetection && cadenceModeRef.current === "continuous"
+          if (isDiscrete) acceptedDiscrete = true
+          if (isContinuous) acceptedContinuous = true
+          if (!isContinuous) resetContinuousAcceleration()
+          const continuousAccelerationMultiplier = isContinuous
+            ? resolveContinuousAccelerationMultiplier(sample.t, sampleDir < 0 ? -1 : 1)
+            : 1
+          const stepRows = isDiscrete
             ? WHEEL_STEP_ROWS * wheelMultiplier * DISCRETE_STEP_MULTIPLIER
             : WHEEL_STEP_ROWS *
               (isContinuous
                 ? continuousWheelMultiplier * continuousAccelerationMultiplier
-                : wheelMultiplier))
-        const appliedRows = applyWheelRows(sampleDir * stepRows, isDiscrete)
-        if (appliedRows !== 0) buf.push({ t: sample.t, rows: appliedRows })
+                : wheelMultiplier)
+          appliedSampleRows += applyWheelRows(sampleDir * stepRows, isDiscrete)
+        }
+        if (appliedSampleRows !== 0) buf.push({ t: sample.t, rows: appliedSampleRows })
       }
       setIsScrolling(true)
       scheduleScrollbarHide()
