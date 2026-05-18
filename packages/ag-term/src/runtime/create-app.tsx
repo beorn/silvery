@@ -2243,46 +2243,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       pendingRerender = true
       queueMicrotask(() => {
         if (!pendingRerender) return
+        if (isRendering) return
         pendingRerender = false
-        if (!shouldExit && !isRendering) {
-          isRendering = true
-          try {
-            currentBuffer = doRender()
-            // Commit boundary — see processEventBatch path for full
-            // rationale. Promotes in-flight rect signals to committed,
-            // firing forceUpdate on reactive useBoxRect/useScrollRect/
-            // useScreenRect consumers if rects changed. The microtask
-            // re-render below picks up the resulting React work; further
-            // rect changes produced by it defer to the next commit.
-            renderer.commitLayout()
-            if (pendingRerender) {
-              pendingRerender = false
-              currentBuffer = doRender()
-              pendingRerender = false
-            }
-            paintFrame()
-            // Re-resolve hover at the last known pointer coordinates so
-            // content that scrolled / shifted under a stationary cursor
-            // gets proper mouseenter/mouseleave dispatch. Without this,
-            // hover bg sticks to whatever AgNode was under the pointer
-            // when the last mouse event fired — symptom: wheel scrolls
-            // the list, the previously-hovered row scrolls away, but
-            // its hover-bg remains painted on the new row that took its
-            // place. Idempotent when nothing changed.
-            // Bead: @km/code/sticky-hover-residue.
-            refreshHoverPath(mouseEventState, container.root)
-            // CLS instrumentation — post-commit layout-shift detection.
-            // Gated by `DEBUG=silvery:cls`; cheap when disabled (single
-            // method-armed check). The microtask path is post-paint
-            // commits driven by setState / async settlement (NOT
-            // scroll/resize) — so no scroll/resize suppression here.
-            // Bead: @km/silvery/layout-shift-instrumentation-cls.
-            const clsDims = target.getDims()
-            clsMonitor.onCommit(container.root, clsDims.cols, clsDims.rows, false)
-          } finally {
-            isRendering = false
-          }
-        }
+        void renderStandaloneFrame()
       })
     }
   })
@@ -2640,109 +2603,115 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   // Initial render — must run AFTER alt-screen entry so reconciler effects
   // (Image, Static, etc.) write to the correct screen surface.
+  //
+  // Keep `isRendering` true across the full initial settle loop. React commits
+  // call `container.onRender()`, which defers a standalone microtask render;
+  // startup must absorb that as `pendingRerender` and settle before first
+  // paint, otherwise a resumed transcript can publish an intermediate layout
+  // before the startup convergence loop reaches the stable bottom pin.
   if (_ansiTrace) {
     traceLog.debug?.("=== INITIAL RENDER ===")
   }
-  currentBuffer = doRender()
+  isRendering = true
+  try {
+    currentBuffer = doRender()
 
-  if (!headless) {
-    // Kitty keyboard protocol — all paths go through the Modes owner so state
-    // is tracked for race-free teardown.
-    if (kittyOption != null && kittyOption !== false) {
-      if (kittyOption === true) {
-        // Auto-detect: probe terminal, enable if supported.
-        // If caller already detected Kitty support synchronously (via caps from
-        // detectTerminalCaps — $TERM-based), skip the 200ms stdio roundtrip and
-        // enable directly. The synchronous heuristic is reliable for the four
-        // Kitty-protocol terminals (kitty/ghostty/wezterm/foot); the probe only
-        // adds value when caps weren't provided.
-        if (capsOption?.kittyKeyboard) {
-          modes.kittyKeyboard(defaultKittyFlags)
-          kittyEnabled = true
-          kittyFlags = defaultKittyFlags
-        } else {
-          const result = await detectKittyFromStdio(stdout, stdin as NodeJS.ReadStream)
-          if (result.supported) {
+    if (!headless) {
+      // Kitty keyboard protocol — all paths go through the Modes owner so state
+      // is tracked for race-free teardown.
+      if (kittyOption != null && kittyOption !== false) {
+        if (kittyOption === true) {
+          // Auto-detect: probe terminal, enable if supported.
+          // If caller already detected Kitty support synchronously (via caps from
+          // detectTerminalCaps — $TERM-based), skip the 200ms stdio roundtrip and
+          // enable directly. The synchronous heuristic is reliable for the four
+          // Kitty-protocol terminals (kitty/ghostty/wezterm/foot); the probe only
+          // adds value when caps weren't provided.
+          if (capsOption?.kittyKeyboard) {
             modes.kittyKeyboard(defaultKittyFlags)
             kittyEnabled = true
             kittyFlags = defaultKittyFlags
+          } else {
+            const result = await detectKittyFromStdio(stdout, stdin as NodeJS.ReadStream)
+            if (result.supported) {
+              modes.kittyKeyboard(defaultKittyFlags)
+              kittyEnabled = true
+              kittyFlags = defaultKittyFlags
+            }
           }
+        } else {
+          // Explicit flags — enable directly without detection
+          modes.kittyKeyboard(kittyOption as number)
+          kittyEnabled = true
+          kittyFlags = kittyOption as number
         }
-      } else {
-        // Explicit flags — enable directly without detection
-        modes.kittyKeyboard(kittyOption as number)
+      } else if (kittyOption == null) {
+        // No option specified: legacy behavior — always enable Kitty with full fidelity
+        modes.kittyKeyboard(defaultKittyFlags)
         kittyEnabled = true
-        kittyFlags = kittyOption as number
+        kittyFlags = defaultKittyFlags
       }
-    } else if (kittyOption == null) {
-      // No option specified: legacy behavior — always enable Kitty with full fidelity
-      modes.kittyKeyboard(defaultKittyFlags)
-      kittyEnabled = true
-      kittyFlags = defaultKittyFlags
-    }
 
-    // Mouse tracking
-    if (mouseTrackingEnabled) {
-      modes.mouse(mouseParseOptions?.coordinateMode === "pixel" ? "pixel" : true)
-      mouseEnabled = true
-    }
+      // Mouse tracking
+      if (mouseTrackingEnabled) {
+        modes.mouse(mouseParseOptions?.coordinateMode === "pixel" ? "pixel" : true)
+        mouseEnabled = true
+      }
 
-    // Focus reporting is deferred to after the event loop starts (see below).
-    // Enabling it here would cause the terminal's immediate CSI I/O response
-    // to arrive before the input parser's stdin listener is attached, leaking
-    // raw escape sequences to the screen.
-  }
-  if (_ansiTrace) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("node:fs").appendFileSync(
-      "/tmp/silvery-trace.log",
-      "=== RUNTIME.RENDER (initial) ===\n",
-    )
-  }
-  // Settle the deferred-rect convergence BEFORE the first user-visible
-  // paintFrame. Each iteration:
-  //   1. commitLayoutSnapshot promotes in-flight rects to committed.
-  //   2. Reactive useBoxRect/useScrollRect/useScreenRect subscribers may
-  //      forceUpdate.
-  //   3. await drains microtasks so React processes those forceUpdates.
-  //   4. If pendingRerender, doRender, then loop.
-  //
-  // Bounded by MAX_CONVERGENCE_PASSES — multi-layer-measurement trees
-  // (e.g. MeasuredBox inside a flex container that also reads useBoxRect)
-  // need one iteration per layer to settle. Steady state converges in 1.
-  //
-  // Per-event renders use a single settle (see processEventBatch / press)
-  // because in-batch idempotence already guarantees single-layer
-  // convergence; the initial render is the one place where multi-layer
-  // chains genuinely need a few iterations.
-  //
-  // **Why settle BEFORE the first paintFrame** (Phase 1b of the
-  // layout-feedback-regression-epic): the deferred-only useBoxRect
-  // contract returns 0 on first render and the measured rect on the next
-  // commit boundary. If paintFrame fires BEFORE the commit loop runs, the
-  // first user-visible frame paints with zero rects, then a second frame
-  // snaps to the settled layout — that's the visible "first-frame zero,
-  // second-frame snap" flicker (scrollbar-invisible-on-first-paint,
-  // codeblock-not-centered-then-reflow). The
-  // test renderer settles before publishing its frame; production must do
-  // the same so live behavior matches what unit tests assert.
-  //
-  // See bead `@km/silvery/runtime-settle-before-first-paint` and
-  // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
-  let initCommitLoops = 0
-  while (initCommitLoops < MAX_CONVERGENCE_PASSES) {
-    renderer.commitLayout()
-    await Promise.resolve()
-    if (!pendingRerender) break
-    pendingRerender = false
-    isRendering = true
-    try {
+      // Focus reporting is deferred to after the event loop starts (see below).
+      // Enabling it here would cause the terminal's immediate CSI I/O response
+      // to arrive before the input parser's stdin listener is attached, leaking
+      // raw escape sequences to the screen.
+    }
+    if (_ansiTrace) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("node:fs").appendFileSync(
+        "/tmp/silvery-trace.log",
+        "=== RUNTIME.RENDER (initial) ===\n",
+      )
+    }
+    // Settle the deferred-rect convergence BEFORE the first user-visible
+    // paintFrame. Each iteration:
+    //   1. commitLayoutSnapshot promotes in-flight rects to committed.
+    //   2. Reactive useBoxRect/useScrollRect/useScreenRect subscribers may
+    //      forceUpdate.
+    //   3. await drains microtasks so React processes those forceUpdates.
+    //   4. If pendingRerender, doRender, then loop.
+    //
+    // Bounded by MAX_CONVERGENCE_PASSES — multi-layer-measurement trees
+    // (e.g. MeasuredBox inside a flex container that also reads useBoxRect)
+    // need one iteration per layer to settle. Steady state converges in 1.
+    //
+    // Per-event renders use a single settle (see processEventBatch / press)
+    // because in-batch idempotence already guarantees single-layer
+    // convergence; the initial render is the one place where multi-layer
+    // chains genuinely need a few iterations.
+    //
+    // **Why settle BEFORE the first paintFrame** (Phase 1b of the
+    // layout-feedback-regression-epic): the deferred-only useBoxRect
+    // contract returns 0 on first render and the measured rect on the next
+    // commit boundary. If paintFrame fires BEFORE the commit loop runs, the
+    // first user-visible frame paints with zero rects, then a second frame
+    // snaps to the settled layout — that's the visible "first-frame zero,
+    // second-frame snap" flicker (scrollbar-invisible-on-first-paint,
+    // codeblock-not-centered-then-reflow). The
+    // test renderer settles before publishing its frame; production must do
+    // the same so live behavior matches what unit tests assert.
+    //
+    // See bead `@km/silvery/runtime-settle-before-first-paint` and
+    // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+    let initCommitLoops = 0
+    while (initCommitLoops < MAX_CONVERGENCE_PASSES) {
+      renderer.commitLayout()
+      await Promise.resolve()
+      if (!pendingRerender) break
+      pendingRerender = false
       currentBuffer = doRender()
-    } finally {
-      isRendering = false
+      pendingRerender = false
+      initCommitLoops++
     }
-    pendingRerender = false
-    initCommitLoops++
+  } finally {
+    isRendering = false
   }
   paintFrame()
   if (_perfLog) {
@@ -2801,6 +2770,86 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     }
   }
 
+  async function drainStandaloneCommitRerenders(): Promise<number> {
+    let commitRerenders = 0
+    for (;;) {
+      // Standalone async store updates (timers, session hydration, resource
+      // probes) need the same "settle before paint" contract as startup.
+      // One post-commit rerender is not enough for nested layout feedback:
+      // pass N can discover a measurement that only becomes readable after
+      // the next commit boundary. Painting between those passes is the
+      // visible no-input bounce seen during resumed transcript startup.
+      renderer.commitLayout()
+      // Layout-signal subscribers (useScrollState/useBoxRect/etc.) schedule
+      // React work synchronously during commitLayout(), but the container
+      // onRender flag is raised only when that React work is flushed. Flush
+      // before deciding stability so we do not paint the pre-subscriber frame.
+      // Some signal subscribers are installed from layout effects and enqueue
+      // their React update one microtask later, so yield once after advancing
+      // the layout snapshot before checking the pending-rerender flag.
+      // eslint-disable-next-line no-await-in-loop -- each iteration is one layout-commit boundary
+      await Promise.resolve()
+      reconciler.flushSyncWork()
+      if (!pendingRerender) return commitRerenders
+      if (commitRerenders >= MAX_CONVERGENCE_PASSES) {
+        pendingRerender = false
+        assertBoundedConvergence(commitRerenders + 1, "production-flush", MAX_CONVERGENCE_PASSES)
+        return commitRerenders
+      }
+      pendingRerender = false
+      currentBuffer = doRender()
+      commitRerenders++
+    }
+  }
+
+  async function renderStandaloneFrame(): Promise<void> {
+    if (shouldExit) return
+    if (isRendering) {
+      pendingRerender = true
+      return
+    }
+
+    isRendering = true
+    try {
+      let rerenderedBeforePaint = false
+      currentBuffer = doRender()
+      reconciler.flushSyncWork()
+      // React layout effects may schedule sync work after doRender() returns
+      // (for example ListView measuring a row and setting measurement state).
+      // Give those microtasks a chance to raise pendingRerender before the
+      // commit drain decides the frame is stable.
+      await Promise.resolve()
+      const commitRerenders = await drainStandaloneCommitRerenders()
+      rerenderedBeforePaint ||= commitRerenders > 0
+      // One additional macrotask catches layout-feedback updates that React
+      // schedules after layout effects have installed signal subscriptions.
+      // This path is outside direct input handling; user input uses
+      // processEventBatch and never pays this pre-paint coalescing delay.
+      await new Promise<void>((resolve) => setImmediate(resolve))
+      if (pendingRerender) {
+        pendingRerender = false
+        currentBuffer = doRender()
+        reconciler.flushSyncWork()
+        rerenderedBeforePaint = true
+        const lateCommitRerenders = await drainStandaloneCommitRerenders()
+        rerenderedBeforePaint ||= lateCommitRerenders > 0
+      }
+      if (rerenderedBeforePaint) currentBuffer._buffer.markAllRowsDirty()
+      paintFrame()
+      // Re-resolve hover at the last known pointer coordinates so content
+      // that scrolled / shifted under a stationary cursor gets proper
+      // mouseenter/mouseleave dispatch.
+      refreshHoverPath(mouseEventState, container.root)
+      // CLS instrumentation — post-commit layout-shift detection. The
+      // microtask path is post-paint commits driven by setState / async
+      // settlement, not direct scroll/resize input.
+      const clsDims = target.getDims()
+      clsMonitor.onCommit(container.root, clsDims.cols, clsDims.rows, false)
+    } finally {
+      isRendering = false
+    }
+  }
+
   // Subscribe to store for re-renders.
   //
   // Three cases:
@@ -2832,6 +2881,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         pendingRerender = true
         queueMicrotask(() => {
           if (!pendingRerender) return
+          if (isRendering) return
           pendingRerender = false
           if (!shouldExit && !isRendering) {
             if (_perfLog) {
@@ -2841,22 +2891,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 `SUBSCRIPTION: deferred microtask render (case 2, render #${renderer.renderCount() + 1})\n`,
               )
             }
-            isRendering = true
-            try {
-              currentBuffer = doRender()
-              // Commit boundary for this standalone render — same as the
-              // processEventBatch path. See bead
-              // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
-              renderer.commitLayout()
-              if (pendingRerender) {
-                pendingRerender = false
-                currentBuffer = doRender()
-                pendingRerender = false
-              }
-              paintFrame()
-            } finally {
-              isRendering = false
-            }
+            void renderStandaloneFrame()
           }
         })
       }
@@ -2869,20 +2904,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         `SUBSCRIPTION: immediate render (case 3, render #${renderer.renderCount() + 1})\n`,
       )
     }
-    isRendering = true
-    try {
-      currentBuffer = doRender()
-      // Commit boundary — see processEventBatch path for full rationale.
-      renderer.commitLayout()
-      if (pendingRerender) {
-        pendingRerender = false
-        currentBuffer = doRender()
-        pendingRerender = false
-      }
-      paintFrame()
-    } finally {
-      isRendering = false
-    }
+    void renderStandaloneFrame()
   })
 
   // Create namespaced event streams from all providers

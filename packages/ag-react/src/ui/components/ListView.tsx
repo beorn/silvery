@@ -94,6 +94,7 @@ import {
 import {
   createContentGeometry,
   resolveScrollPositionTop,
+  type ContentGeometry,
   type ScrollPosition,
 } from "./list-view/scroll-position"
 import {
@@ -290,6 +291,25 @@ type FollowEndPin =
 
 function followEndPin(snap: "pending" | "settled" = "settled"): FollowEndPin {
   return { kind: "end", snap }
+}
+
+function resolveFollowEndTopRow({
+  geometry,
+  viewportHeight,
+  measuredMaxTopRow,
+}: {
+  geometry: ContentGeometry<string | number>
+  viewportHeight: number
+  measuredMaxTopRow: number
+}): number {
+  // Follow=end must share the same content-height authority as the scroll
+  // cap. During layout convergence, rendered layout can observe a newly
+  // measured row one frame before HeightModel is updated; using only
+  // geometry.maxTopRow paints the old bottom, then snaps a row later.
+  const geometryTopRow = resolveScrollPositionTop({ kind: "end" }, geometry, {
+    height: viewportHeight,
+  }).topRow
+  return Math.max(geometryTopRow, measuredMaxTopRow)
 }
 
 export interface ListViewProps<T> {
@@ -1685,11 +1705,12 @@ function ListViewInner<T>(
     [physics],
   )
   const followOwnsViewport = resolvedFollow === "end" && followEndPinRef.current.kind === "end"
-  const followPosition: ScrollPosition = { kind: "end" }
   const followPinnedTopRow = followOwnsViewport
-    ? resolveScrollPositionTop(followPosition, contentGeometry, {
-        height: contentViewportHeight,
-      }).topRow
+    ? resolveFollowEndTopRow({
+        geometry: contentGeometry,
+        viewportHeight: contentViewportHeight,
+        measuredMaxTopRow: scrollableRows,
+      })
     : null
   // Explicit `scrollTo` prop means "place this item at the viewport
   // anchor" rather than Box's child-index "ensure visible somewhere"
@@ -2713,6 +2734,12 @@ function ListViewInner<T>(
     const prevMeasuredCount = prevMeasuredCountRef.current
     const rowsChangedFromNewMeasurements =
       rowsChanged && prevMeasuredCount !== null && measuredHeights.size !== prevMeasuredCount
+    // Same-key height revisions are just as real as new measurements. A
+    // resumed transcript can revise one already-measured row above the
+    // viewport; while follow=end is pinned, that must snap with the content
+    // height change instead of painting one stale-bottom frame.
+    const rowsChangedFromMeasurementRevision =
+      rowsChanged && prevMeasuredCount !== null && measuredHeights.size === prevMeasuredCount
     const prevTailMeasuredHeight = prevTailMeasuredHeightRef.current
     const tailMeasuredHeightChanged =
       prevTailMeasuredHeight !== null &&
@@ -2788,6 +2815,7 @@ function ListViewInner<T>(
         ((grew ||
           rowsShrank ||
           rowsChangedFromNewMeasurements ||
+          rowsChangedFromMeasurementRevision ||
           rowsChangedFromTailMeasurement ||
           (rowsChanged && widthReflowActive) ||
           rowsChangedBeforeViewportTracked ||
@@ -2797,9 +2825,11 @@ function ListViewInner<T>(
       !shouldSnap && viewportReady && maxRow > 0 && activeDownwardScrollReachedPreviousEnd
     if (shouldSnap) {
       const targetRow = Math.round(
-        resolveScrollPositionTop({ kind: "end" }, contentGeometry, {
-          height: contentViewportHeight,
-        }).topRow,
+        resolveFollowEndTopRow({
+          geometry: contentGeometry,
+          viewportHeight: contentViewportHeight,
+          measuredMaxTopRow: maxRow,
+        }),
       )
       isWheelDrivenRef.current = true
       wheelMeasurementSnapshotAvgHeightRef.current = undefined
@@ -2808,9 +2838,11 @@ function ListViewInner<T>(
       followEndPinRef.current = followEndPin("settled")
     } else if (shouldTrackActiveBottom) {
       const targetRow = Math.round(
-        resolveScrollPositionTop({ kind: "end" }, contentGeometry, {
-          height: contentViewportHeight,
-        }).topRow,
+        resolveFollowEndTopRow({
+          geometry: contentGeometry,
+          viewportHeight: contentViewportHeight,
+          measuredMaxTopRow: maxRow,
+        }),
       )
       isWheelDrivenRef.current = true
       physics.setScrollFloat(targetRow)
