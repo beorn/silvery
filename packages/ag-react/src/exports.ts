@@ -521,6 +521,9 @@ export type { BoxMetrics } from "./hooks/useBoxMetrics"
  * ```
  */
 export { useInput } from "./hooks/useInput"
+export { useHotkey, useHotkeyMap } from "./hooks/useHotkey"
+export { useTextInput } from "./hooks/useTextInput"
+export { useRawKeyEvent } from "./hooks/useRawKeyEvent"
 
 /**
  * App control hook - provides exit function.
@@ -1049,6 +1052,14 @@ export type { BoxProps, BoxHandle } from "./components/Box"
 export type { TextProps, TextHandle } from "./components/Text"
 export type { Rect } from "@silvery/ag/types"
 export type { Key, InputHandler, UseInputOptions } from "./hooks/useInput"
+export type { HotkeyEvent, HotkeyHandler, HotkeyMap, UseHotkeyOptions } from "./hooks/useHotkey"
+export type {
+  GraphemeInputHandler,
+  TextInputEvent,
+  TextInputHandler,
+  UseTextInputOptions,
+} from "./hooks/useTextInput"
+export type { RawKeyEvent, RawKeyEventHandler, UseRawKeyEventOptions } from "./hooks/useRawKeyEvent"
 export {
   keyToName,
   keyToModifiers,

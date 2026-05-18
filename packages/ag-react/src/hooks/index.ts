@@ -25,6 +25,27 @@ export { useAnimation, type UseAnimationOptions, type UseAnimationResult } from 
 
 // Input
 export { useInput, type Key, type InputHandler, type UseInputOptions } from "./useInput"
+export {
+  useHotkey,
+  useHotkeyMap,
+  type HotkeyEvent,
+  type HotkeyHandler,
+  type HotkeyMap,
+  type UseHotkeyOptions,
+} from "./useHotkey"
+export {
+  useTextInput,
+  type GraphemeInputHandler,
+  type TextInputEvent,
+  type TextInputHandler,
+  type UseTextInputOptions,
+} from "./useTextInput"
+export {
+  useRawKeyEvent,
+  type RawKeyEvent,
+  type RawKeyEventHandler,
+  type UseRawKeyEventOptions,
+} from "./useRawKeyEvent"
 
 // Runtime
 export { useRuntime } from "./useRuntime"
