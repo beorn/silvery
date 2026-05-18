@@ -20,6 +20,14 @@ export interface AnchoredOverlayProps extends Omit<
   placement?: Placement
   /** Intrinsic overlay size in terminal cells. */
   size: { width: number; height: number }
+  /**
+   * How to apply `size` to the rendered overlay. `"fixed"` gives the overlay
+   * that exact cell footprint. `"max"` uses `size` as the collision footprint
+   * but lets content shrink inside `maxWidth` / `maxHeight`.
+   *
+   * Default: "fixed".
+   */
+  sizing?: "fixed" | "max"
   /** Gap along the placement axis, in cells. */
   offset?: number
   /** Nudge along the alignment axis, in cells. */
@@ -40,6 +48,7 @@ type AnchoredOverlayBoxProps = Omit<
   | "overlayId"
   | "placement"
   | "size"
+  | "sizing"
 >
 
 /**
@@ -56,6 +65,7 @@ export function AnchoredOverlay({
   open = true,
   placement = "bottom-start",
   size,
+  sizing = "fixed",
   offset,
   alignOffset,
   collisionStrategy = "flip-then-shift",
@@ -88,7 +98,12 @@ export function AnchoredOverlay({
       flexShrink={0}
       decorations={decorations}
     >
-      <AnchoredOverlayContent decorationId={decorationId} fallbackSize={size} boxProps={boxProps}>
+      <AnchoredOverlayContent
+        decorationId={decorationId}
+        fallbackSize={size}
+        sizing={sizing}
+        boxProps={boxProps}
+      >
         {children}
       </AnchoredOverlayContent>
     </Box>
@@ -98,26 +113,31 @@ export function AnchoredOverlay({
 function AnchoredOverlayContent({
   decorationId,
   fallbackSize,
+  sizing,
   boxProps,
   children,
 }: {
   decorationId: string
   fallbackSize: { width: number; height: number }
+  sizing: "fixed" | "max"
   boxProps: AnchoredOverlayBoxProps
   children: React.ReactNode
 }): React.ReactElement | null {
   const ag = useAgNode()
   const decorationRects = useSignal<readonly DecorationRect[]>(ag?.signals.decorationRects ?? null)
+  const hostRect = useSignal<Rect | null>(ag?.signals.boxRectCommitted ?? null) ?? ag?.node.boxRect
   const rect = decorationRects?.find((entry) => entry.id === decorationId)?.rects[0]
   if (!rect) return null
+  const width = rect.width || fallbackSize.width
+  const height = rect.height || fallbackSize.height
+  const sizeProps = sizing === "max" ? { maxWidth: width, maxHeight: height } : { width, height }
   return (
     <Box
       {...boxProps}
       position="absolute"
-      top={rect.y}
-      left={rect.x}
-      width={rect.width || fallbackSize.width}
-      height={rect.height || fallbackSize.height}
+      top={rect.y - (hostRect?.y ?? 0)}
+      left={rect.x - (hostRect?.x ?? 0)}
+      {...sizeProps}
     >
       {children}
     </Box>
