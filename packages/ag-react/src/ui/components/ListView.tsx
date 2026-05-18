@@ -2791,7 +2791,32 @@ function ListViewInner<T>(
   // (silvercode chat: estimate=1, actual ~10-50 rows per assistant block)
   // the measured total dominates and the thumb shrinks toward truth.
   // Bead: km-silvery.listview-thumb-too-big-when-items-tall.
-  const totalRowsForThumb = Math.max(totalRowsStable, totalRowsMeasured)
+  const rawTotalRowsForThumb = Math.max(totalRowsStable, totalRowsMeasured)
+  const chromeTotalRowsRef = useRef<{
+    itemCount: number
+    viewportWidth: number | null
+    gap: number
+    estimate: number
+    totalRows: number
+  } | null>(null)
+  const chromeViewportWidth = viewportSize?.w ?? null
+  const previousChromeTotal = chromeTotalRowsRef.current
+  const chromeTotalReset =
+    previousChromeTotal === null ||
+    activeItems.length < previousChromeTotal.itemCount ||
+    previousChromeTotal.viewportWidth !== chromeViewportWidth ||
+    previousChromeTotal.gap !== gap ||
+    previousChromeTotal.estimate !== estimateAsNumber
+  const chromeCanRelax = !isScrolling && !wheelGestureActiveRef.current && !physics.isAnimating
+  const totalRowsForThumb =
+    chromeTotalReset || chromeCanRelax ? rawTotalRowsForThumb : previousChromeTotal.totalRows
+  chromeTotalRowsRef.current = {
+    itemCount: activeItems.length,
+    viewportWidth: chromeViewportWidth,
+    gap,
+    estimate: estimateAsNumber,
+    totalRows: totalRowsForThumb,
+  }
   const overflowing = totalRowsForOverflow > contentViewportHeight
   const thumbHeight = overflowing
     ? Math.max(
@@ -2802,6 +2827,7 @@ function ListViewInner<T>(
         ),
       )
     : 0
+  const scrollbarScrollableRows = Math.max(0, Math.round(totalRowsForThumb - contentViewportHeight))
   // SCROLL CAP — `scrollRow` is clamped to [0, scrollableRows] in wheel +
   // momentum + keyboard handlers. Uses `totalRowsMeasured` directly (NOT
   // `max(stable, measured)` — that's the visibility gate's job).
@@ -2956,6 +2982,7 @@ function ListViewInner<T>(
       trackHeight,
       totalRowsMeasured,
       totalRowsStable,
+      totalRowsForThumb,
       totalRowsForOverflow,
       measuredHeights.size,
       showScrollbar,
@@ -3025,6 +3052,7 @@ function ListViewInner<T>(
       trackHeight,
       totalRowsMeasured,
       totalRowsStable,
+      totalRowsForThumb,
       totalRowsForOverflow,
       measuredCount: measuredHeights.size,
       avgMeasuredHeight,
@@ -3086,6 +3114,7 @@ function ListViewInner<T>(
     showScrollToBottomButton,
     startIndex,
     totalRowsForOverflow,
+    totalRowsForThumb,
     totalRowsMeasured,
     totalRowsStable,
     trackHeight,
@@ -3244,10 +3273,14 @@ function ListViewInner<T>(
       {showScrollbar && scrollbarVisibility !== "hidden" && (
         <Scrollbar
           trackHeight={trackHeight}
-          scrollableRows={scrollableRows}
-          scrollOffset={effectiveRowsAbove}
+          scrollableRows={scrollbarScrollableRows}
+          scrollOffset={
+            scrollableRows > 0 && effectiveRowsAbove >= scrollableRows - 0.5
+              ? scrollbarScrollableRows
+              : Math.min(effectiveRowsAbove, scrollbarScrollableRows)
+          }
           onScrollOffsetChange={(offset, meta) =>
-            scrollToFrac(scrollableRows > 0 ? offset / scrollableRows : 0, {
+            scrollToFrac(scrollbarScrollableRows > 0 ? offset / scrollbarScrollableRows : 0, {
               rearmFollowAtEnd: !meta?.dragActive,
             })
           }

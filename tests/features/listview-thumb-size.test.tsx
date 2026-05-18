@@ -22,7 +22,7 @@
 
 import React from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { bufferToText, compareBuffers, createRenderer, formatMismatch } from "@silvery/test"
 import { Box, ListView, Text } from "@silvery/ag-react"
 
 const THUMB_EIGHTHS = new Set(["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"])
@@ -89,5 +89,46 @@ describe("ListView scrollbar thumb size — accurate when items taller than esti
     const cells = thumbCells(app, COLS, ROWS)
     expect(cells.length).toBeGreaterThan(0)
     expect(cells.length).toBeLessThanOrEqual(3)
+  })
+
+  test("active scroll keeps thumb geometry stable while measurements catch up", () => {
+    const COLS = 120
+    const ROWS = 26
+    const items = Array.from({ length: 105 }, (_, i) =>
+      i >= 47 && i < 52 ? `item ${i}\nwrapped` : `item ${i}`,
+    )
+
+    function Scene({ scrollTo }: { scrollTo: number }) {
+      return (
+        <Box width={COLS} height={ROWS} flexDirection="column">
+          <ListView
+            items={items}
+            height={ROWS}
+            width={COLS}
+            scrollTo={scrollTo}
+            scrollbarVisibility="always"
+            renderItem={(item) => <Text>{item}</Text>}
+          />
+        </Box>
+      )
+    }
+
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(<Scene scrollTo={1} />)
+    app.rerender(<Scene scrollTo={20} />)
+
+    const incremental = app.lastBuffer()
+    expect(incremental).toBeDefined()
+    const fresh = app.freshRender()
+    const mismatch = compareBuffers(incremental!, fresh)
+    if (mismatch) {
+      expect.unreachable(
+        formatMismatch(mismatch, {
+          incrementalText: bufferToText(incremental!),
+          freshText: bufferToText(fresh),
+          key: "scrollTo=20",
+        }),
+      )
+    }
   })
 })
