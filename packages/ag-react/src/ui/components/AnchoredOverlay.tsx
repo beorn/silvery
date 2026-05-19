@@ -128,6 +128,15 @@ function AnchoredOverlayContent({
   const hostRect = useSignal<Rect | null>(ag?.signals.boxRectCommitted ?? null) ?? ag?.node.boxRect
   const rect = decorationRects?.find((entry) => entry.id === decorationId)?.rects[0]
   if (!rect) return null
+  // First-render guard: when the overlay opens before the wrapper's
+  // boxRect has committed, hostRect is null and the `rect.x - hostRect.x`
+  // subtraction degenerates to `rect.x` (screen-absolute) used as a
+  // *parent-relative* `left` — the overlay paints at
+  // `wrapper.x + rect.x` (screen-far-right when the wrapper is itself
+  // offset by the parent container, e.g. a right-side panel). Defer the
+  // paint one frame so the next signal commit gives us a real hostRect.
+  // Refs @km/code/15390-account-switch-bugs Bug 3.
+  if (!hostRect) return null
   const width = rect.width || fallbackSize.width
   const height = rect.height || fallbackSize.height
   const sizeProps = sizing === "max" ? { maxWidth: width, maxHeight: height } : { width, height }
