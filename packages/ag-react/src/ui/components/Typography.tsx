@@ -163,10 +163,17 @@ export function Em({ children, color, ...rest }: TypographyProps) {
 // Inline Elements
 // ============================================================================
 
-/** Inline code — $bg-muted background with padding. Inherits foreground from parent. */
+/**
+ * Inline code — `$bg-muted` background with padding. Inherits foreground
+ * from parent. Defaults to `wrap="truncate-middle"` (GitHub-style):
+ * inline code is one unbroken token, so when it overflows the container
+ * we keep the start and end visible (`getPolygonInt…rBand`) instead of
+ * wrapping mid-identifier. Callers can override via the spread `wrap=…`
+ * prop. Tracking: @km/silvery/15086-inline-code-nowrap-default.
+ */
 export function Code({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text variant="code" color={color} {...rest}>
+    <Text variant="code" color={color} wrap="truncate-middle" {...rest}>
       {` ${children} `}
     </Text>
   )

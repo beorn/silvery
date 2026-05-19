@@ -239,6 +239,60 @@ describe("Inline code elements", () => {
     const cell = app.term.buffer.getCell(1, 0)
     expect(cell.fg).not.toBeNull()
   })
+
+  // Tracking: @km/silvery/15086-inline-code-nowrap-default.
+  // Inline code is one unbroken token; when it overflows we truncate
+  // the middle (GitHub-style) instead of wrapping mid-identifier.
+  test("Code defaults to truncate-middle on overflow (long identifier in narrow container)", () => {
+    const longId = "getPolygonInterValForBand"
+    // 18-wide container: padded " <id> " is 27 chars → must truncate.
+    const app = render(
+      <Box width={18}>
+        <Code>{longId}</Code>
+      </Box>,
+    )
+    // Truncate-middle uses U+2026 (…) ellipsis. The original identifier
+    // must NOT appear verbatim (since it's >18 chars including padding),
+    // and the rendered text must contain the ellipsis character.
+    expect(app.text).toContain("…")
+    expect(app.text).not.toContain(longId)
+  })
+
+  test("Code on a single line — no mid-identifier wrap", () => {
+    // Render Code inside a 12-wide container that would otherwise wrap.
+    // truncate-middle is single-line by definition: the rendered output
+    // must have at most one row of visible code content (plus surrounding
+    // empty rows). Easier assertion: the ellipsis appears, and no row
+    // contains a partial-identifier prefix without the ellipsis.
+    const longId = "veryLongIdentifierName"
+    const app = render(
+      <Box width={12}>
+        <Code>{longId}</Code>
+      </Box>,
+    )
+    expect(app.text).toContain("…")
+    // None of the displayed lines should END with a non-ellipsis
+    // continuation of `veryLong…` — i.e. no `veryLong` + newline + `…erName`.
+    for (const line of app.text.split("\n")) {
+      // A wrapped-mid-identifier symptom would have a line containing
+      // a clean prefix of the identifier without the ellipsis.
+      if (line.includes("veryLong") && !line.includes("…")) {
+        throw new Error(`mid-identifier wrap symptom: ${JSON.stringify(line)}`)
+      }
+    }
+  })
+
+  test("Code caller can override the truncate-middle default", () => {
+    // The new default is opt-in: an explicit `wrap="wrap"` still wraps.
+    const app = render(
+      <Box width={10}>
+        <Code wrap="wrap">veryLongIdentifierName</Code>
+      </Box>,
+    )
+    // wrap=wrap with no overflow handling: text should span multiple
+    // lines without an ellipsis (greedy hard-wrap fallback).
+    expect(app.text).not.toContain("…")
+  })
 })
 
 // ============================================================================
