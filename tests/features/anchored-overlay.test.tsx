@@ -172,6 +172,104 @@ describe("AnchoredOverlay", () => {
     }
   })
 
+  test("overlay placed left of anchor in a right-column container resolves to screen-absolute position", () => {
+    // Regression coverage for @km/code/15390 Bug 3 — silvercode SidePanel
+    // cmd-hover popovers (account-row quota panel, agents panel, model
+    // selector) when the anchor sits inside a right-side flex column.
+    //
+    // The AnchoredOverlay wrapper is `position="absolute"` inside the
+    // right-side column; in flexily, absolute children's containing block
+    // is the immediate parent's padding box (no "nearest positioned
+    // ancestor" search). The wrapper takes the right-column's rect.
+    // Decoration rects are screen-absolute; AnchoredOverlayContent
+    // subtracts the wrapper's hostRect so the inner Box ends up at the
+    // correct screen-absolute position, even when placement="left-start"
+    // pushes the popover OUTSIDE the right column (negative left).
+    //
+    // This test pins the right-column scenario at steady state so a
+    // future regression in either layout-signals decoration math or
+    // AnchoredOverlay's hostRect-subtraction is caught.
+    const render = createRenderer({ cols: 60, rows: 14 })
+
+    const app = render(
+      <Box width={60} height={14} flexDirection="row">
+        <Box flexGrow={1} minWidth={0}>
+          <Text>chat</Text>
+        </Box>
+        <Box width={24} flexShrink={0} flexDirection="column" padding={1}>
+          <Box marginTop={4} anchorRef="right-col-trigger" width={10} height={1}>
+            <Text>trigger</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="right-col-trigger"
+            placement="left-start"
+            size={{ width: 20, height: 4 }}
+            id="overlay"
+          >
+            <Text>menu-body</Text>
+          </AnchoredOverlay>
+        </Box>
+      </Box>,
+    )
+
+    expect(app.text).toContain("menu-body")
+    const overlay = findById(getRoot(app), "overlay")
+    expect(overlay).not.toBeNull()
+    // Right-side panel starts at screen x = 36 (60 - 24). With
+    // placement="left-start" the popover must render to the LEFT of the
+    // panel, in the chat-area space.
+    expect(overlay!.boxRect.x, "popover screen-x must be left of the side panel").toBeLessThan(36)
+    expect(overlay!.boxRect.x).toBeGreaterThanOrEqual(0)
+    expect(overlay!.boxRect.width).toBe(20)
+    expect(overlay!.boxRect.height).toBe(4)
+  })
+
+  test("sizing=max popover in right-side panel with left-start placement renders left of the panel", () => {
+    // Mirrors the silvercode SidePanel.tsx popover shape: sizing="max"
+    // with size collision footprint up to panel height, placement
+    // "left-start", inside an AsideLayout right column.
+    // Pins behavior at a realistic terminal size + panel width.
+    const COLS = 200
+    const ROWS = 30
+    const PANEL_W = 40
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+
+    const app = render(
+      <Box width={COLS} height={ROWS} flexDirection="row">
+        <Box flexGrow={1} minWidth={0}>
+          <Text>{"chat area".padEnd(COLS - PANEL_W - 1, " ")}</Text>
+        </Box>
+        <Box width={PANEL_W} flexShrink={0} flexDirection="column" padding={1}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Box key={i} height={1}>
+              <Text>{`panel-row-${i}`.padEnd(PANEL_W - 3)}</Text>
+            </Box>
+          ))}
+          <Box anchorRef="quota-trigger" width={PANEL_W - 3} height={1}>
+            <Text>{"quota-row".padEnd(PANEL_W - 3)}</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="quota-trigger"
+            placement="left-start"
+            sizing="max"
+            size={{ width: 48, height: ROWS - 2 }}
+            id="quota-overlay"
+          >
+            <Text>QUOTA-DETAIL</Text>
+          </AnchoredOverlay>
+        </Box>
+      </Box>,
+    )
+
+    expect(app.text).toContain("QUOTA-DETAIL")
+    const overlay = findById(getRoot(app), "quota-overlay")
+    expect(overlay).not.toBeNull()
+    expect(overlay!.boxRect.x, "popover screen-x must be left of the side panel").toBeLessThan(COLS - PANEL_W)
+    expect(overlay!.boxRect.x).toBeGreaterThanOrEqual(0)
+    expect(overlay!.boxRect.y).toBeGreaterThanOrEqual(0)
+    expect(overlay!.boxRect.y + overlay!.boxRect.height).toBeLessThanOrEqual(ROWS)
+  })
+
   test("removes overlay content when closed", () => {
     const render = createRenderer({ cols: 40, rows: 14 })
 
