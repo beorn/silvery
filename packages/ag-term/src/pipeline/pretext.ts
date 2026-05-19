@@ -14,6 +14,7 @@ import {
   graphemeWidth as defaultGraphemeWidth,
   splitGraphemesAnsiAware,
   isWordBoundary,
+  isSoftBreakPoint,
   canBreakAnywhere,
   wrapText,
 } from "../unicode"
@@ -87,6 +88,18 @@ export function buildTextAnalysis(
       breakIndices.push(i)
       maxWordWidth = Math.max(maxWordWidth, currentWordWidth)
       currentWordWidth = w
+    } else if (isSoftBreakPoint(g) && i + 1 < len) {
+      // Soft-punct (/ \ . _ : ,) emits the break AFTER the punctuation,
+      // not before. `commands/run` wraps to `commands/` + `run`, never
+      // `commands` + `/run`. This matches chenglou/pretext's convention
+      // and avoids the lone-punct-line failure mode (`/` alone on a line).
+      // The grapheme itself stays in `currentWordWidth` of the LEFT
+      // compound (it belongs visually to the preceding token).
+      // Tracking: @km/silvery/15132-pretext-break-kind.
+      currentWordWidth += w
+      breakIndices.push(i + 1)
+      maxWordWidth = Math.max(maxWordWidth, currentWordWidth)
+      currentWordWidth = 0
     } else if (w > 0) {
       currentWordWidth += w
     }

@@ -236,6 +236,57 @@ describe("optimalWrap", () => {
     })
   })
 
+  // `@km/silvery/15132-pretext-break-kind`: soft-punct (`/ \ . _ : ,`) emits
+  // break candidates AFTER the punctuation, not BEFORE. So `commands/run`
+  // wraps as `commands/` + `run` (never `commands` + `/run` from K-P,
+  // never `commands` + `/` + `run`). Matches chenglou/pretext convention.
+  describe("soft-punct emits break AFTER, not BEFORE (km-silvery.15132-pretext-break-kind)", () => {
+    test("buildTextAnalysis emits a break AFTER `/` in `commands/run`", () => {
+      const analysis = buildTextAnalysis("commands/run", graphemeWidth)
+      // Index 9 == position AFTER the `/` at index 8.
+      expect(analysis.breakIndices).toContain(9)
+      // No break BEFORE `/` (no candidate at index 8).
+      expect(analysis.breakIndices).not.toContain(8)
+    })
+
+    test("buildTextAnalysis emits breaks AFTER `.` in `example.com.au`", () => {
+      const analysis = buildTextAnalysis("example.com.au", graphemeWidth)
+      // After `example.` (index 8) and after `com.` (index 12).
+      expect(analysis.breakIndices).toContain(8)
+      expect(analysis.breakIndices).toContain(12)
+    })
+
+    test("`path/to/file` at w=8 wraps with `/` glued to LEFT side", () => {
+      const text = "path/to/file"
+      const analysis = buildTextAnalysis(text, graphemeWidth)
+      const lines = optimalWrap(text, analysis, 8)
+      // No line should start with `/` — that's the lone-punct failure mode.
+      for (const line of lines) {
+        expect(line.startsWith("/"), `line starts with /: ${JSON.stringify(line)}`).toBe(false)
+      }
+      // Content preserved.
+      const recovered = lines.map((l) => l).join("").replace(/\s+/g, "")
+      expect(recovered).toBe("path/to/file")
+    })
+
+    test("no lone-punct line for `/`, `.`, `:` at narrow widths (w=4..10)", () => {
+      const texts = ["a/b/c", "foo.bar.baz", "host:port:8080", "x_y_z"]
+      for (const text of texts) {
+        const analysis = buildTextAnalysis(text, graphemeWidth)
+        for (let w = 4; w <= 10; w++) {
+          const lines = optimalWrap(text, analysis, w)
+          for (const line of lines) {
+            // No line should be a single soft-punct char.
+            expect(
+              ["/", "\\", ".", "_", ":", ","].includes(line),
+              `text=${text} w=${w} lone-punct line: ${JSON.stringify(lines)}`,
+            ).toBe(false)
+          }
+        }
+      }
+    })
+  })
+
   // Helper: strip ANSI escapes for visual-content assertions.
   const ANSI_RE = /\x1b\[[0-9;:?]*[A-Za-z]/g
   const stripAnsi = (s: string) => s.replace(ANSI_RE, "")
@@ -512,24 +563,27 @@ describe("optimalWrap", () => {
     test("preserves all text content in the orphan-fixed wraps", () => {
       // Regression guard: the orphan penalty must not drop content. Joining
       // adjacent lines preserves the inter-line whitespace removed by the
-      // wrapper — except for hyphen breaks, where the trailing "-" stays
-      // glued to the next line's leading word (a wrap inside `cmd-hover`
-      // emits `cmd-` + `hover`, not `cmd-` + ` hover`).
+      // wrapper — except for hyphen breaks AND soft-punct breaks
+      // (/ \ . _ : ,), where the trailing punctuation stays glued to the
+      // next line's leading word (a wrap inside `cmd-hover` emits `cmd-` +
+      // `hover`, not `cmd-` + ` hover`; same for `@agent/` + `0..9`).
       const texts = [
         "Click on commands does nothing in live TUI (cmd-hover also no-op)",
         "km init should NOT auto-scaffold @agent/0..9 — document as primer example instead",
       ]
+      const SOFT_PUNCT = ["-", "/", "\\", ".", "_", ":", ","]
       for (const text of texts) {
         const analysis = buildTextAnalysis(text, graphemeWidth)
         for (let w = 22; w <= 32; w++) {
           const lines = optimalWrap(text, analysis, w)
-          // Glue adjacent lines: insert " " between non-hyphenated pairs,
-          // "" between a hyphen-ending line and the next.
+          // Glue adjacent lines: insert " " between non-soft-punct-ending
+          // pairs, "" between a soft-punct-ending line and the next.
           let recovered = stripAnsi(lines[0] ?? "")
           for (let k = 1; k < lines.length; k++) {
             const prev = stripAnsi(lines[k - 1]!)
             const next = stripAnsi(lines[k]!)
-            const sep = prev.endsWith("-") ? "" : " "
+            const lastChar = prev.slice(-1)
+            const sep = SOFT_PUNCT.includes(lastChar) ? "" : " "
             recovered += sep + next
           }
           recovered = recovered.replace(/\s+/g, " ").trim()
