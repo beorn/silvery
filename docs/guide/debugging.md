@@ -259,6 +259,52 @@ per tier; `truecolor` is an identity no-op.
 
 6. **Text bg inheritance**: Text nodes inherit bg via `nodeState.inheritedBg` (threaded top-down, O(1) per node), not buffer reads. Viewport clears and region clears still affect buffer state, which matters for the `getCellBg` legacy fallback (used by scroll indicators). If your fix clears a region, verify it clears to the correct bg (usually `null` to match fresh render state).
 
+## Render-path debug primitive — "where does X live?"
+
+Visual / first-paint / layout bugs often have one root cause: the bead reporter thinks component X renders inside lane A, but the actual mounted tree has it inside lane B. Static-trace this BEFORE `/pro` to catch misframed beads early.
+
+The primitive is a pure read of the committed AgNode tree — no env knob, no logging hook, no instrumentation cost. Use it in tests for structural invariants, and in ad-hoc REPL/console for live exploration.
+
+```ts
+import {
+  getRenderPath,
+  getMountTree,
+  formatRenderPath,
+  printRenderPath,
+  findNodesByComponentName,
+} from "@silvery/ag-react/debug/render-path"
+
+// In a termless test — app exposes the conveniences directly.
+const path = app.renderPath("ToolBlock")
+//   → [{ name: "silvery-root" }, { name: "App" }, { name: "Body" },
+//      { name: "ToolBlock", boxRect: {...} }]
+formatRenderPath(path)
+//   → "silvery-root > App > Body > ToolBlock"
+
+// Full structural dump for snapshot tests.
+const tree = app.mountTree()
+expect(tree).toMatchInlineSnapshot(...)
+```
+
+**Component name resolution** (mirrors `getDebugComponentName` in the reconciler):
+1. `data-component="X"` prop → `"X"`
+2. else `testID="y"` → `"${hostType}#y"` (e.g., `"Box#tool-1"`)
+3. else `id="y"` → `"${hostType}#y"`
+4. else bare host type (`"Box"`, `"Text"`, `"silvery-root"`)
+
+Add `data-component="X"` to any component you want render-path-addressable. The reconciler already uses it for `silvery:mount` logs, so it's a doubly-useful convention.
+
+**When to reach for render-path** vs other diagnostics:
+
+| Bug shape | Reach for |
+| --- | --- |
+| "component X jumps after first paint" | [CLS](./cls.md) — detects SHIFTS |
+| "component X mounted in wrong lane / parent" | render-path — answers WHERE |
+| "component X mounted, then immediately unmounted" | `DEBUG=silvery:mount` — mount/update/unmount events |
+| "what was the parent chain at the moment of the bug?" | render-path on `app.getContainer()` |
+
+**Anti-pattern**: don't grep source to guess the render path — the JSX you read is the static structure, but conditional rendering, suspense boundaries, and provider wrappers can shift the actual mounted parent. The debug primitive walks the LIVE tree.
+
 ## Panic on render error — auto-restore + stderr dump
 
 Silvery routes uncaught React render errors (and effect errors that escape every `ErrorBoundary`) to the same `panicApp` path that `handle.panic()` uses. Concretely:

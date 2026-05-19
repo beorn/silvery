@@ -47,6 +47,7 @@ import type { AgNode } from "@silvery/ag/types"
 import type { FrameCell } from "@silvery/ag/text-frame"
 import type { CLSReport, ReasonClassifier } from "@silvery/ag/cls"
 import type { ClsMonitor } from "./runtime/cls-monitor"
+import { getRenderPath, getMountTree } from "@silvery/ag-react/debug/render-path"
 
 /**
  * App interface - unified return type from render()
@@ -358,6 +359,25 @@ export interface App {
 
   /** Get the current cursor state for this silvery instance (per-instance, not global). */
   getCursorState(): import("@silvery/ag-react/hooks/useCursor").CursorState | null
+
+  // === Debug (render-path / mount-tree) ===
+
+  /**
+   * Return the parent chain from the container root down to the first
+   * AgNode whose component name matches `componentName`. Empty array if
+   * not found. Useful for asserting structural invariants in tests and
+   * for bead-investigation static traces ("does ToolBlock actually
+   * render inside Content.Body[width=full]?").
+   *
+   * See `@silvery/ag-react/debug/render-path` for the underlying API.
+   */
+  renderPath(componentName: string): import("@silvery/ag-react/debug/render-path").RenderPathNode[]
+
+  /**
+   * Recursive JSON dump of the entire mount tree. Useful for snapshot
+   * tests asserting on structural invariants.
+   */
+  mountTree(): import("@silvery/ag-react/debug/render-path").MountTree
 }
 
 /**
@@ -961,6 +981,14 @@ export function buildApp(options: AppOptions): App {
         }
       }
       return options.getCursorState?.() ?? null
+    },
+
+    renderPath(componentName) {
+      return getRenderPath(getContainer(), componentName)
+    },
+
+    mountTree() {
+      return getMountTree(getContainer())
     },
   }
 

@@ -46,6 +46,7 @@
     "./ScopeProvider": "./src/ScopeProvider.tsx",
     "./scope-context": "./src/scope-context.ts",
     "./hooks": "./src/hooks/index.ts",
+    "./debug/render-path": "./src/debug/render-path.ts",
     "./*": "./src/*.ts"
   },
   "publishConfig": {
