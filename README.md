@@ -83,7 +83,7 @@ Along the way, three principles emerged. Take the best from the web, stay true t
 | `silvery`                         | Components, hooks, renderer — the one package you need            |
 | `@silvery/ink` / `@silvery/chalk` | Ink compatibility — 918/931 Ink 7.0 tests, 32/32 Chalk tests      |
 | `@silvery/test`                   | Playwright-style testing — locators, `press()`, buffer assertions |
-| `@silvery/create`                 | Composable app builder — `pipe()` providers                       |
+| `@silvery/create`                 | Composable app builder — `pipe()` providers _(coming soon)_       |
 | `@silvery/theme`                  | 84 color schemes, semantic tokens, auto-detect                    |
 | `@silvery/commander`              | **Beautiful CLIs for free** — help renders through Silvery itself |
 | `@silvery/headless`               | Pure state machines — portable, no React                          |
@@ -104,7 +104,7 @@ Standalone projects Silvery builds on — each stands on its own:
 
 - **Renderers** — Canvas 2D, Web DOM (experimental today, production later)
 - **Frameworks** — Svelte, Solid.js, Vue adapters
-- **@silvery/create** — Structured state management with commands, keybindings, effects-as-data
+- **Silvertea** — Structured state management with commands, keybindings, effects-as-data (ships as `@silvery/create`)
 
 **Runtimes:** Bun >= 1.0 and Node.js >= 23.6. CLI (`silvery` command) requires Bun.
 

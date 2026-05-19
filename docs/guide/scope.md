@@ -197,21 +197,20 @@ Three handlers, three exit paths, no guarantee teardown completes before `proces
 ::: tip ✨ Shiny
 
 ```ts
-import { pipe, createApp } from "@silvery/create"
+import { render, createTerm } from "silvery"
 import { withScope } from "@silvery/scope"
-import { withTerminal } from "@silvery/create"
 
-const app = pipe(
-  createApp(store),
-  withTerminal(process), // provides term.signals
-  withScope("app"), // wires SIGINT/SIGTERM → root-scope dispose
-  // ...
-)
-
-await app.run()
+using term = createTerm()
+await render(<App />, term)
+  .use(withScope("app")) // wires SIGINT/SIGTERM → root-scope dispose
+  .run()
 ```
 
-`withScope()` adds a root `Scope` to the app. Because it's composed after `withTerminal`, it auto-wires SIGINT and SIGTERM through `term.signals` so the signal flows into root-scope disposal. The root scope also disposes on the app's normal exit hook. Disposal failures from any of these paths flow through `reportDisposeError` with the originating phase (`"signal"`, `"app-exit"`).
+`withScope()` adds a root `Scope` to the app. When `render(...).run()` exits or the process receives `SIGINT` / `SIGTERM`, the signal flows into root-scope disposal. Disposal failures from any of these paths flow through `reportDisposeError` with the originating phase (`"signal"`, `"app-exit"`).
+
+::: info Coming soon: Silvertea composition
+The `pipe(createApp(store), withTerminal(process), withReact(<App />), withScope("app"))` form (Silvertea / `@silvery/create`) is in active development. Today, `render(...).run()` is the shipped surface and `withScope` plugs in through it.
+:::
 
 Resources you registered anywhere in the tree — `useScopeEffect` children, terminal sub-owners, the `db` and `server` from above (registered on `app.scope`) — all dispose in the right order from a single trigger.
 :::
@@ -400,9 +399,21 @@ function Search({ query }: { query: string }) {
 
 ## The `withScope()` plugin
 
-`withScope(name?)` is the host-level wiring that puts a root `Scope` on the app object. Compose it via `pipe()`:
+`withScope(name?)` is the host-level wiring that puts a root `Scope` on the app object. Today it composes through `render(...).run()`; the future Silvertea (`@silvery/create`) story will compose it via `pipe()`.
+
+**Shipped today** — plug into `render().run()`:
+
+```tsx
+import { render } from "silvery"
+import { withScope } from "@silvery/scope"
+
+await render(<App />).use(withScope("app")).run()
+```
+
+**Coming soon** — Silvertea `pipe()` form:
 
 ```ts
+// Coming soon — Silvertea (@silvery/create) composition.
 import { pipe, createApp, withTerminal, withReact } from "@silvery/create"
 import { withScope } from "@silvery/scope"
 
@@ -661,20 +672,25 @@ For app-level paths (`react-unmount`, `signal`, `app-exit`), errors flow through
 A complete pattern, end to end:
 
 ```tsx
-import { pipe, createApp, withTerminal, withReact } from "@silvery/create"
+import { render } from "silvery"
 import { withScope, disposable } from "@silvery/scope"
 import { useScope, useScopeEffect } from "@silvery/ag-react"
 
-// --- App composition ---
+// --- App composition (shipped: render().use(withScope(...)).run()) ---
 
-const app = pipe(
-  createApp(store),
-  withTerminal(process),
-  withReact(<App />),
-  withScope("app"), // root scope; SIGINT/SIGTERM/exit → root.dispose()
-)
+await render(<App />)
+  .use(withScope("app")) // root scope; SIGINT/SIGTERM/exit → root.dispose()
+  .run()
 
-await app.run()
+// Coming soon: Silvertea (@silvery/create) composition:
+//
+//   const app = pipe(
+//     createApp(store),
+//     withTerminal(process),
+//     withReact(<App />),
+//     withScope("app"),
+//   )
+//   await app.run()
 
 // --- Component: spawn a process, watch a file, time out a fetch ---
 

@@ -1,5 +1,16 @@
 # State Management
 
+::: danger Coming Soon — Silvertea (`@silvery/create`)
+This page documents **Silvertea**, the composable app + state-management layer that ships as `@silvery/create`. Silvertea is in active development — the `createApp()`, `pipe()`, plugin, and TEA / store / signals APIs shown below are **not yet released**.
+
+**For shipped state management today**, use:
+
+- **`useState`** / **`useReducer`** — standard React, works out of the box with `render(<App />).run()`.
+- **Zustand**, **Jotai**, **Redux**, or any React state library — Silvery is BYO-state. Wire them in via normal React patterns.
+
+Track Silvertea progress on the [silvery roadmap](https://github.com/beorn/silvery). The patterns described on this page show the design direction; the code samples will compile once `@silvery/create` ships.
+:::
+
 Start with `useState` — standard React. When state gets shared across components, move to a store. When you need undo or replay, make state transitions into data. When side effects need testing, return them as data too. Each step makes your app more testable and composable — take them one at a time, when the complexity justifies it.
 
 ::: tip Most apps stop early

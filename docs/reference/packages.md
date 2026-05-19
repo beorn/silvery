@@ -58,12 +58,13 @@ For framework authors and custom renderers, import from scoped packages:
 import { createAg, type AgNode } from "@silvery/ag"
 import { createTermProvider } from "@silvery/ag-term/runtime"
 
-// TEA state management
-import { createSlice, createStore } from "@silvery/create"
-
 // Testing
 import { createRenderer } from "@silvery/test"
 ```
+
+::: tip Coming soon: `@silvery/create`
+The `@silvery/create` composable-app package (TEA state machines, `pipe()` composition, plugin system) is in active development. APIs shown elsewhere in the docs labeled "Silvertea" are not yet shipped. Use `useState` / `useReducer` / `Zustand` for shared state today.
+:::
 
 ### Runtime Entry Points
 

@@ -4,21 +4,29 @@ Silvery provides text search at two levels: buffer-level search for visible cont
 
 ## How It's Activated
 
-Find is a **runtime feature** (`FindFeature`) that activates automatically when you use `withFocus()`:
+Find (`Ctrl+F`) ships as part of the shipped `render(...).run()` runtime — no plugin wiring needed today. Just render your app:
 
-```typescript
-const app = pipe(
-  createApp(store),
-  withReact(<App />),
-  withTerminal(process),
-  withFocus(),        // ← Ctrl+F find is included
-  withDomEvents(),
-)
+```tsx
+import { render, Box, Text } from "silvery"
+
+function App() {
+  return (
+    <Box>
+      <Text>Lots of text to search through…</Text>
+    </Box>
+  )
+}
+
+await render(<App />).run()
 ```
 
 Press `Ctrl+F` to open the find bar, type a query, use `n`/`N` to navigate matches, `Enter` to select the current match, and `Esc` to close.
 
-Find works automatically via `withFocus()` — no explicit hook setup is needed for basic find functionality. The `useFind` hook is still available for custom find UIs (see below).
+The `useFind` hook is available for custom find UIs (see below).
+
+::: tip Coming soon
+A future Silvertea release (`@silvery/create`) will expose Find as a composable `withFocus()` plugin so app authors can opt in/out per app. Until then, it's bundled into `render().run()`.
+:::
 
 ## Buffer-Level Find
 

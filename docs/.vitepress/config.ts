@@ -152,7 +152,10 @@ export default withMermaid(
       nav: [
         {
           text: "Getting Started",
-          items: [{ text: "Quick Start", link: "/getting-started/quick-start" }],
+          items: [
+            { text: "Quick Start", link: "/getting-started/quick-start" },
+            { text: "Migrate from Ink", link: "/getting-started/migrate-from-ink" },
+          ],
         },
         { text: "The Silvery Way", link: "/guide/the-silvery-way" },
         {
@@ -163,7 +166,7 @@ export default withMermaid(
             { text: "FAQ", link: "/guide/faq" },
             { text: "Components", link: "/guides/components" },
             { text: "Building an App", link: "/guides/terminal-apps" },
-            { text: "State Management", link: "/guides/state-management" },
+            // "State Management" gated: documents Silvertea (@silvery/create), not yet shipped — see /guides/state-management
             { text: "Layouts", link: "/guide/layouts" },
             { text: "Responsive Layout", link: "/guide/responsive-layout" },
             { text: "Styling", link: "/guide/styling" },
@@ -217,7 +220,10 @@ export default withMermaid(
       sidebar: [
         {
           text: "Getting Started",
-          items: [{ text: "Quick Start", link: "/getting-started/quick-start" }],
+          items: [
+            { text: "Quick Start", link: "/getting-started/quick-start" },
+            { text: "Migrate from Ink", link: "/getting-started/migrate-from-ink" },
+          ],
         },
         {
           text: "The Silvery Way",
@@ -229,7 +235,7 @@ export default withMermaid(
           items: [
             { text: "Components", link: "/guides/components" },
             { text: "Building an App", link: "/guides/terminal-apps" },
-            { text: "State Management", link: "/guides/state-management" },
+            // "State Management" gated: documents Silvertea (@silvery/create), not yet shipped — see /guides/state-management
             { text: "Layouts", link: "/guide/layouts" },
             { text: "Responsive Layout", link: "/guide/responsive-layout" },
             { text: "Styling", link: "/guide/styling" },
