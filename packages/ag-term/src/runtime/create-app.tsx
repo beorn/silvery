@@ -490,6 +490,22 @@ export interface AppRunOptions {
    * Returns an unsubscribe function.
    */
   onResize?: (handler: (dims: { cols: number; rows: number }) => void) => () => void
+  /**
+   * Trailing-edge debounce for stdout `resize` events on the internally-
+   * created autoTerm, in milliseconds.
+   *
+   * Only applies when the caller does NOT pass a `term` provider (i.e. the
+   * autoTerm fallback is used). Real-PTY callers inject their own Term via
+   * the run.tsx Term branch and bring their own size policy.
+   *
+   * Default: `undefined` (use `createSize`'s built-in default, 200 ms — coalesces
+   * SIGWINCH bursts from tmux/cmux/Ghostty multiplexer resizes). Tests and
+   * emulator paths that drive resize explicitly via `term.resize(...)` should
+   * pass `0` so the snapshot updates synchronously and the layout reflows
+   * within the test's settle window. See
+   * `@km/silvery/termless-resize-reflow-4-fails`.
+   */
+  resizeCoalesceMs?: number
   /** Abort signal for external cleanup */
   signal?: AbortSignal
   /** Enter alternate screen buffer (clean slate, restore on exit). Default: false */
@@ -899,6 +915,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     capabilityRegistry: capabilityRegistryOption,
     writable: explicitWritable,
     onResize: explicitOnResize,
+    resizeCoalesceMs: explicitResizeCoalesceMs,
     ...injectValues
   } = options
   const mouseParseOptions = typeof mouseOption === "object" ? mouseOption : undefined
@@ -1035,7 +1052,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           setEncoding: () => {},
         } as unknown as NodeJS.ReadStream)
       : stdin
-    autoTerm = createTerm({ stdin: termStdin, stdout: termStdout, mouse: mouseParseOptions })
+    // `resizeCoalesceMs` flows through from the caller (run.tsx emulator branch
+    // passes `0` so `term.resize(...)` reflows layout synchronously; the
+    // options-path with a fake real-stream defers to the createSize default of
+    // 200 ms so SIGWINCH burst tests still see coalescing). Bead:
+    // `@km/silvery/termless-resize-reflow-4-fails`.
+    autoTerm = createTerm({
+      stdin: termStdin,
+      stdout: termStdout,
+      mouse: mouseParseOptions,
+      ...(explicitResizeCoalesceMs !== undefined
+        ? { resizeCoalesceMs: explicitResizeCoalesceMs }
+        : {}),
+    })
     providers.term = autoTerm as unknown as Provider<unknown, Record<string, unknown>>
     providerCleanups.push(() => autoTerm![Symbol.dispose]())
 

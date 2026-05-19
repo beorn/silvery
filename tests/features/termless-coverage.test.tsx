@@ -130,9 +130,11 @@ describe("termless: resize + reflow", () => {
     handle?.unmount()
   })
 
-  // see km-silvery.termless-resize-reflow-4-fails — term.resize!() doesn't propagate to
-  // render output: borders, content, and visible-rows don't reflow as expected.
-  test.fails("resize wider: content and borders stretch to new width", async () => {
+  // Regression guard for km-silvery.termless-resize-reflow-4-fails — the autoTerm's
+  // `createSize` previously applied a 200 ms trailing-edge debounce that delayed
+  // resize propagation past the test's 100 ms settle window. Fix: emulator-path
+  // runs (via run.tsx → createTermless) pass `resizeCoalesceMs: 0` to skip debouncing.
+  test("resize wider: content and borders stretch to new width", async () => {
     using term = createTermless({ cols: 40, rows: 10 })
     handle = await run(<MultiColumnApp />, term)
 
@@ -155,8 +157,8 @@ describe("termless: resize + reflow", () => {
     expect(resizedTopBorder.length).toBeGreaterThan(initialTopBorder.length)
   })
 
-  // see km-silvery.termless-resize-reflow-4-fails
-  test.fails("resize narrower: content reflows without truncation of visible text", async () => {
+  // Regression guard — see km-silvery.termless-resize-reflow-4-fails.
+  test("resize narrower: content reflows without truncation of visible text", async () => {
     using term = createTermless({ cols: 80, rows: 15 })
     handle = await run(<MultiColumnApp />, term)
 
@@ -175,8 +177,8 @@ describe("termless: resize + reflow", () => {
     expect(term.screen!.getText()).toContain("╰")
   })
 
-  // see km-silvery.termless-resize-reflow-4-fails
-  test.fails("resize shorter: visible content capped to new terminal height", async () => {
+  // Regression guard — see km-silvery.termless-resize-reflow-4-fails.
+  test("resize shorter: visible content capped to new terminal height", async () => {
     using term = createTermless({ cols: 60, rows: 20 })
     handle = await run(<RowListApp count={15} />, term)
 
@@ -198,8 +200,8 @@ describe("termless: resize + reflow", () => {
     expect(text).toContain("╭")
   })
 
-  // see km-silvery.termless-resize-reflow-4-fails
-  test.fails("resize taller: all content rows visible when terminal grows", async () => {
+  // Regression guard — see km-silvery.termless-resize-reflow-4-fails.
+  test("resize taller: all content rows visible when terminal grows", async () => {
     // At 8 rows, 10 items + header + 2 borders = 13 rows of content.
     // Fullscreen renders from the top, so bottom rows are clipped.
     using term = createTermless({ cols: 60, rows: 8 })
