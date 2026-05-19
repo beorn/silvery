@@ -90,6 +90,20 @@ export interface VirtualizerConfig {
   maxRendered?: number
   /** Gap between items in rows. Default: 0 */
   gap?: number
+  /**
+   * Whether the render path injects an "interstitial" AgNode (gap-Box,
+   * separator, etc.) between every pair of consecutive visible items.
+   * The virtualizer needs this to correctly map layout-phase's child
+   * indices back to virtual-item indices in steady-state mode — without
+   * it, every other child is a gap node and the stride-1 mapping shifts
+   * the window by ~half-the-gap-count.
+   *
+   * Defaults to `gap > 0`. Consumers that inject their OWN separator
+   * (e.g. ListView's `renderSeparator` prop) should pass `true`
+   * explicitly so the mapping accounts for the extra child even when
+   * `gap === 0`. Tracking: @km/silvery/14164-gap-node-mapping.
+   */
+  hasInterstitial?: boolean
   /** Get a stable key for an item by index. Falls back to index if not provided. */
   getItemKey?: (index: number) => string | number
   /** Called when the visible range reaches near the end of the list (infinite scroll). */
@@ -352,12 +366,16 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     overscan = DEFAULT_OVERSCAN,
     maxRendered = DEFAULT_MAX_RENDERED,
     gap = 0,
+    hasInterstitial: hasInterstitialOpt,
     getItemKey,
     containerNode,
     trailingExtraChildren = 0,
     viewportWidth,
     deferMeasurementUpdates = false,
   } = config
+  // Default: assume an interstitial is rendered when gap > 0. Consumers
+  // with their own separator (renderSeparator etc.) override to true.
+  const hasInterstitial = hasInterstitialOpt ?? gap > 0
 
   // ── Measurement cache ─────────────────────────────────────────────
   // Stores actual rendered heights keyed by `${itemKey}:${width}` (or
@@ -422,12 +440,21 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     hasLeading: boolean
     hasTrailing: boolean
     trailingExtras: number
+    /**
+     * Whether the LAST FRAME injected an interstitial AgNode between
+     * each consecutive item pair. Stored on the ref (not derived from
+     * current `hasInterstitial`) because the mapping operates on
+     * last-frame's structure — the current frame's gap setting may
+     * have changed since the previous render.
+     */
+    hasInterstitial: boolean
   }>({
     startIndex: 0,
     endIndex: 0,
     hasLeading: false,
     hasTrailing: false,
     trailingExtras: 0,
+    hasInterstitial: false,
   })
 
   // ── Subscribe to layout-phase scroll state (steady-state mode) ────
@@ -648,16 +675,37 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       const prevEnd = prev.endIndex
       const prevVisibleCount = prevEnd - prevStart
       const leadingOffset = prev.hasLeading ? 1 : 0
-      const realItemChildEnd = leadingOffset + prevVisibleCount
+      // Child layout when items are interleaved with interstitials
+      // (gap-Box or renderSeparator):
+      //   [leading?] item₀ [gap] item₁ [gap] … itemₘ₋₁ [extras] [trailing?]
+      // Stride between successive items is `1 + (hasInterstitial ? 1 : 0)`.
+      // For `m = prevVisibleCount` items, the visible-items span occupies
+      //   `m * stride - (hasInterstitial ? 1 : 0)` slots (no trailing gap).
+      // Without this stride math, every other child is mis-mapped as a
+      // virtual-item index and the viewport-anchor shifts by ~half the
+      // gap count on every scroll cycle. Tracking:
+      // @km/silvery/14164-gap-node-mapping.
+      const prevHasInterstitial = prev.hasInterstitial
+      const stride = prevHasInterstitial ? 2 : 1
+      const itemsSpan = prevVisibleCount * stride - (prevHasInterstitial ? 1 : 0)
+      const realItemChildEnd = leadingOffset + itemsSpan
 
       // Degenerate: no items rendered last frame (e.g. bootstrap transition).
       // Fall through to bootstrap below — the prev ref is empty.
       if (prevVisibleCount > 0) {
-        type Mapped = { kind: "item"; idx: number } | { kind: "before" } | { kind: "after" }
+        type Mapped =
+          | { kind: "item"; idx: number }
+          | { kind: "interstitial" }
+          | { kind: "before" }
+          | { kind: "after" }
         const mapChild = (c: number): Mapped => {
           if (c < leadingOffset) return { kind: "before" }
           if (c >= realItemChildEnd) return { kind: "after" }
-          return { kind: "item", idx: prevStart + (c - leadingOffset) }
+          const local = c - leadingOffset
+          if (!prevHasInterstitial) return { kind: "item", idx: prevStart + local }
+          // Even local index → item; odd → interstitial gap-Box.
+          if (local % 2 === 0) return { kind: "item", idx: prevStart + local / 2 }
+          return { kind: "interstitial" }
         }
 
         const firstMapped = mapChild(ssFirstVisibleChild)
@@ -670,6 +718,21 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
         let firstVisibleItem: number
         let lastVisibleItem: number
 
+        // Map a child-index to the virtual-item index it lives "between"
+        // when it's an interstitial gap-Box. local index L (odd) sits
+        // between items (L-1)/2 and (L+1)/2 of the prev visible range.
+        // For firstVisible we anchor on the item BEFORE the gap (still
+        // partly visible above the gap); for lastVisible we anchor on
+        // the item AFTER (top edge below the gap). Symmetric, conservative.
+        const interstitialPrevItem = (childIdx: number): number => {
+          const local = childIdx - leadingOffset
+          return prevStart + Math.max(0, (local - 1) / 2)
+        }
+        const interstitialNextItem = (childIdx: number): number => {
+          const local = childIdx - leadingOffset
+          return prevStart + Math.min(prevVisibleCount - 1, (local + 1) / 2)
+        }
+
         if (firstMapped.kind === "item") {
           firstVisibleItem = firstMapped.idx
         } else if (firstMapped.kind === "before") {
@@ -681,6 +744,11 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
           // guarantee the next window will include prevStart - overscan at
           // minimum, which forces a further shift next frame if still short.
           firstVisibleItem = Math.max(0, prevStart - overscan)
+        } else if (firstMapped.kind === "interstitial") {
+          // First visible child is a gap between items. Anchor at the item
+          // the gap is BELOW (top-of-viewport on the gap means the item
+          // above is partly visible). Tracking 14164.
+          firstVisibleItem = interstitialPrevItem(ssFirstVisibleChild)
         } else {
           // Leading placeholder gone AND firstVisible points past real items
           // — unusual (would mean viewport shows only footer/trailing).
@@ -695,6 +763,11 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
           // Items after prevEnd-1 may be visible. Shift anchor later to
           // pull more items in.
           lastVisibleItem = Math.min(count - 1, prevEnd - 1 + overscan)
+        } else if (lastMapped.kind === "interstitial") {
+          // Last visible child is a gap between items. Anchor at the item
+          // the gap is ABOVE (bottom-of-viewport on the gap means the item
+          // below is partly visible). Tracking 14164.
+          lastVisibleItem = interstitialNextItem(ssLastVisibleChild)
         } else {
           // lastVisible < leadingOffset: entire viewport is in leading
           // placeholder (cursor above window). Extend anchor earlier.
@@ -879,6 +952,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     hasLeading: windowCalc.leadingHeight > 0,
     hasTrailing: windowCalc.trailingHeight > 0,
     trailingExtras: trailingExtraChildren,
+    hasInterstitial,
   }
 
   // ── onEndReached ─────────────────────────────────────────────────────
