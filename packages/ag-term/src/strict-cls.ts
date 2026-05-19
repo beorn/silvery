@@ -30,11 +30,7 @@
  * helper that sits outside `pipeline/`).
  */
 
-import {
-  aggregateUnexpectedScore,
-  type CLSReport,
-  type LayoutShift,
-} from "@silvery/ag/cls"
+import { aggregateUnexpectedScore, type CLSReport, type LayoutShift } from "@silvery/ag/cls"
 import { isStrictEnabled } from "./strict-mode"
 
 /** SILVERY_STRICT slug for the CLS check. Tier 2 by design. */

@@ -24,9 +24,9 @@ SILVERY_STRICT=1,!canary        # tier 1 minus the canary (per-check skip with `
 | `canary`             | 2    | Degenerate frame: large buffer (≥ 4000 cells) where < 5% of cells are painted after first render — usually means the root component has no `<Screen>` or `<Box width height>` wrapper. **Filed at tier 2** so it surfaces the punch-list of broken harnesses during `test:strictest` cadence runs without blocking `test:fast`. Promote to tier 1 once the suite is clean.                                                                                                                                                                                                                                                                |
 | `residue`            | 2    | Stale-prev-cell carry-over: poisons the prev buffer with a sentinel (rgb(254, 0, 254) "þ"), runs the regular incremental render against it, then compares against a fresh-from-zero render. Any cell that retains the sentinel exposes "incremental cascade trusted prev pixels but no paint op covered them" — the cyan-strip residue class. **Tier 2** because of the cost (one extra render-phase pass + cloned buffer per frame). The plain `incremental` check at tier 1 only catches divergences in CHANGED cells; stale carry-over often passes that check because the prev pixel happens to coincide with what fresh would paint. |
 | `bordered-rect-clip` | 2    | Cell painted outside the nearest bordered-Box ancestor's inner content rect. Catches overflowing `<Text>` inside a `<Box borderStyle="…">` that lacks `overflow="hidden"` — text spills past the border or bleeds into siblings. Skipped automatically when the bordered ancestor has `overflow="hidden"` (the existing `computeChildClipBounds` path already enforces correctness). Suggested fix surfaces in the diagnostic: add `overflow="hidden"` on the box, or `wrap="truncate"` on the text.                                                                                                                                      |
-| `bytes_out`          | 1    | Render-out throughput monitor. WARN @ sustained 1 MB/s × 10s; PANIC @ 100 MB/s × 2s. PANIC emits `v8.writeHeapSnapshot()` + frame summaries; WARN emits frame summaries only. Fixed thresholds in code — no env knobs. Activates with the other tier-1 checks under `SILVERY_STRICT=1` (the same default `bun run test:fast` uses); opt out per session with `SILVERY_STRICT=1,!bytes_out`. Catches render-output firehoses that fill the pty parent's scrollback (cmux/tmux/iTerm) while the TUI's own `process.memoryUsage()` looks healthy — see the sibling lesson `docs/lessons/cmux-pty-buffer-firehose.md` in km. |
-| `signal_fanout`      | 1    | App-level hot-signal subscriber budget. km uses this slug to throw `SignalFanoutError` when rendered components subscribe too broadly to hot cursor singletons such as `nodeStore.cursor`, `cursorDepth`, or `cursorCardNodeId`. Fixed budgets live with the tagged signals; opt out per session with `SILVERY_STRICT=1,!signal_fanout`. This follows the same no-extra-knobs rule as `bytes_out` / `mem`: diagnostics are automatic under tier 1 and documented at the strict-mode umbrella. See km's `docs/lessons/signal-fanout-guard.md` for the current implementation.                                                                                               |
-| `mem`                | 1    | In-process heap-poll sibling of `bytes_out`. Every 30s, logs `process.memoryUsage()` (RSS, heapUsed, heapTotal, external, arrayBuffers) via the `silvery:mem` loggily namespace and trips a one-shot WARN when RSS — or `external + arrayBuffers` — doubles within a 60s window. Fixed cadence in code, no env knobs. Opt out per session with `SILVERY_STRICT=1,!mem`. Catches in-process growth that `bytes_out` cannot see (queue accumulators, retained closures, buffer pools).                                                                                                                                                          |
+| `bytes_out`          | 1    | Render-out throughput monitor. WARN @ sustained 1 MB/s × 10s; PANIC @ 100 MB/s × 2s. PANIC emits `v8.writeHeapSnapshot()` + frame summaries; WARN emits frame summaries only. Fixed thresholds in code — no env knobs. Activates with the other tier-1 checks under `SILVERY_STRICT=1` (the same default `bun run test:fast` uses); opt out per session with `SILVERY_STRICT=1,!bytes_out`. Catches render-output firehoses that fill the pty parent's scrollback (cmux/tmux/iTerm) while the TUI's own `process.memoryUsage()` looks healthy — see the sibling lesson `docs/lessons/cmux-pty-buffer-firehose.md` in km.                  |
+| `signal_fanout`      | 1    | App-level hot-signal subscriber budget. km uses this slug to throw `SignalFanoutError` when rendered components subscribe too broadly to hot cursor singletons such as `nodeStore.cursor`, `cursorDepth`, or `cursorCardNodeId`. Fixed budgets live with the tagged signals; opt out per session with `SILVERY_STRICT=1,!signal_fanout`. This follows the same no-extra-knobs rule as `bytes_out` / `mem`: diagnostics are automatic under tier 1 and documented at the strict-mode umbrella. See km's `docs/lessons/signal-fanout-guard.md` for the current implementation.                                                              |
+| `mem`                | 1    | In-process heap-poll sibling of `bytes_out`. Every 30s, logs `process.memoryUsage()` (RSS, heapUsed, heapTotal, external, arrayBuffers) via the `silvery:mem` loggily namespace and trips a one-shot WARN when RSS — or `external + arrayBuffers` — doubles within a 60s window. Fixed cadence in code, no env knobs. Opt out per session with `SILVERY_STRICT=1,!mem`. Catches in-process growth that `bytes_out` cannot see (queue accumulators, retained closures, buffer pools).                                                                                                                                                      |
 
 More checks land here as the framework hardens. Each new check publishes its slug + tier in this table.
 
@@ -101,17 +101,17 @@ SILVERY_INSTRUMENT=1 bun run app
 
 #### Loggily Namespace Reference
 
-| Namespace               | What                                              |
-| ----------------------- | ------------------------------------------------- |
-| `silvery:render`        | Frame-level spans with per-phase timing           |
-| `silvery:content`       | Render phase stats per frame (render/skip counts) |
-| `silvery:content:trace` | Per-node trace entries (skip/render decisions)    |
-| `silvery:content:cell`  | Per-cell debug (node coverage at target coords)   |
-| `silvery:measure`       | Measure phase debug (text measurement calls)      |
+| Namespace               | What                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------- |
+| `silvery:render`        | Frame-level spans with per-phase timing                                         |
+| `silvery:content`       | Render phase stats per frame (render/skip counts)                               |
+| `silvery:content:trace` | Per-node trace entries (skip/render decisions)                                  |
+| `silvery:content:cell`  | Per-cell debug (node coverage at target coords)                                 |
+| `silvery:measure`       | Measure phase debug (text measurement calls)                                    |
 | `silvery:mount`         | Component lifecycle stream: mount/update/unmount with compact identifying props |
-| `silvery:bytes_out`     | Render-output throughput monitor (WARN/PANIC events, frame summaries) |
-| `silvery:mem`           | In-process heap poll (30s `process.memoryUsage()` samples + WARN on doubling) |
-| `@silvery/ag-react`     | React reconciler pipeline spans                   |
+| `silvery:bytes_out`     | Render-output throughput monitor (WARN/PANIC events, frame summaries)           |
+| `silvery:mem`           | In-process heap poll (30s `process.memoryUsage()` samples + WARN on doubling)   |
+| `@silvery/ag-react`     | React reconciler pipeline spans                                                 |
 
 ### Enriched STRICT Errors
 
@@ -287,6 +287,7 @@ expect(tree).toMatchInlineSnapshot(...)
 ```
 
 **Component name resolution** (mirrors `getDebugComponentName` in the reconciler):
+
 1. `data-component="X"` prop → `"X"`
 2. else `testID="y"` → `"${hostType}#y"` (e.g., `"Box#tool-1"`)
 3. else `id="y"` → `"${hostType}#y"`
@@ -296,12 +297,12 @@ Add `data-component="X"` to any component you want render-path-addressable. The 
 
 **When to reach for render-path** vs other diagnostics:
 
-| Bug shape | Reach for |
-| --- | --- |
-| "component X jumps after first paint" | [CLS](./cls.md) — detects SHIFTS |
-| "component X mounted in wrong lane / parent" | render-path — answers WHERE |
-| "component X mounted, then immediately unmounted" | `DEBUG=silvery:mount` — mount/update/unmount events |
-| "what was the parent chain at the moment of the bug?" | render-path on `app.getContainer()` |
+| Bug shape                                             | Reach for                                           |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| "component X jumps after first paint"                 | [CLS](./cls.md) — detects SHIFTS                    |
+| "component X mounted in wrong lane / parent"          | render-path — answers WHERE                         |
+| "component X mounted, then immediately unmounted"     | `DEBUG=silvery:mount` — mount/update/unmount events |
+| "what was the parent chain at the moment of the bug?" | render-path on `app.getContainer()`                 |
 
 **Anti-pattern**: don't grep source to guess the render path — the JSX you read is the static structure, but conditional rendering, suspense boundaries, and provider wrappers can shift the actual mounted parent. The debug primitive walks the LIVE tree.
 

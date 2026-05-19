@@ -535,7 +535,7 @@ class _CommandBase extends BaseCommand {
     defaultValue?: any,
   ): this {
     // Extract the camelCase name from the flags string for action() merging
-    const rawName = flags.replace(/[<\[\]>.]/g, "").trim()
+    const rawName = flags.replace(/[<[\]>.]/g, "").trim()
     const camelName = rawName.replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase())
     this._typedArgNames.push(camelName)
 

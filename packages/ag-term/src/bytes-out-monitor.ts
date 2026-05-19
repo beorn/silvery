@@ -100,9 +100,7 @@ export interface BytesOutMonitor {
   dispose(): void
 }
 
-export function createBytesOutMonitor(
-  options: BytesOutMonitorOptions = {},
-): BytesOutMonitor {
+export function createBytesOutMonitor(options: BytesOutMonitorOptions = {}): BytesOutMonitor {
   const warnMbPerSec = options.warnMbPerSec ?? DEFAULT_WARN_MB_PER_SEC
   const panicMbPerSec = options.panicMbPerSec ?? DEFAULT_PANIC_MB_PER_SEC
   const skipHeapSnapshot = options.skipHeapSnapshot ?? false

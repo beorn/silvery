@@ -28,11 +28,7 @@ describe("[A0.2] LayoutNode.setFitWidth — flexily-zero adapter", () => {
     // flexily's UNIT_CQI / UNIT_CQMIN without throwing.
     const engine = createFlexilyZeroEngine()
     const box = engine.createNode()
-    box.setFitWidth([
-      80,
-      { value: 100, unit: "cqi" },
-      { value: 50, unit: "cqmin" },
-    ])
+    box.setFitWidth([80, { value: 100, unit: "cqi" }, { value: 50, unit: "cqmin" }])
     expect(() => box.calculateLayout(200, 100)).not.toThrow()
   })
 

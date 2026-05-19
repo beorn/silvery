@@ -19,7 +19,12 @@ import {
 } from "@silvery/ag/cls"
 import type { Rect } from "@silvery/ag/types"
 
-const rect = (x: number, y: number, width: number, height: number): Rect => ({ x, y, width, height })
+const rect = (x: number, y: number, width: number, height: number): Rect => ({
+  x,
+  y,
+  width,
+  height,
+})
 
 describe("computeShiftScore", () => {
   test("identical rects → score 0", () => {
@@ -93,9 +98,21 @@ describe("aggregateReport", () => {
   test("cumulativeScore sums every shift regardless of reason", () => {
     const shifts: LayoutShift[] = [
       // 8 area × 1 distance = 8 (unexpected)
-      { blockId: "A", fromRect: rect(0, 0, 4, 2), toRect: rect(1, 0, 4, 2), frameTimestamp: 0, reflowReason: "unexpected" },
+      {
+        blockId: "A",
+        fromRect: rect(0, 0, 4, 2),
+        toRect: rect(1, 0, 4, 2),
+        frameTimestamp: 0,
+        reflowReason: "unexpected",
+      },
       // 9 area × 5 distance = 45 (user-action — counted in cumulative, NOT in unexpected)
-      { blockId: "B", fromRect: rect(0, 0, 3, 3), toRect: rect(3, 4, 3, 3), frameTimestamp: 1, reflowReason: "user-action" },
+      {
+        blockId: "B",
+        fromRect: rect(0, 0, 3, 3),
+        toRect: rect(3, 4, 3, 3),
+        frameTimestamp: 1,
+        reflowReason: "user-action",
+      },
     ]
     const report = aggregateReport(shifts)
     expect(report.cumulativeScore).toBe(53)
@@ -105,11 +122,41 @@ describe("aggregateReport", () => {
 
   test("unexpectedShifts holds only reflowReason=unexpected", () => {
     const shifts: LayoutShift[] = [
-      { blockId: "A", fromRect: rect(0, 0, 1, 1), toRect: rect(1, 0, 1, 1), frameTimestamp: 0, reflowReason: "unexpected" },
-      { blockId: "B", fromRect: rect(0, 0, 1, 1), toRect: rect(1, 0, 1, 1), frameTimestamp: 0, reflowReason: "user-action" },
-      { blockId: "C", fromRect: rect(0, 0, 1, 1), toRect: rect(1, 0, 1, 1), frameTimestamp: 0, reflowReason: "animation" },
-      { blockId: "D", fromRect: rect(0, 0, 1, 1), toRect: rect(1, 0, 1, 1), frameTimestamp: 0, reflowReason: "content-arrival" },
-      { blockId: "E", fromRect: rect(0, 0, 1, 1), toRect: rect(2, 0, 1, 1), frameTimestamp: 0, reflowReason: "unexpected" },
+      {
+        blockId: "A",
+        fromRect: rect(0, 0, 1, 1),
+        toRect: rect(1, 0, 1, 1),
+        frameTimestamp: 0,
+        reflowReason: "unexpected",
+      },
+      {
+        blockId: "B",
+        fromRect: rect(0, 0, 1, 1),
+        toRect: rect(1, 0, 1, 1),
+        frameTimestamp: 0,
+        reflowReason: "user-action",
+      },
+      {
+        blockId: "C",
+        fromRect: rect(0, 0, 1, 1),
+        toRect: rect(1, 0, 1, 1),
+        frameTimestamp: 0,
+        reflowReason: "animation",
+      },
+      {
+        blockId: "D",
+        fromRect: rect(0, 0, 1, 1),
+        toRect: rect(1, 0, 1, 1),
+        frameTimestamp: 0,
+        reflowReason: "content-arrival",
+      },
+      {
+        blockId: "E",
+        fromRect: rect(0, 0, 1, 1),
+        toRect: rect(2, 0, 1, 1),
+        frameTimestamp: 0,
+        reflowReason: "unexpected",
+      },
     ]
     const ids = aggregateReport(shifts).unexpectedShifts.map((s) => s.blockId)
     expect(ids).toEqual(["A", "E"])
@@ -117,7 +164,13 @@ describe("aggregateReport", () => {
 
   test("shifts array is preserved verbatim (same reference, same order)", () => {
     const shifts: LayoutShift[] = [
-      { blockId: "Z", fromRect: rect(0, 0, 1, 1), toRect: rect(1, 0, 1, 1), frameTimestamp: 5, reflowReason: "unexpected" },
+      {
+        blockId: "Z",
+        fromRect: rect(0, 0, 1, 1),
+        toRect: rect(1, 0, 1, 1),
+        frameTimestamp: 5,
+        reflowReason: "unexpected",
+      },
     ]
     expect(aggregateReport(shifts).shifts).toBe(shifts)
   })
@@ -127,9 +180,21 @@ describe("aggregateUnexpectedScore", () => {
   test("ignores non-unexpected reasons", () => {
     const shifts: LayoutShift[] = [
       // 4 area × 1 = 4 (user-action — should be excluded)
-      { blockId: "A", fromRect: rect(0, 0, 2, 2), toRect: rect(1, 0, 2, 2), frameTimestamp: 0, reflowReason: "user-action" },
+      {
+        blockId: "A",
+        fromRect: rect(0, 0, 2, 2),
+        toRect: rect(1, 0, 2, 2),
+        frameTimestamp: 0,
+        reflowReason: "user-action",
+      },
       // 8 area × 1 = 8 (unexpected — included)
-      { blockId: "B", fromRect: rect(0, 0, 4, 2), toRect: rect(1, 0, 4, 2), frameTimestamp: 0, reflowReason: "unexpected" },
+      {
+        blockId: "B",
+        fromRect: rect(0, 0, 4, 2),
+        toRect: rect(1, 0, 4, 2),
+        frameTimestamp: 0,
+        reflowReason: "unexpected",
+      },
     ]
     expect(aggregateUnexpectedScore(shifts)).toBe(8)
   })
@@ -140,8 +205,20 @@ describe("aggregateUnexpectedScore", () => {
 
   test("all-unexpected → same as raw cumulative sum", () => {
     const shifts: LayoutShift[] = [
-      { blockId: "A", fromRect: rect(0, 0, 2, 2), toRect: rect(1, 0, 2, 2), frameTimestamp: 0, reflowReason: "unexpected" },
-      { blockId: "B", fromRect: rect(0, 0, 4, 2), toRect: rect(1, 0, 4, 2), frameTimestamp: 0, reflowReason: "unexpected" },
+      {
+        blockId: "A",
+        fromRect: rect(0, 0, 2, 2),
+        toRect: rect(1, 0, 2, 2),
+        frameTimestamp: 0,
+        reflowReason: "unexpected",
+      },
+      {
+        blockId: "B",
+        fromRect: rect(0, 0, 4, 2),
+        toRect: rect(1, 0, 4, 2),
+        frameTimestamp: 0,
+        reflowReason: "unexpected",
+      },
     ]
     expect(aggregateUnexpectedScore(shifts)).toBe(aggregateReport(shifts).cumulativeScore)
   })

@@ -418,7 +418,7 @@ For container-relative responsive design, silvery exposes three engine-native pr
 
    ```tsx
    <Box containerType="inline-size" containSize>
-     {children}  // cqi values inside resolve against this Box's inline-size
+     {children} // cqi values inside resolve against this Box's inline-size
    </Box>
    ```
 
@@ -426,7 +426,7 @@ For container-relative responsive design, silvery exposes three engine-native pr
 
    ```tsx
    <Box fitWidth={[80, 120, "100cqi"]}>
-     {children}  // Box snaps to smallest lane ≥ children's max-content
+     {children} // Box snaps to smallest lane ≥ children's max-content
    </Box>
    ```
 

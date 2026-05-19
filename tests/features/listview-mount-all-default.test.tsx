@@ -28,10 +28,7 @@ describe("ListView mount-all default (W7 / 15332 Wave 3)", () => {
     const items = Array.from({ length: 200 }, (_, i) => `item-${i}`)
     const app = r(
       <Box width={40} height={50} flexDirection="column">
-        <ListView<string>
-          items={items}
-          renderItem={(item: string) => <Text>{item}</Text>}
-        />
+        <ListView<string> items={items} renderItem={(item: string) => <Text>{item}</Text>} />
       </Box>,
     )
     expect(app.text).toContain("item-0")

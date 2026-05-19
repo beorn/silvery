@@ -40,12 +40,7 @@ describe("render-path debug primitive", () => {
     const r = createRenderer({ cols: 40, rows: 10 })
     const app = r(<App />)
     const path = app.renderPath("ToolBlock")
-    expect(path.map((n) => n.name)).toEqual([
-      "silvery-root",
-      "App",
-      "Body",
-      "ToolBlock",
-    ])
+    expect(path.map((n) => n.name)).toEqual(["silvery-root", "App", "Body", "ToolBlock"])
   })
 
   test("getRenderPath returns [] when component not found", () => {

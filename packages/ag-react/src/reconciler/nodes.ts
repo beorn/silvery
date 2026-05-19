@@ -570,7 +570,9 @@ export function applyTextFlexItemProps(
  * pointer to the bug — the layout engine consumes only the parsed form, so
  * parse-fail at the React seam is the right place.
  */
-function parseFitWidthEntry(entry: number | string): number | { value: number; unit: "cqi" | "cqmin" } {
+function parseFitWidthEntry(
+  entry: number | string,
+): number | { value: number; unit: "cqi" | "cqmin" } {
   if (typeof entry === "number") return entry
   const cqiMatch = entry.match(/^(\d+(?:\.\d+)?)cqi$/)
   if (cqiMatch) return { value: Number.parseFloat(cqiMatch[1]!), unit: "cqi" }

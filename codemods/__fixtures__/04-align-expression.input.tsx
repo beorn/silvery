@@ -11,7 +11,11 @@ import { AutoFit, Box } from "silvery"
 
 type Ctx = { align: "start" | "center" | "stretch" }
 
-export function ConditionalAlign({ ctx, lanes, children }: {
+export function ConditionalAlign({
+  ctx,
+  lanes,
+  children,
+}: {
   ctx: Ctx
   lanes: number[]
   children: React.ReactNode

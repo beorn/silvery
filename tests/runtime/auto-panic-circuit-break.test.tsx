@@ -23,10 +23,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { Text } from "../../src/index.js"
-import {
-  _resetPanicCircuitBreaker,
-  run,
-} from "../../packages/ag-term/src/runtime/run"
+import { _resetPanicCircuitBreaker, run } from "../../packages/ag-term/src/runtime/run"
 
 const DEFAULT_MAX_DUMPS = 10
 

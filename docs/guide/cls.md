@@ -39,11 +39,11 @@ That's the canonical close-gate shape for a visual-bug bead: capture across the 
 
 The capture API lives on `App` (returned from `createRenderer`, `createTermless`, or `render`). It is process-wide: a single recorder is active at any time, set when `beginCLSCapture()` runs and cleared when `endCLSCapture()` or `cancelCLSCapture()` runs.
 
-| Method                          | Purpose                                                                                                            |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `app.beginCLSCapture(reasoner?)` | Start a capture window. Optional `ReasonClassifier` overrides the default labeling (every shift `"unexpected"`).   |
-| `app.endCLSCapture()`           | Stop capture, return a `CLSReport`. Throws under `SILVERY_STRICT=cls` if any `unexpected` shifts were recorded.    |
-| `app.cancelCLSCapture()`        | Discard the in-flight capture without producing a report. Idempotent — safe to call when no capture is active.     |
+| Method                           | Purpose                                                                                                          |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `app.beginCLSCapture(reasoner?)` | Start a capture window. Optional `ReasonClassifier` overrides the default labeling (every shift `"unexpected"`). |
+| `app.endCLSCapture()`            | Stop capture, return a `CLSReport`. Throws under `SILVERY_STRICT=cls` if any `unexpected` shifts were recorded.  |
+| `app.cancelCLSCapture()`         | Discard the in-flight capture without producing a report. Idempotent — safe to call when no capture is active.   |
 
 ```ts
 app.beginCLSCapture()
@@ -86,12 +86,12 @@ Web CLS uses impact-fraction (area moved ÷ viewport area). We use raw because t
 
 The classifier decides _why_ a shift happened. The default classifier labels every shift `"unexpected"` — most pessimistic, surfaces the bug class CLS exists to catch.
 
-| Reason             | Meaning                                                                | Action                  |
-| ------------------ | ---------------------------------------------------------------------- | ----------------------- |
-| `user-action`      | User did something — typed, scrolled, resized                          | Allowed — not a bug    |
-| `unexpected`       | No triggering event — the actionable bug class                          | Fix it                  |
-| `animation`        | Ongoing animation that's expected to move stuff                         | Allowed — not a bug    |
-| `content-arrival`  | New content streamed in — expected for chat / log views                 | Allowed — not a bug    |
+| Reason            | Meaning                                                 | Action              |
+| ----------------- | ------------------------------------------------------- | ------------------- |
+| `user-action`     | User did something — typed, scrolled, resized           | Allowed — not a bug |
+| `unexpected`      | No triggering event — the actionable bug class          | Fix it              |
+| `animation`       | Ongoing animation that's expected to move stuff         | Allowed — not a bug |
+| `content-arrival` | New content streamed in — expected for chat / log views | Allowed — not a bug |
 
 Pass a custom classifier to `beginCLSCapture` when you want the consumer to decide:
 

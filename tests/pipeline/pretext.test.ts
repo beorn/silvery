@@ -265,7 +265,10 @@ describe("optimalWrap", () => {
         expect(line.startsWith("/"), `line starts with /: ${JSON.stringify(line)}`).toBe(false)
       }
       // Content preserved.
-      const recovered = lines.map((l) => l).join("").replace(/\s+/g, "")
+      const recovered = lines
+        .map((l) => l)
+        .join("")
+        .replace(/\s+/g, "")
       expect(recovered).toBe("path/to/file")
     })
 

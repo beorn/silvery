@@ -269,9 +269,10 @@ function readAttrExpressionText(attr: import("ts-morph").JsxAttribute): string |
   return initializer.getText()
 }
 
-function resolveAlignSelf(
-  alignAttr: import("ts-morph").JsxAttribute | null,
-): { alignSelfText: string | null; todoNote?: string } {
+function resolveAlignSelf(alignAttr: import("ts-morph").JsxAttribute | null): {
+  alignSelfText: string | null
+  todoNote?: string
+} {
   // No align → preserve AutoFit's default ("start" → flex-start).
   if (!alignAttr) return { alignSelfText: `"flex-start"` }
 
@@ -318,7 +319,9 @@ if (import.meta.main) {
   for (const file of files) {
     const result = transformFile(file, { dry })
     if (result.changed || result.todos.length > 0) {
-      console.log(`${file}: ${result.rewrites} rewrite(s)${result.todos.length ? `, ${result.todos.length} TODO(s)` : ""}`)
+      console.log(
+        `${file}: ${result.rewrites} rewrite(s)${result.todos.length ? `, ${result.todos.length} TODO(s)` : ""}`,
+      )
       for (const todo of result.todos) console.log(`  TODO: ${todo}`)
     }
     totalRewrites += result.rewrites

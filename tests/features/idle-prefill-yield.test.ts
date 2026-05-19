@@ -80,9 +80,7 @@ function makeFakeScheduler(): FakeScheduler {
       while (this.flush()) {
         steps++
         if (steps > maxSteps) {
-          throw new Error(
-            `FakeScheduler.drain exceeded ${maxSteps} steps — runaway loop?`,
-          )
+          throw new Error(`FakeScheduler.drain exceeded ${maxSteps} steps — runaway loop?`)
         }
       }
       return steps

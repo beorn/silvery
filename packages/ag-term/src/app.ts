@@ -875,9 +875,7 @@ export function buildApp(options: AppOptions): App {
     },
     endCLSCapture(): CLSReport {
       if (!clsMonitor) {
-        throw new Error(
-          "endCLSCapture: no ClsMonitor was provided to buildApp().",
-        )
+        throw new Error("endCLSCapture: no ClsMonitor was provided to buildApp().")
       }
       // endCapture() applies SILVERY_STRICT=cls internally — throws
       // UnexpectedLayoutShiftError when tier 2 strict is active and the
