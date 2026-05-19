@@ -414,6 +414,188 @@ export function sanitizeAnsi(text: string): string {
 }
 
 // =============================================================================
+// SGR color parsing (ITU-T T.416 semicolon and colon forms)
+// =============================================================================
+
+/**
+ * Which surface an SGR color targets.
+ *
+ * - `fg` — foreground (SGR introducer 38)
+ * - `bg` — background (SGR introducer 48)
+ * - `ul` — underline color (SGR introducer 58)
+ */
+export type SGRColorLayer = "fg" | "bg" | "ul"
+
+/**
+ * A color parsed out of an SGR (Select Graphic Rendition) sequence.
+ *
+ * Truecolor variant (`kind: "rgb"`) carries the literal RGB triple.
+ * Extended-palette variant (`kind: "indexed"`) carries the 0-255 palette
+ * index used by 256-color terminals.
+ */
+export type SGRColor =
+  | { layer: SGRColorLayer; kind: "rgb"; r: number; g: number; b: number }
+  | { layer: SGRColorLayer; kind: "indexed"; index: number }
+
+/**
+ * SGR introducer code → layer. 38/48/58 introduce extended-color sub-parameters.
+ */
+const SGR_INTRODUCER_TO_LAYER: Record<number, SGRColorLayer> = {
+  38: "fg",
+  48: "bg",
+  58: "ul",
+}
+
+/**
+ * Split a semicolon-separated SGR parameter string into individual params,
+ * expanding any colon-form extended-color groups into a single param string.
+ *
+ * The CSI spec (ITU-T T.416 § 13.1.8) allows extended-color sub-parameters
+ * to use COLON (`:`) instead of SEMICOLON (`;`) as the separator. Both forms
+ * MUST yield the same color when consumed. This function returns each
+ * top-level param verbatim — extended-color groups (colon or semicolon-form)
+ * are kept inside their param chunk for downstream consumption.
+ */
+function splitSGRParams(raw: string): string[] {
+  if (raw === "") return []
+  return raw.split(";")
+}
+
+/**
+ * Parse one extended-color sub-parameter group. Accepts either separator:
+ *
+ *   - colon form: `"38:2::r:g:b"`, `"38:2:r:g:b"`, `"38:5:n"`
+ *   - semicolon form: parts is `[38, 2, r, g, b]` or `[38, 5, n]` — passed
+ *     as already-split-by-semicolon tokens (consumed by the outer walker).
+ *
+ * Returns `{ color, consumed }` where `consumed` is the number of params used
+ * in the semicolon walk (always 1 for the colon form because the whole group
+ * lives inside a single semicolon-delimited chunk).
+ */
+function parseExtendedColor(
+  layer: SGRColorLayer,
+  /** Sub-parameter tokens AFTER the introducer (38/48/58). Empty strings allowed
+   *  (the colon-form colorspace-id slot is conventionally empty). */
+  subs: string[],
+): SGRColor | null {
+  if (subs.length === 0) return null
+  // First sub: color-mode selector
+  const mode = subs[0] === "" ? Number.NaN : Number(subs[0])
+
+  if (mode === 2) {
+    // Truecolor. Spec form is `2:colorspace-id:r:g:b` (5 sub-params after
+    // the introducer; colorspace-id is conventionally empty). Wild form is
+    // `2:r:g:b` (4 sub-params). The semicolon-walker also reaches us as
+    // `2;r;g;b` (4 sub-params) which is the canonical xterm form.
+    // Strategy: take the LAST three sub-params as R,G,B. This handles all
+    // three layouts uniformly without precedence ambiguity.
+    if (subs.length < 4) return null
+    const r = Number(subs[subs.length - 3])
+    const g = Number(subs[subs.length - 2])
+    const b = Number(subs[subs.length - 1])
+    if (!isFinite(r) || !isFinite(g) || !isFinite(b)) return null
+    return { layer, kind: "rgb", r, g, b }
+  }
+
+  if (mode === 5) {
+    // 256-color (extended palette): `5:n` (colon) or `5;n` (semicolon).
+    if (subs.length < 2) return null
+    const index = Number(subs[subs.length - 1])
+    if (!isFinite(index)) return null
+    return { layer, kind: "indexed", index }
+  }
+
+  return null
+}
+
+/**
+ * Parse all colors (truecolor + 256-color) out of an SGR sequence, recognising
+ * both the canonical semicolon form (`\x1b[38;2;R;G;Bm`) and the ITU-T T.416
+ * colon form (`\x1b[38:2::R:G:Bm` / `\x1b[38:2:R:G:Bm` / `\x1b[38:5:Nm`).
+ *
+ * Non-color SGR params (bold, underline, reset, basic 30-37 colors, etc.) are
+ * ignored — this helper exists so the pipeline can recover RGB values from
+ * either form without normalising the input string first.
+ *
+ * @param sgrSequence - A CSI SGR sequence (`\x1b[...m`) or its parameter
+ *   substring. Non-SGR or malformed inputs yield an empty array.
+ * @returns Parsed colors in document order, FG/BG/UL each at most once per call.
+ *
+ * @example
+ * ```ts
+ * parseSGRColor("\x1b[38;2;255;0;0m")
+ * // → [{ layer: "fg", kind: "rgb", r: 255, g: 0, b: 0 }]
+ *
+ * parseSGRColor("\x1b[38:2::255:0:0m")  // colon form, empty colorspace-id
+ * // → [{ layer: "fg", kind: "rgb", r: 255, g: 0, b: 0 }]
+ *
+ * parseSGRColor("\x1b[38:5:196m")  // colon-form 256-color
+ * // → [{ layer: "fg", kind: "indexed", index: 196 }]
+ * ```
+ */
+export function parseSGRColor(sgrSequence: string): SGRColor[] {
+  // Tolerate both the full `\x1b[…m` envelope and a bare parameter string.
+  let raw: string | null = null
+  const match = sgrSequence.match(/\x1b\[([0-9;:]*)m/)
+  if (match) {
+    raw = match[1]!
+  } else if (!sgrSequence.includes("\x1b")) {
+    raw = sgrSequence
+  }
+  if (raw === null) return []
+  if (raw === "") return []
+
+  const out: SGRColor[] = []
+  const params = splitSGRParams(raw)
+
+  for (let i = 0; i < params.length; i++) {
+    const part = params[i]!
+    if (part === "") continue
+
+    if (part.includes(":")) {
+      // Colon-form extended-color group: introducer + 2|5 + … in one chunk.
+      const subs = part.split(":")
+      const introducer = Number(subs[0])
+      const layer = SGR_INTRODUCER_TO_LAYER[introducer]
+      if (!layer) continue
+      const color = parseExtendedColor(layer, subs.slice(1))
+      if (color) out.push(color)
+      continue
+    }
+
+    // Semicolon-form: introducer in this param, sub-params in the next ones.
+    const introducer = Number(part)
+    const layer = SGR_INTRODUCER_TO_LAYER[introducer]
+    if (!layer) continue
+
+    // Need at least the mode (2 or 5) in the next param.
+    if (i + 1 >= params.length) continue
+    const mode = Number(params[i + 1])
+    let consumed = 1 // counts past the introducer
+    let color: SGRColor | null = null
+    if (mode === 2) {
+      // `38;2;R;G;B` → introducer + 4 sub-params.
+      if (i + 4 < params.length) {
+        color = parseExtendedColor(layer, params.slice(i + 1, i + 5))
+        consumed = 4
+      }
+    } else if (mode === 5) {
+      // `38;5;N` → introducer + 2 sub-params.
+      if (i + 2 < params.length) {
+        color = parseExtendedColor(layer, params.slice(i + 1, i + 3))
+        consumed = 2
+      }
+    }
+    if (color) {
+      out.push(color)
+      i += consumed
+    }
+  }
+
+  return out
+}
+
+// =============================================================================
 // Colon-format SGR round-trip tracking
 // =============================================================================
 
@@ -428,9 +610,16 @@ export interface ColonSGRReplacement {
 /**
  * Detect colon-format SGR sequences in an SGR token and return replacement pairs.
  *
- * Terminals use colon-separated parameters (e.g., `38:2::255:100:0`) for true color,
- * but silvery's pipeline normalizes to semicolons (`38;2;255;100;0`). This function
- * extracts the mapping so the original colon format can be restored after rendering.
+ * Terminals use colon-separated parameters (e.g., `38:2::255:100:0`) for true color
+ * and `38:5:n` for 256-color (ITU-T T.416 § 13.1.8); silvery's pipeline normalizes
+ * to semicolons (`38;2;255;100;0` / `38;5;n`). This function extracts the mapping
+ * so the original colon format can be restored after rendering.
+ *
+ * Recognised colon forms (per spec + wild variants):
+ *   - `38:2::R:G:B` — truecolor with empty colorspace-id slot (spec/kitty/mintty)
+ *   - `38:2:R:G:B`  — truecolor without colorspace-id slot (some xterm builds)
+ *   - `38:5:N`      — 256-color extended palette
+ *   - same for 48 (background) and 58 (underline color)
  *
  * @param sgrSequence - A CSI SGR sequence (must end with 'm')
  * @returns Array of replacement pairs, empty if no colon-format params found
@@ -447,17 +636,19 @@ export function extractColonSGRReplacements(sgrSequence: string): ColonSGRReplac
   for (const part of parts) {
     if (!part.includes(":")) continue
     const subs = part.split(":")
-    const code = Number(subs[0])
-    if ((code === 38 || code === 48) && Number(subs[1]) === 2) {
-      // True color colon format: code:2::R:G:B or code:2:R:G:B
-      // Extract R, G, B (skip empty colorspace ID)
-      const nums = subs.map((s) => (s === "" ? 0 : Number(s)))
-      const r = nums[3] ?? nums[2] ?? 0
-      const g = nums[4] ?? nums[3] ?? 0
-      const b = nums[5] ?? nums[4] ?? 0
-      const semicolonForm = `\x1b[${code};2;${r};${g};${b}m`
-      replacements.push({ semicolonForm, colonForm: `\x1b[${part}m` })
-    }
+    const introducer = Number(subs[0])
+    const layer = SGR_INTRODUCER_TO_LAYER[introducer]
+    if (!layer) continue
+
+    const color = parseExtendedColor(layer, subs.slice(1))
+    if (!color) continue
+
+    const colonForm = `\x1b[${part}m`
+    const semicolonForm =
+      color.kind === "rgb"
+        ? `\x1b[${introducer};2;${color.r};${color.g};${color.b}m`
+        : `\x1b[${introducer};5;${color.index}m`
+    replacements.push({ semicolonForm, colonForm })
   }
   return replacements
 }

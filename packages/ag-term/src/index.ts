@@ -130,8 +130,14 @@ export {
   isCSISGR,
   extractColonSGRReplacements,
   createColonSGRTracker,
+  parseSGRColor,
 } from "./ansi-sanitize"
-export type { AnsiToken, ColonSGRReplacement } from "./ansi-sanitize"
+export type {
+  AnsiToken,
+  ColonSGRReplacement,
+  SGRColor,
+  SGRColorLayer,
+} from "./ansi-sanitize"
 
 // =============================================================================
 // ANSI Escape Sequences / Output
