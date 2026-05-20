@@ -62,7 +62,7 @@ export interface ProtocolErrorContext {
  * and continue — never let a protocol parse error crash the app.
  */
 export class ProtocolError extends Error {
-  readonly name = "ProtocolError" as const
+  override readonly name = "ProtocolError" as const
   readonly parser: string
   readonly input: string
   readonly inputLength: number

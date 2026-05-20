@@ -215,13 +215,15 @@ describe("AnchoredOverlay", () => {
     expect(app.text).toContain("menu-body")
     const overlay = findById(getRoot(app), "overlay")
     expect(overlay).not.toBeNull()
+    const rect = overlay!.boxRect
+    expect(rect).not.toBeNull()
     // Right-side panel starts at screen x = 36 (60 - 24). With
     // placement="left-start" the popover must render to the LEFT of the
     // panel, in the chat-area space.
-    expect(overlay!.boxRect.x, "popover screen-x must be left of the side panel").toBeLessThan(36)
-    expect(overlay!.boxRect.x).toBeGreaterThanOrEqual(0)
-    expect(overlay!.boxRect.width).toBe(20)
-    expect(overlay!.boxRect.height).toBe(4)
+    expect(rect!.x, "popover screen-x must be left of the side panel").toBeLessThan(36)
+    expect(rect!.x).toBeGreaterThanOrEqual(0)
+    expect(rect!.width).toBe(20)
+    expect(rect!.height).toBe(4)
   })
 
   test("sizing=max popover in right-side panel with left-start placement renders left of the panel", () => {
@@ -264,10 +266,12 @@ describe("AnchoredOverlay", () => {
     expect(app.text).toContain("QUOTA-DETAIL")
     const overlay = findById(getRoot(app), "quota-overlay")
     expect(overlay).not.toBeNull()
-    expect(overlay!.boxRect.x, "popover screen-x must be left of the side panel").toBeLessThan(COLS - PANEL_W)
-    expect(overlay!.boxRect.x).toBeGreaterThanOrEqual(0)
-    expect(overlay!.boxRect.y).toBeGreaterThanOrEqual(0)
-    expect(overlay!.boxRect.y + overlay!.boxRect.height).toBeLessThanOrEqual(ROWS)
+    const rect = overlay!.boxRect
+    expect(rect).not.toBeNull()
+    expect(rect!.x, "popover screen-x must be left of the side panel").toBeLessThan(COLS - PANEL_W)
+    expect(rect!.x).toBeGreaterThanOrEqual(0)
+    expect(rect!.y).toBeGreaterThanOrEqual(0)
+    expect(rect!.y + rect!.height).toBeLessThanOrEqual(ROWS)
   })
 
   test("removes overlay content when closed", () => {
