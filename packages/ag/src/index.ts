@@ -89,6 +89,19 @@ export type { SilveryMouseEvent, SilveryWheelEvent, MouseEventProps } from "./mo
 // Layout Types
 export type { LayoutNode, MeasureFunc, MeasureMode } from "./layout-types"
 
+// Style Math — min() / max() / clamp() for cqi safety
+// (Bead: @km/silvery/15111-min-max-clamp — Phase A0.3 of the responsive-layout reframe)
+export { parseStyleMath, evaluateStyleMath } from "./style-math"
+export type {
+  StyleMathNode,
+  StyleMathNumber,
+  StyleMathCqValue,
+  StyleMathBinOp,
+  StyleMathCall,
+  StyleMathContext,
+  CqUnit,
+} from "./style-math"
+
 // Render Epoch + Bit-Packed Dirty Flags
 export {
   INITIAL_EPOCH,
