@@ -56,7 +56,6 @@ chrome `<Box>`.
 ```tsx
 import { Terminal } from "silvery"
 import type { TerminalReadable } from "silvery" // duck-typed
-
 ;<Terminal
   terminal={readable} // TerminalReadable — required
   cursor // publish cursor via cursorOffset (default true)
