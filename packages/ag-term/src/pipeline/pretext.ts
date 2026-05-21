@@ -224,6 +224,23 @@ export function balancedWidth(analysis: TextAnalysis, maxWidth: number): number 
 export type WidthFn = (lineIndex: number) => number
 
 /**
+ * Options for the Knuth-Plass break selector and `optimalWrap`.
+ *
+ * - `maxLines`: caps the wrap to ≤ N lines. When the DP can't fit the
+ *   text in that budget at the requested width, `knuthPlassBreaks` returns
+ *   an empty array (infeasibility signal) and `optimalWrap` falls back to
+ *   greedy wrapping clipped to `maxLines` with the final line truncated
+ *   and `truncationSuffix` appended.
+ *
+ * Tracking: @km/silvery/15130-pretext-maxlines-aware. Without `maxLines`
+ * the DP behaves exactly as before — same line count, same break points.
+ */
+export interface PretextOpts {
+  /** Maximum number of wrapped lines. Omit for unbounded (default). */
+  maxLines?: number
+}
+
+/**
  * Find optimal line breaks that minimize total raggedness.
  *
  * Runs per-paragraph (split by newlines) to avoid penalty interactions
@@ -234,10 +251,20 @@ export type WidthFn = (lineIndex: number) => number
  * or a `WidthFn(lineIndex)` for per-line widths. Per-line uses a
  * forward DP that tracks line index in state.
  *
- * O(breakpoints²) for the constant-width case; O(breakpoints² × maxLines)
- * for per-line. Both negligible for terminal-scale text.
+ * Pass `opts.maxLines` to cap the wrap to ≤ N lines (a 2D DP over
+ * candidates × lines-used). When infeasible the function returns `[]`
+ * and the caller (`optimalWrap`) is responsible for the truncation
+ * fallback.
+ *
+ * O(breakpoints²) for the constant-width unbounded case;
+ * O(breakpoints² × maxLines) for per-line or when `maxLines` is set.
+ * All variants are negligible for terminal-scale text.
  */
-export function knuthPlassBreaks(analysis: TextAnalysis, width: number | WidthFn): number[] {
+export function knuthPlassBreaks(
+  analysis: TextAnalysis,
+  width: number | WidthFn,
+  opts?: PretextOpts,
+): number[] {
   // Quick reject: empty or single-line at the widest available width.
   // For per-line, use width(0) as the conservative single-line check —
   // if the whole text fits on line 0, no breaks are needed regardless
@@ -251,6 +278,11 @@ export function knuthPlassBreaks(analysis: TextAnalysis, width: number | WidthFn
   // is "line 0" for width purposes. Most callers pass single-paragraph
   // text (titles, labels) so this matches expectations; multi-paragraph
   // callers wanting absolute line indexing should pre-split + offset.
+  //
+  // maxLines semantics with multi-paragraph input: the budget is applied
+  // PER-PARAGRAPH. Multi-paragraph callers needing global line capping
+  // should pre-split. (Title callers — the primary maxLines consumer —
+  // always pass single-paragraph text, so this is a non-issue in practice.)
   const { newlineIndices, graphemes } = analysis
   const allBreaks: number[] = []
 
@@ -267,8 +299,15 @@ export function knuthPlassBreaks(analysis: TextAnalysis, width: number | WidthFn
 
     const breaks =
       typeof width === "function"
-        ? knuthPlassForParagraphPerLine(analysis, pStart, pEnd, width)
-        : knuthPlassForParagraph(analysis, pStart, pEnd, width)
+        ? knuthPlassForParagraphPerLine(analysis, pStart, pEnd, width, opts)
+        : knuthPlassForParagraph(analysis, pStart, pEnd, width, opts)
+    // When maxLines is set and the paragraph is infeasible, the per-
+    // paragraph DP returns [] (no breaks) — but the paragraph may still
+    // be non-empty (totalWidth > width). The caller (`optimalWrap`)
+    // distinguishes "single-line OK" from "infeasible-under-cap" by
+    // re-running the line-count check post hoc; signalling infeasibility
+    // here would require a separate channel. Keeping the [] convention
+    // matches the existing greedy-fallback contract.
     allBreaks.push(...breaks)
 
     // Add newline break if not the last paragraph
@@ -379,13 +418,28 @@ function wrapQualityPenalty(
   return penalty
 }
 
-/** DP for a single paragraph (no newlines). Constant-width fast path. */
+/**
+ * DP for a single paragraph (no newlines). Constant-width.
+ *
+ * Without `opts.maxLines`: backward 1D DP, `cost[i]` = min cost to reach
+ * the end starting at candidate `i`. Final answer = `cost[0]`.
+ *
+ * With `opts.maxLines`: forward 2D DP, `f[i][k]` = min cost to reach
+ * candidate `i` after consuming exactly `k` lines. See
+ * `knuthPlassForParagraph2D` below — same shape as the per-line variant
+ * but with a constant `width` for every line.
+ */
 function knuthPlassForParagraph(
   analysis: TextAnalysis,
   pStart: number,
   pEnd: number,
   width: number,
+  opts?: PretextOpts,
 ): number[] {
+  if (opts?.maxLines !== undefined) {
+    return knuthPlassForParagraph2D(analysis, pStart, pEnd, () => width, opts.maxLines)
+  }
+
   const { cumWidths, breakIndices, widths, graphemes } = analysis
 
   // Build candidates for this paragraph
@@ -471,13 +525,23 @@ function knuthPlassForParagraph(
  * O(n² × m) where m is max meaningful line index. For titles n is small
  * (~30 candidates, ~5 lines) so this is trivial. The constant-width path
  * above stays as the fast path for callers that don't need per-line.
+ *
+ * Dispatches to the 2D variant when `opts.maxLines` is set — needed because
+ * the optimal path through candidate `i` for line-count `k` may differ from
+ * the path for `k+1`, so the single-state `line[]` shortcut is unsafe under
+ * a hard line cap.
  */
 function knuthPlassForParagraphPerLine(
   analysis: TextAnalysis,
   pStart: number,
   pEnd: number,
   widthFn: WidthFn,
+  opts?: PretextOpts,
 ): number[] {
+  if (opts?.maxLines !== undefined) {
+    return knuthPlassForParagraph2D(analysis, pStart, pEnd, widthFn, opts.maxLines)
+  }
+
   const { cumWidths, breakIndices, widths, graphemes } = analysis
 
   // Build candidates for this paragraph
@@ -561,6 +625,172 @@ function knuthPlassForParagraphPerLine(
 }
 
 /**
+ * DP for a single paragraph with a hard line-budget cap.
+ *
+ * Forward 2D DP — `f[i][k]` = min cost to reach candidate `i` using
+ * exactly `k` lines. Transition:
+ *
+ *   f[i][k+1] = min over j<i of (f[j][k] + lineCost(j → i, line k))
+ *
+ * The line index `k` is consumed by the (j → i) segment, so its allowed
+ * width is `widthFn(k)`. Final answer = `argmin_{k <= maxLines} f[n-1][k]`,
+ * with `cost = 0` on the last line (no raggedness penalty on the final
+ * line, matching the 1D contracts above).
+ *
+ * Returns `[]` when no path fits within `maxLines` lines (infeasibility
+ * signal — `optimalWrap` falls back to truncation).
+ *
+ * Complexity: O(n² × maxLines). For terminal titles n ≈ 30 candidates and
+ * maxLines ≈ 4-6, so ≤ 5400 ops per paragraph — negligible. Memory: one
+ * 2D Float64Array sized `n × (maxLines + 1)`.
+ *
+ * Tracking: @km/silvery/15130-pretext-maxlines-aware.
+ */
+function knuthPlassForParagraph2D(
+  analysis: TextAnalysis,
+  pStart: number,
+  pEnd: number,
+  widthFn: WidthFn,
+  maxLines: number,
+): number[] {
+  if (maxLines <= 0) return []
+
+  const { cumWidths, breakIndices, widths, graphemes } = analysis
+
+  // Build candidates for this paragraph
+  const candidates: number[] = [pStart]
+  for (const bp of breakIndices) {
+    if (bp > pStart && bp <= pEnd) candidates.push(bp)
+  }
+  candidates.push(pEnd)
+
+  const n = candidates.length
+  if (n <= 2) {
+    // Single segment, no breaks needed — but still subject to the line cap.
+    // A 1-line wrap is always feasible under maxLines >= 1.
+    return []
+  }
+
+  // K = maxLines + 1 (so we index k = 0..maxLines).
+  // f[i * K + k] = min cost to reach candidate i using exactly k lines.
+  // from[i * K + k] = predecessor candidate index (-1 if unreached).
+  // fromK[i * K + k] = predecessor line count (= k - 1) — stored
+  // for symmetry with from[]; both make traceback trivial.
+  const K = maxLines + 1
+  const f = new Float64Array(n * K).fill(Infinity)
+  const from = new Int32Array(n * K).fill(-1)
+  // f[(0 * K) + 0] = state "reached candidate 0 using 0 lines"
+  f[0] = 0
+
+  // Pre-compute trimEnd for each candidate (the visible end of a line
+  // ending at that candidate — strips trailing whitespace and ANSI).
+  const trimEnds = new Array<number>(n)
+  for (let i = 0; i < n; i++) {
+    const lineEnd = candidates[i]!
+    let trimEnd = lineEnd
+    while (trimEnd > 0) {
+      const prevG = graphemes[trimEnd - 1]
+      const prevW = widths[trimEnd - 1]
+      if (prevW === 0) {
+        trimEnd--
+        continue
+      }
+      if (prevG === " " || prevG === "\t") {
+        trimEnd--
+        continue
+      }
+      break
+    }
+    trimEnds[i] = trimEnd
+  }
+
+  // Forward DP: for each (j, k) state with finite cost, extend to every i > j
+  // landing at line count k+1.
+  for (let j = 0; j < n - 1; j++) {
+    const lineStart = candidates[j]!
+    const lineStartCum = cumWidths[lineStart]!
+
+    for (let k = 0; k < maxLines; k++) {
+      const fjk = f[j * K + k]!
+      if (fjk === Infinity) continue
+      const allowedWidth = widthFn(k)
+      if (allowedWidth <= 0) continue
+
+      for (let i = j + 1; i < n; i++) {
+        const lineEnd = candidates[i]!
+        const trimEnd = trimEnds[i]!
+        const lineWidth = cumWidths[trimEnd]! - lineStartCum
+
+        // Constant-width fast-path optimization: when widthFn returns the
+        // same value for every line, candidates are visited in ascending
+        // order of cumWidths, so once a candidate's width exceeds the
+        // allowed width all subsequent ones do too. With per-line widths
+        // we can't break — `continue` is the safe move. (The performance
+        // cost is small at terminal scales.)
+        if (lineWidth > allowedWidth) continue
+
+        const leftover = allowedWidth - lineWidth
+        const isLastLine = i === n - 1
+        let lineCost = isLastLine ? 0 : leftover * leftover
+
+        if (!isLastLine) {
+          lineCost += wrapQualityPenalty(analysis, lineStart, lineEnd, trimEnd)
+        }
+
+        const total = fjk + lineCost
+        const target = i * K + (k + 1)
+        if (total < f[target]!) {
+          f[target] = total
+          from[target] = j
+        }
+      }
+    }
+  }
+
+  // Pick the best terminal state — min f[n-1][k] over k = 1..maxLines.
+  let bestK = -1
+  let bestCost = Infinity
+  for (let k = 1; k <= maxLines; k++) {
+    const c = f[(n - 1) * K + k]!
+    if (c < bestCost) {
+      bestCost = c
+      bestK = k
+    }
+  }
+  if (bestK === -1 || bestCost === Infinity) return [] // infeasible under cap
+
+  // Trace back: walk from (n-1, bestK) to (0, 0) using `from`.
+  const breaks: number[] = []
+  let curI = n - 1
+  let curK = bestK
+  while (curK > 0) {
+    const prev = from[curI * K + curK]!
+    if (prev < 0) break // safety; shouldn't happen with bestCost finite
+    if (prev > 0) breaks.push(candidates[prev]!)
+    curI = prev
+    curK = curK - 1
+  }
+  breaks.reverse()
+  return breaks
+}
+
+/**
+ * Options for `optimalWrap`. Extends `PretextOpts` with caller-side
+ * presentation knobs (truncation suffix on overflow).
+ */
+export interface OptimalWrapOpts extends PretextOpts {
+  /**
+   * Suffix appended to the final visible line when `maxLines` is exceeded
+   * and the wrap falls back to truncation. Default is `"…"` (single
+   * horizontal-ellipsis). Set to `""` to truncate without a suffix.
+   *
+   * The suffix is counted against the available width when truncating —
+   * the last line is cut so that `displayLength(head + suffix) <= width`.
+   */
+  truncationSuffix?: string
+}
+
+/**
  * Wrap text using Knuth-Plass optimal breaks.
  * Returns line strings — drop-in replacement for greedy wrap.
  * Falls back to greedy wrapText when DP finds no feasible solution.
@@ -568,19 +798,40 @@ function knuthPlassForParagraphPerLine(
  * `width` accepts a constant `number` (uniform width) OR a `WidthFn(lineIndex)`
  * for per-line widths (e.g. line 0 narrowed by a top-right pill, lines 1+
  * full width — CSS-float-equivalent layouts).
+ *
+ * `opts.maxLines` caps the wrap to ≤ N lines. When the DP can't fit the
+ * text in that budget, falls back to a greedy wrap clipped to `maxLines`
+ * with the final visible line truncated (head trimmed at a grapheme
+ * boundary so `head + truncationSuffix` fits within the budget). Default
+ * suffix is `"…"`.
+ *
+ * Tracking: @km/silvery/15130-pretext-maxlines-aware.
  */
 export function optimalWrap(
   text: string,
   analysis: TextAnalysis,
   width: number | WidthFn,
+  opts?: OptimalWrapOpts,
 ): string[] {
-  const breaks = knuthPlassBreaks(analysis, width)
+  const maxLines = opts?.maxLines
+  const truncationSuffix = opts?.truncationSuffix ?? "…"
+  const breaks = knuthPlassBreaks(
+    analysis,
+    width,
+    maxLines !== undefined ? { maxLines } : undefined,
+  )
   // For greedy fallback, use line-0 width as the conservative single value
   const fallbackWidth = typeof width === "function" ? width(0) : width
   if (breaks.length === 0) {
-    // No breaks found — either single line or DP infeasible → fall back to greedy
-    if (analysis.totalWidth <= fallbackWidth && analysis.newlineIndices.length === 0) return [text]
-    return wrapText(text, fallbackWidth, true, true)
+    // No breaks — either single-line, multi-line-infeasible, OR DP infeasible
+    // under `maxLines` cap. Disambiguate via line-count check.
+    const singleLine = analysis.totalWidth <= fallbackWidth && analysis.newlineIndices.length === 0
+    if (singleLine) return [text]
+    const greedy = wrapText(text, fallbackWidth, true, true)
+    if (maxLines !== undefined && greedy.length > maxLines) {
+      return clampToMaxLines(greedy, maxLines, fallbackWidth, truncationSuffix)
+    }
+    return greedy
   }
 
   const { graphemes, widths } = analysis
@@ -650,5 +901,87 @@ export function optimalWrap(
     }
   }
 
+  // Defensive: the DP enforces `maxLines` by construction, but if a future
+  // edit introduces a path where breaks > maxLines - 1 leaks through (e.g.
+  // multi-paragraph callers passing newlines), clamp + ellipsize here so
+  // the contract "≤ maxLines visible rows" is honored unconditionally.
+  if (maxLines !== undefined && lines.length > maxLines) {
+    return clampToMaxLines(lines, maxLines, fallbackWidth, truncationSuffix)
+  }
+
   return lines
+}
+
+/**
+ * Clamp a wrapped output to `maxLines` rows. The final visible line is
+ * truncated so that `head + suffix` fits within `width`; the head is cut
+ * at a grapheme-aware boundary (using `splitGraphemesAnsiAware` to keep
+ * ANSI tokens intact).
+ *
+ * Used by `optimalWrap` when the DP cannot satisfy `opts.maxLines` and
+ * falls back to greedy + truncate, AND as a defensive net at the end of
+ * `optimalWrap` (the DP already enforces the cap by construction).
+ *
+ * Tracking: @km/silvery/15130-pretext-maxlines-aware.
+ */
+function clampToMaxLines(
+  lines: string[],
+  maxLines: number,
+  width: number,
+  suffix: string,
+): string[] {
+  if (lines.length <= maxLines) return lines
+  if (maxLines <= 0) return []
+  const kept = lines.slice(0, maxLines)
+  const lastIdx = maxLines - 1
+  const last = kept[lastIdx]!
+  kept[lastIdx] = appendTruncationSuffix(last, width, suffix)
+  return kept
+}
+
+/**
+ * Append `suffix` to `line`, trimming graphemes off the visible end if
+ * needed so that `displayLength(line + suffix) <= width`. ANSI tokens
+ * (zero-width) are preserved across the truncation boundary so styling
+ * state isn't dropped.
+ *
+ * If `suffix` itself is wider than `width`, returns just the suffix
+ * (truncated to width via the same grapheme walk). Callers using a
+ * pathological width should size-check on their side.
+ */
+function appendTruncationSuffix(line: string, width: number, suffix: string): string {
+  if (width <= 0) return ""
+  // Fast path: line already fits with suffix appended.
+  const suffixGraphemes = splitGraphemesAnsiAware(suffix)
+  const suffixWidth = suffixGraphemes.reduce((acc, g) => acc + defaultGraphemeWidth(g), 0)
+
+  const lineGraphemes = splitGraphemesAnsiAware(line)
+  const lineWidth = lineGraphemes.reduce((acc, g) => acc + defaultGraphemeWidth(g), 0)
+
+  if (lineWidth + suffixWidth <= width) return line + suffix
+
+  // Walk backward over visible graphemes, dropping until head + suffix fits.
+  // ANSI tokens are preserved — we only count visible width but keep all
+  // tokens in source order (so trailing styling-off sequences survive).
+  const budget = Math.max(0, width - suffixWidth)
+  let acc = 0
+  let cutoff = 0
+  for (let i = 0; i < lineGraphemes.length; i++) {
+    const g = lineGraphemes[i]!
+    const w = defaultGraphemeWidth(g)
+    if (acc + w > budget) break
+    acc += w
+    cutoff = i + 1
+  }
+  // Capture any trailing zero-width ANSI tokens that sit just past the cutoff,
+  // so styling-off sequences aren't dropped at the truncation boundary.
+  let tail = ""
+  for (let i = cutoff; i < lineGraphemes.length; i++) {
+    if (defaultGraphemeWidth(lineGraphemes[i]!) === 0) {
+      tail += lineGraphemes[i]
+    } else {
+      break
+    }
+  }
+  return lineGraphemes.slice(0, cutoff).join("") + tail + suffix
 }
