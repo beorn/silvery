@@ -1191,9 +1191,9 @@ export function outputPhase(
       nativeScrollPrefix(nativeScrollPlan) +
       (filteredNativeCount === 0
         ? ""
-        : changesToAnsi(nativePool, filteredNativeCount, ctx, next).output)
+        : changesToAnsi(nativePool, filteredNativeCount, ctx, next, 0, Infinity, prev).output)
   } else {
-    incrOutput = changesToAnsi(pool, count, ctx, next).output
+    incrOutput = changesToAnsi(pool, count, ctx, next, 0, Infinity, prev).output
   }
   const tAnsi1 = performance.now()
 
@@ -1514,7 +1514,7 @@ function inlineIncrementalRender(
   // Use the larger of prev/next output lines so changesToAnsi processes all
   // visible cells including rows that shrank (need clearing) or grew (need writing).
   const effectiveOutputLines = Math.max(prevMaxOutputLines, maxOutputLines)
-  const changes = changesToAnsi(pool, count, ctx, next, startLine, effectiveOutputLines)
+  const changes = changesToAnsi(pool, count, ctx, next, startLine, effectiveOutputLines, prev)
   output += changes.output
 
   // After changesToAnsi, cursor is at changes.finalY (render-relative).
@@ -1619,7 +1619,7 @@ function inlineIncrementalRender(
   if (needsFsDiff) {
     const savedMode = ctx.mode
     ctx.mode = "fullscreen"
-    const fsIncrOutput = changesToAnsi(pool, count, ctx, next).output
+    const fsIncrOutput = changesToAnsi(pool, count, ctx, next, 0, Infinity, prev).output
     if (isStrictOutput() || tvState?.hasVt100) {
       _verifyOutputEquivalence(
         prev,
@@ -2145,6 +2145,7 @@ function changesToAnsi(
   buffer?: TerminalBuffer,
   startLine = 0,
   maxOutputLines = Infinity,
+  prevBuffer?: TerminalBuffer,
 ): ChangesResult {
   const { mode } = ctx
   if (count === 0) return { output: "", finalY: -1 }
@@ -2352,8 +2353,58 @@ function changesToAnsi(
     // pass, skip. Otherwise, look up and emit the main cell from the
     // buffer so the wide char covers both columns.
     if (cell.continuation) {
-      // Main cell was already emitted — skip
-      if (lastEmittedX === x - 1 && lastEmittedY === y) continue
+      // Main cell was already emitted — skip.
+      //
+      // Narrow→wide-shift continuation rescue (bead 13047): when prev[x-1]
+      // was NOT wide AND the wide grapheme at x-1 was just emitted, the
+      // terminal at column x still holds the stale narrow content from
+      // prev[x] (the terminal's wcwidth disagreement for certain emoji like
+      // 📋 / 📄 means it didn't auto-claim x as continuation). Without an
+      // explicit clear, the stale glyph stays visible NEXT to the new wide
+      // grapheme, producing the user-visible "📋t" / "📄i" symptom. Emit a
+      // CUP + space at x to overwrite the stale glyph BEFORE skipping. In a
+      // terminal that DID auto-claim x as continuation, this overwrites the
+      // continuation marker with space — but the wide char's glyph already
+      // occupies both columns visually, and the OSC 66 / CUP resync paths
+      // re-establish wide-char structural correctness on the next frame.
+      if (lastEmittedX === x - 1 && lastEmittedY === y) {
+        if (prevBuffer && x > 0 && !prevBuffer.isCellWide(x - 1, y)) {
+          // The wide grapheme at x-1 is NEW (prev[x-1] was narrow). The
+          // terminal may not have auto-claimed x; explicitly clear it.
+          const clearRenderY = isInline ? y - startLine : y
+          // Reset bg before CUF/CUP to prevent traversed-cell bg bleed
+          if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+            output += "\x1b[0m"
+            currentStyle = null
+          }
+          // Cursor is currently at (cursorX, cursorY) after the wide-resync
+          // CUP. Move to (x, clearRenderY).
+          if (clearRenderY === cursorY && x === cursorX) {
+            // Already at target — no move needed.
+          } else if (cursorY >= 0 && clearRenderY === cursorY && x > cursorX) {
+            const dx = x - cursorX
+            output += dx === 1 ? "\x1b[C" : `\x1b[${dx}C`
+          } else if (isInline) {
+            const fromRow = cursorY >= 0 ? cursorY : 0
+            if (clearRenderY > fromRow) {
+              output += `\x1b[${clearRenderY - fromRow}B\r`
+            } else if (clearRenderY < fromRow) {
+              output += `\x1b[${fromRow - clearRenderY}A\r`
+            } else {
+              output += "\r"
+            }
+            if (x > 0) output += x === 1 ? "\x1b[C" : `\x1b[${x}C`
+          } else {
+            output += `\x1b[${clearRenderY + 1};${x + 1}H`
+          }
+          output += " "
+          cursorX = x + 1
+          cursorY = clearRenderY
+          lastEmittedX = x
+          lastEmittedY = y
+        }
+        continue
+      }
 
       // Orphaned continuation cell: main cell didn't change but this
       // cell's style did. Read the main cell from the buffer and emit it.
