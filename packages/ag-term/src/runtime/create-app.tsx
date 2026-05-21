@@ -648,6 +648,28 @@ export interface AppRunOptions {
    * hooks like useSelection() can discover interaction features.
    */
   capabilityRegistry?: import("@silvery/ag-react/context").CapabilityLookup
+  /**
+   * Opt out of silvery's stdin ownership for this run.
+   *
+   * When `false`, the runtime skips:
+   *   - flipping `stdin` raw mode
+   *   - attaching `stdin.on("data", …)` listeners (including the
+   *     text-sizing + DEC width-detection probes)
+   *   - the term provider's input subscription (`useInput`, `usePaste`,
+   *     focus key dispatch all become no-ops)
+   *
+   * The host process is then free to own stdin itself — typically by
+   * piping it to a child PTY (recording overlays, in-app shells, debugger
+   * surfaces). The runtime still owns stdout, alt screen, cursor, paint,
+   * size, signals, modes.
+   *
+   * Default: undefined (silvery owns stdin via term.input — the canonical
+   * Term-I/O contract). Only `false` is meaningful — `true` matches the
+   * default and is therefore not accepted.
+   *
+   * See `docs/design/terminal-component.md` § "render({ input: false })".
+   */
+  input?: false
   /** Providers and plain values to inject */
   [key: string]: unknown
 }
@@ -923,8 +945,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     writable: explicitWritable,
     onResize: explicitOnResize,
     resizeCoalesceMs: explicitResizeCoalesceMs,
+    input: inputOption,
     ...injectValues
   } = options
+  // When the caller opts out (`input: false`), the runtime treats stdin
+  // as if it weren't a TTY: no raw-mode flip, no `stdin.on("data", …)`
+  // listener (including the text-sizing + DEC width-detection probes),
+  // no term-provider input subscription. The host process keeps stdin
+  // for its own use (typically piping to a child PTY). See
+  // `docs/design/terminal-component.md` § "render({ input: false })".
+  const inputDisabled = inputOption === false
   const mouseParseOptions = typeof mouseOption === "object" ? mouseOption : undefined
   const mouseTrackingEnabled = mouseOption === true || mouseParseOptions != null
 
@@ -1466,12 +1496,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     textSizing = false
   }
 
-  // Whether we still need to run the async probe (no cache hit)
-  const needsProbe = shouldProbe && cachedProbe === undefined && !headless
+  // Whether we still need to run the async probe (no cache hit).
+  // `inputDisabled` short-circuits any stdin-touching probe: the host
+  // owns stdin and we must not race for it.
+  const needsProbe = shouldProbe && cachedProbe === undefined && !headless && !inputDisabled
 
-  // Resolve width detection: "auto" enables when caps are provided and not headless
+  // Resolve width detection: "auto" enables when caps are provided and not headless.
+  // Same `inputDisabled` short-circuit applies — width detection reads CPR
+  // responses from stdin, which the host owns when input is opted out.
   const needsWidthDetection =
     !headless &&
+    !inputDisabled &&
     (widthDetectionOption === true || (widthDetectionOption === "auto" && capsOption != null))
 
   // Track effective caps — may be updated by width detection and text sizing
@@ -1666,7 +1701,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   function drainBufferedStdinBytes(): void {
-    if (headless || !stdin.isTTY) return
+    if (headless || !stdin.isTTY || inputDisabled) return
     try {
       stdin.resume()
       while (stdin.read() !== null) {
@@ -1679,7 +1714,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   async function drainLateStdinBytes(delayMs = 15): Promise<void> {
-    if (headless || !stdin.isTTY) return
+    if (headless || !stdin.isTTY || inputDisabled) return
     try {
       stdin.removeAllListeners("data")
       stdin.resume()
@@ -2002,9 +2037,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // and SGR mouse events appear as garbled text on the shell prompt after exit.
 
     if (!headless && stdin.isTTY) {
-      // Step 1: Stop consuming stdin — prevent any more event processing
-      stdin.removeAllListeners("data")
-      stdin.pause()
+      // Step 1: Stop consuming stdin — prevent any more event processing.
+      // Skipped when `inputDisabled`: the host owns stdin; we never attached
+      // listeners and must not remove anything the host installed.
+      if (!inputDisabled) {
+        stdin.removeAllListeners("data")
+        stdin.pause()
+      }
 
       // Step 2: Send ALL protocol disable sequences unconditionally.
       // Sending a disable for an inactive protocol is harmless, and unconditional
@@ -2043,13 +2082,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Step 3: Drain in-flight stdin bytes. The terminal may have already
       // queued events (Kitty release, mouse moves) before processing our
       // disable sequences. Read and discard them so they don't leak to shell.
+      // (drainBufferedStdinBytes() already short-circuits when inputDisabled.)
       drainBufferedStdinBytes()
 
-      // Step 4: Disable raw mode
-      try {
-        stdin.setRawMode(false)
-      } catch {
-        // Ignore — stdin may be closed
+      // Step 4: Disable raw mode — only when we owned stdin in the first
+      // place. With `inputDisabled` the host owns it and may want raw
+      // mode for its child PTY pipe; flipping it off here would break the host.
+      if (!inputDisabled) {
+        try {
+          stdin.setRawMode(false)
+        } catch {
+          // Ignore — stdin may be closed
+        }
       }
     } else if (!headless) {
       // Non-TTY cleanup: just send disable sequences
@@ -4190,7 +4234,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // late-arriving bytes (Kitty release events, mouse events) that were
       // in the kernel TTY buffer when we sent the disable sequences.
       // This is the async path — signal handlers use the sync fallback in exit().
-      if (shouldExit && !cleanedUp && !headless && stdin.isTTY) {
+      // Skipped when `inputDisabled`: the host owns stdin and we never
+      // had a listener to remove or kernel bytes to drain.
+      if (shouldExit && !cleanedUp && !headless && stdin.isTTY && !inputDisabled) {
         try {
           // Remove data listener but keep raw mode on — we're still consuming
           stdin.removeAllListeners("data")

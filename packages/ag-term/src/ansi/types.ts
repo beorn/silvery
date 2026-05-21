@@ -87,6 +87,35 @@ export interface CreateTermOptions {
   mouse?: ParseMouseOptions
 
   /**
+   * Opt out of silvery's stdin ownership entirely.
+   *
+   * When `false`, `term.input` resolves to `undefined`. The lazy
+   * `InputOwner` is never constructed: raw mode is never flipped, no
+   * `stdin.on("data", …)` listener is attached, and no probe writes
+   * touch stdin. The Term still owns stdout, modes, size, signals, and
+   * console — only stdin ownership is suppressed.
+   *
+   * Use case: a host process needs to pipe its own stdin to a child
+   * (e.g. a PTY for a recording overlay) while still using silvery to
+   * render visuals around the child's grid. Without this opt-out the
+   * host and silvery race for stdin and silvery's `setRawMode(true)`
+   * eats the child's keystrokes.
+   *
+   * Pair with `render(..., term, { input: false })` to mirror the
+   * opt-out at the render pipeline level — the runtime then skips the
+   * text-sizing + width-detection probes and never attaches its own
+   * stdin listener.
+   *
+   * Default: undefined (silvery owns stdin via the lazy InputOwner —
+   * the canonical contract). Only `false` is meaningful — `true` is the
+   * default and not a separate code path, so it is not accepted.
+   *
+   * See `docs/design/terminal-component.md` § "render({ input: false })"
+   * for the full rationale.
+   */
+  input?: false
+
+  /**
    * Trailing-edge debounce for stdout `resize` events, in ms.
    *
    * Real terminals fire SIGWINCH bursts (tmux/cmux/Ghostty multiplexer

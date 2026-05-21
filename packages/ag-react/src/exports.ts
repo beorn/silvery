@@ -364,6 +364,21 @@ export type { TagProps } from "./ui/components"
 export { Switch } from "./ui/components"
 export type { SwitchProps } from "./ui/components"
 
+// Terminal — public renderer for headless terminal cell-grids. Backend-
+// agnostic via the duck-typed `TerminalReadable` interface. Use with
+// `render({ input: false })` to render visuals around a child PTY
+// without silvery taking stdin from the host. See
+// `docs/design/terminal-component.md` for the API rationale.
+export { Terminal, encodeTerminalRow } from "./ui/components"
+export type {
+  TerminalProps,
+  TerminalReadable,
+  TerminalCell,
+  TerminalCursor,
+  TerminalRGB,
+  TerminalMouseEvent,
+} from "./ui/components"
+
 // Image Component
 export { Image } from "./ui/image/index"
 export type { ImageProps } from "./ui/image/index"

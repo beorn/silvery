@@ -271,6 +271,21 @@ export type { BadgeProps as TagProps } from "./components/Badge"
 export { Toggle as Switch } from "./components/Toggle"
 export type { ToggleProps as SwitchProps } from "./components/Toggle"
 
+// Terminal — render a headless terminal's grid inside a silvery layout.
+// Backend-agnostic (duck-typed TerminalReadable). Pairs with
+// `render({ input: false })` so a host process can pipe its own stdin to
+// a child PTY while silvery renders visuals around the child's grid.
+// See `docs/design/terminal-component.md`.
+export { Terminal, encodeTerminalRow } from "./components/Terminal"
+export type {
+  TerminalProps,
+  TerminalReadable,
+  TerminalCell,
+  TerminalCursor,
+  TerminalRGB,
+  TerminalMouseEvent,
+} from "./components/Terminal"
+
 // =============================================================================
 // Position Registry (2D Grid Virtualization)
 // =============================================================================

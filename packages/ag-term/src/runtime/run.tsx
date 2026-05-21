@@ -196,6 +196,31 @@ export interface RunOptionsCommon {
   onResume?: () => void
   /** Called on Ctrl+C. Return false to prevent exit. */
   onInterrupt?: () => boolean | void
+  /**
+   * Opt out of silvery's stdin ownership for this run.
+   *
+   * When `false`, the runtime skips:
+   *   - flipping `stdin` raw mode
+   *   - attaching `stdin.on("data", …)` listeners (text-sizing + DEC
+   *     width-detection probes)
+   *   - the term provider's input subscription (`useInput`, `usePaste`,
+   *     focus key dispatch all become no-ops)
+   *
+   * The host process is then free to own stdin itself — typically by
+   * piping it to a child PTY (recording overlays, in-app shells, debugger
+   * surfaces). The runtime still owns stdout, alt screen, cursor, paint,
+   * size, signals, modes.
+   *
+   * Pair with `createTerm({ input: false })` to also suppress the lazy
+   * `term.input` accessor — the accessor returns `undefined` so any
+   * `term.input?.…` chain becomes a no-op for the Term's lifetime.
+   *
+   * Default: undefined (silvery owns stdin via term.input). Only `false`
+   * is meaningful.
+   *
+   * See `docs/design/terminal-component.md` § "render({ input: false })".
+   */
+  input?: false
 }
 
 /**
@@ -479,8 +504,13 @@ export async function run(
     // `termOptions.profile` caller-override still short-circuits the whole
     // thing, and `term.profile` is the caps base when no override is passed.
     const { stdin: termStdin, stdout: termStdout } = getInternalStreams(term)
+    // `input: false` opts the host out of stdin ownership entirely — skip
+    // the transient probe owner so we never touch stdin. The probe falls
+    // back to caller-supplied caps + the heuristic theme; the recording
+    // overlay use case typically supplies its own colorLevel anyway.
+    const termInputDisabled = termOptions?.input === false
     const probeOwner =
-      termStdin?.isTTY && termStdout?.isTTY
+      termStdin?.isTTY && termStdout?.isTTY && !termInputDisabled
         ? createInputOwner(termStdin, termStdout, { retainRawModeOnDispose: true })
         : null
     // Read profile / colorLevel through a widened view of termOptions — the
@@ -537,6 +567,9 @@ export async function run(
       focusReporting: true,
       textSizing: "auto",
       widthDetection: "auto",
+      // Forward the stdin opt-out so createApp's probes + cleanup paths
+      // skip stdin ownership end-to-end.
+      ...(termInputDisabled ? { input: false as const } : {}),
     })
     return wrapHandle(handle)
   }
@@ -563,12 +596,15 @@ export async function run(
   const headless = rest.writable != null || (rest.cols != null && rest.rows != null && !rest.stdout)
   const runStdin = (rest.stdin ?? process.stdin) as NodeJS.ReadStream
   const runStdout = (rest.stdout ?? process.stdout) as NodeJS.WriteStream
+  // Mirror the Term-path: when the caller opts out of stdin, skip the
+  // transient probe owner. The probe falls back to caps + heuristic theme.
+  const optsInputDisabled = (rest as { input?: false }).input === false
 
   // Transient InputOwner around the probe window — owns raw-mode + stdin
   // listener for the duration, disposed BEFORE createApp constructs its own
   // input owner. Same shape as the Term-path branch above.
   const optsProbeOwner =
-    !headless && runStdin.isTTY && runStdout.isTTY
+    !headless && runStdin.isTTY && runStdout.isTTY && !optsInputDisabled
       ? createInputOwner(runStdin, runStdout, { retainRawModeOnDispose: true })
       : null
   let optsProfile: TerminalProfile

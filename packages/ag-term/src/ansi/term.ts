@@ -872,8 +872,18 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // 11th `data` listener on process.stdin). Non-TTY backed terms (tests,
   // piped stdin) get undefined; callers branch off `term.input` existence.
   // See km-silvery.term-sub-owners Phase 2 + km-silvery.input-structured-events.
+  //
+  // `options.input === false` is the explicit opt-out: the host process
+  // owns stdin for its own purpose (e.g. piping to a child PTY) and silvery
+  // must not race for it. The accessor permanently returns `undefined`,
+  // so `term.input?.…` chains no-op and downstream code (probes, term
+  // provider input subscription) skips the input pipeline by structural
+  // check rather than a separate code path. See
+  // `docs/design/terminal-component.md` § "render({ input: false })".
+  const inputDisabled = options.input === false
   let _input: Input | null = null
   const getInput = (): Input | undefined => {
+    if (inputDisabled) return undefined
     if (!stdin.isTTY) return undefined
     if (!_input) {
       _input = createInputOwner(stdin, stdout, {
