@@ -132,14 +132,14 @@ Some Ink ecosystem packages (`ink-select-input`, `ink-text-input`, `ink-spinner`
 
 When swapping an Ink ecosystem component, check if Silvery has a native equivalent first — it usually does, and the native version is faster and more featureful.
 
-| Ink ecosystem        | Silvery native    | Notes                                                                 |
-| -------------------- | ----------------- | --------------------------------------------------------------------- |
-| `ink-select-input`   | `SelectList`      | Search, multi-select, virtualization, keyboard + mouse                |
-| `ink-text-input`     | `TextInput`       | Readline binding, full Unicode, paste, IME                            |
-| `ink-spinner`        | `Spinner`         | Built-in; `Spinner.start("…")` CLI helper too                         |
-| `ink-table`          | `Table`           | Responsive columns, search/filter                                     |
-| `ink-progress-bar`   | `ProgressBar`     | Full-featured, theme-aware                                            |
-| `ink-syntax-highlight` | _(no equivalent)_ | Use a syntax-highlighter library and render via `<Text>` directly     |
+| Ink ecosystem          | Silvery native    | Notes                                                             |
+| ---------------------- | ----------------- | ----------------------------------------------------------------- |
+| `ink-select-input`     | `SelectList`      | Search, multi-select, virtualization, keyboard + mouse            |
+| `ink-text-input`       | `TextInput`       | Readline binding, full Unicode, paste, IME                        |
+| `ink-spinner`          | `Spinner`         | Built-in; `Spinner.start("…")` CLI helper too                     |
+| `ink-table`            | `Table`           | Responsive columns, search/filter                                 |
+| `ink-progress-bar`     | `ProgressBar`     | Full-featured, theme-aware                                        |
+| `ink-syntax-highlight` | _(no equivalent)_ | Use a syntax-highlighter library and render via `<Text>` directly |
 
 ## Want the full feature comparison?
 

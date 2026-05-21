@@ -407,7 +407,9 @@ function Search({ query }: { query: string }) {
 import { render } from "silvery"
 import { withScope } from "@silvery/scope"
 
-await render(<App />).use(withScope("app")).run()
+await render(<App />)
+  .use(withScope("app"))
+  .run()
 ```
 
 **Coming soon** — Silvertea `pipe()` form:
