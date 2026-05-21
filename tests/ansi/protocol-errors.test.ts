@@ -18,13 +18,8 @@
  */
 
 import { describe, expect, test } from "vitest"
-import {
-  parseClipboardResponse,
-} from "../../packages/ag-term/src/clipboard"
-import {
-  parseBracketedPaste,
-  PASTE_START,
-} from "../../packages/ag-term/src/bracketed-paste"
+import { parseClipboardResponse } from "../../packages/ag-term/src/clipboard"
+import { parseBracketedPaste, PASTE_START } from "../../packages/ag-term/src/bracketed-paste"
 import { parseFocusEvent } from "../../packages/ag-term/src/focus-reporting"
 import { parseMouseSequence } from "../../packages/ag-term/src/mouse"
 import {

@@ -331,9 +331,7 @@ describe("parseBracketedPaste", () => {
     // paste and must fail loudly so the dispatch boundary can decide whether
     // to buffer (stream-split paste) or log + drop (protocol violation).
     // See @km/silvery/15127-custom-protocol-implementation/protocol-loud-errors.
-    expect(() => parseBracketedPaste(`${PASTE_START}partial content`)).toThrow(
-      /PASTE_END/,
-    )
+    expect(() => parseBracketedPaste(`${PASTE_START}partial content`)).toThrow(/PASTE_END/)
   })
 
   test("handles multiline pasted content", () => {
