@@ -333,7 +333,7 @@ describe("Scrollbar", () => {
     await term.mouse.move(19, 4)
     await new Promise((r) => setTimeout(r, 50))
 
-    expect(term.screen).toContainText("off:27")
+    expect(term.screen!.getText()).toContain("off:27")
     expect(term.cell(4, 19).char).toMatch(/[█▁▂▃▄▅▆▇]/)
     handle.unmount()
   })
@@ -371,7 +371,7 @@ describe("Scrollbar", () => {
     await term.mouse.down(19, 9)
     await new Promise((r) => setTimeout(r, 50))
 
-    expect(term.screen).toContainText("off:30")
+    expect(term.screen!.getText()).toContain("off:30")
     expect(term.cell(9, 19).char).toMatch(/[█▁▂▃▄▅▆▇]/)
     handle.unmount()
   })
@@ -473,7 +473,7 @@ describe("Scrollbar", () => {
 
     await term.mouse.move(40, 9)
     await new Promise((r) => setTimeout(r, 50))
-    expect(term.screen).toContainText("off:0")
+    expect(term.screen!.getText()).toContain("off:0")
 
     handle.unmount()
   })
@@ -511,7 +511,7 @@ describe("Scrollbar", () => {
     await new Promise((r) => setTimeout(r, 50))
 
     expect(term.cell(6, 19).bg).toEqual(draggingBg)
-    expect(term.screen).not.toContainText("off:0")
+    expect(term.screen!.getText()).not.toContain("off:0")
 
     handle.unmount()
   })
@@ -534,16 +534,16 @@ describe("ScrollArea", () => {
     const handle = await run(<Content />, term, { mouse: true, selection: false })
     await new Promise((r) => setTimeout(r, 50))
 
-    expect(term.screen).toContainText("row 0")
-    expect(term.screen).not.toContainText("row 19")
+    expect(term.screen!.getText()).toContain("row 0")
+    expect(term.screen!.getText()).not.toContain("row 19")
 
     for (let i = 0; i < 20; i++) {
       wheelDown(term, 5, 4)
     }
     await new Promise((r) => setTimeout(r, 50))
 
-    expect(term.screen).not.toContainText("row 0")
-    expect(term.screen).toContainText("row 19")
+    expect(term.screen!.getText()).not.toContain("row 0")
+    expect(term.screen!.getText()).toContain("row 19")
     expect(term.cell(7, 29).char).toMatch(/[█▁▂▃▄▅▆▇]/)
     handle.unmount()
   })
@@ -561,12 +561,10 @@ describe("ScrollArea", () => {
  * cell sat underneath — typically a Border's right edge — and users
  * read "missing right border" on `km view`.
  *
- * Contract: when `visible=false` and the cursor is NOT over the column
- * and no drag is active, the track must be transparent — cells behind
- * the Scrollbar survive verbatim. When the user hovers the column (or a
- * drag is active), the bg paints again so the legacy
- * scroll-fast-path-shift smear protection still holds for the visible
- * thumb.
+ * Contract: the track stays transparent except where the thumb itself is
+ * rendered. The cells behind non-thumb rows survive verbatim in idle,
+ * hover, and always-visible states. The thumb cells still paint their own
+ * bg so the visible handle remains easy to read.
  */
 describe("Scrollbar idle track bg (regression: 15404)", () => {
   test("idle (visible=false) does NOT paint $bg over the underlying cell", async () => {
@@ -650,7 +648,7 @@ describe("Scrollbar idle track bg (regression: 15404)", () => {
     handle.unmount()
   })
 
-  test("visible=true (always-show) still paints $bg — drag-shift smear protection preserved", async () => {
+  test("visible=true paints only the thumb cells, leaving non-thumb track rows transparent", async () => {
     using term = createTermless({ cols: 20, rows: 10 })
     const onChange = vi.fn()
     const handle = await run(
@@ -671,13 +669,14 @@ describe("Scrollbar idle track bg (regression: 15404)", () => {
     )
     await new Promise((r) => setTimeout(r, 50))
 
-    // With visible=true the track paints unconditionally — the border at
-    // col 19 should NOT survive (it's masked by the track bg + thumb).
+    // With visible=true the thumb masks only the rows it occupies. Non-thumb
+    // rows in the same column must leave the underlying border visible.
     let borderSurvivors = 0
     for (let row = 1; row < 9; row++) {
       if (term.cell(row, 19).char === "│") borderSurvivors++
     }
-    expect(borderSurvivors).toBeLessThan(8)
+    expect(borderSurvivors).toBeGreaterThan(0)
+    expect(term.cell(8, 19).char).toBe("│")
 
     handle.unmount()
   })

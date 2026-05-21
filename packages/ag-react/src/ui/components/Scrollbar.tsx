@@ -248,14 +248,12 @@ export function Scrollbar({
       width={1}
       height={trackHeight}
       flexDirection="column"
-      // Own the whole scrollbar column ONLY when the thumb is showing, so
-      // scroll fast-path shifts don't smear old thumb pixels. When idle
-      // (`visible=false` + no hover + no drag), leave the column transparent
-      // so the cell underneath (e.g. a Border right-edge) survives — painting
-      // `$bg` here in dark themes produces a 1-column black bar adjacent to
-      // the card border that users read as "missing right border."
+      // Keep the track transparent. Only thumb cells paint bg; non-thumb
+      // rows must preserve the cell underneath (e.g. a Border right edge).
+      // Painting `$bg` across the whole track in dark themes produces a
+      // 1-column black bar next to card borders that users read as a broken
+      // scrollbar column.
       // Bead: @km/silvery/15404-scrollbar-track-bg-renders-as-black-bar-on-idle.
-      backgroundColor={showThumb ? "$bg" : undefined}
       // `userSelect="none"` prevents silvery's selection feature from
       // intercepting the mousedown — without it, clicking on the
       // scrollbar starts a text-selection drag and our handlers never
