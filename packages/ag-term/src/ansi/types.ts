@@ -85,6 +85,23 @@ export interface CreateTermOptions {
 
   /** Mouse parser options for terminal-backed input owners. */
   mouse?: ParseMouseOptions
+
+  /**
+   * Trailing-edge debounce for stdout `resize` events, in ms.
+   *
+   * Real terminals fire SIGWINCH bursts (tmux/cmux/Ghostty multiplexer
+   * resizes can produce 4-6 events at ~80 ms intervals). The default
+   * (200 ms) coalesces these bursts to a single layout reflow.
+   *
+   * Test and emulator paths drive resize explicitly via `term.resize(...)`
+   * and don't experience SIGWINCH bursts — they want the resize signal to
+   * propagate immediately so layout reflows before the test's settle window
+   * expires. Pass `0` (or any value shorter than the test's settle) to opt
+   * out of debouncing.
+   *
+   * See `createSize` in `runtime/devices/size.ts` for the underlying contract.
+   */
+  resizeCoalesceMs?: number
 }
 
 // =============================================================================

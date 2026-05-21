@@ -447,6 +447,14 @@ export async function run(
         cols: term.cols ?? 80,
         rows: term.rows ?? 24,
         mouse: emulatorMouseOption,
+        // Emulator-backed runs drive resize explicitly via `term.resize(...)`,
+        // not via real-terminal SIGWINCH. The autoTerm's `createSize` defaults
+        // to a 200 ms trailing-edge debounce to coalesce multiplexer bursts —
+        // for emulator paths that delay only puts the resize event past tests'
+        // settle windows, leaving stale layout. Disable coalescing here so the
+        // snapshot update is synchronous. Bead:
+        // `@km/silvery/termless-resize-reflow-4-fails`.
+        resizeCoalesceMs: 0,
       })
       return wrapHandle(handle)
     }

@@ -805,8 +805,16 @@ function createNodeTerm(options: CreateTermOptions): Term {
   // `resize` event with trailing-edge coalescing so burst SIGWINCH from tmux/cmux/
   // Ghostty tab switches collapses to one notification. Constructed eagerly
   // so term.size and term.cols/rows are valid for any consumer.
+  //
+  // `resizeCoalesceMs` lets test / emulator paths opt out of debouncing — they
+  // drive resize explicitly via `term.resize(...)` (no SIGWINCH bursts) and
+  // want the snapshot to update synchronously so layout reflows within the
+  // test's settle window. See `km-silvery.termless-resize-reflow-4-fails`.
   // See km-silvery.term-sub-owners Phase 5.
-  const size = createSize(stdout)
+  const size =
+    options.resizeCoalesceMs !== undefined
+      ? createSize(stdout, { coalesceMs: options.resizeCoalesceMs })
+      : createSize(stdout)
 
   // Force-install the SIGWINCH listener even if no React subscriber ever
   // reads `size.cols()` / `size.rows()` / `size.snapshot()`.
