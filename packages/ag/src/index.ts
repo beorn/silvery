@@ -86,6 +86,22 @@ export type { DragEventPayload, DragEventProps } from "./drag-event-types"
 // Mouse Event Types
 export type { SilveryMouseEvent, SilveryWheelEvent, MouseEventProps } from "./mouse-event-types"
 
+// Viewport (nested-cell-domain composition primitive — see bead @km/silvery/15513)
+export type {
+  CellBuffer,
+  ViewportRect,
+  ViewportCursorStyle,
+  ViewportInputMode,
+  ViewportPalette,
+  ViewportContext,
+  ForeignSource,
+  ViewportRef,
+  ViewportProps,
+  ViewportNodeState,
+} from "./viewport-types"
+export { createCellBuffer } from "./viewport-buffer"
+export type { MutableCellBuffer } from "./viewport-buffer"
+
 // Layout Types
 export type { LayoutNode, MeasureFunc, MeasureMode } from "./layout-types"
 

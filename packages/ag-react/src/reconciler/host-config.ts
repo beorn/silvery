@@ -35,8 +35,15 @@ import {
   SUBTREE_BIT,
   ALL_RECONCILER_BITS,
 } from "@silvery/ag/epoch"
+import type { ViewportProps } from "@silvery/ag/viewport-types"
 import { classifyPropChanges } from "./helpers"
-import { applyBoxProps, applyTextFlexItemProps, createNode, createVirtualTextNode } from "./nodes"
+import {
+  applyBoxProps,
+  applyTextFlexItemProps,
+  applyViewportProps,
+  createNode,
+  createVirtualTextNode,
+} from "./nodes"
 import { createLogger } from "loggily"
 import { warnOnce, _resetWarnOnceForTesting } from "@silvery/ansi"
 
@@ -75,6 +82,7 @@ const DEBUG_PROP_NAMES = [
 function hostTypeLabel(type: AgNodeType): string {
   if (type === "silvery-box") return "Box"
   if (type === "silvery-text") return "Text"
+  if (type === "silvery-viewport") return "Viewport"
   return type
 }
 
@@ -744,6 +752,12 @@ export const hostConfig = {
       if (instance.layoutNode) {
         if (instance.type === "silvery-text") {
           applyTextFlexItemProps(instance.layoutNode, newProps as TextProps, oldProps as TextProps)
+        } else if (instance.type === "silvery-viewport") {
+          applyViewportProps(
+            instance.layoutNode,
+            newProps as unknown as ViewportProps,
+            oldProps as unknown as ViewportProps,
+          )
         } else {
           applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)
         }

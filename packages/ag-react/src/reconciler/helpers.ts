@@ -56,6 +56,11 @@ export const LAYOUT_PROPS = new Set([
   "overflow",
   "overflowX",
   "overflowY",
+  // Viewport leaf dimensions (silvery-viewport host element — see bead
+  // @km/silvery/15513). cols/rows pin the layout node's width/height; their
+  // changes must mark the layout node dirty so the parent re-flows.
+  "cols",
+  "rows",
   // Note: scrollTo intentionally excluded - it doesn't affect layout dimensions,
   // only scroll offset which is handled in scrollPhase (reads props.scrollTo directly)
 ])

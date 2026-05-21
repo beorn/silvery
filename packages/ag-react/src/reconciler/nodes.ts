@@ -15,6 +15,7 @@ import {
   type TextProps,
   rectEqual,
 } from "@silvery/ag/types"
+import type { ViewportProps } from "@silvery/ag/viewport-types"
 import {
   type Measurer,
   displayWidth,
@@ -119,6 +120,11 @@ export function createNode(
     // TextFlexItemProps (flexGrow/flexShrink/flexBasis/alignSelf + min/max
     // dimensions). See `TextFlexItemProps` in @silvery/ag/types.
     applyTextFlexItemProps(layoutNode, props as TextProps)
+  } else if (type === "silvery-viewport") {
+    // Viewport is a leaf with fixed cols × rows. No flex children, no measure
+    // function — the foreign cell buffer is blitted by the render phase at
+    // boxRect. See bead @km/silvery/15513.
+    applyViewportProps(layoutNode, props as unknown as ViewportProps)
   }
 
   // Set up measure function for text nodes
@@ -465,6 +471,33 @@ export function createVirtualTextNode(props: TextProps): AgNode {
 // ============================================================================
 // Layout Property Application
 // ============================================================================
+
+/**
+ * Apply ViewportProps to a viewport node's layout node.
+ *
+ * A `<Viewport>` is a leaf with fixed `cols`×`rows` — no flex children, no
+ * measure function. We pin width/height from the props so the parent layout
+ * positions the viewport rect deterministically; if the parent rect is
+ * narrower, flexbox + parent overflow="hidden" clips at paint time.
+ *
+ * See bead `@km/silvery/15513-surface-nested-composition-primitive`.
+ */
+export function applyViewportProps(
+  layoutNode: LayoutNode,
+  props: ViewportProps,
+  oldProps?: ViewportProps,
+): void {
+  if (props.cols !== undefined) {
+    layoutNode.setWidth(props.cols)
+  } else if (oldProps?.cols !== undefined) {
+    layoutNode.setWidthAuto()
+  }
+  if (props.rows !== undefined) {
+    layoutNode.setHeight(props.rows)
+  } else if (oldProps?.rows !== undefined) {
+    layoutNode.setHeightAuto()
+  }
+}
 
 /**
  * Apply TextFlexItemProps to a Text node's layout node.

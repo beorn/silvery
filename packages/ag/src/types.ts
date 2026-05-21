@@ -336,8 +336,12 @@ export interface InteractiveState {
 
 /**
  * Silvery node types - the primitive elements in the render tree.
+ *
+ * `silvery-viewport` is a leaf node hosting a foreign cell domain
+ * (xtermjs PTY, replay frames, snapshot). See {@link viewport-types.ts}
+ * and bead `@km/silvery/15513-surface-nested-composition-primitive`.
  */
-export type AgNodeType = "silvery-root" | "silvery-box" | "silvery-text"
+export type AgNodeType = "silvery-root" | "silvery-box" | "silvery-text" | "silvery-viewport"
 
 /**
  * Flexbox properties that can be applied to Box nodes.
@@ -1142,6 +1146,14 @@ export interface AgNode {
    * See InteractiveState for field docs.
    */
   interactiveState?: InteractiveState | null
+
+  /**
+   * Viewport state for silvery-viewport nodes. Lazily created by the
+   * `<Viewport>` React component at mount; read by the pipeline render
+   * phase to blit the foreign cell buffer at the node's boxRect.
+   * See `viewport-types.ts` and bead `@km/silvery/15513`.
+   */
+  viewportState?: import("./viewport-types").ViewportNodeState | null
 
   /** Scroll state for overflow='scroll' containers */
   scrollState?: {

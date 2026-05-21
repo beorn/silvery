@@ -7,12 +7,15 @@
 
 import type { ReactNode, Ref } from "react"
 import type { BoxProps, AgNode, TextProps } from "@silvery/ag/types"
+import type { ViewportProps } from "@silvery/ag/viewport-types"
 
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
       "silvery-box": BoxProps & { children?: ReactNode; ref?: Ref<AgNode> }
       "silvery-text": TextProps & { children?: ReactNode; ref?: Ref<AgNode> }
+      // Viewport — leaf node (no children); see bead @km/silvery/15513.
+      "silvery-viewport": ViewportProps & { ref?: Ref<AgNode> }
     }
   }
 }
