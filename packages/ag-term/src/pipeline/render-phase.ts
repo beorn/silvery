@@ -22,6 +22,7 @@ import { TerminalBuffer } from "../buffer"
 import type { BoxProps, AgNode, Rect, TextProps } from "@silvery/ag/types"
 import { getBorderSize, getPadding } from "./helpers"
 import { renderBox, renderScrollIndicators, getEffectiveBg } from "./render-box"
+import { renderViewport } from "./render-viewport"
 import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
@@ -1158,6 +1159,12 @@ function renderOwnContent(
       bgOnlyChange,
       nodeState.inheritedFg,
     )
+  } else if (node.type === "silvery-viewport") {
+    // Opaque blit of the foreign cell domain. The viewport doesn't participate
+    // in bg-coherence with the parent — `renderText`'s bg-conflict throw is
+    // never reached because viewport cells go through `buffer.setCell` directly.
+    // See bead @km/silvery/15513.
+    renderViewport(node, buffer, layout, nodeState.scrollOffset)
   } else if (node.type === "silvery-text") {
     if (instrumentEnabled) stats.textNodes++
     // O(1) inherited bg/fg — threaded top-down through nodeState.

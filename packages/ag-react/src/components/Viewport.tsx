@@ -23,9 +23,12 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
 } from "react"
 import type { AgNode, Cell } from "@silvery/ag/types"
+import { trackContentDirty } from "@silvery/ag/dirty-tracking"
+import { CONTENT_BIT, getRenderEpoch } from "@silvery/ag/epoch"
 import { createCellBuffer, type MutableCellBuffer } from "@silvery/ag/viewport-buffer"
 import type {
   CellBuffer,
@@ -108,7 +111,11 @@ export const Viewport = forwardRef(function Viewport(
       cursorVisible,
       inputMode: captureInput,
     }
-    const ctx = createViewportContext(viewportState, () => stateRef.current?.invalidated ?? true)
+    const ctx = createViewportContext(
+      viewportState,
+      () => stateRef.current?.invalidated ?? true,
+      () => nodeRef.current,
+    )
     stateRef.current = { buffer, state: viewportState, ctx, invalidated: false }
   }
 
@@ -116,36 +123,31 @@ export const Viewport = forwardRef(function Viewport(
   stateRef.current.state.cursorVisible = cursorVisible
   stateRef.current.state.inputMode = captureInput
 
-  // ── 2. Source lifecycle ─────────────────────────────────────────────────
-  useEffect(() => {
-    const slot = stateRef.current
-    if (!slot || !source) return
-    source.connect(slot.ctx)
-    return () => {
-      try {
-        source.disconnect()
-      } finally {
-        slot.invalidated = true
-      }
-    }
-  }, [source])
-
-  // ── 3. Wire viewport state onto the AgNode after mount ──────────────────
-  // The reconciler creates the AgNode synchronously when the host element
-  // mounts; we attach the per-instance buffer + state once we have the node
-  // reference. The render phase reads `node.viewportState` to blit cells.
-  useEffect(() => {
+  // ── 2. Wire viewport state + source lifecycle BEFORE first paint ────────
+  // useLayoutEffect runs synchronously after the reconciler commits refs and
+  // BEFORE `resetAfterCommit` triggers the silvery render pipeline. This means
+  // the viewport's `viewportState` slot and any initial source-pushed cells
+  // are visible to the very first frame's render phase — apps don't have to
+  // force a second re-render to see the source's startup content.
+  useLayoutEffect(() => {
     const node = nodeRef.current
     const slot = stateRef.current
     if (!node || !slot) return
     node.viewportState = slot.state
+    if (source) {
+      source.connect(slot.ctx)
+    }
     return () => {
-      // Detach on unmount so a stale state doesn't outlive the React tree.
-      if (node.viewportState === slot.state) {
-        node.viewportState = null
+      try {
+        if (source) source.disconnect()
+      } finally {
+        slot.invalidated = true
+        if (node.viewportState === slot.state) {
+          node.viewportState = null
+        }
       }
     }
-  }, [])
+  }, [source])
 
   // ── 4. Resize notification ──────────────────────────────────────────────
   // Fire onResize whenever the React-visible dimensions change. The buffer
@@ -167,6 +169,19 @@ export const Viewport = forwardRef(function Viewport(
         const slot = stateRef.current
         if (!slot) return
         slot.buffer.blit(dirtyRects, buffer)
+        // Imperative writes need the same dirty signal as source-driven blit
+        // so the next pipeline run paints the change.
+        const node = nodeRef.current
+        if (node) {
+          const epoch = getRenderEpoch()
+          if (node.dirtyEpoch !== epoch) {
+            node.dirtyBits = CONTENT_BIT
+            node.dirtyEpoch = epoch
+          } else {
+            node.dirtyBits |= CONTENT_BIT
+          }
+          trackContentDirty(node)
+        }
       },
       writeAnsi(_chunk) {
         // v1: not implemented — apps that want ANSI parsing should use an
@@ -181,6 +196,17 @@ export const Viewport = forwardRef(function Viewport(
         const slot = stateRef.current
         if (!slot) return
         slot.state.cursor = { row: pos.row, col: pos.col, style: style ?? "block" }
+        const node = nodeRef.current
+        if (node) {
+          const epoch = getRenderEpoch()
+          if (node.dirtyEpoch !== epoch) {
+            node.dirtyBits = CONTENT_BIT
+            node.dirtyEpoch = epoch
+          } else {
+            node.dirtyBits |= CONTENT_BIT
+          }
+          trackContentDirty(node)
+        }
       },
       resize(_nextCols, _nextRows) {
         // v1: ref-driven resize is informational only — the AgNode's layout
@@ -222,7 +248,28 @@ export const Viewport = forwardRef(function Viewport(
 function createViewportContext(
   state: ViewportNodeState,
   isInvalidated: () => boolean,
+  getNode: () => AgNode | null,
 ): ViewportContext {
+  /**
+   * Mark the host AgNode contentDirty so the next pipeline run blits the
+   * updated cell buffer instead of fast-path-skipping the viewport node.
+   * Without this, a source that updates the buffer asynchronously (PTY data
+   * arriving, replay frame stepping) would have its changes ignored unless
+   * some sibling state change also triggered the cascade.
+   */
+  function markDirty(): void {
+    const node = getNode()
+    if (!node) return
+    const epoch = getRenderEpoch()
+    if (node.dirtyEpoch !== epoch) {
+      node.dirtyBits = CONTENT_BIT
+      node.dirtyEpoch = epoch
+    } else {
+      node.dirtyBits |= CONTENT_BIT
+    }
+    trackContentDirty(node)
+  }
+
   return {
     dimensions() {
       return { cols: state.buffer.cols, rows: state.buffer.rows }
@@ -230,15 +277,16 @@ function createViewportContext(
     blit(dirtyRects: readonly ViewportRect[], buffer: CellBuffer) {
       if (isInvalidated()) return
       ;(state.buffer as MutableCellBuffer).blit(dirtyRects, buffer)
+      markDirty()
     },
     setCursor(pos: { row: number; col: number }, style?: ViewportCursorStyle) {
       if (isInvalidated()) return
       state.cursor = { row: pos.row, col: pos.col, style: style ?? "block" }
+      markDirty()
     },
     invalidateAll() {
       if (isInvalidated()) return
-      // v1: invalidateAll is advisory — the render phase always blits the
-      // current buffer every frame. Reserved for future incremental modes.
+      markDirty()
     },
     requestInputMode(mode: ViewportInputMode) {
       if (isInvalidated()) return
