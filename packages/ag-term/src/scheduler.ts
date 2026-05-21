@@ -496,7 +496,7 @@ export class RenderScheduler {
   dispose(): void {
     if (this.disposed) return
 
-    log.info?.(
+    log.debug?.(
       `dispose: renders=${this.stats.renderCount}, skipped=${this.stats.skippedCount}, avg=${Math.round(this.stats.avgRenderTime)}ms`,
     )
     this.disposed = true
