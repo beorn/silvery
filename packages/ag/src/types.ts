@@ -337,11 +337,21 @@ export interface InteractiveState {
 /**
  * Silvery node types - the primitive elements in the render tree.
  *
- * `silvery-viewport` is a leaf node hosting a foreign cell domain
- * (xtermjs PTY, replay frames, snapshot). See {@link viewport-types.ts}
- * and bead `@km/silvery/15513-surface-nested-composition-primitive`.
+ * - `silvery-viewport` is a leaf node hosting a foreign cell domain
+ *   (xtermjs PTY, replay frames, snapshot). See {@link viewport-types.ts}
+ *   and bead `@km/silvery/15513-surface-nested-composition-primitive`.
+ * - `silvery-island` is the runtime-agnostic cell-grid mount primitive —
+ *   sibling of `silvery-box` / `silvery-text`. Holds an
+ *   {@link import("./island-types").IslandHandle} ref + per-node lifecycle.
+ *   Supersedes `silvery-viewport` in epic
+ *   `@km/silvery/15646-islands` (Phase 4 deletes `silvery-viewport`).
  */
-export type AgNodeType = "silvery-root" | "silvery-box" | "silvery-text" | "silvery-viewport"
+export type AgNodeType =
+  | "silvery-root"
+  | "silvery-box"
+  | "silvery-text"
+  | "silvery-viewport"
+  | "silvery-island"
 
 /**
  * Flexbox properties that can be applied to Box nodes.
@@ -1173,8 +1183,20 @@ export interface AgNode {
    * `<Viewport>` React component at mount; read by the pipeline render
    * phase to blit the foreign cell buffer at the node's boxRect.
    * See `viewport-types.ts` and bead `@km/silvery/15513`.
+   *
+   * Deprecated by `<Island>` / {@link islandState} in epic
+   * `@km/silvery/15646-islands`; Phase 4 deletes this slot.
    */
   viewportState?: import("./viewport-types").ViewportNodeState | null
+
+  /**
+   * Island state for silvery-island nodes. Lazily created by `createIsland()`
+   * / `<Island>` at mount; read by the pipeline render phase to blit the
+   * guest's cell buffer at the node's boxRect, and by the host aggregator
+   * (create-app.tsx) to derive focused-subtree protocol modes.
+   * See `island-types.ts` and bead `@km/silvery/15646-islands`.
+   */
+  islandState?: import("./island-types").IslandNodeState | null
 
   /** Scroll state for overflow='scroll' containers */
   scrollState?: {

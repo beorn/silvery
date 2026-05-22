@@ -87,6 +87,7 @@ export type { DragEventPayload, DragEventProps } from "./drag-event-types"
 export type { SilveryMouseEvent, SilveryWheelEvent, MouseEventProps } from "./mouse-event-types"
 
 // Viewport (nested-cell-domain composition primitive — see bead @km/silvery/15513)
+// Deprecated by Islands (@km/silvery/15646); Phase 4 of that epic deletes this surface.
 export type {
   CellBuffer,
   ViewportRect,
@@ -101,6 +102,29 @@ export type {
 } from "./viewport-types"
 export { createCellBuffer } from "./viewport-buffer"
 export type { MutableCellBuffer } from "./viewport-buffer"
+
+// Islands (cell-grid mount primitive — see bead @km/silvery/15646)
+export type {
+  IslandSignal,
+  IslandCapabilities,
+  IslandHydrate,
+  IslandPalettePolicy,
+  IslandSizeOwner,
+  IslandOutputOwner,
+  IslandInputOwner,
+  IslandModesOwner,
+  IslandSignalsOwner,
+  IslandPaletteOwner,
+  IslandProtocolModes,
+  IslandHandle,
+  IslandContext,
+  IslandGuest,
+  IslandNodeState,
+  IslandCursorState,
+  IslandKeyEvent,
+  IslandMouseEvent,
+  IslandInputEvent,
+} from "./island-types"
 
 // Layout Types
 export type { LayoutNode, MeasureFunc, MeasureMode } from "./layout-types"
