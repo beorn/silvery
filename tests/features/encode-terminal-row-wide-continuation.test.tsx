@@ -59,7 +59,12 @@ describe("encodeTerminalRow — wide-cell continuation handling", () => {
   test("explicit continuation=true cell IS skipped (legacy contract)", () => {
     // Confirm the continuation=true path still works for backends that
     // populate it (vt100, vterm).
-    const row: TerminalCell[] = [cell("本", { wide: true }), cell(" ", { continuation: true }), cell(" "), cell("X")]
+    const row: TerminalCell[] = [
+      cell("本", { wide: true }),
+      cell(" ", { continuation: true }),
+      cell(" "),
+      cell("X"),
+    ]
     const out = encodeTerminalRow(row, 4)
     const visible = out.replace(/\x1b\[[0-9;]*m/g, "")
     expect(visible).toBe("本 X")
