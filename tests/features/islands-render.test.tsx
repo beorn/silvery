@@ -210,7 +210,9 @@ async function flushMicrotasks(): Promise<void> {
  */
 function makeTestScopeWrapper() {
   const scope = createScope("islands-render-test")
-  return (children: ReactNode): ReactElement => <ScopeProvider scope={scope}>{children}</ScopeProvider>
+  return (children: ReactNode): ReactElement => (
+    <ScopeProvider scope={scope}>{children}</ScopeProvider>
+  )
 }
 
 // ────────────────────────────────────────────────────────────────────────────
