@@ -159,6 +159,7 @@ import { createVirtualScrollback } from "../virtual-scrollback"
 import { createSearchState, searchUpdate } from "../search-overlay"
 import { createOutput, type Output } from "./devices/output"
 import { createModes } from "./devices/modes"
+import { deriveProtocolModesFromFocusSubtree } from "./island-aggregator"
 import type { Term } from "../ansi/term"
 import { perfLog, checkBudget, logExitSummary, startTracking } from "./perf"
 import {
@@ -2739,10 +2740,24 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // hotkeys (incl. Ctrl-D) go dead. The teardown's `disableKittyKeyboard()`
       // is likewise scoped: see the `!inputDisabled` guard below.
       // See `docs/design/terminal-component.md` § "render({ input: false })".
+      //
+      // Aggregator hook (@km/silvery/15646-islands Unit C): if a focused-
+      // subtree <Island> declares it wants Kitty keyboard via its modes
+      // owner, treat that as `kittyOption === true` for this initial enable.
+      // No-op until Phase 3 mounts a real island guest (current apps return
+      // `{}` from the aggregator). Focus-change re-evaluation lives in
+      // Phase 3 when the rec adoption demonstrates the full lifecycle.
+      const aggregatedModesAtInit = deriveProtocolModesFromFocusSubtree(focusManager.activeElement)
+      const kittyOptionEffective =
+        kittyOption != null && kittyOption !== false
+          ? kittyOption
+          : aggregatedModesAtInit.kittyKeyboard
+            ? true
+            : kittyOption
       if (inputDisabled) {
         // No-op — leave keyboard-protocol negotiation to the stdin owner.
-      } else if (kittyOption != null && kittyOption !== false) {
-        if (kittyOption === true) {
+      } else if (kittyOptionEffective != null && kittyOptionEffective !== false) {
+        if (kittyOptionEffective === true) {
           // Auto-detect: probe terminal, enable if supported.
           // If caller already detected Kitty support synchronously (via caps from
           // detectTerminalCaps — $TERM-based), skip the 200ms stdio roundtrip and
@@ -2763,9 +2778,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           }
         } else {
           // Explicit flags — enable directly without detection
-          modes.kittyKeyboard(kittyOption as number)
+          modes.kittyKeyboard(kittyOptionEffective as number)
           kittyEnabled = true
-          kittyFlags = kittyOption as number
+          kittyFlags = kittyOptionEffective as number
         }
       } else if (kittyOption == null) {
         // No option specified: legacy behavior — always enable Kitty with full fidelity
@@ -2788,7 +2803,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // emits `CSI M…` / `CSI <…M` reports the child cannot parse — they
       // leak to the screen as garbled text. Sibling of the Kitty-keyboard
       // gate above. See `@km/termless/15586-rec-mouse-garble`.
-      if (mouseTrackingEnabled && !inputDisabled) {
+      // Aggregator hook (@km/silvery/15646-islands Unit C): focused-subtree
+      // <Island> requesting mouse tracking is OR'd into the enable. No
+      // effect today — current apps mount no islands; aggregator returns
+      // `{}`. Phase 3 (rec adoption) is the first consumer.
+      const mouseRequestedByIsland = aggregatedModesAtInit.mouseTracking !== undefined
+      if ((mouseTrackingEnabled || mouseRequestedByIsland) && !inputDisabled) {
         modes.mouse(mouseParseOptions?.coordinateMode === "pixel" ? "pixel" : true)
         mouseEnabled = true
       }
@@ -4183,7 +4203,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // not own stdin (`input: false`) it must not enable it; the actual input
     // owner negotiates its own protocols. Sibling of the Kitty-keyboard and
     // mouse gates. See `@km/termless/15586-rec-mouse-garble`.
-    if (focusReportingOption && !focusReportingEnabled && !inputDisabled) {
+    // Aggregator hook (@km/silvery/15646-islands Unit C): focused-subtree
+    // <Island> requesting focus reporting is OR'd into the enable. No
+    // effect today — current apps mount no islands; aggregator returns
+    // `{}`. Re-evaluated on each render-cycle entry; Phase 3 adds focus-
+    // change hot-swap (currently: once-enabled-stays-enabled until exit).
+    const focusReportingFromAggregator = deriveProtocolModesFromFocusSubtree(
+      focusManager.activeElement,
+    ).focusReporting
+    if (
+      (focusReportingOption || focusReportingFromAggregator) &&
+      !focusReportingEnabled &&
+      !inputDisabled
+    ) {
       modes.focusReporting(true)
       focusReportingEnabled = true
     }
