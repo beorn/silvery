@@ -8,7 +8,6 @@ A silvery app sometimes needs to compose content it doesn't draw itself: a PTY c
 
 ```tsx
 import { Island, snapshotGuest } from "silvery"
-
 ;<Island
   guest={snapshotGuest({
     cells: [
