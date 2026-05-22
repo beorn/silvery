@@ -103,6 +103,16 @@ function createFakeTtyStdout(): NodeJS.WriteStream & { written: string[] } {
 /** CSI > <flags> u — the Kitty keyboard ENABLE (push) sequence. */
 const KITTY_ENABLE_RE = /\x1b\[>\d*u/
 
+/**
+ * Mouse-tracking ENABLE sequences — any of the SGR / motion private modes.
+ * `enableMouse()` writes `CSI ?1003h CSI ?1006h` (+ `?1016h` for pixels);
+ * the legacy modes `?1000h` / `?1002h` are matched too for completeness.
+ */
+const MOUSE_ENABLE_RE = /\x1b\[\?(?:1000|1002|1003|1006|1016)h/
+
+/** CSI ?1004h — the focus-event reporting ENABLE sequence. */
+const FOCUS_ENABLE_RE = /\x1b\[\?1004h/
+
 describe("run({ input: false }) — stdin hands-off contract", () => {
   test("does not touch stdin (no setRawMode, no setEncoding, no data listener)", async () => {
     const { stream: stdin, spy } = createFakeTtyStdin()
@@ -207,4 +217,120 @@ describe("run({ input: false }) — stdin hands-off contract", () => {
       handle.unmount?.()
     }
   })
+
+  // Regression for `@km/termless/15586-rec-mouse-garble` — the mouse sibling
+  // of 15575. Mouse tracking (`CSI ?1000h` / `?1002h` / `?1003h` / `?1006h`)
+  // is a host-input-protocol toggle: it makes the terminal *emit mouse-report
+  // bytes on stdin*. When silvery does not own stdin (`input: false`) it must
+  // not enable it — the recorded child app reached through the PTY negotiates
+  // its own mouse protocol; host mouse-report bytes the child cannot parse
+  // leak to the screen as garbled text. The fix gates the mouse enable on
+  // `!inputDisabled` in create-app.tsx.
+  test("does NOT enable mouse tracking on the host", async () => {
+    const { stream: stdin } = createFakeTtyStdin()
+    const stdout = createFakeTtyStdout()
+
+    const handle = await run(
+      <Box>
+        <Text>hi</Text>
+      </Box>,
+      {
+        stdin,
+        stdout,
+        cols: 80,
+        rows: 24,
+        input: false,
+        mouse: true, // explicitly requested — the gate must still suppress it
+        selection: false,
+        focusReporting: false,
+      },
+    )
+
+    try {
+      const all = stdout.written.join("")
+      expect(
+        MOUSE_ENABLE_RE.test(all),
+        `input:false render must not write a mouse-enable sequence ` +
+          `(CSI ?1000/1002/1003/1006h); got: ${JSON.stringify(all.slice(0, 200))}`,
+      ).toBe(false)
+    } finally {
+      handle.unmount?.()
+    }
+  })
+
+  // Control: the SAME render WITHOUT `input: false` *does* enable mouse
+  // tracking. Proves the gate is scoped to the input-disabled case and
+  // silvery's normal mouse setup is intact for apps that own stdin.
+  test("control — a normal (input-owning) render DOES enable mouse tracking", async () => {
+    const { stream: stdin } = createFakeTtyStdin()
+    const stdout = createFakeTtyStdout()
+
+    const handle = await run(
+      <Box>
+        <Text>hi</Text>
+      </Box>,
+      {
+        stdin,
+        stdout,
+        cols: 80,
+        rows: 24,
+        // input not disabled — silvery owns stdin, mouse enable is correct.
+        mouse: true,
+        selection: false,
+        focusReporting: false,
+      },
+    )
+
+    try {
+      const all = stdout.written.join("")
+      expect(MOUSE_ENABLE_RE.test(all)).toBe(true)
+    } finally {
+      handle.unmount?.()
+    }
+  })
+
+  // Regression for `@km/termless/15586-rec-mouse-garble` — focus reporting
+  // (`CSI ?1004h`) is likewise a host-input-protocol toggle: it makes the
+  // terminal emit `CSI I` / `CSI O` focus-event bytes on stdin. With
+  // `input: false` silvery does not own stdin and must not enable it.
+  test("does NOT enable focus reporting on the host", async () => {
+    const { stream: stdin } = createFakeTtyStdin()
+    const stdout = createFakeTtyStdout()
+
+    const handle = await run(
+      <Box>
+        <Text>hi</Text>
+      </Box>,
+      {
+        stdin,
+        stdout,
+        cols: 80,
+        rows: 24,
+        input: false,
+        mouse: false,
+        selection: false,
+        focusReporting: true, // explicitly requested — the gate must suppress it
+      },
+    )
+
+    try {
+      const all = stdout.written.join("")
+      expect(
+        FOCUS_ENABLE_RE.test(all),
+        `input:false render must not write a focus-enable sequence (CSI ?1004h); ` +
+          `got: ${JSON.stringify(all.slice(0, 200))}`,
+      ).toBe(false)
+    } finally {
+      handle.unmount?.()
+    }
+  })
+
+  // NOTE on the focus-reporting control: there is deliberately no positive
+  // `focusReporting: true` control here. Unlike Kitty / mouse (enabled
+  // synchronously in the init phase), focus reporting is enabled *inside the
+  // event loop*, after `pumpEvents()` attaches the stdin listener — so its
+  // `CSI ?1004h` write does not land within a deterministic window of
+  // `run()` resolving against a fake (event-less) stdin. The negative test
+  // above exercises the `!inputDisabled` gate; the gate is the same single
+  // `&& !inputDisabled` conjunct the mouse control proves bidirectionally.
 })

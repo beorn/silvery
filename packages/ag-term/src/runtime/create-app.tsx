@@ -1694,15 +1694,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   function disableInteractiveProtocolsEarly(): void {
     if (headless || !stdout.isTTY) return
-    // `disableKittyKeyboard()` is gated by `!inputDisabled` — the Kitty
-    // keyboard protocol is a stdin-encoding mode. When silvery does not own
-    // stdin (`input: false`) it never pushed a Kitty stack (see the enable
-    // block in the render path) and must not pop one the actual input owner
-    // may rely on. See `@km/termless/15575-rec-input-broken`.
+    // Kitty keyboard, mouse tracking, and focus reporting are all
+    // host-input-protocol toggles — they change how the terminal *encodes
+    // input* on stdin. All three are gated by `!inputDisabled`: when silvery
+    // does not own stdin (`input: false`) it never enabled them (see the
+    // enable blocks in the render path) and must not pop a protocol stack the
+    // actual input owner may rely on. Alt-screen / cursor / colour cleanup
+    // (genuine stdout-only output state) is unconditional.
+    // See `@km/termless/15575-rec-input-broken` (keyboard) and
+    // `@km/termless/15586-rec-mouse-garble` (mouse + focus).
     const earlyDisable = [
       inputDisabled ? "" : disableKittyKeyboard(), // Stop Kitty release events — only if silvery owns stdin
-      disableMouse(), // Stop mouse events
-      "\x1b[?1004l", // Stop focus reporting
+      inputDisabled ? "" : disableMouse(), // Stop mouse events — only if silvery owns stdin
+      inputDisabled ? "" : "\x1b[?1004l", // Stop focus reporting — only if silvery owns stdin
     ].join("")
     try {
       writeSync((stdout as unknown as { fd: number }).fd, earlyDisable)
@@ -2064,13 +2068,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Sending a disable for an inactive protocol is harmless, and unconditional
       // cleanup is more robust than tracking enable/disable state.
       //
-      // Exception: `disableKittyKeyboard()` is gated by `!inputDisabled`. The
-      // Kitty keyboard protocol is a stdin-encoding mode; when silvery does not
-      // own stdin (`input: false`), it never enabled Kitty (see the enable block
-      // above) and must not pop a Kitty stack the input owner may be relying on.
+      // Exception: the three host-input-protocol toggles — Kitty keyboard,
+      // mouse tracking, and focus reporting — are gated by `!inputDisabled`.
+      // They change how the terminal *encodes input* on stdin; when silvery
+      // does not own stdin (`input: false`), it never enabled them (see the
+      // enable blocks above) and must not pop a protocol stack the input owner
+      // may be relying on. Bracketed paste / cursor / colour / alt-screen are
+      // stdout-only output state and stay unconditional.
       const sequences = [
-        "\x1b[?1004l", // Disable focus reporting
-        disableMouse(), // Disable SGR mouse tracking (modes 1003, 1006, optional 1016)
+        inputDisabled ? "" : "\x1b[?1004l", // Disable focus reporting — only if silvery owns stdin
+        inputDisabled ? "" : disableMouse(), // Disable SGR mouse tracking — only if silvery owns stdin
         inputDisabled ? "" : disableKittyKeyboard(), // Pop Kitty keyboard protocol — only if silvery owns stdin
         "\x1b[?2004l", // Disable bracketed paste
         "\x1b[0m", // Reset SGR attributes
@@ -2118,8 +2125,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     } else if (!headless) {
       // Non-TTY cleanup: just send disable sequences
       const sequences = [
-        "\x1b[?1004l",
-        disableMouse(),
+        inputDisabled ? "" : "\x1b[?1004l",
+        inputDisabled ? "" : disableMouse(),
         inputDisabled ? "" : disableKittyKeyboard(),
         "\x1b[?2004l",
         "\x1b[0m",
@@ -2768,7 +2775,20 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       }
 
       // Mouse tracking
-      if (mouseTrackingEnabled) {
+      //
+      // `inputDisabled` short-circuits the mouse enable: mouse tracking
+      // (`CSI ?1000h` / `?1002h` / `?1003h` / `?1006h`) is a host-input-
+      // protocol toggle — it makes the terminal *emit mouse-report bytes on
+      // stdin*. When silvery does not own stdin (`input: false` — e.g.
+      // termless `rec`'s live overlay, which keeps the host's stdin →
+      // child-PTY pipe intact), it must not put the terminal into mouse-
+      // reporting mode. The actual input owner (the recorded child app
+      // reached through the PTY) negotiates its own mouse protocol; if
+      // silvery flips the host into mouse mode behind its back, the host
+      // emits `CSI M…` / `CSI <…M` reports the child cannot parse — they
+      // leak to the screen as garbled text. Sibling of the Kitty-keyboard
+      // gate above. See `@km/termless/15586-rec-mouse-garble`.
+      if (mouseTrackingEnabled && !inputDisabled) {
         modes.mouse(mouseParseOptions?.coordinateMode === "pixel" ? "pixel" : true)
         mouseEnabled = true
       }
@@ -4156,7 +4176,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Enable focus reporting NOW — after stdin listener is attached.
     // Must be deferred from the init phase because the terminal's immediate
     // CSI I/O response would leak before the input parser was ready.
-    if (focusReportingOption && !focusReportingEnabled) {
+    //
+    // `inputDisabled` short-circuits the focus enable: focus reporting
+    // (`CSI ?1004h`) is a host-input-protocol toggle — it makes the terminal
+    // emit `CSI I` / `CSI O` focus-event bytes on stdin. When silvery does
+    // not own stdin (`input: false`) it must not enable it; the actual input
+    // owner negotiates its own protocols. Sibling of the Kitty-keyboard and
+    // mouse gates. See `@km/termless/15586-rec-mouse-garble`.
+    if (focusReportingOption && !focusReportingEnabled && !inputDisabled) {
       modes.focusReporting(true)
       focusReportingEnabled = true
     }
