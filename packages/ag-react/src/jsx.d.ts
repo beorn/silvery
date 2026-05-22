@@ -16,6 +16,11 @@ declare module "react" {
       "silvery-text": TextProps & { children?: ReactNode; ref?: Ref<AgNode> }
       // Viewport — leaf node (no children); see bead @km/silvery/15513.
       "silvery-viewport": ViewportProps & { ref?: Ref<AgNode> }
+      // Island — leaf node (no children); see bead @km/silvery/15646.
+      // Intrinsic shape is intentionally narrow (cols/rows only) — the
+      // React-facing <Island> wraps this with the full guest contract via
+      // its own IslandProps interface.
+      "silvery-island": { cols: number; rows: number; ref?: Ref<AgNode> }
     }
   }
 }

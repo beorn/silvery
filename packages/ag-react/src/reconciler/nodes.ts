@@ -125,6 +125,11 @@ export function createNode(
     // function — the foreign cell buffer is blitted by the render phase at
     // boxRect. See bead @km/silvery/15513.
     applyViewportProps(layoutNode, props as unknown as ViewportProps)
+  } else if (type === "silvery-island") {
+    // Island is a leaf with intrinsic cols × rows hints — parent flex/layout
+    // overrides at the layout phase. The guest's cell buffer is blitted by
+    // the render phase at boxRect. See bead @km/silvery/15646.
+    applyIslandProps(layoutNode, props as IslandLayoutProps)
   }
 
   // Set up measure function for text nodes
@@ -486,6 +491,45 @@ export function applyViewportProps(
   layoutNode: LayoutNode,
   props: ViewportProps,
   oldProps?: ViewportProps,
+): void {
+  if (props.cols !== undefined) {
+    layoutNode.setWidth(props.cols)
+  } else if (oldProps?.cols !== undefined) {
+    layoutNode.setWidthAuto()
+  }
+  if (props.rows !== undefined) {
+    layoutNode.setHeight(props.rows)
+  } else if (oldProps?.rows !== undefined) {
+    layoutNode.setHeightAuto()
+  }
+}
+
+/**
+ * Layout-relevant slice of <Island> props. The full island contract (guest,
+ * focusable, palette policy, hydration, callbacks) lives in
+ * `@silvery/ag/island-types`; only cols × rows touch flex layout, so the
+ * reconciler-side prop applier takes the minimal structural type.
+ */
+export interface IslandLayoutProps {
+  cols?: number
+  rows?: number
+}
+
+/**
+ * Apply IslandProps to an island node's layout node.
+ *
+ * `<Island>` is a leaf — guest content lives off the AgNode's `islandState`
+ * slot, blitted by the render phase at boxRect. cols × rows are intrinsic
+ * hints; parent flex (flexGrow, flexShrink, container-query units) overrides
+ * at the layout phase, and the guest's `IslandSizeOwner` acknowledges
+ * dynamic resize via the two-phase `requestResize` protocol.
+ *
+ * See bead `@km/silvery/15646-islands`.
+ */
+export function applyIslandProps(
+  layoutNode: LayoutNode,
+  props: IslandLayoutProps,
+  oldProps?: IslandLayoutProps,
 ): void {
   if (props.cols !== undefined) {
     layoutNode.setWidth(props.cols)
