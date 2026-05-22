@@ -22,7 +22,7 @@
  *      overrides cols for layout while guest still gets cols as initial dim
  */
 
-import React, { useRef, type ReactNode } from "react"
+import React, { useRef, type ReactElement, type ReactNode } from "react"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Island, ScopeProvider } from "@silvery/ag-react"
@@ -132,8 +132,12 @@ async function flushMicrotasks(): Promise<void> {
  * Wrap a React tree in a Scope so `<Island>`'s `useScopeEffect` finds an
  * ancestor scope (real apps use `withScope()` at the app root; tests don't
  * spin up the full create-app pipeline, so we provide one directly).
+ *
+ * Returns `ReactElement` (not `ReactNode`) because the silvery test
+ * `render(tree)` API requires a concrete element — `ReactNode` includes
+ * `null | undefined | boolean | string` which the reconciler rejects.
  */
-function withTestScope(children: ReactNode): ReactNode {
+function withTestScope(children: ReactNode): ReactElement {
   const scope = createScope("islands-test")
   return <ScopeProvider scope={scope}>{children}</ScopeProvider>
 }

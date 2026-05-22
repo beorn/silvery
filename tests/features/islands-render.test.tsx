@@ -23,7 +23,7 @@
  * Tracking: bead `@km/silvery/15646-islands`.
  */
 
-import React, { type ReactNode } from "react"
+import React, { type ReactElement, type ReactNode } from "react"
 import { describe, expect, test } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Island, ScopeProvider, Text } from "@silvery/ag-react"
@@ -178,7 +178,7 @@ function BoardWithIsland({
         <Island guest={guest} cols={cols} rows={rows} />
       </Box>
       <Box>
-        <Text dimColor>footer</Text>
+        <Text color="$muted">footer</Text>
       </Box>
     </Box>
   )
@@ -210,7 +210,7 @@ async function flushMicrotasks(): Promise<void> {
  */
 function makeTestScopeWrapper() {
   const scope = createScope("islands-render-test")
-  return (children: ReactNode): ReactNode => <ScopeProvider scope={scope}>{children}</ScopeProvider>
+  return (children: ReactNode): ReactElement => <ScopeProvider scope={scope}>{children}</ScopeProvider>
 }
 
 // ────────────────────────────────────────────────────────────────────────────

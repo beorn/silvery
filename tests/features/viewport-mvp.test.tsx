@@ -131,7 +131,7 @@ function BoardWithViewport({
         <Viewport cols={cols} rows={rows} source={source} ref={viewportRef} />
       </Box>
       <Box>
-        <Text dimColor>footer</Text>
+        <Text color="$muted">footer</Text>
       </Box>
     </Box>
   )
@@ -342,9 +342,11 @@ describe("Viewport — v1 MVP", () => {
     const { source: innerSource } = mockSource("Y")
     function Nested() {
       return (
+        // @ts-expect-error — Viewport is typed as a leaf (no `children` in
+        // ViewportProps). We deliberately pass a child here so the runtime
+        // guard fires; the ts-expect-error applies to the outer Viewport's
+        // implicit `children` prop, which is the path we're testing.
         <Viewport cols={20} rows={4} source={outerSource}>
-          {/* @ts-expect-error — Viewport is typed as a leaf; React still
-              allows children at runtime, which is the path we're guarding. */}
           <Viewport cols={5} rows={2} source={innerSource} />
         </Viewport>
       )
