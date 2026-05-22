@@ -954,6 +954,13 @@ function renderTextLineReturn(
   ctx?: PipelineContext,
   minCol?: number,
   selectable = false,
+  /**
+   * Per-node bg-conflict policy from the owning Text node's `bgConflict`
+   * prop. When set, it overrides the context / global `BgConflictMode`
+   * for this line — used by `<Terminal>` to opt its external-ANSI cells
+   * out of the throw.
+   */
+  bgConflictOverride?: BgConflictMode,
 ): number {
   if (hasAnsi(text)) {
     return renderAnsiTextLineReturn(
@@ -967,6 +974,7 @@ function renderTextLineReturn(
       ctx,
       minCol,
       selectable,
+      bgConflictOverride,
     )
   }
   return renderGraphemes(
@@ -1173,6 +1181,15 @@ function renderAnsiTextLineReturn(
   ctx?: PipelineContext,
   minCol?: number,
   selectable = false,
+  /**
+   * Per-node bg-conflict policy (the owning Text node's `bgConflict`
+   * prop). Highest-precedence override: when set, it takes priority over
+   * `ctx.bgConflictMode` and the module-global mode. `<Terminal>` passes
+   * `"ignore"` here so its re-encoded external-ANSI cells are exempt from
+   * the global throw, while real silvery-app pipeline bugs elsewhere
+   * still throw.
+   */
+  bgConflictOverride?: BgConflictMode,
 ): number {
   const sink: RenderSink = createFrameSink(buffer)
   const segments = parseAnsiText(text)
@@ -1188,7 +1205,8 @@ function renderAnsiTextLineReturn(
     // Phase 2 Step 6 / paint-clear-l5-final Step 1b: the diagnostic now uses
     // `inheritedBg` (threaded from the render walk) instead of `buffer.getCellBg`,
     // matching the rendered-output bg priority chain (style.bg → inheritedBg → null).
-    const effectiveBgConflictMode = ctx?.bgConflictMode ?? getBgConflictMode()
+    // Precedence: per-node `bgConflict` prop → context mode → global mode.
+    const effectiveBgConflictMode = bgConflictOverride ?? ctx?.bgConflictMode ?? getBgConflictMode()
     if (
       effectiveBgConflictMode !== "ignore" &&
       !segment.bgOverride &&
@@ -1660,6 +1678,7 @@ export function renderText(
       ctx,
       minCol,
       lineSelectable,
+      props.bgConflict,
     )
 
     // Clear remaining cells after text to end of layout width (clipped).

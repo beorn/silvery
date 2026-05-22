@@ -989,6 +989,27 @@ export interface TextProps extends StyleProps, TextFlexItemProps, TestProps, Mou
     | boolean
   /** Internal transform function applied to each rendered line. Used by Transform component. */
   internal_transform?: (line: string, index: number) => string
+  /**
+   * Per-node background-conflict policy. Overrides the global / context
+   * `BgConflictMode` for the cells this Text node paints.
+   *
+   * Background conflicts (ANSI bg in text content layered over an silvery
+   * `backgroundColor`) normally `throw` — that strictness is the right
+   * safety net for an silvery app's own pipeline bugs. But a component
+   * mirroring arbitrary EXTERNAL ANSI (e.g. `<Terminal>` re-encoding a
+   * captured terminal grid, where chalk status bars are conflict-rich by
+   * nature) *expects* conflicts. Such a component sets `bgConflict="ignore"`
+   * on the `<Text>` rows it paints so the global throw stays a safety net
+   * everywhere else.
+   *
+   * - `"ignore"`: no detection for this node's cells.
+   * - `"warn"`: log a deduplicated warning instead of throwing.
+   * - `"throw"`: throw (the default behavior when unset).
+   *
+   * When unset, the pipeline falls back to the context mode, then the
+   * global mode (`SILVERY_BG_CONFLICT`, default `"throw"`).
+   */
+  bgConflict?: "ignore" | "warn" | "throw"
 }
 
 /**

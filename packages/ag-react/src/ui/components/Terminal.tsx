@@ -407,8 +407,18 @@ export function Terminal(props: TerminalProps): React.ReactElement {
         // <Text> lays out at width=cols every time. Embedded ANSI
         // escapes are parsed by silvery's measure/output phase via
         // `parseAnsiText` — same code path as chalk strings.
+        //
+        // `bgConflict="ignore"`: <Terminal> mirrors arbitrary EXTERNAL
+        // ANSI (a captured terminal grid). Chalk-styled status bars and
+        // selection highlights are conflict-rich by nature — an ANSI bg
+        // in a cell layered over the silvery buffer bg is *expected*
+        // here, not a pipeline bug. The global throw stays a safety net
+        // for real silvery-app bugs; only the cells <Terminal> paints
+        // are exempt. See `bgConflict` on TextProps.
         // eslint-disable-next-line react/no-array-index-key
-        <Text key={r}>{line}</Text>
+        <Text key={r} bgConflict="ignore">
+          {line}
+        </Text>
       ))}
     </Box>
   )
