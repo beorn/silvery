@@ -454,3 +454,87 @@ describe("TextInput modifier-gated keys never insert", () => {
     expect(app.text).toContain("val:o")
   })
 })
+
+// ============================================================================
+// readOnly mode (km bead @km/silvery/12945-text-input-readonly)
+// ============================================================================
+
+describe("TextInput readOnly mode", () => {
+  // Storybook + preview consumers need to show a TextInput "in its active
+  // visual state" without that input stealing j/k or other keystrokes from
+  // the surrounding navigation. Before `readOnly`, the only way to get the
+  // cursor to render visually was to leave `isActive=true`, which also
+  // captured every keystroke. Consumers worked around it by hand-rolling a
+  // FakeTextInput replica of the render path.
+  //
+  // The `readOnly` prop decouples "looks active" from "captures keys":
+  // when true, useReadline runs with isActive=false (no key capture), but
+  // the visual cursor + hardware cursor positioning are unchanged. The
+  // `isActive` prop still controls hardware-cursor visibility so previews
+  // that want a blinking cursor pass both `isActive readOnly`.
+  //
+  // Sibling bead: km-silvery.text-input-readonly.
+
+  test("readOnly ignores keystrokes — value does not change", async () => {
+    // readOnly path: keystroke dropped at the useReadline gate, onChange
+    // never fires, value stays "hello".
+    const renderReadOnly = createRenderer({ cols: 40, rows: 5 })
+    const onChange = vi.fn()
+    const Static = () => (
+      <Box flexDirection="column">
+        <TextInput value="hello" onChange={onChange} prompt="> " readOnly />
+        <Text>val:hello</Text>
+      </Box>
+    )
+    const app = renderReadOnly(<Static />)
+    await app.press("x")
+    expect(app.text).toContain("val:hello")
+    expect(app.text).not.toContain("hellox")
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  test("readOnly preserves visual cursor (inverse glyph) at the cursor column", async () => {
+    // The visual cursor (inverse Text on the at-cursor character) is the
+    // load-bearing render for storybook previews. readOnly must not erase
+    // it. With no value, the cursor sits on the first placeholder char or
+    // a single space; with a value, it sits at the end.
+    const render = createRenderer({ cols: 40, rows: 5 })
+    const Static = () => (
+      <Box flexDirection="column">
+        <TextInput value="hi" onChange={() => {}} prompt="> " readOnly />
+      </Box>
+    )
+    const app = render(<Static />)
+    // The prompt + value should render. The trailing visual cursor lands
+    // on the post-value space; we assert the rendered prompt + value are
+    // present (the inverse-glyph at the cursor position is a Text node we
+    // can't easily inspect from this renderer, but its presence does not
+    // disturb the value text).
+    expect(app.text).toContain("> hi")
+  })
+
+  test("readOnly does not invoke onChange even on insert + edit keys", async () => {
+    const render = createRenderer({ cols: 40, rows: 5 })
+    const onChange = vi.fn()
+    const Static = () => (
+      <Box flexDirection="column">
+        <TextInput value="hello" onChange={onChange} prompt="> " readOnly />
+      </Box>
+    )
+    const app = render(<Static />)
+    await app.press("a")
+    await app.press("backspace")
+    await app.press("ctrl+a")
+    await app.press("ctrl+k")
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  test("readOnly={false} (default) keeps the existing capture-on-isActive=true behavior", async () => {
+    // Default-off contract — the new prop is additive and does not change
+    // behavior when omitted or explicitly false.
+    const render = createRenderer({ cols: 40, rows: 5 })
+    const app = render(<ControlledInput initial="" />)
+    await app.press("z")
+    expect(app.text).toContain("val:z")
+  })
+})

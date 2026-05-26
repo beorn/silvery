@@ -54,6 +54,20 @@ export interface TextInputProps {
   placeholderColor?: string
   /** Whether input is focused/active (overrides focus system) */
   isActive?: boolean
+  /**
+   * Render the cursor visually + position the hardware cursor, but do not
+   * capture keystrokes. Useful for storybook previews and docs renderers
+   * that want to show the active visual state of an input without stealing
+   * `j` / `k` / readline shortcuts from the surrounding navigation.
+   *
+   * Independent of `isActive`: `readOnly` gates input capture only; the
+   * visual cursor and hardware-cursor visibility still follow `isActive`.
+   *
+   * Bead: km-silvery.text-input-readonly.
+   *
+   * @default false
+   */
+  readOnly?: boolean
   /** Prompt prefix (e.g., "$ " or "> ") */
   prompt?: string
   /** Prompt color (default: "$fg-accent") */
@@ -105,6 +119,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     placeholder = "",
     placeholderColor = "$fg-muted",
     isActive: isActiveProp,
+    readOnly = false,
     prompt = "",
     promptColor = "$fg-accent",
     promptBold = false,
@@ -141,7 +156,10 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   const internalChangeRef = useRef(false)
   const lastEmittedValueRef = useRef<string | null>(null)
 
-  // Use readline hook
+  // Use readline hook. readOnly decouples "visually active" (isActive →
+  // cursor visibility, border-focus color) from "captures keys" (useReadline
+  // isActive). Storybook-style previews pass readOnly=true so the visual
+  // state renders without stealing j/k from the surrounding navigation.
   const readline = useReadline({
     initialValue: isControlled ? (controlledValue ?? "") : defaultValue,
     onChange: useCallback(
@@ -152,7 +170,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
       },
       [onChange],
     ),
-    isActive,
+    isActive: isActive && !readOnly,
     handleEnter: !!onSubmit,
     onSubmit,
     onEOF,
