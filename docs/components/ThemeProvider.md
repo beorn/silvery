@@ -47,6 +47,6 @@ const theme = useTheme() // Access current theme in components
 ## See Also
 
 - [Sterling primer](/reference/sterling) — silvery's design system
-- [Theming guide](/guide/theming) — switching schemes, custom themes
-- [Theming reference](/reference/theming) — `$token` shorthand, special values
+- [Theming guide](/guide/styling) — switching schemes, custom themes
+- [Theming reference](/guide/styling) — `$token` shorthand, special values
 - [Box](./Box.md) — layout container with `theme` prop

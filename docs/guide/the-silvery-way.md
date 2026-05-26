@@ -321,7 +321,7 @@ console.log("\x1b[31;1mError\x1b[0m")
 Hardcoded colors marry one theme. Raw SGR marries whatever that specific terminal does with SGR 2 and SGR 1. **Semantic tokens and typography presets marry them all.**
 :::
 
-→ [Styling guide](/guide/styling) · [Theming reference](/reference/theming) · [Themes gallery](/themes)
+→ [Styling guide](/guide/styling) · [Theming reference](/guide/styling) · [Themes gallery](/themes)
 
 ## 7. Compose with Factory Functions
 

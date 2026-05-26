@@ -125,7 +125,7 @@ App composition and state management. _(Coming soon — API is in active develop
 
 Theme system with 84 color schemes, auto-generation from a single color, semantic tokens, and contrast checking.
 
-See the [Theming Guide](/guide/theming) for full documentation.
+See the [Theming Guide](/guide/styling) for full documentation.
 
 ## `@silvery/test`
 

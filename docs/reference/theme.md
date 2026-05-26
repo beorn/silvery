@@ -488,7 +488,7 @@ Use the `theme` prop on `Box` to override token resolution for a subtree:
 </Box>
 ```
 
-See the [Theming guide](/guide/theming) for runtime swapping, brand overlays, and per-role pinning.
+See the [Theming guide](/guide/styling) for runtime swapping, brand overlays, and per-role pinning.
 
 ## Usage in CLI (@silvery/ansi)
 
@@ -581,8 +581,8 @@ sterling.deriveFromScheme()    contrast targets, OKLCH blending,
 ## Related
 
 - **[Sterling primer](/reference/sterling)** — design-system fundamentals: roles, flat tokens, derivation entry points, full migration map.
-- **[Theming guide](/guide/theming)** — using schemes, switching at runtime, brand overlays, custom themes.
-- **[Theming reference](/reference/theming)** — `$token` shorthand on Box / Text, special values (`inherit`, `mix()`).
+- **[Theming guide](/guide/styling)** — using schemes, switching at runtime, brand overlays, custom themes.
+- **[Theming reference](/guide/styling)** — `$token` shorthand on Box / Text, special values (`inherit`, `mix()`).
 - **[Styling guide](/guide/styling)** — when to use tokens vs letting components handle it.
 - **[Color Schemes guide](/reference/color-schemes)** — the 22-slot scheme model and the 84+ bundled schemes.
 - **[@silvery/ansi style reference](/reference/style)** — CLI styling API.

@@ -77,7 +77,7 @@ Zero color props. The modal gets `$bg-surface-raised`, `$border-default`, `$fg-a
 Rebuilding what the component already does. If you're writing `color="$fg"` or `borderColor="$border-default"`, you're spelling out the default — just remove it. Same goes for SelectList, Badge, Divider, and ProgressBar — they already know how to color themselves.
 :::
 
-→ [Components guide](/guides/components) · [Theming reference](/reference/theming)
+→ [Components guide](/guides/components) · [Theme System](#theme-system)
 
 ## 2. Build Hierarchy with Color + Typography
 
@@ -185,7 +185,7 @@ Apps extend the variant table via <span v-pre>`<ThemeProvider tokens={{ variants
 For fixed-width labels, titles, status bars, and table cells, pass `wrap="truncate"` (or `truncate-start` / `truncate-middle`) and let the text renderer ellipsize against the actual laid-out container. It is ANSI-aware, wide-character-aware, and only adds `…` when content overflows; exact-fit text remains unchanged. Leading-edge / bidi-aware ellipsis direction is future work tracked by `@km/silvery/text-truncate-i18n-and-strictness`.
 :::
 
-→ [Typography reference](/components/typography) · [Text reference](/api/text) · [Theme tokens](/reference/theming#token-reference)
+→ [Typography reference](/components/typography) · [Text reference](/api/text) · [Theme tokens](/guide/styling#token-reference)
 
 ## 3. Use Tokens for Meaning, Not Decoration
 
@@ -222,7 +222,7 @@ Each color matches its meaning. A new user knows what green and red mean without
 When status colors are used for decoration, actual status signals get lost in the noise. "Settings" isn't a warning, "Username" isn't info, and "Saved" is a success — not a brand moment.
 :::
 
-→ [Theme tokens](/reference/theming#token-reference) · [Badge component](/guides/components#badge)
+→ [Theme tokens](/guide/styling#token-reference) · [Badge component](/guides/components#badge)
 
 ## 4. Always Pair Surfaces
 
@@ -289,7 +289,7 @@ Each background is paired with its text token. Contrast is guaranteed across all
 Always use the `fg-on-X` companion when drawing on a status / inverse / accent fill. A token designed for one surface is not interchangeable with another.
 :::
 
-→ [Theming reference](/reference/theming#surface-tokens)
+→ [Theming reference](/guide/styling#surface-tokens)
 
 ## 5. Add Redundant Signals for Status
 
@@ -513,7 +513,7 @@ Palette colors for UI chrome strips them of their data-categorization role. Usin
 
 In truecolor mode, each theme curates the 16 palette colors for visual harmony — equal-weight hues that look cohesive together. Sterling's categorical hue ring (`$red`–`$pink`) goes a step further with OKLCH contrast-adjustment per scheme. Your component code stays the same; the theme does the heavy lifting.
 
-→ [Token Taxonomy](/reference/token-taxonomy#categorical-color-ring) · [Palette reference](/reference/theming#content-palette)
+→ [Token Taxonomy](/reference/token-taxonomy#categorical-color-ring) · [Palette reference](/guide/styling#content-palette)
 
 ## 9. Color Inheritance and Mixing
 
@@ -761,6 +761,337 @@ CSS [`field-sizing`](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizi
 
 **Don't compute wrap math in your consumer.** A common anti-pattern is calling `useBoxRect` + `countVisualLines` to derive a `height={N}` for `<TextArea>`. Use `fieldSizing` / `minRows` / `maxRows` instead — the component knows about wrap, scroll, and clamping. Hand-rolled height math drifts from the wrap algorithm under width changes and IME input.
 
+## Theme System
+
+The principles above are about **using** tokens. This section is about **picking, building, and swapping the theme behind them**. Without an explicit theme, silvery auto-detects the terminal's palette and runs it through [Sterling](/reference/sterling) to produce a complete theme — your app matches whatever the user has configured (Dracula, Nord, Catppuccin, etc.) with zero work on your end. Reach for the APIs below when you want to take control.
+
+For type definitions and derivation rules, see the [@silvery/theme reference](/reference/theme). For the design-system fundamentals, see the [Sterling primer](/reference/sterling).
+
+### Quick Start
+
+Pick a scheme, derive a theme, wrap your app:
+
+```tsx
+import { ThemeProvider, Box, Text } from "silvery"
+import { sterling, catppuccinMocha } from "silvery/theme"
+
+const theme = sterling.deriveFromScheme(catppuccinMocha)
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <Box borderStyle="single">
+        <Text color="$fg-accent">Deploy complete</Text>
+        <Text color="$fg-muted">3 files changed</Text>
+      </Box>
+    </ThemeProvider>
+  )
+}
+```
+
+Without `ThemeProvider`, silvery uses the auto-detected terminal theme. You only need it when you want to pin a specific look.
+
+### Switching Schemes
+
+#### At Startup
+
+Pick a built-in scheme and derive a theme before rendering:
+
+```tsx
+import { ThemeProvider } from "silvery"
+import { sterling, tokyoNight } from "silvery/theme"
+
+const theme = sterling.deriveFromScheme(tokyoNight)
+
+function App() {
+  return <ThemeProvider theme={theme}>{/* ... */}</ThemeProvider>
+}
+```
+
+#### At Runtime
+
+Store the theme in state and swap it on demand:
+
+```tsx
+import { useState } from "react"
+import { ThemeProvider, Box, Text } from "silvery"
+import { sterling, nord, dracula, rosePine } from "silvery/theme"
+
+const themes = {
+  nord: sterling.deriveFromScheme(nord),
+  dracula: sterling.deriveFromScheme(dracula),
+  "rose-pine": sterling.deriveFromScheme(rosePine),
+}
+
+function App() {
+  const [name, setName] = useState<keyof typeof themes>("nord")
+
+  return (
+    <ThemeProvider theme={themes[name]}>
+      <Text color="$fg-accent">Current: {name}</Text>
+      {/* Cycle themes on 't' keypress */}
+    </ThemeProvider>
+  )
+}
+```
+
+#### Per-Subtree Overrides
+
+Use the `theme` prop on `Box` to override tokens for a subtree — useful for light panels inside a dark app:
+
+```tsx
+import { sterling, catppuccinMocha, catppuccinLatte } from "silvery/theme"
+
+const lightTheme = sterling.deriveFromScheme(catppuccinLatte)
+
+function App() {
+  return (
+    <ThemeProvider theme={sterling.deriveFromScheme(catppuccinMocha)}>
+      <Text color="$fg-accent">Dark context</Text>
+
+      <Box theme={lightTheme} borderStyle="single">
+        {/* All $tokens resolve against lightTheme here */}
+        <Text color="$fg-accent">Light context</Text>
+      </Box>
+    </ThemeProvider>
+  )
+}
+```
+
+### Custom Themes
+
+Sterling exposes the [DesignSystem contract](/reference/sterling#authoring-an-alternative-designsystem) with five entry points — pick the one that matches what you have.
+
+#### From a single seed color
+
+The fastest way to get a unique theme — provide one hex color and Sterling generates everything else:
+
+```typescript
+import { sterling } from "silvery/theme"
+
+const theme = sterling.deriveFromColor("#818cf8") // dark mode (default)
+const light = sterling.deriveFromColor("#818cf8", { mode: "light" })
+```
+
+#### From a light/dark scheme pair
+
+Derive both modes at once — useful when you ship a paired theme:
+
+```typescript
+import { sterling, catppuccinLatte, catppuccinMocha } from "silvery/theme"
+
+const { light, dark } = sterling.deriveFromPair(catppuccinLatte, catppuccinMocha)
+```
+
+#### From a scheme + brand overlay
+
+Apply your brand color on top of an existing scheme — your theme keeps the scheme's character but pivots around your brand:
+
+```typescript
+import { sterling, nord } from "silvery/theme"
+
+const theme = sterling.deriveFromSchemeWithBrand(nord, "#5B8DEF")
+```
+
+#### From the defaults, with overrides
+
+Sterling ships built-in defaults you can layer onto:
+
+```typescript
+import { sterling } from "silvery/theme"
+
+// Defaults — silvery's baseline (no input)
+const theme = sterling.defaults("dark")
+
+// Defaults plus per-role overrides
+const theme = sterling.theme(
+  {
+    accent: { bg: "#5B8DEF" },
+    error: { fg: "#bf616a" },
+  },
+  { mode: "dark" },
+)
+```
+
+#### Full manual scheme
+
+For complete control, provide all 22 colors as a `ColorScheme` and derive:
+
+```typescript
+import { sterling } from "silvery/theme"
+import type { ColorScheme } from "silvery/theme"
+
+const myScheme: ColorScheme = {
+  name: "my-scheme",
+  dark: true,
+  black: "#1a1b26",
+  red: "#f7768e",
+  green: "#9ece6a",
+  yellow: "#e0af68",
+  blue: "#7aa2f7",
+  magenta: "#bb9af7",
+  cyan: "#7dcfff",
+  white: "#a9b1d6",
+  brightBlack: "#414868",
+  brightRed: "#f7768e",
+  brightGreen: "#9ece6a",
+  brightYellow: "#e0af68",
+  brightBlue: "#7aa2f7",
+  brightMagenta: "#bb9af7",
+  brightCyan: "#7dcfff",
+  brightWhite: "#c0caf5",
+  foreground: "#c0caf5",
+  background: "#1a1b26",
+  cursorColor: "#c0caf5",
+  cursorText: "#1a1b26",
+  selectionBackground: "#33467c",
+  selectionForeground: "#c0caf5",
+}
+
+const theme = sterling.deriveFromScheme(myScheme)
+```
+
+See the [ColorScheme type definition](/reference/theme#colorscheme-22-colors) for all fields, the [Color Schemes guide](/reference/color-schemes) for the broader model, and the [Sterling primer](/reference/sterling#deriveoptions) for `DeriveOptions` (`contrast`, `pins`, `trace`, `mode`).
+
+#### Pinning specific tokens
+
+If auto-lift is adjusting a token you want untouched, pin it explicitly. Pins accept either nested or flat path syntax:
+
+```typescript
+const theme = sterling.deriveFromScheme(myScheme, {
+  pins: {
+    "accent.bg": "#5B8DEF", // nested
+    "fg-on-error": "#FFFFFF", // flat
+  },
+})
+```
+
+#### Strict-mode contrast checking
+
+Use `contrast: "strict"` in tests to catch palettes that fail WCAG AA:
+
+```typescript
+const theme = sterling.deriveFromScheme(myScheme, { contrast: "strict" })
+// Throws SterlingContrastError on AA failure of core role pairs.
+```
+
+### CLI Usage
+
+For non-React CLI output (spinners, log messages, progress lines), use `@silvery/ansi` instead of chalk. It resolves the same `$tokens` without React:
+
+```typescript
+import { createStyle } from "@silvery/ansi"
+import { sterling, nord } from "silvery/theme"
+
+const theme = sterling.deriveFromScheme(nord)
+const s = createStyle({ theme })
+
+console.log(s["fg-accent"]("deploy") + " " + s["fg-muted"]("starting..."))
+console.log(s["fg-success"]("done") + " " + s["fg-muted"]("(3 files)"))
+console.log(s.bold["fg-error"]("FAIL") + " missing dependency")
+```
+
+Without a theme, token names fall back to sensible ANSI colors. See the [@silvery/ansi reference](/reference/style) for the full chainable API.
+
+### Color Level Degradation
+
+silvery detects the terminal's color capabilities and adapts automatically. The same `$token` code works everywhere — only the visual fidelity changes.
+
+| Level       | Colors | When                                      | Token Resolution                           |
+| ----------- | ------ | ----------------------------------------- | ------------------------------------------ |
+| `truecolor` | 16M    | Modern terminals (Ghostty, Kitty, iTerm2) | Hex blending, contrast-adjusted derivation |
+| `256`       | 256    | Older terminals, some SSH sessions        | Hex values downsampled to nearest 256      |
+| `basic`     | 16     | Very old terminals, CI, pipes             | Direct ANSI color name mapping             |
+
+Detection is automatic. Override with environment variables:
+
+```bash
+FORCE_COLOR=1   # Force basic (16 colors)
+FORCE_COLOR=2   # Force 256 colors
+FORCE_COLOR=3   # Force truecolor
+NO_COLOR=1      # Disable all color
+```
+
+See the [Capability Tiers reference](/reference/capability-tiers) for the full opt-out matrix.
+
+#### Pre-built Themes
+
+Four themes ship pre-derived for instant use:
+
+```typescript
+import {
+  ansi16DarkTheme,
+  ansi16LightTheme,
+  defaultDarkTheme,
+  defaultLightTheme,
+  getThemeByName,
+} from "silvery/theme"
+
+const theme = getThemeByName("dark-truecolor") // defaultDarkTheme
+const light = getThemeByName("light-ansi16") // ansi16LightTheme
+const catppuccin = getThemeByName("catppuccin-mocha") // derived on access
+```
+
+### Terminal Palette Detection
+
+silvery reads the terminal's actual colors at startup via OSC escape sequences (OSC 4 for ANSI colors, OSC 10/11 for fg/bg). This means a Dracula user gets Dracula colors and a Nord user gets Nord colors — automatically.
+
+```typescript
+import { detectTheme, getSchemeByName } from "silvery/theme"
+
+// Manual detection with a custom fallback
+const theme = await detectTheme({
+  fallback: getSchemeByName("nord"),
+})
+```
+
+Supported terminals: Ghostty, Kitty, WezTerm, iTerm2, foot, Alacritty, xterm. Falls back gracefully in tmux, CI, and pipe environments.
+
+`detectTheme` is Sterling-aware — its result has flat hyphen-keys baked, so `$bg-accent` etc. resolve immediately without an explicit augment call.
+
+### Color Scheme Detection (Mode 2031)
+
+silvery can detect whether the terminal is in dark or light mode using Mode 2031 — a terminal protocol where the terminal self-reports its color scheme. This works cross-platform (Linux, Windows Terminal, SSH sessions), unlike the macOS-only `AppleInterfaceStyle` approach.
+
+```typescript
+import { createBgModeDetector } from "@silvery/ansi"
+
+using detector = createBgModeDetector({
+  write: (data) => process.stdout.write(data),
+  onData: (handler) => {
+    process.stdin.on("data", handler)
+    return () => process.stdin.off("data", handler)
+  },
+  fallback: () => "dark",
+})
+
+detector.start()
+detector.subscribe((scheme) => {
+  console.log("Color scheme changed:", scheme)
+})
+```
+
+**Supported terminals:** Contour, foot, WezTerm (1.0+), and growing. Terminals that don't support Mode 2031 are handled gracefully via the timeout + fallback mechanism.
+
+### Debugging Themes
+
+Pass `trace: true` to any Sterling derivation entry point to see how each token was produced:
+
+```typescript
+import { sterling, nord } from "silvery/theme"
+
+const theme = sterling.deriveFromScheme(nord, { trace: true })
+
+for (const step of theme.derivationTrace ?? []) {
+  console.log(`${step.token}: ${step.rule} → ${step.output}`, step.inputs)
+  if (step.liftedFrom) {
+    console.log(`  (auto-lifted from ${step.liftedFrom})`)
+  }
+}
+```
+
+Each step records the token path, the rule that produced it, the inputs, the output, and `liftedFrom` if `auto-lift` adjusted the value to meet contrast.
+
 ## See Also
 
 - **[Sterling](/reference/sterling)** — silvery's canonical design system: roles, flat tokens, derivation entry points, full migration map.
@@ -768,3 +1099,6 @@ CSS [`field-sizing`](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizi
 - **[Color Schemes](/reference/color-schemes)** — the 22-slot scheme model, derivation entry points, and the 84+ bundled schemes.
 - **[Capability Tiers](/reference/capability-tiers)** — how tokens render at truecolor / 256 / ANSI 16 / monochrome, and the four opt-out modes (`NO_COLOR`, `SILVERY_COLOR=mono|plain`, `SILVERY_STRIP_ALL`).
 - **[Custom Tokens](/reference/custom-tokens)** — `defineTokens()` for app-specific semantic tokens and brand colors with proper fallbacks.
+- **[@silvery/theme reference](/reference/theme)** — full type definitions, derivation rules, built-in palettes.
+- **[@silvery/ansi reference](/reference/style)** — chainable CLI styling API.
+- **[Theme Explorer](/themes)** — browse all 84 color schemes interactively.

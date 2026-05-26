@@ -297,7 +297,7 @@ For TypeScript code that read fields off `Theme` directly:
 
 - **[Styling](/guide/styling)** — components, presets, anti-patterns. The day-to-day rules.
 - **[Token Taxonomy](/reference/token-taxonomy)** — the decision tree: `$brand` vs `$red` vs `$error` vs `$color1` vs `$fg-accent`.
-- **[Theming](/guide/theming)** — `ThemeProvider`, `Box theme={}`, switching schemes at runtime.
+- **[Theming](/guide/styling)** — `ThemeProvider`, `Box theme={}`, switching schemes at runtime.
 - **[Color Schemes](/reference/color-schemes)** — the 22-slot terminal scheme model that feeds Sterling.
 - **[@silvery/theme reference](/reference/theme)** — full type definitions for ColorScheme, Theme, DesignSystem.
 - **[Custom Tokens](/reference/custom-tokens)** — `defineTokens()` for app-specific roles on top of Sterling.
