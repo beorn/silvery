@@ -46,6 +46,12 @@ All layers work in both Node.js and the browser — `createTerm()` abstracts the
 
 ## Layer 3: createApp()
 
+::: danger Coming Soon — Silvertea (`@silvery/create`)
+Layer 3 (`createApp()`, `pipe()`, providers, Zustand store integration) is part of **Silvertea**, the composable app layer that ships as `@silvery/create`. Silvertea is in active development and **not yet released**.
+
+For shipped state management today, use `useState` / `useReducer` / Zustand directly with the [Layer 2 `run()` runtime](#layer-1-createruntime).
+:::
+
 For apps with complex shared state, `createApp()` adds a Zustand store with centralized event handling. Components subscribe to individual slices of state -- no prop drilling, no unnecessary re-renders.
 
 Use `createApp()` when you have:

@@ -1,5 +1,11 @@
 # Plugin Architecture
 
+::: danger Coming Soon — Silvertea (`@silvery/create`)
+This page documents **Silvertea**, the plugin architecture that ships as `@silvery/create`. Silvertea is in active development — the `pipe()`, `withApp`, `withCommands`, `withFocus`, and other plugin APIs shown below are **not yet released**.
+
+For the shipped (`render()` + `run()` + hooks) shape, see [Getting Started](/getting-started/quick-start) and [The Silvery Way](/guide/the-silvery-way).
+:::
+
 Plugins are functions `(app) => enhancedApp` that compose via `pipe()`. The `.Root` component pattern lets plugins wrap the React element tree with providers.
 
 ## Core Concepts

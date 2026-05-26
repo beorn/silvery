@@ -1,5 +1,11 @@
 # Providers and Plugins
 
+::: danger Coming Soon — Silvertea (`@silvery/create`)
+Providers (`pipe()`, `createApp`, `withReact`, `withTerminal`, `withFocus`, `withDomEvents`, …) are part of **Silvertea**, the composable app layer that ships as `@silvery/create`. Silvertea is in active development — the APIs documented below are **not yet released**.
+
+For shipped composition today, use [`render()`](/api/render) + [`run()`](/guide/runtime-getting-started) with standard React state primitives.
+:::
+
 Silvery apps are built by composing **providers** — small functions that each add one capability to the app object. Providers are composed left-to-right using `pipe()`.
 
 ## pipe() Composition

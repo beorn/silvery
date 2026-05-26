@@ -1,5 +1,11 @@
 # App Composition
 
+::: danger Coming Soon — Silvertea (`@silvery/create`)
+This page documents **Silvertea**, the composable app layer that ships as `@silvery/create`. Silvertea is in active development — the `createApp()`, `pipe()`, plugin, and TEA APIs shown below are **not yet released**.
+
+For shipped composition today, see [`render()`](/api/render) + [`run()`](/guide/runtime-getting-started). For the graduated path through state and events, see [Building an App](/guides/terminal-apps).
+:::
+
 How silvery apps are built, piece by piece.
 
 ## Simple Apps
