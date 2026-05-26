@@ -26,6 +26,33 @@ describe("WheelGestureFilter", () => {
     expect(deltas(filter.process({ t: 132, deltaY: -1 }))).toEqual([-1, -1, -1])
   })
 
+  test("interleaved inertia cannot starve an intentional reversal", () => {
+    const filter = createWheelGestureFilter()
+
+    for (let i = 0; i < 5; i++) filter.process({ t: i * 16, deltaY: 1 })
+
+    expect(deltas(filter.process({ t: 100, deltaY: -1 }))).toEqual([])
+    expect(deltas(filter.process({ t: 116, deltaY: 1 }))).toEqual([1])
+    expect(deltas(filter.process({ t: 132, deltaY: -1 }))).toEqual([])
+    expect(deltas(filter.process({ t: 148, deltaY: 1 }))).toEqual([1])
+    expect(deltas(filter.process({ t: 164, deltaY: -1 }))).toEqual([-1, -1, -1])
+  })
+
+  test("sparse interleaved bounce does not overturn a slow drag", () => {
+    const filter = createWheelGestureFilter()
+
+    for (let i = 0; i < 5; i++) filter.process({ t: i * 80, deltaY: -1 })
+
+    expect(deltas(filter.process({ t: 400, deltaY: 1 }))).toEqual([])
+    expect(deltas(filter.process({ t: 496, deltaY: -1 }))).toEqual([-1])
+    expect(deltas(filter.process({ t: 497, deltaY: 1 }))).toEqual([])
+    expect(deltas(filter.process({ t: 596, deltaY: -1 }))).toEqual([-1])
+    expect(deltas(filter.process({ t: 640, deltaY: 1 }))).toEqual([])
+    expect(deltas(filter.process({ t: 723, deltaY: 1 }))).toEqual([])
+    expect(deltas(filter.process({ t: 733, deltaY: -1 }))).toEqual([-1])
+    expect(deltas(filter.process({ t: 833, deltaY: 1 }))).toEqual([])
+  })
+
   test("confirms reversal after two opposite samples for a short stream", () => {
     const filter = createWheelGestureFilter()
 
