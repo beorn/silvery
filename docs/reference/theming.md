@@ -1,6 +1,6 @@
 # Theming Reference
 
-`$token` shorthand, special values, the `Box theme={…}` prop, `ThemeProvider`, and `useTheme()` — the React-side reference for working with [Sterling](/guide/sterling) themes in components.
+`$token` shorthand, special values, the `Box theme={…}` prop, `ThemeProvider`, and `useTheme()` — the React-side reference for working with [Sterling](/reference/sterling) themes in components.
 
 For the underlying type system (`Theme`, `ColorScheme`, `DesignSystem`, derivation rules), see the [@silvery/theme reference](/reference/theme). For day-to-day styling discipline, see the [Styling guide](/guide/styling).
 
@@ -192,7 +192,7 @@ For exact ANSI parity — syntax highlighters, git diff viewers:
 
 ## Progressive Enhancement
 
-The same token vocabulary works across all terminal capability tiers — see [Capability Tiers](/guide/capability-tiers).
+The same token vocabulary works across all terminal capability tiers — see [Capability Tiers](/reference/capability-tiers).
 
 ### ANSI 16 (baseline)
 
@@ -204,7 +204,7 @@ Truecolor hex values are downsampled to the nearest 256-cube color (indices 16�
 
 ### Truecolor (24-bit)
 
-Full Sterling derivation with OKLCH-native blends and contrast-aware auto-lift. See the [Sterling primer](/guide/sterling) for the role expansion and the [theme reference](/reference/theme#derivation-rules-truecolor) for the per-token derivation table.
+Full Sterling derivation with OKLCH-native blends and contrast-aware auto-lift. See the [Sterling primer](/reference/sterling) for the role expansion and the [theme reference](/reference/theme#derivation-rules-truecolor) for the per-token derivation table.
 
 ## ThemeProvider
 
@@ -283,7 +283,7 @@ silvery 0.19.x had a flatter `Theme` interface with single-hex role fields (`the
 
 Legacy `$tokens` (`$primary`, `$muted`, `$selectionbg`, …) keep resolving through 0.20.x via `resolveToken`'s direct kebab lookup. Migrate during this window — they're removed in 0.21.0.
 
-The full migration map (both `$token` strings and TypeScript dot-access fields) lives in the [Sterling primer](/guide/sterling#migrating-from-pre-0-20-0).
+The full migration map (both `$token` strings and TypeScript dot-access fields) lives in the [Sterling primer](/reference/sterling#migrating-from-pre-0-20-0).
 
 ## Built-in Themes
 
@@ -306,8 +306,8 @@ const theme = getThemeByName("dark-ansi16")
 
 ## Related
 
-- **[Sterling primer](/guide/sterling)** — design-system fundamentals: roles, flat tokens, derivation entry points, migration.
+- **[Sterling primer](/reference/sterling)** — design-system fundamentals: roles, flat tokens, derivation entry points, migration.
 - **[@silvery/theme reference](/reference/theme)** — type definitions, derivation rules, color utilities.
 - **[Theming guide](/guide/theming)** — using schemes, switching at runtime, custom themes.
 - **[Styling guide](/guide/styling)** — when to use which token, anti-patterns, contrast guarantees.
-- **[Token Taxonomy](/guide/token-taxonomy)** — the decision tree for picking the right token.
+- **[Token Taxonomy](/reference/token-taxonomy)** — the decision tree for picking the right token.

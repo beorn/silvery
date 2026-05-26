@@ -16,7 +16,7 @@ Layer 2:  Theme         →  Sterling roles + flat hyphen-keys      — what you
 Every UI token you style with (`$fg-accent`, `$fg-muted`, `$fg-success`, …) resolves back to a slot in the user's color scheme. When the terminal changes theme, tokens re-resolve automatically.
 
 ::: info Sterling derivation
-silvery 0.20.0 ships [Sterling](/guide/sterling) as THE Theme. Layer 2 here is the Sterling-shaped object emitted by `sterling.deriveFromScheme(...)` — nested roles plus flat tokens on the same frozen object.
+silvery 0.20.0 ships [Sterling](/reference/sterling) as THE Theme. Layer 2 here is the Sterling-shaped object emitted by `sterling.deriveFromScheme(...)` — nested roles plus flat tokens on the same frozen object.
 :::
 
 ## The ColorScheme shape
@@ -76,7 +76,7 @@ const theme = sterling.deriveFromScheme(dracula)
 
 Derivation is OKLCH-native throughout — blends, lightness adjustments, and hue rotations happen in the perceptually-uniform OKLCH color space. The result: tokens look visually balanced regardless of which scheme you start with.
 
-Sterling exposes five derivation entry points (`deriveFromScheme`, `deriveFromColor`, `deriveFromPair`, `deriveFromSchemeWithBrand`, `defaults`) — see the [Sterling primer](/guide/sterling#building-a-theme) for the full menu.
+Sterling exposes five derivation entry points (`deriveFromScheme`, `deriveFromColor`, `deriveFromPair`, `deriveFromSchemeWithBrand`, `defaults`) — see the [Sterling primer](/reference/sterling#building-a-theme) for the full menu.
 
 ### Contrast auto-lift
 

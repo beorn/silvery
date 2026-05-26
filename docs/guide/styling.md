@@ -5,9 +5,9 @@ _Colors, typography, and component defaults for the shiniest Silvery apps_
 Colors tarnish fast. Typography gets inconsistent. A hardcoded `"red"` here, a `"$fg-success"` where you meant "brand emphasis" there — suddenly your UI is a patchwork that breaks on every theme. These principles keep your apps **shiny**.
 
 ::: info Sterling is the system
-Silvery 0.20.0 ships [Sterling](/guide/sterling) as **THE Theme**. The tokens used below — `$fg-accent`, `$fg-muted`, `$bg-surface-subtle`, `$border-focus`, `$bg-selected`, `$fg-on-error` — are Sterling's flat hyphen-keys. Every silvery component already speaks them.
+Silvery 0.20.0 ships [Sterling](/reference/sterling) as **THE Theme**. The tokens used below — `$fg-accent`, `$fg-muted`, `$bg-surface-subtle`, `$border-focus`, `$bg-selected`, `$fg-on-error` — are Sterling's flat hyphen-keys. Every silvery component already speaks them.
 
-Migrating from silvery 0.19.x? Legacy `$tokens` (`$primary`, `$muted`, `$selectionbg`, …) keep resolving through 0.20.x via a kebab-fallback path. Migrate during this window — they're removed in 0.21.0. The full map is in the [Sterling primer](/guide/sterling#token-migration-map).
+Migrating from silvery 0.19.x? Legacy `$tokens` (`$primary`, `$muted`, `$selectionbg`, …) keep resolving through 0.20.x via a kebab-fallback path. Migrate during this window — they're removed in 0.21.0. The full map is in the [Sterling primer](/reference/sterling#token-migration-map).
 :::
 
 ## 1. Don't Specify Colors
@@ -339,7 +339,7 @@ In a 16-color terminal, these might all look yellow. Without icons, there's no w
 
 Sterling collapses the legacy `$primary` / `$accent` distinction onto a single role: **`accent` is the canonical interactive-text role**. Use `$fg-accent` for headings, links, focus indicators, primary action buttons — anything where "this is the brand color, look here" is the intent.
 
-For **app-specific identity** (your logo, signature chrome) use `$brand` — defined separately so apps can pin a fixed color without overriding scheme-derived `$fg-accent`. See [Token Taxonomy](/guide/token-taxonomy#app-identity-brand).
+For **app-specific identity** (your logo, signature chrome) use `$brand` — defined separately so apps can pin a fixed color without overriding scheme-derived `$fg-accent`. See [Token Taxonomy](/reference/token-taxonomy#app-identity-brand).
 
 | Good use                                  | Why `$fg-accent`        |
 | ----------------------------------------- | ----------------------- |
@@ -375,7 +375,7 @@ For **app-specific identity** (your logo, signature chrome) use `$brand` — def
 If you can't explain why this element needs accent emphasis, you probably want `$fg` or `$fg` + `bold` instead.
 :::
 
-→ [Token Taxonomy](/guide/token-taxonomy)
+→ [Token Taxonomy](/reference/token-taxonomy)
 
 ## 7. Let Components Handle Borders
 
@@ -513,7 +513,7 @@ Palette colors for UI chrome strips them of their data-categorization role. Usin
 
 In truecolor mode, each theme curates the 16 palette colors for visual harmony — equal-weight hues that look cohesive together. Sterling's categorical hue ring (`$red`–`$pink`) goes a step further with OKLCH contrast-adjustment per scheme. Your component code stays the same; the theme does the heavy lifting.
 
-→ [Token Taxonomy](/guide/token-taxonomy#categorical-color-ring) · [Palette reference](/reference/theming#content-palette)
+→ [Token Taxonomy](/reference/token-taxonomy#categorical-color-ring) · [Palette reference](/reference/theming#content-palette)
 
 ## 9. Color Inheritance and Mixing
 
@@ -763,8 +763,8 @@ CSS [`field-sizing`](https://developer.mozilla.org/en-US/docs/Web/CSS/field-sizi
 
 ## See Also
 
-- **[Sterling](/guide/sterling)** — silvery's canonical design system: roles, flat tokens, derivation entry points, full migration map.
-- **[Token Taxonomy](/guide/token-taxonomy)** — every token category silvery ships and the decision tree for which to use (`$brand` vs `$red` vs `$fg-error` vs `$color1` vs `$fg-accent`).
-- **[Color Schemes](/guide/color-schemes)** — the 22-slot scheme model, derivation entry points, and the 84+ bundled schemes.
-- **[Capability Tiers](/guide/capability-tiers)** — how tokens render at truecolor / 256 / ANSI 16 / monochrome, and the four opt-out modes (`NO_COLOR`, `SILVERY_COLOR=mono|plain`, `SILVERY_STRIP_ALL`).
-- **[Custom Tokens](/guide/custom-tokens)** — `defineTokens()` for app-specific semantic tokens and brand colors with proper fallbacks.
+- **[Sterling](/reference/sterling)** — silvery's canonical design system: roles, flat tokens, derivation entry points, full migration map.
+- **[Token Taxonomy](/reference/token-taxonomy)** — every token category silvery ships and the decision tree for which to use (`$brand` vs `$red` vs `$fg-error` vs `$color1` vs `$fg-accent`).
+- **[Color Schemes](/reference/color-schemes)** — the 22-slot scheme model, derivation entry points, and the 84+ bundled schemes.
+- **[Capability Tiers](/reference/capability-tiers)** — how tokens render at truecolor / 256 / ANSI 16 / monochrome, and the four opt-out modes (`NO_COLOR`, `SILVERY_COLOR=mono|plain`, `SILVERY_STRIP_ALL`).
+- **[Custom Tokens](/reference/custom-tokens)** — `defineTokens()` for app-specific semantic tokens and brand colors with proper fallbacks.

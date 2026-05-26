@@ -117,4 +117,4 @@ Call order matters: `term.console.capture()` first, then `term.output.activate()
 
 - [term.console](/api/term-console) — console.\* capture + replay
 - [term.modes](/api/term-modes) — protocol-mode setup (called before `activate`)
-- [Term — the I/O umbrella](/guide/term)
+- [Term — the I/O umbrella](/reference/term)

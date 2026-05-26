@@ -160,4 +160,4 @@ When the component unmounts (or the scope otherwise disposes), the SIGINT handle
 
 - [Scope — structured concurrency for resources](/guide/scope) — how `term.signals.on(...)` composes with `useScopeEffect` and `withScope()`
 - [term.modes](/api/term-modes) — most cleanup handlers ultimately tear down a mode (alt screen, raw mode)
-- [Term — the I/O umbrella](/guide/term)
+- [Term — the I/O umbrella](/reference/term)

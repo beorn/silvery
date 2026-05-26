@@ -9,7 +9,7 @@ ColorScheme (22) → sterling.deriveFromScheme() → Theme (nested roles + flat 
 Components never reference raw colors directly. They use `$token` strings (`color="$fg-accent"`) that resolve against the active theme at render time. This decouples UI code from any specific palette.
 
 ::: info Sterling is THE Theme
-As of silvery 0.20.0, `export type Theme = SterlingTheme`. The legacy single-hex `Theme` interface is gone. See the [Sterling primer](/guide/sterling) for the full design-system surface and the [migration map](/guide/sterling#migrating-from-pre-0-20-0) if you're upgrading from 0.19.x.
+As of silvery 0.20.0, `export type Theme = SterlingTheme`. The legacy single-hex `Theme` interface is gone. See the [Sterling primer](/reference/sterling) for the full design-system surface and the [migration map](/reference/sterling#migrating-from-pre-0-20-0) if you're upgrading from 0.19.x.
 :::
 
 ## ColorScheme (22 Colors)
@@ -176,7 +176,7 @@ import type { Theme } from "@silvery/theme"
 // AND flat hyphen-keys reference the same string on the same object.
 ```
 
-See [`Theme`](/guide/sterling#the-shape) in the Sterling primer for the full structural breakdown, or `packages/ansi/src/sterling/types.ts` for the source of truth.
+See [`Theme`](/reference/sterling#the-shape) in the Sterling primer for the full structural breakdown, or `packages/ansi/src/sterling/types.ts` for the source of truth.
 
 ## Sterling DesignSystem
 
@@ -580,9 +580,9 @@ sterling.deriveFromScheme()    contrast targets, OKLCH blending,
 
 ## Related
 
-- **[Sterling primer](/guide/sterling)** — design-system fundamentals: roles, flat tokens, derivation entry points, full migration map.
+- **[Sterling primer](/reference/sterling)** — design-system fundamentals: roles, flat tokens, derivation entry points, full migration map.
 - **[Theming guide](/guide/theming)** — using schemes, switching at runtime, brand overlays, custom themes.
 - **[Theming reference](/reference/theming)** — `$token` shorthand on Box / Text, special values (`inherit`, `mix()`).
 - **[Styling guide](/guide/styling)** — when to use tokens vs letting components handle it.
-- **[Color Schemes guide](/guide/color-schemes)** — the 22-slot scheme model and the 84+ bundled schemes.
+- **[Color Schemes guide](/reference/color-schemes)** — the 22-slot scheme model and the 84+ bundled schemes.
 - **[@silvery/ansi style reference](/reference/style)** — CLI styling API.

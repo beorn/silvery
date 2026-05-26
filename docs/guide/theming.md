@@ -2,9 +2,9 @@
 
 _How to use schemes, tokens, and theme switching in your Silvery apps_
 
-Silvery auto-detects your terminal's color palette and runs it through [Sterling](/guide/sterling) — silvery's canonical design system — to produce a complete theme. Your app matches whatever the user has configured (Dracula, Nord, Catppuccin, etc.) with zero work on your end. This guide shows you how to take control when you need to.
+Silvery auto-detects your terminal's color palette and runs it through [Sterling](/reference/sterling) — silvery's canonical design system — to produce a complete theme. Your app matches whatever the user has configured (Dracula, Nord, Catppuccin, etc.) with zero work on your end. This guide shows you how to take control when you need to.
 
-For type definitions and derivation rules, see the [@silvery/theme reference](/reference/theme). For the design-system fundamentals, see the [Sterling primer](/guide/sterling).
+For type definitions and derivation rules, see the [@silvery/theme reference](/reference/theme). For the design-system fundamentals, see the [Sterling primer](/reference/sterling).
 
 ## Quick Start
 
@@ -215,7 +215,7 @@ function App() {
 
 ## Custom Themes
 
-Sterling exposes the [DesignSystem contract](/guide/sterling#authoring-an-alternative-designsystem) with five entry points — pick the one that matches what you have.
+Sterling exposes the [DesignSystem contract](/reference/sterling#authoring-an-alternative-designsystem) with five entry points — pick the one that matches what you have.
 
 ### From a single seed color
 
@@ -306,7 +306,7 @@ const myScheme: ColorScheme = {
 const theme = sterling.deriveFromScheme(myScheme)
 ```
 
-See the [ColorScheme type definition](/reference/theme#colorscheme-22-colors) for all fields, the [Color Schemes guide](/guide/color-schemes) for the broader model, and the [Sterling primer](/guide/sterling#deriveoptions) for `DeriveOptions` (`contrast`, `pins`, `trace`, `mode`).
+See the [ColorScheme type definition](/reference/theme#colorscheme-22-colors) for all fields, the [Color Schemes guide](/reference/color-schemes) for the broader model, and the [Sterling primer](/reference/sterling#deriveoptions) for `DeriveOptions` (`contrast`, `pins`, `trace`, `mode`).
 
 ### Pinning specific tokens
 
@@ -449,7 +449,7 @@ Each step records the token path, the rule that produced it, the inputs, the out
 
 ## Further Reading
 
-- **[Sterling primer](/guide/sterling)** — silvery's canonical design system: roles, flat tokens, derivation entry points, full migration map.
+- **[Sterling primer](/reference/sterling)** — silvery's canonical design system: roles, flat tokens, derivation entry points, full migration map.
 - [@silvery/theme reference](/reference/theme) — full type definitions, derivation rules, built-in palettes
 - [Theming reference](/reference/theming) — `$token` shorthand, special values, `ThemeProvider` API
 - [Styling guide](/guide/styling) — when to use tokens vs letting components handle it
