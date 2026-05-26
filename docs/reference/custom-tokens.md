@@ -126,4 +126,4 @@ Note: `ThemeProvider`'s `customTokens` prop wiring is currently part of the desi
 - **[Token Taxonomy](./token-taxonomy)** — decision tree for picking the right built-in token before reaching for `defineTokens()`
 - [Color Schemes](./color-schemes) — what `scheme` + `theme` arguments carry
 - [Capability Tiers](./capability-tiers) — how tiers resolve to rgb / ansi16 / attrs
-- [Styling Guide](./styling) — built-in tokens and when to use them
+- [Styling Guide](../guide/styling.md) — built-in tokens and when to use them

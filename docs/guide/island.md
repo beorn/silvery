@@ -123,7 +123,7 @@ interface IslandCapabilities {
 }
 ```
 
-Per-island prop overrides intersect with the guest's declarations. Overrides can only narrow (drop a capability), never add one the guest didn't declare. A `<Island capabilities={{ input: false }} guest={ptyGuest({ ... })} />` gives a read-only mirror view of a PTY child even when the guest itself could take input.
+Per-island prop overrides intersect with the guest's declarations. Overrides can only narrow (drop a capability), never add one the guest didn't declare. Setting the Island `capabilities` prop to disable `input` gives a read-only mirror view of a PTY child even when the guest itself could take input.
 
 ## IslandHandle: sub-owners
 
@@ -499,7 +499,7 @@ Nested islands are possible by construction. The aggregator walks every island o
 
 ## See also
 
-- [docs/reference/term.md](./term.md) — the parent `Term.input` / `Term.output` / `Term.modes` pattern islands recursively implement
+- [docs/reference/term.md](../reference/term.md) — the parent `Term.input` / `Term.output` / `Term.modes` pattern islands recursively implement
 - [docs/guide/scope.md](./scope.md) — the Scope primitive `<Island>` uses for lifecycle (`useScopeEffect` + `ctx.abortSignal`)
 - [docs/guide/debugging.md](./debugging.md) — full SILVERY_STRICT slug table including the 7 island slugs
 - `@km/silvery/15646-islands` — the full epic body (design, P0 landmines, /pro decisions, phases)

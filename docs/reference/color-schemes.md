@@ -194,4 +194,4 @@ Criteria: total OKLCH ΔE < 30 AND max per-slot ΔE < 8. Both must pass — the 
 - **[Token Taxonomy](./token-taxonomy)** — when to use `$brand` vs `$red` vs `$fg-error` vs `$color1` vs `$fg-accent`. The decision tree for every token category.
 - [Capability Tiers](./capability-tiers) — truecolor / 256 / ANSI16 / mono degradation
 - [Custom Tokens](./custom-tokens) — extending the theme with app-specific semantic tokens
-- [Styling Guide](./styling) — using tokens in components
+- [Styling Guide](../guide/styling.md) — using tokens in components

@@ -306,7 +306,7 @@ Add `data-component="X"` to any component you want render-path-addressable. The 
 
 | Bug shape                                             | Reach for                                           |
 | ----------------------------------------------------- | --------------------------------------------------- |
-| "component X jumps after first paint"                 | [CLS](./cls.md) — detects SHIFTS                    |
+| "component X jumps after first paint"                 | [CLS](../reference/cls.md) — detects SHIFTS         |
 | "component X mounted in wrong lane / parent"          | render-path — answers WHERE                         |
 | "component X mounted, then immediately unmounted"     | `DEBUG=silvery:mount` — mount/update/unmount events |
 | "what was the parent chain at the moment of the bug?" | render-path on `app.getContainer()`                 |

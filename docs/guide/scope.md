@@ -749,4 +749,4 @@ One primitive. Three patterns. Every disposable in the app has a clear owner.
 - `@silvery/ag-react` — `packages/ag-react/src/hooks/{useScope,useAppScope,useScopeEffect}.ts` and `packages/ag-react/src/ScopeProvider.tsx`
 - [TC39 explicit resource management](https://github.com/tc39/proposal-explicit-resource-management) — the underlying `using` / `await using` proposal
 - [The Silvery Way](./the-silvery-way.md) — the broader principles `Scope` falls out of
-- [Term I/O umbrella](./term.md) — `term.signals`, `term.input`, and the rest of the terminal sub-owners that `Scope` composes with
+- [Term I/O umbrella](../reference/term.md) — `term.signals`, `term.input`, and the rest of the terminal sub-owners that `Scope` composes with
