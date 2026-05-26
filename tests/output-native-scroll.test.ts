@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest"
 import { TerminalBuffer } from "../packages/ag-term/src/buffer.ts"
-import { outputPhase, replayAnsiWithStyles } from "../packages/ag-term/src/pipeline/output-phase.ts"
+import { outputPhase } from "../packages/ag-term/src/pipeline/output-phase.ts"
+import { replayAnsiWithStyles } from "../packages/ag-term/src/pipeline/output-verify.ts"
 
 function writeRow(buffer: TerminalBuffer, y: number, text: string): void {
   for (let x = 0; x < buffer.width; x++) {

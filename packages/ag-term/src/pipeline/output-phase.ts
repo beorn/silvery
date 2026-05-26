@@ -68,8 +68,9 @@ function isHybridOutputEnabled(): boolean {
 let _debugFrameCount = 0
 let _captureRawFrameCount = 0
 
-// Re-export verification functions for external consumers (test files import from output-phase)
-export { replayAnsiWithStyles } from "./output-verify"
+// Re-export verification types only. `replayAnsiWithStyles` is internal —
+// tests that need it import from `./output-verify` directly. Bead:
+// km-silvery.unexport-replay-ansi-with-styles.
 export type { StyledCell } from "./output-verify"
 // Wrap captureStrictFailureArtifacts to bind bufferToAnsi (avoids circular dep in output-verify.ts)
 export function captureStrictFailureArtifacts(
