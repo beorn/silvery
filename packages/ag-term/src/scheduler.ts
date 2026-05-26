@@ -36,7 +36,7 @@ import {
   type CursorRect,
 } from "@silvery/ag/layout-signals"
 import { findActiveCursorNode, resolveCaretStyle } from "./caret-style"
-import { copyToClipboard as copyToClipboardImpl } from "./clipboard"
+import { createOsc52Backend } from "./clipboard"
 import { ANSI, notify as notifyTerminal, setCursorStyle, resetCursorStyle } from "./output"
 import type { PipelineConfig } from "./pipeline"
 import { outputPhase } from "./pipeline/output-phase"
@@ -426,9 +426,10 @@ export class RenderScheduler {
    */
   copyToClipboard(text: string): void {
     if (this.disposed) return
-    // Route through writeOutput so the output guard allows it through
-    const writable = { write: (data: string) => this.writeOutput(data) } as NodeJS.WriteStream
-    copyToClipboardImpl(writable, text)
+    // Route through writeOutput so the output guard allows it through.
+    // Uses createOsc52Backend (the canonical ClipboardBackend factory).
+    const writable = { write: (data: string) => this.writeOutput(data) }
+    createOsc52Backend(writable).write({ text })
   }
 
   /**

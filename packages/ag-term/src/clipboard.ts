@@ -218,35 +218,6 @@ export function createCompositeClipboard(...backends: ClipboardBackend[]): Clipb
 }
 
 // ============================================================================
-// Backwards-compatible API (delegates to OSC 52)
-// ============================================================================
-
-/**
- * Copy text to the system clipboard via OSC 52.
- * Encodes the text as base64 and writes the OSC 52 sequence to stdout.
- *
- * @deprecated Use createOsc52Backend() for new code.
- * Deletion tracked: km-silvery.delete-clipboard-legacy-api
- */
-export function copyToClipboard(stdout: NodeJS.WriteStream, text: string): void {
-  const base64 = Buffer.from(text).toString("base64")
-  stdout.write(`${ESC}]52;c;${base64}${BEL}`)
-}
-
-/**
- * Request clipboard contents via OSC 52.
- * Writes the OSC 52 query sequence. The terminal will respond with
- * an OSC 52 response containing the clipboard contents as base64.
- * Use parseClipboardResponse() to decode the response.
- *
- * @deprecated Use createOsc52Backend() for new code.
- * Deletion tracked: km-silvery.delete-clipboard-legacy-api
- */
-export function requestClipboard(stdout: NodeJS.WriteStream): void {
-  stdout.write(`${ESC}]52;c;?${BEL}`)
-}
-
-// ============================================================================
 // Response Parsing
 // ============================================================================
 

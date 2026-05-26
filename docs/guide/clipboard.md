@@ -122,10 +122,11 @@ interface ClipboardBackend {
 The default backend uses the OSC 52 escape sequence to write to the system clipboard. This works across SSH sessions and in most modern terminals.
 
 ```tsx
-import { copyToClipboard } from "silvery"
+import { createOsc52Backend } from "silvery"
 
-// Write text to clipboard via OSC 52
-copyToClipboard(stdout, "Hello, clipboard!")
+// Construct an OSC 52 backend and write text to the system clipboard
+const backend = createOsc52Backend(stdout)
+backend.write({ text: "Hello, clipboard!" })
 ```
 
 **Terminal support**: iTerm2, kitty, Alacritty, WezTerm, Windows Terminal, Ghostty, and most modern terminals support OSC 52. Some have payload size limits. tmux requires `set -g set-clipboard on`.

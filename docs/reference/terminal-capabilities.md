@@ -668,23 +668,25 @@ Text is base64-encoded in the escape sequence. Terminals support both BEL (`\x07
 ### API
 
 ```tsx
-import { copyToClipboard, requestClipboard, parseClipboardResponse } from "@silvery/ag-term"
+import { createOsc52Backend, parseClipboardResponse } from "@silvery/ag-term"
+
+// Construct the OSC 52 backend over a writable stream
+const backend = createOsc52Backend(process.stdout)
 
 // Copy text to system clipboard
-copyToClipboard(process.stdout, "Hello, clipboard!")
+backend.write({ text: "Hello, clipboard!" })
 
 // Request clipboard contents (terminal sends response asynchronously)
-requestClipboard(process.stdout)
+void backend.read()
 
 // Parse the terminal's response
 const text = parseClipboardResponse(rawInput) // string | null
 ```
 
-| Function                 | Description                                                     |
-| ------------------------ | --------------------------------------------------------------- |
-| `copyToClipboard`        | Write base64-encoded text to clipboard via OSC 52               |
-| `requestClipboard`       | Send OSC 52 query to request clipboard contents                 |
-| `parseClipboardResponse` | Decode an OSC 52 response (handles both BEL and ST terminators) |
+| Function                 | Description                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| `createOsc52Backend`     | Construct a `ClipboardBackend` over a writable stream — `.write({text})` / `.read()`     |
+| `parseClipboardResponse` | Decode an OSC 52 response (handles both BEL and ST terminators)                          |
 
 ### Terminal Support
 
@@ -701,7 +703,7 @@ const text = parseClipboardResponse(rawInput) // string | null
 
 ### SSH Transparency
 
-OSC 52 is particularly useful over SSH because the escape sequence is forwarded through the SSH connection to the local terminal. The clipboard operation happens on the user's machine, not the remote server. This means `copyToClipboard` works even in remote sessions without any special configuration.
+OSC 52 is particularly useful over SSH because the escape sequence is forwarded through the SSH connection to the local terminal. The clipboard operation happens on the user's machine, not the remote server. This means `createOsc52Backend` works even in remote sessions without any special configuration.
 
 ## Bracketed Paste Mode
 
