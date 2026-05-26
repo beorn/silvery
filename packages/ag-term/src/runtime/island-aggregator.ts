@@ -19,9 +19,9 @@
  *   focusReporting); union-with-precedence mouse tracking; first-island-wins
  *   for cursor (there's only one cursor on screen).
  *
- * Phase 1 has no real consumers: no shipped app mounts an `<Island>`. The
- * aggregator returns `{}` and existing behavior is unchanged. Phase 3 (rec
- * adoption) is the first consumer.
+ * The runtime wires this into terminal protocol modes in Phase 1. No shipped
+ * app relies on non-empty island modes until the rec-overlay adoption, so
+ * existing non-island behavior stays unchanged.
  *
  * See bead `@km/silvery/15646-islands` — the host aggregator is what makes
  * islands compose with the existing app-level protocol-mode flags

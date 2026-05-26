@@ -540,6 +540,8 @@ export interface IslandLayoutProps {
   cols?: number
   /** Initial guest cell-grid height (cells). */
   rows?: number
+  /** Whether this island participates in tree focus navigation. */
+  focusable?: boolean
   /** Explicit layout slot width (cells or "N%"). Overrides `cols` for layout. */
   width?: number | string
   /** Explicit layout slot height. Overrides `rows` for layout. */

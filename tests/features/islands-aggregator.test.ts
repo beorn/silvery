@@ -186,4 +186,80 @@ describe("deriveProtocolModesFromFocusSubtree", () => {
       kittyKeyboard: true,
     })
   })
+
+  test("property: boolean modes OR across every focused ancestor", () => {
+    const root = makeNode("silvery-root")
+    const modes: Array<
+      keyof Pick<
+        IslandProtocolModes,
+        "altScreen" | "bracketedPaste" | "kittyKeyboard" | "focusReporting"
+      >
+    > = ["altScreen", "bracketedPaste", "kittyKeyboard", "focusReporting"]
+
+    let parent: AgNode = root
+    for (const mode of modes) {
+      const island = makeNode("silvery-island", parent)
+      attachIsland(island, { [mode]: true })
+      parent = island
+    }
+
+    expect(deriveProtocolModesFromFocusSubtree(parent)).toEqual({
+      altScreen: true,
+      bracketedPaste: true,
+      kittyKeyboard: true,
+      focusReporting: true,
+    })
+  })
+
+  test("property: mouse precedence is independent of nesting order", () => {
+    const modes: Array<NonNullable<IslandProtocolModes["mouseTracking"]>> = ["click", "any", "drag"]
+
+    for (const ordered of [modes, [...modes].reverse()]) {
+      const root = makeNode("silvery-root")
+      let parent: AgNode = root
+      for (const mode of ordered) {
+        const island = makeNode("silvery-island", parent)
+        attachIsland(island, { mouseTracking: mode })
+        parent = island
+      }
+      expect(deriveProtocolModesFromFocusSubtree(parent).mouseTracking).toBe("any")
+    }
+  })
+
+  test("property: mouseTracking off alone does not imply an enable request", () => {
+    const root = makeNode("silvery-root")
+    const island = makeNode("silvery-island", root)
+    attachIsland(island, { mouseTracking: "off" })
+
+    expect(deriveProtocolModesFromFocusSubtree(island).mouseTracking).toBe("off")
+  })
+
+  test("property: clearing a focused island handle disables all contributed modes", () => {
+    const root = makeNode("silvery-root")
+    const island = makeNode("silvery-island", root)
+    attachIsland(island, { kittyKeyboard: true, mouseTracking: "any", focusReporting: true })
+    expect(deriveProtocolModesFromFocusSubtree(island)).toEqual({
+      kittyKeyboard: true,
+      mouseTracking: "any",
+      focusReporting: true,
+    })
+
+    island.islandState!.handle = null
+    expect(deriveProtocolModesFromFocusSubtree(island)).toEqual({})
+  })
+
+  test("property: deepest cursor wins across three nested islands", () => {
+    const root = makeNode("silvery-root")
+    const outer = makeNode("silvery-island", root)
+    attachIsland(outer, { cursor: { shape: "underline", visible: true } })
+    const middle = makeNode("silvery-island", outer)
+    attachIsland(middle, { cursor: { shape: "bar", visible: true } })
+    const inner = makeNode("silvery-island", middle)
+    attachIsland(inner, { cursor: { shape: "block", visible: false } })
+
+    expect(deriveProtocolModesFromFocusSubtree(inner).cursor).toEqual({
+      shape: "block",
+      visible: false,
+    })
+  })
 })

@@ -351,6 +351,7 @@ export const Island = forwardRef(function Island(
       ref={nodeRef}
       cols={cols}
       rows={rows}
+      focusable={focusable}
       width={width}
       height={height}
       flexGrow={flexGrow}

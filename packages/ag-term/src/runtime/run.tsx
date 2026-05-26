@@ -636,6 +636,11 @@ export async function run(
       element
     )
   const app = createApp(() => () => ({}))
+  const kittyOption = Object.prototype.hasOwnProperty.call(rest, "kitty")
+    ? rest.kitty
+    : caps.kittyKeyboard
+      ? true
+      : undefined
   const handle = await app.run(themed, {
     ...rest,
     caps,
@@ -645,7 +650,7 @@ export async function run(
     profile: optsProfile,
     alternateScreen: mode !== "inline",
     virtualInline: mode === "virtualInline",
-    kitty: rest.kitty ?? caps.kittyKeyboard,
+    kitty: kittyOption,
     mouse: optsMouseOption,
     focusReporting: rest.focusReporting ?? mode !== "inline",
     textSizing: rest.textSizing ?? "auto",
