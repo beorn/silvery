@@ -683,10 +683,10 @@ void backend.read()
 const text = parseClipboardResponse(rawInput) // string | null
 ```
 
-| Function                 | Description                                                                              |
-| ------------------------ | ---------------------------------------------------------------------------------------- |
-| `createOsc52Backend`     | Construct a `ClipboardBackend` over a writable stream — `.write({text})` / `.read()`     |
-| `parseClipboardResponse` | Decode an OSC 52 response (handles both BEL and ST terminators)                          |
+| Function                 | Description                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| `createOsc52Backend`     | Construct a `ClipboardBackend` over a writable stream — `.write({text})` / `.read()` |
+| `parseClipboardResponse` | Decode an OSC 52 response (handles both BEL and ST terminators)                      |
 
 ### Terminal Support
 

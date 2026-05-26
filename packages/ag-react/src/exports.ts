@@ -676,12 +676,7 @@ export {
 } from "./components/Popover"
 export type { PopoverAnchor, PopoverContent } from "./components/Popover"
 export { useConsole } from "./hooks/useConsole"
-export {
-  useCursor,
-  resetCursorState,
-  createCursorStore,
-  CursorProvider,
-} from "./hooks/useCursor"
+export { useCursor, resetCursorState, createCursorStore, CursorProvider } from "./hooks/useCursor"
 export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor"
 export { PasteProvider, usePaste } from "./hooks/usePaste"
 export type { PasteHandler } from "./hooks/usePaste"
