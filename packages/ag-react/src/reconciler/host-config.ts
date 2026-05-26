@@ -39,10 +39,12 @@ import type { ViewportProps } from "@silvery/ag/viewport-types"
 import { classifyPropChanges } from "./helpers"
 import {
   applyBoxProps,
+  applyIslandProps,
   applyTextFlexItemProps,
   applyViewportProps,
   createNode,
   createVirtualTextNode,
+  type IslandLayoutProps,
 } from "./nodes"
 import { createLogger } from "loggily"
 import { warnOnce, _resetWarnOnceForTesting } from "@silvery/ansi"
@@ -83,6 +85,7 @@ function hostTypeLabel(type: AgNodeType): string {
   if (type === "silvery-box") return "Box"
   if (type === "silvery-text") return "Text"
   if (type === "silvery-viewport") return "Viewport"
+  if (type === "silvery-island") return "Island"
   return type
 }
 
@@ -757,6 +760,12 @@ export const hostConfig = {
             instance.layoutNode,
             newProps as unknown as ViewportProps,
             oldProps as unknown as ViewportProps,
+          )
+        } else if (instance.type === "silvery-island") {
+          applyIslandProps(
+            instance.layoutNode,
+            newProps as unknown as IslandLayoutProps,
+            oldProps as unknown as IslandLayoutProps,
           )
         } else {
           applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react"
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
 import { Box, Text } from "../../src/index.js"
-import { run, usePanic } from "../../packages/ag-term/src/runtime/run"
+import { run, usePanic, type RunHandle } from "../../packages/ag-term/src/runtime/run"
 
 const settle = (ms = 50) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -196,5 +196,81 @@ describe("panic()", () => {
 
     expect(stdin.readLog).toContain(lateModeReplies)
     expect(stdin.rawModes.at(-1)).toBe(false)
+  })
+
+  test("process uncaughtException routes through panic and unregisters on cleanup", async () => {
+    const before = process.listeners("uncaughtException")
+    const { writable: stdout, written } = createMockStdout()
+    let handle: RunHandle | null = null
+
+    try {
+      handle = await run(<Text>ready</Text>, {
+        cols: 40,
+        rows: 10,
+        stdout,
+        stdin: createMockStdin(),
+        guardOutput: true,
+        kitty: false,
+        textSizing: false,
+        widthDetection: false,
+      } as never)
+
+      const added = process
+        .listeners("uncaughtException")
+        .filter((listener) => !before.includes(listener))
+      expect(added).toHaveLength(1)
+
+      added[0]?.(new Error("process boom"), "uncaughtException")
+      await handle.waitUntilExit()
+      handle = null
+
+      const visible = stderr.join("")
+      expect(written.join("")).toContain("\x1b[?1049l")
+      expect(visible).toContain("uncaughtException: process boom")
+      expect(process.listeners("uncaughtException")).toEqual(before)
+    } finally {
+      handle?.unmount()
+      for (const listener of process.listeners("uncaughtException")) {
+        if (!before.includes(listener)) process.off("uncaughtException", listener)
+      }
+    }
+  })
+
+  test("process unhandledRejection routes through panic and unregisters on cleanup", async () => {
+    const before = process.listeners("unhandledRejection")
+    const { writable: stdout, written } = createMockStdout()
+    let handle: RunHandle | null = null
+
+    try {
+      handle = await run(<Text>ready</Text>, {
+        cols: 40,
+        rows: 10,
+        stdout,
+        stdin: createMockStdin(),
+        guardOutput: true,
+        kitty: false,
+        textSizing: false,
+        widthDetection: false,
+      } as never)
+
+      const added = process
+        .listeners("unhandledRejection")
+        .filter((listener) => !before.includes(listener))
+      expect(added).toHaveLength(1)
+
+      added[0]?.("reject boom", Promise.resolve())
+      await handle.waitUntilExit()
+      handle = null
+
+      const visible = stderr.join("")
+      expect(written.join("")).toContain("\x1b[?1049l")
+      expect(visible).toContain("unhandledRejection: reject boom")
+      expect(process.listeners("unhandledRejection")).toEqual(before)
+    } finally {
+      handle?.unmount()
+      for (const listener of process.listeners("unhandledRejection")) {
+        if (!before.includes(listener)) process.off("unhandledRejection", listener)
+      }
+    }
   })
 })

@@ -183,14 +183,41 @@ function sgrDelta(prev: CellStyle, next: CellStyle): string {
  * Exported so tests can drive the encoder directly without instantiating
  * a full silvery render tree, and so consumers building custom adapters
  * can reuse the same SGR-delta calculation.
+ *
+ * **Wide-char continuation handling** (bead `@km/termless/15615`): backends
+ * disagree on how to mark the continuation cell of a wide grapheme. The
+ * legacy contract was "set `continuation: true` on column X+1 after a wide
+ * char at X" — vt100, vterm, in-memory test fixtures all do this. But
+ * `@termless/xtermjs` (the backend `termless rec` uses) hardcodes
+ * `continuation: false` and stores `char: ""` on the continuation column.
+ * Without compensation the encoder writes BOTH the wide grapheme AND the
+ * empty cell (as a space), emitting 3 visible cells for a 2-column
+ * grapheme — every subsequent cell on the row drifts right by 1, the
+ * row's right border falls off, and the silvery `<Text>` layout receives
+ * `cols+1` glyphs that downstream truncate / clip mid-codepoint into
+ * U+FFFD. The fix below treats "previous cell was wide" as load-bearing:
+ * the cell immediately after a wide grapheme is ALWAYS skipped, no
+ * matter how the backend labels it. This matches the same robustness
+ * pattern in `bufferToAnsi` (see `output-phase.ts` §"after writing a
+ * wide char, unconditionally skip X+1 instead of relying on the next
+ * cell's continuation flag"), one layer down in the pipeline.
  */
 export function encodeTerminalRow(row: readonly TerminalCell[], cols: number): string {
   let out = ""
   let state: CellStyle = FRESH_STYLE
   let written = 0
+  let prevWasWide = false
   for (let c = 0; c < cols && c < row.length; c++) {
     const cell = row[c]
     if (!cell) {
+      // A null cell at the column after a wide grapheme is the wide
+      // grapheme's continuation slot — skip it the same way we skip an
+      // explicit continuation/empty-after-wide cell below. Otherwise the
+      // null-cell padding-space path bumps `written` past the row width.
+      if (prevWasWide) {
+        prevWasWide = false
+        continue
+      }
       const delta = sgrDelta(state, FRESH_STYLE)
       if (delta) out += delta
       state = FRESH_STYLE
@@ -198,13 +225,27 @@ export function encodeTerminalRow(row: readonly TerminalCell[], cols: number): s
       written++
       continue
     }
-    if (cell.continuation) continue
+    if (cell.continuation) {
+      // Backend marked the cell explicitly as continuation (vt100, vterm,
+      // in-memory fixtures). Skip.
+      prevWasWide = false
+      continue
+    }
+    if (prevWasWide) {
+      // The previous cell was wide. THIS cell is its continuation slot —
+      // even if the backend (xterm.js) labels it `continuation: false`
+      // with `char: ""`. Skip it; the wide grapheme already accounted
+      // for both columns via `written += 2` below.
+      prevWasWide = false
+      continue
+    }
     const want = styleOf(cell)
     const delta = sgrDelta(state, want)
     if (delta) out += delta
     state = want
     out += cell.char || " "
     written += cell.wide ? 2 : 1
+    prevWasWide = cell.wide === true
   }
   if (written < cols) {
     const delta = sgrDelta(state, FRESH_STYLE)
@@ -407,8 +448,18 @@ export function Terminal(props: TerminalProps): React.ReactElement {
         // <Text> lays out at width=cols every time. Embedded ANSI
         // escapes are parsed by silvery's measure/output phase via
         // `parseAnsiText` — same code path as chalk strings.
+        //
+        // `bgConflict="ignore"`: <Terminal> mirrors arbitrary EXTERNAL
+        // ANSI (a captured terminal grid). Chalk-styled status bars and
+        // selection highlights are conflict-rich by nature — an ANSI bg
+        // in a cell layered over the silvery buffer bg is *expected*
+        // here, not a pipeline bug. The global throw stays a safety net
+        // for real silvery-app bugs; only the cells <Terminal> paints
+        // are exempt. See `bgConflict` on TextProps.
         // eslint-disable-next-line react/no-array-index-key
-        <Text key={r}>{line}</Text>
+        <Text key={r} bgConflict="ignore">
+          {line}
+        </Text>
       ))}
     </Box>
   )

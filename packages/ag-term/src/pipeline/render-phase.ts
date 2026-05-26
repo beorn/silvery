@@ -22,7 +22,7 @@ import { TerminalBuffer } from "../buffer"
 import type { BoxProps, AgNode, Rect, TextProps } from "@silvery/ag/types"
 import { getBorderSize, getPadding } from "./helpers"
 import { renderBox, renderScrollIndicators, getEffectiveBg } from "./render-box"
-import { renderViewport } from "./render-viewport"
+import { renderIsland, renderViewport } from "./render-viewport"
 import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { getTextStyle, parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
@@ -1165,6 +1165,13 @@ function renderOwnContent(
     // never reached because viewport cells route through `sink.emitSetCell`
     // directly. See bead @km/silvery/15513.
     renderViewport(node, buffer, sink, layout, nodeState.scrollOffset)
+  } else if (node.type === "silvery-island") {
+    // Sibling of silvery-viewport — opaque blit of the guest's cell buffer.
+    // The island generalises Viewport with the runtime-agnostic IslandGuest
+    // contract (PTY, snapshot, replay, embedded silvery sub-instance, etc.).
+    // Bails cleanly when the guest hasn't initialised yet (`handle === null`).
+    // See bead @km/silvery/15646-islands.
+    renderIsland(node, buffer, sink, layout, nodeState.scrollOffset)
   } else if (node.type === "silvery-text") {
     if (instrumentEnabled) stats.textNodes++
     // O(1) inherited bg/fg — threaded top-down through nodeState.

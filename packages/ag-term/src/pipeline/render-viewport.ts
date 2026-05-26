@@ -69,6 +69,9 @@ export function renderViewport(
  * {@link TerminalBuffer} accepts (Color = `number | RGB | null`). String
  * colors are parsed once per cell — the upcoming xterm adapter writes
  * pre-resolved RGB strings, so parseColor's fast path runs.
+ *
+ * Reused by {@link renderIsland} — both viewport and island share the same
+ * Cell shape from `@silvery/ag/types`, so the conversion is identical.
  */
 function viewportCellToPatch(cell: Cell): CellPatch {
   return {
@@ -78,5 +81,75 @@ function viewportCellToPatch(cell: Cell): CellPatch {
     attrs: cell.attrs,
     wide: cell.wide,
     continuation: cell.continuation,
+  }
+}
+
+/**
+ * Blit a `silvery-island` node's guest cell buffer into the parent buffer.
+ *
+ * Sibling of {@link renderViewport}: reads from
+ * `node.islandState.handle.output.buffer` (the guest's read-only output
+ * surface from {@link IslandOutputOwner}) instead of
+ * `node.viewportState.buffer`. Same routing — through {@link RenderSink}'s
+ * `emitSetCell`, not direct buffer writes — so the cells survive
+ * `commitSectionedPlan` under `SILVERY_RENDER_PLAN`.
+ *
+ * Bails when the host node has no `islandState` (factory still mounting) or
+ * the guest's `init()` hasn't resolved yet (`handle === null`, lifecycle
+ * `"pending"` / `"errored"` / `"disposed"`). In that case the parent's
+ * `clearNodeRegion` (or inherited bg fill) has already painted blanks at
+ * the island's rect, so we paint nothing and the host chrome shows through.
+ *
+ * Cursor handling: `IslandOutputOwner.cursor` is the guest's internal
+ * cursor descriptor. v1 (Phase 1) does NOT render the guest cursor into the
+ * host frame — the host cursor sits OUTSIDE the island, and the
+ * `IslandModesOwner` contract un-applies the host cursor on focus blur to
+ * the island. Phase 3 of `@km/silvery/15646-islands` wires the guest cursor
+ * into the host's cursor signal (separate epic unit); until then, the
+ * cursor field is read by the focus aggregator, not the blit.
+ *
+ * Clipping: same as viewport — out-of-bounds cells are silently dropped.
+ * Both axes (right + bottom) clip; an island whose `cols×rows` overshoots
+ * the parent buffer paints only its in-bounds intersection.
+ *
+ * See {@link island-types.ts} in `@silvery/ag` and bead
+ * `@km/silvery/15646-islands`.
+ */
+export function renderIsland(
+  node: AgNode,
+  buffer: TerminalBuffer,
+  sink: RenderSink,
+  layout: Rect,
+  scrollOffset: number,
+): void {
+  const state = node.islandState
+  if (!state) return
+  const handle = state.handle
+  // Deferred-hydrate or async-init islands have no handle until the
+  // guest's `init()` resolves. STRICT slug `island-paint-oob` (tier 2)
+  // would catch a guest writing past its rect; the null-handle bail is a
+  // structural guard that runs at every paint regardless of STRICT.
+  if (!handle) return
+  const src = handle.output.buffer
+  const baseX = layout.x
+  const baseY = layout.y - scrollOffset
+
+  // Clip blit region to the intersection of the island rect and the guest's
+  // current cell grid. We don't enlarge to the guest's dimensions if the
+  // layout rect is smaller — the parent layout decides visible bounds (the
+  // two-phase resize protocol means the guest may temporarily lag the
+  // host's reported cols/rows after a resize).
+  const drawW = Math.min(layout.width, src.cols)
+  const drawH = Math.min(layout.height, src.rows)
+
+  for (let r = 0; r < drawH; r++) {
+    const dstY = baseY + r
+    if (dstY < 0 || dstY >= buffer.height) continue
+    for (let c = 0; c < drawW; c++) {
+      const dstX = baseX + c
+      if (dstX < 0 || dstX >= buffer.width) continue
+      const cell = src.getCell(c, r)
+      sink.emitSetCell(dstX, dstY, viewportCellToPatch(cell))
+    }
   }
 }

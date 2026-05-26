@@ -131,7 +131,7 @@ function BoardWithViewport({
         <Viewport cols={cols} rows={rows} source={source} ref={viewportRef} />
       </Box>
       <Box>
-        <Text dimColor>footer</Text>
+        <Text color="$muted">footer</Text>
       </Box>
     </Box>
   )
@@ -342,13 +342,110 @@ describe("Viewport — v1 MVP", () => {
     const { source: innerSource } = mockSource("Y")
     function Nested() {
       return (
+        // @ts-expect-error — Viewport is typed as a leaf (no `children` in
+        // ViewportProps). We deliberately pass a child here so the runtime
+        // guard fires; the ts-expect-error applies to the outer Viewport's
+        // implicit `children` prop, which is the path we're testing.
         <Viewport cols={20} rows={4} source={outerSource}>
-          {/* @ts-expect-error — Viewport is typed as a leaf; React still
-              allows children at runtime, which is the path we're guarding. */}
           <Viewport cols={5} rows={2} source={innerSource} />
         </Viewport>
       )
     }
     expect(() => render(<Nested />)).toThrow(/Viewport cannot be nested/)
+  })
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // L5 property tests — per @km/silvery/15732-viewport-composition-plateau
+  // ──────────────────────────────────────────────────────────────────────────
+
+  test("10. property — Viewport renders chaotic chalk-style bg colors without bg-conflict throw", () => {
+    // Under silvery's main pipeline a cell with `bg='#c5cbd7'` adjacent to a
+    // cell with the silvery bufferBg is the canonical bg-coherence violation
+    // (the bug @km/silvery/15506 patchworked with setBgConflictMode('ignore')).
+    // Inside a Viewport the cell domain is opaque — the pipeline must skip
+    // bg-coherence enforcement for the foreign cells. This test fuzzes across
+    // a representative set of "chalk could emit any of these" backgrounds
+    // (hex, palette index, null, mixed neighbors) and asserts the rendered
+    // text comes out without any throw under SILVERY_STRICT=1 (the default
+    // for vendor/silvery tests — every render runs the incremental==fresh
+    // comparator + every-action invariants).
+    const bgPalette = [
+      "#c5cbd7", // grey
+      "#1d2021", // dark
+      "#fb4934", // red
+      "#83a598", // blue
+      "#fabd2f", // yellow
+      "#b8bb26", // green
+      "#d3869b", // pink
+      null, // transparent
+    ]
+
+    function chaoticBufferSource(initial = "C"): ForeignSource {
+      return {
+        connect(ctx) {
+          const { cols, rows } = ctx.dimensions()
+          const buf = createCellBuffer(cols, rows)
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              const bg = bgPalette[(r * cols + c) % bgPalette.length] ?? null
+              buf.setCell(c, r, makeCell(initial, { bg }))
+            }
+          }
+          ctx.blit([{ row: 0, col: 0, width: cols, height: rows }], buf)
+        },
+        disconnect() {},
+      }
+    }
+
+    const render = createRenderer({ cols: 80, rows: 24 })
+    const source = chaoticBufferSource("M")
+    // The act of rendering with SILVERY_STRICT=1 (default) is the assertion —
+    // if the Viewport boundary doesn't structurally bypass bg-coherence, the
+    // STRICT every-action invariants throw before this returns. Wrap in
+    // expect().not.toThrow() so a failure produces a clear diagnostic
+    // pointing at this property rather than a bare stack trace.
+    expect(() => {
+      const app = render(<BoardWithViewport source={source} cols={10} rows={3} />)
+      // Sanity — the chaotic-bg cells still render. The foreign cells should
+      // surface as the 'M' chars from the buffer.
+      expect(app.text).toContain("M")
+    }).not.toThrow()
+  })
+
+  test("11. property — repeated blit of identical buffer state is idempotent (no spurious paint divergence)", () => {
+    // A ForeignSource that re-blits the SAME buffer N times must produce the
+    // SAME rendered output. If the renderViewport pipeline branch sets a
+    // spurious dirty bit on each blit (or fails to coalesce equal buffers),
+    // the SILVERY_STRICT incremental==fresh comparator catches it on the next
+    // rerender — the comparator runs every event-batch under tier 1. The text
+    // identity check below is the visible-side assertion.
+    function repeatingBlitSource(char: string, captured: { ctx: ViewportContext | null }): ForeignSource {
+      return {
+        connect(ctx) {
+          captured.ctx = ctx
+          const { cols, rows } = ctx.dimensions()
+          ctx.blit([{ row: 0, col: 0, width: cols, height: rows }], uniformBuffer(cols, rows, char))
+        },
+        disconnect() {},
+      }
+    }
+
+    const render = createRenderer({ cols: 80, rows: 24 })
+    const captured: { ctx: ViewportContext | null } = { ctx: null }
+    const source = repeatingBlitSource("I", captured)
+    const app = render(<BoardWithViewport source={source} cols={10} rows={3} />)
+    const baseline = app.text
+    expect(baseline).toContain("IIIIIIIIII")
+
+    // Re-blit the same buffer 5 times + rerender. Each rerender runs
+    // SILVERY_STRICT=1 incremental==fresh; an idempotency defect (spurious
+    // dirty propagation, blit not deduped) trips the comparator.
+    const sameBuffer = uniformBuffer(10, 3, "I")
+    for (let i = 0; i < 5; i++) {
+      captured.ctx!.blit([{ row: 0, col: 0, width: 10, height: 3 }], sameBuffer)
+      app.rerender(<BoardWithViewport source={source} cols={10} rows={3} />)
+      // Visible output stays identical — no cell changed, no chrome reflowed.
+      expect(app.text).toBe(baseline)
+    }
   })
 })

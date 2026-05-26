@@ -125,6 +125,11 @@ export function createNode(
     // function — the foreign cell buffer is blitted by the render phase at
     // boxRect. See bead @km/silvery/15513.
     applyViewportProps(layoutNode, props as unknown as ViewportProps)
+  } else if (type === "silvery-island") {
+    // Island is a leaf with intrinsic cols × rows hints — parent flex/layout
+    // overrides at the layout phase. The guest's cell buffer is blitted by
+    // the render phase at boxRect. See bead @km/silvery/15646.
+    applyIslandProps(layoutNode, props as IslandLayoutProps)
   }
 
   // Set up measure function for text nodes
@@ -496,6 +501,186 @@ export function applyViewportProps(
     layoutNode.setHeight(props.rows)
   } else if (oldProps?.rows !== undefined) {
     layoutNode.setHeightAuto()
+  }
+}
+
+/**
+ * Layout-relevant slice of <Island> props.
+ *
+ * Islands are leaf flex items that ALSO carry guest-contract dims. The two
+ * are intentionally decoupled:
+ *
+ * - `cols` / `rows` — initial dimensions for the **guest's cell grid**. PTY
+ *   guests need them to spawn the child process; snapshot guests use them
+ *   as the frame size. Live for the guest's first paint; subsequent resizes
+ *   flow through `IslandSizeOwner.requestResize` (two-phase ack).
+ *
+ * - `width` / `height` / `flexGrow` / `flexShrink` / `flexBasis` / `alignSelf` /
+ *   `minWidth` / `minHeight` / `maxWidth` / `maxHeight` — control the **layout
+ *   slot** in flexily, exactly like any other flex item (Box, Text). When
+ *   present, they override `cols` / `rows` for layout purposes. When the
+ *   layout-derived dim differs from what the guest is rendering at, the host
+ *   calls `handle.size.requestResize(layoutCols, layoutRows)` so the guest can
+ *   acknowledge.
+ *
+ * Default behavior:
+ *   - `<Island cols=80 rows=24 />` — fixed 80×24 slot, guest renders at 80×24.
+ *   - `<Island cols=80 rows=24 flexGrow=1 />` — guest spawns at 80×24, flex
+ *     grows the slot, host immediately requests resize to the new dims.
+ *   - `<Island cols=80 rows=24 width=120 />` — guest spawns at 80×24, slot is
+ *     120 wide, host requests resize to 120.
+ *
+ * Container-query units (`"100cqi"`, `"50cqmin"`) on `width` / `height` are not
+ * wired yet (Phase 1 limitation); the cq plumbing lives in `applyBoxProps`
+ * and will land here in a follow-up. See `@km/silvery/15646-islands`.
+ */
+export interface IslandLayoutProps {
+  /** Initial guest cell-grid width (cells). Required at the <Island> surface;
+   *  optional here because oldProps may have already pinned it on a re-apply. */
+  cols?: number
+  /** Initial guest cell-grid height (cells). */
+  rows?: number
+  /** Explicit layout slot width (cells or "N%"). Overrides `cols` for layout. */
+  width?: number | string
+  /** Explicit layout slot height. Overrides `rows` for layout. */
+  height?: number | string
+  /** CSS `flex-grow` — proportion of free positive space along the main axis. */
+  flexGrow?: number
+  /** CSS `flex-shrink`. */
+  flexShrink?: number
+  /** CSS `flex-basis` — initial main-size before grow/shrink distribution. */
+  flexBasis?: number | string
+  /** Cross-axis self-alignment override. */
+  alignSelf?: "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
+  /** CSS `min-width` — floor for shrink distribution. */
+  minWidth?: number | string
+  /** CSS `min-height`. */
+  minHeight?: number | string
+  /** CSS `max-width` — ceiling for grow distribution. */
+  maxWidth?: number | string
+  /** CSS `max-height`. */
+  maxHeight?: number | string
+}
+
+/**
+ * Apply IslandProps to an island node's layout node.
+ *
+ * `<Island>` is a leaf — guest content lives off the AgNode's `islandState`
+ * slot, blitted by the render phase at boxRect. Layout-dim resolution:
+ * explicit `width` / `height` wins; otherwise fall back to `cols` / `rows`.
+ *
+ * See bead `@km/silvery/15646-islands` for the two-phase resize protocol
+ * (guest acks via `IslandSizeOwner` after host writes new dims).
+ */
+export function applyIslandProps(
+  layoutNode: LayoutNode,
+  props: IslandLayoutProps,
+  oldProps?: IslandLayoutProps,
+): void {
+  const c = getConstants()
+  const wasRemoved = (prop: keyof IslandLayoutProps): boolean =>
+    oldProps?.[prop] !== undefined && props[prop] === undefined
+
+  // ─── Width: explicit `width` wins; fall back to `cols` ─────────────────
+  if (props.width !== undefined) {
+    if (typeof props.width === "string" && props.width.endsWith("%")) {
+      layoutNode.setWidthPercent(Number.parseFloat(props.width))
+    } else if (typeof props.width === "number") {
+      layoutNode.setWidth(props.width)
+    }
+  } else if (props.cols !== undefined) {
+    layoutNode.setWidth(props.cols)
+  } else if (wasRemoved("width") || wasRemoved("cols")) {
+    layoutNode.setWidthAuto()
+  }
+
+  // ─── Height: explicit `height` wins; fall back to `rows` ───────────────
+  if (props.height !== undefined) {
+    if (typeof props.height === "string" && props.height.endsWith("%")) {
+      layoutNode.setHeightPercent(Number.parseFloat(props.height))
+    } else if (typeof props.height === "number") {
+      layoutNode.setHeight(props.height)
+    }
+  } else if (props.rows !== undefined) {
+    layoutNode.setHeight(props.rows)
+  } else if (wasRemoved("height") || wasRemoved("rows")) {
+    layoutNode.setHeightAuto()
+  }
+
+  // ─── Flex item props (mirror applyTextFlexItemProps semantics) ─────────
+  if (props.flexGrow !== undefined) {
+    layoutNode.setFlexGrow(props.flexGrow)
+  } else if (wasRemoved("flexGrow")) {
+    layoutNode.setFlexGrow(0)
+  }
+
+  if (props.flexShrink !== undefined) {
+    layoutNode.setFlexShrink(props.flexShrink)
+  } else if (wasRemoved("flexShrink")) {
+    layoutNode.setFlexShrink(1)
+  }
+
+  if (props.flexBasis !== undefined) {
+    if (typeof props.flexBasis === "string" && props.flexBasis.endsWith("%")) {
+      layoutNode.setFlexBasisPercent(Number.parseFloat(props.flexBasis))
+    } else if (props.flexBasis === "auto") {
+      layoutNode.setFlexBasisAuto()
+    } else if (typeof props.flexBasis === "number") {
+      layoutNode.setFlexBasis(props.flexBasis)
+    }
+  } else if (wasRemoved("flexBasis")) {
+    layoutNode.setFlexBasisAuto()
+  }
+
+  if (props.alignSelf !== undefined) {
+    if (props.alignSelf === "auto") {
+      layoutNode.setAlignSelf(c.ALIGN_AUTO)
+    } else {
+      layoutNode.setAlignSelf(alignToConstant(props.alignSelf))
+    }
+  } else if (wasRemoved("alignSelf")) {
+    layoutNode.setAlignSelf(c.ALIGN_AUTO)
+  }
+
+  // ─── Min / max dimensions ──────────────────────────────────────────────
+  if (props.minWidth !== undefined) {
+    if (typeof props.minWidth === "string" && props.minWidth.endsWith("%")) {
+      layoutNode.setMinWidthPercent(Number.parseFloat(props.minWidth))
+    } else if (typeof props.minWidth === "number") {
+      layoutNode.setMinWidth(props.minWidth)
+    }
+  } else if (wasRemoved("minWidth")) {
+    layoutNode.setMinWidth(0)
+  }
+
+  if (props.minHeight !== undefined) {
+    if (typeof props.minHeight === "string" && props.minHeight.endsWith("%")) {
+      layoutNode.setMinHeightPercent(Number.parseFloat(props.minHeight))
+    } else if (typeof props.minHeight === "number") {
+      layoutNode.setMinHeight(props.minHeight)
+    }
+  } else if (wasRemoved("minHeight")) {
+    layoutNode.setMinHeight(0)
+  }
+
+  if (props.maxWidth !== undefined) {
+    if (typeof props.maxWidth === "string" && props.maxWidth.endsWith("%")) {
+      layoutNode.setMaxWidthPercent(Number.parseFloat(props.maxWidth))
+    } else if (typeof props.maxWidth === "number") {
+      layoutNode.setMaxWidth(props.maxWidth)
+    }
+  } else if (wasRemoved("maxWidth")) {
+    layoutNode.setMaxWidth(Number.POSITIVE_INFINITY)
+  }
+
+  if (props.maxHeight !== undefined) {
+    if (typeof props.maxHeight === "string" && props.maxHeight.endsWith("%")) {
+      layoutNode.setMaxHeightPercent(Number.parseFloat(props.maxHeight))
+    } else if (typeof props.maxHeight === "number") {
+      layoutNode.setMaxHeight(props.maxHeight)
+    }
+  } else if (wasRemoved("maxHeight")) {
+    layoutNode.setMaxHeight(Number.POSITIVE_INFINITY)
   }
 }
 

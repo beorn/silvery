@@ -1,0 +1,50 @@
+name: links
+
+# Per-PR link checking via lychee. The cheapest fast-feedback layer for
+# broken links in repo docs; complements the cross-site /marketing
+# link-check (monthly cadence, catches bit-rot from external sites).
+#
+# Shared accept/exclude args keep per-PR and monthly checks aligned —
+# a link should not pass per-PR but fail monthly.
+#
+# Tracked at @km/infra/14942-lychee-action-rollout.
+
+on:
+  pull_request:
+    paths: ["**/*.md", "**/*.html", "docs/**"]
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          # Scoped glob: lint top-level + docs only — skips node_modules
+          # entirely (which the workspace pulls in via bun install on CI
+          # and pollutes the scan with thousands of npm-vendor README
+          # links). --root-dir lets lychee parse VitePress root-relative
+          # paths (/guide/…) without erroring; --exclude '^file:' then
+          # skips the resulting file:// checks since VitePress validates
+          # internal links at build time. Accept 401 for fossies.org
+          # rate-limiting. Excludes scrub: (a) CHANGELOG v0.0.1 placeholder
+          # GitHub URLs, (b) private/retired beorn/km and silvery-internal
+          # repos (links exist for authenticated users / archived).
+          args: |
+            --max-concurrency 24
+            --no-progress
+            --root-dir '${{ github.workspace }}/docs'
+            --accept '200..=204,206,301,302,303,307,308,401,403,429'
+            --exclude '^(mailto|tel|javascript):'
+            --exclude '^file:'
+            --exclude 'github\.com/.*/(compare|releases/tag)/v0\.0\.1'
+            --exclude 'github\.com/beorn/(km|silvery-internal)'
+            README.md
+            CHANGELOG.md
+            CLAUDE.md
+            'docs/**/*.md'
+            'docs/**/*.html'
+          fail: true

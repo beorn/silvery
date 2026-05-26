@@ -61,6 +61,7 @@ import { createTerminal } from "@termless/core"
 import { createXtermBackend } from "@termless/xtermjs"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
 import { outputPhase } from "@silvery/ag-term/pipeline/output-phase"
+import { replayAnsiWithStyles } from "@silvery/ag-term/pipeline/output-verify"
 
 const COLS = 80
 const ROWS = 3
@@ -212,5 +213,66 @@ describe("wide-emoji continuation cell after layout shift (13047)", () => {
     expect(term.getCell(0, 4)?.char).toBe("e")
 
     term.close()
+  })
+
+  test("Fixture D: narrow→wide-shift continuation rescue space carries the wide char's style (STRICT col-0 default-style bug, 15566)", () => {
+    // Bead: @km/silvery/15566-incremental-column-zero-default-style
+    //
+    // The narrow→wide-shift continuation rescue (Fixture A/B/C above) emits
+    // an explicit CUP + space at the continuation column to erase a possible
+    // stale glyph. The rescue did `\x1b[0m` (style reset) before the CUP, then
+    // wrote the space WITHOUT re-applying any style — so the continuation cell
+    // landed with DEFAULT fg/bg.
+    //
+    // On a FRESH render the continuation cell of a wide grapheme carries the
+    // wide char's own style (the buffer stores the continuation cell with the
+    // same fg/bg as its main cell). On a themed background — e.g. km's Nord
+    // breadcrumb row, bg rgb(46,52,64) / fg rgb(197,203,215) — incremental
+    // therefore diverged from fresh at the continuation column:
+    //
+    //   STRICT_OUTPUT style mismatch at (col,0) char=' ':
+    //     fg: default vs rgb(46,52,64), bg: default vs rgb(197,203,215)
+    //
+    // This fixture reproduces the exact shape: a themed row where a wide
+    // emoji replaces narrow text one column to the LEFT of where a narrow
+    // char sat in prev, triggering the rescue, and asserts the rescued
+    // continuation cell's STYLE matches a fresh render.
+    const W = 16
+    const FG = { r: 197, g: 203, b: 215 }
+    const BG = { r: 46, g: 52, b: 64 }
+
+    // prev: a themed row of narrow letters. Col 3 holds a narrow 'd'.
+    const prev = new TerminalBuffer(W, 1)
+    for (let x = 0; x < W; x++) {
+      prev.setCell(x, 0, { char: "abcdefghijklmnop"[x]!, fg: FG, bg: BG })
+    }
+    prev.resetDirtyRows()
+
+    const initialAnsi = outputPhase(null, prev, "fullscreen")
+
+    // next: wide emoji 💼 at col 2 (occupying 2 + continuation 3), themed.
+    // prev[2] was narrow 'c' (not wide) → narrow→wide-shift rescue fires for
+    // the continuation cell at col 3.
+    const next = prev.clone()
+    next.setCell(2, 0, { char: "💼", wide: true, fg: FG, bg: BG })
+    next.setCell(3, 0, { char: "", continuation: true, fg: FG, bg: BG })
+
+    const incrAnsi = outputPhase(prev, next, "fullscreen")
+    const freshAnsi = outputPhase(null, next, "fullscreen")
+
+    const incr = replayAnsiWithStyles(W, 1, initialAnsi + incrAnsi)
+    const fresh = replayAnsiWithStyles(W, 1, freshAnsi)
+
+    // The continuation column (col 3) must have the SAME fg/bg as a fresh
+    // render — the wide char's themed style, not default.
+    expect(incr[0]![3]!.fg, "col 3 fg incremental-vs-fresh").toEqual(fresh[0]![3]!.fg)
+    expect(incr[0]![3]!.bg, "col 3 bg incremental-vs-fresh").toEqual(fresh[0]![3]!.bg)
+
+    // Whole-row style + char equivalence — incremental MUST match fresh.
+    for (let x = 0; x < W; x++) {
+      expect(incr[0]![x]!.char, `col ${x} char`).toBe(fresh[0]![x]!.char)
+      expect(incr[0]![x]!.fg, `col ${x} fg`).toEqual(fresh[0]![x]!.fg)
+      expect(incr[0]![x]!.bg, `col ${x} bg`).toEqual(fresh[0]![x]!.bg)
+    }
   })
 })

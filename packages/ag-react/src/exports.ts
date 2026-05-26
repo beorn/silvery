@@ -72,6 +72,31 @@
 export { Box } from "./components/Box"
 export { Viewport } from "./components/Viewport"
 export type { ViewportProps, ViewportRef, ForeignSource } from "./components/Viewport"
+export { Island } from "./components/Island"
+export type { IslandProps } from "./components/Island"
+// Island contract types — re-exported here so consumers don't need to import
+// from @silvery/ag/island-types directly. See bead @km/silvery/15646-islands.
+export type {
+  IslandGuest,
+  IslandContext,
+  IslandHandle,
+  IslandSignal,
+  IslandCapabilities,
+  IslandHydrate,
+  IslandPalettePolicy,
+  IslandNodeState,
+  IslandSizeOwner,
+  IslandOutputOwner,
+  IslandInputOwner,
+  IslandModesOwner,
+  IslandSignalsOwner,
+  IslandPaletteOwner,
+  IslandProtocolModes,
+  IslandKeyEvent,
+  IslandMouseEvent,
+  IslandInputEvent,
+  IslandCursorState,
+} from "@silvery/ag/island-types"
 export { MeasuredBox } from "./ui/components"
 export type { MeasuredBoxProps, MeasuredBoxRect, MeasuredBoxRenderFn } from "./ui/components"
 export { Scrollbar } from "./ui/components"

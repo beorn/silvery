@@ -2636,7 +2636,23 @@ function ListViewInner<T>(
     const prevCount = prevItemCountRef.current
     const grew = activeItems.length > prevCount
     if (grew) {
-      if (flashScrollbarOnItemCountGrow) physics.flashScrollbar()
+      // Scrollbar-flash provenance gate (bead @km/code/15565):
+      // when `follow="end"` is active AND items have been streaming for
+      // a while (this is the Nth grow, not the 0→N first appearance),
+      // the user has already seen the content and the viewport's auto-
+      // follow movement is not user-initiated — suppress the flash.
+      //
+      // The 0→N transition (resumed-session shape: ListView mounts with
+      // empty items, then a batch of N projected events lands) still
+      // flashes — this is the user's first sight of the content and the
+      // flash signals "you can scroll over this". The `prevCount > 0`
+      // discriminator distinguishes ongoing streaming (N→N+M, suppress)
+      // from initial appearance (0→N, flash). Sibling test:
+      // `listview-signals-convergence.test.tsx` "silvercode shape — items
+      // appear AFTER first render" still asserts the 0→N flash.
+      const autoFollowingStream =
+        resolvedFollow === "end" && followEndPinRef.current.kind === "end" && prevCount > 0
+      if (flashScrollbarOnItemCountGrow && !autoFollowingStream) physics.flashScrollbar()
       // Stale-bump cleanup. A `bumpedEdge` set by a prior wheel/keyboard
       // overscroll attempt is bound to the boundary as it was THEN. Once
       // items append, the boundary moved — `scrollableRows` leaps ahead

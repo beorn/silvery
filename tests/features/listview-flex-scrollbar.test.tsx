@@ -15,7 +15,7 @@
  */
 
 import React from "react"
-import { describe, test, expect } from "vitest"
+import { afterEach, describe, expect, test, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, ListView, Text } from "@silvery/ag-react"
 
@@ -91,5 +91,77 @@ describe("ListView flex-mode scrollbar", () => {
     app.rerender(<Harness items={buildItems(150)} />)
     const thumb = findThumbCell(app, COLS, ROWS)
     expect(thumb).not.toBeNull()
+  })
+
+  test('bead 15565: follow="end" streaming-grow does NOT flash the scrollbar', async () => {
+    // User-reported 2026-05-21 (screenshot
+    // 260521-silvercode-permission-dialog-massive.png context): when new
+    // content arrives in a follow=\"end\" ListView (chat transcript), the
+    // viewport auto-scrolls to keep the newest content visible. Pre-fix,
+    // the item-count-grow effect also flashed the scrollbar — even
+    // though the user did NOT initiate the scroll. The scrollbar
+    // visibility should reflect SCROLL PROVENANCE: user-initiated → show,
+    // auto-follow streaming → stay hidden.
+    //
+    // The 0→N transition (initial content appearance) still flashes —
+    // that's the user's first sight of the content. STREAMING growth
+    // (N→N+M while already-pinned at end) is what the user sees as
+    // "auto-follow disturbance" and that's what this test guards.
+    vi.useFakeTimers()
+    try {
+      const COLS = 60
+      const ROWS = 20
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+
+      function Harness({ items }: { items: string[] }): React.ReactElement {
+        return (
+          <Box width={COLS} height={ROWS} flexDirection="column">
+            <Box flexGrow={1} flexShrink={1} minHeight={0}>
+              <ListView items={items} follow="end" renderItem={(item) => <Text>{item}</Text>} />
+            </Box>
+          </Box>
+        )
+      }
+
+      // Mount with content that overflows — establishes follow-end pin.
+      // The 0→30 transition flashes (initial appearance — user's first sight).
+      const app = render(<Harness items={buildItems(30)} />)
+      expect(
+        findThumbCell(app, COLS, ROWS),
+        "0→N initial transition: scrollbar visible (user's first sight of overflow)",
+      ).not.toBeNull()
+
+      // Advance past the scrollbar fade timer (800ms) so any leftover
+      // flash from the mount has cleared.
+      vi.advanceTimersByTime(900)
+      app.rerender(<Harness items={buildItems(30)} />)
+      expect(
+        findThumbCell(app, COLS, ROWS),
+        "post-fade: scrollbar should be hidden before the streaming grow",
+      ).toBeNull()
+
+      // STREAMING GROWTH while pinned at end — bead 15565 trigger. The
+      // viewport auto-scrolls to keep the new content visible; the
+      // scrollbar should NOT flash because the user did not initiate
+      // this scroll.
+      app.rerender(<Harness items={buildItems(60)} />)
+      expect(
+        findThumbCell(app, COLS, ROWS),
+        "streaming grow while pinned at end: scrollbar must stay hidden (15565)",
+      ).toBeNull()
+
+      // Another streaming grow — same.
+      app.rerender(<Harness items={buildItems(90)} />)
+      expect(
+        findThumbCell(app, COLS, ROWS),
+        "second streaming grow while pinned: scrollbar must stay hidden",
+      ).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 })

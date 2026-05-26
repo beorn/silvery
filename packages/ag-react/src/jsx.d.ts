@@ -16,6 +16,12 @@ declare module "react" {
       "silvery-text": TextProps & { children?: ReactNode; ref?: Ref<AgNode> }
       // Viewport — leaf node (no children); see bead @km/silvery/15513.
       "silvery-viewport": ViewportProps & { ref?: Ref<AgNode> }
+      // Island — leaf node (no children); see bead @km/silvery/15646.
+      // Accepts the IslandLayoutProps slice (cols/rows for the guest's cell
+      // grid, plus width/height/flex* for the layout slot — see
+      // IslandLayoutProps docstring for the decoupling rationale). The
+      // React-facing <Island> wraps this with the full guest contract.
+      "silvery-island": import("./reconciler/nodes").IslandLayoutProps & { ref?: Ref<AgNode> }
     }
   }
 }

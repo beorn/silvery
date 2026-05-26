@@ -2397,6 +2397,27 @@ function changesToAnsi(
           } else {
             output += `\x1b[${clearRenderY + 1};${x + 1}H`
           }
+          // Apply the continuation cell's own style before writing the rescue
+          // space. On a FRESH render the continuation cell carries the wide
+          // char's style (same fg/bg/attrs as its main cell). Writing the
+          // space with whatever style is current — default, after the \x1b[0m
+          // reset above — diverges from fresh at the continuation column:
+          // STRICT_OUTPUT throws `(x,0) char=' ' fg: default vs <theme>`.
+          // Bead: @km/silvery/15566-incremental-column-zero-default-style.
+          reusableCellStyle.fg = cell.fg
+          reusableCellStyle.bg = cell.bg
+          reusableCellStyle.underlineColor = cell.underlineColor
+          reusableCellStyle.attrs = cell.attrs
+          if (!styleEquals(currentStyle, reusableCellStyle)) {
+            const prevStyle = currentStyle
+            currentStyle = {
+              fg: cell.fg,
+              bg: cell.bg,
+              underlineColor: cell.underlineColor,
+              attrs: { ...cell.attrs },
+            }
+            output += styleTransition(prevStyle, currentStyle, ctx)
+          }
           output += " "
           cursorX = x + 1
           cursorY = clearRenderY
