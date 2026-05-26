@@ -419,7 +419,10 @@ describe("Viewport — v1 MVP", () => {
     // the SILVERY_STRICT incremental==fresh comparator catches it on the next
     // rerender — the comparator runs every event-batch under tier 1. The text
     // identity check below is the visible-side assertion.
-    function repeatingBlitSource(char: string, captured: { ctx: ViewportContext | null }): ForeignSource {
+    function repeatingBlitSource(
+      char: string,
+      captured: { ctx: ViewportContext | null },
+    ): ForeignSource {
       return {
         connect(ctx) {
           captured.ctx = ctx
