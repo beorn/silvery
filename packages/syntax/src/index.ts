@@ -266,6 +266,80 @@ function cachePut(key: string, result: TokenLine[]): void {
 }
 
 // =============================================================================
+// Pending-highlight queue (for deterministic test settle)
+// =============================================================================
+
+// Track every in-flight highlight() promise so test harnesses can await
+// the queue draining before snapshotting. Without this, callers that
+// kick off `highlight(...)` from a React effect race against the
+// snapshot capture: a few-microtask `settle()` is shorter than
+// shiki's lazy `createHighlighter()` + grammar load, so tool-row
+// goldens flap between the plain-text fallback (shipped synchronously
+// from `useSyntaxTokens`) and the Shiki-resolved tokens.
+//
+// We track the *outer* `highlight()` promise (not internal shiki
+// awaits) so the public contract is "await flushPendingHighlights()
+// and every previously-issued highlight call has resolved." Recursive
+// drains catch cascades where one resolution kicks off another
+// highlight call (React re-render → new effect → new highlight).
+const _pendingHighlights = new Set<Promise<unknown>>()
+
+function trackHighlight<T>(p: Promise<T>): Promise<T> {
+  _pendingHighlights.add(p)
+  // Detach on resolution; .catch keeps the tracking finally from
+  // becoming an unhandled rejection observer (the outer await still
+  // sees the original error/value).
+  p.finally(() => _pendingHighlights.delete(p)).catch(() => {})
+  return p
+}
+
+/**
+ * Wait until every in-flight `highlight()` call has resolved.
+ *
+ * Test harnesses call this before capturing a snapshot to guarantee
+ * deterministic output: without it, components that mount with the
+ * plain-text fallback and async-upgrade to Shiki-resolved tokens
+ * (`SyntaxHighlighter` in silvercode) race the snapshot capture and
+ * produce flaky goldens.
+ *
+ * The drain is **recursive** — if resolving one highlight kicks off
+ * another (e.g. a React re-render triggers a new effect, which
+ * issues a fresh highlight call), the new call is awaited too. The
+ * loop terminates when the pending set is empty after `Promise.all`
+ * settles.
+ *
+ * @example
+ * ```ts
+ * import { flushPendingHighlights } from "@silvery/syntax"
+ *
+ * // Inside a test settle():
+ * await flushPendingHighlights()
+ * // snapshot is deterministic now — no fallback-vs-resolved race.
+ * ```
+ */
+export async function flushPendingHighlights(): Promise<void> {
+  // Bounded loop guard — a runaway feedback loop (highlight resolves,
+  // spawns N more highlights, those resolve and spawn more) would
+  // otherwise wedge the test. 64 iterations is generous; production
+  // settle in silvercode visual-snapshot tests typically converges in
+  // 2 (initial + post-rerender).
+  for (let i = 0; i < 64; i++) {
+    if (_pendingHighlights.size === 0) return
+    const snapshot = Array.from(_pendingHighlights)
+    await Promise.allSettled(snapshot)
+    // Drain one round of microtasks so finally-handlers detach
+    // resolved promises before the next size check.
+    await Promise.resolve()
+  }
+  // Hitting the cap usually means a runaway loop — surface it loudly
+  // so the test author investigates rather than papering over with a
+  // larger cap. Fail-loud per km's NO SILENT ERRORS policy.
+  throw new Error(
+    `flushPendingHighlights: still ${_pendingHighlights.size} pending after 64 drain rounds — likely a feedback loop`,
+  )
+}
+
+// =============================================================================
 // Public API
 // =============================================================================
 
@@ -286,11 +360,15 @@ function cachePut(key: string, result: TokenLine[]): void {
  * // lines[0].tokens === [{ text: "const", color: "#f97583" }, { text: " x = 1" }]
  * ```
  */
-export async function highlight(
+export function highlight(
   code: string,
   lang: string = "plain",
   theme: string = DEFAULT_THEME,
 ): Promise<TokenLine[]> {
+  return trackHighlight(_highlight(code, lang, theme))
+}
+
+async function _highlight(code: string, lang: string, theme: string): Promise<TokenLine[]> {
   const canonLang = canonicalLang(lang)
   const cacheKey = `${canonLang}::${theme}::${code}`
   const cached = cacheGet(cacheKey)
@@ -403,4 +481,13 @@ export function _resetHighlighter(): void {
   _highlighterPromise = undefined
   _loadedLangs.clear()
   _themeLoadPromises.clear()
+  _pendingHighlights.clear()
+}
+
+/**
+ * Snapshot the current pending-highlight count.
+ * @internal — for test instrumentation only.
+ */
+export function _pendingHighlightCount(): number {
+  return _pendingHighlights.size
 }
