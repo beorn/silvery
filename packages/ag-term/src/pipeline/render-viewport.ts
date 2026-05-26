@@ -23,6 +23,7 @@ import type { TerminalBuffer, CellPatch, Color } from "../buffer"
 import type { AgNode, Cell, Rect } from "@silvery/ag/types"
 import type { RenderSink } from "./render-sink"
 import { parseColor } from "./render-helpers"
+import { assertIslandRenderInvariants, ensureIslandStrictInstrumentation } from "../strict-island"
 
 /**
  * Blit the foreign cell buffer at `node.viewportState.buffer` into `buffer`
@@ -130,6 +131,8 @@ export function renderIsland(
   // would catch a guest writing past its rect; the null-handle bail is a
   // structural guard that runs at every paint regardless of STRICT.
   if (!handle) return
+  ensureIslandStrictInstrumentation(node)
+  assertIslandRenderInvariants(node, layout)
   const src = handle.output.buffer
   const baseX = layout.x
   const baseY = layout.y - scrollOffset
