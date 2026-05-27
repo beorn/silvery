@@ -15,14 +15,15 @@
  *   input to it nor mirrors any of its mode requests. Useful for tests,
  *   static demos, frozen frames, GIF rendering, sandbox composition.
  *
- * Future built-ins (planned, not yet shipped — see `@km/silvery/15646-islands`):
- *
  * - `sandbox(inner)` — wraps any other guest and neutralizes the 8 query
  *   families (OSC 4/10/11 + DSR 5/6 + DA1/2 + window title) so the inner
  *   guest can't probe the host terminal. The interim termless `rec --live-
  *   chrome=none` flip exists because the silvery overlay didn't have this;
  *   Phase 3 rec adoption replaces the chrome-overlay path with
  *   `<Island guest={sandbox(ptyGuest(...))}>`.
+ *
+ * Future built-ins (planned, not yet shipped — see `@km/silvery/15646-islands`):
+ *
  * - `replayGuest(asciicast)` — plays an asciicast (.cast) file frame-by-frame.
  */
 
