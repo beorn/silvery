@@ -72,7 +72,8 @@ function createMockIO(opts?: { isTTY?: boolean }) {
 
   function send(chunk: string) {
     // Clone the set so mutations during dispatch don't affect this pass.
-    for (const handler of [...dataHandlers]) handler(chunk)
+    const handlers = Array.from(dataHandlers)
+    for (const handler of handlers) handler(chunk)
   }
 
   return { stdin, stdout, written, send, rawState, dataHandlers }
@@ -236,6 +237,46 @@ describe("InputOwner", () => {
     unsubscribe()
     send("c")
     expect(keys).toEqual(["a", "b"])
+  })
+
+  it("reassembles SGR mouse packets when ESC arrives in the previous stdin chunk", () => {
+    const { stdin, stdout, send } = createMockIO()
+    using owner = createInputOwner(stdin, stdout, {
+      enableBracketedPaste: false,
+      mouse: { coordinateMode: "pixel", cellSize: { width: 8, height: 16 } },
+    })
+
+    const keys: string[] = []
+    const mouse: unknown[] = []
+    owner.onKey((e) => keys.push(e.input))
+    owner.onMouse((e) => mouse.push(e))
+
+    send("\x1b")
+    send("[<64;672;1488M")
+
+    expect(keys).toEqual([])
+    expect(mouse).toHaveLength(1)
+    expect(mouse[0]).toMatchObject({
+      action: "wheel",
+      delta: -1,
+      coordinateMode: "pixel",
+      clientX: 671,
+      clientY: 1487,
+    })
+  })
+
+  it("dispatches standalone Escape after the protocol disambiguation window", async () => {
+    const { stdin, stdout, send } = createMockIO()
+    using owner = createInputOwner(stdin, stdout, { enableBracketedPaste: false })
+
+    const keys: Array<{ input: string; escape: boolean }> = []
+    owner.onKey((e) => keys.push({ input: e.input, escape: e.key.escape }))
+
+    send("\x1b")
+    expect(keys).toEqual([])
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 40))
+    expect(keys).toEqual([{ input: "", escape: true }])
   })
 
   it("probe parse gets priority — event parser only sees remainder", async () => {

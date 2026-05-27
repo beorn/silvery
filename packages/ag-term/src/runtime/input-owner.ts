@@ -56,6 +56,7 @@ import type { Modes } from "./devices/modes"
 
 const BRACKETED_PASTE_ON = "\x1b[?2004h"
 const BRACKETED_PASTE_OFF = "\x1b[?2004l"
+const ESC_DISAMBIGUATION_MS = 25
 
 const log = createLogger("silvery:input-owner")
 
@@ -241,10 +242,11 @@ function splitRawInput(raw: string): SplitResult {
     if (raw[i] === "\x1b") {
       // Escape sequence
       if (i + 1 >= raw.length) {
-        // Bare ESC at end
-        sequences.push("\x1b")
-        i++
-      } else if (raw[i + 1] === "[") {
+        // Bare ESC at the chunk boundary may be either the Escape key or the
+        // prefix of a CSI/SS3/meta sequence arriving in the next read.
+        return { sequences, incomplete: raw.slice(i) }
+      }
+      if (raw[i + 1] === "[") {
         // CSI sequence: ESC [ ... <letter or ~>
         let j = i + 2
         while (j < raw.length && !isCSITerminator(raw[j]!)) j++
@@ -356,7 +358,9 @@ export function createInputOwner(
 
   // Per-owner state.
   let buffer = ""
-  let incompleteCSI: string | null = null
+  let incompleteSequence: string | null = null
+  let incompleteSequenceTimer: ReturnType<typeof setTimeout> | null = null
+  let incompleteSequenceImmediate: ReturnType<typeof setImmediate> | null = null
   const probes: ProbeEntry[] = []
   const keyHandlers = new Set<(e: KeyEvent) => void>()
   const mouseHandlers = new Set<(e: ParsedMouse) => void>()
@@ -413,6 +417,34 @@ export function createInputOwner(
     fire(keyHandlers, { input, key })
   }
 
+  function clearIncompleteTimer(): void {
+    if (incompleteSequenceTimer !== null) {
+      clearTimeout(incompleteSequenceTimer)
+      incompleteSequenceTimer = null
+    }
+    if (incompleteSequenceImmediate !== null) {
+      clearImmediate(incompleteSequenceImmediate)
+      incompleteSequenceImmediate = null
+    }
+  }
+
+  function scheduleIncompleteFlush(receivedAt?: number, inputBatchId?: number): void {
+    if (incompleteSequence !== "\x1b") return
+    clearIncompleteTimer()
+    incompleteSequenceTimer = setTimeout(() => {
+      incompleteSequenceTimer = null
+      // Yield through the check phase before committing standalone Escape.
+      // If the event loop was busy while the timeout expired, already-ready
+      // stdin tail bytes get one poll phase to arrive and reassemble first.
+      incompleteSequenceImmediate = setImmediate(() => {
+        incompleteSequenceImmediate = null
+        if (disposed || incompleteSequence !== "\x1b") return
+        incompleteSequence = null
+        dispatchSequence("\x1b", receivedAt, inputBatchId)
+      })
+    }, ESC_DISAMBIGUATION_MS)
+  }
+
   // Drain the current buffer against probes (in registration order). Anything
   // probes don't consume flows into the event parser, which fires typed
   // handlers for each parsed sequence.
@@ -456,13 +488,15 @@ export function createInputOwner(
     // Parser phase: run leftover bytes through the typed event parser.
     if (buffer.length === 0) return
 
-    // Prepend any buffered incomplete CSI from a prior chunk so split SGR
-    // mouse sequences (e.g. '\x1b[<0;58;8' + 'M') reassemble.
+    // Prepend any buffered incomplete escape/control sequence from a prior
+    // chunk so split SGR mouse sequences (e.g. '\x1b[<0;58;8' + 'M')
+    // reassemble.
     let chunk = buffer
     buffer = ""
-    if (incompleteCSI !== null) {
-      chunk = incompleteCSI + chunk
-      incompleteCSI = null
+    if (incompleteSequence !== null) {
+      clearIncompleteTimer()
+      chunk = incompleteSequence + chunk
+      incompleteSequence = null
     }
 
     // Bracketed paste is detected before splitting into individual keys —
@@ -493,7 +527,8 @@ export function createInputOwner(
     }
 
     const { sequences, incomplete } = splitRawInput(chunk)
-    incompleteCSI = incomplete
+    incompleteSequence = incomplete
+    scheduleIncompleteFlush(receivedAt, inputBatchId)
     for (const raw of sequences) dispatchSequence(raw, receivedAt, inputBatchId)
   }
 
@@ -632,8 +667,9 @@ export function createInputOwner(
     mouseHandlers.clear()
     pasteHandlers.clear()
     focusHandlers.clear()
+    clearIncompleteTimer()
     buffer = ""
-    incompleteCSI = null
+    incompleteSequence = null
 
     if (isTTY) {
       try {
