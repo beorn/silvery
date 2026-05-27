@@ -19,6 +19,58 @@ export interface ListViewRenderScrollRowResult {
   authority: ListViewScrollAuthority
 }
 
+export interface ListViewViewportCandidate {
+  authority: ListViewScrollAuthority
+  row: number | null
+  active: boolean
+  committed: boolean
+}
+
+export interface ListViewViewportFrameResult extends ListViewRenderScrollRowResult {
+  candidates: readonly ListViewViewportCandidate[]
+  suppressedWriters: readonly ListViewViewportCandidate[]
+}
+
+/**
+ * Resolve ListView's viewport authority for one render frame.
+ *
+ * `active` means an input path offered a row-space viewport write this
+ * frame. `committed` means the single prioritized authority whose row is
+ * actually projected to the scroll container. Suppressed writers are
+ * explicit handoffs: they can be diagnosed and tested, but they are not
+ * allowed to mutate the viewport for this frame.
+ */
+export function resolveListViewViewportFrame(
+  input: ListViewRenderScrollRowInput,
+): ListViewViewportFrameResult {
+  const ordered: Array<{ authority: ListViewScrollAuthority; row: number | null }> = [
+    { authority: "declarative-row", row: input.declarativeScrollRow },
+    { authority: "follow-end", row: input.followPinnedTopRow },
+    { authority: "wheel-row", row: input.scrollRow },
+    { authority: "follow-disengage", row: input.followDisengageTopRow },
+    { authority: "visible-anchor", row: input.maintainedTopRow },
+    { authority: "layout", row: null },
+  ]
+  const committedIndex = ordered.findIndex(
+    (candidate) => candidate.authority === "layout" || candidate.row !== null,
+  )
+  const candidates = ordered.map((candidate, index): ListViewViewportCandidate => {
+    const active = candidate.authority !== "layout" && candidate.row !== null
+    return {
+      ...candidate,
+      active,
+      committed: index === committedIndex,
+    }
+  })
+  const committed = candidates[committedIndex]!
+  return {
+    row: committed.row,
+    authority: committed.authority,
+    candidates,
+    suppressedWriters: candidates.filter((candidate) => candidate.active && !candidate.committed),
+  }
+}
+
 export function resolveListViewRenderScrollRow({
   declarativeScrollRow,
   followPinnedTopRow,
@@ -26,14 +78,14 @@ export function resolveListViewRenderScrollRow({
   followDisengageTopRow,
   maintainedTopRow,
 }: ListViewRenderScrollRowInput): ListViewRenderScrollRowResult {
-  if (declarativeScrollRow !== null)
-    return { row: declarativeScrollRow, authority: "declarative-row" }
-  if (followPinnedTopRow !== null) return { row: followPinnedTopRow, authority: "follow-end" }
-  if (scrollRow !== null) return { row: scrollRow, authority: "wheel-row" }
-  if (followDisengageTopRow !== null)
-    return { row: followDisengageTopRow, authority: "follow-disengage" }
-  if (maintainedTopRow !== null) return { row: maintainedTopRow, authority: "visible-anchor" }
-  return { row: null, authority: "layout" }
+  const { row, authority } = resolveListViewViewportFrame({
+    declarativeScrollRow,
+    followPinnedTopRow,
+    scrollRow,
+    followDisengageTopRow,
+    maintainedTopRow,
+  })
+  return { row, authority }
 }
 
 export function resolveListViewBoxScrollTo({

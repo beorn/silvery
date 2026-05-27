@@ -88,7 +88,7 @@ import {
 import {
   resolveGestureScrollWindow,
   resolveListViewBoxScrollTo,
-  resolveListViewRenderScrollRow,
+  resolveListViewViewportFrame,
 } from "./list-view/scroll-authority"
 import {
   createContentGeometry,
@@ -1757,7 +1757,7 @@ function ListViewInner<T>(
   const followDisengagedThisRender =
     prevResolvedFollowRef.current === "end" && resolvedFollow !== "end" && scrollRow === null
   const followDisengageTopRow = rowsAboveViewportRef.current
-  const renderScroll = resolveListViewRenderScrollRow({
+  const renderScroll = resolveListViewViewportFrame({
     declarativeScrollRow,
     followPinnedTopRow,
     scrollRow,
@@ -1766,6 +1766,8 @@ function ListViewInner<T>(
   })
   const renderScrollRow = renderScroll.row
   const scrollAuthority = renderScroll.authority
+  const suppressedScrollWriters =
+    renderScroll.suppressedWriters.map((candidate) => candidate.authority).join(",") || "none"
   visualTopRowRef.current = renderScrollRow ?? rowsAboveViewport
 
   // ── Viewport-anchored windowing (height-independent / "index" mode) ──
@@ -3079,6 +3081,7 @@ function ListViewInner<T>(
       scrollAnchoring.maintainedTopRow ?? "null",
       declarativeScrollRow ?? "null",
       scrollAuthority,
+      suppressedScrollWriters,
       boxScrollTo ?? "null",
       gestureScrollWindowClamped ? 1 : 0,
       retainedIndexWindow ? 1 : 0,
@@ -3145,6 +3148,7 @@ function ListViewInner<T>(
       maintainedTopRow: scrollAnchoring.maintainedTopRow,
       declarativeScrollRow,
       scrollAuthority,
+      suppressedScrollWriters,
       boxScrollTo,
       gestureScrollWindowClamped,
       retainedIndexWindow,
@@ -3210,6 +3214,7 @@ function ListViewInner<T>(
     rowsAboveViewport,
     scrollAnchoring.maintainedTopRow,
     scrollAuthority,
+    suppressedScrollWriters,
     gestureScrollWindowClamped,
     declarativeScrollRow,
     boxScrollTo,
