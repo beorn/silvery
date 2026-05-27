@@ -150,7 +150,11 @@ function routeKeyToFocusedIsland(input: string, key: Key, focusManager: FocusMan
   return feedIsland(node, keyToIslandAnsi(input, key))
 }
 
-function encodeIslandMouse(data: RoutedMouseData, localCol: number, localRow: number): string | null {
+function encodeIslandMouse(
+  data: RoutedMouseData,
+  localCol: number,
+  localRow: number,
+): string | null {
   let button = data.button
   let terminator: "M" | "m" = "M"
   if (data.action === "up") {
