@@ -52,6 +52,8 @@ import {
   releaseContainer,
   setOnNodeRemoved,
 } from "@silvery/ag-react/reconciler"
+import { ScopeProvider } from "@silvery/ag-react/ScopeProvider"
+import { createScope, reportDisposeError } from "@silvery/scope"
 
 import { isProtocolError } from "@silvery/ansi"
 import { createTerm } from "./ansi/index"
@@ -580,6 +582,33 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // Per-instance cursor state (replaces module-level globals)
   const cursorStore = createCursorStore()
 
+  // Per-render app-root scope — faithful to production.
+  //
+  // `create-app.tsx` creates `const appScope = createScope("app")` and wraps
+  // the React tree in `<ScopeProvider scope={appScope} appScope={appScope}>`,
+  // disposing it on app exit. The lower-level test renderer must mirror this:
+  // components migrated to `useScopeEffect` call `useScope()`, which throws
+  // without a `<ScopeProvider>` ancestor OR an app-root scope (see
+  // `@silvery/ag-react/hooks/useScope`). Rendering an isolated component
+  // (`render(<CommandBox />)`) through this path therefore needs the same
+  // app-root scope production provides.
+  //
+  // The scope is created ONCE per render instance and lives for the
+  // instance's lifetime — it survives `rerender()` (which reuses the same
+  // fiberRoot) just as production's `appScope` survives across event batches.
+  // It is disposed in `unmountFn` (after React unmount, before
+  // `releaseContainer`), mirroring create-app's
+  // `appScope[Symbol.asyncDispose]()` on-exit ordering.
+  //
+  // The same value flows into both `ScopeContext` and `AppScopeContext` so
+  // `useScope()` and `useAppScope()` resolve to it when no inner provider is
+  // present. This is additive: components that don't use scope are
+  // unaffected, and a test that nests its own `<ScopeProvider>` (e.g. via
+  // createTestApp → BoardApp → KmTuiScopeProvider) still resolves the NEAREST
+  // `ScopeContext` — inner wins, this is only the fallback. Bead:
+  // @km/silvery/test-render-app-root-scope.
+  const renderScope = createScope("test-render")
+
   // Child apply-chain BaseApp — the ChainAppContext surface for hooks
   // rendered via the test renderer. Mirrors the plumbing in
   // `create-app.tsx` (TEA Phase 2). Inputs routed here via the
@@ -608,22 +637,35 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // Wrap element with contexts
   function wrapWithContexts(el: ReactElement): ReactElement {
     const inner = wrapRoot ? wrapRoot(el) : el
+    // ScopeProvider is the outermost wrapper (mirrors create-app.tsx, where it
+    // sits just under SilveryErrorBoundary) so `useScope()` / `useAppScope()`
+    // resolve to the per-render app-root scope for any component that doesn't
+    // nest its own provider. The same `renderScope` value flows into both
+    // ScopeContext and AppScopeContext.
     return React.createElement(
-      CursorProvider,
-      { store: cursorStore },
+      ScopeProvider,
+      { scope: renderScope, appScope: renderScope },
       React.createElement(
-        TermContext.Provider,
-        { value: mockTerm },
+        CursorProvider,
+        { store: cursorStore },
         React.createElement(
-          StdoutContext.Provider,
-          { value: { stdout: mockStdout, write: () => {} } },
+          TermContext.Provider,
+          { value: mockTerm },
           React.createElement(
-            FocusManagerContext.Provider,
-            { value: focusManager },
+            StdoutContext.Provider,
+            { value: { stdout: mockStdout, write: () => {} } },
             React.createElement(
-              RuntimeContext.Provider,
-              { value: runtimeValue },
-              React.createElement(ChainAppContext.Provider, { value: chainAppContextValue }, inner),
+              FocusManagerContext.Provider,
+              { value: focusManager },
+              React.createElement(
+                RuntimeContext.Provider,
+                { value: runtimeValue },
+                React.createElement(
+                  ChainAppContext.Provider,
+                  { value: chainAppContextValue },
+                  inner,
+                ),
+              ),
             ),
           ),
         ),
@@ -1495,6 +1537,17 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         reconciler.flushSyncWork()
       })
     })
+
+    // Dispose the per-render app-root scope AFTER React unmount (so
+    // useScopeEffect child scopes and host-attached scopes have already
+    // disposed via fiber teardown) but BEFORE releaseContainer. Mirrors
+    // create-app.tsx's `appScope[Symbol.asyncDispose]()` on-exit step.
+    // Fire-and-forget: unmountFn is sync, so any async-disposer rejection
+    // routes through reportDisposeError (phase "app-exit") instead of
+    // throwing into the caller.
+    void renderScope[Symbol.asyncDispose]().catch((error) =>
+      reportDisposeError(error, { phase: "app-exit", scope: renderScope }),
+    )
 
     instance.mounted = false
     instance.rendering = false

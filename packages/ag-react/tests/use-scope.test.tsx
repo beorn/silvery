@@ -27,6 +27,7 @@ import {
 import { createRenderer } from "@silvery/test"
 import { Text } from "../src/components/Text"
 import { ScopeProvider } from "../src/ScopeProvider"
+import { AppScopeContext, ScopeContext } from "../src/scope-context"
 import { useScope } from "../src/hooks/useScope"
 import { useAppScope } from "../src/hooks/useAppScope"
 import { useScopeEffect } from "../src/hooks/useScopeEffect"
@@ -80,12 +81,48 @@ describe("useScope", () => {
     await root[Symbol.asyncDispose]()
   })
 
-  it("falls back to useAppScope when no ScopeProvider is above", async () => {
-    const app = createScope("app")
+  it("falls back to the app-root scope when no ScopeContext is above", async () => {
+    // Faithful to production (create-app.tsx wraps the tree in
+    // `<ScopeProvider scope={appScope} appScope={appScope}>`): when no
+    // intervening `<ScopeProvider scope=…>` sets ScopeContext, `useScope()`
+    // resolves to the app-root scope via AppScopeContext. The lower-level
+    // test renderer now provides this same app-root scope (bead
+    // @km/silvery/test-render-app-root-scope), so a probe with no provider
+    // above it reads the renderer's per-render scope — exactly the fallback
+    // path useScope() documents.
     let seen: Scope | undefined
+    let appRoot: Scope | undefined
 
     function Probe(): React.ReactElement {
       seen = useScope()
+      appRoot = useAppScope()
+      return <Text>probe</Text>
+    }
+
+    const render = createRenderer({ cols: 20, rows: 2 })
+    render(<Probe />)
+
+    expect(seen).toBeDefined()
+    expect(appRoot).toBeDefined()
+    // useScope() with no ScopeContext above === the app-root scope.
+    expect(seen).toBe(appRoot)
+  })
+
+  it("a nested appScope-only provider does not shadow useScope() (matches production wrap)", async () => {
+    // A consumer that sets ONLY `appScope` (not `scope`) leaves ScopeContext
+    // pointing at whatever the parent set. Under the production-faithful wrap,
+    // that parent is the app-root scope the renderer installs — so useScope()
+    // resolves to the renderer's scope, NOT the consumer's appScope. This is
+    // identical to how production behaves: create-app sets BOTH contexts to
+    // appScope, so an inner appScope-only provider can never redirect
+    // useScope(). useAppScope(), however, DOES observe the inner appScope.
+    const app = createScope("inner-app")
+    let seenCurrent: Scope | undefined
+    let seenApp: Scope | undefined
+
+    function Probe(): React.ReactElement {
+      seenCurrent = useScope()
+      seenApp = useAppScope()
       return <Text>probe</Text>
     }
 
@@ -96,18 +133,36 @@ describe("useScope", () => {
       </ScopeProvider>,
     )
 
-    expect(seen).toBe(app)
+    // useAppScope() sees the inner appScope (it shadows AppScopeContext).
+    expect(seenApp).toBe(app)
+    // useScope() is NOT redirected by an appScope-only provider — it reads
+    // the renderer's app-root scope (the nearest ScopeContext).
+    expect(seenCurrent).toBeDefined()
+    expect(seenCurrent).not.toBe(app)
     await app[Symbol.asyncDispose]()
   })
 
-  it("throws when neither provider is present", () => {
+  it("a nested scope provider DOES shadow useScope() (inner wins, fallback is only a fallback)", async () => {
+    // The additive guarantee: nesting a `<ScopeProvider scope=…>` still wins
+    // for useScope() over the renderer's app-root fallback. Proves the
+    // per-render scope is strictly a fallback, never an override.
+    const inner = createScope("inner")
+    let seen: Scope | undefined
+
     function Probe(): React.ReactElement {
-      useScope()
+      seen = useScope()
       return <Text>probe</Text>
     }
 
     const render = createRenderer({ cols: 20, rows: 2 })
-    expect(() => render(<Probe />)).toThrow(/useScope\(\) called without/)
+    render(
+      <ScopeProvider scope={inner}>
+        <Probe />
+      </ScopeProvider>,
+    )
+
+    expect(seen).toBe(inner)
+    await inner[Symbol.asyncDispose]()
   })
 })
 
@@ -142,14 +197,71 @@ describe("useAppScope", () => {
     await app[Symbol.asyncDispose]()
   })
 
-  it("throws when no app scope is provided", () => {
+  it("resolves to the renderer's app-root scope when none is nested", async () => {
+    // Faithful to production: the test renderer installs an app-root scope
+    // (bead @km/silvery/test-render-app-root-scope), mirroring create-app's
+    // `<ScopeProvider appScope={appScope}>`. So `useAppScope()` resolves to
+    // that per-render scope instead of throwing. The throw-contract itself
+    // (no AppScopeContext anywhere → throw) is exercised directly, below,
+    // outside the production-faithful render wrap.
+    let seen: Scope | undefined
+
+    function Probe(): React.ReactElement {
+      seen = useAppScope()
+      return <Text>probe</Text>
+    }
+
+    const render = createRenderer({ cols: 20, rows: 2 })
+    render(<Probe />)
+
+    expect(seen).toBeDefined()
+    expect(seen!.name).toBe("test-render")
+  })
+
+  it("throws when AppScopeContext is genuinely absent (hook contract)", () => {
+    // The renderer always provides an app-root scope, so the throw path is
+    // unreachable by default. Reproduce "genuinely absent" by shadowing BOTH
+    // scope contexts with `null` (the contexts' default) directly above the
+    // probe — `<ScopeProvider>` itself can't set null (undefined means
+    // "inherit"), so we use the raw Context.Providers. This keeps the
+    // "missing app-root scope → throw" guarantee covered without a bare
+    // react-test-renderer dependency.
     function Probe(): React.ReactElement {
       useAppScope()
       return <Text>probe</Text>
     }
 
     const render = createRenderer({ cols: 20, rows: 2 })
-    expect(() => render(<Probe />)).toThrow(/useAppScope\(\) called without/)
+    expect(() =>
+      render(
+        <ScopeContext.Provider value={null}>
+          <AppScopeContext.Provider value={null}>
+            <Probe />
+          </AppScopeContext.Provider>
+        </ScopeContext.Provider>,
+      ),
+    ).toThrow(/useAppScope\(\) called without/)
+  })
+
+  it("useScope throws when ScopeContext AND AppScopeContext are absent (hook contract)", () => {
+    // Sibling to the above for useScope(): with both contexts shadowed to
+    // `null`, useScope() must throw. The production-faithful test renderer
+    // bypasses this by design (it always installs an app-root scope).
+    function Probe(): React.ReactElement {
+      useScope()
+      return <Text>probe</Text>
+    }
+
+    const render = createRenderer({ cols: 20, rows: 2 })
+    expect(() =>
+      render(
+        <ScopeContext.Provider value={null}>
+          <AppScopeContext.Provider value={null}>
+            <Probe />
+          </AppScopeContext.Provider>
+        </ScopeContext.Provider>,
+      ),
+    ).toThrow(/useScope\(\) called without/)
   })
 })
 
