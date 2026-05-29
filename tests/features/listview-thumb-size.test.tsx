@@ -91,6 +91,31 @@ describe("ListView scrollbar thumb size — accurate when items taller than esti
     expect(cells.length).toBeLessThanOrEqual(3)
   })
 
+  test("gap accounting does not invent overflow when content exactly fits", async () => {
+    const COLS = 40
+    const ROWS = 12
+    // 2 one-row items with one 10-row inter-item gap: 1 + 10 + 1 = 12.
+    // There is no trailing gap, so the content exactly fits a 12-row viewport.
+    const items = ["first", "second"]
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(
+      <Box width={COLS} height={ROWS} flexDirection="column">
+        <ListView
+          items={items}
+          height={ROWS}
+          width={COLS}
+          estimateHeight={1}
+          gap={10}
+          scrollbarVisibility="always"
+          renderItem={(item) => <Text>{item}</Text>}
+        />
+      </Box>,
+    )
+
+    const cells = thumbCells(app, COLS, ROWS)
+    expect(cells.length, "content fits exactly; no scrollbar thumb should render").toBe(0)
+  })
+
   test("active scroll keeps thumb geometry stable while measurements catch up", () => {
     const COLS = 120
     const ROWS = 26

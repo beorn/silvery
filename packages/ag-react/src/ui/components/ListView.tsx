@@ -2584,7 +2584,9 @@ function ListViewInner<T>(
   // index 0; for uniform-height lists this is exact, and for variable-height
   // the thumb is mildly imprecise in size but doesn't jitter.
   const estimateAsNumber = typeof estimateHeight === "number" ? estimateHeight : estimateHeight(0)
-  const totalRowsStable = Math.max(1, activeItems.length * (estimateAsNumber + gap))
+  const estimatedItemRows = activeItems.length * estimateAsNumber
+  const estimatedGapRows = Math.max(0, activeItems.length - 1) * gap
+  const totalRowsStable = Math.max(1, estimatedItemRows + estimatedGapRows)
   // Overflow detection for the scrollbar VISIBILITY GATE: take the maximum
   // of estimate-based and measurement-based totals. Estimate alone misses
   // overflow when items are taller than `estimateHeight` (silvercode shape:

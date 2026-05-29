@@ -98,10 +98,10 @@ describe("ListView height-independent — scrollbar with multi-line items", () =
     const COLS = 60
     const ROWS = 20
     // 12 items × 8 rows each = 96 content rows in a 20-row viewport.
-    // estimateHeight defaults to 1 → totalRowsStable = 24 (still > trackHeight
-    // because 12 items × (1 + gap=1) = 24, just barely > 20). The bug shows
-    // up most clearly when items.length × (estimate + gap) ≤ trackHeight.
-    // 6 items × 8 lines each = 48 content rows; estimate = 6 × 2 = 12 < 20.
+    // estimateHeight defaults to 1 → totalRowsStable = 23 for the original
+    // 12-item shape (12 item rows + 11 gap rows), still barely > 20. The bug
+    // shows up most clearly when estimated item rows + inter-item gaps stays
+    // within the track height. Here 6 items = 6 item rows + 5 gaps = 11 < 20.
     const N = 6
     const items = Array.from({ length: N }, (_, i) => i)
     const render = createRenderer({ cols: COLS, rows: ROWS })
@@ -122,7 +122,7 @@ describe("ListView height-independent — scrollbar with multi-line items", () =
     // Wheel-scroll once — content overflows (48 rows in 20-row viewport),
     // scrollbar should remain rendered. Before the height-independent fix, it
     // didn't because totalRowsStable
-    // (= 6 items × 2 = 12) ≤ trackHeight (20) → thumbHeight = 0.
+    // (= 6 item rows + 5 gap rows = 11) ≤ trackHeight (20) → thumbHeight = 0.
     await app.wheel(5, ROWS / 2, 1)
     const thumb = findThumbCell(app, COLS, ROWS)
     expect(thumb).not.toBeNull()
