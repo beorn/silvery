@@ -122,6 +122,44 @@ describe("Scope timers", () => {
 
     expect(resolved).toBe(true)
   })
+
+  it("debounce fires once with the last args after a burst", async () => {
+    await using scope = createScope("debounce")
+    const fire = vi.fn()
+    const debounced = scope.debounce((n: number) => fire(n), 100)
+
+    debounced(1)
+    debounced(2)
+    debounced(3)
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(fire).toHaveBeenCalledTimes(1)
+    expect(fire).toHaveBeenCalledWith(3)
+  })
+
+  it("debounce is cancelled when the scope disposes", async () => {
+    const scope = createScope("debounce")
+    const fire = vi.fn()
+    const debounced = scope.debounce(fire, 100)
+
+    debounced()
+    await scope[Symbol.asyncDispose]()
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(fire).not.toHaveBeenCalled()
+  })
+
+  it("debounce .cancel() drops a pending call", async () => {
+    await using scope = createScope("debounce")
+    const fire = vi.fn()
+    const debounced = scope.debounce(fire, 100)
+
+    debounced()
+    debounced.cancel()
+    await vi.advanceTimersByTimeAsync(100)
+
+    expect(fire).not.toHaveBeenCalled()
+  })
 })
 
 // =============================================================================

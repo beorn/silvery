@@ -148,6 +148,42 @@ export class Scope extends AsyncDisposableStack {
   }
 
   /**
+   * A debounced wrapper around `fn`, owned by this scope. Each call cancels the
+   * pending invocation and reschedules `ms` out, so only the last call in a
+   * burst fires. Uses a SINGLE timer slot — no per-call defer accumulation
+   * (unlike repeatedly calling {@link timeout}), which is what makes it the
+   * right primitive for keystroke/hover debounces. Disposing the scope cancels
+   * any pending call; the returned function exposes `.cancel()` to drop a
+   * pending call early. Resolves the structured-concurrency adoption need for
+   * cancel-and-reschedule timers (@km/all/structured-concurrency).
+   */
+  debounce<A extends unknown[]>(
+    fn: (...args: A) => void,
+    ms: number,
+    opts?: ScopeTimerOptions,
+  ): ((...args: A) => void) & { cancel: () => void } {
+    let timer: (ReturnType<typeof setTimeout> & { unref?: () => void }) | undefined
+    const cancel = () => {
+      if (timer !== undefined) {
+        clearTimeout(timer)
+        timer = undefined
+      }
+    }
+    this.defer(cancel)
+    const debounced = (...args: A) => {
+      if (this.signal.aborted) return
+      cancel()
+      timer = setTimeout(() => {
+        timer = undefined
+        fn(...args)
+      }, ms)
+      if (opts?.unref === true) timer.unref?.()
+    }
+    debounced.cancel = cancel
+    return debounced
+  }
+
+  /**
    * Adopt an opaque {@link Handle} (from `defineHandle()`) into this scope's
    * ownership registry. The handle is added to the inherited disposer stack
    * (LIFO disposal) and tracked separately so {@link assertScopeBalance}
