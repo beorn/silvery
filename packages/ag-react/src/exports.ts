@@ -676,14 +676,7 @@ export {
 } from "./components/Popover"
 export type { PopoverAnchor, PopoverContent } from "./components/Popover"
 export { useConsole } from "./hooks/useConsole"
-export {
-  useCursor,
-  resetCursorState,
-  getCursorState,
-  subscribeCursor,
-  createCursorStore,
-  CursorProvider,
-} from "./hooks/useCursor"
+export { useCursor, resetCursorState, createCursorStore, CursorProvider } from "./hooks/useCursor"
 export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor"
 export { PasteProvider, usePaste } from "./hooks/usePaste"
 export type { PasteHandler } from "./hooks/usePaste"
@@ -943,9 +936,6 @@ export type { BracketedPasteResult } from "@silvery/ag-term/bracketed-paste"
 
 // OSC 52 clipboard support
 export {
-  // eslint-disable-next-line @typescript-eslint/no-deprecated -- barrel re-export of deprecated legacy helper; callers should prefer createOsc52Backend (also re-exported here)
-  copyToClipboard,
-  requestClipboard,
   parseClipboardResponse,
   createOsc52Backend,
   createInternalClipboardBackend,

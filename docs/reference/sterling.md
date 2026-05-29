@@ -125,7 +125,7 @@ The grammar is `prefix-role[-state]` or `prefix-on-role`:
 <Text color="$fg-on-error" backgroundColor="$bg-error">Build failed</Text>
 ```
 
-For the full token-picking decision tree, see [Token Taxonomy](/guide/token-taxonomy). For component-level styling discipline, see [Styling](/guide/styling).
+For the full token-picking decision tree, see [Token Taxonomy](/reference/token-taxonomy). For component-level styling discipline, see [Styling](/guide/styling).
 
 ## Building a Theme
 
@@ -296,9 +296,9 @@ For TypeScript code that read fields off `Theme` directly:
 ## Related
 
 - **[Styling](/guide/styling)** — components, presets, anti-patterns. The day-to-day rules.
-- **[Token Taxonomy](/guide/token-taxonomy)** — the decision tree: `$brand` vs `$red` vs `$error` vs `$color1` vs `$fg-accent`.
-- **[Theming](/guide/theming)** — `ThemeProvider`, `Box theme={}`, switching schemes at runtime.
-- **[Color Schemes](/guide/color-schemes)** — the 22-slot terminal scheme model that feeds Sterling.
+- **[Token Taxonomy](/reference/token-taxonomy)** — the decision tree: `$brand` vs `$red` vs `$error` vs `$color1` vs `$fg-accent`.
+- **[Theming](/guide/styling)** — `ThemeProvider`, `Box theme={}`, switching schemes at runtime.
+- **[Color Schemes](/reference/color-schemes)** — the 22-slot terminal scheme model that feeds Sterling.
 - **[@silvery/theme reference](/reference/theme)** — full type definitions for ColorScheme, Theme, DesignSystem.
-- **[Custom Tokens](/guide/custom-tokens)** — `defineTokens()` for app-specific roles on top of Sterling.
-- **[Capability Tiers](/guide/capability-tiers)** — how Sterling tokens degrade across truecolor / 256 / ANSI 16 / mono.
+- **[Custom Tokens](/reference/custom-tokens)** — `defineTokens()` for app-specific roles on top of Sterling.
+- **[Capability Tiers](/reference/capability-tiers)** — how Sterling tokens degrade across truecolor / 256 / ANSI 16 / mono.

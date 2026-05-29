@@ -169,7 +169,7 @@ s.bgAnsi256(17)("Navy bg")
 
 ## Theme Token Resolution
 
-When a `theme` is provided to `createStyle()`, [Sterling](/guide/sterling) `$tokens` resolve to their theme colors. Both kebab and camelCase forms work.
+When a `theme` is provided to `createStyle()`, [Sterling](/reference/sterling) `$tokens` resolve to their theme colors. Both kebab and camelCase forms work.
 
 ```typescript
 import { createStyle } from "@silvery/ansi"
@@ -204,7 +204,7 @@ The `$token` resolver works on Sterling's flat hyphen-keys. The most common ones
 | `fg`             | terminal default fg        | `theme.fg` as hex                     |
 | `bg`             | terminal default bg        | `theme.bg` as hex                     |
 
-For the complete flat-token list (selection, inverse, surface stack, status fills, accent state variants, etc.) see the [Sterling primer](/guide/sterling#flat-tokens). When no theme is provided, tokens fall back to standard ANSI codes.
+For the complete flat-token list (selection, inverse, surface stack, status fills, accent state variants, etc.) see the [Sterling primer](/reference/sterling#flat-tokens). When no theme is provided, tokens fall back to standard ANSI codes.
 
 ### resolve()
 

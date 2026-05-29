@@ -28,8 +28,7 @@ import {
   useApp,
   useStdout,
   createTerm,
-  copyToClipboard,
-  requestClipboard,
+  createOsc52Backend,
   parseClipboardResponse,
   type Key,
 } from "silvery"
@@ -38,7 +37,7 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 export const meta: ExampleMeta = {
   name: "Clipboard (OSC 52)",
   description: "Copy/paste via OSC 52 terminal protocol",
-  features: ["copyToClipboard()", "requestClipboard()", "parseClipboardResponse()", "useStdout"],
+  features: ["createOsc52Backend()", "parseClipboardResponse()", "useStdout"],
 }
 
 // ============================================================================
@@ -120,20 +119,20 @@ export function ClipboardDemo() {
       setSelectedIndex((prev) => Math.min(allItems.length - 1, prev + 1))
     }
 
-    // Copy selected item
+    // Copy selected item — write through the canonical clipboard backend.
     if (input === "c") {
       const text = allItems[selectedIndex]!.value
-      copyToClipboard(stdout, text)
+      createOsc52Backend(stdout).write({ text })
       setLastCopied(text)
     }
 
-    // Request clipboard
+    // Request clipboard — `backend.read()` writes the OSC 52 query for us.
+    // The terminal responds with an OSC 52 sequence containing the
+    // clipboard contents. In a real app you'd parse stdin for the
+    // response using parseClipboardResponse(). For this demo we just
+    // show that the request was sent.
     if (input === "v") {
-      requestClipboard(stdout)
-      // Note: The terminal responds with an OSC 52 sequence containing
-      // the clipboard contents. In a real app you'd parse stdin for the
-      // response using parseClipboardResponse(). For this demo we just
-      // show that the request was sent.
+      void createOsc52Backend(stdout).read?.()
       setLastPasted("(request sent — check terminal)")
     }
 

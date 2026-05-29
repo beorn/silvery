@@ -60,7 +60,7 @@ Bubble Tea first, Silvery second. Features marked "core" are built into the fram
 | **Focus system**          | Manual — manage focused component in model state                                                         | Tree-based: scopes, spatial nav (arrow keys), click-to-focus, `useFocusWithin`          |
 | **Text selection + find** | Not in core                                                                                              | Mouse drag, `Ctrl+F` search, `Esc,v` keyboard selection                                 |
 | **Command system**        | Not in core                                                                                              | Named commands, context-aware keys, `parseHotkey("⌘K")`                                 |
-| **Clipboard**             | OSC 52 (v2)                                                                                              | OSC 52 `copyToClipboard`/`requestClipboard`                                             |
+| **Clipboard**             | OSC 52 (v2)                                                                                              | OSC 52 via `createOsc52Backend` (pluggable ClipboardBackend)                            |
 | **Image rendering**       | Not in core (ecosystem libraries available)                                                              | Core: `<Image>` — Kitty graphics + Sixel + text fallback                                |
 
 ### Components & Framework

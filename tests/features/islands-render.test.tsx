@@ -67,18 +67,69 @@ function fillBuffer(buf: MutableCellBuffer, char: string): MutableCellBuffer {
  * is pre-filled with the given character. Holds a reference so the test can
  * mutate the buffer between frames.
  */
+function asyncSnapshotGuest(initialChar = "L", delayMs = 10) {
+  let initCount = 0
+  let disposeCount = 0
+  const subscribers = new Set<() => void>()
+
+  const guest: IslandGuest = {
+    async init(ctx) {
+      initCount++
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+      const buf = fillBuffer(createCellBuffer(ctx.cols, ctx.rows), initialChar)
+      const size: IslandSizeOwner = {
+        get cols() {
+          return ctx.cols
+        },
+        get rows() {
+          return ctx.rows
+        },
+        subscribe: () => () => {},
+        requestResize() {},
+      }
+      const output: IslandOutputOwner = {
+        buffer: buf,
+        cursor: null,
+        cursorVisible: false,
+        subscribe(listener) {
+          subscribers.add(listener)
+          return () => subscribers.delete(listener)
+        },
+        writeCells() {},
+        invalidateAll() {
+          for (const fn of subscribers) fn()
+        },
+      }
+      ctx.emit({ type: "ready" })
+      return {
+        size,
+        output,
+        dispose() {
+          disposeCount++
+        },
+      }
+    },
+  }
+
+  return {
+    guest,
+    get initCount() {
+      return initCount
+    },
+    get disposeCount() {
+      return disposeCount
+    },
+  }
+}
+
 function snapshotGuest(initialChar = "A") {
   let initCount = 0
   let disposeCount = 0
   const subscribers = new Set<() => void>()
 
-  // NOTE: `init` is a non-async function returning a pre-resolved Promise so
-  // the handle attaches at the earliest microtask the factory's
-  // `Promise.resolve().then(() => guest.init(ctx)).then(handle => ...)`
-  // chain allows. An `async init` adds one more microtask hop, which races
-  // the `<Island>` binding's 2-microtask `subscribeWhenReady` retry budget
-  // and can miss the subscription in the default project's flush window
-  // (Phase 1 limitation in Island.tsx — TODO Phase 2 hydration scheduler).
+  // Keep this fixture synchronous so the base render tests exercise the
+  // earliest possible handle attachment. The delayed-hydration case is pinned
+  // separately below.
   const guest: IslandGuest = {
     init(ctx) {
       initCount++
@@ -244,6 +295,18 @@ describe("Island — render-phase blit", () => {
     expect(g.initCount).toBe(1)
   })
 
+  test("2b. async guest handle paints after delayed hydration without caller rerender", async () => {
+    const render = createRenderer({ cols: 80, rows: 24, autoRender: true })
+    const wrap = makeTestScopeWrapper()
+    const g = asyncSnapshotGuest("L", 10)
+    const app = render(wrap(<BoardWithIsland guest={g.guest} cols={8} rows={2} />))
+
+    await new Promise((resolve) => setTimeout(resolve, 40))
+
+    expect(app.text).toContain("LLLLLLLL")
+    expect(g.initCount).toBe(1)
+  })
+
   test("2. guest output buffer content shows up in the parent frame", async () => {
     const render = createRenderer({ cols: 80, rows: 24 })
     const wrap = makeTestScopeWrapper()
@@ -252,6 +315,34 @@ describe("Island — render-phase blit", () => {
     await flushMicrotasks()
     app.rerender(wrap(<BoardWithIsland guest={g.guest} cols={12} rows={2} />))
     expect(app.text).toContain("BBBBBBBBBBBB")
+  })
+
+  test("2c. null-bg snapshot cells inherit the host chrome background", async () => {
+    const render = createRenderer({ cols: 80, rows: 24 })
+    const wrap = makeTestScopeWrapper()
+    const g = snapshotGuest("I")
+    const view = (backgroundColor: string) =>
+      wrap(
+        <Box width={80} height={24} backgroundColor={backgroundColor}>
+          <Island guest={g.guest} cols={4} rows={1} />
+        </Box>,
+      )
+
+    const app = render(view("$bg-surface-subtle"))
+    await flushMicrotasks()
+    app.rerender(view("$bg-surface-subtle"))
+
+    const island = app.locator("silvery-island").boundingBox()
+    expect(island).toBeTruthy()
+    const x = island!.x
+    const y = island!.y
+    expect(app.cell(x, y).char).toBe("I")
+    const restingBg = app.cell(x, y).bg
+    expect(restingBg).toBeTruthy()
+
+    app.rerender(view("$bg-surface-hover"))
+    expect(app.cell(x, y).char).toBe("I")
+    expect(app.cell(x, y).bg).not.toEqual(restingBg)
   })
 
   test("3. island renders correctly when its layout shrinks (clipping cascade)", async () => {

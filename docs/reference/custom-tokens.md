@@ -5,7 +5,7 @@ description: Extend silvery's theme with app-specific semantic tokens or brand c
 
 # Custom Tokens
 
-Silvery's built-in [Sterling](/guide/sterling) tokens (`$fg-accent`, `$fg-muted`, `$fg-success`, `$bg-surface-raised`, …) cover semantic UI roles. For app-specific needs — priority levels, category colors, brand identity — define your own tokens via `defineTokens()`.
+Silvery's built-in [Sterling](/reference/sterling) tokens (`$fg-accent`, `$fg-muted`, `$fg-success`, `$bg-surface-raised`, …) cover semantic UI roles. For app-specific needs — priority levels, category colors, brand identity — define your own tokens via `defineTokens()`.
 
 ## Two kinds of custom tokens
 
@@ -126,4 +126,4 @@ Note: `ThemeProvider`'s `customTokens` prop wiring is currently part of the desi
 - **[Token Taxonomy](./token-taxonomy)** — decision tree for picking the right built-in token before reaching for `defineTokens()`
 - [Color Schemes](./color-schemes) — what `scheme` + `theme` arguments carry
 - [Capability Tiers](./capability-tiers) — how tiers resolve to rgb / ansi16 / attrs
-- [Styling Guide](./styling) — built-in tokens and when to use them
+- [Styling Guide](../guide/styling.md) — built-in tokens and when to use them

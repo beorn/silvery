@@ -161,4 +161,4 @@ Restore in reverse: `term.console.restore()` first, then `term.output.deactivate
 
 - [term.output](/api/term-output) — the foreign-write sink
 - `<Console>` component — UI wrapper around `entries`
-- [Term — the I/O umbrella](/guide/term)
+- [Term — the I/O umbrella](/reference/term)

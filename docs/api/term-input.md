@@ -110,4 +110,4 @@ The Term's own `dispose()` cascades to `term.input.dispose()` — normal `using 
 
 - [term.modes](/api/term-modes) — protocol-mode setters (raw mode coexists with input ownership)
 - [term.output](/api/term-output) — stdout/stderr mediator
-- [Term — the I/O umbrella](/guide/term) — the overall architecture
+- [Term — the I/O umbrella](/reference/term) — the overall architecture

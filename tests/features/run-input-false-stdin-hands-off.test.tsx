@@ -24,7 +24,7 @@
 
 import React from "react"
 import { EventEmitter } from "node:events"
-import { describe, test, expect } from "vitest"
+import { afterEach, describe, test, expect } from "vitest"
 import { Box, Text } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
 
@@ -113,6 +113,24 @@ const MOUSE_ENABLE_RE = /\x1b\[\?(?:1000|1002|1003|1006|1016)h/
 /** CSI ?1004h — the focus-event reporting ENABLE sequence. */
 const FOCUS_ENABLE_RE = /\x1b\[\?1004h/
 
+const restoredProcessProps: Array<() => void> = []
+
+afterEach(() => {
+  while (restoredProcessProps.length > 0) restoredProcessProps.pop()?.()
+})
+
+function overrideProcessProp(target: object, key: PropertyKey, value: unknown) {
+  const descriptor = Object.getOwnPropertyDescriptor(target, key)
+  Object.defineProperty(target, key, {
+    configurable: true,
+    value,
+  })
+  restoredProcessProps.push(() => {
+    if (descriptor) Object.defineProperty(target, key, descriptor)
+    else Reflect.deleteProperty(target, key)
+  })
+}
+
 describe("run({ input: false }) — stdin hands-off contract", () => {
   test("does not touch stdin (no setRawMode, no setEncoding, no data listener)", async () => {
     const { stream: stdin, spy } = createFakeTtyStdin()
@@ -139,6 +157,66 @@ describe("run({ input: false }) — stdin hands-off contract", () => {
       expect(spy.setEncodingCalls).toEqual([])
       expect(spy.dataListenerCount).toBe(0)
       expect(spy.readableListenerCount).toBe(0)
+    } finally {
+      handle.unmount?.()
+    }
+  })
+
+  test("does not touch ambient process stdin while deriving the terminal profile", async () => {
+    const savedNoColor = process.env.NO_COLOR
+    delete process.env.NO_COLOR
+    restoredProcessProps.push(() => {
+      if (savedNoColor === undefined) delete process.env.NO_COLOR
+      else process.env.NO_COLOR = savedNoColor
+    })
+
+    const stdout = createFakeTtyStdout()
+    const setRawModeCalls: boolean[] = []
+    let raw = false
+    let dataListenerCount = 0
+
+    overrideProcessProp(process.stdin, "isTTY", true)
+    overrideProcessProp(process.stdin, "isRaw", false)
+    overrideProcessProp(process.stdin, "setRawMode", (mode: boolean) => {
+      setRawModeCalls.push(mode)
+      raw = mode
+      overrideProcessProp(process.stdin, "isRaw", raw)
+      return process.stdin
+    })
+    overrideProcessProp(process.stdin, "listenerCount", (eventName: string | symbol) =>
+      eventName === "data" ? dataListenerCount : 0,
+    )
+    overrideProcessProp(process.stdin, "on", (eventName: string | symbol) => {
+      if (eventName === "data") dataListenerCount += 1
+      return process.stdin
+    })
+    overrideProcessProp(process.stdin, "removeListener", (eventName: string | symbol) => {
+      if (eventName === "data") dataListenerCount = Math.max(0, dataListenerCount - 1)
+      return process.stdin
+    })
+    overrideProcessProp(process.stdout, "isTTY", true)
+    overrideProcessProp(process.stdout, "write", () => true)
+
+    const handle = await run(
+      <Box>
+        <Text>hi</Text>
+      </Box>,
+      {
+        stdin: process.stdin,
+        stdout,
+        cols: 80,
+        rows: 24,
+        colorLevel: "truecolor",
+        input: false,
+        mouse: false,
+        selection: false,
+        focusReporting: false,
+      },
+    )
+
+    try {
+      expect(setRawModeCalls).toEqual([])
+      expect(dataListenerCount).toBe(0)
     } finally {
       handle.unmount?.()
     }

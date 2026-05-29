@@ -133,16 +133,20 @@ describe("scheduler subscribes to cursor changes (km-silvercode.cursor-startup-p
     expect(scheduleSpy).not.toHaveBeenCalled()
   })
 
-  test("scheduler without cursorAccessors falls back to global cursor (no subscription)", () => {
-    // Back-compat: scheduler must continue to work when no
-    // cursorAccessors are provided (legacy embedders before the
-    // per-instance store landed). dispose() must not throw on a
-    // null cursorCleanup.
+  test("scheduler without cursorAccessors no-ops cursor reads (no subscription)", () => {
+    // Post km-silvery.delete-cursor-globals: the legacy global-cursor
+    // public fallback is gone. Scheduler still constructs + disposes
+    // without throwing — `getCursorState` resolves to a `() => null`
+    // no-op and no `subscribeCursor` subscription is wired up when
+    // accessors are absent. Legacy embedders that relied on the global
+    // fallback now simply render without a positioned cursor; explicit
+    // `cursorAccessors` from `createCursorStore()` is required for
+    // cursor visibility.
     const stdout = createMockStdout()
     const scheduler = new RenderScheduler({
       stdout: stdout.stream,
       root: { type: "silvery-box", children: [], props: {} } as unknown as AgNode,
-      // No cursorAccessors — exercises the global fallback path.
+      // No cursorAccessors — no-op fallback path.
     })
     // Just constructing + disposing must not throw.
     expect(() => scheduler.dispose()).not.toThrow()

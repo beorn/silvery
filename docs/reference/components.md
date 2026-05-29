@@ -203,7 +203,7 @@ Renders content once above the dynamic output. Useful for completed items in a s
 <Static items={completedTasks}>{(task) => <Text key={task.id}>✓ {task.name}</Text>}</Static>
 ```
 
-## Viewport Architecture
+## Screen And Scrollback Architecture
 
 Four composable primitives for different rendering modes.
 

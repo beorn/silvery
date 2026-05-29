@@ -166,7 +166,7 @@ Auto-detected features include Kitty keyboard protocol, truecolor, synchronized 
 
 ## How does theming work in Silvery?
 
-Silvery ships 84 color palettes with [Sterling](/guide/sterling) tokens:
+Silvery ships 84 color palettes with [Sterling](/reference/sterling) tokens:
 
 ```tsx
 <Box borderStyle="round" borderColor="$border-default">

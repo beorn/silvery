@@ -328,21 +328,13 @@ export function useCursor(position: CursorPosition): void {
   }, [])
 }
 
-// ============================================================================
-// Exports for scheduler integration
-// ============================================================================
-
-/**
- * @deprecated Use CursorAccessors from createCursorStore() instead.
- * These module-level functions are the global fallback for backward compat.
- * Deletion tracked: km-silvery.delete-cursor-globals
- */
-function getCursorState(): CursorState | null {
-  return globalGetCursorState()
-}
-
-function subscribeCursor(listener: () => void): () => void {
-  return globalSubscribeCursor(listener)
-}
-
-export { getCursorState, subscribeCursor }
+// The legacy `getCursorState` / `subscribeCursor` public wrappers were
+// removed in km-silvery.delete-cursor-globals (the
+// `@km/silvery/12393-delete-cursor-globals` bead). Scheduler callers that
+// want cursor visibility wire `cursorAccessors` from `createCursorStore()`
+// explicitly; the scheduler falls back to `() => null` when no accessors
+// are provided. The module-level `_globalCursorState` /
+// `globalSetCursorState` / `globalGetCursorState` / `globalSubscribeCursor`
+// helpers above are kept for the @deprecated `useCursor` hook's
+// no-provider path (own deletion tracked at km-silvery.delete-use-cursor),
+// but are no longer part of the public surface.

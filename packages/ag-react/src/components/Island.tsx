@@ -27,6 +27,7 @@ import {
   type ForwardedRef,
   type JSX,
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -37,7 +38,6 @@ import type {
   IslandGuest,
   IslandHandle,
   IslandHydrate,
-  IslandNodeState,
   IslandPalettePolicy,
   IslandSignal,
 } from "@silvery/ag/island-types"
@@ -205,11 +205,31 @@ export const Island = forwardRef(function Island(
       const node = nodeRef.current
       if (!node) return
 
+      let resolveHandle!: (handle: IslandHandle) => void
+      let rejectHandle!: (err: unknown) => void
+      const handleReady = new Promise<IslandHandle>((resolve, reject) => {
+        resolveHandle = resolve
+        rejectHandle = reject
+      })
+      const trackedGuest: IslandGuest = {
+        ...guest,
+        async init(ctx) {
+          try {
+            const handle = await guest.init(ctx)
+            resolveHandle(handle)
+            return handle
+          } catch (err) {
+            rejectHandle(err)
+            throw err
+          }
+        },
+      }
+
       // Build the framework-agnostic factory. Its `node` field is a stub
       // (layoutNode === null); we discard it and copy the islandState onto
       // the reconciler-owned node from the JSX intrinsic.
       const factory = createIsland({
-        guest,
+        guest: trackedGuest,
         cols,
         rows,
         focusable,
@@ -249,35 +269,48 @@ export const Island = forwardRef(function Island(
         // resolves. We re-check inside a deferred microtask hook attached
         // via `scope.defer` so a deferred-hydrate flow eventually wires
         // the subscription too.
-        const subscribeWhenReady = (): void => {
-          const handle = slot.alive ? state.handle : null
-          if (!handle) return
-          const unsub = handle.output.subscribe(() => {
+        let subscribed = false
+        let paintScheduled = false
+        const requestIslandPaint = (): void => {
+          if (!slot.alive) return
+          markNodeDirty(node)
+          if (paintScheduled) return
+          paintScheduled = true
+          queueMicrotask(() => {
+            paintScheduled = false
             if (!slot.alive) return
             markNodeDirty(node)
+            setMountTick((t) => t + 1)
           })
-          scope.defer(unsub)
         }
-        // Try synchronously — `init` may have already resolved (rare with
-        // the Promise.resolve hop in createIsland, but cheap to attempt).
-        subscribeWhenReady()
-        // Schedule a microtask retry so async init's first-paint
-        // subscription doesn't race the first frame. The factory's
-        // `lifecycle = "ready"` transition runs in the same microtask that
-        // assigns `state.handle`, so this is the first opportunity to see
-        // a non-null handle.
-        queueMicrotask(() => {
-          if (!slot.alive) return
-          if (!state.handle) {
-            // Still not ready — re-poll on the next tick. For Phase 1's
-            // synchronous `"load"` hydration the second microtask is
-            // always sufficient; deferred-hydrate would need a richer
-            // signal. Tracked under the Phase 2 TODO in createIsland.
-            queueMicrotask(subscribeWhenReady)
-          } else {
-            subscribeWhenReady()
+        const subscribeToHandle = (handle: IslandHandle): void => {
+          if (!slot.alive || subscribed) return
+          subscribed = true
+          const unsub = handle.output.subscribe(requestIslandPaint)
+          scope.defer(unsub)
+
+          // The handle may resolve long after the mount commit. Request a
+          // paint so its already-populated first buffer can show even if no
+          // guest output event fires after the subscription is attached.
+          requestIslandPaint()
+        }
+
+        const subscribeWhenAttached = (): void => {
+          if (!slot.alive || subscribed) return
+          const handle = state.handle
+          if (!handle) {
+            queueMicrotask(subscribeWhenAttached)
+            return
           }
-        })
+          subscribeToHandle(handle)
+        }
+
+        void handleReady.then(
+          () => queueMicrotask(subscribeWhenAttached),
+          () => {
+            // createIsland routes init failures through onError / ErrorBoundary.
+          },
+        )
       }
 
       // Schedule a second render so the pipeline re-runs with islandState
@@ -328,6 +361,16 @@ export const Island = forwardRef(function Island(
     [guest, hydrate],
   )
 
+  // Host-driven resize: prop/layout owners update cols/rows without
+  // re-instantiating the guest. Forward the new grid dimensions through the
+  // IslandSizeOwner so PTY guests can resize their child process.
+  useEffect(() => {
+    const handle = slotRef.current?.factory.handle
+    if (!handle) return
+    if (handle.size.cols === cols && handle.size.rows === rows) return
+    handle.size.requestResize(cols, rows)
+  }, [cols, rows, guest, hydrate])
+
   // ── Imperative ref handle ────────────────────────────────────────────────
   // The user-facing ref resolves to the guest's IslandHandle (null until
   // init resolves). We re-read the slot on each access so a late-arriving
@@ -351,6 +394,7 @@ export const Island = forwardRef(function Island(
       ref={nodeRef}
       cols={cols}
       rows={rows}
+      focusable={focusable}
       width={width}
       height={height}
       flexGrow={flexGrow}

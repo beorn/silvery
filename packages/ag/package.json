@@ -55,6 +55,18 @@
         "types": "./dist/interactive-signals.d.mts",
         "import": "./dist/interactive-signals.mjs"
       },
+      "./island": {
+        "types": "./dist/island.d.mts",
+        "import": "./dist/island.mjs"
+      },
+      "./island-guests": {
+        "types": "./dist/island-guests.d.mts",
+        "import": "./dist/island-guests.mjs"
+      },
+      "./island-types": {
+        "types": "./dist/island-types.d.mts",
+        "import": "./dist/island-types.mjs"
+      },
       "./keys": {
         "types": "./dist/keys.d.mts",
         "import": "./dist/keys.mjs"
@@ -103,6 +115,9 @@
       "src/focus-manager.ts",
       "src/focus-queries.ts",
       "src/interactive-signals.ts",
+      "src/island.ts",
+      "src/island-guests.ts",
+      "src/island-types.ts",
       "src/keys.ts",
       "src/layout-types.ts",
       "src/mouse-event-types.ts",

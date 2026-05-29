@@ -5,7 +5,7 @@
  * OSC 52 clipboard, and key parsing utilities.
  *
  * ```tsx
- * import { parseMouseSequence, enableKittyKeyboard, copyToClipboard } from '@silvery/ag-react/input'
+ * import { parseMouseSequence, enableKittyKeyboard, createOsc52Backend } from '@silvery/ag-react/input'
  * ```
  *
  * @packageDocumentation
@@ -113,7 +113,7 @@ export type { BracketedPasteResult, PasteEvent } from "./bracketed-paste"
 // Clipboard
 // =============================================================================
 
-export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./clipboard"
+export { parseClipboardResponse } from "./clipboard"
 export {
   createOsc52Backend,
   createInternalClipboardBackend,

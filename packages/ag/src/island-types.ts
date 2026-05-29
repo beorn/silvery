@@ -433,11 +433,14 @@ export interface IslandContext {
 // ============================================================================
 
 /**
- * The runtime-agnostic guest contract. Implementations: `ptyGuest`,
- * `snapshotGuest`, `replayGuest`, `silveryGuest` (embedded sub-instance),
- * `inkGuest` (legacy adapter), `vueGuest`, `solidGuest`, … any author.
+ * The runtime-agnostic guest contract. Current factories include
+ * `snapshotGuest` and `sandbox(guest)` in `@silvery/ag/island-guests`, plus
+ * package-specific guests such as `xtermGuest` and silvermux's `tmuxGuest`.
+ * Planned or external guests include `replayGuest`, `silveryGuest` (embedded
+ * sub-instance), `inkGuest` (legacy adapter), `vueGuest`, `solidGuest`, and
+ * other author-provided implementations.
  *
- * Silvery does NOT ship per-framework adapters beyond `ptyGuest` /
+ * Silvery does NOT ship per-framework adapters beyond core helpers such as
  * `snapshotGuest` / a `sandbox(guest)` wrapper. Community frameworks
  * implement the contract directly; the contract is the integration surface.
  *

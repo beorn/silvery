@@ -518,4 +518,29 @@ describe("<Island> — cols/rows vs flex props (Unit B' contract)", () => {
     // flexGrow=1 in a 60-wide parent — island absorbs all 60 cells.
     expect(islandNode.boxRect?.width).toBe(60)
   })
+
+  test("cols/rows changes request resize on the live guest handle", async () => {
+    const m = mockGuest()
+    const render = createRenderer({ cols: 80, rows: 24 })
+    const scope = createScope("island-resize-test")
+    const wrap = (cols: number, rows: number) => (
+      <ScopeProvider scope={scope}>
+        <Box>
+          <Island guest={m.guest} cols={cols} rows={rows} />
+        </Box>
+      </ScopeProvider>
+    )
+
+    const app = render(wrap(20, 5))
+    await flushMicrotasks()
+    expect(m.handle?.size.cols).toBe(20)
+    expect(m.handle?.size.rows).toBe(5)
+
+    app.rerender(wrap(32, 7))
+    await flushMicrotasks()
+    expect(m.handle?.size.cols).toBe(32)
+    expect(m.handle?.size.rows).toBe(7)
+
+    await scope[Symbol.asyncDispose]()
+  })
 })

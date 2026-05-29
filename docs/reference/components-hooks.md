@@ -68,7 +68,7 @@ This is a quick-reference index of all Silvery components and hooks. For detaile
 
 | Component                              | Description                            | API   |
 | -------------------------------------- | -------------------------------------- | ----- |
-| [ThemeProvider](/guide/theming)        | Theme context provider                 | Theme |
+| [ThemeProvider](/guide/styling)        | Theme context provider                 | Theme |
 | [ErrorBoundary](/guides/components)    | React error boundary with reset        | UI    |
 | [Console](/guides/components)          | Captures `console.log` output          | UI    |
 | [Form / FormField](/guides/components) | Form layout with labels and validation | UI    |

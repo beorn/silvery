@@ -104,4 +104,4 @@ Removes the `resize` listener and clears any pending coalesce timer. Idempotent.
 
 - [alien-signals](https://github.com/stackblitz/alien-signals) — the reactive primitive
 - [`@silvery/signals`](/reference/signals) — Silvery's thin wrapper (signal, computed, effect)
-- [Term — the I/O umbrella](/guide/term)
+- [Term — the I/O umbrella](/reference/term)

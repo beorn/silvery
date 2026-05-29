@@ -185,7 +185,7 @@ export type { BracketedPasteResult, PasteEvent } from "./bracketed-paste"
 // Clipboard
 // =============================================================================
 
-export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./clipboard"
+export { parseClipboardResponse } from "./clipboard"
 export {
   createOsc52Backend,
   createInternalClipboardBackend,

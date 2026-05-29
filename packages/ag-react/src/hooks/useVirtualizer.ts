@@ -550,31 +550,12 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     if (scrollToChanged) {
       const currentOffset = scrollOffsetRef.current
       const visibleEndExclusive = currentOffset + estimatedVisibleCount
-      const movingLeft = prevScrollToValue !== undefined && clampedIndex < prevScrollToValue
       if (clampedIndex < currentOffset) {
         // Off-screen above: scroll so target becomes topmost.
         scrollOffsetRef.current = clampedIndex
       } else if (clampedIndex >= visibleEndExclusive) {
         // Off-screen below: scroll so target becomes bottommost.
         scrollOffsetRef.current = Math.max(0, clampedIndex - estimatedVisibleCount + 1)
-      } else if (movingLeft && clampedIndex === currentOffset && currentOffset > 0) {
-        // Symmetric scroll-back: cursor retreats into the leading edge with
-        // items hidden before. Pull viewport back by 1 so prior context
-        // becomes visible. Without this, going l,l,h leaves the viewport
-        // stuck at [col2,col3] even though the cursor is on col2 — col1
-        // stays hidden. Bead: km-qlib7.
-        //
-        // Asymmetric by design — NOT mirrored on the right side. The right-
-        // side advance only fires when cursor goes OFF-SCREEN
-        // (≥ visibleEndExclusive). Adding a "cursor at trailing edge moving
-        // right → advance" rule would re-trigger the
-        // cursor-stuck-col-0-h-scrolls bug: pressing l from col0 with
-        // visible=[col0,col1] would push viewport to [col1,col2], leaving
-        // cursor pinned at the leading edge. The asymmetry is necessary —
-        // `movingLeft` is the discriminator: scroll-back happens when cursor
-        // *retreats* into a leading edge that has hidden items behind it,
-        // which never happens on cursor advance into the trailing edge.
-        scrollOffsetRef.current = Math.max(0, currentOffset - 1)
       }
     }
   }

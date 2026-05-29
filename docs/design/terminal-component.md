@@ -17,12 +17,13 @@ into `<Terminal>`.
 
 It is the silvery-native replacement for any place where the application
 would otherwise hand-roll `rowToAnsi` + `ansiCursorTo` against
-`process.stdout`. The motivating consumer is `termless rec`'s
+`process.stdout`. The original motivating consumer was `termless rec`'s
 [`rec-live-overlay.ts`](../../../termless/packages/cli/src/rec-live-overlay.ts),
-a ~410-LOC direct-ANSI painter that mirrors a recording terminal into a
-centred frame on the host. After this component lands, ~80% of that
-file collapses to a thin shim that mounts `<Terminal>` inside a
-chrome `<Box>`.
+a direct-ANSI painter that mirrored a recording terminal into a centred
+frame on the host. The live recording path has since moved to
+`<Island guest={xtermGuest}>`; `<Terminal>` remains the reusable
+read-only grid renderer for in-process terminal snapshots, debugger
+views, and tests.
 
 ## Goals
 

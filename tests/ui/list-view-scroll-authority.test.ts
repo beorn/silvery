@@ -3,6 +3,7 @@ import {
   resolveGestureScrollWindow,
   resolveListViewBoxScrollTo,
   resolveListViewRenderScrollRow,
+  resolveListViewViewportFrame,
 } from "../../packages/ag-react/src/ui/components/list-view/scroll-authority"
 
 describe("ListView scroll authority", () => {
@@ -58,6 +59,40 @@ describe("ListView scroll authority", () => {
         selectedBoxScrollTo: 7,
       }),
     ).toBe(7)
+  })
+
+  test("commits exactly one viewport writer for every authority combination", () => {
+    const candidates = [null, 0, 7]
+
+    for (const declarativeScrollRow of candidates) {
+      for (const followPinnedTopRow of candidates) {
+        for (const scrollRow of candidates) {
+          for (const followDisengageTopRow of candidates) {
+            for (const maintainedTopRow of candidates) {
+              const frame = resolveListViewViewportFrame({
+                declarativeScrollRow,
+                followPinnedTopRow,
+                scrollRow,
+                followDisengageTopRow,
+                maintainedTopRow,
+              })
+              const committed = frame.candidates.filter((candidate) => candidate.committed)
+              const active = frame.candidates.filter((candidate) => candidate.active)
+
+              expect(committed).toHaveLength(1)
+              expect(committed[0]).toMatchObject({
+                authority: frame.authority,
+                row: frame.row,
+              })
+              expect(frame.suppressedWriters).toEqual(
+                active.filter((candidate) => !candidate.committed),
+              )
+              expect(frame.suppressedWriters).not.toContainEqual(committed[0])
+            }
+          }
+        }
+      }
+    }
   })
 
   test("active upward flick keeps virtual window start monotonic", () => {

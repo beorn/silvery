@@ -1,6 +1,6 @@
 # ThemeProvider
 
-Delivers a [Sterling](/guide/sterling) Theme to the React component tree. Sets React context so `useTheme()` returns the active theme.
+Delivers a [Sterling](/reference/sterling) Theme to the React component tree. Sets React context so `useTheme()` returns the active theme.
 
 For pipeline `$token` resolution and automatic fg/bg, use `Box theme={…}` instead — it handles fg, bg, and `$tokens` automatically.
 
@@ -46,7 +46,7 @@ const theme = useTheme() // Access current theme in components
 
 ## See Also
 
-- [Sterling primer](/guide/sterling) — silvery's design system
-- [Theming guide](/guide/theming) — switching schemes, custom themes
-- [Theming reference](/reference/theming) — `$token` shorthand, special values
+- [Sterling primer](/reference/sterling) — silvery's design system
+- [Theming guide](/guide/styling) — switching schemes, custom themes
+- [Theming reference](/guide/styling) — `$token` shorthand, special values
 - [Box](./Box.md) — layout container with `theme` prop

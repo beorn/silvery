@@ -263,7 +263,7 @@ Keybindings are a UI detail. Commands are the API. Build on commands; bind keys 
 
 Components express semantic intent — color, hierarchy, state — via **tokens and presets**. The token system decides the concrete rendering details: which hex value, which SGR attributes, which tier-appropriate fallback. Components never reach for raw rendering primitives (hex colors, ANSI escapes, or SGR modifiers like `dim` / `bold` / `italic` / `underline`).
 
-[`silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. [Sterling](/guide/sterling) — silvery's canonical design system — derives nested roles + flat tokens (`$fg-accent`, `$fg-muted`, `$bg-surface-*`, `$border-focus`, …) plus typography presets that adapt to every terminal theme. 84 color schemes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, …) work automatically.
+[`silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. [Sterling](/reference/sterling) — silvery's canonical design system — derives nested roles + flat tokens (`$fg-accent`, `$fg-muted`, `$bg-surface-*`, `$border-focus`, …) plus typography presets that adapt to every terminal theme. 84 color schemes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, …) work automatically.
 
 ### Why not SGR in components
 
@@ -321,7 +321,7 @@ console.log("\x1b[31;1mError\x1b[0m")
 Hardcoded colors marry one theme. Raw SGR marries whatever that specific terminal does with SGR 2 and SGR 1. **Semantic tokens and typography presets marry them all.**
 :::
 
-→ [Styling guide](/guide/styling) · [Theming reference](/reference/theming) · [Themes gallery](/themes)
+→ [Styling guide](/guide/styling) · [Theming reference](/guide/styling) · [Themes gallery](/themes)
 
 ## 7. Compose with Factory Functions
 
@@ -568,10 +568,10 @@ process.stdout.write("\x1b[?1003h\x1b[?1006h") // enable mouse
 // …forgot the disable sequences on one of the error paths, terminal is broken
 ```
 
-The fix is not "be more careful with capture/restore." It's "have one owner per resource." See [Term — the I/O umbrella](/guide/term).
+The fix is not "be more careful with capture/restore." It's "have one owner per resource." See [Term — the I/O umbrella](/reference/term).
 :::
 
-→ [Term — the I/O umbrella](/guide/term) · [term.input](/api/term-input) · [term.output](/api/term-output) · [term.modes](/api/term-modes) · [term.size](/api/term-size) · [term.console](/api/term-console)
+→ [Term — the I/O umbrella](/reference/term) · [term.input](/api/term-input) · [term.output](/api/term-output) · [term.modes](/api/term-modes) · [term.size](/api/term-size) · [term.console](/api/term-console)
 
 ## The Silvery Way, at a Glance
 

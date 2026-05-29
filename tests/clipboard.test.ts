@@ -6,7 +6,7 @@
  * - Internal clipboard store (write, read, getData, timestamp)
  * - Composite clipboard (fan-out writes, first-reader-wins reads)
  * - Bracketed paste detection and PasteEvent creation
- * - Backwards-compatible API (copyToClipboard, requestClipboard, parseClipboardResponse)
+ * - Response parsing (parseClipboardResponse)
  */
 import { describe, test, expect, vi, beforeEach } from "vitest"
 // Note: Uses relative imports for worktree compatibility. In the main repo,
@@ -15,8 +15,6 @@ import {
   createOsc52Backend,
   createInternalClipboardBackend,
   createCompositeClipboard,
-  copyToClipboard,
-  requestClipboard,
   parseClipboardResponse,
   type ClipboardData,
   type ClipboardBackend,
@@ -388,29 +386,8 @@ describe("createInternalPasteEvent", () => {
 })
 
 // ============================================================================
-// Backwards-compatible API
+// Response parsing
 // ============================================================================
-
-describe("copyToClipboard (legacy)", () => {
-  test("writes OSC 52 sequence to stdout", () => {
-    const stdout = createMockStdout()
-    copyToClipboard(stdout as unknown as NodeJS.WriteStream, "test text")
-
-    const written = stdout.written[0]!
-    expect(written).toMatch(/^\x1b\]52;c;[A-Za-z0-9+/=]+\x07$/)
-    const base64 = written.slice(7, -1)
-    expect(Buffer.from(base64, "base64").toString("utf-8")).toBe("test text")
-  })
-})
-
-describe("requestClipboard (legacy)", () => {
-  test("writes OSC 52 query to stdout", () => {
-    const stdout = createMockStdout()
-    requestClipboard(stdout as unknown as NodeJS.WriteStream)
-
-    expect(stdout.written[0]).toBe("\x1b]52;c;?\x07")
-  })
-})
 
 describe("parseClipboardResponse", () => {
   test("decodes valid OSC 52 response with BEL terminator", () => {

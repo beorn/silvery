@@ -74,7 +74,7 @@ Toggles stdin termios raw mode. Uses the stdin stream passed at construction (no
 - TTY stdin: calls `stdin.setRawMode(on)`.
 - Non-TTY stdin: no-op on the stream; the signal still reflects the intent (useful for tests).
 
-Prefer a single `modes.rawMode(true)` at session start. Do not capture-and-restore around async work — see [the `wasRaw` anti-pattern note](/guide/term#anti-patterns).
+Prefer a single `modes.rawMode(true)` at session start. Do not capture-and-restore around async work — see [the `wasRaw` anti-pattern note](/reference/term#anti-patterns).
 
 ### `altScreen`
 
@@ -148,4 +148,4 @@ Dispose is implemented by writing `false` to each ever-activated signal — the 
 - [term.input](/api/term-input) — coexists with raw mode but is the mediator for stdin data
 - [term.output](/api/term-output) — writes ANSI on behalf of mode-signal effects once Output is active
 - [Kitty Protocol](/guide/kitty-protocol) — what the flags mean
-- [Term — the I/O umbrella](/guide/term)
+- [Term — the I/O umbrella](/reference/term)

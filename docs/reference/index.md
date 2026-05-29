@@ -19,7 +19,7 @@ Comprehensive reference documentation for Silvery's APIs, packages, and terminal
 ## Styling & Theming
 
 - [Style](/reference/style) -- Chainable terminal styling API (chalk replacement)
-- [Theming](/reference/theming) -- Semantic color tokens and progressive enhancement
+- [Theming](/guide/styling) -- Semantic color tokens and progressive enhancement
 
 ## Input & Events
 

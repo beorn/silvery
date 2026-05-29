@@ -61,7 +61,7 @@ Everything you need to build terminal UIs with Silvery.
 
 ## Term sub-owners
 
-Typed facets of the `Term` abstraction — one owner per class of shared-global I/O state. See the [I/O umbrella guide](/guide/term) for the architecture.
+Typed facets of the `Term` abstraction — one owner per class of shared-global I/O state. See the [I/O umbrella guide](/reference/term) for the architecture.
 
 | Owner                             | Description                                                                    |
 | --------------------------------- | ------------------------------------------------------------------------------ |

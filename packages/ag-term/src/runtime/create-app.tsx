@@ -71,6 +71,8 @@ import { createScope, reportDisposeError, type Scope } from "@silvery/scope"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 import { createFocusEvent, dispatchFocusEvent } from "@silvery/ag/focus-events"
+import type { AgNode } from "@silvery/ag/types"
+import type { IslandModesOwner, IslandProtocolModes } from "@silvery/ag/island-types"
 import { createPipeline } from "../measurer"
 import {
   detectTextSizingSupport,
@@ -90,6 +92,7 @@ import {
 import { map, merge, takeUntil } from "@silvery/create/streams"
 import { createRuntime } from "./create-runtime"
 import {
+  canRouteKeyToFocusedIsland,
   createHandlerContext,
   dispatchKeyToHandlers,
   handleFocusNavigation,
@@ -158,7 +161,7 @@ import {
 import { createVirtualScrollback } from "../virtual-scrollback"
 import { createSearchState, searchUpdate } from "../search-overlay"
 import { createOutput, type Output } from "./devices/output"
-import { createModes } from "./devices/modes"
+import { createModes, type MouseTrackingMode } from "./devices/modes"
 import { deriveProtocolModesFromFocusSubtree } from "./island-aggregator"
 import type { Term } from "../ansi/term"
 import { perfLog, checkBudget, logExitSummary, startTracking } from "./perf"
@@ -956,8 +959,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // for its own use (typically piping to a child PTY). See
   // `docs/design/terminal-component.md` § "render({ input: false })".
   const inputDisabled = inputOption === false
+  const hostOwnsStdin = inputOption !== false
   const mouseParseOptions = typeof mouseOption === "object" ? mouseOption : undefined
   const mouseTrackingEnabled = mouseOption === true || mouseParseOptions != null
+  const legacyMouseMode: MouseTrackingMode =
+    hostOwnsStdin && mouseTrackingEnabled
+      ? mouseParseOptions?.coordinateMode === "pixel"
+        ? "pixel"
+        : true
+      : false
 
   // Phase 4 of km-silvery.terminal-profile-plateau: a caller-supplied
   // `profile` wins over `caps`. Both paths converge on `capsOption` — the
@@ -1508,16 +1518,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   // Whether we still need to run the async probe (no cache hit).
-  // `inputDisabled` short-circuits any stdin-touching probe: the host
+  // `input: false` short-circuits any stdin-touching probe: the host
   // owns stdin and we must not race for it.
-  const needsProbe = shouldProbe && cachedProbe === undefined && !headless && !inputDisabled
+  const needsProbe = shouldProbe && cachedProbe === undefined && !headless && hostOwnsStdin
 
   // Resolve width detection: "auto" enables when caps are provided and not headless.
-  // Same `inputDisabled` short-circuit applies — width detection reads CPR
+  // Same `input: false` short-circuit applies — width detection reads CPR
   // responses from stdin, which the host owns when input is opted out.
   const needsWidthDetection =
     !headless &&
-    !inputDisabled &&
+    hostOwnsStdin &&
     (widthDetectionOption === true || (widthDetectionOption === "auto" && capsOption != null))
 
   // Track effective caps — may be updated by width detection and text sizing
@@ -1702,18 +1712,16 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   function disableInteractiveProtocolsEarly(): void {
     if (headless || !stdout.isTTY) return
     // Kitty keyboard, mouse tracking, and focus reporting are all
-    // host-input-protocol toggles — they change how the terminal *encodes
-    // input* on stdin. All three are gated by `!inputDisabled`: when silvery
-    // does not own stdin (`input: false`) it never enabled them (see the
-    // enable blocks in the render path) and must not pop a protocol stack the
-    // actual input owner may rely on. Alt-screen / cursor / colour cleanup
-    // (genuine stdout-only output state) is unconditional.
+    // host-input-protocol toggles — they change how the terminal encodes
+    // stdin. Disable exactly the protocols this runtime enabled, including
+    // focused-island requests under `input: false`. Alt-screen / cursor /
+    // colour cleanup (genuine stdout-only output state) is unconditional.
     // See `@km/termless/15575-rec-input-broken` (keyboard) and
     // `@km/termless/15586-rec-mouse-garble` (mouse + focus).
     const earlyDisable = [
-      inputDisabled ? "" : disableKittyKeyboard(), // Stop Kitty release events — only if silvery owns stdin
-      inputDisabled ? "" : disableMouse(), // Stop mouse events — only if silvery owns stdin
-      inputDisabled ? "" : "\x1b[?1004l", // Stop focus reporting — only if silvery owns stdin
+      kittyEnabled ? disableKittyKeyboard() : "", // Stop Kitty release events when enabled.
+      mouseEnabled ? disableMouse() : "", // Stop mouse events when enabled.
+      focusReportingEnabled ? "\x1b[?1004l" : "", // Stop focus reporting when enabled.
     ].join("")
     try {
       writeSync((stdout as unknown as { fd: number }).fd, earlyDisable)
@@ -1758,8 +1766,36 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   const defaultKittyFlags =
     KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
   let kittyFlags: number = defaultKittyFlags
+  let legacyKittyFlags: number | false = false
+  let legacyAltScreenEnabled = false
+  let legacyBracketedPasteEnabled = false
   let mouseEnabled = false
   let focusReportingEnabled = false
+  let inputPumpStarted = false
+
+  function setAltScreenMode(enabled: boolean): void {
+    modes.altScreen(enabled)
+  }
+
+  function setBracketedPasteMode(enabled: boolean): void {
+    modes.bracketedPaste(enabled)
+  }
+
+  function setKittyKeyboardMode(flags: number | false): void {
+    modes.kittyKeyboard(flags)
+    kittyEnabled = flags !== false
+    if (flags !== false) kittyFlags = flags
+  }
+
+  function setMouseMode(mode: MouseTrackingMode): void {
+    modes.mouse(mode)
+    mouseEnabled = mode !== false
+  }
+
+  function setFocusReportingMode(enabled: boolean): void {
+    modes.focusReporting(enabled)
+    focusReportingEnabled = enabled
+  }
   // Selection follows mouse: when mouse tracking is enabled, drag-to-select +
   // OSC 52 copy should work without requiring explicit opt-in. (The comment
   // here used to say "don't hijack mouse clicks by default" but the
@@ -1952,12 +1988,164 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         const focusEvent = createFocusEvent("focus", newNode, oldNode)
         dispatchFocusEvent(focusEvent)
       }
+      applyFocusedIslandProtocolModes("focus-change")
     },
   })
 
+  const islandModeSubscriptions = new Map<
+    AgNode,
+    { modes: IslandModesOwner; unsubscribe: () => void }
+  >()
+
+  function walkAgTree(node: AgNode | null, visit: (node: AgNode) => void): void {
+    if (!node) return
+    visit(node)
+    for (const child of node.children) walkAgTree(child, visit)
+  }
+
+  function containsAgNode(root: AgNode, target: AgNode): boolean {
+    if (root === target) return true
+    for (const child of root.children) {
+      if (containsAgNode(child, target)) return true
+    }
+    return false
+  }
+
+  function releaseIslandModeSubscriptionsInSubtree(root: AgNode): void {
+    for (const [node, sub] of islandModeSubscriptions) {
+      if (containsAgNode(root, node)) {
+        sub.unsubscribe()
+        islandModeSubscriptions.delete(node)
+      }
+    }
+  }
+
+  function syncIslandModeSubscriptions(): void {
+    const root = getContainerRoot(container)
+    const seen = new Set<AgNode>()
+    walkAgTree(root, (node) => {
+      if (node.type !== "silvery-island") return
+      const islandModes = node.islandState?.handle?.modes
+      if (!islandModes) return
+      seen.add(node)
+      const existing = islandModeSubscriptions.get(node)
+      if (existing?.modes === islandModes) return
+      existing?.unsubscribe()
+      const unsubscribe = islandModes.subscribe(() => {
+        applyFocusedIslandProtocolModes("island-modes-change")
+      })
+      islandModeSubscriptions.set(node, { modes: islandModes, unsubscribe })
+    })
+
+    for (const [node, sub] of islandModeSubscriptions) {
+      if (seen.has(node) && node.islandState?.handle?.modes === sub.modes) continue
+      sub.unsubscribe()
+      islandModeSubscriptions.delete(node)
+    }
+  }
+
+  function syncFocusedIslandState(focusedNode: AgNode | null): void {
+    const focusedIslands = new Set<AgNode>()
+    let node: AgNode | null = focusedNode
+    while (node) {
+      if (node.type === "silvery-island") focusedIslands.add(node)
+      node = node.parent
+    }
+
+    walkAgTree(getContainerRoot(container), (candidate) => {
+      if (candidate.type !== "silvery-island" || !candidate.islandState) return
+      candidate.islandState.focused = focusedIslands.has(candidate)
+    })
+  }
+
+  function resolveDesiredProtocolModes(aggregated: IslandProtocolModes): {
+    altScreen: boolean
+    bracketedPaste: boolean
+    kittyKeyboard: number | false
+    mouse: MouseTrackingMode
+    focusReporting: boolean
+  } {
+    const islandRequestsAltScreen = aggregated.altScreen === true
+    const islandRequestsBracketedPaste = aggregated.bracketedPaste === true
+    const islandRequestsKitty = aggregated.kittyKeyboard === true
+    const islandRequestsMouse =
+      aggregated.mouseTracking !== undefined && aggregated.mouseTracking !== "off"
+    const islandRequestsFocusReporting = aggregated.focusReporting === true
+
+    return {
+      altScreen: legacyAltScreenEnabled || islandRequestsAltScreen,
+      bracketedPaste: legacyBracketedPasteEnabled || islandRequestsBracketedPaste,
+      kittyKeyboard: islandRequestsKitty ? defaultKittyFlags : legacyKittyFlags,
+      mouse:
+        legacyMouseMode === "pixel"
+          ? "pixel"
+          : legacyMouseMode || islandRequestsMouse
+            ? true
+            : false,
+      focusReporting:
+        inputPumpStarted &&
+        ((hostOwnsStdin && focusReportingOption) || islandRequestsFocusReporting),
+    }
+  }
+
+  function assertNoIslandModeLeak(
+    desired: ReturnType<typeof resolveDesiredProtocolModes>,
+    reason: string,
+  ): void {
+    if (!isStrictEnabled("island-mode-leak", 2)) return
+    const leaks: string[] = []
+    if (modes.altScreen() !== desired.altScreen) {
+      leaks.push(`altScreen=${String(modes.altScreen())}, wanted ${String(desired.altScreen)}`)
+    }
+    if (modes.bracketedPaste() !== desired.bracketedPaste) {
+      leaks.push(
+        `bracketedPaste=${String(modes.bracketedPaste())}, wanted ${String(
+          desired.bracketedPaste,
+        )}`,
+      )
+    }
+    if (modes.kittyKeyboard() !== desired.kittyKeyboard) {
+      leaks.push(`kittyKeyboard=${String(modes.kittyKeyboard())}, wanted ${desired.kittyKeyboard}`)
+    }
+    if (modes.mouse() !== desired.mouse) {
+      leaks.push(`mouse=${String(modes.mouse())}, wanted ${String(desired.mouse)}`)
+    }
+    if (modes.focusReporting() !== desired.focusReporting) {
+      leaks.push(
+        `focusReporting=${String(modes.focusReporting())}, wanted ${String(
+          desired.focusReporting,
+        )}`,
+      )
+    }
+    if (leaks.length === 0) return
+    throw new Error(
+      `[SILVERY_STRICT=island-mode-leak] terminal protocol mode mismatch after ${reason}: ${leaks.join(
+        "; ",
+      )}`,
+    )
+  }
+
+  function applyFocusedIslandProtocolModes(reason: string): void {
+    if (headless) return
+    syncIslandModeSubscriptions()
+    syncFocusedIslandState(focusManager.activeElement)
+    const aggregated = deriveProtocolModesFromFocusSubtree(focusManager.activeElement)
+    const desired = resolveDesiredProtocolModes(aggregated)
+    setAltScreenMode(desired.altScreen)
+    setBracketedPasteMode(desired.bracketedPaste)
+    setKittyKeyboardMode(desired.kittyKeyboard)
+    setMouseMode(desired.mouse)
+    setFocusReportingMode(desired.focusReporting)
+    assertNoIslandModeLeak(desired, reason)
+  }
+
   // Wire up focus cleanup on node removal — when React unmounts a subtree,
   // the host-config calls this to clear focus if the active element was removed.
-  setOnNodeRemoved((removedNode) => focusManager.handleSubtreeRemoved(removedNode))
+  setOnNodeRemoved((removedNode) => {
+    releaseIslandModeSubscriptionsInSubtree(removedNode)
+    focusManager.handleSubtreeRemoved(removedNode)
+    applyFocusedIslandProtocolModes("subtree-removed")
+  })
 
   // Per-instance cursor state (replaces module-level globals)
   const cursorStore = createCursorStore()
@@ -2073,9 +2261,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     if (!headless && stdin.isTTY) {
       // Step 1: Stop consuming stdin — prevent any more event processing.
-      // Skipped when `inputDisabled`: the host owns stdin; we never attached
+      // Skipped when `input: false`: the host owns stdin; we never attached
       // listeners and must not remove anything the host installed.
-      if (!inputDisabled) {
+      if (hostOwnsStdin) {
         stdin.removeAllListeners("data")
         stdin.pause()
       }
@@ -2085,16 +2273,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // cleanup is more robust than tracking enable/disable state.
       //
       // Exception: the three host-input-protocol toggles — Kitty keyboard,
-      // mouse tracking, and focus reporting — are gated by `!inputDisabled`.
-      // They change how the terminal *encodes input* on stdin; when silvery
-      // does not own stdin (`input: false`), it never enabled them (see the
-      // enable blocks above) and must not pop a protocol stack the input owner
-      // may be relying on. Bracketed paste / cursor / colour / alt-screen are
-      // stdout-only output state and stay unconditional.
+      // mouse tracking, and focus reporting — are restored only when this
+      // runtime enabled them. Focused islands can request them even when the
+      // host opted out of owning stdin, so the input flag is not the cleanup
+      // authority; the mode state is.
       const sequences = [
-        inputDisabled ? "" : "\x1b[?1004l", // Disable focus reporting — only if silvery owns stdin
-        inputDisabled ? "" : disableMouse(), // Disable SGR mouse tracking — only if silvery owns stdin
-        inputDisabled ? "" : disableKittyKeyboard(), // Pop Kitty keyboard protocol — only if silvery owns stdin
+        focusReportingEnabled ? "\x1b[?1004l" : "", // Disable focus reporting if enabled.
+        mouseEnabled ? disableMouse() : "", // Disable SGR mouse tracking if enabled.
+        kittyEnabled ? disableKittyKeyboard() : "", // Pop Kitty keyboard protocol if enabled.
         "\x1b[?2004l", // Disable bracketed paste
         "\x1b[0m", // Reset SGR attributes
         resetCursorStyle(), // Reset cursor shape to terminal default (DECSCUSR 0)
@@ -2125,13 +2311,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Step 3: Drain in-flight stdin bytes. The terminal may have already
       // queued events (Kitty release, mouse moves) before processing our
       // disable sequences. Read and discard them so they don't leak to shell.
-      // (drainBufferedStdinBytes() already short-circuits when inputDisabled.)
+      // (drainBufferedStdinBytes() already short-circuits when input is opted out.)
       drainBufferedStdinBytes()
 
       // Step 4: Disable raw mode — only when we owned stdin in the first
-      // place. With `inputDisabled` the host owns it and may want raw
+      // place. With `input: false` the host owns it and may want raw
       // mode for its child PTY pipe; flipping it off here would break the host.
-      if (!inputDisabled) {
+      if (hostOwnsStdin) {
         try {
           stdin.setRawMode(false)
         } catch {
@@ -2141,9 +2327,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     } else if (!headless) {
       // Non-TTY cleanup: just send disable sequences
       const sequences = [
-        inputDisabled ? "" : "\x1b[?1004l",
-        inputDisabled ? "" : disableMouse(),
-        inputDisabled ? "" : disableKittyKeyboard(),
+        focusReportingEnabled ? "\x1b[?1004l" : "",
+        mouseEnabled ? disableMouse() : "",
+        kittyEnabled ? disableKittyKeyboard() : "",
         "\x1b[?2004l",
         "\x1b[0m",
         resetCursorStyle(),
@@ -2159,6 +2345,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Cleanup providers — stdin is already cleaned up above for TTY,
     // but provider cleanup handles other resources (resize listeners, etc.)
+    for (const sub of islandModeSubscriptions.values()) sub.unsubscribe()
+    islandModeSubscriptions.clear()
     providerCleanups.forEach((fn) => {
       try {
         fn()
@@ -2729,7 +2917,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Clear + home still go through stdout — they're transient cursor moves,
       // not mode toggles. Use the owned writer so the (now-active) Output
       // sink doesn't suppress them.
-      modes.altScreen(true)
+      legacyAltScreenEnabled = true
+      setAltScreenMode(true)
       writeOwned("\x1b[2J\x1b[H")
     }
     writeOwned("\x1b[?25l")
@@ -2751,39 +2940,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     currentBuffer = doRender()
 
     if (!headless) {
-      // Kitty keyboard protocol — all paths go through the Modes owner so state
-      // is tracked for race-free teardown.
-      //
-      // `inputDisabled` short-circuits the whole block: the Kitty keyboard
-      // protocol changes how the terminal *encodes keystrokes*. When silvery
-      // does not own stdin (`input: false` — e.g. termless `rec`'s live
-      // overlay, which keeps the host's stdin → child-PTY pipe intact), it
-      // must not put the terminal into Kitty mode. The actual input owner
-      // (the recorded child app reached through the PTY) negotiates its own
-      // keyboard protocol; if silvery flips the host into Kitty mode behind
-      // its back, the host emits CSI-u key reports the child cannot parse —
-      // keystrokes leak to the screen as raw `[57441;2u`-style text and
-      // hotkeys (incl. Ctrl-D) go dead. The teardown's `disableKittyKeyboard()`
-      // is likewise scoped: see the `!inputDisabled` guard below.
-      // See `docs/design/terminal-component.md` § "render({ input: false })".
-      //
-      // Aggregator hook (@km/silvery/15646-islands Unit C): if a focused-
-      // subtree <Island> declares it wants Kitty keyboard via its modes
-      // owner, treat that as `kittyOption === true` for this initial enable.
-      // No-op until Phase 3 mounts a real island guest (current apps return
-      // `{}` from the aggregator). Focus-change re-evaluation lives in
-      // Phase 3 when the rec adoption demonstrates the full lifecycle.
-      const aggregatedModesAtInit = deriveProtocolModesFromFocusSubtree(focusManager.activeElement)
-      const kittyOptionEffective =
-        kittyOption != null && kittyOption !== false
-          ? kittyOption
-          : aggregatedModesAtInit.kittyKeyboard
-            ? true
-            : kittyOption
-      if (inputDisabled) {
-        // No-op — leave keyboard-protocol negotiation to the stdin owner.
-      } else if (kittyOptionEffective != null && kittyOptionEffective !== false) {
-        if (kittyOptionEffective === true) {
+      // Legacy app-level Kitty keyboard protocol. Focused islands are applied
+      // by applyFocusedIslandProtocolModes() on focus / mode-owner changes.
+      // With `input: false`, legacy app-level requests are suppressed, but a
+      // focused island can still request the host mode structurally.
+      if (hostOwnsStdin && kittyOption != null && kittyOption !== false) {
+        if (kittyOption === true) {
           // Auto-detect: probe terminal, enable if supported.
           // If caller already detected Kitty support synchronously (via caps from
           // detectTerminalCaps — $TERM-based), skip the 200ms stdio roundtrip and
@@ -2791,52 +2953,31 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           // Kitty-protocol terminals (kitty/ghostty/wezterm/foot); the probe only
           // adds value when caps weren't provided.
           if (capsOption?.kittyKeyboard) {
-            modes.kittyKeyboard(defaultKittyFlags)
-            kittyEnabled = true
-            kittyFlags = defaultKittyFlags
+            legacyKittyFlags = defaultKittyFlags
+            setKittyKeyboardMode(defaultKittyFlags)
           } else {
             const result = await detectKittyFromStdio(stdout, stdin as NodeJS.ReadStream)
             if (result.supported) {
-              modes.kittyKeyboard(defaultKittyFlags)
-              kittyEnabled = true
-              kittyFlags = defaultKittyFlags
+              legacyKittyFlags = defaultKittyFlags
+              setKittyKeyboardMode(defaultKittyFlags)
             }
           }
         } else {
           // Explicit flags — enable directly without detection
-          modes.kittyKeyboard(kittyOptionEffective as number)
-          kittyEnabled = true
-          kittyFlags = kittyOptionEffective as number
+          legacyKittyFlags = kittyOption as number
+          setKittyKeyboardMode(kittyOption as number)
         }
-      } else if (kittyOption == null) {
+      } else if (hostOwnsStdin && kittyOption == null) {
         // No option specified: legacy behavior — always enable Kitty with full fidelity
-        modes.kittyKeyboard(defaultKittyFlags)
-        kittyEnabled = true
-        kittyFlags = defaultKittyFlags
+        legacyKittyFlags = defaultKittyFlags
+        setKittyKeyboardMode(defaultKittyFlags)
       }
 
-      // Mouse tracking
-      //
-      // `inputDisabled` short-circuits the mouse enable: mouse tracking
-      // (`CSI ?1000h` / `?1002h` / `?1003h` / `?1006h`) is a host-input-
-      // protocol toggle — it makes the terminal *emit mouse-report bytes on
-      // stdin*. When silvery does not own stdin (`input: false` — e.g.
-      // termless `rec`'s live overlay, which keeps the host's stdin →
-      // child-PTY pipe intact), it must not put the terminal into mouse-
-      // reporting mode. The actual input owner (the recorded child app
-      // reached through the PTY) negotiates its own mouse protocol; if
-      // silvery flips the host into mouse mode behind its back, the host
-      // emits `CSI M…` / `CSI <…M` reports the child cannot parse — they
-      // leak to the screen as garbled text. Sibling of the Kitty-keyboard
-      // gate above. See `@km/termless/15586-rec-mouse-garble`.
-      // Aggregator hook (@km/silvery/15646-islands Unit C): focused-subtree
-      // <Island> requesting mouse tracking is OR'd into the enable. No
-      // effect today — current apps mount no islands; aggregator returns
-      // `{}`. Phase 3 (rec adoption) is the first consumer.
-      const mouseRequestedByIsland = aggregatedModesAtInit.mouseTracking !== undefined
-      if ((mouseTrackingEnabled || mouseRequestedByIsland) && !inputDisabled) {
-        modes.mouse(mouseParseOptions?.coordinateMode === "pixel" ? "pixel" : true)
-        mouseEnabled = true
+      // Legacy app-level mouse tracking. Focused islands are OR'd in by the
+      // aggregator path below; `input: false` suppresses only the legacy app
+      // request, not focused-island requests.
+      if (legacyMouseMode !== false) {
+        setMouseMode(legacyMouseMode)
       }
 
       // Focus reporting is deferred to after the event loop starts (see below).
@@ -3700,7 +3841,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         const data = event.data as { input: string; key: Key }
 
         // Ctrl+Z: suspend (parseKey returns input="z" with key.ctrl=true)
-        if (data.input === "z" && data.key.ctrl && suspendOption) {
+        if (
+          data.input === "z" &&
+          data.key.ctrl &&
+          suspendOption &&
+          !canRouteKeyToFocusedIsland(data.input, data.key, focusManager)
+        ) {
           const prevented = onSuspendHook?.() === false
           if (!prevented) {
             // Remove this event from the batch
@@ -3730,7 +3876,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         }
 
         // Ctrl+C: exit (parseKey returns input="c" with key.ctrl=true)
-        if (data.input === "c" && data.key.ctrl && exitOnCtrlCOption) {
+        if (
+          data.input === "c" &&
+          data.key.ctrl &&
+          exitOnCtrlCOption &&
+          !canRouteKeyToFocusedIsland(data.input, data.key, focusManager)
+        ) {
           const prevented = onInterruptHook?.() === false
           if (!prevented) {
             exit()
@@ -4218,33 +4369,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // generator body, which attaches the stdin data listener. After this call,
     // stdin is being consumed, so terminal responses won't leak as raw text.
     pumpEvents().catch((err: unknown) => log.error?.(`pumpEvents failed: ${err}`))
+    inputPumpStarted = true
+    legacyBracketedPasteEnabled = hostOwnsStdin && modes.bracketedPaste()
 
-    // Enable focus reporting NOW — after stdin listener is attached.
-    // Must be deferred from the init phase because the terminal's immediate
-    // CSI I/O response would leak before the input parser was ready.
-    //
-    // `inputDisabled` short-circuits the focus enable: focus reporting
-    // (`CSI ?1004h`) is a host-input-protocol toggle — it makes the terminal
-    // emit `CSI I` / `CSI O` focus-event bytes on stdin. When silvery does
-    // not own stdin (`input: false`) it must not enable it; the actual input
-    // owner negotiates its own protocols. Sibling of the Kitty-keyboard and
-    // mouse gates. See `@km/termless/15586-rec-mouse-garble`.
-    // Aggregator hook (@km/silvery/15646-islands Unit C): focused-subtree
-    // <Island> requesting focus reporting is OR'd into the enable. No
-    // effect today — current apps mount no islands; aggregator returns
-    // `{}`. Re-evaluated on each render-cycle entry; Phase 3 adds focus-
-    // change hot-swap (currently: once-enabled-stays-enabled until exit).
-    const focusReportingFromAggregator = deriveProtocolModesFromFocusSubtree(
-      focusManager.activeElement,
-    ).focusReporting
-    if (
-      (focusReportingOption || focusReportingFromAggregator) &&
-      !focusReportingEnabled &&
-      !inputDisabled
-    ) {
-      modes.focusReporting(true)
-      focusReportingEnabled = true
-    }
+    // Focus reporting must wait until after the stdin listener is attached;
+    // bracketed paste's legacy default is also known only after the Input
+    // owner is constructed. The shared island aggregator then handles both
+    // legacy app-level modes and focused-island requests.
+    applyFocusedIslandProtocolModes("startup")
 
     try {
       while (!shouldExit && !signal.aborted) {
@@ -4354,9 +4486,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // late-arriving bytes (Kitty release events, mouse events) that were
       // in the kernel TTY buffer when we sent the disable sequences.
       // This is the async path — signal handlers use the sync fallback in exit().
-      // Skipped when `inputDisabled`: the host owns stdin and we never
+      // Skipped when `input: false`: the host owns stdin and we never
       // had a listener to remove or kernel bytes to drain.
-      if (shouldExit && !cleanedUp && !headless && stdin.isTTY && !inputDisabled) {
+      if (shouldExit && !cleanedUp && !headless && stdin.isTTY && hostOwnsStdin) {
         try {
           // Remove data listener but keep raw mode on — we're still consuming
           stdin.removeAllListeners("data")

@@ -14,12 +14,15 @@ import type { StoreApi } from "@silvery/create/signal-store"
 import { createKeyEvent, dispatchKeyEvent } from "@silvery/ag/focus-events"
 import type { FocusManager } from "@silvery/ag/focus-manager"
 import { findByTestID } from "@silvery/ag/focus-queries"
+import { keyToAnsi, keyToModifiers, keyToName } from "@silvery/ag/keys"
 import { type MouseEventProcessorState, processMouseEvent, hitTest } from "../mouse-events"
 import type { Container } from "@silvery/ag-react/reconciler"
 import { getContainerRoot } from "@silvery/ag-react/reconciler"
 import type { AgNode } from "@silvery/ag/types"
 import type { Key } from "./keys"
 import type { EventHandler, EventHandlerContext, EventHandlers } from "./create-app"
+
+const islandInputEncoder = new TextEncoder()
 
 // ============================================================================
 // Types
@@ -83,6 +86,108 @@ export function createHandlerContext<S>(
 // Focus Navigation
 // ============================================================================
 
+type RoutedMouseData = {
+  button: number
+  x: number
+  y: number
+  action: string
+  delta?: number
+  shift?: boolean
+  meta?: boolean
+  ctrl?: boolean
+}
+
+function focusedIslandNode(focusManager: FocusManager): AgNode | null {
+  let node: AgNode | null = focusManager.activeElement
+  while (node) {
+    if (node.type === "silvery-island") return node
+    node = node.parent
+  }
+  return null
+}
+
+function feedIsland(node: AgNode, data: string): boolean {
+  if (!data) return false
+  const state = node.islandState
+  if (!state?.capabilities.input) return false
+  const feed = state.handle?.input?.feed
+  if (!feed) return false
+  feed(islandInputEncoder.encode(data))
+  return true
+}
+
+function keyToIslandAnsi(input: string, key: Key): string {
+  const name = keyToName(key)
+  const main = name || input
+  if (!main) return ""
+  const modifiers = keyToModifiers(key)
+  const parts: string[] = []
+  if (modifiers.ctrl) parts.push("Control")
+  if (modifiers.meta) parts.push("Meta")
+  if (modifiers.super) parts.push("Super")
+  if (modifiers.hyper) parts.push("Hyper")
+  if (modifiers.shift && name) parts.push("Shift")
+  parts.push(main)
+  return keyToAnsi(parts.join("+"))
+}
+
+export function canRouteKeyToFocusedIsland(
+  _input: string,
+  key: Key,
+  focusManager: FocusManager,
+): boolean {
+  if (key.eventType === "release") return false
+  const node = focusedIslandNode(focusManager)
+  if (!node) return false
+  const state = node.islandState
+  return Boolean(state?.capabilities.input && state.handle?.input?.feed)
+}
+
+function routeKeyToFocusedIsland(input: string, key: Key, focusManager: FocusManager): boolean {
+  if (!canRouteKeyToFocusedIsland(input, key, focusManager)) return false
+  const node = focusedIslandNode(focusManager)
+  if (!node) return false
+  return feedIsland(node, keyToIslandAnsi(input, key))
+}
+
+function encodeIslandMouse(
+  data: RoutedMouseData,
+  localCol: number,
+  localRow: number,
+): string | null {
+  let button = data.button
+  let terminator: "M" | "m" = "M"
+  if (data.action === "up") {
+    terminator = "m"
+  } else if (data.action === "move") {
+    button += 32
+  } else if (data.action === "wheel") {
+    button = (data.delta ?? 1) < 0 ? 64 : 65
+  } else if (data.action !== "down") {
+    return null
+  }
+  if (data.shift) button += 4
+  if (data.meta) button += 8
+  if (data.ctrl) button += 16
+  return `\x1b[<${button};${localCol + 1};${localRow + 1}${terminator}`
+}
+
+function routeMouseToFocusedIsland(event: NamespacedEvent, focusManager: FocusManager): boolean {
+  if (event.event !== "mouse" || !event.data) return false
+  const node = focusedIslandNode(focusManager)
+  if (!node?.boxRect) return false
+  const data = event.data as RoutedMouseData
+  const rect = node.boxRect
+  const x = Math.floor(data.x)
+  const y = Math.floor(data.y)
+  if (x < rect.x || x >= rect.x + rect.width || y < rect.y || y >= rect.y + rect.height) {
+    return false
+  }
+  const encoded = encodeIslandMouse(data, x - rect.x, y - rect.y)
+  if (!encoded) return false
+  return feedIsland(node, encoded)
+}
+
 /**
  * Dispatch a key event through the focus system and handle default
  * focus navigation (Tab, Shift+Tab, Enter scope, Escape scope).
@@ -98,6 +203,10 @@ export function handleFocusNavigation(
   options: { handleTabCycling?: boolean } = {},
 ): "consumed" | "continue" {
   const handleTabCycling = options.handleTabCycling ?? true
+
+  if (routeKeyToFocusedIsland(input, parsedKey, focusManager)) {
+    return "consumed"
+  }
 
   // Dispatch key event to focused node (capture + bubble phases)
   if (focusManager.activeElement) {
@@ -242,6 +351,8 @@ export function invokeEventHandler<S>(
   // can call preventDefault() to suppress the app-level handler.
   const root = getContainerRoot(container)
   const prevented = dispatchMouseEventToTree(event, mouseEventState, root)
+
+  if (!prevented && routeMouseToFocusedIsland(event, ctx.focusManager)) return true
 
   // Skip app handler if a component called preventDefault()
   if (prevented) return true
