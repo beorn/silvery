@@ -2197,15 +2197,31 @@ function renderNormalChildren(
 // ============================================================================
 
 /**
- * Compute the screen-space rectangle that bounds every paint within this
- * subtree. Used by sibling-overlap detection in renderNormalChildren so
- * that a descendant overflowing its ancestor still triggers force-repaint
- * of any later sibling at the painted row.
+ * Compute the screen-space rectangle that bounds every paint AND every
+ * descendant-overflow CLEAR within this subtree this frame. Used by
+ * sibling-overlap detection in renderNormalChildren so that a descendant
+ * overflowing its ancestor still triggers force-repaint of any later
+ * sibling at the painted (or cleared) row.
  *
  * Returns the union of `node.boxRect` with the recursive paint extent of
  * each child whose `boxRect` is set. Returns null if `node.boxRect` is
  * unset (e.g. abandoned subtree). Skipping descendants without a boxRect
  * is safe because they never paint.
+ *
+ * **prevLayout inclusion (overflow-clear coverage):** when a node's layout
+ * changed this frame, `clearDescendantOverflowRegions` will clear the
+ * region its `prevLayout` overflowed beyond each ancestor — driven by
+ * `prevLayout`, NOT the current rect. A node that SHRANK (e.g. a flexGrow
+ * content area whose ancestor lost a row) vacates rows that a clean later
+ * sibling now occupies. Unioning `prevLayout` here makes the sibling-overlap
+ * pass see the about-to-be-cleared rows, so the overlapped sibling is
+ * force-repainted and the clear does not leave a hole. Without this, the
+ * overlap check only sees the (smaller) current rect, misses the cleared
+ * row, and the clean sibling is fast-path skipped — leaving stale-blank
+ * pixels where its content should be (incremental != fresh).
+ * Repro: km empty-board status bar "MEM …" blanked on the post-mount
+ * settle render — the board content area shrank by a row and its
+ * descendant-overflow clear wiped the bottom bar's row.
  *
  * Cost: O(N) per call where N is the subtree's node count. Only called
  * for first-pass children that will render AND only when their parent has
@@ -2219,6 +2235,18 @@ function computeSubtreePaintExtent(node: AgNode): NonNullable<AgNode["boxRect"]>
   let minY = own.y
   let maxX = own.x + own.width
   let maxY = own.y + own.height
+  // Include this node's prevLayout when its layout changed this frame —
+  // matches the condition under which clearDescendantOverflowRegions clears
+  // the prevLayout-overflow region (see _clearDescendantOverflow). The
+  // sibling-overlap pass must treat the cleared (old) extent as "painted"
+  // so later siblings overlapping it repaint over the clear.
+  if (node.prevLayout && isCurrentEpoch(node.layoutChangedThisFrame)) {
+    const prev = node.prevLayout
+    if (prev.x < minX) minX = prev.x
+    if (prev.y < minY) minY = prev.y
+    if (prev.x + prev.width > maxX) maxX = prev.x + prev.width
+    if (prev.y + prev.height > maxY) maxY = prev.y + prev.height
+  }
   const children = node.children
   if (children) {
     for (const child of children) {
