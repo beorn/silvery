@@ -499,6 +499,64 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // the viewport are still rendered (clipped by overflow="hidden").
   const estimatedVisibleCount = Math.max(1, Math.ceil(viewportHeight / (avgHeight + gap)))
 
+  // ── Actual-size edge math (axis-agnostic) ─────────────────────────
+  // The avg-based `estimatedVisibleCount` is only sound for UNIFORM item
+  // sizes. For MIXED sizes (collapsed/expanded board columns, variable-height
+  // cards) it mis-estimates how many items fit, which corrupts the edge-based
+  // scroll decision below. Concretely, for a wide cursor item flanked by
+  // narrow ones the avg is too small, so the avg-based back-count
+  // `clampedIndex - estimatedVisibleCount + 1` UNDER-scrolls — it lands the
+  // anchor one item earlier than the minimal offset that actually reveals the
+  // target whole. A consumer that then bottom/right-anchors the cursor itself
+  // (HorizontalVirtualList's `displayScrollOffset` partial-visibility bump)
+  // papers over the gap by adding +1 — but ONLY on the frame whose cursor
+  // overflows. The next cursor move (to an already-visible neighbour) doesn't
+  // overflow, so the consumer doesn't re-add the +1, and the rendered window
+  // start SNAPS back by one. That cursor-dependent re-bump is the user-visible
+  // "board scrolls when the cursor leaves the rightmost column" bug (17065).
+  //
+  // The fix: compute "is the target already fully visible?" and "what is the
+  // minimal offset that reveals it?" against the REAL item sizes (`getHeight`
+  // → measured cache → per-index estimate → avg fallback). This lands the
+  // anchor on the SAME offset the consumer's reveal wants, so the consumer's
+  // bump becomes an idempotent no-op and the window stops oscillating.
+  //
+  // "height" here is the main-axis size — width for HorizontalVirtualList,
+  // height for VirtualList/ListView — so this is axis-agnostic. The helpers
+  // are recreated per render but invoked only on cursor-move renders (the
+  // `scrollToChanged` branch), so the O(window) walk is off the hot path.
+  const avgMeasuredHeight = averageMeasuredHeightForWidth(measuredHeights, viewportWidth)
+  const sizeOf = (index: number): number =>
+    getHeight(index, estimateHeight, measuredHeights, getItemKey, avgMeasuredHeight, viewportWidth)
+  // True iff items [offset..target] (inclusive) all fit within the viewport,
+  // measured against real sizes. A target whose far edge is clipped counts as
+  // NOT fully visible (strict `>`), matching "scroll so the target is whole".
+  const isIndexFullyVisible = (offset: number, target: number): boolean => {
+    if (target < offset) return false
+    let used = 0
+    for (let i = offset; i <= target; i++) {
+      used += sizeOf(i) + (i > offset ? gap : 0)
+      if (used > viewportHeight) return false
+    }
+    return true
+  }
+  // The SMALLEST offset `o` (0 ≤ o ≤ target) such that items [o..target] all
+  // fit in the viewport — i.e. the minimal scroll that trailing-anchors the
+  // target. Walk leftward from the target accumulating real sizes until adding
+  // the next item would overflow. Replaces the avg-based
+  // `clampedIndex - estimatedVisibleCount + 1` back-count with actual sizes.
+  const firstOffsetRevealing = (target: number): number => {
+    let used = sizeOf(target)
+    let o = target
+    while (o > 0) {
+      const next = used + sizeOf(o - 1) + gap
+      if (next > viewportHeight) break
+      used = next
+      o -= 1
+    }
+    return o
+  }
+
   // Selected index as ref — doesn't trigger re-renders when cursor moves
   // within the viewport.
   const selectedIndexRef = useRef(Math.max(0, Math.min(scrollTo ?? 0, count - 1)))
@@ -549,14 +607,18 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     // the cursor's visible position) re-anchors the viewport to bottom.
     if (scrollToChanged) {
       const currentOffset = scrollOffsetRef.current
-      const visibleEndExclusive = currentOffset + estimatedVisibleCount
       if (clampedIndex < currentOffset) {
-        // Off-screen above: scroll so target becomes topmost.
+        // Off-screen above/left: scroll so the target becomes the leading item.
         scrollOffsetRef.current = clampedIndex
-      } else if (clampedIndex >= visibleEndExclusive) {
-        // Off-screen below: scroll so target becomes bottommost.
-        scrollOffsetRef.current = Math.max(0, clampedIndex - estimatedVisibleCount + 1)
+      } else if (!isIndexFullyVisible(currentOffset, clampedIndex)) {
+        // Off-screen below/right against ACTUAL item sizes — anchor at the
+        // minimal offset that reveals the target whole. Using actual sizes
+        // (not the avg-based `estimatedVisibleCount`) lands on the same offset
+        // a consumer's own reveal wants, so no cursor-dependent re-bump shifts
+        // the window on a later move to an already-visible neighbour (17065).
+        scrollOffsetRef.current = firstOffsetRevealing(clampedIndex)
       }
+      // else: target already fully visible against actual sizes → no scroll.
     }
   }
 
@@ -864,13 +926,32 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     if (end === count) {
       start = Math.max(0, end - minItems)
     }
+    // Always span the declarative cursor. `effectiveScrollOffset` is NOT
+    // guaranteed to be near the cursor: the edge-based scroll now anchors the
+    // offset at the SMALLEST index whose run up to the cursor fits the viewport
+    // (actual-size walk in `firstOffsetRevealing`). When trailing items are
+    // small, many fit, so that minimal-reveal offset can sit well below the
+    // cursor — and the avg-based `minItems` window from there would stop short
+    // of the cursor, so the cursor item never renders and the scroll container
+    // can't reveal it. Extend the window to include the cursor (plus overscan).
+    // Mirrors the steady-state cursor-anchor expansion. (Pre-actual-size, the
+    // avg-based back-count kept the offset ≈estVis below the cursor, so the
+    // window covered it by construction — that coupling no longer holds.)
+    if (scrollTo !== undefined) {
+      const cursor = Math.max(0, Math.min(scrollTo, count - 1))
+      if (cursor < start) start = Math.max(0, cursor - overscan)
+      if (cursor + 1 > end) end = Math.min(count, cursor + 1 + overscan)
+    }
     // Safety cap — bounds overscan, NOT the cursor. When the viewport is
     // tall enough that `minItems > maxRendered` the naive cap `end = min(end,
     // start + maxRendered)` can clamp end BEFORE the cursor, leaving the Box
-    // unable to scroll to it → layout loop spins. Floor end at cursor+1.
-    // Note: `effectiveScrollOffset` IS the cursor on bootstrap (it's seeded
-    // from `scrollTo` on mount), so this bounds correctly.
-    const cappedEnd = Math.max(effectiveScrollOffset + 1, start + maxRendered)
+    // unable to scroll to it → layout loop spins. Floor end at cursor+1 (the
+    // declarative scrollTo), then cap at `start + maxRendered`.
+    const cursorFloor =
+      scrollTo !== undefined
+        ? Math.max(0, Math.min(scrollTo, count - 1)) + 1
+        : effectiveScrollOffset + 1
+    const cappedEnd = Math.max(cursorFloor, start + maxRendered)
     end = Math.min(end, cappedEnd)
 
     // Placeholder sizes using measured heights when available; sumHeights
@@ -904,6 +985,12 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   }, [
     count,
     effectiveScrollOffset,
+    // The window calc reads `scrollTo` directly (cursor-anchor expansion in
+    // both steady-state and bootstrap). On a no-scroll cursor move
+    // (`effectiveScrollOffset` unchanged because the target was already
+    // visible) the window is structurally identical, but `scrollTo` must be a
+    // dependency so the memo recomputes correctly when only the cursor moves.
+    scrollTo,
     maxRendered,
     overscan,
     estimateHeight,
