@@ -1,5 +1,11 @@
-import type { ReadSignal } from "@silvery/signals"
 import type { ZodSchema, z } from "zod"
+
+export type Signal<T> = {
+  (): T
+  (value: T): void
+}
+
+export type ReadSignal<T> = () => T
 
 /**
  * Coercion hint for query-string values. Default for unknown keys is "string".

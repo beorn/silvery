@@ -87,6 +87,8 @@ jobs:
           publish packages/create
           publish packages/test
           publish packages/commander
+          publish packages/config
+          publish packages/syntax
 
           # Layer 5: Root barrel (depends on everything)
           publish .

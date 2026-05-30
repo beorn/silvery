@@ -53,9 +53,9 @@ describe("computeIndexTrailingSpacer (Bug B — never negative)", () => {
   })
 
   test("matches sumHeights(end, n) — the rendered-layout invariant", () => {
-    // Reference value: sum of effective heights for [end, n) plus the
-    // (m-1) gaps BETWEEN those items. The spacer represents that exact
-    // slice of the virtual list.
+    // Reference value: sum of effective heights for [end, n) plus the gaps
+    // hidden by the trailing spacer. When at least one visible item precedes
+    // the spacer, the boundary gap after that last visible item is hidden too.
     const n = 6
     const heights = [3, 7, 2, 5, 4, 6]
     const gap = 2
@@ -63,11 +63,12 @@ describe("computeIndexTrailingSpacer (Bug B — never negative)", () => {
     for (let end = 0; end <= n; end++) {
       const trailingCount = n - end
       const sumHeights = heights.slice(end).reduce((s, h) => s + h, 0)
-      const internalGaps = Math.max(0, trailingCount - 1) * gap
-      const expected = sumHeights + internalGaps
+      const hiddenGaps =
+        (end === 0 ? Math.max(0, trailingCount - 1) : trailingCount) * gap
+      const expected = sumHeights + hiddenGaps
       expect(
         computeIndexTrailingSpacer(m, end, n, gap),
-        `end=${end}: expected ${expected} (= sumHeights ${sumHeights} + internalGaps ${internalGaps})`,
+        `end=${end}: expected ${expected} (= sumHeights ${sumHeights} + hiddenGaps ${hiddenGaps})`,
       ).toBe(expected)
     }
   })

@@ -373,22 +373,20 @@ export function renderScrollIndicators(
     const indicator = `\u25b2${ss.hiddenAbove}`
 
     if (border.top > 0) {
-      // Bordered: render centered inverse bar on top border line
+      // Bordered: render centered inverse indicator on top border line
       const contentWidth = layout.width - border.left - border.right
-      const bar = padCenter(indicator, contentWidth)
       const x = layout.x + border.left
       const y = layout.y
       const maxCol = x + contentWidth
-      renderTextLine(buffer, x, y, bar, indicatorStyle, maxCol, undefined, ctx)
+      renderCenteredIndicator(buffer, x, y, indicator, indicatorStyle, contentWidth, maxCol, ctx)
     } else if (showBorderless) {
-      // Borderless: render centered inverse bar on first content row
+      // Borderless: render centered inverse indicator on first content row
       const padding = getPadding(props)
       const contentWidth = layout.width - padding.left - padding.right
-      const bar = padCenter(indicator, contentWidth)
       const x = layout.x + padding.left
       const y = layout.y + padding.top
       const maxCol = x + contentWidth
-      renderTextLine(buffer, x, y, bar, indicatorStyle, maxCol, undefined, ctx)
+      renderCenteredIndicator(buffer, x, y, indicator, indicatorStyle, contentWidth, maxCol, ctx)
     }
   }
 
@@ -397,33 +395,42 @@ export function renderScrollIndicators(
     const indicator = `\u25bc${ss.hiddenBelow}`
 
     if (border.bottom > 0) {
-      // Bordered: render centered inverse bar on bottom border line
+      // Bordered: render centered inverse indicator on bottom border line
       const contentWidth = layout.width - border.left - border.right
-      const bar = padCenter(indicator, contentWidth)
       const x = layout.x + border.left
       const y = layout.y + layout.height - 1
       const maxCol = x + contentWidth
-      renderTextLine(buffer, x, y, bar, indicatorStyle, maxCol, undefined, ctx)
+      renderCenteredIndicator(buffer, x, y, indicator, indicatorStyle, contentWidth, maxCol, ctx)
     } else if (showBorderless) {
       // Borderless: render indicator flush to viewport bottom
       const padding = getPadding(props)
       const contentWidth = layout.width - padding.left - padding.right
-      const bar = padCenter(indicator, contentWidth)
       const x = layout.x + padding.left
       const y = layout.y + layout.height - padding.bottom - 1
       const maxCol = x + contentWidth
-      renderTextLine(buffer, x, y, bar, indicatorStyle, maxCol, undefined, ctx)
+      renderCenteredIndicator(buffer, x, y, indicator, indicatorStyle, contentWidth, maxCol, ctx)
     }
   }
 }
 
-/** Center text within a fixed width, padding with spaces on both sides.
- *  Truncates from the right if text exceeds available width. */
-function padCenter(text: string, width: number): string {
-  if (width <= 0) return ""
-  if (text.length > width) return text.slice(0, width)
-  if (text.length === width) return text
-  const leftPad = Math.floor((width - text.length) / 2)
-  const rightPad = width - text.length - leftPad
-  return " ".repeat(leftPad) + text + " ".repeat(rightPad)
+function renderCenteredIndicator(
+  buffer: TerminalBuffer,
+  x: number,
+  y: number,
+  indicator: string,
+  style: Style,
+  width: number,
+  maxCol: number,
+  ctx?: PipelineContext,
+): void {
+  if (width <= 0) return
+  const text = indicator.length > width ? indicator.slice(0, width) : indicator
+  const indicatorX = x + Math.max(0, Math.floor((width - text.length) / 2))
+  // Clear the whole indicator row first. The viewport window can replace an
+  // item row with an overflow-indicator row after scrolling; without explicit
+  // clears, incremental output leaves stale item glyphs around the centered
+  // token. Keep the clears unstyled so fresh and incremental buffers agree on
+  // the surrounding blank cells.
+  renderTextLine(buffer, x, y, " ".repeat(width), { fg: null, bg: null, attrs: {} }, maxCol, undefined, ctx)
+  renderTextLine(buffer, indicatorX, y, text, style, Math.min(maxCol, indicatorX + text.length), undefined, ctx)
 }

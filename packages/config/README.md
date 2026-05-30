@@ -6,7 +6,7 @@ Three layers in one small package:
 
 - **Config** — git-config-style deep-key get/set/unset/list/save with multi-source discovery (global + project), atomic writes, file watching, and reactive signals.
 - **Registry<Kind>** — typed view over a sub-tree, with connection-string parsing, schema validation, and reserved-key handling.
-- **Signals** — `@silvery/signals`-backed `ReadSignal` views over keys, registry entries, and the root, for reactive UI.
+- **Signals** — `alien-signals`-backed `ReadSignal` views over keys, registry entries, and the root, for reactive UI.
 
 Designed for apps that maintain named presets (database connections, AI agent connections, MCP servers, theme bundles) and want one canonical way to read, write, and address them — both as objects in YAML and as `key=value&key=value` strings on the CLI.
 
@@ -76,10 +76,10 @@ await config.save({ scope: "local" }) // saves project only
 
 ## Reactive signals
 
-Built on [`@silvery/signals`](https://www.npmjs.com/package/@silvery/signals) (alien-signals). Dependents only re-fire when the value at the key actually changes (alien-signals applies a value-equality check on `computed`).
+Built on [`alien-signals`](https://www.npmjs.com/package/alien-signals). Dependents only re-fire when the value at the key actually changes (`computed` applies a value-equality check).
 
 ```ts
-import { effect } from "@silvery/signals"
+import { effect } from "alien-signals"
 
 const themeSignal = config.signal<string>("ui.theme")
 const stop = effect(() => {

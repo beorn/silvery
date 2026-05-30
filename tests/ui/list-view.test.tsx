@@ -105,7 +105,7 @@ describe("ListView — basic rendering", () => {
 })
 
 describe("ListView — scrollbar overlay", () => {
-  test("owns the rightmost column for scrollbar chrome", () => {
+  test("paints the thumb in the rightmost column and leaves the transparent track alone", () => {
     const items = makeItems(20)
     const r = createRenderer({ cols: 40, rows: 6 })
     const app = r(
@@ -121,8 +121,9 @@ describe("ListView — scrollbar overlay", () => {
       />,
     )
 
-    for (let row = 0; row < 6; row++) {
-      expect(app.cell(39, row).char).not.toBe("x")
+    expect(app.cell(39, 0).char).not.toBe("x")
+    for (let row = 1; row < 6; row++) {
+      expect(app.cell(39, row).char).toBe("x")
     }
   })
 })

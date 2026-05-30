@@ -4733,15 +4733,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         pendingRerender = false
         flushCount++
       }
-      // Mark all rows dirty — same safety net as processEventBatch (line 2443).
-      // When the effect flush loop ran additional doRender calls, the final buffer's
-      // dirty rows are relative to the Ag's internal prevBuffer (which advanced),
-      // not the runtime's prevBuffer (which is from the last runtime.render()).
-      // Without this, diffBuffers skips rows that changed relative to runtime's
-      // prevBuffer but aren't marked dirty → garbled output.
-      if (flushCount > 0) {
-        currentBuffer._buffer.markAllRowsDirty()
-      }
+      // Mark all rows dirty — same safety net as processEventBatch. The render
+      // phase's dirty rows are relative to Ag's internal prevBuffer, while
+      // runtime.render() diffs against the last painted runtime buffer. A direct
+      // press/wheel can update rendered rows without an effect flush (for example
+      // ListView wheel anchoring), so keep the runtime diff coverage unconditional.
+      currentBuffer._buffer.markAllRowsDirty()
       inEventHandler = false
       paintFrame()
       if (_perfSpan) checkBudget(input || rawKey, performance.now() - pressStart)

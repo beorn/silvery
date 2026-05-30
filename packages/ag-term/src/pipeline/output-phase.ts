@@ -2354,77 +2354,11 @@ function changesToAnsi(
     // pass, skip. Otherwise, look up and emit the main cell from the
     // buffer so the wide char covers both columns.
     if (cell.continuation) {
-      // Main cell was already emitted — skip.
-      //
-      // Narrow→wide-shift continuation rescue (bead 13047): when prev[x-1]
-      // was NOT wide AND the wide grapheme at x-1 was just emitted, the
-      // terminal at column x still holds the stale narrow content from
-      // prev[x] (the terminal's wcwidth disagreement for certain emoji like
-      // 📋 / 📄 means it didn't auto-claim x as continuation). Without an
-      // explicit clear, the stale glyph stays visible NEXT to the new wide
-      // grapheme, producing the user-visible "📋t" / "📄i" symptom. Emit a
-      // CUP + space at x to overwrite the stale glyph BEFORE skipping. In a
-      // terminal that DID auto-claim x as continuation, this overwrites the
-      // continuation marker with space — but the wide char's glyph already
-      // occupies both columns visually, and the OSC 66 / CUP resync paths
-      // re-establish wide-char structural correctness on the next frame.
+      // Main cell was already emitted — skip. Do not write into the
+      // continuation column after emitting the wide character: xterm-compatible
+      // backends treat that as editing the wide cell and clear the glyph.
+      // The wide-char CUP resync below keeps the cursor model aligned.
       if (lastEmittedX === x - 1 && lastEmittedY === y) {
-        if (prevBuffer && x > 0 && !prevBuffer.isCellWide(x - 1, y)) {
-          // The wide grapheme at x-1 is NEW (prev[x-1] was narrow). The
-          // terminal may not have auto-claimed x; explicitly clear it.
-          const clearRenderY = isInline ? y - startLine : y
-          // Reset bg before CUF/CUP to prevent traversed-cell bg bleed
-          if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
-            output += "\x1b[0m"
-            currentStyle = null
-          }
-          // Cursor is currently at (cursorX, cursorY) after the wide-resync
-          // CUP. Move to (x, clearRenderY).
-          if (clearRenderY === cursorY && x === cursorX) {
-            // Already at target — no move needed.
-          } else if (cursorY >= 0 && clearRenderY === cursorY && x > cursorX) {
-            const dx = x - cursorX
-            output += dx === 1 ? "\x1b[C" : `\x1b[${dx}C`
-          } else if (isInline) {
-            const fromRow = cursorY >= 0 ? cursorY : 0
-            if (clearRenderY > fromRow) {
-              output += `\x1b[${clearRenderY - fromRow}B\r`
-            } else if (clearRenderY < fromRow) {
-              output += `\x1b[${fromRow - clearRenderY}A\r`
-            } else {
-              output += "\r"
-            }
-            if (x > 0) output += x === 1 ? "\x1b[C" : `\x1b[${x}C`
-          } else {
-            output += `\x1b[${clearRenderY + 1};${x + 1}H`
-          }
-          // Apply the continuation cell's own style before writing the rescue
-          // space. On a FRESH render the continuation cell carries the wide
-          // char's style (same fg/bg/attrs as its main cell). Writing the
-          // space with whatever style is current — default, after the \x1b[0m
-          // reset above — diverges from fresh at the continuation column:
-          // STRICT_OUTPUT throws `(x,0) char=' ' fg: default vs <theme>`.
-          // Bead: @km/silvery/15566-incremental-column-zero-default-style.
-          reusableCellStyle.fg = cell.fg
-          reusableCellStyle.bg = cell.bg
-          reusableCellStyle.underlineColor = cell.underlineColor
-          reusableCellStyle.attrs = cell.attrs
-          if (!styleEquals(currentStyle, reusableCellStyle)) {
-            const prevStyle = currentStyle
-            currentStyle = {
-              fg: cell.fg,
-              bg: cell.bg,
-              underlineColor: cell.underlineColor,
-              attrs: { ...cell.attrs },
-            }
-            output += styleTransition(prevStyle, currentStyle, ctx)
-          }
-          output += " "
-          cursorX = x + 1
-          cursorY = clearRenderY
-          lastEmittedX = x
-          lastEmittedY = y
-        }
         continue
       }
 

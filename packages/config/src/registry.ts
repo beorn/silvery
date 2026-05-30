@@ -1,7 +1,7 @@
-import { computed, type ReadSignal, type Signal } from "@silvery/signals"
+import { computed } from "alien-signals"
 import type { ZodSchema, z } from "zod"
 import { formatString, parseString } from "./parse.ts"
-import type { Config, Kind, Registry, RegistryEntry } from "./types.ts"
+import type { Config, Kind, ReadSignal, Registry, RegistryEntry, Signal } from "./types.ts"
 
 /**
  * Build a typed registry view over a sub-tree of a Config.

@@ -91,8 +91,8 @@ export interface CreateTermOptions {
    *
    * When `false`, `term.input` resolves to `undefined`. The lazy
    * `InputOwner` is never constructed: raw mode is never flipped, no
-   * `stdin.on("data", …)` listener is attached, and no probe writes
-   * touch stdin. The Term still owns stdout, modes, size, signals, and
+   * data listener is attached to stdin, and no probe writes touch
+   * stdin. The Term still owns stdout, modes, size, signals, and
    * console — only stdin ownership is suppressed.
    *
    * Use case: a host process needs to pipe its own stdin to a child

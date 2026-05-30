@@ -1,7 +1,7 @@
 import { mkdtemp, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { effect } from "@silvery/signals"
+import { effect } from "alien-signals"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
 import { z } from "zod"
 import { loadConfig } from "../src/config.ts"

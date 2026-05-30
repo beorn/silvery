@@ -43,9 +43,9 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/signals": "0.21.0",
     "cosmiconfig": "^9.0.1",
-    "yaml": ">=2.0.0"
+    "yaml": ">=2.0.0",
+    "alien-signals": "^3.1.2"
   },
   "peerDependencies": {
     "@silvery/commander": "0.21.0",
@@ -65,7 +65,6 @@
     ],
     "external": [
       "@silvery/commander",
-      "@silvery/signals",
       "alien-signals",
       "commander",
       "cosmiconfig",

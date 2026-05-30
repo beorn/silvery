@@ -2,12 +2,21 @@ import { existsSync, type FSWatcher, watch as fsWatch } from "node:fs"
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { dirname, join, resolve } from "node:path"
-import { computed, signal as createSignal, type ReadSignal, type Signal } from "@silvery/signals"
+import { computed, signal as createSignal } from "alien-signals"
 import { cosmiconfig, defaultLoaders, type PublicExplorer } from "cosmiconfig"
 import { Document, parseDocument } from "yaml"
 import type { ZodSchema } from "zod"
 import { buildRegistry } from "./registry.ts"
-import type { ChangeListener, Config, ConfigEntry, Kind, LoadOpts, Registry } from "./types.ts"
+import type {
+  ChangeListener,
+  Config,
+  ConfigEntry,
+  Kind,
+  LoadOpts,
+  ReadSignal,
+  Registry,
+  Signal,
+} from "./types.ts"
 
 type Scope = "global" | "local"
 

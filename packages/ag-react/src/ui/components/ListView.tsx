@@ -1738,11 +1738,15 @@ function ListViewInner<T>(
     declarativeScrollRow ??
     followPinnedTopRow ??
     (scrollRow !== null ? scrollRow : rowsAboveViewport)
-  const anchoringEnabled = shouldApplyVisibleContentAnchoring({
-    maintainVisibleContentPosition,
-    followOwnsViewport: followPinnedTopRow !== null,
-    wheelGestureActive: wheelMeasurementSnapshotActive,
-  })
+  const cursorScrollTargetActive =
+    scrollToProp === undefined && nav === true && adjustedScrollTo !== undefined && scrollRow === null
+  const anchoringEnabled =
+    !cursorScrollTargetActive &&
+    shouldApplyVisibleContentAnchoring({
+      maintainVisibleContentPosition,
+      followOwnsViewport: followPinnedTopRow !== null,
+      wheelGestureActive: wheelMeasurementSnapshotActive,
+    })
   const scrollAnchoring = useScrollAnchoring({
     // Wheel/trackpad gestures keep their active direction threaded into
     // anchoring so measurement churn may preserve visible content without
@@ -1817,7 +1821,8 @@ function ListViewInner<T>(
     gestureDirection: null,
   })
 
-  const cursorAnchor = Math.max(0, Math.min(activeItems.length - 1, scrollOffset))
+  const cursorAnchorTarget = adjustedScrollTo ?? scrollOffset
+  const cursorAnchor = Math.max(0, Math.min(activeItems.length - 1, cursorAnchorTarget))
 
   // Compute the index window for "index" virtualization mode.
   let indexWindowStart: number

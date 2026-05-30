@@ -18,7 +18,7 @@
 
 import React from "react"
 import { describe, test, expect } from "vitest"
-import { createTermless } from "@silvery/test"
+import { createTermless, waitFor } from "@silvery/test"
 import "@termless/test/matchers"
 import { Box, Text } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
@@ -98,50 +98,54 @@ describe("km-silvery.layout-churn-leaks-pixels (terminal)", () => {
     using term = createTermless({ cols: 120, rows: 20 })
     const handle = await run(<Board />, term)
 
-    // Frame 1: wave-1 columns on screen.
-    expect(term.screen!.getText()).toContain("@next")
-    expect(term.screen!.getText()).toContain("@someday")
+    try {
+      // Frame 1: wave-1 columns on screen.
+      expect(term.screen!.getText()).toContain("@next")
+      expect(term.screen!.getText()).toContain("@someday")
 
-    // Trigger the reflow — React re-renders with wave=1.
-    setStateRef?.(1)
-    // Let the runtime drain re-render + output.
-    await new Promise((r) => setTimeout(r, 50))
+      // Trigger the reflow — React re-renders with wave=1.
+      setStateRef?.(1)
+      await waitFor(() => {
+        const text = term.screen!.getText()
+        return text.includes("done") && text.includes("inbox")
+      })
 
-    const text = term.screen!.getText()
-    expect(text).toContain("archive")
-    expect(text).toContain("done")
-    expect(text).toContain("inbox")
-    // Wave-1 column titles must be gone.
-    expect(text).not.toContain("@next")
-    expect(text).not.toContain("@someday")
+      const text = term.screen!.getText()
+      expect(text).toContain("archive")
+      expect(text).toContain("done")
+      expect(text).toContain("inbox")
+      // Wave-1 column titles must be gone.
+      expect(text).not.toContain("@next")
+      expect(text).not.toContain("@someday")
 
-    // Spot-check: the wave-1 inbox/ideas card contents must not leak through.
-    expect(text).not.toContain("Inbox")
-    expect(text).not.toContain("Ideas")
+      // Spot-check: the wave-1 inbox/ideas card contents must not leak through.
+      expect(text).not.toContain("Inbox")
+      expect(text).not.toContain("Ideas")
 
-    // Reflow-leak signature: orphan corner characters (`─╯`, `╯`) at row/col
-    // positions that aren't inside any current card. After wave-2 every `╯`
-    // and `╮` must sit at the bottom-right or top-right of a current card;
-    // we assert that each `╯` has a matching `│` directly above it on the
-    // same card.
-    const lines = text.split("\n")
-    for (let y = 1; y < lines.length; y++) {
-      const line = lines[y]
-      if (!line) continue
-      for (let x = 0; x < line.length; x++) {
-        const ch = line[x]
-        if (ch === "╯" || ch === "╰") {
-          // Above must be `│` (card vertical edge) — otherwise this is an
-          // orphan corner from a previous layout.
-          const above = lines[y - 1]?.[x] ?? " "
-          expect(
-            ["│", " "].includes(above),
-            `orphan ${ch} at (${x},${y}): above='${above}' (expected '│' or empty)`,
-          ).toBe(true)
+      // Reflow-leak signature: orphan corner characters (`─╯`, `╯`) at row/col
+      // positions that aren't inside any current card. After wave-2 every `╯`
+      // and `╮` must sit at the bottom-right or top-right of a current card;
+      // we assert that each `╯` has a matching `│` directly above it on the
+      // same card.
+      const lines = text.split("\n")
+      for (let y = 1; y < lines.length; y++) {
+        const line = lines[y]
+        if (!line) continue
+        for (let x = 0; x < line.length; x++) {
+          const ch = line[x]
+          if (ch === "╯" || ch === "╰") {
+            // Above must be `│` (card vertical edge) — otherwise this is an
+            // orphan corner from a previous layout.
+            const above = lines[y - 1]?.[x] ?? " "
+            expect(
+              ["│", " "].includes(above),
+              `orphan ${ch} at (${x},${y}): above='${above}' (expected '│' or empty)`,
+            ).toBe(true)
+          }
         }
       }
+    } finally {
+      handle.unmount()
     }
-
-    handle.unmount()
   })
 })

@@ -10,6 +10,8 @@ export type {
   Kind,
   KindOpts,
   LoadOpts,
+  ReadSignal,
   Registry,
   RegistryEntry,
+  Signal,
 } from "./types.ts"

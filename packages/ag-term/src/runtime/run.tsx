@@ -201,8 +201,8 @@ export interface RunOptionsCommon {
    *
    * When `false`, the runtime skips:
    *   - flipping `stdin` raw mode
-   *   - attaching `stdin.on("data", …)` listeners (text-sizing + DEC
-   *     width-detection probes)
+   *   - attaching stdin data listeners (text-sizing + DEC width-detection
+   *     probes)
    *   - the term provider's input subscription (`useInput`, `usePaste`,
    *     focus key dispatch all become no-ops)
    *

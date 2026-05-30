@@ -21,17 +21,7 @@ export function ConditionalAlign({
   children: React.ReactNode
 }): React.ReactElement {
   return (
-    <Box
-      fitWidth={lanes}
-      alignSelf={
-        (ctx.align === "center" ? "center" : "start") === "center"
-          ? "center"
-          : (ctx.align === "center" ? "center" : "start") === "stretch"
-            ? "stretch"
-            : "flex-start"
-      }
-      minWidth={0}
-    >
+    <Box fitWidth={lanes} alignSelf={(ctx.align === "center" ? "center" : "start") === "center" ? "center" : (ctx.align === "center" ? "center" : "start") === "stretch" ? "stretch" : "flex-start"} minWidth={0}>
       {children}
     </Box>
   )
