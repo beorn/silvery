@@ -340,3 +340,125 @@ describe("HeightModel", () => {
     ).toBe(false)
   })
 })
+
+// km @km/silvery/15369 Phase B — the named gesture-snapshot state on HeightModel.
+// `reconcile()` folds the old ListView external gate (shouldKeepHeightModelSnapshot +
+// the conditional update + the heightModelConfigRef) into the model. These tests pin
+// that it reproduces the gate exactly: hold the frozen watermark (skip the rebuild)
+// only while a gesture is active AND the config key is unchanged.
+describe("HeightModel.reconcile (named gesture-snapshot state)", () => {
+  test("applies on the first reconcile regardless of gesture (no frozen reference yet)", () => {
+    const m = createHeightModel({ itemCount: 3, estimate: () => 2, gap: 0 })
+    m.reconcile({
+      itemCount: 3,
+      gap: 0,
+      estimate: () => 5,
+      viewportWidth: 80,
+      estimateKey: 1,
+      gestureActive: true,
+    })
+    expect(m.frozen).toBe(false)
+    expect(m.totalRows()).toBe(15) // 3 * 5 — the new estimate was applied
+  })
+
+  test("applies when no gesture is active even if the config is unchanged", () => {
+    const m = createHeightModel({ itemCount: 3, estimate: () => 2, gap: 0 })
+    m.reconcile({
+      itemCount: 3,
+      gap: 0,
+      estimate: () => 2,
+      viewportWidth: 80,
+      estimateKey: 1,
+      gestureActive: false,
+    })
+    m.reconcile({
+      itemCount: 3,
+      gap: 0,
+      estimate: () => 9,
+      viewportWidth: 80,
+      estimateKey: 1,
+      gestureActive: false,
+    })
+    expect(m.frozen).toBe(false)
+    expect(m.totalRows()).toBe(27) // 3 * 9 applied
+  })
+
+  test("holds the watermark when a gesture is active and the config key is unchanged", () => {
+    const m = createHeightModel({ itemCount: 3, estimate: () => 2, gap: 0 })
+    m.reconcile({
+      itemCount: 3,
+      gap: 0,
+      estimate: () => 2,
+      viewportWidth: 80,
+      estimateKey: 1,
+      gestureActive: false,
+    })
+    expect(m.totalRows()).toBe(6)
+    // Same config key, gesture active → held; the new estimate must NOT be applied.
+    m.reconcile({
+      itemCount: 3,
+      gap: 0,
+      estimate: () => 100,
+      viewportWidth: 80,
+      estimateKey: 1,
+      gestureActive: true,
+    })
+    expect(m.frozen).toBe(true)
+    expect(m.totalRows()).toBe(6) // rebuild skipped
+  })
+
+  test("applies during a gesture when any config-key field changes", () => {
+    const changes = [
+      { itemCount: 4, gap: 0, viewportWidth: 80, estimateKey: 1 },
+      { itemCount: 3, gap: 2, viewportWidth: 80, estimateKey: 1 },
+      { itemCount: 3, gap: 0, viewportWidth: 120, estimateKey: 1 },
+      { itemCount: 3, gap: 0, viewportWidth: 80, estimateKey: 2 },
+    ]
+    for (const change of changes) {
+      const m = createHeightModel({ itemCount: 3, estimate: () => 2, gap: 0 })
+      m.reconcile({
+        itemCount: 3,
+        gap: 0,
+        estimate: () => 2,
+        viewportWidth: 80,
+        estimateKey: 1,
+        gestureActive: false,
+      })
+      m.reconcile({ ...change, estimate: () => 9, gestureActive: true })
+      expect(m.frozen, JSON.stringify(change)).toBe(false) // config changed → applied despite the gesture
+    }
+  })
+
+  test("frozen agrees with shouldKeepHeightModelSnapshot for the same inputs", () => {
+    const m = createHeightModel({ itemCount: 5, estimate: () => 3, gap: 1 })
+    m.reconcile({
+      itemCount: 5,
+      gap: 1,
+      estimate: () => 3,
+      viewportWidth: 80,
+      estimateKey: 7,
+      gestureActive: false,
+    })
+    m.reconcile({
+      itemCount: 5,
+      gap: 1,
+      estimate: () => 3,
+      viewportWidth: 80,
+      estimateKey: 7,
+      gestureActive: true,
+    })
+    expect(m.frozen).toBe(
+      shouldKeepHeightModelSnapshot({
+        wheelGestureActive: true,
+        itemCount: 5,
+        currentItemCount: 5,
+        gap: 1,
+        previousGap: 1,
+        viewportWidth: 80,
+        previousViewportWidth: 80,
+        estimateKey: 7,
+        previousEstimateKey: 7,
+      }),
+    )
+  })
+})

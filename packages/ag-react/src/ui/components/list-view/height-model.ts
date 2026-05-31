@@ -59,8 +59,31 @@ export interface HeightModel {
   totalRows(): number
   /** Update item count and/or gap. Grows or truncates as needed. O(n log n) on resize. */
   update(opts: { itemCount?: number; gap?: number; estimate?: (index: number) => number }): void
+  /**
+   * Reconcile the model for a render: apply the new config UNLESS a wheel gesture is
+   * holding the frozen watermark and nothing in the config changed (km 15369 Phase B).
+   * This is the named-state form of the gesture snapshot — it folds the
+   * `shouldKeepHeightModelSnapshot` gate plus the last-applied config INTO the model,
+   * so callers no longer track a separate config ref or skip `update()` externally.
+   * Sets `frozen` to whether the watermark was held during this reconcile.
+   */
+  reconcile(input: HeightModelReconcileInput): void
   /** Number of items currently tracked. */
   readonly itemCount: number
+  /** True when the most recent `reconcile()` held the frozen watermark (no rebuild). */
+  readonly frozen: boolean
+}
+
+export interface HeightModelReconcileInput {
+  itemCount: number
+  gap: number
+  estimate: (index: number) => number
+  /** Viewport-width key — a change invalidates the frozen watermark (wrap-aware heights). */
+  viewportWidth: number | null
+  /** Stable estimate-identity key — a change invalidates the frozen watermark. */
+  estimateKey: number
+  /** Whether a wheel gesture currently wants to hold the watermark. */
+  gestureActive: boolean
 }
 
 export interface HeightModelOptions {
@@ -91,6 +114,16 @@ interface Internals {
   estimate: (index: number) => number
   itemCount: number
   gap: number
+  // km 15369 Phase B — named gesture-snapshot state. `frozen` is whether the most
+  // recent reconcile() held the watermark; `lastConfig` is the frozen-watermark
+  // reference config (the data the old ListView `heightModelConfigRef` carried).
+  frozen: boolean
+  lastConfig: {
+    itemCount: number
+    gap: number
+    viewportWidth: number | null
+    estimateKey: number
+  } | null
 }
 
 function fenwickAdd(tree: number[], i: number, delta: number, n: number): void {
@@ -151,6 +184,8 @@ export function createHeightModel(opts: HeightModelOptions): HeightModel {
     estimate: opts.estimate,
     itemCount: Math.max(0, opts.itemCount),
     gap: opts.gap ?? 0,
+    frozen: false,
+    lastConfig: null,
   }
   rebuild(self)
 
@@ -235,6 +270,35 @@ export function createHeightModel(opts: HeightModelOptions): HeightModel {
     }
   }
 
+  function reconcile(input: HeightModelReconcileInput): void {
+    // Named gesture-snapshot gate (km 15369 Phase B). Behaviour-identical to the old
+    // ListView external gate: hold the existing config (skip the Fenwick rebuild)
+    // while a wheel gesture owns the watermark AND nothing in the config changed;
+    // apply otherwise. `shouldKeepHeightModelSnapshot` is the same predicate, now
+    // consulted against the model's own last-applied config instead of a caller ref.
+    const prev = self.lastConfig
+    const keep = shouldKeepHeightModelSnapshot({
+      wheelGestureActive: input.gestureActive,
+      itemCount: input.itemCount,
+      currentItemCount: self.itemCount,
+      gap: input.gap,
+      previousGap: prev?.gap ?? null,
+      viewportWidth: input.viewportWidth,
+      previousViewportWidth: prev?.viewportWidth ?? null,
+      estimateKey: input.estimateKey,
+      previousEstimateKey: prev?.estimateKey ?? null,
+    })
+    self.frozen = keep
+    if (keep) return
+    update({ itemCount: input.itemCount, gap: input.gap, estimate: input.estimate })
+    self.lastConfig = {
+      itemCount: input.itemCount,
+      gap: input.gap,
+      viewportWidth: input.viewportWidth,
+      estimateKey: input.estimateKey,
+    }
+  }
+
   return {
     setMeasured,
     setEstimate,
@@ -243,8 +307,12 @@ export function createHeightModel(opts: HeightModelOptions): HeightModel {
     indexAtRow,
     totalRows,
     update,
+    reconcile,
     get itemCount() {
       return self.itemCount
+    },
+    get frozen() {
+      return self.frozen
     },
   }
 }

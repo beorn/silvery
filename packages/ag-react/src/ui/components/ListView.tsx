@@ -74,11 +74,7 @@ import { Scrollbar } from "./Scrollbar"
 import type { AgNode, Rect } from "@silvery/ag/types"
 import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { renderStringSync } from "../../render-string"
-import {
-  createHeightModel,
-  shouldKeepHeightModelSnapshot,
-  type HeightModel,
-} from "./list-view/height-model"
+import { createHeightModel, type HeightModel } from "./list-view/height-model"
 import {
   computeIndexTrailingSpacer,
   mapChildIndexToItem,
@@ -1575,12 +1571,6 @@ function ListViewInner<T>(
     })
   }
   const heightModel = heightModelRef.current
-  const heightModelConfigRef = useRef<{
-    itemCount: number
-    gap: number
-    viewportWidth: number | null
-    estimateKey: number
-  } | null>(null)
 
   // Average measured height — used as a fallback for unmeasured items with
   // a fixed numeric estimate (mirrors `sumHeights` semantics). Per-index
@@ -1630,31 +1620,20 @@ function ListViewInner<T>(
   // the rebuild can be amortised by switching to `setMeasured` deltas
   // tracked across renders, deferred to Phase 3 if profiling shows it.
   const viewportWidthForHeightModel = viewportSize?.w ?? null
-  const previousHeightModelConfig = heightModelConfigRef.current
-  const heightModelSnapshotActive = shouldKeepHeightModelSnapshot({
-    wheelGestureActive: wheelMeasurementSnapshotActive,
+  // km 15369 Phase B — the gesture snapshot is now a named HeightModel state.
+  // `reconcile` folds the old external gate (shouldKeepHeightModelSnapshot + the
+  // conditional update + the heightModelConfigRef) into the model; it holds the
+  // frozen watermark while a wheel gesture owns row-space and the config is
+  // unchanged, and applies otherwise. `frozen` exposes that decision downstream.
+  heightModel.reconcile({
     itemCount: activeItems.length,
-    currentItemCount: heightModel.itemCount,
     gap,
-    previousGap: previousHeightModelConfig?.gap ?? null,
+    estimate: effectiveEstimate,
     viewportWidth: viewportWidthForHeightModel,
-    previousViewportWidth: previousHeightModelConfig?.viewportWidth ?? null,
     estimateKey: virtualizerEstimateAsNumber,
-    previousEstimateKey: previousHeightModelConfig?.estimateKey ?? null,
+    gestureActive: wheelMeasurementSnapshotActive,
   })
-  if (!heightModelSnapshotActive) {
-    heightModel.update({
-      itemCount: activeItems.length,
-      gap,
-      estimate: effectiveEstimate,
-    })
-    heightModelConfigRef.current = {
-      itemCount: activeItems.length,
-      gap,
-      viewportWidth: viewportWidthForHeightModel,
-      estimateKey: virtualizerEstimateAsNumber,
-    }
-  }
+  const heightModelSnapshotActive = heightModel.frozen
 
   const innerScrollState = useScrollState(containerNode ?? null)
   const layoutContentRows =
@@ -1739,7 +1718,10 @@ function ListViewInner<T>(
     followPinnedTopRow ??
     (scrollRow !== null ? scrollRow : rowsAboveViewport)
   const cursorScrollTargetActive =
-    scrollToProp === undefined && nav === true && adjustedScrollTo !== undefined && scrollRow === null
+    scrollToProp === undefined &&
+    nav === true &&
+    adjustedScrollTo !== undefined &&
+    scrollRow === null
   const anchoringEnabled =
     !cursorScrollTargetActive &&
     shouldApplyVisibleContentAnchoring({
