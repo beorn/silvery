@@ -87,6 +87,17 @@ function outputOwner(source: CellBuffer): IslandOutputOwner {
   }
 }
 
+function cursorOutputOwner(source: CellBuffer, col: number, row: number): IslandOutputOwner {
+  return {
+    buffer: source,
+    cursor: { col, row, style: "block" },
+    cursorVisible: true,
+    subscribe: () => () => {},
+    writeCells: () => {},
+    invalidateAll: () => {},
+  }
+}
+
 function makeNode(handle: IslandHandle): AgNode {
   const state: IslandNodeState = {
     handle,
@@ -235,6 +246,59 @@ describe("island runtime SILVERY_STRICT checks", () => {
     ensureIslandStrictInstrumentation(node)
     handle.input!.onMouse?.(() => {})
     expect(() => emit?.({ row: 2, col: 0, button: "left" })).toThrow(
+      /SILVERY_STRICT=island-boundary-limits/,
+    )
+  })
+
+  test("island-boundary-limits allows the right-margin (pending-wrap) cursor at col == cols", () => {
+    // DECAWM: after writing the last column with autowrap on, the logical
+    // cursor holds at col == width before the next char wraps it to the next
+    // row. tmux's capture (cursor_x) / xterm.js's cursorX both report
+    // width for that state. It is a legitimate terminal position, not a
+    // boundary escape — the render blit clips at < cols and never paints
+    // there. Regression: the 19466 silvermux resize-window fix made the guest
+    // actually resize, so after a resize the cursor can land at the right
+    // margin of the new width (cursor 20,1 in a 20x19 island).
+    setStrict("island-boundary-limits")
+    const handle: IslandHandle = {
+      size: sizeOwner(20, 19),
+      output: cursorOutputOwner(buffer(20, 19), /* col */ 20, /* row */ 1),
+      dispose() {},
+    }
+    const node = makeNode(handle)
+    expect(() =>
+      assertIslandRenderInvariants(node, { x: 0, y: 0, width: 20, height: 19 }),
+    ).not.toThrow()
+  })
+
+  test("island-boundary-limits still rejects a cursor genuinely past the right margin (col > cols)", () => {
+    // col == cols is the pending-wrap right margin (allowed); col == cols + 1
+    // is a genuine escape — the guest reported a cursor a full column outside
+    // its own grid. Detection must NOT be weakened for this case.
+    setStrict("island-boundary-limits")
+    const handle: IslandHandle = {
+      size: sizeOwner(20, 19),
+      output: cursorOutputOwner(buffer(20, 19), /* col */ 21, /* row */ 1),
+      dispose() {},
+    }
+    const node = makeNode(handle)
+    expect(() => assertIslandRenderInvariants(node, { x: 0, y: 0, width: 20, height: 19 })).toThrow(
+      /SILVERY_STRICT=island-boundary-limits/,
+    )
+  })
+
+  test("island-boundary-limits keeps the row axis strict (no pending-wrap on rows)", () => {
+    // There is no row-axis equivalent of pending-wrap: a cursor on the
+    // phantom row below the last (row == rows) is a genuine escape, even at
+    // a valid column.
+    setStrict("island-boundary-limits")
+    const handle: IslandHandle = {
+      size: sizeOwner(20, 19),
+      output: cursorOutputOwner(buffer(20, 19), /* col */ 0, /* row */ 19),
+      dispose() {},
+    }
+    const node = makeNode(handle)
+    expect(() => assertIslandRenderInvariants(node, { x: 0, y: 0, width: 20, height: 19 })).toThrow(
       /SILVERY_STRICT=island-boundary-limits/,
     )
   })

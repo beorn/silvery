@@ -196,11 +196,30 @@ function assertCursorBoundary(handle: IslandHandle): void {
   if (!isStrictEnabled("island-boundary-limits", 2)) return
   const cursor = handle.output.cursor
   if (!handle.output.cursorVisible || !cursor) return
+  // The right-margin / pending-wrap cursor (col == cols) is a LEGITIMATE
+  // terminal state, not a boundary escape. Under DECAWM (autowrap), after a
+  // glyph is written to the last column the logical cursor holds at col ==
+  // width — the "next char goes here, then wrap" position — until the next
+  // write moves it. tmux's capture (cursor_x) and xterm.js's cursorX both
+  // report width for that state, and the render blit clips at < cols so it
+  // never paints there. Allow col == cols; only col > cols is a real escape.
+  //
+  // The row axis stays strict (< rows): there is no row-axis pending-wrap, so
+  // a cursor on the phantom row below the last is a genuine escape. col < 0,
+  // row < 0, and row >= rows remain escapes.
+  //
+  // col > cols cannot occur on the xterm-backed guest path: term.resize()
+  // clamps the cursor inside the new bounds before the size owner's cols
+  // updates (same synchronous tick — see viewport-adapter.ts resize()), so
+  // there is no stale-cursor-before-reflow window to suppress. Allowing
+  // == cols is the minimal correct change; clamping would lie about the
+  // guest's reported cursor and suppressing during resize would blind the
+  // check in the exact window resize bugs live in.
   if (
     cursor.row >= 0 &&
     cursor.row < handle.size.rows &&
     cursor.col >= 0 &&
-    cursor.col < handle.size.cols
+    cursor.col <= handle.size.cols
   ) {
     return
   }
