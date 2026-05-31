@@ -9,7 +9,12 @@
 import { describe, test, expect } from "vitest"
 import { createHeightModel, shouldKeepHeightModelSnapshot } from "@silvery/ag-react"
 import type { HeightModel } from "@silvery/ag-react"
-import { sumHeights } from "../../packages/ag-react/src/hooks/useVirtualizer"
+import {
+  averageMeasuredHeightForWidth,
+  getHeight,
+  makeMeasureKey,
+  sumHeights,
+} from "../../packages/ag-react/src/hooks/useVirtualizer"
 // Touch the type so it isn't pruned by the linter — semi-public surface check.
 const _typeCheck: HeightModel | null = null
 void _typeCheck
@@ -98,6 +103,69 @@ describe("HeightModel", () => {
     for (let i = 0; i < heights.length; i++) {
       const virtualizerTop = sumHeights(0, i, (j) => heights[j]!, gap) + (i > 0 ? gap : 0)
       expect(m.rowOfIndex(i)).toBe(virtualizerTop)
+    }
+  })
+
+  // km @km/silvery/15369 Phase A — measured-mode compat-path parity.
+  //
+  // The measured-mode viewport path sums heights via `useVirtualizer.sumHeights`,
+  // which resolves each row as: measured cache → avgMeasured fallback (fixed
+  // estimate only) → estimate. ListView configures HeightModel with that exact
+  // per-index resolution (`effectiveEstimate`, which is logically identical to the
+  // exported `getHeight`). These two tests pin the two paths to agree on total
+  // content height and on leading-spacer (top-of-item-k) geometry — including the
+  // spacer boundary gap HeightModel owns for k>0 — so measured mode is a verified
+  // compat path rather than an independent measurement authority. A divergence in
+  // either path's gap accounting or avgMeasured fallback fails here.
+  test("measured-mode sumHeights agrees with HeightModel under a fixed estimate + sparse measurements", () => {
+    const itemCount = 8
+    const gap = 2
+    const estimate = 3 // fixed numeric → unmeasured rows fall back to avgMeasured
+    const width = 80
+    const getItemKey = (i: number): string => `row-${i}`
+    // Sparse measurements at the current width; the rest fall back to avgMeasured.
+    const measuredHeights = new Map<string, number>([
+      [makeMeasureKey("row-1", width), 5],
+      [makeMeasureKey("row-2", width), 9],
+      [makeMeasureKey("row-5", width), 1],
+    ])
+    const avg = averageMeasuredHeightForWidth(measuredHeights, width)
+    // Mirror ListView's effectiveEstimate exactly (measured ?? avgMeasured ?? estimate).
+    const effectiveEstimate = (i: number): number =>
+      getHeight(i, estimate, measuredHeights, getItemKey, avg, width)
+    const m = createHeightModel({ itemCount, estimate: effectiveEstimate, gap })
+
+    expect(m.totalRows()).toBe(
+      sumHeights(0, itemCount, estimate, gap, measuredHeights, getItemKey, width),
+    )
+    for (let k = 0; k < itemCount; k++) {
+      const virtualizerLeading = sumHeights(0, k, estimate, gap, measuredHeights, getItemKey, width)
+      expect(m.rowOfIndex(k)).toBe(virtualizerLeading + (k > 0 ? gap : 0))
+    }
+  })
+
+  test("measured-mode sumHeights agrees with HeightModel under a per-index function estimate", () => {
+    const itemCount = 6
+    const gap = 1
+    const estimate = (i: number): number => i + 2 // function estimate → no avgMeasured fallback
+    const width = 100
+    const getItemKey = (i: number): string => `fn-${i}`
+    const measuredHeights = new Map<string, number>([
+      [makeMeasureKey("fn-2", width), 8],
+      [makeMeasureKey("fn-4", width), 3],
+    ])
+    const avg = averageMeasuredHeightForWidth(measuredHeights, width)
+    const effectiveEstimate = (i: number): number =>
+      getHeight(i, estimate, measuredHeights, getItemKey, avg, width)
+    const m = createHeightModel({ itemCount, estimate: effectiveEstimate, gap })
+
+    expect(m.totalRows()).toBe(
+      sumHeights(0, itemCount, estimate, gap, measuredHeights, getItemKey, width),
+    )
+    for (let k = 0; k < itemCount; k++) {
+      expect(m.rowOfIndex(k)).toBe(
+        sumHeights(0, k, estimate, gap, measuredHeights, getItemKey, width) + (k > 0 ? gap : 0),
+      )
     }
   })
 
