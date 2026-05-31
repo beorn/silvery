@@ -46,6 +46,7 @@
  */
 
 import { createLogger, type ConditionalLogger, type Stage, type Event } from "loggily"
+import { isStrictAnyEnabled } from "../strict-mode.js"
 
 /**
  * Categories of feedback edges that can trigger an extra render/layout pass.
@@ -176,6 +177,43 @@ export function isInstrumentEnabled(): boolean {
   return instrumentEnabled
 }
 
+/**
+ * Recording gate for the convergence loops.
+ *
+ * Pass-cause recording must be live whenever `assertBoundedConvergence`
+ * COULD fire — i.e. under SILVERY_INSTRUMENT (the full diagnostic trace)
+ * OR under any SILVERY_STRICT tier/slug (the convergence-bound assertion
+ * reads `getPassHistogram().byCause` to build its per-cause breakdown).
+ * Before this gate, recording was `INSTRUMENT`-only, so a bounded-
+ * convergence breach under plain `SILVERY_STRICT=2` (INSTRUMENT off) threw
+ * with "(no records — INSTRUMENT off)" — a silent violation that named no
+ * looping cause. See bead
+ * `@km/silvery/19436-production-flush-convergence-bound-crash`.
+ *
+ * Zero-overhead when BOTH are off: `instrumentEnabled` is a module const
+ * the JS engine folds, and `isStrictAnyEnabled()` is a cached parse of
+ * `process.env.SILVERY_STRICT` (set-size check, no per-call allocation).
+ * When neither is set this short-circuits on the const and never touches
+ * the strict cache beyond the first read. The convergence loops also only
+ * call the recording functions on extra passes (pass ≥ 1), so the
+ * steady-state single-pass frame pays nothing.
+ */
+function passRecordingActive(): boolean {
+  return instrumentEnabled || isStrictAnyEnabled()
+}
+
+/**
+ * True when pass-cause recording should run — exported so the convergence
+ * loops in `renderer.ts` / `create-app.tsx` can guard their
+ * `beginConvergenceLoop` / `beginPass` / `notePassCommit` / `logPass`
+ * calls with the SAME predicate the recording functions use internally.
+ * (The loops historically guarded on the bare `INSTRUMENT` const; that
+ * left the STRICT-without-INSTRUMENT path unrecorded.)
+ */
+export function isPassRecordingEnabled(): boolean {
+  return passRecordingActive()
+}
+
 // =============================================================================
 // Aggregator — captures categorical pass-cause data from log events.
 // =============================================================================
@@ -209,6 +247,17 @@ export interface PassCauseAggregator {
   beginPass(passIndex: number): void
   /** Reset before a fresh convergence loop. */
   beginConvergenceLoop(): void
+  /**
+   * Record a pass-cause directly (bypasses the loggily level filter).
+   *
+   * The `stage` only captures events that survive the logger's level gate,
+   * which is `debug` only under SILVERY_INSTRUMENT. Under
+   * `SILVERY_STRICT`-without-INSTRUMENT the namespace level is `info`, so a
+   * `.debug?.()` emit is a no-op and never reaches the stage. The
+   * convergence loops call `record()` so the canonical histogram is
+   * populated whenever recording is active, independent of loggily level.
+   */
+  record(rec: PassCauseRecord): void
   /** Append a JSON snapshot to a file (test-runner exit hook). */
   appendJson(file: string): void
 }
@@ -216,6 +265,17 @@ export interface PassCauseAggregator {
 export function createPassCauseAggregator(): PassCauseAggregator {
   let state: AggregatorState = { records: [], perPass: [] }
   let recordsAtPassStart = 0
+
+  function pushRecord(rec: Partial<PassCauseRecord>): void {
+    if (!rec.cause) return
+    state.records.push({
+      cause: rec.cause,
+      nodeId: rec.nodeId,
+      edge: rec.edge,
+      producerPhase: rec.producerPhase,
+      detail: rec.detail,
+    })
+  }
 
   const stage: Stage = (event: Event): Event => {
     // Match parent (`silvery:passes`) and child (`silvery:passes:<cause>`)
@@ -226,15 +286,7 @@ export function createPassCauseAggregator(): PassCauseAggregator {
       return event
     }
     if (event.message !== "pass") return event
-    const props = event.props as Partial<PassCauseRecord> | undefined
-    if (!props?.cause) return event
-    state.records.push({
-      cause: props.cause,
-      nodeId: props.nodeId,
-      edge: props.edge,
-      producerPhase: props.producerPhase,
-      detail: props.detail,
-    })
+    pushRecord((event.props ?? {}) as Partial<PassCauseRecord>)
     return event
   }
 
@@ -348,6 +400,7 @@ export function createPassCauseAggregator(): PassCauseAggregator {
     notePassCommit,
     beginPass,
     beginConvergenceLoop,
+    record: pushRecord,
     appendJson,
   }
 }
@@ -420,24 +473,32 @@ function loggerForCause(cause: PassCause): ConditionalLogger {
  * convergence loop in renderer.ts / runtime/create-app.tsx.
  */
 export function beginConvergenceLoop(): void {
-  if (!instrumentEnabled) return
+  if (!passRecordingActive()) return
   passAggregator.beginConvergenceLoop()
 }
 
 /** Mark the start of pass N (0-based). */
 export function beginPass(passIndex: number): void {
-  if (!instrumentEnabled) return
+  if (!passRecordingActive()) return
   passAggregator.beginPass(passIndex)
 }
 
 /**
  * Record that a feedback edge fired during the current pass.
  *
- * Emits on the per-cause child namespace so that
- * `DEBUG=silvery:passes:<cause>` filters by cause; the aggregator stage
- * captures both parent and child events into the canonical histogram.
+ * Two sinks, decoupled:
+ * - The canonical histogram (`passAggregator.record`) is populated whenever
+ *   recording is active (INSTRUMENT or any STRICT tier), bypassing loggily's
+ *   level gate so the convergence-bound breakdown is always available under
+ *   STRICT.
+ * - The loggily emit (`DEBUG=silvery:passes:<cause>` console filter) stays
+ *   INSTRUMENT-gated, because the namespace level is only raised to `debug`
+ *   under INSTRUMENT — under STRICT alone the `.debug?.()` would be a no-op
+ *   anyway.
  */
 export function logPass(record: PassCauseRecord): void {
+  if (!passRecordingActive()) return
+  passAggregator.record(record)
   if (!instrumentEnabled) return
   const log = loggerForCause(record.cause)
   log.debug?.("pass", record as unknown as Record<string, unknown>)
@@ -458,13 +519,13 @@ export function getPassLog(): ConditionalLogger {
  * if no specific cause was emitted during pass N.
  */
 export function notePassCommit(passIndex: number): void {
-  if (!instrumentEnabled) return
+  if (!passRecordingActive()) return
   passAggregator.notePassCommit(passIndex)
 }
 
 /** Snapshot the current pass-cause histogram. */
 export function getPassHistogram(): PassHistogram {
-  if (!instrumentEnabled) {
+  if (!passRecordingActive()) {
     return { totalRecords: 0, perPass: [], byCause: [] }
   }
   return passAggregator.getHistogram()

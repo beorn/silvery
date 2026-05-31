@@ -194,6 +194,7 @@ import {
   assertBoundedConvergence,
   MAX_CONVERGENCE_PASSES,
   INSTRUMENT,
+  isPassRecordingEnabled,
 } from "./pass-cause"
 
 const log = createLogger("silvery:app")
@@ -3094,7 +3095,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   async function drainStandaloneCommitRerenders(): Promise<number> {
     let commitRerenders = 0
+    // This standalone-frame drain is the convergence loop that ACTUALLY
+    // throws on a runaway feedback edge (it asserts at commitRerenders+1 >
+    // cap, unlike the other loops which cap inclusively). It historically
+    // had NO pass-cause recording, so even under SILVERY_INSTRUMENT its
+    // breakdown was empty — and under plain SILVERY_STRICT the crash named
+    // no looping cause at all. Record on the same gate as the other loops so
+    // the bounded-convergence breach carries a per-cause breakdown. See bead
+    // `@km/silvery/19436-production-flush-convergence-bound-crash`.
+    const recordPasses = isPassRecordingEnabled()
+    if (recordPasses) beginConvergenceLoop()
     for (;;) {
+      if (recordPasses) beginPass(commitRerenders)
       // Standalone async store updates (timers, session hydration, resource
       // probes) need the same "settle before paint" contract as startup.
       // One post-commit rerender is not enough for nested layout feedback:
@@ -3115,9 +3127,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       if (!pendingRerender) return commitRerenders
       if (commitRerenders >= MAX_CONVERGENCE_PASSES) {
         pendingRerender = false
+        if (recordPasses) {
+          notePassCommit(commitRerenders)
+          logPass({ cause: "unknown", detail: "standalone-commit-flush-exhaustion" })
+        }
         assertBoundedConvergence(commitRerenders + 1, "production-flush", MAX_CONVERGENCE_PASSES)
         return commitRerenders
       }
+      if (recordPasses) notePassCommit(commitRerenders)
       pendingRerender = false
       currentBuffer = doRender()
       commitRerenders++
@@ -4019,14 +4036,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Bound: MAX_CONVERGENCE_PASSES — see pass-cause.ts. Same convergence
     // structure as the renderer's loops; replaces the prior magic 5.
     let flushCount = 0
-    if (INSTRUMENT) beginConvergenceLoop()
+    // Record pass-causes whenever the convergence-bound assertion could fire
+    // (INSTRUMENT or any STRICT tier), so an over-cap throw under plain
+    // SILVERY_STRICT carries a populated per-cause breakdown.
+    const recordPasses = isPassRecordingEnabled()
+    if (recordPasses) beginConvergenceLoop()
     while (flushCount < MAX_CONVERGENCE_PASSES) {
-      if (INSTRUMENT) beginPass(flushCount)
+      if (recordPasses) beginPass(flushCount)
       await Promise.resolve() // Drain microtask queue → passive effects flush
       if (!pendingRerender) break
       pendingRerender = false
       isRendering = true
-      if (INSTRUMENT) {
+      if (recordPasses) {
         notePassCommit(flushCount)
         if (flushCount === MAX_CONVERGENCE_PASSES - 1) {
           logPass({ cause: "unknown", detail: "production-flush-exhaustion" })

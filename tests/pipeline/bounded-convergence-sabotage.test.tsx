@@ -22,14 +22,19 @@
  * Tracking: km-silvery.renderer-convergence-by-design (C3b)
  */
 
-import React, { useLayoutEffect, useState } from "react"
-import { describe, test, expect } from "vitest"
+import React, { useEffect, useLayoutEffect, useState } from "react"
+import { afterEach, beforeEach, describe, test, expect, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
 import {
   MAX_CONVERGENCE_PASSES,
   INITIAL_RENDER_MAX_PASSES,
+  resetPassHistogram,
 } from "@silvery/ag-term/runtime/pass-cause"
+import { resetStrictCache } from "@silvery/ag-term/strict-mode"
+// run.tsx (not .ts) — the `./*` package export maps to `./src/*.ts`, so import
+// the .tsx entry via a package-relative path (matches auto-panic-circuit-break).
+import { _resetPanicCircuitBreaker, run } from "../../packages/ag-term/src/runtime/run"
 
 /**
  * Bounded feedback: schedules `targetIterations` setState updates from
@@ -136,5 +141,186 @@ describe("bounded-convergence: sabotage (real feedback loop)", () => {
     // Sanity: the bound consts haven't drifted from the design doc.
     expect(MAX_CONVERGENCE_PASSES).toBe(2)
     expect(INITIAL_RENDER_MAX_PASSES).toBe(5)
+  })
+})
+
+// ===========================================================================
+// Observability regression: the convergence-bound throw must name the cause
+// under plain SILVERY_STRICT (INSTRUMENT off).
+//
+// `assertBoundedConvergence` builds its per-cause breakdown from
+// `getPassHistogram().byCause`, which was populated ONLY under
+// SILVERY_INSTRUMENT=1. Under plain `SILVERY_STRICT=2` the breakdown was
+// empty and the crash message ended with "(no records — INSTRUMENT off)" —
+// a bounded-convergence breach that named no looping edge.
+//
+// This drives the production standalone-frame drain
+// (`drainStandaloneCommitRerenders`) — the loop that ACTUALLY throws on a
+// runaway feedback edge (it asserts at commitRerenders+1 > cap; the other
+// loops cap inclusively and never exceed). It is reached via a timer-driven
+// setState (case 3 → renderStandaloneFrame), exactly the production trigger
+// (timers / session hydration / resource probes). The throw is routed
+// through the runtime's panic handler, which flushes the error message +
+// stack to stderr; we capture stderr and assert the breakdown is populated.
+//
+// Bead: @km/silvery/19436-production-flush-convergence-bound-crash
+// ===========================================================================
+
+function createMockStdout(): NodeJS.WriteStream {
+  const writable = {
+    write() {
+      return true
+    },
+    isTTY: true,
+    columns: 40,
+    rows: 10,
+    fd: -1,
+    on: () => writable,
+    off: () => writable,
+    once: () => writable,
+    emit: () => true,
+    removeListener: () => writable,
+    addListener: () => writable,
+  } as unknown as NodeJS.WriteStream
+  return writable
+}
+
+function createMockStdin(): NodeJS.ReadStream {
+  const stdin = {
+    isTTY: true,
+    isRaw: false,
+    fd: 0,
+    setRawMode: () => stdin,
+    resume: () => stdin,
+    pause: () => stdin,
+    setEncoding: () => stdin,
+    read: () => null,
+    on: () => stdin,
+    off: () => stdin,
+    once: () => stdin,
+    removeListener: () => stdin,
+    removeAllListeners: () => stdin,
+    addListener: () => stdin,
+    listenerCount: () => 0,
+    listeners: () => [],
+  } as unknown as NodeJS.ReadStream
+  return stdin
+}
+
+/**
+ * Deterministic standalone runaway. A one-shot timer flips `active` from
+ * OUTSIDE any event handler (store-subscription case 3 →
+ * renderStandaloneFrame → drainStandaloneCommitRerenders). Once active, an
+ * effect with no deps unconditionally re-setStates every render, so
+ * `pendingRerender` stays true past MAX_CONVERGENCE_PASSES and the drain
+ * loop throws. (Unlike `ForeverFeedback` under `createRenderer`, this hits
+ * the hard-capped production drain — no React update-depth dependence.)
+ */
+function StandaloneRunaway() {
+  const [active, setActive] = useState(false)
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const id = setTimeout(() => setActive(true), 5)
+    return () => clearTimeout(id)
+  }, [])
+  useEffect(() => {
+    if (active) setTick((n) => n + 1)
+  })
+  return <Text>tick:{tick}</Text>
+}
+
+describe("bounded-convergence: breakdown is populated under STRICT (INSTRUMENT off)", () => {
+  // Capture stderr in this suite's own buffer so the panic message doesn't
+  // trip the km vitest setup's "no console output" afterEach guard, and so
+  // we can assert on the thrown breakdown. Mirrors
+  // tests/runtime/auto-panic-circuit-break.test.tsx.
+  let origStderrWrite: typeof process.stderr.write
+  let origStdoutWrite: typeof process.stdout.write
+  let stderr: string[]
+
+  beforeEach(() => {
+    stderr = []
+    origStderrWrite = process.stderr.write
+    origStdoutWrite = process.stdout.write
+    process.stderr.write = ((chunk: unknown) => {
+      stderr.push(typeof chunk === "string" ? chunk : String(chunk))
+      return true
+    }) as typeof process.stderr.write
+    process.stdout.write = (() => true) as typeof process.stdout.write
+    _resetPanicCircuitBreaker()
+    resetPassHistogram()
+    // Production behavior is process.exit(2) after the panic circuit-break;
+    // opt out so the runner survives.
+    vi.stubEnv("SILVERY_AUTO_PANIC_TEST_NO_EXIT", "1")
+  })
+
+  afterEach(() => {
+    process.stderr.write = origStderrWrite
+    process.stdout.write = origStdoutWrite
+    vi.unstubAllEnvs()
+    resetStrictCache()
+    resetPassHistogram()
+    _resetPanicCircuitBreaker()
+  })
+
+  test("STRICT=2 production-flush over cap throws WITH a populated per-cause breakdown", async () => {
+    vi.stubEnv("SILVERY_STRICT", "2")
+    // INSTRUMENT explicitly OFF — this is the whole point of the regression.
+    delete process.env.SILVERY_INSTRUMENT
+    resetStrictCache()
+
+    const handle = await run(<StandaloneRunaway />, {
+      cols: 40,
+      rows: 10,
+      stdout: createMockStdout(),
+      stdin: createMockStdin(),
+      guardOutput: true,
+      kitty: false,
+      textSizing: false,
+      widthDetection: false,
+    } as never)
+
+    // Let the timer fire → standalone runaway → drain throws → panic flush.
+    await new Promise((r) => setTimeout(r, 300))
+    await handle.waitUntilExit()
+
+    const visible = stderr.join("")
+
+    // The bounded-convergence breach fired in the production drain loop.
+    expect(visible).toContain("convergence bound exceeded in production-flush")
+
+    // The whole point: the breakdown is POPULATED, not the empty sentinel.
+    expect(visible).not.toContain("(no records — INSTRUMENT off)")
+    expect(visible).not.toContain("no records")
+
+    // The message names a cause with its per-cause bound — e.g.
+    // "Per-cause breakdown: unknown=N(bound=0)". Assert the breakdown line
+    // exists and carries at least one `cause=count(bound=...)` entry.
+    expect(visible).toMatch(/Per-cause breakdown: \S+=\d+\(bound=\d+\)/)
+  })
+
+  test("STRICT=2 + INSTRUMENT=1 still populates the breakdown (no regression)", async () => {
+    vi.stubEnv("SILVERY_STRICT", "2")
+    vi.stubEnv("SILVERY_INSTRUMENT", "1")
+    resetStrictCache()
+
+    const handle = await run(<StandaloneRunaway />, {
+      cols: 40,
+      rows: 10,
+      stdout: createMockStdout(),
+      stdin: createMockStdin(),
+      guardOutput: true,
+      kitty: false,
+      textSizing: false,
+      widthDetection: false,
+    } as never)
+
+    await new Promise((r) => setTimeout(r, 300))
+    await handle.waitUntilExit()
+
+    const visible = stderr.join("")
+    expect(visible).toContain("convergence bound exceeded in production-flush")
+    expect(visible).not.toContain("no records")
+    expect(visible).toMatch(/Per-cause breakdown: \S+=\d+\(bound=\d+\)/)
   })
 })

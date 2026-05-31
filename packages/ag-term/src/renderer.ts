@@ -73,7 +73,7 @@ import {
   logPass,
   assertBoundedConvergence,
   MAX_CONVERGENCE_PASSES,
-  INSTRUMENT,
+  isPassRecordingEnabled,
 } from "./runtime/pass-cause"
 import { ALL_RECONCILER_BITS, getRenderEpoch, isAnyDirty } from "@silvery/ag/epoch"
 // Side-effect import: arms `@silvery/ag`'s wrap-measurer registry with the
@@ -812,11 +812,15 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // separate act after each pass, then loop if hadReactCommit.
     let passCount = 0
     const cap = instance.maxLayoutPasses
-    if (INSTRUMENT) beginConvergenceLoop()
+    // Record pass-causes whenever the convergence-bound assertion could fire
+    // (INSTRUMENT or any STRICT tier), not just under INSTRUMENT — otherwise
+    // an over-cap throw under plain SILVERY_STRICT names no looping cause.
+    const recordPasses = isPassRecordingEnabled()
+    if (recordPasses) beginConvergenceLoop()
     for (let pass = 0; pass < cap; pass++) {
       hadReactCommit = false
       passCount++
-      if (INSTRUMENT) beginPass(pass)
+      if (recordPasses) beginPass(pass)
       let renderError: Error | null = null
       let carryForwardBuffer: TerminalBuffer | undefined
       withActEnvironment(() => {
@@ -875,7 +879,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         break
       }
       invalidateRootAfterLayoutFeedback(getContainerRoot(instance.container))
-      if (INSTRUMENT) {
+      if (recordPasses) {
         notePassCommit(pass)
         if (pass === cap - 1) {
           logPass({ cause: "unknown", detail: "layout-pass-exhaustion" })
@@ -1423,18 +1427,19 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     let doRenderCount = 1
     if (instance.maxLayoutPasses <= MAX_CONVERGENCE_PASSES) {
       let flushCount = 0
-      if (INSTRUMENT) beginConvergenceLoop()
+      const recordPasses = isPassRecordingEnabled()
+      if (recordPasses) beginConvergenceLoop()
       for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
         hadReactCommit = false
         flushCount = flush + 1
-        if (INSTRUMENT) beginPass(flush)
+        if (recordPasses) beginPass(flush)
         withActEnvironment(() => {
           act(() => {
             reconciler.flushSyncWork()
           })
         })
         if (!hadReactCommit) break
-        if (INSTRUMENT) {
+        if (recordPasses) {
           notePassCommit(flush)
           if (flush === MAX_CONVERGENCE_PASSES - 1) {
             logPass({ cause: "unknown", detail: "effect-flush-exhaustion" })
