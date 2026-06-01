@@ -46,6 +46,24 @@ function StableFullscreenApp() {
   )
 }
 
+function TickingFullscreenApp() {
+  const [tick, setTick] = React.useState(0)
+  React.useEffect(() => {
+    const interval = setInterval(() => setTick((value) => value + 1), 30)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <Box flexDirection="column" width="100%" height="100%">
+      <Text>live transcript row</Text>
+      <Box flexGrow={1}>
+        <Text>ongoing tool output</Text>
+      </Box>
+      <Text>tick {tick}</Text>
+    </Box>
+  )
+}
+
 describe("fullscreen reflow residue", () => {
   test("runtime clears fullscreen output after a same-size resize notification", () => {
     let dims: Dims = { cols: 24, rows: 6 }
@@ -131,5 +149,27 @@ describe("fullscreen reflow residue", () => {
     expect(term.screen.getText()).not.toContain(term.reflowResidue!.marker)
 
     handle.unmount()
+  })
+
+  test("focus-out damage risk clears fullscreen residue on the next live render if focus-in is missed", async () => {
+    using term = createTermless({ cols: 40, rows: 8, reflowResidue: true })
+    const handle = await run(<TickingFullscreenApp />, term)
+
+    try {
+      expect(term.screen).toContainText("live transcript row")
+
+      ;(term as unknown as { sendInput(data: string): void }).sendInput("\x1b[O")
+      await settle()
+
+      term.out.clear()
+      term.reflowResidue!.arm()
+      await settle(650)
+
+      const outputAfterTick = term.out.getText()
+      expect(outputAfterTick).toContain("\x1b[2J")
+      expect(term.screen.getText()).not.toContain(term.reflowResidue!.marker)
+    } finally {
+      handle.unmount()
+    }
   })
 })

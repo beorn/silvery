@@ -213,6 +213,7 @@ const traceLog = createLogger("silvery:trace")
 const ENV = typeof process !== "undefined" ? process.env : undefined
 const NO_INCREMENTAL = ENV?.SILVERY_NO_INCREMENTAL === "1"
 const PANIC_STDIN_DRAIN_MS = 75
+const FOCUS_DAMAGE_REPAINT_INTERVAL_MS = 500
 
 type RuntimeWheelMouseEvent = {
   action?: string
@@ -1974,6 +1975,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   const scrollback = virtualInlineOption ? createVirtualScrollback() : null
   let virtualScrollOffset = 0 // 0 = live (bottom), >0 = scrolled up
   let searchState = createSearchState()
+  // A focus-out means the terminal/compositor may reflow or drop visible
+  // alt-screen pixels while Silvery's shadow buffer stays internally correct.
+  // Keep periodically forcing fullscreen clears until a confirmed focus-in;
+  // some multiplexers deliver focus-out but miss focus-in on workspace return.
+  let fullscreenDamageRiskFromBlur = false
+  let fullscreenDamageLastRepaintMs = -Infinity
 
   // Focus manager (tree-based focus system) with event dispatch wiring
   const focusManager = createFocusManager({
@@ -3272,6 +3279,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // `selectionEnabled` / `runtime` are by-reference, evaluated at call time.
   function paintFrame(): void {
     if (!currentBuffer) return
+    if (fullscreenDamageRiskFromBlur && alternateScreen) {
+      const now = performance.now()
+      if (now - fullscreenDamageLastRepaintMs >= FOCUS_DAMAGE_REPAINT_INTERVAL_MS) {
+        fullscreenDamageLastRepaintMs = now
+        runtime.invalidate({ clearScreen: true })
+      }
+    }
     const hasSelection = selectionEnabled && !!selectionState.range
     const hasSearchHighlight = searchState.active && searchState.currentMatch >= 0
     const hasSearchBar = searchState.active
@@ -3951,8 +3965,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         const { focused } = event.data as { focused: boolean }
         chainApp.dispatch({ type: "term:focus", focused })
         chainApp.drainEffects()
-        if (focused && alternateScreen) {
-          runtime.invalidate({ clearScreen: true })
+        if (alternateScreen) {
+          if (focused) {
+            runtime.invalidate({ clearScreen: true })
+            fullscreenDamageRiskFromBlur = false
+            fullscreenDamageLastRepaintMs = -Infinity
+          } else {
+            fullscreenDamageRiskFromBlur = true
+            fullscreenDamageLastRepaintMs = -Infinity
+          }
         }
         // withTerminalChain is an observer — fan out to the chain
         // focusEvents store so useTerminalFocused / useModifierKeys
