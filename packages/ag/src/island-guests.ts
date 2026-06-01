@@ -2,10 +2,11 @@
  * Silvery built-in IslandGuest implementations.
  *
  * Layer-3 of the islands stack — concrete {@link IslandGuest} instances the
- * host can mount. Built-ins ship inside `@silvery/ag` so the cost-to-use is
- * one import. Heavier guests (PTY child, replay player, embedded silvery
- * sub-instance) live in their own packages — `@silvery/island-pty`,
- * `@silvery/island-replay`, etc — to keep the core package dependency-tight.
+ * host can mount. Built-ins ship inside `@silvery/ag` and are re-exported by
+ * the app-facing `silvery` package so the cost-to-use is one import. Heavier
+ * guests live next to the engine they wrap — for example, termless exports
+ * `xtermGuest` from `@termless/xtermjs` — to keep the core package
+ * dependency-tight.
  *
  * Current built-ins:
  *
@@ -18,9 +19,9 @@
  * - `sandbox(inner)` — wraps any other guest and neutralizes the 8 query
  *   families (OSC 4/10/11 + DSR 5/6 + DA1/2 + window title) so the inner
  *   guest can't probe the host terminal. The interim termless `rec --live-
- *   chrome=none` flip exists because the silvery overlay didn't have this;
- *   Phase 3 rec adoption replaces the chrome-overlay path with
- *   `<Island guest={sandbox(ptyGuest(...))}>`.
+ *   chrome=none` flip existed because the silvery overlay didn't have this;
+ *   rec adoption replaced the chrome-overlay path with an
+ *   `<Island guest={sandbox(xtermGuest(...))}>` boundary.
  *
  * Future built-ins (planned, not yet shipped — see `@km/silvery/15646-islands`):
  *
@@ -306,15 +307,15 @@ export interface SandboxOptions {
  * has access to host-fulfilled OS side-effects it depends on (clipboard
  * write via OSC 52 stays functional).
  *
- * Why: the interim termless `--live-chrome=none` flip exists because the
- * silvery overlay didn't have this. Phase 3 rec adoption replaces the
- * chrome-overlay path with `<Island guest={sandbox(ptyGuest(...))}>`; the
- * sandbox absorbs the recorded program's queries so the host terminal
- * never echoes responses into the recorded grid.
+ * Why: the interim termless `--live-chrome=none` flip existed because the
+ * silvery overlay didn't have this. Rec adoption replaced the chrome-overlay
+ * path with an `<Island guest={sandbox(xtermGuest(...))}>` boundary; the
+ * sandbox absorbs the recorded program's queries so the host terminal never
+ * echoes responses into the recorded grid.
  *
  * @example
  * ```ts
- * const guest = sandbox(ptyGuest({ cmd: ["nvim"] }), {
+ * const guest = sandbox(xtermGuest({ child, cols: 80, rows: 24 }), {
  *   background: theme.bg,     // align with host's resolved theme
  *   foreground: theme.fg,
  * })

@@ -30,7 +30,7 @@ These are implementation details — you'll only need them for advanced use case
 Most apps import everything from `silvery`:
 
 ```tsx
-import { Box, Text, render, useBoxRect, useInput, createTerm } from "silvery"
+import { Box, Text, Island, snapshotGuest, render, useBoxRect, useInput, createTerm } from "silvery"
 ```
 
 ### Power-User Imports
@@ -83,11 +83,11 @@ import chalk from "silvery/chalk"
 
 Re-exports the application-facing surface from `@silvery/ag-react`. This is the primary import for most applications.
 
-**Components**: Box, Text, Newline, Spacer, Static, Transform, TextInput, TextArea, SelectList, Toggle, Button, Spinner, ProgressBar, Table, Badge, Divider, VirtualList, VirtualView, Console, Image, Link, Form, FormField, Toast, CommandPalette, TreeView, Breadcrumb, Tabs, TabList, Tab, TabPanel, Tooltip, Skeleton, ErrorBoundary, ModalDialog, PickerDialog, PickerList, SplitView, ThemeProvider.
+**Components**: Box, Text, Newline, Spacer, Static, Transform, Island, TextInput, TextArea, SelectList, Toggle, Button, Spinner, ProgressBar, Table, Badge, Divider, VirtualList, VirtualView, Console, Image, Link, Form, FormField, Toast, CommandPalette, TreeView, Breadcrumb, Tabs, TabList, Tab, TabPanel, Tooltip, Skeleton, ErrorBoundary, ModalDialog, PickerDialog, PickerList, SplitView, ThemeProvider.
 
 **Hooks**: useBoxRect, useScrollRect, useInput, useApp, useStdout, useFocus, useFocusManager, useFocusWithin, usePaste, useCursor, useAnimation, useAnimatedTransition, useScrollback, useToast.
 
-**Functions**: render, renderSync, renderToString, createTerm.
+**Functions**: render, renderSync, renderToString, createTerm, createCellBuffer, createIsland, snapshotGuest, sandbox.
 
 ## `@silvery/ag-term`
 
@@ -98,6 +98,13 @@ Key exports: `createTerm`, `Pipeline`, buffer utilities, ANSI helpers, terminal 
 ## `@silvery/ag-react`
 
 React reconciler adapted for terminal rendering. Provides the component model, hooks, and reconciliation logic.
+
+## `@silvery/ag`
+
+Framework-agnostic renderer contracts and factories. Public subpaths include
+`@silvery/ag/island`, `@silvery/ag/island-guests`, and
+`@silvery/ag/island-types`; app code normally imports their re-exported surface
+from `silvery`.
 
 ## `silvery/ui`
 

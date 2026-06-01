@@ -74,8 +74,18 @@ export { Viewport } from "./components/Viewport"
 export type { ViewportProps, ViewportRef, ForeignSource } from "./components/Viewport"
 export { Island } from "./components/Island"
 export type { IslandProps } from "./components/Island"
-// Island contract types — re-exported here so consumers don't need to import
-// from @silvery/ag/island-types directly. See bead @km/silvery/15646-islands.
+// Islands — re-exported here so app-facing `silvery` imports match the guide.
+// See bead @km/silvery/15646-islands.
+export { createIsland } from "@silvery/ag/island"
+export type { CreateIslandOptions, CreateIslandResult } from "@silvery/ag/island"
+export { snapshotGuest, sandbox, synthesizeOSCResponse } from "@silvery/ag/island-guests"
+export type {
+  SnapshotGuestOptions,
+  SnapshotGuestHandle,
+  SandboxOptions,
+} from "@silvery/ag/island-guests"
+export { createCellBuffer } from "@silvery/ag"
+export type { CellBuffer, MutableCellBuffer } from "@silvery/ag"
 export type {
   IslandGuest,
   IslandContext,

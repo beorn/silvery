@@ -104,6 +104,8 @@ export { createCellBuffer } from "./viewport-buffer"
 export type { MutableCellBuffer } from "./viewport-buffer"
 
 // Islands — built-in guests (Phase 2 of @km/silvery/15646)
+export { createIsland } from "./island"
+export type { CreateIslandOptions, CreateIslandResult } from "./island"
 export { snapshotGuest, sandbox, synthesizeOSCResponse } from "./island-guests"
 export type { SnapshotGuestOptions, SnapshotGuestHandle, SandboxOptions } from "./island-guests"
 

@@ -240,7 +240,11 @@ Present only when `capabilities.palette = true` AND `palettePolicy !== "freeze"`
 
 ## Built-in guests
 
-`@silvery/ag` ships two built-in guests. Heavier guests (PTY, replay player, embedded silvery sub-instance) live in their own packages.
+The app-facing `silvery` surface re-exports the core guests from
+`@silvery/ag`. Heavier guests live next to the engine they wrap; for example,
+termless exports `xtermGuest` from `@termless/xtermjs`. `replayGuest` is still
+future work, so replay consumers should use `snapshotGuest` for static frames
+until a real replay guest ships.
 
 ### snapshotGuest
 
@@ -281,8 +285,10 @@ const guest = sandbox(snapshotGuest({ cols: 80, rows: 24 }), {
   foreground: "#cccccc",
 })
 
-// Wrap a PTY guest (Phase 3 of @km/silvery/15646-islands):
-const guest = sandbox(ptyGuest({ cmd: ["nvim"] }))
+// Wrap a live PTY-shaped guest from termless:
+import { xtermGuest } from "@termless/xtermjs"
+
+const guest = sandbox(xtermGuest({ child, cols: 80, rows: 24 }))
 ```
 
 Unknown OSC sequences pass through to the host's real `execOSC` so guests retain access to side-effects they need (OSC 52 clipboard stays functional). The wrapper is purely query-neutralization; it doesn't modify cell content or change the guest's capabilities.
@@ -355,7 +361,7 @@ For init-time failures (`guest.init()` rejects), the same routing applies: `onEr
 
 ```tsx
 <Island
-  guest={ptyGuest({ cmd: ["nvim"] })}
+  guest={xtermGuest({ child, cols: 80, rows: 24 })}
   cols={80}
   rows={24}
   onSignal={(sig) => {
@@ -470,10 +476,11 @@ Best practices:
 
 ## Composition patterns
 
-Sandbox + PTY is the canonical termless-rec pattern:
+Sandbox + a live PTY-shaped guest is the canonical termless-rec pattern:
 
 ```tsx
-<Island guest={sandbox(ptyGuest({ cmd: ["nvim"] }))} cols={80} rows={24} focusable />
+const guest = sandbox(xtermGuest({ child, cols: 80, rows: 24 }))
+<Island guest={guest} cols={80} rows={24} focusable />
 ```
 
 Snapshot + sandbox + setBuffer is the GIF-playback pattern:
