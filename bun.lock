@@ -271,6 +271,7 @@
         "@silvery/ag": "0.24.0",
         "@silvery/ag-react": "0.24.0",
         "@silvery/ag-term": "0.24.0",
+        "@silvery/ansi": "0.24.0",
         "@silvery/create": "0.24.0",
         "@termless/core": ">=0.9.1 <1.0.0",
         "@termless/ghostty": ">=0.9.1 <1.0.0",

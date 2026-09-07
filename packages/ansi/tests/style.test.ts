@@ -134,8 +134,13 @@ describe("resolveThemeColor", () => {
     expect(resolveThemeColor("#ff0000", {})).toBe("#ff0000")
   })
 
-  it("returns undefined for unknown token", () => {
-    expect(resolveThemeColor("$unknown", {})).toBeUndefined()
+  it("preserves optional custom lookups, including prototype-named tokens", () => {
+    // Retirement membership is own-entry-only; an inherited Object method
+    // must neither become a cure nor hide the app's custom string value.
+    for (const token of ["unknown", "constructor", "toString", "hasOwnProperty"]) {
+      expect(resolveThemeColor(`$${token}`, {})).toBeUndefined()
+      expect(resolveThemeColor(`$${token}`, { [token]: "#aabbcc" })).toBe("#aabbcc")
+    }
   })
 
   it("resolves palette colors", () => {
