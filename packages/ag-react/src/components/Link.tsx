@@ -1,7 +1,7 @@
 /**
  * Link Component — URLs and App Actions
  *
- * Renders clickable text that brightens on plain hover. When `href`
+ * Renders clickable text that brightens and underlines on plain hover. When `href`
  * is present, Link also paints an OSC 8 terminal hyperlink; action-only links
  * omit `href` and leave activation entirely to `onClick`.
  *
@@ -56,7 +56,8 @@ export function Link({
   children,
   color = "$fg-link",
   role = href === undefined ? "control" : "content-link",
-  revealColor = "$fg",
+  revealColor = "$fg-link-hover",
+  underline,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -83,6 +84,7 @@ export function Link({
       internal_hyperlink={href ?? ""}
       {...rest}
       color={interaction.isHovered ? revealColor : interaction.treatment.color}
+      underline={underline ?? interaction.isHovered}
       mouseCursor={interaction.treatment.mouseCursor}
       onClick={handleClick}
       onMouseEnter={(event) => {

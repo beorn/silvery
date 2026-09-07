@@ -89,7 +89,7 @@ describe("MarkdownView — paragraph reflow", () => {
 })
 
 describe("MarkdownView — inline emphasis (Typography presets)", () => {
-  test("links retain their destination and brighten on plain hover without underline", async () => {
+  test("links retain their destination and brighten with an underline on plain hover", async () => {
     const app = render("See [Example](https://example.com) now.")
     const column = app.lines[0]!.indexOf("Example")
     expect(column).toBeGreaterThanOrEqual(0)
@@ -97,7 +97,7 @@ describe("MarkdownView — inline emphasis (Typography presets)", () => {
     const idle = app.cell(column, 0).fg
     await app.hover(column, 0)
     expect(app.cell(column, 0).fg).not.toEqual(idle)
-    expect(app.cell(column, 0).underline).toBeFalsy()
+    expect(app.cell(column, 0).underline).toBe("single")
   })
 
   test("**bold** renders bold and strips the markers", () => {
@@ -120,7 +120,7 @@ describe("MarkdownView — inline emphasis (Typography presets)", () => {
   test("`inline code` mixes muted and link foreground without padding or a background chip", () => {
     const app = render("run `bun fix` now")
     const info = createRenderer({ cols: 12, rows: 2 })(
-      <Text color="mix($fg-muted, $fg-link, 50%)">b</Text>,
+      <Text color="mix($fg-muted, $fg-link, 20%)">b</Text>,
     )
     expect(app.text).toContain("bun fix")
     expect(app.text).not.toContain("`")

@@ -286,7 +286,7 @@ Tokens avoid this. At truecolor, `$fg-muted` resolves to a specific pre-dimmed h
 <Strong>urgent</Strong>      // bold
 <Em>aside</Em>               // italic
 <Small>fine print</Small>    // pre-dimmed $fg-muted at truecolor
-<Link href="https://example.com">clickable</Link> // $fg-link + semantic link affordance
+<Link href="https://example.com">clickable</Link> // $fg-link + brightened, underlined hover affordance
 
 // Status indicators: shape + color (colorblind-safe)
 <Text color="$fg-success">✓</Text>   // done

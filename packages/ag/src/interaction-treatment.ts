@@ -62,7 +62,7 @@ export const textPair = (idle = "$fg-muted", revealed = "$fg"): InteractionSurfa
   recipe({ idle: fg(idle), revealed: fg(revealed) })
 export const cardOutline = (previewRevealed: boolean): InteractionSurfaceRecipe =>
   recipe({
-    revealed: fg(previewRevealed ? "$fg-link" : "$fg-muted"),
+    revealed: fg(previewRevealed ? "$fg-link-hover" : "$fg-muted"),
     pointer: previewRevealed ? "revealed" : "none",
   })
 export const togglePillSurface = (

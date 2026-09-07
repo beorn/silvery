@@ -36,9 +36,9 @@ Most Silvery components already use the correct semantic colors by default. **Th
 | `<Muted>`              | `$fg-muted` text                                                           |
 | `<Small>`              | `$fg-muted` (pre-dimmed at truecolor)                                      |
 | `<Lead>`               | `$fg-muted` + italic                                                       |
-| `<Code>`               | `mix($fg-muted, $fg-link, 50%)`, no chip or padding                        |
+| `<Code>`               | `mix($fg-muted, $fg-link, 20%)`, no chip or padding                        |
 | `<CodeBlock>`          | Subtle padded frame, click to collapse; hover reveals its label            |
-| `<Link>`               | `$fg-link`, plain-hover brightening, no default underline                  |
+| `<Link>`               | `$fg-link`, `$fg-link-hover` + underline on plain hover                    |
 | `<Blockquote>`         | `$fg-muted` italic body, inset two cells without a rail                    |
 | `<P>`                  | `mix($fg, $fg-muted, 12.5%)` body foreground                               |
 | `<LI>`                 | Same `•` at every unordered depth; indentation expresses nesting           |

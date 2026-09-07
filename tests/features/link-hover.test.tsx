@@ -1,7 +1,7 @@
 /**
  * Link Hover Effects — Cmd+hover reveal state + modifier-aware mouse cursors.
  *
- * Verifies that <Link> brightens without changing underline on reveal,
+ * Verifies that <Link> brightens and underlines on hover by default,
  * that useModifierKeys tracks modifier state correctly, and that
  * useMouseCursor writes the correct OSC 22 escape sequences.
  */
@@ -124,7 +124,7 @@ describe("interaction treatment recipes", () => {
       pointer: "none",
     })
     expect(cardOutline(true)).toEqual({
-      revealed: { color: "$fg-link" },
+      revealed: { color: "$fg-link-hover" },
       pointer: "revealed",
     })
     expect(resolveInteractionTreatment(hovered, "control", cardOutline(false))).toMatchObject({
@@ -132,7 +132,7 @@ describe("interaction treatment recipes", () => {
       mouseCursor: undefined,
     })
     expect(resolveInteractionTreatment(hovered, "control", cardOutline(true))).toMatchObject({
-      color: "$fg-link",
+      color: "$fg-link-hover",
       mouseCursor: "pointer",
     })
     expect(togglePillSurface(true, false, "$fg", "$fg-accent")).toEqual({
@@ -476,7 +476,7 @@ describe("Link", () => {
 // ============================================================================
 
 describe("Link role-derived reveal", () => {
-  test("action-only links brighten on plain hover without changing underline", async () => {
+  test("action-only links brighten and underline on plain hover", async () => {
     const render = createRenderer({ cols: 40, rows: 5 })
     const app = render(
       <Box flexDirection="column">
@@ -490,7 +490,7 @@ describe("Link role-derived reveal", () => {
     await app.hover(col, 0)
 
     const cell = app.term.cell(col, 0)
-    expect(cell.attrs.underline).toBeFalsy()
+    expect(cell.attrs.underline).toBe(true)
     expect(app.cell(col, 0).fg).not.toEqual(idleForeground)
   })
 
@@ -512,7 +512,7 @@ describe("Link role-derived reveal", () => {
     await React.act(async () => term.mouse.move(0, 0))
 
     await waitFor(() => term.out.containsOutput("Runtime link"))
-    expect(term.out.getText()).not.toMatch(/\x1b\[[0-9;:]*4mRuntime link/u)
+    expect(term.out.getText()).toMatch(/\x1b\[[0-9;:]*4mRuntime link/u)
     expect(term.out.containsOutput("\x1b]22;pointer\x07")).toBe(true)
   })
 
@@ -530,7 +530,7 @@ describe("Link role-derived reveal", () => {
     const col = app.text.indexOf("Hover Link")
     const idleForeground = app.cell(col, 0).fg
     await app.hover(col, 0)
-    expect(app.term.cell(col, 0).attrs.underline).toBeFalsy()
+    expect(app.term.cell(col, 0).attrs.underline).toBe(true)
     expect(app.cell(col, 0).fg).not.toEqual(idleForeground)
 
     await app.hover(0, 1)
@@ -542,7 +542,7 @@ describe("Link role-derived reveal", () => {
     ["https://example.com", "$fg"],
     ["file:///tmp/diagram.png", "$fg-success"],
   ])(
-    "URL %s brightens on plain hover without changing its destination or underline",
+    "URL %s uses its explicit hover color without changing its destination",
     async (href, revealColor) => {
       const render = createRenderer({ cols: 40, rows: 5 })
       const app = render(
@@ -561,7 +561,7 @@ describe("Link role-derived reveal", () => {
 
       expect(app.cell(col, 0).fg).not.toEqual(idleForeground)
       expect(app.cell(col, 0).fg).toEqual(expected.cell(0, 0).fg)
-      expect(app.cell(col, 0).underline).toBeFalsy()
+      expect(app.term.cell(col, 0).attrs.underline).toBe(true)
       expect(app.term.cell(col, 0).hyperlink).toBe(href)
 
       await app.hover(0, 1)
@@ -576,7 +576,7 @@ describe("Link role-derived reveal", () => {
 // ============================================================================
 
 describe("Link Cmd+hover reveal state", () => {
-  test("hover without Cmd does not underline", async () => {
+  test("plain hover underlines without changing content-link activation policy", async () => {
     const render = createRenderer({ cols: 40, rows: 5 })
     const app = render(
       <Box>
@@ -590,12 +590,12 @@ describe("Link Cmd+hover reveal state", () => {
     // Hover over the link
     await app.hover(col, 0)
 
-    // Still no underline (no Cmd held)
+    // Hover is visible even though opening the content link still requires Cmd.
     const cell = app.term.cell(col, 0)
-    expect(cell.attrs.underline).toBeFalsy()
+    expect(cell.attrs.underline).toBe(true)
   })
 
-  test("Cmd+hover brightens a content link without changing underline", async () => {
+  test("Cmd+hover keeps the content link underlined while arming it", async () => {
     const render = createRenderer({ cols: 40, rows: 5, kittyMode: true })
     const app = render(
       <Box>
@@ -612,9 +612,9 @@ describe("Link Cmd+hover reveal state", () => {
     // Press a key with Super held (simulates Cmd press)
     await app.press("Super+a")
 
-    // Revealed content links brighten; underline remains a stable link property.
+    // Cmd changes activation readiness; the hover affordance stays visible.
     const cell = app.term.cell(col, 0)
-    expect(cell.attrs.underline).toBeFalsy()
+    expect(cell.attrs.underline).toBe(true)
     expect(app.cell(col, 0).fg).not.toEqual(idleForeground)
   })
 
@@ -655,7 +655,7 @@ describe("Link Cmd+hover reveal state", () => {
 
     const col = app.text.indexOf("LinkText")
 
-    // Hover + Cmd changes colour, never the underline decision.
+    // An explicit caller choice wins over the hover default.
     await app.hover(col, 0)
     await app.press("Super+a")
     expect(app.term.cell(col, 0).attrs.underline).toBeFalsy()
@@ -793,7 +793,7 @@ describe("Link modifier-aware mouse cursor", () => {
     // Press a key with Super held (simulates Cmd press)
     await app.press("Super+a")
 
-    expect(app.term.cell(col, 0).attrs.underline).toBeFalsy()
+    expect(app.term.cell(col, 0).attrs.underline).toBe(true)
     expect(app.cell(col, 0).fg).not.toEqual(idleForeground)
   })
 
@@ -812,7 +812,7 @@ describe("Link modifier-aware mouse cursor", () => {
     // Arm the link
     await app.hover(col, 0)
     await app.press("Super+a")
-    expect(app.term.cell(col, 0).attrs.underline).toBeFalsy()
+    expect(app.term.cell(col, 0).attrs.underline).toBe(true)
     expect(app.cell(col, 0).fg).not.toEqual(idleForeground)
 
     // Move away — disarms, cursor should reset
