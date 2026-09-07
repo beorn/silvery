@@ -91,6 +91,12 @@ describe("parseColor: monochrome tier", () => {
     })
   })
 
+  test("$fg-link-hover resolves to null", () => {
+    withMonoTier((tier) => {
+      expect(parseColor("$fg-link-hover", tier)).toBeNull()
+    })
+  })
+
   test("non-token hex still resolves to RGB (output phase strips it)", () => {
     withMonoTier((tier) => {
       expect(parseColor("#FF0000", tier)).toEqual({ r: 255, g: 0, b: 0 })
@@ -141,6 +147,15 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
   test("$fg-link → underline", () => {
     withMonoTier((tier) => {
       const style = getTextStyle({ color: "$fg-link" }, tier)
+      expect(style.fg).toBeNull()
+      expect(style.attrs.underline).toBe(true)
+      expect(style.attrs.underlineStyle).toBe("single")
+    })
+  })
+
+  test("$fg-link-hover → underline", () => {
+    withMonoTier((tier) => {
+      const style = getTextStyle({ color: "$fg-link-hover" }, tier)
       expect(style.fg).toBeNull()
       expect(style.attrs.underline).toBe(true)
       expect(style.attrs.underlineStyle).toBe("single")

@@ -226,10 +226,10 @@ describe("Inline code elements", () => {
     expect(app.text).not.toContain(" fn() ")
   })
 
-  test("Code mixes muted and link foreground without a background chip", () => {
+  test("Code keeps four-fifths muted foreground without a background chip", () => {
     const app = render(<Code>x</Code>)
     const info = createRenderer({ cols: 1, rows: 1 })(
-      <Text color="mix($fg-muted, $fg-link, 50%)">x</Text>,
+      <Text color="mix($fg-muted, $fg-link, 20%)">x</Text>,
     )
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.char).toBe("x")

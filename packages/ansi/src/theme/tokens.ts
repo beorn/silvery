@@ -86,6 +86,7 @@ export type StandardThemeToken =
   | "$bg-selected"
   | "$fg-on-selected"
   | "$fg-link"
+  | "$fg-link-hover"
   // State variants — hover/active lightness shifts (dark: +L, light: -L)
   | "$primary-hover"
   | "$primary-active"

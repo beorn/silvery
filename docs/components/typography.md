@@ -86,7 +86,7 @@ Use `<Text variant="body">` for body styling without a `<P>` wrapper; bare
 
 | Component     | Default Style                                       | Use For                 |
 | ------------- | --------------------------------------------------- | ----------------------- |
-| `<Code>`      | `mix($fg-muted, $fg-link, 50%)`, no chip or padding | Inline code             |
+| `<Code>`      | `mix($fg-muted, $fg-link, 20%)`, no chip or padding | Inline code             |
 | `<Kbd>`       | `$bg-muted` + bold                                  | Keyboard shortcut badge |
 | `<CodeBlock>` | `$bg-surface-subtle` padded surface                 | Multi-line code block   |
 

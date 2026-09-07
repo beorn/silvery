@@ -136,7 +136,7 @@ describe("Text variant prop", () => {
     const code = createRenderer({ cols: 40, rows: 3 })
     const app = code(<Text variant="code">hello</Text>)
     const info = createRenderer({ cols: 40, rows: 3 })(
-      <Text color="mix($fg-muted, $fg-link, 50%)">hello</Text>,
+      <Text color="mix($fg-muted, $fg-link, 20%)">hello</Text>,
     )
     const cell = app.cell(0, 0)
     expect(cell.char).toBe("h")

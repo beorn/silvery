@@ -186,9 +186,10 @@ loudly.
 
 ### Link
 
-| Token     | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                      | Derivation                                                              | Tier notes                                                        |
-| --------- | ---------- | --------------- | -------- | -------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `fg-link` | `#8AAFDD`  | 5.51:1          | AA 4.5:1 | Hyperlink text color (distinct from accent). | = scheme.brightBlue (dark mode) / scheme.blue (light); ensure-AA on bg. | Apps that want link === accent can pin `link.fg` to `$fg-accent`. |
+| Token           | Hex (Nord) | Ratio vs canvas | Contract | Purpose                                      | Derivation                                                                              | Tier notes                                                        |
+| --------------- | ---------- | --------------- | -------- | -------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `fg-link`       | `#9DBCE2`  | 6.38:1          | AA 4.5:1 | Hyperlink text color (distinct from accent). | = blend(scheme.brightBlue, fg, 20%) (dark mode) / scheme.blue (light); ensure-AA on bg. | Apps that want link === accent can pin `link.fg` to `$fg-accent`. |
+| `fg-link-hover` | `#D8E2F0`  | 9.55:1          | AA 4.5:1 | Brightened hyperlink text while hovered.     | = mix(link.fg, fg, 75%); ensure-AA on bg.                                               | Retains underline in monochrome tiers.                            |
 
 ### Cursor
 

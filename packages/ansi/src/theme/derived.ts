@@ -35,7 +35,7 @@ export const DEFAULT_VARIANTS: Record<string, Variant> = {
   em: { color: "mix($fg, mix($fg, $fg-muted, 12.5%), 50%)", italic: true },
   link: { color: "$fg-link" },
   key: { color: "$accent", bold: true },
-  code: { color: "mix($fg-muted, $fg-link, 50%)" },
+  code: { color: "mix($fg-muted, $fg-link, 20%)" },
   kbd: { backgroundColor: "$mutedbg", color: "$accent", bold: true },
 }
 

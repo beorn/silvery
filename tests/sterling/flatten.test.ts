@@ -17,7 +17,7 @@ describe("sterling flatten", () => {
     }
   })
 
-  test("STERLING_FLAT_TOKENS has exactly 55 tokens", () => {
+  test("STERLING_FLAT_TOKENS has exactly 56 tokens", () => {
     // Status roles (info/success/warning/error) no longer emit fg-X-hover
     // and fg-X-active — text tokens on status roles are not state-varying.
     //   surfaces = 5, border = 3, cursor = 2, muted = 2                = 12
@@ -27,19 +27,20 @@ describe("sterling flatten", () => {
     //     fg, bg, fgOn, bg-hover, bg-active = 5, × 4                   = 20
     //   selected = bg, fgOn, bg-hover                                   =  3
     //   inverse = bg, fgOn, bg-hover, fgOn-muted                        =  4
-    //   link = fg                                                       =  1
+    //   link = fg, fg-hover                                             =  2
     //   disabled = fg, bg, border                                       =  3
     //   backdrop = bg                                                   =  1
     //   default surfaces = fg-default, bg-default                       =  2
     //   faint = fg                                                      =  1
-    //   total = 55
-    expect(STERLING_FLAT_TOKENS.length).toBe(55)
+    //   total = 56
+    expect(STERLING_FLAT_TOKENS.length).toBe(56)
   })
 
   test("theme is frozen (direct assignment throws in strict mode)", () => {
     expect(Object.isFrozen(theme)).toBe(true)
     expect(Object.isFrozen(theme.accent)).toBe(true)
     expect(Object.isFrozen(theme.accent.hover)).toBe(true)
+    expect(Object.isFrozen(theme.link.hover)).toBe(true)
     expect(Object.isFrozen(theme.surface)).toBe(true)
   })
 
@@ -48,6 +49,7 @@ describe("sterling flatten", () => {
     // sharing string interning saves real memory).
     expect(theme.accent.bg).toBe(theme["bg-accent"])
     expect(theme.accent.hover.fg).toBe(theme["fg-accent-hover"])
+    expect(theme.link.hover.fg).toBe(theme["fg-link-hover"])
     expect(theme.surface.overlay).toBe(theme["bg-surface-overlay"])
   })
 

@@ -79,7 +79,7 @@ export const DEFAULT_VARIANTS: Record<string, Variant> = {
   em: { color: "mix($fg, mix($fg, $fg-muted, 12.5%), 50%)", italic: true },
   link: { color: "$fg-link" },
   key: { color: "$fg-accent", bold: true },
-  code: { color: "mix($fg-muted, $fg-link, 50%)" },
+  code: { color: "mix($fg-muted, $fg-link, 20%)" },
   kbd: { backgroundColor: "$bg-muted", color: "$fg-accent", bold: true },
 }
 
@@ -218,7 +218,7 @@ function inferMode(scheme: ColorScheme, explicit?: "light" | "dark"): "light" | 
  */
 function pickFgOn(roleBg: string, scheme: ColorScheme): string {
   const candidates = [scheme.foreground, scheme.background, "#FFFFFF", "#000000"]
-  let best = candidates[0]!
+  let best = scheme.foreground
   let bestRatio = 0
   for (const c of candidates) {
     const r = checkAA("fgOn", c, roleBg) // null means passes
@@ -760,18 +760,26 @@ export function deriveRoles(
   //
   // Hyperlink text color. Not the same as accent — many design systems want
   // "link blue" (Material, Polaris, GitHub) distinct from the brand-derived
-  // accent. Dark mode softens bright blue 35% toward foreground;
+  // accent. Dark mode softens bright blue 20% toward foreground;
   // light mode retains scheme.blue to preserve contrast on a light canvas.
   // Apps that want link === accent can pin `{ "link.fg": "$fg-accent" }`.
   const linkFg = guard(
     "link.fg",
     "fg-link",
-    mode === "dark" ? "blend(scheme.brightBlue, fg, 0.35)" : "scheme.blue",
+    mode === "dark" ? "blend(scheme.brightBlue, fg, 0.2)" : "scheme.blue",
     mode === "dark" ? [scheme.brightBlue, fg] : [scheme.blue],
-    mode === "dark" ? blend(scheme.brightBlue, fg, 0.35) : scheme.blue,
+    mode === "dark" ? blend(scheme.brightBlue, fg, 0.2) : scheme.blue,
     bg,
   )
-  const link: LinkRole = { fg: linkFg }
+  const linkHoverFg = guard(
+    "link.hover.fg",
+    "fg-link-hover",
+    "mixSrgb(link.fg, fg, 0.75)",
+    [linkFg, fg],
+    mixSrgb(linkFg, fg, 0.75),
+    bg,
+  )
+  const link: LinkRole = { fg: linkFg, hover: { fg: linkHoverFg } }
 
   // ── Disabled ─────────────────────────────────────────────────────────────
   //
@@ -1039,27 +1047,37 @@ export function deriveTheme(
  */
 export function mergePartial(base: Theme, patch: DeepPartial<Theme> | undefined): Theme {
   if (!patch) return base
-  const out: any = { ...base }
+  const baseRecord = base as unknown as Record<string, unknown>
+  const out: Record<string, unknown> = { ...baseRecord }
   for (const [k, v] of Object.entries(patch)) {
     if (v === undefined) continue
-    const cur = (base as any)[k]
-    if (cur && typeof cur === "object" && typeof v === "object" && !Array.isArray(v)) {
-      out[k] = { ...cur, ...(v as object) }
+    const cur = baseRecord[k]
+    if (
+      cur !== null &&
+      typeof cur === "object" &&
+      v !== null &&
+      typeof v === "object" &&
+      !Array.isArray(v)
+    ) {
+      const curRecord = cur as Record<string, unknown>
+      const next: Record<string, unknown> = { ...curRecord, ...(v as object) }
       // Second-level deep (for hover/active under roles)
       for (const [k2, v2] of Object.entries(v as object)) {
+        const currentNested = curRecord[k2]
         if (
-          v2 &&
+          v2 !== null &&
           typeof v2 === "object" &&
           !Array.isArray(v2) &&
-          cur[k2] &&
-          typeof cur[k2] === "object"
+          currentNested !== null &&
+          typeof currentNested === "object"
         ) {
-          out[k][k2] = { ...cur[k2], ...(v2 as object) }
+          next[k2] = { ...(currentNested as Record<string, unknown>), ...(v2 as object) }
         }
       }
+      out[k] = next
     } else {
       out[k] = v
     }
   }
-  return out as Theme
+  return out as unknown as Theme
 }

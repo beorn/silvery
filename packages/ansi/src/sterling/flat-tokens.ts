@@ -72,8 +72,9 @@ export const STERLING_FLAT_TOKENS: readonly FlatToken[] = [
   "fg-on-inverse",
   "bg-inverse-hover",
   "fg-on-inverse-muted",
-  // Link — hyperlink text color
+  // Link — hyperlink text color + hover foreground
   "fg-link",
+  "fg-link-hover",
   // Disabled — neutral deemphasis for unavailable controls
   "fg-disabled",
   "bg-disabled",

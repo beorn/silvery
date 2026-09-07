@@ -163,12 +163,12 @@ export interface InverseRole {
 
 /**
  * Link role — hyperlink text color. Distinct from `accent` so apps that want
- * "link blue" (as opposed to the brand-derived accent) can opt in. Single
- * `fg` slot — links are text, not surfaces; if a link surface is ever needed,
- * extend with `bg` + `fgOn` then.
+ * "link blue" (as opposed to the brand-derived accent) can opt in. Links are
+ * text, not surfaces, so their hover state varies only the foreground.
  */
 export interface LinkRole {
   readonly fg: string
+  readonly hover: { readonly fg: string }
 }
 
 /**
@@ -285,8 +285,9 @@ export type FlatToken =
   | "fg-on-inverse"
   | "bg-inverse-hover"
   | "fg-on-inverse-muted"
-  // Link — hyperlink text color
+  // Link — hyperlink text color + hover foreground
   | "fg-link"
+  | "fg-link-hover"
   // Disabled — neutral deemphasis for unavailable controls
   | "fg-disabled"
   | "bg-disabled"

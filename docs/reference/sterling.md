@@ -111,7 +111,7 @@ Selected    bg-selected | fg-on-selected | bg-selected-hover
 Inverse     bg-inverse | fg-on-inverse
             | bg-inverse-hover | fg-on-inverse-muted
 
-Link        fg-link
+Link        fg-link | fg-link-hover
 ```
 
 Plus the **root pair** `fg` and `bg`, the **categorical hues** (`red`, `orange`, `yellow`, `green`, `teal`, `blue`, `purple`, `pink`), the 16-slot ANSI **palette** (`$color0` … `$color15`), the **typography variants** map, and metadata (`name`, `mode`, optional `derivationTrace`).
@@ -132,6 +132,7 @@ The grammar is `prefix-role[-state]` or `prefix-on-role[-state]`:
 <Text color="$fg-accent">Deploy</Text>
 <Box backgroundColor="$bg-surface-raised" borderColor="$border-default">…</Box>
 <Text color="$fg-on-error" backgroundColor="$bg-error">Build failed</Text>
+<Link color="$fg-link" revealColor="$fg-link-hover">Documentation</Link>
 ```
 
 For the full token-picking decision tree, see [Token Taxonomy](/reference/token-taxonomy). For component-level styling discipline, see [Styling](/guide/styling).

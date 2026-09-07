@@ -11,7 +11,7 @@
 import { describe, test, expect } from "vitest"
 import { sterling, STERLING_FLAT_TOKENS } from "@silvery/theme/sterling"
 import { builtinPalettes } from "@silvery/theme/schemes"
-import { blend, relativeLuminance } from "@silvery/color"
+import { blend, mixSrgb, relativeLuminance } from "@silvery/color"
 
 /** WCAG contrast ratio between two hex colors (1..21). */
 function contrastRatio(a: string, b: string): number {
@@ -105,8 +105,9 @@ describe("sterling.deriveFromScheme — shape", () => {
     expect(theme.inverse.hover.bg).toBe(theme["bg-inverse-hover"])
     expect(theme.inverse.muted.fgOn).toBe(theme["fg-on-inverse-muted"])
 
-    // Link — text color only
+    // Link — idle + hover text colors
     expect(theme.link.fg).toBe(theme["fg-link"])
+    expect(theme.link.hover.fg).toBe(theme["fg-link-hover"])
 
     // Faint — text color only, the deemphasis tier below muted
     expect(theme.faint.fg).toBe(theme["fg-faint"])
@@ -153,7 +154,10 @@ describe("sterling.deriveFromScheme — shape", () => {
     // First step should be accent.fg
     expect(theme.derivationTrace![0]?.token).toBe("accent.fg")
     expect(theme.derivationTrace!.find((step) => step.token === "link.fg")?.rule).toBe(
-      "blend(scheme.brightBlue, fg, 0.35)",
+      "blend(scheme.brightBlue, fg, 0.2)",
+    )
+    expect(theme.derivationTrace!.find((step) => step.token === "link.hover.fg")?.rule).toBe(
+      "mixSrgb(link.fg, fg, 0.75)",
     )
   })
 
@@ -189,7 +193,8 @@ describe("sterling.deriveFromScheme — shape", () => {
     expect(theme["fg-on-inverse"]).toMatch(/^#[0-9a-fA-F]{6}$/)
     expect(theme["bg-inverse-hover"]).toMatch(/^#[0-9a-fA-F]{6}$/)
     expect(theme["fg-on-inverse-muted"]).toMatch(/^#[0-9a-fA-F]{6}$/)
-    expect(theme["fg-link"]).toBe(blend(scheme.brightBlue, scheme.foreground, 0.35))
+    expect(theme["fg-link"]).toBe(blend(scheme.brightBlue, scheme.foreground, 0.2))
+    expect(theme["fg-link-hover"]).toBe(mixSrgb(theme["fg-link"], scheme.foreground, 0.75))
   })
 
   test("deriveFromColor produces a well-formed theme", () => {
@@ -197,6 +202,22 @@ describe("sterling.deriveFromScheme — shape", () => {
     expect(theme.accent.bg).toBe("#FF6A00") // seed color used verbatim as bg
     expect(theme["fg-accent"]).toBeTruthy()
     expect(theme.mode).toBe("dark")
+  })
+
+  test("light-mode link hover mixes toward the scheme foreground", () => {
+    const scheme = builtinPalettes["catppuccin-latte"]!
+    const theme = sterling.deriveFromScheme(scheme)
+    expect(theme["fg-link-hover"]).toBe(mixSrgb(theme["fg-link"], scheme.foreground, 0.75))
+    expect(theme["fg-link-hover"]).not.toBe(mixSrgb(theme["fg-link"], "#FFFFFF", 0.75))
+  })
+
+  test("link hover foreground can be pinned by its canonical path", () => {
+    const pinned = "#ABCDEF"
+    const theme = sterling.deriveFromScheme(builtinPalettes["nord"]!, {
+      pins: { "link.hover.fg": pinned },
+    })
+    expect(theme.link.hover.fg).toBe(pinned)
+    expect(theme["fg-link-hover"]).toBe(pinned)
   })
 
   test("deriveFromPair returns two themes", () => {
