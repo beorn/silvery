@@ -149,6 +149,12 @@ describe("resolveThemeColor", () => {
     expect(() => resolveThemeColor("$surface-bg", { surfacebg: "#1e1e2e" })).toThrow(
       'Legacy theme token "$surface-bg" is retired; use "$bg-surface-raised".',
     )
+    expect(() => resolveThemeColor("$warning-fg", { warningfg: "#ffffff" })).toThrow(
+      'Legacy theme token "$warning-fg" is retired; use "$fg-warning" for warning-colored text or "$fg-on-warning" for text on a warning background.',
+    )
+    expect(() => resolveThemeColor("$accent-fg", { accentfg: "#000000" })).toThrow(
+      'Legacy theme token "$accent-fg" is retired; use "$fg-accent" for accent-colored text or "$fg-on-accent" for text on an accent background.',
+    )
   })
 
   it("direct kebab lookup for state-variant tokens", () => {

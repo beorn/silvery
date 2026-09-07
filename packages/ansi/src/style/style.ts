@@ -102,6 +102,8 @@ const LEGACY_THEME_TOKEN_CURES: Readonly<Record<string, string>> = {
   "accent-hover": '"$fg-accent-hover" for text or "$bg-accent-hover" for fills',
   "accent-active": '"$fg-accent-active" for text or "$bg-accent-active" for fills',
   accentfg: '"$fg-on-accent"',
+  "accent-fg":
+    '"$fg-accent" for accent-colored text or "$fg-on-accent" for text on an accent background',
   muted: '"$fg-muted"',
   mutedbg: '"$bg-muted"',
   surface: '"$fg" for text or "$bg-surface-raised" for fills',
@@ -114,6 +116,8 @@ const LEGACY_THEME_TOKEN_CURES: Readonly<Record<string, string>> = {
   errorfg: '"$fg-on-error"',
   warning: '"$fg-warning" for text or "$bg-warning" for fills',
   warningfg: '"$fg-on-warning"',
+  "warning-fg":
+    '"$fg-warning" for warning-colored text or "$fg-on-warning" for text on a warning background',
   success: '"$fg-success" for text or "$bg-success" for fills',
   successfg: '"$fg-on-success"',
   info: '"$fg-info" for text or "$bg-info" for fills',

@@ -25,13 +25,16 @@ import { describe, expect, it } from "vitest"
 import {
   ansi16DarkTheme,
   ansi16LightTheme,
+  assignPrimaryToSlot as assignPrimaryToSlotTheme,
   defaultDarkTheme,
   defaultLightTheme,
   builtinThemes,
+  fromColors as fromColorsTheme,
   getThemeByName,
   STERLING_FLAT_TOKENS,
 } from "@silvery/theme"
 import {
+  assignPrimaryToSlot as assignPrimaryToSlotAnsi,
   defaultDarkScheme,
   defaultLightScheme,
   deriveTheme as deriveThemeAnsi,
@@ -40,6 +43,7 @@ import {
   detectTheme as detectThemeAnsi,
   detectScheme as detectSchemeAnsi,
   detectSchemeTheme as detectSchemeThemeAnsi,
+  fromColors as fromColorsAnsi,
   generateTheme as generateThemeAnsi,
 } from "@silvery/ansi"
 import {
@@ -286,6 +290,39 @@ describe("contract: @silvery/ansi entry points all produce Sterling-baked themes
       "@silvery/ansi detectScheme (override)",
       theme as unknown as Record<string, unknown>,
     )
+  })
+})
+
+describe("contract: public palette generators have one canonical authority", () => {
+  it("@silvery/theme re-exports the canonical @silvery/ansi generators", () => {
+    // Equal output alone permits two generators to drift independently; the
+    // public wrappers must be the same functions so ANSI remains the authority.
+    expect(fromColorsTheme).toBe(fromColorsAnsi)
+    expect(assignPrimaryToSlotTheme).toBe(assignPrimaryToSlotAnsi)
+  })
+
+  it("preserves the representative generated ColorScheme through both public entry points", () => {
+    const options = {
+      background: "#102030",
+      foreground: "#d8e2f0",
+      primary: "#EBCB8B",
+      dark: true,
+      name: "contract-generated",
+    }
+    const fromTheme = fromColorsTheme(options)
+    const fromAnsi = fromColorsAnsi(options)
+
+    expect(fromTheme).toEqual(fromAnsi)
+    expect(fromTheme).toMatchObject({
+      name: "contract-generated",
+      dark: true,
+      primary: "#EBCB8B",
+      foreground: "#d8e2f0",
+      background: "#102030",
+    })
+    expect(fromTheme).toHaveProperty("selectionBackground")
+    expect(fromTheme).toHaveProperty("selectionForeground", "#d8e2f0")
+    expect(assignPrimaryToSlotTheme("#EBCB8B")).toBe("green")
   })
 })
 

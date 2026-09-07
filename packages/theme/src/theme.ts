@@ -6,7 +6,7 @@
  *
  * Two-layer architecture:
  *   Layer 1: ColorScheme (22 terminal colors — universal pivot format)
- *   Layer 2: Theme (33 semantic tokens — what UI apps consume, via @silvery/ansi deriveTheme)
+ *   Layer 2: Theme (56 semantic flat tokens plus nested roles — what UI apps consume, via @silvery/ansi deriveTheme)
  *
  * Pipeline: builtinPalettes → deriveTheme() → Theme
  *
@@ -28,7 +28,8 @@ export { COLOR_SCHEME_FIELDS } from "@silvery/ansi"
 // ANSI 16 theme generation (produces Theme from primary color, no ColorScheme needed)
 export { generateTheme } from "./generate"
 
-// Palette generators (fromColors, fromPreset, assignPrimaryToSlot also in @silvery/ansi)
+// Palette generators — fromColors and assignPrimaryToSlot are canonical ANSI
+// re-exports; fromBase16 and fromPreset use this package's catalog/importer.
 export { fromBase16, fromColors, fromPreset, assignPrimaryToSlot } from "./generators"
 
 // Builder API (convenience wrappers that use preset schemes from this package)
