@@ -28,14 +28,8 @@ import type { ReactNode } from "react"
 import { type AutoLocator, createAutoLocator } from "@silvery/test/auto-locator"
 import { type BoundTerm, createBoundTerm } from "./bound-term"
 import type { TerminalBuffer } from "./buffer"
-import {
-  bufferToHTML,
-  bufferToStyledText,
-  bufferToText,
-  cellToFrameCell,
-  EMPTY_FRAME_CELL,
-} from "./buffer"
-import { type Screenshotter, createScreenshotter } from "./screenshot"
+import { bufferToStyledText, bufferToText, cellToFrameCell, EMPTY_FRAME_CELL } from "./buffer"
+import { captureScreenshot } from "./screenshot"
 import { keyToAnsi, keyToKittyAnsi, parseHotkey } from "@silvery/ag/keys"
 import { findActiveCursorRect } from "@silvery/ag/layout-signals"
 import { updateKeyboardModifiers } from "./mouse-events"
@@ -303,7 +297,7 @@ export interface App {
 
   // === Screenshot ===
 
-  /** Render current buffer to PNG. Requires Playwright (lazy-loaded on first call). */
+  /** Render current buffer to PNG through the lazy native Ghostty canvas path. */
   screenshot(outputPath?: string): Promise<Buffer>
 
   // === Debug ===
@@ -500,9 +494,6 @@ export function buildApp(options: AppOptions): App {
 
   // Mouse event processor for click/doubleClick/wheel
   const mouseState = createMouseEventProcessor()
-
-  // Screenshotter is created lazily on first screenshot() call
-  let screenshotter: Screenshotter | null = null
 
   const app: App = {
     // === Content/Document Perspective ===
@@ -825,22 +816,26 @@ export function buildApp(options: AppOptions): App {
       if (!buffer) {
         throw new Error("No buffer available for screenshot")
       }
-      const html = bufferToHTML(buffer)
-      if (!screenshotter) {
-        screenshotter = createScreenshotter()
-      }
-      return screenshotter.capture(html, outputPath)
+      // `bufferToStyledText` is a text serialization, so its rows are LF
+      // separated. The native Ghostty screenshot adapter disables DECAWM;
+      // terminal LF preserves the current column in that mode. Re-encode row
+      // boundaries for its VT input here, without changing the public text/ANSI
+      // serialization contract.
+      const styledBuffer = bufferToStyledText(buffer, {
+        trimTrailingWhitespace: false,
+        trimEmptyLines: false,
+      }).replaceAll("\n", "\r\n")
+      return captureScreenshot(
+        styledBuffer,
+        { cols: buffer.width, rows: buffer.height },
+        outputPath,
+      )
     },
 
     // === Lifecycle ===
 
     rerender,
     unmount() {
-      // Close screenshotter if it was created
-      if (screenshotter) {
-        screenshotter.close().catch(() => {})
-        screenshotter = null
-      }
       unmount()
     },
     [Symbol.dispose]() {

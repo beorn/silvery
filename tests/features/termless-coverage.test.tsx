@@ -12,9 +12,16 @@
 
 import React, { useState } from "react"
 import { describe, test, expect, afterEach } from "vitest"
+import { mkdtemp, readFile, rm } from "node:fs/promises"
+import { join } from "node:path"
+import { tmpdir } from "node:os"
+import { createCanvas, loadImage } from "@napi-rs/canvas"
 import { createTermless } from "@silvery/test"
+import { createRenderer } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/ag-term/src/ansi/term"
+import { buildApp } from "../../packages/ag-term/src/app"
+import type { AgNode } from "@silvery/ag/types"
 import { run, useInput, type RunHandle } from "../../packages/ag-term/src/runtime/run"
 import { Box, Text, ListView } from "../../src/index"
 
@@ -518,5 +525,89 @@ describe("termless: scrollbackList freeze/promote borders", () => {
     // After 5 cycles, scrollback should have accumulated content
     const scrollback = term.scrollback?.getText() ?? ""
     expect(scrollback.length).toBeGreaterThan(0)
+  })
+})
+
+// ============================================================================
+// 4. Native App screenshots
+// ============================================================================
+
+function pngDimensions(png: Uint8Array): { width: number; height: number } {
+  expect([...png.subarray(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10])
+  expect(new TextDecoder().decode(png.subarray(12, 16))).toBe("IHDR")
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength)
+  return { width: view.getUint32(16), height: view.getUint32(20) }
+}
+
+async function countPixels(
+  png: Uint8Array,
+  rect: { x: number; y: number; width: number; height: number },
+  rgb: readonly [number, number, number],
+): Promise<number> {
+  const image = await loadImage(Buffer.from(png))
+  const canvas = createCanvas(image.width, image.height)
+  const context = canvas.getContext("2d")
+  context.drawImage(image as unknown as never, 0, 0)
+  const pixels = context.getImageData(rect.x, rect.y, rect.width, rect.height).data
+  let count = 0
+  for (let index = 0; index < pixels.length; index += 4) {
+    if (pixels[index] === rgb[0] && pixels[index + 1] === rgb[1] && pixels[index + 2] === rgb[2]) {
+      count++
+    }
+  }
+  return count
+}
+
+describe("App screenshots", () => {
+  test("renders the full styled buffer to a native PNG and writes the requested file", async () => {
+    const render = createRenderer({ cols: 12, rows: 3 })
+    const app = render(
+      <Box flexDirection="column">
+        <Text color="red">red 你</Text>
+        <Text backgroundColor="blue">blue</Text>
+      </Box>,
+    )
+    const dir = await mkdtemp(join(tmpdir(), "silvery-screenshot-"))
+    const outputPath = join(dir, "screen.png")
+    try {
+      const png = await app.screenshot(outputPath)
+      const { width, height } = pngDimensions(png)
+
+      // The native Ghostty canvas has deterministic 20×24 physical cells for
+      // this bundled font configuration, so this pins the complete 12×3 grid.
+      expect({ width, height }).toEqual({ width: 240, height: 72 })
+      expect(app.text).toBe("red 你\nblue")
+
+      // @failure styled-buffer rows rendered as LF-separated raw VT inherit
+      // the previous column after Ghostty's DECAWM-off preamble, losing row 2.
+      // Geometry/file checks alone stay green; row 2 must retain blue fill.
+      expect(
+        await countPixels(
+          png,
+          { x: 0, y: height / 3, width: width / 3, height: height / 3 },
+          [129, 162, 190],
+        ),
+      ).toBeGreaterThan(100)
+      expect(await readFile(outputPath)).toEqual(png)
+    } finally {
+      app.unmount()
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test("fails loudly when screenshotting an App without a rendered buffer", async () => {
+    const app = buildApp({
+      getContainer: () => ({}) as AgNode,
+      getBuffer: () => null,
+      sendInput: () => {},
+      rerender: () => {},
+      unmount: () => {},
+      waitUntilExit: async () => {},
+      clear: () => {},
+      columns: 12,
+      rows: 3,
+    })
+
+    await expect(app.screenshot()).rejects.toThrow("No buffer available for screenshot")
   })
 })

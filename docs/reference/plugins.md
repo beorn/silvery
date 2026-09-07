@@ -144,14 +144,17 @@ await driver.cmd.down() // Throws if any check fails (with screenshot path)
 
 ## Screenshots
 
-The App interface supports direct screenshot capture via `bufferToHTML()` + lazy Playwright rendering:
+The App interface supports direct screenshot capture through the native
+`@termless/ghostty` canvas renderer:
 
 ```tsx
 const png = await app.screenshot("/tmp/board.png") // Save to file
 const buffer = await app.screenshot() // Get Buffer
 ```
 
-No TTY server or external processes needed. Playwright is lazy-loaded on first call.
+The full terminal buffer, including ANSI colors and trailing blank cells, is
+rendered at its terminal dimensions. Ghostty's WASM and native canvas path load
+lazily on first capture; no browser, TTY server, or external process is needed.
 
 ## Driver Pattern
 

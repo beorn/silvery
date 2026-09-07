@@ -1,57 +1,28 @@
 import { writeFile } from "node:fs/promises"
 
-// ============================================================================
-// Types
-// ============================================================================
-
-export interface Screenshotter {
-  /** Render HTML to PNG. First call starts Playwright (~3-5s), subsequent calls ~200ms */
-  capture(html: string, outputPath?: string): Promise<Buffer>
-  /** Close browser */
-  close(): Promise<void>
-  [Symbol.asyncDispose](): Promise<void>
-}
-
-// ============================================================================
-// Factory
-// ============================================================================
-
-export function createScreenshotter(): Screenshotter {
-  let browser: import("playwright").Browser | null = null
-  let page: import("playwright").Page | null = null
-
-  async function ensureBrowser() {
-    if (browser && page) return page
-
-    const { chromium } = await import("playwright")
-    browser = await chromium.launch()
-    const context = await browser.newContext()
-    page = await context.newPage()
-    return page
+/**
+ * Render ANSI to a PNG through Ghostty's native canvas renderer.
+ *
+ * The import remains lazy so regular terminal rendering does not initialize
+ * Ghostty's WASM or Skia canvas support. Each capture is independent: no
+ * browser, page, or lifecycle state needs to survive between calls.
+ *
+ * @internal
+ */
+export async function captureScreenshot(
+  ansi: string,
+  dimensions: { cols: number; rows: number },
+  outputPath?: string,
+): Promise<Buffer> {
+  const { renderAnsiPng } = await import("@termless/ghostty")
+  const png = await renderAnsiPng(ansi, {
+    ...dimensions,
+    cursorBlink: false,
+    hideCursor: true,
+  })
+  const buffer = Buffer.from(png)
+  if (outputPath) {
+    await writeFile(outputPath, buffer)
   }
-
-  async function capture(html: string, outputPath?: string): Promise<Buffer> {
-    const p = await ensureBrowser()
-    await p.setContent(html, { waitUntil: "load" })
-    await p.waitForTimeout(50)
-    const buffer = (await p.screenshot({ fullPage: true })) as Buffer
-    if (outputPath) {
-      await writeFile(outputPath, buffer)
-    }
-    return buffer
-  }
-
-  async function close() {
-    if (browser) {
-      await browser.close()
-      browser = null
-      page = null
-    }
-  }
-
-  return {
-    capture,
-    close,
-    [Symbol.asyncDispose]: close,
-  }
+  return buffer
 }
