@@ -11,30 +11,23 @@ import React, { useState } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
-import { ansi16DarkTheme, ansi16LightTheme, type Theme } from "@silvery/ansi"
+import { ansi16DarkTheme, bakeFlat, sterlingMergePartial, type Theme } from "@silvery/ansi"
 
-// Two themes with clearly different accent/muted colors for assertions.
-// Tests below use Sterling flat tokens in JSX; pinning the flat keys is what
-// drives the visible difference. Spread `as Record<string, unknown>` because
-// Sterling Theme's nested role objects (`muted: MutedRole`, etc.) make a
-// plain-object literal too restrictive for partial overrides.
-const themeA = {
-  ...ansi16DarkTheme,
-  name: "theme-a",
-  "bg-accent": "#ff0000", // red
-  "fg-on-accent": "#ffffff",
-  "fg-accent": "#ff0000",
-  "fg-muted": "#888888",
-} as unknown as Theme
+// Two canonical frozen themes with clearly different accent/muted colors.
+// The test changes nested leaves, then bakes their matching flat projections;
+// it never constructs an inconsistent shallow Theme object.
+function themeForChange(name: string, accent: string, accentFgOn: string, muted: string): Theme {
+  return bakeFlat(
+    sterlingMergePartial(ansi16DarkTheme, {
+      name,
+      accent: { fg: accent, bg: accent, fgOn: accentFgOn },
+      muted: { fg: muted },
+    }),
+  )
+}
 
-const themeB = {
-  ...ansi16DarkTheme,
-  name: "theme-b",
-  "bg-accent": "#00ff00", // green
-  "fg-on-accent": "#000000",
-  "fg-accent": "#00ff00",
-  "fg-muted": "#cccccc",
-} as unknown as Theme
+const themeA = themeForChange("theme-a", "#ff0000", "#ffffff", "#888888")
+const themeB = themeForChange("theme-b", "#00ff00", "#000000", "#cccccc")
 
 describe("theme change rendering", () => {
   test("theme prop change marks bgDirty and re-renders affected node", () => {
@@ -176,8 +169,8 @@ describe("theme change rendering", () => {
           <Box>
             <Text color="$fg-muted">Body text</Text>
           </Box>
-          <Box backgroundColor="$surfacebg" width={20} height={1}>
-            <Text color="$surface">Footer</Text>
+          <Box backgroundColor="$bg-surface-raised" width={20} height={1}>
+            <Text color="$fg">Footer</Text>
           </Box>
         </Box>
       )

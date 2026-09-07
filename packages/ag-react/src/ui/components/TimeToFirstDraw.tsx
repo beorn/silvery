@@ -59,7 +59,7 @@ export function TimeToFirstDraw({
 
   const ms = Math.round(elapsedRef.current)
   return (
-    <Text color="$muted" {...rest}>
+    <Text color="$fg-muted" {...rest}>
       {label} {ms}ms
     </Text>
   )

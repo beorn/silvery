@@ -146,16 +146,16 @@ export function LayoutRefApp() {
       {/* Show layout info from onLayout callbacks */}
       <Box marginTop={1} borderStyle="single" borderColor="$border-default" padding={1}>
         <Box flexDirection="column">
-          <Text bold color="$muted">
+          <Text bold color="$fg-muted">
             onLayout Results:
           </Text>
           {Object.entries(layouts).map(([pane, info]) => (
-            <Text key={pane} color="$muted">
+            <Text key={pane} color="$fg-muted">
               Pane {pane.toUpperCase()}: {info.width}x{info.height} at ({info.x},{info.y})
             </Text>
           ))}
           {Object.keys(layouts).length === 0 && (
-            <Text italic color="$muted">
+            <Text italic color="$fg-muted">
               Waiting for layout...
             </Text>
           )}

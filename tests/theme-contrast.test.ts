@@ -10,11 +10,8 @@
  * hyphens. Two non-Sterling root fields survive: `theme.fg` and `theme.bg` —
  * they carry the raw scheme foreground and background.
  *
- * Each palette is resolved via `getThemeByName` (or derived through the
- * Sterling inlining pipeline) so that Sterling flat tokens are populated.
- * Asserting on a bare `deriveTheme(palette)` output would miss flat tokens —
- * they're added by `inlineSterlingTokens` at construction in every shipped
- * Theme.
+ * Every canonical factory, including bare `deriveTheme(palette)`, returns
+ * Sterling flat tokens together with nested roles.
  */
 
 import { describe, expect, it } from "vitest"
@@ -41,9 +38,7 @@ function ratio(fg: string, bg: string): number {
  * Sterling flat-token lookup — flat keys contain hyphens so bracket access
  * is mandatory. Wrap in a typed helper so the call sites read naturally.
  *
- * For Themes produced by `createTheme`/`quickTheme`/`autoGenerateTheme`
- * (plain `deriveTheme` output), Sterling flat keys are NOT populated. Those
- * tests assert against legacy role-hex fields instead.
+ * Every supported constructor returns the same canonical flat-token shape.
  */
 function tok(theme: Theme, key: string): string {
   return (theme as unknown as Record<string, string>)[key] ?? ""
@@ -80,9 +75,8 @@ function fgOnAccent(theme: Theme): string {
 /**
  * Derive a Sterling-inlined theme from a palette name.
  *
- * `getThemeByName` runs the palette through `deriveTheme` then
- * `inlineSterlingTokens`, giving us both legacy Theme fields AND Sterling
- * flat keys on the same object (exactly the shape every shipped Theme has).
+ * `getThemeByName` returns the canonical frozen Theme with nested roles and
+ * its matching flat keys.
  */
 function paletteTheme(name: string): Theme {
   return getThemeByName(name)
@@ -148,8 +142,8 @@ describe("checkContrast", () => {
 //
 // These tests exercise the canonical Sterling accent surface
 // (`fg-accent` / `fg-on-accent` / `bg-accent`) — the builders they call
-// (`quickTheme`, `createTheme`, `autoGenerateTheme`) flow through
-// `deriveTheme` + `inlineSterlingTokens` so the flat keys are present.
+// (`quickTheme`, `createTheme`, `autoGenerateTheme`) flow through the one
+// canonical derive factory, so the flat keys are present.
 
 describe("semantic accent propagation", () => {
   it("quickTheme('blue') uses blue as accent, not yellow", () => {
@@ -215,8 +209,7 @@ describe("semantic accent propagation", () => {
 
 describe("deriveTheme contrast guarantees", () => {
   describe.each(palettes)("%s", (name, _palette) => {
-    // Resolve by name — `getThemeByName` runs the palette through
-    // `deriveTheme` + `inlineSterlingTokens`, so Sterling flat keys resolve.
+    // Resolve by name — `getThemeByName` returns canonical Sterling flat keys.
     const theme = paletteTheme(name)
 
     // Body text on all surfaces

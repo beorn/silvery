@@ -23,8 +23,8 @@ describe("regression: status bar stale text (km-silvery.aichat-incr)", () => {
     function StatusBar({ cost }: { cost: string }) {
       return (
         <Box flexDirection="row" justifyContent="space-between" width={80}>
-          <Text color="$muted">esc quit</Text>
-          <Text color="$muted" wrap="truncate">
+          <Text color="$fg-muted">esc quit</Text>
+          <Text color="$fg-muted" wrap="truncate">
             ctx {"█░░░░░░░░░░░░░░░░░░░"} 4%{"  "}
             {cost}
           </Text>
@@ -98,8 +98,8 @@ describe("regression: status bar stale text (km-silvery.aichat-incr)", () => {
 
           {/* Status bar at bottom — space-between with variable-length right text */}
           <Box flexDirection="row" justifyContent="space-between">
-            <Text color="$muted">esc quit</Text>
-            <Text color="$muted">
+            <Text color="$fg-muted">esc quit</Text>
+            <Text color="$fg-muted">
               ctx {"█░░░░░░░░░░░░░░░░░░░"} {count}%{"  "}
               {cost}
             </Text>

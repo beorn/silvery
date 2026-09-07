@@ -92,7 +92,7 @@ const attrs = monoAttrsFor(theme, "error") // → ["bold", "inverse"]
 A token's resolved value changes by tier, but the token itself doesn't change:
 
 ```tsx
-<Text color="$error">Failed</Text>
+<Text color="$fg-error">Failed</Text>
 
 // truecolor: fg=#D28078 (from scheme.red, ensureContrast-adjusted)
 // 256:       fg=203 (closest 256-cube entry to the truecolor value)

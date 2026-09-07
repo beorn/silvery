@@ -46,10 +46,10 @@ type ToastVariant = "default" | "success" | "error" | "warning" | "info"
 | Variant   | Icon  | Color Token |
 | --------- | ----- | ----------- |
 | `default` | `[i]` | `$fg`       |
-| `success` | `[+]` | `$success`  |
-| `error`   | `[x]` | `$error`    |
-| `warning` | `[!]` | `$warning`  |
-| `info`    | `[i]` | `$info`     |
+| `success` | `[+]` | `$fg-success`  |
+| `error`   | `[x]` | `$fg-error`    |
+| `warning` | `[!]` | `$fg-warning`  |
+| `info`    | `[i]` | `$fg-info`     |
 
 ## Usage
 

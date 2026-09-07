@@ -60,11 +60,11 @@ function Rows({ cursor, cols }: { cursor: number; cols: number }) {
   return (
     <Box width={cols} flexDirection="column">
       {Array.from({ length: ROW_COUNT }, (_, i) => (
-        <Box key={i} flexDirection="row" backgroundColor={i === cursor ? "$primary" : undefined}>
-          <Text color={i === cursor ? "$inverse" : "$fg"}>
+        <Box key={i} flexDirection="row" backgroundColor={i === cursor ? "$fg-accent" : undefined}>
+          <Text color={i === cursor ? "$fg-on-inverse" : "$fg"}>
             {`row ${i} `.padEnd(cols - 4, i === cursor ? "#" : ".")}
           </Text>
-          <Text color="$muted">{i === cursor ? "<<<<" : "    "}</Text>
+          <Text color="$fg-muted">{i === cursor ? "<<<<" : "    "}</Text>
         </Box>
       ))}
     </Box>

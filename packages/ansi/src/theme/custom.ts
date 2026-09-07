@@ -10,7 +10,7 @@
  *    ```ts
  *    defineTokens({
  *      "$priority-p0": { derive: (scheme, theme) => scheme.brightRed },
- *      "$priority-p1": { derive: (scheme, theme) => blend(theme.warning, theme.bg, 0.2) },
+ *      "$priority-p1": { derive: (scheme, theme) => blend(theme.warning.bg, theme.bg, 0.2) },
  *    })
  *    ```
  *

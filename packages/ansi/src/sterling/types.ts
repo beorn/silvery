@@ -9,8 +9,8 @@
  *   - `FlatToken` — string-literal union of all ~50 flat hyphen keys.
  *   - `ColorScheme` — re-exported from `@silvery/ansi` (D5: unchanged).
  *
- * Sterling is additive relative to the legacy `Theme` in @silvery/ansi —
- * consumers keep working through Phase 2c. Nothing here deletes.
+ * Sterling is the canonical `Theme` in @silvery/ansi: frozen nested roles
+ * plus their flat token projections on the same object.
  *
  * @see `hub/silvery/design/v10-terminal/design-system.md` — canonical spec
  * @see `hub/silvery/design/v10-terminal/sterling-preflight.md` — D1-D6
@@ -341,7 +341,7 @@ export type DerivationTrace = readonly DerivationStep[]
  *
  * Distinguish from:
  *   - `$color0..$color15`         — raw terminal ANSI (user's theme verbatim)
- *   - `$error/$warning/$success`  — semantic state (communicates meaning)
+ *   - `$fg-error`/`$fg-warning`/`$fg-success`  — semantic state (communicates meaning)
  *   - `$brand`                    — app identity anchor (one color)
  */
 export interface CategoricalHues {

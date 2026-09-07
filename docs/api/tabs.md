@@ -56,7 +56,7 @@ Renders tabs in a horizontal row with a bottom border.
 | `value`    | `string`    | _required_ | Unique tab identifier |
 | `children` | `ReactNode` | _required_ | Tab label content     |
 
-Active tab is bold with `$primary` color; inactive tabs use `$muted`.
+Active tab is bold with `$fg-accent` color; inactive tabs use `$fg-muted`.
 
 ### TabPanel
 

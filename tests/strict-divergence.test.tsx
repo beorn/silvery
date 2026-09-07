@@ -217,21 +217,21 @@ describe("divergence: integration smoke (no false-fire on a healthy frame)", () 
   function BigApp({ selected }: { selected: number }) {
     return (
       <Box flexDirection="column" width={120} height={60} padding={1}>
-        <Box backgroundColor="$primary" paddingLeft={1}>
-          <Text color="$inverse">Divergence Smoke — realistic fixture</Text>
+        <Box backgroundColor="$bg-accent" paddingLeft={1}>
+          <Text color="$fg-on-inverse">Divergence Smoke — realistic fixture</Text>
         </Box>
         <Box flexDirection="row" flexGrow={1} gap={1}>
           {[0, 1, 2].map((col) => (
             <Box key={col} flexDirection="column" width={COL_W} borderStyle="round" padding={1}>
-              <Text bold color="$accent">
+              <Text bold color="$fg-accent">
                 Column {col}
               </Text>
               {Array.from({ length: 18 }).map((_, row) => {
                 const idx = col * 18 + row
                 const isCursor = idx === selected
                 return (
-                  <Box key={row} minWidth={0} backgroundColor={isCursor ? "$accent" : undefined}>
-                    <Text color={isCursor ? "$inverse" : "$muted"} wrap="truncate">
+                  <Box key={row} minWidth={0} backgroundColor={isCursor ? "$fg-accent" : undefined}>
+                    <Text color={isCursor ? "$fg-on-inverse" : "$fg-muted"} wrap="truncate">
                       [{col}.{row}] task item {idx}
                     </Text>
                   </Box>
@@ -240,8 +240,8 @@ describe("divergence: integration smoke (no false-fire on a healthy frame)", () 
             </Box>
           ))}
         </Box>
-        <Box backgroundColor="$mutedbg" paddingLeft={1}>
-          <Text color="$muted">selected={selected} — j/k to move</Text>
+        <Box backgroundColor="$bg-muted" paddingLeft={1}>
+          <Text color="$fg-muted">selected={selected} — j/k to move</Text>
         </Box>
       </Box>
     )

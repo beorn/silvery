@@ -63,9 +63,9 @@ function ContentWithSize({ label }: { label: string }) {
           {height}
         </Text>
       </Text>
-      <Text color="$muted">The quick brown fox</Text>
-      <Text color="$muted">jumps over the lazy</Text>
-      <Text color="$muted">dog on a sunny day.</Text>
+      <Text color="$fg-muted">The quick brown fox</Text>
+      <Text color="$fg-muted">jumps over the lazy</Text>
+      <Text color="$fg-muted">dog on a sunny day.</Text>
     </Box>
   )
 }

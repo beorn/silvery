@@ -2347,7 +2347,19 @@ function rgbForColor(color: Exclude<Color, null>): { r: number; g: number; b: nu
   return typeof color === "number" ? ansi256ToRgb(color) : color
 }
 
-function foregroundCode(color: Exclude<Color, null>, colorLevel: ColorLevel): string | undefined {
+/**
+ * Serialize a foreground cell color for a terminal color level.
+ *
+ * Both full-buffer and incremental output use this one conversion so a
+ * hex-valued Theme remains canonical and the output boundary alone selects
+ * truecolor, 256-color, or ANSI16 SGR.
+ *
+ * @internal
+ */
+export function foregroundCode(
+  color: Exclude<Color, null>,
+  colorLevel: ColorLevel,
+): string | undefined {
   if (colorLevel === "mono") return undefined
   if (colorLevel === "truecolor") return fgColorCode(color)
   const index = serializedPaletteIndex(color)
@@ -2356,7 +2368,11 @@ function foregroundCode(color: Exclude<Color, null>, colorLevel: ColorLevel): st
   return fgFromRgb(r, g, b, colorLevel)
 }
 
-function backgroundCode(color: Exclude<Color, null>, colorLevel: ColorLevel): string | undefined {
+/** @internal See {@link foregroundCode}. */
+export function backgroundCode(
+  color: Exclude<Color, null>,
+  colorLevel: ColorLevel,
+): string | undefined {
   if (colorLevel === "mono") return undefined
   if (colorLevel === "truecolor") return bgColorCode(color)
   const index = serializedPaletteIndex(color)
@@ -2365,7 +2381,8 @@ function backgroundCode(color: Exclude<Color, null>, colorLevel: ColorLevel): st
   return bgFromRgb(r, g, b, colorLevel)
 }
 
-function underlineColorCode(
+/** @internal See {@link foregroundCode}. */
+export function underlineColorCode(
   color: Exclude<Color, null>,
   colorLevel: ColorLevel,
 ): string | undefined {

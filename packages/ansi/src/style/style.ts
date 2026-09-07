@@ -11,7 +11,7 @@
  * s.hex("#ff0000")("text")      // truecolor foreground
  *
  * const s = createStyle({ theme })
- * s.primary("deploy")           // resolves $primary from theme
+ * s.resolve("$fg-accent")       // resolves a canonical Sterling token
  * ```
  */
 
@@ -24,15 +24,7 @@ import {
   buildUnderlineColorCode,
 } from "../constants.ts"
 
-import {
-  BG_COLORS,
-  FG_COLORS,
-  MODIFIERS,
-  THEME_TOKEN_DEFAULTS,
-  bgFromRgb,
-  fgFromRgb,
-  hexToRgb,
-} from "./colors.ts"
+import { BG_COLORS, FG_COLORS, MODIFIERS, bgFromRgb, fgFromRgb, hexToRgb } from "./colors.ts"
 import type { Style, StyleOptions, ThemeLike } from "./types.ts"
 
 // =============================================================================
@@ -54,8 +46,9 @@ interface ChainState {
  * Resolve a color value against a theme — the canonical token resolver.
  *
  * If the color starts with `$`, looks up the token in the theme.
- * Supports `$primary`, `$surface-bg` (hyphens stripped), `$color0`–`$color15` (palette).
- * Non-`$` strings pass through unchanged. Returns undefined if no theme or unknown token.
+ * Supports canonical Sterling tokens and `$color0`–`$color15` palette slots.
+ * Retired spellings fail loudly with their canonical replacement; other
+ * unknown tokens return undefined so optional custom-token lookups stay safe.
  *
  * Compatible with @silvery/theme's Theme type (or any object with string properties).
  */
@@ -71,27 +64,17 @@ export function resolveThemeColor(
 
 /** Internal: resolve a token name (with or without $ prefix) against a theme.
  *
- * Resolution order:
- *   1. Direct key lookup — finds Sterling flat keys (`bg-accent`,
- *      `fg-on-error`, `border-focus`, …) and legacy kebab keys
- *      (`primary-hover`, `fg-hover`, `bg-surface-hover`) and plain names
- *      (`bg`, `primary`, `muted`).
- *   2. No-hyphen fallback — `$surface-bg` → `theme.surfacebg`,
- *      `$focus-border` → `theme.focusborder`.
- *
- * The old `LEGACY_ALIASES` table (e.g. `fgmuted` → `muted`, `bgsurface` →
- * `surfacebg`) was removed in 0.18.1 once every shipped default Theme ships
- * with Sterling flat tokens baked in — `theme["fg-muted"]` and
- * `theme["bg-surface-subtle"]` are direct fields now, so no alias fallback
- * is required for canonical Sterling tokens. Tokens that existed only as
- * aliases (e.g. `$bg-surface`, `$fg-on-primary`, `$border-input`,
- * `$fg-disabled`) no longer resolve — callers should use the canonical
- * Sterling equivalents (`$bg-surface-default`, `$fg-on-accent`,
- * `$border-default`, `$fg-muted`).
+ * Resolution is direct only. A legacy spelling is a programmer error, not a
+ * missing optional resource: reject it with the exact canonical cure instead
+ * of silently returning an empty color or following an alias fallback.
  */
 function resolveToken(name: string, theme: ThemeLike | undefined): string | undefined {
-  if (!theme) return undefined
   const token = name.startsWith("$") ? name.slice(1) : name
+  const cure = LEGACY_THEME_TOKEN_CURES[token]
+  if (cure !== undefined) {
+    throw new Error(`Legacy theme token "$${token}" is retired; use ${cure}.`)
+  }
+  if (!theme) return undefined
   // Palette colors: $color0–$color15
   if (token.startsWith("color")) {
     const idx = parseInt(token.slice(5), 10)
@@ -100,18 +83,59 @@ function resolveToken(name: string, theme: ThemeLike | undefined): string | unde
     }
   }
   const themeObj = theme as Record<string, unknown>
-  // Direct kebab lookup — covers Sterling flat keys AND legacy kebab keys
-  // AND plain tokens (`bg`, `primary`, `muted`, …).
+  // Direct lookup covers canonical Sterling flat keys plus the root canvas
+  // pair and app-defined custom tokens.
   const direct = themeObj[token]
   if (typeof direct === "string") return direct
-  // No-hyphen fallback for legacy names: `$surface-bg` → `surfacebg`,
-  // `$focus-border` → `focusborder`, etc.
-  const noHyphen = token.replace(/-/g, "")
-  if (noHyphen !== token) {
-    const stripped = themeObj[noHyphen]
-    if (typeof stripped === "string") return stripped
-  }
   return undefined
+}
+
+/** Retired token spellings and the channel-aware canonical cure for each. */
+const LEGACY_THEME_TOKEN_CURES: Readonly<Record<string, string>> = {
+  primary: '"$fg-accent" for text or "$bg-accent" for fills',
+  "primary-hover": '"$fg-accent-hover" for text or "$bg-accent-hover" for fills',
+  "primary-active": '"$fg-accent-active" for text or "$bg-accent-active" for fills',
+  primaryfg: '"$fg-on-accent"',
+  secondary: '"$fg-link" for navigation or "$purple" for a categorical hue',
+  secondaryfg: '"$fg-on-accent" only for an actual accent fill',
+  accent: '"$fg-accent" for text or "$bg-accent" for fills',
+  "accent-hover": '"$fg-accent-hover" for text or "$bg-accent-hover" for fills',
+  "accent-active": '"$fg-accent-active" for text or "$bg-accent-active" for fills',
+  accentfg: '"$fg-on-accent"',
+  muted: '"$fg-muted"',
+  mutedbg: '"$bg-muted"',
+  surface: '"$fg" for text or "$bg-surface-raised" for fills',
+  surfacebg: '"$bg-surface-raised"',
+  "surface-bg": '"$bg-surface-raised"',
+  popover: '"$fg" for text or "$bg-surface-overlay" for fills',
+  popoverbg: '"$bg-surface-overlay"',
+  "popover-bg": '"$bg-surface-overlay"',
+  error: '"$fg-error" for text or "$bg-error" for fills',
+  errorfg: '"$fg-on-error"',
+  warning: '"$fg-warning" for text or "$bg-warning" for fills',
+  warningfg: '"$fg-on-warning"',
+  success: '"$fg-success" for text or "$bg-success" for fills',
+  successfg: '"$fg-on-success"',
+  info: '"$fg-info" for text or "$bg-info" for fills',
+  infofg: '"$fg-on-info"',
+  border: '"$border-default"',
+  inputborder: '"$border-default"',
+  focusborder: '"$border-focus"',
+  "focus-border": '"$border-focus"',
+  "bg-surface": '"$bg-surface-default"',
+  "bg-popover": '"$bg-surface-overlay"',
+  "fg-selected": '"$fg-on-selected"',
+  "border-input": '"$border-default"',
+  "fg-on-primary": '"$fg-on-accent"',
+  cursor: '"$fg-cursor" for text or "$bg-cursor" for fills',
+  cursorbg: '"$bg-cursor"',
+  "cursor-bg": '"$bg-cursor"',
+  selection: '"$fg-on-selected"',
+  selectionbg: '"$bg-selected"',
+  inverse: '"$fg-on-inverse"',
+  inversebg: '"$bg-inverse"',
+  link: '"$fg-link"',
+  disabledfg: '"$fg-disabled"',
 }
 
 // =============================================================================
@@ -135,20 +159,6 @@ const KNOWN_METHODS = new Set([
   "underlineColor",
   "styledUnderline",
 ])
-const THEME_TOKENS = new Set([
-  "primary",
-  "secondary",
-  "accent",
-  "error",
-  "warning",
-  "success",
-  "info",
-  "muted",
-  "link",
-  "border",
-  "surface",
-])
-
 // =============================================================================
 // Public API
 // =============================================================================
@@ -281,7 +291,10 @@ function createChainWithRef(
       if (args.length === 0) {
         text = ""
       } else if (Array.isArray(args[0]) && "raw" in args[0]) {
-        text = String.raw(args[0] as TemplateStringsArray, ...args.slice(1))
+        text = String.raw(
+          args[0] as TemplateStringsArray,
+          ...args.slice(1).map((arg) => String(arg ?? "")),
+        )
       } else if (args.length > 1) {
         text = args.map((a) => String(a ?? "")).join(" ")
       } else {
@@ -336,7 +349,9 @@ function createChainWithRef(
       // Function.prototype methods — chalk compat (call, apply, bind)
       // Return the method bound to the proxy so the apply trap fires
       if (prop === "call" || prop === "apply" || prop === "bind") {
-        return Function.prototype[prop as "call" | "apply" | "bind"].bind(proxyRef.proxy!)
+        const proxy = proxyRef.proxy
+        if (!proxy) throw new Error("Style proxy has not been initialized")
+        return Function.prototype[prop as "call" | "apply" | "bind"].bind(proxy)
       }
 
       const level = ref.level
@@ -430,9 +445,10 @@ function createChainWithRef(
       }
 
       // Modifiers
-      if (prop in MODIFIERS) {
+      const modifier = MODIFIERS[prop]
+      if (modifier !== undefined) {
         if (level === "mono") return createChainWithRef(state, ref)
-        const [open, close] = MODIFIERS[prop]!
+        const [open, close] = modifier
         return createChainWithRef(
           { opens: [...state.opens, String(open)], closes: [...state.closes, String(close)] },
           ref,
@@ -440,65 +456,23 @@ function createChainWithRef(
       }
 
       // Foreground colors
-      if (prop in FG_COLORS) {
+      const foreground = FG_COLORS[prop]
+      if (foreground !== undefined) {
         if (level === "mono") return createChainWithRef(state, ref)
         return createChainWithRef(
-          { opens: [...state.opens, String(FG_COLORS[prop]!)], closes: [...state.closes, "39"] },
+          { opens: [...state.opens, String(foreground)], closes: [...state.closes, "39"] },
           ref,
         )
       }
 
       // Background colors
-      if (prop in BG_COLORS) {
+      const background = BG_COLORS[prop]
+      if (background !== undefined) {
         if (level === "mono") return createChainWithRef(state, ref)
         return createChainWithRef(
-          { opens: [...state.opens, String(BG_COLORS[prop]!)], closes: [...state.closes, "49"] },
+          { opens: [...state.opens, String(background)], closes: [...state.closes, "49"] },
           ref,
         )
-      }
-
-      // Theme tokens
-      if (THEME_TOKENS.has(prop)) {
-        if (level === "mono") return createChainWithRef(state, ref)
-        const hex = resolveToken(prop, ref.theme)
-        if (hex) {
-          const rgb = hexToRgb(hex)
-          if (rgb) {
-            const code = fgFromRgb(rgb[0], rgb[1], rgb[2], level)
-            if (prop === "link") {
-              return createChainWithRef(
-                { opens: [...state.opens, code, "4"], closes: [...state.closes, "39", "24"] },
-                ref,
-              )
-            }
-            return createChainWithRef(
-              { opens: [...state.opens, code], closes: [...state.closes, "39"] },
-              ref,
-            )
-          }
-        }
-        const fallback = THEME_TOKEN_DEFAULTS[prop]
-        if (fallback !== undefined) {
-          if (prop === "muted") {
-            return createChainWithRef(
-              { opens: [...state.opens, String(fallback)], closes: [...state.closes, "22"] },
-              ref,
-            )
-          }
-          if (prop === "link") {
-            return createChainWithRef(
-              {
-                opens: [...state.opens, String(fallback), "4"],
-                closes: [...state.closes, "39", "24"],
-              },
-              ref,
-            )
-          }
-          return createChainWithRef(
-            { opens: [...state.opens, String(fallback)], closes: [...state.closes, "39"] },
-            ref,
-          )
-        }
       }
 
       return undefined
@@ -515,13 +489,7 @@ function createChainWithRef(
     has(_target, prop) {
       if (prop === "level") return true
       if (typeof prop === "symbol") return false
-      return (
-        prop in MODIFIERS ||
-        prop in FG_COLORS ||
-        prop in BG_COLORS ||
-        THEME_TOKENS.has(prop) ||
-        KNOWN_METHODS.has(prop)
-      )
+      return prop in MODIFIERS || prop in FG_COLORS || prop in BG_COLORS || KNOWN_METHODS.has(prop)
     },
   }
 

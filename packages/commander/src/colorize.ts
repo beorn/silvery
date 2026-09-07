@@ -49,15 +49,15 @@ export interface CommandLike {
 
 /** Color scheme for help output. Each value is a styling function (text → styled text). */
 export interface ColorizeHelpOptions {
-  /** Style for command/subcommand names. Default: primary (yellow without theme) */
+  /** Style for command/subcommand names. Default: bright blue. */
   commands?: (text: string) => string
-  /** Style for --flags and -short options. Default: secondary (cyan without theme) */
+  /** Style for --flags and -short options. Default: cyan. */
   flags?: (text: string) => string
   /** Style for description text. Default: unstyled (normal foreground) */
   description?: (text: string) => string
   /** Style for section headings (Usage:, Options:, etc.). Default: bold */
   heading?: (text: string) => string
-  /** Style for <required> and [optional] argument brackets. Default: accent (magenta without theme) */
+  /** Style for <required> and [optional] argument brackets. Default: magenta. */
   brackets?: (text: string) => string
 }
 
@@ -71,12 +71,11 @@ export interface ColorizeHelpOptions {
  * @param options - Override default style functions for each element
  */
 export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions): void {
-  // Semantic token fallback: theme token → named color
-  const cmds = options?.commands ?? ((t: string) => s.primary(t))
-  const flags = options?.flags ?? ((t: string) => s.secondary(t))
+  const cmds = options?.commands ?? ((t: string) => s.blueBright(t))
+  const flags = options?.flags ?? ((t: string) => s.cyan(t))
   const desc = options?.description ?? ((t: string) => t)
   const heading = options?.heading ?? ((t: string) => s.bold(t))
-  const brackets = options?.brackets ?? ((t: string) => s.accent(t))
+  const brackets = options?.brackets ?? ((t: string) => s.magenta(t))
 
   const helpConfig: Record<string, unknown> = {
     styleTitle: (str: string) => heading(str),
@@ -85,7 +84,7 @@ export function colorizeHelp(program: CommandLike, options?: ColorizeHelpOptions
     styleSubcommandText: (str: string) => cmds(str),
     styleArgumentText: (str: string) => brackets(str),
     styleDescriptionText: (str: string) => desc(str),
-    styleCommandDescription: (str: string) => s.bold.primary(str),
+    styleCommandDescription: (str: string) => s.bold.blueBright(str),
   }
 
   const existingHelp = program.configureHelp()

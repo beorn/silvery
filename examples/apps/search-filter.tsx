@@ -146,7 +146,7 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
     <Box>
       <Strong color="$fg-accent">Search: </Strong>
       <Text>{value}</Text>
-      <Text color="$muted">|</Text>
+      <Text color="$fg-muted">|</Text>
     </Box>
   )
 }
@@ -173,7 +173,7 @@ function FilteredList({ query, isPending }: { query: string; isPending: boolean 
       {filtered.map((item) => (
         <Box key={item.id} marginBottom={1}>
           <Text bold>{item.name}</Text>
-          <Text color="$muted"> [{item.category}]</Text>
+          <Text color="$fg-muted"> [{item.category}]</Text>
           <Text color="$fg-muted"> {item.tags.join(", ")}</Text>
         </Box>
       ))}

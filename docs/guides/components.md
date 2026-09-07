@@ -278,7 +278,7 @@ Higher-level pre-styled components using `$token` semantic colors. Import from `
 | `ModalDialog`                           | Modal overlay with focus trapping                                |
 | `PickerDialog` / `PickerList`           | Selection dialog                                                 |
 
-These components use the theming system — wrap your app in `ThemeProvider` with `defaultDarkTheme` or `defaultLightTheme` and the components will use semantic colors automatically. Any color prop starting with `$` is resolved against the active theme (e.g. `color="$primary"`, `backgroundColor="$surface-bg"`).
+These components use the theming system — wrap your app in `ThemeProvider` with `defaultDarkTheme` or `defaultLightTheme` and the components will use semantic colors automatically. Any color prop starting with `$` is resolved against the active theme (e.g. `color="$fg-accent"`, `backgroundColor="$bg-surface-raised"`).
 
 ## @silvery/ag-react/ui — Progress & Input Package
 

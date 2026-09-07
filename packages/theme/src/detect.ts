@@ -7,9 +7,8 @@
  * shape; this module exists only so downstream code importing from
  * `@silvery/theme` (or `silvery`, via barrel re-export) continues to work.
  *
- * Historical note (km-silvery.fallback-theme-empty-bg-tokens): this file used
- * to wrap `@silvery/ansi`'s detection functions with `inlineSterlingTokens` to
- * compensate for `@silvery/ansi` producing "partial" themes. That split was
+ * Historical note (km-silvery.fallback-theme-empty-bg-tokens): this file once
+ * wrapped `@silvery/ansi` detection to compensate for partial themes. That split was
  * the root cause of the "31/32 empty bg tokens on fallback" regression —
  * every caller that reached past the wrapper hit the partial shape. The
  * fix was structural: move Sterling into `@silvery/ansi` so `deriveTheme`,

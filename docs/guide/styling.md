@@ -7,9 +7,9 @@ Colors tarnish fast. Typography gets inconsistent. A hardcoded `"red"` here, a `
 ::: info Sterling is the system
 Silvery 0.20.0 ships [Sterling](/reference/sterling) as **THE Theme**. The tokens used below — `$fg-accent`, `$fg-muted`, `$bg-surface-subtle`, `$border-focus`, `$bg-selected`, `$fg-on-error` — are Sterling's flat hyphen-keys. Every silvery component already speaks them.
 
-Migrating from silvery 0.19.x? Legacy `$tokens` (`$primary`, `$muted`, `$selectionbg`, …) keep resolving through 0.20.x via a kebab-fallback path. Migrate during this window — they're removed in 0.21.0. The full map is in the [Sterling primer](/reference/sterling#token-migration-map).
+Migrating pre-Sterling code? Retired legacy `$tokens` are rejected with a canonical cure; they do not resolve as aliases. Use the [Sterling migration map](/reference/sterling#token-migration-map) while editing old code.
 
-**`$muted` is not "dim"** — it is the legacy muted-_surface_ text slot (pairs with `$mutedbg`), and in dark themes it resolves to ≈`$fg`. Code that reaches for `$muted` expecting dimmed text gets full-brightness foreground and the "dimming" silently does nothing. The dim foreground slot is **`$fg-muted`**. (Found the hard way: a default elision-marker color set to `$muted` never dimmed; only a cell-color test against the resolved RGB caught it.)
+**Use `$fg-muted` for dimmed text.** It is the guarded neutral foreground role; `<Small>` adds a rendering-level dim treatment where that is useful.
 :::
 
 ## 1. Don't Specify Colors
@@ -347,7 +347,7 @@ In a 16-color terminal, these might all look yellow. Without icons, there's no w
 
 ## 6. Use `$fg-accent` for Brand Emphasis
 
-Sterling collapses the legacy `$primary` / `$accent` distinction onto a single role: **`accent` is the canonical interactive-text role**. Use `$fg-accent` for headings, links, focus indicators, primary action buttons — anything where "this is the brand color, look here" is the intent.
+Sterling's **accent** is the canonical interactive-text role. Use `$fg-accent` for headings, links, focus indicators, primary action buttons — anything where "this is the brand color, look here" is the intent.
 
 For **app-specific identity** (your logo, signature chrome) use `$brand` — defined separately so apps can pin a fixed color without overriding scheme-derived `$fg-accent`. See [Token Taxonomy](/reference/token-taxonomy#app-identity-brand).
 
@@ -743,7 +743,7 @@ useEffect(() => { const t = setInterval(() => setFade(f => Math.min(f + 0.1, 0.7
 | `$fg-success` / `$fg-error` without icon or label       | Color-only status — add redundant text signal                                         |
 | `$fg-success` on a structural border for decoration     | Misused status — use `$border-default` or `$fg-accent`                                |
 | `$color0`–`$color15` for UI chrome                      | Palette is for data categorization only                                               |
-| `$primary` / `$muted` / `$selectionbg`                  | Legacy `$tokens` — migrate to Sterling (`$fg-accent`, `$fg-muted`, `$bg-selected`, …) |
+| Retired pre-Sterling token                              | Use the explicit Sterling role (`$fg-accent`, `$fg-muted`, `$bg-selected`, …)           |
 | Specifying colors a component already handles           | Fighting the framework — remove and trust defaults                                    |
 | Hardcoded hex for a tinted surface                      | Use `mix($bg, $token, N%)` — adapts to any theme                                      |
 | `<Link>` inside a colored container using `$fg-link`    | Use `color="inherit"` — inherits from the parent instead of forcing blue              |

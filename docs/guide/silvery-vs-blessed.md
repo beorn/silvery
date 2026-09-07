@@ -21,7 +21,7 @@ The biggest differences at a glance:
 - **Multi-backend test matrix** — [Termless](https://termless.dev) runs tests across 10+ real terminal parsers (xterm.js, vt100, Ghostty, Kitty, Alacritty, ...). Blessed has no built-in testing support.
 - **Dynamic scrollback** — items graduate to terminal history automatically; inline/fullscreen hybrid modes blur the boundary. Blessed has neither.
 - **Fast incremental rendering** — cell-level dirty tracking. See [benchmarks](/guide/silvery-vs-ink#performance-size) for details.
-- **84 color schemes, semantic tokens** — theme system with `$primary`, `$muted`, auto-detection. Blessed uses manual styling.
+- **84 color schemes, semantic tokens** — theme system with `$fg-accent`, `$fg-muted`, auto-detection. Blessed uses manual styling.
 
 **Where Blessed is stronger:**
 
@@ -75,7 +75,7 @@ You create widget objects, set properties, append them to a screen, and call `re
 function App() {
   return (
     <Box alignItems="center" justifyContent="center" width="100%" height="100%">
-      <Box borderStyle="single" borderColor="$border" padding={1} width="50%" height="50%">
+      <Box borderStyle="single" borderColor="$border-default" padding={1} width="50%" height="50%">
         <Text bold>Hello world!</Text>
       </Box>
     </Box>
@@ -156,7 +156,7 @@ For compatibility data across terminals, see [terminfo.dev](https://terminfo.dev
 | ------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | **Built-in widgets/components** | ~40 widgets (list, table, form, textbox, terminal, etc.) | **45+** components (VirtualList, Table, CommandPalette, TreeView, Toast, Tabs, SplitView, ...) |
 | **Specialized widgets**         | Terminal emulator, video player, IRC widgets             | None — focused on general-purpose UI components                                                |
-| **Theme system**                | Manual styling                                           | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect                          |
+| **Theme system**                | Manual styling                                           | 84 color schemes, semantic tokens (`$fg-accent`, `$fg-muted`), auto-detect                       |
 | **Plugin composition**          | Not in core                                              | `withCommands` / `withKeybindings` / `withDomEvents` / `withFocus`                             |
 | **TEA state machines**          | Not in core                                              | `@silvery/create`: `(action, state) → [state, effects]`, replay, undo                          |
 | **Animation**                   | Not built-in                                             | `useAnimation` + easing functions + `useAnimatedTransition`                                    |

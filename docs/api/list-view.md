@@ -123,7 +123,7 @@ interface ListItemMeta {
   height={15}
   navigable
   renderItem={(item, i, meta) => <Text inverse={meta.isCursor}>{item.title}</Text>}
-  renderSeparator={() => <Text color="$border">{"─".repeat(40)}</Text>}
+  renderSeparator={() => <Text color="$border-default">{"─".repeat(40)}</Text>}
 />
 ```
 

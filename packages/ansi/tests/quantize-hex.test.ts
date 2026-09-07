@@ -131,6 +131,6 @@ describe("quantizeHex", () => {
 
   it("returns input unchanged for non-hex strings", () => {
     expect(quantizeHex("not a hex", "ansi16")).toBe("not a hex")
-    expect(quantizeHex("$accent", "256")).toBe("$accent")
+    expect(quantizeHex("$fg-accent", "256")).toBe("$fg-accent")
   })
 })

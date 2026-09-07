@@ -29,11 +29,7 @@ describe("diagnosticTheme", () => {
     const collidedWithCanvas = seen.get(canvas) ?? []
     const surfaceCollisions = collidedWithCanvas.filter(
       (t) =>
-        t.startsWith("bg-surface-") ||
-        t === "bg-muted" ||
-        t === "mutedbg" ||
-        t === "bg-selected" ||
-        t === "bg-cursor",
+        t.startsWith("bg-surface-") || t === "bg-muted" || t === "bg-selected" || t === "bg-cursor",
     )
     expect(
       surfaceCollisions,
@@ -41,24 +37,17 @@ describe("diagnosticTheme", () => {
     ).toEqual([])
   })
 
-  test("legacy mutedbg ≠ canvas (the cyan-strip-bug invariant)", () => {
+  test("bg-muted ≠ canvas (the cyan-strip-bug invariant)", () => {
     const flat = (diagnosticTheme as any).flat ?? diagnosticTheme
     const canvas = flat["bg"] ?? flat["bg-surface-default"]
-    const mutedbg = flat["mutedbg"] ?? flat["bg-muted"]
+    const mutedBg = flat["bg-muted"]
     expect(canvas).toBeDefined()
-    expect(mutedbg).toBeDefined()
-    expect(mutedbg).not.toEqual(canvas)
+    expect(mutedBg).toBeDefined()
+    expect(mutedBg).not.toEqual(canvas)
   })
 
-  test("Sterling bg-muted ≠ legacy mutedbg under diagnostic (separable code-variant paths)", () => {
+  test("does not emit a retired mutedbg field", () => {
     const flat = (diagnosticTheme as any).flat ?? diagnosticTheme
-    // Both tokens should resolve under diagnostic — Sterling's bg-muted
-    // (blend 0.08) and legacy mutedbg (blend 0.04) should produce different
-    // RGBs so a test can tell which path emitted the bg.
-    const sterlingMuted = flat["bg-muted"]
-    const legacyMutedbg = flat["mutedbg"]
-    if (sterlingMuted && legacyMutedbg) {
-      expect(sterlingMuted).not.toEqual(legacyMutedbg)
-    }
+    expect(flat).not.toHaveProperty("mutedbg")
   })
 })

@@ -40,8 +40,8 @@ const [value, setValue] = useState("")
 | `underlineWidth`   | `number`                  | `40`             | Width of the underline decoration          |
 | `mask`             | `string`                  | —                | Mask character for passwords (e.g., `"*"`) |
 | `borderStyle`      | `string`                  | —                | Border style (e.g., `"round"`, `"single"`) |
-| `borderColor`      | `string`                  | `"$border"`      | Border color when unfocused                |
-| `focusBorderColor` | `string`                  | `"$focusborder"` | Border color when focused                  |
+| `borderColor`      | `string`                  | `"$border-default"` | Border color when unfocused             |
+| `focusBorderColor` | `string`                  | `"$border-focus"`   | Border color when focused               |
 | `testID`           | `string`                  | —                | Test ID for focus system identification    |
 
 ### Ref Handle (TextInputHandle)
@@ -103,6 +103,6 @@ The border color automatically changes between `borderColor` and `focusBorderCol
   onChange={setCommand}
   onSubmit={executeCommand}
   prompt="$ "
-  promptColor="$success"
+  promptColor="$fg-success"
 />
 ```

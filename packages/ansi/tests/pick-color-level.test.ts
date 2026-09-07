@@ -34,7 +34,7 @@ function makeFixtureTheme() {
       },
     },
     // Non-hex strings must pass through untouched (tokens, names, etc.).
-    brand: "$primary",
+    brand: "$fg-accent",
     ratio: 0.5,
     count: 7,
   }
@@ -93,9 +93,9 @@ describe("pickColorLevel", () => {
     expect(out.dark).toBe(true)
     expect(out.ratio).toBe(0.5)
     expect(out.count).toBe(7)
-    // $primary is a theme-token reference, not a color literal — must not
+    // $fg-accent is a theme-token reference, not a color literal — must not
     // be mangled into a hex.
-    expect(out.brand).toBe("$primary")
+    expect(out.brand).toBe("$fg-accent")
   })
 
   it("is idempotent per tier", () => {

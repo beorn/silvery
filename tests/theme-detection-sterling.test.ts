@@ -1,8 +1,7 @@
 /**
  * Tests for the Sterling-aware detection wrappers in @silvery/theme.
  *
- * The wrappers run @silvery/ansi's detection results through
- * `inlineSterlingTokens` so consumers can read flat keys like
+ * The canonical detection factory returns flat keys so consumers can read
  * `theme["border-default"]` directly.
  *
  * Ported from the former @silvery/theme-detect package (killed in 0.19.2).

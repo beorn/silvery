@@ -44,8 +44,7 @@ import {
   type Key,
 } from "silvery"
 import { builtinPalettes, sterling, type SterlingTheme } from "@silvery/theme"
-import { deriveTheme as legacyDeriveTheme } from "@silvery/ansi"
-import type { ColorScheme, Theme as LegacyTheme } from "@silvery/ansi"
+import type { ColorScheme } from "@silvery/ansi"
 
 import { SchemeList } from "./SchemeList.tsx"
 import { ComponentPreview } from "./ComponentPreview.tsx"
@@ -55,7 +54,7 @@ import { TierBar, TIER_ORDER, type Tier, type ViewMode } from "./TierBar.tsx"
 import { ContrastAudit } from "./ContrastAudit.tsx"
 import { SchemeAuthor } from "./SchemeAuthor.tsx"
 import { PaletteGallery } from "./PaletteGallery.tsx"
-import { quantizeLegacyTheme, quantizeSterlingTheme } from "./shared/quantize.ts"
+import { quantizeSterlingTheme } from "./shared/quantize.ts"
 
 // ────────────────────────────────────────────────────────────────────────────
 // Scheme list — sort dark-first, then alpha, for a predictable browser order.
@@ -79,16 +78,11 @@ function orderedSchemes(): string[] {
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Build the legacy Theme that drives the middle pane (<ThemeProvider theme=>).
- * silvery/ui components consume the legacy token names today; Sterling lives
- * alongside and drives the token tree + derivation panel + contrast audit.
+ * Build the canonical Theme that drives the middle pane (<ThemeProvider theme=>).
+ * The preview tier is a render-only quantization of Sterling's frozen output.
  */
-function buildLegacyTheme(palette: ColorScheme, tier: Tier): LegacyTheme {
-  // Derive at truecolor and preview-quantize — the output phase would
-  // quantize again at a real TTY, but our in-process preview bypasses that,
-  // so we mirror the quantization here.
-  const base = legacyDeriveTheme(palette, "truecolor")
-  return quantizeLegacyTheme(base, tier)
+function buildPreviewTheme(palette: ColorScheme, tier: Tier): SterlingTheme {
+  return quantizeSterlingTheme(sterling.deriveFromScheme(palette, { contrast: "auto-lift" }), tier)
 }
 
 /**
@@ -144,7 +138,7 @@ export function App(): React.ReactElement {
     () => quantizeSterlingTheme(sterlingThemeBase, tier),
     [sterlingThemeBase, tier],
   )
-  const legacyTheme = useMemo(() => buildLegacyTheme(livePalette, tier), [livePalette, tier])
+  const previewTheme = useMemo(() => buildPreviewTheme(livePalette, tier), [livePalette, tier])
   const flatTokens: FlatTokenEntry[] = useMemo(() => flattenTokens(sterlingTheme), [sterlingTheme])
 
   // Clamp the token cursor when the flat list shrinks (paranoid defence).
@@ -293,7 +287,7 @@ export function App(): React.ReactElement {
 
   if (showGallery) {
     return (
-      <ThemeProvider theme={legacyTheme}>
+      <ThemeProvider theme={previewTheme}>
         <Screen>
           <PaletteGallery
             schemes={schemes}
@@ -309,7 +303,7 @@ export function App(): React.ReactElement {
   }
 
   return (
-    <ThemeProvider theme={legacyTheme}>
+    <ThemeProvider theme={previewTheme}>
       <Screen>
         {header}
         <Divider />

@@ -61,7 +61,7 @@ describe("Text variant — runtime warning", () => {
   // Test 4: custom variant registered via ThemeProvider → no warn
   test("<Text variant='hero'> inside ThemeProvider with hero registered → no warn", () => {
     r(
-      <ThemeProvider tokens={{ variants: { hero: { color: "$accent", bold: true } } }}>
+      <ThemeProvider tokens={{ variants: { hero: { color: "$fg-accent", bold: true } } }}>
         <Text variant="hero">Hero text</Text>
       </ThemeProvider>,
     )

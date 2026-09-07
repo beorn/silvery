@@ -4,7 +4,7 @@
  *
  * Verifies:
  * 1. Default indicator="" renders without arrow prefix
- * 2. Selected row has $cursor-bg background and $cursor fg at cell level
+ * 2. Selected row has $bg-cursor background and $fg-cursor fg at cell level
  * 3. Click on row fires onSelect with that item + moves cursor there
  * 4. Mouse enter on row moves cursor (without firing onSelect)
  * 5. indicator="▸ " keeps old arrow behavior (backward compat)
@@ -62,7 +62,7 @@ describe("SelectList default UX: no arrow indicator", () => {
 })
 
 // ============================================================================
-// 2. Selected row has $cursor-bg background at cell level
+// 2. Selected row has $bg-cursor background at cell level
 // ============================================================================
 
 describe("SelectList default UX: full-row bg on cursor", () => {
@@ -87,10 +87,10 @@ describe("SelectList default UX: full-row bg on cursor", () => {
   test("cursor row fg uses cursor color token", () => {
     const r = createRenderer({ cols: 40, rows: 10 })
 
-    // Get what $cursor resolves to via direct reference
+    // Get what $fg-cursor resolves to via direct reference
     const { Text } = require("../src/components/Text")
     const React2 = require("react")
-    const appDirect = r(React2.createElement(Text, { color: "$cursor" }, "X"))
+    const appDirect = r(React2.createElement(Text, { color: "$fg-cursor" }, "X"))
     const expectedFg = appDirect.cell(0, 0).fg
 
     const app = r(<SelectList items={OPTIONS} />)

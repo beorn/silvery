@@ -154,10 +154,10 @@ import { run } from "silvery/runtime"
 function App() {
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold color="$primary">
+      <Text bold color="$fg-accent">
         Hello, Silvery!
       </Text>
-      <Text color="$muted">Press any key to exit.</Text>
+      <Text color="$fg-muted">Press any key to exit.</Text>
     </Box>
   )
 }
@@ -282,11 +282,11 @@ prevent rectangular blank-cell selection.
 Tokens adapt to any terminal theme automatically. 84 color schemes work out of the box.
 
 ```tsx
-<Text color="$primary">Selected item</Text>
-<Text color="$success">✓ Saved</Text>
-<Text color="$error">✗ Failed</Text>
-<Text color="$muted">Last modified 2h ago</Text>
-<Box borderStyle="round" />  // auto $border color
+<Text color="$fg-accent">Selected item</Text>
+<Text color="$fg-success">✓ Saved</Text>
+<Text color="$fg-error">✗ Failed</Text>
+<Text color="$fg-muted">Last modified 2h ago</Text>
+<Box borderStyle="round" />  // auto $border-default color
 ```
 
 ### Typography presets — not manual color+bold combos
@@ -294,12 +294,12 @@ Tokens adapt to any terminal theme automatically. 84 color schemes work out of t
 ```tsx
 import { H1, H2, H3, Muted, Small, Code, Blockquote } from "silvery"
 
-<H1>Page Title</H1>          // $primary + bold
-<H2>Section</H2>              // $accent + bold
+<H1>Page Title</H1>          // $fg-accent + bold
+<H2>Section</H2>              // accent role + bold
 <H3>Group</H3>                // bold
-<Muted>Caption text</Muted>   // $muted
-<Small>Fine print</Small>     // $muted + dim
-<Code>npm install</Code>      // $mutedbg background
+<Muted>Caption text</Muted>   // $fg-muted
+<Small>Fine print</Small>     // $fg-muted + dim
+<Code>npm install</Code>      // $bg-muted background
 ```
 
 ### Background + text pairing
@@ -307,12 +307,12 @@ import { H1, H2, H3, Muted, Small, Code, Blockquote } from "silvery"
 Every surface background has a matching text token. Set both or set neither.
 
 ```tsx
-<Box backgroundColor="$surfacebg">
-  <Text color="$surface">Dialog content</Text>
+<Box backgroundColor="$bg-surface-raised">
+  <Text>Dialog content</Text>
 </Box>
 
-<Box backgroundColor="$inversebg">
-  <Text color="$inverse">Status bar</Text>
+<Box backgroundColor="$bg-inverse">
+  <Text color="$fg-on-inverse">Status bar</Text>
 </Box>
 ```
 
@@ -609,7 +609,7 @@ AutoLocator methods: `resolve()`, `resolveAll()`, `count()`, `textContent()`, `g
 
 **Manual key handlers instead of components** — Use `SelectList` for lists, `TextInput` for text entry. Don't reimplement j/k navigation or readline keybindings.
 
-**Hardcoded colors** — Use `$primary`, `$muted`, `$success`, etc. Never `"red"`, `"#ff0000"`, or `"\x1b[31m"`.
+**Hardcoded colors** — Use `$fg-accent`, `$fg-muted`, `$fg-success`, etc. Never `"red"`, `"#ff0000"`, or `"\x1b[31m"`.
 
 **`Box theme={{}}` for bg-only changes** — `theme={{}}` re-resolves ALL `$tokens`. Use `backgroundColor` directly:
 
@@ -618,12 +618,12 @@ AutoLocator methods: `resolve()`, `resolveAll()`, `count()`, `textContent()`, `g
 <Box theme={{ bg: "#1a1a1a" }}>
 
 // Right: only sets background
-<Box backgroundColor="$surfacebg">
+<Box backgroundColor="$bg-surface-raised">
 ```
 
-**Status tokens for decoration** — `$success` means success, `$error` means error. Don't use them for headings, borders, or categories. Use `$primary`/`$accent` for emphasis, `$color0`-`$color15` for data categories.
+**Status tokens for decoration** — `$fg-success` means success, `$fg-error` means error. Don't use them for headings, borders, or categories. Use `$fg-accent` for emphasis, `$color0`-`$color15` for data categories.
 
-**Specifying default colors** — Components already use correct colors. Don't write `<Text color="$fg">` or `<SelectList color="$primary">`.
+**Specifying default colors** — Components already use correct colors. Don't write `<Text color="$fg">` or `<SelectList color="$fg-accent">`.
 
 **Reading `useBoxRectDangerously()` and writing layout-affecting props is structurally safe.** The reactive layout hooks (`useBoxRectDangerously()` / `useScrollRect()` / `useScreenRect()`) return the **committed** rect — the value as of the most recent event-batch commit boundary. Within a single batch the returned rect is invariant across every convergence pass, so a render that reads the rect and writes a layout-affecting prop based on it produces the same output every pass. The convergence loop terminates in one pass; no feedback edge can form by construction.
 

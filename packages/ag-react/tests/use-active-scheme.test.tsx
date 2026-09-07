@@ -81,7 +81,7 @@ describe("useActiveScheme", () => {
     const render = createRenderer({ cols: 20, rows: 2 })
     render(
       <ThemeProvider theme={defaultTheme} scheme={outerScheme}>
-        <ThemeProvider tokens={{ primary: "#FF00FF" } as never} scheme={innerScheme}>
+        <ThemeProvider tokens={{ "fg-accent": "#FF00FF" } as never} scheme={innerScheme}>
           <CaptureScheme onScheme={(s) => (captured = s)} />
         </ThemeProvider>
       </ThemeProvider>,
@@ -101,7 +101,7 @@ describe("useActiveScheme", () => {
       <ThemeProvider theme={defaultTheme} scheme={outerScheme}>
         <CaptureScheme onScheme={(s) => (capturedOuter = s)} />
         {/* Inner ThemeProvider without scheme — should inherit outer */}
-        <ThemeProvider tokens={{ primary: "#FF00FF" } as never}>
+        <ThemeProvider tokens={{ "fg-accent": "#FF00FF" } as never}>
           <CaptureScheme onScheme={(s) => (capturedInner = s)} />
         </ThemeProvider>
       </ThemeProvider>,

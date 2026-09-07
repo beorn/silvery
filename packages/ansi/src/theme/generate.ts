@@ -1,105 +1,58 @@
 /**
- * ANSI 16 theme generation — derives a complete Theme from a primary color + dark/light.
+ * ANSI-slot theme generator.
  *
- * Uses ANSI color names (not hex) so it works on any terminal without truecolor support.
+ * This builds a ColorScheme seed and delegates to the canonical Sterling
+ * factory. The generated Theme remains hex-valued; terminal color level is
+ * applied only by rendering.
  */
 
-import type { AnsiPrimary, Theme } from "./types"
-import { deriveFields, DEFAULT_VARIANTS } from "./derived"
+import { ANSI16_SLOT_HEX } from "../color-maps.ts"
+import type { AnsiPrimary, ColorScheme, Theme } from "./types.ts"
+import { deriveTheme } from "./derive.ts"
 
-// Re-export for consumers that import DEFAULT_VARIANTS from here.
-export { DEFAULT_VARIANTS }
-
-/**
- * Generate a complete ANSI 16 theme from a primary color + dark/light preference.
- *
- * All token values are ANSI color names (e.g. "yellow", "blueBright").
- */
-export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
-  const fg = dark ? "whiteBright" : "black"
-  const accent = primary // generate.ts: accent = primary (single-color generator)
-  const selectionbg = primary
-  const surfacebg = dark ? "black" : "white"
-
-  // Categorical ring — computed from dark flag alone (no ColorScheme available)
-  const ring = {
-    red: dark ? "redBright" : "red",
-    orange: dark ? "redBright" : "red", // no orange slot in ANSI 16
-    yellow: "yellow",
-    green: dark ? "greenBright" : "green",
-    teal: "cyan", // canonical: cyan (not cyanBright — aligned to deriveAnsi16Theme)
-    blue: dark ? "blueBright" : "blue",
-    purple: "magenta",
-    pink: dark ? "magentaBright" : "magenta",
+function slot(name: string): string {
+  const value = ANSI16_SLOT_HEX[name]
+  if (value === undefined) {
+    throw new Error(
+      `ANSI16 theme generation: missing canonical hex for slot ${JSON.stringify(name)}`,
+    )
   }
+  return value
+}
 
-  const derived = deriveFields({ primary, accent, fg, selectionbg, surfacebg, ring })
-
+/** Build the complete canonical input; semantic roles belong to Sterling. */
+export function generatedAnsi16Scheme(primary: AnsiPrimary, dark: boolean): ColorScheme {
+  const primaryHex = slot(primary)
   return {
     name: `${dark ? "dark" : "light"}-${primary}`,
+    dark,
+    primary: primaryHex,
+    black: slot("black"),
+    red: slot("red"),
+    green: slot("green"),
+    yellow: slot("yellow"),
+    blue: slot("blue"),
+    magenta: slot("magenta"),
+    cyan: slot("cyan"),
+    white: slot("white"),
+    brightBlack: slot("blackBright"),
+    brightRed: slot("redBright"),
+    brightGreen: slot("greenBright"),
+    brightYellow: slot("yellowBright"),
+    brightBlue: slot("blueBright"),
+    brightMagenta: slot("magentaBright"),
+    brightCyan: slot("cyanBright"),
+    brightWhite: slot("whiteBright"),
+    foreground: slot(dark ? "whiteBright" : "black"),
+    background: slot(dark ? "black" : "white"),
+    cursorColor: primaryHex,
+    cursorText: slot(dark ? "black" : "whiteBright"),
+    selectionBackground: primaryHex,
+    selectionForeground: slot(dark ? "black" : "whiteBright"),
+  }
+}
 
-    // ── Root pair ─────────────────────────────────────────────────
-    bg: "",
-    fg,
-
-    // ── Surface pairs (base = text, *bg = background) ──────────
-    muted: dark ? "white" : "blackBright",
-    mutedbg: dark ? "black" : "white",
-    surface: dark ? "whiteBright" : "black",
-    surfacebg,
-    popover: dark ? "whiteBright" : "black",
-    popoverbg: dark ? "blackBright" : "white",
-    inverse: dark ? "black" : "whiteBright",
-    inversebg: dark ? "whiteBright" : "black",
-    cursor: "black",
-    cursorbg: primary,
-    selection: "black",
-    selectionbg: primary,
-
-    // ── Accent pairs (base = area bg, *fg = text on area) ──────
-    primary,
-    primaryfg: "black",
-    secondary: primary,
-    secondaryfg: "black",
-    accent: primary,
-    accentfg: "black",
-    error: dark ? "redBright" : "red",
-    errorfg: "black",
-    warning: primary,
-    warningfg: "black",
-    success: dark ? "greenBright" : "green",
-    successfg: "black",
-    info: dark ? "cyanBright" : "cyan",
-    infofg: "black",
-
-    // ── Standalone ───────────────────────────────────────────────
-    border: "gray",
-    inputborder: "gray",
-    focusborder: dark ? "blueBright" : "blue",
-    link: "blueBright",
-    disabledfg: "gray",
-
-    // ── Palette ──────────────────────────────────────────────────
-    palette: [
-      "black",
-      "red",
-      "green",
-      "yellow",
-      "blue",
-      "magenta",
-      "cyan",
-      "white",
-      "blackBright",
-      "redBright",
-      "greenBright",
-      "yellowBright",
-      "blueBright",
-      "magentaBright",
-      "cyanBright",
-      "whiteBright",
-    ],
-
-    // ── Derived fields (brand, ring, state variants, variants) ───
-    ...derived,
-  } as unknown as Theme
+/** Generate a frozen canonical Theme from a standard ANSI16 seed. */
+export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
+  return deriveTheme(generatedAnsi16Scheme(primary, dark))
 }

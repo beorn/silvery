@@ -1,388 +1,99 @@
 /**
- * Theme derivation — transforms a ColorScheme into a Theme.
+ * Public theme-construction entry points.
+ *
+ * Sterling is the sole semantic derivation authority. These wrappers retain
+ * the established `@silvery/ansi` imports while delegating to its frozen
+ * nested-role plus flat-projection factory; they must not add fields or
+ * derive a second set of values.
  */
 
-import {
-  blend,
-  contrastFg,
-  complement,
-  hexToOklch,
-  oklchToHex,
-  colorDistance,
-} from "@silvery/color"
-import { checkContrast, ensureContrast } from "@silvery/color"
-import type { ColorScheme, Theme, Variant } from "./types.ts"
+import type { ColorScheme, Theme } from "./types.ts"
 import {
   validateThemeInvariants,
   ThemeInvariantError,
-  SELECTION_DELTA_L,
-  CURSOR_DELTA_E,
   type InvariantViolation,
 } from "./invariants.ts"
-import { deriveFields } from "./derived.ts"
-import { inlineSterlingTokens } from "../sterling/inline.ts"
+import { sterling } from "../sterling/sterling.ts"
 
+/**
+ * A contrast lift reported by Sterling's canonical derivation trace.
+ *
+ * This preserves `loadTheme({ adjustments })` as a useful diagnostic without
+ * inventing a parallel measurement model: every value is projected from the
+ * exact Sterling trace step which changed it.
+ */
 export interface ThemeAdjustment {
-  token: string
-  from: string
-  to: string
-  against: string
-  target: number
-  ratioBefore: number
-  ratioAfter: number
+  readonly token: string
+  readonly from: string
+  readonly to: string
+  readonly rule: string
+  readonly inputs: readonly string[]
+}
+
+function deriveCanonicalTheme(palette: ColorScheme, adjustments?: ThemeAdjustment[]): Theme {
+  const theme = sterling.deriveFromScheme(palette, adjustments ? { trace: true } : undefined)
+  if (adjustments) {
+    for (const step of theme.derivationTrace ?? []) {
+      if (step.liftedFrom === undefined) continue
+      adjustments.push({
+        token: step.token,
+        from: step.liftedFrom,
+        to: step.output,
+        rule: step.rule,
+        inputs: step.inputs,
+      })
+    }
+  }
+  return theme
 }
 
 /**
- * Derive a Theme from a ColorScheme, with Sterling flat tokens baked in.
+ * Derive a frozen Sterling Theme from a ColorScheme.
  *
- * Every Theme `@silvery/ansi` produces passes through `inlineSterlingTokens`
- * so consumers can read `$bg-accent`, `$bg-surface-overlay`, `$border-default`,
- * `$fg-muted`, etc. directly off the returned object. This is the one
- * canonical Theme shape in silvery — there is no separate "partial" Theme.
+ * ANSI16 is a renderer capability, not a separate theme shape: the returned
+ * Theme is hex-valued and the output phase quantizes it when needed.
  */
-export function deriveTheme(
-  palette: ColorScheme,
-  mode: "ansi16" | "truecolor" = "truecolor",
-  adjustments?: ThemeAdjustment[],
-): Theme {
-  const theme =
-    mode === "ansi16" ? deriveAnsi16ThemeRaw(palette) : deriveTruecolorTheme(palette, adjustments)
-  return inlineSterlingTokens(theme, palette)
+export function deriveTheme(palette: ColorScheme, adjustments?: ThemeAdjustment[]): Theme {
+  return deriveCanonicalTheme(palette, adjustments)
+}
+
+/**
+ * Existing ergonomic ANSI16 entry point. It intentionally performs the same
+ * canonical derivation as `deriveTheme`; paint-time quantization owns ANSI16.
+ */
+export function deriveAnsi16Theme(palette: ColorScheme): Theme {
+  return deriveCanonicalTheme(palette)
 }
 
 export interface LoadThemeOptions {
-  /** Output mode. Default: "truecolor". */
-  mode?: "ansi16" | "truecolor"
   /**
    * Invariant enforcement:
    *   - `"strict"` — throw `ThemeInvariantError` when invariants fail.
-   *   - `"lenient"` (default) — accept auto-adjustments, populate `violations` out-param.
-   *   - `"off"` — skip invariant validation entirely.
-   *
-   * Note: `deriveTheme()` already runs `ensureContrast` on every text/bg pair
-   * it builds (thresholds: AA=4.5, DIM=3.0, FAINT=1.5, CONTROL=3.0 — tuned for
-   * terminals, not blind WCAG imports). Invariant validation is a second pass
-   * that catches things derive can't fix. Default: visibility only.
+   *   - `"lenient"` (default) — keep the Theme and populate `violations`.
+   *   - `"off"` — skip post-derivation invariant validation.
    */
   enforce?: "strict" | "lenient" | "off"
-  /**
-   * Run WCAG contrast validation in addition to visibility. Default: false.
-   * `deriveTheme` already applies the project-tweaked thresholds via
-   * `ensureContrast`; only enable `wcag: true` for build-time audits of
-   * bundled themes or to validate hand-authored Theme objects.
-   */
+  /** Run the optional WCAG invariant audit in addition to visibility checks. */
   wcag?: boolean
-  /** Out-parameter: adjustments applied by `deriveTheme`'s ensureContrast calls. */
+  /** Out-parameter for canonical Sterling contrast-lift trace entries. */
   adjustments?: ThemeAdjustment[]
-  /** Out-parameter: invariant violations (only populated in "lenient" mode; "strict" throws). */
+  /** Out-parameter for post-derivation invariant violations in lenient mode. */
   violations?: InvariantViolation[]
 }
 
 /**
- * Load and validate a theme from a ColorScheme.
- *
- * Combines `deriveTheme()` (auto-adjust via ensureContrast with project-tuned
- * thresholds) with `validateThemeInvariants()` (post-derivation visibility +
- * optional WCAG).
- *
- * We don't re-impose WCAG on top of derive's tweaked thresholds — default
- * validation checks visibility invariants only (selection/cursor vs bg) that
- * derive doesn't handle.
- *
- * @example
- * ```ts
- * // Default: lenient + visibility-only (derive already handled contrast)
- * const theme = loadTheme(myScheme)
- *
- * // Build-time audit: strict + full WCAG
- * const theme = loadTheme(myScheme, { enforce: "strict", wcag: true })
- * ```
+ * Derive and validate a Theme. Diagnostics are projections of the canonical
+ * Sterling trace; no legacy derivation or ANSI16 mode branch exists here.
  */
 export function loadTheme(palette: ColorScheme, opts: LoadThemeOptions = {}): Theme {
-  const mode = opts.mode ?? "truecolor"
   const enforce = opts.enforce ?? "lenient"
-  const theme = deriveTheme(palette, mode, opts.adjustments)
+  const theme = deriveCanonicalTheme(palette, opts.adjustments)
   if (enforce === "off") return theme
 
   const { ok, violations } = validateThemeInvariants(theme, { wcag: opts.wcag })
   if (!ok) {
     if (enforce === "strict") throw new ThemeInvariantError(violations)
-    if (opts.violations) opts.violations.push(...violations)
+    opts.violations?.push(...violations)
   }
   return theme
-}
-
-const AA = 4.5
-const DIM = 3.0
-const FAINT = 1.5
-const CONTROL = 3.0
-
-/**
- * Build a "raw" Theme with legacy single-hex role fields. The output is NOT a
- * complete Sterling Theme — Sterling roles + flat tokens are layered on by
- * `inlineSterlingTokens` at the end of `deriveTheme`. The cast at the bottom
- * (`as unknown as Theme`) acknowledges the staged construction; the contract
- * `deriveTheme()` returns a fully-shaped Sterling Theme is honored at the
- * `deriveTheme` boundary, not here.
- *
- * Legacy fields (`primary`, `primaryfg`, `accent`, `accentfg`, `errorfg`,
- * `successfg`, `warningfg`, `infofg`, `secondaryfg`, `focusborder`,
- * `inputborder`, `disabledfg`, `mutedbg`, `surfacebg`, `popoverbg`, `cursor`,
- * `cursorbg`, `secondary`, `border`) are still emitted at runtime so app code
- * that still uses `theme.primary` / `theme.errorfg` keeps working. The selection
- * / inverse / link aliases (`inverse`, `inversebg`, `selection`, `selectionbg`,
- * `link`) were dropped in 0.21.0 (sterling-purge-legacy-tokens) — consumers must
- * read Sterling's flat tokens (`bg-selected`, `fg-on-selected`, `bg-inverse`,
- * `fg-on-inverse`, `fg-link`).
- */
-function deriveTruecolorTheme(p: ColorScheme, adjustments?: ThemeAdjustment[]): Theme {
-  const dark = p.dark ?? true
-  const bg = p.background
-
-  function ensure(token: string, color: string, against: string, target: number): string {
-    const result = ensureContrast(color, against, target)
-    if (adjustments && result !== color) {
-      const before = checkContrast(color, against)
-      const after = checkContrast(result, against)
-      adjustments.push({
-        token,
-        from: color,
-        to: result,
-        against,
-        target,
-        ratioBefore: before?.ratio ?? 0,
-        ratioAfter: after?.ratio ?? 0,
-      })
-    }
-    return result
-  }
-
-  const surfacebg = blend(bg, p.foreground, 0.03)
-  const popoverbg = blend(bg, p.foreground, 0.08)
-  const fg = ensure("fg", p.foreground, popoverbg, AA)
-  const primary = ensure("primary", p.primary ?? (dark ? p.yellow : p.blue), bg, AA)
-  const accent = ensure("accent", complement(primary), bg, AA)
-  const secondary = ensure("secondary", blend(primary, accent, 0.35), bg, AA)
-  const error = ensure("error", p.red, bg, AA)
-  const warning = ensure("warning", p.yellow, bg, AA)
-  const success = ensure("success", p.green, bg, AA)
-  const info = ensure("info", blend(fg, accent, 0.5), bg, AA)
-  // Sterling owns link styling via roles.link.fg → flat $fg-link. The legacy
-  // single-hex `link` field was dropped in 0.21.0 (sterling-purge-legacy-tokens).
-
-  // Categorical color ring — 8 harmonious hues for tagging / chart series /
-  // categories. ensureContrast-adjusted against bg.
-  const red = ensure("red", p.red, bg, AA)
-  const orange = ensure("orange", blend(p.red, p.yellow, 0.5), bg, AA)
-  const yellow = ensure("yellow", p.yellow, bg, AA)
-  const green = ensure("green", p.green, bg, AA)
-  const teal = ensure("teal", blend(p.green, p.cyan, 0.5), bg, AA)
-  const blue = ensure("blue", dark ? p.brightBlue : p.blue, bg, AA)
-  const purple = ensure("purple", p.magenta, bg, AA)
-  const pink = ensure("pink", blend(p.magenta, p.red, 0.5), bg, AA)
-  const mutedbg = blend(bg, p.foreground, 0.04)
-  const muted = ensure("muted", blend(fg, bg, 0.4), mutedbg, AA)
-  const disabledfg = ensure("disabledfg", blend(fg, bg, 0.5), bg, DIM)
-  const border = ensure("border", blend(bg, p.foreground, 0.15), bg, FAINT)
-  const inputborder = ensure("inputborder", blend(bg, p.foreground, 0.25), bg, CONTROL)
-  // Repair selection visibility — nudge selectionbg L away from bg until ΔL ≥ threshold.
-  // Preserves hue + chroma. For ultra-subtle themes (one-light, serendipity-morning, etc.)
-  // this shifts the selection ~0.05 L while keeping the aesthetic. The repaired
-  // value feeds Sterling's `bg-selected-hover` derivation; the literal selection
-  // surface ships as Sterling's `bg-selected` (legacy `selectionbg` was dropped
-  // in 0.21.0 — sterling-purge-legacy-tokens).
-  const selectionBg = repairSelectionBg(p.selectionBackground, bg)
-
-  // Repair cursor visibility — nudge cursorbg ΔE away from bg (OKLCH).
-  const cursorBgRepaired = repairCursorBg(p.cursorColor, bg)
-  const cursor = ensure("cursor", p.cursorText, cursorBgRepaired, AA)
-
-  const derived = deriveFields({
-    dark,
-    primary,
-    accent,
-    fg,
-    selectionbg: selectionBg,
-    surfacebg,
-    ring: { red, orange, yellow, green, teal, blue, purple, pink },
-  })
-
-  return {
-    name: p.name ?? (dark ? "derived-dark" : "derived-light"),
-    bg,
-    fg,
-    muted,
-    mutedbg,
-    surface: fg,
-    surfacebg,
-    popover: fg,
-    popoverbg,
-    cursor,
-    cursorbg: cursorBgRepaired,
-    primary,
-    primaryfg: contrastFg(primary),
-    secondary,
-    secondaryfg: contrastFg(secondary),
-    accent,
-    accentfg: contrastFg(accent),
-    error,
-    errorfg: contrastFg(error),
-    warning,
-    warningfg: contrastFg(warning),
-    success,
-    successfg: contrastFg(success),
-    info,
-    infofg: contrastFg(info),
-    border,
-    inputborder,
-    // Sterling owns link/selection/inverse styling via roles → flat tokens
-    // (`fg-link`, `bg-selected`, `fg-on-selected`, `bg-inverse`, `fg-on-inverse`).
-    // Legacy single-hex aliases were dropped in 0.21.0.
-    focusborder: ensure("focusborder", dark ? p.brightBlue : p.blue, bg, AA),
-    disabledfg,
-    palette: [
-      p.black,
-      p.red,
-      p.green,
-      p.yellow,
-      p.blue,
-      p.magenta,
-      p.cyan,
-      p.white,
-      p.brightBlack,
-      p.brightRed,
-      p.brightGreen,
-      p.brightYellow,
-      p.brightBlue,
-      p.brightMagenta,
-      p.brightCyan,
-      p.brightWhite,
-    ],
-    ...derived,
-  } as unknown as Theme
-}
-
-export function deriveAnsi16Theme(p: ColorScheme): Theme {
-  return inlineSterlingTokens(deriveAnsi16ThemeRaw(p), p)
-}
-
-function deriveAnsi16ThemeRaw(p: ColorScheme): Theme {
-  const dark = p.dark ?? true
-  const primaryColor = dark ? p.yellow : p.blue
-  const accentColor = p.cyan
-
-  const derived = deriveFields({
-    primary: primaryColor,
-    accent: accentColor,
-    fg: p.foreground,
-    selectionbg: p.selectionBackground,
-    surfacebg: p.black,
-    ring: {
-      red: dark ? p.brightRed : p.red,
-      orange: dark ? p.brightRed : p.red, // no orange slot in ANSI 16
-      yellow: p.yellow,
-      green: dark ? p.brightGreen : p.green,
-      teal: p.cyan,
-      blue: dark ? p.brightBlue : p.blue,
-      purple: p.magenta,
-      pink: dark ? p.brightMagenta : p.magenta,
-    },
-  })
-
-  return {
-    name: p.name ?? (dark ? "derived-ansi16-dark" : "derived-ansi16-light"),
-    bg: p.background,
-    fg: p.foreground,
-    muted: p.white,
-    mutedbg: p.black,
-    surface: p.foreground,
-    surfacebg: p.black,
-    popover: p.foreground,
-    popoverbg: p.black,
-    cursor: p.cursorText,
-    cursorbg: p.cursorColor,
-    primary: primaryColor,
-    primaryfg: p.black,
-    secondary: p.magenta,
-    secondaryfg: p.black,
-    accent: accentColor,
-    accentfg: p.black,
-    error: dark ? p.brightRed : p.red,
-    errorfg: p.black,
-    warning: p.yellow,
-    warningfg: p.black,
-    success: dark ? p.brightGreen : p.green,
-    successfg: p.black,
-    info: p.cyan,
-    infofg: p.black,
-    border: p.brightBlack,
-    inputborder: p.brightBlack,
-    focusborder: dark ? p.brightBlue : p.blue,
-    // Sterling supplies link/selection/inverse via roles → flat tokens.
-    // (Legacy `link`, `selection`, `selectionbg`, `inverse`, `inversebg` were
-    // dropped in 0.21.0 — sterling-purge-legacy-tokens.)
-    disabledfg: p.brightBlack,
-    palette: [
-      p.black,
-      p.red,
-      p.green,
-      p.yellow,
-      p.blue,
-      p.magenta,
-      p.cyan,
-      p.white,
-      p.brightBlack,
-      p.brightRed,
-      p.brightGreen,
-      p.brightYellow,
-      p.brightBlue,
-      p.brightMagenta,
-      p.brightCyan,
-      p.brightWhite,
-    ],
-    ...derived,
-  } as unknown as Theme
-}
-
-/**
- * Nudge `selectionBg`'s OKLCH lightness until it differs from `bg` by at least
- * `SELECTION_DELTA_L`. Preserves hue + chroma. Non-hex input returns unchanged.
- *
- * Direction: shift away from bg — if bg is dark, lift L; if bg is light, drop L.
- * If the input already meets the threshold, it's returned unchanged.
- */
-function repairSelectionBg(selectionBg: string, bg: string): string {
-  const oSel = hexToOklch(selectionBg)
-  const oBg = hexToOklch(bg)
-  if (!oSel || !oBg) return selectionBg
-  const dL = Math.abs(oSel.L - oBg.L)
-  if (dL >= SELECTION_DELTA_L) return selectionBg
-
-  const needed = SELECTION_DELTA_L - dL + 0.005 // small overshoot to land above floor after gamut-map
-  const direction = oSel.L >= oBg.L ? 1 : -1
-  const newL = Math.max(0, Math.min(1, oSel.L + direction * needed))
-  return oklchToHex({ L: newL, C: oSel.C, H: oSel.H })
-}
-
-/**
- * Nudge `cursorBg`'s OKLCH values until it differs from `bg` by at least
- * `CURSOR_DELTA_E`. Shifts lightness first (preserves hue/chroma aesthetics).
- * Non-hex input returns unchanged.
- */
-function repairCursorBg(cursorBg: string, bg: string): string {
-  const d = colorDistance(cursorBg, bg)
-  if (d === null || d >= CURSOR_DELTA_E) return cursorBg
-
-  const oCur = hexToOklch(cursorBg)!
-  const oBg = hexToOklch(bg)!
-  // Shift L in the direction that increases distance.
-  const lGap = SELECTION_DELTA_L + 0.02
-  const direction = oCur.L >= oBg.L ? 1 : -1
-  const newL = Math.max(0, Math.min(1, oCur.L + direction * lGap))
-  const candidate = oklchToHex({ L: newL, C: oCur.C, H: oCur.H })
-  const d2 = colorDistance(candidate, bg)
-  if (d2 !== null && d2 >= CURSOR_DELTA_E) return candidate
-
-  // Fallback: high-contrast neutral pick.
-  return oBg.L > 0.5 ? "#000000" : "#FFFFFF"
 }

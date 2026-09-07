@@ -153,7 +153,7 @@ import {
  *
  * Sterling flat tokens (`bg-surface-subtle`, `fg-on-accent`, `border-focus`, …)
  * are baked in by `@silvery/ansi`'s `deriveAnsi16Theme` — consumers read either
- * legacy fields or Sterling flat keys off the same object.
+ * canonical Sterling flat keys off the same frozen object.
  */
 export const ansi16DarkTheme: Theme = _ansi16DarkTheme
 

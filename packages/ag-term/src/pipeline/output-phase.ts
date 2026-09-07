@@ -11,14 +11,16 @@ import {
   type TerminalBuffer,
   type UnderlineStyle,
   VISIBLE_SPACE_ATTR_MASK,
+  backgroundCode,
   cellEquals as cellVisualEquals,
   colorEquals,
   createMutableCell,
+  foregroundCode,
   hasActiveAttrs,
   isDefaultBg,
   styleEquals,
+  underlineColorCode,
 } from "../buffer"
-import { fgColorCode, bgColorCode } from "../ansi/sgr-codes"
 import { resetCursorStyle, setCursorStyle } from "../output"
 import type { CursorState } from "@silvery/ag-react/hooks/useCursor"
 import { textSized } from "../text-sizing"
@@ -913,7 +915,8 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
     if (newStyle.fg === null || ctx.caps.colorLevel === "mono") {
       codes.push("39")
     } else {
-      codes.push(fgColorCode(newStyle.fg))
+      const code = foregroundCode(newStyle.fg, ctx.caps.colorLevel)
+      if (code) codes.push(code)
     }
   }
 
@@ -922,7 +925,8 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
     if (newStyle.bg === null || ctx.caps.colorLevel === "mono") {
       codes.push("49")
     } else {
-      codes.push(bgColorCode(newStyle.bg))
+      const code = backgroundCode(newStyle.bg, ctx.caps.colorLevel)
+      if (code) codes.push(code)
     }
   }
 
@@ -931,12 +935,9 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
     if (newStyle.underlineColor === null || newStyle.underlineColor === undefined) {
       // SGR 59 resets underline color
       codes.push("59")
-    } else if (typeof newStyle.underlineColor === "number") {
-      codes.push(`58;5;${newStyle.underlineColor}`)
     } else {
-      codes.push(
-        `58;2;${newStyle.underlineColor.r};${newStyle.underlineColor.g};${newStyle.underlineColor.b}`,
-      )
+      const code = underlineColorCode(newStyle.underlineColor, ctx.caps.colorLevel)
+      if (code) codes.push(code)
     }
   }
 
@@ -2781,12 +2782,14 @@ function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string 
 
   // Foreground color — stripped at monochrome tier (hierarchy via attrs)
   if (fg !== null && !monoTier) {
-    codes.push(fgColorCode(fg))
+    const code = foregroundCode(fg, ctx.caps.colorLevel)
+    if (code) codes.push(code)
   }
 
   // Background color (DEFAULT_BG sentinel = terminal default, skip) — stripped at mono tier
   if (bg !== null && !isDefaultBg(bg) && !monoTier) {
-    codes.push(bgColorCode(bg))
+    const code = backgroundCode(bg, ctx.caps.colorLevel)
+    if (code) codes.push(code)
   }
 
   // Attributes
@@ -2824,13 +2827,8 @@ function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string 
     style.underlineColor !== null &&
     style.underlineColor !== undefined
   ) {
-    if (typeof style.underlineColor === "number") {
-      codes.push(`58;5;${style.underlineColor}`)
-    } else {
-      codes.push(
-        `58;2;${style.underlineColor.r};${style.underlineColor.g};${style.underlineColor.b}`,
-      )
-    }
+    const code = underlineColorCode(style.underlineColor, ctx.caps.colorLevel)
+    if (code) codes.push(code)
   }
 
   if (codes.length === 0) return ""

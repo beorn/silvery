@@ -11,10 +11,8 @@
  *   2. Without a Theme (omitted), the hardcoded `DEFAULT_SELECTION_THEME` is
  *      used so callers without a Theme still get a visible highlight that
  *      avoids the inverse two-tone artifact on default-bg cells.
- *   3. With a hand-authored legacy Theme that only carries `selectionbg` (no
- *      `bg-selected`), the legacy fallback wins. This pins the 0.19.x
- *      transition window — Sterling Phase D will purge the legacy fallback,
- *      but until then existing apps must keep working.
+ *   3. A retired hand-authored `selectionbg` Theme fails with the canonical
+ *      `bg-selected` cure instead of entering a hidden fallback path.
  *   4. `composeSelectionCells` itself, when called with an explicit theme on
  *      default-fg/bg cells, produces direct fg/bg colors and `inverseAttr=false`
  *      — the SGR-7 toggle is gated on `theme?.selectionBg == null`.
@@ -155,30 +153,21 @@ describe("contract: selection theme tokens — fallback when theme omitted", () 
 })
 
 // ============================================================================
-// Contract 3 — Legacy `selectionbg` fallback
+// Contract 3 — Retired `selectionbg` refusal
 // ============================================================================
 
-describe("contract: selection theme tokens — legacy selectionbg fallback", () => {
-  test("contract: theme with only legacy selectionbg still resolves", () => {
-    // Synthetic legacy Theme — the 0.19.x transition window keeps this path
-    // alive for hand-authored themes that don't flow through
-    // inlineSterlingTokens. Phase D (sterling-purge-legacy-tokens) removes it.
+describe("contract: selection theme tokens — retired selectionbg refusal", () => {
+  test("contract: theme with only retired selectionbg names the canonical cure", () => {
     const legacyTheme = { selectionbg: "#ff0000" } as unknown as Theme
-    const resolved = resolveSelectionThemeFromTheme(legacyTheme)
-
-    expect(resolved.selectionBg).toEqual({ r: 255, g: 0, b: 0 })
-    // No fg-on-selected on a legacy theme — fg stays undefined so the
-    // composer preserves cell fg via `theme.selectionFg ?? cellFg`.
-    expect(resolved.selectionFg).toBeUndefined()
+    expect(() => resolveSelectionThemeFromTheme(legacyTheme)).toThrow('use "$bg-selected"')
   })
 
-  test("contract: bg-selected wins over selectionbg when both present", () => {
+  test("contract: retired selectionbg cannot hide behind bg-selected", () => {
     const dualTheme = {
       "bg-selected": "#00ff00",
       selectionbg: "#ff0000",
     } as unknown as Theme
-    const resolved = resolveSelectionThemeFromTheme(dualTheme)
-    expect(resolved.selectionBg).toEqual({ r: 0, g: 255, b: 0 })
+    expect(() => resolveSelectionThemeFromTheme(dualTheme)).toThrow('use "$bg-selected"')
   })
 
   test("contract: missing both → falls back to DEFAULT_SELECTION_THEME", () => {

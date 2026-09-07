@@ -51,7 +51,7 @@ export interface SelectListProps {
   /**
    * Selection indicator prefix shown on highlighted item (default: "").
    * When empty (default), the cursor row is communicated via full-row background
-   * color ($cursor-bg / $fg-cursor fg) — the omnibox-style UX.
+   * color ($bg-cursor / $fg-cursor fg) — the omnibox-style UX.
    * Pass "▸ " (or any string) to use an arrow/glyph indicator instead of row bg.
    * Non-highlighted items then get equal-width spaces for alignment.
    */

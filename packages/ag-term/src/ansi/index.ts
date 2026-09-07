@@ -200,7 +200,7 @@ export const BG_OVERRIDE_CODE = 9999
  * </Box>
  *
  * // Also works with term styling:
- * <Box backgroundColor="$surface-bg">
+ * <Box backgroundColor="$bg-surface-raised">
  *   <Text>{bgOverride(term.bgRgb(30, 30, 30)('highlighted'))}</Text>
  * </Box>
  * ```

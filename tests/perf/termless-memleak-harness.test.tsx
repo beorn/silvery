@@ -37,11 +37,11 @@ import type { Term } from "@silvery/ag-term"
 function LittleApp(): React.ReactElement {
   return (
     <Box flexDirection="column" padding={1} gap={1}>
-      <Text bold color="$primary">
+      <Text bold color="$fg-accent">
         Memory leak harness
       </Text>
       {Array.from({ length: 20 }, (_, i) => (
-        <Text key={i} color={i % 2 === 0 ? "$success" : "$muted"}>
+        <Text key={i} color={i % 2 === 0 ? "$fg-success" : "$fg-muted"}>
           Row {i.toString().padStart(3, "0")} — lorem ipsum dolor sit amet
         </Text>
       ))}

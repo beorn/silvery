@@ -65,7 +65,7 @@ import type { TerminalBuffer } from "../buffer"
 import { cellEquals, bufferToText } from "../buffer"
 import type { createFiberRoot, createContainer } from "@silvery/ag-react/reconciler"
 import type { TerminalSelectionState } from "@silvery/headless/selection"
-import type { Theme } from "@silvery/ansi"
+import { resolveThemeColor, type Theme } from "@silvery/ansi"
 import type { AgNode } from "@silvery/ag/types"
 
 type Scrollback = ReturnType<typeof createVirtualScrollback>
@@ -663,7 +663,7 @@ export interface SelectionPaintOptions {
   paintBuffer: Buffer
   /**
    * Active Theme — when provided, Sterling `bg-selected` / `fg-on-selected`
-   * (with legacy `selectionbg` fallback) drive the selection highlight color.
+   * drive the selection highlight color.
    * When omitted, the hardcoded `DEFAULT_SELECTION_THEME` desaturated blue-grey
    * is used so callers without a Theme still get a visible highlight that
    * sidesteps the SGR-7 two-tone artifact described on
@@ -716,28 +716,26 @@ const DEFAULT_SELECTION_THEME = { selectionBg: { r: 68, g: 78, b: 109 } } as con
  * Resolve a `SelectionTheme` from an optional Theme.
  *
  * Priority for the selection background:
- *   1. Sterling flat token `bg-selected` (Phase A — sterling-selection-tokens)
- *   2. Legacy `selectionbg` (retained for hand-authored Themes that don't flow
- *      through `inlineSterlingTokens`; purged in 0.20.0 by
- *      sterling-purge-legacy-tokens)
- *   3. Fall back to {@link DEFAULT_SELECTION_THEME} (the in-source desaturated
+ *   1. Sterling flat token `bg-selected`
+ *   2. Fall back to {@link DEFAULT_SELECTION_THEME} (the in-source desaturated
  *      blue-grey) so the highlight stays visible when no Theme is wired.
  *
- * Selection foreground: only `fg-on-selected` is honored. The legacy Theme has
- * no `selectionfg` field — leaving fg undefined preserves each cell's original
+ * Selection foreground: only `fg-on-selected` is honored. Leaving fg undefined
+ * preserves each cell's original
  * foreground (text stays legible regardless of selection bg) via
  * `theme.selectionFg ?? cellFg` in {@link composeSelectionCells}.
  *
- * Tracking: km-silvery.selection-theme-tokens
  */
 export function resolveSelectionThemeFromTheme(theme: Theme | undefined): SelectionTheme {
   if (!theme) return DEFAULT_SELECTION_THEME
-  // Sterling flat tokens live alongside legacy fields on the Theme record.
-  // Use a widened view so kebab keys (`bg-selected`, `fg-on-selected`) are
-  // indexable without the type system complaining about missing properties on
-  // pre-Sterling Themes.
+  // Use a widened view for the canonical hyphen keys. A raw retired field is
+  // an invalid Theme shape, so route it through the shared refusal instead of
+  // silently letting it influence selection paint.
   const themeAny = theme as unknown as Record<string, string | undefined>
-  const bgHex = themeAny["bg-selected"] ?? themeAny["selectionbg"]
+  if (themeAny["selectionbg"] !== undefined) {
+    resolveThemeColor("$selectionbg", theme)
+  }
+  const bgHex = themeAny["bg-selected"]
   const fgHex = themeAny["fg-on-selected"]
   const bg = bgHex ? hexToRgb(bgHex) : null
   if (!bg) return DEFAULT_SELECTION_THEME

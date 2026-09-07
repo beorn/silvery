@@ -339,9 +339,9 @@ function LevelToggles({
         const active = levels[level]
         return (
           <Box key={level} gap={0}>
-            <Text color="$muted">{i + 1}:</Text>
+            <Text color="$fg-muted">{i + 1}:</Text>
             <Text
-              color={active ? LEVEL_COLORS[level] : "$muted"}
+              color={active ? LEVEL_COLORS[level] : "$fg-muted"}
               bold={active}
               strikethrough={!active}
             >

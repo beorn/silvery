@@ -35,7 +35,7 @@ import { Box, Text, ModalDialog, ThemeProvider } from "@silvery/ag-react"
 import { deriveTheme } from "@silvery/ansi"
 import { catppuccinMocha } from "@silvery/theme/schemes"
 
-const darkTheme = deriveTheme(catppuccinMocha, "truecolor")
+const darkTheme = deriveTheme(catppuccinMocha)
 
 // Kitty APC protocol markers we assert on:
 //   \x1b_G...\x1b\\  — generic APC graphics command envelope

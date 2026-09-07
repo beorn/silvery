@@ -64,10 +64,8 @@ export {
   getThemeByName,
 } from "./schemes/index"
 
-// Terminal detection — Sterling-aware wrappers around `@silvery/ansi`'s
-// detection layer. All four entry points run their result through
-// `inlineSterlingTokens` so `$border-default` etc. always resolve, and
-// re-export the underlying types unchanged.
+// Terminal detection — direct canonical re-exports from `@silvery/ansi`.
+// Its factory returns Sterling flat tokens such as `$border-default`.
 //
 // - `probeColors` — OSC 4/10/11 probe → 22-slot ColorScheme (canonical name)
 // - `detectTerminalScheme` — legacy alias for `probeColors`

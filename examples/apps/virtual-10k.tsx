@@ -176,7 +176,7 @@ function ProgressBar({ percent, width: barWidth }: { percent: number; width: num
   return (
     <Text>
       <Text color="$fg-success">{"█".repeat(filled)}</Text>
-      <Text color="$muted">{"░".repeat(empty)}</Text>
+      <Text color="$fg-muted">{"░".repeat(empty)}</Text>
     </Text>
   )
 }
@@ -200,7 +200,7 @@ function ItemRow({
     >
       <Box>
         <Text color={STATUS_COLORS[item.status]}>{STATUS_ICONS[item.status]}</Text>
-        <Text color="$muted"> {idStr} </Text>
+        <Text color="$fg-muted"> {idStr} </Text>
         <Text bold color={PRIORITY_COLORS[item.priority]}>
           {item.priority}
         </Text>
@@ -216,10 +216,10 @@ function ItemRow({
       </Box>
       {showDetail && (
         <Box paddingLeft={8}>
-          <Text color="$muted">{item.description}</Text>
+          <Text color="$fg-muted">{item.description}</Text>
           <Text> </Text>
           <ProgressBar percent={item.progress} width={10} />
-          <Text color="$muted"> {item.progress}%</Text>
+          <Text color="$fg-muted"> {item.progress}%</Text>
         </Box>
       )}
     </Box>
@@ -245,11 +245,11 @@ function ScrollIndicator({
   return (
     <Box gap={2} paddingX={1}>
       <Strong color="$fg-accent">{(current + 1).toLocaleString()}</Strong>
-      <Text color="$muted">of</Text>
+      <Text color="$fg-muted">of</Text>
       <Strong>{total.toLocaleString()}</Strong>
       <Text>
         <Text color="$fg-accent">{"█".repeat(filled)}</Text>
-        <Text color="$muted">{"░".repeat(empty)}</Text>
+        <Text color="$fg-muted">{"░".repeat(empty)}</Text>
       </Text>
       <Strong color="$fg-accent">{percent}%</Strong>
     </Box>
@@ -284,8 +284,8 @@ function StatsBar({ items }: { items: Item[] }) {
       <Strong color="$fg-error">P0:{stats.p0}</Strong>
       <Strong color="$fg-warning">P1:{stats.p1}</Strong>
       <Text color="$fg-info">P2:{stats.p2}</Text>
-      <Text color="$muted">P3:{stats.p3}</Text>
-      <Text color="$muted">|</Text>
+      <Text color="$fg-muted">P3:{stats.p3}</Text>
+      <Text color="$fg-muted">|</Text>
       <Text color="$fg-muted">
         {STATUS_ICONS.todo} {stats.todo}
       </Text>

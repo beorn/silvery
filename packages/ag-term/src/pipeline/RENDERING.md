@@ -120,6 +120,8 @@ Invariants: (1) contentAreaAffected ∧ bgRefillNeeded → ⊥, (2) contentRegio
 
 Diff the current buffer against the previous buffer and emit minimal ANSI escape sequences.
 
+**This phase owns color-tier serialization.** Cells hold canonical hex at every tier except `"mono"` (where the render phase already stripped `$token` colors to `null` and injected attrs), so `ctx.caps.colorLevel` is applied here and nowhere else: `foregroundCode` / `backgroundCode` / `underlineColorCode` from `buffer.ts` pick truecolor `38;2;R;G;B`, 256-color `38;5;N`, or 4-bit `30–37`/`90–97`. Never call `fgColorCode` / `bgColorCode` directly on a render path — they are the truecolor-only leaves. Because the tier is applied *below* the buffer, STRICT buffer comparison cannot detect a wrong tier; only `STRICT_TERMINAL` can. See [CLAUDE.md](CLAUDE.md#the-output-phase-owns-tier-serialization--the-render-phase-never-quantizes).
+
 **First render** (prev === null):
 
 - `bufferToAnsi(next)` — full sequential render:

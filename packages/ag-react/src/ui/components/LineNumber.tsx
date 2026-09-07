@@ -47,7 +47,7 @@ export function LineNumber({ n, width, highlight, ...rest }: LineNumberProps): R
   const padded = text.padStart(w, " ")
   return (
     <Box {...rest}>
-      <Text color={highlight ? "$primary" : "$muted"}>{padded}</Text>
+      <Text color={highlight ? "$fg-accent" : "$fg-muted"}>{padded}</Text>
     </Box>
   )
 }

@@ -80,7 +80,7 @@ function HistoryDialogShape(): React.ReactElement {
           onSelect={() => {}}
           isActive
         />
-        <Text color="$muted">Enter = open · Esc = close</Text>
+        <Text color="$fg-muted">Enter = open · Esc = close</Text>
       </Box>
     </ModalDialog>
   )

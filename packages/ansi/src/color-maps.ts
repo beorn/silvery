@@ -306,8 +306,7 @@ function isHexLeaf(value: unknown): value is string {
  * pass through unchanged. Arrays and nested objects are rebuilt with
  * quantized leaves.
  *
- * Works on both the legacy ANSI Theme (flat hex tokens + `palette` array)
- * and the Sterling Theme (nested roles + flat tokens) — the structural rule
+ * Works on the canonical Sterling Theme (nested roles + flat tokens) — the structural rule
  * "any leaf that looks like a hex is a color value" holds for both.
  *
  * @example Pre-cache tier variants

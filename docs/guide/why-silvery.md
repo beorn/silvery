@@ -71,7 +71,7 @@ Silvery ships 45+ components organized across several categories:
 
 **Interaction:** Mouse events, spatial focus navigation (`focusScope` on Box), command system with keybindings, input layer stack
 
-**Theming:** 84 color schemes with semantic color tokens (`$primary`, `$success`, `$muted`, `$danger`), auto-detection of terminal background color, WCAG-aware contrast. See the [theme explorer](/themes) to preview all palettes.
+**Theming:** 84 color schemes with semantic color tokens (`$fg-accent`, `$fg-success`, `$fg-muted`, `$fg-error`), auto-detection of terminal background color, WCAG-aware contrast. See the [theme explorer](/themes) to preview all palettes.
 
 ## Terminal Protocol Coverage
 

@@ -7,8 +7,8 @@
  * `hub/silvery/design/v10-terminal/design-system.md` §"Flat — the
  * user-facing form".
  *
- * Every shipped Theme has Sterling flat keys baked on at construction
- * (via `inlineSterlingTokens` in `./schemes/index.ts`) so this walk
+ * Every shipped Theme has Sterling flat keys baked by the canonical factory,
+ * so this walk
  * produces a complete export without needing a separate derivation pass.
  */
 

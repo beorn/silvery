@@ -64,7 +64,7 @@ Use `"inherit"` to skip color override and inherit from the parent:
 {
   /* Useful for Link inside colored containers */
 }
-;<Text color="$selection">
+;<Text backgroundColor="$bg-selected" color="$fg-on-selected">
   <Link href="..." color="inherit">
     Inherits selection color
   </Link>

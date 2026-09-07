@@ -50,7 +50,7 @@ vp @silvery/examples components
 Silvery components compose like regular React. A SelectList inside a Box with borders, inside a flex column with a header — no special wiring needed:
 
 ```tsx
-<Box flexDirection="column" borderStyle="single" borderColor="$primary">
+<Box flexDirection="column" borderStyle="single" borderColor="$border-focus">
   <Text bold> Choose a framework </Text>
   <SelectList
     items={[
@@ -69,11 +69,11 @@ Silvery components compose like regular React. A SelectList inside a Box with bo
 Use `$token` colors instead of hardcoded values. The theme adapts to the user's terminal palette:
 
 ```tsx
-<Text color="$primary">Active</Text>
-<Text color="$success">Completed</Text>
-<Text color="$warning">Pending</Text>
-<Text color="$error">Failed</Text>
-<Text color="$muted">Secondary info</Text>
+<Text color="$fg-accent">Active</Text>
+<Text color="$fg-success">Completed</Text>
+<Text color="$fg-warning">Pending</Text>
+<Text color="$fg-error">Failed</Text>
+<Text color="$fg-muted">Secondary info</Text>
 ```
 
 ### Progress Feedback
@@ -83,10 +83,10 @@ ProgressBar sizes itself via flex — no manual width calculations:
 ```tsx
 <Box flexDirection="row">
   <Box flexGrow={value}>
-    <Text color="$success">{"█".repeat(50)}</Text>
+    <Text color="$fg-success">{"█".repeat(50)}</Text>
   </Box>
   <Box flexGrow={100 - value}>
-    <Text color="$muted">{"░".repeat(50)}</Text>
+    <Text color="$fg-muted">{"░".repeat(50)}</Text>
   </Box>
 </Box>
 ```

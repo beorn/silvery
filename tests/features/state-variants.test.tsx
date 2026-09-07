@@ -20,7 +20,7 @@ function getL(hex: string): number {
 }
 
 describe("dark theme Sterling state variants — OKLCH L shift", () => {
-  const theme = deriveTheme(catppuccinMocha, "truecolor")
+  const theme = deriveTheme(catppuccinMocha)
 
   test("accent state tokens are present and distinct", () => {
     expect(theme["fg-accent-hover"]).toMatch(/^#[0-9A-F]{6}$/i)
@@ -46,7 +46,7 @@ describe("dark theme Sterling state variants — OKLCH L shift", () => {
 })
 
 describe("light theme Sterling state variants — OKLCH L shift", () => {
-  const theme = deriveTheme(catppuccinLatte, "truecolor")
+  const theme = deriveTheme(catppuccinLatte)
 
   test("accent state lightness moves monotonically away from the base", () => {
     const baseL = getL(theme["fg-accent"])
@@ -63,7 +63,7 @@ describe("light theme Sterling state variants — OKLCH L shift", () => {
 })
 
 describe("dark theme Sterling state variants — oneDark", () => {
-  const theme = deriveTheme(oneDark, "truecolor")
+  const theme = deriveTheme(oneDark)
 
   test("accent state tokens are distinct", () => {
     expect(theme["fg-accent-hover"]).not.toBe(theme["fg-accent"])
@@ -75,7 +75,7 @@ const render = createRenderer({ cols: 40, rows: 5 })
 
 describe("Sterling state tokens resolve in JSX", () => {
   test("<Text color='$fg-accent-hover'> renders with theme['fg-accent-hover'] RGB", () => {
-    const theme = deriveTheme(catppuccinMocha, "truecolor")
+    const theme = deriveTheme(catppuccinMocha)
     const app = render(
       <Box theme={theme} width={10} height={1}>
         <Text color="$fg-accent-hover">X</Text>
@@ -103,7 +103,7 @@ describe("Sterling state tokens resolve in JSX", () => {
   test("token override sticks to theme['fg-accent-hover']", () => {
     const overrideColor = "#abcdef"
     const mergedTheme = {
-      ...deriveTheme(catppuccinMocha, "truecolor"),
+      ...deriveTheme(catppuccinMocha),
       "fg-accent-hover": overrideColor,
     }
     const expected = hexToRgbTest(overrideColor)

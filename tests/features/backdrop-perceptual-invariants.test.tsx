@@ -30,7 +30,7 @@ import { Backdrop, Box, Text, ThemeProvider } from "@silvery/ag-react"
 import { deriveTheme } from "@silvery/ansi"
 import { catppuccinMocha } from "@silvery/theme/schemes"
 
-const darkTheme = deriveTheme(catppuccinMocha, "truecolor")
+const darkTheme = deriveTheme(catppuccinMocha)
 
 // Test panel: realistic theme colors spanning hue + chroma range.
 // Each entry is (name, hex) for diagnostic output on failure.

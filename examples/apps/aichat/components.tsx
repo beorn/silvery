@@ -48,8 +48,8 @@ function splitTitleBody(content: string): { title: string; body: string } {
 
 /** Render a line with auto-linked URLs. */
 function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; color?: string }) {
-  // If `dim` is requested and no explicit color given, fall back to $muted token.
-  const effectiveColor = color ?? (dim ? "$muted" : undefined)
+  // If `dim` is requested and no explicit color given, fall back to $fg-muted token.
+  const effectiveColor = color ?? (dim ? "$fg-muted" : undefined)
   const parts: JSX.Element[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -86,12 +86,13 @@ function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; colo
 
 /** Thinking block — shows thinking text preview in the body. */
 function ThinkingBlock({ text, done }: { text: string; done: boolean }) {
-  if (done)
+  if (done) {
     return (
       <Text color="$fg-muted" italic>
         {"▸ thought"}
       </Text>
     )
+  }
   return (
     <Text color="$fg-muted" wrap="truncate" italic>
       {text}
@@ -127,8 +128,9 @@ function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "ru
       {phase === "done" && (
         <Box flexDirection="column" paddingLeft={2}>
           {call.output.map((line, i) => {
-            if (line.startsWith("+"))
+            if (line.startsWith("+")) {
               return <LinkifiedLine key={i} text={line} color="$fg-success" />
+            }
             if (line.startsWith("-")) return <LinkifiedLine key={i} text={line} color="$fg-error" />
             return <LinkifiedLine key={i} text={line} />
           })}
@@ -211,7 +213,7 @@ export function ExchangeItem({
 
   if (isUser) {
     return (
-      <Box paddingX={1} flexDirection="row" backgroundColor="$surface-bg">
+      <Box paddingX={1} flexDirection="row" backgroundColor="$bg-surface-raised">
         <Text bold color="$focusring">
           {"❯"}{" "}
         </Text>
@@ -231,10 +233,12 @@ export function ExchangeItem({
 
   // Metadata: token count + thought indicator
   const metaParts: string[] = []
-  if (exchange.tokens && phase === "done")
+  if (exchange.tokens && phase === "done") {
     metaParts.push(`${formatTokens(exchange.tokens.output)} tokens`)
-  if (exchange.thinking && (phase === "done" || phase === "streaming"))
+  }
+  if (exchange.thinking && (phase === "done" || phase === "streaming")) {
     metaParts.push("thought for 1s")
+  }
   const metaStr = metaParts.length > 0 ? ` (${metaParts.join(" · ")})` : ""
 
   // Split content into title (first sentence) and body (rest)
@@ -246,7 +250,7 @@ export function ExchangeItem({
   return (
     <Box flexDirection="column">
       <Text>
-        <Text bold color={hasOperations && !pulse && phase !== "done" ? "$muted" : bulletColor}>
+        <Text bold color={hasOperations && !pulse && phase !== "done" ? "$fg-muted" : bulletColor}>
           {"●"}
         </Text>
         {phase === "thinking" ? (
@@ -453,8 +457,9 @@ export function DemoFooter({
       inputText ||
       autoTypingText ||
       !terminalFocused
-    )
+    ) {
       return
+    }
     autoSubmitRef.current = setTimeout(() => onSubmit(effectiveMessage), AUTO_SUBMIT_DELAY)
     return () => {
       if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current)
@@ -470,7 +475,7 @@ export function DemoFooter({
         flexDirection="row"
         width="100%"
         borderStyle="round"
-        borderColor={!done && terminalFocused ? "$border-focus" : "$inputborder"}
+        borderColor={!done && terminalFocused ? "$border-focus" : "$border-default"}
         paddingX={1}
       >
         <Text bold color="$focusring">

@@ -52,7 +52,7 @@ Because width is known during render, this works on the first paint — no prop 
 
 **Pure TypeScript.** The entire stack, including the layout engine, is TypeScript with no native dependencies. No WASM heap to manage, no platform-specific binaries, no C++ build step.
 
-**[The Silvery Way](/guide/the-silvery-way).** Ten design principles for building terminal apps with Silvery. The short version: use the high-level components (SelectList, TextInput, VirtualList), use semantic theme tokens (`$primary`, `$muted`), and let the framework handle focus management, key bindings, and scrolling.
+**[The Silvery Way](/guide/the-silvery-way).** Ten design principles for building terminal apps with Silvery. The short version: use the high-level components (SelectList, TextInput, VirtualList), use semantic theme tokens (`$fg-accent`, `$fg-muted`), and let the framework handle focus management, key bindings, and scrolling.
 
 ## Ecosystem
 
@@ -66,7 +66,7 @@ All MIT-licensed, all part of the same development effort.
 | `@silvery/ink` / `@silvery/chalk` | Ink compatibility — 99% of Ink 7.0 tests, 100% of Chalk tests         |
 | `@silvery/test`                   | Playwright-style testing — locators, `press()`, buffer assertions     |
 | `@silvery/create`                 | Composable app builder — `pipe()` providers _(coming soon)_           |
-| `@silvery/theme`                  | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect |
+| `@silvery/theme`                  | 84 color schemes, semantic tokens (`$fg-accent`, `$fg-muted`), auto-detect |
 | `@silvery/commander`              | **Beautiful CLIs for free** — help renders through Silvery itself     |
 | `@silvery/headless`               | Pure state machines — portable, embeddable, no React                  |
 | `@silvery/ansi`                   | Terminal primitives — styling, SGR, truecolor, detection              |

@@ -85,7 +85,7 @@ function Card({
         {card.title}
       </Text>
       {card.body.map((line, i) => (
-        <Text key={i} color="$muted">
+        <Text key={i} color="$fg-muted">
           {line}
         </Text>
       ))}
@@ -114,7 +114,7 @@ function Column({
 }) {
   return (
     <Box flexDirection="column" width={width} flexShrink={0} paddingX={1}>
-      <Text bold color="$primary">
+      <Text bold color="$fg-accent">
         {col.title}
       </Text>
       <Box height={1} flexShrink={0} />
@@ -296,8 +296,8 @@ describe("outline + bg combo: kanban-shaped layout (regression — light-blue st
                   <Text bold color="$bg-accent">
                     Editing card
                   </Text>
-                  <Text color="$muted">line 1</Text>
-                  <Text color="$muted">line 2</Text>
+                  <Text color="$fg-muted">line 1</Text>
+                  <Text color="$fg-muted">line 2</Text>
                 </Box>
               </Box>
             ) : (
@@ -308,8 +308,8 @@ describe("outline + bg combo: kanban-shaped layout (regression — light-blue st
                 flexDirection="column"
               >
                 <Text bold>Idle card</Text>
-                <Text color="$muted">line 1</Text>
-                <Text color="$muted">line 2</Text>
+                <Text color="$fg-muted">line 1</Text>
+                <Text color="$fg-muted">line 2</Text>
               </Box>
             )}
             <Box height={1} />

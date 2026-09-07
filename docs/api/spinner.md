@@ -40,7 +40,7 @@ All [`Text` props](./text) are supported (color, bold, dim, etc.) in addition to
 ### With Label
 
 ```tsx
-<Spinner label="Fetching data..." color="$primary" />
+<Spinner label="Fetching data..." color="$fg-accent" />
 ```
 
 Output: `⠋ Fetching data...` (animated)
@@ -48,7 +48,7 @@ Output: `⠋ Fetching data...` (animated)
 ### Styled Spinner
 
 ```tsx
-<Spinner type="arc" color="$success" bold />
+<Spinner type="arc" color="$fg-success" bold />
 ```
 
 ### Loading State

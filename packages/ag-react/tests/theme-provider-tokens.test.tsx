@@ -45,8 +45,11 @@ describe("ThemeProvider — v2 tokens API", () => {
     )
     const c = captured as Record<string, string>
     expect(c["fg-accent"]).toBe("#FF00FF") // overridden
+    expect((c.accent as unknown as { fg: string }).fg).toBe("#FF00FF")
+    expect(Object.isFrozen(c)).toBe(true)
     expect(c.fg).toBe(defaultThemeRecord.fg) // inherited from parent
     expect(c.bg).toBe(defaultThemeRecord.bg) // inherited from parent
+    expect((defaultTheme.accent as { fg: string }).fg).toBe(defaultThemeRecord["fg-accent"])
   })
 
   it("tokens prop — custom tokens live alongside standard", () => {
@@ -88,21 +91,31 @@ describe("ThemeProvider — v2 tokens API", () => {
     ).toThrow(/pass either .tokens. or .theme., not both/)
   })
 
-  it("tokens merge with Primer-style names (v1 resolver aliases)", () => {
-    // Passing new Primer-style names in `tokens` — the resolver's alias
-    // map handles $fg-muted → muted at $token resolution time. Parent
-    // provides the base keys; child overrides via new names get merged
-    // into the same bag (aliases resolve at read time, not write time).
+  it("tokens reject a retired raw role instead of emitting it", () => {
+    const render = createRenderer({ cols: 20, rows: 2 })
+    expect(() =>
+      render(
+        <ThemeProvider theme={defaultTheme}>
+          <ThemeProvider tokens={{ muted: "#888888" } as never}>
+            <Capture onTheme={() => {}} />
+          </ThemeProvider>
+        </ThemeProvider>,
+      ),
+    ).toThrow('use "$fg-muted"')
+  })
+
+  it("tokens merge canonical flat names without emitting a raw role", () => {
     let captured: unknown
     const render = createRenderer({ cols: 20, rows: 2 })
     render(
       <ThemeProvider theme={defaultTheme}>
-        <ThemeProvider tokens={{ muted: "#888888" } as never}>
+        <ThemeProvider tokens={{ "fg-muted": "#888888" } as never}>
           <Capture onTheme={(t) => (captured = t)} />
         </ThemeProvider>
       </ThemeProvider>,
     )
     const c = captured as Record<string, string>
-    expect(c.muted).toBe("#888888")
+    expect(c["fg-muted"]).toBe("#888888")
+    expect((c.muted as unknown as { fg: string }).fg).toBe("#888888")
   })
 })

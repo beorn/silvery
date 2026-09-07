@@ -10,7 +10,7 @@ description: Every token category silvery ships — when to use each, how they r
 Silvery ships six distinct token categories. Each has a _different contract_ — picking the right one makes your UI adapt correctly across 84 schemes, four tiers, and every user's terminal. Picking the wrong one produces hardcoded-looking apps that don't respect user themes.
 
 ::: info Sterling tokens
-Silvery 0.20.0 ships [Sterling](/reference/sterling) as THE Theme. The `$fg-accent` / `$fg-muted` / `$bg-selected` tokens used below are Sterling's flat hyphen-keys. Migrating from pre-0.20.0? Legacy `$tokens` keep resolving through 0.20.x — see the [migration map](/reference/sterling#token-migration-map).
+Silvery ships [Sterling](/reference/sterling) as THE Theme. The `$fg-accent` / `$fg-muted` / `$bg-selected` tokens used below are Sterling's flat hyphen-keys. Retired pre-Sterling `$tokens` are rejected with a cure; see the [migration map](/reference/sterling#token-migration-map) when updating old code.
 :::
 
 The decision tree, memorized:
@@ -120,7 +120,7 @@ Plus `bg-X-hover` and `bg-X-active` for interactive surfaces. Note that text on 
 | `$fg-on-inverse`       | Base text on `$bg-inverse` (status bars, modal chrome) |
 | `$fg-on-inverse-muted` | Deemphasized metadata; ≥3:1 on base and hover chrome   |
 
-Sterling collapses pre-0.20 `$muted` / `$secondary` / `$disabledfg` / `$faint` onto a single role: `$fg-muted`. The `<Small>` typography preset emits a pre-dimmed variant for fine print.
+`$fg-muted` is the one guarded role for captions, hints, disabled text, and fine print. The `<Small>` typography preset emits a pre-dimmed variant for fine print.
 
 ### Surface stack
 
@@ -251,7 +251,7 @@ What color are you choosing for?
 - **`$fg-accent` for app brand** — `$fg-accent` is the _scheme's_ canonical interactive color. For _app brand_, use `$brand`.
 - **Hardcoded hex for a tinted surface** — use `$bg-surface-subtle` / `$bg-surface-overlay` or `mix($bg, $token, N%)`.
 - **`dim` or `dimColor` anywhere** — `dim` is a rendering detail. Use `$fg-muted` or `<Small>` instead. (See the [Styling Guide](/guide/styling) for the full deprecation rationale.)
-- **Legacy `$tokens` after migrating** — `$primary`, `$muted`, `$selectionbg`, etc. resolve through 0.20.x but go away in 0.21.0. Migrate now via the [Sterling migration map](/reference/sterling#token-migration-map).
+- **Retired pre-Sterling tokens** — they are rejected with a canonical cure. Use the [Sterling migration map](/reference/sterling#token-migration-map) when updating old code.
 
 ## Defining your own tokens
 

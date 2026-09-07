@@ -12,9 +12,9 @@
  * ```
  *
  * Implementation: cycles `useAnimation` from 0→1→0 every `period` ms.
- * Renders text at `$primary` when t > 0.5, `$muted` otherwise (binary
+ * Renders text at `$fg-accent` when t > 0.5, `$fg-muted` otherwise (binary
  * pulse — terminals don't blend mid-frame). When `active=false` the
- * shimmer stops and text shows at `$primary`.
+ * shimmer stops and text shows at `$fg-accent`.
  */
 import React, { useEffect, useState } from "react"
 import { Text } from "../../components/Text"
@@ -32,7 +32,7 @@ export interface TextShimmerProps extends Omit<TextProps, "color" | "children"> 
   active?: boolean
   /** Pulse period in ms. Default 1200 (slow, non-distracting). */
   period?: number
-  /** Theme tokens for the pulse. Defaults to `$primary` and `$muted`. */
+  /** Theme tokens for the pulse. Defaults to `$fg-accent` and `$fg-muted`. */
   highColor?: string
   lowColor?: string
 }
@@ -45,8 +45,8 @@ export function TextShimmer({
   children,
   active = true,
   period = 1200,
-  highColor = "$primary",
-  lowColor = "$muted",
+  highColor = "$fg-accent",
+  lowColor = "$fg-muted",
   ...rest
 }: TextShimmerProps): React.ReactElement {
   // Tick state — flips every `period/2` to oscillate between high and low.

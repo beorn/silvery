@@ -66,7 +66,7 @@ function SessionLike({ messages, focused }: { messages: string[]; focused: boole
         overflow="hidden"
       >
         {focused ? (
-          <Text id="gutter-text" color="$accent" wrap="wrap">
+          <Text id="gutter-text" color="$fg-accent" wrap="wrap">
             {"▎".repeat(200)}
           </Text>
         ) : null}
@@ -133,7 +133,7 @@ function CommandLike({ queue, command }: { queue: string; command: string }) {
         </>
       )}
       <Box flexDirection="row">
-        <Text color="$primary" bold>
+        <Text color="$fg-accent" bold>
           {"> "}
         </Text>
         <Box flexGrow={1}>

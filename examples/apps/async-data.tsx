@@ -121,7 +121,7 @@ function RecentActivity() {
       <H1 color="$fg-warning">Recent Activity</H1>
       {activities.map((a) => (
         <Text key={a.id}>
-          <Text color="$muted">{a.time}</Text> {a.action}
+          <Text color="$fg-muted">{a.time}</Text> {a.action}
         </Text>
       ))}
     </Box>

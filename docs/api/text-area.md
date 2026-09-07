@@ -64,8 +64,8 @@ In content mode the widget expands as the user types, capped at `maxRows`. Beyon
 | `disabled`         | `boolean`                                 | —                | Ignore input and dim text                                                  |
 | `maxLength`        | `number`                                  | —                | Maximum characters allowed                                                 |
 | `borderStyle`      | `string`                                  | —                | Border style (e.g., `"round"`, `"single"`)                                 |
-| `borderColor`      | `string`                                  | `"$border"`      | Border color when unfocused                                                |
-| `focusBorderColor` | `string`                                  | `"$focusborder"` | Border color when focused                                                  |
+| `borderColor`      | `string`                                  | `"$border-default"` | Border color when unfocused                                             |
+| `focusBorderColor` | `string`                                  | `"$border-focus"`   | Border color when focused                                               |
 | `testID`           | `string`                                  | —                | Test ID for focus system identification                                    |
 | `wrap`             | `"soft" \| "off"`                         | `"soft"`         | Soft-wrap long logical lines (default) or keep them on a single visual row |
 | `color`            | `string`                                  | —                | Foreground color for body text (e.g., `"$fg-muted"`)                       |

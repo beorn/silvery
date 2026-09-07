@@ -131,7 +131,7 @@ function BoardWithViewport({
         <Viewport cols={cols} rows={rows} source={source} ref={viewportRef} />
       </Box>
       <Box>
-        <Text color="$muted">footer</Text>
+        <Text color="$fg-muted">footer</Text>
       </Box>
     </Box>
   )

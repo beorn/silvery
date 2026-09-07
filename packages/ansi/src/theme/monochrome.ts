@@ -17,6 +17,7 @@
  */
 
 import type { Theme } from "./types.ts"
+import { resolveThemeColor } from "../style/style.ts"
 
 /** SGR attrs recognized by the monochrome theme system. Universally-supported subset. */
 export type MonoAttr = "bold" | "dim" | "italic" | "underline" | "inverse" | "strikethrough"
@@ -27,10 +28,9 @@ export type MonoAttr = "bold" | "dim" | "italic" | "underline" | "inverse" | "st
  * Keyed by Theme token name. Tokens not in this map have no attrs (default
  * rendering). Callers apply these attrs at paint time when color tier is none.
  *
- * The key space is legacy `keyof Theme` UNION the Sterling flat token strings
- * (`"fg-muted"`, `"border-focus"`, `"bg-surface-default"`, …). Both are
- * first-class entries so `$fg-muted` in a `<Text color=…>` resolves via a
- * single direct lookup — no alias table required.
+ * The key space is canonical Sterling flat tokens plus the root `fg` / `bg`
+ * pair. Each is a direct lookup; retired spellings never receive a mono-mode
+ * fallback.
  */
 export type MonochromeAttrs = Partial<Record<keyof Theme | string, readonly MonoAttr[]>>
 
@@ -43,56 +43,15 @@ export type MonochromeAttrs = Partial<Record<keyof Theme | string, readonly Mono
  * warning is bold to stand out but not as aggressively; info is italic to
  * indicate auxiliary information.
  *
- * Structural surfaces (bg/mutedbg/surfacebg/popoverbg) have no attrs — they
+ * Structural surfaces (`bg`, `bg-muted`, `bg-surface-*`) have no attrs — they
  * represent background planes that monochrome terminals can't vary anyway.
  */
 export const DEFAULT_MONO_ATTRS: MonochromeAttrs = {
-  // Structural — no attrs (background planes, container chrome)
-  bg: [],
-  mutedbg: [],
-  surfacebg: [],
-  popoverbg: [],
-  border: [],
-  cursorbg: [],
-
-  // Text hierarchy
+  // Root text hierarchy
   fg: [], // default body text — no attrs
-  muted: ["dim"], // secondary info
-  disabledfg: ["dim"], // clearly inactive
-  surface: [],
-  popover: [],
+  bg: [], // default canvas — no attrs
 
-  // Brand / accent emphasis
-  primary: ["bold"], // brand emphasis
-  secondary: ["bold"], // secondary emphasis
-  accent: ["italic", "bold"], // complement — italic+bold for distinct rank below primary
-
-  // States — distinguishable combinations
-  error: ["bold", "inverse"], // danger: loudest
-  warning: ["bold"], // caution
-  success: ["bold"], // positive confirmation
-  info: ["italic"], // auxiliary info
-
-  // On-fill text (contrast against accent/state bg)
-  primaryfg: [],
-  secondaryfg: [],
-  accentfg: [],
-  errorfg: ["inverse"],
-  warningfg: [],
-  successfg: [],
-  infofg: [],
-
-  // Interactive chrome
-  focusborder: ["bold"],
-  inputborder: [],
-
-  // Cursor
-  cursor: [],
-
-  // Sterling flat tokens — paired with their legacy-attr equivalents so that
-  // `$fg-muted`, `$border-focus`, `$bg-selected`, etc. resolve to the same
-  // mono attrs as their legacy counterparts without an alias table. Extending
-  // the map keeps the resolution path a single direct lookup.
+  // Canonical flat tokens resolve through one direct lookup.
   "fg-muted": ["dim"],
   "bg-muted": [],
   "fg-accent": ["italic", "bold"],
@@ -172,18 +131,12 @@ export function monoAttrsFor(theme: Theme, token: keyof Theme): readonly MonoAtt
  * Resolve mono-attrs from a color *string* — the high-level entry point
  * consumed by the render pipeline.
  *
- * Accepts strings like `"$primary"`, `"$fg-muted"`, `"$border-focus"`. Strips
- * the `$` prefix and looks the name up directly against `DEFAULT_MONO_ATTRS`,
- * which carries both legacy keys (`muted`, `surfacebg`, `focusborder`, …) AND
- * Sterling flat tokens (`fg-muted`, `bg-surface-default`, `border-focus`, …)
- * as first-class entries. Returns `undefined` for non-token strings (hex,
- * rgb(), named ANSI colors) — callers should treat this as "no attrs".
+ * Accepts canonical strings like `"$fg-accent"`, `"$fg-muted"`, and
+ * `"$border-focus"`. Retired names first pass through the shared resolver so
+ * they fail with its specific replacement rather than silently losing mono
+ * emphasis. Non-token strings (hex, rgb(), ANSI names) return `undefined`.
  *
- * A secondary no-hyphen fallback (`$surface-bg` → `surfacebg`) keeps the
- * legacy hyphenated-compound form working for callers that still emit that
- * shape.
- *
- * @param color    The color string (e.g. `"$primary"`, `"#ff0000"`, `"red"`)
+ * @param color    The color string (e.g. `"$fg-accent"`, `"#ff0000"`, `"red"`)
  * @param theme    Active theme (reserved for per-theme overrides)
  * @returns        Array of mono-attrs for the token, or `undefined` if not a
  *                 recognized token.
@@ -193,16 +146,12 @@ export function monoAttrsForColorString(
   theme: Theme,
 ): readonly MonoAttr[] | undefined {
   if (!color.startsWith("$")) return undefined
+  // Shared resolver is the single authority for loud legacy-token refusal.
+  resolveThemeColor(color, theme)
   const name = color.slice(1)
   const attrs = deriveMonochromeTheme(theme)
-  // Direct lookup — covers Sterling flat keys AND legacy names.
+  // Direct lookup — canonical keys only.
   const direct = attrs[name as keyof Theme]
   if (direct !== undefined) return direct
-  // No-hyphen fallback for compound legacy names (`$surface-bg` → `surfacebg`).
-  const noHyphen = name.replace(/-/g, "")
-  if (noHyphen !== name) {
-    const stripped = attrs[noHyphen as keyof Theme]
-    if (stripped !== undefined) return stripped
-  }
   return undefined
 }

@@ -210,7 +210,7 @@ export interface TextAreaProps {
   /**
    * Foreground color for body text (rendered Text rows).
    *
-   * Accepts any silvery theme token (e.g. `"$fg-muted"`, `"$primary"`) or
+   * Accepts any silvery theme token (e.g. `"$fg-muted"`, `"$fg-accent"`) or
    * raw color string. Cursor row, selection, and placeholder rendering are
    * unaffected — cursor block/underline still uses `inverse`/`underline`,
    * selection still uses `inverse`, and placeholder text stays at its own

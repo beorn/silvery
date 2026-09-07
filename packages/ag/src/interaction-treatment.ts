@@ -30,20 +30,20 @@ const fill = (color: string, backgroundColor: string, bold = false): Interaction
 export type ActionFillTone = "accent" | "info" | "warning"
 export type ActionFillResting = "transparent" | "quiet" | "inverse" | "filled" | "selected"
 const toneFills = {
-  accent: ["$fg-accent", "$primary", "$accent"],
-  info: ["$fg-info", "$fg-info", "$fg-info"],
-  warning: ["$warning", "$warning", "$warning"],
+  accent: ["$bg-accent", "$bg-accent"],
+  info: ["$bg-info", "$bg-info"],
+  warning: ["$bg-warning", "$bg-warning"],
 } as const
 
 export function actionFill(
   tone: ActionFillTone = "accent",
   resting: ActionFillResting = "transparent",
 ): InteractionSurfaceRecipe {
-  const [transparent, background, filled] = toneFills[tone]
-  const active = fill("$bg", transparent)
+  const [background, filled] = toneFills[tone]
+  const active = fill("$bg", background)
   switch (resting) {
     case "quiet":
-      return recipe({ idle: fill("$muted", "$mutedbg"), revealed: fill("$bg", "$primary") })
+      return recipe({ idle: fill("$fg-muted", "$bg-muted"), revealed: fill("$bg", "$bg-accent") })
     case "inverse":
       return recipe({
         idle: fill("$fg-on-inverse", "$bg-inverse"),
@@ -80,17 +80,17 @@ export const togglePillSurface = (
   })
 
 const hoverBg = bg("$bg-surface-hover")
-const primary = fg("$primary")
+const primary = fg("$fg-accent")
 export const interactionSurfaceRecipes = Object.freeze({
   surfaceHover: recipe({ revealed: hoverBg }),
   bare: recipe({}),
   neutralText: textPair(),
   accentText: textPair("$fg-muted", "$fg-accent"),
   accentReveal: recipe({ revealed: primary, selected: primary }),
-  accentSurface: recipe({ revealed: fill("$primary", "$bg-surface-hover") }),
+  accentSurface: recipe({ revealed: fill("$fg-accent", "$bg-surface-hover") }),
   mutedAccentSurface: recipe({
-    idle: fg("$muted"),
-    revealed: fill("$primary", "$bg-surface-hover"),
+    idle: fg("$fg-muted"),
+    revealed: fill("$fg-accent", "$bg-surface-hover"),
   }),
   inverseWash: recipe({ revealed: bg("$bg-inverse-hover") }),
   inverseText: textPair("$fg-on-inverse-muted", "$fg-on-inverse"),
@@ -106,9 +106,9 @@ export const interactionSurfaceRecipes = Object.freeze({
     selected: fill("$fg-accent", "$bg-selected", true),
   }),
   dragHandle: recipe({
-    idle: fill("$muted", "$muted"),
-    revealed: fill("$primary", "$primary"),
-    armed: fill("$primary", "$primary"),
+    idle: fill("$fg-muted", "$bg-muted"),
+    revealed: fill("$fg-accent", "$bg-accent"),
+    armed: fill("$fg-accent", "$bg-accent"),
   }),
   warningText: recipe({
     idle: fg("$fg"),

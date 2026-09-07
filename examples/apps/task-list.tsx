@@ -109,22 +109,22 @@ function TaskItem({
     <Box flexDirection="column">
       <Box>
         {isSelected ? (
-          <Text backgroundColor="$fg-accent" color="$primary-fg">
+          <Text backgroundColor="$fg-accent" color="$fg-on-accent">
             {" "}
             {checkbox} {task.title}{" "}
           </Text>
         ) : (
-          <Text strikethrough={task.completed} color={task.completed ? "$muted" : undefined}>
+          <Text strikethrough={task.completed} color={task.completed ? "$fg-muted" : undefined}>
             {checkbox} {task.title}
           </Text>
         )}{" "}
         <PriorityBadge priority={task.priority} />
-        {hasSubtasks && <Text color="$muted"> ({task.subtasks!.length} subtasks)</Text>}
+        {hasSubtasks && <Text color="$fg-muted"> ({task.subtasks!.length} subtasks)</Text>}
       </Box>
       {hasSubtasks && isExpanded && (
         <Box flexDirection="column" marginLeft={4}>
           {task.subtasks!.map((subtask, idx) => (
-            <Text key={idx} color="$muted">
+            <Text key={idx} color="$fg-muted">
               - {subtask}
             </Text>
           ))}

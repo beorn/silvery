@@ -43,7 +43,7 @@ afterEach(() => resetStrictCache())
  * renderGraphemes's rightEdge check, leaving bg-only cells (no character
  * content) past the visible boundary.
  *
- * Symptom in km: 14-cell horizontal strip of $mutedbg with empty content
+ * Symptom in km: 14-cell horizontal strip of $bg-muted with empty content
  * past the right edge of cards containing inline `~vault/@inbox/`.
  *
  * Bead: km-silvery.render-light-blue-bg-strip-residue

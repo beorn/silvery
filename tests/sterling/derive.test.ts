@@ -133,6 +133,16 @@ describe("sterling.deriveFromScheme — shape", () => {
     expect(theme.name).toBe("nord") // from ColorScheme.name
   })
 
+  test("root canvas pair agrees with the corresponding default flat tokens", () => {
+    const scheme = builtinPalettes["nord"]!
+    const theme = sterling.deriveFromScheme(scheme)
+
+    expect(theme.fg).toBe(scheme.foreground)
+    expect(theme.bg).toBe(scheme.background)
+    expect(theme["fg-default"]).toBe(theme.fg)
+    expect(theme["bg-default"]).toBe(theme.bg)
+  })
+
   test("shape metadata matches actual output", () => {
     const shape = sterling.shape
     expect(shape.flatTokens.length).toBe(STERLING_FLAT_TOKENS.length)
@@ -151,8 +161,9 @@ describe("sterling.deriveFromScheme — shape", () => {
     const theme = sterling.deriveFromScheme(builtinPalettes["nord"]!, { trace: true })
     expect(theme.derivationTrace).toBeDefined()
     expect(theme.derivationTrace!.length).toBeGreaterThan(20)
-    // First step should be accent.fg
-    expect(theme.derivationTrace![0]?.token).toBe("accent.fg")
+    // Root foreground is guarded before every semantic role consumes it.
+    expect(theme.derivationTrace![0]?.token).toBe("fg")
+    expect(theme.derivationTrace!.find((step) => step.token === "accent.fg")).toBeDefined()
     expect(theme.derivationTrace!.find((step) => step.token === "link.fg")?.rule).toBe(
       "blend(scheme.brightBlue, fg, 0.2)",
     )

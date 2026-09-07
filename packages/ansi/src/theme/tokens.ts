@@ -15,6 +15,7 @@
  */
 
 import type { HueName } from "./types.ts"
+import type { FlatToken } from "../sterling/types.ts"
 
 /** Standard Theme tokens (Primer-aligned + brand family).
  *
@@ -26,89 +27,17 @@ import type { HueName } from "./types.ts"
  * should migrate to the canonical Sterling forms: `$bg-surface-default`,
  * `$bg-surface-overlay`, `$fg-muted`, `$fg-on-accent`, `$border-default`.
  */
-export type StandardThemeToken =
-  // Root pair
-  | "$fg"
-  | "$bg"
-  // Surfaces — legacy roots (Sterling variants live as $bg-surface-default etc.)
-  | "$surface"
-  | "$popover"
-  // Muted + disabled
-  | "$muted"
-  | "$fg-muted"
-  | "$mutedbg"
-  | "$bg-muted"
-  | "$disabledfg"
-  // Cursor
-  | "$cursor"
-  | "$fg-cursor"
-  | "$cursorbg"
-  | "$bg-cursor"
-  // Accents + their fg
-  | "$primary"
-  | "$primaryfg"
-  | "$secondary"
-  | "$secondaryfg"
-  | "$accent"
-  | "$accentfg"
-  | "$fg-on-accent"
-  // Semantic states
-  | "$error"
-  | "$errorfg"
-  | "$fg-on-error"
-  | "$warning"
-  | "$warningfg"
-  | "$fg-on-warning"
-  | "$success"
-  | "$successfg"
-  | "$fg-on-success"
-  | "$info"
-  | "$infofg"
-  | "$fg-on-info"
-  // Borders
-  | "$border"
-  | "$inputborder"
-  | "$focusborder"
-  | "$border-focus"
-  | "$border-default"
-  // Sterling flat — surface/border/accent/inverse/selected/link variants baked in by every shipped Theme
-  | "$bg-surface-default"
-  | "$bg-surface-subtle"
-  | "$bg-surface-raised"
-  | "$bg-surface-overlay"
-  | "$fg-accent"
-  | "$bg-accent"
-  | "$border-accent"
-  | "$bg-inverse"
-  | "$fg-on-inverse"
-  | "$bg-inverse-hover"
-  | "$fg-on-inverse-muted"
-  | "$bg-selected"
-  | "$fg-on-selected"
-  | "$fg-link"
-  | "$fg-link-hover"
-  // State variants — hover/active lightness shifts (dark: +L, light: -L)
-  | "$primary-hover"
-  | "$primary-active"
-  | "$accent-hover"
-  | "$accent-active"
-  | "$fg-hover"
-  | "$fg-active"
-  | "$bg-selected-hover"
-  | "$bg-surface-hover"
+export type StandardThemeToken = "$fg" | "$bg" | `$${FlatToken}`
 
 /** Categorical color ring — harmonious hues for tagging / chart series / categories. */
 export type ColorRingToken = `$${HueName}` // $red, $orange, $yellow, $green, $teal, $blue, $purple, $pink
-
-/** Brand tokens (Apple system-color model) — app identity anchor. */
-export type BrandToken = "$brand" | "$brand-hover" | "$brand-active"
 
 /** Raw ANSI palette slots. */
 export type PaletteToken =
   `$color${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15}`
 
 /** Every known token shipped by silvery — useful for `switch` exhaustiveness. */
-export type KnownThemeToken = StandardThemeToken | ColorRingToken | BrandToken | PaletteToken
+export type KnownThemeToken = StandardThemeToken | ColorRingToken | PaletteToken
 
 /**
  * Any `$token` string — known or app-specific. Template literal narrows to

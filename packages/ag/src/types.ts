@@ -1168,8 +1168,8 @@ export interface TextProps extends StyleProps, TextFlexItemProps, TestProps, Mou
    * named, `rgb(...)`, `mix(...)`), resolved against the active theme at paint
    * time. Does NOT affect the surrounding text — only the marker cells.
    *
-   * Defaults to `"$fg-muted"` (the standard low/dim fg slot), NOT `"$muted"` —
-   * in the default pipeline theme `"$muted"` resolves to the same value as
+   * Defaults to `"$fg-muted"` (the standard low/dim fg slot), NOT `"$fg-muted"` —
+   * in the default pipeline theme `"$fg-muted"` resolves to the same value as
    * `"$fg"`, so it would never dim against `$fg`-colored text.
    *
    * @default "$fg-muted"
@@ -1180,7 +1180,7 @@ export interface TextProps extends StyleProps, TextFlexItemProps, TestProps, Mou
   /**
    * @internal Faint/dim text — SGR 2. Intentionally NOT a public style prop:
    * the design system is token-first, so reach for a semantic token
-   * (`$fg-muted`, `$muted`, …) instead. This escape hatch exists only for
+   * (`$fg-muted`, `$fg-muted`, …) instead. This escape hatch exists only for
    * chrome on surfaces with no matching token tier (e.g. dimmed text on the
    * `$bg-inverse` band). Prefer tokens everywhere a token exists. Inherited by
    * nested `<Text>`; a child's explicit value wins.

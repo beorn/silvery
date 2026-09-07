@@ -545,7 +545,7 @@ describe("property invariants fuzz", () => {
               ))}
             </Box>
           )}
-          <Text color="$muted">Footer</Text>
+          <Text color="$fg-muted">Footer</Text>
         </Box>
       )
     }

@@ -271,7 +271,7 @@ function TableImplementation<T>({
     allocation !== null &&
     available !== null &&
     allocation.widths.reduce((total, width) => total + width, 0) < available
-  const borderColor = "$border"
+  const borderColor = "$border-default"
   const ruleColor = presentation === "document" ? "$border-muted" : borderColor
   const leftPadding = directRows ? Math.floor(padding / 2) : 0
   const rightPadding = directRows ? padding - leftPadding : padding

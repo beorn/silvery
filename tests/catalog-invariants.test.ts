@@ -26,20 +26,12 @@
  * ## Token pairs checked
  *
  * All CONTRAST_PAIRS defined in packages/ansi/src/theme/invariants.ts:
- *   - fg/bg, fg/surfacebg, fg/popoverbg (AA 4.5:1)
- *   - muted/mutedbg (LARGE 3.0:1)
- *   - primary/bg, secondary/bg, accent/bg (AA 4.5:1)
- *   - error/bg, warning/bg, success/bg, info/bg, link/bg (AA 4.5:1)
- *   - inverse/inversebg, selection/selectionbg, cursor/cursorbg (AA 4.5:1)
- *   - primaryfg/primary, secondaryfg/secondary, accentfg/accent (AA 4.5:1)
- *   - errorfg/error, warningfg/warning, successfg/success, infofg/info (AA 4.5:1)
- *   - inputborder/bg, focusborder/bg (CONTROL 3.0:1)
- *   - disabledfg/bg (DIM 3.0:1)
- *   - border/bg (FAINT 1.5:1)
+ *   - canonical root, text-on-surface, status, selection, cursor, and
+ *     border pairs listed in `CONTRAST_PAIRS` (AA/LARGE/CONTROL/DIM/FAINT)
  *
  * Plus visibility invariants:
- *   - selectionbg vs bg: ΔL ≥ 0.08 (selection must be distinguishable)
- *   - cursorbg vs bg: OKLCH ΔE ≥ 0.15 (cursor must be distinguishable)
+ *   - bg-selected vs bg: ΔL ≥ 0.08 (selection must be distinguishable)
+ *   - bg-cursor vs bg: OKLCH ΔE ≥ 0.15 (cursor must be distinguishable)
  */
 
 import { describe, expect, it } from "vitest"
@@ -60,7 +52,7 @@ import { validateThemeInvariants } from "@silvery/ansi"
 // See packages/ansi/src/theme/invariants.ts for the full rule list.
 const WCAG_EXEMPT: Record<string, Set<string>> = {
   // Example (not active):
-  // "my-pastel-theme": new Set(["contrast:muted/mutedbg"]),
+  // "my-pastel-theme": new Set(["contrast:fg-muted/bg-muted"]),
 }
 
 // ── Global (per-rule) exemptions ──────────────────────────────────────

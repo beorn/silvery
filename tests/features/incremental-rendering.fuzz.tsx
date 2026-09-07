@@ -63,7 +63,7 @@ function DynamicList() {
   useInput((input) => {
     if (input === "a") setItems((prev) => [...prev, `item-${prev.length + 1}`])
     if (input === "d") setItems((prev) => (prev.length > 0 ? prev.slice(0, -1) : prev))
-    if (input === "r")
+    if (input === "r") {
       setItems((prev) => {
         if (prev.length < 2) return prev
         const copy = [...prev]
@@ -71,6 +71,7 @@ function DynamicList() {
         ;[copy[0], copy[i]] = [copy[i]!, copy[0]!]
         return copy
       })
+    }
   })
   return (
     <Box flexDirection="column" borderStyle="round">
@@ -102,7 +103,7 @@ function StyledBoxes() {
 
   return (
     <Box flexDirection="column" borderStyle={s.border}>
-      <Text bold={s.bold} color={s.dim ? "$muted" : undefined}>
+      <Text bold={s.bold} color={s.dim ? "$fg-muted" : undefined}>
         Variant {variant}
       </Text>
       <Box paddingX={1}>
@@ -394,7 +395,7 @@ describe("incremental rendering fuzz", () => {
           </Box>
           {showExtra && (
             <Box borderStyle="single">
-              <Text color="$muted">Extra section visible</Text>
+              <Text color="$fg-muted">Extra section visible</Text>
             </Box>
           )}
         </Box>
@@ -523,7 +524,7 @@ describe("incremental rendering fuzz", () => {
             ))}
           </Box>
           <Box height={1}>
-            <Text color="$muted">
+            <Text color="$fg-muted">
               {offset}/{items.length}
             </Text>
           </Box>
@@ -569,10 +570,12 @@ describe("incremental rendering fuzz", () => {
       const [innerBg, setInnerBg] = useState<string | undefined>(undefined)
       const [showMiddle, setShowMiddle] = useState(true)
       useInput((input) => {
-        if (input === "1")
+        if (input === "1") {
           setOuterBg((bg) => (bg === "blue" ? "red" : bg === "red" ? undefined : "blue"))
-        if (input === "2")
+        }
+        if (input === "2") {
           setInnerBg((bg) => (bg === undefined ? "green" : bg === "green" ? "yellow" : undefined))
+        }
         if (input === "3") setShowMiddle((v) => !v)
       })
       return (

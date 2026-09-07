@@ -78,33 +78,6 @@ describe("createStyle (from @silvery/ansi)", () => {
     })
   })
 
-  describe("theme tokens", () => {
-    const theme = {
-      primary: "#818cf8",
-      error: "#f87171",
-      success: "#34d399",
-      muted: "#6b7280",
-      link: "#60a5fa",
-      palette: ["#1f2937", "#ef4444"],
-    }
-
-    it("resolves primary to hex", () => {
-      const s = createStyle({ level: "truecolor", theme })
-      expect(s.primary("deploy")).toBe(`${ESC}38;2;129;140;248mdeploy${ESC}39m`)
-    })
-
-    it("falls back to ANSI defaults without theme", () => {
-      const s = createStyle({ level: "ansi16" })
-      expect(s.primary("deploy")).toBe(`${ESC}33mdeploy${ESC}39m`)
-      expect(s.error("fail")).toBe(`${ESC}31mfail${ESC}39m`)
-    })
-
-    it("muted uses dim modifier as fallback", () => {
-      const s = createStyle({ level: "ansi16" })
-      expect(s.muted("note")).toBe(`${ESC}2mnote${ESC}22m`)
-    })
-  })
-
   describe("multiple arguments (chalk compat)", () => {
     it("joins multiple args with spaces", () => {
       const s = createStyle({ level: "ansi16" })
@@ -150,16 +123,11 @@ describe("createPlainStyle", () => {
     const s = createPlainStyle("ansi16")
     expect(s.red("error")).toBe(`${ESC}31merror${ESC}39m`)
   })
-
-  it("theme tokens use fallback defaults", () => {
-    const s = createPlainStyle("ansi16")
-    expect(s.primary("x")).toBe(`${ESC}33mx${ESC}39m`)
-  })
 })
 
 describe("resolveThemeColor", () => {
-  it("resolves $token from theme", () => {
-    expect(resolveThemeColor("$primary", { primary: "#ff0000" })).toBe("#ff0000")
+  it("resolves a canonical token from theme", () => {
+    expect(resolveThemeColor("$fg-accent", { "fg-accent": "#ff0000" })).toBe("#ff0000")
   })
 
   it("passes through non-$ strings", () => {
@@ -174,14 +142,19 @@ describe("resolveThemeColor", () => {
     expect(resolveThemeColor("$color0", { palette: ["#000000"] })).toBe("#000000")
   })
 
-  it("strips hyphens for lookup (legacy no-hyphen key)", () => {
-    expect(resolveThemeColor("$surface-bg", { surfacebg: "#1e1e2e" })).toBe("#1e1e2e")
+  it("rejects legacy spellings with their canonical cure", () => {
+    expect(() => resolveThemeColor("$primary", { primary: "#ff0000" })).toThrow(
+      'Legacy theme token "$primary" is retired; use "$fg-accent" for text or "$bg-accent" for fills.',
+    )
+    expect(() => resolveThemeColor("$surface-bg", { surfacebg: "#1e1e2e" })).toThrow(
+      'Legacy theme token "$surface-bg" is retired; use "$bg-surface-raised".',
+    )
   })
 
   it("direct kebab lookup for state-variant tokens", () => {
     // New-style flat kebab keys — resolved via direct lookup without stripping
-    const theme = { "primary-hover": "#aabbcc", "bg-selected-hover": "#112233" }
-    expect(resolveThemeColor("$primary-hover", theme)).toBe("#aabbcc")
+    const theme = { "fg-accent-hover": "#aabbcc", "bg-selected-hover": "#112233" }
+    expect(resolveThemeColor("$fg-accent-hover", theme)).toBe("#aabbcc")
     expect(resolveThemeColor("$bg-selected-hover", theme)).toBe("#112233")
   })
 
@@ -195,15 +168,7 @@ describe("resolveThemeColor", () => {
   // (`bg-selected`, `fg-on-selected`, inverse-family tokens, `fg-link`).
   describe("Sterling flat tokens (direct lookup)", () => {
     const sterlingTheme = {
-      // Legacy roots still emitted by deriveTheme at runtime
-      muted: "#8b8da2",
-      surface: "#f8f8f2",
-      popover: "#f8f8f2",
-      cursor: "#282a36",
-      focusborder: "#bd93f9",
-      inputborder: "#44475a",
-      // Sterling flat tokens — baked in by inlineSterlingTokens at theme
-      // construction
+      // Canonical flat tokens are the direct resolver surface.
       "fg-muted": "#8b8da2",
       "bg-muted": "#2a2a40",
       "bg-surface-default": "#1e1e2e",
@@ -224,6 +189,7 @@ describe("resolveThemeColor", () => {
       "bg-inverse-hover": "#e2e2de",
       "fg-on-inverse-muted": "#686866",
       "fg-link": "#8be9fd",
+      "fg-disabled": "#666666",
     }
     it("$fg-muted resolves directly", () => {
       expect(resolveThemeColor("$fg-muted", sterlingTheme)).toBe("#8b8da2")
@@ -267,18 +233,28 @@ describe("resolveThemeColor", () => {
     it("$fg-link resolves directly (Sterling-owned, no legacy root)", () => {
       expect(resolveThemeColor("$fg-link", sterlingTheme)).toBe("#8be9fd")
     })
-    it("legacy names still resolve via direct lookup", () => {
-      expect(resolveThemeColor("$muted", sterlingTheme)).toBe("#8b8da2")
-      expect(resolveThemeColor("$focusborder", sterlingTheme)).toBe("#bd93f9")
+    it("legacy names reject rather than following a fallback", () => {
+      expect(() => resolveThemeColor("$muted", sterlingTheme)).toThrow('use "$fg-muted"')
+      expect(() => resolveThemeColor("$focusborder", sterlingTheme)).toThrow('use "$border-focus"')
     })
-    it("legacy-only aliases without Sterling equivalents no longer resolve", () => {
-      // Removed in 0.18.1 — callers should switch to canonical Sterling forms.
-      expect(resolveThemeColor("$bg-surface", sterlingTheme)).toBeUndefined()
-      expect(resolveThemeColor("$bg-popover", sterlingTheme)).toBeUndefined()
-      expect(resolveThemeColor("$fg-selected", sterlingTheme)).toBeUndefined()
-      expect(resolveThemeColor("$fg-disabled", sterlingTheme)).toBeUndefined()
-      expect(resolveThemeColor("$border-input", sterlingTheme)).toBeUndefined()
-      expect(resolveThemeColor("$fg-on-primary", sterlingTheme)).toBeUndefined()
+    it("retired aliases reject loudly", () => {
+      expect(() => resolveThemeColor("$bg-surface", sterlingTheme)).toThrow(
+        'use "$bg-surface-default"',
+      )
+      expect(() => resolveThemeColor("$bg-popover", sterlingTheme)).toThrow(
+        'use "$bg-surface-overlay"',
+      )
+      expect(() => resolveThemeColor("$fg-selected", sterlingTheme)).toThrow(
+        'use "$fg-on-selected"',
+      )
+      expect(resolveThemeColor("$fg-disabled", sterlingTheme)).toBe(sterlingTheme["fg-disabled"])
+      expect(() => resolveThemeColor("$disabledfg", sterlingTheme)).toThrow('use "$fg-disabled"')
+      expect(() => resolveThemeColor("$border-input", sterlingTheme)).toThrow(
+        'use "$border-default"',
+      )
+      expect(() => resolveThemeColor("$fg-on-primary", sterlingTheme)).toThrow(
+        'use "$fg-on-accent"',
+      )
     })
   })
 })

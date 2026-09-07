@@ -9,20 +9,20 @@
  *
  * The default `ansi16DarkTheme` uses Nord-derived hexes. In Nord:
  * - canvas `bg` = `#2e3440` = rgb(46, 52, 64)
- * - legacy `mutedbg` = blend(bg, fg, 0.04) ≈ rgb(52, 58, 70)
+ * - canonical `bg-muted` = a guarded neutral fill distinct from the canvas
  *
- * When tests render at ansi16, the underlying RGBs from `mutedbg` and `bg`
+ * When tests render at ansi16, the underlying RGBs from `bg-muted` and `bg`
  * differ by only a few units — and crucially, they look "the same" to
  * naive bg-vs-canvas detectors that compare against a fixed canvas color.
  *
  * One concrete consequence: the cyan-strip cold-start bug
- * (`@km/silvery/render-light-blue-bg-strip-residue`) emitted bg=$mutedbg paint
+ * (`@km/silvery/render-light-blue-bg-strip-residue`) emitted bg=$bg-muted paint
  * at cells past a clip boundary, but every test passed because the bg color
  * was indistinguishable from canvas in the test theme. Real users running at
  * Nord saw a visible strip; tests saw nothing.
  *
  * The diagnostic theme uses pure black canvas + saturated primaries so blends
- * preserve their step magnitude in every channel. Every Sterling/legacy token
+ * preserve their step magnitude in every channel. Every Sterling token
  * resolves to a distinct RGB tuple. A test that asserts "no non-canvas bg in
  * region X" catches phantom bg paints regardless of which token emitted them.
  *
@@ -51,15 +51,14 @@
  * ## Distinctness invariant
  *
  * Pure black canvas (rgb 0,0,0) + pure white fg (rgb 255,255,255) means every
- * blend(bg, fg, t) for distinct `t` produces distinct RGBs. Sterling/legacy
- * derive uses these `t` values:
+ * blend(bg, fg, t) for distinct `t` produces distinct RGBs. Sterling derives
+ * these values:
  *
  *   - `bg-surface-subtle`  = blend(0.03) ≈ rgb(8, 8, 8)
  *   - `bg-surface-hover`   = blend(0.10) ≈ rgb(26, 26, 26)
  *   - `bg-surface-raised`  = blend(0.10) ≈ rgb(26, 26, 26)
  *   - `bg-surface-overlay` = blend(0.12) ≈ rgb(31, 31, 31)
- *   - `bg-muted` (Sterling)= blend(0.08) ≈ rgb(20, 20, 20)
- *   - `mutedbg` (legacy)   = blend(0.04) ≈ rgb(10, 10, 10)
+ *   - `bg-muted` = guarded neutral fill
  *
  * All distinct from canvas (rgb 0,0,0) and from each other. The named ANSI
  * slots are saturated primaries so accentBg, redBg, etc. paint in vivid

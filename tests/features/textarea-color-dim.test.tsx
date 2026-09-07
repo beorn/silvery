@@ -107,7 +107,7 @@ describe("TextArea color/dim props", () => {
             fieldSizing="fixed"
             rows={3}
             placeholder="type here"
-            color="$primary"
+            color="$fg-accent"
             isActive={false}
           />
         </Box>

@@ -97,7 +97,7 @@ function Wizard() {
           }}
           maxVisible={5}
         />
-        <Text color="$muted">↑↓ navigate Enter select</Text>
+        <Text color="$fg-muted">↑↓ navigate Enter select</Text>
       </Box>
     )
   }
@@ -114,7 +114,7 @@ function Wizard() {
           }}
           prompt="> "
         />
-        <Text color="$muted">
+        <Text color="$fg-muted">
           Type a name and press Enter (Ctrl+A/E, Ctrl+K/U, Alt+B/F all work)
         </Text>
       </Box>
@@ -125,21 +125,21 @@ function Wizard() {
     return (
       <Box flexDirection="column" gap={1}>
         <Text bold>Step 3: Installing {framework}...</Text>
-        <ProgressBar value={progress} width={40} color="$success" />
-        <Text color="$muted">Setting up {name || "my-app"}</Text>
+        <ProgressBar value={progress} width={40} color="$fg-success" />
+        <Text color="$fg-muted">Setting up {name || "my-app"}</Text>
       </Box>
     )
   }
 
   return (
     <Box flexDirection="column" gap={1}>
-      <Text color="$success" bold>
+      <Text color="$fg-success" bold>
         Done!
       </Text>
       <Text>
         Created {name || "my-app"} with {framework}.
       </Text>
-      <Text color="$muted">Press q to exit</Text>
+      <Text color="$fg-muted">Press q to exit</Text>
     </Box>
   )
 }

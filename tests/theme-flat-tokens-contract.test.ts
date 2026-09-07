@@ -40,10 +40,12 @@ import {
   detectTheme as detectThemeAnsi,
   detectScheme as detectSchemeAnsi,
   detectSchemeTheme as detectSchemeThemeAnsi,
+  generateTheme as generateThemeAnsi,
 } from "@silvery/ansi"
 import {
   detectScheme as detectSchemeSterling,
   detectTheme as detectThemeSterling,
+  validateTheme,
 } from "@silvery/theme"
 
 function assertAllFlatTokensPopulated(themeName: string, theme: Record<string, unknown>): void {
@@ -66,6 +68,46 @@ function assertAllFlatTokensPopulated(themeName: string, theme: Record<string, u
       ...(empty.length ? [`  empty/invalid (${empty.length}): ${empty.join(", ")}`] : []),
     ].join("\n")
     throw new Error(report)
+  }
+}
+
+/**
+ * The factory boundary is deliberately one-way: callers receive Sterling's
+ * frozen nested roles plus their flat projections, never the retired string
+ * aliases that used to be layered in by a second derivation pass.
+ */
+function assertCanonicalThemeFactory(themeName: string, theme: Record<string, unknown>): void {
+  expect(Object.isFrozen(theme)).toBe(true)
+  expect(typeof theme.accent, `${themeName}.accent must be a nested role`).toBe("object")
+  expect(theme["fg-accent"]).toBe((theme.accent as { fg: string }).fg)
+  expect(theme["bg-accent"]).toBe((theme.accent as { bg: string }).bg)
+  expect(theme["fg-default"]).toBe(theme.fg)
+  expect(theme["bg-default"]).toBe(theme.bg)
+
+  const retired = [
+    "primary",
+    "primaryfg",
+    "secondary",
+    "secondaryfg",
+    "accentfg",
+    "errorfg",
+    "warningfg",
+    "successfg",
+    "infofg",
+    "mutedbg",
+    "surfacebg",
+    "popover",
+    "popoverbg",
+    "cursorbg",
+    "inputborder",
+    "focusborder",
+    "disabledfg",
+    "selection",
+    "selectionbg",
+    "inversebg",
+  ]
+  for (const key of retired) {
+    expect(theme, `${themeName} must not emit retired ${key}`).not.toHaveProperty(key)
   }
 }
 
@@ -196,6 +238,19 @@ describe("contract: @silvery/ansi entry points all produce Sterling-baked themes
     )
   })
 
+  it("every factory yields the canonical frozen nested-plus-flat Theme", () => {
+    const factories: ReadonlyArray<[string, Record<string, unknown>]> = [
+      ["deriveTheme", deriveThemeAnsi(defaultDarkScheme) as unknown as Record<string, unknown>],
+      ["loadTheme", loadThemeAnsi(defaultDarkScheme) as unknown as Record<string, unknown>],
+      [
+        "deriveAnsi16Theme",
+        deriveAnsi16ThemeAnsi(defaultDarkScheme) as unknown as Record<string, unknown>,
+      ],
+      ["generateTheme", generateThemeAnsi("cyan", true) as unknown as Record<string, unknown>],
+    ]
+    for (const [name, theme] of factories) assertCanonicalThemeFactory(name, theme)
+  })
+
   it("@silvery/ansi detectTheme (no TTY → fallback) produces every flat token", async () => {
     // Exact path the user's "31/32 empty bg tokens" bug came from. Must
     // resolve even from the bare @silvery/ansi import path now.
@@ -231,6 +286,16 @@ describe("contract: @silvery/ansi entry points all produce Sterling-baked themes
       "@silvery/ansi detectScheme (override)",
       theme as unknown as Record<string, unknown>,
     )
+  })
+})
+
+describe("contract: theme validation recognizes only the canonical shape", () => {
+  it("accepts a complete Sterling Theme and reports a retired raw field", () => {
+    const canonical = deriveThemeAnsi(defaultDarkScheme) as unknown as Record<string, unknown>
+    expect(validateTheme(canonical)).toMatchObject({ valid: true, missing: [], extra: [] })
+
+    const withRetiredField = { ...canonical, primary: "#ff00ff" }
+    expect(validateTheme(withRetiredField)).toMatchObject({ valid: true, extra: ["primary"] })
   })
 })
 

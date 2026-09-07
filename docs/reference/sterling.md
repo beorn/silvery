@@ -237,9 +237,9 @@ interface DesignSystem {
 
 ## Migrating from pre-0.20.0
 
-silvery 0.19.x had a legacy `Theme` interface with single-hex role fields (`theme.primary`, `theme.errorfg`, `theme.surfacebg`, …). At 0.20.0 it's gone at the type level — `export type Theme = SterlingTheme`. **TypeScript dot-access on legacy fields breaks now.**
+Pre-Sterling releases had a legacy `Theme` interface with single-hex role fields (`theme.primary`, `theme.errorfg`, `theme.surfacebg`, …). The Sterling `Theme` is nested plus frozen flat projections. **TypeScript dot-access on legacy fields breaks now.**
 
-JSX `$token` references keep resolving through the 0.20.x window via `resolveToken`'s direct kebab lookup. Migrate during this release window — the legacy runtime emit will be deleted in 0.21.0.
+Retired JSX `$token` spellings are rejected loudly with the canonical replacement named in the error. The table below is a migration aid for updating old code; it is not an alias contract.
 
 ### `$token` migration map
 
@@ -306,7 +306,7 @@ For TypeScript code that read fields off `Theme` directly:
 ## Related
 
 - **[Styling](/guide/styling)** — components, presets, anti-patterns. The day-to-day rules.
-- **[Token Taxonomy](/reference/token-taxonomy)** — the decision tree: `$brand` vs `$red` vs `$error` vs `$color1` vs `$fg-accent`.
+- **[Token Taxonomy](/reference/token-taxonomy)** — the decision tree: `$brand` vs `$red` vs `$fg-error` vs `$color1` vs `$fg-accent`.
 - **[Theming](/guide/styling)** — `ThemeProvider`, `Box theme={}`, switching schemes at runtime.
 - **[Color Schemes](/reference/color-schemes)** — the 22-slot terminal scheme model that feeds Sterling.
 - **[@silvery/theme reference](/reference/theme)** — full type definitions for ColorScheme, Theme, DesignSystem.

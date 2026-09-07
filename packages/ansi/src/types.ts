@@ -72,7 +72,7 @@ type RgbColor = `rgb(${string})`
 /**
  * Theme token color string pattern.
  * Format: $name — resolved against the active theme at render time.
- * Examples: $primary, $surface, $error, $bg, $fg, $muted
+ * Examples: $fg-accent, $bg-surface-raised, $fg-error, $bg, $fg, $fg-muted
  */
 type ThemeToken = `$${string}`
 
@@ -83,7 +83,7 @@ type ThemeToken = `$${string}`
  * - ANSI color names: `"red"`, `"cyan"`, `"whiteBright"`, etc.
  * - Hex colors: `"#ff0000"`, `"#f00"`
  * - RGB function: `"rgb(255, 0, 0)"`
- * - Theme tokens: `"$primary"`, `"$error"`, `"$surface"`
+ * - Theme tokens: `"$fg-accent"`, `"$fg-error"`, `"$bg-surface-raised"`
  * - Any other string (for forward compatibility with custom color schemes)
  *
  * The union of known literals provides autocompletion in editors while

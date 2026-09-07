@@ -143,19 +143,6 @@ export interface Style {
   ansi256(code: number): Style
   bgAnsi256(code: number): Style
 
-  // Theme tokens (when theme is provided)
-  readonly primary: Style
-  readonly secondary: Style
-  readonly accent: Style
-  readonly error: Style
-  readonly warning: Style
-  readonly success: Style
-  readonly info: Style
-  readonly muted: Style
-  readonly link: Style
-  readonly border: Style
-  readonly surface: Style
-
   /** Resolve a $token or color name to its hex/ANSI value. */
   resolve(token: string): string | undefined
 

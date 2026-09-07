@@ -1,7 +1,7 @@
 /**
  * Variant system tests — typography presets as first-class theme tokens.
  *
- * `<Text variant="h1">` resolves from theme.variants.h1 = { color: "$primary", bold: true }.
+ * `<Text variant="h1">` resolves from theme.variants.h1 = { color: "$fg-accent", bold: true }.
  * Caller props win over variant defaults (variant is a default, not an override).
  * Apps extend variants via <ThemeProvider tokens={{ variants: { ... } }}>.
  *
@@ -10,13 +10,8 @@
  *
  * Bead: km-silvery.variants-as-tokens
  *
- * NOTE (Sterling sweep — km-silvery.sterling-tests-legacy-sweep, 2026-04-20):
- * This file deliberately retains legacy `$primary`/`$accent`/`$success`/`$muted`
- * tokens. The legacy `DEFAULT_VARIANTS` in `@silvery/ansi/theme/derived.ts` still
- * binds `h1.color = "$primary"`, and these tests verify variant↔direct-color
- * parity through that legacy binding. When 0.20.0 drops `inlineSterlingTokens`
- * and migrates `DEFAULT_VARIANTS` to Sterling flat tokens, retire / rewrite this
- * file rather than mechanically renaming.
+ * Sterling's one canonical DEFAULT_VARIANTS table binds `h1.color` to
+ * `$fg-accent`; these tests pin variant↔direct-color parity.
  */
 
 import React from "react"
@@ -51,23 +46,23 @@ describe("Text variant prop", () => {
     const cell = app.cell(0, 0)
     expect(cell.char).toBe("T")
     expect(cell.bold).toBe(true)
-    // $primary must resolve to some non-null fg color
+    // $fg-accent must resolve to some non-null fg color
     expect(cell.fg).not.toBeNull()
   })
 
   // =============================================================================
-  // Test 2: variant color matches direct $primary color
+  // Test 2: variant color matches direct $fg-accent color
   // =============================================================================
 
-  test("variant='h1' fg matches direct color='$primary'", () => {
+  test("variant='h1' fg matches direct color='$fg-accent'", () => {
     const appVariant = r(<Text variant="h1">X</Text>)
     const appDirect = r(
-      <Text color="$primary" bold>
+      <Text color="$fg-accent" bold>
         X
       </Text>,
     )
 
-    // Both should produce the same fg color (variant resolves $primary the same way)
+    // Both should produce the same fg color (variant resolves $fg-accent the same way)
     expect(appVariant.cell(0, 0).fg).toEqual(appDirect.cell(0, 0).fg)
   })
 
@@ -78,7 +73,7 @@ describe("Text variant prop", () => {
   test("caller color overrides variant color", () => {
     const appDefault = r(<Text variant="h1">X</Text>)
     const appOverride = r(
-      <Text variant="h1" color="$success">
+      <Text variant="h1" color="$fg-success">
         X
       </Text>,
     )
@@ -90,24 +85,24 @@ describe("Text variant prop", () => {
     expect(defaultCell.bold).toBe(true)
     expect(overrideCell.bold).toBe(true)
 
-    // color was overridden — fg must differ when $success ≠ $primary
-    // (if $success == $primary in current theme, this just confirms both are equal, which is fine)
-    const directSuccess = r(<Text color="$success">X</Text>).cell(0, 0)
+    // color was overridden — fg must differ when $fg-success ≠ $fg-accent
+    // (if $fg-success == $fg-accent in current theme, this just confirms both are equal, which is fine)
+    const directSuccess = r(<Text color="$fg-success">X</Text>).cell(0, 0)
     expect(overrideCell.fg).toEqual(directSuccess.fg)
   })
 
   // =============================================================================
-  // Test 4: variant="body-muted" → some fg color (from $muted)
+  // Test 4: variant="body-muted" → some fg color (from $fg-muted)
   // =============================================================================
 
-  test("variant='body-muted' → fg non-null, matches $muted", () => {
+  test("variant='body-muted' → fg non-null, matches $fg-muted", () => {
     const app = r(<Text variant="body-muted">X</Text>)
     const cell = app.cell(0, 0)
     expect(cell.bold).toBeFalsy()
     expect(cell.fg).not.toBeNull()
 
-    // Should match direct $muted
-    const mutedDirect = r(<Text color="$muted">X</Text>).cell(0, 0)
+    // Should match direct $fg-muted
+    const mutedDirect = r(<Text color="$fg-muted">X</Text>).cell(0, 0)
     expect(cell.fg).toEqual(mutedDirect.fg)
   })
 
@@ -236,20 +231,20 @@ describe("Typography wrapper parity", () => {
     expect(cell1.fg).toEqual(cell2.fg)
   })
 
-  test("<H1 color='$success'> override propagates via variant system", () => {
-    const app = r(<H1 color="$success">Done</H1>)
+  test("<H1 color='$fg-success'> override propagates via variant system", () => {
+    const app = r(<H1 color="$fg-success">Done</H1>)
     const cell = app.cell(0, 0)
     // bold comes from h1 variant
     expect(cell.bold).toBe(true)
-    // color is overridden to $success
-    const successDirect = r(<Text color="$success">D</Text>).cell(0, 0)
+    // color is overridden to $fg-success
+    const successDirect = r(<Text color="$fg-success">D</Text>).cell(0, 0)
     expect(cell.fg).toEqual(successDirect.fg)
   })
 
   test("<H2> blends the H1 color halfway toward foreground", () => {
     const app1 = r(<H2>Section</H2>)
     const app2 = createRenderer({ cols: 80, rows: 5 })(
-      <Text color="mix($primary, $fg, 50%)" bold>
+      <Text color="mix($fg-accent, $fg, 50%)" bold>
         Section
       </Text>,
     )
@@ -268,20 +263,20 @@ describe("Typography wrapper parity", () => {
 describe("Custom variants via ThemeProvider", () => {
   test("hero variant resolves from ThemeProvider tokens", () => {
     const app = r(
-      <ThemeProvider tokens={{ variants: { hero: { color: "$accent", bold: true } } }}>
+      <ThemeProvider tokens={{ variants: { hero: { color: "$fg-accent", bold: true } } }}>
         <Text variant="hero">X</Text>
       </ThemeProvider>,
     )
 
     const cell = app.cell(0, 0)
     expect(cell.bold).toBe(true)
-    // Should have same fg as $accent resolved within the same ThemeProvider scope.
+    // Should have same fg as $fg-accent resolved within the same ThemeProvider scope.
     // Use the same ThemeProvider wrapper to ensure consistent theme resolution —
     // without ThemeProvider the fallback (ansi16DarkTheme) may differ from the
     // merged theme used above.
     const accentDirect = r(
-      <ThemeProvider tokens={{ variants: { hero: { color: "$accent", bold: true } } }}>
-        <Text color="$accent">X</Text>
+      <ThemeProvider tokens={{ variants: { hero: { color: "$fg-accent", bold: true } } }}>
+        <Text color="$fg-accent">X</Text>
       </ThemeProvider>,
     ).cell(0, 0)
     expect(cell.fg).toEqual(accentDirect.fg)
@@ -290,7 +285,7 @@ describe("Custom variants via ThemeProvider", () => {
   test("custom variant merged with standard variants", () => {
     // Standard h1 still works after adding custom variant
     const app = r(
-      <ThemeProvider tokens={{ variants: { hero: { color: "$accent", bold: true } } }}>
+      <ThemeProvider tokens={{ variants: { hero: { color: "$fg-accent", bold: true } } }}>
         <Box flexDirection="column">
           <Text variant="h1">Standard</Text>
           <Text variant="hero">Custom</Text>
@@ -339,10 +334,10 @@ describe("Theme.variants structure", () => {
     }
   })
 
-  test("h1 variant has color='$primary' and bold=true", () => {
+  test("h1 variant has color='$fg-accent' and bold=true", () => {
     const h1 = defaultDarkTheme.variants?.h1
     expect(h1).toBeDefined()
-    expect(h1?.color).toBe("$primary")
+    expect(h1?.color).toBe("$fg-accent")
     expect(h1?.bold).toBe(true)
   })
 

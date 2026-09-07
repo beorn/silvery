@@ -221,7 +221,7 @@ function CodeSnippet({ width }: { width: number }) {
   if (!showSnippet) {
     return (
       <Box paddingX={1}>
-        <Text italic color="$muted">
+        <Text italic color="$fg-muted">
           (Widen terminal to see the code that powers this)
         </Text>
       </Box>
@@ -242,7 +242,7 @@ function CodeSnippet({ width }: { width: number }) {
         <Text color="magenta">const</Text> columns = width {">"} 100 ? <Text color="green">3</Text>{" "}
         : width {">"} 60 ? <Text color="green">2</Text> : <Text color="green">1</Text>
       </Text>
-      <Text italic color="$muted">
+      <Text italic color="$fg-muted">
         {"  "}// No useEffect, no layout thrashing. Synchronous.
       </Text>
     </Box>

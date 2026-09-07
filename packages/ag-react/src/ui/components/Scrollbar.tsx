@@ -199,7 +199,7 @@ export function Scrollbar({
   const lastRow = Math.min(trackHeight - 1, Math.ceil(thumbBottomFloat) - 1)
 
   // Armed/hover thumb tone — brighter when the cursor is over the
-  // track or actively dragging. The `$primary` swap matches the
+  // track or actively dragging. The `$fg-accent` swap matches the
   // macOS-style "this is interactive" affordance and signals the
   // user can start a drag.
   const thumbTreatment = resolveInteractionTreatment(

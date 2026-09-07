@@ -8,46 +8,13 @@
 /**
  * Required semantic token keys on Theme (excludes `name` and `palette`).
  *
- * Sterling owns selection / inverse / link styling via flat tokens
- * (`bg-selected`, `fg-on-selected`, `bg-inverse`, `fg-on-inverse`, `fg-link`)
- * baked in by `inlineSterlingTokens`. The legacy single-hex aliases
- * (`selection`, `selectionbg`, `inverse`, `inversebg`, `link`) were removed
- * in 0.21.0 (sterling-purge-legacy-tokens).
+ * Sterling owns all semantic styling through its frozen nested roles and
+ * canonical flat tokens. Validation must recognize that exact factory output,
+ * rather than looking for retired single-hex aliases.
  */
-export const THEME_TOKEN_KEYS: readonly string[] = [
-  // Root pair
-  "bg",
-  "fg",
-  // Surface pairs (base = text, *bg = background)
-  "muted",
-  "mutedbg",
-  "surface",
-  "surfacebg",
-  "popover",
-  "popoverbg",
-  "cursor",
-  "cursorbg",
-  // 7 accent pairs (base = area bg, *fg = text on area)
-  "primary",
-  "primaryfg",
-  "secondary",
-  "secondaryfg",
-  "accent",
-  "accentfg",
-  "error",
-  "errorfg",
-  "warning",
-  "warningfg",
-  "success",
-  "successfg",
-  "info",
-  "infofg",
-  // Standalone tokens
-  "border",
-  "inputborder",
-  "focusborder",
-  "disabledfg",
-] as const
+import { STERLING_FLAT_TOKENS } from "@silvery/ansi"
+
+export const THEME_TOKEN_KEYS = ["bg", "fg", ...STERLING_FLAT_TOKENS] as const
 
 /** Result of theme validation. */
 export interface ThemeValidationResult {
@@ -59,8 +26,37 @@ export interface ThemeValidationResult {
   extra: string[]
 }
 
-/** All recognized keys on Theme (tokens + metadata). */
-const ALL_KNOWN_KEYS = new Set([...THEME_TOKEN_KEYS, "name", "palette"])
+/** All recognized keys on a frozen canonical Theme (tokens + nested form + metadata). */
+const ALL_KNOWN_KEYS = new Set([
+  ...THEME_TOKEN_KEYS,
+  "name",
+  "mode",
+  "palette",
+  "variants",
+  "derivationTrace",
+  "accent",
+  "info",
+  "success",
+  "warning",
+  "error",
+  "muted",
+  "faint",
+  "surface",
+  "border",
+  "cursor",
+  "selected",
+  "inverse",
+  "link",
+  "disabled",
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "teal",
+  "blue",
+  "purple",
+  "pink",
+])
 
 /**
  * Validate a Theme object — check that all required tokens are present.

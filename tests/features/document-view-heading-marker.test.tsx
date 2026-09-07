@@ -246,12 +246,12 @@ describe("DocumentView heading marker gutter", () => {
   })
 
   test.each([
-    [1, "$primary"],
-    [2, "mix($primary, $fg, 50%)"],
+    [1, "$fg-accent"],
+    [2, "mix($fg-accent, $fg, 50%)"],
     [3, "$fg"],
-    [4, "$muted"],
-    [5, "$muted"],
-    [6, "$muted"],
+    [4, "$fg-muted"],
+    [5, "$fg-muted"],
+    [6, "$fg-muted"],
   ] as const)(
     "level %i keeps task/title alignment and gives only non-task headings a subdued #",
     (level, foreground) => {

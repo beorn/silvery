@@ -111,7 +111,7 @@ Core principle: **always use canonical high-level components, never manual low-l
 - Text entry → `TextInput` (not manual key handling)
 - Focus → `focusScope` on Box (not manual focus state)
 - Large lists → `VirtualList` (not manual scroll offset)
-- Theme colors → `$primary`, `$muted` semantic tokens (not hardcoded ANSI)
+- Theme colors → `$fg-accent`, `$fg-muted` semantic tokens (not hardcoded ANSI)
 - Progress → `ProgressBar` / `Spinner` (not manual animation)
 
 Cursor convention (WIDGET focus): TextInput/TextArea use the real terminal cursor when the widget is focused, a fake (inverse/underline) cell when a sibling widget holds focus. No `realCursor` prop — this is just how it works.

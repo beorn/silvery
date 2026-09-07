@@ -50,7 +50,7 @@ export function getActiveTheme(): Theme {
  * Color tier a render is targeting.
  *
  * Mirrors `TerminalCaps.colorLevel`. At `"mono"` (monochrome),
- * `parseColor("$primary")` returns `null` and `getTextStyle()` injects
+ * `parseColor("$fg-accent")` returns `null` and `getTextStyle()` injects
  * mono-attrs (bold, dim, italic, underline, inverse, strikethrough) from
  * `DEFAULT_MONO_ATTRS`, so hierarchy survives where color cannot. See
  * `hub/silvery/design/v10-terminal/theme-system-v2-plan.md#p4`.

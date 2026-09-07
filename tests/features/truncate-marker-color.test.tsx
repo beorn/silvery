@@ -179,7 +179,7 @@ describe("truncateMarkerColor — hook-returned markers", () => {
 
   // The exact km shape that caught the $muted-aliases-$fg bug: hook-returned
   // markers + DEFAULT marker color (prop OMITTED) + a $token TEXT color. With
-  // the wrong default ($muted == $fg), the marker fg would equal the text fg
+  // the wrong default ($fg-muted == $fg), the marker fg would equal the text fg
   // and the elision would not dim at all. Assert the default marker dims.
   test("default marker + $token text color: marker fg dims vs text fg (km shape)", () => {
     const WIDTH = 44
@@ -200,7 +200,7 @@ describe("truncateMarkerColor — hook-returned markers", () => {
     const textFg = parseColor("$fg")
     const dotCol = colOf(app, "…", 0)
     // The marked separator is the DEFAULT ($fg-muted) — it must NOT equal the
-    // $fg text color (the regression: $muted resolved to the same RGB as $fg).
+    // $fg text color (the regression: $fg-muted resolved to the same RGB as $fg).
     const markerFg = app.cell(dotCol, 0).fg
     expect(markerFg).not.toEqual(textFg)
     expect(markerFg).toEqual(parseColor("$fg-muted"))

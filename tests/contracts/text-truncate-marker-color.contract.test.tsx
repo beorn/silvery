@@ -10,7 +10,7 @@
  *     parseColor/resolveThemeColor path; never a hardcoded hex), AND it is a
  *     genuinely dim slot, i.e. it DIFFERS from `$fg`.
  *
- * Why the equality (not just ≠-text-color): the original default was `"$muted"`,
+ * Why the equality (not just ≠-text-color): the original default was `"$fg-muted"`,
  * which in the default pipeline theme resolves to the SAME value as `$fg`
  * (#d8dee9). A ≠-text-color assertion alone passed against a `#ffffff` text and
  * let the aliased token slip through — the marker never dimmed for any
@@ -58,7 +58,7 @@ describe("contract: truncateMarkerColor defaults to $fg-muted", () => {
     const fgMuted = resolveRgb("$fg-muted")
     const fg = resolveRgb("$fg")
     // The token actually dims: $fg-muted is NOT the plain foreground. Guards
-    // against re-aliasing the default to a token that equals $fg (the $muted bug).
+    // against re-aliasing the default to a token that equals $fg (the $fg-muted bug).
     expect(fgMuted).not.toEqual(fg)
 
     // The omitted-prop default path painted the marker with EXACTLY $fg-muted.

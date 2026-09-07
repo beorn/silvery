@@ -17,7 +17,7 @@
  * (which holds `colorLevel` per instance, in a closure) still strips the color
  * it would have emitted instead. The app renders flat: no color, no hierarchy.
  *
- * Calibrated emission for `<Text color="$primary">`:
+ * Calibrated emission for `<Text color="$fg-accent">`:
  *   mono      → `\x1b[1m` (bold), no color SGR
  *   truecolor → `\x1b[38;2;235;203;139m`, no bold
  */
@@ -74,7 +74,7 @@ const BASE_CAPS = {
   maybeWideEmojis: true,
 } satisfies Partial<TerminalCaps>
 
-/** SGR 1 (bold) — the attr `$primary` carries at mono tier. */
+/** SGR 1 (bold) — the attr `$fg-accent` carries at mono tier. */
 function hasBold(ansi: string): boolean {
   for (const m of ansi.matchAll(/\x1b\[([0-9;]*)m/g)) {
     if (m[1]!.split(";").includes("1")) return true
@@ -100,7 +100,7 @@ function Counter() {
   useInput(() => setN((v) => v + 1))
   return (
     <Box>
-      <Text color="$primary">tick{n}</Text>
+      <Text color="$fg-accent">tick{n}</Text>
     </Box>
   )
 }

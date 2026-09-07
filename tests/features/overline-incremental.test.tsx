@@ -254,7 +254,7 @@ describe("feature: overscroll indicator shape — height=1 overline Box over scr
           right={0}
           height={1}
           underline="single"
-          underlineColor="$muted"
+          underlineColor="$fg-muted"
         />
       </Box>,
     )

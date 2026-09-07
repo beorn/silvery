@@ -1,7 +1,7 @@
 /**
  * Token aliasing — resolve token values that reference other tokens.
  *
- * Supports alias chains (e.g. $button -> $primary -> #EBCB8B) with a
+ * Supports alias chains (e.g. $button -> $fg-accent -> #EBCB8B) with a
  * depth limit to prevent infinite loops from circular references.
  */
 
@@ -24,7 +24,7 @@ const MAX_ALIAS_DEPTH = 10
  * ```typescript
  * const themed = resolveAliases({
  *   ...baseTheme,
- *   button: "$primary",      // resolves to the value of 'primary'
+ *   button: "$fg-accent",    // resolves to the value of 'fg-accent'
  *   buttonHover: "$button",  // chain: buttonHover -> button -> primary -> hex
  * })
  * ```

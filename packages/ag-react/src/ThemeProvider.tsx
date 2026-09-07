@@ -6,7 +6,7 @@
  *
  * ```tsx
  * // v2 API (preferred) — sparse or full token bag, merged over defaults
- * <ThemeProvider tokens={{ primary: "#5B8DEF", "priority-p0": "#FF5555" }}>
+ * <ThemeProvider tokens={{ "fg-accent": "#5B8DEF", "priority-p0": "#FF5555" }}>
  *   <App />
  * </ThemeProvider>
  *
@@ -40,7 +40,14 @@
 
 import React, { useContext, useMemo } from "react"
 import { ThemeContext, ActiveSchemeContext } from "./ThemeContext"
-import type { Theme, ActiveScheme } from "@silvery/ansi"
+import {
+  bakeFlat,
+  defaultFlattenRule,
+  resolveThemeColor,
+  sterlingMergePartial,
+  type Theme,
+  type ActiveScheme,
+} from "@silvery/ansi"
 import { Box } from "./components/Box"
 
 /** Partial token bag — merged over the base theme. Accepts any Theme key, custom $tokens via app-defined keys, or a full Theme. */
@@ -71,6 +78,66 @@ export interface ThemeProviderProps {
   children: React.ReactNode
 }
 
+/**
+ * Reflect canonical flat-token overrides onto their nested source leaves.
+ *
+ * `bakeFlat` owns the forward projection and freezes the result. This small
+ * inverse walk only identifies the existing nested leaf for a supplied flat
+ * key; it neither reconstructs a ColorScheme nor derives colors, so overlays
+ * cannot become a second theme authority.
+ */
+function applyFlatOverrides(
+  node: Record<string, unknown>,
+  overrides: Record<string, unknown>,
+  path: readonly string[] = [],
+  isRoot = true,
+): Record<string, unknown> {
+  let out = node
+  for (const [key, value] of Object.entries(node)) {
+    // Root-level hyphen keys are prior projections. Their nested source wins
+    // when `bakeFlat` writes a fresh canonical projection below.
+    if (isRoot && key.includes("-")) continue
+    const nextPath = [...path, key]
+    if (typeof value === "string") {
+      const flat = defaultFlattenRule(nextPath)
+      const override = flat === null ? undefined : overrides[flat]
+      if (typeof override === "string" && override !== value) {
+        if (out === node) out = { ...node }
+        out[key] = override
+      }
+      continue
+    }
+    if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      const next = applyFlatOverrides(value as Record<string, unknown>, overrides, nextPath, false)
+      if (next !== value) {
+        if (out === node) out = { ...node }
+        out[key] = next
+      }
+    }
+  }
+  return out
+}
+
+function mergeThemeTokens(parent: Theme, tokens: ThemeTokens): Theme {
+  // A string in place of a nested canonical role is the retired Theme shape.
+  // Ask the shared token resolver to reject it with its channel-aware cure,
+  // rather than merging a raw field into the otherwise canonical Theme.
+  for (const [key, value] of Object.entries(tokens)) {
+    if (typeof value === "string" && !key.includes("-")) {
+      resolveThemeColor(`$${key}`, parent)
+    }
+  }
+  // mergePartial builds a new overlay; it never mutates the frozen parent.
+  const merged = sterlingMergePartial(parent, tokens as never) as unknown as Record<string, unknown>
+  const projected = applyFlatOverrides(merged, tokens as Record<string, unknown>)
+  // Rebuild canonical flats from their nested source and freeze both forms.
+  // App-defined flat custom tokens are preserved because bakeFlat skips root
+  // hyphen keys that are not produced by the standard projection rule.
+  // `projected` is structurally open for app tokens; `bakeFlat` restores the
+  // complete, frozen Sterling flat projection before it reaches context.
+  return bakeFlat(projected) as unknown as Theme
+}
+
 export function ThemeProvider({
   tokens,
   theme,
@@ -86,24 +153,7 @@ export function ThemeProvider({
     }
     if (theme) return theme
     if (!tokens) return parent
-    // Sparse merge: parent theme + tokens override.
-    // `variants` is deep-merged so `tokens={{ variants: { hero: {...} } }}` adds
-    // to the existing variants map rather than replacing it entirely.
-    const t = tokens as Record<string, unknown>
-    const result = { ...parent, ...tokens } as Theme
-    if (
-      t["variants"] !== null &&
-      typeof t["variants"] === "object" &&
-      !Array.isArray(t["variants"])
-    ) {
-      // Sterling 0.19.0 marks `variants` readonly; we're constructing a fresh
-      // theme object here (not mutating a frozen one), so the cast is safe.
-      ;(result as { variants: Theme["variants"] }).variants = {
-        ...parent.variants,
-        ...(t["variants"] as Record<string, unknown>),
-      } as Theme["variants"]
-    }
-    return result
+    return mergeThemeTokens(parent, tokens)
   }, [tokens, theme, parent])
   // Wrap children in a Box with theme= prop so the render pipeline picks up the
   // theme via the AgNode tree (same mechanism as color="inherit" cascade). The

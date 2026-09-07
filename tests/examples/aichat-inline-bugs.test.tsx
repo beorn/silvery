@@ -219,7 +219,7 @@ describe("aichat inline bugs", { timeout: 15000 }, () => {
     expect(focusedCell).not.toBeNull()
     const focusedFg = (term.screen!.cell?.(focusedCell!.row, focusedCell!.col) as any)?.fg
 
-    // Send focus-out (CSI O) — border color should flip to $inputborder.
+    // Send focus-out (CSI O) — border color should flip to $border-default.
     ;(term as any).sendInput?.("\x1b[O")
     await settle(150)
 

@@ -50,7 +50,7 @@ The biggest differences at a glance:
 | **Clipboard**       | Built-in `App.copy_to_clipboard()` API                                                                                                  | OSC 52 (works over SSH)                                                                                                             |
 | **Image rendering** | None built-in                                                                                                                           | Kitty graphics + Sixel with auto-detect                                                                                             |
 | **Web target**      | Textual Web (serve TUI in browser)                                                                                                      | Experimental (Canvas 2D, DOM)                                                                                                       |
-| **Theme system**    | TCSS variables + built-in themes                                                                                                        | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect                                                               |
+| **Theme system**    | TCSS variables + built-in themes                                                                                                        | 84 color schemes, semantic tokens (`$fg-accent`, `$fg-muted`), auto-detect                                                          |
 | **Runtime**         | CPython / PyPy                                                                                                                          | Node.js / Bun                                                                                                                       |
 | **Native deps**     | None                                                                                                                                    | None                                                                                                                                |
 | **Community**       | Large (Python TUI standard)                                                                                                             | Newer, smaller community                                                                                                            |
@@ -73,11 +73,11 @@ class MainApp(App):
     Sidebar {
         dock: left;
         width: 30;
-        background: $surface;
+        background: $bg-surface-raised;
     }
 
     Sidebar:focus-within {
-        border: tall $accent;
+        border: tall $fg-accent;
     }
 
     #content {
@@ -102,7 +102,7 @@ Silvery uses React props for styling, with semantic theme tokens:
 function App() {
   return (
     <Box flexDirection="row">
-      <Box width={30} borderStyle="round" borderColor="$border">
+      <Box width={30} borderStyle="round" borderColor="$border-default">
         <Sidebar />
       </Box>
       <Box flexGrow={1} flexDirection="column">
@@ -116,7 +116,7 @@ function App() {
 
 Layout is CSS flexbox via the Flexily engine — `flexDirection`, `flexGrow`, `flexShrink`, `flexWrap`, `gap`, `alignItems`, `justifyContent`, `padding`, `margin`, and `border` all work as they do in browser CSS.
 
-Silvery does not have external stylesheet files. Styling is inline (props) or via theme tokens (`$primary`, `$muted`, `$border`). This is closer to React Native or Tailwind than traditional CSS.
+Silvery does not have external stylesheet files. Styling is inline (props) or via theme tokens (`$fg-accent`, `$fg-muted`, `$border-default`). This is closer to React Native or Tailwind than traditional CSS.
 
 **Trade-off:** TCSS gives you selector-based styling with hot-reload and separation of concerns. Silvery's inline props are more explicit and co-located with components but lack the cascading and selector power of TCSS.
 

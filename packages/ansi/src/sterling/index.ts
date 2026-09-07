@@ -50,8 +50,6 @@ export type {
 export { sterling } from "./sterling.ts"
 export { defineDesignSystem } from "./define.ts"
 export { deriveTheme, deriveRoles, mergePartial } from "./derive.ts"
-export { inlineSterlingTokens } from "./inline.ts"
-export type { InlinedTheme } from "./inline.ts"
 export { STERLING_FLAT_TOKENS } from "./flat-tokens.ts"
 export { PUBLIC_TOKENS, FAMILY_ORDER, groupTokensByFamily } from "./token-manifest.ts"
 export type { TokenManifestEntry } from "./token-manifest.ts"

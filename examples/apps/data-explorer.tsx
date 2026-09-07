@@ -261,28 +261,28 @@ function ProcessRow({
 
   return (
     <Box paddingX={1} backgroundColor={isSelected ? "$fg-accent" : undefined}>
-      <Text color={isSelected ? "$primary-fg" : "$fg-muted"}>
+      <Text color={isSelected ? "$fg-on-accent" : "$fg-muted"}>
         {String(proc.pid).padEnd(cols.pidW)}
       </Text>
-      <Text bold={isSelected} color={isSelected ? "$primary-fg" : undefined}>
+      <Text bold={isSelected} color={isSelected ? "$fg-on-accent" : undefined}>
         {displayName.padEnd(cols.nameW)}
       </Text>
-      <Text color={isSelected ? "$primary-fg" : cpuColor}>
+      <Text color={isSelected ? "$fg-on-accent" : cpuColor}>
         {proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%
       </Text>
-      <Text color={isSelected ? "$primary-fg" : memColor}>
+      <Text color={isSelected ? "$fg-on-accent" : memColor}>
         {proc.mem.toFixed(1).padStart(cols.memW - 1)}%
       </Text>
       <Text>{"  "}</Text>
-      <Text color={isSelected ? "$primary-fg" : STATUS_COLORS[proc.status]}>
+      <Text color={isSelected ? "$fg-on-accent" : STATUS_COLORS[proc.status]}>
         {STATUS_ICONS[proc.status]} {proc.status.padEnd(cols.statusW - 2)}
       </Text>
-      <Text color={isSelected ? "$primary-fg" : "$fg-muted"}>{proc.user.padEnd(cols.userW)}</Text>
-      <Text color={isSelected ? "$primary-fg" : "$fg-muted"}>
+      <Text color={isSelected ? "$fg-on-accent" : "$fg-muted"}>{proc.user.padEnd(cols.userW)}</Text>
+      <Text color={isSelected ? "$fg-on-accent" : "$fg-muted"}>
         {String(proc.threads).padStart(cols.threadsW)}
       </Text>
       <Text>{"  "}</Text>
-      <Text color={isSelected ? "$primary-fg" : "$fg-muted"}>
+      <Text color={isSelected ? "$fg-on-accent" : "$fg-muted"}>
         {proc.uptime.padStart(cols.uptimeW)}
       </Text>
     </Box>
@@ -316,7 +316,7 @@ function SummaryBar({ processes, query }: { processes: ProcessInfo[]; query: str
       {query && (
         <>
           <Muted>|</Muted>
-          <Text color="$muted">filter: &quot;{query}&quot;</Text>
+          <Text color="$fg-muted">filter: &quot;{query}&quot;</Text>
         </>
       )}
     </Box>

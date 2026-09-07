@@ -73,7 +73,7 @@ interface ErrorBoundaryState {
  *   fallback={(error, errorInfo) => (
  *     <Box flexDirection="column">
  *       <Text color="red">Error: {error.message}</Text>
- *       <Text color="$muted">{errorInfo.componentStack}</Text>
+ *       <Text color="$fg-muted">{errorInfo.componentStack}</Text>
  *     </Box>
  *   )}
  * >

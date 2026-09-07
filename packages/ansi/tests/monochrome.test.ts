@@ -23,25 +23,27 @@ describe("deriveMonochromeTheme", () => {
     // Per the design spec: error is loudest (bold+inverse), info is subtlest
     // (italic), warning and success share the "bold" rank — their semantic
     // difference is contextual framing, not visual rank.
-    const error = DEFAULT_MONO_ATTRS.error?.slice().sort().join(",") ?? ""
-    const info = DEFAULT_MONO_ATTRS.info?.slice().sort().join(",") ?? ""
-    const warning = DEFAULT_MONO_ATTRS.warning?.slice().sort().join(",") ?? ""
-    const success = DEFAULT_MONO_ATTRS.success?.slice().sort().join(",") ?? ""
+    const error = DEFAULT_MONO_ATTRS["fg-error"]?.slice().sort().join(",") ?? ""
+    const info = DEFAULT_MONO_ATTRS["fg-info"]?.slice().sort().join(",") ?? ""
+    const warning = DEFAULT_MONO_ATTRS["fg-warning"]?.slice().sort().join(",") ?? ""
+    const success = DEFAULT_MONO_ATTRS["fg-success"]?.slice().sort().join(",") ?? ""
     const ranks = new Set([error, info, warning])
     expect(ranks.size).toBe(3) // error, info, warning are each distinct
     expect(warning).toBe(success) // warning and success share visual rank
   })
 
   it("error is the loudest — has both bold and inverse", () => {
-    expect(DEFAULT_MONO_ATTRS.error).toEqual(expect.arrayContaining<MonoAttr>(["bold", "inverse"]))
+    expect(DEFAULT_MONO_ATTRS["fg-error"]).toEqual(
+      expect.arrayContaining<MonoAttr>(["bold", "inverse"]),
+    )
   })
 
   it("fg-link has underline attr (standard monochrome convention)", () => {
     expect(DEFAULT_MONO_ATTRS["fg-link"]).toEqual(["underline"])
   })
 
-  it("muted gets dim attr", () => {
-    expect(DEFAULT_MONO_ATTRS.muted).toEqual(["dim"])
+  it("fg-muted gets dim attr", () => {
+    expect(DEFAULT_MONO_ATTRS["fg-muted"]).toEqual(["dim"])
   })
 
   it("bg-selected uses inverse (visible without color)", () => {
@@ -57,11 +59,12 @@ describe("deriveMonochromeTheme", () => {
     // These represent background planes that mono terminals can't color/vary.
     for (const token of [
       "bg",
-      "mutedbg",
-      "surfacebg",
-      "popoverbg",
-      "border",
-      "cursorbg",
+      "bg-muted",
+      "bg-surface-default",
+      "bg-surface-raised",
+      "bg-surface-overlay",
+      "border-default",
+      "bg-cursor",
     ] as const) {
       expect(DEFAULT_MONO_ATTRS[token]).toEqual([])
     }
@@ -82,7 +85,9 @@ describe("deriveMonochromeTheme", () => {
 describe("monoAttrsFor", () => {
   it("returns attrs for a known token", () => {
     const theme = deriveTheme(defaultDarkScheme)
-    expect(monoAttrsFor(theme, "error")).toEqual(DEFAULT_MONO_ATTRS.error)
+    expect(monoAttrsFor(theme, "fg-error" as keyof typeof theme)).toEqual(
+      DEFAULT_MONO_ATTRS["fg-error"],
+    )
   })
 
   it("returns empty array for an unmapped token", () => {

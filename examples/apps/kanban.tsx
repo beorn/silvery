@@ -105,7 +105,7 @@ function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }
     >
       {isSelected ? (
         <Box backgroundColor="$fg-accent" paddingX={1}>
-          <Text color="$primary-fg" bold wrap="truncate">
+          <Text color="$fg-on-accent" bold wrap="truncate">
             {card.title}
           </Text>
         </Box>
@@ -141,10 +141,10 @@ function ColumnComponent({
       borderColor={isSelected ? "$fg-accent" : "$border-default"}
     >
       <Box backgroundColor={isSelected ? "$fg-accent" : undefined} paddingX={1}>
-        <Text bold color={isSelected ? "$primary-fg" : "$text"}>
+        <Text bold color={isSelected ? "$fg-on-accent" : "$text"}>
           {column.title}
         </Text>
-        <Text color={isSelected ? "$primary-fg" : "$fg-muted"}> ({column.cards.length})</Text>
+        <Text color={isSelected ? "$fg-on-accent" : "$fg-muted"}> ({column.cards.length})</Text>
       </Box>
 
       <Box
@@ -163,7 +163,7 @@ function ColumnComponent({
         ))}
 
         {column.cards.length === 0 && (
-          <Text italic color="$muted">
+          <Text italic color="$fg-muted">
             No cards
           </Text>
         )}

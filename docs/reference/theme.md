@@ -3,7 +3,7 @@
 The silvery theme system transforms a 22-color terminal scheme into a Sterling-shaped `Theme` — nested role objects (`theme.accent`, `theme.surface`, …) plus flat hyphen-keys (`theme["bg-accent"]`, `theme["fg-on-error"]`, …) on the same frozen object. The pipeline flows in one direction:
 
 ```
-ColorScheme (22) → sterling.deriveFromScheme() → Theme (nested roles + flat tokens) → resolveToken() → ANSI output
+ColorScheme (22) → sterling.deriveFromScheme() → Theme (nested roles + flat tokens) → resolveThemeColor() → ANSI output
 ```
 
 Components never reference raw colors directly. They use `$token` strings (`color="$fg-accent"`) that resolve against the active theme at render time. This decouples UI code from any specific palette.
@@ -293,30 +293,29 @@ type DerivationTrace = readonly DerivationStep[]
 
 This is useful for the [Theme Explorer](/themes) and for debugging unexpected token values.
 
-## resolveToken()
+## resolveThemeColor()
 
-Resolves a `$token` string against a `Theme` object. Both kebab and camelCase forms work; hyphens are stripped before lookup.
+Resolves a `$token` string against a `Theme` object by direct canonical lookup. Retired spellings throw with the required canonical cure; unknown custom-token names return `undefined`.
 
 ```typescript
-import { resolveToken } from "@silvery/ansi"
+import { resolveThemeColor } from "@silvery/ansi"
 
-resolveToken("$fg-accent", theme) // theme["fg-accent"]
-resolveToken("$bg-surface-raised", theme) // theme["bg-surface-raised"]
-resolveToken("$color0", theme) // theme.palette[0]
-resolveToken("$fg", theme) // theme.fg
-resolveToken("#ff0000", theme) // pass-through
-resolveToken("red", theme) // pass-through (named CSS color)
+resolveThemeColor("$fg-accent", theme) // theme["fg-accent"]
+resolveThemeColor("$bg-surface-raised", theme) // theme["bg-surface-raised"]
+resolveThemeColor("$color0", theme) // theme.palette[0]
+resolveThemeColor("$fg", theme) // theme.fg
+resolveThemeColor("#ff0000", theme) // pass-through
+resolveThemeColor("red", theme) // pass-through (named CSS color)
 ```
 
 | Input                    | Behavior                     | Example                     |
 | ------------------------ | ---------------------------- | --------------------------- |
 | `undefined`              | Returns `undefined`          | —                           |
 | `"$fg-accent"`           | Lookup `theme["fg-accent"]`  | `"#EBCB8B"`                 |
-| `"$bgAccent"`            | camelCase form — same lookup | `"#EBCB8B"`                 |
 | `"$color0"`–`"$color15"` | Index into `theme.palette`   | `"#2E3440"`                 |
 | `"#ff0000"`              | Pass through unchanged       | `"#ff0000"`                 |
 | `"red"`                  | Pass through unchanged       | `"red"`                     |
-| Unknown `$token`         | Pass through as-is           | `"$unknown"` → `"$unknown"` |
+| Unknown `$token`         | Returns `undefined`          | `"$unknown"` → `undefined` |
 
 ## Built-in Schemes
 

@@ -56,7 +56,7 @@ Loading... ░░░░░░████░░░░░░░░░░░░░
 ### Download Progress
 
 ```tsx
-<ProgressBar value={bytesReceived / totalBytes} label="Downloading..." color="$primary" />
+<ProgressBar value={bytesReceived / totalBytes} label="Downloading..." color="$fg-accent" />
 ```
 
 ### File Processing

@@ -51,34 +51,12 @@ const STERLING_SHAPE: ThemeShape = {
  * Internal: build a nested Theme (no flat keys). `defineDesignSystem` applies
  * `bakeFlat` afterwards — the inner derivation stays flat-agnostic.
  *
- * Also pre-populates the standalone flat tokens that don't come from a role
- * walk: `bg-backdrop` (modal scrim), and `fg-default`/`bg-default` (explicit
- * aliases for canvas fg/bg). bakeFlat preserves pre-existing root-level
- * hyphen keys, so writing these here is the simplest seam.
+ * The canonical derivation already owns the root canvas pair and standalone
+ * flat tokens (`bg-backdrop`, `fg-default`, `bg-default`). This wrapper only
+ * selects a scheme and leaves projection to `defineDesignSystem`.
  */
 function buildRawTheme(scheme: ColorScheme, opts: DeriveOptions = {}): Theme {
-  const base = deriveTheme(scheme, opts) as unknown as Theme
-  const out = base as unknown as Record<string, unknown>
-
-  // Backdrop — modal scrim. Composite-derived from canvas bg with a 40 %
-  // toward-black push, baked solid (TUI has no alpha; web target can emit
-  // the actual rgba layer separately). Distinct from `bg-surface-overlay`
-  // (which is the popover/tooltip CARD bg).
-  if (typeof out["bg-backdrop"] !== "string") {
-    out["bg-backdrop"] = blend(scheme.background, "#000000", 0.4)
-  }
-
-  // Public default tokens — explicit flat aliases for canvas fg/bg, exposed
-  // so consumers can write `$fg-default` / `$bg-default` without reaching
-  // for `theme.fg` directly.
-  if (typeof out["fg-default"] !== "string") {
-    out["fg-default"] = scheme.foreground
-  }
-  if (typeof out["bg-default"] !== "string") {
-    out["bg-default"] = scheme.background
-  }
-
-  return base
+  return deriveTheme(scheme, opts) as unknown as Theme
 }
 
 /**

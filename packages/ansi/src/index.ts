@@ -243,7 +243,6 @@ export { hyperlink } from "./hyperlink"
 
 export { createStyle, createPlainStyle, style, resolveThemeColor } from "./style/style"
 export { createMixedStyle } from "./style/mixed-proxy"
-export { THEME_TOKEN_DEFAULTS } from "./style/colors"
 export type { Style, StyleOptions, ThemeLike, UnderlineCaps } from "./style/types"
 
 // =============================================================================
@@ -252,8 +251,7 @@ export type { Style, StyleOptions, ThemeLike, UnderlineCaps } from "./style/type
 
 export { deriveTheme, deriveAnsi16Theme, loadTheme } from "./theme/derive"
 export type { ThemeAdjustment, LoadThemeOptions } from "./theme/derive"
-export { deriveFields, DEFAULT_VARIANTS } from "./theme/derived"
-export type { DeriveFieldsInput, DerivedFields } from "./theme/derived"
+export { DEFAULT_VARIANTS } from "./sterling/derive"
 export {
   deriveMonochromeTheme,
   monoAttrsFor,
@@ -275,7 +273,6 @@ export type {
   ThemeToken,
   StandardThemeToken,
   ColorRingToken,
-  BrandToken,
   PaletteToken,
   KnownThemeToken,
   TextColor,
@@ -390,7 +387,6 @@ export {
   deriveTheme as sterlingDeriveTheme,
   deriveRoles as sterlingDeriveRoles,
   mergePartial as sterlingMergePartial,
-  inlineSterlingTokens,
   STERLING_FLAT_TOKENS,
   PUBLIC_TOKENS,
   FAMILY_ORDER,
@@ -415,7 +411,6 @@ export type {
   DisabledRole,
   FlatToken,
   FlatTokens,
-  InlinedTheme,
   /** @deprecated Use `StatusRole`. */
   InteractiveRole,
   MutedRole,

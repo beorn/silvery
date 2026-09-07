@@ -233,7 +233,7 @@ function BoardWithIsland({
         <Island guest={guest} cols={cols} rows={rows} />
       </Box>
       <Box>
-        <Text color="$muted">footer</Text>
+        <Text color="$fg-muted">footer</Text>
       </Box>
     </Box>
   )

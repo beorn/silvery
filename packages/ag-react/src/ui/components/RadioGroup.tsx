@@ -98,7 +98,7 @@ export function RadioGroup<T extends string = string>({
         const marker = isSelected ? "(•)" : "( )"
         return (
           <Box key={opt.value}>
-            <Text color={isCursor ? "$primary" : isSelected ? "$primary" : "$muted"}>
+            <Text color={isCursor ? "$fg-accent" : isSelected ? "$fg-accent" : "$fg-muted"}>
               {isCursor ? "› " : "  "}
               {marker} {opt.label}
             </Text>

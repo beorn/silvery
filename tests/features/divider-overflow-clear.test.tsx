@@ -9,7 +9,7 @@
  *
  *     <Box flexShrink={0} flexGrow={0} flexBasis={1} height={1} flexDirection="row">
  *       <Box flexGrow={1} flexShrink={1} minWidth={0} minHeight={0}>
- *         <Text color="$border" wrap="wrap" minHeight={0}>{"─".repeat(400)}</Text>
+ *         <Text color="$border-default" wrap="wrap" minHeight={0}>{"─".repeat(400)}</Text>
  *       </Box>
  *     </Box>
  *

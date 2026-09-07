@@ -19,8 +19,8 @@ import type { ActiveColorLevel } from "./state"
 /**
  * Get the effective background color string for a Box.
  * Returns explicit `backgroundColor` if set, otherwise the Theme's root
- * surface background — Sterling's `bg-surface-default` if present, falling
- * back to the legacy `bg` root for any pre-Sterling Theme shape.
+ * surface background — Sterling's `bg-surface-default` if present, otherwise
+ * its canonical root `bg` canvas.
  * Used by both renderBox (paint fill) and render-phase (cascade logic).
  */
 export function getEffectiveBg(props: BoxProps): string | undefined {
@@ -29,8 +29,8 @@ export function getEffectiveBg(props: BoxProps): string | undefined {
     const theme = props.theme as unknown as Record<string, unknown>
     const sterlingBg = theme["bg-surface-default"]
     if (typeof sterlingBg === "string") return sterlingBg
-    const legacyBg = theme["bg"]
-    if (typeof legacyBg === "string") return legacyBg
+    const rootBg = theme["bg"]
+    if (typeof rootBg === "string") return rootBg
   }
   return undefined
 }
@@ -192,19 +192,19 @@ export function renderBorder(
   // Helper to check if a column is visible within clip bounds
   const isColVisible = (col: number): boolean => {
     if (clipBounds?.left === undefined || clipBounds.right === undefined)
-      return col >= 0 && col < sink.width
+      {return col >= 0 && col < sink.width}
     return col >= clipBounds.left && col < clipBounds.right && col < sink.width
   }
 
   // Top border — corners use the bg of the horizontal side (top/bottom)
   if (showTop && isRowVisible(y)) {
     if (showLeft && isColVisible(x))
-      sink.emitSetCell(x, y, { char: chars.topLeft, fg: color, bg: topBg })
+      {sink.emitSetCell(x, y, { char: chars.topLeft, fg: color, bg: topBg })}
     const hStart = showLeft ? x + 1 : x
     const hEnd = showRight ? x + width - 1 : x + width
     for (let col = hStart; col < hEnd && col < sink.width; col++) {
       if (isColVisible(col))
-        sink.emitSetCell(col, y, { char: chars.horizontal, fg: color, bg: topBg })
+        {sink.emitSetCell(col, y, { char: chars.horizontal, fg: color, bg: topBg })}
     }
     if (showRight && x + width - 1 < sink.width && isColVisible(x + width - 1)) {
       sink.emitSetCell(x + width - 1, y, { char: chars.topRight, fg: color, bg: topBg })
@@ -218,7 +218,7 @@ export function renderBorder(
   for (let row = sideStart; row < sideEnd; row++) {
     if (!isRowVisible(row)) continue
     if (showLeft && isColVisible(x))
-      sink.emitSetCell(x, row, { char: chars.vertical, fg: color, bg: leftBg })
+      {sink.emitSetCell(x, row, { char: chars.vertical, fg: color, bg: leftBg })}
     if (showRight && x + width - 1 < sink.width && isColVisible(x + width - 1)) {
       sink.emitSetCell(x + width - 1, row, { char: rightVertical, fg: color, bg: rightBg })
     }
@@ -235,7 +235,7 @@ export function renderBorder(
     const bEnd = showRight ? x + width - 1 : x + width
     for (let col = bStart; col < bEnd && col < sink.width; col++) {
       if (isColVisible(col))
-        sink.emitSetCell(col, bottomY, { char: bottomHorizontal, fg: color, bg: bottomBg })
+        {sink.emitSetCell(col, bottomY, { char: bottomHorizontal, fg: color, bg: bottomBg })}
     }
     if (showRight && x + width - 1 < sink.width && isColVisible(x + width - 1)) {
       sink.emitSetCell(x + width - 1, bottomY, {
@@ -295,7 +295,7 @@ export function renderOutline(
   // Helper to check if a column is visible within clip bounds
   const isColVisible = (col: number): boolean => {
     if (clipBounds?.left === undefined || clipBounds.right === undefined)
-      return col >= 0 && col < sink.width
+      {return col >= 0 && col < sink.width}
     return col >= clipBounds.left && col < clipBounds.right && col < sink.width
   }
 
@@ -307,10 +307,10 @@ export function renderOutline(
   // Top border (one row above the box)
   if (showTop && isRowVisible(oy)) {
     if (showLeft && isColVisible(ox))
-      sink.emitSetCell(ox, oy, { char: chars.topLeft, fg: color, bg, attrs })
+      {sink.emitSetCell(ox, oy, { char: chars.topLeft, fg: color, bg, attrs })}
     for (let col = ox + 1; col < ox + ow - 1 && col < sink.width; col++) {
       if (isColVisible(col))
-        sink.emitSetCell(col, oy, { char: chars.horizontal, fg: color, bg, attrs })
+        {sink.emitSetCell(col, oy, { char: chars.horizontal, fg: color, bg, attrs })}
     }
     if (showRight && ox + ow - 1 < sink.width && isColVisible(ox + ow - 1)) {
       sink.emitSetCell(ox + ow - 1, oy, { char: chars.topRight, fg: color, bg, attrs })
@@ -324,7 +324,7 @@ export function renderOutline(
   for (let row = sideStart; row < sideEnd; row++) {
     if (!isRowVisible(row)) continue
     if (showLeft && isColVisible(ox))
-      sink.emitSetCell(ox, row, { char: chars.vertical, fg: color, bg, attrs })
+      {sink.emitSetCell(ox, row, { char: chars.vertical, fg: color, bg, attrs })}
     if (showRight && ox + ow - 1 < sink.width && isColVisible(ox + ow - 1)) {
       sink.emitSetCell(ox + ow - 1, row, { char: outlineRightVertical, fg: color, bg, attrs })
     }
@@ -339,7 +339,7 @@ export function renderOutline(
     }
     for (let col = ox + 1; col < ox + ow - 1 && col < sink.width; col++) {
       if (isColVisible(col))
-        sink.emitSetCell(col, bottomY, { char: outlineBottomHorizontal, fg: color, bg, attrs })
+        {sink.emitSetCell(col, bottomY, { char: outlineBottomHorizontal, fg: color, bg, attrs })}
     }
     if (showRight && ox + ow - 1 < sink.width && isColVisible(ox + ow - 1)) {
       sink.emitSetCell(ox + ow - 1, bottomY, {

@@ -114,10 +114,10 @@ Generate an OSC 66 escape sequence to reset text scale to default (1.0). Equival
 The `textSize` style prop is available on `Box` and `Text` components. It declares the desired OSC 66 font scale for the node's content. Currently a hint for terminal-aware renderers — the standard terminal pipeline emits the escape sequences around the node's rendered content on terminals that support OSC 66.
 
 ```tsx
-<Text textSize={2} bold color="$primary">
+<Text textSize={2} bold color="$fg-accent">
   Large Heading
 </Text>
-<Text textSize={0.5} color="$muted">
+<Text textSize={0.5} color="$fg-muted">
   Fine print annotation
 </Text>
 ```

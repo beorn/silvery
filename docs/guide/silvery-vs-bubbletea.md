@@ -18,7 +18,7 @@ The biggest differences at a glance:
 - **45+ built-in components** — VirtualList, Table, CommandPalette, TreeView, Toast, Tabs, SplitView, ModalDialog, Image, TextArea, and more. Bubbles provides ~12 components.
 - **Incremental rendering** — cell-level dirty tracking skips unchanged nodes. Bubble Tea v2's cell-based renderer diffs at the cell level too, but re-runs `View()` for the full tree on every update.
 - **DOM-style mouse events** — `onClick`, `onWheel`, `onMouseDown` with hit testing and drag support. Bubble Tea v2 has SGR mouse with typed messages (`MouseClickMsg`, `MouseReleaseMsg`, etc.), but events are routed through `Update` without DOM-style bubbling or hit testing.
-- **84 color schemes with semantic tokens** — `$primary`, `$muted`, `$border` with auto-detection. Lip Gloss provides chainable style functions with color downsampling.
+- **84 color schemes with semantic tokens** — `$fg-accent`, `$fg-muted`, `$border-default` with auto-detection. Lip Gloss provides chainable style functions with color downsampling.
 - **Multi-backend test matrix** — [Termless](https://termless.dev) runs tests across 10+ real terminal parsers (xterm.js, vt100, Ghostty, Kitty, Alacritty, ...). `teatest` uses golden file comparison.
 - **Dynamic scrollback** — items graduate to terminal history; inline/fullscreen hybrid modes. Bubble Tea v2 supports inline mode but has no scrollback graduation mechanism.
 - **Fast incremental rendering** — cell-level dirty tracking means most of the tree is skipped on interactive updates. Performance is comparable to Ink 7.0 — see [benchmarks](/guide/silvery-vs-ink#performance-size) for details.
@@ -69,7 +69,7 @@ Bubble Tea first, Silvery second. Features marked "core" are built into the fram
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | **Built-in components** | Bubbles: ~12 (spinner, textinput, textarea, viewport, table, list, filepicker, paginator, progress, help, timer, stopwatch) | **45+** core (VirtualList, Table, CommandPalette, TreeView, Toast, Tabs, SplitView, ModalDialog, Image, TextArea, ...) |
 | **Forms**               | [Huh](https://github.com/charmbracelet/huh) — form builder with groups, validation, accessibility                           | Built-in form components (TextInput, SelectList, Checkbox, etc.)                                                       |
-| **Theme system**        | Lip Gloss: chainable style functions, auto color downsampling (truecolor → 256 → 16)                                        | 84 color schemes, semantic tokens (`$primary`, `$muted`), auto-detect terminal scheme                                  |
+| **Theme system**        | Lip Gloss: chainable style functions, auto color downsampling (truecolor → 256 → 16)                                        | 84 color schemes, semantic tokens (`$fg-accent`, `$fg-muted`), auto-detect terminal scheme                               |
 | **TEA state machines**  | Core — every program is `Init`/`Update`/`View`                                                                              | Optional via `@silvery/create`: `(action, state) → [state, effects]`, replay, undo                                     |
 | **Composition**         | Embed models in parent, forward messages manually                                                                           | React JSX nesting + `pipe()` provider composition                                                                      |
 | **SSH server**          | [Wish](https://github.com/charmbracelet/wish) — serve TUI apps over SSH                                                     | None                                                                                                                   |
@@ -248,9 +248,9 @@ Lip Gloss v2 integrates with Bubble Tea for automatic color downsampling -- true
 **Silvery** uses semantic theme tokens with 84 color schemes:
 
 ```tsx
-<Text color="$primary">Important</Text>
-<Text color="$muted">Secondary</Text>
-<Box borderStyle="round" borderColor="$border">
+<Text color="$fg-accent">Important</Text>
+<Text color="$fg-muted">Secondary</Text>
+<Box borderStyle="round" borderColor="$border-default">
   <Text>Framed content</Text>
 </Box>
 ```

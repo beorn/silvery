@@ -9,7 +9,7 @@
  *
  * To make the `1 / 2 / 3 / 4` toggle visibly different in the storybook, we
  * apply the same quantization at RENDER time to every hex value that flows
- * into the preview (legacy Theme tokens, Sterling Theme tokens, token-tree
+ * into the preview (Sterling Theme tokens, token-tree
  * swatch hexes, derivation-panel input chips). The result: switching to
  * `ansi16` snaps colors to one of 16 slots (very different look), `256`
  * introduces subtle cube-quantization shifts, `mono` collapses all hues to
@@ -21,18 +21,11 @@
  *
  * Implementation: thin wrappers over the public {@link pickColorLevel} API.
  * `pickColorLevel` walks hex leaves at any depth (flat tokens, nested roles,
- * palette arrays, arbitrary objects) so both Theme shapes work without a
- * storybook-local implementation.
+ * palette arrays, arbitrary objects) without a storybook-local implementation.
  */
 
 import { pickColorLevel, quantizeHex, type ColorLevel } from "@silvery/ansi"
-import type { Theme as LegacyTheme } from "@silvery/ansi"
 import type { SterlingTheme } from "@silvery/theme"
-
-/** Quantize the legacy (silvery/ui) Theme. Returns a new object; inputs not mutated. */
-export function quantizeLegacyTheme(theme: LegacyTheme, tier: ColorLevel): LegacyTheme {
-  return pickColorLevel(theme, tier)
-}
 
 /** Quantize the Sterling Theme (nested roles + flat tokens). */
 export function quantizeSterlingTheme(theme: SterlingTheme, tier: ColorLevel): SterlingTheme {

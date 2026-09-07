@@ -192,7 +192,7 @@ export class SilveryErrorBoundary extends Component<
             { key: "location", marginTop: 1 },
             React.createElement(
               "silvery-text",
-              { color: "$muted" },
+              { color: "$fg-muted" },
               `${filePath}:${origin.line}:${origin.column}`,
             ),
           ),
@@ -210,7 +210,8 @@ export class SilveryErrorBoundary extends Component<
               "silvery-text",
               {
                 backgroundColor: line === origin.line ? "red" : undefined,
-                color: line === origin.line ? "white" : line !== origin.line ? "$muted" : undefined,
+                color:
+                  line === origin.line ? "white" : line !== origin.line ? "$fg-muted" : undefined,
               },
               `${lineNum}:`,
             ),
@@ -241,22 +242,22 @@ export class SilveryErrorBoundary extends Component<
             return React.createElement(
               "silvery-box",
               { key: `stack-${i}` },
-              React.createElement("silvery-text", { color: "$muted" }, `- ${line.trim()}`),
+              React.createElement("silvery-text", { color: "$fg-muted" }, `- ${line.trim()}`),
             )
           }
           const cleanFile = cleanupPath(parsed.file)
           return React.createElement(
             "silvery-box",
             { key: `stack-${i}`, gap: 1 },
-            React.createElement("silvery-text", { color: "$muted" }, "-"),
+            React.createElement("silvery-text", { color: "$fg-muted" }, "-"),
             React.createElement(
               "silvery-text",
-              { color: "$muted", bold: true },
+              { color: "$fg-muted", bold: true },
               parsed.function ?? "",
             ),
             React.createElement(
               "silvery-text",
-              { color: "$muted" },
+              { color: "$fg-muted" },
               `(${cleanFile ?? ""}:${parsed.line}:${parsed.column})`,
             ),
           )

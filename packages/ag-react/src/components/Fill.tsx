@@ -15,17 +15,17 @@
  * <Box>
  *   <Text color="yellow">hjkl</Text>
  *   <Box flexGrow={1} flexBasis={0}>
- *     <Fill><Text color="$muted">.</Text></Fill>
+ *     <Fill><Text color="$fg-muted">.</Text></Fill>
  *   </Box>
  *   <Text>navigate</Text>
  * </Box>
  *
  * // Section header fill
  * <Box>
- *   <Text color="$muted">── </Text>
+ *   <Text color="$fg-muted">── </Text>
  *   <Text bold color="cyan">NAVIGATION</Text>
  *   <Box flexGrow={1} flexBasis={0}>
- *     <Fill><Text color="$muted"> ─</Text></Fill>
+ *     <Fill><Text color="$fg-muted"> ─</Text></Fill>
  *   </Box>
  * </Box>
  * ```

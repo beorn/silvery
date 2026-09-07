@@ -3695,7 +3695,7 @@ function ListViewInner<T>(
        * BLOCK, flush-bottom, 4/8 cell height). Half-block is the tallest
        * symmetric edge-flush option in Unicode — there's no upper-quarter
        * glyph, so going bigger than 1/8 means going to 1/2 directly.
-       * Color $muted matches the scrollbar thumb — same chrome vocabulary.
+       * Color $fg-muted matches the scrollbar thumb — same chrome vocabulary.
        *
        * No animation — indicator appears when bumpedEdge is set and
        * disappears when the user leaves the edge or the scrollbar-idle
@@ -3705,12 +3705,12 @@ function ListViewInner<T>(
        * nav (which doesn't flip isScrolling) still shows the bump. */}
       {scrollbar && bumpedEdge === "top" && effectiveRowsAbove <= 0 && (
         <Box position="absolute" top={0} right={1} flexDirection="row">
-          <Text color="$muted">▀▀▀▀▀▀▀▀▀▀</Text>
+          <Text color="$fg-muted">▀▀▀▀▀▀▀▀▀▀</Text>
         </Box>
       )}
       {scrollbar && bumpedEdge === "bottom" && effectiveRowsAbove >= scrollableRows && (
         <Box position="absolute" top={trackHeight - 1} right={1} flexDirection="row">
-          <Text color="$muted">▄▄▄▄▄▄▄▄▄▄</Text>
+          <Text color="$fg-muted">▄▄▄▄▄▄▄▄▄▄</Text>
         </Box>
       )}
       {/* Scroll-to-bottom floating button — chat-style affordance that
@@ -3737,8 +3737,8 @@ function ListViewInner<T>(
  * scrolled away from streaming content" cue).
  *
  * Visual states:
- *   - Idle: rounded pill, $mutedbg background, $muted text
- *   - Armed (hover): inverse — $primary background, $bg text — the macOS
+ *   - Idle: rounded pill, $bg-muted background, $fg-muted text
+ *   - Armed (hover): inverse — $fg-accent background, $bg text — the macOS
  *     "active button" affordance
  */
 function ScrollToBottomButton({

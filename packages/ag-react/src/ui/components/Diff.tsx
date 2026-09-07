@@ -98,13 +98,13 @@ const MARKER: Record<DiffLine["kind"], string> = {
 }
 
 // Text-color tokens for diff lines. Use semantic status tokens — they
-// resolve consistently across themes; `$success` and `$error` carry the
+// resolve consistently across themes; `$fg-success` and `$fg-error` carry the
 // add/remove signal even on monochrome / colorblind-safe palettes when
 // paired with the `+`/`-` markers.
 const COLOR: Record<DiffLine["kind"], string> = {
-  context: "$muted",
-  add: "$success",
-  remove: "$error",
+  context: "$fg-muted",
+  add: "$fg-success",
+  remove: "$fg-error",
 }
 
 // =============================================================================
@@ -126,7 +126,7 @@ function UnifiedHunk({
     <Box flexDirection="column">
       {hunk.header ? (
         <Box>
-          <Text color="$muted">
+          <Text color="$fg-muted">
             @@ -{hunk.oldStart},+{hunk.newStart} @@ {hunk.header}
           </Text>
         </Box>
@@ -211,7 +211,7 @@ function SideBySideHunk({
     <Box flexDirection="column">
       {hunk.header ? (
         <Box>
-          <Text color="$muted">
+          <Text color="$fg-muted">
             @@ -{hunk.oldStart},+{hunk.newStart} @@ {hunk.header}
           </Text>
         </Box>
@@ -233,7 +233,7 @@ function SideBySideHunk({
           ) : (
             <Text> </Text>
           )}
-          <Text color="$muted"> │ </Text>
+          <Text color="$fg-muted"> │ </Text>
           {showLineNumbers ? (
             row.right.line ? (
               <LineNumber n={row.right.n} width={lineNumberWidth} />

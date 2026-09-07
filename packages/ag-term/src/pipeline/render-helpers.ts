@@ -135,7 +135,7 @@ export function parseColor(
     }
   }
 
-  // Future: slash notation for background opacity (e.g. "$link/10") is not yet supported.
+  // Future: slash notation for background opacity (e.g. "$fg-link/10") is not yet supported.
   // It would require richer return types to carry opacity alongside the base color.
 
   // Resolve $token colors against the active theme
@@ -219,7 +219,7 @@ export function getBorderChars(style: BoxProps["borderStyle"]): BorderChars {
 // ============================================================================
 
 /**
- * Collect monochrome attrs from a color string (`"$primary"` → `["bold"]`).
+ * Collect monochrome attrs from a color string (`"$fg-accent"` → `["italic", "bold"]`).
  *
  * At mono tier, `parseColor` strips the color (returns `null`). The hierarchy
  * signal lives in the attrs bag. This helper merges the mapped attrs from
@@ -268,8 +268,9 @@ export function getTextStyle(
 
   // Monochrome tier: inject per-token SGR attrs from DEFAULT_MONO_ATTRS. Colors
   // are stripped by parseColor (returns null for $tokens at mono tier). The
-  // attrs carry the hierarchy: $primary → bold, $muted → dim, $error →
-  // bold+inverse, $link → underline, etc. User-supplied attrs always OR-in.
+  // attrs carry the hierarchy: $fg-accent → italic+bold, $fg-muted → dim,
+  // $fg-error → bold+inverse, $fg-link → underline, etc. User-supplied attrs
+  // always OR-in.
   if (colorLevel === "mono") {
     const monoAttrs = new Set<MonoAttr>()
     collectMonoAttrs(props.color, monoAttrs)

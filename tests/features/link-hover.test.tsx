@@ -98,35 +98,35 @@ describe("interaction treatment recipes", () => {
   test("parameterized recipes preserve status fills and caller text pairs", () => {
     expect(actionFill("accent", "transparent")).toEqual({
       idle: {},
-      revealed: { backgroundColor: "$fg-accent", color: "$bg" },
+      revealed: { backgroundColor: "$bg-accent", color: "$bg" },
     })
     expect(actionFill("info", "transparent")).toEqual({
       idle: {},
-      revealed: { backgroundColor: "$fg-info", color: "$bg" },
+      revealed: { backgroundColor: "$bg-info", color: "$bg" },
     })
     expect(actionFill("warning", "inverse")).toEqual({
       idle: { backgroundColor: "$bg-inverse", color: "$fg-on-inverse" },
-      revealed: { backgroundColor: "$warning", color: "$bg" },
+      revealed: { backgroundColor: "$bg-warning", color: "$bg" },
     })
     expect(actionFill("accent", "quiet")).toEqual({
-      idle: { backgroundColor: "$mutedbg", color: "$muted" },
-      revealed: { backgroundColor: "$primary", color: "$bg" },
+      idle: { backgroundColor: "$bg-muted", color: "$fg-muted" },
+      revealed: { backgroundColor: "$bg-accent", color: "$bg" },
     })
     expect(actionFill("accent", "filled")).toEqual({
-      idle: { backgroundColor: "$primary", color: "$bg" },
-      revealed: { backgroundColor: "$accent", color: "$bg" },
+      idle: { backgroundColor: "$bg-accent", color: "$bg" },
+      revealed: { backgroundColor: "$bg-accent", color: "$bg" },
     })
     expect(actionFill("accent", "selected")).toEqual({
-      idle: { backgroundColor: "$fg-accent", color: "$bg" },
-      revealed: { backgroundColor: "$fg-accent", color: "$bg" },
+      idle: { backgroundColor: "$bg-accent", color: "$bg" },
+      revealed: { backgroundColor: "$bg-accent", color: "$bg" },
     })
     expect(actionFill("info", "selected")).toEqual({
-      idle: { backgroundColor: "$fg-info", color: "$bg" },
-      revealed: { backgroundColor: "$fg-info", color: "$bg" },
+      idle: { backgroundColor: "$bg-info", color: "$bg" },
+      revealed: { backgroundColor: "$bg-info", color: "$bg" },
     })
     expect(actionFill("warning", "selected")).toEqual({
-      idle: { backgroundColor: "$warning", color: "$bg" },
-      revealed: { backgroundColor: "$warning", color: "$bg" },
+      idle: { backgroundColor: "$bg-warning", color: "$bg" },
+      revealed: { backgroundColor: "$bg-warning", color: "$bg" },
     })
     expect(
       resolveInteractionTreatment(hovered, "control", textPair("title", "$fg-link")),
@@ -177,24 +177,24 @@ describe("interaction treatment recipes", () => {
       revealed: { color: "$fg-accent" },
     })
     expect(interactionSurfaceRecipes.accentReveal).toEqual({
-      revealed: { color: "$primary" },
-      selected: { color: "$primary" },
+      revealed: { color: "$fg-accent" },
+      selected: { color: "$fg-accent" },
     })
     expect(interactionSurfaceRecipes.boldReveal).toEqual({
       idle: { color: "$fg" },
       revealed: { color: "$fg", bold: true },
     })
     expect(interactionSurfaceRecipes.accentSurface).toEqual({
-      revealed: { backgroundColor: "$bg-surface-hover", color: "$primary" },
+      revealed: { backgroundColor: "$bg-surface-hover", color: "$fg-accent" },
     })
     expect(interactionSurfaceRecipes.mutedAccentSurface).toEqual({
-      idle: { color: "$muted" },
-      revealed: { backgroundColor: "$bg-surface-hover", color: "$primary" },
+      idle: { color: "$fg-muted" },
+      revealed: { backgroundColor: "$bg-surface-hover", color: "$fg-accent" },
     })
     expect(interactionSurfaceRecipes.dragHandle).toEqual({
-      idle: { color: "$muted", backgroundColor: "$muted" },
-      revealed: { color: "$primary", backgroundColor: "$primary" },
-      armed: { color: "$primary", backgroundColor: "$primary" },
+      idle: { color: "$fg-muted", backgroundColor: "$bg-muted" },
+      revealed: { color: "$fg-accent", backgroundColor: "$bg-accent" },
+      armed: { color: "$fg-accent", backgroundColor: "$bg-accent" },
     })
     expect(interactionSurfaceRecipes.warningText).toEqual({
       idle: { color: "$fg" },

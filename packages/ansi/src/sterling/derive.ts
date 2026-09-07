@@ -359,6 +359,8 @@ export function deriveRoles(
 ): {
   roles: Roles
   mode: "light" | "dark"
+  fg: string
+  bg: string
   trace: DerivationStep[]
   violations: ContrastViolation[]
 } {
@@ -371,7 +373,6 @@ export function deriveRoles(
   // Primary seed
   const primary = scheme.primary ?? (mode === "dark" ? scheme.brightBlue : scheme.blue)
   const bg = scheme.background
-  const fg = scheme.foreground
 
   // Shared function: guard one leaf token through pins + contrast.
   function guard(
@@ -397,6 +398,18 @@ export function deriveRoles(
       violations,
     )
   }
+
+  // Root canvas pair is part of Sterling's actual contract, not a raw legacy
+  // overlay. Guard its text side before every role uses it, then project the
+  // exact same guarded value through `fg-default` at the factory boundary.
+  const fg = guard(
+    "fg",
+    "fg-default",
+    "scheme.foreground",
+    [scheme.foreground],
+    scheme.foreground,
+    bg,
+  )
 
   // ── Accent ───────────────────────────────────────────────────────────────
   const accentBase = guard("accent.fg", "fg-accent", "scheme.primary", [primary], primary, bg)
@@ -840,7 +853,7 @@ export function deriveRoles(
     disabled,
   }
 
-  return { roles, mode, trace, violations }
+  return { roles, mode, fg, bg, trace, violations }
 }
 
 // ── Visibility repair (selection bg) ──────────────────────────────────────
@@ -1021,7 +1034,7 @@ export function deriveTheme(
   scheme: ColorScheme,
   opts: DeriveOptions = {},
 ): Omit<Theme, keyof import("./types.ts").FlatTokens> {
-  const { roles, mode, trace, violations } = deriveRoles(scheme, opts)
+  const { roles, mode, fg, bg, trace, violations } = deriveRoles(scheme, opts)
 
   if ((opts.contrast ?? "auto-lift") === "strict" && violations.length > 0) {
     throw new ContrastError(violations)
@@ -1032,6 +1045,14 @@ export function deriveTheme(
     ...buildCategoricalHues(scheme),
     name: scheme.name,
     mode,
+    // The canvas pair is part of the canonical Theme, not a legacy-factory
+    // overlay. Its flat aliases are explicit root tokens (the flatten walk
+    // intentionally skips depth-one leaves), so they originate here too.
+    fg,
+    bg,
+    "fg-default": fg,
+    "bg-default": bg,
+    "bg-backdrop": blend(bg, "#000000", 0.4),
     variants: DEFAULT_VARIANTS,
     palette: buildPalette(scheme),
     ...(opts.trace ? { derivationTrace: trace } : {}),

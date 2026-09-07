@@ -121,7 +121,7 @@ describe("rendered: nested colored Text keeps color across soft-wrap", () => {
     const app = render(
       <Box flexDirection="column" width={24}>
         <Text wrap="wrap">
-          prefix <Text color="$accent">alpha betagammadelta epsilon</Text> suffix
+          prefix <Text color="$fg-accent">alpha betagammadelta epsilon</Text> suffix
         </Text>
       </Box>,
     )

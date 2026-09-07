@@ -11,8 +11,8 @@
  * returned `null`; the renderer painted the default terminal fg (white on
  * most dark terminals).
  *
- * Fix: re-export from `@silvery/theme` instead, where every Theme is run
- * through `inlineSterlingTokens`. This test locks the invariant for every
+ * Fix: re-export from `@silvery/theme`, where every Theme uses the canonical
+ * Sterling factory. This test locks the invariant for every
  * public theme surface that km-tui and other apps consume.
  */
 
@@ -58,8 +58,8 @@ describe("theme: Sterling flat tokens are present on every shipped Theme", () =>
 
   test("detectTheme() returns a Sterling-inlined Theme (fallback path)", async () => {
     // No terminal attached in vitest — detectTheme falls back to the ANSI 16
-    // theme derived from caps.darkBackground. The wrapper in @silvery/theme
-    // must still run it through inlineSterlingTokens.
+    // theme derived from caps.darkBackground. The canonical factory must
+    // still expose flat tokens.
     const theme = await detectTheme({ caps: { colorLevel: "ansi16", darkBackground: true } })
     const t = theme as unknown as Record<string, string | undefined>
     expect(t["border-default"]).toBeTypeOf("string")

@@ -2231,7 +2231,7 @@ export function renderText(
   // Pass the active context theme as a cache key so that $token ANSI codes
   // embedded in collected text are invalidated when the nearest-ancestor
   // ThemeProvider changes its theme. Without this, a theme change would leave
-  // stale ANSI-encoded token colors in the cache (e.g., $primary → blue from
+  // stale ANSI-encoded token colors in the cache (e.g., $fg-accent → blue from
   // the first render), causing the new theme's green to be overridden.
   const contextTheme = getActiveTheme()
   const nestedUserSelectOverride = hasNestedUserSelectOverride(node)
@@ -2275,11 +2275,10 @@ export function renderText(
   const internalTransform = props.internal_transform
   const truncateHook = props.truncate
   // Elision-marker chrome color. Defaults to "$fg-muted" so the inserted "…"
-  // (and hook-returned marker ranges) read as quiet chrome, not content. NOT
-  // "$muted" — in the default pipeline theme "$muted" resolves to the same
-  // value as "$fg" (both #d8dee9), so it would never dim against $fg-colored
-  // text. "$fg-muted" is the codebase's standard low/dim fg slot (e.g.
-  // StatusGlyph lowColor). Resolved against the active theme at paint time via
+  // (and hook-returned marker ranges) read as quiet chrome, not content.
+  // "$fg-muted" is the codebase's standard low/dim fg slot (e.g. StatusGlyph
+  // lowColor); it has to stay distinct from "$fg" or the marker would never dim
+  // against $fg-colored text. Resolved against the active theme at paint time via
   // parseColor (same path as the `color` prop). A theme change invalidates the
   // collected-text cache (which keys on contextTheme), which clears the format
   // cache — so the embedded marker SGR is recomputed with the new token value.

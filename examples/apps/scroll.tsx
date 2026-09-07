@@ -55,7 +55,7 @@ export function ScrollExample() {
             backgroundColor={index === selectedIndex ? "$fg-accent" : undefined}
           >
             <Text
-              color={index === selectedIndex ? "$primary-fg" : undefined}
+              color={index === selectedIndex ? "$fg-on-accent" : undefined}
               bold={index === selectedIndex}
             >
               {item.title}

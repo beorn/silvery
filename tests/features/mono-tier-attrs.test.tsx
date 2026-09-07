@@ -4,15 +4,15 @@
  * When `colorLevel === "mono"` (NO_COLOR / TERM=dumb / SILVERY_COLOR=mono),
  * the render pipeline must:
  *
- *   1. Strip all colors. `$primary`, `$muted`, ..., `#FF0000`, `"red"` — all
+ *   1. Strip all colors. `$fg-accent`, `$fg-muted`, ..., `#FF0000`, `"red"` — all
  *      resolve to no fg/bg in the output buffer + SGR stream.
  *   2. Inject per-token SGR attrs from `DEFAULT_MONO_ATTRS` so apps keep
  *      hierarchy (bold / dim / italic / underline / inverse / strikethrough).
  *
  * Coverage:
- *   - `$primary` → bold
- *   - `$muted` → dim
- *   - `$error` → bold + inverse
+ *   - `$fg-accent` → bold
+ *   - `$fg-muted` → dim
+ *   - `$fg-error` → bold + inverse
  *   - `$fg-link` → underline
  *   - `$bg-selected` → inverse
  *   - Non-token hex `"#FF0000"` → no color, no attrs (pass-through)
@@ -22,10 +22,10 @@
  * Spec: hub/silvery/design/v10-terminal/theme-system-v2-plan.md#p4
  *
  * NOTE (Sterling sweep — sterling-purge-legacy-tokens, 0.21.0):
- * Legacy `$selectionbg` / `$link` tokens were dropped from `DEFAULT_MONO_ATTRS`.
+ * Legacy `$bg-selected` / `$fg-link` tokens were dropped from `DEFAULT_MONO_ATTRS`.
  * This file now exercises the Sterling-keyed equivalents (`$bg-selected`,
- * `$fg-link`) alongside the still-valid legacy semantic tokens (`$primary`,
- * `$muted`, `$error`, …). Sterling-flat-keyed coverage also lives in
+ * `$fg-link`) alongside the still-valid legacy semantic tokens (`$fg-accent`,
+ * `$fg-muted`, `$fg-error`, …). Sterling-flat-keyed coverage also lives in
  * `packages/ansi/tests/monochrome.test.ts`.
  */
 
@@ -67,21 +67,21 @@ function withMonoTier(run: (tier: "mono") => void): void {
 // ============================================================================
 
 describe("parseColor: monochrome tier", () => {
-  test("$primary resolves to null (color stripped)", () => {
+  test("$fg-accent resolves to null (color stripped)", () => {
     withMonoTier((tier) => {
-      expect(parseColor("$primary", tier)).toBeNull()
+      expect(parseColor("$fg-accent", tier)).toBeNull()
     })
   })
 
-  test("$muted resolves to null", () => {
+  test("$fg-muted resolves to null", () => {
     withMonoTier((tier) => {
-      expect(parseColor("$muted", tier)).toBeNull()
+      expect(parseColor("$fg-muted", tier)).toBeNull()
     })
   })
 
-  test("$error resolves to null", () => {
+  test("$fg-error resolves to null", () => {
     withMonoTier((tier) => {
-      expect(parseColor("$error", tier)).toBeNull()
+      expect(parseColor("$fg-error", tier)).toBeNull()
     })
   })
 
@@ -103,10 +103,10 @@ describe("parseColor: monochrome tier", () => {
     })
   })
 
-  test("$primary at truecolor tier resolves to a hex RGB", () => {
+  test("$fg-accent at truecolor tier resolves to a hex RGB", () => {
     withTheme(ansi16DarkTheme, () => {
-      const result = parseColor("$primary", "truecolor")
-      // At truecolor tier, $primary must NOT be null — we rely on the normal
+      const result = parseColor("$fg-accent", "truecolor")
+      // At truecolor tier, $fg-accent must NOT be null — we rely on the normal
       // token → hex → RGB pipeline. This guards against an accidental always-on
       // mono-strip regression.
       expect(result).not.toBeNull()
@@ -115,9 +115,9 @@ describe("parseColor: monochrome tier", () => {
 })
 
 describe("getTextStyle: monochrome tier attrs injection", () => {
-  test("$primary → bold=true", () => {
+  test("$fg-accent → bold=true", () => {
     withMonoTier((tier) => {
-      const style = getTextStyle({ color: "$primary" }, tier)
+      const style = getTextStyle({ color: "$fg-accent" }, tier)
       expect(style.fg).toBeNull()
       expect(style.attrs.bold).toBe(true)
       expect(style.attrs.dim).toBeFalsy()
@@ -126,18 +126,18 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
     })
   })
 
-  test("$muted → dim=true", () => {
+  test("$fg-muted → dim=true", () => {
     withMonoTier((tier) => {
-      const style = getTextStyle({ color: "$muted" }, tier)
+      const style = getTextStyle({ color: "$fg-muted" }, tier)
       expect(style.fg).toBeNull()
       expect(style.attrs.dim).toBe(true)
       expect(style.attrs.bold).toBeFalsy()
     })
   })
 
-  test("$error → bold + inverse", () => {
+  test("$fg-error → bold + inverse", () => {
     withMonoTier((tier) => {
-      const style = getTextStyle({ color: "$error" }, tier)
+      const style = getTextStyle({ color: "$fg-error" }, tier)
       expect(style.fg).toBeNull()
       expect(style.attrs.bold).toBe(true)
       expect(style.attrs.inverse).toBe(true)
@@ -162,24 +162,24 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
     })
   })
 
-  test("$success → bold", () => {
+  test("$fg-success → bold", () => {
     withMonoTier((tier) => {
-      const style = getTextStyle({ color: "$success" }, tier)
+      const style = getTextStyle({ color: "$fg-success" }, tier)
       expect(style.fg).toBeNull()
       expect(style.attrs.bold).toBe(true)
     })
   })
 
-  test("$warning → bold", () => {
+  test("$fg-warning → bold", () => {
     withMonoTier((tier) => {
-      const style = getTextStyle({ color: "$warning" }, tier)
+      const style = getTextStyle({ color: "$fg-warning" }, tier)
       expect(style.attrs.bold).toBe(true)
     })
   })
 
-  test("$info → italic", () => {
+  test("$fg-info → italic", () => {
     withMonoTier((tier) => {
-      const style = getTextStyle({ color: "$info" }, tier)
+      const style = getTextStyle({ color: "$fg-info" }, tier)
       expect(style.attrs.italic).toBe(true)
     })
   })
@@ -197,9 +197,9 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
     })
   })
 
-  test("explicit bold prop + $muted → bold + dim (user attrs OR with mono attrs)", () => {
+  test("explicit bold prop + $fg-muted → bold + dim (user attrs OR with mono attrs)", () => {
     withMonoTier((tier) => {
-      const style = getTextStyle({ bold: true, color: "$muted" }, tier)
+      const style = getTextStyle({ bold: true, color: "$fg-muted" }, tier)
       expect(style.attrs.bold).toBe(true)
       expect(style.attrs.dim).toBe(true)
     })
@@ -208,15 +208,15 @@ describe("getTextStyle: monochrome tier attrs injection", () => {
   test("$bg-selected → inverse", () => {
     withMonoTier((tier) => {
       // bg-selected → ["inverse"] in DEFAULT_MONO_ATTRS. The legacy
-      // `$selectionbg` alias was removed in 0.21.0 (sterling-purge-legacy-tokens).
+      // `$bg-selected` alias was removed in 0.21.0 (sterling-purge-legacy-tokens).
       const style = getTextStyle({ backgroundColor: "$bg-selected" }, tier)
       expect(style.attrs.inverse).toBe(true)
     })
   })
 
-  test("at truecolor tier, $primary → RGB fg, no bold injected", () => {
+  test("at truecolor tier, $fg-accent → RGB fg, no bold injected", () => {
     withTheme(ansi16DarkTheme, () => {
-      const style = getTextStyle({ color: "$primary" }, "truecolor")
+      const style = getTextStyle({ color: "$fg-accent" }, "truecolor")
       expect(style.fg).not.toBeNull()
       // Bold is NOT auto-injected when the user didn't ask for it at color tiers.
       expect(style.attrs.bold).toBeFalsy()
@@ -302,9 +302,9 @@ describe("render pipeline: $token attrs reach the buffer at mono tier", () => {
     popContextTheme()
   })
 
-  test("<Text color='$primary'> renders bold cells, no fg", () => {
+  test("<Text color='$fg-accent'> renders bold cells, no fg", () => {
     const render = createRenderer({ cols: 10, rows: 1, colorLevel: "mono" })
-    const app = render(<Text color="$primary">HELLO</Text>)
+    const app = render(<Text color="$fg-accent">HELLO</Text>)
 
     expect(app.text).toContain("HELLO")
     for (let i = 0; i < 5; i++) {
@@ -314,9 +314,9 @@ describe("render pipeline: $token attrs reach the buffer at mono tier", () => {
     }
   })
 
-  test("<Text color='$muted'> renders dim cells, no fg", () => {
+  test("<Text color='$fg-muted'> renders dim cells, no fg", () => {
     const render = createRenderer({ cols: 10, rows: 1, colorLevel: "mono" })
-    const app = render(<Text color="$muted">FAINT</Text>)
+    const app = render(<Text color="$fg-muted">FAINT</Text>)
 
     for (let i = 0; i < 5; i++) {
       const c = app.cell(i, 0)
@@ -326,9 +326,9 @@ describe("render pipeline: $token attrs reach the buffer at mono tier", () => {
     }
   })
 
-  test("<Text color='$error'> renders bold + inverse cells", () => {
+  test("<Text color='$fg-error'> renders bold + inverse cells", () => {
     const render = createRenderer({ cols: 10, rows: 1, colorLevel: "mono" })
-    const app = render(<Text color="$error">DANGER</Text>)
+    const app = render(<Text color="$fg-error">DANGER</Text>)
 
     for (let i = 0; i < 6; i++) {
       const c = app.cell(i, 0)
@@ -385,12 +385,12 @@ describe("mono tier: realistic 50+ node fixture (STRICT compounding safety)", ()
     const cols = 12
     return (
       <Box flexDirection="column">
-        <Text color="$primary">Header</Text>
-        <Text color="$muted">Subtitle with muted foreground</Text>
-        <Text color="$error">Error: something went wrong</Text>
-        <Text color="$warning">Warning: heads up</Text>
-        <Text color="$success">Success!</Text>
-        <Text color="$info">Info note</Text>
+        <Text color="$fg-accent">Header</Text>
+        <Text color="$fg-muted">Subtitle with muted foreground</Text>
+        <Text color="$fg-error">Error: something went wrong</Text>
+        <Text color="$fg-warning">Warning: heads up</Text>
+        <Text color="$fg-success">Success!</Text>
+        <Text color="$fg-info">Info note</Text>
         <Text color="$fg-link">https://silvery.dev</Text>
         {Array.from({ length: rows }).map((_, r) => (
           <Box key={r} flexDirection="row" gap={1}>
@@ -398,7 +398,7 @@ describe("mono tier: realistic 50+ node fixture (STRICT compounding safety)", ()
               const i = r * cols + c
               const active = i === highlightIndex
               return (
-                <Text key={c} color={active ? "$primary" : "$muted"}>
+                <Text key={c} color={active ? "$fg-accent" : "$fg-muted"}>
                   {active ? "*" : "-"}
                 </Text>
               )
@@ -435,10 +435,10 @@ describe("mono tier: realistic 50+ node fixture (STRICT compounding safety)", ()
     const errorRow = app.cell(0, 2) // "E" from "Error: ..."
     const linkRow = app.cell(0, 6) // "h" from "https://..."
 
-    expect(headerRow.bold).toBe(true) // $primary
-    expect(subtitleRow.dim).toBe(true) // $muted
-    expect(errorRow.bold).toBe(true) // $error = bold + inverse
+    expect(headerRow.bold).toBe(true) // $fg-accent
+    expect(subtitleRow.dim).toBe(true) // $fg-muted
+    expect(errorRow.bold).toBe(true) // $fg-error = bold + inverse
     expect(errorRow.inverse).toBe(true)
-    expect(linkRow.underline).not.toBe(false) // $link
+    expect(linkRow.underline).not.toBe(false) // $fg-link
   })
 })

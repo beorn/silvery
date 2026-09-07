@@ -8,7 +8,7 @@
  * Repro shape (scaled down from the AI chat demo's ListView):
  *
  *   Frame N  (prev): scrollbar absolute child = (col 4, row 0, w=1, h=5)
- *                    The track covers rows 0..4 entirely with "█" (bg=$muted).
+ *                    The track covers rows 0..4 entirely with "█" (bg=$fg-muted).
  *
  *   Frame N+1     : scrollbar shrinks to (col 4, row 0, w=1, h=2)
  *                    Normal-flow row at (row 4) gains backgroundColor and

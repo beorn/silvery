@@ -32,7 +32,7 @@ import { catppuccinMocha } from "@silvery/theme/schemes"
 
 // A dark theme with known bg — catppuccin mocha bg is #1e1e2e (luminance ≈ 0.012).
 // With defaultBg="#1e1e2e", deriveScrimColor returns "#000000" (dark scrim).
-const darkTheme = deriveTheme(catppuccinMocha, "truecolor")
+const darkTheme = deriveTheme(catppuccinMocha)
 
 // Check whether a cell's fg has been mixed toward the scrim. For cells where
 // fg is white (#FFFFFF), any post-fade fg with all channels < 255 counts.

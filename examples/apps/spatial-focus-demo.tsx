@@ -262,10 +262,10 @@ function ColumnView({
       borderColor={hasFocus ? "$fg-warning" : "$border-default"}
     >
       <Box backgroundColor={hasFocus ? "$fg-warning" : undefined} paddingX={1}>
-        <Text bold color={hasFocus ? "$warning-fg" : undefined}>
+        <Text bold color={hasFocus ? "$fg-on-warning" : undefined}>
           {column.title}
         </Text>
-        <Text color={hasFocus ? "$warning-fg" : "$fg-muted"}> ({column.cards.length})</Text>
+        <Text color={hasFocus ? "$fg-on-warning" : "$fg-muted"}> ({column.cards.length})</Text>
       </Box>
       <Box flexDirection="column" paddingX={1} flexGrow={1}>
         {column.cards.map((card) => (
@@ -290,8 +290,8 @@ function StatusBar({ focusedId }: { focusedId: string | null }) {
 
   return (
     <Box paddingX={1} gap={2}>
-      <Text color="$muted">←↑↓→/hjkl navigate</Text>
-      <Text color="$muted">q quit</Text>
+      <Text color="$fg-muted">←↑↓→/hjkl navigate</Text>
+      <Text color="$fg-muted">q quit</Text>
       {focusedCard && (
         <>
           <Text color="$border-default">│</Text>

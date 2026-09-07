@@ -134,7 +134,7 @@ function REPL() {
       keyExtractor={(e) => String(e.id)}
       isFrozen={(e) => e.done}
       footer={
-        <Box borderStyle="round" borderColor="$primary" paddingX={1}>
+        <Box borderStyle="round" borderColor="$border-focus" paddingX={1}>
           <TextInput
             value={input}
             onChange={setInput}
@@ -147,8 +147,8 @@ function REPL() {
     >
       {(entry) => (
         <Box flexDirection="column">
-          <Text color="$primary">&gt; {entry.input}</Text>
-          <Text color="$success">{entry.output}</Text>
+          <Text color="$fg-accent">&gt; {entry.input}</Text>
+          <Text color="$fg-success">{entry.output}</Text>
         </Box>
       )}
     </ScrollbackList>

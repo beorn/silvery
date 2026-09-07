@@ -20,7 +20,7 @@ import type { Theme } from "@silvery/ansi"
 const HEX_RE = /^#[0-9a-f]{6}$/i
 
 /** Fields that are NOT hex strings — excluded from the hex-only check. */
-const NON_HEX_FIELDS = new Set<string>(["name", "bg", "variants", "palette"])
+const NON_HEX_FIELDS = new Set<string>(["name", "mode", "variants", "palette"])
 
 function assertAllHex(theme: Theme, label: string): void {
   for (const [key, value] of Object.entries(theme)) {

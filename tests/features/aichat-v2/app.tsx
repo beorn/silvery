@@ -62,20 +62,22 @@ export function ChatProvider({
 
 function useChat<U>(selector: (m: ChatModel) => U): U {
   const chat = useContext(ChatContext)
-  if (!chat)
+  if (!chat) {
     throw new Error(
       "useChat() called outside <ChatProvider>. Wrap the view in <ChatProvider chat={app.chat}>.",
     )
+  }
   return useModel(chat, selector)
 }
 
 /** Escape hatch for imperative access (e.g. input onChange handlers). */
 function useChatModel(): ChatModel {
   const chat = useContext(ChatContext)
-  if (!chat)
+  if (!chat) {
     throw new Error(
       "useChatModel() called outside <ChatProvider>. Wrap the view in <ChatProvider chat={app.chat}>.",
     )
+  }
   return chat
 }
 
@@ -395,10 +397,11 @@ export function withDemoScript(driver: AIProvider) {
       cancelIdleTimer()
       if (chat.isDone()) return
       const content = driver.suggestInput?.(chat.messages()) ?? ""
-      if (content)
+      if (content) {
         cancelIdleTimer = clock.timeout(10_000, () => {
           chat.submit(content)
         })
+      }
     }
   }
 }
@@ -433,8 +436,9 @@ function createDemoDriver(entries: ScriptEntry[]): AIProvider {
       const { content, thinking, toolCalls, tokens } = entry
       if (thinking) yield { type: "thinking", text: thinking }
       for (const word of content.split(/(\s+)/)) yield { type: "text-delta", text: word }
-      for (const { tool, args, output } of toolCalls ?? [])
+      for (const { tool, args, output } of toolCalls ?? []) {
         yield { type: "tool-result", tool, args, output }
+      }
       yield { type: "done", tokens }
     },
 
@@ -485,7 +489,7 @@ function InputFooter(): JSX.Element {
       <Box
         flexDirection="row"
         borderStyle="round"
-        borderColor={!isDone && terminalFocused ? "$focusborder" : "$inputborder"}
+        borderColor={!isDone && terminalFocused ? "$border-focus" : "$border-default"}
         paddingX={1}
       >
         <Text bold color="$focusring">
@@ -524,7 +528,7 @@ function MessageItem({ message }: { message: ChatMessage }): JSX.Element {
         <Text> </Text>
         <Text bold>AI Chat</Text>
         <Text> </Text>
-        <Text color="$muted">{message.content}</Text>
+        <Text color="$fg-muted">{message.content}</Text>
         <Text> </Text>
       </Box>
     )
@@ -532,7 +536,7 @@ function MessageItem({ message }: { message: ChatMessage }): JSX.Element {
 
   if (message.role === "user") {
     return (
-      <Box paddingX={1} flexDirection="row" backgroundColor="$surface-bg">
+      <Box paddingX={1} flexDirection="row" backgroundColor="$bg-surface-raised">
         <Text bold color="$focusring">
           {"❯"}{" "}
         </Text>
@@ -565,11 +569,11 @@ function StreamingAgentMessage({ message }: { message: AgentMessage }): JSX.Elem
   return (
     <Box flexDirection="column">
       <Text>
-        <Text bold color={hasOps && pulse ? "$success" : "$muted"}>
+        <Text bold color={hasOps && pulse ? "$fg-success" : "$fg-muted"}>
           {"●"}
         </Text>
         {stage === "thinking" ? (
-          <Text color="$muted" italic>
+          <Text color="$fg-muted" italic>
             {" "}
             <Spinner type="dots" /> thinking
           </Text>
@@ -582,7 +586,7 @@ function StreamingAgentMessage({ message }: { message: AgentMessage }): JSX.Elem
         {visibleText && (
           <Text>
             {visibleText}
-            <Text color="$primary">{"▌"}</Text>
+            <Text color="$fg-accent">{"▌"}</Text>
           </Text>
         )}
         {stage === "revealing-tools" && revealedTools > 0 && (
@@ -612,11 +616,11 @@ function SettledAgentMessage({ message }: { message: AgentMessage }): JSX.Elemen
   return (
     <Box flexDirection="column">
       <Text>
-        <Text bold color={hasOps ? "$success" : "$muted"}>
+        <Text bold color={hasOps ? "$fg-success" : "$fg-muted"}>
           {"●"}
         </Text>
         {title && <Text> {title}</Text>}
-        <Text color="$muted">{metaStr}</Text>
+        <Text color="$fg-muted">{metaStr}</Text>
       </Text>
       <Box flexDirection="column" {...agentBorderProps}>
         {message.thinking && <ThinkingBlock text={message.thinking} done />}
@@ -635,7 +639,7 @@ function SettledAgentMessage({ message }: { message: AgentMessage }): JSX.Elemen
 
 const agentBorderProps = {
   borderStyle: "bold" as const,
-  borderColor: "$border",
+  borderColor: "$border-default",
   borderLeft: true,
   borderRight: false,
   borderTop: false,
@@ -659,16 +663,16 @@ function StatusBar({ elapsed }: { elapsed: number }): JSX.Element {
   const effectiveContext = Math.max(0, usage.maxInputTokens - compacted)
   const ctxPct = Math.round((effectiveContext / demo.CONTEXT_WINDOW) * 100)
   const ctxFilled = Math.round(Math.min(effectiveContext / demo.CONTEXT_WINDOW, 1) * 20)
-  const ctxColor = ctxPct > 100 ? "$error" : ctxPct > 80 ? "$warning" : "$primary"
+  const ctxColor = ctxPct > 100 ? "$fg-error" : ctxPct > 80 ? "$fg-warning" : "$fg-accent"
 
   return (
     <Box flexDirection="row" justifyContent="space-between" width="100%">
-      <Text color="$muted" wrap="truncate">
+      <Text color="$fg-muted" wrap="truncate">
         {elapsedStr}
         {"  "}
         {isCompacting ? "compacting..." : "esc quit · ctrl+d quit"}
       </Text>
-      <Text color={ctxPct > 80 ? ctxColor : "$muted"} wrap="truncate">
+      <Text color={ctxPct > 80 ? ctxColor : "$fg-muted"} wrap="truncate">
         ctx {"█".repeat(ctxFilled)}
         {"░".repeat(20 - ctxFilled)} {ctxPct}%{"  "}
         {cost}
@@ -678,26 +682,27 @@ function StatusBar({ elapsed }: { elapsed: number }): JSX.Element {
 }
 
 function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Element {
-  if (done)
+  if (done) {
     return (
-      <Text color="$muted" italic>
+      <Text color="$fg-muted" italic>
         {"▸ thought"}
       </Text>
     )
+  }
   return (
-    <Text color="$muted" wrap="truncate" italic>
+    <Text color="$fg-muted" wrap="truncate" italic>
       {text}
     </Text>
   )
 }
 
 function ToolRunBlock({ run, done }: { run: ToolRun; done: boolean }): JSX.Element {
-  const color = demo.TOOL_COLORS[run.tool] ?? "$muted"
+  const color = demo.TOOL_COLORS[run.tool] ?? "$fg-muted"
   return (
     <Box flexDirection="column">
       <Text>
         {done ? (
-          <Text color="$success">{"✓ "}</Text>
+          <Text color="$fg-success">{"✓ "}</Text>
         ) : (
           <>
             <Spinner type="dots" />{" "}
@@ -707,7 +712,7 @@ function ToolRunBlock({ run, done }: { run: ToolRun; done: boolean }): JSX.Eleme
           {run.tool}
         </Text>{" "}
         {run.tool === "Bash" || run.tool === "Grep" || run.tool === "Glob" ? (
-          <Text color="$muted">{run.args}</Text>
+          <Text color="$fg-muted">{run.args}</Text>
         ) : (
           <Link href={`file://${run.args}`}>{run.args}</Link>
         )}
@@ -719,7 +724,11 @@ function ToolRunBlock({ run, done }: { run: ToolRun; done: boolean }): JSX.Eleme
               key={i}
               text={line}
               color={
-                line.startsWith("+") ? "$success" : line.startsWith("-") ? "$error" : undefined
+                line.startsWith("+")
+                  ? "$fg-success"
+                  : line.startsWith("-")
+                    ? "$fg-error"
+                    : undefined
               }
             />
           ))}
@@ -735,12 +744,13 @@ function LinkifiedLine({ text, color }: { text: string; color?: string }): JSX.E
   let match: RegExpExecArray | null
   demo.URL_RE.lastIndex = 0
   while ((match = demo.URL_RE.exec(text)) !== null) {
-    if (match.index > lastIndex)
+    if (match.index > lastIndex) {
       parts.push(
         <Text key={`t${lastIndex}`} color={color}>
           {text.slice(lastIndex, match.index)}
         </Text>,
       )
+    }
     parts.push(
       <Link key={`l${match.index}`} href={match[0]}>
         {match[0]}
@@ -748,12 +758,13 @@ function LinkifiedLine({ text, color }: { text: string; color?: string }): JSX.E
     )
     lastIndex = match.index + match[0].length
   }
-  if (lastIndex < text.length)
+  if (lastIndex < text.length) {
     parts.push(
       <Text key={`t${lastIndex}`} color={color}>
         {text.slice(lastIndex)}
       </Text>,
     )
+  }
   return parts.length > 0 ? <Text>{parts}</Text> : <Text color={color}>{text}</Text>
 }
 
