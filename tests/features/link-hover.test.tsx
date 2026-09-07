@@ -27,6 +27,7 @@ import {
   resolveInteractionTreatment,
   textPair,
   togglePillSurface,
+  type InteractionSurfaceInput,
 } from "@silvery/ag"
 import { run } from "../../packages/ag-term/src/runtime/run"
 
@@ -79,6 +80,19 @@ describe("interaction treatment recipes", () => {
         "selectableNav",
       ),
     ).toMatchObject({ backgroundColor: "$bg-selected", color: "$fg-accent", bold: true })
+  })
+
+  test("accepts named and branded surface inputs but rejects raw objects", () => {
+    const named: InteractionSurfaceInput = "surfaceHover"
+    const registered: InteractionSurfaceInput = interactionSurfaceRecipes.surfaceHover
+    const custom: InteractionSurfaceInput = customInteractionSurface({
+      revealed: { color: "$fg-success" },
+    })
+    // @ts-expect-error — raw surface literals must enter through customInteractionSurface.
+    const raw: InteractionSurfaceInput = { revealed: { color: "$fg-success" } }
+
+    expect([named, registered, custom]).toHaveLength(3)
+    expect(raw).toEqual({ revealed: { color: "$fg-success" } })
   })
 
   test("parameterized recipes preserve status fills and caller text pairs", () => {

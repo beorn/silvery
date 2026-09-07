@@ -82,43 +82,44 @@ export const togglePillSurface = (
 const hoverBg = bg("$bg-surface-hover")
 const primary = fg("$primary")
 export const interactionSurfaceRecipes = Object.freeze({
-  surfaceHover: { revealed: hoverBg },
-  bare: {},
+  surfaceHover: recipe({ revealed: hoverBg }),
+  bare: recipe({}),
   neutralText: textPair(),
   accentText: textPair("$fg-muted", "$fg-accent"),
-  accentReveal: { revealed: primary, selected: primary },
-  accentSurface: { revealed: fill("$primary", "$bg-surface-hover") },
-  mutedAccentSurface: { idle: fg("$muted"), revealed: fill("$primary", "$bg-surface-hover") },
-  inverseWash: { revealed: bg("$bg-inverse-hover") },
+  accentReveal: recipe({ revealed: primary, selected: primary }),
+  accentSurface: recipe({ revealed: fill("$primary", "$bg-surface-hover") }),
+  mutedAccentSurface: recipe({
+    idle: fg("$muted"),
+    revealed: fill("$primary", "$bg-surface-hover"),
+  }),
+  inverseWash: recipe({ revealed: bg("$bg-inverse-hover") }),
   inverseText: textPair("$fg-on-inverse-muted", "$fg-on-inverse"),
-  raisedWash: { idle: bg("$bg-surface-raised"), revealed: hoverBg },
-  raisedOverlay: { idle: bg("$bg-surface-raised"), revealed: bg("$bg-surface-overlay") },
-  strongText: { idle: fg("$fg-muted"), revealed: fg("$fg", true) },
-  boldReveal: { idle: fg("$fg"), revealed: fg("$fg", true) },
-  surfaceHoverFocused: { revealed: hoverBg, focused: hoverBg },
+  raisedWash: recipe({ idle: bg("$bg-surface-raised"), revealed: hoverBg }),
+  raisedOverlay: recipe({ idle: bg("$bg-surface-raised"), revealed: bg("$bg-surface-overlay") }),
+  strongText: recipe({ idle: fg("$fg-muted"), revealed: fg("$fg", true) }),
+  boldReveal: recipe({ idle: fg("$fg"), revealed: fg("$fg", true) }),
+  surfaceHoverFocused: recipe({ revealed: hoverBg, focused: hoverBg }),
   toggleGroup: textPair("$border-default", "$fg-muted"),
-  selectableNav: {
+  selectableNav: recipe({
     idle: fg("$fg"),
     revealed: hoverBg,
     selected: fill("$fg-accent", "$bg-selected", true),
-  },
-  dragHandle: {
+  }),
+  dragHandle: recipe({
     idle: fill("$muted", "$muted"),
     revealed: fill("$primary", "$primary"),
     armed: fill("$primary", "$primary"),
-  },
-  warningText: { idle: fg("$fg"), revealed: fg("$fg-warning"), selected: fg("$fg-warning") },
-  cursorSurface: { revealed: bg("$bg-cursor"), selected: bg("$bg-cursor") },
-} as const satisfies Record<string, InteractionSurface>)
+  }),
+  warningText: recipe({
+    idle: fg("$fg"),
+    revealed: fg("$fg-warning"),
+    selected: fg("$fg-warning"),
+  }),
+  cursorSurface: recipe({ revealed: bg("$bg-cursor"), selected: bg("$bg-cursor") }),
+} as const satisfies Record<string, InteractionSurfaceRecipe>)
 
 export type InteractionSurfaceName = keyof typeof interactionSurfaceRecipes
-// TRANSITION-COMPAT(@si/app/22571-maddoc-doc-viewer-umbrella/armed-hover-consolidation/22906-contract):
-// Accept legacy raw surfaces only while the Ag and KM callers migrate. The linked contract bead removes
-// this union member once both component pins land; new callers must use a named recipe or explicit custom marker.
-export type InteractionSurfaceInput =
-  | InteractionSurfaceName
-  | InteractionSurfaceRecipe
-  | InteractionSurface
+export type InteractionSurfaceInput = InteractionSurfaceName | InteractionSurfaceRecipe
 export const customInteractionSurface = (surface: InteractionSurface): InteractionSurfaceRecipe =>
   recipe(surface)
 
