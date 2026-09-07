@@ -117,7 +117,7 @@ Programmatic access — typed, IDE-completable, structured:
 | `cursor`   | `{ fg, bg }`                                                      | Cursor color and the glyph under it                            |
 | `selected` | `{ bg, fgOn, hover: { bg } }`                                     | Cursor row, mouse selection, search match highlight            |
 | `inverse`  | `{ bg, fgOn, hover: { bg }, muted: { fgOn } }`                    | Status bars, modal chrome                                      |
-| `link`     | `{ fg }`                                                          | Hyperlink text (distinct from `accent`)                        |
+| `link`     | `{ fg, hover: { fg } }`                                           | Hyperlink text (distinct from `accent`)                        |
 
 ### Flat tokens (the `$token` resolution path)
 
@@ -147,7 +147,7 @@ Selected    bg-selected | fg-on-selected | bg-selected-hover
 
 Inverse     bg-inverse | fg-on-inverse | bg-inverse-hover | fg-on-inverse-muted
 
-Link        fg-link
+Link        fg-link | fg-link-hover
 ```
 
 `theme.accent.bg === theme["bg-accent"]` always — same string, two paths, no Proxy.

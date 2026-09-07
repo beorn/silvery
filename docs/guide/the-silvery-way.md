@@ -312,7 +312,7 @@ const interaction = useInteractionTreatment("control", "surfaceHover")
 </Box>
 ```
 
-Roles own reveal policy: content links reveal on Cmd/Super-hover, controls reveal on plain hover, and regions reveal on plain hover with a structural gutter cue. `<Link href>` and action-only `<Link onClick>` derive the first two roles automatically. Use `<DecoratedRegion interactionSurface="surfaceHover">` for a self-contained regional treatment, or pass `interactionTreatment` when a parent owns the hover state. Underline is link semantics and never changes on hover.
+Roles own reveal policy: content links reveal their destination on Cmd/Super-hover, controls reveal on plain hover, and regions reveal on plain hover with a structural gutter cue. `<Link href>` and action-only `<Link onClick>` derive the first two roles automatically, while both gain `$fg-link-hover` plus an underline on plain hover. An explicit `underline` choice wins. Use `<DecoratedRegion interactionSurface="surfaceHover">` for a self-contained regional treatment, or pass `interactionTreatment` when a parent owns the hover state.
 
 Named surfaces are the normal path. Exported recipe factories such as `actionFill()`, `textPair()`, `cardOutline()`, and `togglePillSurface()` centralize parameterized families; only genuinely runtime-computed visuals use `customInteractionSurface()`. Raw surface objects are rejected by the resolver types so a new one-off treatment cannot silently reintroduce the old pattern.
 

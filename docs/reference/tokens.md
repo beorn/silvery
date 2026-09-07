@@ -59,7 +59,7 @@ text on a status (e.g. `fg-error`) is a label, not an interactive link.
 | cursor                                    |  ✓  |  ✓  |  –   |   –    |    –     |    –     |     –     |     –     |     –      |
 | selected                                  |  –  |  ✓  |  ✓   |   –    |    –     |    ✓     |     –     |     –     |     –      |
 | inverse                                   |  –  |  ✓  |  ✓   |   –    |    –     |    ✓     |     –     |     –     |     ✓      |
-| link                                      |  ✓  |  –  |  –   |   –    |    –     |    –     |     –     |     –     |     –      |
+| link                                      |  ✓  |  –  |  –   |   –    |    ✓     |    –     |     –     |     –     |     –      |
 | disabled                                  |  ✓  |  ✓  |  –   |   ✓    |    –     |    –     |     –     |     –     |     –      |
 | backdrop                                  |  –  |  ✓  |  –   |   –    |    –     |    –     |     –     |     –     |     –      |
 | default                                   |  ✓  |  ✓  |  –   |   –    |    –     |    –     |     –     |     –     |     –      |

@@ -24,7 +24,9 @@ const REPO_ROOT = join(import.meta.dir, "..")
 const OUT_PATH = join(REPO_ROOT, "docs/reference/tokens.md")
 
 const DOC_PALETTE_NAME = "nord"
-const docTheme = sterling.deriveFromScheme(builtinPalettes[DOC_PALETTE_NAME]!)
+const docPalette = builtinPalettes[DOC_PALETTE_NAME]
+if (!docPalette) throw new Error(`Token docs require the built-in ${DOC_PALETTE_NAME} palette`)
+const docTheme = sterling.deriveFromScheme(docPalette)
 
 function hexOf(theme: Theme, flat: string): string {
   return (theme as unknown as Record<string, string>)[flat] ?? ""
@@ -152,7 +154,7 @@ text on a status (e.g. \`fg-error\`) is a label, not an interactive link.
 | cursor | ✓ | ✓ | – | – | – | – | – | – | – |
 | selected | – | ✓ | ✓ | – | – | ✓ | – | – | – |
 | inverse | – | ✓ | ✓ | – | – | ✓ | – | – | ✓ |
-| link | ✓ | – | – | – | – | – | – | – | – |
+| link | ✓ | – | – | – | ✓ | – | – | – | – |
 | disabled | ✓ | ✓ | – | ✓ | – | – | – | – | – |
 | backdrop | – | ✓ | – | – | – | – | – | – | – |
 | default | ✓ | ✓ | – | – | – | – | – | – | – |

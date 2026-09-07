@@ -100,7 +100,7 @@ Status roles ship a full surface pair plus contrast-picked text-on-fill:
 | `$fg-success` | `$bg-success` | `$fg-on-success` | completions, confirmations |
 | `$fg-info`    | `$bg-info`    | `$fg-on-info`    | neutral info, tips         |
 
-Plus `bg-X-hover` and `bg-X-active` for interactive surfaces. Note that text on a status role doesn't carry hover variants — `fg-error-hover` would be a category error (text on a status role isn't a link). For interactive text-color hover, use `$fg-accent-hover`.
+Plus `bg-X-hover` and `bg-X-active` for interactive surfaces. Note that text on a status role doesn't carry hover variants — `fg-error-hover` would be a category error (text on a status role isn't a link). For general interactive text-color hover, use `$fg-accent-hover`; hyperlinks use `$fg-link-hover`.
 
 **When an app needs a red that's NOT an error** (e.g. "delete button" or a red tag category): use `$red` or `$brand`. `$fg-error` is reserved for _error state_.
 
@@ -146,16 +146,16 @@ Every "surface" comes as a `bg-X` background paired with `$fg` (text) or `$fg-on
 | `$bg-inverse-hover`              | Hover for inverse controls; AA with base text |
 | `$bg-muted` / `$fg`              | Inline muted chips                            |
 
-### Accent (the canonical interactive role)
+### Accent (the general interactive role)
 
-| Token              | Meaning                                                                            |
-| ------------------ | ---------------------------------------------------------------------------------- |
-| `$fg-accent`       | Brand emphasis text — headings, links, focus indicators, nav highlights            |
-| `$bg-accent`       | Primary action button fill                                                         |
-| `$fg-on-accent`    | Text on `$bg-accent` (contrast-picked)                                             |
-| `$fg-accent-hover` | Text-color hover (link hover) — Sterling's only role with `fg.hover` / `fg.active` |
-| `$bg-accent-hover` | Surface hover on accent fill                                                       |
-| `$border-accent`   | Accent-emphasized borders (focus rings, etc.)                                      |
+| Token              | Meaning                                                                 |
+| ------------------ | ----------------------------------------------------------------------- |
+| `$fg-accent`       | Brand emphasis text — headings, links, focus indicators, nav highlights |
+| `$bg-accent`       | Primary action button fill                                              |
+| `$fg-on-accent`    | Text on `$bg-accent` (contrast-picked)                                  |
+| `$fg-accent-hover` | General interactive text-color hover                                    |
+| `$bg-accent-hover` | Surface hover on accent fill                                            |
+| `$border-accent`   | Accent-emphasized borders (focus rings, etc.)                           |
 
 **`$fg-accent` vs `$brand`?** `$fg-accent` is the _scheme's_ canonical interactive color (derives from `scheme.primary`). `$brand` is the _app's_ identity. Apps that want their brand to dominate pin `$brand`; apps that want to blend in let `$brand` default to `$fg-accent`.
 
@@ -167,6 +167,7 @@ Every "surface" comes as a `bg-X` background paired with `$fg` (text) or `$fg-on
 | `$border-focus`   | Focused input border (3:1 WCAG 1.4.11).                                   |
 | `$border-muted`   | Faint subdivider for dense layouts                                        |
 | `$fg-link`        | Hyperlink color — distinct from `$fg-accent` (often classic blue)         |
+| `$fg-link-hover`  | Brighter hyperlink text on hover                                          |
 
 ### Selection + cursor
 

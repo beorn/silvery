@@ -392,8 +392,8 @@ import { Link } from "silvery"
 | `href`        | `string`                             | Optional OSC 8 URL; omit for an app-owned action                                |
 | `children`    | `ReactNode`                          | Link text content                                                               |
 | `color`       | `string`                             | Text color (default: `"$fg-link"`). Use `"inherit"` to inherit from the parent. |
-| `revealColor` | `string`                             | Brighter text color while the role-derived reveal condition is active           |
-| `underline`   | `boolean`                            | Stable link underline; hover never changes it                                   |
+| `revealColor` | `string`                             | Hover text color (default: `"$fg-link-hover"`)                                  |
+| `underline`   | `boolean`                            | Explicit stable choice; otherwise underline appears on hover                    |
 | `onClick`     | `(event: SilveryMouseEvent) => void` | Click handler (preventDefault to skip navigation)                               |
 | `testID`      | `string`                             | Test ID for locator queries                                                     |
 

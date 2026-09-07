@@ -13,7 +13,7 @@ Sterling is opinionated where the legacy system was loose:
 
 - **Two access paths to every leaf**: nested roles (`theme.accent.bg`) and flat hyphen-keys (`theme["bg-accent"]`) reference the same string on the same object.
 - **Real semantic roles** instead of single-hex blobs. `theme.accent` is `{ fg, bg, fgOn, border, hover: { fg, bg }, active: { fg, bg } }` — not just a string.
-- **Status / interactive / surface separation**. Status roles (`error`, `warning`, `success`, `info`) only carry surface state (`bg-hover`, `bg-active`); interactive text-color hover lives on `accent` (the canonical link-like role).
+- **Status / interactive / surface separation**. Status roles (`error`, `warning`, `success`, `info`) only carry surface state (`bg-hover`, `bg-active`); interactive text-color hover lives on `accent` and `link`.
 - **Auto-lift contrast** in OKLCH. Author a scheme, Sterling fixes the WCAG holes.
 - **One DesignSystem contract**. `sterling.deriveFromScheme(...)`, `sterling.deriveFromColor(...)`, `sterling.deriveFromPair(...)`, `sterling.deriveFromSchemeWithBrand(...)`, `sterling.theme(partial)` — everything goes through the same shape.
 
@@ -67,9 +67,9 @@ Both paths are real fields on the same object — there is no Proxy. `theme.acce
 | `cursor`   | `{ fg, bg }`                                                      | Cursor color and the glyph under it                              |
 | `selected` | `{ bg, fgOn, hover: { bg } }`                                     | Cursor row, mouse selection, search match highlight              |
 | `inverse`  | `{ bg, fgOn, hover: { bg }, muted: { fgOn } }`                    | Status bars, modal chrome — the "you are here" inverse band      |
-| `link`     | `{ fg }`                                                          | Hyperlink text (distinct from `accent` if you want classic blue) |
+| `link`     | `{ fg, hover: { fg } }`                                           | Hyperlink text (distinct from `accent` if you want classic blue) |
 
-Status roles only carry **surface** state (`hover.bg`, `active.bg`). They don't carry text-color hover variants — text on a status role isn't a link, so `fg-error-hover` would be a category error. `accent` is the only role with `fg.hover` / `fg.active`, because it _is_ a link-like role.
+Status roles only carry **surface** state (`hover.bg`, `active.bg`). They don't carry text-color hover variants — text on a status role isn't a link, so `fg-error-hover` would be a category error. `accent` carries `hover.fg` and `active.fg` for general interactive emphasis; `link` carries the dedicated `hover.fg` for hyperlinks.
 
 Inverse chrome is the exception with a dedicated on-fill deemphasis tier:
 `inverse.hover.bg` keeps base `fgOn` at AA, while `inverse.muted.fgOn`
