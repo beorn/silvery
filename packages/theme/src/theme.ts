@@ -34,8 +34,9 @@ export { fromBase16, fromColors, fromPreset, assignPrimaryToSlot } from "./gener
 // Builder API (convenience wrappers that use preset schemes from this package)
 export { createTheme, quickTheme, presetTheme } from "./builder"
 
-// Auto-generate (also in @silvery/ansi; kept here for convenience)
-export { autoGenerateTheme } from "./auto-generate"
+// Auto-generate through the canonical ANSI factory; this package deliberately
+// does not maintain a second implementation.
+export { autoGenerateTheme } from "@silvery/ansi"
 
 // Validation
 export { validateColorScheme } from "./validate"
@@ -125,7 +126,6 @@ export type {
   FlatToken as SterlingFlatToken,
   FlatTokens as SterlingFlatTokens,
   FlattenRule,
-  InteractiveRole,
   MutedRole,
   Roles as SterlingRoles,
   StatePair,

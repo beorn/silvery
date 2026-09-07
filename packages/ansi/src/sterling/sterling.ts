@@ -43,6 +43,7 @@ const STERLING_SHAPE: ThemeShape = {
     "inverse",
     "link",
     "disabled",
+    "backdrop",
   ],
   states: ["hover", "active"],
 }
@@ -51,9 +52,9 @@ const STERLING_SHAPE: ThemeShape = {
  * Internal: build a nested Theme (no flat keys). `defineDesignSystem` applies
  * `bakeFlat` afterwards — the inner derivation stays flat-agnostic.
  *
- * The canonical derivation already owns the root canvas pair and standalone
- * flat tokens (`bg-backdrop`, `fg-default`, `bg-default`). This wrapper only
- * selects a scheme and leaves projection to `defineDesignSystem`.
+ * The canonical derivation owns nested roles and the root canvas pair. This
+ * wrapper only selects a scheme and leaves every flat projection to
+ * `defineDesignSystem`.
  */
 function buildRawTheme(scheme: ColorScheme, opts: DeriveOptions = {}): Theme {
   return deriveTheme(scheme, opts) as unknown as Theme

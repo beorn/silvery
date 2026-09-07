@@ -40,7 +40,6 @@ export type {
   FlatToken,
   FlatTokens,
   FlattenRule,
-  InteractiveRole,
   MutedRole,
   SterlingRoles as Roles,
   StatePair,

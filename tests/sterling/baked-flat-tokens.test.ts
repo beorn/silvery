@@ -1,13 +1,11 @@
 /**
  * Regression tests for baked-in Sterling flat tokens on every shipped default
- * theme. Replaces the pre-0.18.1 tests of `augmentWithSterlingFlat` (that
- * helper was inlined into `schemes/index.ts` when its public API was removed).
+ * theme. The public default-theme exports must expose the canonical shape,
+ * not a legacy string-role wrapper around its flat projection.
  *
  * Invariants:
  *   - Every Sterling flat token is present and hex-valued on each default theme
- *   - Legacy role keys (`accent`, `error`, `surface`, etc.) keep their legacy
- *     string values (nested Sterling role objects are not populated on the
- *     legacy Theme)
+ *   - Nested role objects are frozen and agree with the flat projection.
  */
 
 import { describe, it, expect } from "vitest"
@@ -39,7 +37,7 @@ describe("default themes ship Sterling flat tokens", () => {
       }
     })
 
-    it(`${name} preserves legacy string role values`, () => {
+    it(`${name} exposes canonical frozen roles and matching flat tokens`, () => {
       for (const role of [
         "accent",
         "error",
@@ -50,10 +48,13 @@ describe("default themes ship Sterling flat tokens", () => {
         "success",
         "warning",
       ]) {
-        expect(typeof (theme as unknown as Record<string, unknown>)[role], `${name}.${role}`).toBe(
-          "string",
-        )
+        const value = (theme as unknown as Record<string, unknown>)[role]
+        expect(typeof value, `${name}.${role}`).toBe("object")
+        expect(Object.isFrozen(value), `${name}.${role}`).toBe(true)
       }
+      expect(theme.accent.fg).toBe(theme["fg-accent"])
+      expect(theme.surface.default).toBe(theme["bg-surface-default"])
+      expect(theme.backdrop.bg).toBe(theme["bg-backdrop"])
     })
   }
 })

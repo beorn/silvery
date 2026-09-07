@@ -88,11 +88,9 @@ export type AnsiColorName =
  * `border-focus`, …) on the same object. See `sterling/types.ts` for the
  * full type definition.
  *
- * Legacy single-hex role aliases (`theme.primary`, `theme.muted`,
- * `theme.accent` as strings, `theme.primaryfg`, `theme.errorfg`, …) are no
- * longer part of the type. They're emitted at runtime by the legacy
- * `deriveTheme` paths during the 0.19.x window for consumers that haven't
- * migrated; they will be removed in 0.20.0.
+ * Retired single-hex role aliases (`theme.primary`, `theme.muted`,
+ * `theme.accent` as strings, `theme.primaryfg`, `theme.errorfg`, …) are
+ * neither part of the type nor emitted by a Theme factory.
  */
 export type { Theme } from "../sterling/types.ts"
 

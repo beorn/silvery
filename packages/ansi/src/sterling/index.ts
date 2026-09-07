@@ -24,6 +24,7 @@
 
 export type {
   AccentRole,
+  BackdropRole,
   BorderRole,
   ColorScheme,
   ContrastMode,
@@ -36,8 +37,6 @@ export type {
   DisabledRole,
   FlatToken,
   FlatTokens,
-  /** @deprecated Use `StatusRole`. */
-  InteractiveRole,
   MutedRole,
   Roles,
   StatePair,

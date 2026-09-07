@@ -70,13 +70,6 @@ export interface StatusRole {
 }
 
 /**
- * @deprecated Renamed to `StatusRole` for clarity (the family lacks the
- * `fg.hover/active` interaction states the old name implied). The alias is
- * retained for one cycle so external consumers don't break on rename.
- */
-export type InteractiveRole = StatusRole
-
-/**
  * Accent — the canonical link-like interactive-text role. Has everything
  * `StatusRole` does PLUS a focus-ring border AND `fg.hover` /
  * `fg.active` text-color state variants (link hover treatments).
@@ -190,6 +183,11 @@ export interface DisabledRole {
   readonly border: string
 }
 
+/** Backdrop — the modal/dialog scrim surface. */
+export interface BackdropRole {
+  readonly bg: string
+}
+
 // ── Roles (the nested form) ────────────────────────────────────────────────
 
 /**
@@ -211,6 +209,7 @@ export interface Roles {
   readonly inverse: InverseRole
   readonly link: LinkRole
   readonly disabled: DisabledRole
+  readonly backdrop: BackdropRole
 }
 
 // ── Flat form (the user-facing string-keyed surface) ───────────────────────
@@ -386,10 +385,9 @@ export interface CategoricalHues {
  *
  * The nested roles (`accent`, `muted`, `surface`, `border`, `cursor`, plus
  * the status roles `info`/`success`/`warning`/`error`) are authoritative for
- * stateful tokens. Legacy flat hex aliases for these roles (`theme.primary`,
- * `theme.muted`, `theme.accent` as strings) are emitted as runtime
- * conveniences via the scheme-builder but are not part of this type — they
- * were deleted in silvery 0.19.0.
+ * stateful tokens. Retired single-hex aliases (`theme.primary`,
+ * `theme.muted`, `theme.accent` as strings) are neither emitted nor part of
+ * this type; legacy `$token` requests fail with their canonical cure.
  */
 export type Theme = FlatTokens &
   Roles & {

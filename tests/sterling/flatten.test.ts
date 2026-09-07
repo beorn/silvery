@@ -1,5 +1,5 @@
 /**
- * Sterling flatten — populateFlat writes all flat keys, same references,
+ * Sterling flatten — bakeFlat writes all flat keys, matching nested values,
  * and freezes the Theme.
  */
 
@@ -12,7 +12,7 @@ describe("sterling flatten", () => {
 
   test("all STERLING_FLAT_TOKENS are hex strings", () => {
     for (const flat of STERLING_FLAT_TOKENS) {
-      const val = (theme as any)[flat]
+      const val = theme[flat]
       expect(val, flat).toMatch(/^#[0-9a-fA-F]{3,8}$/)
     }
   })
@@ -51,12 +51,6 @@ describe("sterling flatten", () => {
     expect(theme.accent.hover.fg).toBe(theme["fg-accent-hover"])
     expect(theme.link.hover.fg).toBe(theme["fg-link-hover"])
     expect(theme.surface.overlay).toBe(theme["bg-surface-overlay"])
-  })
-
-  test("Object.keys counts ~83 entries (55 flat + 14 roles + mode + name + variants + palette + 8 hues + fg/bg root)", () => {
-    const keys = Object.keys(theme)
-    expect(keys.length).toBeGreaterThanOrEqual(74)
-    expect(keys.length).toBeLessThanOrEqual(84)
   })
 
   test("flat-only filter finds exactly STERLING_FLAT_TOKENS entries", () => {

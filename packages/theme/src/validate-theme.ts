@@ -48,6 +48,7 @@ const ALL_KNOWN_KEYS = new Set([
   "inverse",
   "link",
   "disabled",
+  "backdrop",
   "red",
   "orange",
   "yellow",

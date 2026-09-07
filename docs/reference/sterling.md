@@ -245,21 +245,21 @@ Retired JSX `$token` spellings are rejected loudly with the canonical replacemen
 
 | Legacy `$token` | Sterling `$token`          |
 | --------------- | -------------------------- |
-| `$primary`      | `$fg-accent`               |
+| `$primary`      | `$fg-accent` for text; `$bg-accent` for fills |
 | `$primaryfg`    | `$fg-on-accent`            |
-| `$accent`       | `$fg-accent`               |
+| `$accent`       | `$fg-accent` for text; `$bg-accent` for fills |
 | `$accentfg`     | `$fg-on-accent`            |
 | `$muted`        | `$fg-muted`                |
 | `$mutedbg`      | `$bg-muted`                |
-| `$secondary`    | `$fg-muted`                |
+| `$secondary`    | `$fg-link` for navigation; `$purple` categorically |
 | `$error`        | `$fg-error`                |
 | `$warning`      | `$fg-warning`              |
 | `$success`      | `$fg-success`              |
 | `$info`         | `$fg-info`                 |
 | `$inverse`      | `$fg-on-inverse`           |
 | `$inversebg`    | `$bg-inverse`              |
-| `$surface`      | `$fg`                      |
-| `$surfacebg`    | `$bg-surface-subtle`       |
+| `$surface`      | `$fg` for text; `$bg-surface-raised` for fills |
+| `$surfacebg`    | `$bg-surface-raised`       |
 | `$popover`      | `$fg`                      |
 | `$popoverbg`    | `$bg-surface-overlay`      |
 | `$selection`    | `$fg-on-selected`          |
@@ -270,7 +270,7 @@ Retired JSX `$token` spellings are rejected loudly with the canonical replacemen
 | `$inputborder`  | `$border-default`          |
 | `$focusborder`  | `$border-focus`            |
 | `$link`         | `$fg-link`                 |
-| `$disabledfg`   | `$fg-muted`                |
+| `$disabledfg`   | `$fg-disabled`             |
 | `$bg`           | unchanged (still resolves) |
 | `$fg`           | unchanged (still resolves) |
 

@@ -303,7 +303,7 @@ export function formatViolations(violations: InvariantViolation[]): string {
 }
 
 /**
- * Thrown by `loadTheme({ mode: "strict" })` when invariants fail.
+ * Thrown by `loadTheme()` when invariants fail.
  * Carries the violations array for programmatic inspection.
  */
 export class ThemeInvariantError extends Error {

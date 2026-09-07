@@ -399,6 +399,7 @@ export {
 } from "./sterling/index"
 export type {
   AccentRole,
+  BackdropRole,
   BorderRole,
   ContrastMode as SterlingContrastMode,
   ContrastViolation as SterlingContrastViolation,
@@ -411,8 +412,6 @@ export type {
   DisabledRole,
   FlatToken,
   FlatTokens,
-  /** @deprecated Use `StatusRole`. */
-  InteractiveRole,
   MutedRole,
   Roles as SterlingRoles,
   StatePair,

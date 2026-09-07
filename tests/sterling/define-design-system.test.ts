@@ -219,6 +219,8 @@ describe("defaultFlattenRule — channel-role-state", () => {
     expect(defaultFlattenRule(["cursor", "bg"])).toBe("bg-cursor")
     expect(defaultFlattenRule(["muted", "fg"])).toBe("fg-muted")
     expect(defaultFlattenRule(["muted", "bg"])).toBe("bg-muted")
+    expect(defaultFlattenRule(["fg"])).toBe("fg-default")
+    expect(defaultFlattenRule(["bg"])).toBe("bg-default")
   })
 
   test("returns null for unflattenable paths", () => {
@@ -229,22 +231,75 @@ describe("defaultFlattenRule — channel-role-state", () => {
 })
 
 describe("bakeFlat — generic helper", () => {
+  test("projects and deep-freezes a shallow-frozen input without mutating its nested roles", () => {
+    // A root-only freeze is not the canonical frozen Theme contract: it has
+    // neither the flat aliases nor immutable nested roles.
+    const input = Object.freeze({ accent: { fg: "#0969da", bg: "#1f6feb" } })
+
+    const projected = bakeFlat(input) as Record<string, unknown> & { accent: object }
+
+    expect(projected).not.toBe(input)
+    expect(projected["fg-accent"]).toBe("#0969da")
+    expect(projected["bg-accent"]).toBe("#1f6feb")
+    expect(Object.isFrozen(projected)).toBe(true)
+    expect(Object.isFrozen(projected.accent)).toBe(true)
+    expect(Object.isFrozen(input.accent)).toBe(false)
+    expect(() => bakeFlat(Object.freeze({ accent: { fg: "Accent Blue" } }))).toThrow(
+      'Invalid color leaf at "accent.fg": "Accent Blue"',
+    )
+  })
+
   test("baking twice is safe (idempotent on frozen input)", () => {
     const t = bakeFlat(nested())
     // Already frozen — second bake short-circuits.
-    expect(() => bakeFlat(t)).not.toThrow()
+    expect(bakeFlat(t)).toBe(t)
     expect((t as unknown as Record<string, unknown>)["bg-accent"]).toBe("#1f6feb")
   })
 
-  test("does not flatten non-hex string leaves", () => {
-    const theme = {
-      accent: { fg: "#0969da", label: "Accent Blue" },
-    } as unknown as Theme
-    const t = bakeFlat(theme) as unknown as Record<string, unknown>
+  test("frozen objects are not evidence that projection or nested freezing already ran", () => {
+    // Acceptance: all returned projections are validated, equal, and deeply
+    // frozen. The shallow-root case missed a fully frozen but unbaked root,
+    // and a frozen intermediate role with a still-mutable grandchild.
+    const frozen = Object.freeze({ accent: Object.freeze({ fg: "red" }) })
+    expect((bakeFlat(frozen) as unknown as Record<string, unknown>)["fg-accent"]).toBe("red")
+    expect(() => bakeFlat(Object.freeze({ accent: Object.freeze({ fg: "not-a-color" }) }))).toThrow(
+      'Invalid color leaf at "accent.fg": "not-a-color"',
+    )
+    const mixed = { accent: Object.freeze({ hover: { fg: "red" } }) }
+    expect(Object.isFrozen(bakeFlat(mixed).accent.hover)).toBe(true)
+  })
 
-    expect(t["fg-accent"]).toBe("#0969da")
-    // `label` is a string but not a hex — NOT flattened.
-    expect(Object.keys(t).some((k) => k.includes("label"))).toBe(false)
+  test("projects the closed terminal color grammar and freezes the result", () => {
+    const theme = {
+      name: "tiny", // root metadata is not a color leaf
+      annotations: { label: "preserved metadata" },
+      fg: "blueBright",
+      bg: "",
+      accent: { fg: "blueBright", bg: 196 },
+      surface: { default: "" },
+    }
+    const t = bakeFlat(theme) as Record<string, unknown>
+
+    expect(t["fg-accent"]).toBe("blueBright")
+    expect(t["bg-accent"]).toBe(196)
+    expect(t["fg-default"]).toBe("blueBright")
+    expect(t["bg-default"]).toBe("")
+    expect(t["bg-surface-default"]).toBe("")
+    expect(t.annotations).toEqual({ label: "preserved metadata" })
+    expect(Object.isFrozen(t)).toBe(true)
+    expect(Object.isFrozen(t.accent)).toBe(true)
+  })
+
+  test("rejects an unsupported color leaf loudly without treating metadata as color", () => {
+    for (const value of ["Accent Blue", "#abcde", "grayBright"]) {
+      const theme = {
+        name: "tiny",
+        annotations: { label: "preserved metadata" },
+        accent: { fg: value },
+      }
+
+      expect(() => bakeFlat(theme)).toThrow(`Invalid color leaf at "accent.fg": "${value}"`)
+    }
   })
 })
 

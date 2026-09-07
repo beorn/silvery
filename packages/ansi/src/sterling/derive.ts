@@ -28,7 +28,6 @@
 import {
   blend,
   deltaE as oklchDeltaE,
-  ensureContrast,
   hexToOklch,
   mixSrgb,
   oklchToHex,
@@ -37,6 +36,7 @@ import {
 import type { ColorScheme } from "../theme/types.ts"
 import type {
   AccentRole,
+  BackdropRole,
   BorderRole,
   CategoricalHues,
   CursorRole,
@@ -536,20 +536,13 @@ export function deriveRoles(
   // 4.5:1, but a few light schemes (tokyo-night-day, everforest-light,
   // material-light) land at ~4.07-4.31:1 once the bg is shifted halfway
   // toward fg. Auto-lift via `guard(... fgForSurfaceLift, AA)` pushes the
-  // surface BACK toward `bg` (away from `fg`) until the pair passes AA.
+  // surface BACK toward `bg` (away from the canonical `theme.fg`) until the
+  // pair passes AA. The canonical factory preserves the scheme's root fg, so
+  // the guard must use that exact output rather than a private repaired value:
+  // otherwise a light palette can pass during derivation and fail for callers
+  // that render its actual root foreground.
   //
-  // Lift target is `fgForSurfaceLift` — `scheme.foreground` after replicating
-  // the legacy `theme/derive.ts` fg lift (against `blend(bg, fg, 0.08)` at
-  // AA). The legacy path ships the lifted fg as `theme.fg`, and the post-
-  // derivation invariant audit reads `theme.fg` not `scheme.foreground`. If
-  // Sterling lifted surfaces against `scheme.fg` only, schemes whose `fg`
-  // gets lifted (darker on light schemes) would still fail the audit
-  // because the surface isn't far enough from the post-lift `fg`. Anchoring
-  // Sterling's surface lift to the same lifted-fg the legacy emits closes
-  // that gap structurally without touching `theme/derive.ts`. `surfaceDefault`
-  // is `bg` verbatim — we don't lift the root surface; `theme.fg` is already
-  // guaranteed AA against it by the legacy ensure().
-  const fgForSurfaceLift = ensureContrast(fg, blend(bg, fg, 0.08), WCAG_AA)
+  // `surfaceDefault` is `bg` verbatim — root fg is already guarded against it.
   const surfaceDefault = guard(
     "surface.default",
     "bg-surface-default",
@@ -563,7 +556,7 @@ export function deriveRoles(
     "blend(bg, fg, 0.03)",
     [bg, fg],
     blend(bg, fg, 0.03),
-    fgForSurfaceLift,
+    fg,
     WCAG_AA,
   )
   const surfaceRaised = guard(
@@ -572,7 +565,7 @@ export function deriveRoles(
     "blend(bg, fg, 0.10)",
     [bg, fg],
     blend(bg, fg, 0.1),
-    fgForSurfaceLift,
+    fg,
     WCAG_AA,
   )
   const surfaceOverlay = guard(
@@ -581,7 +574,7 @@ export function deriveRoles(
     "blend(bg, fg, 0.12)",
     [bg, fg],
     blend(bg, fg, 0.12),
-    fgForSurfaceLift,
+    fg,
     WCAG_AA,
   )
   const surfaceHover = guard(
@@ -590,7 +583,7 @@ export function deriveRoles(
     "blend(bg, fg, 0.10)",
     [bg, fg],
     blend(bg, fg, 0.1),
-    fgForSurfaceLift,
+    fg,
     WCAG_AA,
   )
   const surface: SurfaceRole = {
@@ -836,6 +829,20 @@ export function deriveRoles(
   )
   const disabled: DisabledRole = { fg: fgDisabled, bg: bgDisabled, border: borderDisabled }
 
+  // ── Backdrop ────────────────────────────────────────────────────────────
+  //
+  // Modal scrim: a concrete role leaf, not a post-derivation flat-field
+  // append. `bakeFlat` projects this unchanged as `bg-backdrop`.
+  const backdrop: BackdropRole = {
+    bg: guard(
+      "backdrop.bg",
+      "bg-backdrop",
+      "blend(bg, #000000, 0.4)",
+      [bg],
+      blend(bg, "#000000", 0.4),
+    ),
+  }
+
   const roles: Roles = {
     accent,
     info,
@@ -851,6 +858,7 @@ export function deriveRoles(
     inverse,
     link,
     disabled,
+    backdrop,
   }
 
   return { roles, mode, fg, bg, trace, violations }
@@ -1046,13 +1054,10 @@ export function deriveTheme(
     name: scheme.name,
     mode,
     // The canvas pair is part of the canonical Theme, not a legacy-factory
-    // overlay. Its flat aliases are explicit root tokens (the flatten walk
-    // intentionally skips depth-one leaves), so they originate here too.
+    // overlay. `bakeFlat` projects its explicit root aliases from these
+    // canonical nested-factory fields.
     fg,
     bg,
-    "fg-default": fg,
-    "bg-default": bg,
-    "bg-backdrop": blend(bg, "#000000", 0.4),
     variants: DEFAULT_VARIANTS,
     palette: buildPalette(scheme),
     ...(opts.trace ? { derivationTrace: trace } : {}),
