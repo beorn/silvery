@@ -28,6 +28,7 @@ export {
 
 export type {
   AccentRole,
+  BackdropRole,
   BorderRole,
   SterlingContrastMode as ContrastMode,
   SterlingContrastViolation as ContrastViolation,

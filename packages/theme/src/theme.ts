@@ -115,6 +115,7 @@ export {
 } from "./sterling/index"
 export type {
   AccentRole,
+  BackdropRole,
   BorderRole,
   ContrastMode as SterlingContrastMode,
   ContrastViolation as SterlingContrastViolation,

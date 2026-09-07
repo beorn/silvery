@@ -13,6 +13,8 @@
 import { describe, test, expect } from "vitest"
 import { sterling } from "@silvery/theme/sterling"
 import { builtinPalettes } from "@silvery/theme/schemes"
+import type { BackdropRole as BackdropRoleFromTheme } from "@silvery/theme"
+import type { BackdropRole as BackdropRoleFromSterling } from "@silvery/theme/sterling"
 
 describe("Sterling backdrop token", () => {
   const names = Object.keys(builtinPalettes)
@@ -21,7 +23,10 @@ describe("Sterling backdrop token", () => {
     const scheme = builtinPalettes[name]!
     const theme = sterling.deriveFromScheme(scheme)
 
+    const fromSterling: BackdropRoleFromSterling = theme.backdrop
+    const fromTheme: BackdropRoleFromTheme = fromSterling
     const backdrop = theme["bg-backdrop"]
+    expect(fromTheme.bg).toBe(backdrop)
     expect(backdrop, `${name} bg-backdrop`).toMatch(/^#[0-9a-fA-F]{3,8}$/)
     // Not distinct from `bg-surface-overlay` — overlay is the popover card bg
     // (a small fg-blend shift), backdrop is the modal scrim (a black-blend
