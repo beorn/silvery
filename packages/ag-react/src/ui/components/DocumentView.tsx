@@ -241,6 +241,7 @@ function BlockFrame({
   lane,
   marginTop,
   marginBottom,
+  paddingLeft,
   onLayout,
   children,
 }: {
@@ -249,6 +250,7 @@ function BlockFrame({
   lane: DocumentLane
   marginTop?: number
   marginBottom?: number
+  paddingLeft?: number
   onLayout?: (y: number) => void
   children: React.ReactNode
 }): React.ReactElement {
@@ -272,6 +274,7 @@ function BlockFrame({
           paddingRight={block.embed ? 2 : undefined}
           marginTop={block.attachedToPrevious ? 0 : marginTop}
           marginBottom={marginBottom}
+          paddingLeft={paddingLeft}
           onLayout={onLayout ? (rect) => onLayout(rect.y) : undefined}
           backgroundColor={background}
           color={selected ? "$fg-on-selected" : undefined}
@@ -513,7 +516,20 @@ function DocumentBlocks({
               </BlockFrame>
             )
           case "paragraph":
-          case "extension":
+          case "extension": {
+            // Attached property paragraphs keep their own identity, but share
+            // their list owner's text column (including nesting and numbering).
+            const owner = block.attachedToPrevious && isListBlock(previous) ? previous : undefined
+            const ownerItem = owner ? resolvedLists.get(owner.id) : undefined
+            if (owner && !ownerItem) {
+              throw new Error(
+                `DocumentView: attached list owner ${String(owner.id)} was not resolved`,
+              )
+            }
+            const paddingLeft =
+              owner && ownerItem
+                ? Math.max(0, owner.list.depth) * 2 + ownerItem.markerWidth + 1
+                : undefined
             return (
               <BlockFrame
                 key={block.id}
@@ -522,6 +538,7 @@ function DocumentBlocks({
                 lane={blockLane}
                 marginTop={afterList ? 1 : undefined}
                 marginBottom={bottomMargin}
+                paddingLeft={paddingLeft}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
                 <Text variant="body" color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
@@ -529,6 +546,7 @@ function DocumentBlocks({
                 </Text>
               </BlockFrame>
             )
+          }
         }
       })}
     </Box>
