@@ -332,6 +332,7 @@ export type {
   DocumentQuoteBlock,
   DocumentRuleBlock,
   DocumentTableBlock,
+  DocumentTableCell,
   DocumentViewSearchConfig,
   DocumentViewProps,
 } from "./ui/components"
@@ -381,12 +382,13 @@ export type { PulseProps, UsePulseOptions, UseSynchronizedPhaseOptions } from ".
 export { SelectList } from "./ui/components"
 export type { SelectListProps, SelectOption } from "./ui/components"
 
-export { Table, tableHeightAt } from "./components/Table"
+export { Table, tableHeightAt, contentNode, contentText } from "./components/Table"
 export type {
   TableProps,
   Column,
   Column as TableColumn,
   TableMetricsOptions,
+  MeasuredContent,
 } from "./components/Table"
 
 export { Badge } from "./ui/components"

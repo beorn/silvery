@@ -11,6 +11,7 @@ import { describe, expect, test, vi } from "vitest"
 import { parseColor } from "@silvery/ag-term/pipeline/render-helpers"
 import { createRenderer } from "@silvery/test"
 import { Box } from "../src/components/Box"
+import { Text } from "../src/components/Text"
 import { Content } from "../src/ui/components/Content"
 
 function resolveRgb(color: string): { r: number; g: number; b: number } {
@@ -117,5 +118,47 @@ describe("Content.Table document presentation (@km/tui/22807)", () => {
     expect(new Set(glyphCells.map(({ x }) => x)).size).toBe(1)
     expect(new Set(glyphCells.map(({ width }) => width)).size).toBe(1)
     expect(new Set(tailCells.map(({ x }) => x)).size).toBe(1)
+  })
+
+  test("renders a { text, node } cell as its node, not as its text", () => {
+    const label = "@i/29-buckets"
+    const render = createRenderer({ cols: 80, rows: 20 })
+    const app = render(
+      <Content.Table
+        headers={["Link", "Note"]}
+        rows={[
+          [
+            {
+              text: label,
+              node: (
+                <Text bold color="$fg-accent">
+                  {label}
+                </Text>
+              ),
+            },
+            "inline",
+          ],
+        ]}
+      />,
+    )
+    const rect = app.getByText(label).first().resolve()?.boxRect
+    if (rect === null || rect === undefined) {
+      throw new Error(`expected a measured cell for ${JSON.stringify(label)}`)
+    }
+    const painted = app.cell(rect.x, rect.y)
+
+    expect(painted.bold).toBe(true)
+    expect(painted.fg).toEqual(resolveRgb("$fg-accent"))
+
+    // Control: the identical table built from the plain string paints neither.
+    const plainRender = createRenderer({ cols: 80, rows: 20 })
+    const plain = plainRender(
+      <Content.Table headers={["Link", "Note"]} rows={[[label, "inline"]]} />,
+    )
+    const plainRect = plain.getByText(label).first().resolve()?.boxRect
+    if (plainRect === null || plainRect === undefined) {
+      throw new Error(`expected a measured control cell for ${JSON.stringify(label)}`)
+    }
+    expect(plain.cell(plainRect.x, plainRect.y).bold).toBe(false)
   })
 })

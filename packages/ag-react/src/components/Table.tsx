@@ -22,13 +22,37 @@ import { Box } from "./Box"
 import { Text, type TextProps } from "./Text"
 import { ListView } from "../ui/components/ListView"
 
+/**
+ * Cell content whose rendered node differs from the text that measures it.
+ * A plain string is both. A `{ text, node }` pair renders `node` while the
+ * width allocator reads `text` — a cell that renders `[[@i/29-buckets]]`
+ * down to the label `@i/29-buckets` must size by the label, not by the
+ * source bytes.
+ */
+export type MeasuredContent = string | { readonly text: string; readonly node: React.ReactNode }
+
+/** The text the width allocator reads for a piece of measured content. */
+export function contentText(content: MeasuredContent): string {
+  return typeof content === "string" ? content : content.text
+}
+
+/** The node the renderer paints for a piece of measured content. */
+export function contentNode(content: MeasuredContent): React.ReactNode {
+  return typeof content === "string" ? content : content.node
+}
+
 export type Column<T> = {
-  /** Column header text. */
-  header: string
+  /** Column header: plain text, or a `{ text, node }` pair rendered as `node` and measured as `text`. */
+  header: MeasuredContent
   /** Key to read from the data item. */
   key?: keyof T & string
   /** Custom renderer; a returned string also participates in intrinsic sizing. */
   render?: (item: T, index: number) => React.ReactNode
+  /**
+   * Plain text the width allocator reads when `render` returns a node. Without
+   * it a node cell measures as empty and the track collapses to its header.
+   */
+  measure?: (item: T, index: number) => string
   /** Text alignment. */
   align?: "left" | "right" | "center"
   /** Fixed total track width. */
@@ -118,6 +142,9 @@ function trackAt(tracks: readonly Track[], index: number): Track {
 }
 
 function plainCellValue<T>(column: Column<T>, item: T, index: number): string {
+  // Explicit measurement wins: it is the only source that survives a render()
+  // returning a node, which is exactly when the track would otherwise collapse.
+  if (column.measure) return column.measure(item, index)
   if (column.render) {
     const rendered = column.render(item, index)
     if (typeof rendered === "string" || typeof rendered === "number") return String(rendered)
@@ -211,7 +238,7 @@ export function tableHeightAt<T>(
   const headerHeight = showHeader
     ? columns.reduce(
         (tallest, column, columnIndex) =>
-          Math.max(tallest, wrapHeaders ? lines(column.header, columnIndex) : 1),
+          Math.max(tallest, wrapHeaders ? lines(contentText(column.header), columnIndex) : 1),
         1,
       )
     : 0
@@ -234,15 +261,17 @@ function computeTracks<T>(
       const total = column.width + separatorWidth
       return { min: total, max: total, degradedMin: total, fixed: true }
     }
-    // Intrinsic sizing reads the RENDERED cell text (a render() that returns a
-    // string participates), never the source data — a cell rendering a long
-    // source down to a short label must not inflate the floor.
+    // Intrinsic sizing reads the RENDERED cell text — `measure` when the column
+    // declares one, otherwise a render() that returns a string — never the
+    // source data: a cell rendering a long source down to a short label must
+    // not inflate the floor, and a cell rendering a node must not measure as
+    // empty and collapse the track to its header.
     const headerMin = intrinsicWidths(
-      column.header,
+      contentText(column.header),
       wrapHeaders ? "wrap" : "truncate",
     ).minContentWidth
     let minContent = headerMin
-    let maxContent = displayWidth(column.header)
+    let maxContent = displayWidth(contentText(column.header))
     for (let itemIndex = 0; itemIndex < data.length; itemIndex++) {
       const item = data[itemIndex]
       if (item === undefined) continue
@@ -494,7 +523,7 @@ function TableImplementation<T>({
               return (
                 <Box key={columnIndex} flexDirection="column" width="100%" minWidth={0}>
                   <Text bold color={headerColor} flexShrink={0}>
-                    {column.header}:
+                    {contentNode(column.header)}:
                   </Text>
                   {typeof value === "string" || typeof value === "number" ? (
                     <Text minWidth={0} wrap="wrap">
@@ -537,7 +566,7 @@ function TableImplementation<T>({
             maxWidth="100%"
             wrap={wrapHeaders ? "wrap" : "truncate"}
           >
-            {column.header}
+            {contentNode(column.header)}
           </Text>
         </Box>
       ))}
