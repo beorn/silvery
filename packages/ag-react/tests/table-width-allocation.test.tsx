@@ -22,7 +22,7 @@ import { describe, expect, test } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { displayWidth } from "@silvery/ag-term/unicode"
 import { Box } from "../src/components/Box"
-import { Table, type Column } from "../src/components/Table"
+import { Table, type Column, type MeasuredContent } from "../src/components/Table"
 import { Text } from "../src/components/Text"
 import { Content } from "../src/ui/components/Content"
 
@@ -274,5 +274,112 @@ describe("table width allocation (@si/apportion-consolidation gate)", () => {
     await app.waitForLayoutStable()
 
     expect(commits, "height-only geometry must not wake the width-only table consumer").toBe(1)
+  })
+})
+
+/**
+ * MeasuredContent: a cell whose rendered node differs from the text that sizes
+ * it. km document tables render inline markup per cell (`[[@i/29-buckets]]`
+ * becomes a link node), so the display path takes a node while the width
+ * allocator still needs plain text.
+ *
+ * @failure  `plainCellValue` returned "" for any cell whose `render` produced a
+ *           node, so `computeTracks` sized the track from the HEADER alone and
+ *           the column silently collapsed — no throw, no warning, just a
+ *           column too narrow to read.
+ * @invariant Track geometry is identical whether a cell is a plain string or a
+ *           `{ text, node }` pair carrying the same text.
+ */
+const LINK_HEADERS = ["Link", "Why"]
+const LINK_LABELS = ["@i/29-buckets", "@i/16-work-lifecycle", "@i/7-tent-and-beads"]
+const LINK_PROSE = [
+  "buckets are the durable lane for work nobody owns yet",
+  "the lifecycle is the only path a work item may travel",
+  "a tent carries the wire while a bead carries the work",
+]
+
+function linkTable(cols: number, cell: (label: string) => MeasuredContent) {
+  const render = createRenderer({ cols, rows: 24 })
+  return render(
+    <Box width={cols} flexDirection="column">
+      <Content.Layout fill={false} prose={80} wide={120}>
+        <Content.Row>
+          <Content.Body width="auto">
+            <Content.Table
+              headers={LINK_HEADERS}
+              rows={LINK_LABELS.map((label, index) => [cell(label), LINK_PROSE[index]!])}
+            />
+          </Content.Body>
+        </Content.Row>
+      </Content.Layout>
+    </Box>,
+  )
+}
+
+/** A one-column table whose header is `header`; `probe` is the text it renders. */
+function headerTable(header: MeasuredContent, probe: string) {
+  const render = createRenderer({ cols: 80, rows: 20 })
+  const app = render(
+    <Box width={80} flexDirection="column">
+      <Table
+        data={[{ note: "n" }]}
+        columns={[
+          { header, key: "note" },
+          { header: "Tail", key: "note" },
+        ]}
+      />
+    </Box>,
+  )
+  return { app, probe, width: cellWidth(app, probe) }
+}
+
+/** The painted cell at the header probe's origin — nested Text styling shows here. */
+function paintedHeader(table: ReturnType<typeof headerTable>) {
+  const rect = table.app.getByText(table.probe).resolve()?.boxRect
+  if (rect === null || rect === undefined) {
+    throw new Error(`no measured header cell for ${JSON.stringify(table.probe)}`)
+  }
+  return table.app.cell(rect.x, rect.y)
+}
+
+describe("table measured content (node cells keep their track)", () => {
+  test("a { text, node } cell allocates the same track as the identical plain string", () => {
+    for (let cols = 70; cols <= 160; cols += 10) {
+      const plain = linkTable(cols, (label) => label)
+      const measured = linkTable(cols, (label) => ({ text: label, node: <Text>{label}</Text> }))
+
+      for (const label of [...LINK_HEADERS, ...LINK_LABELS]) {
+        expect(cellWidth(measured, label), `cols=${cols}, cell ${JSON.stringify(label)}`).toBe(
+          cellWidth(plain, label),
+        )
+      }
+      // Not passing vacuously: the collapse this pins would size the link track
+      // from its 4-cell header, which equality alone would happily ratify if
+      // BOTH variants collapsed.
+      expect(
+        cellWidth(measured, "Link"),
+        `cols=${cols}: link track collapsed to its header`,
+      ).toBeGreaterThan(displayWidth("Link") + CELL_CHROME)
+    }
+  })
+
+  test("a MeasuredContent header renders its node and measures its text", () => {
+    const long = "Bucket lifecycle"
+    const short = "BL"
+    const plainLong = headerTable(long, long)
+    const plainShort = headerTable(short, short)
+    const measured = headerTable({ text: long, node: <Text italic>{short}</Text> }, short)
+
+    // Renders the node: the header paints the node's own italic styling, which
+    // the plain-string control never carries. (A nested <Text> collapses into
+    // its parent text node, so the proof is the painted cell, not the tree.)
+    expect(paintedHeader(measured).italic).toBe(true)
+    expect(paintedHeader(plainShort).italic).toBe(false)
+    expect(measured.app.text).toContain(short)
+    expect(measured.app.text).not.toContain(long)
+
+    // Measures the text: the track is sized by `text`, not by the rendered node.
+    expect(measured.width).toBe(plainLong.width)
+    expect(measured.width).toBeGreaterThan(plainShort.width)
   })
 })

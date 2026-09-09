@@ -39,13 +39,20 @@ const data = [
 interface TableColumn {
   /** Key in data objects to display */
   key: string
-  /** Header text */
-  header: string
+  /** Header: plain text, or `{ text, node }` rendered as `node` and measured as `text` */
+  header: MeasuredContent
   /** Fixed column width (auto-calculated from content if omitted) */
   width?: number
   /** Text alignment within the column */
   align?: "left" | "center" | "right"
+  /**
+   * Plain text the width allocator reads when `render` returns a node. Without
+   * it a node cell measures as empty and the track collapses to its header.
+   */
+  measure?: (item: T, index: number) => string
 }
+
+type MeasuredContent = string | { readonly text: string; readonly node: ReactNode }
 ```
 
 ## Output

@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { createLogger } from "loggily"
 import { Box } from "../../components/Box"
-import { DocumentTable as DataTable, type Column as DataTableColumn } from "../../components/Table"
+import {
+  contentNode,
+  contentText,
+  DocumentTable as DataTable,
+  type Column as DataTableColumn,
+  type MeasuredContent,
+} from "../../components/Table"
 import { Text } from "../../components/Text"
 import { useOnBoxRectCommitted } from "../../hooks/useLayout"
 import { type Breakpoint, DEFAULT_BREAKPOINTS } from "../../hooks/useResponsiveValue"
@@ -846,8 +852,10 @@ function AutoLane({ children }: { children: React.ReactNode }): React.ReactEleme
 }
 
 type TableProps = {
-  headers: string[]
-  rows: string[][]
+  /** Column headers; a `{ text, node }` header renders `node` and measures `text`. */
+  headers: readonly MeasuredContent[]
+  /** Body cells; a `{ text, node }` cell renders `node` and measures `text`. */
+  rows: readonly (readonly MeasuredContent[])[]
   alignments?: TableAlignment[]
 }
 
@@ -868,17 +876,22 @@ function TableGridRoot({
   layout = "grid",
 }: TableGridProps): React.ReactElement {
   const availableWidth = useContentRowWidth()
-  const columns: DataTableColumn<string[]>[] = headers.map((header, columnIndex) => {
-    const width = widths?.[columnIndex]
-    return {
-      header,
-      render: (row) => row[columnIndex] ?? "",
-      align: alignments[columnIndex] ?? undefined,
-      width: width === undefined ? undefined : width + 2,
-      minWidth: 3,
-      shrink: true,
-    }
-  })
+  const columns: DataTableColumn<readonly MeasuredContent[]>[] = headers.map(
+    (header, columnIndex) => {
+      const width = widths?.[columnIndex]
+      return {
+        header,
+        render: (row) => contentNode(row[columnIndex] ?? ""),
+        // Without this the width allocator sees a node and measures nothing,
+        // collapsing the track to its header.
+        measure: (row) => contentText(row[columnIndex] ?? ""),
+        align: alignments[columnIndex] ?? undefined,
+        width: width === undefined ? undefined : width + 2,
+        minWidth: 3,
+        shrink: true,
+      }
+    },
+  )
   return (
     <DataTable
       columns={columns}

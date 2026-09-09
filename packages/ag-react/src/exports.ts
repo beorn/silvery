@@ -332,6 +332,7 @@ export type {
   DocumentQuoteBlock,
   DocumentRuleBlock,
   DocumentTableBlock,
+  DocumentTableCell,
   DocumentViewSearchConfig,
   DocumentViewProps,
 } from "./ui/components"
@@ -382,7 +383,8 @@ export { SelectList } from "./ui/components"
 export type { SelectListProps, SelectOption } from "./ui/components"
 
 export { Table } from "./components/Table"
-export type { TableProps, Column, Column as TableColumn } from "./components/Table"
+export type { TableProps, Column, Column as TableColumn, MeasuredContent } from "./components/Table"
+export { contentNode, contentText } from "./components/Table"
 
 export { Badge } from "./ui/components"
 export type { BadgeProps } from "./ui/components"

@@ -4,6 +4,7 @@ import { displayLength } from "@silvery/ansi"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { usePopoverHandlers } from "../../components/Popover"
+import type { MeasuredContent } from "../../components/Table"
 import { Blockquote, H1, H2, H3, H4, H5, H6, HR, Small } from "./Typography"
 import { SyntaxHighlighter } from "./SyntaxHighlighter"
 import { Prose } from "./Prose"
@@ -81,10 +82,17 @@ export interface DocumentRuleBlock extends DocumentBlockBase {
   readonly kind: "rule"
 }
 
+/**
+ * One table cell. A plain string renders and measures as itself; a
+ * `{ text, node }` pair renders `node` (inline markup, links, code spans)
+ * while the width allocator reads `text`.
+ */
+export type DocumentTableCell = MeasuredContent
+
 export interface DocumentTableBlock extends DocumentBlockBase {
   readonly kind: "table"
-  readonly headers: readonly string[]
-  readonly rows: readonly (readonly string[])[]
+  readonly headers: readonly DocumentTableCell[]
+  readonly rows: readonly (readonly DocumentTableCell[])[]
   readonly alignments?: readonly ("left" | "right" | "center" | null)[]
 }
 
