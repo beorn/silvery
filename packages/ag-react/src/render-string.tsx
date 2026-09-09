@@ -43,6 +43,7 @@ import { StdoutContext, StderrContext, TermContext } from "./context"
 import { isLayoutEngineInitialized } from "@silvery/ag-term/layout-engine"
 import type { PipelineConfig } from "@silvery/ag-term/pipeline"
 import { createAg } from "@silvery/ag-term/ag"
+import { commitLayoutSnapshot } from "@silvery/ag/layout-signals"
 import { runWithMeasurer } from "@silvery/ag-term/unicode"
 import { createContainer, getContainerRoot } from "./reconciler"
 import { stringReconciler } from "./reconciler/string-reconciler"
@@ -299,6 +300,15 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
   // Layout stabilization loop: run the pipeline, flush React work from
   // layout notifications (useBoxRect forceUpdate etc.), repeat until stable.
   // This matches the test renderer's multi-pass approach.
+  //
+  // Each pass ends at a COMMIT BOUNDARY (`commitLayoutSnapshot`), exactly as
+  // the interactive runtimes do — see `renderer.ts` and `scheduler.ts`, which
+  // are the only other callers. Without it the committed rect signals never
+  // advance, so every `useBoxRect` / `useOnBoxRectCommitted` consumer reads
+  // its zero seed forever and a static render silently disagrees with the
+  // interactive one: `Content.Table` measured a 0-width container at every
+  // width and fell back to its stacked form, which is what `maddoc --width N`
+  // showed for every table in every document.
   let buffer!: TerminalBuffer
   let rootNode: ReturnType<typeof getContainerRoot> | undefined
   const MAX_ITERATIONS = 5
@@ -316,6 +326,10 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
         }
         const result = measurer ? runWithMeasurer(measurer, doRender) : doRender()
         buffer = result.buffer
+        // Promoted committed rects fire deferred-lane forceUpdates that
+        // `flushSyncWork` does NOT drain; only the next `doRender` paints
+        // them, so a promotion has to keep the loop running.
+        if (root !== undefined && commitLayoutSnapshot(root)) hadReactCommit = true
       })
       if (!hadReactCommit) {
         act(() => {

@@ -37,6 +37,13 @@ interface DocumentBlockBase {
   readonly embed?: { readonly source: string }
   /** Keep this block directly beneath its preceding owner without a paragraph gap. */
   readonly attachedToPrevious?: true
+  /**
+   * Activate this block — a click on its frame, and whatever key the host
+   * binds to the same intent. Presence is what makes a block interactive, so
+   * a presenter opts blocks in one at a time rather than DocumentView guessing
+   * which kinds are actionable.
+   */
+  readonly onActivate?: () => void
 }
 
 export interface DocumentHeadingBlock extends DocumentBlockBase {
@@ -267,6 +274,7 @@ function BlockFrame({
           data-document-block-kind={block.kind}
           data-cursor={selected ? true : undefined}
           focusable
+          onClick={block.onActivate}
           minWidth={0}
           width={block.embed ? "100%" : undefined}
           paddingRight={block.embed ? 2 : undefined}

@@ -16,7 +16,7 @@
  */
 import React, { useMemo, useState } from "react"
 import { apportion, TRACK_BAND_ATTR, type ApportionTrack } from "@silvery/ag"
-import { displayWidth, intrinsicWidths } from "@silvery/ag-term/unicode"
+import { displayWidth, intrinsicWidths, wrapText } from "@silvery/ag-term/unicode"
 import { useOnBoxRectCommitted } from "../hooks/useLayout"
 import { Box } from "./Box"
 import { Text, type TextProps } from "./Text"
@@ -136,6 +136,87 @@ function isWrapCapable(cellWrap: TextProps["wrap"]): boolean {
     cellWrap === false ||
     cellWrap === "hard"
   )
+}
+
+/** How a table would be laid out, for {@link tableHeightAt}. Mirrors `TableImplementation`'s own defaults. */
+export type TableMetricsOptions = {
+  /** Total horizontal padding per cell. Default 2, matching `TableProps`. */
+  padding?: number
+  /** Body-cell overflow behavior. Default `"wrap"` — the document-table setting. */
+  cellWrap?: TextProps["wrap"]
+  /** Draw column separators (the framed presentation). Default false. */
+  columnSeparators?: boolean
+  /** Count one rule row before each body row, as document tables draw. Default true. */
+  rowSeparators?: boolean
+  /** Reserve rows for a header. Default true. */
+  showHeader?: boolean
+}
+
+/**
+ * Rendered row count for a table laid into `width` columns — without rendering it.
+ *
+ * This exists so a POLICY can compare lanes by what they COST THE READER IN
+ * ROWS rather than by intrinsic width. `<Box fitWidth>` answers "does the
+ * content fit?", which is a width question and the only one it can answer;
+ * a caller deciding whether a wider lane is WORTH its aesthetic price needs
+ * height, and no width comparison yields it. Keeping that comparison out here
+ * leaves the fitWidth mechanism untouched (@si/layout/15149: mechanism =
+ * `<Box fitWidth>`, policy = `<Content.Layout>`).
+ *
+ * Pure: no React, no rendering, no measurement pass, and no dependence on a
+ * committed rect — which is deliberate, since a frame-dependent answer is the
+ * defect class that made this function necessary. It reuses the same three
+ * primitives the renderer does, and reimplements none of them: `computeTracks`
+ * for the bands, `apportion` for the split, and the shared `wrapText` for the
+ * line count, so the number it returns is the number the table will render.
+ */
+export function tableHeightAt<T>(
+  columns: readonly Column<T>[],
+  data: readonly T[],
+  width: number,
+  options: TableMetricsOptions = {},
+): number {
+  const {
+    padding = 2,
+    cellWrap = "wrap",
+    columnSeparators = false,
+    rowSeparators = true,
+    showHeader = true,
+  } = options
+  if (columns.length === 0 || width <= 0) return 0
+
+  const wrapHeaders = isWrapCapable(cellWrap)
+  const tracks = computeTracks(columns, data, padding, columnSeparators, cellWrap, wrapHeaders)
+  const allocation = allocateTracks(tracks, width, cellWrap)
+  // No legal allocation: cells fall back to flex truncation, one row each.
+  if (allocation === null)
+    {return (showHeader ? 1 : 0) + data.length + (rowSeparators ? data.length : 0)}
+
+  /** Content columns left after this track's own chrome. */
+  const contentWidth = (columnIndex: number): number => {
+    const separatorWidth = columnSeparators && columnIndex > 0 ? 1 : 0
+    return Math.max(1, (allocation.widths[columnIndex] ?? 0) - padding - separatorWidth)
+  }
+  const lines = (text: string, columnIndex: number): number =>
+    text.length === 0 ? 1 : wrapText(text, contentWidth(columnIndex)).length
+
+  // A row is as tall as its tallest cell — the same max the flex row realizes.
+  const rowHeight = (item: T, itemIndex: number): number =>
+    columns.reduce(
+      (tallest, column, columnIndex) =>
+        Math.max(tallest, lines(plainCellValue(column, item, itemIndex), columnIndex)),
+      1,
+    )
+
+  const headerHeight = showHeader
+    ? columns.reduce(
+        (tallest, column, columnIndex) =>
+          Math.max(tallest, wrapHeaders ? lines(column.header, columnIndex) : 1),
+        1,
+      )
+    : 0
+  const bodyHeight = data.reduce((total, item, itemIndex) => total + rowHeight(item, itemIndex), 0)
+  return headerHeight + bodyHeight + (rowSeparators ? data.length : 0)
 }
 
 function computeTracks<T>(
