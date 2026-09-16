@@ -97,7 +97,7 @@ export interface CreateIslandOptions {
    * consumes the mark, and leaves nothing to re-trigger the paint.
    *
    * Subscribing to `handle.output` from here is also the only way to close the
-   * window in which guest output has no subscriber. See `@si/render/24649` and
+   * window in which guest output has no subscriber. See `@si/render/24702` and
    * the `<Island>` binding's `onAttach` wiring.
    *
    * Throwing from this callback routes through `onError` / the surrounding
@@ -377,7 +377,7 @@ export function createIsland(opts: CreateIslandOptions): CreateIslandResult {
         // host NOW, with the state consistent — anything deferred by even one
         // microtask can lose the race to a frame driven by other state, which
         // paints the island blank and drops the pending repaint on the floor
-        // (@si/render/24649). See CreateIslandOptions.onAttach.
+        // (@si/render/24702). See CreateIslandOptions.onAttach.
         onAttach?.(handle)
       })
       .catch((rawErr: unknown) => {

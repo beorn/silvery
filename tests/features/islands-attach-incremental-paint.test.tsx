@@ -1,5 +1,5 @@
 /**
- * `@si/render/24649` — an island must paint on the FIRST frame rendered after
+ * `@si/render/24702` — an island must paint on the FIRST frame rendered after
  * its guest handle attaches, whatever drove that frame.
  *
  * `guest.init()` resolves in a microtask, so `islandState.handle` flips from

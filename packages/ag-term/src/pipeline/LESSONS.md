@@ -325,7 +325,7 @@ Structural ownership rather than a scoped save/restore global was deliberate: th
 
 ## An Island Attached Between Frames and Nothing Marked It Dirty (2026-09-16)
 
-**Symptom**: expanding a completed shell-command row in the ag-code transcript left the body empty. Under `SILVERY_STRICT` the createApp event loop threw `MISMATCH at (25, 23) on render #4 — incremental: char=" " fresh: char="h"`, the fresh write trap naming `renderIsland → emitOpaqueBlit`. The fresh frame painted the guest's cells; the incremental frame painted the body box's fill and nothing else. Tracked as `@si/render/24649`.
+**Symptom**: expanding a completed shell-command row in the ag-code transcript left the body empty. Under `SILVERY_STRICT` the createApp event loop threw `MISMATCH at (25, 23) on render #4 — incremental: char=" " fresh: char="h"`, the fresh write trap naming `renderIsland → emitOpaqueBlit`. The fresh frame painted the guest's cells; the incremental frame painted the body box's fill and nothing else. Tracked as `@si/render/24702`.
 
 **The blind path**: the trap says the island's blit is missing, so the natural move is to hunt for the skip that dropped it — a cascade formula, a scroll tier, a clip. The render-phase stats say otherwise once you read them: on the failing frame `C=0 P=0 L=0 Ch=0 CP=0 AL=0`, i.e. not one node in the tree carried a content, style, layout or children bit. `SILVERY_CELL_DEBUG=25,23` is the instrument that settles it — the incremental walk logged the ancestor chain down to depth 14 and then stopped, with no SKIP line for the island. No SKIP line means `renderNodeToBuffer` was never CALLED: `canSkipChildSubtree` had pruned the branch before descending, correctly, because nothing in it was dirty.
 

@@ -351,7 +351,7 @@ export const Island = forwardRef(function Island(
         // Subscriptions live on the handle, which is null until init
         // resolves, so the factory hands it to us through `onAttach` — in
         // the same microtask that assigns `islandState.handle`. Deferring
-        // this by even one microtask reopens @si/render/24649: a frame
+        // this by even one microtask reopens @si/render/24702: a frame
         // driven by unrelated state renders the now-attached island while
         // nothing has marked it dirty, the fast path skips it, and the
         // blanks painted before the attach survive in the cloned buffer
