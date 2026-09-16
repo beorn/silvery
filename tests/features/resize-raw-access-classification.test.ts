@@ -26,6 +26,8 @@ const classifiedRawAccess: Record<string, string> = {
     "standalone createApp fallback when no injected Term Size owner exists",
   "packages/ag-term/src/runtime/create-app.tsx:terminal-dimensions":
     "standalone createApp fallback/initial seed before a Term Size owner is available",
+  "packages/ag-term/src/runtime/input-owner.ts:terminal-dimensions":
+    "mouse unit verifier grid fallback for owners constructed without an injected size reader (wrap-with-themed-provider, tests); createTerm injects the Size owner",
   "packages/ag-term/src/runtime/devices/size.ts:resize-listener":
     "canonical Size owner; this is the only shared coalescing stream listener",
   "packages/ag-term/src/runtime/devices/size.ts:terminal-dimensions":
