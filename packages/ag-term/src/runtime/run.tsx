@@ -115,6 +115,12 @@ export interface RunOptionsCommon {
   /**
    * Enable SGR mouse tracking for click, scroll, and drag events. `true` probes
    * terminal cell metrics and enables SGR-Pixels when the probe succeeds.
+   * Pixel units are applied only once the event stream proves them: an event
+   * whose wire coordinate exceeds the terminal grid is impossible under cell
+   * units. Until then events are read as cells, so a multiplexer that answers
+   * the probe but forwards cell units (herdr 0.9, `@si/select/24649`) still
+   * lands clicks on the right cell. `getInputOwnerMouseInterpretation()` in
+   * `./input-owner` reports which units are live.
    * When enabled, native text selection requires holding Shift (or Option on macOS)
    * and native terminal scrolling is disabled.
    * Default: `true` in fullscreen mode, `false` in inline mode (where content

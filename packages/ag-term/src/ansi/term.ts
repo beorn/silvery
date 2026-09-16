@@ -919,6 +919,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
         writeStdout: ownedWrite,
         modes,
         mouse: options.mouse,
+        size: () => size.snapshot(),
       })
     }
     return _input
@@ -1281,7 +1282,10 @@ function createBackendTerm(emulator: TermEmulator, capsOverride?: Partial<Termin
   // Input sub-owner — non-TTY, pure event-bus mode. `sendInput(data)` parses
   // ANSI bytes and fans out to onKey/onMouse/onPaste/onFocus subscribers so
   // emulator-backed Terms share the same consumer shape as Node-backed.
-  const input = createInputOwner(HEADLESS_STDIN, stdout, { enableBracketedPaste: false })
+  const input = createInputOwner(HEADLESS_STDIN, stdout, {
+    enableBracketedPaste: false,
+    size: () => size.snapshot(),
+  })
   // Signals owner — emulator-backed terms share the host process so exit /
   // SIGINT handlers remain meaningful. Construction is free (no process
   // listeners until first on()), and the contract promises signals on every

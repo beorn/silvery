@@ -478,6 +478,9 @@ export function dispatchMouseEventToTree(
     button: number
     x: number
     y: number
+    coordinateMode?: "cell" | "pixel"
+    clientX?: number
+    clientY?: number
     action: string
     delta?: number
     deltaX?: number
@@ -494,7 +497,12 @@ export function dispatchMouseEventToTree(
       button: mouseData.button,
       x: mouseData.x,
       y: mouseData.y,
-      coordinateMode: "cell",
+      // The payload is the input owner's ParsedMouse: carry the units it
+      // actually applied (and the pixel client coordinates when it did), so
+      // `nativeEvent` / `clientX` on the component event tell the truth.
+      coordinateMode: mouseData.coordinateMode ?? "cell",
+      ...(mouseData.clientX === undefined ? {} : { clientX: mouseData.clientX }),
+      ...(mouseData.clientY === undefined ? {} : { clientY: mouseData.clientY }),
       action: mouseData.action as "down" | "up" | "move" | "wheel",
       delta: mouseData.delta,
       deltaX: mouseData.deltaX,
