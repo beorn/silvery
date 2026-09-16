@@ -74,7 +74,7 @@ export interface ParseMouseOptions {
  * the units are NOT recoverable from the sequence itself — see
  * {@link createMouseUnitVerifier} for how they are established.
  */
-export interface SgrMouseWire {
+interface SgrMouseWire {
   readonly button: number
   /** 1-indexed wire X, in the terminal's units. */
   readonly x: number
@@ -84,7 +84,7 @@ export interface SgrMouseWire {
 }
 
 /** Read the wire fields of an SGR mouse sequence; `null` when the shape doesn't match. */
-export function readSgrMouseWire(input: string): SgrMouseWire | null {
+function readSgrMouseWire(input: string): SgrMouseWire | null {
   const m = SGR_MOUSE_RE.exec(input)
   if (!m) return null
   return {
@@ -122,7 +122,7 @@ export function parseMouseSequence(input: string, options?: ParseMouseOptions): 
 }
 
 /** Turn wire fields into a {@link ParsedMouse} using the given coordinate units. */
-export function interpretSgrMouse(wire: SgrMouseWire, options?: ParseMouseOptions): ParsedMouse {
+function interpretSgrMouse(wire: SgrMouseWire, options?: ParseMouseOptions): ParsedMouse {
   const raw = wire.button
   const rawX = wire.x - 1 // 1-indexed → 0-indexed
   const rawY = wire.y - 1

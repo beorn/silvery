@@ -484,7 +484,10 @@ export function createInputOwner(
     size: options.size ?? (() => ({ cols: Number(stdout.columns), rows: Number(stdout.rows) })),
     onChange: (interpretation, reason) => {
       const grid = interpretation.lastGrid
-      const gridText = grid ? `${grid.cols}x${grid.rows}` : "unknown"
+      const gridText =
+        grid && Number.isFinite(grid.cols) && Number.isFinite(grid.rows)
+          ? `${grid.cols}x${grid.rows}`
+          : "unknown — the size source reports no grid, so pixel units can never be proven here"
       if (reason === "proven") {
         log?.debug?.(
           `mouse units: pixel units proven at event ${interpretation.verifiedAtEvent} (grid ${gridText})`,
