@@ -65,6 +65,16 @@ const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/
 export interface ParseMouseOptions {
   coordinateMode?: "cell" | "pixel"
   cellSize?: { width: number; height: number }
+  /**
+   * The negotiating side attests that the terminal encodes pixel units under
+   * 1016, so {@link createMouseUnitVerifier} starts proven instead of waiting
+   * for the stream. Only an in-process emulator whose modes the runtime itself
+   * set can say so — `run()`'s emulator branch is the one writer. A real PTY
+   * never can: a multiplexer answers every probe, DECRQM `?1016` included, and
+   * still forwards cells (herdr 0.9, measured 2026-09-16), so the real-PTY
+   * branch strips this from caller options and the stream stays the proof.
+   */
+  pixelUnitsAttested?: true
 }
 
 /**
@@ -206,6 +216,12 @@ export function isMouseSequence(input: string): boolean {
  * and proves pixel units; until that proof arrives, events are read as cells.
  * The residual — a click inside the top-left cells before any motion on a true
  * pixel terminal reads as cells — is why this state is readable, not silent.
+ *
+ * The one exception is an in-process emulator: there is no tty between the
+ * runtime and the terminal, the runtime set the emulator's 1016 itself, and the
+ * emulator encodes what its mode says. That side attests pixel units through
+ * {@link ParseMouseOptions.pixelUnitsAttested} and the stream has nothing left
+ * to prove; `provenBy` says which of the two happened.
  */
 export interface MouseCoordinateInterpretation {
   /** Units the next event will be parsed in. */
@@ -213,11 +229,18 @@ export interface MouseCoordinateInterpretation {
   /** Units negotiated with the terminal through the parser options. */
   readonly negotiated: "cell" | "pixel"
   /**
-   * `true` once the stream proved pixel units; `false` while a pixel
-   * negotiation is unproven (events read as cells); `undefined` when cell
-   * units were negotiated and there is nothing to verify.
+   * `true` once pixel units are proven — by the stream, or attested at
+   * negotiation by an in-process emulator; `false` while a pixel negotiation
+   * is unproven (events read as cells); `undefined` when cell units were
+   * negotiated and there is nothing to verify.
    */
   readonly pixelVerified: boolean | undefined
+  /**
+   * How pixel units were proven: `"stream"` by an event impossible under cell
+   * units, `"attested"` by the negotiating side (an in-process emulator);
+   * `undefined` while unproven or under a cell negotiation.
+   */
+  readonly provenBy: "stream" | "attested" | undefined
   /** 1-based ordinal of the event that proved pixel units, once one has. */
   readonly verifiedAtEvent: number | undefined
   /** Mouse events seen since the options were last set. */
@@ -263,6 +286,7 @@ export function createMouseUnitVerifier(
   let options = initial
   let negotiated: "cell" | "pixel" = "cell"
   let pixelVerified: boolean | undefined
+  let provenBy: "stream" | "attested" | undefined
   let verifiedAtEvent: number | undefined
   let eventsSeen = 0
   let lastGrid: { cols: number; rows: number } | undefined
@@ -271,7 +295,11 @@ export function createMouseUnitVerifier(
   function reset(next: ParseMouseOptions | undefined): void {
     options = next
     negotiated = next?.coordinateMode === "pixel" ? "pixel" : "cell"
-    pixelVerified = negotiated === "pixel" ? false : undefined
+    // An attestation is a proof the negotiating side already holds; without
+    // one, a pixel negotiation starts unproven and the stream must earn it.
+    const attested = negotiated === "pixel" && next?.pixelUnitsAttested === true
+    pixelVerified = negotiated === "pixel" ? attested : undefined
+    provenBy = attested ? "attested" : undefined
     verifiedAtEvent = undefined
     eventsSeen = 0
     lastGrid = undefined
@@ -284,6 +312,7 @@ export function createMouseUnitVerifier(
     units: units(),
     negotiated,
     pixelVerified,
+    provenBy,
     verifiedAtEvent,
     eventsSeen,
     lastGrid,
@@ -302,6 +331,7 @@ export function createMouseUnitVerifier(
           (Number.isFinite(grid.rows) && wire.y > grid.rows)
         if (provesPixels) {
           pixelVerified = true
+          provenBy = "stream"
           verifiedAtEvent = eventsSeen
           verifierOptions.onChange?.(snapshot(), "proven")
         } else if (!unprovenAnnounced) {

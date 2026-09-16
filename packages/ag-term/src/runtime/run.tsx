@@ -820,10 +820,26 @@ async function resolveMouseOption(
   defaultEnabled: boolean,
 ): Promise<boolean | ParseMouseOptions> {
   const resolved = requested ?? defaultEnabled
-  if (resolved !== true) return resolved
+  if (resolved !== true)
+    {return typeof resolved === "object" ? withoutPixelAttestation(resolved) : resolved}
 
   const cellSize = await probeMouseCellSize(probeOwner)
   return cellSize ? { coordinateMode: "pixel", cellSize } : true
+}
+
+/**
+ * A real PTY never attests pixel units. Nothing on this side of the tty can
+ * know what sits between the runtime and the terminal: herdr 0.9 answers the
+ * 14t/18t probes and DECRQM `?1016` as "set" and still forwards cell units
+ * (@si/select/24649, measured 2026-09-16). So the stream is the only proof
+ * here, and a caller-supplied attestation is dropped before it reaches the
+ * verifier. The emulator branch (`resolveEmulatorMouseOption`) is the one
+ * place that may attest, because there the terminal is in-process.
+ */
+function withoutPixelAttestation(options: ParseMouseOptions): ParseMouseOptions {
+  if (options.pixelUnitsAttested === undefined) return options
+  const { pixelUnitsAttested: _attested, ...rest } = options
+  return rest
 }
 
 async function probeMouseCellSize(
@@ -981,7 +997,14 @@ async function resolveEmulatorMouseOption(
   if (requested === undefined && !defaultEnabled) return false
 
   const cellSize = await probeEmulatorMouseCellSize(emulator)
-  return cellSize ? { coordinateMode: "pixel", cellSize } : true
+  // The backend that answered is in-process, this runtime sets its 1016
+  // itself, and it encodes what its mode says — so pixel units are attested
+  // here rather than proven event by event. A single synthetic click inside
+  // the top-left cells would otherwise never exceed the grid and would be
+  // read as cells (the 16 consumer suites that bounced on 2026-09-16). This
+  // is the only production writer of `pixelUnitsAttested`; the real-PTY
+  // branch strips it (`withoutPixelAttestation`).
+  return cellSize ? { coordinateMode: "pixel", cellSize, pixelUnitsAttested: true } : true
 }
 
 async function probeEmulatorMouseCellSize(

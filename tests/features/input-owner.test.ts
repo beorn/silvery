@@ -553,6 +553,7 @@ describe("InputOwner mouse coordinate units", () => {
       units: "cell",
       negotiated: "pixel",
       pixelVerified: false,
+      provenBy: undefined,
       eventsSeen: 1,
       lastGrid: grid,
     })
@@ -574,8 +575,37 @@ describe("InputOwner mouse coordinate units", () => {
       units: "pixel",
       negotiated: "pixel",
       pixelVerified: true,
+      provenBy: "stream",
       verifiedAtEvent: 2,
       eventsSeen: 3,
+    })
+    owner.dispose()
+  })
+
+  it("applies pixel units from the first event when the negotiating side attested them", () => {
+    const io = createMockIO()
+    const owner = createInputOwner(io.stdin, io.stdout, {
+      enableBracketedPaste: false,
+      mouse: { ...PIXEL, pixelUnitsAttested: true },
+      size: () => grid,
+    })
+    const events: ParsedMouse[] = []
+    owner.onMouse((e) => events.push(e))
+    // Fits the grid — under an unattested negotiation this would be cell (90, 12).
+    io.send("\x1b[<35;91;13M")
+    expect(events[0]).toMatchObject({
+      x: 90 / 14,
+      y: 12 / 26,
+      coordinateMode: "pixel",
+      clientX: 90,
+    })
+    expect(getInputOwnerMouseInterpretation(owner)).toMatchObject({
+      units: "pixel",
+      negotiated: "pixel",
+      pixelVerified: true,
+      provenBy: "attested",
+      verifiedAtEvent: undefined,
+      eventsSeen: 1,
     })
     owner.dispose()
   })
@@ -651,5 +681,41 @@ describe("createMouseUnitVerifier", () => {
       coordinateMode: "cell",
     })
     expect(verifier.interpretation()).toMatchObject({ units: "cell", pixelVerified: false })
+  })
+
+  it("starts proven under an attestation, announces nothing, and forgets it when the options change", () => {
+    const onChange = vi.fn()
+    const verifier = createMouseUnitVerifier(
+      { coordinateMode: "pixel", cellSize: { width: 14, height: 26 }, pixelUnitsAttested: true },
+      { size: () => ({ cols: 151, rows: 73 }), onChange },
+    )
+    expect(verifier.interpretation()).toMatchObject({
+      units: "pixel",
+      pixelVerified: true,
+      provenBy: "attested",
+      verifiedAtEvent: undefined,
+    })
+    expect(verifier.parse("\x1b[<35;91;13M")).toMatchObject({
+      coordinateMode: "pixel",
+      clientX: 90,
+    })
+    expect(onChange).not.toHaveBeenCalled()
+    // A fresh, unattested negotiation is unproven again — the stream must earn it.
+    verifier.setOptions({ coordinateMode: "pixel", cellSize: { width: 14, height: 26 } })
+    expect(verifier.interpretation()).toMatchObject({ pixelVerified: false, provenBy: undefined })
+    expect(verifier.parse("\x1b[<35;91;13M")).toMatchObject({ coordinateMode: "cell", x: 90 })
+  })
+
+  it("ignores an attestation that comes without a pixel negotiation", () => {
+    const verifier = createMouseUnitVerifier(
+      { coordinateMode: "cell", pixelUnitsAttested: true },
+      { size: () => ({ cols: 151, rows: 73 }) },
+    )
+    expect(verifier.interpretation()).toMatchObject({
+      units: "cell",
+      negotiated: "cell",
+      pixelVerified: undefined,
+      provenBy: undefined,
+    })
   })
 })

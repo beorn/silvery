@@ -162,13 +162,19 @@ describe("contract: run() emulator-branch mouse precedence", () => {
 })
 
 // ============================================================================
-// Coordinate units under 1016 — verified from the stream (@si/select/24649)
+// Coordinate units under 1016 — attested by the in-process backend
+// (@si/select/24649)
 //
-// The population 14207 never covered: a terminal that answers the 14t/18t
-// geometry probes (so the runtime upgrades to 1016) but forwards CELL units
-// anyway — herdr 0.9, measured 2026-09-16. SGR 1006 and 1016 bytes are
-// shape-identical, so the runtime must derive the units from the stream: an
-// event whose wire coordinate exceeds the grid is impossible under cell units.
+// SGR 1006 and 1016 bytes are shape-identical, so on a real PTY the runtime
+// derives the units from the stream (an event whose wire coordinate exceeds the
+// grid is impossible under cell units) — those contracts, including the
+// herdr-shaped "answers 14t, forwards cells" one, live where the real PTY does:
+// tests/runtime/run-mouse-pixels-auto.test.tsx. Here the terminal is the
+// in-process termless backend: the runtime set its 1016 itself and it encodes
+// what its mode says, so the emulator branch attests pixel units and a single
+// click inside the top-left cells lands on its cell instead of waiting for a
+// proof that a one-click test can never supply (the 16 consumer suites that
+// bounced on 2026-09-16 with the stream-only latch).
 // ============================================================================
 
 /**
@@ -208,17 +214,8 @@ function ClickProbe({ onEvent }: { onEvent: (e: Seen) => void }) {
   )
 }
 
-/**
- * The termless term's own raw-input door — the same one `term.mouse.*` uses
- * (run()'s emulator branch rewires it into the app's stdin, so the bytes take
- * the real parse path).
- */
-function rawInput(term: unknown): (data: string) => void {
-  return (term as { sendInput: (data: string) => void }).sendInput
-}
-
-describe("contract: run() coordinate units under SGR-Pixels are verified, not assumed", () => {
-  test("contract: a terminal that answers 14t but forwards cell units still lands the click on its cell", async () => {
+describe("contract: run() emulator-branch pixel units are attested by the in-process backend", () => {
+  test("contract: a single pixel click inside the unproven corner lands on its cell", async () => {
     using term = createTermless({ cols: 40, rows: 5 })
     const seen: Seen[] = []
     const handle = await run(<ClickProbe onEvent={(e) => seen.push(e)} />, term)
@@ -227,68 +224,37 @@ describe("contract: run() coordinate units under SGR-Pixels are verified, not as
       SGR_PIXELS_ENABLE,
     )
 
-    // herdr-shaped: cell (30, 3), 1-indexed on the wire, although 1016 is on.
-    rawInput(term)("\x1b[<0;31;4M")
+    // Auto encoding follows the negotiated mode: cell (2, 0) → pixel (16, 0)
+    // → wire (17, 1), which FITS the 40x5 grid. A stream-only verifier reads
+    // this as cell (16, 0) — off by a factor of the cell width, on the wrong
+    // node. The emulator branch attested pixel units at negotiation, so no
+    // proof is owed and the first click is already right.
+    await term.mouse.down(2, 0)
     await settle()
 
-    const last = seen.at(-1)
-    expect(last?.type).toBe("mousedown")
-    expect(Math.floor(last!.x), "cell units must not be divided by the probed cell width").toBe(30)
-    expect(Math.floor(last!.y)).toBe(3)
-    // The units in force are visible on the event itself: still cells, no pixel client coords.
-    expect(last).toMatchObject({ units: "cell", clientX: undefined })
+    expect(seen.at(-1)).toMatchObject({
+      type: "mousedown",
+      x: 2,
+      y: 0,
+      units: "pixel",
+      clientX: 16,
+    })
 
     handle.unmount()
   })
 
-  test("contract: a true pixel terminal proves itself on its first out-of-grid event and keeps fractional coordinates", async () => {
+  test("contract: pixel-encoded events keep fractional coordinates and pixel client coords", async () => {
     using term = createTermless({ cols: 40, rows: 5 })
     const seen: Seen[] = []
     const handle = await run(<ClickProbe onEvent={(e) => seen.push(e)} />, term)
     await settle()
 
-    // Auto encoding follows the negotiated mode: cell (20, 3) → pixel (160, 51)
-    // → wire (161, 52), impossible under cell units in a 40x5 grid.
+    // cell (20, 3) → pixel (160, 51) → wire (161, 52).
     await term.mouse.down(20, 3)
     await settle()
 
     expect(seen.at(-1)).toMatchObject({
       type: "mousedown",
-      x: 20,
-      y: 3,
-      units: "pixel",
-      clientX: 160,
-    })
-
-    handle.unmount()
-  })
-
-  test("contract: the documented residual is visible — a pixel click inside the unproven corner reads as cells, and the next out-of-grid motion proves pixels", async () => {
-    using term = createTermless({ cols: 40, rows: 5 })
-    const seen: Seen[] = []
-    const handle = await run(<ClickProbe onEvent={(e) => seen.push(e)} />, term)
-    await settle()
-
-    // Pixel-encoded hover (SGR 35 = motion, no button) exactly as a true
-    // pixel terminal sends it. cell (2, 0) → pixel (16, 0) → wire (17, 1)
-    // fits the 40x5 grid, so it cannot prove pixels and is read as cell
-    // (16, 0). This is the accepted residual (@si/select/24649): wrong by
-    // design here, never silent — the event says which units were applied.
-    rawInput(term)("\x1b[<35;17;1M")
-    await settle()
-    expect(seen.at(-1)).toMatchObject({
-      type: "mousemove",
-      x: 16,
-      y: 0,
-      units: "cell",
-      clientX: undefined,
-    })
-
-    // cell (20, 3) → pixel (160, 51) → wire (161, 52): 161 > 40 columns proves pixels.
-    rawInput(term)("\x1b[<35;161;52M")
-    await settle()
-    expect(seen.at(-1)).toMatchObject({
-      type: "mousemove",
       x: 20,
       y: 3,
       units: "pixel",
