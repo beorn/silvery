@@ -1,6 +1,6 @@
 import EventEmitter from "node:events"
 import { readdirSync, readFileSync, statSync } from "node:fs"
-import { join, relative } from "node:path"
+import { join, relative, sep } from "node:path"
 import { fileURLToPath } from "node:url"
 import React from "react"
 import { describe, expect, test } from "vitest"
@@ -305,27 +305,31 @@ describe("run() real-PTY branch — pixel units are proven by the stream", () =>
   })
 
   test("negative control: the emulator branch is the only production writer of the attestation", () => {
-    const src = fileURLToPath(new URL("../../packages/ag-term/src/", import.meta.url))
+    // Every package's src/ — a writer in ag or ag-react would be as wrong as one in ag-term.
+    const packages = fileURLToPath(new URL("../../packages/", import.meta.url))
     const files: string[] = []
     const walk = (dir: string): void => {
       for (const name of readdirSync(dir)) {
+        if (name === "node_modules" || name === "dist" || name === "tests") continue
         const path = join(dir, name)
         if (statSync(path).isDirectory()) walk(path)
-        else if (/\.tsx?$/.test(name)) files.push(path)
+        else if (/\.tsx?$/.test(name) && path.includes(`${sep}src${sep}`)) files.push(path)
       }
     }
-    walk(src)
+    walk(packages)
     expect(files.length).toBeGreaterThan(50)
 
-    const writers = files.filter((file) =>
-      /pixelUnitsAttested\s*:\s*true/.test(readFileSync(file, "utf8")),
-    )
-    expect(writers.map((file) => relative(src, file))).toEqual(["runtime/run.tsx"])
+    // One pattern for the inventory AND the count, so a writer spelled without
+    // the space cannot pass one check and hide from the other.
+    const writer = /pixelUnitsAttested\s*:\s*true/
+    const writers = files.filter((file) => writer.test(readFileSync(file, "utf8")))
+    expect(writers.map((file) => relative(packages, file))).toEqual(["ag-term/src/runtime/run.tsx"])
 
-    // …and inside run.tsx it sits in the emulator branch, not the real-PTY one.
-    const text = readFileSync(join(src, "runtime/run.tsx"), "utf8")
-    const at = text.indexOf("pixelUnitsAttested: true")
-    expect(text.indexOf("pixelUnitsAttested: true", at + 1)).toBe(-1)
+    // …exactly once, and inside run.tsx it sits in the emulator branch, not the real-PTY one.
+    const text = readFileSync(join(packages, "ag-term/src/runtime/run.tsx"), "utf8")
+    const sites = [...text.matchAll(new RegExp(writer.source, "g"))]
+    expect(sites).toHaveLength(1)
+    const at = sites[0]!.index
     expect(at).toBeGreaterThan(text.indexOf("async function resolveEmulatorMouseOption("))
     expect(at).toBeLessThan(text.indexOf("async function probeEmulatorMouseCellSize("))
     expect(at).toBeGreaterThan(text.indexOf("async function resolveMouseOption("))
