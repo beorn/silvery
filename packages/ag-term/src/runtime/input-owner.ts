@@ -476,6 +476,9 @@ export function createInputOwner(
   const pasteHandlers = new Set<(e: PasteEvent) => void>()
   const focusHandlers = new Set<(e: FocusEvent) => void>()
   const notificationActivationHandlers = new Set<(e: TerminalNotificationActivation) => void>()
+  // UPSTREAM-WAITING(herdr#unfiled): Delete when herdr forwards pixel units under 1016
+  // Bead: @km/all/12134-upstream-waiting/24675-herdr-reports-sgr-pixels-mode-set-while-forwarding-cell-unit-mouse-coordinates
+  // Escalate by: 2027-03-16
   // Coordinate units come from the stream, not from the options alone: a
   // negotiated pixel mode is applied only after an event proves it. The
   // verifier owns that latch; the owner wires its two announcements to the

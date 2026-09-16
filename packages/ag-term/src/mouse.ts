@@ -65,6 +65,9 @@ const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/
 export interface ParseMouseOptions {
   coordinateMode?: "cell" | "pixel"
   cellSize?: { width: number; height: number }
+  // UPSTREAM-WAITING(herdr#unfiled): Delete when herdr forwards pixel units under 1016
+  // Bead: @km/all/12134-upstream-waiting/24675-herdr-reports-sgr-pixels-mode-set-while-forwarding-cell-unit-mouse-coordinates
+  // Escalate by: 2027-03-16
   /**
    * The negotiating side attests that the terminal encodes pixel units under
    * 1016, so {@link createMouseUnitVerifier} starts proven instead of waiting
@@ -272,6 +275,9 @@ export interface MouseUnitVerifier {
   setOptions(options: ParseMouseOptions | undefined): void
 }
 
+// UPSTREAM-WAITING(herdr#unfiled): Delete when herdr forwards pixel units under 1016
+// Bead: @km/all/12134-upstream-waiting/24675-herdr-reports-sgr-pixels-mode-set-while-forwarding-cell-unit-mouse-coordinates
+// Escalate by: 2027-03-16
 /**
  * Create a parser that applies pixel units only once the stream has proven
  * them. See {@link MouseCoordinateInterpretation} for the contract.

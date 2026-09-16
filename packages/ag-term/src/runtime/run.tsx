@@ -820,13 +820,17 @@ async function resolveMouseOption(
   defaultEnabled: boolean,
 ): Promise<boolean | ParseMouseOptions> {
   const resolved = requested ?? defaultEnabled
-  if (resolved !== true)
-    {return typeof resolved === "object" ? withoutPixelAttestation(resolved) : resolved}
+  if (resolved !== true) {
+    return typeof resolved === "object" ? withoutPixelAttestation(resolved) : resolved
+  }
 
   const cellSize = await probeMouseCellSize(probeOwner)
   return cellSize ? { coordinateMode: "pixel", cellSize } : true
 }
 
+// UPSTREAM-WAITING(herdr#unfiled): Delete when herdr forwards pixel units under 1016
+// Bead: @km/all/12134-upstream-waiting/24675-herdr-reports-sgr-pixels-mode-set-while-forwarding-cell-unit-mouse-coordinates
+// Escalate by: 2027-03-16
 /**
  * A real PTY never attests pixel units. Nothing on this side of the tty can
  * know what sits between the runtime and the terminal: herdr 0.9 answers the
