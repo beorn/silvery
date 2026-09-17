@@ -197,7 +197,7 @@
       "optional": true
     }
   },
-  "overrides": {
+  "resolutions": {
     "flexily": "github:beorn/flexily",
     "loggily": "^0.10.2"
   },

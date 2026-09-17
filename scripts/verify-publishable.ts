@@ -408,12 +408,13 @@ function checkPackSizes() {
   for (const entry of PACKAGES) {
     // Pack the package dir directly, NOT the workspace root — a root pack can hit
     // npm's overrides-vs-direct-dep conflict, and per-dir matches what publishes anyway.
-    const r = spawnSync("npm", ["pack", "--dry-run", "--json"], {
+    // --ignore-scripts: build:all built dist; prepack would rebuild it and log ahead of the JSON.
+    const r = spawnSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], {
       cwd: join(ROOT, entry.dir),
       encoding: "utf-8",
       env: { ...process.env, npm_config_registry: "https://registry.npmjs.org/" },
     })
-    const query = `${entry.name}: npm pack --dry-run --json in ${join(ROOT, entry.dir)}`
+    const query = `${entry.name}: npm pack --dry-run --json --ignore-scripts in ${join(ROOT, entry.dir)}`
     if (r.error || r.signal || r.status !== 0) {
       fail(
         `${query} failed; tarball size could not be verified (exit ${r.status}, signal ${r.signal ?? "none"}).\n` +
