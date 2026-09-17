@@ -1497,10 +1497,10 @@ export function wrapTextWithMeasurer(
         // there's already content before this separator on the line — a
         // leading separator has nothing to keep with its left context.
         if (
-        currentLine.length > 1 &&
-        isSoftBreakPoint(grapheme) &&
-        !isNumericInfixSeparator(graphemes, i, gWidthFn)
-      ) {
+          currentLine.length > 1 &&
+          isSoftBreakPoint(grapheme) &&
+          !isNumericInfixSeparator(graphemes, i, gWidthFn)
+        ) {
           lastSoftBreakIndex = currentLine.length
           lastSoftBreakWidth = currentWidth
           lastSoftBreakGraphemeIndex = i + 1

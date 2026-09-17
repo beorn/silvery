@@ -89,7 +89,11 @@ export function buildTextAnalysis(
       breakIndices.push(i)
       maxWordWidth = Math.max(maxWordWidth, currentWordWidth)
       currentWordWidth = w
-    } else if (isSoftBreakPoint(g) && i + 1 < len && !isNumericInfixSeparator(graphemes, i, gWidthFn)) {
+    } else if (
+      isSoftBreakPoint(g) &&
+      i + 1 < len &&
+      !isNumericInfixSeparator(graphemes, i, gWidthFn)
+    ) {
       // Soft-punct (/ \ . _ : ,) emits the break AFTER the punctuation,
       // not before. `commands/run` wraps to `commands/` + `run`, never
       // `commands` + `/run`. This matches chenglou/pretext's convention

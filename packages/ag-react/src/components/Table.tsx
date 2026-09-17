@@ -216,8 +216,9 @@ export function tableHeightAt<T>(
   const tracks = computeTracks(columns, data, padding, columnSeparators, cellWrap, wrapHeaders)
   const allocation = allocateTracks(tracks, width, cellWrap)
   // No legal allocation: cells fall back to flex truncation, one row each.
-  if (allocation === null)
-    {return (showHeader ? 1 : 0) + data.length + (rowSeparators ? data.length : 0)}
+  if (allocation === null) {
+    return (showHeader ? 1 : 0) + data.length + (rowSeparators ? data.length : 0)
+  }
 
   /** Content columns left after this track's own chrome. */
   const contentWidth = (columnIndex: number): number => {
