@@ -498,7 +498,7 @@ describe("Block elements", () => {
     expect(buffer.getCell(2, 0).fg).toEqual(muted.term.buffer.getCell(0, 0).fg)
   })
 
-  test("CodeBlock reveals its label on hover and collapses on a body click", async () => {
+  test("CodeBlock reveals its label on hover and collapses only from the corner label", async () => {
     const app = createRenderer({ cols: 40, rows: 8, autoRender: true })(
       <Box width={40} flexDirection="column">
         <CodeBlock label="tsx">const answer = 42</CodeBlock>
@@ -506,13 +506,25 @@ describe("Block elements", () => {
       </Box>,
     )
     expect(app.text).not.toContain("tsx")
+    expect(app.text).not.toContain("▾")
     const expandedBackground = app.cell(0, 0).bg
     expect(app.lines.findIndex((line) => line.includes("After"))).toBe(3)
+    expect(app.getByText("const answer = 42").resolve()?.parent?.props.mouseCursor).toBeUndefined()
+
     await app.hover(3, 1)
-    expect(app.lines[0]).toContain("tsx")
+    expect(app.lines[0]).toContain("tsx ▾")
     expect(app.cell(0, 0).bg).toEqual(expandedBackground)
-    expect(app.text).not.toContain("▾")
+    expect(app.getByText("tsx ▾").resolve()?.parent?.props.mouseCursor).toBe("pointer")
+
+    // A click in the body does not collapse the block
     await app.click(3, 1)
+    expect(app.text).toContain("const answer = 42")
+    expect(app.lines.findIndex((line) => line.includes("After"))).toBe(3)
+
+    // A click on the top-right corner label collapses it
+    const cornerCol = app.lines[0]!.indexOf("▾")
+    expect(cornerCol).toBeGreaterThan(0)
+    await app.click(cornerCol, 0)
     expect(app.text).not.toContain("const answer")
     expect(app.lines[0]).toContain("▸ tsx")
     expect(app.cell(0, 0).char).toBe("▸")
@@ -520,8 +532,27 @@ describe("Block elements", () => {
     const mutedLabel = createRenderer({ cols: 1, rows: 1 })(<Text color="$fg-muted">t</Text>)
     expect(app.cell(2, 0).fg).toEqual(mutedLabel.cell(0, 0).fg)
     expect(app.lines.findIndex((line) => line.includes("After"))).toBe(1)
+
+    // A click anywhere on the collapsed row expands it
     await app.click(3, 0)
     expect(app.text).toContain("const answer = 42")
+    expect(app.lines.findIndex((line) => line.includes("After"))).toBe(3)
+  })
+
+  test("CodeBlock without language defaults to 'plain ▾' click target on hover", async () => {
+    const app = createRenderer({ cols: 40, rows: 8, autoRender: true })(
+      <Box width={40} flexDirection="column">
+        <CodeBlock>const answer = 42</CodeBlock>
+      </Box>,
+    )
+    expect(app.text).not.toContain("plain")
+    await app.hover(3, 1)
+    expect(app.lines[0]).toContain("plain ▾")
+    expect(app.getByText("plain ▾").resolve()?.parent?.props.mouseCursor).toBe("pointer")
+    const cornerCol = app.lines[0]!.indexOf("▾")
+    await app.click(cornerCol, 0)
+    expect(app.text).not.toContain("const answer")
+    expect(app.lines[0]).toContain("▸ plain")
   })
 
   test("CodeBlock respects a child that prevents the toggle click", async () => {
