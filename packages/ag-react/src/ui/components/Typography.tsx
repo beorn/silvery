@@ -10,14 +10,13 @@
  *
  * ## Color inheritance
  *
- * Body-text components (P, Strong, Em, H3) inherit foreground color from
- * the nearest ancestor Box with a `color` or `theme` prop — just like CSS.
- * They do NOT hardcode `$fg`, so `<Box color="$fg-error"><P>red text</P></Box>` works.
+ * H3 inherits foreground; body and inline emphasis use theme variants.
+ * An explicit color or structural style priority overrides those defaults.
  *
  * `Box theme={}` auto-inherits `$fg` for all text and auto-fills `$bg`:
  * ```tsx
  * <Box theme={lightTheme}>
- *   <P>This text uses the light theme's fg on its bg</P>
+ *   <P>This text uses the light theme's body foreground on its bg</P>
  * </Box>
  * ```
  *
@@ -36,12 +35,16 @@
 import type { ReactNode } from "react"
 import { createContext, useContext, Children, cloneElement, isValidElement } from "react"
 import type { InteractionSurfaceInput, InteractionTreatment, InteractiveState } from "@silvery/ag"
+import type { TerminalSelectionState } from "@silvery/ag-term"
 import { Box, type BoxProps } from "../../components/Box"
 import { Text } from "../../components/Text"
 import type { TextProps } from "../../components/Text"
 import { useInteractionTreatment } from "../../hooks/useInteractionTreatment"
 import { useTheme } from "../../ThemeContext"
-import { StylePriorityProvider } from "../../style-priority"
+import { CapabilityRegistryContext } from "../../context"
+import { StylePriorityContext, StylePriorityProvider } from "../../style-priority"
+import { useExpansion } from "./use-expansion"
+import { HangingMarkerRow } from "./HeadingRow"
 
 export interface TypographyProps extends Omit<TextProps, "children"> {
   children?: ReactNode
@@ -87,7 +90,7 @@ export function H1({ children, color, ...rest }: TypographyProps) {
   return <Heading variant="h1" children={children} color={color} {...rest} />
 }
 
-/** Section heading — $fg-accent + bold. Contrasts with H1. */
+/** Section heading — H1's color blended halfway toward foreground, plus bold. */
 export function H2({ children, color, ...rest }: TypographyProps) {
   return <Heading variant="h2" children={children} color={color} {...rest} />
 }
@@ -116,7 +119,7 @@ export function H6({ children, color, ...rest }: TypographyProps) {
 // Body Text
 // ============================================================================
 
-/** Paragraph — plain body text. Inherits foreground from parent. */
+/** Paragraph — the theme's body foreground, with optional caller override. */
 export function P({ children, color, ...rest }: TypographyProps) {
   return (
     <Text variant="body" color={color} {...rest}>
@@ -152,7 +155,7 @@ export function Small({ children, color, ...rest }: TypographyProps) {
   )
 }
 
-/** Bold emphasis — inline strong text. Inherits foreground from parent. */
+/** Bold emphasis — halfway between body foreground and the theme's full foreground. */
 export function Strong({ children, color, ...rest }: TypographyProps) {
   return (
     <Text variant="strong" color={color} {...rest}>
@@ -161,7 +164,7 @@ export function Strong({ children, color, ...rest }: TypographyProps) {
   )
 }
 
-/** Italic emphasis — inline emphasized text. Inherits foreground from parent. */
+/** Italic emphasis — halfway between body foreground and the theme's full foreground. */
 export function Em({ children, color, ...rest }: TypographyProps) {
   return (
     <Text variant="em" color={color} {...rest}>
@@ -175,7 +178,7 @@ export function Em({ children, color, ...rest }: TypographyProps) {
 // ============================================================================
 
 /**
- * Inline code — `$fg-info` text without a background chip or padding.
+ * Inline code — muted/link foreground blend without a background chip or padding.
  * An explicit caller color still wins (for selection and local emphasis).
  * Defaults to `wrap="truncate-middle"` (GitHub-style):
  * inline code is one unbroken token, so when it overflows the container
@@ -281,31 +284,121 @@ export function DecoratedRegion({
   )
 }
 
-/** Blockquote — an inset structural hairline around italic muted prose. */
+/** Blockquote — italic muted prose inset two cells, without structural chrome. */
 export function Blockquote({ children, color }: TypographyProps) {
   const muted = color ?? "$fg-muted"
   return (
-    <DecoratedRegion marginLeft={2} marginRight={4} railColor="$fg-faint">
+    <Box marginLeft={2} minWidth={0}>
       <Text color={muted} italic wrap="wrap">
         {children}
       </Text>
-    </DecoratedRegion>
+    </Box>
   )
 }
 
 /**
- * Code block — │ border in `$border-default` + monospace content.
+ * Code block — subtle surface with two-cell sides and one-row vertical padding.
+ * Document layouts can outdent this surface to align its code with prose.
  * Distinct from Blockquote. Body Text defaults to `wrap="hard"` (CSS
  * `word-break: break-all`): long code lines wrap mid-identifier at
  * the column boundary rather than spilling off the right edge. Code
  * fences in a narrow terminal stay fully visible. Tracking:
  * @km/silvery/15087-markdown-code-block-char-wrap-default.
  */
-export function CodeBlock({ children, color }: TypographyProps) {
+export interface CodeBlockProps extends Omit<BoxProps, "children" | "content"> {
+  children?: ReactNode
+  /** Already-rendered source, such as a bare SyntaxHighlighter. */
+  content?: ReactNode
+  label?: string
+  expanded?: boolean
+  defaultExpanded?: boolean
+  onExpandedChange?: (expanded: boolean) => void
+}
+
+export function CodeBlock({
+  children,
+  content,
+  label = "text",
+  expanded,
+  defaultExpanded = true,
+  onExpandedChange,
+  color,
+  backgroundColor,
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+  ...props
+}: CodeBlockProps) {
+  const [isExpanded, setExpanded] = useExpansion(expanded, defaultExpanded, onExpandedChange)
+  const interaction = useInteractionTreatment("control", "surfaceHover")
+  const priority = useContext(StylePriorityContext)
+  const registry = useContext(CapabilityRegistryContext)
+  const background =
+    priority?.background ??
+    backgroundColor ??
+    (!isExpanded && interaction.isHovered ? "$bg-surface-hover" : "$bg-surface-subtle")
+  const labelColor = "mix($fg-faint, $bg, 50%)"
   return (
-    <DecoratedRegion railColor={color ?? "$border-default"}>
-      <Text wrap="hard">{children}</Text>
-    </DecoratedRegion>
+    <Box
+      flexDirection="column"
+      position="relative"
+      width="100%"
+      minWidth={0}
+      paddingX={2}
+      {...props}
+      paddingY={isExpanded ? 1 : 0}
+      color={color}
+      backgroundColor={background}
+      mouseCursor="pointer"
+      onMouseEnter={(event) => {
+        interaction.onMouseEnter(event)
+        onMouseEnter?.(event)
+      }}
+      onMouseLeave={(event) => {
+        interaction.onMouseLeave(event)
+        onMouseLeave?.(event)
+      }}
+      onClick={(event) => {
+        onClick?.(event)
+        if (event.defaultPrevented) return
+        // The runtime consumes drag releases. Also leave an existing text
+        // selection intact rather than interpreting it as a disclosure click.
+        const selection = registry?.get<{ readonly state: TerminalSelectionState }>(
+          Symbol.for("silvery.selection"),
+        )?.state
+        const range = selection?.range
+        if (
+          selection?.selecting ||
+          (range && (range.anchor.col !== range.head.col || range.anchor.row !== range.head.row))
+        ) {
+          return
+        }
+        setExpanded(!isExpanded)
+        event.preventDefault()
+        event.stopPropagation()
+      }}
+    >
+      <StylePriorityProvider background={background}>
+        {isExpanded ? (
+          <>
+            {interaction.isHovered ? (
+              <Box position="absolute" top={0} right={2}>
+                <Text color={labelColor}>{label}</Text>
+              </Box>
+            ) : null}
+            {content ?? (
+              <Text color={color ?? "mix($fg, $fg-muted, 50%)"} wrap="hard">
+                {children}
+              </Text>
+            )}
+          </>
+        ) : (
+          <HangingMarkerRow marker={<Text color="$fg-faint">▸</Text>}>
+            <Text color="$fg-muted">{label}</Text>
+          </HangingMarkerRow>
+        )}
+      </StylePriorityProvider>
+    </Box>
   )
 }
 
@@ -408,19 +501,12 @@ export function OL({ children }: TypographyProps) {
   )
 }
 
-// Third level is a square, not `▸`: a right-pointing triangle is the
-// disclosure affordance in every tree widget and a static list has nothing to
-// disclose. `■` (U+25A0) and not `▪` (U+25AA) — the small square is Emoji=Yes
-// and measures two cells. See DocumentView's UNORDERED_MARKERS.
-const BULLETS = ["•", "◦", "■", "-"]
-
 /** List item with hanging indent. Use inside UL or OL. 2-char marker (bullet + space). */
 export function LI({ children, color, _index }: TypographyProps & { _index?: number }) {
   const { level, ordered } = useContext(ListContext)
   const effectiveLevel = Math.max(level, 1)
   const indent = "  ".repeat(effectiveLevel - 1)
-  const bullet = BULLETS[Math.min(effectiveLevel - 1, BULLETS.length - 1)]
-  const marker = ordered && _index != null ? `${_index}. ` : `${bullet} `
+  const marker = ordered && _index != null ? `${_index}. ` : "• "
 
   return (
     <Box>
@@ -429,7 +515,7 @@ export function LI({ children, color, _index }: TypographyProps & { _index?: num
         {marker}
       </Text>
       <Box flexShrink={1}>
-        <Text color={color}>{children}</Text>
+        <P color={color}>{children}</P>
       </Box>
     </Box>
   )

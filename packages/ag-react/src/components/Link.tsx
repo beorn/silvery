@@ -1,13 +1,13 @@
 /**
  * Link Component — URLs and App Actions
  *
- * Renders clickable text that reveals by becoming brighter. When `href`
+ * Renders clickable text that brightens and underlines on plain hover. When `href`
  * is present, Link also paints an OSC 8 terminal hyperlink; action-only links
  * omit `href` and leave activation entirely to `onClick`.
  *
- * Reveal policy is derived from semantic role: content hyperlinks reveal on
- * Cmd+hover, while app controls reveal on plain hover. Underline is stable
- * content semantics and never appears as a hover effect.
+ * Activation policy is derived from semantic role: content hyperlinks arm on
+ * Cmd+hover, while app controls arm on plain hover. Foreground hover does not
+ * change activation, cursor policy, or an explicit caller underline choice.
  *
  * A revealed URL click emits `"link:open"` through the app event chain. App-owned
  * actions run their `onClick` handler without emitting a destination.
@@ -36,7 +36,7 @@ interface LinkSharedProps extends Omit<TextProps, "children" | "onClick"> {
   children?: ReactNode
   /** Semantic role. Omit to derive content-link from href, control otherwise. */
   role?: InteractionRole
-  /** Foreground used while the role's reveal condition is active. */
+  /** Foreground used while hovered, independently of the activation gesture. */
   revealColor?: TextProps["color"]
 }
 
@@ -56,7 +56,8 @@ export function Link({
   children,
   color = "$fg-link",
   role = href === undefined ? "control" : "content-link",
-  revealColor = "$fg",
+  revealColor = "$fg-link-hover",
+  underline,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -82,7 +83,8 @@ export function Link({
       // hyperlink inheritance while remaining falsey to OSC 8 emission.
       internal_hyperlink={href ?? ""}
       {...rest}
-      color={interaction.treatment.color}
+      color={interaction.isHovered ? revealColor : interaction.treatment.color}
+      underline={underline ?? interaction.isHovered}
       mouseCursor={interaction.treatment.mouseCursor}
       onClick={handleClick}
       onMouseEnter={(event) => {

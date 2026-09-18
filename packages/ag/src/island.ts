@@ -84,6 +84,28 @@ export interface CreateIslandOptions {
   /** Lifecycle signal callback — fires on `ready` / `exit` / `error`. */
   onSignal?: (sig: IslandSignal) => void
   /**
+   * The guest's handle just became the island's paint source — called
+   * SYNCHRONOUSLY, in the same microtask that assigns `islandState.handle`,
+   * with the state already updated.
+   *
+   * This is the only moment at which an island's painted content changes
+   * (placeholder blanks → guest cells) without any host-observable event, so
+   * a host that skips clean subtrees MUST mark its node dirty from here. An
+   * `onSignal({type:"ready"})` is NOT a substitute: guests emit `ready` from
+   * inside `init()`, one or more microtasks BEFORE the handle is attached, and
+   * a frame driven by unrelated state in that window paints the island blank,
+   * consumes the mark, and leaves nothing to re-trigger the paint.
+   *
+   * Subscribing to `handle.output` from here is also the only way to close the
+   * window in which guest output has no subscriber. See `@si/render/24702` and
+   * the `<Island>` binding's `onAttach` wiring.
+   *
+   * Throwing from this callback routes through `onError` / the surrounding
+   * ErrorBoundary, exactly like an `init()` failure — the island cannot paint
+   * correctly if its host refused the attach.
+   */
+  onAttach?: (handle: IslandHandle) => void
+  /**
    * Async-init failure handler. If absent, init errors are thrown (which in
    * the `<Island>` React binding becomes the surrounding ErrorBoundary's
    * problem).
@@ -225,6 +247,7 @@ export function createIsland(opts: CreateIslandOptions): CreateIslandResult {
     palettePolicy: palettePolicyOverride,
     hydrate = "load",
     onSignal,
+    onAttach,
     onError,
     hostPalette,
   } = opts
@@ -350,6 +373,12 @@ export function createIsland(opts: CreateIslandOptions): CreateIslandResult {
         // before its init promise resolved) or "errored" (guest emitted
         // error then init resolved anyway). Don't downgrade from those.
         if (nodeState.lifecycle === "pending") nodeState.lifecycle = "ready"
+        // The island's paint source changed in this very statement. Tell the
+        // host NOW, with the state consistent — anything deferred by even one
+        // microtask can lose the race to a frame driven by other state, which
+        // paints the island blank and drops the pending repaint on the floor
+        // (@si/render/24702). See CreateIslandOptions.onAttach.
+        onAttach?.(handle)
       })
       .catch((rawErr: unknown) => {
         if (disposed) return

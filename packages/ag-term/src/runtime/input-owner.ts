@@ -57,8 +57,9 @@ export type {
 import { createLogger } from "loggily"
 import { type Key, parseKey } from "./keys"
 import {
+  createMouseUnitVerifier,
   isMouseSequence,
-  parseMouseSequence,
+  type MouseCoordinateInterpretation,
   type ParseMouseOptions,
   type ParsedMouse,
 } from "../mouse"
@@ -75,6 +76,7 @@ const BRACKETED_PASTE_ON = "\x1b[?2004h"
 const BRACKETED_PASTE_OFF = "\x1b[?2004l"
 const ESC_DISAMBIGUATION_MS = 25
 const SET_MOUSE_OPTIONS = Symbol("silvery.input.setMouseOptions")
+const GET_MOUSE_INTERPRETATION = Symbol("silvery.input.mouseInterpretation")
 
 const log = createLogger("silvery:input-owner")
 
@@ -243,9 +245,17 @@ export interface InputOwnerOptions {
   enableBracketedPaste?: boolean
   /**
    * Mouse coordinate parser options. Use this when the terminal has been put
-   * into SGR-Pixels mode 1016 and cell metrics are known.
+   * into SGR-Pixels mode 1016 and cell metrics are known. Pixel units are
+   * applied only once the event stream proves them — see
+   * `createMouseUnitVerifier` in `../mouse`.
    */
   mouse?: ParseMouseOptions
+  /**
+   * Live terminal grid, read per mouse event to verify coordinate units.
+   * Defaults to `stdout.columns` / `stdout.rows`; a Term passes its `size`
+   * device so resizes are seen immediately.
+   */
+  size?: () => { cols: number; rows: number }
 }
 
 interface ProbeEntry {
@@ -279,6 +289,7 @@ interface QueuedProbeStart {
 
 interface ConfigurableInputOwner extends InputOwner {
   [SET_MOUSE_OPTIONS](options: ParseMouseOptions | undefined): void
+  [GET_MOUSE_INTERPRETATION](): MouseCoordinateInterpretation
 }
 
 /** Configure startup-discovered mouse metrics without widening Term.input's public API. */
@@ -289,6 +300,19 @@ export function setInputOwnerMouseOptions(
   const configure = (input as ConfigurableInputOwner)[SET_MOUSE_OPTIONS]
   if (!configure) throw new Error("InputOwner does not support negotiated mouse options")
   configure(options)
+}
+
+/**
+ * Read which coordinate units the owner is applying to mouse events, and
+ * whether a negotiated pixel mode has been proven by the stream. This is the
+ * diagnostic for a mis-mapped click: it says which interpretation was live
+ * instead of leaving the reader to re-derive it. Same symbol-keyed shape as
+ * {@link setInputOwnerMouseOptions}, so Term.input's public API stays put.
+ */
+export function getInputOwnerMouseInterpretation(input: InputOwner): MouseCoordinateInterpretation {
+  const read = (input as ConfigurableInputOwner)[GET_MOUSE_INTERPRETATION]
+  if (!read) throw new Error("InputOwner does not expose its mouse coordinate interpretation")
+  return read()
 }
 
 // ============================================================================
@@ -452,7 +476,35 @@ export function createInputOwner(
   const pasteHandlers = new Set<(e: PasteEvent) => void>()
   const focusHandlers = new Set<(e: FocusEvent) => void>()
   const notificationActivationHandlers = new Set<(e: TerminalNotificationActivation) => void>()
-  let mouseOptions = options.mouse
+  // UPSTREAM-WAITING(herdr#unfiled): Delete when herdr forwards pixel units under 1016
+  // Bead: @km/all/12134-upstream-waiting/24675-herdr-reports-sgr-pixels-mode-set-while-forwarding-cell-unit-mouse-coordinates
+  // Escalate by: 2027-03-16
+  // Coordinate units come from the stream, not from the options alone: a
+  // negotiated pixel mode is applied only after an event proves it. The
+  // verifier owns that latch; the owner wires its two announcements to the
+  // logger so the state is never silent.
+  const mouseUnits = createMouseUnitVerifier(options.mouse, {
+    size: options.size ?? (() => ({ cols: Number(stdout.columns), rows: Number(stdout.rows) })),
+    onChange: (interpretation, reason) => {
+      const grid = interpretation.lastGrid
+      const gridText =
+        grid && Number.isFinite(grid.cols) && Number.isFinite(grid.rows)
+          ? `${grid.cols}x${grid.rows}`
+          : "unknown — the size source reports no grid, so pixel units can never be proven here"
+      if (reason === "proven") {
+        log?.debug?.(
+          `mouse units: pixel units proven at event ${interpretation.verifiedAtEvent} (grid ${gridText})`,
+        )
+        return
+      }
+      log?.warn?.(
+        `mouse units: SGR-Pixels (1016) negotiated but the first event fits the cell grid (${gridText}); ` +
+          `reading coordinates as CELLS until an event exceeds the grid proves pixel units. ` +
+          `A multiplexer that forwards cell units under 1016 (@si/select/24649) reads correctly this way; ` +
+          `a true pixel terminal proves itself on its first event outside the top-left cells.`,
+      )
+    },
+  })
   let resolvedCount = 0
   let timedOutCount = 0
   let disposed = false
@@ -481,7 +533,7 @@ export function createInputOwner(
       return
     }
     if (isMouseSequence(raw)) {
-      const mouse = parseMouseSequence(raw, mouseOptions)
+      const mouse = mouseUnits.parse(raw)
       if (mouse) {
         const event = { ...mouse, receivedAt, inputBatchId }
         // Action-specific debug — silvery:input-owner only logs the
@@ -489,8 +541,13 @@ export function createInputOwner(
         // streams. Use `silvery:input-owner` namespace for live capture.
         // Bead: @km/code/trackpad-wheel-not-scrolling.
         if (mouse.action === "wheel" || mouse.action === "down" || mouse.action === "up") {
+          const interpretation = mouseUnits.interpretation()
+          const units =
+            interpretation.negotiated === "pixel" && !interpretation.pixelVerified
+              ? "cell(pixel-unproven)"
+              : interpretation.units
           log?.debug?.(
-            `parsed mouse: action=${mouse.action} button=${mouse.button} x=${mouse.x} y=${mouse.y} delta=${mouse.delta ?? 0} bytes=${JSON.stringify(raw)}`,
+            `parsed mouse: action=${mouse.action} button=${mouse.button} x=${mouse.x} y=${mouse.y} delta=${mouse.delta ?? 0} units=${units} bytes=${JSON.stringify(raw)}`,
           )
         }
         fire(mouseHandlers, event)
@@ -1019,7 +1076,7 @@ export function createInputOwner(
 
   function setMouseOptions(next: ParseMouseOptions | undefined): void {
     if (disposed) return
-    mouseOptions = next
+    mouseUnits.setOptions(next)
   }
 
   function dispose(): void {
@@ -1119,5 +1176,6 @@ export function createInputOwner(
     [Symbol.dispose]: dispose,
   }
   Object.defineProperty(owner, SET_MOUSE_OPTIONS, { value: setMouseOptions })
+  Object.defineProperty(owner, GET_MOUSE_INTERPRETATION, { value: mouseUnits.interpretation })
   return owner
 }

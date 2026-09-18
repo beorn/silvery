@@ -129,13 +129,15 @@ describe("Text variant prop", () => {
   })
 
   // =============================================================================
-  // Test 6: variant="code" → $fg-info foreground without a background chip
+  // Test 6: variant="code" → muted-link foreground without a background chip
   // =============================================================================
 
-  test("variant='code' → $fg-info foreground and inherited background", () => {
+  test("variant='code' → muted-link foreground and inherited background", () => {
     const code = createRenderer({ cols: 40, rows: 3 })
     const app = code(<Text variant="code">hello</Text>)
-    const info = createRenderer({ cols: 40, rows: 3 })(<Text color="$fg-info">hello</Text>)
+    const info = createRenderer({ cols: 40, rows: 3 })(
+      <Text color="mix($fg-muted, $fg-link, 20%)">hello</Text>,
+    )
     const cell = app.cell(0, 0)
     expect(cell.char).toBe("h")
     expect(cell.fg).toEqual(info.cell(0, 0).fg)
@@ -244,9 +246,13 @@ describe("Typography wrapper parity", () => {
     expect(cell.fg).toEqual(successDirect.fg)
   })
 
-  test("<H2> uses $accent color from variant", () => {
+  test("<H2> blends the H1 color halfway toward foreground", () => {
     const app1 = r(<H2>Section</H2>)
-    const app2 = r(<Text variant="h2">Section</Text>)
+    const app2 = createRenderer({ cols: 80, rows: 5 })(
+      <Text color="mix($primary, $fg, 50%)" bold>
+        Section
+      </Text>,
+    )
 
     const cell1 = app1.cell(0, 0)
     const cell2 = app2.cell(0, 0)
@@ -340,10 +346,10 @@ describe("Theme.variants structure", () => {
     expect(h1?.bold).toBe(true)
   })
 
-  test("body variant is an empty object (plain body text)", () => {
+  test("body variant softens foreground without changing weight", () => {
     const body = defaultDarkTheme.variants?.body
     expect(body).toBeDefined()
-    expect(body?.color).toBeUndefined()
+    expect(body?.color).toBe("mix($fg, $fg-muted, 12.5%)")
     expect(body?.bold).toBeUndefined()
   })
 })

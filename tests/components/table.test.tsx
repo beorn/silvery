@@ -8,7 +8,8 @@
 import { describe, test, expect } from "vitest"
 import { displayWidth } from "@silvery/ag-term/unicode"
 import { createRenderer } from "@silvery/test"
-import { Text, Table } from "silvery"
+import { Box, Text, Table } from "silvery"
+import { DocumentTable } from "../../packages/ag-react/src/components/Table"
 
 const render = createRenderer({ cols: 80, rows: 20 })
 
@@ -413,6 +414,92 @@ describe("Table", () => {
     expect(app.text).toContain("components")
     expect(app.text).toContain("┐")
     expect(app.text).toContain("┘")
+  })
+
+  test("document tables preserve atomic dates and complete status headers", () => {
+    const headers = ["Sample", "Due date", "Status", "Reference", "Command"]
+    const app = createRenderer({ cols: 74, rows: 20 })(
+      <Box paddingX={1}>
+        <DocumentTable
+          cellWrap="wrap"
+          availableWidth={72}
+          columns={headers.map((header, index) => ({
+            header,
+            render: (row: string[]) => row[index] ?? "",
+          }))}
+          data={[
+            ["Typography", "2026-09-08", "WIP", "This sample", "maddoc typography.md"],
+            ["Documentation", "2026-09-09", "Todo", "Maddoc README", "bun run typecheck"],
+            ["External reference", "2026-09-10", "Done", "Example website", "echo ready"],
+          ]}
+        />
+      </Box>,
+    )
+
+    expect(app.lines.find((line) => line.includes("Sample"))).toMatch(
+      /Sample\s+Due date\s+Status\s+Reference\s+Command/u,
+    )
+    for (const date of ["2026-09-08", "2026-09-09", "2026-09-10"]) expect(app.text).toContain(date)
+  })
+
+  test("document tables keep a seven-column grid when header floors fit inside pane padding", () => {
+    const headers = [
+      "Surface",
+      "Language",
+      "Alignment",
+      "Marker",
+      "Navigation",
+      "Wrapping",
+      "Example",
+    ]
+    const app = createRenderer({ cols: 76, rows: 50 })(
+      <Box paddingX={2}>
+        <DocumentTable
+          cellWrap="wrap"
+          availableWidth={72}
+          columns={headers.map((header, index) => ({
+            header,
+            render: (row: string[]) => row[index] ?? "",
+          }))}
+          data={[
+            [
+              "Prose document",
+              "Markdown",
+              "Prose-aligned",
+              "Heading or bullet",
+              "Local and external links",
+              "Word wrapping",
+              "Typography playground",
+            ],
+            [
+              "Source block",
+              "TypeScript",
+              "Source-aligned",
+              "Collapsed triangle",
+              "Click to expand",
+              "Long source lines",
+              "Greeting component",
+            ],
+            [
+              "Metadata panel",
+              "YAML",
+              "Prose-aligned when it fits",
+              "Collapsed triangle",
+              "Search reveals content",
+              "Multiline values",
+              "Sample frontmatter",
+            ],
+          ]}
+        />
+      </Box>,
+    )
+
+    expect(app.lines.find((line) => line.includes("Surface"))).toMatch(
+      /Surface\s+Language\s+Alignment\s+Marker\s+Navigation\s+Wrapping\s+Example/u,
+    )
+    expect(app.text).not.toContain("Surface:")
+    // Keep natural word breaks even after relaxing oversized value floors.
+    expect(app.lines.find((line) => line.includes("Prose"))).toMatch(/Prose\s+Markdown/u)
   })
 
   test("framed tracks align emoji, CJK, combining marks, and ZWJ sequences", () => {

@@ -39,7 +39,7 @@ import { describe, test, expect, vi } from "vitest"
 import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import { run } from "../../packages/ag-term/src/runtime/run"
-import { Box, Text } from "../../src/index.js"
+import { Box, CodeBlock, Text } from "../../src/index.js"
 import { ListView } from "../../packages/ag-react/src/ui/components/ListView"
 import {
   createSelectionFeature,
@@ -297,6 +297,28 @@ describe("Bug 2 — drag-end suppresses onClick/onSelect", () => {
     expect(onSelect).not.toHaveBeenCalled()
 
     handle.unmount()
+  })
+
+  test("drag-select on CodeBlock copies source without collapsing", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+    const handle = await run(<CodeBlock label="ts">const answer = 42</CodeBlock>, term, {
+      selection: true,
+      mouse: true,
+    })
+    try {
+      await settle()
+      expect(term.screen).toContainText("const answer = 42")
+      term.clipboard.clear()
+
+      // CodeBlock has two columns of side padding and one row above its source.
+      await term.mouse.drag({ from: [2, 1], to: [6, 1] })
+      await settle()
+
+      expect(term.clipboard.last).toBe("const")
+      expect(term.screen).toContainText("const answer = 42")
+    } finally {
+      handle.unmount()
+    }
   })
 })
 

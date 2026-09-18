@@ -13,6 +13,9 @@ import {
   H1,
   H2,
   H3,
+  H4,
+  H5,
+  H6,
   P,
   Lead,
   Muted,
@@ -38,10 +41,14 @@ const render = createRenderer({ cols: 80, rows: 10 })
 // ============================================================================
 
 describe("Headings", () => {
-  test("H1 renders text", () => {
-    const app = render(<H1>Page Title</H1>)
-    expect(app.text).toContain("Page Title")
-  })
+  test.each([H1, H2, H3, H4, H5, H6])(
+    "%p leaves heading text un-underlined by default",
+    (Heading) => {
+      const app = render(<Heading>Page Title</Heading>)
+      expect(app.text).toContain("Page Title")
+      expect(app.cell(0, 0).underline).toBeFalsy()
+    },
+  )
 
   test("H1 is bold with $fg-accent color", () => {
     const app = render(<H1>Title</H1>)
@@ -111,11 +118,15 @@ describe("Body text", () => {
     expect(app.text).toContain("Body text here")
   })
 
-  test("P has no bold/italic by default", () => {
+  test("P softens foreground by 12.5% without bold or italic", () => {
     const app = render(<P>Plain</P>)
+    const expected = createRenderer({ cols: 1, rows: 1 })(
+      <Text color="mix($fg, $fg-muted, 12.5%)">P</Text>,
+    )
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.attrs.bold).toBeFalsy()
     expect(cell.attrs.italic).toBeFalsy()
+    expect(cell.fg).toEqual(expected.cell(0, 0).fg)
   })
 
   test("Lead renders text in italic", () => {
@@ -163,9 +174,13 @@ describe("Body text", () => {
 describe("Inline emphasis", () => {
   test("Strong renders bold text", () => {
     const app = render(<Strong>Important</Strong>)
+    const reference = createRenderer({ cols: 1, rows: 1 })(
+      <Text color="mix($fg, mix($fg, $fg-muted, 12.5%), 50%)">I</Text>,
+    )
     expect(app.text).toContain("Important")
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.attrs.bold).toBe(true)
+    expect(cell.fg).toEqual(reference.cell(0, 0).fg)
   })
 
   test("Strong is not italic", () => {
@@ -176,9 +191,13 @@ describe("Inline emphasis", () => {
 
   test("Em renders italic text", () => {
     const app = render(<Em>Emphasis</Em>)
+    const reference = createRenderer({ cols: 1, rows: 1 })(
+      <Text color="mix($fg, mix($fg, $fg-muted, 12.5%), 50%)">E</Text>,
+    )
     expect(app.text).toContain("Emphasis")
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.attrs.italic).toBe(true)
+    expect(cell.fg).toEqual(reference.cell(0, 0).fg)
   })
 
   test("Em is not bold", () => {
@@ -207,9 +226,11 @@ describe("Inline code elements", () => {
     expect(app.text).not.toContain(" fn() ")
   })
 
-  test("Code uses $fg-info without a background chip", () => {
+  test("Code keeps four-fifths muted foreground without a background chip", () => {
     const app = render(<Code>x</Code>)
-    const info = render(<Text color="$fg-info">x</Text>)
+    const info = createRenderer({ cols: 1, rows: 1 })(
+      <Text color="mix($fg-muted, $fg-link, 20%)">x</Text>,
+    )
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.char).toBe("x")
     expect(cell.fg).toEqual(info.term.buffer.getCell(0, 0).fg)
@@ -239,7 +260,7 @@ describe("Inline code elements", () => {
     expect(kbdCell.attrs.bold).toBe(true)
   })
 
-  test("Code caller color overrides $fg-info", () => {
+  test("Code caller color overrides its muted-link foreground", () => {
     const app = render(<Code color="$fg-success">ok</Code>)
     const override = render(<Text color="$fg-success">ok</Text>)
     expect(app.term.buffer.getCell(0, 0).fg).toEqual(override.term.buffer.getCell(0, 0).fg)
@@ -427,14 +448,14 @@ describe("Block elements", () => {
     ).toThrow(/requires interactionSurface/u)
   })
 
-  test("Blockquote renders with a hairline left rail", () => {
+  test("Blockquote is inset two cells without a rail", () => {
     const app = render(<Blockquote>Quoted text</Blockquote>)
-    expect(app.text).toContain("▏")
+    expect(app.text).not.toContain("▏")
     expect(app.text).not.toContain("│")
-    expect(app.text).toContain("Quoted text")
+    expect(app.lines[0]).toMatch(/^  Quoted text/)
   })
 
-  test("Blockquote rail spans wrapped rows with balanced prose insets", () => {
+  test("Blockquote preserves its two-cell inset on wrapped rows", () => {
     const narrow = createRenderer({ cols: 32, rows: 10 })
     const app = narrow(
       <Box width={32}>
@@ -447,15 +468,15 @@ describe("Block elements", () => {
 
     expect(rows.length).toBeGreaterThan(1)
     for (const { line } of rows) {
-      expect(line[2]).toBe("▏")
-      expect(line[3]).toBe(" ")
-      expect(line.slice(28).trim()).toBe("")
+      expect(line.slice(0, 2)).toBe("  ")
+      expect(line[2]).toMatch(/\S/)
+      expect(line).not.toMatch(/[▏│]/)
     }
   })
 
   test("Blockquote content is italic", () => {
     const app = render(<Blockquote>Quote</Blockquote>)
-    // Find the 'Q' in "Quote" — after "│ " (2 chars)
+    // Find the first quoted character after the two-cell inset.
     const buffer = app.term.buffer
     let quoteCol = -1
     for (let x = 0; x < 80; x++) {
@@ -468,42 +489,92 @@ describe("Block elements", () => {
     expect(buffer.getCell(quoteCol, 0).attrs.italic).toBe(true)
   })
 
-  test("Blockquote rail uses $fg-faint below the $fg-muted body", () => {
+  test("Blockquote uses the muted foreground", () => {
     const localRender = createRenderer({ cols: 80, rows: 4 })
     const app = localRender(<Blockquote>Text</Blockquote>)
-    const faint = createRenderer({ cols: 4, rows: 2 })(<Text color="$fg-faint">x</Text>)
     const muted = createRenderer({ cols: 4, rows: 2 })(<Text color="$fg-muted">x</Text>)
     const buffer = app.term.buffer
-    let barCol = -1
-    for (let x = 0; x < 80; x++) {
-      if (buffer.getCell(x, 0).char === "▏") {
-        barCol = x
-        break
-      }
-    }
-    expect(barCol).toBeGreaterThanOrEqual(0)
-    expect(buffer.getCell(barCol, 0).fg).toEqual(faint.term.buffer.getCell(0, 0).fg)
-    expect(buffer.getCell(barCol + 2, 0).fg).toEqual(muted.term.buffer.getCell(0, 0).fg)
+    expect(buffer.getCell(2, 0).char).toBe("T")
+    expect(buffer.getCell(2, 0).fg).toEqual(muted.term.buffer.getCell(0, 0).fg)
   })
 
-  test("CodeBlock renders with a structural hairline rail", () => {
-    const app = render(<CodeBlock>const x = 1</CodeBlock>)
-    expect(app.text).toContain("▏")
+  test("CodeBlock reveals its label on hover and collapses on a body click", async () => {
+    const app = createRenderer({ cols: 40, rows: 8, autoRender: true })(
+      <Box width={40} flexDirection="column">
+        <CodeBlock label="tsx">const answer = 42</CodeBlock>
+        <Text>After</Text>
+      </Box>,
+    )
+    expect(app.text).not.toContain("tsx")
+    const expandedBackground = app.cell(0, 0).bg
+    expect(app.lines.findIndex((line) => line.includes("After"))).toBe(3)
+    await app.hover(3, 1)
+    expect(app.lines[0]).toContain("tsx")
+    expect(app.cell(0, 0).bg).toEqual(expandedBackground)
+    expect(app.text).not.toContain("▾")
+    await app.click(3, 1)
+    expect(app.text).not.toContain("const answer")
+    expect(app.lines[0]).toContain("▸ tsx")
+    expect(app.cell(0, 0).char).toBe("▸")
+    expect(app.cell(2, 0).char).toBe("t")
+    const mutedLabel = createRenderer({ cols: 1, rows: 1 })(<Text color="$fg-muted">t</Text>)
+    expect(app.cell(2, 0).fg).toEqual(mutedLabel.cell(0, 0).fg)
+    expect(app.lines.findIndex((line) => line.includes("After"))).toBe(1)
+    await app.click(3, 0)
+    expect(app.text).toContain("const answer = 42")
+  })
+
+  test("CodeBlock respects a child that prevents the toggle click", async () => {
+    const app = createRenderer({ cols: 40, rows: 8, autoRender: true })(
+      <CodeBlock
+        label="text"
+        content={<Text onClick={(event) => event.preventDefault()}>Keep open</Text>}
+      />,
+    )
+    await app.click(3, 1)
+    expect(app.text).toContain("Keep open")
+  })
+
+  test("CodeBlock frames code with two-cell sides and one-row padding", () => {
+    const app = render(
+      <Box width={30} flexDirection="column">
+        <Box paddingX={2}>
+          <Text>Prose</Text>
+        </Box>
+        <CodeBlock>{"const x = 1\nnext line"}</CodeBlock>
+      </Box>,
+    )
+    const subtle = createRenderer({ cols: 1, rows: 1 })(
+      <Box backgroundColor="$bg-surface-subtle">
+        <Text>x</Text>
+      </Box>,
+    )
+    const bg = subtle.cell(0, 0).bg
+    const codeForeground = createRenderer({ cols: 1, rows: 1 })(
+      <Text color="mix($fg, $fg-muted, 50%)">x</Text>,
+    )
+    expect(bg).not.toBeNull()
+    expect(app.text).not.toMatch(/[▏│]/)
     expect(app.text).toContain("const x = 1")
+    expect(app.lines[2]?.indexOf("const")).toBe(app.lines[0]?.indexOf("Prose"))
+    for (const row of [1, 2, 3, 4]) {
+      for (let col = 0; col < 30; col++) {
+        expect(app.cell(col, row).bg).toEqual(bg)
+      }
+      expect(app.cell(30, row).bg).not.toEqual(bg)
+    }
+    expect(app.lines[1]?.trim()).toBe("")
+    expect(app.lines[4]?.trim()).toBe("")
+    expect(app.cell(2, 2).italic).toBe(false)
+    expect(app.cell(2, 2).fg).toEqual(codeForeground.cell(0, 0).fg)
+    expect(app.cell(2, 2).fg).not.toEqual(app.cell(2, 0).fg)
   })
 
   test("CodeBlock content is not italic", () => {
     const app = render(<CodeBlock>code</CodeBlock>)
-    const buffer = app.term.buffer
-    let codeCol = -1
-    for (let x = 0; x < 80; x++) {
-      if (buffer.getCell(x, 0).char === "c") {
-        codeCol = x
-        break
-      }
-    }
-    expect(codeCol).toBeGreaterThan(0)
-    expect(buffer.getCell(codeCol, 0).attrs.italic).toBeFalsy()
+    const row = app.lines.findIndex((line) => line.includes("code"))
+    expect(row).toBe(1)
+    expect(app.cell(app.lines[row]!.indexOf("code"), row).italic).toBe(false)
   })
 
   // Tracking: @km/silvery/15087-markdown-code-block-char-wrap-default.
@@ -513,7 +584,7 @@ describe("Block elements", () => {
   // default for fenced code.
   test("CodeBlock defaults to wrap='hard' (long identifier wraps mid-token)", () => {
     const longId = "getPolygonIntervalForBandWithFloatingPointPrecision"
-    // 20-wide container — the rail + padding leaves ~18 cols for body.
+    // The frame shares the 20-column measure with its padding.
     const app = render(
       <Box width={20}>
         <CodeBlock>{longId}</CodeBlock>
@@ -526,68 +597,42 @@ describe("Block elements", () => {
     // The identifier is 51 chars — must span multiple rendered rows.
     const linesWithContent = app.text.split("\n").filter((l) => l.trim().length > 0).length
     expect(linesWithContent).toBeGreaterThan(1)
-    expect(
-      app.text
-        .split("\n")
-        .filter((line) => /[A-Za-z]/.test(line))
-        .every((line) => line.includes("▏")),
-    ).toBe(true)
+    expect(app.text).not.toMatch(/[▏│]/)
     // Hard-wrap doesn't insert ellipsis — fully visible content.
     expect(app.text).not.toContain("…")
     // All identifier characters preserved on screen.
-    const joined = app.text.replace(/[▏\s]/g, "")
-    for (const ch of "abcdefghijklmnopqrstuvwxyz") {
-      if (longId.includes(ch)) {
-        expect(joined, `char '${ch}' missing from rendered output`).toContain(ch)
-      }
-    }
+    expect(app.text.replace(/\s/g, "")).toBe(longId)
   })
 
-  test("CodeBlock short content stays on one line", () => {
-    const app = render(<CodeBlock>{"const x = 1"}</CodeBlock>)
+  test("CodeBlock short content stays on one line without growing vertically", () => {
+    const app = render(
+      <Box height={12} flexDirection="column">
+        <CodeBlock>{"const x = 1"}</CodeBlock>
+        <Text>After</Text>
+      </Box>,
+    )
     // Single-line content should not wrap.
     const linesWithContent = app.text.split("\n").filter((l) => l.includes("const")).length
     expect(linesWithContent).toBe(1)
+    expect(app.lines.findIndex((line) => line.includes("After"))).toBe(3)
   })
 
-  test("CodeBlock rail uses $border-default color", () => {
-    const app = render(<CodeBlock>x</CodeBlock>)
-    const buffer = app.term.buffer
-    let barCol = -1
-    for (let x = 0; x < 80; x++) {
-      if (buffer.getCell(x, 0).char === "▏") {
-        barCol = x
-        break
-      }
-    }
-    expect(barCol).toBeGreaterThanOrEqual(0)
-    // $border-default resolves to a color
-    expect(buffer.getCell(barCol, 0).fg).not.toBeNull()
+  test("CodeBlock honors caller foreground", () => {
+    const expected = createRenderer({ cols: 1, rows: 1 })(<Text color="$fg-error">x</Text>)
+    const app = render(<CodeBlock color="$fg-error">x</CodeBlock>)
+    expect(app.cell(2, 1).fg).toEqual(expected.cell(0, 0).fg)
   })
 
-  test("Blockquote hairline and CodeBlock rail have different colors", () => {
-    const app1 = render(<Blockquote>a</Blockquote>)
-    const buf1 = app1.term.buffer
-    let bqBarFg = null
-    for (let x = 0; x < 80; x++) {
-      if (buf1.getCell(x, 0).char === "▏") {
-        bqBarFg = buf1.getCell(x, 0).fg
-        break
-      }
-    }
-
-    const app2 = render(<CodeBlock>a</CodeBlock>)
-    const buf2 = app2.term.buffer
-    let cbBarFg = null
-    for (let x = 0; x < 80; x++) {
-      if (buf2.getCell(x, 0).char === "│") {
-        cbBarFg = buf2.getCell(x, 0).fg
-        break
-      }
-    }
-
-    // $fg-muted and $border-default should be different colors
-    expect(bqBarFg).not.toEqual(cbBarFg)
+  test("the code surface does not paint adjacent quote or prose rows", () => {
+    const app = render(
+      <Box flexDirection="column" width={30} paddingX={2}>
+        <Blockquote>Quote</Blockquote>
+        <CodeBlock>code</CodeBlock>
+        <Text>After</Text>
+      </Box>,
+    )
+    expect(app.cell(4, 0).bg).toEqual(app.cell(2, 4).bg)
+    expect(app.cell(2, 2).bg).not.toEqual(app.cell(2, 4).bg)
   })
 })
 
@@ -675,7 +720,7 @@ describe("Lists", () => {
       expect(app.text).toContain("Gamma")
     })
 
-    test("nested UL uses different bullet at level 2", () => {
+    test("nested UL keeps the same filled bullet at level 2", () => {
       // Nesting UL/OL as sibling elements (not inside LI children text)
       // to avoid Box-in-Text warning
 
@@ -692,12 +737,12 @@ describe("Lists", () => {
         </Box>,
       )
       expect(app.text).toContain("•")
-      expect(app.text).toContain("◦")
+      expect(app.text.match(/•/g)).toHaveLength(2)
       expect(app.text).toContain("Outer")
       expect(app.text).toContain("Inner")
     })
 
-    test("deeply nested UL cycles through bullet styles", () => {
+    test("deeply nested UL uses one filled bullet at every depth", () => {
       const app = render(
         <Box flexDirection="column">
           <UL>
@@ -726,10 +771,8 @@ describe("Lists", () => {
           </UL>
         </Box>,
       )
-      expect(app.text).toContain("•") // level 1
-      expect(app.text).toContain("◦") // level 2
-      expect(app.text).toContain("■") // level 3
-      expect(app.text).toContain("-") // level 4
+      expect(app.text.match(/•/g)).toHaveLength(4)
+      expect(app.text).not.toMatch(/[◦■]/)
       // A triangle is the fold affordance; a static list never wears one.
       expect(app.text).not.toContain("▸")
     })
@@ -748,14 +791,16 @@ describe("Lists", () => {
         </Box>,
       )
       const buffer = app.term.buffer
-      // Find "•" (level 1) and "◦" (level 2)
+      // Find the same filled bullet at each level; indentation carries depth.
       let bulletCol1 = -1
       let bulletCol2 = -1
       for (let y = 0; y < 10; y++) {
         for (let x = 0; x < 80; x++) {
           const ch = buffer.getCell(x, y).char
-          if (ch === "•" && bulletCol1 === -1) bulletCol1 = x
-          if (ch === "◦" && bulletCol2 === -1) bulletCol2 = x
+          if (ch === "•") {
+            if (bulletCol1 === -1) bulletCol1 = x
+            else if (bulletCol2 === -1) bulletCol2 = x
+          }
         }
       }
       expect(bulletCol1).toBeGreaterThanOrEqual(0)
@@ -879,7 +924,7 @@ describe("Lists", () => {
         </Box>,
       )
       expect(app.text).toContain("1.")
-      expect(app.text).toContain("◦")
+      expect(app.text).toContain("•")
       expect(app.text).toContain("First")
       expect(app.text).toContain("Sub-bullet")
     })

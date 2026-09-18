@@ -41,6 +41,44 @@ const flush = () => new Promise<void>((r) => setTimeout(r, 10))
 // ============================================================================
 
 describe("SearchProvider", () => {
+  test("DocumentView expands a collapsed code match before revealing it", async () => {
+    let search: SearchContextValue | null = null
+    function Document() {
+      search = useSearch()
+      const controller = useScrollController()
+      return (
+        <Box width={40} height={8} flexDirection="column">
+          <ScrollArea controller={controller}>
+            <DocumentView
+              blocks={[{ id: "source", kind: "code", content: "unique needle\nsecond line" }]}
+              search={{
+                id: "code",
+                getText: (block) => ("content" in block ? String(block.content) : ""),
+                scrollController: controller,
+              }}
+            />
+          </ScrollArea>
+        </Box>
+      )
+    }
+    const app = createRenderer({ cols: 40, rows: 8, autoRender: true })(
+      <SearchProvider>
+        <Document />
+      </SearchProvider>,
+    )
+    const row = app.lines.findIndex((line) => line.includes("unique needle"))
+    const column = app.lines[row]!.indexOf("unique needle")
+    await app.click(column, row)
+    expect(app.text).not.toContain("unique needle")
+    search!.open()
+    for (const char of "needle") search!.input(char)
+    await vi.waitFor(() => {
+      expect(search!.matches).toHaveLength(1)
+      expect(app.text).toContain("unique needle")
+      expect(app.text).toContain("second line")
+    })
+  })
+
   test("DocumentView registers semantic text and reveals the measured matching block", async () => {
     const blocks = Array.from({ length: 18 }, (_, index) => ({
       id: `block-${index}`,

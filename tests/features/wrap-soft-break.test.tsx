@@ -23,9 +23,14 @@ import { describe, test, expect } from "vitest"
 import { wrapText } from "@silvery/ag-term"
 // `wrapTextWithOffsets` lives in the unicode module — exposed via the
 // terminal-side wrap measurer registration, not the public barrel.
-import { wrapTextWithOffsets } from "@silvery/ag-term/unicode"
+import {
+  displayWidth,
+  intrinsicWidths,
+  longestUnbreakableSegment,
+  wrapTextWithOffsets,
+} from "@silvery/ag-term/unicode"
 import { createRenderer } from "@silvery/test"
-import { Box, Text } from "@silvery/ag-react"
+import { Box, Table, Text } from "@silvery/ag-react"
 
 describe("wrapText: soft break inside long tokens", () => {
   test("path wraps at / separators when too wide", () => {
@@ -387,5 +392,149 @@ describe("Text rendering: wrap-truncate in box", () => {
     expect(text).toContain("SKILL.md")
     // No ellipsis was needed — the path soft-broke cleanly.
     expect(text.includes("…")).toBe(false)
+  })
+})
+
+/**
+ * UAX #14 LB25 — a soft break may not fall INSIDE a numeric expression.
+ *
+ * Reported from a live render: a table cell showed `5,305` as `5,` + `305`,
+ * and likewise `4,383` and `1,885`. Read back, that is two numbers.
+ *
+ * `isSoftBreakPoint` accepts `,` `.` `:` `/` `\` as intra-token separators so
+ * paths and identifiers wrap at a readable place. The set is right; it just
+ * carried no digit context, so a thousands separator looked like the `/` in
+ * `path/to`. UAX #14 rule LB25 ("Do not break numbers") says otherwise —
+ * `IS × NU` and `NU ( SY | IS )* × NU` — and the spec's own examples are our
+ * symptoms verbatim: "there is no break in “100.00” or “10,000”, nor in
+ * “12:59”". Classes verified against `LineBreak-17.0.0.txt`: `,` `.` `:` are
+ * IS, `/` is SY, `\` is PR, digits are NU. `_` is AL, so `1_000` is NOT a
+ * numeric expression and deliberately keeps its soft break.
+ *
+ * THE MEASURE IS HALF THE BUG, and the half that produced the symptom.
+ * `longestUnbreakableSegment` is the min-content query behind table column
+ * sizing; it reported 3 for `5,305` (`5,` then `305`), so the column was
+ * allocated 3 cells and the wrap had no legal choice left. Fixing only the
+ * wrap would leave the column too narrow and the number still broken — which
+ * is why every break-decision site shares one predicate and why the measure
+ * is asserted here beside the wrap.
+ *
+ * Swept, not sampled: a width-dependent wrap defect interleaves broken widths
+ * with correct ones, so three samples can all land on good widths (LESSONS.md,
+ * "Common Blind Paths").
+ */
+describe("wrapText: LB25 — no soft break inside a numeric expression", () => {
+  /** The operator's three reported values, plus the other LB25 separator forms. */
+  const NUMERIC = ["5,305", "4,383", "1,885", "1.885", "12:59", "100.00", "1,234,567"]
+
+  /**
+   * Discriminating a CHOSEN break from the char-wrap fallback: the wrap
+   * algorithm reaches a soft break by REWINDING, so the line it emits is
+   * shorter than the wrap width. A character wrap instead fills the line to
+   * exactly the width and can land on a separator by coincidence —
+   * `1,234,567` at width 6 yields `1,234,` + `567` either way. Only the short
+   * line proves the separator was preferred as a break opportunity, which is
+   * what LB25 forbids.
+   */
+  test("a separator inside a number is never CHOSEN as the break", () => {
+    const offenders: string[] = []
+    for (const value of NUMERIC) {
+      for (let width = 2; width <= value.length + 6; width++) {
+        for (const trim of [false, true]) {
+          const lines = wrapText(`queue ${value} refs`, width, true, trim)
+          for (let i = 0; i < lines.length - 1; i++) {
+            const line = lines[i]!
+            const rewound = displayWidth(line) < width
+            if (rewound && /[,.:/\\]$/u.test(line) && /^\d/u.test(lines[i + 1]!.trimStart())) {
+              offenders.push(`${value} w=${width} trim=${trim}: ${JSON.stringify(lines)}`)
+            }
+          }
+        }
+      }
+    }
+    // Listed, not counted: the failure is width-dependent and sparse, so a
+    // bare boolean would not say which boundaries broke.
+    expect(offenders).toEqual([])
+  })
+
+  test("5,305 stays whole at every width that can hold it", () => {
+    const broken: string[] = []
+    for (let width = 5; width <= 40; width++) {
+      const flowed = wrapText(`queue 5,305 refs`, width, true, true).join(" ")
+      if (!flowed.includes("5,305")) broken.push(`w=${width}: ${flowed}`)
+    }
+    expect(broken).toEqual([])
+  })
+
+  test("the min-content measure keeps a number whole — the half that sized the column", () => {
+    // Was 3 for `5,305` (`5,` + `305`), so a table column was allocated 3.
+    expect(longestUnbreakableSegment("5,305")).toBe(5)
+    expect(longestUnbreakableSegment("1.885")).toBe(5)
+    expect(longestUnbreakableSegment("12:59")).toBe(5)
+    expect(longestUnbreakableSegment("1,234,567")).toBe(9)
+    expect(intrinsicWidths("queue 5,305 refs", "wrap").minContentWidth).toBe(5)
+  })
+
+  test("selection geometry agrees with the render wrap", () => {
+    // wrapTextWithOffsets is a second implementation of the same algorithm;
+    // if it disagrees, selection highlights land on the wrong cells.
+    for (let width = 5; width <= 20; width++) {
+      const slices = wrapTextWithOffsets("queue 5,305 refs", width)
+      const flowed = slices.map((slice) => slice.text).join(" ")
+      // `[]` is the documented "no wrap happened" passthrough.
+      if (slices.length > 0) expect(flowed).toContain("5,305")
+    }
+  })
+
+  test("the path/identifier tailoring is NOT regressed", () => {
+    // The whole point of soft breaks. These must keep breaking.
+    expect(wrapText(".claude/skills/{claim,do}/SKILL.md", 14, true, false)).toEqual([
+      ".claude/",
+      "skills/{claim,",
+      "do}/SKILL.md",
+    ])
+    expect(longestUnbreakableSegment("path/to")).toBe(5)
+    expect(longestUnbreakableSegment("km/tui/22752")).toBe(5)
+    // `_` is line-break class AL, so `1_000` is not a numeric expression.
+    expect(longestUnbreakableSegment("1_000")).toBe(3)
+  })
+
+  test("a rendered table cell shows the number whole", () => {
+    // The operator's actual context: a grid cell, not a bare string.
+    const render = createRenderer({ cols: 40, rows: 12 })
+    const app = render(
+      <Box width={24}>
+        <Table
+          columns={[
+            { key: "name", header: "queue" },
+            { key: "refs", header: "refs" },
+          ]}
+          data={[{ name: "uncarried", refs: "5,305" }]}
+          cellWrap="wrap"
+        />
+      </Box>,
+    )
+    expect(app.text).toContain("5,305")
+  })
+
+  /**
+   * The wrapper half of @km/tui/22752 symptom B. The layout half — a track
+   * laid out wider than the pane that clips it — is pinned end-to-end by
+   * `km/apps/maddoc/tests/width-monotonicity-22752.test.tsx`, because it is
+   * not observable from the wrapper: `wrapText` wraps correctly at whatever
+   * width it is handed. What IS the wrapper's contract is that `wrap="wrap"`
+   * never drops a character, and that is asserted here.
+   */
+  test("wrap='wrap' conserves every character at every width", () => {
+    const cell = "agent host — all agents, all accounts, all together in your terminal"
+    const want = cell.replace(/\s+/gu, "")
+    const lossy: string[] = []
+    for (let width = 2; width <= 90; width++) {
+      for (const trim of [false, true]) {
+        const got = wrapText(cell, width, true, trim).join("").replace(/\s+/gu, "")
+        if (got !== want) lossy.push(`w=${width} trim=${trim}`)
+      }
+    }
+    expect(lossy).toEqual([])
   })
 })

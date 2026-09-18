@@ -16,19 +16,43 @@
  */
 import React, { useMemo, useState } from "react"
 import { apportion, TRACK_BAND_ATTR, type ApportionTrack } from "@silvery/ag"
-import { displayWidth, intrinsicWidths } from "@silvery/ag-term/unicode"
+import { displayWidth, intrinsicWidths, wrapText } from "@silvery/ag-term/unicode"
 import { useOnBoxRectCommitted } from "../hooks/useLayout"
 import { Box } from "./Box"
 import { Text, type TextProps } from "./Text"
 import { ListView } from "../ui/components/ListView"
 
+/**
+ * Cell content whose rendered node differs from the text that measures it.
+ * A plain string is both. A `{ text, node }` pair renders `node` while the
+ * width allocator reads `text` — a cell that renders `[[@i/29-buckets]]`
+ * down to the label `@i/29-buckets` must size by the label, not by the
+ * source bytes.
+ */
+export type MeasuredContent = string | { readonly text: string; readonly node: React.ReactNode }
+
+/** The text the width allocator reads for a piece of measured content. */
+export function contentText(content: MeasuredContent): string {
+  return typeof content === "string" ? content : content.text
+}
+
+/** The node the renderer paints for a piece of measured content. */
+export function contentNode(content: MeasuredContent): React.ReactNode {
+  return typeof content === "string" ? content : content.node
+}
+
 export type Column<T> = {
-  /** Column header text. */
-  header: string
+  /** Column header: plain text, or a `{ text, node }` pair rendered as `node` and measured as `text`. */
+  header: MeasuredContent
   /** Key to read from the data item. */
   key?: keyof T & string
   /** Custom renderer; a returned string also participates in intrinsic sizing. */
   render?: (item: T, index: number) => React.ReactNode
+  /**
+   * Plain text the width allocator reads when `render` returns a node. Without
+   * it a node cell measures as empty and the track collapses to its header.
+   */
+  measure?: (item: T, index: number) => string
   /** Text alignment. */
   align?: "left" | "right" | "center"
   /** Fixed total track width. */
@@ -99,8 +123,8 @@ type Track = Readonly<{
   min: number
   /** Band cap: max-content + chrome, capped by an explicit maxWidth. */
   max: number
-  /** Cell chrome inside the track: padding + column separator. */
-  chrome: number
+  /** Character-wrap floor; document headers and explicit minima still fit. */
+  degradedMin: number
   /** Explicit author width — the band is a single point and never degrades. */
   fixed: boolean
 }>
@@ -118,6 +142,9 @@ function trackAt(tracks: readonly Track[], index: number): Track {
 }
 
 function plainCellValue<T>(column: Column<T>, item: T, index: number): string {
+  // Explicit measurement wins: it is the only source that survives a render()
+  // returning a node, which is exactly when the track would otherwise collapse.
+  if (column.measure) return column.measure(item, index)
   if (column.render) {
     const rendered = column.render(item, index)
     if (typeof rendered === "string" || typeof rendered === "number") return String(rendered)
@@ -138,25 +165,114 @@ function isWrapCapable(cellWrap: TextProps["wrap"]): boolean {
   )
 }
 
+/** How a table would be laid out, for {@link tableHeightAt}. Mirrors `TableImplementation`'s own defaults. */
+export type TableMetricsOptions = {
+  /** Total horizontal padding per cell. Default 2, matching `TableProps`. */
+  padding?: number
+  /** Body-cell overflow behavior. Default `"wrap"` — the document-table setting. */
+  cellWrap?: TextProps["wrap"]
+  /** Draw column separators (the framed presentation). Default false. */
+  columnSeparators?: boolean
+  /** Count one rule row before each body row, as document tables draw. Default true. */
+  rowSeparators?: boolean
+  /** Reserve rows for a header. Default true. */
+  showHeader?: boolean
+}
+
+/**
+ * Rendered row count for a table laid into `width` columns — without rendering it.
+ *
+ * This exists so a POLICY can compare lanes by what they COST THE READER IN
+ * ROWS rather than by intrinsic width. `<Box fitWidth>` answers "does the
+ * content fit?", which is a width question and the only one it can answer;
+ * a caller deciding whether a wider lane is WORTH its aesthetic price needs
+ * height, and no width comparison yields it. Keeping that comparison out here
+ * leaves the fitWidth mechanism untouched (@si/layout/15149: mechanism =
+ * `<Box fitWidth>`, policy = `<Content.Layout>`).
+ *
+ * Pure: no React, no rendering, no measurement pass, and no dependence on a
+ * committed rect — which is deliberate, since a frame-dependent answer is the
+ * defect class that made this function necessary. It reuses the same three
+ * primitives the renderer does, and reimplements none of them: `computeTracks`
+ * for the bands, `apportion` for the split, and the shared `wrapText` for the
+ * line count, so the number it returns is the number the table will render.
+ */
+export function tableHeightAt<T>(
+  columns: readonly Column<T>[],
+  data: readonly T[],
+  width: number,
+  options: TableMetricsOptions = {},
+): number {
+  const {
+    padding = 2,
+    cellWrap = "wrap",
+    columnSeparators = false,
+    rowSeparators = true,
+    showHeader = true,
+  } = options
+  if (columns.length === 0 || width <= 0) return 0
+
+  const wrapHeaders = isWrapCapable(cellWrap)
+  const tracks = computeTracks(columns, data, padding, columnSeparators, cellWrap, wrapHeaders)
+  const allocation = allocateTracks(tracks, width, cellWrap)
+  // No legal allocation: cells fall back to flex truncation, one row each.
+  if (allocation === null) {
+    return (showHeader ? 1 : 0) + data.length + (rowSeparators ? data.length : 0)
+  }
+
+  /** Content columns left after this track's own chrome. */
+  const contentWidth = (columnIndex: number): number => {
+    const separatorWidth = columnSeparators && columnIndex > 0 ? 1 : 0
+    return Math.max(1, (allocation.widths[columnIndex] ?? 0) - padding - separatorWidth)
+  }
+  const lines = (text: string, columnIndex: number): number =>
+    text.length === 0 ? 1 : wrapText(text, contentWidth(columnIndex)).length
+
+  // A row is as tall as its tallest cell — the same max the flex row realizes.
+  const rowHeight = (item: T, itemIndex: number): number =>
+    columns.reduce(
+      (tallest, column, columnIndex) =>
+        Math.max(tallest, lines(plainCellValue(column, item, itemIndex), columnIndex)),
+      1,
+    )
+
+  const headerHeight = showHeader
+    ? columns.reduce(
+        (tallest, column, columnIndex) =>
+          Math.max(tallest, wrapHeaders ? lines(contentText(column.header), columnIndex) : 1),
+        1,
+      )
+    : 0
+  const bodyHeight = data.reduce((total, item, itemIndex) => total + rowHeight(item, itemIndex), 0)
+  return headerHeight + bodyHeight + (rowSeparators ? data.length : 0)
+}
+
 function computeTracks<T>(
   columns: readonly Column<T>[],
   data: readonly T[],
   padding: number,
   columnSeparators: boolean,
   cellWrap: TextProps["wrap"],
+  wrapHeaders: boolean,
 ): Track[] {
   return columns.map((column, columnIndex) => {
     const separatorWidth = columnSeparators && columnIndex > 0 ? 1 : 0
     const chrome = padding + separatorWidth
     if (column.width !== undefined) {
       const total = column.width + separatorWidth
-      return { min: total, max: total, chrome, fixed: true }
+      return { min: total, max: total, degradedMin: total, fixed: true }
     }
-    // Intrinsic sizing reads the RENDERED cell text (a render() that returns a
-    // string participates), never the source data — a cell rendering a long
-    // source down to a short label must not inflate the floor.
-    let minContent = intrinsicWidths(column.header, "truncate").minContentWidth
-    let maxContent = displayWidth(column.header)
+    // Intrinsic sizing reads the RENDERED cell text — `measure` when the column
+    // declares one, otherwise a render() that returns a string — never the
+    // source data: a cell rendering a long source down to a short label must
+    // not inflate the floor, and a cell rendering a node must not measure as
+    // empty and collapse the track to its header.
+    const headerMin = intrinsicWidths(
+      contentText(column.header),
+      wrapHeaders ? "wrap" : "truncate",
+    ).minContentWidth
+    let minContent = headerMin
+    let maxContent = displayWidth(contentText(column.header))
     for (let itemIndex = 0; itemIndex < data.length; itemIndex++) {
       const item = data[itemIndex]
       if (item === undefined) continue
@@ -167,7 +283,11 @@ function computeTracks<T>(
     }
     const max = Math.min(maxContent + chrome, column.maxWidth ?? Number.MAX_SAFE_INTEGER)
     const min = Math.min(Math.max(minContent + chrome, column.minWidth ?? 0), max)
-    return { min, max, chrome, fixed: false }
+    const degradedMin = Math.min(
+      wrapHeaders ? Math.max(headerMin + chrome, column.minWidth ?? 0) : chrome + 1,
+      max,
+    )
+    return { min, max, degradedMin, fixed: false }
   })
 }
 
@@ -176,10 +296,9 @@ function computeTracks<T>(
  * floors do not fit:
  *
  * 1. Bands as computed — the normal case.
- * 2. Floors exceed the width: wrap-capable tracks drop their floor to one
- *    cell (character wrapping can break anywhere) and re-allocate. The
- *    degradation is visible — text breaks mid-word — never a silent squeeze
- *    below a floor.
+ * 2. Floors exceed the width: re-allocate with character-wrap floors. Document
+ *    headers and explicit minima stay readable; other tracks may reach one cell.
+ *    The degradation is visible — text breaks mid-word — never a silent squeeze.
  * 3. Even one-cell floors do not fit: no legal allocation exists. Returns
  *    null; cells fall back to flex truncation, whose ellipsis marks the loss.
  */
@@ -194,11 +313,10 @@ function allocateTracks(
   if (first.feasible) return { widths: first.widths, degraded: false }
 
   if (isWrapCapable(cellWrap)) {
-    const degradedBands: ApportionTrack[] = tracks.map((track) =>
-      track.fixed
-        ? { min: track.min, max: track.max }
-        : { min: Math.min(track.chrome + 1, track.max), max: track.max },
-    )
+    const degradedBands: ApportionTrack[] = tracks.map((track) => ({
+      min: track.degradedMin,
+      max: track.max,
+    }))
     const second = apportion(degradedBands, available)
     if (second.feasible) return { widths: second.widths, degraded: true }
   }
@@ -234,9 +352,10 @@ function TableImplementation<T>({
 }: TableImplementationProps<T>): React.ReactElement {
   const directRows = presentation !== "plain"
   const framed = presentation === "framed"
+  const wrapHeaders = presentation === "document" && isWrapCapable(cellWrap)
   const tracks = useMemo(
-    () => computeTracks(columns, data, padding, framed, cellWrap),
-    [cellWrap, columns, data, framed, padding],
+    () => computeTracks(columns, data, padding, framed, cellWrap, wrapHeaders),
+    [cellWrap, columns, data, framed, padding, wrapHeaders],
   )
   // The committed inner rect of the CONTAINING Box (NodeContext) — the width
   // the table is being laid into. Batch-invariant, so allocating from it
@@ -267,12 +386,12 @@ function TableImplementation<T>({
   const ruleColor = presentation === "document" ? "$border-muted" : borderColor
   const leftPadding = directRows ? Math.floor(padding / 2) : 0
   const rightPadding = directRows ? padding - leftPadding : padding
-  const bodyWrap: TextProps["wrap"] = allocation?.degraded ? "hard" : cellWrap
+  const bodyWrap: TextProps["wrap"] = allocation?.degraded && !wrapHeaders ? "hard" : cellWrap
   const blocks =
     layout === "blocks" ||
     (layout === "auto" &&
       available !== null &&
-      (containerWidth <= 0 || allocation === null || allocation.degraded))
+      (containerWidth <= 0 || allocation === null || (allocation.degraded && !wrapHeaders)))
 
   // The band the allocator worked under, carried onto the rendered track so the
   // `apportion-bands` STRICT check can compare the width the layout engine
@@ -280,7 +399,11 @@ function TableImplementation<T>({
   // unmeasured first frame or visible hard-overflow fallback has no allocation
   // promise, so it deliberately carries no band assertion.
   const trackProps = (column: Column<T>, track: Track, columnIndex: number) => ({
-    ...(allocation === null ? {} : { [TRACK_BAND_ATTR]: `${track.min},${track.max}` }),
+    ...(allocation === null
+      ? {}
+      : {
+          [TRACK_BAND_ATTR]: `${allocation.degraded ? track.degradedMin : track.min},${track.max}`,
+        }),
     ...trackFlexProps(column, track, columnIndex),
   })
 
@@ -401,7 +524,7 @@ function TableImplementation<T>({
               return (
                 <Box key={columnIndex} flexDirection="column" width="100%" minWidth={0}>
                   <Text bold color={headerColor} flexShrink={0}>
-                    {column.header}:
+                    {contentNode(column.header)}:
                   </Text>
                   {typeof value === "string" || typeof value === "number" ? (
                     <Text minWidth={0} wrap="wrap">
@@ -437,8 +560,14 @@ function TableImplementation<T>({
           paddingRight={rightPadding}
           justifyContent={cellJustify(column)}
         >
-          <Text bold color={headerColor} minWidth={0} maxWidth="100%" wrap="truncate">
-            {column.header}
+          <Text
+            bold
+            color={headerColor}
+            minWidth={0}
+            maxWidth="100%"
+            wrap={wrapHeaders ? "wrap" : "truncate"}
+          >
+            {contentNode(column.header)}
           </Text>
         </Box>
       ))}

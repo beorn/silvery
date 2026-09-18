@@ -174,6 +174,7 @@ export {
   enterAltScreen,
   leaveAltScreen,
   clearScreen,
+  clearScrollback,
   clearLine,
   cursorTo,
   cursorHome,

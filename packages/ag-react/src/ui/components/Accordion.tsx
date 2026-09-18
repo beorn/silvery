@@ -19,12 +19,13 @@
  * Keyboard: Enter or Space toggles when focused. The header itself is
  * the affordance; callers can add their own marker if their surface needs one.
  */
-import React, { useState } from "react"
+import React from "react"
 import { useFocusable } from "../../hooks/useFocusable"
 import { useInput } from "../../hooks/useInput"
 import { Box } from "../../components/Box"
 import type { BoxProps } from "../../components/Box"
 import { Text } from "../../components/Text"
+import { useExpansion } from "./use-expansion"
 
 // =============================================================================
 // Types
@@ -61,18 +62,13 @@ export function Accordion({
   const { focused } = useFocusable()
   const active = isActive ?? focused
 
-  // Internal state for the uncontrolled variant. When `expanded` is
-  // provided, `internal` is ignored (the prop wins on every render).
-  const [internal, setInternal] = useState(defaultExpanded)
-  const isOpen = expanded ?? internal
+  const [isOpen, setExpanded] = useExpansion(expanded, defaultExpanded, onToggle)
 
   useInput(
     (input, key) => {
       if (!active) return
       if (key.return || input === " ") {
-        const next = !isOpen
-        if (expanded === undefined) setInternal(next)
-        onToggle?.(next)
+        setExpanded(!isOpen)
       }
     },
     { isActive: active },

@@ -2,7 +2,7 @@
  * Document style precedence.
  *
  * Structural foreground and selection background are stronger semantic
- * layers than inline-element styling. Link decoration remains visible.
+ * layers than inline-element styling. Links remain un-underlined by default.
  */
 
 import React from "react"
@@ -22,7 +22,7 @@ function cellAt(
 }
 
 describe("DocumentView style precedence", () => {
-  test("structural foreground beats link color while dotted affordance survives", () => {
+  test("structural foreground beats link color without adding an underline", () => {
     const blocks: DocumentBlock[] = [
       {
         id: "heading",
@@ -39,7 +39,7 @@ describe("DocumentView style precedence", () => {
     const app = render(<DocumentView blocks={blocks} />)
 
     expect(cellAt(app, "linked-span").fg).toEqual(cellAt(app, "Heading").fg)
-    expect(cellAt(app, "linked-span").underline).toBe("dotted")
+    expect(cellAt(app, "linked-span").underline).toBe(false)
   })
 
   test("selected background beats inline code background", () => {

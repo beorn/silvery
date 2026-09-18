@@ -27,29 +27,18 @@
  *
  * A pragmatic subset, not a CommonMark implementation: no tables, reference
  * links, raw HTML, setext headings, or nested-emphasis edge cases. Fenced code
- * is rendered verbatim (line breaks preserved, no reflow) without syntax
- * highlighting — `@silvery/syntax` highlighting is an async follow-up. When a
- * consumer needs more, grow the parser here rather than pre-formatting Markdown
- * at the call site.
+ * preserves authored lines and uses the shared SyntaxHighlighter, including
+ * its language label and collapsible frame. When a consumer needs more, grow
+ * the parser here rather than pre-formatting Markdown at the call site.
  */
 
 import { Fragment, type JSX, type ReactNode } from "react"
 import { Box, type BoxProps } from "../../components/Box"
 import { Text } from "../../components/Text"
-import {
-  Blockquote,
-  Code,
-  DecoratedRegion,
-  Em,
-  H1,
-  H2,
-  H3,
-  H4,
-  H5,
-  H6,
-  HR,
-  Strong,
-} from "./Typography"
+import { Link } from "../../components/Link"
+import { Blockquote, Code, Em, H1, H2, H3, H4, H5, H6, HR, Strong } from "./Typography"
+import { HeadingRow } from "./HeadingRow"
+import { SyntaxHighlighter } from "./SyntaxHighlighter"
 
 // ============================================================================
 // Block model
@@ -70,7 +59,7 @@ interface MdList {
 type MdBlock =
   | { kind: "heading"; level: number; text: string }
   | { kind: "paragraph"; text: string }
-  | { kind: "code"; lines: string[] }
+  | { kind: "code"; lines: string[]; language: string }
   | { kind: "quote"; text: string }
   | { kind: "hr" }
   | { kind: "list"; list: MdList }
@@ -90,13 +79,14 @@ const ORDERED_MARKER_RE = /^\s*\d/u
 interface FenceInfo {
   ch: string
   len: number
+  language: string
 }
 
 function matchFenceOpen(line: string): FenceInfo | null {
   const m = FENCE_RE.exec(line)
   if (m === null) return null
   const run = m[1] ?? ""
-  return { ch: run[0] ?? "`", len: run.length }
+  return { ch: run[0] ?? "`", len: run.length, language: m[2] ?? "" }
 }
 
 function matchFenceClose(line: string, fence: FenceInfo): boolean {
@@ -214,7 +204,7 @@ function collectFence(lines: string[], start: number, fence: FenceInfo): [MdBloc
     body.push(line)
     i++
   }
-  return [{ kind: "code", lines: body }, i]
+  return [{ kind: "code", lines: body, language: fence.language }, i]
 }
 
 function collectQuote(lines: string[], start: number): [MdBlock, number] {
@@ -393,13 +383,15 @@ function findInline(s: string): InlineCandidate | null {
   const link = LINK_RE.exec(s)
   if (link !== null) {
     const label = link[1] ?? ""
+    const href = link[2]
+    if (href === undefined) throw new Error("Markdown link match is missing its destination")
     candidates.push({
       start: link.index,
       end: link.index + link[0].length,
       build: (key) => (
-        <Text key={key} color="$fg-link">
+        <Link key={key} href={href}>
           {parseInline(label, key)}
-        </Text>
+        </Link>
       ),
     })
   }
@@ -445,20 +437,12 @@ export function parseInline(text: string, keyPrefix = "md"): ReactNode[] {
 // ============================================================================
 
 const HEADINGS = [H1, H2, H3, H4, H5, H6] as const
-// Third level is a square, not `▸`: a right-pointing triangle is the
-// disclosure affordance in every tree widget and a static list has nothing to
-// disclose. `■` (U+25A0) and not `▪` (U+25AA) — the small square is Emoji=Yes
-// and measures two cells. See DocumentView's UNORDERED_MARKERS.
-const BULLETS = ["•", "◦", "■"] as const
-
 function renderList(list: MdList, keyPrefix: string, depth = 0): JSX.Element {
   return (
     <Box flexDirection="column" minWidth={0}>
       {list.items.map((item, index) => {
         const key = `${keyPrefix}-${index}`
-        const marker = list.ordered
-          ? `${index + 1}.`
-          : (BULLETS[Math.min(depth, BULLETS.length - 1)] ?? "•")
+        const marker = list.ordered ? `${index + 1}.` : "•"
         return (
           <Box key={key} flexDirection="column" minWidth={0}>
             <Box flexDirection="row" minWidth={0}>
@@ -467,7 +451,9 @@ function renderList(list: MdList, keyPrefix: string, depth = 0): JSX.Element {
                 {marker}{" "}
               </Text>
               <Box flexShrink={1} minWidth={0}>
-                <Text wrap="wrap">{parseInline(item.text, key)}</Text>
+                <Text variant="body" wrap="wrap">
+                  {parseInline(item.text, key)}
+                </Text>
               </Box>
             </Box>
             {item.list === undefined ? null : renderList(item.list, `${key}-sub`, depth + 1)}
@@ -478,33 +464,37 @@ function renderList(list: MdList, keyPrefix: string, depth = 0): JSX.Element {
   )
 }
 
-/**
- * A fenced code block, rendered verbatim: one `<Text wrap="hard">` per source
- * line behind the shared structural rail. The rail remains present when a
- * source line wraps.
- */
-function CodeFence({ lines }: { lines: string[] }): JSX.Element {
+/** Fenced source uses the shared code surface and preserves authored lines. */
+function CodeFence({ lines, language }: { lines: string[]; language: string }): JSX.Element {
   return (
-    <DecoratedRegion flexDirection="column">
-      {lines.map((line, index) => (
-        <Text key={index} wrap="hard" minWidth={0}>
-          {line === "" ? " " : line}
-        </Text>
-      ))}
-    </DecoratedRegion>
+    <Box minWidth={0} marginX={-2}>
+      <SyntaxHighlighter language={language} code={lines.join("\n")} />
+    </Box>
   )
 }
 
-function renderBlock(block: MdBlock, key: string): ReactNode {
+function renderBlock(block: MdBlock, key: string, previous: MdBlock | undefined): ReactNode {
   switch (block.kind) {
     case "heading": {
       const Heading = HEADINGS[Math.min(Math.max(block.level, 1), 6) - 1] ?? H1
-      return <Heading wrap="wrap">{parseInline(block.text, key)}</Heading>
+      const afterBody =
+        previous !== undefined && previous.kind !== "heading" && previous.kind !== "hr"
+      return (
+        <Box marginTop={block.level <= 2 && afterBody ? 1 : 0} minWidth={0}>
+          <HeadingRow level={block.level}>
+            <Heading wrap="wrap">{parseInline(block.text, key)}</Heading>
+          </HeadingRow>
+        </Box>
+      )
     }
     case "paragraph":
-      return <Text wrap="wrap">{parseInline(block.text, key)}</Text>
+      return (
+        <Text variant="body" wrap="wrap">
+          {parseInline(block.text, key)}
+        </Text>
+      )
     case "code":
-      return <CodeFence lines={block.lines} />
+      return <CodeFence lines={block.lines} language={block.language} />
     case "quote":
       return <Blockquote>{parseInline(block.text, key)}</Blockquote>
     case "hr":
@@ -536,9 +526,9 @@ export interface MarkdownViewProps extends Omit<BoxProps, "children"> {
 export function MarkdownView({ source, ...boxProps }: MarkdownViewProps): JSX.Element {
   const blocks = parseMarkdownBlocks(source)
   return (
-    <Box flexDirection="column" flexShrink={1} minWidth={0} gap={1} {...boxProps}>
+    <Box width="100%" flexDirection="column" flexShrink={1} minWidth={0} gap={1} {...boxProps}>
       {blocks.map((block, index) => (
-        <Fragment key={index}>{renderBlock(block, `b${index}`)}</Fragment>
+        <Fragment key={index}>{renderBlock(block, `b${index}`, blocks[index - 1])}</Fragment>
       ))}
     </Box>
   )

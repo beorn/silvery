@@ -12,12 +12,13 @@ import { Link } from "silvery"
 
 `LinkProps` extends `TextProps` (excluding `children`).
 
-| Prop          | Type        | Default      | Description                                      |
-| ------------- | ----------- | ------------ | ------------------------------------------------ |
-| `href`        | `string`    | --           | Optional OSC 8 URL; omit for an app-owned action |
-| `children`    | `ReactNode` | --           | Link text content                                |
-| `color`       | `string`    | `"$fg-link"` | Link text color                                  |
-| `revealColor` | `string`    | `"$fg"`      | Brighter color used when the role reveals        |
+| Prop          | Type        | Default            | Description                                                  |
+| ------------- | ----------- | ------------------ | ------------------------------------------------------------ |
+| `href`        | `string`    | --                 | Optional OSC 8 URL; omit for an app-owned action             |
+| `children`    | `ReactNode` | --                 | Link text content                                            |
+| `color`       | `string`    | `"$fg-link"`       | Link text color                                              |
+| `revealColor` | `string`    | `"$fg-link-hover"` | Brighter color used while hovered                            |
+| `underline`   | `boolean`   | --                 | Explicit stable choice; otherwise underline appears on hover |
 
 All `TextProps` style props (bold, italic, etc.) are also accepted.
 
@@ -45,10 +46,10 @@ All `TextProps` style props (bold, italic, etc.) are also accepted.
 
 ## Behavior
 
-- Role derives reveal policy: an `href` is a content link and reveals on
-  Cmd/Super-hover; an action-only link is a control and reveals on plain hover.
-- Reveal brightens the text. Underline is stable link semantics: it may be
-  always present or always absent, but never changes because of hover.
+- Plain hover brightens the text with `$fg-link-hover` and adds an underline.
+  An explicit `underline` value remains stable and overrides that default.
+- Role still derives activation policy: a URL link opens on Cmd/Super-click;
+  an action-only link delegates activation to its `onClick` handler.
 - The `onClick` callback runs first. If it calls `preventDefault()`, it owns the
   activation; otherwise a revealed click emits `"link:open"` through the app
   event chain when `href` is present. An action-only Link with no `href` never

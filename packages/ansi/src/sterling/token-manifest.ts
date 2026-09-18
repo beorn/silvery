@@ -414,9 +414,20 @@ export const PUBLIC_TOKENS: readonly TokenManifestEntry[] = [
     family: "link",
     axis: "fg",
     purpose: "Hyperlink text color (distinct from accent).",
-    derivation: "= scheme.brightBlue (dark mode) / scheme.blue (light); ensure-AA on bg.",
+    derivation:
+      "= blend(scheme.brightBlue, fg, 20%) (dark mode) / scheme.blue (light); ensure-AA on bg.",
     contrast: AA,
     tierNotes: "Apps that want link === accent can pin `link.fg` to `$fg-accent`.",
+  },
+  {
+    flat: "fg-link-hover",
+    path: "link.hover.fg",
+    family: "link",
+    axis: "fg-hover",
+    purpose: "Brightened hyperlink text while hovered.",
+    derivation: "= mix(link.fg, fg, 75%); ensure-AA on bg.",
+    contrast: AA,
+    tierNotes: "Retains underline in monochrome tiers.",
   },
 
   // ── Disabled (neutral family — sourced from base interface tokens) ──────

@@ -22,11 +22,14 @@ import { Table } from "silvery"
 
 ```ts
 interface TableColumn {
-  header: string
+  header: MeasuredContent // string, or { text, node }: renders node, measures text
   key?: string // Key to extract from data row
   width?: number // Column width (auto if omitted)
   align?: "left" | "right" | "center"
+  measure?: (item, index) => string // Required when render() returns a node
 }
+
+type MeasuredContent = string | { readonly text: string; readonly node: ReactNode }
 ```
 
 ## Usage

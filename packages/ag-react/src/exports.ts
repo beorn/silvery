@@ -284,7 +284,7 @@ export {
   OL,
   LI,
 } from "./ui/components"
-export type { DecoratedRegionProps, TypographyProps } from "./ui/components"
+export type { CodeBlockProps, DecoratedRegionProps, TypographyProps } from "./ui/components"
 
 // Shared noun#value.revision identity grammar.
 export { formatNounId, NounId } from "./ui/components"
@@ -332,6 +332,7 @@ export type {
   DocumentQuoteBlock,
   DocumentRuleBlock,
   DocumentTableBlock,
+  DocumentTableCell,
   DocumentViewSearchConfig,
   DocumentViewProps,
 } from "./ui/components"
@@ -381,8 +382,14 @@ export type { PulseProps, UsePulseOptions, UseSynchronizedPhaseOptions } from ".
 export { SelectList } from "./ui/components"
 export type { SelectListProps, SelectOption } from "./ui/components"
 
-export { Table } from "./components/Table"
-export type { TableProps, Column, Column as TableColumn } from "./components/Table"
+export { Table, tableHeightAt, contentNode, contentText } from "./components/Table"
+export type {
+  TableProps,
+  Column,
+  Column as TableColumn,
+  TableMetricsOptions,
+  MeasuredContent,
+} from "./components/Table"
 
 export { Badge } from "./ui/components"
 export type { BadgeProps } from "./ui/components"

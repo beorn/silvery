@@ -54,6 +54,14 @@ export function clearScreen(): string {
 }
 
 /**
+ * Clear saved scrollback (ED 3), preserving the visible screen.
+ * Compose with clearScreen() when both history and visible content must go.
+ */
+export function clearScrollback(): string {
+  return `${CSI}3J`
+}
+
+/**
  * Clear the current line (EL 2 -- Erase in Line, entire line).
  */
 export function clearLine(): string {

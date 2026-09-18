@@ -706,8 +706,75 @@ export function isSoftBreakPoint(grapheme: string): boolean {
 }
 
 /**
+ * Line-break class NU (Numeric) for the subset we need: ASCII digits.
+ */
+function isAsciiDigit(value: string | undefined): boolean {
+  return value !== undefined && value.length === 1 && value >= "0" && value <= "9"
+}
+
+/**
+ * Separators that participate in a UAX #14 numeric expression, by line-break
+ * class (verified against `LineBreak-17.0.0.txt`):
+ *
+ *  - `,` `.` `:` are IS (Infix Numeric Separator)
+ *  - `/` is SY (Symbols Allowing Break After)
+ *  - `\` is PR (Prefix Numeric)
+ *
+ * `_` is deliberately absent: it is class AL (Alphabetic), so `1_000` is not a
+ * numeric expression to UAX #14 and keeps its soft break.
+ */
+const NUMERIC_INFIX_SEPARATORS = new Set([",", ".", ":", "/", "\\"])
+
+/** Nearest neighbour with non-zero display width — skips interleaved ANSI tokens. */
+function adjacentVisible(
+  units: ArrayLike<string>,
+  index: number,
+  step: -1 | 1,
+  width: (value: string) => number,
+): string | undefined {
+  for (let i = index + step; i >= 0 && i < units.length; i += step) {
+    const unit = units[i]
+    if (unit !== undefined && width(unit) !== 0) return unit
+  }
+  return undefined
+}
+
+/**
+ * Is `units[index]` a separator INSIDE a numeric expression, where UAX #14
+ * rule LB25 ("Do not break numbers") forbids a break?
+ *
+ * The two clauses that bite here are `IS × NU` and `NU ( SY | IS )* × NU`;
+ * the spec's own examples are exactly our symptoms — "there is no break in
+ * “100.00” or “10,000”, nor in “12:59”". Without this guard
+ * `isSoftBreakPoint` treats the `,` in `5,305` as an ordinary intra-token
+ * separator and wraps it to `5,` + `305`, which reads as two numbers.
+ *
+ * Requiring a digit on BOTH sides is a deliberate, conservative subset of
+ * LB25: every break it suppresses is one the spec also forbids, and it never
+ * suppresses a break the spec allows. (LB25's `IS × NU` needs no preceding
+ * digit, so a leading-separator form like `.5` keeps its soft break. That is
+ * under-application, never over-application — the safe direction.)
+ *
+ * Shared by every break-decision site so the min-content measure and the wrap
+ * agree. They must: `longestUnbreakableSegment` reported 3 for `5,305`, so a
+ * table column was sized to 3 cells and the wrap then had no choice.
+ */
+export function isNumericInfixSeparator(
+  units: ArrayLike<string>,
+  index: number,
+  width: (value: string) => number,
+): boolean {
+  const separator = units[index]
+  if (separator === undefined || !NUMERIC_INFIX_SEPARATORS.has(separator)) return false
+  return (
+    isAsciiDigit(adjacentVisible(units, index, -1, width)) &&
+    isAsciiDigit(adjacentVisible(units, index, 1, width))
+  )
+}
+
+/**
  * Longest unbreakable run of one source line under word-aware wrapping — the
- * per-line CSS min-content. Hard break opportunities (space, tab, hyphen) end
+ * per-line CSS min-content. Hard break opportunities (space, tab) end
  * a segment BEFORE the breaking character; soft break points
  * (`isSoftBreakPoint`) end the segment INCLUDING the separator, because wrap
  * breaks after it.
@@ -725,13 +792,13 @@ export function longestUnbreakableSegment(
   let segment = 0
   for (let pos = 0; pos < line.length; pos++) {
     const ch = line[pos]!
-    if (ch === " " || ch === "\t" || ch === "-") {
+    if (isWordBoundary(ch)) {
       if (segment > longest) longest = segment
       segment = 0
       continue
     }
     segment += dw(ch)
-    if (isSoftBreakPoint(ch)) {
+    if (isSoftBreakPoint(ch) && !isNumericInfixSeparator(line, pos, dw)) {
       if (segment > longest) longest = segment
       segment = 0
     }
@@ -1147,7 +1214,11 @@ export function wrapTextWithOffsets(text: string, width: number): WrapTextSlice[
       currentWidth += gWidth
       // Track soft (intra-token) break points. Only meaningful if there
       // is already content before this separator on the line.
-      if (currentLine.length > 1 && isSoftBreakPoint(grapheme)) {
+      if (
+        currentLine.length > 1 &&
+        isSoftBreakPoint(grapheme) &&
+        !isNumericInfixSeparator(graphemes, i, gWidthFn)
+      ) {
         lastSoftBreakIndex = currentLine.length
         lastSoftBreakWidth = currentWidth
         lastSoftBreakGraphemeIdx = i + 1
@@ -1425,7 +1496,11 @@ export function wrapTextWithMeasurer(
         // separator so `path/to` breaks as `path/` + `to`. Only useful if
         // there's already content before this separator on the line — a
         // leading separator has nothing to keep with its left context.
-        if (currentLine.length > 1 && isSoftBreakPoint(grapheme)) {
+        if (
+          currentLine.length > 1 &&
+          isSoftBreakPoint(grapheme) &&
+          !isNumericInfixSeparator(graphemes, i, gWidthFn)
+        ) {
           lastSoftBreakIndex = currentLine.length
           lastSoftBreakWidth = currentWidth
           lastSoftBreakGraphemeIndex = i + 1

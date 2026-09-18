@@ -300,6 +300,12 @@ export const Island = forwardRef(function Island(
         },
       }
 
+      // Set to `subscribeToHandle` right after the factory returns. The
+      // factory can only call `onAttach` from a later microtask (init runs
+      // through `Promise.resolve().then(...)`), so this forward reference is
+      // always resolved by the time it fires.
+      let attachHandle: ((handle: IslandHandle) => void) | null = null
+
       // Build the framework-agnostic factory. Its `node` field is a stub
       // (layoutNode === null); we discard it and copy the islandState onto
       // the reconciler-owned node from the JSX intrinsic.
@@ -318,6 +324,7 @@ export const Island = forwardRef(function Island(
           onSignal?.(sig)
           markNodeDirty(node)
         },
+        onAttach: (handle) => attachHandle?.(handle),
         onError,
         hostPalette,
       })
@@ -342,9 +349,14 @@ export const Island = forwardRef(function Island(
         // `factory.dispose()` kicks off.
         //
         // Subscriptions live on the handle, which is null until init
-        // resolves. We re-check inside a deferred microtask hook attached
-        // via `scope.defer` so a deferred-hydrate flow eventually wires
-        // the subscription too.
+        // resolves, so the factory hands it to us through `onAttach` — in
+        // the same microtask that assigns `islandState.handle`. Deferring
+        // this by even one microtask reopens @si/render/24702: a frame
+        // driven by unrelated state renders the now-attached island while
+        // nothing has marked it dirty, the fast path skips it, and the
+        // blanks painted before the attach survive in the cloned buffer
+        // (incremental ≠ fresh under SILVERY_STRICT; a permanently empty
+        // island body on screen without it).
         let subscribed = false
         let paintScheduled = false
         const requestIslandPaint = (): void => {
@@ -438,19 +450,15 @@ export const Island = forwardRef(function Island(
           requestIslandPaint()
         }
 
-        const subscribeWhenAttached = (): void => {
-          if (!slot.alive || subscribed) return
-          const handle = state.handle
-          if (!handle) {
-            queueMicrotask(subscribeWhenAttached)
-            return
-          }
-          subscribeToHandle(handle)
-        }
+        // Fires from `nodeState.handle = handle` inside the factory, so the
+        // first thing that happens after the island becomes paintable is the
+        // host marking it dirty (via `requestIslandPaint` at the end of
+        // `subscribeToHandle`). Nothing between the two can render a stale
+        // frame.
+        attachHandle = subscribeToHandle
 
         void handleReady.then(
           (handle) => {
-            queueMicrotask(subscribeWhenAttached)
             // Refresh the imperative ref now that the handle exists so
             // callback-ref consumers receive it. @km/silvery/19426.
             if (slot.alive) setHandleEpoch((e) => e + 1)

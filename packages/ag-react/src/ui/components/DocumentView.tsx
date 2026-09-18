@@ -1,13 +1,19 @@
-import React, { useEffect, useId, useRef } from "react"
+import React, { useEffect, useId, useRef, useState } from "react"
 import { computeMatchRanges, type SearchMatch } from "@silvery/ag-term/search-overlay"
 import { displayLength } from "@silvery/ansi"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
-import { Blockquote, CodeBlock, H1, H2, H3, H4, H5, H6, HR, Small } from "./Typography"
+import { usePopoverHandlers } from "../../components/Popover"
+import type { MeasuredContent } from "../../components/Table"
+import { Blockquote, H1, H2, H3, H4, H5, H6, HR, Small } from "./Typography"
+import { SyntaxHighlighter } from "./SyntaxHighlighter"
 import { Prose } from "./Prose"
+import { HeadingRow } from "./HeadingRow"
 import { Content, type ContentBodyWidth, useContentLayout, useHasContentLayout } from "./Content"
 import { StylePriorityProvider } from "../../style-priority"
 import { useSearchOptional } from "../../providers/SearchProvider"
+import { useTerm } from "../../hooks/useTerm"
+import { DEFAULT_BREAKPOINTS } from "../../hooks/useResponsiveValue"
 import type { ScrollController } from "./ScrollArea"
 
 export type DocumentBlockId = string | number
@@ -28,6 +34,17 @@ interface DocumentBlockBase {
   readonly lane?: DocumentLane
   /** Non-geometric leaf content such as a measurement registrar. */
   readonly accessory?: React.ReactNode
+  /** Content projected from another source; the presenter owns its visual treatment. */
+  readonly embed?: { readonly source: string }
+  /** Keep this block directly beneath its preceding owner without a paragraph gap. */
+  readonly attachedToPrevious?: true
+  /**
+   * Activate this block — a click on its frame, and whatever key the host
+   * binds to the same intent. Presence is what makes a block interactive, so
+   * a presenter opts blocks in one at a time rather than DocumentView guessing
+   * which kinds are actionable.
+   */
+  readonly onActivate?: () => void
 }
 
 export interface DocumentHeadingBlock extends DocumentBlockBase {
@@ -35,12 +52,9 @@ export interface DocumentHeadingBlock extends DocumentBlockBase {
   readonly level: 1 | 2 | 3 | 4 | 5 | 6
   readonly content: React.ReactNode
   /**
-   * Optional leaf marker, such as a task checkbox. DocumentView still owns
-   * its column: the moment ANY heading block in the document supplies a
-   * marker, EVERY heading reserves that same column (a non-task heading's
-   * slot renders blank) so titles all start at one aligned column. Documents
-   * with no heading markers at all pay zero width — headings render exactly
-   * as before.
+   * Optional leaf marker, such as a task checkbox, replacing the default #.
+   * DocumentView owns its outdented column so every title stays aligned with
+   * ordinary prose, whether it carries a task marker or the default #.
    */
   readonly marker?: React.ReactNode
 }
@@ -67,17 +81,25 @@ export interface DocumentQuoteBlock extends DocumentBlockBase {
 
 export interface DocumentCodeBlock extends DocumentBlockBase {
   readonly kind: "code"
-  readonly content: React.ReactNode
+  readonly content: string
+  readonly language?: string
 }
 
 export interface DocumentRuleBlock extends DocumentBlockBase {
   readonly kind: "rule"
 }
 
+/**
+ * One table cell. A plain string renders and measures as itself; a
+ * `{ text, node }` pair renders `node` (inline markup, links, code spans)
+ * while the width allocator reads `text`.
+ */
+export type DocumentTableCell = MeasuredContent
+
 export interface DocumentTableBlock extends DocumentBlockBase {
   readonly kind: "table"
-  readonly headers: readonly string[]
-  readonly rows: readonly (readonly string[])[]
+  readonly headers: readonly DocumentTableCell[]
+  readonly rows: readonly (readonly DocumentTableCell[])[]
   readonly alignments?: readonly ("left" | "right" | "center" | null)[]
 }
 
@@ -141,21 +163,6 @@ interface ResolvedListItem {
   readonly markerWidth: number
 }
 
-/**
- * disc → circle → square, the CSS nested-list ladder.
- *
- * NO TRIANGLES. The third level was `▸` until a reader read it as a collapsed
- * node and tried to expand it. A right-pointing triangle is the disclosure
- * affordance in every tree widget, `DocumentView` has no fold capability at
- * all, and a marker that promises an interaction the component cannot honour
- * is worse than a plain bullet.
- *
- * `■` (U+25A0) and NOT the smaller `▪` (U+25AA) / `▫` (U+25AB): the small
- * squares carry Emoji=Yes, so they acquire emoji presentation and measure TWO
- * cells, which silently widens a marker column sized for one.
- */
-const UNORDERED_MARKERS = ["•", "◦", "■"] as const
-
 function textMarkerWidth(marker: React.ReactNode): number | null {
   // `displayLength`, not `.length`: this width indents every line of the list
   // item, so it is terminal columns. The built-in markers are all one cell, but
@@ -180,10 +187,7 @@ function resolveListItems(
     const count = groupCounts.get(block.list.groupId) ?? 0
     groupCounts.set(block.list.groupId, count + 1)
     const marker =
-      block.marker ??
-      (block.list.ordered
-        ? `${(block.list.start ?? 1) + count}.`
-        : (UNORDERED_MARKERS[Math.min(block.list.depth, UNORDERED_MARKERS.length - 1)] ?? "•"))
+      block.marker ?? (block.list.ordered ? `${(block.list.start ?? 1) + count}.` : "•")
     const width = Math.max(1, block.markerWidth ?? textMarkerWidth(marker) ?? 1)
     provisional.set(block.id, { marker, width, groupId: block.list.groupId })
     groupWidths.set(block.list.groupId, Math.max(groupWidths.get(block.list.groupId) ?? 0, width))
@@ -204,9 +208,8 @@ function resolveListItems(
  * Width of the widest heading marker in the document — shared by every
  * heading, not computed per-row like list markers, because the design
  * intent is column ALIGNMENT: a task heading's checkbox and a non-task
- * heading's blank slot must start titles at the same column. Zero when no
- * heading block in the whole document carries a marker, so documents that
- * never use heading tasks render exactly as before — no wrapping Box.
+ * heading's # must start titles at the same column. At least one cell is
+ * reserved for the default #, including documents without task headings.
  *
  * The gutter HANGS in the title's own left margin — it does not push the
  * title right, relative to any OTHER heading in the document (marked or
@@ -217,7 +220,7 @@ function resolveListItems(
  * whether or not this particular document happens to use heading markers.
  */
 function resolveHeadingMarkerWidth(blocks: readonly DocumentBlock[]): number {
-  let width = 0
+  let width = 1
   for (const block of blocks) {
     if (block.kind !== "heading" || block.marker === undefined) continue
     width = Math.max(width, textMarkerWidth(block.marker) ?? 1)
@@ -264,6 +267,11 @@ function BlockFrame({
   onLayout?: (y: number) => void
   children: React.ReactNode
 }): React.ReactElement {
+  const popover = usePopoverHandlers(
+    { body: <Text color="$fg-muted">{block.embed?.source}</Text> },
+    { trigger: "hover" },
+  )
+  const background = selected ? "$bg-selected" : block.embed ? "mix($fg-link, $bg, 95%)" : undefined
   return (
     <Content.Row>
       <Content.Body width={lane}>
@@ -274,20 +282,30 @@ function BlockFrame({
           data-document-block-kind={block.kind}
           data-cursor={selected ? true : undefined}
           focusable
+          onClick={block.onActivate}
           minWidth={0}
-          marginTop={marginTop}
+          width={block.embed ? "100%" : undefined}
+          paddingRight={block.embed ? 2 : undefined}
+          marginTop={block.attachedToPrevious ? 0 : marginTop}
           marginBottom={marginBottom}
           onLayout={onLayout ? (rect) => onLayout(rect.y) : undefined}
-          backgroundColor={selected ? "$bg-selected" : undefined}
+          backgroundColor={background}
           color={selected ? "$fg-on-selected" : undefined}
+          onMouseEnter={block.embed ? popover.onMouseEnter : undefined}
+          onMouseLeave={block.embed ? popover.onMouseLeave : undefined}
         >
           <StylePriorityProvider
             foreground={selected ? "$fg-on-selected" : undefined}
-            background={selected ? "$bg-selected" : undefined}
+            background={background}
           >
             {block.accessory}
             {children}
           </StylePriorityProvider>
+          {block.embed ? (
+            <Box position="absolute" right={0} top={0} width={1}>
+              <Text color={selected ? "$fg-on-selected" : "mix($fg-link, $bg, 75%)"}>→</Text>
+            </Box>
+          ) : null}
         </Box>
       </Content.Body>
     </Content.Row>
@@ -326,7 +344,7 @@ function ListItemRow({
         </Box>
         <Box width={1} minWidth={1} flexShrink={0} />
         <Prose flexGrow={1} minWidth={0}>
-          <Text color={color} wrap="wrap">
+          <Text variant="body" color={color} wrap="wrap">
             {block.content}
           </Text>
         </Prose>
@@ -335,79 +353,21 @@ function ListItemRow({
   )
 }
 
-/**
- * Renders heading content with an outdented marker gutter to its left.
- *
- * Unlike `ListItemRow`'s marker (every list item has one, so shifting text
- * right by `markerWidth + gap` IS the intended hanging-indent shape for
- * wrapped continuation lines), a heading marker is optional per-row within
- * a document that may mix task and non-task headings — the title column
- * must be identical whether or not THIS heading has a marker. A
- * `Content.Row` side slot (`Content.Left`) does not give that guarantee: it
- * claims real width from the row's available space, and once that space is
- * genuinely tight — a narrow pane, or a `Content.Layout` with a fixed
- * `prose` target close to the pane width, as with km-tui's `DetailView`
- * (`prose={80}`) — the lane itself narrows and the title shifts.
- *
- * `HeadingRow` sizes the marker's flex sibling to exactly `markerWidth + 1`
- * (glyph, then one blank gap cell), with an equal, opposite negative
- * `marginLeft`. The marker's outer contribution to the row's layout —
- * content width plus margins — is therefore exactly zero: the heading's
- * own box, wrap width, and start column are computed identically whether
- * this particular heading's own marker is present or blank, and identically
- * to a heading in a document that never uses heading markers at all —
- * pinned across pane widths 30-200 in
- * `tests/features/document-view-heading-marker.test.tsx`, including
- * km-tui's exact `prose={80}` configuration.
- *
- * The reach-back space this hangs into is `ProseLane`'s own natural side
- * gutter (Content.tsx) — but that gutter defaults to a 1-cell floor,
- * one cell short of `markerWidth + 1`. `DocumentView` widens it to
- * `DOCUMENT_MIN_GUTTER` (2) for every document it renders, unconditionally
- * — not a per-heading reservation here, a lane-wide floor raised once, up
- * front. Two earlier revisions are worth recording as the paths NOT taken:
- * reaching into the UNwidened 1-cell floor directly clipped the glyph
- * invisible the moment a pane was narrow enough to hit it (any pane at or
- * below the document's configured prose width); reserving the gutter as a
- * per-heading `Content.Body paddingLeft` instead of raising the shared
- * floor worked, but only insets headings, so a heading and an ordinary
- * paragraph in the same marker-bearing document no longer shared a left
- * margin. Operator ruling settled on raising the floor itself, both sides,
- * for every document, with no narrower "flush" fallback — see
- * `DOCUMENT_MIN_GUTTER`'s own docstring for the rejected inline-marker
- * degrade this replaces.
- */
-function HeadingRow({
-  markerWidth,
-  marker,
-  children,
-}: {
-  markerWidth: number
-  marker: React.ReactNode
-  children: React.ReactNode
-}): React.ReactElement {
-  const gutter = markerWidth + 1
-  return (
-    <Box flexDirection="row" width="100%" minWidth={0}>
-      <Box width={gutter} minWidth={gutter} marginLeft={-gutter} flexShrink={0}>
-        {marker}
-      </Box>
-      <Prose flexGrow={1} minWidth={0}>
-        {children}
-      </Prose>
-    </Box>
-  )
-}
-
 function DocumentBlocks({
   blocks,
   selectedId,
   empty,
   lane,
+  compact,
   onBlockLayout,
+  collapsedCode,
+  onCodeExpandedChange,
 }: Required<Pick<DocumentViewProps, "blocks" | "lane">> &
   Pick<DocumentViewProps, "selectedId" | "empty"> & {
+    compact: boolean
     onBlockLayout?: (id: DocumentBlockId, y: number) => void
+    collapsedCode: ReadonlySet<DocumentBlockId>
+    onCodeExpandedChange: (id: DocumentBlockId, expanded: boolean) => void
   }): React.ReactElement {
   const resolvedLists = resolveListItems(blocks)
   const headingMarkerWidth = resolveHeadingMarkerWidth(blocks)
@@ -425,14 +385,22 @@ function DocumentBlocks({
     <Box flexDirection="column" minWidth={0}>
       {blocks.map((block, index) => {
         const selected = block.id === selectedId
-        const blockLane = block.lane ?? lane
+        const blockLane = compact && block.kind === "table" ? "prose" : (block.lane ?? lane)
         const previous = blocks[index - 1]
         const afterList = !isListBlock(block) && isListBlock(previous)
+        const bottomMargin = blocks[index + 1]?.attachedToPrevious ? 0 : 1
 
         switch (block.kind) {
           case "heading": {
             const headings = [H1, H2, H3, H4, H5, H6] as const
             const Heading = headings[block.level - 1] ?? H6
+            const afterBody =
+              previous !== undefined &&
+              previous.kind !== "heading" &&
+              previous.kind !== "rule" &&
+              previous.kind !== "media"
+            const extraSpace = block.level <= 2 && afterBody
+            const topMargin = (afterList ? 1 : 0) + (extraSpace ? 1 : 0)
             const headingNode = (
               <Heading color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
                 {block.content}
@@ -444,17 +412,18 @@ function DocumentBlocks({
                 block={block}
                 selected={selected}
                 lane={blockLane}
-                marginTop={afterList ? 1 : undefined}
-                marginBottom={1}
+                marginTop={topMargin || undefined}
+                marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
-                {headingMarkerWidth > 0 ? (
-                  <HeadingRow markerWidth={headingMarkerWidth} marker={block.marker}>
-                    {headingNode}
-                  </HeadingRow>
-                ) : (
-                  headingNode
-                )}
+                <HeadingRow
+                  level={block.level}
+                  markerWidth={headingMarkerWidth}
+                  marker={block.marker}
+                  color={selected ? "$fg-on-selected" : undefined}
+                >
+                  {headingNode}
+                </HeadingRow>
               </BlockFrame>
             )
           }
@@ -482,7 +451,7 @@ function DocumentBlocks({
                 selected={selected}
                 lane={blockLane}
                 marginTop={afterList ? 1 : undefined}
-                marginBottom={1}
+                marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
                 <HR />
@@ -496,7 +465,7 @@ function DocumentBlocks({
                 selected={selected}
                 lane={blockLane}
                 marginTop={afterList ? 1 : undefined}
-                marginBottom={1}
+                marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
                 <Blockquote color={selected ? "$fg-on-selected" : undefined}>
@@ -512,12 +481,17 @@ function DocumentBlocks({
                 selected={selected}
                 lane={blockLane}
                 marginTop={afterList ? 1 : undefined}
-                marginBottom={1}
+                marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
-                <CodeBlock color={selected ? "$fg-on-selected" : undefined}>
-                  {block.content}
-                </CodeBlock>
+                <Box flexDirection="column" flexGrow={1} minWidth={0} marginLeft={-2}>
+                  <SyntaxHighlighter
+                    language={block.language ?? "plain"}
+                    code={block.content}
+                    expanded={!collapsedCode.has(block.id)}
+                    onExpandedChange={(expanded) => onCodeExpandedChange(block.id, expanded)}
+                  />
+                </Box>
               </BlockFrame>
             )
           case "table":
@@ -528,7 +502,7 @@ function DocumentBlocks({
                 selected={selected}
                 lane={blockLane}
                 marginTop={afterList ? 1 : undefined}
-                marginBottom={1}
+                marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
                 <Content.Table
@@ -546,7 +520,7 @@ function DocumentBlocks({
                 selected={selected}
                 lane={blockLane}
                 marginTop={afterList ? 1 : undefined}
-                marginBottom={1}
+                marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
                 <Box width="100%" flexDirection="column">
@@ -563,10 +537,10 @@ function DocumentBlocks({
                 selected={selected}
                 lane={blockLane}
                 marginTop={afterList ? 1 : undefined}
-                marginBottom={1}
+                marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
-                <Text color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
+                <Text variant="body" color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
                   {block.content}
                 </Text>
               </BlockFrame>
@@ -577,21 +551,7 @@ function DocumentBlocks({
   )
 }
 
-/**
- * Minimum blank margin `DocumentView`'s prose lane keeps on EACH side, in
- * cells — always, not just when a heading marker is present. This is what
- * lets `HeadingRow`'s marker gutter (`markerWidth + 1` — see there) hang
- * into ORDINARY document margin at any pane width, with no narrower "flush"
- * degrade: `ProseLane`'s own default floor is only 1 (`Content.tsx`), too
- * narrow to guarantee a glyph plus its gap. Operator: "we always make sure
- * there's a 2-space column to the left and right of text" — deliberately
- * NOT conditioned on whether the document happens to use heading markers,
- * both so every document (marker-bearing or not) gets identical geometry
- * and so the guarantee can never depend on a callsite remembering to ask
- * for it. A rejected alternative — degrade to the marker sitting inline
- * with the title once the pane pinches — is recorded here as the option
- * NOT taken, should a future revision want it back.
- */
+/** Normal document margin; compact mode keeps only one trailing cell. */
 const DOCUMENT_MIN_GUTTER = 2
 
 /**
@@ -610,6 +570,10 @@ export function DocumentView({
 }: DocumentViewProps): React.ReactElement {
   const hasContentLayout = useHasContentLayout()
   const ambientLayout = useContentLayout()
+  const termCols = useTerm((term) => term.size.cols())
+  const paneCols = hasContentLayout ? ambientLayout.available : termCols
+  const compact = paneCols > 0 && paneCols < DEFAULT_BREAKPOINTS.md
+  const markerGutter = resolveHeadingMarkerWidth(blocks) + 1
   const searchContext = useSearchOptional()
   const autoSearchId = useId()
   const searchId = search?.id ?? autoSearchId
@@ -620,9 +584,13 @@ export function DocumentView({
   const revealRef = useRef(reveal)
   const revealedOperationRef = useRef<string | number | null>(null)
   const rowOffsetsRef = useRef(new Map<DocumentBlockId, number>())
+  const [collapsedCode, setCollapsedCode] = useState<ReadonlySet<DocumentBlockId>>(() => new Set())
+  const collapsedCodeRef = useRef(collapsedCode)
+  const pendingSearchRevealRef = useRef<DocumentBlockId | null>(null)
   blocksRef.current = blocks
   searchRef.current = search
   revealRef.current = reveal
+  collapsedCodeRef.current = collapsedCode
 
   useEffect(() => {
     if (!searchEnabled || !registerSearchable) return
@@ -643,6 +611,15 @@ export function DocumentView({
         const block = currentBlocks[match.row]
         const currentSearch = searchRef.current
         if (!block || !currentSearch) return
+        if (block.kind === "code" && collapsedCodeRef.current.has(block.id)) {
+          pendingSearchRevealRef.current = block.id
+          setCollapsedCode((current) => {
+            const next = new Set(current)
+            next.delete(block.id)
+            return next
+          })
+          return
+        }
         revealDocumentBlock(
           currentBlocks,
           rowOffsetsRef.current,
@@ -652,6 +629,27 @@ export function DocumentView({
       },
     })
   }, [registerSearchable, searchEnabled, searchId])
+
+  // A collapsed match must acquire its expanded layout before scrolling.
+  useEffect(() => {
+    const id = pendingSearchRevealRef.current
+    const currentSearch = searchRef.current
+    if (id === null || !currentSearch || collapsedCode.has(id)) return
+    if (
+      revealDocumentBlock(
+        blocksRef.current,
+        rowOffsetsRef.current,
+        id,
+        currentSearch.scrollController,
+      )
+    ) {
+      pendingSearchRevealRef.current = null
+    }
+  }, [
+    collapsedCode,
+    search?.scrollController.contentHeight,
+    search?.scrollController.viewportHeight,
+  ])
 
   useEffect(() => {
     const currentReveal = revealRef.current
@@ -684,6 +682,16 @@ export function DocumentView({
       selectedId={searchSelectedId ?? selectedId}
       empty={empty}
       lane={lane}
+      compact={compact}
+      collapsedCode={collapsedCode}
+      onCodeExpandedChange={(id, expanded) => {
+        setCollapsedCode((current) => {
+          const next = new Set(current)
+          if (expanded) next.delete(id)
+          else next.add(id)
+          return next
+        })
+      }}
       onBlockLayout={(id, y) => {
         rowOffsetsRef.current.set(id, y)
         const currentReveal = revealRef.current
@@ -701,27 +709,19 @@ export function DocumentView({
       }}
     />
   )
-  // Always nest a Content.Layout — even when an ancestor already provides
-  // one (e.g. km-tui DetailView's own `prose={80} wide={120}`) — so
-  // DOCUMENT_MIN_GUTTER is guaranteed regardless of whether the caller's
-  // own Layout happens to be wide enough. When an ancestor exists, its
-  // resolved prose/wide/align/gap are threaded through unchanged (`ctx`
-  // already reflects the real pane's resolved values, so re-declaring them
-  // here is a width no-op — see `Layout` in Content.tsx); only
-  // `gutterMinWidth` is ever widened. When there is no ancestor, passing
-  // `undefined` for those four lets `Content.Layout`'s OWN prop defaults
-  // apply exactly as before (notably `align="center"`, which the
-  // no-ancestor fallback context value does NOT share — reading `ctx.align`
-  // unconditionally here would have silently flipped standalone documents
-  // from centered to left-aligned).
+  // Keep ambient wide-lane policy. Compact prose fills the pane, reserving
+  // enough leading cells for its heading marker and a single trailing space.
   return (
     <Content.Layout
       fill={false}
-      prose={hasContentLayout ? ambientLayout.prose : undefined}
+      prose={compact ? "100%" : hasContentLayout ? ambientLayout.prose : undefined}
       wide={hasContentLayout ? ambientLayout.wide : undefined}
       align={hasContentLayout ? ambientLayout.align : undefined}
       gap={hasContentLayout ? ambientLayout.gap : undefined}
-      gutterMinWidth={Math.max(ambientLayout.gutterMinWidth, DOCUMENT_MIN_GUTTER)}
+      gutterMinWidth={{
+        left: Math.max(ambientLayout.gutterMinWidth.left, markerGutter),
+        right: compact ? 1 : Math.max(ambientLayout.gutterMinWidth.right, DOCUMENT_MIN_GUTTER),
+      }}
     >
       {document}
     </Content.Layout>

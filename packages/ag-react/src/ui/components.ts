@@ -177,7 +177,15 @@ export { SelectList } from "./components/SelectList"
 export type { SelectListProps, SelectOption } from "./components/SelectList"
 
 export { Table } from "../components/Table"
-export type { TableProps, Column as TableColumn } from "../components/Table"
+export type {
+  TableProps,
+  Column as TableColumn,
+  MeasuredContent as TableMeasuredContent,
+} from "../components/Table"
+export {
+  contentNode as tableContentNode,
+  contentText as tableContentText,
+} from "../components/Table"
 
 export { Badge } from "./components/Badge"
 export type { BadgeProps } from "./components/Badge"
@@ -216,7 +224,7 @@ export {
   OL,
   LI,
 } from "./components/Typography"
-export type { DecoratedRegionProps, TypographyProps } from "./components/Typography"
+export type { CodeBlockProps, DecoratedRegionProps, TypographyProps } from "./components/Typography"
 
 export { formatNounId, NounId } from "./components/NounId"
 export type { NounIdProps, NounIdValue } from "./components/NounId"
@@ -259,6 +267,7 @@ export type {
   DocumentQuoteBlock,
   DocumentRuleBlock,
   DocumentTableBlock,
+  DocumentTableCell,
   DocumentViewSearchConfig,
   DocumentViewProps,
 } from "./components/DocumentView"

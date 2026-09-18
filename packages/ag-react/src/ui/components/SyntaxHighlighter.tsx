@@ -4,9 +4,9 @@ import { computeMatchRanges, type SearchMatch } from "@silvery/ag-term/search-ov
 import { highlight, type TokenLine } from "@silvery/syntax"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
-import { useHover } from "../../hooks/useHover"
 import { useSearchOptional } from "../../providers/SearchProvider"
 import type { ScrollController } from "./ScrollArea"
+import { CodeBlock } from "./Typography"
 
 export interface SyntaxHighlighterProps {
   language: string
@@ -15,6 +15,9 @@ export interface SyntaxHighlighterProps {
   bare?: boolean
   backgroundColor?: string
   bold?: boolean
+  expanded?: boolean
+  defaultExpanded?: boolean
+  onExpandedChange?: (expanded: boolean) => void
   /** Register this source with the enclosing SearchProvider. */
   search?: {
     readonly id?: string
@@ -31,9 +34,11 @@ export function SyntaxHighlighter({
   backgroundColor,
   bold: forceBold = false,
   search,
+  expanded,
+  defaultExpanded,
+  onExpandedChange,
 }: SyntaxHighlighterProps): ReactElement {
   const lang = (language || "plain").toLowerCase()
-  const hover = useHover()
   const lines = useSyntaxTokens(code, lang, theme)
   const lineWrap = isDiffLanguage(lang) ? "truncate" : "hard"
   const body = search ? (
@@ -47,53 +52,28 @@ export function SyntaxHighlighter({
     />
   ) : (
     lines.map((line, lineIndex) => (
-      <Text key={lineIndex} wrap={lineWrap} backgroundColor={backgroundColor}>
-        {line.tokens.map((token, tokenIndex) => (
-          <Text
-            key={tokenIndex}
-            color={token.color}
-            bold={forceBold || token.bold}
-            italic={token.italic}
-            backgroundColor={backgroundColor}
-          >
-            {token.text}
-          </Text>
-        ))}
-      </Text>
+      <SyntaxLine
+        key={lineIndex}
+        line={line}
+        lineWrap={lineWrap}
+        backgroundColor={backgroundColor}
+        forceBold={forceBold}
+      />
     ))
   )
 
   if (bare) return <Box flexDirection="column">{body}</Box>
 
   return (
-    <Box
-      flexDirection="column"
-      position="relative"
-      minWidth={0}
-      backgroundColor="$bg-surface-subtle"
-      paddingX={2}
-      onMouseEnter={hover.onMouseEnter}
-      onMouseLeave={hover.onMouseLeave}
-    >
-      <Text> </Text>
-      {hover.isHovered ? (
-        <Box
-          position="absolute"
-          top={1}
-          right={1}
-          flexDirection="row"
-          backgroundColor="$bg-surface-subtle"
-        >
-          <Text backgroundColor="$bg-surface-subtle"> </Text>
-          <Text color="$fg-muted" backgroundColor="$bg-surface-subtle">
-            {lang}
-          </Text>
-          <Text backgroundColor="$bg-surface-subtle"> </Text>
-        </Box>
-      ) : null}
-      {body}
-      <Text> </Text>
-    </Box>
+    <CodeBlock
+      width="auto"
+      label={lang}
+      content={body}
+      expanded={expanded}
+      defaultExpanded={defaultExpanded}
+      onExpandedChange={onExpandedChange}
+      backgroundColor={backgroundColor}
+    />
   )
 }
 
@@ -117,6 +97,38 @@ function useSyntaxTokens(code: string, language: string, theme: string): TokenLi
 
 function isDiffLanguage(language: string): boolean {
   return ["diff", "patch", "udiff", "gitdiff", "git-diff"].includes(language)
+}
+
+function SyntaxLine({
+  line,
+  lineWrap,
+  backgroundColor,
+  forceBold,
+}: {
+  readonly line: TokenLine
+  readonly lineWrap: "hard" | "truncate"
+  readonly backgroundColor?: string
+  readonly forceBold: boolean
+}): ReactElement {
+  return (
+    <Text color="mix($fg, $fg-muted, 50%)" wrap={lineWrap} backgroundColor={backgroundColor}>
+      {line.tokens.map((token, tokenIndex) => (
+        <Text
+          key={tokenIndex}
+          color={
+            token.color === undefined
+              ? undefined
+              : `mix(${token.color}, mix($fg, $fg-muted, 50%), 50%)`
+          }
+          bold={forceBold || token.bold}
+          italic={token.italic}
+          backgroundColor={backgroundColor}
+        >
+          {token.text}
+        </Text>
+      ))}
+    </Text>
+  )
 }
 
 interface SearchableSyntaxLinesProps {
@@ -182,19 +194,12 @@ function SearchableSyntaxLines({
           flexDirection="row"
           onLayout={(rect) => recordLineOrigin(lineIndex, rect.y)}
         >
-          <Text wrap={lineWrap} backgroundColor={backgroundColor}>
-            {line.tokens.map((token, tokenIndex) => (
-              <Text
-                key={tokenIndex}
-                color={token.color}
-                bold={forceBold || token.bold}
-                italic={token.italic}
-                backgroundColor={backgroundColor}
-              >
-                {token.text}
-              </Text>
-            ))}
-          </Text>
+          <SyntaxLine
+            line={line}
+            lineWrap={lineWrap}
+            backgroundColor={backgroundColor}
+            forceBold={forceBold}
+          />
         </Box>
       ))}
     </>

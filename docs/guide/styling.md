@@ -32,14 +32,16 @@ Most Silvery components already use the correct semantic colors by default. **Th
 | `<Meter>`              | `$bg-accent` fill, `$fg-muted` track, `$fg-on-accent`/`$fg` overlay label  |
 | `<Spinner>`            | `$fg`                                                                      |
 | `<Button>`             | inverse (`$bg-inverse` / `$fg-on-inverse`) when focused/active             |
-| `<H1>`, `<H2>`, `<H3>` | `$fg-accent` / `$fg-accent` / `$fg` + bold (variant table)                 |
+| `<H1>`, `<H2>`, `<H3>` | accent / halfway accent-to-foreground / inherited foreground, all bold     |
 | `<Muted>`              | `$fg-muted` text                                                           |
 | `<Small>`              | `$fg-muted` (pre-dimmed at truecolor)                                      |
-| `<Lead>`               | `italic` text                                                              |
-| `<Code>`               | `$fg-info`, no background chip or padding                                  |
-| `<Blockquote>`         | `$fg-faint` hairline rail + `$fg-muted` italic body                        |
-| `<P>`                  | body text (semantic wrapper)                                               |
-| `<LI>`                 | `•` bullet + indented content                                              |
+| `<Lead>`               | `$fg-muted` + italic                                                       |
+| `<Code>`               | `mix($fg-muted, $fg-link, 20%)`, no chip or padding                        |
+| `<CodeBlock>`          | Subtle padded frame, click to collapse; hover reveals its label            |
+| `<Link>`               | `$fg-link`, `$fg-link-hover` + underline on plain hover                    |
+| `<Blockquote>`         | `$fg-muted` italic body, inset two cells without a rail                    |
+| `<P>`                  | `mix($fg, $fg-muted, 12.5%)` body foreground                               |
+| `<LI>`                 | Same `•` at every unordered depth; indentation expresses nesting           |
 
 ::: tip ✨ Shiny
 
@@ -86,15 +88,15 @@ Rebuilding what the component already does. If you're writing `color="$fg"` or `
 
 TUIs can't vary font size — bold, dim, and italic are your only typographic tools. That makes color **more important** for hierarchy than in web UIs. Use intentional combinations of color + bold/dim to create clear levels.
 
-| Level           | Style                       | Visual effect                                  |
-| --------------- | --------------------------- | ---------------------------------------------- |
-| H1 — Page title | `$fg-accent` + `bold`       | Brand color, bold — maximum emphasis           |
-| H2 — Section    | `$fg-accent` + `bold`       | Brand color, bold (typography variant tunes)   |
-| H3 — Group      | `$fg` + `bold`              | Bright, bold — stands out without accent color |
-| Body            | `$fg`                       | Normal text                                    |
-| Meta / caption  | `$fg-muted`                 | Dimmed, recedes                                |
-| Fine print      | `$fg-muted` (via `<Small>`) | Maximally receded — captions, footnotes        |
-| Disabled        | `$fg-muted`                 | Faded — clearly inactive                       |
+| Level           | Style                                | Visual effect                           |
+| --------------- | ------------------------------------ | --------------------------------------- |
+| H1 — Page title | `$fg-accent` + `bold`                | Brand color, bold — maximum emphasis    |
+| H2 — Section    | `mix($fg-accent, $fg, 50%)` + `bold` | Softer accent, still prominent          |
+| H3 — Group      | inherited foreground + `bold`        | Stands out without accent color         |
+| Body            | `mix($fg, $fg-muted, 12.5%)`         | Slightly receded prose                  |
+| Meta / caption  | `$fg-muted`                          | Dimmed, recedes                         |
+| Fine print      | `$fg-muted` (via `<Small>`)          | Maximally receded — captions, footnotes |
+| Disabled        | `$fg-muted`                          | Faded — clearly inactive                |
 
 ::: tip ✨ Rule — `dim` is a rendering detail, not a design primitive
 
@@ -104,7 +106,7 @@ Use semantic tokens to express intent:
 
 - **`$fg-muted`** — meta text, captions, labels, hints, secondary info. The canonical "grey". **Use by default.**
 - **`<Small>` preset** — fine print. Resolves to a pre-dimmed `$fg-muted` at truecolor; dim attrs only at ANSI 16 / monochrome. Keybinding legends, footnotes, timestamps.
-- **None of the above** — primary body text. `$fg` is inherited; don't set it.
+- **Primary body text** — use `<P>` or `<Text variant="body">`; bare `<Text>` inherits foreground.
 
 Where `dim` _is_ allowed (inside the token system only):
 
@@ -128,10 +130,10 @@ Since TUIs lack font-size variation, using 2-3 colors for heading levels is natu
 ::: tip ✨ Shiny
 
 ```tsx
-<Text bold color="$fg-accent">Settings</Text>             // H1 — brand color
-<Text bold color="$fg-accent">General</Text>              // H2 — brand color
-<Text bold>Appearance</Text>                              // H3 — bold alone
-<Text>Use dark colors for the UI</Text>                   // body
+<H1>Settings</H1>                                        // accent + bold
+<H2>General</H2>                                         // softer accent + bold
+<H3>Appearance</H3>                                      // inherited foreground + bold
+<P>Use dark colors for the UI</P>                        // body variant
 <Text color="$fg-muted">Requires restart</Text>           // caption
 ```
 
@@ -157,14 +159,14 @@ Use the built-in typography presets (inspired by [shadcn/ui](https://ui.shadcn.c
 import { H1, H2, H3, Muted, Small, Lead, Code, Blockquote, P, LI } from "silvery"
 
 <H1>Settings</H1>                    // $fg-accent + bold
-<H2>General</H2>                      // $fg-accent + bold
+<H2>General</H2>                     // halfway from accent to foreground + bold
 <H3>Appearance</H3>                   // bold
-<P>Use dark colors for the UI.</P>    // plain body text
+<P>Use dark colors for the UI.</P>    // slightly muted body text
 <Muted>Requires restart</Muted>       // $fg-muted
 <Small>Last updated 2 hours ago</Small> // $fg-muted (pre-dimmed)
-<Lead>Welcome to the app</Lead>       // italic
-<Code>npm install silvery</Code>      // $fg-info, no background chip
-<Blockquote>Less is more.</Blockquote> // ▏ hairline rail + italic
+<Lead>Welcome to the app</Lead>       // muted + italic
+<Code>npm install silvery</Code>      // muted/link blend, no background chip
+<Blockquote>Less is more.</Blockquote> // two-cell inset + muted italic
 <LI>First item</LI>                   // • bullet
 <LI>Second item</LI>
 ```
@@ -173,7 +175,7 @@ Zero color props — the presets handle it. This is the easiest way to get corre
 :::
 
 ::: tip ✨ Shiny — `<Text variant=…>` resolves from the theme
-Variants are theme tokens — `h1`, `h2`, `h3`, `body`, `body-muted`, `fine-print`, `strong`, `em`, `link`, `key`, `code`, `kbd` come built in. The `<H1>` / `<H2>` / … components are thin wrappers over `<Text variant=…>`.
+Variants are theme tokens — `h1`–`h6`, `body`, `body-muted`, `fine-print`, `strong`, `em`, `link`, `key`, `code`, `kbd` come built in. Heading components resolve these variants and keep their foreground over nested inline styling. Strong/emphasis variants blend halfway from body color back toward `$fg`, with bold/italic respectively.
 
 ```tsx
 <Text variant="h1">Settings</Text>              // = H1 — $fg-accent + bold
@@ -204,10 +206,15 @@ Every `$token` carries semantic weight. Users learn that green means success and
 <Text color="$fg-warning">⚠ Rate limit exceeded</Text>     // actually a warning
 <Text color="$fg-info">ℹ 3 items updated</Text>            // informational
 <Text color="$fg-accent">Tab</Text>                        // keyboard shortcut label
-<Text color="$fg-link" underline>docs.silvery.dev</Text>   // clickable
+<Link href="https://silvery.dev">silvery.dev</Link>       // destination + hover treatment
 ```
 
 Each color matches its meaning. A new user knows what green and red mean without reading docs. `$fg-accent` marks interactive chrome — prompts, shortcuts, labels. `$fg-link` marks clickable text.
+
+Links have no underline by default and brighten on plain hover. Inline code
+uses a muted/link blend without hover behavior. For fenced source, use
+`SyntaxHighlighter`: it shares `CodeBlock`'s padding, background, hover label,
+and collapse behavior. See the [typography reference](/components/typography).
 :::
 
 ::: danger 🩶 Tarnished
@@ -705,7 +712,7 @@ useEffect(() => { const t = setInterval(() => setFade(f => Math.min(f + 0.1, 0.7
 **"What color should this element use?"**
 
 1. **Is there a standard component for this?** → Use it. Don't specify colors.
-2. **Is it body text?** → `$fg` (default — don't specify)
+2. **Is it body text?** → `<P>` or `<Text variant="body">`
 3. **Is it secondary/supporting?** → `$fg-muted`
 4. **Is it disabled or placeholder?** → `$fg-muted`
 5. **Is it a heading?** → `<H1>` / `<H2>` / `<H3>` presets

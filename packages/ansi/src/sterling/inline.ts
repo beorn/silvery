@@ -227,6 +227,7 @@ export function inlineSterlingTokens(theme: Theme, scheme?: ColorScheme): Inline
   const lnk = roles.link
   if (lnk) {
     setIfAbsent("fg-link", lnk.fg)
+    setIfAbsent("fg-link-hover", lnk.hover.fg)
   }
 
   const dis = roles.disabled

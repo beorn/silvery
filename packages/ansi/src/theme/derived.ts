@@ -23,19 +23,19 @@ import type { Theme, Variant } from "./types.ts"
 /** Default typography variants — token-based, works across any theme. */
 export const DEFAULT_VARIANTS: Record<string, Variant> = {
   h1: { color: "$primary", bold: true },
-  h2: { color: "$accent", bold: true },
+  h2: { color: "mix($primary, $fg, 50%)", bold: true },
   h3: { bold: true },
   h4: { color: "$muted", bold: true },
   h5: { color: "$muted", italic: true },
   h6: { color: "$muted", dim: true },
-  body: {},
+  body: { color: "mix($fg, $fg-muted, 12.5%)" },
   "body-muted": { color: "$muted" },
   "fine-print": { color: "$muted", dim: true },
-  strong: { bold: true },
-  em: { italic: true },
-  link: { color: "$fg-link", underlineStyle: "dotted" },
+  strong: { color: "mix($fg, mix($fg, $fg-muted, 12.5%), 50%)", bold: true },
+  em: { color: "mix($fg, mix($fg, $fg-muted, 12.5%), 50%)", italic: true },
+  link: { color: "$fg-link" },
   key: { color: "$accent", bold: true },
-  code: { color: "$fg-info" },
+  code: { color: "mix($fg-muted, $fg-link, 20%)" },
   kbd: { backgroundColor: "$mutedbg", color: "$accent", bold: true },
 }
 

@@ -5,7 +5,7 @@
  * paragraph join into one logical line and re-wrap to the container width — the
  * terminal, not the author, decides where lines break. Plus emphasis / inline
  * code / heading / list styling via Typography presets + semantic tokens
- * (`strong`→bold, `em`→italic, `code`→`$fg-info`, headings bold).
+ * (`strong`→bold, `em`→italic, `code`→muted/link blend, headings bold).
  *
  * Assertions render the buffer and check what the user sees (The Silvery Way
  * §10); one parser unit test pins the reflow join at the source. Runs at
@@ -89,6 +89,17 @@ describe("MarkdownView — paragraph reflow", () => {
 })
 
 describe("MarkdownView — inline emphasis (Typography presets)", () => {
+  test("links retain their destination and brighten with an underline on plain hover", async () => {
+    const app = render("See [Example](https://example.com) now.")
+    const column = app.lines[0]!.indexOf("Example")
+    expect(column).toBeGreaterThanOrEqual(0)
+    expect(app.term.cell(column, 0).hyperlink).toBe("https://example.com")
+    const idle = app.cell(column, 0).fg
+    await app.hover(column, 0)
+    expect(app.cell(column, 0).fg).not.toEqual(idle)
+    expect(app.cell(column, 0).underline).toBe("single")
+  })
+
   test("**bold** renders bold and strips the markers", () => {
     const app = render("**Bold** text")
     const cell = app.cell(0, 0)
@@ -106,9 +117,11 @@ describe("MarkdownView — inline emphasis (Typography presets)", () => {
     expect(app.text).not.toContain("*")
   })
 
-  test("`inline code` renders as $fg-info without padding or a background chip", () => {
+  test("`inline code` mixes muted and link foreground without padding or a background chip", () => {
     const app = render("run `bun fix` now")
-    const info = createRenderer({ cols: 12, rows: 2 })(<Text color="$fg-info">b</Text>)
+    const info = createRenderer({ cols: 12, rows: 2 })(
+      <Text color="mix($fg-muted, $fg-link, 20%)">b</Text>,
+    )
     expect(app.text).toContain("bun fix")
     expect(app.text).not.toContain("`")
     // "run " is cols 0-3; without presentation padding, "b" begins at col 4.
@@ -120,14 +133,44 @@ describe("MarkdownView — inline emphasis (Typography presets)", () => {
 })
 
 describe("MarkdownView — block elements", () => {
-  test("# heading renders bold and strips the hashes", () => {
-    const app = render("# Title\n\nBody text")
-    const cell = app.cell(0, 0)
+  test.each([
+    ["# Title", 0],
+    ["Before\n\n# Title", 3],
+    ["## Title", 0],
+    ["Before\n\n## Title", 3],
+    ["Before\n\n### Title", 2],
+    ["# Before\n\n## Title", 2],
+    ["## Before\n\n# Title", 2],
+    ["---\n\n## Title", 2],
+    ["- Before\n\n## Title", 3],
+    ["> Before\n\n## Title", 3],
+  ])("heading spacing for %j places the title on row %i", (source, expectedRow) => {
+    const app = render(source)
+    const titleRow = app.lines.findIndex((line) => line.includes("Title"))
+    expect(titleRow).toBe(expectedRow)
+    const beforeRow = app.lines.findIndex((line) => line.includes("Before") || line.includes("─"))
+    expect(app.lines.slice(beforeRow + 1, titleRow).every((line) => line.trim() === "")).toBe(true)
+  })
+
+  test("headings render one outdented # while titles stay aligned with prose", () => {
+    const app = createRenderer({ cols: 80, rows: 8 })(
+      <Box width={80} paddingX={2}>
+        <MarkdownView source={"### Title\n\nBody text"} />
+      </Box>,
+    )
+    const headingRow = app.lines.findIndex((line) => line.includes("Title"))
+    const bodyRow = app.lines.findIndex((line) => line.includes("Body text"))
+    const titleStart = app.lines[headingRow]!.indexOf("Title")
+    const cell = app.cell(titleStart, headingRow)
     expect(cell.char).toBe("T")
     expect(cell.bold).toBe(true)
     expect(app.text).toContain("Title")
     expect(app.text).toContain("Body text")
-    expect(app.text).not.toContain("#")
+    expect(titleStart).toBe(app.lines[bodyRow]!.indexOf("Body text"))
+    expect(app.cell(titleStart - 2, headingRow).char).toBe("#")
+    expect(app.cell(titleStart - 1, headingRow).char).toBe(" ")
+    expect(app.text.match(/#/gu)).toHaveLength(1)
+    expect(cell.underline).toBeFalsy()
   })
 
   test("bullet list renders one marked row per item", () => {
@@ -157,12 +200,32 @@ describe("MarkdownView — block elements", () => {
     }
   })
 
-  test("fenced code preserves line breaks and does not reflow", () => {
-    const app = render("```ts\nconst a = 1\nconst b = 2\n```")
+  test("fenced code preserves line breaks and forwards its language for highlighting", async () => {
+    const app = createRenderer({ cols: 80, rows: 24, autoRender: true })(
+      <Box width={80} height={24}>
+        <MarkdownView source={"```typescript\nconst a = 1\nconst b = 2\n```"} />
+      </Box>,
+    )
     expect(app.text).toContain("const a = 1")
     expect(app.text).toContain("const b = 2")
     expect(app.text).not.toContain("const a = 1 const b = 2") // stayed on two lines
     expect(app.text).not.toContain("```") // fence markers stripped
+    const sourceRow = app.lines.findIndex((line) => line.includes("const a = 1"))
+    const sourceColumn = app.lines[sourceRow]!.indexOf("const")
+    await app.hover(sourceColumn, sourceRow)
+    expect(app.text).toContain("typescript")
+    const plainForeground = createRenderer({ cols: 1, rows: 1 })(
+      <Text color="mix($fg, $fg-muted, 50%)">x</Text>,
+    ).cell(0, 0).fg
+    await vi.waitFor(
+      () => {
+        const row = app.lines.findIndex((line) => line.includes("const a = 1"))
+        const column = app.lines[row]!.indexOf("const")
+        expect(app.cell(column, row).fg).not.toBeNull()
+        expect(app.cell(column, row).fg).not.toEqual(plainForeground)
+      },
+      { timeout: 5_000 },
+    )
   })
 })
 

@@ -42,22 +42,23 @@ function cellWidth(element: React.ReactElement, cols = 60): number {
 
 describe("minimum-width protocol", () => {
   describe("the auto-min floor (CSS §4.5, item side)", () => {
-    test("a Box wrapping wrappable Text floors at the longest unbreakable token", () => {
-      // Container is 12 cells; the token is 34 and cannot break. The auto-min
-      // floor keeps the cell at the token width and lets it overflow, rather
-      // than squeezing to 12 and shredding the word.
-      const width = cellWidth(
-        <Box width={12} flexDirection="row">
-          <Box id="cell">
-            <Text wrap="wrap">{LONG_TOKEN}</Text>
-          </Box>
-        </Box>,
-      )
-      expect(width).toBe(LONG_TOKEN.length)
-      // And that floor is exactly what intrinsicWidths reports as min-content —
-      // the same number, from the shared measurement home.
-      expect(intrinsicWidths(LONG_TOKEN, "wrap").minContentWidth).toBe(LONG_TOKEN.length)
-    })
+    test.each([LONG_TOKEN, "2026-09-08"])(
+      "wrappable Text floors at its unbreakable token (%s)",
+      (token) => {
+        // A hyphenated date and an ordinary token have the same atomic floor.
+        const width = cellWidth(
+          <Box width={Math.min(12, token.length - 1)} flexDirection="row">
+            <Box id="cell">
+              <Text wrap="wrap">{token}</Text>
+            </Box>
+          </Box>,
+        )
+        expect(width).toBe(token.length)
+        // And that floor is exactly what intrinsicWidths reports as min-content —
+        // the same number, from the shared measurement home.
+        expect(intrinsicWidths(token, "wrap").minContentWidth).toBe(token.length)
+      },
+    )
 
     test("wrappable prose floors at its longest token, not its natural width", () => {
       const longestToken = Math.max(...PROSE.split(" ").map((w) => w.length))
