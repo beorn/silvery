@@ -26,13 +26,13 @@ import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { setTimeout as sleep } from "node:timers/promises"
 
-const ROOT = resolve(import.meta.dir, "..")
+const ROOT = resolve(import.meta.dirname ?? import.meta.dir, "..")
 const KEEP = process.argv.includes("--keep")
 const NO_BUILD = process.argv.includes("--no-build")
 const REGISTRY_PORT = Number(process.env.VERDACCIO_PORT ?? 4873)
 const REGISTRY = `http://127.0.0.1:${REGISTRY_PORT}`
 
-interface PackageEntry {
+export interface PackageEntry {
   dir: string
   name: string
   /** Expected to publish to public npm in CI (matches release.yml's skip logic).
@@ -44,7 +44,7 @@ interface PackageEntry {
 
 // Same publish order as release.yml. Internal packages are sandbox-published to
 // verdaccio so cross-deps resolve; only `expectPublic` ones are import-probed.
-const PACKAGES: PackageEntry[] = [
+export const PACKAGES: PackageEntry[] = [
   { dir: "packages/command", name: "@silvery/command", expectPublic: true },
   { dir: "packages/ag", name: "@silvery/ag", expectPublic: false },
   { dir: "packages/ag-react", name: "@silvery/ag-react", expectPublic: false },
@@ -60,6 +60,8 @@ const PACKAGES: PackageEntry[] = [
   { dir: "packages/create", name: "@silvery/create", expectPublic: false },
   { dir: "packages/test", name: "@silvery/test", expectPublic: false },
   { dir: "packages/commander", name: "@silvery/commander", expectPublic: true },
+  { dir: "packages/config", name: "@silvery/config", expectPublic: false },
+  { dir: "packages/syntax", name: "@silvery/syntax", expectPublic: false },
   { dir: ".", name: "silvery", expectPublic: true },
 ]
 
@@ -616,17 +618,19 @@ async function main() {
   runCleanup()
 }
 
-process.on("SIGINT", () => {
-  runCleanup()
-  process.exit(130)
-})
-process.on("SIGTERM", () => {
-  runCleanup()
-  process.exit(143)
-})
+if (import.meta.main) {
+  process.on("SIGINT", () => {
+    runCleanup()
+    process.exit(130)
+  })
+  process.on("SIGTERM", () => {
+    runCleanup()
+    process.exit(143)
+  })
 
-main().catch((err: unknown) => {
-  console.error(err instanceof Error ? (err.stack ?? err.message) : err)
-  runCleanup()
-  process.exit(1)
-})
+  main().catch((err: unknown) => {
+    console.error(err instanceof Error ? (err.stack ?? err.message) : err)
+    runCleanup()
+    process.exit(1)
+  })
+}
