@@ -555,15 +555,16 @@ describe("Block elements", () => {
     expect(app.lines[0]).toContain("▸ plain")
   })
 
-  test("CodeBlock respects a child that prevents the toggle click", async () => {
+  test("CodeBlock respects an onClick that prevents the expand toggle", async () => {
     const app = createRenderer({ cols: 40, rows: 8, autoRender: true })(
-      <CodeBlock
-        label="text"
-        content={<Text onClick={(event) => event.preventDefault()}>Keep open</Text>}
-      />,
+      <CodeBlock label="plain" defaultExpanded={false} onClick={(event) => event.preventDefault()}>
+        {"const x = 1"}
+      </CodeBlock>,
     )
-    await app.click(3, 1)
-    expect(app.text).toContain("Keep open")
+    expect(app.lines[0]).toContain("▸ plain")
+    await app.click(3, 0)
+    expect(app.lines[0]).toContain("▸ plain")
+    expect(app.text).not.toContain("const x = 1")
   })
 
   test("CodeBlock frames code with two-cell sides and one-row padding", () => {

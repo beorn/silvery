@@ -358,7 +358,7 @@ export function CodeBlock({
       flexDirection="column"
       position="relative"
       width="100%"
-      minWidth={props.minWidth ?? (effectiveLabel ? effectiveLabel.length + 6 : 0)}
+      minWidth={0}
       paddingX={2}
       {...props}
       paddingY={isExpanded ? 1 : 0}
@@ -396,7 +396,6 @@ export function CodeBlock({
                 right={2}
                 mouseCursor="pointer"
                 onClick={(event) => {
-                  if (event.defaultPrevented) return
                   if (isSelectionActive()) return
                   setExpanded(false)
                   event.preventDefault()
