@@ -9,6 +9,7 @@ import {
   SyntaxHighlighter,
   useScrollController,
 } from "@silvery/ag-react"
+import { flushPendingHighlights } from "@silvery/syntax"
 
 const REPRO_CODE = [
   "line one",
@@ -72,6 +73,8 @@ describe("SyntaxHighlighter blank lines (bead 25017)", () => {
       </Box>,
     )
 
+    await flushPendingHighlights()
+
     await vi.waitFor(
       () => {
         const lines = app.lines.map((l) => l.trimEnd())
@@ -80,6 +83,11 @@ describe("SyntaxHighlighter blank lines (bead 25017)", () => {
         const row6 = lines.findIndex((l) => l.includes("line six after two blanks"))
 
         expect(row1).toBeGreaterThanOrEqual(0)
+        // Witness that highlighting has resolved into styled tokens before row assertions:
+        // Plain frame uses unhighlighted fallback mix($fg, $fg-muted, 50%) = rgb(180, 186, 197).
+        // Resolved Shiki typescript token uses theme color = rgb(203, 207, 215).
+        expect(app.cell(0, row1).fg).not.toEqual({ r: 180, g: 186, b: 197 })
+
         expect(row3).toBe(row1 + 2)
         expect(row6).toBe(row3 + 3)
       },
@@ -129,6 +137,8 @@ describe("SyntaxHighlighter blank lines (bead 25017)", () => {
       </SearchProvider>,
     )
 
+    await flushPendingHighlights()
+
     await vi.waitFor(
       () => {
         const lines = app.lines.map((l) => l.trimEnd())
@@ -137,6 +147,11 @@ describe("SyntaxHighlighter blank lines (bead 25017)", () => {
         const row6 = lines.findIndex((l) => l.includes("line six after two blanks"))
 
         expect(row1).toBeGreaterThanOrEqual(0)
+        // Witness that highlighting has resolved into styled tokens before row assertions:
+        // Plain frame uses unhighlighted fallback mix($fg, $fg-muted, 50%) = rgb(180, 186, 197).
+        // Resolved Shiki typescript token uses theme color = rgb(203, 207, 215).
+        expect(app.cell(0, row1).fg).not.toEqual({ r: 180, g: 186, b: 197 })
+
         expect(row3).toBe(row1 + 2)
         expect(row6).toBe(row3 + 3)
       },
