@@ -497,7 +497,7 @@ export function createInputOwner(
         )
         return
       }
-      log?.warn?.(
+      log?.debug?.(
         `mouse units: SGR-Pixels (1016) negotiated but the first event fits the cell grid (${gridText}); ` +
           `reading coordinates as CELLS until an event exceeds the grid proves pixel units. ` +
           `A multiplexer that forwards cell units under 1016 (@si/select/24649) reads correctly this way; ` +
