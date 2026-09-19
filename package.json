@@ -118,6 +118,7 @@
     "@chenglou/pretext": "^0.0.8",
     "@silvery/color": "0.24.0",
     "@silvery/commander": "0.24.0",
+    "@silvery/syntax": "0.24.0",
     "@termless/core": ">=0.9.1 <1.0.0",
     "css-select": "^7.0.0",
     "css-what": "^8.0.0",
