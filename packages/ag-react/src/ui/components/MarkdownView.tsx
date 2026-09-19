@@ -467,7 +467,7 @@ function renderList(list: MdList, keyPrefix: string, depth = 0): JSX.Element {
 /** Fenced source uses the shared code surface and preserves authored lines. */
 function CodeFence({ lines, language }: { lines: string[]; language: string }): JSX.Element {
   return (
-    <Box minWidth={0} marginX={-2}>
+    <Box flexDirection="column" minWidth={0} marginX={-2}>
       <SyntaxHighlighter language={language} code={lines.join("\n")} />
     </Box>
   )
