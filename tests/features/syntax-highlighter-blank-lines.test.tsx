@@ -7,7 +7,6 @@ import {
   ScrollArea,
   SearchProvider,
   SyntaxHighlighter,
-  Text,
   useScrollController,
 } from "@silvery/ag-react"
 
@@ -88,7 +87,25 @@ describe("SyntaxHighlighter blank lines (bead 25017)", () => {
     )
   })
 
-  test("search path (SearchableSyntaxLines) preserves blank line row count and origins", async () => {
+  test("framed form (no bare prop) preserves blank line row count", () => {
+    const render = createRenderer({ cols: 80, rows: 14 })
+    const app = render(
+      <Box width={80} flexDirection="column">
+        <SyntaxHighlighter language="plain" code={REPRO_CODE} />
+      </Box>,
+    )
+
+    const lines = app.lines.map((l) => l.trimEnd())
+    const row1 = lines.findIndex((l) => l.includes("line one"))
+    const row3 = lines.findIndex((l) => l.includes("line three after one blank"))
+    const row6 = lines.findIndex((l) => l.includes("line six after two blanks"))
+
+    expect(row1).toBeGreaterThanOrEqual(0)
+    expect(row3).toBe(row1 + 2)
+    expect(row6).toBe(row3 + 3)
+  })
+
+  test("search path (SearchableSyntaxLines) preserves blank line row count", async () => {
     function SearchableSource() {
       const controller = useScrollController()
       return (
