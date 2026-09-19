@@ -110,6 +110,9 @@ function SyntaxLine({
   readonly backgroundColor?: string
   readonly forceBold: boolean
 }): ReactElement {
+  if (line.tokens.length === 0 || line.tokens.every((token) => token.text === "")) {
+    return <Box height={1} minWidth={0} backgroundColor={backgroundColor} />
+  }
   return (
     <Text color="mix($fg, $fg-muted, 50%)" wrap={lineWrap} backgroundColor={backgroundColor}>
       {line.tokens.map((token, tokenIndex) => (
