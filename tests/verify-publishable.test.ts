@@ -5,10 +5,11 @@
  * retire-when: The release gate no longer shells out to npm for tarball sizes.
  */
 import { spawnSync } from "node:child_process"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { expect, test } from "vitest"
+import { PACKAGES } from "../scripts/verify-publishable.ts"
 
 const ROOT = resolve(import.meta.dirname, "..")
 const LIMIT = 25 * 1024 * 1024
@@ -120,5 +121,26 @@ printf '[{"unpackedSize":1}]'
     }
   } finally {
     rmSync(bin, { recursive: true, force: true })
+  }
+})
+
+test("PACKAGES includes every package published in release.yml", () => {
+  const releaseYml = readFileSync(join(ROOT, ".github/workflows/release.yml"), "utf-8")
+  const publishedDirs = Array.from(releaseYml.matchAll(/^\s+publish\s+([^\s#]+)/gm))
+    .map((m) => m[1] ?? "")
+    .filter((dir) => {
+      if (!dir) return false
+      const pkgPath = join(ROOT, dir, "package.json")
+      const pkg = JSON.parse(readFileSync(pkgPath, "utf-8")) as { private?: boolean }
+      return !pkg.private
+    })
+  expect(publishedDirs.length).toBeGreaterThan(0)
+  const registeredDirs = new Set(PACKAGES.map((p) => p.dir))
+
+  for (const dir of publishedDirs) {
+    expect(
+      registeredDirs.has(dir),
+      `Package dir "${dir}" from release.yml is missing from PACKAGES in scripts/verify-publishable.ts`,
+    ).toBe(true)
   }
 })
