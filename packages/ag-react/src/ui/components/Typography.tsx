@@ -318,7 +318,7 @@ export interface CodeBlockProps extends Omit<BoxProps, "children" | "content"> {
 export function CodeBlock({
   children,
   content,
-  label = "text",
+  label = "plain",
   expanded,
   defaultExpanded = true,
   onExpandedChange,
@@ -338,6 +338,21 @@ export function CodeBlock({
     backgroundColor ??
     (!isExpanded && interaction.isHovered ? "$bg-surface-hover" : "$bg-surface-subtle")
   const labelColor = "mix($fg-faint, $bg, 50%)"
+  const effectiveLabel = label || "plain"
+
+  const isSelectionActive = () => {
+    // The runtime consumes drag releases. Also leave an existing text
+    // selection intact rather than interpreting it as a disclosure click.
+    const selection = registry?.get<{ readonly state: TerminalSelectionState }>(
+      Symbol.for("silvery.selection"),
+    )?.state
+    const range = selection?.range
+    return Boolean(
+      selection?.selecting ||
+      (range && (range.anchor.col !== range.head.col || range.anchor.row !== range.head.row)),
+    )
+  }
+
   return (
     <Box
       flexDirection="column"
@@ -349,7 +364,7 @@ export function CodeBlock({
       paddingY={isExpanded ? 1 : 0}
       color={color}
       backgroundColor={background}
-      mouseCursor="pointer"
+      mouseCursor={isExpanded ? props.mouseCursor : (props.mouseCursor ?? "pointer")}
       onMouseEnter={(event) => {
         interaction.onMouseEnter(event)
         onMouseEnter?.(event)
@@ -358,32 +373,36 @@ export function CodeBlock({
         interaction.onMouseLeave(event)
         onMouseLeave?.(event)
       }}
-      onClick={(event) => {
-        onClick?.(event)
-        if (event.defaultPrevented) return
-        // The runtime consumes drag releases. Also leave an existing text
-        // selection intact rather than interpreting it as a disclosure click.
-        const selection = registry?.get<{ readonly state: TerminalSelectionState }>(
-          Symbol.for("silvery.selection"),
-        )?.state
-        const range = selection?.range
-        if (
-          selection?.selecting ||
-          (range && (range.anchor.col !== range.head.col || range.anchor.row !== range.head.row))
-        ) {
-          return
-        }
-        setExpanded(!isExpanded)
-        event.preventDefault()
-        event.stopPropagation()
-      }}
+      onClick={
+        isExpanded
+          ? onClick
+          : (event) => {
+              onClick?.(event)
+              if (event.defaultPrevented) return
+              if (isSelectionActive()) return
+              setExpanded(true)
+              event.preventDefault()
+              event.stopPropagation()
+            }
+      }
     >
       <StylePriorityProvider background={background}>
         {isExpanded ? (
           <>
             {interaction.isHovered ? (
-              <Box position="absolute" top={0} right={2}>
-                <Text color={labelColor}>{label}</Text>
+              <Box
+                position="absolute"
+                top={0}
+                right={2}
+                mouseCursor="pointer"
+                onClick={(event) => {
+                  if (isSelectionActive()) return
+                  setExpanded(false)
+                  event.preventDefault()
+                  event.stopPropagation()
+                }}
+              >
+                <Text color={labelColor}>{`${effectiveLabel} ▾`}</Text>
               </Box>
             ) : null}
             {content ?? (
@@ -394,7 +413,7 @@ export function CodeBlock({
           </>
         ) : (
           <HangingMarkerRow marker={<Text color="$fg-faint">▸</Text>}>
-            <Text color="$fg-muted">{label}</Text>
+            <Text color="$fg-muted">{effectiveLabel}</Text>
           </HangingMarkerRow>
         )}
       </StylePriorityProvider>
