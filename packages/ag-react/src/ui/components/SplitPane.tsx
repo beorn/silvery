@@ -113,7 +113,7 @@ function finiteCells(value: number, label: string): number {
 }
 
 function dividerCells(value: number | undefined): number {
-  return Math.max(1, finiteCells(value ?? 1, "dividerSize"))
+  return finiteCells(value ?? 1, "dividerSize")
 }
 
 function finiteRatio(value: number): number {
@@ -276,7 +276,7 @@ function MeasuredSplitPane({
       >
         {primary}
       </Box>
-      {!secondaryCollapsed && (
+      {!secondaryCollapsed && dividerSize > 0 && (
         <PaneDivider
           key={direction}
           orientation={row ? "vertical" : "horizontal"}

@@ -1235,6 +1235,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       // microtasks are warned and dropped under IS_REACT_ACT_ENVIRONMENT.
       // (IS_REACT_ACT_ENVIRONMENT is set globally by `@silvery/test`'s
       // top-level await, so no withActEnvironment wrapper is required.)
+      const previouslyCommitted = hadReactCommit
       hadReactCommit = false
       instance.rendering = true
       try {
@@ -1244,7 +1245,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       } finally {
         instance.rendering = false
       }
-      const reactCommittedThisPass = hadReactCommit
+      const reactCommittedThisPass = previouslyCommitted || hadReactCommit
 
       // If React committed, re-render to materialize the new tree into
       // the buffer. Then run the commit-boundary settle for any reactive

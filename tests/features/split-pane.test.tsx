@@ -238,4 +238,52 @@ describe("SplitPane", () => {
       }
     }
   })
+
+  test("allows dividerSize of 0 and renders no divider sash in row and column directions", async () => {
+    using termRow = createTermless({ cols: 40, rows: 8 })
+    const handleRow = await run(
+      <Box width={40} height={8}>
+        <SplitPane
+          direction="row"
+          ratio={0.5}
+          dividerSize={0}
+          primary={<Text>{PRIMARY}</Text>}
+          secondary={<Text>{SECONDARY}</Text>}
+        />
+      </Box>,
+      termRow,
+    )
+    try {
+      await waitFor(() => termRow.screen.getText().includes(SECONDARY))
+      expect(termRow.screen).toContainText(PRIMARY)
+      expect(termRow.screen).toContainText(SECONDARY)
+      expect(termRow.screen.getText()).not.toContain("│")
+      expect(termRow.screen.getText()).not.toContain("─")
+    } finally {
+      await handleRow.unmount()
+    }
+
+    using termCol = createTermless({ cols: 40, rows: 8 })
+    const handleCol = await run(
+      <Box width={40} height={8}>
+        <SplitPane
+          direction="column"
+          ratio={0.5}
+          dividerSize={0}
+          primary={<Text>{PRIMARY}</Text>}
+          secondary={<Text>{SECONDARY}</Text>}
+        />
+      </Box>,
+      termCol,
+    )
+    try {
+      await waitFor(() => termCol.screen.getText().includes(SECONDARY))
+      expect(termCol.screen).toContainText(PRIMARY)
+      expect(termCol.screen).toContainText(SECONDARY)
+      expect(termCol.screen.getText()).not.toContain("│")
+      expect(termCol.screen.getText()).not.toContain("─")
+    } finally {
+      await handleCol.unmount()
+    }
+  })
 })

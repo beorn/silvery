@@ -119,6 +119,32 @@ describe("contract: waitForLayoutStable drains additional commits", () => {
     app.unmount()
   })
 
+  test("contract: waitForLayoutStable detects async React commit occurring prior to layout pass", async () => {
+    // When an asynchronous React commit occurs (e.g. state update triggered outside
+    // synchronous render or before waitForLayoutStable begins its layout evaluation),
+    // waitForLayoutStable must carry forward previouslyCommitted so the renderer
+    // materializes the updated React tree into the buffer rather than declaring stability early.
+    let updateState!: (val: string) => void
+    function AsyncUpdater(): React.ReactElement {
+      const [msg, setMsg] = useState("initial")
+      updateState = setMsg
+      return <Text>{msg}</Text>
+    }
+
+    const render = createRenderer({ cols: 80, rows: 24 })
+    const app = render(<AsyncUpdater />)
+    expect(app.text).toContain("initial")
+
+    // Trigger state update outside render
+    updateState("updated-content")
+
+    // waitForLayoutStable must recognize the commit and materialize into the buffer
+    await app.waitForLayoutStable()
+    expect(app.text).toContain("updated-content")
+
+    app.unmount()
+  })
+
   test("contract: waitForLayoutStable on a stable tree is a fast no-op", async () => {
     // A tree that has no pending work resolves immediately — the loop
     // exits on the first stability check. This is the common case for
