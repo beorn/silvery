@@ -164,8 +164,8 @@ export interface VirtualizerResult {
   hiddenAfter: number
   /** Current scroll offset (item index of viewport top) */
   scrollOffset: number
-  /** Imperatively scroll to an item index */
-  scrollToItem: (index: number) => void
+  /** Imperatively scroll to an item index with optional alignment ("start" | "center" | "end") */
+  scrollToItem: (index: number, align?: "start" | "center" | "end") => void
   /** Get the key for an item at index */
   getKey: (index: number) => string | number
   /** Report a measured height for an item. Call after layout with actual
@@ -656,6 +656,23 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     }
     return o
   }
+  // The offset `o` (0 ≤ o ≤ target) such that target is vertically centered
+  // in the viewport. Walk backward from target accumulating item sizes until
+  // approximately half the remaining viewport height is allocated above target.
+  const centerOffsetFor = (target: number): number => {
+    const targetSize = sizeOf(target)
+    if (targetSize >= viewportHeight) return target
+    const halfRemaining = Math.max(0, Math.floor((viewportHeight - targetSize) / 2))
+    let usedBefore = 0
+    let o = target
+    while (o > 0) {
+      const next = usedBefore + sizeOf(o - 1) + gap
+      if (next > halfRemaining) break
+      usedBefore = next
+      o -= 1
+    }
+    return o
+  }
 
   // Selected index as ref — doesn't trigger re-renders when cursor moves
   // within the viewport.
@@ -733,13 +750,21 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // handles the actual scroll (edge-based "keep in view with padding" lives
   // in Box's overflow="scroll" path, not here).
   const scrollToItem = useCallback(
-    (index: number) => {
+    (index: number, align: "start" | "center" | "end" = "start") => {
       const clampedIndex = Math.max(0, Math.min(index, count - 1))
       selectedIndexRef.current = clampedIndex
-      scrollOffsetRef.current = clampedIndex
-      setScrollOffset(clampedIndex)
+      let targetOffset: number
+      if (align === "center") {
+        targetOffset = centerOffsetFor(clampedIndex)
+      } else if (align === "end") {
+        targetOffset = firstOffsetRevealing(clampedIndex)
+      } else {
+        targetOffset = clampedIndex
+      }
+      scrollOffsetRef.current = targetOffset
+      setScrollOffset(targetOffset)
     },
-    [count],
+    [count, centerOffsetFor, firstOffsetRevealing],
   )
 
   // Key resolver

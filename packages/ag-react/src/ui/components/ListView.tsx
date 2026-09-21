@@ -661,8 +661,8 @@ export interface ListViewProps<T> {
 }
 
 export interface ListViewHandle {
-  /** Imperatively scroll to a specific item index */
-  scrollToItem(index: number): void
+  /** Imperatively scroll to a specific item index with optional alignment ("start" | "center" | "end") */
+  scrollToItem(index: number, align?: "start" | "center" | "end"): void
   /**
    * Imperatively scroll the viewport by `rows` rows. Positive scrolls down
    * (further into the list), negative scrolls up. Clamped to
@@ -1580,8 +1580,10 @@ function ListViewInner<T>(
   // parent render. The refs are only replaced when width/height changes.
   const outerViewportSize = prevOuterSizeRef.current
   const viewportSize = prevInnerSizeRef.current
+  const fallbackIndependentHeight =
+    term?.rows && term.rows > 7 ? Math.max(1, term.rows - 7) : 0
   const outerViewportHeight = isHeightIndependent
-    ? Math.max(1, outerViewportSize?.h ?? viewportSize?.h ?? 0)
+    ? Math.max(1, outerViewportSize?.h ?? viewportSize?.h ?? fallbackIndependentHeight)
     : Math.max(1, height ?? 1)
   const viewportInsetRows = Math.max(
     0,
@@ -2548,8 +2550,26 @@ function ListViewInner<T>(
   useImperativeHandle(
     ref,
     () => ({
-      scrollToItem(index: number) {
-        scrollToItem(Math.max(0, index - unmountedCount))
+      scrollToItem(index: number, align: "start" | "center" | "end" = "start") {
+        const itemIdx = Math.max(0, Math.min(index - unmountedCount, activeItems.length - 1))
+        scrollToItem(itemIdx, align)
+        const itemTopRow = heightModel.rowOfIndex(itemIdx)
+        const itemHeight = heightModel.prefixSum(itemIdx + 1) - heightModel.prefixSum(itemIdx)
+        const maxRow = maxScrollRowRef.current
+        let targetRow = itemTopRow
+        if (align === "center") {
+          const halfRemaining = Math.max(0, Math.floor((contentViewportHeight - itemHeight) / 2))
+          targetRow = Math.max(0, itemTopRow - halfRemaining)
+        } else if (align === "end") {
+          targetRow = Math.max(0, itemTopRow + itemHeight - contentViewportHeight)
+        }
+        targetRow = Math.max(0, Math.min(maxRow, targetRow))
+        scrollAnchoring.suppressOnce()
+        isWheelDrivenRef.current = true
+        if (scrollBehavior === "smooth") physics.animateToFloat(targetRow)
+        else physics.setScrollFloat(targetRow)
+        setScrollRow(Math.round(targetRow))
+        followEndPinRef.current = { kind: "none" }
       },
       scrollBy(rows: number) {
         const maxRow = maxScrollRowRef.current
@@ -2632,7 +2652,18 @@ function ListViewInner<T>(
         return composedViewportRef.current
       },
     }),
-    [flashEdgeBump, physics, scrollBehavior, scrollToItem, unmountedCount, resolvedFollow],
+    [
+      activeItems.length,
+      contentViewportHeight,
+      flashEdgeBump,
+      heightModel,
+      physics,
+      resolvedFollow,
+      scrollAnchoring,
+      scrollBehavior,
+      scrollToItem,
+      unmountedCount,
+    ],
   )
 
   // ── Mouse wheel handler ─────────────────────────────────────────

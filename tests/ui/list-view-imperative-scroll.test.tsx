@@ -253,4 +253,23 @@ describe("ListView imperative scroll API", () => {
     expect(stripAnsi(app.text)).not.toContain("▄▄▄▄▄▄▄▄▄▄")
     expect(stripAnsi(app.text)).not.toContain("▀▀▀▀▀▀▀▀▀▀")
   })
+
+  test("scrollToItem with center alignment vertically centers target item in viewport", () => {
+    const items = makeItems(50)
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 40, rows: 10 })
+    const app = r(renderList(items, listRef))
+    expect(stripAnsi(app.text)).toContain("Item 0")
+
+    act(() => {
+      listRef.current!.scrollToItem(25, "center")
+    })
+    app.rerender(renderList(items, listRef))
+    const scrolled = stripAnsi(app.text)
+    // In an 8-row viewport, item 25 centered has ~3 items before (22..24) and 4 items after (26..29)
+    expect(scrolled).toContain("Item 25")
+    expect(scrolled).toContain("Item 22")
+    expect(scrolled).not.toContain("Item 21\n")
+    expect(scrolled).not.toContain("Item 30\n")
+  })
 })
