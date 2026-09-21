@@ -521,4 +521,60 @@ describe("ListView imperative scroll API", () => {
     expect(scrolled).not.toContain("Item 7")
     expect(scrolled).not.toContain("Item 13")
   })
+
+  test("D2 pin: odd viewport with 2-row item puts spare row below (3 above and 4 below)", () => {
+    const items = makeItems(30)
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 40, rows: 15 })
+    const app = r(
+      <ListView<Item>
+        ref={listRef}
+        items={items}
+        height={9}
+        estimateHeight={2}
+        renderItem={(item) => (
+          <Box height={2} flexShrink={0} flexDirection="column">
+            <Text>{item.title}</Text>
+            <Text>{item.title}-sub</Text>
+          </Box>
+        )}
+        getKey={(item) => item.id}
+      />,
+    )
+    act(() => {
+      listRef.current!.scrollToItem(10, "center")
+    })
+    app.rerender(
+      <ListView<Item>
+        ref={listRef}
+        items={items}
+        height={9}
+        estimateHeight={2}
+        renderItem={(item) => (
+          <Box height={2} flexShrink={0} flexDirection="column">
+            <Text>{item.title}</Text>
+            <Text>{item.title}-sub</Text>
+          </Box>
+        )}
+        getKey={(item) => item.id}
+      />,
+    )
+    const scrolled = stripAnsi(app.text)
+    const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
+    // In a 9-row viewport with 2-row items, rowsAbove = floor(9/2) - floor(2/2) = 4 - 1 = 3, rowsBelow = 4 (spare row below!)
+    // Target Item 10 starts at row 20. Top row of viewport is 20 - 3 = 17.
+    // Row 17: Item 8's 2nd line (1 row)
+    // Rows 18-19: Item 9 (2 rows) -> 3 rows above Item 10
+    // Rows 20-21: Item 10 (2 rows, centered at index 3)
+    // Rows 22-23: Item 11 (2 rows)
+    // Rows 24-25: Item 12 (2 rows) -> 4 rows below Item 10
+    expect(itemLines.length).toBe(9)
+    expect(itemLines[0]).toContain("Item 8-sub")
+    expect(itemLines[1]).toContain("Item 9")
+    expect(itemLines[3]).toContain("Item 10")
+    expect(itemLines[5]).toContain("Item 11")
+    expect(itemLines[7]).toContain("Item 12")
+    expect(scrolled).not.toContain("Item 7")
+    expect(scrolled).not.toContain("Item 13")
+  })
 })

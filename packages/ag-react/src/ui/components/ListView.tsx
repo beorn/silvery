@@ -1978,9 +1978,10 @@ function ListViewInner<T>(
    *   row anchor (offset: Math.floor(itemHeight / 2)). The target row is rounded to a whole
    *   row once (Math.round) before handing the identical integer to both kinetic physics and
    *   setScrollRow, avoiding fractional row disagreement between the two records.
-   *   When remaining space (h - itemHeight) is odd, the spare row is placed above the item
-   *   for odd-height items in even viewports (matching resolvePinOffset's top-half bias h / 2
-   *   and preserving existing even-viewport pins).
+   *   Rows above = Math.floor(h / 2) - Math.floor(itemHeight / 2).
+   *   When remaining space (h - itemHeight) is odd:
+   *   - An odd-height item in an even viewport places the spare row above (e.g. h=8, itemHeight=1: 4 above, 3 below).
+   *   - An even-height item in an odd viewport places the spare row below (e.g. h=9, itemHeight=2: 3 above, 4 below).
    */
   const applyScrollToItem = useCallback(
     (itemIdx: number, align: "start" | "center" | "end") => {
@@ -2635,9 +2636,9 @@ function ListViewInner<T>(
         applyScrollToItemRef.current(itemIdx, align)
       },
       scrollBy(rows: number) {
-        pendingScrollToItemRef.current = null
         const maxRow = maxScrollRowRef.current
         if (maxRow <= 0) return
+        pendingScrollToItemRef.current = null
         // Seed from the kinetic-scroll's known position when wheel-driven;
         // otherwise compute a cursor-aware seed mirroring the wheel-seed
         // logic so keyboard scroll picks up exactly where the user is
