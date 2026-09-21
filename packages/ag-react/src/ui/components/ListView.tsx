@@ -937,7 +937,10 @@ function ListViewInner<T>(
 
   // Pending imperative scrollToItem request (index + align) issued before
   // first layout commit when viewport height is not yet known (C1).
-  const pendingScrollToItemRef = useRef<{ index: number; align: "start" | "center" | "end" } | null>(null)
+  const pendingScrollToItemRef = useRef<{
+    index: number
+    align: "start" | "center" | "end"
+  } | null>(null)
 
   // ── Term context for cache capture width ─────────────────────────
   const term = useContext(TermContext)
@@ -1965,6 +1968,20 @@ function ListViewInner<T>(
   const scrollAnchoringRef = useRef(scrollAnchoring)
   scrollAnchoringRef.current = scrollAnchoring
 
+  /**
+   * Applies imperative scrollToItem alignment in row space.
+   *
+   * Alignment rules:
+   * - "start": places item's top edge at top of viewport (pin: top).
+   * - "end": places item's bottom edge at bottom of viewport (pin: offset = h - itemHeight).
+   * - "center": centers item in viewport using Pin { kind: "center" } and the item's middle
+   *   row anchor (offset: Math.floor(itemHeight / 2)). The target row is rounded to a whole
+   *   row once (Math.round) before handing the identical integer to both kinetic physics and
+   *   setScrollRow, avoiding fractional row disagreement between the two records.
+   *   When remaining space (h - itemHeight) is odd, the spare row is placed above the item
+   *   for odd-height items in even viewports (matching resolvePinOffset's top-half bias h / 2
+   *   and preserving existing even-viewport pins).
+   */
   const applyScrollToItem = useCallback(
     (itemIdx: number, align: "start" | "center" | "end") => {
       const key = keyForActiveIndex(itemIdx)
@@ -1978,20 +1995,21 @@ function ListViewInner<T>(
           : align === "end"
             ? { kind: "offset", value: Math.max(0, h - itemHeight), unit: "axis" }
             : { kind: "top" }
-      const offset = align === "center" ? Math.ceil(itemHeight / 2) : 0
-      const targetRow = computeViewportTopFromAnchor({
+      const offset = align === "center" ? Math.floor(itemHeight / 2) : 0
+      const rawTargetRow = computeViewportTopFromAnchor({
         point: { key, offset },
         pin,
         geometry,
         viewport: { height: h },
       })
-      if (targetRow === null) return
+      if (rawTargetRow === null) return
+      const targetRow = Math.round(rawTargetRow)
       scrollAnchoringRef.current?.suppressOnce()
       // Imperative scroll takes explicit viewport ownership, matching wheel/keyboard scroll intent
       isWheelDrivenRef.current = true
       if (scrollBehavior === "smooth") physics.animateToFloat(targetRow)
       else physics.setScrollFloat(targetRow)
-      setScrollRow(Math.round(targetRow))
+      setScrollRow(targetRow)
       followEndPinRef.current = { kind: "none" }
     },
     [keyForActiveIndex, physics, scrollBehavior],
@@ -2604,15 +2622,20 @@ function ListViewInner<T>(
     ref,
     () => ({
       scrollToItem(index: number, align: "start" | "center" | "end" = "start") {
+        // activeItems.length stays fresh in this closure because the handle depends on
+        // scrollToItem from useVirtualizer, which changes identity whenever count (activeItems.length) changes.
         const itemIdx = Math.max(0, Math.min(index - unmountedCount, activeItems.length - 1))
         scrollToItem(itemIdx, align)
-        if (!isViewportReadyRef.current || contentViewportHeightRef.current <= 1) {
-          pendingScrollToItemRef.current = { index: itemIdx, align }
+        if (!isViewportReadyRef.current) {
+          // Store caller's index in ITEMS space (D1) so pendingScrollToItemTarget feeds scrollTo
+          // without double-subtracting unmountedCount, and remains valid if unmounted prefix changes.
+          pendingScrollToItemRef.current = { index, align }
           return
         }
         applyScrollToItemRef.current(itemIdx, align)
       },
       scrollBy(rows: number) {
+        pendingScrollToItemRef.current = null
         const maxRow = maxScrollRowRef.current
         if (maxRow <= 0) return
         // Seed from the kinetic-scroll's known position when wheel-driven;
@@ -2646,7 +2669,7 @@ function ListViewInner<T>(
           else if (rows < 0 && next <= 0) flashEdgeBump("top")
           return
         }
-        scrollAnchoring.suppressOnce()
+        scrollAnchoringRef.current?.suppressOnce()
         if (
           !isWheelDrivenRef.current ||
           wheelMeasurementSnapshotAvgHeightRef.current === undefined
@@ -2663,7 +2686,8 @@ function ListViewInner<T>(
         followEndPinRef.current = { kind: "none" }
       },
       scrollToTop() {
-        scrollAnchoring.suppressOnce()
+        pendingScrollToItemRef.current = null
+        scrollAnchoringRef.current?.suppressOnce()
         isWheelDrivenRef.current = true
         wheelMeasurementSnapshotAvgHeightRef.current = liveAvgMeasuredHeightRef.current
         if (scrollBehavior === "smooth") physics.animateToFloat(0)
@@ -2672,8 +2696,9 @@ function ListViewInner<T>(
         followEndPinRef.current = { kind: "none" }
       },
       scrollToBottom() {
+        pendingScrollToItemRef.current = null
         const maxRow = maxScrollRowRef.current
-        scrollAnchoring.suppressOnce()
+        scrollAnchoringRef.current?.suppressOnce()
         isWheelDrivenRef.current = true
         wheelMeasurementSnapshotAvgHeightRef.current = undefined
         if (scrollBehavior === "smooth") physics.animateToFloat(maxRow)
@@ -3007,7 +3032,7 @@ function ListViewInner<T>(
     // to a phantom small number. Without this gate, the snap fires
     // with a tiny `maxRow` and the viewport freezes near the top with
     // the follow-end pin already settled.
-    const viewportReady = !isHeightIndependent || (viewportSize?.h ?? 0) > 0
+    const viewportReady = isViewportReady
     // User-wheel-vs-auto-follow race guard: if the user is actively
     // wheel-driving (scrollRow !== null) and has scrolled BELOW the
     // current end (scrollRow < prevMaxRow - threshold), respect their
@@ -3095,7 +3120,11 @@ function ListViewInner<T>(
     if (pendingScrollToItemRef.current !== null && viewportReady) {
       const pending = pendingScrollToItemRef.current
       pendingScrollToItemRef.current = null
-      applyScrollToItemRef.current(pending.index, pending.align)
+      const itemIdx = Math.max(
+        0,
+        Math.min(pending.index - unmountedCountRef.current, activeItems.length - 1),
+      )
+      applyScrollToItemRef.current(itemIdx, pending.align)
     } else if (shouldSnap) {
       const targetRow = Math.round(
         tailReserveSnapRow ??

@@ -299,33 +299,24 @@ describe("ListView imperative scroll API", () => {
 
   test("C1 pin: a height-independent list in a box shorter than terminal centers target item in the box after layout", () => {
     const items = makeItems(50)
-    const listRef = React.createRef<ListViewHandle>()
+    function Harness({ listItems }: { listItems: Item[] }) {
+      const listRef = React.useRef<ListViewHandle | null>(null)
+      React.useEffect(() => {
+        listRef.current?.scrollToItem(25, "center")
+      }, [listItems])
+      return (
+        <Box height={8} flexDirection="column">
+          <ListView<Item>
+            ref={listRef}
+            items={listItems}
+            renderItem={(item) => <Text>{item.title}</Text>}
+            getKey={(item) => item.id}
+          />
+        </Box>
+      )
+    }
     const r = createRenderer({ cols: 40, rows: 25 })
-    // Mount height-independent list inside an 8-row box (without height prop on ListView)
-    const app = r(
-      <Box height={8} flexDirection="column">
-        <ListView<Item>
-          ref={listRef}
-          items={items}
-          renderItem={(item) => <Text>{item.title}</Text>}
-          getKey={(item) => item.id}
-        />
-      </Box>,
-    )
-
-    act(() => {
-      listRef.current!.scrollToItem(25, "center")
-    })
-    app.rerender(
-      <Box height={8} flexDirection="column">
-        <ListView<Item>
-          ref={listRef}
-          items={items}
-          renderItem={(item) => <Text>{item.title}</Text>}
-          getKey={(item) => item.id}
-        />
-      </Box>,
-    )
+    const app = r(<Harness listItems={items} />)
     const scrolled = stripAnsi(app.text)
     const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
     // Centered in the 8-row box, NOT the 25-row terminal
@@ -353,5 +344,181 @@ describe("ListView imperative scroll API", () => {
     for (let i = 1; i < callbacks.length; i++) {
       expect(callbacks[i]).toBe(callbacks[0])
     }
+  })
+
+  test("D1 pin: a list with an unmounted prefix centers target item i, not i - unmountedCount, when scrollToItem is called before layout", () => {
+    const items = makeItems(50)
+    function Harness({ listItems }: { listItems: Item[] }) {
+      const listRef = React.useRef<ListViewHandle | null>(null)
+      React.useEffect(() => {
+        listRef.current?.scrollToItem(25, "center")
+      }, [listItems])
+      return (
+        <Box height={8} flexDirection="column">
+          <ListView<Item>
+            ref={listRef}
+            items={listItems}
+            unmounted={(_item, index) => index < 10}
+            renderItem={(item) => <Text>{item.title}</Text>}
+            getKey={(item) => item.id}
+          />
+        </Box>
+      )
+    }
+    const r = createRenderer({ cols: 40, rows: 25 })
+    const app = r(<Harness listItems={items} />)
+    const scrolled = stripAnsi(app.text)
+    const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
+    // Target item 25 centered in 8-row box (rowsAbove = 4, rowsBelow = 3)
+    // Visible items are 21..28 with item 25 at index 4 (NOT 15 which would occur if unmounted prefix was double-subtracted)
+    expect(itemLines.length).toBe(8)
+    expect(itemLines[0]).toContain("Item 21")
+    expect(itemLines[4]).toContain("Item 25")
+    expect(itemLines[7]).toContain("Item 28")
+    expect(scrolled).not.toContain("Item 15")
+  })
+
+  test("D2 pin: odd viewport with 1-row item centers target item with equal rows above and below", () => {
+    const items = makeItems(50)
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 40, rows: 15 })
+    const app = r(
+      <ListView<Item>
+        ref={listRef}
+        items={items}
+        height={9}
+        renderItem={(item) => <Text>{item.title}</Text>}
+        getKey={(item) => item.id}
+      />,
+    )
+    act(() => {
+      listRef.current!.scrollToItem(25, "center")
+    })
+    app.rerender(
+      <ListView<Item>
+        ref={listRef}
+        items={items}
+        height={9}
+        renderItem={(item) => <Text>{item.title}</Text>}
+        getKey={(item) => item.id}
+      />,
+    )
+    const scrolled = stripAnsi(app.text)
+    const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
+    // In a 9-row viewport with 1-row item, rowsAbove = (9-1)/2 = 4 and rowsBelow = 4 (equal!)
+    // Target item 25 is at index 4, with 4 items above (21..24) and 4 items below (26..29)
+    expect(itemLines.length).toBe(9)
+    expect(itemLines[0]).toContain("Item 21")
+    expect(itemLines[4]).toContain("Item 25")
+    expect(itemLines[8]).toContain("Item 29")
+    expect(scrolled).not.toContain("Item 20")
+    expect(scrolled).not.toContain("Item 30")
+  })
+
+  test("D2 pin: odd viewport with 3-row item centers target item with equal rows above and below", () => {
+    const items = makeItems(30)
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 40, rows: 15 })
+    const app = r(
+      <ListView<Item>
+        ref={listRef}
+        items={items}
+        height={9}
+        estimateHeight={3}
+        renderItem={(item) => (
+          <Box height={3} flexShrink={0} flexDirection="column">
+            <Text>{item.title}</Text>
+            <Text>{item.title}-b</Text>
+            <Text>{item.title}-c</Text>
+          </Box>
+        )}
+        getKey={(item) => item.id}
+      />,
+    )
+    act(() => {
+      listRef.current!.scrollToItem(10, "center")
+    })
+    app.rerender(
+      <ListView<Item>
+        ref={listRef}
+        items={items}
+        height={9}
+        estimateHeight={3}
+        renderItem={(item) => (
+          <Box height={3} flexShrink={0} flexDirection="column">
+            <Text>{item.title}</Text>
+            <Text>{item.title}-b</Text>
+            <Text>{item.title}-c</Text>
+          </Box>
+        )}
+        getKey={(item) => item.id}
+      />,
+    )
+    const scrolled = stripAnsi(app.text)
+    const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
+    // In a 9-row viewport with 3-row items, rowsAbove = (9-3)/2 = 3 and rowsBelow = 3 (equal!)
+    // Target Item 10 is centered: 3 rows (Item 9) above and 3 rows (Item 11) below.
+    expect(itemLines.length).toBe(9)
+    expect(itemLines[0]).toContain("Item 9")
+    expect(itemLines[3]).toContain("Item 10")
+    expect(itemLines[6]).toContain("Item 11")
+    expect(scrolled).not.toContain("Item 8")
+    expect(scrolled).not.toContain("Item 12")
+  })
+
+  test("D2 pin: even viewport with 2-row item centers target item with equal rows above and below", () => {
+    const items = makeItems(30)
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 40, rows: 15 })
+    const app = r(
+      <ListView<Item>
+        ref={listRef}
+        items={items}
+        height={8}
+        estimateHeight={2}
+        renderItem={(item) => (
+          <Box height={2} flexShrink={0} flexDirection="column">
+            <Text>{item.title}</Text>
+            <Text>{item.title}-sub</Text>
+          </Box>
+        )}
+        getKey={(item) => item.id}
+      />,
+    )
+    act(() => {
+      listRef.current!.scrollToItem(10, "center")
+    })
+    app.rerender(
+      <ListView<Item>
+        ref={listRef}
+        items={items}
+        height={8}
+        estimateHeight={2}
+        renderItem={(item) => (
+          <Box height={2} flexShrink={0} flexDirection="column">
+            <Text>{item.title}</Text>
+            <Text>{item.title}-sub</Text>
+          </Box>
+        )}
+        getKey={(item) => item.id}
+      />,
+    )
+    const scrolled = stripAnsi(app.text)
+    const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
+    // In an 8-row viewport with 2-row items, rowsAbove = (8-2)/2 = 3 and rowsBelow = 3 (equal!)
+    // Target Item 10 starts at row 20. Top row of viewport is 20 - 3 = 17.
+    // Row 17: Item 8's 2nd line (1 row)
+    // Rows 18-19: Item 9 (2 rows) -> 3 rows above Item 10
+    // Rows 20-21: Item 10 (2 rows, centered)
+    // Rows 22-23: Item 11 (2 rows)
+    // Row 24: Item 12's 1st line (1 row) -> 3 rows below Item 10
+    expect(itemLines.length).toBe(8)
+    expect(itemLines[0]).toContain("Item 8-sub")
+    expect(itemLines[1]).toContain("Item 9")
+    expect(itemLines[3]).toContain("Item 10")
+    expect(itemLines[5]).toContain("Item 11")
+    expect(itemLines[7]).toContain("Item 12")
+    expect(scrolled).not.toContain("Item 7")
+    expect(scrolled).not.toContain("Item 13")
   })
 })
