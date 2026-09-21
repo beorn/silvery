@@ -14,7 +14,8 @@
 import React, { act } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
-import { Text } from "@silvery/ag-react"
+import { Box, Text } from "@silvery/ag-react"
+import { useVirtualizer } from "../../packages/ag-react/src/hooks/useVirtualizer"
 import {
   ListView,
   type ListViewHandle,
@@ -266,10 +267,91 @@ describe("ListView imperative scroll API", () => {
     })
     app.rerender(renderList(items, listRef))
     const scrolled = stripAnsi(app.text)
-    // In an 8-row viewport, item 25 centered has ~3 items before (22..24) and 4 items after (26..29)
-    expect(scrolled).toContain("Item 25")
-    expect(scrolled).toContain("Item 22")
-    expect(scrolled).not.toContain("Item 21\n")
-    expect(scrolled).not.toContain("Item 30\n")
+    const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
+    // In an 8-row viewport, item 25 centered has items 21..28 visible with item 25 at index 4
+    expect(itemLines.length).toBe(8)
+    expect(itemLines[0]).toContain("Item 21")
+    expect(itemLines[4]).toContain("Item 25")
+    expect(itemLines[7]).toContain("Item 28")
+    expect(scrolled).not.toContain("Item 20")
+    expect(scrolled).not.toContain("Item 29")
+  })
+
+  test("scrollToItem with end alignment places target item at bottom of viewport", () => {
+    const items = makeItems(50)
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 40, rows: 10 })
+    const app = r(renderList(items, listRef))
+
+    act(() => {
+      listRef.current!.scrollToItem(25, "end")
+    })
+    app.rerender(renderList(items, listRef))
+    const scrolled = stripAnsi(app.text)
+    const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
+    // In an 8-row viewport with end alignment, items 18..25 are visible with item 25 at bottom (index 7)
+    expect(itemLines.length).toBe(8)
+    expect(itemLines[0]).toContain("Item 18")
+    expect(itemLines[7]).toContain("Item 25")
+    expect(scrolled).not.toContain("Item 17")
+    expect(scrolled).not.toContain("Item 26")
+  })
+
+  test("C1 pin: a height-independent list in a box shorter than terminal centers target item in the box after layout", () => {
+    const items = makeItems(50)
+    const listRef = React.createRef<ListViewHandle>()
+    const r = createRenderer({ cols: 40, rows: 25 })
+    // Mount height-independent list inside an 8-row box (without height prop on ListView)
+    const app = r(
+      <Box height={8} flexDirection="column">
+        <ListView<Item>
+          ref={listRef}
+          items={items}
+          renderItem={(item) => <Text>{item.title}</Text>}
+          getKey={(item) => item.id}
+        />
+      </Box>,
+    )
+
+    act(() => {
+      listRef.current!.scrollToItem(25, "center")
+    })
+    app.rerender(
+      <Box height={8} flexDirection="column">
+        <ListView<Item>
+          ref={listRef}
+          items={items}
+          renderItem={(item) => <Text>{item.title}</Text>}
+          getKey={(item) => item.id}
+        />
+      </Box>,
+    )
+    const scrolled = stripAnsi(app.text)
+    const itemLines = scrolled.split("\n").filter((l) => l.includes("Item "))
+    // Centered in the 8-row box, NOT the 25-row terminal
+    expect(itemLines.length).toBe(8)
+    expect(itemLines[0]).toContain("Item 21")
+    expect(itemLines[4]).toContain("Item 25")
+    expect(itemLines[7]).toContain("Item 28")
+  })
+
+  test("C3 pin: useVirtualizer scrollToItem callback identity is stable across renders with same count", () => {
+    const callbacks: Array<(index: number, align?: "start" | "center" | "end") => void> = []
+    function Harness({ step }: { step: number }) {
+      const v = useVirtualizer({
+        count: 50,
+        estimateHeight: 1,
+        viewportHeight: 10,
+      })
+      callbacks.push(v.scrollToItem)
+      return <Text>step:{step}</Text>
+    }
+    const r = createRenderer({ cols: 40, rows: 10 })
+    const app = r(<Harness step={1} />)
+    app.rerender(<Harness step={2} />)
+    expect(callbacks.length).toBeGreaterThanOrEqual(2)
+    for (let i = 1; i < callbacks.length; i++) {
+      expect(callbacks[i]).toBe(callbacks[0])
+    }
   })
 })
