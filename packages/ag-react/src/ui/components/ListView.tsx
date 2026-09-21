@@ -1978,7 +1978,7 @@ function ListViewInner<T>(
           : align === "end"
             ? { kind: "offset", value: Math.max(0, h - itemHeight), unit: "axis" }
             : { kind: "top" }
-      const offset = align === "center" ? Math.floor(itemHeight / 2) : 0
+      const offset = align === "center" ? Math.ceil(itemHeight / 2) : 0
       const targetRow = computeViewportTopFromAnchor({
         point: { key, offset },
         pin,
