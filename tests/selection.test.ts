@@ -29,6 +29,7 @@ import {
   isContentSelectionEndpointValid,
   orientContentSelectionRange,
   projectContentSelectionRange,
+  extractContentSelectionText,
   findSelectionScrollOwner,
   findContainBoundary,
   findSelectionBoundaries,
@@ -895,6 +896,25 @@ describe("resolveSelectionAnchorFromPoint", () => {
     expect(isContentSelectionEndpointValid(anchor!, root)).toBe(false)
     expect(isContentSelectionEndpointValid(head!, root)).toBe(false)
     expect(projectContentSelectionRange(root, anchor!, head!, 40, 8)).toBeNull()
+  })
+
+  test("copies only visible text when a Text child contains SGR styling", () => {
+    const root = makeNode("silvery-root", { x: 0, y: 0, width: 40, height: 8 })
+    const text = makeNode("silvery-text", { x: 0, y: 0, width: 7, height: 1 })
+    const styledChild = makeNode(
+      "silvery-text",
+      { x: 0, y: 0, width: 0, height: 0 },
+      {},
+      "\x1b[31m@sample\x1b[0m",
+    )
+    attach(root, text)
+    attach(text, styledChild)
+
+    const anchor = contentSelectionEndpointFromPoint(text, 0, 0, "before")
+    const head = contentSelectionEndpointFromPoint(text, 4, 0, "after")
+    expect(anchor?.gap).toBe(0)
+    expect(head?.gap).toBe(5)
+    expect(extractContentSelectionText(root, anchor!, head!)).toBe("@samp")
   })
 
   test("orients half-open endpoints so reverse drags include both pointer glyphs", () => {
