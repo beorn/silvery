@@ -6,6 +6,8 @@ A standalone package that replaces chalk, supports-color, and terminal-kit primi
 
 ## Install
 
+> Install from npm; a git install resolves the TypeScript source and runs only under Bun.
+
 ```bash
 npm install @silvery/ansi
 ```

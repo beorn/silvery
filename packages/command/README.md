@@ -22,6 +22,8 @@ The tree contains JSON data only. Runtime behavior, validation schemas,
 availability functions, keybindings, CLI parsing, and surface projection live
 in adapters such as `@silvery/commands` and `@silvery/commander`.
 
+> Install from npm; a git install resolves the TypeScript source and runs only under Bun.
+
 ## API
 
 - `command()` defines immutable command metadata and its phantom argument type.

@@ -76,6 +76,8 @@ Along the way, three principles emerged. Take the best from the web, stay true t
 - [Interactive examples](https://silvery.dev/examples) — `npx @silvery/examples` to try them locally
 - [Silvery vs Ink](https://silvery.dev/guide/silvery-vs-ink) — feature comparison and migration guide
 
+> Install from npm; a git install resolves the TypeScript source and runs only under Bun.
+
 ## Packages
 
 | Package                           | Description                                                       |
