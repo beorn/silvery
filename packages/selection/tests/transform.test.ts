@@ -1,5 +1,5 @@
 /**
- * @reach fs-walk <fixture-only: walk order refers to in-memory node ordering of a mock selection tree, not a directory walk.>
+ * @reach fs-walk <fixture-only: walkOrder is a mock method, in-memory tree, not fs walk>
  */
 import { describe, expect, it } from "vitest"
 import type { ID, SelectionSnapshot } from "../src/types.ts"

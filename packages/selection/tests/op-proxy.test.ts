@@ -1,5 +1,5 @@
 /**
- * @reach fs-walk <fixture-only: walkOrder is a mock method name for an in-memory node-tree ordering; the matched idiom is not a directory walk at all.>
+ * @reach fs-walk <fixture-only: walkOrder is a mock method, in-memory tree, not fs walk>
  */
 import { describe, expect, it } from "vitest"
 import { op } from "../src/op-proxy.ts"

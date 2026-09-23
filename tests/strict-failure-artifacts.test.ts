@@ -2,7 +2,7 @@
  * Tests for captureStrictFailureArtifacts: debug artifact capture when STRICT
  * verification fails. Verifies directory creation, file contents, and edge
  * cases (missing buffers, empty ANSI, no ctx).
- * @reach fs-walk <fixture-only: dir comes from captureStrictFailureArtifacts(), which hardcodes `/tmp/silvery-strict-failure-$timestamp` — an OS temp path, not the repo tree.>
+ * @reach fs-walk <fixture-only: dir is a hardcoded /tmp path, not the repo tree>
  */
 import { describe, test, expect, afterEach } from "vitest"
 import { existsSync, readFileSync, rmSync, readdirSync } from "fs"

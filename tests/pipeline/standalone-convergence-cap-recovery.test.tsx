@@ -50,7 +50,7 @@
  * microtasks land inside `drainStandaloneCommitRerenders`'s per-iteration
  * `await Promise.resolve()`, the loop keeps finding `pendingRerender` true and
  * exceeds MAX_CONVERGENCE_PASSES (= 2) within one standalone frame.
- * @reach fs-walk <fixture-only: readdirSync(dir) targets tmpdir()/redirectedDumpDir (mkdtempSync(join(tmpdir(), ...))) — the OS temp dir for panic-dump files, never the repo tree.>
+ * @reach fs-walk <fixture-only: readdirSync targets redirectedDumpDir under tmpdir(), not repo>
  */
 
 import React, { useEffect, useLayoutEffect, useState } from "react"
