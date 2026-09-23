@@ -17,7 +17,13 @@ import { getAncestorPath, hitTestInlineRects, pointInRect } from "@silvery/ag/tr
 import type { AgNode, BoxProps, Rect, TextProps, UserSelect } from "@silvery/ag/types"
 import type { SelectionScope } from "@silvery/headless/selection"
 import { setHovered, setArmed } from "@silvery/ag/interactive-signals"
-import { displayWidthAnsi, graphemeWidth, splitGraphemes, wrapTextWithOffsets } from "./unicode"
+import {
+  displayWidthAnsi,
+  graphemeWidth,
+  splitGraphemes,
+  stripAnsi,
+  wrapTextWithOffsets,
+} from "./unicode"
 import type { TerminalBuffer } from "./buffer"
 import { resolveUserSelect } from "./user-select"
 
@@ -602,7 +608,8 @@ function visitTextLeaves(node: AgNode, visit: (leaf: AgNode, text: string) => vo
 function collectText(node: AgNode): string {
   let out = ""
   visitTextLeaves(node, (_leaf, text) => {
-    out += text
+    // Selection gaps count visible graphemes, not the child's SGR bytes.
+    out += stripAnsi(text)
   })
   return out
 }
@@ -617,7 +624,7 @@ function collectSelectableContentGraphemes(node: AgNode): SelectableContentGraph
   let text = ""
   visitTextLeaves(node, (leaf, leafText) => {
     const start = text.length
-    text += leafText
+    text += stripAnsi(leafText)
     runs.push({
       start,
       end: text.length,
