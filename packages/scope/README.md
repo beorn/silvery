@@ -8,6 +8,8 @@ Part of the [Silvery](https://silvery.dev) ecosystem.
 
 ## Install
 
+> Install from npm; a git install resolves the TypeScript source and runs only under Bun.
+
 ```bash
 npm install @silvery/scope
 ```

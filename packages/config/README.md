@@ -12,6 +12,8 @@ Designed for apps that maintain named presets (database connections, AI agent co
 
 ## Install
 
+> Install from npm; a git install resolves the TypeScript source and runs only under Bun.
+
 ```bash
 bun add @silvery/config zod yaml
 ```

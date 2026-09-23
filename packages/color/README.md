@@ -6,6 +6,8 @@ Used by [@silvery/ansi](../ansi/) for terminal styling and theme derivation, and
 
 ## Install
 
+> Install from npm; a git install resolves the TypeScript source and runs only under Bun.
+
 ```bash
 npm install @silvery/color
 ```

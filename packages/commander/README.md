@@ -6,6 +6,8 @@ Type-safe [Commander.js](https://github.com/tj/commander.js) with validated opti
 npm install @silvery/commander
 ```
 
+> Install from npm; a git install resolves the TypeScript source and runs only under Bun.
+
 ## Example
 
 ```typescript
