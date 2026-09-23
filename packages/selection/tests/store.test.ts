@@ -1,3 +1,6 @@
+/**
+ * @reach fs-walk <fixture-only: walkOrder is a mock method for an in-memory selection-tree traversal, not a filesystem walk.>
+ */
 import { describe, expect, it } from "vitest"
 import { effect } from "alien-signals"
 import { createSelection } from "../src/store.ts"

@@ -7,6 +7,7 @@
  *   will not install — the independence checklist, mechanically.
  * @level l2
  * @consumer silvery standalone CI (`bun run typecheck` in a fresh clone)
+ * @reach fs-walk vendor/silvery/tests/** vendor/silvery/packages/*\/tests/**
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs"
 import { builtinModules } from "node:module"

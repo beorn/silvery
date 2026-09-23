@@ -21,6 +21,7 @@
  * SILVERY_STRICT=1 (set by vitest/setup.ts) verifies incremental === fresh on
  * every rerender. The backdrop pass runs inside `ag.render()` on both paths,
  * so identical pre-transform buffers produce identical post-transform buffers.
+ * @reach fs-walk <fixture-only: "walk" mentions are prose/comments describing production runtime tree-walk functions (findRootThemeBg/findRootThemeAnsi16 over the virtual node tre...>
  */
 
 import React, { useState } from "react"

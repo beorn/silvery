@@ -7,6 +7,7 @@
  *   2. A deliberate violation dropped into a temp file must be caught.
  *
  * See `km-silvery.plateau-env-read-lint`.
+ * @reach fs-walk vendor/silvery/packages/**
  */
 import { spawnSync } from "node:child_process"
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from "node:fs"

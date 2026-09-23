@@ -16,6 +16,7 @@
  *      that fires in production (so the test runner survives).
  *
  * Bead: @km/silvery/auto-panic-circuit-break.
+ * @reach fs-walk <fixture-only: readdirSync(tmpdir()) scans the OS temp directory for panic-dump files, not the repository tree.>
  */
 
 import { existsSync, readdirSync } from "node:fs"

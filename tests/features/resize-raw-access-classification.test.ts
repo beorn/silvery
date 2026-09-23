@@ -1,3 +1,7 @@
+/**
+ * @reach fs-walk vendor/silvery/packages/ag-react/src/** vendor/silvery/packages/ag-term/src/**
+ * @reach fs-walk vendor/silvery/packages/ink/src/**
+ */
 import { readdirSync, readFileSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
