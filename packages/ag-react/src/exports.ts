@@ -717,6 +717,7 @@ export { useFocusManager } from "./hooks/useFocusManager"
  * const { isFocused, focus } = useFocus({ id: "panel", autoFocus: true })
  * ```
  */
+// oxlint-disable-next-line typescript/no-deprecated -- compatibility export pending focus migration
 export { useFocus } from "./hooks/useFocus"
 export type { UseFocusOptions, UseFocusResult } from "./hooks/useFocus"
 
@@ -773,7 +774,13 @@ export { useHover } from "./hooks/useHover"
 export type { UseHoverReturn } from "./hooks/useHover"
 export { useInteractionTreatment } from "./hooks/useInteractionTreatment"
 export { actionFill } from "@silvery/ag"
-export { FOLD_MARKERS, fileBrowserIcons, NAV_BACK_ICON, NAV_FORWARD_ICON } from "./ui/icons"
+export {
+  DISCLOSURE_MARKERS,
+  FOLD_MARKERS,
+  fileBrowserIcons,
+  NAV_BACK_ICON,
+  NAV_FORWARD_ICON,
+} from "./ui/icons"
 export type { FileBrowserIcons } from "./ui/icons"
 export { useFileBrowserIcons } from "./hooks/useFileBrowserIcons"
 export {
@@ -785,6 +792,7 @@ export {
 } from "./components/Popover"
 export type { PopoverAnchor, PopoverContent } from "./components/Popover"
 export { useConsole } from "./hooks/useConsole"
+// oxlint-disable-next-line typescript/no-deprecated -- compatibility export pending cursor migration
 export { useCursor, resetCursorState, createCursorStore, CursorProvider } from "./hooks/useCursor"
 export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor"
 export { PasteProvider, usePaste } from "./hooks/usePaste"
@@ -808,6 +816,7 @@ export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualize
 export { useListItem } from "./hooks/useListItem"
 export type { ListItemContext } from "./hooks/useListItem"
 export { useInteractiveState } from "./hooks/useInteractiveState"
+// oxlint-disable-next-line typescript/no-deprecated -- compatibility export pending selection migration
 export { useSelection } from "./hooks/useSelection"
 export { useSelectionActions, type SelectionActions } from "./hooks/useSelectionActions"
 export { useCopyModeState } from "./hooks/useCopyModeState"
@@ -1251,7 +1260,9 @@ export {
   dispatchMouseEvent,
   processMouseEvent,
   createMouseEventProcessor,
+  // oxlint-disable-next-line typescript/no-deprecated -- compatibility export pending click migration
   checkDoubleClick,
+  // oxlint-disable-next-line typescript/no-deprecated -- compatibility export pending click migration
   createDoubleClickState,
   computeEnterLeave,
   type SilveryMouseEvent,

@@ -39,6 +39,16 @@ export const FOLD_MARKERS = Object.freeze({
   empty: "·",
 } as const)
 
+/**
+ * Section disclosure markers: a section is collapsed or expanded, unlike an
+ * outline node with the three states above. Both triangles measure one cell
+ * under the render pipeline's width policy; no variation selector is needed.
+ */
+export const DISCLOSURE_MARKERS = Object.freeze({
+  collapsed: NAV_FORWARD_ICON,
+  expanded: "▼",
+} as const)
+
 /** The pair of glyphs a file browser uses for its two node kinds. */
 export interface FileBrowserIcons {
   readonly directory: string
