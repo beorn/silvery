@@ -17,7 +17,7 @@
  * repaints when the match set for non-visible items churns).
  */
 
-import React from "react"
+import React, { act } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import type { MatchRange } from "@silvery/ag-term/search-overlay"
@@ -48,8 +48,6 @@ function makeRealisticItems(): Item[] {
   for (let i = 0; i < 60; i++) out.push({ id: `i${i}`, text: variants[i % 3]! })
   return out
 }
-
-const flush = () => new Promise<void>((r) => setTimeout(r, 10))
 
 // ============================================================================
 // Tests
@@ -113,11 +111,12 @@ describe("ListView renderItem meta: matchRanges + searchQuery", () => {
       </SearchProvider>,
     )
 
-    ctx!.open()
-    ctx!.input("f")
-    ctx!.input("o")
-    ctx!.input("o")
-    await flush()
+    await act(async () => {
+      ctx!.open()
+      ctx!.input("f")
+      ctx!.input("o")
+      ctx!.input("o")
+    })
 
     // Grab the most recent meta seen per item id.
     const latest = new Map<string, ListItemMeta>()
@@ -188,11 +187,12 @@ describe("ListView renderItem meta: matchRanges + searchQuery", () => {
       </SearchProvider>,
     )
 
-    ctx!.open()
-    ctx!.input("f")
-    ctx!.input("o")
-    ctx!.input("o")
-    await flush()
+    await act(async () => {
+      ctx!.open()
+      ctx!.input("f")
+      ctx!.input("o")
+      ctx!.input("o")
+    })
 
     expect(lastMeta!.searchQuery).toBe("foo")
     expect(lastMeta!.matchRanges).toEqual<MatchRange[]>([

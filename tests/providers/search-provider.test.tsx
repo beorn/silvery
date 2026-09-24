@@ -7,7 +7,7 @@
  * to focused searchable, and reveal() calls.
  */
 
-import React, { useRef } from "react"
+import React, { act, useRef } from "react"
 import { describe, test, expect, vi } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Box, DocumentView, ScrollArea, Text, useScrollController } from "../../src/index.js"
@@ -307,8 +307,9 @@ describe("SearchProvider", () => {
 
     // setFocused triggers a state update. After flush, SearchProvider re-renders
     // and ctx is re-captured with new callbacks that capture focusedId="pane-b".
-    ctx!.setFocused("pane-b")
-    await flush()
+    await act(async () => {
+      ctx!.setFocused("pane-b")
+    })
 
     // ctx now has the re-rendered callbacks with focusedId="pane-b"
     ctx!.open()
@@ -373,9 +374,10 @@ describe("SearchProvider", () => {
     )
 
     // Should not throw — just produces no matches
-    ctx!.open()
-    ctx!.input("x")
-    await flush()
+    await act(async () => {
+      ctx!.open()
+      ctx!.input("x")
+    })
   })
 
   test("shift+; inserts ':' into query (legacy-terminal text insertion)", async () => {
@@ -404,8 +406,9 @@ describe("SearchProvider", () => {
     )
 
     // Open the search bar, then press ':' (shift+; on US QWERTY).
-    ctx!.open()
-    await flush()
+    await act(async () => {
+      ctx!.open()
+    })
     await app.press(":")
     await flush()
 
@@ -434,8 +437,9 @@ describe("SearchProvider", () => {
       </SearchProvider>,
     )
 
-    ctx!.open()
-    await flush()
+    await act(async () => {
+      ctx!.open()
+    })
     await app.press("#")
     await flush()
 
@@ -471,9 +475,10 @@ describe("SearchProvider", () => {
     unregister!()
 
     // Now search should find no searchable — no reveal
-    ctx!.open()
-    ctx!.input("x")
-    await flush()
+    await act(async () => {
+      ctx!.open()
+      ctx!.input("x")
+    })
     expect(reveal).not.toHaveBeenCalled()
   })
 })
