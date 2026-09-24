@@ -16,6 +16,43 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `@silvery/ag-term/pipeline`) is the one layout rule that both the painter
   and this hit-test read.
 
+## [0.24.2] - 2026-09-23
+
+### Added
+
+The published 0.24.2 exports these names compared with 0.24.1:
+
+- `silvery`: `CapabilityDecisionChannel`, `CodeBlockProps`,
+  `DocumentTableCell`, `IslandArtifactCapabilities`, `IslandOutputArtifact`,
+  `IslandOutputArtifactOwner`, `MeasuredContent`, `TableMetricsOptions`,
+  `TerminalCapabilityProvenance`, `contentNode`, `contentText`,
+  `tableHeightAt`.
+- `silvery/runtime`: `ProbeTransactionOptions`,
+  `ProbeTransactionRecognition`, `ProbeTransactionResult`,
+  `ProbeTransactionSpan`.
+- `silvery/term`: `CapabilityDecisionChannel`,
+  `TerminalCapabilityProvenance`.
+- `silvery/test`: `OutputLog`.
+
+These are 17 distinct added names; `CapabilityDecisionChannel` and
+`TerminalCapabilityProvenance` are exported from both `silvery` and
+`silvery/term`.
+
+### Removed (breaking)
+
+- `DeviceAttributes` and `queryDeviceAttributes` from `@silvery/ag-term` and
+  `@silvery/ag-react`, also re-exported from `silvery`. Commit
+  `9add35d3ac6` removed the zero-caller raw-stdin wrapper; callers can issue
+  the individual dependency-injected query helpers or use
+  `term.input.probeTransaction()` for an atomic multi-response query.
+
+### Changed
+
+- `ListViewHandle.scrollToItem(index, align?)` accepts `"start"`, `"center"`,
+  or `"end"` alignment when scrolling to an item.
+- The published `silvery` bin is built JavaScript since 0.24.2 and runs under
+  Node; the in-repository bin remains TypeScript for development.
+
 ## [0.24.1] - 2026-09-04
 
 ### Added
@@ -187,43 +224,6 @@ input out of the box. `fieldSizing="fixed"` mirrors HTML
 
 `useTextArea(...)` (the headless hook) still takes `height: number` —
 consumers calling it directly choose the viewport height themselves.
-
-## [0.24.2] - 2026-09-23
-
-### Added
-
-The published 0.24.2 exports these names compared with 0.24.1:
-
-- `silvery`: `CapabilityDecisionChannel`, `CodeBlockProps`,
-  `DocumentTableCell`, `IslandArtifactCapabilities`, `IslandOutputArtifact`,
-  `IslandOutputArtifactOwner`, `MeasuredContent`, `TableMetricsOptions`,
-  `TerminalCapabilityProvenance`, `contentNode`, `contentText`,
-  `tableHeightAt`.
-- `silvery/runtime`: `ProbeTransactionOptions`,
-  `ProbeTransactionRecognition`, `ProbeTransactionResult`,
-  `ProbeTransactionSpan`.
-- `silvery/term`: `CapabilityDecisionChannel`,
-  `TerminalCapabilityProvenance`.
-- `silvery/test`: `OutputLog`.
-
-These are 17 distinct added names; `CapabilityDecisionChannel` and
-`TerminalCapabilityProvenance` are exported from both `silvery` and
-`silvery/term`.
-
-### Removed (breaking)
-
-- `DeviceAttributes` and `queryDeviceAttributes` from `@silvery/ag-term` and
-  `@silvery/ag-react`, also re-exported from `silvery`. Commit
-  `9add35d3ac6` removed the zero-caller raw-stdin wrapper; callers can issue
-  the individual dependency-injected query helpers or use
-  `term.input.probeTransaction()` for an atomic multi-response query.
-
-### Changed
-
-- `ListViewHandle.scrollToItem(index, align?)` accepts `"start"`, `"center"`,
-  or `"end"` alignment when scrolling to an item.
-- The published `silvery` bin is built JavaScript since 0.24.2 and runs under
-  Node; the in-repository bin remains TypeScript for development.
 
 ## 0.24.0 — Ship the truncate clip fix, and repair the gate that hid it
 
