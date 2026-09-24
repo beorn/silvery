@@ -5,7 +5,7 @@
  * in SearchProvider, and that Ctrl+F → type → navigate works end-to-end.
  */
 
-import React, { useRef } from "react"
+import React, { act, useRef } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Text } from "../../src/index.js"
@@ -27,8 +27,6 @@ function makeItems(texts: string[]): Item[] {
 }
 
 /** Flush React batched state updates */
-const flush = () => new Promise<void>((r) => setTimeout(r, 10))
-
 // ============================================================================
 // Tests
 // ============================================================================
@@ -108,10 +106,11 @@ describe("ListView + SearchProvider", () => {
     )
 
     // Search for "ap" — should match "apple" and "apricot"
-    ctx!.open()
-    ctx!.input("a")
-    ctx!.input("p")
-    await flush()
+    await act(async () => {
+      ctx!.open()
+      ctx!.input("a")
+      ctx!.input("p")
+    })
 
     expect(ctx!.matches.length).toBe(2)
     expect(ctx!.currentMatch).toBe(0)
@@ -143,13 +142,14 @@ describe("ListView + SearchProvider", () => {
     )
 
     // Case-insensitive search for "hello" — should match first two items
-    ctx!.open()
-    ctx!.input("h")
-    ctx!.input("e")
-    ctx!.input("l")
-    ctx!.input("l")
-    ctx!.input("o")
-    await flush()
+    await act(async () => {
+      ctx!.open()
+      ctx!.input("h")
+      ctx!.input("e")
+      ctx!.input("l")
+      ctx!.input("l")
+      ctx!.input("o")
+    })
 
     expect(ctx!.matches.length).toBe(2)
   })
@@ -179,11 +179,12 @@ describe("ListView + SearchProvider", () => {
       </SearchProvider>,
     )
 
-    ctx!.open()
-    ctx!.input("d")
-    ctx!.input("e")
-    ctx!.input("f")
-    await flush()
+    await act(async () => {
+      ctx!.open()
+      ctx!.input("d")
+      ctx!.input("e")
+      ctx!.input("f")
+    })
 
     // "def" appears in all three items at different columns
     expect(ctx!.matches.length).toBe(3)
@@ -217,8 +218,9 @@ describe("ListView + SearchProvider", () => {
       </SearchProvider>,
     )
 
-    ctx!.open()
-    await flush()
+    await act(async () => {
+      ctx!.open()
+    })
 
     // No input = no matches
     expect(ctx!.matches.length).toBe(0)
@@ -251,9 +253,10 @@ describe("ListView + SearchProvider", () => {
     )
 
     // Search for "2" — should find items "2", "12", "21", "22" (5 occurrences: 2, 12, 21, 22 has two 2's)
-    ctx!.open()
-    ctx!.input("2")
-    await flush()
+    await act(async () => {
+      ctx!.open()
+      ctx!.input("2")
+    })
 
     // "1" → no 2, "2" → one 2, "12" → one 2, "21" → one 2, "22" → two 2's
     expect(ctx!.matches.length).toBe(5)
