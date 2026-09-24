@@ -129,17 +129,22 @@ function feedIsland(node: AgNode, data: string): boolean {
   return true
 }
 
-function keyToIslandAnsi(input: string, key: Key): string {
+/** @internal */
+export function keyToIslandAnsi(input: string, key: Key): string {
+  const modifiers = keyToModifiers(key)
+  const hasControlModifiers = modifiers.ctrl || modifiers.meta || modifiers.super || modifiers.hyper
   const name = keyToName(key)
+  if (key.text && !hasControlModifiers && !name) {
+    return key.text
+  }
   const main = name || input
   if (!main) return ""
-  const modifiers = keyToModifiers(key)
   const parts: string[] = []
   if (modifiers.ctrl) parts.push("Control")
   if (modifiers.meta) parts.push("Meta")
   if (modifiers.super) parts.push("Super")
   if (modifiers.hyper) parts.push("Hyper")
-  if (modifiers.shift && name) parts.push("Shift")
+  if (modifiers.shift && (name || !hasControlModifiers)) parts.push("Shift")
   parts.push(main)
   return keyToAnsi(parts.join("+"))
 }

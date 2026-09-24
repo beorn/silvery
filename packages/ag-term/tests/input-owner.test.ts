@@ -1,6 +1,8 @@
 import { EventEmitter } from "node:events"
 import { describe, expect, it } from "vitest"
+import type { Key } from "@silvery/ag/keys"
 import { createInputOwner } from "../src/runtime/input-owner"
+import { keyToIslandAnsi } from "../src/runtime/event-handlers"
 
 class FakeStdin extends EventEmitter {
   isTTY = true
@@ -466,5 +468,96 @@ describe("createInputOwner probe transactions", () => {
       message: "Error: bad recognizer",
     })
     input[Symbol.dispose]()
+  })
+})
+
+describe("keyToIslandAnsi — shifted symbols and hotkey preservation (25124)", () => {
+  function makeKey(partial: Partial<Key>): Key {
+    return {
+      upArrow: false,
+      downArrow: false,
+      leftArrow: false,
+      rightArrow: false,
+      pageDown: false,
+      pageUp: false,
+      home: false,
+      end: false,
+      return: false,
+      escape: false,
+      ctrl: false,
+      shift: false,
+      tab: false,
+      backspace: false,
+      delete: false,
+      meta: false,
+      super: false,
+      hyper: false,
+      capsLock: false,
+      numLock: false,
+      ...partial,
+    }
+  }
+
+  it("preserves shifted symbol keys when text is present (Kitty protocol)", () => {
+    // Under Kitty keyboard protocol, input contains the unshifted key (e.g. "4"),
+    // key.shift is true, and key.text contains the typed symbol (e.g. "$").
+    const symbolCases: Array<{ input: string; key: Partial<Key>; expected: string }> = [
+      { input: "`", key: { shift: true, text: "~" }, expected: "~" },
+      { input: "1", key: { shift: true, text: "!" }, expected: "!" },
+      { input: "2", key: { shift: true, text: "@" }, expected: "@" },
+      { input: "3", key: { shift: true, text: "#" }, expected: "#" },
+      { input: "4", key: { shift: true, text: "$" }, expected: "$" },
+      { input: "5", key: { shift: true, text: "%" }, expected: "%" },
+      { input: "6", key: { shift: true, text: "^" }, expected: "^" },
+      { input: "7", key: { shift: true, text: "&" }, expected: "&" },
+      { input: "8", key: { shift: true, text: "*" }, expected: "*" },
+      { input: "9", key: { shift: true, text: "(" }, expected: "(" },
+      { input: "0", key: { shift: true, text: ")" }, expected: ")" },
+      { input: "-", key: { shift: true, text: "_" }, expected: "_" },
+      { input: "=", key: { shift: true, text: "+" }, expected: "+" },
+      { input: "[", key: { shift: true, text: "{" }, expected: "{" },
+      { input: "]", key: { shift: true, text: "}" }, expected: "}" },
+      { input: "\\", key: { shift: true, text: "|" }, expected: "|" },
+      { input: ";", key: { shift: true, text: ":" }, expected: ":" },
+      { input: "'", key: { shift: true, text: '"' }, expected: '"' },
+      { input: ",", key: { shift: true, text: "<" }, expected: "<" },
+      { input: ".", key: { shift: true, text: ">" }, expected: ">" },
+      { input: "/", key: { shift: true, text: "?" }, expected: "?" },
+    ]
+
+    for (const c of symbolCases) {
+      expect(keyToIslandAnsi(c.input, makeKey(c.key))).toBe(c.expected)
+    }
+  })
+
+  it("encodes $((6*7)) arithmetic sequence without shift-stripping", () => {
+    // Regression: $((6*7)) previously arrived as 49968700 due to shift-stripping
+    const tokens: Array<{ input: string; key: Partial<Key>; expected: string }> = [
+      { input: "4", key: { shift: true, text: "$" }, expected: "$" },
+      { input: "9", key: { shift: true, text: "(" }, expected: "(" },
+      { input: "9", key: { shift: true, text: "(" }, expected: "(" },
+      { input: "6", key: { shift: false, text: "6" }, expected: "6" },
+      { input: "8", key: { shift: true, text: "*" }, expected: "*" },
+      { input: "7", key: { shift: false, text: "7" }, expected: "7" },
+      { input: "0", key: { shift: true, text: ")" }, expected: ")" },
+      { input: "0", key: { shift: true, text: ")" }, expected: ")" },
+    ]
+    const result = tokens.map((t) => keyToIslandAnsi(t.input, makeKey(t.key))).join("")
+    expect(result).toBe("$((6*7))")
+  })
+
+  it("resolves legacy shifted symbols when text is not set", () => {
+    expect(keyToIslandAnsi("4", makeKey({ shift: true }))).toBe("$")
+    expect(keyToIslandAnsi("9", makeKey({ shift: true }))).toBe("(")
+    expect(keyToIslandAnsi("0", makeKey({ shift: true }))).toBe(")")
+    expect(keyToIslandAnsi("/", makeKey({ shift: true }))).toBe("?")
+  })
+
+  it("preserves control modifiers and special keys", () => {
+    expect(keyToIslandAnsi("c", makeKey({ ctrl: true }))).toBe("\x03")
+    expect(keyToIslandAnsi("g", makeKey({ ctrl: true }))).toBe("\x07")
+    expect(keyToIslandAnsi("", makeKey({ escape: true }))).toBe("\x1b")
+    expect(keyToIslandAnsi("", makeKey({ upArrow: true }))).toBe("\x1b[A")
+    expect(keyToIslandAnsi("\r", makeKey({ return: true }))).toBe("\r")
   })
 })

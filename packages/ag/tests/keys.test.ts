@@ -63,4 +63,10 @@ describe("keyToAnsi — modifier encoding on tilde-terminated nav keys", () => {
     expect(keyToAnsi("PageUp")).toBe("\x1b[5~")
     expect(keyToAnsi("PageDown")).toBe("\x1b[6~")
   })
+
+  test("plus symbol key and combos encode correctly", () => {
+    expect(keyToAnsi("+")).toBe("+")
+    expect(keyToAnsi("Shift++")).toBe("+")
+    expect(keyToAnsi("Shift+=")).toBe("+")
+  })
 })

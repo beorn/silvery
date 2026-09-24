@@ -229,9 +229,18 @@ function normalizeModifier(mod: string): string {
  * ```
  */
 export function keyToAnsi(key: string): string {
-  // Split on + for combos: 'Control+Shift+a' -> ['Control', 'Shift', 'a']
-  const parts = key.split("+")
-  const mainKey = parts.pop()!
+  let mainKey: string
+  let parts: string[]
+  if (key === "+") {
+    mainKey = "+"
+    parts = []
+  } else if (key.endsWith("++")) {
+    mainKey = "+"
+    parts = key.slice(0, -2).split("+")
+  } else {
+    parts = key.split("+")
+    mainKey = parts.pop()!
+  }
   // Normalize modifier aliases: ctrl->Control, shift->Shift, alt->Alt, meta->Meta
   const modifiers = parts.map(normalizeModifier)
 
