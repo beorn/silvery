@@ -5,7 +5,7 @@ All notable changes to Silvery are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.24.1] - 2026-09-04
 
 ### Added
 
@@ -35,11 +35,6 @@ is breaking for anyone importing the named surface:
 - `INITIAL_RENDER_MAX_PASSES` (from `@silvery/ag-term`) — dead runtime
   surface used only by internal convergence tests; inline `5` if you
   asserted against it.
-- `queryDeviceAttributes` / `DeviceAttributes` (from `@silvery/ag-term` and
-  the `@silvery/ag-react` re-export) — this convenience wrapper installed a
-  second raw-stdin owner. Issue individual dependency-injected query helpers,
-  or use `term.input.probeTransaction()` for an atomic multi-response query.
-  This removal is breaking for the next published version of both packages.
 
 ### Fixed
 
@@ -77,6 +72,9 @@ is breaking for anyone importing the named surface:
 - `@silvery/commander@0.21.2` publishes the already-tested `silentAlias()`
   runtime support. The source implementation was present, but the published
   `0.21.0` artifact could not contain it.
+- Bound React development User Timing entries at Silvery's commit boundary so
+  long-lived renderers no longer retain one timeline entry set per commit
+  (`@ag/dutiful-and-maddoc-grow-without-bound`).
 
 ### Changed — copy extraction is semantic by default (`respectSelectableFlag` → `true`)
 
@@ -180,6 +178,34 @@ input out of the box. `fieldSizing="fixed"` mirrors HTML
 consumers calling it directly choose the viewport height themselves.
 
 ## [0.24.2] - 2026-09-23
+
+### Added
+
+The published 0.24.2 exports these names compared with 0.24.1:
+
+- `silvery`: `CapabilityDecisionChannel`, `CodeBlockProps`,
+  `DocumentTableCell`, `IslandArtifactCapabilities`, `IslandOutputArtifact`,
+  `IslandOutputArtifactOwner`, `MeasuredContent`, `TableMetricsOptions`,
+  `TerminalCapabilityProvenance`, `contentNode`, `contentText`,
+  `tableHeightAt`.
+- `silvery/runtime`: `ProbeTransactionOptions`,
+  `ProbeTransactionRecognition`, `ProbeTransactionResult`,
+  `ProbeTransactionSpan`.
+- `silvery/term`: `CapabilityDecisionChannel`,
+  `TerminalCapabilityProvenance`.
+- `silvery/test`: `OutputLog`.
+
+These are 17 distinct added names; `CapabilityDecisionChannel` and
+`TerminalCapabilityProvenance` are exported from both `silvery` and
+`silvery/term`.
+
+### Removed (breaking)
+
+- `DeviceAttributes` and `queryDeviceAttributes` from `@silvery/ag-term` and
+  `@silvery/ag-react`, also re-exported from `silvery`. Commit
+  `9add35d3ac6` removed the zero-caller raw-stdin wrapper; callers can issue
+  the individual dependency-injected query helpers or use
+  `term.input.probeTransaction()` for an atomic multi-response query.
 
 ### Changed
 
@@ -527,14 +553,6 @@ This is a stepping-stone toward 0.20.0, which will make Sterling THE Theme type 
 - Legacy `Theme` interface fields removed at the type level (`theme.primary`, `theme.bg`, etc. — TypeScript errors instead of silent any).
 - `inlineSterlingTokens` deleted; runtime resolution requires Sterling flat-token names only.
 - `deriveTheme` removed; `sterling.deriveFromScheme` is the only path.
-
-## [0.24.1] - 2026-09-04
-
-### Fixed
-
-- Bound React development User Timing entries at Silvery's commit boundary so
-  long-lived renderers no longer retain one timeline entry set per commit
-  (`@ag/dutiful-and-maddoc-grow-without-bound`).
 
 ## [0.18.2] - 2026-04-20
 
