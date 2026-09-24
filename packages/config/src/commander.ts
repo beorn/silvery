@@ -77,10 +77,10 @@ export function mountConfigCommand(
 
   const cmd = program
     .command("config [args...]")
-    .description("get/set config values and manage named entries")
+    .description("Get and set config values, and manage named entries")
 
-  cmd.option("--unset <key>", "Remove the leaf at <key>")
-  cmd.option("--list", "List all leaves (default with no args)")
+  cmd.option("--unset <key>", "Remove the value at <key>")
+  cmd.option("--list", "List every value (the default with no arguments)")
   cmd.option("--get-regexp <pattern>", "Filter --list by regex on the key")
   cmd.option("--edit", "Open the config file in $EDITOR")
 
