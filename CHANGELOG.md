@@ -19,6 +19,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `folded` `►`, `unfolded` `•`, `empty` `·`, each one cell under the width
   table. `▶` was measured and rejected: it has emoji presentation and is two
   cells wide.
+- `actionFill` is exported from `silvery`, so an app can draw an action chip
+  from the recipe rather than spelling its token pair by hand.
 
 ## [0.24.1] - 2026-09-04
 
