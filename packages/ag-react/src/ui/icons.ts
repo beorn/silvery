@@ -24,6 +24,21 @@
 export const NAV_BACK_ICON = "◄"
 export const NAV_FORWARD_ICON = "►"
 
+/**
+ * Tree-disclosure markers: a node whose children are hidden, shown, or absent.
+ *
+ * NOT RESOLVED, and pinned on purpose: every outline on one screen should
+ * draw the same three glyphs, so they live here once rather than in each app.
+ * Folded is the biggest right-pointing triangle the width table measures as
+ * one cell; U+25B6 would read bigger still, but it carries emoji presentation
+ * and measures two cells, which shifts every cell after it on the row.
+ */
+export const FOLD_MARKERS = Object.freeze({
+  folded: NAV_FORWARD_ICON,
+  unfolded: "•",
+  empty: "·",
+} as const)
+
 /** The pair of glyphs a file browser uses for its two node kinds. */
 export interface FileBrowserIcons {
   readonly directory: string

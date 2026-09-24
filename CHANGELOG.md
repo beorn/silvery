@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   that row still selects the item under it. `overflowIndicatorPlacement` (from
   `@silvery/ag-term/pipeline`) is the one layout rule that both the painter
   and this hit-test read.
+- `FOLD_MARKERS` names the tree-disclosure glyphs every outline shares:
+  `folded` `►`, `unfolded` `•`, `empty` `·`, each one cell under the width
+  table. `▶` was measured and rejected: it has emoji presentation and is two
+  cells wide.
 
 ## [0.24.1] - 2026-09-04
 
