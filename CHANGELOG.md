@@ -179,6 +179,15 @@ input out of the box. `fieldSizing="fixed"` mirrors HTML
 `useTextArea(...)` (the headless hook) still takes `height: number` —
 consumers calling it directly choose the viewport height themselves.
 
+## [0.24.2] - 2026-09-23
+
+### Changed
+
+- `ListViewHandle.scrollToItem(index, align?)` accepts `"start"`, `"center"`,
+  or `"end"` alignment when scrolling to an item.
+- The published `silvery` bin is built JavaScript since 0.24.2 and runs under
+  Node; the in-repository bin remains TypeScript for development.
+
 ## 0.24.0 — Ship the truncate clip fix, and repair the gate that hid it
 
 A minor, not a patch: 77 commits separate this from 0.23.2, including nine

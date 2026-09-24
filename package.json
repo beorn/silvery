@@ -1,6 +1,6 @@
 {
   "name": "silvery",
-  "version": "0.24.1",
+  "version": "0.24.2",
   "description": "React for modern terminal apps — powerful apps, polished UIs, proudly terminal",
   "keywords": [
     "ansi",
@@ -55,6 +55,9 @@
   },
   "publishConfig": {
     "access": "public",
+    "bin": {
+      "silvery": "./dist/bin/silvery.js"
+    },
     "exports": {
       ".": {
         "types": "./dist/index.d.mts",
@@ -87,8 +90,8 @@
     }
   },
   "scripts": {
-    "build": "tsdown",
-    "prepack": "tsdown",
+    "build": "tsdown && bun build ./bin/silvery.ts --target=node --outfile ./dist/bin/silvery.js && node scripts/set-published-bin-shebang.mjs",
+    "prepack": "bun run build",
     "build:all": "tsdown && tsdown -W -F '@silvery/ag' -F '@silvery/ag-react' -F '@silvery/ag-term' -F '@silvery/ansi' -F '@silvery/color' -F '@silvery/command' -F '@silvery/commander' -F '@silvery/commands' -F '@silvery/config' -F '@silvery/create' -F '@silvery/headless' -F '@silvery/ink' -F '@silvery/scope' -F '@silvery/selection' -F '@silvery/signals' -F '@silvery/syntax' -F '@silvery/theme'",
     "test": "NODE_ENV=test BUN_RUNTIME_TRANSPILER_CACHE_PATH=\"${HOME}/.cache/silvercode/bun-transpiler-silvery-test\" bunx --bun vitest run",
     "test:fast": "NODE_ENV=test BUN_RUNTIME_TRANSPILER_CACHE_PATH=\"${HOME}/.cache/silvercode/bun-transpiler-silvery-test\" bunx --bun vitest run --reporter=dot",
