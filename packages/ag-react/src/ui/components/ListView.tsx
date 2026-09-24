@@ -73,7 +73,8 @@ import { actionFill } from "@silvery/ag"
 import { Box, type BoxHandle } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { Scrollbar } from "./Scrollbar"
-import type { AgNode, Rect } from "@silvery/ag/types"
+import type { AgNode, BoxProps, Rect } from "@silvery/ag/types"
+import { overflowIndicatorPlacement } from "@silvery/ag-term/pipeline"
 import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { renderStringSync } from "../../render-string"
 import {
@@ -1802,6 +1803,48 @@ function ListViewInner<T>(
   }
 
   const innerScrollState = useScrollState(containerNode ?? null)
+
+  // A click on the ▲N / ▼N overflow indicator is the mouse spelling of
+  // Home / End (25418): the glyph's own cells only, placed by the painter's
+  // one layout rule, so a click elsewhere on its row stays an item click.
+  // Bottom first: when both edges share a row, the bottom one is what shows.
+  const overflowEdgeAt = useCallback(
+    (x: number, y: number): "top" | "bottom" | undefined => {
+      const rect = containerNode?.screenRect
+      if (
+        !nav ||
+        active === false ||
+        containerNode == null ||
+        rect == null ||
+        innerScrollState == null
+      ) {
+        return undefined
+      }
+      for (const edge of ["bottom", "top"] as const) {
+        const at = overflowIndicatorPlacement({
+          edge,
+          hidden: edge === "top" ? innerScrollState.hiddenAbove : innerScrollState.hiddenBelow,
+          layout: rect,
+          props: containerNode.props as BoxProps,
+        })
+        if (at !== undefined && Math.floor(y) === at.y && x >= at.x && x < at.x + at.width) {
+          return edge
+        }
+      }
+      return undefined
+    },
+    [active, containerNode, innerScrollState, nav],
+  )
+  const jumpFromOverflowIndicator = useCallback(
+    (event: { x: number; y: number; stopPropagation(): void }): boolean => {
+      const edge = overflowEdgeAt(event.x, event.y)
+      if (edge === undefined) return false
+      event.stopPropagation()
+      moveTo(edge === "top" ? 0 : items.length - 1)
+      return true
+    },
+    [items.length, moveTo, overflowEdgeAt],
+  )
   const layoutContentRows =
     innerScrollState !== null && innerScrollState.contentHeight > 0
       ? innerScrollState.contentHeight
@@ -3635,7 +3678,9 @@ function ListViewInner<T>(
         overflowIndicator={overflowIndicator}
         onWheel={onWheel}
         onMouseDown={handlePointerViewportIntent}
-        onClick={handlePointerViewportIntent}
+        onClick={(event) => {
+          if (!jumpFromOverflowIndicator(event)) handlePointerViewportIntent()
+        }}
       >
         {/* Leading placeholder for virtual height.
          *
@@ -3717,14 +3762,15 @@ function ListViewInner<T>(
                 onMouseLeave={() =>
                   setHoveredIndex((current) => (current === originalIndex ? null : current))
                 }
-                onClick={
-                  onItemClick
-                    ? () => onItemClick(originalIndex)
-                    : () => {
-                        moveTo(originalIndex)
-                        onSelect?.(originalIndex)
-                      }
-                }
+                onClick={(event) => {
+                  if (jumpFromOverflowIndicator(event)) return
+                  if (onItemClick) {
+                    onItemClick(originalIndex)
+                    return
+                  }
+                  moveTo(originalIndex)
+                  onSelect?.(originalIndex)
+                }}
               >
                 {rendered}
               </Box>

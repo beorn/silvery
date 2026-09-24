@@ -5,6 +5,17 @@ All notable changes to Silvery are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- A navigable `ListView` treats a click on its `▲N` / `▼N` overflow indicator
+  as Home / End: the cursor moves to the first or last item and `onCursor`
+  fires. Only the glyph's own cells are the target, so a click elsewhere on
+  that row still selects the item under it. `overflowIndicatorPlacement` (from
+  `@silvery/ag-term/pipeline`) is the one layout rule that both the painter
+  and this hit-test read.
+
 ## [0.24.1] - 2026-09-04
 
 ### Added
