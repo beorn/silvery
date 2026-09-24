@@ -4,7 +4,8 @@
  * Contains:
  * - Box rendering (renderBox)
  * - Border rendering (renderBorder)
- * - Scroll indicators (renderScrollIndicators)
+ * - Scroll indicators (renderScrollIndicators), placed by
+ *   overflowIndicatorPlacement (public via the pipeline barrel)
  */
 
 import type { Color, Style, TerminalBuffer } from "../buffer"
@@ -356,15 +357,114 @@ export function renderOutline(
 // Scroll Indicators
 // ============================================================================
 
+/** The viewport edge an overflow indicator sits on: `▲N` top, `▼N` bottom. */
+export type OverflowIndicatorEdge = "top" | "bottom"
+
+/** Input to {@link overflowIndicatorPlacement}. */
+export interface OverflowIndicatorPlacementInput {
+  /** Which edge's indicator to place. */
+  edge: OverflowIndicatorEdge
+  /**
+   * Items hidden past this edge: the scroll container's
+   * `scrollState.hiddenAbove` for `"top"`, `scrollState.hiddenBelow` for
+   * `"bottom"`. There is no indicator unless this is greater than 0.
+   */
+  hidden: number
+  /**
+   * The scroll container's rect. The placement comes back in the same
+   * coordinate space; the painter passes the container's `boxRect`.
+   */
+  layout: Rect
+  /**
+   * The scroll container's own props, as given to the Box. Read:
+   * `borderStyle` and the per-side `borderTop`/`borderBottom`/`borderLeft`/
+   * `borderRight` switches, the padding props, and `overflowIndicator`.
+   */
+  props: BoxProps
+}
+
 /**
- * Render scroll indicators showing hidden items above/below viewport.
+ * Where one edge's overflow indicator is drawn. Row `y` carries it; the
+ * glyph's own cells are `[x, x + width)`, centred in the blanked row span
+ * `[rowX, rowX + rowWidth)`.
+ */
+export interface OverflowIndicatorPlacement {
+  /** The row the indicator is drawn on. */
+  y: number
+  /** First column of the glyph text. */
+  x: number
+  /**
+   * Cells the glyph text covers. Every character of `▲N`/`▼N` is one cell
+   * wide, so this is `text.length`, and `[x, x + width)` is exactly the set
+   * of cells the painter draws the glyph into: the region a click must land
+   * in to hit the indicator, as opposed to the rest of its row.
+   */
+  width: number
+  /** The glyph text as drawn: `▲N` or `▼N`, cut to `rowWidth` cells when wider. */
+  text: string
+  /** First column of the row span the painter blanks before drawing the glyph. */
+  rowX: number
+  /** Width of that blanked row span. */
+  rowWidth: number
+}
+
+/**
+ * Place the overflow indicator for one edge of a scroll container: the one
+ * home of the indicator's layout rule. {@link renderScrollIndicators} paints
+ * exactly what this returns, and mouse hit-tests call it to tell a click on
+ * the glyph from a click elsewhere on its row, so the two cannot disagree.
  *
- * Two rendering modes:
- * 1. Bordered containers: Indicators appear on the border (e.g., "───▲42───")
- * 2. Borderless containers with overflowIndicator: Indicators appear directly
- *    after the last visible child (not at the viewport bottom)
+ * Decided per edge:
+ * - The edge has a border line (as `getBorderSize` counts it: `borderStyle`
+ *   set and that side not switched off): the indicator is centred on the
+ *   border line, across the columns between the left and right borders.
+ *   Padding plays no part.
+ * - The edge has no border line and `overflowIndicator` is set: it is centred
+ *   on the first (top) or last (bottom) content row, inside the padding.
+ * - Otherwise: `undefined`, nothing is drawn for that edge. Likewise when
+ *   nothing is hidden past the edge, or when the row span has no width.
  *
- * Uses ▲N for items hidden above, ▼N for items hidden below.
+ * When both edges resolve to the same row, the painter draws the bottom
+ * indicator last, so the bottom one is what shows there.
+ */
+export function overflowIndicatorPlacement(
+  input: OverflowIndicatorPlacementInput,
+): OverflowIndicatorPlacement | undefined {
+  const { edge, hidden, layout, props } = input
+  if (!(hidden > 0)) return undefined
+
+  const border = getBorderSize(props)
+  const onBorderLine = edge === "top" ? border.top > 0 : border.bottom > 0
+
+  let rowX: number
+  let rowWidth: number
+  let y: number
+  if (onBorderLine) {
+    rowX = layout.x + border.left
+    rowWidth = layout.width - border.left - border.right
+    y = edge === "top" ? layout.y : layout.y + layout.height - 1
+  } else if (props.overflowIndicator === true) {
+    const padding = getPadding(props)
+    rowX = layout.x + padding.left
+    rowWidth = layout.width - padding.left - padding.right
+    y = edge === "top" ? layout.y + padding.top : layout.y + layout.height - padding.bottom - 1
+  } else {
+    return undefined
+  }
+  if (rowWidth <= 0) return undefined
+
+  const glyph = `${edge === "top" ? "\u25b2" : "\u25bc"}${hidden}`
+  const text = glyph.length > rowWidth ? glyph.slice(0, rowWidth) : glyph
+  const x = rowX + Math.max(0, Math.floor((rowWidth - text.length) / 2))
+  return { y, x, width: text.length, text, rowX, rowWidth }
+}
+
+/**
+ * Render scroll indicators showing hidden items above/below the viewport:
+ * `▲N` for items hidden above, `▼N` for items hidden below, drawn where
+ * {@link overflowIndicatorPlacement} puts them: on the border line of a
+ * bordered edge, on the first/last content row of a borderless edge when
+ * `overflowIndicator` is set.
  */
 export function renderScrollIndicators(
   _node: AgNode,
@@ -374,8 +474,6 @@ export function renderScrollIndicators(
   ss: NonNullable<AgNode["scrollState"]>,
   ctx?: PipelineContext,
 ): void {
-  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-
   // Inverse bar style: white text on dark background
   const indicatorStyle: Style = {
     fg: 15, // Bright white
@@ -383,67 +481,26 @@ export function renderScrollIndicators(
     attrs: {},
   }
 
-  // Determine if we should show indicators for borderless containers
-  const showBorderless = props.overflowIndicator === true
-
-  // Top indicator
-  if (ss.hiddenAbove > 0) {
-    const indicator = `\u25b2${ss.hiddenAbove}`
-
-    if (border.top > 0) {
-      // Bordered: render centered inverse indicator on top border line
-      const contentWidth = layout.width - border.left - border.right
-      const x = layout.x + border.left
-      const y = layout.y
-      const maxCol = x + contentWidth
-      renderCenteredIndicator(buffer, x, y, indicator, indicatorStyle, contentWidth, maxCol, ctx)
-    } else if (showBorderless) {
-      // Borderless: render centered inverse indicator on first content row
-      const padding = getPadding(props)
-      const contentWidth = layout.width - padding.left - padding.right
-      const x = layout.x + padding.left
-      const y = layout.y + padding.top
-      const maxCol = x + contentWidth
-      renderCenteredIndicator(buffer, x, y, indicator, indicatorStyle, contentWidth, maxCol, ctx)
-    }
-  }
-
-  // Bottom indicator
-  if (ss.hiddenBelow > 0) {
-    const indicator = `\u25bc${ss.hiddenBelow}`
-
-    if (border.bottom > 0) {
-      // Bordered: render centered inverse indicator on bottom border line
-      const contentWidth = layout.width - border.left - border.right
-      const x = layout.x + border.left
-      const y = layout.y + layout.height - 1
-      const maxCol = x + contentWidth
-      renderCenteredIndicator(buffer, x, y, indicator, indicatorStyle, contentWidth, maxCol, ctx)
-    } else if (showBorderless) {
-      // Borderless: render indicator flush to viewport bottom
-      const padding = getPadding(props)
-      const contentWidth = layout.width - padding.left - padding.right
-      const x = layout.x + padding.left
-      const y = layout.y + layout.height - padding.bottom - 1
-      const maxCol = x + contentWidth
-      renderCenteredIndicator(buffer, x, y, indicator, indicatorStyle, contentWidth, maxCol, ctx)
-    }
-  }
+  // Top first, then bottom: on a shared row the bottom indicator wins.
+  const top = overflowIndicatorPlacement({ edge: "top", hidden: ss.hiddenAbove, layout, props })
+  if (top) renderOverflowIndicator(buffer, top, indicatorStyle, ctx)
+  const bottom = overflowIndicatorPlacement({
+    edge: "bottom",
+    hidden: ss.hiddenBelow,
+    layout,
+    props,
+  })
+  if (bottom) renderOverflowIndicator(buffer, bottom, indicatorStyle, ctx)
 }
 
-function renderCenteredIndicator(
+function renderOverflowIndicator(
   buffer: TerminalBuffer,
-  x: number,
-  y: number,
-  indicator: string,
+  placement: OverflowIndicatorPlacement,
   style: Style,
-  width: number,
-  maxCol: number,
   ctx?: PipelineContext,
 ): void {
-  if (width <= 0) return
-  const text = indicator.length > width ? indicator.slice(0, width) : indicator
-  const indicatorX = x + Math.max(0, Math.floor((width - text.length) / 2))
+  const { y, x, width, text, rowX, rowWidth } = placement
+  const maxCol = rowX + rowWidth
   // Clear the whole indicator row first. The viewport window can replace an
   // item row with an overflow-indicator row after scrolling; without explicit
   // clears, incremental output leaves stale item glyphs around the centered
@@ -451,22 +508,15 @@ function renderCenteredIndicator(
   // the surrounding blank cells.
   renderTextLine(
     buffer,
-    x,
+    rowX,
     y,
-    " ".repeat(width),
+    " ".repeat(rowWidth),
     { fg: null, bg: null, attrs: {} },
     maxCol,
     undefined,
     ctx,
   )
-  renderTextLine(
-    buffer,
-    indicatorX,
-    y,
-    text,
-    style,
-    Math.min(maxCol, indicatorX + text.length),
-    undefined,
-    ctx,
-  )
+  // Clip the glyph to its own cells, so the placement's [x, x + width) is
+  // exactly what reaches the buffer.
+  renderTextLine(buffer, x, y, text, style, Math.min(maxCol, x + width), undefined, ctx)
 }

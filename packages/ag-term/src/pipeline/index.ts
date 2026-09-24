@@ -60,6 +60,14 @@ export {
   type PipelineFeatures,
 } from "./layout-phase"
 export { renderPhase, clearBgConflictWarnings, setBgConflictMode } from "./render-phase"
+// Where the ▲N/▼N overflow indicator is drawn: the painter's own rule, public
+// so mouse hit-tests (ListView) read the glyph's cells instead of re-deriving.
+export {
+  overflowIndicatorPlacement,
+  type OverflowIndicatorEdge,
+  type OverflowIndicatorPlacement,
+  type OverflowIndicatorPlacementInput,
+} from "./render-box"
 export { renderPhaseAdapter } from "./render-phase-adapter"
 export { outputPhase } from "./output-phase"
 export {

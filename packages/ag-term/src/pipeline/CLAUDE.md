@@ -586,7 +586,7 @@ Virtual text nodes (nested `<Text>` inside `<Text>`) don't have layout nodes or 
 | File              | Responsibility                                                                                                             |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | render-phase.ts   | Tree traversal, dirty-flag evaluation, incremental cascade logic, scroll container tiers, region clearing                  |
-| render-box.ts     | Box bg fill (`skipBgFill` aware), border rendering, scroll indicators                                                      |
+| render-box.ts     | Box bg fill (`skipBgFill` aware), border rendering, scroll indicators placed by `overflowIndicatorPlacement` (public)      |
 | render-text.ts    | Text content collection, ANSI parsing, bg segment tracking, `inheritedBg` inheritance, bg conflict detection, inline rects |
 | layout-phase.ts   | Layout calculation, scroll state, screen rects, layout subscriber notification                                             |
 | measure-phase.ts  | Intrinsic size measurement for fit-content nodes                                                                           |
