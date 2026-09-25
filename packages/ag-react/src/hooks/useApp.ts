@@ -7,7 +7,7 @@
  * Unlike useInput (which throws outside a runtime), useApp returns
  * no-op values in static mode — exit/pause/resume are safe to call
  * but do nothing. This allows components to be rendered statically
- * for testing or string output.
+ * for string output.
  */
 
 import { useContext } from "react"

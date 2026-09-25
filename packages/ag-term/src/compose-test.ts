@@ -1,7 +1,7 @@
 /**
  * withTest() — Compose plugin that adds testing convenience methods.
  *
- * Requires withReact() — adds press(), text, lines, containsText() for testing.
+ * Requires withReact() — adds press(), text, lines, containsText() for testing. // seam-allow: no caller outside its own tests; kept pending E-7 (@i/17-test-system/25631-the-engineering-lane/25641-e-7-dead-modules-are-kept-alive-only-by-their-tests)
  *
  * @example
  * ```tsx
@@ -15,7 +15,6 @@
 import type { Ag } from "./ag"
 import type { Term } from "./ansi/term"
 import type { TextFrame } from "@silvery/ag/text-frame"
-import { createTextFrame } from "./buffer"
 import { splitRawInput } from "@silvery/ag/keys"
 
 // =============================================================================
