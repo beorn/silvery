@@ -338,7 +338,13 @@ export type { BreadcrumbProps, BreadcrumbItem } from "./components/Breadcrumb"
 
 // Tabs
 export { Tabs, TabList, Tab, TabPanel } from "./components/Tabs"
-export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabsVariant } from "./components/Tabs"
+export type {
+  TabsProps,
+  TabListProps,
+  TabProps,
+  TabPanelProps,
+  TabsVariant,
+} from "./components/Tabs"
 
 // Tooltip
 export { Tooltip } from "./components/Tooltip"
