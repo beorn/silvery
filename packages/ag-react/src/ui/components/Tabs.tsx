@@ -239,9 +239,14 @@ export function Tab({ value, children, variant: propVariant }: TabProps): React.
   const isFilled = variant === "filled"
   const isActive = activeValue === value
 
-  const interaction = useInteractionTreatment("control", isFilled ? "tabFilled" : "warningText", true, {
-    selected: isActive,
-  })
+  const interaction = useInteractionTreatment(
+    "control",
+    isFilled ? "tabFilled" : "warningText",
+    true,
+    {
+      selected: isActive,
+    },
+  )
 
   // Register this tab's value for keyboard navigation
   React.useEffect(() => {
