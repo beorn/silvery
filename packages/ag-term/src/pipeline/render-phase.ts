@@ -157,7 +157,12 @@ export function renderPhase(
   // (Phase 2 Step 5 of paint-clear-invariant L5) — they no longer travel
   // with the cloned buffer. No-op when the carrier holds an empty list
   // (fresh render, or no outlines on the previous frame).
-  clearPreviousOutlines(buffer, postState)
+  //
+  // Only a clone of the previous frame holds the previous outline. When the
+  // frame size changed the buffer starts blank, and restoring would write last
+  // frame's under-cells onto it as stale content no clear removes — the walk
+  // assumes a blank buffer. `renderDecorationPass` replaces the snapshots below.
+  if (hasPrevBuffer) clearPreviousOutlines(buffer, postState)
 
   const t1 = instr.enabled ? performance.now() : 0
   renderNodeToBuffer(
