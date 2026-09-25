@@ -381,6 +381,10 @@ export function commitPlan(target: TerminalBuffer, plan: RenderPlan): void {
  * Phase 2 once renderers emit ops directly. Exposed in Phase 1 so tests
  * can pin the bucket ordering and so that downstream developers can
  * inspect the substrate.
+ *
+ * Outline restores reach a flat plan as `setCell`, so they apply in the
+ * `setCell` bucket, after the `fill` clears. Same limitation as
+ * `classifyPlan`.
  */
 export function commitPlanByPriority(target: TerminalBuffer, plan: RenderPlan): void {
   if (target.width !== plan.width || target.height !== plan.height) {
@@ -424,6 +428,12 @@ function applyOp(buffer: TerminalBuffer, op: RenderOp): void {
       if (op.wrapJoinSpace !== undefined) meta.wrapJoinSpace = op.wrapJoinSpace
       buffer.setRowMeta(op.row, meta)
       return
+    }
+    default: {
+      const exhaustive: never = op
+      throw new Error(
+        `applyOp: unhandled RenderOp kind ${JSON.stringify((exhaustive as { kind: unknown }).kind)}`,
+      )
     }
   }
 }
@@ -666,7 +676,16 @@ export interface SectionedRenderPlan {
  *     renderer uses space char` pins the char-shape; it does NOT pin
  *     intent. Phase 2 Step 3 closes this.
  *   - `fillBg` → `fillBg` paint.
- *   - `setCell`, `restyleRegion` → paint.
+ *   - `setCell`, `restyleRegion` → paint. That includes outline restores,
+ *     so a classified plan CANNOT prove outline-restore order: the flat
+ *     `RenderOp` union has no `restoreCell`, because the recorder sees
+ *     `BufferSink.emitRestoreCell` as a plain `buffer.setCell`. The restores
+ *     land in `paintOps` and replay AFTER cleanup, the order @km/tui/25821
+ *     removed from production. Production records them as `restoreCell`
+ *     transfer ops through `PlanSink`, and
+ *     tests/features/outline-restore-plan-order.test.tsx proves that order.
+ *     The parity test never meets a restore: it calls `renderPhase` without
+ *     a `RenderPostState`, so every frame starts with no outline snapshots.
  *   - `scrollRegion` → transfer.
  *   - `mergeAttrsInRect` → overlay.
  *   - `setRowMeta` → postState.
@@ -720,6 +739,12 @@ export function classifyPlan(flat: RenderPlan): SectionedRenderPlan {
       case "setRowMeta":
         postStateOps.push(op)
         break
+      default: {
+        const exhaustive: never = op
+        throw new Error(
+          `classifyPlan: unhandled RenderOp kind ${JSON.stringify((exhaustive as { kind: unknown }).kind)}`,
+        )
+      }
     }
   }
 
@@ -774,6 +799,12 @@ function applyTransfer(buffer: TerminalBuffer, op: TransferOp): void {
     case "restoreCell":
       buffer.setCell(op.x, op.y, op.cell)
       return
+    default: {
+      const exhaustive: never = op
+      throw new Error(
+        `applyTransfer: unhandled TransferOp kind ${JSON.stringify((exhaustive as { kind: unknown }).kind)}`,
+      )
+    }
   }
 }
 
@@ -812,6 +843,12 @@ function applyPaint(buffer: TerminalBuffer, op: PaintOp): void {
       realizeToBuffer(plan, buffer)
       return
     }
+    default: {
+      const exhaustive: never = op
+      throw new Error(
+        `applyPaint: unhandled PaintOp kind ${JSON.stringify((exhaustive as { kind: unknown }).kind)}`,
+      )
+    }
   }
 }
 
@@ -840,6 +877,12 @@ function applyPostState(buffer: TerminalBuffer, op: PostStateOp): void {
       // here is a no-op. If a future test wants to inspect snapshot ops
       // from a plan, iterate `plan.postStateOps` directly.
       return
+    default: {
+      const exhaustive: never = op
+      throw new Error(
+        `applyPostState: unhandled PostStateOp kind ${JSON.stringify((exhaustive as { kind: unknown }).kind)}`,
+      )
+    }
   }
 }
 

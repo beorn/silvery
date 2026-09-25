@@ -366,6 +366,9 @@ describe("render-plan-commit parity (Phase 1)", () => {
     const wrappedPrev = wrapPrevBufferForRecording(frame1.clone())
     const recorded = renderPhase(mountB.root, wrappedPrev) as RecordingBuffer
     const flat = recorded.toPlan()
+    // No outline restore reaches this plan (the scene has no outline and no
+    // RenderPostState is threaded). classifyPlan would file one as paint:
+    // see its doc comment.
     const sectioned = classifyPlan(flat)
 
     // Section invariants.
@@ -474,6 +477,41 @@ describe("render-plan-commit parity (Phase 1)", () => {
       cell: {},
     }
     void _badClear
+  })
+
+  test("an op kind no switch handles throws and names the kind", () => {
+    // Requirement (@km/tui/25821 P3): a commit or classify switch with no
+    // case for an op's kind throws and names the kind. It must not skip the
+    // op silently, because a skipped op leaves stale cells on screen. The
+    // `never` default already makes a kind added to a union without a case
+    // a type error. This row covers the runtime half, a forged op, which no
+    // other test feeds in.
+    const forged = { kind: "forgedKind", x: 0, y: 0, cell: {} } as never
+    const flat: RenderPlan = { width: 1, height: 1, ops: [forged] }
+    const empty = {
+      width: 1,
+      height: 1,
+      transferOps: [],
+      cleanupOps: [],
+      paintOps: [],
+      overlayOps: [],
+      postStateOps: [],
+    }
+    const target = () => new TerminalBuffer(1, 1)
+
+    expect(() => commitSectionedPlan(target(), { ...empty, transferOps: [forged] })).toThrow(
+      'applyTransfer: unhandled TransferOp kind "forgedKind"',
+    )
+    expect(() => commitSectionedPlan(target(), { ...empty, paintOps: [forged] })).toThrow(
+      'applyPaint: unhandled PaintOp kind "forgedKind"',
+    )
+    expect(() => commitSectionedPlan(target(), { ...empty, postStateOps: [forged] })).toThrow(
+      'applyPostState: unhandled PostStateOp kind "forgedKind"',
+    )
+    expect(() => commitPlan(target(), flat)).toThrow(
+      'applyOp: unhandled RenderOp kind "forgedKind"',
+    )
+    expect(() => classifyPlan(flat)).toThrow('classifyPlan: unhandled RenderOp kind "forgedKind"')
   })
 
   test("plan ops are non-empty and commit accepts the plan", () => {
