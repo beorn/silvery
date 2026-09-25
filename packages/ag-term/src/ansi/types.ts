@@ -70,7 +70,7 @@ export interface CreateTermOptions {
   stdout?: NodeJS.WriteStream
   stdin?: NodeJS.ReadStream
 
-  // Override auto-detection (for testing or forcing). Field names match
+  // Override auto-detection (for testing or forcing). Field names match // seam-allow: ink-render.ts and ag-react render.tsx pass these in production
   // the caps fields they override — passing `{ ...caps }` works as a
   // partial spread.
   //

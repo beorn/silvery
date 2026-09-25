@@ -645,8 +645,8 @@ function finalizeTerm(
  * Factory overloads:
  * - `createTerm()` — Node.js terminal (auto-detect from process.stdin/stdout)
  * - `createTerm({ stdout, stdin, ... })` — Node.js with custom streams/overrides
- * - `createTerm({ cols, rows })` — Headless for testing (no I/O, fixed dims)
- * - `createTerm(backend, { cols, rows })` — Terminal emulator backend (termless) for testing
+ * - `createTerm({ cols, rows })` — Headless for testing (no I/O, fixed dims) // seam-allow: public headless API (silvery `.`, re-exported by @silvery/test)
+ * - `createTerm(backend, { cols, rows })` — Terminal emulator backend (termless) for testing // seam-allow: public emulator-backend API
  * - `createTerm(emulator)` — Pre-created termless Terminal
  *
  * Detection results are cached at creation time for consistency.
@@ -657,7 +657,7 @@ function finalizeTerm(
  * using term = createTerm()
  * await run(<App />, term)
  *
- * // Headless for testing
+ * // Headless for testing // seam-allow: public headless API example
  * const term = createTerm({ cols: 80, rows: 24 })
  *
  * // Terminal emulator (termless) for full ANSI testing
@@ -1035,7 +1035,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
  *
  * Not a TTY, so `setRawMode` is a no-op on the underlying stream. The Modes
  * owner tracks intent (e.g. `isRawMode`) but emits no ANSI and touches no
- * real termios — correct for testing / emulator backends.
+ * real termios — correct for headless and emulator backends.
  */
 const HEADLESS_STDIN: NodeJS.ReadStream = {
   isTTY: false,
@@ -1044,7 +1044,7 @@ const HEADLESS_STDIN: NodeJS.ReadStream = {
   },
 } as unknown as NodeJS.ReadStream
 
-/** Create a headless terminal for testing — no I/O, fixed dimensions. */
+/** Create a headless terminal for testing — no I/O, fixed dimensions. */ // seam-allow: public headless API behind createTerm({ cols, rows })
 function createHeadlessTerm(
   dims: { cols: number; rows: number },
   capsOverride?: Partial<TerminalCaps>,
