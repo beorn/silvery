@@ -34,6 +34,8 @@ import { Text } from "../../components/Text"
 // Types
 // =============================================================================
 
+export type TabsVariant = "default" | "filled"
+
 export interface TabsProps {
   /** Default active tab value (uncontrolled) */
   defaultValue?: string
@@ -43,6 +45,8 @@ export interface TabsProps {
   onChange?: (value: string) => void
   /** Whether tab input is active (default: true) */
   isActive?: boolean
+  /** Visual variant of the tab strip (default: "default") */
+  variant?: TabsVariant
   /** Tab children (TabList + TabPanel components) */
   children: React.ReactNode
 }
@@ -59,6 +63,12 @@ export interface TabListProps {
    * of clipping the trailing tabs off-screen.
    */
   flexWrap?: BoxProps["flexWrap"]
+  /** Gap between tabs. Defaults to 1 for "filled", 0 for "default". */
+  gap?: number
+  /** Whether to render a bottom border under the tab list. Defaults to false for "filled", true for "default". */
+  borderBottom?: boolean
+  /** Visual variant override for this TabList. Defaults to Tabs context variant, or "default". */
+  variant?: TabsVariant
 }
 
 export interface TabProps {
@@ -66,6 +76,8 @@ export interface TabProps {
   value: string
   /** Tab label children */
   children: React.ReactNode
+  /** Visual variant override for this Tab. Defaults to TabList / Tabs context variant. */
+  variant?: TabsVariant
 }
 
 export interface TabPanelProps {
@@ -84,6 +96,7 @@ interface TabsContextValue {
   setActiveValue: (value: string) => void
   tabValues: string[]
   registerTab: (value: string) => void
+  variant: TabsVariant
 }
 
 const TabsContext = createContext<TabsContextValue>({
@@ -91,6 +104,7 @@ const TabsContext = createContext<TabsContextValue>({
   setActiveValue: () => {},
   tabValues: [],
   registerTab: () => {},
+  variant: "default",
 })
 
 function useTabsContext(): TabsContextValue {
@@ -112,6 +126,7 @@ export function Tabs({
   value: controlledValue,
   onChange,
   isActive = true,
+  variant = "default",
   children,
 }: TabsProps): React.ReactElement {
   const isControlled = controlledValue !== undefined
@@ -160,7 +175,7 @@ export function Tabs({
   )
 
   return (
-    <TabsContext.Provider value={{ activeValue, setActiveValue, tabValues, registerTab }}>
+    <TabsContext.Provider value={{ activeValue, setActiveValue, tabValues, registerTab, variant }}>
       <Box flexDirection="column" flexGrow={1} minHeight={0}>
         {children}
       </Box>
@@ -171,37 +186,60 @@ export function Tabs({
 /**
  * Horizontal tab bar container.
  *
- * Renders Tab children in a compact segmented row.
+ * Renders Tab children in a row.
+ * Default variant: compact segmented row with borderBottom and gap 0.
+ * Filled variant: tabs with background fills and gap 1 between them.
  */
-export function TabList({ children, justifyContent, flexWrap }: TabListProps): React.ReactElement {
-  return (
+export function TabList({
+  children,
+  justifyContent,
+  flexWrap,
+  gap: propGap,
+  borderBottom: propBorderBottom,
+  variant: propVariant,
+}: TabListProps): React.ReactElement {
+  const context = useTabsContext()
+  const variant = propVariant ?? context.variant ?? "default"
+  const isFilled = variant === "filled"
+  const gap = propGap ?? (isFilled ? 1 : 0)
+  const borderBottom = propBorderBottom ?? !isFilled
+
+  const content = (
     <Box
       flexDirection="row"
       flexWrap={flexWrap}
-      gap={0}
+      gap={gap}
       width="100%"
-      borderBottom
+      borderBottom={borderBottom}
       borderColor="$border-default"
       justifyContent={justifyContent}
     >
       {children}
     </Box>
   )
+
+  if (propVariant !== undefined && propVariant !== context.variant) {
+    return <TabsContext.Provider value={{ ...context, variant }}>{content}</TabsContext.Provider>
+  }
+  return content
 }
 
 /**
  * Individual tab trigger.
  *
- * Renders the tab label with active/inactive styling. Tabs do not use a
+ * Default variant: tab label with active/inactive styling. Tabs do not use a
  * filled background; the active tab is the selected text color.
  *
- * Hover: a non-active hovered tab gets the same selected text color to
- * signal interactivity without adding a second surface treatment.
+ * Filled variant: tab label with its own filled background box, 1-cell horizontal
+ * padding around each tab, and a distinct selected background color.
  */
-export function Tab({ value, children }: TabProps): React.ReactElement {
-  const { activeValue, setActiveValue, registerTab } = useTabsContext()
+export function Tab({ value, children, variant: propVariant }: TabProps): React.ReactElement {
+  const { activeValue, setActiveValue, registerTab, variant: contextVariant } = useTabsContext()
+  const variant = propVariant ?? contextVariant ?? "default"
+  const isFilled = variant === "filled"
   const isActive = activeValue === value
-  const interaction = useInteractionTreatment("control", "warningText", true, {
+
+  const interaction = useInteractionTreatment("control", isFilled ? "tabFilled" : "warningText", true, {
     selected: isActive,
   })
 
@@ -216,7 +254,9 @@ export function Tab({ value, children }: TabProps): React.ReactElement {
       onMouseDown={() => setActiveValue(value)}
       onMouseEnter={interaction.onMouseEnter}
       onMouseLeave={interaction.onMouseLeave}
-      paddingRight={2}
+      paddingX={isFilled ? 1 : undefined}
+      paddingRight={isFilled ? undefined : 2}
+      backgroundColor={isFilled ? interaction.treatment.backgroundColor : undefined}
     >
       <Text color={interaction.treatment.color} bold>
         {children}

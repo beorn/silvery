@@ -462,7 +462,7 @@ export type { BreadcrumbProps, BreadcrumbItem } from "./ui/components"
 
 // Tabs
 export { Tabs, TabList, Tab, TabPanel } from "./ui/components"
-export type { TabsProps, TabListProps, TabProps, TabPanelProps } from "./ui/components"
+export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabsVariant } from "./ui/components"
 
 // Tooltip
 export { Tooltip } from "./ui/components"

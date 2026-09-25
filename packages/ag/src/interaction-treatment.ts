@@ -108,6 +108,11 @@ export const interactionSurfaceRecipes = Object.freeze({
     armed: fill("$primary", "$primary"),
   },
   warningText: { idle: fg("$fg"), revealed: fg("$fg-warning"), selected: fg("$fg-warning") },
+  tabFilled: {
+    idle: fill("$fg-muted", "$bg-surface-subtle"),
+    revealed: fill("$fg", "$bg-surface-hover"),
+    selected: fill("$fg-on-selected", "$bg-selected", true),
+  },
   cursorSurface: { revealed: bg("$bg-cursor"), selected: bg("$bg-cursor") },
 } as const satisfies Record<string, InteractionSurface>)
 
