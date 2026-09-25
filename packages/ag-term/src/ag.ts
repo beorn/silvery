@@ -551,7 +551,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
           throw new Error("doRender: SILVERY_RENDER_PLAN enabled but root has no boxRect")
         }
         const captured = withPlanCapture(layout.width, layout.height, () =>
-          renderPhase(root, prevBuffer, ctx, postState),
+          renderPhase(root, prevBuffer, ctx, postState, opts),
         )
         void captured.result
         const replay =
@@ -561,7 +561,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
         commitSectionedPlan(replay, captured.plan)
         buffer = replay
       } else {
-        buffer = renderPhase(root, prevBuffer, ctx, postState)
+        buffer = renderPhase(root, prevBuffer, ctx, postState, opts)
       }
       tContent = performance.now() - t
       log.debug?.(`content: ${tContent.toFixed(2)}ms`)
@@ -641,7 +641,9 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     // Clear THIS tree's dirty tracking after each render pass. Content dirty
     // nodes were processed by renderPhase; layout dirty is managed by Flexily
     // internally (isDirty cleared after calculateLayout).
-    clearDirtyTracking(root)
+    if (!opts?.fresh) {
+      clearDirtyTracking(root)
+    }
 
     // Bench instrumentation: accumulate content-phase timing.
     const acc = (globalThis as any).__silvery_bench_phases

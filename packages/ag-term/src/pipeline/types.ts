@@ -178,6 +178,8 @@ export interface NodeRenderState {
    * sets it to false for the subtree; userSelect="text"|"contain" sets it back
    * to true. */
   selectableMode: boolean
+  /** True when rendering a fresh frame (no incremental tracking, don't clear dirty flags or advance epochs). */
+  fresh?: boolean
 }
 
 /**

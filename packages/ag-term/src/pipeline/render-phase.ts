@@ -93,6 +93,7 @@ export function renderPhase(
   prevBuffer?: TerminalBuffer | null,
   ctx?: PipelineContext,
   postState: RenderPostState = createRenderPostState(),
+  opts?: { fresh?: boolean },
 ): TerminalBuffer {
   const layout = root.boxRect
   if (!layout) {
@@ -115,7 +116,9 @@ export function renderPhase(
   // - Scheduler polling without React pending work
   if (hasPrevBuffer && !isAnyDirty(root) && !isCurrentEpoch(root, root.layoutChangedThisFrame)) {
     if (instr.enabled) instr.stats._noopSkip = 1
-    advanceRenderEpoch(root)
+    if (!opts?.fresh) {
+      advanceRenderEpoch(root)
+    }
     return prevBuffer
   }
 
@@ -179,6 +182,7 @@ export function renderPhase(
       inheritedBg: { color: null, ancestorRect: null },
       inheritedFg: null,
       selectableMode: true,
+      fresh: !!opts?.fresh,
     },
     ctx,
   )
@@ -200,15 +204,12 @@ export function renderPhase(
   // Skip when no layout changed this frame (cursor move, style-only changes).
   // The layout phase sets layoutChangedThisFrame on affected nodes; if root's
   // subtree has any, we need the full sync. If not, prevLayout is already correct.
-  const anyLayoutChanged =
-    isCurrentEpoch(root, root.layoutChangedThisFrame) || isDirty(root, SUBTREE_BIT)
-  syncPrevLayout(root, anyLayoutChanged || !hasPrevBuffer)
-
-  // Advance the render epoch — all dirty flags stamped with the old epoch
-  // instantly become "not dirty". This replaces the O(N) clearDirtyFlags walk
-  // for rendered nodes (skipped nodes still need explicit clearing). Scoped to
-  // THIS tree — a peer renderer's frame must never clear our pending bits.
-  advanceRenderEpoch(root)
+  if (!opts?.fresh) {
+    const anyLayoutChanged =
+      isCurrentEpoch(root, root.layoutChangedThisFrame) || isDirty(root, SUBTREE_BIT)
+    syncPrevLayout(root, anyLayoutChanged || !hasPrevBuffer)
+    advanceRenderEpoch(root)
+  }
 
   return buffer
 }
@@ -464,13 +465,17 @@ function renderNodeToBuffer(
   // Skip nodes without Yoga (raw text and virtual text nodes)
   // Their content is rendered by their parent silvery-text via collectTextContent()
   if (!node.layoutNode) {
-    clearVirtualTextFlags(node)
+    if (!nodeState.fresh) {
+      clearVirtualTextFlags(node)
+    }
     return
   }
 
   // Skip hidden nodes (Suspense support)
   if (node.hidden) {
-    clearDirtyFlags(node)
+    if (!nodeState.fresh) {
+      clearDirtyFlags(node)
+    }
     return
   }
 
@@ -478,7 +483,9 @@ function renderNodeToBuffer(
 
   // Skip display="none" nodes
   if (props.display === "none") {
-    clearDirtyFlags(node)
+    if (!nodeState.fresh) {
+      clearDirtyFlags(node)
+    }
     return
   }
 
@@ -557,7 +564,9 @@ function renderNodeToBuffer(
         })
       }
     }
-    clearDirtyFlags(node)
+    if (!nodeState.fresh) {
+      clearDirtyFlags(node)
+    }
     return
   }
   if (instr.enabled) {
@@ -776,11 +785,15 @@ function renderNodeToBuffer(
       if (prevSig !== undefined && prevSig === sig && isDirty(node, STYLE_PROPS_BIT)) {
         useTextStyleFastPath = true
       }
-      _textContentSigs.set(node, sig)
+      if (!nodeState.fresh) {
+        _textContentSigs.set(node, sig)
+      }
     } else if (node.type === "silvery-text") {
       // Keep the signature current for every other text render so the NEXT
       // frame's comparison reflects the chars actually in the (cloned) buffer.
-      _textContentSigs.set(node, collectPlainText(node))
+      if (!nodeState.fresh) {
+        _textContentSigs.set(node, collectPlainText(node))
+      }
     }
 
     // Clear stale regions in the cloned buffer before rendering content.
@@ -924,7 +937,9 @@ function renderNodeToBuffer(
         clipBounds,
         ctx,
       )
-      node.hadBoxAttrOverlay = applied
+      if (!nodeState.fresh) {
+        node.hadBoxAttrOverlay = applied
+      }
     }
 
     // Outlines are NOT rendered here — the decoration phase (post-content)
@@ -933,7 +948,9 @@ function renderNodeToBuffer(
     // frame. See decoration-phase.ts.
 
     // Clear dirty flags (current node only — children clear their own when rendered)
-    clearNodeDirtyFlags(node)
+    if (!nodeState.fresh) {
+      clearNodeDirtyFlags(node)
+    }
   } finally {
     // Pop per-subtree theme override (after ALL child passes including absolute/sticky)
     if (nodeTheme) popContextTheme()
@@ -1628,6 +1645,7 @@ function renderScrollContainerChildren(
     inheritedBg,
     inheritedFg,
     selectableMode,
+    fresh,
   } = nodeState
   const instr = resolveInstrumentation(ctx)
   const layout = node.boxRect
@@ -1857,6 +1875,7 @@ function renderScrollContainerChildren(
         inheritedBg,
         inheritedFg,
         selectableMode,
+        fresh,
       },
       ctx,
     )
@@ -1901,6 +1920,7 @@ function renderScrollContainerChildren(
           inheritedBg,
           inheritedFg,
           selectableMode,
+          fresh,
         },
         ctx,
       )
@@ -1973,6 +1993,7 @@ function renderNormalChildren(
     inheritedBg,
     inheritedFg,
     selectableMode,
+    fresh,
   } = nodeState
   const instr = resolveInstrumentation(ctx)
   const layout = node.boxRect
@@ -2194,6 +2215,7 @@ function renderNormalChildren(
         inheritedBg,
         inheritedFg,
         selectableMode,
+        fresh,
       },
       ctx,
     )
@@ -2234,6 +2256,7 @@ function renderNormalChildren(
           inheritedBg,
           inheritedFg,
           selectableMode,
+          fresh,
         },
         ctx,
       )
@@ -2273,6 +2296,7 @@ function renderNormalChildren(
           inheritedBg,
           inheritedFg,
           selectableMode,
+          fresh,
         },
         ctx,
       )

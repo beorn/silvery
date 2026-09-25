@@ -801,6 +801,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // so the fresh pass doesn't observe or mutate the cross-frame snapshots
     // — see the `fresh` option doc above.
     const { buffer, carryForwardBuffer, overlay } = ag.render({
+      fresh: opts?.fresh,
       prevBuffer,
       postState: opts?.fresh ? createRenderPostState() : instance.postState,
     })
