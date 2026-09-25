@@ -20,6 +20,7 @@ import { type MouseEventProcessorState, processMouseEvent, hitTest } from "../mo
 import { PASTE_START, PASTE_END } from "../bracketed-paste"
 import type { Container } from "@silvery/ag-react/reconciler"
 import { getContainerRoot } from "@silvery/ag-react/reconciler"
+import { activeEditContextRef } from "@silvery/ag-react/hooks/use-edit-context"
 import type { AgNode } from "@silvery/ag/types"
 import type { Key } from "./keys"
 import type { EventHandler, EventHandlerContext, EventHandlers } from "./create-app"
@@ -407,6 +408,14 @@ export function handleFocusNavigation(
   // `handleTabCycling: false` so Tab / Shift+Tab reach useInput instead —
   // common pattern for Claude-Code-style "shift+tab cycles permission mode"
   // bindings where focus navigation isn't useful.
+  //
+  // When an EditContext is active, text editing owns Tab navigation (e.g. field
+  // switching in dialogs, indenting in outliners). Do not let default focus
+  // cycling intercept Tab away from the active editor.
+  if (activeEditContextRef.current !== null && parsedKey.tab) {
+    return "continue"
+  }
+
   if (handleTabCycling && parsedKey.tab && !parsedKey.shift) {
     focusManager.focusNext(root)
     return "consumed"

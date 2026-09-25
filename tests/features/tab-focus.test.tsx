@@ -443,4 +443,34 @@ describe("handleTabCycling option (run path)", () => {
     expect(observed).toEqual(["accept-edits", "auto", "bypass"])
     app.unmount()
   })
+
+  test("contract: when an EditContext is active (useEditContext), Tab bypasses default focus cycling", async () => {
+    const { useEditContext } = await import("@silvery/ag-react")
+    let tabSeen = false
+    function EditorApp() {
+      useEditContext({ initialValue: "test" })
+      useInput((_input, key) => {
+        if (key.tab) tabSeen = true
+      })
+      return (
+        <Box flexDirection="column">
+          <FocusableItem id="btn1" />
+          <FocusableItem id="btn2" />
+        </Box>
+      )
+    }
+
+    const app = await run(<EditorApp />, {
+      cols: 40,
+      rows: 5,
+    })
+
+    // With handleTabCycling default (true) and 2 focusables, Tab must bypass
+    // default focus cycling while an EditContext is active.
+    await app.press("Tab")
+    expect(tabSeen).toBe(true)
+    expect(app.text).toContain("btn1: unfocused")
+    expect(app.text).toContain("btn2: unfocused")
+    app.unmount()
+  })
 })
