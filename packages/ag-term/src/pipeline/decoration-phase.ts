@@ -63,8 +63,10 @@ export function clearPreviousOutlines(buffer: TerminalBuffer, postState: RenderP
   const snapshots = postState.outlineSnapshots
   if (snapshots.length === 0) return
   const sink: RenderSink = createFrameSink(buffer)
+  // A transfer, not a paint: it must commit before this frame's clears
+  // (see `TransferOp` in render-plan.ts).
   for (const snap of snapshots) {
-    sink.emitSetCell(snap.x, snap.y, snap.cell)
+    sink.emitRestoreCell(snap.x, snap.y, snap.cell)
   }
   // Clear the post-state directly so the next phase (renderDecorationPass)
   // starts from an empty list. The sink op records the intent in the plan

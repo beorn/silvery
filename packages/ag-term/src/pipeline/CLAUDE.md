@@ -42,6 +42,8 @@ measure -> layout -> scroll -> sticky -> scrollRect -> [notify] -> content -> de
 
 The **decoration phase** is separate from content so overlays that draw OUTSIDE their owning node's rect (currently: outlines) don't have to participate in the per-node incremental cascade. Before the content phase runs, `clearPreviousOutlines` restores cells under last frame's outlines from snapshots carried on the `RenderPostState` carrier (see [`render-post-state.ts`](render-post-state.ts)). After content, `renderDecorationPass` walks the tree, draws outlines, and captures fresh snapshots into the same carrier for the next frame. This makes outline removal "just work" — the decoration pass redraws every frame, so there's no false-positive cascade to debug.
 
+The restores are **transfer** ops (`sink.emitRestoreCell` → `transferOps`), not paints. `commitSectionedPlan` applies transfer → cleanup → paint, so a restore filed as a paint replays after this frame's clears and brings back last frame's text wherever the frame cleared without repainting. They also run only when the working buffer is a clone of the previous frame (`hasPrevBuffer`): after a frame-size change the buffer starts blank and never held the outline. See LESSONS.md "Outline Restores Replayed After the Clears" (2026-09-25).
+
 ### Carrier ownership — load-bearing for per-frame-Ag callers
 
 The `RenderPostState` carrier MUST persist across frames. It defaults to a per-`createAg` instance field (`_postState`), which is correct for **long-lived-Ag callers** that reuse the same `Ag` across frames (`runtime/renderer.ts`, plugin-style hosts).

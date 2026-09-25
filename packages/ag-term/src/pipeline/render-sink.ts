@@ -115,6 +115,13 @@ export interface RenderSink {
     selectable?: boolean,
   ): void
 
+  /**
+   * Put back a prev-frame cell that the previous frame's outline was drawn
+   * over (`clearPreviousOutlines`). Lives in `transferOps`, so it commits
+   * before this frame's clears — see `TransferOp` in render-plan.ts.
+   */
+  emitRestoreCell(x: number, y: number, cell: CellPatch): void
+
   // -- cleanup ops ----------------------------------------------------------
 
   /**
@@ -276,6 +283,10 @@ export class BufferSink implements RenderSink {
     this.buffer.scrollRegion(x, y, width, height, delta, this.selectableCell(clearCell, selectable))
   }
 
+  emitRestoreCell(x: number, y: number, cell: CellPatch): void {
+    this.buffer.setCell(x, y, cell)
+  }
+
   emitClearRect(
     x: number,
     y: number,
@@ -409,6 +420,11 @@ export class TeeSink implements RenderSink {
   ): void {
     this.primary.emitScrollRegion(x, y, width, height, delta, clearCell, selectable)
     this.secondary.emitScrollRegion(x, y, width, height, delta, clearCell, selectable)
+  }
+
+  emitRestoreCell(x: number, y: number, cell: CellPatch): void {
+    this.primary.emitRestoreCell(x, y, cell)
+    this.secondary.emitRestoreCell(x, y, cell)
   }
 
   emitClearRect(
@@ -607,6 +623,10 @@ export class PlanSink implements RenderSink {
       clearCell: clearCell ? this.selectableCell(clearCell, selectable) : undefined,
       selectable,
     })
+  }
+
+  emitRestoreCell(x: number, y: number, cell: CellPatch): void {
+    this.transferOps.push({ kind: "restoreCell", x, y, cell: cloneCellPatch(cell) })
   }
 
   emitClearRect(

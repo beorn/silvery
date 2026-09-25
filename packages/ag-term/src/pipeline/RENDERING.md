@@ -86,7 +86,7 @@ Render the node tree to a `TerminalBuffer` (2D grid of cells).
 
 **Key invariant**: Incremental render MUST produce identical buffer to fresh render. `SILVERY_STRICT` verifies this.
 
-Before walking the tree, the render phase runs `clearPreviousOutlines(buffer)` to restore cells under last frame's outlines using snapshots carried on the cloned buffer. After the content walk, `renderDecorationPass(buffer, root)` walks the tree again, draws outlines for every node with `outlineStyle`, and captures fresh snapshots. Outlines are NOT part of the per-node cascade — they draw OUTSIDE their owning node, so they're handled as a separate decoration pass that runs every frame.
+Before walking the tree, the render phase runs `clearPreviousOutlines(buffer, postState)` to restore cells under last frame's outlines, using snapshots from the `RenderPostState` carrier. It runs only when the buffer is a clone of the previous frame, and it emits transfer ops, so the sectioned plan commits the restores before this frame's clears. After the content walk, `renderDecorationPass(buffer, root)` walks the tree again, draws outlines for every node with `outlineStyle`, and captures fresh snapshots. Outlines are NOT part of the per-node cascade — they draw OUTSIDE their owning node, so they're handled as a separate decoration pass that runs every frame.
 
 Output: `TerminalBuffer` — the correct pixel state for this frame.
 

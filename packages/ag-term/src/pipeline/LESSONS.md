@@ -343,3 +343,19 @@ Not fixed in the pipeline, deliberately. A per-node check inside `renderNodeToBu
 **Test**: `tests/features/islands-attach-incremental-paint.test.tsx` — a transcript inside an `overflow="scroll"` container, rendering one frame per microtask generation of the init chain with only unrelated header state changing. Whichever generation attaches the handle, the next frame is the one asserted on. Red before the fix at frame #4; no `SILVERY_STRICT` needed, though the same frame throws under it.
 
 **Lesson**: the incremental invariant is "a skipped node's pixels in the clone are still correct", and every node whose paint reads state outside the tree owes a dirty mark at the moment that state changes — not one microtask later. A deferral is not a small scheduling detail here: a frame can run inside it, and the epoch that frame advances silently voids whatever mark arrives next. Reach for `SILVERY_CELL_DEBUG=x,y` early on a "which node failed to paint" question; the absence of a SKIP line for a node that covers the cell is the difference between "skipped it" and "never looked at it", and those have opposite fixes.
+
+## Outline Restores Replayed After the Clears — Stale Text Under a Moved Focus Ring (2026-09-25)
+
+**Symptom** (`@km/tui/25798`): km's list view draws the editing row's focus ring with `outlineStyle`, over the rows above and below. Enter split the row and moved the ring onto a new EMPTY row inserted where the old ring's bottom edge sat. The new row showed `·  eta` — the tail of "beta", the row that used to sit there — while a fresh render showed `·`. STRICT: `MISMATCH at (3, 6) — incremental "e" bold, fresh " "`, fresh write trap `NO WRITES`.
+
+**The instrument**: `SILVERY_STRICT_TRAP=3,6` (createApp path) logs the INCREMENTAL writes. `clearPreviousOutlines` restored the "e", `clearNodeRegion` cleared it, then `commitSectionedPlan` → `applyPaint` wrote the "e" again. `SILVERY_RENDER_PLAN=0` turned the test green, so here the sectioned plan was the culprit, not a red herring as in 2026-07-09.
+
+**Root cause**: `clearPreviousOutlines` emitted its restores through `emitSetCell`, which puts them in `paintOps`. `commitSectionedPlan` applies transfer → cleanup → paint, so the restores replayed AFTER every clear of the frame. Any restored cell that the frame cleared but did not repaint came back with last frame's content. A restore undoes last frame's decoration on the clone, so it belongs with the transfers.
+
+**A second defect in the same function**: when the frame size changes, `renderPhase` starts from a blank buffer (`hasPrevBuffer=false`) and paints with no clears, but it still called `clearPreviousOutlines`. That wrote last frame's under-cells onto a buffer that never had the outline, and it did so in both plan and direct modes. It shows up in content-sized frames (`createRenderer`, inline mode) when a row is added under an outline.
+
+**Fix**: a `restoreCell` `TransferOp` plus `RenderSink.emitRestoreCell`, which `clearPreviousOutlines` now uses. Restores are emitted before the walk, so they stay ahead of any `scrollRegion`. `renderPhase` calls `clearPreviousOutlines` only when `hasPrevBuffer` is true.
+
+**Test**: `tests/features/outline-restore-plan-order.test.tsx`: a 20-row list with an outlined editing row. The ring moves onto an inserted empty row, the ring is removed while the covered row shrinks, and in the third case the frame grows. All three assert the row text and fail without STRICT.
+
+**Lesson**: in the sectioned plan, a section says what an op is for, and emission order no longer decides the result. When an op is filed in a section by its buffer call rather than its purpose, the plan changes its order silently. Check every `emit*` call against the section it lands in: is this op painting this frame, or rebuilding the baseline?

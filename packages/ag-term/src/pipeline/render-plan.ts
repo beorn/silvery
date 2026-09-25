@@ -539,20 +539,31 @@ export type PaintOp =
     }
 
 /**
- * A transfer op. Lives in `transferOps`. Shifts existing prev-frame
- * pixels (e.g. scroll Tier 1 buffer-shift). Runs FIRST so subsequent
- * paints into the shifted region land on the right cells.
+ * A transfer op. Lives in `transferOps`. Turns the prev-frame clone into
+ * this frame's incremental baseline, so it runs FIRST — before any clear
+ * or paint of this frame:
+ *
+ *   - `scrollRegion` shifts existing prev-frame pixels (scroll Tier 1
+ *     buffer-shift) so subsequent paints into the shifted region land on
+ *     the right cells.
+ *   - `restoreCell` puts back a cell the previous frame's outline was
+ *     drawn over (decoration-phase.ts `clearPreviousOutlines`). It undoes
+ *     the previous frame's decoration, it does not paint this frame: as a
+ *     paint it would replay AFTER this frame's clears and resurrect the
+ *     stale cell wherever this frame cleared without repainting.
  */
-export type TransferOp = {
-  kind: "scrollRegion"
-  x: number
-  y: number
-  width: number
-  height: number
-  delta: number
-  clearCell?: SelectableCellPatch
-  selectable?: boolean
-}
+export type TransferOp =
+  | {
+      kind: "scrollRegion"
+      x: number
+      y: number
+      width: number
+      height: number
+      delta: number
+      clearCell?: SelectableCellPatch
+      selectable?: boolean
+    }
+  | { kind: "restoreCell"; x: number; y: number; cell: SelectableCellPatch }
 
 /**
  * An overlay op. Lives in `overlayOps`. Applied AFTER paint — Box attr
@@ -607,7 +618,8 @@ export type PostStateOp =
  * Each section is a typed list, so the type system rejects mixing kinds.
  * Commit applies sections in fixed order:
  *
- *   1. transferOps      — shift prev pixels (scroll Tier 1)
+ *   1. transferOps      — shift prev pixels (scroll Tier 1), restore cells
+ *                         under the previous frame's outlines
  *   2. cleanupOps       — destructive clears (excess, overflow, viewport)
  *   3. paintOps         — final-frame content (bg fills, text, borders)
  *   4. overlayOps       — attr overlays (merge into existing cells)
@@ -748,14 +760,21 @@ export function commitSectionedPlan(target: TerminalBuffer, plan: SectionedRende
 }
 
 function applyTransfer(buffer: TerminalBuffer, op: TransferOp): void {
-  buffer.scrollRegion(
-    op.x,
-    op.y,
-    op.width,
-    op.height,
-    op.delta,
-    selectablePatch(op.clearCell ?? {}, op.selectable),
-  )
+  switch (op.kind) {
+    case "scrollRegion":
+      buffer.scrollRegion(
+        op.x,
+        op.y,
+        op.width,
+        op.height,
+        op.delta,
+        selectablePatch(op.clearCell ?? {}, op.selectable),
+      )
+      return
+    case "restoreCell":
+      buffer.setCell(op.x, op.y, op.cell)
+      return
+  }
 }
 
 function applyClear(buffer: TerminalBuffer, op: ClearOp): void {
