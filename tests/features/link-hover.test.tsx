@@ -63,6 +63,7 @@ describe("interaction treatment recipes", () => {
       "selectableNav",
       "dragHandle",
       "warningText",
+      "tabFilled",
       "cursorSurface",
     ])
 
