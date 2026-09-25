@@ -554,4 +554,212 @@ describe("handleTabCycling option (run path)", () => {
 
     app.unmount()
   })
+
+  test("withFocus: with an active edit context (useEditContext), Tab and Shift+Tab bypass focus cycling and pass through to target press (25842 Row 1)", async () => {
+    const { withFocus } = await import("@silvery/ag-term/plugins/with-focus")
+    const { createContainer, getContainerRoot, createFiberRoot, reconciler } =
+      await import("@silvery/ag-react/reconciler")
+    const { useEditContext, activeEditContextRef } = await import("@silvery/ag-react")
+    const { ensureLayoutEngine } = await import("@silvery/ag-term/runtime")
+    await ensureLayoutEngine()
+
+    function EditorApp() {
+      useEditContext({ initialValue: "test" })
+      return (
+        <Box flexDirection="column">
+          <FocusableItem id="btn1" />
+          <FocusableItem id="btn2" />
+        </Box>
+      )
+    }
+
+    const container = createContainer(() => {})
+    const root = getContainerRoot(container)
+    const fiberRoot = createFiberRoot(container)
+
+    reconciler.updateContainerSync(<EditorApp />, fiberRoot, null, null)
+    reconciler.flushSyncWork()
+
+    expect(activeEditContextRef.current).not.toBeNull()
+
+    const pressed: string[] = []
+    const baseApp = {
+      getContainer() {
+        return root
+      },
+      async press(key: string) {
+        pressed.push(key)
+      },
+    }
+
+    const enhanced = withFocus()(baseApp as any)
+
+    expect(enhanced.focusManager.activeId).toBeNull()
+
+    await enhanced.press("Tab")
+    expect(pressed).toEqual(["Tab"])
+    expect(enhanced.focusManager.activeId).toBeNull()
+
+    await enhanced.press("Shift+Tab")
+    expect(pressed).toEqual(["Tab", "Shift+Tab"])
+    expect(enhanced.focusManager.activeId).toBeNull()
+
+    reconciler.updateContainerSync(null, fiberRoot, null, null)
+    reconciler.flushSyncWork()
+  })
+
+  test("renderToCanvas: with an active edit context (useEditContext), Tab and Shift+Tab bypass focus cycling and reach useInput (25842 Row 2)", async () => {
+    const { renderToCanvas } = await import("../../packages/ag-react/src/ui/canvas/index")
+    const { useEditContext, activeEditContextRef } = await import("@silvery/ag-react")
+    const { ensureLayoutEngine } = await import("@silvery/ag-term/runtime")
+    await ensureLayoutEngine()
+
+    let tabSeen = false
+    let shiftTabSeen = false
+    function CanvasEditorApp() {
+      useEditContext({ initialValue: "test" })
+      useInput((_input, key) => {
+        if (key.tab && !key.shift) tabSeen = true
+        if (key.tab && key.shift) shiftTabSeen = true
+      })
+      return (
+        <Box flexDirection="column">
+          <FocusableItem id="btn1" />
+          <FocusableItem id="btn2" />
+        </Box>
+      )
+    }
+
+    const createMockCtx = () => ({
+      setTransform: () => {},
+      clearRect: () => {},
+      drawImage: () => {},
+      save: () => {},
+      restore: () => {},
+      fillRect: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      stroke: () => {},
+      setLineDash: () => {},
+      fillText: () => {},
+      measureText: () => ({ width: 10 }),
+    })
+
+    const listeners = new Map<string, (e: any) => void>()
+    const mockTextarea = {
+      style: {},
+      setAttribute: () => {},
+      addEventListener: (event: string, handler: (e: any) => void) => {
+        listeners.set(event, handler)
+      },
+      removeEventListener: (event: string) => {
+        listeners.delete(event)
+      },
+      focus: () => {},
+      blur: () => {},
+    }
+
+    const mockContainer = {
+      style: {},
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 200 }),
+      appendChild: () => {},
+      removeChild: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }
+
+    const mockCanvas = {
+      width: 400,
+      height: 200,
+      style: {},
+      parentElement: mockContainer,
+      getContext: () => createMockCtx(),
+    }
+
+    const prevDocument = globalThis.document
+    globalThis.document = {
+      createElement: (tag: string) => {
+        if (tag === "textarea") return mockTextarea as any
+        if (tag === "canvas")
+          return { width: 400, height: 200, getContext: () => createMockCtx() } as any
+        return { style: {}, setAttribute: () => {}, appendChild: () => {} } as any
+      },
+    } as any
+
+    let instance: any
+    try {
+      instance = renderToCanvas(<CanvasEditorApp />, mockCanvas as any, {
+        width: 400,
+        height: 200,
+        input: true,
+      })
+
+      expect(activeEditContextRef.current).not.toBeNull()
+
+      const keydown = listeners.get("keydown")!
+      expect(keydown).toBeDefined()
+
+      keydown({ key: "Tab", shiftKey: false, preventDefault: () => {}, stopPropagation: () => {} })
+      expect(tabSeen).toBe(true)
+
+      keydown({ key: "Tab", shiftKey: true, preventDefault: () => {}, stopPropagation: () => {} })
+      expect(shiftTabSeen).toBe(true)
+    } finally {
+      try {
+        instance?.unmount()
+      } finally {
+        globalThis.document = prevDocument
+      }
+    }
+  })
+
+  test("renderToXterm: with an active edit context (useEditContext), Tab and Shift+Tab bypass focus cycling and reach useInput (25842 Row 3)", async () => {
+    const { renderToXterm } = await import("@silvery/ag-term/xterm/index")
+    const { useEditContext, activeEditContextRef } = await import("@silvery/ag-react")
+    const { ensureLayoutEngine } = await import("@silvery/ag-term/runtime")
+    await ensureLayoutEngine()
+
+    let tabSeen = false
+    let shiftTabSeen = false
+    function XtermEditorApp() {
+      useEditContext({ initialValue: "test" })
+      useInput((_input, key) => {
+        if (key.tab && !key.shift) tabSeen = true
+        if (key.tab && key.shift) shiftTabSeen = true
+      })
+      return (
+        <Box flexDirection="column">
+          <FocusableItem id="btn1" />
+          <FocusableItem id="btn2" />
+        </Box>
+      )
+    }
+
+    let dataListener: ((data: string) => void) | null = null
+    const terminal = {
+      cols: 40,
+      rows: 10,
+      write: () => {},
+      onData: (cb: (data: string) => void) => {
+        dataListener = cb
+        return { dispose: () => {} }
+      },
+    }
+
+    const instance = renderToXterm(<XtermEditorApp />, terminal, { input: true })
+
+    expect(activeEditContextRef.current).not.toBeNull()
+    expect(dataListener).not.toBeNull()
+
+    // Tab escape sequence (\t)
+    dataListener!("\t")
+    expect(tabSeen).toBe(true)
+
+    // Shift+Tab escape sequence (\x1b[Z)
+    dataListener!("\x1b[Z")
+    expect(shiftTabSeen).toBe(true)
+
+    instance.unmount()
+  })
 })
