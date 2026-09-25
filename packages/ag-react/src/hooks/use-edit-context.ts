@@ -97,22 +97,77 @@ export interface UseEditContextResult {
 }
 
 /**
+ * Stack of currently mounted edit contexts (last mounted = top of stack).
+ */
+export const activeEditContextStack: TermEditContext[] = []
+
+/**
+ * Stack of currently mounted edit targets (last mounted = top of stack).
+ */
+export const activeEditTargetStack: EditTarget[] = []
+
+let _currentContext: TermEditContext | null = null
+let _currentTarget: EditTarget | null = null
+
+/**
+ * Returns true when any edit context is currently mounted and active.
+ */
+export function hasActiveEditContext(): boolean {
+  return activeEditContextStack.length > 0 || _currentContext !== null
+}
+
+/**
+ * Determines whether Tab / Shift+Tab should cycle focus or pass through to the active editor.
+ * Returns false when an EditContext is active (Tab belongs to the text editor).
+ */
+export function tabCyclesFocus(key?: { tab?: boolean }): boolean {
+  if (key && !key.tab) return false
+  return !hasActiveEditContext()
+}
+
+/**
  * Shared mutable ref for the active edit context.
- * Only one edit context is active at a time (inline edit or search).
- * Set by useEditContext on mount, cleared on unmount.
+ * Represents the topmost mounted edit context.
+ * Maintained as a stack so unmounting a later editor restores the earlier editor.
  */
 export const activeEditContextRef: { current: TermEditContext | null } = {
-  current: null,
+  get current(): TermEditContext | null {
+    if (activeEditContextStack.length > 0) {
+      return activeEditContextStack[activeEditContextStack.length - 1] ?? null
+    }
+    return _currentContext
+  },
+  set current(val: TermEditContext | null) {
+    _currentContext = val
+    if (val === null) {
+      activeEditContextStack.length = 0
+    } else if (!activeEditContextStack.includes(val)) {
+      activeEditContextStack.push(val)
+    }
+  },
 }
 
 /**
  * Shared mutable ref for the active edit target.
  * Stores the EditTarget wrapper (BlockEditTarget-compatible methods).
  * board-actions.ts reads this to dispatch text editing commands.
- * Set by useEditContext on mount, cleared on unmount.
+ * Maintained as a stack so unmounting a later editor restores the earlier editor.
  */
 export const activeEditTargetRef: { current: EditTarget | null } = {
-  current: null,
+  get current(): EditTarget | null {
+    if (activeEditTargetStack.length > 0) {
+      return activeEditTargetStack[activeEditTargetStack.length - 1] ?? null
+    }
+    return _currentTarget
+  },
+  set current(val: EditTarget | null) {
+    _currentTarget = val
+    if (val === null) {
+      activeEditTargetStack.length = 0
+    } else if (!activeEditTargetStack.includes(val)) {
+      activeEditTargetStack.push(val)
+    }
+  },
 }
 
 // =============================================================================
@@ -315,14 +370,16 @@ export function useEditContext({
   // Register as active edit context + target on mount, clean up on unmount.
   // useLayoutEffect ensures registration happens before the next input event.
   useLayoutEffect(() => {
-    activeEditContextRef.current = ctx
-    activeEditTargetRef.current = target
+    activeEditContextStack.push(ctx)
+    activeEditTargetStack.push(target)
     return () => {
-      if (activeEditContextRef.current === ctx) {
-        activeEditContextRef.current = null
+      const ctxIdx = activeEditContextStack.lastIndexOf(ctx)
+      if (ctxIdx !== -1) {
+        activeEditContextStack.splice(ctxIdx, 1)
       }
-      if (activeEditTargetRef.current === target) {
-        activeEditTargetRef.current = null
+      const targetIdx = activeEditTargetStack.lastIndexOf(target)
+      if (targetIdx !== -1) {
+        activeEditTargetStack.splice(targetIdx, 1)
       }
       // Auto-save on unmount if value was modified and not explicitly cancelled
       if (!cancelledRef.current) {

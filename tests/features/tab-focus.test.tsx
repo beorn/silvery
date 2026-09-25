@@ -444,13 +444,15 @@ describe("handleTabCycling option (run path)", () => {
     app.unmount()
   })
 
-  test("contract: when an EditContext is active (useEditContext), Tab bypasses default focus cycling", async () => {
+  test("contract: when an EditContext is active (useEditContext), Tab and Shift+Tab bypass default focus cycling", async () => {
     const { useEditContext } = await import("@silvery/ag-react")
     let tabSeen = false
+    let shiftTabSeen = false
     function EditorApp() {
       useEditContext({ initialValue: "test" })
       useInput((_input, key) => {
-        if (key.tab) tabSeen = true
+        if (key.tab && !key.shift) tabSeen = true
+        if (key.tab && key.shift) shiftTabSeen = true
       })
       return (
         <Box flexDirection="column">
@@ -465,12 +467,91 @@ describe("handleTabCycling option (run path)", () => {
       rows: 5,
     })
 
-    // With handleTabCycling default (true) and 2 focusables, Tab must bypass
+    // With handleTabCycling default (true) and 2 focusables, Tab and Shift+Tab must bypass
     // default focus cycling while an EditContext is active.
     await app.press("Tab")
     expect(tabSeen).toBe(true)
     expect(app.text).toContain("btn1: unfocused")
     expect(app.text).toContain("btn2: unfocused")
+
+    await app.press("Shift+Tab")
+    expect(shiftTabSeen).toBe(true)
+    expect(app.text).toContain("btn1: unfocused")
+    expect(app.text).toContain("btn2: unfocused")
+    app.unmount()
+  })
+
+  test("createRenderer: with an editor mounted, Tab and Shift+Tab reach useInput (P3-1)", async () => {
+    const { useEditContext } = await import("@silvery/ag-react")
+    let tabSeen = false
+    let shiftTabSeen = false
+    function EditorApp() {
+      useEditContext({ initialValue: "test" })
+      useInput((_input, key) => {
+        if (key.tab && !key.shift) tabSeen = true
+        if (key.tab && key.shift) shiftTabSeen = true
+      })
+      return (
+        <Box flexDirection="column">
+          <FocusableItem id="btn1" />
+          <FocusableItem id="btn2" />
+        </Box>
+      )
+    }
+
+    const render = createRenderer({ cols: 40, rows: 5 })
+    const app = render(<EditorApp />)
+
+    await app.press("Tab")
+    expect(tabSeen).toBe(true)
+    expect(app.text).toContain("btn1: unfocused")
+    expect(app.text).toContain("btn2: unfocused")
+
+    await app.press("Shift+Tab")
+    expect(shiftTabSeen).toBe(true)
+    expect(app.text).toContain("btn1: unfocused")
+    expect(app.text).toContain("btn2: unfocused")
+  })
+
+  test("two editors: unmounting the later editor leaves active edit context, Tab still reaches useInput (P3-2)", async () => {
+    const { useEditContext, activeEditContextRef } = await import("@silvery/ag-react")
+    let tabCount = 0
+    function Editor({ value }: { value: string }) {
+      useEditContext({ initialValue: value })
+      return <Text>editor {value}</Text>
+    }
+
+    function TwoEditorsApp() {
+      const [showSecond, setShowSecond] = React.useState(true)
+      useInput((input, key) => {
+        if (key.tab) tabCount++
+        if (input === "u") setShowSecond(false)
+      })
+      return (
+        <Box flexDirection="column">
+          <Editor value="first" />
+          {showSecond ? <Editor value="second" /> : <Text>second gone</Text>}
+          <FocusableItem id="btn1" />
+          <FocusableItem id="btn2" />
+        </Box>
+      )
+    }
+
+    const app = await run(<TwoEditorsApp />, { cols: 40, rows: 8 })
+    expect(activeEditContextRef.current).not.toBeNull()
+
+    // Unmount second editor
+    await app.press("u")
+    expect(app.text).toContain("second gone")
+    expect(app.text).toContain("editor first")
+    expect(activeEditContextRef.current).not.toBeNull()
+
+    // Tab must still reach useInput and not cycle focus away
+    await app.press("Tab")
+    expect(tabCount).toBe(1)
+    expect(app.text).toContain("btn1: unfocused")
+    expect(app.text).toContain("btn2: unfocused")
+
     app.unmount()
   })
 })

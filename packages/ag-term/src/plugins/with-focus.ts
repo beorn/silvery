@@ -40,6 +40,7 @@ import {
   dispatchKeyEvent,
 } from "@silvery/ag/focus-events"
 import { parseHotkey, parseKey } from "@silvery/ag/keys"
+import { tabCyclesFocus } from "@silvery/ag-react/hooks/use-edit-context"
 import { createSelectionFeature, type SelectionFeature } from "../features/selection"
 import { createCopyModeFeature, type CopyModeFeature } from "../features/copy-mode"
 import type { CapabilityRegistry } from "@silvery/create/internal/capability-registry"
@@ -301,16 +302,16 @@ export function withFocus(options: WithFocusOptions = {}): (app: App) => AppWith
               }
             }
 
-            // Tab → focus next
-            if (handleTab && key === "Tab" && !shift) {
-              fm.focusNext(root)
-              return enhancedApp
-            }
-
-            // Shift+Tab → focus previous
-            if (handleTab && key === "Tab" && shift) {
-              fm.focusPrev(root)
-              return enhancedApp
+            // Tab → focus next / previous
+            if (handleTab && key === "Tab" && tabCyclesFocus({ tab: true })) {
+              if (!shift) {
+                fm.focusNext(root)
+                return enhancedApp
+              }
+              if (shift) {
+                fm.focusPrev(root)
+                return enhancedApp
+              }
             }
 
             // Escape → blur (only when something is focused)

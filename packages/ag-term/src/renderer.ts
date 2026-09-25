@@ -75,6 +75,7 @@ import type { ColorLevel } from "@silvery/ansi"
 import { bufferToText } from "./buffer.js"
 import { buildMismatchContext, formatMismatchContext } from "@silvery/test/debug-mismatch"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
+import { tabCyclesFocus } from "@silvery/ag-react/hooks/use-edit-context"
 import { keyToAnsi, parseKey, splitRawInput } from "@silvery/ag/keys"
 import { parseBracketedPaste } from "./bracketed-paste"
 import { IncrementalRenderMismatchError } from "./scheduler.js"
@@ -1446,19 +1447,21 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             // Each focus change runs in its own act() boundary so React
             // commits the re-render before the next keypress or doRender().
             const [, key] = parseKey(keypress)
-            if (handleTabCycling && key.tab && !key.shift) {
-              act(() => {
-                const root = getContainerRoot(instance.container)
-                focusManager.focusNext(root)
-              })
-              continue
-            }
-            if (handleTabCycling && key.tab && key.shift) {
-              act(() => {
-                const root = getContainerRoot(instance.container)
-                focusManager.focusPrev(root)
-              })
-              continue
+            if (handleTabCycling && tabCyclesFocus(key)) {
+              if (!key.shift) {
+                act(() => {
+                  const root = getContainerRoot(instance.container)
+                  focusManager.focusNext(root)
+                })
+                continue
+              }
+              if (key.shift) {
+                act(() => {
+                  const root = getContainerRoot(instance.container)
+                  focusManager.focusPrev(root)
+                })
+                continue
+              }
             }
             if (key.escape && focusManager.activeElement) {
               act(() => {

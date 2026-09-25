@@ -56,6 +56,7 @@ import {
 import { createChildApp, toChainAppContextValue } from "@silvery/ag-react/chain-bridge"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey, splitRawInput } from "@silvery/ag/keys"
+import { tabCyclesFocus } from "@silvery/ag-react/hooks/use-edit-context"
 import { parseBracketedPaste } from "../bracketed-paste"
 import { createXtermProvider, type XtermProvider } from "./xterm-provider"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
@@ -366,15 +367,17 @@ export function renderToXterm(
         const treeRoot = getContainerRoot(container)
         if (treeRoot) {
           const [, key] = parseKey(rawKey)
-          if (key.tab && !key.shift) {
-            focusManager.focusNext(treeRoot)
-            reconciler.flushSyncWork()
-            return
-          }
-          if (key.tab && key.shift) {
-            focusManager.focusPrev(treeRoot)
-            reconciler.flushSyncWork()
-            return
+          if (tabCyclesFocus(key)) {
+            if (!key.shift) {
+              focusManager.focusNext(treeRoot)
+              reconciler.flushSyncWork()
+              return
+            }
+            if (key.shift) {
+              focusManager.focusPrev(treeRoot)
+              reconciler.flushSyncWork()
+              return
+            }
           }
           if (key.escape && focusManager.activeElement) {
             focusManager.blur()

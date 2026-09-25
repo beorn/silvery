@@ -1441,7 +1441,15 @@ export type { EditContextLike, TermEditContext, TermEditContextOptions } from ".
 export { applyTextOp, invertTextOp, mergeTextOps } from "@silvery/create/text-ops"
 export type { TextOp } from "@silvery/create/text-ops"
 
-export { useEditContext, activeEditContextRef, activeEditTargetRef } from "./hooks/use-edit-context"
+export {
+  useEditContext,
+  activeEditContextRef,
+  activeEditTargetRef,
+  activeEditContextStack,
+  activeEditTargetStack,
+  hasActiveEditContext,
+  tabCyclesFocus,
+} from "./hooks/use-edit-context"
 export type {
   UseEditContextOptions,
   UseEditContextResult,

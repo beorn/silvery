@@ -51,6 +51,7 @@ import {
 import { createChildApp, toChainAppContextValue } from "../../chain-bridge"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey, splitRawInput } from "@silvery/ag/keys"
+import { tabCyclesFocus } from "../../hooks/use-edit-context"
 import { parseBracketedPaste } from "@silvery/ag-term/bracketed-paste"
 import { ThemeProvider } from "../../ThemeProvider"
 import { catppuccinMocha } from "@silvery/theme/schemes"
@@ -412,15 +413,17 @@ export function renderToCanvas(
         const treeRoot = getContainerRoot(container)
         if (treeRoot) {
           const [, key] = parseKey(rawKey)
-          if (key.tab && !key.shift) {
-            focusManager.focusNext(treeRoot)
-            reconciler.flushSyncWork()
-            return
-          }
-          if (key.tab && key.shift) {
-            focusManager.focusPrev(treeRoot)
-            reconciler.flushSyncWork()
-            return
+          if (tabCyclesFocus(key)) {
+            if (!key.shift) {
+              focusManager.focusNext(treeRoot)
+              reconciler.flushSyncWork()
+              return
+            }
+            if (key.shift) {
+              focusManager.focusPrev(treeRoot)
+              reconciler.flushSyncWork()
+              return
+            }
           }
           if (key.escape && focusManager.activeElement) {
             focusManager.blur()

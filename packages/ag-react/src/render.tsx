@@ -41,6 +41,7 @@ import { createChildApp, toChainAppContextValue } from "./chain-bridge"
 import { createCursorStore, CursorProvider, type CursorStore } from "./hooks/useCursor"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey } from "@silvery/ag/keys"
+import { tabCyclesFocus } from "./hooks/use-edit-context"
 import { type LayoutEngineType, isLayoutEngineInitialized } from "@silvery/ag-term/layout-engine"
 import {
   enableBracketedPaste,
@@ -452,15 +453,17 @@ function SilveryApp({
         const root = getRootRef.current?.()
         if (fm && root) {
           const [, key] = parseKey(chunk)
-          if (key.tab && !key.shift) {
-            fm.focusNext(root)
-            reconciler.flushSyncWork()
-            return
-          }
-          if (key.tab && key.shift) {
-            fm.focusPrev(root)
-            reconciler.flushSyncWork()
-            return
+          if (tabCyclesFocus(key)) {
+            if (!key.shift) {
+              fm.focusNext(root)
+              reconciler.flushSyncWork()
+              return
+            }
+            if (key.shift) {
+              fm.focusPrev(root)
+              reconciler.flushSyncWork()
+              return
+            }
           }
           if (key.escape && fm.activeElement) {
             fm.blur()
