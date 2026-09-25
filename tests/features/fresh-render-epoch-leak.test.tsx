@@ -75,9 +75,9 @@ describe("fresh render epoch leak regression", () => {
     })
 
     // Find the updated text node
-    const outerBox = root.children[0]
-    const row5Box = outerBox.children[5]
-    const textNode = row5Box.children[0]
+    const outerBox = root.children[0]!
+    const row5Box = outerBox.children[5]!
+    const textNode = row5Box.children[0]!
     expect(isAnyDirty(textNode)).toBe(true)
     expect(isDirty(textNode, STYLE_PROPS_BIT)).toBe(true)
 
@@ -93,7 +93,7 @@ describe("fresh render epoch leak regression", () => {
     // 2. Dirty bit MUST still be set (STYLE_PROPS_BIT survives measure phase, and raw text child retains CONTENT_BIT)
     expect(isAnyDirty(textNode)).toBe(true)
     expect(isDirty(textNode, STYLE_PROPS_BIT)).toBe(true)
-    expect(isDirty(textNode.children[0], CONTENT_BIT)).toBe(true)
+    expect(isDirty(textNode.children[0]!, CONTENT_BIT)).toBe(true)
 
     app.unmount()
   })
@@ -125,9 +125,9 @@ describe("fresh render epoch leak regression", () => {
       })
 
       const root = app.getContainer()
-      const outerBox = root.children[0]
-      const row10 = outerBox.children[10]
-      const textNode = row10.children[0]
+      const outerBox = root.children[0]!
+      const row10 = outerBox.children[10]!
+      const textNode = row10.children[0]!
       const epochBefore = getRenderEpoch(root)
       expect(isAnyDirty(textNode)).toBe(true)
       expect(isDirty(textNode, STYLE_PROPS_BIT)).toBe(true)
@@ -140,7 +140,7 @@ describe("fresh render epoch leak regression", () => {
       expect(getRenderEpoch(root)).toBe(epochBefore)
       expect(isAnyDirty(textNode)).toBe(true)
       expect(isDirty(textNode, STYLE_PROPS_BIT)).toBe(true)
-      expect(isDirty(textNode.children[0], CONTENT_BIT)).toBe(true)
+      expect(isDirty(textNode.children[0]!, CONTENT_BIT)).toBe(true)
 
       // The real incremental frame via waitForLayoutStable.
       // Under SILVERY_STRICT=1, this verifies incremental === fresh.
