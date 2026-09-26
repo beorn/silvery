@@ -14,26 +14,24 @@
  * the endpoints clipped to the columns of the anchor, and the clipboard held
  * the block ("Measured 14:1", "KPI Wa - 70%") instead of the lines.
  *
- * Mechanism (diagnosed, not yet fixed): the drag's head and its scope are
- * resolved by two different functions.
- *   - The head goes through `resolveSelectionAnchorFromPoint`, which snaps a
- *     pointer over text-free space to the nearest selectable cell.
- *   - The scope goes through `selectionScopeForFocus` (create-app.tsx), which
- *     calls a bare `selectionHitTest` and, when that finds nothing, falls back
- *     to `anchorBoundaries[0].scope` — the anchor TEXT node's own rect.
- * `refreshContentSelectionProjection` then replaces the range with the
- * unclamped semantic projection but keeps that narrow scope, and both
- * `composeSelectionCells` (highlight) and `extractText` (copy) clip EVERY row
- * to `[scope.left, scope.right]`. A wrapped paragraph's rect spans the lane,
- * so the clip is invisible there; a list item's or heading's rect is only as
- * wide as its own text, so the clip shows as a column block.
+ * Cause: the drag's head and its scope were resolved by two different
+ * functions. The head went through `resolveSelectionAnchorFromPoint`, which
+ * snaps a pointer over text-free space to nearby text; the scope re-hit-tested
+ * the pointer with a bare `selectionHitTest` and, finding nothing, fell back to
+ * the anchor TEXT node's own rect. The range crossed rows while
+ * `composeSelectionCells` (highlight) and `extractText` (copy) clipped every
+ * row to that narrow scope. A wrapped paragraph's rect spans the lane, so the
+ * clip was invisible there; a list item's or heading's rect is only as wide as
+ * its own text. Fix: create-app resolves the pointer once per drag move and
+ * takes both the head and the scope from that one result.
  *
- * This row releases the drag on the fifth item's row, past the end of its
- * text, at a real pointer position (mid-cell, SGR-Pixels units — what a
- * pixel-reporting terminal sends). `pointHitsRenderedTextRow` indexes
- * `lines[y - rect.y]` with that fractional row, so the hit test finds nothing
- * there and the fallback fires. In cell units the same fallback fires on any
- * text-free row, e.g. the blank row under the list.
+ * Rows:
+ *   - release past the fifth item's text, mid-cell in SGR-Pixels units, where
+ *     the bare hit test misses (`pointHitsRenderedTextRow` indexes a
+ *     fractional row);
+ *   - the operator's screenshot-4 gesture in cell units: from the heading to
+ *     the blank row above the next heading;
+ *   - control: a release on a character still ends the selection there.
  */
 
 import React from "react"
@@ -47,6 +45,7 @@ const settle = (ms = 250) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const COLS = 100
 const ROWS = 30
+const SGR_PIXELS_ENABLE = "\x1b[?1016h"
 
 // The operator's list, verbatim in shape: item 2 (the anchor) is SHORTER than
 // items 3 and 4, so a clip at the anchor's right edge truncates them.
@@ -86,6 +85,24 @@ const BLOCKS: DocumentBlock[] = [
 
 type Term = ReturnType<typeof createTermless>
 
+async function mountDocument(term: Term, mouse: RunOptions["mouse"]) {
+  const handle = await run(<DocumentView blocks={BLOCKS} />, term, {
+    mouse,
+    selection: true,
+    copyOnSelect: true,
+  } as Partial<RunOptions>)
+  await settle()
+  const lines = term.screen.getLines()
+  const at = (text: string) => {
+    const row = lines.findIndex((line: string) => line.includes(text))
+    expect(row, `row showing "${text}"`).toBeGreaterThanOrEqual(0)
+    return { row, col: lines[row]!.indexOf(text) }
+  }
+  const bulletCol = lines[at(ITEMS[2]).row]!.indexOf("•")
+  expect(bulletCol, "list items render their bullet").toBeGreaterThanOrEqual(0)
+  return { handle, at, bulletCol, before: backgrounds(term) }
+}
+
 function backgrounds(term: Term): string[][] {
   const grid: string[][] = []
   for (let row = 0; row < ROWS; row++) {
@@ -106,34 +123,28 @@ function highlightedColumns(term: Term, before: string[][], row: number): number
   return columns
 }
 
+/** An interior row is lit from its bullet to the last glyph of its text. */
+function expectRowLitWhole(
+  term: Term,
+  before: string[][],
+  item: { row: number; col: number },
+  text: string,
+  bulletCol: number,
+): void {
+  const lit = highlightedColumns(term, before, item.row)
+  expect(lit, `"${text}": bullet highlighted`).toContain(bulletCol)
+  expect(lit, `"${text}": last glyph highlighted`).toContain(item.col + text.length - 1)
+}
+
 describe("selection across list items", () => {
   test("a drag from the second list item to the fifth highlights and copies every line between them whole", async () => {
     using term = createTermless({ cols: COLS, rows: ROWS })
-    const handle = await run(<DocumentView blocks={BLOCKS} />, term, {
-      mouse: true,
-      selection: true,
-      copyOnSelect: true,
-    } as Partial<RunOptions>)
-    await settle()
-
-    // Precondition: the runtime negotiated SGR-Pixels, so a fractional cell
-    // below reaches the hit test as a real mid-cell pointer position.
-    expect(term.out.containsOutput("\x1b[?1016h"), "runtime enabled SGR-Pixels (1016)").toBe(true)
-
-    const lines = term.screen.getLines()
-    const at = (text: string) => {
-      const row = lines.findIndex((line: string) => line.includes(text))
-      expect(row, `row showing "${text}"`).toBeGreaterThanOrEqual(0)
-      return { row, col: lines[row]!.indexOf(text) }
-    }
+    const { handle, at, bulletCol, before } = await mountDocument(term, true)
+    // The runtime negotiated SGR-Pixels, so a fractional cell below reaches the
+    // hit test as a real mid-cell pointer position.
+    expect(term.out.containsOutput(SGR_PIXELS_ENABLE), "SGR-Pixels (1016) enabled").toBe(true)
     const second = at(ITEMS[1])
-    const third = at(ITEMS[2])
-    const fourth = at(ITEMS[3])
     const fifth = at(ITEMS[4])
-    const bulletCol = lines[third.row]!.indexOf("•")
-    expect(bulletCol, "the third item renders its bullet").toBeGreaterThanOrEqual(0)
-
-    const before = backgrounds(term)
     term.clipboard.clear()
 
     // Press inside the second item's text; release on the fifth item's row,
@@ -151,17 +162,56 @@ describe("selection across list items", () => {
     expect(copied, "third item copied whole").toContain(ITEMS[2])
     expect(copied, "fourth item copied whole").toContain(ITEMS[3])
     expect(copied, "fifth item copied whole").toContain(ITEMS[4])
+    // The highlight matches the copy: not clipped to the anchor's columns.
+    expectRowLitWhole(term, before, at(ITEMS[2]), ITEMS[2], bulletCol)
+    expectRowLitWhole(term, before, at(ITEMS[3]), ITEMS[3], bulletCol)
 
-    // The highlight matches the copy: each interior row is lit from its bullet
-    // to the last glyph of its text, not clipped to the anchor's columns.
-    for (const [name, item, text] of [
-      ["third", third, ITEMS[2]],
-      ["fourth", fourth, ITEMS[3]],
-    ] as const) {
-      const lit = highlightedColumns(term, before, item.row)
-      expect(lit, `${name} item's bullet is highlighted`).toContain(bulletCol)
-      expect(lit, `${name} item's last glyph is highlighted`).toContain(item.col + text.length - 1)
-    }
+    handle.unmount()
+  })
+
+  test("a drag from a heading to the blank row above the next heading selects every line between whole (cell units)", async () => {
+    using term = createTermless({ cols: COLS, rows: ROWS })
+    const { handle, at, bulletCol, before } = await mountDocument(term, { coordinateMode: "cell" })
+    expect(term.out.containsOutput(SGR_PIXELS_ENABLE), "cell units, not SGR-Pixels").toBe(false)
+    const goals = at("Goals & Metrics")
+    const changed = at("Changed since the last page")
+    term.clipboard.clear()
+
+    // The operator's screenshot-4 gesture: press on the heading's first glyph,
+    // release on the text-free row above the next heading, 13 cells in.
+    await term.mouse.drag({ from: [goals.col, goals.row], to: [changed.col + 13, changed.row - 1] })
+    await settle()
+
+    const copied = term.clipboard.last ?? ""
+    expect(copied, "the drag copied a selection").not.toBe("")
+    for (const item of ITEMS) expect(copied, "list item copied whole").toContain(item)
+    expect(copied, "the head lands where released").toMatch(/Changed since $/u)
+    for (const item of ITEMS) expectRowLitWhole(term, before, at(item), item, bulletCol)
+
+    handle.unmount()
+  })
+
+  test("a release on a character still ends the selection at that character", async () => {
+    using term = createTermless({ cols: COLS, rows: ROWS })
+    const { handle, at, bulletCol, before } = await mountDocument(term, true)
+    const second = at(ITEMS[1])
+    const fifth = at(ITEMS[4])
+    term.clipboard.clear()
+
+    // Release on the "%" of "Queues 42%" (the tenth glyph), mid-cell.
+    await term.mouse.drag({
+      from: [second.col + 6.5, second.row + 0.5],
+      to: [fifth.col + 9.5, fifth.row + 0.5],
+    })
+    await settle()
+
+    const copied = term.clipboard.last ?? ""
+    expect(copied, "third item copied whole").toContain(ITEMS[2])
+    expect(copied, "fourth item copied whole").toContain(ITEMS[3])
+    expect(copied, "the copy ends at the released glyph").toMatch(/Queues 42%$/u)
+    expectRowLitWhole(term, before, at(ITEMS[2]), ITEMS[2], bulletCol)
+    const lastRowLit = highlightedColumns(term, before, fifth.row)
+    expect(Math.max(...lastRowLit), "the highlight ends at the released glyph").toBe(fifth.col + 9)
 
     handle.unmount()
   })
