@@ -908,18 +908,22 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
     codes.push(na.blink ? "5" : "25")
   }
 
-  // Foreground color — stripped at monochrome tier (hierarchy via attrs)
+  // Foreground color — stripped at monochrome tier (hierarchy via attrs).
+  // The DEFAULT_BG sentinel reaches fg when a canvas token is painted as a
+  // foreground (Scrollbar's `$bg` thumb edge); fg's only default is SGR 39.
   if (!colorEquals(oldStyle.fg, newStyle.fg)) {
-    if (newStyle.fg === null || ctx.caps.colorLevel === "mono") {
+    if (newStyle.fg === null || isDefaultBg(newStyle.fg) || ctx.caps.colorLevel === "mono") {
       codes.push("39")
     } else {
       codes.push(fgColorCode(newStyle.fg))
     }
   }
 
-  // Background color — stripped at monochrome tier (hierarchy via attrs)
+  // Background color — stripped at monochrome tier (hierarchy via attrs).
+  // DEFAULT_BG (`$default`) is the terminal's own background: SGR 49, as for
+  // null. As truecolor it would be `48;2;-1;-1;-1`, which no terminal applies.
   if (!colorEquals(oldStyle.bg, newStyle.bg)) {
-    if (newStyle.bg === null || ctx.caps.colorLevel === "mono") {
+    if (newStyle.bg === null || isDefaultBg(newStyle.bg) || ctx.caps.colorLevel === "mono") {
       codes.push("49")
     } else {
       codes.push(bgColorCode(newStyle.bg))
@@ -2779,8 +2783,8 @@ function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string 
   // This is more spec-compliant and produces fewer bytes than separate sequences.
   const codes: string[] = []
 
-  // Foreground color — stripped at monochrome tier (hierarchy via attrs)
-  if (fg !== null && !monoTier) {
+  // Foreground color (DEFAULT_BG sentinel = terminal default, skip) — stripped at mono tier
+  if (fg !== null && !isDefaultBg(fg) && !monoTier) {
     codes.push(fgColorCode(fg))
   }
 
