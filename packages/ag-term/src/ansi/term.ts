@@ -645,7 +645,7 @@ function finalizeTerm(
  * Factory overloads:
  * - `createTerm()` — Node.js terminal (auto-detect from process.stdin/stdout)
  * - `createTerm({ stdout, stdin, ... })` — Node.js with custom streams/overrides
- * - `createTerm({ cols, rows })` — Headless for testing (no I/O, fixed dims) // seam-allow: public headless API (silvery `.`, re-exported by @silvery/test)
+ * - `createTerm({ cols, rows })` — Headless for testing (no I/O, fixed dims) // seam-allow: public headless API (exported from silvery `.`)
  * - `createTerm(backend, { cols, rows })` — Terminal emulator backend (termless) for testing // seam-allow: public emulator-backend API
  * - `createTerm(emulator)` — Pre-created termless Terminal
  *

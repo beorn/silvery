@@ -868,7 +868,7 @@ This applies to install commands, run commands, and `npx`/`bunx`/`pnpm dlx`/`vp`
 
 Factory functions, `using` cleanup, no classes, no globals. ESM imports only. TypeScript strict mode.
 
-**Test seams in production source.** An export whose only consumers are tests does not ship: a test resets module state with `vi.resetModules()` and a fresh import, or enters through the public entry a consumer would use. A line that reads as a seam and stays (a public testing API, a real non-test consumer) carries `// seam-allow: <reason>` on that line, with a reason that is not empty. The reader is the test-map S4 signal (`seam_markers`, the weekly `/sop` test-quality scan): S4 counts lines matching `test seam|for testing|test-only|for unit testing` and exported `__` names, minus the lines that carry this marker.
+**Test seams in production source.** An export whose only consumers are tests does not ship: a test resets module state with `vi.resetModules()` and a fresh import, or enters through the public entry a consumer would use. A line that reads as a seam and stays (a public testing API, a real non-test consumer) carries `// seam-allow: <reason>` on that line, with a reason that is not empty. No scan reads the marker yet, so the count is taken by hand. S4 is the number of non-test source lines (excluding `tests/`, `__tests__/`, `*.test.*`, `*.spec.*` and `dist/`) that match `test seam|for testing|test-only|for unit testing|__[A-Za-z]+ =|export const __` (case-insensitive), minus the lines that carry this marker.
 
 ## Common Tasks
 
