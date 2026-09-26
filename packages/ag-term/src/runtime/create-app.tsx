@@ -125,8 +125,6 @@ import { ensureLayoutEngine } from "./layout"
 import {
   createMouseEventProcessor,
   updateKeyboardModifiers,
-  findSelectionBoundaries,
-  selectionHitTest,
   hitTest,
   refreshHoverPath,
   resolveSelectionAnchorFromPoint,
@@ -142,6 +140,7 @@ import {
   checkClickCount,
   type ContentSelectionEndpoint,
   type ContentSelectionPoint,
+  type SelectionAnchorResolution,
   type SelectionBoundary,
 } from "../mouse-events"
 import { createClsMonitor } from "./cls-monitor"
@@ -2359,21 +2358,27 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     dispatchSelectionAutoScrollTick()
   }
 
+  /**
+   * The drag's one pointer→node resolution. The content head and the scope both
+   * read this result: when the scope re-hit-tested the pointer on its own, a
+   * text-free pointer left it on the anchor's text rect while the head snapped
+   * to other rows, and every row clipped to a column block (25962).
+   */
+  function selectionFocusAt(x: number, y: number, raw = false): SelectionAnchorResolution | null {
+    // A Shift/raw drag bypasses document scopes, so it has no document focus.
+    const root = raw ? null : getContainerRoot(container)
+    if (!root) return null
+    return resolveSelectionAnchorFromPoint({ root, buffer: currentBuffer?._buffer ?? null, x, y })
+  }
+
   function resolveContentRangeAtPointer(
     contentRoot: AgNode,
     origin: ContentSelectionPoint,
+    focus: SelectionAnchorResolution | null,
     x: number,
     y: number,
   ): { anchor: ContentSelectionEndpoint; head: ContentSelectionEndpoint } | null {
-    const root = getContainerRoot(container)
-    if (!root) return null
-    const resolved = resolveSelectionAnchorFromPoint({
-      root,
-      buffer: currentBuffer?._buffer ?? null,
-      x,
-      y,
-    })
-    const point = resolved?.node ? contentSelectionPointFromPoint(resolved.node, x, y) : null
+    const point = focus?.node ? contentSelectionPointFromPoint(focus.node, x, y) : null
     const range = point
       ? orientContentSelectionRange(contentRoot, {
           anchorBefore: origin.before,
@@ -2411,17 +2416,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   function selectionScopeForFocus(
     anchorBoundaries: readonly SelectionBoundary[],
-    x: number,
-    y: number,
+    focus: SelectionAnchorResolution | null,
     forceBufferSelection: boolean,
+    // The kept head's scope. Before a drag has one, the anchor's widest: its own
+    // text rect would clamp a head over chrome back onto the anchor's row.
+    retained: SelectionScope | null = anchorBoundaries.at(-1)?.scope ?? null,
   ): SelectionScope | null {
     if (forceBufferSelection) return null
     const hardScope = hardContainScope(anchorBoundaries)
     if (hardScope) return hardScope
-    const agRoot = getContainerRoot(container)
-    const focusHit = agRoot ? selectionHitTest(agRoot, x, y) : null
-    if (!focusHit) return anchorBoundaries[0]?.scope ?? null
-    return nearestCommonSelectionScope(anchorBoundaries, findSelectionBoundaries(focusHit))
+    // No selectable focus (e.g. userSelect="none" chrome): the head is kept, so its scope is too.
+    if (!focus?.node) return retained
+    return nearestCommonSelectionScope(anchorBoundaries, focus.boundaries)
   }
   // Click-count tracker dedicated to selection (separate from
   // mouseEventState.doubleClick which drives onDoubleClick / onTripleClick
@@ -4032,15 +4038,26 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (!activeContentSelection || !currentBuffer) return
 
     if (selectionState.selecting && activeSelectionPointer) {
+      const { x, y } = activeSelectionPointer
+      const focus = selectionFocusAt(x, y)
       const nextRange = resolveContentRangeAtPointer(
         activeContentSelection.root,
         activeContentSelection.origin,
-        activeSelectionPointer.x,
-        activeSelectionPointer.y,
+        focus,
+        x,
+        y,
       )
       if (nextRange) {
         activeContentSelection.anchor = nextRange.anchor
         activeContentSelection.head = nextRange.head
+        // Autoscroll moves content under a still pointer: the scope follows the head.
+        const scope = selectionScopeForFocus(
+          activeSelectionBoundaries,
+          focus,
+          activeForceBufferSelection,
+          selectionState.scope,
+        )
+        selectionState = { ...selectionState, scope }
       }
     }
 
@@ -4379,10 +4396,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               pendingSelectionDown = null
               activeSelectionBoundaries = anchor.boundaries
               activeForceBufferSelection = anchor.forceBufferSelection
+              const focus = selectionFocusAt(mouseData.x, mouseData.y, anchor.forceBufferSelection)
               const scope = selectionScopeForFocus(
                 anchor.boundaries,
-                mouseData.x,
-                mouseData.y,
+                focus,
                 anchor.forceBufferSelection,
               )
               // Pick the start action based on the click chain that armed
@@ -4440,6 +4457,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 const contentRange = resolveContentRangeAtPointer(
                   contentRoot,
                   anchor.contentOrigin,
+                  focus,
                   mouseData.x,
                   mouseData.y,
                 )
@@ -4473,11 +4491,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             // Buffer is forwarded so word / line granularity drags snap
             // the head to the right boundary on every move.
             const pointerCell = selectionCellFromPointer(mouseData.x, mouseData.y)
+            const focus = selectionFocusAt(mouseData.x, mouseData.y, activeForceBufferSelection)
             const scope = selectionScopeForFocus(
               activeSelectionBoundaries,
-              mouseData.x,
-              mouseData.y,
+              focus,
               activeForceBufferSelection,
+              selectionState.scope,
             )
             const [next] = terminalSelectionUpdate(
               {
@@ -4494,6 +4513,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               const contentRange = resolveContentRangeAtPointer(
                 activeContentSelection.root,
                 activeContentSelection.origin,
+                focus,
                 mouseData.x,
                 mouseData.y,
               )
@@ -4601,8 +4621,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 row: anchor.row,
                 scope: selectionScopeForFocus(
                   anchor.boundaries,
-                  anchor.col,
-                  anchor.row,
+                  selectionFocusAt(anchor.col, anchor.row, anchor.forceBufferSelection),
                   anchor.forceBufferSelection,
                 ),
                 clickCount: anchor.clickCount,
