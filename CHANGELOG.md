@@ -7,7 +7,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.24.3] - 2026-09-26
+
 ### Added
+
+- `DISCLOSURE_MARKERS` names the section disclosure glyphs, `collapsed` and
+  `expanded`, one cell each; a section has two states where an outline node
+  (`FOLD_MARKERS`) has three.
+- `Tabs`, `TabList` and `Tab` take a `variant`, and `"filled"` draws the tab
+  strip as filled chips.
 
 - A navigable `ListView` treats a click on its `▲N` / `▼N` overflow indicator
   as Home / End: the cursor moves to the first or last item and `onCursor`
@@ -39,6 +47,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   `CSI ? 997 ; 1|2 n`. The `CSI ? 2031 ; N n` form is no longer read: no
   terminal tracked by terminfo.dev emits it (probe-defs
   `modes.color-scheme-reporting`, whose notice is the `?997` form).
+
+### Fixed
+
+- A terminal reply (OSC) that no probe claims is dropped, never typed as keys.
+  An unended reply is dropped 150 ms after its first byte however fast keys
+  follow, a split reply prefix is held for its rest, and a reply that starts
+  in the read ending the previous one gets its own bound.
+- Tab focus cycling is bypassed while an edit context is active, and every
+  site that cycles focus uses the one gate, with nested edit contexts stacked.
+- A fresh render no longer advances the render epoch or clears dirty
+  tracking, so the next incremental frame still clears its trailing lines.
+- An outline restores the committed cells before the frame's clears, never
+  onto a fresh buffer.
+- An unhandled render-plan op kind throws instead of doing nothing.
+- An island's key keeps its `text` and shifted symbols (`keyToIslandAnsi`).
 
 ## [0.24.2] - 2026-09-23
 
