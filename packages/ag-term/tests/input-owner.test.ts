@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import type { Key } from "@silvery/ag/keys"
 import { createInputOwner } from "../src/runtime/input-owner"
 import { keyToIslandAnsi } from "../src/runtime/event-handlers"
@@ -603,7 +603,10 @@ describe("createInputOwner unclaimed OSC replies", () => {
     input[Symbol.dispose]()
   })
 
-  it("a typed Alt+] is still a key", () => {
+  const pastTheEscWindow = () => new Promise((resolve) => setTimeout(resolve, 80))
+  const pastTheReplyBound = () => new Promise((resolve) => setTimeout(resolve, 250))
+
+  it("a typed Alt+] is still a key, once the ESC window passes", async () => {
     const stdin = new FakeStdin()
     const stdout = new FakeStdout()
     const input = createInputOwner(
@@ -615,8 +618,54 @@ describe("createInputOwner unclaimed OSC replies", () => {
     input.onKey((event) => keys.push({ input: event.input, meta: event.key.meta }))
 
     stdin.emit("data", "\x1b]")
+    await pastTheEscWindow()
 
     expect(keys).toEqual([{ input: "]", meta: true }])
+    input[Symbol.dispose]()
+  })
+
+  // @dev/review-adhoc5 P3 on e1279c1f87: an unended reply was buffered with no timer and swallowed every later key.
+  it("a reply that never ends is dropped after the ESC window, and later keys arrive", async () => {
+    const stdin = new FakeStdin()
+    const stdout = new FakeStdout()
+    const input = createInputOwner(
+      stdin as unknown as NodeJS.ReadStream,
+      stdout as unknown as NodeJS.WriteStream,
+      { enableBracketedPaste: false },
+    )
+    const keys: string[] = []
+    input.onKey((event) => keys.push(event.input))
+    const warned = vi.spyOn(console, "warn").mockImplementation(() => {})
+
+    try {
+      stdin.emit("data", "\x1b]11;rgb:1e1e/")
+      await pastTheReplyBound()
+      stdin.emit("data", "abc")
+
+      expect(keys).toEqual(["a", "b", "c"])
+      expect(warned.mock.calls.flat().join(" ")).toContain("dropped an OSC reply that never ended")
+    } finally {
+      warned.mockRestore()
+      input[Symbol.dispose]()
+    }
+  })
+
+  // @dev/review-adhoc5 P4: a read ending inside `ESC ] <digits>` missed the reply prefix and was typed.
+  it("a reply split before its semicolon is still dropped whole", () => {
+    const stdin = new FakeStdin()
+    const stdout = new FakeStdout()
+    const input = createInputOwner(
+      stdin as unknown as NodeJS.ReadStream,
+      stdout as unknown as NodeJS.WriteStream,
+      { enableBracketedPaste: false },
+    )
+    const keys: string[] = []
+    input.onKey((event) => keys.push(event.input))
+
+    stdin.emit("data", "\x1b]11")
+    stdin.emit("data", ";rgb:1e1e/1e1e/2e2e\x07x")
+
+    expect(keys).toEqual(["x"])
     input[Symbol.dispose]()
   })
 })

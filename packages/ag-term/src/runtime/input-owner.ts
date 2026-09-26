@@ -75,6 +75,12 @@ import type { Modes } from "./devices/modes"
 const BRACKETED_PASTE_ON = "\x1b[?2004h"
 const BRACKETED_PASTE_OFF = "\x1b[?2004l"
 const ESC_DISAMBIGUATION_MS = 25
+/**
+ * How long a started OSC reply may wait for its terminator (BEL or ST) before it is dropped: long enough for a
+ * reply split across reads over a slow link, short enough that keys typed after an unended one are not lost for
+ * long (21624, @chief 13bce963).
+ */
+const OSC_REPLY_COMPLETION_MS = 150
 const SET_MOUSE_OPTIONS = Symbol("silvery.input.setMouseOptions")
 const GET_MOUSE_INTERPRETATION = Symbol("silvery.input.mouseInterpretation")
 
@@ -370,7 +376,10 @@ function splitRawInput(raw: string): SplitResult {
           // Incomplete CSI — hit end of chunk without finding terminator.
           return { sequences, incomplete: raw.slice(i) }
         }
-      } else if (raw[i + 1] === "]" && OSC_REPLY_PREFIX.test(raw.slice(i, i + 16))) {
+      } else if (
+        raw[i + 1] === "]" &&
+        (OSC_REPLY_PREFIX.test(raw.slice(i, i + 16)) || OSC_REPLY_OPENING.test(raw.slice(i)))
+      ) {
         // OSC reply: ESC ] <number> ; ... BEL|ST — a terminal's answer (a palette probe answered late, or by a
         // second attached client) that no probe claimed. Kept whole so it is dropped as one sequence, never typed
         // as Alt+] and its text (21624). A typed Alt+] is not followed by `<number>;` and stays a meta key.
@@ -419,6 +428,12 @@ function splitRawInput(raw: string): SplitResult {
 
 /** An OSC reply opens `ESC ] <number> ;`; a typed Alt+] followed by other keys does not. */
 const OSC_REPLY_PREFIX = /^\x1b\]\d+;/u
+
+/**
+ * A read that ends inside `ESC ] <digits>`: a reply split before its `;`, or a typed Alt+] (and digits). Held for
+ * the ESC window like a bare ESC; if nothing completes it, it is replayed as those keys.
+ */
+const OSC_REPLY_OPENING = /^\x1b\]\d*$/u
 
 /** The index just past an OSC reply's terminator (BEL, or ST as ESC \), or -1 when it has not arrived yet. */
 function oscReplyEnd(raw: string, from: number): number {
@@ -496,6 +511,8 @@ export function createInputOwner(
   let incompleteNotification: string | null = null
   let incompleteSequenceTimer: ReturnType<typeof setTimeout> | null = null
   let incompleteSequenceImmediate: ReturnType<typeof setImmediate> | null = null
+  /** The armed timer is a started OSC reply's bound, which a later read must not restart. */
+  let replyBoundArmed = false
   const probes: ProbeEntry[] = []
   let transaction: ProbeTransactionEntry | null = null
   const queuedProbeStarts: QueuedProbeStart[] = []
@@ -602,6 +619,7 @@ export function createInputOwner(
   }
 
   function clearIncompleteTimer(): void {
+    replyBoundArmed = false
     if (incompleteSequenceTimer !== null) {
       clearTimeout(incompleteSequenceTimer)
       incompleteSequenceTimer = null
@@ -613,20 +631,44 @@ export function createInputOwner(
   }
 
   function scheduleIncompleteFlush(receivedAt?: number, inputBatchId?: number): void {
-    if (incompleteSequence !== "\x1b") return
+    const pending = incompleteSequence
+    const replyPending = pending !== null && OSC_REPLY_PREFIX.test(pending)
+    // A started reply keeps its bound from its first byte: a later read that extends it does not restart the
+    // clock, so keys typed after an unended reply cannot keep it buffered (21624, @dev/review-adhoc5 P3).
+    if (replyPending && replyBoundArmed) return
     clearIncompleteTimer()
-    incompleteSequenceTimer = setTimeout(() => {
-      incompleteSequenceTimer = null
-      // Yield through the check phase before committing standalone Escape.
-      // If the event loop was busy while the timeout expired, already-ready
-      // stdin tail bytes get one poll phase to arrive and reassemble first.
-      incompleteSequenceImmediate = setImmediate(() => {
-        incompleteSequenceImmediate = null
-        if (disposed || incompleteSequence !== "\x1b") return
-        incompleteSequence = null
-        dispatchSequence("\x1b", receivedAt, inputBatchId)
-      })
-    }, ESC_DISAMBIGUATION_MS)
+    // A bare ESC, a read ending inside `ESC ] <digits>`, or an OSC reply still waiting for its end.
+    if (pending === null || (pending !== "\x1b" && !pending.startsWith("\x1b]"))) return
+    replyBoundArmed = replyPending
+    incompleteSequenceTimer = setTimeout(
+      () => {
+        incompleteSequenceTimer = null
+        replyBoundArmed = false
+        // Yield through the check phase before committing standalone Escape.
+        // If the event loop was busy while the timeout expired, already-ready
+        // stdin tail bytes get one poll phase to arrive and reassemble first.
+        incompleteSequenceImmediate = setImmediate(() => {
+          incompleteSequenceImmediate = null
+          const current = incompleteSequence
+          if (disposed || current === null || (current !== "\x1b" && !current.startsWith("\x1b]")))
+            return
+          incompleteSequence = null
+          if (current === "\x1b") dispatchSequence("\x1b", receivedAt, inputBatchId)
+          else flushIncompleteOsc(current, receivedAt, inputBatchId)
+        })
+      },
+      replyPending ? OSC_REPLY_COMPLETION_MS : ESC_DISAMBIGUATION_MS,
+    )
+  }
+
+  /** An OSC that did not complete in its bound: an unended reply is dropped; `ESC ] <digits>` alone was typed. */
+  function flushIncompleteOsc(pending: string, receivedAt?: number, inputBatchId?: number): void {
+    if (OSC_REPLY_PREFIX.test(pending)) {
+      log?.warn?.(`dropped an OSC reply that never ended: ${JSON.stringify(pending.slice(0, 48))}`)
+      return
+    }
+    dispatchSequence("\x1b]", receivedAt, inputBatchId)
+    for (const ch of pending.slice(2)) dispatchSequence(ch, receivedAt, inputBatchId)
   }
 
   function dispatchRawChunk(chunk: string, receivedAt?: number, inputBatchId?: number): void {
