@@ -370,6 +370,14 @@ function splitRawInput(raw: string): SplitResult {
           // Incomplete CSI — hit end of chunk without finding terminator.
           return { sequences, incomplete: raw.slice(i) }
         }
+      } else if (raw[i + 1] === "]" && OSC_REPLY_PREFIX.test(raw.slice(i, i + 16))) {
+        // OSC reply: ESC ] <number> ; ... BEL|ST — a terminal's answer (a palette probe answered late, or by a
+        // second attached client) that no probe claimed. Kept whole so it is dropped as one sequence, never typed
+        // as Alt+] and its text (21624). A typed Alt+] is not followed by `<number>;` and stays a meta key.
+        const end = oscReplyEnd(raw, i + 2)
+        if (end === -1) return { sequences, incomplete: raw.slice(i) }
+        sequences.push(raw.slice(i, end))
+        i = end
       } else if (raw[i + 1] === "O") {
         // SS3 sequence: ESC O <letter>
         const end = Math.min(i + 3, raw.length)
@@ -407,6 +415,18 @@ function splitRawInput(raw: string): SplitResult {
     }
   }
   return { sequences, incomplete: null }
+}
+
+/** An OSC reply opens `ESC ] <number> ;`; a typed Alt+] followed by other keys does not. */
+const OSC_REPLY_PREFIX = /^\x1b\]\d+;/u
+
+/** The index just past an OSC reply's terminator (BEL, or ST as ESC \), or -1 when it has not arrived yet. */
+function oscReplyEnd(raw: string, from: number): number {
+  for (let j = from; j < raw.length; j++) {
+    if (raw[j] === "\x07") return j + 1
+    if (raw[j] === "\x1b" && raw[j + 1] === "\\") return j + 2
+  }
+  return -1
 }
 
 function isCSITerminator(ch: string | undefined): boolean {
@@ -536,6 +556,12 @@ export function createInputOwner(
    * type and fire it. Order: focus → color-scheme notice → mouse → key (catch-all).
    */
   function dispatchSequence(raw: string, receivedAt?: number, inputBatchId?: number): void {
+    if (OSC_REPLY_PREFIX.test(raw)) {
+      // An OSC reply no probe claimed (the splitter only keeps `ESC ] <number> ;` replies whole): a terminal's
+      // answer to a question nobody is waiting on. It is not input, so no subscriber sees it (21624).
+      log?.debug?.(`dropped an OSC reply no probe claimed: ${JSON.stringify(raw.slice(0, 48))}`)
+      return
+    }
     const focus = parseFocusEvent(raw)
     if (focus) {
       fire(focusHandlers, { focused: focus.type === "focus-in" })

@@ -561,3 +561,62 @@ describe("keyToIslandAnsi — shifted symbols and hotkey preservation (25124)", 
     expect(keyToIslandAnsi("\r", makeKey({ return: true }))).toBe("\r")
   })
 })
+
+// 21624: a palette probe answered late, or by a second attached client, arrives with no probe waiting for it. The
+// splitter had no OSC branch, so ESC ] became Alt+] and the reply's text was typed into the app key by key.
+describe("createInputOwner unclaimed OSC replies", () => {
+  it.each([
+    ["BEL-terminated", "\x1b]11;rgb:1e1e/1e1e/2e2e\x07"],
+    ["ST-terminated", "\x1b]10;rgb:d8d8/dede/e9e9\x1b\\"],
+  ])("a %s reply no probe claims is dropped, never typed as keys", (_form, reply) => {
+    const stdin = new FakeStdin()
+    const stdout = new FakeStdout()
+    const input = createInputOwner(
+      stdin as unknown as NodeJS.ReadStream,
+      stdout as unknown as NodeJS.WriteStream,
+      { enableBracketedPaste: false },
+    )
+    const keys: string[] = []
+    input.onKey((event) => keys.push(event.input))
+
+    stdin.emit("data", `a${reply}b`)
+
+    expect(keys).toEqual(["a", "b"])
+    input[Symbol.dispose]()
+  })
+
+  it("a reply split across reads is still dropped whole", () => {
+    const stdin = new FakeStdin()
+    const stdout = new FakeStdout()
+    const input = createInputOwner(
+      stdin as unknown as NodeJS.ReadStream,
+      stdout as unknown as NodeJS.WriteStream,
+      { enableBracketedPaste: false },
+    )
+    const keys: string[] = []
+    input.onKey((event) => keys.push(event.input))
+
+    stdin.emit("data", "\x1b]11;rgb:1e1e/")
+    stdin.emit("data", "1e1e/2e2e\x07x")
+
+    expect(keys).toEqual(["x"])
+    input[Symbol.dispose]()
+  })
+
+  it("a typed Alt+] is still a key", () => {
+    const stdin = new FakeStdin()
+    const stdout = new FakeStdout()
+    const input = createInputOwner(
+      stdin as unknown as NodeJS.ReadStream,
+      stdout as unknown as NodeJS.WriteStream,
+      { enableBracketedPaste: false },
+    )
+    const keys: Array<{ input: string; meta: boolean }> = []
+    input.onKey((event) => keys.push({ input: event.input, meta: event.key.meta }))
+
+    stdin.emit("data", "\x1b]")
+
+    expect(keys).toEqual([{ input: "]", meta: true }])
+    input[Symbol.dispose]()
+  })
+})
