@@ -516,6 +516,11 @@ export function createInputOwner(
    * every read, so the bound is re-armed with what remains, never restarted (21624, @dev/review-adhoc5 76bd247d7a).
    */
   let replyStartedAt: number | null = null
+  /**
+   * Whether the next dispatch starts with the sequence carried over from the previous read. Only that sequence keeps
+   * its start: a reply that begins later in the read, or in a later dispatch of the same drain, is new (21624).
+   */
+  let carriedIntoNextDispatch = false
   const probes: ProbeEntry[] = []
   let transaction: ProbeTransactionEntry | null = null
   const queuedProbeStarts: QueuedProbeStart[] = []
@@ -676,8 +681,12 @@ export function createInputOwner(
   }
 
   function dispatchRawChunk(chunk: string, receivedAt?: number, inputBatchId?: number): void {
+    const carried = carriedIntoNextDispatch
+    carriedIntoNextDispatch = false
     if (chunk.length === 0) return
     const { sequences, incomplete } = splitRawInput(chunk)
+    // The carried sequence sits at the front of the chunk, so a pending tail is still it only when nothing split off.
+    if (!carried || sequences.length > 0) replyStartedAt = null
     incompleteSequence = incomplete
     scheduleIncompleteFlush(receivedAt, inputBatchId)
     for (const raw of sequences) dispatchSequence(raw, receivedAt, inputBatchId)
@@ -848,6 +857,7 @@ export function createInputOwner(
     // reassemble.
     let chunk = buffer
     buffer = ""
+    carriedIntoNextDispatch = incompleteSequence !== null
     if (incompleteSequence !== null) {
       clearIncompleteTimer()
       chunk = incompleteSequence + chunk
@@ -1204,6 +1214,7 @@ export function createInputOwner(
     clearIncompleteTimer()
     buffer = ""
     incompleteSequence = null
+    replyStartedAt = null
     incompletePaste = null
     incompleteNotification = null
 

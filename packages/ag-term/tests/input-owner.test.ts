@@ -683,6 +683,38 @@ describe("createInputOwner unclaimed OSC replies", () => {
     }
   })
 
+  // @dev/10 pre-check of 7198e3740a's follow-up: a read that ended one reply and left the next one pending kept the
+  // first reply's start, so the next reply was dropped early and its tail arrived as keys.
+  it("a reply that starts in the read that ends the previous one gets its own bound", async () => {
+    const stdin = new FakeStdin()
+    const stdout = new FakeStdout()
+    const input = createInputOwner(
+      stdin as unknown as NodeJS.ReadStream,
+      stdout as unknown as NodeJS.WriteStream,
+      { enableBracketedPaste: false },
+    )
+    const keys: string[] = []
+    input.onKey((event) => keys.push(event.input))
+    const warned = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+    try {
+      stdin.emit("data", "\x1b]11;rgb:1e1e/")
+      await wait(100)
+      stdin.emit("data", "2e2e/3e3e\x07\x1b]10;rgb:ffff/")
+      // 200 ms after the first reply began, 100 ms after the second did: past a carried bound, inside its own.
+      await wait(100)
+      stdin.emit("data", "ffff/ffff\x07")
+      await pastTheEscWindow()
+
+      expect(keys).toEqual([])
+      expect(warned).not.toHaveBeenCalled()
+    } finally {
+      warned.mockRestore()
+      input[Symbol.dispose]()
+    }
+  })
+
   // @dev/review-adhoc5 P4: a read ending inside `ESC ] <digits>` missed the reply prefix and was typed.
   it("a reply split before its semicolon is still dropped whole", () => {
     const stdin = new FakeStdin()
