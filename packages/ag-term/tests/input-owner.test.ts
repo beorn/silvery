@@ -650,6 +650,39 @@ describe("createInputOwner unclaimed OSC replies", () => {
     }
   })
 
+  // @dev/review-adhoc5 on 7198e3740a: each read restarted the bound, so keys typed faster than it kept an unended
+  // reply buffered, and the first pause dropped them all.
+  it("keys typed every 50 ms after an unended reply do not extend its bound", async () => {
+    const stdin = new FakeStdin()
+    const stdout = new FakeStdout()
+    const input = createInputOwner(
+      stdin as unknown as NodeJS.ReadStream,
+      stdout as unknown as NodeJS.WriteStream,
+      { enableBracketedPaste: false },
+    )
+    const keys: string[] = []
+    input.onKey((event) => keys.push(event.input))
+    const warned = vi.spyOn(console, "warn").mockImplementation(() => {})
+    const typed = "abcdefghij"
+
+    try {
+      stdin.emit("data", "\x1b]11;rgb:1e1e/")
+      for (const key of typed) {
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        stdin.emit("data", key)
+      }
+      await pastTheEscWindow()
+
+      expect(warned.mock.calls.flat().join(" ")).toContain("dropped an OSC reply that never ended")
+      // Keys typed inside the first 150 ms go with the reply; every key after the bound arrives.
+      expect(keys.length).toBeGreaterThanOrEqual(5)
+      expect(keys.join("")).toBe(typed.slice(typed.length - keys.length))
+    } finally {
+      warned.mockRestore()
+      input[Symbol.dispose]()
+    }
+  })
+
   // @dev/review-adhoc5 P4: a read ending inside `ESC ] <digits>` missed the reply prefix and was typed.
   it("a reply split before its semicolon is still dropped whole", () => {
     const stdin = new FakeStdin()

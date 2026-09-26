@@ -511,8 +511,11 @@ export function createInputOwner(
   let incompleteNotification: string | null = null
   let incompleteSequenceTimer: ReturnType<typeof setTimeout> | null = null
   let incompleteSequenceImmediate: ReturnType<typeof setImmediate> | null = null
-  /** The armed timer is a started OSC reply's bound, which a later read must not restart. */
-  let replyBoundArmed = false
+  /**
+   * When the pending OSC reply's first byte arrived. Its bound runs from here; the prepend path clears the timer on
+   * every read, so the bound is re-armed with what remains, never restarted (21624, @dev/review-adhoc5 76bd247d7a).
+   */
+  let replyStartedAt: number | null = null
   const probes: ProbeEntry[] = []
   let transaction: ProbeTransactionEntry | null = null
   const queuedProbeStarts: QueuedProbeStart[] = []
@@ -619,7 +622,6 @@ export function createInputOwner(
   }
 
   function clearIncompleteTimer(): void {
-    replyBoundArmed = false
     if (incompleteSequenceTimer !== null) {
       clearTimeout(incompleteSequenceTimer)
       incompleteSequenceTimer = null
@@ -633,32 +635,34 @@ export function createInputOwner(
   function scheduleIncompleteFlush(receivedAt?: number, inputBatchId?: number): void {
     const pending = incompleteSequence
     const replyPending = pending !== null && OSC_REPLY_PREFIX.test(pending)
-    // A started reply keeps its bound from its first byte: a later read that extends it does not restart the
-    // clock, so keys typed after an unended reply cannot keep it buffered (21624, @dev/review-adhoc5 P3).
-    if (replyPending && replyBoundArmed) return
+    // A started reply keeps its bound from its first byte: a later read that extends it re-arms with what is left,
+    // so keys typed after an unended reply cannot keep it buffered (21624, @dev/review-adhoc5 P3).
+    if (!replyPending) replyStartedAt = null
+    else replyStartedAt ??= Date.now()
     clearIncompleteTimer()
     // A bare ESC, a read ending inside `ESC ] <digits>`, or an OSC reply still waiting for its end.
     if (pending === null || (pending !== "\x1b" && !pending.startsWith("\x1b]"))) return
-    replyBoundArmed = replyPending
-    incompleteSequenceTimer = setTimeout(
-      () => {
-        incompleteSequenceTimer = null
-        replyBoundArmed = false
-        // Yield through the check phase before committing standalone Escape.
-        // If the event loop was busy while the timeout expired, already-ready
-        // stdin tail bytes get one poll phase to arrive and reassemble first.
-        incompleteSequenceImmediate = setImmediate(() => {
-          incompleteSequenceImmediate = null
-          const current = incompleteSequence
-          if (disposed || current === null || (current !== "\x1b" && !current.startsWith("\x1b]")))
-            return
-          incompleteSequence = null
-          if (current === "\x1b") dispatchSequence("\x1b", receivedAt, inputBatchId)
-          else flushIncompleteOsc(current, receivedAt, inputBatchId)
-        })
-      },
-      replyPending ? OSC_REPLY_COMPLETION_MS : ESC_DISAMBIGUATION_MS,
-    )
+    const delay =
+      replyStartedAt === null
+        ? ESC_DISAMBIGUATION_MS
+        : Math.max(0, replyStartedAt + OSC_REPLY_COMPLETION_MS - Date.now())
+    incompleteSequenceTimer = setTimeout(() => {
+      incompleteSequenceTimer = null
+      // Yield through the check phase before committing standalone Escape.
+      // If the event loop was busy while the timeout expired, already-ready
+      // stdin tail bytes get one poll phase to arrive and reassemble first.
+      incompleteSequenceImmediate = setImmediate(() => {
+        incompleteSequenceImmediate = null
+        const current = incompleteSequence
+        if (disposed || current === null || (current !== "\x1b" && !current.startsWith("\x1b]"))) {
+          return
+        }
+        incompleteSequence = null
+        replyStartedAt = null
+        if (current === "\x1b") dispatchSequence("\x1b", receivedAt, inputBatchId)
+        else flushIncompleteOsc(current, receivedAt, inputBatchId)
+      })
+    }, delay)
   }
 
   /** An OSC that did not complete in its bound: an unended reply is dropped; `ESC ] <digits>` alone was typed. */
