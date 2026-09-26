@@ -140,12 +140,14 @@ export async function probeColors(
     const bg = await queryBackgroundColor(write, read, timeoutMs)
     const fg = await queryForegroundColor(write, read, timeoutMs)
 
-    const ansi: (string | null)[] = new Array(16).fill(null)
+    const ansi = Array.from<string | null>({ length: 16 }).fill(null)
     queryMultiplePaletteColors(
       Array.from({ length: 16 }, (_, i) => i),
       write,
     )
-    await new Promise((resolve) => setTimeout(resolve, timeoutMs))
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, timeoutMs)
+    })
 
     const remaining = buffer
     buffer = ""
@@ -188,8 +190,9 @@ export async function probeColors(
       "brightCyan",
       "brightWhite",
     ]
-    for (let i = 0; i < 16; i++) {
-      if (ansi[i]) (palette as Record<string, string>)[ansiFields[i]!] = ansi[i]!
+    for (const [i, field] of ansiFields.entries()) {
+      const color = ansi[i]
+      if (color) (palette as Record<string, string>)[field] = color
     }
     if (fg) {
       palette.cursorColor = fg
@@ -230,8 +233,9 @@ function parseOscColor(acc: string, oscCode: number): { result: string; consumed
   }
   const body = acc.slice(bodyStart, bodyEnd)
   const match = RGB_BODY_RE.exec(body)
-  if (!match) return null
-  const hex = `#${normalizeHex(match[1]!)}${normalizeHex(match[2]!)}${normalizeHex(match[3]!)}`
+  const [, r, g, b] = match ?? []
+  if (r === undefined || g === undefined || b === undefined) return null
+  const hex = `#${normalizeHex(r)}${normalizeHex(g)}${normalizeHex(b)}`
   return { result: hex, consumed: bodyEnd + terminatorLen }
 }
 
@@ -271,7 +275,7 @@ async function probeColorsViaOwner(
   // window. Unlike FG/BG we don't know in which order responses will come,
   // so use a single accumulating probe that returns when the window expires
   // OR all 16 slots are filled.
-  const ansi: (string | null)[] = new Array(16).fill(null)
+  const ansi = Array.from<string | null>({ length: 16 }).fill(null)
   let filled = 0
   // Emit all 16 queries in one burst via the owner's writeStdout (embedded
   // in the first probe's `query`). The parser scans the accumulated buffer
@@ -340,8 +344,9 @@ async function probeColorsViaOwner(
     "brightCyan",
     "brightWhite",
   ]
-  for (let i = 0; i < 16; i++) {
-    if (ansi[i]) (palette as Record<string, string>)[ansiFields[i]!] = ansi[i]!
+  for (const [i, field] of ansiFields.entries()) {
+    const color = ansi[i]
+    if (color) (palette as Record<string, string>)[field] = color
   }
   if (fg) {
     palette.cursorColor = fg
@@ -386,20 +391,73 @@ export interface DetectThemeOptions {
   input?: ProbeInputOwner
 }
 
-export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme> {
+/**
+ * Whether the terminal answered the OSC 10/11/4 palette probe.
+ *
+ * - `answered` — at least one slot came back; the theme holds the probed colors.
+ * - `unanswered` — nothing came back (a headless pty, a terminal that does not
+ *   answer). The theme paints the terminal's own default background (SGR 49),
+ *   never a guessed scheme background.
+ * - `skipped` — the color tier (mono / ansi16) never probes.
+ */
+export type PaletteProbeState = "answered" | "unanswered" | "skipped"
+
+/** A detected theme plus whether the terminal answered the probe behind it. */
+export interface DetectedPalette {
+  theme: Theme
+  state: PaletteProbeState
+}
+
+/**
+ * The canvas tokens — the unstyled background every themed root paints.
+ * Everything else a theme derives from the scheme background (raised
+ * surfaces, selection, the backdrop scrim) stays as derived.
+ */
+const CANVAS_TOKENS = ["bg", "bg-default", "bg-surface-default"] as const
+
+/**
+ * Point the canvas tokens at the terminal's default background (`$default`,
+ * which the pipeline paints as SGR 49). Used when the palette probe went
+ * unanswered: the scheme background is a guess, and a guess painted as an
+ * explicit background shows up as a band that does not match the terminal.
+ */
+export function withTerminalDefaultCanvas(theme: Theme): Theme {
+  const out = { ...theme } as Record<string, unknown>
+  for (const token of CANVAS_TOKENS) out[token] = "$default"
+  return out as unknown as Theme
+}
+
+/**
+ * Probe the terminal palette and derive a theme, reporting whether the probe
+ * was answered. {@link detectTheme} is this without the state.
+ */
+export async function detectPalette(opts: DetectThemeOptions = {}): Promise<DetectedPalette> {
   const colorLevel = opts.caps?.colorLevel
   if (colorLevel === "mono" || colorLevel === "ansi16") {
     const isDark = opts.caps?.darkBackground ?? true
-    return isDark ? ansi16DarkTheme : ansi16LightTheme
+    return { theme: isDark ? ansi16DarkTheme : ansi16LightTheme, state: "skipped" }
   }
   const detected = await probeColors({ timeoutMs: opts.timeoutMs, input: opts.input })
   const isDark = detected?.dark ?? opts.caps?.darkBackground ?? true
   const fallback =
     opts.fallback ??
     (isDark ? (opts.fallbackDark ?? defaultDarkScheme) : (opts.fallbackLight ?? defaultLightScheme))
-  if (!detected) return deriveTheme(fallback)
+  // The standalone probe returns all-null slots rather than null when nothing
+  // answers, so "answered" means some slot actually came back.
+  if (!detected || !probeAnswered(detected)) {
+    return { theme: withTerminalDefaultCanvas(deriveTheme(fallback)), state: "unanswered" }
+  }
   const merged: ColorScheme = { ...fallback, ...stripNulls(detected.palette) }
-  return deriveTheme(merged)
+  return { theme: deriveTheme(merged), state: "answered" }
+}
+
+export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme> {
+  return (await detectPalette(opts)).theme
+}
+
+/** True when at least one probed slot came back. Module-internal (not in the package index). */
+export function probeAnswered(detected: DetectedScheme): boolean {
+  return detected.fg !== null || detected.bg !== null || detected.ansi.some((c) => c !== null)
 }
 
 function stripNulls(partial: Partial<ColorScheme>): Partial<ColorScheme> {

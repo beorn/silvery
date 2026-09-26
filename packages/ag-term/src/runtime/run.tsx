@@ -41,12 +41,14 @@ import {
   createTerminalProfile,
   probeTerminalProfile,
   type ColorLevel,
+  type PaletteProbeState,
   type TerminalProfile,
 } from "@silvery/ansi"
 import { nord, catppuccinLatte } from "@silvery/theme/schemes"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
 import type { TerminalCaps } from "../terminal-caps"
 import { setInputOwnerMouseOptions, type InputOwner } from "./input-owner"
+import { createPaletteSession, PaletteThemeProvider, type PaletteSession } from "./palette-session"
 import { getInternalStreams } from "./term-internal"
 import type { ParseMouseOptions } from "../mouse"
 import { preloadStrictTerminalBackends } from "../strict-terminal-backends"
@@ -354,6 +356,15 @@ export interface RunHandle {
   [Symbol.dispose](): void
   /** Send a key press */
   press(key: string): Promise<void>
+  /**
+   * Probe the terminal palette (OSC 10/11/4) again and repaint with the answer.
+   * run() already calls this on a mode-2031 color-scheme notice, and on a
+   * focus-in or resize while the startup probe is unanswered. Resolves with the
+   * palette's state after the probe; `skipped` when this run has no terminal
+   * to probe (headless, emulator-backed, `input: false`, a caller-supplied
+   * profile, or a mono / ansi16 tier).
+   */
+  reprobePalette(): Promise<PaletteProbeState>
 }
 
 // ============================================================================
@@ -457,8 +468,9 @@ export async function run(
       // The mixed-proxy's set/defineProperty traps forward to termBase,
       // so this override replaces the original sendInput with one that
       // feeds the mock stdin instead of the internal event queue.
-      if ((term as any).sendInput) {
-        ;(term as any).sendInput = (data: string) => {
+      const inputTarget = term as unknown as { sendInput?: (data: string) => void }
+      if (inputTarget.sendInput) {
+        inputTarget.sendInput = (data: string) => {
           stdinEmitter.emit("data", data)
         }
       }
@@ -568,11 +580,24 @@ export async function run(
     if (probeOwner) setInputOwnerMouseOptions(probeOwner, mouseParseOptions(termMouseOption))
     const caps: TerminalCaps = termProfile.caps
     // `profile.theme` is populated by probeTerminalProfile (already
-    // pre-quantized when `profile.caps.colorForced === true`). When a caller
-    // supplied a pre-built profile without a theme, no ThemeProvider wrap
-    // happens — the app uses whatever ThemeProvider higher up the tree or
-    // the framework default.
-    const themed = termProfile.theme ? (
+    // pre-quantized when `profile.caps.colorForced === true`). The palette
+    // session re-probes it later (see ./palette-session). When a caller
+    // supplied a pre-built profile, no probe ran here: its theme (if any) is
+    // painted as given, and no ThemeProvider wrap happens without one.
+    const paletteSession =
+      !termOptsAny?.profile && probeOwner
+        ? createPaletteSession({
+            profile: termProfile,
+            input: probeOwner,
+            size: term.size,
+            modes: term.modes,
+            fallbackDark: nord,
+            fallbackLight: catppuccinLatte,
+          })
+        : undefined
+    const themed = paletteSession ? (
+      <PaletteThemeProvider session={paletteSession}>{element}</PaletteThemeProvider>
+    ) : termProfile.theme ? (
       <ThemeProvider theme={termProfile.theme}>{element}</ThemeProvider>
     ) : (
       element
@@ -581,29 +606,35 @@ export async function run(
     // Phase 8b: real-terminal Term adapter — createApp's option bag still takes
     // raw WriteStream / ReadStream, so we thread them via the internal accessor.
     // (termStdin / termStdout are already in scope from the probe above.)
-    const handle = await app.run(themed, {
-      term,
-      stdout: termStdout,
-      stdin: termStdin,
-      cols: term.cols ?? undefined,
-      rows: term.rows ?? undefined,
-      caps,
-      // Thread the resolved profile through so createApp's `profileOption`
-      // branch sees the same source-of-truth that run() already consulted.
-      // Phase 4 of km-silvery.terminal-profile-plateau.
-      profile: termProfile,
-      alternateScreen: true,
-      kitty: caps.kittyKeyboard,
-      mouse: termMouseOption,
-      focusReporting: true,
-      textSizing: "auto",
-      widthDetection: "auto",
-      terminalLinks: termOptions?.terminalLinks,
-      // Forward the stdin opt-out so createApp's probes + cleanup paths
-      // skip stdin ownership end-to-end.
-      ...(termInputDisabled ? { input: false as const } : {}),
-    })
-    return wrapHandle(handle)
+    let handle: Awaited<ReturnType<typeof app.run>>
+    try {
+      handle = await app.run(themed, {
+        term,
+        stdout: termStdout,
+        stdin: termStdin,
+        cols: term.cols ?? undefined,
+        rows: term.rows ?? undefined,
+        caps,
+        // Thread the resolved profile through so createApp's `profileOption`
+        // branch sees the same source-of-truth that run() already consulted.
+        // Phase 4 of km-silvery.terminal-profile-plateau.
+        profile: termProfile,
+        alternateScreen: true,
+        kitty: caps.kittyKeyboard,
+        mouse: termMouseOption,
+        focusReporting: true,
+        textSizing: "auto",
+        widthDetection: "auto",
+        terminalLinks: termOptions?.terminalLinks,
+        // Forward the stdin opt-out so createApp's probes + cleanup paths
+        // skip stdin ownership end-to-end.
+        ...(termInputDisabled ? { input: false as const } : {}),
+      })
+    } catch (error) {
+      paletteSession?.[Symbol.dispose]()
+      throw error
+    }
+    return wrapHandle(handle, undefined, paletteSession)
   }
 
   // Options path: auto-detect caps and derive defaults.
@@ -618,13 +649,19 @@ export async function run(
   // level — profile vs caps/colorLevel are mutually exclusive. A JS caller
   // can still smuggle both; the runtime warning below is the back-stop.
   warnIfMixedRunOptions(optionsOrTerm)
+  // Read through a view without the XOR branches: `caps` is still accepted
+  // here (deprecated on RunOptions, with the runtime warning above).
   const {
     mode,
     colorLevel: colorLevelOption,
     profile: profileOption,
     caps: capsOption,
     ...rest
-  } = optionsOrTerm as RunOptions & { caps?: TerminalCaps; colorLevel?: ColorLevel }
+  } = optionsOrTerm as RunOptionsCommon & {
+    profile?: TerminalProfile
+    caps?: TerminalCaps
+    colorLevel?: ColorLevel
+  }
   const headless = rest.writable != null || (rest.cols != null && rest.rows != null && !rest.stdout)
   const runStdin = (rest.stdin ?? process.stdin) as NodeJS.ReadStream
   const runStdout = (rest.stdout ?? process.stdout) as NodeJS.WriteStream
@@ -647,6 +684,7 @@ export async function run(
         ...(optsInputDisabled ? { input: false as const } : {}),
       })
   const optsProbeOwner = ownedTerm?.input ?? null
+  let paletteSession: PaletteSession | undefined
   try {
     const optsProfile =
       profileOption ??
@@ -669,13 +707,26 @@ export async function run(
     const caps: TerminalCaps = optsProfile.caps
     // Headless renders don't wrap in ThemeProvider — no OSC probe ran, no
     // theme was bundled. Non-headless renders with a theme wrap the element
-    // so the app sees the detected (and pre-quantized when forced) theme.
-    const themed: ReactElement =
-      !headless && optsProfile.theme ? (
-        <ThemeProvider theme={optsProfile.theme}>{element}</ThemeProvider>
-      ) : (
-        element
-      )
+    // so the app sees the detected (and pre-quantized when forced) theme; the
+    // palette session re-probes it later (see ./palette-session).
+    paletteSession =
+      !profileOption && ownedTerm && optsProbeOwner
+        ? createPaletteSession({
+            profile: optsProfile,
+            input: optsProbeOwner,
+            size: ownedTerm.size,
+            modes: ownedTerm.modes,
+            fallbackDark: nord,
+            fallbackLight: catppuccinLatte,
+          })
+        : undefined
+    const themed: ReactElement = paletteSession ? (
+      <PaletteThemeProvider session={paletteSession}>{element}</PaletteThemeProvider>
+    ) : !headless && optsProfile.theme ? (
+      <ThemeProvider theme={optsProfile.theme}>{element}</ThemeProvider>
+    ) : (
+      element
+    )
     const app = createApp(() => () => ({}))
     const kittyOption = Object.prototype.hasOwnProperty.call(rest, "kitty")
       ? rest.kitty
@@ -698,8 +749,9 @@ export async function run(
       textSizing: rest.textSizing ?? "auto",
       widthDetection: rest.widthDetection ?? "auto",
     })
-    return wrapHandle(handle, ownedTerm ?? undefined)
+    return wrapHandle(handle, ownedTerm ?? undefined, paletteSession)
   } catch (error) {
+    paletteSession?.[Symbol.dispose]()
     ownedTerm?.[Symbol.dispose]()
     throw error
   }
@@ -735,9 +787,12 @@ function wrapHandle(
     press(key: string): Promise<void>
   },
   ownedTerm?: Term,
+  paletteSession?: PaletteSession,
 ): RunHandle {
   let ownedTermDisposed = false
   const disposeOwnedTerm = (): void => {
+    // The palette session holds the Term's input, size and modes; it goes first.
+    paletteSession?.[Symbol.dispose]()
     if (!ownedTerm || ownedTermDisposed) return
     ownedTermDisposed = true
     ownedTerm[Symbol.dispose]()
@@ -749,7 +804,9 @@ function wrapHandle(
   // injects a Term so startup probes and normal input can share one owner;
   // mirror the auto-Term lifecycle even when the app exits itself and the
   // caller never invokes `waitUntilExit()`.
-  if (ownedTerm) void handle.waitUntilExit().then(disposeOwnedTerm, disposeOwnedTerm)
+  if (ownedTerm || paletteSession) {
+    void handle.waitUntilExit().then(disposeOwnedTerm, disposeOwnedTerm)
+  }
 
   return {
     get text() {
@@ -777,6 +834,8 @@ function wrapHandle(
     unmount,
     [Symbol.dispose]: unmount,
     press: (key: string) => handle.press(key),
+    reprobePalette: () =>
+      paletteSession ? paletteSession.reprobePalette() : Promise.resolve("skipped"),
   }
 }
 
@@ -1040,7 +1099,9 @@ async function probeEmulatorMouseCellSize(
     backend.feed(new TextEncoder().encode("\x1b[14t\x1b[18t"))
     // Drain the microtask queue, then a macrotask, in case a backend defers.
     await Promise.resolve()
-    await new Promise<void>((r) => setTimeout(r, 0))
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0)
+    })
   } finally {
     backend.onResponse = priorOnResponse
   }

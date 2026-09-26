@@ -27,6 +27,8 @@ interface Input extends Disposable {
   onMouse(handler: (event: ParsedMouse) => void): () => void
   onPaste(handler: (event: PasteEvent) => void): () => void
   onFocus(handler: (event: FocusEvent) => void): () => void
+  // Mode-2031 color-scheme notice (`CSI ? 997 ; 1|2 n`); needs term.modes.colorSchemeReporting(true)
+  onColorSchemeNotice(handler: (scheme: "dark" | "light") => void): () => void
   readonly active: boolean
   readonly resolvedCount: number
   readonly timedOutCount: number

@@ -22,8 +22,8 @@
 import { defaultCaps, type TerminalCaps } from "./caps"
 import { defaultEmulator, type TerminalEmulator } from "./emulator"
 import type { ColorLevel } from "./types"
-import { detectTheme } from "./theme/detect"
-import type { DetectThemeOptions, ProbeInputOwner } from "./theme/detect"
+import { detectPalette } from "./theme/detect"
+import type { DetectThemeOptions, PaletteProbeState, ProbeInputOwner } from "./theme/detect"
 import { probeTerminalCapabilities } from "./kitty-graphics-probe"
 import type { Theme } from "./theme/types"
 import { pickColorLevel } from "./color-maps"
@@ -111,6 +111,14 @@ export interface TerminalProfile {
    * Post km-silvery.plateau-profile-theme (H2 of the /big review 2026-04-23).
    */
   readonly theme?: Theme
+  /**
+   * Whether the terminal answered the palette probe behind {@link theme}.
+   * `unanswered` means `theme`'s canvas paints the terminal default
+   * background, and the runtime re-probes when a terminal can answer.
+   * Absent when no probe ran (sync {@link createTerminalProfile}, or
+   * `probeTheme: false`).
+   */
+  readonly paletteProbe?: PaletteProbeState
 }
 
 /**
@@ -438,7 +446,8 @@ export interface ProbeTerminalProfileOptions extends CreateTerminalProfileOption
  *
  * 1. Gather Kitty, XTVERSION, and DA1 through one bounded owner transaction.
  * 2. Use explicit live evidence to refine corpus graphics/font decisions.
- * 3. Run `detectTheme` (OSC 4/10/11 probe with fallback) once.
+ * 3. Run `detectPalette` (OSC 4/10/11 probe with fallback) once, recording
+ *    whether it was answered as `paletteProbe`.
  * 4. Pre-quantize the resulting theme via {@link pickColorLevel} when the
  *    tier was forced ({@link TerminalCaps.colorForced} is `true`) so
  *    token hex values match what the pipeline will actually emit.
@@ -486,10 +495,10 @@ export async function probeTerminalProfile(
   let sixel = profile.caps.sixel
   let maybeNerdFont = profile.caps.maybeNerdFont
   const capabilityProvenance = { ...profile.capabilityProvenance }
-  const canProbeCapabilities =
-    options.probeGraphics !== false && profile.caps.input && options.input !== undefined
-  if (canProbeCapabilities) {
-    const result = await probeTerminalCapabilities(options.input!, options.timeoutMs ?? 150)
+  const capabilityInput =
+    options.probeGraphics !== false && profile.caps.input ? options.input : undefined
+  if (capabilityInput !== undefined) {
+    const result = await probeTerminalCapabilities(capabilityInput, options.timeoutMs ?? 150)
     if (result.status === "complete") {
       const evidence = result.value
       if (
@@ -528,7 +537,7 @@ export async function probeTerminalProfile(
   // Run the OSC probe. The detectTheme docstring documents its own fallbacks
   // (mono/ansi16 tiers skip the probe and return canned themes); we pass the
   // profile's caps through so those short-circuits fire when appropriate.
-  const theme = await detectTheme({
+  const { theme, state: paletteProbe } = await detectPalette({
     caps: profile.caps,
     fallbackDark: options.fallbackDark,
     fallbackLight: options.fallbackLight,
@@ -551,7 +560,13 @@ export async function probeTerminalProfile(
     maybeNerdFont === profile.caps.maybeNerdFont
       ? profile.caps
       : { ...profile.caps, kittyGraphics, sixel, maybeNerdFont }
-  return freezeProfileInDev({ ...profile, caps, capabilityProvenance, theme: resolvedTheme })
+  return freezeProfileInDev({
+    ...profile,
+    caps,
+    capabilityProvenance,
+    theme: resolvedTheme,
+    paletteProbe,
+  })
 }
 
 // ============================================================================

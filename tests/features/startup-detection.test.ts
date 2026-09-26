@@ -128,7 +128,7 @@ describe("withTerminal startup detection", () => {
     const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: true }))
 
     // Simulate terminal responding with dark mode
-    send("\x1b[?2031;1n")
+    send("\x1b[?997;1n")
     expect(app.colorSchemeDetector!.scheme).toBe("dark")
   })
 
@@ -136,7 +136,7 @@ describe("withTerminal startup detection", () => {
     const { proc, send } = createMockProcess()
     const app = pipe(createBaseApp(), withTerminal(proc, { autoDetect: true }))
 
-    send("\x1b[?2031;2n")
+    send("\x1b[?997;2n")
     expect(app.colorSchemeDetector!.scheme).toBe("light")
   })
 

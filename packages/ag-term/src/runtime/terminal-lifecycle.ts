@@ -149,6 +149,7 @@ export function restoreTerminalState(
   const sequences = [
     "\x1b[0m", // Reset SGR attributes
     "\x1b[?1004l", // Disable focus reporting
+    "\x1b[?2031l", // Disable color-scheme reporting (the palette re-probe's notice)
     disableMouse(), // Disable all mouse tracking modes
     disableKittyKeyboard(), // Pop Kitty keyboard protocol
     "\x1b[?2004l", // Disable bracketed paste

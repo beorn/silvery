@@ -25,8 +25,8 @@
  *    response bytes via a custom parser. First match wins, consumed bytes
  *    are spliced out of the shared buffer.
  * 2. **Typed event parser** — whatever probes don't consume is parsed into
- *    key/mouse/paste/focus events and fanned out to `onKey/onMouse/onPaste/onFocus`
- *    subscribers. The parser handles bracketed paste, mouse sequences, focus
+ *    key/mouse/paste/focus/color-scheme events and fanned out to
+ *    `onKey/onMouse/onPaste/onFocus/onColorSchemeNotice` subscribers. The parser handles bracketed paste, mouse sequences, focus
  *    events, CSI/SS3 sequences, and cross-chunk incomplete CSI buffering.
  *
  * Raw mode and bracketed paste are set ONCE at construction (when `modes`
@@ -41,7 +41,7 @@
  * `stdout.write` is fine. The owner's concern is stdin.
  */
 
-import { isProtocolError } from "@silvery/ansi"
+import { isProtocolError, parseBgModeResponse } from "@silvery/ansi"
 import type {
   ProbeTransactionOptions,
   ProbeTransactionRecognition,
@@ -167,6 +167,13 @@ export interface InputOwner extends Disposable {
    * unsubscribe function.
    */
   onFocus(handler: (event: FocusEvent) => void): () => void
+
+  /**
+   * Subscribe to mode-2031 color-scheme notices (`CSI ? 997 ; 1|2 n`), which a
+   * terminal sends when its palette changes while mode 2031 is enabled.
+   * Returns an unsubscribe function.
+   */
+  onColorSchemeNotice(handler: (scheme: "dark" | "light") => void): () => void
 
   /** Subscribe to parsed OSC 99 activation replies. */
   onNotificationActivationReply(
@@ -354,7 +361,7 @@ function splitRawInput(raw: string): SplitResult {
       if (raw[i + 1] === "[") {
         // CSI sequence: ESC [ ... <letter or ~>
         let j = i + 2
-        while (j < raw.length && !isCSITerminator(raw[j]!)) j++
+        while (j < raw.length && !isCSITerminator(raw[j])) j++
         if (j < raw.length) {
           j++ // include terminator
           sequences.push(raw.slice(i, j))
@@ -372,7 +379,7 @@ function splitRawInput(raw: string): SplitResult {
         // Double ESC: meta + escape, OR meta + CSI/SS3 sequence
         if (i + 2 < raw.length && raw[i + 2] === "[") {
           let j = i + 3
-          while (j < raw.length && !isCSITerminator(raw[j]!)) j++
+          while (j < raw.length && !isCSITerminator(raw[j])) j++
           if (j < raw.length) {
             j++
             sequences.push(raw.slice(i, j))
@@ -395,14 +402,15 @@ function splitRawInput(raw: string): SplitResult {
       }
     } else {
       // Single byte (printable char, ctrl code, etc.)
-      sequences.push(raw[i]!)
+      sequences.push(raw.charAt(i))
       i++
     }
   }
   return { sequences, incomplete: null }
 }
 
-function isCSITerminator(ch: string): boolean {
+function isCSITerminator(ch: string | undefined): boolean {
+  if (ch === undefined) return false
   return (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || ch === "~"
 }
 
@@ -475,6 +483,7 @@ export function createInputOwner(
   const mouseHandlers = new Set<(e: ParsedMouse) => void>()
   const pasteHandlers = new Set<(e: PasteEvent) => void>()
   const focusHandlers = new Set<(e: FocusEvent) => void>()
+  const colorSchemeHandlers = new Set<(scheme: "dark" | "light") => void>()
   const notificationActivationHandlers = new Set<(e: TerminalNotificationActivation) => void>()
   // UPSTREAM-WAITING(herdr#unfiled): Delete when herdr forwards pixel units under 1016
   // Bead: @km/all/12134-upstream-waiting/24675-herdr-reports-sgr-pixels-mode-set-while-forwarding-cell-unit-mouse-coordinates
@@ -524,12 +533,17 @@ export function createInputOwner(
 
   /**
    * Parse one CSI/SS3/meta/control/printable sequence into the right event
-   * type and fire it. Order: focus → mouse → key (catch-all).
+   * type and fire it. Order: focus → color-scheme notice → mouse → key (catch-all).
    */
   function dispatchSequence(raw: string, receivedAt?: number, inputBatchId?: number): void {
     const focus = parseFocusEvent(raw)
     if (focus) {
       fire(focusHandlers, { focused: focus.type === "focus-in" })
+      return
+    }
+    const scheme = parseBgModeResponse(raw)
+    if (scheme) {
+      fire(colorSchemeHandlers, scheme)
       return
     }
     if (isMouseSequence(raw)) {
@@ -567,7 +581,7 @@ export function createInputOwner(
       incompleteSequenceTimer = null
     }
     if (incompleteSequenceImmediate !== null) {
-      clearImmediate(incompleteSequenceImmediate)
+      globalThis.clearImmediate(incompleteSequenceImmediate)
       incompleteSequenceImmediate = null
     }
   }
@@ -725,8 +739,7 @@ export function createInputOwner(
     let progress = true
     while (progress && probes.length > 0 && buffer.length > 0) {
       progress = false
-      for (let i = 0; i < probes.length; i++) {
-        const entry = probes[i]!
+      for (const entry of probes) {
         if (entry.settled) continue
         let parsed: { result: unknown; consumed: number } | null
         try {
@@ -751,7 +764,7 @@ export function createInputOwner(
         }
       }
       for (let i = probes.length - 1; i >= 0; i--) {
-        if (probes[i]!.settled) probes.splice(i, 1)
+        if (probes[i]?.settled) probes.splice(i, 1)
       }
     }
 
@@ -1045,6 +1058,13 @@ export function createInputOwner(
     }
   }
 
+  function onColorSchemeNotice(handler: (scheme: "dark" | "light") => void): () => void {
+    colorSchemeHandlers.add(handler)
+    return () => {
+      colorSchemeHandlers.delete(handler)
+    }
+  }
+
   function onNotificationActivationReply(
     handler: (e: TerminalNotificationActivation) => void,
   ): () => void {
@@ -1107,6 +1127,7 @@ export function createInputOwner(
     mouseHandlers.clear()
     pasteHandlers.clear()
     focusHandlers.clear()
+    colorSchemeHandlers.clear()
     notificationActivationHandlers.clear()
     clearIncompleteTimer()
     buffer = ""
@@ -1157,6 +1178,7 @@ export function createInputOwner(
     onMouse,
     onPaste,
     onFocus,
+    onColorSchemeNotice,
     onNotificationActivationReply,
     sendRaw,
     sendKey,

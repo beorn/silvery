@@ -1,4 +1,9 @@
 /**
+ * @failure A terminal's mode-2031 color-scheme notice (`CSI ? 997 ; 1|2 n`) was not recognized, so a palette change never reached the app.
+ * @level l1
+ * @consumer @ag/code/21624-hab-attach-wrong-size
+ * @testonly none
+ *
  * Tests for Mode 2031 color scheme detection.
  */
 
@@ -16,11 +21,16 @@ import {
 
 describe("parseBgModeResponse", () => {
   it("parses dark scheme response", () => {
-    expect(parseBgModeResponse("\x1b[?2031;1n")).toBe("dark")
+    expect(parseBgModeResponse("\x1b[?997;1n")).toBe("dark")
   })
 
   it("parses light scheme response", () => {
-    expect(parseBgModeResponse("\x1b[?2031;2n")).toBe("light")
+    expect(parseBgModeResponse("\x1b[?997;2n")).toBe("light")
+  })
+
+  it("does not read the `?2031;Nn` form, which no terminal on terminfo.dev emits", () => {
+    expect(parseBgModeResponse("\x1b[?2031;1n")).toBeNull()
+    expect(parseBgModeResponse("\x1b[?2031;2n")).toBeNull()
   })
 
   it("returns null for unrelated input", () => {
@@ -31,8 +41,8 @@ describe("parseBgModeResponse", () => {
 
   it("extracts response from mixed input", () => {
     // Response may arrive with other data in the same chunk
-    expect(parseBgModeResponse("junk\x1b[?2031;1nmore")).toBe("dark")
-    expect(parseBgModeResponse("\x1b[?25h\x1b[?2031;2n")).toBe("light")
+    expect(parseBgModeResponse("junk\x1b[?997;1nmore")).toBe("dark")
+    expect(parseBgModeResponse("\x1b[?25h\x1b[?997;2n")).toBe("light")
   })
 })
 
@@ -79,7 +89,7 @@ describe("createBgModeDetector", () => {
     expect(terminal.written).toContain(ENABLE_BG_MODE_REPORTING)
 
     // Simulate terminal responding with dark mode
-    terminal.send("\x1b[?2031;1n")
+    terminal.send("\x1b[?997;1n")
     expect(detector.scheme).toBe("dark")
   })
 
@@ -91,7 +101,7 @@ describe("createBgModeDetector", () => {
     })
 
     detector.start()
-    terminal.send("\x1b[?2031;2n")
+    terminal.send("\x1b[?997;2n")
     expect(detector.scheme).toBe("light")
   })
 
@@ -131,7 +141,7 @@ describe("createBgModeDetector", () => {
     })
 
     detector.start()
-    terminal.send("\x1b[?2031;2n") // light response before timeout
+    terminal.send("\x1b[?997;2n") // light response before timeout
 
     await vi.advanceTimersByTimeAsync(200)
     expect(fallback).not.toHaveBeenCalled()
@@ -151,9 +161,9 @@ describe("createBgModeDetector", () => {
     detector.subscribe((scheme) => changes.push(scheme))
 
     detector.start()
-    terminal.send("\x1b[?2031;1n") // dark
-    terminal.send("\x1b[?2031;2n") // change to light
-    terminal.send("\x1b[?2031;1n") // change back to dark
+    terminal.send("\x1b[?997;1n") // dark
+    terminal.send("\x1b[?997;2n") // change to light
+    terminal.send("\x1b[?997;1n") // change back to dark
 
     expect(changes).toEqual(["dark", "light", "dark"])
   })
@@ -169,8 +179,8 @@ describe("createBgModeDetector", () => {
     detector.subscribe((scheme) => changes.push(scheme))
 
     detector.start()
-    terminal.send("\x1b[?2031;1n") // dark
-    terminal.send("\x1b[?2031;1n") // still dark — no change notification
+    terminal.send("\x1b[?997;1n") // dark
+    terminal.send("\x1b[?997;1n") // still dark — no change notification
 
     expect(changes).toEqual(["dark"])
   })
@@ -186,9 +196,9 @@ describe("createBgModeDetector", () => {
     const unsub = detector.subscribe((scheme) => changes.push(scheme))
 
     detector.start()
-    terminal.send("\x1b[?2031;1n") // dark
+    terminal.send("\x1b[?997;1n") // dark
     unsub()
-    terminal.send("\x1b[?2031;2n") // light — should not be received
+    terminal.send("\x1b[?997;2n") // light — should not be received
 
     expect(changes).toEqual(["dark"])
   })
@@ -218,14 +228,14 @@ describe("createBgModeDetector", () => {
     detector.subscribe((scheme) => changes.push(scheme))
 
     detector.start()
-    terminal.send("\x1b[?2031;1n")
+    terminal.send("\x1b[?997;1n")
     expect(changes).toEqual(["dark"])
 
     detector.stop()
     expect(terminal.written).toContain(DISABLE_BG_MODE_REPORTING)
 
     // No more notifications after stop
-    terminal.send("\x1b[?2031;2n")
+    terminal.send("\x1b[?997;2n")
     expect(changes).toEqual(["dark"])
   })
 
@@ -237,7 +247,7 @@ describe("createBgModeDetector", () => {
         onData: terminal.onData,
       })
       detector.start()
-      terminal.send("\x1b[?2031;2n")
+      terminal.send("\x1b[?997;2n")
       expect(detector.scheme).toBe("light")
     }
     // After scope exit, disable should have been sent
@@ -255,7 +265,7 @@ describe("createBgModeDetector", () => {
     detector.stop()
 
     // Sending data after stop should not throw or change scheme
-    terminal.send("\x1b[?2031;1n")
+    terminal.send("\x1b[?997;1n")
     // scheme stays "unknown" because we stopped before receiving any response
     expect(detector.scheme).toBe("unknown")
   })

@@ -8,8 +8,12 @@
  * Protocol:
  * - Enable:  \x1b[?2031h
  * - Disable: \x1b[?2031l
- * - Response: \x1b[?2031;1n (dark) or \x1b[?2031;2n (light)
- * - Terminal sends the same response when the scheme changes
+ * - Notice:  \x1b[?997;1n (dark) or \x1b[?997;2n (light), sent when the
+ *   scheme changes
+ *
+ * The notice is DSR 997, not a `?2031;N` form: terminfo.dev's own probe reads
+ * `?997;Nn` (probe-defs/src/modes.ts, `modes.color-scheme-reporting`), and no
+ * terminal it tracks emits `?2031;Nn`, so that form is not read.
  *
  * @see https://contour-terminal.org/vt-extensions/color-palette-update-notifications/
  */
@@ -27,8 +31,8 @@ export const ENABLE_BG_MODE_REPORTING = `${CSI}?2031h`
 /** Disable Mode 2031 color scheme reporting */
 export const DISABLE_BG_MODE_REPORTING = `${CSI}?2031l`
 
-/** Response pattern: \x1b[?2031;Nn where N is 1 (dark) or 2 (light) */
-const MODE_2031_RESPONSE_RE = /\x1b\[\?2031;([12])n/
+/** Notice pattern: \x1b[?997;Nn where N is 1 (dark) or 2 (light) */
+const COLOR_SCHEME_NOTICE_RE = /\x1b\[\?997;([12])n/
 
 // =============================================================================
 // Types
@@ -63,11 +67,11 @@ export interface BgModeDetectorOptions {
 // =============================================================================
 
 /**
- * Parse a Mode 2031 response from terminal input data.
- * Returns "dark", "light", or null if not a Mode 2031 response.
+ * Parse a mode-2031 color-scheme notice (`CSI ? 997 ; 1|2 n`) from terminal
+ * input data. Returns "dark", "light", or null if the data holds no notice.
  */
 export function parseBgModeResponse(data: string): "dark" | "light" | null {
-  const match = MODE_2031_RESPONSE_RE.exec(data)
+  const match = COLOR_SCHEME_NOTICE_RE.exec(data)
   if (!match) return null
   return match[1] === "1" ? "dark" : "light"
 }

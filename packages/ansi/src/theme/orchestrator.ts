@@ -6,7 +6,8 @@
  *   1. **Override** — `SILVERY_COLOR` env var / explicit option forces a scheme
  *   2. **Probe** — OSC 10/11/4 query the terminal for its 22 slots
  *   3. **Fingerprint** — match probed slots against a catalog → named scheme
- *   4. **Fallback** — `defaultDarkScheme` / `defaultLightScheme` based on BgMode
+ *   4. **Fallback** — `defaultDarkScheme` / `defaultLightScheme` based on BgMode,
+ *      with the canvas on the terminal default background (the probe went unanswered)
  *
  * Returns `{ scheme, theme, source, confidence, slotSources }` so callers can
  * tell apart "detected Dracula at 0.98 confidence" from "falling back to
@@ -15,8 +16,13 @@
 
 import type { ColorScheme, Theme } from "./types.ts"
 import { COLOR_SCHEME_FIELDS } from "./types.ts"
-import { deriveTheme, loadTheme } from "./derive.ts"
-import { probeColors, type ProbeInputOwner } from "./detect.ts"
+import { loadTheme } from "./derive.ts"
+import {
+  probeAnswered,
+  probeColors,
+  withTerminalDefaultCanvas,
+  type ProbeInputOwner,
+} from "./detect.ts"
 import { fingerprintMatch } from "./fingerprint.ts"
 import { defaultDarkScheme, defaultLightScheme } from "./default-schemes.ts"
 import { blend } from "@silvery/color"
@@ -81,8 +87,9 @@ function envOverride(): "truecolor" | "256" | "ansi16" | "scheme" | "mono" | "au
     v === "scheme" ||
     v === "mono" ||
     v === "auto"
-  )
+  ) {
     return v
+  }
   return null
 }
 
@@ -144,11 +151,12 @@ export async function detectScheme(opts: DetectSchemeOptions = {}): Promise<Dete
   // 2. Probe terminal
   const detected = await probeColors({ timeoutMs: opts.timeoutMs, input: opts.input })
 
-  // No probe result → pure fallback
-  if (!detected) {
+  // No probe answer → pure fallback. The fallback scheme's background is a
+  // guess, so the canvas paints the terminal's own default (SGR 49) instead.
+  if (!detected || !probeAnswered(detected)) {
     const dark = opts.darkFallback !== false
     const fallback = dark ? defaultDarkScheme : defaultLightScheme
-    const theme = loadTheme(fallback, { enforce, wcag })
+    const theme = withTerminalDefaultCanvas(loadTheme(fallback, { enforce, wcag }))
     return {
       scheme: fallback,
       theme,

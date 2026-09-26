@@ -8,6 +8,7 @@
  *   - Kitty keyboard protocol (CSI > flags u / CSI < u)
  *   - mouse tracking (modes 1003 + 1006, optional 1016 SGR-Pixels)
  *   - focus reporting (DEC private mode 1004)
+ *   - color-scheme reporting (DEC private mode 2031)
  *
  * ## Why
  *
@@ -59,6 +60,8 @@
 import { signal, effect, type Signal } from "@silvery/signals"
 
 import {
+  DISABLE_BG_MODE_REPORTING,
+  ENABLE_BG_MODE_REPORTING,
   enableMouse,
   disableMouse,
   enableKittyKeyboard,
@@ -106,7 +109,13 @@ export const KittyFlags = {
  * the `kittyKeyboard` signal below) — it's intentionally excluded from
  * `enable()` because the "on" value is not a single fixed boolean.
  */
-export type ModeName = "rawMode" | "altScreen" | "bracketedPaste" | "mouse" | "focusReporting"
+export type ModeName =
+  | "rawMode"
+  | "altScreen"
+  | "bracketedPaste"
+  | "mouse"
+  | "focusReporting"
+  | "colorSchemeReporting"
 
 export type MouseTrackingMode = boolean | "pixel"
 
@@ -155,6 +164,13 @@ export interface Modes extends Disposable {
 
   /** Focus-in / focus-out reporting (DEC 1004). */
   readonly focusReporting: Signal<boolean>
+
+  /**
+   * Color-scheme reporting (DEC 2031): the terminal sends `CSI ? 997 ; 1|2 n`
+   * when its palette changes. Parsed by the input owner's
+   * `onColorSchemeNotice`.
+   */
+  readonly colorSchemeReporting: Signal<boolean>
 
   /**
    * Disable DEC private mode 1007 (alternate-scroll) with `CSI ?1007l`.
@@ -263,6 +279,7 @@ export function createModes(opts: CreateModesOptions): Modes {
   const kittyKeyboard = signal<number | false>(false)
   const mouse = signal<MouseTrackingMode>(false)
   const focusReporting = signal<boolean>(false)
+  const colorSchemeReporting = signal<boolean>(false)
 
   // Track which modes this owner ever activated. Dispose only restores those,
   // matching the pre-signals behaviour — we must not emit a disable sequence
@@ -273,6 +290,7 @@ export function createModes(opts: CreateModesOptions): Modes {
   let touchedKittyKeyboard = false
   let touchedMouse = false
   let touchedFocusReporting = false
+  let touchedColorSchemeReporting = false
   // Alternate-scroll (1007) is one-way: we only ever disable it, and never
   // restore it on dispose (see `disableAlternateScroll` docs). This flag makes
   // the emission idempotent — a second call is a no-op.
@@ -394,6 +412,22 @@ export function createModes(opts: CreateModesOptions): Modes {
     }
   })
 
+  let colorSchemeSeeded = false
+  const stopColorSchemeEffect = effect(() => {
+    const on = colorSchemeReporting()
+    if (!colorSchemeSeeded) {
+      colorSchemeSeeded = true
+      return
+    }
+    if (disposed && !disposing) return
+    if (on) touchedColorSchemeReporting = true
+    try {
+      write(on ? ENABLE_BG_MODE_REPORTING : DISABLE_BG_MODE_REPORTING)
+    } catch {
+      // silent-fallback-allow: a terminal that is already gone has no mode to set or reset.
+    }
+  })
+
   const dispose = () => {
     if (disposed) return
     disposed = true
@@ -407,6 +441,7 @@ export function createModes(opts: CreateModesOptions): Modes {
     // We flip each signal back to its inactive value; the per-mode effect
     // emits the disable ANSI as a side-effect. Effects that were never
     // activated stay at `false` (no value change → no emission).
+    if (touchedColorSchemeReporting) colorSchemeReporting(false)
     if (touchedFocusReporting) focusReporting(false)
     if (touchedMouse) mouse(false)
     if (touchedKittyKeyboard) kittyKeyboard(false)
@@ -426,6 +461,7 @@ export function createModes(opts: CreateModesOptions): Modes {
     stopKittyEffect()
     stopMouseEffect()
     stopFocusEffect()
+    stopColorSchemeEffect()
   }
 
   function disableAlternateScroll(): void {
@@ -452,7 +488,9 @@ export function createModes(opts: CreateModesOptions): Modes {
             ? bracketedPaste
             : name === "mouse"
               ? mouse
-              : focusReporting
+              : name === "focusReporting"
+                ? focusReporting
+                : colorSchemeReporting
     const prior = sig()
     sig(true)
     let disposed = false
@@ -472,6 +510,7 @@ export function createModes(opts: CreateModesOptions): Modes {
     kittyKeyboard,
     mouse,
     focusReporting,
+    colorSchemeReporting,
     disableAlternateScroll,
     enable,
     [Symbol.dispose]: dispose,

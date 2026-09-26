@@ -1084,11 +1084,13 @@ const theme = await detectTheme({
 
 Supported terminals: Ghostty, Kitty, WezTerm, iTerm2, foot, Alacritty, xterm. Falls back gracefully in tmux, CI, and pipe environments.
 
+When nothing answers the probe (a pane service started with no terminal attached), the theme's canvas (`bg`, `bg-default`, `bg-surface-default`) is `$default`, which paints the terminal's own background (SGR 49). A guessed scheme background is never painted. `detectPalette()` returns the theme together with a named state: `answered`, `unanswered` or `skipped`. `run()` records the state as `profile.paletteProbe` and re-probes on its own when a terminal can answer: on a mode-2031 notice, and on a focus-in or resize while the palette is unanswered. The run handle's `reprobePalette()` asks for one explicitly.
+
 `detectTheme` is Sterling-aware — its result has flat hyphen-keys baked, so `$bg-accent` etc. resolve immediately without an explicit augment call.
 
 ### Color Scheme Detection (Mode 2031)
 
-silvery can detect whether the terminal is in dark or light mode using Mode 2031 — a terminal protocol where the terminal self-reports its color scheme. This works cross-platform (Linux, Windows Terminal, SSH sessions), unlike the macOS-only `AppleInterfaceStyle` approach.
+silvery can detect whether the terminal is in dark or light mode using Mode 2031 — a terminal protocol where the terminal self-reports its color scheme with the notice `CSI ? 997 ; 1 n` (dark) or `CSI ? 997 ; 2 n` (light). This works cross-platform (Linux, Windows Terminal, SSH sessions), unlike the macOS-only `AppleInterfaceStyle` approach.
 
 ```typescript
 import { createBgModeDetector } from "@silvery/ansi"

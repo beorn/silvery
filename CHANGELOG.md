@@ -21,6 +21,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   cells wide.
 - `actionFill` is exported from `silvery`, so an app can draw an action chip
   from the recipe rather than spelling its token pair by hand.
+- `run()` re-probes the terminal palette. It does so on a mode-2031
+  color-scheme notice, and on a focus-in or resize while the startup probe
+  is unanswered. The run handle's `reprobePalette()` asks for one explicitly.
+  `detectPalette()` returns the theme together with its probe state
+  (`answered`, `unanswered` or `skipped`), and `probeTerminalProfile` records
+  that state as `profile.paletteProbe`. `term.input.onColorSchemeNotice` and
+  `term.modes.colorSchemeReporting` carry the notice.
+
+### Changed
+
+- An unanswered palette probe paints the terminal's default background
+  (SGR 49) rather than the fallback scheme's background. `detectTheme`,
+  `detectPalette` and `detectScheme` (at confidence 0) point the canvas tokens
+  `bg`, `bg-default` and `bg-surface-default` at `$default`.
+- The mode-2031 parser reads the notice terminals send,
+  `CSI ? 997 ; 1|2 n`. The `CSI ? 2031 ; N n` form is no longer read: no
+  terminal tracked by terminfo.dev emits it (probe-defs
+  `modes.color-scheme-reporting`, whose notice is the `?997` form).
 
 ## [0.24.2] - 2026-09-23
 
