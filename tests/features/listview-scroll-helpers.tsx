@@ -98,7 +98,12 @@ export function renderFixture(f: ListViewFixture): RenderAnalysis {
     </Box>,
   )
 
-  const text = stripAnsi(app.text)
+  let text: string
+  try {
+    text = stripAnsi(app.text)
+  } finally {
+    app.unmount()
+  }
   const lines = text.split("\n")
   const viewportLines = lines.slice(0, f.viewport)
 
