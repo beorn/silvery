@@ -1135,7 +1135,7 @@
 
     "fdir": ["fdir@6.5.0", "", { "peerDependencies": { "picomatch": "^3 || ^4" }, "optionalPeers": ["picomatch"] }, "sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg=="],
 
-    "flexily": ["flexily@github:beorn/flexily#d005259", {}, "beorn-flexily-d005259", "sha512-/QUZ3mubKhYn7Yu6uUUmZ+RI315/USdEER0OGaSt9PZdrrhlM/fBLOF20LyT65D6dRmgbFp25xe0O8gLNsOwSQ=="],
+    "flexily": ["flexily@github:beorn/flexily#17b8560", {}, "beorn-flexily-17b8560", "sha512-+QmcIMHVo3whRG9FUZzpcLj62TH92vfKxyTwP1rWA4AcELvtmPJumDRjT18IZlPwkNzAagbzH+pniTPz7WRy2Q=="],
 
     "focus-trap": ["focus-trap@7.8.0", "", { "dependencies": { "tabbable": "^6.4.0" } }, "sha512-/yNdlIkpWbM0ptxno3ONTuf+2g318kh2ez3KSeZN5dZ8YC6AAmgeWz+GasYYiBJPFaYcSAPeu4GfhUaChzIJXA=="],
 
@@ -1631,7 +1631,7 @@
 
     "@shikijs/themes/@shikijs/types": ["@shikijs/types@4.3.1", "", { "dependencies": { "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.4" } }, "sha512-CHFxE0jztBIZRHH6gxXE7DXUCFXjReEGxZ/j0rfSLGKZuwp2xBYycEP14875DSa9KLL/6700oxIq6oO6ef9K2g=="],
 
-    "@silvery/ag-term/flexily": ["flexily@github:beorn/flexily#2016633", {}, "beorn-flexily-2016633", "sha512-FDJf71X1n7DSXjKbamPr5IZfg3ft37YE2cYDrnN2++JLr4O1F8t/hUW0voYm2KbhpHLoH8Qehuh3UUfrG6y0Ag=="],
+    "@silvery/ag-term/flexily": ["flexily@github:beorn/flexily#17b8560", {}, "beorn-flexily-17b8560", "sha512-+QmcIMHVo3whRG9FUZzpcLj62TH92vfKxyTwP1rWA4AcELvtmPJumDRjT18IZlPwkNzAagbzH+pniTPz7WRy2Q=="],
 
     "@ts-morph/common/minimatch": ["minimatch@9.0.9", "", { "dependencies": { "brace-expansion": "^2.0.2" } }, "sha512-OBwBN9AL4dqmETlpS2zasx+vTeWclWzkblfZk7KTA5j3jeOONz/tRCnZomUyvNg83wL5Zv9Ss6HMJXAgL8R2Yg=="],
 
