@@ -6,14 +6,27 @@
  * Note: createRenderer only updates app.text on input events. Timer-driven
  * setState won't refresh the buffer. So we test hook behavior via callback
  * spies, not visual assertions.
+ *
+ * Every row runs on a virtual clock: `sleep` advances fake timers, so a row
+ * asserting "at least three 20 ms ticks in 75 ms" cannot lose a tick to a busy
+ * host (silvery CI 36290987239 saw 2 of 3 on real timers).
  */
 
-import { describe, test, expect, vi } from "vitest"
+import { afterEach, beforeEach, describe, test, expect, vi } from "vitest"
 import { useState, useEffect, useRef } from "react"
 import { createRenderer } from "@silvery/test"
 import { Text, useTimeout, useInterval, useLatest } from "silvery"
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "setTimeout", "clearTimeout"] })
+})
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+const sleep = async (ms: number) => {
+  await vi.advanceTimersByTimeAsync(ms)
+}
 
 // ============================================================================
 // useTimeout
