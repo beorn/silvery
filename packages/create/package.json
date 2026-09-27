@@ -54,6 +54,10 @@
         "types": "./dist/plugins.d.mts",
         "import": "./dist/plugins.mjs"
       },
+      "./runtime-chain": {
+        "types": "./dist/runtime-chain.d.mts",
+        "import": "./dist/runtime-chain.mjs"
+      },
       "./signal-store": {
         "types": "./dist/signal-store.d.mts",
         "import": "./dist/signal-store.mjs"
@@ -131,6 +135,7 @@
       "src/effects.ts",
       "src/pipe.ts",
       "src/plugins.ts",
+      "src/runtime-chain.ts",
       "src/signal-store.ts",
       "src/store/index.ts",
       "src/streams/index.ts",
