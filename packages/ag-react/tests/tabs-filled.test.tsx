@@ -45,18 +45,24 @@ function TestFilledTabs({
   )
 }
 
+function lineCol(appText: string, lineIdx: number, substr: string): number {
+  const line = appText.split("\n")[lineIdx] ?? ""
+  return line.indexOf(substr)
+}
+
 describe("Tabs filled variant", () => {
   test("each tab has a background, and active tab is distinct from inactive tabs", () => {
-    const render = createRenderer({ cols: 40, rows: 5 })
+    const render = createRenderer({ cols: 40, rows: 7 })
     const app = render(<TestFilledTabs defaultValue="one" />)
 
-    const oneCol = app.text.indexOf("One")
-    const twoCol = app.text.indexOf("Two")
-    expect(oneCol).toBeGreaterThanOrEqual(0)
-    expect(twoCol).toBeGreaterThanOrEqual(0)
+    const oneCol = lineCol(app.text, 1, "One")
+    const twoCol = lineCol(app.text, 1, "Two")
+    expect(oneCol).toBe(2)
+    expect(twoCol).toBe(10)
 
-    const activeCell = app.cell(oneCol, 0)
-    const inactiveCell = app.cell(twoCol, 0)
+    // Text sits on row 1 (row 0 is top padding)
+    const activeCell = app.cell(oneCol, 1)
+    const inactiveCell = app.cell(twoCol, 1)
 
     // Both active and inactive tabs must have a non-null background in filled variant
     expect(activeCell.bg).not.toBeNull()
@@ -69,65 +75,74 @@ describe("Tabs filled variant", () => {
     expect(activeCell.fg).not.toStrictEqual(inactiveCell.fg)
   })
 
-  test("tabs have 1 blank column gap between them and 1-cell padding on edges", () => {
-    const render = createRenderer({ cols: 40, rows: 5 })
+  test("tabs have standard inner padding (2 spaces horizontal, 1 line vertical) with 1 blank column gap", () => {
+    const render = createRenderer({ cols: 40, rows: 7 })
     const app = render(<TestFilledTabs defaultValue="one" />)
 
-    // "One" has 3 chars + 1 col padding on left + 1 col padding on right = 5 cols wide (cols 0..4)
-    // Then 1 blank col gap (col 5)
-    // Then "Two" (cols 6..10)
-    // Check that col 0 has background (padding cell before 'O')
+    // Row 0 is top padding line (paddingY=1)
     expect(app.cell(0, 0).bg).not.toBeNull()
-
-    // Find position of 'O' in "One"
-    const oneCol = app.text.indexOf("One")
-    expect(oneCol).toBe(1) // 1 column of padding before 'O'
-
-    // Col 4 is padding after 'e' in "One"
-    expect(app.cell(4, 0).bg).not.toBeNull()
-
-    // Col 5 is the gap between tabs: no background fill
-    expect(app.cell(5, 0).bg).toBeNull()
-
-    // Col 6 is padding before 'T' in "Two"
     expect(app.cell(6, 0).bg).not.toBeNull()
+    expect(app.cell(7, 0).bg).toBeNull() // gap between tab one and two
+
+    // Row 1 has 2 spaces padding before 'O' in "One"
+    const oneCol = lineCol(app.text, 1, "One")
+    expect(oneCol).toBe(2) // 2 columns of padding before 'O'
+    expect(app.cell(0, 1).bg).not.toBeNull()
+    expect(app.cell(1, 1).bg).not.toBeNull()
+    expect(app.cell(5, 1).bg).not.toBeNull()
+    expect(app.cell(6, 1).bg).not.toBeNull()
+
+    // Col 7 is the gap between tabs: no background fill
+    expect(app.cell(7, 1).bg).toBeNull()
+
+    // Col 8, 9 is 2 columns of padding before 'T' in "Two" (col 10)
+    expect(app.cell(8, 1).bg).not.toBeNull()
+    expect(app.cell(9, 1).bg).not.toBeNull()
+
+    // Row 2 is bottom padding line (paddingY=1)
+    expect(app.cell(0, 2).bg).not.toBeNull()
+    expect(app.cell(6, 2).bg).not.toBeNull()
+    expect(app.cell(7, 2).bg).toBeNull() // gap
+
+    // Row 3 is panel content
+    expect(app.text).toContain("Panel One")
   })
 
   test("clicking an inactive tab in filled variant activates it", async () => {
     const onChange = vi.fn()
-    const render = createRenderer({ cols: 40, rows: 5 })
+    const render = createRenderer({ cols: 40, rows: 7 })
     const app = render(<TestFilledTabs defaultValue="one" onChange={onChange} />)
 
     expect(app.text).toContain("Panel One")
 
-    const twoCol = app.text.indexOf("Two")
-    await app.click(twoCol, 0)
+    const twoCol = lineCol(app.text, 1, "Two")
+    await app.click(twoCol, 1)
 
     expect(app.text).toContain("Panel Two")
     expect(onChange).toHaveBeenCalledWith("two")
 
     // Now tab "two" is active
-    const newActiveCell = app.cell(twoCol, 0)
-    const newInactiveCell = app.cell(app.text.indexOf("One"), 0)
+    const newActiveCell = app.cell(twoCol, 1)
+    const newInactiveCell = app.cell(lineCol(app.text, 1, "One"), 1)
     expect(newActiveCell.bg).not.toStrictEqual(newInactiveCell.bg)
   })
 
   test("hovering an inactive tab lifts its background", async () => {
-    const render = createRenderer({ cols: 40, rows: 5 })
+    const render = createRenderer({ cols: 40, rows: 7 })
     const app = render(<TestFilledTabs defaultValue="one" />)
 
-    const twoCol = app.text.indexOf("Two")
-    const bgBefore = app.cell(twoCol, 0).bg
+    const twoCol = lineCol(app.text, 1, "Two")
+    const bgBefore = app.cell(twoCol, 1).bg
 
-    await app.hover(twoCol, 0)
-    const bgAfter = app.cell(twoCol, 0).bg
+    await app.hover(twoCol, 1)
+    const bgAfter = app.cell(twoCol, 1).bg
 
     expect(bgAfter).not.toBeNull()
     expect(bgAfter).not.toStrictEqual(bgBefore)
   })
 
   test("TabList variant='filled' prop applies filled variant to children", () => {
-    const render = createRenderer({ cols: 40, rows: 5 })
+    const render = createRenderer({ cols: 40, rows: 7 })
     const app = render(
       <Box flexDirection="column" width={40}>
         <Tabs defaultValue="one">
@@ -142,15 +157,15 @@ describe("Tabs filled variant", () => {
       </Box>,
     )
 
-    const firstCol = app.text.indexOf("First")
-    const secondCol = app.text.indexOf("Second")
-    expect(app.cell(firstCol, 0).bg).not.toBeNull()
-    expect(app.cell(secondCol, 0).bg).not.toBeNull()
-    expect(app.cell(firstCol, 0).bg).not.toStrictEqual(app.cell(secondCol, 0).bg)
+    const firstCol = lineCol(app.text, 1, "First")
+    const secondCol = lineCol(app.text, 1, "Second")
+    expect(app.cell(firstCol, 1).bg).not.toBeNull()
+    expect(app.cell(secondCol, 1).bg).not.toBeNull()
+    expect(app.cell(firstCol, 1).bg).not.toStrictEqual(app.cell(secondCol, 1).bg)
   })
 
-  test("multi-line tab children have padding and background across both lines", () => {
-    const render = createRenderer({ cols: 40, rows: 6 })
+  test("multi-line tab children have standard inner padding and background across all lines", () => {
+    const render = createRenderer({ cols: 40, rows: 8 })
     const app = render(
       <Box flexDirection="column" width={40}>
         <Tabs defaultValue="one" variant="filled">
@@ -173,10 +188,22 @@ describe("Tabs filled variant", () => {
       </Box>,
     )
 
-    // Check line 0 and line 1 for tab "one"
-    const line0Col = app.text.indexOf("Line1")
-    expect(app.cell(line0Col, 0).bg).not.toBeNull()
-    expect(app.cell(0, 0).bg).not.toBeNull() // padding on line 0
-    expect(app.cell(0, 1).bg).not.toBeNull() // padding on line 1
+    // Row 0 is top padding for tab "one"
+    expect(app.cell(0, 0).bg).not.toBeNull()
+
+    // Row 1 is Line1
+    const line1Col = lineCol(app.text, 1, "Line1")
+    expect(line1Col).toBe(2)
+    expect(app.cell(line1Col, 1).bg).not.toBeNull()
+    expect(app.cell(0, 1).bg).not.toBeNull()
+
+    // Row 2 is Line2
+    const line2Col = lineCol(app.text, 2, "Line2")
+    expect(line2Col).toBe(2)
+    expect(app.cell(line2Col, 2).bg).not.toBeNull()
+    expect(app.cell(0, 2).bg).not.toBeNull()
+
+    // Row 3 is bottom padding
+    expect(app.cell(0, 3).bg).not.toBeNull()
   })
 })
