@@ -188,7 +188,9 @@ describe("a column's flex base size for a child holding a row with wrapped text"
     const rail = (
       <MarkerRow>
         {rows.map((row) => (
-          <Text key={row} wrap="truncate">{row}</Text>
+          <Text key={row} wrap="truncate">
+            {row}
+          </Text>
         ))}
       </MarkerRow>
     )
@@ -206,7 +208,9 @@ describe("a column's flex base size for a child holding a row with wrapped text"
   test("at 240 columns nested wrapped text still leaves STATS and footer in place", () => {
     const rail = (
       <MarkerRow>
-        <Text wrap="wrap" minWidth={0}>{WIDE_RAIL}</Text>
+        <Text wrap="wrap" minWidth={0}>
+          {WIDE_RAIL}
+        </Text>
       </MarkerRow>
     )
     expect(rects(rail, 240)).toEqual({
