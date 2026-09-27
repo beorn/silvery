@@ -78,6 +78,10 @@ export interface TabProps {
   children: React.ReactNode
   /** Visual variant override for this Tab. Defaults to TabList / Tabs context variant. */
   variant?: TabsVariant
+  /** Horizontal padding override. Defaults to 2 for filled, undefined for default. */
+  paddingX?: number
+  /** Vertical padding override. Defaults to 1 for filled, undefined for default. */
+  paddingY?: number
 }
 
 export interface TabPanelProps {
@@ -230,10 +234,17 @@ export function TabList({
  * Default variant: tab label with active/inactive styling. Tabs do not use a
  * filled background; the active tab is the selected text color.
  *
- * Filled variant: tab label with its own filled background box, 1-cell horizontal
- * padding around each tab, and a distinct selected background color.
+ * Filled variant: tab label with its own filled background box, standard inner
+ * padding (2-cell horizontal, 1-cell vertical) around each tab, and a distinct
+ * selected background color.
  */
-export function Tab({ value, children, variant: propVariant }: TabProps): React.ReactElement {
+export function Tab({
+  value,
+  children,
+  variant: propVariant,
+  paddingX: propPaddingX,
+  paddingY: propPaddingY,
+}: TabProps): React.ReactElement {
   const { activeValue, setActiveValue, registerTab, variant: contextVariant } = useTabsContext()
   const variant = propVariant ?? contextVariant ?? "default"
   const isFilled = variant === "filled"
@@ -253,13 +264,17 @@ export function Tab({ value, children, variant: propVariant }: TabProps): React.
     registerTab(value)
   }, [value, registerTab])
 
+  const paddingX = propPaddingX ?? (isFilled ? 2 : undefined)
+  const paddingY = propPaddingY ?? (isFilled ? 1 : undefined)
+
   return (
     <Box
       mouseCursor="pointer"
       onMouseDown={() => setActiveValue(value)}
       onMouseEnter={interaction.onMouseEnter}
       onMouseLeave={interaction.onMouseLeave}
-      paddingX={isFilled ? 1 : undefined}
+      paddingX={paddingX}
+      paddingY={paddingY}
       paddingRight={isFilled ? undefined : 2}
       backgroundColor={isFilled ? interaction.treatment.backgroundColor : undefined}
     >
