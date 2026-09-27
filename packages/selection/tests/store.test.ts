@@ -1,3 +1,6 @@
+/**
+ * @reach fs-walk <fixture-only: walkOrder traverses an in-memory selection tree>
+ */
 import { describe, expect, it } from "vitest"
 import { effect } from "alien-signals"
 import { createSelection } from "../src/store.ts"

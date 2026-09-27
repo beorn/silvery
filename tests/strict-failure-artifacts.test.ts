@@ -1,4 +1,5 @@
 /**
+ * @reach fs-walk <fixture-only: failure artifact scan reads a temporary directory>
  * Tests for captureStrictFailureArtifacts: debug artifact capture when STRICT
  * verification fails. Verifies directory creation, file contents, and edge
  * cases (missing buffers, empty ANSI, no ctx).

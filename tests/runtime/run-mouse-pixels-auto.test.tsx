@@ -1,3 +1,6 @@
+/**
+ * @reach fs-walk vendor/silvery/packages/**\/src/**
+ */
 import EventEmitter from "node:events"
 import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join, relative, sep } from "node:path"

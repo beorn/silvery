@@ -1,4 +1,5 @@
 /**
+ * @reach fs-walk vendor/silvery/packages/**
  * Tests for scripts/lint-env-reads.ts — the "only profile.ts reads terminal
  * env signals" enforcement.
  *

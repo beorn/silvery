@@ -1,4 +1,5 @@
 /**
+ * @reach fs-walk <fixture-only: convergence dump scan reads redirected temporary directory>
  * @failure When the STANDALONE convergence drain
  *   (`drainStandaloneCommitRerenders` in create-app.tsx) hits
  *   `MAX_CONVERGENCE_PASSES` with a React-requested rerender STILL pending,

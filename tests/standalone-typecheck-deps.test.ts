@@ -1,4 +1,5 @@
 /**
+ * @reach fs-walk vendor/silvery/tests/** vendor/silvery/packages/*\/tests/**
  * @failure Silvery cloud CI died in typecheck for two days after tests entered
  *   the tsc program (2026-08-19T19:32). A standalone clone does not hoist
  *   `@playwright/test` from the host monorepo, so `tests/site-smoke.test.ts`

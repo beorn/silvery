@@ -1,3 +1,6 @@
+/**
+ * @reach fs-walk <fixture-only: walkOrder traverses an in-memory selection tree>
+ */
 import { describe, expect, it } from "vitest"
 import { op } from "../src/op-proxy.ts"
 import type { OpDescriptor } from "../src/op-proxy.ts"

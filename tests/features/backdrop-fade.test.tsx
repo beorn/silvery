@@ -1,4 +1,5 @@
 /**
+ * @reach fs-walk <fixture-only: backdrop tests walk rendered nodes in memory>
  * Backdrop Fade — SILVERY_STRICT regression tests.
  *
  * Verifies:

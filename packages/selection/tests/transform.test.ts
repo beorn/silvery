@@ -1,3 +1,6 @@
+/**
+ * @reach fs-walk <fixture-only: walkOrder traverses an in-memory selection tree>
+ */
 import { describe, expect, it } from "vitest"
 import type { ID, SelectionSnapshot } from "../src/types.ts"
 import type { SelectionTree, TreeOp } from "../src/transform.ts"

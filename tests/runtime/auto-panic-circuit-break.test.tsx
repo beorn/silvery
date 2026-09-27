@@ -1,4 +1,5 @@
 /**
+ * @reach fs-walk <fixture-only: panic artifact scan reads the OS temporary directory>
  * Auto-panic circuit-break — caps dump-file writes when panic loops.
  *
  * Regression for the 2026-05-13 overnight bleed: a fixture bug
