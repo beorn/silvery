@@ -1,7 +1,8 @@
 /**
  * @failure Browser adapter installation diverges from the existing public singleton or terminal fallback.
- * @level package entry
+ * @level l1
  * @consumer Canvas/DOM renderers and terminal callers
+ * @testonly none
  */
 import { describe, expect, test, vi } from "vitest"
 

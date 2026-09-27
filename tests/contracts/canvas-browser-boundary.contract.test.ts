@@ -1,7 +1,8 @@
 /**
  * @failure Canvas browser bundles retain Node or terminal-only modules.
- * @level package entry
+ * @level l1
  * @consumer Browser Canvas renderer
+ * @testonly none
  */
 import { isAbsolute } from "node:path"
 import { fileURLToPath } from "node:url"

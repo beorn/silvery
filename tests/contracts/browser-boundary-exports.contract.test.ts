@@ -1,7 +1,8 @@
 /**
  * @failure Browser-boundary refactoring drops existing published compatibility entries.
- * @level package manifest
+ * @level l1
  * @consumer Published terminal and app-composition callers
+ * @testonly none
  */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"

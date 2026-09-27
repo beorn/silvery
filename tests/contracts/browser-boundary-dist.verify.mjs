@@ -1,7 +1,8 @@
 /**
  * @failure Built legacy and narrow entries hold separate render-adapter singletons.
- * @level published dist entries
+ * @level l1
  * @consumer Canvas and terminal callers installed from a package
+ * @testonly none
  *
  * Run after: tsdown -W -F '@silvery/ag-term' -F '@silvery/create'
  */
