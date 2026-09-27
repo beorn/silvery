@@ -1,5 +1,5 @@
 /**
- * @failure Browser adapter installation diverges from the existing public singleton or terminal fallback.
+ * @failure Browser and terminal adapter installation diverge from the shared singleton.
  * @level l1
  * @consumer Canvas/DOM renderers and terminal callers
  * @testonly none
@@ -44,13 +44,23 @@ describe("browser boundary compatibility", () => {
     expect(publicAdapter.getRenderAdapter()).toBe(second)
   })
 
-  test("the existing public wrapper still lazily initializes the terminal adapter", async () => {
+  test("the terminal render path installs its adapter in the shared singleton", async () => {
     vi.resetModules()
     const publicAdapter = await import("../../packages/ag-term/src/render-adapter")
+    const xterm = await import("../../packages/ag-term/src/xterm/index")
+    const { createElement } = await import("react")
 
     expect(publicAdapter.hasRenderAdapter()).toBe(false)
-    await publicAdapter.ensureRenderAdapterInitialized()
-    expect(publicAdapter.getRenderAdapter().name).toBe("terminal")
+    const instance = xterm.renderToXterm(createElement(xterm.Text, null, "terminal"), {
+      cols: 20,
+      rows: 4,
+      write: () => undefined,
+    })
+    try {
+      expect(publicAdapter.getRenderAdapter()).toBe(xterm.terminalAdapter)
+    } finally {
+      instance.unmount()
+    }
   })
 
   test("the ANSI barrel preserves the background-override symbols", async () => {
