@@ -14,6 +14,16 @@
     "dist"
   ],
   "type": "module",
+  "sideEffects": [
+    "./src/runtime/wrap-measurer-registration.ts",
+    "./src/runtime/create-runtime.ts",
+    "./src/runtime/index.ts",
+    "./src/renderer.ts",
+    "./src/ansi/storybook.ts",
+    "./dist/runtime/index.mjs",
+    "./dist/wrap-measurer-registration-*.mjs",
+    "./dist/renderer.mjs"
+  ],
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
@@ -191,6 +201,10 @@
         "types": "./dist/pipeline/index.d.mts",
         "import": "./dist/pipeline/index.mjs"
       },
+      "./pipeline/adapter-pipeline": {
+        "types": "./dist/pipeline/adapter-pipeline.d.mts",
+        "import": "./dist/pipeline/adapter-pipeline.mjs"
+      },
       "./pipeline/backdrop": {
         "types": "./dist/pipeline/backdrop/index.d.mts",
         "import": "./dist/pipeline/backdrop/index.mjs"
@@ -218,6 +232,10 @@
       "./pipeline/output-phase": {
         "types": "./dist/pipeline/output-phase.d.mts",
         "import": "./dist/pipeline/output-phase.mjs"
+      },
+      "./pipeline/overflow-indicator": {
+        "types": "./dist/pipeline/overflow-indicator.d.mts",
+        "import": "./dist/pipeline/overflow-indicator.mjs"
       },
       "./pipeline/pretext": {
         "types": "./dist/pipeline/pretext.d.mts",
@@ -438,6 +456,7 @@
       "src/output.ts",
       "src/pane-manager.ts",
       "src/pipeline/index.ts",
+      "src/pipeline/adapter-pipeline.ts",
       "src/pipeline/backdrop/index.ts",
       "src/pipeline/cascade-predicates.ts",
       "src/pipeline/collect-text.ts",
@@ -445,6 +464,7 @@
       "src/pipeline/layout-phase.ts",
       "src/pipeline/measure-stats.ts",
       "src/pipeline/output-phase.ts",
+      "src/pipeline/overflow-indicator.ts",
       "src/pipeline/pretext.ts",
       "src/pipeline/reactive-node.ts",
       "src/pipeline/render-helpers.ts",

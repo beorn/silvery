@@ -35,7 +35,7 @@ import {
   type InputStore,
   type PasteStore,
   type TerminalStore,
-} from "@silvery/create/plugins"
+} from "@silvery/create/runtime-chain"
 import type {
   ChainAppContextValue,
   ChainFocusEvents,
