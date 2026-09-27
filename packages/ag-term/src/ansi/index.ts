@@ -162,13 +162,6 @@ export {
 // =============================================================================
 
 /**
- * SGR code recognized by silvery to signal intentional bg override.
- * When text is wrapped with this, silvery won't warn/throw about chalk bg + silvery bg conflicts.
- * Exported for silvery to detect this marker in text content.
- */
-export const BG_OVERRIDE_CODE = 9999
-
-/**
  * Compose styled text with an explicit background inside a Box that has its own
  * `backgroundColor`. This is the correct way to layer chalk/term background
  * colors on top of an silvery Box background.
@@ -205,9 +198,7 @@ export const BG_OVERRIDE_CODE = 9999
  * </Box>
  * ```
  */
-export function bgOverride(text: string): string {
-  return `\x1b[${BG_OVERRIDE_CODE}m${text}`
-}
+export { BG_OVERRIDE_CODE, bgOverride } from "./background-override"
 
 // =============================================================================
 // Advanced Clipboard (OSC 5522)

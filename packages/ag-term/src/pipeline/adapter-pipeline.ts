@@ -11,10 +11,10 @@
 
 import { createLogger } from "loggily"
 import type { AgNode } from "@silvery/ag/types"
-import type { ExecuteRenderOptions } from "./index"
-import { type RenderBuffer, getRenderAdapter, hasRenderAdapter } from "../render-adapter"
+import type { ExecuteRenderOptions } from "./render-options"
+import { type RenderBuffer, getRenderAdapter, hasRenderAdapter } from "../render-adapter-state"
 import { renderPhaseAdapter } from "./render-phase-adapter"
-import { clearBgConflictWarnings } from "./render-phase"
+import { clearBgConflictWarnings } from "./render-text"
 import {
   layoutPhase,
   notifyLayoutSubscribers,
@@ -26,6 +26,10 @@ import { measurePhase } from "./measure-phase"
 
 const log = createLogger("silvery:render")
 const baseLog = createLogger("@silvery/ag-react")
+
+export { setRenderAdapter } from "../render-adapter-state"
+export type { RenderAdapter, RenderBuffer } from "../render-adapter-state"
+export type { ExecuteRenderOptions } from "./render-options"
 
 /**
  * Execute the full render pipeline using the current RenderAdapter.

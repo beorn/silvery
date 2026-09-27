@@ -17,8 +17,8 @@ import {
   reconciler,
   unmountFiberRoot,
 } from "@silvery/ag-react/reconciler"
-import type { RenderAdapter, RenderBuffer } from "./render-adapter"
-import { setRenderAdapter } from "./render-adapter"
+import type { RenderAdapter, RenderBuffer } from "./render-adapter-state"
+import { setRenderAdapter } from "./render-adapter-state"
 
 // ============================================================================
 // Types

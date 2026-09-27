@@ -15,7 +15,7 @@ import type {
   TextMeasureResult,
   TextMeasureStyle,
   TextMeasurer,
-} from "../render-adapter"
+} from "../render-adapter-state"
 import type { Measurer } from "../unicode"
 import { wrapTextWithMeasurer, stripAnsi } from "../unicode"
 import { builtInBorderPreset } from "@silvery/ag"
