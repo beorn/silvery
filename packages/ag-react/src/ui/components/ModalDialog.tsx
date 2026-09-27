@@ -190,6 +190,7 @@ export function ModalDialog({
     <Box
       flexDirection="column"
       width={width ?? "snug-content"}
+      minWidth={0}
       height={height}
       borderColor={borderColor}
       backgroundColor={raisedSurfaceBackground(theme)}
@@ -210,8 +211,11 @@ export function ModalDialog({
           <Text> </Text>
         </Box>
       )}
-      {/* Content area - flexGrow pushes footer to bottom, overflow hidden prevents title displacement */}
-      <Box flexDirection="column" flexGrow={1} overflow="hidden">
+      {/* Content area - flexGrow pushes footer to bottom; the bounded overflow
+          keeps the title in place, and `scroll` (not `hidden`) means a body
+          taller than the dialog stays reachable by wheel through Box's default
+          scroll owner. A body that fits leaves wheel input to its ancestors. */}
+      <Box flexDirection="column" flexGrow={1} overflow="scroll">
         {children}
       </Box>
       {/* Footer with spacer line above */}
