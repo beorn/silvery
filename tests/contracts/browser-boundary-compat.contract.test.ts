@@ -44,12 +44,16 @@ describe("browser boundary compatibility", () => {
     expect(publicAdapter.getRenderAdapter()).toBe(second)
   })
 
-  test("the existing public wrapper still lazily initializes the terminal adapter", async () => {
+  test("the terminal adapter installs through the public path the terminal renderer uses", async () => {
+    // The terminal path installs its adapter with setRenderAdapter(terminalAdapter)
+    // (xterm/index.ts); no lazy initializer stands between them.
     vi.resetModules()
     const publicAdapter = await import("../../packages/ag-term/src/render-adapter")
+    const { terminalAdapter } = await import("../../packages/ag-term/src/adapters/terminal-adapter")
 
     expect(publicAdapter.hasRenderAdapter()).toBe(false)
-    await publicAdapter.ensureRenderAdapterInitialized()
+    publicAdapter.setRenderAdapter(terminalAdapter)
+    expect(publicAdapter.getRenderAdapter()).toBe(terminalAdapter)
     expect(publicAdapter.getRenderAdapter().name).toBe("terminal")
   })
 
