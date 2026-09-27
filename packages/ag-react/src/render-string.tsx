@@ -47,6 +47,7 @@ import { commitLayoutSnapshot } from "@silvery/ag/layout-signals"
 import { runWithMeasurer } from "@silvery/ag-term/unicode"
 import { createContainer, getContainerRoot } from "./reconciler"
 import { stringReconciler } from "./reconciler/string-reconciler"
+import { setListViewCacheRenderer } from "./ui/components/list-view/cache-renderer"
 
 // ============================================================================
 // Types
@@ -392,3 +393,7 @@ function withActEnvironment(fn: () => void): void {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev
   }
 }
+
+// The terminal/static entry supplies ListView's optional ANSI cache capture.
+// Canvas does not load this module and keeps semantic text for cached rows.
+setListViewCacheRenderer(renderStringSync)

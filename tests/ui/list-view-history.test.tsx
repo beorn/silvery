@@ -19,6 +19,7 @@ import {
   type ListViewHandle,
   type ListItemMeta,
 } from "../../packages/ag-react/src/ui/components/ListView"
+import { setListViewCacheRenderer } from "../../packages/ag-react/src/ui/components/list-view/cache-renderer"
 
 // ============================================================================
 // Test Helpers
@@ -293,6 +294,36 @@ describe("ListView", () => {
     const plainRows = buf!.getPlainTextRows(0, 2)
     expect(plainRows[0]).toContain("Styled msg")
     expect(plainRows[0]).not.toContain("\x1b[")
+  })
+
+  test("cached items use semantic text when the browser entry has no ANSI renderer", () => {
+    const restoreRenderer = setListViewCacheRenderer(undefined)
+    const listRef = React.createRef<ListViewHandle>()
+    const items: Message[] = [
+      { id: "1", body: "Plain fallback", delivered: true },
+      { id: "2", body: "Still pending", delivered: false },
+    ]
+
+    try {
+      const r = createRenderer({ cols: 40, rows: 10 })
+      r(
+        <ListView
+          ref={listRef}
+          items={items}
+          getKey={(m) => m.id}
+          height={10}
+          cache={{ mode: "virtual", isCacheable: (m) => (m as Message).delivered }}
+          search={{ getText: (m) => (m as Message).body }}
+          renderItem={(msg) => <Text bold>{msg.body}</Text>}
+        />,
+      )
+
+      const rows = listRef.current?.getHistoryBuffer()?.getRows(0, 1)
+      expect(rows).toEqual(["Plain fallback"])
+      expect(rows?.[0]).not.toContain("\x1b[")
+    } finally {
+      restoreRenderer()
+    }
   })
 
   // ── No history buffer when mode="none" ──────────────────────────

@@ -11,7 +11,7 @@
  * - Combining characters: Diacritics, emoji modifiers that take 0 columns
  */
 
-import { BG_OVERRIDE_CODE } from "./ansi/index"
+import { BG_OVERRIDE_CODE } from "./ansi/background-override"
 import sliceAnsi from "slice-ansi"
 import stringWidth from "string-width"
 import {
