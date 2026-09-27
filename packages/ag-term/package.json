@@ -13,6 +13,7 @@
   "files": [
     "dist"
   ],
+  "type": "module",
   "sideEffects": [
     "./src/runtime/wrap-measurer-registration.ts",
     "./src/runtime/create-runtime.ts",
@@ -22,7 +23,6 @@
     "./dist/runtime/create-runtime.mjs",
     "./dist/renderer.mjs"
   ],
-  "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
