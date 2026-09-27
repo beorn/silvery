@@ -74,7 +74,7 @@ import { Box, type BoxHandle } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { Scrollbar } from "./Scrollbar"
 import type { AgNode, BoxProps, Rect } from "@silvery/ag/types"
-import { overflowIndicatorPlacement } from "@silvery/ag-term/pipeline"
+import { overflowIndicatorPlacement } from "@silvery/ag-term/pipeline/render-box"
 import { CacheBackendContext, StdoutContext, TermContext } from "../../context"
 import { getListViewCacheRenderer } from "./list-view/cache-renderer"
 import {

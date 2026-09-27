@@ -29,9 +29,12 @@ import { createPretextMeasurer } from "./pretext-measurer"
 import { createDomMeasurer } from "./dom-measurer"
 import { createFlexilyZeroEngine } from "@silvery/ag-term/adapters/flexily-zero-adapter"
 import { setLayoutEngine } from "@silvery/ag-term/layout-engine"
-import { executeRenderAdapter } from "@silvery/ag-term/pipeline"
-import type { RenderAdapter, RenderBuffer } from "@silvery/ag-term/render-adapter"
-import { setRenderAdapter } from "@silvery/ag-term/render-adapter"
+import {
+  executeRenderAdapter,
+  setRenderAdapter,
+  type RenderAdapter,
+  type RenderBuffer,
+} from "@silvery/ag-term/pipeline/adapter-pipeline"
 import {
   createContainer,
   createFiberRoot,

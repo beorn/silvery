@@ -54,7 +54,7 @@ import {
   type RenderStyle,
   getRenderAdapter,
   hasRenderAdapter,
-} from "../render-adapter"
+} from "../render-adapter-state"
 import type { BoxProps, AgNode, Rect, TextProps } from "@silvery/ag/types"
 import { INITIAL_EPOCH, CONTENT_BIT } from "@silvery/ag/epoch"
 import { getBorderSize, getPadding } from "./helpers"
