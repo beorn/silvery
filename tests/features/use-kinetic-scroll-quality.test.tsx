@@ -13,11 +13,14 @@
  *
  * Tests use real timers (matching the sibling `use-kinetic-scroll.test.tsx`
  * style) and budget settle windows generously — the animation loop runs at
- * KINETIC_FRAME_MS=16ms so a 250ms ease-out fully drains within ~280ms.
+ * KINETIC_FRAME_MS=16ms so a 250ms ease-out fully drains within ~280ms. The
+ * `animateToFloat` rows that sample the ease at a fixed instant run on a
+ * virtual clock instead (`onVirtualClock`), because a wall-clock sample races
+ * the first frame on a loaded runner.
  */
 
 import React from "react"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box } from "../../src/index.js"
 import {
@@ -27,6 +30,27 @@ import {
 } from "../../packages/ag-react/src/hooks/useKineticScroll"
 
 const settle = (ms = 30): Promise<void> => new Promise((r) => setTimeout(r, ms))
+
+/**
+ * Run `body` on a virtual clock: the animation loop's setInterval and its
+ * performance.now() reads advance only when the test says so, so a loaded
+ * runner cannot sample the ease before its first frame (silvery Tests run
+ * 36287650693 attempt 1: "position has advanced: expected 0 to be greater than 0").
+ */
+async function onVirtualClock(
+  body: (advance: (ms: number) => Promise<void>) => Promise<void>,
+): Promise<void> {
+  vi.useFakeTimers({
+    toFake: ["setInterval", "clearInterval", "setTimeout", "clearTimeout", "performance"],
+  })
+  try {
+    await body(async (ms) => {
+      await vi.advanceTimersByTimeAsync(ms)
+    })
+  } finally {
+    vi.useRealTimers()
+  }
+}
 
 function busyWait(ms: number): void {
   const start = performance.now()
@@ -57,19 +81,18 @@ describe("useKineticScroll — animated scrollTo", () => {
     r(<TestHarness apiRef={apiRef} options={{ maxScroll: 100 }} />)
     await settle()
 
-    apiRef.current!.animateToFloat(50, 80)
-    // Mid-animation: should be partway, not at start, not at target.
-    await settle(40)
-    const mid = apiRef.current!.scrollFloat
-    expect(mid, "mid-animation: position has advanced").toBeGreaterThan(0)
-    expect(mid, "mid-animation: not yet at target").toBeLessThan(50)
+    await onVirtualClock(async (advance) => {
+      apiRef.current!.animateToFloat(50, 80)
+      // Mid-animation: should be partway, not at start, not at target.
+      await advance(40)
+      const mid = apiRef.current!.scrollFloat
+      expect(mid, "mid-animation: position has advanced").toBeGreaterThan(0)
+      expect(mid, "mid-animation: not yet at target").toBeLessThan(50)
 
-    // After full duration + a frame, should land at the target. Timer
-    // scheduling can sample the cubic ease a fraction of a millisecond before
-    // completion under parallel tests, so assert perceptual row equality rather
-    // than floating-point identity.
-    await settle(80)
-    expect(apiRef.current!.scrollFloat, "lands at target after duration").toBeCloseTo(50, 2)
+      // After the full duration plus a frame, it lands at the target.
+      await advance(80)
+      expect(apiRef.current!.scrollFloat, "lands at target after duration").toBeCloseTo(50, 2)
+    })
   })
 
   test("animateToFloat clamps target to [0, maxScroll]", async () => {
@@ -78,16 +101,15 @@ describe("useKineticScroll — animated scrollTo", () => {
     r(<TestHarness apiRef={apiRef} options={{ maxScroll: 50 }} />)
     await settle()
 
-    apiRef.current!.animateToFloat(999, 30)
-    await settle(80)
-    // A loaded runner can observe the penultimate cubic-ease sample before
-    // the interval commits the exact endpoint. Clamping is a row-space
-    // contract, so assert sub-cell convergence rather than timer identity.
-    expect(apiRef.current!.scrollFloat).toBeCloseTo(50, 2)
+    await onVirtualClock(async (advance) => {
+      apiRef.current!.animateToFloat(999, 30)
+      await advance(80)
+      expect(apiRef.current!.scrollFloat).toBeCloseTo(50, 2)
 
-    apiRef.current!.animateToFloat(-100, 30)
-    await settle(80)
-    expect(apiRef.current!.scrollFloat).toBeCloseTo(0, 2)
+      apiRef.current!.animateToFloat(-100, 30)
+      await advance(80)
+      expect(apiRef.current!.scrollFloat).toBeCloseTo(0, 2)
+    })
   })
 
   test("user wheel during animation cancels it", async () => {
