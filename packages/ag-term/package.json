@@ -13,6 +13,15 @@
   "files": [
     "dist"
   ],
+  "sideEffects": [
+    "./src/runtime/wrap-measurer-registration.ts",
+    "./src/runtime/create-runtime.ts",
+    "./src/renderer.ts",
+    "./src/ansi/storybook.ts",
+    "./dist/runtime/wrap-measurer-registration.mjs",
+    "./dist/runtime/create-runtime.mjs",
+    "./dist/renderer.mjs"
+  ],
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",

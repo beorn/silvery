@@ -13,6 +13,7 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
