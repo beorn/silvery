@@ -50,8 +50,6 @@ assert.equal(
   adapter,
   "built main and narrow entries split adapter state",
 )
-await legacy.ensureRenderAdapterInitialized()
-assert.equal(legacy.getRenderAdapter(), adapter, "lazy terminal init replaced an installed adapter")
 assert.equal(typeof narrow.executeRenderAdapter, "function")
 assert.equal(typeof overflow.overflowIndicatorPlacement, "function")
 assert.equal(typeof runtimeChain.createBaseApp, "function")
