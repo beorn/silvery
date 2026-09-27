@@ -168,6 +168,11 @@ export interface DocumentViewProps {
   readonly onToggleFoldHeading?: (headingId: string) => void
   /** Opt-in flag for section folding. Defaults to false. */
   readonly enableSectionFolding?: boolean
+  /**
+   * Optional ref populated with rendered block vertical offsets (blockId -> y).
+   * Used by readers to query rendered layout geometry without re-deriving it.
+   */
+  readonly rowOffsetsRef?: React.RefObject<Map<DocumentBlockId, number>>
 }
 
 interface ResolvedListItem {
@@ -608,6 +613,7 @@ export function DocumentView({
   foldedHeadingIds,
   onToggleFoldHeading,
   enableSectionFolding = false,
+  rowOffsetsRef: externalRowOffsetsRef,
 }: DocumentViewProps): React.ReactElement {
   const hasContentLayout = useHasContentLayout()
   const ambientLayout = useContentLayout()
@@ -624,7 +630,8 @@ export function DocumentView({
   const searchRef = useRef(search)
   const revealRef = useRef(reveal)
   const revealedOperationRef = useRef<string | number | null>(null)
-  const rowOffsetsRef = useRef(new Map<DocumentBlockId, number>())
+  const internalRowOffsetsRef = useRef(new Map<DocumentBlockId, number>())
+  const rowOffsetsRef = externalRowOffsetsRef ?? internalRowOffsetsRef
   const [collapsedCode, setCollapsedCode] = useState<ReadonlySet<DocumentBlockId>>(() => new Set())
   const collapsedCodeRef = useRef(collapsedCode)
   const pendingSearchRevealRef = useRef<DocumentBlockId | null>(null)
@@ -632,6 +639,15 @@ export function DocumentView({
   searchRef.current = search
   revealRef.current = reveal
   collapsedCodeRef.current = collapsedCode
+
+  useEffect(() => {
+    const currentBlockIds = new Set(blocks.map((b) => b.id))
+    for (const key of rowOffsetsRef.current.keys()) {
+      if (!currentBlockIds.has(key)) {
+        rowOffsetsRef.current.delete(key)
+      }
+    }
+  }, [blocks, rowOffsetsRef])
 
   useEffect(() => {
     if (!searchEnabled || !registerSearchable) return
@@ -669,7 +685,7 @@ export function DocumentView({
         )
       },
     })
-  }, [registerSearchable, searchEnabled, searchId])
+  }, [registerSearchable, searchEnabled, searchId, rowOffsetsRef])
 
   // A collapsed match must acquire its expanded layout before scrolling.
   useEffect(() => {
@@ -690,6 +706,7 @@ export function DocumentView({
     collapsedCode,
     search?.scrollController.contentHeight,
     search?.scrollController.viewportHeight,
+    rowOffsetsRef,
   ])
 
   useEffect(() => {
@@ -709,6 +726,7 @@ export function DocumentView({
     reveal?.operationId,
     reveal?.scrollController.contentHeight,
     reveal?.scrollController.viewportHeight,
+    rowOffsetsRef,
   ])
 
   const currentSearchMatch =
