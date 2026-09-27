@@ -1,6 +1,6 @@
 {
   "name": "@silvery/commands",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "private": true,
   "description": "Command registry, keymaps, and invocation for silvery apps",
   "license": "MIT",
@@ -45,8 +45,8 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ag": "0.24.0",
-    "@silvery/command": "0.24.0"
+    "@silvery/ag": "0.25.0",
+    "@silvery/command": "0.25.0"
   },
   "tsdown": {
     "clean": true,

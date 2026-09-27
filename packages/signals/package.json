@@ -1,6 +1,6 @@
 {
   "name": "@silvery/signals",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Reactive signals for silvery — thin wrapper around alien-signals",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",

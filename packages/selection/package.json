@@ -1,6 +1,6 @@
 {
   "name": "@silvery/selection",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Pure selection state machine for silvery apps — node selection, sub-selection, pointer gestures",
   "license": "MIT",
   "author": "Bjorn Stabell <bjorn@stabell.org>",

@@ -1,6 +1,6 @@
 {
   "name": "silvery",
-  "version": "0.24.3",
+  "version": "0.25.0",
   "description": "React for modern terminal apps — powerful apps, polished UIs, proudly terminal",
   "keywords": [
     "ansi",
@@ -119,9 +119,9 @@
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.8",
-    "@silvery/color": "0.24.0",
-    "@silvery/commander": "0.24.0",
-    "@silvery/syntax": "0.24.0",
+    "@silvery/color": "0.25.0",
+    "@silvery/commander": "0.25.0",
+    "@silvery/syntax": "0.25.0",
     "@termless/core": ">=0.9.1 <1.0.0",
     "css-select": "^7.0.0",
     "css-what": "^8.0.0",
@@ -133,11 +133,11 @@
   },
   "devDependencies": {
     "@braintree/sanitize-url": "^7.1.2",
-    "@silvery/ag": "0.24.0",
-    "@silvery/ag-react": "0.24.0",
-    "@silvery/ag-term": "0.24.0",
-    "@silvery/ansi": "0.24.0",
-    "@silvery/theme": "0.24.0",
+    "@silvery/ag": "0.25.0",
+    "@silvery/ag-react": "0.25.0",
+    "@silvery/ag-term": "0.25.0",
+    "@silvery/ansi": "0.25.0",
+    "@silvery/theme": "0.25.0",
     "@termless/ghostty": ">=0.9.1 <1.0.0",
     "@termless/ghostty-native": ">=0.9.1 <1.0.0",
     "@termless/test": ">=0.9.1 <1.0.0",

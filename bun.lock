@@ -6,8 +6,9 @@
       "name": "silvery",
       "dependencies": {
         "@chenglou/pretext": "^0.0.8",
-        "@silvery/color": "0.24.0",
-        "@silvery/commander": "0.24.0",
+        "@silvery/color": "0.25.0",
+        "@silvery/commander": "0.25.0",
+        "@silvery/syntax": "0.25.0",
         "@termless/core": ">=0.9.1 <1.0.0",
         "css-select": "^7.0.0",
         "css-what": "^8.0.0",
@@ -19,11 +20,11 @@
       },
       "devDependencies": {
         "@braintree/sanitize-url": "^7.1.2",
-        "@silvery/ag": "0.24.0",
-        "@silvery/ag-react": "0.24.0",
-        "@silvery/ag-term": "0.24.0",
-        "@silvery/ansi": "0.24.0",
-        "@silvery/theme": "0.24.0",
+        "@silvery/ag": "0.25.0",
+        "@silvery/ag-react": "0.25.0",
+        "@silvery/ag-term": "0.25.0",
+        "@silvery/ansi": "0.25.0",
+        "@silvery/theme": "0.25.0",
         "@termless/ghostty": ">=0.9.1 <1.0.0",
         "@termless/ghostty-native": ">=0.9.1 <1.0.0",
         "@termless/test": ">=0.9.1 <1.0.0",
@@ -78,33 +79,25 @@
         "playwright",
       ],
     },
-    "benchmarks": {
-      "name": "silvery-benchmarks",
-      "dependencies": {
-        "ink": "7.0.0",
-        "react": "^19.0.0",
-        "vitest": "4.1.10",
-      },
-    },
     "packages/ag": {
       "name": "@silvery/ag",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/signals": "0.24.0",
+        "@silvery/signals": "0.25.0",
         "loggily": "^0.10.0",
       },
     },
     "packages/ag-react": {
       "name": "@silvery/ag-react",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ag": "0.24.0",
-        "@silvery/ag-term": "0.24.0",
-        "@silvery/create": "0.24.0",
-        "@silvery/headless": "0.24.0",
-        "@silvery/scope": "0.24.0",
-        "@silvery/syntax": "0.24.0",
-        "@silvery/theme": "0.24.0",
+        "@silvery/ag": "0.25.0",
+        "@silvery/ag-term": "0.25.0",
+        "@silvery/create": "0.25.0",
+        "@silvery/headless": "0.25.0",
+        "@silvery/scope": "0.25.0",
+        "@silvery/syntax": "0.25.0",
+        "@silvery/theme": "0.25.0",
         "loggily": "^0.10.0",
         "upng-js": "^2.1.0",
       },
@@ -114,19 +107,19 @@
     },
     "packages/ag-term": {
       "name": "@silvery/ag-term",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ag": "0.24.0",
-        "@silvery/ag-react": "0.24.0",
-        "@silvery/ansi": "0.24.0",
-        "@silvery/color": "0.24.0",
-        "@silvery/create": "0.24.0",
-        "@silvery/headless": "0.24.0",
-        "@silvery/ink": "0.24.0",
-        "@silvery/scope": "0.24.0",
-        "@silvery/signals": "0.24.0",
-        "@silvery/test": "0.24.0",
-        "@silvery/theme": "0.24.0",
+        "@silvery/ag": "0.25.0",
+        "@silvery/ag-react": "0.25.0",
+        "@silvery/ansi": "0.25.0",
+        "@silvery/color": "0.25.0",
+        "@silvery/create": "0.25.0",
+        "@silvery/headless": "0.25.0",
+        "@silvery/ink": "0.25.0",
+        "@silvery/scope": "0.25.0",
+        "@silvery/signals": "0.25.0",
+        "@silvery/test": "0.25.0",
+        "@silvery/theme": "0.25.0",
         "@termless/core": ">=0.9.1 <1.0.0",
         "@termless/ghostty": ">=0.9.1 <1.0.0",
         "@termless/xtermjs": ">=0.9.1 <1.0.0",
@@ -142,47 +135,47 @@
     },
     "packages/ansi": {
       "name": "@silvery/ansi",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/color": "0.24.0",
+        "@silvery/color": "0.25.0",
         "string-width": "^8.2.2",
       },
     },
     "packages/color": {
       "name": "@silvery/color",
-      "version": "0.24.0",
+      "version": "0.25.0",
     },
     "packages/command": {
       "name": "@silvery/command",
-      "version": "0.24.0",
+      "version": "0.25.0",
     },
     "packages/commander": {
       "name": "@silvery/commander",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ansi": "0.24.0",
+        "@silvery/ansi": "0.25.0",
         "commander": ">=15.0.0",
         "zod": ">=3.0.0",
       },
     },
     "packages/commands": {
       "name": "@silvery/commands",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ag": "0.24.0",
-        "@silvery/command": "0.24.0",
+        "@silvery/ag": "0.25.0",
+        "@silvery/command": "0.25.0",
       },
     },
     "packages/config": {
       "name": "@silvery/config",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
         "alien-signals": "~3.2.1",
         "cosmiconfig": "^9.0.2",
         "yaml": ">=2.0.0",
       },
       "peerDependencies": {
-        "@silvery/commander": "0.24.0",
+        "@silvery/commander": "0.25.0",
         "zod": ">=3.0.0",
       },
       "optionalPeers": [
@@ -191,24 +184,24 @@
     },
     "packages/create": {
       "name": "@silvery/create",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ag": "0.24.0",
-        "@silvery/ag-react": "0.24.0",
-        "@silvery/ag-term": "0.24.0",
-        "@silvery/commands": "0.24.0",
-        "@silvery/headless": "0.24.0",
-        "@silvery/ink": "0.24.0",
-        "@silvery/test": "0.24.0",
+        "@silvery/ag": "0.25.0",
+        "@silvery/ag-react": "0.25.0",
+        "@silvery/ag-term": "0.25.0",
+        "@silvery/commands": "0.25.0",
+        "@silvery/headless": "0.25.0",
+        "@silvery/ink": "0.25.0",
+        "@silvery/test": "0.25.0",
         "alien-signals": "~3.2.1",
       },
     },
     "packages/headless": {
       "name": "@silvery/headless",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "peerDependencies": {
-        "@silvery/ag": "0.24.0",
-        "@silvery/ag-term": "0.24.0",
+        "@silvery/ag": "0.25.0",
+        "@silvery/ag-term": "0.25.0",
       },
       "optionalPeers": [
         "@silvery/ag",
@@ -217,20 +210,20 @@
     },
     "packages/ink": {
       "name": "@silvery/ink",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ag-react": "0.24.0",
-        "@silvery/ag-term": "0.24.0",
-        "@silvery/ansi": "0.24.0",
+        "@silvery/ag-react": "0.25.0",
+        "@silvery/ag-term": "0.25.0",
+        "@silvery/ansi": "0.25.0",
       },
     },
     "packages/scope": {
       "name": "@silvery/scope",
-      "version": "0.24.0",
+      "version": "0.25.0",
     },
     "packages/selection": {
       "name": "@silvery/selection",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
         "alien-signals": "^3.1.2",
       },
@@ -241,17 +234,17 @@
     },
     "packages/signals": {
       "name": "@silvery/signals",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
         "alien-signals": "~3.2.1",
       },
     },
     "packages/storybook": {
       "name": "@silvery/storybook",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ag-react": "0.24.0",
-        "@silvery/ag-term": "0.24.0",
+        "@silvery/ag-react": "0.25.0",
+        "@silvery/ag-term": "0.25.0",
       },
       "peerDependencies": {
         "react": "^18.0.0 || ^19.0.0",
@@ -259,19 +252,19 @@
     },
     "packages/syntax": {
       "name": "@silvery/syntax",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
         "shiki": "^4.3.1",
       },
     },
     "packages/test": {
       "name": "@silvery/test",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ag": "0.24.0",
-        "@silvery/ag-react": "0.24.0",
-        "@silvery/ag-term": "0.24.0",
-        "@silvery/create": "0.24.0",
+        "@silvery/ag": "0.25.0",
+        "@silvery/ag-react": "0.25.0",
+        "@silvery/ag-term": "0.25.0",
+        "@silvery/create": "0.25.0",
         "@termless/core": ">=0.9.1 <1.0.0",
         "@termless/ghostty": ">=0.9.1 <1.0.0",
         "@termless/ghostty-native": ">=0.9.1 <1.0.0",
@@ -280,10 +273,10 @@
     },
     "packages/theme": {
       "name": "@silvery/theme",
-      "version": "0.24.0",
+      "version": "0.25.0",
       "dependencies": {
-        "@silvery/ansi": "0.24.0",
-        "@silvery/color": "0.24.0",
+        "@silvery/ansi": "0.25.0",
+        "@silvery/color": "0.25.0",
       },
     },
   },
@@ -1466,8 +1459,6 @@
 
     "silvery": ["silvery@root:", {}],
 
-    "silvery-benchmarks": ["silvery-benchmarks@workspace:benchmarks"],
-
     "sirv": ["sirv@3.0.2", "", { "dependencies": { "@polka/url": "^1.0.0-next.24", "mrmime": "^2.0.0", "totalist": "^3.0.0" } }, "sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g=="],
 
     "slice-ansi": ["slice-ansi@8.0.0", "", { "dependencies": { "ansi-styles": "^6.2.3", "is-fullwidth-code-point": "^5.1.0" } }, "sha512-stxByr12oeeOyY2BlviTNQlYV5xOj47GirPr4yA1hE9JCtxfQN0+tVbkxwCtYDQWhEKWFHsEK48ORg5jrouCAg=="],
@@ -1630,6 +1621,8 @@
 
     "@shikijs/themes/@shikijs/types": ["@shikijs/types@4.3.1", "", { "dependencies": { "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.4" } }, "sha512-CHFxE0jztBIZRHH6gxXE7DXUCFXjReEGxZ/j0rfSLGKZuwp2xBYycEP14875DSa9KLL/6700oxIq6oO6ef9K2g=="],
 
+    "@silvery/ag-term/flexily": ["flexily@github:beorn/flexily#2016633", {}, "beorn-flexily-2016633", "sha512-FDJf71X1n7DSXjKbamPr5IZfg3ft37YE2cYDrnN2++JLr4O1F8t/hUW0voYm2KbhpHLoH8Qehuh3UUfrG6y0Ag=="],
+
     "@ts-morph/common/minimatch": ["minimatch@9.0.9", "", { "dependencies": { "brace-expansion": "^2.0.2" } }, "sha512-OBwBN9AL4dqmETlpS2zasx+vTeWclWzkblfZk7KTA5j3jeOONz/tRCnZomUyvNg83wL5Zv9Ss6HMJXAgL8R2Yg=="],
 
     "@voidzero-dev/vite-plus-core/@oxc-project/types": ["@oxc-project/types@0.133.0", "", {}, "sha512-KzkdCd6Uxqnf6l3HOw1xfatAlUURA0g14cvBYFyJ5SaNOQbOUvBr9PKArcPcrNIeRsBdgcUzOGrhKveVpvOIGA=="],
@@ -1688,8 +1681,6 @@
 
     "shiki/@shikijs/types": ["@shikijs/types@4.3.1", "", { "dependencies": { "@shikijs/vscode-textmate": "^10.0.2", "@types/hast": "^3.0.4" } }, "sha512-CHFxE0jztBIZRHH6gxXE7DXUCFXjReEGxZ/j0rfSLGKZuwp2xBYycEP14875DSa9KLL/6700oxIq6oO6ef9K2g=="],
 
-    "silvery-benchmarks/ink": ["ink@7.0.0", "", { "dependencies": { "@alcalzone/ansi-tokenize": "^0.3.0", "ansi-escapes": "^7.3.0", "ansi-styles": "^6.2.3", "auto-bind": "^5.0.1", "chalk": "^5.6.2", "cli-boxes": "^4.0.1", "cli-cursor": "^4.0.0", "cli-truncate": "^6.0.0", "code-excerpt": "^4.0.0", "es-toolkit": "^1.45.1", "indent-string": "^5.0.0", "is-in-ci": "^2.0.0", "patch-console": "^2.0.0", "react-reconciler": "^0.33.0", "scheduler": "^0.27.0", "signal-exit": "^3.0.7", "slice-ansi": "^9.0.0", "stack-utils": "^2.0.6", "string-width": "^8.2.0", "terminal-size": "^4.0.1", "type-fest": "^5.5.0", "widest-line": "^6.0.0", "wrap-ansi": "^10.0.0", "ws": "^8.20.0", "yoga-layout": "~3.2.1" }, "peerDependencies": { "@types/react": ">=19.2.0", "react": ">=19.2.0", "react-devtools-core": ">=6.1.2" }, "optionalPeers": ["@types/react", "react-devtools-core"] }, "sha512-fMie5/VwIYXofMyND0s+fOVhwVBBPYx+uuqJ6V6rUBGjui+2UYp+0fWtvhSeKT4z+X1uH98a4ge5Vj3aTlL6mg=="],
-
     "tsdown/rolldown": ["rolldown@1.0.0-rc.17", "", { "dependencies": { "@oxc-project/types": "=0.127.0", "@rolldown/pluginutils": "1.0.0-rc.17" }, "optionalDependencies": { "@rolldown/binding-android-arm64": "1.0.0-rc.17", "@rolldown/binding-darwin-arm64": "1.0.0-rc.17", "@rolldown/binding-darwin-x64": "1.0.0-rc.17", "@rolldown/binding-freebsd-x64": "1.0.0-rc.17", "@rolldown/binding-linux-arm-gnueabihf": "1.0.0-rc.17", "@rolldown/binding-linux-arm64-gnu": "1.0.0-rc.17", "@rolldown/binding-linux-arm64-musl": "1.0.0-rc.17", "@rolldown/binding-linux-ppc64-gnu": "1.0.0-rc.17", "@rolldown/binding-linux-s390x-gnu": "1.0.0-rc.17", "@rolldown/binding-linux-x64-gnu": "1.0.0-rc.17", "@rolldown/binding-linux-x64-musl": "1.0.0-rc.17", "@rolldown/binding-openharmony-arm64": "1.0.0-rc.17", "@rolldown/binding-wasm32-wasi": "1.0.0-rc.17", "@rolldown/binding-win32-arm64-msvc": "1.0.0-rc.17", "@rolldown/binding-win32-x64-msvc": "1.0.0-rc.17" }, "bin": { "rolldown": "bin/cli.mjs" } }, "sha512-ZrT53oAKrtA4+YtBWPQbtPOxIbVDbxT0orcYERKd63VJTF13zPcgXTvD4843L8pcsI7M6MErt8QtON6lrB9tyA=="],
 
     "unrun/rolldown": ["rolldown@1.0.0-rc.17", "", { "dependencies": { "@oxc-project/types": "=0.127.0", "@rolldown/pluginutils": "1.0.0-rc.17" }, "optionalDependencies": { "@rolldown/binding-android-arm64": "1.0.0-rc.17", "@rolldown/binding-darwin-arm64": "1.0.0-rc.17", "@rolldown/binding-darwin-x64": "1.0.0-rc.17", "@rolldown/binding-freebsd-x64": "1.0.0-rc.17", "@rolldown/binding-linux-arm-gnueabihf": "1.0.0-rc.17", "@rolldown/binding-linux-arm64-gnu": "1.0.0-rc.17", "@rolldown/binding-linux-arm64-musl": "1.0.0-rc.17", "@rolldown/binding-linux-ppc64-gnu": "1.0.0-rc.17", "@rolldown/binding-linux-s390x-gnu": "1.0.0-rc.17", "@rolldown/binding-linux-x64-gnu": "1.0.0-rc.17", "@rolldown/binding-linux-x64-musl": "1.0.0-rc.17", "@rolldown/binding-openharmony-arm64": "1.0.0-rc.17", "@rolldown/binding-wasm32-wasi": "1.0.0-rc.17", "@rolldown/binding-win32-arm64-msvc": "1.0.0-rc.17", "@rolldown/binding-win32-x64-msvc": "1.0.0-rc.17" }, "bin": { "rolldown": "bin/cli.mjs" } }, "sha512-ZrT53oAKrtA4+YtBWPQbtPOxIbVDbxT0orcYERKd63VJTF13zPcgXTvD4843L8pcsI7M6MErt8QtON6lrB9tyA=="],
@@ -1737,8 +1728,6 @@
     "d3-sankey/d3-shape/d3-path": ["d3-path@1.0.9", "", {}, "sha512-VLaYcn81dtHVTjEHd8B+pbe9yHWpXKZUC87PzoFmsFrJqgFwDe/qxfp5MlfsfM1V5E/iVt0MmEbWQ7FVIXh/bg=="],
 
     "gray-matter/js-yaml/argparse": ["argparse@1.0.10", "", { "dependencies": { "sprintf-js": "~1.0.2" } }, "sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg=="],
-
-    "silvery-benchmarks/ink/slice-ansi": ["slice-ansi@9.0.0", "", { "dependencies": { "ansi-styles": "^6.2.3", "is-fullwidth-code-point": "^5.1.0" } }, "sha512-SO/3iYL5S3W57LLEniscOGPZgOqZUPCx6d3dB+52B80yJ0XstzsC/eV8gnA4tM3MHDrKz+OCFSLNjswdSC+/bA=="],
 
     "tsdown/rolldown/@oxc-project/types": ["@oxc-project/types@0.127.0", "", {}, "sha512-aIYXQBo4lCbO4z0R3FHeucQHpF46l2LbMdxRvqvuRuW2OxdnSkcng5B8+K12spgLDj93rtN3+J2Vac/TIO+ciQ=="],
 

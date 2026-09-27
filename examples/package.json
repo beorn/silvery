@@ -1,6 +1,6 @@
 {
   "name": "@silvery/examples",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "private": true,
   "description": "Example apps and component demos for silvery — npx @silvery/examples <name>",
   "license": "MIT",
@@ -35,7 +35,7 @@
   "dependencies": {
     "loggily": "^0.6.0",
     "react": "^19.0.0",
-    "silvery": "0.24.0"
+    "silvery": "0.25.0"
   },
   "tsdown": {
     "clean": true,
