@@ -128,7 +128,7 @@
     "flexily": "0.7.3",
     "loggily": "^0.10.2",
     "react-reconciler": "^0.33.0",
-    "slice-ansi": "^8.0.0",
+    "slice-ansi": "^9.0.0",
     "string-width": "^8.2.2"
   },
   "devDependencies": {

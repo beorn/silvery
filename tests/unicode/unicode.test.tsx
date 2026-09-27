@@ -337,6 +337,17 @@ describe("unicode: emoji", () => {
     expect(splitGraphemes(w2).length).toBe(1)
   })
 
+  test("ANSI sliceByWidth excludes a wide grapheme that crosses the end boundary", () => {
+    const measurer = createMeasurer({})
+    const styled = `\x1b[31mA${ZWJ_FAMILY3}B\x1b[39m`
+    const linked = `\x1b]8;;https://example.com\x1b\\A${ZWJ_FAMILY3}B\x1b]8;;\x1b\\`
+
+    expect(measurer.sliceByWidth(styled, 2)).toBe("\x1b[31mA\x1b[39m")
+    expect(measurer.sliceByWidth(linked, 2)).toBe(
+      "\x1b]8;;https://example.com\x1b\\A\x1b]8;;\x1b\\",
+    )
+  })
+
   test("wrapText keeps a ZWJ family on one line as an atomic grapheme", () => {
     // Two families separated by a space, wrapped at width 3 (each family is
     // width 2, so only one fits per line). Neither line may contain a partial
