@@ -15,6 +15,7 @@
  *           from the laid-out nodes, then the painted text)
  * @consumer every Tabs whose TabList wraps: the yrd detail pane's check tabs,
  *           any settings dialog with more tabs than the width holds
+ * @testonly none
  */
 
 import React from "react"

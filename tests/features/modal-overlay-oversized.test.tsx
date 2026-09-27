@@ -15,6 +15,7 @@
  *           the laid-out nodes, then the painted text)
  * @consumer every ModalOverlay user: the deck help, the command palette, the
  *           pickers; any dialog opened on a small terminal
+ * @testonly none
  *
  * Two limits this file stays inside, both pre-existing and filed separately:
  * the constrained case is height-constrained only (80x12), because a flex

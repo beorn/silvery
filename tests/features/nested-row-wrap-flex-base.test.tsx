@@ -14,6 +14,7 @@
  * @consumer every column with a bordered card, a marker gutter or a status
  *           box whose rows carry wrapped text: yrd watch RUNNER, its detail
  *           pane, km cards
+ * @testonly none
  */
 
 import React from "react"
