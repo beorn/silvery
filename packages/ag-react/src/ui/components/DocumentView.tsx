@@ -57,6 +57,12 @@ export interface DocumentHeadingBlock extends DocumentBlockBase {
    * ordinary prose, whether it carries a task marker or the default #.
    */
   readonly marker?: React.ReactNode
+  /** Whether this heading section can be folded. Defaults to true when enableSectionFolding is set. */
+  readonly foldable?: boolean
+  /** Controlled expansion state. */
+  readonly expanded?: boolean
+  /** Callback fired when folding is toggled. */
+  readonly onToggleFold?: () => void
 }
 
 export interface DocumentParagraphBlock extends DocumentBlockBase {
@@ -156,6 +162,12 @@ export interface DocumentViewProps {
     readonly blockId: DocumentBlockId
     readonly scrollController: ScrollController
   }
+  /** Headings currently folded by their string ID. */
+  readonly foldedHeadingIds?: ReadonlySet<string>
+  /** Callback fired when a heading's fold state is toggled. */
+  readonly onToggleFoldHeading?: (headingId: string) => void
+  /** Opt-in flag for section folding. Defaults to false. */
+  readonly enableSectionFolding?: boolean
 }
 
 interface ResolvedListItem {
@@ -362,8 +374,14 @@ function DocumentBlocks({
   onBlockLayout,
   collapsedCode,
   onCodeExpandedChange,
+  foldedHeadingIds,
+  onToggleFoldHeading,
+  enableSectionFolding,
 }: Required<Pick<DocumentViewProps, "blocks" | "lane">> &
-  Pick<DocumentViewProps, "selectedId" | "empty"> & {
+  Pick<
+    DocumentViewProps,
+    "selectedId" | "empty" | "foldedHeadingIds" | "onToggleFoldHeading" | "enableSectionFolding"
+  > & {
     compact: boolean
     onBlockLayout?: (id: DocumentBlockId, y: number) => void
     collapsedCode: ReadonlySet<DocumentBlockId>
@@ -406,6 +424,23 @@ function DocumentBlocks({
                 {block.content}
               </Heading>
             )
+            const isFoldable =
+              block.foldable !== undefined ? block.foldable : (enableSectionFolding ?? false)
+
+            const isExpanded =
+              block.expanded !== undefined
+                ? block.expanded
+                : foldedHeadingIds !== undefined
+                  ? !foldedHeadingIds.has(String(block.id))
+                  : true
+
+            const handleToggleFold =
+              block.onToggleFold !== undefined
+                ? block.onToggleFold
+                : onToggleFoldHeading !== undefined
+                  ? () => onToggleFoldHeading(String(block.id))
+                  : undefined
+
             return (
               <BlockFrame
                 key={block.id}
@@ -421,6 +456,9 @@ function DocumentBlocks({
                   markerWidth={headingMarkerWidth}
                   marker={block.marker}
                   color={selected ? "$fg-on-selected" : undefined}
+                  foldable={isFoldable}
+                  expanded={isExpanded}
+                  onToggleFold={handleToggleFold}
                 >
                   {headingNode}
                 </HeadingRow>
@@ -567,6 +605,9 @@ export function DocumentView({
   lane = "prose",
   search,
   reveal,
+  foldedHeadingIds,
+  onToggleFoldHeading,
+  enableSectionFolding = false,
 }: DocumentViewProps): React.ReactElement {
   const hasContentLayout = useHasContentLayout()
   const ambientLayout = useContentLayout()
@@ -684,6 +725,9 @@ export function DocumentView({
       lane={lane}
       compact={compact}
       collapsedCode={collapsedCode}
+      foldedHeadingIds={foldedHeadingIds}
+      onToggleFoldHeading={onToggleFoldHeading}
+      enableSectionFolding={enableSectionFolding}
       onCodeExpandedChange={(id, expanded) => {
         setCollapsedCode((current) => {
           const next = new Set(current)
