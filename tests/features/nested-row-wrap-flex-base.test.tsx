@@ -27,6 +27,7 @@ const RAIL =
   "paused by @ci since Sep 5, 2026, 8:51:32 AM PDT: CI garage: M8 git-process prerequisite merged as " +
   "4431d6d8ad163ef1d560963f3f70782f4ffca156; full round audit and remaining M8 reconciliation before another " +
   "admission; no service activation"
+const WIDE_RAIL = `${RAIL}; waiting for final review`
 
 /** The yrd MarkerRow shape: a marker gutter beside a flexGrow column. */
 function MarkerRow({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -160,6 +161,55 @@ describe("a column's flex base size for a child holding a row with wrapped text"
     )
     // Measured 2026-09-05 (flexily 0.7.3): headHeight 4 after layout but listHeight 15, pillsY 20, statsY 21, footerY 30.
     expect(rects(rail, 200)).toEqual({
+      headHeight: 4,
+      listHeight: 14,
+      pillsY: 19,
+      statsY: 20,
+      footerY: 29,
+      paintedPills: 19,
+      paintedFooter: 29,
+    })
+  })
+
+  test("at 240 columns direct wrapped text still fits", () => {
+    expect(rects(<Text wrap="wrap">{WIDE_RAIL}</Text>, 240)).toEqual({
+      headHeight: 4,
+      listHeight: 14,
+      pillsY: 19,
+      statsY: 20,
+      footerY: 29,
+      paintedPills: 19,
+      paintedFooter: 29,
+    })
+  })
+
+  test("at 240 columns pre-wrapped truncate rows still fit", () => {
+    const rows = [WIDE_RAIL.slice(0, 110), WIDE_RAIL.slice(110, 220), WIDE_RAIL.slice(220)]
+    const rail = (
+      <MarkerRow>
+        {rows.map((row) => (
+          <Text key={row} wrap="truncate">{row}</Text>
+        ))}
+      </MarkerRow>
+    )
+    expect(rects(rail, 240)).toEqual({
+      headHeight: 5,
+      listHeight: 13,
+      pillsY: 19,
+      statsY: 20,
+      footerY: 29,
+      paintedPills: 19,
+      paintedFooter: 29,
+    })
+  })
+
+  test("at 240 columns nested wrapped text still leaves STATS and footer in place", () => {
+    const rail = (
+      <MarkerRow>
+        <Text wrap="wrap" minWidth={0}>{WIDE_RAIL}</Text>
+      </MarkerRow>
+    )
+    expect(rects(rail, 240)).toEqual({
       headHeight: 4,
       listHeight: 14,
       pillsY: 19,
