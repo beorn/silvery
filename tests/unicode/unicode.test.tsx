@@ -337,6 +337,11 @@ describe("unicode: emoji", () => {
     expect(splitGraphemes(w2).length).toBe(1)
   })
 
+  /**
+   * @failure Styled clipping renders an overflowing wide glyph or leaves an OSC8 link open.
+   * @level l1
+   * @consumer Terminal text and hyperlink rendering
+   */
   test("ANSI sliceByWidth excludes a wide grapheme that crosses the end boundary", () => {
     const measurer = createMeasurer({})
     const styled = `\x1b[31mA${ZWJ_FAMILY3}B\x1b[39m`

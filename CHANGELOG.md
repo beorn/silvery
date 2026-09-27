@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Styled `sliceByWidth` no longer returns a wide grapheme that crosses the end
+  boundary, matching plain text slicing after the slice-ansi 9 upgrade.
+
 ## [0.24.3] - 2026-09-26
 
 ### Added
