@@ -1130,7 +1130,7 @@
 
     "fdir": ["fdir@6.5.0", "", { "peerDependencies": { "picomatch": "^3 || ^4" }, "optionalPeers": ["picomatch"] }, "sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg=="],
 
-    "flexily": ["flexily@github:beorn/flexily#17b8560", {}, "beorn-flexily-17b8560", "sha512-+QmcIMHVo3whRG9FUZzpcLj62TH92vfKxyTwP1rWA4AcELvtmPJumDRjT18IZlPwkNzAagbzH+pniTPz7WRy2Q=="],
+    "flexily": ["flexily@github:beorn/flexily#be301b8", {}, "beorn-flexily-be301b8", "sha512-SjD0apMylquKGcvITx+tisvr4Ct5sJoPm24hEzVJWD9zN1gmIZhijJCO7bjHcmDVNje2wlcdBIoPlyT338tkTw=="],
 
     "focus-trap": ["focus-trap@7.8.0", "", { "dependencies": { "tabbable": "^6.4.0" } }, "sha512-/yNdlIkpWbM0ptxno3ONTuf+2g318kh2ez3KSeZN5dZ8YC6AAmgeWz+GasYYiBJPFaYcSAPeu4GfhUaChzIJXA=="],
 
