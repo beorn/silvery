@@ -173,10 +173,18 @@ export interface RenderTraceInput {
 // enables the same in-process/loggily trace without a sidecar. Both gates
 // are read lazily so the trace surface is testable and opt-in.
 
+// The sidecar each stream last opened. A trace dir seen for the first time starts its file empty, so a changed
+// SILVERY_TRACE_FRAMES opens a fresh sidecar instead of appending to the old dir's.
 let sidecarFile: string | null = null
-let sidecarReady = false
 let outputSidecarFile: string | null = null
-let outputSidecarReady = false
+
+function openSidecar(traceDir: string, name: string, open: string | null): string {
+  const file = join(traceDir, name)
+  if (file === open) return file
+  if (!existsSync(traceDir)) mkdirSync(traceDir, { recursive: true })
+  appendFileSync(file, "", { flag: "w" })
+  return file
+}
 
 /** The configured trace directory, or `null` when `SILVERY_TRACE_FRAMES` is unset. */
 export function renderTraceDir(): string | null {
@@ -288,14 +296,8 @@ export function emitRenderDispatched(input: RenderTraceInput): void {
 
     // Sidecar JSONL — lazily created on first emit so a disabled trace dir
     // never gets touched.
-    if (traceDir !== null && !sidecarReady) {
-      if (!existsSync(traceDir)) mkdirSync(traceDir, { recursive: true })
-      sidecarFile = join(traceDir, "render-events.jsonl")
-      // Truncate any prior sidecar for this dir.
-      appendFileSync(sidecarFile, "", { flag: "w" })
-      sidecarReady = true
-    }
-    if (traceDir !== null && sidecarFile) {
+    if (traceDir !== null) {
+      sidecarFile = openSidecar(traceDir, "render-events.jsonl", sidecarFile)
       appendFileSync(sidecarFile, JSON.stringify(event) + "\n")
     }
   } catch {
@@ -341,29 +343,11 @@ export function emitRenderOutputFrame(input: RenderOutputFrameInput): void {
 
     outputLog.debug?.("render output", { ...event })
 
-    if (traceDir !== null && !outputSidecarReady) {
-      if (!existsSync(traceDir)) mkdirSync(traceDir, { recursive: true })
-      outputSidecarFile = join(traceDir, "render-output-events.jsonl")
-      appendFileSync(outputSidecarFile, "", { flag: "w" })
-      outputSidecarReady = true
-    }
-    if (traceDir !== null && outputSidecarFile) {
+    if (traceDir !== null) {
+      outputSidecarFile = openSidecar(traceDir, "render-output-events.jsonl", outputSidecarFile)
       appendFileSync(outputSidecarFile, JSON.stringify(event) + "\n")
     }
   } catch {
     // Tracing must never destabilise rendering. Swallow sink errors.
   }
-}
-
-/**
- * Test-only: reset module state (in-process bus + sidecar latch). Lets a
- * test exercise the enabled and disabled paths without a fresh process.
- */
-export function __resetRenderTraceForTests(): void {
-  bus().events.length = 0
-  bus().outputEvents.length = 0
-  sidecarReady = false
-  sidecarFile = null
-  outputSidecarReady = false
-  outputSidecarFile = null
 }

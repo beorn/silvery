@@ -36,11 +36,16 @@ import {
   renderTraceDir,
   recentRenderEvents,
   recentRenderOutputEvents,
-  __resetRenderTraceForTests,
   emitRenderOutputFrame,
   type RenderDispatchedEvent,
   type RenderOutputFrameEvent,
 } from "../../packages/ag-term/src/runtime/render-trace"
+
+// The render-event bus is a globalThis ring shared by every module instance, so a test starts from an empty bus by
+// dropping that slot; the sidecars follow the trace dir (E-1, 25632).
+function clearRenderEventBus(): void {
+  Reflect.deleteProperty(globalThis, "__silvery_render_events")
+}
 
 let traceDir: string
 const SAVED_ENV = process.env.SILVERY_TRACE_FRAMES
@@ -52,7 +57,7 @@ beforeEach(() => {
   traceDir = mkdtempSync(join(tmpdir(), "silvery-render-trace-"))
   delete process.env.DEBUG
   delete process.env.SILVERY_SYNC_UPDATE
-  __resetRenderTraceForTests()
+  clearRenderEventBus()
 })
 
 afterEach(() => {
@@ -64,7 +69,7 @@ afterEach(() => {
   else process.env.SILVERY_SYNC_UPDATE = SAVED_SYNC_UPDATE
   if (SAVED_KITTY_GRAPHICS === undefined) delete process.env.SILVERY_KITTY_GRAPHICS
   else process.env.SILVERY_KITTY_GRAPHICS = SAVED_KITTY_GRAPHICS
-  __resetRenderTraceForTests()
+  clearRenderEventBus()
   if (traceDir && existsSync(traceDir)) rmSync(traceDir, { recursive: true, force: true })
 })
 
