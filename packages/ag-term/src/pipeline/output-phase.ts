@@ -41,6 +41,7 @@ import {
   createTerminalVerifyState,
   sgrColorEquals,
   formatColor,
+  visibleRows,
   type AccumulateState,
   type TerminalVerifyState,
 } from "./output-verify"
@@ -293,14 +294,22 @@ function rowsEqualWithOffset(
   return true
 }
 
+/**
+ * @param rows Rows of the terminal the frame is written for ({@link visibleRows}).
+ *   The scroll region must end on screen. A terminal clamps a DECSTBM bottom
+ *   past its last row to that row, so a region reaching below it scrolls fewer
+ *   rows than `afterScroll` models. The blank line SU pulls into the terminal's
+ *   last row would then never be repainted.
+ */
 function detectNativeScrollPlan(
   prev: TerminalBuffer,
   next: TerminalBuffer,
+  rows: number,
 ): NativeScrollPlan | null {
   if (prev.width !== next.width || prev.height !== next.height) return null
   if (next.minDirtyRow < 0 || next.maxDirtyRow < next.minDirtyRow) return null
   const top = next.minDirtyRow
-  const bottom = next.maxDirtyRow
+  const bottom = Math.min(next.maxDirtyRow, rows - 1)
   const height = bottom - top + 1
   if (height < 4 || next.width < 4) return null
 
@@ -1170,14 +1179,17 @@ export function outputPhase(
       })
       return output
     }
+    // `firstOutput` stops at termRows, so the oracles' terminals do too: they
+    // model the terminal this frame was written for (see visibleRows).
+    const firstRows = visibleRows(next.height, termRows)
     if (isStrictAccumulate()) {
       accState.accumulatedAnsi = firstOutput
       accState.accumulateWidth = next.width
-      accState.accumulateHeight = next.height
+      accState.accumulateHeight = firstRows
       accState.accumulateFrameCount = 0
     }
     if (tvState.backends.length > 0) {
-      initTerminalVerifyState(tvState, next.width, next.height, firstOutput)
+      initTerminalVerifyState(tvState, next.width, next.height, firstOutput, firstRows)
     }
     if (CAPTURE_RAW) {
       try {
@@ -1334,7 +1346,10 @@ export function outputPhase(
   // - Orphaned continuation cells (main cell unchanged) trigger a
   //   re-emit of the main cell from the buffer
   const tAnsi0 = performance.now()
-  const nativeScrollPlan = ctx.mode === "fullscreen" ? detectNativeScrollPlan(prev, next) : null
+  const nativeScrollPlan =
+    ctx.mode === "fullscreen"
+      ? detectNativeScrollPlan(prev, next, visibleRows(next.height, termRows))
+      : null
   let incrOutput: string
   let diagnosticReason: OutputPhaseDiagnostics["reason"] = "diff"
   let diagnosticChangedCells = count
@@ -1457,7 +1472,8 @@ export function outputPhase(
   // vt100 output verification: verify that the incremental ANSI output produces
   // the same visible terminal state as a fresh render. Uses the internal
   // replayAnsiWithStyles parser (stateless). Enabled by SILVERY_STRICT or
-  // SILVERY_STRICT_TERMINAL containing "vt100".
+  // SILVERY_STRICT_TERMINAL containing "vt100". `termRows` is the terminal the
+  // diff was filtered for: rows below it are never written, and never judged.
   if (isStrictOutput() || tvState.hasVt100) {
     _verifyOutputEquivalence(
       prev,
@@ -1467,6 +1483,7 @@ export function outputPhase(
       bufferToAnsi,
       outputGraphemeWidth,
       outputTextSizingEnabled,
+      termRows,
     )
   }
 
@@ -1488,7 +1505,7 @@ export function outputPhase(
   // char cursor drift, buffer overflow scrolling).
   if (tvState.backends.length > 0 && (tvState.terminal || tvState.ghosttyTerminal)) {
     tvState.frameCount++
-    _verifyTerminalEquivalence(tvState, incrOutput, next, ctx, bufferToAnsi)
+    _verifyTerminalEquivalence(tvState, incrOutput, next, ctx, bufferToAnsi, termRows)
 
     // ───────────────────────────────────────────────────────────────────────
     // Render/emulator divergence canary  (SILVERY_STRICT slug: "divergence")
