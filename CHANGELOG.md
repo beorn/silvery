@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-09-28
+
 ### Removed
 
 Test-only exports leave the published entries. Tests reset module state with
@@ -24,6 +26,26 @@ Test-only exports leave the published entries. Tests reset module state with
   instance; `flushPendingHighlights()` drains in-flight highlights.
 - `@silvery/ansi`: `_resetWarnOnceForTesting`. A fresh module instance clears
   every `warnOnce` latch.
+- `silvery/ui/cli`: `isTTY` no longer honours `FORCE_TTY=1`; pass a stream
+  whose `isTTY` is true.
+- The test-only `SILVERY_AUTO_PANIC_TEST_NO_EXIT` variable. After the
+  auto-panic dump cap trips the process always exits with code 2; a test
+  spies on `process.exit` to survive it.
+
+### Changed
+
+- Unordered list markers use one small dot (`•`) at every depth, instead of
+  `•`, `◦` and `■` by depth.
+- A folded heading in `DocumentView` shows its disclosure triangle one space
+  left of the `#`, always when collapsed and on hover when expanded; section
+  folding reserves that left gutter.
+
+### Fixed
+
+- `SILVERY_TRACE_FRAMES` pointed at a new directory now opens fresh sidecar
+  files there, instead of appending to the first directory's files.
+- Mouse hit testing lets an unclipped child that overflows its parent
+  receive events.
 
 ## [0.25.1] - 2026-09-28
 
