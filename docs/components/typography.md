@@ -163,8 +163,9 @@ Lists support nesting via `UL`/`OL` containers.
 </OL>
 ```
 
-Every unordered depth uses the same small filled circle, `•`; indentation
-expresses nesting. Ordered lists retain their numbers.
+Unordered lists use `•` at the outer level, `◦` one level in, and `■` at
+all deeper levels. Indentation also grows with nesting. Ordered lists retain
+their numbers.
 
 ## Props
 
