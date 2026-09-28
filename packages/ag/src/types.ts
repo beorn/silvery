@@ -497,7 +497,7 @@ export interface FlexboxProps {
 }
 
 /**
- * Props for testing and identification.
+ * Props for testing and identification. // seam-allow: testID and data-* also identify nodes for km views (km-tui BoardView)
  * These props are stored in the node for DOM query access.
  */
 export interface TestProps {
@@ -505,7 +505,7 @@ export interface TestProps {
   id?: string
   /** Test ID for querying nodes (like Playwright's data-testid) */
   testID?: string
-  /** Allow arbitrary data-* attributes for testing */
+  /** Allow arbitrary data-* attributes for testing */ // seam-allow: data-* also carries identity in km views
   [key: `data-${string}`]: unknown
 }
 

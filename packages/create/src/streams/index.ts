@@ -243,7 +243,7 @@ export async function* take<T>(
 }
 
 /**
- * Create an AsyncIterable from an array (useful for testing).
+ * Create an AsyncIterable from an array (useful for testing). // seam-allow: public stream helper, documented in docs/reference/streams.md
  *
  * @example
  * ```typescript
@@ -260,7 +260,7 @@ export async function* fromArray<T>(items: T[]): AsyncGenerator<T, void, undefin
 }
 
 /**
- * Create an AsyncIterable that yields after a delay (useful for testing).
+ * Create an AsyncIterable that yields after a delay (useful for testing). // seam-allow: public stream helper, documented in docs/reference/streams.md
  *
  * @example
  * ```typescript

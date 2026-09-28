@@ -105,11 +105,8 @@ const COLLECTED_TEXT_DIRTY = CONTENT_BIT | CHILDREN_BIT | STYLE_PROPS_BIT | BG_B
 // Storage
 // ============================================================================
 
-/** Set to true to disable all caching (for testing/debugging). */
-let _cacheDisabled = !!process.env.SILVERY_NO_TEXT_CACHE
-export function setPreparedTextCacheEnabled(enabled: boolean): void {
-  _cacheDisabled = !enabled
-}
+/** SILVERY_NO_TEXT_CACHE disables all four cache levels; read once at module load. */
+const _cacheDisabled = !!process.env.SILVERY_NO_TEXT_CACHE
 
 const textCaches = new WeakMap<AgNode, TextNodeCache>()
 

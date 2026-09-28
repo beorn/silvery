@@ -1,7 +1,7 @@
 /**
  * Silvery Testing Library
  *
- * Unified App-based API for testing Silvery components.
+ * Unified App-based API for testing Silvery components. // seam-allow: @silvery/test is the testing package
  * Uses the actual silvery render pipeline for accurate ANSI output.
  *
  * ## Import Syntax
@@ -88,7 +88,7 @@ export type { App } from "@silvery/ag-term/app"
 export { createAutoLocator, type AutoLocator, type FilterOptions } from "./auto-locator"
 export type { BoundTerm } from "@silvery/ag-term/bound-term"
 
-// Re-export buffer utilities for testing convenience
+// Re-export buffer utilities for testing convenience // seam-allow: @silvery/test is the testing package
 export { bufferToText, bufferToStyledText, bufferToHTML } from "@silvery/ag-term/buffer"
 export type { TerminalBuffer } from "@silvery/ag-term/buffer"
 

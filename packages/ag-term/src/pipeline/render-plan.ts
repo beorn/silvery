@@ -185,8 +185,9 @@ export class RecordingBuffer extends TerminalBuffer {
 
   override fill(x: number, y: number, width: number, height: number, cell: CellPatch): void {
     super.fill(x, y, width, height, cell)
-    if (this.recording)
+    if (this.recording) {
       this.ops.push({ kind: "fill", x, y, width, height, cell: cloneCellPatch(cell) })
+    }
   }
 
   override fillBg(x: number, y: number, width: number, height: number, bg: Color): void {
@@ -196,8 +197,9 @@ export class RecordingBuffer extends TerminalBuffer {
 
   override restyleRegion(x: number, y: number, width: number, height: number, style: Style): void {
     super.restyleRegion(x, y, width, height, style)
-    if (this.recording)
+    if (this.recording) {
       this.ops.push({ kind: "restyleRegion", x, y, width, height, style: { ...style } })
+    }
   }
 
   override scrollRegion(
@@ -209,7 +211,7 @@ export class RecordingBuffer extends TerminalBuffer {
     clearCell: CellPatch = {},
   ): void {
     super.scrollRegion(x, y, width, height, delta, clearCell)
-    if (this.recording)
+    if (this.recording) {
       this.ops.push({
         kind: "scrollRegion",
         x,
@@ -219,6 +221,7 @@ export class RecordingBuffer extends TerminalBuffer {
         delta,
         clearCell: cloneCellPatch(clearCell),
       })
+    }
   }
 
   override mergeAttrsInRect(
@@ -230,7 +233,7 @@ export class RecordingBuffer extends TerminalBuffer {
     underlineColor?: Color,
   ): void {
     super.mergeAttrsInRect(x, y, width, height, attrs, underlineColor)
-    if (this.recording)
+    if (this.recording) {
       this.ops.push({
         kind: "mergeAttrsInRect",
         x,
@@ -240,6 +243,7 @@ export class RecordingBuffer extends TerminalBuffer {
         attrs: { ...attrs },
         underlineColor,
       })
+    }
   }
 
   override setRowMeta(
@@ -444,7 +448,6 @@ function applyOp(buffer: TerminalBuffer, op: RenderOp): void {
  * `SILVERY_RENDER_PLAN=false`.
  *
  * Phase 1: opt-in only (default off).
- * Phase 2: opt-in via flag for testing.
  * Phase 3 (current): default ON, opt-out for one release. The plan
  * capture + sectioned commit is now load-bearing — it runs every
  * frame, the captured plan is committed onto a fresh clone for parity
