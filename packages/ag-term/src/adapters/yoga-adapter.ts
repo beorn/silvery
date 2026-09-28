@@ -145,12 +145,14 @@ class YogaNodeAdapter implements LayoutNode {
   ): number | string {
     if (typeof value === "number") return value
     const input = value.trim()
-    if (input === "auto" && (prop === "width" || prop === "height" || prop === "flexBasis"))
-      {return input}
+    if (input === "auto" && (prop === "width" || prop === "height" || prop === "flexBasis")) {
+      return input
+    }
     if (prop === "width" && (input === "fit-content" || input === "snug-content")) return "auto"
     const percent = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)%$/i.exec(input)
-    if (percent && Number.isFinite(Number(percent[1])) && Number(percent[1]) >= 0)
-      {return `${Number(percent[1])}%`}
+    if (percent && Number.isFinite(Number(percent[1])) && Number(percent[1]) >= 0) {
+      return `${Number(percent[1])}%`
+    }
     throw new TypeError(
       `${prop}: ${JSON.stringify(value)} — Yoga accepts a number, a valid N% or a supported keyword; ` +
         `use SILVERY_ENGINE=flexily for other length strings.`,

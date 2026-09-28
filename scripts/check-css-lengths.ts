@@ -32,8 +32,9 @@ const corpus = new Set<string>(controls.map(([input]) => input))
 for (const unit of ["ch", "lh", "%", "cqi"]) {
   for (const number of ["0", "1", "2.5", "1e1"]) {
     const leaf = `${number}${unit}`
-    for (const input of [leaf, leaf.toUpperCase(), `calc(${leaf})`, `calc((${leaf})*2/3)`])
+    for (const input of [leaf, leaf.toUpperCase(), `calc(${leaf})`, `calc((${leaf})*2/3)`]) {
       corpus.add(input)
+    }
     for (const otherUnit of ["ch", "lh", "%", "cqi"]) {
       const other = `2${otherUnit}`
       for (const input of [
@@ -44,8 +45,9 @@ for (const unit of ["ch", "lh", "%", "cqi"]) {
         `calc(${leaf} - ${other})`,
         `min(max(${leaf}, ${other}), calc(10${unit} / 2))`,
         `calc((${leaf} + ${other}) * 2 - 1${unit})`,
-      ])
+      ]) {
         corpus.add(input)
+      }
     }
   }
 }
@@ -84,14 +86,18 @@ try {
   const results = await page.evaluate(
     ({ accepted, controls, properties }) => ({
       accepted: properties.flatMap((property) =>
-        accepted.map((input) => ({ property, input, actual: CSS.supports(property, input) })),
+        accepted.map((input) => ({
+          property,
+          input,
+          actual: globalThis.CSS.supports(property, input),
+        })),
       ),
       controls: properties.flatMap((property) =>
         controls.map(([input, expected]) => ({
           property,
           input,
           expected,
-          actual: CSS.supports(property, input),
+          actual: globalThis.CSS.supports(property, input),
         })),
       ),
     }),
