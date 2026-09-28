@@ -30,6 +30,7 @@ import {
   getTermlessXterm,
   getTermlessGhostty,
 } from "@silvery/ag-term/strict-terminal-backends"
+import { createApp } from "../packages/ag-term/src/runtime/create-app"
 
 let origStrictTerminal: string | undefined
 
@@ -105,6 +106,25 @@ describe("SILVERY_STRICT terminal backends — single ESM instance", () => {
       expect(() => getTermlessCore()).toThrow(/preloadStrictTerminalBackends/)
     } finally {
       await preloadStrictTerminalBackends({ ghostty: true, initGhosttyWasm: false })
+    }
+  })
+
+  // 26496: km starts through createApp().run(), not run(). Only run() preloaded the backends, so the first strict
+  // frame of any createApp consumer failed loud at startup. The app must preload at its own async setup boundary.
+  test("createApp().run() preloads the backends itself before its first strict frame", async () => {
+    Reflect.deleteProperty(globalThis, Symbol.for("@silvery/ag-term:strict-terminal-backends"))
+    process.env.SILVERY_STRICT_TERMINAL = "xterm"
+    let written = ""
+    const handle = await createApp(() => () => ({})).run(<Counter n={0} />, {
+      writable: { write: (data: string) => void (written += data) },
+      cols: 40,
+      rows: 10,
+    })
+    try {
+      expect(written).toContain("Count: 0")
+      expect(getTermlessXterm()).toBe(await import("@termless/xtermjs"))
+    } finally {
+      handle.unmount()
     }
   })
 })
