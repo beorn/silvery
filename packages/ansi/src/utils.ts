@@ -202,16 +202,3 @@ export function warnOnce(id: string, emit: () => void): void {
   _firedWarnings.add(id)
   emit()
 }
-
-/**
- * Reset the warn-once latch — test-only.
- *
- * With no argument, clears every warning ID. With an explicit ID, clears just
- * that one (lets a test exercise its own warning without disturbing others).
- * Export is prefixed `_` to signal "test infrastructure, do not call from
- * production code."
- */
-export function _resetWarnOnceForTesting(id?: string): void {
-  if (id === undefined) _firedWarnings.clear()
-  else _firedWarnings.delete(id)
-}

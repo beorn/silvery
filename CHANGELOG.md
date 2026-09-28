@@ -7,6 +7,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Removed
+
+Test-only exports leave the published entries. Tests reset module state with
+`vi.resetModules()` and a fresh import, or enter through the public API.
+
+- `silvery`: `createPositionRegistry`. Use `PositionRegistryProvider`, which
+  creates the registry, and read it with `usePositionRegistry()`.
+- `silvery`: `resetCursorState`. A fresh module instance starts with no cursor
+  state.
+- `silvery/ui/progress`: the `StepsRunner._steps` field. Run the steps with
+  `run()`; the parsed nodes are internal.
+- `silvery`: `resetHitRegionIdCounter`. A fresh module instance starts its hit
+  region IDs at 1.
+- `@silvery/syntax`: `_clearCache` and `_resetHighlighter`. Use a fresh module
+  instance; `flushPendingHighlights()` drains in-flight highlights.
+- `@silvery/ansi`: `_resetWarnOnceForTesting`. A fresh module instance clears
+  every `warnOnce` latch.
+
 ## [0.25.1] - 2026-09-28
 
 ### Changed

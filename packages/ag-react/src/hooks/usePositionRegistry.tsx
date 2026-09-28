@@ -236,6 +236,3 @@ export function PositionRegistryProvider({ children }: { children: ReactNode }) 
 export function usePositionRegistry(): PositionRegistry | null {
   return useContext(PositionRegistryContext)
 }
-
-// Export for testing
-export { createPositionRegistry }

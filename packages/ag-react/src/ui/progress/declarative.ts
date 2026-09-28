@@ -67,9 +67,6 @@ type StepResults<T extends StepsDef> = {
  * The runner object returned by steps()
  */
 export interface StepsRunner<T extends StepsDef> {
-  /** Internal: the parsed step nodes (for testing) */
-  readonly _steps: StepNode[]
-
   /**
    * Execute all steps sequentially
    * @returns Results keyed by step name
@@ -131,10 +128,6 @@ export function stepsDeclarative<T extends StepsDef>(def: T): StepsRunner<T> {
   }
 
   return {
-    get _steps() {
-      return rootNodes
-    },
-
     async run(options?: ExecuteOptions): Promise<StepResults<T>> {
       multi = new MultiProgress()
 
