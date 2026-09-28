@@ -4,6 +4,8 @@
  * @consumer @si/render/26304-strict-stale-pixels-when-shaping-prop-flips-on-measure
  * @testonly none
  *
+ * This file enables SILVERY_STRICT itself so the repro also runs in ordinary CI.
+ *
  * A text-shaping prop flipped on a MEASUREMENT-driven re-render must still
  * invalidate the text node (@si/apportion-consolidation — the regression that
  * bead shipped as `69d8fd69e`).
@@ -48,6 +50,7 @@
 import React from "react"
 import { describe, expect, it, test } from "vitest"
 import { createRenderer } from "@silvery/test"
+import { resetStrictCache } from "@silvery/ag-term/strict-mode"
 import { Box } from "../../packages/ag-react/src/components/Box"
 import { Text } from "../../packages/ag-react/src/components/Text"
 import { useBoxRectDangerously } from "../../packages/ag-react/src/hooks/useLayout"
@@ -123,13 +126,24 @@ const WIDTHS = [4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 20, 24, 30, 40, 60, 80]
 
 /** Widths at which rendering throws a STRICT incremental-vs-fresh mismatch. */
 function divergentWidths(Cell: () => React.ReactElement): string[] {
+  const savedStrict = process.env.SILVERY_STRICT
+  process.env.SILVERY_STRICT = "1"
+  resetStrictCache()
   const diverged: string[] = []
-  for (const cols of WIDTHS) {
-    try {
-      createRenderer({ cols, rows: 24 })(<App cols={cols} Cell={Cell} />)
-    } catch (error) {
-      diverged.push(`cols=${cols}: ${String((error as Error).message).split("\n")[0]}`)
+  try {
+    for (const cols of WIDTHS) {
+      try {
+        createRenderer({ cols, rows: 24 })(<App cols={cols} Cell={Cell} />)
+      } catch (error) {
+        const message = String((error as Error).message).split("\n")[0] ?? ""
+        if (!message.startsWith("SILVERY_STRICT: MISMATCH")) throw error
+        diverged.push(`cols=${cols}: ${message}`)
+      }
     }
+  } finally {
+    if (savedStrict === undefined) delete process.env.SILVERY_STRICT
+    else process.env.SILVERY_STRICT = savedStrict
+    resetStrictCache()
   }
   return diverged
 }
@@ -145,7 +159,7 @@ describe("measurement-convergence text invalidation", () => {
     expect(diverged, `\n${diverged.join("\n")}`).toEqual([])
   })
 
-  it("26304: a text-shaping prop flipped on the measured re-render keeps pixels current", () => {
+  it.fails("26304: a text-shaping prop flipped on the measured re-render leaves stale pixels", () => {
     const diverged = divergentWidths(ShapingCell)
     expect(diverged, `\n${diverged.join("\n")}`).toEqual([])
   })
