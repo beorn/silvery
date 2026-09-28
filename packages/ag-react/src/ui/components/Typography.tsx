@@ -485,6 +485,16 @@ export function HR({ color, ...rest }: Omit<TypographyProps, "children">) {
 // Lists
 // ============================================================================
 
+/** Zero-based unordered list depth; every marker occupies one terminal cell. */
+export function unorderedListMarker(depth: number): string {
+  if (!Number.isInteger(depth) || depth < 0) {
+    throw new RangeError(`Unordered list depth must be a non-negative integer; received ${depth}`)
+  }
+  if (depth === 0) return "•"
+  if (depth === 1) return "◦"
+  return "■"
+}
+
 interface ListContextValue {
   level: number
   ordered: boolean
@@ -525,7 +535,8 @@ export function LI({ children, color, _index }: TypographyProps & { _index?: num
   const { level, ordered } = useContext(ListContext)
   const effectiveLevel = Math.max(level, 1)
   const indent = "  ".repeat(effectiveLevel - 1)
-  const marker = ordered && _index != null ? `${_index}. ` : "• "
+  const marker =
+    ordered && _index != null ? `${_index}. ` : `${unorderedListMarker(effectiveLevel - 1)} `
 
   return (
     <Box>

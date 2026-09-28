@@ -36,7 +36,20 @@ import { Fragment, type JSX, type ReactNode } from "react"
 import { Box, type BoxProps } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { Link } from "../../components/Link"
-import { Blockquote, Code, Em, H1, H2, H3, H4, H5, H6, HR, Strong } from "./Typography"
+import {
+  Blockquote,
+  Code,
+  Em,
+  H1,
+  H2,
+  H3,
+  H4,
+  H5,
+  H6,
+  HR,
+  Strong,
+  unorderedListMarker,
+} from "./Typography"
 import { HeadingRow } from "./HeadingRow"
 import { SyntaxHighlighter } from "./SyntaxHighlighter"
 
@@ -442,7 +455,7 @@ function renderList(list: MdList, keyPrefix: string, depth = 0): JSX.Element {
     <Box flexDirection="column" minWidth={0}>
       {list.items.map((item, index) => {
         const key = `${keyPrefix}-${index}`
-        const marker = list.ordered ? `${index + 1}.` : "•"
+        const marker = list.ordered ? `${index + 1}.` : unorderedListMarker(depth)
         return (
           <Box key={key} flexDirection="column" minWidth={0}>
             <Box flexDirection="row" minWidth={0}>

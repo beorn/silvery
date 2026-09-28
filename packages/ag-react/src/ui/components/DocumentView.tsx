@@ -5,7 +5,7 @@ import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { usePopoverHandlers } from "../../components/Popover"
 import type { MeasuredContent } from "../../components/Table"
-import { Blockquote, H1, H2, H3, H4, H5, H6, HR, Small } from "./Typography"
+import { Blockquote, H1, H2, H3, H4, H5, H6, HR, Small, unorderedListMarker } from "./Typography"
 import { SyntaxHighlighter } from "./SyntaxHighlighter"
 import { Prose } from "./Prose"
 import { HeadingRow } from "./HeadingRow"
@@ -204,7 +204,10 @@ function resolveListItems(
     const count = groupCounts.get(block.list.groupId) ?? 0
     groupCounts.set(block.list.groupId, count + 1)
     const marker =
-      block.marker ?? (block.list.ordered ? `${(block.list.start ?? 1) + count}.` : "•")
+      block.marker ??
+      (block.list.ordered
+        ? `${(block.list.start ?? 1) + count}.`
+        : unorderedListMarker(block.list.depth))
     const width = Math.max(1, block.markerWidth ?? textMarkerWidth(marker) ?? 1)
     provisional.set(block.id, { marker, width, groupId: block.list.groupId })
     groupWidths.set(block.list.groupId, Math.max(groupWidths.get(block.list.groupId) ?? 0, width))

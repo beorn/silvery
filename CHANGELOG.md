@@ -15,6 +15,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Styled `sliceByWidth` no longer returns a wide grapheme that crosses the end
   boundary, matching plain text slicing after the slice-ansi 9 upgrade.
 
+### Fixed
+
+- A scroll container's `▲N` / `▼N` overflow indicator now uses the same clip
+  and scroll offset as the container's background and border. An indicator
+  row that falls outside an `overflow="hidden"` ancestor no longer paints over
+  the row below it, and an incremental frame there now matches a fresh one.
+
 ## [0.24.3] - 2026-09-26
 
 ### Added

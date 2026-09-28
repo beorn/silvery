@@ -244,11 +244,20 @@ function syncPrevLayout(root: AgNode, layoutPhaseRan: boolean): void {
 
   const stack: AgNode[] = [root]
   while (stack.length > 0) {
-    const node = stack.pop()!
+    const node = stack.pop()
+    if (!node) {
+      throw new Error("Layout history traversal stack: expected a node while the stack is nonempty")
+    }
     node.prevLayout = node.boxRect
     const children = node.children
     for (let i = children.length - 1; i >= 0; i--) {
-      stack.push(children[i]!)
+      const child = children[i]
+      if (!child) {
+        throw new Error(
+          `Layout history child at index ${i}: expected a node within the children array`,
+        )
+      }
+      stack.push(child)
     }
   }
 }
@@ -302,14 +311,14 @@ const _renderPhaseStats: RenderPhaseStats = {
 let _renderPhaseCallCount = 0
 
 /**
- * Per-text-node plain-text signature from the previous render, keyed weakly so
+ * Per-text-node text and wrap signature from the previous render, keyed weakly so
  * unmounted nodes are GC'd. Drives the style-only restyle fast path: when the
- * current plain text equals the stored one (and layout is unchanged), the
+ * current plain text and wrap equal the stored ones (and layout is unchanged), the
  * cloned buffer's chars are correct, so a per-segment restyle is sound. Dirty
  * bits can't be used here — the reconciler re-dirties virtual text children on
  * a parent style change even when the text is byte-identical.
  */
-const _textContentSigs = new WeakMap<AgNode, string>()
+const _textContentSigs = new WeakMap<AgNode, { text: string; wrap: TextProps["wrap"] }>()
 
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
 const _nodeTrace: NodeTraceEntry[] = []
@@ -358,7 +367,7 @@ type CellDebug = { x: number; y: number; log: string[] }
 
 /** Read the cell debug target (set by SILVERY_CELL_DEBUG env var). */
 function getCellDebug(): CellDebug | undefined {
-  return (globalThis as any).__silvery_cell_debug as CellDebug | undefined
+  return (globalThis as { __silvery_cell_debug?: CellDebug }).__silvery_cell_debug
 }
 
 /** Check if a rect covers the cell debug target point. */
@@ -399,18 +408,24 @@ function emitRenderPhaseStats(
   const snap = {
     clone: tClone,
     render: tRender,
-    ...structuredClone(stats),
+    ...globalThis.structuredClone(stats),
   }
   // Retain globalThis for programmatic consumers (STRICT diagnostics, perf profiling)
-  ;(globalThis as any).__silvery_content_detail = snap
-  const arr = ((globalThis as any).__silvery_content_all ??= [] as (typeof snap)[])
+  const diagnostics = globalThis as {
+    __silvery_content_detail?: typeof snap
+    __silvery_content_all?: (typeof snap)[]
+    __silvery_node_trace?: NodeTraceEntry[][]
+  }
+  diagnostics.__silvery_content_detail = snap
+  const arr = (diagnostics.__silvery_content_all ??= [])
   arr.push(snap)
   // Route human-readable output through loggily
   contentLog.debug?.(
     `frame ${snap._callCount}: ${snap.nodesRendered}/${snap.nodesVisited} rendered, ${snap.nodesSkipped} skipped (${tClone.toFixed(1)}ms clone, ${tRender.toFixed(1)}ms render)`,
   )
+  const resettableStats: Record<keyof RenderPhaseStats, number | string> = stats
   for (const key of Object.keys(stats) as (keyof RenderPhaseStats)[]) {
-    ;(stats as any)[key] = 0
+    resettableStats[key] = 0
   }
   stats.cascadeMinDepth = 999
   stats.cascadeNodes = ""
@@ -419,7 +434,7 @@ function emitRenderPhaseStats(
 
   // Export node trace for SILVERY_STRICT diagnosis
   if (nodeTraceEnabled && nodeTrace.length > 0) {
-    const traceArr = ((globalThis as any).__silvery_node_trace ??= [] as NodeTraceEntry[][])
+    const traceArr = (diagnostics.__silvery_node_trace ??= [])
     traceArr.push([...nodeTrace])
     traceLog.debug?.(`${nodeTrace.length} nodes traced`)
     nodeTrace.length = 0
@@ -755,10 +770,10 @@ function renderNodeToBuffer(
     // The reconciler re-creates virtual text children on a parent style change
     // (sets CHILDREN/SUBTREE + per-child CONTENT bits) even when the text is
     // byte-identical — so dirty bits CANNOT distinguish a style-only re-render
-    // from a real content change. The reliable signal is a CONTENT COMPARISON:
-    // the style-independent plain text. When it matches the previous frame's
-    // (and layout is unchanged, so wrapping is identical), the cloned buffer's
-    // chars are correct and the per-segment restyle is sound.
+    // from a real content change. Compare the style-independent plain text AND
+    // wrap mode with the previous frame. Equal layout alone does not prove
+    // identical wrapping: a shaping prop can change while the rect stays fixed.
+    // Only when text, wrap, and layout match are the cloned chars safe to restyle.
     //
     // collectPlainText is a cheap string concat (no Intl.Segmenter, no per-cell
     // work) and only runs for the FEW text nodes actually re-rendered this frame
@@ -782,17 +797,22 @@ function renderNodeToBuffer(
       const prevSig = _textContentSigs.get(node)
       // A style change is the only thing left that re-rendered this node with
       // identical content — exactly the restyle case.
-      if (prevSig !== undefined && prevSig === sig && isDirty(node, STYLE_PROPS_BIT)) {
+      if (
+        prevSig !== undefined &&
+        prevSig.text === sig &&
+        prevSig.wrap === props.wrap &&
+        isDirty(node, STYLE_PROPS_BIT)
+      ) {
         useTextStyleFastPath = true
       }
       if (!nodeState.fresh) {
-        _textContentSigs.set(node, sig)
+        _textContentSigs.set(node, { text: sig, wrap: props.wrap })
       }
     } else if (node.type === "silvery-text") {
       // Keep the signature current for every other text render so the NEXT
       // frame's comparison reflects the chars actually in the (cloned) buffer.
       if (!nodeState.fresh) {
-        _textContentSigs.set(node, collectPlainText(node))
+        _textContentSigs.set(node, { text: collectPlainText(node), wrap: props.wrap })
       }
     }
 
@@ -901,8 +921,13 @@ function renderNodeToBuffer(
 
       // Render overflow indicators AFTER children so they survive viewport clear.
       // renderScrollContainerChildren may clear the viewport (Tier 2) which would
-      // overwrite indicators drawn before children.
-      renderScrollIndicators(node, buffer, layout, props, node.scrollState!, ctx)
+      // overwrite indicators drawn before children. They are this container's own
+      // paint, so they take its screen offset and clip exactly as renderBox does.
+      const scrollState = node.scrollState
+      if (!scrollState) {
+        throw new Error("Scroll container state: expected scroll state after rendering children")
+      }
+      renderScrollIndicators(node, buffer, layout, props, scrollState, nodeState, ctx)
     } else {
       renderNormalChildren(
         node,
@@ -1061,7 +1086,7 @@ function traceRenderDecision(
       if (depth < stats.cascadeMinDepth) {
         stats.cascadeMinDepth = depth
       }
-      const id = (node.props as Record<string, unknown>).id ?? node.type
+      const id = (node.props as BoxProps).id ?? node.type
       const flags = [
         isDirty(node, CONTENT_BIT) && "C",
         isDirty(node, STYLE_PROPS_BIT) && "P",
@@ -1327,9 +1352,11 @@ function renderOwnContent(
  * which won't happen for a Box that never had these props).
  */
 function mayHaveBoxAttrOverlay(props: BoxProps): boolean {
+  // oxlint-disable-next-line typescript/no-deprecated -- legacy underlineStyle remains a supported Box overlay prop
+  const legacyUnderlineStyle = props.underlineStyle
   return !!(
     props.underline ||
-    props.underlineStyle ||
+    legacyUnderlineStyle ||
     props.underlineColor ||
     props.overline ||
     props.bold ||
@@ -1360,8 +1387,10 @@ function computeBoxAttrOverlay(
   // the legacy `underlineStyle: UnderlineStyle`. `underlineStyle` wins when
   // both are set (matches getTextStyle() precedence).
   let underlineStyle: Exclude<import("@silvery/ag/types").UnderlineStyle, false> | undefined
-  if (props.underlineStyle !== undefined && props.underlineStyle !== false) {
-    underlineStyle = props.underlineStyle
+  // oxlint-disable-next-line typescript/no-deprecated -- legacy underlineStyle must retain precedence over underline
+  const legacyUnderlineStyle = props.underlineStyle
+  if (legacyUnderlineStyle !== undefined && legacyUnderlineStyle !== false) {
+    underlineStyle = legacyUnderlineStyle
   } else if (typeof props.underline === "string") {
     underlineStyle = props.underline
   } else if (props.underline === true) {
@@ -1705,15 +1734,16 @@ function renderScrollContainerChildren(
   const contentWidth = layout.width - border.left - border.right - padding.left - padding.right
 
   // Compute scroll bg eagerly -- planScrollRender needs it and it's cheap
-  const scrollBg =
+  let scrollBg: Color = null
+  if (
     scrollOffsetChanged ||
     isDirty(node, CHILDREN_BIT) ||
     childrenNeedFreshRender ||
     visibleRangeChanged
-      ? getEffectiveBg(props)
-        ? parseColor(getEffectiveBg(props)!)
-        : inheritedBg.color
-      : null
+  ) {
+    const effectiveBg = getEffectiveBg(props)
+    scrollBg = effectiveBg ? parseColor(effectiveBg) : inheritedBg.color
+  }
 
   // Tier 1 (buffer shift) is unsafe when a sibling absolute child overlays
   // this scroll container's rect. The shift moves pixels in our rect — but
@@ -2129,6 +2159,11 @@ function renderNormalChildren(
   // scroll indicator overwrites the bottom-bar's "MEM 📋 NNN" text without
   // the bottom-bar repainting to restore it. STRICT_OUTPUT mismatches at
   // (col, N) char='M' vs ' '. See bead km-all.fix-sweep-strict-cluster.
+  //
+  // Known gap: a later sibling that renders for its own reasons (willRender[j]
+  // already true) is not overlap-forced. It keeps hasPrevBuffer, so its clean
+  // descendants under the earlier sibling's new paint stay on the fast path.
+  // See LESSONS.md "A Scroll Indicator Painted Outside Its Clip" (2026-09-28).
   const firstPassChildren: AgNode[] = []
   for (const child of node.children) {
     const childProps = child.props as BoxProps
@@ -2159,7 +2194,12 @@ function renderNormalChildren(
     // skipped children don't need the walk.
     for (let i = 0; i < firstPassChildren.length; i++) {
       if (!willRender[i]) continue
-      const childI = firstPassChildren[i]!
+      const childI = firstPassChildren[i]
+      if (!childI) {
+        throw new Error(
+          `Paint extent child at index ${i}: expected a node within the first-pass children array`,
+        )
+      }
       const ei = computeSubtreePaintExtent(childI)
       if (!ei || ei.width <= 0 || ei.height <= 0) continue
       for (let j = i + 1; j < firstPassChildren.length; j++) {
@@ -2170,7 +2210,13 @@ function renderNormalChildren(
         // j wouldn't be at the row painted by i unless they're also inside
         // ei — and our recursion-from-i covers any descendant of j that ALSO
         // happens to fall within ei. We don't need j's full subtree extent.
-        const rj = firstPassChildren[j]!.boxRect
+        const childJ = firstPassChildren[j]
+        if (!childJ) {
+          throw new Error(
+            `Overlap sibling at index ${j}: expected a node within the first-pass children array`,
+          )
+        }
+        const rj = childJ.boxRect
         if (!rj || rj.width <= 0 || rj.height <= 0) continue
         const overlapX = ei.x < rj.x + rj.width && rj.x < ei.x + ei.width
         const overlapY = ei.y < rj.y + rj.height && rj.y < ei.y + ei.height
@@ -2188,7 +2234,12 @@ function renderNormalChildren(
       if (instr.enabled) instr.stats.nodesSkipped++
       continue
     }
-    const child = firstPassChildren[i]!
+    const child = firstPassChildren[i]
+    if (!child) {
+      throw new Error(
+        `Render child at index ${i}: expected a node within the first-pass children array`,
+      )
+    }
 
     // For overlap-forced children (clean by their own flags but overlapped
     // by an earlier-rendered sibling) we must NOT trust the cloned buffer

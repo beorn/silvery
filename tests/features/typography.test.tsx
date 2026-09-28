@@ -752,7 +752,7 @@ describe("Lists", () => {
       expect(app.text).toContain("Gamma")
     })
 
-    test("nested UL keeps the same filled bullet at level 2", () => {
+    test("nested UL uses the hollow bullet at level 2", () => {
       // Nesting UL/OL as sibling elements (not inside LI children text)
       // to avoid Box-in-Text warning
 
@@ -768,13 +768,11 @@ describe("Lists", () => {
           </UL>
         </Box>,
       )
-      expect(app.text).toContain("•")
-      expect(app.text.match(/•/g)).toHaveLength(2)
-      expect(app.text).toContain("Outer")
-      expect(app.text).toContain("Inner")
+      expect(app.text).toContain("• Outer")
+      expect(app.text).toContain("◦ Inner")
     })
 
-    test("deeply nested UL uses one filled bullet at every depth", () => {
+    test("deeply nested UL clamps the third square marker", () => {
       const app = render(
         <Box flexDirection="column">
           <UL>
@@ -803,8 +801,10 @@ describe("Lists", () => {
           </UL>
         </Box>,
       )
-      expect(app.text.match(/•/g)).toHaveLength(4)
-      expect(app.text).not.toMatch(/[◦■]/)
+      expect(app.text).toContain("• L1")
+      expect(app.text).toContain("◦ L2")
+      expect(app.text).toContain("■ L3")
+      expect(app.text).toContain("■ L4")
       // A triangle is the fold affordance; a static list never wears one.
       expect(app.text).not.toContain("▸")
     })
@@ -822,19 +822,11 @@ describe("Lists", () => {
           </UL>
         </Box>,
       )
-      const buffer = app.term.buffer
-      // Find the same filled bullet at each level; indentation carries depth.
-      let bulletCol1 = -1
-      let bulletCol2 = -1
-      for (let y = 0; y < 10; y++) {
-        for (let x = 0; x < 80; x++) {
-          const ch = buffer.getCell(x, y).char
-          if (ch === "•") {
-            if (bulletCol1 === -1) bulletCol1 = x
-            else if (bulletCol2 === -1) bulletCol2 = x
-          }
-        }
-      }
+      const top = app.lines.find((line) => line.includes("Top")) ?? ""
+      const nested = app.lines.find((line) => line.includes("Nested")) ?? ""
+      // Marker width stays one cell, so increased nesting moves its column right.
+      const bulletCol1 = top.indexOf("•")
+      const bulletCol2 = nested.indexOf("◦")
       expect(bulletCol1).toBeGreaterThanOrEqual(0)
       expect(bulletCol2).toBeGreaterThan(bulletCol1)
     })
@@ -956,9 +948,8 @@ describe("Lists", () => {
         </Box>,
       )
       expect(app.text).toContain("1.")
-      expect(app.text).toContain("•")
+      expect(app.text).toContain("◦ Sub-bullet")
       expect(app.text).toContain("First")
-      expect(app.text).toContain("Sub-bullet")
     })
   })
 })

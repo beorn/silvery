@@ -306,14 +306,14 @@ pipeline:
 
 **Why dirty bits can't gate it:** the reconciler re-dirties virtual text
 children (CHILDREN + SUBTREE + per-child CONTENT) on a parent style change even
-when the text is byte-identical. The gate instead compares a per-node plain-text
-signature (`_textContentSigs` in render-phase.ts) to the previous frame's; equal
-
-- `stylePropsDirty` ⇒ a pure restyle.
+when the text is byte-identical. The gate instead compares a per-node text and
+wrap signature (`_textContentSigs` in render-phase.ts) to the previous frame's.
+Equal text and wrap, unchanged layout, and `stylePropsDirty` are required for a
+pure restyle.
 
 **Disabled when (falls back to full renderText):**
 
-- Plain text content changed (signature differs) or `!hasPrevBuffer`
+- Plain text content or wrap mode changed (signature differs) or `!hasPrevBuffer`
 - `bgDirty`, `ancestorCleared`, `ancestorLayoutChanged`, or own `layoutChanged`
 - A truncate hook / `internal_transform` is present (output not in the signature)
 - No nested runs (`childSpans.length === 0`) — plain text keeps base transform
@@ -487,6 +487,8 @@ When a child overflows its parent (e.g., text content extending beyond the paren
 8. **Descendant overflow must be detected recursively, against the CONTENT area.** When a child overflows its parent and shrinks, `clearExcessArea` clips to the immediate parent's content area. If the overflow extends into a grandparent's border/padding, the grandparent must detect and handle it — otherwise a child-level clear overwrites the grandparent's border (parent-first render order). `_hasDescendantOverflowChanged()` (layout-phase.ts) follows `subtreeDirty` paths and compares descendants against the node's **content area** (rect minus border + padding), NOT its full rect — a descendant that sits EXACTLY on the node's border column (`prevRight === full nodeRight`) still reached into a cell the node owns (its border glyph), so a strict-`>` full-rect check has an off-by-the-border blind spot. See LESSONS.md "Descendant Overflow into a Bordered Ancestor's Border Column (2026-06-28)" (`@si/render/20529`).
 
 9. **The descendant-overflow CLEAR must be intersected with intermediate clips, and its left/right strips must clamp to `clipBounds`.** `_clearDescendantOverflow` erases a retreating descendant's overflow OUTSIDE the clearing node's rect — cells that belong to siblings/ancestors. That is only safe where the descendant actually PAINTED those cells. Two premise-breakers: (a) an OPAQUE descendant clipped by an INTERMEDIATE `overflow:hidden` ancestor never painted the overflow (`nodeEmitsOwnPixels` only gates transparent overflowers, not clipped-away paint), and (b) the left/right strips historically did not clamp to `clipBounds` at all (only above/below did). The clear must narrow `clipBounds` through the recursion at each clipping child (`computeChildClipBounds`, mirroring `renderNormalChildren`'s `effectiveClipBounds`) AND clamp all four strips to it. The change only ever tightens the clear, so it can't under-clear the descendant's own (in-clip) pixels. See LESSONS.md "Descendant-Overflow Clear Ignored Intermediate Clips → Stomped a Sibling Divider (2026-07-09)" (`@si/render/20989`) — the opaque-text sibling of the `@si/render/20598` transparent-box case.
+
+10. **Every own-content paint honors the node's `clipBounds` and `scrollOffset`, including the easy ones to forget.** `renderBox`, `renderBorder`, `renderText` and `renderScrollIndicators` all place at `layout.y - scrollOffset` and clip to `nodeState.clipBounds`. A paint that escapes its clip lands on cells a later sibling owns. The fresh render hides this because the sibling paints last. The incremental render does not hide it when that sibling is partly dirty: the sibling-overlap pass in `renderNormalChildren` only overlap-forces a later sibling that is fully clean, so its clean descendants stay on the fast path. See LESSONS.md "A Scroll Indicator Painted Outside Its Clip" (2026-09-28), which also records that overlap gap as not yet fixed.
 
 ## Debugging
 

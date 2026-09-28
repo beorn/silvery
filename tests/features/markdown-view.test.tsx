@@ -15,6 +15,7 @@
 import React from "react"
 import { describe, test, expect, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
+import { displayLength } from "@silvery/ansi"
 import {
   Box,
   Content,
@@ -174,8 +175,11 @@ describe("MarkdownView — block elements", () => {
   })
 
   test("bullet list renders one marked row per item", () => {
-    const app = render("- Apple\n- Banana\n- Cherry")
+    const app = render("- Apple\n  - Orange\n    - Grapefruit\n      - Lemon\n- Banana\n- Cherry")
     expect(app.text).toContain("• Apple")
+    expect(app.text).toContain("◦ Orange")
+    expect(app.text).toContain("■ Grapefruit")
+    expect(app.text).toContain("■ Lemon")
     expect(app.text).toContain("• Banana")
     expect(app.text).toContain("• Cherry")
     expect(app.text).not.toMatch(/^-\s/mu) // raw dash marker gone
@@ -230,6 +234,37 @@ describe("MarkdownView — block elements", () => {
 })
 
 describe("DocumentView — shared document geometry", () => {
+  test("unordered depth ladder keeps one-cell markers for km-document-view", () => {
+    const markers = ["•", "◦", "■", "■"] as const
+    const blocks: DocumentBlock[] = markers.map((_, depth) => ({
+      id: `level-${depth}`,
+      kind: "list-item",
+      list: { groupId: "nested", depth, ordered: false },
+      content: `Level ${depth}`,
+    }))
+    const app = renderDocument(blocks, 80)
+    for (const [depth, marker] of markers.entries()) {
+      const text = `Level ${depth}`
+      const row = app.lines.findIndex((line) => line.includes(text))
+      expect(row).toBeGreaterThanOrEqual(0)
+      const markerColumn = app.lines[row]!.indexOf(`${marker} ${text}`)
+      expect(markerColumn, `depth ${depth}`).toBeGreaterThanOrEqual(0)
+      expect(displayLength(app.cell(markerColumn, row).char), `depth ${depth} width`).toBe(1)
+    }
+  })
+
+  test.each([-1, 1.5])("unordered list rejects invalid depth %s", (depth) => {
+    const blocks: DocumentBlock[] = [
+      {
+        id: "invalid",
+        kind: "list-item",
+        list: { groupId: "g", depth, ordered: false },
+        content: "Bad depth",
+      },
+    ]
+    expect(() => renderDocument(blocks, 80)).toThrow(RangeError)
+  })
+
   test("renders geometric media as a block without nesting its Box inside Text", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined)
     try {

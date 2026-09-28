@@ -16,32 +16,32 @@ Migrating from silvery 0.19.x? Legacy `$tokens` (`$primary`, `$muted`, `$selecti
 
 Most Silvery components already use the correct semantic colors by default. **The best color code is no color code.**
 
-| Component              | What's automatic                                                           |
-| ---------------------- | -------------------------------------------------------------------------- |
-| `<Text>`               | `$fg` text color                                                           |
-| `<TextInput>`          | `$border-default` → `$border-focus` on focus, prompt, cursor               |
-| `<TextArea>`           | `$border-default` → `$border-focus` on focus                               |
-| `<ModalDialog>`        | `$bg-surface-raised` bg, `$border-default` border, `$fg-accent` title      |
-| `<CommandPalette>`     | `$bg-surface-raised` bg, `$border-default` border                          |
-| `<Toast>`              | `$bg-surface-raised` bg, `$border-default` border                          |
-| `<SelectList>`         | `$bg-selected` / `$fg-on-selected` for selection, `$fg-muted` for disabled |
-| `<Badge>`              | Variant colors: `$fg-success`, `$fg-error`, `$fg-warning`, `$fg-accent`    |
-| `<ErrorBoundary>`      | `$fg-error` border                                                         |
-| `<Divider>`            | `$border-default` for line character                                       |
-| `<ProgressBar>`        | `$fg-muted` for empty portion                                              |
-| `<Meter>`              | `$bg-accent` fill, `$fg-muted` track, `$fg-on-accent`/`$fg` overlay label  |
-| `<Spinner>`            | `$fg`                                                                      |
-| `<Button>`             | inverse (`$bg-inverse` / `$fg-on-inverse`) when focused/active             |
-| `<H1>`, `<H2>`, `<H3>` | accent / halfway accent-to-foreground / inherited foreground, all bold     |
-| `<Muted>`              | `$fg-muted` text                                                           |
-| `<Small>`              | `$fg-muted` (pre-dimmed at truecolor)                                      |
-| `<Lead>`               | `$fg-muted` + italic                                                       |
-| `<Code>`               | `mix($fg-muted, $fg-link, 20%)`, no chip or padding                        |
-| `<CodeBlock>`          | Subtle padded frame, click to collapse; hover reveals its label            |
-| `<Link>`               | `$fg-link`, `$fg-link-hover` + underline on plain hover                    |
-| `<Blockquote>`         | `$fg-muted` italic body, inset two cells without a rail                    |
-| `<P>`                  | `mix($fg, $fg-muted, 12.5%)` body foreground                               |
-| `<LI>`                 | Same `•` at every unordered depth; indentation expresses nesting           |
+| Component              | What's automatic                                                            |
+| ---------------------- | --------------------------------------------------------------------------- |
+| `<Text>`               | `$fg` text color                                                            |
+| `<TextInput>`          | `$border-default` → `$border-focus` on focus, prompt, cursor                |
+| `<TextArea>`           | `$border-default` → `$border-focus` on focus                                |
+| `<ModalDialog>`        | `$bg-surface-raised` bg, `$border-default` border, `$fg-accent` title       |
+| `<CommandPalette>`     | `$bg-surface-raised` bg, `$border-default` border                           |
+| `<Toast>`              | `$bg-surface-raised` bg, `$border-default` border                           |
+| `<SelectList>`         | `$bg-selected` / `$fg-on-selected` for selection, `$fg-muted` for disabled  |
+| `<Badge>`              | Variant colors: `$fg-success`, `$fg-error`, `$fg-warning`, `$fg-accent`     |
+| `<ErrorBoundary>`      | `$fg-error` border                                                          |
+| `<Divider>`            | `$border-default` for line character                                        |
+| `<ProgressBar>`        | `$fg-muted` for empty portion                                               |
+| `<Meter>`              | `$bg-accent` fill, `$fg-muted` track, `$fg-on-accent`/`$fg` overlay label   |
+| `<Spinner>`            | `$fg`                                                                       |
+| `<Button>`             | inverse (`$bg-inverse` / `$fg-on-inverse`) when focused/active              |
+| `<H1>`, `<H2>`, `<H3>` | accent / halfway accent-to-foreground / inherited foreground, all bold      |
+| `<Muted>`              | `$fg-muted` text                                                            |
+| `<Small>`              | `$fg-muted` (pre-dimmed at truecolor)                                       |
+| `<Lead>`               | `$fg-muted` + italic                                                        |
+| `<Code>`               | `mix($fg-muted, $fg-link, 20%)`, no chip or padding                         |
+| `<CodeBlock>`          | Subtle padded frame, click to collapse; hover reveals its label             |
+| `<Link>`               | `$fg-link`, `$fg-link-hover` + underline on plain hover                     |
+| `<Blockquote>`         | `$fg-muted` italic body, inset two cells without a rail                     |
+| `<P>`                  | `mix($fg, $fg-muted, 12.5%)` body foreground                                |
+| `<LI>`                 | `•`, `◦`, then `■` at unordered depths 0, 1, and 2+; indentation also grows |
 
 ::: tip ✨ Shiny
 
