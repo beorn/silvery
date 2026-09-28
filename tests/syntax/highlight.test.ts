@@ -10,20 +10,8 @@
  * - Plain lang produces token-per-line with no color
  */
 
-import { describe, test, expect, beforeEach } from "vitest"
-import {
-  highlight,
-  highlightToAnsi,
-  canonicalLang,
-  _clearCache,
-  _resetHighlighter,
-} from "@silvery/syntax"
-
-// Reset highlighter between test blocks to ensure lazy-load tests are
-// independent. Caches cleared before each test for deterministic cache hits.
-beforeEach(() => {
-  _clearCache()
-})
+import { describe, test, expect, vi } from "vitest"
+import { highlight, highlightToAnsi, canonicalLang } from "@silvery/syntax"
 
 // =============================================================================
 // canonicalLang alias resolution
@@ -238,8 +226,9 @@ describe("highlightToAnsi", () => {
 
 describe("lazy loading", () => {
   test("highlighting succeeds without pre-loading grammars", async () => {
-    _resetHighlighter()
-    // Fresh highlighter — no grammars loaded yet
+    // Fresh module, so a fresh highlighter with no grammars loaded (E-1, 25632).
+    vi.resetModules()
+    const { highlight } = await import("@silvery/syntax")
     const lines = await highlight("const x = 1", "typescript", "github-dark")
     expect(lines.length).toBeGreaterThan(0)
     const hasColor = lines.some((l) => l.tokens.some((t) => t.color))
@@ -247,7 +236,8 @@ describe("lazy loading", () => {
   })
 
   test("multiple languages load independently", async () => {
-    _resetHighlighter()
+    vi.resetModules()
+    const { highlight } = await import("@silvery/syntax")
     const [ts, py, rs] = await Promise.all([
       highlight("const x = 1", "ts", "github-dark"),
       highlight("def foo(): pass", "py", "github-dark"),

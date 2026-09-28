@@ -56,7 +56,6 @@ export {
   useHitRegistry,
   useHitRegion,
   useHitRegionCallback,
-  resetHitRegionIdCounter,
   Z_INDEX,
 } from "./hit-registry"
 export type { HitTarget, HitRegion } from "./hit-registry"

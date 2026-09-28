@@ -141,7 +141,7 @@ export function CursorProvider({ store, children }: { store: CursorStore; childr
 // ============================================================================
 
 let _globalCursorState: CursorState | null = null
-let _globalCursorListeners = new Set<() => void>()
+const _globalCursorListeners = new Set<() => void>()
 
 function globalSetCursorState(state: CursorState | null): void {
   _globalCursorState = state
@@ -157,12 +157,6 @@ function globalSubscribeCursor(listener: () => void): () => void {
   return () => {
     _globalCursorListeners.delete(listener)
   }
-}
-
-/** For testing -- reset global fallback state between tests. */
-export function resetCursorState(): void {
-  _globalCursorState = null
-  _globalCursorListeners = new Set()
 }
 
 // ============================================================================
