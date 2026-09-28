@@ -149,6 +149,8 @@ class YogaNodeAdapter implements LayoutNode {
       return input
     }
     if (prop === "width" && (input === "fit-content" || input === "snug-content")) return "auto"
+    // Height fit-content is measured by Silvery's pre-layout polyfill.
+    if (prop === "height" && input === "fit-content") return "auto"
     const percent = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)%$/i.exec(input)
     if (percent && Number.isFinite(Number(percent[1])) && Number(percent[1]) >= 0) {
       return `${Number(percent[1])}%`

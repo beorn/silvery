@@ -207,7 +207,8 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
     this.node.setWidthSnugContent()
   }
   setHeight(value: number | string): void {
-    if (value === "auto") this.node.setHeightAuto()
+    // The measure phase supplies the numeric height for this existing polyfill.
+    if (value === "auto" || value === "fit-content") this.node.setHeightAuto()
     else this.node.setHeight(this.length("height", value))
   }
   setHeightPercent(value: number): void {
