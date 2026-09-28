@@ -306,14 +306,14 @@ pipeline:
 
 **Why dirty bits can't gate it:** the reconciler re-dirties virtual text
 children (CHILDREN + SUBTREE + per-child CONTENT) on a parent style change even
-when the text is byte-identical. The gate instead compares a per-node plain-text
-signature (`_textContentSigs` in render-phase.ts) to the previous frame's; equal
-
-- `stylePropsDirty` ⇒ a pure restyle.
+when the text is byte-identical. The gate instead compares a per-node text and
+wrap signature (`_textContentSigs` in render-phase.ts) to the previous frame's.
+Equal text and wrap, unchanged layout, and `stylePropsDirty` are required for a
+pure restyle.
 
 **Disabled when (falls back to full renderText):**
 
-- Plain text content changed (signature differs) or `!hasPrevBuffer`
+- Plain text content or wrap mode changed (signature differs) or `!hasPrevBuffer`
 - `bgDirty`, `ancestorCleared`, `ancestorLayoutChanged`, or own `layoutChanged`
 - A truncate hook / `internal_transform` is present (output not in the signature)
 - No nested runs (`childSpans.length === 0`) — plain text keeps base transform
