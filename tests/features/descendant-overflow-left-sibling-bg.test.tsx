@@ -137,3 +137,54 @@ describe("regression: descendant overflow clear must not stomp a sibling's bg (@
     expect(incremental.text).toBe(fresh.text)
   })
 })
+
+// A filled tab extends below its one-row header into the following transparent
+// output branch. Unlike the transparent-box cases above, this branch paints
+// text over the tab and must erase its retiring glyphs when the text shrinks.
+// The output wrappers stay wide, so the text's old rect is inside its ancestors.
+// The 27 status rows make this a real 50+ node pane rather than a tiny-tree case.
+function StagePane({ output }: { output: string }): React.ReactElement {
+  return (
+    <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
+      <Box height={1} flexShrink={0}>
+        <Box width={20} height={5} flexShrink={0} backgroundColor="#0000ff" />
+      </Box>
+      <Box width={COLS} height={8} flexShrink={0} flexDirection="column">
+        <Box width={COLS} flexDirection="column">
+          <Box width={COLS} alignItems="flex-start">
+            <Text>{output}</Text>
+          </Box>
+        </Box>
+      </Box>
+      {Array.from({ length: 27 }, (_, i) => (
+        <Box key={i} height={1} flexShrink={0}>
+          <Text>{`status ${i}`}</Text>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+/**
+ * @failure Shrinking output replaces an earlier filled tab's background with the pane background.
+ * @level l2
+ * @consumer Yrd stage-output pane; public Box/Text users with visible sibling overflow.
+ */
+describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26485)", () => {
+  test("shrinking text reveals the earlier filled tab background", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAA" />)
+
+    try {
+      expect(app.term.buffer.getCell(16, 1).char).toBe("A")
+
+      app.rerender(<StagePane output="AAAAAAAAAAAAAAAA" />)
+
+      const revealed = app.term.buffer.getCell(16, 1)
+      expect(revealed.char).toBe(" ")
+      expect(revealed.bg).toEqual({ r: 0, g: 0, b: 255 })
+    } finally {
+      app.unmount()
+    }
+  })
+})
