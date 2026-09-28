@@ -134,6 +134,7 @@ export interface CursorOffset {
    * (canvas / DOM) ignore this field. Accepted for one cycle for back-compat;
    * removed in the next major. See `km-silvery.cursor-invariants` invariant 6.
    */
+  // oxlint-disable-next-line typescript/no-deprecated -- neutral compatibility alias avoids importing the terminal layer into ag
   shape?: CursorShape
 }
 
@@ -1024,6 +1025,10 @@ export interface ContainerQueryBranch {
  * the Text. See bead km-silvery.text-intrinsic-vs-render.
  */
 export interface TextFlexItemProps {
+  /** Explicit inline size, in cells or a supported CSS length string. */
+  width?: number | string
+  /** Explicit block size, in cells or a supported CSS length string. */
+  height?: number | string
   /** CSS `flex-grow` — proportion of free positive space along main axis. */
   flexGrow?: number
   /** CSS `flex-shrink` — proportion of negative free space along main axis. */

@@ -74,27 +74,27 @@ export interface LayoutNode {
   isDirty(): boolean
 
   // Dimension setters
-  setWidth(value: number): void
+  setWidth(value: number | string): void
   setWidthPercent(value: number): void
   setWidthAuto(): void
   setWidthFitContent(): void
   setWidthSnugContent(): void
-  setHeight(value: number): void
+  setHeight(value: number | string): void
   setHeightPercent(value: number): void
   setHeightAuto(): void
-  setMinWidth(value: number): void
+  setMinWidth(value: number | string): void
   setMinWidthPercent(value: number): void
-  setMinHeight(value: number): void
+  setMinHeight(value: number | string): void
   setMinHeightPercent(value: number): void
-  setMaxWidth(value: number): void
+  setMaxWidth(value: number | string): void
   setMaxWidthPercent(value: number): void
-  setMaxHeight(value: number): void
+  setMaxHeight(value: number | string): void
   setMaxHeightPercent(value: number): void
 
   // Flex properties
   setFlexGrow(value: number): void
   setFlexShrink(value: number): void
-  setFlexBasis(value: number): void
+  setFlexBasis(value: number | string): void
   setFlexBasisPercent(value: number): void
   setFlexBasisAuto(): void
   setFlexDirection(direction: number): void

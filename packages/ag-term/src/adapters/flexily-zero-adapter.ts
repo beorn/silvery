@@ -53,6 +53,9 @@ import {
   WRAP_NO_WRAP,
   WRAP_WRAP,
   WRAP_WRAP_REVERSE,
+  parseLength,
+  LengthError,
+  type Value,
 } from "flexily"
 
 // Flexily UNIT_CQI / UNIT_CQMIN constants. Hardcoded at this seam rather than
@@ -168,8 +171,28 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   }
 
   // Dimension setters
-  setWidth(value: number): void {
-    this.node.setWidth(value)
+  // Terminal coordinates are columns/rows. A renderer with a different
+  // scale must re-set affected styles when its scale changes.
+  private length(
+    prop: "width" | "height" | "minWidth" | "minHeight" | "maxWidth" | "maxHeight" | "flexBasis",
+    value: number | string,
+  ): number | Value {
+    if (typeof value === "number") return value
+    const current = this.node.style[prop]
+    if (current.source === value) return current
+    try {
+      return parseLength(value, { ch: 1, lh: 1 })
+    } catch (error) {
+      if (error instanceof LengthError) throw new LengthError(error.input, error.reason, prop)
+      throw error
+    }
+  }
+
+  setWidth(value: number | string): void {
+    if (value === "auto") this.node.setWidthAuto()
+    else if (value === "fit-content") this.node.setWidthFitContent()
+    else if (value === "snug-content") this.node.setWidthSnugContent()
+    else this.node.setWidth(this.length("width", value))
   }
   setWidthPercent(value: number): void {
     this.node.setWidthPercent(value)
@@ -183,8 +206,9 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   setWidthSnugContent(): void {
     this.node.setWidthSnugContent()
   }
-  setHeight(value: number): void {
-    this.node.setHeight(value)
+  setHeight(value: number | string): void {
+    if (value === "auto") this.node.setHeightAuto()
+    else this.node.setHeight(this.length("height", value))
   }
   setHeightPercent(value: number): void {
     this.node.setHeightPercent(value)
@@ -192,26 +216,26 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   setHeightAuto(): void {
     this.node.setHeightAuto()
   }
-  setMinWidth(value: number): void {
-    this.node.setMinWidth(value)
+  setMinWidth(value: number | string): void {
+    this.node.setMinWidth(this.length("minWidth", value))
   }
   setMinWidthPercent(value: number): void {
     this.node.setMinWidthPercent(value)
   }
-  setMinHeight(value: number): void {
-    this.node.setMinHeight(value)
+  setMinHeight(value: number | string): void {
+    this.node.setMinHeight(this.length("minHeight", value))
   }
   setMinHeightPercent(value: number): void {
     this.node.setMinHeightPercent(value)
   }
-  setMaxWidth(value: number): void {
-    this.node.setMaxWidth(value)
+  setMaxWidth(value: number | string): void {
+    this.node.setMaxWidth(this.length("maxWidth", value))
   }
   setMaxWidthPercent(value: number): void {
     this.node.setMaxWidthPercent(value)
   }
-  setMaxHeight(value: number): void {
-    this.node.setMaxHeight(value)
+  setMaxHeight(value: number | string): void {
+    this.node.setMaxHeight(this.length("maxHeight", value))
   }
   setMaxHeightPercent(value: number): void {
     this.node.setMaxHeightPercent(value)
@@ -224,8 +248,9 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   setFlexShrink(value: number): void {
     this.node.setFlexShrink(value)
   }
-  setFlexBasis(value: number): void {
-    this.node.setFlexBasis(value)
+  setFlexBasis(value: number | string): void {
+    if (value === "auto") this.node.setFlexBasisAuto()
+    else this.node.setFlexBasis(this.length("flexBasis", value))
   }
   setFlexBasisPercent(value: number): void {
     this.node.setFlexBasisPercent(value)

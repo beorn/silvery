@@ -33,10 +33,7 @@ import {
   CONTENT_BIT,
   STYLE_PROPS_BIT,
   BG_BIT,
-  CHILDREN_BIT,
   SUBTREE_BIT,
-  ABS_CHILD_BIT,
-  DESC_OVERFLOW_BIT,
   ALL_RECONCILER_BITS,
 } from "@silvery/ag/epoch"
 
@@ -406,7 +403,9 @@ export function createRootNode(): AgNode {
   // A root IS a tree, so it mints the epoch state every node under it shares.
   const node = createNode("silvery-root", {}, createEpochOwner())
   const c = getConstants()
-  node.layoutNode!.setFlexDirection(c.FLEX_DIRECTION_COLUMN)
+  if (!node.layoutNode)
+    {throw new Error("Silvery root creation did not create its required layout node")}
+  node.layoutNode.setFlexDirection(c.FLEX_DIRECTION_COLUMN)
   return node
 }
 
@@ -495,9 +494,8 @@ export function applyViewportProps(
  *   - `<Island cols=80 rows=24 width=120 />` — guest spawns at 80×24, slot is
  *     120 wide, host requests resize to 120.
  *
- * Container-query units (`"100cqi"`, `"50cqmin"`) on `width` / `height` are not
- * wired yet (Phase 1 limitation); the cq plumbing lives in `applyBoxProps`
- * and will land here in a follow-up. See `@km/silvery/15646-islands`.
+ * The seven dimension props share the Box/Text length path. Adapter grammar
+ * and axis checks apply equally to Island layout slots.
  */
 export interface IslandLayoutProps {
   /** Stable focus/test identity, matching Box/Text `testID` semantics. */
@@ -533,6 +531,88 @@ export interface IslandLayoutProps {
   maxHeight?: number | string
 }
 
+const lengthSetters = {
+  width: "setWidth",
+  height: "setHeight",
+  minWidth: "setMinWidth",
+  minHeight: "setMinHeight",
+  maxWidth: "setMaxWidth",
+  maxHeight: "setMaxHeight",
+  flexBasis: "setFlexBasis",
+} as const
+
+type LengthProp = keyof typeof lengthSetters | "top" | "left" | "bottom" | "right"
+
+function positionPercent(prop: string, input: string): number {
+  const match = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)%$/i.exec(input.trim())
+  if (match && Number.isFinite(Number(match[1]))) return Number(match[1])
+  throw new TypeError(
+    `${prop}: ${JSON.stringify(input)} — offsets accept numeric cells or a valid N%; math waits for #26238.`,
+  )
+}
+
+/** Validate raw values before specificity or any node mutation. */
+function validateRawLengths(props: object, component: "Box" | "Text" | "Island"): void {
+  const raw = props as Record<string, unknown>
+  for (const prop of [
+    "padding",
+    "paddingX",
+    "paddingY",
+    "paddingTop",
+    "paddingBottom",
+    "paddingLeft",
+    "paddingRight",
+    "margin",
+    "marginX",
+    "marginY",
+    "marginTop",
+    "marginBottom",
+    "marginLeft",
+    "marginRight",
+    "gap",
+    "rowGap",
+    "columnGap",
+  ]) {
+    const value = raw[prop]
+    if (typeof value === "string" && !(prop.startsWith("margin") && value === "auto")) {
+      throw new TypeError(
+        `<${component} ${prop}>: ${JSON.stringify(value)} — use numeric cells; spacing math waits for #26238.`,
+      )
+    }
+  }
+  for (const prop of ["top", "left", "bottom", "right"]) {
+    const value = raw[prop]
+    if (typeof value === "string") positionPercent(`<${component} ${prop}>`, value)
+  }
+}
+
+/** One prop route. Adapters own string grammar, unit scale and capability errors. */
+function applyLength(
+  layoutNode: LayoutNode,
+  prop: LengthProp,
+  value: number | string | undefined,
+  oldValue?: number | string,
+): void {
+  if (prop === "top" || prop === "left" || prop === "bottom" || prop === "right") {
+    const c = getConstants()
+    const edge = { top: c.EDGE_TOP, left: c.EDGE_LEFT, bottom: c.EDGE_BOTTOM, right: c.EDGE_RIGHT }[
+      prop
+    ]
+    if (typeof value === "string") layoutNode.setPositionPercent(edge, positionPercent(prop, value))
+    else layoutNode.setPosition(edge, value ?? NaN)
+    return
+  }
+  if (Object.is(value, oldValue)) return
+  if (value !== undefined) {
+    layoutNode[lengthSetters[prop]](value)
+    return
+  }
+  if (prop === "width") layoutNode.setWidthAuto()
+  else if (prop === "height") layoutNode.setHeightAuto()
+  else if (prop === "flexBasis") layoutNode.setFlexBasisAuto()
+  else layoutNode[lengthSetters[prop]](prop.startsWith("min") ? 0 : Infinity)
+}
+
 /**
  * Apply IslandProps to an island node's layout node.
  *
@@ -548,35 +628,16 @@ export function applyIslandProps(
   props: IslandLayoutProps,
   oldProps?: IslandLayoutProps,
 ): void {
+  validateRawLengths(props, "Island")
   const c = getConstants()
   const wasRemoved = (prop: keyof IslandLayoutProps): boolean =>
     oldProps?.[prop] !== undefined && props[prop] === undefined
 
   // ─── Width: explicit `width` wins; fall back to `cols` ─────────────────
-  if (props.width !== undefined) {
-    if (typeof props.width === "string" && props.width.endsWith("%")) {
-      layoutNode.setWidthPercent(Number.parseFloat(props.width))
-    } else if (typeof props.width === "number") {
-      layoutNode.setWidth(props.width)
-    }
-  } else if (props.cols !== undefined) {
-    layoutNode.setWidth(props.cols)
-  } else if (wasRemoved("width") || wasRemoved("cols")) {
-    layoutNode.setWidthAuto()
-  }
+  applyLength(layoutNode, "width", props.width ?? props.cols, oldProps?.width ?? oldProps?.cols)
 
   // ─── Height: explicit `height` wins; fall back to `rows` ───────────────
-  if (props.height !== undefined) {
-    if (typeof props.height === "string" && props.height.endsWith("%")) {
-      layoutNode.setHeightPercent(Number.parseFloat(props.height))
-    } else if (typeof props.height === "number") {
-      layoutNode.setHeight(props.height)
-    }
-  } else if (props.rows !== undefined) {
-    layoutNode.setHeight(props.rows)
-  } else if (wasRemoved("height") || wasRemoved("rows")) {
-    layoutNode.setHeightAuto()
-  }
+  applyLength(layoutNode, "height", props.height ?? props.rows, oldProps?.height ?? oldProps?.rows)
 
   // ─── Flex item props (mirror applyTextFlexItemProps semantics) ─────────
   if (props.flexGrow !== undefined) {
@@ -591,17 +652,7 @@ export function applyIslandProps(
     layoutNode.setFlexShrink(1)
   }
 
-  if (props.flexBasis !== undefined) {
-    if (typeof props.flexBasis === "string" && props.flexBasis.endsWith("%")) {
-      layoutNode.setFlexBasisPercent(Number.parseFloat(props.flexBasis))
-    } else if (props.flexBasis === "auto") {
-      layoutNode.setFlexBasisAuto()
-    } else if (typeof props.flexBasis === "number") {
-      layoutNode.setFlexBasis(props.flexBasis)
-    }
-  } else if (wasRemoved("flexBasis")) {
-    layoutNode.setFlexBasisAuto()
-  }
+  applyLength(layoutNode, "flexBasis", props.flexBasis, oldProps?.flexBasis)
 
   if (props.alignSelf !== undefined) {
     if (props.alignSelf === "auto") {
@@ -614,45 +665,13 @@ export function applyIslandProps(
   }
 
   // ─── Min / max dimensions ──────────────────────────────────────────────
-  if (props.minWidth !== undefined) {
-    if (typeof props.minWidth === "string" && props.minWidth.endsWith("%")) {
-      layoutNode.setMinWidthPercent(Number.parseFloat(props.minWidth))
-    } else if (typeof props.minWidth === "number") {
-      layoutNode.setMinWidth(props.minWidth)
-    }
-  } else if (wasRemoved("minWidth")) {
-    layoutNode.setMinWidth(0)
-  }
+  applyLength(layoutNode, "minWidth", props.minWidth, oldProps?.minWidth)
 
-  if (props.minHeight !== undefined) {
-    if (typeof props.minHeight === "string" && props.minHeight.endsWith("%")) {
-      layoutNode.setMinHeightPercent(Number.parseFloat(props.minHeight))
-    } else if (typeof props.minHeight === "number") {
-      layoutNode.setMinHeight(props.minHeight)
-    }
-  } else if (wasRemoved("minHeight")) {
-    layoutNode.setMinHeight(0)
-  }
+  applyLength(layoutNode, "minHeight", props.minHeight, oldProps?.minHeight)
 
-  if (props.maxWidth !== undefined) {
-    if (typeof props.maxWidth === "string" && props.maxWidth.endsWith("%")) {
-      layoutNode.setMaxWidthPercent(Number.parseFloat(props.maxWidth))
-    } else if (typeof props.maxWidth === "number") {
-      layoutNode.setMaxWidth(props.maxWidth)
-    }
-  } else if (wasRemoved("maxWidth")) {
-    layoutNode.setMaxWidth(Number.POSITIVE_INFINITY)
-  }
+  applyLength(layoutNode, "maxWidth", props.maxWidth, oldProps?.maxWidth)
 
-  if (props.maxHeight !== undefined) {
-    if (typeof props.maxHeight === "string" && props.maxHeight.endsWith("%")) {
-      layoutNode.setMaxHeightPercent(Number.parseFloat(props.maxHeight))
-    } else if (typeof props.maxHeight === "number") {
-      layoutNode.setMaxHeight(props.maxHeight)
-    }
-  } else if (wasRemoved("maxHeight")) {
-    layoutNode.setMaxHeight(Number.POSITIVE_INFINITY)
-  }
+  applyLength(layoutNode, "maxHeight", props.maxHeight, oldProps?.maxHeight)
 }
 
 /**
@@ -671,9 +690,13 @@ export function applyTextFlexItemProps(
   props: TextProps,
   oldProps?: TextProps,
 ): void {
+  validateRawLengths(props, "Text")
   const c = getConstants()
   const wasRemoved = (prop: keyof TextProps): boolean =>
     oldProps?.[prop] !== undefined && props[prop] === undefined
+
+  applyLength(layoutNode, "width", props.width, oldProps?.width)
+  applyLength(layoutNode, "height", props.height, oldProps?.height)
 
   if (props.flexGrow !== undefined) {
     layoutNode.setFlexGrow(props.flexGrow)
@@ -687,17 +710,7 @@ export function applyTextFlexItemProps(
     layoutNode.setFlexShrink(1)
   }
 
-  if (props.flexBasis !== undefined) {
-    if (typeof props.flexBasis === "string" && props.flexBasis.endsWith("%")) {
-      layoutNode.setFlexBasisPercent(Number.parseFloat(props.flexBasis))
-    } else if (props.flexBasis === "auto") {
-      layoutNode.setFlexBasisAuto()
-    } else if (typeof props.flexBasis === "number") {
-      layoutNode.setFlexBasis(props.flexBasis)
-    }
-  } else if (wasRemoved("flexBasis")) {
-    layoutNode.setFlexBasisAuto()
-  }
+  applyLength(layoutNode, "flexBasis", props.flexBasis, oldProps?.flexBasis)
 
   if (props.alignSelf !== undefined) {
     if (props.alignSelf === "auto") {
@@ -709,45 +722,13 @@ export function applyTextFlexItemProps(
     layoutNode.setAlignSelf(c.ALIGN_AUTO)
   }
 
-  if (props.minWidth !== undefined) {
-    if (typeof props.minWidth === "string" && props.minWidth.endsWith("%")) {
-      layoutNode.setMinWidthPercent(Number.parseFloat(props.minWidth))
-    } else if (typeof props.minWidth === "number") {
-      layoutNode.setMinWidth(props.minWidth)
-    }
-  } else if (wasRemoved("minWidth")) {
-    layoutNode.setMinWidth(0)
-  }
+  applyLength(layoutNode, "minWidth", props.minWidth, oldProps?.minWidth)
 
-  if (props.minHeight !== undefined) {
-    if (typeof props.minHeight === "string" && props.minHeight.endsWith("%")) {
-      layoutNode.setMinHeightPercent(Number.parseFloat(props.minHeight))
-    } else if (typeof props.minHeight === "number") {
-      layoutNode.setMinHeight(props.minHeight)
-    }
-  } else if (wasRemoved("minHeight")) {
-    layoutNode.setMinHeight(0)
-  }
+  applyLength(layoutNode, "minHeight", props.minHeight, oldProps?.minHeight)
 
-  if (props.maxWidth !== undefined) {
-    if (typeof props.maxWidth === "string" && props.maxWidth.endsWith("%")) {
-      layoutNode.setMaxWidthPercent(Number.parseFloat(props.maxWidth))
-    } else if (typeof props.maxWidth === "number") {
-      layoutNode.setMaxWidth(props.maxWidth)
-    }
-  } else if (wasRemoved("maxWidth")) {
-    layoutNode.setMaxWidth(Number.POSITIVE_INFINITY)
-  }
+  applyLength(layoutNode, "maxWidth", props.maxWidth, oldProps?.maxWidth)
 
-  if (props.maxHeight !== undefined) {
-    if (typeof props.maxHeight === "string" && props.maxHeight.endsWith("%")) {
-      layoutNode.setMaxHeightPercent(Number.parseFloat(props.maxHeight))
-    } else if (typeof props.maxHeight === "number") {
-      layoutNode.setMaxHeight(props.maxHeight)
-    }
-  } else if (wasRemoved("maxHeight")) {
-    layoutNode.setMaxHeight(Number.POSITIVE_INFINITY)
-  }
+  applyLength(layoutNode, "maxHeight", props.maxHeight, oldProps?.maxHeight)
 }
 
 /**
@@ -764,9 +745,9 @@ function parseFitWidthEntry(
 ): number | { value: number; unit: "cqi" | "cqmin" } {
   if (typeof entry === "number") return entry
   const cqiMatch = entry.match(/^(\d+(?:\.\d+)?)cqi$/)
-  if (cqiMatch) return { value: Number.parseFloat(cqiMatch[1]!), unit: "cqi" }
+  if (cqiMatch) return { value: Number.parseFloat(entry.slice(0, -3)), unit: "cqi" }
   const cqminMatch = entry.match(/^(\d+(?:\.\d+)?)cqmin$/)
-  if (cqminMatch) return { value: Number.parseFloat(cqminMatch[1]!), unit: "cqmin" }
+  if (cqminMatch) return { value: Number.parseFloat(entry.slice(0, -5)), unit: "cqmin" }
   throw new Error(
     `<Box fitWidth>: invalid lane entry ${JSON.stringify(entry)}. ` +
       `Expected a number (cells) or a string like "100cqi" / "50cqmin".`,
@@ -778,80 +759,25 @@ function parseFitWidthEntry(
  * This maps Ink/Silvery props to the layout engine API.
  */
 export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?: BoxProps): void {
+  validateRawLengths(props, "Box")
   const c = getConstants()
   // Helper: true when a prop was set in oldProps but not in newProps (prop removed on rerender)
   const wasRemoved = (prop: keyof BoxProps): boolean =>
     oldProps?.[prop] !== undefined && props[prop] === undefined
 
   // Dimensions
-  if (props.width !== undefined) {
-    if (typeof props.width === "string" && props.width.endsWith("%")) {
-      layoutNode.setWidthPercent(Number.parseFloat(props.width))
-    } else if (typeof props.width === "number") {
-      layoutNode.setWidth(props.width)
-    } else if (props.width === "auto") {
-      layoutNode.setWidthAuto()
-    } else if (props.width === "fit-content") {
-      layoutNode.setWidthFitContent()
-    } else if (props.width === "snug-content") {
-      layoutNode.setWidthSnugContent()
-    }
-  } else if (wasRemoved("width")) {
-    layoutNode.setWidthAuto()
-  }
+  applyLength(layoutNode, "width", props.width, oldProps?.width)
 
-  if (props.height !== undefined) {
-    if (typeof props.height === "string" && props.height.endsWith("%")) {
-      layoutNode.setHeightPercent(Number.parseFloat(props.height))
-    } else if (typeof props.height === "number") {
-      layoutNode.setHeight(props.height)
-    } else if (props.height === "auto") {
-      layoutNode.setHeightAuto()
-    }
-  } else if (wasRemoved("height")) {
-    layoutNode.setHeightAuto()
-  }
+  applyLength(layoutNode, "height", props.height, oldProps?.height)
 
   // Min/Max dimensions
-  if (props.minWidth !== undefined) {
-    if (typeof props.minWidth === "string" && props.minWidth.endsWith("%")) {
-      layoutNode.setMinWidthPercent(Number.parseFloat(props.minWidth))
-    } else if (typeof props.minWidth === "number") {
-      layoutNode.setMinWidth(props.minWidth)
-    }
-  } else if (wasRemoved("minWidth")) {
-    layoutNode.setMinWidth(0)
-  }
+  applyLength(layoutNode, "minWidth", props.minWidth, oldProps?.minWidth)
 
-  if (props.minHeight !== undefined) {
-    if (typeof props.minHeight === "string" && props.minHeight.endsWith("%")) {
-      layoutNode.setMinHeightPercent(Number.parseFloat(props.minHeight))
-    } else if (typeof props.minHeight === "number") {
-      layoutNode.setMinHeight(props.minHeight)
-    }
-  } else if (wasRemoved("minHeight")) {
-    layoutNode.setMinHeight(0)
-  }
+  applyLength(layoutNode, "minHeight", props.minHeight, oldProps?.minHeight)
 
-  if (props.maxWidth !== undefined) {
-    if (typeof props.maxWidth === "string" && props.maxWidth.endsWith("%")) {
-      layoutNode.setMaxWidthPercent(Number.parseFloat(props.maxWidth))
-    } else if (typeof props.maxWidth === "number") {
-      layoutNode.setMaxWidth(props.maxWidth)
-    }
-  } else if (wasRemoved("maxWidth")) {
-    layoutNode.setMaxWidth(Number.POSITIVE_INFINITY)
-  }
+  applyLength(layoutNode, "maxWidth", props.maxWidth, oldProps?.maxWidth)
 
-  if (props.maxHeight !== undefined) {
-    if (typeof props.maxHeight === "string" && props.maxHeight.endsWith("%")) {
-      layoutNode.setMaxHeightPercent(Number.parseFloat(props.maxHeight))
-    } else if (typeof props.maxHeight === "number") {
-      layoutNode.setMaxHeight(props.maxHeight)
-    }
-  } else if (wasRemoved("maxHeight")) {
-    layoutNode.setMaxHeight(Number.POSITIVE_INFINITY)
-  }
+  applyLength(layoutNode, "maxHeight", props.maxHeight, oldProps?.maxHeight)
 
   // Flex properties
   if (props.flexGrow !== undefined) {
@@ -866,17 +792,7 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
     layoutNode.setFlexShrink(1)
   }
 
-  if (props.flexBasis !== undefined) {
-    if (typeof props.flexBasis === "string" && props.flexBasis.endsWith("%")) {
-      layoutNode.setFlexBasisPercent(Number.parseFloat(props.flexBasis))
-    } else if (props.flexBasis === "auto") {
-      layoutNode.setFlexBasisAuto()
-    } else if (typeof props.flexBasis === "number") {
-      layoutNode.setFlexBasis(props.flexBasis)
-    }
-  } else if (wasRemoved("flexBasis")) {
-    layoutNode.setFlexBasisAuto()
-  }
+  applyLength(layoutNode, "flexBasis", props.flexBasis, oldProps?.flexBasis)
 
   // Flex direction
   if (props.flexDirection !== undefined) {
@@ -981,10 +897,10 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
   // Position offsets (top, left, bottom, right)
   // Skip offsets for position="static" — static positioning ignores offsets (CSS spec).
   if (props.position !== "static") {
-    applyPositionOffset(layoutNode, c.EDGE_TOP, props.top)
-    applyPositionOffset(layoutNode, c.EDGE_LEFT, props.left)
-    applyPositionOffset(layoutNode, c.EDGE_BOTTOM, props.bottom)
-    applyPositionOffset(layoutNode, c.EDGE_RIGHT, props.right)
+    applyLength(layoutNode, "top", props.top, oldProps?.top)
+    applyLength(layoutNode, "left", props.left, oldProps?.left)
+    applyLength(layoutNode, "bottom", props.bottom, oldProps?.bottom)
+    applyLength(layoutNode, "right", props.right, oldProps?.right)
   }
 
   // Aspect ratio
@@ -1129,27 +1045,6 @@ function applySpacing(layoutNode: LayoutNode, type: "padding" | "margin", props:
   set(c.EDGE_BOTTOM, bottom ?? yy ?? all ?? 0)
   set(c.EDGE_LEFT, left ?? x ?? all ?? 0)
   set(c.EDGE_RIGHT, right ?? x ?? all ?? 0)
-}
-
-/**
- * Apply a position offset (top/left/bottom/right) to a layout node.
- * Supports both numeric (absolute) and percentage string values.
- */
-function applyPositionOffset(
-  layoutNode: LayoutNode,
-  edge: number,
-  value: number | string | undefined,
-): void {
-  if (value === undefined) {
-    // Unset stale position offset when prop is removed on rerender
-    layoutNode.setPosition(edge, NaN)
-    return
-  }
-  if (typeof value === "string" && value.endsWith("%")) {
-    layoutNode.setPositionPercent(edge, Number.parseFloat(value))
-  } else if (typeof value === "number") {
-    layoutNode.setPosition(edge, value)
-  }
 }
 
 /**

@@ -139,8 +139,26 @@ class YogaNodeAdapter implements LayoutNode {
   }
 
   // Dimension setters
-  setWidth(value: number): void {
-    this.node.setWidth(value)
+  private length(
+    prop: "width" | "height" | "minWidth" | "minHeight" | "maxWidth" | "maxHeight" | "flexBasis",
+    value: number | string,
+  ): number | string {
+    if (typeof value === "number") return value
+    const input = value.trim()
+    if (input === "auto" && (prop === "width" || prop === "height" || prop === "flexBasis"))
+      {return input}
+    if (prop === "width" && (input === "fit-content" || input === "snug-content")) return "auto"
+    const percent = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)%$/i.exec(input)
+    if (percent && Number.isFinite(Number(percent[1])) && Number(percent[1]) >= 0)
+      {return `${Number(percent[1])}%`}
+    throw new TypeError(
+      `${prop}: ${JSON.stringify(value)} — Yoga accepts a number, a valid N% or a supported keyword; ` +
+        `use SILVERY_ENGINE=flexily for other length strings.`,
+    )
+  }
+
+  setWidth(value: number | string): void {
+    this.node.setWidth(this.length("width", value))
   }
   setWidthPercent(value: number): void {
     this.node.setWidthPercent(value)
@@ -156,8 +174,8 @@ class YogaNodeAdapter implements LayoutNode {
     // Yoga doesn't support snug-content natively — fall back to auto
     this.node.setWidthAuto()
   }
-  setHeight(value: number): void {
-    this.node.setHeight(value)
+  setHeight(value: number | string): void {
+    this.node.setHeight(this.length("height", value))
   }
   setHeightPercent(value: number): void {
     this.node.setHeightPercent(value)
@@ -165,26 +183,26 @@ class YogaNodeAdapter implements LayoutNode {
   setHeightAuto(): void {
     this.node.setHeightAuto()
   }
-  setMinWidth(value: number): void {
-    this.node.setMinWidth(value)
+  setMinWidth(value: number | string): void {
+    this.node.setMinWidth(this.length("minWidth", value))
   }
   setMinWidthPercent(value: number): void {
     this.node.setMinWidthPercent(value)
   }
-  setMinHeight(value: number): void {
-    this.node.setMinHeight(value)
+  setMinHeight(value: number | string): void {
+    this.node.setMinHeight(this.length("minHeight", value))
   }
   setMinHeightPercent(value: number): void {
     this.node.setMinHeightPercent(value)
   }
-  setMaxWidth(value: number): void {
-    this.node.setMaxWidth(value)
+  setMaxWidth(value: number | string): void {
+    this.node.setMaxWidth(this.length("maxWidth", value))
   }
   setMaxWidthPercent(value: number): void {
     this.node.setMaxWidthPercent(value)
   }
-  setMaxHeight(value: number): void {
-    this.node.setMaxHeight(value)
+  setMaxHeight(value: number | string): void {
+    this.node.setMaxHeight(this.length("maxHeight", value))
   }
   setMaxHeightPercent(value: number): void {
     this.node.setMaxHeightPercent(value)
@@ -197,8 +215,8 @@ class YogaNodeAdapter implements LayoutNode {
   setFlexShrink(value: number): void {
     this.node.setFlexShrink(value)
   }
-  setFlexBasis(value: number): void {
-    this.node.setFlexBasis(value)
+  setFlexBasis(value: number | string): void {
+    this.node.setFlexBasis(this.length("flexBasis", value))
   }
   setFlexBasisPercent(value: number): void {
     this.node.setFlexBasisPercent(value)
