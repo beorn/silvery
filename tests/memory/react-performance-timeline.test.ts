@@ -5,6 +5,7 @@
  * @consumer @ag/dutiful-and-maddoc-grow-without-bound
  */
 import { describe, expect, test } from "vitest"
+import { fileURLToPath } from "node:url"
 
 interface ProbeResult {
   readonly mode: "development" | "production"
@@ -68,7 +69,7 @@ describe("React performance timeline ownership", () => {
 
 async function runProbe(mode: ProbeResult["mode"], commits: number): Promise<ProbeResult> {
   const child = Bun.spawn([process.execPath, "-e", probeSource], {
-    cwd: new URL("../..", import.meta.url).pathname,
+    cwd: fileURLToPath(new URL("../..", import.meta.url)),
     env: {
       ...process.env,
       NODE_ENV: mode,
