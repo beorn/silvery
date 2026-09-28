@@ -30,7 +30,7 @@
  * screen and one far below the terminal in the same frame.
  */
 import React, { useState } from "react"
-import { describe, expect, test } from "vitest"
+import { afterEach, describe, expect, test, vi } from "vitest"
 import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 
@@ -65,8 +65,14 @@ function TallWatch(): React.ReactElement {
 }
 
 describe("fullscreen root taller than the terminal", () => {
+  // The oracle under test must be on in every runner: the hh workspace setup
+  // sets SILVERY_STRICT, silvery's standalone CI does not (26385).
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   test("a tick on screen and a tick below the terminal in one frame verify under STRICT", async () => {
-    expect(process.env.SILVERY_STRICT, "the oracle under test must be on").toBeTruthy()
+    vi.stubEnv("SILVERY_STRICT", "1")
     using term = createTermless({ cols: COLS, rows: ROWS })
     const handle = await run(<TallWatch />, term)
     try {
