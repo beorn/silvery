@@ -793,7 +793,7 @@ export {
 export type { PopoverAnchor, PopoverContent } from "./components/Popover"
 export { useConsole } from "./hooks/useConsole"
 // oxlint-disable-next-line typescript/no-deprecated -- compatibility export pending cursor migration
-export { useCursor, resetCursorState, createCursorStore, CursorProvider } from "./hooks/useCursor"
+export { useCursor, createCursorStore, CursorProvider } from "./hooks/useCursor"
 export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor"
 export { PasteProvider, usePaste } from "./hooks/usePaste"
 export type { PasteHandler } from "./hooks/usePaste"
@@ -963,7 +963,6 @@ export {
   useHitRegistry,
   useHitRegion,
   useHitRegionCallback,
-  resetHitRegionIdCounter,
   Z_INDEX,
 } from "@silvery/ag-term/hit-registry"
 
@@ -1618,11 +1617,7 @@ export type { InputBoundaryProps } from "./contexts/InputBoundary"
  * </PositionRegistryProvider>
  * ```
  */
-export {
-  PositionRegistryProvider,
-  usePositionRegistry,
-  createPositionRegistry,
-} from "./hooks/usePositionRegistry"
+export { PositionRegistryProvider, usePositionRegistry } from "./hooks/usePositionRegistry"
 export type { PositionRegistry, ScrollRect } from "./hooks/usePositionRegistry"
 export { useGridPosition } from "./hooks/useGridPosition"
 export { GridCell } from "./ui/components"

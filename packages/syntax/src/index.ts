@@ -501,25 +501,6 @@ export async function highlightToAnsi(
 }
 
 /**
- * Invalidate the highlight cache (useful for testing).
- * @internal
- */
-export function _clearCache(): void {
-  _cache.clear()
-}
-
-/**
- * Reset the shiki highlighter singleton (useful for testing).
- * @internal
- */
-export function _resetHighlighter(): void {
-  _highlighterPromise = undefined
-  _loadedLangs.clear()
-  _themeLoadPromises.clear()
-  _pendingHighlights.clear()
-}
-
-/**
  * Snapshot the current pending-highlight count.
  * @internal — for test instrumentation only.
  */

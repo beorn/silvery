@@ -419,11 +419,7 @@ export type {
 // Position Registry (2D Grid Virtualization)
 // =============================================================================
 
-export {
-  PositionRegistryProvider,
-  usePositionRegistry,
-  createPositionRegistry,
-} from "../hooks/usePositionRegistry"
+export { PositionRegistryProvider, usePositionRegistry } from "../hooks/usePositionRegistry"
 export type { PositionRegistry, ScrollRect } from "../hooks/usePositionRegistry"
 export { useGridPosition } from "../hooks/useGridPosition"
 export { GridCell } from "./components/GridCell"
