@@ -403,8 +403,9 @@ export function createRootNode(): AgNode {
   // A root IS a tree, so it mints the epoch state every node under it shares.
   const node = createNode("silvery-root", {}, createEpochOwner())
   const c = getConstants()
-  if (!node.layoutNode)
-    {throw new Error("Silvery root creation did not create its required layout node")}
+  if (!node.layoutNode) {
+    throw new Error("Silvery root creation did not create its required layout node")
+  }
   node.layoutNode.setFlexDirection(c.FLEX_DIRECTION_COLUMN)
   return node
 }
