@@ -391,9 +391,8 @@ function coalesceWheelEvents(events: NamespacedEvent[]): NamespacedEvent[] {
  * never reach the threshold.
  *
  * - `SILVERY_AUTO_PANIC_MAX_DUMPS=N` (default 10) — dump cap.
- * - `SILVERY_AUTO_PANIC_TEST_NO_EXIT=1` — skip the hard `process.exit(2)`
- *   that fires after the cap is hit. ONLY for the regression test;
- *   real callers want the hard-exit so a runaway loop terminates.
+ * - After the cap is hit the process exits with code 2, so a runaway loop
+ *   terminates; tests spy on `process.exit` to survive it.
  *
  * Tests start each case from zero with fresh modules (`vi.resetModules()`).
  *
@@ -405,12 +404,6 @@ const MAX_PANIC_DUMPS_PER_RUN = (() => {
   const n = Number.parseInt(v, 10)
   return Number.isFinite(n) && n > 0 ? n : 10
 })()
-/** Read the test-only hard-exit override fresh on every panic so tests
- *  can flip it via `vi.stubEnv` between cases without re-importing the
- *  module. Static-const capture would freeze the value at module load. */
-function isPanicTestNoExit(): boolean {
-  return process.env.SILVERY_AUTO_PANIC_TEST_NO_EXIT === "1"
-}
 let _processPanicDumpCount = 0
 let _processPanicCircuitBroken = false
 
@@ -3071,9 +3064,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Circuit-break hard-exit: once the per-process dump cap fires, force
     // terminal cleanup and process.exit(2) so a runaway panic loop in a
     // long-lived process (vitest worker, daemon, server) terminates
-    // cleanly instead of pinning CPU forever. Skipped under the test-only
-    // SILVERY_AUTO_PANIC_TEST_NO_EXIT env (see module-level docstring).
-    if (_processPanicCircuitBroken && !isPanicTestNoExit()) {
+    // cleanly instead of pinning CPU forever.
+    if (_processPanicCircuitBroken) {
       try {
         disableInteractiveProtocolsEarly()
       } catch {

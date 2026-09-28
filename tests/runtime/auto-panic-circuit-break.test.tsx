@@ -13,8 +13,8 @@
  *      stops calling writeFileSync.
  *   2. The FIRST overage emits a "[silvery] auto-panic circuit-break"
  *      line on stderr naming the dump count + the override env var.
- *   3. SILVERY_AUTO_PANIC_TEST_NO_EXIT=1 prevents the hard process.exit(2)
- *      that fires in production (so the test runner survives).
+ *   3. The overage panic calls process.exit(2), as in production; the
+ *      test spies on process.exit so the runner survives.
  *
  * Bead: @km/silvery/auto-panic-circuit-break.
  */
@@ -107,6 +107,7 @@ describe("auto-panic circuit-break", () => {
   let origStderrWrite: typeof process.stderr.write
   let origStdoutWrite: typeof process.stdout.write
   let origExitCode: typeof process.exitCode
+  let exitSpy: ReturnType<typeof vi.spyOn>
   let stderr: string[]
   let testStartMs: number
 
@@ -127,9 +128,9 @@ describe("auto-panic circuit-break", () => {
     ;({ run } = await import("../../packages/ag-term/src/runtime/run"))
     ;({ Text } = await import("../../src/index.js"))
 
-    // Production behavior is process.exit(2) after circuit-break.
-    // Tests opt out so the runner survives.
-    vi.stubEnv("SILVERY_AUTO_PANIC_TEST_NO_EXIT", "1")
+    // Production calls process.exit(2) after circuit-break; the spy keeps
+    // the runner alive while the real exit path runs.
+    exitSpy = vi.spyOn(process, "exit").mockImplementation((() => undefined) as never)
 
     testStartMs = Date.now()
   })
@@ -138,6 +139,7 @@ describe("auto-panic circuit-break", () => {
     process.stderr.write = origStderrWrite
     process.stdout.write = origStdoutWrite
     process.exitCode = origExitCode
+    exitSpy.mockRestore()
     vi.unstubAllEnvs()
   })
 
@@ -180,6 +182,7 @@ describe("auto-panic circuit-break", () => {
     // Acceptance #3: exitCode reflects circuit-break (2) for the
     // overage panic, not just 1.
     expect(process.exitCode).toBe(2)
+    expect(exitSpy).toHaveBeenCalledWith(2)
   })
 
   test("circuit-break message names the override env var", async () => {

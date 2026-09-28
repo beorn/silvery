@@ -75,7 +75,7 @@ export interface BytesOutFrameDiagnostics {
 }
 
 /**
- * Test-only overrides for the monitor. Production code passes nothing — the
+ * Test-only overrides for the monitor. Production code passes nothing — the // seam-allow: injected clock, logger and writers keep the tests deterministic without module mocks
  * scheduler instantiates the monitor with all defaults so the activation
  * surface stays at `SILVERY_STRICT` slugs only.
  */

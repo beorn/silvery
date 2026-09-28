@@ -30,10 +30,9 @@
  * exercised — same code, same bytes, different directory — so the test can
  * read the artifact back while the shared temp dir stays clean.
  *
- * Deliberately NOT folded into `SILVERY_AUTO_PANIC_TEST_NO_EXIT`: that
- * variable means "skip the hard process.exit", and overloading it with
- * "and also stop writing dumps" would silently delete real-panic diagnostics
- * in any environment that sets it. One variable, one meaning.
+ * Deliberately separate from the exit behaviour: a variable that also stopped
+ * writing dumps would silently delete real-panic diagnostics in any
+ * environment that sets it. One variable, one meaning.
  *
  * Deliberately NOT a `SILVERY_STRICT` slug either: STRICT's one-knob contract
  * governs which CHECKS run, not where artifacts are written. This is an

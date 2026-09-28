@@ -29,12 +29,10 @@ function normalizeHexChannel(hex: string): string {
  *   but the response is malformed: missing terminator, body is not a valid
  *   `rgb:RRRR/GGGG/BBBB` spec, etc.
  *
- * Exported for testing and so callers in chained-discriminator pipelines
- * can dispatch raw input through the parser directly. Most users should
- * use {@link queryForegroundColor} / {@link queryBackgroundColor} /
- * {@link queryCursorColor} which wrap this with the write+read cycle.
+ * Module-local: {@link queryForegroundColor} / {@link queryBackgroundColor} /
+ * {@link queryCursorColor} wrap it with the write+read cycle.
  */
-export function parseOscColorResponse(input: string, oscCode: number): string | null {
+function parseOscColorResponse(input: string, oscCode: number): string | null {
   const prefix = `${ESC}]${oscCode};`
   const prefixIdx = input.indexOf(prefix)
   if (prefixIdx === -1) return null
