@@ -1,6 +1,6 @@
 {
   "name": "@silvery/ag",
-  "version": "0.25.0",
+  "version": "0.25.1",
   "private": true,
   "description": "Core types and infrastructure for silvery (internal — use silvery instead)",
   "license": "MIT",
@@ -101,7 +101,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/signals": "0.25.0",
+    "@silvery/signals": "0.25.1",
     "loggily": "^0.10.0"
   },
   "tsdown": {

@@ -7,6 +7,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.25.1] - 2026-09-28
+
 ### Changed
 
 - `@silvery/config` and `@silvery/commander` now declare Zod support as
@@ -17,6 +19,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- Public installs now use Flexily `^0.8.2`; internal consumers and the
+  standalone dependency resolution use `0.8.2`. This delivers the committed-box
+  layout fix for narrowed panes, percentage descendants and container queries,
+  together with constrained re-stretch and once-counted relative insets.
 - A scroll container's `▲N` / `▼N` overflow indicator now uses the same clip
   and scroll offset as the container's background and border. An indicator
   row that falls outside an `overflow="hidden"` ancestor no longer paints over

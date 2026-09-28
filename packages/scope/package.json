@@ -1,6 +1,6 @@
 {
   "name": "@silvery/scope",
-  "version": "0.25.0",
+  "version": "0.25.1",
   "description": "Structured concurrency scopes for silvery apps — cancellation, disposal, lifecycle",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
