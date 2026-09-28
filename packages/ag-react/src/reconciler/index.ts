@@ -25,7 +25,6 @@ import { createRootNode } from "./nodes"
 export type { Container } from "./host-config"
 export {
   runWithDiscreteEvent,
-  _resetBoxInsideTextWarning,
   setInkStrictValidation,
   setContainerNodeLifecycle,
   attachNodeScope,

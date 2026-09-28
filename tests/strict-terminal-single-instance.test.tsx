@@ -29,7 +29,6 @@ import {
   getTermlessCore,
   getTermlessXterm,
   getTermlessGhostty,
-  _resetStrictTerminalBackendsForTesting,
 } from "@silvery/ag-term/strict-terminal-backends"
 
 let origStrictTerminal: string | undefined
@@ -98,7 +97,9 @@ describe("SILVERY_STRICT terminal backends — single ESM instance", () => {
   // NO SILENT ERRORS: a consumed-but-not-preloaded backend must throw a loud,
   // actionable error rather than degrade silently.
   test("a sync accessor throws loud when the backend was not preloaded", async () => {
-    _resetStrictTerminalBackendsForTesting()
+    // The cache is a Symbol.for global so every module instance shares it; no module reset reaches it, so the test
+    // empties that registry slot (E-1, 25632).
+    Reflect.deleteProperty(globalThis, Symbol.for("@silvery/ag-term:strict-terminal-backends"))
     try {
       expect(() => getTermlessGhostty()).toThrow(/preloaded/)
       expect(() => getTermlessCore()).toThrow(/preloadStrictTerminalBackends/)

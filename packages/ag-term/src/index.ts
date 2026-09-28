@@ -294,7 +294,6 @@ export {
   getTerminalFingerprint,
   getCachedProbeResult,
   setCachedProbeResult,
-  clearProbeCache,
   type TextSizingProbeResult,
   type FingerprintEmulator,
 } from "./text-sizing"

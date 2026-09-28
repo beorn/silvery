@@ -14,15 +14,23 @@
  * lives in `createTerminalProfile` and is tested in
  * packages/ansi/tests/profile.test.ts.
  */
-import { describe, expect, test, beforeEach } from "vitest"
+import { describe, expect, test, beforeEach, vi } from "vitest"
 import {
-  detectTextSizingSupport,
   getTerminalFingerprint,
-  getCachedProbeResult,
-  setCachedProbeResult,
-  clearProbeCache,
   type TextSizingProbeResult,
 } from "../packages/ag-term/src/text-sizing"
+
+type TextSizing = typeof import("../packages/ag-term/src/text-sizing")
+let detectTextSizingSupport: TextSizing["detectTextSizingSupport"]
+let getCachedProbeResult: TextSizing["getCachedProbeResult"]
+let setCachedProbeResult: TextSizing["setCachedProbeResult"]
+
+// The probe cache is module state: each test takes a fresh module instead of a reset export (E-1, 25632).
+beforeEach(async () => {
+  vi.resetModules()
+  ;({ detectTextSizingSupport, getCachedProbeResult, setCachedProbeResult } =
+    await import("../packages/ag-term/src/text-sizing"))
+})
 
 // Canonical fingerprints used across the test suite — identify a terminal
 // deterministically without ever touching process.env.
@@ -34,10 +42,6 @@ const GHOSTTY_13 = getTerminalFingerprint({ program: "Ghostty", version: "1.3.0"
 // ============================================================================
 
 describe("detectTextSizingSupport", () => {
-  beforeEach(() => {
-    clearProbeCache()
-  })
-
   test("detects support when cursor advances by 2 columns", async () => {
     // CPR response: cursor at row 1, column 3 (1-indexed)
     // means the space wrapped in OSC 66 w=2 occupied 2 cells
@@ -83,10 +87,6 @@ describe("detectTextSizingSupport", () => {
 // ============================================================================
 
 describe("probe timeout", () => {
-  beforeEach(() => {
-    clearProbeCache()
-  })
-
   test("returns not supported on timeout", async () => {
     const write = (_data: string) => {}
     // read() that never resolves
@@ -113,10 +113,6 @@ describe("probe timeout", () => {
 // ============================================================================
 
 describe("probe result caching", () => {
-  beforeEach(() => {
-    clearProbeCache()
-  })
-
   test("caches successful probe result", async () => {
     let readCount = 0
     const write = (_data: string) => {}
@@ -165,23 +161,6 @@ describe("probe result caching", () => {
 
     expect(getCachedProbeResult(KITTY_040)?.supported).toBe(true)
     expect(getCachedProbeResult(GHOSTTY_13)?.supported).toBe(false)
-  })
-
-  test("clearProbeCache resets cache", async () => {
-    let readCount = 0
-    const write = (_data: string) => {}
-    const read = () => {
-      readCount++
-      return Promise.resolve("\x1b[1;3R")
-    }
-
-    await detectTextSizingSupport(write, read, KITTY_040)
-    expect(readCount).toBe(1)
-
-    clearProbeCache()
-
-    await detectTextSizingSupport(write, read, KITTY_040)
-    expect(readCount).toBe(2)
   })
 
   test("getCachedProbeResult returns undefined when no cache", () => {

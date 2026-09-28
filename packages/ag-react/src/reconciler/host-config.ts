@@ -47,7 +47,7 @@ import {
   type IslandLayoutProps,
 } from "./nodes"
 import { createLogger } from "loggily"
-import { warnOnce, _resetWarnOnceForTesting } from "@silvery/ansi"
+import { warnOnce } from "@silvery/ansi"
 
 const log = createLogger("silvery:reconciler")
 const mountLog = createLogger("silvery:mount")
@@ -385,19 +385,9 @@ function markLayoutAncestorDirty(node: AgNode): void {
 // ============================================================================
 //
 // Box-inside-Text warning uses the shared `warnOnce` latch from @silvery/ansi
-// (see km-silvery.latch-consolidation). Tests reset via
-// `_resetWarnOnceForTesting("silvery/ag-react:box-in-text")`.
+// (see km-silvery.latch-consolidation). Tests take fresh modules to see it fire again.
 
 const BOX_INSIDE_TEXT_WARNING_ID = "silvery/ag-react:box-in-text"
-
-/**
- * Reset the box-inside-text warning latch (for testing).
- * Thin wrapper over `_resetWarnOnceForTesting` that pins the warning ID —
- * call sites don't need to remember the exact key.
- */
-export function _resetBoxInsideTextWarning(): void {
-  _resetWarnOnceForTesting(BOX_INSIDE_TEXT_WARNING_ID)
-}
 
 /**
  * Ink-compatible strict validation mode.
