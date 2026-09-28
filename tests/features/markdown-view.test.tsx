@@ -177,9 +177,9 @@ describe("MarkdownView — block elements", () => {
   test("bullet list renders one marked row per item", () => {
     const app = render("- Apple\n  - Orange\n    - Grapefruit\n      - Lemon\n- Banana\n- Cherry")
     expect(app.text).toContain("• Apple")
-    expect(app.text).toContain("◦ Orange")
-    expect(app.text).toContain("■ Grapefruit")
-    expect(app.text).toContain("■ Lemon")
+    expect(app.text).toContain("• Orange")
+    expect(app.text).toContain("• Grapefruit")
+    expect(app.text).toContain("• Lemon")
     expect(app.text).toContain("• Banana")
     expect(app.text).toContain("• Cherry")
     expect(app.text).not.toMatch(/^-\s/mu) // raw dash marker gone
@@ -234,8 +234,8 @@ describe("MarkdownView — block elements", () => {
 })
 
 describe("DocumentView — shared document geometry", () => {
-  test("unordered depth ladder keeps one-cell markers for km-document-view", () => {
-    const markers = ["•", "◦", "■", "■"] as const
+  test("unordered lists keep one small dot and one-cell width at every depth", () => {
+    const markers = ["•", "•", "•", "•"] as const
     const blocks: DocumentBlock[] = markers.map((_, depth) => ({
       id: `level-${depth}`,
       kind: "list-item",

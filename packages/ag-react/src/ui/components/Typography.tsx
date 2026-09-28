@@ -485,14 +485,12 @@ export function HR({ color, ...rest }: Omit<TypographyProps, "children">) {
 // Lists
 // ============================================================================
 
-/** Zero-based unordered list depth; every marker occupies one terminal cell. */
+/** One small dot for every unordered depth; keep depth validation at the shared boundary. */
 export function unorderedListMarker(depth: number): string {
   if (!Number.isInteger(depth) || depth < 0) {
     throw new RangeError(`Unordered list depth must be a non-negative integer; received ${depth}`)
   }
-  if (depth === 0) return "•"
-  if (depth === 1) return "◦"
-  return "■"
+  return "•"
 }
 
 interface ListContextValue {

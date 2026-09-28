@@ -752,7 +752,7 @@ describe("Lists", () => {
       expect(app.text).toContain("Gamma")
     })
 
-    test("nested UL uses the hollow bullet at level 2", () => {
+    test("nested UL keeps the small dot at level 2", () => {
       // Nesting UL/OL as sibling elements (not inside LI children text)
       // to avoid Box-in-Text warning
 
@@ -769,10 +769,10 @@ describe("Lists", () => {
         </Box>,
       )
       expect(app.text).toContain("• Outer")
-      expect(app.text).toContain("◦ Inner")
+      expect(app.text).toContain("• Inner")
     })
 
-    test("deeply nested UL clamps the third square marker", () => {
+    test("deeply nested UL keeps one small dot at every level", () => {
       const app = render(
         <Box flexDirection="column">
           <UL>
@@ -802,9 +802,9 @@ describe("Lists", () => {
         </Box>,
       )
       expect(app.text).toContain("• L1")
-      expect(app.text).toContain("◦ L2")
-      expect(app.text).toContain("■ L3")
-      expect(app.text).toContain("■ L4")
+      expect(app.text).toContain("• L2")
+      expect(app.text).toContain("• L3")
+      expect(app.text).toContain("• L4")
       // A triangle is the fold affordance; a static list never wears one.
       expect(app.text).not.toContain("▸")
     })
@@ -826,7 +826,7 @@ describe("Lists", () => {
       const nested = app.lines.find((line) => line.includes("Nested")) ?? ""
       // Marker width stays one cell, so increased nesting moves its column right.
       const bulletCol1 = top.indexOf("•")
-      const bulletCol2 = nested.indexOf("◦")
+      const bulletCol2 = nested.indexOf("•")
       expect(bulletCol1).toBeGreaterThanOrEqual(0)
       expect(bulletCol2).toBeGreaterThan(bulletCol1)
     })
@@ -948,7 +948,7 @@ describe("Lists", () => {
         </Box>,
       )
       expect(app.text).toContain("1.")
-      expect(app.text).toContain("◦ Sub-bullet")
+      expect(app.text).toContain("• Sub-bullet")
       expect(app.text).toContain("First")
     })
   })
