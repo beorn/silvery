@@ -72,6 +72,7 @@ With no query ancestor, the layout root supplies the viewport fallback.
 This is a deliberate CSS subset. Math on padding, margin, gap and position offsets is refused; numeric spacing and margin `auto` keep their existing behavior.
 `cqmin`, `cqb` and `cqmax` are refused in dimension expressions until both query axes are supported. The existing `fitWidth` API retains its earlier `cqmin` behavior.
 `var()` and other units are unsupported. The Yoga backend accepts its existing numbers, percentages and keywords, and reports a prop-named error for these expressions.
+On Yoga, width `fit-content` and `snug-content` use its existing `auto` fallback; use Flexily when content sizing is required.
 Percent dimensions against an indefinite, auto-sized parent can resolve to zero in Flexily where CSS uses auto sizing; this page does not claim browser-identical layout.
 
 ## Pattern 1: Declarative Box-prop spread
