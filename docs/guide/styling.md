@@ -41,7 +41,7 @@ Most Silvery components already use the correct semantic colors by default. **Th
 | `<Link>`               | `$fg-link`, `$fg-link-hover` + underline on plain hover                    |
 | `<Blockquote>`         | `$fg-muted` italic body, inset two cells without a rail                    |
 | `<P>`                  | `mix($fg, $fg-muted, 12.5%)` body foreground                               |
-| `<LI>`                 | Same `•` at every unordered depth; indentation expresses nesting           |
+| `<LI>`                 | `•`, `◦`, then `■` at unordered depths 0, 1, and 2+; indentation also grows |
 
 ::: tip ✨ Shiny
 
