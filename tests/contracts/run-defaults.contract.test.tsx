@@ -25,12 +25,20 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 
 import { Box, Text } from "../../src/index.js"
-import {
-  run,
-  _resetRunOptionsWarningForTesting,
-  type RunOptions,
-} from "../../packages/ag-term/src/runtime/run"
+import { run, type RunOptions } from "../../packages/ag-term/src/runtime/run"
 import { createTerminalProfile } from "../../packages/ansi/src/profile"
+
+// run()'s option warnings latch once per module instance, so a test that asserts on them takes a fresh run, Text and
+// createTermless (one module graph, so React contexts match) instead of a reset export (E-1, 25632).
+async function freshRuntime() {
+  vi.resetModules()
+  const [{ run }, { Text }, { createTermless }] = await Promise.all([
+    import("../../packages/ag-term/src/runtime/run"),
+    import("../../src/index.js"),
+    import("@silvery/test"),
+  ])
+  return { run, Text, createTermless }
+}
 
 // ============================================================================
 // Env-var scaffolding — isolate each test from the ambient environment.
@@ -374,6 +382,7 @@ describe("contract: RunOptions.profile", () => {
   })
 
   test("contract: profile + caps/colorLevel mixed — TS-level XOR blocks it, JS caller gets a runtime warning (profile still wins)", async () => {
+    const { run, Text, createTermless } = await freshRuntime()
     // Phase 5 (/pro review 2026-04-23). The prior "silent-wins" semantics
     // that supplying both fields ignored caps/colorLevel was exactly the bug
     // class the plateau was supposed to kill. Now:
@@ -389,8 +398,6 @@ describe("contract: RunOptions.profile", () => {
       caps: { colorLevel: "256", kittyKeyboard: false },
     })
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
-    // Reset the once-per-process warning latch so this test sees the warn.
-    _resetRunOptionsWarningForTesting()
     // `as any` simulates a JS caller that smuggled both keys through (a TS
     // caller would have failed to compile on `{ profile, caps, colorLevel }`).
     const badOptions = {
@@ -417,12 +424,12 @@ describe("contract: RunOptions.profile", () => {
   })
 
   test("contract: run({ caps }) alone emits the deprecation warning (no profile)", async () => {
+    const { run, Text, createTermless } = await freshRuntime()
     // Phase 5 (/pro review 2026-04-23). `caps` is deprecated on the legacy
     // branch of the RunOptions XOR; pass it alone (no `profile`) and the
     // one-time deprecation warning fires. Migration path is in the message.
     using term = createTermless({ cols: 20, rows: 3 })
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
-    _resetRunOptionsWarningForTesting()
     // Exercising the deprecated `caps` legacy branch on purpose. The TS
     // type wants a full TerminalCaps object; `as any` documents this is a
     // minimal-fixture JS-style call targeting the deprecation warning.
@@ -440,6 +447,7 @@ describe("contract: RunOptions.profile", () => {
   })
 
   test("contract: run({ colorLevel }) alone emits NO deprecation warning (canonical shorthand)", async () => {
+    const { run, Text, createTermless } = await freshRuntime()
     // Post colorTier→colorLevel reversal (2026-04-23): the option name is
     // aligned 1:1 with `caps.colorLevel` and `createTerminalProfile({
     // colorLevel })`, so the shorthand is a first-class canonical override,
@@ -450,7 +458,6 @@ describe("contract: RunOptions.profile", () => {
     // encode colorForced/colorProvenance); see its own contract test above.
     using term = createTermless({ cols: 20, rows: 3 })
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
-    _resetRunOptionsWarningForTesting()
     const handle = await run(<Text>hi</Text>, term, { colorLevel: "mono" })
     await settle(80)
     const messages = warnSpy.mock.calls.map((c) => c[0] as string)
@@ -464,6 +471,7 @@ describe("contract: RunOptions.profile", () => {
   })
 
   test("contract: profile-only path emits no deprecation warning", async () => {
+    const { run, Text, createTermless } = await freshRuntime()
     // Callers on the migrated path must not see any warning — that's the
     // whole point of adopting the profile argument.
     using term = createTermless({ cols: 20, rows: 3 })
@@ -473,7 +481,6 @@ describe("contract: RunOptions.profile", () => {
       colorLevel: "256",
     })
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
-    _resetRunOptionsWarningForTesting()
     const handle = await run(<Text>hi</Text>, term, { profile })
     await settle(80)
     // Filter out unrelated warnings that other layers might emit — we only

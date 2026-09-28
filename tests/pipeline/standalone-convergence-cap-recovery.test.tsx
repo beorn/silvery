@@ -61,7 +61,7 @@ import { join } from "node:path"
 import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import { Box, Text } from "../../src/index.js"
-import { _resetPanicCircuitBreaker, run } from "../../packages/ag-term/src/runtime/run"
+import { run } from "../../packages/ag-term/src/runtime/run"
 import {
   resetPassRing,
   formatPassRingBreakdown,
@@ -219,7 +219,6 @@ async function driveStandalonePerpetual(): Promise<string[]> {
   // Production exits the process once the per-run dump cap trips; tests opt out
   // so the runner survives a deliberate panic.
   vi.stubEnv("SILVERY_AUTO_PANIC_TEST_NO_EXIT", "1")
-  _resetPanicCircuitBreaker()
   try {
     using term = createTermless({ cols: 40, rows: 20 })
     resetPassRing()
@@ -244,7 +243,6 @@ async function driveStandalonePerpetual(): Promise<string[]> {
     process.stdout.write = origStdoutWrite
     process.exitCode = origExitCode
     vi.unstubAllEnvs()
-    _resetPanicCircuitBreaker()
     for (const l of originalListeners) process.on("unhandledRejection", l as never)
   }
 }

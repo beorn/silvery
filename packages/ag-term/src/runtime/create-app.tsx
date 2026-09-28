@@ -395,7 +395,7 @@ function coalesceWheelEvents(events: NamespacedEvent[]): NamespacedEvent[] {
  *   that fires after the cap is hit. ONLY for the regression test;
  *   real callers want the hard-exit so a runaway loop terminates.
  *
- * Reset via `_resetPanicCircuitBreaker()` from test infrastructure.
+ * Tests start each case from zero with fresh modules (`vi.resetModules()`).
  *
  * Bead: @km/silvery/auto-panic-circuit-break.
  */
@@ -414,16 +414,6 @@ function isPanicTestNoExit(): boolean {
 let _processPanicDumpCount = 0
 let _processPanicCircuitBroken = false
 
-/**
- * Test helper — reset the process-level panic circuit-break state.
- * Call in `beforeEach` of any test that exercises the panic flow more
- * than `MAX_PANIC_DUMPS_PER_RUN` times within one suite. Not part of
- * the public runtime API.
- */
-export function _resetPanicCircuitBreaker(): void {
-  _processPanicDumpCount = 0
-  _processPanicCircuitBroken = false
-}
 const STRICT_MODE = (() => {
   return isStrictEnabled("incremental", 1)
 })()

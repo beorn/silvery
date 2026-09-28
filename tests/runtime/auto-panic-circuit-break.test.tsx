@@ -23,8 +23,11 @@ import { existsSync, readdirSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
-import { Text } from "../../src/index.js"
-import { _resetPanicCircuitBreaker, run } from "../../packages/ag-term/src/runtime/run"
+
+// The circuit-break counter is module state: each test takes a fresh run and Text (one module graph) instead of a
+// reset export (E-1, 25632).
+let run: typeof import("../../packages/ag-term/src/runtime/run").run
+let Text: typeof import("../../src/index.js").Text
 
 const DEFAULT_MAX_DUMPS = 10
 
@@ -107,7 +110,7 @@ describe("auto-panic circuit-break", () => {
   let stderr: string[]
   let testStartMs: number
 
-  beforeEach(() => {
+  beforeEach(async () => {
     stderr = []
     origExitCode = process.exitCode
     origStderrWrite = process.stderr.write
@@ -119,10 +122,10 @@ describe("auto-panic circuit-break", () => {
     }) as typeof process.stderr.write
     process.stdout.write = ((_chunk: unknown) => true) as typeof process.stdout.write
 
-    // Reset the process-level panic counter so each test starts clean.
-    // Without this, earlier tests in the same vitest worker that
-    // exercise the panic flow would push us past the threshold.
-    _resetPanicCircuitBreaker()
+    // Fresh modules so each test starts with the panic counter at zero.
+    vi.resetModules()
+    ;({ run } = await import("../../packages/ag-term/src/runtime/run"))
+    ;({ Text } = await import("../../src/index.js"))
 
     // Production behavior is process.exit(2) after circuit-break.
     // Tests opt out so the runner survives.
@@ -136,7 +139,6 @@ describe("auto-panic circuit-break", () => {
     process.stdout.write = origStdoutWrite
     process.exitCode = origExitCode
     vi.unstubAllEnvs()
-    _resetPanicCircuitBreaker()
   })
 
   test("caps dump-write at MAX_PANIC_DUMPS_PER_RUN (default 10) when handle.panic loops", async () => {
@@ -229,48 +231,5 @@ describe("auto-panic circuit-break", () => {
     const visible = stderr.join("")
     const circuitBreakLines = visible.match(/\[silvery\] auto-panic circuit-break/g) ?? []
     expect(circuitBreakLines.length).toBe(1)
-  })
-
-  test("_resetPanicCircuitBreaker brings the counter back to zero", async () => {
-    // Trip the gate in the first phase.
-    const { writable: stdout } = createMockStdout()
-    const handle1 = await run(<Text>ready1</Text>, {
-      cols: 40,
-      rows: 10,
-      stdout,
-      stdin: createMockStdin(),
-      guardOutput: true,
-      kitty: false,
-      textSizing: false,
-      widthDetection: false,
-    } as never)
-    for (let i = 0; i < DEFAULT_MAX_DUMPS + 2; i++) {
-      handle1.panic(new Error(`phase1 ${i}`), { title: "test" })
-    }
-    await handle1.waitUntilExit()
-
-    const phase1Lines = stderr.join("").match(/\[silvery\] auto-panic circuit-break/g) ?? []
-    expect(phase1Lines.length).toBe(1)
-
-    // Reset counter and start a fresh phase. The gate should not fire
-    // immediately on the new App's first panic.
-    _resetPanicCircuitBreaker()
-    stderr.length = 0
-
-    const handle2 = await run(<Text>ready2</Text>, {
-      cols: 40,
-      rows: 10,
-      stdout: createMockStdout().writable,
-      stdin: createMockStdin(),
-      guardOutput: true,
-      kitty: false,
-      textSizing: false,
-      widthDetection: false,
-    } as never)
-    handle2.panic(new Error("phase2 single"), { title: "test" })
-    await handle2.waitUntilExit()
-
-    const phase2Lines = stderr.join("").match(/\[silvery\] auto-panic circuit-break/g) ?? []
-    expect(phase2Lines.length).toBe(0)
   })
 })
