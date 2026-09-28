@@ -34,7 +34,9 @@
 import React from "react"
 import { describe, expect, test, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
-import { Text } from "../../src/index.js"
+import { Box, Text } from "../../src/index.js"
+import { BorderedRectClipError } from "@silvery/ag-term/strict-bordered-rect"
+import { resetStrictCache } from "@silvery/ag-term/strict-mode"
 import {
   type Scope,
   createScope,
@@ -69,6 +71,124 @@ async function drainMicrotasksUntil(predicate: () => boolean, limit = 100): Prom
 }
 
 describe("createRenderer/render provides a per-render app-root scope", () => {
+  /**
+   * @failure Failed construction leaves subscriptions and scope alive; one
+   *          throwing release strands later owners or hides the first error.
+   * @level l3
+   * @consumer @silvery/test createRenderer / km-tui storybook smoke
+   * @testonly none
+   * Existing rows dispose successfully returned handles. Construction failures
+   * return no handle, and synchronous multi-release errors need their own row.
+   */
+  test.each([
+    "first paint",
+    "onFrame",
+    "onFrame with cleanup failure",
+    "dispose with cleanup failures",
+  ] as const)(
+    "lifetime failure at %s releases effects and scope before a healthy retry",
+    async (failurePoint) => {
+      const subscriptions = new Set<() => void>()
+      const baseline = subscriptions.size
+      let scope: Scope | undefined
+      let cleanups = 0
+      const frameError = new Error("initial-frame-failed")
+      const cleanupError = new Error("react-cleanup-failed")
+      const stdinError = new Error("stdin-detach-failed")
+      const disposeFailure = failurePoint === "dispose with cleanup failures"
+      const stdinBaseline = process.stdin.listenerCount("readable")
+      const onRemove = (event: string | symbol) => {
+        if (shouldFail && event === "readable") throw stdinError
+      }
+      const reported: unknown[] = []
+      let shouldFail = true
+      setDisposeErrorSink((error) => reported.push(error))
+
+      function Owner({ overflow = false }: { overflow?: boolean }): React.ReactElement {
+        scope = useAppScope()
+        React.useEffect(() => {
+          const listener = () => {}
+          subscriptions.add(listener)
+          return () => {
+            subscriptions.delete(listener)
+            cleanups++
+            if (shouldFail && (failurePoint === "onFrame with cleanup failure" || disposeFailure))
+              throw cleanupError
+          }
+        }, [])
+        return overflow ? (
+          <Box width={20} height={3} borderStyle="round">
+            <Text>{"a ".repeat(20)}</Text>
+          </Box>
+        ) : (
+          <Text>healthy owner</Text>
+        )
+      }
+
+      vi.stubEnv("SILVERY_STRICT", "2")
+      resetStrictCache()
+      if (disposeFailure) process.stdin.on("removeListener", onRemove)
+      try {
+        const render = createRenderer({
+          cols: 80,
+          rows: 12,
+          stdin: disposeFailure ? process.stdin : undefined,
+          onFrame: () => {
+            if (shouldFail && failurePoint.startsWith("onFrame")) throw frameError
+          },
+        })
+        let thrown: unknown
+        let frames: string[] | undefined
+        try {
+          const app = render(<Owner overflow={failurePoint === "first paint"} />)
+          if (disposeFailure) {
+            frames = app.frames
+            app.unmount()
+          }
+        } catch (error) {
+          thrown = error
+        }
+        if (failurePoint === "first paint") {
+          expect(thrown).toBeInstanceOf(BorderedRectClipError)
+        } else {
+          expect(thrown).toBe(disposeFailure ? cleanupError : frameError)
+        }
+        expect(subscriptions.size, "failed construction must synchronously unsubscribe").toBe(
+          baseline,
+        )
+        expect(cleanups).toBe(1)
+        const failedScope = scope!
+        await drainMicrotasksUntil(() => failedScope.disposed)
+        expect(failedScope.disposed).toBe(true)
+        expect(reported).toEqual(
+          disposeFailure
+            ? [stdinError]
+            : failurePoint === "onFrame with cleanup failure"
+              ? [cleanupError]
+              : [],
+        )
+        if (disposeFailure) {
+          expect(frames).toEqual([])
+          expect(process.stdin.listenerCount("readable")).toBe(stdinBaseline)
+        }
+
+        shouldFail = false
+        {
+          using app = render(<Owner />)
+          expect(app.text).toContain("healthy owner")
+          expect(subscriptions.size).toBe(baseline + 1)
+        }
+        expect(subscriptions.size).toBe(baseline)
+        expect(cleanups, "successful ownership transfer must dispose exactly once").toBe(2)
+      } finally {
+        process.stdin.removeListener("removeListener", onRemove)
+        setDisposeErrorSink(() => {})
+        vi.unstubAllEnvs()
+        resetStrictCache()
+      }
+    },
+  )
+
   // --------------------------------------------------------------------------
   // Test 1 + 2 — useScopeEffect renders without throwing; scope is real
   // --------------------------------------------------------------------------
