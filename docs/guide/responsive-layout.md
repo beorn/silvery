@@ -67,7 +67,7 @@ Give the query ancestor `containerType="inline-size"` and `containSize` so its i
 ```
 
 The size is frozen before dependent descendants lay out. A query container's own length queries its ancestor, rather than itself.
-With no query ancestor, the layout root supplies the viewport fallback.
+With no query ancestor, the layout root is the implicit inline-size query container: descendants use its computed inline size. The root's own query units resolve against the available size.
 
 This is a deliberate CSS subset. Math on padding, margin, gap and position offsets is refused; numeric spacing and margin `auto` keep their existing behavior.
 `cqmin`, `cqb` and `cqmax` are refused in dimension expressions until both query axes are supported. The existing `fitWidth` API retains its earlier `cqmin` behavior.
