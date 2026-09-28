@@ -921,12 +921,13 @@ function renderNodeToBuffer(
 
       // Render overflow indicators AFTER children so they survive viewport clear.
       // renderScrollContainerChildren may clear the viewport (Tier 2) which would
-      // overwrite indicators drawn before children.
+      // overwrite indicators drawn before children. They are this container's own
+      // paint, so they take its screen offset and clip exactly as renderBox does.
       const scrollState = node.scrollState
       if (!scrollState) {
         throw new Error("Scroll container state: expected scroll state after rendering children")
       }
-      renderScrollIndicators(node, buffer, layout, props, scrollState, ctx)
+      renderScrollIndicators(node, buffer, layout, props, scrollState, nodeState, ctx)
     } else {
       renderNormalChildren(
         node,
@@ -2158,6 +2159,11 @@ function renderNormalChildren(
   // scroll indicator overwrites the bottom-bar's "MEM 📋 NNN" text without
   // the bottom-bar repainting to restore it. STRICT_OUTPUT mismatches at
   // (col, N) char='M' vs ' '. See bead km-all.fix-sweep-strict-cluster.
+  //
+  // Known gap: a later sibling that renders for its own reasons (willRender[j]
+  // already true) is not overlap-forced. It keeps hasPrevBuffer, so its clean
+  // descendants under the earlier sibling's new paint stay on the fast path.
+  // See LESSONS.md "A Scroll Indicator Painted Outside Its Clip" (2026-09-28).
   const firstPassChildren: AgNode[] = []
   for (const child of node.children) {
     const childProps = child.props as BoxProps

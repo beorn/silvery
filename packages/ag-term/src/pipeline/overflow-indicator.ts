@@ -18,7 +18,9 @@ export interface OverflowIndicatorPlacementInput {
   hidden: number
   /**
    * The scroll container's rect. The placement comes back in the same
-   * coordinate space; the painter passes the container's `boxRect`.
+   * coordinate space. The painter passes the container's screen position
+   * (`boxRect` shifted by the scroll offset it renders under), and hit tests
+   * pass its `screenRect`.
    */
   layout: Rect
   /**

@@ -192,20 +192,23 @@ export function renderBorder(
 
   // Helper to check if a column is visible within clip bounds
   const isColVisible = (col: number): boolean => {
-    if (clipBounds?.left === undefined || clipBounds.right === undefined)
+    if (clipBounds?.left === undefined || clipBounds.right === undefined) {
       return col >= 0 && col < sink.width
+    }
     return col >= clipBounds.left && col < clipBounds.right && col < sink.width
   }
 
   // Top border — corners use the bg of the horizontal side (top/bottom)
   if (showTop && isRowVisible(y)) {
-    if (showLeft && isColVisible(x))
+    if (showLeft && isColVisible(x)) {
       sink.emitSetCell(x, y, { char: chars.topLeft, fg: color, bg: topBg })
+    }
     const hStart = showLeft ? x + 1 : x
     const hEnd = showRight ? x + width - 1 : x + width
     for (let col = hStart; col < hEnd && col < sink.width; col++) {
-      if (isColVisible(col))
+      if (isColVisible(col)) {
         sink.emitSetCell(col, y, { char: chars.horizontal, fg: color, bg: topBg })
+      }
     }
     if (showRight && x + width - 1 < sink.width && isColVisible(x + width - 1)) {
       sink.emitSetCell(x + width - 1, y, { char: chars.topRight, fg: color, bg: topBg })
@@ -218,8 +221,9 @@ export function renderBorder(
   const sideEnd = showBottom ? y + height - 1 : y + height
   for (let row = sideStart; row < sideEnd; row++) {
     if (!isRowVisible(row)) continue
-    if (showLeft && isColVisible(x))
+    if (showLeft && isColVisible(x)) {
       sink.emitSetCell(x, row, { char: chars.vertical, fg: color, bg: leftBg })
+    }
     if (showRight && x + width - 1 < sink.width && isColVisible(x + width - 1)) {
       sink.emitSetCell(x + width - 1, row, { char: rightVertical, fg: color, bg: rightBg })
     }
@@ -235,8 +239,9 @@ export function renderBorder(
     const bStart = showLeft ? x + 1 : x
     const bEnd = showRight ? x + width - 1 : x + width
     for (let col = bStart; col < bEnd && col < sink.width; col++) {
-      if (isColVisible(col))
+      if (isColVisible(col)) {
         sink.emitSetCell(col, bottomY, { char: bottomHorizontal, fg: color, bg: bottomBg })
+      }
     }
     if (showRight && x + width - 1 < sink.width && isColVisible(x + width - 1)) {
       sink.emitSetCell(x + width - 1, bottomY, {
@@ -295,8 +300,9 @@ export function renderOutline(
 
   // Helper to check if a column is visible within clip bounds
   const isColVisible = (col: number): boolean => {
-    if (clipBounds?.left === undefined || clipBounds.right === undefined)
+    if (clipBounds?.left === undefined || clipBounds.right === undefined) {
       return col >= 0 && col < sink.width
+    }
     return col >= clipBounds.left && col < clipBounds.right && col < sink.width
   }
 
@@ -307,11 +313,13 @@ export function renderOutline(
 
   // Top border (one row above the box)
   if (showTop && isRowVisible(oy)) {
-    if (showLeft && isColVisible(ox))
+    if (showLeft && isColVisible(ox)) {
       sink.emitSetCell(ox, oy, { char: chars.topLeft, fg: color, bg, attrs })
+    }
     for (let col = ox + 1; col < ox + ow - 1 && col < sink.width; col++) {
-      if (isColVisible(col))
+      if (isColVisible(col)) {
         sink.emitSetCell(col, oy, { char: chars.horizontal, fg: color, bg, attrs })
+      }
     }
     if (showRight && ox + ow - 1 < sink.width && isColVisible(ox + ow - 1)) {
       sink.emitSetCell(ox + ow - 1, oy, { char: chars.topRight, fg: color, bg, attrs })
@@ -324,8 +332,9 @@ export function renderOutline(
   const sideEnd = showBottom ? oy + oh - 1 : oy + oh
   for (let row = sideStart; row < sideEnd; row++) {
     if (!isRowVisible(row)) continue
-    if (showLeft && isColVisible(ox))
+    if (showLeft && isColVisible(ox)) {
       sink.emitSetCell(ox, row, { char: chars.vertical, fg: color, bg, attrs })
+    }
     if (showRight && ox + ow - 1 < sink.width && isColVisible(ox + ow - 1)) {
       sink.emitSetCell(ox + ow - 1, row, { char: outlineRightVertical, fg: color, bg, attrs })
     }
@@ -339,8 +348,9 @@ export function renderOutline(
       sink.emitSetCell(ox, bottomY, { char: chars.bottomLeft, fg: color, bg, attrs })
     }
     for (let col = ox + 1; col < ox + ow - 1 && col < sink.width; col++) {
-      if (isColVisible(col))
+      if (isColVisible(col)) {
         sink.emitSetCell(col, bottomY, { char: outlineBottomHorizontal, fg: color, bg, attrs })
+      }
     }
     if (showRight && ox + ow - 1 < sink.width && isColVisible(ox + ow - 1)) {
       sink.emitSetCell(ox + ow - 1, bottomY, {
@@ -370,6 +380,14 @@ export {
  * {@link overflowIndicatorPlacement} puts them: on the border line of a
  * bordered edge, on the first/last content row of a borderless edge when
  * `overflowIndicator` is set.
+ *
+ * The indicators are the scroll container's own paint, like its background and
+ * border (see {@link renderBox}). They are placed at the container's screen
+ * position (`layout.y - scrollOffset`) and clipped to the `clipBounds` the
+ * container renders under. An indicator row outside that clip paints nothing,
+ * which matches the clip-aware pointer hit test. If it painted, it would draw
+ * over whatever owns those cells, and an incremental frame would keep that
+ * owner's clean cells on the fast path while a fresh frame repaints them.
  */
 export function renderScrollIndicators(
   _node: AgNode,
@@ -377,6 +395,7 @@ export function renderScrollIndicators(
   layout: Rect,
   props: BoxProps,
   ss: NonNullable<AgNode["scrollState"]>,
+  nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds">,
   ctx?: PipelineContext,
 ): void {
   // Inverse bar style: white text on dark background
@@ -385,27 +404,39 @@ export function renderScrollIndicators(
     bg: 8, // Dark gray
     attrs: {},
   }
+  const { scrollOffset, clipBounds } = nodeState
+  const screenLayout: Rect = { ...layout, y: layout.y - scrollOffset }
 
   // Top first, then bottom: on a shared row the bottom indicator wins.
-  const top = overflowIndicatorPlacement({ edge: "top", hidden: ss.hiddenAbove, layout, props })
-  if (top) renderOverflowIndicator(buffer, top, indicatorStyle, ctx)
+  const top = overflowIndicatorPlacement({
+    edge: "top",
+    hidden: ss.hiddenAbove,
+    layout: screenLayout,
+    props,
+  })
+  if (top) renderOverflowIndicator(buffer, top, indicatorStyle, clipBounds, ctx)
   const bottom = overflowIndicatorPlacement({
     edge: "bottom",
     hidden: ss.hiddenBelow,
-    layout,
+    layout: screenLayout,
     props,
   })
-  if (bottom) renderOverflowIndicator(buffer, bottom, indicatorStyle, ctx)
+  if (bottom) renderOverflowIndicator(buffer, bottom, indicatorStyle, clipBounds, ctx)
 }
 
 function renderOverflowIndicator(
   buffer: TerminalBuffer,
   placement: OverflowIndicatorPlacement,
   style: Style,
+  clipBounds: NodeRenderState["clipBounds"],
   ctx?: PipelineContext,
 ): void {
   const { y, x, width, text, rowX, rowWidth } = placement
-  const maxCol = rowX + rowWidth
+  if (clipBounds && (y < clipBounds.top || y >= clipBounds.bottom)) return
+  // The painted span is the placement's row span narrowed to the clip.
+  const left = Math.max(rowX, clipBounds?.left ?? rowX)
+  const right = Math.min(rowX + rowWidth, clipBounds?.right ?? rowX + rowWidth)
+  if (right <= left) return
   // Clear the whole indicator row first. The viewport window can replace an
   // item row with an overflow-indicator row after scrolling; without explicit
   // clears, incremental output leaves stale item glyphs around the centered
@@ -413,15 +444,28 @@ function renderOverflowIndicator(
   // the surrounding blank cells.
   renderTextLine(
     buffer,
-    rowX,
+    left,
     y,
-    " ".repeat(rowWidth),
+    " ".repeat(right - left),
     { fg: null, bg: null, attrs: {} },
-    maxCol,
+    right,
     undefined,
     ctx,
   )
-  // Clip the glyph to its own cells, so the placement's [x, x + width) is
-  // exactly what reaches the buffer.
-  renderTextLine(buffer, x, y, text, style, Math.min(maxCol, x + width), undefined, ctx)
+  // Clip the glyph to its own cells within the painted span, so no more than
+  // the placement's [x, x + width) reaches the buffer. Every glyph character
+  // is one cell wide, so a cell offset is a string offset.
+  const glyphLeft = Math.max(x, left)
+  const glyphRight = Math.min(x + width, right)
+  if (glyphRight <= glyphLeft) return
+  renderTextLine(
+    buffer,
+    glyphLeft,
+    y,
+    text.slice(glyphLeft - x, glyphRight - x),
+    style,
+    glyphRight,
+    undefined,
+    ctx,
+  )
 }
