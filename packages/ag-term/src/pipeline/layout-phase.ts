@@ -326,8 +326,9 @@ function countNodes(node: AgNode): number {
  * The skip is safe because:
  * - Flexily's internal fingerprint caching guarantees identical output for
  *   subtrees whose inputs didn't change
- * - If the parent's rect matches, all descendants' rects also match
- *   (Flexily computes absolute positions from parent dimensions)
+ * - No ancestor rectangle changed in this propagation branch. Descendants
+ *   can depend on a resized CQ through an unchanged fixed-size wrapper, so
+ *   a matching immediate parent rectangle alone is insufficient.
  * - prevLayout and layoutChangedThisFrame (stale epoch, won't match
  *   current) all retain correct values
  *
@@ -447,9 +448,11 @@ function propagateLayout(
     }
   }
 
-  // Recurse to children
+  // A changed ancestor can alter descendant layout through an unchanged
+  // wrapper (for example, CQ units). Visit that entire branch; unrelated
+  // branches can still use the incremental prune.
   for (const child of node.children) {
-    propagateLayout(child, rect.x, rect.y, incrementalSkip)
+    propagateLayout(child, rect.x, rect.y, incrementalSkip && !layoutDidChange)
   }
 
   // Cache cascade inputs that render-phase would otherwise compute via tree walks.

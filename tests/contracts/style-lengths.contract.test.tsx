@@ -8,7 +8,7 @@
  * Existing engine math tests assign Value directly and miss this string seam.
  */
 import React from "react"
-import { expect, test } from "vitest"
+import { expect, test, vi } from "vitest"
 import { Box, Text, Island, ScopeProvider } from "@silvery/ag-react"
 import { createRenderer } from "@silvery/test"
 import { snapshotGuest } from "@silvery/ag/island-guests"
@@ -97,8 +97,9 @@ test.each(
   const assertPair = (dimension?: number) => {
     const numeric = app.getByTestId("numeric").boundingBox()
     const math = app.getByTestId("math").boundingBox()
-    if (!numeric || !math)
-      {throw new Error(`${component} ${property}: expected both public layout nodes`)}
+    if (!numeric || !math) {
+      throw new Error(`${component} ${property}: expected both public layout nodes`)
+    }
     if (dimension !== undefined) expect(numeric[inline ? "width" : "height"]).toBe(dimension)
     expect([math.width, math.height]).toEqual([numeric.width, numeric.height])
   }
@@ -192,8 +193,9 @@ test("public rerender and identical adapter input retain the parsed length", () 
   const app = render(tree("A"))
   try {
     const layout = ref.current?.getNode()?.layoutNode
-    if (!layout || !("getFlexilyNode" in layout))
-      {throw new Error("Expected the mounted Box's Flexily adapter")}
+    if (!layout || !("getFlexilyNode" in layout)) {
+      throw new Error("Expected the mounted Box's Flexily adapter")
+    }
     const native = (layout as typeof layout & { getFlexilyNode(): FlexilyNode }).getFlexilyNode()
     const parsed = native.getWidth()
     expect(Object.isFrozen(parsed)).toBe(true)
@@ -212,13 +214,24 @@ test("public rerender and identical adapter input retain the parsed length", () 
 
 // #26247/AC CQ lifetime: the containing CQ changes while the intervening
 // wrapper stays at width 30; a reused descendant must resolve the new freeze.
+// Paint the full math width so STRICT's fresh-layout oracle cannot repair
+// stale public geometry without first detecting the incremental pixel error.
 test("public math width follows a resized CQ through a fixed wrapper", () => {
+  // Root Vitest setup defaults to tier 1; this pipeline contract requires
+  // tier 2's independent fresh-layout baseline after that setup has run.
+  vi.stubEnv("SILVERY_STRICT", "2")
   const render = createRenderer({ cols: 220, rows: 80 })
   const tree = (width: number) => (
-    <Box width={220} height={80}>
+    <Box width={220} height={80} backgroundColor="black">
       <Box width={width} height={1} containerType="inline-size" flexShrink={0}>
         <Box width={30} height={1} flexShrink={0}>
-          <Box testID="cq-math" width="max(1ch, 10cqi)" height={1} flexShrink={0}>
+          <Box
+            testID="cq-math"
+            width="max(1ch, 10cqi)"
+            height={1}
+            flexShrink={0}
+            backgroundColor="green"
+          >
             <Text>M</Text>
           </Box>
         </Box>
@@ -230,12 +243,14 @@ test("public math width follows a resized CQ through a fixed wrapper", () => {
       ))}
     </Box>
   )
-  const app = render(tree(200))
+  let app: ReturnType<typeof render> | undefined
   try {
+    app = render(tree(200))
     expect(app.getByTestId("cq-math").boundingBox()?.width).toBe(20)
     app.rerender(tree(100))
     expect(app.getByTestId("cq-math").boundingBox()?.width).toBe(10)
   } finally {
-    app.unmount()
+    app?.unmount()
+    vi.unstubAllEnvs()
   }
 })
