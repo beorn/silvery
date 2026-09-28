@@ -244,11 +244,20 @@ function syncPrevLayout(root: AgNode, layoutPhaseRan: boolean): void {
 
   const stack: AgNode[] = [root]
   while (stack.length > 0) {
-    const node = stack.pop()!
+    const node = stack.pop()
+    if (!node) {
+      throw new Error("Layout history traversal stack: expected a node while the stack is nonempty")
+    }
     node.prevLayout = node.boxRect
     const children = node.children
     for (let i = children.length - 1; i >= 0; i--) {
-      stack.push(children[i]!)
+      const child = children[i]
+      if (!child) {
+        throw new Error(
+          `Layout history child at index ${i}: expected a node within the children array`,
+        )
+      }
+      stack.push(child)
     }
   }
 }
@@ -358,7 +367,7 @@ type CellDebug = { x: number; y: number; log: string[] }
 
 /** Read the cell debug target (set by SILVERY_CELL_DEBUG env var). */
 function getCellDebug(): CellDebug | undefined {
-  return (globalThis as any).__silvery_cell_debug as CellDebug | undefined
+  return (globalThis as { __silvery_cell_debug?: CellDebug }).__silvery_cell_debug
 }
 
 /** Check if a rect covers the cell debug target point. */
@@ -399,18 +408,24 @@ function emitRenderPhaseStats(
   const snap = {
     clone: tClone,
     render: tRender,
-    ...structuredClone(stats),
+    ...globalThis.structuredClone(stats),
   }
   // Retain globalThis for programmatic consumers (STRICT diagnostics, perf profiling)
-  ;(globalThis as any).__silvery_content_detail = snap
-  const arr = ((globalThis as any).__silvery_content_all ??= [] as (typeof snap)[])
+  const diagnostics = globalThis as {
+    __silvery_content_detail?: typeof snap
+    __silvery_content_all?: (typeof snap)[]
+    __silvery_node_trace?: NodeTraceEntry[][]
+  }
+  diagnostics.__silvery_content_detail = snap
+  const arr = (diagnostics.__silvery_content_all ??= [])
   arr.push(snap)
   // Route human-readable output through loggily
   contentLog.debug?.(
     `frame ${snap._callCount}: ${snap.nodesRendered}/${snap.nodesVisited} rendered, ${snap.nodesSkipped} skipped (${tClone.toFixed(1)}ms clone, ${tRender.toFixed(1)}ms render)`,
   )
+  const resettableStats: Record<keyof RenderPhaseStats, number | string> = stats
   for (const key of Object.keys(stats) as (keyof RenderPhaseStats)[]) {
-    ;(stats as any)[key] = 0
+    resettableStats[key] = 0
   }
   stats.cascadeMinDepth = 999
   stats.cascadeNodes = ""
@@ -419,7 +434,7 @@ function emitRenderPhaseStats(
 
   // Export node trace for SILVERY_STRICT diagnosis
   if (nodeTraceEnabled && nodeTrace.length > 0) {
-    const traceArr = ((globalThis as any).__silvery_node_trace ??= [] as NodeTraceEntry[][])
+    const traceArr = (diagnostics.__silvery_node_trace ??= [])
     traceArr.push([...nodeTrace])
     traceLog.debug?.(`${nodeTrace.length} nodes traced`)
     nodeTrace.length = 0
@@ -907,7 +922,11 @@ function renderNodeToBuffer(
       // Render overflow indicators AFTER children so they survive viewport clear.
       // renderScrollContainerChildren may clear the viewport (Tier 2) which would
       // overwrite indicators drawn before children.
-      renderScrollIndicators(node, buffer, layout, props, node.scrollState!, ctx)
+      const scrollState = node.scrollState
+      if (!scrollState) {
+        throw new Error("Scroll container state: expected scroll state after rendering children")
+      }
+      renderScrollIndicators(node, buffer, layout, props, scrollState, ctx)
     } else {
       renderNormalChildren(
         node,
@@ -1066,7 +1085,7 @@ function traceRenderDecision(
       if (depth < stats.cascadeMinDepth) {
         stats.cascadeMinDepth = depth
       }
-      const id = (node.props as Record<string, unknown>).id ?? node.type
+      const id = (node.props as BoxProps).id ?? node.type
       const flags = [
         isDirty(node, CONTENT_BIT) && "C",
         isDirty(node, STYLE_PROPS_BIT) && "P",
@@ -1332,9 +1351,11 @@ function renderOwnContent(
  * which won't happen for a Box that never had these props).
  */
 function mayHaveBoxAttrOverlay(props: BoxProps): boolean {
+  // oxlint-disable-next-line typescript/no-deprecated -- legacy underlineStyle remains a supported Box overlay prop
+  const legacyUnderlineStyle = props.underlineStyle
   return !!(
     props.underline ||
-    props.underlineStyle ||
+    legacyUnderlineStyle ||
     props.underlineColor ||
     props.overline ||
     props.bold ||
@@ -1365,8 +1386,10 @@ function computeBoxAttrOverlay(
   // the legacy `underlineStyle: UnderlineStyle`. `underlineStyle` wins when
   // both are set (matches getTextStyle() precedence).
   let underlineStyle: Exclude<import("@silvery/ag/types").UnderlineStyle, false> | undefined
-  if (props.underlineStyle !== undefined && props.underlineStyle !== false) {
-    underlineStyle = props.underlineStyle
+  // oxlint-disable-next-line typescript/no-deprecated -- legacy underlineStyle must retain precedence over underline
+  const legacyUnderlineStyle = props.underlineStyle
+  if (legacyUnderlineStyle !== undefined && legacyUnderlineStyle !== false) {
+    underlineStyle = legacyUnderlineStyle
   } else if (typeof props.underline === "string") {
     underlineStyle = props.underline
   } else if (props.underline === true) {
@@ -1710,15 +1733,16 @@ function renderScrollContainerChildren(
   const contentWidth = layout.width - border.left - border.right - padding.left - padding.right
 
   // Compute scroll bg eagerly -- planScrollRender needs it and it's cheap
-  const scrollBg =
+  let scrollBg: Color = null
+  if (
     scrollOffsetChanged ||
     isDirty(node, CHILDREN_BIT) ||
     childrenNeedFreshRender ||
     visibleRangeChanged
-      ? getEffectiveBg(props)
-        ? parseColor(getEffectiveBg(props)!)
-        : inheritedBg.color
-      : null
+  ) {
+    const effectiveBg = getEffectiveBg(props)
+    scrollBg = effectiveBg ? parseColor(effectiveBg) : inheritedBg.color
+  }
 
   // Tier 1 (buffer shift) is unsafe when a sibling absolute child overlays
   // this scroll container's rect. The shift moves pixels in our rect — but
@@ -2164,7 +2188,12 @@ function renderNormalChildren(
     // skipped children don't need the walk.
     for (let i = 0; i < firstPassChildren.length; i++) {
       if (!willRender[i]) continue
-      const childI = firstPassChildren[i]!
+      const childI = firstPassChildren[i]
+      if (!childI) {
+        throw new Error(
+          `Paint extent child at index ${i}: expected a node within the first-pass children array`,
+        )
+      }
       const ei = computeSubtreePaintExtent(childI)
       if (!ei || ei.width <= 0 || ei.height <= 0) continue
       for (let j = i + 1; j < firstPassChildren.length; j++) {
@@ -2175,7 +2204,13 @@ function renderNormalChildren(
         // j wouldn't be at the row painted by i unless they're also inside
         // ei — and our recursion-from-i covers any descendant of j that ALSO
         // happens to fall within ei. We don't need j's full subtree extent.
-        const rj = firstPassChildren[j]!.boxRect
+        const childJ = firstPassChildren[j]
+        if (!childJ) {
+          throw new Error(
+            `Overlap sibling at index ${j}: expected a node within the first-pass children array`,
+          )
+        }
+        const rj = childJ.boxRect
         if (!rj || rj.width <= 0 || rj.height <= 0) continue
         const overlapX = ei.x < rj.x + rj.width && rj.x < ei.x + ei.width
         const overlapY = ei.y < rj.y + rj.height && rj.y < ei.y + ei.height
@@ -2193,7 +2228,12 @@ function renderNormalChildren(
       if (instr.enabled) instr.stats.nodesSkipped++
       continue
     }
-    const child = firstPassChildren[i]!
+    const child = firstPassChildren[i]
+    if (!child) {
+      throw new Error(
+        `Render child at index ${i}: expected a node within the first-pass children array`,
+      )
+    }
 
     // For overlap-forced children (clean by their own flags but overlapped
     // by an earlier-rendered sibling) we must NOT trust the cloned buffer
