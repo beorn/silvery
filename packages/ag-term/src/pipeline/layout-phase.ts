@@ -123,8 +123,7 @@ export const FRESH_LAYOUT_STRICT_MIN_TIER = 2
  */
 export function markLayoutTreeDirty(root: AgNode): void {
   const stack: AgNode[] = [root]
-  while (stack.length > 0) {
-    const node = stack.pop()!
+  for (let node = stack.pop(); node !== undefined; node = stack.pop()) {
     node.layoutNode?.markDirty()
     for (const child of node.children) stack.push(child)
   }
@@ -951,14 +950,22 @@ export function strictApportionBandsCheck(root: AgNode): void {
     const violation = findApportionBandViolation(realized)
     if (violation === null) return
 
-    const starved = realized[violation.starved]!
-    const donor = realized[violation.donor]!
+    const starved = realized[violation.starved]
+    const donor = realized[violation.donor]
+    const starvedNode = group[violation.starved]
+    const donorNode = group[violation.donor]
+    if (!starved || !donor || !starvedNode || !donorNode) {
+      throw new Error(
+        `[SILVERY_STRICT] apportion violation indices ${violation.starved}/${violation.donor} ` +
+          `do not match realized tracks and children in ${nodePath(parent)}`,
+      )
+    }
     const detail = {
       container: nodeIdent(parent),
       containerPath: nodePath(parent),
       containerBox: parent.boxRect,
-      starved: nodeIdent(group[violation.starved]!),
-      donor: nodeIdent(group[violation.donor]!),
+      starved: nodeIdent(starvedNode),
+      donor: nodeIdent(donorNode),
       tracks: realized,
     }
     const msg =
@@ -1119,8 +1126,7 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
     stickyBottom?: number
   }[] = []
 
-  for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i]!
+  for (const [i, child] of node.children.entries()) {
     if (!child.layoutNode || !child.boxRect) continue
 
     const childTop = child.boxRect.y - layout.y - border.top - padding.top
@@ -1128,7 +1134,7 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
     const childProps = child.props as BoxProps
 
     childPositions.push({
-      child: child!,
+      child,
       top: childTop,
       bottom: childBottom,
       index: i,
@@ -1693,8 +1699,7 @@ export function stickyPhase(root: AgNode): void {
 
     const newStickyChildren: NonNullable<AgNode["stickyChildren"]> = []
 
-    for (let i = 0; i < node.children.length; i++) {
-      const child = node.children[i]!
+    for (const [i, child] of node.children.entries()) {
       const childProps = child.props as BoxProps
       if (childProps.position !== "sticky") continue
       if (childProps.stickyBottom === undefined) continue
@@ -1753,9 +1758,11 @@ function stickyChildrenEqual(a: AgNode["stickyChildren"], b: AgNode["stickyChild
   if (a === b) return true
   if (!a || !b) return false
   if (a.length !== b.length) return false
-  for (let i = 0; i < a.length; i++) {
-    const ai = a[i]!
-    const bi = b[i]!
+  for (const [i, ai] of a.entries()) {
+    const bi = b[i]
+    if (bi === undefined) {
+      throw new Error(`Sticky layout comparison is missing entry ${i} in equal-length arrays`)
+    }
     if (
       ai.index !== bi.index ||
       ai.renderOffset !== bi.renderOffset ||
