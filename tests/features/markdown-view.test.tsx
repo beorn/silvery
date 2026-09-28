@@ -183,6 +183,13 @@ describe("MarkdownView — block elements", () => {
     expect(app.text).toContain("• Banana")
     expect(app.text).toContain("• Cherry")
     expect(app.text).not.toMatch(/^-\s/mu) // raw dash marker gone
+    let previousColumn = -1
+    for (const item of ["Apple", "Orange", "Grapefruit", "Lemon"]) {
+      const line = app.lines.find((row) => row.includes(`• ${item}`)) ?? ""
+      const markerColumn = line.indexOf(`• ${item}`)
+      expect(markerColumn, item).toBeGreaterThan(previousColumn)
+      previousColumn = markerColumn
+    }
   })
 
   test("ordered list renders sequential numbers", () => {
@@ -243,13 +250,16 @@ describe("DocumentView — shared document geometry", () => {
       content: `Level ${depth}`,
     }))
     const app = renderDocument(blocks, 80)
+    let previousMarkerColumn = -1
     for (const [depth, marker] of markers.entries()) {
       const text = `Level ${depth}`
       const row = app.lines.findIndex((line) => line.includes(text))
       expect(row).toBeGreaterThanOrEqual(0)
       const markerColumn = app.lines[row]!.indexOf(`${marker} ${text}`)
       expect(markerColumn, `depth ${depth}`).toBeGreaterThanOrEqual(0)
+      expect(markerColumn, `depth ${depth} indent`).toBeGreaterThan(previousMarkerColumn)
       expect(displayLength(app.cell(markerColumn, row).char), `depth ${depth} width`).toBe(1)
+      previousMarkerColumn = markerColumn
     }
   })
 
