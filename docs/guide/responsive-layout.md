@@ -21,6 +21,59 @@ silvery uses Bootstrap/Tailwind/Polaris-style mobile-first breakpoints:
 
 Each breakpoint is **cumulative** — a `lg` value applies at `lg` and `xl` unless `xl` overrides it. Specifying `default` is mandatory; every other breakpoint is optional.
 
+## Dimension expressions
+
+With the Flexily backend, Box, Text and Island accept length strings on `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight` and `flexBasis`.
+Use `calc()`, `min()`, `max()` and `clamp()` to combine a responsive size with a floor or ceiling:
+
+```tsx
+<Box width="clamp(20ch, 50%, 80ch)" height="max(2lh, 25%)">
+  <Text width="calc(100% - 2ch)">A bounded panel</Text>
+</Box>
+```
+
+| Unit  | Meaning in the terminal                                                                                                         |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ch`  | One column; accepted on width and other inline-axis dimensions.                                                                 |
+| `lh`  | One row; accepted on height and other block-axis dimensions.                                                                    |
+| `%`   | A percentage of the corresponding containing axis.                                                                              |
+| `cqi` | One percent of the nearest ancestor's frozen query inline size, or the layout root's inline size when no query ancestor exists. |
+
+Numeric props still count cells: `width={10}` is ten columns and `height={3}` is three rows.
+The terminal adapter supplies the `ch` and `lh` scale. `px` strings are refused with an error pointing to `ch` and `lh`.
+Cross-axis strings such as `height="2ch"`, `width="2lh"` or `height="10cqi"` are refused because this adapter has no cell aspect ratio.
+For `flexBasis`, the parent direction determines the axis, so an incompatible unit is reported at first layout.
+
+### Accepted syntax and fixes
+
+- Function names and units are case-insensitive: `MIN(10CH, 50%)` works.
+- Functions can nest and group expressions: `calc((100% - 2ch) / 2)`.
+- Every length carries a unit. Write `max(50%, 2ch)` instead of `max(50%, 2)`.
+- Arithmetic belongs inside a math function. Wrap `100% - 2ch` as `calc(100% - 2ch)`.
+- Binary `+` and `-` require spaces on both sides. Write `calc(100% - 2ch)` instead of `calc(100%-2ch)`.
+- Multiplication and division take a unitless constant: `calc(2ch*3)` and `calc(6lh/2)`. Division by zero is an error.
+- Fractional lengths such as `0.5ch` are valid. Layout keeps fractional sizes; final box edges snap to whole terminal cells, so a small expression can occupy zero cells.
+
+### Container-relative dimensions
+
+Give the query ancestor `containerType="inline-size"` and `containSize` so its inline size does not depend on the descendants that query it:
+
+```tsx
+<Box width={100} containerType="inline-size" containSize>
+  <Box width="max(1ch, 10cqi)">
+    <Text>At least one column, otherwise ten percent of the query width</Text>
+  </Box>
+</Box>
+```
+
+The size is frozen before dependent descendants lay out. A query container's own length queries its ancestor, rather than itself.
+With no query ancestor, the layout root supplies the viewport fallback.
+
+This is a deliberate CSS subset. Math on padding, margin, gap and position offsets is refused; numeric spacing and margin `auto` keep their existing behavior.
+`cqmin`, `cqb` and `cqmax` are refused in dimension expressions until both query axes are supported. The existing `fitWidth` API retains its earlier `cqmin` behavior.
+`var()` and other units are unsupported. The Yoga backend accepts its existing numbers, percentages and keywords, and reports a prop-named error for these expressions.
+Percent dimensions against an indefinite, auto-sized parent can resolve to zero in Flexily where CSS uses auto sizing; this page does not claim browser-identical layout.
+
 ## Pattern 1: Declarative Box-prop spread
 
 The most common case: layout chrome that switches between column and row, narrows padding on small terminals, or hides a sidebar below some width. Reach for `useResponsiveBoxProps`:
