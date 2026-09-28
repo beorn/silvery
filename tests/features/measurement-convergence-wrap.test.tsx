@@ -159,7 +159,7 @@ describe("measurement-convergence text invalidation", () => {
     expect(diverged, `\n${diverged.join("\n")}`).toEqual([])
   })
 
-  it.fails("26304: a text-shaping prop flipped on the measured re-render leaves stale pixels", () => {
+  it("26304: a text-shaping prop flipped on the measured re-render leaves stale pixels", () => {
     const diverged = divergentWidths(ShapingCell)
     expect(diverged, `\n${diverged.join("\n")}`).toEqual([])
   })

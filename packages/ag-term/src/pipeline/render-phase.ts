@@ -302,14 +302,14 @@ const _renderPhaseStats: RenderPhaseStats = {
 let _renderPhaseCallCount = 0
 
 /**
- * Per-text-node plain-text signature from the previous render, keyed weakly so
+ * Per-text-node text and wrap signature from the previous render, keyed weakly so
  * unmounted nodes are GC'd. Drives the style-only restyle fast path: when the
- * current plain text equals the stored one (and layout is unchanged), the
+ * current plain text and wrap equal the stored ones (and layout is unchanged), the
  * cloned buffer's chars are correct, so a per-segment restyle is sound. Dirty
  * bits can't be used here — the reconciler re-dirties virtual text children on
  * a parent style change even when the text is byte-identical.
  */
-const _textContentSigs = new WeakMap<AgNode, string>()
+const _textContentSigs = new WeakMap<AgNode, { text: string; wrap: TextProps["wrap"] }>()
 
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
 const _nodeTrace: NodeTraceEntry[] = []
@@ -755,10 +755,10 @@ function renderNodeToBuffer(
     // The reconciler re-creates virtual text children on a parent style change
     // (sets CHILDREN/SUBTREE + per-child CONTENT bits) even when the text is
     // byte-identical — so dirty bits CANNOT distinguish a style-only re-render
-    // from a real content change. The reliable signal is a CONTENT COMPARISON:
-    // the style-independent plain text. When it matches the previous frame's
-    // (and layout is unchanged, so wrapping is identical), the cloned buffer's
-    // chars are correct and the per-segment restyle is sound.
+    // from a real content change. Compare the style-independent plain text AND
+    // wrap mode with the previous frame. Equal layout alone does not prove
+    // identical wrapping: a shaping prop can change while the rect stays fixed.
+    // Only when text, wrap, and layout match are the cloned chars safe to restyle.
     //
     // collectPlainText is a cheap string concat (no Intl.Segmenter, no per-cell
     // work) and only runs for the FEW text nodes actually re-rendered this frame
@@ -782,17 +782,22 @@ function renderNodeToBuffer(
       const prevSig = _textContentSigs.get(node)
       // A style change is the only thing left that re-rendered this node with
       // identical content — exactly the restyle case.
-      if (prevSig !== undefined && prevSig === sig && isDirty(node, STYLE_PROPS_BIT)) {
+      if (
+        prevSig !== undefined &&
+        prevSig.text === sig &&
+        prevSig.wrap === props.wrap &&
+        isDirty(node, STYLE_PROPS_BIT)
+      ) {
         useTextStyleFastPath = true
       }
       if (!nodeState.fresh) {
-        _textContentSigs.set(node, sig)
+        _textContentSigs.set(node, { text: sig, wrap: props.wrap })
       }
     } else if (node.type === "silvery-text") {
       // Keep the signature current for every other text render so the NEXT
       // frame's comparison reflects the chars actually in the (cloned) buffer.
       if (!nodeState.fresh) {
-        _textContentSigs.set(node, collectPlainText(node))
+        _textContentSigs.set(node, { text: collectPlainText(node), wrap: props.wrap })
       }
     }
 
