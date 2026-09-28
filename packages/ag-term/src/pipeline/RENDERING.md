@@ -148,6 +148,8 @@ Diff the current buffer against the previous buffer and emit minimal ANSI escape
      - CUP re-sync after each wide char (terminal width disagreement defense)
    - Output: minimal ANSI string
 
+**Buffer taller than the terminal (fullscreen)**: the root is content-sized, so the buffer can have more rows than the terminal. Fullscreen output shows the top `termRows` rows and never addresses a row below them. The first render and every full render stop at the last row, `diffBuffers` changes at `y >= termRows` are dropped, and the native scroll region (`detectNativeScrollPlan`) ends at the terminal's last row. A terminal clamps a `DECSTBM` bottom past its last row. A region reaching below it would scroll fewer rows than the plan modeled, and the blank line pulled into the last row would never be repainted.
+
 **Verification** (during incremental render):
 
 - STRICT (buffer): Compare incremental buffer cell-by-cell against fresh render buffer
@@ -155,6 +157,8 @@ Diff the current buffer against the previous buffer and emit minimal ANSI escape
 - STRICT_TERMINAL=xterm: Feed output to xterm.js terminal emulator, compare cell-by-cell
 - STRICT_TERMINAL=ghostty: Feed output to Ghostty WASM emulator, compare cell-by-cell
 - STRICT_ACCUMULATE: Replay ALL accumulated output (O(N²)) against fresh render
+
+Every output oracle models the terminal the output was written for. In fullscreen that terminal has `visibleRows(bufferHeight, termRows)` rows (`output-verify.ts`): the replay screen or emulator has that many rows, and the fresh reference is capped the same way. Rows below the terminal are never judged, and a write addressed below it clamps onto the last row, as it would on a real terminal. Inline mode's STRICT re-diffs the whole buffer in fullscreen form with no row filter, so it passes no terminal height and compares the whole buffer.
 
 ### 4. Scheduler Output
 
