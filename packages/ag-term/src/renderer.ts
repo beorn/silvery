@@ -1123,457 +1123,85 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     return doFreshRenderFull().buffer
   }
 
-  // Synchronously update React tree within act()
-  instance.rendering = true
-  try {
-    withActEnvironment(() => {
-      act(() => {
-        reconciler.updateContainerSync(
-          wrapWithContexts(currentElement),
-          instance.fiberRoot,
-          null,
-          null,
-        )
-        reconciler.flushSyncWork()
-      })
-    })
-  } finally {
-    instance.rendering = false
-  }
-
-  /**
-   * Promote in-flight rect signals to their committed peers, then drain any
-   * resulting React work with one more `doRender()` if needed.
-   *
-   * Reactive `useBoxRect()` / `useScrollRect()` / `useScreenRect()` hooks
-   * read the COMMITTED rect signals (stable across all convergence passes
-   * within one batch). Calling `commitLayoutSnapshot` advances them by one
-   * frame, which may fire `effect()` callbacks that trigger React
-   * `forceUpdate`s. Those forceUpdates need to land before the test
-   * driver's caller observes the frame — otherwise the first frame would
-   * show the empty-rect fallback for any reactive layout consumer.
-   *
-   * The settle pass is bounded to ONE doRender. Any in-flight rect changes
-   * produced by it are intentionally NOT committed in this batch — they
-   * belong to the next event boundary (one-frame-late contract).
-   *
-   * See bead `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
-   */
-  function settleAfterCommit(prevOutput: string): string {
-    const root = getContainerRoot(instance.container)
-    let scheduled = false
-    hadReactCommit = false
-    withActEnvironment(() => {
-      act(() => {
-        commitLayoutSnapshot(root)
-      })
-      // act() flushes scheduled work; if commit fired effect → forceUpdate,
-      // hadReactCommit was set during the inner act(). If anything still
-      // pending, flush once more.
-      if (hadReactCommit) {
-        act(() => {
-          reconciler.flushSyncWork()
-        })
-        scheduled = true
-      }
-    })
-    if (!scheduled) return prevOutput
-    // One settle pass — re-render with the new committed values. Do NOT
-    // re-commit; further in-flight changes defer to the next batch.
-    return doRender()
-  }
-
-  /**
-   * Drain additional commit / layout cycles until the React tree is stable
-   * (no pending commit, no dirty layout nodes) OR a budget is reached.
-   * Resolves once stable so tests can assert post-convergence state.
-   *
-   * The default is production timing — `render()` exposes a frame after the
-   * production-cap `MAX_CONVERGENCE_PASSES`. Tests asserting layout that
-   * requires more passes to settle (multi-layer measurement chains,
-   * Suspense-driven first-paint cascades, etc.) call this explicitly:
-   *
-   * ```ts
-   * const app = render(<MyApp />)
-   * await app.waitForLayoutStable()
-   * expect(app.text).toMatchSnapshot()
-   * ```
-   *
-   * Stability detection: a pass is run, then `flushSyncWork` runs in a
-   * separate `act()`. If `hadReactCommit` flips during the flush, layout
-   * is still in-flight; loop again (run another commit boundary + flush).
-   * Same predicate the renderer uses internally — does not invent a new
-   * readiness probe.
-   *
-   * Bounded by `maxPasses` (default 20) and `timeoutMs` (default 50ms).
-   * If the cap is reached, resolves WITHOUT throwing — an infinitely
-   * non-converging app is a bug, not a test fault. The contract is "best
-   * effort within the budget."
-   *
-   * Bead: `@km/silvery/test-harness-convergence-cap-parity`.
-   */
-  async function waitForLayoutStable(opts?: {
-    timeoutMs?: number
-    maxPasses?: number
-  }): Promise<void> {
-    if (!instance.mounted) return
-    const timeoutMs = opts?.timeoutMs ?? 50
-    const maxPasses = opts?.maxPasses ?? 20
-    const start = performance.now()
-    let lastFrame = instance.frames[instance.frames.length - 1] ?? ""
-    for (let pass = 0; pass < maxPasses; pass++) {
-      if (performance.now() - start >= timeoutMs) return
-      if (!instance.mounted) return
-
-      // Drain any pending async React work in an act() boundary. Async
-      // microtasks (useEffect → queueMicrotask → setState) need to fire
-      // INSIDE act() so React's scheduler commits the resulting state
-      // updates synchronously rather than warning and deferring.
-      //
-      // `act(async () => { await Promise.resolve() })` is the canonical
-      // React-testing pattern: drains microtasks + flushes passive
-      // effects + commits scheduled state updates, all under the act
-      // boundary. Without the async act wrapper, setState calls inside
-      // microtasks are warned and dropped under IS_REACT_ACT_ENVIRONMENT.
-      // (IS_REACT_ACT_ENVIRONMENT is set globally by `@silvery/test`'s
-      // top-level await, so no withActEnvironment wrapper is required.)
-      const previouslyCommitted = hadReactCommit
-      hadReactCommit = false
-      instance.rendering = true
-      try {
-        await act(async () => {
-          await Promise.resolve()
-        })
-      } finally {
-        instance.rendering = false
-      }
-      const reactCommittedThisPass = previouslyCommitted || hadReactCommit
-
-      // If React committed, re-render to materialize the new tree into
-      // the buffer. Then run the commit-boundary settle for any reactive
-      // useBoxRect / useScrollRect / useScreenRect cascades.
-      let next = lastFrame
-      if (reactCommittedThisPass) {
-        next = doRender()
-      }
-      // commitLayoutSnapshot + flush — promotes in-flight rect signals
-      // to committed and drains any resulting forceUpdate cascade. Same
-      // pattern sendInput / resizeFn use after their bounded loops.
-      next = settleAfterCommit(next)
-      if (!reactCommittedThisPass && next === lastFrame && !hadReactCommit) {
-        // Stable: nothing committed during microtask drain, nothing fired
-        // in the commit-boundary settle. Verify no node remains
-        // epoch-dirty as a final correctness check.
-        try {
-          const root = getContainerRoot(instance.container)
-          if (root && !isAnyDirty(root)) return
-        } catch {
-          return
-        }
-        return
-      }
-      if (next !== lastFrame) {
-        lastFrame = next
-        instance.frames.push(next)
-        onFrame?.(next, instance.prevBuffer!, getRootContentHeight())
-      }
-    }
-    // Budget exhausted — the app didn't converge in the cap. Resolve
-    // anyway (per the contract — best effort within budget). The
-    // SILVERY_STRICT bound assertion already catches structural
-    // non-convergence in the inner loops; this method is for test-author
-    // ergonomics, not a determinism check.
-  }
-
-  // Execute the render pipeline.
-  //
-  // Production parity (bead `@km/silvery/test-harness-convergence-cap-parity`):
-  // the initial render uses the same `MAX_CONVERGENCE_PASSES` cap as
-  // production's `processEventBatch` and `app.run()` initial-render flush
-  // loops (see `create-app.tsx` ~line 2435). Production NEVER runs an extra-
-  // wide cap on first paint, so the test harness must not either — otherwise
-  // tests see post-convergence layout that real users never get on first
-  // paint, and bugs that fire during the first 1-2 passes are invisible.
-  //
-  // Tests that need post-convergence state for their assertions call
-  // `await app.waitForLayoutStable()` explicitly — see that method's docs.
-  // The default is production timing; opt-in is the explicit primitive.
-  //
-  // Historical note: this used to run a wider 5-pass initial cap to
-  // accommodate multi-layer measurement chains (useBoxRect → forceUpdate
-  // → re-render → useBoxRect again). With the layout-signals refactor
-  // (`@km/silvery/listview-layout-signals-from-getlayoutsignals`), the
-  // canonical primitive `boxRectCommitted` reads synchronously during the
-  // SAME render that consumes it, so multi-layer chains converge in 1-2
-  // passes via signal idempotence rather than needing 3-5 React commits.
-  let output = doRender()
-  // Commit boundary for the initial render. Reactive useBoxRect/useScrollRect/
-  // useScreenRect hooks subscribed during this render see the seeded committed
-  // signal (often null/zero) on first read; promoting in-flight → committed
-  // here fires their effects so the next render reads real rects. See bead
-  // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
-  output = settleAfterCommit(output)
-
-  instance.frames.push(output)
-  onFrame?.(output, instance.prevBuffer!, getRootContentHeight())
-
-  if (debug) {
-    console.log("[silvery] Initial render:", output)
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Degenerate-frame canary  (SILVERY_STRICT slug: "canary")
-  // ─────────────────────────────────────────────────────────────────────────
-  //
-  // After the initial render settles, measure the painted-cell ratio. A
-  // healthy full-app render at any non-trivial geometry paints thousands
-  // of cells. A misconfigured root that omits a `<Screen>` /
-  // `<Box width height>` wrapper collapses the entire tree to ~one row
-  // (the title bar) — at 360×120 that's ~360 of 43,200 cells, < 1%.
-  //
-  // The canary only fires when the buffer is large enough that a real-app
-  // frame is expected (cols × rows >= CANARY_MIN_BUFFER_CELLS). Smaller
-  // buffers are unit-test fixtures where low paint ratio is meaningful.
-  //
-  // Strictness: gated by the canonical SILVERY_STRICT contract — fires
-  // whenever `SILVERY_STRICT` includes tier ≥ 1 OR the explicit slug
-  // "canary". Per-test opt-out: `SILVERY_STRICT=1,!canary`.
-  // No new SILVERY_* env vars. See packages/ag-term/src/strict-mode.ts.
-  //
-  // Default (SILVERY_STRICT unset / "0"): emit a `silvery:render` debug
-  // log line. `console.warn` is deliberately NOT used because km's vitest
-  // setup treats any console.warn as a hard test failure.
-  //
-  // Bead: @km/silvery/render-degenerate-frame-canary.
-  if (instance.prevBuffer) {
-    const bufW = instance.prevBuffer.width
-    const bufH = instance.prevBuffer.height
-    const totalCells = bufW * bufH
-    const CANARY_MIN_BUFFER_CELLS = 4000 // ≈ 80×50 — anything smaller is a unit-test fixture
-    if (totalCells >= CANARY_MIN_BUFFER_CELLS) {
-      const painted = instance.prevBuffer.countPaintedCells()
-      const ratio = painted / totalCells
-      if (ratio < 0.05) {
-        const msg =
-          `silvery: degenerate frame after first render — only ${painted} of ${totalCells} cells ` +
-          `painted (${(ratio * 100).toFixed(2)}%) at ${bufW}x${bufH}. ` +
-          `Likely cause: the root component does not pin width/height (no <Screen> ` +
-          `wrapper). createRenderer({cols, rows}) passes dimensions as the AVAILABLE ` +
-          `size to layout, but does NOT set root.style.width/height — wrap the tree ` +
-          `in <Box width={cols} height={rows}> or <Screen>. ` +
-          `Per-test opt-out: SILVERY_STRICT=1,!canary. ` +
-          `See @km/silvery/render-degenerate-frame-canary.`
-        // Tier 2 — surfaces a punch list of harness defects without
-        // blocking tier-1 (back-compat). Promotes to tier 1 once the
-        // existing test suite is clean. Explicit slug "canary" or
-        // tier ≥ 2 fires the throw; tier 1 alone emits debug-log.
-        if (isStrictEnabled("canary", 2)) {
-          throw new Error(msg)
-        } else {
-          log.debug?.(msg)
-        }
-      }
-    }
-  }
-
-  // Set up stdin bridge: forward external stdin data to the renderer's input
+  // Own the mounted root before the first React commit. Initial paint and
+  // callbacks can throw before buildApp returns a disposable handle (#26375).
   let stdinOnReadable: (() => void) | undefined
-  if (stdinStream) {
-    stdinOnReadable = () => {
-      let chunk: string | null
-      while ((chunk = (stdinStream as any).read?.()) !== null && chunk !== undefined) {
-        instance.inputEmitter.emit("input", chunk)
-      }
-    }
-    stdinStream.on("readable", stdinOnReadable)
+  const renderTracker = { unmount: () => {}, id: renderId }
+  const renderRef = new WeakRef(renderTracker)
+  activeRenders.add(renderRef)
+
+  const clearFn = () => {
+    instance.frames.length = 0
+    instance.prevBuffer = null
+    instance.prevPaintedBuffer = null
+    instance.postState = createRenderPostState()
   }
 
-  // Helper functions for App
-  const getContainer = () => getContainerRoot(instance.container)
-  // Expose the POST-fade buffer so app.cell() / app.text / createTextFrame
-  // read what was actually painted. `instance.prevBuffer` is the pre-fade
-  // buffer used for the next frame's renderPhase incremental clone.
-  const getBuffer = () => instance.prevPaintedBuffer ?? instance.prevBuffer
-
-  const sendInput = (data: string) => {
-    if (!instance.mounted) {
-      throw new Error("Cannot write to stdin after unmount")
-    }
-    if (instance.rendering) {
-      throw new Error(
-        "silvery: Re-entrant render detected. " +
-          "Cannot call press()/stdin.write() from inside a React render or effect. " +
-          "Use setTimeout or an event handler instead.",
-      )
-    }
-    const t0 = performance.now()
-    instance.rendering = true
-    try {
-      // Check for bracketed paste before splitting into individual keys.
-      // Paste content is delivered as a single "paste" event, not individual keystrokes.
-      // This mirrors the production path in term-provider.ts.
-      //
-      // parseBracketedPaste may throw ProtocolError when PASTE_START is found
-      // but PASTE_END is missing in the test input (typically a fixture
-      // mistake or intentional malformed-input test). The test renderer
-      // mirrors the runtime input-owner contract: log + fall through.
-      // Bead: @km/silvery/15127-custom-protocol-implementation/protocol-loud-errors.
-      let pasteResult: ReturnType<typeof parseBracketedPaste> = null
+  const unmountFn = () => {
+    if (!instance.mounted) return
+    instance.mounted = false
+    let failed = false
+    let firstError: unknown
+    // Keep one teardown, but a failed release must not strand later owners
+    // or replace the first error. A boolean also preserves `throw undefined`.
+    const attemptRelease = (release: () => void) => {
       try {
-        pasteResult = parseBracketedPaste(data)
-      } catch (err) {
-        if (isProtocolError(err)) {
-          log.debug?.(
-            `bracketed paste parser flagged malformed input in press(): ${err.reason} (len=${err.inputLength})`,
-          )
+        release()
+      } catch (error) {
+        if (failed) {
+          reportDisposeError(error, { phase: "app-exit", scope: renderScope })
         } else {
-          throw err
+          failed = true
+          firstError = error
         }
       }
-      if (pasteResult) {
-        withActEnvironment(() => {
-          act(() => {
-            instance.inputEmitter.emit("paste", pasteResult.content)
-          })
-        })
-      } else {
-        // Split multi-character data into individual keypresses.
-        // This mirrors the production path (render.tsx handleReadable)
-        // where stdin.read() can return buffered characters.
-        withActEnvironment(() => {
-          for (const keypress of splitRawInput(data)) {
-            // Default Tab/Shift+Tab focus cycling and Escape blur.
-            // Matches production behavior in run.tsx and render.tsx.
-            // Tab events are consumed (not passed to useInput handlers).
-            // Each focus change runs in its own act() boundary so React
-            // commits the re-render before the next keypress or doRender().
-            const [, key] = parseKey(keypress)
-            if (handleTabCycling && tabCyclesFocus(key)) {
-              if (!key.shift) {
-                act(() => {
-                  const root = getContainerRoot(instance.container)
-                  focusManager.focusNext(root)
-                })
-                continue
-              }
-              if (key.shift) {
-                act(() => {
-                  const root = getContainerRoot(instance.container)
-                  focusManager.focusPrev(root)
-                })
-                continue
-              }
-            }
-            if (key.escape && focusManager.activeElement) {
-              act(() => {
-                focusManager.blur()
-              })
-              continue
-            }
-            act(() => {
-              instance.inputEmitter.emit("input", keypress)
-            })
-          }
-        })
-      } // end else (non-paste input)
-    } finally {
-      instance.rendering = false
     }
-
-    const t1 = performance.now()
-    // doRender() handles SILVERY_STRICT checking internally
-    let newFrame = doRender()
-
-    // Effect-flush after doRender() — matching production's
-    // processEventBatch pattern (create-app.tsx). Production does:
-    // doRender → await Promise.resolve() → check pendingRerender → repeat.
-    // In tests we use act(flushSyncWork) as the synchronous equivalent.
-    //
-    // Only runs when the caller opted into a tight cap (cap <=
-    // MAX_CONVERGENCE_PASSES). With wider caps (legacy multi-iteration
-    // stabilization), doRender's internal loop already absorbs the
-    // feedback in its own iterations — running the outer flush in
-    // addition would consume microtasks the test fixture timeline
-    // depends on (e.g. controller event ordering in chat-stability).
-    let doRenderCount = 1
-    if (instance.maxLayoutPasses <= MAX_CONVERGENCE_PASSES) {
-      let flushCount = 0
-      if (INSTRUMENT) beginConvergenceLoop()
-      for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
-        hadReactCommit = false
-        flushCount = flush + 1
-        if (INSTRUMENT) beginPass(flush)
+    attemptRelease(() => {
+      // ConcurrentRoot needs a synchronous null commit to release React
+      // subscriptions before construction rethrows its original failure.
+      if (instance.fiberRoot) {
         withActEnvironment(() => {
           act(() => {
+            reconciler.updateContainerSync(null, instance.fiberRoot, null, null)
             reconciler.flushSyncWork()
           })
         })
-        if (!hadReactCommit) break
-        // Always-on exhaustion marker → never-empty violation ring.
-        if (flush === MAX_CONVERGENCE_PASSES - 1) {
-          recordPassRing("unknown", "effect-flush-exhaustion")
-        }
-        if (INSTRUMENT) {
-          notePassCommit(flush)
-          if (flush === MAX_CONVERGENCE_PASSES - 1) {
-            logPass({ cause: "unknown", detail: "effect-flush-exhaustion" })
-          }
-        }
-        newFrame = doRender()
-        doRenderCount++
       }
-      if (flushCount >= MAX_CONVERGENCE_PASSES && hadReactCommit) {
-        assertBoundedConvergence(flushCount, "effect-flush", MAX_CONVERGENCE_PASSES)
-      }
-    }
-
-    // Commit boundary — promote in-flight rect signals to committed peers,
-    // then settle any forceUpdate-driven re-renders with one more pass.
-    // Reactive useBoxRect/useScrollRect/useScreenRect consumers see one
-    // stable value across the whole sendInput cycle. See bead
-    // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
-    const settled = settleAfterCommit(newFrame)
-    if (settled !== newFrame) {
-      newFrame = settled
-      doRenderCount++
-    }
-
-    // When multiple doRender() calls ran (layout feedback, effects), the final
-    // buffer's dirty rows only cover the LAST call's writes. Rows changed in
-    // earlier doRender calls are invisible to callers using outputPhase to diff
-    // against an older prevBuffer. Mark all rows dirty for correctness.
-    if (incremental && doRenderCount > 1 && instance.prevBuffer) {
-      instance.prevBuffer!.markAllRowsDirty()
-    }
-
-    const t2 = performance.now()
-    instance.frames.push(newFrame)
-    onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
-    if (debug) {
-      console.log("[silvery] stdin.write:", newFrame)
-    }
-    // Expose timing on global for benchmarking
-    ;(globalThis as any).__silvery_last_timing = {
-      actMs: t1 - t0,
-      renderMs: t2 - t1,
-    }
-  }
-
-  const rerenderFn = (newElement: ReactNode) => {
-    if (!instance.mounted) {
-      throw new Error("Cannot rerender after unmount")
-    }
-    if (instance.rendering) {
-      throw new Error(
-        "silvery: Re-entrant render detected. " +
-          "Cannot call rerender() from inside a React render or effect.",
+    })
+    // Async scope teardown keeps the existing loud app-exit error sink.
+    attemptRelease(() => {
+      void renderScope[Symbol.asyncDispose]().catch((error) =>
+        reportDisposeError(error, { phase: "app-exit", scope: renderScope }),
       )
+    })
+    instance.rendering = false
+    autoRenderScheduled = false
+    inRenderCycle = false
+    attemptRelease(() => instance.inputEmitter.removeAllListeners())
+    attemptRelease(() => stdoutEmitter.removeAllListeners())
+    if (stdinStream && stdinOnReadable) {
+      const listener = stdinOnReadable
+      stdinOnReadable = undefined
+      attemptRelease(() => stdinStream.removeListener("readable", listener))
     }
+    activeRenders.delete(renderRef)
+    attemptRelease(clearFn)
+    instance.kittyActive = false
+    if (instance.container) attemptRelease(() => releaseContainer(instance.container))
+    instance.fiberRoot = null
+    if (debug) attemptRelease(() => console.log("[silvery] Unmounted"))
+    if (failed) throw firstError
+  }
+  renderTracker.unmount = unmountFn
+  const construction = new DisposableStack()
+  construction.defer(unmountFn)
+
+  try {
+    // Synchronously update React tree within act()
     instance.rendering = true
     try {
       withActEnvironment(() => {
         act(() => {
-          currentElement = newElement as ReactElement
           reconciler.updateContainerSync(
             wrapWithContexts(currentElement),
             instance.fiberRoot,
@@ -1586,200 +1214,583 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     } finally {
       instance.rendering = false
     }
-    const newFrame = settleAfterCommit(doRender())
-    instance.frames.push(newFrame)
-    onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
-    if (debug) {
-      console.log("[silvery] Rerender:", newFrame)
-    }
-  }
 
-  // Track this render for leak detection
-  const renderTracker = { unmount: () => {}, id: renderId }
-  const renderRef = new WeakRef(renderTracker)
-  activeRenders.add(renderRef)
-
-  const unmountFn = () => {
-    if (!instance.mounted) {
-      throw new Error("Already unmounted")
-    }
-    // The root is created as ConcurrentRoot (see createFiberRoot). Mount and
-    // rerender both use updateContainerSync + flushSyncWork; unmount must do
-    // the same so React layout-effect cleanups (e.g. useBoxRect's
-    // signalEffect disposers) actually run synchronously. The async
-    // updateContainer(null, …) path on a ConcurrentRoot leaves cleanups
-    // pending past unmount, which kept signal subscriptions + the whole
-    // RenderInstance graph alive across mount/unmount cycles.
-    const fiberRoot = instance.fiberRoot
-    withActEnvironment(() => {
-      act(() => {
-        reconciler.updateContainerSync(null, fiberRoot, null, null)
-        reconciler.flushSyncWork()
-      })
-    })
-
-    // Dispose the per-render app-root scope AFTER React unmount (so
-    // useScopeEffect child scopes and host-attached scopes have already
-    // disposed via fiber teardown) but BEFORE releaseContainer. Mirrors
-    // create-app.tsx's `appScope[Symbol.asyncDispose]()` on-exit step.
-    // Fire-and-forget: unmountFn is sync, so any async-disposer rejection
-    // routes through reportDisposeError (phase "app-exit") instead of
-    // throwing into the caller.
-    void renderScope[Symbol.asyncDispose]().catch((error) =>
-      reportDisposeError(error, { phase: "app-exit", scope: renderScope }),
-    )
-
-    instance.mounted = false
-    instance.rendering = false
-    autoRenderScheduled = false
-    inRenderCycle = false
-
-    instance.inputEmitter.removeAllListeners()
-    stdoutEmitter.removeAllListeners()
-
-    // Clean up stdin bridge
-    if (stdinStream && stdinOnReadable) {
-      stdinStream.removeListener("readable", stdinOnReadable)
-      stdinOnReadable = undefined
-    }
-
-    // Untrack this render
-    activeRenders.delete(renderRef)
-
-    // Drop heavy retained state and break the FiberRoot → Container.onRender
-    // → RenderInstance retention chain. Without releaseContainer(), even a
-    // synchronously-flushed unmount keeps the full instance reachable
-    // through the container that the FiberRoot still references.
-    clearFn()
-    instance.kittyActive = false
-    releaseContainer(instance.container)
-    instance.fiberRoot = null
-
-    if (debug) {
-      console.log("[silvery] Unmounted")
-    }
-  }
-  renderTracker.unmount = unmountFn
-
-  const clearFn = () => {
-    instance.frames.length = 0
-    instance.prevBuffer = null
-    instance.prevPaintedBuffer = null
-    // Snapshots reference cells in the discarded prev buffer; reset alongside.
-    instance.postState = createRenderPostState()
-  }
-
-  const debugFn = () => {
-    console.log(debugTree(getContainerRoot(instance.container)))
-  }
-
-  // actAndRender: wrap a callback in act() so React state updates are flushed,
-  // then doRender() to update the buffer. Used by click/wheel/doubleClick.
-  const actAndRenderFn = (fn: () => void) => {
-    if (!instance.mounted) return
-    withActEnvironment(() => {
-      act(() => {
-        fn()
-        reconciler.updateContainerSync(
-          wrapWithContexts(currentElement),
-          instance.fiberRoot,
-          null,
-          null,
-        )
-        reconciler.flushSyncWork()
-      })
-    })
-    const newFrame = settleAfterCommit(doRender())
-    instance.frames.push(newFrame)
-    onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
-  }
-
-  // Resize: update dimensions, clear prevBuffer, re-render (matches scheduler resize behavior)
-  const resizeFn = (newCols: number, newRows: number) => {
-    if (!instance.mounted) {
-      throw new Error("Cannot resize after unmount")
-    }
-    instance.columns = newCols
-    instance.rows = newRows
-    mockStdout.columns = newCols
-    mockStdout.rows = newRows
-    updateMockTermSize?.(newCols, newRows)
-    // Emit resize event so component-level listeners (e.g., ScrollbackView's
-    // width tracking) fire before the render, matching real terminal behavior.
-    stdoutEmitter.emit("resize")
-    // Clear prevBuffer to force full redraw (matches scheduler.setupResizeListener)
-    instance.prevBuffer = null
-    instance.prevPaintedBuffer = null
-    // Outline snapshots reference cells in the OLD-dimensions buffer; if we
-    // kept them, the next frame's clearPreviousOutlines would write at
-    // potentially out-of-bounds coordinates. Reset alongside prevBuffer.
-    instance.postState = createRenderPostState()
-    // Re-render at new dimensions
-    let newFrame = doRender()
-
-    // Drain any remaining React effects after resize. Resize is a worst
-    // case for layout-subscriber feedback (the multi-pass cascade in
-    // doRender's internal loop may exit with React still dirty from a
-    // late subscriber notify). Same gate as sendInput's effect-flush
-    // (only runs at tight caps; wider caps already absorb in doRender).
-    let doRenderCount = 1
-    if (instance.maxLayoutPasses <= MAX_CONVERGENCE_PASSES) {
-      for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
-        hadReactCommit = false
-        withActEnvironment(() => {
+    /**
+     * Promote in-flight rect signals to their committed peers, then drain any
+     * resulting React work with one more `doRender()` if needed.
+     *
+     * Reactive `useBoxRect()` / `useScrollRect()` / `useScreenRect()` hooks
+     * read the COMMITTED rect signals (stable across all convergence passes
+     * within one batch). Calling `commitLayoutSnapshot` advances them by one
+     * frame, which may fire `effect()` callbacks that trigger React
+     * `forceUpdate`s. Those forceUpdates need to land before the test
+     * driver's caller observes the frame — otherwise the first frame would
+     * show the empty-rect fallback for any reactive layout consumer.
+     *
+     * The settle pass is bounded to ONE doRender. Any in-flight rect changes
+     * produced by it are intentionally NOT committed in this batch — they
+     * belong to the next event boundary (one-frame-late contract).
+     *
+     * See bead `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+     */
+    function settleAfterCommit(prevOutput: string): string {
+      const root = getContainerRoot(instance.container)
+      let scheduled = false
+      hadReactCommit = false
+      withActEnvironment(() => {
+        act(() => {
+          commitLayoutSnapshot(root)
+        })
+        // act() flushes scheduled work; if commit fired effect → forceUpdate,
+        // hadReactCommit was set during the inner act(). If anything still
+        // pending, flush once more.
+        if (hadReactCommit) {
           act(() => {
             reconciler.flushSyncWork()
           })
-        })
-        if (!hadReactCommit) break
-        newFrame = doRender()
-        doRenderCount++
+          scheduled = true
+        }
+      })
+      if (!scheduled) return prevOutput
+      // One settle pass — re-render with the new committed values. Do NOT
+      // re-commit; further in-flight changes defer to the next batch.
+      return doRender()
+    }
+
+    /**
+     * Drain additional commit / layout cycles until the React tree is stable
+     * (no pending commit, no dirty layout nodes) OR a budget is reached.
+     * Resolves once stable so tests can assert post-convergence state.
+     *
+     * The default is production timing — `render()` exposes a frame after the
+     * production-cap `MAX_CONVERGENCE_PASSES`. Tests asserting layout that
+     * requires more passes to settle (multi-layer measurement chains,
+     * Suspense-driven first-paint cascades, etc.) call this explicitly:
+     *
+     * ```ts
+     * const app = render(<MyApp />)
+     * await app.waitForLayoutStable()
+     * expect(app.text).toMatchSnapshot()
+     * ```
+     *
+     * Stability detection: a pass is run, then `flushSyncWork` runs in a
+     * separate `act()`. If `hadReactCommit` flips during the flush, layout
+     * is still in-flight; loop again (run another commit boundary + flush).
+     * Same predicate the renderer uses internally — does not invent a new
+     * readiness probe.
+     *
+     * Bounded by `maxPasses` (default 20) and `timeoutMs` (default 50ms).
+     * If the cap is reached, resolves WITHOUT throwing — an infinitely
+     * non-converging app is a bug, not a test fault. The contract is "best
+     * effort within the budget."
+     *
+     * Bead: `@km/silvery/test-harness-convergence-cap-parity`.
+     */
+    async function waitForLayoutStable(opts?: {
+      timeoutMs?: number
+      maxPasses?: number
+    }): Promise<void> {
+      if (!instance.mounted) return
+      const timeoutMs = opts?.timeoutMs ?? 50
+      const maxPasses = opts?.maxPasses ?? 20
+      const start = performance.now()
+      let lastFrame = instance.frames[instance.frames.length - 1] ?? ""
+      for (let pass = 0; pass < maxPasses; pass++) {
+        if (performance.now() - start >= timeoutMs) return
+        if (!instance.mounted) return
+
+        // Drain any pending async React work in an act() boundary. Async
+        // microtasks (useEffect → queueMicrotask → setState) need to fire
+        // INSIDE act() so React's scheduler commits the resulting state
+        // updates synchronously rather than warning and deferring.
+        //
+        // `act(async () => { await Promise.resolve() })` is the canonical
+        // React-testing pattern: drains microtasks + flushes passive
+        // effects + commits scheduled state updates, all under the act
+        // boundary. Without the async act wrapper, setState calls inside
+        // microtasks are warned and dropped under IS_REACT_ACT_ENVIRONMENT.
+        // (IS_REACT_ACT_ENVIRONMENT is set globally by `@silvery/test`'s
+        // top-level await, so no withActEnvironment wrapper is required.)
+        const previouslyCommitted = hadReactCommit
+        hadReactCommit = false
+        instance.rendering = true
+        try {
+          await act(async () => {
+            await Promise.resolve()
+          })
+        } finally {
+          instance.rendering = false
+        }
+        const reactCommittedThisPass = previouslyCommitted || hadReactCommit
+
+        // If React committed, re-render to materialize the new tree into
+        // the buffer. Then run the commit-boundary settle for any reactive
+        // useBoxRect / useScrollRect / useScreenRect cascades.
+        let next = lastFrame
+        if (reactCommittedThisPass) {
+          next = doRender()
+        }
+        // commitLayoutSnapshot + flush — promotes in-flight rect signals
+        // to committed and drains any resulting forceUpdate cascade. Same
+        // pattern sendInput / resizeFn use after their bounded loops.
+        next = settleAfterCommit(next)
+        if (!reactCommittedThisPass && next === lastFrame && !hadReactCommit) {
+          // Stable: nothing committed during microtask drain, nothing fired
+          // in the commit-boundary settle. Verify no node remains
+          // epoch-dirty as a final correctness check.
+          try {
+            const root = getContainerRoot(instance.container)
+            if (root && !isAnyDirty(root)) return
+          } catch {
+            return
+          }
+          return
+        }
+        if (next !== lastFrame) {
+          lastFrame = next
+          instance.frames.push(next)
+          onFrame?.(next, instance.prevBuffer!, getRootContentHeight())
+        }
+      }
+      // Budget exhausted — the app didn't converge in the cap. Resolve
+      // anyway (per the contract — best effort within budget). The
+      // SILVERY_STRICT bound assertion already catches structural
+      // non-convergence in the inner loops; this method is for test-author
+      // ergonomics, not a determinism check.
+    }
+
+    // Execute the render pipeline.
+    //
+    // Production parity (bead `@km/silvery/test-harness-convergence-cap-parity`):
+    // the initial render uses the same `MAX_CONVERGENCE_PASSES` cap as
+    // production's `processEventBatch` and `app.run()` initial-render flush
+    // loops (see `create-app.tsx` ~line 2435). Production NEVER runs an extra-
+    // wide cap on first paint, so the test harness must not either — otherwise
+    // tests see post-convergence layout that real users never get on first
+    // paint, and bugs that fire during the first 1-2 passes are invisible.
+    //
+    // Tests that need post-convergence state for their assertions call
+    // `await app.waitForLayoutStable()` explicitly — see that method's docs.
+    // The default is production timing; opt-in is the explicit primitive.
+    //
+    // Historical note: this used to run a wider 5-pass initial cap to
+    // accommodate multi-layer measurement chains (useBoxRect → forceUpdate
+    // → re-render → useBoxRect again). With the layout-signals refactor
+    // (`@km/silvery/listview-layout-signals-from-getlayoutsignals`), the
+    // canonical primitive `boxRectCommitted` reads synchronously during the
+    // SAME render that consumes it, so multi-layer chains converge in 1-2
+    // passes via signal idempotence rather than needing 3-5 React commits.
+    let output = doRender()
+    // Commit boundary for the initial render. Reactive useBoxRect/useScrollRect/
+    // useScreenRect hooks subscribed during this render see the seeded committed
+    // signal (often null/zero) on first read; promoting in-flight → committed
+    // here fires their effects so the next render reads real rects. See bead
+    // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+    output = settleAfterCommit(output)
+
+    instance.frames.push(output)
+    onFrame?.(output, instance.prevBuffer!, getRootContentHeight())
+
+    if (debug) {
+      console.log("[silvery] Initial render:", output)
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Degenerate-frame canary  (SILVERY_STRICT slug: "canary")
+    // ─────────────────────────────────────────────────────────────────────────
+    //
+    // After the initial render settles, measure the painted-cell ratio. A
+    // healthy full-app render at any non-trivial geometry paints thousands
+    // of cells. A misconfigured root that omits a `<Screen>` /
+    // `<Box width height>` wrapper collapses the entire tree to ~one row
+    // (the title bar) — at 360×120 that's ~360 of 43,200 cells, < 1%.
+    //
+    // The canary only fires when the buffer is large enough that a real-app
+    // frame is expected (cols × rows >= CANARY_MIN_BUFFER_CELLS). Smaller
+    // buffers are unit-test fixtures where low paint ratio is meaningful.
+    //
+    // Strictness: gated by the canonical SILVERY_STRICT contract — fires
+    // whenever `SILVERY_STRICT` includes tier ≥ 1 OR the explicit slug
+    // "canary". Per-test opt-out: `SILVERY_STRICT=1,!canary`.
+    // No new SILVERY_* env vars. See packages/ag-term/src/strict-mode.ts.
+    //
+    // Default (SILVERY_STRICT unset / "0"): emit a `silvery:render` debug
+    // log line. `console.warn` is deliberately NOT used because km's vitest
+    // setup treats any console.warn as a hard test failure.
+    //
+    // Bead: @km/silvery/render-degenerate-frame-canary.
+    if (instance.prevBuffer) {
+      const bufW = instance.prevBuffer.width
+      const bufH = instance.prevBuffer.height
+      const totalCells = bufW * bufH
+      const CANARY_MIN_BUFFER_CELLS = 4000 // ≈ 80×50 — anything smaller is a unit-test fixture
+      if (totalCells >= CANARY_MIN_BUFFER_CELLS) {
+        const painted = instance.prevBuffer.countPaintedCells()
+        const ratio = painted / totalCells
+        if (ratio < 0.05) {
+          const msg =
+            `silvery: degenerate frame after first render — only ${painted} of ${totalCells} cells ` +
+            `painted (${(ratio * 100).toFixed(2)}%) at ${bufW}x${bufH}. ` +
+            `Likely cause: the root component does not pin width/height (no <Screen> ` +
+            `wrapper). createRenderer({cols, rows}) passes dimensions as the AVAILABLE ` +
+            `size to layout, but does NOT set root.style.width/height — wrap the tree ` +
+            `in <Box width={cols} height={rows}> or <Screen>. ` +
+            `Per-test opt-out: SILVERY_STRICT=1,!canary. ` +
+            `See @km/silvery/render-degenerate-frame-canary.`
+          // Tier 2 — surfaces a punch list of harness defects without
+          // blocking tier-1 (back-compat). Promotes to tier 1 once the
+          // existing test suite is clean. Explicit slug "canary" or
+          // tier ≥ 2 fires the throw; tier 1 alone emits debug-log.
+          if (isStrictEnabled("canary", 2)) {
+            throw new Error(msg)
+          } else {
+            log.debug?.(msg)
+          }
+        }
       }
     }
 
-    // Commit boundary — see `settleAfterCommit` JSDoc.
-    const settled = settleAfterCommit(newFrame)
-    if (settled !== newFrame) {
-      newFrame = settled
-      doRenderCount++
+    // Set up stdin bridge: forward external stdin data to the renderer's input
+    if (stdinStream) {
+      stdinOnReadable = () => {
+        let chunk: string | null
+        while ((chunk = (stdinStream as any).read?.()) !== null && chunk !== undefined) {
+          instance.inputEmitter.emit("input", chunk)
+        }
+      }
+      stdinStream.on("readable", stdinOnReadable)
     }
 
-    const prevBufferForDirtying = instance.prevBuffer as TerminalBuffer | null
-    if (incremental && doRenderCount > 1 && prevBufferForDirtying) {
-      prevBufferForDirtying.markAllRowsDirty()
+    // Helper functions for App
+    const getContainer = () => getContainerRoot(instance.container)
+    // Expose the POST-fade buffer so app.cell() / app.text / createTextFrame
+    // read what was actually painted. `instance.prevBuffer` is the pre-fade
+    // buffer used for the next frame's renderPhase incremental clone.
+    const getBuffer = () => instance.prevPaintedBuffer ?? instance.prevBuffer
+
+    const sendInput = (data: string) => {
+      if (!instance.mounted) {
+        throw new Error("Cannot write to stdin after unmount")
+      }
+      if (instance.rendering) {
+        throw new Error(
+          "silvery: Re-entrant render detected. " +
+            "Cannot call press()/stdin.write() from inside a React render or effect. " +
+            "Use setTimeout or an event handler instead.",
+        )
+      }
+      const t0 = performance.now()
+      instance.rendering = true
+      try {
+        // Check for bracketed paste before splitting into individual keys.
+        // Paste content is delivered as a single "paste" event, not individual keystrokes.
+        // This mirrors the production path in term-provider.ts.
+        //
+        // parseBracketedPaste may throw ProtocolError when PASTE_START is found
+        // but PASTE_END is missing in the test input (typically a fixture
+        // mistake or intentional malformed-input test). The test renderer
+        // mirrors the runtime input-owner contract: log + fall through.
+        // Bead: @km/silvery/15127-custom-protocol-implementation/protocol-loud-errors.
+        let pasteResult: ReturnType<typeof parseBracketedPaste> = null
+        try {
+          pasteResult = parseBracketedPaste(data)
+        } catch (err) {
+          if (isProtocolError(err)) {
+            log.debug?.(
+              `bracketed paste parser flagged malformed input in press(): ${err.reason} (len=${err.inputLength})`,
+            )
+          } else {
+            throw err
+          }
+        }
+        if (pasteResult) {
+          withActEnvironment(() => {
+            act(() => {
+              instance.inputEmitter.emit("paste", pasteResult.content)
+            })
+          })
+        } else {
+          // Split multi-character data into individual keypresses.
+          // This mirrors the production path (render.tsx handleReadable)
+          // where stdin.read() can return buffered characters.
+          withActEnvironment(() => {
+            for (const keypress of splitRawInput(data)) {
+              // Default Tab/Shift+Tab focus cycling and Escape blur.
+              // Matches production behavior in run.tsx and render.tsx.
+              // Tab events are consumed (not passed to useInput handlers).
+              // Each focus change runs in its own act() boundary so React
+              // commits the re-render before the next keypress or doRender().
+              const [, key] = parseKey(keypress)
+              if (handleTabCycling && tabCyclesFocus(key)) {
+                if (!key.shift) {
+                  act(() => {
+                    const root = getContainerRoot(instance.container)
+                    focusManager.focusNext(root)
+                  })
+                  continue
+                }
+                if (key.shift) {
+                  act(() => {
+                    const root = getContainerRoot(instance.container)
+                    focusManager.focusPrev(root)
+                  })
+                  continue
+                }
+              }
+              if (key.escape && focusManager.activeElement) {
+                act(() => {
+                  focusManager.blur()
+                })
+                continue
+              }
+              act(() => {
+                instance.inputEmitter.emit("input", keypress)
+              })
+            }
+          })
+        } // end else (non-paste input)
+      } finally {
+        instance.rendering = false
+      }
+
+      const t1 = performance.now()
+      // doRender() handles SILVERY_STRICT checking internally
+      let newFrame = doRender()
+
+      // Effect-flush after doRender() — matching production's
+      // processEventBatch pattern (create-app.tsx). Production does:
+      // doRender → await Promise.resolve() → check pendingRerender → repeat.
+      // In tests we use act(flushSyncWork) as the synchronous equivalent.
+      //
+      // Only runs when the caller opted into a tight cap (cap <=
+      // MAX_CONVERGENCE_PASSES). With wider caps (legacy multi-iteration
+      // stabilization), doRender's internal loop already absorbs the
+      // feedback in its own iterations — running the outer flush in
+      // addition would consume microtasks the test fixture timeline
+      // depends on (e.g. controller event ordering in chat-stability).
+      let doRenderCount = 1
+      if (instance.maxLayoutPasses <= MAX_CONVERGENCE_PASSES) {
+        let flushCount = 0
+        if (INSTRUMENT) beginConvergenceLoop()
+        for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
+          hadReactCommit = false
+          flushCount = flush + 1
+          if (INSTRUMENT) beginPass(flush)
+          withActEnvironment(() => {
+            act(() => {
+              reconciler.flushSyncWork()
+            })
+          })
+          if (!hadReactCommit) break
+          // Always-on exhaustion marker → never-empty violation ring.
+          if (flush === MAX_CONVERGENCE_PASSES - 1) {
+            recordPassRing("unknown", "effect-flush-exhaustion")
+          }
+          if (INSTRUMENT) {
+            notePassCommit(flush)
+            if (flush === MAX_CONVERGENCE_PASSES - 1) {
+              logPass({ cause: "unknown", detail: "effect-flush-exhaustion" })
+            }
+          }
+          newFrame = doRender()
+          doRenderCount++
+        }
+        if (flushCount >= MAX_CONVERGENCE_PASSES && hadReactCommit) {
+          assertBoundedConvergence(flushCount, "effect-flush", MAX_CONVERGENCE_PASSES)
+        }
+      }
+
+      // Commit boundary — promote in-flight rect signals to committed peers,
+      // then settle any forceUpdate-driven re-renders with one more pass.
+      // Reactive useBoxRect/useScrollRect/useScreenRect consumers see one
+      // stable value across the whole sendInput cycle. See bead
+      // `@km/silvery/use-deferred-box-rect-and-post-commit-observers`.
+      const settled = settleAfterCommit(newFrame)
+      if (settled !== newFrame) {
+        newFrame = settled
+        doRenderCount++
+      }
+
+      // When multiple doRender() calls ran (layout feedback, effects), the final
+      // buffer's dirty rows only cover the LAST call's writes. Rows changed in
+      // earlier doRender calls are invisible to callers using outputPhase to diff
+      // against an older prevBuffer. Mark all rows dirty for correctness.
+      if (incremental && doRenderCount > 1 && instance.prevBuffer) {
+        instance.prevBuffer!.markAllRowsDirty()
+      }
+
+      const t2 = performance.now()
+      instance.frames.push(newFrame)
+      onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
+      if (debug) {
+        console.log("[silvery] stdin.write:", newFrame)
+      }
+      // Expose timing on global for benchmarking
+      ;(globalThis as any).__silvery_last_timing = {
+        actMs: t1 - t0,
+        renderMs: t2 - t1,
+      }
     }
 
-    instance.frames.push(newFrame)
-    onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
-    if (debug) {
-      console.log("[silvery] Resize:", newCols, "x", newRows)
+    const rerenderFn = (newElement: ReactNode) => {
+      if (!instance.mounted) {
+        throw new Error("Cannot rerender after unmount")
+      }
+      if (instance.rendering) {
+        throw new Error(
+          "silvery: Re-entrant render detected. " +
+            "Cannot call rerender() from inside a React render or effect.",
+        )
+      }
+      instance.rendering = true
+      try {
+        withActEnvironment(() => {
+          act(() => {
+            currentElement = newElement as ReactElement
+            reconciler.updateContainerSync(
+              wrapWithContexts(currentElement),
+              instance.fiberRoot,
+              null,
+              null,
+            )
+            reconciler.flushSyncWork()
+          })
+        })
+      } finally {
+        instance.rendering = false
+      }
+      const newFrame = settleAfterCommit(doRender())
+      instance.frames.push(newFrame)
+      onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
+      if (debug) {
+        console.log("[silvery] Rerender:", newFrame)
+      }
     }
+
+    const debugFn = () => {
+      console.log(debugTree(getContainerRoot(instance.container)))
+    }
+
+    // actAndRender: wrap a callback in act() so React state updates are flushed,
+    // then doRender() to update the buffer. Used by click/wheel/doubleClick.
+    const actAndRenderFn = (fn: () => void) => {
+      if (!instance.mounted) return
+      withActEnvironment(() => {
+        act(() => {
+          fn()
+          reconciler.updateContainerSync(
+            wrapWithContexts(currentElement),
+            instance.fiberRoot,
+            null,
+            null,
+          )
+          reconciler.flushSyncWork()
+        })
+      })
+      const newFrame = settleAfterCommit(doRender())
+      instance.frames.push(newFrame)
+      onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
+    }
+
+    // Resize: update dimensions, clear prevBuffer, re-render (matches scheduler resize behavior)
+    const resizeFn = (newCols: number, newRows: number) => {
+      if (!instance.mounted) {
+        throw new Error("Cannot resize after unmount")
+      }
+      instance.columns = newCols
+      instance.rows = newRows
+      mockStdout.columns = newCols
+      mockStdout.rows = newRows
+      updateMockTermSize?.(newCols, newRows)
+      // Emit resize event so component-level listeners (e.g., ScrollbackView's
+      // width tracking) fire before the render, matching real terminal behavior.
+      stdoutEmitter.emit("resize")
+      // Clear prevBuffer to force full redraw (matches scheduler.setupResizeListener)
+      instance.prevBuffer = null
+      instance.prevPaintedBuffer = null
+      // Outline snapshots reference cells in the OLD-dimensions buffer; if we
+      // kept them, the next frame's clearPreviousOutlines would write at
+      // potentially out-of-bounds coordinates. Reset alongside prevBuffer.
+      instance.postState = createRenderPostState()
+      // Re-render at new dimensions
+      let newFrame = doRender()
+
+      // Drain any remaining React effects after resize. Resize is a worst
+      // case for layout-subscriber feedback (the multi-pass cascade in
+      // doRender's internal loop may exit with React still dirty from a
+      // late subscriber notify). Same gate as sendInput's effect-flush
+      // (only runs at tight caps; wider caps already absorb in doRender).
+      let doRenderCount = 1
+      if (instance.maxLayoutPasses <= MAX_CONVERGENCE_PASSES) {
+        for (let flush = 0; flush < MAX_CONVERGENCE_PASSES; flush++) {
+          hadReactCommit = false
+          withActEnvironment(() => {
+            act(() => {
+              reconciler.flushSyncWork()
+            })
+          })
+          if (!hadReactCommit) break
+          newFrame = doRender()
+          doRenderCount++
+        }
+      }
+
+      // Commit boundary — see `settleAfterCommit` JSDoc.
+      const settled = settleAfterCommit(newFrame)
+      if (settled !== newFrame) {
+        newFrame = settled
+        doRenderCount++
+      }
+
+      const prevBufferForDirtying = instance.prevBuffer as TerminalBuffer | null
+      if (incremental && doRenderCount > 1 && prevBufferForDirtying) {
+        prevBufferForDirtying.markAllRowsDirty()
+      }
+
+      instance.frames.push(newFrame)
+      onFrame?.(newFrame, instance.prevBuffer!, getRootContentHeight())
+      if (debug) {
+        console.log("[silvery] Resize:", newCols, "x", newRows)
+      }
+    }
+
+    // Build unified App instance
+    const app = buildApp({
+      getContainer,
+      getBuffer,
+      sendInput,
+      rerender: rerenderFn,
+      unmount: () => {
+        if (!instance.mounted) throw new Error("Already unmounted")
+        appResources.dispose()
+      },
+      waitUntilExit: () => Promise.resolve(),
+      clear: clearFn,
+      exitCalled: () => exitCalledFlag,
+      exitError: () => exitErrorValue,
+      freshRender: doFreshRender,
+      debugFn,
+      frames: instance.frames,
+      columns: cols,
+      rows: rows,
+      kittyMode,
+      actAndRender: actAndRenderFn,
+      resize: resizeFn,
+      focusManager,
+      getCursorState: cursorStore.accessors.getCursorState,
+      waitForLayoutStable,
+      clsMonitor,
+    })
+    const appResources = construction.move()
+    return app
+  } catch (error) {
+    try {
+      construction.dispose()
+    } catch (cleanupError) {
+      reportDisposeError(cleanupError, { phase: "app-exit", scope: renderScope })
+    }
+    throw error
   }
-
-  // Build unified App instance
-  return buildApp({
-    getContainer,
-    getBuffer,
-    sendInput,
-    rerender: rerenderFn,
-    unmount: unmountFn,
-    waitUntilExit: () => Promise.resolve(),
-    clear: clearFn,
-    exitCalled: () => exitCalledFlag,
-    exitError: () => exitErrorValue,
-    freshRender: doFreshRender,
-    debugFn,
-    frames: instance.frames,
-    columns: cols,
-    rows: rows,
-    kittyMode,
-    actAndRender: actAndRenderFn,
-    resize: resizeFn,
-    focusManager,
-    getCursorState: cursorStore.accessors.getCursorState,
-    waitForLayoutStable,
-    clsMonitor,
-  })
 }
 
 // ============================================================================
