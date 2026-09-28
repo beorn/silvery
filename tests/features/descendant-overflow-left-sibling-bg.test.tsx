@@ -143,7 +143,11 @@ describe("regression: descendant overflow clear must not stomp a sibling's bg (@
 // text over the tab and must erase its retiring glyphs when the text shrinks.
 // The output wrappers stay wide, so the text's old rect is inside its ancestors.
 // The 27 status rows make this a real 50+ node pane rather than a tiny-tree case.
-function StagePane({ output }: { output: string }): React.ReactElement {
+function StagePane({
+  output,
+}: {
+  output: string
+}): React.ReactElement<React.ComponentProps<typeof Box>> {
   return (
     <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
       <Box height={1} flexShrink={0}>
@@ -183,6 +187,23 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
       const revealed = app.term.buffer.getCell(16, 1)
       expect(revealed.char).toBe(" ")
       expect(revealed.bg).toEqual({ r: 0, g: 0, b: 255 })
+    } finally {
+      app.unmount()
+    }
+  })
+
+  // Residual: without an opaque common ancestor, text cleanup still overwrites
+  // earlier sibling paint. Keep STRICT's alarm until that recovery is supported.
+  test.fails("text retreat without an opaque common ancestor still loses the earlier background", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const scene = (output: string) =>
+      React.cloneElement(StagePane({ output }), { backgroundColor: undefined })
+    const app = render(scene("AAAAAAAAAAAAAAAAAAA"))
+
+    try {
+      expect(app.term.buffer.getCell(16, 1).char).toBe("A")
+      app.rerender(scene("AAAAAAAAAAAAAAAA"))
+      expect(app.term.buffer.getCell(16, 1).bg).toEqual({ r: 0, g: 0, b: 255 })
     } finally {
       app.unmount()
     }
