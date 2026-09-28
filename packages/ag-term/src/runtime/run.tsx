@@ -46,9 +46,6 @@ import { setInputOwnerMouseOptions, type InputOwner } from "./input-owner"
 import { createPaletteSession, PaletteThemeProvider, type PaletteSession } from "./palette-session"
 import { getInternalStreams } from "./term-internal"
 import type { ParseMouseOptions } from "../mouse"
-import { preloadStrictTerminalBackends } from "../strict-terminal-backends"
-import { strictTerminalBackends } from "../pipeline/output-verify"
-import { isCursorStrictEnabled } from "../cursor-diagnostics"
 import type { TerminalLinksOptions } from "../terminal-links"
 
 // Re-export types from keys.ts
@@ -402,18 +399,6 @@ export async function run(
   optionsOrTerm: RunOptions | Term = {},
   termOptions?: Partial<RunOptions>,
 ): Promise<RunHandle> {
-  // Live SILVERY_STRICT_TERMINAL / cursor verification loads the @termless
-  // emulator backends synchronously mid-frame (output-verify.ts,
-  // cursor-diagnostics.ts). Preload them here, at this async setup boundary, so
-  // the sync accessors resolve via the ESM graph (never createRequire — the
-  // 2026-07-02 Ghostty-WASM singleton-split fix). Tests take the @silvery/test
-  // top-level preload instead; this covers the live `run()` path.
-  const strictBackends = strictTerminalBackends()
-  const wantsGhostty = strictBackends.includes("ghostty")
-  if (strictBackends.some((b) => b !== "vt100") || isCursorStrictEnabled()) {
-    await preloadStrictTerminalBackends({ ghostty: wantsGhostty, initGhosttyWasm: wantsGhostty })
-  }
-
   // Term path: pass Term as provider + its streams, auto-enable from Term caps
   if (isTerm(optionsOrTerm)) {
     const term = optionsOrTerm as Term

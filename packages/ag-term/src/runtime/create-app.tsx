@@ -83,7 +83,9 @@ import {
 } from "../text-sizing"
 import { applyWidthConfig, detectWidthConfigWithProbe } from "../ansi/width-detection"
 import { isStrictEnabled } from "../strict-mode.js"
-import { recordOutputCursorDiagnostics } from "../cursor-diagnostics"
+import { isCursorStrictEnabled, recordOutputCursorDiagnostics } from "../cursor-diagnostics"
+import { preloadStrictTerminalBackends } from "../strict-terminal-backends"
+import { strictTerminalBackends } from "../pipeline/output-verify"
 import { computeManagedFrame, protectManagedCursorSuffix } from "../managed-caret"
 import { createBytesOutMonitor } from "../bytes-out-monitor"
 import { createMemMonitor } from "../mem-monitor"
@@ -1019,6 +1021,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   element: ReactElement,
   options: AppRunOptions,
 ): Promise<AppHandle<S & I>> {
+  // Live SILVERY_STRICT_TERMINAL / cursor verification loads the @termless
+  // emulator backends synchronously mid-frame (output-verify.ts,
+  // cursor-diagnostics.ts). Preload them here, at the async setup boundary every
+  // createApp().run() and run() passes, so the sync accessors resolve via the ESM
+  // graph (never createRequire — the 2026-07-02 Ghostty-WASM singleton-split fix).
+  // It lived in run() alone, so createApp consumers such as km failed at their
+  // first strict frame (26496). Tests also get @silvery/test's top-level preload.
+  const strictBackends = strictTerminalBackends()
+  const wantsGhostty = strictBackends.includes("ghostty")
+  if (strictBackends.some((b) => b !== "vt100") || isCursorStrictEnabled()) {
+    await preloadStrictTerminalBackends({ ghostty: wantsGhostty, initGhosttyWasm: wantsGhostty })
+  }
+
   const {
     cols: explicitCols,
     rows: explicitRows,
