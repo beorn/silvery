@@ -44,7 +44,7 @@
   "dependencies": {
     "@silvery/ansi": "0.25.0",
     "commander": ">=15.0.0",
-    "zod": ">=3.0.0"
+    "zod": "^3.24.0 || ^4.0.0"
   },
   "tsdown": {
     "clean": true,

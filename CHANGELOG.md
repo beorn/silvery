@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- `@silvery/config` and `@silvery/commander` now declare Zod support as
+  `^3.24.0 || ^4.0.0`. Earlier Zod 3 releases were already incompatible:
+  Commander needs `zod.coerce`, and Standard Schema support needs Zod 3.24.
 - Styled `sliceByWidth` no longer returns a wide grapheme that crosses the end
   boundary, matching plain text slicing after the slice-ansi 9 upgrade.
 
