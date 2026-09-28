@@ -201,7 +201,7 @@
     }
   },
   "resolutions": {
-    "flexily": "^0.8.0",
+    "flexily": "0.8.0",
     "loggily": "^0.10.2"
   },
   "tsdown": {
