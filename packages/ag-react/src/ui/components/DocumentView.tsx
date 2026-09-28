@@ -239,11 +239,23 @@ function resolveListItems(
  * guarantees at least that much margin is always there to hang into,
  * whether or not this particular document happens to use heading markers.
  */
-function resolveHeadingMarkerWidth(blocks: readonly DocumentBlock[]): number {
+function resolveHeadingMarkerWidth(
+  blocks: readonly DocumentBlock[],
+  enableSectionFolding = false,
+): number {
   let width = 1
+  let hasFoldable = false
   for (const block of blocks) {
-    if (block.kind !== "heading" || block.marker === undefined) continue
-    width = Math.max(width, textMarkerWidth(block.marker) ?? 1)
+    if (block.kind !== "heading") continue
+    if (block.foldable || (block.foldable !== false && enableSectionFolding)) {
+      hasFoldable = true
+    }
+    if (block.marker !== undefined) {
+      width = Math.max(width, textMarkerWidth(block.marker) ?? 1)
+    }
+  }
+  if (hasFoldable) {
+    width += 2
   }
   return width
 }
@@ -396,7 +408,7 @@ function DocumentBlocks({
     onCodeExpandedChange: (id: DocumentBlockId, expanded: boolean) => void
   }): React.ReactElement {
   const resolvedLists = resolveListItems(blocks)
-  const headingMarkerWidth = resolveHeadingMarkerWidth(blocks)
+  const headingMarkerWidth = resolveHeadingMarkerWidth(blocks, enableSectionFolding)
   if (blocks.length === 0) {
     return (
       <Content.Row>
@@ -623,7 +635,7 @@ export function DocumentView({
   const termCols = useTerm((term) => term.size.cols())
   const paneCols = hasContentLayout ? ambientLayout.available : termCols
   const compact = paneCols > 0 && paneCols < DEFAULT_BREAKPOINTS.md
-  const markerGutter = resolveHeadingMarkerWidth(blocks) + 1
+  const markerGutter = resolveHeadingMarkerWidth(blocks, enableSectionFolding) + 1
   const searchContext = useSearchOptional()
   const autoSearchId = useId()
   const searchId = search?.id ?? autoSearchId

@@ -1,5 +1,6 @@
 import React, { useCallback, useContext } from "react"
 import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
+import { displayLength } from "@silvery/ansi"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { useTheme } from "../../ThemeContext"
@@ -58,37 +59,61 @@ export function HeadingRow({
     [isExpanded, setExpanded],
   )
 
+  const showTriangle = foldable && (!isExpanded || interaction.isHovered)
+
+  const baseMarker = marker ?? (
+    <StylePriorityProvider foreground={`mix(${foreground}, $bg, 75%)`}>
+      <Text>#</Text>
+    </StylePriorityProvider>
+  )
+
+  const baseMarkerWidth = typeof marker === "string" ? displayLength(marker) : 1
+  const minRequiredWidth = foldable ? baseMarkerWidth + 2 : baseMarkerWidth
+  const totalMarkerWidth = Math.max(markerWidth ?? minRequiredWidth, minRequiredWidth)
+  const foldPrefixWidth = Math.max(0, totalMarkerWidth - baseMarkerWidth)
+
+  const foldPrefix =
+    foldPrefixWidth > 0 ? (
+      foldable ? (
+        <Box flexDirection="row" alignItems="center" flexShrink={0}>
+          {showTriangle ? (
+            <Box
+              mouseCursor="pointer"
+              onClick={handleToggle}
+              data-testid="fold-triangle"
+              flexShrink={0}
+            >
+              <Text color={color ?? "$fg-muted"}>
+                {isExpanded ? DISCLOSURE_MARKERS.expanded : DISCLOSURE_MARKERS.collapsed}
+              </Text>
+            </Box>
+          ) : (
+            <Text> </Text>
+          )}
+          <Text>{" ".repeat(foldPrefixWidth - 1)}</Text>
+        </Box>
+      ) : (
+        <Text>{" ".repeat(foldPrefixWidth)}</Text>
+      )
+    ) : null
+
+  const effectiveMarker = foldPrefix ? (
+    <Box flexDirection="row" alignItems="center" flexShrink={0}>
+      {foldPrefix}
+      {baseMarker}
+    </Box>
+  ) : (
+    baseMarker
+  )
+
   return (
     <HangingMarkerRow
-      markerWidth={markerWidth}
+      markerWidth={totalMarkerWidth}
       onMouseEnter={foldable ? interaction.onMouseEnter : undefined}
       onMouseLeave={foldable ? interaction.onMouseLeave : undefined}
-      marker={
-        marker ?? (
-          <StylePriorityProvider foreground={`mix(${foreground}, $bg, 75%)`}>
-            <Text>#</Text>
-          </StylePriorityProvider>
-        )
-      }
+      marker={effectiveMarker}
     >
-      <Box flexDirection="row" alignItems="center" flexWrap="nowrap" minWidth={0}>
-        <Box flexShrink={1} minWidth={0}>
-          {children}
-        </Box>
-        {foldable && interaction.isHovered ? (
-          <Box
-            marginLeft={1}
-            flexShrink={0}
-            mouseCursor="pointer"
-            onClick={handleToggle}
-            data-testid="fold-triangle"
-          >
-            <Text color={color ?? "$fg-muted"}>
-              {isExpanded ? DISCLOSURE_MARKERS.expanded : DISCLOSURE_MARKERS.collapsed}
-            </Text>
-          </Box>
-        ) : null}
-      </Box>
+      {children}
     </HangingMarkerRow>
   )
 }
@@ -115,10 +140,17 @@ export function HangingMarkerRow({
       flexDirection="row"
       width="100%"
       minWidth={0}
+      marginLeft={-gutter}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <Box width={gutter} minWidth={gutter} marginLeft={-gutter} flexShrink={0}>
+      <Box
+        width={gutter}
+        minWidth={gutter}
+        flexShrink={0}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
         {marker}
       </Box>
       <Prose flexGrow={1} minWidth={0}>

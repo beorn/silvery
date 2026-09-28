@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-non-null-assertion, typescript/restrict-template-expressions, typescript/no-deprecated */
 /**
  * DOM-level Mouse Events for silvery
  *
@@ -219,12 +220,11 @@ function hitTestInFlow(node: AgNode, x: number, y: number): AgNode | null {
   const rect = node.scrollRect
   if (!rect) return null
 
-  if (!pointInRect(x, y, rect)) return null
-
   const props = node.props as { overflow?: string; pointerEvents?: string }
   if (props.pointerEvents === "none") return null
 
   const clips = props.overflow === "hidden" || props.overflow === "scroll"
+  if (clips && !pointInRect(x, y, rect)) return null
 
   // DFS: reverse child order (last child = top z-order).
   for (let i = node.children.length - 1; i >= 0; i--) {
@@ -247,7 +247,7 @@ function hitTestInFlow(node: AgNode, x: number, y: number): AgNode | null {
     if (inlineHit) return inlineHit
   }
 
-  return node
+  return pointInRect(x, y, rect) ? node : null
 }
 
 /**
