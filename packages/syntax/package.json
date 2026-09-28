@@ -38,7 +38,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "shiki": "^4.3.1"
+    "shiki": "4.4.3"
   },
   "tsdown": {
     "clean": true,
