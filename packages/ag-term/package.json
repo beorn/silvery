@@ -401,7 +401,7 @@
     "@termless/core": ">=0.9.1 <1.0.0",
     "@termless/ghostty": ">=0.9.1 <1.0.0",
     "@termless/xtermjs": ">=0.9.1 <1.0.0",
-    "flexily": "0.7.1",
+    "flexily": "^0.8.0",
     "loggily": "^0.10.0"
   },
   "peerDependencies": {
