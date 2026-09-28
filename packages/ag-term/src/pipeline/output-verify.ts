@@ -44,8 +44,29 @@ export type OutputTextSizingEnabledFn = (ctx: OutputContext) => boolean
 export interface AccumulateState {
   accumulatedAnsi: string
   accumulateWidth: number
+  /** Rows of the terminal the accumulated output was written for ({@link visibleRows}). */
   accumulateHeight: number
   accumulateFrameCount: number
+}
+
+/**
+ * Rows of the terminal an output frame was written for.
+ *
+ * Fullscreen output never addresses a row at or below `termRows`: the first
+ * render and every full render stop at the terminal's last row, and the diff
+ * drops changes below it. A buffer taller than the terminal is legal (the root
+ * is content-sized), and only its top `termRows` rows are ever on screen.
+ *
+ * Every oracle in this module models that terminal. It sizes its replay screen
+ * with this value and renders its fresh reference with the same cap. It never
+ * compares rows that no terminal shows, and a write addressed below the
+ * terminal lands on the last row, where a real terminal clamps it.
+ *
+ * `termRows` undefined means the output covers the whole buffer: inline mode's
+ * canonical fullscreen re-diff, or a caller that gave no terminal height.
+ */
+export function visibleRows(bufferHeight: number, termRows: number | undefined): number {
+  return termRows == null ? bufferHeight : Math.min(bufferHeight, termRows)
 }
 
 /** A verifier emulator: the io `Emulator` plus its backend's lifecycle (unterm A2). */
@@ -59,10 +80,12 @@ export interface TerminalVerifyState {
   terminal: VerificationTerminal | null
   /** Optional persistent Ghostty terminal for cross-backend verification */
   ghosttyTerminal: VerificationTerminal | null
-  /** Width of the terminal */
+  /** Width of the buffer the emulators were initialized for (and of the emulators) */
   width: number
-  /** Height of the terminal */
+  /** Height of the buffer the emulators were initialized for; a change re-initializes them */
   height: number
+  /** Rows of the emulators: the terminal the output was written for ({@link visibleRows}) */
+  rows: number
   /** Frame count for diagnostics */
   frameCount: number
   /** Which emulator backends to verify (xterm, ghostty — vt100 handled separately) */
@@ -111,6 +134,7 @@ export function createTerminalVerifyState(): TerminalVerifyState {
     ghosttyTerminal: null,
     width: 0,
     height: 0,
+    rows: 0,
     frameCount: 0,
     backends: allBackends.filter((b) => b !== "vt100") as Array<"xterm" | "ghostty">,
     hasVt100: allBackends.includes("vt100"),
@@ -862,6 +886,12 @@ export function captureStrictFailureArtifacts(opts: {
   frameCount?: number
   /** Optional bufferToAnsi function for generating fresh-prev.ansi. */
   renderFull?: BufferToAnsiFn
+  /**
+   * Rows of the terminal the oracle compared ({@link visibleRows}). Recorded so
+   * a dump says which window was judged when the buffer is taller than the
+   * terminal; absent means the whole buffer.
+   */
+  viewportRows?: number
 }): string {
   try {
     // sync-node-builtin: multi-target lazy guard via getBuiltinModule (ESM-only wave-3).
@@ -881,6 +911,8 @@ export function captureStrictFailureArtifacts(opts: {
       frameCount: opts.frameCount,
       prevSize: opts.prev ? { width: opts.prev.width, height: opts.prev.height } : null,
       nextSize: opts.next ? { width: opts.next.width, height: opts.next.height } : null,
+      termRows: opts.ctx?.termRows ?? null,
+      viewportRows: opts.viewportRows ?? null,
       incrOutputLength: opts.incrOutput?.length,
       freshOutputLength: opts.freshOutput?.length,
       testName: (globalThis as any).__vitest_worker__?.current?.name as string | undefined,
@@ -925,9 +957,9 @@ export function captureStrictFailureArtifacts(opts: {
       fs.writeFileSync(path.join(dir, "next-buffer.txt"), rows.join("\n"))
     }
 
-    // Fresh prev ANSI (for replay)
+    // Fresh prev ANSI (for replay), capped like the frames the oracle replayed
     if (opts.prev && opts.ctx && opts.renderFull) {
-      const freshPrev = opts.renderFull(opts.prev, opts.ctx)
+      const freshPrev = opts.renderFull(opts.prev, opts.ctx, opts.viewportRows)
       fs.writeFileSync(path.join(dir, "fresh-prev.ansi"), freshPrev)
     }
 
@@ -953,6 +985,10 @@ export function captureStrictFailureArtifacts(opts: {
  * @param renderFull Function to convert a buffer to full ANSI output
  * @param graphemeWidthFn Function to get grapheme width
  * @param textSizingEnabledFn Function to check if text sizing is enabled
+ * @param termRows Rows of the terminal `incrOutput` was written for. Fullscreen
+ *   output is capped there, so the replay screen and the fresh reference are
+ *   capped the same way ({@link visibleRows}). Undefined when the output covers
+ *   the whole buffer.
  */
 export function verifyOutputEquivalence(
   prev: TerminalBuffer,
@@ -962,12 +998,15 @@ export function verifyOutputEquivalence(
   renderFull: BufferToAnsiFn,
   graphemeWidthFn: OutputGraphemeWidthFn,
   textSizingEnabledFn: OutputTextSizingEnabledFn,
+  termRows?: number,
 ): void {
   const w = Math.max(prev.width, next.width)
   // VT height must accommodate the larger buffer to prevent scrolling artifacts
-  // when prev is taller than next (e.g., items removed from a scrollback list).
-  // We only compare up to next.height rows — excess rows should be cleared.
-  const vtHeight = Math.max(prev.height, next.height)
+  // when prev is taller than next (e.g., items removed from a scrollback list),
+  // but it is never taller than the terminal the output was written for: rows
+  // below that terminal are never on screen, and a write addressed there must
+  // clamp onto the last row as it would on the real terminal.
+  const vtHeight = visibleRows(Math.max(prev.height, next.height), termRows)
   // DEBUG: log buffer dimensions
   if (DEBUG_OUTPUT) {
     log.error?.(
@@ -975,7 +1014,7 @@ export function verifyOutputEquivalence(
     )
   }
   // Replay: fresh prev render + incremental diff applied on top
-  const freshPrev = renderFull(prev, ctx)
+  const freshPrev = renderFull(prev, ctx, termRows)
   if (DEBUG_OUTPUT) {
     log.error?.(`[VERIFY] freshPrev len=${freshPrev.length} incrOutput len=${incrOutput.length}`)
     // Show incrOutput as escaped string
@@ -984,7 +1023,7 @@ export function verifyOutputEquivalence(
   }
   const screenIncr = replayAnsiWithStyles(w, vtHeight, freshPrev + incrOutput, ctx)
   // Replay: fresh render of next buffer
-  const freshNext = renderFull(next, ctx)
+  const freshNext = renderFull(next, ctx, termRows)
   const screenFresh = replayAnsiWithStyles(w, vtHeight, freshNext, ctx)
 
   const _dumpRowWideCells = (buf: TerminalBuffer, row: number): string => {
@@ -1069,6 +1108,7 @@ export function verifyOutputEquivalence(
           freshOutput: freshNext,
           ctx,
           renderFull,
+          viewportRows: vtHeight,
         })
         const fullMsg = `${msg}\n  Artifacts: ${artifactDir}`
         log.error?.(fullMsg)
@@ -1109,6 +1149,7 @@ export function verifyOutputEquivalence(
           freshOutput: freshNext,
           ctx,
           renderFull,
+          viewportRows: vtHeight,
         })
         throw new IncrementalRenderMismatchError(`${msg}\n  Artifacts: ${artifactDir2}`)
       }
@@ -1132,11 +1173,14 @@ export function verifyAccumulatedOutput(
   renderFull: BufferToAnsiFn,
 ): void {
   const w = accState.accumulateWidth
+  // The terminal the accumulated frames were written for ({@link visibleRows}):
+  // the fresh reference is rendered for the same terminal, so a buffer taller
+  // than it is compared only where it is on screen.
   const h = accState.accumulateHeight
   // Replay all accumulated output (first render + all incremental updates)
   const screenAccumulated = replayAnsiWithStyles(w, h, accState.accumulatedAnsi, ctx)
   // Replay fresh render of current buffer
-  const freshOutput = renderFull(currentBuffer, ctx)
+  const freshOutput = renderFull(currentBuffer, ctx, h)
   const screenFresh = replayAnsiWithStyles(w, h, freshOutput, ctx)
 
   for (let y = 0; y < h; y++) {
@@ -1157,6 +1201,7 @@ export function verifyAccumulatedOutput(
           ctx,
           frameCount: accState.accumulateFrameCount,
           renderFull,
+          viewportRows: h,
         })
         log.error?.(`${msg}\n  Artifacts: ${dir}`)
         throw new IncrementalRenderMismatchError(`${msg}\n  Artifacts: ${dir}`)
@@ -1194,6 +1239,7 @@ export function verifyAccumulatedOutput(
           ctx,
           frameCount: accState.accumulateFrameCount,
           renderFull,
+          viewportRows: h,
         })
         log.error?.(`${msg}\n  Artifacts: ${dir2}`)
         throw new IncrementalRenderMismatchError(`${msg}\n  Artifacts: ${dir2}`)
@@ -1218,12 +1264,17 @@ export function verifyAccumulatedOutput(
 /**
  * Initialize the terminal verify state: create persistent terminal emulators
  * and feed the initial full render ANSI output.
+ *
+ * `height` is the buffer's height. `rows` is the emulators' height: the
+ * terminal `initialAnsi` was written for ({@link visibleRows}). It defaults to
+ * the buffer's height for output that covers the whole buffer.
  */
 export function initTerminalVerifyState(
   state: TerminalVerifyState,
   width: number,
   height: number,
   initialAnsi: string,
+  rows: number = height,
 ): void {
   // Close any existing emulators from a previous run
   if (state.terminal) state.terminal.close()
@@ -1231,7 +1282,7 @@ export function initTerminalVerifyState(
 
   // Create the xterm.js emulator if requested
   if (state.backends.includes("xterm")) {
-    state.terminal = createStrictEmulator("xterm", { cols: width, rows: height })
+    state.terminal = createStrictEmulator("xterm", { cols: width, rows })
     state.terminal.feed(initialAnsi)
   } else {
     state.terminal = null
@@ -1239,7 +1290,7 @@ export function initTerminalVerifyState(
 
   // Create the Ghostty emulator if requested
   if (state.backends.includes("ghostty")) {
-    state.ghosttyTerminal = createStrictEmulator("ghostty", { cols: width, rows: height })
+    state.ghosttyTerminal = createStrictEmulator("ghostty", { cols: width, rows })
     state.ghosttyTerminal.feed(initialAnsi)
   } else {
     state.ghosttyTerminal = null
@@ -1247,6 +1298,7 @@ export function initTerminalVerifyState(
 
   state.width = width
   state.height = height
+  state.rows = rows
   state.frameCount = 0
 }
 
@@ -1259,6 +1311,11 @@ export function initTerminalVerifyState(
  * "For a given terminal capability profile and viewport size, the actual
  * terminal state after incremental rendering must equal the actual terminal
  * state after a fresh full redraw" — checked in an independent emulator.
+ *
+ * `termRows` is the terminal `incrOutput` was written for. The emulators have
+ * that many rows, and the fresh reference is capped the same way
+ * ({@link visibleRows}), so a buffer taller than the terminal is compared only
+ * where it is on screen.
  */
 export function verifyTerminalEquivalence(
   state: TerminalVerifyState,
@@ -1266,24 +1323,30 @@ export function verifyTerminalEquivalence(
   nextBuffer: TerminalBuffer,
   ctx: OutputContext,
   renderFull: BufferToAnsiFn,
+  termRows?: number,
 ): void {
+  const rows = visibleRows(nextBuffer.height, termRows)
   // Buffer dimensions may change between frames (test renderers use content-sized
   // buffers). When dimensions change, the persistent terminal can't be meaningfully
   // compared — CUP commands and scrolling behave differently at different sizes.
   // Reinitialize the persistent terminal with a fresh render at the new dimensions.
-  if (nextBuffer.width !== state.width || nextBuffer.height !== state.height) {
-    const freshAnsi = renderFull(nextBuffer, ctx)
-    initTerminalVerifyState(state, nextBuffer.width, nextBuffer.height, freshAnsi)
+  if (
+    nextBuffer.width !== state.width ||
+    nextBuffer.height !== state.height ||
+    rows !== state.rows
+  ) {
+    const freshAnsi = renderFull(nextBuffer, ctx, termRows)
+    initTerminalVerifyState(state, nextBuffer.width, nextBuffer.height, freshAnsi, rows)
     state.frameCount++
     return
   }
 
-  const freshAnsi = renderFull(nextBuffer, ctx)
+  const freshAnsi = renderFull(nextBuffer, ctx, termRows)
 
   // Verify xterm.js terminal
   if (state.terminal) {
     state.terminal.feed(incrOutput)
-    const freshTerm = createStrictEmulator("xterm", { cols: state.width, rows: state.height })
+    const freshTerm = createStrictEmulator("xterm", { cols: state.width, rows: state.rows })
     freshTerm.feed(freshAnsi)
     try {
       compareTerminals(state.terminal.emulator, freshTerm.emulator, state, "xterm")
@@ -1298,6 +1361,7 @@ export function verifyTerminalEquivalence(
           ctx,
           frameCount: state.frameCount,
           renderFull,
+          viewportRows: state.rows,
         })
         throw new IncrementalRenderMismatchError(`${e.message}\n  Artifacts: ${dir}`)
       }
@@ -1310,7 +1374,7 @@ export function verifyTerminalEquivalence(
   // Verify Ghostty terminal
   if (state.ghosttyTerminal) {
     state.ghosttyTerminal.feed(incrOutput)
-    const freshTerm = createStrictEmulator("ghostty", { cols: state.width, rows: state.height })
+    const freshTerm = createStrictEmulator("ghostty", { cols: state.width, rows: state.rows })
     freshTerm.feed(freshAnsi)
     try {
       compareTerminals(state.ghosttyTerminal.emulator, freshTerm.emulator, state, "ghostty")
@@ -1325,6 +1389,7 @@ export function verifyTerminalEquivalence(
           ctx,
           frameCount: state.frameCount,
           renderFull,
+          viewportRows: state.rows,
         })
         throw new IncrementalRenderMismatchError(`${e.message}\n  Artifacts: ${dir}`)
       }
@@ -1343,7 +1408,7 @@ function compareTerminals(
   backendName: string,
 ): void {
   const w = state.width
-  const h = state.height
+  const h = state.rows
   const prefix = `SILVERY_STRICT_TERMINAL[${backendName}]`
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
