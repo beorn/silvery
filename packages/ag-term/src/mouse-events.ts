@@ -1,4 +1,4 @@
-/* oxlint-disable typescript/no-non-null-assertion, typescript/restrict-template-expressions, typescript/no-deprecated */
+/* oxlint-disable typescript/no-non-null-assertion, typescript/restrict-template-expressions, typescript/no-deprecated -- historical mouse-events tree traversal and synthetic event dispatch */
 /**
  * DOM-level Mouse Events for silvery
  *

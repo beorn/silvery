@@ -140,7 +140,7 @@ Phase 1 (current) seeds the convention with five entry points:
 
 Phase 2 backlogs live in each file as TODO comments — grep for `Phase 2 backlog` to find the outstanding defaults. Phase 3 will add a lint-ish script that flags any `@default` docstring without a matching contract test.
 
-See `tests/contracts/README.md` and bead `km-silvery.defaults-contract-tests`.
+See `tests/contracts/README.md` and bead `@si/test/12390-defaults-contract-tests`.
 
 ## Quick Start
 
@@ -341,7 +341,7 @@ Full styling reference: [Styling Guide](docs/guide/styling.md)
 >
 > `processEventBatch` inside `create-app.tsx` still uses the legacy
 > `runtimeInputListeners + handleFocusNavigation` pattern; migration onto
-> `runEventBatch` is staged in bead `km-silvery.tea-useinput` so each
+> `runEventBatch` is staged in bead `@si/app/12901-tea/12912-useinput` so each
 > commit keeps behavioural equivalence tests green. The ag-react hooks
 > (`useInput`, `usePaste*`, `useInputLayer`, `useExit`, `useModifierKeys`)
 > still read from `RuntimeContext.on()` pending that migration.
@@ -535,7 +535,7 @@ const app = render(
 )
 ```
 
-Counter-example (the misdiagnosis trap): `tests/features/wrap-nested-flexgrow.test.tsx` has a `.skip`-ed test that documents the antipattern. The wrap bug filed as `km-silvery.wrap-measurement` was this artifact, not a flexily defect.
+Counter-example (the misdiagnosis trap): `tests/features/wrap-nested-flexgrow.test.tsx` has a `.skip`-ed test that documents the antipattern. The wrap bug filed as `@si/text/14447-wrap-measurement` was this artifact, not a flexily defect.
 
 ### createTermless -- full ANSI, real terminal emulator
 
@@ -725,7 +725,7 @@ Silvery apps are assembled via `pipe()` — each **provider** (`with-*` function
 
 **Public docs** describe the system as-is: [App Composition](docs/design/app-composition.md) — `createApp`, `pipe()`, `with*` plugins, event flow.
 
-**Internal design** (target architecture): `create()` + `pipe()` + plugins wrapping `apply()`. Design docs live in km's private workspace. Tracking bead: `km-silvery.tea`.
+**Internal design** (target architecture): `create()` + `pipe()` + plugins wrapping `apply()`. Design docs live in km's private workspace. Tracking bead: `@si/app/12901-tea`.
 
 - **[Providers and Plugins](docs/guide/providers.md)** — `pipe()` composition, `AppPlugin` type, all built-in providers, how to write custom providers
 - **[Headless Machines](docs/guide/headless-machines.md)** — `createMachine()`, pure update functions (readline, select-list), naming conventions, React hooks
