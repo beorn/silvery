@@ -257,11 +257,11 @@ Characterized the 14 pre-existing vendor-project test failures that had been the
 baseline for several silvery bumps. 13 of them are classified as real-but-deferred
 bugs and now carry `test.fails` markers (vitest's canary marker — flips to failed
 if they unexpectedly pass) referencing four P3 sub-beads plus one P4: TextArea
-onEdge / Ctrl-N/P (5 tests → km-silvery.textarea-onedge-fires-zero-times), termless
-resize+reflow (4 tests → km-silvery.termless-resize-reflow-4-fails), selection-e2e
-OSC 52 mouse-drag (2 tests → km-silvery.selection-e2e-osc52-partial), ai-chat
-rate-limit fastMode turn (1 test → km-silvery.ai-chat-rate-limit-turn-missing),
-dashboard 80x40 snapshot drift (1 test → km-silvery.dashboard-narrow-snapshot-mismatch).
+onEdge / Ctrl-N/P (5 tests → @si/text/14763-textarea-onedge-fires), termless
+resize+reflow (4 tests → @si/select/14764-termless-resize-reflow), selection-e2e
+OSC 52 mouse-drag (2 tests → @si/select/14765-selection-e2e-osc52), ai-chat
+rate-limit fastMode turn (1 test → @si/demo/14767-ai-chat-missing),
+dashboard 80x40 snapshot drift (1 test → @si/test/14766-snapshot-mismatch).
 The 14th failure — sterling ANSI16 surface-collision threshold — was an environment
 slack case and is fixed in place (bumped 75 → 80). Baseline is now 0 fails | N pass
 | 13 expected-fail. See parent audit bead for the full breakdown.
