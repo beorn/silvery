@@ -206,6 +206,11 @@
   },
   "tsdown": {
     "clean": true,
+    "deps": {
+      "alwaysBundle": [
+        "slice-ansi"
+      ]
+    },
     "dts": true,
     "entry": [
       "src/index.ts",
