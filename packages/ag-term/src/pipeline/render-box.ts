@@ -398,10 +398,11 @@ export function renderScrollIndicators(
   nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds">,
   ctx?: PipelineContext,
 ): void {
-  // Inverse bar style: white text on dark background
+  const rawBg = getEffectiveBg(props)
+  const bg = rawBg ? (parseColor(rawBg) ?? null) : null
   const indicatorStyle: Style = {
     fg: 15, // Bright white
-    bg: 8, // Dark gray
+    bg,
     attrs: {},
   }
   const { scrollOffset, clipBounds } = nodeState
@@ -440,14 +441,14 @@ function renderOverflowIndicator(
   // Clear the whole indicator row first. The viewport window can replace an
   // item row with an overflow-indicator row after scrolling; without explicit
   // clears, incremental output leaves stale item glyphs around the centered
-  // token. Keep the clears unstyled so fresh and incremental buffers agree on
-  // the surrounding blank cells.
+  // token. Keep the clears matching the container background so fresh and
+  // incremental buffers agree on the surrounding blank cells.
   renderTextLine(
     buffer,
     left,
     y,
     " ".repeat(right - left),
-    { fg: null, bg: null, attrs: {} },
+    { fg: null, bg: style.bg, attrs: {} },
     right,
     undefined,
     ctx,
