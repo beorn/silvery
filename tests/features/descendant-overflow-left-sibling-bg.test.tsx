@@ -31,7 +31,7 @@
 
 import React from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { compareBuffers, createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
 
 const COLS = 60
@@ -150,6 +150,7 @@ function StagePane({
   borderOnly = false,
   boxEmitter = false,
   outsideOpaque = false,
+  stableOutputKey,
 }: {
   output: string
   scrolled?: boolean
@@ -157,6 +158,7 @@ function StagePane({
   borderOnly?: boolean
   boxEmitter?: boolean
   outsideOpaque?: boolean
+  stableOutputKey?: string
 }): React.ReactElement<React.ComponentProps<typeof Box>> {
   return (
     <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
@@ -200,7 +202,16 @@ function StagePane({
             height={boxEmitter ? 1 : undefined}
             alignItems="flex-start"
           >
-            {!boxEmitter && <Text>{output}</Text>}
+            {!boxEmitter &&
+              (stableOutputKey === undefined ? (
+                <Text>{output}</Text>
+              ) : (
+                <Box id="stable-output" width={COLS} height={1} flexShrink={0}>
+                  <Text id="stable-output-text" key={stableOutputKey}>
+                    {output}
+                  </Text>
+                </Box>
+              ))}
           </Box>
         </Box>
       </Box>
@@ -219,6 +230,39 @@ function StagePane({
  * @consumer Yrd stage-output pane; public Box/Text users with visible sibling overflow.
  */
 describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26485)", () => {
+  /**
+   * @failure Stable transparent output cleanup erases an earlier tab's fill after keyed Text replacement.
+   * @level l2
+   * @consumer Yrd stage-output pane; incremental Silvery clients with overlapping sibling paint.
+   */
+  test("stable transparent output replacement preserves earlier tab paint in the same frame", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAA" stableOutputKey="long" />)
+
+    try {
+      const before = app.locator("#stable-output").resolve()
+      const oldText = app.locator("#stable-output-text").resolve()
+      expect(before?.boxRect).toBeDefined()
+      expect(oldText).toBeDefined()
+      const stableBounds = { ...before!.boxRect! }
+      expect(app.term.buffer.getCell(16, 1).char).toBe("A")
+
+      app.rerender(<StagePane output="AAAAAAAAAAAAAAAA" stableOutputKey="short" />)
+
+      const after = app.locator("#stable-output").resolve()
+      const replacement = app.locator("#stable-output-text").resolve()
+      expect(after?.boxRect).toEqual(stableBounds)
+      expect(replacement).not.toBe(oldText)
+      expect(replacement?.prevLayout).toBeNull()
+      const revealed = app.term.buffer.getCell(16, 1)
+      expect(revealed.char).toBe(" ")
+      expect(revealed.bg).toEqual({ r: 0, g: 0, b: 255 })
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+    } finally {
+      app.unmount()
+    }
+  })
+
   test("shrinking text reveals the earlier filled tab background", () => {
     const render = createRenderer({ cols: COLS, rows: ROWS })
     const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAA" />)
