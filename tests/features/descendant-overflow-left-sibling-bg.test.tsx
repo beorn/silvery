@@ -263,6 +263,130 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
     }
   })
 
+  /**
+   * @failure A clean, clipped earlier sibling makes a one-Text change scan its entire subtree.
+   * @level l3
+   * @consumer Large incremental Silvery trees with overlapping paint.
+   */
+  test("one Text change has prewalk work independent of a clipped, disjoint clean subtree", () => {
+    function CostPane({ cleanGroup, short }: { cleanGroup: React.ReactNode; short: boolean }) {
+      return (
+        <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
+          {cleanGroup}
+          <Box height={1} flexShrink={0}>
+            <Box width={20} height={5} flexShrink={0} backgroundColor="#0000ff" />
+          </Box>
+          <Box width={20} height={1} flexShrink={0}>
+            <Text key={short ? "short" : "long"}>
+              {short ? "AAAAAAAAAAAAAAAA" : "AAAAAAAAAAAAAAAAAAA"}
+            </Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    function measure(cleanCount: number) {
+      const rows = Array.from({ length: cleanCount }, (_, i) => <Text key={i}>clean {i}</Text>)
+      const cleanGroup = (
+        <Box
+          width={20}
+          height={1}
+          marginLeft={40}
+          flexShrink={0}
+          overflow="hidden"
+          flexDirection="column"
+        >
+          {rows}
+        </Box>
+      )
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+      const app = render(<CostPane cleanGroup={cleanGroup} short={false} />)
+      try {
+        ;(globalThis as any).__silvery_content_all = []
+        app.rerender(<CostPane cleanGroup={cleanGroup} short />)
+        const frames = ((globalThis as any).__silvery_content_all ?? []) as Array<
+          Record<string, number>
+        >
+        const incremental = frames.find((frame) => frame._hasPrevBuffer === 1)
+        expect(incremental).toBeDefined()
+        expect(app.term.buffer.getCell(16, 2).bg).toEqual({ r: 0, g: 0, b: 255 })
+        return {
+          extents: incremental!.prewalkExtentDerivations,
+          rectangles: incremental!.prewalkRectChecks,
+          rendered: incremental!.nodesRendered,
+          skipped: incremental!.nodesSkipped,
+        }
+      } finally {
+        app.unmount()
+      }
+    }
+
+    const small = measure(20)
+    const large = measure(2100)
+    expect(large.extents).toBe(small.extents)
+    expect(large.rectangles).toBe(small.rectangles)
+  }, 120_000)
+
+  /**
+   * @failure A flat prefix of disjoint clean painters makes one Text clear scan with tree size.
+   * @level l3
+   * @consumer Large incremental Silvery rows with many sibling items.
+   */
+  // CTO's flat-sibling cost gate still fails. Make this a normal passing test
+  // before delivery; the local WIP branch deliberately preserves the witness.
+  test.fails("one Text change has prewalk work independent of flat disjoint clean siblings", () => {
+    function FlatPane({
+      prefix,
+      short,
+      width,
+    }: {
+      prefix: React.ReactNode[]
+      short: boolean
+      width: number
+    }) {
+      return (
+        <Box width={width} height={2} flexDirection="row" backgroundColor="#000000">
+          {prefix}
+          <Box width={20} height={1} flexShrink={0}>
+            <Text key={short ? "short" : "long"}>
+              {short ? "AAAAAAAAAAAAAAAA" : "AAAAAAAAAAAAAAAAAAA"}
+            </Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    function measure(prefixCount: number) {
+      const prefix = Array.from({ length: prefixCount }, (_, i) => (
+        <Box key={i} width={1} height={1} flexShrink={0} backgroundColor="#0000ff" />
+      ))
+      const width = prefixCount + 20
+      const render = createRenderer({ cols: width, rows: 2 })
+      const app = render(<FlatPane prefix={prefix} short={false} width={width} />)
+      try {
+        ;(globalThis as any).__silvery_content_all = []
+        app.rerender(<FlatPane prefix={prefix} short width={width} />)
+        const frames = ((globalThis as any).__silvery_content_all ?? []) as Array<
+          Record<string, number>
+        >
+        const incremental = frames.find((frame) => frame._hasPrevBuffer === 1)
+        expect(incremental).toBeDefined()
+        return {
+          extents: incremental!.prewalkExtentDerivations,
+          rectangles: incremental!.prewalkRectChecks,
+          rendered: incremental!.nodesRendered,
+          skipped: incremental!.nodesSkipped,
+        }
+      } finally {
+        app.unmount()
+      }
+    }
+
+    const small = measure(20)
+    const large = measure(2100)
+    expect(large).toMatchObject({ extents: small.extents, rectangles: small.rectangles })
+  }, 120_000)
+
   test("shrinking text reveals the earlier filled tab background", () => {
     const render = createRenderer({ cols: COLS, rows: ROWS })
     const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAA" />)

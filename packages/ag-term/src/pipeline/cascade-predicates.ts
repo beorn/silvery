@@ -653,3 +653,36 @@ export function computeCascade(inputs: CascadeInputs): CascadeOutputs {
     bgOnlyChange,
   }
 }
+
+/**
+ * Conservative entry-prewalk gate for a node that can clear its own current
+ * region. SUBTREE alone only makes a node a route to changed descendants;
+ * it never enters contentAreaAffected. STYLE is admitted for Boxes too because
+ * the attribute overlay can force a clear after the cascade is computed.
+ */
+export function mayClearOwnRegion(
+  inputs: Pick<
+    CascadeInputs,
+    | "hasBgColor"
+    | "contentDirty"
+    | "stylePropsDirty"
+    | "layoutChanged"
+    | "childrenDirty"
+    | "childPositionChanged"
+    | "bgDirty"
+    | "absoluteChildMutated"
+    | "descendantOverflowChanged"
+  >,
+): boolean {
+  return (
+    !inputs.hasBgColor &&
+    (inputs.contentDirty ||
+      inputs.stylePropsDirty ||
+      inputs.layoutChanged ||
+      inputs.childrenDirty ||
+      inputs.childPositionChanged ||
+      inputs.bgDirty ||
+      inputs.absoluteChildMutated ||
+      inputs.descendantOverflowChanged)
+  )
+}

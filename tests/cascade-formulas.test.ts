@@ -7,7 +7,7 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { computeCascade } from "@silvery/ag-term/pipeline/cascade-predicates"
+import { computeCascade, mayClearOwnRegion } from "@silvery/ag-term/pipeline/cascade-predicates"
 import type { CascadeInputs, CascadeOutputs } from "@silvery/ag-term/pipeline/cascade-predicates"
 
 /** Input field names in the order they map to bit positions */
@@ -262,6 +262,36 @@ describe("cascade predicates — structural invariants (2^14 = 16384 cases)", ()
       }
     }
     expect(violations).toEqual([])
+  })
+
+  /**
+   * @failure A clearing node omitted by the entry prewalk can erase earlier paint.
+   * @level l2
+   * @consumer Incremental Silvery clients with overlapping siblings.
+   */
+  test("every cascade current-region clear passes the prewalk own-change gate", () => {
+    const violations: string[] = []
+    for (let bits = 0; bits < TOTAL; bits++) {
+      const inputs = bitsToInputs(bits)
+      if (computeCascade(inputs).contentRegionCleared && !mayClearOwnRegion(inputs)) {
+        violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
+      }
+    }
+    expect(violations).toEqual([])
+  })
+
+  /**
+   * @failure A Box attribute overlay can force a clear after computeCascade.
+   * @level l2
+   * @consumer Incremental Silvery clients with styled overlapping Boxes.
+   */
+  test("Box attribute overlay style change passes the prewalk own-change gate", () => {
+    const inputs = bitsToInputs(
+      (1 << INPUT_FIELDS.indexOf("hasPrevBuffer")) | (1 << INPUT_FIELDS.indexOf("stylePropsDirty")),
+    )
+    expect(inputs.isTextNode).toBe(false)
+    expect(computeCascade(inputs).contentRegionCleared).toBe(false)
+    expect(mayClearOwnRegion(inputs)).toBe(true)
   })
 
   test("skipBgFill requires hasPrevBuffer and !ancestorCleared", () => {

@@ -51,7 +51,7 @@ import { pushContextTheme, popContextTheme } from "./state"
 import type { Theme } from "@silvery/ansi"
 // cascade-predicates is the imperative oracle — used for STRICT verification
 // and as the fallback when SILVERY_REACTIVE=0 (bench only).
-import { computeCascade } from "./cascade-predicates"
+import { computeCascade, mayClearOwnRegion } from "./cascade-predicates"
 import {
   isCurrentEpoch,
   isAnyDirty,
@@ -94,7 +94,22 @@ type PaintMemoEntry = {
   paintOrder?: number[]
   extent?: Rect | null
 }
-type RenderPassState = RenderPostState & { paintMemo: Map<AgNode, PaintMemoEntry> }
+type RenderPassState = RenderPostState & {
+  paintMemo: Map<AgNode, PaintMemoEntry>
+  detectorCounts: { prewalkExtentDerivations: number; prewalkRectChecks: number }
+  prewalkActive: boolean
+}
+
+/** The same ancestor supplies the writer's clear color and its horizontal bound. */
+function inheritedBgSource(node: AgNode): { color: string; ancestorRect: Rect } | null {
+  if (!node.boxRect) return null
+  const props = node.props as BoxProps
+  const effectiveBg = getEffectiveBg(props)
+  const theme = props.theme as Theme | undefined
+  if (effectiveBg) return { color: effectiveBg, ancestorRect: node.boxRect }
+  if (theme) return { color: theme.bg, ancestorRect: node.boxRect }
+  return null
+}
 
 /**
  * Render all nodes to a terminal buffer.
@@ -148,6 +163,8 @@ export function renderPhase(
   // Attach only for this pass; finally releases node references on return/throw.
   const passState: RenderPassState = Object.assign(postState, {
     paintMemo: new Map<AgNode, PaintMemoEntry>(),
+    detectorCounts: { prewalkExtentDerivations: 0, prewalkRectChecks: 0 },
+    prewalkActive: true,
   })
   try {
     if (hasPrevBuffer && !opts?.fresh) {
@@ -158,6 +175,7 @@ export function renderPhase(
         [],
       )
     }
+    passState.prewalkActive = false
 
     if (instr.enabled) {
       instr.stats._prevBufferNull = prevBuffer == null ? 1 : 0
@@ -235,6 +253,7 @@ export function renderPhase(
     renderDecorationPass(buffer, root, postState, ctx)
 
     if (instr.enabled) {
+      Object.assign(instr.stats, passState.detectorCounts)
       emitRenderPhaseStats(instr.stats, instr.nodeTrace, instr.nodeTraceEnabled, tClone, tRender)
     }
 
@@ -252,7 +271,11 @@ export function renderPhase(
     return buffer
   } finally {
     passState.paintMemo.clear()
-    if (!Reflect.deleteProperty(postState, "paintMemo")) {
+    if (
+      !Reflect.deleteProperty(postState, "paintMemo") ||
+      !Reflect.deleteProperty(postState, "detectorCounts") ||
+      !Reflect.deleteProperty(postState, "prewalkActive")
+    ) {
       throw new Error("Cannot release rendering pass paint memo")
     }
   }
@@ -924,12 +947,13 @@ function renderNodeToBuffer(
 
     // Compute inherited bg/fg for children. If this node sets backgroundColor,
     // color, or theme, children inherit from this node. Otherwise, inherit from parent.
-    const effectiveBg = getEffectiveBg(props)
-    const childInheritedBg = effectiveBg
-      ? { color: parseColor(effectiveBg, ctx?.colorLevel), ancestorRect: node.boxRect }
-      : nodeTheme
-        ? { color: parseColor(nodeTheme.bg, ctx?.colorLevel), ancestorRect: node.boxRect }
-        : nodeState.inheritedBg
+    const ownBgSource = inheritedBgSource(node)
+    const childInheritedBg = ownBgSource
+      ? {
+          color: parseColor(ownBgSource.color, ctx?.colorLevel),
+          ancestorRect: ownBgSource.ancestorRect,
+        }
+      : nodeState.inheritedBg
     // color="inherit"/"currentColor" is a pass-through — children inherit
     // from this node's OWN inheritedFg (our parent's color), not from null.
     // Without this, an intermediate "inherit" node breaks the cascade to
@@ -2433,6 +2457,7 @@ function subtreePaintExtent(
 ): Rect | null {
   const entry = paintMemoEntry(node, state, passState)
   if (entry.extent !== undefined) return entry.extent
+  if (passState.prewalkActive) passState.detectorCounts.prewalkExtentDerivations++
   const props = node.props as BoxProps
   const own = node.boxRect
   if (!own || node.hidden || props.display === "none") return (entry.extent = null)
@@ -2474,6 +2499,53 @@ function subtreePaintExtent(
 
 type PaintAncestor = { node: AgNode; state: PaintState; branchIndex: number }
 
+function overlapsEarlierPainter(
+  rect: Rect,
+  path: PaintAncestor[],
+  opaqueIndex: number,
+  passState: RenderPassState,
+): boolean {
+  for (let level = path.length - 1; level >= opaqueIndex; level--) {
+    const ancestor = path[level]
+    if (!ancestor) throw new Error(`Missing paint ancestor ${level}`)
+    const childStates = paintChildren(ancestor.node, ancestor.state, passState)
+    const branchState = childStates[ancestor.branchIndex]
+    if (!branchState) throw new Error("Missing emitting branch paint state")
+    const paintOrder = paintMemoEntry(ancestor.node, ancestor.state, passState).paintOrder
+    if (!paintOrder) throw new Error("Missing earlier-painter index")
+    for (let earlier = 0; earlier < branchState.order; earlier++) {
+      const i = paintOrder[earlier]
+      if (i === undefined) throw new Error(`Missing earlier paint index ${earlier}`)
+      const sibling = ancestor.node.children[i]
+      const siblingState = childStates[i]
+      if (!sibling || !siblingState) throw new Error(`Missing sibling paint state ${i}`)
+      passState.detectorCounts.prewalkRectChecks++
+      // A hidden-overflow sibling's descendants cannot paint outside its own
+      // unchanged rectangle. Reject a disjoint clean subtree before deriving
+      // every descendant's extent (the approved own-rectangle cost re-slice).
+      if (
+        (sibling.props as BoxProps).overflow === "hidden" &&
+        sibling.boxRect &&
+        !isCurrentEpoch(sibling, sibling.layoutChangedThisFrame)
+      ) {
+        const own = intersectPaintRect(
+          projectPaintRect(sibling.boxRect, siblingState.scrollOffset),
+          siblingState.clipBounds,
+        )
+        if (!own || !paintRectsIntersect(own, rect)) continue
+      }
+      const extent = subtreePaintExtent(sibling, siblingState, passState)
+      if (
+        extent &&
+        paintRectsIntersect(projectPaintRect(extent, siblingState.scrollOffset), rect)
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 /** One entry prewalk along dirty paths, not a walk at each node's render visit.
  * Bounds are derived only when a strip or forward overlap reader needs them.
  * Memoized extent derivation is O(touched nodes). Detector work is the sum of
@@ -2485,17 +2557,13 @@ function prepareExcessRepaint(
   passState: RenderPassState,
   path: PaintAncestor[],
   inheritedOpaque: AgNode | null = null,
+  inheritedSource: AgNode | null = null,
 ): void {
   if (node.hidden || (node.props as BoxProps).display === "none") return
   // Already-marked opaque fill/fresh-child cascade covers the remaining dirty
   // descendants. Do not repeat their emitter ancestry/sibling searches.
   if (inheritedOpaque && isDirty(inheritedOpaque, DESC_OVERFLOW_BIT)) return
-  if (
-    node.boxRect &&
-    node.prevLayout &&
-    isCurrentEpoch(node, node.layoutChangedThisFrame) &&
-    hasExcessClearRetreat(node.prevLayout, node.boxRect)
-  ) {
+  if (node.boxRect) {
     // Find the nearest inherited opaque ancestor once, never climb above it.
     let opaqueIndex = path.length - 1
     while (opaqueIndex >= 0) {
@@ -2504,9 +2572,45 @@ function prepareExcessRepaint(
       opaqueIndex--
     }
     const opaque = opaqueIndex >= 0 ? path[opaqueIndex]?.node : undefined
+    // A stable transparent node can erase earlier paint when it clears its
+    // current region. The writer and this detector use the same rectangle,
+    // including the inherited background source (which may be a theme node).
+    const clearCandidate =
+      node.layoutNode &&
+      mayClearOwnRegion({
+        hasBgColor: !!getEffectiveBg(node.props as BoxProps),
+        contentDirty: isDirty(node, CONTENT_BIT),
+        stylePropsDirty: isDirty(node, STYLE_PROPS_BIT),
+        layoutChanged: isCurrentEpoch(node, node.layoutChangedThisFrame),
+        childrenDirty: isDirty(node, CHILDREN_BIT),
+        childPositionChanged: hasChildPositionChanged(node),
+        bgDirty: isDirty(node, BG_BIT),
+        absoluteChildMutated: isDirty(node, ABS_CHILD_BIT),
+        descendantOverflowChanged: isDirty(node, DESC_OVERFLOW_BIT),
+      })
+    if (clearCandidate && opaque?.boxRect && !isDirty(opaque, DESC_OVERFLOW_BIT)) {
+      const rect = currentClearRect(
+        node,
+        node.boxRect,
+        state.scrollOffset,
+        state.clipBounds,
+        inheritedSource?.boxRect ?? null,
+      )
+      if (rect && overlapsEarlierPainter(rect, path, opaqueIndex, passState)) {
+        markDirty(opaque, SUBTREE_BIT | DESC_OVERFLOW_BIT)
+        return
+      }
+    }
+
     // Residual: no opaque ancestor or outside-opaque overflow retains existing
     // cleanup and STRICT's loud mismatch. See both 26485 test.fails rows.
-    if (opaque?.boxRect && !isDirty(opaque, DESC_OVERFLOW_BIT)) {
+    if (
+      node.prevLayout &&
+      isCurrentEpoch(node, node.layoutChangedThisFrame) &&
+      hasExcessClearRetreat(node.prevLayout, node.boxRect) &&
+      opaque?.boxRect &&
+      !isDirty(opaque, DESC_OVERFLOW_BIT)
+    ) {
       const strips = excessClearRects(
         node.prevLayout,
         node.boxRect,
@@ -2525,29 +2629,9 @@ function prepareExcessRepaint(
       for (const rawStrip of strips) {
         const strip = intersectPaintRect(rawStrip, opaqueClip)
         if (!strip) continue
-        for (let level = path.length - 1; level >= opaqueIndex; level--) {
-          const ancestor = path[level]
-          if (!ancestor) throw new Error(`Missing paint ancestor ${level}`)
-          const childStates = paintChildren(ancestor.node, ancestor.state, passState)
-          const branchState = childStates[ancestor.branchIndex]
-          if (!branchState) throw new Error("Missing emitting branch paint state")
-          const paintOrder = paintMemoEntry(ancestor.node, ancestor.state, passState).paintOrder
-          if (!paintOrder) throw new Error("Missing earlier-painter index")
-          for (let earlier = 0; earlier < branchState.order; earlier++) {
-            const i = paintOrder[earlier]
-            if (i === undefined) throw new Error(`Missing earlier paint index ${earlier}`)
-            const sibling = ancestor.node.children[i]
-            const siblingState = childStates[i]
-            if (!sibling || !siblingState) throw new Error(`Missing sibling paint state ${i}`)
-            const extent = subtreePaintExtent(sibling, siblingState, passState)
-            if (
-              extent &&
-              paintRectsIntersect(projectPaintRect(extent, siblingState.scrollOffset), strip)
-            ) {
-              markDirty(opaque, SUBTREE_BIT | DESC_OVERFLOW_BIT)
-              return
-            }
-          }
+        if (overlapsEarlierPainter(strip, path, opaqueIndex, passState)) {
+          markDirty(opaque, SUBTREE_BIT | DESC_OVERFLOW_BIT)
+          return
         }
       }
     }
@@ -2555,6 +2639,7 @@ function prepareExcessRepaint(
   if (!isDirty(node, SUBTREE_BIT)) return
   const childOpaque =
     node.type === "silvery-box" && getEffectiveBg(node.props as BoxProps) ? node : inheritedOpaque
+  const childSource = inheritedBgSource(node) ? node : inheritedSource
   const children = paintChildren(node, state, passState)
   for (const [i, child] of node.children.entries()) {
     if (childOpaque && isDirty(childOpaque, DESC_OVERFLOW_BIT)) break
@@ -2564,7 +2649,7 @@ function prepareExcessRepaint(
     const childState = children[i]
     if (!childState) throw new Error(`Missing dirty child paint state ${i}`)
     path.push({ node, state, branchIndex: i })
-    prepareExcessRepaint(child, childState, passState, path, childOpaque)
+    prepareExcessRepaint(child, childState, passState, path, childOpaque, childSource)
     path.pop()
   }
 }
@@ -2953,16 +3038,13 @@ function _clearDescendantOverflow(
  * Clipping: clips to parent's boxRect (prevents overflow) and to the
  * colored ancestor's bounds (prevents bg color bleeding into siblings).
  */
-function clearNodeRegion(
+function currentClearRect(
   node: AgNode,
-  sink: RenderSink,
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
-  threadedInheritedBg: NodeRenderState["inheritedBg"],
-): void {
-  const inherited = threadedInheritedBg
-  const clearBg = inherited.color
+  ancestorRect: Rect | null,
+): Rect | null {
   const screenY = layout.y - scrollOffset
 
   // Clip to parent's boxRect to prevent oversized children from clearing
@@ -2991,9 +3073,9 @@ function clearNodeRegion(
       clearWidth = Math.max(0, clipBounds.right - clearX)
     }
   }
-  if (inherited.ancestorRect) {
-    const ancestorRight = inherited.ancestorRect.x + inherited.ancestorRect.width
-    const ancestorLeft = inherited.ancestorRect.x
+  if (ancestorRect) {
+    const ancestorRight = ancestorRect.x + ancestorRect.width
+    const ancestorLeft = ancestorRect.x
     if (clearX < ancestorLeft) {
       clearWidth -= ancestorLeft - clearX
       clearX = ancestorLeft
@@ -3004,15 +3086,36 @@ function clearNodeRegion(
   }
 
   const clearHeight = clearBottom - clearY
-  if (clearHeight > 0 && clearWidth > 0) {
+  return clearHeight > 0 && clearWidth > 0
+    ? { x: clearX, y: clearY, width: clearWidth, height: clearHeight }
+    : null
+}
+
+function clearNodeRegion(
+  node: AgNode,
+  sink: RenderSink,
+  layout: NonNullable<AgNode["boxRect"]>,
+  scrollOffset: number,
+  clipBounds: ClipBounds | undefined,
+  threadedInheritedBg: NodeRenderState["inheritedBg"],
+): void {
+  const clearBg = threadedInheritedBg.color
+  const rect = currentClearRect(
+    node,
+    layout,
+    scrollOffset,
+    clipBounds,
+    threadedInheritedBg.ancestorRect,
+  )
+  if (rect) {
     const _cellDbg2 = getCellDebug()
-    if (_cellDbg2 && cellCoversPoint(_cellDbg2, clearX, clearY, clearWidth, clearHeight)) {
+    if (_cellDbg2 && cellCoversPoint(_cellDbg2, rect.x, rect.y, rect.width, rect.height)) {
       const id = ((node.props as Record<string, unknown>).id as string) ?? node.type
-      const msg = `CLEAR_REGION ${id} fill=${clearX},${clearY} ${clearWidth}x${clearHeight} bg=${String(clearBg)} COVERS TARGET`
+      const msg = `CLEAR_REGION ${id} fill=${rect.x},${rect.y} ${rect.width}x${rect.height} bg=${String(clearBg)} COVERS TARGET`
       _cellDbg2.log.push(msg)
       cellLog.debug?.(msg)
     }
-    sink.emitClearRect(clearX, clearY, clearWidth, clearHeight, clearBg)
+    sink.emitClearRect(rect.x, rect.y, rect.width, rect.height, clearBg)
   }
 
   // Excess-area clearing is the responsibility of executeRegionClearing —
