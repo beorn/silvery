@@ -3139,6 +3139,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   const startStandaloneFrame = (): void => {
     // Native processing can clear isRendering while a standalone frame awaits
     // its pre-paint macrotask. Keep that frame's ownership until it settles.
+    // A coalesced request is consumed before paint or handed to exactly one
+    // successor at settlement; a request from the post-paint tail must not drop.
     if (standaloneFrameTasks.size > 0) {
       pendingRerender = true
       return
@@ -3146,7 +3148,20 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     const task = renderStandaloneFrame()
     standaloneFrameTasks.add(task)
     void task.then(
-      () => standaloneFrameTasks.delete(task),
+      () => {
+        standaloneFrameTasks.delete(task)
+        if (
+          pendingRerender &&
+          !shouldExit &&
+          !inEventHandler &&
+          !isRendering &&
+          standaloneFrameTasks.size === 0
+        ) {
+          pendingRerender = false
+          startStandaloneFrame()
+        }
+        return undefined
+      },
       (error: unknown) => {
         standaloneFrameTasks.delete(task)
         panicApp(error, { title: "standalone render" })
