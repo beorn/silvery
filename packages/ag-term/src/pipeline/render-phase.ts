@@ -13,27 +13,14 @@
  *                                     → renderOwnContent
  *                                     → renderScrollContainerChildren / renderNormalChildren
  *   Helpers: clearDirtyFlags, hasChildPositionChanged, computeChildClipBounds
- *   Region clearing: clearNodeRegion, clearExcessArea
+ *   Region clearing: clearNodeRegion, clearExcessArea, clippedFill
  */
 
 import { createLogger } from "loggily"
 import type { Color } from "../buffer"
 import { TerminalBuffer } from "../buffer"
 import type { BoxProps, AgNode, Rect, TextProps } from "@silvery/ag/types"
-import {
-  getBorderSize,
-  getPadding,
-  computeChildClipBounds,
-  childPaintOffset,
-  childPaintClip,
-  paintChildStates,
-  projectPaintRect,
-  intersectPaintRect,
-  unionPaintRects,
-  paintRectsIntersect,
-  excessClearRects,
-  hasExcessClearRetreat,
-} from "./helpers"
+import { getBorderSize, getPadding } from "./helpers"
 import { renderBox, renderScrollIndicators, getEffectiveBg } from "./render-box"
 import { renderIsland, renderViewport } from "./render-viewport"
 import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
@@ -58,7 +45,6 @@ import {
   INITIAL_EPOCH,
   advanceRenderEpoch,
   isDirty,
-  markDirty,
   CONTENT_BIT,
   STYLE_PROPS_BIT,
   BG_BIT,
@@ -86,15 +72,6 @@ import { isStrictEnabled } from "../strict-mode"
 const contentLog = createLogger("silvery:content")
 const traceLog = createLogger("silvery:content:trace")
 const cellLog = createLogger("silvery:content:cell")
-
-type PaintState = ReturnType<typeof paintChildStates>[number]
-type PaintMemoEntry = {
-  state: PaintState
-  children?: PaintState[]
-  paintOrder?: number[]
-  extent?: Rect | null
-}
-type RenderPassState = RenderPostState & { paintMemo: Map<AgNode, PaintMemoEntry> }
 
 /**
  * Render all nodes to a terminal buffer.
@@ -145,117 +122,96 @@ export function renderPhase(
     return prevBuffer
   }
 
-  // Attach only for this pass; finally releases node references on return/throw.
-  const passState: RenderPassState = Object.assign(postState, {
-    paintMemo: new Map<AgNode, PaintMemoEntry>(),
-  })
-  try {
-    if (hasPrevBuffer && !opts?.fresh) {
-      prepareExcessRepaint(
-        root,
-        { scrollOffset: 0, clipBounds: undefined, pass: 0, order: 0 },
-        passState,
-        [],
-      )
-    }
-
-    if (instr.enabled) {
-      instr.stats._prevBufferNull = prevBuffer == null ? 1 : 0
-      instr.stats._prevBufferDimMismatch = prevBuffer && !hasPrevBuffer ? 1 : 0
-      instr.stats._hasPrevBuffer = hasPrevBuffer ? 1 : 0
-      instr.stats._layoutW = layout.width
-      instr.stats._layoutH = layout.height
-      instr.stats._prevW = prevBuffer?.width ?? 0
-      instr.stats._prevH = prevBuffer?.height ?? 0
-    }
-
-    const t0 = instr.enabled ? performance.now() : 0
-    const buffer = hasPrevBuffer
-      ? prevBuffer.clone()
-      : new TerminalBuffer(layout.width, layout.height)
-    const tClone = instr.enabled ? performance.now() - t0 : 0
-
-    // Single frame-shared RenderSink. Smell #2 from the 2026-04-27 dual-pro
-    // review (Kimi K2.6 winner): every helper used to call createFrameSink(buffer)
-    // ad hoc, fabricating up to 7 sinks per frame. With BufferSink that was
-    // behaviorally idempotent because all sinks point-mutate the same buffer.
-    // With PlanSink (Step 3, paint-clear-l5-final), independent sinks would
-    // build 7 fragmented plans. Threading ONE sink through the tree walk makes
-    // PlanSink-authoritative a signature change rather than a multi-site refactor.
-    const frameSink: RenderSink = createFrameSink(buffer)
-
-    // Default selection state is semantic, not a blanket paint mode: root
-    // userSelect defaults to "text", but only text-rendering operations stamp
-    // SELECTABLE_FLAG. Box backgrounds, padding, and cleanup writes stay
-    // structural and non-selectable.
-
-    // Restore cells under previous-frame outlines BEFORE content rendering.
-    // Outlines draw OUTSIDE their owning node into the parent's pixel space,
-    // so they don't fit the per-node cascade. We treat them as a separate
-    // decoration pass: clear prev positions here, redraw new positions after
-    // the content phase below. The snapshots live on the `postState` carrier
-    // (Phase 2 Step 5 of paint-clear-invariant L5) — they no longer travel
-    // with the cloned buffer. No-op when the carrier holds an empty list
-    // (fresh render, or no outlines on the previous frame).
-    //
-    // Only a clone of the previous frame holds the previous outline. When the
-    // frame size changed the buffer starts blank, and restoring would write last
-    // frame's under-cells onto it as stale content no clear removes — the walk
-    // assumes a blank buffer. `renderDecorationPass` replaces the snapshots below.
-    if (hasPrevBuffer) clearPreviousOutlines(buffer, postState)
-
-    const t1 = instr.enabled ? performance.now() : 0
-    renderNodeToBuffer(
-      root,
-      buffer,
-      frameSink,
-      {
-        scrollOffset: 0,
-        clipBounds: undefined,
-        hasPrevBuffer: !!hasPrevBuffer,
-        ancestorCleared: false,
-        bufferIsCloned: !!hasPrevBuffer,
-        ancestorLayoutChanged: false,
-        inheritedBg: { color: null, ancestorRect: null },
-        inheritedFg: null,
-        selectableMode: true,
-        fresh: !!opts?.fresh,
-      },
-      ctx,
-      passState,
-    )
-    const tRender = instr.enabled ? performance.now() - t1 : 0
-
-    // Decoration phase: draw outlines AFTER content rendering. Walks the full
-    // tree (O(N)) independent of dirty flags — outlines are idempotent per
-    // frame and cheap to redraw (~5000 cells at worst). Populates fresh
-    // snapshots on the `postState` carrier for the next frame's
-    // `clearPreviousOutlines` (Phase 2 Step 5 — snapshots no longer live on
-    // the buffer).
-    renderDecorationPass(buffer, root, postState, ctx)
-
-    if (instr.enabled) {
-      emitRenderPhaseStats(instr.stats, instr.nodeTrace, instr.nodeTraceEnabled, tClone, tRender)
-    }
-
-    // Sync prevLayout after render phase to prevent staleness on subsequent frames.
-    // Skip when no layout changed this frame (cursor move, style-only changes).
-    // The layout phase sets layoutChangedThisFrame on affected nodes; if root's
-    // subtree has any, we need the full sync. If not, prevLayout is already correct.
-    if (!opts?.fresh) {
-      const anyLayoutChanged =
-        isCurrentEpoch(root, root.layoutChangedThisFrame) || isDirty(root, SUBTREE_BIT)
-      syncPrevLayout(root, anyLayoutChanged || !hasPrevBuffer)
-      advanceRenderEpoch(root)
-    }
-
-    return buffer
-  } finally {
-    passState.paintMemo.clear()
-    if (!Reflect.deleteProperty(postState, "paintMemo")) {
-      throw new Error("Cannot release rendering pass paint memo")
-    }
+  if (instr.enabled) {
+    instr.stats._prevBufferNull = prevBuffer == null ? 1 : 0
+    instr.stats._prevBufferDimMismatch = prevBuffer && !hasPrevBuffer ? 1 : 0
+    instr.stats._hasPrevBuffer = hasPrevBuffer ? 1 : 0
+    instr.stats._layoutW = layout.width
+    instr.stats._layoutH = layout.height
+    instr.stats._prevW = prevBuffer?.width ?? 0
+    instr.stats._prevH = prevBuffer?.height ?? 0
   }
+
+  const t0 = instr.enabled ? performance.now() : 0
+  const buffer = hasPrevBuffer
+    ? prevBuffer.clone()
+    : new TerminalBuffer(layout.width, layout.height)
+  const tClone = instr.enabled ? performance.now() - t0 : 0
+
+  // Single frame-shared RenderSink. Smell #2 from the 2026-04-27 dual-pro
+  // review (Kimi K2.6 winner): every helper used to call createFrameSink(buffer)
+  // ad hoc, fabricating up to 7 sinks per frame. With BufferSink that was
+  // behaviorally idempotent because all sinks point-mutate the same buffer.
+  // With PlanSink (Step 3, paint-clear-l5-final), independent sinks would
+  // build 7 fragmented plans. Threading ONE sink through the tree walk makes
+  // PlanSink-authoritative a signature change rather than a multi-site refactor.
+  const frameSink: RenderSink = createFrameSink(buffer)
+
+  // Default selection state is semantic, not a blanket paint mode: root
+  // userSelect defaults to "text", but only text-rendering operations stamp
+  // SELECTABLE_FLAG. Box backgrounds, padding, and cleanup writes stay
+  // structural and non-selectable.
+
+  // Restore cells under previous-frame outlines BEFORE content rendering.
+  // Outlines draw OUTSIDE their owning node into the parent's pixel space,
+  // so they don't fit the per-node cascade. We treat them as a separate
+  // decoration pass: clear prev positions here, redraw new positions after
+  // the content phase below. The snapshots live on the `postState` carrier
+  // (Phase 2 Step 5 of paint-clear-invariant L5) — they no longer travel
+  // with the cloned buffer. No-op when the carrier holds an empty list
+  // (fresh render, or no outlines on the previous frame).
+  //
+  // Only a clone of the previous frame holds the previous outline. When the
+  // frame size changed the buffer starts blank, and restoring would write last
+  // frame's under-cells onto it as stale content no clear removes — the walk
+  // assumes a blank buffer. `renderDecorationPass` replaces the snapshots below.
+  if (hasPrevBuffer) clearPreviousOutlines(buffer, postState)
+
+  const t1 = instr.enabled ? performance.now() : 0
+  renderNodeToBuffer(
+    root,
+    buffer,
+    frameSink,
+    {
+      scrollOffset: 0,
+      clipBounds: undefined,
+      hasPrevBuffer: !!hasPrevBuffer,
+      ancestorCleared: false,
+      bufferIsCloned: !!hasPrevBuffer,
+      ancestorLayoutChanged: false,
+      inheritedBg: { color: null, ancestorRect: null },
+      inheritedFg: null,
+      selectableMode: true,
+      fresh: !!opts?.fresh,
+    },
+    ctx,
+  )
+  const tRender = instr.enabled ? performance.now() - t1 : 0
+
+  // Decoration phase: draw outlines AFTER content rendering. Walks the full
+  // tree (O(N)) independent of dirty flags — outlines are idempotent per
+  // frame and cheap to redraw (~5000 cells at worst). Populates fresh
+  // snapshots on the `postState` carrier for the next frame's
+  // `clearPreviousOutlines` (Phase 2 Step 5 — snapshots no longer live on
+  // the buffer).
+  renderDecorationPass(buffer, root, postState, ctx)
+
+  if (instr.enabled) {
+    emitRenderPhaseStats(instr.stats, instr.nodeTrace, instr.nodeTraceEnabled, tClone, tRender)
+  }
+
+  // Sync prevLayout after render phase to prevent staleness on subsequent frames.
+  // Skip when no layout changed this frame (cursor move, style-only changes).
+  // The layout phase sets layoutChangedThisFrame on affected nodes; if root's
+  // subtree has any, we need the full sync. If not, prevLayout is already correct.
+  if (!opts?.fresh) {
+    const anyLayoutChanged =
+      isCurrentEpoch(root, root.layoutChangedThisFrame) || isDirty(root, SUBTREE_BIT)
+    syncPrevLayout(root, anyLayoutChanged || !hasPrevBuffer)
+    advanceRenderEpoch(root)
+  }
+
+  return buffer
 }
 
 /**
@@ -507,7 +463,6 @@ function renderNodeToBuffer(
   sink: RenderSink,
   nodeState: NodeRenderState,
   ctx?: PipelineContext,
-  passState?: RenderPassState,
 ): void {
   const {
     scrollOffset,
@@ -962,7 +917,6 @@ function renderNodeToBuffer(
         contentRegionCleared,
         childrenNeedFreshRender,
         ctx,
-        passState,
       )
 
       // Render overflow indicators AFTER children so they survive viewport clear.
@@ -985,7 +939,6 @@ function renderNodeToBuffer(
         contentRegionCleared,
         childrenNeedFreshRender,
         ctx,
-        passState,
       )
     }
 
@@ -1048,8 +1001,8 @@ function buildCascadeInputs(
     return { absoluteChildMutated: false, descendantOverflowChanged: false }
   }
 
-  // Phase 3b: Read epoch values computed during layout and the single
-  // render-entry dirty-path prewalk. No tree walk at each render-node visit.
+  // Phase 3b: Read cached epoch values computed during layout phase
+  // (propagateLayout), avoiding per-node tree walks in the render phase.
   return {
     absoluteChildMutated: isDirty(node, ABS_CHILD_BIT),
     descendantOverflowChanged: isDirty(node, DESC_OVERFLOW_BIT),
@@ -1246,7 +1199,16 @@ function executeRegionClearing(
     hasPrevBuffer,
   )
   if (excessGate) {
-    clearExcessArea(excessGate, node, sink, layout, scrollOffset, clipBounds, threadedInheritedBg)
+    clearExcessArea(
+      excessGate,
+      node,
+      buffer,
+      sink,
+      layout,
+      scrollOffset,
+      clipBounds,
+      threadedInheritedBg,
+    )
   }
 
   // Clear descendant overflow regions: areas where descendants' previous layouts
@@ -1702,7 +1664,6 @@ function renderScrollContainerChildren(
   contentRegionCleared = false,
   childrenNeedFreshRender = false,
   ctx?: PipelineContext,
-  passState?: RenderPassState,
 ): void {
   const {
     clipBounds,
@@ -1744,7 +1705,15 @@ function renderScrollContainerChildren(
   // row(s). Viewport operations (Tier 1 shift indicator pre-clear, Tier 2
   // viewport clear) continue to use the full `viewportClipBounds` so the
   // indicator row itself is repainted correctly.
-  const childClipBounds = childPaintClip(node, clipBounds, nodeState.scrollOffset)
+  const showBorderlessIndicator = props.overflowIndicator === true && !props.borderStyle
+  const childClipBounds =
+    showBorderlessIndicator && (ss.hiddenAbove > 0 || ss.hiddenBelow > 0)
+      ? {
+          ...viewportClipBounds,
+          top: ss.hiddenAbove > 0 ? viewportClipBounds.top + 1 : viewportClipBounds.top,
+          bottom: ss.hiddenBelow > 0 ? viewportClipBounds.bottom - 1 : viewportClipBounds.bottom,
+        }
+      : viewportClipBounds
 
   // Determine if scroll offset changed since last render.
   const scrollOffsetChanged = ss.offset !== ss.prevOffset
@@ -1927,7 +1896,7 @@ function renderScrollContainerChildren(
       buffer,
       sink,
       {
-        scrollOffset: childPaintOffset(nodeState.scrollOffset, ss.offset),
+        scrollOffset: ss.offset,
         clipBounds: childClipBounds,
         hasPrevBuffer: thisChildHasPrev,
         ancestorCleared: thisChildAncestorCleared,
@@ -1939,7 +1908,6 @@ function renderScrollContainerChildren(
         fresh,
       },
       ctx,
-      passState,
     )
   }
 
@@ -1953,7 +1921,7 @@ function renderScrollContainerChildren(
       // Calculate the scroll offset that would place the child at its sticky position
       // stickyOffset = naturalTop - renderOffset
       // This makes the child render at renderOffset instead of its natural position
-      const stickyScrollOffset = childPaintOffset(nodeState.scrollOffset, undefined, sticky)
+      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
 
       // Sticky children always re-render (hasPrevBuffer=false) since their
       // effective scroll offset may change even when the container's doesn't.
@@ -1985,7 +1953,6 @@ function renderScrollContainerChildren(
           fresh,
         },
         ctx,
-        passState,
       )
     }
   }
@@ -2045,7 +2012,6 @@ function renderNormalChildren(
   contentRegionCleared = false,
   childrenNeedFreshRender = false,
   ctx?: PipelineContext,
-  passState?: RenderPassState,
 ): void {
   const {
     scrollOffset,
@@ -2065,7 +2031,12 @@ function renderNormalChildren(
 
   // For overflow='hidden' containers, clip children to content area.
   // Supports per-axis clipping: overflowX/overflowY override the shorthand overflow prop.
-  const effectiveClipBounds = childPaintClip(node, clipBounds, scrollOffset)
+  const clipX = (props.overflowX ?? props.overflow) === "hidden"
+  const clipY = (props.overflowY ?? props.overflow) === "hidden"
+  const effectiveClipBounds =
+    clipX || clipY
+      ? computeChildClipBounds(layout, props, clipBounds, scrollOffset, clipX, clipY)
+      : clipBounds
 
   // Non-scroll sticky children support. When the layout phase computes
   // node.stickyChildren, we use the same two-pass pattern as scroll containers:
@@ -2219,8 +2190,8 @@ function renderNormalChildren(
     // descendant boxRect that overflows it. Using boxRect alone misses the
     // case where a deeper descendant (e.g. a column inside a board) extends
     // beyond its parent's rect into a great-aunt's territory. We compute
-    // clipped paint/cleanup extent lazily through the shared per-pass memo.
-    // Readers never repeat the walk, including for clean skipped branches.
+    // paint extent lazily and only for children that will render — clean
+    // skipped children don't need the walk.
     for (let i = 0; i < firstPassChildren.length; i++) {
       if (!willRender[i]) continue
       const childI = firstPassChildren[i]
@@ -2229,12 +2200,7 @@ function renderNormalChildren(
           `Paint extent child at index ${i}: expected a node within the first-pass children array`,
         )
       }
-      if (!passState) throw new Error("Forward overlap requires the rendering pass carrier")
-      const parentState: PaintState = { scrollOffset, clipBounds, pass: 0, order: 0 }
-      const childIndex = node.children.indexOf(childI)
-      const childState = paintChildren(node, parentState, passState)[childIndex]
-      if (!childState) throw new Error(`Forward overlap child ${childIndex} has no paint state`)
-      const ei = subtreePaintExtent(childI, childState, passState)
+      const ei = computeSubtreePaintExtent(childI)
       if (!ei || ei.width <= 0 || ei.height <= 0) continue
       for (let j = i + 1; j < firstPassChildren.length; j++) {
         if (willRender[j]) continue
@@ -2303,7 +2269,6 @@ function renderNormalChildren(
         fresh,
       },
       ctx,
-      passState,
     )
   }
 
@@ -2317,7 +2282,7 @@ function renderNormalChildren(
       // Calculate the scroll offset that would place the child at its sticky position.
       // stickyScrollOffset = naturalTop - renderOffset
       // This makes the child render at renderOffset instead of its natural position.
-      const stickyScrollOffset = childPaintOffset(nodeState.scrollOffset, undefined, sticky)
+      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
 
       // Sticky children always re-render (hasPrevBuffer=false) since their
       // effective position may change between frames.
@@ -2345,7 +2310,6 @@ function renderNormalChildren(
           fresh,
         },
         ctx,
-        passState,
       )
     }
   }
@@ -2386,7 +2350,6 @@ function renderNormalChildren(
           fresh,
         },
         ctx,
-        passState,
       )
     }
   }
@@ -2396,177 +2359,69 @@ function renderNormalChildren(
 // Subtree Paint Extent
 // ============================================================================
 
-/** Memo entries belong only to this rendering pass and the painter's dispatch. */
-function paintMemoEntry(
-  node: AgNode,
-  state: PaintState,
-  passState: RenderPassState,
-): PaintMemoEntry {
-  let entry = passState.paintMemo.get(node)
-  if (!entry) {
-    entry = { state }
-    passState.paintMemo.set(node, entry)
-  } else if (entry.state.scrollOffset !== state.scrollOffset) {
-    throw new Error(`Conflicting paint projection for ${node.type} in one pass`)
-  }
-  return entry
-}
-
-function paintChildren(node: AgNode, state: PaintState, passState: RenderPassState): PaintState[] {
-  const entry = paintMemoEntry(node, state, passState)
-  if (!entry.children) {
-    entry.children = paintChildStates(node, state.scrollOffset, state.clipBounds)
-    // Linear index construction once per parent; emitter scans only its earlier
-    // prefix, rather than paying again to reject every later sibling slot.
-    entry.paintOrder = new Array<number>(entry.children.length)
-    for (const [i, childState] of entry.children.entries()) entry.paintOrder[childState.order] = i
-  }
-  return entry.children
-}
-
-/** Lazy one-derivation bound. Store in this node's layout frame; project at the
- * reader. Child scroll/sticky transforms use the same helper as dispatch. */
-function subtreePaintExtent(
-  node: AgNode,
-  state: PaintState,
-  passState: RenderPassState,
-): Rect | null {
-  const entry = paintMemoEntry(node, state, passState)
-  if (entry.extent !== undefined) return entry.extent
-  const props = node.props as BoxProps
+/**
+ * Compute the screen-space rectangle that bounds every paint AND every
+ * descendant-overflow CLEAR within this subtree this frame. Used by
+ * sibling-overlap detection in renderNormalChildren so that a descendant
+ * overflowing its ancestor still triggers force-repaint of any later
+ * sibling at the painted (or cleared) row.
+ *
+ * Returns the union of `node.boxRect` with the recursive paint extent of
+ * each child whose `boxRect` is set. Returns null if `node.boxRect` is
+ * unset (e.g. abandoned subtree). Skipping descendants without a boxRect
+ * is safe because they never paint.
+ *
+ * **prevLayout inclusion (overflow-clear coverage):** when a node's layout
+ * changed this frame, `clearDescendantOverflowRegions` will clear the
+ * region its `prevLayout` overflowed beyond each ancestor — driven by
+ * `prevLayout`, NOT the current rect. A node that SHRANK (e.g. a flexGrow
+ * content area whose ancestor lost a row) vacates rows that a clean later
+ * sibling now occupies. Unioning `prevLayout` here makes the sibling-overlap
+ * pass see the about-to-be-cleared rows, so the overlapped sibling is
+ * force-repainted and the clear does not leave a hole. Without this, the
+ * overlap check only sees the (smaller) current rect, misses the cleared
+ * row, and the clean sibling is fast-path skipped — leaving stale-blank
+ * pixels where its content should be (incremental != fresh).
+ * Repro: km empty-board status bar "MEM …" blanked on the post-mount
+ * settle render — the board content area shrank by a row and its
+ * descendant-overflow clear wiped the bottom bar's row.
+ *
+ * Cost: O(N) per call where N is the subtree's node count. Only called
+ * for first-pass children that will render AND only when their parent has
+ * a prev buffer (i.e. real incremental render frames). Skipped children
+ * never trigger the walk.
+ */
+function computeSubtreePaintExtent(node: AgNode): NonNullable<AgNode["boxRect"]> | null {
   const own = node.boxRect
-  if (!own || node.hidden || props.display === "none") return (entry.extent = null)
-  let extent: Rect | null = null
-  const paints =
-    node.layoutNode && (node.type !== "silvery-box" || getEffectiveBg(props) || props.borderStyle)
-  if (paints) {
-    const projected = intersectPaintRect(
-      projectPaintRect(own, state.scrollOffset),
-      state.clipBounds,
-    )
-    extent = projected ? projectPaintRect(projected, -state.scrollOffset) : null
-  }
-  // Preserve the old cleanup footprint, including changed transparent boxes.
+  if (!own) return null
+  let minX = own.x
+  let minY = own.y
+  let maxX = own.x + own.width
+  let maxY = own.y + own.height
+  // Include this node's prevLayout when its layout changed this frame —
+  // matches the condition under which clearDescendantOverflowRegions clears
+  // the prevLayout-overflow region (see _clearDescendantOverflow). The
+  // sibling-overlap pass must treat the cleared (old) extent as "painted"
+  // so later siblings overlapping it repaint over the clear.
   if (node.prevLayout && isCurrentEpoch(node, node.layoutChangedThisFrame)) {
-    const projected = intersectPaintRect(
-      projectPaintRect(node.prevLayout, state.scrollOffset),
-      state.clipBounds,
-    )
-    extent = unionPaintRects(
-      extent,
-      projected ? projectPaintRect(projected, -state.scrollOffset) : null,
-    )
+    const prev = node.prevLayout
+    if (prev.x < minX) minX = prev.x
+    if (prev.y < minY) minY = prev.y
+    if (prev.x + prev.width > maxX) maxX = prev.x + prev.width
+    if (prev.y + prev.height > maxY) maxY = prev.y + prev.height
   }
-  const children = paintChildren(node, state, passState)
-  for (const [i, child] of node.children.entries()) {
-    const childState = children[i]
-    if (!childState) throw new Error(`Missing child paint state ${i}`)
-    const sub = subtreePaintExtent(child, childState, passState)
-    if (sub) {
-      extent = unionPaintRects(
-        extent,
-        projectPaintRect(sub, childState.scrollOffset - state.scrollOffset),
-      )
+  const children = node.children
+  if (children) {
+    for (const child of children) {
+      const sub = computeSubtreePaintExtent(child)
+      if (!sub) continue
+      if (sub.x < minX) minX = sub.x
+      if (sub.y < minY) minY = sub.y
+      if (sub.x + sub.width > maxX) maxX = sub.x + sub.width
+      if (sub.y + sub.height > maxY) maxY = sub.y + sub.height
     }
   }
-  return (entry.extent = extent)
-}
-
-type PaintAncestor = { node: AgNode; state: PaintState; branchIndex: number }
-
-/** One entry prewalk along dirty paths, not a walk at each node's render visit.
- * Bounds are derived only when a strip or forward overlap reader needs them.
- * Memoized extent derivation is O(touched nodes). Detector work is the sum of
- * emitter ancestry and earlier-sibling scans; many no-hit sibling emitters can
- * be quadratic. First hit marks the opaque ancestor, subsuming later scans. */
-function prepareExcessRepaint(
-  node: AgNode,
-  state: PaintState,
-  passState: RenderPassState,
-  path: PaintAncestor[],
-  inheritedOpaque: AgNode | null = null,
-): void {
-  if (node.hidden || (node.props as BoxProps).display === "none") return
-  // Already-marked opaque fill/fresh-child cascade covers the remaining dirty
-  // descendants. Do not repeat their emitter ancestry/sibling searches.
-  if (inheritedOpaque && isDirty(inheritedOpaque, DESC_OVERFLOW_BIT)) return
-  if (
-    node.boxRect &&
-    node.prevLayout &&
-    isCurrentEpoch(node, node.layoutChangedThisFrame) &&
-    hasExcessClearRetreat(node.prevLayout, node.boxRect)
-  ) {
-    // Find the nearest inherited opaque ancestor once, never climb above it.
-    let opaqueIndex = path.length - 1
-    while (opaqueIndex >= 0) {
-      const ancestor = path[opaqueIndex]?.node
-      if (ancestor?.type === "silvery-box" && getEffectiveBg(ancestor.props as BoxProps)) break
-      opaqueIndex--
-    }
-    const opaque = opaqueIndex >= 0 ? path[opaqueIndex]?.node : undefined
-    // Residual: no opaque ancestor or outside-opaque overflow retains existing
-    // cleanup and STRICT's loud mismatch. See both 26485 test.fails rows.
-    if (opaque?.boxRect && !isDirty(opaque, DESC_OVERFLOW_BIT)) {
-      const strips = excessClearRects(
-        node.prevLayout,
-        node.boxRect,
-        node.parent,
-        opaque.boxRect,
-        state.scrollOffset,
-        state.clipBounds,
-      )
-      const projectedOpaque = projectPaintRect(opaque.boxRect, state.scrollOffset)
-      const opaqueClip: ClipBounds = {
-        left: projectedOpaque.x,
-        right: projectedOpaque.x + projectedOpaque.width,
-        top: projectedOpaque.y,
-        bottom: projectedOpaque.y + projectedOpaque.height,
-      }
-      for (const rawStrip of strips) {
-        const strip = intersectPaintRect(rawStrip, opaqueClip)
-        if (!strip) continue
-        for (let level = path.length - 1; level >= opaqueIndex; level--) {
-          const ancestor = path[level]
-          if (!ancestor) throw new Error(`Missing paint ancestor ${level}`)
-          const childStates = paintChildren(ancestor.node, ancestor.state, passState)
-          const branchState = childStates[ancestor.branchIndex]
-          if (!branchState) throw new Error("Missing emitting branch paint state")
-          const paintOrder = paintMemoEntry(ancestor.node, ancestor.state, passState).paintOrder
-          if (!paintOrder) throw new Error("Missing earlier-painter index")
-          for (let earlier = 0; earlier < branchState.order; earlier++) {
-            const i = paintOrder[earlier]
-            if (i === undefined) throw new Error(`Missing earlier paint index ${earlier}`)
-            const sibling = ancestor.node.children[i]
-            const siblingState = childStates[i]
-            if (!sibling || !siblingState) throw new Error(`Missing sibling paint state ${i}`)
-            const extent = subtreePaintExtent(sibling, siblingState, passState)
-            if (
-              extent &&
-              paintRectsIntersect(projectPaintRect(extent, siblingState.scrollOffset), strip)
-            ) {
-              markDirty(opaque, SUBTREE_BIT | DESC_OVERFLOW_BIT)
-              return
-            }
-          }
-        }
-      }
-    }
-  }
-  if (!isDirty(node, SUBTREE_BIT)) return
-  const childOpaque =
-    node.type === "silvery-box" && getEffectiveBg(node.props as BoxProps) ? node : inheritedOpaque
-  const children = paintChildren(node, state, passState)
-  for (const [i, child] of node.children.entries()) {
-    if (childOpaque && isDirty(childOpaque, DESC_OVERFLOW_BIT)) break
-    if (!isDirty(child, SUBTREE_BIT) && !isCurrentEpoch(child, child.layoutChangedThisFrame)) {
-      continue
-    }
-    const childState = children[i]
-    if (!childState) throw new Error(`Missing dirty child paint state ${i}`)
-    path.push({ node, state, branchIndex: i })
-    prepareExcessRepaint(child, childState, passState, path, childOpaque)
-    path.pop()
-  }
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
 // ============================================================================
@@ -2722,6 +2577,47 @@ function hasDescendantWithBg(node: AgNode): boolean {
  * Compute clip bounds for a container's children by insetting for border+padding,
  * then intersecting with parent clip bounds.
  */
+function computeChildClipBounds(
+  layout: NonNullable<AgNode["boxRect"]>,
+  props: BoxProps,
+  parentClip: ClipBounds | undefined,
+  scrollOffset = 0,
+  /** Compute left/right clip bounds for horizontal overflow clipping. */
+  horizontal = true,
+  /** Compute top/bottom clip bounds for vertical overflow clipping.
+   *  Defaults to true — scroll containers pass vertical=true, horizontal=false
+   *  (horizontal containment is via layout OVERFLOW_HIDDEN, not render clipping). */
+  vertical = true,
+): ClipBounds {
+  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
+  const padding = getPadding(props)
+  const adjustedY = layout.y - scrollOffset
+  const nodeClip: ClipBounds = vertical
+    ? {
+        top: adjustedY + border.top + padding.top,
+        bottom: adjustedY + layout.height - border.bottom - padding.bottom,
+      }
+    : { top: -Infinity, bottom: Infinity }
+  if (horizontal) {
+    nodeClip.left = layout.x + border.left + padding.left
+    nodeClip.right = layout.x + layout.width - border.right - padding.right
+  }
+  if (!parentClip) return nodeClip
+  const result: ClipBounds = {
+    top: vertical ? Math.max(parentClip.top, nodeClip.top) : parentClip.top,
+    bottom: vertical ? Math.min(parentClip.bottom, nodeClip.bottom) : parentClip.bottom,
+  }
+  if (horizontal && nodeClip.left !== undefined && nodeClip.right !== undefined) {
+    result.left = Math.max(parentClip.left ?? 0, nodeClip.left)
+    result.right = Math.min(parentClip.right ?? Infinity, nodeClip.right)
+  } else if (parentClip.left !== undefined && parentClip.right !== undefined) {
+    // Pass through parent's horizontal clip bounds without adding own
+    result.left = parentClip.left
+    result.right = parentClip.right
+  }
+  return result
+}
+
 // ============================================================================
 // Region Clearing
 // ============================================================================
@@ -3104,21 +3000,162 @@ export function requireExcessClearGate(
 function clearExcessArea(
   gate: ExcessClearGate,
   node: AgNode,
+  buffer: TerminalBuffer,
   sink: RenderSink,
   layout: NonNullable<AgNode["boxRect"]>,
   scrollOffset: number,
   clipBounds: ClipBounds | undefined,
   inherited: NodeRenderState["inheritedBg"],
 ): void {
-  const rects = excessClearRects(
-    gate.prevLayout,
-    layout,
-    node.parent,
-    inherited.ancestorRect,
-    scrollOffset,
-    clipBounds,
+  // The gate's existence is the proof of preconditions; `prevLayout` comes
+  // from the gate so the type system guarantees it's non-null here.
+  const prev = gate.prevLayout
+
+  const _cellDbg3 = getCellDebug()
+  const _prevCoversCell3 =
+    _cellDbg3 && cellCoversPoint(_cellDbg3, prev.x, prev.y - scrollOffset, prev.width, prev.height)
+
+  // Only clear if the node actually shrank in at least one dimension
+  if (prev.width <= layout.width && prev.height <= layout.height) {
+    if (_cellDbg3 && _prevCoversCell3) {
+      const id = ((node.props as Record<string, unknown>).id as string) ?? node.type
+      const msg =
+        `EXCESS_SKIP_NO_SHRINK ${id} prev=${prev.x},${prev.y - scrollOffset} ${prev.width}x${prev.height}` +
+        ` now=${layout.x},${layout.y - scrollOffset} ${layout.width}x${layout.height}`
+      _cellDbg3.log.push(msg)
+      cellLog.debug?.(msg)
+    }
+    return
+  }
+
+  // Skip excess clearing when the node MOVED (changed x or y position).
+  // The right/bottom excess formulas use new-x + old-y coordinates, which
+  // creates a phantom rectangle at wrong positions when the node moved.
+  // Example: text at old=(30,7,23,1) → new=(22,8,14,2) computes excess at
+  // (36,7) which overwrites a sibling's border character.
+  //
+  // When the node moved, the parent handles old-pixel cleanup:
+  // - Parent's clearNodeRegion covers old pixels within parent's current rect
+  // - Parent's clearExcessArea covers old pixels outside parent's rect
+  if (prev.x !== layout.x || prev.y !== layout.y) {
+    if (_cellDbg3 && _prevCoversCell3) {
+      const id = ((node.props as Record<string, unknown>).id as string) ?? node.type
+      const msg =
+        `EXCESS_SKIP_MOVED ${id} prev=${prev.x},${prev.y - scrollOffset} ${prev.width}x${prev.height}` +
+        ` now=${layout.x},${layout.y - scrollOffset} ${layout.width}x${layout.height}` +
+        ` (dx=${layout.x - prev.x} dy=${layout.y - prev.y})`
+      _cellDbg3.log.push(msg)
+      cellLog.debug?.(msg)
+    }
+    return
+  }
+
+  const clearBg = inherited.color
+  const screenY = layout.y - scrollOffset
+  const prevScreenY = prev.y - scrollOffset
+
+  // Clip to prevent excess clearing from bleeding outside valid bounds.
+  // Start with the colored ancestor's rect (prevents bg color bleed),
+  // then further restrict to the immediate parent's content area (prevents
+  // overwriting parent's border characters).
+  const clipRect = inherited.ancestorRect ?? node.parent?.boxRect
+  if (!clipRect) return
+
+  const clipRectScreenY = clipRect.y - scrollOffset
+  let clipRectBottom = clipRectScreenY + clipRect.height
+  let clipRectRight = clipRect.x + clipRect.width
+
+  // Always inset by the immediate parent's border/padding.
+  // Without this, a child's excess clearing extends into the parent's
+  // border row, overwriting border characters with spaces.
+  // (The old code skipped inset when clip rect came from a colored ancestor,
+  // assuming "its bg fill covers its border area" — but bg fill only covers
+  // the inside, while renderBorder draws characters on the border row.)
+  const parent = node.parent
+  if (parent?.boxRect) {
+    const parentProps = parent.props as BoxProps
+    const border = getBorderSize(parentProps)
+    const padding = getPadding(parentProps)
+    const parentRight = parent.boxRect.x + parent.boxRect.width - border.right - padding.right
+    const parentBottom =
+      parent.boxRect.y - scrollOffset + parent.boxRect.height - border.bottom - padding.bottom
+    clipRectRight = Math.min(clipRectRight, parentRight)
+    clipRectBottom = Math.min(clipRectBottom, parentBottom)
+  }
+
+  // Clear right margin (old was wider than new)
+  if (prev.width > layout.width) {
+    const excessX = layout.x + layout.width
+    let excessWidth = prev.width - layout.width
+    // Clip horizontally to parent's content area (inside border/padding).
+    // Without this, excess clearing of a child that previously filled a wider
+    // layout extends into the parent's right border, overwriting border chars.
+    if (excessX + excessWidth > clipRectRight) {
+      excessWidth = Math.max(0, clipRectRight - excessX)
+    }
+    if (excessWidth > 0) {
+      clippedFill(
+        sink,
+        excessX,
+        excessWidth,
+        prevScreenY,
+        prevScreenY + prev.height,
+        clipBounds,
+        clipRectBottom,
+        clearBg,
+      )
+    }
+  }
+
+  // Clear bottom margin (old was taller than new)
+  if (prev.height > layout.height) {
+    let bottomWidth = prev.width
+    // Clip horizontally to parent's content area
+    if (layout.x + bottomWidth > clipRectRight) {
+      bottomWidth = Math.max(0, clipRectRight - layout.x)
+    }
+    clippedFill(
+      sink,
+      layout.x,
+      bottomWidth,
+      screenY + layout.height,
+      prevScreenY + prev.height,
+      clipBounds,
+      clipRectBottom,
+      clearBg,
+    )
+  }
+}
+
+/** Fill a rectangular region, clipping to clipBounds and an outer bottom limit. */
+function clippedFill(
+  sink: RenderSink,
+  x: number,
+  width: number,
+  top: number,
+  bottom: number,
+  clipBounds: ClipBounds | undefined,
+  outerBottom: number,
+  bg: Color,
+): void {
+  const clippedTop = clipBounds ? Math.max(top, clipBounds.top) : top
+  const clippedBottom = Math.min(
+    clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom,
+    outerBottom,
   )
-  for (const rect of rects) {
-    sink.emitClearRect(rect.x, rect.y, rect.width, rect.height, inherited.color)
+  let clippedX = x
+  let clippedWidth = width
+  if (clipBounds?.left !== undefined && clipBounds.right !== undefined) {
+    if (clippedX < clipBounds.left) {
+      clippedWidth -= clipBounds.left - clippedX
+      clippedX = clipBounds.left
+    }
+    if (clippedX + clippedWidth > clipBounds.right) {
+      clippedWidth = Math.max(0, clipBounds.right - clippedX)
+    }
+  }
+  const height = clippedBottom - clippedTop
+  if (height > 0 && clippedWidth > 0) {
+    sink.emitClearRect(clippedX, clippedTop, clippedWidth, height, bg)
   }
 }
