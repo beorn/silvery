@@ -443,4 +443,31 @@ describe("DocumentView heading marker gutter", () => {
       expect(app.cell(cols - 1, 0).char).toBe(" ")
     }
   })
+
+  test.each([false, true])(
+    "wrapping heading lines reach the same right edge as a wrapping paragraph (enableSectionFolding=%s)",
+    (enableSectionFolding) => {
+      const W = 40
+      const words =
+        "a b c d e f g h i j k l m n o p q r s t u v w x y z a b c d e f g h i j k l m n o p q r s t u v w x y z"
+      const blocks: DocumentBlock[] = [
+        { id: "h", kind: "heading", level: 1, content: words },
+        { id: "p", kind: "paragraph", content: words },
+      ]
+      const app = createRenderer({ cols: W, rows: 20 })(
+        <DocumentView blocks={blocks} enableSectionFolding={enableSectionFolding} />,
+      )
+      const headingBox = app.locator("#h").boundingBox()!
+      const paragraphBox = app.locator("#p").boundingBox()!
+      expect(headingBox.x).toBe(paragraphBox.x)
+      expect(headingBox.width).toBe(paragraphBox.width)
+      expect(headingBox.height).toBe(paragraphBox.height)
+
+      for (let offset = 0; offset < headingBox.height; offset++) {
+        expect(app.lines[headingBox.y + offset]!.trimEnd().length).toBe(
+          app.lines[paragraphBox.y + offset]!.trimEnd().length,
+        )
+      }
+    },
+  )
 })
