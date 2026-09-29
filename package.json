@@ -113,7 +113,7 @@
     "compat": "bun packages/ink/scripts/compat-check.ts",
     "compat:ink": "bun packages/ink/scripts/compat-check.ts ink",
     "compat:chalk": "bun packages/ink/scripts/compat-check.ts chalk",
-    "verify-publishable": "bun scripts/verify-publishable.ts",
+    "verify-publishable": "verify-publishable",
     "bench": "cd benchmarks && bun run bench",
     "bench:compare": "cd benchmarks && bun run bench:compare"
   },
@@ -163,6 +163,7 @@
     "silvery": "link:.",
     "tsdown": "0.22.13",
     "typescript": "^5.5.0",
+    "verify-publishable": "github:beorn/verify-publishable#f634aef30d11ab0a7610ed5e82dc92bebdaab601",
     "vimonkey": "^0.2.0",
     "vite-plus": "^0.1.16",
     "vitepress": "^1.5.0",

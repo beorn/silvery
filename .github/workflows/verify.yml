@@ -1,18 +1,7 @@
 name: Verify Publishable
 
-# Pre-publish gate using a local verdaccio registry. Catches three classes
-# of bug BEFORE tag-publish:
-#   (a) wrong publishConfig.exports / missing dist entries
-#   (b) empty tarball / missing dist files
-#   (c) EPRIVATE on accidentally-listed private packages
-#
-# The legacy version of this workflow ran `npm install <tgz>` for each packed
-# tarball, but the tarballs reference @silvery/<dep>@<thisversion> which is not
-# on the public registry yet during release windows — so it failed on every
-# push with ETARGET. Verdaccio gives every package a real registry to install
-# from, so the gate measures what consumers will actually see.
-#
-# Local equivalent: `bun run verify-publishable` (or `bun scripts/verify-publishable.ts`).
+# The pinned verify-publishable command builds and checks every public package
+# from its exact tarball through an isolated registry and fresh Node consumer.
 
 on:
   push:
@@ -41,10 +30,10 @@ jobs:
           version: 9
       - run: |
           for attempt in 1 2 3; do
-            bun install && exit 0
+            bun install --frozen-lockfile && exit 0
             sleep $((attempt * 10))
           done
-          bun install
+          bun install --frozen-lockfile
 
-      - name: Verify publishable (verdaccio gate)
+      - name: Verify publishable artifacts
         run: bun run verify-publishable

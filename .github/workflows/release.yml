@@ -19,7 +19,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9
-      - run: bun install
+      - run: bun install --frozen-lockfile
       # Pre-publish gate: suite must be green before anything is built or
       # published. If this fails, no tarballs reach npm. (km 19772 Phase 0)
       - run: bun run test
@@ -29,11 +29,10 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
-      # Pre-publish gate: real publish + install + import-probe through a
-      # local verdaccio. Same script devs run as `bun run verify-publishable`.
+      # Pre-publish gate: check exact tarballs through the pinned verifier.
       # If this fails, no tarballs reach npm.
-      - name: Verify publishable (verdaccio gate)
-        run: bun scripts/verify-publishable.ts --no-build
+      - name: Verify publishable artifacts
+        run: bun run verify-publishable --no-build
 
       # Publish packages in dependency order
       # Skip if version already published (idempotent)
