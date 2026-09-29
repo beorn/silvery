@@ -29,7 +29,7 @@ import {
   hasZeroWidthCharacters,
   isZeroWidthGrapheme,
 } from "@silvery/ag-react"
-import { createMeasurer } from "@silvery/ag-term/unicode"
+import { createMeasurer, parseAnsiText } from "@silvery/ag-term/unicode"
 
 // ============================================================================
 // CJK Wide Characters
@@ -351,6 +351,38 @@ describe("unicode: emoji", () => {
     expect(measurer.sliceByWidth(linked, 2)).toBe(
       "\x1b]8;;https://example.com\x1b\\A\x1b]8;;\x1b\\",
     )
+  })
+
+  /**
+   * @failure Clipping underline colors turns RGB/palette channels into dim or background styles.
+   * @level l1
+   * @consumer Terminal text clipping and truncation
+   */
+  test("ANSI slicing preserves underline colors and their independent reset", () => {
+    const measurer = createMeasurer({})
+    for (const [sgr, color] of [
+      ["58;2;102;122;147", 0x1000000 | (102 << 16) | (122 << 8) | 147],
+      ["58;5;102", 102],
+    ] as const) {
+      const styled = `\x1b[4:4;${sgr}mIssue alias\x1b[0m`
+      for (const clipped of [
+        measurer.sliceByWidth(styled, 5),
+        measurer.sliceByWidthFromEnd(styled, 5),
+      ]) {
+        const segment = parseAnsiText(clipped)[0]!
+        expect(segment.underlineStyle).toBe("dotted")
+        expect(segment.underlineColor).toBe(color)
+        expect(segment.bg ?? null).toBeNull()
+        expect(segment.dim ?? false).toBe(false)
+      }
+
+      const reset = `\x1b[4:4;${sgr}mA\x1b[59mB\x1b[0m`
+      const segment = parseAnsiText(measurer.sliceByWidthFromEnd(reset, 1))[0]!
+      expect(segment.underlineStyle).toBe("dotted")
+      expect(segment.underlineColor ?? null).toBeNull()
+      expect(segment.bg ?? null).toBeNull()
+      expect(segment.dim ?? false).toBe(false)
+    }
   })
 
   test("wrapText keeps a ZWJ family on one line as an atomic grapheme", () => {
