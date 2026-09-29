@@ -3137,6 +3137,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   const standaloneFrameTasks = new Set<Promise<void>>()
   const startStandaloneFrame = (): void => {
+    // Native processing can clear isRendering while a standalone frame awaits
+    // its pre-paint macrotask. Keep that frame's ownership until it settles.
+    if (standaloneFrameTasks.size > 0) {
+      pendingRerender = true
+      return
+    }
     const task = renderStandaloneFrame()
     standaloneFrameTasks.add(task)
     void task.then(
