@@ -61,7 +61,7 @@ import { join } from "node:path"
 import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import { Box, Text } from "../../src/index.js"
-import { _resetPanicCircuitBreaker, run } from "../../packages/ag-term/src/runtime/run"
+import { run } from "../../packages/ag-term/src/runtime/run"
 import {
   resetPassRing,
   formatPassRingBreakdown,
@@ -216,10 +216,9 @@ async function driveStandalonePerpetual(): Promise<string[]> {
     return true
   }) as typeof process.stderr.write
   process.stdout.write = ((_chunk: unknown) => true) as typeof process.stdout.write
-  // Production exits the process once the per-run dump cap trips; tests opt out
-  // so the runner survives a deliberate panic.
-  vi.stubEnv("SILVERY_AUTO_PANIC_TEST_NO_EXIT", "1")
-  _resetPanicCircuitBreaker()
+  // Production exits the process once the per-run dump cap trips; the spy keeps
+  // the runner alive if a deliberate panic ever reaches it.
+  const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => undefined) as never)
   try {
     using term = createTermless({ cols: 40, rows: 20 })
     resetPassRing()
@@ -243,8 +242,8 @@ async function driveStandalonePerpetual(): Promise<string[]> {
     process.stderr.write = origStderrWrite
     process.stdout.write = origStdoutWrite
     process.exitCode = origExitCode
+    exitSpy.mockRestore()
     vi.unstubAllEnvs()
-    _resetPanicCircuitBreaker()
     for (const l of originalListeners) process.on("unhandledRejection", l as never)
   }
 }

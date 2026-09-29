@@ -125,7 +125,7 @@ interface StyleMismatch {
 // =============================================================================
 
 /**
- * Virtual terminal simulator for testing ANSI replay equivalence.
+ * Virtual terminal simulator for testing ANSI replay equivalence. // seam-allow: diagnostics toolbelt, used by create/src/with-diagnostics.ts
  *
  * Parses ANSI sequences and applies them to a 2D grid tracking both
  * character content and SGR style attributes (fg, bg, bold, italic, etc.).

@@ -137,7 +137,6 @@ export {
   isTextPresentationEmoji,
   MAY_CONTAIN_TEXT_EMOJI,
   warnOnce,
-  _resetWarnOnceForTesting,
 } from "./utils"
 
 // =============================================================================

@@ -2413,7 +2413,7 @@ const ANSI_TEST_REGEX = /\x1b(?:\[[0-9;:]*[A-Za-z]|\])|\x9b[\x30-\x3f]*[\x40-\x7
  * - U+009D (C1 OSC)
  */
 export function hasAnsi(text: string): boolean {
-  // Use a non-global regex for testing to avoid lastIndex issues
+  // Use a non-global regex for RegExp.test() to avoid lastIndex issues
   return ANSI_TEST_REGEX.test(text)
 }
 

@@ -40,7 +40,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 
 import { Box, Text } from "../../src/index.js"
-import { run, _resetRunOptionsWarningForTesting } from "../../packages/ag-term/src/runtime/run"
+import { run } from "../../packages/ag-term/src/runtime/run"
 import { createApp } from "../../packages/ag-term/src/runtime/create-app"
 import { render } from "../../packages/ag-term/src/renderer"
 import { createTerm } from "../../packages/ag-term/src/ansi/term"
@@ -142,7 +142,6 @@ beforeEach(() => {
   savedForceColor = process.env.FORCE_COLOR
   delete process.env.NO_COLOR
   delete process.env.FORCE_COLOR
-  _resetRunOptionsWarningForTesting()
 })
 
 afterEach(() => {

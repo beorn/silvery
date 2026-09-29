@@ -27,7 +27,7 @@ import {
   parsePasteData,
 } from "../../packages/ag-term/src/ansi/advanced-clipboard"
 import { isProtocolError, ProtocolError } from "../../packages/ansi/src/protocol-error"
-import { parseOscColorResponse } from "../../packages/ansi/src/osc-colors"
+import { queryBackgroundColor } from "../../packages/ansi/src/osc-colors"
 
 const ESC = "\x1b"
 const ST = `${ESC}\\`
@@ -177,33 +177,33 @@ describe("parseMouseSequence — silent skip on shape mismatch", () => {
 })
 
 // ============================================================================
-// parseOscColorResponse (OSC 10/11/12) — loud on prefix-matched malformed.
+// OSC 10/11/12 color replies — loud on prefix-matched malformed. The parser is
+// module-local, so these enter through queryBackgroundColor (E-1, 25632).
 // ============================================================================
 
-describe("parseOscColorResponse — loud on malformed", () => {
-  test("returns null when OSC prefix is absent (next parser please)", () => {
-    expect(parseOscColorResponse("garbage", 11)).toBeNull()
+describe("OSC color reply parsing — loud on malformed", () => {
+  const replying = (reply: string) => () => Promise.resolve(reply)
+  const noWrite = () => {}
+
+  test("resolves null when the OSC prefix is absent (next parser please)", async () => {
+    expect(await queryBackgroundColor(noWrite, replying("garbage"))).toBeNull()
   })
 
-  test("throws ProtocolError when prefix matched but no terminator", () => {
-    let thrown: unknown
-    try {
-      parseOscColorResponse(`${ESC}]11;rgb:ff/ff/ff`, 11)
-    } catch (err) {
-      thrown = err
-    }
+  test("rejects with ProtocolError when prefix matched but no terminator", async () => {
+    const thrown: unknown = await queryBackgroundColor(
+      noWrite,
+      replying(`${ESC}]11;rgb:ff/ff/ff`),
+    ).catch((err: unknown) => err)
     expect(isProtocolError(thrown)).toBe(true)
     expect((thrown as ProtocolError).parser).toBe("parseOscColorResponse")
     expect((thrown as ProtocolError).reason).toMatch(/terminator/i)
   })
 
-  test("throws ProtocolError when body is not a valid rgb: spec", () => {
-    let thrown: unknown
-    try {
-      parseOscColorResponse(`${ESC}]11;notacolor${BEL}`, 11)
-    } catch (err) {
-      thrown = err
-    }
+  test("rejects with ProtocolError when body is not a valid rgb: spec", async () => {
+    const thrown: unknown = await queryBackgroundColor(
+      noWrite,
+      replying(`${ESC}]11;notacolor${BEL}`),
+    ).catch((err: unknown) => err)
     expect(isProtocolError(thrown)).toBe(true)
     expect((thrown as ProtocolError).parser).toBe("parseOscColorResponse")
     expect((thrown as ProtocolError).reason).toMatch(/rgb/i)

@@ -83,7 +83,9 @@ import {
 } from "../text-sizing"
 import { applyWidthConfig, detectWidthConfigWithProbe } from "../ansi/width-detection"
 import { isStrictEnabled } from "../strict-mode.js"
-import { recordOutputCursorDiagnostics } from "../cursor-diagnostics"
+import { isCursorStrictEnabled, recordOutputCursorDiagnostics } from "../cursor-diagnostics"
+import { preloadStrictTerminalBackends } from "../strict-terminal-backends"
+import { strictTerminalBackends } from "../pipeline/output-verify"
 import { computeManagedFrame, protectManagedCursorSuffix } from "../managed-caret"
 import { createBytesOutMonitor } from "../bytes-out-monitor"
 import { createMemMonitor } from "../mem-monitor"
@@ -391,11 +393,10 @@ function coalesceWheelEvents(events: NamespacedEvent[]): NamespacedEvent[] {
  * never reach the threshold.
  *
  * - `SILVERY_AUTO_PANIC_MAX_DUMPS=N` (default 10) — dump cap.
- * - `SILVERY_AUTO_PANIC_TEST_NO_EXIT=1` — skip the hard `process.exit(2)`
- *   that fires after the cap is hit. ONLY for the regression test;
- *   real callers want the hard-exit so a runaway loop terminates.
+ * - After the cap is hit the process exits with code 2, so a runaway loop
+ *   terminates; tests spy on `process.exit` to survive it.
  *
- * Reset via `_resetPanicCircuitBreaker()` from test infrastructure.
+ * Tests start each case from zero with fresh modules (`vi.resetModules()`).
  *
  * Bead: @km/silvery/auto-panic-circuit-break.
  */
@@ -405,25 +406,9 @@ const MAX_PANIC_DUMPS_PER_RUN = (() => {
   const n = Number.parseInt(v, 10)
   return Number.isFinite(n) && n > 0 ? n : 10
 })()
-/** Read the test-only hard-exit override fresh on every panic so tests
- *  can flip it via `vi.stubEnv` between cases without re-importing the
- *  module. Static-const capture would freeze the value at module load. */
-function isPanicTestNoExit(): boolean {
-  return process.env.SILVERY_AUTO_PANIC_TEST_NO_EXIT === "1"
-}
 let _processPanicDumpCount = 0
 let _processPanicCircuitBroken = false
 
-/**
- * Test helper — reset the process-level panic circuit-break state.
- * Call in `beforeEach` of any test that exercises the panic flow more
- * than `MAX_PANIC_DUMPS_PER_RUN` times within one suite. Not part of
- * the public runtime API.
- */
-export function _resetPanicCircuitBreaker(): void {
-  _processPanicDumpCount = 0
-  _processPanicCircuitBroken = false
-}
 const STRICT_MODE = (() => {
   return isStrictEnabled("incremental", 1)
 })()
@@ -1036,6 +1021,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   element: ReactElement,
   options: AppRunOptions,
 ): Promise<AppHandle<S & I>> {
+  // Live SILVERY_STRICT_TERMINAL / cursor verification loads the @termless
+  // emulator backends synchronously mid-frame (output-verify.ts,
+  // cursor-diagnostics.ts). Preload them here, at the async setup boundary every
+  // createApp().run() and run() passes, so the sync accessors resolve via the ESM
+  // graph (never createRequire — the 2026-07-02 Ghostty-WASM singleton-split fix).
+  // It lived in run() alone, so createApp consumers such as km failed at their
+  // first strict frame (26496). Tests also get @silvery/test's top-level preload.
+  const strictBackends = strictTerminalBackends()
+  const wantsGhostty = strictBackends.includes("ghostty")
+  if (strictBackends.some((b) => b !== "vt100") || isCursorStrictEnabled()) {
+    await preloadStrictTerminalBackends({ ghostty: wantsGhostty, initGhosttyWasm: wantsGhostty })
+  }
+
   const {
     cols: explicitCols,
     rows: explicitRows,
@@ -3081,9 +3079,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Circuit-break hard-exit: once the per-process dump cap fires, force
     // terminal cleanup and process.exit(2) so a runaway panic loop in a
     // long-lived process (vitest worker, daemon, server) terminates
-    // cleanly instead of pinning CPU forever. Skipped under the test-only
-    // SILVERY_AUTO_PANIC_TEST_NO_EXIT env (see module-level docstring).
-    if (_processPanicCircuitBroken && !isPanicTestNoExit()) {
+    // cleanly instead of pinning CPU forever.
+    if (_processPanicCircuitBroken) {
       try {
         disableInteractiveProtocolsEarly()
       } catch {

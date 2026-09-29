@@ -192,13 +192,6 @@ export function generateHitRegionId(): string {
   return `hit-${++hitRegionIdCounter}`
 }
 
-/**
- * Reset the ID counter (useful for testing).
- */
-export function resetHitRegionIdCounter(): void {
-  hitRegionIdCounter = 0
-}
-
 // ============================================================================
 // Z-Index Constants
 // ============================================================================

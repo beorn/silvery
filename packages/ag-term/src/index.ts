@@ -294,7 +294,6 @@ export {
   getTerminalFingerprint,
   getCachedProbeResult,
   setCachedProbeResult,
-  clearProbeCache,
   type TextSizingProbeResult,
   type FingerprintEmulator,
 } from "./text-sizing"
@@ -414,7 +413,7 @@ export { isTerm, createInputEvents } from "./term-def"
 // React hooks and context are available via @silvery/ag-term/hit-registry.
 //
 
-export { HitRegistry, resetHitRegionIdCounter, Z_INDEX } from "./hit-registry-core"
+export { HitRegistry, Z_INDEX } from "./hit-registry-core"
 export type { HitTarget, HitRegion } from "./hit-registry-core"
 
 // =============================================================================

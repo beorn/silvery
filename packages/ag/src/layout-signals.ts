@@ -1080,7 +1080,7 @@ function scrollStateEqual(a: ScrollStateSnapshot | null, b: ScrollStateSnapshot 
   )
 }
 
-/** Check whether a node has signals allocated (for testing). */
+/** Whether a node has signals allocated; layout-phase skips signal sync for nodes without them. */
 export function hasLayoutSignals(node: AgNode): boolean {
   return signalMap.has(node)
 }

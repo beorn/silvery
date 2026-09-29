@@ -131,13 +131,6 @@ export function setCachedProbeResult(fingerprint: string, result: TextSizingProb
   probeCache.set(fingerprint, result)
 }
 
-/**
- * Clear the probe cache. Useful for testing.
- */
-export function clearProbeCache(): void {
-  probeCache.clear()
-}
-
 // ============================================================================
 // Async probe
 // ============================================================================

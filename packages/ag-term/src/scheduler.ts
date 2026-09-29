@@ -69,7 +69,7 @@ const log = createLogger("silvery:scheduler")
  * corruption. Works correctly in Kitty. Full renders (bufferToAnsi) work
  * fine with sync — only incremental diff output (changesToAnsi) triggers it.
  *
- * Set SILVERY_SYNC_UPDATE=1 to force-enable (e.g., for testing in Kitty).
+ * Set SILVERY_SYNC_UPDATE=1 to force-enable (e.g., to try it in Kitty).
  * TODO: Re-enable by default once the Ghostty bug is fixed.
  * See: https://github.com/ghostty-org/ghostty/discussions/11002
  */
@@ -1203,20 +1203,4 @@ function extractPlacementIds(overlay: string): string[] {
  */
 export function createScheduler(options: SchedulerOptions): RenderScheduler {
   return new RenderScheduler(options)
-}
-
-// ============================================================================
-// Utility: Simple Render (for testing/debugging)
-// ============================================================================
-
-/**
- * Render once to a string (for testing).
- *
- * Does not batch or diff - just runs the pipeline and returns ANSI output.
- */
-export function renderToString(root: AgNode, width: number, height: number): string {
-  const ag = createAg(root)
-  ag.layout({ cols: width, rows: height })
-  const { buffer } = ag.render()
-  return outputPhase(null, buffer, "fullscreen")
 }

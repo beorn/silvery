@@ -73,10 +73,8 @@ export function withCursor<T>(
 
 /**
  * Check if stream is a TTY (supports ANSI codes)
- * Also respects FORCE_TTY environment variable for testing
  */
 export function isTTY(stream: NodeJS.WriteStream = process.stdout): boolean {
-  if (process.env.FORCE_TTY === "1") return true
   return stream.isTTY ?? false
 }
 

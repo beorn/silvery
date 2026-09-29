@@ -9,19 +9,18 @@
  * Bead: @km/infra/15587-visual-snapshot-shiki-race.
  */
 
-import { describe, test, expect, beforeEach } from "vitest"
-import {
-  highlight,
-  flushPendingHighlights,
-  _clearCache,
-  _resetHighlighter,
-  _pendingHighlightCount,
-} from "@silvery/syntax"
+import { describe, test, expect, beforeEach, vi } from "vitest"
 
-beforeEach(() => {
-  // Pending set is per-module-singleton. Reset between tests for isolation.
-  _resetHighlighter()
-  _clearCache()
+type Syntax = typeof import("@silvery/syntax")
+let highlight: Syntax["highlight"]
+let flushPendingHighlights: Syntax["flushPendingHighlights"]
+let _pendingHighlightCount: Syntax["_pendingHighlightCount"]
+
+beforeEach(async () => {
+  // The pending set, cache and highlighter are module singletons: each test takes a fresh module instead of a reset
+  // export (E-1, 25632).
+  vi.resetModules()
+  ;({ highlight, flushPendingHighlights, _pendingHighlightCount } = await import("@silvery/syntax"))
 })
 
 describe("flushPendingHighlights — public drain API", () => {
@@ -121,13 +120,13 @@ describe("flushPendingHighlights — protects against the visual-snapshot race",
     // few microtask drains do not synchronize with it. Demonstrates
     // why the bead exists.
     //
-    // We DON'T _resetHighlighter() — that would force a fresh shiki
+    // We DON'T take a fresh module here — that would force a fresh shiki
     // instance and shiki warns past 10 of them in a test run. Instead
     // we use a unique source string so the cache can't short-circuit.
     const p = highlight(`const microtask_race = 1`, "ts", "github-dark")
     // Drain microtasks the way render-harness's settle() did before
     // the fix — one task tick + 5 microtask ticks. On a cold start
-    // (or after _resetHighlighter) the shiki promise is still pending
+    // (or in a fresh module) the shiki promise is still pending
     // here: dynamic import + grammar load haven't completed.
     await new Promise<void>((r) => setTimeout(r, 0))
     for (let i = 0; i < 5; i++) await Promise.resolve()
@@ -144,11 +143,10 @@ describe("flushPendingHighlights — protects against the visual-snapshot race",
   test("with flush, the result is always the resolved (multi-token) state", async () => {
     // Run a few iterations to detect flakiness. Vary the source text
     // so the cache doesn't short-circuit the race we're stressing.
-    // Don't _resetHighlighter() per iteration — shiki warns past 10
-    // instances; the singleton-with-cache-bust is enough to exercise
-    // the drain path on each call.
+    // Don't take a fresh module per iteration — shiki warns past 10
+    // instances; a distinct source per iteration misses the cache, which is
+    // enough to exercise the drain path on each call.
     for (let iter = 0; iter < 4; iter++) {
-      _clearCache()
       const p = highlight(`const v${iter} = ${iter}`, "ts", "github-dark")
       await flushPendingHighlights()
       const lines = await p

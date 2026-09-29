@@ -1,13 +1,17 @@
 import { describe, test, expect, vi, beforeEach } from "vitest"
-import { createRenderer } from "@silvery/test"
-import { Box, Text } from "silvery"
-import { _resetBoxInsideTextWarning } from "@silvery/ag-react/reconciler/host-config"
 
-const render = createRenderer({ cols: 40, rows: 10 })
+// The warning latches once per module instance, so each test takes fresh modules through the public entries
+// instead of a reset export (E-1, 25632).
+let render: ReturnType<typeof import("@silvery/test").createRenderer>
+let Box: typeof import("silvery").Box
+let Text: typeof import("silvery").Text
 
 describe("Box inside Text warning", () => {
-  beforeEach(() => {
-    _resetBoxInsideTextWarning()
+  beforeEach(async () => {
+    vi.resetModules()
+    const { createRenderer } = await import("@silvery/test")
+    ;({ Box, Text } = await import("silvery"))
+    render = createRenderer({ cols: 40, rows: 10 })
   })
 
   test("Box inside Text produces console.warn", () => {

@@ -147,19 +147,6 @@ export function getTermlessGhostty(): typeof import("@termless/ghostty") {
   )
 }
 
-/**
- * Test-only reset of the backend cache. Lets a test assert the fail-loud path
- * and re-exercise the preload. NOT for production use.
- * @internal
- */
-export function _resetStrictTerminalBackendsForTesting(): void {
-  const cache = backendCache()
-  cache.core = null
-  cache.io = null
-  cache.xterm = null
-  cache.ghostty = null
-}
-
 // ── The verifier's emulator (unterm A2) ──────────────────────────────────────
 //
 // The strict verifiers speak the io vocabulary: an `Emulator` eats `output`
