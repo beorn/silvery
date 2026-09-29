@@ -218,6 +218,10 @@ layoutChanged = node.layoutChangedThisFrame
 //   or child position shift. Forces parent to clear (removes stale overlay pixels in gap areas).
 // descendantOverflowChanged: a descendant's prevLayout extended beyond THIS node's rect
 //   and its layout changed. Recursive check (follows subtreeDirty paths).
+//   Also set by one render-entry dirty-path prewalk when an excess strip
+//   intersects earlier paint inside its nearest opaque ancestor. Existing
+//   fill/fresh-child cascade rebuilds that paint before cleanup can erase it.
+//   In-rect recovery gives clearDescendantOverflowRegions no outer work.
 // NOTE: outlines are NOT in contentAreaAffected — they're handled by the
 // decoration phase (see decoration-phase.ts) which redraws outlines every
 // frame and uses per-cell snapshots to clear previous positions.

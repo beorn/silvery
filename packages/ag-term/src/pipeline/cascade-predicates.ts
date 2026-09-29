@@ -307,6 +307,10 @@
 //    the stale overflow pixels are OUTSIDE the descendant's parent's content
 //    area. hasDescendantOverflowChanged recursively detects this at the ancestor
 //    level and triggers contentAreaAffected + clearDescendantOverflowRegions.
+//    The render-entry dirty-path prewalk also sets this bit on the nearest
+//    opaque ancestor when excess cleanup intersects earlier sibling paint.
+//    Its fill/fresh-child cascade reconstructs in-rect paint; the extra
+//    descendant-overflow clear has no out-of-rect work in that case.
 //
 // 7. SCROLL OFFSET CHANGE → SUBTREE RE-RENDER
 //    The scroll phase sets subtreeDirty on the scroll container when offset or
@@ -416,8 +420,8 @@
 //     between children have stale pixels from old positions
 //  7. Absolute child mutated (absoluteChildMutated) — overlay pixels in gap areas
 //     between current children are stale from old overlay positions
-//  8. Descendant overflow changed (descendantOverflowChanged) — pixels beyond this
-//     node's rect are stale from previous overflow that no longer extends there
+//  8. Descendant overflow / earlier paint exposed (descendantOverflowChanged) —
+//     stale overflow or excess cleanup requires this ancestor's reconstruction
 //  9. Scroll offset changed (scrollOffsetChanged) — children's visual positions
 //     shifted; buffer has content at old scroll positions
 // 10. Ancestor layout changed (ancestorLayoutChanged) — this node's absolute

@@ -145,18 +145,62 @@ describe("regression: descendant overflow clear must not stomp a sibling's bg (@
 // The 27 status rows make this a real 50+ node pane rather than a tiny-tree case.
 function StagePane({
   output,
+  scrolled = false,
+  stickyTab = false,
+  borderOnly = false,
+  boxEmitter = false,
+  outsideOpaque = false,
 }: {
   output: string
+  scrolled?: boolean
+  stickyTab?: boolean
+  borderOnly?: boolean
+  boxEmitter?: boolean
+  outsideOpaque?: boolean
 }): React.ReactElement<React.ComponentProps<typeof Box>> {
   return (
     <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
       <Box height={1} flexShrink={0}>
-        <Box width={20} height={5} flexShrink={0} backgroundColor="#0000ff" />
+        {stickyTab ? (
+          <Box
+            width={20}
+            height={5}
+            flexShrink={0}
+            overflow="scroll"
+            scrollOffset={8}
+            flexDirection="column"
+          >
+            <Box height={6} flexShrink={0} />
+            <Box width={20} height={2} flexShrink={0} position="sticky" backgroundColor="#0000ff" />
+            <Box height={10} flexShrink={0} />
+          </Box>
+        ) : (
+          <Box
+            width={20}
+            height={scrolled ? 2 : 5}
+            flexShrink={0}
+            backgroundColor={borderOnly ? undefined : "#0000ff"}
+            borderStyle={borderOnly ? "single" : undefined}
+          />
+        )}
       </Box>
-      <Box width={COLS} height={8} flexShrink={0} flexDirection="column">
-        <Box width={COLS} flexDirection="column">
-          <Box width={COLS} alignItems="flex-start">
-            <Text>{output}</Text>
+      <Box
+        width={outsideOpaque ? 12 : COLS}
+        backgroundColor={outsideOpaque ? "#000000" : undefined}
+        height={8}
+        flexShrink={0}
+        flexDirection="column"
+        overflow={scrolled ? "scroll" : undefined}
+        scrollOffset={scrolled ? 1 : undefined}
+      >
+        <Box width={COLS} height={scrolled ? 10 : undefined} flexShrink={0} flexDirection="column">
+          {scrolled && <Box height={1} flexShrink={0} />}
+          <Box
+            width={boxEmitter ? output.length : COLS}
+            height={boxEmitter ? 1 : undefined}
+            alignItems="flex-start"
+          >
+            {!boxEmitter && <Text>{output}</Text>}
           </Box>
         </Box>
       </Box>
@@ -192,6 +236,64 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
     }
   })
 
+  test("scrolled text retreat reveals an earlier sibling outside its viewport", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    // Text has content y=2 but rendered y=1. The earlier tab ends at y=2,
+    // so unscrolled rect intersection misses the revealed background.
+    const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAA" scrolled />)
+    try {
+      expect(app.term.buffer.getCell(16, 1).char).toBe("A")
+      app.rerender(<StagePane output="AAAAAAAAAAAAAAAA" scrolled />)
+      const revealed = app.term.buffer.getCell(16, 1)
+      expect(revealed.char).toBe(" ")
+      expect(revealed.bg).toEqual({ r: 0, g: 0, b: 255 })
+    } finally {
+      app.unmount()
+    }
+  })
+
+  // Requirement: a transparent scroll wrapper's opaque sticky child owns its
+  // actual pinned rows, even when stored screen geometry lies above the clip.
+  test("text retreat reveals the pinned background inside an earlier transparent scroll wrapper", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAA" stickyTab />)
+    try {
+      expect(app.term.buffer.getCell(16, 1).char).toBe("A")
+      app.rerender(<StagePane output="AAAAAAAAAAAAAAAA" stickyTab />)
+      expect(app.term.buffer.getCell(16, 1).char).toBe(" ")
+      expect(app.term.buffer.getCell(16, 1).bg).toEqual({ r: 0, g: 0, b: 255 })
+    } finally {
+      app.unmount()
+    }
+  })
+
+  // Requirement: borders are own paint without an explicit background.
+  test("text retreat reveals an earlier border-only box", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAAAA" borderOnly />)
+    try {
+      expect(app.term.buffer.getCell(19, 1).char).toBe("A")
+      app.rerender(<StagePane output="AAAAAAAAAAAAAAAA" borderOnly />)
+      expect(app.term.buffer.getCell(19, 1).char).toBe("│")
+    } finally {
+      app.unmount()
+    }
+  })
+
+  // Requirement: a transparent box's excess cleanup must preserve earlier
+  // paint too; no changing text exists inside this shrinking emitter.
+  test("shrinking transparent box reveals the earlier filled tab background", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAA" boxEmitter />)
+    try {
+      expect(app.term.buffer.getCell(16, 1).bg).toEqual({ r: 0, g: 0, b: 255 })
+      app.rerender(<StagePane output="AAAAAAAAAAAAAAAA" boxEmitter />)
+      expect(app.term.buffer.getCell(16, 1).bg).toEqual({ r: 0, g: 0, b: 255 })
+    } finally {
+      app.unmount()
+    }
+  })
+
   // Residual: without an opaque common ancestor, text cleanup still overwrites
   // earlier sibling paint. Keep STRICT's alarm until that recovery is supported.
   test.fails("text retreat without an opaque common ancestor still loses the earlier background", () => {
@@ -203,6 +305,21 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
     try {
       expect(app.term.buffer.getCell(16, 1).char).toBe("A")
       app.rerender(scene("AAAAAAAAAAAAAAAA"))
+      expect(app.term.buffer.getCell(16, 1).bg).toEqual({ r: 0, g: 0, b: 255 })
+    } finally {
+      app.unmount()
+    }
+  })
+
+  // Requirement/residual: old glyphs outside the nearest opaque ancestor are
+  // not recovered by this slice. Preserve STRICT's alarm rather than widening.
+  test.fails("text retreat outside its opaque ancestor still leaves overflow residue (@i/10-yrd/26485)", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(<StagePane output="AAAAAAAAAAAAAAAAAAA" outsideOpaque />)
+    try {
+      expect(app.term.buffer.getCell(16, 1).char).toBe("A")
+      app.rerender(<StagePane output="AAAAAAAAAAAAAAAA" outsideOpaque />)
+      expect(app.term.buffer.getCell(16, 1).char).toBe(" ")
       expect(app.term.buffer.getCell(16, 1).bg).toEqual({ r: 0, g: 0, b: 255 })
     } finally {
       app.unmount()
