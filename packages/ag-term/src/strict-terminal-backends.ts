@@ -31,8 +31,8 @@
  * sync GET that throws LOUD on a cache miss (no silent fallback — a missing
  * backend must be diagnosable, not swallowed). Preload is awaited at the two
  * async boundaries that precede any strict frame:
- *   - `@silvery/test`'s top-level await (test path — the backends are already
- *     statically imported there, so the preload is a free re-resolve).
+ *   - `@silvery/test`'s top-level await when the optional peers are installed
+ *     (test path; fresh consumers without them can still import the barrel).
  *   - the live `run()` setup (the SILVERY_STRICT_TERMINAL / cursor debugging path).
  *
  * Bead: createrequire-ban (wave 3 — the incident siblings).
