@@ -140,13 +140,13 @@ export function HangingMarkerRow({
       flexDirection="row"
       width="100%"
       minWidth={0}
-      marginLeft={-gutter}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
       <Box
         width={gutter}
         minWidth={gutter}
+        marginLeft={-gutter}
         flexShrink={0}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
