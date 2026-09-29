@@ -287,6 +287,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "slice-ansi@9.0.1": "patches/slice-ansi@9.0.1.patch",
+  },
   "overrides": {
     "flexily": "0.8.2",
     "loggily": "^0.10.2",

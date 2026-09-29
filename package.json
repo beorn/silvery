@@ -222,5 +222,8 @@
     "bun": ">=1.0",
     "node": ">=24.0.0"
   },
+  "patchedDependencies": {
+    "slice-ansi@9.0.1": "patches/slice-ansi@9.0.1.patch"
+  },
   "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2."
 }

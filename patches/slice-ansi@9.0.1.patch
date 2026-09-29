@@ -1,0 +1,57 @@
+diff --git a/tokenize-ansi.js b/tokenize-ansi.js
+index 8bc4454d4fb638e193208e0c72bab18a3853c12b..e788cb7b9034a409a98c31f620b7b3fabe79a0b7 100644
+--- a/tokenize-ansi.js
++++ b/tokenize-ansi.js
+@@ -56,6 +56,8 @@ const SGR_EXTENDED_FOREGROUND_CODE = 38;
+ const SGR_DEFAULT_FOREGROUND_CODE = 39;
+ const SGR_EXTENDED_BACKGROUND_CODE = 48;
+ const SGR_DEFAULT_BACKGROUND_CODE = 49;
++const SGR_EXTENDED_UNDERLINE_CODE = 58;
++const SGR_DEFAULT_UNDERLINE_CODE = 59;
+ const SGR_COLOR_TYPE_ANSI_256 = 5;
+ const SGR_COLOR_TYPE_TRUECOLOR = 2;
+ const SGR_ANSI_256_FRAGMENT_LENGTH = 3;
+@@ -68,6 +70,7 @@ const EMOJI_PRESENTATION_GRAPHEME_REGEX = /\p{Emoji_Presentation}/v;
+ const GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, {granularity: 'grapheme'});
+ 
+ const endCodeNumbers = new Set();
++endCodeNumbers.add(SGR_DEFAULT_UNDERLINE_CODE);
+ for (const [, end] of ansiStyles.codes) {
+ 	endCodeNumbers.add(end);
+ }
+@@ -188,14 +191,15 @@ function getSgrFragments(code) {
+ 			continue;
+ 		}
+ 
+-		if (codeNumber === SGR_EXTENDED_FOREGROUND_CODE || codeNumber === SGR_EXTENDED_BACKGROUND_CODE) {
++		if (codeNumber === SGR_EXTENDED_FOREGROUND_CODE || codeNumber === SGR_EXTENDED_BACKGROUND_CODE || codeNumber === SGR_EXTENDED_UNDERLINE_CODE) {
++			const resetCode = codeNumber === SGR_EXTENDED_FOREGROUND_CODE ? SGR_DEFAULT_FOREGROUND_CODE : codeNumber === SGR_EXTENDED_BACKGROUND_CODE ? SGR_DEFAULT_BACKGROUND_CODE : SGR_DEFAULT_UNDERLINE_CODE;
+ 			const colorType = Number.parseInt(rawCodes[index + 1], 10);
+ 			if (colorType === SGR_COLOR_TYPE_ANSI_256 && index + SGR_ANSI_256_LAST_PARAMETER_OFFSET < rawCodes.length) {
+ 				const openCode = createSgrCode(sgrPrefix, rawCodes.slice(index, index + SGR_ANSI_256_FRAGMENT_LENGTH));
+ 				fragments.push({
+ 					type: 'start',
+ 					code: openCode,
+-					endCode: ansiStyles.color.ansi(codeNumber === SGR_EXTENDED_FOREGROUND_CODE ? SGR_DEFAULT_FOREGROUND_CODE : SGR_DEFAULT_BACKGROUND_CODE),
++					endCode: ansiStyles.color.ansi(resetCode),
+ 				});
+ 				index += SGR_ANSI_256_FRAGMENT_LENGTH;
+ 				continue;
+@@ -206,7 +210,7 @@ function getSgrFragments(code) {
+ 				fragments.push({
+ 					type: 'start',
+ 					code: openCode,
+-					endCode: ansiStyles.color.ansi(codeNumber === SGR_EXTENDED_FOREGROUND_CODE ? SGR_DEFAULT_FOREGROUND_CODE : SGR_DEFAULT_BACKGROUND_CODE),
++					endCode: ansiStyles.color.ansi(resetCode),
+ 				});
+ 				index += SGR_TRUECOLOR_FRAGMENT_LENGTH;
+ 				continue;
+@@ -216,7 +220,7 @@ function getSgrFragments(code) {
+ 			fragments.push({
+ 				type: 'start',
+ 				code: openCode,
+-				endCode: ansiStyles.color.ansi(codeNumber === SGR_EXTENDED_FOREGROUND_CODE ? SGR_DEFAULT_FOREGROUND_CODE : SGR_DEFAULT_BACKGROUND_CODE),
++				endCode: ansiStyles.color.ansi(resetCode),
+ 			});
+ 			index++;
+ 			continue;
