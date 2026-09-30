@@ -2439,10 +2439,13 @@ function subtreePaintExtent(
   let extent: Rect | null = null
   const paints =
     node.layoutNode && (node.type !== "silvery-box" || getEffectiveBg(props) || props.borderStyle)
+  // Viewport/island blits ignore clipBounds (emitOpaqueBlit clips only at the
+  // buffer edge), so their own paint is the whole projected rect.
+  const opaqueBlit = node.type === "silvery-viewport" || node.type === "silvery-island"
   if (paints) {
     const projected = intersectPaintRect(
       projectPaintRect(own, state.scrollOffset),
-      state.clipBounds,
+      opaqueBlit ? undefined : state.clipBounds,
     )
     extent = projected ? projectPaintRect(projected, -state.scrollOffset) : null
   }
