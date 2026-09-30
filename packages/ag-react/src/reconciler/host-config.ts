@@ -21,6 +21,7 @@ import {
   trackContentDirty,
   trackStyleOnlyDirty,
   trackScrollDirty,
+  trackNotifyDirty,
 } from "@silvery/ag/dirty-tracking"
 import { syncTextContentSignal } from "@silvery/ag/layout-signals"
 import {
@@ -36,6 +37,7 @@ import {
   ALL_RECONCILER_BITS,
 } from "@silvery/ag/epoch"
 import type { ViewportProps } from "@silvery/ag/viewport-types"
+import { shallow } from "../hooks/useTerm"
 import { classifyPropChanges } from "./helpers"
 import {
   applyBoxProps,
@@ -346,6 +348,38 @@ export function disposeSubtreeScopes(node: AgNode): void {
 // ============================================================================
 // Subtree Dirty Propagation
 // ============================================================================
+
+/**
+ * Box props that the layout phase's notify step reads straight from props to
+ * write a node's layout signals (cursorRect, focusedNodeId, selectionFragments,
+ * anchorRect, parkRect, decorationRects). A change to one is tracked with
+ * `trackNotifyDirty` so the layout-on-demand gate runs that step.
+ */
+const NOTIFY_SYNCED_PROPS = [
+  "decorations",
+  "cursorOffset",
+  "focused",
+  "selectionIntent",
+  "anchorRef",
+  "parkOffset",
+] as const
+
+/**
+ * Compared shallowly, not by identity: TextInput, TextArea and Terminal build
+ * `cursorOffset` on every render, so an identity check would run the notify
+ * step on each of their re-renders even when the caret has not moved. The
+ * notify step reads only the top-level fields of these props, so a shallow
+ * match means every signal it writes would come out the same.
+ */
+function notifySyncedPropChanged(
+  oldProps: Record<string, unknown>,
+  newProps: Record<string, unknown>,
+): boolean {
+  for (const key of NOTIFY_SYNCED_PROPS) {
+    if (!shallow(oldProps[key], newProps[key])) return true
+  }
+  return false
+}
 
 /**
  * Mark this node and all ancestors as having dirty content/layout.
@@ -917,8 +951,22 @@ export const hostConfig = {
     if (scrollToChanged || scrollOffsetChanged) {
       trackScrollDirty(instance)
     }
+    // The notify step writes layout signals from six props it reads directly
+    // (layout-signals.ts syncRectSignals / syncDecorationRects). They change no
+    // dimension, so Flexily stays clean: the notify set keeps the ag.ts
+    // layout-on-demand gate from skipping that step, and the subtree mark lets
+    // the frame past the pre-pipeline dirty check. No relayout is requested.
+    const notifyPropChanged = notifySyncedPropChanged(
+      oldProps as Record<string, unknown>,
+      newProps as Record<string, unknown>,
+    )
+    if (notifyPropChanged) {
+      trackNotifyDirty(instance)
+    }
     if (layoutChanged || contentChanged || scrollToChanged || scrollOffsetChanged) {
       markLayoutAncestorDirty(instance)
+      markSubtreeDirty(instance)
+    } else if (notifyPropChanged) {
       markSubtreeDirty(instance)
     }
   },
