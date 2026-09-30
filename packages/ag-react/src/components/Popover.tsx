@@ -403,9 +403,9 @@ function PopoverOverlay({
   const EDGE_X = 2
   const EDGE_Y = 1
 
-  // Cap width at the smaller of the requested maxWidth and the viewport
-  // width minus edge margins on both sides.
-  const maxWidth = Math.min(content.maxWidth ?? 48, Math.max(20, columns - EDGE_X * 2))
+  // The requested cap, and the narrowest room a popover may wrap into.
+  const cap = content.maxWidth ?? 48
+  const MIN_ROOM = 20
 
   // Placement heuristic: flip to whichever side has more space. When
   // placing ABOVE, anchor the popover from the viewport BOTTOM (using the
@@ -420,19 +420,17 @@ function PopoverOverlay({
 
   const maxHeight = Math.max(4, placeAbove ? spaceAbove : spaceBelow)
 
-  // Horizontal clamp: prefer anchor.x + offset but enforce both edge margins.
-  // The box is as wide as its content, capped by maxWidth (#26388), so when
-  // the cap would cross the right margin place it by `right`: it then ends at
-  // the margin whatever its content width, instead of a `left` computed from
-  // the cap that leaves narrow content short of its anchor (#26660). Pass
-  // `left` OR `right`, never both, as `top`/`bottom` below.
-  const preferredLeft = anchor.x + (content.anchorOffsetX ?? 0)
-  const horizontal =
-    preferredLeft + maxWidth <= columns - EDGE_X
-      ? { left: Math.max(EDGE_X, preferredLeft) }
-      : columns - EDGE_X - maxWidth >= EDGE_X
-        ? { right: EDGE_X }
-        : { left: EDGE_X }
+  // Horizontal placement: the popover stays at its anchor and its cap is the
+  // room to the right margin. The box is as wide as its content (#26388), so
+  // sliding it left by the cap would leave narrow content short of, or far
+  // from, its anchor; instead wide content wraps into the room (#26660). Only
+  // when that room is below MIN_ROOM is it placed flush against the right
+  // margin by `right`. Pass `left` OR `right`, never both, as `top`/`bottom`.
+  const left = Math.max(EDGE_X, anchor.x + (content.anchorOffsetX ?? 0))
+  const room = columns - EDGE_X - left
+  const atAnchor = room >= MIN_ROOM
+  const maxWidth = atAnchor ? Math.min(cap, room) : Math.min(cap, Math.max(1, columns - EDGE_X * 2))
+  const horizontal = atAnchor ? { left } : { right: EDGE_X }
 
   // Positional props — pass `top` OR `bottom`, never both. Below-anchor
   // gets `top = anchor.y + 1` for a 1-row gap by default; `flushTop: true`
