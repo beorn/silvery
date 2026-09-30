@@ -55,10 +55,7 @@ function ScrollScene({
  * Find the column of the first ▼ or ▲ glyph on a given row.
  * Returns -1 if not found.
  */
-function findIndicatorCol(
-  app: ReturnType<ReturnType<typeof createRenderer>>,
-  row: number,
-): number {
+function findIndicatorCol(app: ReturnType<ReturnType<typeof createRenderer>>, row: number): number {
   for (let x = 0; x < COLS; x++) {
     const ch = app.cell(x, row).char
     if (ch === "▼" || ch === "▲") return x
