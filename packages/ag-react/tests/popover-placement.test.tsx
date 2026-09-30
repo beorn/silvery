@@ -39,7 +39,9 @@ function renderAt(x: number, body: string, maxWidth = 48) {
 }
 
 // The popover surface's committed box: [left, right) and height, or null.
-function popoverBox(app: ReturnType<typeof renderAt>): { left: number; right: number; height: number } | null {
+function popoverBox(
+  app: ReturnType<typeof renderAt>,
+): { left: number; right: number; height: number } | null {
   const find = (node: AgNode): AgNode | null => {
     if ((node.props as BoxProps | undefined)?.backgroundColor === "$bg-surface-overlay") return node
     for (const child of node.children) {

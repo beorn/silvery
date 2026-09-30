@@ -595,7 +595,9 @@ describe("AnchoredOverlay", () => {
       "account-overlay",
     )
     expect(rect).toBeTruthy()
-    expect(rect!.x + rect!.width, "overlay right edge touches the anchor's left edge").toBe(120 - 40)
+    expect(rect!.x + rect!.width, "overlay right edge touches the anchor's left edge").toBe(
+      120 - 40,
+    )
   })
 
   test("removes overlay content when closed", () => {

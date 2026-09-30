@@ -91,7 +91,9 @@ export function AnchoredOverlay({
   // deterministically: frame 1 places at the cap, frame 2 at the measured size.
   const [measuredSize, setMeasuredSize] = useState<{ width: number; height: number } | null>(null)
   const collisionWidth =
-    sizing === "max" && measuredSize !== null ? Math.min(size.width, measuredSize.width) : size.width
+    sizing === "max" && measuredSize !== null
+      ? Math.min(size.width, measuredSize.width)
+      : size.width
   const collisionHeight =
     sizing === "max" && measuredSize !== null
       ? Math.min(size.height, measuredSize.height)
