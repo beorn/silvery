@@ -2915,11 +2915,16 @@ function clearDescendantOverflowRegions(
   const nodeLeft = layout.x
   const nodeTop = layout.y - scrollOffset
 
-  // Start from the clip this node's children paint under (the painter's
-  // childPaintClip), not the node's own clip. A hidden or scroll node never
-  // lets a descendant paint outside it, so it has no outer overflow to clear
-  // there. Its own clip let an unscrolled layout box below a scroll viewport
-  // clear the clean later sibling that owns that row (ag-code 19383).
+  // Start from the clip this node's children painted under, this frame's and
+  // last frame's united (overflowClearClip), not the clip the node itself
+  // paints under. The clear erases cells a descendant painted last frame, so
+  // it stays inside the clip that bounded that paint: a hidden node's content
+  // rect, a scroll node's viewport rows. A scroll node clips vertically only,
+  // so its descendants still paint, and are cleared, past its left and right
+  // edges. The node's own clip let an unscrolled layout box below a scroll
+  // viewport clear the clean later sibling that owns that row (ag-code 19383);
+  // this frame's clip alone keeps last frame's rows when the viewport shrank
+  // (26846).
   _clearDescendantOverflow(
     node.children,
     buffer,

@@ -1023,6 +1023,110 @@ describe("regression: a scroll container's own clip bounds its descendant-overfl
 })
 
 /**
+ * @failure A hidden or scroll box whose rows overflow it clears a retreating row below itself over the clean status bar there.
+ * @invariant The clearing node's own child clip bounds its descendant-overflow clear, whichever overflow clips.
+ * @level l2
+ * @consumer any overflow="hidden" or scroll box above a later filled sibling (26846, the clear's entry); public Box users.
+ * @testonly none
+ */
+describe("regression: a hidden or scroll clearing node's own clip bounds its descendant-overflow clear (26846, the entry)", () => {
+  // A 3-row box that clips holds 40 plain one-row boxes, so rows 3..39 are
+  // laid out below it; its next sibling, a clean status bar with its own
+  // fill, owns row 3. Row 3's Text shortens from 25 to 11 columns. The box
+  // flags the descendant overflow and clears the Text's retreat below itself,
+  // on row 3, where its own clip kept the Text from painting. Only the box's
+  // own child clip keeps that clear off the status bar, for hidden and scroll
+  // alike.
+  function ClippedRows({
+    len,
+    overflow,
+  }: {
+    len: number
+    overflow: "hidden" | "scroll"
+  }): React.ReactElement {
+    return (
+      <Box width={COLS} height={ROWS} flexDirection="column">
+        <Box width={30} height={3} flexShrink={0} overflow={overflow} flexDirection="column">
+          {Array.from({ length: 40 }, (_, i) => (
+            <Box key={i} height={1} flexShrink={0}>
+              <Text>{`row${i} ` + "y".repeat(i === 3 ? len : 20)}</Text>
+            </Box>
+          ))}
+        </Box>
+        <Box height={1} flexShrink={0} backgroundColor="#0000ff">
+          <Text>{"  status bar"}</Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  for (const overflow of ["hidden", "scroll"] as const) {
+    test(`a shortening row laid out on the status row keeps the status bar (${overflow} clearing node)`, () => {
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+      const app = render(<ClippedRows len={20} overflow={overflow} />)
+      try {
+        expect(bufferToText(app.term.buffer).split("\n")[3]?.trimEnd()).toBe("  status bar")
+        app.rerender(<ClippedRows len={6} overflow={overflow} />)
+        expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+        expect(app.term.buffer.getCell(0, 3).bg).toEqual({ r: 0, g: 0, b: 255 })
+      } finally {
+        app.unmount()
+      }
+    })
+  }
+})
+
+/**
+ * @failure A scroll container that shrinks and clears a moved row's overflow under its new viewport leaves that row's cells past its left edge.
+ * @invariant A clearing node's own descendant-overflow clear covers the rows its children painted last frame, under last frame's clip.
+ * @level l2
+ * @consumer any scroll container over rows with a negative margin (26846, the clear's entry); public scroll users.
+ * @testonly none
+ */
+describe("regression: a shrinking scroll container clears its own last-frame rows (26846, the entry)", () => {
+  // A 6-column left box 5 rows tall, then a 26-column scroll container that
+  // goes from 8 rows to 6 while its row 7 moves from marginLeft -5 to 0. A
+  // scroll container clips vertically only, so last frame row 7 painted
+  // columns 1..5, left of the container and below the left box. The container
+  // flags that row's overflow itself and clears it; only last frame's
+  // viewport, which still held row 7, reaches those cells.
+  function ShiftedRowViewport({ height, ml }: { height: number; ml: number }): React.ReactElement {
+    return (
+      <Box width={COLS} height={24} flexDirection="column">
+        <Box height={10} flexShrink={0} flexDirection="row">
+          <Box width={6} height={5} flexShrink={0}>
+            <Text>LEFT</Text>
+          </Box>
+          <Box width={26} height={height} flexShrink={0} flexDirection="column" overflow="scroll">
+            {Array.from({ length: 40 }, (_, i) => (
+              <Box key={i} height={1} flexShrink={0} marginLeft={i === 7 && ml ? ml : undefined}>
+                <Text>{`row${i} xxxx`}</Text>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+        <Box height={1} flexShrink={0} backgroundColor="#0000ff">
+          <Text>{"  status bar"}</Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  test("a viewport shrinking 8 to 6 rows under a row moving back from marginLeft -5 leaves none of it", () => {
+    const render = createRenderer({ cols: COLS, rows: 24 })
+    const app = render(<ShiftedRowViewport height={8} ml={-5} />)
+    try {
+      expect(bufferToText(app.term.buffer).split("\n")[7]?.slice(1, 5)).toBe("row7")
+      app.rerender(<ShiftedRowViewport height={6} ml={0} />)
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+      expect(bufferToText(app.term.buffer).split("\n")[7]?.trimEnd()).toBe("")
+    } finally {
+      app.unmount()
+    }
+  })
+})
+
+/**
  * @failure A scroll container that shrinks out of a non-clipping wrapper leaves last frame's rows below its new viewport.
  * @invariant A descendant-overflow clear covers the cells its descendant painted last frame, under last frame's clip.
  * @level l2
