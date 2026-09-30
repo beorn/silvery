@@ -397,7 +397,7 @@ export function renderScrollIndicators(
   layout: Rect,
   props: BoxProps,
   ss: NonNullable<AgNode["scrollState"]>,
-  nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds" | "inheritedBg">,
+  nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds" | "inheritedBg" | "inheritedFg">,
   ctx?: PipelineContext,
 ): void {
   // Use the already-threaded inherited background (O(1), built with colorLevel).
@@ -407,11 +407,16 @@ export function renderScrollIndicators(
     ? (parseColor(rawBg, ctx?.colorLevel) ?? null)
     : nodeState.inheritedBg.color
 
-  // Compute a contrasting foreground using the WCAG primitive from @silvery/color.
-  // colorToHex converts the parsed Color to a hex string for contrastFg.
+  // On a resolved bg, pick the contrasting fg with the WCAG primitive from
+  // @silvery/color (colorToHex converts the parsed Color for contrastFg).
+  // With no bg anywhere (null, or the `$default` sentinel) only the terminal
+  // knows the bg it paints, so take the inherited fg the item text uses: null,
+  // the terminal default fg, which is legible on the terminal default bg under
+  // every theme, unless an ancestor sets `color` or a theme. A fixed bright
+  // white (15) vanished on a light terminal.
   const bgHex = bg !== null ? colorToHex(bg) : null
-  const fgHex = bgHex !== null ? contrastFg(bgHex) : null
-  const fg: Color = fgHex !== null ? parseColor(fgHex) : 15 // 15 = bright white fallback
+  const fg: Color =
+    bgHex !== null ? parseColor(contrastFg(bgHex), ctx?.colorLevel) : nodeState.inheritedFg
 
   const indicatorStyle: Style = {
     fg,
