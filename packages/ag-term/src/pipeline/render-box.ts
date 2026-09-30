@@ -16,6 +16,8 @@ import { createFrameSink, type RenderSink } from "./render-sink"
 import { overflowIndicatorPlacement, type OverflowIndicatorPlacement } from "./overflow-indicator"
 import type { NodeRenderState, PipelineContext } from "./types"
 import type { ActiveColorLevel } from "./state"
+import { contrastFg } from "@silvery/color"
+import { colorToHex } from "./backdrop/color"
 
 /**
  * Get the effective background color string for a Box.
@@ -395,13 +397,25 @@ export function renderScrollIndicators(
   layout: Rect,
   props: BoxProps,
   ss: NonNullable<AgNode["scrollState"]>,
-  nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds">,
+  nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds" | "inheritedBg">,
   ctx?: PipelineContext,
 ): void {
-  // Inverse bar style: white text on dark background
+  // Use the already-threaded inherited background (O(1), built with colorLevel).
+  // Fall back to the own backgroundColor/theme if the node itself sets one.
+  const rawBg = getEffectiveBg(props)
+  const bg: Color = rawBg
+    ? (parseColor(rawBg, ctx?.colorLevel) ?? null)
+    : nodeState.inheritedBg.color
+
+  // Compute a contrasting foreground using the WCAG primitive from @silvery/color.
+  // colorToHex converts the parsed Color to a hex string for contrastFg.
+  const bgHex = bg !== null ? colorToHex(bg) : null
+  const fgHex = bgHex !== null ? contrastFg(bgHex) : null
+  const fg: Color = fgHex !== null ? parseColor(fgHex) : 15 // 15 = bright white fallback
+
   const indicatorStyle: Style = {
-    fg: 15, // Bright white
-    bg: 8, // Dark gray
+    fg,
+    bg,
     attrs: {},
   }
   const { scrollOffset, clipBounds } = nodeState
@@ -440,14 +454,14 @@ function renderOverflowIndicator(
   // Clear the whole indicator row first. The viewport window can replace an
   // item row with an overflow-indicator row after scrolling; without explicit
   // clears, incremental output leaves stale item glyphs around the centered
-  // token. Keep the clears unstyled so fresh and incremental buffers agree on
-  // the surrounding blank cells.
+  // token. Keep the clears matching the container background so fresh and
+  // incremental buffers agree on the surrounding blank cells.
   renderTextLine(
     buffer,
     left,
     y,
     " ".repeat(right - left),
-    { fg: null, bg: null, attrs: {} },
+    { fg: null, bg: style.bg, attrs: {} },
     right,
     undefined,
     ctx,

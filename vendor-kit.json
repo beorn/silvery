@@ -1,12 +1,19 @@
 {
-  "modules": ["release", "verify", "format-check", "oxfmt", "links"],
+  "modules": [
+    "release",
+    "verify",
+    "format-check",
+    "oxfmt",
+    "links",
+    "source-siblings",
+    "publish-shebang"
+  ],
   "vars": {
     "testCommand": "bun run test",
     "bunVersion": "1.3.11",
     "linksCronMinute": "20"
   },
   "overrides": {
-    "release": "multi-package build:all + verdaccio verify-publishable gate before publish \u2014 generic single-publish template doesn't apply",
     "verify": "verdaccio-registry pack+install+import gate (legacy npm-install variant hit ETARGET on unpublished @silvery/* deps during release windows)",
     "format-check": "gate runs `bun run fix` = oxlint --fix + oxfmt \u2014 asserts MORE than the oxfmt-only template; do not weaken",
     "oxfmt": "minimal config (semi only) predates canonical; mass reflow deferred \u2014 highest-churn vendor repo, would conflict with in-flight branches"

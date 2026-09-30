@@ -90,9 +90,9 @@
     }
   },
   "scripts": {
-    "build": "tsdown && bun build ./bin/silvery.ts --target=node --outfile ./dist/bin/silvery.js && node scripts/set-published-bin-shebang.mjs",
+    "build": "tsdown && bun build ./bin/silvery.ts --target=node --outfile ./dist/bin/silvery.js && bun scripts/publish-shebang.ts",
     "prepack": "bun run build",
-    "build:all": "tsdown && tsdown -W -F '@silvery/ag' -F '@silvery/ag-react' -F '@silvery/ag-term' -F '@silvery/ansi' -F '@silvery/color' -F '@silvery/command' -F '@silvery/commander' -F '@silvery/commands' -F '@silvery/config' -F '@silvery/create' -F '@silvery/headless' -F '@silvery/ink' -F '@silvery/scope' -F '@silvery/selection' -F '@silvery/signals' -F '@silvery/syntax' -F '@silvery/theme'",
+    "build:all": "bun run build && tsdown -W -F '@silvery/ag' -F '@silvery/ag-react' -F '@silvery/ag-term' -F '@silvery/ansi' -F '@silvery/color' -F '@silvery/command' -F '@silvery/commander' -F '@silvery/commands' -F '@silvery/config' -F '@silvery/create' -F '@silvery/headless' -F '@silvery/ink' -F '@silvery/scope' -F '@silvery/selection' -F '@silvery/signals' -F '@silvery/syntax' -F '@silvery/theme'",
     "test": "NODE_ENV=test BUN_RUNTIME_TRANSPILER_CACHE_PATH=\"${HOME}/.cache/silvercode/bun-transpiler-silvery-test\" bunx --bun vitest run",
     "test:fast": "NODE_ENV=test BUN_RUNTIME_TRANSPILER_CACHE_PATH=\"${HOME}/.cache/silvercode/bun-transpiler-silvery-test\" bunx --bun vitest run --reporter=dot",
     "typecheck": "tsc --noEmit",
@@ -113,7 +113,7 @@
     "compat": "bun packages/ink/scripts/compat-check.ts",
     "compat:ink": "bun packages/ink/scripts/compat-check.ts ink",
     "compat:chalk": "bun packages/ink/scripts/compat-check.ts chalk",
-    "verify-publishable": "bun scripts/verify-publishable.ts",
+    "verify-publishable": "verify-publishable",
     "bench": "cd benchmarks && bun run bench",
     "bench:compare": "cd benchmarks && bun run bench:compare"
   },
@@ -163,6 +163,7 @@
     "silvery": "link:.",
     "tsdown": "0.22.13",
     "typescript": "^5.5.0",
+    "verify-publishable": "github:beorn/verify-publishable#f634aef30d11ab0a7610ed5e82dc92bebdaab601",
     "vimonkey": "^0.2.0",
     "vite-plus": "^0.1.16",
     "vitepress": "^1.5.0",
@@ -229,6 +230,21 @@
   },
   "patchedDependencies": {
     "slice-ansi@9.0.1": "patches/slice-ansi@9.0.1.patch"
+  },
+  "verifyPublishable": {
+    "build": "bun run build:all",
+    "public": [
+      "silvery",
+      "@silvery/ansi",
+      "@silvery/color",
+      "@silvery/command",
+      "@silvery/commander",
+      "@silvery/config",
+      "@silvery/scope",
+      "@silvery/selection",
+      "@silvery/signals",
+      "@silvery/syntax"
+    ]
   },
   "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2."
 }

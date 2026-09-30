@@ -26,6 +26,8 @@ export default defineConfig({
       // false-fail against the current source (SR-7, deletion-wave 21453).
       "**/.claude/**",
       "**/.worktrees/**",
+      // Source siblings are dependency inputs, not part of Silvery's suite.
+      "**/.ci-siblings/**",
       // Playwright-driven — run via `bun run test:showcase`, not vitest.
       "tests/web/**",
       "tests/site-smoke.test.ts",

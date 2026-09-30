@@ -26,31 +26,9 @@ import {
 // Internal — tests reach in directly so the public barrel can stay
 // minimal. See km-silvery.backdrop-hardening.slim-barrel.
 import { forEachBackdropCell } from "@silvery/ag-term/pipeline/backdrop/region"
-import type { AgNode, Rect } from "@silvery/ag/types"
+import type { Rect } from "@silvery/ag/types"
+import { fakeNode } from "../../packages/ag/tests/support/fake-node"
 import { createBuffer } from "@silvery/ag-term/buffer"
-
-function fakeNode(
-  props: Record<string, unknown>,
-  rect: Rect | null = null,
-  children: AgNode[] = [],
-): AgNode {
-  return {
-    type: "silvery-box",
-    props,
-    children,
-    parent: null,
-    layoutNode: null,
-    prevLayout: null,
-    boxRect: rect,
-    scrollRect: null,
-    prevScrollRect: null,
-    screenRect: null,
-    prevScreenRect: null,
-    layoutChangedThisFrame: 0,
-    dirtyBits: 0,
-    dirtyEpoch: 0,
-  } as unknown as AgNode
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. multi-exclude — region.ts: outside(A) ∪ outside(B) ≠ outside(A ∪ B).

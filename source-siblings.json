@@ -1,0 +1,10 @@
+{
+  "schema": "vendor-kit/source-siblings/v1",
+  "siblings": [
+    {
+      "name": "flexily",
+      "repository": "beorn/flexily",
+      "commit": "43dc2c5d8afd49defe9be49f7f8c337170530298"
+    }
+  ]
+}

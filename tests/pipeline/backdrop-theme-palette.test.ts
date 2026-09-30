@@ -48,7 +48,8 @@ import { applyBackdrop } from "@silvery/ag-term/pipeline/backdrop"
 import { colorToHex } from "@silvery/ag-term/pipeline/backdrop/color"
 import { ansi256ToRgb, createBuffer } from "@silvery/ag-term/buffer"
 import type { RGB } from "@silvery/ag/text-frame"
-import type { AgNode, Rect } from "@silvery/ag/types"
+import type { Rect } from "@silvery/ag/types"
+import { fakeNode } from "../../packages/ag/tests/support/fake-node"
 
 // =============================================================================
 // Theme ANSI-16 palette (Tokyo Night). Index order matches `theme.palette` and
@@ -133,30 +134,6 @@ describe("colorToHex — theme-aware ANSI palette resolution (@km 19764)", () =>
 // =============================================================================
 // Layer 2 — realistic-scale STRICT-path integration via applyBackdrop
 // =============================================================================
-
-/** Minimal AgNode factory — matches `backdrop-scene-polarity.test.ts`. */
-function fakeNode(
-  props: Record<string, unknown>,
-  rect: Rect | null = null,
-  children: AgNode[] = [],
-): AgNode {
-  return {
-    type: "silvery-box",
-    props,
-    children,
-    parent: null,
-    layoutNode: null,
-    prevLayout: null,
-    boxRect: rect,
-    scrollRect: null,
-    prevScrollRect: null,
-    screenRect: null,
-    prevScreenRect: null,
-    layoutChangedThisFrame: 0,
-    dirtyBits: 0,
-    dirtyEpoch: 0,
-  } as unknown as AgNode
-}
 
 const COLS = 120
 const ROWS = 40

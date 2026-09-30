@@ -5,7 +5,7 @@ Silvery uses two GitHub Actions workflows for releases:
 - `verify.yml` — runs on every push to `main` and every PR. Pre-publish gate.
 - `release.yml` — runs on tag push (`v*`). Publishes to npm + GitHub Release.
 
-Both share the same engine: `scripts/verify-publishable.ts`.
+Both run the `verify-publishable` revision pinned in `package.json` and `bun.lock`.
 
 ## Pre-publish gate (verify-publishable)
 
@@ -15,7 +15,7 @@ Pre-publish bugs are expensive — once a broken `silvery@0.19.X` reaches the np
 2. **Empty tarball / missing dist** — `tsdown` crashed silently or ran from the wrong cwd; the package ships without its build output.
 3. **EPRIVATE on accidentally-listed public package** — a package that is supposed to publish (e.g. `@silvery/color`) still has `private: true` in `package.json`. `npm publish` would refuse, halting the release midway.
 
-The gate works by spinning up a local [verdaccio](https://verdaccio.org/) (npm-compatible registry), publishing **every** workspace package to it, then `npm install`ing each public package into a fresh tmpdir and running `import('@silvery/<pkg>')`. If the import returns named exports, the package is publishable.
+The gate builds all workspaces, packs their exact tarballs, checks packed manifest targets, Publint and ATTW, then publishes them to an isolated local registry. It installs each of the ten public packages into a fresh Node 24 consumer and probes their imports and bins. The `verifyPublishable.public` list in `package.json` asserts the release set.
 
 The legacy verify workflow ran `npm install <packed-tarball.tgz>` directly, which always failed during release windows because the tarball's transitive deps reference `@silvery/<dep>@<thisversion>` that wasn't on the public registry yet (chicken-and-egg). Verdaccio breaks the loop by hosting every cross-dep itself.
 
@@ -25,32 +25,37 @@ The legacy verify workflow ran `npm install <packed-tarball.tgz>` directly, whic
 bun run verify-publishable
 ```
 
-Equivalent to `bun scripts/verify-publishable.ts`. Builds first, then publishes to a verdaccio instance on `127.0.0.1:4873`, then runs the import probes.
+This runs the pinned local binary. It builds first, then runs the local registry and fresh-consumer checks.
 
 Useful flags:
 
-- `--no-build` — skip `bun run build:all` (use existing `dist/`).
-- `--keep` — leave verdaccio + tmpdirs alive for inspection.
-- `VERDACCIO_PORT=4874 bun run verify-publishable` — use a different port.
-- `VERDACCIO_DEBUG=1 bun run verify-publishable` — stream verdaccio logs.
+- `--no-build` — use artifacts already built from this checkout.
+- `--keep` — retain the verifier's scratch directory for inspection.
+- `--output-dir <empty-dir>` — retain verified tarballs and their SHA-512 digests for a publisher.
 
 The gate normally takes 1-2 minutes (build dominates; the verdaccio cycle is ~30s).
 
 ## What gets probed
 
-The script holds an authoritative list of packages with an `expectPublic` flag — the same packages release.yml ships to npm. Currently:
+The package manifest asserts these public names:
 
-- `@silvery/color`
 - `@silvery/ansi`
+- `@silvery/color`
+- `@silvery/command`
 - `@silvery/commander`
+- `@silvery/config`
+- `@silvery/scope`
+- `@silvery/selection`
+- `@silvery/signals`
+- `@silvery/syntax`
 - `silvery` (root barrel)
 
-Internal packages (`@silvery/ag`, `@silvery/ag-react`, `@silvery/ag-term`, etc.) are sandbox-published to verdaccio so cross-deps resolve, but are not import-probed — they are bundled into `silvery`'s `dist/` and not consumed directly. To add a new public package, set `expectPublic: true` in `scripts/verify-publishable.ts`.
+Private workspaces are published only to the isolated registry so internal dependencies resolve. They are not consumer-probed. To add a public package, update `verifyPublishable.public` and the release workflow in the same change.
 
 ## Adding a public package
 
 1. Create the package under `packages/<name>/` with `tsdown` build + `publishConfig.exports`.
-2. Add `{ dir: "packages/<name>", name: "@silvery/<name>", expectPublic: true }` to `PACKAGES` in `scripts/verify-publishable.ts`.
+2. Add its exact npm name to `verifyPublishable.public` in the root `package.json`.
 3. Add a publish step to `release.yml` in the right dependency-order layer.
 4. Run `bun run verify-publishable` locally to confirm the gate is happy.
 

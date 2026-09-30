@@ -34,16 +34,10 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: ./.github/actions/source-siblings
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-
-      - name: Install dependencies
-        run: |
-          for attempt in 1 2 3; do
-            bun install && exit 0
-            sleep $((attempt * 10))
-          done
-          bun install
 
       - name: Build examples
         run: bun run examples/web/build.ts

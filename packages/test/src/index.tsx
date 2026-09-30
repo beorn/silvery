@@ -179,7 +179,6 @@ import {
 } from "@silvery/ag-term/strict-terminal-backends"
 import { warnOnce } from "@silvery/ansi"
 import { micros, type OutputEvent } from "@termless/core/io"
-import { createGhosttyNativeBackend } from "@termless/ghostty-native"
 // ┌─ WHY xterm.js IS STILL HERE, for anyone sweeping xterm references ────────────┐
 // │ createTermless("xterm") reaches @termless/xtermjs through ag-term's loader    │
 // │ (strict-terminal-backends.ts, `createTermlessBackend("xterm")`), preloaded   │
@@ -192,14 +191,46 @@ import { createGhosttyNativeBackend } from "@termless/ghostty-native"
 // │ are load-bearing, for different reasons. @pm/22783 Track 2, class 2.          │
 // └──────────────────────────────────────────────────────────────────────────────┘
 
-// Preload the @termless emulator backends into ag-term's loader cache: it is the
+function missingOptionalPeer(error: unknown, name: string): boolean {
+  if (
+    error === null ||
+    typeof error !== "object" ||
+    !("code" in error) ||
+    error.code !== "ERR_MODULE_NOT_FOUND"
+  ) {
+    return false
+  }
+  const message = error instanceof Error ? error.message : String(error)
+  return (
+    message.includes(`Cannot find package '${name}'`) ||
+    message.includes(`Cannot find module '${name}'`)
+  )
+}
+
+let nativeBackend: typeof import("@termless/ghostty-native").createGhosttyNativeBackend | undefined
+try {
+  nativeBackend = (await import("@termless/ghostty-native")).createGhosttyNativeBackend
+} catch (error) {
+  if (!missingOptionalPeer(error, "@termless/ghostty-native")) throw error
+}
+
+// Preload the available @termless emulator backends into ag-term's loader cache: it is the
 // one place that names a backend factory (unterm A2), and the SYNCHRONOUS
 // SILVERY_STRICT_TERMINAL / cursor verifiers (output-verify.ts,
 // cursor-diagnostics.ts) resolve them mid-frame WITHOUT createRequire — the
 // 2026-07-02 Ghostty-WASM singleton-split fix. Ghostty WASM init stays deferred
 // to each ghostty test's own `await initGhostty()` (initGhosttyWasm: false) so
 // non-ghostty suites don't pay the WASM load.
-await preloadStrictTerminalBackends({ ghostty: true, initGhosttyWasm: false })
+try {
+  await preloadStrictTerminalBackends({ ghostty: true, initGhosttyWasm: false })
+} catch (error) {
+  if (
+    !missingOptionalPeer(error, "@termless/xtermjs") &&
+    !missingOptionalPeer(error, "@termless/ghostty")
+  ) {
+    throw error
+  }
+}
 
 /**
  * Live-termless tracker. Each `createTermless()` registers a WeakRef to the
@@ -776,7 +807,12 @@ export function createTermless(
   if (choice === "ghostty") {
     backend = createTermlessBackend("ghostty")
   } else if (choice === "ghostty-native") {
-    backend = createGhosttyNativeBackend()
+    if (nativeBackend === undefined) {
+      throw new Error(
+        '[silvery/test] createTermless("ghostty-native") requires the optional @termless/ghostty-native peer',
+      )
+    }
+    backend = nativeBackend()
   } else if (choice === "xterm") {
     backend = createTermlessBackend("xterm")
   } else {

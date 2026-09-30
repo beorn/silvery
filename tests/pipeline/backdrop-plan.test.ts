@@ -8,37 +8,9 @@
  * covered by `tests/features/backdrop-fade.test.tsx`.
  */
 import { describe, test, expect } from "vitest"
-import type { AgNode, Rect } from "@silvery/ag/types"
+import type { Rect } from "@silvery/ag/types"
+import { fakeNode } from "../../packages/ag/tests/support/fake-node"
 import { buildPlan } from "@silvery/ag-term/pipeline/backdrop"
-
-/**
- * Minimal AgNode factory for plan tests — `collectBackdropMarkers` only
- * reads `props`, `children`, and `screenRect ?? scrollRect ?? boxRect`.
- * The other AgNode fields are unused and set to null to keep the test
- * fixtures readable.
- */
-function fakeNode(
-  props: Record<string, unknown>,
-  rect: Rect | null = null,
-  children: AgNode[] = [],
-): AgNode {
-  return {
-    type: "silvery-box",
-    props,
-    children,
-    parent: null,
-    layoutNode: null,
-    prevLayout: null,
-    boxRect: rect,
-    scrollRect: null,
-    prevScrollRect: null,
-    screenRect: null,
-    prevScreenRect: null,
-    layoutChangedThisFrame: 0,
-    dirtyBits: 0,
-    dirtyEpoch: 0,
-  } as unknown as AgNode
-}
 
 const RECT: Rect = { x: 0, y: 0, width: 10, height: 4 }
 

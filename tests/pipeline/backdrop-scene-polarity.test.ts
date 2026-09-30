@@ -33,31 +33,8 @@
 import { describe, expect, test } from "vitest"
 import { applyBackdrop } from "@silvery/ag-term/pipeline/backdrop"
 import { createBuffer } from "@silvery/ag-term/buffer"
-import type { AgNode, Rect } from "@silvery/ag/types"
-
-/** Minimal AgNode factory — matches `backdrop-hardening.test.ts`. */
-function fakeNode(
-  props: Record<string, unknown>,
-  rect: Rect | null = null,
-  children: AgNode[] = [],
-): AgNode {
-  return {
-    type: "silvery-box",
-    props,
-    children,
-    parent: null,
-    layoutNode: null,
-    prevLayout: null,
-    boxRect: rect,
-    scrollRect: null,
-    prevScrollRect: null,
-    screenRect: null,
-    prevScreenRect: null,
-    layoutChangedThisFrame: 0,
-    dirtyBits: 0,
-    dirtyEpoch: 0,
-  } as unknown as AgNode
-}
+import type { Rect } from "@silvery/ag/types"
+import { fakeNode } from "../../packages/ag/tests/support/fake-node"
 
 const COLS = 120
 const ROWS = 40

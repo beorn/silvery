@@ -158,4 +158,78 @@ describe("overflowIndicatorPlacement", () => {
       }
     }
   })
+
+  test("overflow indicator cells take container background color (or theme background) instead of 8", () => {
+    const rows = (prefix: string) =>
+      Array.from({ length: 60 }, (_, i) => <Text key={i}>{`${prefix}-${i}`}</Text>)
+    const render = createRenderer({ cols: 60, rows: 16 })
+    const app = render(
+      <Box flexDirection="row" width={60} height={16}>
+        <Box
+          testID="bg-color"
+          flexDirection="column"
+          width={30}
+          height={14}
+          overflow="scroll"
+          scrollTo={30}
+          overflowIndicator
+          backgroundColor="#123456"
+          paddingX={2}
+          paddingY={1}
+        >
+          {rows("bg")}
+        </Box>
+        <Box
+          testID="theme-bg"
+          flexDirection="column"
+          width={30}
+          height={14}
+          overflow="scroll"
+          scrollTo={30}
+          overflowIndicator
+          theme={{ bg: "#223344", fg: "#ffffff", "bg-surface-default": "#223344" } as any}
+          paddingX={2}
+          paddingY={1}
+        >
+          {rows("th")}
+        </Box>
+      </Box>,
+    )
+
+    const cases = [
+      { id: "bg-color", expectedBg: { r: 0x12, g: 0x34, b: 0x56 } },
+      { id: "theme-bg", expectedBg: { r: 0x22, g: 0x33, b: 0x44 } },
+    ]
+
+    for (const { id, expectedBg } of cases) {
+      const node = app.getByTestId(id).first().resolve()!
+      const ss = node.scrollState!
+      for (const [edge, hidden] of [
+        ["top", ss.hiddenAbove],
+        ["bottom", ss.hiddenBelow],
+      ] as const) {
+        const p = overflowIndicatorPlacement({
+          edge,
+          hidden,
+          layout: node.boxRect!,
+          props: node.props as BoxProps,
+        })!
+        expect(p, `${id} ${edge}: placement`).toBeDefined()
+
+        // Glyphs take container background color instead of lighter strip (bg !== 8)
+        for (let k = 0; k < p.width; k++) {
+          const cell = app.cell(p.x + k, p.y)
+          expect(cell.bg, `${id} ${edge}: glyph cell bg at ${p.x + k},${p.y}`).toEqual(expectedBg)
+          expect(cell.bg).not.toBe(8)
+        }
+
+        // Entire cleared row keeps container background color
+        expect(app.cell(p.rowX, p.y).bg, `${id} ${edge}: row start bg`).toEqual(expectedBg)
+        expect(app.cell(p.x - 1, p.y).bg, `${id} ${edge}: left of glyph bg`).toEqual(expectedBg)
+        expect(app.cell(p.x + p.width, p.y).bg, `${id} ${edge}: right of glyph bg`).toEqual(
+          expectedBg,
+        )
+      }
+    }
+  })
 })
