@@ -1,4 +1,4 @@
-# vendor-kit: source-siblings@fbee33eb955e — generated; edit km/packages/km-infra/vendor-kit/templates/source-siblings-action.yml in km, then re-sync
+# vendor-kit: source-siblings@cbda4f4fba02 — generated; edit km/packages/km-infra/vendor-kit/templates/source-siblings-action.yml in km, then re-sync
 name: Install named source siblings
 description: Test against public sibling commits without requiring a new npm release
 
@@ -82,8 +82,26 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        bun install
-        cp .ci-siblings/package.original.json package.json
-        cp .ci-siblings/bun.lock.original bun.lock
-        cmp package.json .ci-siblings/package.original.json
-        cmp bun.lock .ci-siblings/bun.lock.original
+        for attempt in 1 2 3; do
+          cp .ci-siblings/bun.lock.original bun.lock
+          if bun install; then
+            cp .ci-siblings/package.original.json package.json
+            cp .ci-siblings/bun.lock.original bun.lock
+            cmp package.json .ci-siblings/package.original.json || {
+              echo 'source-siblings: restored package.json differs from original' >&2
+              exit 1
+            }
+            cmp bun.lock .ci-siblings/bun.lock.original || {
+              echo 'source-siblings: restored bun.lock differs from original' >&2
+              exit 1
+            }
+            exit 0
+          else
+            status=$?
+            echo "source-siblings: bun install attempt ${attempt}/3 failed (exit ${status})" >&2
+            if [ "$attempt" -eq 3 ]; then
+              exit "$status"
+            fi
+            sleep $((attempt * 2))
+          fi
+        done
