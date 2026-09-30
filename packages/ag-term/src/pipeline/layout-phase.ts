@@ -1485,6 +1485,8 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
   // Track previous visible range for incremental rendering
   const prevFirstVisible = node.scrollState?.firstVisibleChild ?? firstVisible
   const prevLastVisible = node.scrollState?.lastVisibleChild ?? lastVisible
+  const prevHiddenAbove = node.scrollState?.hiddenAbove ?? hiddenAbove
+  const prevHiddenBelow = node.scrollState?.hiddenBelow ?? hiddenBelow
 
   // Mark node dirty if scroll offset or visible range changed (for incremental rendering)
   // Without this, renderPhase would skip the container and children would
@@ -1513,6 +1515,8 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
     prevLastVisibleChild: prevLastVisible,
     hiddenAbove,
     hiddenBelow,
+    prevHiddenAbove,
+    prevHiddenBelow,
     stickyChildren: stickyChildren.length > 0 ? stickyChildren : undefined,
   }
 }

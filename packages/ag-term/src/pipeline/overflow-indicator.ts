@@ -1,6 +1,6 @@
 /** Shared overflow-indicator placement for the painter and ListView hit tests. */
 
-import type { BoxProps, Rect } from "@silvery/ag/types"
+import type { AgNode, BoxProps, Rect } from "@silvery/ag/types"
 import { getBorderSize, getPadding } from "./helpers"
 
 /** The viewport edge an overflow indicator sits on: `▲N` top, `▼N` bottom. */
@@ -82,7 +82,7 @@ export function overflowIndicatorPlacement(
   if (!(hidden > 0)) return undefined
 
   const border = getBorderSize(props)
-  const onBorderLine = edge === "top" ? border.top > 0 : border.bottom > 0
+  const onBorderLine = isBorderLineEdge(edge, props)
 
   let rowX: number
   let rowWidth: number
@@ -105,4 +105,31 @@ export function overflowIndicatorPlacement(
   const text = glyph.length > rowWidth ? glyph.slice(0, rowWidth) : glyph
   const x = rowX + Math.max(0, Math.floor((rowWidth - text.length) / 2))
   return { y, x, width: text.length, text, rowX, rowWidth }
+}
+
+/** Whether `edge`'s indicator goes on the container's border line: that side has one. */
+function isBorderLineEdge(edge: OverflowIndicatorEdge, props: BoxProps): boolean {
+  const border = getBorderSize(props)
+  return edge === "top" ? border.top > 0 : border.bottom > 0
+}
+
+/**
+ * Whether an overflow indicator drawn on one of the container's border lines
+ * last frame is gone this frame, because nothing is hidden past that edge any
+ * more. Drawing it blanked the line between the corners. The indicator painter
+ * draws nothing once nothing is hidden, so only the container's own border
+ * paint puts the line back. A frame where only its children changed skips that
+ * paint unless the render phase asks for it with this.
+ */
+export function borderLineIndicatorRetired(
+  props: BoxProps,
+  ss: Pick<
+    NonNullable<AgNode["scrollState"]>,
+    "hiddenAbove" | "hiddenBelow" | "prevHiddenAbove" | "prevHiddenBelow"
+  >,
+): boolean {
+  return (
+    (ss.prevHiddenAbove > 0 && !(ss.hiddenAbove > 0) && isBorderLineEdge("top", props)) ||
+    (ss.prevHiddenBelow > 0 && !(ss.hiddenBelow > 0) && isBorderLineEdge("bottom", props))
+  )
 }

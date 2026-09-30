@@ -1447,6 +1447,13 @@ export interface AgNode {
     hiddenAbove: number
     /** Count of items hidden below viewport */
     hiddenBelow: number
+    /**
+     * `hiddenAbove` from last render (for incremental rendering): whether last
+     * frame drew a top overflow indicator, so which rows it painted.
+     */
+    prevHiddenAbove: number
+    /** `hiddenBelow` from last render (for incremental rendering), likewise. */
+    prevHiddenBelow: number
     /** Sticky children with their computed render positions */
     stickyChildren?: Array<{
       /** Index of the sticky child */

@@ -187,6 +187,27 @@ export function computeChildClipBounds(
   return result
 }
 
+/**
+ * The rows a scroll container lets its children paint: `viewport` (its
+ * viewport clip, inside the inherited clip) minus the first and last row while
+ * items are hidden past that edge and a borderless overflow indicator reserves
+ * the row. Given this frame's hidden counts it is the child clip; given last
+ * frame's (`scrollState.prevHiddenAbove`/`prevHiddenBelow`) it is the rows the
+ * children painted last frame, which a Tier 1 shift may keep.
+ */
+export function scrollChildClip(
+  viewport: ClipBounds,
+  props: BoxProps,
+  hiddenAbove: number,
+  hiddenBelow: number,
+): ClipBounds {
+  if (props.overflowIndicator !== true || props.borderStyle) return viewport
+  const top = hiddenAbove > 0 ? 1 : 0
+  const bottom = hiddenBelow > 0 ? 1 : 0
+  if (top === 0 && bottom === 0) return viewport
+  return { ...viewport, top: viewport.top + top, bottom: viewport.bottom - bottom }
+}
+
 /** The actual child clip used by both painter and overlap preparation. */
 export function childPaintClip(
   node: AgNode,
@@ -199,18 +220,7 @@ export function childPaintClip(
   if (props.overflow === "scroll" && node.scrollState) {
     const viewport = computeChildClipBounds(layout, props, inherited, 0, false, true)
     const ss = node.scrollState
-    if (
-      props.overflowIndicator === true &&
-      !props.borderStyle &&
-      (ss.hiddenAbove > 0 || ss.hiddenBelow > 0)
-    ) {
-      return {
-        ...viewport,
-        top: viewport.top + (ss.hiddenAbove > 0 ? 1 : 0),
-        bottom: viewport.bottom - (ss.hiddenBelow > 0 ? 1 : 0),
-      }
-    }
-    return viewport
+    return scrollChildClip(viewport, props, ss.hiddenAbove, ss.hiddenBelow)
   }
   const x = (props.overflowX ?? props.overflow) === "hidden"
   const y = (props.overflowY ?? props.overflow) === "hidden"
