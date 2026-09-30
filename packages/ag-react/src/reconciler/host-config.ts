@@ -378,7 +378,9 @@ function notifySyncedPropChanged(
   for (const key of NOTIFY_SYNCED_PROPS) {
     if (!shallow(oldProps[key], newProps[key])) return true
   }
-  return false
+  // A focused Box's focusedNodeId is its id, else its testID
+  // (computeFocusedNodeId), so while it stays focused those are inputs too.
+  return !!newProps.focused && (oldProps.id !== newProps.id || oldProps.testID !== newProps.testID)
 }
 
 /**

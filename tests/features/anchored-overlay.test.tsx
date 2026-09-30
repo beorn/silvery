@@ -475,6 +475,48 @@ describe("AnchoredOverlay", () => {
     handle.unmount()
   })
 
+  // #26660, seen and filed separately: an overlay paints in its host's absolute
+  // pass (renderNormalChildren's third pass in render-phase.ts), so a later
+  // sibling of one of its host's ancestors paints over it. A full-width anchor
+  // leaves no room on either side, the policy shifts the overlay over the rows
+  // below, and the footer painted after it covers them. This row pins today's
+  // behavior and fails until an overlay paints above later rows of the tree.
+  test.fails("an overlay shifted over later rows is painted over by them (paint order)", () => {
+    const render = createRenderer({ cols: 40, rows: 12 })
+
+    const app = render(
+      <Box width={40} height={12} flexDirection="column">
+        <Box height={9} flexDirection="column" justifyContent="flex-end">
+          <Box anchorRef="row" width={40} height={1}>
+            <Text>anchor row</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="row"
+            placement="left-start"
+            size={{ width: 20, height: 4 }}
+            flexDirection="column"
+            id="overlay"
+          >
+            <Text>OVERLAY-LINE-1</Text>
+            <Text>OVERLAY-LINE-2</Text>
+            <Text>OVERLAY-LINE-3</Text>
+            <Text>OVERLAY-LINE-4</Text>
+          </AnchoredOverlay>
+        </Box>
+        <Box flexDirection="column">
+          <Text>FOOTER-1</Text>
+          <Text>FOOTER-2</Text>
+          <Text>FOOTER-3</Text>
+        </Box>
+      </Box>,
+    )
+
+    // Shifted to x 0 at the anchor's row, over the footer's three rows.
+    expect(findById(getRoot(app), "overlay")?.boxRect).toEqual({ x: 0, y: 8, width: 20, height: 4 })
+    // Today the footer's text overwrites the overlay's lines 2 to 4.
+    expect(app.text).toContain("OVERLAY-LINE-4")
+  })
+
   test("removes overlay content when closed", () => {
     const render = createRenderer({ cols: 40, rows: 14 })
 
