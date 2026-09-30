@@ -36,7 +36,7 @@ import { TerminalBuffer } from "../../packages/ag-term/src/buffer"
 import { createSearchState, searchUpdate } from "../../packages/ag-term/src/search-overlay"
 import { applySearchBarToPaintBuffer } from "../../packages/ag-term/src/runtime/renderer"
 import { createBuffer } from "../../packages/ag-term/src/runtime/create-buffer"
-import type { AgNode } from "@silvery/ag/types"
+import { fakeNode } from "../../packages/ag/tests/support/fake-node"
 
 // ============================================================================
 // Helpers — minimal Buffer wrapper for unit-level paint tests
@@ -49,9 +49,8 @@ function makeBuffer(width: number, height: number, fillChar = " ") {
       buf.setCell(x, y, { char: fillChar, fg: null, bg: null })
     }
   }
-  // Fake AgNode — applySearchBarToPaintBuffer doesn't use it
-  const fakeNode = {} as AgNode
-  return createBuffer(buf, fakeNode)
+  // The owner's bare AgNode: applySearchBarToPaintBuffer never reads it
+  return createBuffer(buf, fakeNode({}))
 }
 
 // ============================================================================
