@@ -16,6 +16,8 @@ import { createFrameSink, type RenderSink } from "./render-sink"
 import { overflowIndicatorPlacement, type OverflowIndicatorPlacement } from "./overflow-indicator"
 import type { NodeRenderState, PipelineContext } from "./types"
 import type { ActiveColorLevel } from "./state"
+import { contrastFg } from "@silvery/color"
+import { colorToHex } from "./backdrop/color"
 
 /**
  * Get the effective background color string for a Box.
@@ -375,44 +377,6 @@ export {
 } from "./overflow-indicator"
 
 /**
- * Returns true if the given color string is a hex color (`#rrggbb` or `#rgb`)
- * whose average channel value exceeds 128 — i.e., a "light" color.
- * Returns false for undefined, non-hex strings, or dark hex colors.
- */
-export function isLightColor(color: string | undefined): boolean {
-  if (!color || color[0] !== "#") return false
-  const hex = color.slice(1)
-  let r: number, g: number, b: number
-  if (hex.length === 3) {
-    r = parseInt(hex[0]! + hex[0]!, 16)
-    g = parseInt(hex[1]! + hex[1]!, 16)
-    b = parseInt(hex[2]! + hex[2]!, 16)
-  } else if (hex.length === 6) {
-    r = parseInt(hex.slice(0, 2), 16)
-    g = parseInt(hex.slice(2, 4), 16)
-    b = parseInt(hex.slice(4, 6), 16)
-  } else {
-    return false
-  }
-  return (r + g + b) / 3 > 128
-}
-
-/**
- * Walk the `node.parent` chain to find the first ancestor whose
- * {@link getEffectiveBg} returns a non-undefined value.
- * Returns that bg string, or `undefined` if no ancestor has one.
- */
-export function resolveAncestorBg(node: AgNode | null): string | undefined {
-  let current: AgNode | null = node
-  while (current !== null) {
-    const bg = getEffectiveBg(current.props as BoxProps)
-    if (bg !== undefined) return bg
-    current = current.parent
-  }
-  return undefined
-}
-
-/**
  * Render scroll indicators showing hidden items above/below the viewport:
  * `▲N` for items hidden above, `▼N` for items hidden below, drawn where
  * {@link overflowIndicatorPlacement} puts them: on the border line of a
@@ -428,23 +392,27 @@ export function resolveAncestorBg(node: AgNode | null): string | undefined {
  * owner's clean cells on the fast path while a fresh frame repaints them.
  */
 export function renderScrollIndicators(
-  node: AgNode,
+  _node: AgNode,
   buffer: TerminalBuffer,
   layout: Rect,
   props: BoxProps,
   ss: NonNullable<AgNode["scrollState"]>,
-  nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds">,
+  nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds" | "inheritedBg">,
   ctx?: PipelineContext,
 ): void {
-  // Resolve the effective background: first check the scroll box itself, then
-  // walk the parent chain. This ensures the indicator is visible when the
-  // scroll container inherits its background from an ancestor and has no
-  // explicit backgroundColor of its own.
-  const rawBg = getEffectiveBg(props) ?? resolveAncestorBg(node.parent)
-  const bg = rawBg ? (parseColor(rawBg) ?? null) : null
-  // Choose a foreground that contrasts with the resolved background.
-  // fg 0 (black) on light backgrounds, fg 15 (bright white) otherwise.
-  const fg: number = isLightColor(rawBg) ? 0 : 15
+  // Use the already-threaded inherited background (O(1), built with colorLevel).
+  // Fall back to the own backgroundColor/theme if the node itself sets one.
+  const rawBg = getEffectiveBg(props)
+  const bg: Color = rawBg
+    ? (parseColor(rawBg, ctx?.colorLevel) ?? null)
+    : nodeState.inheritedBg.color
+
+  // Compute a contrasting foreground using the WCAG primitive from @silvery/color.
+  // colorToHex converts the parsed Color to a hex string for contrastFg.
+  const bgHex = bg !== null ? colorToHex(bg) : null
+  const fgHex = bgHex !== null ? contrastFg(bgHex) : null
+  const fg: Color = fgHex !== null ? parseColor(fgHex) : 15 // 15 = bright white fallback
+
   const indicatorStyle: Style = {
     fg,
     bg,
