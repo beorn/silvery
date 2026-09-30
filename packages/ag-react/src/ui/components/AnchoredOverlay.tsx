@@ -1,10 +1,11 @@
-import React, { useLayoutEffect, useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 import type { BoxProps } from "../../components/Box"
 import { Box } from "../../components/Box"
 import { useAgNode } from "../../hooks/useAgNode"
 import { useSignal } from "../../hooks/useSignal"
-import { markObservedLayoutSignal, type DecorationRect } from "@silvery/ag/layout-signals"
+import type { DecorationRect } from "@silvery/ag/layout-signals"
 import type { CollisionStrategy, Decoration, Placement, Rect } from "@silvery/ag/types"
+import { OverlaySizeProbe } from "./OverlaySizeProbe"
 
 export interface AnchoredOverlayProps extends Omit<
   BoxProps,
@@ -197,38 +198,6 @@ function AnchoredOverlayContent({
       {children}
     </Box>
   )
-}
-
-/**
- * Zero-footprint child that measures its enclosing overlay box and reports its
- * size up so the parent can refine its collision footprint (see the
- * `sizing="max"` note above). The footprint is the overlay's BORDER box: the
- * committed boxRect, padding and border included, both axes from that one
- * read. `useBoxSize()` gives the content box, which is short by the padding,
- * so an overlay placed by it runs past the viewport edge. The committed rect
- * advances at the commit boundary, so the read/write pair converges within one
- * event batch and cannot form a layout feedback loop.
- */
-function OverlaySizeProbe({
-  onMeasure,
-}: {
-  onMeasure: (size: { width: number; height: number }) => void
-}): null {
-  const ag = useAgNode()
-  // Observed, as useBoxSize() marks it, so the runtime paints the refined
-  // footprint in the same event (commitLayoutSnapshot reports it promoted).
-  if (ag) markObservedLayoutSignal(ag.node, "boxSize")
-  const committed = useSignal<Rect | null>(ag?.signals.boxRectCommitted ?? null)
-  const width = committed?.width ?? 0
-  const height = committed?.height ?? 0
-  // useLayoutEffect (not useEffect): the synchronous render path
-  // (`flushSyncWork`) commits layout effects but defers passive effects, so a
-  // passive effect would not propagate the measurement into the next sync
-  // re-place — only a layout effect settles deterministically in one frame.
-  useLayoutEffect(() => {
-    if (width > 0 && height > 0) onMeasure({ width, height })
-  }, [width, height, onMeasure])
-  return null
 }
 
 export type { Rect as AnchoredOverlayRect }

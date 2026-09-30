@@ -38,6 +38,7 @@ import { useHover } from "../hooks/useHover"
 import { useKineticScroll } from "../hooks/useKineticScroll"
 import { lastModifierState, useModifierKeys } from "../hooks/useModifierKeys"
 import { useWindowSize } from "../hooks/useWindowSize"
+import { OverlaySizeProbe } from "../ui/components/OverlaySizeProbe"
 
 // -----------------------------------------------------------------------------
 // Types
@@ -396,16 +397,31 @@ function PopoverOverlay({
   // content change is handled by the key prop on the inner Box below.
   const { scrollOffset, onWheel } = useKineticScroll({})
   const { content, anchor } = state
-  if (!content || !anchor) return null
+  // The popover's measured border-box width, for the anchor it was measured
+  // at. A new anchor or a hidden popover discards it, so a fresh popover's
+  // first frame is always placed by its cap (#26660).
+  const anchorKey = anchor ? `${anchor.x},${anchor.y},${content?.anchorOffsetX ?? 0}` : null
+  const [measured, setMeasured] = useState<{ anchorKey: string; width: number } | null>(null)
+  const onMeasure = useCallback(
+    (size: { width: number; height: number }) => {
+      if (anchorKey !== null) setMeasured({ anchorKey, width: size.width })
+    },
+    [anchorKey],
+  )
+  if (!content || !anchor) {
+    if (measured !== null) setMeasured(null)
+    return null
+  }
+  const measuredWidth = measured?.anchorKey === anchorKey ? measured.width : null
 
   // Edge margins: popover must stay at least this far from the viewport
   // edges. 2 cols (left/right) + 1 row (top/bottom) per design convention.
   const EDGE_X = 2
   const EDGE_Y = 1
 
-  // The requested cap, and the narrowest room a popover may wrap into.
-  const cap = content.maxWidth ?? 48
-  const MIN_ROOM = 20
+  // Cap width at the smaller of the requested maxWidth and the viewport
+  // width minus edge margins on both sides.
+  const maxWidth = Math.min(content.maxWidth ?? 48, Math.max(20, columns - EDGE_X * 2))
 
   // Placement heuristic: flip to whichever side has more space. When
   // placing ABOVE, anchor the popover from the viewport BOTTOM (using the
@@ -420,17 +436,15 @@ function PopoverOverlay({
 
   const maxHeight = Math.max(4, placeAbove ? spaceAbove : spaceBelow)
 
-  // Horizontal placement: the popover stays at its anchor and its cap is the
-  // room to the right margin. The box is as wide as its content (#26388), so
-  // sliding it left by the cap would leave narrow content short of, or far
-  // from, its anchor; instead wide content wraps into the room (#26660). Only
-  // when that room is below MIN_ROOM is it placed flush against the right
-  // margin by `right`. Pass `left` OR `right`, never both, as `top`/`bottom`.
-  const left = Math.max(EDGE_X, anchor.x + (content.anchorOffsetX ?? 0))
-  const room = columns - EDGE_X - left
-  const atAnchor = room >= MIN_ROOM
-  const maxWidth = atAnchor ? Math.min(cap, room) : Math.min(cap, Math.max(1, columns - EDGE_X * 2))
-  const horizontal = atAnchor ? { left } : { right: EDGE_X }
+  // Horizontal clamp: prefer anchor.x + offset but enforce both edge margins.
+  // The box is as wide as its content, capped by maxWidth (#26388). Frame 1
+  // slides it left by the cap, so it never crosses the right margin; once its
+  // border box is measured, it slides only as far as its real width needs, so
+  // narrow content settles at its anchor and wide content stays whole (#26660).
+  const footprint = measuredWidth ?? maxWidth
+  let left = anchor.x + (content.anchorOffsetX ?? 0)
+  if (left + footprint > columns - EDGE_X) left = columns - EDGE_X - footprint
+  if (left < EDGE_X) left = EDGE_X
 
   // Positional props — pass `top` OR `bottom`, never both. Below-anchor
   // gets `top = anchor.y + 1` for a 1-row gap by default; `flushTop: true`
@@ -450,7 +464,7 @@ function PopoverOverlay({
     <Box
       position="absolute"
       {...placement}
-      {...horizontal}
+      left={left}
       maxWidth={maxWidth}
       maxHeight={maxHeight}
       flexDirection="column"
@@ -475,6 +489,7 @@ function PopoverOverlay({
         e.stopPropagation()
       }}
     >
+      <OverlaySizeProbe onMeasure={onMeasure} />
       <Box flexDirection="column" maxWidth={bodyMaxWidth} minWidth={0} overflow="hidden">
         {content.body}
       </Box>
