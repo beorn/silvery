@@ -1077,6 +1077,56 @@ describe("regression: a hidden or scroll clearing node's own clip bounds its des
 })
 
 /**
+ * @failure A scroll container that shrinks and clears a moved row's overflow under its new viewport leaves that row's cells past its left edge.
+ * @invariant A clearing node's own descendant-overflow clear covers the rows its children painted last frame, under last frame's clip.
+ * @level l2
+ * @consumer any scroll container over rows with a negative margin (26846, the clear's entry); public scroll users.
+ * @testonly none
+ */
+describe("regression: a shrinking scroll container clears its own last-frame rows (26846, the entry)", () => {
+  // A 6-column left box 5 rows tall, then a 26-column scroll container that
+  // goes from 8 rows to 6 while its row 7 moves from marginLeft -5 to 0. A
+  // scroll container clips vertically only, so last frame row 7 painted
+  // columns 1..5, left of the container and below the left box. The container
+  // flags that row's overflow itself and clears it; only last frame's
+  // viewport, which still held row 7, reaches those cells.
+  function ShiftedRowViewport({ height, ml }: { height: number; ml: number }): React.ReactElement {
+    return (
+      <Box width={COLS} height={24} flexDirection="column">
+        <Box height={10} flexShrink={0} flexDirection="row">
+          <Box width={6} height={5} flexShrink={0}>
+            <Text>LEFT</Text>
+          </Box>
+          <Box width={26} height={height} flexShrink={0} flexDirection="column" overflow="scroll">
+            {Array.from({ length: 40 }, (_, i) => (
+              <Box key={i} height={1} flexShrink={0} marginLeft={i === 7 && ml ? ml : undefined}>
+                <Text>{`row${i} xxxx`}</Text>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+        <Box height={1} flexShrink={0} backgroundColor="#0000ff">
+          <Text>{"  status bar"}</Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  test("a viewport shrinking 8 to 6 rows under a row moving back from marginLeft -5 leaves none of it", () => {
+    const render = createRenderer({ cols: COLS, rows: 24 })
+    const app = render(<ShiftedRowViewport height={8} ml={-5} />)
+    try {
+      expect(bufferToText(app.term.buffer).split("\n")[7]?.slice(1, 5)).toBe("row7")
+      app.rerender(<ShiftedRowViewport height={6} ml={0} />)
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+      expect(bufferToText(app.term.buffer).split("\n")[7]?.trimEnd()).toBe("")
+    } finally {
+      app.unmount()
+    }
+  })
+})
+
+/**
  * @failure A scroll container that shrinks out of a non-clipping wrapper leaves last frame's rows below its new viewport.
  * @invariant A descendant-overflow clear covers the cells its descendant painted last frame, under last frame's clip.
  * @level l2
