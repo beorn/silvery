@@ -201,13 +201,19 @@ function resolveListItems(
 
   for (const block of blocks) {
     if (block.kind !== "list-item") continue
+    // Continuation paragraphs use marker "" to share the parent group's indent
+    // column without being a real list item. Skip the ordinal counter so later
+    // items are not shifted (#26757). `undefined` means "use the default marker";
+    // `""` means "no marker — continuation".
+    const isContinuation = block.marker === ""
     const count = groupCounts.get(block.list.groupId) ?? 0
-    groupCounts.set(block.list.groupId, count + 1)
-    const marker =
-      block.marker ??
-      (block.list.ordered
-        ? `${(block.list.start ?? 1) + count}.`
-        : unorderedListMarker(block.list.depth))
+    if (!isContinuation) groupCounts.set(block.list.groupId, count + 1)
+    const marker = isContinuation
+      ? ""
+      : (block.marker ??
+          (block.list.ordered
+            ? `${(block.list.start ?? 1) + count}.`
+            : unorderedListMarker(block.list.depth)))
     const width = Math.max(1, block.markerWidth ?? textMarkerWidth(marker) ?? 1)
     provisional.set(block.id, { marker, width, groupId: block.list.groupId })
     groupWidths.set(block.list.groupId, Math.max(groupWidths.get(block.list.groupId) ?? 0, width))
