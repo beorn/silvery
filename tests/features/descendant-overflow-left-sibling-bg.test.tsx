@@ -950,3 +950,177 @@ describe("regression: a descendant-overflow clear stays inside its scroll viewpo
     }
   }
 })
+
+/**
+ * @failure A scroll container directly above a status bar clears its unscrolled descendant's row over that bar.
+ * @invariant The clearing node's own child clip bounds its descendant-overflow clear.
+ * @level l2
+ * @consumer ag-code transcript without a wrapper (19383, the clear's entry); public scroll users.
+ * @testonly none
+ */
+describe("regression: a scroll container's own clip bounds its descendant-overflow clear (19383, the entry)", () => {
+  // StreamPane without the wrapper: the scroll container is the node that
+  // flags the descendant overflow, so the clip the clear starts from is its
+  // own child clip (its viewport), not the clip it paints under itself.
+  function BareStreamPane({
+    word,
+    scrollOffset,
+  }: {
+    word: string
+    scrollOffset: number
+  }): React.ReactElement {
+    return (
+      <Box width={COLS} height={ROWS} flexDirection="column">
+        <Box
+          flexGrow={1}
+          flexShrink={1}
+          minHeight={0}
+          overflow="scroll"
+          scrollOffset={scrollOffset}
+          flexDirection="column"
+        >
+          {Array.from({ length: ROWS - 1 }, (_, i) => (
+            <Box key={i} height={1} flexShrink={0}>
+              <Text>{`line ${i}`}</Text>
+            </Box>
+          ))}
+          <Box height={1} flexShrink={0} flexDirection="row">
+            <Text>{"• "}</Text>
+            <Text>{word}</Text>
+          </Box>
+          {Array.from({ length: scrollOffset }, (_, i) => (
+            <Box key={`tail-${i}`} height={1} flexShrink={0}>
+              <Text>{`tail ${i}`}</Text>
+            </Box>
+          ))}
+        </Box>
+        <Box height={1} flexShrink={0} backgroundColor="#0000ff">
+          <Text>{"  Claude Sonnet 4.6"}</Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  for (const scrollOffset of [0, 5]) {
+    test(`a growing word laid out on the status row keeps the status bar (no wrapper, offset ${scrollOffset})`, () => {
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+      const scene = (word: string) => <BareStreamPane word={word} scrollOffset={scrollOffset} />
+      const app = render(scene("Complex"))
+      try {
+        const paintedRow = bufferToText(app.term.buffer).split("\n")[ROWS - 1 - scrollOffset]
+        expect(paintedRow?.trimEnd()).toBe(scrollOffset > 0 ? "• Complex" : "  Claude Sonnet 4.6")
+        app.rerender(scene("Complexity?"))
+        expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+        const status = app.term.buffer.getCell(2, ROWS - 1)
+        expect(status.char).toBe("C")
+        expect(status.bg).toEqual({ r: 0, g: 0, b: 255 })
+      } finally {
+        app.unmount()
+      }
+    })
+  }
+})
+
+/**
+ * @failure A scroll container that shrinks out of a non-clipping wrapper leaves last frame's rows below its new viewport.
+ * @invariant A descendant-overflow clear covers the cells its descendant painted last frame, under last frame's clip.
+ * @level l2
+ * @consumer any scroll container taller than a non-clipping wrapper (26846); public scroll users.
+ * @testonly none
+ */
+describe("regression: a descendant-overflow clear reaches last frame's viewport rows (26846)", () => {
+  // A scroll container 8 rows tall in a 3-row wrapper that does not clip
+  // shrinks to 6 rows while the Text on its row 7 shortens. Last frame the
+  // Text painted rows 0..7 of the viewport; this frame's viewport ends at
+  // row 6. The wrapper clears the Text's retreat below itself, and a clear
+  // clipped to this frame's viewport only keeps last frame's rows 6 and 7.
+  function ShrinkingViewport({ height, len }: { height: number; len: number }): React.ReactElement {
+    return (
+      <Box width={COLS} height={ROWS} flexDirection="column">
+        <Box width={30} height={3} flexShrink={0} flexDirection="column">
+          <Box width={30} height={height} flexShrink={0} flexDirection="column" overflow="scroll">
+            {Array.from({ length: 40 }, (_, i) => (
+              <Text key={i}>{`row${i} ` + "y".repeat(i === 7 ? len : 20)}</Text>
+            ))}
+          </Box>
+        </Box>
+        <Text>footer</Text>
+      </Box>
+    )
+  }
+
+  test("a viewport shrinking 8 to 6 rows under a shortening row leaves no row of last frame", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(<ShrinkingViewport height={8} len={20} />)
+    try {
+      expect(bufferToText(app.term.buffer).split("\n")[7]?.trimEnd()).toBe("row7 " + "y".repeat(20))
+      app.rerender(<ShrinkingViewport height={6} len={8} />)
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+      const lines = bufferToText(app.term.buffer).split("\n")
+      expect(lines[6]?.trimEnd()).toBe("")
+      expect(lines[7]?.trimEnd()).toBe("")
+    } finally {
+      app.unmount()
+    }
+  })
+})
+
+/**
+ * @failure A scrolled container's descendant-overflow clear lands at the unscrolled row and keeps the stale cells.
+ * @invariant A descendant-overflow clear projects a scroll container's descendants with that container's own offset.
+ * @level l2
+ * @consumer any vertical scroller whose rows are wider than it (26842); public scroll users.
+ * @testonly none
+ */
+describe("regression: a descendant-overflow clear uses the scroll container's offset (26842)", () => {
+  // A 20-column vertical scroller at offset 3 holds rows 40 columns wide; a
+  // scroll container clips vertically only, so each row paints past its right
+  // edge. Row 5's text shortens from 40 to 22 columns. It paints at row
+  // 1 + 5 - 3 = 3; the clear projected it with the offset its ancestors paint
+  // at (0), cleared row 6 and kept the stale columns 22..39 on row 3.
+  function WideRows({
+    len5,
+    scrollOffset,
+  }: {
+    len5: number
+    scrollOffset: number
+  }): React.ReactElement {
+    return (
+      <Box width={COLS} height={24} flexDirection="column">
+        <Text>header</Text>
+        <Box flexDirection="row" flexShrink={0}>
+          <Box
+            width={20}
+            height={10}
+            flexShrink={0}
+            flexDirection="column"
+            overflow="scroll"
+            scrollOffset={scrollOffset}
+          >
+            {Array.from({ length: 24 }, (_, i) => (
+              <Box key={i} width={40} height={1} flexShrink={0}>
+                <Text>{`r${i} ` + "x".repeat((i === 5 ? len5 : 40) - 4)}</Text>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+        <Box height={1} flexShrink={0} backgroundColor="#0000ff">
+          <Text>{"  status bar"}</Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  test("a shortening wide row in a scrolled vertical scroller clears where it painted", () => {
+    const render = createRenderer({ cols: COLS, rows: 24 })
+    const app = render(<WideRows len5={40} scrollOffset={3} />)
+    try {
+      expect(bufferToText(app.term.buffer).split("\n")[3]?.trimEnd()).toBe("r5 " + "x".repeat(36))
+      app.rerender(<WideRows len5={22} scrollOffset={3} />)
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+      expect(bufferToText(app.term.buffer).split("\n")[3]?.trimEnd()).toBe("r5 " + "x".repeat(18))
+    } finally {
+      app.unmount()
+    }
+  })
+})
