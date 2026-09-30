@@ -375,6 +375,44 @@ export {
 } from "./overflow-indicator"
 
 /**
+ * Returns true if the given color string is a hex color (`#rrggbb` or `#rgb`)
+ * whose average channel value exceeds 128 — i.e., a "light" color.
+ * Returns false for undefined, non-hex strings, or dark hex colors.
+ */
+export function isLightColor(color: string | undefined): boolean {
+  if (!color || color[0] !== "#") return false
+  const hex = color.slice(1)
+  let r: number, g: number, b: number
+  if (hex.length === 3) {
+    r = parseInt(hex[0]! + hex[0]!, 16)
+    g = parseInt(hex[1]! + hex[1]!, 16)
+    b = parseInt(hex[2]! + hex[2]!, 16)
+  } else if (hex.length === 6) {
+    r = parseInt(hex.slice(0, 2), 16)
+    g = parseInt(hex.slice(2, 4), 16)
+    b = parseInt(hex.slice(4, 6), 16)
+  } else {
+    return false
+  }
+  return (r + g + b) / 3 > 128
+}
+
+/**
+ * Walk the `node.parent` chain to find the first ancestor whose
+ * {@link getEffectiveBg} returns a non-undefined value.
+ * Returns that bg string, or `undefined` if no ancestor has one.
+ */
+export function resolveAncestorBg(node: AgNode | null): string | undefined {
+  let current: AgNode | null = node
+  while (current !== null) {
+    const bg = getEffectiveBg(current.props as BoxProps)
+    if (bg !== undefined) return bg
+    current = current.parent
+  }
+  return undefined
+}
+
+/**
  * Render scroll indicators showing hidden items above/below the viewport:
  * `▲N` for items hidden above, `▼N` for items hidden below, drawn where
  * {@link overflowIndicatorPlacement} puts them: on the border line of a
@@ -390,7 +428,7 @@ export {
  * owner's clean cells on the fast path while a fresh frame repaints them.
  */
 export function renderScrollIndicators(
-  _node: AgNode,
+  node: AgNode,
   buffer: TerminalBuffer,
   layout: Rect,
   props: BoxProps,
@@ -398,10 +436,17 @@ export function renderScrollIndicators(
   nodeState: Pick<NodeRenderState, "scrollOffset" | "clipBounds">,
   ctx?: PipelineContext,
 ): void {
-  const rawBg = getEffectiveBg(props)
+  // Resolve the effective background: first check the scroll box itself, then
+  // walk the parent chain. This ensures the indicator is visible when the
+  // scroll container inherits its background from an ancestor and has no
+  // explicit backgroundColor of its own.
+  const rawBg = getEffectiveBg(props) ?? resolveAncestorBg(node.parent)
   const bg = rawBg ? (parseColor(rawBg) ?? null) : null
+  // Choose a foreground that contrasts with the resolved background.
+  // fg 0 (black) on light backgrounds, fg 15 (bright white) otherwise.
+  const fg: number = isLightColor(rawBg) ? 0 : 15
   const indicatorStyle: Style = {
-    fg: 15, // Bright white
+    fg,
     bg,
     attrs: {},
   }
