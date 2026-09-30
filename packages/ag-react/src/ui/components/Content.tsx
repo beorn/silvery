@@ -660,6 +660,9 @@ function Wide({ children }: { children: React.ReactNode }): React.ReactElement {
   // resolved width. flexily clamps `maxWidth=120` to parent width when the
   // container is narrower than the wide lane.
   // Bead: @km/code/codeblock-flush-left-not-centered (#undead 2026-05-12).
+  // The lane tells its children they have `width` (ContentRowContext), so it
+  // states that it fills to it: `width="100%"` of the lane row, capped by
+  // `maxWidth`. A numeric max alone is a ceiling over natural content (#26388).
   const ctx = useContentLayout()
   const row = useContext(ContentRowContext)
   const available = row?.available ?? ctx.available
@@ -683,6 +686,7 @@ function Wide({ children }: { children: React.ReactNode }): React.ReactElement {
         <Box
           data-component="content-lane-wide-inner"
           flexDirection="column"
+          width="100%"
           maxWidth={width}
           minWidth={0}
           overflow="hidden"
