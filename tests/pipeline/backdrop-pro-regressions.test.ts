@@ -17,7 +17,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import type { AgNode, Rect } from "@silvery/ag/types"
+import type { Rect } from "@silvery/ag/types"
+import { fakeNode } from "../../packages/ag/tests/support/fake-node"
 import {
   buildPlan,
   DEFAULT_AMOUNT,
@@ -29,30 +30,6 @@ import {
 import { deemphasizeOklchToward } from "@silvery/ag-term/pipeline/backdrop/color-shim"
 import { forEachBackdropCell } from "@silvery/ag-term/pipeline/backdrop/region"
 import { hexToOklch } from "@silvery/color"
-
-/** Minimal AgNode factory — matches `backdrop-plan.test.ts`. */
-function fakeNode(
-  props: Record<string, unknown>,
-  rect: Rect | null = null,
-  children: AgNode[] = [],
-): AgNode {
-  return {
-    type: "silvery-box",
-    props,
-    children,
-    parent: null,
-    layoutNode: null,
-    prevLayout: null,
-    boxRect: rect,
-    scrollRect: null,
-    prevScrollRect: null,
-    screenRect: null,
-    prevScreenRect: null,
-    layoutChangedThisFrame: 0,
-    dirtyBits: 0,
-    dirtyEpoch: 0,
-  } as unknown as AgNode
-}
 
 const RECT_A: Rect = { x: 0, y: 0, width: 10, height: 4 }
 const RECT_B: Rect = { x: 5, y: 0, width: 10, height: 4 } // overlaps x=[5,10), y=[0,4) with RECT_A
