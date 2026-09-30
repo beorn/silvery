@@ -1,12 +1,20 @@
 /**
  * Cascade Predicates — Pure boolean logic extracted from renderNodeToBuffer.
  *
- * TEST/STRICT-ONLY ORACLE: In production, the reactive system (alien-signals)
- * drives cascade computation. This module is only used as a verification oracle
- * when SILVERY_STRICT enables the `incremental` check (e.g. `SILVERY_STRICT=1`
- * or `SILVERY_STRICT=incremental`) or SILVERY_REACTIVE=0 (fallback mode). The
- * bundler tree-shakes it when STRICT is off since all call sites are gated
- * behind `_reactiveVerifyEnabled` or `!_reactiveEnabled`.
+ * `computeCascade` is the TEST/STRICT ORACLE: in production, the reactive
+ * system (alien-signals) drives cascade computation, and computeCascade runs
+ * only as a verification oracle when SILVERY_STRICT enables the `incremental`
+ * check (e.g. `SILVERY_STRICT=1` or `SILVERY_STRICT=incremental`) or with
+ * SILVERY_REACTIVE=0 (fallback mode); those call sites are gated behind
+ * `_reactiveVerifyEnabled` or `!_reactiveEnabled`.
+ *
+ * `mayClearOwnRegion` RUNS IN PRODUCTION: the render-entry prewalk
+ * (`prepareExcessRepaint` in render-phase.ts) calls it on every dirty-path
+ * node to find the nodes whose current-region clear can erase an earlier
+ * sibling's paint (26485). It lives here as a statement about the oracle, and
+ * tests/cascade-formulas.test.ts pins it to computeCascade exhaustively: for
+ * every input where computeCascade clears the content region, it holds. So
+ * this module is not tree-shaken with STRICT off.
  *
  * These 6 computed values (plus 1 intermediate: textPaintDirty) control the
  * entire incremental rendering cascade. Extracted here for exhaustive testing.

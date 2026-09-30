@@ -2595,7 +2595,15 @@ function overlapsEarlierPainter(
 }
 
 /** One entry prewalk along dirty paths, not a walk at each node's render visit.
- * Bounds are derived only when a strip or forward overlap reader needs them.
+ * It finds a clear inside the nearest opaque ancestor that would erase an
+ * earlier sibling's paint, and marks that ancestor SUBTREE | DESC_OVERFLOW so
+ * its fill and fresh-child cascade repaint the earlier paint first. Two clears
+ * qualify: a node's current-region clear (mayClearOwnRegion holds, over
+ * currentClearRect, the rectangle clearNodeRegion writes, clamped to the
+ * inherited-background source inheritedBgSource names), and a retreating
+ * node's excess strips (excessClearRects). The walk's sibling-overlap pass
+ * repaints only LATER siblings, so an earlier one is this prewalk's (26485).
+ * Bounds are derived only when a clear or forward overlap reader needs them.
  * Memoized extent derivation is O(touched nodes). Detector work is the sum of
  * emitter ancestry and earlier-sibling scans; many no-hit sibling emitters can
  * be quadratic. First hit marks the opaque ancestor, subsuming later scans. */
