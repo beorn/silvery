@@ -593,3 +593,89 @@ describe("regression: an opaque blit stays inside its clipping ancestor (@i/10-y
     }
   })
 })
+
+// ag-code's transcript shape (19383): a transparent wrapper holds a scroll
+// container whose content runs past its viewport; a clean one-row status bar
+// is the wrapper's later sibling. The streamed word's unscrolled layout box
+// sits on the status bar's row: one row below the viewport at offset 0, five
+// rows below where it paints at offset 5. When the word grows, the wrapper
+// flags descendant overflow and clears below itself at that unscrolled row,
+// although the scroll viewport (and a hidden wrapper) clipped the word's
+// paint there. The status bar is the only owner of that row. Before #26485's
+// d9e824de91 the overlap pass counted the wrapper's unclipped, unscrolled
+// descendant rects and repainted the status bar after the clear; with paint
+// extents clipped to their viewport it stays on the fast path.
+function StreamPane({
+  word,
+  wrapper,
+  scrollOffset,
+}: {
+  word: string
+  wrapper: "hidden" | "visible"
+  scrollOffset: number
+}): React.ReactElement {
+  return (
+    <Box width={COLS} height={ROWS} flexDirection="column">
+      <Box flexGrow={1} flexShrink={1} minHeight={0} overflow={wrapper} flexDirection="column">
+        <Box
+          flexGrow={1}
+          flexShrink={1}
+          minHeight={0}
+          overflow="scroll"
+          scrollOffset={scrollOffset}
+          flexDirection="column"
+        >
+          {Array.from({ length: ROWS - 1 }, (_, i) => (
+            <Box key={i} height={1} flexShrink={0}>
+              <Text>{`line ${i}`}</Text>
+            </Box>
+          ))}
+          <Box height={1} flexShrink={0} flexDirection="row">
+            <Text>{"• "}</Text>
+            <Text>{word}</Text>
+          </Box>
+          {Array.from({ length: scrollOffset }, (_, i) => (
+            <Box key={`tail-${i}`} height={1} flexShrink={0}>
+              <Text>{`tail ${i}`}</Text>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+      <Box height={1} flexShrink={0} backgroundColor="#0000ff">
+        <Text>{"  Claude Sonnet 4.6"}</Text>
+      </Box>
+    </Box>
+  )
+}
+
+/**
+ * @failure A streamed word's descendant-overflow clear blanks a clean status bar below its scroll viewport.
+ * @invariant A descendant-overflow clear stays inside the clip its descendant painted under.
+ * @level l2
+ * @consumer ag-code transcript over its bottom status bar (19383 streaming repaint hole); public scroll users.
+ * @testonly none
+ */
+describe("regression: a descendant-overflow clear stays inside its scroll viewport (19383)", () => {
+  for (const wrapper of ["hidden", "visible"] as const) {
+    for (const scrollOffset of [0, 5]) {
+      test(`a growing word laid out on the status row keeps the status bar (${wrapper} wrapper, offset ${scrollOffset})`, () => {
+        const render = createRenderer({ cols: COLS, rows: ROWS })
+        const scene = (word: string) => (
+          <StreamPane word={word} wrapper={wrapper} scrollOffset={scrollOffset} />
+        )
+        const app = render(scene("Complex"))
+        try {
+          const paintedRow = bufferToText(app.term.buffer).split("\n")[ROWS - 1 - scrollOffset]
+          expect(paintedRow?.trimEnd()).toBe(scrollOffset > 0 ? "• Complex" : "  Claude Sonnet 4.6")
+          app.rerender(scene("Complexity?"))
+          expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+          const status = app.term.buffer.getCell(2, ROWS - 1)
+          expect(status.char).toBe("C")
+          expect(status.bg).toEqual({ r: 0, g: 0, b: 255 })
+        } finally {
+          app.unmount()
+        }
+      })
+    }
+  }
+})
