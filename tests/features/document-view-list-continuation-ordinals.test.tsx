@@ -3,6 +3,13 @@
  * not increment the group's ordinal counter. Without the fix, a sequence
  * [1. Alpha, continuation, Bravo] renders Bravo as "3." instead of "2.".
  * Tracking: @km/tui/26751-list-item-continuation-paragraph-render/26757-continuation-shifts-ordered-numbering
+ *
+ * @failure  An ordered list numbers the item after a continuation paragraph
+ *           one too high: [1. Alpha, continuation, Bravo] shows "3." for Bravo.
+ * @level    l1 (createRenderer; DocumentView list resolution and paint)
+ * @consumer every DocumentView ordered list whose items carry continuation
+ *           paragraphs (26751, 26757)
+ * @testonly none
  */
 
 import React from "react"
