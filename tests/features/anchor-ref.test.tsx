@@ -26,10 +26,11 @@
  * Bead: km-silvery.overlay-anchor-impl-v1
  */
 
-import React from "react"
+import React, { useState } from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, createTermless } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
+import { run, useInput } from "@silvery/ag-term/runtime"
 import { findAnchor, getLayoutSignals } from "@silvery/ag/layout-signals"
 import type { AgNode } from "@silvery/ag/types"
 
@@ -194,6 +195,41 @@ describe("invariant 3: anchorRect recomputes on prop change", () => {
     app.rerender(<App on={false} />)
     // The previously-allocated signal on the same node clears to null.
     expect(sig.anchorRect()).toBeNull()
+  })
+
+  // #26660: the same invariant in the live runtime, with a root the size of the
+  // terminal. An anchorRef-only change leaves every Flexily node clean, and the
+  // layout-on-demand gate used to skip the notify step that writes the signal.
+  // The createRenderer rows above relay out on every frame (content-sized root).
+  test("live runtime: an anchorRef-only change clears the node's anchorRect signal", async () => {
+    using term = createTermless({ cols: 30, rows: 8 })
+
+    function App(): React.ReactElement {
+      const [on, setOn] = useState(true)
+      useInput((input) => {
+        if (input === "x") setOn(false)
+      })
+      return (
+        <Box width={30} height={8} padding={1}>
+          <Box anchorRef={on ? "probe" : undefined} width={5} height={2}>
+            <Text>p</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const handle = await run(<App />, term)
+    await handle.waitForLayoutStable()
+    const node = findFirstWithAnchorRef(handle.root)
+    if (!node) throw new Error("test fixture: no anchor node")
+    const sig = getLayoutSignals(node)
+    expect(sig.anchorRect()).toEqual({ x: 1, y: 1, width: 5, height: 2 })
+
+    await handle.press("x")
+    await handle.waitForLayoutStable()
+    expect(sig.anchorRect(), "a Box without anchorRef has no anchor rect").toBeNull()
+
+    handle.unmount()
   })
 })
 

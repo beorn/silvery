@@ -57,7 +57,7 @@ export { createRenderPostState, type RenderPostState } from "./pipeline/render-p
 import { applyBackdrop, hasBackdropMarkers, type ColorLevel } from "./pipeline/backdrop"
 import { applySubtreeFade, hasSubtreeFadeMarkers } from "./pipeline/subtree-fade"
 import { CURSOR_RESTORE, CURSOR_SAVE, kittyDeleteAllScrimPlacements } from "@silvery/ansi"
-import { clearDirtyTracking, hasScrollDirty } from "@silvery/ag/dirty-tracking"
+import { clearDirtyTracking, hasNotifyDirty, hasScrollDirty } from "@silvery/ag/dirty-tracking"
 import type { PipelineContext } from "./pipeline/types"
 
 const log = createLogger("silvery:render")
@@ -407,6 +407,14 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       // input bits computed for the render phase. Without this, the render
       // phase can't detect outline mutations and stale outline pixels persist.
       layoutPhase(root, cols, rows)
+      // A notify-synced prop (decorations, cursorOffset, focused,
+      // selectionIntent, anchorRef, parkOffset) changes no dimension, so
+      // Flexily is clean, yet its layout signals are written only by the
+      // notify step. No rect moved, so that step runs alone: no measure,
+      // layout, scroll or scrollRect pass.
+      if (!opts?.skipLayoutNotifications && hasNotifyDirty(root)) {
+        notifyLayoutSubscribers(root)
+      }
       return { tMeasure: 0, tLayout: 0, tScroll: 0, tScrollRect: 0, tNotify: 0 }
     }
 

@@ -373,6 +373,45 @@ describe("invariant 4: decoration recompute on prop change", () => {
     expect(r2.y).toBe(-1) // anchor.y - target.height = 1 - 2
   })
 
+  // #26660: the row above passes because its root is content-sized: the root
+  // is smaller than the 60x20 frame, so the layout-on-demand gate sees a size
+  // change and relays out on every frame. A root the size of the frame keeps
+  // every Flexily node clean on a decorations-only change, and the gate used to
+  // skip the notify step that writes the decoration rects.
+  test("swapping placements under a root the size of the frame re-runs placement math", () => {
+    const render = createRenderer({ cols: 60, rows: 20 })
+
+    function App({ placement }: { placement: "bottom-start" | "top-start" }) {
+      const decorations: Decoration[] = [
+        {
+          kind: "popover",
+          id: "p",
+          anchorId: "a",
+          placement,
+          size: { width: 5, height: 2 },
+        },
+      ]
+      return (
+        <Box width={60} height={20} padding={1} paddingTop={9}>
+          <Box anchorRef="a" width={10} height={3}>
+            <Text>a</Text>
+          </Box>
+          <Box decorations={decorations}>
+            <Text>host</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const app = render(<App placement="bottom-start" />)
+    const r1 = findActiveDecorationRects(getRoot(app))[0]!.rects[0]!
+    expect(r1.y).toBe(12) // anchor.y + anchor.height = 9 + 3
+
+    app.rerender(<App placement="top-start" />)
+    const r2 = findActiveDecorationRects(getRoot(app))[0]!.rects[0]!
+    expect(r2.y).toBe(7) // anchor.y - target.height = 9 - 2
+  })
+
   test("removing decorations clears the signal to the empty sentinel", () => {
     const render = createRenderer({ cols: 40, rows: 10 })
 

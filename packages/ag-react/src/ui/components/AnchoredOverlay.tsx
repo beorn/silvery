@@ -2,9 +2,8 @@ import React, { useLayoutEffect, useMemo, useState } from "react"
 import type { BoxProps } from "../../components/Box"
 import { Box } from "../../components/Box"
 import { useAgNode } from "../../hooks/useAgNode"
-import { useBoxSize } from "../../hooks/useLayout"
 import { useSignal } from "../../hooks/useSignal"
-import type { DecorationRect } from "@silvery/ag/layout-signals"
+import { markObservedLayoutSignal, type DecorationRect } from "@silvery/ag/layout-signals"
 import type { CollisionStrategy, Decoration, Placement, Rect } from "@silvery/ag/types"
 
 export interface AnchoredOverlayProps extends Omit<
@@ -80,9 +79,10 @@ export function AnchoredOverlay({
   // placement believe the popover is screen-tall: a short popover anchored low
   // then overflows its placement side, and the shift/flip step drags it across
   // the anchor — clipping the popover's leading lines under surrounding chrome
-  // (the @km/code/v0.2/19777 top-clip). The real footprint is the CONTENT's
-  // natural height, which we learn by measuring the rendered content one frame
-  // late and feeding `min(cap, measured)` back as the collision size. The
+  // (the @km/code/v0.2/19777 top-clip). The real footprint is the rendered
+  // box's natural height (its border box: content, padding and border), which
+  // we learn by measuring the box one frame late and feeding
+  // `min(cap, measured)` back as the collision size. The
   // committed-rect read + layout-prop write converges in one event batch (see
   // useLayout's reactive-rect contract), so this settles deterministically:
   // frame 1 places at the cap, frame 2 places at the measured content height.
@@ -174,10 +174,10 @@ function AnchoredOverlayContent({
   const sizeProps =
     sizing === "max" ? { maxWidth: width, maxHeight: fallbackSize.height } : { width, height }
   // When measuring (sizing="max"), the probe reads the overlay box's committed
-  // content height and reports it up. Because the box keeps the GENEROUS
+  // border-box height and reports it up. Because the box keeps the GENEROUS
   // `fallbackSize.height` cap (not the shrunk collision height), its measured
-  // height is the content's natural height (only clamped if content truly
-  // exceeds the cap) — so there is no shrinking feedback loop. The collision
+  // height is its natural height (only clamped if content truly exceeds the
+  // cap) — so there is no shrinking feedback loop. The collision
   // footprint refines to this height one frame later, placing the popover
   // against the anchor without dragging its leading lines off-screen.
   return (
@@ -195,15 +195,21 @@ function AnchoredOverlayContent({
 }
 
 /**
- * Zero-footprint child that measures its enclosing overlay box's committed
- * content height and reports it up so the parent can refine its collision
- * footprint (see the `sizing="max"` note above). It reads the COMMITTED
- * boxRect via `useBoxSize`, which re-renders the probe on the next commit
- * boundary — so the read/write pair converges within one event batch and
- * cannot form a layout feedback loop.
+ * Zero-footprint child that measures its enclosing overlay box and reports its
+ * height up so the parent can refine its collision footprint (see the
+ * `sizing="max"` note above). The footprint is the overlay's BORDER box: the
+ * committed boxRect, padding and border included, both axes from that one
+ * read. `useBoxSize()` gives the content box, which is short by the padding,
+ * so an overlay placed by it runs past the viewport edge. The committed rect
+ * advances at the commit boundary, so the read/write pair converges within one
+ * event batch and cannot form a layout feedback loop.
  */
 function OverlayHeightProbe({ onMeasure }: { onMeasure: (height: number) => void }): null {
-  const { height } = useBoxSize()
+  const ag = useAgNode()
+  // Observed, as useBoxSize() marks it, so the runtime paints the refined
+  // footprint in the same event (commitLayoutSnapshot reports it promoted).
+  if (ag) markObservedLayoutSignal(ag.node, "boxSize")
+  const height = useSignal<Rect | null>(ag?.signals.boxRectCommitted ?? null)?.height ?? 0
   // useLayoutEffect (not useEffect): the synchronous render path
   // (`flushSyncWork`) commits layout effects but defers passive effects, so a
   // passive effect would not propagate the measurement into the next sync
