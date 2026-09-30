@@ -2907,6 +2907,11 @@ function clearDescendantOverflowRegions(
   const nodeLeft = layout.x
   const nodeTop = layout.y - scrollOffset
 
+  // Start from the clip this node's children paint under (the painter's
+  // childPaintClip), not the node's own clip. A hidden or scroll node never
+  // lets a descendant paint outside it, so it has no outer overflow to clear
+  // there. Its own clip let an unscrolled layout box below a scroll viewport
+  // clear the clean later sibling that owns that row (ag-code 19383).
   _clearDescendantOverflow(
     node.children,
     buffer,
@@ -2916,7 +2921,7 @@ function clearDescendantOverflowRegions(
     nodeRight,
     nodeBottom,
     scrollOffset,
-    clipBounds,
+    childPaintClip(node, clipBounds, scrollOffset),
     clearBg,
   )
 }
@@ -3029,30 +3034,17 @@ function _clearDescendantOverflow(
     }
     // Recurse into subtree-dirty children to find deeper overflows
     if (isDirty(child, SUBTREE_BIT) && child.children !== undefined) {
-      // Narrow the clip when descending through a clipping (`overflow: hidden`)
-      // child. Such a child bounds its descendants' PAINT to its content rect,
-      // so a descendant whose LAYOUT overflows the clearing node was actually
-      // clipped there and never painted the overflow cells. Intersecting the
-      // clear with the accumulated clip (mirrors renderNormalChildren's
-      // effectiveClipBounds) keeps the deeper clear from nulling cells a sibling
-      // of the clip owns — the @si/render/20989 divider-stomp signature, where a
-      // transparent deck (clipBounds=undefined) recursed through a pane's clip to
-      // an overflowing status `<Text>`. Current layout is used for the clip: a
-      // clipper that itself moved cleans its own vacated cells at its own level.
-      const childProps = child.props as BoxProps
-      const childClipX = (childProps.overflowX ?? childProps.overflow) === "hidden"
-      const childClipY = (childProps.overflowY ?? childProps.overflow) === "hidden"
-      const childClip =
-        (childClipX || childClipY) && child.boxRect
-          ? computeChildClipBounds(
-              child.boxRect,
-              childProps,
-              clipBounds,
-              scrollOffset,
-              childClipX,
-              childClipY,
-            )
-          : clipBounds
+      // Narrow the clip when descending through a clipping child, with the
+      // painter's own rule (childPaintClip): an `overflow: hidden` child bounds
+      // its descendants' PAINT to its content rect, a scroll container to its
+      // viewport. A descendant whose LAYOUT overflows the clearing node was
+      // clipped there and never painted the overflow cells, so the clear must
+      // not null cells a sibling of the clip owns: the @si/render/20989
+      // divider-stomp signature (a transparent deck recursed through a pane's
+      // clip to an overflowing status `<Text>`), and ag-code 19383 (an
+      // unscrolled layout box below a scroll viewport blanked the status bar).
+      // Current layout is used for the clip: a clipper that itself moved
+      // cleans its own vacated cells at its own level.
       _clearDescendantOverflow(
         child.children,
         buffer,
@@ -3062,7 +3054,7 @@ function _clearDescendantOverflow(
         nodeRight,
         nodeBottom,
         scrollOffset,
-        childClip,
+        childPaintClip(child, clipBounds, scrollOffset),
         clearBg,
       )
     }

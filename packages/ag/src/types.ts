@@ -1452,13 +1452,14 @@ export interface AgNode {
      * frame drew a top overflow indicator, so which rows it painted. Read by the
      * Tier-1 shift's reuse decision (scrollChildClip in ag-term helpers.ts): a
      * child that sat under last frame's indicator row was never painted, so its
-     * shifted pixels cannot be reused. The first frame takes the current value.
+     * shifted pixels cannot be reused. Also read by `borderLineIndicatorRetired` (ag-term overflow-indicator.ts),
+     * which repaints a border line whose indicator went away. The first frame takes the current value.
      */
     prevHiddenAbove: number
     /**
      * `hiddenBelow` from last render (for incremental rendering): the bottom
      * indicator's counterpart of `prevHiddenAbove`, read by the same Tier-1
-     * shift reuse decision.
+     * shift reuse decision and by `borderLineIndicatorRetired`.
      */
     prevHiddenBelow: number
     /** Sticky children with their computed render positions */
