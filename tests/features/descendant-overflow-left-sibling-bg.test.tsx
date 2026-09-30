@@ -328,13 +328,19 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
   }, 120_000)
 
   /**
-   * @failure A flat prefix of disjoint clean painters makes one Text clear scan with tree size.
+   * @failure A flat prefix of disjoint clean painters makes one Text clear's prewalk outgrow the walk.
    * @level l3
    * @consumer Large incremental Silvery rows with many sibling items.
    */
-  // CTO's flat-sibling cost gate still fails. Make this a normal passing test
-  // before delivery; the local WIP branch deliberately preserves the witness.
-  test.fails("one Text change has prewalk work independent of flat disjoint clean siblings", () => {
+  // Recorded cost, accepted by the CTO ruling on @i/10-yrd/26485 (2026-09-29
+  // addendum): the walk itself skips every clean sibling on the dirty path, so
+  // the prewalk may grow with the walk's rendered + skipped, never faster, for
+  // each own-change emitter. Two emitters test the same earlier siblings here:
+  // the wrapper whose keyed child was replaced, and the replacement Text.
+  // Wall time is evidence and is not asserted: at 2,100 siblings the warmed
+  // median of this frame against the delivered source (0e9e4810321) on one
+  // host was 1.03x, inside the ruling's bound of 1.25x.
+  test("one Text change has prewalk work that grows no faster than the walk over flat siblings", () => {
     function FlatPane({
       prefix,
       short,
@@ -371,20 +377,29 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
         >
         const incremental = frames.find((frame) => frame._hasPrevBuffer === 1)
         expect(incremental).toBeDefined()
+        const stat = (key: string): number => {
+          const value = incremental?.[key]
+          if (typeof value !== "number") throw new Error(`Missing render-phase stat ${key}`)
+          return value
+        }
         return {
-          extents: incremental!.prewalkExtentDerivations,
-          rectangles: incremental!.prewalkRectChecks,
-          rendered: incremental!.nodesRendered,
-          skipped: incremental!.nodesSkipped,
+          extents: stat("prewalkExtentDerivations"),
+          rectangles: stat("prewalkRectChecks"),
+          rendered: stat("nodesRendered"),
+          skipped: stat("nodesSkipped"),
         }
       } finally {
         app.unmount()
       }
     }
 
+    const EMITTERS = 2
     const small = measure(20)
     const large = measure(2100)
-    expect(large).toMatchObject({ extents: small.extents, rectangles: small.rectangles })
+    const walkGrowth = large.rendered + large.skipped - (small.rendered + small.skipped)
+    expect(large.rendered).toBe(small.rendered)
+    expect(large.extents - small.extents).toBeLessThanOrEqual(walkGrowth)
+    expect(large.rectangles - small.rectangles).toBeLessThanOrEqual(EMITTERS * walkGrowth)
   }, 120_000)
 
   test("shrinking text reveals the earlier filled tab background", () => {

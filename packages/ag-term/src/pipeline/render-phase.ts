@@ -2448,6 +2448,22 @@ function paintChildren(node: AgNode, state: PaintState, passState: RenderPassSta
   return entry.children
 }
 
+/** A node's own current paint as the painter places it: its rectangle projected
+ * by the threaded offset and clipped to the clip it paints under. Null when the
+ * node paints nothing itself (no rectangle, hidden, display none, no layout
+ * node, or a Box with neither background nor border). The own term of
+ * subtreePaintExtent, and the whole extent of a childless unchanged node. */
+function ownPaintRect(node: AgNode, state: PaintState): Rect | null {
+  const props = node.props as BoxProps
+  const own = node.boxRect
+  if (!own || node.hidden || props.display === "none") return null
+  const paints =
+    node.layoutNode && (node.type !== "silvery-box" || getEffectiveBg(props) || props.borderStyle)
+  return paints
+    ? intersectPaintRect(projectPaintRect(own, state.scrollOffset), state.clipBounds)
+    : null
+}
+
 /** Lazy one-derivation bound. Store in this node's layout frame; project at the
  * reader. Child scroll/sticky transforms use the same helper as dispatch. */
 function subtreePaintExtent(
@@ -2459,18 +2475,9 @@ function subtreePaintExtent(
   if (entry.extent !== undefined) return entry.extent
   if (passState.prewalkActive) passState.detectorCounts.prewalkExtentDerivations++
   const props = node.props as BoxProps
-  const own = node.boxRect
-  if (!own || node.hidden || props.display === "none") return (entry.extent = null)
-  let extent: Rect | null = null
-  const paints =
-    node.layoutNode && (node.type !== "silvery-box" || getEffectiveBg(props) || props.borderStyle)
-  if (paints) {
-    const projected = intersectPaintRect(
-      projectPaintRect(own, state.scrollOffset),
-      state.clipBounds,
-    )
-    extent = projected ? projectPaintRect(projected, -state.scrollOffset) : null
-  }
+  if (!node.boxRect || node.hidden || props.display === "none") return (entry.extent = null)
+  const projectedOwn = ownPaintRect(node, state)
+  let extent = projectedOwn ? projectPaintRect(projectedOwn, -state.scrollOffset) : null
   // Preserve the old cleanup footprint, including changed transparent boxes.
   if (node.prevLayout && isCurrentEpoch(node, node.layoutChangedThisFrame)) {
     const projected = intersectPaintRect(
@@ -2520,14 +2527,20 @@ function overlapsEarlierPainter(
       const siblingState = childStates[i]
       if (!sibling || !siblingState) throw new Error(`Missing sibling paint state ${i}`)
       passState.detectorCounts.prewalkRectChecks++
+      const layoutChanged = isCurrentEpoch(sibling, sibling.layoutChangedThisFrame)
+      // A childless sibling whose layout did not change: subtreePaintExtent adds
+      // the old rectangle only for a layout change this frame and unions only
+      // children, so its extent is exactly ownPaintRect. Test that; build no
+      // child states, memo entry or extent for it (the CTO's second re-slice).
+      if (!layoutChanged && sibling.children.length === 0) {
+        const own = ownPaintRect(sibling, siblingState)
+        if (own && paintRectsIntersect(own, rect)) return true
+        continue
+      }
       // A hidden-overflow sibling's descendants cannot paint outside its own
       // unchanged rectangle. Reject a disjoint clean subtree before deriving
       // every descendant's extent (the approved own-rectangle cost re-slice).
-      if (
-        (sibling.props as BoxProps).overflow === "hidden" &&
-        sibling.boxRect &&
-        !isCurrentEpoch(sibling, sibling.layoutChangedThisFrame)
-      ) {
+      if ((sibling.props as BoxProps).overflow === "hidden" && sibling.boxRect && !layoutChanged) {
         const own = intersectPaintRect(
           projectPaintRect(sibling.boxRect, siblingState.scrollOffset),
           siblingState.clipBounds,
