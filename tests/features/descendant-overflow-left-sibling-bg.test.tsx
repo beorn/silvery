@@ -48,6 +48,7 @@ import { Box, Text } from "silvery"
 import { Viewport } from "@silvery/ag-react"
 import type { ForeignSource, ViewportContext } from "@silvery/ag/viewport-types"
 import { createCellBuffer } from "@silvery/ag/viewport-buffer"
+import type { Theme } from "@silvery/ansi"
 
 // The pipeline has read the switch; give the environment back to the worker.
 if (instrumentBefore === undefined) delete process.env.SILVERY_INSTRUMENT
@@ -1119,6 +1120,130 @@ describe("regression: a descendant-overflow clear uses the scroll container's of
       app.rerender(<WideRows len5={22} scrollOffset={3} />)
       expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
       expect(bufferToText(app.term.buffer).split("\n")[3]?.trimEnd()).toBe("r5 " + "x".repeat(18))
+    } finally {
+      app.unmount()
+    }
+  })
+})
+
+// Ruling 26485 condition 3: one function names the node that gives a node its
+// inherited background, for the walk's clear and for the prewalk. A `theme`
+// whose bg is empty is not a filled box (getEffectiveBg is falsy), yet the walk
+// takes it as the inherited-background source and clamps the clear to its rect.
+// The prewalk has to take the same node, or it looks for the earlier painter in
+// the wrong place. The wrapper sits around the header and the output, around
+// the output only, or around the emitter; the opaque output is the control.
+const THEME_ONLY = { name: "theme-only", bg: "", fg: "#cccccc" } as unknown as Theme
+
+function ThemedStagePane({
+  output,
+  outputKey,
+  wrap,
+  opaqueOutput = false,
+}: {
+  output: string
+  outputKey: string
+  wrap: "header-and-output" | "output" | "emitter"
+  opaqueOutput?: boolean
+}): React.ReactElement {
+  const header = (
+    <Box key="header" height={1} flexShrink={0}>
+      <Box width={20} height={5} flexShrink={0} backgroundColor="#0000ff" />
+    </Box>
+  )
+  const text = (
+    <Box width={COLS} height={1} flexShrink={0}>
+      <Text key={outputKey}>{output}</Text>
+    </Box>
+  )
+  const output_ = (
+    <Box
+      key="output"
+      width={COLS}
+      height={8}
+      flexShrink={0}
+      flexDirection="column"
+      backgroundColor={opaqueOutput ? "#101820" : undefined}
+    >
+      <Box width={COLS} flexShrink={0} alignItems="flex-start" flexDirection="column">
+        {wrap === "emitter" ? (
+          <Box theme={THEME_ONLY} width={COLS} flexShrink={0} flexDirection="column">
+            {text}
+          </Box>
+        ) : (
+          text
+        )}
+      </Box>
+    </Box>
+  )
+  return (
+    <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
+      {wrap === "header-and-output" ? (
+        <Box theme={THEME_ONLY} width={COLS} flexShrink={0} flexDirection="column">
+          {header}
+          {output_}
+        </Box>
+      ) : wrap === "output" ? (
+        [
+          header,
+          <Box key="themed" theme={THEME_ONLY} width={COLS} flexShrink={0} flexDirection="column">
+            {output_}
+          </Box>,
+        ]
+      ) : (
+        [header, output_]
+      )}
+      {Array.from({ length: 27 }, (_, i) => (
+        <Box key={i} height={1} flexShrink={0}>
+          <Text>{`status ${i}`}</Text>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+/**
+ * @failure A theme-only node between the output and the pane makes a stable text clear erase an earlier tab's fill.
+ * @invariant The walk and the prewalk name the same inherited-background ancestor (inheritedBgSource).
+ * @level l2
+ * @consumer Yrd stage-output pane under a themed subtree; public Box users with theme-only wrappers.
+ * @testonly none
+ */
+describe("regression: a theme-only wrapper names the same inherited background for the walk and the prewalk (@i/10-yrd/26485)", () => {
+  for (const wrap of ["header-and-output", "output", "emitter"] as const) {
+    test(`a stable text clear under a theme-only wrapper around the ${wrap} keeps the tab's fill`, () => {
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+      const app = render(<ThemedStagePane output={"A".repeat(19)} outputKey="long" wrap={wrap} />)
+      try {
+        expect(app.term.buffer.getCell(16, 1).char).toBe("A")
+        app.rerender(<ThemedStagePane output={"A".repeat(16)} outputKey="short" wrap={wrap} />)
+        const revealed = app.term.buffer.getCell(16, 1)
+        expect(revealed.char).toBe(" ")
+        expect(revealed.bg).toEqual({ r: 0, g: 0, b: 255 })
+        expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+      } finally {
+        app.unmount()
+      }
+    })
+  }
+
+  test("an opaque output under a theme-only wrapper clears to its own fill", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const scene = (output: string, outputKey: string) => (
+      <ThemedStagePane
+        output={output}
+        outputKey={outputKey}
+        wrap="header-and-output"
+        opaqueOutput
+      />
+    )
+    const app = render(scene("A".repeat(19), "long"))
+    try {
+      app.rerender(scene("A".repeat(16), "short"))
+      const revealed = app.term.buffer.getCell(16, 1)
+      expect(revealed.char).toBe(" ")
+      expect(revealed.bg).toEqual({ r: 16, g: 24, b: 32 })
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
     } finally {
       app.unmount()
     }
