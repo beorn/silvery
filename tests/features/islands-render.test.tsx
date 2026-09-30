@@ -15,6 +15,8 @@
  *   5. Pending-lifecycle island (no handle yet) skips blit cleanly — no crash
  *      and no stray pixels (parent's inherited bg paints through)
  *   6. Island clipped at right/bottom edge of parent buffer — no out-of-bounds writes
+ *   7. Island taller than its scroll box paints nothing below the box
+ *  7b. Island scrolled through its scroll box — incremental equals fresh
  *
  * The test fixture uses a synchronous snapshot guest — `init()` resolves
  * immediately with an IslandHandle whose output.buffer is pre-populated.
@@ -25,7 +27,7 @@
 
 import React, { type ReactElement, type ReactNode } from "react"
 import { describe, expect, test } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { bufferToText, compareBuffers, createRenderer } from "@silvery/test"
 import { Box, Island, ScopeProvider, Text } from "@silvery/ag-react"
 import { createCellBuffer, type MutableCellBuffer } from "@silvery/ag/viewport-buffer"
 import { createScope } from "@silvery/scope"
@@ -270,6 +272,34 @@ function makeTestScopeWrapper() {
   )
 }
 
+/**
+ * An island taller than its compact scroll box, with text rows below it: the
+ * ag-code tool-call output shape. Rows 3+ belong to the later siblings.
+ */
+function IslandInScrollBox({ guest, scrollOffset }: { guest: IslandGuest; scrollOffset?: number }) {
+  return (
+    <Box flexDirection="column" width={40} height={24}>
+      <Box
+        height={3}
+        flexShrink={0}
+        overflow="scroll"
+        scrollOffset={scrollOffset}
+        flexDirection="column"
+      >
+        <Box flexShrink={0}>
+          <Island guest={guest} cols={16} rows={6} />
+        </Box>
+      </Box>
+      <Text>Exit code 1</Text>
+      {Array.from({ length: 20 }, (_, i) => (
+        <Box key={i} height={1} flexShrink={0}>
+          <Text>{`status ${i}`}</Text>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Tests
 // ────────────────────────────────────────────────────────────────────────────
@@ -483,5 +513,47 @@ describe("Island — render-phase blit", () => {
     expect(app.text).toContain("top")
     // Visible portion of the island shows 'Z' cells.
     expect(app.text).toContain("Z")
+  })
+
+  test("7. island taller than its scroll box paints nothing below the box", async () => {
+    // The ag-code tool-call shape: a guest in a compact scroll box read
+    // "Exit code 113" below it, where "13" was guest output past the scroll
+    // viewport. The blit takes the clip its node's ordinary paint uses, so the
+    // fresh frame's rows below the box belong to the later siblings alone
+    // (@i/10-yrd/26485-stage-switch-stale-background/26811-opaque-blit-ignores-scroll-clip).
+    const render = createRenderer({ cols: 40, rows: 24 })
+    const g = snapshotGuest("T")
+    const wrap = makeTestScopeWrapper()
+    const app = render(wrap(<IslandInScrollBox guest={g.guest} />))
+    await flushMicrotasks()
+    app.rerender(wrap(<IslandInScrollBox guest={g.guest} />))
+    const fresh = bufferToText(app.freshRender()).split("\n")
+    expect(fresh.slice(0, 6)).toEqual([
+      "TTTTTTTTTTTTTTTT",
+      "TTTTTTTTTTTTTTTT",
+      "TTTTTTTTTTTTTTTT",
+      "Exit code 1",
+      "status 0",
+      "status 1",
+    ])
+  })
+
+  test("7b. island scrolled 0,1,2,3,2,1,0 through its scroll box: incremental equals fresh", async () => {
+    // A scroll step moves the guest without dirtying the rows below the box;
+    // cells an earlier offset's blit wrote there were tracked by nothing.
+    const render = createRenderer({ cols: 40, rows: 24 })
+    const g = snapshotGuest("T")
+    const wrap = makeTestScopeWrapper()
+    const app = render(wrap(<IslandInScrollBox guest={g.guest} scrollOffset={0} />))
+    await flushMicrotasks()
+    app.rerender(wrap(<IslandInScrollBox guest={g.guest} scrollOffset={0} />))
+    expect(app.text).toContain("TTTTTTTTTTTTTTTT")
+    for (const scrollOffset of [1, 2, 3, 2, 1, 0]) {
+      app.rerender(wrap(<IslandInScrollBox guest={g.guest} scrollOffset={scrollOffset} />))
+      expect(
+        compareBuffers(app.term.buffer, app.freshRender()),
+        `scrollOffset=${scrollOffset}`,
+      ).toBeNull()
+    }
   })
 })

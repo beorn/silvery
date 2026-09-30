@@ -9,6 +9,7 @@
  *   5. ref.snapshot() returns a CellBuffer matching the latest blits
  *   6. SILVERY_STRICT incremental==fresh with chrome around the viewport
  *   7. Viewport clipped at the right/bottom edge of the parent buffer
+ *  7b. Viewport clipped by a smaller overflow=hidden ancestor, both axes
  *   8. v1 nesting guard: viewport-in-viewport throws at mount (added in A6)
  *
  * Realistic-scale fixture: 50+ surrounding silvery nodes (cards in a board
@@ -19,7 +20,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { bufferToText, createRenderer } from "@silvery/test"
 import { Box, Text, Viewport } from "@silvery/ag-react"
 import type {
   CellBuffer,
@@ -300,6 +301,43 @@ describe("Viewport — v1 MVP", () => {
     expect(app.text).toContain("top")
     // Visible portion of the viewport shows 'Z' cells.
     expect(app.text).toContain("Z")
+  })
+
+  test("7b. Viewport inside a smaller overflow=hidden box paints only inside the box", () => {
+    // The blit takes the clip its node's ordinary paint uses, from its
+    // clipping ancestors (@i/10-yrd/26485-stage-switch-stale-background/26811-opaque-blit-ignores-scroll-clip).
+    // A 12x6 Viewport in an 8x3 hidden box: the fresh frame holds guest cells
+    // in the box and nowhere else — not right of it on rows 1-2, and not below
+    // it (the "exit code 1G" / "status 0GGGG" shapes).
+    const render = createRenderer({ cols: 30, rows: 24 })
+    const { source } = mockSource("G")
+    const app = render(
+      <Box flexDirection="column" width={30} height={24}>
+        <Box flexDirection="row" height={3} flexShrink={0}>
+          <Box width={8} height={3} flexShrink={0} overflow="hidden" flexDirection="column">
+            <Box width={12} flexShrink={0}>
+              <Viewport cols={12} rows={6} source={source} />
+            </Box>
+          </Box>
+          <Text>|side</Text>
+        </Box>
+        <Text>exit code 1</Text>
+        {Array.from({ length: 20 }, (_, i) => (
+          <Box key={i} height={1} flexShrink={0}>
+            <Text>{`status ${i}`}</Text>
+          </Box>
+        ))}
+      </Box>,
+    )
+    const fresh = bufferToText(app.freshRender()).split("\n")
+    expect(fresh.slice(0, 6)).toEqual([
+      "GGGGGGGG|side",
+      "GGGGGGGG",
+      "GGGGGGGG",
+      "exit code 1",
+      "status 0",
+      "status 1",
+    ])
   })
 
   test("8. ref.writeCells() routes through dirty-marking and paints on rerender", () => {
