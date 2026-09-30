@@ -30,12 +30,28 @@
  */
 
 import React from "react"
-import { describe, test, expect } from "vitest"
+import { describe, test, expect, vi } from "vitest"
+
+// The prewalk cost rows read the render phase's per-frame stats
+// (__silvery_content_all), which render-phase.ts records only when
+// instrumentation is on; it reads the switch once, at module load. The root
+// setup turns it on through SILVERY_STRICT, silvery's own runner does not, so
+// the file turns it on itself, before the imports below load the pipeline.
+const instrumentBefore = vi.hoisted(() => {
+  const before = process.env.SILVERY_INSTRUMENT
+  process.env.SILVERY_INSTRUMENT = "1"
+  return before
+})
+
 import { bufferToText, compareBuffers, createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
 import { Viewport } from "@silvery/ag-react"
 import type { ForeignSource, ViewportContext } from "@silvery/ag/viewport-types"
 import { createCellBuffer } from "@silvery/ag/viewport-buffer"
+
+// The pipeline has read the switch; give the environment back to the worker.
+if (instrumentBefore === undefined) delete process.env.SILVERY_INSTRUMENT
+else process.env.SILVERY_INSTRUMENT = instrumentBefore
 
 const COLS = 60
 const ROWS = 40
