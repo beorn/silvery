@@ -391,3 +391,17 @@ Not fixed in the pipeline, deliberately. A per-node check inside `renderNodeToBu
 **Test**: `tests/viewport-height-boundary.test.ts` "STRICT oracles at the fullscreen viewport cap" covers the vt100, accumulate and xterm oracles, and the native scroll case at `SILVERY_STRICT` 0 and 1. Two guards check that the capped oracle still throws: once on a dropped visible change, and once on a write addressed below the terminal. `tests/features/fullscreen-taller-than-terminal.test.tsx` drives the yrd shape through `run()`: a 42-row content-sized root in a 12-row termless terminal, whose clock and footer tick in the same frame.
 
 **Lesson**: an oracle is a model of the device, and it must model the device the output was written for: the same height, the same caps and the same clamps. When a fullscreen `STRICT_OUTPUT` mismatch sits at a row at or below the terminal height, suspect the model before the diff. A model bigger than the device is also blind to the very writes a real device would clamp.
+
+## An Opaque Blit Painted Past Its Scroll Clip — STRICT Blind Because Both Frames Bled (2026-09-30)
+
+**Symptom**: ag-code `tool-call.spec` went red on main after d9e824de91 (#26485) clipped `subtreePaintExtent`'s own-paint rect: `MISMATCH at (3, 13) on render #2`, incremental `T` (a guest cell) vs fresh `E` (text). The fresh frame itself read `Exit code 113` on row 13; the `13` was the tail of `TRACE-LINE-13` from an output island taller than its compact scroll box.
+
+**The blind path**: the first cure (f1cf585d2a) made the reader agree with the painter: `subtreePaintExtent` counted a viewport's or island's whole rect, unclipped. STRICT went green while every frame still showed guest cells below the box, and STRICT could not see that because the fresh render bleeds the same way. The exception also broke the premise of #26485's hidden-overflow fast path, that a clipping sibling's paint cannot leave its rect.
+
+**Root cause**: `emitOpaqueBlit` (`renderViewport` / `renderIsland`) took no clip. It wrote the whole layout rect, bounded only by the buffer, so a guest taller or wider than a scroll or `overflow:hidden` ancestor painted cells that later siblings own. Every other own-content painter honors `nodeState.clipBounds` (pitfall 10).
+
+**Fix** (#26811): the blit takes `nodeState.clipBounds`, the clip the node's ordinary paint uses, which the dispatcher and the overlap prewalk both derive through `childPaintClip`. There is no second clip computation, and the extent exception is gone. An overlay meant to escape an ancestor escapes through the overlay layer, never through an unclipped blit; no island, viewport or overlay row relied on the escape.
+
+**Test**: `tests/features/viewport-mvp.test.tsx` 7b (fresh frame, an 8x3 hidden box, both axes), `tests/features/islands-render.test.tsx` 7 (the `Exit code 113` shape), and the 26811 describe in `tests/features/descendant-overflow-left-sibling-bg.test.tsx` (hidden and scroll, a shrinking-box strip and a stable text clear on row 3). All six failed on f1cf585d2a. Removing the extent exception without the painter fix turned the tool-call witness and the strip rows back into STRICT mismatches.
+
+**Lesson**: when STRICT goes green because a reader counts more, check whether the painter breaks the invariant every other painter keeps. A defect both renders share is invisible to STRICT, so assert the fresh frame directly.

@@ -330,11 +330,11 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
   })
 })
 
-// A viewport blit is opaque over its whole layout rect and clips only at the
-// buffer edge, not at a scroll ancestor's viewport. A guest frame inside a
-// shorter scroll container therefore rewrites the rows below that viewport,
-// which a clean later sibling owns. The forward-overlap pass must count those
-// rows as painted, or the clean sibling is skipped under the guest's cells.
+// A guest frame repaints inside a scroll container shorter than its Viewport.
+// The blit is clipped to the scroll viewport like every other paint, so the
+// rows below it stay the clean later sibling's, which may stay on the fast
+// path. Before #26811 the blit painted those rows too, and the forward-overlap
+// pass had to count them or the sibling was skipped under the guest's cells.
 function BlitPane({ source }: { source: ForeignSource }): React.ReactElement {
   return (
     <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">

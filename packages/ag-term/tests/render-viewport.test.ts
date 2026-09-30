@@ -69,6 +69,7 @@ describe("renderViewport", () => {
       sink,
       rect(2, 1, 3, 2),
       0,
+      undefined,
     )
 
     expect(writes).toHaveLength(6)
@@ -89,6 +90,7 @@ describe("renderIsland", () => {
       sink,
       rect(1, 1, 2, 2),
       0,
+      undefined,
       inheritedBg,
       true,
     )

@@ -24,7 +24,7 @@ import type { AgNode, Cell, Rect } from "@silvery/ag/types"
 import type { CellBuffer } from "@silvery/ag/viewport-types"
 import type { RenderSink } from "./render-sink"
 import { parseColor } from "./render-helpers"
-import type { PipelineContext } from "./types"
+import type { ClipBounds, PipelineContext } from "./types"
 import { assertIslandRenderInvariants, ensureIslandStrictInstrumentation } from "../strict-island"
 
 /**
@@ -32,8 +32,9 @@ import { assertIslandRenderInvariants, ensureIslandStrictInstrumentation } from 
  * (via `sink.emitSetCell`) at `layout` (the viewport's content rect in
  * absolute parent-buffer coordinates). The full layout rect is painted so
  * cloned parent buffers cannot retain stale cells where the source is smaller.
- * Cells outside `buffer`'s bounds are silently clipped — the Viewport rect's
- * right/bottom may extend off-screen and that's fine.
+ * The blit is clipped like every other own-content paint: to `clipBounds`,
+ * the node's clip from its clipping ancestors (`nodeState.clipBounds`), and
+ * to the buffer's bounds.
  */
 export function renderViewport(
   node: AgNode,
@@ -41,10 +42,21 @@ export function renderViewport(
   sink: RenderSink,
   layout: Rect,
   scrollOffset: number,
+  clipBounds: ClipBounds | undefined,
   ctx?: PipelineContext,
 ): void {
   const state = node.viewportState
-  emitOpaqueBlit(state?.buffer ?? null, buffer, sink, layout, scrollOffset, null, false, ctx)
+  emitOpaqueBlit(
+    state?.buffer ?? null,
+    buffer,
+    sink,
+    layout,
+    scrollOffset,
+    clipBounds,
+    null,
+    false,
+    ctx,
+  )
 }
 
 /**
@@ -91,6 +103,7 @@ function emitOpaqueBlit(
   sink: RenderSink,
   layout: Rect,
   scrollOffset: number,
+  clipBounds: ClipBounds | undefined,
   inheritedBg: Color = null,
   selectableMode = false,
   ctx?: PipelineContext,
@@ -98,16 +111,23 @@ function emitOpaqueBlit(
   const baseX = layout.x
   const baseY = layout.y - scrollOffset
   const blank = blankCellToPatch(inheritedBg)
+  // Clip like every other own-content paint: to the clip the node renders
+  // under (from its clipping ancestors), then to the buffer. Cells past a
+  // scroll or hidden ancestor belong to whatever paints there (#26811).
+  const top = Math.max(0, clipBounds?.top ?? 0)
+  const bottom = Math.min(buffer.height, clipBounds?.bottom ?? buffer.height)
+  const left = Math.max(0, clipBounds?.left ?? 0)
+  const right = Math.min(buffer.width, clipBounds?.right ?? buffer.width)
 
   // Viewports and islands are opaque cell domains. Paint the whole layout
   // rect, not just the currently available source grid, so cloned host buffers
   // cannot retain stale cells after a guest resize, deferred init, or remount.
   for (let r = 0; r < layout.height; r++) {
     const dstY = baseY + r
-    if (dstY < 0 || dstY >= buffer.height) continue
+    if (dstY < top || dstY >= bottom) continue
     for (let c = 0; c < layout.width; c++) {
       const dstX = baseX + c
-      if (dstX < 0 || dstX >= buffer.width) continue
+      if (dstX < left || dstX >= right) continue
       const cell =
         src && r < src.rows && c < src.cols
           ? viewportCellToPatch(src.getCell(c, r), inheritedBg, ctx)
@@ -141,9 +161,10 @@ function emitOpaqueBlit(
  * into the host's cursor signal (separate epic unit); until then, the
  * cursor field is read by the focus aggregator, not the blit.
  *
- * Clipping: same as viewport — out-of-bounds cells are silently dropped.
- * Both axes (right + bottom) clip; an island whose `cols×rows` overshoots
- * the parent buffer paints only its in-bounds intersection.
+ * Clipping: same as viewport — the blit paints only inside `clipBounds` (the
+ * node's clip from its clipping ancestors) and the parent buffer; an island
+ * taller or wider than a scroll/hidden ancestor, or overshooting the parent
+ * buffer, paints only its visible intersection.
  *
  * See {@link island-types.ts} in `@silvery/ag` and bead
  * `@km/silvery/15646-islands`.
@@ -154,13 +175,24 @@ export function renderIsland(
   sink: RenderSink,
   layout: Rect,
   scrollOffset: number,
+  clipBounds: ClipBounds | undefined,
   inheritedBg: Color = null,
   selectableMode = false,
   ctx?: PipelineContext,
 ): void {
   const state = node.islandState
   if (!state) {
-    emitOpaqueBlit(null, buffer, sink, layout, scrollOffset, inheritedBg, selectableMode, ctx)
+    emitOpaqueBlit(
+      null,
+      buffer,
+      sink,
+      layout,
+      scrollOffset,
+      clipBounds,
+      inheritedBg,
+      selectableMode,
+      ctx,
+    )
     return
   }
   const handle = state.handle
@@ -168,11 +200,31 @@ export function renderIsland(
   // `init()` resolves. The island rect is still opaque, so emit blank cells
   // instead of letting cloned parent-buffer content survive under it.
   if (!handle) {
-    emitOpaqueBlit(null, buffer, sink, layout, scrollOffset, inheritedBg, selectableMode, ctx)
+    emitOpaqueBlit(
+      null,
+      buffer,
+      sink,
+      layout,
+      scrollOffset,
+      clipBounds,
+      inheritedBg,
+      selectableMode,
+      ctx,
+    )
     return
   }
   ensureIslandStrictInstrumentation(node)
   assertIslandRenderInvariants(node, layout)
   const src = handle.output.buffer
-  emitOpaqueBlit(src, buffer, sink, layout, scrollOffset, inheritedBg, selectableMode, ctx)
+  emitOpaqueBlit(
+    src,
+    buffer,
+    sink,
+    layout,
+    scrollOffset,
+    clipBounds,
+    inheritedBg,
+    selectableMode,
+    ctx,
+  )
 }
