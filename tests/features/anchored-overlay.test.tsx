@@ -1,8 +1,8 @@
-import React from "react"
+import React, { useMemo, useState } from "react"
 import { describe, expect, test } from "vitest"
 import { createRenderer, createTermless } from "@silvery/test"
 import "@termless/test/matchers"
-import { run } from "../../packages/ag-term/src/runtime/run"
+import { run, useInput } from "../../packages/ag-term/src/runtime/run"
 import { AnchoredOverlay, Box, Text } from "@silvery/ag-react"
 import type { AgNode, BoxProps, Placement } from "@silvery/ag/types"
 
@@ -338,6 +338,266 @@ describe("AnchoredOverlay", () => {
     expect(term.screen).toContainText("header-0")
 
     await handle.unmount?.()
+  })
+
+  // #26660: an overlay whose only change is its decoration (placement, footprint)
+  // must be re-placed. The decoration rect is written by the notify step of the
+  // layout phase, and a `decorations` change leaves every Flexily node clean, so
+  // the layout-on-demand gate used to skip that step and the overlay kept its old
+  // rect. Driven through the live runtime with a root the size of the terminal:
+  // a content-sized root changes size between frames and relays out every frame,
+  // which hid the skip.
+  test("a decorations-only change re-places a fixed overlay (placement flips to top)", async () => {
+    const SIZE = { width: 10, height: 2 }
+    using term = createTermless({ cols: 40, rows: 20 })
+
+    function Tree(): React.ReactElement {
+      const [placement, setPlacement] = useState<Placement>("bottom-start")
+      useInput((input) => {
+        if (input === "t") setPlacement("top-start")
+      })
+      return (
+        <Box width={40} height={20} flexDirection="column" paddingTop={9}>
+          <Box anchorRef="trigger" width={10} height={2}>
+            <Text>trigger</Text>
+          </Box>
+          <AnchoredOverlay anchorId="trigger" placement={placement} size={SIZE} id="overlay">
+            <Text>menu</Text>
+          </AnchoredOverlay>
+        </Box>
+      )
+    }
+
+    const handle = await run(<Tree />, term)
+    await handle.waitForLayoutStable()
+    expect(findById(handle.root, "overlay")?.boxRect).toMatchObject({ y: 11, height: 2 })
+
+    await handle.press("t")
+    await handle.waitForLayoutStable()
+    expect(
+      findById(handle.root, "overlay")?.boxRect,
+      "top-start sits above the anchor",
+    ).toMatchObject({ y: 7, height: 2 })
+    expect(term.screen).toContainText("menu")
+
+    handle.unmount()
+  })
+
+  test("a decorations-only change re-places a max-sized overlay (footprint narrows)", async () => {
+    // The content is wider than both footprints, so the box is as wide as the
+    // footprint under either sizing order in Flexily; no width is measured here.
+    using term = createTermless({ cols: 80, rows: 20 })
+
+    function Tree(): React.ReactElement {
+      const [width, setWidth] = useState(30)
+      useInput((input) => {
+        if (input === "n") setWidth(12)
+      })
+      const size = useMemo(() => ({ width, height: 10 }), [width])
+      return (
+        <Box width={80} height={20} paddingLeft={10} paddingTop={1} flexDirection="column">
+          <Box anchorRef="trigger" width={40} height={1}>
+            <Text>trigger</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="trigger"
+            placement="bottom-end"
+            sizing="max"
+            size={size}
+            id="overlay"
+          >
+            <Text>OVERLAY-CONTENT-WIDER-THAN-BOTH-CAPS</Text>
+          </AnchoredOverlay>
+        </Box>
+      )
+    }
+
+    const handle = await run(<Tree />, term)
+    await handle.waitForLayoutStable()
+    // bottom-end: the overlay's right edge meets the anchor's (10 + 40 = 50).
+    expect(findById(handle.root, "overlay")?.boxRect).toMatchObject({ x: 20, width: 30 })
+
+    await handle.press("n")
+    await handle.waitForLayoutStable()
+    expect(findById(handle.root, "overlay")?.boxRect, "12-wide footprint ends at 50").toMatchObject(
+      {
+        x: 38,
+        width: 12,
+      },
+    )
+
+    handle.unmount()
+  })
+
+  // #26660: the collision footprint is the overlay's border box. The height
+  // probe reported the content box (padding excluded), so a padded overlay
+  // whose content fit below its anchor was placed there and its box ran past
+  // the bottom of the screen by its padding. The column overlay with a column
+  // body is the AnchoredPopoverTarget shape; its height follows its content.
+  test("a sizing=max footprint is the overlay's border box (padding included)", async () => {
+    using term = createTermless({ cols: 40, rows: 12 })
+
+    function Tree(): React.ReactElement {
+      return (
+        <Box width={40} height={12} flexDirection="column" paddingTop={8}>
+          <Box anchorRef="trigger" width={10} height={1}>
+            <Text>trigger</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="trigger"
+            placement="bottom-start"
+            sizing="max"
+            size={{ width: 20, height: 10 }}
+            flexDirection="column"
+            paddingY={1}
+            id="overlay"
+          >
+            <Box flexDirection="column">
+              <Text>FIRST</Text>
+              <Text>middle</Text>
+              <Text>LAST</Text>
+            </Box>
+          </AnchoredOverlay>
+        </Box>
+      )
+    }
+
+    const handle = await run(<Tree />, term)
+    // The measured height reaches the footprint on a later commit (see 19777).
+    await settle()
+    await handle.waitForLayoutStable()
+    // Three lines and a row of padding above and below make a 5-row box. Only
+    // 3 rows remain below the anchor (row 8), so the policy flips it above,
+    // flush with the anchor's top edge.
+    expect(findById(handle.root, "overlay")?.boxRect).toMatchObject({ y: 3, height: 5 })
+    expect(term.screen).toContainText("LAST")
+
+    handle.unmount()
+  })
+
+  // #26660, seen and filed separately: an overlay paints in its host's absolute
+  // pass (renderNormalChildren's third pass in render-phase.ts), so a later
+  // sibling of one of its host's ancestors paints over it. A full-width anchor
+  // leaves no room on either side, the policy shifts the overlay over the rows
+  // below, and the footer painted after it covers them. This row pins today's
+  // behavior and fails until an overlay paints above later rows of the tree.
+  test.fails("an overlay shifted over later rows is painted over by them (paint order)", () => {
+    const render = createRenderer({ cols: 40, rows: 12 })
+
+    const app = render(
+      <Box width={40} height={12} flexDirection="column">
+        <Box height={9} flexDirection="column" justifyContent="flex-end">
+          <Box anchorRef="row" width={40} height={1}>
+            <Text>anchor row</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="row"
+            placement="left-start"
+            size={{ width: 20, height: 4 }}
+            flexDirection="column"
+            id="overlay"
+          >
+            <Text>OVERLAY-LINE-1</Text>
+            <Text>OVERLAY-LINE-2</Text>
+            <Text>OVERLAY-LINE-3</Text>
+            <Text>OVERLAY-LINE-4</Text>
+          </AnchoredOverlay>
+        </Box>
+        <Box flexDirection="column">
+          <Text>FOOTER-1</Text>
+          <Text>FOOTER-2</Text>
+          <Text>FOOTER-3</Text>
+        </Box>
+      </Box>,
+    )
+
+    // Shifted to x 0 at the anchor's row, over the footer's three rows.
+    expect(findById(getRoot(app), "overlay")?.boxRect).toEqual({ x: 0, y: 8, width: 20, height: 4 })
+    // Today the footer's text overwrites the overlay's lines 2 to 4.
+    expect(app.text).toContain("OVERLAY-LINE-4")
+  })
+
+  // #26660: under content-first sizing (#26388) a `sizing="max"` box is as
+  // wide as its content, so the collision footprint must learn the measured
+  // width the way it learns the measured height; placements that subtract the
+  // footprint width (`*-end`, `left-*`) otherwise leave a cap-wide gap.
+  // Both rows hold on cap-first layout too, where content fills the cap.
+  function NarrowContent({ label }: { label: string }): React.ReactElement {
+    return (
+      <Box flexDirection="column">
+        <Text>{label}</Text>
+      </Box>
+    )
+  }
+
+  // The measured size reaches the footprint on a later commit, which only the
+  // live runtime advances (see the 19777 row below).
+  async function settledRect(tree: React.ReactElement, cols: number, rows: number, id: string) {
+    using term = createTermless({ cols, rows })
+    const handle = await run(tree, term)
+    await settle()
+    await handle.waitForLayoutStable()
+    await settle()
+    const rect = findById(handle.root, id)?.boxRect ?? null
+    await handle.unmount?.()
+    return rect
+  }
+
+  test("sizing=max footprint width follows the measured content (bottom-end is flush)", async () => {
+    const rect = await settledRect(
+      <Box width={80} height={20} paddingLeft={10} paddingTop={1} flexDirection="column">
+        <Box anchorRef="trigger" width={40} height={1}>
+          <Text>trigger</Text>
+        </Box>
+        <AnchoredOverlay
+          anchorId="trigger"
+          placement="bottom-end"
+          sizing="max"
+          size={{ width: 30, height: 10 }}
+          id="overlay"
+        >
+          <NarrowContent label="NARROW-12ch!" />
+        </AnchoredOverlay>
+      </Box>,
+      80,
+      20,
+      "overlay",
+    )
+    expect(rect).toBeTruthy()
+    expect(rect!.width).toBeLessThanOrEqual(30)
+    expect(rect!.x + rect!.width, "overlay right edge is flush with the anchor's").toBe(10 + 40)
+  })
+
+  test("sizing=max left-start overlay ends flush against its anchor", async () => {
+    // The side-panel account popover shape (ag-chat-ui SidePanel.tsx).
+    const rect = await settledRect(
+      <Box width={120} height={20} flexDirection="row">
+        <Box flexGrow={1} minWidth={0}>
+          <Text>chat</Text>
+        </Box>
+        <Box width={40} flexShrink={0} flexDirection="column" paddingTop={2}>
+          <Box anchorRef="account" width={40} height={1}>
+            <Text>account-row</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="account"
+            placement="left-start"
+            sizing="max"
+            size={{ width: 48, height: 18 }}
+            id="account-overlay"
+          >
+            <NarrowContent label="ACCOUNT-DETAIL" />
+          </AnchoredOverlay>
+        </Box>
+      </Box>,
+      120,
+      20,
+      "account-overlay",
+    )
+    expect(rect).toBeTruthy()
+    expect(rect!.x + rect!.width, "overlay right edge touches the anchor's left edge").toBe(
+      120 - 40,
+    )
   })
 
   test("removes overlay content when closed", () => {

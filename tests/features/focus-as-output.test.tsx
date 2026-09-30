@@ -30,10 +30,11 @@
  * Bead: km-silvery.phase4-split-focus-selection
  */
 
-import React from "react"
+import React, { useState } from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, createTermless } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
+import { run, useInput } from "@silvery/ag-term/runtime"
 import {
   computeFocusedNodeId,
   findActiveFocusedNodeId,
@@ -231,6 +232,80 @@ describe("invariant 2: focusedNodeId recomputes on focused prop change", () => {
     expect(stillFocused).toBeNull()
     // The previously-allocated signal on the same node clears to null.
     expect(sig.focusedNodeId()).toBeNull()
+  })
+
+  // #26660: the same invariant in the live runtime, with a root the size of the
+  // terminal. A focused-only change leaves every Flexily node clean, and the
+  // layout-on-demand gate used to skip the notify step that writes the signal.
+  // The createRenderer rows above relay out on every frame (content-sized root).
+  test("live runtime: a focused-only change clears the node's focusedNodeId signal", async () => {
+    using term = createTermless({ cols: 30, rows: 6 })
+
+    function App(): React.ReactElement {
+      const [focused, setFocused] = useState(true)
+      useInput((input) => {
+        if (input === "b") setFocused(false)
+      })
+      return (
+        <Box width={30} height={6} flexDirection="column" padding={1}>
+          <Box id="target" width={20} height={2} focused={focused}>
+            <Text>target</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const handle = await run(<App />, term)
+    await handle.waitForLayoutStable()
+    const node = findFirstFocused(handle.root)
+    if (!node) throw new Error("test fixture: no focused node found")
+    const sig = getLayoutSignals(node)
+    expect(sig.focusedNodeId()).toBe("target")
+
+    await handle.press("b")
+    await handle.waitForLayoutStable()
+    expect(sig.focusedNodeId(), "blurred Box clears its signal").toBeNull()
+
+    handle.unmount()
+  })
+
+  // #26660: a focused Box's focusedNodeId is its id, else its testID, so while
+  // it stays focused those two props are notify inputs as well.
+  test("live runtime: an id-only or testID-only change on a focused Box updates focusedNodeId", async () => {
+    const steps: { id: string | undefined; testID: string }[] = [
+      { id: "alpha", testID: "gamma" },
+      { id: "beta", testID: "gamma" },
+      { id: undefined, testID: "gamma" },
+      { id: undefined, testID: "delta" },
+    ]
+    using term = createTermless({ cols: 30, rows: 6 })
+
+    function App(): React.ReactElement {
+      const [step, setStep] = useState(0)
+      useInput((input) => {
+        if (input === "n") setStep((s) => Math.min(s + 1, steps.length - 1))
+      })
+      const { id, testID } = steps[step]!
+      return (
+        <Box width={30} height={6} flexDirection="column" padding={1}>
+          <Box id={id} testID={testID} width={20} height={2} focused={true}>
+            <Text>x</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const handle = await run(<App />, term)
+    await handle.waitForLayoutStable()
+    expect(findActiveFocusedNodeId(handle.root)).toBe("alpha")
+
+    for (const expected of ["beta", "gamma", "delta"]) {
+      await handle.press("n")
+      await handle.waitForLayoutStable()
+      expect(findActiveFocusedNodeId(handle.root), "same Box, same layout").toBe(expected)
+    }
+
+    handle.unmount()
   })
 })
 

@@ -27,6 +27,7 @@ import {
   childPaintOffset,
   childPaintClip,
   childClipAxes,
+  scrollChildClip,
   paintChildStates,
   projectPaintRect,
   intersectPaintRect,
@@ -36,6 +37,7 @@ import {
   hasExcessClearRetreat,
 } from "./helpers"
 import { renderBox, renderScrollIndicators, getEffectiveBg } from "./render-box"
+import { borderLineIndicatorRetired } from "./overflow-indicator"
 import { renderIsland, renderViewport } from "./render-viewport"
 import { clearPreviousOutlines, renderDecorationPass } from "./decoration-phase"
 import { parseColor } from "./render-helpers"
@@ -909,14 +911,20 @@ function renderNodeToBuffer(
     // When hasPrevBuffer=true and only subtreeDirty is set (no own visual changes),
     // the cloned buffer already has correct own content. Skipping avoids a border
     // redraw that would overwrite child content rendered on top of the border area
-    // (e.g., text overflow into border columns).
+    // (e.g., text overflow into border columns). The exception is a scroll
+    // container whose border-line overflow indicator went away this frame: the
+    // clone holds the indicator's blanked line, and only the border paint
+    // restores it.
     const needsOwnRepaint =
       !hasPrevBuffer ||
       ancestorCleared ||
       ancestorLayoutChanged ||
       cascade.contentAreaAffected ||
       isDirty(node, STYLE_PROPS_BIT) ||
-      cascade.bgRefillNeeded
+      cascade.bgRefillNeeded ||
+      (props.overflow === "scroll" &&
+        node.scrollState !== undefined &&
+        borderLineIndicatorRetired(props, node.scrollState))
 
     if (needsOwnRepaint) {
       // STRICT bordered-rect-clip: track which AgNode is currently
@@ -1800,7 +1808,7 @@ function renderScrollContainerChildren(
     visibleRangeChanged
   ) {
     const effectiveBg = getEffectiveBg(props)
-    scrollBg = effectiveBg ? parseColor(effectiveBg) : inheritedBg.color
+    scrollBg = effectiveBg ? parseColor(effectiveBg, ctx?.colorLevel) : inheritedBg.color
   }
 
   // Tier 1 (buffer shift) is unsafe when a sibling absolute child overlays
@@ -1857,28 +1865,41 @@ function renderScrollContainerChildren(
   // Apply the plan: buffer shift, viewport clear, or sticky force refresh.
   // Phase 2 Step 4d: scroll-tier ops route through sink.
   //   - Tier 1 shift: scrollRegion is a TRANSFER (shifts prev pixels);
-  //     leading indicator-row clears are CLEANUP (clear stale indicator).
+  //     the clears of last frame's indicator rows are CLEANUP, emitted after it.
   //   - Tier 2 clear: viewport clear is CLEANUP.
   //   - stickyForceRefresh: viewport pre-clear (CLEANUP).
   // Smell #2: routes through the frame-shared `sink` rather than fabricating a
   // local one — see Smell #2 from the 2026-04-27 dual-pro review.
   const scrollDelta = ss.offset - (ss.prevOffset ?? ss.offset)
+  // Last frame's child clip: the rows the children painted last frame. The
+  // viewport rows outside it held the borderless indicators, not content.
+  const prevChildClip = scrollChildClip(
+    viewportClipBounds,
+    props,
+    ss.prevHiddenAbove,
+    ss.prevHiddenBelow,
+  )
   if (tier === "shift" && clearHeight > 0) {
-    // Clear scroll indicator rows before shifting to prevent stale indicator
-    // pixels at edges (columns not covered by children).
-    const showBorderless = props.overflowIndicator === true
-    if (showBorderless && !border.top && !border.bottom) {
-      const topIndicatorY = clearY
-      const bottomIndicatorY = clearY + clearHeight - 1
-      if (ss.prevOffset != null && ss.prevOffset > 0) {
-        sink.emitClearRect(contentX, topIndicatorY, contentWidth, 1, plan.clearBg)
-      }
-      sink.emitClearRect(contentX, bottomIndicatorY, contentWidth, 1, plan.clearBg)
-    }
     sink.emitScrollRegion(contentX, clearY, contentWidth, clearHeight, scrollDelta, {
       char: " ",
       bg: plan.clearBg,
     })
+    // Blank last frame's indicator rows where the shift moved them, so a stale
+    // glyph cannot survive in cells no child covers. Emitted after the shift,
+    // the clear follows it in emission order and in the sectioned plan
+    // (transfer -> cleanup) alike. A clear emitted before the shift at the
+    // pre-shift rows runs after the shift under the plan, at the wrong rows.
+    const regionEnd = clearY + clearHeight
+    const prevIndicatorRows = [
+      ...(prevChildClip.top > clearY ? [clearY] : []),
+      ...(prevChildClip.bottom < regionEnd ? [regionEnd - 1] : []),
+    ]
+    for (const row of prevIndicatorRows) {
+      const landed = row - scrollDelta
+      if (landed >= clearY && landed < regionEnd) {
+        sink.emitClearRect(contentX, landed, contentWidth, 1, plan.clearBg)
+      }
+    }
   }
 
   if (tier === "clear" && clearHeight > 0) {
@@ -1895,10 +1916,10 @@ function renderScrollContainerChildren(
   const childAncestorLayoutChanged =
     isCurrentEpoch(node, node.layoutChangedThisFrame) || !!ancestorLayoutChanged
 
-  // For buffer shift: children that were fully visible in BOTH the previous
-  // and current frames have correct pixels after the shift (childHasPrev=true).
-  const prevVisTop = ss.prevOffset ?? ss.offset
-  const prevVisBottom = prevVisTop + ss.viewportHeight
+  // For buffer shift: a child whose rows lay wholly inside last frame's child
+  // clip has correct pixels after the shift (childHasPrev=true). A child under
+  // last frame's `▲N`/`▼N` row was clipped there, so it must render now.
+  const prevOffset = ss.prevOffset ?? ss.offset
 
   // First pass: render non-sticky visible children with scroll offset
   for (let i = 0; i < node.children.length; i++) {
@@ -1920,17 +1941,24 @@ function renderScrollContainerChildren(
     let thisChildHasPrev = defaultChildHasPrev
     let thisChildAncestorCleared = defaultChildAncestorCleared
     if (tier === "shift") {
-      // Check if child was fully visible in the previous frame
+      // A child keeps its shifted pixels if every row of it was painted last
+      // frame (its rows at last frame's offset, same layout, inside last
+      // frame's child clip), or if it paints no row this frame.
       const childRect = child.boxRect
       if (childRect) {
-        const childTop = childRect.y - layout.y - border.top - padding.top
-        const childBottom = childTop + childRect.height
-        const wasFullyVisible = childTop >= prevVisTop && childBottom <= prevVisBottom
-        thisChildHasPrev = wasFullyVisible
+        const prevTop = childRect.y - prevOffset
+        const top = childRect.y - ss.offset
+        const paintedLastFrame =
+          prevTop >= prevChildClip.top && prevTop + childRect.height <= prevChildClip.bottom
+        const hiddenNow =
+          childClipBounds !== undefined &&
+          (top + childRect.height <= childClipBounds.top || top >= childClipBounds.bottom)
+        const keepsPixels = paintedLastFrame || hiddenNow
+        thisChildHasPrev = keepsPixels
         // Shifted children: their pixels are intact (not cleared)
         // Newly visible: exposed region was filled by scrollRegion
-        thisChildAncestorCleared = wasFullyVisible ? ancestorCleared || contentRegionCleared : true
-        if (!wasFullyVisible) {
+        thisChildAncestorCleared = keepsPixels ? ancestorCleared || contentRegionCleared : true
+        if (!keepsPixels) {
           clearShiftedNewChildRegion(childRect, ss.offset, childClipBounds, sink, plan.clearBg)
         }
       }
