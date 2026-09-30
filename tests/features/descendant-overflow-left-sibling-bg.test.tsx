@@ -31,7 +31,7 @@
 
 import React from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { compareBuffers, createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
 import { Viewport } from "@silvery/ag-react"
 import type { ForeignSource, ViewportContext } from "@silvery/ag/viewport-types"
@@ -353,7 +353,7 @@ function BlitPane({ source }: { source: ForeignSource }): React.ReactElement {
   )
 }
 
-function blitSource(): { source: ForeignSource; paint: (char: string) => void } {
+function blitSource(initial = "A"): { source: ForeignSource; paint: (char: string) => void } {
   let ctx: ViewportContext | null = null
   const paint = (char: string): void => {
     if (!ctx) throw new Error("viewport source is not connected")
@@ -376,7 +376,7 @@ function blitSource(): { source: ForeignSource; paint: (char: string) => void } 
   const source: ForeignSource = {
     connect(connected) {
       ctx = connected
-      paint("A")
+      paint(initial)
     },
     disconnect() {
       ctx = null
@@ -405,4 +405,84 @@ describe("regression: an opaque blit past its scroll clip keeps the later siblin
       app.unmount()
     }
   })
+})
+
+// A clean earlier sibling that clips holds a 12x6 Viewport in 3 rows; the
+// emitter on row 3 clears cells under the Viewport's layout rect. Those cells
+// are outside the clip, so no frame, fresh or incremental, holds a guest cell
+// there, and the emitter's clear needs no repaint of the earlier sibling.
+function ClippedBlitPane({
+  source,
+  overflow,
+  emitter,
+}: {
+  source: ForeignSource
+  overflow: "hidden" | "scroll"
+  emitter: { text: string } | { width: number }
+}): React.ReactElement {
+  return (
+    <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
+      <Box height={3} flexShrink={0} overflow={overflow} flexDirection="column">
+        <Box flexShrink={0}>
+          <Viewport cols={12} rows={6} source={source} />
+        </Box>
+      </Box>
+      {"text" in emitter ? (
+        <Box width={COLS} height={1} flexShrink={0}>
+          <Text key={emitter.text}>{emitter.text}</Text>
+        </Box>
+      ) : (
+        <Box width={emitter.width} height={1} flexShrink={0} />
+      )}
+      {Array.from({ length: 27 }, (_, i) => (
+        <Box key={i} height={1} flexShrink={0}>
+          <Text>{`status ${i}`}</Text>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+/**
+ * @failure A guest cell painted past a hidden or scroll box survives, or is lost, when a later sibling clears under it.
+ * @level l2
+ * @consumer ag-code tool-call output island inside a compact scroll; hab-deck shell panes; public Viewport users.
+ */
+describe("regression: an opaque blit stays inside its clipping ancestor (@i/10-yrd/26485-stage-switch-stale-background/26811-opaque-blit-ignores-scroll-clip)", () => {
+  for (const overflow of ["hidden", "scroll"] as const) {
+    test(`a shrinking box below a clipped guest frame clears to the pane background (${overflow})`, () => {
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+      const guest = blitSource("G")
+      const scene = (width: number) => (
+        <ClippedBlitPane source={guest.source} overflow={overflow} emitter={{ width }} />
+      )
+      const app = render(scene(19))
+      try {
+        app.rerender(scene(6))
+        expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+        const cleared = app.term.buffer.getCell(8, 3)
+        expect(cleared.char).toBe(" ")
+        expect(cleared.bg).toEqual({ r: 0, g: 0, b: 0 })
+      } finally {
+        app.unmount()
+      }
+    })
+
+    test(`a stable text clear below a clipped guest frame keeps no guest cell (${overflow})`, () => {
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+      const guest = blitSource("G")
+      const scene = (text: string) => (
+        <ClippedBlitPane source={guest.source} overflow={overflow} emitter={{ text }} />
+      )
+      const app = render(scene("exit code 1"))
+      try {
+        app.rerender(scene("exit 1"))
+        expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+        expect(app.term.buffer.getCell(6, 3).char).toBe(" ")
+        expect(app.term.buffer.getCell(6, 3).bg).toEqual({ r: 0, g: 0, b: 0 })
+      } finally {
+        app.unmount()
+      }
+    })
+  }
 })

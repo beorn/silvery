@@ -15,6 +15,7 @@
  *   5. Pending-lifecycle island (no handle yet) skips blit cleanly — no crash
  *      and no stray pixels (parent's inherited bg paints through)
  *   6. Island clipped at right/bottom edge of parent buffer — no out-of-bounds writes
+ *   7. Island taller than its scroll box paints nothing below the box
  *
  * The test fixture uses a synchronous snapshot guest — `init()` resolves
  * immediately with an IslandHandle whose output.buffer is pre-populated.
@@ -25,7 +26,7 @@
 
 import React, { type ReactElement, type ReactNode } from "react"
 import { describe, expect, test } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { bufferToText, createRenderer } from "@silvery/test"
 import { Box, Island, ScopeProvider, Text } from "@silvery/ag-react"
 import { createCellBuffer, type MutableCellBuffer } from "@silvery/ag/viewport-buffer"
 import { createScope } from "@silvery/scope"
@@ -483,5 +484,45 @@ describe("Island — render-phase blit", () => {
     expect(app.text).toContain("top")
     // Visible portion of the island shows 'Z' cells.
     expect(app.text).toContain("Z")
+  })
+
+  test("7. island taller than its scroll box paints nothing below the box", async () => {
+    // The ag-code tool-call shape: a guest in a compact scroll box read
+    // "Exit code 113" below it, where "13" was guest output past the scroll
+    // viewport. The blit takes the clip its node's ordinary paint uses, so the
+    // fresh frame's rows below the box belong to the later siblings alone
+    // (@i/10-yrd/26485-stage-switch-stale-background/26811-opaque-blit-ignores-scroll-clip).
+    const render = createRenderer({ cols: 40, rows: 24 })
+    const g = snapshotGuest("T")
+    function App() {
+      return (
+        <Box flexDirection="column" width={40} height={24}>
+          <Box height={3} flexShrink={0} overflow="scroll" flexDirection="column">
+            <Box flexShrink={0}>
+              <Island guest={g.guest} cols={16} rows={6} />
+            </Box>
+          </Box>
+          <Text>Exit code 1</Text>
+          {Array.from({ length: 20 }, (_, i) => (
+            <Box key={i} height={1} flexShrink={0}>
+              <Text>{`status ${i}`}</Text>
+            </Box>
+          ))}
+        </Box>
+      )
+    }
+    const wrap = makeTestScopeWrapper()
+    const app = render(wrap(<App />))
+    await flushMicrotasks()
+    app.rerender(wrap(<App />))
+    const fresh = bufferToText(app.freshRender()).split("\n")
+    expect(fresh.slice(0, 6)).toEqual([
+      "TTTTTTTTTTTTTTTT",
+      "TTTTTTTTTTTTTTTT",
+      "TTTTTTTTTTTTTTTT",
+      "Exit code 1",
+      "status 0",
+      "status 1",
+    ])
   })
 })
