@@ -38,6 +38,7 @@ import { useHover } from "../hooks/useHover"
 import { useKineticScroll } from "../hooks/useKineticScroll"
 import { lastModifierState, useModifierKeys } from "../hooks/useModifierKeys"
 import { useWindowSize } from "../hooks/useWindowSize"
+import { OverlaySizeProbe } from "../ui/components/OverlaySizeProbe"
 
 // -----------------------------------------------------------------------------
 // Types
@@ -396,7 +397,22 @@ function PopoverOverlay({
   // content change is handled by the key prop on the inner Box below.
   const { scrollOffset, onWheel } = useKineticScroll({})
   const { content, anchor } = state
-  if (!content || !anchor) return null
+  // The popover's measured border-box width, for the anchor it was measured
+  // at. A new anchor or a hidden popover discards it, so a fresh popover's
+  // first frame is always placed by its cap (#26660).
+  const anchorKey = anchor ? `${anchor.x},${anchor.y},${content?.anchorOffsetX ?? 0}` : null
+  const [measured, setMeasured] = useState<{ anchorKey: string; width: number } | null>(null)
+  const onMeasure = useCallback(
+    (size: { width: number; height: number }) => {
+      if (anchorKey !== null) setMeasured({ anchorKey, width: size.width })
+    },
+    [anchorKey],
+  )
+  if (!content || !anchor) {
+    if (measured !== null) setMeasured(null)
+    return null
+  }
+  const measuredWidth = measured?.anchorKey === anchorKey ? measured.width : null
 
   // Edge margins: popover must stay at least this far from the viewport
   // edges. 2 cols (left/right) + 1 row (top/bottom) per design convention.
@@ -421,8 +437,13 @@ function PopoverOverlay({
   const maxHeight = Math.max(4, placeAbove ? spaceAbove : spaceBelow)
 
   // Horizontal clamp: prefer anchor.x + offset but enforce both edge margins.
+  // The box is as wide as its content, capped by maxWidth (#26388). Frame 1
+  // slides it left by the cap, so it never crosses the right margin; once its
+  // border box is measured, it slides only as far as its real width needs, so
+  // narrow content settles at its anchor and wide content stays whole (#26660).
+  const footprint = measuredWidth ?? maxWidth
   let left = anchor.x + (content.anchorOffsetX ?? 0)
-  if (left + maxWidth > columns - EDGE_X) left = columns - EDGE_X - maxWidth
+  if (left + footprint > columns - EDGE_X) left = columns - EDGE_X - footprint
   if (left < EDGE_X) left = EDGE_X
 
   // Positional props — pass `top` OR `bottom`, never both. Below-anchor
@@ -468,6 +489,7 @@ function PopoverOverlay({
         e.stopPropagation()
       }}
     >
+      <OverlaySizeProbe onMeasure={onMeasure} />
       <Box flexDirection="column" maxWidth={bodyMaxWidth} minWidth={0} overflow="hidden">
         {content.body}
       </Box>
