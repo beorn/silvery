@@ -33,6 +33,9 @@ import React from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
+import { Viewport } from "@silvery/ag-react"
+import type { ForeignSource, ViewportContext } from "@silvery/ag/viewport-types"
+import { createCellBuffer } from "@silvery/ag/viewport-buffer"
 
 const COLS = 60
 const ROWS = 40
@@ -321,6 +324,83 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
       app.rerender(<StagePane output="AAAAAAAAAAAAAAAA" outsideOpaque />)
       expect(app.term.buffer.getCell(16, 1).char).toBe(" ")
       expect(app.term.buffer.getCell(16, 1).bg).toEqual({ r: 0, g: 0, b: 255 })
+    } finally {
+      app.unmount()
+    }
+  })
+})
+
+// A viewport blit is opaque over its whole layout rect and clips only at the
+// buffer edge, not at a scroll ancestor's viewport. A guest frame inside a
+// shorter scroll container therefore rewrites the rows below that viewport,
+// which a clean later sibling owns. The forward-overlap pass must count those
+// rows as painted, or the clean sibling is skipped under the guest's cells.
+function BlitPane({ source }: { source: ForeignSource }): React.ReactElement {
+  return (
+    <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
+      <Box height={3} flexShrink={0} overflow="scroll" flexDirection="column">
+        <Box flexShrink={0}>
+          <Viewport cols={12} rows={6} source={source} />
+        </Box>
+      </Box>
+      <Text>exit code 1</Text>
+      {Array.from({ length: 27 }, (_, i) => (
+        <Box key={i} height={1} flexShrink={0}>
+          <Text>{`status ${i}`}</Text>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+function blitSource(): { source: ForeignSource; paint: (char: string) => void } {
+  let ctx: ViewportContext | null = null
+  const paint = (char: string): void => {
+    if (!ctx) throw new Error("viewport source is not connected")
+    const { cols, rows } = ctx.dimensions()
+    const frame = createCellBuffer(cols, rows)
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        frame.setCell(c, r, {
+          char,
+          fg: null,
+          bg: null,
+          attrs: {},
+          wide: false,
+          continuation: false,
+        })
+      }
+    }
+    ctx.blit([{ row: 0, col: 0, width: cols, height: rows }], frame)
+  }
+  const source: ForeignSource = {
+    connect(connected) {
+      ctx = connected
+      paint("A")
+    },
+    disconnect() {
+      ctx = null
+    },
+  }
+  return { source, paint }
+}
+
+/**
+ * @failure A guest frame's blit past its scroll viewport stays over the clean text below it.
+ * @level l2
+ * @consumer ag-code tool-call output island inside a compact scroll; public Viewport users.
+ */
+describe("regression: an opaque blit past its scroll clip keeps the later sibling (@i/10-yrd/26485)", () => {
+  test("a guest frame inside a shorter scroll container repaints the text below it", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const guest = blitSource()
+    const app = render(<BlitPane source={guest.source} />)
+    try {
+      expect(app.term.buffer.getCell(0, 3).char).toBe("e")
+      guest.paint("B")
+      app.rerender(<BlitPane source={guest.source} />)
+      expect(app.term.buffer.getCell(0, 0).char).toBe("B")
+      expect(app.term.buffer.getCell(0, 3).char).toBe("e")
     } finally {
       app.unmount()
     }
