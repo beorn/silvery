@@ -8,6 +8,8 @@
  *   as far as its real width needs: narrow content settles at its anchor and
  *   wide content stays whole against the margin.
  * @level l2 — the committed popover box rect through the public PopoverProvider.
+ * @consumer ag-code cmd-hover metadata popovers (session-pane-control-bar).
+ * @testonly none
  */
 
 import React, { useEffect } from "react"
