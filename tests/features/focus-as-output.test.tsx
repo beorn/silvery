@@ -268,6 +268,45 @@ describe("invariant 2: focusedNodeId recomputes on focused prop change", () => {
 
     handle.unmount()
   })
+
+  // #26660: a focused Box's focusedNodeId is its id, else its testID, so while
+  // it stays focused those two props are notify inputs as well.
+  test("live runtime: an id-only or testID-only change on a focused Box updates focusedNodeId", async () => {
+    const steps: { id: string | undefined; testID: string }[] = [
+      { id: "alpha", testID: "gamma" },
+      { id: "beta", testID: "gamma" },
+      { id: undefined, testID: "gamma" },
+      { id: undefined, testID: "delta" },
+    ]
+    using term = createTermless({ cols: 30, rows: 6 })
+
+    function App(): React.ReactElement {
+      const [step, setStep] = useState(0)
+      useInput((input) => {
+        if (input === "n") setStep((s) => Math.min(s + 1, steps.length - 1))
+      })
+      const { id, testID } = steps[step]!
+      return (
+        <Box width={30} height={6} flexDirection="column" padding={1}>
+          <Box id={id} testID={testID} width={20} height={2} focused={true}>
+            <Text>x</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const handle = await run(<App />, term)
+    await handle.waitForLayoutStable()
+    expect(findActiveFocusedNodeId(handle.root)).toBe("alpha")
+
+    for (const expected of ["beta", "gamma", "delta"]) {
+      await handle.press("n")
+      await handle.waitForLayoutStable()
+      expect(findActiveFocusedNodeId(handle.root), "same Box, same layout").toBe(expected)
+    }
+
+    handle.unmount()
+  })
 })
 
 // ============================================================================

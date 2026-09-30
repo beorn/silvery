@@ -429,6 +429,52 @@ describe("AnchoredOverlay", () => {
     handle.unmount()
   })
 
+  // #26660: the collision footprint is the overlay's border box. The height
+  // probe reported the content box (padding excluded), so a padded overlay
+  // whose content fit below its anchor was placed there and its box ran past
+  // the bottom of the screen by its padding. The column overlay with a column
+  // body is the AnchoredPopoverTarget shape; its height follows its content.
+  test("a sizing=max footprint is the overlay's border box (padding included)", async () => {
+    using term = createTermless({ cols: 40, rows: 12 })
+
+    function Tree(): React.ReactElement {
+      return (
+        <Box width={40} height={12} flexDirection="column" paddingTop={8}>
+          <Box anchorRef="trigger" width={10} height={1}>
+            <Text>trigger</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="trigger"
+            placement="bottom-start"
+            sizing="max"
+            size={{ width: 20, height: 10 }}
+            flexDirection="column"
+            paddingY={1}
+            id="overlay"
+          >
+            <Box flexDirection="column">
+              <Text>FIRST</Text>
+              <Text>middle</Text>
+              <Text>LAST</Text>
+            </Box>
+          </AnchoredOverlay>
+        </Box>
+      )
+    }
+
+    const handle = await run(<Tree />, term)
+    // The measured height reaches the footprint on a later commit (see 19777).
+    await settle()
+    await handle.waitForLayoutStable()
+    // Three lines and a row of padding above and below make a 5-row box. Only
+    // 3 rows remain below the anchor (row 8), so the policy flips it above,
+    // flush with the anchor's top edge.
+    expect(findById(handle.root, "overlay")?.boxRect).toMatchObject({ y: 3, height: 5 })
+    expect(term.screen).toContainText("LAST")
+
+    handle.unmount()
+  })
+
   test("removes overlay content when closed", () => {
     const render = createRenderer({ cols: 40, rows: 14 })
 
