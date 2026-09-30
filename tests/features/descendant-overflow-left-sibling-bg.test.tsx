@@ -146,6 +146,9 @@ describe("regression: descendant overflow clear must not stomp a sibling's bg (@
 // text over the tab and must erase its retiring glyphs when the text shrinks.
 // The output wrappers stay wide, so the text's old rect is inside its ancestors.
 // The 27 status rows make this a real 50+ node pane rather than a tiny-tree case.
+// `tabOverflow` clips the one-row tab header: "hidden" on both axes, or
+// "hidden-y-visible" (overflow hidden, overflowY visible), which clips only x
+// and so still lets the tab paint below its header.
 function StagePane({
   output,
   scrolled = false,
@@ -154,6 +157,7 @@ function StagePane({
   boxEmitter = false,
   outsideOpaque = false,
   stableOutputKey,
+  tabOverflow,
 }: {
   output: string
   scrolled?: boolean
@@ -162,10 +166,16 @@ function StagePane({
   boxEmitter?: boolean
   outsideOpaque?: boolean
   stableOutputKey?: string
+  tabOverflow?: "hidden" | "hidden-y-visible"
 }): React.ReactElement<React.ComponentProps<typeof Box>> {
   return (
     <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
-      <Box height={1} flexShrink={0}>
+      <Box
+        height={1}
+        flexShrink={0}
+        overflow={tabOverflow ? "hidden" : undefined}
+        overflowY={tabOverflow === "hidden-y-visible" ? "visible" : undefined}
+      >
         {stickyTab ? (
           <Box
             width={20}
@@ -257,6 +267,68 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
       expect(after?.boxRect).toEqual(stableBounds)
       expect(replacement).not.toBe(oldText)
       expect(replacement?.prevLayout).toBeNull()
+      const revealed = app.term.buffer.getCell(16, 1)
+      expect(revealed.char).toBe(" ")
+      expect(revealed.bg).toEqual({ r: 0, g: 0, b: 255 })
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+    } finally {
+      app.unmount()
+    }
+  })
+
+  // The row above is the plain-header control. The two rows below clip the
+  // header: on both axes the tab stays in its row, so the clear reveals the
+  // pane; with overflowY visible only x is clipped and the tab still paints
+  // below the header, so the clear must reveal the tab.
+  /**
+   * @failure A stable clear below a header clipped on both axes shows anything but the pane background.
+   * @level l2
+   * @consumer Silvery clients with an overflow="hidden" filled earlier sibling.
+   */
+  test("stable transparent clear below a fully hidden tab header reveals the pane background", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(
+      <StagePane output="AAAAAAAAAAAAAAAAAAA" stableOutputKey="long" tabOverflow="hidden" />,
+    )
+
+    try {
+      expect(app.term.buffer.getCell(16, 2).bg).toEqual({ r: 0, g: 0, b: 0 })
+      app.rerender(
+        <StagePane output="AAAAAAAAAAAAAAAA" stableOutputKey="short" tabOverflow="hidden" />,
+      )
+      const revealed = app.term.buffer.getCell(16, 1)
+      expect(revealed.char).toBe(" ")
+      expect(revealed.bg).toEqual({ r: 0, g: 0, b: 0 })
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+    } finally {
+      app.unmount()
+    }
+  })
+
+  /**
+   * @failure A header with overflow="hidden" and overflowY="visible" is treated as clipping both axes, so a stable clear below it erases the tab's fill.
+   * @level l2
+   * @consumer Silvery clients using per-axis overflow on a filled earlier sibling.
+   */
+  test("stable transparent clear below a y-visible hidden tab header preserves the tab's fill", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const app = render(
+      <StagePane
+        output="AAAAAAAAAAAAAAAAAAA"
+        stableOutputKey="long"
+        tabOverflow="hidden-y-visible"
+      />,
+    )
+
+    try {
+      expect(app.term.buffer.getCell(16, 2).bg).toEqual({ r: 0, g: 0, b: 255 })
+      app.rerender(
+        <StagePane
+          output="AAAAAAAAAAAAAAAA"
+          stableOutputKey="short"
+          tabOverflow="hidden-y-visible"
+        />,
+      )
       const revealed = app.term.buffer.getCell(16, 1)
       expect(revealed.char).toBe(" ")
       expect(revealed.bg).toEqual({ r: 0, g: 0, b: 255 })
