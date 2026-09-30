@@ -421,9 +421,18 @@ function PopoverOverlay({
   const maxHeight = Math.max(4, placeAbove ? spaceAbove : spaceBelow)
 
   // Horizontal clamp: prefer anchor.x + offset but enforce both edge margins.
-  let left = anchor.x + (content.anchorOffsetX ?? 0)
-  if (left + maxWidth > columns - EDGE_X) left = columns - EDGE_X - maxWidth
-  if (left < EDGE_X) left = EDGE_X
+  // The box is as wide as its content, capped by maxWidth (#26388), so when
+  // the cap would cross the right margin place it by `right`: it then ends at
+  // the margin whatever its content width, instead of a `left` computed from
+  // the cap that leaves narrow content short of its anchor (#26660). Pass
+  // `left` OR `right`, never both, as `top`/`bottom` below.
+  const preferredLeft = anchor.x + (content.anchorOffsetX ?? 0)
+  const horizontal =
+    preferredLeft + maxWidth <= columns - EDGE_X
+      ? { left: Math.max(EDGE_X, preferredLeft) }
+      : columns - EDGE_X - maxWidth >= EDGE_X
+        ? { right: EDGE_X }
+        : { left: EDGE_X }
 
   // Positional props — pass `top` OR `bottom`, never both. Below-anchor
   // gets `top = anchor.y + 1` for a 1-row gap by default; `flushTop: true`
@@ -443,7 +452,7 @@ function PopoverOverlay({
     <Box
       position="absolute"
       {...placement}
-      left={left}
+      {...horizontal}
       maxWidth={maxWidth}
       maxHeight={maxHeight}
       flexDirection="column"
