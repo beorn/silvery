@@ -2921,9 +2921,44 @@ function clearDescendantOverflowRegions(
     nodeRight,
     nodeBottom,
     scrollOffset,
-    childPaintClip(node, clipBounds, scrollOffset),
+    overflowClearClip(node, clipBounds, scrollOffset),
     clearBg,
   )
+}
+
+/**
+ * The clip a descendant-overflow clear narrows through at `node`: the clip its
+ * children paint under this frame united with the one they painted under last
+ * frame, both from the painter's rule (`childPaintClip`). The clear erases
+ * cells a retreating descendant painted LAST frame. This frame's clip alone
+ * misses them when the clipper shrank: a scroll container 8 rows tall in a
+ * 3-row wrapper that does not clip, shrunk to 6 rows, kept its Text's rows 6
+ * and 7 (26846). Both clips come from the clipper's own rule, so the clear
+ * still stays off rows no frame let the descendant paint (19383). Equal when
+ * the clipper did not change.
+ */
+function overflowClearClip(
+  node: AgNode,
+  inherited: ClipBounds | undefined,
+  offset: number,
+): ClipBounds | undefined {
+  const current = childPaintClip(node, inherited, offset)
+  const previous = childPaintClip(node, inherited, offset, "previous")
+  if (!current || !previous) return undefined
+  const union: ClipBounds = {
+    top: Math.min(current.top, previous.top),
+    bottom: Math.max(current.bottom, previous.bottom),
+  }
+  if (
+    current.left !== undefined &&
+    current.right !== undefined &&
+    previous.left !== undefined &&
+    previous.right !== undefined
+  ) {
+    union.left = Math.min(current.left, previous.left)
+    union.right = Math.max(current.right, previous.right)
+  }
+  return union
 }
 
 function _clearDescendantOverflow(
@@ -3043,8 +3078,9 @@ function _clearDescendantOverflow(
       // divider-stomp signature (a transparent deck recursed through a pane's
       // clip to an overflowing status `<Text>`), and ag-code 19383 (an
       // unscrolled layout box below a scroll viewport blanked the status bar).
-      // Current layout is used for the clip: a clipper that itself moved
-      // cleans its own vacated cells at its own level.
+      // The clip covers this frame and last frame (overflowClearClip): the
+      // cells cleared were painted last frame, under the clipper's old rect
+      // when it moved or shrank (26846).
       _clearDescendantOverflow(
         child.children,
         buffer,
@@ -3054,7 +3090,7 @@ function _clearDescendantOverflow(
         nodeRight,
         nodeBottom,
         scrollOffset,
-        childPaintClip(child, clipBounds, scrollOffset),
+        overflowClearClip(child, clipBounds, scrollOffset),
         clearBg,
       )
     }

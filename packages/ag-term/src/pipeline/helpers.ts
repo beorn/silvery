@@ -227,19 +227,27 @@ export function scrollChildClip(
   return { ...viewport, top: viewport.top + top, bottom: viewport.bottom - bottom }
 }
 
-/** The actual child clip used by both painter and overlap preparation. */
+/** The actual child clip used by both painter and overlap preparation. With
+ * `frame: "previous"`, the same rule on last frame's rect (`prevLayout`) and
+ * hidden counts (`prevHiddenAbove`/`prevHiddenBelow`): the clip the children
+ * painted under last frame, which bounds the cells a clear of last frame's
+ * paint may reach. */
 export function childPaintClip(
   node: AgNode,
   inherited: ClipBounds | undefined,
   offset: number,
+  frame: "current" | "previous" = "current",
 ): ClipBounds | undefined {
-  const layout = node.boxRect
+  const previous = frame === "previous"
+  const layout = previous ? (node.prevLayout ?? node.boxRect) : node.boxRect
   if (!layout) return inherited
   const props = node.props as BoxProps
   const { x, y, scrollState: ss } = childClipAxes(node)
   if (ss) {
     const viewport = computeChildClipBounds(layout, props, inherited, 0, x, y)
-    return scrollChildClip(viewport, props, ss.hiddenAbove, ss.hiddenBelow)
+    return previous
+      ? scrollChildClip(viewport, props, ss.prevHiddenAbove, ss.prevHiddenBelow)
+      : scrollChildClip(viewport, props, ss.hiddenAbove, ss.hiddenBelow)
   }
   return x || y ? computeChildClipBounds(layout, props, inherited, offset, x, y) : inherited
 }
