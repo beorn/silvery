@@ -187,6 +187,25 @@ export function computeChildClipBounds(
   return result
 }
 
+/** The axes on which the painter clips a node's children: the one per-axis
+ * resolution that childPaintClip applies and the overlap prewalk reads. A
+ * scrolling viewport (returned with its scroll state) clips vertically only;
+ * horizontal containment there is layout's. Any other node clips each axis
+ * whose overflowX/overflowY, else overflow, is "hidden". */
+export function childClipAxes(node: AgNode): {
+  x: boolean
+  y: boolean
+  scrollState?: NonNullable<AgNode["scrollState"]>
+} {
+  const props = node.props as BoxProps
+  const scrollState = props.overflow === "scroll" ? node.scrollState : undefined
+  if (scrollState) return { x: false, y: true, scrollState }
+  return {
+    x: (props.overflowX ?? props.overflow) === "hidden",
+    y: (props.overflowY ?? props.overflow) === "hidden",
+  }
+}
+
 /** The actual child clip used by both painter and overlap preparation. */
 export function childPaintClip(
   node: AgNode,
@@ -196,9 +215,9 @@ export function childPaintClip(
   const layout = node.boxRect
   if (!layout) return inherited
   const props = node.props as BoxProps
-  if (props.overflow === "scroll" && node.scrollState) {
-    const viewport = computeChildClipBounds(layout, props, inherited, 0, false, true)
-    const ss = node.scrollState
+  const { x, y, scrollState: ss } = childClipAxes(node)
+  if (ss) {
+    const viewport = computeChildClipBounds(layout, props, inherited, 0, x, y)
     if (
       props.overflowIndicator === true &&
       !props.borderStyle &&
@@ -212,8 +231,6 @@ export function childPaintClip(
     }
     return viewport
   }
-  const x = (props.overflowX ?? props.overflow) === "hidden"
-  const y = (props.overflowY ?? props.overflow) === "hidden"
   return x || y ? computeChildClipBounds(layout, props, inherited, offset, x, y) : inherited
 }
 

@@ -26,6 +26,7 @@ import {
   computeChildClipBounds,
   childPaintOffset,
   childPaintClip,
+  childClipAxes,
   paintChildStates,
   projectPaintRect,
   intersectPaintRect,
@@ -2539,10 +2540,14 @@ function overlapsEarlierPainter(
         if (own && paintRectsIntersect(own, rect)) return true
         continue
       }
-      // A hidden-overflow sibling's descendants cannot paint outside its own
-      // unchanged rectangle. Reject a disjoint clean subtree before deriving
-      // every descendant's extent (the approved own-rectangle cost re-slice).
-      if ((sibling.props as BoxProps).overflow === "hidden" && sibling.boxRect && !layoutChanged) {
+      // A sibling whose painter clips its children on both axes (childClipAxes,
+      // the resolution childPaintClip applies) keeps its descendants' paint
+      // inside its own unchanged rectangle. Reject a disjoint clean subtree
+      // before deriving every descendant's extent (the approved own-rectangle
+      // cost re-slice). One visible axis (overflow="hidden" overflowY="visible")
+      // lets descendants paint past the rectangle, so it takes the derivation.
+      const clips = childClipAxes(sibling)
+      if (clips.x && clips.y && sibling.boxRect && !layoutChanged) {
         const own = intersectPaintRect(
           projectPaintRect(sibling.boxRect, siblingState.scrollOffset),
           siblingState.clipBounds,
