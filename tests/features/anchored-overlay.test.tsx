@@ -1,8 +1,8 @@
-import React from "react"
+import React, { useMemo, useState } from "react"
 import { describe, expect, test } from "vitest"
 import { createRenderer, createTermless } from "@silvery/test"
 import "@termless/test/matchers"
-import { run } from "../../packages/ag-term/src/runtime/run"
+import { run, useInput } from "../../packages/ag-term/src/runtime/run"
 import { AnchoredOverlay, Box, Text } from "@silvery/ag-react"
 import type { AgNode, BoxProps, Placement } from "@silvery/ag/types"
 
@@ -338,6 +338,95 @@ describe("AnchoredOverlay", () => {
     expect(term.screen).toContainText("header-0")
 
     await handle.unmount?.()
+  })
+
+  // #26660: an overlay whose only change is its decoration (placement, footprint)
+  // must be re-placed. The decoration rect is written by the notify step of the
+  // layout phase, and a `decorations` change leaves every Flexily node clean, so
+  // the layout-on-demand gate used to skip that step and the overlay kept its old
+  // rect. Driven through the live runtime with a root the size of the terminal:
+  // a content-sized root changes size between frames and relays out every frame,
+  // which hid the skip.
+  test("a decorations-only change re-places a fixed overlay (placement flips to top)", async () => {
+    const SIZE = { width: 10, height: 2 }
+    using term = createTermless({ cols: 40, rows: 20 })
+
+    function Tree(): React.ReactElement {
+      const [placement, setPlacement] = useState<Placement>("bottom-start")
+      useInput((input) => {
+        if (input === "t") setPlacement("top-start")
+      })
+      return (
+        <Box width={40} height={20} flexDirection="column" paddingTop={9}>
+          <Box anchorRef="trigger" width={10} height={2}>
+            <Text>trigger</Text>
+          </Box>
+          <AnchoredOverlay anchorId="trigger" placement={placement} size={SIZE} id="overlay">
+            <Text>menu</Text>
+          </AnchoredOverlay>
+        </Box>
+      )
+    }
+
+    const handle = await run(<Tree />, term)
+    await handle.waitForLayoutStable()
+    expect(findById(handle.root, "overlay")?.boxRect).toMatchObject({ y: 11, height: 2 })
+
+    await handle.press("t")
+    await handle.waitForLayoutStable()
+    expect(
+      findById(handle.root, "overlay")?.boxRect,
+      "top-start sits above the anchor",
+    ).toMatchObject({ y: 7, height: 2 })
+    expect(term.screen).toContainText("menu")
+
+    handle.unmount()
+  })
+
+  test("a decorations-only change re-places a max-sized overlay (footprint narrows)", async () => {
+    // The content is wider than both footprints, so the box is as wide as the
+    // footprint under either sizing order in Flexily; no width is measured here.
+    using term = createTermless({ cols: 80, rows: 20 })
+
+    function Tree(): React.ReactElement {
+      const [width, setWidth] = useState(30)
+      useInput((input) => {
+        if (input === "n") setWidth(12)
+      })
+      const size = useMemo(() => ({ width, height: 10 }), [width])
+      return (
+        <Box width={80} height={20} paddingLeft={10} paddingTop={1} flexDirection="column">
+          <Box anchorRef="trigger" width={40} height={1}>
+            <Text>trigger</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="trigger"
+            placement="bottom-end"
+            sizing="max"
+            size={size}
+            id="overlay"
+          >
+            <Text>OVERLAY-CONTENT-WIDER-THAN-BOTH-CAPS</Text>
+          </AnchoredOverlay>
+        </Box>
+      )
+    }
+
+    const handle = await run(<Tree />, term)
+    await handle.waitForLayoutStable()
+    // bottom-end: the overlay's right edge meets the anchor's (10 + 40 = 50).
+    expect(findById(handle.root, "overlay")?.boxRect).toMatchObject({ x: 20, width: 30 })
+
+    await handle.press("n")
+    await handle.waitForLayoutStable()
+    expect(findById(handle.root, "overlay")?.boxRect, "12-wide footprint ends at 50").toMatchObject(
+      {
+        x: 38,
+        width: 12,
+      },
+    )
+
+    handle.unmount()
   })
 
   test("removes overlay content when closed", () => {

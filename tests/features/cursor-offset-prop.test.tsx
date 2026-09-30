@@ -21,8 +21,10 @@
 
 import React, { useState } from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, createTermless } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
+import { run, useInput } from "@silvery/ag-term/runtime"
+import { findActiveCursorRect } from "@silvery/ag/layout-signals"
 
 describe("cursorOffset prop (Phase 2: cursor as layout output)", () => {
   test("first frame: cursorOffset produces non-null cursor state without re-render", () => {
@@ -200,5 +202,38 @@ describe("cursorOffset prop (Phase 2: cursor as layout output)", () => {
       app.rerender(<App col={i} />)
       expect(app.getCursorState()!.x).toBe(1 + i)
     }
+  })
+
+  // #26660: the cursor rect is written by the layout phase's notify step. A
+  // cursorOffset-only change leaves every Flexily node clean, and with a root
+  // the size of the terminal the layout-on-demand gate skipped that step, so the
+  // caret stayed where it was. The test above hides this: its content-sized
+  // root relays out on every frame.
+  test("live runtime: a cursorOffset-only change moves the active cursor rect", async () => {
+    using term = createTermless({ cols: 40, rows: 10 })
+
+    function App(): React.ReactElement {
+      const [col, setCol] = useState(0)
+      useInput((input) => {
+        if (input === "l") setCol(5)
+      })
+      return (
+        <Box width={40} height={10} paddingLeft={2} flexDirection="column">
+          <Box cursorOffset={{ col, row: 0, visible: true }}>
+            <Text>abcdefgh</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const handle = await run(<App />, term)
+    await handle.waitForLayoutStable()
+    expect(findActiveCursorRect(handle.root)?.x).toBe(2)
+
+    await handle.press("l")
+    await handle.waitForLayoutStable()
+    expect(findActiveCursorRect(handle.root)?.x, "paddingLeft 2 + col 5").toBe(7)
+
+    handle.unmount()
   })
 })

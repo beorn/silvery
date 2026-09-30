@@ -39,10 +39,11 @@
  * Bead: km-silvery.phase4-split-focus-selection
  */
 
-import React from "react"
+import React, { useState } from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, createTermless } from "@silvery/test"
 import { Box, Text } from "@silvery/ag-react"
+import { run, useInput } from "@silvery/ag-term/runtime"
 import {
   computeSelectionFragments,
   findActiveSelectionFragments,
@@ -215,6 +216,44 @@ describe("invariant 2: selectionFragments recomputes on intent prop change", () 
     // Remove the prop — per-node signal must clear back to empty.
     app.rerender(<App intent={undefined} />)
     expect(sig.selectionFragments()).toHaveLength(0)
+  })
+
+  // #26660: the same invariant in the live runtime, with a root the size of the
+  // terminal. A selectionIntent-only change leaves every Flexily node clean, and
+  // the layout-on-demand gate used to skip the notify step that writes the
+  // signal. The createRenderer rows above relay out on every frame
+  // (content-sized root).
+  test("live runtime: a selectionIntent-only change moves the node's fragments", async () => {
+    using term = createTermless({ cols: 40, rows: 6 })
+
+    function App(): React.ReactElement {
+      const [intent, setIntent] = useState<SelectionIntent>({ from: 0, to: 5 })
+      useInput((input) => {
+        if (input === "w") setIntent({ from: 6, to: 11 })
+      })
+      return (
+        <Box width={40} height={6} flexDirection="column" padding={1}>
+          <Box id="target" width={20} height={1} selectionIntent={intent}>
+            <Text>hello world here</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const handle = await run(<App />, term)
+    await handle.waitForLayoutStable()
+    const node = findFirstWithSelection(handle.root)
+    if (!node) throw new Error("test fixture: no selection node found")
+    const sig = getLayoutSignals(node)
+    expect(sig.selectionFragments()).toEqual([{ x: 1, y: 1, width: 5, height: 1 }])
+
+    await handle.press("w")
+    await handle.waitForLayoutStable()
+    expect(sig.selectionFragments(), "the fragment covers 'world'").toEqual([
+      { x: 7, y: 1, width: 5, height: 1 },
+    ])
+
+    handle.unmount()
   })
 })
 
