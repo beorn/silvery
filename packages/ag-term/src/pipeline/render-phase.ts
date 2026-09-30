@@ -1328,8 +1328,9 @@ function renderOwnContent(
     // Opaque blit of the foreign cell domain. The viewport doesn't participate
     // in bg-coherence with the parent — `renderText`'s bg-conflict throw is
     // never reached because viewport cells route through `sink.emitSetCell`
-    // directly. See bead @km/silvery/15513.
-    renderViewport(node, buffer, sink, layout, nodeState.scrollOffset, ctx)
+    // directly. See bead @km/silvery/15513. Clipped like renderBox/renderText:
+    // to nodeState.clipBounds, the clip from the node's clipping ancestors.
+    renderViewport(node, buffer, sink, layout, nodeState.scrollOffset, nodeState.clipBounds, ctx)
   } else if (node.type === "silvery-island") {
     // Sibling of silvery-viewport — opaque blit of the guest's cell buffer.
     // The island generalises Viewport with the runtime-agnostic IslandGuest
@@ -1342,6 +1343,7 @@ function renderOwnContent(
       sink,
       layout,
       nodeState.scrollOffset,
+      nodeState.clipBounds,
       nodeState.inheritedBg.color,
       nodeState.selectableMode,
       ctx,
@@ -2467,13 +2469,10 @@ function subtreePaintExtent(
   let extent: Rect | null = null
   const paints =
     node.layoutNode && (node.type !== "silvery-box" || getEffectiveBg(props) || props.borderStyle)
-  // Viewport/island blits ignore clipBounds (emitOpaqueBlit clips only at the
-  // buffer edge), so their own paint is the whole projected rect.
-  const opaqueBlit = node.type === "silvery-viewport" || node.type === "silvery-island"
   if (paints) {
     const projected = intersectPaintRect(
       projectPaintRect(own, state.scrollOffset),
-      opaqueBlit ? undefined : state.clipBounds,
+      state.clipBounds,
     )
     extent = projected ? projectPaintRect(projected, -state.scrollOffset) : null
   }

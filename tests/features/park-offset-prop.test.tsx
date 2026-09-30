@@ -14,11 +14,13 @@
  * replaying the bytes through xterm.js to read the hardware cursor's rest cell.
  */
 
-import React from "react"
+import React, { useState } from "react"
 import { describe, expect, test } from "vitest"
 import { createTermless } from "@silvery/test"
-import { run } from "@silvery/ag-term/runtime"
+import { run, useInput } from "@silvery/ag-term/runtime"
 import { Box, Text } from "@silvery/ag-react"
+import { findActiveParkRect, getLayoutSignals } from "@silvery/ag/layout-signals"
+import type { AgNode, BoxProps } from "@silvery/ag/types"
 import { createTerminal } from "@termless/core"
 import { createXtermBackend } from "@termless/xtermjs"
 
@@ -186,4 +188,52 @@ describe("parkOffset prop (hardware-cursor park as layout output, 19702)", () =>
     expect(cursorY, "compact pane parks on the declared parkOffset row").toBe(parkRow)
     handle.unmount()
   })
+
+  // #26660: the park rect is written by the layout phase's notify step. A
+  // parkOffset-only change leaves every Flexily node clean, and with a root the
+  // size of the terminal the layout-on-demand gate used to skip that step.
+  // parkOffset does not allocate signals by itself (findActiveParkRect computes
+  // from props when a node has none), so this row allocates them the way any
+  // reader does, then moves the park cell.
+  test("a parkOffset-only change moves the node's parkRect signal", async () => {
+    using term = createTermless({ cols: COLS, rows: ROWS })
+    function App(): React.ReactElement {
+      const [col, setCol] = useState(0)
+      useInput((input) => {
+        if (input === "p") setCol(5)
+      })
+      return (
+        <Box width={COLS} height={ROWS} flexDirection="column" paddingLeft={2}>
+          <Backdrop />
+          <Box flexGrow={1} />
+          <Box parkOffset={{ col, row: 0 }}>
+            <Text>PARKHERE input row</Text>
+          </Box>
+          <Text>status bar row</Text>
+        </Box>
+      )
+    }
+    const handle = await run(<App />, term)
+    await handle.waitForLayoutStable()
+    const node = findParkDeclarer(handle.root)
+    if (!node) throw new Error("test fixture: no parkOffset node")
+    const sig = getLayoutSignals(node)
+    const row = ROWS - 2
+    expect(sig.parkRect()).toEqual({ x: 2, y: row, width: 1, height: 1 })
+
+    await handle.press("p")
+    await handle.waitForLayoutStable()
+    expect(sig.parkRect(), "paddingLeft 2 + col 5").toEqual({ x: 7, y: row, width: 1, height: 1 })
+    expect(findActiveParkRect(handle.root)).toEqual({ x: 7, y: row, width: 1, height: 1 })
+    handle.unmount()
+  })
 })
+
+function findParkDeclarer(node: AgNode): AgNode | null {
+  if ((node.props as BoxProps | undefined)?.parkOffset) return node
+  for (const child of node.children) {
+    const hit = findParkDeclarer(child)
+    if (hit) return hit
+  }
+  return null
+}

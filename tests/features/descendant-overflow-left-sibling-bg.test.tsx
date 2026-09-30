@@ -31,7 +31,7 @@
 
 import React from "react"
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { bufferToText, compareBuffers, createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
 import { Viewport } from "@silvery/ag-react"
 import type { ForeignSource, ViewportContext } from "@silvery/ag/viewport-types"
@@ -330,11 +330,11 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
   })
 })
 
-// A viewport blit is opaque over its whole layout rect and clips only at the
-// buffer edge, not at a scroll ancestor's viewport. A guest frame inside a
-// shorter scroll container therefore rewrites the rows below that viewport,
-// which a clean later sibling owns. The forward-overlap pass must count those
-// rows as painted, or the clean sibling is skipped under the guest's cells.
+// A guest frame repaints inside a scroll container shorter than its Viewport.
+// The blit is clipped to the scroll viewport like every other paint, so the
+// rows below it stay the clean later sibling's, which may stay on the fast
+// path. Before #26811 the blit painted those rows too, and the forward-overlap
+// pass had to count them or the sibling was skipped under the guest's cells.
 function BlitPane({ source }: { source: ForeignSource }): React.ReactElement {
   return (
     <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
@@ -353,7 +353,7 @@ function BlitPane({ source }: { source: ForeignSource }): React.ReactElement {
   )
 }
 
-function blitSource(): { source: ForeignSource; paint: (char: string) => void } {
+function blitSource(initial = "A"): { source: ForeignSource; paint: (char: string) => void } {
   let ctx: ViewportContext | null = null
   const paint = (char: string): void => {
     if (!ctx) throw new Error("viewport source is not connected")
@@ -376,7 +376,7 @@ function blitSource(): { source: ForeignSource; paint: (char: string) => void } 
   const source: ForeignSource = {
     connect(connected) {
       ctx = connected
-      paint("A")
+      paint(initial)
     },
     disconnect() {
       ctx = null
@@ -401,6 +401,193 @@ describe("regression: an opaque blit past its scroll clip keeps the later siblin
       app.rerender(<BlitPane source={guest.source} />)
       expect(app.term.buffer.getCell(0, 0).char).toBe("B")
       expect(app.term.buffer.getCell(0, 3).char).toBe("e")
+    } finally {
+      app.unmount()
+    }
+  })
+})
+
+// A clean earlier sibling that clips holds a 12x6 Viewport in 3 rows; the
+// emitter on the row below clears cells under the Viewport's layout rect.
+// Those cells are outside the clip, so no frame, fresh or incremental, holds a
+// guest cell there, and the emitter's clear needs no repaint of the earlier
+// sibling. Header rows above the box are what a guest scrolled up would cover.
+function ClippedBlitPane({
+  source,
+  overflow,
+  emitter,
+  scrollOffset,
+  headerRows = 0,
+}: {
+  source: ForeignSource
+  overflow: "hidden" | "scroll"
+  emitter: { text: string } | { width: number } | { label: string; tick: number }
+  scrollOffset?: number
+  headerRows?: number
+}): React.ReactElement {
+  return (
+    <Box width={COLS} height={ROWS} flexDirection="column" backgroundColor="#000000">
+      {Array.from({ length: headerRows }, (_, i) => (
+        <Text key={`header-${i}`}>{`HEADER LINE ${i}`}</Text>
+      ))}
+      <Box
+        height={3}
+        flexShrink={0}
+        overflow={overflow}
+        scrollOffset={scrollOffset}
+        flexDirection="column"
+      >
+        <Box flexShrink={0}>
+          <Viewport cols={12} rows={6} source={source} />
+        </Box>
+      </Box>
+      {"width" in emitter ? (
+        <Box width={emitter.width} height={1} flexShrink={0} />
+      ) : "label" in emitter ? (
+        // A partly dirty row: the label stays clean while the counter changes.
+        <Box width={COLS} height={1} flexShrink={0} flexDirection="row">
+          <Text>{emitter.label}</Text>
+          <Text>{`t${emitter.tick}`}</Text>
+        </Box>
+      ) : (
+        <Box width={COLS} height={1} flexShrink={0}>
+          <Text key={emitter.text}>{emitter.text}</Text>
+        </Box>
+      )}
+      {Array.from({ length: 27 }, (_, i) => (
+        <Box key={i} height={1} flexShrink={0}>
+          <Text>{`status ${i}`}</Text>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+/**
+ * @failure A guest cell painted past a hidden or scroll box survives, or is lost, when a later sibling clears under it.
+ * @level l2
+ * @consumer ag-code tool-call output island inside a compact scroll; hab-deck shell panes; public Viewport users.
+ */
+describe("regression: an opaque blit stays inside its clipping ancestor (@i/10-yrd/26485-stage-switch-stale-background/26811-opaque-blit-ignores-scroll-clip)", () => {
+  for (const overflow of ["hidden", "scroll"] as const) {
+    test(`a shrinking box below a clipped guest frame clears to the pane background (${overflow})`, () => {
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+      const guest = blitSource("G")
+      const scene = (width: number) => (
+        <ClippedBlitPane source={guest.source} overflow={overflow} emitter={{ width }} />
+      )
+      const app = render(scene(19))
+      try {
+        app.rerender(scene(6))
+        expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+        const cleared = app.term.buffer.getCell(8, 3)
+        expect(cleared.char).toBe(" ")
+        expect(cleared.bg).toEqual({ r: 0, g: 0, b: 0 })
+      } finally {
+        app.unmount()
+      }
+    })
+
+    test(`a stable text clear below a clipped guest frame keeps no guest cell (${overflow})`, () => {
+      const render = createRenderer({ cols: COLS, rows: ROWS })
+      const guest = blitSource("G")
+      const scene = (text: string) => (
+        <ClippedBlitPane source={guest.source} overflow={overflow} emitter={{ text }} />
+      )
+      const app = render(scene("exit code 1"))
+      try {
+        app.rerender(scene("exit 1"))
+        expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+        expect(app.term.buffer.getCell(6, 3).char).toBe(" ")
+        expect(app.term.buffer.getCell(6, 3).bg).toEqual({ r: 0, g: 0, b: 0 })
+      } finally {
+        app.unmount()
+      }
+    })
+  }
+
+  // A scroll step moves the guest without dirtying the rows below the box;
+  // cells an earlier offset's blit wrote there were tracked by nothing.
+  test("scrolling a guest frame 0,1,2,3,2,1,0 through its scroll box keeps incremental equal to fresh", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const guest = blitSource("G")
+    const scene = (scrollOffset: number) => (
+      <ClippedBlitPane
+        source={guest.source}
+        overflow="scroll"
+        scrollOffset={scrollOffset}
+        emitter={{ text: "exit code 1" }}
+      />
+    )
+    const app = render(scene(0))
+    try {
+      for (const scrollOffset of [1, 2, 3, 2, 1, 0]) {
+        app.rerender(scene(scrollOffset))
+        expect(
+          compareBuffers(app.term.buffer, app.freshRender()),
+          `scrollOffset=${scrollOffset}`,
+        ).toBeNull()
+      }
+      expect(app.term.buffer.getCell(8, 4).char).toBe(" ")
+    } finally {
+      app.unmount()
+    }
+  })
+
+  // The row below the box renders for its own reason (its counter), so the
+  // overlap pass does not force it and its clean label stays on the fast path
+  // (the LESSONS 2026-09-28 gap). A blit inside its clip never reaches it.
+  test("a partly dirty later sibling keeps its clean label while the guest repaints", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const guest = blitSource("G")
+    const scene = (tick: number) => (
+      <ClippedBlitPane
+        source={guest.source}
+        overflow="scroll"
+        emitter={{ label: "exit code 1 ", tick }}
+      />
+    )
+    const app = render(scene(0))
+    try {
+      guest.paint("B")
+      app.rerender(scene(1))
+      expect(compareBuffers(app.term.buffer, app.freshRender())).toBeNull()
+      expect(app.term.buffer.getCell(0, 0).char).toBe("B")
+      expect(app.term.buffer.getCell(0, 3).char).toBe("e")
+    } finally {
+      app.unmount()
+    }
+  })
+
+  // Scrolled down, the guest's top rows sit above the box, over the header an
+  // earlier sibling paints: a fresh frame lost "HEADER LINE 1" to guest cells.
+  test("a guest frame scrolled above its scroll box leaves the earlier header intact", () => {
+    const render = createRenderer({ cols: COLS, rows: ROWS })
+    const guest = blitSource("G")
+    const scene = (scrollOffset: number) => (
+      <ClippedBlitPane
+        source={guest.source}
+        overflow="scroll"
+        scrollOffset={scrollOffset}
+        headerRows={3}
+        emitter={{ text: "exit code 1" }}
+      />
+    )
+    const app = render(scene(2))
+    try {
+      const fresh = bufferToText(app.freshRender()).split("\n")
+      expect(fresh.slice(0, 3).map((line) => line.trimEnd())).toEqual([
+        "HEADER LINE 0",
+        "HEADER LINE 1",
+        "HEADER LINE 2",
+      ])
+      for (const scrollOffset of [1, 0, 1, 2, 3, 2]) {
+        app.rerender(scene(scrollOffset))
+        expect(
+          compareBuffers(app.term.buffer, app.freshRender()),
+          `scrollOffset=${scrollOffset}`,
+        ).toBeNull()
+      }
     } finally {
       app.unmount()
     }
