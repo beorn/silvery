@@ -517,6 +517,87 @@ describe("AnchoredOverlay", () => {
     expect(app.text).toContain("OVERLAY-LINE-4")
   })
 
+  // #26660: under content-first sizing (#26388) a `sizing="max"` box is as
+  // wide as its content, so the collision footprint must learn the measured
+  // width the way it learns the measured height; placements that subtract the
+  // footprint width (`*-end`, `left-*`) otherwise leave a cap-wide gap.
+  // Both rows hold on cap-first layout too, where content fills the cap.
+  function NarrowContent({ label }: { label: string }): React.ReactElement {
+    return (
+      <Box flexDirection="column">
+        <Text>{label}</Text>
+      </Box>
+    )
+  }
+
+  // The measured size reaches the footprint on a later commit, which only the
+  // live runtime advances (see the 19777 row below).
+  async function settledRect(tree: React.ReactElement, cols: number, rows: number, id: string) {
+    using term = createTermless({ cols, rows })
+    const handle = await run(tree, term)
+    await settle()
+    await handle.waitForLayoutStable()
+    await settle()
+    const rect = findById(handle.root, id)?.boxRect ?? null
+    await handle.unmount?.()
+    return rect
+  }
+
+  test("sizing=max footprint width follows the measured content (bottom-end is flush)", async () => {
+    const rect = await settledRect(
+      <Box width={80} height={20} paddingLeft={10} paddingTop={1} flexDirection="column">
+        <Box anchorRef="trigger" width={40} height={1}>
+          <Text>trigger</Text>
+        </Box>
+        <AnchoredOverlay
+          anchorId="trigger"
+          placement="bottom-end"
+          sizing="max"
+          size={{ width: 30, height: 10 }}
+          id="overlay"
+        >
+          <NarrowContent label="NARROW-12ch!" />
+        </AnchoredOverlay>
+      </Box>,
+      80,
+      20,
+      "overlay",
+    )
+    expect(rect).toBeTruthy()
+    expect(rect!.width).toBeLessThanOrEqual(30)
+    expect(rect!.x + rect!.width, "overlay right edge is flush with the anchor's").toBe(10 + 40)
+  })
+
+  test("sizing=max left-start overlay ends flush against its anchor", async () => {
+    // The side-panel account popover shape (ag-chat-ui SidePanel.tsx).
+    const rect = await settledRect(
+      <Box width={120} height={20} flexDirection="row">
+        <Box flexGrow={1} minWidth={0}>
+          <Text>chat</Text>
+        </Box>
+        <Box width={40} flexShrink={0} flexDirection="column" paddingTop={2}>
+          <Box anchorRef="account" width={40} height={1}>
+            <Text>account-row</Text>
+          </Box>
+          <AnchoredOverlay
+            anchorId="account"
+            placement="left-start"
+            sizing="max"
+            size={{ width: 48, height: 18 }}
+            id="account-overlay"
+          >
+            <NarrowContent label="ACCOUNT-DETAIL" />
+          </AnchoredOverlay>
+        </Box>
+      </Box>,
+      120,
+      20,
+      "account-overlay",
+    )
+    expect(rect).toBeTruthy()
+    expect(rect!.x + rect!.width, "overlay right edge touches the anchor's left edge").toBe(120 - 40)
+  })
+
   test("removes overlay content when closed", () => {
     const render = createRenderer({ cols: 40, rows: 14 })
 
