@@ -16,10 +16,13 @@ export interface HeadingRowProps {
   markerWidth?: number
   marker?: React.ReactNode
   color?: string
-  children: React.ReactNode
+  children:
+    | React.ReactNode
+    | ((props: { isHovered: boolean; summaryColor: string }) => React.ReactNode)
   foldable?: boolean
   expanded?: boolean
   onToggleFold?: () => void
+  subtaskSummary?: { readonly done: number; readonly total: number } | string
 }
 
 /**
@@ -37,12 +40,15 @@ export function HeadingRow({
   foldable = false,
   expanded,
   onToggleFold,
+  subtaskSummary,
 }: HeadingRowProps): React.ReactElement {
   const theme = useTheme()
   const priority = useContext(StylePriorityContext)
   const foreground = priority?.foreground ?? color ?? theme.variants?.[`h${level}`]?.color ?? "$fg"
   const interaction = useInteractionTreatment("control", "surfaceHover")
   const defaultMarkerColor = `mix(${foreground}, $bg, 75%)`
+  const summaryColor = color ?? `mix(${foreground}, $bg, 50%)`
+  const isInteractive = foldable || subtaskSummary !== undefined
   const triangleInteraction = useInteractionTreatment(
     "control",
     customInteractionSurface({
@@ -105,11 +111,13 @@ export function HeadingRow({
   return (
     <HangingMarkerRow
       markerWidth={totalMarkerWidth}
-      onMouseEnter={foldable ? interaction.onMouseEnter : undefined}
-      onMouseLeave={foldable ? interaction.onMouseLeave : undefined}
+      onMouseEnter={isInteractive ? interaction.onMouseEnter : undefined}
+      onMouseLeave={isInteractive ? interaction.onMouseLeave : undefined}
       marker={effectiveMarker}
     >
-      {children}
+      {typeof children === "function"
+        ? children({ isHovered: interaction.isHovered, summaryColor })
+        : children}
     </HangingMarkerRow>
   )
 }

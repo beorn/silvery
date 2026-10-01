@@ -67,6 +67,8 @@ export interface DocumentHeadingBlock extends DocumentBlockBase {
   readonly expanded?: boolean
   /** Callback fired when folding is toggled. */
   readonly onToggleFold?: () => void
+  /** Subtask completion summary for task headings. */
+  readonly subtaskSummary?: { readonly done: number; readonly total: number } | string
 }
 
 export interface DocumentParagraphBlock extends DocumentBlockBase {
@@ -88,6 +90,8 @@ export interface DocumentListItemBlock extends DocumentBlockBase {
   readonly expanded?: boolean
   /** Callback fired when folding is toggled. */
   readonly onToggleFold?: () => void
+  /** Subtask completion summary for task list items. */
+  readonly subtaskSummary?: { readonly done: number; readonly total: number } | string
 }
 
 export interface DocumentQuoteBlock extends DocumentBlockBase {
@@ -366,6 +370,14 @@ function BlockFrame({
   )
 }
 
+function formatSubtaskSummary(
+  summary: { readonly done: number; readonly total: number } | string,
+): string {
+  if (typeof summary === "string") return summary
+  const pct = summary.total > 0 ? Math.round((summary.done / summary.total) * 100) : 0
+  return `${pct}% (${summary.done}/${summary.total})`
+}
+
 function ListItemRow({
   block,
   item,
@@ -414,6 +426,7 @@ function ListItemRow({
   )
 
   const showTriangle = foldable && (!isExpanded || rowInteraction.isHovered)
+  const isInteractive = foldable || block.subtaskSummary !== undefined
 
   return (
     <BlockFrame block={block} selected={selected} lane={lane} onLayout={onLayout}>
@@ -422,8 +435,8 @@ function ListItemRow({
         width="100%"
         minWidth={0}
         paddingLeft={Math.max(0, block.list.depth) * 2}
-        onMouseEnter={foldable ? rowInteraction.onMouseEnter : undefined}
-        onMouseLeave={foldable ? rowInteraction.onMouseLeave : undefined}
+        onMouseEnter={isInteractive ? rowInteraction.onMouseEnter : undefined}
+        onMouseLeave={isInteractive ? rowInteraction.onMouseLeave : undefined}
       >
         {item.hasFoldableGroup ? (
           <FoldPrefix
@@ -447,6 +460,12 @@ function ListItemRow({
         <Prose flexGrow={1} minWidth={0}>
           <Text variant="body" color={color} wrap="wrap">
             {block.content}
+            {block.subtaskSummary && rowInteraction.isHovered ? (
+              <Text color={color ?? "mix($fg, $bg, 50%)"} bold={false}>
+                {"   "}
+                {formatSubtaskSummary(block.subtaskSummary)}
+              </Text>
+            ) : null}
           </Text>
         </Prose>
       </Box>
@@ -508,11 +527,7 @@ function DocumentBlocks({
               previous.kind !== "media"
             const extraSpace = block.level <= 2 && afterBody
             const topMargin = (afterList ? 1 : 0) + (extraSpace ? 1 : 0)
-            const headingNode = (
-              <Heading color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
-                {block.content}
-              </Heading>
-            )
+            const subtaskSummary = block.subtaskSummary
             const isFoldable =
               block.foldable !== undefined ? block.foldable : (enableSectionFolding ?? false)
 
@@ -548,8 +563,19 @@ function DocumentBlocks({
                   foldable={isFoldable}
                   expanded={isExpanded}
                   onToggleFold={handleToggleFold}
+                  subtaskSummary={subtaskSummary}
                 >
-                  {headingNode}
+                  {({ isHovered, summaryColor }) => (
+                    <Heading color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
+                      {block.content}
+                      {subtaskSummary && isHovered ? (
+                        <Text color={summaryColor} bold={false}>
+                          {"   "}
+                          {formatSubtaskSummary(subtaskSummary)}
+                        </Text>
+                      ) : null}
+                    </Heading>
+                  )}
                 </HeadingRow>
               </BlockFrame>
             )
