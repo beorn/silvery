@@ -5,6 +5,7 @@ import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { useTheme } from "../../ThemeContext"
 import { StylePriorityContext, StylePriorityProvider } from "../../style-priority"
+import { customInteractionSurface } from "@silvery/ag"
 import { useInteractionTreatment } from "../../hooks/useInteractionTreatment"
 import { DISCLOSURE_MARKERS } from "../icons"
 import { useExpansion } from "./use-expansion"
@@ -41,6 +42,14 @@ export function HeadingRow({
   const priority = useContext(StylePriorityContext)
   const foreground = priority?.foreground ?? color ?? theme.variants?.[`h${level}`]?.color ?? "$fg"
   const interaction = useInteractionTreatment("control", "surfaceHover")
+  const defaultMarkerColor = `mix(${foreground}, $bg, 75%)`
+  const triangleInteraction = useInteractionTreatment(
+    "control",
+    customInteractionSurface({
+      idle: { color: defaultMarkerColor },
+      revealed: { color: foreground, backgroundColor: "$bg-surface-hover" },
+    }),
+  )
 
   const onExpandedChange = useCallback(
     (_next: boolean) => {
@@ -62,7 +71,7 @@ export function HeadingRow({
   const showTriangle = foldable && (!isExpanded || interaction.isHovered)
 
   const baseMarker = marker ?? (
-    <StylePriorityProvider foreground={`mix(${foreground}, $bg, 75%)`}>
+    <StylePriorityProvider foreground={defaultMarkerColor}>
       <Text>#</Text>
     </StylePriorityProvider>
   )
@@ -80,10 +89,13 @@ export function HeadingRow({
             <Box
               mouseCursor="pointer"
               onClick={handleToggle}
+              onMouseEnter={triangleInteraction.onMouseEnter}
+              onMouseLeave={triangleInteraction.onMouseLeave}
+              backgroundColor={triangleInteraction.treatment.backgroundColor}
               data-testid="fold-triangle"
               flexShrink={0}
             >
-              <Text color={color ?? "$fg-muted"}>
+              <Text color={triangleInteraction.treatment.color}>
                 {isExpanded ? DISCLOSURE_MARKERS.expanded : DISCLOSURE_MARKERS.collapsed}
               </Text>
             </Box>

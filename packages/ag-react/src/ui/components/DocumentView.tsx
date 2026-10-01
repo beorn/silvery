@@ -1,6 +1,8 @@
-import React, { useEffect, useId, useRef, useState } from "react"
+import React, { useCallback, useEffect, useId, useRef, useState } from "react"
+import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
 import { computeMatchRanges, type SearchMatch } from "@silvery/ag-term/search-overlay"
 import { displayLength } from "@silvery/ansi"
+import { customInteractionSurface } from "@silvery/ag"
 import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { usePopoverHandlers } from "../../components/Popover"
@@ -15,6 +17,9 @@ import { useSearchOptional } from "../../providers/SearchProvider"
 import { useTerm } from "../../hooks/useTerm"
 import { DEFAULT_BREAKPOINTS } from "../../hooks/useResponsiveValue"
 import type { ScrollController } from "./ScrollArea"
+import { DISCLOSURE_MARKERS } from "../icons"
+import { useExpansion } from "./use-expansion"
+import { useInteractionTreatment } from "../../hooks/useInteractionTreatment"
 
 export type DocumentBlockId = string | number
 export type DocumentLane = ContentBodyWidth
@@ -78,6 +83,12 @@ export interface DocumentListItemBlock extends DocumentBlockBase {
   readonly marker?: React.ReactNode
   /** Width of a non-text marker in logical layout units. Defaults to one. */
   readonly markerWidth?: number
+  /** Whether this list item has sub-items and can be folded. */
+  readonly foldable?: boolean
+  /** Controlled expansion state. */
+  readonly expanded?: boolean
+  /** Callback fired when folding is toggled. */
+  readonly onToggleFold?: () => void
 }
 
 export interface DocumentQuoteBlock extends DocumentBlockBase {
@@ -178,6 +189,7 @@ export interface DocumentViewProps {
 interface ResolvedListItem {
   readonly marker: React.ReactNode
   readonly markerWidth: number
+  readonly hasFoldableGroup: boolean
 }
 
 function textMarkerWidth(marker: React.ReactNode): number | null {
@@ -194,6 +206,7 @@ function resolveListItems(
 ): ReadonlyMap<DocumentBlockId, ResolvedListItem> {
   const groupCounts = new Map<DocumentBlockId, number>()
   const groupWidths = new Map<DocumentBlockId, number>()
+  const groupHasFoldable = new Map<DocumentBlockId, boolean>()
   const provisional = new Map<
     DocumentBlockId,
     { marker: React.ReactNode; width: number; groupId: DocumentBlockId }
@@ -201,6 +214,9 @@ function resolveListItems(
 
   for (const block of blocks) {
     if (block.kind !== "list-item") continue
+    if (block.foldable) {
+      groupHasFoldable.set(block.list.groupId, true)
+    }
     // Continuation paragraphs use marker "" to share the parent group's indent
     // column without being a real list item. Skip the ordinal counter so later
     // items are not shifted (#26757). `undefined` means "use the default marker";
@@ -225,6 +241,7 @@ function resolveListItems(
       {
         marker: item.marker,
         markerWidth: groupWidths.get(item.groupId) ?? item.width,
+        hasFoldableGroup: groupHasFoldable.get(item.groupId) ?? false,
       },
     ]),
   )
@@ -356,14 +373,49 @@ function ListItemRow({
   selected,
   lane,
   onLayout,
+  foldable = false,
+  expanded = true,
+  onToggleFold,
 }: {
   block: DocumentListItemBlock
   item: ResolvedListItem
   selected: boolean
   lane: DocumentLane
   onLayout?: (y: number) => void
+  foldable?: boolean
+  expanded?: boolean
+  onToggleFold?: () => void
 }): React.ReactElement {
   const color = selected ? "$fg-on-selected" : undefined
+  const rowInteraction = useInteractionTreatment("control", "surfaceHover")
+  const defaultMarkerColor = `mix($fg, $bg, 75%)`
+  const triangleInteraction = useInteractionTreatment(
+    "control",
+    customInteractionSurface({
+      idle: { color: defaultMarkerColor },
+      revealed: { color: "$fg", backgroundColor: "$bg-surface-hover" },
+    }),
+  )
+
+  const onExpandedChange = useCallback(
+    (_next: boolean) => {
+      onToggleFold?.()
+    },
+    [onToggleFold],
+  )
+
+  const [isExpanded, setExpanded] = useExpansion(expanded, true, onExpandedChange)
+
+  const handleToggle = useCallback(
+    (event: SilveryMouseEvent) => {
+      event.stopPropagation()
+      setExpanded(!isExpanded)
+    },
+    [isExpanded, setExpanded],
+  )
+
+  const showTriangle = foldable && (!isExpanded || rowInteraction.isHovered)
+
   return (
     <BlockFrame block={block} selected={selected} lane={lane} onLayout={onLayout}>
       <Box
@@ -371,7 +423,31 @@ function ListItemRow({
         width="100%"
         minWidth={0}
         paddingLeft={Math.max(0, block.list.depth) * 2}
+        onMouseEnter={foldable ? rowInteraction.onMouseEnter : undefined}
+        onMouseLeave={foldable ? rowInteraction.onMouseLeave : undefined}
       >
+        {item.hasFoldableGroup ? (
+          showTriangle ? (
+            <Box flexDirection="row" alignItems="center" flexShrink={0}>
+              <Box
+                mouseCursor="pointer"
+                onClick={handleToggle}
+                onMouseEnter={triangleInteraction.onMouseEnter}
+                onMouseLeave={triangleInteraction.onMouseLeave}
+                backgroundColor={triangleInteraction.treatment.backgroundColor}
+                data-testid="fold-triangle"
+                flexShrink={0}
+              >
+                <Text color={triangleInteraction.treatment.color}>
+                  {isExpanded ? DISCLOSURE_MARKERS.expanded : DISCLOSURE_MARKERS.collapsed}
+                </Text>
+              </Box>
+              <Text> </Text>
+            </Box>
+          ) : (
+            <Text> </Text>
+          )
+        ) : null}
         <Box
           width={item.markerWidth}
           minWidth={item.markerWidth}
@@ -496,6 +572,20 @@ function DocumentBlocks({
             if (!item) {
               throw new Error(`DocumentView: list item ${String(block.id)} was not resolved`)
             }
+            const isFoldable = block.foldable ?? false
+            const isExpanded =
+              block.expanded !== undefined
+                ? block.expanded
+                : foldedHeadingIds !== undefined
+                  ? !foldedHeadingIds.has(String(block.id))
+                  : true
+            const handleToggleFold =
+              block.onToggleFold !== undefined
+                ? block.onToggleFold
+                : onToggleFoldHeading !== undefined
+                  ? () => onToggleFoldHeading(String(block.id))
+                  : undefined
+
             return (
               <ListItemRow
                 key={block.id}
@@ -504,6 +594,9 @@ function DocumentBlocks({
                 selected={selected}
                 lane={blockLane}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
+                foldable={isFoldable}
+                expanded={isExpanded}
+                onToggleFold={handleToggleFold}
               />
             )
           }

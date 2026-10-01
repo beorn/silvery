@@ -200,4 +200,125 @@ describe("DocumentView section folding integration", () => {
     await app.click(triangleCol, h1Row)
     expect(toggledId).toBe("h1")
   })
+
+  test("un-hovered fold triangle uses default marker color matching '#'", () => {
+    const render = createRenderer({ cols: 60, rows: 5 })
+    const app = render(
+      <Box paddingLeft={4}>
+        <HeadingRow level={1} foldable={true} expanded={false}>
+          <Text>Overview Section</Text>
+        </HeadingRow>
+      </Box>,
+    )
+    const row = app.lines.findIndex((line) => line.includes("Overview Section"))
+    expect(row).toBeGreaterThanOrEqual(0)
+    const hashCol = app.lines[row]!.indexOf("#")
+    const triangleCol = app.lines[row]!.indexOf(DISCLOSURE_MARKERS.collapsed)
+    expect(triangleCol).toBeGreaterThanOrEqual(0)
+
+    const triangleFg = app.cell(triangleCol, row).fg
+    const hashFg = app.cell(hashCol, row).fg
+    expect(triangleFg).toBeDefined()
+    expect(triangleFg).toEqual(hashFg)
+  })
+
+  test("hovering fold triangle applies hover treatment (foreground and hover background)", async () => {
+    const render = createRenderer({ cols: 60, rows: 5 })
+    const app = render(
+      <Box paddingLeft={4}>
+        <HeadingRow level={1} foldable={true} expanded={false}>
+          <Text>Overview Section</Text>
+        </HeadingRow>
+      </Box>,
+    )
+    const row = app.lines.findIndex((line) => line.includes("Overview Section"))
+    expect(row).toBeGreaterThanOrEqual(0)
+    const titleCol = app.lines[row]!.indexOf("Overview Section")
+    const triangleCol = app.lines[row]!.indexOf(DISCLOSURE_MARKERS.collapsed)
+
+    const unhoveredFg = app.cell(triangleCol, row).fg
+    const titleFg = app.cell(titleCol, row).fg
+
+    await app.hover(triangleCol, row)
+    const hoveredFg = app.cell(triangleCol, row).fg
+    const hoveredBg = app.cell(triangleCol, row).bg
+
+    expect(hoveredBg).toBeDefined()
+    expect(hoveredFg).toBeDefined()
+    expect(hoveredFg).not.toEqual(unhoveredFg)
+  })
+
+  test("list item with sub-items folds and unfolds with disclosure triangle", async () => {
+    let toggledId: string | null = null
+    const BLOCKS: DocumentBlock[] = [
+      {
+        id: "item1",
+        kind: "list-item",
+        list: { groupId: "g1", depth: 0, ordered: false },
+        content: "Foldable Parent Item",
+        foldable: true,
+      },
+      {
+        id: "child1",
+        kind: "list-item",
+        list: { groupId: "g2", depth: 1, ordered: false },
+        content: "Child Item 1",
+        foldable: false,
+      },
+      {
+        id: "item2",
+        kind: "list-item",
+        list: { groupId: "g1", depth: 0, ordered: false },
+        content: "Leaf Sibling Item",
+        foldable: false,
+      },
+    ]
+
+    function TestApp() {
+      const [folded, setFolded] = useState<ReadonlySet<string>>(new Set(["item1"]))
+      return (
+        <DocumentView
+          blocks={BLOCKS}
+          foldedHeadingIds={folded}
+          onToggleFoldHeading={(id) => {
+            toggledId = id
+            setFolded((prev) => {
+              const next = new Set(prev)
+              if (next.has(id)) next.delete(id)
+              else next.add(id)
+              return next
+            })
+          }}
+        />
+      )
+    }
+
+    const render = createRenderer({ cols: 60, rows: 10 })
+    const app = render(<TestApp />)
+
+    const row = app.lines.findIndex((line) => line.includes("Foldable Parent Item"))
+    expect(row).toBeGreaterThanOrEqual(0)
+    const textCol = app.lines[row]!.indexOf("Foldable Parent Item")
+    const bulletCol = app.lines[row]!.indexOf("•")
+    const triangleCol = app.lines[row]!.indexOf(DISCLOSURE_MARKERS.collapsed)
+
+    // Folded list item shows collapsed triangle
+    expect(triangleCol).toBeGreaterThanOrEqual(0)
+    expect(triangleCol).toBeLessThan(bulletCol)
+    expect(bulletCol).toBeLessThan(textCol)
+
+    // Sibling non-foldable list item aligns its bullet with parent's bullet
+    const item2Row = app.lines.findIndex((line) => line.includes("Leaf Sibling Item"))
+    expect(item2Row).toBeGreaterThanOrEqual(0)
+    const item2BulletCol = app.lines[item2Row]!.indexOf("•")
+    expect(item2BulletCol).toBe(bulletCol)
+
+    // Hovering the fold triangle applies hover treatment
+    await app.hover(triangleCol, row)
+    expect(app.cell(triangleCol, row).bg).toBeDefined()
+
+    // Clicking triangle toggles fold
+    await app.click(triangleCol, row)
+    expect(toggledId).toBe("item1")
+  })
 })
