@@ -483,4 +483,38 @@ describe("DocumentView section folding integration", () => {
     expect(bulletPlain).toBe(2)
     expect(bulletWithFold).toBe(2)
   })
+
+  test("nested child item under foldable parent aligns bullet and keeps tree fold gutter", () => {
+    const li = (id: string, g: string, content: string, foldable = false, depth = 0) => ({
+      id,
+      kind: "list-item" as const,
+      list: { groupId: g, depth, ordered: false },
+      content,
+      foldable,
+    })
+    const nested: DocumentBlock[] = [
+      li("p1", "P", "Foldable parent", true, 0),
+      li("c1", "C", "Nested child", false, 1),
+      li("p2", "P", "Parent sibling", false, 0),
+    ]
+
+    const render = createRenderer({ cols: 60, rows: 10 })
+    const app = render(<DocumentView blocks={nested} />)
+
+    const parentRow = app.lines.findIndex((l) => l.includes("Foldable parent"))
+    const childRow = app.lines.findIndex((l) => l.includes("Nested child"))
+    const siblingRow = app.lines.findIndex((l) => l.includes("Parent sibling"))
+
+    expect(parentRow).toBeGreaterThanOrEqual(0)
+    expect(childRow).toBeGreaterThanOrEqual(0)
+    expect(siblingRow).toBeGreaterThanOrEqual(0)
+
+    const parentBullet = app.lines[parentRow]!.indexOf("•")
+    const childBullet = app.lines[childRow]!.indexOf("•")
+    const siblingBullet = app.lines[siblingRow]!.indexOf("•")
+
+    expect(parentBullet).toBe(4)
+    expect(siblingBullet).toBe(4)
+    expect(childBullet).toBe(6)
+  })
 })
