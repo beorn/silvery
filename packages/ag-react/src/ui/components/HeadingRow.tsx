@@ -23,6 +23,15 @@ export interface HeadingRowProps {
   expanded?: boolean
   onToggleFold?: () => void
   subtaskSummary?: { readonly done: number; readonly total: number } | string
+  trailing?: React.ReactNode
+}
+
+export function formatSubtaskSummary(
+  summary: { readonly done: number; readonly total: number } | string,
+): string {
+  if (typeof summary === "string") return summary
+  const pct = summary.total > 0 ? Math.round((summary.done / summary.total) * 100) : 0
+  return `${pct}% (${summary.done}/${summary.total})`
 }
 
 /**
@@ -41,6 +50,7 @@ export function HeadingRow({
   expanded,
   onToggleFold,
   subtaskSummary,
+  trailing,
 }: HeadingRowProps): React.ReactElement {
   const theme = useTheme()
   const priority = useContext(StylePriorityContext)
@@ -108,12 +118,24 @@ export function HeadingRow({
     baseMarker
   )
 
+  const summaryText = subtaskSummary ? formatSubtaskSummary(subtaskSummary) : ""
+  const summaryLength = displayLength(summaryText)
+  const defaultTrailing = subtaskSummary ? (
+    <Box flexShrink={0} paddingLeft={3}>
+      <Text color={summaryColor} bold={false}>
+        {interaction.isHovered ? summaryText : " ".repeat(summaryLength)}
+      </Text>
+    </Box>
+  ) : undefined
+  const effectiveTrailing = trailing ?? defaultTrailing
+
   return (
     <HangingMarkerRow
       markerWidth={totalMarkerWidth}
       onMouseEnter={isInteractive ? interaction.onMouseEnter : undefined}
       onMouseLeave={isInteractive ? interaction.onMouseLeave : undefined}
       marker={effectiveMarker}
+      trailing={effectiveTrailing}
     >
       {typeof children === "function"
         ? children({ isHovered: interaction.isHovered, summaryColor })
@@ -128,6 +150,7 @@ export interface HangingMarkerRowProps {
   onMouseEnter?: (event: SilveryMouseEvent) => void
   onMouseLeave?: (event: SilveryMouseEvent) => void
   children: React.ReactNode
+  trailing?: React.ReactNode
 }
 
 /** Private gutter geometry shared by headings and collapsed source blocks. */
@@ -137,6 +160,7 @@ export function HangingMarkerRow({
   onMouseEnter,
   onMouseLeave,
   children,
+  trailing,
 }: HangingMarkerRowProps): React.ReactElement {
   const gutter = markerWidth + 1
   return (
@@ -157,9 +181,10 @@ export function HangingMarkerRow({
       >
         {marker}
       </Box>
-      <Prose flexGrow={1} minWidth={0}>
+      <Prose flexGrow={trailing ? undefined : 1} minWidth={0}>
         {children}
       </Prose>
+      {trailing}
     </Box>
   )
 }

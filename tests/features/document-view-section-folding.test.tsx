@@ -335,6 +335,77 @@ describe("DocumentView section folding integration", () => {
     expect(expandedTriangleCol).toBe(triangleCol)
   })
 
+  test("near-width task row with subtask summary does not re-wrap or shift subsequent blocks on hover", async () => {
+    // 26997: hovering a near-width list-item or heading row must not wrap onto an extra line or shift following rows
+    const listBlocks: DocumentBlock[] = [
+      {
+        id: "task-item",
+        kind: "list-item",
+        list: { groupId: "g", depth: 0, ordered: false },
+        content: "Write the release notes for v2 now",
+        foldable: false,
+        subtaskSummary: { done: 2, total: 3 },
+      },
+      {
+        id: "next-item",
+        kind: "list-item",
+        list: { groupId: "g", depth: 0, ordered: false },
+        content: "NEXT ITEM",
+        foldable: false,
+      },
+    ]
+
+    const listRender = createRenderer({ cols: 40, rows: 10 })
+    const listApp = listRender(<DocumentView blocks={listBlocks} />)
+
+    const listTitleRow0 = listApp.lines.findIndex((l) => l.includes("Write the release"))
+    const listNextRow0 = listApp.lines.findIndex((l) => l.includes("NEXT ITEM"))
+    expect(listTitleRow0).toBeGreaterThanOrEqual(0)
+    expect(listNextRow0).toBeGreaterThanOrEqual(0)
+    expect(listApp.lines.some((l) => l.includes("67% (2/3)"))).toBe(false)
+
+    // Hover list item
+    await listApp.hover(listApp.lines[listTitleRow0]!.indexOf("Write"), listTitleRow0)
+    const listTitleRow1 = listApp.lines.findIndex((l) => l.includes("Write the release"))
+    const listNextRow1 = listApp.lines.findIndex((l) => l.includes("NEXT ITEM"))
+    expect(listTitleRow1).toBe(listTitleRow0)
+    expect(listNextRow1).toBe(listNextRow0)
+    expect(listApp.lines.some((l) => l.includes("67% (2/3)"))).toBe(true)
+
+    // Heading near-width test
+    const headingBlocks: DocumentBlock[] = [
+      {
+        id: "task-heading",
+        kind: "heading",
+        level: 2,
+        content: "Prepare the quarterly planning doc",
+        subtaskSummary: { done: 1, total: 4 },
+      },
+      {
+        id: "next-paragraph",
+        kind: "paragraph",
+        content: "BELOW HEADING",
+      },
+    ]
+
+    const headingRender = createRenderer({ cols: 40, rows: 10 })
+    const headingApp = headingRender(<DocumentView blocks={headingBlocks} />)
+
+    const headingTitleRow0 = headingApp.lines.findIndex((l) => l.includes("Prepare the"))
+    const headingBelowRow0 = headingApp.lines.findIndex((l) => l.includes("BELOW HEADING"))
+    expect(headingTitleRow0).toBeGreaterThanOrEqual(0)
+    expect(headingBelowRow0).toBeGreaterThanOrEqual(0)
+    expect(headingApp.lines.some((l) => l.includes("25% (1/4)"))).toBe(false)
+
+    // Hover heading
+    await headingApp.hover(headingApp.lines[headingTitleRow0]!.indexOf("Prepare"), headingTitleRow0)
+    const headingTitleRow1 = headingApp.lines.findIndex((l) => l.includes("Prepare the"))
+    const headingBelowRow1 = headingApp.lines.findIndex((l) => l.includes("BELOW HEADING"))
+    expect(headingTitleRow1).toBe(headingTitleRow0)
+    expect(headingBelowRow1).toBe(headingBelowRow0)
+    expect(headingApp.lines.some((l) => l.includes("25% (1/4)"))).toBe(true)
+  })
+
   test("nested list items maintain strictly increasing bullet column across depths even when leaf items are in separate groups", () => {
     const BLOCKS: DocumentBlock[] = [
       {

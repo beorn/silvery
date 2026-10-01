@@ -10,7 +10,7 @@ import type { MeasuredContent } from "../../components/Table"
 import { Blockquote, H1, H2, H3, H4, H5, H6, HR, Small, unorderedListMarker } from "./Typography"
 import { SyntaxHighlighter } from "./SyntaxHighlighter"
 import { Prose } from "./Prose"
-import { FoldPrefix, HeadingRow } from "./HeadingRow"
+import { FoldPrefix, HeadingRow, formatSubtaskSummary } from "./HeadingRow"
 import { Content, type ContentBodyWidth, useContentLayout, useHasContentLayout } from "./Content"
 import { StylePriorityProvider } from "../../style-priority"
 import { useSearchOptional } from "../../providers/SearchProvider"
@@ -370,14 +370,6 @@ function BlockFrame({
   )
 }
 
-function formatSubtaskSummary(
-  summary: { readonly done: number; readonly total: number } | string,
-): string {
-  if (typeof summary === "string") return summary
-  const pct = summary.total > 0 ? Math.round((summary.done / summary.total) * 100) : 0
-  return `${pct}% (${summary.done}/${summary.total})`
-}
-
 function ListItemRow({
   block,
   item,
@@ -427,6 +419,8 @@ function ListItemRow({
 
   const showTriangle = foldable && (!isExpanded || rowInteraction.isHovered)
   const isInteractive = foldable || block.subtaskSummary !== undefined
+  const summaryText = block.subtaskSummary ? formatSubtaskSummary(block.subtaskSummary) : ""
+  const summaryLength = displayLength(summaryText)
 
   return (
     <BlockFrame block={block} selected={selected} lane={lane} onLayout={onLayout}>
@@ -457,17 +451,18 @@ function ListItemRow({
           <Text color={color ?? "$fg-muted"}>{item.marker}</Text>
         </Box>
         <Box width={1} minWidth={1} flexShrink={0} />
-        <Prose flexGrow={1} minWidth={0}>
+        <Prose flexGrow={block.subtaskSummary ? undefined : 1} minWidth={0}>
           <Text variant="body" color={color} wrap="wrap">
             {block.content}
-            {block.subtaskSummary && rowInteraction.isHovered ? (
-              <Text color={color ?? "mix($fg, $bg, 50%)"} bold={false}>
-                {"   "}
-                {formatSubtaskSummary(block.subtaskSummary)}
-              </Text>
-            ) : null}
           </Text>
         </Prose>
+        {block.subtaskSummary ? (
+          <Box flexShrink={0} paddingLeft={3}>
+            <Text color={color ?? "mix($fg, $bg, 50%)"} bold={false}>
+              {rowInteraction.isHovered ? summaryText : " ".repeat(summaryLength)}
+            </Text>
+          </Box>
+        ) : null}
       </Box>
     </BlockFrame>
   )
@@ -565,17 +560,9 @@ function DocumentBlocks({
                   onToggleFold={handleToggleFold}
                   subtaskSummary={subtaskSummary}
                 >
-                  {({ isHovered, summaryColor }) => (
-                    <Heading color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
-                      {block.content}
-                      {subtaskSummary && isHovered ? (
-                        <Text color={summaryColor} bold={false}>
-                          {"   "}
-                          {formatSubtaskSummary(subtaskSummary)}
-                        </Text>
-                      ) : null}
-                    </Heading>
-                  )}
+                  <Heading color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
+                    {block.content}
+                  </Heading>
                 </HeadingRow>
               </BlockFrame>
             )
