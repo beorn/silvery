@@ -10,11 +10,11 @@
   ],
   "vars": {
     "testCommand": "bun run test",
-    "bunVersion": "1.3.11",
+    "bunVersion": "1.3.14",
+    "verifyTimeoutMinutes": "20",
     "linksCronMinute": "20"
   },
   "overrides": {
-    "verify": "verdaccio-registry pack+install+import gate (legacy npm-install variant hit ETARGET on unpublished @silvery/* deps during release windows)",
     "format-check": "gate runs `bun run fix` = oxlint --fix + oxfmt \u2014 asserts MORE than the oxfmt-only template; do not weaken",
     "oxfmt": "minimal config (semi only) predates canonical; mass reflow deferred \u2014 highest-churn vendor repo, would conflict with in-flight branches"
   }
