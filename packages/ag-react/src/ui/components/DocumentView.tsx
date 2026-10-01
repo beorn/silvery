@@ -209,7 +209,7 @@ function resolveListItems(
 ): ReadonlyMap<DocumentBlockId, ResolvedListItem> {
   const groupCounts = new Map<DocumentBlockId, number>()
   const groupWidths = new Map<DocumentBlockId, number>()
-  const groupHasFoldable = new Map<DocumentBlockId, boolean>()
+  let hasAnyFoldableListItem = false
   const provisional = new Map<
     DocumentBlockId,
     { marker: React.ReactNode; width: number; groupId: DocumentBlockId }
@@ -218,7 +218,7 @@ function resolveListItems(
   for (const block of blocks) {
     if (block.kind !== "list-item") continue
     if (block.foldable) {
-      groupHasFoldable.set(block.list.groupId, true)
+      hasAnyFoldableListItem = true
     }
     // Continuation paragraphs use marker "" to share the parent group's indent
     // column without being a real list item. Skip the ordinal counter so later
@@ -244,7 +244,7 @@ function resolveListItems(
       {
         marker: item.marker,
         markerWidth: groupWidths.get(item.groupId) ?? item.width,
-        hasFoldableGroup: groupHasFoldable.get(item.groupId) ?? false,
+        hasFoldableGroup: hasAnyFoldableListItem,
       },
     ]),
   )

@@ -334,4 +334,49 @@ describe("DocumentView section folding integration", () => {
     const expandedTriangleCol = app.lines[row]!.indexOf(DISCLOSURE_MARKERS.expanded)
     expect(expandedTriangleCol).toBe(triangleCol)
   })
+
+  test("nested list items maintain strictly increasing bullet column across depths even when leaf items are in separate groups", () => {
+    const BLOCKS: DocumentBlock[] = [
+      {
+        id: "l0",
+        kind: "list-item",
+        list: { groupId: "g0", depth: 0, ordered: false },
+        content: "Level 0",
+        foldable: true,
+      },
+      {
+        id: "l1",
+        kind: "list-item",
+        list: { groupId: "g1", depth: 1, ordered: false },
+        content: "Level 1",
+        foldable: true,
+      },
+      {
+        id: "l2",
+        kind: "list-item",
+        list: { groupId: "g2", depth: 2, ordered: false },
+        content: "Level 2",
+        foldable: true,
+      },
+      {
+        id: "l3",
+        kind: "list-item",
+        list: { groupId: "g3", depth: 3, ordered: false },
+        content: "Level 3 Leaf",
+        foldable: false,
+      },
+    ]
+
+    const render = createRenderer({ cols: 60, rows: 10 })
+    const app = render(<DocumentView blocks={BLOCKS} />)
+
+    let prevCol = -1
+    for (const name of ["Level 0", "Level 1", "Level 2", "Level 3 Leaf"]) {
+      const row = app.lines.findIndex((line) => line.includes(name))
+      expect(row).toBeGreaterThanOrEqual(0)
+      const bulletCol = app.lines[row]!.indexOf("•")
+      expect(bulletCol, name).toBeGreaterThan(prevCol)
+      prevCol = bulletCol
+    }
+  })
 })
