@@ -1700,3 +1700,6 @@ export { ReactiveThemeProvider } from "./ReactiveThemeProvider"
 export { useActiveScheme } from "./hooks/useActiveScheme"
 export type { ActiveScheme } from "@silvery/ansi"
 export { ActiveSchemeContext } from "./ThemeContext"
+
+// Style priority
+export { StylePriorityContext, StylePriorityProvider, type StylePriority } from "./style-priority"

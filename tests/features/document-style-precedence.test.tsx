@@ -59,4 +59,44 @@ describe("DocumentView style precedence", () => {
 
     expect(cellAt(app, "code-span").bg).toEqual(cellAt(app, "plain-span").bg)
   })
+
+  test("block.color styles heading and list-item foreground, yielding to selection", () => {
+    const blocks: DocumentBlock[] = [
+      {
+        id: "muted-heading",
+        kind: "heading",
+        level: 2,
+        color: "$fg-muted",
+        content: "Muted heading",
+      },
+      {
+        id: "muted-item",
+        kind: "list-item",
+        list: { groupId: "list", depth: 0, ordered: false },
+        color: "$fg-muted",
+        content: "Muted item",
+      },
+      {
+        id: "selected-heading",
+        kind: "heading",
+        level: 2,
+        color: "$fg-muted",
+        content: "Selected heading",
+      },
+    ]
+    const render = createRenderer({ cols: 60, rows: 10 })
+    const app = render(<DocumentView blocks={blocks} selectedId="selected-heading" />)
+
+    const mutedCell = createRenderer({ cols: 1, rows: 1 })(<Text color="$fg-muted">x</Text>).cell(
+      0,
+      0,
+    )
+    const selectedCell = createRenderer({ cols: 1, rows: 1 })(
+      <Text color="$fg-on-selected">x</Text>,
+    ).cell(0, 0)
+
+    expect(cellAt(app, "Muted heading").fg).toEqual(mutedCell.fg)
+    expect(cellAt(app, "Muted item").fg).toEqual(mutedCell.fg)
+    expect(cellAt(app, "Selected heading").fg).toEqual(selectedCell.fg)
+  })
 })

@@ -36,6 +36,8 @@ export interface DocumentListItem {
 interface DocumentBlockBase {
   readonly id: DocumentBlockId
   readonly lane?: DocumentLane
+  /** Foreground color override for this block. Selected treatment still wins. */
+  readonly color?: string
   /** Non-geometric leaf content such as a measurement registrar. */
   readonly accessory?: React.ReactNode
   /** Content projected from another source; the presenter owns its visual treatment. */
@@ -389,7 +391,7 @@ function ListItemRow({
   expanded?: boolean
   onToggleFold?: () => void
 }): React.ReactElement {
-  const color = selected ? "$fg-on-selected" : undefined
+  const color = selected ? "$fg-on-selected" : block.color
   const rowInteraction = useInteractionTreatment("control", "surfaceHover")
   const defaultMarkerColor = `mix($fg, $bg, 75%)`
   const triangleInteraction = useInteractionTreatment(
@@ -554,13 +556,13 @@ function DocumentBlocks({
                   level={block.level}
                   markerWidth={headingMarkerWidth}
                   marker={block.marker}
-                  color={selected ? "$fg-on-selected" : undefined}
+                  color={selected ? "$fg-on-selected" : block.color}
                   foldable={isFoldable}
                   expanded={isExpanded}
                   onToggleFold={handleToggleFold}
                   subtaskSummary={subtaskSummary}
                 >
-                  <Heading color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
+                  <Heading color={selected ? "$fg-on-selected" : block.color} wrap="wrap">
                     {block.content}
                   </Heading>
                 </HeadingRow>
@@ -697,7 +699,7 @@ function DocumentBlocks({
                 marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
-                <Text variant="body" color={selected ? "$fg-on-selected" : undefined} wrap="wrap">
+                <Text variant="body" color={selected ? "$fg-on-selected" : block.color} wrap="wrap">
                   {block.content}
                 </Text>
               </BlockFrame>
