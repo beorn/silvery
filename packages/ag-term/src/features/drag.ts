@@ -44,8 +44,9 @@ export interface DragFeature {
   /**
    * Handle mouse down on a node.
    * If the node or its nearest ancestor has draggable=true, starts drag
-   * tracking (pointing phase) from that declared source. Returns true when
-   * tracking has started.
+   * tracking (pointing phase) from that declared source. A draggable=false
+   * node on the way up opts its subtree out. Returns true when tracking has
+   * started.
    */
   handleMouseDown(col: number, row: number, node: AgNode): boolean
 
@@ -92,12 +93,17 @@ interface PointingState {
   startPos: Position
 }
 
-/** Resolve the nearest draggable ancestor of the hit-tested node. */
+/**
+ * Resolve the nearest draggable ancestor of the hit-tested node. An explicit
+ * `draggable={false}` met first stops the walk, so a child (a button inside a
+ * draggable title bar) opts out of its ancestor's drag.
+ */
 function findDragSource(node: AgNode): AgNode | null {
   let current: AgNode | null = node
   while (current) {
     const props = current.props as { draggable?: boolean }
     if (props.draggable === true) return current
+    if (props.draggable === false) return null
     current = current.parent
   }
   return null

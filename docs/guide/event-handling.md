@@ -68,7 +68,10 @@ or stay with cell-mode mouse input for that region.
 
 Set `draggable` on a source `Box` and add drag handlers to a target. A pointer
 hit on source content resolves to the nearest draggable ancestor, so ordinary
-cards and rows don't need to repeat `draggable` on each child.
+cards and rows don't need to repeat `draggable` on each child. Set
+`draggable={false}` on a child to opt it out — a button inside a draggable
+title bar starts no drag and still receives its click. While a drag is active
+the mouse cursor shows `grabbing`.
 
 ```tsx
 function BoardCard() {

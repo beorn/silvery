@@ -680,7 +680,10 @@ export interface BoxProps
    * When true, mousedown + drag past threshold initiates a node drag gesture
    * instead of text selection. The prop is not inherited, but pointer hits on
    * descendants resolve to their nearest draggable ancestor, matching DOM drag
-   * targeting for content-bearing cards and rows.
+   * targeting for content-bearing cards and rows. Unlike the DOM, an explicit
+   * `false` on a descendant stops that walk: its subtree opts out of the
+   * ancestor's drag (e.g. a button inside a draggable title bar), so a press
+   * there starts no drag and still clicks.
    */
   draggable?: boolean
 
@@ -706,7 +709,9 @@ export interface BoxProps
    *
    * When omitted, activation handlers derive `"pointer"` and selectable text
    * derives `"text"`. Explicit values always win; pass `"default"` to opt out
-   * of semantic defaults and restore the target's native cursor.
+   * of semantic defaults and restore the target's native cursor. The one
+   * exception is an active `draggable` drag, which shows `"grabbing"` until it
+   * ends or is cancelled.
    *
    * @default Derived from interaction semantics.
    */

@@ -129,6 +129,7 @@ import {
   updateKeyboardModifiers,
   hitTest,
   refreshHoverPath,
+  refreshMouseCursor,
   resolveSelectionAnchorFromPoint,
   contentSelectionPointFromPoint,
   dispatchMouseEvent,
@@ -2699,6 +2700,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     onMouseCursorChange: (shape) => {
       writeTerminalControl(shape ? setMouseCursorShape(shape) : resetMouseCursorShape())
     },
+    isDragActive: dragFeature ? () => dragFeature.state !== null : undefined,
   })
 
   // Layout-shift (CLS) monitor — runs post-paintFrame to detect
@@ -4982,12 +4984,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         // The DOM event processor armed the drag source on mousedown. An
         // active drag consumes mouseup, so release that capture explicitly
         // instead of leaving a stale armed/capture target behind.
-        const mouse = event.event === "mouse" ? (event.data as { action?: string }) : null
+        const mouse =
+          event.event === "mouse" ? (event.data as { action?: string; x: number; y: number }) : null
         if (mouse?.action === "up" && mouseEventState.mouseDownTarget) {
           setArmed(mouseEventState.mouseDownTarget, false)
           mouseEventState.mouseDownTarget = null
           mouseEventState.mouseCaptureTarget = null
         }
+        // processMouseEvent never sees a drag-owned event, so re-run the cursor
+        // resolver here: drag start shows `grabbing`; drop and Escape cancel
+        // restore the cursor resolved under the pointer.
+        refreshMouseCursor(mouseEventState, getContainerRoot(container), mouse ?? undefined)
         continue
       }
 

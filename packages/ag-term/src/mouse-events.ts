@@ -1280,6 +1280,11 @@ export interface MouseEventProcessorOptions {
    * `null` means reset to the default target cursor.
    */
   onMouseCursorChange?: (shape: BoxProps["mouseCursor"] | null) => void
+  /**
+   * Reads whether a node drag is active (past its threshold). While true the
+   * cursor resolves to `grabbing` ahead of the capture target and hit node.
+   */
+  isDragActive?: () => boolean
 }
 
 /**
@@ -1329,6 +1334,8 @@ export interface MouseEventProcessorState {
   lastMouseCursor: BoxProps["mouseCursor"] | null
   /** Optional callback for terminal/canvas/DOM cursor sinks. */
   onMouseCursorChange?: (shape: BoxProps["mouseCursor"] | null) => void
+  /** Optional reader of the runtime's node-drag state (see options). */
+  isDragActive?: () => boolean
 }
 
 export function createMouseEventProcessor(
@@ -1347,6 +1354,7 @@ export function createMouseEventProcessor(
     lastPointer: null,
     lastMouseCursor: null,
     onMouseCursorChange: options?.onMouseCursorChange,
+    isDragActive: options?.isDragActive,
   }
 }
 
@@ -1392,11 +1400,31 @@ function resolveMouseCursor(node: AgNode | null): BoxProps["mouseCursor"] | null
 }
 
 function updateMouseCursor(state: MouseEventProcessorState, target: AgNode | null): void {
-  const cursorTarget = state.mouseCaptureTarget ?? target
-  const next = resolveMouseCursor(cursorTarget)
+  // An active node drag owns the pointer affordance until it ends or is
+  // cancelled; afterwards the capture target or hit node resolves as usual.
+  const next = state.isDragActive?.()
+    ? "grabbing"
+    : resolveMouseCursor(state.mouseCaptureTarget ?? target)
   if (next === state.lastMouseCursor) return
   state.lastMouseCursor = next
   state.onMouseCursorChange?.(next)
+}
+
+/**
+ * Re-resolve the cursor for input that `processMouseEvent` never sees: the
+ * moves and release a node drag owns, and the Escape that cancels it. Records
+ * the pointer when the input carried one, so drag start emits `grabbing` and
+ * drop or cancel restores the cursor resolved under the pointer, not under
+ * the original press.
+ */
+export function refreshMouseCursor(
+  state: MouseEventProcessorState,
+  root: AgNode,
+  pointer?: { readonly x: number; readonly y: number },
+): void {
+  if (pointer) state.lastPointer = { x: pointer.x, y: pointer.y }
+  const at = state.lastPointer
+  updateMouseCursor(state, at ? hitTest(root, at.x, at.y) : null)
 }
 
 const MOUSE_CAPTURE_OUTSIDE_GRACE_MS = 2000
@@ -1524,9 +1552,9 @@ function clearHoverPath(state: MouseEventProcessorState, parsed: ParsedMouse): v
  */
 export function refreshHoverPath(state: MouseEventProcessorState, root: AgNode): void {
   if (state.lastPointer === null) return
-  // Don't override an active capture (drag in progress) — the dragger
-  // owns the move/up routing until release.
-  if (state.mouseCaptureTarget) return
+  // Don't override an active capture or node drag (drag in progress) — the
+  // dragger owns the move/up routing until release.
+  if (state.mouseCaptureTarget || state.isDragActive?.()) return
   const { x, y } = state.lastPointer
   const target = hitTest(root, x, y)
   updateMouseCursor(state, target)

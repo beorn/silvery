@@ -632,7 +632,9 @@ affordance and applications normally omit `mouseCursor`.
 Explicit intent still wins. Pass another shape to override a default, or pass
 `mouseCursor="default"` to opt out and restore the target's native cursor.
 This is preferable to `undefined`: omission asks Silvery to derive semantic
-intent, while `"default"` is an explicit decision.
+intent, while `"default"` is an explicit decision. The one exception to
+explicit intent is an active `draggable` drag, which shows `grabbing` until the
+drag ends or is cancelled.
 
 Terminal targets emit these shapes through OSC 22. Terminals without OSC 22
 support ignore the sequence, so this remains progressive enhancement.
