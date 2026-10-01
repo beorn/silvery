@@ -320,5 +320,18 @@ describe("DocumentView section folding integration", () => {
     // Clicking triangle toggles fold
     await app.click(triangleCol, row)
     expect(toggledId).toBe("item1")
+
+    // Unhover row: expanded foldable item without hover hides triangle; bullet does not move
+    await app.hover(0, 9)
+    const unhoveredBulletCol = app.lines[row]!.indexOf("•")
+    expect(unhoveredBulletCol).toBe(bulletCol)
+    expect(app.lines[row]!.indexOf(DISCLOSURE_MARKERS.expanded)).toBe(-1)
+
+    // Hover row: expanded foldable item reveals triangle; bullet column remains stable (no horizontal jitter)
+    await app.hover(textCol, row)
+    const hoveredBulletCol = app.lines[row]!.indexOf("•")
+    expect(hoveredBulletCol).toBe(bulletCol)
+    const expandedTriangleCol = app.lines[row]!.indexOf(DISCLOSURE_MARKERS.expanded)
+    expect(expandedTriangleCol).toBe(triangleCol)
   })
 })

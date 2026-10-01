@@ -83,30 +83,14 @@ export function HeadingRow({
 
   const foldPrefix =
     foldPrefixWidth > 0 ? (
-      foldable ? (
-        <Box flexDirection="row" alignItems="center" flexShrink={0}>
-          {showTriangle ? (
-            <Box
-              mouseCursor="pointer"
-              onClick={handleToggle}
-              onMouseEnter={triangleInteraction.onMouseEnter}
-              onMouseLeave={triangleInteraction.onMouseLeave}
-              backgroundColor={triangleInteraction.treatment.backgroundColor}
-              data-testid="fold-triangle"
-              flexShrink={0}
-            >
-              <Text color={triangleInteraction.treatment.color}>
-                {isExpanded ? DISCLOSURE_MARKERS.expanded : DISCLOSURE_MARKERS.collapsed}
-              </Text>
-            </Box>
-          ) : (
-            <Text> </Text>
-          )}
-          <Text>{" ".repeat(foldPrefixWidth - 1)}</Text>
-        </Box>
-      ) : (
-        <Text>{" ".repeat(foldPrefixWidth)}</Text>
-      )
+      <FoldPrefix
+        foldable={foldable}
+        showTriangle={showTriangle}
+        isExpanded={isExpanded}
+        foldPrefixWidth={foldPrefixWidth}
+        triangleInteraction={triangleInteraction}
+        onToggle={handleToggle}
+      />
     ) : null
 
   const effectiveMarker = foldPrefix ? (
@@ -168,6 +152,60 @@ export function HangingMarkerRow({
       <Prose flexGrow={1} minWidth={0}>
         {children}
       </Prose>
+    </Box>
+  )
+}
+
+export interface FoldPrefixProps {
+  readonly foldable?: boolean
+  readonly showTriangle: boolean
+  readonly isExpanded: boolean
+  readonly foldPrefixWidth?: number
+  readonly triangleInteraction: {
+    readonly onMouseEnter: (event: SilveryMouseEvent) => void
+    readonly onMouseLeave: (event: SilveryMouseEvent) => void
+    readonly treatment: {
+      readonly color?: string
+      readonly backgroundColor?: string
+    }
+  }
+  readonly onToggle?: (event: SilveryMouseEvent) => void
+}
+
+/**
+ * Shared disclosure prefix for collapsible rows (headings, list items).
+ * Guarantees a constant-width gutter whether the fold triangle is shown,
+ * hidden (unhovered open item), or absent (non-foldable item in group).
+ */
+export function FoldPrefix({
+  foldable = false,
+  showTriangle,
+  isExpanded,
+  foldPrefixWidth = 2,
+  triangleInteraction,
+  onToggle,
+}: FoldPrefixProps): React.ReactElement | null {
+  if (foldPrefixWidth <= 0) return null
+  return (
+    <Box flexDirection="row" alignItems="center" flexShrink={0}>
+      {foldable && showTriangle ? (
+        <Box
+          mouseCursor="pointer"
+          onClick={onToggle}
+          onMouseEnter={triangleInteraction.onMouseEnter}
+          onMouseLeave={triangleInteraction.onMouseLeave}
+          backgroundColor={triangleInteraction.treatment.backgroundColor}
+          data-testid="fold-triangle"
+          flexShrink={0}
+        >
+          <Text color={triangleInteraction.treatment.color}>
+            {isExpanded ? DISCLOSURE_MARKERS.expanded : DISCLOSURE_MARKERS.collapsed}
+          </Text>
+        </Box>
+      ) : (
+        <Text> </Text>
+      )}
+      {foldPrefixWidth > 1 ? <Text>{" ".repeat(foldPrefixWidth - 1)}</Text> : null}
     </Box>
   )
 }

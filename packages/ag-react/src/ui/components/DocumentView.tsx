@@ -10,14 +10,13 @@ import type { MeasuredContent } from "../../components/Table"
 import { Blockquote, H1, H2, H3, H4, H5, H6, HR, Small, unorderedListMarker } from "./Typography"
 import { SyntaxHighlighter } from "./SyntaxHighlighter"
 import { Prose } from "./Prose"
-import { HeadingRow } from "./HeadingRow"
+import { FoldPrefix, HeadingRow } from "./HeadingRow"
 import { Content, type ContentBodyWidth, useContentLayout, useHasContentLayout } from "./Content"
 import { StylePriorityProvider } from "../../style-priority"
 import { useSearchOptional } from "../../providers/SearchProvider"
 import { useTerm } from "../../hooks/useTerm"
 import { DEFAULT_BREAKPOINTS } from "../../hooks/useResponsiveValue"
 import type { ScrollController } from "./ScrollArea"
-import { DISCLOSURE_MARKERS } from "../icons"
 import { useExpansion } from "./use-expansion"
 import { useInteractionTreatment } from "../../hooks/useInteractionTreatment"
 
@@ -427,26 +426,14 @@ function ListItemRow({
         onMouseLeave={foldable ? rowInteraction.onMouseLeave : undefined}
       >
         {item.hasFoldableGroup ? (
-          showTriangle ? (
-            <Box flexDirection="row" alignItems="center" flexShrink={0}>
-              <Box
-                mouseCursor="pointer"
-                onClick={handleToggle}
-                onMouseEnter={triangleInteraction.onMouseEnter}
-                onMouseLeave={triangleInteraction.onMouseLeave}
-                backgroundColor={triangleInteraction.treatment.backgroundColor}
-                data-testid="fold-triangle"
-                flexShrink={0}
-              >
-                <Text color={triangleInteraction.treatment.color}>
-                  {isExpanded ? DISCLOSURE_MARKERS.expanded : DISCLOSURE_MARKERS.collapsed}
-                </Text>
-              </Box>
-              <Text> </Text>
-            </Box>
-          ) : (
-            <Text> </Text>
-          )
+          <FoldPrefix
+            foldable={foldable}
+            showTriangle={showTriangle}
+            isExpanded={isExpanded}
+            foldPrefixWidth={2}
+            triangleInteraction={triangleInteraction}
+            onToggle={handleToggle}
+          />
         ) : null}
         <Box
           width={item.markerWidth}
