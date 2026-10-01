@@ -206,12 +206,69 @@ function textMarkerWidth(marker: React.ReactNode): number | null {
   return null
 }
 
+class GroupDisjointSet {
+  private readonly parent = new Map<DocumentBlockId, DocumentBlockId>()
+
+  find(item: DocumentBlockId): DocumentBlockId {
+    let root = item
+    while (this.parent.has(root)) {
+      root = this.parent.get(root)!
+    }
+    let curr = item
+    while (curr !== root) {
+      const next = this.parent.get(curr) ?? root
+      this.parent.set(curr, root)
+      curr = next
+    }
+    return root
+  }
+
+  union(a: DocumentBlockId, b: DocumentBlockId): void {
+    const rootA = this.find(a)
+    const rootB = this.find(b)
+    if (rootA !== rootB) {
+      this.parent.set(rootA, rootB)
+    }
+  }
+}
+
 function resolveListItems(
   blocks: readonly DocumentBlock[],
 ): ReadonlyMap<DocumentBlockId, ResolvedListItem> {
   const groupCounts = new Map<DocumentBlockId, number>()
   const groupWidths = new Map<DocumentBlockId, number>()
-  let hasAnyFoldableListItem = false
+  const dsu = new GroupDisjointSet()
+  const activeStack: Array<{ depth: number; groupId: DocumentBlockId }> = []
+
+  // Connect list groups into list trees (a root group plus the groups nested under it).
+  for (const block of blocks) {
+    if (block.kind !== "list-item") {
+      activeStack.length = 0
+      continue
+    }
+
+    const depth = block.list.depth
+    const groupId = block.list.groupId
+
+    while (activeStack.length > 0 && activeStack[activeStack.length - 1]!.depth >= depth) {
+      activeStack.pop()
+    }
+
+    if (activeStack.length > 0) {
+      const parent = activeStack[activeStack.length - 1]!
+      dsu.union(groupId, parent.groupId)
+    }
+
+    activeStack.push({ depth, groupId })
+  }
+
+  const treeHasFoldable = new Map<DocumentBlockId, boolean>()
+  for (const block of blocks) {
+    if (block.kind === "list-item" && block.foldable) {
+      treeHasFoldable.set(dsu.find(block.list.groupId), true)
+    }
+  }
+
   const provisional = new Map<
     DocumentBlockId,
     { marker: React.ReactNode; width: number; groupId: DocumentBlockId }
@@ -219,9 +276,6 @@ function resolveListItems(
 
   for (const block of blocks) {
     if (block.kind !== "list-item") continue
-    if (block.foldable) {
-      hasAnyFoldableListItem = true
-    }
     // Continuation paragraphs use marker "" to share the parent group's indent
     // column without being a real list item. Skip the ordinal counter so later
     // items are not shifted (#26757). `undefined` means "use the default marker";
@@ -246,7 +300,7 @@ function resolveListItems(
       {
         marker: item.marker,
         markerWidth: groupWidths.get(item.groupId) ?? item.width,
-        hasFoldableGroup: hasAnyFoldableListItem,
+        hasFoldableGroup: treeHasFoldable.get(dsu.find(item.groupId)) ?? false,
       },
     ]),
   )

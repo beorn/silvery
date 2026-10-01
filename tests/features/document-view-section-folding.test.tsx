@@ -450,4 +450,37 @@ describe("DocumentView section folding integration", () => {
       prevCol = bulletCol
     }
   })
+
+  test("unrelated non-foldable list items do not shift column when a foldable list exists elsewhere in the document", () => {
+    const li = (id: string, g: string, content: string, foldable = false) => ({
+      id,
+      kind: "list-item" as const,
+      list: { groupId: g, depth: 0, ordered: false },
+      content,
+      foldable,
+    })
+    const plain: DocumentBlock[] = [
+      li("u1", "U", "Unrelated list item"),
+      { id: "p", kind: "paragraph", content: "Some paragraph between lists" },
+    ]
+    const withFold: DocumentBlock[] = [
+      ...plain,
+      li("f1", "F", "Foldable task", true),
+      li("f2", "F", "Sibling task"),
+    ]
+
+    const render = createRenderer({ cols: 60, rows: 10 })
+    const appPlain = render(<DocumentView blocks={plain} />)
+    const appWithFold = render(<DocumentView blocks={withFold} />)
+
+    const rowPlain = appPlain.lines.findIndex((l) => l.includes("Unrelated list item"))
+    const rowWithFold = appWithFold.lines.findIndex((l) => l.includes("Unrelated list item"))
+    expect(rowPlain).toBeGreaterThanOrEqual(0)
+    expect(rowWithFold).toBeGreaterThanOrEqual(0)
+
+    const bulletPlain = appPlain.lines[rowPlain]!.indexOf("•")
+    const bulletWithFold = appWithFold.lines[rowWithFold]!.indexOf("•")
+    expect(bulletPlain).toBe(2)
+    expect(bulletWithFold).toBe(2)
+  })
 })
