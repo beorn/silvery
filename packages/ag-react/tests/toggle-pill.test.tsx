@@ -45,6 +45,23 @@ describe("togglePillColor ladder", () => {
     expect(color({ active: true, groupHovered: true, itemHovered: true })).toBe("$fg-accent")
     expect(color({ active: false, groupHovered: true, itemHovered: true })).toBe("$fg-muted")
   })
+
+  // 27064 row 8 (@cto 25e0c7c7): an active pill whose state must stay visible at rest (hab's `fast`, which costs
+  // more) names its own idle colour; without it the idle active tone is unchanged, and the inactive ladder never moves.
+  test("idleActiveColor colours an idle active pill; omitted, the idle active tone stays $fg-muted", () => {
+    const lit = (o: { active: boolean; groupHovered: boolean; itemHovered: boolean }) =>
+      togglePillColor({
+        ...o,
+        activeColor: "$fg-warning",
+        activeHoverColor: "$fg-warning",
+        idleActiveColor: "$fg-warning",
+      })
+    expect(lit({ active: true, groupHovered: false, itemHovered: false })).toBe("$fg-warning")
+    expect(lit({ active: true, groupHovered: true, itemHovered: false })).toBe("$fg-warning")
+    expect(lit({ active: false, groupHovered: false, itemHovered: false })).toBe("$border-default")
+    expect(lit({ active: false, groupHovered: true, itemHovered: true })).toBe("$fg-muted")
+    expect(color({ active: true, groupHovered: false, itemHovered: false })).toBe("$fg-muted")
+  })
 })
 
 function FilterRow({ onDone }: { onDone?: () => void } = {}) {

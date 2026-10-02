@@ -50,6 +50,8 @@ interface TogglePillTreatmentInput {
   itemHovered: boolean
   activeColor: string
   activeHoverColor: string
+  /** Colour when active and nothing is hovered; `$fg-muted` when omitted. */
+  idleActiveColor?: string
 }
 
 export function togglePillColor(input: TogglePillTreatmentInput): string {
@@ -64,8 +66,15 @@ function resolveTogglePillTreatment({
   itemHovered,
   activeColor,
   activeHoverColor,
+  idleActiveColor,
 }: TogglePillTreatmentInput) {
-  const surface = togglePillSurface(active, itemHovered, activeColor, activeHoverColor)
+  const surface = togglePillSurface(
+    active,
+    itemHovered,
+    activeColor,
+    activeHoverColor,
+    idleActiveColor,
+  )
   return resolveInteractionTreatment(
     {
       hovered: groupHovered || itemHovered,
@@ -101,6 +110,11 @@ export interface TogglePillProps extends Omit<BoxProps, "children" | "onClick"> 
   activeColor?: string
   /** Brighter colour when active and the pill itself is hovered. Default `$fg-accent`. */
   activeHoverColor?: string
+  /**
+   * Colour when active and nothing is hovered. Default `$fg-muted`, dim but brighter than an inactive pill; pass a
+   * colour when the active state must stay visible at rest (a costlier mode, for example).
+   */
+  idleActiveColor?: string
 }
 
 /**
@@ -114,6 +128,7 @@ export function TogglePill({
   onToggle,
   activeColor = "$fg",
   activeHoverColor = "$fg-accent",
+  idleActiveColor,
   ...rest
 }: TogglePillProps): React.ReactElement {
   const hover = useHover()
@@ -124,6 +139,7 @@ export function TogglePill({
     itemHovered: hover.isHovered,
     activeColor,
     activeHoverColor,
+    ...(idleActiveColor === undefined ? {} : { idleActiveColor }),
   })
   return (
     <Box
