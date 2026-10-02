@@ -1,4 +1,4 @@
-# vendor-kit: source-siblings@cbda4f4fba02 — generated; edit km/packages/km-infra/vendor-kit/templates/source-siblings-action.yml in km, then re-sync
+# vendor-kit: source-siblings@d452d663a60a — generated; edit km/packages/km-infra/vendor-kit/templates/source-siblings-action.yml in km, then re-sync
 name: Install named source siblings
 description: Test against public sibling commits without requiring a new npm release
 
@@ -19,7 +19,7 @@ runs:
         set -euo pipefail
         node --input-type=module <<'NODE'
         import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
-        import { join, resolve } from "node:path"
+        import { join, posix, resolve } from "node:path"
         import { spawnSync } from "node:child_process"
 
         const root = process.cwd()
@@ -51,7 +51,7 @@ runs:
         }
 
         for (const [index, sibling] of config.siblings.entries()) {
-          const { name, repository, commit } = sibling ?? {}
+          const { name, repository, commit, directory = "." } = sibling ?? {}
           if (typeof name !== "string" || !/^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/.test(name) || names.has(name)) {
             throw new Error(`source-siblings: invalid or duplicate package name ${JSON.stringify(name)}`)
           }
@@ -60,6 +60,16 @@ runs:
           }
           if (typeof commit !== "string" || !/^[0-9a-f]{40}$/.test(commit)) {
             throw new Error(`source-siblings: ${name} needs a full lowercase commit SHA`)
+          }
+          // A package below the repository root, such as one member of a monorepo, names its directory.
+          if (
+            typeof directory !== "string" ||
+            !/^[A-Za-z0-9._/-]+$/.test(directory) ||
+            directory.startsWith("/") ||
+            posix.normalize(directory) !== directory ||
+            directory.split("/").includes("..")
+          ) {
+            throw new Error(`source-siblings: ${name} has invalid directory ${JSON.stringify(directory)}; name a relative path inside ${repository}`)
           }
           const declared = pkg.dependencies?.[name] ?? pkg.devDependencies?.[name] ?? pkg.peerDependencies?.[name] ?? pkg.optionalDependencies?.[name]
           if (typeof declared !== "string" || declared.startsWith("workspace:") || declared.startsWith("file:")) {
@@ -70,11 +80,13 @@ runs:
           git(["clone", "--filter=blob:none", "--single-branch", "--branch", "main", "--no-checkout", `https://github.com/${repository}.git`, checkout])
           git(["-C", checkout, "merge-base", "--is-ancestor", commit, "refs/remotes/origin/main"])
           git(["-C", checkout, "-c", "advice.detachedHead=false", "checkout", "--detach", commit])
-          const sourcePkg = JSON.parse(readFileSync(join(checkout, "package.json"), "utf8"))
-          if (sourcePkg.name !== name) throw new Error(`source-siblings: ${repository}@${commit} is ${sourcePkg.name}, expected ${name}`)
+          const subdirectory = posix.normalize(directory).replace(/\/$/, "")
+          const where = subdirectory === "." ? `${repository}@${commit}` : `${repository}@${commit}:${subdirectory}`
+          const sourcePkg = JSON.parse(readFileSync(join(checkout, subdirectory, "package.json"), "utf8"))
+          if (sourcePkg.name !== name) throw new Error(`source-siblings: ${where} is ${sourcePkg.name}, expected ${name}`)
           pkg.overrides ??= {}
-          pkg.overrides[name] = `file:./.ci-siblings/${index}`
-          console.log(`source-siblings: ${name}@${sourcePkg.version} from ${repository}@${commit}`)
+          pkg.overrides[name] = subdirectory === "." ? `file:./.ci-siblings/${index}` : `file:./.ci-siblings/${index}/${subdirectory}`
+          console.log(`source-siblings: ${name}@${sourcePkg.version} from ${where}`)
         }
         writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + "\n")
         NODE
