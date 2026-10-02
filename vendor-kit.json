@@ -16,6 +16,7 @@
   },
   "overrides": {
     "format-check": "gate runs `bun run fix` = oxlint --fix + oxfmt \u2014 asserts MORE than the oxfmt-only template; do not weaken",
-    "oxfmt": "minimal config (semi only) predates canonical; mass reflow deferred \u2014 highest-churn vendor repo, would conflict with in-flight branches"
+    "oxfmt": "minimal config (semi only) predates canonical; mass reflow deferred \u2014 highest-churn vendor repo, would conflict with in-flight branches",
+    "source-siblings-install-order:.github/workflows/format-check.yml#format-check": "formats and lints silvery's own files with oxlint and oxfmt; it reads no sibling code, so the registry graph is the right install"
   }
 }
