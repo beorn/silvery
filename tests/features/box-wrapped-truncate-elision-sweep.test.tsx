@@ -154,8 +154,13 @@ describe("Box-wrapped truncating Text — elision sweep", () => {
         for (const [index, field] of fields.entries()) {
           if (field !== "") continue
           empties++
-          const labels = LABELS.map((label, i) => (i === index ? label.replace(/[a-z]/g, "x") : label))
-          const swapped = (render(trail(containerWidth, rowWidth, labels)).lines[0] ?? "").replace(/\s+$/, "")
+          const labels = LABELS.map((label, i) =>
+            i === index ? label.replace(/[a-z]/g, "x") : label,
+          )
+          const swapped = (render(trail(containerWidth, rowWidth, labels)).lines[0] ?? "").replace(
+            /\s+$/,
+            "",
+          )
           const after = swapped.split(SEPARATOR)[index]
           if (after !== "") {
             unexplained.push(

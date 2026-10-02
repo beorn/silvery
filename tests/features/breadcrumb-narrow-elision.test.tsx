@@ -50,7 +50,9 @@ const MIN_ROW_WIDTH = LABELS.length * 2 - 1
 function describeBadFields(line: string): string[] {
   const fields = line.split(SEPARATOR)
   if (fields.length !== LABELS.length) {
-    return [`row split into ${fields.length} segments, expected ${LABELS.length}: ${JSON.stringify(fields)}`]
+    return [
+      `row split into ${fields.length} segments, expected ${LABELS.length}: ${JSON.stringify(fields)}`,
+    ]
   }
   const bad: string[] = []
   for (const [index, label] of LABELS.entries()) {
@@ -75,9 +77,7 @@ function trail(
     <Box width={containerWidth} height={1} flexDirection="column">
       <Box width={rowWidth} height={1} flexDirection="row" overflow="hidden">
         <Breadcrumb
-          items={labels.map((label) =>
-            actionable ? { label, onPress: () => {} } : { label },
-          )}
+          items={labels.map((label) => (actionable ? { label, onPress: () => {} } : { label }))}
           separator={SEPARATOR}
           separatorSpacing="compact"
         />
@@ -125,5 +125,4 @@ describe("Breadcrumb — narrow-width elision", () => {
       `a real Breadcrumb trail was cut with no marker while re-laying out live at ${broken.length} widths:\n${broken.slice(0, 20).join("\n")}`,
     ).toEqual([])
   })
-
 })
