@@ -137,12 +137,12 @@ describe("interaction treatment recipes", () => {
       mouseCursor: "pointer",
     })
     expect(togglePillSurface(true, false, "$fg", "$fg-accent")).toEqual({
-      idle: { color: "$fg-muted" },
+      idle: { color: "$fg" },
       revealed: { color: "$fg" },
       pointer: "none",
     })
     expect(togglePillSurface(true, true, "$fg", "$fg-accent")).toEqual({
-      idle: { color: "$fg-muted" },
+      idle: { color: "$fg" },
       revealed: { color: "$fg-accent", backgroundColor: "$bg-surface-hover" },
       pointer: "none",
     })
