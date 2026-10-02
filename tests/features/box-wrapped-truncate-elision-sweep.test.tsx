@@ -72,11 +72,11 @@ function describeBadFields(line: string): string[] {
   return bad
 }
 
-function trail(containerWidth: number, rowWidth: number) {
+function trail(containerWidth: number, rowWidth: number, labels: readonly string[] = LABELS) {
   return (
     <Box width={containerWidth} height={1} flexDirection="column">
       <Box width={rowWidth} height={1} flexDirection="row" overflow="hidden">
-        {LABELS.map((label, index) => (
+        {labels.map((label, index) => (
           <React.Fragment key={label}>
             {index > 0 && <Text wrap="truncate">{SEPARATOR}</Text>}
             <Box minWidth={0} flexShrink={1} overflow="hidden" height={1}>
@@ -132,5 +132,44 @@ describe("Box-wrapped truncating Text — elision sweep", () => {
       broken.slice(0, 20),
       `content cut with no marker while re-laying out live at ${broken.length} widths:\n${broken.slice(0, 20).join("\n")}`,
     ).toEqual([])
+  })
+
+  test("an empty field is a zero-cell allocation, not lost content", () => {
+    // `describeBadFields` accepts an empty field because a zero-cell box has
+    // nowhere to paint — but that acceptance must not hide a positive-width box
+    // whose content vanished, which is the whole harm this file exists for.
+    // Repaint each shape that shows an empty field with a SAME-LENGTH substitute
+    // label in that slot: substitution leaves every intrinsic width identical,
+    // so the layout is unchanged, and a box with even one cell would paint the
+    // substitute or at least its marker. Emptiness in both renderings is
+    // therefore proof the box got zero cells.
+    const render = createRenderer({ cols: SWEEP_MAX + 40, rows: 3 })
+    const unexplained: string[] = []
+    let empties = 0
+    for (let rowWidth = MIN_ROW_WIDTH; rowWidth <= MAX_ROW_WIDTH; rowWidth++) {
+      for (let containerWidth = rowWidth; containerWidth <= SWEEP_MAX; containerWidth++) {
+        const line = (render(trail(containerWidth, rowWidth)).lines[0] ?? "").replace(/\s+$/, "")
+        const fields = line.split(SEPARATOR)
+        if (fields.length !== LABELS.length) continue
+        for (const [index, field] of fields.entries()) {
+          if (field !== "") continue
+          empties++
+          const labels = LABELS.map((label, i) => (i === index ? label.replace(/[a-z]/g, "x") : label))
+          const swapped = (render(trail(containerWidth, rowWidth, labels)).lines[0] ?? "").replace(/\s+$/, "")
+          const after = swapped.split(SEPARATOR)[index]
+          if (after !== "") {
+            unexplained.push(
+              `container=${containerWidth} row=${rowWidth} slot ${index} painted nothing as ${JSON.stringify(LABELS[index]!)} but ${JSON.stringify(after)} as ${JSON.stringify(labels[index]!)} — a non-zero allocation, so content was lost`,
+            )
+          }
+        }
+      }
+    }
+    expect(
+      unexplained.slice(0, 20),
+      `${unexplained.length} of ${empties} empty fields were not zero-cell allocations:\n${unexplained.slice(0, 20).join("\n")}`,
+    ).toEqual([])
+    // The sweep must actually reach the empty case, or this proves nothing.
+    expect(empties).toBeGreaterThan(0)
   })
 })
