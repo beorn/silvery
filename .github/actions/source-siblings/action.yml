@@ -1,4 +1,4 @@
-# vendor-kit: source-siblings@d452d663a60a — generated; edit km/packages/km-infra/vendor-kit/templates/source-siblings-action.yml in km, then re-sync
+# vendor-kit: source-siblings@8d43a52d418a — generated; edit km/packages/km-infra/vendor-kit/templates/source-siblings-action.yml in km, then re-sync
 name: Install named source siblings
 description: Test against public sibling commits without requiring a new npm release
 
@@ -84,6 +84,17 @@ runs:
           const where = subdirectory === "." ? `${repository}@${commit}` : `${repository}@${commit}:${subdirectory}`
           const sourcePkg = JSON.parse(readFileSync(join(checkout, subdirectory, "package.json"), "utf8"))
           if (sourcePkg.name !== name) throw new Error(`source-siblings: ${where} is ${sourcePkg.name}, expected ${name}`)
+          // A sibling that publishes built output (publishConfig) installs here as source. Bun runs that source, but a
+          // consumer whose own checks run its built output under Node cannot: Node refuses TypeScript under node_modules.
+          // engines.node cannot say which runtime the checks use, so this warns and changes no outcome (@cto 011d29a2).
+          if (sourcePkg.publishConfig !== undefined && pkg.engines?.node !== undefined) {
+            console.log(
+              `::warning title=source-siblings::${name} from ${where} publishes built output (publishConfig) but installs ` +
+                `here as source, and this package's engines declare node ${pkg.engines.node}; anything that runs it under ` +
+                `Node fails with ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING. Cure: consume ${name}'s release from npm, ` +
+                `or pack the sibling with publishConfig applied`,
+            )
+          }
           pkg.overrides ??= {}
           pkg.overrides[name] = subdirectory === "." ? `file:./.ci-siblings/${index}` : `file:./.ci-siblings/${index}/${subdirectory}`
           console.log(`source-siblings: ${name}@${sourcePkg.version} from ${where}`)
