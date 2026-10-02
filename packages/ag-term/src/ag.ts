@@ -407,6 +407,14 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       // input bits computed for the render phase. Without this, the render
       // phase can't detect outline mutations and stale outline pixels persist.
       layoutPhase(root, cols, rows)
+      // Settle scrollState.prevOffset even when the full pipeline is skipped.
+      // Without this, a pure-scroll frame (which runs scrollPhase and stores
+      // prevOffset = old value) followed by a style-only frame (which skips
+      // scrollPhase) leaves prevOffset stale. The render then sees
+      // offset !== prevOffset and replays the Tier-1 buffer shift. (#26832)
+      if (hasScroll) {
+        scrollPhase(root, { skipStateUpdates: opts?.skipScrollStateUpdates })
+      }
       // A notify-synced prop (decorations, cursorOffset, focused,
       // selectionIntent, anchorRef, parkOffset) changes no dimension, so
       // Flexily is clean, yet its layout signals are written only by the
