@@ -12,6 +12,8 @@
 import React, { useState } from "react"
 import { describe, expect, test, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
+import { checkContrast } from "@silvery/color"
+import { defaultDarkTheme, defaultLightTheme } from "@silvery/theme"
 import { TogglePill, TogglePillGroup, togglePillColor } from "../src/ui/components/TogglePill"
 import * as agReact from "../src/index"
 
@@ -36,7 +38,7 @@ describe("togglePillColor ladder", () => {
     expect(color({ active: false, groupHovered: false, itemHovered: false })).toBe(
       "$border-default",
     )
-    expect(color({ active: true, groupHovered: false, itemHovered: false })).toBe("$fg-muted")
+    expect(color({ active: true, groupHovered: false, itemHovered: false })).toBe("$fg")
     // Group hovered: active lifts to activeColor; inactive stays dim.
     expect(color({ active: true, groupHovered: true, itemHovered: false })).toBe("$fg")
     expect(color({ active: false, groupHovered: true, itemHovered: false })).toBe("$border-default")
@@ -48,7 +50,7 @@ describe("togglePillColor ladder", () => {
 
   // 27064 row 8 (@cto 25e0c7c7): an active pill whose state must stay visible at rest (hab's `fast`, which costs
   // more) names its own idle colour; without it the idle active tone is unchanged, and the inactive ladder never moves.
-  test("idleActiveColor colours an idle active pill; omitted, the idle active tone stays $fg-muted", () => {
+  test("idleActiveColor colours an idle active pill; omitted, the idle active tone is the $fg default", () => {
     const lit = (o: { active: boolean; groupHovered: boolean; itemHovered: boolean }) =>
       togglePillColor({
         ...o,
@@ -60,8 +62,31 @@ describe("togglePillColor ladder", () => {
     expect(lit({ active: true, groupHovered: true, itemHovered: false })).toBe("$fg-warning")
     expect(lit({ active: false, groupHovered: false, itemHovered: false })).toBe("$border-default")
     expect(lit({ active: false, groupHovered: true, itemHovered: true })).toBe("$fg-muted")
-    expect(color({ active: true, groupHovered: false, itemHovered: false })).toBe("$fg-muted")
+    expect(color({ active: true, groupHovered: false, itemHovered: false })).toBe("$fg")
   })
+
+  // 27086 (@cto 7b84076e): an active pill at rest must read apart from an inactive one. Measured as WCAG contrast
+  // between the two idle tones on the default themes, never below the pre-27064 floor the operator lived with
+  // (1.83:1 dark, 1.50:1 light); the old $fg-muted default measured 1.56:1 and 1.13:1. A default change re-measures.
+  test.each([
+    ["default dark", defaultDarkTheme, 1.83],
+    ["default light", defaultLightTheme, 1.5],
+  ] as const)(
+    "on %s, an idle active pill reads apart from an idle inactive one",
+    (_name, theme, floor) => {
+      const tone = (active: boolean) => {
+        const token = color({ active, groupHovered: false, itemHovered: false })
+        const hex = (theme as unknown as Record<string, string | undefined>)[token.slice(1)]
+        if (hex === undefined || !/^#[0-9A-Fa-f]{6}$/u.test(hex)) {
+          throw new Error(`${token} does not resolve to #rrggbb on the theme`)
+        }
+        return hex
+      }
+      expect(
+        Number(checkContrast(tone(true), tone(false))?.ratio.toFixed(2)),
+      ).toBeGreaterThanOrEqual(floor)
+    },
+  )
 })
 
 function FilterRow({ onDone }: { onDone?: () => void } = {}) {

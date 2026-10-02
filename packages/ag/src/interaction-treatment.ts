@@ -70,7 +70,7 @@ export const togglePillSurface = (
   itemRevealed: boolean,
   activeColor: string,
   activeHoverColor: string,
-  idleActiveColor = "$fg-muted",
+  idleActiveColor = "$fg",
 ): InteractionSurfaceRecipe =>
   recipe({
     idle: fg(active ? idleActiveColor : "$border-default"),

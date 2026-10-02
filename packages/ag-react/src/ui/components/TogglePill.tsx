@@ -39,10 +39,14 @@ const TogglePillGroupContext = createContext<boolean>(false)
 /**
  * Three-state colour ladder (idle → group-hover → item-hover), mirroring ag
  * code's `bottomBarToggleColor`. An idle inactive pill sits at the extra-muted
- * border tone; an idle active pill stays readable at `$fg-muted`; hovering the
- * group lifts active pills into `activeColor`, and the pill under the pointer
- * reaches `activeHoverColor`. Inactive pills only ever brighten to `$fg-muted`,
- * so "on" always reads brighter than "off".
+ * border tone; an idle active pill sits at `$fg`, measured against the idle
+ * inactive tone at 3.60:1 on the default dark theme and 2.35:1 on the default
+ * light theme (`$fg-muted` measured 1.56:1 and 1.13:1, too close to "off" to
+ * read at rest). Hovering the group lifts active pills into `activeColor` (a
+ * visible step when a caller passes one other than `$fg`), and the pill under
+ * the pointer reaches `activeHoverColor` with a hover background.
+ * Inactive pills only ever brighten to `$fg-muted`, so "on" always reads
+ * brighter than "off".
  */
 interface TogglePillTreatmentInput {
   active: boolean
@@ -50,7 +54,7 @@ interface TogglePillTreatmentInput {
   itemHovered: boolean
   activeColor: string
   activeHoverColor: string
-  /** Colour when active and nothing is hovered; `$fg-muted` when omitted. */
+  /** Colour when active and nothing is hovered; `$fg` when omitted. */
   idleActiveColor?: string
 }
 
@@ -111,8 +115,9 @@ export interface TogglePillProps extends Omit<BoxProps, "children" | "onClick"> 
   /** Brighter colour when active and the pill itself is hovered. Default `$fg-accent`. */
   activeHoverColor?: string
   /**
-   * Colour when active and nothing is hovered. Default `$fg-muted`, dim but brighter than an inactive pill; pass a
-   * colour when the active state must stay visible at rest (a costlier mode, for example).
+   * Colour when active and nothing is hovered. Default `$fg`, measured against an inactive pill at 3.60:1 (default dark)
+   * and 2.35:1 (default light); pass a colour when the active state must carry meaning at rest (a costlier mode, for
+   * example).
    */
   idleActiveColor?: string
 }
