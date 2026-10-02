@@ -19,12 +19,15 @@
  * segment is affected depends on the fractional part the container gives the
  * row.
  *
- * Assertions are on the OUTCOME — what the row painted — never on layout
- * numbers. A field is acceptable when it is the whole label, a prefix of the
- * label plus a marker, or empty because its box was allotted no cells at all:
- * a zero-cell box has nowhere to paint a marker, which is a separate,
+ * The two marker sweeps assert on the OUTCOME — what the row painted — never on
+ * layout numbers. A field is acceptable when it is the whole label, a prefix of
+ * the label plus a marker, or empty because its box was allotted no cells at
+ * all: a zero-cell box has nowhere to paint a marker, which is a separate,
  * pre-existing regime, not the clipping defect this sweep pins
- * (@si/text/clip-drops-the-marker).
+ * (@si/text/clip-drops-the-marker). Rendered output alone cannot tell "the box
+ * got no cells" from "content vanished inside a box that had cells", so the
+ * third test reads each box's committed allocation directly and requires an
+ * empty field to be a zero-cell allocation.
  *
  * @failure  A `wrap="truncate"` Text inside a clipped Box paints a bare prefix
  *           with no "…", so a narrow width shows the reader a wrong name.
@@ -36,7 +39,8 @@
 import React from "react"
 import { describe, expect, test } from "vitest"
 import { createRenderer } from "@silvery/test"
-import { Box, Text } from "silvery"
+import { getLayoutSignals } from "@silvery/ag/layout-signals"
+import { Box, Text, type BoxHandle } from "silvery"
 
 const ELLIPSIS = "…"
 const SEPARATOR = "|"
@@ -72,14 +76,19 @@ function describeBadFields(line: string): string[] {
   return bad
 }
 
-function trail(containerWidth: number, rowWidth: number, labels: readonly string[] = LABELS) {
+function trail(
+  containerWidth: number,
+  rowWidth: number,
+  labels: readonly string[] = LABELS,
+  refs?: readonly React.RefObject<BoxHandle | null>[],
+) {
   return (
     <Box width={containerWidth} height={1} flexDirection="column">
       <Box width={rowWidth} height={1} flexDirection="row" overflow="hidden">
         {labels.map((label, index) => (
           <React.Fragment key={label}>
             {index > 0 && <Text wrap="truncate">{SEPARATOR}</Text>}
-            <Box minWidth={0} flexShrink={1} overflow="hidden" height={1}>
+            <Box ref={refs?.[index]} minWidth={0} flexShrink={1} overflow="hidden" height={1}>
               <Text wrap="truncate">{label}</Text>
             </Box>
           </React.Fragment>
@@ -134,37 +143,48 @@ describe("Box-wrapped truncating Text — elision sweep", () => {
     ).toEqual([])
   })
 
-  test("an empty field is a zero-cell allocation, not lost content", () => {
+  test("every painted-empty field is a zero-cell allocation, not lost content", () => {
     // `describeBadFields` accepts an empty field because a zero-cell box has
     // nowhere to paint — but that acceptance must not hide a positive-width box
     // whose content vanished, which is the whole harm this file exists for.
-    // Repaint each shape that shows an empty field with a SAME-LENGTH substitute
-    // label in that slot: substitution leaves every intrinsic width identical,
-    // so the layout is unchanged, and a box with even one cell would paint the
-    // substitute or at least its marker. Emptiness in both renderings is
-    // therefore proof the box got zero cells.
+    // Painted output cannot tell those apart, and neither can a same-length
+    // substitute (a clip/paint bug independent of the label would blank both).
+    // So read the box's COMMITTED allocation — the width the parent granted,
+    // which is exactly what `overflow="hidden"` clips against — through the
+    // existing ref surface, and require it to be zero.
     const render = createRenderer({ cols: SWEEP_MAX + 40, rows: 3 })
+    const refs = LABELS.map(() => React.createRef<BoxHandle>())
     const unexplained: string[] = []
     let empties = 0
+    let shapes = 0
     for (let rowWidth = MIN_ROW_WIDTH; rowWidth <= MAX_ROW_WIDTH; rowWidth++) {
       for (let containerWidth = rowWidth; containerWidth <= SWEEP_MAX; containerWidth++) {
-        const line = (render(trail(containerWidth, rowWidth)).lines[0] ?? "").replace(/\s+$/, "")
+        const line = (render(trail(containerWidth, rowWidth, LABELS, refs)).lines[0] ?? "").replace(
+          /\s+$/,
+          "",
+        )
         const fields = line.split(SEPARATOR)
         if (fields.length !== LABELS.length) continue
+        shapes++
         for (const [index, field] of fields.entries()) {
-          if (field !== "") continue
-          empties++
-          const labels = LABELS.map((label, i) =>
-            i === index ? label.replace(/[a-z]/g, "x") : label,
-          )
-          const swapped = (render(trail(containerWidth, rowWidth, labels)).lines[0] ?? "").replace(
-            /\s+$/,
-            "",
-          )
-          const after = swapped.split(SEPARATOR)[index]
-          if (after !== "") {
+          const node = refs[index]!.current?.getNode()
+          const committed = node ? getLayoutSignals(node).boxRectCommitted() : null
+          if (!committed) {
             unexplained.push(
-              `container=${containerWidth} row=${rowWidth} slot ${index} painted nothing as ${JSON.stringify(LABELS[index]!)} but ${JSON.stringify(after)} as ${JSON.stringify(labels[index]!)} — a non-zero allocation, so content was lost`,
+              `container=${containerWidth} row=${rowWidth} slot ${index} has no committed allocation`,
+            )
+            continue
+          }
+          if (field === "") {
+            empties++
+            if (committed.width !== 0) {
+              unexplained.push(
+                `container=${containerWidth} row=${rowWidth} slot ${index} painted nothing but was allocated ${committed.width} cells`,
+              )
+            }
+          } else if (committed.width === 0) {
+            unexplained.push(
+              `container=${containerWidth} row=${rowWidth} slot ${index} was allocated zero cells yet painted ${JSON.stringify(field)}`,
             )
           }
         }
@@ -172,9 +192,9 @@ describe("Box-wrapped truncating Text — elision sweep", () => {
     }
     expect(
       unexplained.slice(0, 20),
-      `${unexplained.length} of ${empties} empty fields were not zero-cell allocations:\n${unexplained.slice(0, 20).join("\n")}`,
+      `${unexplained.length} of ${empties} empty fields (${shapes} shapes) were not zero-cell allocations:\n${unexplained.slice(0, 20).join("\n")}`,
     ).toEqual([])
     // The sweep must actually reach the empty case, or this proves nothing.
-    expect(empties).toBeGreaterThan(0)
+    expect(empties, "the sweep never reached an empty field").toBeGreaterThan(0)
   })
 })
