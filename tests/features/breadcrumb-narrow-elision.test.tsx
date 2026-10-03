@@ -19,8 +19,10 @@
  * in which to hold a marker, so the reader sees a missing name.
  * `@si/text/27182-zero-cell-segment-paints-nothing` rules that a shrunken
  * segment keeps a one-cell floor, so the element it is given can always show the
- * marker. `committedWidths` still reads each label's committed allocation so a
- * failure names the cells the segment was actually granted.
+ * marker; below one cell per element the row's `overflow="hidden"` ancestor
+ * clips the tail instead of overflowing the container. `committedWidths` still
+ * reads each label's committed allocation so a failure names the cells the
+ * segment was actually granted.
  *
  * @failure  A real `Breadcrumb` trail in a constrained row paints a bare
  *           prefix with no "…", so a narrow width shows the reader a wrong
@@ -144,6 +146,11 @@ describe("Breadcrumb — narrow-width elision", () => {
           const bad = describeBadFields(line, allocations)
           if (bad.length > 0) {
             broken.push(`container=${containerWidth} row=${rowWidth} [${line}] — ${bad.join(", ")}`)
+          }
+          if (line.length > containerWidth) {
+            broken.push(
+              `container=${containerWidth} row=${rowWidth} painted ${line.length} cells [${line}]`,
+            )
           }
         }
       }
