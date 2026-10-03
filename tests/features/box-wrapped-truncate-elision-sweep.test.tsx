@@ -163,17 +163,15 @@ describe("Box-wrapped truncating Text — elision sweep", () => {
     let clipped = 0
     for (let rowWidth = 1; rowWidth < MIN_ROW_WIDTH; rowWidth++) {
       for (let containerWidth = rowWidth; containerWidth <= SWEEP_MAX; containerWidth++) {
+        clipped++
         const line = (render(trail(containerWidth, rowWidth)).lines[0] ?? "").replace(/\s+$/, "")
         if (line.length > containerWidth) {
           unexplained.push(
             `container=${containerWidth} row=${rowWidth} painted ${line.length} cells [${line}]`,
           )
         }
-        if (containerWidth === rowWidth) {
-          clipped++
-          if (!line.includes(ELLIPSIS)) {
-            unexplained.push(`container=${containerWidth} row=${rowWidth} hides the cut [${line}]`)
-          }
+        if (!line.includes(ELLIPSIS)) {
+          unexplained.push(`container=${containerWidth} row=${rowWidth} hides the cut [${line}]`)
         }
       }
     }
