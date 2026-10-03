@@ -39,6 +39,14 @@ const FULL_TRAIL = LABELS.join(SEPARATOR)
 /** One cell per element (each label plus each separator): the row's own minimum. */
 const MIN_COLS = LABELS.length * 2 - 1
 const MAX_COLS = FULL_TRAIL.length + 12
+/**
+ * The known narrow witness: the width the original defect was observed at, and
+ * the one every sweep is required to actually inspect. `barePrefixes` cannot
+ * judge a row whose separators did not all paint, so a regression that drops
+ * separators at the narrow widths would otherwise skip every dangerous
+ * observation and still pass on the comfortable ones.
+ */
+const WITNESS_COLS = 12
 
 /**
  * The trail row is exactly as wide as the terminal, so the label boxes — not
@@ -107,10 +115,14 @@ describe("Breadcrumb — narrow-width elision in a real terminal", () => {
         const widths: number[] = []
         for (let cols = MAX_COLS; cols >= MIN_COLS; cols--) widths.push(cols)
         for (let cols = MIN_COLS; cols <= MAX_COLS; cols++) widths.push(cols)
-        let parsed = 0
+        let witnessObservations = 0
+        const witnessUnparseable: string[] = []
         for (const cols of widths) {
           const line = await resizeAndRead(term, handle, cols)
-          if (line.split(SEPARATOR).length === LABELS.length) parsed++
+          if (cols === WITNESS_COLS) {
+            witnessObservations++
+            if (line.split(SEPARATOR).length !== LABELS.length) witnessUnparseable.push(line)
+          }
           const bad = barePrefixes(line)
           if (bad.length > 0) broken.push(`cols=${cols} [${line}] — ${bad.join(", ")}`)
         }
@@ -118,7 +130,11 @@ describe("Breadcrumb — narrow-width elision in a real terminal", () => {
           broken.slice(0, 20),
           `a real Breadcrumb trail was cut with no elision marker in ${broken.length} of ${widths.length} swept widths:\n${broken.slice(0, 20).join("\n")}`,
         ).toEqual([])
-        expect(parsed, "no swept width produced a parseable trail row").toBeGreaterThan(0)
+        expect(witnessObservations, `the known ${WITNESS_COLS}-column witness was never swept`).toBeGreaterThan(0)
+        expect(
+          witnessUnparseable,
+          `the known ${WITNESS_COLS}-column witness painted a row that is not a parseable trail, so no label there was inspected for an unmarked cut: ${JSON.stringify(witnessUnparseable)}`,
+        ).toEqual([])
       } finally {
         handle.unmount()
       }
