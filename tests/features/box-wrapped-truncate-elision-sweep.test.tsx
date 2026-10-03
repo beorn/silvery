@@ -29,6 +29,15 @@
  * third test reads each box's committed allocation directly and requires an
  * empty field to be a zero-cell allocation.
  *
+ * The wrapper below keeps `minWidth={0}` deliberately: the engine's explicit
+ * `minWidth=0`/`overflow="hidden"` escape hatch can allot a box zero cells, and
+ * this sweep still pins that the box then paints nothing rather than a clipped
+ * bare prefix. What a *reader* must never get is a segment that had cells and
+ * lost its marker. `@si/text/27182-zero-cell-segment-paints-nothing` covers the
+ * zero-cell regime for a reader-facing trail: the `Breadcrumb` component no
+ * longer opts into `minWidth={0}` on a one-cell-must-paint segment, and
+ * `breadcrumb-narrow-elision` fails if a real trail paints an empty segment.
+ *
  * @failure  A `wrap="truncate"` Text inside a clipped Box paints a bare prefix
  *           with no "…", so a narrow width shows the reader a wrong name.
  * @level    l2

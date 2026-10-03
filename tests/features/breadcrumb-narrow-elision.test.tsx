@@ -13,16 +13,14 @@
  * because the container's width decides the fractional absolute position the
  * row's children land on.
  *
- * The painted line decides pass/fail: a field is acceptable when it is the whole
- * label, a prefix of the label plus a marker, or empty because its box was
- * allotted no cells. That last case needs the allocation, not the pixels —
- * rendered output cannot tell "the box got no cells" from "content vanished
- * inside a box that had cells" — so each label's committed allocation is read
- * from the node tree and an empty field is accepted only at width zero. The
- * component does reach the zero-cell regime: a handful of the narrowest widths
- * squeeze a middle segment to nothing. That regime is pre-existing and split to
- * `@si/text/27182-zero-cell-segment-paints-nothing`; this file proves it is
- * genuinely zero-cell rather than the clip defect this bead fixes.
+ * The painted line decides pass/fail: a field is acceptable only when it is the
+ * whole label or a prefix of the label followed by a marker. An empty field is
+ * never acceptable: a segment allotted zero cells paints nothing and has no cell
+ * in which to hold a marker, so the reader sees a missing name.
+ * `@si/text/27182-zero-cell-segment-paints-nothing` rules that a shrunken
+ * segment keeps a one-cell floor, so the element it is given can always show the
+ * marker. `committedWidths` still reads each label's committed allocation so a
+ * failure names the cells the segment was actually granted.
  *
  * @failure  A real `Breadcrumb` trail in a constrained row paints a bare
  *           prefix with no "…", so a narrow width shows the reader a wrong
@@ -64,8 +62,10 @@ function describeBadFields(line: string, allocations: readonly number[]): string
     const field = fields[index]!
     const width = allocations[index]!
     if (field === label) continue
-    // A zero-cell box paints nothing and has no cell to hold a marker.
-    if (field === "" && width === 0) continue
+    if (field === "") {
+      bad.push(`"${label}" painted nothing with ${width} cell(s) allotted`)
+      continue
+    }
     if (width === 0) {
       bad.push(`"${label}" was allotted zero cells yet the row painted ${JSON.stringify(field)}`)
       continue
@@ -130,7 +130,7 @@ describe("Breadcrumb — narrow-width elision", () => {
     for (const actionable of [false, true] as const) {
       const broken: string[] = []
       let swept = 0
-      let empties = 0
+      let markers = 0
       for (let rowWidth = MIN_ROW_WIDTH; rowWidth <= MAX_ROW_WIDTH; rowWidth++) {
         for (let containerWidth = rowWidth; containerWidth <= SWEEP_MAX; containerWidth++) {
           swept++
@@ -139,7 +139,7 @@ describe("Breadcrumb — narrow-width elision", () => {
           const allocations = committedWidths(app, actionable)
           const fields = line.split(SEPARATOR)
           if (fields.length === LABELS.length) {
-            empties += fields.filter((field) => field === "").length
+            markers += fields.filter((field) => field.endsWith(ELLIPSIS)).length
           }
           const bad = describeBadFields(line, allocations)
           if (bad.length > 0) {
@@ -152,9 +152,9 @@ describe("Breadcrumb — narrow-width elision", () => {
         `a real Breadcrumb trail (${actionable ? "actionable" : "plain"} items) was cut with no elision marker at ${broken.length} of ${swept} swept shapes:\n${broken.slice(0, 20).join("\n")}`,
       ).toEqual([])
       if (actionable) {
-        // The zero-cell exception this helper allows must actually be exercised,
-        // or the assertion above proves nothing about it.
-        expect(empties, "the actionable sweep never reached a zero-cell segment").toBeGreaterThan(0)
+        // The floor this file pins must actually be exercised: the sweep has to
+        // squeeze some segment far enough that it paints a marker.
+        expect(markers, "the actionable sweep never reached a shrunken segment").toBeGreaterThan(0)
       }
     }
   })
