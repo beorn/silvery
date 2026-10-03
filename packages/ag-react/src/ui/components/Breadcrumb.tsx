@@ -128,7 +128,7 @@ function ActionableBreadcrumbItem({
       focusable={item.onPress !== undefined || item.href !== undefined}
       mouseCursor="pointer"
       height={1}
-      minWidth={0}
+      minWidth={1}
       flexShrink={1}
       overflow="hidden"
     >
