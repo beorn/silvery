@@ -12,7 +12,7 @@
         "@termless/core": ">=0.9.1 <1.0.0",
         "css-select": "^7.0.0",
         "css-what": "^8.0.0",
-        "flexily": "^0.8.2",
+        "flexily": "^0.8.3",
         "loggily": "^0.10.2",
         "react-reconciler": "^0.33.0",
         "slice-ansi": "^9.0.1",
@@ -291,7 +291,7 @@
     "slice-ansi@9.0.1": "patches/slice-ansi@9.0.1.patch",
   },
   "overrides": {
-    "flexily": "0.8.2",
+    "flexily": "0.8.3",
     "loggily": "^0.10.2",
   },
   "packages": {
@@ -1173,7 +1173,7 @@
 
     "fdir": ["fdir@6.5.0", "", { "peerDependencies": { "picomatch": "^3 || ^4" }, "optionalPeers": ["picomatch"] }, "sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg=="],
 
-    "flexily": ["flexily@0.8.2", "", { "peerDependencies": { "debug": "^4.4.3", "loggily": "^0.10.0 || ^0.11.0" }, "optionalPeers": ["debug", "loggily"] }, "sha512-1Q6rgUj2AnBj5zQmGqmZVV5ABZ82QyA/xlDGm5RmdiD/tibrkXUWYdywrHX6EcSuq/zewPygMsBzET1wqfWIlQ=="],
+    "flexily": ["flexily@0.8.3", "", { "peerDependencies": { "debug": "^4.4.3", "loggily": "^0.10.0 || ^0.11.0" }, "optionalPeers": ["debug", "loggily"] }, "sha512-IUu06cgFoax61hKF+LJUvIWz1OmN5QWLu2lm5d6WzOaBRRmnwPEdvMpnzWQHauv7gsI+FvDnb2dZYTU3LyooPA=="],
 
     "focus-trap": ["focus-trap@7.8.0", "", { "dependencies": { "tabbable": "^6.4.0" } }, "sha512-/yNdlIkpWbM0ptxno3ONTuf+2g318kh2ez3KSeZN5dZ8YC6AAmgeWz+GasYYiBJPFaYcSAPeu4GfhUaChzIJXA=="],
 
