@@ -41,6 +41,8 @@
  */
 
 import type { App } from "../app"
+import type { ReactElement } from "react"
+import type { AppRunOptions } from "../runtime/create-app"
 import type { FocusManager } from "@silvery/ag/focus-manager"
 import {
   createMouseEventProcessor,
@@ -103,9 +105,15 @@ export interface AppWithDomEvents {
  * @param options - Configuration (focusManager for click-to-focus)
  * @returns Plugin function that enhances an App with DOM event dispatch
  */
+export function withDomEvents<
+  T extends { run(element: ReactElement, options?: AppRunOptions): unknown },
+>(options?: WithDomEventsOptions): (app: T) => T & AppWithDomEvents
+export function withDomEvents<T extends App>(
+  options?: WithDomEventsOptions,
+): (app: T) => T & AppWithDomEvents
 export function withDomEvents(
   options: WithDomEventsOptions = {},
-): <T extends App>(app: T) => T & AppWithDomEvents {
+): unknown {
   return <T extends App>(app: T): T & AppWithDomEvents => {
     // Get focus manager from options or from the app itself
     const fm = options.focusManager ?? (app as App & { focusManager?: FocusManager }).focusManager

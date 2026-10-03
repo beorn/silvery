@@ -200,7 +200,6 @@ export interface AppWithTerminal {
  */
 interface RunnableApp {
   run(...args: unknown[]): unknown
-  [key: string]: unknown
 }
 
 // =============================================================================

@@ -12,15 +12,18 @@
 
 import React from "react"
 import type { ReactElement } from "react"
-import { describe, expect, test } from "vitest"
+import { describe, expect, expectTypeOf, test } from "vitest"
 import { withReact } from "../src/with-react"
+import { createApp, type AppHandle, type AppRunner } from "../src/create-app"
+import { pipe } from "../src/pipe"
+import { withTerminal } from "../src/with-terminal"
+import { withDomEvents } from "../src/with-dom-events"
 
 // A minimal app stub that records what run() was called with.
 function mkRunnable() {
   const calls: { element: ReactElement | undefined; rest: unknown[] }[] = []
   const app: {
     run(element: ReactElement, ...args: unknown[]): string
-    [key: string]: unknown
   } = {
     run(element: ReactElement, ...rest: unknown[]) {
       calls.push({ element, rest })
@@ -37,6 +40,44 @@ function makeElement(label = "legacy"): ReactElement {
 }
 
 describe("withReact", () => {
+  test("preserves the runner and handle types of a real app definition", () => {
+    const definition = createApp(() => () => ({ count: 0 }))
+    const app = pipe(
+      definition,
+      withReact(makeElement()),
+      withTerminal({ stdin: process.stdin, stdout: process.stdout }),
+      withDomEvents(),
+    )
+    type State = { count: number } & Record<string, unknown>
+    expectTypeOf(app.run).returns.toEqualTypeOf<AppRunner<State>>()
+    expectTypeOf<Awaited<ReturnType<typeof app.run>>>().toEqualTypeOf<AppHandle<State>>()
+    expectTypeOf(app).not.toHaveProperty("getContainer")
+    expectTypeOf(app).not.toHaveProperty("click")
+  })
+
+  test("composed no-argument run forwards its result, registry and terminal options", () => {
+    const { app: definition, calls } = mkRunnable()
+    const element = makeElement()
+    const app = pipe(
+      definition,
+      withReact(element),
+      withTerminal({ stdin: process.stdin, stdout: process.stdout }, { mouse: true, kitty: false }),
+      withDomEvents(),
+    )
+    const result = app.run()
+    expectTypeOf(result).toEqualTypeOf<string>()
+    expect(result).toBe("ok")
+    expect(calls).toHaveLength(1)
+    expect(calls[0]!.element).toBe(element)
+    expect(calls[0]!.rest[0]).toMatchObject({
+      capabilityRegistry: app.capabilityRegistry,
+      stdin: process.stdin,
+      stdout: process.stdout,
+      mouse: true,
+      kitty: false,
+    })
+  })
+
   describe("legacy positional form: withReact(element)", () => {
     test("stores the element on app.element", () => {
       const { app } = mkRunnable()

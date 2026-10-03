@@ -67,11 +67,11 @@ import type { ReactElement } from "react"
 /**
  * App enhanced with a React element for rendering.
  */
-export interface AppWithReact {
+export interface AppWithReact<R = unknown> {
   /** The React element to render */
   readonly element: ReactElement
   /** Run the app (renders the element and starts the event loop) */
-  run(): Promise<void>
+  run(): R
 }
 
 /**
@@ -80,7 +80,6 @@ export interface AppWithReact {
  */
 interface RunnableApp {
   run(element: ReactElement, ...args: unknown[]): unknown
-  [key: string]: unknown
 }
 
 /**
@@ -144,8 +143,8 @@ function resolveView<T>(view: ReactElement | ViewFactory<T>, app: T): ReactEleme
  */
 export function withReact<T extends RunnableApp>(
   viewOrOptions: ReactElement | WithReactOptions<T>,
-): (app: T) => T & AppWithReact {
-  return (app: T): T & AppWithReact => {
+): (app: T) => T & AppWithReact<ReturnType<T["run"]>> {
+  return (app: T): T & AppWithReact<ReturnType<T["run"]>> => {
     const originalRun = app.run
 
     // Resolve the view spec to a ReactElement.
@@ -176,6 +175,6 @@ export function withReact<T extends RunnableApp>(
         // Otherwise pass through as-is
         return originalRun.apply(app, args as [ReactElement, ...unknown[]])
       },
-    }) as T & AppWithReact
+    }) as T & AppWithReact<ReturnType<T["run"]>>
   }
 }

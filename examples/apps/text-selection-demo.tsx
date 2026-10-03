@@ -208,7 +208,7 @@ function TextSelectionDemo(): React.ReactElement {
 
 export async function main() {
   const app = pipe(
-    createApp(() => () => ({})) as any,
+    createApp(() => () => ({})),
     withReact(
       <ExampleBanner meta={meta} controls="Drag select  Alt+Drag force select  Ctrl+C quit">
         <TextSelectionDemo />
