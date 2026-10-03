@@ -111,9 +111,7 @@ export function withDomEvents<
 export function withDomEvents<T extends App>(
   options?: WithDomEventsOptions,
 ): (app: T) => T & AppWithDomEvents
-export function withDomEvents(
-  options: WithDomEventsOptions = {},
-): unknown {
+export function withDomEvents(options: WithDomEventsOptions = {}): unknown {
   return <T extends App>(app: T): T & AppWithDomEvents => {
     // Get focus manager from options or from the app itself
     const fm = options.focusManager ?? (app as App & { focusManager?: FocusManager }).focusManager
