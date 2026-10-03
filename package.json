@@ -124,7 +124,7 @@
     "@termless/core": ">=0.9.1 <1.0.0",
     "css-select": "^7.0.0",
     "css-what": "^8.0.0",
-    "flexily": "^0.8.2",
+    "flexily": "^0.8.3",
     "loggily": "^0.10.2",
     "react-reconciler": "^0.33.0",
     "slice-ansi": "^9.0.1",
@@ -200,7 +200,7 @@
     }
   },
   "resolutions": {
-    "flexily": "0.8.2",
+    "flexily": "0.8.3",
     "loggily": "^0.10.2"
   },
   "tsdown": {
