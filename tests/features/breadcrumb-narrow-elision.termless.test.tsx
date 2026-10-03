@@ -93,7 +93,9 @@ function barePrefixes(line: string): string[] {
 async function resizeAndRead(term: TermlessTerm, handle: RunHandle, cols: number): Promise<string> {
   const resize = term.resize
   if (!resize) {
-    throw new Error("termless term exposes no resize(): the trail cannot be re-laid out for this test")
+    throw new Error(
+      "termless term exposes no resize(): the trail cannot be re-laid out for this test",
+    )
   }
   resize.call(term, cols, 3)
   await handle.waitForLayoutStable()
@@ -130,7 +132,10 @@ describe("Breadcrumb — narrow-width elision in a real terminal", () => {
           broken.slice(0, 20),
           `a real Breadcrumb trail was cut with no elision marker in ${broken.length} of ${widths.length} swept widths:\n${broken.slice(0, 20).join("\n")}`,
         ).toEqual([])
-        expect(witnessObservations, `the known ${WITNESS_COLS}-column witness was never swept`).toBeGreaterThan(0)
+        expect(
+          witnessObservations,
+          `the known ${WITNESS_COLS}-column witness was never swept`,
+        ).toBeGreaterThan(0)
         expect(
           witnessUnparseable,
           `the known ${WITNESS_COLS}-column witness painted a row that is not a parseable trail, so no label there was inspected for an unmarked cut: ${JSON.stringify(witnessUnparseable)}`,
