@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process"
+import { readFileSync } from "node:fs"
 import { dirname, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import { describe, expect, test } from "vitest"
 
 const silveryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..")
@@ -38,3 +39,28 @@ describe("contract: package entry points load under Bun", () => {
     expectBunCanImport("silvery/test", ["createRenderer", "createTermless", "waitFor"])
   })
 })
+
+// @failure A Silvery tarball leaks Bun's source-only patch path, or another workspace pack loses its patch metadata.
+// @level l1 @consumer PNPM beforePacking lifecycle @testonly none
+// Source-import tests never inspect the manifest handed to the native pack lifecycle.
+test.each(["silvery", "@silvery/commander"])(
+  "packing %s preserves the source patch contract",
+  async (name) => {
+    const sourcePath = resolve(silveryRoot, "package.json")
+    const sourceBytes = readFileSync(sourcePath, "utf8")
+    const source = JSON.parse(sourceBytes) as Record<string, unknown>
+    const manifest = { ...source, name }
+    const { default: config } = (await import(
+      pathToFileURL(resolve(silveryRoot, ".pnpmfile.cjs")).href
+    )) as {
+      default: { hooks: { beforePacking(pkg: Record<string, unknown>): Record<string, unknown> } }
+    }
+    const packed = config.hooks.beforePacking(manifest)
+
+    expect(packed.patchedDependencies).toEqual(
+      name === "silvery" ? undefined : source.patchedDependencies,
+    )
+    expect(packed.exports).toEqual(source.exports)
+    expect(readFileSync(sourcePath, "utf8")).toBe(sourceBytes)
+  },
+)
