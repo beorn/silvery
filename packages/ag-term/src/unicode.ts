@@ -311,8 +311,12 @@ export function createMeasurer(
     }
     let width = 0
     let result = ""
-    const graphemes = splitGraphemes(text)
-    for (const grapheme of graphemes) {
+    // Walk the segmenter lazily and break at the width. `splitGraphemes(text)`
+    // would materialise EVERY grapheme of the whole string first, so slicing
+    // one 2 MB line to 120 columns cost ~108 ms (bead @hab/27504); the
+    // Segmenter still pre-scans the text, but that array-of-every-grapheme
+    // work is gone. A prefix-window would also skip the pre-scan.
+    for (const { segment: grapheme } of segmenter.segment(text)) {
       const gWidth = measuredGraphemeWidth(grapheme)
       if (width + gWidth > maxWidth) break
       result += grapheme
