@@ -44,8 +44,28 @@ const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
  * Simple LRU cache for displayWidth results.
  * String width calculation is expensive (~8us for ASCII text),
  * but the same strings are often measured repeatedly.
+ *
+ * A key here is the ENTIRE measured text, so one entry costs the string it
+ * keys — NOT the ~100 bytes an entry-count bound assumes. The worst case is
+ * therefore `maxSize * MAX_KEY_LENGTH` characters per cache, and there is one
+ * cache per measurer plus the global instance below: at 10 000 * 4096 that is
+ * 41M characters, ~82 MB of UTF-16, for EACH cache. Keep that number in mind
+ * before raising either bound.
+ *
+ * Measured defect (@hab/dutiful-rss-leak): a watcher pane handing silvery one
+ * 2 MB line per tick retained the whole line per distinct value and grew
+ * ~15 MB per render, unbounded — a cache sized in entries cannot bound a key
+ * whose length is the cost.
  */
-class DisplayWidthCache {
+export class DisplayWidthCache {
+  /**
+   * Keys longer than this are measured but never cached. A line this wide is
+   * already past any terminal's viewport, so it is not a repeat-measurement
+   * candidate, and one such line must not be able to spend the whole byte
+   * budget. The cost of this cap: a line over 4096 characters is re-measured
+   * on every frame — accepted as the leak fix.
+   */
+  private static readonly MAX_KEY_LENGTH = 4096
   private cache = new Map<string, number>()
   private maxSize: number
 
@@ -54,6 +74,7 @@ class DisplayWidthCache {
   }
 
   get(text: string): number | undefined {
+    if (text.length > DisplayWidthCache.MAX_KEY_LENGTH) return undefined
     const cached = this.cache.get(text)
     if (cached !== undefined) {
       // Move to end (most recently used)
@@ -64,6 +85,7 @@ class DisplayWidthCache {
   }
 
   set(text: string, width: number): void {
+    if (text.length > DisplayWidthCache.MAX_KEY_LENGTH) return
     // Evict oldest if at capacity
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value
@@ -74,13 +96,20 @@ class DisplayWidthCache {
     this.cache.set(text, width)
   }
 
+  /** Entry count — a test-visible counter, like getActiveHandleCount(). */
+  get size(): number {
+    return this.cache.size
+  }
+
   clear(): void {
     this.cache.clear()
   }
 }
 
-// Cache size: 10K entries should be enough for most TUI apps
-// Each entry is a string key + number value, ~100 bytes, so 10K = ~1MB
+// 10K entries should be enough for most TUI apps. Their cost is NOT
+// ~100 bytes each: the key is the whole text, so this cache's worst case is
+// 10 000 * MAX_KEY_LENGTH characters (~82 MB), and each measurer has its own
+// (createMeasurer, below).
 const displayWidthCache = new DisplayWidthCache(10000)
 
 // ============================================================================
