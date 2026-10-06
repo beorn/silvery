@@ -34,10 +34,20 @@ describe("runtime post-paint cursor restoration", () => {
       await expect(term.out).toContainOutput("!", { timeout: 500 })
       await settle()
 
+      // The managed-caret contract (19702, managed-caret.ts) parks the hardware
+      // cursor at the caret and keeps it hidden; the caret the user sees is the
+      // composited inverse cell. This test predates that contract, so the restore
+      // is checked as park-at-caret plus hidden, never a re-shown hardware cursor.
       expect(term, "post-frame write must not leave cursor at the raw write site").toHaveCursor({
         x: 1 + "compose".length,
         y: 1,
-        visible: true,
+        visible: false,
+      })
+      expect(
+        term.cell(1, 1 + "compose".length),
+        "the composited caret stays painted at the caret",
+      ).toHaveAttrs({
+        inverse: true,
       })
     } finally {
       handle.unmount()
