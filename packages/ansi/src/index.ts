@@ -236,6 +236,7 @@ export {
 // =============================================================================
 
 export { hyperlink } from "./hyperlink"
+export { findUrls, type UrlRange } from "./find-urls"
 
 // =============================================================================
 // Style — Theme-aware chalk replacement
