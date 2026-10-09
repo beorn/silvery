@@ -103,6 +103,7 @@ import { _sharedResizeRefcount } from "./devices/size"
 import {
   createContainer,
   createFiberRoot,
+  dispatchDiscreteEvent,
   getContainerRoot,
   reconciler,
   setContainerNodeLifecycle,
@@ -302,6 +303,17 @@ function isWheelEvent(event: NamespacedEvent): event is NamespacedEvent & {
 
 function isMouseEvent(event: NamespacedEvent): boolean {
   return event.event === "mouse"
+}
+
+/**
+ * Pointer motion and wheel are continuous input; every other event — keys,
+ * paste, focus, button presses — is discrete and commits its React updates
+ * before the next event in the batch runs (28217).
+ */
+function isContinuousPointerEvent(event: NamespacedEvent): boolean {
+  if (!isMouseEvent(event)) return false
+  const action = (event.data as { action?: string } | undefined)?.action
+  return action === "move" || action === "wheel"
 }
 
 function inputBatchIdForMouseEvent(event: NamespacedEvent): number | undefined {
@@ -4772,6 +4784,125 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   /**
+   * Run one batched event's handlers: the apply chain (focus → useInput →
+   * paste / terminal observers), then the app handler. Synchronous by design —
+   * processEventBatch runs it inside `dispatchDiscreteEvent`, so React commits
+   * what these handlers scheduled before the next event's handlers run (28217).
+   *
+   * @returns "exit" when a handler requested exit (`shouldExit` is set),
+   *   "abort" when the app handler returned false, "barrier" when the next
+   *   event must wait for a painted frame, otherwise "done".
+   */
+  function dispatchBatchedEvent(event: NamespacedEvent): "exit" | "abort" | "barrier" | "done" {
+    let hostInputOwnershipBarrier = false
+    let dragPointerOwned = false
+    let suppressEvent = false
+    if (event.type === "term:key") {
+      const { input, key: parsedKey } = event.data as { input: string; key: Key }
+      hostInputOwnershipBarrier = isFocusedIslandHostInputBarrier(input, parsedKey, focusManager)
+
+      // Raw lane: Always update keyboard modifier state (Super/Cmd, Hyper) for
+      // mouse events. SGR mouse protocol can't report these — Kitty fills the gap.
+      updateKeyboardModifiers(mouseEventState, parsedKey)
+
+      // Raw-key observer: fire unconditionally (useModifierKeys tracks state
+      // from every key event, including release and modifier-only).
+      chainApp.rawKeys.notify(input, parsedKey)
+
+      // Dispatch into the chain. withInputChain filters release / modifier-only
+      // events internally so useInput handlers aren't spammed; withFocusChain
+      // drives focus precedence via the injected handleFocusNavigation.
+      chainApp.dispatch({ type: "input:key", input, key: parsedKey })
+      // Drain chain effects — render/exit are re-emitted via processEventBatch's
+      // legacy render orchestration (doRender + flush loop). Capture exit
+      // intent so we can short-circuit before the app handler fires.
+      const chainEffects = chainApp.drainEffects()
+      for (const eff of chainEffects) {
+        if (eff.type === "exit") shouldExit = true
+        if (isDragChainEffect(eff)) suppressEvent = eff.suppressEvent
+      }
+      if (shouldExit) return "exit"
+      // Release / modifier-only events skip the app handler path (matches
+      // pre-refactor behaviour: those never produced app-level commands).
+      if (parsedKey.eventType === "release" || isModifierOnlyEvent(input, parsedKey)) {
+        return "done"
+      }
+    } else if (dragFeature && event.event === "mouse" && event.data) {
+      const mouse = event.data as {
+        action: "down" | "up" | "move" | "wheel"
+        button: number
+        x: number
+        y: number
+      }
+      chainApp.dispatch({ type: "term:mouse", ...mouse })
+      const chainEffects = chainApp.drainEffects()
+      for (const effect of chainEffects) {
+        if (!isDragChainEffect(effect)) continue
+        suppressEvent ||= effect.suppressEvent
+        if (effect.type === "drag:pointer") dragPointerOwned = effect.ownsPointer
+      }
+    } else if (event.type === "term:paste") {
+      const { text } = event.data as { text: string }
+      // Route paste to the focused input-capable island's guest FIRST — the
+      // paste sibling of routeKeyToFocusedIsland. A focused shell pane's pty
+      // must receive Cmd-V paste (bracketed-paste re-wrapped when the guest
+      // enabled DECSET 2004). Only when NO focused island consumes it do we
+      // dispatch the app-level React `term:paste` event, so React apps
+      // without a focused island still get their `usePaste` handlers.
+      if (!routePasteToFocusedIsland(text, focusManager)) {
+        chainApp.dispatch({ type: "term:paste", text })
+        chainApp.drainEffects()
+      }
+    } else if (event.type === "term:focus") {
+      const { focused } = event.data as { focused: boolean }
+      chainApp.dispatch({ type: "term:focus", focused })
+      chainApp.drainEffects()
+      if (alternateScreen) {
+        if (focused) {
+          runtime.invalidate({ clearScreen: true })
+          fullscreenDamageRiskFromBlur = false
+          fullscreenDamageRepairRequested = false
+          fullscreenDamageLastRepaintMs = -Infinity
+        } else {
+          fullscreenDamageRiskFromBlur = true
+          fullscreenDamageRepairRequested = false
+          fullscreenDamageLastRepaintMs = performance.now()
+        }
+      }
+      // withTerminalChain is an observer — fan out to the chain
+      // focusEvents store so useTerminalFocused / useModifierKeys
+      // subscribers see the transition.
+      chainApp.focusEvents.notify(focused)
+    }
+
+    // If a listener called exit() (e.g., useInput handler returned "exit"),
+    // stop processing events immediately — don't render or flush.
+    if (shouldExit) return "exit"
+
+    if (suppressEvent) {
+      // The DOM event processor armed the drag source on mousedown. An
+      // active drag consumes mouseup, so release that capture explicitly
+      // instead of leaving a stale armed/capture target behind.
+      const mouse =
+        event.event === "mouse" ? (event.data as { action?: string; x: number; y: number }) : null
+      if (mouse?.action === "up" && mouseEventState.mouseDownTarget) {
+        setArmed(mouseEventState.mouseDownTarget, false)
+        mouseEventState.mouseDownTarget = null
+        mouseEventState.mouseCaptureTarget = null
+      }
+      // processMouseEvent never sees a drag-owned event, so re-run the cursor
+      // resolver here: drag start shows `grabbing`; drop and Escape cancel
+      // restore the cursor resolved under the pointer.
+      refreshMouseCursor(mouseEventState, getContainerRoot(container), mouse ?? undefined)
+      return "done"
+    }
+
+    const result = runEventHandler(event, { skipSelection: dragPointerOwned })
+    if (result === false) return "abort"
+    return result === "flush" || hostInputOwnershipBarrier ? "barrier" : "done"
+  }
+
+  /**
    * Process a batch of events — run all handlers, then render once.
    *
    * This is the key optimization for press-and-hold / auto-repeat keys.
@@ -4779,7 +4910,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
    * 50ms renders), we batch all pending handlers into a single render pass.
    *
    * For a batch of 3 'j' presses: handler1 → handler2 → handler3 → render.
-   * The cursor moves 3 positions, but we only pay one render cost.
+   * Each handler runs as a React discrete event, so React commits what it
+   * scheduled before the next handler reads state (28217); layout and paint
+   * run once, after the batch. The cursor moves 3 positions, but we only pay
+   * one layout and paint.
    */
   async function processEventBatch(events: NamespacedEvent[]): Promise<Buffer | null> {
     if (shouldExit || events.length === 0) return null
@@ -4889,117 +5023,20 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Node-drag mouse events also enter the chain; unclaimed mouse events and
     // resize / other namespaced events continue to runEventHandler.
     for (const event of events) {
-      let hostInputOwnershipBarrier = false
-      let dragPointerOwned = false
-      let suppressEvent = false
-      if (event.type === "term:key") {
-        const { input, key: parsedKey } = event.data as { input: string; key: Key }
-        hostInputOwnershipBarrier = isFocusedIslandHostInputBarrier(input, parsedKey, focusManager)
-
-        // Raw lane: Always update keyboard modifier state (Super/Cmd, Hyper) for
-        // mouse events. SGR mouse protocol can't report these — Kitty fills the gap.
-        updateKeyboardModifiers(mouseEventState, parsedKey)
-
-        // Raw-key observer: fire unconditionally (useModifierKeys tracks state
-        // from every key event, including release and modifier-only).
-        chainApp.rawKeys.notify(input, parsedKey)
-
-        // Dispatch into the chain. withInputChain filters release / modifier-only
-        // events internally so useInput handlers aren't spammed; withFocusChain
-        // drives focus precedence via the injected handleFocusNavigation.
-        chainApp.dispatch({ type: "input:key", input, key: parsedKey })
-        // Drain chain effects — render/exit are re-emitted via the legacy
-        // render orchestration below (doRender + flush loop). Capture exit
-        // intent so we can short-circuit before the app handler fires.
-        const chainEffects = chainApp.drainEffects()
-        for (const eff of chainEffects) {
-          if (eff.type === "exit") shouldExit = true
-          if (isDragChainEffect(eff)) suppressEvent = eff.suppressEvent
-        }
-        if (shouldExit) {
-          inEventHandler = false
-          return null
-        }
-        // Release / modifier-only events skip the app handler path (matches
-        // pre-refactor behaviour: those never produced app-level commands).
-        if (parsedKey.eventType === "release" || isModifierOnlyEvent(input, parsedKey)) {
-          continue
-        }
-      } else if (dragFeature && event.event === "mouse" && event.data) {
-        const mouse = event.data as {
-          action: "down" | "up" | "move" | "wheel"
-          button: number
-          x: number
-          y: number
-        }
-        chainApp.dispatch({ type: "term:mouse", ...mouse })
-        const chainEffects = chainApp.drainEffects()
-        for (const effect of chainEffects) {
-          if (!isDragChainEffect(effect)) continue
-          suppressEvent ||= effect.suppressEvent
-          if (effect.type === "drag:pointer") dragPointerOwned = effect.ownsPointer
-        }
-      } else if (event.type === "term:paste") {
-        const { text } = event.data as { text: string }
-        // Route paste to the focused input-capable island's guest FIRST — the
-        // paste sibling of routeKeyToFocusedIsland. A focused shell pane's pty
-        // must receive Cmd-V paste (bracketed-paste re-wrapped when the guest
-        // enabled DECSET 2004). Only when NO focused island consumes it do we
-        // dispatch the app-level React `term:paste` event, so React apps
-        // without a focused island still get their `usePaste` handlers.
-        if (!routePasteToFocusedIsland(text, focusManager)) {
-          chainApp.dispatch({ type: "term:paste", text })
-          chainApp.drainEffects()
-        }
-      } else if (event.type === "term:focus") {
-        const { focused } = event.data as { focused: boolean }
-        chainApp.dispatch({ type: "term:focus", focused })
-        chainApp.drainEffects()
-        if (alternateScreen) {
-          if (focused) {
-            runtime.invalidate({ clearScreen: true })
-            fullscreenDamageRiskFromBlur = false
-            fullscreenDamageRepairRequested = false
-            fullscreenDamageLastRepaintMs = -Infinity
-          } else {
-            fullscreenDamageRiskFromBlur = true
-            fullscreenDamageRepairRequested = false
-            fullscreenDamageLastRepaintMs = performance.now()
-          }
-        }
-        // withTerminalChain is an observer — fan out to the chain
-        // focusEvents store so useTerminalFocused / useModifierKeys
-        // subscribers see the transition.
-        chainApp.focusEvents.notify(focused)
-      }
-
-      // If a listener called exit() (e.g., useInput handler returned "exit"),
-      // stop processing events immediately — don't render or flush.
-      if (shouldExit) {
+      // React discrete-event semantics (28217): each event's handlers run as
+      // one discrete event, so React commits what they scheduled before the
+      // next event's handlers read state — "\x1b[B\r" in one chunk opens the
+      // row the cursor moved to. Reconciliation only: layout and paint stay
+      // once per batch, below. Pointer motion and wheel are continuous input,
+      // as in React DOM, and keep coalescing into the batch's one render.
+      const dispatched = isContinuousPointerEvent(event)
+        ? dispatchBatchedEvent(event)
+        : dispatchDiscreteEvent(() => dispatchBatchedEvent(event))
+      if (dispatched === "exit") {
         inEventHandler = false
         return null
       }
-
-      if (suppressEvent) {
-        // The DOM event processor armed the drag source on mousedown. An
-        // active drag consumes mouseup, so release that capture explicitly
-        // instead of leaving a stale armed/capture target behind.
-        const mouse =
-          event.event === "mouse" ? (event.data as { action?: string; x: number; y: number }) : null
-        if (mouse?.action === "up" && mouseEventState.mouseDownTarget) {
-          setArmed(mouseEventState.mouseDownTarget, false)
-          mouseEventState.mouseDownTarget = null
-          mouseEventState.mouseCaptureTarget = null
-        }
-        // processMouseEvent never sees a drag-owned event, so re-run the cursor
-        // resolver here: drag start shows `grabbing`; drop and Escape cancel
-        // restore the cursor resolved under the pointer.
-        refreshMouseCursor(mouseEventState, getContainerRoot(container), mouse ?? undefined)
-        continue
-      }
-
-      const result = runEventHandler(event, { skipSelection: dragPointerOwned })
-      if (result === false) {
+      if (dispatched === "abort") {
         isRendering = false
         inEventHandler = false
         exit()
@@ -5015,7 +5052,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // the post-batch doRender's dirty-row tracking would be stale relative
       // to runtime.prevBuffer, causing diffBuffers() to skip all rows and
       // produce an empty diff (0 bytes output).
-      if (result === "flush" || hostInputOwnershipBarrier) {
+      if (dispatched === "barrier") {
         pendingRerender = false
         currentBuffer = doRender()
         paintFrame()

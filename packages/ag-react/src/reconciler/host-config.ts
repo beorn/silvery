@@ -483,6 +483,28 @@ export function runWithDiscreteEvent(fn: () => void): void {
   }
 }
 
+/**
+ * Open `dispatchDiscreteEvent` scopes (reconciler/index.ts). While one is
+ * open, every update takes the discrete (sync) lane — the event handlers' own
+ * AND the ones its commit's passive effects schedule, which React would give
+ * the default lane — so an input event's whole cascade settles inside its
+ * commit. Left on the default lane, an effect's update stays pending past the
+ * commit, each later key's commit then counts as a nested update, and a burst
+ * of more than 50 keys in one stdin chunk throws "Maximum update depth
+ * exceeded" (28217).
+ */
+let discreteEventScopes = 0
+
+/** Run `fn` inside a discrete-event scope — see {@link discreteEventScopes}. */
+export function inDiscreteEventScope<T>(fn: () => T): T {
+  discreteEventScopes++
+  try {
+    return fn()
+  } finally {
+    discreteEventScopes--
+  }
+}
+
 // ============================================================================
 // Host Config
 // ============================================================================
@@ -1128,6 +1150,7 @@ export const hostConfig = {
   },
 
   resolveUpdatePriority() {
+    if (discreteEventScopes > 0) return DiscreteEventPriority
     if (currentUpdatePriority !== NoEventPriority) {
       return currentUpdatePriority
     }

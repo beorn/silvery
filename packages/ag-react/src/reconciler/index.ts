@@ -16,6 +16,7 @@ import {
   type Container,
   disposeSubtreeScopes,
   hostConfig,
+  inDiscreteEventScope,
   registerContainer,
   releaseContainerLifecycle,
 } from "./host-config"
@@ -41,6 +42,31 @@ export {
  * Create the React reconciler instance.
  */
 export const reconciler = Reconciler(hostConfig)
+
+/**
+ * Run one input event's handlers with React discrete-event semantics.
+ *
+ * Updates the handlers schedule take the discrete (sync) lane, and React
+ * renders and commits them — layout and passive effects included, plus any
+ * update those effects schedule — before this returns. The next event's
+ * handlers therefore observe that state and the latest handler refs, exactly
+ * as two separately delivered keys would. React's own sync-work queue is the
+ * gate: handlers that schedule nothing cost no render.
+ *
+ * Reconciliation only: no silvery layout and no paint run here, so a batch
+ * of N keys still lays out and paints once, after the batch. Every runtime
+ * loop that dispatches a batch of input events calls this once per event —
+ * createApp's `processEventBatch` and `@silvery/create`'s `runEventBatch`.
+ * Without it, keys from one stdin chunk all run against the same committed
+ * render: "\x1b[B\r" opens the row above the cursor (28217).
+ */
+export function dispatchDiscreteEvent<T>(handlers: () => T): T {
+  return inDiscreteEventScope(() => {
+    const result = handlers()
+    ;(reconciler as { flushSyncWork(): void }).flushSyncWork()
+    return result
+  })
+}
 
 /**
  * Create a container for rendering.
