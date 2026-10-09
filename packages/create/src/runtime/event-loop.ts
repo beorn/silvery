@@ -198,6 +198,9 @@ export async function runEventBatch(
 
     // Give the runner its turn (app handler / commands layer).
     const afterDispatch = hooks.afterDispatch
+    // The discrete event covers an async afterDispatch only up to its first
+    // await: flushSyncWork runs when the call returns its promise, before the
+    // promise settles.
     const afterResult = afterDispatch
       ? await dispatchDiscreteEvent(() => afterDispatch(ev))
       : undefined

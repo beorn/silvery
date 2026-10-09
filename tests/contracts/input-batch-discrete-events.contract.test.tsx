@@ -16,10 +16,15 @@
  *   - A bracketed paste stays ONE event, and the Enter after it observes it.
  *   - Layout and paint still run once per batch: the per-key commit is React
  *     reconciliation only.
+ *   - An exit or abort key whose handler also schedules state still exits
+ *     once, and nothing renders or paints after it, although that state
+ *     commits before teardown.
  *
- * Every row runs through `run()` AND `createApp().run()`. run() is a thin
- * wrapper over createApp today; moving createApp's processEventBatch onto
- * @silvery/create's runEventBatch must keep both entries green.
+ * The rows run through `run()` AND `createApp().run()`; the exit row runs
+ * through `createApp().run()` only, because its abort route is an app
+ * handler. run() is a thin wrapper over createApp today; moving createApp's
+ * processEventBatch onto @silvery/create's runEventBatch must keep both
+ * entries green.
  *
  * @failure A key in the same stdin chunk as an earlier key acts on stale React
  *   state: Enter opens the row above the cursor, or submits the text as it was
@@ -29,14 +34,14 @@
  * @testonly none
  */
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { describe, expect, test } from "vitest"
 import { createTermless, type TermlessTerm } from "@silvery/test"
 import { silveryBenchStart, silveryBenchStop } from "@silvery/ag-term/pipeline"
 
 import { ListView, Text, TextInput, useInput } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
-import { createApp } from "../../packages/ag-term/src/runtime/create-app"
+import { createApp, useApp } from "../../packages/ag-term/src/runtime/create-app"
 
 const COLS = 40
 const ROWS = 10
@@ -252,4 +257,101 @@ describe.each(ENTRIES)("contract: one input batch, discrete events — %s", (_en
       handle.unmount()
     }
   })
+})
+
+/** How the exit key leaves the batch: chain exit, or the app handler aborting it. */
+type ExitRoute = "useInput" | "app handler"
+
+describe("contract: an exit key that also schedules state — createApp().run()", () => {
+  test.each<[string, ExitRoute]>([
+    ['a useInput handler returns "exit"', "useInput"],
+    ['the app\'s term:key handler returns "exit", aborting the batch', "app handler"],
+  ])(
+    "contract: %s — the app exits once, and nothing renders or paints after it",
+    async (_name, route) => {
+      const log: string[] = []
+
+      function Farewell({ label }: { label: string }) {
+        useEffect(() => {
+          log.push(`effect:${label}`)
+        }, [label])
+        useEffect(
+          () => () => {
+            log.push("unmount")
+          },
+          [],
+        )
+        return <Text>label={label}</Text>
+      }
+
+      function QuitOnQ() {
+        const [label, setLabel] = useState("ready")
+        useInput((input) => {
+          if (input !== "q") return
+          setLabel("bye")
+          return "exit"
+        })
+        return <Farewell label={label} />
+      }
+
+      function StoreLabel() {
+        return <Farewell label={useApp((state: { label: string }) => state.label)} />
+      }
+
+      using term = createTermless({ cols: COLS, rows: ROWS })
+      const harness = {
+        term,
+        cols: COLS,
+        rows: ROWS,
+        writable: { write: (data: string) => term.write(data) },
+      }
+      const handle =
+        route === "useInput"
+          ? await createApp(() => () => ({})).run(<QuitOnQ />, harness)
+          : await createApp(() => () => ({ label: "ready" }), {
+              "term:key": (data, ctx) => {
+                if ((data as { input: string }).input !== "q") return
+                ctx.set({ label: "bye" })
+                return "exit"
+              },
+            }).run(<StoreLabel />, harness)
+      // createApp has no onExit option; its exit hook is the app scope's disposal.
+      let exits = 0
+      handle.scope.defer(() => {
+        exits++
+      })
+      let exited = false
+      void handle.waitUntilExit().then(() => {
+        exited = true
+      })
+      try {
+        await waitUntil(() => term.screen.getText().includes("label=ready"), "the first paint")
+        await settle(50) // the app is idle: no frame in flight when counting starts
+        const writesBefore = term.out.events.length
+        const phases = silveryBenchStart()
+        try {
+          sendChunk(term, "q")
+          await waitUntil(() => exited, "the exit")
+          await settle(50) // anything the exit key's commit scheduled
+        } finally {
+          silveryBenchStop()
+        }
+
+        // The app exited once: one app-scope disposal, one unmount.
+        expect(exits).toBe(1)
+        expect(log.filter((entry) => entry === "unmount")).toHaveLength(1)
+        // The exit key's update rendered nothing: no layout or content pass, no
+        // terminal write, and the screen still shows the frame from before it.
+        expect(phases.pipelineCalls).toBe(0)
+        expect(term.out.events.length - writesBefore).toBe(0)
+        expect(term.screen.getText()).toContain("label=ready")
+        // The exit key's update did commit before teardown (each key is a
+        // discrete event), so the expectations above saw that commit; without
+        // it this row proves nothing.
+        expect(log).toEqual(["effect:ready", "effect:bye", "unmount"])
+      } finally {
+        handle.unmount()
+      }
+    },
+  )
 })

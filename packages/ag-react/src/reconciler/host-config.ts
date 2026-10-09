@@ -491,7 +491,11 @@ export function runWithDiscreteEvent(fn: () => void): void {
  * commit. Left on the default lane, an effect's update stays pending past the
  * commit, each later key's commit then counts as a nested update, and a burst
  * of more than 50 keys in one stdin chunk throws "Maximum update depth
- * exceeded" (28217).
+ * exceeded" (28217). This is deliberately broader than React DOM, which gives
+ * effect-scheduled updates the default lane: it settles a key's whole cascade
+ * inside one synchronous batch, so per-key commits work without a scheduler
+ * turn, and React's 50-nested-update limit stays the loud failure for an
+ * effect loop that re-schedules itself by design.
  */
 let discreteEventScopes = 0
 
