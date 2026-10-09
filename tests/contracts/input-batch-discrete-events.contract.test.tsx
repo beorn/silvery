@@ -39,9 +39,13 @@ import { describe, expect, test } from "vitest"
 import { createTermless, type TermlessTerm } from "@silvery/test"
 import { silveryBenchStart, silveryBenchStop } from "@silvery/ag-term/pipeline"
 
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { ListView, Text, TextInput, useInput } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
 import { createApp, useApp } from "../../packages/ag-term/src/runtime/create-app"
+import { recentRenderOutputEvents } from "../../packages/ag-term/src/runtime/render-trace"
 
 const COLS = 40
 const ROWS = 10
@@ -255,6 +259,91 @@ describe.each(ENTRIES)("contract: one input batch, discrete events — %s", (_en
       expect(term.screen.getText()).toContain("count=3")
     } finally {
       handle.unmount()
+    }
+  })
+
+  test("contract: an update a key handler schedules after an await paints in the batch's own frame", async () => {
+    // A handler that commits, then awaits once and commits again — the hab deck's split runs its state update one
+    // microtask after the key because its dispatch awaits a target. That continuation lands in React's default lane,
+    // outside the key's discrete scope, and must still be in the frame the batch paints, not in a later one.
+    function Split() {
+      const [state, setState] = useState("idle")
+      useInput((input) => {
+        if (input !== "v") return
+        setState("chord-closed")
+        void Promise.resolve().then(() => setState("split-done"))
+      })
+      return <Text>state={state}</Text>
+    }
+
+    using term = createTermless({ cols: COLS, rows: ROWS })
+    const handle = await mount(<Split />, term)
+    try {
+      await waitUntil(() => term.screen.getText().includes("state=idle"), "the first paint")
+      await settle(50) // the app is idle: no frame in flight when counting starts
+      const writesBefore = term.out.events.length
+      sendChunk(term, "v")
+      await waitUntil(
+        () => term.screen.getText().includes("state=split-done"),
+        "the awaited update's paint",
+      )
+      await settle(100) // anything a late standalone frame would add
+      // One frame for the batch, and it carries the continuation: never a frame of the intermediate state first.
+      expect(term.out.events.length - writesBefore).toBe(1)
+    } finally {
+      handle.unmount()
+    }
+  })
+
+  test("contract: a committing batch costs exactly one sweep pass, and the pass adds no layout or paint", async () => {
+    // The sweep that carries an awaited continuation into the batch's frame is one more pass of the existing flush
+    // loop, run when the batch's keys committed (28297). While SILVERY_TRACE_FRAMES names a directory, every painted
+    // frame emits a RENDER_OUTPUT event with the batch's own doRender() count (the renderer resets it per batch),
+    // early returns included, so the count is the cost even when the pass finds nothing dirty.
+    const traceDir = mkdtempSync(join(tmpdir(), "silvery-batch-sweep-"))
+    const savedTrace = process.env.SILVERY_TRACE_FRAMES
+    process.env.SILVERY_TRACE_FRAMES = traceDir
+    try {
+      function Counter() {
+        const [count, setCount] = useState(0)
+        useInput((input) => {
+          if (input === "j") setCount((value) => value + 1)
+        })
+        return <Text>count={count}</Text>
+      }
+
+      using term = createTermless({ cols: COLS, rows: ROWS })
+      const handle = await mount(<Counter />, term)
+      try {
+        await waitUntil(() => term.screen.getText().includes("count=0"), "the first paint")
+        await settle(50) // the app is idle: no frame in flight when counting starts
+        const batchRenders = () => recentRenderOutputEvents().at(-1)?.renderCount ?? Number.NaN
+        const press = async (key: string, shows: string) => {
+          sendChunk(term, key)
+          await waitUntil(() => term.screen.getText().includes(shows), shows)
+          await settle(100) // the batch's frame, and anything it schedules
+        }
+
+        await press("j", "count=1") // the first key also flushes the mount's passive effects
+        const writesBefore = term.out.events.length
+        const phases = silveryBenchStart()
+        try {
+          await press("j", "count=2")
+        } finally {
+          silveryBenchStop()
+        }
+        // The batch render plus exactly one sweep pass (one before 28297)...
+        expect(batchRenders()).toBe(2)
+        // ...which renders nothing new here, so layout and paint still run once for the batch.
+        expect(phases.pipelineCalls).toBe(1)
+        expect(term.out.events.length - writesBefore).toBe(1)
+      } finally {
+        handle.unmount()
+      }
+    } finally {
+      if (savedTrace === undefined) delete process.env.SILVERY_TRACE_FRAMES
+      else process.env.SILVERY_TRACE_FRAMES = savedTrace
+      rmSync(traceDir, { recursive: true, force: true })
     }
   })
 })

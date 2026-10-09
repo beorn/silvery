@@ -5067,7 +5067,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     }
 
     // Clear deferred renders from handlers' setState calls — the explicit
-    // doRender below picks up all state changes in one pass.
+    // doRender below picks up all state changes in one pass. Since the per-key
+    // commits (28217) already ran the handlers' work, this flag is also the only
+    // trace that the batch committed: keep it for the flush loop, whose first
+    // drain is where a continuation the handlers awaited lands (a default-lane
+    // update outside the key's discrete scope). One pass then renders it into
+    // this batch's frame instead of a later standalone one (28297).
+    const batchCommitted = pendingRerender
     pendingRerender = false
 
     // Explicit render — batches all handler state changes + flushes effects
@@ -5076,6 +5082,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     } finally {
       isRendering = false
     }
+    if (batchCommitted) pendingRerender = true
 
     // Flush deferred re-renders from effects.
     // React's passive effects (useEffect) are scheduled during doRender
