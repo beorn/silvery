@@ -103,6 +103,8 @@ Silvery enables flags 1 + 2 + 8 = **11** by default:
 
 `processEventBatch()` in `create-app.tsx` processes all queued provider events in a single batch before rendering. For a burst of 3 `j` presses: handler1 -> handler2 -> handler3 -> one render.
 
+Each event's handlers still run as a React discrete event (`dispatchDiscreteEvent` from `@silvery/ag-react/reconciler`): React commits what they scheduled — effects and the updates those effects schedule included — before the next event's handlers run. A handler that reads React state therefore sees the previous key's update, exactly as if the keys had arrived separately: `\x1b[B\r` in one chunk opens the row the cursor moved to. The commit is reconciliation only; layout and paint still run once per batch. Pointer motion and wheel are continuous input and keep coalescing into the batch's render.
+
 ### Bridge to RuntimeContext
 
 All key events are bridged to `RuntimeContext` listeners first, before any filtering:
@@ -136,7 +138,7 @@ The ad-hoc `runtimeInputListeners` arrays and hardcoded `handleFocusNavigation` 
 - **`with-input-chain.ts`** — the fallback `useInput` store, running AFTER focused dispatch. Handlers invoked in registration order; `"exit"` short-circuits.
 - **`with-paste-chain.ts`** — paste routing: focused `onPaste` (via `routeToFocused`) wins; otherwise global handlers fire.
 - **`with-focus-chain.ts`** — focused-element key dispatch via injected `dispatchKey`/`hasActiveFocus`. Sits outermost so focused consumes before `useInput`.
-- **`event-loop.ts`** — `runEventBatch(app, events, hooks, options)`. Pure function: intercepts Ctrl+C/Ctrl+Z via `lifecycle-effects.ts`, dispatches each event to the chain, drains effects through the runner's `onRender`/`onBarrier`/`onExit`/`onSuspend`/`afterDispatch` hooks.
+- **`event-loop.ts`** — `runEventBatch(app, events, hooks, options)`. Pure function: intercepts Ctrl+C/Ctrl+Z via `lifecycle-effects.ts`, dispatches each event to the chain, drains effects through the runner's `onRender`/`onBarrier`/`onExit`/`onSuspend`/`afterDispatch` hooks. Its one React touchpoint is the discrete-event commit: the chain dispatch and `afterDispatch` run through the same `dispatchDiscreteEvent` that `processEventBatch` uses.
 - **`lifecycle-effects.ts`** — Ctrl+C / Ctrl+Z / exit / suspend / render-barrier as typed `Effect` data with constructors and detectors.
 
 Every substrate module ships with unit tests (90 across 7 files). See `packages/create/tests/` for the authoritative contract.

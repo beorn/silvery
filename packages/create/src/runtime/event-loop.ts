@@ -17,9 +17,12 @@
  * flush React + doRender on render effects.
  *
  * The function is PURE with respect to the apps/effects it's given —
- * no terminal I/O, no React, no signals. Everything real is injected.
+ * no terminal I/O, no signals. Everything real is injected. React enters in
+ * one place only: each event's handlers run through `dispatchDiscreteEvent`,
+ * the discrete-event commit createApp's processEventBatch shares (28217).
  */
 
+import { dispatchDiscreteEvent } from "@silvery/ag-react/reconciler"
 import type { Effect, Op } from "../types"
 import type { BaseApp } from "./base-app"
 import { exitEffect, interceptLifecycleKey, type LifecycleOptions } from "./lifecycle-effects"
@@ -116,6 +119,9 @@ export interface RunEventBatchOptions {
  *        b. Drain effects; route render/exit/suspend/barrier
  *        c. Invoke afterDispatch (runner's app-handler equivalent)
  *        d. If afterDispatch returned "flush", emit an extra barrier
+ *      Both handler steps (a, c) run through `dispatchDiscreteEvent`: React
+ *      commits what they scheduled before the next handler or event reads
+ *      state — React discrete-event semantics (28217).
  *   3. Return shouldExit so the caller can stop the outer loop.
  *
  * @returns true when the batch wants the outer loop to exit.
@@ -162,13 +168,15 @@ export async function runEventBatch(
     const op = eventToOp(ev)
     if (!op) continue
 
-    try {
-      app.dispatch(op)
-    } catch (err) {
-      // Reentrancy or handler failure — surface but don't hang.
-      // eslint-disable-next-line no-console
-      console.error("[event-loop] dispatch threw", err)
-    }
+    dispatchDiscreteEvent(() => {
+      try {
+        app.dispatch(op)
+      } catch (err) {
+        // Reentrancy or handler failure — surface but don't hang.
+        // eslint-disable-next-line no-console
+        console.error("[event-loop] dispatch threw", err)
+      }
+    })
 
     // Drain + route effects emitted by the chain.
     const effects = app.drainEffects()
@@ -189,7 +197,13 @@ export async function runEventBatch(
     if (shouldExit) return true
 
     // Give the runner its turn (app handler / commands layer).
-    const afterResult = hooks.afterDispatch ? await hooks.afterDispatch(ev) : undefined
+    const afterDispatch = hooks.afterDispatch
+    // The discrete event covers an async afterDispatch only up to its first
+    // await: flushSyncWork runs when the call returns its promise, before the
+    // promise settles.
+    const afterResult = afterDispatch
+      ? await dispatchDiscreteEvent(() => afterDispatch(ev))
+      : undefined
     if (afterResult === false) {
       await hooks.onExit?.(exitEffect("app-handler"))
       return true

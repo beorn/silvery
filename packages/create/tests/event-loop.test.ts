@@ -7,9 +7,21 @@
  *   - afterDispatch === false aborts the batch
  *   - afterDispatch === "flush" fires an extra barrier
  *   - Reentry guard inside the chain doesn't crash the loop
+ *   - Each event's handlers observe the React state the previous event's
+ *     handlers committed (React discrete-event semantics, 28217)
  */
 
+import React, { useLayoutEffect, useState } from "react"
 import { describe, expect, test, vi } from "vitest"
+// Top-level await in @silvery/test initializes the default layout engine the
+// reconciler's root node needs.
+import "@silvery/test"
+import {
+  createContainer,
+  createFiberRoot,
+  reconciler,
+  unmountFiberRoot,
+} from "@silvery/ag-react/reconciler"
 import { pipe } from "../src/pipe"
 import { createBaseApp } from "../src/runtime/base-app"
 import { eventToOp, runEventBatch, type BatchedEvent } from "../src/runtime/event-loop"
@@ -281,5 +293,72 @@ describe("runEventBatch — robustness", () => {
       onOtherEffect: onOther,
     })
     expect(onOther).toHaveBeenCalledWith({ type: "telemetry", kind: "paste-ingested" })
+  })
+})
+
+describe("runEventBatch — React discrete-event semantics (28217)", () => {
+  const j: BatchedEvent = { type: "term:key", input: "j", key: { eventType: "press" } }
+
+  /** Mount `element` on the silvery reconciler; returns the unmount. */
+  function mount(element: React.ReactElement): () => void {
+    const container = createContainer(() => {})
+    const root = createFiberRoot(container)
+    reconciler.updateContainerSync(element, root, null, null)
+    reconciler.flushSyncWork()
+    return () => unmountFiberRoot(root, container)
+  }
+
+  test("a chain handler observes the state the previous key's handler committed", async () => {
+    const app = mkApp()
+    const seen: number[] = []
+    function Counter() {
+      const [count, setCount] = useState(0)
+      // Re-registered by a layout effect on every commit: the next key reaches
+      // the handler that closes over the new count only if React committed —
+      // layout effects included — between the two keys.
+      useLayoutEffect(
+        () =>
+          app.input.register((input) => {
+            if (input !== "j") return
+            seen.push(count)
+            setCount(count + 1)
+          }),
+        [count],
+      )
+      return null
+    }
+    const unmount = mount(React.createElement(Counter))
+    try {
+      await runEventBatch(app, [j, j, j], {})
+      expect(seen).toEqual([0, 1, 2])
+    } finally {
+      unmount()
+    }
+  })
+
+  test("the runner's afterDispatch phase commits before the next event too", async () => {
+    const app = mkApp()
+    const seen: number[] = []
+    // What the last render saw — a runner's app handler reads React state the
+    // way a latest-ref does, so it is current only after a commit.
+    const latest: { count: number; setCount?: (next: number) => void } = { count: 0 }
+    function Counter() {
+      const [count, setCount] = useState(0)
+      latest.count = count
+      latest.setCount = setCount
+      return null
+    }
+    const unmount = mount(React.createElement(Counter))
+    try {
+      await runEventBatch(app, [j, j, j], {
+        afterDispatch: () => {
+          seen.push(latest.count)
+          latest.setCount?.(latest.count + 1)
+        },
+      })
+      expect(seen).toEqual([0, 1, 2])
+    } finally {
+      unmount()
+    }
   })
 })
