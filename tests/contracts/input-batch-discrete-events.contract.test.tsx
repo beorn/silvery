@@ -337,13 +337,24 @@ describe.each(ENTRIES)("contract: one input batch, discrete events — %s", (_en
         // ...which renders nothing new here, so layout and paint still run once for the batch.
         expect(phases.pipelineCalls).toBe(1)
         expect(term.out.events.length - writesBefore).toBe(1)
+
+        // A key no handler acts on: its batch's sweep pass is an early-return dirty check, so nothing is written.
+        const batches = batchDiagnostics.__silvery_batch_count ?? 0
+        const writesBeforeIdle = term.out.events.length
+        sendChunk(term, "x")
+        await waitUntil(
+          () => (batchDiagnostics.__silvery_batch_count ?? 0) > batches,
+          "the batch for x",
+        )
+        await settle(100)
+        expect(term.out.events.length - writesBeforeIdle).toBe(0)
       } finally {
         handle.unmount()
       }
     } finally {
       if (savedTrace === undefined) delete process.env.SILVERY_TRACE_FRAMES
       else process.env.SILVERY_TRACE_FRAMES = savedTrace
-      rmSync(traceDir, { recursive: true, force: true })
+      rmSync(traceDir, { recursive: true, force: true }) // raw-delete-allow: the trace dir this test made with mkdtempSync
     }
   })
 })
