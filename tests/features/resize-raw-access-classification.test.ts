@@ -21,6 +21,8 @@ const sourceRoots = ["packages/ag-react/src", "packages/ag-term/src", "packages/
 const classifiedRawAccess: Record<string, string> = {
   "packages/ag-react/src/render.tsx:resize-listener":
     "legacy render() API owns its own scheduler and still listens to raw stdout resize events",
+  "packages/ag-react/src/render.tsx:terminal-dimensions":
+    "legacy render() has no injected Size owner; mouse verifier reads stream geometry the same way the classified raw resize listener does",
   "packages/ag-react/src/ui/cli/ansi.ts:terminal-dimensions":
     "CLI utility resolves a one-shot terminal width outside the reactive render path",
   "packages/ag-term/src/ansi/term.ts:terminal-dimensions":
