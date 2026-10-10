@@ -718,4 +718,30 @@ describe("createMouseUnitVerifier", () => {
       provenBy: undefined,
     })
   })
+
+  // 24659: a widening resize publishes a stale-small grid for ~200 ms, so a
+  // cell-unit motion in the newly revealed columns has wire.x > cols and
+  // latches pixels. The latch must re-arm once the size source grows past
+  // the proving coordinate; otherwise every later click divides by cell size
+  // and collapses into the top-left.
+  it("re-arms a stream pixel latch when the observed grid grows past the proving coordinate", () => {
+    let cols = 100
+    const verifier = createMouseUnitVerifier(
+      { coordinateMode: "pixel", cellSize: { width: 14, height: 26 } },
+      { size: () => ({ cols, rows: 24 }) },
+    )
+    // CSI<0;150;5M — x=150 sits past the stale 100-col report and latches.
+    expect(verifier.parse("\x1b[<0;150;5M")).toMatchObject({ coordinateMode: "pixel" })
+    expect(verifier.interpretation()).toMatchObject({
+      pixelVerified: true,
+      provenBy: "stream",
+    })
+    cols = 200
+    expect(verifier.parse("\x1b[<0;150;5M")).toMatchObject({ coordinateMode: "cell", x: 149 })
+    expect(verifier.interpretation()).toMatchObject({
+      pixelVerified: false,
+      provenBy: undefined,
+      lastGrid: { cols: 200, rows: 24 },
+    })
+  })
 })

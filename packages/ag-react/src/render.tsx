@@ -60,7 +60,12 @@ import {
   setMouseCursorShape,
   resetMouseCursorShape,
 } from "@silvery/ag-term/output"
-import { parseMouseSequence, isMouseSequence, type ParseMouseOptions } from "@silvery/ag-term/mouse"
+import {
+  isMouseSequence,
+  createMouseUnitVerifier,
+  type ParseMouseOptions,
+  type MouseUnitVerifier,
+} from "@silvery/ag-term/mouse"
 import {
   createMouseEventProcessor,
   processMouseEvent,
@@ -388,6 +393,19 @@ function SilveryApp({
   // not the value. Undefined when mouse tracking is disabled; mouse CSI
   // sequences on stdin are silently dropped in that case.
   const mouseParseOptionsRef = useRef<ParseMouseOptions | undefined>(mouseParseOptions)
+  const mouseVerifierRef = useRef<MouseUnitVerifier | null>(null)
+  if (mouseVerifierRef.current === null) {
+    mouseVerifierRef.current = createMouseUnitVerifier(mouseParseOptions, {
+      size: () => ({ cols: Number(stdout.columns), rows: Number(stdout.rows) }),
+    })
+  } else if (
+    mouseParseOptionsRef.current?.coordinateMode !== mouseParseOptions?.coordinateMode ||
+    mouseParseOptionsRef.current?.pixelUnitsAttested !== mouseParseOptions?.pixelUnitsAttested ||
+    mouseParseOptionsRef.current?.cellSize?.width !== mouseParseOptions?.cellSize?.width ||
+    mouseParseOptionsRef.current?.cellSize?.height !== mouseParseOptions?.cellSize?.height
+  ) {
+    mouseVerifierRef.current.setOptions(mouseParseOptions)
+  }
   mouseParseOptionsRef.current = mouseParseOptions
 
   // Stable input chunk handler — created once, never changes identity.
@@ -431,7 +449,7 @@ function SilveryApp({
       // through to parseKey / useInput, matching run() / createApp()).
       const mstate = mouseStateRef.current
       if (mstate && isMouseSequence(chunk)) {
-        const parsed = parseMouseSequence(chunk, mouseParseOptionsRef.current)
+        const parsed = mouseVerifierRef.current?.parse(chunk) ?? null
         if (parsed) {
           const root = getRootRef.current?.()
           if (root) {

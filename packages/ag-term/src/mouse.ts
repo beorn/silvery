@@ -255,13 +255,16 @@ export interface MouseCoordinateInterpretation {
 export interface MouseUnitVerifierOptions {
   /**
    * Live terminal grid. Read per event, so a resize between the geometry
-   * probe and the first event cannot manufacture or hide a proof.
+   * probe and the first event cannot manufacture or hide a proof, and a
+   * later widening can retract a stream proof taken against a stale-small
+   * report (@si/select/24659).
    */
   size: () => { cols: number; rows: number }
   /**
-   * Fires once when the first event under an unproven pixel negotiation is
-   * read as cells (`"unproven"`) and once when pixel units are proven
-   * (`"proven"`). Wire it to a logger — the verifier stays dependency-free.
+   * Fires when the first event under an unproven pixel negotiation is
+   * read as cells (`"unproven"`), when pixel units are proven (`"proven"`),
+   * and again as `"unproven"` if a grown grid retracts a stream proof.
+   * Wire it to a logger — the verifier stays dependency-free.
    */
   onChange?: (interpretation: MouseCoordinateInterpretation, reason: "unproven" | "proven") => void
 }
@@ -297,6 +300,7 @@ export function createMouseUnitVerifier(
   let eventsSeen = 0
   let lastGrid: { cols: number; rows: number } | undefined
   let unprovenAnnounced = false
+  let provingWire: { x: number; y: number } | undefined
 
   function reset(next: ParseMouseOptions | undefined): void {
     options = next
@@ -310,6 +314,7 @@ export function createMouseUnitVerifier(
     eventsSeen = 0
     lastGrid = undefined
     unprovenAnnounced = false
+    provingWire = undefined
   }
   reset(initial)
 
@@ -323,26 +328,44 @@ export function createMouseUnitVerifier(
     eventsSeen,
     lastGrid,
   })
+  const gridProvesPixels = (grid: { cols: number; rows: number }, x: number, y: number): boolean =>
+    (Number.isFinite(grid.cols) && x > grid.cols) || (Number.isFinite(grid.rows) && y > grid.rows)
 
   return {
     parse(input) {
       const wire = readSgrMouseWire(input)
       if (!wire) return null
       eventsSeen++
-      if (negotiated === "pixel" && !pixelVerified) {
+      if (negotiated === "pixel") {
         const grid = verifierOptions.size()
         lastGrid = grid
-        const provesPixels =
-          (Number.isFinite(grid.cols) && wire.x > grid.cols) ||
-          (Number.isFinite(grid.rows) && wire.y > grid.rows)
-        if (provesPixels) {
-          pixelVerified = true
-          provenBy = "stream"
-          verifiedAtEvent = eventsSeen
-          verifierOptions.onChange?.(snapshot(), "proven")
-        } else if (!unprovenAnnounced) {
+        // A widening resize can publish a stale-small grid; a stream proof
+        // taken against it is retracted once the live grid contains the
+        // proving coordinate again (24659). Attested proofs stay put.
+        if (
+          pixelVerified &&
+          provenBy === "stream" &&
+          provingWire &&
+          !gridProvesPixels(grid, provingWire.x, provingWire.y)
+        ) {
+          pixelVerified = false
+          provenBy = undefined
+          verifiedAtEvent = undefined
+          provingWire = undefined
           unprovenAnnounced = true
           verifierOptions.onChange?.(snapshot(), "unproven")
+        }
+        if (!pixelVerified) {
+          if (gridProvesPixels(grid, wire.x, wire.y)) {
+            pixelVerified = true
+            provenBy = "stream"
+            verifiedAtEvent = eventsSeen
+            provingWire = { x: wire.x, y: wire.y }
+            verifierOptions.onChange?.(snapshot(), "proven")
+          } else if (!unprovenAnnounced) {
+            unprovenAnnounced = true
+            verifierOptions.onChange?.(snapshot(), "unproven")
+          }
         }
       }
       return interpretSgrMouse(wire, units() === "pixel" ? options : { coordinateMode: "cell" })
