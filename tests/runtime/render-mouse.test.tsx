@@ -365,4 +365,56 @@ describe("render() mouse wiring", () => {
 
     instance.unmount()
   })
+
+  /**
+   * Bead 24659: render() used to call parseMouseSequence directly, so an
+   * explicit unattested `{coordinateMode: pixel, cellSize}` treated every
+   * in-grid SGR click as pixels and collapsed it. The shared verifier must
+   * keep that event in cell units until a wire coordinate actually exceeds
+   * the live grid.
+   *
+   * Discriminator: CSI `<0;10;2M` on a 40×10 grid. Cell units → x=9, y=1.
+   * The old parser divides by cellSize → x≈0.643, y≈0.038.
+   *
+   * @failure render() with explicit pixel options divides an in-grid click by cellSize.
+   * @level l1
+   * @consumer @si/select/24659 render() under herdr
+   * @testonly none
+   */
+  test("explicit unattested pixel options keep an in-grid SGR click in cell units", async () => {
+    const downs: Array<{ x: number; y: number }> = []
+    const stdout = createMockStdout(40, 10)
+    const stdin = createMockStdin()
+    const streams = { stdout: stdout.stream, stdin: stdin.stream }
+
+    function App() {
+      return (
+        <Box
+          width={40}
+          height={10}
+          onMouseDown={(event) => {
+            downs.push({ x: event.x, y: event.y })
+          }}
+        >
+          <Text>target</Text>
+        </Box>
+      )
+    }
+
+    const instance = await render(<App />, streams, {
+      ...streams,
+      alternateScreen: false,
+      mouse: { coordinateMode: "pixel", cellSize: { width: 14, height: 26 } },
+    })
+    await settle()
+    instance.flush()
+    await settle()
+
+    stdin.push("\x1b[<0;10;2M")
+    await settle()
+
+    expect(downs).toEqual([{ x: 9, y: 1 }])
+
+    instance.unmount()
+  })
 })

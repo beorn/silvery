@@ -719,11 +719,18 @@ describe("createMouseUnitVerifier", () => {
     })
   })
 
-  // 24659: a widening resize publishes a stale-small grid for ~200 ms, so a
-  // cell-unit motion in the newly revealed columns has wire.x > cols and
-  // latches pixels. The latch must re-arm once the size source grows past
-  // the proving coordinate; otherwise every later click divides by cell size
-  // and collapses into the top-left.
+  /**
+   * 24659: a widening resize publishes a stale-small grid for ~200 ms, so a
+   * cell-unit motion in the newly revealed columns has wire.x > cols and
+   * latches pixels. The latch must re-arm once the size source grows past
+   * the proving coordinate; otherwise every later click divides by cell size
+   * and collapses into the top-left.
+   *
+   * @failure After a pane grow, later SGR clicks stay in pixel units and collapse to the top-left.
+   * @level l1
+   * @consumer @si/select/24659 herdr widen mouse sessions
+   * @testonly none
+   */
   it("re-arms a stream pixel latch when the observed grid grows past the proving coordinate", () => {
     let cols = 100
     const verifier = createMouseUnitVerifier(
