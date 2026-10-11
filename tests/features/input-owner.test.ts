@@ -328,6 +328,23 @@ describe("InputOwner", () => {
     expect(pastes.join("")).toBe(body)
   })
 
+  it("a PASTE_END that straddles a 64 KiB cut is still matched", () => {
+    const { stdin, stdout, send } = createMockIO()
+    using owner = createInputOwner(stdin, stdout, { enableBracketedPaste: false })
+    const keys: string[] = []
+    const pastes: string[] = []
+    owner.onKey((e) => keys.push(e.input))
+    owner.onPaste((e) => pastes.push(e.text))
+
+    const end = "\x1b[201~"
+    const body = "a".repeat(64 * 1024 - 1)
+    send(`\x1b[200~${body}${end.slice(0, 3)}`)
+    send(end.slice(3))
+
+    expect(keys).toEqual([])
+    expect(pastes.join("")).toBe(body)
+  })
+
   it("a paste arriving in 50 ms pieces over 400 ms stays a paste", async () => {
     const { stdin, stdout, send } = createMockIO()
     using owner = createInputOwner(stdin, stdout, { enableBracketedPaste: false })

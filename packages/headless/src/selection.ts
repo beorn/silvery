@@ -381,7 +381,19 @@ export function extractText(
   range: SelectionRange,
   options?: ExtractTextOptions,
 ): string {
-  const { startRow, startCol, endRow, endCol } = normalizeRange(range)
+  const normalized = normalizeRange(range)
+  const maxRow = Math.max(0, buffer.height - 1)
+  const maxCol = Math.max(0, buffer.width - 1)
+  const clamp = (n: number, max: number) => {
+    if (!Number.isFinite(n)) return 0
+    if (n < 0) return 0
+    if (n > max) return max
+    return n
+  }
+  const startRow = clamp(normalized.startRow, maxRow)
+  const endRow = clamp(normalized.endRow, maxRow)
+  const startCol = clamp(normalized.startCol, maxCol)
+  const endCol = clamp(normalized.endCol, maxCol)
   // Semantic-by-default: copy matches the highlight (which filters by
   // SELECTABLE_FLAG). Raw screen-rectangle extraction (Shift+drag) opts out.
   const respectSelectable = options?.respectSelectableFlag ?? true

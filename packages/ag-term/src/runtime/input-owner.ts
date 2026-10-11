@@ -706,6 +706,14 @@ export function createInputOwner(
     return raw.startsWith(PASTE_START) ? raw.slice(PASTE_START.length) : raw
   }
 
+  function trailingPasteEndPrefixLength(s: string): number {
+    const max = Math.min(s.length, PASTE_END.length - 1)
+    for (let k = max; k > 0; k--) {
+      if (PASTE_END.startsWith(s.slice(s.length - k))) return k
+    }
+    return 0
+  }
+
   function takePasteCap(content: string): { emit: string; rest: string } {
     if (Buffer.byteLength(content, "utf8") <= INCOMPLETE_PASTE_MAX_BYTES) {
       return { emit: "", rest: content }
@@ -714,6 +722,11 @@ export function createInputOwner(
     while (n > 0 && Buffer.byteLength(content.slice(0, n), "utf8") > INCOMPLETE_PASTE_MAX_BYTES) {
       n--
     }
+    // A PASTE_END split across the 64 KiB cut is never matched if the prefix
+    // is emitted as paste text. Keep any trailing prefix of PASTE_END in rest.
+    const prefix = trailingPasteEndPrefixLength(content.slice(0, n))
+    if (prefix > 0) n -= prefix
+    if (n <= 0) return { emit: "", rest: content }
     return { emit: content.slice(0, n), rest: content.slice(n) }
   }
 

@@ -61,6 +61,14 @@ export interface ParsedMouse {
 }
 
 const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/
+/** 1-indexed wire cap: larger than any real cell or pixel grid; 50 M-row reports clamp. */
+const MAX_MOUSE_WIRE_COORD = 100_000
+
+function parseWireNumber(raw: string): number | null {
+  const n = parseInt(raw, 10)
+  if (!Number.isFinite(n) || n < 0) return null
+  return n
+}
 
 export interface ParseMouseOptions {
   coordinateMode?: "cell" | "pixel"
@@ -100,10 +108,18 @@ interface SgrMouseWire {
 function readSgrMouseWire(input: string): SgrMouseWire | null {
   const m = SGR_MOUSE_RE.exec(input)
   if (!m) return null
+  const buttonRaw = m[1]
+  const xRaw = m[2]
+  const yRaw = m[3]
+  if (buttonRaw === undefined || xRaw === undefined || yRaw === undefined) return null
+  const button = parseWireNumber(buttonRaw)
+  const x = parseWireNumber(xRaw)
+  const y = parseWireNumber(yRaw)
+  if (button === null || x === null || y === null) return null
   return {
-    button: parseInt(m[1]!),
-    x: parseInt(m[2]!),
-    y: parseInt(m[3]!),
+    button,
+    x: Math.min(x, MAX_MOUSE_WIRE_COORD),
+    y: Math.min(y, MAX_MOUSE_WIRE_COORD),
     terminator: m[4] === "m" ? "m" : "M",
   }
 }

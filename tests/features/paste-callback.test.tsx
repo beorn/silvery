@@ -55,6 +55,30 @@ describe("usePasteCallback", () => {
     expect(onPaste).toHaveBeenCalledWith("hello world")
   })
 
+  test("PC-01b: a split paste is not typed as keystrokes", () => {
+    const onPaste = vi.fn()
+    const keys: string[] = []
+
+    function App() {
+      usePasteCallback(onPaste)
+      useInput((input) => {
+        keys.push(input)
+      })
+      return <Text>ready</Text>
+    }
+
+    const render = createRenderer({ cols: 40, rows: 5 })
+    const app = render(<App />)
+
+    app.stdin.write("\x1b[200~abc")
+    expect(onPaste).not.toHaveBeenCalled()
+    expect(keys).toEqual([])
+    app.stdin.write("\x1b[201~")
+    expect(onPaste).toHaveBeenCalledTimes(1)
+    expect(onPaste).toHaveBeenCalledWith("abc")
+    expect(keys).toEqual([])
+  })
+
   test("PC-02: multiple pastes each trigger the callback", () => {
     const onPaste = vi.fn()
 
