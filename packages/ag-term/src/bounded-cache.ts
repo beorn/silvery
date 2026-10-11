@@ -56,8 +56,7 @@ export type BoundedStringCacheOptions<V extends LruValue> = {
   maxSize?: number
   /**
    * TTL ms. Default 10 minutes. Pass `0` to disable TTL (DisplayWidthCache:
-   * a pure memo; entries + bytes already cap memory). `0` is load-bearing —
-   * `options?.ttl ?? default` would swallow it because `0` is falsy.
+   * a pure memo; entries + bytes already cap memory).
    */
   ttl?: number
   /**
@@ -76,7 +75,7 @@ export function createBoundedStringCache<V extends LruValue>(
     maxSize: options?.maxSize ?? CACHE_MAX_BYTES,
     maxEntrySize: CACHE_MAX_ENTRY_SIZE,
     sizeCalculation: options?.sizeCalculation ?? ((_value, key) => contentKeySize(key)),
-    ttl: options?.ttl === 0 ? 0 : (options?.ttl ?? CACHE_MAX_AGE_MS),
+    ttl: options?.ttl ?? CACHE_MAX_AGE_MS,
     ttlAutopurge: false,
     // 0, not a resolution: lru-cache arms a setTimeout on every clock read when ttlResolution > 0, so a
     // nonzero value put a timer behind each cache read and broke 'never by a timer' (pulse contract, CI #855).
