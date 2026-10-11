@@ -58,7 +58,7 @@ import { tabCyclesFocus } from "../../hooks/use-edit-context"
 import { parseBracketedPaste } from "@silvery/ag-term/bracketed-paste"
 import { ThemeProvider } from "../../ThemeProvider"
 import { catppuccinMocha } from "@silvery/theme/schemes"
-import { deriveTheme, type Theme } from "@silvery/ansi"
+import { deriveTheme, isProtocolError, type Theme } from "@silvery/ansi"
 import { createCursorStore, CursorProvider } from "../../hooks/useCursor"
 import { createCanvasInput, type CanvasInputConfig } from "./input"
 
@@ -382,8 +382,14 @@ export function renderToCanvas(
       onData(data: string) {
         if (unmounted) return
 
-        // Check for bracketed paste
-        const pasteResult = parseBracketedPaste(data)
+        // Check for bracketed paste. parseBracketedPaste throws ProtocolError
+        // when PASTE_START is in this chunk and PASTE_END is not (hh 28598 F11).
+        let pasteResult: ReturnType<typeof parseBracketedPaste> = null
+        try {
+          pasteResult = parseBracketedPaste(data)
+        } catch (err) {
+          if (!isProtocolError(err)) throw err
+        }
         if (pasteResult) {
           childApp.dispatch({ type: "term:paste", text: pasteResult.content })
           childApp.drainEffects()

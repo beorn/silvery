@@ -63,7 +63,7 @@ import {
   type ParseMouseOptions,
   type ParsedMouse,
 } from "../mouse"
-import { parseBracketedPasteEnvelope } from "../bracketed-paste"
+import { parseBracketedPasteEnvelope, PASTE_START } from "../bracketed-paste"
 import { parseClipboardResponseEnvelope } from "../clipboard"
 import { parseFocusEvent } from "../focus-reporting"
 import {
@@ -81,6 +81,11 @@ const ESC_DISAMBIGUATION_MS = 25
  * long (21624, @chief 13bce963).
  */
 const OSC_REPLY_COMPLETION_MS = 150
+/** Shared bound for incomplete paste, OSC 99, and CSI prefixes (hh 28598 F9/F10/F12). */
+const INCOMPLETE_ENVELOPE_MS = 150
+const INCOMPLETE_PASTE_MAX_BYTES = 64 * 1024
+const INCOMPLETE_NOTIFICATION_MAX_BYTES = 4096
+const INCOMPLETE_CSI_MAX_BYTES = 64
 const SET_MOUSE_OPTIONS = Symbol("silvery.input.setMouseOptions")
 const GET_MOUSE_INTERPRETATION = Symbol("silvery.input.mouseInterpretation")
 
@@ -511,6 +516,7 @@ export function createInputOwner(
   let incompleteNotification: string | null = null
   let incompleteSequenceTimer: ReturnType<typeof setTimeout> | null = null
   let incompleteSequenceImmediate: ReturnType<typeof setImmediate> | null = null
+  let incompleteEnvelopeStartedAt: number | null = null
   /**
    * When the pending OSC reply's first byte arrived. Its bound runs from here; the prepend path clears the timer on
    * every read, so the bound is re-armed with what remains, never restarted (21624, @dev/review-adhoc5 76bd247d7a).
@@ -637,6 +643,38 @@ export function createInputOwner(
     }
   }
 
+  function hasIncompleteEnvelope(): boolean {
+    return (
+      incompleteSequence !== null || incompletePaste !== null || incompleteNotification !== null
+    )
+  }
+
+  function isFlushableSequence(pending: string | null): pending is string {
+    return (
+      pending === "\x1b" ||
+      (pending !== null && (pending.startsWith("\x1b]") || pending.startsWith("\x1b[")))
+    )
+  }
+
+  function flushIncompleteCsi(pending: string, receivedAt?: number, inputBatchId?: number): void {
+    for (const ch of pending) dispatchSequence(ch, receivedAt, inputBatchId)
+  }
+
+  function flushIncompletePaste(): void {
+    const raw = incompletePaste
+    incompletePaste = null
+    if (raw === null) return
+    const content = raw.startsWith(PASTE_START) ? raw.slice(PASTE_START.length) : raw
+    fire(pasteHandlers, { text: content })
+  }
+
+  function flushIncompleteNotification(): void {
+    const raw = incompleteNotification
+    incompleteNotification = null
+    if (raw === null) return
+    log?.debug?.(`dropped an incomplete OSC 99 prefix: ${JSON.stringify(raw.slice(0, 48))}`)
+  }
+
   function scheduleIncompleteFlush(receivedAt?: number, inputBatchId?: number): void {
     const pending = incompleteSequence
     const replyPending = pending !== null && OSC_REPLY_PREFIX.test(pending)
@@ -644,13 +682,30 @@ export function createInputOwner(
     // so keys typed after an unended reply cannot keep it buffered (21624, @dev/review-adhoc5 P3).
     if (!replyPending) replyStartedAt = null
     else replyStartedAt ??= Date.now()
+    if (hasIncompleteEnvelope()) incompleteEnvelopeStartedAt ??= Date.now()
+    else incompleteEnvelopeStartedAt = null
     clearIncompleteTimer()
-    // A bare ESC, a read ending inside `ESC ] <digits>`, or an OSC reply still waiting for its end.
-    if (pending === null || (pending !== "\x1b" && !pending.startsWith("\x1b]"))) return
-    const delay =
-      replyStartedAt === null
-        ? ESC_DISAMBIGUATION_MS
-        : Math.max(0, replyStartedAt + OSC_REPLY_COMPLETION_MS - Date.now())
+    // A bare ESC, a CSI/OSC prefix, an OSC reply still waiting for its end, or a paste/OSC-99 envelope.
+    if (!hasIncompleteEnvelope()) return
+    const delays: number[] = []
+    if (replyPending && replyStartedAt !== null) {
+      delays.push(Math.max(0, replyStartedAt + OSC_REPLY_COMPLETION_MS - Date.now()))
+    } else if (
+      pending === "\x1b" ||
+      (pending !== null && pending.startsWith("\x1b]") && !replyPending)
+    ) {
+      delays.push(ESC_DISAMBIGUATION_MS)
+    }
+    if (
+      incompletePaste !== null ||
+      incompleteNotification !== null ||
+      (pending !== null && pending.startsWith("\x1b["))
+    ) {
+      const started = incompleteEnvelopeStartedAt ?? Date.now()
+      delays.push(Math.max(0, started + INCOMPLETE_ENVELOPE_MS - Date.now()))
+    }
+    if (delays.length === 0) return
+    const delay = Math.min(...delays)
     incompleteSequenceTimer = setTimeout(() => {
       incompleteSequenceTimer = null
       // Yield through the check phase before committing standalone Escape.
@@ -658,14 +713,19 @@ export function createInputOwner(
       // stdin tail bytes get one poll phase to arrive and reassemble first.
       incompleteSequenceImmediate = setImmediate(() => {
         incompleteSequenceImmediate = null
+        if (disposed) return
         const current = incompleteSequence
-        if (disposed || current === null || (current !== "\x1b" && !current.startsWith("\x1b]"))) {
-          return
+        if (isFlushableSequence(current)) {
+          incompleteSequence = null
+          replyStartedAt = null
+          if (current === "\x1b") dispatchSequence("\x1b", receivedAt, inputBatchId)
+          else if (current.startsWith("\x1b[")) {
+            flushIncompleteCsi(current, receivedAt, inputBatchId)
+          } else flushIncompleteOsc(current, receivedAt, inputBatchId)
         }
-        incompleteSequence = null
-        replyStartedAt = null
-        if (current === "\x1b") dispatchSequence("\x1b", receivedAt, inputBatchId)
-        else flushIncompleteOsc(current, receivedAt, inputBatchId)
+        if (incompletePaste !== null) flushIncompletePaste()
+        if (incompleteNotification !== null) flushIncompleteNotification()
+        incompleteEnvelopeStartedAt = hasIncompleteEnvelope() ? incompleteEnvelopeStartedAt : null
       })
     }, delay)
   }
@@ -687,7 +747,16 @@ export function createInputOwner(
     const { sequences, incomplete } = splitRawInput(chunk)
     // The carried sequence sits at the front of the chunk, so a pending tail is still it only when nothing split off.
     if (!carried || sequences.length > 0) replyStartedAt = null
-    incompleteSequence = incomplete
+    if (
+      incomplete !== null &&
+      incomplete.startsWith("\x1b[") &&
+      incomplete.length > INCOMPLETE_CSI_MAX_BYTES
+    ) {
+      incompleteSequence = null
+      flushIncompleteCsi(incomplete, receivedAt, inputBatchId)
+    } else {
+      incompleteSequence = incomplete
+    }
     scheduleIncompleteFlush(receivedAt, inputBatchId)
     for (const raw of sequences) dispatchSequence(raw, receivedAt, inputBatchId)
   }
@@ -893,6 +962,11 @@ export function createInputOwner(
           log?.debug?.(
             `bracketed paste parser buffered incomplete input: ${err.reason} (parser=${err.parser}, len=${err.inputLength})`,
           )
+          if (Buffer.byteLength(remaining, "utf8") > INCOMPLETE_PASTE_MAX_BYTES) {
+            flushIncompletePaste()
+          } else {
+            scheduleIncompleteFlush(receivedAt, inputBatchId)
+          }
           return
         } else {
           log?.warn?.(`bracketed paste parser threw: ${String(err)}`)
@@ -922,6 +996,13 @@ export function createInputOwner(
         dispatchRawChunk(remaining.slice(0, notificationEnvelope.start), receivedAt, inputBatchId)
         if (notificationEnvelope.status === "incomplete") {
           incompleteNotification = remaining.slice(notificationEnvelope.start)
+          if (
+            Buffer.byteLength(incompleteNotification, "utf8") > INCOMPLETE_NOTIFICATION_MAX_BYTES
+          ) {
+            flushIncompleteNotification()
+          } else {
+            scheduleIncompleteFlush(receivedAt, inputBatchId)
+          }
           return
         }
         if (notificationEnvelope.activation !== null) {
@@ -1217,6 +1298,7 @@ export function createInputOwner(
     replyStartedAt = null
     incompletePaste = null
     incompleteNotification = null
+    incompleteEnvelopeStartedAt = null
 
     if (isTTY) {
       try {

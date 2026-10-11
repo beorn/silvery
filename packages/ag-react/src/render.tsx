@@ -41,6 +41,7 @@ import { createChildApp, toChainAppContextValue } from "./chain-bridge"
 import { createCursorStore, CursorProvider, type CursorStore } from "./hooks/useCursor"
 import { createFocusManager } from "@silvery/ag/focus-manager"
 import { parseKey } from "@silvery/ag/keys"
+import { isProtocolError } from "@silvery/ansi"
 import { tabCyclesFocus } from "./hooks/use-edit-context"
 import { type LayoutEngineType, isLayoutEngineInitialized } from "@silvery/ag-term/layout-engine"
 import {
@@ -416,7 +417,21 @@ function SilveryApp({
       log.debug?.(`handleChunk: ${JSON.stringify(rawChunk)}`)
 
       // Check for bracketed paste before splitting into individual keys.
-      const pasteResult = parseBracketedPaste(rawChunk)
+      // parseBracketedPaste throws ProtocolError when PASTE_START is in this
+      // chunk and PASTE_END is not (hh 28598 F11). Mirror renderer.ts: log and
+      // fall through to key splitting so a split paste cannot kill render().
+      let pasteResult: ReturnType<typeof parseBracketedPaste> = null
+      try {
+        pasteResult = parseBracketedPaste(rawChunk)
+      } catch (err) {
+        if (isProtocolError(err)) {
+          log.debug?.(
+            `bracketed paste parser flagged malformed input: ${err.reason} (len=${err.inputLength})`,
+          )
+        } else {
+          throw err
+        }
+      }
       if (pasteResult) {
         // Dispatch to the child chain — the canonical subscription
         // surface for hooks via ChainAppContext. The legacy

@@ -61,7 +61,7 @@ import { parseBracketedPaste } from "../bracketed-paste"
 import { createXtermProvider, type XtermProvider } from "./xterm-provider"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
 import { catppuccinMocha } from "@silvery/theme/schemes"
-import { deriveTheme, type Theme } from "@silvery/ansi"
+import { deriveTheme, isProtocolError, type Theme } from "@silvery/ansi"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 import { findActiveCursorRect } from "@silvery/ag/layout-signals"
 
@@ -322,8 +322,14 @@ export function renderToXterm(
     provider.onInput((chunk: string) => {
       if (unmounted) return
 
-      // Check for bracketed paste
-      const pasteResult = parseBracketedPaste(chunk)
+      // Check for bracketed paste. parseBracketedPaste throws ProtocolError
+      // when PASTE_START is in this chunk and PASTE_END is not (hh 28598 F11).
+      let pasteResult: ReturnType<typeof parseBracketedPaste> = null
+      try {
+        pasteResult = parseBracketedPaste(chunk)
+      } catch (err) {
+        if (!isProtocolError(err)) throw err
+      }
       if (pasteResult) {
         childApp!.dispatch({ type: "term:paste", text: pasteResult.content })
         childApp!.drainEffects()
@@ -416,8 +422,9 @@ export function renderToXterm(
       children: withCursor,
     })
 
-    if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue)
+    if (!inputEnabled || !runtimeContextValue || !focusManager || !chainAppContextValue) {
       return themed
+    }
     return React.createElement(
       FocusManagerContext.Provider,
       { value: focusManager },
