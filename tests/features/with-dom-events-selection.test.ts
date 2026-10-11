@@ -14,7 +14,7 @@
 
 import { describe, test, expect, vi } from "vitest"
 import { withDomEvents, type AppWithDomEvents } from "../../packages/create/src/with-dom-events"
-import { withTerminal, type AppWithTerminal } from "../../packages/create/src/with-terminal"
+import { withTerminal } from "../../packages/create/src/with-terminal"
 import { CLIPBOARD_CAPABILITY, INPUT_ROUTER } from "../../packages/create/src/internal/capabilities"
 import type { ClipboardCapability } from "../../packages/ag-term/src/features/clipboard-capability"
 import type { InputRouter } from "../../packages/create/src/internal/input-router"
@@ -126,10 +126,10 @@ describe("withDomEvents — registry sharing", () => {
     }
 
     // Apply withTerminal first (creates registry + clipboard)
-    const withTerm = withTerminal(mockProc as any)(mockApp) as AppWithTerminal
+    const withTerm = withTerminal(mockProc as any)(mockApp)
 
     // Apply withDomEvents (should pick up existing registry)
-    const enhanced = withDomEvents()(withTerm as any) as AppWithDomEvents & AppWithTerminal
+    const enhanced = withDomEvents()(withTerm)
 
     // The clipboard from withTerminal should be accessible via the shared registry
     const clipboard = enhanced.capabilityRegistry.get<ClipboardCapability>(CLIPBOARD_CAPABILITY)

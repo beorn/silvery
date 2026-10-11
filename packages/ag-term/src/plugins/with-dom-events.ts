@@ -41,6 +41,8 @@
  */
 
 import type { App } from "../app"
+import type { ReactElement } from "react"
+import type { AppRunOptions } from "../runtime/create-app"
 import type { FocusManager } from "@silvery/ag/focus-manager"
 import {
   createMouseEventProcessor,
@@ -105,10 +107,19 @@ export interface AppWithDomEvents {
  */
 export function withDomEvents(
   options: WithDomEventsOptions = {},
-): <T extends App>(app: T) => T & AppWithDomEvents {
-  return <T extends App>(app: T): T & AppWithDomEvents => {
-    // Get focus manager from options or from the app itself
-    const fm = options.focusManager ?? (app as App & { focusManager?: FocusManager }).focusManager
+): <T extends { run(element: ReactElement, options?: AppRunOptions): unknown }>(
+  app: T,
+) => T & AppWithDomEvents {
+  return <T extends { run(element: ReactElement, options?: AppRunOptions): unknown }>(
+    app: T,
+  ): T & AppWithDomEvents => {
+    // Get focus manager from options or from the app itself. The public constraint is deliberately
+    // structural — it requires only `run`, so `withDomEvents()(app)` infers T from the app it is
+    // piped with instead of binding to a bare App — and the body reaches the App surface it needs
+    // (getContainer, the optional focusManager) through casts from T, exactly as capabilityRegistry
+    // is reached below. A composed app is not required to declare either.
+    const fm =
+      options.focusManager ?? (app as T & App & { focusManager?: FocusManager }).focusManager
 
     // Create a mouse event processor with the focus manager
     const processorOptions: MouseEventProcessorOptions = {}
@@ -136,6 +147,9 @@ export function withDomEvents(
 
     // Override click, doubleClick, and wheel to use our processor
     // which is connected to the focus manager and input router
+    // The mouse handlers below read getContainer() from the proxy target; that member is asserted
+    // from T at each read (a type-only cast on the SAME object), because the public constraint
+    // deliberately requires only `run`.
     const enhanced = new Proxy(app, {
       get(target, prop, receiver) {
         if (prop === "capabilityRegistry") return registry
@@ -159,7 +173,7 @@ export function withDomEvents(
 
             if (!downClaimed) {
               // Fall through to DOM event processor
-              const root = target.getContainer()
+              const root = (target as T & App).getContainer()
               processMouseEvent(
                 mouseState,
                 {
@@ -184,7 +198,7 @@ export function withDomEvents(
             })
 
             if (!upClaimed) {
-              const root = target.getContainer()
+              const root = (target as T & App).getContainer()
               processMouseEvent(
                 mouseState,
                 {
@@ -213,7 +227,7 @@ export function withDomEvents(
             clickOptions?: { button?: number },
           ): Promise<T> {
             const button = clickOptions?.button ?? 0
-            const root = target.getContainer()
+            const root = (target as T & App).getContainer()
             const parsed = {
               button,
               x,
@@ -246,7 +260,7 @@ export function withDomEvents(
             })
 
             if (!claimed) {
-              const root = target.getContainer()
+              const root = (target as T & App).getContainer()
               processMouseEvent(
                 mouseState,
                 {

@@ -24,7 +24,7 @@
 
 import React from "react"
 import { Box, Text, Muted, Kbd } from "silvery"
-import { createApp, useApp, type AppHandle } from "@silvery/create"
+import { createApp, useApp } from "@silvery/create"
 import { pipe, withReact, withTerminal } from "@silvery/create/plugins"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
@@ -171,11 +171,8 @@ const baseApp = createApp<Record<string, unknown>, State>(
 // 2. pipe() composes plugins left-to-right:
 //    - withReact() binds the element, so run() needs no JSX argument
 //    - withTerminal() binds stdin/stdout, so run() needs no options
-// Note: pipe() type composition requires casts at plugin boundaries
-// because AppDefinition's typed run() doesn't structurally match
-// the generic RunnableApp constraint used by plugins.
 const app = pipe(
-  baseApp as any,
+  baseApp,
   withReact(
     <ExampleBanner meta={meta} controls="j/k move  x toggle  a add  d delete  Esc/q quit">
       <TodoApp />
@@ -190,7 +187,7 @@ const app = pipe(
 
 export async function main() {
   // 3. run() needs no arguments — element and terminal are already bound
-  const handle = (await app.run()) as AppHandle<State>
+  const handle = await app.run()
 
   await handle.waitUntilExit()
 
