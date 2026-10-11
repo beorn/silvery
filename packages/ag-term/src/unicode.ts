@@ -2116,8 +2116,8 @@ export function parseAnsiText(text: string): StyledSegment[] {
     hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink })
   }
 
-  // If no OSC 8 sequences found, use sanitized text for efficiency
-  const processText = hyperlinkRanges.length > 0 ? cleaned : sanitizedText
+  // A close-only OSC 8 sequence still needs stripping, even without a linked range.
+  const processText = cleaned
 
   // Extended pattern: matches SGR with semicolons AND colons (for 4:x, 58:2::r:g:b)
   // Handles both ESC-based CSI (\x1b[) and C1 CSI (\x9b)
