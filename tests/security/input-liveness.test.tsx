@@ -149,4 +149,27 @@ describe("mouse reports with very large coordinates", () => {
     console.log(`drag to row 50000000: ${ms.toFixed(0)} ms`)
     expect(ms).toBeLessThan(1_000)
   }, 120_000)
+
+  async function dragAcross(x: number): Promise<number> {
+    const { term, handle, send } = await start({ mouse: true })
+    try {
+      const t0 = performance.now()
+      send(`${ESC}[<4;2;1M`)
+      await tick(20)
+      send(`${ESC}[<36;${x};1M`) // shift + motion to column x on the same row
+      await tick(20)
+      send(`${ESC}[<4;${x};1m`)
+      await tick(20)
+      return performance.now() - t0
+    } finally {
+      handle.unmount()
+      term[Symbol.dispose]()
+    }
+  }
+
+  test("column 50,000,000 on one row is clamped or cheap", async () => {
+    const ms = await dragAcross(50_000_000)
+    console.log(`drag to column 50000000: ${ms.toFixed(0)} ms`)
+    expect(ms).toBeLessThan(1_000)
+  }, 120_000)
 })
