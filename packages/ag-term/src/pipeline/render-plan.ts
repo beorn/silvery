@@ -569,7 +569,16 @@ export type TransferOp =
       clearCell?: SelectableCellPatch
       selectable?: boolean
     }
-  | { kind: "restoreCell"; x: number; y: number; cell: SelectableCellPatch }
+  | {
+      kind: "restoreCell"
+      x: number
+      y: number
+      cell: SelectableCellPatch
+      source?: TerminalBuffer
+      restoreStart?: number
+      sourceStart?: number
+      restoreWidth?: number
+    }
 
 /**
  * An overlay op. Lives in `overlayOps`. Applied AFTER paint — Box attr
@@ -793,7 +802,17 @@ function applyTransfer(buffer: TerminalBuffer, op: TransferOp): void {
       )
       return
     case "restoreCell":
-      buffer.setCell(op.x, op.y, op.cell)
+      if (op.source) {
+        buffer.copyFrom(
+          op.source,
+          op.sourceStart ?? 0,
+          0,
+          op.restoreStart ?? op.x,
+          op.y,
+          op.restoreWidth ?? op.source.width,
+          1,
+        )
+      } else buffer.setCell(op.x, op.y, op.cell)
       return
     default: {
       const exhaustive: never = op

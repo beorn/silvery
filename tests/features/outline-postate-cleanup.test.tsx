@@ -21,6 +21,7 @@
 import React from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
+import { deriveLinkTarget } from "@silvery/ansi"
 import { Box, Text } from "@silvery/ag-react"
 
 describe("outline cleanup — post-state survives across frames", () => {
@@ -109,4 +110,111 @@ describe("outline cleanup — post-state survives across frames", () => {
       expect(app.text).toContain("Two")
     }
   })
+})
+
+const LINK_TARGETS = Array.from({ length: 60 }, (_, i) =>
+  deriveLinkTarget(`file:///tmp/card-${i}.ts`),
+)
+
+function LinkedOutlineCards({ outlined }: { outlined: boolean }) {
+  return (
+    <Box width={80} height={30} flexDirection="row">
+      {Array.from({ length: 5 }, (_, col) => (
+        <Box key={col} width={16} flexDirection="column">
+          {Array.from({ length: 12 }, (_, row) => {
+            const i = col * 12 + row
+            return (
+              <Box
+                key={row}
+                width={14}
+                height={1}
+                outlineStyle={outlined && i === 0 ? "round" : undefined}
+              >
+                <Text internal_hyperlink={LINK_TARGETS[i]}>card-{i}</Text>
+              </Box>
+            )
+          })}
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+test("outline removal restores producer provenance underneath a clean linked row", () => {
+  const render = createRenderer({ cols: 80, rows: 30 })
+  const app = render(<LinkedOutlineCards outlined={true} />)
+  expect(app.lines[1]).toContain("──")
+  app.rerender(<LinkedOutlineCards outlined={false} />)
+  expect(app.lines[1]).toContain("card-1")
+  expect(app.cell(0, 1).hyperlink).toBe("file:///tmp/card-1.ts")
+  expect(app.ansi).toContain("file:///tmp/card-1.ts")
+  app.unmount()
+})
+
+test("an outline covering a wide continuation restores its whole generated-link pair", () => {
+  const render = createRenderer({ cols: 80, rows: 30 })
+  const target = deriveLinkTarget("file:///tmp/wide.ts")
+  const scene = (outlined: boolean) => (
+    <Box width={80} height={30} flexDirection="column">
+      <Text>header</Text>
+      <Text internal_hyperlink={target}>a界z</Text>
+      {Array.from({ length: 55 }, (_, i) => (
+        <Text key={i}>row-{i}</Text>
+      ))}
+      <Box
+        position="absolute"
+        left={3}
+        top={1}
+        width={8}
+        height={1}
+        outlineStyle={outlined ? "round" : undefined}
+      />
+    </Box>
+  )
+  const app = render(scene(true))
+  app.rerender(scene(false))
+  expect(app.cell(1, 1).char).toBe("界")
+  expect(app.cell(1, 1).wide).toBe(true)
+  expect(app.cell(2, 1).continuation).toBe(true)
+  expect(app.ansi).toContain("file:///tmp/wide.ts")
+  app.unmount()
+})
+
+test("overlapping outlines restore clean generated links after sequential removal", () => {
+  const render = createRenderer({ cols: 80, rows: 30 })
+  const target = deriveLinkTarget("file:///tmp/overlap.ts")
+  const scene = (first: boolean, second: boolean) => (
+    <Box width={80} height={30} flexDirection="column">
+      {Array.from({ length: 30 }, (_, i) => (
+        <Text key={i} internal_hyperlink={target}>
+          row-{i}-abcdefghijklmnopqrstuv
+        </Text>
+      ))}
+      <Box
+        position="absolute"
+        left={2}
+        top={2}
+        width={10}
+        height={2}
+        outlineColor="red"
+        outlineStyle={first ? "round" : undefined}
+      />
+      <Box
+        position="absolute"
+        left={5}
+        top={3}
+        width={10}
+        height={2}
+        outlineColor="blue"
+        outlineStyle={second ? "single" : undefined}
+      />
+    </Box>
+  )
+  const app = render(scene(true, true))
+  app.rerender(scene(true, false))
+  app.rerender(scene(false, false))
+  expect(app.lines[1]).toContain("row-1-abcdefghijklmnopqrstuv")
+  expect(app.lines[2]).toContain("row-2-abcdefghijklmnopqrstuv")
+  expect(app.ansi).toContain("file:///tmp/overlap.ts")
+  app.unmount()
 })

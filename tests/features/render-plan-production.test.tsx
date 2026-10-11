@@ -23,6 +23,9 @@
  */
 import { describe, test, expect } from "vitest"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
+import { deriveLinkTarget } from "@silvery/ansi"
+import { clearPreviousOutlines } from "@silvery/ag-term/pipeline/decoration-phase"
+import { createRenderPostState } from "@silvery/ag-term/pipeline/render-post-state"
 import { commitSectionedPlan, isRenderPlanEnabled } from "@silvery/ag-term/pipeline/render-plan"
 import {
   BufferSink,
@@ -33,6 +36,40 @@ import {
 import { compareBuffers, formatMismatch, readCellSnapshot } from "@silvery/test"
 
 describe("RenderPlan production wiring (Phase 2 Step 7)", () => {
+  test("overlapping outline removal replays the same reverse restores as direct mutation", () => {
+    const seed = new TerminalBuffer(10, 1)
+    const uri = "file:///tmp/overlap-replay.ts"
+    seed.fill(0, 0, 10, 1, { char: "a", hyperlink: deriveLinkTarget(uri) })
+    const painted = seed.clone()
+    const post = createRenderPostState()
+    for (const [start, char] of [
+      [2, "─"],
+      [4, "│"],
+    ] as const) {
+      const source = painted.clone()
+      for (let x = start; x < start + 4; x++) {
+        post.outlineSnapshots.push({
+          x,
+          y: 0,
+          cell: painted.getCell(x, 0),
+          source,
+          sourceStart: x,
+          restoreStart: x,
+          restoreWidth: 1,
+        })
+      }
+      painted.fill(start, 0, 4, 1, { char })
+    }
+    const direct = painted.clone()
+    const capture = withPlanCapture(10, 1, () => clearPreviousOutlines(direct, post))
+    const replay = painted.clone()
+    commitSectionedPlan(replay, capture.plan)
+    expect(compareBuffers(direct, replay)).toBeNull()
+    expect(compareBuffers(seed, direct)).toBeNull()
+    expect(direct.hyperlinkSequence(4, 0)).toContain(uri)
+    expect(replay.hyperlinkSequence(4, 0)).toContain(uri)
+  })
+
   test("isRenderPlanEnabled defaults ON (Phase 3); opt-out via SILVERY_RENDER_PLAN=0", () => {
     const original = process.env.SILVERY_RENDER_PLAN
     try {

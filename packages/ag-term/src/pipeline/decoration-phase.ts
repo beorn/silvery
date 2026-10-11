@@ -35,7 +35,7 @@
  * selection borders) — any decoration that draws outside its owning node.
  */
 
-import type { TerminalBuffer, Color } from "../buffer"
+import { TerminalBuffer, type Color } from "../buffer"
 import type { BoxProps, AgNode } from "@silvery/ag/types"
 import { getBorderSize, getPadding } from "./helpers"
 import { renderOutline, getEffectiveBg } from "./render-box"
@@ -65,8 +65,19 @@ export function clearPreviousOutlines(buffer: TerminalBuffer, postState: RenderP
   const sink: RenderSink = createFrameSink(buffer)
   // A transfer, not a paint: it must commit before this frame's clears
   // (see `TransferOp` in render-plan.ts).
-  for (const snap of snapshots) {
-    sink.emitRestoreCell(snap.x, snap.y, snap.cell)
+  // Undo overlays as a stack: a later outline may have captured an earlier
+  // outline's paint. Restore it first, then the original underlying cells.
+  for (let i = snapshots.length - 1; i >= 0; i--) {
+    const snap = snapshots[i] as OutlineCellSnapshot
+    sink.emitRestoreCell(
+      snap.x,
+      snap.y,
+      snap.cell,
+      snap.source,
+      snap.restoreStart,
+      snap.sourceStart,
+      snap.restoreWidth,
+    )
   }
   // Clear the post-state directly so the next phase (renderDecorationPass)
   // starts from an empty list. The sink op records the intent in the plan
@@ -168,16 +179,63 @@ function walk(
       sink.width,
       sink.height,
     )
-    for (const pos of positions) {
-      // Snapshot the cell BEFORE the outline overwrites it.
-      snapshots.push({
-        x: pos.x,
-        y: pos.y,
-        cell: {
-          ...buffer.getCell(pos.x, pos.y),
-          selectable: buffer.isCellSelectable(pos.x, pos.y),
-        },
-      })
+    // Pack the four perimeter strips into one row. Horizontal edges copy as
+    // regions; vertical strips copy one row-region at a time. Both ends include
+    // a complete wide pair, so copyFrom never trims a covered half-glyph.
+    // Measure first with scalar offsets: no per-run buffer or range allocations.
+    let packedWidth = 0
+    for (let i = 0; i < positions.length; ) {
+      let end = i + 1
+      const first = positions[i] as (typeof positions)[number]
+      while (end < positions.length) {
+        const next = positions[end] as (typeof positions)[number]
+        const previous = positions[end - 1] as (typeof positions)[number]
+        if (next.y !== first.y || next.x !== previous.x + 1) break
+        end++
+      }
+      const last = positions[end - 1] as (typeof positions)[number]
+      const startX = first.x - (buffer.isCellContinuation(first.x, first.y) && first.x > 0 ? 1 : 0)
+      const endX =
+        last.x + 1 + (buffer.isCellWide(last.x, last.y) && last.x + 1 < buffer.width ? 1 : 0)
+      packedWidth += endX - startX
+      i = end
+    }
+    const source = packedWidth > 0 ? new TerminalBuffer(packedWidth, 1) : undefined
+    let sourceOffset = 0
+    for (let i = 0; source && i < positions.length; ) {
+      let end = i + 1
+      const first = positions[i] as (typeof positions)[number]
+      while (end < positions.length) {
+        const next = positions[end] as (typeof positions)[number]
+        const previous = positions[end - 1] as (typeof positions)[number]
+        if (next.y !== first.y || next.x !== previous.x + 1) break
+        end++
+      }
+      const last = positions[end - 1] as (typeof positions)[number]
+      const startX = first.x - (buffer.isCellContinuation(first.x, first.y) && first.x > 0 ? 1 : 0)
+      const endX =
+        last.x + 1 + (buffer.isCellWide(last.x, last.y) && last.x + 1 < buffer.width ? 1 : 0)
+      source.copyFrom(buffer, startX, first.y, sourceOffset, 0, endX - startX, 1)
+      for (let p = i; p < end; p++) {
+        const pos = positions[p] as (typeof positions)[number]
+        const restoreStart = pos.x - (buffer.isCellContinuation(pos.x, pos.y) && pos.x > 0 ? 1 : 0)
+        const restoreWidth =
+          buffer.isCellWide(restoreStart, pos.y) && restoreStart + 1 < buffer.width ? 2 : 1
+        snapshots.push({
+          x: pos.x,
+          y: pos.y,
+          cell: {
+            ...buffer.getCell(pos.x, pos.y),
+            selectable: buffer.isCellSelectable(pos.x, pos.y),
+          },
+          source,
+          sourceStart: sourceOffset + restoreStart - startX,
+          restoreStart,
+          restoreWidth,
+        })
+      }
+      sourceOffset += endX - startX
+      i = end
     }
     renderOutline(
       buffer,
@@ -266,8 +324,9 @@ function collectOutlineCells(
     return row >= clipBounds.top && row < clipBounds.bottom && row < bufferHeight
   }
   const isColVisible = (col: number): boolean => {
-    if (clipBounds?.left === undefined || clipBounds.right === undefined)
+    if (clipBounds?.left === undefined || clipBounds.right === undefined) {
       return col >= 0 && col < bufferWidth
+    }
     return col >= clipBounds.left && col < clipBounds.right && col < bufferWidth
   }
 

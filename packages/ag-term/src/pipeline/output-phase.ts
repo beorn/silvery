@@ -802,11 +802,6 @@ function styleToKey(style: Style): string {
     }
   }
 
-  // Hyperlink URL (rare)
-  if (style.hyperlink) {
-    key += `|h${style.hyperlink}`
-  }
-
   return key
 }
 

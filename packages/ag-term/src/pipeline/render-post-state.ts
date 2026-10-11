@@ -23,7 +23,7 @@
  * decoration / render-phase / sink seam.
  */
 
-import type { CellPatch } from "../buffer"
+import type { CellPatch, TerminalBuffer } from "../buffer"
 
 /**
  * Snapshot of a single cell, used to restore it when the overlaying outline
@@ -35,6 +35,13 @@ export interface OutlineCellSnapshot {
   x: number
   y: number
   cell: CellPatch
+  /** Existing buffer snapshot retains private link provenance without widening reads. */
+  source?: TerminalBuffer
+  /** Whole-pair capture starts one column left when the covered cell is a continuation. */
+  restoreStart?: number
+  /** Packed perimeter offset and whole-pair width in source. */
+  sourceStart?: number
+  restoreWidth?: number
 }
 
 /**

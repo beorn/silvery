@@ -1,3 +1,8 @@
+import {
+  renderDecorationPass,
+  clearPreviousOutlines,
+} from "@silvery/ag-term/pipeline/decoration-phase"
+import { createRenderPostState } from "@silvery/ag-term/pipeline/render-post-state"
 /**
  * Phase 1 perf regression check for render-plan-commit
  * (km-silvery.paint-clear-invariant). The new path adds a recorder
@@ -158,4 +163,46 @@ describe("render-plan-commit perf (Phase 1, ≤ 2x of legacy)", () => {
       expect(planMedian).toBeLessThanOrEqual(legacyMedian + 5)
     }
   })
+})
+
+test("large outline decoration measures allocation count and frame time", () => {
+  const mounted = mountScene(
+    <Box width={300} height={100}>
+      <Box position="absolute" left={2} top={2} width={280} height={90} outlineStyle="round" />
+      {Array.from({ length: 55 }, (_, i) => (
+        <Text key={i}>row-{i}</Text>
+      ))}
+    </Box>,
+    300,
+    100,
+  )
+  const seed = new TerminalBuffer(300, 100)
+  const times: number[] = []
+  let snapshotCount = 0
+  let snapshotBufferCount = 0
+  for (let i = 0; i < 80; i++) {
+    const buffer = seed.clone()
+    const post = createRenderPostState()
+    const begin = performance.now()
+    renderDecorationPass(buffer, mounted.root, post)
+    clearPreviousOutlines(buffer, post)
+    const elapsed = performance.now() - begin
+    if (i >= 20) times.push(elapsed)
+    if (i === 0) {
+      const observed = createRenderPostState()
+      renderDecorationPass(buffer, mounted.root, observed)
+      snapshotCount = observed.outlineSnapshots.length
+      snapshotBufferCount = new Set(observed.outlineSnapshots.map((s) => s.source).filter(Boolean))
+        .size
+    }
+  }
+  const evidence = {
+    medianMs: median(times),
+    snapshotCount,
+    snapshotBufferCount,
+    timedFrames: times.length,
+  }
+  ;(globalThis as { __outlinePerf?: unknown }).__outlinePerf = evidence
+  expect(snapshotCount).toBeGreaterThan(500)
+  expect(snapshotBufferCount).toBe(1)
 })

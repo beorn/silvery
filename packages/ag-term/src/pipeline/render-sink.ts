@@ -120,7 +120,15 @@ export interface RenderSink {
    * over (`clearPreviousOutlines`). Lives in `transferOps`, so it commits
    * before this frame's clears — see `TransferOp` in render-plan.ts.
    */
-  emitRestoreCell(x: number, y: number, cell: CellPatch): void
+  emitRestoreCell(
+    x: number,
+    y: number,
+    cell: CellPatch,
+    source?: TerminalBuffer,
+    restoreStart?: number,
+    sourceStart?: number,
+    restoreWidth?: number,
+  ): void
 
   // -- cleanup ops ----------------------------------------------------------
 
@@ -283,8 +291,26 @@ export class BufferSink implements RenderSink {
     this.buffer.scrollRegion(x, y, width, height, delta, this.selectableCell(clearCell, selectable))
   }
 
-  emitRestoreCell(x: number, y: number, cell: CellPatch): void {
-    this.buffer.setCell(x, y, cell)
+  emitRestoreCell(
+    x: number,
+    y: number,
+    cell: CellPatch,
+    source?: TerminalBuffer,
+    restoreStart?: number,
+    sourceStart?: number,
+    restoreWidth?: number,
+  ): void {
+    if (source) {
+      this.buffer.copyFrom(
+        source,
+        sourceStart ?? 0,
+        0,
+        restoreStart ?? x,
+        y,
+        restoreWidth ?? source.width,
+        1,
+      )
+    } else this.buffer.setCell(x, y, cell)
   }
 
   emitClearRect(
@@ -422,9 +448,17 @@ export class TeeSink implements RenderSink {
     this.secondary.emitScrollRegion(x, y, width, height, delta, clearCell, selectable)
   }
 
-  emitRestoreCell(x: number, y: number, cell: CellPatch): void {
-    this.primary.emitRestoreCell(x, y, cell)
-    this.secondary.emitRestoreCell(x, y, cell)
+  emitRestoreCell(
+    x: number,
+    y: number,
+    cell: CellPatch,
+    source?: TerminalBuffer,
+    restoreStart?: number,
+    sourceStart?: number,
+    restoreWidth?: number,
+  ): void {
+    this.primary.emitRestoreCell(x, y, cell, source, restoreStart, sourceStart, restoreWidth)
+    this.secondary.emitRestoreCell(x, y, cell, source, restoreStart, sourceStart, restoreWidth)
   }
 
   emitClearRect(
@@ -625,8 +659,25 @@ export class PlanSink implements RenderSink {
     })
   }
 
-  emitRestoreCell(x: number, y: number, cell: CellPatch): void {
-    this.transferOps.push({ kind: "restoreCell", x, y, cell: cloneCellPatch(cell) })
+  emitRestoreCell(
+    x: number,
+    y: number,
+    cell: CellPatch,
+    source?: TerminalBuffer,
+    restoreStart?: number,
+    sourceStart?: number,
+    restoreWidth?: number,
+  ): void {
+    this.transferOps.push({
+      kind: "restoreCell",
+      x,
+      y,
+      cell: cloneCellPatch(cell),
+      source,
+      restoreStart,
+      sourceStart,
+      restoreWidth,
+    })
   }
 
   emitClearRect(

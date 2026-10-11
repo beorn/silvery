@@ -20,7 +20,10 @@ import {
 } from "@silvery/ag-term/pipeline/output-modes"
 import type { CellChange } from "@silvery/ag-term/pipeline/types"
 import { createBoundedStringCache } from "@silvery/ag-term/bounded-cache"
-import type { OutputContext } from "@silvery/ag-term/pipeline/output-phase"
+import {
+  _internalStyleTransition,
+  type OutputContext,
+} from "@silvery/ag-term/pipeline/output-phase"
 
 // ============================================================================
 // Helpers
@@ -61,6 +64,31 @@ const defaultCtx: OutputContext = {
   mode: "fullscreen",
   termRows: undefined,
 }
+
+test("SGR cache shares visual styles while OSC retains raw-versus-derived policy", () => {
+  const uri = "file:///tmp/sgr-cache.ts"
+  const raw = new TerminalBuffer(2, 1)
+  const derived = new TerminalBuffer(2, 1)
+  raw.setCell(0, 0, { char: "x", fg: 2, attrs: { bold: true }, hyperlink: uri })
+  derived.setCell(0, 0, {
+    char: "x",
+    fg: 2,
+    attrs: { bold: true },
+    hyperlink: deriveLinkTarget(uri),
+  })
+  const ctx: OutputContext = {
+    ...defaultCtx,
+    sgrCache: createBoundedStringCache<string>(),
+    transitionCache: createBoundedStringCache<string>(),
+  }
+  const plain = { ...raw.getCell(0, 0), hyperlink: undefined }
+  const sgr = _internalStyleTransition(null, plain, ctx)
+  expect(_internalStyleTransition(null, raw.getCell(0, 0), ctx)).toBe(sgr)
+  expect(_internalStyleTransition(null, derived.getCell(0, 0), ctx)).toBe(sgr)
+  expect(ctx.sgrCache.size).toBe(1)
+  expect(raw.hyperlinkSequence(0, 0)).toBe("")
+  expect(derived.hyperlinkSequence(0, 0)).toContain(uri)
+})
 
 // ============================================================================
 // analyzeRowDensity
