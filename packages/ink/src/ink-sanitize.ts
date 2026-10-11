@@ -4,9 +4,8 @@
  */
 
 import {
-  tokenizeAnsi as tokenizeAnsiEsc,
-  isCSISGR,
   createColonSGRTracker,
+  sanitizeAnsi as sanitizeAnsiCore,
 } from "@silvery/ag-term/ansi-sanitize"
 
 // =============================================================================
@@ -36,77 +35,17 @@ export function restoreColonFormatSGR(output: string): string {
 }
 
 // =============================================================================
-// OSC helpers
-// =============================================================================
-
-/** Check if an OSC sequence is properly terminated (BEL or ST). */
-function isOSCTerminated(value: string): boolean {
-  if (value.length === 0) return false
-  const last = value.charCodeAt(value.length - 1)
-  // BEL terminator (0x07)
-  if (last === 0x07) return true
-  // C1 ST terminator (0x9C)
-  if (last === 0x9c) return true
-  // 7-bit ST: ESC + '\' — check last two chars
-  if (value.length >= 2 && last === 0x5c && value.charCodeAt(value.length - 2) === 0x1b) {
-    return true
-  }
-  return false
-}
-
-/** Check if an OSC token is OSC 8 (hyperlink). */
-function isOSC8(value: string): boolean {
-  // OSC 8 starts with ESC]8; or \x9D8;
-  if (value.charCodeAt(0) === 0x1b) {
-    // ESC ] 8 ;
-    return value.charCodeAt(2) === 0x38 && value.charCodeAt(3) === 0x3b
-  }
-  // C1 OSC: \x9D 8 ;
-  return value.charCodeAt(1) === 0x38 && value.charCodeAt(2) === 0x3b
-}
-
-// =============================================================================
-// ANSI sanitization
+// ANSI sanitization — one home: @silvery/ag-term sanitizeAnsi
 // =============================================================================
 
 /**
  * Sanitize ANSI sequences in text content using silvery's tokenizer.
  *
- * Preserves SGR (colors/styles) and OSC 8 hyperlinks.
- * Strips cursor movement, screen clearing, non-hyperlink OSC, DCS, PM, APC, SOS, C1 controls.
- * Also tracks colon-format SGR for round-trip restoration via restoreColonFormatSGR().
+ * Preserves SGR (colors/styles) and terminated OSC 8 hyperlinks with an
+ * allowed scheme. Tracks colon-format SGR for restoreColonFormatSGR().
  */
 export function sanitizeAnsi(text: string): string {
-  if (text.length === 0) return ""
-
-  const tokens = tokenizeAnsiEsc(text)
-  let result = ""
-
-  for (const token of tokens) {
-    switch (token.type) {
-      case "text":
-        result += token.value
-        break
-      case "csi":
-        // Only keep SGR sequences: final byte 'm', no intermediate bytes,
-        // no private-use parameter prefixes (<, =, >, ?)
-        if (isCSISGR(token.value)) {
-          result += token.value
-          colonSGRTracker.register(token.value)
-        }
-        break
-      case "osc":
-        // Only keep properly terminated OSC 8 (hyperlinks).
-        // Strip unterminated OSC (no BEL/ST terminator) to prevent payload leaks.
-        if (isOSC8(token.value) && isOSCTerminated(token.value)) {
-          result += token.value
-        }
-        break
-      // Strip everything else: esc, dcs, pm, apc, sos, c1
-    }
-  }
-
-  return result
+  return sanitizeAnsiCore(text, { onSgr: (value) => colonSGRTracker.register(value) })
 }
 
 /** Recursively sanitize string children, preserving React elements. */

@@ -2,11 +2,14 @@
  * ANSI escape sequence sanitizer.
  *
  * Strips dangerous escape sequences from text while preserving safe SGR
- * styling and OSC sequences (hyperlinks, etc.). Used for rendering untrusted
- * text safely in the terminal.
+ * styling and terminated OSC 8 hyperlinks with an allowed scheme
+ * (http, https, mailto). Used for rendering untrusted text safely in the
+ * terminal.
  *
  * @packageDocumentation
  */
+
+import { sanitizeHyperlinkTarget } from "@silvery/ansi"
 
 // =============================================================================
 // Types
@@ -351,17 +354,65 @@ export function isCSISGR(value: string): boolean {
   return true
 }
 
+/** BEL (0x07), C1 ST (0x9C), or 7-bit ST (ESC \). */
+function isOSCTerminated(value: string): boolean {
+  if (value.length === 0) return false
+  const last = value.charCodeAt(value.length - 1)
+  if (last === 0x07 || last === 0x9c) return true
+  return value.length >= 2 && last === 0x5c && value.charCodeAt(value.length - 2) === 0x1b
+}
+
+/** OSC 8 starts with ESC]8; or C1 OSC (0x9D) then 8;. */
+function isOSC8(value: string): boolean {
+  if (value.length < 4) return false
+  if (value.charCodeAt(0) === 0x1b) {
+    return value.charCodeAt(2) === 0x38 && value.charCodeAt(3) === 0x3b
+  }
+  return value.charCodeAt(1) === 0x38 && value.charCodeAt(2) === 0x3b
+}
+
+function oscTerminator(value: string): string {
+  const last = value.charCodeAt(value.length - 1)
+  if (last === 0x07) return "\x07"
+  if (last === 0x9c) return "\x9c"
+  return "\x1b\\"
+}
+
+/**
+ * Keep a terminated OSC 8 closer (empty URL) or an allowed-scheme target.
+ * Drop every other OSC, including unterminated OSC 8 and refused schemes.
+ */
+function sanitizeOscToken(value: string): string {
+  if (!isOSC8(value) || !isOSCTerminated(value)) return ""
+  const introLen = value.charCodeAt(0) === 0x1b ? 2 : 1
+  const prefix = value.slice(0, introLen)
+  const terminator = oscTerminator(value)
+  const body = value.slice(introLen + 2, value.length - terminator.length)
+  const semi = body.indexOf(";")
+  if (semi < 0) return ""
+  const params = body.slice(0, semi)
+  const url = body.slice(semi + 1)
+  if (url.length === 0) return value
+  const safe = sanitizeHyperlinkTarget(url)
+  if (safe === undefined) return ""
+  if (safe === url) return value
+  return `${prefix}8;${params};${safe}${terminator}`
+}
+
 /**
  * Sanitize a string by stripping dangerous ANSI escape sequences while
- * preserving safe SGR styling codes and OSC sequences (hyperlinks, etc.).
+ * preserving safe SGR styling codes and terminated OSC 8 hyperlinks.
  *
  * Safe (preserved):
  * - Plain text
  * - CSI SGR sequences (colors, bold, underline — final byte 'm', no intermediates)
- * - OSC sequences (hyperlinks, window titles, etc.)
+ * - Terminated OSC 8 with an empty URL (closer) or an http/https/mailto target
  *
  * Stripped:
  * - Non-SGR CSI sequences (cursor movement, screen clearing, etc.)
+ * - Non-OSC-8 OSC (window titles, clipboard, notifications, palette, …)
+ * - Unterminated OSC, including unterminated OSC 8
+ * - OSC 8 whose target fails {@link sanitizeHyperlinkTarget}
  * - DCS (Device Control String)
  * - PM (Privacy Message)
  * - APC (Application Program Command)
@@ -371,6 +422,7 @@ export function isCSISGR(value: string): boolean {
  * - Malformed/incomplete escape sequences
  *
  * @param text - Input string that may contain ANSI escape sequences
+ * @param opts.onSgr - optional hook for each kept SGR token (Ink colon-SGR tracking)
  * @returns Sanitized string with only safe sequences preserved
  *
  * @example
@@ -385,7 +437,7 @@ export function isCSISGR(value: string): boolean {
  * sanitizeAnsi('\x1b[31m\x1b[2Jred\x1b[0m') // '\x1b[31mred\x1b[0m'
  * ```
  */
-export function sanitizeAnsi(text: string): string {
+export function sanitizeAnsi(text: string, opts?: { onSgr?: (value: string) => void }): string {
   if (text.length === 0) return ""
 
   const tokens = tokenizeAnsi(text)
@@ -397,14 +449,13 @@ export function sanitizeAnsi(text: string): string {
         result += token.value
         break
       case "csi":
-        // Only keep SGR sequences (color/style codes)
         if (isCSISGR(token.value)) {
           result += token.value
+          opts?.onSgr?.(token.value)
         }
         break
       case "osc":
-        // OSC sequences are safe (hyperlinks, titles, etc.)
-        result += token.value
+        result += sanitizeOscToken(token.value)
         break
       // Strip everything else: esc, dcs, pm, apc, sos, c1
     }
