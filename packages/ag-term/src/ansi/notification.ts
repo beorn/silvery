@@ -1,6 +1,5 @@
 /** Terminal-owned desktop notification emission. */
 
-import { Buffer } from "node:buffer"
 import type { TerminalCaps, TerminalNotificationProtocol } from "@silvery/ansi"
 
 const ESC = "\x1b"
@@ -255,8 +254,17 @@ function validateActions(actions: readonly NotificationAction[]): void {
   }
 }
 
+// Browser-safe base64 of the UTF-8 bytes: the canvas entry reaches this module through the input owner, and a
+// node:buffer import there breaks the canvas-browser-boundary contract. btoa takes one char per byte.
+const utf8Encoder = new TextEncoder()
+function utf8Base64(text: string): string {
+  let binary = ""
+  for (const byte of utf8Encoder.encode(text)) binary += String.fromCharCode(byte)
+  return btoa(binary)
+}
+
 function encodedChunks(text: string): readonly string[] {
-  const encoded = Buffer.from(text, "utf8").toString("base64")
+  const encoded = utf8Base64(text)
   if (encoded.length === 0) return [""]
   const chunks: string[] = []
   for (let offset = 0; offset < encoded.length; offset += KITTY_ENCODED_CHUNK_SIZE) {

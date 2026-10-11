@@ -72,6 +72,13 @@ import {
 } from "../ansi/notification"
 import type { Modes } from "./devices/modes"
 
+// The canvas entry runs this owner in a browser (renderToCanvas), so byte counts use TextEncoder, never Node's
+// Buffer: a Buffer reference makes the browser bundle import node:buffer (canvas-browser-boundary contract).
+const utf8Encoder = new TextEncoder()
+function utf8Bytes(text: string): number {
+  return utf8Encoder.encode(text).length
+}
+
 const BRACKETED_PASTE_ON = "\x1b[?2004h"
 const BRACKETED_PASTE_OFF = "\x1b[?2004l"
 const ESC_DISAMBIGUATION_MS = 25
@@ -707,11 +714,11 @@ export function createInputOwner(
   }
 
   function takePasteCap(content: string): { emit: string; rest: string } {
-    if (Buffer.byteLength(content, "utf8") <= INCOMPLETE_PASTE_MAX_BYTES) {
+    if (utf8Bytes(content) <= INCOMPLETE_PASTE_MAX_BYTES) {
       return { emit: "", rest: content }
     }
     let n = Math.min(content.length, INCOMPLETE_PASTE_MAX_BYTES)
-    while (n > 0 && Buffer.byteLength(content.slice(0, n), "utf8") > INCOMPLETE_PASTE_MAX_BYTES) {
+    while (n > 0 && utf8Bytes(content.slice(0, n)) > INCOMPLETE_PASTE_MAX_BYTES) {
       n--
     }
     return { emit: content.slice(0, n), rest: content.slice(n) }
@@ -940,7 +947,7 @@ export function createInputOwner(
 
     if (transaction !== null) {
       const entry = transaction
-      const receivedBytes = Buffer.byteLength(buffer, "utf8")
+      const receivedBytes = utf8Bytes(buffer)
       if (receivedBytes > entry.maxBufferBytes) {
         settleTransaction(
           entry,
@@ -1099,9 +1106,7 @@ export function createInputOwner(
         dispatchRawChunk(remaining.slice(0, notificationEnvelope.start), receivedAt, inputBatchId)
         if (notificationEnvelope.status === "incomplete") {
           incompleteNotification = remaining.slice(notificationEnvelope.start)
-          if (
-            Buffer.byteLength(incompleteNotification, "utf8") > INCOMPLETE_NOTIFICATION_MAX_BYTES
-          ) {
+          if (utf8Bytes(incompleteNotification) > INCOMPLETE_NOTIFICATION_MAX_BYTES) {
             flushIncompleteNotification()
           } else {
             scheduleIncompleteFlush(receivedAt, inputBatchId)
