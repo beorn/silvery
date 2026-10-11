@@ -238,9 +238,9 @@ describe("sanitizeAnsi", () => {
     expect(sanitizeAnsi(link)).toBe(link)
   })
 
-  test("OSC window title preserved", () => {
+  test("OSC window title stripped", () => {
     const title = "\x1b]0;My Title\x07"
-    expect(sanitizeAnsi(title)).toBe(title)
+    expect(sanitizeAnsi(title)).toBe("")
   })
 
   // -------------------------------------------------------------------------
@@ -367,7 +367,7 @@ describe("sanitizeAnsi", () => {
       "text", // text (keep)
       "\x1b[2J", // erase display (strip)
       "\x1b[H", // cursor home (strip)
-      "\x1b]8;;url\x1b\\", // OSC hyperlink (keep)
+      "\x1b]8;;https://example.com\x1b\\", // OSC hyperlink (keep)
       "link", // text (keep)
       "\x1b]8;;\x1b\\", // OSC close (keep)
       "\x1bPdcs\x1b\\", // DCS (strip)
@@ -379,7 +379,12 @@ describe("sanitizeAnsi", () => {
     ].join("")
 
     expect(sanitizeAnsi(input)).toBe(
-      "\x1b[31m" + "text" + "\x1b]8;;url\x1b\\" + "link" + "\x1b]8;;\x1b\\" + "\x1b[0m",
+      "\x1b[31m" +
+        "text" +
+        "\x1b]8;;https://example.com\x1b\\" +
+        "link" +
+        "\x1b]8;;\x1b\\" +
+        "\x1b[0m",
     )
   })
 

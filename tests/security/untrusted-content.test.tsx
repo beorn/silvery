@@ -10,7 +10,7 @@
  *   clipboard / OSC 2 title writes; file:/javascript:/data:/ssh: hrefs and inline
  *   OSC 8 in Text reach the terminal as OSC 8 targets.
  * @level l2
- * @consumer silvery Link, Text, OSC 8 emission (hh 28598 F1-F3)
+ * @consumer silvery Link, Text, OSC 8 emission, sanitizeAnsi (hh 28598 F1-F5)
  * @testonly none
  */
 
@@ -20,6 +20,8 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import { Text, Link } from "../../src/index.js"
 import { run } from "../../packages/ag-term/src/runtime/run"
+import { sanitizeAnsi as agTermSanitize } from "../../packages/ag-term/src/ansi-sanitize"
+import { sanitizeAnsi as inkSanitize } from "../../packages/ink/src/ink-sanitize"
 
 const ESC = "\x1b"
 const BEL = "\x07"
@@ -87,4 +89,39 @@ describe("inline OSC 8 in Text content", () => {
     const { bytes } = await renderBytes(<Text>{text}</Text>)
     expect(osc8Urls(bytes), show(bytes)).toEqual([])
   })
+})
+
+// =============================================================================
+// The two sanitizers, by contract (F5): only SGR and OSC 8 survive
+// =============================================================================
+
+describe("sanitizeAnsi contract: only SGR and OSC 8 survive", () => {
+  const dangerous: Array<[string, string]> = [
+    ["OSC 52 clipboard write", OSC52_WRITE],
+    ["OSC 0 window title", `${ESC}]0;pwned${BEL}`],
+    ["OSC 2 window title", `${ESC}]2;pwned${BEL}`],
+    ["OSC 9 notification", `${ESC}]9;hello${BEL}`],
+    ["OSC 1337 iTerm2 command", `${ESC}]1337;File=name=x:AAAA${BEL}`],
+    ["OSC 7 cwd", `${ESC}]7;file://h/tmp${BEL}`],
+    ["OSC 4 palette", `${ESC}]4;0;rgb:ff/00/00${BEL}`],
+    ["OSC 10 fg colour", `${ESC}]10;#ff0000${BEL}`],
+  ]
+
+  test.each(dangerous)("@silvery/ag-term sanitizeAnsi strips %s", (_n, seq) => {
+    const out = agTermSanitize(`a${seq}b`)
+    expect(out, show(out)).toBe("ab")
+  })
+
+  test.each(dangerous)("@silvery/ink sanitizeAnsi strips %s", (_n, seq) => {
+    const out = inkSanitize(`a${seq}b`)
+    expect(out, show(out)).toBe("ab")
+  })
+
+  test.each(["file:///etc/passwd", "javascript:alert(1)"])(
+    "@silvery/ink sanitizeAnsi does not pass an OSC 8 with scheme %s",
+    (url) => {
+      const out = inkSanitize(`${ESC}]8;;${url}${ST}x${ESC}]8;;${ST}`)
+      expect(osc8Urls(out), show(out)).toEqual([])
+    },
+  )
 })
