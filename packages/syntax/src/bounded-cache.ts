@@ -54,7 +54,9 @@ export function createBoundedStringCache<V extends LruValue>(
     sizeCalculation: options?.sizeCalculation ?? ((_value, key) => contentKeySize(key)),
     ttl: options?.ttl ?? CACHE_MAX_AGE_MS,
     ttlAutopurge: false,
-    ttlResolution: 1000,
+    // 0, not a resolution: lru-cache arms a setTimeout on every clock read when ttlResolution > 0, so a
+    // nonzero value put a timer behind each cache read and broke 'never by a timer' (pulse contract, CI #855).
+    ttlResolution: 0,
     updateAgeOnGet: options?.updateAgeOnGet ?? true,
   })
 }
