@@ -87,8 +87,21 @@ export function composeSelectionCells(
   scope?: SelectionScope | null,
 ): SelectionCellChange[] {
   if (!selection) return []
+  if (buffer.height === 0 || buffer.width === 0) return []
 
-  const { startRow, startCol, endRow, endCol } = normalizeRange(selection)
+  const normalized = normalizeRange(selection)
+  const maxRow = Math.max(0, buffer.height - 1)
+  const maxCol = Math.max(0, buffer.width - 1)
+  const clamp = (n: number, max: number) => {
+    if (!Number.isFinite(n)) return 0
+    if (n < 0) return 0
+    if (n > max) return max
+    return n
+  }
+  const startRow = clamp(normalized.startRow, maxRow)
+  const endRow = clamp(normalized.endRow, maxRow)
+  const startCol = clamp(normalized.startCol, maxCol)
+  const endCol = clamp(normalized.endCol, maxCol)
   const changes: SelectionCellChange[] = []
 
   for (let row = startRow; row <= endRow; row++) {

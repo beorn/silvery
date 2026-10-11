@@ -69,15 +69,14 @@ import {
 import { ScopeProvider } from "@silvery/ag-react/ScopeProvider"
 import { createScope, reportDisposeError } from "@silvery/scope"
 
-import { isProtocolError } from "@silvery/ansi"
 import { createTerm } from "./ansi/index"
 import type { ColorLevel } from "@silvery/ansi"
 import { bufferToText } from "./buffer.js"
 import { buildMismatchContext, formatMismatchContext } from "@silvery/test/debug-mismatch"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 import { tabCyclesFocus } from "@silvery/ag-react/hooks/use-edit-context"
-import { keyToAnsi, parseKey, splitRawInput } from "@silvery/ag/keys"
-import { parseBracketedPaste } from "./bracketed-paste"
+import { keyToAnsi, parseKey } from "@silvery/ag/keys"
+import { createDetachedInputOwner } from "./runtime/input-owner"
 import { IncrementalRenderMismatchError } from "./scheduler.js"
 import type { RenderPhaseStats } from "./pipeline/types"
 import { debugTree } from "@silvery/test/debug"
@@ -671,6 +670,52 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     childApp.drainEffects()
   })
 
+  // One input owner for press()/stdin.write() (hh 28598 F11 note 3): a split
+  // paste stays a paste. Import the leaf module, never the runtime barrel.
+  const inputOwner = createDetachedInputOwner({
+    size: () => ({ cols: instance.columns, rows: instance.rows }),
+  })
+  inputOwner.onPaste((event) => {
+    withActEnvironment(() => {
+      act(() => {
+        instance.inputEmitter.emit("paste", event.text)
+      })
+    })
+  })
+  inputOwner.onKey((event) => {
+    const key = event.key
+    if (handleTabCycling && tabCyclesFocus(key)) {
+      if (!key.shift) {
+        act(() => {
+          const root = getContainerRoot(instance.container)
+          focusManager.focusNext(root)
+        })
+        return
+      }
+      if (key.shift) {
+        act(() => {
+          const root = getContainerRoot(instance.container)
+          focusManager.focusPrev(root)
+        })
+        return
+      }
+    }
+    if (key.escape && focusManager.activeElement) {
+      act(() => {
+        focusManager.blur()
+      })
+      return
+    }
+    // Emit the raw sequence so the :662 parseKey bridge stays the one
+    // dispatch path (ink-compat inputEmitter listeners included). event.input
+    // is a printable/empty string and would drop ArrowLeft / CSI-u.
+    withActEnvironment(() => {
+      act(() => {
+        instance.inputEmitter.emit("input", event.sequence)
+      })
+    })
+  })
+
   // RuntimeContext — trimmed to `exit()` only. First-party hooks
   // subscribe via ChainAppContext above; app-defined events ride on
   // `chain.events`.
@@ -1177,6 +1222,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     instance.rendering = false
     autoRenderScheduled = false
     inRenderCycle = false
+    attemptRelease(() => inputOwner.dispose())
     attemptRelease(() => instance.inputEmitter.removeAllListeners())
     attemptRelease(() => stdoutEmitter.removeAllListeners())
     if (stdinStream && stdinOnReadable) {
@@ -1482,73 +1528,17 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       const t0 = performance.now()
       instance.rendering = true
       try {
-        // Check for bracketed paste before splitting into individual keys.
-        // Paste content is delivered as a single "paste" event, not individual keystrokes.
-        // This mirrors the production path in term-provider.ts.
-        //
-        // parseBracketedPaste may throw ProtocolError when PASTE_START is found
-        // but PASTE_END is missing in the test input (typically a fixture
-        // mistake or intentional malformed-input test). The test renderer
-        // mirrors the runtime input-owner contract: log + fall through.
-        // Bead: @km/silvery/15127-custom-protocol-implementation/protocol-loud-errors.
-        let pasteResult: ReturnType<typeof parseBracketedPaste> = null
-        try {
-          pasteResult = parseBracketedPaste(data)
-        } catch (err) {
-          if (isProtocolError(err)) {
-            log.debug?.(
-              `bracketed paste parser flagged malformed input in press(): ${err.reason} (len=${err.inputLength})`,
-            )
-          } else {
-            throw err
-          }
-        }
-        if (pasteResult) {
-          withActEnvironment(() => {
-            act(() => {
-              instance.inputEmitter.emit("paste", pasteResult.content)
-            })
-          })
+        // Lone ESC is held 25ms by the owner for CSI disambiguation. The
+        // test harness press() only awaits a microtask, matching the parent
+        // key-split path that parseKey'd Escape immediately. Inject it as a
+        // completed key so onKey emits the sequence through the :662 bridge
+        // in this turn. Anything else, including paste, goes through sendRaw.
+        if (data === "\x1b") {
+          const [input, key] = parseKey(data)
+          inputOwner.sendKey({ input, key, sequence: data })
         } else {
-          // Split multi-character data into individual keypresses.
-          // This mirrors the production path (render.tsx handleReadable)
-          // where stdin.read() can return buffered characters.
-          withActEnvironment(() => {
-            for (const keypress of splitRawInput(data)) {
-              // Default Tab/Shift+Tab focus cycling and Escape blur.
-              // Matches production behavior in run.tsx and render.tsx.
-              // Tab events are consumed (not passed to useInput handlers).
-              // Each focus change runs in its own act() boundary so React
-              // commits the re-render before the next keypress or doRender().
-              const [, key] = parseKey(keypress)
-              if (handleTabCycling && tabCyclesFocus(key)) {
-                if (!key.shift) {
-                  act(() => {
-                    const root = getContainerRoot(instance.container)
-                    focusManager.focusNext(root)
-                  })
-                  continue
-                }
-                if (key.shift) {
-                  act(() => {
-                    const root = getContainerRoot(instance.container)
-                    focusManager.focusPrev(root)
-                  })
-                  continue
-                }
-              }
-              if (key.escape && focusManager.activeElement) {
-                act(() => {
-                  focusManager.blur()
-                })
-                continue
-              }
-              act(() => {
-                instance.inputEmitter.emit("input", keypress)
-              })
-            }
-          })
-        } // end else (non-paste input)
+          inputOwner.sendRaw(data)
+        }
       } finally {
         instance.rendering = false
       }

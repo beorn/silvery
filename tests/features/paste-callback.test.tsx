@@ -55,6 +55,67 @@ describe("usePasteCallback", () => {
     expect(onPaste).toHaveBeenCalledWith("hello world")
   })
 
+  test("PC-01b: a split paste is not typed as keystrokes", () => {
+    const onPaste = vi.fn()
+    const keys: string[] = []
+
+    function App() {
+      usePasteCallback(onPaste)
+      useInput((input) => {
+        keys.push(input)
+      })
+      return <Text>ready</Text>
+    }
+
+    const render = createRenderer({ cols: 40, rows: 5 })
+    const app = render(<App />)
+
+    app.stdin.write("\x1b[200~abc")
+    expect(onPaste).not.toHaveBeenCalled()
+    expect(keys).toEqual([])
+    app.stdin.write("\x1b[201~")
+    expect(onPaste).toHaveBeenCalledTimes(1)
+    expect(onPaste).toHaveBeenCalledWith("abc")
+    expect(keys).toEqual([])
+  })
+
+  test("press Tab with handleTabCycling false reaches useInput as tab", async () => {
+    const seen: Array<{ input: string; tab: boolean }> = []
+
+    function App() {
+      useInput((input, key) => {
+        seen.push({ input, tab: key.tab })
+      })
+      return <Text>ready</Text>
+    }
+
+    const render = createRenderer({
+      cols: 40,
+      rows: 5,
+      incremental: true,
+      handleTabCycling: false,
+    })
+    const app = render(<App />)
+    await app.press("\t")
+    expect(seen).toEqual([{ input: "", tab: true }])
+  })
+
+  test("press ArrowLeft still dispatches ArrowLeft", async () => {
+    const seen: Array<{ input: string; left: boolean }> = []
+
+    function App() {
+      useInput((input, key) => {
+        seen.push({ input, left: key.leftArrow })
+      })
+      return <Text>ready</Text>
+    }
+
+    const render = createRenderer({ cols: 40, rows: 5 })
+    const app = render(<App />)
+    await app.press("ArrowLeft")
+    expect(seen.some((e) => e.left)).toBe(true)
+  })
+
   test("PC-02: multiple pastes each trigger the callback", () => {
     const onPaste = vi.fn()
 

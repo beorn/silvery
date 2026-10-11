@@ -235,15 +235,21 @@ describe("InputOwner", () => {
     using owner = createInputOwner(stdin, stdout)
 
     const keys: string[] = []
-    const unsubscribe = owner.onKey((e) => keys.push(e.input))
+    const sequences: string[] = []
+    const unsubscribe = owner.onKey((e) => {
+      keys.push(e.input)
+      sequences.push(e.sequence)
+    })
 
     send("a")
     send("b")
-    expect(keys).toEqual(["a", "b"])
+    send("\t")
+    expect(keys).toEqual(["a", "b", ""])
+    expect(sequences).toEqual(["a", "b", "\t"])
 
     unsubscribe()
     send("c")
-    expect(keys).toEqual(["a", "b"])
+    expect(keys).toEqual(["a", "b", ""])
   })
 
   it("reassembles SGR mouse packets when ESC arrives in the previous stdin chunk", () => {
@@ -323,6 +329,23 @@ describe("InputOwner", () => {
     const body = "a".repeat(100 * 1024)
     send(`\x1b[200~${body.slice(0, 50 * 1024)}`)
     send(`${body.slice(50 * 1024)}\x1b[201~`)
+
+    expect(keys).toEqual([])
+    expect(pastes.join("")).toBe(body)
+  })
+
+  it("a PASTE_END that straddles a 64 KiB cut is still matched", () => {
+    const { stdin, stdout, send } = createMockIO()
+    using owner = createInputOwner(stdin, stdout, { enableBracketedPaste: false })
+    const keys: string[] = []
+    const pastes: string[] = []
+    owner.onKey((e) => keys.push(e.input))
+    owner.onPaste((e) => pastes.push(e.text))
+
+    const end = "\x1b[201~"
+    const body = "a".repeat(64 * 1024 - 1)
+    send(`\x1b[200~${body}${end.slice(0, 3)}`)
+    send(end.slice(3))
 
     expect(keys).toEqual([])
     expect(pastes.join("")).toBe(body)
