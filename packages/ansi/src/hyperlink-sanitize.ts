@@ -11,7 +11,7 @@ export const MAX_HYPERLINK_TARGET_BYTES = 2083
 const ALLOWED_SCHEMES = new Set(["http:", "https:", "mailto:"])
 
 /** RFC 3986 unreserved + reserved, plus `%` so existing encodings pass through. */
-const URL_SAFE = /[A-Za-z0-9\-._~:/?#\[\]@!$&'()*+,;=%]/
+const URL_SAFE = /[A-Za-z0-9\-._~:/?#[\]@!$&'()*+,;=%]/
 
 /**
  * Return a terminal-safe hyperlink target, or `undefined` to drop it.
