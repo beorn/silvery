@@ -396,6 +396,7 @@
     "@silvery/ink": "0.26.0",
     "@silvery/scope": "0.26.0",
     "@silvery/signals": "0.26.0",
+    "@silvery/syntax": "0.26.0",
     "@silvery/test": "0.26.0",
     "@silvery/theme": "0.26.0",
     "@termless/core": ">=0.9.1 <1.0.0",

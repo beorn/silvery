@@ -23,7 +23,8 @@
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./bounded-cache": "./src/bounded-cache.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -31,6 +32,10 @@
       ".": {
         "types": "./dist/index.d.mts",
         "import": "./dist/index.mjs"
+      },
+      "./bounded-cache": {
+        "types": "./dist/bounded-cache.d.mts",
+        "import": "./dist/bounded-cache.mjs"
       }
     }
   },
@@ -44,7 +49,10 @@
   "tsdown": {
     "clean": true,
     "dts": true,
-    "entry": "src/index.ts",
+    "entry": [
+      "src/index.ts",
+      "src/bounded-cache.ts"
+    ],
     "format": "esm"
   },
   "engines": {
