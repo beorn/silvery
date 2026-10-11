@@ -4,13 +4,14 @@
  * @cto e84ed6d7 / 2ded2ccc — every silvery cache that lives as long as the
  * process or its owner is bounded by max entries, max bytes, and max age
  * through lru-cache 11.5.2. Age is checked on read (`ttlAutopurge: false`),
- * never by a timer. DisplayWidthCache is the memo exception: its TTL is
- * age-from-insert (`updateAgeOnGet: false`); other caches pass the default
- * `true` (idle age).
+ * never by a timer. DisplayWidthCache is the memo exception: it drops TTL
+ * entirely (`ttl: 0`, `updateAgeOnGet: false`); other caches keep the 10
+ * minute idle TTL (`true`) with ttlResolution 0.
  *
  * A cache states its bound in bytes, or as entries × the largest entry with
  * the product written down, never entries alone. Here: 10 000 entries ×
- * (2 bytes per key character + 48) with a 2 MiB byte cap, 10 minute TTL.
+ * (2 bytes per key character + 48) with a 2 MiB byte cap, 10 minute TTL
+ * (DisplayWidthCache: no TTL).
  */
 import { LRUCache } from "lru-cache"
 
@@ -53,7 +54,11 @@ export type BoundedStringCacheOptions<V extends LruValue> = {
   max?: number
   /** Max bytes from sizeCalculation. Default 2 MiB. */
   maxSize?: number
-  /** TTL ms. Default 10 minutes. */
+  /**
+   * TTL ms. Default 10 minutes. Pass `0` to disable TTL (DisplayWidthCache:
+   * a pure memo; entries + bytes already cap memory). `0` is load-bearing —
+   * `options?.ttl ?? default` would swallow it because `0` is falsy.
+   */
   ttl?: number
   /**
    * Idle-age (true, default) vs insert-age (false). DisplayWidthCache is the
@@ -71,7 +76,7 @@ export function createBoundedStringCache<V extends LruValue>(
     maxSize: options?.maxSize ?? CACHE_MAX_BYTES,
     maxEntrySize: CACHE_MAX_ENTRY_SIZE,
     sizeCalculation: options?.sizeCalculation ?? ((_value, key) => contentKeySize(key)),
-    ttl: options?.ttl ?? CACHE_MAX_AGE_MS,
+    ttl: options?.ttl === 0 ? 0 : (options?.ttl ?? CACHE_MAX_AGE_MS),
     ttlAutopurge: false,
     // 0, not a resolution: lru-cache arms a setTimeout on every clock read when ttlResolution > 0, so a
     // nonzero value put a timer behind each cache read and broke 'never by a timer' (pulse contract, CI #855).

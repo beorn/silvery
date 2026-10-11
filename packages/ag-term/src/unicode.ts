@@ -50,8 +50,8 @@ const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
  * Bounds, each written down (@cto e84ed6d7 / 2ded2ccc):
  * - max 10 000 entries (constructor default 1 000; measurers pass 10 000)
  * - max 2 MiB of keys, sized as `2 * key.length + 48` bytes per entry
- * - max age 10 minutes from insert (`updateAgeOnGet: false` — this is a memo,
- *   not an idle cache)
+ * - no TTL (`ttl: 0`, `updateAgeOnGet: false` — this is a pure memo; entries
+ *   10k + 2 MiB already cap memory, so an idle age is not needed)
  * - keys longer than MAX_KEY_LENGTH (4096) are measured but never stored, so
  *   one line cannot spend the whole byte budget (`maxEntrySize = 2*4096+48`
  *   is the backstop if that guard is skipped)
@@ -84,6 +84,7 @@ export class DisplayWidthCache {
     this.cache = createBoundedStringCache<number>({
       max: maxSize,
       updateAgeOnGet: false,
+      ttl: 0,
     })
   }
 
@@ -107,8 +108,8 @@ export class DisplayWidthCache {
   }
 }
 
-// 10K entries, 2 MiB of keys, 10 minute insert-age. Each measurer
-// (createMeasurer, below) has its own cache with the same bounds.
+// 10K entries, 2 MiB of keys, no TTL. Each measurer (createMeasurer, below)
+// has its own cache with the same bounds.
 const displayWidthCache = new DisplayWidthCache(10000)
 
 // ============================================================================

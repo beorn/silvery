@@ -17,7 +17,8 @@
  * @consumer @si/render/28274-displaywidthcache-bounded-by-key-characters
  * @testonly none
  */
-import { describe, test, expect } from "vitest"
+import { describe, test, expect, vi } from "vitest"
+import { createBoundedStringCache } from "../src/bounded-cache.ts"
 import { createMeasurer, DisplayWidthCache } from "../src/unicode.ts"
 
 /** Matches @cto e84ed6d7: 2 bytes per key char + 48, 2 MiB per cache. */
@@ -91,6 +92,27 @@ describe("DisplayWidthCache: entry count is not a byte bound", () => {
     }
     expect(cache.size).toBeGreaterThan(0)
     expect(cache.size).toBeLessThanOrEqual(maxByBytes)
+  })
+
+  // @cto 5f7e1b17: a pure memo needs no idle age. Entries 10k + 2 MiB already
+  // cap memory. Other caches keep TTL (clock read on hit, no timer);
+  // DisplayWidthCache drops TTL so a per-cell hit does not call
+  // performance.now(). The sibling timer contract only counts setTimeout.
+  test("a hit calls performance.now zero times", () => {
+    const ttlCache = createBoundedStringCache<number>({ max: 10 })
+    ttlCache.set("hello", 5)
+    const ttlSpy = vi.spyOn(performance, "now")
+    expect(ttlCache.get("hello")).toBe(5)
+    const ttlReads = ttlSpy.mock.calls.length
+    ttlSpy.mockRestore()
+    expect(ttlReads).toBeGreaterThan(0)
+
+    const cache = new DisplayWidthCache(100)
+    cache.set("hello", 5)
+    const spy = vi.spyOn(performance, "now")
+    expect(cache.get("hello")).toBe(5)
+    expect(spy).toHaveBeenCalledTimes(0)
+    spy.mockRestore()
   })
 })
 
