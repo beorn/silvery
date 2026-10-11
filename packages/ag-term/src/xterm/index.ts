@@ -55,13 +55,13 @@ import {
 } from "@silvery/ag-react/context"
 import { createChildApp, toChainAppContextValue } from "@silvery/ag-react/chain-bridge"
 import { createFocusManager } from "@silvery/ag/focus-manager"
-import { parseKey, splitRawInput } from "@silvery/ag/keys"
+import type { Key } from "@silvery/ag/keys"
 import { tabCyclesFocus } from "@silvery/ag-react/hooks/use-edit-context"
-import { parseBracketedPaste } from "../bracketed-paste"
+import { createDetachedInputOwner } from "../runtime/input-owner"
 import { createXtermProvider, type XtermProvider } from "./xterm-provider"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
 import { catppuccinMocha } from "@silvery/theme/schemes"
-import { deriveTheme, isProtocolError, type Theme } from "@silvery/ansi"
+import { deriveTheme, type Theme } from "@silvery/ansi"
 import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCursor"
 import { findActiveCursorRect } from "@silvery/ag/layout-signals"
 
@@ -293,6 +293,7 @@ export function renderToXterm(
   let runtimeContextValue: RuntimeContextValue | null = null
   let chainAppContextValue: ChainAppContextValue | null = null
   let childApp: ReturnType<typeof createChildApp> | null = null
+  let inputOwner: ReturnType<typeof createDetachedInputOwner> | null = null
 
   // Exit handler — uses doUnmount() indirection to avoid referencing
   // the `unmount` const before it's declared.
@@ -318,28 +319,21 @@ export function renderToXterm(
     childApp = createChildApp()
     chainAppContextValue = toChainAppContextValue(childApp)
 
-    // Wire provider input to the child chain + user callbacks
+    // One parser: feed bytes into InputOwner.sendRaw (hh 28598 F11).
+    const owner = createDetachedInputOwner()
+    inputOwner = owner
+    owner.onPaste((event) => {
+      if (unmounted) return
+      childApp!.dispatch({ type: "term:paste", text: event.text })
+      childApp!.drainEffects()
+    })
+    owner.onKey((event) => {
+      if (unmounted) return
+      processKey(event.input, event.key)
+    })
     provider.onInput((chunk: string) => {
       if (unmounted) return
-
-      // Check for bracketed paste. parseBracketedPaste throws ProtocolError
-      // when PASTE_START is in this chunk and PASTE_END is not (hh 28598 F11).
-      let pasteResult: ReturnType<typeof parseBracketedPaste> = null
-      try {
-        pasteResult = parseBracketedPaste(chunk)
-      } catch (err) {
-        if (!isProtocolError(err)) throw err
-      }
-      if (pasteResult) {
-        childApp!.dispatch({ type: "term:paste", text: pasteResult.content })
-        childApp!.drainEffects()
-        return
-      }
-
-      // Split and process individual keys
-      for (const keypress of splitRawInput(chunk)) {
-        processKey(keypress)
-      }
+      owner.sendRaw(chunk)
     })
 
     // Wire mouse events to user callback
@@ -361,9 +355,9 @@ export function renderToXterm(
     provider.enableMouse()
 
     // Process a single keypress — handles Ctrl+C, focus cycling, then dispatches
-    function processKey(rawKey: string): void {
+    function processKey(input: string, key: Key): void {
       // Handle Ctrl+C
-      if (rawKey === "\x03" && exitOnCtrlC) {
+      if (input === "\x03" && exitOnCtrlC) {
         handleExit()
         return
       }
@@ -372,7 +366,6 @@ export function renderToXterm(
       if (handleFocusCycling && focusManager) {
         const treeRoot = getContainerRoot(container)
         if (treeRoot) {
-          const [, key] = parseKey(rawKey)
           if (tabCyclesFocus(key)) {
             if (!key.shift) {
               focusManager.focusNext(treeRoot)
@@ -393,8 +386,6 @@ export function renderToXterm(
         }
       }
 
-      // Parse and dispatch through the child apply chain.
-      const [input, key] = parseKey(rawKey)
       runWithDiscreteEvent(() => {
         childApp!.rawKeys.notify(input, key)
         childApp!.dispatch({ type: "input:key", input, key })
@@ -402,8 +393,7 @@ export function renderToXterm(
       })
       reconciler.flushSyncWork()
 
-      // Also call user callback
-      inputCallbacks.onKey?.(rawKey)
+      inputCallbacks.onKey?.(input)
     }
 
     // RuntimeContext — trimmed to `exit()` only.
@@ -501,6 +491,8 @@ export function renderToXterm(
       provider.disableMouse()
       provider.dispose()
     }
+    inputOwner?.dispose()
+    inputOwner = null
     // Synchronous unmount ensures useEffect cleanups (e.g. clearInterval) run
     // before returning, preventing stale renders to the same terminal.
     reconciler.updateContainerSync(null, fiberRoot, null, null)

@@ -63,7 +63,7 @@ import {
   type ParseMouseOptions,
   type ParsedMouse,
 } from "../mouse"
-import { parseBracketedPasteEnvelope, PASTE_START } from "../bracketed-paste"
+import { parseBracketedPasteEnvelope, PASTE_START, PASTE_END } from "../bracketed-paste"
 import { parseClipboardResponseEnvelope } from "../clipboard"
 import { parseFocusEvent } from "../focus-reporting"
 import {
@@ -81,8 +81,14 @@ const ESC_DISAMBIGUATION_MS = 25
  * long (21624, @chief 13bce963).
  */
 const OSC_REPLY_COMPLETION_MS = 150
-/** Shared bound for incomplete paste, OSC 99, and CSI prefixes (hh 28598 F9/F10/F12). */
+/** Start-based bound for incomplete OSC 99 and CSI prefixes (hh 28598 F9/F12). */
 const INCOMPLETE_ENVELOPE_MS = 150
+/**
+ * Idle bound for an open paste: time since the last byte, not since PASTE_START.
+ * 1s is longer than a slow SSH/tmux/mosh inter-chunk gap and short enough that a
+ * stuck PASTE_START with no further bytes releases the keyboard (hh 28598 F10).
+ */
+const PASTE_IDLE_MS = 1000
 const INCOMPLETE_PASTE_MAX_BYTES = 64 * 1024
 const INCOMPLETE_NOTIFICATION_MAX_BYTES = 4096
 const INCOMPLETE_CSI_MAX_BYTES = 64
@@ -458,6 +464,37 @@ function isCSITerminator(ch: string | undefined): boolean {
 // Implementation
 // ============================================================================
 
+const DETACHED_STDIN = {
+  isTTY: false,
+  setRawMode() {
+    return this as NodeJS.ReadStream
+  },
+} as unknown as NodeJS.ReadStream
+
+const DETACHED_STDOUT = {
+  write() {
+    return true
+  },
+} as unknown as NodeJS.WriteStream
+
+/**
+ * Input owner that does not attach to a TTY. Callers feed bytes with
+ * {@link InputOwner.sendRaw} so render()/xterm/canvas share the one paste and
+ * key parser instead of a second state machine (hh 28598 F11).
+ *
+ * ag-react must import this from `runtime/input-owner`, not the runtime
+ * barrel: the barrel loads `run.tsx`, which imports ag-react, and a cycle
+ * leaves `setInputOwnerMouseOptions` unbound so SilveryApp throws on mount.
+ */
+export function createDetachedInputOwner(
+  options: Pick<InputOwnerOptions, "mouse" | "size"> = {},
+): InputOwner {
+  return createInputOwner(DETACHED_STDIN, DETACHED_STDOUT, {
+    enableBracketedPaste: false,
+    ...options,
+  })
+}
+
 export function createInputOwner(
   stdin: NodeJS.ReadStream,
   stdout: NodeJS.WriteStream,
@@ -517,6 +554,8 @@ export function createInputOwner(
   let incompleteSequenceTimer: ReturnType<typeof setTimeout> | null = null
   let incompleteSequenceImmediate: ReturnType<typeof setImmediate> | null = null
   let incompleteEnvelopeStartedAt: number | null = null
+  let pasteLastByteAt: number | null = null
+  let inPasteContinuation = false
   /**
    * When the pending OSC reply's first byte arrived. Its bound runs from here; the prepend path clears the timer on
    * every read, so the bound is re-armed with what remains, never restarted (21624, @dev/review-adhoc5 76bd247d7a).
@@ -645,7 +684,10 @@ export function createInputOwner(
 
   function hasIncompleteEnvelope(): boolean {
     return (
-      incompleteSequence !== null || incompletePaste !== null || incompleteNotification !== null
+      incompleteSequence !== null ||
+      incompletePaste !== null ||
+      incompleteNotification !== null ||
+      inPasteContinuation
     )
   }
 
@@ -660,12 +702,68 @@ export function createInputOwner(
     for (const ch of pending) dispatchSequence(ch, receivedAt, inputBatchId)
   }
 
+  function pasteContentOf(raw: string): string {
+    return raw.startsWith(PASTE_START) ? raw.slice(PASTE_START.length) : raw
+  }
+
+  function takePasteCap(content: string): { emit: string; rest: string } {
+    if (Buffer.byteLength(content, "utf8") <= INCOMPLETE_PASTE_MAX_BYTES) {
+      return { emit: "", rest: content }
+    }
+    let n = Math.min(content.length, INCOMPLETE_PASTE_MAX_BYTES)
+    while (n > 0 && Buffer.byteLength(content.slice(0, n), "utf8") > INCOMPLETE_PASTE_MAX_BYTES) {
+      n--
+    }
+    return { emit: content.slice(0, n), rest: content.slice(n) }
+  }
+
+  function emitPasteText(text: string): void {
+    if (text.length === 0) return
+    fire(pasteHandlers, { text })
+  }
+
+  function emitPasteCapped(content: string): string {
+    let rest = content
+    for (;;) {
+      const { emit, rest: next } = takePasteCap(rest)
+      if (emit.length === 0) return next
+      emitPasteText(emit)
+      rest = next
+    }
+  }
+
+  function endPasteContinuation(): void {
+    incompletePaste = null
+    inPasteContinuation = false
+    pasteLastByteAt = null
+  }
+
   function flushIncompletePaste(): void {
     const raw = incompletePaste
-    incompletePaste = null
+    endPasteContinuation()
     if (raw === null) return
-    const content = raw.startsWith(PASTE_START) ? raw.slice(PASTE_START.length) : raw
-    fire(pasteHandlers, { text: content })
+    emitPasteText(pasteContentOf(raw))
+  }
+
+  /**
+   * Ingest bytes while a paste is open. Never turns paste bytes into keys.
+   * Returns leftover after PASTE_END, or "" if the paste is still open.
+   */
+  function ingestPasteContinuation(raw: string): string {
+    const combined = pasteContentOf(incompletePaste !== null ? incompletePaste + raw : raw)
+    incompletePaste = null
+    const endIdx = combined.indexOf(PASTE_END)
+    if (endIdx >= 0) {
+      const rest = emitPasteCapped(combined.slice(0, endIdx))
+      emitPasteText(rest)
+      endPasteContinuation()
+      return combined.slice(endIdx + PASTE_END.length)
+    }
+    const rest = emitPasteCapped(combined)
+    incompletePaste = rest
+    inPasteContinuation = true
+    pasteLastByteAt = Date.now()
+    return ""
   }
 
   function flushIncompleteNotification(): void {
@@ -696,11 +794,10 @@ export function createInputOwner(
     ) {
       delays.push(ESC_DISAMBIGUATION_MS)
     }
-    if (
-      incompletePaste !== null ||
-      incompleteNotification !== null ||
-      (pending !== null && pending.startsWith("\x1b["))
-    ) {
+    if (incompletePaste !== null && pasteLastByteAt !== null) {
+      delays.push(Math.max(0, pasteLastByteAt + PASTE_IDLE_MS - Date.now()))
+    }
+    if (incompleteNotification !== null || (pending !== null && pending.startsWith("\x1b["))) {
       const started = incompleteEnvelopeStartedAt ?? Date.now()
       delays.push(Math.max(0, started + INCOMPLETE_ENVELOPE_MS - Date.now()))
     }
@@ -932,10 +1029,6 @@ export function createInputOwner(
       chunk = incompleteSequence + chunk
       incompleteSequence = null
     }
-    if (incompletePaste !== null) {
-      chunk = incompletePaste + chunk
-      incompletePaste = null
-    }
     if (incompleteNotification !== null) {
       chunk = incompleteNotification + chunk
       incompleteNotification = null
@@ -952,22 +1045,32 @@ export function createInputOwner(
     // problems become visible. Bead reference:
     // @km/silvery/15127-custom-protocol-implementation/protocol-loud-errors.
     let remaining = chunk
+    if (inPasteContinuation || incompletePaste !== null) {
+      remaining = ingestPasteContinuation(remaining)
+      if (remaining.length === 0) {
+        scheduleIncompleteFlush(receivedAt, inputBatchId)
+        return
+      }
+    }
     while (remaining.length > 0) {
       let pasteEnvelope: ReturnType<typeof parseBracketedPasteEnvelope> = null
       try {
         pasteEnvelope = parseBracketedPasteEnvelope(remaining)
       } catch (err) {
         if (isProtocolError(err)) {
-          incompletePaste = remaining
+          const startIdx = remaining.indexOf(PASTE_START)
+          if (startIdx > 0) {
+            dispatchRawChunk(remaining.slice(0, startIdx), receivedAt, inputBatchId)
+          }
           log?.debug?.(
             `bracketed paste parser buffered incomplete input: ${err.reason} (parser=${err.parser}, len=${err.inputLength})`,
           )
-          if (Buffer.byteLength(remaining, "utf8") > INCOMPLETE_PASTE_MAX_BYTES) {
-            flushIncompletePaste()
-          } else {
+          remaining = ingestPasteContinuation(startIdx >= 0 ? remaining.slice(startIdx) : remaining)
+          if (remaining.length === 0) {
             scheduleIncompleteFlush(receivedAt, inputBatchId)
+            return
           }
-          return
+          continue
         } else {
           log?.warn?.(`bracketed paste parser threw: ${String(err)}`)
         }
@@ -1299,6 +1402,8 @@ export function createInputOwner(
     incompletePaste = null
     incompleteNotification = null
     incompleteEnvelopeStartedAt = null
+    pasteLastByteAt = null
+    inPasteContinuation = false
 
     if (isTTY) {
       try {

@@ -53,12 +53,12 @@ import {
 } from "../../context"
 import { createChildApp, toChainAppContextValue } from "../../chain-bridge"
 import { createFocusManager } from "@silvery/ag/focus-manager"
-import { parseKey, splitRawInput } from "@silvery/ag/keys"
+import type { Key } from "@silvery/ag/keys"
 import { tabCyclesFocus } from "../../hooks/use-edit-context"
-import { parseBracketedPaste } from "@silvery/ag-term/bracketed-paste"
+import { createDetachedInputOwner } from "@silvery/ag-term/runtime/input-owner"
 import { ThemeProvider } from "../../ThemeProvider"
 import { catppuccinMocha } from "@silvery/theme/schemes"
-import { deriveTheme, isProtocolError, type Theme } from "@silvery/ansi"
+import { deriveTheme, type Theme } from "@silvery/ansi"
 import { createCursorStore, CursorProvider } from "../../hooks/useCursor"
 import { createCanvasInput, type CanvasInputConfig } from "./input"
 
@@ -353,6 +353,7 @@ export function renderToCanvas(
   const handleFocusCycling = options.handleFocusCycling ?? inputEnabled
 
   let canvasInput: ReturnType<typeof createCanvasInput> | null = null
+  let inputOwner: ReturnType<typeof createDetachedInputOwner> | null = null
   let focusManager: ReturnType<typeof createFocusManager> | null = null
   let runtimeContextValue: RuntimeContextValue | null = null
   let chainAppContextValue: ChainAppContextValue | null = null
@@ -375,31 +376,24 @@ export function renderToCanvas(
     const childApp = createChildApp()
     chainAppContextValue = toChainAppContextValue(childApp)
 
-    // Create canvas input handler (hidden textarea + DOM event conversion)
+    // One parser: feed bytes into InputOwner.sendRaw (hh 28598 F11).
+    const owner = createDetachedInputOwner()
+    inputOwner = owner
+    owner.onPaste((event) => {
+      if (unmounted) return
+      childApp.dispatch({ type: "term:paste", text: event.text })
+      childApp.drainEffects()
+    })
+    owner.onKey((event) => {
+      if (unmounted) return
+      processKey(event.input, event.key)
+    })
     const canvasContainer = canvas.parentElement ?? canvas
     canvasInput = createCanvasInput({
       container: canvasContainer,
       onData(data: string) {
         if (unmounted) return
-
-        // Check for bracketed paste. parseBracketedPaste throws ProtocolError
-        // when PASTE_START is in this chunk and PASTE_END is not (hh 28598 F11).
-        let pasteResult: ReturnType<typeof parseBracketedPaste> = null
-        try {
-          pasteResult = parseBracketedPaste(data)
-        } catch (err) {
-          if (!isProtocolError(err)) throw err
-        }
-        if (pasteResult) {
-          childApp.dispatch({ type: "term:paste", text: pasteResult.content })
-          childApp.drainEffects()
-          return
-        }
-
-        // Split and process individual keys
-        for (const keypress of splitRawInput(data)) {
-          processKey(keypress)
-        }
+        owner.sendRaw(data)
       },
       onFocusChange(focused: boolean) {
         inputCallbacks.onFocus?.(focused)
@@ -410,9 +404,9 @@ export function renderToCanvas(
     // Set dimensions for mouse coordinate conversion
     canvasInput.updateDimensions(charWidth, lineHeight)
 
-    function processKey(rawKey: string): void {
+    function processKey(input: string, key: Key): void {
       // Handle Ctrl+C
-      if (rawKey === "\x03" && exitOnCtrlC) {
+      if (input === "\x03" && exitOnCtrlC) {
         handleExit()
         return
       }
@@ -421,7 +415,6 @@ export function renderToCanvas(
       if (handleFocusCycling && focusManager) {
         const treeRoot = getContainerRoot(container)
         if (treeRoot) {
-          const [, key] = parseKey(rawKey)
           if (tabCyclesFocus(key)) {
             if (!key.shift) {
               focusManager.focusNext(treeRoot)
@@ -442,8 +435,6 @@ export function renderToCanvas(
         }
       }
 
-      // Parse and dispatch through the child apply chain.
-      const [input, key] = parseKey(rawKey)
       runWithDiscreteEvent(() => {
         childApp.rawKeys.notify(input, key)
         childApp.dispatch({ type: "input:key", input, key })
@@ -451,8 +442,7 @@ export function renderToCanvas(
       })
       reconciler.flushSyncWork()
 
-      // Also call user callback
-      inputCallbacks.onKey?.(rawKey)
+      inputCallbacks.onKey?.(input)
     }
 
     // RuntimeContext — trimmed to `exit()` only.
@@ -545,6 +535,8 @@ export function renderToCanvas(
     unmounted = true
 
     if (canvasInput) canvasInput.dispose()
+    inputOwner?.dispose()
+    inputOwner = null
     reconciler.updateContainerSync(null, fiberRoot, null, null)
     reconciler.flushSyncWork()
     setContainerNodeLifecycle(container, null)

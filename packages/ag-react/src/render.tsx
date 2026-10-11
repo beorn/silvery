@@ -40,15 +40,14 @@ import {
 import { createChildApp, toChainAppContextValue } from "./chain-bridge"
 import { createCursorStore, CursorProvider, type CursorStore } from "./hooks/useCursor"
 import { createFocusManager } from "@silvery/ag/focus-manager"
-import { parseKey } from "@silvery/ag/keys"
-import { isProtocolError } from "@silvery/ansi"
+import type { Key } from "@silvery/ag/keys"
 import { tabCyclesFocus } from "./hooks/use-edit-context"
 import { type LayoutEngineType, isLayoutEngineInitialized } from "@silvery/ag-term/layout-engine"
+import { enableBracketedPaste, disableBracketedPaste } from "@silvery/ag-term/bracketed-paste"
 import {
-  enableBracketedPaste,
-  disableBracketedPaste,
-  parseBracketedPaste,
-} from "@silvery/ag-term/bracketed-paste"
+  createDetachedInputOwner,
+  setInputOwnerMouseOptions,
+} from "@silvery/ag-term/runtime/input-owner"
 import {
   ANSI,
   enterAlternateScreen,
@@ -61,12 +60,7 @@ import {
   setMouseCursorShape,
   resetMouseCursorShape,
 } from "@silvery/ag-term/output"
-import {
-  isMouseSequence,
-  createMouseUnitVerifier,
-  type ParseMouseOptions,
-  type MouseUnitVerifier,
-} from "@silvery/ag-term/mouse"
+import { type ParseMouseOptions } from "@silvery/ag-term/mouse"
 import {
   createMouseEventProcessor,
   processMouseEvent,
@@ -94,7 +88,6 @@ import {
   resolveFromTerm,
   resolveTermDef,
 } from "@silvery/ag-term/term-def"
-import { splitRawInput } from "@silvery/ag/keys"
 
 // ============================================================================
 // Types
@@ -394,98 +387,54 @@ function SilveryApp({
   // not the value. Undefined when mouse tracking is disabled; mouse CSI
   // sequences on stdin are silently dropped in that case.
   const mouseParseOptionsRef = useRef<ParseMouseOptions | undefined>(mouseParseOptions)
-  const mouseVerifierRef = useRef<MouseUnitVerifier | null>(null)
-  if (mouseVerifierRef.current === null) {
-    mouseVerifierRef.current = createMouseUnitVerifier(mouseParseOptions, {
-      size: () => ({ cols: Number(stdout.columns), rows: Number(stdout.rows) }),
-    })
-  } else if (
-    mouseParseOptionsRef.current?.coordinateMode !== mouseParseOptions?.coordinateMode ||
-    mouseParseOptionsRef.current?.pixelUnitsAttested !== mouseParseOptions?.pixelUnitsAttested ||
-    mouseParseOptionsRef.current?.cellSize?.width !== mouseParseOptions?.cellSize?.width ||
-    mouseParseOptionsRef.current?.cellSize?.height !== mouseParseOptions?.cellSize?.height
-  ) {
-    mouseVerifierRef.current.setOptions(mouseParseOptions)
-  }
   mouseParseOptionsRef.current = mouseParseOptions
 
   // Stable input chunk handler — created once, never changes identity.
   // All mutable state is read via refs to avoid dependency cascade.
+  // Bytes go through the one InputOwner parser (hh 28598 F11): a split paste
+  // stays a paste instead of falling through to key splitting.
+  const inputOwnerRef = useRef<ReturnType<typeof createDetachedInputOwner> | null>(null)
   const handleChunkRef = useRef<((chunk: string) => void) | null>(null)
   if (handleChunkRef.current === null) {
+    const owner = createDetachedInputOwner({
+      mouse: mouseParseOptions,
+      size: () => ({ cols: Number(stdout.columns), rows: Number(stdout.rows) }),
+    })
+    inputOwnerRef.current = owner
+
+    owner.onPaste((event) => {
+      childApp.dispatch({ type: "term:paste", text: event.text })
+      childApp.drainEffects()
+    })
+    owner.onMouse((parsed) => {
+      const mstate = mouseStateRef.current
+      const root = getRootRef.current?.()
+      if (!mstate || !root) return
+      runWithDiscreteEvent(() => {
+        processMouseEvent(mstate, parsed, root)
+      })
+      reconciler.flushSyncWork()
+    })
+    owner.onKey((event) => {
+      processSingleKey(event.input, event.key)
+    })
+
     handleChunkRef.current = (rawChunk: string) => {
       log.debug?.(`handleChunk: ${JSON.stringify(rawChunk)}`)
-
-      // Check for bracketed paste before splitting into individual keys.
-      // parseBracketedPaste throws ProtocolError when PASTE_START is in this
-      // chunk and PASTE_END is not (hh 28598 F11). Mirror renderer.ts: log and
-      // fall through to key splitting so a split paste cannot kill render().
-      let pasteResult: ReturnType<typeof parseBracketedPaste> = null
-      try {
-        pasteResult = parseBracketedPaste(rawChunk)
-      } catch (err) {
-        if (isProtocolError(err)) {
-          log.debug?.(
-            `bracketed paste parser flagged malformed input: ${err.reason} (len=${err.inputLength})`,
-          )
-        } else {
-          throw err
-        }
-      }
-      if (pasteResult) {
-        // Dispatch to the child chain — the canonical subscription
-        // surface for hooks via ChainAppContext. The legacy
-        // `rt.on("paste", …)` subscriber list is gone (RuntimeContext
-        // trimmed to {exit} only).
-        childApp.dispatch({ type: "term:paste", text: pasteResult.content })
-        childApp.drainEffects()
-        return
-      }
-
-      // Split multi-character chunks into individual keypresses.
-      // Raw input sources can deliver multiple characters in a single chunk
-      // (rapid typing, paste, or auto-repeat during heavy renders).
-      for (const keypress of splitRawInput(rawChunk)) {
-        processSingleKey(keypress)
-      }
+      owner.sendRaw(rawChunk)
     }
 
-    function processSingleKey(chunk: string) {
-      log.debug?.(`processSingleKey: ${JSON.stringify(chunk)}`)
-      // Handle Ctrl+C
-      if (chunk === "\x03" && exitOnCtrlCRef.current) {
+    function processSingleKey(input: string, key: Key) {
+      log.debug?.(`processSingleKey: ${JSON.stringify(input)}`)
+      if (input === "\x03" && exitOnCtrlCRef.current) {
         handleExitRef.current()
         return
       }
 
-      // Mouse dispatch — SGR mouse sequences arrive as single
-      // CSI chunks from splitRawInput. Detect + parse + dispatch through the
-      // DOM-style event processor, then consume (mouse sequences never fall
-      // through to parseKey / useInput, matching run() / createApp()).
-      const mstate = mouseStateRef.current
-      if (mstate && isMouseSequence(chunk)) {
-        const parsed = mouseVerifierRef.current?.parse(chunk) ?? null
-        if (parsed) {
-          const root = getRootRef.current?.()
-          if (root) {
-            runWithDiscreteEvent(() => {
-              processMouseEvent(mstate, parsed, root)
-            })
-            reconciler.flushSyncWork()
-          }
-        }
-        return
-      }
-
-      // Default Tab/Shift+Tab focus cycling and Escape blur.
-      // Handled before dispatching to useInput handlers so it works
-      // automatically when focusable components exist. Tab events are
-      // consumed (not passed to useInput) — matching run() and createApp().
       if (handleFocusCyclingRef.current) {
         const fm = focusManagerRef.current
         const root = getRootRef.current?.()
         if (fm && root) {
-          const [, key] = parseKey(chunk)
           if (tabCyclesFocus(key)) {
             if (!key.shift) {
               fm.focusNext(root)
@@ -506,31 +455,21 @@ function SilveryApp({
         }
       }
 
-      // Parse the key and dispatch to the child chain.
-      const [input, key] = parseKey(chunk)
-
-      // Update keyboard modifier state for mouse events. SGR mouse protocol
-      // can't report Super/Cmd or Hyper — Kitty keyboard fills the gap.
+      const mstate = mouseStateRef.current
       if (mstate) {
         updateKeyboardModifiers(mstate, key)
       }
 
-      // All input handling runs at discrete priority so React commits
-      // synchronously. Without this, concurrent mode defers the commit
-      // and onCommit → scheduleRender() never fires.
       runWithDiscreteEvent(() => {
-        // Fire raw-key observers first (useModifierKeys, etc.) so modifier
-        // state is up-to-date before the filtered input handlers run.
         childApp.rawKeys.notify(input, key)
-        // Dispatch into the child apply chain — this reaches `useInput`
-        // consumers via `chain.input.register`. Effects (render/exit)
-        // are drained and discarded; render.tsx owns its own commit
-        // lifecycle below.
         childApp.dispatch({ type: "input:key", input, key })
         childApp.drainEffects()
       })
       reconciler.flushSyncWork()
     }
+  }
+  if (inputOwnerRef.current) {
+    setInputOwnerMouseOptions(inputOwnerRef.current, mouseParseOptions)
   }
   const handleChunk = handleChunkRef.current
 
@@ -539,6 +478,13 @@ function SilveryApp({
     if (!onInputSubscribe) return
     return onInputSubscribe(handleChunk)
   }, [onInputSubscribe, handleChunk])
+
+  useEffect(() => {
+    return () => {
+      inputOwnerRef.current?.dispose()
+      inputOwnerRef.current = null
+    }
+  }, [])
 
   const stdoutContextValue = useMemo(
     () => ({

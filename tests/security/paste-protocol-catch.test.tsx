@@ -16,7 +16,7 @@
 import EventEmitter from "node:events"
 import React from "react"
 import { describe, expect, test } from "vitest"
-import { Text } from "../../src/index.js"
+import { Text, useInput } from "../../src/index.js"
 import { render } from "../../packages/ag-react/src/render"
 import { parseBracketedPaste, PASTE_START } from "../../packages/ag-term/src/bracketed-paste"
 import { ProtocolError } from "@silvery/ansi"
@@ -121,6 +121,37 @@ describe("parseBracketedPaste callers catch ProtocolError (hh 28598 F11)", () =>
       await settle()
       expect(() => stdin.push(`${PASTE_START}abc`)).not.toThrow()
       await settle()
+    } finally {
+      instance.unmount()
+    }
+  })
+
+  test("render() does not type a split paste as keystrokes", async () => {
+    const seen: string[] = []
+    let mounted = false
+    function Probe() {
+      mounted = true
+      useInput((input) => {
+        seen.push(input)
+      })
+      return <Text>probe</Text>
+    }
+    const stdout = createMockStdout()
+    const stdin = createMockStdin()
+    const instance = await render(
+      <Probe />,
+      { stdout, stdin: stdin.stream },
+      { alternateScreen: false },
+    )
+    try {
+      await settle()
+      expect(mounted).toBe(true)
+      stdin.push(`${PASTE_START}abc`)
+      await settle(80)
+      expect(seen).toEqual([])
+      stdin.push("q")
+      await settle(80)
+      expect(seen).toEqual([])
     } finally {
       instance.unmount()
     }

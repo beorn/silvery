@@ -312,6 +312,42 @@ describe("InputOwner", () => {
     expect(pastes).toEqual(["payload"])
   })
 
+  it("a 100 KiB paste split across reads yields paste events only", () => {
+    const { stdin, stdout, send } = createMockIO()
+    using owner = createInputOwner(stdin, stdout, { enableBracketedPaste: false })
+    const keys: string[] = []
+    const pastes: string[] = []
+    owner.onKey((e) => keys.push(e.input))
+    owner.onPaste((e) => pastes.push(e.text))
+
+    const body = "a".repeat(100 * 1024)
+    send(`\x1b[200~${body.slice(0, 50 * 1024)}`)
+    send(`${body.slice(50 * 1024)}\x1b[201~`)
+
+    expect(keys).toEqual([])
+    expect(pastes.join("")).toBe(body)
+  })
+
+  it("a paste arriving in 50 ms pieces over 400 ms stays a paste", async () => {
+    const { stdin, stdout, send } = createMockIO()
+    using owner = createInputOwner(stdin, stdout, { enableBracketedPaste: false })
+    const keys: string[] = []
+    const pastes: string[] = []
+    owner.onKey((e) => keys.push(e.input))
+    owner.onPaste((e) => pastes.push(e.text))
+
+    send("\x1b[200~")
+    const pieces = ["one ", "two ", "three ", "four ", "five ", "six ", "seven ", "eight"]
+    for (const piece of pieces) {
+      send(piece)
+      await new Promise<void>((r) => setTimeout(r, 50))
+    }
+    send("\x1b[201~")
+
+    expect(keys).toEqual([])
+    expect(pastes.join("")).toBe(pieces.join(""))
+  })
+
   it("preserves trailing input after complete paste protocols in one stdin chunk", () => {
     const cases = [
       { chunk: "\x1b[200~bracketed\x1b[201~\r", text: "bracketed" },

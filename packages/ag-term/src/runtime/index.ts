@@ -36,6 +36,8 @@ export type {
 // See ./input-owner.ts for the wasRaw anti-pattern it replaces.
 export {
   createInputOwner,
+  createDetachedInputOwner,
+  setInputOwnerMouseOptions,
   type InputOwner,
   type InputOwnerOptions,
   type ProbeTransactionOptions,

@@ -75,9 +75,9 @@ describe("input stays alive after an incomplete envelope", () => {
     const { term, handle, seen, send } = await start()
     try {
       send(`${ESC}[200~`)
-      await tick(500)
+      await tick(1200)
       send("q")
-      await tick(500)
+      await tick(300)
       expect(seen).toContain("q")
     } finally {
       handle.unmount()
