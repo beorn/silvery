@@ -1,3 +1,4 @@
+import type { DerivedLinkTarget } from "@silvery/ansi"
 /**
  * Browser-neutral render adapter state
  *
@@ -41,7 +42,7 @@ export interface TextMeasurer {
 
 export interface RenderStyle {
   /** Cross-target hyperlink carried by the rendered text cells. */
-  hyperlink?: string
+  hyperlink?: string | DerivedLinkTarget
   fg?: string
   bg?: string
   attrs?: {

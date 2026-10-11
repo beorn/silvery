@@ -1,3 +1,7 @@
+import { deriveLinkTarget, hyperlink } from "@silvery/ansi"
+import { writeTextToBuffer, parseAnsiText } from "@silvery/ag-term/unicode"
+import { bufferToHTML, bufferToStyledText, createTextFrame } from "@silvery/ag-term/buffer"
+import { outputPhase } from "@silvery/ag-term/pipeline/output-phase"
 /**
  * Tests for diffBuffers: buffer diffing for the output phase.
  *
@@ -772,4 +776,76 @@ describe("diffBuffers property tests", () => {
       expect(result.count).toBeLessThanOrEqual(maxAllowed)
     }
   })
+})
+
+describe("derived hyperlink buffer provenance", () => {
+  test("buffer sinks preserve clone/copy/scroll trust, expose strings and deny HTML hrefs", () => {
+    const uri = "file:///tmp/example.ts"
+    const buffer = new TerminalBuffer(8, 3)
+    buffer.setCell(0, 1, { char: "x", hyperlink: deriveLinkTarget(uri) })
+    expect(buffer.getCell(0, 1).hyperlink).toBe(uri)
+    expect(bufferToStyledText(buffer)).toContain(uri)
+    expect(createTextFrame(buffer).ansi).toContain(uri)
+    expect(bufferToHTML(buffer)).not.toContain("href=")
+    expect(outputPhase(null, buffer)).toContain(uri)
+    const same = new TerminalBuffer(8, 3)
+    same.setCell(0, 1, { char: "x", hyperlink: deriveLinkTarget(uri) })
+    expect(diffBuffers(buffer, same).count).toBe(0)
+    const copied = new TerminalBuffer(8, 3)
+    copied.copyFrom(buffer, 0, 0, 0, 0, 8, 3)
+    expect(bufferToStyledText(copied)).toContain(uri)
+    copied.scrollRegion(0, 0, 8, 3, 1)
+    expect(bufferToStyledText(copied)).toContain(uri)
+    const raw = new TerminalBuffer(8, 3)
+    raw.setCell(0, 1, buffer.getCell(0, 1))
+    expect(bufferToStyledText(raw)).not.toContain(uri)
+    expect(diffBuffers(buffer, raw).count).toBe(1)
+  })
+})
+
+test("buffer mutations preserve producer trust but raw changes and ANSI cannot recreate it", () => {
+  const uri = "km://node/42"
+  const b = new TerminalBuffer(4, 1)
+  b.setCell(0, 0, { char: "a", hyperlink: deriveLinkTarget(uri) })
+  writeTextToBuffer(b, 1, 0, "\u0301")
+  expect(b.getCell(0, 0).char).toBe("a\u0301")
+  b.restyleRegion(0, 0, 1, 1, { fg: 2, bg: null, attrs: { bold: true } })
+  expect(bufferToStyledText(b)).toContain(uri)
+  const raw = new TerminalBuffer(4, 1)
+  raw.setCell(0, 0, b.getCell(0, 0))
+  expect(outputPhase(null, raw)).not.toContain(uri)
+  const parsed = parseAnsiText(hyperlink("a", deriveLinkTarget(uri)))
+  const reparsed = new TerminalBuffer(4, 1)
+  reparsed.setCell(0, 0, { char: parsed[0]!.text, hyperlink: parsed[0]!.hyperlink })
+  expect(bufferToStyledText(reparsed)).not.toContain(uri)
+})
+
+test.each(["\x01c1b\x02", "\x01c1s\x02", "\x01e7b\x02", ""])(
+  "terminal sinks retain raw safe OSC format %s and HTML gets only the URI",
+  (format) => {
+    const b = new TerminalBuffer(2, 1)
+    b.setCell(0, 0, { char: "a", hyperlink: format + "https://example.com/" })
+    const intro = format.includes("c1") ? "\x9d" : "\x1b]"
+    const end = format.includes("b") ? "\x07" : "\x1b\\"
+    const open = `${intro}8;;https://example.com/${end}`
+    const close = `${intro}8;;${end}`
+    expect(bufferToStyledText(b)).toContain(open)
+    expect(bufferToStyledText(b)).toContain(close)
+    expect(outputPhase(null, b)).toContain(open)
+    expect(outputPhase(null, b)).toContain(close)
+    expect(bufferToHTML(b)).toContain('href="https://example.com/"')
+    expect(b.getCell(0, 0).hyperlink).toBe("https://example.com/")
+  },
+)
+
+test("orphaned wide-edge blanks preserve copied hyperlink provenance", () => {
+  const source = new TerminalBuffer(3, 1)
+  const target = deriveLinkTarget("km://node/42")
+  source.setCell(0, 0, { char: "界", wide: true, hyperlink: target })
+  source.setCell(1, 0, { char: "", continuation: true, hyperlink: target })
+  const copied = new TerminalBuffer(1, 1)
+  copied.copyFrom(source, 1, 0, 0, 0, 1, 1)
+  expect(copied.getCell(0, 0).char).toBe(" ")
+  expect(copied.getCell(0, 0).continuation).toBe(false)
+  expect(copied.resolveHyperlink(0, 0)).toBe("km://node/42")
 })

@@ -44,9 +44,14 @@ export function sanitizeHyperlinkTarget(url: string): string | undefined {
 
 // The private field is the runtime producer identity. JSON and structurally
 // similar objects cannot recreate it; the constructor never leaves this module.
+const PRODUCER_KEY = Symbol("derived link producer")
+
 class DerivedTarget {
   readonly #uri: string
-  constructor(uri: string) {
+  constructor(key: typeof PRODUCER_KEY, uri: string) {
+    if (key !== PRODUCER_KEY) {
+      throw new TypeError("Use deriveLinkTarget to mint a resolved destination")
+    }
     this.#uri = uri
     Object.freeze(this)
   }
@@ -74,7 +79,7 @@ export function deriveLinkTarget(canonicalUri: string): DerivedLinkTarget {
       "deriveLinkTarget file URI requires an absolute path and empty or localhost authority",
     )
   }
-  return new DerivedTarget(canonicalUri)
+  return new DerivedTarget(PRODUCER_KEY, canonicalUri)
 }
 
 /** Canonical URI readback is deliberately lossy: it does not confer trust. */
@@ -127,12 +132,16 @@ export function buildHyperlinkSequence(
   if (uri === undefined) return ""
   const format =
     typeof target === "string" ? decodeHyperlinkFormat(target) : { intro: "\x1b]", end: "\x1b\\" }
-  return `${format.intro}8;;${close ? "" : uri}${format.end}`
+  return osc8Sequence(format.intro, close ? "" : uri, format.end)
 }
 
 /** Close a previously emitted canonical OSC 8 opening sequence. */
 export function closeHyperlinkSequence(open: string | undefined): string {
   if (!open) return ""
   const end = open.endsWith("\x07") ? "\x07" : "\x1b\\"
-  return `${open.startsWith("\x9d") ? "\x9d" : "\x1b]"}8;;${end}`
+  return osc8Sequence(open.startsWith("\x9d") ? "\x9d" : "\x1b]", "", end)
+}
+
+function osc8Sequence(intro: string, uri: string, end: string): string {
+  return `${intro}8;;${uri}${end}`
 }

@@ -9,7 +9,11 @@
  * - Text content collection (collectTextContent)
  */
 
-import { sanitizeHyperlinkTarget } from "@silvery/ansi"
+import {
+  sanitizeHyperlinkTarget,
+  type DerivedLinkTarget,
+  hyperlinkTargetEquals,
+} from "@silvery/ansi"
 import {
   type CellAttrs,
   type Color,
@@ -40,6 +44,7 @@ import {
   splitGraphemesAnsiAware,
   wrapText,
 } from "../unicode"
+import { tokenizeAnsi } from "../ansi-sanitize"
 import { collectPlainText } from "./collect-text"
 import { getTextStyle, getTextWidth, parseColor } from "./render-helpers"
 import { getActiveTheme, type ActiveColorLevel } from "./state"
@@ -61,6 +66,8 @@ import { assertBgCellHasTextPaint, isClipParityEnabled } from "../strict-clip-pa
 import { createBoundedStringCache, setIsolated } from "../bounded-cache"
 import { createLogger } from "loggily"
 import { resolveUserSelect } from "../user-select"
+
+type PaintStyle = Omit<Style, "hyperlink"> & { hyperlink?: string | DerivedLinkTarget }
 
 const log = createLogger("silvery:content")
 
@@ -149,7 +156,7 @@ export function clearBgConflictWarnings(): void {
  * Tracks cumulative styles through the tree to enable proper push/pop behavior.
  */
 interface StyleContext {
-  hyperlink?: string
+  hyperlink?: string | DerivedLinkTarget
   color?: string
   backgroundColor?: string
   bold?: boolean
@@ -274,11 +281,25 @@ const HYPERLINK_CLOSE = "\x1b]8;;\x1b\\"
 // reaches the output buffer.
 const INTERNAL_HYPERLINK_CLEAR = "\0silvery:hyperlink-clear"
 
-function hyperlinkOpen(href: string): string {
+function hyperlinkOpen(href: string | DerivedLinkTarget): string {
+  // A producer target travels in ChildSpan.context; ANSI carries only a reset.
+  if (typeof href !== "string") return HYPERLINK_CLOSE
   // Internal clear marker is not a URL and never reaches the output buffer.
   if (href === INTERNAL_HYPERLINK_CLEAR) return `\x1b]8;;${href}\x1b\\`
   const next = sanitizeHyperlinkTarget(href)
   return next ? `\x1b]8;;${next}\x1b\\` : ""
+}
+
+/** Authored OSC closes are explicit clears before structural spans are added. */
+function carryHyperlinkClears(text: string): string {
+  if (!text.includes("\x1b]8;") && !text.includes("\x9d8;")) return text
+  return tokenizeAnsi(text)
+    .map((token) =>
+      token.type === "osc" && /^(?:\x1b\]|\x9d)8;[^;]*;(?:\x07|\x1b\\|\x9c)$/.test(token.value)
+        ? hyperlinkOpen(INTERNAL_HYPERLINK_CLEAR)
+        : token.value,
+    )
+    .join("")
 }
 
 /**
@@ -347,7 +368,7 @@ function applyTextStyleAnsi(
 
   const childAnsi = styleToAnsi(childStyle, colorLevel)
   const parentAnsi = styleToAnsi(parentStyle, colorLevel)
-  const linkChanged = childStyle.hyperlink !== parentStyle.hyperlink
+  const linkChanged = !hyperlinkTargetEquals(childStyle.hyperlink, parentStyle.hyperlink)
 
   // If child has no style changes, just return text
   if (!childAnsi && !linkChanged) {
@@ -502,7 +523,7 @@ function collectTextWithBg(
 ): TextWithBg {
   // If this node has direct text content, return it with no bg segments
   if (node.textContent !== undefined) {
-    let text = node.textContent
+    let text = carryHyperlinkClears(node.textContent)
     // DOM-level truncation: trim leaf text to display width budget
     if (maxDisplayWidth !== undefined) {
       const textW = getTextWidth(text, ctx)
@@ -789,7 +810,12 @@ function applySelectableSpansToLine(
       for (let offset = 0; offset < width; offset++) {
         const cellX = col + offset
         buffer.readCellInto(cellX, y, cell)
-        sink.emitSetCell(cellX, y, cell, lineHasContent && resolveUserSelect(span.node) !== "none")
+        sink.emitSetCell(
+          cellX,
+          y,
+          { ...cell, preserveHyperlink: true },
+          lineHasContent && resolveUserSelect(span.node) !== "none",
+        )
       }
     },
   )
@@ -1560,7 +1586,7 @@ export function renderTextLine(
   x: number,
   y: number,
   text: string,
-  baseStyle: Style,
+  baseStyle: PaintStyle,
   maxCol?: number,
   inheritedBg?: Color,
   ctx?: PipelineContext,
@@ -1595,7 +1621,7 @@ function renderTextLineReturn(
   x: number,
   y: number,
   text: string,
-  baseStyle: Style,
+  baseStyle: PaintStyle,
   maxCol?: number,
   inheritedBg?: Color,
   ctx?: PipelineContext,
@@ -1608,8 +1634,10 @@ function renderTextLineReturn(
    * out of the throw.
    */
   bgConflictOverride?: BgConflictMode,
+  spans: readonly ChildSpan[] = [],
+  lineOffset = 0,
 ): number {
-  if (hasAnsi(text)) {
+  if (hasAnsi(text) || spans.length > 0) {
     return renderAnsiTextLineReturn(
       buffer,
       x,
@@ -1622,6 +1650,8 @@ function renderTextLineReturn(
       minCol,
       selectable,
       bgConflictOverride,
+      spans,
+      lineOffset,
     )
   }
   return renderGraphemes(
@@ -1660,7 +1690,7 @@ function renderGraphemes(
   graphemes: string[],
   startCol: number,
   y: number,
-  style: Style,
+  style: PaintStyle,
   maxCol?: number,
   inheritedBg?: Color,
   ctx?: PipelineContext,
@@ -1794,7 +1824,7 @@ export function renderAnsiTextLine(
   x: number,
   y: number,
   text: string,
-  baseStyle: Style,
+  baseStyle: PaintStyle,
   maxCol?: number,
   inheritedBg?: Color,
   ctx?: PipelineContext,
@@ -1822,7 +1852,7 @@ function renderAnsiTextLineReturn(
   x: number,
   y: number,
   text: string,
-  baseStyle: Style,
+  baseStyle: PaintStyle,
   maxCol?: number,
   inheritedBg?: Color,
   ctx?: PipelineContext,
@@ -1837,6 +1867,8 @@ function renderAnsiTextLineReturn(
    * still throw.
    */
   bgConflictOverride?: BgConflictMode,
+  spans: readonly ChildSpan[] = [],
+  lineOffset = 0,
 ): number {
   const sink: RenderSink = createFrameSink(buffer)
   const segments = parseAnsiText(text)
@@ -1888,18 +1920,49 @@ function renderAnsiTextLineReturn(
       }
     }
 
-    col = renderGraphemes(
-      buffer,
-      splitGraphemes(segment.text),
-      col,
-      y,
-      style,
-      maxCol,
-      inheritedBg,
-      ctx,
-      minCol,
-      selectable,
-    )
+    if (spans.length === 0) {
+      col = renderGraphemes(
+        buffer,
+        splitGraphemes(segment.text),
+        col,
+        y,
+        style,
+        maxCol,
+        inheritedBg,
+        ctx,
+        minCol,
+        selectable,
+      )
+      continue
+    }
+    let previousTarget: string | DerivedLinkTarget | undefined
+    let painted: PaintStyle | undefined
+    for (const grapheme of splitGraphemes(segment.text)) {
+      const offset = lineOffset + col - x
+      let target = baseStyle.hyperlink
+      for (const span of spans) {
+        if (offset >= span.start && offset < span.end) target = span.context.hyperlink
+      }
+      if (!painted || target !== previousTarget) {
+        painted = {
+          ...style,
+          hyperlink: segment.hyperlink === undefined ? target : style.hyperlink,
+        }
+        previousTarget = target
+      }
+      col = renderGraphemes(
+        buffer,
+        [grapheme],
+        col,
+        y,
+        painted,
+        maxCol,
+        inheritedBg,
+        ctx,
+        minCol,
+        selectable,
+      )
+    }
   }
   return col
 }
@@ -2008,10 +2071,10 @@ export function mergeStyles(
  * Uses category-based merging to preserve decorations and emphasis.
  */
 function mergeAnsiStyle(
-  base: Style,
+  base: PaintStyle,
   segment: StyledSegment,
   options: MergeStylesOptions = {},
-): Style {
+): PaintStyle {
   const { preserveDecorations = true, preserveEmphasis = true } = options
 
   // Convert ANSI SGR codes to overlay style
@@ -2046,17 +2109,19 @@ function mergeAnsiStyle(
 
   // Use mergeStyles for consistent category-based merging
   const merged = mergeStyles(
-    base,
+    { ...base, hyperlink: undefined },
     { fg, bg, underlineColor, attrs: overlayAttrs },
     { preserveDecorations, preserveEmphasis },
   )
 
+  const painted: PaintStyle = { ...merged, hyperlink: base.hyperlink }
+
   // Pass through OSC 8 hyperlink from segment (not an SGR attribute)
   if (segment.hyperlink !== undefined) {
-    merged.hyperlink = segment.hyperlink === INTERNAL_HYPERLINK_CLEAR ? "" : segment.hyperlink
+    painted.hyperlink = segment.hyperlink === INTERNAL_HYPERLINK_CLEAR ? "" : segment.hyperlink
   }
 
-  return merged
+  return painted
 }
 
 /**
@@ -2257,7 +2322,7 @@ export function renderText(
 
   // Get style for this Text node.
   // Inherit foreground from nearest ancestor Box with color prop (CSS semantics).
-  const style = getTextStyle(props, ctx?.colorLevel)
+  const style: PaintStyle = getTextStyle(props, ctx?.colorLevel)
   style.hyperlink = props.internal_hyperlink
   if (style.fg === null && inheritedFg !== undefined) {
     style.fg = inheritedFg
@@ -2439,6 +2504,8 @@ export function renderText(
       minCol,
       lineSelectable,
       props.bgConflict,
+      childSpans,
+      lineOffsets[lineIdx]?.start ?? 0,
     )
 
     // Row metadata for copy-selection: soft-wrap rejoining + trailing-space
@@ -2580,15 +2647,23 @@ const CLEAR_ATTRS: CellAttrs = {
  * merges it over baseStyle. We reproduce that per span (once, not per grapheme).
  */
 function resolveSpanStyle(
-  baseStyle: Style,
+  baseStyle: PaintStyle,
   context: StyleContext,
   colorLevel?: ActiveColorLevel,
 ): Style {
   const ansi = styleToAnsi(context, colorLevel)
-  if (!ansi) return mergeAnsiStyle(baseStyle, EMPTY_ANSI_SEGMENT)
+  if (!ansi) {
+    return {
+      ...mergeAnsiStyle({ ...baseStyle, hyperlink: undefined }, EMPTY_ANSI_SEGMENT),
+      hyperlink: undefined,
+    }
+  }
   // Append a sentinel char so parseAnsiText emits a segment carrying the SGR.
   const segs = parseAnsiText(ansi + " ")
-  return mergeAnsiStyle(baseStyle, segs[0] ?? EMPTY_ANSI_SEGMENT)
+  return {
+    ...mergeAnsiStyle({ ...baseStyle, hyperlink: undefined }, segs[0] ?? EMPTY_ANSI_SEGMENT),
+    hyperlink: undefined,
+  }
 }
 
 /**
@@ -2613,7 +2688,7 @@ function restyleTextSegments(
   y: number,
   width: number,
   rowCount: number,
-  baseStyle: Style,
+  baseStyle: PaintStyle,
   inheritedBg: Color | undefined,
   childSpans: ChildSpan[],
   lineOffsets: Array<{ start: number; end: number }>,

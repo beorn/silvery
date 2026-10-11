@@ -21,7 +21,7 @@
 
 import { type ReactNode, useCallback, useContext } from "react"
 import { textPair, type InteractionRole } from "@silvery/ag"
-import { sanitizeHyperlinkTarget } from "@silvery/ansi"
+import { resolveTerminalHyperlink, type DerivedLinkTarget } from "@silvery/ansi"
 import type { TextProps } from "./Text"
 import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
 import { Text } from "./Text"
@@ -44,7 +44,7 @@ interface LinkSharedProps extends Omit<TextProps, "children" | "onClick"> {
 /** A URL link may also intercept activation; an action-only link must handle it. */
 export type LinkProps = LinkSharedProps &
   (
-    | { href: string; onClick?: TextProps["onClick"] }
+    | { href: string | DerivedLinkTarget; onClick?: TextProps["onClick"] }
     | { href?: undefined; onClick: NonNullable<TextProps["onClick"]> }
   )
 
@@ -71,7 +71,7 @@ export function Link({
       const isRevealed = interaction.isRevealActive || (role === "content-link" && event.metaKey)
       onClick?.(event)
       if (isRevealed && href !== undefined && !event.defaultPrevented) {
-        const safe = sanitizeHyperlinkTarget(href)
+        const safe = resolveTerminalHyperlink(href)
         if (safe !== undefined) {
           chain?.events.emit("link:open", safe)
           event.preventDefault()

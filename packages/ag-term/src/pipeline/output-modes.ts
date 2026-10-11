@@ -14,7 +14,7 @@
  * is unchanged.
  */
 
-import { sanitizeHyperlinkTarget } from "@silvery/ansi"
+import { closeHyperlinkSequence } from "@silvery/ansi"
 import {
   type Style,
   type TerminalBuffer,
@@ -54,7 +54,7 @@ export interface OutputEmitState {
   lastEmittedY: number
   /** Currently active SGR style, or null if reset. */
   currentStyle: Style | null
-  /** Last emitted sanitized OSC 8 URL, or undefined if none is open. */
+  /** Last emitted OSC 8 opening bytes (URI plus format), or undefined if none is open. */
   currentHyperlink: string | undefined
   /** Inline mode adjustments: subtract from y to get render-relative row. */
   startLine: number
@@ -191,19 +191,15 @@ function emitCellAtCursor(
     hyperlink?: string
   },
   ctx: OutputContext,
+  buffer: TerminalBuffer,
 ): void {
-  // Hyperlink transition. Track the last emitted sanitized URL, not the raw
+  // Hyperlink transition. Track the canonical OSC opening, not the raw
   // cell value, so a refused target drops OSC 8 without close+open noise.
-  if (cell.hyperlink !== state.currentHyperlink) {
-    const next = cell.hyperlink ? sanitizeHyperlinkTarget(cell.hyperlink) : undefined
-    if (next !== state.currentHyperlink) {
-      if (state.currentHyperlink) {
-        state.output += "\x1b]8;;\x1b\\"
-      }
-      if (next) {
-        state.output += `\x1b]8;;${next}\x1b\\`
-      }
-    }
+  const sourceY = state.isInline ? renderY + state.startLine : renderY
+  const next = buffer.hyperlinkSequence(x, sourceY) || undefined
+  if (next !== state.currentHyperlink) {
+    state.output += closeHyperlinkSequence(state.currentHyperlink)
+    if (next) state.output += next
     state.currentHyperlink = next
   }
 
@@ -257,7 +253,7 @@ function emitCellAtCursor(
  */
 function endOfRowReset(state: OutputEmitState): void {
   if (state.currentHyperlink) {
-    state.output += "\x1b]8;;\x1b\\"
+    state.output += closeHyperlinkSequence(state.currentHyperlink)
     state.currentHyperlink = undefined
   }
   if (
@@ -296,7 +292,7 @@ export function emitWholeRow(
 
   // Close hyperlink on row change.
   if (y !== state.prevY && state.currentHyperlink) {
-    state.output += "\x1b]8;;\x1b\\"
+    state.output += closeHyperlinkSequence(state.currentHyperlink)
     state.currentHyperlink = undefined
   }
   state.prevY = y
@@ -320,6 +316,7 @@ export function emitWholeRow(
         hyperlink: reusableCell.hyperlink,
       },
       ctx,
+      buffer,
     )
     if (reusableCell.wide) {
       x++ // skip continuation column
@@ -363,7 +360,7 @@ export function emitRuns(
   const renderY = state.isInline ? y - state.startLine : y
 
   if (y !== state.prevY && state.currentHyperlink) {
-    state.output += "\x1b]8;;\x1b\\"
+    state.output += closeHyperlinkSequence(state.currentHyperlink)
     state.currentHyperlink = undefined
   }
   state.prevY = y
@@ -404,6 +401,7 @@ export function emitRuns(
             hyperlink: change.cell.hyperlink,
           },
           ctx,
+          buffer,
         )
         x += change.cell.wide ? 2 : 1
       } else {
@@ -435,6 +433,7 @@ export function emitRuns(
             hyperlink: reusableCell.hyperlink,
           },
           ctx,
+          buffer,
         )
         x += reusableCell.wide ? 2 : 1
       }
@@ -472,7 +471,7 @@ export function emitScatter(
   const renderY = state.isInline ? y - state.startLine : y
 
   if (y !== state.prevY && state.currentHyperlink) {
-    state.output += "\x1b]8;;\x1b\\"
+    state.output += closeHyperlinkSequence(state.currentHyperlink)
     state.currentHyperlink = undefined
   }
   state.prevY = y
@@ -512,6 +511,7 @@ export function emitScatter(
         hyperlink: cell.hyperlink,
       },
       ctx,
+      buffer,
     )
     // emitCellAtCursor stores buffer-relative y, but for scatter we want
     // the actual y for cross-cell continuation tracking.

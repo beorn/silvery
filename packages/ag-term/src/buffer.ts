@@ -6,7 +6,20 @@
  * multi-byte Unicode graphemes and combining characters).
  */
 
-import { bgFromRgb, fgFromRgb, nearestAnsi16, rgbToAnsi256, type ColorLevel } from "@silvery/ansi"
+import {
+  bgFromRgb,
+  fgFromRgb,
+  nearestAnsi16,
+  rgbToAnsi256,
+  type ColorLevel,
+  type DerivedLinkTarget,
+  hyperlinkUri,
+  resolveTerminalHyperlink,
+  resolveDOMHyperlink,
+  buildHyperlinkSequence,
+  closeHyperlinkSequence,
+  hyperlinkTargetEquals,
+} from "@silvery/ansi"
 import { fgColorCode, bgColorCode } from "./ansi/sgr-codes"
 
 // ============================================================================
@@ -110,7 +123,12 @@ export interface Cell {
  * on write payloads so selectability is explicit per mutation rather than an
  * ambient buffer mode.
  */
-export type CellPatch = Partial<Cell> & { selectable?: boolean }
+export type CellPatch = Omit<Partial<Cell>, "hyperlink"> & {
+  hyperlink?: string | DerivedLinkTarget
+  selectable?: boolean
+  /** Internal read/write mutations preserve the existing sparse target. */
+  preserveHyperlink?: boolean
+}
 
 /**
  * Style information for a cell (excludes char and position flags).
@@ -478,7 +496,7 @@ export class TerminalBuffer {
   /** Underline color storage (independent of fg, for SGR 58) */
   private underlineColors: Map<number, Color>
   /** OSC 8 hyperlink URL storage (only for cells that are part of a hyperlink) */
-  private hyperlinks: Map<number, string>
+  private hyperlinks: Map<number, string | DerivedLinkTarget>
   /**
    * Per-row dirty tracking for diff optimization.
    * When set, diffBuffers() can skip clean rows entirely.
@@ -555,6 +573,7 @@ export class TerminalBuffer {
     const cell = this.getCell(x, y)
     this.setCell(x, y, {
       ...cell,
+      preserveHyperlink: true,
       char: " ",
       wide: false,
       continuation: false,
@@ -606,7 +625,7 @@ export class TerminalBuffer {
       bg = bgIndex > 0 ? bgIndex - 1 : null // -1 to restore actual color index
     }
 
-    const hyperlink = this.hyperlinks.get(idx)
+    const hyperlink = hyperlinkUri(this.hyperlinks.get(idx))
     return {
       char: char!,
       fg,
@@ -617,6 +636,25 @@ export class TerminalBuffer {
       continuation: unpackContinuation(packed!),
       ...(hyperlink !== undefined ? { hyperlink } : {}),
     }
+  }
+
+  /** Resolve a cell at the final terminal/activation boundary. Readback is lossy. */
+  resolveHyperlink(x: number, y: number): string | undefined {
+    return this.inBounds(x, y)
+      ? resolveTerminalHyperlink(this.hyperlinks.get(this.index(x, y)))
+      : undefined
+  }
+
+  /** Final OSC 8 bytes retain original transport format without exposing trust. */
+  hyperlinkSequence(x: number, y: number): string {
+    return this.inBounds(x, y) ? buildHyperlinkSequence(this.hyperlinks.get(this.index(x, y))) : ""
+  }
+
+  /** Final HTML href policy. Non-web destinations yield no href. */
+  domHyperlink(x: number, y: number): string | undefined {
+    return this.inBounds(x, y)
+      ? resolveDOMHyperlink(this.hyperlinks.get(this.index(x, y)))
+      : undefined
   }
 
   // --------------------------------------------------------------------------
@@ -820,7 +858,7 @@ export class TerminalBuffer {
 
     out.wide = (packed & WIDE_FLAG) !== 0
     out.continuation = (packed & CONTINUATION_FLAG) !== 0
-    out.hyperlink = this.hyperlinks.get(idx)
+    out.hyperlink = hyperlinkUri(this.hyperlinks.get(idx))
 
     return out
   }
@@ -889,7 +927,7 @@ export class TerminalBuffer {
     }
 
     // Handle hyperlink storage
-    const hyperlink = cell.hyperlink
+    const hyperlink = cell.preserveHyperlink ? this.hyperlinks.get(idx) : cell.hyperlink
     if (hyperlink !== undefined && hyperlink !== "") {
       this.hyperlinks.set(idx, hyperlink)
     } else {
@@ -1316,7 +1354,11 @@ export class TerminalBuffer {
 
         if (source.inBounds(sx, sy) && this.inBounds(dX, dstY)) {
           source.readCellInto(sx, sy, cell)
-          this.setCell(dX, dstY, { ...cell, selectable: source.isCellSelectable(sx, sy) })
+          this.setCell(dX, dstY, {
+            ...cell,
+            hyperlink: source.hyperlinks.get(source.index(sx, sy)),
+            selectable: source.isCellSelectable(sx, sy),
+          })
           if (firstCopiedX === -1) firstCopiedX = dX
           lastCopiedX = dX
         }
@@ -1633,7 +1675,7 @@ export class TerminalBuffer {
     // Check hyperlinks
     const hlA = this.hyperlinks.get(idx)
     const hlB = other.hyperlinks.get(otherIdx)
-    if (hlA !== hlB) return false
+    if (!hyperlinkTargetEquals(hlA, hlB)) return false
 
     return true
   }
@@ -1711,7 +1753,7 @@ export class TerminalBuffer {
       // Check hyperlinks
       const hlA = this.hyperlinks.get(idx)
       const hlB = other.hyperlinks.get(otherIdx)
-      if (hlA !== hlB) return false
+      if (!hyperlinkTargetEquals(hlA, hlB)) return false
     }
     return true
   }
@@ -1929,14 +1971,14 @@ export function bufferToStyledText(
       if (cell.continuation) continue
 
       // Check if hyperlink changed (OSC 8 is separate from SGR)
-      const cellHyperlink = cell.hyperlink
+      const cellHyperlink = buffer.hyperlinkSequence(x, y) || undefined
       if (cellHyperlink !== currentHyperlink) {
         if (currentHyperlink) {
           // Close previous hyperlink using the same format as the open
-          line += emitHyperlinkClose(currentHyperlink)
+          line += closeHyperlinkSequence(currentHyperlink)
         }
         if (cellHyperlink) {
-          line += emitHyperlinkOpen(cellHyperlink)
+          line += cellHyperlink
         }
         currentHyperlink = cellHyperlink
       }
@@ -1958,7 +2000,7 @@ export function bufferToStyledText(
 
     // Close any open hyperlink at end of line
     if (currentHyperlink) {
-      line += emitHyperlinkClose(currentHyperlink)
+      line += closeHyperlinkSequence(currentHyperlink)
       currentHyperlink = undefined
     }
 
@@ -1988,84 +2030,6 @@ export function bufferToStyledText(
   }
 
   return result
-}
-
-// ============================================================================
-// Hyperlink Format Helpers
-// ============================================================================
-
-/**
- * Decode hyperlink format metadata from URL prefix.
- * parseAnsiText encodes the original OSC format (C1 vs ESC, BEL vs ST)
- * as a prefix: \x01<tag>\x02<url>
- *
- * Tags:
- *   c1b = C1 OSC (\x9d) + BEL (\x07) terminator
- *   c1s = C1 OSC (\x9d) + ST (\x1b\\) terminator
- *   e7b = ESC OSC (\x1b]) + BEL (\x07) terminator
- *   (no prefix) = ESC OSC + ST (default)
- */
-function decodeHyperlinkFormat(encoded: string): {
-  url: string
-  oscIntro: string
-  oscClose: string
-  closeIntro: string
-  closeTerminator: string
-} {
-  if (encoded.charCodeAt(0) === 1) {
-    const sepIdx = encoded.indexOf("\x02")
-    if (sepIdx > 0) {
-      const tag = encoded.slice(1, sepIdx)
-      const url = encoded.slice(sepIdx + 1)
-      if (tag === "c1b") {
-        return {
-          url,
-          oscIntro: "\x9d",
-          oscClose: "\x9d",
-          closeIntro: "\x9d",
-          closeTerminator: "\x07",
-        }
-      }
-      if (tag === "c1s") {
-        return {
-          url,
-          oscIntro: "\x9d",
-          oscClose: "\x9d",
-          closeIntro: "\x9d",
-          closeTerminator: "\x1b\\",
-        }
-      }
-      if (tag === "e7b") {
-        return {
-          url,
-          oscIntro: "\x1b]",
-          oscClose: "\x1b]",
-          closeIntro: "\x1b]",
-          closeTerminator: "\x07",
-        }
-      }
-    }
-  }
-  // Default: ESC OSC + ST
-  return {
-    url: encoded,
-    oscIntro: "\x1b]",
-    oscClose: "\x1b]",
-    closeIntro: "\x1b]",
-    closeTerminator: "\x1b\\",
-  }
-}
-
-/** Emit OSC 8 hyperlink open sequence, respecting format metadata in URL. */
-function emitHyperlinkOpen(encoded: string): string {
-  const fmt = decodeHyperlinkFormat(encoded)
-  return `${fmt.oscIntro}8;;${fmt.url}${fmt.closeTerminator}`
-}
-
-/** Emit OSC 8 hyperlink close sequence, respecting format metadata in URL. */
-function emitHyperlinkClose(encoded: string): string {
-  const fmt = decodeHyperlinkFormat(encoded)
-  return `${fmt.closeIntro}8;;${fmt.closeTerminator}`
 }
 
 // ============================================================================
@@ -2181,7 +2145,7 @@ export function bufferToHTML(
       if (cell.continuation) continue
 
       // Handle hyperlink transitions
-      const cellHyperlink = cell.hyperlink
+      const cellHyperlink = buffer.domHyperlink(x, y)
       if (cellHyperlink !== currentHyperlink) {
         if (linkOpen) {
           if (spanOpen) {

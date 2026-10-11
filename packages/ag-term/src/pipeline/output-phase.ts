@@ -18,7 +18,7 @@ import {
   isDefaultBg,
   styleEquals,
 } from "../buffer"
-import { sanitizeHyperlinkTarget } from "@silvery/ansi"
+import { buildHyperlinkSequence, closeHyperlinkSequence } from "@silvery/ansi"
 import { fgColorCode, bgColorCode } from "../ansi/sgr-codes"
 import { resetCursorStyle, setCursorStyle } from "../output"
 import type { CursorState } from "@silvery/ag-react/hooks/useCursor"
@@ -2100,19 +2100,12 @@ function bufferToAnsi(
       // be skipped — they write a space to keep the VT cursor in sync.
 
       // Handle OSC 8 hyperlink transitions (separate from SGR style).
-      // currentHyperlink is the last emitted sanitized URL, not the raw cell value.
-      const cellHyperlink = cell.hyperlink
-      if (cellHyperlink !== currentHyperlink) {
-        const next = cellHyperlink ? sanitizeHyperlinkTarget(cellHyperlink) : undefined
-        if (next !== currentHyperlink) {
-          if (currentHyperlink) {
-            output += "\x1b]8;;\x1b\\" // Close previous hyperlink
-          }
-          if (next) {
-            output += `\x1b]8;;${next}\x1b\\` // Open new hyperlink
-          }
-        }
-        currentHyperlink = next
+      // currentHyperlink is the final OSC opening (URI plus format), never a producer object.
+      const nextHyperlink = buffer.hyperlinkSequence(x, y) || undefined
+      if (nextHyperlink !== currentHyperlink) {
+        output += closeHyperlinkSequence(currentHyperlink)
+        if (nextHyperlink) output += nextHyperlink
+        currentHyperlink = nextHyperlink
       }
 
       // Build style from cell and check if changed.
@@ -2177,7 +2170,7 @@ function bufferToAnsi(
 
     // Close any open hyperlink at end of row
     if (currentHyperlink) {
-      output += "\x1b]8;;\x1b\\"
+      output += closeHyperlinkSequence(currentHyperlink)
       currentHyperlink = undefined
     }
 
@@ -2213,7 +2206,7 @@ function bufferToAnsi(
 
   // Close any open hyperlink at end
   if (currentHyperlink) {
-    output += "\x1b]8;;\x1b\\"
+    output += closeHyperlinkSequence(currentHyperlink)
   }
 
   // Reset style at end
@@ -2360,7 +2353,7 @@ function hybridChangesToAnsi(
   // close any open hyperlink and reset SGR so the terminal returns to a
   // known-clean state.
   if (hybridEmitState.currentHyperlink) {
-    hybridEmitState.output += "\x1b]8;;\x1b\\"
+    hybridEmitState.output += closeHyperlinkSequence(hybridEmitState.currentHyperlink)
     hybridEmitState.currentHyperlink = undefined
   }
   if (hybridEmitState.currentStyle) {
@@ -2493,7 +2486,7 @@ function changesToAnsi(
 
       // Close hyperlink on row change
       if (y !== prevY && currentHyperlink) {
-        output += "\x1b]8;;\x1b\\"
+        output += closeHyperlinkSequence(currentHyperlink)
         currentHyperlink = undefined
       }
       prevY = y
@@ -2529,15 +2522,12 @@ function changesToAnsi(
       for (let bx = 0; bx < bufWidth; bx++) {
         buffer.readCellInto(bx, y, denseRowCell)
 
-        // Handle hyperlink transitions. Track the last emitted sanitized URL.
-        const cellHyperlink = denseRowCell.hyperlink
-        if (cellHyperlink !== currentHyperlink) {
-          const next = cellHyperlink ? sanitizeHyperlinkTarget(cellHyperlink) : undefined
-          if (next !== currentHyperlink) {
-            if (currentHyperlink) output += "\x1b]8;;\x1b\\"
-            if (next) output += `\x1b]8;;${next}\x1b\\`
-          }
-          currentHyperlink = next
+        // Handle hyperlink transitions. Track final OSC opening bytes (URI plus format).
+        const nextHyperlink = buffer.hyperlinkSequence(bx, y) || undefined
+        if (nextHyperlink !== currentHyperlink) {
+          output += closeHyperlinkSequence(currentHyperlink)
+          if (nextHyperlink) output += nextHyperlink
+          currentHyperlink = nextHyperlink
         }
 
         // Style transition
@@ -2580,7 +2570,7 @@ function changesToAnsi(
 
       // Close hyperlink at end of row
       if (currentHyperlink) {
-        output += "\x1b]8;;\x1b\\"
+        output += closeHyperlinkSequence(currentHyperlink)
         currentHyperlink = undefined
       }
 
@@ -2633,7 +2623,7 @@ function changesToAnsi(
 
     // Close hyperlink on row change (hyperlinks must not span across rows)
     if (y !== prevY && currentHyperlink) {
-      output += "\x1b]8;;\x1b\\"
+      output += closeHyperlinkSequence(currentHyperlink)
       currentHyperlink = undefined
     }
     prevY = y
@@ -2696,19 +2686,14 @@ function changesToAnsi(
     }
 
     // Handle OSC 8 hyperlink transitions (separate from SGR style).
-    // currentHyperlink is the last emitted sanitized URL, not the raw cell value.
-    const cellHyperlink = cell.hyperlink
-    if (cellHyperlink !== currentHyperlink) {
-      const next = cellHyperlink ? sanitizeHyperlinkTarget(cellHyperlink) : undefined
-      if (next !== currentHyperlink) {
-        if (currentHyperlink) {
-          output += "\x1b]8;;\x1b\\" // Close previous hyperlink
-        }
-        if (next) {
-          output += `\x1b]8;;${next}\x1b\\` // Open new hyperlink
-        }
-      }
-      currentHyperlink = next
+    // currentHyperlink is the final OSC opening (URI plus format), never a producer object.
+    const nextHyperlink =
+      (buffer ? buffer.hyperlinkSequence(x, y) : buildHyperlinkSequence(cell.hyperlink)) ||
+      undefined
+    if (nextHyperlink !== currentHyperlink) {
+      output += closeHyperlinkSequence(currentHyperlink)
+      if (nextHyperlink) output += nextHyperlink
+      currentHyperlink = nextHyperlink
     }
 
     // Update style if changed (reuse pre-allocated style object)
@@ -2769,7 +2754,7 @@ function changesToAnsi(
 
   // Close any open hyperlink
   if (currentHyperlink) {
-    output += "\x1b]8;;\x1b\\"
+    output += closeHyperlinkSequence(currentHyperlink)
   }
 
   // Reset style at end

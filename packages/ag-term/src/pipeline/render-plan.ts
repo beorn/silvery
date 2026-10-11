@@ -327,16 +327,9 @@ class RecordingPrevBuffer extends TerminalBuffer {
  * here too.
  */
 function copyBufferState(dst: TerminalBuffer, src: TerminalBuffer): void {
-  // We rely on TerminalBuffer being internally consistent: the only way
-  // to populate dst with src's state without exposing private fields is
-  // to walk the public read API and reapply via setCell/fill. That is
-  // O(width*height) and runs once per recorded frame — acceptable for
-  // Phase 1 (opt-in flag) and replaced by Phase 2's emit-only renderer.
-  for (let y = 0; y < src.height; y++) {
-    for (let x = 0; x < src.width; x++) {
-      dst.setCell(x, y, src.getCell(x, y))
-    }
-  }
+  // Copy through the existing buffer operation so private hyperlink provenance
+  // and selectability survive. Public cell readback is deliberately lossy.
+  dst.copyFrom(src, 0, 0, 0, 0, src.width, src.height)
   for (let y = 0; y < src.height; y++) {
     const meta = src.getRowMeta(y)
     dst.setRowMeta(y, {

@@ -8,6 +8,7 @@
  * Tracking: km-silvery.known-limits.hybrid-output
  */
 
+import { deriveLinkTarget } from "@silvery/ansi"
 import { describe, test, expect } from "vitest"
 import { TerminalBuffer, createMutableCell, type Cell } from "@silvery/ag-term/buffer"
 import { analyzeRowDensity, pickEmissionMode } from "@silvery/ag-term/pipeline/output-density"
@@ -304,5 +305,19 @@ describe("emitScatter", () => {
     const state = createOutputEmitState({ isInline: false })
     // Should not throw and should emit the wide char from the buffer.
     expect(() => emitScatter(result.rows[0]!, pool, buf, defaultCtx, state)).not.toThrow()
+  })
+})
+
+describe("derived hyperlink final sinks", () => {
+  test.each(["whole", "runs", "scatter"])("%s uses owning cell provenance", (mode) => {
+    const buffer = new TerminalBuffer(20, 1)
+    buffer.setCell(2, 0, { char: "x", hyperlink: deriveLinkTarget("km://node/42") })
+    const pool = [change(2, 0, buffer.getCell(2, 0))]
+    const summary = analyzeRowDensity(pool, 1, 20).rows[0]!
+    const state = createOutputEmitState()
+    if (mode === "whole") emitWholeRow(summary, buffer, defaultCtx, state)
+    else if (mode === "runs") emitRuns(summary, pool, buffer, defaultCtx, state)
+    else emitScatter(summary, pool, buffer, defaultCtx, state)
+    expect(state.output).toContain("\x1b]8;;km://node/42\x1b\\")
   })
 })

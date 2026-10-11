@@ -57,7 +57,7 @@ export function resolveTerminalLinkAt(
   const row = Math.floor(y)
   if (col < 0 || row < 0 || col >= buffer.width || row >= buffer.height) return undefined
 
-  const explicit = buffer.getCell(col, row).hyperlink
+  const explicit = buffer.resolveHyperlink(col, row)
   if (explicit) return explicit
   if (!options.detect) return undefined
 

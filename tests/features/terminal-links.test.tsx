@@ -1,3 +1,6 @@
+import { deriveLinkTarget } from "@silvery/ansi"
+import { TerminalBuffer } from "@silvery/ag-term/buffer"
+import { resolveTerminalLinkAt } from "@silvery/ag-term/terminal-links"
 /**
  * withTerminalLinks — visible-cell link production through the shared
  * `link:open` event rail.
@@ -91,7 +94,7 @@ describe("withTerminalLinks", () => {
     const handle = await run(
       <CaptureLinkOpens onOpen={onOpen}>
         <Text>other row</Text>
-        <Text internal_hyperlink="km://bead/explicit">ticket-42</Text>
+        <Text internal_hyperlink={deriveLinkTarget("km://bead/explicit")}>ticket-42</Text>
       </CaptureLinkOpens>,
       term,
       { mouse: true, kitty: true, terminalLinks: { detect } },
@@ -168,4 +171,14 @@ describe("withTerminalLinks", () => {
 
     handle.unmount()
   })
+})
+
+test("explicit cell activation authenticates derived targets and keeps URI payloads", () => {
+  const b = new TerminalBuffer(4, 1)
+  b.setCell(0, 0, { char: "a", hyperlink: "file:///tmp/example.ts" })
+  b.setCell(1, 0, { char: "b", hyperlink: deriveLinkTarget("file:///tmp/example.ts") })
+  b.setCell(2, 0, { char: "c", hyperlink: "https://example.com/" })
+  expect(resolveTerminalLinkAt(b, 0, 0, {})).toBeUndefined()
+  expect(resolveTerminalLinkAt(b, 1, 0, {})).toBe("file:///tmp/example.ts")
+  expect(resolveTerminalLinkAt(b, 2, 0, {})).toBe("https://example.com/")
 })

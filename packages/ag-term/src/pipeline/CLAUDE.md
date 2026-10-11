@@ -3,6 +3,26 @@
 
 # Pipeline Internals
 
+## Generated hyperlink transport
+
+`deriveLinkTarget` in `@silvery/ansi` mints an immutable application-resolved URI.
+Nested Text carries the target in existing `ChildSpan.context`; its ANSI
+serialization contains only a close, never producer identity. Authored explicit
+closes and child clears retain their clear semantics. Raw strings remain under
+the existing supplied web policy.
+
+The buffer's existing sparse map retains provenance and raw OSC format. Public
+Cell, Style and FrameCell reads remain URI strings. Buffer coordinate methods
+resolve the private entry only at final output or activation; readback followed
+by setCell does not recover provenance. Clone, copy and scroll retain entries,
+and pure style writes preserve them. The existing text restyle signature also
+compares hyperlink value, provenance and format: a destination change needs
+content paint even when its visible label stays identical.
+
+Terminal sinks share the ANSI OSC builder. DOM and HTML share the DOM resolver,
+which omits non-web hrefs. `link:open` keeps its string payload. TextFrame ANSI
+uses the snapshot buffer clone, retaining its provenance until emission.
+
 Read this before modifying render-phase.ts, render-text.ts, render-box.ts, or layout-phase.ts. These files implement incremental rendering -- the most complex and bug-prone part of Silvery.
 
 ## Mandatory: Test Before Change

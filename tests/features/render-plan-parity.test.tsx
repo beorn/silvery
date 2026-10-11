@@ -1,3 +1,5 @@
+import { deriveLinkTarget } from "@silvery/ansi"
+import { bufferToStyledText } from "@silvery/ag-term/buffer"
 /**
  * Phase 1 parity test for render-plan-commit (km-silvery.paint-clear-invariant).
  *
@@ -547,4 +549,11 @@ describe("render-plan-commit parity (Phase 1)", () => {
       throw new Error(`commit replay diverges from recorded buffer:\n${formatMismatch(mismatch)}`)
     }
   })
+})
+
+test("recording buffers retain producer targets through the existing copy rail", () => {
+  const b = new TerminalBuffer(4, 1)
+  b.setCell(0, 0, { char: "a", hyperlink: deriveLinkTarget("km://node/42") })
+  const recorded = wrapPrevBufferForRecording(b).clone()
+  expect(bufferToStyledText(recorded)).toContain("km://node/42")
 })

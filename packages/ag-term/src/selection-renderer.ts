@@ -210,11 +210,13 @@ export function applySelectionToBuffer(
       // Used when both colors are default (null) so direct swap would no-op.
       buffer.setCell(change.col, change.row, {
         ...cell,
+        preserveHyperlink: true,
         attrs: { ...cell.attrs, inverse: !cell.attrs.inverse },
       })
     } else {
       buffer.setCell(change.col, change.row, {
         ...cell,
+        preserveHyperlink: true,
         fg: normalizeSelectionColor(change.fg) ?? null,
         bg: normalizeSelectionColor(change.bg) ?? null,
       })

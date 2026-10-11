@@ -1,3 +1,4 @@
+import type { DerivedLinkTarget } from "@silvery/ansi"
 /**
  * Silvery Types
  *
@@ -1186,7 +1187,7 @@ export interface TextProps extends StyleProps, TextFlexItemProps, TestProps, Mou
    */
   truncateMarkerColor?: string
   /** @internal Hyperlink carried as cell metadata; use Link instead. */
-  internal_hyperlink?: string
+  internal_hyperlink?: string | DerivedLinkTarget
   /**
    * @internal Faint/dim text — SGR 2. Intentionally NOT a public style prop:
    * the design system is token-first, so reach for a semantic token

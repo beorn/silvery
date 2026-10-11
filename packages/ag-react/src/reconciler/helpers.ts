@@ -72,7 +72,8 @@ export const LAYOUT_PROPS = new Set([
  * to it must force a content re-render (its identity is unstable across renders,
  * which is also why render-text.ts bypasses the format cache when it is present).
  */
-const TEXT_CONTENT_PROPS = new Set(["wrap", "internal_transform", "truncate"])
+// Hyperlink changes repaint content: style-only restyle deliberately preserves links.
+const TEXT_CONTENT_PROPS = new Set(["wrap", "internal_transform", "truncate", "internal_hyperlink"])
 
 /**
  * Set of style props that affect content (paint) but NOT layout dimensions.

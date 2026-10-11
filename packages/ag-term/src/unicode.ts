@@ -1791,7 +1791,7 @@ export function writeTextToBuffer(
         combineCell ??= createMutableCell()
         buffer.readCellInto(col - 1, y, combineCell)
         combineCell.char = combineCell.char + grapheme
-        buffer.setCell(col - 1, y, combineCell)
+        buffer.setCell(col - 1, y, { ...combineCell, preserveHyperlink: true })
       }
     } else if (width === 1) {
       // Normal single-width character

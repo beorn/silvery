@@ -28,7 +28,7 @@ import type {
   TextMeasurer,
 } from "../render-adapter"
 import { builtInBorderPreset } from "@silvery/ag"
-import { sanitizeHyperlinkTarget } from "@silvery/ansi"
+import { resolveDOMHyperlink } from "@silvery/ansi"
 
 // ============================================================================
 // Configuration
@@ -266,9 +266,7 @@ export class DOMRenderBuffer implements RenderBuffer {
 
       for (const run of sortedRuns) {
         const safeHref =
-          run.style.hyperlink === undefined
-            ? undefined
-            : sanitizeHyperlinkTarget(run.style.hyperlink)
+          run.style.hyperlink === undefined ? undefined : resolveDOMHyperlink(run.style.hyperlink)
         const span = document.createElement(safeHref === undefined ? "span" : "a")
         span.className = `${this.config.classPrefix}-text`
         span.textContent = run.text

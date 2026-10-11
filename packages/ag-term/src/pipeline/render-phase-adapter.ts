@@ -1,3 +1,4 @@
+import type { DerivedLinkTarget } from "@silvery/ansi"
 /**
  * Phase 3: Render Phase (Adapter-aware) -- DIVERGENT RENDERER
  *
@@ -478,7 +479,7 @@ interface StyledSegment {
 
 /** Style context for nested Text style inheritance (mirrors render-text.ts StyleContext). */
 interface AdapterStyleContext {
-  hyperlink?: string
+  hyperlink?: string | DerivedLinkTarget
   color?: string
   bold?: boolean
   dim?: boolean

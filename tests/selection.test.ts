@@ -1,3 +1,5 @@
+import { deriveLinkTarget } from "@silvery/ansi"
+import { bufferToStyledText } from "@silvery/ag-term/buffer"
 /**
  * Tests for selection state machine and text extraction.
  */
@@ -1390,4 +1392,13 @@ describe("composeSelectionCells", () => {
     expect(cell.bg).toBe(1) // swapped
     expect(cell.char).toBe("A") // char unchanged
   })
+})
+
+test("selection color and inverse paints retain resolved hyperlink provenance", () => {
+  const b = new TerminalBuffer(3, 1)
+  b.setCell(0, 0, { char: "a", hyperlink: deriveLinkTarget("km://node/42") })
+  applySelectionToBuffer(b, [{ col: 0, row: 0, fg: "#ff0000", bg: "#0000ff" }])
+  expect(bufferToStyledText(b)).toContain("km://node/42")
+  applySelectionToBuffer(b, [{ col: 0, row: 0, fg: null, bg: null, inverseAttr: true }])
+  expect(bufferToStyledText(b)).toContain("km://node/42")
 })

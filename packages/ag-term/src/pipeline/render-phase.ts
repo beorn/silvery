@@ -1,3 +1,4 @@
+import { hyperlinkUri } from "@silvery/ansi"
 /**
  * Phase 3: Render Phase
  *
@@ -112,6 +113,16 @@ function inheritedBgSource(node: AgNode): { color: string; ancestorRect: Rect } 
   if (effectiveBg) return { color: effectiveBg, ancestorRect: node.boxRect }
   if (theme) return { color: theme.bg, ancestorRect: node.boxRect }
   return null
+}
+
+/** Structural link inputs join the existing text signature; reads never mint trust. */
+function textHyperlinkSignature(node: AgNode): string {
+  const href = (node.props as TextProps).internal_hyperlink
+  const own =
+    href === undefined
+      ? ""
+      : JSON.stringify([typeof href, typeof href === "string" ? href : hyperlinkUri(href)])
+  return own + "[" + node.children.map(textHyperlinkSignature).join(",") + "]"
 }
 
 /**
@@ -381,14 +392,17 @@ const _renderPhaseStats: RenderPhaseStats = {
 let _renderPhaseCallCount = 0
 
 /**
- * Per-text-node text and wrap signature from the previous render, keyed weakly so
+ * Per-text-node text, wrap and hyperlink signature, keyed weakly so
  * unmounted nodes are GC'd. Drives the style-only restyle fast path: when the
- * current plain text and wrap equal the stored ones (and layout is unchanged), the
+ * current text, wrap and link inputs equal the stored ones (and layout is unchanged), the
  * cloned buffer's chars are correct, so a per-segment restyle is sound. Dirty
  * bits can't be used here — the reconciler re-dirties virtual text children on
  * a parent style change even when the text is byte-identical.
  */
-const _textContentSigs = new WeakMap<AgNode, { text: string; wrap: TextProps["wrap"] }>()
+const _textContentSigs = new WeakMap<
+  AgNode,
+  { text: string; wrap: TextProps["wrap"]; hyperlinks: string }
+>()
 
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
 const _nodeTrace: NodeTraceEntry[] = []
@@ -841,8 +855,8 @@ function renderNodeToBuffer(
     // The reconciler re-creates virtual text children on a parent style change
     // (sets CHILDREN/SUBTREE + per-child CONTENT bits) even when the text is
     // byte-identical — so dirty bits CANNOT distinguish a style-only re-render
-    // from a real content change. Compare the style-independent plain text AND
-    // wrap mode with the previous frame. Equal layout alone does not prove
+    // from a real content change. Compare plain text, wrap and link provenance
+    // with the previous frame. Equal layout alone does not prove
     // identical wrapping: a shaping prop can change while the rect stays fixed.
     // Only when text, wrap, and layout match are the cloned chars safe to restyle.
     //
@@ -865,6 +879,7 @@ function renderNodeToBuffer(
       !(props as TextProps).internal_transform
     ) {
       const sig = collectPlainText(node)
+      const hyperlinks = textHyperlinkSignature(node)
       const prevSig = _textContentSigs.get(node)
       // A style change is the only thing left that re-rendered this node with
       // identical content — exactly the restyle case.
@@ -872,18 +887,23 @@ function renderNodeToBuffer(
         prevSig !== undefined &&
         prevSig.text === sig &&
         prevSig.wrap === props.wrap &&
+        prevSig.hyperlinks === hyperlinks &&
         isDirty(node, STYLE_PROPS_BIT)
       ) {
         useTextStyleFastPath = true
       }
       if (!nodeState.fresh) {
-        _textContentSigs.set(node, { text: sig, wrap: props.wrap })
+        _textContentSigs.set(node, { text: sig, wrap: props.wrap, hyperlinks })
       }
     } else if (node.type === "silvery-text") {
       // Keep the signature current for every other text render so the NEXT
       // frame's comparison reflects the chars actually in the (cloned) buffer.
       if (!nodeState.fresh) {
-        _textContentSigs.set(node, { text: collectPlainText(node), wrap: props.wrap })
+        _textContentSigs.set(node, {
+          text: collectPlainText(node),
+          wrap: props.wrap,
+          hyperlinks: textHyperlinkSignature(node),
+        })
       }
     }
 

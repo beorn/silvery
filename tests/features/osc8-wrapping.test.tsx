@@ -7,6 +7,7 @@
  */
 
 import React from "react"
+import { deriveLinkTarget } from "@silvery/ansi"
 import { describe, test, expect } from "vitest"
 import { wrapText, parseAnsiText } from "@silvery/ag-react"
 import { createRenderer } from "@silvery/test"
@@ -207,4 +208,62 @@ describe("19654 — wrap='even' (optimalWrap) OSC 8 self-containment", () => {
     // The link text itself still renders.
     expect(app.text).toContain("CommandPermissionPromptRenderer.tsx")
   })
+})
+
+describe("derived links survive nested text and incremental frames", () => {
+  test("generated targets wrap, restyle, clear and retain their public URI read shape at scale", () => {
+    const uri = "file:///hh/dev/src/renderer.ts"
+    const render = createRenderer({ cols: 32, rows: 60 })
+    const screen = (color: string, clear = false) => (
+      <Box width={32} flexDirection="column">
+        {Array.from({ length: 55 }, (_, i) => (
+          <Text key={i} wrap="wrap" color={color}>
+            prefix{" "}
+            <Link href={deriveLinkTarget(uri)}>
+              generated path words
+              <Text internal_hyperlink={clear ? "" : undefined}> tail</Text>
+            </Link>{" "}
+            suffix
+          </Text>
+        ))}
+      </Box>
+    )
+    const app = render(screen("red"))
+    expect(app.ansi).toContain(OSC8_OPEN(uri))
+    expect(app.cell(7, 0).hyperlink).toBe(uri)
+    app.rerender(screen("blue"))
+    expect(app.ansi).toContain(OSC8_OPEN(uri))
+    app.rerender(screen("blue", true))
+    expect(app.cell(28, 0).hyperlink).toBeNull()
+    expect(app.ansi).toContain(OSC8_OPEN(uri))
+    expect(app.text).not.toContain("]8;;")
+    app.unmount()
+  })
+})
+
+test("derived nested context respects explicit clear and raw web override", () => {
+  const render = createRenderer({ cols: 30, rows: 2 })
+  const app = render(
+    <Text internal_hyperlink={deriveLinkTarget("km://node/42")}>
+      <Text>abc</Text>
+      <Text internal_hyperlink="">def</Text>
+      <Text>
+        {OSC8_OPEN("https://example.com/")}ghi{OSC8_CLOSE}
+      </Text>
+    </Text>,
+  )
+  expect(app.cell(0, 0).hyperlink).toBe("km://node/42")
+  expect(app.cell(3, 0).hyperlink).toBeNull()
+  expect(app.cell(6, 0).hyperlink).toBe("https://example.com/")
+  app.unmount()
+})
+
+test("a parsed explicit close clears a generated ancestor instead of inheriting it again", () => {
+  const render = createRenderer({ cols: 20, rows: 2 })
+  const app = render(
+    <Text internal_hyperlink={deriveLinkTarget("km://node/42")}>{"abc" + OSC8_CLOSE + "def"}</Text>,
+  )
+  expect(app.cell(0, 0).hyperlink).toBe("km://node/42")
+  expect(app.cell(3, 0).hyperlink).toBeNull()
+  app.unmount()
 })

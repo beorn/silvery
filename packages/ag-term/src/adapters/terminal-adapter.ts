@@ -1,3 +1,4 @@
+import type { DerivedLinkTarget } from "@silvery/ansi"
 /**
  * Terminal Render Adapter
  *
@@ -125,7 +126,7 @@ export class TerminalRenderBuffer implements RenderBuffer {
   }
 
   private convertStyle(style: RenderStyle): {
-    hyperlink?: string
+    hyperlink?: string | DerivedLinkTarget
     fg: Color
     bg: Color
     underlineColor: Color

@@ -400,11 +400,17 @@ function fadeCell(
 
     if (mixedFg) {
       if (mixedBg) {
-        buffer.setCell(x, y, { ...cell, fg: mixedFg, bg: mixedBg, attrs: newAttrs })
+        buffer.setCell(x, y, {
+          ...cell,
+          preserveHyperlink: true,
+          fg: mixedFg,
+          bg: mixedBg,
+          attrs: newAttrs,
+        })
         propagateToContinuation(buffer, cell, x, y, { bg: mixedBg, dim: stampEmojiDim })
         return true
       }
-      buffer.setCell(x, y, { ...cell, fg: mixedFg, attrs: newAttrs })
+      buffer.setCell(x, y, { ...cell, preserveHyperlink: true, fg: mixedFg, attrs: newAttrs })
       if (stampEmojiDim) propagateToContinuation(buffer, cell, x, y, { dim: true })
       return true
     }
@@ -412,12 +418,12 @@ function fadeCell(
     // Fg deemphasize failed (rare — hex parse edge). Fall back to bg-only
     // mix + dim stamp.
     if (mixedBg) {
-      buffer.setCell(x, y, { ...cell, bg: mixedBg, attrs: newAttrs })
+      buffer.setCell(x, y, { ...cell, preserveHyperlink: true, bg: mixedBg, attrs: newAttrs })
       propagateToContinuation(buffer, cell, x, y, { bg: mixedBg, dim: stampEmojiDim })
       return true
     }
     if (cell.attrs.dim) return false
-    buffer.setCell(x, y, { ...cell, attrs: { ...cell.attrs, dim: true } })
+    buffer.setCell(x, y, { ...cell, preserveHyperlink: true, attrs: { ...cell.attrs, dim: true } })
     return true
   }
 
@@ -463,9 +469,15 @@ function fadeCell(
     const newAttrs = stampEmojiDim && !cell.attrs.dim ? { ...cell.attrs, dim: true } : cell.attrs
 
     if (mixedFgRgb) {
-      buffer.setCell(x, y, { ...cell, fg: mixedFgRgb, bg: darkenedBgRgb, attrs: newAttrs })
+      buffer.setCell(x, y, {
+        ...cell,
+        preserveHyperlink: true,
+        fg: mixedFgRgb,
+        bg: darkenedBgRgb,
+        attrs: newAttrs,
+      })
     } else {
-      buffer.setCell(x, y, { ...cell, bg: darkenedBgRgb, attrs: newAttrs })
+      buffer.setCell(x, y, { ...cell, preserveHyperlink: true, bg: darkenedBgRgb, attrs: newAttrs })
     }
     propagateToContinuation(buffer, cell, x, y, { bg: darkenedBgRgb, dim: stampEmojiDim })
     return true
@@ -475,11 +487,15 @@ function fadeCell(
   // no theme default there is nothing to darken toward, so stamp dim to keep
   // the cell reading as "backdrop".
   if (cell.attrs.dim) return false
-  buffer.setCell(x, y, { ...cell, attrs: { ...cell.attrs, dim: true } })
+  buffer.setCell(x, y, { ...cell, preserveHyperlink: true, attrs: { ...cell.attrs, dim: true } })
   if (cell.wide && x + 1 < buffer.width) {
     const cont = buffer.getCell(x + 1, y)
     if (!cont.attrs.dim) {
-      buffer.setCell(x + 1, y, { ...cont, attrs: { ...cont.attrs, dim: true } })
+      buffer.setCell(x + 1, y, {
+        ...cont,
+        preserveHyperlink: true,
+        attrs: { ...cont.attrs, dim: true },
+      })
     }
   }
   return true
@@ -517,8 +533,8 @@ function propagateToContinuation(
 
   const attrs = stampDim ? { ...cont.attrs, dim: true } : cont.attrs
   if (writeBg) {
-    buffer.setCell(x + 1, y, { ...cont, bg: patch.bg, attrs })
+    buffer.setCell(x + 1, y, { ...cont, preserveHyperlink: true, bg: patch.bg, attrs })
   } else {
-    buffer.setCell(x + 1, y, { ...cont, attrs })
+    buffer.setCell(x + 1, y, { ...cont, preserveHyperlink: true, attrs })
   }
 }
