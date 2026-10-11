@@ -378,11 +378,31 @@ export async function flushPendingHighlights(): Promise<void> {
 // Public API
 // =============================================================================
 
+/** Inputs larger than this fall back to plain tokens (hh 28598 F6). */
+const MAX_HIGHLIGHT_CHARS = 256 * 1024
+/** Any line longer than this falls back to plain tokens (hh 28598 F6). */
+const MAX_HIGHLIGHT_LINE_CHARS = 4000
+
+function exceedsHighlightBound(code: string): boolean {
+  if (code.length > MAX_HIGHLIGHT_CHARS) return true
+  let start = 0
+  for (let i = 0; i < code.length; i++) {
+    if (code.charCodeAt(i) === 10) {
+      if (i - start > MAX_HIGHLIGHT_LINE_CHARS) return true
+      start = i + 1
+    }
+  }
+  return code.length - start > MAX_HIGHLIGHT_LINE_CHARS
+}
+
 /**
  * Highlight code and return structured token lines.
  *
  * Grammars are lazy-loaded on first use. Results are cached (512 entries,
  * LRU-ish eviction by insertion order).
+ *
+ * Inputs larger than 256 KiB, or with any line longer than 4000 characters,
+ * fall back to plain tokens so untrusted source cannot block the event loop.
  *
  * @param code - Source code to highlight.
  * @param lang - Language alias or shiki language ID. Defaults to `"plain"`.
@@ -404,6 +424,9 @@ export function highlight(
 }
 
 async function _highlight(code: string, lang: string, theme: string): Promise<TokenLine[]> {
+  // Bound before the cache key so a huge untrusted body is never stored as a Map key.
+  if (exceedsHighlightBound(code)) return plainLines(code)
+
   const canonLang = canonicalLang(lang)
   const cacheKey = `${canonLang}::${theme}::${code}`
   const cached = cacheGet(cacheKey)
@@ -466,6 +489,7 @@ function ansiTruecolorFg(hex: string): string {
  *
  * Uses SGR true-color (24-bit) escape sequences for foreground colors.
  * Suitable for raw terminal output. Line endings are LF (`\n`).
+ * Same size/line bound as {@link highlight}: oversize input is plain text.
  *
  * @param code - Source code to highlight.
  * @param lang - Language alias or shiki language ID.
