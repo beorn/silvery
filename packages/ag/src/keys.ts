@@ -931,12 +931,18 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
 
       // Shifted codepoint (group 2)
       if (kittyParts?.[2]) {
-        key.shiftedKey = String.fromCodePoint(Number(kittyParts[2]))
+        const shifted = Number(kittyParts[2])
+        if (isValidCodepoint(shifted)) {
+          key.shiftedKey = String.fromCodePoint(shifted)
+        }
       }
 
       // Base layout key (group 3)
       if (kittyParts?.[3]) {
-        key.baseLayoutKey = String.fromCodePoint(Number(kittyParts[3]))
+        const baseLayout = Number(kittyParts[3])
+        if (isValidCodepoint(baseLayout)) {
+          key.baseLayoutKey = String.fromCodePoint(baseLayout)
+        }
       }
 
       // Text-as-codepoints (group 6) — requires REPORT_TEXT flag
