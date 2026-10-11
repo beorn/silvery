@@ -12,6 +12,8 @@
  */
 
 import { BG_OVERRIDE_CODE } from "./ansi/background-override"
+import { CACHE_MAX_KEY_CHARS, createBoundedStringCache, isolateString } from "./bounded-cache"
+import type { LRUCache } from "lru-cache"
 import sliceAnsi from "slice-ansi"
 import stringWidth from "string-width"
 import {
@@ -41,16 +43,26 @@ const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
 // ============================================================================
 
 /**
- * Simple LRU cache for displayWidth results.
+ * LRU cache for displayWidth results (lru-cache 11.5.2).
  * String width calculation is expensive (~8us for ASCII text),
  * but the same strings are often measured repeatedly.
  *
- * A key here is the ENTIRE measured text, so one entry costs the string it
- * keys — NOT the ~100 bytes an entry-count bound assumes. The worst case is
- * therefore `maxSize * MAX_KEY_LENGTH` characters per cache, and there is one
- * cache per measurer plus the global instance below: at 10 000 * 4096 that is
- * 41M characters, ~82 MB of UTF-16, for EACH cache. Keep that number in mind
- * before raising either bound.
+ * Bounds, each written down (@cto e84ed6d7 / 2ded2ccc):
+ * - max 10 000 entries (constructor default 1 000; measurers pass 10 000)
+ * - max 2 MiB of keys, sized as `2 * key.length + 48` bytes per entry
+ * - max age 10 minutes from insert (`updateAgeOnGet: false` — this is a memo,
+ *   not an idle cache)
+ * - keys longer than MAX_KEY_LENGTH (4096) are measured but never stored, so
+ *   one line cannot spend the whole byte budget (`maxEntrySize = 2*4096+48`
+ *   is the backstop if that guard is skipped)
+ *
+ * Worst case in bytes is therefore min(2 MiB, entries × (2×4096+48)), about
+ * 2 MiB per cache, not 10 000 × 4096 characters (~82 MB). There is still one
+ * cache per measurer plus the global instance below; process total scales
+ * with live measurers, each capped at 2 MiB.
+ *
+ * Keys are copied on store so a slice of a multi-MB line cannot keep the
+ * parent rope alive (JSC substring views). Hits do not copy.
  *
  * Measured defect (@hab/dutiful-rss-leak): a watcher pane handing silvery one
  * 2 MB line per tick retained the whole line per distinct value and grew
@@ -65,35 +77,24 @@ export class DisplayWidthCache {
    * budget. The cost of this cap: a line over 4096 characters is re-measured
    * on every frame — accepted as the leak fix.
    */
-  private static readonly MAX_KEY_LENGTH = 4096
-  private cache = new Map<string, number>()
-  private maxSize: number
+  private static readonly MAX_KEY_LENGTH = CACHE_MAX_KEY_CHARS
+  private cache: LRUCache<string, number>
 
   constructor(maxSize = 1000) {
-    this.maxSize = maxSize
+    this.cache = createBoundedStringCache<number>({
+      max: maxSize,
+      updateAgeOnGet: false,
+    })
   }
 
   get(text: string): number | undefined {
     if (text.length > DisplayWidthCache.MAX_KEY_LENGTH) return undefined
-    const cached = this.cache.get(text)
-    if (cached !== undefined) {
-      // Move to end (most recently used)
-      this.cache.delete(text)
-      this.cache.set(text, cached)
-    }
-    return cached
+    return this.cache.get(text)
   }
 
   set(text: string, width: number): void {
     if (text.length > DisplayWidthCache.MAX_KEY_LENGTH) return
-    // Evict oldest if at capacity
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value
-      if (firstKey !== undefined) {
-        this.cache.delete(firstKey)
-      }
-    }
-    this.cache.set(text, width)
+    this.cache.set(isolateString(text), width)
   }
 
   /** Entry count — a test-visible counter, like getActiveHandleCount(). */
@@ -106,10 +107,8 @@ export class DisplayWidthCache {
   }
 }
 
-// 10K entries should be enough for most TUI apps. Their cost is NOT
-// ~100 bytes each: the key is the whole text, so this cache's worst case is
-// 10 000 * MAX_KEY_LENGTH characters (~82 MB), and each measurer has its own
-// (createMeasurer, below).
+// 10K entries, 2 MiB of keys, 10 minute insert-age. Each measurer
+// (createMeasurer, below) has its own cache with the same bounds.
 const displayWidthCache = new DisplayWidthCache(10000)
 
 // ============================================================================
