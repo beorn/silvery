@@ -18,6 +18,7 @@ import {
   emitScatter,
 } from "@silvery/ag-term/pipeline/output-modes"
 import type { CellChange } from "@silvery/ag-term/pipeline/types"
+import { createBoundedStringCache } from "@silvery/ag-term/bounded-cache"
 import type { OutputContext } from "@silvery/ag-term/pipeline/output-phase"
 
 // ============================================================================
@@ -54,8 +55,8 @@ const defaultCtx: OutputContext = {
     colorLevel: "truecolor",
   },
   measurer: null,
-  sgrCache: new Map(),
-  transitionCache: new Map(),
+  sgrCache: createBoundedStringCache<string>(),
+  transitionCache: createBoundedStringCache<string>(),
   mode: "fullscreen",
   termRows: undefined,
 }

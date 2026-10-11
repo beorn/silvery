@@ -11,6 +11,7 @@ describe("HistoryBuffer", () => {
     expect(buf.totalRows).toBe(0)
     expect(buf.itemCount).toBe(0)
     expect(buf.capacity).toBe(10_000)
+    expect(buf.capacityBytes).toBe(2 * 1024 * 1024)
   })
 
   it("push increases totalRows and itemCount", () => {

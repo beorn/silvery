@@ -14,6 +14,9 @@
  */
 import { LRUCache } from "lru-cache"
 
+/** Non-nullish cache values — lru-cache's `V extends {}` without the `{}` literal. */
+type LruValue = object | string | number | boolean | bigint | symbol
+
 export const CACHE_MAX_ENTRIES = 10_000
 /** 2 MiB — 2 bytes per key character + 48 overhead, @cto e84ed6d7 item 5. */
 export const CACHE_MAX_BYTES = 2 * 1024 * 1024
@@ -37,7 +40,15 @@ export function isolateString(text: string): string {
   return Buffer.from(text, "utf16le").toString("utf16le")
 }
 
-export type BoundedStringCacheOptions<V extends {}> = {
+export function setIsolated<V extends LruValue>(
+  cache: LRUCache<string, V>,
+  key: string,
+  value: V,
+): void {
+  cache.set(isolateString(key), value)
+}
+
+export type BoundedStringCacheOptions<V extends LruValue> = {
   /** Max entries. Default 10 000. */
   max?: number
   /** Max bytes from sizeCalculation. Default 2 MiB. */
@@ -52,7 +63,7 @@ export type BoundedStringCacheOptions<V extends {}> = {
   sizeCalculation?: (value: V, key: string) => number
 }
 
-export function createBoundedStringCache<V extends {}>(
+export function createBoundedStringCache<V extends LruValue>(
   options?: BoundedStringCacheOptions<V>,
 ): LRUCache<string, V> {
   return new LRUCache<string, V>({

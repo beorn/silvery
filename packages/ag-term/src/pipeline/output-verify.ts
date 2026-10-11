@@ -15,6 +15,7 @@ import { IncrementalRenderMismatchError } from "../errors"
 import { createStrictEmulator, type StrictEmulator } from "../strict-terminal-backends"
 import { graphemeWidth, isTextPresentationEmoji } from "../unicode"
 import { createLogger } from "loggily"
+import { createBoundedStringCache } from "../bounded-cache"
 import type { OutputContext } from "./output-phase"
 
 const log = createLogger("silvery:output")
@@ -851,8 +852,8 @@ const _defaultCtxForReplay: OutputContext = {
     colorLevel: "truecolor",
   },
   measurer: null,
-  sgrCache: new Map(),
-  transitionCache: new Map(),
+  sgrCache: createBoundedStringCache<string>(),
+  transitionCache: createBoundedStringCache<string>(),
   mode: "fullscreen",
   termRows: undefined,
 }

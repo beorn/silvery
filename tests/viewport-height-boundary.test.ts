@@ -15,6 +15,7 @@ import { createTerminal } from "@termless/core"
 import { createXtermBackend } from "@termless/xtermjs"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
 import { IncrementalRenderMismatchError } from "@silvery/ag-term/errors"
+import { createBoundedStringCache } from "@silvery/ag-term/bounded-cache"
 import {
   createOutputPhase,
   outputPhase,
@@ -655,8 +656,8 @@ describe("STRICT oracles at the fullscreen viewport cap", () => {
         colorLevel: "truecolor",
       },
       measurer: null,
-      sgrCache: new Map(),
-      transitionCache: new Map(),
+      sgrCache: createBoundedStringCache<string>(),
+      transitionCache: createBoundedStringCache<string>(),
       mode: "fullscreen",
       termRows: TERM_ROWS,
     }

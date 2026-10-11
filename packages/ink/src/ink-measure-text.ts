@@ -6,11 +6,12 @@
  * so we wrap it here to match Ink's behavior.
  */
 
+import { createBoundedStringCache, setIsolated } from "@silvery/ag-term/bounded-cache"
 import { measureText as silveryMeasureText } from "@silvery/ag-term/unicode"
 
 type MeasureResult = { width: number; height: number }
 
-const cache = new Map<string, MeasureResult>()
+const cache = createBoundedStringCache<MeasureResult>()
 
 /**
  * Measure the dimensions of text, returning cached results for repeated calls.
@@ -29,6 +30,6 @@ export function measureText(text: string): MeasureResult {
   }
 
   const result = silveryMeasureText(text)
-  cache.set(text, result)
+  setIsolated(cache, text, result)
   return result
 }

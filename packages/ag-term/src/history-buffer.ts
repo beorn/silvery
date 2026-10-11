@@ -8,6 +8,7 @@
  * deterministic cache budget, not an exact process heap measurement.
  */
 
+import { CACHE_MAX_BYTES } from "./bounded-cache"
 import { stripAnsi } from "./unicode"
 
 export interface HistoryItem {
@@ -34,7 +35,7 @@ export interface HistoryBuffer {
 
 export interface HistoryBufferOptions {
   capacityRows?: number
-  /** Maximum cached ANSI payload bytes. Omit for no byte cap. */
+  /** Maximum cached ANSI payload bytes. Default 2 MiB (@cto e84ed6d7 / 28274). */
   capacityBytes?: number
 }
 
@@ -49,7 +50,9 @@ export function createHistoryBuffer(
 ): HistoryBuffer {
   const capacity = typeof options === "number" ? options : (options.capacityRows ?? 10_000)
   const capacityBytes =
-    typeof options === "number" ? null : normalizeCapacityBytes(options.capacityBytes)
+    typeof options === "number"
+      ? CACHE_MAX_BYTES
+      : (normalizeCapacityBytes(options.capacityBytes) ?? CACHE_MAX_BYTES)
   // Store items in insertion order; evict from front when over budget.
   let items: HistoryItem[] = []
   let _totalRows = 0

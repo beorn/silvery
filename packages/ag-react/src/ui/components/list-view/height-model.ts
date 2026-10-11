@@ -147,6 +147,9 @@ export function createHeightModel(opts: HeightModelOptions): HeightModel {
   const self: Internals = {
     tree: [],
     effective: [],
+    // Index→height is Fenwick-synced and capped by itemCount (setMeasured
+    // rejects index >= itemCount). TTL eviction would desync the tree; this
+    // is not a content-keyed process cache (28274 / @cto e84ed6d7 B9).
     measured: new Map(),
     estimate: opts.estimate,
     itemCount: Math.max(0, opts.itemCount),

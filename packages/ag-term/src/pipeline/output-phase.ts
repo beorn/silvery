@@ -24,6 +24,8 @@ import { resetCursorStyle, setCursorStyle } from "../output"
 import type { CursorState } from "@silvery/ag-react/hooks/useCursor"
 import { textSized } from "../text-sizing"
 import { graphemeWidth, isTextSizingEnabled } from "../unicode"
+import type { LRUCache } from "lru-cache"
+import { createBoundedStringCache, setIsolated } from "../bounded-cache"
 import type { CellChange } from "./types"
 import { checkRenderEmulatorDivergence, countNonSpaceInText } from "../strict-divergence"
 import {
@@ -226,8 +228,8 @@ export interface OutputCaps {
 export interface OutputContext {
   readonly caps: OutputCaps
   readonly measurer: OutputMeasurer | null
-  readonly sgrCache: Map<string, string>
-  readonly transitionCache: Map<string, string>
+  readonly sgrCache: LRUCache<string, string>
+  readonly transitionCache: LRUCache<string, string>
   /** Render mode for the current frame. Set per-frame by the output phase entry point. */
   mode: "fullscreen" | "inline"
   /** Terminal height in rows for the current frame. Caps output to prevent
@@ -244,8 +246,8 @@ const defaultContext: OutputContext = {
     colorLevel: "truecolor",
   },
   measurer: null,
-  sgrCache: new Map(),
-  transitionCache: new Map(),
+  sgrCache: createBoundedStringCache<string>(),
+  transitionCache: createBoundedStringCache<string>(),
   mode: "fullscreen",
   termRows: undefined,
 }
@@ -427,8 +429,8 @@ export function createOutputPhase(
       colorLevel: caps.colorLevel ?? "truecolor",
     },
     measurer: measurer ?? null,
-    sgrCache: new Map(),
-    transitionCache: new Map(),
+    sgrCache: createBoundedStringCache<string>(),
+    transitionCache: createBoundedStringCache<string>(),
     mode: "fullscreen",
     termRows: undefined,
   }
@@ -810,7 +812,7 @@ function styleToKey(style: Style): string {
 
 /**
  * Get the SGR escape string for a style, using the intern cache.
- * Cache hit: O(1) Map lookup + key serialization.
+ * Cache hit: O(1) lookup + key serialization.
  * Cache miss: builds the SGR string and caches it.
  */
 function cachedStyleToAnsi(style: Style, ctx: OutputContext): string {
@@ -818,8 +820,7 @@ function cachedStyleToAnsi(style: Style, ctx: OutputContext): string {
   let sgr = ctx.sgrCache.get(key)
   if (sgr !== undefined) return sgr
   sgr = styleToAnsi(style, ctx)
-  ctx.sgrCache.set(key, sgr)
-  if (ctx.sgrCache.size > 1000) ctx.sgrCache.clear()
+  setIsolated(ctx.sgrCache, key, sgr)
   return sgr
 }
 
@@ -965,8 +966,7 @@ function styleTransition(oldStyle: Style | null, newStyle: Style, ctx: OutputCon
     result = `\x1b[${codes.join(";")}m`
   }
 
-  ctx.transitionCache.set(cacheKey, result)
-  if (ctx.transitionCache.size > 1000) ctx.transitionCache.clear()
+  setIsolated(ctx.transitionCache, cacheKey, result)
   return result
 }
 

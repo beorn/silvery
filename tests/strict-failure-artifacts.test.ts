@@ -7,6 +7,7 @@
 import { describe, test, expect, afterEach } from "vitest"
 import { existsSync, readFileSync, rmSync, readdirSync } from "fs"
 import { TerminalBuffer } from "@silvery/ag-term/buffer"
+import { createBoundedStringCache } from "@silvery/ag-term/bounded-cache"
 import {
   captureStrictFailureArtifacts,
   type OutputContext,
@@ -50,8 +51,8 @@ function makeOutputContext(): OutputContext {
       colorLevel: "truecolor",
     },
     measurer: null,
-    sgrCache: new Map(),
-    transitionCache: new Map(),
+    sgrCache: createBoundedStringCache<string>(),
+    transitionCache: createBoundedStringCache<string>(),
     mode: "fullscreen",
     termRows: undefined,
   }
