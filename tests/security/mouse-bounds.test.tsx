@@ -68,6 +68,16 @@ describe("selection loops stay inside the buffer", () => {
     expect(performance.now() - t0).toBeLessThan(50)
     expect(typeof text).toBe("string")
   })
+
+  test("composeSelectionCells on a zero-size buffer returns empty", () => {
+    const emptyHeight = new TerminalBuffer(40, 0)
+    const emptyWidth = new TerminalBuffer(0, 6)
+    const range = { anchor: { col: 0, row: 0 }, head: { col: 0, row: 0 } }
+    expect(composeSelectionCells(emptyHeight, range)).toEqual([])
+    expect(composeSelectionCells(emptyWidth, range)).toEqual([])
+    expect(extractText(emptyHeight, range, { respectSelectableFlag: false })).toBe("")
+    expect(extractText(emptyWidth, range, { respectSelectableFlag: false })).toBe("")
+  })
 })
 
 describe("mouse reports with very large coordinates", () => {

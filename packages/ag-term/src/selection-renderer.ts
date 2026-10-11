@@ -87,6 +87,7 @@ export function composeSelectionCells(
   scope?: SelectionScope | null,
 ): SelectionCellChange[] {
   if (!selection) return []
+  if (buffer.height === 0 || buffer.width === 0) return []
 
   const normalized = normalizeRange(selection)
   const maxRow = Math.max(0, buffer.height - 1)

@@ -381,6 +381,7 @@ export function extractText(
   range: SelectionRange,
   options?: ExtractTextOptions,
 ): string {
+  if (buffer.height === 0 || buffer.width === 0) return ""
   const normalized = normalizeRange(range)
   const maxRow = Math.max(0, buffer.height - 1)
   const maxCol = Math.max(0, buffer.width - 1)

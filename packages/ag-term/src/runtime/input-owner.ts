@@ -105,6 +105,8 @@ const log = createLogger("silvery:input-owner")
 export interface KeyEvent {
   input: string
   key: Key
+  /** Raw bytes that produced this key (the sequence parseKey consumed). */
+  sequence: string
 }
 
 /** Structured paste event — the text that was pasted (without markers). */
@@ -668,7 +670,7 @@ export function createInputOwner(
       log?.warn?.(`mouse sequence failed to parse: ${JSON.stringify(raw)}`)
     }
     const [input, key] = parseKey(raw)
-    fire(keyHandlers, { input, key })
+    fire(keyHandlers, { input, key, sequence: raw })
   }
 
   function clearIncompleteTimer(): void {

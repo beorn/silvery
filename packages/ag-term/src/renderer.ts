@@ -706,13 +706,12 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       })
       return
     }
-    // Dispatch the parsed key. Re-emitting event.input through inputEmitter
-    // would parseKey a printable/empty string and drop ArrowLeft / CSI-u.
+    // Emit the raw sequence so the :662 parseKey bridge stays the one
+    // dispatch path (ink-compat inputEmitter listeners included). event.input
+    // is a printable/empty string and would drop ArrowLeft / CSI-u.
     withActEnvironment(() => {
       act(() => {
-        childApp.rawKeys.notify(event.input, event.key)
-        childApp.dispatch({ type: "input:key", input: event.input, key: event.key })
-        childApp.drainEffects()
+        instance.inputEmitter.emit("input", event.sequence)
       })
     })
   })
@@ -1529,7 +1528,17 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       const t0 = performance.now()
       instance.rendering = true
       try {
-        inputOwner.sendRaw(data)
+        // Lone ESC is held 25ms by the owner for CSI disambiguation. The
+        // test harness press() only awaits a microtask, matching the parent
+        // key-split path that parseKey'd Escape immediately. Inject it as a
+        // completed key so onKey emits the sequence through the :662 bridge
+        // in this turn. Anything else, including paste, goes through sendRaw.
+        if (data === "\x1b") {
+          const [input, key] = parseKey(data)
+          inputOwner.sendKey({ input, key, sequence: data })
+        } else {
+          inputOwner.sendRaw(data)
+        }
       } finally {
         instance.rendering = false
       }

@@ -235,15 +235,21 @@ describe("InputOwner", () => {
     using owner = createInputOwner(stdin, stdout)
 
     const keys: string[] = []
-    const unsubscribe = owner.onKey((e) => keys.push(e.input))
+    const sequences: string[] = []
+    const unsubscribe = owner.onKey((e) => {
+      keys.push(e.input)
+      sequences.push(e.sequence)
+    })
 
     send("a")
     send("b")
-    expect(keys).toEqual(["a", "b"])
+    send("\t")
+    expect(keys).toEqual(["a", "b", ""])
+    expect(sequences).toEqual(["a", "b", "\t"])
 
     unsubscribe()
     send("c")
-    expect(keys).toEqual(["a", "b"])
+    expect(keys).toEqual(["a", "b", ""])
   })
 
   it("reassembles SGR mouse packets when ESC arrives in the previous stdin chunk", () => {
