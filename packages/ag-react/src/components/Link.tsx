@@ -21,6 +21,7 @@
 
 import { type ReactNode, useCallback, useContext } from "react"
 import { textPair, type InteractionRole } from "@silvery/ag"
+import { sanitizeHyperlinkTarget } from "@silvery/ansi"
 import type { TextProps } from "./Text"
 import type { SilveryMouseEvent } from "@silvery/ag-term/mouse-events"
 import { Text } from "./Text"
@@ -70,8 +71,11 @@ export function Link({
       const isRevealed = interaction.isRevealActive || (role === "content-link" && event.metaKey)
       onClick?.(event)
       if (isRevealed && href !== undefined && !event.defaultPrevented) {
-        chain?.events.emit("link:open", href)
-        event.preventDefault()
+        const safe = sanitizeHyperlinkTarget(href)
+        if (safe !== undefined) {
+          chain?.events.emit("link:open", safe)
+          event.preventDefault()
+        }
       }
     },
     [interaction.isRevealActive, role, href, onClick, chain],

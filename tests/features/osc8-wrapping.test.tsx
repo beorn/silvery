@@ -114,7 +114,7 @@ describe("Link component: OSC 8 wrapping in rendered output", () => {
   })
 
   test("truncated Link text retains its hyperlink target", () => {
-    const href = "file:///repo/.bays/B1"
+    const href = "https://example.com/repo/.bays/B1"
     const render = createRenderer({ cols: 8, rows: 2 })
     const app = render(
       <Box width={8} overflow="hidden">

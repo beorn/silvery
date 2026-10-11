@@ -54,6 +54,7 @@ export {
   HYPERLINK_END,
   buildHyperlink,
 } from "./constants"
+export { sanitizeHyperlinkTarget, MAX_HYPERLINK_TARGET_BYTES } from "./hyperlink-sanitize"
 
 // =============================================================================
 // Caps + Emulator defaults. Full caps/color detection is owned by

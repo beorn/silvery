@@ -28,6 +28,7 @@ import type {
   TextMeasurer,
 } from "../render-adapter"
 import { builtInBorderPreset } from "@silvery/ag"
+import { sanitizeHyperlinkTarget } from "@silvery/ansi"
 
 // ============================================================================
 // Configuration
@@ -264,10 +265,17 @@ export class DOMRenderBuffer implements RenderBuffer {
       const sortedRuns = runs.sort((a, b) => a.x - b.x)
 
       for (const run of sortedRuns) {
-        const span = document.createElement(run.style.hyperlink === undefined ? "span" : "a")
+        const safeHref =
+          run.style.hyperlink === undefined
+            ? undefined
+            : sanitizeHyperlinkTarget(run.style.hyperlink)
+        const span = document.createElement(safeHref === undefined ? "span" : "a")
         span.className = `${this.config.classPrefix}-text`
         span.textContent = run.text
-        if (run.style.hyperlink !== undefined) span.setAttribute("href", run.style.hyperlink)
+        if (safeHref !== undefined) {
+          span.setAttribute("href", safeHref)
+          span.setAttribute("rel", "noopener noreferrer")
+        }
 
         // Apply styles (convert cell x to pixel x)
         const styles: string[] = [`position: absolute`, `left: ${run.x * cw}px`]

@@ -14,6 +14,7 @@
  * is unchanged.
  */
 
+import { sanitizeHyperlinkTarget } from "@silvery/ansi"
 import {
   type Style,
   type TerminalBuffer,
@@ -53,7 +54,7 @@ export interface OutputEmitState {
   lastEmittedY: number
   /** Currently active SGR style, or null if reset. */
   currentStyle: Style | null
-  /** Currently active OSC 8 hyperlink, or undefined if none. */
+  /** Last emitted sanitized OSC 8 URL, or undefined if none is open. */
   currentHyperlink: string | undefined
   /** Inline mode adjustments: subtract from y to get render-relative row. */
   startLine: number
@@ -191,15 +192,19 @@ function emitCellAtCursor(
   },
   ctx: OutputContext,
 ): void {
-  // Hyperlink transition.
+  // Hyperlink transition. Track the last emitted sanitized URL, not the raw
+  // cell value, so a refused target drops OSC 8 without close+open noise.
   if (cell.hyperlink !== state.currentHyperlink) {
-    if (state.currentHyperlink) {
-      state.output += "\x1b]8;;\x1b\\"
+    const next = cell.hyperlink ? sanitizeHyperlinkTarget(cell.hyperlink) : undefined
+    if (next !== state.currentHyperlink) {
+      if (state.currentHyperlink) {
+        state.output += "\x1b]8;;\x1b\\"
+      }
+      if (next) {
+        state.output += `\x1b]8;;${next}\x1b\\`
+      }
     }
-    if (cell.hyperlink) {
-      state.output += `\x1b]8;;${cell.hyperlink}\x1b\\`
-    }
-    state.currentHyperlink = cell.hyperlink
+    state.currentHyperlink = next
   }
 
   // Style transition.

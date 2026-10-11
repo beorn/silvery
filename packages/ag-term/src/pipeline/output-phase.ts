@@ -18,6 +18,7 @@ import {
   isDefaultBg,
   styleEquals,
 } from "../buffer"
+import { sanitizeHyperlinkTarget } from "@silvery/ansi"
 import { fgColorCode, bgColorCode } from "../ansi/sgr-codes"
 import { resetCursorStyle, setCursorStyle } from "../output"
 import type { CursorState } from "@silvery/ag-react/hooks/useCursor"
@@ -2098,16 +2099,20 @@ function bufferToAnsi(
       // continuation cells (wide char overwritten by region clear) must NOT
       // be skipped — they write a space to keep the VT cursor in sync.
 
-      // Handle OSC 8 hyperlink transitions (separate from SGR style)
+      // Handle OSC 8 hyperlink transitions (separate from SGR style).
+      // currentHyperlink is the last emitted sanitized URL, not the raw cell value.
       const cellHyperlink = cell.hyperlink
       if (cellHyperlink !== currentHyperlink) {
-        if (currentHyperlink) {
-          output += "\x1b]8;;\x1b\\" // Close previous hyperlink
+        const next = cellHyperlink ? sanitizeHyperlinkTarget(cellHyperlink) : undefined
+        if (next !== currentHyperlink) {
+          if (currentHyperlink) {
+            output += "\x1b]8;;\x1b\\" // Close previous hyperlink
+          }
+          if (next) {
+            output += `\x1b]8;;${next}\x1b\\` // Open new hyperlink
+          }
         }
-        if (cellHyperlink) {
-          output += `\x1b]8;;${cellHyperlink}\x1b\\` // Open new hyperlink
-        }
-        currentHyperlink = cellHyperlink
+        currentHyperlink = next
       }
 
       // Build style from cell and check if changed.
@@ -2524,12 +2529,15 @@ function changesToAnsi(
       for (let bx = 0; bx < bufWidth; bx++) {
         buffer.readCellInto(bx, y, denseRowCell)
 
-        // Handle hyperlink transitions
+        // Handle hyperlink transitions. Track the last emitted sanitized URL.
         const cellHyperlink = denseRowCell.hyperlink
         if (cellHyperlink !== currentHyperlink) {
-          if (currentHyperlink) output += "\x1b]8;;\x1b\\"
-          if (cellHyperlink) output += `\x1b]8;;${cellHyperlink}\x1b\\`
-          currentHyperlink = cellHyperlink
+          const next = cellHyperlink ? sanitizeHyperlinkTarget(cellHyperlink) : undefined
+          if (next !== currentHyperlink) {
+            if (currentHyperlink) output += "\x1b]8;;\x1b\\"
+            if (next) output += `\x1b]8;;${next}\x1b\\`
+          }
+          currentHyperlink = next
         }
 
         // Style transition
@@ -2687,16 +2695,20 @@ function changesToAnsi(
       }
     }
 
-    // Handle OSC 8 hyperlink transitions (separate from SGR style)
+    // Handle OSC 8 hyperlink transitions (separate from SGR style).
+    // currentHyperlink is the last emitted sanitized URL, not the raw cell value.
     const cellHyperlink = cell.hyperlink
     if (cellHyperlink !== currentHyperlink) {
-      if (currentHyperlink) {
-        output += "\x1b]8;;\x1b\\" // Close previous hyperlink
+      const next = cellHyperlink ? sanitizeHyperlinkTarget(cellHyperlink) : undefined
+      if (next !== currentHyperlink) {
+        if (currentHyperlink) {
+          output += "\x1b]8;;\x1b\\" // Close previous hyperlink
+        }
+        if (next) {
+          output += `\x1b]8;;${next}\x1b\\` // Open new hyperlink
+        }
       }
-      if (cellHyperlink) {
-        output += `\x1b]8;;${cellHyperlink}\x1b\\` // Open new hyperlink
-      }
-      currentHyperlink = cellHyperlink
+      currentHyperlink = next
     }
 
     // Update style if changed (reuse pre-allocated style object)

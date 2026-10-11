@@ -18,13 +18,14 @@ import { buildHyperlink } from "./constants"
  * Falls back to showing just the text (no URL) on unsupported terminals.
  *
  * @param text - Display text for the link
- * @param url - Target URL (http://, https://, file://, etc.)
- * @returns Text wrapped in OSC 8 hyperlink escape codes
+ * @param url - Target URL. Only `http:`, `https:`, and `mailto:` are emitted;
+ *   other schemes and control bytes are dropped (text is kept).
+ * @returns Text wrapped in OSC 8 hyperlink escape codes, or the text alone
  *
  * @example
  * ```ts
  * hyperlink('Click here', 'https://example.com')
- * hyperlink('Open file', 'file:///path/to/file.txt')
+ * hyperlink('Email', 'mailto:hello@example.com')
  * ```
  *
  * @note Most modern terminals support OSC 8 hyperlinks:

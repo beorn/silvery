@@ -9,6 +9,7 @@
  * - Text content collection (collectTextContent)
  */
 
+import { sanitizeHyperlinkTarget } from "@silvery/ansi"
 import {
   type CellAttrs,
   type Color,
@@ -264,10 +265,6 @@ function styleToAnsi(style: StyleContext, colorLevel?: ActiveColorLevel): string
   return `\x1b[${parts.join(";")}m`
 }
 
-function hyperlinkOpen(href: string): string {
-  return `\x1b]8;;${href}\x1b\\`
-}
-
 const HYPERLINK_CLOSE = "\x1b]8;;\x1b\\"
 // Nested Text is serialized to ANSI and parsed back before cells are painted.
 // OSC 8 close otherwise becomes indistinguishable from "no hyperlink override",
@@ -275,6 +272,13 @@ const HYPERLINK_CLOSE = "\x1b]8;;\x1b\\"
 // marker carries an explicit clear across that internal round trip; it never
 // reaches the output buffer.
 const INTERNAL_HYPERLINK_CLEAR = "\0silvery:hyperlink-clear"
+
+function hyperlinkOpen(href: string): string {
+  // Internal clear marker is not a URL and never reaches the output buffer.
+  if (href === INTERNAL_HYPERLINK_CLEAR) return `\x1b]8;;${href}\x1b\\`
+  const next = sanitizeHyperlinkTarget(href)
+  return next ? `\x1b]8;;${next}\x1b\\` : ""
+}
 
 /**
  * Merge child props into parent context.
