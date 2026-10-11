@@ -41,3 +41,98 @@ export function sanitizeHyperlinkTarget(url: string): string | undefined {
   if (!ALLOWED_SCHEMES.has(scheme)) return undefined
   return out
 }
+
+// The private field is the runtime producer identity. JSON and structurally
+// similar objects cannot recreate it; the constructor never leaves this module.
+class DerivedTarget {
+  readonly #uri: string
+  constructor(uri: string) {
+    this.#uri = uri
+    Object.freeze(this)
+  }
+  static uri(value: unknown): string | undefined {
+    return typeof value === "object" && value !== null && #uri in value ? value.#uri : undefined
+  }
+}
+/** An application destination that its producer has already resolved. */
+export type DerivedLinkTarget = DerivedTarget
+
+/** Mint a resolved canonical absolute URI. Invalid producer input is an error. */
+export function deriveLinkTarget(canonicalUri: string): DerivedLinkTarget {
+  if (
+    typeof canonicalUri !== "string" ||
+    !/^[A-Za-z][A-Za-z0-9+.-]*:/.test(canonicalUri) ||
+    /[\u0000-\u0020\u007f-\u009f\s]/u.test(canonicalUri) ||
+    new TextEncoder().encode(canonicalUri).length > MAX_HYPERLINK_TARGET_BYTES
+  ) {
+    throw new TypeError(
+      "deriveLinkTarget requires a canonical absolute URI without controls or whitespace, at most 2083 bytes",
+    )
+  }
+  if (/^file:/i.test(canonicalUri) && !/^file:\/\/(?:localhost)?\/[^\s]*$/i.test(canonicalUri)) {
+    throw new TypeError(
+      "deriveLinkTarget file URI requires an absolute path and empty or localhost authority",
+    )
+  }
+  return new DerivedTarget(canonicalUri)
+}
+
+/** Canonical URI readback is deliberately lossy: it does not confer trust. */
+export function hyperlinkUri(target: string | DerivedLinkTarget | undefined): string | undefined {
+  if (typeof target === "string") return decodeHyperlinkFormat(target).url
+  return DerivedTarget.uri(target)
+}
+
+/** One terminal target policy; raw strings retain the strict supplied policy. */
+export function resolveTerminalHyperlink(
+  target: string | DerivedLinkTarget | undefined,
+): string | undefined {
+  if (typeof target === "string") return sanitizeHyperlinkTarget(decodeHyperlinkFormat(target).url)
+  return DerivedTarget.uri(target)
+}
+
+/** One DOM policy for adapters and HTML, including generated destinations. */
+export function resolveDOMHyperlink(
+  target: string | DerivedLinkTarget | undefined,
+): string | undefined {
+  const uri = hyperlinkUri(target)
+  return uri === undefined ? undefined : sanitizeHyperlinkTarget(uri)
+}
+
+/** Compare value, provenance and original OSC format, never target allocation. */
+export function hyperlinkTargetEquals(
+  a: string | DerivedLinkTarget | undefined,
+  b: string | DerivedLinkTarget | undefined,
+): boolean {
+  if (typeof a === "string" || typeof b === "string") return a === b
+  return DerivedTarget.uri(a) === DerivedTarget.uri(b)
+}
+
+/** Decode parser transport metadata; it is not producer identity. */
+function decodeHyperlinkFormat(target: string): { url: string; intro: string; end: string } {
+  const match = /^\x01(c1b|c1s|e7b)\x02/.exec(target)
+  return {
+    url: match ? target.slice(match[0].length) : target,
+    intro: match && match[1] !== "e7b" ? "\x9d" : "\x1b]",
+    end: match && match[1] !== "c1s" ? "\x07" : "\x1b\\",
+  }
+}
+
+/** The canonical OSC 8 byte builder, shared by every final terminal sink. */
+export function buildHyperlinkSequence(
+  target: string | DerivedLinkTarget | undefined,
+  close = false,
+): string {
+  const uri = resolveTerminalHyperlink(target)
+  if (uri === undefined) return ""
+  const format =
+    typeof target === "string" ? decodeHyperlinkFormat(target) : { intro: "\x1b]", end: "\x1b\\" }
+  return `${format.intro}8;;${close ? "" : uri}${format.end}`
+}
+
+/** Close a previously emitted canonical OSC 8 opening sequence. */
+export function closeHyperlinkSequence(open: string | undefined): string {
+  if (!open) return ""
+  const end = open.endsWith("\x07") ? "\x07" : "\x1b\\"
+  return `${open.startsWith("\x9d") ? "\x9d" : "\x1b]"}8;;${end}`
+}

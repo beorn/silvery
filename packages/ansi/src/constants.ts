@@ -5,7 +5,7 @@
  * @see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
  */
 
-import { sanitizeHyperlinkTarget } from "./hyperlink-sanitize"
+import { buildHyperlinkSequence, type DerivedLinkTarget } from "./hyperlink-sanitize"
 
 // =============================================================================
 // Extended Underline Styles (ISO 8613-6 / ECMA-48)
@@ -76,8 +76,7 @@ export const HYPERLINK_END = "\x1b\\"
  * The URL is passed through {@link sanitizeHyperlinkTarget}: a refused target
  * returns the display text with no OSC 8 wrapper.
  */
-export function buildHyperlink(text: string, url: string): string {
-  const safe = sanitizeHyperlinkTarget(url)
-  if (safe === undefined) return text
-  return `${HYPERLINK_START}${safe}${HYPERLINK_END}${text}${HYPERLINK_START}${HYPERLINK_END}`
+export function buildHyperlink(text: string, url: string | DerivedLinkTarget): string {
+  const open = buildHyperlinkSequence(url)
+  return open ? open + text + buildHyperlinkSequence(url, true) : text
 }

@@ -7,6 +7,7 @@
  * @see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
  */
 
+import type { DerivedLinkTarget } from "./hyperlink-sanitize"
 import { buildHyperlink } from "./constants"
 
 // =============================================================================
@@ -32,7 +33,7 @@ import { buildHyperlink } from "./constants"
  * - Ghostty, Kitty, WezTerm, iTerm2, Terminal.app, GNOME Terminal
  * - VS Code integrated terminal
  */
-export function hyperlink(text: string, url: string): string {
+export function hyperlink(text: string, url: string | DerivedLinkTarget): string {
   // Most modern terminals support OSC 8, so we emit it unconditionally.
   // Unsupported terminals will just show the text.
   return buildHyperlink(text, url)
