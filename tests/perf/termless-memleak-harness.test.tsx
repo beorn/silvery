@@ -143,6 +143,22 @@ function emitCurve(samples: Sample[]): void {
 }
 
 /**
+ * Sample every `SAMPLE_EVERY` iterations; each sample forces a full GC first.
+ * Bun's allocator holds a 60-70 MB chunk for a stretch of iterations and then
+ * returns it (measured 2026-10-10: RSS 296-370 MB while heapUsed moved
+ * 85.2 -> 85.8 MB). Sampled every 10 iterations, the steady window held 7
+ * samples, and a plateau landing on the last two read as ~1,160 KB/iter: 2 of 7
+ * runs at main failed, and the nightly was red in 5 of 12 suites, on a flat
+ * heap. Sampled every 2 (31 steady samples, a forced GC every 2 iterations),
+ * 18 of 18 runs passed at -24 to 109 KB/iter while heapUsed grew 13 KB/iter.
+ * Which of the two changes does the work was not separated; both stay.
+ */
+const SAMPLE_EVERY = 2
+
+/** The fewest steady samples a slope is taken over. Fewer refuse by name rather than pass. */
+const MIN_STEADY_SAMPLES = 6
+
+/**
  * Compute steady-state growth with the Theil-Sen estimator: the median of
  * every pairwise RSS slope after warmup. Unlike comparing two tiny windows,
  * one allocator chunk grant cannot choose both endpoints of the estimate.
@@ -155,7 +171,11 @@ function emitCurve(samples: Sample[]): void {
  */
 function steadyGrowthKbPerIter(samples: Sample[]): number {
   const steady = samples.filter((s) => s.iter >= WARMUP_ITERS)
-  if (steady.length < 6) return 0
+  if (steady.length < MIN_STEADY_SAMPLES) {
+    throw new Error(
+      `termless-memleak: ${steady.length} steady samples, fewer than ${MIN_STEADY_SAMPLES}; raise SILVERY_MEMLEAK_SAMPLES`,
+    )
+  }
   const sortedByIter = steady.slice().sort((a, b) => a.iter - b.iter)
   const slopes: number[] = []
   for (let i = 0; i < sortedByIter.length - 1; i++) {
@@ -187,6 +207,13 @@ describe("termless memory leak harness", () => {
     )
 
     expect(steadyGrowthKbPerIter(samples)).toBeLessThanOrEqual(MAX_STEADY_GROWTH_KB_PER_ITER)
+  })
+
+  test("too few steady samples refuse by name instead of passing", () => {
+    const samples = [WARMUP_ITERS, WARMUP_ITERS + 10].map(
+      (iter): Sample => ({ iter, rss: 300, heap: 85, elapsedMs: 0 }),
+    )
+    expect(() => steadyGrowthKbPerIter(samples)).toThrow(/steady samples, fewer than/u)
   })
 
   test("steady growth detects monotonic retained memory", () => {
@@ -226,7 +253,7 @@ describe("termless memory leak harness", () => {
         handle.unmount()
       }
 
-      if (i % 10 === 0 || i === SAMPLES - 1) {
+      if (i % SAMPLE_EVERY === 0 || i === SAMPLES - 1) {
         recordSample(samples, i, start)
       }
     }
