@@ -22,6 +22,8 @@
  * @module
  */
 
+import { createBoundedStringCache, setIsolated } from "./bounded-cache"
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -283,21 +285,15 @@ function plainLines(code: string): TokenLine[] {
 // Highlight cache
 // =============================================================================
 
-// Key: `${lang}::${theme}::${code}`  — bounded by typical usage (few unique code blocks)
-const _cache = new Map<string, TokenLine[]>()
-const MAX_CACHE = 512
+// Key: `${lang}::${theme}::${code}` — whole source; bounded by entries+bytes+age.
+const _cache = createBoundedStringCache<TokenLine[]>({ max: 512 })
 
 function cacheGet(key: string): TokenLine[] | undefined {
   return _cache.get(key)
 }
 
 function cachePut(key: string, result: TokenLine[]): void {
-  if (_cache.size >= MAX_CACHE) {
-    // Evict oldest entry (insertion order)
-    const first = _cache.keys().next().value
-    if (first !== undefined) _cache.delete(first)
-  }
-  _cache.set(key, result)
+  setIsolated(_cache, key, result)
 }
 
 // =============================================================================

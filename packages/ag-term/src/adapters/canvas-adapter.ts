@@ -18,6 +18,7 @@ import type {
 } from "../render-adapter-state"
 import type { Measurer } from "../unicode"
 import { wrapTextWithMeasurer, stripAnsi } from "../unicode"
+import { createBoundedStringCache, setIsolated } from "../bounded-cache"
 import { builtInBorderPreset } from "@silvery/ag"
 
 // ============================================================================
@@ -120,16 +121,14 @@ export function createCanvasPixelMeasurer(config: CanvasPixelMeasurerConfig): Me
   const ctx = createMeasureContext(config.fontSize, config.fontFamily)
   const lineHeightPx = config.fontSize * config.lineHeight
 
-  // Simple cache with full eviction at capacity (5000 entries, mostly single graphemes)
-  const cache = new Map<string, number>()
+  const cache = createBoundedStringCache<number>()
 
   function pixelWidth(text: string): number {
     if (text.length === 0) return 0
     const cached = cache.get(text)
     if (cached !== undefined) return cached
-    if (cache.size >= 5000) cache.clear()
     const w = ctx.measureText(text).width
-    cache.set(text, w)
+    setIsolated(cache, text, w)
     return w
   }
 

@@ -14,6 +14,7 @@ import {
 } from "@chenglou/pretext"
 import type { Measurer } from "@silvery/ag-term/unicode"
 import { stripAnsi } from "@silvery/ag-term/unicode"
+import { createBoundedStringCache, setIsolated } from "@silvery/ag-term/bounded-cache"
 
 export interface PretextMeasurerConfig {
   fontSize: number
@@ -29,16 +30,14 @@ export function createPretextMeasurer(config: PretextMeasurerConfig): Measurer {
   const lineHeightPx = config.fontSize * config.lineHeight
   const font = `${config.fontSize}px ${config.fontFamily}`
 
-  // Pretext caches internally, but we cache PreparedText per string for repeat calls
-  const preparedCache = new Map<string, PreparedTextWithSegments>()
-  const MAX_CACHE = 2000
+  // Pretext caches internally; this cache is bounded by entries+bytes+age.
+  const preparedCache = createBoundedStringCache<PreparedTextWithSegments>()
 
   function getPrepared(text: string): PreparedTextWithSegments {
     const cached = preparedCache.get(text)
     if (cached) return cached
-    if (preparedCache.size >= MAX_CACHE) preparedCache.clear()
     const prepared = prepareWithSegments(text, font)
-    preparedCache.set(text, prepared)
+    setIsolated(preparedCache, text, prepared)
     return prepared
   }
 

@@ -868,6 +868,8 @@ This applies to install commands, run commands, and `npx`/`bunx`/`pnpm dlx`/`vp`
 
 Factory functions, `using` cleanup, no classes, no globals. ESM imports only. TypeScript strict mode.
 
+**Caches.** A cache states its bound in bytes, or as entries × the largest entry with the product written down, never entries alone. Process-lifetime and owner-lifetime caches also state a max age, checked on read, never by a timer. Content-keyed caches in this repo go through `lru-cache` 11.5.2 (`packages/ag-term/src/bounded-cache.ts`): max 10 000 entries, max 2 MiB (`2` bytes per key character + 48), max age 10 minutes. Flexily stays zero-dependency with its existing fixed-size per-node caches.
+
 **Test seams in production source.** An export whose only consumers are tests does not ship: a test resets module state with `vi.resetModules()` and a fresh import, or enters through the public entry a consumer would use. A line that reads as a seam and stays (a public testing API, a real non-test consumer) carries `// seam-allow: <reason>` on that line, with a reason that is not empty. No scan reads the marker yet, so the count is taken by hand. S4 is the number of non-test source lines (excluding `tests/`, `__tests__/`, `*.test.*`, `*.spec.*` and `dist/`) that match `test seam|for testing|test-only|for unit testing|__[A-Za-z]+ =|export const __` (case-insensitive), minus the lines that carry this marker.
 
 ## Common Tasks

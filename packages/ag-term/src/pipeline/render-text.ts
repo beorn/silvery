@@ -58,6 +58,7 @@ import { createFrameSink, type RenderSink } from "./render-sink"
 import type { BgConflictMode, ClipBounds, NodeRenderState, PipelineContext } from "./types"
 import { isStrictAnyEnabled } from "../strict-mode"
 import { assertBgCellHasTextPaint, isClipParityEnabled } from "../strict-clip-parity.js"
+import { createBoundedStringCache, setIsolated } from "../bounded-cache"
 import { createLogger } from "loggily"
 import { resolveUserSelect } from "../user-select"
 
@@ -1388,13 +1389,13 @@ function applyMarkerRanges(
   return out
 }
 
-const warnedMarkerRanges = new Set<string>()
+const warnedMarkerRanges = createBoundedStringCache<true>()
 
 /** Deduplicated STRICT-mode warning for out-of-bounds / overlapping marker ranges. */
 function warnMarkerRanges(text: string, markers: readonly { start: number; end: number }[]): void {
   const key = `${text.length}:${JSON.stringify(markers)}`
-  if (warnedMarkerRanges.has(key)) return
-  warnedMarkerRanges.add(key)
+  if (warnedMarkerRanges.get(key)) return
+  setIsolated(warnedMarkerRanges, key, true)
   log.warn?.(
     `[silvery] truncate hook returned out-of-bounds or overlapping marker ranges ` +
       `for a line of length ${text.length}: ${JSON.stringify(markers)}. ` +

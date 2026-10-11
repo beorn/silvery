@@ -12,6 +12,7 @@
 
 import type { Measurer } from "@silvery/ag-term/unicode"
 import { stripAnsi } from "@silvery/ag-term/unicode"
+import { createBoundedStringCache, setIsolated } from "@silvery/ag-term/bounded-cache"
 
 export interface DomMeasurerConfig {
   fontSize: number
@@ -58,18 +59,16 @@ export function createDomMeasurer(config: DomMeasurerConfig): Measurer & { dispo
   `
   measurer.appendChild(wrapDiv)
 
-  // Width cache (DOM reflow is expensive)
-  const widthCache = new Map<string, number>()
-  const MAX_CACHE = 2000
+  // Width cache (DOM reflow is expensive). Bounded by entries+bytes+age.
+  const widthCache = createBoundedStringCache<number>()
 
   function getWidth(text: string): number {
     if (text.length === 0) return 0
     const cached = widthCache.get(text)
     if (cached !== undefined) return cached
-    if (widthCache.size >= MAX_CACHE) widthCache.clear()
     span.textContent = text
     const w = span.getBoundingClientRect().width
-    widthCache.set(text, w)
+    setIsolated(widthCache, text, w)
     return w
   }
 

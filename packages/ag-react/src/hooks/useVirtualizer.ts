@@ -66,6 +66,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { AgNode } from "@silvery/ag/types"
+import { createBoundedStringCache, setIsolated } from "@silvery/ag-term/bounded-cache"
 import { createHeightModel, type HeightModel } from "../ui/components/list-view/height-model"
 import { useScrollState } from "./useScrollState"
 
@@ -470,7 +471,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // `String(itemKey)` when no width is provided). Width-keying ensures a
   // pane resize invalidates stale heights for wrapped content. Survives
   // re-renders and accumulates as the user scrolls.
-  const measuredHeightsRef = useRef<Map<string, number>>(new Map())
+  const measuredHeightsRef = useRef(createBoundedStringCache<number>())
   // Counter to trigger re-computation when measurements change
   const [measurementVersion, setMeasurementVersion] = useState(0)
   const deferMeasurementUpdatesRef = useRef(deferMeasurementUpdates)
@@ -497,7 +498,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       const cacheKey = makeMeasureKey(key, width)
       const existing = cache.get(cacheKey)
       if (existing === height) return false
-      cache.set(cacheKey, height)
+      setIsolated(cache, cacheKey, height)
       // Schedule a re-render so placeholder sizes update with new measurements.
       // This is batched by React — multiple measureItem calls in the same
       // layout effect produce a single re-render.
@@ -507,7 +508,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     [scheduleMeasurementUpdate],
   )
 
-  const measuredHeights = measuredHeightsRef.current
+  const measuredHeights = measuredHeightsRef.current as unknown as ReadonlyMap<string, number>
   const virtualizerHeightModel = useMemo(
     () =>
       createVirtualizerHeightModel({
