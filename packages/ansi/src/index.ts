@@ -55,6 +55,7 @@ export {
   buildHyperlink,
 } from "./constants"
 export {
+  encodeHyperlinkTarget,
   sanitizeHyperlinkTarget,
   MAX_HYPERLINK_TARGET_BYTES,
   deriveLinkTarget,

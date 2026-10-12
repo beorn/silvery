@@ -14,13 +14,15 @@ const ALLOWED_SCHEMES = new Set(["http:", "https:", "mailto:"])
 const URL_SAFE = /[A-Za-z0-9\-._~:/?#[\]@!$&'()*+,;=%]/
 
 /**
- * Return a terminal-safe hyperlink target, or `undefined` to drop it.
+ * Encode hyperlink target data without applying scheme policy or granting trust.
  *
  * Strips C0, DEL, and C1 bytes so they cannot terminate OSC 8; percent-encodes
- * remaining characters outside the URL-safe set; refuses targets longer than
- * {@link MAX_HYPERLINK_TARGET_BYTES} and schemes other than http, https, mailto.
+ * remaining characters outside the URL-safe set, preserving existing `%` bytes.
+ * Returns `undefined` for empty output or output exceeding
+ * {@link MAX_HYPERLINK_TARGET_BYTES}. String builders still apply their supplied
+ * target sanitizer; this encoder alone never authorizes a hyperlink.
  */
-export function sanitizeHyperlinkTarget(url: string): string | undefined {
+export function encodeHyperlinkTarget(url: string): string | undefined {
   if (url.length === 0) return undefined
 
   let out = ""
@@ -34,6 +36,13 @@ export function sanitizeHyperlinkTarget(url: string): string | undefined {
   }
 
   if (out.length === 0) return undefined
+  return out
+}
+
+/** Return a terminal-safe supplied target, or `undefined` to drop it. */
+export function sanitizeHyperlinkTarget(url: string): string | undefined {
+  const out = encodeHyperlinkTarget(url)
+  if (out === undefined) return undefined
 
   const colon = out.indexOf(":")
   if (colon <= 0) return undefined
@@ -67,11 +76,11 @@ export function deriveLinkTarget(canonicalUri: string): DerivedLinkTarget {
   if (
     typeof canonicalUri !== "string" ||
     !/^[A-Za-z][A-Za-z0-9+.-]*:/.test(canonicalUri) ||
-    /[\u0000-\u0020\u007f-\u009f\s]/u.test(canonicalUri) ||
+    /[^\u0021-\u007e]/u.test(canonicalUri) ||
     new TextEncoder().encode(canonicalUri).length > MAX_HYPERLINK_TARGET_BYTES
   ) {
     throw new TypeError(
-      "deriveLinkTarget requires a canonical absolute URI without controls or whitespace, at most 2083 bytes",
+      "deriveLinkTarget requires a canonical absolute URI in printable ASCII without whitespace, at most 2083 bytes",
     )
   }
   if (/^file:/i.test(canonicalUri) && !/^file:\/\/(?:localhost)?\/[^\s]*$/i.test(canonicalUri)) {

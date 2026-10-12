@@ -126,6 +126,21 @@ describe("DOM adapter hyperlink target", () => {
 })
 
 describe("derived hyperlink policy and buffer provenance", () => {
+  // Canonical producer input must already be printable ASCII. Existing control,
+  // whitespace and byte-cap cases miss short bidi, zero-width and Unicode URIs.
+  test.each([
+    { name: "bidi override U+202E", uri: "file:///tmp/a\u202eb.ts" },
+    { name: "zero-width space U+200B", uri: "km:@a\u200bb" },
+    { name: "Unicode letter U+00E9", uri: "km:@caf\u00e9" },
+  ])("canonical producer URI rejects $name at mint time", ({ uri }) => {
+    expect(() => deriveLinkTarget(uri)).toThrow(TypeError)
+  })
+
+  test("canonical producer URI accepts an already encoded file path unchanged", () => {
+    const uri = "file:///a%20b"
+    expect(hyperlink("file", deriveLinkTarget(uri))).toBe(`\x1b]8;;${uri}\x1b\\file\x1b]8;;\x1b\\`)
+  })
+
   test("one immutable producer identity accepts absolute URIs, never raw or forged input", () => {
     const target = deriveLinkTarget("km://node/42")
     expect(Object.isFrozen(target)).toBe(true)
