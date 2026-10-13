@@ -28,6 +28,7 @@ import { createEpochOwner } from "@silvery/ag/epoch"
 import { createRenderer } from "@silvery/test"
 import { Box, type BoxHandle } from "../src/components/Box"
 import { Text } from "../src/components/Text"
+import { renderString } from "../src/render-string"
 import { attachNodeScope, detachNodeScope, getNodeScope } from "../src/reconciler/host-config"
 
 // ---------------------------------------------------------------------------
@@ -130,6 +131,58 @@ describe("reconciler fiber-scope disposal", () => {
   afterEach(() => {
     sink.restore()
   })
+
+  // Interactive unmount coverage does not reach the dedicated static reconciler.
+  // A full ConcurrentRoot unmount can leave the host root and its scopes live.
+  it.each([false, true])(
+    "static rendering releases its owned tree (callback failure: %s)",
+    async (fail) => {
+      const scope = createScope("static-node")
+      const failure = new Error("content-height-failure")
+      let node: AgNode | undefined
+      let root: AgNode | undefined
+      let cleanups = 0
+
+      function Observer(): React.ReactElement {
+        React.useLayoutEffect(
+          () => () => {
+            cleanups++
+          },
+          [],
+        )
+        return <Text>static output</Text>
+      }
+
+      const result = renderString(
+        <Box
+          ref={(handle) => {
+            if (!handle) return
+            node = handle.getNode()!
+            root = node
+            while (root.parent) root = root.parent
+            attachNodeScope(node, scope)
+          }}
+        >
+          <Observer />
+        </Box>,
+        {
+          plain: true,
+          onContentHeight: () => {
+            if (fail) throw failure
+          },
+        },
+      )
+      if (fail) await expect(result).rejects.toBe(failure)
+      else expect(await result).toBe("static output")
+
+      expect(cleanups).toBe(1)
+      expect(scope.disposed).toBe(true)
+      expect(getNodeScope(node!)).toBeUndefined()
+      expect(root!.children).toEqual([])
+      expect(root!.layoutNode).toBeNull()
+      expect(root!.boxRect).toBeNull()
+    },
+  )
 
   it("disposes a scope attached to a host instance when its fiber unmounts", async () => {
     const ref = React.createRef<NodeProbeHandle>()

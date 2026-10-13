@@ -45,7 +45,7 @@ import type { PipelineConfig } from "@silvery/ag-term/pipeline"
 import { createAg } from "@silvery/ag-term/ag"
 import { commitLayoutSnapshot } from "@silvery/ag/layout-signals"
 import { runWithMeasurer } from "@silvery/ag-term/unicode"
-import { createContainer, getContainerRoot } from "./reconciler"
+import { createContainer, getContainerRoot, releaseContainer } from "./reconciler"
 import { stringReconciler } from "./reconciler/string-reconciler"
 import { setListViewCacheRenderer } from "./ui/components/list-view/cache-renderer"
 
@@ -258,122 +258,129 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
     colorLevel: plain || colorLevel === "mono" ? null : colorLevel,
   })
 
-  // Wrap with minimal contexts (no input handling needed)
-  const wrapped = React.createElement(
-    TermContext.Provider,
-    { value: mockTerm },
-    React.createElement(
-      StdoutContext.Provider,
-      {
-        value: {
-          stdout: mockStdout,
-          write: () => {},
-        },
-      },
+  try {
+    // Wrap with minimal contexts (no input handling needed)
+    const wrapped = React.createElement(
+      TermContext.Provider,
+      { value: mockTerm },
       React.createElement(
-        StderrContext.Provider,
+        StdoutContext.Provider,
         {
           value: {
-            stderr: process.stderr,
-            write: (data: string) => {
-              process.stderr.write(data)
-            },
+            stdout: mockStdout,
+            write: () => {},
           },
         },
-        element,
+        React.createElement(
+          StderrContext.Provider,
+          {
+            value: {
+              stderr: process.stderr,
+              write: (data: string) => {
+                process.stderr.write(data)
+              },
+            },
+          },
+          element,
+        ),
       ),
-    ),
-  )
+    )
 
-  // Mount the React tree inside act() so layout feedback works
-  withActEnvironment(() => {
-    act(() => {
-      stringReconciler.updateContainerSync(wrapped, fiberRoot, null, null)
-      stringReconciler.flushSyncWork()
-    })
-  })
-
-  // Propagate any uncaught render errors (e.g., text outside <Text> in strict mode)
-  if (uncaughtError) {
-    throw uncaughtError instanceof Error ? uncaughtError : new Error(String(uncaughtError))
-  }
-
-  // Layout stabilization loop: run the pipeline, flush React work from
-  // layout notifications (useBoxRect forceUpdate etc.), repeat until stable.
-  // This matches the test renderer's multi-pass approach.
-  //
-  // Each pass ends at a COMMIT BOUNDARY (`commitLayoutSnapshot`), exactly as
-  // the interactive runtimes do — see `renderer.ts` and `scheduler.ts`, which
-  // are the only other callers. Without it the committed rect signals never
-  // advance, so every `useBoxRect` / `useOnBoxRectCommitted` consumer reads
-  // its zero seed forever and a static render silently disagrees with the
-  // interactive one: `Content.Table` measured a 0-width container at every
-  // width and fell back to its stacked form, which is what `maddoc --width N`
-  // showed for every table in every document.
-  let buffer!: TerminalBuffer
-  let rootNode: ReturnType<typeof getContainerRoot> | undefined
-  const MAX_ITERATIONS = 5
-  for (let i = 0; i < MAX_ITERATIONS; i++) {
-    hadReactCommit = false
+    // Mount the React tree inside act() so layout feedback works
     withActEnvironment(() => {
       act(() => {
-        const root = getContainerRoot(container)
-        rootNode = root
-        const measurer = pipelineConfig?.measurer
-        const doRender = () => {
-          const ag = createAg(root, { measurer })
-          ag.layout({ cols: width, rows: height })
-          return ag.render()
-        }
-        const result = measurer ? runWithMeasurer(measurer, doRender) : doRender()
-        buffer = result.buffer
-        // Promoted committed rects fire deferred-lane forceUpdates that
-        // `flushSyncWork` does NOT drain; only the next `doRender` paints
-        // them, so a promotion has to keep the loop running.
-        if (root !== undefined && commitLayoutSnapshot(root)) hadReactCommit = true
+        stringReconciler.updateContainerSync(wrapped, fiberRoot, null, null)
+        stringReconciler.flushSyncWork()
       })
-      if (!hadReactCommit) {
+    })
+
+    // Propagate any uncaught render errors (e.g., text outside <Text> in strict mode)
+    if (uncaughtError) {
+      throw uncaughtError instanceof Error ? uncaughtError : new Error(String(uncaughtError))
+    }
+
+    // Layout stabilization loop: run the pipeline, flush React work from
+    // layout notifications (useBoxRect forceUpdate etc.), repeat until stable.
+    // This matches the test renderer's multi-pass approach.
+    //
+    // Each pass ends at a COMMIT BOUNDARY (`commitLayoutSnapshot`), exactly as
+    // the interactive runtimes do — see `renderer.ts` and `scheduler.ts`, which
+    // are the only other callers. Without it the committed rect signals never
+    // advance, so every `useBoxRect` / `useOnBoxRectCommitted` consumer reads
+    // its zero seed forever and a static render silently disagrees with the
+    // interactive one: `Content.Table` measured a 0-width container at every
+    // width and fell back to its stacked form, which is what `maddoc --width N`
+    // showed for every table in every document.
+    let buffer!: TerminalBuffer
+    let rootNode: ReturnType<typeof getContainerRoot> | undefined
+    const MAX_ITERATIONS = 5
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+      hadReactCommit = false
+      withActEnvironment(() => {
         act(() => {
+          const root = getContainerRoot(container)
+          rootNode = root
+          const measurer = pipelineConfig?.measurer
+          const doRender = () => {
+            const ag = createAg(root, { measurer })
+            ag.layout({ cols: width, rows: height })
+            return ag.render()
+          }
+          const result = measurer ? runWithMeasurer(measurer, doRender) : doRender()
+          buffer = result.buffer
+          // Promoted committed rects fire deferred-lane forceUpdates that
+          // `flushSyncWork` does NOT drain; only the next `doRender` paints
+          // them, so a promotion has to keep the loop running.
+          if (root !== undefined && commitLayoutSnapshot(root)) hadReactCommit = true
+        })
+        if (!hadReactCommit) {
+          act(() => {
+            stringReconciler.flushSyncWork()
+          })
+        }
+      })
+      if (!hadReactCommit) break
+    }
+
+    // Report content height if callback provided.
+    // Compute from children's outer bottom edges (including margins) rather than
+    // root.boxRect.height which equals the buffer height (root stretches to fill).
+    if (onContentHeight && rootNode) {
+      let maxBottom = 0
+      let hasChildren = false
+      for (const child of rootNode.children) {
+        if (child.boxRect) {
+          hasChildren = true
+          const props = child.props as Record<string, unknown>
+          const mb =
+            (props.marginBottom as number) ??
+            (props.marginY as number) ??
+            (props.margin as number) ??
+            0
+          const childBottom = child.boxRect.y + child.boxRect.height + mb
+          if (childBottom > maxBottom) maxBottom = childBottom
+        }
+      }
+      onContentHeight(hasChildren ? maxBottom : 0)
+    }
+
+    return (plain || colorLevel === "mono") && !alwaysStyled
+      ? bufferToText(buffer, { trimTrailingWhitespace, trimEmptyLines })
+      : bufferToStyledText(buffer, { trimTrailingWhitespace, trimEmptyLines, colorLevel })
+  } finally {
+    // This root belongs to the dedicated string reconciler. Unmount with
+    // its sync path, then release the shared host tree even if cleanup throws.
+    try {
+      withActEnvironment(() => {
+        act(() => {
+          stringReconciler.updateContainerSync(null, fiberRoot, null, null)
           stringReconciler.flushSyncWork()
         })
-      }
-    })
-    if (!hadReactCommit) break
-  }
-
-  // Report content height if callback provided.
-  // Compute from children's outer bottom edges (including margins) rather than
-  // root.boxRect.height which equals the buffer height (root stretches to fill).
-  if (onContentHeight && rootNode) {
-    let maxBottom = 0
-    let hasChildren = false
-    for (const child of rootNode.children) {
-      if (child.boxRect) {
-        hasChildren = true
-        const props = child.props as Record<string, unknown>
-        const mb =
-          (props.marginBottom as number) ??
-          (props.marginY as number) ??
-          (props.margin as number) ??
-          0
-        const childBottom = child.boxRect.y + child.boxRect.height + mb
-        if (childBottom > maxBottom) maxBottom = childBottom
-      }
+      })
+    } finally {
+      releaseContainer(container)
     }
-    onContentHeight(hasChildren ? maxBottom : 0)
   }
-
-  // Unmount (cleanup)
-  withActEnvironment(() => {
-    act(() => {
-      stringReconciler.updateContainerSync(null, fiberRoot, null, null)
-      stringReconciler.flushSyncWork()
-    })
-  })
-
-  return (plain || colorLevel === "mono") && !alwaysStyled
-    ? bufferToText(buffer, { trimTrailingWhitespace, trimEmptyLines })
-    : bufferToStyledText(buffer, { trimTrailingWhitespace, trimEmptyLines, colorLevel })
 }
 
 // ============================================================================
