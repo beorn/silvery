@@ -14,7 +14,7 @@ import React from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text, CapabilityRegistryContext, useDragState } from "@silvery/ag-react"
-import type { CapabilityLookup } from "@silvery/ag-react/context"
+import { createFakeCapabilityLookup } from "@silvery/ag-react/testing/fake-capability-lookup"
 
 const DRAG_CAPABILITY = Symbol.for("silvery.drag")
 
@@ -39,12 +39,6 @@ function createMockDragFeature(initialState: unknown = null) {
   }
 }
 
-/** Create a CapabilityLookup registry backed by a Map. */
-function createMockRegistry(entries: [symbol, unknown][] = []): CapabilityLookup {
-  const map = new Map<symbol, unknown>(entries)
-  return { get: <T,>(key: symbol) => map.get(key) as T | undefined }
-}
-
 describe("useDragState", () => {
   test("returns undefined when capability not registered", () => {
     const r = createRenderer({ cols: 40, rows: 5 })
@@ -60,7 +54,7 @@ describe("useDragState", () => {
 
   test("returns undefined when registry exists but drag not registered", () => {
     const r = createRenderer({ cols: 40, rows: 5 })
-    const registry = createMockRegistry()
+    const registry = createFakeCapabilityLookup()
 
     function TestApp() {
       const drag = useDragState()
@@ -78,7 +72,7 @@ describe("useDragState", () => {
   test("returns null when capability registered but no active drag", () => {
     const r = createRenderer({ cols: 60, rows: 5 })
     const feature = createMockDragFeature(null)
-    const registry = createMockRegistry([[DRAG_CAPABILITY, feature]])
+    const registry = createFakeCapabilityLookup([[DRAG_CAPABILITY, feature]])
 
     function TestApp() {
       const drag = useDragState()
@@ -102,7 +96,7 @@ describe("useDragState", () => {
   test("updates reactively on state change", () => {
     const r = createRenderer({ cols: 60, rows: 5 })
     const feature = createMockDragFeature(null)
-    const registry = createMockRegistry([[DRAG_CAPABILITY, feature]])
+    const registry = createFakeCapabilityLookup([[DRAG_CAPABILITY, feature]])
 
     function TestApp() {
       const drag = useDragState()

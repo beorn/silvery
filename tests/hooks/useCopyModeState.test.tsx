@@ -11,7 +11,7 @@ import React from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text, CapabilityRegistryContext, useCopyModeState } from "@silvery/ag-react"
-import type { CapabilityLookup } from "@silvery/ag-react/context"
+import { createFakeCapabilityLookup } from "@silvery/ag-react/testing/fake-capability-lookup"
 
 const COPY_MODE_CAPABILITY = Symbol.for("silvery.copy-mode")
 
@@ -46,12 +46,6 @@ function createMockCopyModeFeature(
   }
 }
 
-/** Create a CapabilityLookup registry backed by a Map. */
-function createMockRegistry(entries: [symbol, unknown][] = []): CapabilityLookup {
-  const map = new Map<symbol, unknown>(entries)
-  return { get: <T,>(key: symbol) => map.get(key) as T | undefined }
-}
-
 describe("useCopyModeState", () => {
   test("returns undefined when capability not registered", () => {
     const r = createRenderer({ cols: 40, rows: 5 })
@@ -67,7 +61,7 @@ describe("useCopyModeState", () => {
 
   test("returns undefined when registry exists but copy-mode not registered", () => {
     const r = createRenderer({ cols: 40, rows: 5 })
-    const registry = createMockRegistry()
+    const registry = createFakeCapabilityLookup()
 
     function TestApp() {
       const copyMode = useCopyModeState()
@@ -85,7 +79,7 @@ describe("useCopyModeState", () => {
   test("returns state when capability registered", () => {
     const r = createRenderer({ cols: 60, rows: 5 })
     const feature = createMockCopyModeFeature()
-    const registry = createMockRegistry([[COPY_MODE_CAPABILITY, feature]])
+    const registry = createFakeCapabilityLookup([[COPY_MODE_CAPABILITY, feature]])
 
     function TestApp() {
       const copyMode = useCopyModeState()
@@ -109,7 +103,7 @@ describe("useCopyModeState", () => {
   test("updates reactively on state change", () => {
     const r = createRenderer({ cols: 60, rows: 5 })
     const feature = createMockCopyModeFeature()
-    const registry = createMockRegistry([[COPY_MODE_CAPABILITY, feature]])
+    const registry = createFakeCapabilityLookup([[COPY_MODE_CAPABILITY, feature]])
 
     function TestApp() {
       const copyMode = useCopyModeState()
