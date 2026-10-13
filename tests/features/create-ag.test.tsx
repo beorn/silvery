@@ -59,7 +59,10 @@ describe("createAg", () => {
   // stays fixed. React rerenders do not exercise this imperative owner.
   test.each(
     [false, true].flatMap((active) =>
-      ["text", "color", "remove", "reorder", "insert", "move"].map((kind) => ({ active, kind })),
+      ["text", "color", "virtual-color", "remove", "reorder", "insert", "move"].map((kind) => ({
+        active,
+        kind,
+      })),
     ),
   )("retains imperative $kind output with transform=$active", ({ active, kind }) => {
     const prefix = (line: string) => `0→${line}`
@@ -86,7 +89,18 @@ describe("createAg", () => {
                     ? ["AAAA"]
                     : [after && kind === "text" ? "DDDD" : "AAAA", "BBBB"]
               ).map((s) => (
-                <Text key={s}>{s}</Text>
+                <Text
+                  key={s}
+                  color={
+                    kind === "virtual-color" && s === "AAAA"
+                      ? after
+                        ? "#00ff00"
+                        : "#ffffff"
+                      : undefined
+                  }
+                >
+                  {s}
+                </Text>
               ))}
             </Text>
             <Text width={12} height={1} wrap="clip">
@@ -122,6 +136,9 @@ describe("createAg", () => {
           if (kind === "text") ag.setText(main.children[0]!.children[0]!, "DDDD")
           else if (kind === "color") {
             ag.updateProps(main, { ...main.props, color: "#00ff00" }, main.props)
+          } else if (kind === "virtual-color") {
+            const virtual = main.children[0]!
+            ag.updateProps(virtual, { ...virtual.props, color: "#00ff00" }, virtual.props)
           } else if (kind === "remove") ag.removeChild(main, main.children[1]!)
           else {
             const moving = kind === "insert" ? donor.children[0]! : main.children[1]!

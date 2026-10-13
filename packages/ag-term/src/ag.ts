@@ -826,6 +826,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       }
       markDirty(node, CONTENT_BIT | STYLE_PROPS_BIT)
       trackContentDirty(node)
+      markLayoutAncestorDirty(node)
       markSubtreeDirty(node)
       node.props = props
       if (node.layoutNode) {
