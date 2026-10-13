@@ -290,6 +290,16 @@ describe("Text rendering: soft-break wrap in box", () => {
  * content) and `wrap="truncate"` (single-line, truncates the whole text).
  */
 describe('wrapText: wrap-truncate mode (atomic-overflow → "…" instead of char-wrap)', () => {
+  // A wide CJK grapheme is itself a break opportunity. When it cannot fit,
+  // truncation must consume it rather than repeatedly retrying that boundary.
+  test.each([
+    ["日", ["…"]],
+    ["日本a", ["…", "…", "a"]],
+    ["ab日c", ["…", "…", "c"]],
+  ])("too-wide CJK graphemes advance and preserve following text: %s", (text, lines) => {
+    expect(wrapText(text, 1, true, false, true)).toEqual(lines)
+  })
+
   test("atomic over-long token: ends with … instead of char-wrap", () => {
     // 28 a's at width 10 — no soft break. wrap mode would char-wrap into
     // ["aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaa"]. wrap-truncate emits one
