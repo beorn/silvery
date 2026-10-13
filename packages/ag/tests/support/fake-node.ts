@@ -3,15 +3,20 @@
  * without laying it out: no layout node, no parent links, zeroed dirty state.
  * The backdrop plan tests build their marker trees from it.
  *
+ * `rect` lands on `boxRect`; pass `overrides` for any other field a test needs
+ * (a different `type`, `scrollRect`/`screenRect`, `hidden`, …). Children are not
+ * linked or epoch-adopted — a test that needs a real tree assembles that itself.
+ *
  * @fakes @silvery/ag
  */
 import { createEpochOwner } from "../../src/epoch"
 import type { AgNode, Rect } from "../../src/types"
 
 export function fakeNode(
-  props: Record<string, unknown>,
+  props: Record<string, unknown> = {},
   rect: Rect | null = null,
   children: AgNode[] = [],
+  overrides: Partial<AgNode> = {},
 ): AgNode {
   return {
     type: "silvery-box",
@@ -29,5 +34,6 @@ export function fakeNode(
     layoutChangedThisFrame: 0,
     dirtyBits: 0,
     dirtyEpoch: 0,
+    ...overrides,
   }
 }

@@ -18,6 +18,7 @@ import { createClsMonitor } from "@silvery/ag-term/runtime/cls-monitor"
 import { UnexpectedLayoutShiftError } from "@silvery/ag-term/strict-cls"
 import { resetStrictCache } from "@silvery/ag-term/strict-mode"
 import type { AgNode, Rect } from "@silvery/ag/types"
+import { fakeNode } from "../../packages/ag/tests/support/fake-node"
 import {
   addWriter,
   getDebugFilter,
@@ -30,27 +31,26 @@ import {
   type LogLevel,
 } from "loggily"
 
-// Minimal AgNode fake — only the fields cls-monitor's walk reads.
-// Avoids pulling in the full reconciler for state-machine unit tests.
-function fakeNode(opts: {
-  type?: string
+// AgNode fixture for the cls-monitor walk — built from the owner's fakeNode
+// (@silvery/ag) with only the props/rect shape these unit tests read.
+function buildNode(opts: {
+  type?: AgNode["type"]
   id?: string
   props?: Record<string, unknown>
   prevRect?: Rect | null
   rect?: Rect | null
-  children?: ReturnType<typeof fakeNode>[]
+  children?: AgNode[]
 }): AgNode {
-  const node = {
+  const children = opts.children ?? []
+  const node = fakeNode(opts.props ?? (opts.id ? { id: opts.id } : {}), null, children, {
     type: opts.type ?? "silvery-box",
-    props: opts.props ?? (opts.id ? { id: opts.id } : {}),
-    parent: null as AgNode | null,
-    prevScreenRect: opts.prevRect ?? null,
     screenRect: opts.rect ?? null,
-    children: opts.children ?? [],
-  } as unknown as AgNode
-  for (const child of node.children) {
-    ;(child as { parent: AgNode | null }).parent = node
-  }
+    prevScreenRect: opts.prevRect ?? null,
+  })
+  // The owner fake deliberately leaves parent links null; cls-monitor's
+  // nodePath walks n.parent (runtime/cls-monitor.ts:235), so this fixture
+  // wires the tree it builds.
+  for (const child of children) child.parent = node
   return node
 }
 
@@ -95,7 +95,7 @@ function withClsLogging<T>(
 }
 
 function primeMonitor(m: ReturnType<typeof createClsMonitor>): void {
-  const primer = fakeNode({
+  const primer = buildNode({
     type: "silvery-root",
     id: "root",
     rect: { x: 0, y: 0, width: 80, height: 24 },
@@ -145,7 +145,7 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
     const m = createClsMonitor()
     // Prime prevCols/prevRows so the first real commit isn't dropped via
     // first-paint suppressShift gate.
-    const primer = fakeNode({
+    const primer = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
@@ -154,12 +154,12 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
     m.onCommit(primer, 80, 24, false)
 
     m.beginCapture()
-    const root = fakeNode({
+    const root = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
       children: [
-        fakeNode({
+        buildNode({
           type: "silvery-box",
           id: "movable",
           prevRect: { x: 0, y: 0, width: 10, height: 1 },
@@ -172,14 +172,16 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
 
     expect(report.shifts.length).toBe(1)
     expect(report.unexpectedShifts.length).toBe(1) // default classifier
-    expect(report.shifts[0]!.blockId).toContain("movable")
+    // cls-monitor's nodePath walks n.parent (runtime/cls-monitor.ts:235), so the
+    // fixture must carry the full ancestry, not just the leaf id.
+    expect(report.shifts[0]!.blockId).toBe("root#root > #movable")
     expect(report.shifts[0]!.reflowReason).toBe("unexpected")
     expect(report.cumulativeScore).toBeGreaterThan(0)
   })
 
   test("custom classifier labels shifts; non-unexpected stays out of unexpectedShifts", () => {
     const m = createClsMonitor()
-    const primer = fakeNode({
+    const primer = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
@@ -188,12 +190,12 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
     m.onCommit(primer, 80, 24, false)
 
     m.beginCapture(() => "content-arrival")
-    const root = fakeNode({
+    const root = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
       children: [
-        fakeNode({
+        buildNode({
           type: "silvery-box",
           id: "streaming-block",
           prevRect: { x: 0, y: 0, width: 10, height: 1 },
@@ -211,7 +213,7 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
 
   test("scroll-suppressed commits do NOT push to sessionShifts", () => {
     const m = createClsMonitor()
-    const primer = fakeNode({
+    const primer = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
@@ -220,12 +222,12 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
     m.onCommit(primer, 80, 24, false)
 
     m.beginCapture()
-    const root = fakeNode({
+    const root = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
       children: [
-        fakeNode({
+        buildNode({
           type: "silvery-box",
           id: "scroll-shifted",
           prevRect: { x: 0, y: 5, width: 10, height: 1 },
@@ -243,7 +245,7 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
 
   test("SILVERY_STRICT=cls causes endCapture to throw on unexpected shifts", () => {
     const m = createClsMonitor()
-    const primer = fakeNode({
+    const primer = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
@@ -252,12 +254,12 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
     m.onCommit(primer, 80, 24, false)
 
     m.beginCapture()
-    const root = fakeNode({
+    const root = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
       children: [
-        fakeNode({
+        buildNode({
           type: "silvery-box",
           id: "flicker",
           prevRect: { x: 0, y: 0, width: 10, height: 1 },
@@ -274,7 +276,7 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
 
   test("SILVERY_STRICT=cls passes when classifier labels all shifts non-unexpected", () => {
     const m = createClsMonitor()
-    const primer = fakeNode({
+    const primer = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
@@ -283,12 +285,12 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
     m.onCommit(primer, 80, 24, false)
 
     m.beginCapture(() => "user-action")
-    const root = fakeNode({
+    const root = buildNode({
       type: "silvery-root",
       id: "root",
       rect: { x: 0, y: 0, width: 80, height: 24 },
       children: [
-        fakeNode({
+        buildNode({
           type: "silvery-box",
           id: "shifted",
           prevRect: { x: 0, y: 0, width: 10, height: 1 },
@@ -313,7 +315,7 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
     delete process.env.SILVERY_INSTRUMENT
     try {
       const m = createClsMonitor()
-      const primer = fakeNode({
+      const primer = buildNode({
         type: "silvery-root",
         id: "root",
         rect: { x: 0, y: 0, width: 80, height: 24 },
@@ -322,12 +324,12 @@ describe("ClsMonitor capture API (Phase 8 Option C consolidation)", () => {
       m.onCommit(primer, 80, 24, false)
 
       m.beginCapture()
-      const root = fakeNode({
+      const root = buildNode({
         type: "silvery-root",
         id: "root",
         rect: { x: 0, y: 0, width: 80, height: 24 },
         children: [
-          fakeNode({
+          buildNode({
             type: "silvery-box",
             id: "moved",
             prevRect: { x: 0, y: 0, width: 10, height: 1 },
@@ -352,12 +354,12 @@ describe("ClsMonitor production diagnostics (layout-shift instrumentation bead)"
       const m = createClsMonitor()
       primeMonitor(m)
 
-      const root = fakeNode({
+      const root = buildNode({
         type: "silvery-root",
         id: "root",
         rect: { x: 0, y: 0, width: 80, height: 24 },
         children: [
-          fakeNode({
+          buildNode({
             type: "silvery-box",
             id: "movable",
             prevRect: { x: 0, y: 0, width: 10, height: 1 },
@@ -382,12 +384,12 @@ describe("ClsMonitor production diagnostics (layout-shift instrumentation bead)"
         const m = createClsMonitor()
         primeMonitor(m)
 
-        const root = fakeNode({
+        const root = buildNode({
           type: "silvery-root",
           id: "root",
           rect: { x: 0, y: 0, width: 80, height: 24 },
           children: [
-            fakeNode({
+            buildNode({
               type: "silvery-box",
               id: "movable",
               prevRect: { x: 0, y: 0, width: 10, height: 1 },
@@ -415,12 +417,12 @@ describe("ClsMonitor production diagnostics (layout-shift instrumentation bead)"
       primeMonitor(m)
 
       for (let i = 0; i < 6; i++) {
-        const root = fakeNode({
+        const root = buildNode({
           type: "silvery-root",
           id: "root",
           rect: { x: 0, y: 0, width: 80, height: 24 },
           children: [
-            fakeNode({
+            buildNode({
               type: "silvery-box",
               id: "stormy",
               prevRect: { x: i, y: 0, width: 10, height: 1 },
@@ -443,23 +445,23 @@ describe("ClsMonitor production diagnostics (layout-shift instrumentation bead)"
   test("size sentinels warn for zero-area visible content and terminal overflow", () => {
     withClsLogging((events) => {
       const m = createClsMonitor()
-      const root = fakeNode({
+      const root = buildNode({
         type: "silvery-root",
         id: "root",
         rect: { x: 0, y: 0, width: 80, height: 24 },
         children: [
-          fakeNode({
+          buildNode({
             type: "silvery-box",
             id: "collapsed",
             rect: { x: 0, y: 0, width: 0, height: 1 },
             children: [
-              fakeNode({
+              buildNode({
                 type: "silvery-text",
                 rect: { x: 0, y: 0, width: 0, height: 0 },
               }),
             ],
           }),
-          fakeNode({
+          buildNode({
             type: "silvery-box",
             id: "overflowing",
             rect: { x: 0, y: 0, width: 120, height: 1 },
@@ -478,12 +480,12 @@ describe("ClsMonitor production diagnostics (layout-shift instrumentation bead)"
       const m = createClsMonitor()
       primeMonitor(m)
 
-      const root = fakeNode({
+      const root = buildNode({
         type: "silvery-root",
         id: "root",
         rect: { x: 0, y: 0, width: 80, height: 24 },
         children: [
-          fakeNode({
+          buildNode({
             type: "silvery-box",
             id: "scrolled",
             prevRect: { x: 0, y: 10, width: 10, height: 1 },

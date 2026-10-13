@@ -15,22 +15,18 @@ import {
   syncRectSignals,
 } from "@silvery/ag/layout-signals"
 import type { AgNode, Rect } from "@silvery/ag/types"
+import { fakeNode } from "../../packages/ag/tests/support/fake-node"
 
-/** Minimal AgNode stub with rect fields for testing. */
-function createStubNode(overrides?: Partial<AgNode> & { id?: string }): AgNode {
-  return {
-    type: "silvery-box",
-    id: "test-node",
-    boxRect: { x: 0, y: 0, width: 10, height: 5 },
-    scrollRect: { x: 0, y: 0, width: 10, height: 5 },
-    screenRect: { x: 0, y: 0, width: 10, height: 5 },
-    ...overrides,
-  } as AgNode
+const RECT: Rect = { x: 0, y: 0, width: 10, height: 5 }
+
+/** A node whose box/scroll/screen rects all carry the same value (the owner's fakeNode base). */
+function nodeWithRects(rect: Rect = RECT): AgNode {
+  return fakeNode({}, null, [], { boxRect: rect, scrollRect: rect, screenRect: rect })
 }
 
 describe("rect-signals (@silvery/ag)", () => {
   test("signals are created lazily on first getLayoutSignals call", () => {
-    const node = createStubNode()
+    const node = nodeWithRects()
 
     // Before first access, no signals should exist
     expect(hasLayoutSignals(node)).toBe(false)
@@ -42,7 +38,7 @@ describe("rect-signals (@silvery/ag)", () => {
   })
 
   test("getLayoutSignals returns same instance on repeated calls", () => {
-    const node = createStubNode()
+    const node = nodeWithRects()
     const a = getLayoutSignals(node)
     const b = getLayoutSignals(node)
     expect(a).toBe(b)
@@ -50,11 +46,7 @@ describe("rect-signals (@silvery/ag)", () => {
 
   test("signals initialize with node rect values", () => {
     const rect: Rect = { x: 5, y: 10, width: 20, height: 15 }
-    const node = createStubNode({
-      boxRect: rect,
-      scrollRect: rect,
-      screenRect: rect,
-    })
+    const node = nodeWithRects(rect)
 
     const signals = getLayoutSignals(node)
     expect(signals.boxRect()).toBe(rect)
@@ -65,11 +57,7 @@ describe("rect-signals (@silvery/ag)", () => {
   test("syncRectSignals updates signal values from node rects", () => {
     const initialRect: Rect = { x: 0, y: 0, width: 10, height: 5 }
     const updatedRect: Rect = { x: 1, y: 2, width: 20, height: 10 }
-    const node = createStubNode({
-      boxRect: initialRect,
-      scrollRect: initialRect,
-      screenRect: initialRect,
-    })
+    const node = nodeWithRects(initialRect)
 
     // Create signals (initializes from node)
     const signals = getLayoutSignals(node)
@@ -89,7 +77,7 @@ describe("rect-signals (@silvery/ag)", () => {
   })
 
   test("syncRectSignals is a no-op for nodes without signals", () => {
-    const node = createStubNode()
+    const node = nodeWithRects()
 
     // Should not throw or create signals
     syncRectSignals(node)
@@ -97,8 +85,8 @@ describe("rect-signals (@silvery/ag)", () => {
   })
 
   test("different nodes get independent signal instances", () => {
-    const node1 = createStubNode({ id: "node-1" })
-    const node2 = createStubNode({ id: "node-2" })
+    const node1 = nodeWithRects()
+    const node2 = nodeWithRects()
 
     const signals1 = getLayoutSignals(node1)
     const signals2 = getLayoutSignals(node2)
@@ -124,13 +112,13 @@ describe("rect-signals (@silvery/ag)", () => {
   })
 
   test("temporary observations release without clearing permanent observations", () => {
-    const temporaryOnly = createStubNode({ id: "temporary" })
+    const temporaryOnly = nodeWithRects()
     const releaseTemporary = observeLayoutSignal(temporaryOnly, "boxRect")
     expect(hasObservedLayoutSignal(temporaryOnly, "boxRect")).toBe(true)
     releaseTemporary()
     expect(hasObservedLayoutSignal(temporaryOnly, "boxRect")).toBe(false)
 
-    const permanent = createStubNode({ id: "permanent" })
+    const permanent = nodeWithRects()
     markObservedLayoutSignal(permanent, "boxRect")
     const releaseRetained = observeLayoutSignal(permanent, "boxRect")
     expect(hasObservedLayoutSignal(permanent, "boxRect")).toBe(true)

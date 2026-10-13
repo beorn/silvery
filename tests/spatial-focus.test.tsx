@@ -14,8 +14,9 @@
 import { describe, test, expect } from "vitest"
 import { createFocusManager } from "@silvery/create"
 import { findSpatialTarget } from "@silvery/ag/focus-queries"
-import type { AgNode, BoxProps, Rect } from "@silvery/ag/types"
-import { INITIAL_EPOCH, createEpochOwner, type EpochOwner } from "@silvery/ag/epoch"
+import type { AgNode, Rect } from "@silvery/ag/types"
+import { INITIAL_EPOCH, type EpochOwner } from "@silvery/ag/epoch"
+import { fakeNode } from "../packages/ag/tests/support/fake-node"
 
 // ============================================================================
 // Helpers
@@ -33,34 +34,21 @@ function adoptIntoTree(node: AgNode, epochOwner: EpochOwner): void {
   for (const child of node.children) adoptIntoTree(child, epochOwner)
 }
 
-/** Create a minimal AgNode stub with a screen rect for spatial tests. */
-function stubNode(
+/** Create a minimal AgNode fixture with a scroll rect, from the owner's fakeNode. */
+function spatialNode(
   testID: string,
   rect: Rect,
   opts?: { focusable?: boolean; children?: AgNode[] },
 ): AgNode {
   const children = opts?.children ?? []
-  const epochOwner = createEpochOwner()
-  const node: AgNode = {
-    type: "silvery-box",
-    props: { testID, focusable: opts?.focusable ?? true } as BoxProps,
-    children,
-    parent: null,
-    epochOwner,
-    layoutNode: {} as any,
-    boxRect: null,
+  const node = fakeNode({ testID, focusable: opts?.focusable ?? true }, null, children, {
     scrollRect: rect,
-    screenRect: null,
-    prevLayout: null,
-    prevScrollRect: null,
-    prevScreenRect: null,
     layoutChangedThisFrame: INITIAL_EPOCH,
-    dirtyBits: 0,
     dirtyEpoch: INITIAL_EPOCH,
-  }
+  })
   for (const child of children) {
     child.parent = node
-    adoptIntoTree(child, epochOwner)
+    adoptIntoTree(child, node.epochOwner)
   }
   return node
 }
@@ -73,13 +61,13 @@ function stubNode(
  * Each cell is 10 wide, 3 tall, with 2-col gaps.
  */
 function buildGrid3x2() {
-  const a1 = stubNode("a1", { x: 0, y: 0, width: 10, height: 3 })
-  const a2 = stubNode("a2", { x: 12, y: 0, width: 10, height: 3 })
-  const a3 = stubNode("a3", { x: 24, y: 0, width: 10, height: 3 })
-  const b1 = stubNode("b1", { x: 0, y: 4, width: 10, height: 3 })
-  const b2 = stubNode("b2", { x: 12, y: 4, width: 10, height: 3 })
+  const a1 = spatialNode("a1", { x: 0, y: 0, width: 10, height: 3 })
+  const a2 = spatialNode("a2", { x: 12, y: 0, width: 10, height: 3 })
+  const a3 = spatialNode("a3", { x: 24, y: 0, width: 10, height: 3 })
+  const b1 = spatialNode("b1", { x: 0, y: 4, width: 10, height: 3 })
+  const b2 = spatialNode("b2", { x: 12, y: 4, width: 10, height: 3 })
 
-  const root = stubNode(
+  const root = spatialNode(
     "root",
     { x: 0, y: 0, width: 36, height: 7 },
     {
@@ -285,23 +273,23 @@ describe("Kanban layout — varied-height cards", () => {
     const gap = 2
 
     // Column 0: cards at y=1, y=4, y=9
-    const c0card0 = stubNode("c0-card0", { x: 0, y: 1, width: colWidth, height: 3 })
-    const c0card1 = stubNode("c0-card1", { x: 0, y: 4, width: colWidth, height: 5 })
-    const c0card2 = stubNode("c0-card2", { x: 0, y: 9, width: colWidth, height: 2 })
+    const c0card0 = spatialNode("c0-card0", { x: 0, y: 1, width: colWidth, height: 3 })
+    const c0card1 = spatialNode("c0-card1", { x: 0, y: 4, width: colWidth, height: 5 })
+    const c0card2 = spatialNode("c0-card2", { x: 0, y: 9, width: colWidth, height: 2 })
 
     // Column 1: cards at y=1, y=6, y=8
-    const c1card0 = stubNode("c1-card0", { x: colWidth + gap, y: 1, width: colWidth, height: 5 })
-    const c1card1 = stubNode("c1-card1", { x: colWidth + gap, y: 6, width: colWidth, height: 2 })
-    const c1card2 = stubNode("c1-card2", { x: colWidth + gap, y: 8, width: colWidth, height: 4 })
+    const c1card0 = spatialNode("c1-card0", { x: colWidth + gap, y: 1, width: colWidth, height: 5 })
+    const c1card1 = spatialNode("c1-card1", { x: colWidth + gap, y: 6, width: colWidth, height: 2 })
+    const c1card2 = spatialNode("c1-card2", { x: colWidth + gap, y: 8, width: colWidth, height: 4 })
 
     // Column 2: cards at y=1, y=3
-    const c2card0 = stubNode("c2-card0", {
+    const c2card0 = spatialNode("c2-card0", {
       x: 2 * (colWidth + gap),
       y: 1,
       width: colWidth,
       height: 2,
     })
-    const c2card1 = stubNode("c2-card1", {
+    const c2card1 = spatialNode("c2-card1", {
       x: 2 * (colWidth + gap),
       y: 3,
       width: colWidth,
@@ -309,7 +297,7 @@ describe("Kanban layout — varied-height cards", () => {
     })
 
     const all = [c0card0, c0card1, c0card2, c1card0, c1card1, c1card2, c2card0, c2card1]
-    const root = stubNode(
+    const root = spatialNode(
       "root",
       { x: 0, y: 0, width: 66, height: 14 },
       {
@@ -416,9 +404,9 @@ describe("Kanban layout — varied-height cards", () => {
 describe("45-degree cone exclusion", () => {
   test("far diagonal item is not reachable via 'right'", () => {
     // Source at (0,0), candidate at (5, 20) — mostly down, not right
-    const source = stubNode("source", { x: 0, y: 0, width: 4, height: 2 })
-    const diagonal = stubNode("diagonal", { x: 5, y: 20, width: 4, height: 2 })
-    const root = stubNode(
+    const source = spatialNode("source", { x: 0, y: 0, width: 4, height: 2 })
+    const diagonal = spatialNode("diagonal", { x: 5, y: 20, width: 4, height: 2 })
+    const root = spatialNode(
       "root",
       { x: 0, y: 0, width: 40, height: 40 },
       {
@@ -432,9 +420,9 @@ describe("45-degree cone exclusion", () => {
   })
 
   test("item directly to the side is reachable", () => {
-    const source = stubNode("source", { x: 0, y: 10, width: 4, height: 2 })
-    const side = stubNode("side", { x: 20, y: 10, width: 4, height: 2 })
-    const root = stubNode(
+    const source = spatialNode("source", { x: 0, y: 10, width: 4, height: 2 })
+    const side = spatialNode("side", { x: 20, y: 10, width: 4, height: 2 })
+    const root = spatialNode(
       "root",
       { x: 0, y: 0, width: 40, height: 40 },
       {
@@ -450,8 +438,8 @@ describe("45-degree cone exclusion", () => {
   test("item at exactly 45 degrees is on the cone boundary (included)", () => {
     // Source center at (2, 1), candidate center at (12, 11) — dx=10, dy=10
     // isInCone for "down": dy > 0 and |dx| <= |dy| → 10 <= 10 ✓
-    const source = stubNode("source", { x: 0, y: 0, width: 4, height: 2 })
-    const boundary = stubNode("boundary", { x: 10, y: 10, width: 4, height: 2 })
+    const source = spatialNode("source", { x: 0, y: 0, width: 4, height: 2 })
+    const boundary = spatialNode("boundary", { x: 10, y: 10, width: 4, height: 2 })
 
     const target = findSpatialTarget(source, "down", [source, boundary], layoutFn)
     expect(target).toBe(boundary)
@@ -460,8 +448,8 @@ describe("45-degree cone exclusion", () => {
   test("item just outside 45-degree cone is excluded", () => {
     // Source center at (2, 1), candidate center at (14, 11) — dx=12, dy=10
     // isInCone for "down": dy > 0 and |dx| <= |dy| → 12 <= 10 ✗
-    const source = stubNode("source", { x: 0, y: 0, width: 4, height: 2 })
-    const outside = stubNode("outside", { x: 12, y: 10, width: 4, height: 2 })
+    const source = spatialNode("source", { x: 0, y: 0, width: 4, height: 2 })
+    const outside = spatialNode("outside", { x: 12, y: 10, width: 4, height: 2 })
 
     const target = findSpatialTarget(source, "down", [source, outside], layoutFn)
     expect(target).toBeNull()
@@ -475,12 +463,12 @@ describe("45-degree cone exclusion", () => {
 describe("explicit focus links", () => {
   test("nextFocusRight overrides spatial navigation", () => {
     const fm = createFocusManager()
-    const a = stubNode("a", { x: 0, y: 0, width: 10, height: 3 })
+    const a = spatialNode("a", { x: 0, y: 0, width: 10, height: 3 })
     // Add explicit focus link
     ;(a.props as any).nextFocusRight = "c"
-    const b = stubNode("b", { x: 12, y: 0, width: 10, height: 3 })
-    const c = stubNode("c", { x: 24, y: 0, width: 10, height: 3 })
-    const root = stubNode(
+    const b = spatialNode("b", { x: 12, y: 0, width: 10, height: 3 })
+    const c = spatialNode("c", { x: 24, y: 0, width: 10, height: 3 })
+    const root = spatialNode(
       "root",
       { x: 0, y: 0, width: 36, height: 3 },
       {

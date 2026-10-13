@@ -30,6 +30,7 @@ import { Box, type BoxHandle } from "../src/components/Box"
 import { Text } from "../src/components/Text"
 import { renderString } from "../src/render-string"
 import { attachNodeScope, detachNodeScope, getNodeScope } from "../src/reconciler/host-config"
+import { fakeNode } from "../../ag/tests/support/fake-node"
 
 // ---------------------------------------------------------------------------
 // Error-sink capture — keep dispose errors out of vitest's stderr stream
@@ -104,7 +105,7 @@ describe("attachNodeScope / getNodeScope / detachNodeScope", () => {
 
   it("re-attaching the same scope is idempotent", () => {
     const scope = createScope("probe")
-    const node: AgNode = makeFakeNode()
+    const node: AgNode = fakeNode()
     attachNodeScope(node, scope)
     expect(() => attachNodeScope(node, scope)).not.toThrow()
     expect(getNodeScope(node)).toBe(scope)
@@ -113,7 +114,7 @@ describe("attachNodeScope / getNodeScope / detachNodeScope", () => {
   it("attaching a different scope without detaching first throws", () => {
     const a = createScope("a")
     const b = createScope("b")
-    const node: AgNode = makeFakeNode()
+    const node: AgNode = fakeNode()
     attachNodeScope(node, a)
     expect(() => attachNodeScope(node, b)).toThrow(/already has a different scope attached/)
   })
@@ -358,27 +359,3 @@ describe("reconciler fiber-scope disposal", () => {
     expect(scope.disposed).toBe(true)
   })
 })
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function makeFakeNode(): AgNode {
-  return {
-    type: "silvery-box",
-    props: {},
-    children: [],
-    parent: null,
-    epochOwner: createEpochOwner(),
-    layoutNode: null,
-    boxRect: null,
-    scrollRect: null,
-    screenRect: null,
-    prevLayout: null,
-    prevScrollRect: null,
-    prevScreenRect: null,
-    layoutChangedThisFrame: 0,
-    dirtyBits: 0,
-    dirtyEpoch: 0,
-  }
-}
