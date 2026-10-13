@@ -13,6 +13,7 @@ import {
   createReactiveNodeState,
   assertReactiveMatchesOracle,
 } from "@silvery/ag-term/pipeline/reactive-node"
+import { createFakeCascadeOutputs } from "@silvery/ag-term/testing/fake-cascade-outputs"
 
 /** Input field names in the order they map to bit positions */
 const INPUT_FIELDS: (keyof CascadeInputs)[] = [
@@ -179,10 +180,7 @@ describe("reactive cascade — assertReactiveMatchesOracle", () => {
     syncInputsToState(state, inputs)
 
     // Create a fake oracle with one flipped value
-    const fakeOracle: CascadeOutputs = {
-      ...computeCascade(inputs),
-      contentAreaAffected: false, // deliberately wrong
-    }
+    const fakeOracle = createFakeCascadeOutputs(inputs, { contentAreaAffected: false })
 
     expect(() => assertReactiveMatchesOracle(state, fakeOracle, "test-node")).toThrow(
       /ReactiveNodeState mismatch/,

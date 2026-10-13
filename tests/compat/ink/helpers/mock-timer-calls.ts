@@ -1,6 +1,8 @@
 /**
  * Copy of ink/test/helpers/mock-timer-calls.ts.
  * Used by use-animation tests to spy on setTimeout/clearTimeout call counts.
+ *
+ * @fakes silvery
  */
 export default function mockTimerCalls() {
   const originalSetTimeout = globalThis.setTimeout

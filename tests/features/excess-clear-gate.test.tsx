@@ -61,18 +61,18 @@ describe("excess-clear gate — structural invariant for clearExcessArea", () =>
     expect(gate).toBeNull()
   })
 
-  test("type-level: ExcessClearGate brand cannot be forged", () => {
-    // The brand symbol is `declare const ... unique symbol` — runtime-absent,
-    // which means the only way to obtain a value of type ExcessClearGate is
-    // through requireExcessClearGate. Any external attempt to construct
-    // {} as ExcessClearGate forces a structural-type cast (assertion), which
-    // PR review can spot. There is no implicit conversion path.
-    const fake = {} as ExcessClearGate
-    // The cast compiles, but the value is empty — at runtime, accessing
-    // .prevLayout would yield undefined. This test documents that the
-    // brand's safety is "no implicit construction" + "obvious cast required",
-    // not "impossible to bypass via assertion".
-    expect((fake as { prevLayout?: unknown }).prevLayout).toBeUndefined()
+  test("type-level: ExcessClearGate brand blocks literal construction", () => {
+    // The brand symbol is `declare const ... unique symbol` — runtime-absent
+    // AND required — so no object literal can satisfy the type. The only way
+    // to a value of type ExcessClearGate is requireExcessClearGate, which
+    // mints one with the owner-local cast; a foreign literal is a compile
+    // error, not a cast.
+    // @ts-expect-error — ExcessClearGate is branded; a literal cannot satisfy it.
+    const literal: ExcessClearGate = { prevLayout: samplePrev }
+    void literal
+    // The factory grants a real, non-null gate when all four preconditions hold.
+    const gate = requireExcessClearGate(true, true, samplePrev, true)
+    expect(gate?.prevLayout).toBe(samplePrev)
   })
 
   test("type-level: requireExcessClearGate signature pins all four preconditions", () => {
