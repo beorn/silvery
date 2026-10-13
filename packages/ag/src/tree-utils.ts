@@ -4,7 +4,14 @@
  * Functions used by both focus-events.ts and mouse-events.ts.
  */
 
-import type { AgNode, Rect } from "./types.js"
+import type { AgNode, Rect, TextProps } from "./types.js"
+
+/** Include hidden descendants: their previously painted transform still needs clearing. */
+export function subtreeHasTextTransform(node: AgNode): boolean {
+  return (
+    !!(node.props as TextProps).internal_transform || node.children.some(subtreeHasTextTransform)
+  )
+}
 
 /**
  * Collect the ancestor path from target to root (inclusive).

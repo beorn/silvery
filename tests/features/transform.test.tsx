@@ -9,6 +9,49 @@ import { Transform } from "../../packages/ink/src/ink"
 const render = createRenderer({ cols: 80, rows: 10 })
 
 describe("Transform", () => {
+  // @failure Active transformed text leaves old overflow after content/layout changes.
+  // @level l3
+  // @consumer Transform consumers updating retained terminal frames.
+  // Mount-only tests miss old transformed ink outside the owning Text rect.
+  test.each(["text shrink", "ancestor resize", "subtree removal"])(
+    "clears retained transformed overflow on %s",
+    (operation) => {
+      const prefix = (line: string, index: number) => `${index}→${line}`
+      const frame = (next: boolean) => (
+        <Box width={40} height={60} flexDirection="column">
+          <Text height={1} flexShrink={0}>
+            ANCHOR
+          </Text>
+          {Array.from({ length: 24 }, (_, i) => (
+            <Box key={i} height={2} flexShrink={0}>
+              <Box
+                width={next && operation === "ancestor resize" ? 2 : 1}
+                height={next && operation === "ancestor resize" ? 1 : 3}
+                flexShrink={0}
+              >
+                {next && operation === "subtree removal" ? null : (
+                  <Text wrap="hard" color="#ffffff" internal_transform={prefix}>
+                    {next && operation === "text shrink" ? "a" : "Hello world"}
+                  </Text>
+                )}
+              </Box>
+              <Text width={20} wrap="truncate">
+                <Text bold={i % 2 === 0}>{` row ${i}`}</Text>
+              </Text>
+            </Box>
+          ))}
+        </Box>
+      )
+      const app = createRenderer({ cols: 40, rows: 60 })(frame(false))
+      try {
+        expect(app.text).toContain("ANCHOR")
+        app.rerender(frame(true)) // STRICT compares all cells with a fresh pass.
+        expect(app.text).toContain("ANCHOR")
+      } finally {
+        app.unmount()
+      }
+    },
+  )
   test("transforms single text child", () => {
     const app = render(
       <Transform transform={(output) => `[${output}]`}>

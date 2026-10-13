@@ -22,7 +22,10 @@ import {
   trackStyleOnlyDirty,
   trackScrollDirty,
   trackNotifyDirty,
+  markSubtreeDirty,
+  markLayoutAncestorDirty,
 } from "@silvery/ag/dirty-tracking"
+import { subtreeHasTextTransform } from "@silvery/ag/tree-utils"
 import { syncTextContentSignal } from "@silvery/ag/layout-signals"
 import {
   markDirty,
@@ -241,6 +244,10 @@ export function setContainerNodeLifecycle(
 }
 
 function notifyNodeRemoved(container: Container | undefined, removedNode: AgNode): void {
+  if (container && !isDirty(container.root, CONTENT_BIT) && subtreeHasTextTransform(removedNode)) {
+    markDirty(container.root, CONTENT_BIT)
+    trackContentDirty(container.root)
+  }
   container?.nodeLifecycle?.onNodeRemoved?.(removedNode)
 }
 
@@ -387,35 +394,6 @@ function notifySyncedPropChanged(
  * Mark this node and all ancestors as having dirty content/layout.
  * Used to enable fast-path subtree skipping in renderPhase.
  */
-function markSubtreeDirty(node: AgNode | null): void {
-  while (node && !isDirty(node, SUBTREE_BIT)) {
-    markDirty(node, SUBTREE_BIT)
-    node = node.parent
-  }
-}
-
-/**
- * When a child change (append/remove/insert/text-update) occurs inside a
- * virtual text subtree (no layoutNode), the nearest layout ancestor must be
- * notified so its measure function re-collects descendant text and the layout
- * engine recalculates dimensions. Without this, the measure cache stays stale
- * and renderPhase renders at the wrong size / doesn't clear old content.
- *
- * No-op when the node already has a layoutNode (normal path handles it).
- */
-function markLayoutAncestorDirty(node: AgNode): void {
-  if (node.layoutNode) return
-  let ancestor: AgNode | null = node.parent
-  while (ancestor && !ancestor.layoutNode) {
-    ancestor = ancestor.parent
-  }
-  if (ancestor?.layoutNode) {
-    markDirty(ancestor, CONTENT_BIT | STYLE_PROPS_BIT)
-    ancestor.layoutNode.markDirty()
-    trackContentDirty(ancestor)
-  }
-}
-
 // ============================================================================
 // Dev Warnings
 // ============================================================================
@@ -857,6 +835,17 @@ export const hostConfig = {
     }
 
     // Apply layout-affecting prop changes
+    const owner = getOwningContainer(instance)
+    if (owner && !isDirty(owner.root, CONTENT_BIT) && (layoutChanged || contentChanged)) {
+      let transformed = subtreeHasTextTransform(instance)
+      for (let ancestor = instance.parent; !transformed && ancestor; ancestor = ancestor.parent) {
+        transformed = !!(ancestor.props as TextProps).internal_transform
+      }
+      if (transformed) {
+        markDirty(owner.root, CONTENT_BIT)
+        trackContentDirty(owner.root)
+      }
+    }
     if (layoutChanged) {
       if (instance.layoutNode) {
         if (instance.type === "silvery-text") {
@@ -1000,6 +989,16 @@ export const hostConfig = {
   },
 
   commitTextUpdate(textInstance: AgNode, _oldText: string, newText: string) {
+    const owner = getOwningContainer(textInstance)
+    if (owner && !isDirty(owner.root, CONTENT_BIT)) {
+      for (let ancestor = textInstance.parent; ancestor; ancestor = ancestor.parent) {
+        if ((ancestor.props as TextProps).internal_transform) {
+          markDirty(owner.root, CONTENT_BIT)
+          trackContentDirty(owner.root)
+          break
+        }
+      }
+    }
     textInstance.textContent = newText
     syncTextContentSignal(textInstance)
     textInstance.props = { children: newText } as TextProps

@@ -5,10 +5,10 @@
  * These tests verify the direct API + integration contract.
  */
 
-import { describe, test, expect } from "vitest"
+import { describe, test, expect, vi } from "vitest"
 import { createAg } from "@silvery/ag-term/ag"
 import { detectPipelineFeatures } from "@silvery/ag-term/pipeline"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, compareBuffers } from "@silvery/test"
 import React from "react"
 import { Box, Text } from "silvery"
 import type { AgNode } from "@silvery/ag/types"
@@ -52,6 +52,105 @@ function makeNode(type: string, props: Record<string, unknown>, children: AgNode
 }
 
 describe("createAg", () => {
+  // @failure Imperative content/structure changes retain old cells or free moved nodes.
+  // @level l3
+  // @consumer Ag callers updating a retained terminal frame.
+  // Retained imperative mutations must reach the Text painter even when geometry
+  // stays fixed. React rerenders do not exercise this imperative owner.
+  test.each(
+    [false, true].flatMap((active) =>
+      ["text", "color", "remove", "reorder", "insert", "move"].map((kind) => ({ active, kind })),
+    ),
+  )("retains imperative $kind output with transform=$active", ({ active, kind }) => {
+    const prefix = (line: string) => `0→${line}`
+    const frame = (after: boolean) => (
+      <Box width={40} height={60} flexDirection="column">
+        <Text height={1}>ANCHOR</Text>
+        {(after && kind === "move"
+          ? [1, 0, ...Array.from({ length: 22 }, (_, i) => i + 2)]
+          : Array.from({ length: 24 }, (_, i) => i)
+        ).map((i) => (
+          <Box key={i} height={2} flexShrink={0}>
+            <Text
+              width={12}
+              height={1}
+              wrap="clip"
+              color={after && kind === "color" ? "#00ff00" : "#ffffff"}
+              internal_transform={active ? prefix : undefined}
+            >
+              {(after && kind === "reorder"
+                ? ["BBBB", "AAAA"]
+                : after && kind === "insert"
+                  ? [`CCCC${i.toString().padStart(2, "0")}`, "AAAA", "BBBB"]
+                  : after && kind === "remove"
+                    ? ["AAAA"]
+                    : [after && kind === "text" ? "DDDD" : "AAAA", "BBBB"]
+              ).map((s) => (
+                <Text key={s}>{s}</Text>
+              ))}
+            </Text>
+            <Text width={12} height={1} wrap="clip">
+              {after && kind === "insert" ? null : (
+                <Text>{`CCCC${i.toString().padStart(2, "0")}`}</Text>
+              )}
+            </Text>
+          </Box>
+        ))}
+      </Box>
+    )
+    const app = createRenderer({ cols: 40, rows: 60 })(frame(false))
+    const oracle = createRenderer({ cols: 40, rows: 60 })(frame(true))
+    try {
+      const root = app.getContainer(),
+        ag = createAg(root)
+      ag.layout({ cols: 40, rows: 60 })
+      expect(ag.render().frame.text).toContain("AAAABBBB")
+      const panel = root.children[0]!,
+        rows = panel.children.slice(1)
+      expect(rows).toHaveLength(24)
+      if (kind === "move") {
+        const moving = rows[1]!,
+          free = vi.spyOn(moving.layoutNode!, "free")
+        ag.insertChild(panel, moving, 1)
+        expect(panel.children[1]).toBe(moving)
+        expect(free).not.toHaveBeenCalled()
+        free.mockRestore()
+      } else {
+        for (const row of rows) {
+          const main = row.children[0]!,
+            donor = row.children[1]!
+          if (kind === "text") ag.setText(main.children[0]!.children[0]!, "DDDD")
+          else if (kind === "color") {
+            ag.updateProps(main, { ...main.props, color: "#00ff00" }, main.props)
+          } else if (kind === "remove") ag.removeChild(main, main.children[1]!)
+          else {
+            const moving = kind === "insert" ? donor.children[0]! : main.children[1]!
+            ag.insertChild(main, moving, 0)
+            expect(main.children[0]).toBe(moving)
+          }
+        }
+      }
+      ag.layout({ cols: 40, rows: 60 })
+      const actual = ag.render(),
+        expectedAg = createAg(oracle.getContainer())
+      expectedAg.layout({ cols: 40, rows: 60 })
+      expect(compareBuffers(actual.buffer, expectedAg.render({ fresh: true }).buffer)).toBeNull()
+      expect(actual.frame.text).toContain(
+        kind === "text"
+          ? "DDDD"
+          : kind === "reorder"
+            ? "BBBBAAAA"
+            : kind === "insert"
+              ? "CCCC00AA"
+              : kind === "move"
+                ? "CCCC01"
+                : "AAAA",
+      )
+    } finally {
+      app.unmount()
+      oracle.unmount()
+    }
+  })
   describe("pipeline integration", () => {
     test("simple text renders correctly", () => {
       const render = createRenderer({ cols: 40, rows: 10 })

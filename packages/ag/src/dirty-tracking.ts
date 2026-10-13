@@ -26,8 +26,36 @@
  * The layout gate in ag.ts / layout-phase.ts checks root.layoutNode.isDirty().
  */
 
-import type { EpochOwner } from "./epoch"
+import {
+  isDirty,
+  markDirty,
+  SUBTREE_BIT,
+  CONTENT_BIT,
+  STYLE_PROPS_BIT,
+  type EpochOwner,
+} from "./epoch"
 import type { AgNode } from "./types"
+
+export function markSubtreeDirty(node: AgNode | null): void {
+  while (node && !isDirty(node, SUBTREE_BIT)) {
+    markDirty(node, SUBTREE_BIT)
+    node = node.parent
+  }
+}
+
+/** Notify the nearest layout ancestor when a virtual text descendant changes. */
+export function markLayoutAncestorDirty(node: AgNode): void {
+  if (node.layoutNode) return
+  let ancestor: AgNode | null = node.parent
+  while (ancestor && !ancestor.layoutNode) {
+    ancestor = ancestor.parent
+  }
+  if (ancestor?.layoutNode) {
+    markDirty(ancestor, CONTENT_BIT | STYLE_PROPS_BIT)
+    ancestor.layoutNode.markDirty()
+    trackContentDirty(ancestor)
+  }
+}
 
 interface TreeDirtySets {
   /**
