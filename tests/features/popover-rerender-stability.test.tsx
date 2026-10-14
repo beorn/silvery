@@ -20,7 +20,7 @@
  *    re-renders should update the popover without a hide/show cycle.
  *
  * Note: the root Box pins width/height (the `<Screen>` parity rule from
- * vendor/silvery/CLAUDE.md) — without the pin the absolute overlay is
+ * vendor/silvery/AGENTS.md) — without the pin the absolute overlay is
  * clipped by the content-sized root and these tests can't see it.
  */
 

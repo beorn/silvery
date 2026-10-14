@@ -11,7 +11,7 @@
  * Test harness note: createRenderer({cols, rows}) does NOT pin root.style
  * width/height. Production silvercode uses `<Screen>` which pins both. This
  * test mirrors that with an explicit Box width/height — see
- * vendor/silvery/CLAUDE.md "Pin root width/height when testing full-app
+ * vendor/silvery/AGENTS.md "Pin root width/height when testing full-app
  * layouts".
  */
 import React from "react"

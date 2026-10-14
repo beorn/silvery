@@ -1,6 +1,6 @@
 # Pipeline Lessons
 
-Postmortems and strategies from past debugging sessions. Read [CLAUDE.md](CLAUDE.md) for the normative pipeline reference first.
+Postmortems and strategies from past debugging sessions. Read [AGENTS.md](AGENTS.md) for the normative pipeline reference first.
 
 ## The Big 4 Render-Phase Bugs
 
@@ -299,7 +299,7 @@ Why the RIGHTMOST column specifically: a skipped repaint keeps whatever the prev
 
 **Fix**: the epoch moved onto an `EpochOwner` that one tree owns and no other can reach, hung off every node as `node.epochOwner`. The predicates take the node (`isDirty(node, BIT)`, `markDirty(node, BITS)`, `advanceRenderEpoch(root)`) rather than raw `(bits, epoch)` pairs — smaller at the call site, and impossible to answer from the wrong tree. Nodes are born into their tree: `createInstance` / `createTextInstance` read `rootContainer.root.epochOwner`, which React passes and the host config had been discarding as `_rootContainer`. So there is no adoption pass and no window where a node's bits answer to the wrong renderer. The dirty-node sets moved to a `WeakMap` keyed by the same owner.
 
-Structural ownership rather than a scoped save/restore global was deliberate: the framework already bans that shape (root `CLAUDE.md`, the `wasRaw` anti-pattern), and a scope would have reintroduced the same defect the moment a React commit ran outside it.
+Structural ownership rather than a scoped save/restore global was deliberate: the framework already bans that shape (root `AGENTS.md`, the `wasRaw` anti-pattern), and a scope would have reintroduced the same defect the moment a React commit ran outside it.
 
 **Test**: `tests/features/residue-cross-render.test.tsx` — a peer renderer drives a frame from the subject's layout effect, inside the commit→pipeline window. The single-renderer control passes before and after; the subject is red before the fix, reporting `ALL DIRTY FLAGS FALSE - fast-path likely skipped this node` with the previous cursor row's highlight still painted.
 

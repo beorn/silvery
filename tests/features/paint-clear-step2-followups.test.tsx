@@ -6,10 +6,10 @@
  * These tests cover the 5 structural smells flagged by the dual-pro reviews
  * on 2026-04-27 ($3.12 review with Smell #1-#3 + Gemini 3 Pro selectable-
  * purge insight). Each test exercises a realistic-scale fixture (50+ nodes
- * per packages/ag-term/src/pipeline/CLAUDE.md mandate) and verifies
+ * per packages/ag-term/src/pipeline/AGENTS.md mandate) and verifies
  * incremental render parity with fresh render under SILVERY_STRICT.
  *
- * Per pipeline/CLAUDE.md "Test Before Change":
+ * Per pipeline/AGENTS.md "Test Before Change":
  *   1. Test asserts the new behavior (not the old)
  *   2. Test fails on the pre-refactor code path with a clear diagnostic
  *   3. Test passes after the structural fix

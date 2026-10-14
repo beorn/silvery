@@ -22,7 +22,7 @@
  * function of (plan, buffer), so the realize pass is deterministic across the
  * fresh and incremental paths (incremental ≡ fresh).
  *
- * Realistic-scale fixtures per `packages/ag-term/src/pipeline/CLAUDE.md`: a
+ * Realistic-scale fixtures per `packages/ag-term/src/pipeline/AGENTS.md`: a
  * 120×40 buffer (4800 cells) with a full-screen dark surface, a multi-row
  * status bar, and a multi-row right-edge scrollbar — the silvercode shape the
  * user reported, not a 2–3 cell toy.

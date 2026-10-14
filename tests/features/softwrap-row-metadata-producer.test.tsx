@@ -10,7 +10,7 @@
  * asserting the metadata the render phase writes per row. Without the producer,
  * `softWrapped` is always false and wrapped copies wrongly split with "\n".
  *
- * Per the pipeline rule (`packages/ag-term/src/pipeline/CLAUDE.md` — "Test
+ * Per the pipeline rule (`packages/ag-term/src/pipeline/AGENTS.md` — "Test
  * Before Change"), this is a STRICT producer test: run under SILVERY_STRICT=2,
  * which auto-verifies incremental≡fresh on every render. Because rowMeta is NOT
  * part of the cell-level STRICT diff, the multi-frame case below ALSO asserts
@@ -32,7 +32,7 @@ import { Box, Text } from "silvery"
 
 // Mirror <Screen>: pin root width/height so the column→Text wrap chain doesn't
 // collapse to height=1 under unconstrained max-content sizing (see
-// vendor/silvery/CLAUDE.md "Pin root width/height when testing full-app
+// vendor/silvery/AGENTS.md "Pin root width/height when testing full-app
 // layouts"). Generous rows so every wrapped line is rendered.
 const ROWS = 8
 

@@ -824,7 +824,7 @@ These are workspace packages for development. Users do not import from them dire
 | `packages/ag-term/src/buffer.ts`                | TerminalBuffer + createTextFrame() snapshot factory           |
 | `packages/ag-term/src/pipeline/output-phase.ts` | Buffer diff, ANSI output generation                           |
 | `packages/ag-term/src/pipeline/layout-phase.ts` | Layout, scroll, sticky, screen rects                          |
-| `packages/ag-term/src/pipeline/CLAUDE.md`       | Pipeline internals docs (read before editing)                 |
+| `packages/ag-term/src/pipeline/AGENTS.md`       | Pipeline internals docs (read before editing)                 |
 
 ## Documentation Site
 

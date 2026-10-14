@@ -142,7 +142,7 @@ export interface Modes extends Disposable {
    *
    * wasRaw note: prefer a single `modes.rawMode(true)` at session start; do
    * not capture-and-restore around async work. See
-   * `vendor/silvery/CLAUDE.md` "Anti-pattern: wasRaw".
+   * `vendor/silvery/AGENTS.md` "Anti-pattern: wasRaw".
    */
   readonly rawMode: Signal<boolean>
 

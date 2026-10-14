@@ -23,7 +23,7 @@ React state change fires. Reconciler walks the fiber tree and sets dirty flags o
 
 Layout-affecting prop changes call `node.layoutNode.markDirty()` directly — Flexily's `isDirty()` is the sole layout gate.
 
-Those flags are epoch stamps, not booleans: `markDirty(node, BIT)` stamps `node.dirtyEpoch` with the current epoch of the node's tree, and `isDirty(node, BIT)` holds only until step 3 ends with `advanceRenderEpoch(root)`. The epoch belongs to ONE tree (`node.epochOwner`) — a process-global counter lets a second renderer's frame clear this tree's pending flags between the reconciler's stamp here and the render phase's read in step 3, which shows up as stale pixels on screen. See [CLAUDE.md](CLAUDE.md#the-epoch-belongs-to-one-tree--never-the-process).
+Those flags are epoch stamps, not booleans: `markDirty(node, BIT)` stamps `node.dirtyEpoch` with the current epoch of the node's tree, and `isDirty(node, BIT)` holds only until step 3 ends with `advanceRenderEpoch(root)`. The epoch belongs to ONE tree (`node.epochOwner`) — a process-global counter lets a second renderer's frame clear this tree's pending flags between the reconciler's stamp here and the render phase's read in step 3, which shows up as stale pixels on screen. See [AGENTS.md](AGENTS.md#the-epoch-belongs-to-one-tree--never-the-process).
 
 Reconciler calls `scheduler.scheduleRender()`.
 
@@ -90,7 +90,7 @@ Before walking the tree, the render phase runs `clearPreviousOutlines(buffer, po
 
 Output: `TerminalBuffer` — the correct pixel state for this frame.
 
-**Cascade predicates** — 6 computed outputs from 14 boolean inputs control the entire incremental cascade. Pure logic extracted to `cascade-predicates.ts` for exhaustive testing (2^14 = 16,384 cases). See `CLAUDE.md` "The Critical Formulas" for detailed semantics.
+**Cascade predicates** — 6 computed outputs from 14 boolean inputs control the entire incremental cascade. Pure logic extracted to `cascade-predicates.ts` for exhaustive testing (2^14 = 16,384 cases). See `AGENTS.md` "The Critical Formulas" for detailed semantics.
 
 ```
 canSkipEntireSubtree          = hasPrevBuffer && !contentDirty && !stylePropsDirty && !layoutChanged

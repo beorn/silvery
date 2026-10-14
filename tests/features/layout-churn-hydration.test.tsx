@@ -23,7 +23,7 @@
  * outer wrapper + overflow=hidden flex wrapper) — matches km's BoardView →
  * HVL → CardColumn chain.
  *
- * Per `vendor/silvery/packages/ag-term/src/pipeline/CLAUDE.md`: any pipeline
+ * Per `vendor/silvery/packages/ag-term/src/pipeline/AGENTS.md`: any pipeline
  * change MUST have a STRICT test that exercises the new behavior. This file
  * pre-stages the canonical hydration shape so future render-phase tweaks
  * stay safe against the bead's known regression class.

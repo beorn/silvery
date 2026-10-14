@@ -152,7 +152,7 @@ function main(argv: string[]): number {
       "Replace each with `unmountFiberRoot(fiberRoot, container)` from\n" +
         "`@silvery/ag-react/reconciler`. The async path leaks layout-effect\n" +
         "cleanups + the FiberRoot.containerInfo.onRender closure on a\n" +
-        "ConcurrentRoot. See vendor/silvery/CLAUDE.md → 'Anti-pattern: async\n" +
+        "ConcurrentRoot. See vendor/silvery/AGENTS.md → 'Anti-pattern: async\n" +
         "reconciler unmount on ConcurrentRoot' and the unmountFiberRoot\n" +
         "docstring in packages/ag-react/src/reconciler/index.ts.\n",
     )

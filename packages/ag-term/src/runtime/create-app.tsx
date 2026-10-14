@@ -2972,7 +2972,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     //   2. The shared refcount equals what `listenerCount` reports for our
     //      installation — proves the registry is the only attacher.
     //
-    // Per `vendor/silvery/CLAUDE.md` mandate: no new SILVERY_* env vars —
+    // Per `vendor/silvery/AGENTS.md` mandate: no new SILVERY_* env vars —
     // the check threads through `isStrictEnabled(slug, minTier)`.
     if (isStrictEnabled("resize-listener-bound", 1)) {
       try {

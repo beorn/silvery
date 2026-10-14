@@ -94,4 +94,4 @@ Ink 7.0 added 172 new tests (985 total, up from 813 in 5.2.1). New test categori
 
 - **Layer 1**: Clone real Ink/Chalk repos at pinned version, run their ava test suites against silvery's compat layer
 - **Layer 2**: Auto-generate vitest tests from upstream via codemod (`gen-vitest.ts`)
-- See `CLAUDE.md` for full workflow and updating procedures
+- See `AGENTS.md` for full workflow and updating procedures

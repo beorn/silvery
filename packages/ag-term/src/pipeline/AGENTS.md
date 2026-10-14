@@ -1,5 +1,5 @@
 > **See [RENDERING.md](RENDERING.md) for the complete step-by-step rendering algorithm and test coverage map.**
-> This file (CLAUDE.md) covers the render phase internals. RENDERING.md covers the full pipeline end-to-end.
+> This file (AGENTS.md) covers the render phase internals. RENDERING.md covers the full pipeline end-to-end.
 
 # Pipeline Internals
 
@@ -141,7 +141,7 @@ The same reasoning covers `dirty-tracking.ts`'s node sets, which are also per-tr
 
 Rules for pipeline code:
 
-- Never reintroduce a module-level epoch, dirty set, "current frame" counter, or terminal-capability mirror. Reach per-tree state through the node (`node.epochOwner`) and per-render state through `ctx: PipelineContext`, never through a scoped save/restore global — the framework's structural-ownership rule (root `CLAUDE.md`, `wasRaw` anti-pattern) applies here too.
+- Never reintroduce a module-level epoch, dirty set, "current frame" counter, or terminal-capability mirror. Reach per-tree state through the node (`node.epochOwner`) and per-render state through `ctx: PipelineContext`, never through a scoped save/restore global — the framework's structural-ownership rule (root `AGENTS.md`, `wasRaw` anti-pattern) applies here too.
 - Node literals must set `epochOwner`. React-created nodes inherit it from `rootContainer.root.epochOwner` in `createInstance` / `createTextInstance`, so every node is born into the tree that renders it and no adoption pass is needed.
 - Regression pin: `tests/features/residue-cross-render.test.tsx` — a peer renderer drives a frame from the subject's layout effect (inside the commit→pipeline window) and STRICT must stay green.
 

@@ -241,5 +241,5 @@ For these, the fix isn't "file a bug" -- it's "design a system that works regard
 - [Text Sizing Protocol (OSC 66)](../reference/text-sizing.md) -- current implementation
 - [Terminal Compatibility Matrix](../reference/terminal-matrix.md) -- capability detection
 - [Terminal Capabilities Reference](../reference/terminal-capabilities.md) -- per-terminal details
-- [Pipeline Internals](https://github.com/beorn/silvery/blob/main/packages/ag-term/src/pipeline/CLAUDE.md) -- STRICT mode, flag emoji lesson
+- [Pipeline Internals](https://github.com/beorn/silvery/blob/main/packages/ag-term/src/pipeline/AGENTS.md) -- STRICT mode, flag emoji lesson
 - [output-phase-wide-char-matrix.test.ts](https://github.com/beorn/silvery/blob/main/tests/output-phase-wide-char-matrix.test.ts) -- matrix test
