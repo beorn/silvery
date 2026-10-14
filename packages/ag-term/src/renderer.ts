@@ -91,7 +91,15 @@ import {
   MAX_CONVERGENCE_PASSES,
   INSTRUMENT,
 } from "./runtime/pass-cause"
-import { ALL_RECONCILER_BITS, isAnyDirty, setDirty } from "@silvery/ag/epoch"
+import {
+  ALL_RECONCILER_BITS,
+  CONTENT_BIT,
+  isAnyDirty,
+  isCurrentEpoch,
+  isDirty,
+  setDirty,
+} from "@silvery/ag/epoch"
+import { subtreeHasTextTransform } from "@silvery/ag/tree-utils"
 // Side-effect import: arms `@silvery/ag`'s wrap-measurer registry with the
 // terminal grapheme-aware adapter. Importing renderer.ts (via createRenderer
 // in tests, or run() in production) now means soft-wrap-aware
@@ -802,6 +810,10 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   //
   // See hub/silvery/design/convergence-bounds.md for the convergence theorem.
 
+  // Per doRender, shared only with its sibling pipeline closure. Fresh STRICT
+  // verification never replaces the witness from the last real retained paint.
+  let strictRootContentClean: boolean | undefined
+
   /** Run the full pipeline: layout + render + output phase. */
   function runPipeline(
     root: ReturnType<typeof getContainerRoot>,
@@ -845,6 +857,19 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // For fresh renders (STRICT comparison only), pass a throw-away carrier
     // so the fresh pass doesn't observe or mutate the cross-frame snapshots
     // — see the `fresh` option doc above.
+    if (strictMode && !opts?.fresh) {
+      const layout = root.boxRect
+      const retained =
+        prevBuffer &&
+        layout &&
+        prevBuffer.width === layout.width &&
+        prevBuffer.height === layout.height
+      if (!retained) strictRootContentClean = undefined
+      else if (isAnyDirty(root) || isCurrentEpoch(root, root.layoutChangedThisFrame)) {
+        strictRootContentClean = !isDirty(root, CONTENT_BIT)
+      }
+      // Canonical renderPhase no-op paints nothing and leaves the last witness.
+    }
     const { buffer, carryForwardBuffer, overlay } = ag.render({
       fresh: opts?.fresh,
       prevBuffer,
@@ -873,6 +898,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   }
 
   function doRender(): string {
+    strictRootContentClean = undefined
     let output: string
     let buffer!: TerminalBuffer
     // Kitty backdrop-fade overlay from the incremental render. Captured
@@ -1062,7 +1088,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
               ? structuredClone((globalThis as any).__silvery_content_detail)
               : undefined
 
-            const debugInfo = formatMismatchContext(ctx, renderPhaseStats)
+            const transformWitness =
+              strictRootContentClean === true && subtreeHasTextTransform(root)
+                ? "Transform invalidation witness: root CONTENT was clean before retained paint; an active text transform remains, and retained/fresh cells differ. Check transform mutation invalidation.\n"
+                : ""
+            const debugInfo = transformWitness + formatMismatchContext(ctx, renderPhaseStats)
 
             // Include text output for full picture
             const incText = bufferToText(buffer!)

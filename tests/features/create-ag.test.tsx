@@ -7,6 +7,9 @@
 
 import { describe, test, expect, vi } from "vitest"
 import { createAg } from "@silvery/ag-term/ag"
+import * as agModule from "@silvery/ag-term/ag"
+import { IncrementalRenderMismatchError } from "@silvery/ag-term/errors"
+import { CONTENT_BIT, setDirty } from "@silvery/ag/epoch"
 import { detectPipelineFeatures } from "@silvery/ag-term/pipeline"
 import { createRenderer, compareBuffers } from "@silvery/test"
 import React from "react"
@@ -52,6 +55,72 @@ function makeNode(type: string, props: Record<string, unknown>, children: AgNode
 }
 
 describe("createAg", () => {
+  // @failure STRICT cell mismatch omits the observed clean-root transform evidence.
+  // @level l3
+  // @consumer Maintainers diagnosing retained transform invalidation.
+  // Ordinary rendering tests assert correctness; this needs a delegated fault
+  // in the actual retained buffer and the existing typed diagnostic boundary.
+  test.each([
+    { active: true, clean: true, tagged: true },
+    { active: true, clean: false, tagged: false },
+    { active: false, clean: true, tagged: false },
+  ])("STRICT transform evidence active=$active clean=$clean", ({ active, clean, tagged }) => {
+    const original = agModule.createAg
+    let armed = false
+    const spy = vi.spyOn(agModule, "createAg").mockImplementation((root, options) => {
+      const ag = original(root, options),
+        layout = ag.layout.bind(ag),
+        render = ag.render.bind(ag)
+      ag.layout = (dims, opts) => {
+        const result = layout(dims, opts)
+        if (armed && clean) setDirty(root, root.dirtyBits & ~CONTENT_BIT)
+        return result
+      }
+      ag.render = (opts) => {
+        const result = render(opts)
+        if (armed && !opts?.fresh) result.buffer.setCell(39, 59, { char: "Z" })
+        return result
+      }
+      return ag
+    })
+    const prefix = (line: string) => `0→${line}`
+    const frame = (color: string) => (
+      <Box width={40} height={60} flexDirection="column">
+        {Array.from({ length: 24 }, (_, i) => (
+          <Box key={i} height={2} flexShrink={0}>
+            <Text
+              width={12}
+              height={1}
+              color={color}
+              internal_transform={active ? prefix : undefined}
+            >
+              AAAA
+            </Text>
+            <Text width={12} height={1}>
+              BBBB
+            </Text>
+          </Box>
+        ))}
+      </Box>
+    )
+    let app: ReturnType<ReturnType<typeof createRenderer>> | undefined
+    try {
+      app = createRenderer({ cols: 40, rows: 60 })(frame("#ffffff"))
+      expect(app.text).toContain("AAAA")
+      armed = true
+      let failure: unknown
+      try {
+        app.rerender(frame("#00ff00"))
+      } catch (error) {
+        failure = error
+      }
+      expect(failure).toBeInstanceOf(IncrementalRenderMismatchError)
+      expect((failure as Error).message.startsWith("Transform invalidation witness:")).toBe(tagged)
+    } finally {
+      spy.mockRestore()
+      app?.unmount()
+    }
+  })
   // @failure Imperative content/structure changes retain old cells or free moved nodes.
   // @level l3
   // @consumer Ag callers updating a retained terminal frame.

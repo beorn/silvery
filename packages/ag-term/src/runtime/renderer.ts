@@ -22,6 +22,8 @@ import { reconciler, getContainerRoot } from "@silvery/ag-react/reconciler"
 import { createAg, type Ag } from "../ag"
 import { runWithMeasurer } from "../unicode"
 import { createBuffer } from "./create-buffer"
+import { subtreeHasTextTransform } from "@silvery/ag/tree-utils"
+import { isCurrentEpoch } from "@silvery/ag/epoch"
 import {
   isAnyDirty,
   isDirty,
@@ -320,7 +322,32 @@ export function createRenderer(opts: RendererOptions): Renderer {
         ;(globalThis as any).__silvery_write_trap = strictTrap
       }
     }
+    const layout = rootNode.boxRect
+    const retainedCandidate =
+      opts.strictMode &&
+      !opts.noIncremental &&
+      _lastTermBuffer &&
+      _lastLayoutDims &&
+      layout &&
+      _lastLayoutDims.cols === dims.cols &&
+      _lastLayoutDims.rows === dims.rows &&
+      _lastTermBuffer.width === layout.width &&
+      _lastTermBuffer.height === layout.height
+    let strictRootContentClean =
+      retainedCandidate &&
+      (isAnyDirty(rootNode) || isCurrentEpoch(rootNode, rootNode.layoutChangedThisFrame))
+        ? !isDirty(rootNode, CONTENT_BIT)
+        : undefined
     const agResult = _ag.render()
+    // Ag exposes its actual prior input only in the result. Confirmation avoids
+    // attributing reset, resize or fresh frames using runtime storage alone.
+    if (
+      !agResult.prevBuffer ||
+      agResult.prevBuffer.width !== agResult.buffer.width ||
+      agResult.prevBuffer.height !== agResult.buffer.height
+    ) {
+      strictRootContentClean = undefined
+    }
     if (strictTrap) {
       ;(globalThis as any).__silvery_write_trap = null
       ;(globalThis as any).__silvery_strict_incremental_trap = strictTrap
@@ -491,7 +518,12 @@ export function createRenderer(opts: RendererOptions): Renderer {
                   })
                   .join("\n")
               : ""
+            const transformWitness =
+              strictRootContentClean === true && subtreeHasTextTransform(rootNode)
+                ? "Transform invalidation witness: root CONTENT was clean before retained paint; an active text transform remains, and retained/fresh cells differ. Check transform mutation invalidation.\n"
+                : ""
             const msg =
+              transformWitness +
               `SILVERY_STRICT (createApp): MISMATCH at (${x}, ${y}) on render #${_renderCount}\n` +
               `  incremental: ${cellStr(a)}\n` +
               `  fresh:       ${cellStr(b)}` +
