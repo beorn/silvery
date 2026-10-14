@@ -8,7 +8,7 @@
  */
 
 import React from "react"
-import { bench, describe } from "vitest"
+import { test, describe } from "vitest"
 import { Writable } from "node:stream"
 import { createRenderer } from "silvery/test"
 import { Box as SBox, Text as SText } from "silvery"
@@ -106,22 +106,28 @@ describe("Three-way — cursor move 100 items (80x24)", () => {
     c2 = 0,
     c3 = 0
 
-  bench("Silvery (reactive)", () => {
+  test("Silvery (reactive)", async ({ bench }) => {
+  await bench("Silvery (reactive)", () => {
     setReactiveEnabled(true)
     c1 = (c1 + 1) % 100
     sReactiveApp.rerender(silveryList(100, c1))
-  })
+  }).run()
+})
 
-  bench("Silvery (imperative)", () => {
+  test("Silvery (imperative)", async ({ bench }) => {
+  await bench("Silvery (imperative)", () => {
     setReactiveEnabled(false)
     c2 = (c2 + 1) % 100
     sImperativeApp.rerender(silveryList(100, c2))
-  })
+  }).run()
+})
 
-  bench("Ink", () => {
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     c3 = (c3 + 1) % 100
     inkApp.rerender(inkList(100, c3))
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -149,20 +155,26 @@ describe("Three-way — cursor move 1000 items (80x24)", () => {
     c2 = 0,
     c3 = 0
 
-  bench("Silvery (reactive)", () => {
+  test("Silvery (reactive)", async ({ bench }) => {
+  await bench("Silvery (reactive)", () => {
     setReactiveEnabled(true)
     c1 = (c1 + 1) % 1000
     sReactiveApp.rerender(silveryList(1000, c1))
-  })
+  }).run()
+})
 
-  bench("Silvery (imperative)", () => {
+  test("Silvery (imperative)", async ({ bench }) => {
+  await bench("Silvery (imperative)", () => {
     setReactiveEnabled(false)
     c2 = (c2 + 1) % 1000
     sImperativeApp.rerender(silveryList(1000, c2))
-  })
+  }).run()
+})
 
-  bench("Ink", () => {
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     c3 = (c3 + 1) % 1000
     inkApp.rerender(inkList(1000, c3))
-  })
+  }).run()
+})
 })

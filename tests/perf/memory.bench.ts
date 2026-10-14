@@ -13,7 +13,7 @@
  */
 
 import React from "react"
-import { bench, describe, test, expect } from "vitest"
+import { , describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { createBuffer } from "@silvery/ag-term/buffer"
 import { ensureDefaultLayoutEngine, getLayoutEngine } from "@silvery/ag-term/layout-engine"
@@ -44,23 +44,31 @@ function measureHeapBytes(): number {
 // ============================================================================
 
 describe("Memory: Buffer Allocation", () => {
-  bench("Create 80x24 buffer", () => {
+  test("Create 80x24 buffer", async ({ bench }) => {
+  await bench("Create 80x24 buffer", () => {
     createBuffer(80, 24)
-  })
+  }).run()
+})
 
-  bench("Create 200x50 buffer", () => {
+  test("Create 200x50 buffer", async ({ bench }) => {
+  await bench("Create 200x50 buffer", () => {
     createBuffer(200, 50)
-  })
+  }).run()
+})
 
-  bench("Clone 80x24 buffer", () => {
+  test("Clone 80x24 buffer", async ({ bench }) => {
+  await bench("Clone 80x24 buffer", () => {
     const buf = createBuffer(80, 24)
     buf.clone()
-  })
+  }).run()
+})
 
-  bench("Clone 200x50 buffer", () => {
+  test("Clone 200x50 buffer", async ({ bench }) => {
+  await bench("Clone 200x50 buffer", () => {
     const buf = createBuffer(200, 50)
     buf.clone()
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -68,7 +76,8 @@ describe("Memory: Buffer Allocation", () => {
 // ============================================================================
 
 describe("Memory: Layout Nodes", () => {
-  bench("Create 100 flat nodes", () => {
+  test("Create 100 flat nodes", async ({ bench }) => {
+  await bench("Create 100 flat nodes", () => {
     const root = engine.createNode()
     root.setWidth(80)
     root.setHeight(24)
@@ -77,9 +86,11 @@ describe("Memory: Layout Nodes", () => {
       child.setHeight(1)
       root.insertChild(child, i)
     }
-  })
+  }).run()
+})
 
-  bench("Create 1000 flat nodes", () => {
+  test("Create 1000 flat nodes", async ({ bench }) => {
+  await bench("Create 1000 flat nodes", () => {
     const root = engine.createNode()
     root.setWidth(120)
     root.setHeight(40)
@@ -88,7 +99,8 @@ describe("Memory: Layout Nodes", () => {
       child.setHeight(1)
       root.insertChild(child, i)
     }
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -101,16 +113,20 @@ describe("Memory: Render Pipeline", () => {
   const renderFlat = createRenderer({ cols: 80, rows: 24 })
   const renderCursor = createRenderer({ cols: 80, rows: 24 })
 
-  bench("Initial render 100 items", () => {
+  test("Initial render 100 items", async ({ bench }) => {
+  await bench("Initial render 100 items", () => {
     renderFlat(React.createElement(FlatList, { count: 100 }))
-  })
+  }).run()
+})
 
-  bench("Render + 10 re-renders (100 items)", () => {
+  test("Render + 10 re-renders (100 items)", async ({ bench }) => {
+  await bench("Render + 10 re-renders (100 items)", () => {
     const app = renderCursor(React.createElement(CursorList, { count: 100, cursor: 0 }))
     for (let i = 1; i <= 10; i++) {
       app.rerender(React.createElement(CursorList, { count: 100, cursor: i % 100 }))
     }
-  })
+  }).run()
+})
 })
 
 // ============================================================================

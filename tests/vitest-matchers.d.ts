@@ -5,7 +5,7 @@ interface SilveryRetryOptions {
 }
 
 declare module "vitest" {
-  interface Assertion<T = any> {
+  interface Assertion<R extends void | Promise<void> = void, T = unknown> {
     /**
      * vitest's OWN snapshot matchers, re-declared.
      *
@@ -32,6 +32,11 @@ declare module "vitest" {
      * `tests/examples/dashboard.test.tsx` and
      * `tests/features/selection-cell-semantics.test.tsx` are the call sites that
      * will tell you immediately.
+     *
+     * vitest 5 update (29257): expect is bundled and vitest declares `Assertion`
+     * itself, so augmenting `"vitest"` merges instead of minting a fresh
+     * interface, and termless no longer declares `Assertion` in `"vitest"` — the
+     * hazard above is gone. Kept for now; its removal is a separate cleanup.
      */
     toMatchSnapshot(snapshot?: unknown, hint?: string): void
     toMatchInlineSnapshot(properties?: unknown, snapshot?: string, hint?: string): void
@@ -54,7 +59,7 @@ declare module "vitest" {
     ): void
   }
 
-  interface Matchers<T = any> {
+  interface Matchers<R extends void | Promise<void> = void | Promise<void>, T = unknown> {
     toContainText(text: string, options?: SilveryRetryOptions): void
     toHaveText(text: string, options?: SilveryRetryOptions): void
     toMatchLines(lines: string[], options?: SilveryRetryOptions): void

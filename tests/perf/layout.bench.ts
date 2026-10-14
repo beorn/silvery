@@ -10,7 +10,7 @@
  * Run: bun vitest bench tests/perf/layout.bench.ts
  */
 
-import { bench, describe } from "vitest"
+import { test, describe } from "vitest"
 import {
   ensureDefaultLayoutEngine,
   getLayoutEngine,
@@ -154,25 +154,33 @@ describe("Layout: Flat Hierarchy", () => {
   const flat100 = createFlatTree(100, 80, 24)
   const flat1000 = createFlatTree(1000, 120, 40)
 
-  bench("100 nodes — layout only", () => {
+  test("100 nodes — layout only", async ({ bench }) => {
+  await bench("100 nodes — layout only", () => {
     flat100.markDirty()
     flat100.calculateLayout(80, 24, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("1000 nodes — layout only", () => {
+  test("1000 nodes — layout only", async ({ bench }) => {
+  await bench("1000 nodes — layout only", () => {
     flat1000.markDirty()
     flat1000.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("100 nodes — create + layout", () => {
+  test("100 nodes — create + layout", async ({ bench }) => {
+  await bench("100 nodes — create + layout", () => {
     const tree = createFlatTree(100, 80, 24)
     tree.calculateLayout(80, 24, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("1000 nodes — create + layout", () => {
+  test("1000 nodes — create + layout", async ({ bench }) => {
+  await bench("1000 nodes — create + layout", () => {
     const tree = createFlatTree(1000, 120, 40)
     tree.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -184,20 +192,26 @@ describe("Layout: Deep Hierarchy", () => {
   const deep100 = createDeepTree(100, 80, 24)
   const deep200 = createDeepTree(200, 80, 24)
 
-  bench("50 levels deep", () => {
+  test("50 levels deep", async ({ bench }) => {
+  await bench("50 levels deep", () => {
     deep50.markDirty()
     deep50.calculateLayout(80, 24, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("100 levels deep", () => {
+  test("100 levels deep", async ({ bench }) => {
+  await bench("100 levels deep", () => {
     deep100.markDirty()
     deep100.calculateLayout(80, 24, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("200 levels deep", () => {
+  test("200 levels deep", async ({ bench }) => {
+  await bench("200 levels deep", () => {
     deep200.markDirty()
     deep200.calculateLayout(80, 24, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -210,30 +224,40 @@ describe("Layout: TUI Patterns", () => {
   const kanban300 = createKanbanTree(3, 100, 120, 40)
   const dashboard = createDashboardTree(5, 120, 40)
 
-  bench("Kanban 3x10 (33 nodes)", () => {
+  test("Kanban 3x10 (33 nodes)", async ({ bench }) => {
+  await bench("Kanban 3x10 (33 nodes)", () => {
     kanban30.markDirty()
     kanban30.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("Kanban 3x50 (156 nodes)", () => {
+  test("Kanban 3x50 (156 nodes)", async ({ bench }) => {
+  await bench("Kanban 3x50 (156 nodes)", () => {
     kanban150.markDirty()
     kanban150.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("Kanban 3x100 (306 nodes)", () => {
+  test("Kanban 3x100 (306 nodes)", async ({ bench }) => {
+  await bench("Kanban 3x100 (306 nodes)", () => {
     kanban300.markDirty()
     kanban300.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("Dashboard (16 nodes)", () => {
+  test("Dashboard (16 nodes)", async ({ bench }) => {
+  await bench("Dashboard (16 nodes)", () => {
     dashboard.markDirty()
     dashboard.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("Kanban 3x50 — create + layout", () => {
+  test("Kanban 3x50 — create + layout", async ({ bench }) => {
+  await bench("Kanban 3x50 — create + layout", () => {
     const tree = createKanbanTree(3, 50, 120, 40)
     tree.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -245,16 +269,20 @@ describe("Layout: Incremental (dirty tracking)", () => {
   const kanbanClean = createKanbanTree(3, 50, 120, 40)
   kanbanClean.calculateLayout(120, 40, C.DIRECTION_LTR)
 
-  bench("Re-layout clean tree (no-op)", () => {
+  test("Re-layout clean tree (no-op)", async ({ bench }) => {
+  await bench("Re-layout clean tree (no-op)", () => {
     // Tree is already laid out and not dirty — should be near-instant
     kanbanClean.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 
-  bench("Re-layout after resize (120x40 -> 100x30)", () => {
+  test("Re-layout after resize (120x40 -> 100x30)", async ({ bench }) => {
+  await bench("Re-layout after resize (120x40 -> 100x30)", () => {
     // Create fresh tree per iteration since resize mutates layout state
     const kanban = createKanbanTree(3, 50, 120, 40)
     kanban.calculateLayout(120, 40, C.DIRECTION_LTR)
     kanban.calculateLayout(100, 30, C.DIRECTION_LTR)
     kanban.calculateLayout(120, 40, C.DIRECTION_LTR)
-  })
+  }).run()
+})
 })
