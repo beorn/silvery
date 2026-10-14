@@ -19,6 +19,10 @@ import {
 } from "@silvery/ag-term/pipeline/pretext"
 import { graphemeWidth } from "@silvery/ag-term/unicode"
 
+// Tinybench 2's defaults (what vitest 4 ran): time 500ms, iterations 10, warmupTime 100ms,
+// warmupIterations 5. vitest 5 ships tinybench 6 (1000/64/250/64) — pin the v4 values (29257).
+const BENCH_V4 = { time: 500, iterations: 10, warmupTime: 100, warmupIterations: 5 }
+
 // ============================================================================
 // Fixtures
 // ============================================================================
@@ -95,11 +99,11 @@ describe("Cursor move — 20 items (all visible, 80x24)", () => {
   const app = render(memoList(20, 0))
   let cursor = 0
   test("memo'd rerender", async ({ bench }) => {
-  await bench("memo'd rerender", () => {
-    cursor = (cursor + 1) % 20
-    app.rerender(memoList(20, cursor))
-  }).run()
-})
+    await bench("memo'd rerender", () => {
+      cursor = (cursor + 1) % 20
+      app.rerender(memoList(20, cursor))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Cursor move — 100 items (80x24)", () => {
@@ -107,11 +111,11 @@ describe("Cursor move — 100 items (80x24)", () => {
   const app = render(memoList(100, 0))
   let cursor = 0
   test("memo'd rerender", async ({ bench }) => {
-  await bench("memo'd rerender", () => {
-    cursor = (cursor + 1) % 100
-    app.rerender(memoList(100, cursor))
-  }).run()
-})
+    await bench("memo'd rerender", () => {
+      cursor = (cursor + 1) % 100
+      app.rerender(memoList(100, cursor))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Cursor move — 500 items (120x40)", () => {
@@ -119,11 +123,11 @@ describe("Cursor move — 500 items (120x40)", () => {
   const app = render(memoList(500, 0))
   let cursor = 0
   test("memo'd rerender", async ({ bench }) => {
-  await bench("memo'd rerender", () => {
-    cursor = (cursor + 1) % 500
-    app.rerender(memoList(500, cursor))
-  }).run()
-})
+    await bench("memo'd rerender", () => {
+      cursor = (cursor + 1) % 500
+      app.rerender(memoList(500, cursor))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Cursor move — 1000 items (80x24)", () => {
@@ -131,11 +135,11 @@ describe("Cursor move — 1000 items (80x24)", () => {
   const app = render(memoList(1000, 0))
   let cursor = 0
   test("memo'd rerender", async ({ bench }) => {
-  await bench("memo'd rerender", () => {
-    cursor = (cursor + 1) % 1000
-    app.rerender(memoList(1000, cursor))
-  }).run()
-})
+    await bench("memo'd rerender", () => {
+      cursor = (cursor + 1) % 1000
+      app.rerender(memoList(1000, cursor))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -147,11 +151,11 @@ describe("Cursor move (no memo) — 100 items (80x24)", () => {
   const app = render(flatList(100, 0))
   let cursor = 0
   test("full reconcile + render", async ({ bench }) => {
-  await bench("full reconcile + render", () => {
-    cursor = (cursor + 1) % 100
-    app.rerender(flatList(100, cursor))
-  }).run()
-})
+    await bench("full reconcile + render", () => {
+      cursor = (cursor + 1) % 100
+      app.rerender(flatList(100, cursor))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Cursor move (no memo) — 500 items (120x40)", () => {
@@ -159,11 +163,11 @@ describe("Cursor move (no memo) — 500 items (120x40)", () => {
   const app = render(flatList(500, 0))
   let cursor = 0
   test("full reconcile + render", async ({ bench }) => {
-  await bench("full reconcile + render", () => {
-    cursor = (cursor + 1) % 500
-    app.rerender(flatList(500, cursor))
-  }).run()
-})
+    await bench("full reconcile + render", () => {
+      cursor = (cursor + 1) % 500
+      app.rerender(flatList(500, cursor))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -175,11 +179,11 @@ describe("Kanban 5x20 — move editing marker (200x60)", () => {
   const app = render(kanban(5, 20, 2, 0))
   let card = 0
   test("rerender", async ({ bench }) => {
-  await bench("rerender", () => {
-    card = (card + 1) % 20
-    app.rerender(kanban(5, 20, 2, card))
-  }).run()
-})
+    await bench("rerender", () => {
+      card = (card + 1) % 20
+      app.rerender(kanban(5, 20, 2, card))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Kanban 5x50 — move editing marker (200x60)", () => {
@@ -187,11 +191,11 @@ describe("Kanban 5x50 — move editing marker (200x60)", () => {
   const app = render(kanban(5, 50, 2, 0))
   let card = 0
   test("rerender", async ({ bench }) => {
-  await bench("rerender", () => {
-    card = (card + 1) % 50
-    app.rerender(kanban(5, 50, 2, card))
-  }).run()
-})
+    await bench("rerender", () => {
+      card = (card + 1) % 50
+      app.rerender(kanban(5, 50, 2, card))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -203,11 +207,11 @@ describe("Style-only (inverse toggle) — 100 items (80x24)", () => {
   const app = render(memoList(100, 0))
   let on = false
   test("toggle inverse on item 50", async ({ bench }) => {
-  await bench("toggle inverse on item 50", () => {
-    on = !on
-    app.rerender(memoList(100, on ? 50 : -1))
-  }).run()
-})
+    await bench("toggle inverse on item 50", () => {
+      on = !on
+      app.rerender(memoList(100, on ? 50 : -1))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Style-only (inverse toggle) — 1000 items (80x24)", () => {
@@ -215,11 +219,11 @@ describe("Style-only (inverse toggle) — 1000 items (80x24)", () => {
   const app = render(memoList(1000, 0))
   let on = false
   test("toggle inverse on item 500", async ({ bench }) => {
-  await bench("toggle inverse on item 500", () => {
-    on = !on
-    app.rerender(memoList(1000, on ? 500 : -1))
-  }).run()
-})
+    await bench("toggle inverse on item 500", () => {
+      on = !on
+      app.rerender(memoList(1000, on ? 500 : -1))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -238,30 +242,30 @@ describe("Resize — 100 items (80→120 cols)", () => {
   const render = createRenderer({ cols: 80, rows: 24 })
   const app = render(flatList(100, 5))
   test("resize to 120 cols", async ({ bench }) => {
-  await bench("resize to 120 cols", () => {
-    app.resize(120, 24)
-  }).run()
-})
+    await bench("resize to 120 cols", () => {
+      app.resize(120, 24)
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Resize — 1000 items (80→120 cols)", () => {
   const render = createRenderer({ cols: 80, rows: 40 })
   const app = render(flatList(1000, 5))
   test("resize to 120 cols", async ({ bench }) => {
-  await bench("resize to 120 cols", () => {
-    app.resize(120, 40)
-  }).run()
-})
+    await bench("resize to 120 cols", () => {
+      app.resize(120, 40)
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Resize kanban 5x20 (200→160 cols)", () => {
   const render = createRenderer({ cols: 200, rows: 60 })
   const app = render(kanban(5, 20, 2, 5))
   test("resize to 160 cols", async ({ bench }) => {
-  await bench("resize to 160 cols", () => {
-    app.resize(160, 60)
-  }).run()
-})
+    await bench("resize to 160 cols", () => {
+      app.resize(160, 60)
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -279,11 +283,11 @@ describe("Width oscillation — 100 items (80↔120 cols)", () => {
   const app = render(flatList(100, 5))
   let wide = false
   test("alternate 80↔120", async ({ bench }) => {
-  await bench("alternate 80↔120", () => {
-    wide = !wide
-    app.resize(wide ? 120 : 80, 24)
-  }).run()
-})
+    await bench("alternate 80↔120", () => {
+      wide = !wide
+      app.resize(wide ? 120 : 80, 24)
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Width oscillation — 1000 items (80↔120 cols)", () => {
@@ -291,11 +295,11 @@ describe("Width oscillation — 1000 items (80↔120 cols)", () => {
   const app = render(flatList(1000, 5))
   let wide = false
   test("alternate 80↔120", async ({ bench }) => {
-  await bench("alternate 80↔120", () => {
-    wide = !wide
-    app.resize(wide ? 120 : 80, 40)
-  }).run()
-})
+    await bench("alternate 80↔120", () => {
+      wide = !wide
+      app.resize(wide ? 120 : 80, 40)
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Width oscillation kanban 5x20 (160↔200 cols)", () => {
@@ -303,11 +307,11 @@ describe("Width oscillation kanban 5x20 (160↔200 cols)", () => {
   const app = render(kanban(5, 20, 2, 5))
   let wide = true
   test("alternate 160↔200", async ({ bench }) => {
-  await bench("alternate 160↔200", () => {
-    wide = !wide
-    app.resize(wide ? 200 : 160, 60)
-  }).run()
-})
+    await bench("alternate 160↔200", () => {
+      wide = !wide
+      app.resize(wide ? 200 : 160, 60)
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -333,11 +337,11 @@ describe("Scroll container — 200 items, 20 visible (80x24)", () => {
   const app = render(scrollList(200, 0, 20))
   let cursor = 0
   test("cursor move in scroll", async ({ bench }) => {
-  await bench("cursor move in scroll", () => {
-    cursor = (cursor + 1) % 200
-    app.rerender(scrollList(200, cursor, 20))
-  }).run()
-})
+    await bench("cursor move in scroll", () => {
+      cursor = (cursor + 1) % 200
+      app.rerender(scrollList(200, cursor, 20))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Scroll container — 1000 items, 20 visible (80x24)", () => {
@@ -345,11 +349,11 @@ describe("Scroll container — 1000 items, 20 visible (80x24)", () => {
   const app = render(scrollList(1000, 0, 20))
   let cursor = 0
   test("cursor move in scroll", async ({ bench }) => {
-  await bench("cursor move in scroll", () => {
-    cursor = (cursor + 1) % 1000
-    app.rerender(scrollList(1000, cursor, 20))
-  }).run()
-})
+    await bench("cursor move in scroll", () => {
+      cursor = (cursor + 1) % 1000
+      app.rerender(scrollList(1000, cursor, 20))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -370,20 +374,20 @@ const LONG_TEXT = Array.from({ length: 10 }, () => MEDIUM_TEXT).join(" ")
 
 describe("Pretext — buildTextAnalysis", () => {
   test("short (44 chars)", async ({ bench }) => {
-  await bench("short (44 chars)", () => {
-    buildTextAnalysis(SHORT_TEXT, graphemeWidth)
-  }).run()
-})
+    await bench("short (44 chars)", () => {
+      buildTextAnalysis(SHORT_TEXT, graphemeWidth)
+    }).run(BENCH_V4)
+  })
   test("medium (176 chars)", async ({ bench }) => {
-  await bench("medium (176 chars)", () => {
-    buildTextAnalysis(MEDIUM_TEXT, graphemeWidth)
-  }).run()
-})
+    await bench("medium (176 chars)", () => {
+      buildTextAnalysis(MEDIUM_TEXT, graphemeWidth)
+    }).run(BENCH_V4)
+  })
   test("long (1760 chars)", async ({ bench }) => {
-  await bench("long (1760 chars)", () => {
-    buildTextAnalysis(LONG_TEXT, graphemeWidth)
-  }).run()
-})
+    await bench("long (1760 chars)", () => {
+      buildTextAnalysis(LONG_TEXT, graphemeWidth)
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Pretext — shrinkwrapWidth", () => {
@@ -391,20 +395,20 @@ describe("Pretext — shrinkwrapWidth", () => {
   const mediumA = buildTextAnalysis(MEDIUM_TEXT, graphemeWidth)
   const longA = buildTextAnalysis(LONG_TEXT, graphemeWidth)
   test("short at width=20", async ({ bench }) => {
-  await bench("short at width=20", () => {
-    shrinkwrapWidth(shortA, 20)
-  }).run()
-})
+    await bench("short at width=20", () => {
+      shrinkwrapWidth(shortA, 20)
+    }).run(BENCH_V4)
+  })
   test("medium at width=40", async ({ bench }) => {
-  await bench("medium at width=40", () => {
-    shrinkwrapWidth(mediumA, 40)
-  }).run()
-})
+    await bench("medium at width=40", () => {
+      shrinkwrapWidth(mediumA, 40)
+    }).run(BENCH_V4)
+  })
   test("long at width=80", async ({ bench }) => {
-  await bench("long at width=80", () => {
-    shrinkwrapWidth(longA, 80)
-  }).run()
-})
+    await bench("long at width=80", () => {
+      shrinkwrapWidth(longA, 80)
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Pretext — knuthPlassBreaks", () => {
@@ -412,20 +416,20 @@ describe("Pretext — knuthPlassBreaks", () => {
   const mediumA = buildTextAnalysis(MEDIUM_TEXT, graphemeWidth)
   const longA = buildTextAnalysis(LONG_TEXT, graphemeWidth)
   test("short at width=20", async ({ bench }) => {
-  await bench("short at width=20", () => {
-    knuthPlassBreaks(shortA, 20)
-  }).run()
-})
+    await bench("short at width=20", () => {
+      knuthPlassBreaks(shortA, 20)
+    }).run(BENCH_V4)
+  })
   test("medium at width=40", async ({ bench }) => {
-  await bench("medium at width=40", () => {
-    knuthPlassBreaks(mediumA, 40)
-  }).run()
-})
+    await bench("medium at width=40", () => {
+      knuthPlassBreaks(mediumA, 40)
+    }).run(BENCH_V4)
+  })
   test("long at width=80", async ({ bench }) => {
-  await bench("long at width=80", () => {
-    knuthPlassBreaks(longA, 80)
-  }).run()
-})
+    await bench("long at width=80", () => {
+      knuthPlassBreaks(longA, 80)
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -443,15 +447,15 @@ function wrappedParagraph(text: string, wrap: string, width: number) {
 describe("Wrap mode comparison — medium text (width=40)", () => {
   const render = createRenderer({ cols: 80, rows: 24 })
   test('wrap="wrap" (greedy)', async ({ bench }) => {
-  await bench('wrap="wrap" (greedy)', () => {
-    render(wrappedParagraph(MEDIUM_TEXT, "wrap", 40))
-  }).run()
-})
+    await bench('wrap="wrap" (greedy)', () => {
+      render(wrappedParagraph(MEDIUM_TEXT, "wrap", 40))
+    }).run(BENCH_V4)
+  })
   test('wrap="even" (min-raggedness)', async ({ bench }) => {
-  await bench('wrap="even" (min-raggedness)', () => {
-    render(wrappedParagraph(MEDIUM_TEXT, "even", 40))
-  }).run()
-})
+    await bench('wrap="even" (min-raggedness)', () => {
+      render(wrappedParagraph(MEDIUM_TEXT, "even", 40))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -466,11 +470,11 @@ describe("Large terminal — cursor move 100 items (400x200)", () => {
   const app = render(memoList(100, 0))
   let cursor = 0
   test("memo'd rerender", async ({ bench }) => {
-  await bench("memo'd rerender", () => {
-    cursor = (cursor + 1) % 100
-    app.rerender(memoList(100, cursor))
-  }).run()
-})
+    await bench("memo'd rerender", () => {
+      cursor = (cursor + 1) % 100
+      app.rerender(memoList(100, cursor))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Large terminal — cursor move 1000 items (400x200)", () => {
@@ -478,21 +482,21 @@ describe("Large terminal — cursor move 1000 items (400x200)", () => {
   const app = render(memoList(1000, 0))
   let cursor = 0
   test("memo'd rerender", async ({ bench }) => {
-  await bench("memo'd rerender", () => {
-    cursor = (cursor + 1) % 1000
-    app.rerender(memoList(1000, cursor))
-  }).run()
-})
+    await bench("memo'd rerender", () => {
+      cursor = (cursor + 1) % 1000
+      app.rerender(memoList(1000, cursor))
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Large terminal — resize 1000 items (400→300 cols)", () => {
   const render = createRenderer({ cols: 400, rows: 200 })
   const app = render(flatList(1000, 5))
   test("resize to 300 cols", async ({ bench }) => {
-  await bench("resize to 300 cols", () => {
-    app.resize(300, 200)
-  }).run()
-})
+    await bench("resize to 300 cols", () => {
+      app.resize(300, 200)
+    }).run(BENCH_V4)
+  })
 })
 
 describe("Large terminal — kanban 5x50 (400x200)", () => {
@@ -500,11 +504,11 @@ describe("Large terminal — kanban 5x50 (400x200)", () => {
   const app = render(kanban(5, 50, 2, 10))
   let card = 10
   test("move editing marker", async ({ bench }) => {
-  await bench("move editing marker", () => {
-    card = (card + 1) % 50
-    app.rerender(kanban(5, 50, 2, card))
-  }).run()
-})
+    await bench("move editing marker", () => {
+      card = (card + 1) % 50
+      app.rerender(kanban(5, 50, 2, card))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -528,34 +532,34 @@ describe("Reconciliation profiling — 1000 items", () => {
   const app400 = render400(memoList(1000, 0))
 
   test("no-change rerender 80x24", async ({ bench }) => {
-  await bench("no-change rerender 80x24", () => {
-    app80.rerender(memoList(1000, 0))
-  }).run()
-})
+    await bench("no-change rerender 80x24", () => {
+      app80.rerender(memoList(1000, 0))
+    }).run(BENCH_V4)
+  })
   test("no-change rerender 400x200", async ({ bench }) => {
-  await bench("no-change rerender 400x200", () => {
-    app400.rerender(memoList(1000, 0))
-  }).run()
-})
+    await bench("no-change rerender 400x200", () => {
+      app400.rerender(memoList(1000, 0))
+    }).run(BENCH_V4)
+  })
 
   let c80 = 0
   let c400 = 0
   test("cursor move 80x24", async ({ bench }) => {
-  await bench("cursor move 80x24", () => {
-    c80 = (c80 + 1) % 1000
-    app80.rerender(memoList(1000, c80))
-  }).run()
-})
+    await bench("cursor move 80x24", () => {
+      c80 = (c80 + 1) % 1000
+      app80.rerender(memoList(1000, c80))
+    }).run(BENCH_V4)
+  })
   test("cursor move 400x200", async ({ bench }) => {
-  await bench("cursor move 400x200", () => {
-    c400 = (c400 + 1) % 1000
-    app400.rerender(memoList(1000, c400))
-  }).run()
-})
+    await bench("cursor move 400x200", () => {
+      c400 = (c400 + 1) % 1000
+      app400.rerender(memoList(1000, c400))
+    }).run(BENCH_V4)
+  })
 
   test("createElement only (no render)", async ({ bench }) => {
-  await bench("createElement only (no render)", () => {
-    memoList(1000, 42)
-  }).run()
-})
+    await bench("createElement only (no render)", () => {
+      memoList(1000, 42)
+    }).run(BENCH_V4)
+  })
 })

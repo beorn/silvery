@@ -22,6 +22,10 @@ import {
   CursorList,
 } from "./fixtures"
 
+// Tinybench 2's defaults (what vitest 4 ran): time 500ms, iterations 10, warmupTime 100ms,
+// warmupIterations 5. vitest 5 ships tinybench 6 (1000/64/250/64) — pin the v4 values (29257).
+const BENCH_V4 = { time: 500, iterations: 10, warmupTime: 100, warmupIterations: 5 }
+
 // ============================================================================
 // Initial Render (cold — includes React tree creation + full pipeline)
 // ============================================================================
@@ -33,58 +37,58 @@ describe("Initial Render", () => {
   const render120x40 = createRenderer({ cols: 120, rows: 40 })
 
   test("1 Box+Text (80x24)", async ({ bench }) => {
-  await bench("1 Box+Text (80x24)", () => {
-    render80x24(React.createElement(SimpleItem, { label: "Hello" }))
-  }).run()
-})
+    await bench("1 Box+Text (80x24)", () => {
+      render80x24(React.createElement(SimpleItem, { label: "Hello" }))
+    }).run(BENCH_V4)
+  })
 
   test("10 Box+Text (80x24)", async ({ bench }) => {
-  await bench("10 Box+Text (80x24)", () => {
-    render80x24(React.createElement(FlatList, { count: 10 }))
-  }).run()
-})
+    await bench("10 Box+Text (80x24)", () => {
+      render80x24(React.createElement(FlatList, { count: 10 }))
+    }).run(BENCH_V4)
+  })
 
   test("100 Box+Text (80x24)", async ({ bench }) => {
-  await bench("100 Box+Text (80x24)", () => {
-    render80x24(React.createElement(FlatList, { count: 100 }))
-  }).run()
-})
+    await bench("100 Box+Text (80x24)", () => {
+      render80x24(React.createElement(FlatList, { count: 100 }))
+    }).run(BENCH_V4)
+  })
 
   test("100 styled Box+Text (80x24)", async ({ bench }) => {
-  await bench("100 styled Box+Text (80x24)", () => {
-    render80x24(React.createElement(FlatList, { count: 100, styled: true }))
-  }).run()
-})
+    await bench("100 styled Box+Text (80x24)", () => {
+      render80x24(React.createElement(FlatList, { count: 100, styled: true }))
+    }).run(BENCH_V4)
+  })
 
   test("1000 Box+Text (120x40)", async ({ bench }) => {
-  await bench("1000 Box+Text (120x40)", () => {
-    render120x40(React.createElement(FlatList, { count: 1000 }))
-  }).run()
-})
+    await bench("1000 Box+Text (120x40)", () => {
+      render120x40(React.createElement(FlatList, { count: 1000 }))
+    }).run(BENCH_V4)
+  })
 
   test("Kanban 3x10 (120x40)", async ({ bench }) => {
-  await bench("Kanban 3x10 (120x40)", () => {
-    render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 10 }))
-  }).run()
-})
+    await bench("Kanban 3x10 (120x40)", () => {
+      render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 10 }))
+    }).run(BENCH_V4)
+  })
 
   test("Kanban 3x50 (120x40)", async ({ bench }) => {
-  await bench("Kanban 3x50 (120x40)", () => {
-    render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
-  }).run()
-})
+    await bench("Kanban 3x50 (120x40)", () => {
+      render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
+    }).run(BENCH_V4)
+  })
 
   test("Dashboard 5 widgets (120x40)", async ({ bench }) => {
-  await bench("Dashboard 5 widgets (120x40)", () => {
-    render120x40(React.createElement(Dashboard, { widgetCount: 5 }))
-  }).run()
-})
+    await bench("Dashboard 5 widgets (120x40)", () => {
+      render120x40(React.createElement(Dashboard, { widgetCount: 5 }))
+    }).run(BENCH_V4)
+  })
 
   test("Deep tree (50 levels)", async ({ bench }) => {
-  await bench("Deep tree (50 levels)", () => {
-    render80x24(React.createElement(DeepTree, { depth: 50 }))
-  }).run()
-})
+    await bench("Deep tree (50 levels)", () => {
+      render80x24(React.createElement(DeepTree, { depth: 50 }))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -104,34 +108,34 @@ describe("Re-render (incremental)", () => {
   const app1000 = render1000(React.createElement(CursorList, { count: 1000, cursor: 0 }))
 
   test("Cursor move in 10-item list", async ({ bench }) => {
-  await bench("Cursor move in 10-item list", () => {
-    app10.rerender(React.createElement(CursorList, { count: 10, cursor: 1 }))
-    app10.rerender(React.createElement(CursorList, { count: 10, cursor: 0 }))
-  }).run()
-})
+    await bench("Cursor move in 10-item list", () => {
+      app10.rerender(React.createElement(CursorList, { count: 10, cursor: 1 }))
+      app10.rerender(React.createElement(CursorList, { count: 10, cursor: 0 }))
+    }).run(BENCH_V4)
+  })
 
   test("Cursor move in 100-item list", async ({ bench }) => {
-  await bench("Cursor move in 100-item list", () => {
-    app100.rerender(React.createElement(CursorList, { count: 100, cursor: 1 }))
-    app100.rerender(React.createElement(CursorList, { count: 100, cursor: 0 }))
-  }).run()
-})
+    await bench("Cursor move in 100-item list", () => {
+      app100.rerender(React.createElement(CursorList, { count: 100, cursor: 1 }))
+      app100.rerender(React.createElement(CursorList, { count: 100, cursor: 0 }))
+    }).run(BENCH_V4)
+  })
 
   test("Cursor move in 1000-item list", async ({ bench }) => {
-  await bench("Cursor move in 1000-item list", () => {
-    app1000.rerender(React.createElement(CursorList, { count: 1000, cursor: 1 }))
-    app1000.rerender(React.createElement(CursorList, { count: 1000, cursor: 0 }))
-  }).run()
-})
+    await bench("Cursor move in 1000-item list", () => {
+      app1000.rerender(React.createElement(CursorList, { count: 1000, cursor: 1 }))
+      app1000.rerender(React.createElement(CursorList, { count: 1000, cursor: 0 }))
+    }).run(BENCH_V4)
+  })
 
   const renderCounter = createRenderer({ cols: 80, rows: 24 })
 
   test("Counter update (minimal state change)", async ({ bench }) => {
-  await bench("Counter update (minimal state change)", () => {
-    const app = renderCounter(React.createElement(CounterApp, { count: 0 }))
-    app.rerender(React.createElement(CounterApp, { count: 1 }))
-  }).run()
-})
+    await bench("Counter update (minimal state change)", () => {
+      const app = renderCounter(React.createElement(CounterApp, { count: 0 }))
+      app.rerender(React.createElement(CounterApp, { count: 1 }))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -143,16 +147,16 @@ describe("Full rerender (no dirty tracking)", () => {
   const render120x40 = createRenderer({ cols: 120, rows: 40 })
 
   test("100 Box+Text full rerender", async ({ bench }) => {
-  await bench("100 Box+Text full rerender", () => {
-    const app = render80x24(React.createElement(FlatList, { count: 100 }))
-    app.rerender(React.createElement(FlatList, { count: 100 }))
-  }).run()
-})
+    await bench("100 Box+Text full rerender", () => {
+      const app = render80x24(React.createElement(FlatList, { count: 100 }))
+      app.rerender(React.createElement(FlatList, { count: 100 }))
+    }).run(BENCH_V4)
+  })
 
   test("Kanban 3x50 full rerender", async ({ bench }) => {
-  await bench("Kanban 3x50 full rerender", () => {
-    const app = render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
-    app.rerender(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
-  }).run()
-})
+    await bench("Kanban 3x50 full rerender", () => {
+      const app = render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
+      app.rerender(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
+    }).run(BENCH_V4)
+  })
 })

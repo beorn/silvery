@@ -15,6 +15,10 @@ import { Box as SBox, Text as SText } from "silvery"
 import { render as inkRender, Box as IBox, Text as IText } from "ink"
 import { setReactiveEnabled } from "@silvery/ag-term/pipeline/render-phase"
 
+// Tinybench 2's defaults (what vitest 4 ran): time 500ms, iterations 10, warmupTime 100ms,
+// warmupIterations 5. vitest 5 ships tinybench 6 (1000/64/250/64) — pin the v4 values (29257).
+const BENCH_V4 = { time: 500, iterations: 10, warmupTime: 100, warmupIterations: 5 }
+
 // ============================================================================
 // Mock stdout for Ink
 // ============================================================================
@@ -107,27 +111,27 @@ describe("Three-way — cursor move 100 items (80x24)", () => {
     c3 = 0
 
   test("Silvery (reactive)", async ({ bench }) => {
-  await bench("Silvery (reactive)", () => {
-    setReactiveEnabled(true)
-    c1 = (c1 + 1) % 100
-    sReactiveApp.rerender(silveryList(100, c1))
-  }).run()
-})
+    await bench("Silvery (reactive)", () => {
+      setReactiveEnabled(true)
+      c1 = (c1 + 1) % 100
+      sReactiveApp.rerender(silveryList(100, c1))
+    }).run(BENCH_V4)
+  })
 
   test("Silvery (imperative)", async ({ bench }) => {
-  await bench("Silvery (imperative)", () => {
-    setReactiveEnabled(false)
-    c2 = (c2 + 1) % 100
-    sImperativeApp.rerender(silveryList(100, c2))
-  }).run()
-})
+    await bench("Silvery (imperative)", () => {
+      setReactiveEnabled(false)
+      c2 = (c2 + 1) % 100
+      sImperativeApp.rerender(silveryList(100, c2))
+    }).run(BENCH_V4)
+  })
 
   test("Ink", async ({ bench }) => {
-  await bench("Ink", () => {
-    c3 = (c3 + 1) % 100
-    inkApp.rerender(inkList(100, c3))
-  }).run()
-})
+    await bench("Ink", () => {
+      c3 = (c3 + 1) % 100
+      inkApp.rerender(inkList(100, c3))
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -156,25 +160,25 @@ describe("Three-way — cursor move 1000 items (80x24)", () => {
     c3 = 0
 
   test("Silvery (reactive)", async ({ bench }) => {
-  await bench("Silvery (reactive)", () => {
-    setReactiveEnabled(true)
-    c1 = (c1 + 1) % 1000
-    sReactiveApp.rerender(silveryList(1000, c1))
-  }).run()
-})
+    await bench("Silvery (reactive)", () => {
+      setReactiveEnabled(true)
+      c1 = (c1 + 1) % 1000
+      sReactiveApp.rerender(silveryList(1000, c1))
+    }).run(BENCH_V4)
+  })
 
   test("Silvery (imperative)", async ({ bench }) => {
-  await bench("Silvery (imperative)", () => {
-    setReactiveEnabled(false)
-    c2 = (c2 + 1) % 1000
-    sImperativeApp.rerender(silveryList(1000, c2))
-  }).run()
-})
+    await bench("Silvery (imperative)", () => {
+      setReactiveEnabled(false)
+      c2 = (c2 + 1) % 1000
+      sImperativeApp.rerender(silveryList(1000, c2))
+    }).run(BENCH_V4)
+  })
 
   test("Ink", async ({ bench }) => {
-  await bench("Ink", () => {
-    c3 = (c3 + 1) % 1000
-    inkApp.rerender(inkList(1000, c3))
-  }).run()
-})
+    await bench("Ink", () => {
+      c3 = (c3 + 1) % 1000
+      inkApp.rerender(inkList(1000, c3))
+    }).run(BENCH_V4)
+  })
 })
