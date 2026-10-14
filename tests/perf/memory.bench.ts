@@ -19,6 +19,10 @@ import { createBuffer } from "@silvery/ag-term/buffer"
 import { ensureDefaultLayoutEngine, getLayoutEngine } from "@silvery/ag-term/layout-engine"
 import { FlatList, CursorList } from "./fixtures"
 
+// Tinybench 2's defaults (what vitest 4 ran): time 500ms, iterations 10, warmupTime 100ms,
+// warmupIterations 5. vitest 5 ships tinybench 6 (1000/64/250/64) — pin the v4 values (29257).
+const BENCH_V4 = { time: 500, iterations: 10, warmupTime: 100, warmupIterations: 5 }
+
 // Top-level await — beforeAll with async is unreliable in vitest bench mode
 await ensureDefaultLayoutEngine()
 const engine = getLayoutEngine()
@@ -45,30 +49,30 @@ function measureHeapBytes(): number {
 
 describe("Memory: Buffer Allocation", () => {
   test("Create 80x24 buffer", async ({ bench }) => {
-  await bench("Create 80x24 buffer", () => {
-    createBuffer(80, 24)
-  }).run()
-})
+    await bench("Create 80x24 buffer", () => {
+      createBuffer(80, 24)
+    }).run(BENCH_V4)
+  })
 
   test("Create 200x50 buffer", async ({ bench }) => {
-  await bench("Create 200x50 buffer", () => {
-    createBuffer(200, 50)
-  }).run()
-})
+    await bench("Create 200x50 buffer", () => {
+      createBuffer(200, 50)
+    }).run(BENCH_V4)
+  })
 
   test("Clone 80x24 buffer", async ({ bench }) => {
-  await bench("Clone 80x24 buffer", () => {
-    const buf = createBuffer(80, 24)
-    buf.clone()
-  }).run()
-})
+    await bench("Clone 80x24 buffer", () => {
+      const buf = createBuffer(80, 24)
+      buf.clone()
+    }).run(BENCH_V4)
+  })
 
   test("Clone 200x50 buffer", async ({ bench }) => {
-  await bench("Clone 200x50 buffer", () => {
-    const buf = createBuffer(200, 50)
-    buf.clone()
-  }).run()
-})
+    await bench("Clone 200x50 buffer", () => {
+      const buf = createBuffer(200, 50)
+      buf.clone()
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -77,30 +81,30 @@ describe("Memory: Buffer Allocation", () => {
 
 describe("Memory: Layout Nodes", () => {
   test("Create 100 flat nodes", async ({ bench }) => {
-  await bench("Create 100 flat nodes", () => {
-    const root = engine.createNode()
-    root.setWidth(80)
-    root.setHeight(24)
-    for (let i = 0; i < 100; i++) {
-      const child = engine.createNode()
-      child.setHeight(1)
-      root.insertChild(child, i)
-    }
-  }).run()
-})
+    await bench("Create 100 flat nodes", () => {
+      const root = engine.createNode()
+      root.setWidth(80)
+      root.setHeight(24)
+      for (let i = 0; i < 100; i++) {
+        const child = engine.createNode()
+        child.setHeight(1)
+        root.insertChild(child, i)
+      }
+    }).run(BENCH_V4)
+  })
 
   test("Create 1000 flat nodes", async ({ bench }) => {
-  await bench("Create 1000 flat nodes", () => {
-    const root = engine.createNode()
-    root.setWidth(120)
-    root.setHeight(40)
-    for (let i = 0; i < 1000; i++) {
-      const child = engine.createNode()
-      child.setHeight(1)
-      root.insertChild(child, i)
-    }
-  }).run()
-})
+    await bench("Create 1000 flat nodes", () => {
+      const root = engine.createNode()
+      root.setWidth(120)
+      root.setHeight(40)
+      for (let i = 0; i < 1000; i++) {
+        const child = engine.createNode()
+        child.setHeight(1)
+        root.insertChild(child, i)
+      }
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -114,19 +118,19 @@ describe("Memory: Render Pipeline", () => {
   const renderCursor = createRenderer({ cols: 80, rows: 24 })
 
   test("Initial render 100 items", async ({ bench }) => {
-  await bench("Initial render 100 items", () => {
-    renderFlat(React.createElement(FlatList, { count: 100 }))
-  }).run()
-})
+    await bench("Initial render 100 items", () => {
+      renderFlat(React.createElement(FlatList, { count: 100 }))
+    }).run(BENCH_V4)
+  })
 
   test("Render + 10 re-renders (100 items)", async ({ bench }) => {
-  await bench("Render + 10 re-renders (100 items)", () => {
-    const app = renderCursor(React.createElement(CursorList, { count: 100, cursor: 0 }))
-    for (let i = 1; i <= 10; i++) {
-      app.rerender(React.createElement(CursorList, { count: 100, cursor: i % 100 }))
-    }
-  }).run()
-})
+    await bench("Render + 10 re-renders (100 items)", () => {
+      const app = renderCursor(React.createElement(CursorList, { count: 100, cursor: 0 }))
+      for (let i = 1; i <= 10; i++) {
+        app.rerender(React.createElement(CursorList, { count: 100, cursor: i % 100 }))
+      }
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================

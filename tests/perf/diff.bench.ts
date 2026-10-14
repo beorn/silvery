@@ -12,6 +12,10 @@ import { test, describe, beforeAll } from "vitest"
 import { TerminalBuffer, createBuffer } from "@silvery/ag-term/buffer"
 import { outputPhase } from "@silvery/ag-term/pipeline/output-phase"
 
+// Tinybench 2's defaults (what vitest 4 ran): time 500ms, iterations 10, warmupTime 100ms,
+// warmupIterations 5. vitest 5 ships tinybench 6 (1000/64/250/64) — pin the v4 values (29257).
+const BENCH_V4 = { time: 500, iterations: 10, warmupTime: 100, warmupIterations: 5 }
+
 // ============================================================================
 // Buffer Helpers
 // ============================================================================
@@ -137,46 +141,46 @@ beforeAll(() => {
 
 describe("Diff: 80x24", () => {
   test("No changes (skip all rows)", async ({ bench }) => {
-  await bench("No changes (skip all rows)", () => {
-    outputPhase(small_base, small_no_changes, "fullscreen")
-  }).run()
-})
+    await bench("No changes (skip all rows)", () => {
+      outputPhase(small_base, small_no_changes, "fullscreen")
+    }).run(BENCH_V4)
+  })
 
   test("1% cells changed (~19 cells)", async ({ bench }) => {
-  await bench("1% cells changed (~19 cells)", () => {
-    outputPhase(small_base, small_1pct, "fullscreen")
-  }).run()
-})
+    await bench("1% cells changed (~19 cells)", () => {
+      outputPhase(small_base, small_1pct, "fullscreen")
+    }).run(BENCH_V4)
+  })
 
   test("10% cells changed (~192 cells)", async ({ bench }) => {
-  await bench("10% cells changed (~192 cells)", () => {
-    outputPhase(small_base, small_10pct, "fullscreen")
-  }).run()
-})
+    await bench("10% cells changed (~192 cells)", () => {
+      outputPhase(small_base, small_10pct, "fullscreen")
+    }).run(BENCH_V4)
+  })
 
   test("50% cells changed (~960 cells)", async ({ bench }) => {
-  await bench("50% cells changed (~960 cells)", () => {
-    outputPhase(small_base, small_50pct, "fullscreen")
-  }).run()
-})
+    await bench("50% cells changed (~960 cells)", () => {
+      outputPhase(small_base, small_50pct, "fullscreen")
+    }).run(BENCH_V4)
+  })
 
   test("Full repaint (all cells different)", async ({ bench }) => {
-  await bench("Full repaint (all cells different)", () => {
-    outputPhase(small_base, small_full, "fullscreen")
-  }).run()
-})
+    await bench("Full repaint (all cells different)", () => {
+      outputPhase(small_base, small_full, "fullscreen")
+    }).run(BENCH_V4)
+  })
 
   test("Single row change (cursor move)", async ({ bench }) => {
-  await bench("Single row change (cursor move)", () => {
-    outputPhase(small_base, small_single_row, "fullscreen")
-  }).run()
-})
+    await bench("Single row change (cursor move)", () => {
+      outputPhase(small_base, small_single_row, "fullscreen")
+    }).run(BENCH_V4)
+  })
 
   test("First render (no prev buffer)", async ({ bench }) => {
-  await bench("First render (no prev buffer)", () => {
-    outputPhase(null, small_base, "fullscreen")
-  }).run()
-})
+    await bench("First render (no prev buffer)", () => {
+      outputPhase(null, small_base, "fullscreen")
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -185,22 +189,22 @@ describe("Diff: 80x24", () => {
 
 describe("Diff: 200x50", () => {
   test("No changes", async ({ bench }) => {
-  await bench("No changes", () => {
-    outputPhase(large_base, large_no_changes, "fullscreen")
-  }).run()
-})
+    await bench("No changes", () => {
+      outputPhase(large_base, large_no_changes, "fullscreen")
+    }).run(BENCH_V4)
+  })
 
   test("10% cells changed", async ({ bench }) => {
-  await bench("10% cells changed", () => {
-    outputPhase(large_base, large_10pct, "fullscreen")
-  }).run()
-})
+    await bench("10% cells changed", () => {
+      outputPhase(large_base, large_10pct, "fullscreen")
+    }).run(BENCH_V4)
+  })
 
   test("Full repaint", async ({ bench }) => {
-  await bench("Full repaint", () => {
-    outputPhase(large_base, large_full, "fullscreen")
-  }).run()
-})
+    await bench("Full repaint", () => {
+      outputPhase(large_base, large_full, "fullscreen")
+    }).run(BENCH_V4)
+  })
 })
 
 // ============================================================================
@@ -209,20 +213,20 @@ describe("Diff: 200x50", () => {
 
 describe("Diff: Inline Mode (80x24)", () => {
   test("No changes", async ({ bench }) => {
-  await bench("No changes", () => {
-    outputPhase(small_base, small_no_changes, "inline")
-  }).run()
-})
+    await bench("No changes", () => {
+      outputPhase(small_base, small_no_changes, "inline")
+    }).run(BENCH_V4)
+  })
 
   test("10% cells changed", async ({ bench }) => {
-  await bench("10% cells changed", () => {
-    outputPhase(small_base, small_10pct, "inline")
-  }).run()
-})
+    await bench("10% cells changed", () => {
+      outputPhase(small_base, small_10pct, "inline")
+    }).run(BENCH_V4)
+  })
 
   test("First render", async ({ bench }) => {
-  await bench("First render", () => {
-    outputPhase(null, small_base, "inline")
-  }).run()
-})
+    await bench("First render", () => {
+      outputPhase(null, small_base, "inline")
+    }).run(BENCH_V4)
+  })
 })
