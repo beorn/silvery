@@ -135,10 +135,10 @@ describe("createAg", () => {
             donor = row.children[1]!
           if (kind === "text") ag.setText(main.children[0]!.children[0]!, "DDDD")
           else if (kind === "color") {
-            ag.updateProps(main, { ...main.props, color: "#00ff00" }, main.props)
+            ag.updateProps(main, { ...main.props, color: "#00ff00" }, { ...main.props })
           } else if (kind === "virtual-color") {
             const virtual = main.children[0]!
-            ag.updateProps(virtual, { ...virtual.props, color: "#00ff00" }, virtual.props)
+            ag.updateProps(virtual, { ...virtual.props, color: "#00ff00" }, { ...virtual.props })
           } else if (kind === "remove") ag.removeChild(main, main.children[1]!)
           else {
             const moving = kind === "insert" ? donor.children[0]! : main.children[1]!
