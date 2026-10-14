@@ -83,6 +83,8 @@ const SYNC_UPDATE_ENABLED =
 // Re-export from errors.ts (kept separate for React-free barrel imports)
 export { IncrementalRenderMismatchError } from "./errors"
 import { IncrementalRenderMismatchError } from "./errors"
+import { CONTENT_BIT, isAnyDirty, isCurrentEpoch, isDirty } from "@silvery/ag/epoch"
+import { subtreeHasTextTransform } from "@silvery/ag/tree-utils"
 
 // ============================================================================
 // Types
@@ -681,6 +683,7 @@ export class RenderScheduler {
    * Execute the actual render.
    */
   private doRender(): void {
+    let strictRootContentClean: boolean | undefined
     using render = this.log.span?.("render")
     const startTime = Date.now()
 
@@ -724,6 +727,23 @@ export class RenderScheduler {
         // every frame's `clearPreviousOutlines` runs against an empty list
         // and stale outline pixels from `prevBuffer.clone()` leak through —
         // the same shape as km-yej6 / km-silvery.outline-incremental-clear.
+        if (
+          isStrictEnabled("incremental", 1) ||
+          isStrictEnabled(FRESH_LAYOUT_STRICT_SLUG, FRESH_LAYOUT_STRICT_MIN_TIER)
+        ) {
+          const layout = this.root.boxRect
+          const retained =
+            this.prevBuffer &&
+            layout &&
+            this.prevBuffer.width === layout.width &&
+            this.prevBuffer.height === layout.height
+          if (
+            retained &&
+            (isAnyDirty(this.root) || isCurrentEpoch(this.root, this.root.layoutChangedThisFrame))
+          ) {
+            strictRootContentClean = !isDirty(this.root, CONTENT_BIT)
+          }
+        }
         const { buffer, overlay } = ag.render({
           prevBuffer: this.prevBuffer,
           postState: this.postState,
@@ -1000,7 +1020,11 @@ export class RenderScheduler {
                 ? structuredClone((globalThis as any).__silvery_content_detail)
                 : undefined
 
-              const debugInfo = formatMismatchContext(ctx, renderPhaseStats)
+              const transformWitness =
+                strictRootContentClean === true && subtreeHasTextTransform(this.root)
+                  ? "Transform invalidation witness: root CONTENT was clean before retained paint; an active text transform remains, and retained/fresh cells differ. Check transform mutation invalidation.\n"
+                  : ""
+              const debugInfo = transformWitness + formatMismatchContext(ctx, renderPhaseStats)
 
               // Include text output for full picture
               const incText = bufferToText(buffer)

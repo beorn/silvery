@@ -25,6 +25,7 @@ import {
   ALL_RECONCILER_BITS,
   CONTENT_BIT,
   STYLE_PROPS_BIT,
+  CHILDREN_BIT,
 } from "@silvery/ag/epoch"
 import { DEFAULT_COLOR_LEVEL } from "./pipeline/state"
 import { getLayoutEngine } from "./layout-engine"
@@ -57,7 +58,15 @@ export { createRenderPostState, type RenderPostState } from "./pipeline/render-p
 import { applyBackdrop, hasBackdropMarkers, type ColorLevel } from "./pipeline/backdrop"
 import { applySubtreeFade, hasSubtreeFadeMarkers } from "./pipeline/subtree-fade"
 import { CURSOR_RESTORE, CURSOR_SAVE, kittyDeleteAllScrimPlacements } from "@silvery/ansi"
-import { clearDirtyTracking, hasNotifyDirty, hasScrollDirty } from "@silvery/ag/dirty-tracking"
+import {
+  clearDirtyTracking,
+  hasNotifyDirty,
+  hasScrollDirty,
+  trackContentDirty,
+  markSubtreeDirty,
+  markLayoutAncestorDirty,
+  markRootContentIfTransformed,
+} from "@silvery/ag/dirty-tracking"
 import type { PipelineContext } from "./pipeline/types"
 
 const log = createLogger("silvery:render")
@@ -694,8 +703,15 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
   function agInsertChild(parent: AgNode, child: AgNode, index: number): void {
     // Remove from old parent if already in a tree (keyed reorder)
     if (child.parent) {
-      agRemoveChild(child.parent, child)
+      agDetachChild(child.parent, child)
     }
+
+    markRootContentIfTransformed(root, parent)
+    markDirty(parent, CHILDREN_BIT | CONTENT_BIT)
+    trackContentDirty(parent)
+    markLayoutAncestorDirty(parent)
+    markSubtreeDirty(parent)
+    parent.layoutNode?.markDirty()
 
     // Insert into children array
     parent.children.splice(index, 0, child)
@@ -711,18 +727,32 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     }
   }
 
-  function agRemoveChild(parent: AgNode, child: AgNode): void {
+  function agDetachChild(parent: AgNode, child: AgNode): void {
+    // Moving a keyed child releases its old collection membership, not its
+    // layout lifetime. Genuine removal below retains the existing free step.
     const index = parent.children.indexOf(child)
     if (index === -1) return
+
+    markRootContentIfTransformed(root, parent)
+    markDirty(parent, CHILDREN_BIT | CONTENT_BIT)
+    trackContentDirty(parent)
+    markLayoutAncestorDirty(parent)
+    markSubtreeDirty(parent)
+    parent.layoutNode?.markDirty()
 
     parent.children.splice(index, 1)
 
     if (parent.layoutNode && child.layoutNode) {
       parent.layoutNode.removeChild(child.layoutNode)
-      child.layoutNode.free()
     }
 
     child.parent = null
+  }
+
+  function agRemoveChild(parent: AgNode, child: AgNode): void {
+    if (!parent.children.includes(child)) return
+    agDetachChild(parent, child)
+    if (parent.layoutNode && child.layoutNode) child.layoutNode.free()
   }
 
   return {
@@ -765,6 +795,11 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     removeChild: agRemoveChild,
 
     updateProps(node, props, oldProps) {
+      markRootContentIfTransformed(root, node)
+      markDirty(node, CONTENT_BIT | STYLE_PROPS_BIT)
+      trackContentDirty(node)
+      markLayoutAncestorDirty(node)
+      markSubtreeDirty(node)
       node.props = props
       if (node.layoutNode) {
         node.layoutNode.markDirty()
@@ -772,8 +807,12 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     },
 
     setText(node, text) {
+      markRootContentIfTransformed(root, node)
       ;(node as any).textContent = text
       markDirty(node, CONTENT_BIT | STYLE_PROPS_BIT)
+      trackContentDirty(node)
+      markLayoutAncestorDirty(node)
+      markSubtreeDirty(node)
       if (node.layoutNode) {
         node.layoutNode.markDirty()
       }

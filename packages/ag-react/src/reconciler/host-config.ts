@@ -22,6 +22,9 @@ import {
   trackStyleOnlyDirty,
   trackScrollDirty,
   trackNotifyDirty,
+  markSubtreeDirty,
+  markLayoutAncestorDirty,
+  markRootContentIfTransformed,
 } from "@silvery/ag/dirty-tracking"
 import { syncTextContentSignal } from "@silvery/ag/layout-signals"
 import {
@@ -240,7 +243,12 @@ export function setContainerNodeLifecycle(
   container.nodeLifecycle = observer
 }
 
-function notifyNodeRemoved(container: Container | undefined, removedNode: AgNode): void {
+function notifyNodeRemoved(
+  container: Container | undefined,
+  removedNode: AgNode,
+  from: AgNode | null = removedNode.parent,
+): void {
+  if (container) markRootContentIfTransformed(container.root, removedNode, from)
   container?.nodeLifecycle?.onNodeRemoved?.(removedNode)
 }
 
@@ -387,35 +395,6 @@ function notifySyncedPropChanged(
  * Mark this node and all ancestors as having dirty content/layout.
  * Used to enable fast-path subtree skipping in renderPhase.
  */
-function markSubtreeDirty(node: AgNode | null): void {
-  while (node && !isDirty(node, SUBTREE_BIT)) {
-    markDirty(node, SUBTREE_BIT)
-    node = node.parent
-  }
-}
-
-/**
- * When a child change (append/remove/insert/text-update) occurs inside a
- * virtual text subtree (no layoutNode), the nearest layout ancestor must be
- * notified so its measure function re-collects descendant text and the layout
- * engine recalculates dimensions. Without this, the measure cache stays stale
- * and renderPhase renders at the wrong size / doesn't clear old content.
- *
- * No-op when the node already has a layoutNode (normal path handles it).
- */
-function markLayoutAncestorDirty(node: AgNode): void {
-  if (node.layoutNode) return
-  let ancestor: AgNode | null = node.parent
-  while (ancestor && !ancestor.layoutNode) {
-    ancestor = ancestor.parent
-  }
-  if (ancestor?.layoutNode) {
-    markDirty(ancestor, CONTENT_BIT | STYLE_PROPS_BIT)
-    ancestor.layoutNode.markDirty()
-    trackContentDirty(ancestor)
-  }
-}
-
 // ============================================================================
 // Dev Warnings
 // ============================================================================
@@ -700,7 +679,7 @@ export const hostConfig = {
     if (index !== -1) {
       // Notify focus manager before detaching (needs parent chain intact for subtree check)
       const container = getOwningContainer(parentInstance) ?? getOwningContainer(child)
-      notifyNodeRemoved(container, child)
+      notifyNodeRemoved(container, child, parentInstance)
       logUnmountSubtree(child)
       // Dispose any fiber-local scopes in the doomed subtree. Must happen
       // before we splice — disposeSubtreeScopes walks `child.children`,
@@ -728,7 +707,7 @@ export const hostConfig = {
     const index = container.root.children.indexOf(child)
     if (index !== -1) {
       // Notify focus manager before detaching
-      notifyNodeRemoved(container, child)
+      notifyNodeRemoved(container, child, container.root)
       logUnmountSubtree(child)
       disposeSubtreeScopes(child)
       container.root.children.splice(index, 1)
@@ -857,6 +836,10 @@ export const hostConfig = {
     }
 
     // Apply layout-affecting prop changes
+    const owner = getOwningContainer(instance)
+    if (owner && (layoutChanged || contentChanged)) {
+      markRootContentIfTransformed(owner.root, instance)
+    }
     if (layoutChanged) {
       if (instance.layoutNode) {
         if (instance.type === "silvery-text") {
@@ -1000,6 +983,8 @@ export const hostConfig = {
   },
 
   commitTextUpdate(textInstance: AgNode, _oldText: string, newText: string) {
+    const owner = getOwningContainer(textInstance)
+    if (owner) markRootContentIfTransformed(owner.root, textInstance)
     textInstance.textContent = newText
     syncTextContentSignal(textInstance)
     textInstance.props = { children: newText } as TextProps

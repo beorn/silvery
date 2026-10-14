@@ -1495,9 +1495,9 @@ export function wrapTextWithMeasurer(
           ) {
             j++
           }
-          // Reset state and rewind `i` so the next loop iteration picks up
-          // at j (the first wrappable grapheme after the truncated run).
-          i = j - 1
+          // Resume at the next boundary, consuming the current grapheme
+          // when it is itself a too-wide CJK boundary (j === i).
+          i = Math.max(i, j - 1)
           currentLine = ""
           currentWidth = 0
           lastBreakIndex = -1
