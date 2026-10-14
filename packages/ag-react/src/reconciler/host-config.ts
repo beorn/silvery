@@ -24,8 +24,8 @@ import {
   trackNotifyDirty,
   markSubtreeDirty,
   markLayoutAncestorDirty,
+  markRootContentIfTransformed,
 } from "@silvery/ag/dirty-tracking"
-import { subtreeHasTextTransform } from "@silvery/ag/tree-utils"
 import { syncTextContentSignal } from "@silvery/ag/layout-signals"
 import {
   markDirty,
@@ -243,11 +243,12 @@ export function setContainerNodeLifecycle(
   container.nodeLifecycle = observer
 }
 
-function notifyNodeRemoved(container: Container | undefined, removedNode: AgNode): void {
-  if (container && !isDirty(container.root, CONTENT_BIT) && subtreeHasTextTransform(removedNode)) {
-    markDirty(container.root, CONTENT_BIT)
-    trackContentDirty(container.root)
-  }
+function notifyNodeRemoved(
+  container: Container | undefined,
+  removedNode: AgNode,
+  from: AgNode | null = removedNode.parent,
+): void {
+  if (container) markRootContentIfTransformed(container.root, removedNode, from)
   container?.nodeLifecycle?.onNodeRemoved?.(removedNode)
 }
 
@@ -678,7 +679,7 @@ export const hostConfig = {
     if (index !== -1) {
       // Notify focus manager before detaching (needs parent chain intact for subtree check)
       const container = getOwningContainer(parentInstance) ?? getOwningContainer(child)
-      notifyNodeRemoved(container, child)
+      notifyNodeRemoved(container, child, parentInstance)
       logUnmountSubtree(child)
       // Dispose any fiber-local scopes in the doomed subtree. Must happen
       // before we splice — disposeSubtreeScopes walks `child.children`,
@@ -706,7 +707,7 @@ export const hostConfig = {
     const index = container.root.children.indexOf(child)
     if (index !== -1) {
       // Notify focus manager before detaching
-      notifyNodeRemoved(container, child)
+      notifyNodeRemoved(container, child, container.root)
       logUnmountSubtree(child)
       disposeSubtreeScopes(child)
       container.root.children.splice(index, 1)
@@ -836,15 +837,8 @@ export const hostConfig = {
 
     // Apply layout-affecting prop changes
     const owner = getOwningContainer(instance)
-    if (owner && !isDirty(owner.root, CONTENT_BIT) && (layoutChanged || contentChanged)) {
-      let transformed = subtreeHasTextTransform(instance)
-      for (let ancestor = instance.parent; !transformed && ancestor; ancestor = ancestor.parent) {
-        transformed = !!(ancestor.props as TextProps).internal_transform
-      }
-      if (transformed) {
-        markDirty(owner.root, CONTENT_BIT)
-        trackContentDirty(owner.root)
-      }
+    if (owner && (layoutChanged || contentChanged)) {
+      markRootContentIfTransformed(owner.root, instance)
     }
     if (layoutChanged) {
       if (instance.layoutNode) {
@@ -990,15 +984,7 @@ export const hostConfig = {
 
   commitTextUpdate(textInstance: AgNode, _oldText: string, newText: string) {
     const owner = getOwningContainer(textInstance)
-    if (owner && !isDirty(owner.root, CONTENT_BIT)) {
-      for (let ancestor = textInstance.parent; ancestor; ancestor = ancestor.parent) {
-        if ((ancestor.props as TextProps).internal_transform) {
-          markDirty(owner.root, CONTENT_BIT)
-          trackContentDirty(owner.root)
-          break
-        }
-      }
-    }
+    if (owner) markRootContentIfTransformed(owner.root, textInstance)
     textInstance.textContent = newText
     syncTextContentSignal(textInstance)
     textInstance.props = { children: newText } as TextProps

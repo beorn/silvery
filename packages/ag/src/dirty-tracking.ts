@@ -34,7 +34,8 @@ import {
   STYLE_PROPS_BIT,
   type EpochOwner,
 } from "./epoch"
-import type { AgNode } from "./types"
+import type { AgNode, TextProps } from "./types"
+import { subtreeHasTextTransform } from "./tree-utils"
 
 export function markSubtreeDirty(node: AgNode | null): void {
   while (node && !isDirty(node, SUBTREE_BIT)) {
@@ -54,6 +55,27 @@ export function markLayoutAncestorDirty(node: AgNode): void {
     markDirty(ancestor, CONTENT_BIT | STYLE_PROPS_BIT)
     ancestor.layoutNode.markDirty()
     trackContentDirty(ancestor)
+  }
+}
+
+/**
+ * Preserve transformed ink before mutation/detachment. Once positively marked,
+ * root CONTENT short-circuits subsequent calls until paint consumes the epoch.
+ * Negative subtree scans may repeat; this helper retains no summary or cache.
+ */
+export function markRootContentIfTransformed(
+  root: AgNode,
+  node: AgNode,
+  from: AgNode | null = node.parent,
+): void {
+  if (isDirty(root, CONTENT_BIT)) return
+  let transformed = subtreeHasTextTransform(node)
+  for (let ancestor = from; !transformed && ancestor; ancestor = ancestor.parent) {
+    transformed = !!(ancestor.props as TextProps).internal_transform
+  }
+  if (transformed) {
+    markDirty(root, CONTENT_BIT)
+    trackContentDirty(root)
   }
 }
 

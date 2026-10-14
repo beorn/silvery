@@ -2,7 +2,7 @@
  * Transform component tests
  */
 import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
+import { createRenderer, compareBuffers } from "@silvery/test"
 import { Box, Text } from "silvery"
 import { Transform } from "../../packages/ink/src/ink"
 
@@ -13,10 +13,13 @@ describe("Transform", () => {
   // @level l3
   // @consumer Transform consumers updating retained terminal frames.
   // Mount-only tests miss old transformed ink outside the owning Text rect.
-  test.each(["text shrink", "ancestor resize", "subtree removal"])(
+  // Nested removal retains the transformed ancestor; removing the whole
+  // transformed subtree cannot detect a missed ancestor witness at detach.
+  test.each(["text shrink", "ancestor resize", "subtree removal", "nested child removal"])(
     "clears retained transformed overflow on %s",
     (operation) => {
-      const prefix = (line: string, index: number) => `${index}→${line}`
+      const prefix = (line: string, index: number) =>
+        `${operation === "nested child removal" ? 0 : index}→${line}`
       const frame = (next: boolean) => (
         <Box width={40} height={60} flexDirection="column">
           <Text height={1} flexShrink={0}>
@@ -30,8 +33,23 @@ describe("Transform", () => {
                 flexShrink={0}
               >
                 {next && operation === "subtree removal" ? null : (
-                  <Text wrap="hard" color="#ffffff" internal_transform={prefix}>
-                    {next && operation === "text shrink" ? "a" : "Hello world"}
+                  <Text
+                    wrap="hard"
+                    width={operation === "nested child removal" ? 1 : undefined}
+                    height={operation === "nested child removal" ? 3 : undefined}
+                    color="#ffffff"
+                    internal_transform={prefix}
+                  >
+                    {operation === "nested child removal" ? (
+                      <>
+                        <Text key="first">Hello </Text>
+                        {next ? null : <Text key="second">world</Text>}
+                      </>
+                    ) : next && operation === "text shrink" ? (
+                      "a"
+                    ) : (
+                      "Hello world"
+                    )}
                   </Text>
                 )}
               </Box>
@@ -43,12 +61,16 @@ describe("Transform", () => {
         </Box>
       )
       const app = createRenderer({ cols: 40, rows: 60 })(frame(false))
+      let oracle: ReturnType<ReturnType<typeof createRenderer>> | undefined
       try {
         expect(app.text).toContain("ANCHOR")
         app.rerender(frame(true)) // STRICT compares all cells with a fresh pass.
         expect(app.text).toContain("ANCHOR")
+        oracle = createRenderer({ cols: 40, rows: 60 })(frame(true))
+        expect(compareBuffers(app.lastBuffer()!, oracle.lastBuffer()!)).toBeNull()
       } finally {
         app.unmount()
+        oracle?.unmount()
       }
     },
   )

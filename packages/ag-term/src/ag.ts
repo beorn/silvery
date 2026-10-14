@@ -17,7 +17,7 @@
  */
 
 import { createLogger } from "loggily"
-import type { AgNode, AgNodeType, TextProps } from "@silvery/ag/types"
+import type { AgNode, AgNodeType } from "@silvery/ag/types"
 import {
   getRenderEpoch,
   markDirty,
@@ -26,7 +26,6 @@ import {
   CONTENT_BIT,
   STYLE_PROPS_BIT,
   CHILDREN_BIT,
-  isDirty,
 } from "@silvery/ag/epoch"
 import { DEFAULT_COLOR_LEVEL } from "./pipeline/state"
 import { getLayoutEngine } from "./layout-engine"
@@ -66,8 +65,8 @@ import {
   trackContentDirty,
   markSubtreeDirty,
   markLayoutAncestorDirty,
+  markRootContentIfTransformed,
 } from "@silvery/ag/dirty-tracking"
-import { subtreeHasTextTransform } from "@silvery/ag/tree-utils"
 import type { PipelineContext } from "./pipeline/types"
 
 const log = createLogger("silvery:render")
@@ -707,16 +706,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
       agDetachChild(child.parent, child)
     }
 
-    if (!isDirty(root, CONTENT_BIT)) {
-      let transformed = subtreeHasTextTransform(parent)
-      for (let ancestor = parent.parent; !transformed && ancestor; ancestor = ancestor.parent) {
-        transformed = !!(ancestor.props as TextProps).internal_transform
-      }
-      if (transformed) {
-        markDirty(root, CONTENT_BIT)
-        trackContentDirty(root)
-      }
-    }
+    markRootContentIfTransformed(root, parent)
     markDirty(parent, CHILDREN_BIT | CONTENT_BIT)
     trackContentDirty(parent)
     markLayoutAncestorDirty(parent)
@@ -743,16 +733,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     const index = parent.children.indexOf(child)
     if (index === -1) return
 
-    if (!isDirty(root, CONTENT_BIT)) {
-      let transformed = subtreeHasTextTransform(parent)
-      for (let ancestor = parent.parent; !transformed && ancestor; ancestor = ancestor.parent) {
-        transformed = !!(ancestor.props as TextProps).internal_transform
-      }
-      if (transformed) {
-        markDirty(root, CONTENT_BIT)
-        trackContentDirty(root)
-      }
-    }
+    markRootContentIfTransformed(root, parent)
     markDirty(parent, CHILDREN_BIT | CONTENT_BIT)
     trackContentDirty(parent)
     markLayoutAncestorDirty(parent)
@@ -814,16 +795,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     removeChild: agRemoveChild,
 
     updateProps(node, props, oldProps) {
-      if (!isDirty(root, CONTENT_BIT)) {
-        let transformed = subtreeHasTextTransform(node)
-        for (let ancestor = node.parent; !transformed && ancestor; ancestor = ancestor.parent) {
-          transformed = !!(ancestor.props as TextProps).internal_transform
-        }
-        if (transformed) {
-          markDirty(root, CONTENT_BIT)
-          trackContentDirty(root)
-        }
-      }
+      markRootContentIfTransformed(root, node)
       markDirty(node, CONTENT_BIT | STYLE_PROPS_BIT)
       trackContentDirty(node)
       markLayoutAncestorDirty(node)
@@ -835,16 +807,7 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
     },
 
     setText(node, text) {
-      if (!isDirty(root, CONTENT_BIT)) {
-        let transformed = subtreeHasTextTransform(node)
-        for (let ancestor = node.parent; !transformed && ancestor; ancestor = ancestor.parent) {
-          transformed = !!(ancestor.props as TextProps).internal_transform
-        }
-        if (transformed) {
-          markDirty(root, CONTENT_BIT)
-          trackContentDirty(root)
-        }
-      }
+      markRootContentIfTransformed(root, node)
       ;(node as any).textContent = text
       markDirty(node, CONTENT_BIT | STYLE_PROPS_BIT)
       trackContentDirty(node)
