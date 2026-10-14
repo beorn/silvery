@@ -104,7 +104,11 @@ describe("createAg", () => {
       </Box>
     )
     let app: ReturnType<ReturnType<typeof createRenderer>> | undefined
+    const previousStrict = process.env.SILVERY_STRICT
     try {
+      // Standalone CI does not inherit the root suite's STRICT default.
+      // This diagnostic contract needs its comparator enabled explicitly.
+      process.env.SILVERY_STRICT = "1"
       app = createRenderer({ cols: 40, rows: 60 })(frame("#ffffff"))
       expect(app.text).toContain("AAAA")
       armed = true
@@ -117,8 +121,13 @@ describe("createAg", () => {
       expect(failure).toBeInstanceOf(IncrementalRenderMismatchError)
       expect((failure as Error).message.startsWith("Transform invalidation witness:")).toBe(tagged)
     } finally {
-      spy.mockRestore()
-      app?.unmount()
+      try {
+        spy.mockRestore()
+        app?.unmount()
+      } finally {
+        if (previousStrict === undefined) delete process.env.SILVERY_STRICT
+        else process.env.SILVERY_STRICT = previousStrict
+      }
     }
   })
   // @failure Imperative content/structure changes retain old cells or free moved nodes.
