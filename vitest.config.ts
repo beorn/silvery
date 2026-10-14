@@ -17,6 +17,8 @@ export default defineConfig({
     dedupe: ["react", "react-dom", "react-reconciler"],
   },
   test: {
+    // vitest 5 defaults clearMocks to true (v4 was false); pin v4 behaviour (29257).
+    clearMocks: false,
     include: ["**/*.{test,spec}.{ts,tsx}"],
     exclude: [
       "**/node_modules/**",

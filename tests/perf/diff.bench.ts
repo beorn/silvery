@@ -8,7 +8,7 @@
  * Run: bun vitest bench tests/perf/diff.bench.ts
  */
 
-import { bench, describe, beforeAll } from "vitest"
+import { test, describe, beforeAll } from "vitest"
 import { TerminalBuffer, createBuffer } from "@silvery/ag-term/buffer"
 import { outputPhase } from "@silvery/ag-term/pipeline/output-phase"
 
@@ -136,33 +136,47 @@ beforeAll(() => {
 // ============================================================================
 
 describe("Diff: 80x24", () => {
-  bench("No changes (skip all rows)", () => {
+  test("No changes (skip all rows)", async ({ bench }) => {
+  await bench("No changes (skip all rows)", () => {
     outputPhase(small_base, small_no_changes, "fullscreen")
-  })
+  }).run()
+})
 
-  bench("1% cells changed (~19 cells)", () => {
+  test("1% cells changed (~19 cells)", async ({ bench }) => {
+  await bench("1% cells changed (~19 cells)", () => {
     outputPhase(small_base, small_1pct, "fullscreen")
-  })
+  }).run()
+})
 
-  bench("10% cells changed (~192 cells)", () => {
+  test("10% cells changed (~192 cells)", async ({ bench }) => {
+  await bench("10% cells changed (~192 cells)", () => {
     outputPhase(small_base, small_10pct, "fullscreen")
-  })
+  }).run()
+})
 
-  bench("50% cells changed (~960 cells)", () => {
+  test("50% cells changed (~960 cells)", async ({ bench }) => {
+  await bench("50% cells changed (~960 cells)", () => {
     outputPhase(small_base, small_50pct, "fullscreen")
-  })
+  }).run()
+})
 
-  bench("Full repaint (all cells different)", () => {
+  test("Full repaint (all cells different)", async ({ bench }) => {
+  await bench("Full repaint (all cells different)", () => {
     outputPhase(small_base, small_full, "fullscreen")
-  })
+  }).run()
+})
 
-  bench("Single row change (cursor move)", () => {
+  test("Single row change (cursor move)", async ({ bench }) => {
+  await bench("Single row change (cursor move)", () => {
     outputPhase(small_base, small_single_row, "fullscreen")
-  })
+  }).run()
+})
 
-  bench("First render (no prev buffer)", () => {
+  test("First render (no prev buffer)", async ({ bench }) => {
+  await bench("First render (no prev buffer)", () => {
     outputPhase(null, small_base, "fullscreen")
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -170,17 +184,23 @@ describe("Diff: 80x24", () => {
 // ============================================================================
 
 describe("Diff: 200x50", () => {
-  bench("No changes", () => {
+  test("No changes", async ({ bench }) => {
+  await bench("No changes", () => {
     outputPhase(large_base, large_no_changes, "fullscreen")
-  })
+  }).run()
+})
 
-  bench("10% cells changed", () => {
+  test("10% cells changed", async ({ bench }) => {
+  await bench("10% cells changed", () => {
     outputPhase(large_base, large_10pct, "fullscreen")
-  })
+  }).run()
+})
 
-  bench("Full repaint", () => {
+  test("Full repaint", async ({ bench }) => {
+  await bench("Full repaint", () => {
     outputPhase(large_base, large_full, "fullscreen")
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -188,15 +208,21 @@ describe("Diff: 200x50", () => {
 // ============================================================================
 
 describe("Diff: Inline Mode (80x24)", () => {
-  bench("No changes", () => {
+  test("No changes", async ({ bench }) => {
+  await bench("No changes", () => {
     outputPhase(small_base, small_no_changes, "inline")
-  })
+  }).run()
+})
 
-  bench("10% cells changed", () => {
+  test("10% cells changed", async ({ bench }) => {
+  await bench("10% cells changed", () => {
     outputPhase(small_base, small_10pct, "inline")
-  })
+  }).run()
+})
 
-  bench("First render", () => {
+  test("First render", async ({ bench }) => {
+  await bench("First render", () => {
     outputPhase(null, small_base, "inline")
-  })
+  }).run()
+})
 })

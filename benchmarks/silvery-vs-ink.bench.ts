@@ -21,7 +21,7 @@
  */
 
 import React from "react"
-import { bench, describe } from "vitest"
+import { test, describe } from "vitest"
 import { Writable } from "node:stream"
 import { createRenderer } from "silvery/test"
 import { Box as SBox, Text as SText } from "silvery"
@@ -246,75 +246,107 @@ const render80 = createRenderer({ cols: 80, rows: 24 })
 const render200 = createRenderer({ cols: 200, rows: 60 })
 
 describe("Flat list — 10 items (80x24)", () => {
-  bench("Silvery", () => {
+  test("Silvery", async ({ bench }) => {
+  await bench("Silvery", () => {
     render80(silveryFlatList(10))
-  })
-  bench("Ink", () => {
+  }).run()
+})
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     inkRenderToString(inkFlatList(10))
-  })
+  }).run()
+})
 })
 
 describe("Flat list — 100 items (80x24)", () => {
-  bench("Silvery", () => {
+  test("Silvery", async ({ bench }) => {
+  await bench("Silvery", () => {
     render80(silveryFlatList(100))
-  })
-  bench("Ink", () => {
+  }).run()
+})
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     inkRenderToString(inkFlatList(100))
-  })
+  }).run()
+})
 })
 
 describe("Flat list — 100 items (200x60)", () => {
-  bench("Silvery", () => {
+  test("Silvery", async ({ bench }) => {
+  await bench("Silvery", () => {
     render200(silveryFlatList(100))
-  })
-  bench("Ink", () => {
+  }).run()
+})
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     inkRenderToString(inkFlatList(100), { columns: 200 })
-  })
+  }).run()
+})
 })
 
 describe("Styled list — 100 items (80x24)", () => {
-  bench("Silvery", () => {
+  test("Silvery", async ({ bench }) => {
+  await bench("Silvery", () => {
     render80(silveryStyledList(100))
-  })
-  bench("Ink", () => {
+  }).run()
+})
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     inkRenderToString(inkStyledList(100))
-  })
+  }).run()
+})
 })
 
 describe("Kanban board — 5×10 (80x24)", () => {
-  bench("Silvery", () => {
+  test("Silvery", async ({ bench }) => {
+  await bench("Silvery", () => {
     render80(silveryKanban(5, 10))
-  })
-  bench("Ink", () => {
+  }).run()
+})
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     inkRenderToString(inkKanban(5, 10))
-  })
+  }).run()
+})
 })
 
 describe("Kanban board — 5×20 (200x60)", () => {
-  bench("Silvery", () => {
+  test("Silvery", async ({ bench }) => {
+  await bench("Silvery", () => {
     render200(silveryKanban(5, 20))
-  })
-  bench("Ink", () => {
+  }).run()
+})
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     inkRenderToString(inkKanban(5, 20), { columns: 200 })
-  })
+  }).run()
+})
 })
 
 describe("Deep tree — 20 levels", () => {
-  bench("Silvery", () => {
+  test("Silvery", async ({ bench }) => {
+  await bench("Silvery", () => {
     render80(silveryDeepTree(20))
-  })
-  bench("Ink", () => {
+  }).run()
+})
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     inkRenderToString(inkDeepTree(20))
-  })
+  }).run()
+})
 })
 
 describe("Deep tree — 50 levels", () => {
-  bench("Silvery", () => {
+  test("Silvery", async ({ bench }) => {
+  await bench("Silvery", () => {
     render80(silveryDeepTree(50))
-  })
-  bench("Ink", () => {
+  }).run()
+})
+  test("Ink", async ({ bench }) => {
+  await bench("Ink", () => {
     inkRenderToString(inkDeepTree(50))
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -348,7 +380,8 @@ const warmApp1000 = warmRender1000(
 
 describe("Reused renderer rerender vs one-shot — cursor move in 100-item list", () => {
   let sCursor = 0
-  bench("Silvery (dirty tracking)", () => {
+  test("Silvery (dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (dirty tracking)", () => {
     sCursor = (sCursor + 1) % 100
     warmApp100.rerender(
       React.createElement(
@@ -367,10 +400,12 @@ describe("Reused renderer rerender vs one-shot — cursor move in 100-item list"
         ),
       ),
     )
-  })
+  }).run()
+})
 
   let iCursor = 0
-  bench("Ink (one-shot renderToString)", () => {
+  test("Ink (one-shot renderToString)", async ({ bench }) => {
+  await bench("Ink (one-shot renderToString)", () => {
     iCursor = (iCursor + 1) % 100
     inkRenderToString(
       React.createElement(
@@ -389,12 +424,14 @@ describe("Reused renderer rerender vs one-shot — cursor move in 100-item list"
         ),
       ),
     )
-  })
+  }).run()
+})
 })
 
 describe("Reused renderer rerender vs one-shot — cursor move in 1000-item list", () => {
   let sCursor = 0
-  bench("Silvery (dirty tracking)", () => {
+  test("Silvery (dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (dirty tracking)", () => {
     sCursor = (sCursor + 1) % 1000
     warmApp1000.rerender(
       React.createElement(
@@ -413,10 +450,12 @@ describe("Reused renderer rerender vs one-shot — cursor move in 1000-item list
         ),
       ),
     )
-  })
+  }).run()
+})
 
   let iCursor = 0
-  bench("Ink (one-shot renderToString)", () => {
+  test("Ink (one-shot renderToString)", async ({ bench }) => {
+  await bench("Ink (one-shot renderToString)", () => {
     iCursor = (iCursor + 1) % 1000
     inkRenderToString(
       React.createElement(
@@ -435,7 +474,8 @@ describe("Reused renderer rerender vs one-shot — cursor move in 1000-item list
         ),
       ),
     )
-  })
+  }).run()
+})
 })
 
 describe("Reused renderer vs one-shot — move editing marker in kanban 5×20", () => {
@@ -443,16 +483,20 @@ describe("Reused renderer vs one-shot — move editing marker in kanban 5×20", 
   const kanbanApp = warmKanban(silveryKanbanEdit(5, 20, 2, 0))
 
   let sEdit = 0
-  bench("Silvery (dirty tracking)", () => {
+  test("Silvery (dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (dirty tracking)", () => {
     sEdit = (sEdit + 1) % 20
     kanbanApp.rerender(silveryKanbanEdit(5, 20, 2, sEdit))
-  })
+  }).run()
+})
 
   let iEdit = 0
-  bench("Ink (one-shot renderToString)", () => {
+  test("Ink (one-shot renderToString)", async ({ bench }) => {
+  await bench("Ink (one-shot renderToString)", () => {
     iEdit = (iEdit + 1) % 20
     inkRenderToString(inkKanbanEdit(5, 20, 2, iEdit), { columns: 200 })
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -493,7 +537,8 @@ describe("Mounted rerender — cursor move in 100-item list", () => {
   )
 
   let sCursor = 0
-  bench("Silvery (mounted, dirty tracking)", () => {
+  test("Silvery (mounted, dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (mounted, dirty tracking)", () => {
     sCursor = (sCursor + 1) % 100
     sApp.rerender(
       React.createElement(
@@ -512,10 +557,12 @@ describe("Mounted rerender — cursor move in 100-item list", () => {
         ),
       ),
     )
-  })
+  }).run()
+})
 
   let iCursor = 0
-  bench("Ink (mounted, synchronous rerender)", () => {
+  test("Ink (mounted, synchronous rerender)", async ({ bench }) => {
+  await bench("Ink (mounted, synchronous rerender)", () => {
     iCursor = (iCursor + 1) % 100
     inkInstance.rerender(
       React.createElement(
@@ -534,7 +581,8 @@ describe("Mounted rerender — cursor move in 100-item list", () => {
         ),
       ),
     )
-  })
+  }).run()
+})
 })
 
 // All-visible mounted benchmark — 20 items fit in 24 rows (no overflow)
@@ -569,7 +617,8 @@ describe("Mounted rerender — cursor move in 20-item list (all visible)", () =>
   )
 
   let sCursor = 0
-  bench("Silvery (mounted, dirty tracking)", () => {
+  test("Silvery (mounted, dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (mounted, dirty tracking)", () => {
     sCursor = (sCursor + 1) % 20
     sApp.rerender(
       React.createElement(
@@ -588,10 +637,12 @@ describe("Mounted rerender — cursor move in 20-item list (all visible)", () =>
         ),
       ),
     )
-  })
+  }).run()
+})
 
   let iCursor = 0
-  bench("Ink (mounted, synchronous rerender)", () => {
+  test("Ink (mounted, synchronous rerender)", async ({ bench }) => {
+  await bench("Ink (mounted, synchronous rerender)", () => {
     iCursor = (iCursor + 1) % 20
     inkInstance.rerender(
       React.createElement(
@@ -610,7 +661,8 @@ describe("Mounted rerender — cursor move in 20-item list (all visible)", () =>
         ),
       ),
     )
-  })
+  }).run()
+})
 })
 
 // Memo'd item for cursor highlight benchmarks — React skips unchanged children,
@@ -666,7 +718,8 @@ describe("Mounted memo'd cursor highlight (inverse) — 100 items", () => {
   )
 
   let sCursor = 0
-  bench("Silvery (memo + dirty tracking)", () => {
+  test("Silvery (memo + dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (memo + dirty tracking)", () => {
     sCursor = (sCursor + 1) % 100
     sApp.rerender(
       React.createElement(
@@ -677,10 +730,12 @@ describe("Mounted memo'd cursor highlight (inverse) — 100 items", () => {
         ),
       ),
     )
-  })
+  }).run()
+})
 
   let iCursor = 0
-  bench("Ink (memo + synchronous rerender)", () => {
+  test("Ink (memo + synchronous rerender)", async ({ bench }) => {
+  await bench("Ink (memo + synchronous rerender)", () => {
     iCursor = (iCursor + 1) % 100
     inkInstance.rerender(
       React.createElement(
@@ -691,7 +746,8 @@ describe("Mounted memo'd cursor highlight (inverse) — 100 items", () => {
         ),
       ),
     )
-  })
+  }).run()
+})
 })
 
 describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
@@ -724,7 +780,8 @@ describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
   )
 
   let sCursor = 0
-  bench("Silvery (memo + dirty tracking)", () => {
+  test("Silvery (memo + dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (memo + dirty tracking)", () => {
     sCursor = (sCursor + 1) % 1000
     sApp.rerender(
       React.createElement(
@@ -735,10 +792,12 @@ describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
         ),
       ),
     )
-  })
+  }).run()
+})
 
   let iCursor = 0
-  bench("Ink (memo + synchronous rerender)", () => {
+  test("Ink (memo + synchronous rerender)", async ({ bench }) => {
+  await bench("Ink (memo + synchronous rerender)", () => {
     iCursor = (iCursor + 1) % 1000
     inkInstance.rerender(
       React.createElement(
@@ -749,7 +808,8 @@ describe("Mounted memo'd cursor highlight (inverse) — 1000 items", () => {
         ),
       ),
     )
-  })
+  }).run()
+})
 })
 
 describe("Mounted rerender — move editing marker in kanban 5×20", () => {
@@ -764,16 +824,20 @@ describe("Mounted rerender — move editing marker in kanban 5×20", () => {
   })
 
   let sEdit = 0
-  bench("Silvery (mounted, dirty tracking)", () => {
+  test("Silvery (mounted, dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (mounted, dirty tracking)", () => {
     sEdit = (sEdit + 1) % 20
     sApp.rerender(silveryKanbanEdit(5, 20, 2, sEdit))
-  })
+  }).run()
+})
 
   let iEdit = 0
-  bench("Ink (mounted, synchronous rerender)", () => {
+  test("Ink (mounted, synchronous rerender)", async ({ bench }) => {
+  await bench("Ink (mounted, synchronous rerender)", () => {
     iEdit = (iEdit + 1) % 20
     inkInstance.rerender(inkKanbanEdit(5, 20, 2, iEdit))
-  })
+  }).run()
+})
 })
 
 // ============================================================================
@@ -844,16 +908,20 @@ describe("useState pattern — memo'd 100-item list, single active toggle", () =
   })
 
   let sActive = 0
-  bench("Silvery (memo + dirty tracking)", () => {
+  test("Silvery (memo + dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (memo + dirty tracking)", () => {
     sActive = (sActive + 1) % 100
     sApp.rerender(silveryMemoList(100, sActive))
-  })
+  }).run()
+})
 
   let iActive = 0
-  bench("Ink (memo + synchronous rerender)", () => {
+  test("Ink (memo + synchronous rerender)", async ({ bench }) => {
+  await bench("Ink (memo + synchronous rerender)", () => {
     iActive = (iActive + 1) % 100
     inkInstance.rerender(inkMemoList(100, iActive))
-  })
+  }).run()
+})
 })
 
 describe("useState pattern — memo'd 500-item list, single active toggle", () => {
@@ -868,16 +936,20 @@ describe("useState pattern — memo'd 500-item list, single active toggle", () =
   })
 
   let sActive = 0
-  bench("Silvery (memo + dirty tracking)", () => {
+  test("Silvery (memo + dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (memo + dirty tracking)", () => {
     sActive = (sActive + 1) % 500
     sApp.rerender(silveryMemoList(500, sActive))
-  })
+  }).run()
+})
 
   let iActive = 0
-  bench("Ink (memo + synchronous rerender)", () => {
+  test("Ink (memo + synchronous rerender)", async ({ bench }) => {
+  await bench("Ink (memo + synchronous rerender)", () => {
     iActive = (iActive + 1) % 500
     inkInstance.rerender(inkMemoList(500, iActive))
-  })
+  }).run()
+})
 })
 
 // Memo'd kanban — change one card's text in a 5×20 board
@@ -963,14 +1035,18 @@ describe("useState pattern — memo'd kanban 5×20, move editing marker", () => 
   })
 
   let sCard = 0
-  bench("Silvery (memo + dirty tracking)", () => {
+  test("Silvery (memo + dirty tracking)", async ({ bench }) => {
+  await bench("Silvery (memo + dirty tracking)", () => {
     sCard = (sCard + 1) % 20
     sApp.rerender(silveryMemoKanban(5, 20, 2, sCard))
-  })
+  }).run()
+})
 
   let iCard = 0
-  bench("Ink (memo + synchronous rerender)", () => {
+  test("Ink (memo + synchronous rerender)", async ({ bench }) => {
+  await bench("Ink (memo + synchronous rerender)", () => {
     iCard = (iCard + 1) % 20
     inkInstance.rerender(inkMemoKanban(5, 20, 2, iCard))
-  })
+  }).run()
+})
 })
