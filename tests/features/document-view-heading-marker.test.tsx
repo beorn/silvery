@@ -10,9 +10,11 @@ import { describe, expect, test } from "vitest"
 import { createRenderer } from "@silvery/test"
 import {
   Content,
+  DEFAULT_BREAKPOINTS,
   DocumentView,
   PopoverProvider,
   Text,
+  documentGutterMinWidth,
   ThemeProvider,
   type DocumentBlock,
   type DocumentHeadingBlock,
@@ -470,4 +472,93 @@ describe("DocumentView heading marker gutter", () => {
       }
     },
   )
+  /**
+   * @km/29375 — `documentGutterMinWidth` IS the value this component hands `Content.Layout`.
+   *
+   * A host that models the column the prose lands on (maddoc's browser lane) reads this export
+   * instead of mirroring the geometry, so the export has to be what the component actually
+   * reserves. Each row renders the fixture and predicts the prose column from the export through
+   * `ProseLane`'s own placement (a `leftGutter`/`prose`/`rightGutter` row whose flexGrow gutters
+   * split the leftover), across the five cases @cto 993e6f56 listed: no markers, a task marker, a
+   * block that says it is foldable, folding enabled as a FLAG, and compact. A wrong argument at the
+   * component's own call site (or a hand-typed number replacing the export) moves the rendered
+   * column off the prediction.
+   */
+  test("the exported gutter is the gutter this component reserves, at every width", () => {
+    const PROSE = "Gutter probe prose."
+    const fixtures: ReadonlyArray<{
+      readonly name: string
+      readonly blocks: DocumentBlock[]
+      readonly folding: boolean
+    }> = [
+      {
+        name: "no markers",
+        blocks: [{ id: "prose", kind: "paragraph", content: PROSE }],
+        folding: false,
+      },
+      {
+        name: "a task marker",
+        blocks: [
+          { id: "h", kind: "heading", level: 2, content: "Heading", marker: <Text>◐</Text> },
+          { id: "prose", kind: "paragraph", content: PROSE },
+        ],
+        folding: false,
+      },
+      {
+        name: "foldable by block",
+        blocks: [
+          { id: "h", kind: "heading", level: 2, content: "Heading", foldable: true },
+          { id: "prose", kind: "paragraph", content: PROSE },
+        ],
+        folding: false,
+      },
+      {
+        name: "foldable by flag only",
+        blocks: [
+          { id: "h", kind: "heading", level: 2, content: "Heading" },
+          { id: "prose", kind: "paragraph", content: PROSE },
+        ],
+        folding: true,
+      },
+      {
+        name: "the flag on a plain document",
+        blocks: [
+          { id: "h", kind: "heading", level: 2, content: "Heading", foldable: false },
+          { id: "prose", kind: "paragraph", content: PROSE },
+        ],
+        folding: true,
+      },
+    ]
+    // ProseLane's own placement: a [leftGutter | prose | rightGutter] row whose two flexGrow
+    // gutters split the leftover, with the prose width clamped by both gutters first.
+    const predictedColumn = (
+      cols: number,
+      gutter: { readonly left: number; readonly right: number },
+    ): number => {
+      const compact = cols < DEFAULT_BREAKPOINTS.md
+      const prose = compact ? cols : 96
+      const proseWidth = Math.max(1, Math.min(prose, cols - gutter.left - gutter.right))
+      const leftover = Math.max(0, cols - proseWidth - gutter.left - gutter.right)
+      return gutter.left + Math.ceil(leftover / 2)
+    }
+    for (const cols of [41, 64, 89, 90, 98, 100, 120, 160, 199, 200]) {
+      for (const fixture of fixtures) {
+        const app = createRenderer({ cols, rows: 12 })(
+          <DocumentView blocks={fixture.blocks} enableSectionFolding={fixture.folding} />,
+        )
+        const row = app.lines.findIndex((line) => line.includes(PROSE))
+        expect(row, `${fixture.name} renders its prose at ${cols} columns`).toBeGreaterThanOrEqual(
+          0,
+        )
+        const gutter = documentGutterMinWidth(fixture.blocks, {
+          sectionFolding: fixture.folding,
+          compact: cols < DEFAULT_BREAKPOINTS.md,
+        })
+        expect(
+          app.lines[row]!.indexOf(PROSE),
+          `${fixture.name} at ${cols} columns (export ${JSON.stringify(gutter)})`,
+        ).toBe(predictedColumn(cols, gutter))
+      }
+    }
+  })
 })

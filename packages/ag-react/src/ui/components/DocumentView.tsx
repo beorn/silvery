@@ -768,6 +768,27 @@ function DocumentBlocks({
 const DOCUMENT_MIN_GUTTER = 2
 
 /**
+ * The gutter `DocumentView` reserves around the prose lane, in cells, before
+ * any ambient layout is taken into account: LEFT is the resolved heading-marker
+ * width plus one visible gap cell, RIGHT is one cell in compact mode and
+ * `DOCUMENT_MIN_GUTTER` otherwise.
+ *
+ * Exported as ONE composed value rather than as its two inputs, because a
+ * consumer that re-composes them to size its own text lane to the same column
+ * drifts from this the moment either term changes — the class
+ * @si/app/22996 and @si/app/29377 were both instances of (@km/29375).
+ */
+export function documentGutterMinWidth(
+  blocks: readonly DocumentBlock[],
+  options: { sectionFolding?: boolean; compact?: boolean } = {},
+): { readonly left: number; readonly right: number } {
+  return {
+    left: resolveHeadingMarkerWidth(blocks, options.sectionFolding ?? false) + 1,
+    right: options.compact === true ? 1 : DOCUMENT_MIN_GUTTER,
+  }
+}
+
+/**
  * Store-neutral semantic document presenter.
  *
  * Adapters supply identities and inline/leaf content. DocumentView owns block
@@ -790,7 +811,10 @@ export function DocumentView({
   const termCols = useTerm((term) => term.size.cols())
   const paneCols = hasContentLayout ? ambientLayout.available : termCols
   const compact = paneCols > 0 && paneCols < DEFAULT_BREAKPOINTS.md
-  const markerGutter = resolveHeadingMarkerWidth(blocks, enableSectionFolding) + 1
+  const reservedGutter = documentGutterMinWidth(blocks, {
+    sectionFolding: enableSectionFolding,
+    compact,
+  })
   const searchContext = useSearchOptional()
   const autoSearchId = useId()
   const searchId = search?.id ?? autoSearchId
@@ -951,8 +975,10 @@ export function DocumentView({
       align={hasContentLayout ? ambientLayout.align : undefined}
       gap={hasContentLayout ? ambientLayout.gap : undefined}
       gutterMinWidth={{
-        left: Math.max(ambientLayout.gutterMinWidth.left, markerGutter),
-        right: compact ? 1 : Math.max(ambientLayout.gutterMinWidth.right, DOCUMENT_MIN_GUTTER),
+        left: Math.max(ambientLayout.gutterMinWidth.left, reservedGutter.left),
+        right: compact
+          ? reservedGutter.right
+          : Math.max(ambientLayout.gutterMinWidth.right, reservedGutter.right),
       }}
     >
       {document}

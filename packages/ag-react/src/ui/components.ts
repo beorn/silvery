@@ -252,7 +252,7 @@ export type {
 } from "./components/Content"
 
 // DocumentView — store-neutral semantic document presentation.
-export { DocumentView } from "./components/DocumentView"
+export { DocumentView, documentGutterMinWidth } from "./components/DocumentView"
 export type {
   DocumentBlock,
   DocumentBlockId,

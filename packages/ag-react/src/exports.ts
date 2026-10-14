@@ -317,7 +317,7 @@ export type {
 } from "./ui/components"
 
 // DocumentView — store-neutral semantic document presentation.
-export { DocumentView } from "./ui/components"
+export { DocumentView, documentGutterMinWidth } from "./ui/components"
 export type {
   DocumentBlock,
   DocumentBlockId,
