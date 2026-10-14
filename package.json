@@ -141,7 +141,7 @@
     "@termless/ghostty-native": ">=0.9.1 <1.0.0",
     "@termless/test": ">=0.9.1 <1.0.0",
     "@termless/xtermjs": ">=0.9.1 <1.0.0",
-    "@types/bun": "1.4.2",
+    "@types/bun": "1.4.3",
     "@types/react": "19.3.0",
     "@vue/server-renderer": "3.5.43",
     "@xterm/addon-fit": "^0.11.0",
