@@ -19,6 +19,7 @@
  * partial shape fires here loudly.
  *
  * Tracking bead: km-silvery.fallback-theme-empty-bg-tokens.
+ * @source-grep the Sterling flat-token contract: the runtime wrapper source (packages/ag-term/src/runtime/wrap-with-themed-provider.tsx) is read to prove it detects the scheme, so both detection paths return Sterling-baked themes and no flat token resolves empty
  */
 
 import { describe, expect, it } from "vitest"

@@ -1,5 +1,6 @@
 /**
  * @reach fs-walk vendor/silvery/packages/**\/src/**
+ * @source-grep the mouse-pixel auto-writer inventory: a src-tree walk proves the emulator branch of ag-term/src/runtime/run.tsx is the ONLY production writer of pixelUnitsAttested: true (exactly once, inside resolveEmulatorMouseOption)
  */
 import EventEmitter from "node:events"
 import { readdirSync, readFileSync, statSync } from "node:fs"
