@@ -10,6 +10,6 @@
   "dependencies": {
     "ink": "7.0.0",
     "react": "^19.0.0",
-    "vitest": "4.1.10"
+    "vitest": "5.0.4"
   }
 }
