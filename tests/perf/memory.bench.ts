@@ -13,7 +13,7 @@
  */
 
 import React from "react"
-import { , describe, test, expect } from "vitest"
+import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { createBuffer } from "@silvery/ag-term/buffer"
 import { ensureDefaultLayoutEngine, getLayoutEngine } from "@silvery/ag-term/layout-engine"
