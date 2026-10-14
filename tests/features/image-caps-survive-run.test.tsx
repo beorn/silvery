@@ -17,7 +17,9 @@
 import React, { useContext } from "react"
 import { describe, expect, test } from "vitest"
 import { createTermless } from "@silvery/test"
-import { Box, Image, Text } from "../../src/index.js"
+import { Box, Text } from "../../src/index.js"
+// Exercise the same public lazy-image entry used by Welcome, including its package export resolution.
+import { Image } from "silvery/ui/image"
 import { run } from "../../packages/ag-term/src/runtime/run"
 import { createTerm, createTerminalProfile } from "../../packages/ag-term/src/ansi"
 import { TermContext } from "../../packages/ag-react/src/context"
