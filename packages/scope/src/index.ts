@@ -453,6 +453,7 @@ export {
   isBrandedHandle,
   getActiveHandleCount,
   type Handle,
+  type DefinedHandle,
   type RegistrableHandle,
   type LeakedHandle,
   LeakedHandlesError,

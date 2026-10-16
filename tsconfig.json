@@ -15,25 +15,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "dist",
-    "rootDir": ".",
-    "paths": {
-      "@silvery/*": ["./packages/*/src"],
-      "@silvery/ag/*": ["./packages/ag/src/*"],
-      "@silvery/ag-react/ui/*": ["./packages/ag-react/src/ui/*"],
-      "@silvery/ag-react/*": ["./packages/ag-react/src/*"],
-      "@silvery/ag-term/*": ["./packages/ag-term/src/*"],
-      "@silvery/ansi/*": ["./packages/ag-term/src/ansi/*"],
-      "@silvery/theme/*": ["./packages/theme/src/*"],
-      "@silvery/create/*": ["./packages/create/src/*"],
-      "@silvery/headless/*": ["./packages/headless/src/*"],
-      "@silvery/commands/*": ["./packages/commands/src/*"],
-      "@silvery/scope": ["./packages/scope/src/index.ts"],
-      "@silvery/scope/*": ["./packages/scope/src/*"],
-      "@silvery/signals": ["./packages/signals/src/index.ts"],
-      "@silvery/signals/*": ["./packages/signals/src/*"],
-      "@silvery/test/*": ["./packages/test/src/*"],
-      "@silvery/ink/*": ["./packages/ink/src/*"]
-    }
+    "rootDir": "."
   },
   // `tests` and `packages/*/tests` are in the program on purpose. They were
   // outside it until 2026-08-19, which meant a required-field addition to a
