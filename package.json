@@ -209,7 +209,9 @@
         "slice-ansi"
       ]
     },
-    "dts": true,
+    "dts": {
+      "eager": true
+    },
     "entry": [
       "src/index.ts",
       "src/runtime.ts",
