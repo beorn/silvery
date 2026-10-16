@@ -14,38 +14,24 @@
     "dist"
   ],
   "type": "module",
-  "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./detect": "./src/detect.ts",
     "./schemes": "./src/schemes/index.ts",
     "./sterling": "./src/sterling/index.ts",
-    "./theme": "./src/theme.ts"
+    "./theme": "./src/theme.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./detect": {
-        "types": "./dist/detect.d.mts",
-        "import": "./dist/detect.mjs"
-      },
-      "./schemes": {
-        "types": "./dist/schemes.d.mts",
-        "import": "./dist/schemes.mjs"
-      },
-      "./sterling": {
-        "types": "./dist/sterling/index.d.mts",
-        "import": "./dist/sterling/index.mjs"
-      },
-      "./theme": {
-        "types": "./dist/theme.d.mts",
-        "import": "./dist/theme.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./detect": "./dist/detect.mjs",
+      "./schemes": "./dist/schemes/index.mjs",
+      "./sterling": "./dist/sterling/index.mjs",
+      "./theme": "./dist/theme.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -65,6 +51,9 @@
       "src/sterling/index.ts",
       "src/theme.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
   }
 }

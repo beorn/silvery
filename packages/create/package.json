@@ -15,101 +15,64 @@
   ],
   "type": "module",
   "sideEffects": false,
-  "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./core": "./src/core/index.ts",
+    "./create-app": "./src/create-app.tsx",
+    "./create-app-context": "./src/create-app-context.tsx",
+    "./effects": "./src/effects.ts",
+    "./internal/capabilities": "./src/internal/capabilities.ts",
+    "./internal/capability-registry": "./src/internal/capability-registry.ts",
+    "./internal/input-router": "./src/internal/input-router.ts",
+    "./pipe": "./src/pipe.ts",
+    "./plugins": "./src/plugins.ts",
+    "./runtime-chain": "./src/runtime-chain.ts",
+    "./runtime/base-app": "./src/runtime/base-app.ts",
+    "./runtime/event-loop": "./src/runtime/event-loop.ts",
+    "./runtime/with-input-chain": "./src/runtime/with-input-chain.ts",
+    "./runtime/with-terminal-chain": "./src/runtime/with-terminal-chain.ts",
+    "./signal-store": "./src/signal-store.ts",
     "./store": "./src/store/index.ts",
     "./streams": "./src/streams/index.ts",
     "./tea": "./src/tea/index.ts",
-    "./create-app": "./src/create-app.tsx",
-    "./create-app-context": "./src/create-app-context.tsx",
-    "./*": "./src/*.ts"
+    "./text-cursor": "./src/text-cursor.ts",
+    "./text-decorations": "./src/text-decorations.ts",
+    "./text-ops": "./src/text-ops.ts",
+    "./types": "./src/types.ts",
+    "./with-app": "./src/with-app.ts",
+    "./with-render": "./src/with-render.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./create-app": {
-        "types": "./dist/create-app.d.mts",
-        "import": "./dist/create-app.mjs"
-      },
-      "./create-app-context": {
-        "types": "./dist/create-app-context.d.mts",
-        "import": "./dist/create-app-context.mjs"
-      },
-      "./effects": {
-        "types": "./dist/effects.d.mts",
-        "import": "./dist/effects.mjs"
-      },
-      "./pipe": {
-        "types": "./dist/pipe.d.mts",
-        "import": "./dist/pipe.mjs"
-      },
-      "./plugins": {
-        "types": "./dist/plugins.d.mts",
-        "import": "./dist/plugins.mjs"
-      },
-      "./runtime-chain": {
-        "types": "./dist/runtime-chain.d.mts",
-        "import": "./dist/runtime-chain.mjs"
-      },
-      "./signal-store": {
-        "types": "./dist/signal-store.d.mts",
-        "import": "./dist/signal-store.mjs"
-      },
-      "./store": {
-        "types": "./dist/store/index.d.mts",
-        "import": "./dist/store/index.mjs"
-      },
-      "./streams": {
-        "types": "./dist/streams/index.d.mts",
-        "import": "./dist/streams/index.mjs"
-      },
-      "./tea": {
-        "types": "./dist/tea/index.d.mts",
-        "import": "./dist/tea/index.mjs"
-      },
-      "./text-cursor": {
-        "types": "./dist/text-cursor.d.mts",
-        "import": "./dist/text-cursor.mjs"
-      },
-      "./text-decorations": {
-        "types": "./dist/text-decorations.d.mts",
-        "import": "./dist/text-decorations.mjs"
-      },
-      "./text-ops": {
-        "types": "./dist/text-ops.d.mts",
-        "import": "./dist/text-ops.mjs"
-      },
-      "./types": {
-        "types": "./dist/types.d.mts",
-        "import": "./dist/types.mjs"
-      },
-      "./with-app": {
-        "types": "./dist/with-app.d.mts",
-        "import": "./dist/with-app.mjs"
-      },
-      "./with-render": {
-        "types": "./dist/with-render.d.mts",
-        "import": "./dist/with-render.mjs"
-      },
-      "./internal/capabilities": {
-        "types": "./dist/internal/capabilities.d.mts",
-        "import": "./dist/internal/capabilities.mjs"
-      },
-      "./internal/capability-registry": {
-        "types": "./dist/internal/capability-registry.d.mts",
-        "import": "./dist/internal/capability-registry.mjs"
-      },
-      "./internal/input-router": {
-        "types": "./dist/internal/input-router.d.mts",
-        "import": "./dist/internal/input-router.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./core": "./dist/core/index.mjs",
+      "./create-app": "./dist/create-app.mjs",
+      "./create-app-context": "./dist/create-app-context.mjs",
+      "./effects": "./dist/effects.mjs",
+      "./internal/capabilities": "./dist/internal/capabilities.mjs",
+      "./internal/capability-registry": "./dist/internal/capability-registry.mjs",
+      "./internal/input-router": "./dist/internal/input-router.mjs",
+      "./pipe": "./dist/pipe.mjs",
+      "./plugins": "./dist/plugins.mjs",
+      "./runtime-chain": "./dist/runtime-chain.mjs",
+      "./runtime/base-app": "./dist/runtime/base-app.mjs",
+      "./runtime/event-loop": "./dist/runtime/event-loop.mjs",
+      "./runtime/with-input-chain": "./dist/runtime/with-input-chain.mjs",
+      "./runtime/with-terminal-chain": "./dist/runtime/with-terminal-chain.mjs",
+      "./signal-store": "./dist/signal-store.mjs",
+      "./store": "./dist/store/index.mjs",
+      "./streams": "./dist/streams/index.mjs",
+      "./tea": "./dist/tea/index.mjs",
+      "./text-cursor": "./dist/text-cursor.mjs",
+      "./text-decorations": "./dist/text-decorations.mjs",
+      "./text-ops": "./dist/text-ops.mjs",
+      "./types": "./dist/types.mjs",
+      "./with-app": "./dist/with-app.mjs",
+      "./with-render": "./dist/with-render.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -148,12 +111,23 @@
       "src/with-render.ts",
       "src/internal/capabilities.ts",
       "src/internal/capability-registry.ts",
-      "src/internal/input-router.ts"
+      "src/internal/input-router.ts",
+      "src/core/index.ts",
+      "src/runtime/base-app.ts",
+      "src/runtime/event-loop.ts",
+      "src/runtime/with-input-chain.ts",
+      "src/runtime/with-terminal-chain.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
   },
   "engines": {
     "bun": ">=1.0",
     "node": ">=24.0.0"
+  },
+  "inlinedDependencies": {
+    "react": "19.3.1"
   }
 }

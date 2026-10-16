@@ -23,19 +23,15 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
-    "./plain": "./src/plain.ts"
+    "./plain": "./src/plain.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./plain": {
-        "types": "./dist/plain.d.mts",
-        "import": "./dist/plain.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./plain": "./dist/plain.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -58,7 +54,10 @@
       "zod",
       "@silvery/ansi"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
   },
   "engines": {
     "node": ">=24.0.0"

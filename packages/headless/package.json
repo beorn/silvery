@@ -14,43 +14,30 @@
     "dist"
   ],
   "type": "module",
-  "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    "./copy-mode": "./src/copy-mode.ts",
+    "./history": "./src/history.ts",
+    "./machine": "./src/machine.ts",
+    "./pointer": "./src/pointer.ts",
+    "./readline": "./src/readline.ts",
+    "./select-list": "./src/select-list.ts",
+    "./selection": "./src/selection.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./copy-mode": {
-        "types": "./dist/copy-mode.d.mts",
-        "import": "./dist/copy-mode.mjs"
-      },
-      "./machine": {
-        "types": "./dist/machine.d.mts",
-        "import": "./dist/machine.mjs"
-      },
-      "./pointer": {
-        "types": "./dist/pointer.d.mts",
-        "import": "./dist/pointer.mjs"
-      },
-      "./readline": {
-        "types": "./dist/readline.d.mts",
-        "import": "./dist/readline.mjs"
-      },
-      "./select-list": {
-        "types": "./dist/select-list.d.mts",
-        "import": "./dist/select-list.mjs"
-      },
-      "./selection": {
-        "types": "./dist/selection.d.mts",
-        "import": "./dist/selection.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./copy-mode": "./dist/copy-mode.mjs",
+      "./history": "./dist/history.mjs",
+      "./machine": "./dist/machine.mjs",
+      "./pointer": "./dist/pointer.mjs",
+      "./readline": "./dist/readline.mjs",
+      "./select-list": "./dist/select-list.mjs",
+      "./selection": "./dist/selection.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -78,8 +65,15 @@
       "src/pointer.ts",
       "src/readline.ts",
       "src/select-list.ts",
-      "src/selection.ts"
+      "src/selection.ts",
+      "src/history.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
+  },
+  "inlinedDependencies": {
+    "react": "19.3.1"
   }
 }

@@ -14,31 +14,22 @@
     "dist"
   ],
   "type": "module",
-  "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    "./create-command-registry": "./src/create-command-registry.ts",
+    "./with-commands": "./src/with-commands.ts",
+    "./with-keybindings": "./src/with-keybindings.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./create-command-registry": {
-        "types": "./dist/create-command-registry.d.mts",
-        "import": "./dist/create-command-registry.mjs"
-      },
-      "./with-commands": {
-        "types": "./dist/with-commands.d.mts",
-        "import": "./dist/with-commands.mjs"
-      },
-      "./with-keybindings": {
-        "types": "./dist/with-keybindings.d.mts",
-        "import": "./dist/with-keybindings.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./create-command-registry": "./dist/create-command-registry.mjs",
+      "./with-commands": "./dist/with-commands.mjs",
+      "./with-keybindings": "./dist/with-keybindings.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -57,6 +48,9 @@
       "src/with-commands.ts",
       "src/with-keybindings.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
   }
 }

@@ -14,87 +14,64 @@
     "dist"
   ],
   "type": "module",
-  "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    "./apportion": "./src/apportion.ts",
+    "./cls": "./src/cls.ts",
+    "./dirty-tracking": "./src/dirty-tracking.ts",
+    "./drag-event-types": "./src/drag-event-types.ts",
+    "./epoch": "./src/epoch.ts",
+    "./focus-events": "./src/focus-events.ts",
+    "./focus-manager": "./src/focus-manager.ts",
+    "./focus-queries": "./src/focus-queries.ts",
+    "./interactive-signals": "./src/interactive-signals.ts",
+    "./island": "./src/island.ts",
+    "./island-guests": "./src/island-guests.ts",
+    "./island-types": "./src/island-types.ts",
+    "./keys": "./src/keys.ts",
+    "./layout-signals": "./src/layout-signals.ts",
+    "./layout-types": "./src/layout-types.ts",
+    "./mouse-event-types": "./src/mouse-event-types.ts",
+    "./overlay-layer": "./src/overlay-layer.ts",
+    "./place-floating": "./src/place-floating.ts",
+    "./text-frame": "./src/text-frame.ts",
+    "./tree-utils": "./src/tree-utils.ts",
+    "./types": "./src/types.ts",
+    "./viewport-buffer": "./src/viewport-buffer.ts",
+    "./viewport-types": "./src/viewport-types.ts",
+    "./wrap-measurer": "./src/wrap-measurer.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./dirty-tracking": {
-        "types": "./dist/dirty-tracking.d.mts",
-        "import": "./dist/dirty-tracking.mjs"
-      },
-      "./drag-event-types": {
-        "types": "./dist/drag-event-types.d.mts",
-        "import": "./dist/drag-event-types.mjs"
-      },
-      "./epoch": {
-        "types": "./dist/epoch.d.mts",
-        "import": "./dist/epoch.mjs"
-      },
-      "./focus-events": {
-        "types": "./dist/focus-events.d.mts",
-        "import": "./dist/focus-events.mjs"
-      },
-      "./focus-manager": {
-        "types": "./dist/focus-manager.d.mts",
-        "import": "./dist/focus-manager.mjs"
-      },
-      "./focus-queries": {
-        "types": "./dist/focus-queries.d.mts",
-        "import": "./dist/focus-queries.mjs"
-      },
-      "./interactive-signals": {
-        "types": "./dist/interactive-signals.d.mts",
-        "import": "./dist/interactive-signals.mjs"
-      },
-      "./island": {
-        "types": "./dist/island.d.mts",
-        "import": "./dist/island.mjs"
-      },
-      "./island-guests": {
-        "types": "./dist/island-guests.d.mts",
-        "import": "./dist/island-guests.mjs"
-      },
-      "./island-types": {
-        "types": "./dist/island-types.d.mts",
-        "import": "./dist/island-types.mjs"
-      },
-      "./keys": {
-        "types": "./dist/keys.d.mts",
-        "import": "./dist/keys.mjs"
-      },
-      "./layout-types": {
-        "types": "./dist/layout-types.d.mts",
-        "import": "./dist/layout-types.mjs"
-      },
-      "./mouse-event-types": {
-        "types": "./dist/mouse-event-types.d.mts",
-        "import": "./dist/mouse-event-types.mjs"
-      },
-      "./text-frame": {
-        "types": "./dist/text-frame.d.mts",
-        "import": "./dist/text-frame.mjs"
-      },
-      "./tree-utils": {
-        "types": "./dist/tree-utils.d.mts",
-        "import": "./dist/tree-utils.mjs"
-      },
-      "./layout-signals": {
-        "types": "./dist/layout-signals.d.mts",
-        "import": "./dist/layout-signals.mjs"
-      },
-      "./types": {
-        "types": "./dist/types.d.mts",
-        "import": "./dist/types.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./apportion": "./dist/apportion.mjs",
+      "./cls": "./dist/cls.mjs",
+      "./dirty-tracking": "./dist/dirty-tracking.mjs",
+      "./drag-event-types": "./dist/drag-event-types.mjs",
+      "./epoch": "./dist/epoch.mjs",
+      "./focus-events": "./dist/focus-events.mjs",
+      "./focus-manager": "./dist/focus-manager.mjs",
+      "./focus-queries": "./dist/focus-queries.mjs",
+      "./interactive-signals": "./dist/interactive-signals.mjs",
+      "./island": "./dist/island.mjs",
+      "./island-guests": "./dist/island-guests.mjs",
+      "./island-types": "./dist/island-types.mjs",
+      "./keys": "./dist/keys.mjs",
+      "./layout-signals": "./dist/layout-signals.mjs",
+      "./layout-types": "./dist/layout-types.mjs",
+      "./mouse-event-types": "./dist/mouse-event-types.mjs",
+      "./overlay-layer": "./dist/overlay-layer.mjs",
+      "./place-floating": "./dist/place-floating.mjs",
+      "./text-frame": "./dist/text-frame.mjs",
+      "./tree-utils": "./dist/tree-utils.mjs",
+      "./types": "./dist/types.mjs",
+      "./viewport-buffer": "./dist/viewport-buffer.mjs",
+      "./viewport-types": "./dist/viewport-types.mjs",
+      "./wrap-measurer": "./dist/wrap-measurer.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -125,8 +102,18 @@
       "src/text-frame.ts",
       "src/tree-utils.ts",
       "src/layout-signals.ts",
-      "src/types.ts"
+      "src/types.ts",
+      "src/apportion.ts",
+      "src/cls.ts",
+      "src/overlay-layer.ts",
+      "src/place-floating.ts",
+      "src/viewport-buffer.ts",
+      "src/viewport-types.ts",
+      "src/wrap-measurer.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
   }
 }

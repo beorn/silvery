@@ -24,363 +24,260 @@
     "./dist/wrap-measurer-registration-*.mjs",
     "./dist/renderer.mjs"
   ],
-  "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./adapters/canvas-adapter": "./src/adapters/canvas-adapter.ts",
+    "./adapters/dom-adapter": "./src/adapters/dom-adapter.ts",
+    "./adapters/flexily-zero-adapter": "./src/adapters/flexily-zero-adapter.ts",
+    "./adapters/terminal-adapter": "./src/adapters/terminal-adapter.ts",
+    "./adapters/yoga-adapter": "./src/adapters/yoga-adapter.ts",
+    "./ag": "./src/ag.ts",
     "./ansi": "./src/ansi/index.ts",
+    "./ansi-sanitize": "./src/ansi-sanitize.ts",
+    "./ansi/term": "./src/ansi/term.ts",
+    "./app": "./src/app.ts",
+    "./bound-term": "./src/bound-term.ts",
+    "./bounded-cache": "./src/bounded-cache.ts",
+    "./bracketed-paste": "./src/bracketed-paste.ts",
+    "./buffer": "./src/buffer.ts",
+    "./buffer-capture": "./src/buffer-capture.ts",
+    "./bytes-out-monitor": "./src/bytes-out-monitor.ts",
+    "./clipboard": "./src/clipboard.ts",
+    "./compose": "./src/compose.ts",
+    "./copy-extraction": "./src/copy-extraction.ts",
+    "./cursor-query": "./src/cursor-query.ts",
+    "./device-attrs": "./src/device-attrs.ts",
+    "./devtools": "./src/devtools.ts",
     "./dom": "./src/dom/index.ts",
+    "./drag-events": "./src/drag-events.ts",
+    "./errors": "./src/errors.ts",
+    "./features/copy-mode": "./src/features/copy-mode.ts",
+    "./features/selection": "./src/features/selection.ts",
+    "./flicker-monitor": "./src/flicker-monitor.ts",
+    "./focus-reporting": "./src/focus-reporting.ts",
+    "./history-buffer": "./src/history-buffer.ts",
+    "./hit-registry": "./src/hit-registry.ts",
+    "./inspector": "./src/inspector.ts",
+    "./kitty-detect": "./src/kitty-detect.ts",
+    "./layout-engine": "./src/layout-engine.ts",
+    "./list-document": "./src/list-document.ts",
+    "./measurer": "./src/measurer.ts",
+    "./mem-monitor": "./src/mem-monitor.ts",
+    "./mode-query": "./src/mode-query.ts",
+    "./mouse": "./src/mouse.ts",
+    "./mouse-events": "./src/mouse-events.ts",
+    "./non-tty": "./src/non-tty.ts",
+    "./osc-markers": "./src/osc-markers.ts",
+    "./osc-palette": "./src/osc-palette.ts",
+    "./output": "./src/output.ts",
+    "./pane-manager": "./src/pane-manager.ts",
     "./pipeline": "./src/pipeline/index.ts",
+    "./pipeline/adapter-pipeline": "./src/pipeline/adapter-pipeline.ts",
     "./pipeline/backdrop": "./src/pipeline/backdrop/index.ts",
+    "./pipeline/backdrop/color": "./src/pipeline/backdrop/color.ts",
+    "./pipeline/backdrop/color-shim": "./src/pipeline/backdrop/color-shim.ts",
+    "./pipeline/backdrop/region": "./src/pipeline/backdrop/region.ts",
+    "./pipeline/cascade-predicates": "./src/pipeline/cascade-predicates.ts",
+    "./pipeline/collect-text": "./src/pipeline/collect-text.ts",
+    "./pipeline/decoration-phase": "./src/pipeline/decoration-phase.ts",
+    "./pipeline/diff-buffers": "./src/pipeline/diff-buffers.ts",
+    "./pipeline/layout-phase": "./src/pipeline/layout-phase.ts",
+    "./pipeline/measure-stats": "./src/pipeline/measure-stats.ts",
+    "./pipeline/output-density": "./src/pipeline/output-density.ts",
+    "./pipeline/output-modes": "./src/pipeline/output-modes.ts",
+    "./pipeline/output-phase": "./src/pipeline/output-phase.ts",
+    "./pipeline/output-verify": "./src/pipeline/output-verify.ts",
+    "./pipeline/overflow-indicator": "./src/pipeline/overflow-indicator.ts",
+    "./pipeline/pretext": "./src/pipeline/pretext.ts",
+    "./pipeline/reactive-node": "./src/pipeline/reactive-node.ts",
+    "./pipeline/render-helpers": "./src/pipeline/render-helpers.ts",
+    "./pipeline/render-phase": "./src/pipeline/render-phase.ts",
+    "./pipeline/render-phase-adapter": "./src/pipeline/render-phase-adapter.ts",
+    "./pipeline/render-plan": "./src/pipeline/render-plan.ts",
+    "./pipeline/render-post-state": "./src/pipeline/render-post-state.ts",
+    "./pipeline/render-sink": "./src/pipeline/render-sink.ts",
+    "./pipeline/render-text": "./src/pipeline/render-text.ts",
+    "./pipeline/strict-residue": "./src/pipeline/strict-residue.ts",
+    "./pipeline/types": "./src/pipeline/types.ts",
+    "./pixel-size": "./src/pixel-size.ts",
     "./plugins": "./src/plugins/index.ts",
+    "./plugins/with-diagnostics": "./src/plugins/with-diagnostics.ts",
+    "./plugins/with-dom-events": "./src/plugins/with-dom-events.ts",
+    "./plugins/with-focus": "./src/plugins/with-focus.ts",
+    "./plugins/with-links": "./src/plugins/with-links.ts",
+    "./plugins/with-render": "./src/plugins/with-render.ts",
+    "./plugins/with-terminal": "./src/plugins/with-terminal.ts",
+    "./plugins/with-terminal-links": "./src/plugins/with-terminal-links.ts",
+    "./render-adapter": "./src/render-adapter.ts",
+    "./renderer": "./src/renderer.ts",
     "./runtime": "./src/runtime/index.ts",
+    "./runtime/cls-monitor": "./src/runtime/cls-monitor.ts",
+    "./runtime/create-buffer": "./src/runtime/create-buffer.ts",
+    "./runtime/devices/console": "./src/runtime/devices/console.ts",
+    "./runtime/devices/output": "./src/runtime/devices/output.ts",
+    "./runtime/input-owner": "./src/runtime/input-owner.ts",
+    "./runtime/island-aggregator": "./src/runtime/island-aggregator.ts",
+    "./runtime/pass-cause": "./src/runtime/pass-cause.ts",
+    "./runtime/perf": "./src/runtime/perf.ts",
+    "./runtime/renderer": "./src/runtime/renderer.ts",
+    "./runtime/term-internal": "./src/runtime/term-internal.ts",
+    "./runtime/terminal-lifecycle": "./src/runtime/terminal-lifecycle.ts",
+    "./scheduler": "./src/scheduler.ts",
+    "./screenshot": "./src/screenshot.ts",
+    "./scroll-region": "./src/scroll-region.ts",
+    "./scroll-utils": "./src/scroll-utils.ts",
+    "./search-overlay": "./src/search-overlay.ts",
+    "./selection-renderer": "./src/selection-renderer.ts",
+    "./strict-bordered-rect": "./src/strict-bordered-rect.ts",
+    "./strict-clip-parity": "./src/strict-clip-parity.ts",
+    "./strict-cls": "./src/strict-cls.ts",
+    "./strict-divergence": "./src/strict-divergence.ts",
+    "./strict-island": "./src/strict-island.ts",
+    "./strict-mode": "./src/strict-mode.ts",
+    "./strict-terminal-backends": "./src/strict-terminal-backends.ts",
+    "./term-def": "./src/term-def.ts",
+    "./terminal-caps": "./src/terminal-caps.ts",
+    "./terminal-colors": "./src/terminal-colors.ts",
+    "./terminal-links": "./src/terminal-links.ts",
+    "./termtest": "./src/termtest.ts",
+    "./testing/fake-cascade-outputs": "./src/testing/fake-cascade-outputs.ts",
+    "./text-sizing": "./src/text-sizing.ts",
+    "./text-surface": "./src/text-surface.ts",
     "./toolbelt": "./src/toolbelt/index.ts",
+    "./unicode": "./src/unicode.ts",
+    "./viewport-compositor": "./src/viewport-compositor.ts",
+    "./virtual-scrollback": "./src/virtual-scrollback.ts",
     "./xterm": "./src/xterm/index.ts",
-    "./*": "./src/*.ts"
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./adapters/canvas-adapter": {
-        "types": "./dist/adapters/canvas-adapter.d.mts",
-        "import": "./dist/adapters/canvas-adapter.mjs"
-      },
-      "./adapters/dom-adapter": {
-        "types": "./dist/adapters/dom-adapter.d.mts",
-        "import": "./dist/adapters/dom-adapter.mjs"
-      },
-      "./adapters/flexily-zero-adapter": {
-        "types": "./dist/adapters/flexily-zero-adapter.d.mts",
-        "import": "./dist/adapters/flexily-zero-adapter.mjs"
-      },
-      "./adapters/terminal-adapter": {
-        "types": "./dist/adapters/terminal-adapter.d.mts",
-        "import": "./dist/adapters/terminal-adapter.mjs"
-      },
-      "./adapters/yoga-adapter": {
-        "types": "./dist/adapters/yoga-adapter.d.mts",
-        "import": "./dist/adapters/yoga-adapter.mjs"
-      },
-      "./ag": {
-        "types": "./dist/ag.d.mts",
-        "import": "./dist/ag.mjs"
-      },
-      "./ansi": {
-        "types": "./dist/ansi/index.d.mts",
-        "import": "./dist/ansi/index.mjs"
-      },
-      "./ansi-sanitize": {
-        "types": "./dist/ansi-sanitize.d.mts",
-        "import": "./dist/ansi-sanitize.mjs"
-      },
-      "./app": {
-        "types": "./dist/app.d.mts",
-        "import": "./dist/app.mjs"
-      },
-      "./bound-term": {
-        "types": "./dist/bound-term.d.mts",
-        "import": "./dist/bound-term.mjs"
-      },
-      "./bracketed-paste": {
-        "types": "./dist/bracketed-paste.d.mts",
-        "import": "./dist/bracketed-paste.mjs"
-      },
-      "./buffer": {
-        "types": "./dist/buffer.d.mts",
-        "import": "./dist/buffer.mjs"
-      },
-      "./buffer-capture": {
-        "types": "./dist/buffer-capture.d.mts",
-        "import": "./dist/buffer-capture.mjs"
-      },
-      "./clipboard": {
-        "types": "./dist/clipboard.d.mts",
-        "import": "./dist/clipboard.mjs"
-      },
-      "./compose": {
-        "types": "./dist/compose.d.mts",
-        "import": "./dist/compose.mjs"
-      },
-      "./copy-extraction": {
-        "types": "./dist/copy-extraction.d.mts",
-        "import": "./dist/copy-extraction.mjs"
-      },
-      "./cursor-query": {
-        "types": "./dist/cursor-query.d.mts",
-        "import": "./dist/cursor-query.mjs"
-      },
-      "./device-attrs": {
-        "types": "./dist/device-attrs.d.mts",
-        "import": "./dist/device-attrs.mjs"
-      },
-      "./devtools": {
-        "types": "./dist/devtools.d.mts",
-        "import": "./dist/devtools.mjs"
-      },
-      "./drag-events": {
-        "types": "./dist/drag-events.d.mts",
-        "import": "./dist/drag-events.mjs"
-      },
-      "./features/copy-mode": {
-        "types": "./dist/features/copy-mode.d.mts",
-        "import": "./dist/features/copy-mode.mjs"
-      },
-      "./features/selection": {
-        "types": "./dist/features/selection.d.mts",
-        "import": "./dist/features/selection.mjs"
-      },
-      "./focus-reporting": {
-        "types": "./dist/focus-reporting.d.mts",
-        "import": "./dist/focus-reporting.mjs"
-      },
-      "./history-buffer": {
-        "types": "./dist/history-buffer.d.mts",
-        "import": "./dist/history-buffer.mjs"
-      },
-      "./hit-registry": {
-        "types": "./dist/hit-registry.d.mts",
-        "import": "./dist/hit-registry.mjs"
-      },
-      "./inspector": {
-        "types": "./dist/inspector.d.mts",
-        "import": "./dist/inspector.mjs"
-      },
-      "./kitty-detect": {
-        "types": "./dist/kitty-detect.d.mts",
-        "import": "./dist/kitty-detect.mjs"
-      },
-      "./layout-engine": {
-        "types": "./dist/layout-engine.d.mts",
-        "import": "./dist/layout-engine.mjs"
-      },
-      "./list-document": {
-        "types": "./dist/list-document.d.mts",
-        "import": "./dist/list-document.mjs"
-      },
-      "./measurer": {
-        "types": "./dist/measurer.d.mts",
-        "import": "./dist/measurer.mjs"
-      },
-      "./mode-query": {
-        "types": "./dist/mode-query.d.mts",
-        "import": "./dist/mode-query.mjs"
-      },
-      "./mouse": {
-        "types": "./dist/mouse.d.mts",
-        "import": "./dist/mouse.mjs"
-      },
-      "./mouse-events": {
-        "types": "./dist/mouse-events.d.mts",
-        "import": "./dist/mouse-events.mjs"
-      },
-      "./non-tty": {
-        "types": "./dist/non-tty.d.mts",
-        "import": "./dist/non-tty.mjs"
-      },
-      "./osc-markers": {
-        "types": "./dist/osc-markers.d.mts",
-        "import": "./dist/osc-markers.mjs"
-      },
-      "./osc-palette": {
-        "types": "./dist/osc-palette.d.mts",
-        "import": "./dist/osc-palette.mjs"
-      },
-      "./output": {
-        "types": "./dist/output.d.mts",
-        "import": "./dist/output.mjs"
-      },
-      "./pane-manager": {
-        "types": "./dist/pane-manager.d.mts",
-        "import": "./dist/pane-manager.mjs"
-      },
-      "./pipeline": {
-        "types": "./dist/pipeline/index.d.mts",
-        "import": "./dist/pipeline/index.mjs"
-      },
-      "./pipeline/adapter-pipeline": {
-        "types": "./dist/pipeline/adapter-pipeline.d.mts",
-        "import": "./dist/pipeline/adapter-pipeline.mjs"
-      },
-      "./pipeline/backdrop": {
-        "types": "./dist/pipeline/backdrop/index.d.mts",
-        "import": "./dist/pipeline/backdrop/index.mjs"
-      },
-      "./pipeline/cascade-predicates": {
-        "types": "./dist/pipeline/cascade-predicates.d.mts",
-        "import": "./dist/pipeline/cascade-predicates.mjs"
-      },
-      "./pipeline/collect-text": {
-        "types": "./dist/pipeline/collect-text.d.mts",
-        "import": "./dist/pipeline/collect-text.mjs"
-      },
-      "./pipeline/diff-buffers": {
-        "types": "./dist/pipeline/diff-buffers.d.mts",
-        "import": "./dist/pipeline/diff-buffers.mjs"
-      },
-      "./pipeline/layout-phase": {
-        "types": "./dist/pipeline/layout-phase.d.mts",
-        "import": "./dist/pipeline/layout-phase.mjs"
-      },
-      "./pipeline/measure-stats": {
-        "types": "./dist/pipeline/measure-stats.d.mts",
-        "import": "./dist/pipeline/measure-stats.mjs"
-      },
-      "./pipeline/output-phase": {
-        "types": "./dist/pipeline/output-phase.d.mts",
-        "import": "./dist/pipeline/output-phase.mjs"
-      },
-      "./pipeline/overflow-indicator": {
-        "types": "./dist/pipeline/overflow-indicator.d.mts",
-        "import": "./dist/pipeline/overflow-indicator.mjs"
-      },
-      "./pipeline/pretext": {
-        "types": "./dist/pipeline/pretext.d.mts",
-        "import": "./dist/pipeline/pretext.mjs"
-      },
-      "./pipeline/reactive-node": {
-        "types": "./dist/pipeline/reactive-node.d.mts",
-        "import": "./dist/pipeline/reactive-node.mjs"
-      },
-      "./pipeline/render-helpers": {
-        "types": "./dist/pipeline/render-helpers.d.mts",
-        "import": "./dist/pipeline/render-helpers.mjs"
-      },
-      "./pipeline/render-phase": {
-        "types": "./dist/pipeline/render-phase.d.mts",
-        "import": "./dist/pipeline/render-phase.mjs"
-      },
-      "./pipeline/render-phase-adapter": {
-        "types": "./dist/pipeline/render-phase-adapter.d.mts",
-        "import": "./dist/pipeline/render-phase-adapter.mjs"
-      },
-      "./pipeline/render-text": {
-        "types": "./dist/pipeline/render-text.d.mts",
-        "import": "./dist/pipeline/render-text.mjs"
-      },
-      "./pipeline/types": {
-        "types": "./dist/pipeline/types.d.mts",
-        "import": "./dist/pipeline/types.mjs"
-      },
-      "./pixel-size": {
-        "types": "./dist/pixel-size.d.mts",
-        "import": "./dist/pixel-size.mjs"
-      },
-      "./plugins": {
-        "types": "./dist/plugins/index.d.mts",
-        "import": "./dist/plugins/index.mjs"
-      },
-      "./plugins/with-diagnostics": {
-        "types": "./dist/plugins/with-diagnostics.d.mts",
-        "import": "./dist/plugins/with-diagnostics.mjs"
-      },
-      "./plugins/with-dom-events": {
-        "types": "./dist/plugins/with-dom-events.d.mts",
-        "import": "./dist/plugins/with-dom-events.mjs"
-      },
-      "./plugins/with-focus": {
-        "types": "./dist/plugins/with-focus.d.mts",
-        "import": "./dist/plugins/with-focus.mjs"
-      },
-      "./plugins/with-links": {
-        "types": "./dist/plugins/with-links.d.mts",
-        "import": "./dist/plugins/with-links.mjs"
-      },
-      "./plugins/with-render": {
-        "types": "./dist/plugins/with-render.d.mts",
-        "import": "./dist/plugins/with-render.mjs"
-      },
-      "./plugins/with-terminal": {
-        "types": "./dist/plugins/with-terminal.d.mts",
-        "import": "./dist/plugins/with-terminal.mjs"
-      },
-      "./render-adapter": {
-        "types": "./dist/render-adapter.d.mts",
-        "import": "./dist/render-adapter.mjs"
-      },
-      "./renderer": {
-        "types": "./dist/renderer.d.mts",
-        "import": "./dist/renderer.mjs"
-      },
-      "./runtime": {
-        "types": "./dist/runtime/index.d.mts",
-        "import": "./dist/runtime/index.mjs"
-      },
-      "./runtime/perf": {
-        "types": "./dist/runtime/perf.d.mts",
-        "import": "./dist/runtime/perf.mjs"
-      },
-      "./scheduler": {
-        "types": "./dist/scheduler.d.mts",
-        "import": "./dist/scheduler.mjs"
-      },
-      "./screenshot": {
-        "types": "./dist/screenshot.d.mts",
-        "import": "./dist/screenshot.mjs"
-      },
-      "./scroll-region": {
-        "types": "./dist/scroll-region.d.mts",
-        "import": "./dist/scroll-region.mjs"
-      },
-      "./scroll-utils": {
-        "types": "./dist/scroll-utils.d.mts",
-        "import": "./dist/scroll-utils.mjs"
-      },
-      "./search-overlay": {
-        "types": "./dist/search-overlay.d.mts",
-        "import": "./dist/search-overlay.mjs"
-      },
-      "./selection-renderer": {
-        "types": "./dist/selection-renderer.d.mts",
-        "import": "./dist/selection-renderer.mjs"
-      },
-      "./term-def": {
-        "types": "./dist/term-def.d.mts",
-        "import": "./dist/term-def.mjs"
-      },
-      "./terminal-caps": {
-        "types": "./dist/terminal-caps.d.mts",
-        "import": "./dist/terminal-caps.mjs"
-      },
-      "./terminal-colors": {
-        "types": "./dist/terminal-colors.d.mts",
-        "import": "./dist/terminal-colors.mjs"
-      },
-      "./termtest": {
-        "types": "./dist/termtest.d.mts",
-        "import": "./dist/termtest.mjs"
-      },
-      "./text-sizing": {
-        "types": "./dist/text-sizing.d.mts",
-        "import": "./dist/text-sizing.mjs"
-      },
-      "./text-surface": {
-        "types": "./dist/text-surface.d.mts",
-        "import": "./dist/text-surface.mjs"
-      },
-      "./toolbelt": {
-        "types": "./dist/toolbelt/index.d.mts",
-        "import": "./dist/toolbelt/index.mjs"
-      },
-      "./unicode": {
-        "types": "./dist/unicode.d.mts",
-        "import": "./dist/unicode.mjs"
-      },
-      "./viewport-compositor": {
-        "types": "./dist/viewport-compositor.d.mts",
-        "import": "./dist/viewport-compositor.mjs"
-      },
-      "./virtual-scrollback": {
-        "types": "./dist/virtual-scrollback.d.mts",
-        "import": "./dist/virtual-scrollback.mjs"
-      },
-      "./xterm/index": {
-        "types": "./dist/xterm/index.d.mts",
-        "import": "./dist/xterm/index.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./adapters/canvas-adapter": "./dist/adapters/canvas-adapter.mjs",
+      "./adapters/dom-adapter": "./dist/adapters/dom-adapter.mjs",
+      "./adapters/flexily-zero-adapter": "./dist/adapters/flexily-zero-adapter.mjs",
+      "./adapters/terminal-adapter": "./dist/adapters/terminal-adapter.mjs",
+      "./adapters/yoga-adapter": "./dist/adapters/yoga-adapter.mjs",
+      "./ag": "./dist/ag.mjs",
+      "./ansi": "./dist/ansi/index.mjs",
+      "./ansi-sanitize": "./dist/ansi-sanitize.mjs",
+      "./ansi/term": "./dist/ansi/term.mjs",
+      "./app": "./dist/app.mjs",
+      "./bound-term": "./dist/bound-term.mjs",
+      "./bounded-cache": "./dist/bounded-cache.mjs",
+      "./bracketed-paste": "./dist/bracketed-paste.mjs",
+      "./buffer": "./dist/buffer.mjs",
+      "./buffer-capture": "./dist/buffer-capture.mjs",
+      "./bytes-out-monitor": "./dist/bytes-out-monitor.mjs",
+      "./clipboard": "./dist/clipboard.mjs",
+      "./compose": "./dist/compose.mjs",
+      "./copy-extraction": "./dist/copy-extraction.mjs",
+      "./cursor-query": "./dist/cursor-query.mjs",
+      "./device-attrs": "./dist/device-attrs.mjs",
+      "./devtools": "./dist/devtools.mjs",
+      "./dom": "./dist/dom/index.mjs",
+      "./drag-events": "./dist/drag-events.mjs",
+      "./errors": "./dist/errors.mjs",
+      "./features/copy-mode": "./dist/features/copy-mode.mjs",
+      "./features/selection": "./dist/features/selection.mjs",
+      "./flicker-monitor": "./dist/flicker-monitor.mjs",
+      "./focus-reporting": "./dist/focus-reporting.mjs",
+      "./history-buffer": "./dist/history-buffer.mjs",
+      "./hit-registry": "./dist/hit-registry.mjs",
+      "./inspector": "./dist/inspector.mjs",
+      "./kitty-detect": "./dist/kitty-detect.mjs",
+      "./layout-engine": "./dist/layout-engine.mjs",
+      "./list-document": "./dist/list-document.mjs",
+      "./measurer": "./dist/measurer.mjs",
+      "./mem-monitor": "./dist/mem-monitor.mjs",
+      "./mode-query": "./dist/mode-query.mjs",
+      "./mouse": "./dist/mouse.mjs",
+      "./mouse-events": "./dist/mouse-events.mjs",
+      "./non-tty": "./dist/non-tty.mjs",
+      "./osc-markers": "./dist/osc-markers.mjs",
+      "./osc-palette": "./dist/osc-palette.mjs",
+      "./output": "./dist/output.mjs",
+      "./pane-manager": "./dist/pane-manager.mjs",
+      "./pipeline": "./dist/pipeline/index.mjs",
+      "./pipeline/adapter-pipeline": "./dist/pipeline/adapter-pipeline.mjs",
+      "./pipeline/backdrop": "./dist/pipeline/backdrop/index.mjs",
+      "./pipeline/backdrop/color": "./dist/pipeline/backdrop/color.mjs",
+      "./pipeline/backdrop/color-shim": "./dist/pipeline/backdrop/color-shim.mjs",
+      "./pipeline/backdrop/region": "./dist/pipeline/backdrop/region.mjs",
+      "./pipeline/cascade-predicates": "./dist/pipeline/cascade-predicates.mjs",
+      "./pipeline/collect-text": "./dist/pipeline/collect-text.mjs",
+      "./pipeline/decoration-phase": "./dist/pipeline/decoration-phase.mjs",
+      "./pipeline/diff-buffers": "./dist/pipeline/diff-buffers.mjs",
+      "./pipeline/layout-phase": "./dist/pipeline/layout-phase.mjs",
+      "./pipeline/measure-stats": "./dist/pipeline/measure-stats.mjs",
+      "./pipeline/output-density": "./dist/pipeline/output-density.mjs",
+      "./pipeline/output-modes": "./dist/pipeline/output-modes.mjs",
+      "./pipeline/output-phase": "./dist/pipeline/output-phase.mjs",
+      "./pipeline/output-verify": "./dist/pipeline/output-verify.mjs",
+      "./pipeline/overflow-indicator": "./dist/pipeline/overflow-indicator.mjs",
+      "./pipeline/pretext": "./dist/pipeline/pretext.mjs",
+      "./pipeline/reactive-node": "./dist/pipeline/reactive-node.mjs",
+      "./pipeline/render-helpers": "./dist/pipeline/render-helpers.mjs",
+      "./pipeline/render-phase": "./dist/pipeline/render-phase.mjs",
+      "./pipeline/render-phase-adapter": "./dist/pipeline/render-phase-adapter.mjs",
+      "./pipeline/render-plan": "./dist/pipeline/render-plan.mjs",
+      "./pipeline/render-post-state": "./dist/pipeline/render-post-state.mjs",
+      "./pipeline/render-sink": "./dist/pipeline/render-sink.mjs",
+      "./pipeline/render-text": "./dist/pipeline/render-text.mjs",
+      "./pipeline/strict-residue": "./dist/pipeline/strict-residue.mjs",
+      "./pipeline/types": "./dist/pipeline/types.mjs",
+      "./pixel-size": "./dist/pixel-size.mjs",
+      "./plugins": "./dist/plugins/index.mjs",
+      "./plugins/with-diagnostics": "./dist/plugins/with-diagnostics.mjs",
+      "./plugins/with-dom-events": "./dist/plugins/with-dom-events.mjs",
+      "./plugins/with-focus": "./dist/plugins/with-focus.mjs",
+      "./plugins/with-links": "./dist/plugins/with-links.mjs",
+      "./plugins/with-render": "./dist/plugins/with-render.mjs",
+      "./plugins/with-terminal": "./dist/plugins/with-terminal.mjs",
+      "./plugins/with-terminal-links": "./dist/plugins/with-terminal-links.mjs",
+      "./render-adapter": "./dist/render-adapter.mjs",
+      "./renderer": "./dist/renderer.mjs",
+      "./runtime": "./dist/runtime/index.mjs",
+      "./runtime/cls-monitor": "./dist/runtime/cls-monitor.mjs",
+      "./runtime/create-buffer": "./dist/runtime/create-buffer.mjs",
+      "./runtime/devices/console": "./dist/runtime/devices/console.mjs",
+      "./runtime/devices/output": "./dist/runtime/devices/output.mjs",
+      "./runtime/input-owner": "./dist/runtime/input-owner.mjs",
+      "./runtime/island-aggregator": "./dist/runtime/island-aggregator.mjs",
+      "./runtime/pass-cause": "./dist/runtime/pass-cause.mjs",
+      "./runtime/perf": "./dist/runtime/perf.mjs",
+      "./runtime/renderer": "./dist/runtime/renderer.mjs",
+      "./runtime/term-internal": "./dist/runtime/term-internal.mjs",
+      "./runtime/terminal-lifecycle": "./dist/runtime/terminal-lifecycle.mjs",
+      "./scheduler": "./dist/scheduler.mjs",
+      "./screenshot": "./dist/screenshot.mjs",
+      "./scroll-region": "./dist/scroll-region.mjs",
+      "./scroll-utils": "./dist/scroll-utils.mjs",
+      "./search-overlay": "./dist/search-overlay.mjs",
+      "./selection-renderer": "./dist/selection-renderer.mjs",
+      "./strict-bordered-rect": "./dist/strict-bordered-rect.mjs",
+      "./strict-clip-parity": "./dist/strict-clip-parity.mjs",
+      "./strict-cls": "./dist/strict-cls.mjs",
+      "./strict-divergence": "./dist/strict-divergence.mjs",
+      "./strict-island": "./dist/strict-island.mjs",
+      "./strict-mode": "./dist/strict-mode.mjs",
+      "./strict-terminal-backends": "./dist/strict-terminal-backends.mjs",
+      "./term-def": "./dist/term-def.mjs",
+      "./terminal-caps": "./dist/terminal-caps.mjs",
+      "./terminal-colors": "./dist/terminal-colors.mjs",
+      "./terminal-links": "./dist/terminal-links.mjs",
+      "./termtest": "./dist/termtest.mjs",
+      "./testing/fake-cascade-outputs": "./dist/testing/fake-cascade-outputs.mjs",
+      "./text-sizing": "./dist/text-sizing.mjs",
+      "./text-surface": "./dist/text-surface.mjs",
+      "./toolbelt": "./dist/toolbelt/index.mjs",
+      "./unicode": "./dist/unicode.mjs",
+      "./viewport-compositor": "./dist/viewport-compositor.mjs",
+      "./virtual-scrollback": "./dist/virtual-scrollback.mjs",
+      "./xterm": "./dist/xterm/index.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -507,8 +404,62 @@
       "src/unicode.ts",
       "src/viewport-compositor.ts",
       "src/virtual-scrollback.ts",
-      "src/xterm/index.ts"
+      "src/xterm/index.ts",
+      "src/dom/index.ts",
+      "src/ansi/term.ts",
+      "src/bounded-cache.ts",
+      "src/bytes-out-monitor.ts",
+      "src/errors.ts",
+      "src/flicker-monitor.ts",
+      "src/mem-monitor.ts",
+      "src/pipeline/backdrop/color.ts",
+      "src/pipeline/backdrop/color-shim.ts",
+      "src/pipeline/backdrop/region.ts",
+      "src/pipeline/decoration-phase.ts",
+      "src/pipeline/output-density.ts",
+      "src/pipeline/output-modes.ts",
+      "src/pipeline/output-verify.ts",
+      "src/pipeline/render-plan.ts",
+      "src/pipeline/render-post-state.ts",
+      "src/pipeline/render-sink.ts",
+      "src/pipeline/strict-residue.ts",
+      "src/plugins/with-terminal-links.ts",
+      "src/runtime/cls-monitor.ts",
+      "src/runtime/create-buffer.ts",
+      "src/runtime/devices/console.ts",
+      "src/runtime/devices/output.ts",
+      "src/runtime/input-owner.ts",
+      "src/runtime/island-aggregator.ts",
+      "src/runtime/pass-cause.ts",
+      "src/runtime/renderer.ts",
+      "src/runtime/term-internal.ts",
+      "src/runtime/terminal-lifecycle.ts",
+      "src/strict-bordered-rect.ts",
+      "src/strict-clip-parity.ts",
+      "src/strict-cls.ts",
+      "src/strict-divergence.ts",
+      "src/strict-island.ts",
+      "src/strict-mode.ts",
+      "src/strict-terminal-backends.ts",
+      "src/terminal-links.ts",
+      "src/testing/fake-cascade-outputs.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
+  },
+  "inlinedDependencies": {
+    "ansi-regex": "6.2.2",
+    "ansi-styles": "6.2.3",
+    "get-east-asian-width": "1.6.0",
+    "is-fullwidth-code-point": "5.1.0",
+    "react": "19.3.1",
+    "react-devtools-core": "7.0.1",
+    "slice-ansi": "9.0.1",
+    "string-width": "8.3.0",
+    "strip-ansi": "7.2.0",
+    "ws": "8.22.0",
+    "yoga-wasm-web": "0.3.3"
   }
 }

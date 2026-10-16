@@ -14,27 +14,47 @@
     "dist"
   ],
   "type": "module",
-  "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./reconciler": "./src/reconciler/index.ts",
-    "./ui": "./src/ui/index.ts",
-    "./ui/animation": "./src/ui/animation.ts",
-    "./ui/recording-chrome": "./src/ui/recording-chrome/index.ts",
-    "./ui/recording-chrome/spec": "./src/ui/recording-chrome/spec.ts",
-    "./ui/recording-chrome/svg": "./src/ui/recording-chrome/svg.ts",
-    "./ui/image/*": "./src/ui/image/*.ts",
-    "./ui/*": "./src/ui/*/index.ts",
+    "./accessibility": "./src/accessibility.ts",
+    "./chain-bridge": "./src/chain-bridge.ts",
     "./components/Box": "./src/components/Box.tsx",
     "./components/Newline": "./src/components/Newline.tsx",
     "./components/Spacer": "./src/components/Spacer.tsx",
     "./components/Static": "./src/components/Static.tsx",
     "./components/Text": "./src/components/Text.tsx",
     "./components/Transform": "./src/components/Transform.tsx",
+    "./context": "./src/context.ts",
+    "./debug/render-path": "./src/debug/render-path.ts",
     "./error-boundary": "./src/error-boundary.tsx",
+    "./hooks": "./src/hooks/index.ts",
+    "./hooks/scroll-accel": "./src/hooks/scroll-accel.ts",
+    "./hooks/use-edit-context": "./src/hooks/use-edit-context.ts",
+    "./hooks/useApp": "./src/hooks/useApp.ts",
+    "./hooks/useCursor": "./src/hooks/useCursor.ts",
+    "./hooks/useExit": "./src/hooks/useExit.ts",
+    "./hooks/useInput": "./src/hooks/useInput.ts",
+    "./hooks/useLayout": "./src/hooks/useLayout.ts",
+    "./hooks/usePanic": "./src/hooks/usePanic.ts",
+    "./hooks/usePasteCallback": "./src/hooks/usePasteCallback.ts",
+    "./hooks/useStderr": "./src/hooks/useStderr.ts",
+    "./hooks/useStdout": "./src/hooks/useStdout.ts",
+    "./hooks/useWindowSize": "./src/hooks/useWindowSize.ts",
+    "./measureElement": "./src/measureElement.ts",
+    "./reconciler": "./src/reconciler/index.ts",
+    "./reconciler/host-config": "./src/reconciler/host-config.ts",
+    "./reconciler/nodes": "./src/reconciler/nodes.ts",
     "./render": "./src/render.tsx",
     "./render-string": "./src/render-string.tsx",
+    "./ScopeProvider": "./src/ScopeProvider.tsx",
+    "./testing/fake-capability-lookup": "./src/testing/fake-capability-lookup.ts",
+    "./ThemeContext": "./src/ThemeContext.tsx",
+    "./ThemeProvider": "./src/ThemeProvider.tsx",
+    "./ui": "./src/ui/index.ts",
+    "./ui/animation": "./src/ui/animation.ts",
+    "./ui/ansi": "./src/ui/ansi/index.ts",
+    "./ui/cli": "./src/ui/cli/index.ts",
     "./ui/components/CursorLine": "./src/ui/components/CursorLine.tsx",
     "./ui/components/Divider": "./src/ui/components/Divider.tsx",
     "./ui/components/EditContextDisplay": "./src/ui/components/EditContextDisplay.tsx",
@@ -43,210 +63,81 @@
     "./ui/components/TextArea": "./src/ui/components/TextArea.tsx",
     "./ui/components/TextInput": "./src/ui/components/TextInput.tsx",
     "./ui/components/useTextArea": "./src/ui/components/useTextArea.ts",
+    "./ui/image": "./src/ui/image/index.ts",
+    "./ui/image/sixel-encoder": "./src/ui/image/sixel-encoder.ts",
+    "./ui/progress": "./src/ui/progress/index.ts",
+    "./ui/react": "./src/ui/react/index.ts",
+    "./ui/recording-chrome": "./src/ui/recording-chrome/index.ts",
+    "./ui/recording-chrome/RecordingChrome": "./src/ui/recording-chrome/RecordingChrome.tsx",
+    "./ui/recording-chrome/spec": "./src/ui/recording-chrome/spec.ts",
+    "./ui/recording-chrome/svg": "./src/ui/recording-chrome/svg.ts",
+    "./ui/utils": "./src/ui/utils/index.ts",
     "./ui/wrappers": "./src/ui/wrappers/index.ts",
-    "./ThemeProvider": "./src/ThemeProvider.tsx",
-    "./ThemeContext": "./src/ThemeContext.tsx",
-    "./ScopeProvider": "./src/ScopeProvider.tsx",
-    "./scope-context": "./src/scope-context.ts",
-    "./hooks": "./src/hooks/index.ts",
-    "./debug/render-path": "./src/debug/render-path.ts",
-    "./*": "./src/*.ts"
+    "./with-react": "./src/with-react.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./accessibility": {
-        "types": "./dist/accessibility.d.mts",
-        "import": "./dist/accessibility.mjs"
-      },
-      "./components/Box": {
-        "types": "./dist/components/Box.d.mts",
-        "import": "./dist/components/Box.mjs"
-      },
-      "./components/Newline": {
-        "types": "./dist/components/Newline.d.mts",
-        "import": "./dist/components/Newline.mjs"
-      },
-      "./components/Spacer": {
-        "types": "./dist/components/Spacer.d.mts",
-        "import": "./dist/components/Spacer.mjs"
-      },
-      "./components/Static": {
-        "types": "./dist/components/Static.d.mts",
-        "import": "./dist/components/Static.mjs"
-      },
-      "./components/Text": {
-        "types": "./dist/components/Text.d.mts",
-        "import": "./dist/components/Text.mjs"
-      },
-      "./components/Transform": {
-        "types": "./dist/components/Transform.d.mts",
-        "import": "./dist/components/Transform.mjs"
-      },
-      "./context": {
-        "types": "./dist/context.d.mts",
-        "import": "./dist/context.mjs"
-      },
-      "./error-boundary": {
-        "types": "./dist/error-boundary.d.mts",
-        "import": "./dist/error-boundary.mjs"
-      },
-      "./hooks": {
-        "types": "./dist/hooks/index.d.mts",
-        "import": "./dist/hooks/index.mjs"
-      },
-      "./hooks/use-edit-context": {
-        "types": "./dist/hooks/use-edit-context.d.mts",
-        "import": "./dist/hooks/use-edit-context.mjs"
-      },
-      "./hooks/useApp": {
-        "types": "./dist/hooks/useApp.d.mts",
-        "import": "./dist/hooks/useApp.mjs"
-      },
-      "./hooks/useCursor": {
-        "types": "./dist/hooks/useCursor.d.mts",
-        "import": "./dist/hooks/useCursor.mjs"
-      },
-      "./hooks/useExit": {
-        "types": "./dist/hooks/useExit.d.mts",
-        "import": "./dist/hooks/useExit.mjs"
-      },
-      "./hooks/useInput": {
-        "types": "./dist/hooks/useInput.d.mts",
-        "import": "./dist/hooks/useInput.mjs"
-      },
-      "./hooks/useLayout": {
-        "types": "./dist/hooks/useLayout.d.mts",
-        "import": "./dist/hooks/useLayout.mjs"
-      },
-      "./hooks/usePasteCallback": {
-        "types": "./dist/hooks/usePasteCallback.d.mts",
-        "import": "./dist/hooks/usePasteCallback.mjs"
-      },
-      "./hooks/useStderr": {
-        "types": "./dist/hooks/useStderr.d.mts",
-        "import": "./dist/hooks/useStderr.mjs"
-      },
-      "./hooks/useStdout": {
-        "types": "./dist/hooks/useStdout.d.mts",
-        "import": "./dist/hooks/useStdout.mjs"
-      },
-      "./hooks/useWindowSize": {
-        "types": "./dist/hooks/useWindowSize.d.mts",
-        "import": "./dist/hooks/useWindowSize.mjs"
-      },
-      "./measureElement": {
-        "types": "./dist/measureElement.d.mts",
-        "import": "./dist/measureElement.mjs"
-      },
-      "./reconciler": {
-        "types": "./dist/reconciler/index.d.mts",
-        "import": "./dist/reconciler/index.mjs"
-      },
-      "./reconciler/host-config": {
-        "types": "./dist/reconciler/host-config.d.mts",
-        "import": "./dist/reconciler/host-config.mjs"
-      },
-      "./reconciler/nodes": {
-        "types": "./dist/reconciler/nodes.d.mts",
-        "import": "./dist/reconciler/nodes.mjs"
-      },
-      "./render": {
-        "types": "./dist/render.d.mts",
-        "import": "./dist/render.mjs"
-      },
-      "./render-string": {
-        "types": "./dist/render-string.d.mts",
-        "import": "./dist/render-string.mjs"
-      },
-      "./ui": {
-        "types": "./dist/ui/index.d.mts",
-        "import": "./dist/ui/index.mjs"
-      },
-      "./ui/animation": {
-        "types": "./dist/ui/animation.d.mts",
-        "import": "./dist/ui/animation.mjs"
-      },
-      "./ui/ansi": {
-        "types": "./dist/ui/ansi/index.d.mts",
-        "import": "./dist/ui/ansi/index.mjs"
-      },
-      "./ui/cli": {
-        "types": "./dist/ui/cli/index.d.mts",
-        "import": "./dist/ui/cli/index.mjs"
-      },
-      "./ui/components/CursorLine": {
-        "types": "./dist/ui/components/CursorLine.d.mts",
-        "import": "./dist/ui/components/CursorLine.mjs"
-      },
-      "./ui/components/Divider": {
-        "types": "./dist/ui/components/Divider.d.mts",
-        "import": "./dist/ui/components/Divider.mjs"
-      },
-      "./ui/components/EditContextDisplay": {
-        "types": "./dist/ui/components/EditContextDisplay.d.mts",
-        "import": "./dist/ui/components/EditContextDisplay.mjs"
-      },
-      "./ui/components/Pulse": {
-        "types": "./dist/ui/components/Pulse.d.mts",
-        "import": "./dist/ui/components/Pulse.mjs"
-      },
-      "./ui/components/Spinner": {
-        "types": "./dist/ui/components/Spinner.d.mts",
-        "import": "./dist/ui/components/Spinner.mjs"
-      },
-      "./ui/components/TextArea": {
-        "types": "./dist/ui/components/TextArea.d.mts",
-        "import": "./dist/ui/components/TextArea.mjs"
-      },
-      "./ui/components/TextInput": {
-        "types": "./dist/ui/components/TextInput.d.mts",
-        "import": "./dist/ui/components/TextInput.mjs"
-      },
-      "./ui/components/useTextArea": {
-        "types": "./dist/ui/components/useTextArea.d.mts",
-        "import": "./dist/ui/components/useTextArea.mjs"
-      },
-      "./ui/image": {
-        "types": "./dist/ui/image/index.d.mts",
-        "import": "./dist/ui/image/index.mjs"
-      },
-      "./ui/progress": {
-        "types": "./dist/ui/progress/index.d.mts",
-        "import": "./dist/ui/progress/index.mjs"
-      },
-      "./ui/recording-chrome": {
-        "types": "./dist/ui/recording-chrome/index.d.mts",
-        "import": "./dist/ui/recording-chrome/index.mjs"
-      },
-      "./ui/recording-chrome/spec": {
-        "types": "./dist/ui/recording-chrome/spec.d.mts",
-        "import": "./dist/ui/recording-chrome/spec.mjs"
-      },
-      "./ui/recording-chrome/svg": {
-        "types": "./dist/ui/recording-chrome/svg.d.mts",
-        "import": "./dist/ui/recording-chrome/svg.mjs"
-      },
-      "./ui/react": {
-        "types": "./dist/ui/react/index.d.mts",
-        "import": "./dist/ui/react/index.mjs"
-      },
-      "./ui/utils": {
-        "types": "./dist/ui/utils/index.d.mts",
-        "import": "./dist/ui/utils/index.mjs"
-      },
-      "./ui/wrappers": {
-        "types": "./dist/ui/wrappers/index.d.mts",
-        "import": "./dist/ui/wrappers/index.mjs"
-      },
-      "./with-react": {
-        "types": "./dist/with-react.d.mts",
-        "import": "./dist/with-react.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./accessibility": "./dist/accessibility.mjs",
+      "./chain-bridge": "./dist/chain-bridge.mjs",
+      "./components/Box": "./dist/components/Box.mjs",
+      "./components/Newline": "./dist/components/Newline.mjs",
+      "./components/Spacer": "./dist/components/Spacer.mjs",
+      "./components/Static": "./dist/components/Static.mjs",
+      "./components/Text": "./dist/components/Text.mjs",
+      "./components/Transform": "./dist/components/Transform.mjs",
+      "./context": "./dist/context.mjs",
+      "./debug/render-path": "./dist/debug/render-path.mjs",
+      "./error-boundary": "./dist/error-boundary.mjs",
+      "./hooks": "./dist/hooks/index.mjs",
+      "./hooks/scroll-accel": "./dist/hooks/scroll-accel.mjs",
+      "./hooks/use-edit-context": "./dist/hooks/use-edit-context.mjs",
+      "./hooks/useApp": "./dist/hooks/useApp.mjs",
+      "./hooks/useCursor": "./dist/hooks/useCursor.mjs",
+      "./hooks/useExit": "./dist/hooks/useExit.mjs",
+      "./hooks/useInput": "./dist/hooks/useInput.mjs",
+      "./hooks/useLayout": "./dist/hooks/useLayout.mjs",
+      "./hooks/usePanic": "./dist/hooks/usePanic.mjs",
+      "./hooks/usePasteCallback": "./dist/hooks/usePasteCallback.mjs",
+      "./hooks/useStderr": "./dist/hooks/useStderr.mjs",
+      "./hooks/useStdout": "./dist/hooks/useStdout.mjs",
+      "./hooks/useWindowSize": "./dist/hooks/useWindowSize.mjs",
+      "./measureElement": "./dist/measureElement.mjs",
+      "./reconciler": "./dist/reconciler/index.mjs",
+      "./reconciler/host-config": "./dist/reconciler/host-config.mjs",
+      "./reconciler/nodes": "./dist/reconciler/nodes.mjs",
+      "./render": "./dist/render.mjs",
+      "./render-string": "./dist/render-string.mjs",
+      "./ScopeProvider": "./dist/ScopeProvider.mjs",
+      "./testing/fake-capability-lookup": "./dist/testing/fake-capability-lookup.mjs",
+      "./ThemeContext": "./dist/ThemeContext.mjs",
+      "./ThemeProvider": "./dist/ThemeProvider.mjs",
+      "./ui": "./dist/ui/index.mjs",
+      "./ui/animation": "./dist/ui/animation.mjs",
+      "./ui/ansi": "./dist/ui/ansi/index.mjs",
+      "./ui/cli": "./dist/ui/cli/index.mjs",
+      "./ui/components/CursorLine": "./dist/ui/components/CursorLine.mjs",
+      "./ui/components/Divider": "./dist/ui/components/Divider.mjs",
+      "./ui/components/EditContextDisplay": "./dist/ui/components/EditContextDisplay.mjs",
+      "./ui/components/Pulse": "./dist/ui/components/Pulse.mjs",
+      "./ui/components/Spinner": "./dist/ui/components/Spinner.mjs",
+      "./ui/components/TextArea": "./dist/ui/components/TextArea.mjs",
+      "./ui/components/TextInput": "./dist/ui/components/TextInput.mjs",
+      "./ui/components/useTextArea": "./dist/ui/components/useTextArea.mjs",
+      "./ui/image": "./dist/ui/image/index.mjs",
+      "./ui/image/sixel-encoder": "./dist/ui/image/sixel-encoder.mjs",
+      "./ui/progress": "./dist/ui/progress/index.mjs",
+      "./ui/react": "./dist/ui/react/index.mjs",
+      "./ui/recording-chrome": "./dist/ui/recording-chrome/index.mjs",
+      "./ui/recording-chrome/RecordingChrome": "./dist/ui/recording-chrome/RecordingChrome.mjs",
+      "./ui/recording-chrome/spec": "./dist/ui/recording-chrome/spec.mjs",
+      "./ui/recording-chrome/svg": "./dist/ui/recording-chrome/svg.mjs",
+      "./ui/utils": "./dist/ui/utils/index.mjs",
+      "./ui/wrappers": "./dist/ui/wrappers/index.mjs",
+      "./with-react": "./dist/with-react.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -320,8 +211,24 @@
       "src/ui/utils/index.ts",
       "src/ui/wrappers/index.ts",
       "src/with-react.ts",
-      "src/ThemeContext.tsx"
+      "src/ThemeContext.tsx",
+      "src/ScopeProvider.tsx",
+      "src/ThemeProvider.tsx",
+      "src/debug/render-path.ts",
+      "src/chain-bridge.ts",
+      "src/hooks/scroll-accel.ts",
+      "src/hooks/usePanic.ts",
+      "src/testing/fake-capability-lookup.ts",
+      "src/ui/image/sixel-encoder.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
+  },
+  "inlinedDependencies": {
+    "alien-signals": "3.2.1",
+    "react-reconciler": "0.33.0",
+    "scheduler": "0.27.0"
   }
 }

@@ -47,7 +47,10 @@
       "react",
       "loggily"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
   },
   "engines": {
     "bun": ">=1.0",

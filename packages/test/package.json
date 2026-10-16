@@ -14,36 +14,24 @@
     "dist"
   ],
   "type": "module",
-  "main": "src/index.tsx",
   "types": "src/index.tsx",
   "exports": {
     ".": "./src/index.tsx",
-    "./*": "./src/*.ts",
-    "./*.tsx": "./src/*.tsx"
+    "./auto-locator": "./src/auto-locator.ts",
+    "./compare-buffers": "./src/compare-buffers.ts",
+    "./debug": "./src/debug.ts",
+    "./debug-mismatch": "./src/debug-mismatch.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./auto-locator": {
-        "types": "./dist/auto-locator.d.mts",
-        "import": "./dist/auto-locator.mjs"
-      },
-      "./compare-buffers": {
-        "types": "./dist/compare-buffers.d.mts",
-        "import": "./dist/compare-buffers.mjs"
-      },
-      "./debug": {
-        "types": "./dist/debug.d.mts",
-        "import": "./dist/debug.mjs"
-      },
-      "./debug-mismatch": {
-        "types": "./dist/debug-mismatch.d.mts",
-        "import": "./dist/debug-mismatch.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./auto-locator": "./dist/auto-locator.mjs",
+      "./compare-buffers": "./dist/compare-buffers.mjs",
+      "./debug": "./dist/debug.mjs",
+      "./debug-mismatch": "./dist/debug-mismatch.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -69,11 +57,25 @@
       "src/debug.ts",
       "src/debug-mismatch.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
   },
   "engines": {
     "bun": ">=1.0",
     "node": ">=24.0.0"
   },
-  "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2."
+  "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2.",
+  "inlinedDependencies": {
+    "boolbase": "2.0.0",
+    "css-select": "7.0.0",
+    "css-what": "8.0.0",
+    "dom-serializer": "3.1.1",
+    "domelementtype": "3.0.0",
+    "domhandler": "6.0.1",
+    "domutils": "4.0.2",
+    "entities": "8.1.0",
+    "nth-check": "3.0.1"
+  }
 }

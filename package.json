@@ -44,14 +44,24 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./chalk": "./src/chalk.ts",
+    "./ink": "./src/ink.ts",
     "./runtime": "./src/runtime.ts",
     "./term": "./src/term.ts",
-    "./theme": "./src/theme.ts",
     "./test": "./src/test.ts",
+    "./theme": "./src/theme.ts",
     "./ui": "./src/ui.ts",
-    "./ui/*": "./src/ui/*.ts",
-    "./ink": "./src/ink.ts",
-    "./chalk": "./src/chalk.ts"
+    "./ui/animation": "./src/ui/animation.ts",
+    "./ui/ansi": "./src/ui/ansi.ts",
+    "./ui/cli": "./src/ui/cli.ts",
+    "./ui/image": "./src/ui/image.ts",
+    "./ui/progress": "./src/ui/progress.ts",
+    "./ui/react": "./src/ui/react.ts",
+    "./ui/recording-chrome": "./src/ui/recording-chrome.ts",
+    "./ui/recording-chrome-react": "./src/ui/recording-chrome-react.ts",
+    "./ui/utils": "./src/ui/utils.ts",
+    "./ui/wrappers": "./src/ui/wrappers.ts",
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public",
@@ -59,42 +69,25 @@
       "silvery": "./dist/bin/silvery.js"
     },
     "exports": {
-      ".": {
-        "types": "./dist/index.d.mts",
-        "import": "./dist/index.mjs"
-      },
-      "./runtime": {
-        "types": "./dist/runtime.d.mts",
-        "import": "./dist/runtime.mjs"
-      },
-      "./term": {
-        "types": "./dist/term.d.mts",
-        "import": "./dist/term.mjs"
-      },
-      "./theme": {
-        "types": "./dist/theme.d.mts",
-        "import": "./dist/theme.mjs"
-      },
-      "./test": {
-        "types": "./dist/test.d.mts",
-        "import": "./dist/test.mjs"
-      },
-      "./ui": {
-        "types": "./dist/ui.d.mts",
-        "import": "./dist/ui.mjs"
-      },
-      "./ui/*": {
-        "types": "./dist/ui/*.d.mts",
-        "import": "./dist/ui/*.mjs"
-      },
-      "./ink": {
-        "types": "./dist/ink.d.mts",
-        "import": "./dist/ink.mjs"
-      },
-      "./chalk": {
-        "types": "./dist/chalk.d.mts",
-        "import": "./dist/chalk.mjs"
-      }
+      ".": "./dist/index.mjs",
+      "./chalk": "./dist/chalk.mjs",
+      "./ink": "./dist/ink.mjs",
+      "./runtime": "./dist/runtime.mjs",
+      "./term": "./dist/term.mjs",
+      "./test": "./dist/test.mjs",
+      "./theme": "./dist/theme.mjs",
+      "./ui": "./dist/ui.mjs",
+      "./ui/animation": "./dist/ui/animation.mjs",
+      "./ui/ansi": "./dist/ui/ansi.mjs",
+      "./ui/cli": "./dist/ui/cli.mjs",
+      "./ui/image": "./dist/ui/image.mjs",
+      "./ui/progress": "./dist/ui/progress.mjs",
+      "./ui/react": "./dist/ui/react.mjs",
+      "./ui/recording-chrome": "./dist/ui/recording-chrome.mjs",
+      "./ui/recording-chrome-react": "./dist/ui/recording-chrome-react.mjs",
+      "./ui/utils": "./dist/ui/utils.mjs",
+      "./ui/wrappers": "./dist/ui/wrappers.mjs",
+      "./package.json": "./package.json"
     }
   },
   "scripts": {
@@ -226,11 +219,23 @@
       "src/theme.ts",
       "src/test.ts",
       "src/ui.ts",
-      "src/ui/*.ts",
       "src/ink.ts",
-      "src/chalk.ts"
+      "src/chalk.ts",
+      "src/ui/animation.ts",
+      "src/ui/ansi.ts",
+      "src/ui/cli.ts",
+      "src/ui/image.ts",
+      "src/ui/progress.ts",
+      "src/ui/react.ts",
+      "src/ui/recording-chrome-react.ts",
+      "src/ui/recording-chrome.ts",
+      "src/ui/utils.ts",
+      "src/ui/wrappers.ts"
     ],
-    "format": "esm"
+    "format": "esm",
+    "exports": {
+      "devExports": true
+    }
   },
   "engines": {
     "bun": ">=1.0",
@@ -254,5 +259,17 @@
       "@silvery/syntax"
     ]
   },
-  "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2."
+  "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2.",
+  "inlinedDependencies": {
+    "alien-signals": "3.2.1",
+    "ansi-styles": "6.2.3",
+    "get-east-asian-width": "1.6.0",
+    "is-fullwidth-code-point": "5.1.0",
+    "pako": "1.0.11",
+    "react-devtools-core": "7.0.1",
+    "slice-ansi": "9.0.1",
+    "upng-js": "2.1.0",
+    "ws": "8.22.0",
+    "yoga-wasm-web": "0.3.3"
+  }
 }
