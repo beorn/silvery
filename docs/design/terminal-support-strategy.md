@@ -234,7 +234,7 @@ For these, the fix isn't "file a bug" -- it's "design a system that works regard
 - Build capability database from empirical cross-backend results
 - Auto-generate compatibility report (caniuse-style)
 - File upstream bugs with terminal projects using matrix test evidence
-- Track fix status per terminal + version and remove workarounds as fixes land
+- Track fix status per terminal + version and remove workarounds as fixes merge
 
 ## References
 

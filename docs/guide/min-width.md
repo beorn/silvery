@@ -67,7 +67,7 @@ It works on the `<Text>` itself too, via `TextFlexItemProps`.
 
 ### When NOT to reach for it
 
-**Non-wrappable Text does not need it.** A `<Text wrap="truncate">` already reports min-content 1, so a Box around it shrinks to its container unaided; adding `minWidth={0}` measurably changes nothing. Guidance that still prescribes the hatch for truncate/clip Text predates a fix landed 2026-05-11 — before it, non-wrappable Text reported min-content equal to max-content, the parent got pinned at natural width, and its `overflow="hidden"` hard-clipped mid-word with no ellipsis because flex never shrank the Text.
+**Non-wrappable Text does not need it.** A `<Text wrap="truncate">` already reports min-content 1, so a Box around it shrinks to its container unaided; adding `minWidth={0}` measurably changes nothing. Guidance that still prescribes the hatch for truncate/clip Text predates a fix merged 2026-05-11 — before it, non-wrappable Text reported min-content equal to max-content, the parent got pinned at natural width, and its `overflow="hidden"` hard-clipped mid-word with no ellipsis because flex never shrank the Text.
 
 Both claims in this section are pinned by contract tests in `tests/features/min-width-protocol.test.tsx`, so this page cannot quietly drift off the code.
 

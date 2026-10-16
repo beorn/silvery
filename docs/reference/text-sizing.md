@@ -147,7 +147,7 @@ isPrivateUseArea(0x41) // false (ASCII 'A')
 
 ### `createTerminalProfile().caps.textSizing: boolean`
 
-Fast synchronous check on the canonical terminal profile. The flag is computed from `TERM=xterm-kitty` + `TERM_PROGRAM_VERSION` parsing and returns `true` for Kitty v0.40+. (Ghostty's OSC 66 support is currently broken and reports `false` until a fix lands — see the notes in `detectTerminalProfileFromEnv`.)
+Fast synchronous check on the canonical terminal profile. The flag is computed from `TERM=xterm-kitty` + `TERM_PROGRAM_VERSION` parsing and returns `true` for Kitty v0.40+. (Ghostty's OSC 66 support is currently broken and reports `false` until a fix merges — see the notes in `detectTerminalProfileFromEnv`.)
 
 ### `getTerminalFingerprint(emulator): string`
 

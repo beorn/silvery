@@ -457,7 +457,7 @@ For container-relative responsive design, silvery exposes three engine-native pr
 
 `useBoxRectDangerously()` still exists as the imperative escape valve when no declarative primitive covers the need. **Prefer the three primitives above** — they avoid the measure → React-rerender → re-layout round-trip that causes visible flash. Reach for `useBoxRectDangerously()` only when you need to read a measured size into JavaScript control flow (animation, autoscroll thresholds, etc.), not for size-driven layout decisions.
 
-Phase A of the responsive-layout reframe renamed `useBoxRect` to `useBoxRectDangerously` with a lint rule + path-fence (bead `@km/silvery/responsive-layout-architecture-reframe`, landed 2026-05-13). The deprecated `useBoxRect` alias that carried the rename over one release cycle has since been deleted — `useBoxRectDangerously` is the only name.
+Phase A of the responsive-layout reframe renamed `useBoxRect` to `useBoxRectDangerously` with a lint rule + path-fence (bead `@km/silvery/responsive-layout-architecture-reframe`, merged 2026-05-13). The deprecated `useBoxRect` alias that carried the rename over one release cycle has since been deleted — `useBoxRectDangerously` is the only name.
 
 ### Responsive breakpoints
 
