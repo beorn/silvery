@@ -147,10 +147,12 @@
     "@silvery/ag": "0.26.0",
     "@silvery/ag-term": "0.26.0",
     "@silvery/ansi": "0.26.0",
+    "@silvery/commands": "0.26.0",
     "@silvery/create": "0.26.0",
     "@silvery/headless": "0.26.0",
     "@silvery/scope": "0.26.0",
     "@silvery/syntax": "0.26.0",
+    "@silvery/test": "0.26.0",
     "@silvery/theme": "0.26.0",
     "loggily": "^0.10.0",
     "upng-js": "^2.1.0"
