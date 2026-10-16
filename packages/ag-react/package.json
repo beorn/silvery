@@ -49,6 +49,7 @@
     "./render-string": "./src/render-string.tsx",
     "./ScopeProvider": "./src/ScopeProvider.tsx",
     "./testing/fake-capability-lookup": "./src/testing/fake-capability-lookup.ts",
+    "./testing/fake-term-edit-context": "./src/testing/fake-term-edit-context.ts",
     "./ThemeContext": "./src/ThemeContext.tsx",
     "./ThemeProvider": "./src/ThemeProvider.tsx",
     "./ui": "./src/ui/index.ts",
@@ -112,6 +113,7 @@
       "./render-string": "./dist/render-string.mjs",
       "./ScopeProvider": "./dist/ScopeProvider.mjs",
       "./testing/fake-capability-lookup": "./dist/testing/fake-capability-lookup.mjs",
+      "./testing/fake-term-edit-context": "./dist/testing/fake-term-edit-context.mjs",
       "./ThemeContext": "./dist/ThemeContext.mjs",
       "./ThemeProvider": "./dist/ThemeProvider.mjs",
       "./ui": "./dist/ui/index.mjs",
@@ -219,6 +221,7 @@
       "src/hooks/scroll-accel.ts",
       "src/hooks/usePanic.ts",
       "src/testing/fake-capability-lookup.ts",
+      "src/testing/fake-term-edit-context.ts",
       "src/ui/image/sixel-encoder.ts"
     ],
     "format": "esm",
