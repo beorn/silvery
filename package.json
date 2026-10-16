@@ -50,8 +50,8 @@
     "./test": "./src/test.ts",
     "./ui": "./src/ui.ts",
     "./ui/*": "./src/ui/*.ts",
-    "./ink": "@silvery/ink",
-    "./chalk": "@silvery/ink/chalk"
+    "./ink": "./src/ink.ts",
+    "./chalk": "./src/chalk.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -86,6 +86,14 @@
       "./ui/*": {
         "types": "./dist/ui/*.d.mts",
         "import": "./dist/ui/*.mjs"
+      },
+      "./ink": {
+        "types": "./dist/ink.d.mts",
+        "import": "./dist/ink.mjs"
+      },
+      "./chalk": {
+        "types": "./dist/chalk.d.mts",
+        "import": "./dist/chalk.mjs"
       }
     }
   },
@@ -218,7 +226,9 @@
       "src/theme.ts",
       "src/test.ts",
       "src/ui.ts",
-      "src/ui/*.ts"
+      "src/ui/*.ts",
+      "src/ink.ts",
+      "src/chalk.ts"
     ],
     "format": "esm"
   },
