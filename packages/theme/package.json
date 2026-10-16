@@ -20,8 +20,7 @@
     "./detect": "./src/detect.ts",
     "./schemes": "./src/schemes/index.ts",
     "./sterling": "./src/sterling/index.ts",
-    "./theme": "./src/theme.ts",
-    "./package.json": "./package.json"
+    "./theme": "./src/theme.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -30,8 +29,7 @@
       "./detect": "./dist/detect.mjs",
       "./schemes": "./dist/schemes/index.mjs",
       "./sterling": "./dist/sterling/index.mjs",
-      "./theme": "./dist/theme.mjs",
-      "./package.json": "./package.json"
+      "./theme": "./dist/theme.mjs"
     }
   },
   "scripts": {
@@ -53,7 +51,8 @@
     ],
     "format": "esm",
     "exports": {
-      "devExports": true
+      "devExports": true,
+      "packageJson": false
     }
   }
 }

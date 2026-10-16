@@ -41,8 +41,7 @@
     "./types": "./src/types.ts",
     "./viewport-buffer": "./src/viewport-buffer.ts",
     "./viewport-types": "./src/viewport-types.ts",
-    "./wrap-measurer": "./src/wrap-measurer.ts",
-    "./package.json": "./package.json"
+    "./wrap-measurer": "./src/wrap-measurer.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -72,8 +71,7 @@
       "./types": "./dist/types.mjs",
       "./viewport-buffer": "./dist/viewport-buffer.mjs",
       "./viewport-types": "./dist/viewport-types.mjs",
-      "./wrap-measurer": "./dist/wrap-measurer.mjs",
-      "./package.json": "./package.json"
+      "./wrap-measurer": "./dist/wrap-measurer.mjs"
     }
   },
   "scripts": {
@@ -116,7 +114,8 @@
     ],
     "format": "esm",
     "exports": {
-      "devExports": true
+      "devExports": true,
+      "packageJson": false
     }
   }
 }

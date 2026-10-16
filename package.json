@@ -60,8 +60,7 @@
     "./ui/recording-chrome": "./src/ui/recording-chrome.ts",
     "./ui/recording-chrome-react": "./src/ui/recording-chrome-react.ts",
     "./ui/utils": "./src/ui/utils.ts",
-    "./ui/wrappers": "./src/ui/wrappers.ts",
-    "./package.json": "./package.json"
+    "./ui/wrappers": "./src/ui/wrappers.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -86,8 +85,7 @@
       "./ui/recording-chrome": "./dist/ui/recording-chrome.mjs",
       "./ui/recording-chrome-react": "./dist/ui/recording-chrome-react.mjs",
       "./ui/utils": "./dist/ui/utils.mjs",
-      "./ui/wrappers": "./dist/ui/wrappers.mjs",
-      "./package.json": "./package.json"
+      "./ui/wrappers": "./dist/ui/wrappers.mjs"
     }
   },
   "scripts": {
@@ -234,7 +232,8 @@
     ],
     "format": "esm",
     "exports": {
-      "devExports": true
+      "devExports": true,
+      "packageJson": false
     }
   },
   "engines": {

@@ -22,14 +22,12 @@
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./package.json": "./package.json"
+    ".": "./src/index.ts"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": "./dist/index.mjs",
-      "./package.json": "./package.json"
+      ".": "./dist/index.mjs"
     }
   },
   "scripts": {
@@ -41,7 +39,8 @@
     "entry": "src/index.ts",
     "format": "esm",
     "exports": {
-      "devExports": true
+      "devExports": true,
+      "packageJson": false
     }
   },
   "engines": {

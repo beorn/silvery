@@ -23,8 +23,7 @@
     "./pointer": "./src/pointer.ts",
     "./readline": "./src/readline.ts",
     "./select-list": "./src/select-list.ts",
-    "./selection": "./src/selection.ts",
-    "./package.json": "./package.json"
+    "./selection": "./src/selection.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -36,8 +35,7 @@
       "./pointer": "./dist/pointer.mjs",
       "./readline": "./dist/readline.mjs",
       "./select-list": "./dist/select-list.mjs",
-      "./selection": "./dist/selection.mjs",
-      "./package.json": "./package.json"
+      "./selection": "./dist/selection.mjs"
     }
   },
   "scripts": {
@@ -70,7 +68,8 @@
     ],
     "format": "esm",
     "exports": {
-      "devExports": true
+      "devExports": true,
+      "packageJson": false
     }
   },
   "inlinedDependencies": {

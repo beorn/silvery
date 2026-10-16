@@ -150,8 +150,7 @@
     "./unicode": "./src/unicode.ts",
     "./viewport-compositor": "./src/viewport-compositor.ts",
     "./virtual-scrollback": "./src/virtual-scrollback.ts",
-    "./xterm": "./src/xterm/index.ts",
-    "./package.json": "./package.json"
+    "./xterm": "./src/xterm/index.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -280,8 +279,7 @@
       "./unicode": "./dist/unicode.mjs",
       "./viewport-compositor": "./dist/viewport-compositor.mjs",
       "./virtual-scrollback": "./dist/virtual-scrollback.mjs",
-      "./xterm": "./dist/xterm/index.mjs",
-      "./package.json": "./package.json"
+      "./xterm": "./dist/xterm/index.mjs"
     }
   },
   "scripts": {
@@ -452,7 +450,8 @@
     ],
     "format": "esm",
     "exports": {
-      "devExports": true
+      "devExports": true,
+      "packageJson": false
     }
   },
   "inlinedDependencies": {

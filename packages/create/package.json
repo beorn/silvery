@@ -41,8 +41,7 @@
     "./text-ops": "./src/text-ops.ts",
     "./types": "./src/types.ts",
     "./with-app": "./src/with-app.ts",
-    "./with-render": "./src/with-render.ts",
-    "./package.json": "./package.json"
+    "./with-render": "./src/with-render.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -71,8 +70,7 @@
       "./text-ops": "./dist/text-ops.mjs",
       "./types": "./dist/types.mjs",
       "./with-app": "./dist/with-app.mjs",
-      "./with-render": "./dist/with-render.mjs",
-      "./package.json": "./package.json"
+      "./with-render": "./dist/with-render.mjs"
     }
   },
   "scripts": {
@@ -120,7 +118,8 @@
     ],
     "format": "esm",
     "exports": {
-      "devExports": true
+      "devExports": true,
+      "packageJson": false
     }
   },
   "engines": {
