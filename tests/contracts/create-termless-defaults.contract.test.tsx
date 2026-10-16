@@ -202,6 +202,28 @@ describe("contract: createTermless leak tracking", () => {
     // baseline over many iterations — see km-silvery.termless-memleak for
     // the full stress test.
   })
+
+  // 29585: the count is the leak signal, so it must be the UN-DISPOSED terminals. A sweep that disposes every
+  // terminal (maddoc's 22996 row makes 320) failed the 17:00 nightly on the warning whenever GC lagged, because
+  // a disposed terminal stayed counted until collected. One synchronous block keeps every WeakRef alive (no GC can
+  // run inside a job), so counting disposed terminals is deterministic here.
+  test("contract: a disposed terminal leaves the count at once, an undisposed one stays counted (29585)", () => {
+    const baseline = getActiveTermlessCount()
+    for (let i = 0; i < 130; i++) {
+      using term = createTermless({ cols: 10, rows: 3 })
+      expect(term.cols).toBe(10)
+    }
+    expect(getActiveTermlessCount(), "disposed terminals still counted as live").toBe(baseline)
+    const kept = createTermless({ cols: 10, rows: 3 })
+    try {
+      expect(getActiveTermlessCount(), "an undisposed terminal must stay counted").toBe(
+        baseline + 1,
+      )
+    } finally {
+      kept[Symbol.dispose]()
+    }
+    expect(getActiveTermlessCount()).toBe(baseline)
+  })
 })
 
 // ============================================================================

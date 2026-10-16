@@ -234,11 +234,13 @@ try {
 
 /**
  * Live-termless tracker. Each `createTermless()` registers a WeakRef to the
- * returned Term; when the Term is disposed (Symbol.dispose → emulator.close
- * → backend.destroy → xterm Terminal.dispose), the GC eventually clears the
- * ref. A large number of live un-disposed terminals typically means a test
- * forgot to use `using term = createTermless(...)` — the xterm Terminal
- * (1000-line scrollback buffer) stays resident until the worker exits.
+ * returned Term, and disposing the Term (Symbol.dispose → emulator.close
+ * → backend.destroy → xterm Terminal.dispose) removes it at once; a ref the GC
+ * cleared is pruned too. The count is therefore the UN-DISPOSED terminals: a
+ * large number typically means a test forgot to use
+ * `using term = createTermless(...)` — the xterm Terminal (1000-line scrollback
+ * buffer) stays resident until the worker exits. Counting disposed-but-uncollected
+ * terminals made a sweep that disposes every one warn on GC timing (29585).
  *
  * See bead km-silvery.termless-memleak.
  */
@@ -878,8 +880,18 @@ export function createTermless(
   }
   Object.defineProperty(term, "out", { value: out, enumerable: true })
 
-  // Track this instance for leak detection
-  liveTermlessInstances.add(new WeakRef(term))
+  // Track this instance for leak detection until it is disposed (29585).
+  const liveRef = new WeakRef(term)
+  liveTermlessInstances.add(liveRef)
+  const disposeTerm = term[Symbol.dispose]
+  Object.defineProperty(term, Symbol.dispose, {
+    value: () => {
+      liveTermlessInstances.delete(liveRef)
+      disposeTerm.call(term)
+    },
+    configurable: true,
+    writable: true,
+  })
   const live = pruneLiveTermless()
   if (live >= TERMLESS_LEAK_WARN_THRESHOLD) {
     warnOnce(TERMLESS_LEAK_WARNING_ID, () => {
