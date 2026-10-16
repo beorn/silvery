@@ -18,9 +18,10 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./detect": "./src/detect.ts",
     "./schemes": "./src/schemes/index.ts",
     "./sterling": "./src/sterling/index.ts",
-    "./*": "./src/*.ts"
+    "./theme": "./src/theme.ts"
   },
   "publishConfig": {
     "access": "public",
