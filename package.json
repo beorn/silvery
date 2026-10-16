@@ -230,15 +230,27 @@
       "src/ui/utils.ts",
       "src/ui/wrappers.ts"
     ],
-    "format": "esm",
     "exports": {
       "devExports": true,
       "packageJson": false
-    }
+    },
+    "format": "esm"
   },
   "engines": {
     "bun": ">=1.0",
     "node": ">=24.0.0"
+  },
+  "inlinedDependencies": {
+    "alien-signals": "3.2.1",
+    "ansi-styles": "6.2.3",
+    "get-east-asian-width": "1.6.0",
+    "is-fullwidth-code-point": "5.1.0",
+    "pako": "1.0.11",
+    "react-devtools-core": "7.0.1",
+    "slice-ansi": "9.0.1",
+    "upng-js": "2.1.0",
+    "ws": "8.22.0",
+    "yoga-wasm-web": "0.3.3"
   },
   "patchedDependencies": {
     "slice-ansi@9.0.1": "patches/slice-ansi@9.0.1.patch"
@@ -258,17 +270,5 @@
       "@silvery/syntax"
     ]
   },
-  "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2.",
-  "inlinedDependencies": {
-    "alien-signals": "3.2.1",
-    "ansi-styles": "6.2.3",
-    "get-east-asian-width": "1.6.0",
-    "is-fullwidth-code-point": "5.1.0",
-    "pako": "1.0.11",
-    "react-devtools-core": "7.0.1",
-    "slice-ansi": "9.0.1",
-    "upng-js": "2.1.0",
-    "ws": "8.22.0",
-    "yoga-wasm-web": "0.3.3"
-  }
+  "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2."
 }

@@ -49,10 +49,10 @@
       "src/sterling/index.ts",
       "src/theme.ts"
     ],
-    "format": "esm",
     "exports": {
       "devExports": true,
       "packageJson": false
-    }
+    },
+    "format": "esm"
   }
 }

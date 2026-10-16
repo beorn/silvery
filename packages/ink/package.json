@@ -48,11 +48,11 @@
       "src/with-ink-cursor.ts",
       "src/with-ink-focus.ts"
     ],
-    "format": "esm",
     "exports": {
       "devExports": true,
       "packageJson": false
-    }
+    },
+    "format": "esm"
   },
   "inlinedDependencies": {
     "alien-signals": "3.2.1",

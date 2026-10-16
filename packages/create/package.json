@@ -116,11 +116,11 @@
       "src/runtime/with-input-chain.ts",
       "src/runtime/with-terminal-chain.ts"
     ],
-    "format": "esm",
     "exports": {
       "devExports": true,
       "packageJson": false
-    }
+    },
+    "format": "esm"
   },
   "engines": {
     "bun": ">=1.0",

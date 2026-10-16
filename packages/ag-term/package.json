@@ -448,11 +448,11 @@
       "src/testing/fake-cascade-outputs.ts",
       "src/testing/fake-term.ts"
     ],
-    "format": "esm",
     "exports": {
       "devExports": true,
       "packageJson": false
-    }
+    },
+    "format": "esm"
   },
   "inlinedDependencies": {
     "ansi-regex": "6.2.2",

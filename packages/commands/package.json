@@ -46,10 +46,10 @@
       "src/with-commands.ts",
       "src/with-keybindings.ts"
     ],
-    "format": "esm",
     "exports": {
       "devExports": true,
       "packageJson": false
-    }
+    },
+    "format": "esm"
   }
 }

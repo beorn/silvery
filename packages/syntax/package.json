@@ -47,11 +47,11 @@
       "src/index.ts",
       "src/bounded-cache.ts"
     ],
-    "format": "esm",
     "exports": {
       "devExports": true,
       "packageJson": false
-    }
+    },
+    "format": "esm"
   },
   "engines": {
     "node": ">=24.0.0"

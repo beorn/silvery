@@ -47,16 +47,16 @@
       "src/index.ts",
       "src/plain.ts"
     ],
+    "exports": {
+      "devExports": true,
+      "packageJson": false
+    },
     "external": [
       "commander",
       "zod",
       "@silvery/ansi"
     ],
-    "format": "esm",
-    "exports": {
-      "devExports": true,
-      "packageJson": false
-    }
+    "format": "esm"
   },
   "engines": {
     "node": ">=24.0.0"

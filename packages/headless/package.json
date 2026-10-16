@@ -66,11 +66,11 @@
       "src/selection.ts",
       "src/history.ts"
     ],
-    "format": "esm",
     "exports": {
       "devExports": true,
       "packageJson": false
-    }
+    },
+    "format": "esm"
   },
   "inlinedDependencies": {
     "react": "19.3.1"
