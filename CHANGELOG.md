@@ -7,6 +7,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+`silvery`'s `./ui/*` wildcard becomes ten explicit entry points, so every
+published subpath is named in the map instead of matched by a pattern.
+
+- `silvery/ui/animation`, `silvery/ui/ansi`, `silvery/ui/cli`,
+  `silvery/ui/image`, `silvery/ui/progress`, `silvery/ui/react`,
+  `silvery/ui/recording-chrome`, `silvery/ui/recording-chrome-react`,
+  `silvery/ui/utils` and `silvery/ui/wrappers` — the ten files the wildcard
+  reached, each now its own key in both the source and the published map.
+  Nothing importable disappears; a `src/ui/*.ts` path with no key is
+  refused by name instead of resolving silently.
+
 ## [0.26.0] - 2026-09-28
 
 ### Removed

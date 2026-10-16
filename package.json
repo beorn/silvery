@@ -49,7 +49,16 @@
     "./theme": "./src/theme.ts",
     "./test": "./src/test.ts",
     "./ui": "./src/ui.ts",
-    "./ui/*": "./src/ui/*.ts",
+    "./ui/animation": "./src/ui/animation.ts",
+    "./ui/ansi": "./src/ui/ansi.ts",
+    "./ui/cli": "./src/ui/cli.ts",
+    "./ui/image": "./src/ui/image.ts",
+    "./ui/progress": "./src/ui/progress.ts",
+    "./ui/react": "./src/ui/react.ts",
+    "./ui/recording-chrome": "./src/ui/recording-chrome.ts",
+    "./ui/recording-chrome-react": "./src/ui/recording-chrome-react.ts",
+    "./ui/utils": "./src/ui/utils.ts",
+    "./ui/wrappers": "./src/ui/wrappers.ts",
     "./ink": "@silvery/ink",
     "./chalk": "@silvery/ink/chalk"
   },
@@ -83,9 +92,45 @@
         "types": "./dist/ui.d.mts",
         "import": "./dist/ui.mjs"
       },
-      "./ui/*": {
-        "types": "./dist/ui/*.d.mts",
-        "import": "./dist/ui/*.mjs"
+      "./ui/animation": {
+        "types": "./dist/ui/animation.d.mts",
+        "import": "./dist/ui/animation.mjs"
+      },
+      "./ui/ansi": {
+        "types": "./dist/ui/ansi.d.mts",
+        "import": "./dist/ui/ansi.mjs"
+      },
+      "./ui/cli": {
+        "types": "./dist/ui/cli.d.mts",
+        "import": "./dist/ui/cli.mjs"
+      },
+      "./ui/image": {
+        "types": "./dist/ui/image.d.mts",
+        "import": "./dist/ui/image.mjs"
+      },
+      "./ui/progress": {
+        "types": "./dist/ui/progress.d.mts",
+        "import": "./dist/ui/progress.mjs"
+      },
+      "./ui/react": {
+        "types": "./dist/ui/react.d.mts",
+        "import": "./dist/ui/react.mjs"
+      },
+      "./ui/recording-chrome": {
+        "types": "./dist/ui/recording-chrome.d.mts",
+        "import": "./dist/ui/recording-chrome.mjs"
+      },
+      "./ui/recording-chrome-react": {
+        "types": "./dist/ui/recording-chrome-react.d.mts",
+        "import": "./dist/ui/recording-chrome-react.mjs"
+      },
+      "./ui/utils": {
+        "types": "./dist/ui/utils.d.mts",
+        "import": "./dist/ui/utils.mjs"
+      },
+      "./ui/wrappers": {
+        "types": "./dist/ui/wrappers.d.mts",
+        "import": "./dist/ui/wrappers.mjs"
       }
     }
   },
