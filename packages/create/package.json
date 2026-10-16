@@ -41,7 +41,10 @@
     "./text-decorations": "./src/text-decorations.ts",
     "./text-ops": "./src/text-ops.ts",
     "./types": "./src/types.ts",
-    "./with-app": "./src/with-app.ts"
+    "./with-app": "./src/with-app.ts",
+    "./useStore": "./src/useStore.ts",
+    "./with-react": "./src/with-react.ts",
+    "./with-render": "./src/with-render.ts"
   },
   "publishConfig": {
     "access": "public",

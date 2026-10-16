@@ -151,7 +151,8 @@
     "./unicode": "./src/unicode.ts",
     "./viewport-compositor": "./src/viewport-compositor.ts",
     "./virtual-scrollback": "./src/virtual-scrollback.ts",
-    "./xterm/index": "./src/xterm/index.ts"
+    "./xterm/index": "./src/xterm/index.ts",
+    "./hit-registry-core": "./src/hit-registry-core.ts"
   },
   "publishConfig": {
     "access": "public",

@@ -75,7 +75,10 @@
     "./ui/progress": "./src/ui/progress/index.ts",
     "./ui/react": "./src/ui/react/index.ts",
     "./ui/utils": "./src/ui/utils/index.ts",
-    "./with-react": "./src/with-react.ts"
+    "./with-react": "./src/with-react.ts",
+    "./focus": "./src/focus.ts",
+    "./ui/canvas": "./src/ui/canvas/index.ts",
+    "./hooks/useScope": "./src/hooks/useScope.ts"
   },
   "publishConfig": {
     "access": "public",
