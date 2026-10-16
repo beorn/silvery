@@ -1,3 +1,11 @@
+/**
+ * @failure The root silvery package stops publishing the ./ink and ./chalk entry points the Ink and
+ * Chalk migration guides tell users to import, or the tsdown entry list drops the re-export modules
+ * behind them, so the documented migration path fails again for npm consumers.
+ * @level l1
+ * @consumer the silvery ./ink and ./chalk subpaths and the two migration guides
+ * @testonly none
+ */
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { describe, expect, test } from "vitest"
