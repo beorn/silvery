@@ -21,7 +21,15 @@ describe("root silvery Ink/Chalk entry points", () => {
 
   test("silvery/ink is the drop-in Ink replacement the migration guide documents", async () => {
     const ink = (await import("silvery/ink")) as Record<string, unknown>
-    for (const name of ["Box", "Text", "Static", "render", "renderToString", "useInput", "useApp"]) {
+    for (const name of [
+      "Box",
+      "Text",
+      "Static",
+      "render",
+      "renderToString",
+      "useInput",
+      "useApp",
+    ]) {
       expect(ink[name], `silvery/ink must export ${name}`).toBeDefined()
     }
   })
