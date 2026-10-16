@@ -715,7 +715,7 @@ describe("handleTabCycling option (run path)", () => {
   })
 
   test("renderToXterm: with an active edit context (useEditContext), Tab and Shift+Tab bypass focus cycling and reach useInput (25842 Row 3)", async () => {
-    const { renderToXterm } = await import("@silvery/ag-term/xterm/index")
+    const { renderToXterm } = await import("@silvery/ag-term/xterm")
     const { useEditContext, activeEditContextRef } = await import("@silvery/ag-react")
     const { ensureLayoutEngine } = await import("@silvery/ag-term/runtime")
     await ensureLayoutEngine()
