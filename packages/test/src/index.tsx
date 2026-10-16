@@ -269,7 +269,7 @@ function pruneLiveTermless(): number {
 }
 
 /**
- * Return the current count of live (un-GC'd) termless Term instances.
+ * Return the count of termless Term instances not yet disposed (or collected).
  * Exported for tests that want to assert cleanup happened.
  */
 export function getActiveTermlessCount(): number {
