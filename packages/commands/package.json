@@ -18,7 +18,9 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    "./create-command-registry": "./src/create-command-registry.ts",
+    "./with-commands": "./src/with-commands.ts",
+    "./with-keybindings": "./src/with-keybindings.ts"
   },
   "publishConfig": {
     "access": "public",

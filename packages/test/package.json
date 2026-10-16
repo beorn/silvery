@@ -18,8 +18,10 @@
   "types": "src/index.tsx",
   "exports": {
     ".": "./src/index.tsx",
-    "./*": "./src/*.ts",
-    "./*.tsx": "./src/*.tsx"
+    "./auto-locator": "./src/auto-locator.ts",
+    "./compare-buffers": "./src/compare-buffers.ts",
+    "./debug": "./src/debug.ts",
+    "./debug-mismatch": "./src/debug-mismatch.ts"
   },
   "publishConfig": {
     "access": "public",

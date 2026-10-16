@@ -18,7 +18,13 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./*": "./src/*.ts"
+    "./copy-mode": "./src/copy-mode.ts",
+    "./history": "./src/history.ts",
+    "./machine": "./src/machine.ts",
+    "./pointer": "./src/pointer.ts",
+    "./readline": "./src/readline.ts",
+    "./select-list": "./src/select-list.ts",
+    "./selection": "./src/selection.ts"
   },
   "publishConfig": {
     "access": "public",
