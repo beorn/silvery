@@ -596,11 +596,17 @@ function ProseLane({ children }: { children: React.ReactNode }): React.ReactElem
     available > 0
       ? Math.max(1, Math.min(ctx.prose, available - leftGutter - rightGutter))
       : ctx.prose
+  // WHICH GUTTER ABSORBS THE SLACK IS WHAT `align` MEANS (@dev/5 2026-10-19). Both gutters used
+  // to `flexGrow={1}`, so the lane was always centred and `align="start"` only changed the outer
+  // row's `justifyContent`, which has nothing left to justify once the gutters have eaten the
+  // space. A caller that asks for `start` wants the lane flush against its left edge; the slack
+  // belongs on the right. `center` keeps both gutters growing, which is the geometry every existing
+  // caller was written against.
   const lane = (
     <Box flexDirection="row" width="100%" minWidth={0}>
       <Box
         width={leftGutter}
-        flexGrow={1}
+        flexGrow={ctx.align === "start" ? 0 : 1}
         flexBasis={leftGutter}
         flexShrink={0}
         minWidth={leftGutter}
