@@ -623,7 +623,9 @@ test("intrinsic spacing resolves percentages to zero and ch at the adapter scale
   // A container-query part resolves against the given size, and to zero at NaN.
   expect(node.intrinsicSpacing("paddingLeft", "10cqi", Number.NaN)).toBe(0)
   expect(node.intrinsicSpacing("paddingLeft", "10cqi", 200)).toBe(20)
-  expect(() => node.intrinsicSpacing("paddingLeft", "12wat", Number.NaN)).toThrow(/paddingLeft.*12wat/)
+  expect(() => node.intrinsicSpacing("paddingLeft", "12wat", Number.NaN)).toThrow(
+    /paddingLeft.*12wat/,
+  )
 })
 
 test("percentage padding still resolves against the containing block in final layout", () => {
