@@ -16,6 +16,14 @@ raw length string is validated with the adapter's own grammar before the node
 is touched. An implementor that omits it now fails to compile instead of
 throwing on the first raw string at runtime.
 
+`@silvery/ag`'s `LayoutNode` also gains a required `intrinsicSpacing(prop,
+value, queryInlineSize)` method (breaking for implementors; a minor bump under
+0.x). The measure phase calls it for a string padding or gap before layout: the
+adapter resolves the length with its own grammar, percentage parts contribute
+zero (CSS Sizing 3 cyclic-percentage rule), `ch` resolves at the adapter scale,
+and a container-query part resolves against the given inline size or to zero
+when it is NaN. This retires the temporary refusal that named #30346.
+
 `silvery`'s `./ui/*` wildcard becomes ten explicit entry points, so every
 published subpath is named in the map instead of matched by a pattern.
 

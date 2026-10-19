@@ -203,6 +203,23 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   }
 
   /**
+   * Resolve one raw spacing length for intrinsic measurement (#30346). The
+   * grammar and the adapter scale are this adapter's, and the CSS
+   * cyclic-percentage rule is flexily's own resolveValue: percentage parts
+   * count zero, ch is already scaled at parse time.
+   */
+  intrinsicSpacing(prop: string, value: string, queryInlineSize: number): number {
+    let parsed: Value
+    try {
+      parsed = parseLength(value, { ch: 1, lh: 1 })
+    } catch (error) {
+      if (error instanceof LengthError) throw new LengthError(error.input, error.reason, prop)
+      throw error
+    }
+    return this.node.resolveIntrinsicSpacing(parsed, queryInlineSize)
+  }
+
+  /**
    * Parse a spacing/offset string once per style-set, reusing the stored Value
    * when the source is unchanged. Same contract as `length()`: a fresh AST on
    * every render would dirty layout for an identical prop.
