@@ -2,7 +2,7 @@
  * CLI ProgressBar - Determinate progress indicator with ETA
  */
 
-import chalk from "@silvery/ink/chalk"
+import { style as chalk } from "@silvery/ansi"
 import { displayLength } from "@silvery/ansi"
 import type { ProgressBarOptions } from "../types.js"
 import {

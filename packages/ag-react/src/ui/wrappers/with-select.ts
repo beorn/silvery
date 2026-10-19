@@ -2,7 +2,7 @@
  * withSelect - Interactive CLI selection list
  */
 
-import chalk from "@silvery/ink/chalk"
+import { style as chalk } from "@silvery/ansi"
 import { createModes } from "@silvery/ag-term"
 import type { SelectOption, WithSelectOptions } from "../types.js"
 import {

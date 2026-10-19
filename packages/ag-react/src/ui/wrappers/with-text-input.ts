@@ -2,7 +2,7 @@
  * withTextInput - CLI wrapper for text input prompts
  */
 
-import chalk from "@silvery/ink/chalk"
+import { style as chalk } from "@silvery/ansi"
 import { createModes } from "@silvery/ag-term"
 import type { TextInputOptions } from "../types.js"
 import {

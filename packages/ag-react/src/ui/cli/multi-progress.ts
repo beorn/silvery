@@ -2,7 +2,7 @@
  * MultiProgress - Container for managing multiple concurrent progress indicators
  */
 
-import chalk from "@silvery/ink/chalk"
+import { style as chalk } from "@silvery/ansi"
 import type { SpinnerStyle, TaskStatus } from "../types.js"
 import { CURSOR_HIDE, CURSOR_SHOW, CLEAR_LINE, cursorUp, write, isTTY } from "./ansi"
 import { Spinner, SPINNER_FRAMES } from "./spinner"
