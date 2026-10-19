@@ -172,7 +172,7 @@ export function getBorderSize(props: BoxProps): {
 /** Container child clipping shared with the painter. */
 export function computeChildClipBounds(
   layout: NonNullable<AgNode["boxRect"]>,
-  props: BoxProps,
+  node: AgNode,
   parentClip: ClipBounds | undefined,
   scrollOffset = 0,
   /** Compute left/right clip bounds for horizontal overflow clipping. */
@@ -182,8 +182,9 @@ export function computeChildClipBounds(
    *  (horizontal containment is via layout OVERFLOW_HIDDEN, not render clipping). */
   vertical = true,
 ): ClipBounds {
+  const props = node.props as BoxProps
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
+  const padding = getPadding(node)
   const adjustedY = layout.y - scrollOffset
   const nodeClip: ClipBounds = vertical
     ? {
@@ -268,12 +269,12 @@ export function childPaintClip(
   const props = node.props as BoxProps
   const { x, y, scrollState: ss } = childClipAxes(node)
   if (ss) {
-    const viewport = computeChildClipBounds(layout, props, inherited, 0, x, y)
+    const viewport = computeChildClipBounds(layout, node, inherited, 0, x, y)
     return previous
       ? scrollChildClip(viewport, props, ss.prevHiddenAbove, ss.prevHiddenBelow)
       : scrollChildClip(viewport, props, ss.hiddenAbove, ss.hiddenBelow)
   }
-  return x || y ? computeChildClipBounds(layout, props, inherited, offset, x, y) : inherited
+  return x || y ? computeChildClipBounds(layout, node, inherited, offset, x, y) : inherited
 }
 
 /** Indexed child dispatch geometry, in the same normal/sticky/absolute passes

@@ -264,6 +264,12 @@ class YogaNodeAdapter implements LayoutNode {
         `use SILVERY_ENGINE=flexily for length math.`,
     )
   }
+
+  /** Same refusal the setters raise, evaluated before any mutation runs. */
+  validateLength(prop: string, value: string): void {
+    this.requireNumber(prop, value)
+  }
+
   setPadding(edge: number, value: number | string): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
     this.node.setPadding(edge as Edge, this.requireNumber("padding", value))

@@ -1782,7 +1782,7 @@ function renderScrollContainerChildren(
   // horizontal containment is handled by text wrapping, not clipping.
   const viewportClipBounds = computeChildClipBounds(
     layout,
-    props,
+    node,
     clipBounds,
     0,
     /* horizontal */ false,

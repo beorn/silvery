@@ -570,6 +570,51 @@ function applyLength(
   else layoutNode[lengthSetters[prop]](prop.startsWith("min") ? 0 : Infinity)
 }
 
+const rawSpacingProps = [
+  "padding",
+  "paddingX",
+  "paddingY",
+  "paddingTop",
+  "paddingBottom",
+  "paddingLeft",
+  "paddingRight",
+  "margin",
+  "marginX",
+  "marginY",
+  "marginTop",
+  "marginBottom",
+  "marginLeft",
+  "marginRight",
+  "gap",
+  "rowGap",
+  "columnGap",
+] as const
+
+const rawOffsetProps = ["top", "left", "bottom", "right"] as const
+
+/**
+ * Validate every raw length string before specificity resolution or ANY node
+ * mutation (15111 A0.3a 3c, reaffirmed by 26238 A0.3b). The engine owns the
+ * grammar; this only chooses when it runs. Validating after the first setter
+ * would leave width mutated by the time a later prop throws.
+ *
+ * `margin: "auto"` is a keyword, not a length, and stays with the adapter's
+ * dedicated auto path.
+ */
+function validateRawLengths(layoutNode: LayoutNode, props: object): void {
+  const raw = props as Record<string, unknown>
+  for (const prop of rawSpacingProps) {
+    const value = raw[prop]
+    if (typeof value !== "string") continue
+    if (prop.startsWith("margin") && value === "auto") continue
+    layoutNode.validateLength(prop, value)
+  }
+  for (const prop of rawOffsetProps) {
+    const value = raw[prop]
+    if (typeof value === "string") layoutNode.validateLength(prop, value)
+  }
+}
+
 /**
  * Apply IslandProps to an island node's layout node.
  *
@@ -585,6 +630,7 @@ export function applyIslandProps(
   props: IslandLayoutProps,
   oldProps?: IslandLayoutProps,
 ): void {
+  validateRawLengths(layoutNode, props)
   const c = getConstants()
   const wasRemoved = (prop: keyof IslandLayoutProps): boolean =>
     oldProps?.[prop] !== undefined && props[prop] === undefined
@@ -646,6 +692,7 @@ export function applyTextFlexItemProps(
   props: TextProps,
   oldProps?: TextProps,
 ): void {
+  validateRawLengths(layoutNode, props)
   const c = getConstants()
   const wasRemoved = (prop: keyof TextProps): boolean =>
     oldProps?.[prop] !== undefined && props[prop] === undefined
@@ -714,6 +761,7 @@ function parseFitWidthEntry(
  * This maps Ink/Silvery props to the layout engine API.
  */
 export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?: BoxProps): void {
+  validateRawLengths(layoutNode, props)
   const c = getConstants()
   // Helper: true when a prop was set in oldProps but not in newProps (prop removed on rerender)
   const wasRemoved = (prop: keyof BoxProps): boolean =>

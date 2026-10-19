@@ -382,6 +382,93 @@ test("identical spacing and offset strings retain their parsed value", () => {
   }
 })
 
+// 15111 A0.3a 3c, reaffirmed by 26238 A0.3b: every raw length is validated
+// before ANY setter runs, so a malformed value cannot mutate the node first
+// and a shadowed broad prop cannot be skipped silently.
+test("malformed spacing is rejected before any setter, including shadowed props", () => {
+  const node = createFlexilyZeroEngine().createNode()
+  const native = (node as typeof node & { getFlexilyNode(): FlexilyNode }).getFlexilyNode()
+  try {
+    applyBoxProps(node, { width: 20, height: 4 } as unknown as BoxProps)
+    expect(() =>
+      applyBoxProps(node, {
+        width: 99,
+        height: 4,
+        padding: "max(1ch, 2)",
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        paddingRight: 0,
+      } as unknown as BoxProps),
+    ).toThrow(/padding.*max\(1ch, 2\)/)
+    expect(native.getWidth()).toMatchObject({ value: 20 })
+
+    // A valid math value stays accepted when every side shadows it.
+    expect(() =>
+      applyBoxProps(node, {
+        width: 20,
+        height: 4,
+        padding: "max(1ch, 2ch)",
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        paddingRight: 0,
+      } as unknown as BoxProps),
+    ).not.toThrow()
+
+    expect(() =>
+      applyBoxProps(node, { width: 99, height: 4, padding: "max(1ch, 2)" } as unknown as BoxProps),
+    ).toThrow(/padding.*max\(1ch, 2\)/)
+    expect(native.getWidth()).toMatchObject({ value: 20 })
+  } finally {
+    node.free()
+  }
+})
+
+// 26238: applyBoxProps always sets gap through GUTTER_ALL. An unchanged math
+// string must reuse the stored Value through that path, not parse a fresh AST
+// and dirty layout on every render.
+test("identical math gap through GUTTER_ALL retains its parsed value", () => {
+  const node = createFlexilyZeroEngine().createNode()
+  const native = (node as typeof node & { getFlexilyNode(): FlexilyNode }).getFlexilyNode()
+  try {
+    applyBoxProps(node, { width: 80, height: 4, gap: "max(10%, 20%)" } as unknown as BoxProps)
+    const first = native.style.gap[0]
+    expect(first.source).toBe("max(10%, 20%)")
+    expect(native.style.gap[1]).toBe(first)
+    native.calculateLayout(80, 4)
+    expect(native.isDirty()).toBe(false)
+
+    applyBoxProps(node, { gap: "max(10%, 20%)" } as unknown as BoxProps)
+    expect(native.style.gap[0]).toBe(first)
+    expect(native.style.gap[1]).toBe(first)
+    expect(native.isDirty()).toBe(false)
+  } finally {
+    node.free()
+  }
+})
+
+// 26238: accepted string spacing must paint through ordinary scroll/hidden
+// clipping. The intrinsic-measurement exception does not cover paint.
+test("string padding paints through scroll and hidden clipping", () => {
+  for (const overflow of ["scroll", "hidden"] as const) {
+    const render = createRenderer({ cols: 30, rows: 6 })
+    const app = render(
+      <Box width={20} height={4} paddingLeft="max(1ch, 2ch)" overflow={overflow}>
+        <Box width={30} height={10}>
+          <Text>child</Text>
+        </Box>
+      </Box>,
+    )
+    try {
+      expect(app.text).toContain("child")
+      expect(app.text.split("\n")[0]!.startsWith("  child")).toBe(true)
+    } finally {
+      app.unmount()
+    }
+  }
+})
+
 // #26247/AC CQ lifetime: the containing CQ changes while the intervening
 // wrapper stays at width 30; a reused descendant must resolve the new freeze.
 // Paint the full math width so STRICT's fresh-layout oracle cannot repair

@@ -73,6 +73,13 @@ export interface LayoutNode {
   markDirty(): void
   isDirty(): boolean
 
+  /**
+   * Parse a raw length string with this engine's grammar without mutating the
+   * node, re-throwing with the prop name. Used by the React prop layer to
+   * validate every raw length BEFORE any setter runs (15111 A0.3a 3c).
+   */
+  validateLength(prop: string, value: string): void
+
   // Dimension setters
   setWidth(value: number | string): void
   setWidthPercent(value: number): void

@@ -189,6 +189,20 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   }
 
   /**
+   * Parse a raw length with the engine grammar and re-throw with the prop name,
+   * without touching this node's style. The React prop layer calls this before
+   * any setter so a malformed value cannot mutate half the node first.
+   */
+  validateLength(prop: string, value: string): void {
+    try {
+      parseLength(value, { ch: 1, lh: 1 })
+    } catch (error) {
+      if (error instanceof LengthError) throw new LengthError(error.input, error.reason, prop)
+      throw error
+    }
+  }
+
+  /**
    * Parse a spacing/offset string once per style-set, reusing the stored Value
    * when the source is unchanged. Same contract as `length()`: a fresh AST on
    * every render would dirty layout for an identical prop.
@@ -218,8 +232,9 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
     return undefined
   }
 
-  /** Stored Value for one gutter, or undefined for GUTTER_ALL. */
+  /** Stored Value for one gutter. GUTTER_ALL writes both axis slots to one Value. */
   private gutterAt(gutter: number): Value | undefined {
+    if (gutter === GUTTER_ALL) return this.node.style.gap[0]
     if (gutter === GUTTER_COLUMN) return this.node.style.gap[0]
     if (gutter === GUTTER_ROW) return this.node.style.gap[1]
     return undefined
