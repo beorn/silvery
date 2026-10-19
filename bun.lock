@@ -93,7 +93,7 @@
       "dependencies": {
         "@silvery/ansi": "0.26.0",
         "@silvery/signals": "0.26.0",
-        "loggily": "^0.13.0",
+        "loggily": "0.13.0",
       },
     },
     "packages/ag-react": {
@@ -110,7 +110,7 @@
         "@silvery/signals": "0.26.0",
         "@silvery/syntax": "0.26.0",
         "@silvery/theme": "0.26.0",
-        "loggily": "^0.13.0",
+        "loggily": "0.13.0",
         "upng-js": "^2.1.0",
       },
       "peerDependencies": {
@@ -136,7 +136,7 @@
         "@termless/ghostty": ">=0.9.1 <1.0.0",
         "@termless/xtermjs": ">=0.9.1 <1.0.0",
         "flexily": "0.8.4",
-        "loggily": "^0.13.0",
+        "loggily": "0.13.0",
         "lru-cache": "11.5.2",
       },
       "peerDependencies": {
@@ -310,7 +310,7 @@
   },
   "overrides": {
     "flexily": "0.8.4",
-    "loggily": "^0.13.0",
+    "loggily": "0.13.0",
   },
   "packages": {
     "@11ty/gray-matter": ["@11ty/gray-matter@2.1.0", "", { "dependencies": { "js-yaml": "^4.2.0", "section-matter": "^1.0.0" } }, "sha512-fNdBOb3MgDz/1UCIoeY4wDuGbp+/3s5y6UrsyfMabECbh/CVycj7Er33JXqSxRwxrRKXcGE1Jipuq/1mODInsQ=="],
