@@ -1,11 +1,11 @@
 /**
- * Tests for withReact() + withTest() compose plugins.
+ * Tests for the withReact() compose plugin.
  *
- * Verifies the full compose pipeline: create + withAg + withTerm + withReact + withTest.
+ * Verifies the compose pipeline: create + withAg + withTerm + withReact.
  */
 import { describe, test, expect, beforeAll } from "vitest"
 import React from "react"
-import { create, pipe, withAg, withTerm, withReact, withTest, createTerm } from "@silvery/ag-term"
+import { create, pipe, withAg, withTerm, withReact, createTerm } from "@silvery/ag-term"
 import { ensureLayoutEngine } from "@silvery/ag-term/runtime"
 import { Box, Text } from "@silvery/ag-react"
 
@@ -45,49 +45,17 @@ describe("withReact", () => {
   })
 })
 
-describe("withTest", () => {
-  test("provides text accessor", () => {
-    const term = createTerm({ cols: 40, rows: 10 })
-    const app = pipe(create(), withAg(), withTerm(term), withReact(<SimpleApp />), withTest())
-
-    expect(app.text).toContain("Hello World")
-  })
-
-  test("provides containsText", () => {
-    const term = createTerm({ cols: 40, rows: 10 })
-    const app = pipe(create(), withAg(), withTerm(term), withReact(<SimpleApp />), withTest())
-
-    expect(app.containsText("Hello World")).toBe(true)
-    expect(app.containsText("Nonexistent")).toBe(false)
-  })
-
-  test("provides lines accessor", () => {
-    const term = createTerm({ cols: 40, rows: 10 })
-    const app = pipe(create(), withAg(), withTerm(term), withReact(<SimpleApp />), withTest())
-
-    expect(app.lines.length).toBeGreaterThan(0)
-  })
-
-  test("provides width and height", () => {
-    const term = createTerm({ cols: 40, rows: 10 })
-    const app = pipe(create(), withAg(), withTerm(term), withReact(<SimpleApp />), withTest())
-
-    expect(app.width).toBe(40)
-    expect(app.height).toBe(10)
-  })
-})
-
 describe("full pipeline", () => {
-  test("create + withAg + withTerm + withReact + withTest end-to-end", () => {
+  test("create + withAg + withTerm + withReact end-to-end", () => {
     const term = createTerm({ cols: 80, rows: 24 })
-    const app = pipe(create(), withAg(), withTerm(term), withReact(<SimpleApp />), withTest())
+    const app = pipe(create(), withAg(), withTerm(term), withReact(<SimpleApp />))
 
     // All compose layers present
     expect(app.ag).toBeDefined()
     expect(app.term).toBe(term)
     expect(typeof app.render).toBe("function")
     expect(typeof app.dispatch).toBe("function")
-    expect(typeof app.press).toBe("function")
-    expect(app.text).toContain("Hello World")
+    app.ag.layout({ cols: 80, rows: 24 })
+    expect(app.ag.render({ fresh: true }).frame.text).toContain("Hello World")
   })
 })

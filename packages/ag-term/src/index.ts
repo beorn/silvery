@@ -21,7 +21,6 @@ export type { Ag, CreateAgOptions, AgLayoutOptions, AgRenderOptions, AgRenderRes
 export { create, pipe, from, withAg, withTerm } from "./compose"
 export type { AppBase, AppWithAg, AppWithTerm, PipeBuilder } from "./compose"
 export { withReact } from "./compose-react"
-export { withTest, type AppWithTest } from "./compose-test"
 
 // =============================================================================
 // Buffer
