@@ -576,8 +576,19 @@ function DocumentBlocks({
               previous.kind !== "heading" &&
               previous.kind !== "rule" &&
               previous.kind !== "media"
-            const extraSpace = block.level <= 2 && afterBody
-            const topMargin = (afterList ? 1 : 0) + (extraSpace ? 1 : 0)
+            // TWO BLANK ROWS BEFORE EVERY H1 EXCEPT THE FIRST (operator 2026-10-19 13:14, via the
+            // item page): the extra row is what tells an H1 apart from the H2/H3 below it. H2 keeps
+            // its existing row-after-body, and H3+ stay as they are.
+            const isFirstHeading = !blocks
+              .slice(0, index)
+              .some((candidate) => candidate.kind === "heading")
+            const firstH1 = block.level === 1 && isFirstHeading
+            const extraSpace = block.level === 2 && afterBody
+            const topMargin = firstH1
+              ? 0
+              : block.level === 1
+                ? 2
+                : (afterList ? 1 : 0) + (extraSpace ? 1 : 0)
             const subtaskSummary = block.subtaskSummary
             const isFoldable =
               block.foldable !== undefined ? block.foldable : (enableSectionFolding ?? false)
