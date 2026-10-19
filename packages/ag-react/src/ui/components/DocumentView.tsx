@@ -578,9 +578,20 @@ function DocumentBlocks({
               .slice(0, index)
               .some((candidate) => candidate.kind === "heading")
             const firstH1 = block.level === 1 && isFirstHeading
+            // The preceding block already draws its own bottom margin, so the H1's top margin is
+            // only the REMAINDER of the two blank rows the operator asked for. Counting margins
+            // separately is what produced three blank rows (2 + the paragraph's 1) before a later
+            // H1; the contract is two VISIBLE rows, so measure the gap the reader sees.
+            const precedingRowGap = block.attachedToPrevious ? 0 : 1
             // H2's own extra row was the doubled margin the operator rejected: it made H1 and H2
             // look alike. H1 keeps the two rows, every other level keeps one after a list.
-            const topMargin = firstH1 ? 0 : block.level === 1 ? 2 : afterList ? 1 : 0
+            const topMargin = firstH1
+              ? 0
+              : block.level === 1
+                ? Math.max(0, 2 - precedingRowGap)
+                : afterList
+                  ? 1
+                  : 0
             const subtaskSummary = block.subtaskSummary
             const isFoldable =
               block.foldable !== undefined ? block.foldable : (enableSectionFolding ?? false)
