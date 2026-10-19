@@ -71,8 +71,8 @@ import {
   createContainer,
   createFiberRoot,
   getContainerRoot,
+  dispatchDiscreteEvent,
   reconciler,
-  runWithDiscreteEvent,
   setContainerNodeLifecycle,
   unmountFiberRoot,
   type Container,
@@ -410,10 +410,9 @@ function SilveryApp({
       const mstate = mouseStateRef.current
       const root = getRootRef.current?.()
       if (!mstate || !root) return
-      runWithDiscreteEvent(() => {
+      dispatchDiscreteEvent(() => {
         processMouseEvent(mstate, parsed, root)
       })
-      reconciler.flushSyncWork()
     })
     owner.onKey((event) => {
       processSingleKey(event.input, event.key)
@@ -460,12 +459,11 @@ function SilveryApp({
         updateKeyboardModifiers(mstate, key)
       }
 
-      runWithDiscreteEvent(() => {
+      dispatchDiscreteEvent(() => {
         childApp.rawKeys.notify(input, key)
         childApp.dispatch({ type: "input:key", input, key })
         childApp.drainEffects()
       })
-      reconciler.flushSyncWork()
     }
   }
   if (inputOwnerRef.current) {

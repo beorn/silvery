@@ -39,8 +39,8 @@ import {
   createContainer,
   createFiberRoot,
   getContainerRoot,
+  dispatchDiscreteEvent,
   reconciler,
-  runWithDiscreteEvent,
   setContainerNodeLifecycle,
   unmountFiberRoot,
 } from "../../reconciler/index"
@@ -435,12 +435,11 @@ export function renderToCanvas(
         }
       }
 
-      runWithDiscreteEvent(() => {
+      dispatchDiscreteEvent(() => {
         childApp.rawKeys.notify(input, key)
         childApp.dispatch({ type: "input:key", input, key })
         childApp.drainEffects()
       })
-      reconciler.flushSyncWork()
 
       inputCallbacks.onKey?.(input)
     }

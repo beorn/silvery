@@ -40,8 +40,8 @@ import {
   createContainer,
   createFiberRoot,
   getContainerRoot,
+  dispatchDiscreteEvent,
   reconciler,
-  runWithDiscreteEvent,
   setContainerNodeLifecycle,
 } from "@silvery/ag-react/reconciler"
 import type { RenderBuffer } from "../render-adapter"
@@ -386,12 +386,11 @@ export function renderToXterm(
         }
       }
 
-      runWithDiscreteEvent(() => {
+      dispatchDiscreteEvent(() => {
         childApp!.rawKeys.notify(input, key)
         childApp!.dispatch({ type: "input:key", input, key })
         childApp!.drainEffects()
       })
-      reconciler.flushSyncWork()
 
       inputCallbacks.onKey?.(input)
     }
