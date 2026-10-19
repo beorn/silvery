@@ -577,7 +577,10 @@ function DocumentBlocks({
               previous.kind !== "rule" &&
               previous.kind !== "media"
             const extraSpace = block.level <= 2 && afterBody
-            const topMargin = (afterList ? 1 : 0) + (extraSpace ? 1 : 0)
+            // ONE blank row before every heading (@chief 2026-10-19, round 4): the list-follow
+            // and level<=2 allowances used to add, and a heading after a list rendered two blank
+            // rows while the same heading after prose rendered one. Collapse to a single row.
+            const topMargin = afterList || extraSpace ? 1 : 0
             const subtaskSummary = block.subtaskSummary
             const isFoldable =
               block.foldable !== undefined ? block.foldable : (enableSectionFolding ?? false)
