@@ -613,7 +613,17 @@ test("string spacing in fit-content measurement contributes zero for percentages
   expect(app.getByTestId("target").boundingBox()?.height).toBe(2)
 })
 
-test("string padding in fit-content measurement keeps its ch part", () => {
+test("intrinsic spacing resolves percentages to zero and ch at the adapter scale", () => {
+  const node = createFlexilyZeroEngine().createNode()
+  // No percentage basis in intrinsic measurement: max(1ch, 25%) is 1ch.
+  expect(node.intrinsicSpacing("paddingLeft", "max(1ch, 25%)", Number.NaN)).toBe(1)
+  // A container-query part resolves against the given size, and to zero at NaN.
+  expect(node.intrinsicSpacing("paddingLeft", "10cqi", Number.NaN)).toBe(0)
+  expect(node.intrinsicSpacing("paddingLeft", "10cqi", 200)).toBe(20)
+  expect(() => node.intrinsicSpacing("paddingLeft", "12wat", Number.NaN)).toThrow(/paddingLeft.*12wat/)
+})
+
+test("percentage padding still resolves against the containing block in final layout", () => {
   const render = createRenderer({ cols: 40, rows: 10 })
   const app = render(
     <Box testID="target" width="fit-content" height="fit-content" paddingX="max(1ch, 25%)">
@@ -622,5 +632,93 @@ test("string padding in fit-content measurement keeps its ch part", () => {
       </Box>
     </Box>,
   )
-  expect(app.getByTestId("target").boundingBox()?.width).toBe(3)
+  // 25% of the 40-column containing block, 10 per side; the estimate is not
+  // the layout input for a fit-content width (measurePhase delegates that).
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+})
+
+test("width fit-content consumes the intrinsic gap across a rerender", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const tree = (gap: string) => (
+    <Box testID="target" width="fit-content" height={1} flexDirection="row" columnGap={gap}>
+      <Box width={1}>
+        <Text>a</Text>
+      </Box>
+      <Box width={1}>
+        <Text>b</Text>
+      </Box>
+    </Box>
+  )
+  const app = render(tree("max(10%, 25%)"))
+  // Final layout resolves the percentage against the containing block (10),
+  // so the box is 2 columns of content plus one 10-column gap.
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(12)
+  app.rerender(tree("max(20ch, 25%)"))
+  // ch now wins over the same percentage: 2 + 20.
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(22)
+})
+
+test("snug-content width consumes the intrinsic spacing resolution", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const app = render(
+    <Box testID="target" width="snug-content" height={1} paddingX="max(1ch, 25%)">
+      <Text>a</Text>
+    </Box>,
+  )
+  const stringWidth = app.getByTestId("target").boundingBox()?.width
+  const numeric = render(
+    <Box testID="numeric" width="snug-content" height={1} paddingX={1}>
+      <Text>a</Text>
+    </Box>,
+  )
+  const numericWidth = numeric.getByTestId("numeric").boundingBox()?.width
+  expect(numericWidth).toBe(3)
+  // String form must reach the same size as its numeric equivalent (1ch = 1).
+  // Today it measures 20: the percentage resolves to 10 per side at layout
+  // while the intrinsic estimate says 1, and the content is dropped.
+  expect(stringWidth).toBe(3)
+})
+
+test("vertical padding under height fit-content consumes the intrinsic resolution", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const app = render(
+    <Box testID="target" width={20} height="fit-content" paddingY="max(1lh, 25%)">
+      <Box height={1}>
+        <Text>a</Text>
+      </Box>
+    </Box>,
+  )
+  const stringHeight = app.getByTestId("target").boundingBox()?.height
+  const numeric = render(
+    <Box testID="numeric" width={20} height="fit-content" paddingY={1}>
+      <Box height={1}>
+        <Text>a</Text>
+      </Box>
+    </Box>,
+  )
+  const numericHeight = numeric.getByTestId("numeric").boundingBox()?.height
+  expect(numericHeight).toBe(3)
+  // Same shape with the string form must match its numeric equivalent.
+  // Today it measures 10 for the same reason as the snug-content case.
+  expect(stringHeight).toBe(3)
+})
+
+test("the yoga engine keeps its named unsupported-input result for string spacing", async () => {
+  const yoga = await initYogaEngine()
+  const previous = createFlexilyZeroEngine()
+  setLayoutEngine(yoga)
+  try {
+    const render = createRenderer({ cols: 40, rows: 10 })
+    expect(() =>
+      render(
+        <Box width={20} height="fit-content" flexDirection="column" gap="max(10%, 25%)">
+          <Box height={1}>
+            <Text>a</Text>
+          </Box>
+        </Box>,
+      ),
+    ).toThrow(/yoga|SILVERY_ENGINE=flexily/i)
+  } finally {
+    setLayoutEngine(previous)
+  }
 })
