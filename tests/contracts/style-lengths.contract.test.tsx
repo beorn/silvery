@@ -20,6 +20,7 @@ import { applyBoxProps } from "../../packages/ag-react/src/reconciler/nodes"
 import { createFlexilyZeroEngine } from "../../packages/ag-term/src/adapters/flexily-zero-adapter"
 import { initYogaEngine } from "../../packages/ag-term/src/adapters/yoga-adapter"
 import { setLayoutEngine } from "../../packages/ag-term/src/layout-engine"
+import { resetStrictCache } from "@silvery/ag-term/strict-mode"
 
 test("Box math width reaches layout like its numeric equivalent", () => {
   const render = createRenderer({ cols: 40, rows: 2 })
@@ -451,22 +452,45 @@ test("identical math gap through GUTTER_ALL retains its parsed value", () => {
 
 // 26238: accepted string spacing must paint through ordinary scroll/hidden
 // clipping. The intrinsic-measurement exception does not cover paint.
-test("string padding paints through scroll and hidden clipping", () => {
-  for (const overflow of ["scroll", "hidden"] as const) {
-    const render = createRenderer({ cols: 30, rows: 6 })
-    const app = render(
-      <Box width={20} height={4} paddingLeft="max(1ch, 2ch)" overflow={overflow}>
-        <Box width={30} height={10}>
-          <Text>child</Text>
+//
+// pipeline/AGENTS.md "Mandatory: Test Before Change" requires the changed
+// paint path under SILVERY_STRICT with a realistic-scale fixture (50+ nodes),
+// and an incremental rerender so STRICT compares incremental against fresh.
+test("string padding paints through scroll and hidden clipping at realistic scale", () => {
+  const saved = process.env.SILVERY_STRICT
+  process.env.SILVERY_STRICT = "2"
+  resetStrictCache()
+  try {
+    for (const overflow of ["scroll", "hidden"] as const) {
+      const render = createRenderer({ cols: 30, rows: 12 })
+      const tree = (label: string) => (
+        <Box width={20} height={10} paddingLeft="max(1ch, 2ch)" overflow={overflow}>
+          <Box width={30} height={60} flexDirection="column">
+            {Array.from({ length: 60 }, (_, index) => (
+              <Box key={index} height={1}>
+                <Text>
+                  {label}-{index}
+                </Text>
+              </Box>
+            ))}
+          </Box>
         </Box>
-      </Box>,
-    )
-    try {
-      expect(app.text).toContain("child")
-      expect(app.text.split("\n")[0]!.startsWith("  child")).toBe(true)
-    } finally {
-      app.unmount()
+      )
+      const app = render(tree("child"))
+      try {
+        expect(app.text).toContain("child-0")
+        expect(app.text.split("\n")[0]!.startsWith("  child-0")).toBe(true)
+        app.rerender(tree("next"))
+        expect(app.text).toContain("next-0")
+        expect(app.text.split("\n")[0]!.startsWith("  next-0")).toBe(true)
+      } finally {
+        app.unmount()
+      }
     }
+  } finally {
+    if (saved === undefined) delete process.env.SILVERY_STRICT
+    else process.env.SILVERY_STRICT = saved
+    resetStrictCache()
   }
 })
 
