@@ -1196,7 +1196,7 @@ export type { DOMAdapterConfig } from "@silvery/ag-term/adapters/dom-adapter"
 
 // App types (unified render API)
 export type { App } from "@silvery/ag-term/app"
-export type { AutoLocator, FilterOptions } from "@silvery/test/auto-locator"
+export type { AutoLocator, FilterOptions } from "@silvery/ag-term/auto-locator"
 export type { BoundTerm } from "@silvery/ag-term/bound-term"
 
 // Types

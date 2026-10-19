@@ -14,6 +14,7 @@ import {
 } from "react"
 import { effect as signalEffect } from "@silvery/signals"
 import { getLayoutSignals } from "@silvery/ag/layout-signals"
+import type { AgNode } from "@silvery/ag/types"
 import { StdoutContext } from "@silvery/ag-react/context"
 import { ChainAppContext } from "@silvery/ag-react/context"
 import { InkCursorStoreCtx } from "./with-ink-cursor"
@@ -347,7 +348,7 @@ export { useWindowSize } from "@silvery/ag-react/hooks/useWindowSize"
  * In silvery, Box's forwardRef exposes a BoxHandle via useImperativeHandle,
  * which has getNode(). Ink users pass refs expecting direct DOM-like access.
  */
-function resolveAgNode(refValue: any): import("@silvery/create/types").AgNode | null {
+function resolveAgNode(refValue: any): AgNode | null {
   if (!refValue) return null
   // BoxHandle from silvery's Box component
   if (typeof refValue.getNode === "function") {
@@ -397,7 +398,7 @@ export function useBoxMetrics(ref: import("react").RefObject<any>) {
   const [metrics, setMetrics] = useState<BoxMetrics>(ZERO_METRICS)
 
   // Track the previously resolved node so we can detect ref switches
-  const prevNodeRef = useRef<import("@silvery/create/types").AgNode | null>(null)
+  const prevNodeRef = useRef<AgNode | null>(null)
   // Track the last metrics we set to avoid unnecessary state updates
   const lastMetricsRef = useRef<BoxMetrics>(ZERO_METRICS)
 

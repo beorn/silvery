@@ -25,7 +25,7 @@
  */
 
 import type { ReactNode } from "react"
-import { type AutoLocator, createAutoLocator } from "@silvery/test/auto-locator"
+import { type AutoLocator, createAutoLocator } from "./auto-locator"
 import { type BoundTerm, createBoundTerm } from "./bound-term"
 import type { TerminalBuffer } from "./buffer"
 import {

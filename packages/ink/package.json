@@ -33,9 +33,11 @@
     "build": "tsdown"
   },
   "dependencies": {
+    "@silvery/ag": "0.26.0",
     "@silvery/ag-react": "0.26.0",
     "@silvery/ag-term": "0.26.0",
-    "@silvery/ansi": "0.26.0"
+    "@silvery/ansi": "0.26.0",
+    "@silvery/signals": "0.26.0"
   },
   "tsdown": {
     "clean": true,

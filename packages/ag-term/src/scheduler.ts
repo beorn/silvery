@@ -19,7 +19,7 @@ import { type FlickerMonitor, createFlickerMonitor } from "./flicker-monitor"
 import { type MemMonitor, createMemMonitor } from "./mem-monitor"
 import { isStrictEnabled } from "./strict-mode"
 import { type TerminalBuffer, bufferToText, cellEquals } from "./buffer"
-import { buildMismatchContext, formatMismatchContext } from "@silvery/test/debug-mismatch"
+import { buildMismatchContext, formatMismatchContext } from "./debug-mismatch"
 import {
   type ResolvedNonTTYMode as ResolvedMode,
   countLines,

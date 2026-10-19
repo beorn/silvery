@@ -51,7 +51,7 @@ export { IncrementalRenderMismatchError } from "../scheduler"
 // Buffer Comparison
 // =============================================================================
 
-export { compareBuffers, formatMismatch, type BufferMismatch } from "@silvery/test/compare-buffers"
+export { compareBuffers, formatMismatch, type BufferMismatch } from "../compare-buffers"
 
 // =============================================================================
 // Pipeline Internals (for manual ANSI replay verification)
@@ -71,4 +71,4 @@ export {
   formatMismatchContext,
   type NodeDebugInfo,
   type MismatchDebugContext,
-} from "@silvery/test/debug-mismatch"
+} from "../debug-mismatch"
