@@ -19,6 +19,7 @@ import type { Node as FlexilyNode } from "flexily"
 import { applyBoxProps } from "../../packages/ag-react/src/reconciler/nodes"
 import { createFlexilyZeroEngine } from "../../packages/ag-term/src/adapters/flexily-zero-adapter"
 import { initYogaEngine } from "../../packages/ag-term/src/adapters/yoga-adapter"
+import { setLayoutEngine } from "../../packages/ag-term/src/layout-engine"
 
 test("Box math width reaches layout like its numeric equivalent", () => {
   const render = createRenderer({ cols: 40, rows: 2 })
@@ -466,6 +467,63 @@ test("string padding paints through scroll and hidden clipping", () => {
     } finally {
       app.unmount()
     }
+  }
+})
+
+// Review R2: the preflight must not turn Yoga's preserved N% offsets into a
+// refusal. Offsets keep setPosition's numeric/percent branch; spacing strings
+// still refuse.
+test("Yoga keeps numeric and percent offsets through the raw preflight", async () => {
+  const yoga = await initYogaEngine()
+  const previous = createFlexilyZeroEngine()
+  const node = yoga.createNode()
+  try {
+    setLayoutEngine(yoga)
+    expect(() =>
+      applyBoxProps(node, {
+        width: 20,
+        height: 4,
+        position: "absolute",
+        left: "25%",
+        top: "50%",
+      } as unknown as BoxProps),
+    ).not.toThrow()
+    node.calculateLayout(80, 40)
+    // The regression was a refusal, not geometry: both offsets applied.
+    expect(node.getComputedLeft()).toBeGreaterThan(0)
+    expect(node.getComputedTop()).toBeGreaterThan(0)
+    expect(() => applyBoxProps(node, { padding: "1ch" } as unknown as BoxProps)).toThrow(
+      /padding.*1ch/,
+    )
+  } finally {
+    setLayoutEngine(previous)
+    node.free()
+  }
+})
+
+// A0.3a 3b: an unchanged string was validated when it was applied, so an
+// unrelated rerender must not parse it again.
+test("unchanged raw lengths are not revalidated on rerender", () => {
+  const node = createFlexilyZeroEngine().createNode()
+  const spy = vi.spyOn(
+    node as unknown as { validateLength(prop: string, value: string): void },
+    "validateLength",
+  )
+  const props = {
+    width: 20,
+    height: 4,
+    paddingX: "max(1ch, 2ch)",
+    gap: "max(10%, 20%)",
+    left: "max(1ch, 25%)",
+  } as unknown as BoxProps
+  try {
+    applyBoxProps(node, props)
+    const afterFirst = spy.mock.calls.length
+    expect(afterFirst).toBe(3)
+    applyBoxProps(node, props, props)
+    expect(spy.mock.calls.length).toBe(afterFirst)
+  } finally {
+    node.free()
   }
 })
 

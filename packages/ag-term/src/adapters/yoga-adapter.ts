@@ -265,8 +265,20 @@ class YogaNodeAdapter implements LayoutNode {
     )
   }
 
-  /** Same refusal the setters raise, evaluated before any mutation runs. */
+  /**
+   * Same acceptance the setters apply, evaluated before any mutation runs.
+   * Offsets keep Yoga's N% branch (setPosition); every other length is
+   * numeric-only.
+   */
   validateLength(prop: string, value: string): void {
+    if (prop === "top" || prop === "left" || prop === "right" || prop === "bottom") {
+      const percent = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)%$/i.exec(value.trim())
+      if (percent && Number.isFinite(Number(percent[1]))) return
+      throw new TypeError(
+        `${prop}: ${JSON.stringify(value)} — Yoga accepts numeric cells or a valid N% offset; ` +
+          `use SILVERY_ENGINE=flexily for length math.`,
+      )
+    }
     this.requireNumber(prop, value)
   }
 
