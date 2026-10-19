@@ -166,6 +166,7 @@ export function HangingMarkerRow({
   return (
     <Box
       flexDirection="row"
+      alignItems="flex-start"
       width="100%"
       minWidth={0}
       onMouseEnter={onMouseEnter}
