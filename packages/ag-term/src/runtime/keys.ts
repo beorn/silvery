@@ -5,4 +5,4 @@
  */
 
 export type { Key, InputHandler, ParsedKeypress } from "@silvery/ag/keys"
-export { parseKey, emptyKey, parseKeypress, splitRawInput } from "@silvery/ag/keys"
+export { parseKey, emptyKey, parseKeypress } from "@silvery/ag/keys"

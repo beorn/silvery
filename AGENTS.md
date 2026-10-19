@@ -362,7 +362,7 @@ Features: `isActive`, `onRelease`, `onPaste`, release filtering, modifier filter
 
 When Kitty keyboard protocol is enabled (default in Ghostty, Kitty, WezTerm):
 
-1. **stdin** receives raw bytes → `splitRawInput()` splits buffered chunks into individual sequences
+1. **stdin** receives raw bytes → the terminal provider's chunk splitter (`input-owner.ts`) splits buffered chunks into individual sequences
 2. **`parseKey()`** (`@silvery/ag/keys`) parses ANSI/Kitty sequences → `{ input, key }` with `key.eventType: "press" | "repeat" | "release"`
 3. **Event dispatch** (`create-app.tsx:2301`): ALL events go to `runtimeInputListeners` first (useModifierKeys needs releases)
 4. **`useInput` filtering**: both hooks filter `key.eventType === "release"` — handlers see press/repeat only

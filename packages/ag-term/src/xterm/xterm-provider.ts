@@ -17,7 +17,7 @@
  *
  * const provider = createXtermProvider(terminal)
  * const cleanup = provider.onInput((chunk) => {
- *   // raw terminal data, ready for parseKey/splitRawInput
+ *   // raw terminal data, ready for parseKey
  * })
  * provider.write(ansiOutput)
  * provider.dispose()
@@ -40,7 +40,7 @@ const MOUSE_DISABLE = "\x1b[?1000l\x1b[?1006l"
 export interface XtermProvider {
   /**
    * Subscribe to raw input chunks (keyboard data with mouse sequences stripped).
-   * The chunks are raw terminal escape sequences suitable for splitRawInput/parseKey.
+   * The chunks are raw terminal escape sequences suitable for parseKey.
    * Returns cleanup function.
    */
   onInput(handler: (chunk: string) => void): () => void

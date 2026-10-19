@@ -10,7 +10,7 @@ Every keypress travels through five stages before reaching application code:
 stdin bytes
     |
     v
- Terminal Provider          splitRawInput() -- chunk splitting, CSI buffering
+ Terminal Provider          private splitter -- chunk splitting, CSI buffering
     |
     v
  Parser                    parseKeypress() / parseKey() -- structured Key objects
@@ -36,12 +36,12 @@ Each stage has a single responsibility and passes structured data to the next. R
 ```
 stdin data event: "jjj\x1b[A\x1b[A"
                       |
-                splitRawInput()
+                chunk splitter
                       |
         ["j", "j", "j", "\x1b[A", "\x1b[A"]
 ```
 
-`splitRawInput()` recognizes three sequence types:
+The terminal provider's private chunk splitter recognizes three sequence types:
 
 - **Single bytes** -- printable characters and ctrl codes
 - **CSI sequences** -- `ESC [` ... terminator (letter or `~`)

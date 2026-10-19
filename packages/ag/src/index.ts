@@ -58,7 +58,6 @@ export {
   keyToKittyAnsi,
   keyToName,
   keyToModifiers,
-  splitRawInput,
   parseHotkey,
   matchHotkey,
   isModifierOnlyEvent,
