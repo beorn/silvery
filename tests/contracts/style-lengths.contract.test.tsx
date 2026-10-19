@@ -220,6 +220,16 @@ test("offset math resolves at absolute, relative and static paths", () => {
     // Static ignores insets; the values are accepted and never refused.
     app.rerender(tree("static", "max(1ch, 2ch)", "calc(1lh + 1lh)"))
     expect(moved()).toMatchObject({ x: 0, y: 0 })
+    // No query ancestor: the layout root is the implicit container, so `%`
+    // resolves against the containing block rather than a frozen inline size.
+    app.rerender(
+      <Box width={80} height={20} flexDirection="column" backgroundColor="black">
+        <Box testID="moved" position="absolute" left="max(1ch, 25%)" top="50%" width={4} height={1}>
+          <Text>M</Text>
+        </Box>
+      </Box>,
+    )
+    expect(moved()).toMatchObject({ x: 20, y: 10 })
   } finally {
     app.unmount()
     vi.unstubAllEnvs()
