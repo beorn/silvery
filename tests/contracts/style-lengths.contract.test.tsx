@@ -594,20 +594,14 @@ test("public math width follows a resized CQ through a fixed wrapper", () => {
   }
 })
 
-// AC1 exception (@cto a9ea641f / 3c5284be): intrinsic measurement runs before
-// layout, so a string padding or gap has no resolved value. It must refuse
-// loudly, naming the prop, the input and the bead that owns CSS's
-// cyclic-percentage rule (#30346) — never coerce the string to zero.
-test("string spacing in fit-content measurement refuses, naming prop, input and #30346", () => {
-  const escape = (input: string) => input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  const expectRefusal = (element: React.ReactElement, prop: string, input: string) => {
-    expect(() => createRenderer({ cols: 40, rows: 10 })(element)).toThrow(
-      new RegExp(`${prop}: "${escape(input)}".*#30346`),
-    )
-  }
-
-  expectRefusal(
-    <Box width={20} height="fit-content" flexDirection="column" gap="max(10%, 25%)">
+// CSS Sizing 3 cyclic-percentage rule (#30346): during intrinsic (fit-content /
+// snug-content) measurement a percentage part of a spacing length contributes
+// ZERO, while ch resolves at the adapter scale. One evaluator decides — the
+// pipeline asks the layout node instead of parsing the string itself.
+test("string spacing in fit-content measurement contributes zero for percentages", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const app = render(
+    <Box testID="target" width={20} height="fit-content" flexDirection="column" gap="max(10%, 25%)">
       <Box height={1}>
         <Text>a</Text>
       </Box>
@@ -615,17 +609,18 @@ test("string spacing in fit-content measurement refuses, naming prop, input and 
         <Text>b</Text>
       </Box>
     </Box>,
-    "gap",
-    "max(10%, 25%)",
   )
-  expectRefusal(
-    <Box width={20} height="fit-content" paddingX="max(1ch, 25%)">
+  expect(app.getByTestId("target").boundingBox()?.height).toBe(2)
+})
+
+test("string padding in fit-content measurement keeps its ch part", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const app = render(
+    <Box testID="target" width="fit-content" height="fit-content" paddingX="max(1ch, 25%)">
       <Box height={1}>
         <Text>a</Text>
       </Box>
     </Box>,
-    // paddingX expands to paddingLeft/paddingRight before measure reads it.
-    "paddingLeft",
-    "max(1ch, 25%)",
   )
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(3)
 })
