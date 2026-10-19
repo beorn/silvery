@@ -81,6 +81,17 @@ export interface LayoutNode {
    * omits it fails to compile rather than throwing on the first raw string.
    */
   validateLength(prop: string, value: string): void
+  /**
+   * Resolve one raw spacing length for intrinsic (fit-content / snug-content)
+   * measurement, before layout. Never mutates the node. Percentage parts
+   * contribute ZERO (CSS Sizing 3 cyclic-percentage rule, #30346); ch resolves
+   * at the adapter's scale; cq parts resolve against `queryInlineSize` and to
+   * zero when it is NaN — the caller passes NaN explicitly when no container
+   * query size is frozen yet. A malformed value throws an error naming the prop
+   * and the value. Required: the measure phase calls this before any setter
+   * runs, so a custom implementor that omits it fails to compile.
+   */
+  intrinsicSpacing(prop: string, value: string, queryInlineSize: number): number
 
   // Dimension setters
   setWidth(value: number | string): void

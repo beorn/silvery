@@ -282,6 +282,18 @@ class YogaNodeAdapter implements LayoutNode {
     this.requireNumber(prop, value)
   }
 
+  /**
+   * Yoga has no length grammar, so it cannot resolve a string spacing length
+   * for intrinsic measurement. Throw loudly, naming the engine, instead of
+   * guessing a number (#30346).
+   */
+  intrinsicSpacing(prop: string, value: string, _queryInlineSize: number): number {
+    throw new TypeError(
+      `${prop}: ${JSON.stringify(value)} — the yoga engine has no length grammar to resolve a string ` +
+        `spacing prop for intrinsic measurement; use numeric spacing or use SILVERY_ENGINE=flexily.`,
+    )
+  }
+
   setPadding(edge: number, value: number | string): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
     this.node.setPadding(edge as Edge, this.requireNumber("padding", value))

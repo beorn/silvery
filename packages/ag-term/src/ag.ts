@@ -32,7 +32,12 @@ import { getLayoutEngine } from "./layout-engine"
 import type { RGB, TextFrame } from "@silvery/ag/text-frame"
 import { TerminalBuffer, createTextFrame } from "./buffer"
 import { createMeasurer, runWithMeasurer, type Measurer } from "./unicode"
-import { measurePhase } from "./pipeline/measure-phase"
+import {
+  measurePhase,
+  staleMeasureInputs,
+  reportUnsettledMeasureInputs,
+  type MeasureSpacingInput,
+} from "./pipeline/measure-phase"
 import {
   layoutPhase,
   scrollPhase,
@@ -429,23 +434,52 @@ export function createAg(root: AgNode, options?: CreateAgOptions): Ag {
 
     using render = baseLog.span?.("pipeline", { width: cols, height: rows })
 
-    let tMeasure: number
-    {
-      using _m = render?.span("measure")
-      const t = performance.now()
-      measurePhase(root, ctx)
-      tMeasure = performance.now() - t
-      log.debug?.(`measure: ${tMeasure.toFixed(2)}ms`)
+    // Bounded measure re-settle (#30346): measure runs BEFORE layout and
+    // resolves intrinsic spacing through the engine, so on a frame's first
+    // pass — and on the first pass after a resize — getPadding() still reads
+    // the PREVIOUS containing-block width. When the layout that just ran moved
+    // one of those inputs, the constraint measure wrote is stale: re-measure
+    // and lay out again inside THIS transaction so the first exposed frame is
+    // the settled one. At most 2 re-settles (3 measure/layout passes total);
+    // scroll/sticky/scrollRect/notify still run once, after the settle, below.
+    const MEASURE_SETTLE_LIMIT = 2
+    const measureInputs: MeasureSpacingInput[] = []
+    const recordMeasureInput = (input: MeasureSpacingInput): void => {
+      measureInputs.push(input)
     }
-
-    let tLayout: number
-    {
-      using _l = render?.span("layout")
-      const t = performance.now()
-      layoutPhase(root, cols, rows, opts?.forceFullPropagate)
-      tLayout = performance.now() - t
-      log.debug?.(`layout: ${tLayout.toFixed(2)}ms`)
+    let tMeasure = 0
+    let tLayout = 0
+    let settlePasses = 0
+    for (let reSettles = 0; ; reSettles++) {
+      measureInputs.length = 0
+      {
+        using _m = render?.span("measure")
+        const t = performance.now()
+        measurePhase(root, ctx, recordMeasureInput)
+        tMeasure += performance.now() - t
+      }
+      {
+        using _l = render?.span("layout")
+        const t = performance.now()
+        // A re-settle pass must not overwrite the exposed-frame witness
+        // (prevLayout / layoutChangedThisFrame): the first pass captured it,
+        // and the render that follows this transaction still holds those
+        // pixels. See layoutPhase's preserveExposedPrevLayout.
+        layoutPhase(root, cols, rows, opts?.forceFullPropagate, reSettles > 0)
+        tLayout += performance.now() - t
+      }
+      settlePasses += 1
+      const unsettled = staleMeasureInputs(measureInputs)
+      if (unsettled.length === 0) break
+      if (reSettles >= MEASURE_SETTLE_LIMIT) {
+        reportUnsettledMeasureInputs(unsettled, settlePasses)
+        break
+      }
     }
+    log.debug?.(
+      `measure: ${tMeasure.toFixed(2)}ms (${settlePasses} pass${settlePasses === 1 ? "" : "es"})`,
+    )
+    log.debug?.(`layout: ${tLayout.toFixed(2)}ms`)
 
     // STRICT invariant: verify no child overflows its parent's inner width.
     // Catches fit-content/snug-content/measure-phase bugs at the source.

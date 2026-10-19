@@ -121,7 +121,10 @@ test.each(
 // a real inline-size container so cqi has a frozen inline size. This is the
 // A0.3a property-test shape applied to the spacing props.
 const spacingCases: Array<{ prop: keyof BoxProps; math: string; numeric: BoxProps }> = [
-  { prop: "padding", math: "10%", numeric: { padding: 2 } },
+  // 10% resolves against the 40-column containing block, not the 20-wide box:
+  // CSS2 §8.4 makes every padding percentage a share of the containing-block
+  // width, so the numeric equivalent is 4 per side (#30346).
+  { prop: "padding", math: "10%", numeric: { padding: 4 } },
   { prop: "paddingX", math: "calc(1ch + 1ch)", numeric: { paddingX: 2 } },
   { prop: "paddingY", math: "min(2lh, 3lh)", numeric: { paddingY: 2 } },
   { prop: "paddingTop", math: "max(1lh, 2lh)", numeric: { paddingTop: 2 } },
@@ -594,20 +597,14 @@ test("public math width follows a resized CQ through a fixed wrapper", () => {
   }
 })
 
-// AC1 exception (@cto a9ea641f / 3c5284be): intrinsic measurement runs before
-// layout, so a string padding or gap has no resolved value. It must refuse
-// loudly, naming the prop, the input and the bead that owns CSS's
-// cyclic-percentage rule (#30346) — never coerce the string to zero.
-test("string spacing in fit-content measurement refuses, naming prop, input and #30346", () => {
-  const escape = (input: string) => input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  const expectRefusal = (element: React.ReactElement, prop: string, input: string) => {
-    expect(() => createRenderer({ cols: 40, rows: 10 })(element)).toThrow(
-      new RegExp(`${prop}: "${escape(input)}".*#30346`),
-    )
-  }
-
-  expectRefusal(
-    <Box width={20} height="fit-content" flexDirection="column" gap="max(10%, 25%)">
+// CSS Sizing 3 cyclic-percentage rule (#30346): during intrinsic (fit-content /
+// snug-content) measurement a percentage part of a spacing length contributes
+// ZERO, while ch resolves at the adapter scale. One evaluator decides — the
+// pipeline asks the layout node instead of parsing the string itself.
+test("string spacing in fit-content measurement contributes zero for percentages", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const app = render(
+    <Box testID="target" width={20} height="fit-content" flexDirection="column" gap="max(10%, 25%)">
       <Box height={1}>
         <Text>a</Text>
       </Box>
@@ -615,17 +612,392 @@ test("string spacing in fit-content measurement refuses, naming prop, input and 
         <Text>b</Text>
       </Box>
     </Box>,
-    "gap",
-    "max(10%, 25%)",
   )
-  expectRefusal(
-    <Box width={20} height="fit-content" paddingX="max(1ch, 25%)">
+  expect(app.getByTestId("target").boundingBox()?.height).toBe(2)
+})
+
+test("intrinsic spacing resolves percentages to zero and ch at the adapter scale", () => {
+  const node = createFlexilyZeroEngine().createNode()
+  // No percentage basis in intrinsic measurement: max(1ch, 25%) is 1ch.
+  expect(node.intrinsicSpacing("paddingLeft", "max(1ch, 25%)", Number.NaN)).toBe(1)
+  // A container-query part resolves against the given size, and to zero at NaN.
+  expect(node.intrinsicSpacing("paddingLeft", "10cqi", Number.NaN)).toBe(0)
+  expect(node.intrinsicSpacing("paddingLeft", "10cqi", 200)).toBe(20)
+  expect(() => node.intrinsicSpacing("paddingLeft", "12wat", Number.NaN)).toThrow(
+    /paddingLeft.*12wat/,
+  )
+})
+
+test("percentage padding still resolves against the containing block in final layout", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const app = render(
+    <Box testID="target" width="fit-content" height="fit-content" paddingX="max(1ch, 25%)">
       <Box height={1}>
         <Text>a</Text>
       </Box>
     </Box>,
-    // paddingX expands to paddingLeft/paddingRight before measure reads it.
-    "paddingLeft",
-    "max(1ch, 25%)",
   )
+  // 25% of the 40-column containing block, 10 per side; the estimate is not
+  // the layout input for a fit-content width (measurePhase delegates that).
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+})
+
+test("width fit-content consumes the intrinsic gap across a rerender", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const tree = (gap: string) => (
+    <Box testID="target" width="fit-content" height={1} flexDirection="row" columnGap={gap}>
+      <Box width={1}>
+        <Text>a</Text>
+      </Box>
+      <Box width={1}>
+        <Text>b</Text>
+      </Box>
+    </Box>
+  )
+  const app = render(tree("max(10%, 25%)"))
+  // Final layout resolves the percentage against the containing block (10),
+  // so the box is 2 columns of content plus one 10-column gap.
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(12)
+  app.rerender(tree("max(20ch, 25%)"))
+  // ch now wins over the same percentage: 2 + 20.
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(22)
+})
+
+test("snug-content width consumes the intrinsic spacing resolution", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const tree = (
+    <Box testID="target" width="snug-content" height={1} paddingX="max(1ch, 25%)">
+      <Text>a</Text>
+    </Box>
+  )
+  const app = render(tree)
+  const stringWidth = app.getByTestId("target").boundingBox()?.width
+  const numeric = render(
+    <Box testID="numeric" width="snug-content" height={1} paddingX={1}>
+      <Text>a</Text>
+    </Box>,
+  )
+  const numericWidth = numeric.getByTestId("numeric").boundingBox()?.width
+  expect(numericWidth).toBe(3)
+  // The string form is NOT its numeric equivalent: 25% resolves against the
+  // 40-column containing block (10 per side), so the correct box is one column
+  // of content plus 20 of padding. The measure re-settle runs inside the first
+  // layout transaction, so the FIRST exposed frame is the settled 21 — no
+  // caller rerender repairs it.
+  expect(stringWidth).toBe(21)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+})
+
+test("vertical padding under height fit-content consumes the intrinsic resolution", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const tree = (
+    <Box testID="target" width={20} height="fit-content" paddingY="max(1lh, 25%)">
+      <Box height={1}>
+        <Text>a</Text>
+      </Box>
+    </Box>
+  )
+  const app = render(tree)
+  const stringHeight = app.getByTestId("target").boundingBox()?.height
+  const numeric = render(
+    <Box testID="numeric" width={20} height="fit-content" paddingY={1}>
+      <Box height={1}>
+        <Text>a</Text>
+      </Box>
+    </Box>,
+  )
+  const numericHeight = numeric.getByTestId("numeric").boundingBox()?.height
+  expect(numericHeight).toBe(3)
+  // Vertical padding percentages resolve against the containing-block WIDTH
+  // (CSS2 §8.4), so 25% of 40 is 10 per side: one row of content plus 20.
+  // The measure re-settle lands inside the first transaction: 21 on exposure,
+  // and a follow-up rerender stays there.
+  expect(stringHeight).toBe(21)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.height).toBe(21)
+})
+
+test("a resize re-resolves the percentage padding against the new containing block", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const tree = (
+    <Box testID="target" width="snug-content" height={1} paddingX="max(1ch, 25%)">
+      <Text>a</Text>
+    </Box>
+  )
+  const app = render(tree)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+
+  // 25% of 80 is 20 per side: one column of content plus 40 of padding.
+  app.resize(80, 10)
+  // The resize runs the same in-transaction re-settle, so the resize itself
+  // reports 41 — no repair rerender.
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(41)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(41)
+
+  // And back: the old basis must not be replayed.
+  app.resize(40, 10)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+})
+
+// pipeline/AGENTS.md "Mandatory: Test Before Change": the re-settle edge needs
+// a SILVERY_STRICT realistic-scale fixture and an incremental rerender. The
+// settled rect must already be the FIRST returned rect — the transient
+// intrinsic cap (1 + 1 + 1) never reaches the caller — and a normal rerender
+// must leave the box exactly where the first render put it.
+test("string percentage padding settles inside the first render at realistic scale", () => {
+  const saved = process.env.SILVERY_STRICT
+  process.env.SILVERY_STRICT = "2"
+  resetStrictCache()
+  try {
+    const render = createRenderer({ cols: 40, rows: 60 })
+    const tree = (label: string) => (
+      <Box width={40} height={60} flexDirection="column">
+        <Box testID="target" width="snug-content" height={1} paddingX="max(1ch, 25%)">
+          <Text>{label}</Text>
+        </Box>
+        {Array.from({ length: 50 }, (_, index) => (
+          <Box key={index} height={1} flexDirection="row">
+            <Text>
+              {label} row {index}
+            </Text>
+          </Box>
+        ))}
+      </Box>
+    )
+    const app = render(tree("a"))
+    try {
+      // 25% of the 40-column containing block is 10 per side, so the settled
+      // box is one column of content plus 20 of padding.
+      const settled = app.getByTestId("target").boundingBox()
+      expect([settled?.x, settled?.y, settled?.width, settled?.height]).toEqual([0, 0, 21, 1])
+      expect(app.text.split("\n")[0]).toBe(`${" ".repeat(10)}a`)
+      expect(app.text.split("\n")[1]).toBe("a row 0")
+
+      // Ordinary incremental rerender: geometry holds, content repaints.
+      app.rerender(tree("b"))
+      expect(app.getByTestId("target").boundingBox()).toEqual(settled)
+      expect(app.text.split("\n")[0]).toBe(`${" ".repeat(10)}b`)
+      expect(app.text.split("\n")[1]).toBe("b row 0")
+    } finally {
+      app.unmount()
+    }
+  } finally {
+    if (saved === undefined) delete process.env.SILVERY_STRICT
+    else process.env.SILVERY_STRICT = saved
+    resetStrictCache()
+  }
+})
+
+// Reviewer discriminator (#30346): the settle loop must leave prevLayout and
+// layoutChangedThisFrame describing the LAST EXPOSED frame. Terminal dimensions
+// stay fixed -- app.resize discards the previous buffer and hides this -- and
+// the only input change is an ordinary React width change that re-resolves
+// percentage padding, so the frame runs measure/layout more than once. The
+// unchanged sibling moves on the first engine pass and stays put on the next,
+// and its old exposed cells sit in the shrunken panel's clear region.
+test("percentage padding settlement keeps the exposed-frame witness", () => {
+  const saved = process.env.SILVERY_STRICT
+  process.env.SILVERY_STRICT = "2"
+  resetStrictCache()
+  try {
+    const render = createRenderer({ cols: 80, rows: 60 })
+    const tree = (basisWidth: number) => (
+      <Box width={80} height={60} flexDirection="row">
+        <Box width={40} height={60} flexDirection="column">
+          <Box
+            testID="panel"
+            width={basisWidth}
+            height={30}
+            flexDirection="column"
+            backgroundColor="red"
+          >
+            <Box testID="settler" width={4} height="fit-content" paddingY="max(1lh, 25%)">
+              <Box height={1}>
+                <Text>U</Text>
+              </Box>
+            </Box>
+            <Box testID="sibling" height={1}>
+              <Text>SIBL</Text>
+            </Box>
+          </Box>
+        </Box>
+        <Box width={40} height={60} flexDirection="column">
+          {Array.from({ length: 25 }, (_, index) => (
+            <Box key={index} height={1}>
+              <Text>row {index} content</Text>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    )
+    const app = render(tree(40))
+    try {
+      // Exposed frame: 25% of the 40-column containing block is 10 per side, so
+      // the settler is one row of content plus 20 rows of padding.
+      const exposedPanel = [0, 0, 40, 30]
+      const panel = app.getByTestId("panel")
+      const box = panel.boundingBox()
+      expect([box?.x, box?.y, box?.width, box?.height]).toEqual(exposedPanel)
+      expect(app.getByTestId("settler").boundingBox()?.height).toBe(21)
+      expect(app.getByTestId("sibling").boundingBox()?.y).toBe(21)
+      let rows = app.text.split("\n")
+      expect(rows[10]!.startsWith("U")).toBe(true)
+      expect(rows[21]!.startsWith("SIBL")).toBe(true)
+
+      // The parent width change makes the settler settle on the FIRST engine
+      // pass (25% of 20 is 5 per side): 1 + 10 = 11, and the unchanged sibling
+      // moves from row 21 to row 11 without ever moving again. The panel itself
+      // is fixed at 30 rows, so its own rect change happens on the first pass
+      // only -- the second pass is what used to overwrite the witness.
+      app.rerender(tree(20))
+      const settled = panel.boundingBox()
+      expect([settled?.x, settled?.y, settled?.width, settled?.height]).toEqual([0, 0, 20, 30])
+      expect(app.getByTestId("settler").boundingBox()?.height).toBe(11)
+      expect(app.getByTestId("sibling").boundingBox()?.y).toBe(11)
+      rows = app.text.split("\n")
+      // New cells are painted at the final position.
+      expect(rows[5]!.startsWith("U")).toBe(true)
+      expect(rows[11]!.startsWith("SIBL")).toBe(true)
+      // Old cells are not resurrected (left pane columns only; the right pane
+      // owns the tail of every row).
+      expect(rows[10]!.slice(0, 40).trim()).toBe("")
+      expect(rows[21]!.slice(0, 40).trim()).toBe("")
+
+      // Guard the assertions above against a degenerate fixture: the panel's
+      // current rect really does carry its background.
+      expect(app.getByTestId("panel").boundingBox()?.width).toBe(20)
+
+      // The vacated part of the exposed panel is cleared: the shrunken panel
+      // owns columns 0..19 only, so nothing red survives at columns 20..39.
+      const buffer = app.lastBuffer()!
+      expect(buffer.getCell(0, 0).bg).toBe(1)
+      for (let y = 0; y < 30; y++) {
+        for (let x = 20; x < 40; x++) {
+          expect(buffer.getCell(x, y).bg, `stale bg at ${x},${y}`).toBeNull()
+        }
+      }
+
+      // Stable follow-up: an ordinary incremental rerender keeps every box.
+      app.rerender(tree(20))
+      expect(panel.boundingBox()).toEqual(settled)
+      expect(app.text.split("\n")[11]!.startsWith("SIBL")).toBe(true)
+    } finally {
+      app.unmount()
+    }
+  } finally {
+    if (saved === undefined) delete process.env.SILVERY_STRICT
+    else process.env.SILVERY_STRICT = saved
+    resetStrictCache()
+  }
+})
+
+// Nested move/shrink half of the same witness (#30346): a percentage-sized
+// child shrinks on the first engine pass and holds while the settle re-measures
+// its cousin. Its old clear region (the columns and rows of the exposed rect
+// outside the final rect) must be cleared from the carried buffer, and the
+// witness must still name the exposed rect the old pixels were painted into.
+test("percentage padding settlement clears a nested shrink's exposed cells", () => {
+  const saved = process.env.SILVERY_STRICT
+  process.env.SILVERY_STRICT = "2"
+  resetStrictCache()
+  try {
+    const render = createRenderer({ cols: 80, rows: 60 })
+    const tree = (basisWidth: number) => (
+      <Box width={80} height={60} flexDirection="row">
+        <Box width={40} height={60} flexDirection="column">
+          <Box testID="outer" width={basisWidth} height={30} flexDirection="column">
+            <Box
+              testID="nested"
+              width="50%"
+              height={2}
+              paddingLeft="max(1ch, 25%)"
+              backgroundColor="blue"
+            >
+              <Text>NEST</Text>
+            </Box>
+            <Box testID="sibling" height={1}>
+              <Text>SIBL</Text>
+            </Box>
+            <Box testID="settler" width={4} height="fit-content" paddingY="max(1lh, 25%)">
+              <Box height={1}>
+                <Text>U</Text>
+              </Box>
+            </Box>
+            {Array.from({ length: 10 }, (_, index) => (
+              <Box key={index} height={1}>
+                <Text>inner {index}</Text>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+        <Box width={40} height={60} flexDirection="column">
+          {Array.from({ length: 25 }, (_, index) => (
+            <Box key={index} height={1}>
+              <Text>row {index} content</Text>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+    )
+    const app = render(tree(40))
+    try {
+      const exposedNested = [0, 0, 20, 1]
+      const nested = app.getByTestId("nested")
+      const box = nested.boundingBox()
+      expect([box?.x, box?.y, box?.width, box?.height]).toEqual(exposedNested)
+      expect(app.text.split("\n")[0]!.slice(10, 14)).toBe("NEST")
+
+      // 50% of the 20-column panel, with 25% padding: 10 wide, text at column 5.
+      app.rerender(tree(20))
+      const shrunk = nested.boundingBox()
+      expect([shrunk?.x, shrunk?.y, shrunk?.width, shrunk?.height]).toEqual([0, 0, 10, 2])
+      const rows = app.text.split("\n")
+      expect(rows[0]!.slice(5, 9)).toBe("NEST")
+      // The exposed text position is gone, and the rows the exposed box painted
+      // that the final box no longer covers are blank.
+      expect(rows[0]!.slice(10, 14)).not.toBe("NEST")
+      const buffer = app.lastBuffer()!
+      expect(buffer.getCell(5, 0).bg).toBe(4)
+      for (let y = 0; y < 2; y++) {
+        for (let x = 10; x < 20; x++) {
+          expect(buffer.getCell(x, y).bg, `stale bg at ${x},${y}`).toBeNull()
+        }
+      }
+
+      // The nested box moved on the first pass only; the carried buffer still
+      // holds the exposed pixels it has to clear (asserted above by bg cell).
+      expect(app.getByTestId("nested").boundingBox()?.width).toBe(10)
+    } finally {
+      app.unmount()
+    }
+  } finally {
+    if (saved === undefined) delete process.env.SILVERY_STRICT
+    else process.env.SILVERY_STRICT = saved
+    resetStrictCache()
+  }
+})
+
+test("the yoga engine keeps its named unsupported-input result for string spacing", async () => {
+  const yoga = await initYogaEngine()
+  const previous = createFlexilyZeroEngine()
+  setLayoutEngine(yoga)
+  try {
+    const render = createRenderer({ cols: 40, rows: 10 })
+    expect(() =>
+      render(
+        <Box width={20} height="fit-content" flexDirection="column" gap="max(10%, 25%)">
+          <Box height={1}>
+            <Text>a</Text>
+          </Box>
+        </Box>,
+      ),
+    ).toThrow(/yoga|SILVERY_ENGINE=flexily/i)
+  } finally {
+    setLayoutEngine(previous)
+  }
 })
