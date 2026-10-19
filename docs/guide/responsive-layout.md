@@ -21,9 +21,9 @@ silvery uses Bootstrap/Tailwind/Polaris-style mobile-first breakpoints:
 
 Each breakpoint is **cumulative** — a `lg` value applies at `lg` and `xl` unless `xl` overrides it. Specifying `default` is mandatory; every other breakpoint is optional.
 
-## Dimension expressions
+## Length expressions
 
-With the Flexily backend, Box, Text and Island accept length strings on `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight` and `flexBasis`.
+With the Flexily backend, Box, Text and Island accept length strings on `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight` and `flexBasis`, and on the spacing and offset props: `padding`, `paddingX`/`paddingY` and the four sides, `margin` and its variants (`auto` still works), `gap`, `columnGap`, `rowGap`, and `top`/`right`/`bottom`/`left`.
 Use `calc()`, `min()`, `max()` and `clamp()` to combine a responsive size with a floor or ceiling:
 
 ```tsx
@@ -32,16 +32,29 @@ Use `calc()`, `min()`, `max()` and `clamp()` to combine a responsive size with a
 </Box>
 ```
 
+The same grammar applies to spacing, so a pad that shrinks on narrow terminals is declarative rather than a conditional number:
+
+```tsx
+<Box width={80} containerType="inline-size" containSize>
+  <Box paddingLeft="max(0ch, min(2ch, 5cqi))" paddingTop="1lh">
+    <Text>Narrow terminals get no gutter; wide ones get two columns.</Text>
+  </Box>
+</Box>
+```
+
+Offsets take the same grammar. They apply to `position="absolute"` and `position="relative"`; `position="static"` accepts the value and ignores it, as CSS does.
+
 | Unit  | Meaning in the terminal                                                                                                         |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `ch`  | One column; accepted on width and other inline-axis dimensions.                                                                 |
-| `lh`  | One row; accepted on height and other block-axis dimensions.                                                                    |
-| `%`   | A percentage of the corresponding containing axis.                                                                              |
+| `ch`  | One column; accepted on the inline axis (width, left/right, `paddingX`, `columnGap`).                                           |
+| `lh`  | One row; accepted on the block axis (height, top/bottom, `paddingY`, `rowGap`).                                                 |
+| `%`   | A percentage of the corresponding containing axis; valid on both axes.                                                          |
 | `cqi` | One percent of the nearest ancestor's frozen query inline size, or the layout root's inline size when no query ancestor exists. |
 
 Numeric props still count cells: `width={10}` is ten columns and `height={3}` is three rows.
 The terminal adapter supplies the `ch` and `lh` scale. `px` strings are refused with an error pointing to `ch` and `lh`.
 Cross-axis strings such as `height="2ch"`, `width="2lh"` or `height="10cqi"` are refused because this adapter has no cell aspect ratio.
+The same rule applies per edge: `paddingLeft="2ch"` is accepted, `paddingTop="2ch"` is refused, and a shorthand that spans both axes (`padding`, `margin`, `gap`) accepts `%` or a mix of `%` and math but not `ch` or `lh`.
 For `flexBasis`, the parent direction determines the axis, so an incompatible unit is reported at first layout.
 
 ### Accepted syntax and fixes
@@ -69,11 +82,12 @@ Give the query ancestor `containerType="inline-size"` and `containSize` so its i
 The size is frozen before dependent descendants lay out. A query container's own length queries its ancestor, rather than itself.
 With no query ancestor, the layout root is the implicit inline-size query container: descendants use its computed inline size. The root's own query units resolve against the available size.
 
-This is a deliberate CSS subset. Math on padding, margin, gap and position offsets is refused; numeric spacing and margin `auto` keep their existing behavior.
+This is a deliberate CSS subset. Numeric spacing and margin `auto` keep their existing behavior.
 `cqmin`, `cqb` and `cqmax` are refused in dimension expressions until both query axes are supported. The existing `fitWidth` API retains its earlier `cqmin` behavior.
-`var()` and other units are unsupported. The Yoga backend accepts its existing numbers, percentages and keywords, and reports a prop-named error for these expressions.
+`var()` and other units are unsupported. The Yoga backend accepts its existing numbers, percentages and keywords, and reports a prop-named error for these expressions, spacing and offsets included.
 On Yoga, width `fit-content` and `snug-content` use its existing `auto` fallback; use Flexily when content sizing is required.
 Percent dimensions against an indefinite, auto-sized parent can resolve to zero in Flexily where CSS uses auto sizing; this page does not claim browser-identical layout.
+Fit-content and snug-content intrinsic measurement still requires numeric `padding` and `gap`: those paths run before layout, so a length expression there raises a typed error rather than guessing.
 
 ## Pattern 1: Declarative Box-prop spread
 

@@ -24,6 +24,7 @@ import React, {
 } from "react"
 import type { CursorShape } from "@silvery/ag-term/output"
 import type { BoxProps } from "@silvery/ag/types"
+import { resolvePaddingProp } from "@silvery/ag/layout-signals"
 import { NodeContext } from "../context"
 import { useScrollRect, type Rect } from "./useLayout"
 
@@ -214,8 +215,12 @@ export function useCursor(position: CursorPosition): void {
   // useScrollRect provides the node's border-box rect, but cursor
   // col/row are relative to the content area (inside border + padding).
   const props = node?.props as BoxProps | undefined
-  const padLeft = props?.paddingLeft ?? props?.paddingX ?? props?.padding ?? 0
-  const padTop = props?.paddingTop ?? props?.paddingY ?? props?.padding ?? 0
+  const padLeft = node
+    ? resolvePaddingProp(node, props?.paddingLeft ?? props?.paddingX ?? props?.padding, 0)
+    : 0
+  const padTop = node
+    ? resolvePaddingProp(node, props?.paddingTop ?? props?.paddingY ?? props?.padding, 1)
+    : 0
   const borderLeft = props?.borderStyle ? 1 : 0
   const borderTop = props?.borderStyle ? 1 : 0
   const contentOffsetX = borderLeft + padLeft

@@ -196,8 +196,15 @@ function measureIntrinsicSize(
     }
   }
 
-  // Add gap between children
-  const gap = (props.gap as number) ?? 0
+  // Add gap between children. A length string has no value before layout;
+  // coercing it here would silently drop the gap from the intrinsic size.
+  if (typeof props.gap === "string") {
+    throw new TypeError(
+      `gap: ${JSON.stringify(props.gap)} — fit-content/snug-content intrinsic measurement ` +
+        `cannot resolve gap math; size this node explicitly or use numeric cells.`,
+    )
+  }
+  const gap = props.gap ?? 0
   if (gap > 0 && childCount > 1) {
     const totalGap = gap * (childCount - 1)
     if (isRow) {

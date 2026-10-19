@@ -29,6 +29,8 @@ export interface OverflowIndicatorPlacementInput {
    * `borderRight` switches, the padding props, and `overflowIndicator`.
    */
   props: BoxProps
+  /** The scroll container node — needed only when padding is a length string. */
+  node?: AgNode
 }
 
 /**
@@ -78,7 +80,7 @@ export interface OverflowIndicatorPlacement {
 export function overflowIndicatorPlacement(
   input: OverflowIndicatorPlacementInput,
 ): OverflowIndicatorPlacement | undefined {
-  const { edge, hidden, layout, props } = input
+  const { edge, hidden, layout, props, node } = input
   if (!(hidden > 0)) return undefined
 
   const border = getBorderSize(props)
@@ -92,7 +94,7 @@ export function overflowIndicatorPlacement(
     rowWidth = layout.width - border.left - border.right
     y = edge === "top" ? layout.y : layout.y + layout.height - 1
   } else if (props.overflowIndicator === true) {
-    const padding = getPadding(props)
+    const padding = getPadding(node ?? props)
     rowX = layout.x + padding.left
     rowWidth = layout.width - padding.left - padding.right
     y = edge === "top" ? layout.y + padding.top : layout.y + layout.height - padding.bottom - 1

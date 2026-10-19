@@ -943,7 +943,7 @@ function renderScrollContainerChildren(
   if (!layout || !ss) return
 
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
+  const padding = getPadding(node)
 
   const nodeClip: ClipRect = {
     top: layout.y + border.top + padding.top,
@@ -1004,7 +1004,7 @@ function renderNormalChildren(
     const border = props.borderStyle
       ? getBorderSize(props)
       : { top: 0, bottom: 0, left: 0, right: 0 }
-    const padding = getPadding(props)
+    const padding = getPadding(node)
 
     // Adjust layout position by scrollOffset to get screen coordinates
     const adjustedY = layout.y - scrollOffset

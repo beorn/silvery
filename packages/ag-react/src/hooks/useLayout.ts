@@ -58,6 +58,7 @@ import { type AgNode, type BoxProps, type Rect, rectEqual } from "@silvery/ag/ty
 import {
   getLayoutSignals,
   markObservedLayoutSignal,
+  resolvePaddingProp,
   type ObservedLayoutSignalKey,
 } from "@silvery/ag/layout-signals"
 
@@ -85,11 +86,15 @@ function deriveInnerRect(node: AgNode, boxRect: Rect | null | undefined): Rect |
   const props = node.props as BoxProps
   if (!props || node.type === "silvery-text") return boxRect
 
-  // Compute padding
-  const pTop = props.paddingTop ?? props.paddingY ?? props.padding ?? 0
-  const pBottom = props.paddingBottom ?? props.paddingY ?? props.padding ?? 0
-  const pLeft = props.paddingLeft ?? props.paddingX ?? props.padding ?? 0
-  const pRight = props.paddingRight ?? props.paddingX ?? props.padding ?? 0
+  // Compute padding (length strings resolve through the engine, #26238)
+  const pTop = resolvePaddingProp(node, props.paddingTop ?? props.paddingY ?? props.padding, 1)
+  const pBottom = resolvePaddingProp(
+    node,
+    props.paddingBottom ?? props.paddingY ?? props.padding,
+    3,
+  )
+  const pLeft = resolvePaddingProp(node, props.paddingLeft ?? props.paddingX ?? props.padding, 0)
+  const pRight = resolvePaddingProp(node, props.paddingRight ?? props.paddingX ?? props.padding, 2)
 
   // Compute border (1px per side if borderStyle is set)
   let bTop = 0

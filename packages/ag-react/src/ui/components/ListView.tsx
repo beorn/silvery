@@ -1827,6 +1827,7 @@ function ListViewInner<T>(
           hidden: edge === "top" ? innerScrollState.hiddenAbove : innerScrollState.hiddenBelow,
           layout: rect,
           props: containerNode.props as BoxProps,
+          node: containerNode,
         })
         if (at !== undefined && Math.floor(y) === at.y && x >= at.x && x < at.x + at.width) {
           return edge

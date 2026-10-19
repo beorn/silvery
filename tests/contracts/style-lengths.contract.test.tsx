@@ -114,23 +114,125 @@ test.each(
   }
 })
 
-// AC raw preflight: an untyped JS caller can supply even a shadowed broad
-// spacing prop. Geometry after the error proves no earlier setter changed it.
-test.each([
-  { padding: "calc(1ch + 1ch)", paddingTop: 0 },
-  { margin: "max(1ch, 2ch)", marginTop: "auto" },
-  { gap: "clamp(1ch, 2ch, 3ch)" },
-  { top: "calc(1lh + 1lh)", position: "static" },
-])("raw unsupported input refuses before changing dimensions: %j", (raw) => {
-  const node = createFlexilyZeroEngine().createNode()
-  applyBoxProps(node, { width: 20, height: 4 })
-  node.calculateLayout(80, 24)
+// #26238 AC1/AC2: every edge and gap prop takes the A0.3a grammar and lays
+// out exactly like its numeric equivalent, through the public Box seam, inside
+// a real inline-size container so cqi has a frozen inline size. This is the
+// A0.3a property-test shape applied to the spacing props.
+const spacingCases: Array<{ prop: keyof BoxProps; math: string; numeric: BoxProps }> = [
+  { prop: "padding", math: "10%", numeric: { padding: 2 } },
+  { prop: "paddingX", math: "calc(1ch + 1ch)", numeric: { paddingX: 2 } },
+  { prop: "paddingY", math: "min(2lh, 3lh)", numeric: { paddingY: 2 } },
+  { prop: "paddingTop", math: "max(1lh, 2lh)", numeric: { paddingTop: 2 } },
+  { prop: "paddingBottom", math: "calc(2lh)", numeric: { paddingBottom: 2 } },
+  { prop: "paddingLeft", math: "10cqi", numeric: { paddingLeft: 4 } },
+  { prop: "paddingRight", math: "max(1ch, 10cqi)", numeric: { paddingRight: 4 } },
+  { prop: "margin", math: "clamp(0%, 10%, 50%)", numeric: { margin: 4 } },
+  { prop: "marginX", math: "calc(1ch + 1ch)", numeric: { marginX: 2 } },
+  { prop: "marginY", math: "min(2lh, 3lh)", numeric: { marginY: 2 } },
+  { prop: "marginTop", math: "max(1lh, 2lh)", numeric: { marginTop: 2 } },
+  { prop: "marginBottom", math: "calc(2lh)", numeric: { marginBottom: 2 } },
+  { prop: "marginLeft", math: "10cqi", numeric: { marginLeft: 4 } },
+  { prop: "marginRight", math: "max(1ch, 10cqi)", numeric: { marginRight: 4 } },
+  { prop: "gap", math: "10%", numeric: { columnGap: 4, rowGap: 1 } },
+  { prop: "columnGap", math: "10%", numeric: { columnGap: 4 } },
+  { prop: "rowGap", math: "10%", numeric: { rowGap: 1 } },
+]
+
+test.each(spacingCases)(
+  "$prop math lays out like its numeric equivalent",
+  ({ prop, math, numeric }) => {
+    vi.stubEnv("SILVERY_STRICT", "2")
+    const render = createRenderer({ cols: 80, rows: 80 })
+    const tree = (props: BoxProps) => (
+      <Box width={80} height={80} flexDirection="column" backgroundColor="black">
+        <Box width={40} height={10} containerType="inline-size" flexShrink={0} flexDirection="row">
+          <Box {...props} width={20} height={10} flexShrink={0}>
+            <Box testID="pair" width={4} height={10} flexDirection="column" flexShrink={0}>
+              <Text testID="first">A</Text>
+              <Text testID="second">B</Text>
+            </Box>
+          </Box>
+          <Box testID="sibling" width={4} height={10} flexShrink={0}>
+            <Text>C</Text>
+          </Box>
+        </Box>
+        {Array.from({ length: 50 }, (_, index) => (
+          <Box key={index} height={1}>
+            <Text>row {index}</Text>
+          </Box>
+        ))}
+      </Box>
+    )
+    const snapshot = (app: ReturnType<typeof render>) =>
+      ["first", "second", "sibling"].map((id) => app.getByTestId(id).boundingBox())
+    const app = render(tree(numeric))
+    try {
+      const expected = snapshot(app)
+      app.rerender(tree({ [prop]: math } as BoxProps))
+      expect(snapshot(app)).toEqual(expected)
+      app.rerender(tree(numeric))
+      expect(snapshot(app)).toEqual(expected)
+    } finally {
+      app.unmount()
+      vi.unstubAllEnvs()
+    }
+  },
+)
+
+// #26238 AC3: offset math is accepted at the absolute, relative and static
+// paths, and cqi resolves against the frozen inline size of the CQ container.
+test("offset math resolves at absolute, relative and static paths", () => {
+  vi.stubEnv("SILVERY_STRICT", "2")
+  const render = createRenderer({ cols: 80, rows: 20 })
+  const tree = (
+    position: "absolute" | "relative" | "static",
+    left: number | string,
+    top: number | string,
+  ) => (
+    <Box width={80} height={20} flexDirection="column" backgroundColor="black">
+      <Box width={40} height={10} containerType="inline-size" flexShrink={0}>
+        <Box testID="moved" position={position} left={left} top={top} width={4} height={1}>
+          <Text>M</Text>
+        </Box>
+      </Box>
+      {Array.from({ length: 50 }, (_, index) => (
+        <Box key={index} height={1}>
+          <Text>row {index}</Text>
+        </Box>
+      ))}
+    </Box>
+  )
+  const app = render(tree("absolute", "max(2ch, 10cqi)", "1lh"))
   try {
+    const moved = () => app.getByTestId("moved").boundingBox()
+    expect(moved()).toMatchObject({ x: 4, y: 1 })
+    app.rerender(tree("absolute", 4, 1))
+    expect(moved()).toMatchObject({ x: 4, y: 1 })
+    app.rerender(tree("absolute", "25%", "50%"))
+    expect(moved()).toMatchObject({ x: 10, y: 5 })
+    app.rerender(tree("relative", "calc(2ch)", "max(1lh, 2lh)"))
+    expect(moved()).toMatchObject({ x: 2, y: 2 })
+    // Static ignores insets; the values are accepted and never refused.
+    app.rerender(tree("static", "max(1ch, 2ch)", "calc(1lh + 1lh)"))
+    expect(moved()).toMatchObject({ x: 0, y: 0 })
+  } finally {
+    app.unmount()
+    vi.unstubAllEnvs()
+  }
+})
+
+// #26238 AC1: a string the grammar rejects stays a typed error naming the
+// prop and the raw input, now that the spacing refusal itself is gone.
+test("malformed spacing math names the prop and the raw input", () => {
+  const node = createFlexilyZeroEngine().createNode()
+  try {
+    expect(() => applyBoxProps(node, { padding: "max(1ch, 2)" } as unknown as BoxProps)).toThrow(
+      /padding.*max\(1ch, 2\)/,
+    )
+    expect(() => applyBoxProps(node, { gap: "2cqb" } as unknown as BoxProps)).toThrow(/gap.*2cqb/)
     expect(() =>
-      applyBoxProps(node, { width: 99, height: 4, ...raw } as unknown as BoxProps),
-    ).toThrow(/26238/)
-    node.calculateLayout(80, 24)
-    expect(node.getComputedWidth()).toBe(20)
+      applyBoxProps(node, { left: "1px", position: "absolute" } as unknown as BoxProps),
+    ).toThrow(/left.*1px/)
   } finally {
     node.free()
   }
@@ -167,6 +269,16 @@ test("Yoga preserves number/percent/auto and names unsupported direct lengths", 
       expect(() => setters[property].call(node, input)).toThrow(
         new RegExp(`${property}.*max\\(1ch, 50%\\)`),
       )
+    }
+    const spacing = {
+      padding: () => node.setPadding(0, "max(1ch, 25%)"),
+      margin: () => node.setMargin(0, "max(1ch, 25%)"),
+      gap: () => node.setGap(0, "max(1ch, 25%)"),
+      top: () => node.setPosition(1, "max(1lh, 25%)"),
+    }
+    for (const [prop, apply] of Object.entries(spacing)) {
+      expect(apply).toThrow(expect.objectContaining({ name: "TypeError" }))
+      expect(apply).toThrow(new RegExp(`${prop}.*max\\(`))
     }
   } finally {
     node.free()
@@ -207,6 +319,64 @@ test("public rerender and identical adapter input retain the parsed length", () 
     app.rerender(tree("B"))
     expect(native.getWidth()).toBe(parsed)
     expect(ref.current?.getBoxRect()?.width).toBe(20)
+  } finally {
+    app.unmount()
+  }
+})
+
+// #26238 AC1 parse retention: a spacing or offset string parses once per
+// style-set; an identical adapter input must reuse the stored Value rather
+// than allocate a fresh AST and dirty layout.
+test("identical spacing and offset strings retain their parsed value", () => {
+  const ref = React.createRef<BoxHandle>()
+  const render = createRenderer({ cols: 80, rows: 80 })
+  const tree = (label: string) => (
+    <Box width={80} height={80}>
+      <Box
+        ref={ref}
+        width={20}
+        height={4}
+        padding="10%"
+        gap="10%"
+        position="relative"
+        left="max(1ch, 25%)"
+      >
+        <Text>{label}</Text>
+      </Box>
+      {Array.from({ length: 50 }, (_, index) => (
+        <Box key={index} height={1}>
+          <Text>row {index}</Text>
+        </Box>
+      ))}
+    </Box>
+  )
+  const app = render(tree("A"))
+  try {
+    const layout = ref.current?.getNode()?.layoutNode
+    if (!layout || !("getFlexilyNode" in layout)) {
+      throw new Error("Expected the mounted Box's Flexily adapter")
+    }
+    const native = (layout as typeof layout & { getFlexilyNode(): FlexilyNode }).getFlexilyNode()
+    const padding = native.style.padding[1]
+    const gap = native.style.gap[1]
+    const left = native.style.position[0]
+    expect(Object.isFrozen(padding)).toBe(true)
+    expect(padding.source).toBe("10%")
+    expect(gap.source).toBe("10%")
+    expect(left.source).toBe("max(1ch, 25%)")
+    layout.setPadding(1, "10%")
+    layout.setGap(1, "10%")
+    layout.setPosition(0, "max(1ch, 25%)")
+    expect(native.style.padding[1]).toBe(padding)
+    expect(native.style.gap[1]).toBe(gap)
+    expect(native.style.position[0]).toBe(left)
+    expect(native.isDirty()).toBe(false)
+    const width = ref.current?.getBoxRect()?.width
+    app.rerender(tree("B"))
+    expect(native.style.padding[1]).toBe(padding)
+    expect(native.style.gap[1]).toBe(gap)
+    expect(native.style.position[0]).toBe(left)
+    expect(ref.current?.getBoxRect()?.width).toBe(width)
   } finally {
     app.unmount()
   }

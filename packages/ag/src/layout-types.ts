@@ -107,17 +107,17 @@ export interface LayoutNode {
   setJustifyContent(justify: number): void
 
   // Spacing
-  setPadding(edge: number, value: number): void
-  setMargin(edge: number, value: number): void
+  setPadding(edge: number, value: number | string): void
+  setMargin(edge: number, value: number | string): void
   /** CSS `margin: auto` — absorbs positive free space, resolves to 0 when negative. */
   setMarginAuto(edge: number): void
   setBorder(edge: number, value: number): void
-  setGap(gutter: number, value: number): void
+  setGap(gutter: number, value: number | string): void
 
   // Display & Position
   setDisplay(display: number): void
   setPositionType(positionType: number): void
-  setPosition(edge: number, value: number): void
+  setPosition(edge: number, value: number | string): void
   setPositionPercent(edge: number, value: number): void
   setOverflow(overflow: number): void
 
@@ -151,6 +151,8 @@ export interface LayoutNode {
   calculateLayout(width: number, height: number, direction?: number): void
 
   // Layout results
+  /** Resolved padding for one edge, after math/cq resolution at layout time. */
+  getComputedPadding(edge: number): number
   getComputedLeft(): number
   getComputedTop(): number
   getComputedWidth(): number

@@ -419,13 +419,13 @@ export interface FlexboxProps {
     | "space-evenly"
 
   // Spacing
-  padding?: number
-  paddingTop?: number
-  paddingBottom?: number
-  paddingLeft?: number
-  paddingRight?: number
-  paddingX?: number
-  paddingY?: number
+  padding?: number | string
+  paddingTop?: number | string
+  paddingBottom?: number | string
+  paddingLeft?: number | string
+  paddingRight?: number | string
+  paddingX?: number | string
+  paddingY?: number | string
   /**
    * Margins accept `"auto"`, which is CSS's original spelling of `safe center`:
    * an auto margin absorbs POSITIVE free space (centring the box) and resolves
@@ -434,16 +434,16 @@ export interface FlexboxProps {
    * overflowing box pushes it past BOTH edges, silently cutting the head as
    * well as the tail. Padding has no `"auto"`, in CSS or here.
    */
-  margin?: number | "auto"
-  marginTop?: number | "auto"
-  marginBottom?: number | "auto"
-  marginLeft?: number | "auto"
-  marginRight?: number | "auto"
-  marginX?: number | "auto"
-  marginY?: number | "auto"
-  gap?: number
-  columnGap?: number
-  rowGap?: number
+  margin?: number | "auto" | string
+  marginTop?: number | "auto" | string
+  marginBottom?: number | "auto" | string
+  marginLeft?: number | "auto" | string
+  marginRight?: number | "auto" | string
+  marginX?: number | "auto" | string
+  marginY?: number | "auto" | string
+  gap?: number | string
+  columnGap?: number | string
+  rowGap?: number | string
 
   // Position
   position?: "relative" | "absolute" | "sticky" | "static"

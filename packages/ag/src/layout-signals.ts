@@ -443,6 +443,27 @@ export function getLayoutSignals(node: AgNode): LayoutSignals {
  * popover anchors, selection overlays) read one signal instead of re-deriving
  * the offsets at every call site.
  */
+/**
+ * Resolve one padding prop to cells. A number is already resolved; a length
+ * string (#26238) must come from the engine, which is the only evaluator.
+ * `edge` uses the shared physical order: 0 left, 1 top, 2 right, 3 bottom.
+ */
+export function resolvePaddingProp(
+  node: AgNode,
+  value: number | string | undefined,
+  edge: 0 | 1 | 2 | 3,
+): number {
+  if (typeof value !== "string") return value ?? 0
+  const computed = node.layoutNode?.getComputedPadding(edge)
+  if (computed === undefined || Number.isNaN(computed)) {
+    throw new TypeError(
+      `padding: ${JSON.stringify(value)} — spacing math needs a laid-out node; ` +
+        `the engine resolves it at layout, so this reader cannot run before the first pass.`,
+    )
+  }
+  return computed
+}
+
 export function computeContentRect(node: AgNode): Rect | null {
   const props = node.props as BoxProps | undefined
   const scroll = node.scrollRect
@@ -451,10 +472,22 @@ export function computeContentRect(node: AgNode): Rect | null {
   // Border + padding offsets. Per the layout engine's own precedence:
   // paddingLeft / paddingRight / paddingTop / paddingBottom
   //   override paddingX / paddingY which override `padding` shorthand.
-  const padLeft = props?.paddingLeft ?? props?.paddingX ?? props?.padding ?? 0
-  const padRight = props?.paddingRight ?? props?.paddingX ?? props?.padding ?? 0
-  const padTop = props?.paddingTop ?? props?.paddingY ?? props?.padding ?? 0
-  const padBottom = props?.paddingBottom ?? props?.paddingY ?? props?.padding ?? 0
+  const padLeft = resolvePaddingProp(
+    node,
+    props?.paddingLeft ?? props?.paddingX ?? props?.padding,
+    0,
+  )
+  const padRight = resolvePaddingProp(
+    node,
+    props?.paddingRight ?? props?.paddingX ?? props?.padding,
+    2,
+  )
+  const padTop = resolvePaddingProp(node, props?.paddingTop ?? props?.paddingY ?? props?.padding, 1)
+  const padBottom = resolvePaddingProp(
+    node,
+    props?.paddingBottom ?? props?.paddingY ?? props?.padding,
+    3,
+  )
   const borderLeft = props?.borderStyle ? 1 : 0
   const borderRight = props?.borderStyle ? 1 : 0
   const borderTop = props?.borderStyle ? 1 : 0

@@ -6,20 +6,42 @@ import type { AgNode, BoxProps, Rect } from "@silvery/ag/types"
 import type { ClipBounds } from "./types"
 import { getActiveLineHeight } from "../unicode"
 
+/** Edge indices shared by both adapters (flexily EDGE_* and yoga EDGE_*). */
+const EDGE = { left: 0, top: 1, right: 2, bottom: 3 } as const
+
 /**
- * Get padding values from props.
+ * Get padding values from props, or from the engine's resolved values when the
+ * prop is a length string (#26238). Passing the node is required for strings:
+ * the engine is the only evaluator, and a parallel parser here would be a
+ * second implementation that silently disagrees with layout.
  */
-export function getPadding(props: BoxProps): {
+export function getPadding(source: BoxProps | AgNode): {
   top: number
   bottom: number
   left: number
   right: number
 } {
+  const node = "props" in source ? source : undefined
+  const props = (node ? node.props : source) as BoxProps
+  const edge = (
+    value: number | string | undefined,
+    edgeName: "top" | "bottom" | "left" | "right",
+  ) => {
+    if (typeof value !== "string") return value ?? 0
+    const computed = node?.layoutNode?.getComputedPadding(EDGE[edgeName])
+    if (computed === undefined || Number.isNaN(computed)) {
+      throw new TypeError(
+        `padding${edgeName[0]!.toUpperCase()}${edgeName.slice(1)}: ${JSON.stringify(value)} — ` +
+          `spacing math needs a laid-out node; pass the AgNode to getPadding() instead of bare props.`,
+      )
+    }
+    return computed
+  }
   return {
-    top: props.paddingTop ?? props.paddingY ?? props.padding ?? 0,
-    bottom: props.paddingBottom ?? props.paddingY ?? props.padding ?? 0,
-    left: props.paddingLeft ?? props.paddingX ?? props.padding ?? 0,
-    right: props.paddingRight ?? props.paddingX ?? props.padding ?? 0,
+    top: edge(props.paddingTop ?? props.paddingY ?? props.padding, "top"),
+    bottom: edge(props.paddingBottom ?? props.paddingY ?? props.padding, "bottom"),
+    left: edge(props.paddingLeft ?? props.paddingX ?? props.padding, "left"),
+    right: edge(props.paddingRight ?? props.paddingX ?? props.padding, "right"),
   }
 }
 
@@ -86,7 +108,7 @@ export function excessClearRects(
   let bottom = outer.y - scrollOffset + outer.height
   if (parent?.boxRect) {
     const border = getBorderSize(parent.props as BoxProps)
-    const padding = getPadding(parent.props as BoxProps)
+    const padding = getPadding(parent)
     right = Math.min(right, parent.boxRect.x + parent.boxRect.width - border.right - padding.right)
     bottom = Math.min(
       bottom,

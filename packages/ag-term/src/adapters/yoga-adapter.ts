@@ -256,13 +256,21 @@ class YogaNodeAdapter implements LayoutNode {
   }
 
   // Spacing
-  setPadding(edge: number, value: number): void {
-    // LayoutEngine uses plain numbers; Yoga uses branded Edge type
-    this.node.setPadding(edge as Edge, value)
+  /** Yoga has no math grammar; a string is a typed refusal naming the fix. */
+  private requireNumber(prop: string, value: number | string): number {
+    if (typeof value === "number") return value
+    throw new TypeError(
+      `${prop}: ${JSON.stringify(value)} — Yoga accepts numeric cells only; ` +
+        `use SILVERY_ENGINE=flexily for length math.`,
+    )
   }
-  setMargin(edge: number, value: number): void {
+  setPadding(edge: number, value: number | string): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
-    this.node.setMargin(edge as Edge, value)
+    this.node.setPadding(edge as Edge, this.requireNumber("padding", value))
+  }
+  setMargin(edge: number, value: number | string): void {
+    // LayoutEngine uses plain numbers; Yoga uses branded Edge type
+    this.node.setMargin(edge as Edge, this.requireNumber("margin", value))
   }
   setMarginAuto(edge: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
@@ -272,9 +280,9 @@ class YogaNodeAdapter implements LayoutNode {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
     this.node.setBorder(edge as Edge, value)
   }
-  setGap(gutter: number, value: number): void {
+  setGap(gutter: number, value: number | string): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Gutter type
-    this.node.setGap(gutter as Gutter, value)
+    this.node.setGap(gutter as Gutter, this.requireNumber("gap", value))
   }
 
   // Display & Position
@@ -286,9 +294,29 @@ class YogaNodeAdapter implements LayoutNode {
     // LayoutEngine uses plain numbers; Yoga uses branded PositionType type
     this.node.setPositionType(positionType as PositionType)
   }
-  setPosition(edge: number, value: number): void {
+  setPosition(edge: number, value: number | string): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
-    this.node.setPosition(edge as Edge, value)
+    if (typeof value === "number") {
+      this.node.setPosition(edge as Edge, value)
+      return
+    }
+    const percent = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)%$/i.exec(value.trim())
+    if (percent && Number.isFinite(Number(percent[1]))) {
+      this.node.setPositionPercent(edge as Edge, Number(percent[1]))
+      return
+    }
+    const prop =
+      edge === this.yoga.EDGE_LEFT
+        ? "left"
+        : edge === this.yoga.EDGE_TOP
+          ? "top"
+          : edge === this.yoga.EDGE_RIGHT
+            ? "right"
+            : "bottom"
+    throw new TypeError(
+      `${prop}: ${JSON.stringify(value)} — Yoga accepts numeric cells or a valid N% offset; ` +
+        `use SILVERY_ENGINE=flexily for length math.`,
+    )
   }
   setPositionPercent(edge: number, value: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
@@ -327,6 +355,9 @@ class YogaNodeAdapter implements LayoutNode {
   }
 
   // Layout results
+  getComputedPadding(edge: number): number {
+    return this.node.getComputedPadding(edge as Edge)
+  }
   getComputedLeft(): number {
     return this.node.getComputedLeft()
   }

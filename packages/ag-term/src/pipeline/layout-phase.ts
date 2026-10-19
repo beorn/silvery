@@ -650,7 +650,7 @@ function _hasDescendantOverflowChanged(node: AgNode, rect: Rect): boolean {
   // content area equals their full rect, so this is a no-op for them.
   const props = node.props as BoxProps
   const border = getBorderSize(props)
-  const padding = getPadding(props)
+  const padding = getPadding(node)
   return _checkDescendantOverflow(
     node.children,
     rect.x + border.left + padding.left,
@@ -881,7 +881,7 @@ export function strictLayoutOverflowCheck(root: AgNode): void {
         const border = parentProps.borderStyle
           ? getBorderSize(parentProps)
           : { top: 0, bottom: 0, left: 0, right: 0 }
-        const padding = getPadding(parentProps)
+        const padding = getPadding(node)
         const parentInnerWidth =
           node.boxRect.width - padding.left - padding.right - border.left - border.right
 
@@ -1109,7 +1109,7 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
 
   // Calculate viewport (container minus borders/padding)
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
+  const padding = getPadding(node)
 
   const rawViewportHeight =
     layout.height - border.top - border.bottom - padding.top - padding.bottom
@@ -1697,7 +1697,7 @@ export function stickyPhase(root: AgNode): void {
     const border = props.borderStyle
       ? getBorderSize(props)
       : { top: 0, bottom: 0, left: 0, right: 0 }
-    const padding = getPadding(props)
+    const padding = getPadding(node)
     const parentContentHeight =
       layout.height - border.top - border.bottom - padding.top - padding.bottom
 
@@ -1889,7 +1889,7 @@ function computeStickyScreenRects(parent: AgNode): void {
 
   const props = parent.props as BoxProps
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
+  const padding = getPadding(parent)
   const contentOriginY = parentScrollRect.y + border.top + padding.top
 
   for (const sticky of stickyList) {

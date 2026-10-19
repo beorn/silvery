@@ -188,6 +188,43 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
     }
   }
 
+  /**
+   * Parse a spacing/offset string once per style-set, reusing the stored Value
+   * when the source is unchanged. Same contract as `length()`: a fresh AST on
+   * every render would dirty layout for an identical prop.
+   */
+  private spacing(
+    prop: "padding" | "margin" | "gap" | "left" | "top" | "right" | "bottom",
+    value: number | string,
+    current?: Value,
+  ): number | Value {
+    if (typeof value === "number") return value
+    if (current?.source === value) return current
+    try {
+      return parseLength(value, { ch: 1, lh: 1 })
+    } catch (error) {
+      if (error instanceof LengthError) throw new LengthError(error.input, error.reason, prop)
+      throw error
+    }
+  }
+
+  /** Stored Value for one physical edge, or undefined for an edge alias. */
+  private edgeAt(prop: "padding" | "margin" | "position", edge: number): Value | undefined {
+    const values = this.node.style[prop]
+    if (edge === EDGE_LEFT) return values[0]
+    if (edge === EDGE_TOP) return values[1]
+    if (edge === EDGE_RIGHT) return values[2]
+    if (edge === EDGE_BOTTOM) return values[3]
+    return undefined
+  }
+
+  /** Stored Value for one gutter, or undefined for GUTTER_ALL. */
+  private gutterAt(gutter: number): Value | undefined {
+    if (gutter === GUTTER_COLUMN) return this.node.style.gap[0]
+    if (gutter === GUTTER_ROW) return this.node.style.gap[1]
+    return undefined
+  }
+
   setWidth(value: number | string): void {
     if (value === "auto") this.node.setWidthAuto()
     else if (value === "fit-content") this.node.setWidthFitContent()
@@ -281,11 +318,11 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   }
 
   // Spacing
-  setPadding(edge: number, value: number): void {
-    this.node.setPadding(edge, value)
+  setPadding(edge: number, value: number | string): void {
+    this.node.setPadding(edge, this.spacing("padding", value, this.edgeAt("padding", edge)))
   }
-  setMargin(edge: number, value: number): void {
-    this.node.setMargin(edge, value)
+  setMargin(edge: number, value: number | string): void {
+    this.node.setMargin(edge, this.spacing("margin", value, this.edgeAt("margin", edge)))
   }
   setMarginAuto(edge: number): void {
     this.node.setMarginAuto(edge)
@@ -293,8 +330,8 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   setBorder(edge: number, value: number): void {
     this.node.setBorder(edge, value)
   }
-  setGap(gutter: number, value: number): void {
-    this.node.setGap(gutter, value)
+  setGap(gutter: number, value: number | string): void {
+    this.node.setGap(gutter, this.spacing("gap", value, this.gutterAt(gutter)))
   }
 
   // Display & Position
@@ -304,8 +341,16 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   setPositionType(positionType: number): void {
     this.node.setPositionType(positionType)
   }
-  setPosition(edge: number, value: number): void {
-    this.node.setPosition(edge, value)
+  setPosition(edge: number, value: number | string): void {
+    const prop =
+      edge === EDGE_LEFT
+        ? "left"
+        : edge === EDGE_TOP
+          ? "top"
+          : edge === EDGE_RIGHT
+            ? "right"
+            : "bottom"
+    this.node.setPosition(edge, this.spacing(prop, value, this.edgeAt("position", edge)))
   }
   setPositionPercent(edge: number, value: number): void {
     this.node.setPositionPercent(edge, value)
@@ -350,6 +395,9 @@ class FlexilyZeroNodeAdapter implements LayoutNode {
   }
 
   // Layout results
+  getComputedPadding(edge: number): number {
+    return this.node.getComputedPadding(edge)
+  }
   getComputedLeft(): number {
     return this.node.getComputedLeft()
   }

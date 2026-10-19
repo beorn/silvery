@@ -1776,7 +1776,7 @@ function renderScrollContainerChildren(
   if (!layout || !ss) return
 
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
+  const padding = getPadding(node)
   // Scroll containers clip vertically (for scrolling) but NOT horizontally.
   // Scroll containers clip vertically (viewport) but not horizontally —
   // horizontal containment is handled by text wrapping, not clipping.
@@ -2163,7 +2163,7 @@ function renderNormalChildren(
     const border = props.borderStyle
       ? getBorderSize(props)
       : { top: 0, bottom: 0, left: 0, right: 0 }
-    const padding = getPadding(props)
+    const padding = getPadding(node)
     let clearX = layout.x + border.left + padding.left
     let clearY = layout.y - scrollOffset + border.top + padding.top
     let clearW = layout.width - border.left - border.right - padding.left - padding.right

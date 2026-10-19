@@ -263,7 +263,7 @@ function walk(
 
   if (isScrollContainer) {
     const ss = node.scrollState!
-    const childClip = computeChildClip(layout, props, clipBounds, 0, false, true)
+    const childClip = computeChildClip(node, layout, props, clipBounds, 0, false, true)
     // Non-sticky children: rendered with container scroll offset.
     for (let i = 0; i < node.children.length; i++) {
       const child = node.children[i]
@@ -285,7 +285,7 @@ function walk(
   } else {
     const childClip =
       clipX || clipY
-        ? computeChildClip(layout, props, clipBounds, scrollOffset, clipX, clipY)
+        ? computeChildClip(node, layout, props, clipBounds, scrollOffset, clipX, clipY)
         : clipBounds
     for (const child of node.children) {
       walk(child, buffer, sink, scrollOffset, childClip, childInheritedBg, snapshots, ctx)
@@ -378,6 +378,7 @@ function collectOutlineCells(
  * so we reproduce the same computation here. Must stay in sync.
  */
 function computeChildClip(
+  node: AgNode,
   layout: NonNullable<AgNode["boxRect"]>,
   props: BoxProps,
   parentClip: ClipBounds | undefined,
@@ -386,7 +387,7 @@ function computeChildClip(
   vertical: boolean,
 ): ClipBounds {
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
+  const padding = getPadding(node)
   const adjustedY = layout.y - scrollOffset
   const nodeClip: ClipBounds = vertical
     ? {

@@ -432,6 +432,7 @@ export function renderScrollIndicators(
     hidden: ss.hiddenAbove,
     layout: screenLayout,
     props,
+    node: _node,
   })
   if (top) renderOverflowIndicator(buffer, top, indicatorStyle, clipBounds, ctx)
   const bottom = overflowIndicatorPlacement({
@@ -439,6 +440,7 @@ export function renderScrollIndicators(
     hidden: ss.hiddenBelow,
     layout: screenLayout,
     props,
+    node: _node,
   })
   if (bottom) renderOverflowIndicator(buffer, bottom, indicatorStyle, clipBounds, ctx)
 }

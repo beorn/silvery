@@ -544,49 +544,6 @@ const lengthSetters = {
 
 type LengthProp = keyof typeof lengthSetters | "top" | "left" | "bottom" | "right"
 
-function positionPercent(prop: string, input: string): number {
-  const match = /^([+-]?(?:\d*\.\d+|\d+)(?:e[+-]?\d+)?)%$/i.exec(input.trim())
-  if (match && Number.isFinite(Number(match[1]))) return Number(match[1])
-  throw new TypeError(
-    `${prop}: ${JSON.stringify(input)} — offsets accept numeric cells or a valid N%; math waits for #26238.`,
-  )
-}
-
-/** Validate raw values before specificity or any node mutation. */
-function validateRawLengths(props: object, component: "Box" | "Text" | "Island"): void {
-  const raw = props as Record<string, unknown>
-  for (const prop of [
-    "padding",
-    "paddingX",
-    "paddingY",
-    "paddingTop",
-    "paddingBottom",
-    "paddingLeft",
-    "paddingRight",
-    "margin",
-    "marginX",
-    "marginY",
-    "marginTop",
-    "marginBottom",
-    "marginLeft",
-    "marginRight",
-    "gap",
-    "rowGap",
-    "columnGap",
-  ]) {
-    const value = raw[prop]
-    if (typeof value === "string" && !(prop.startsWith("margin") && value === "auto")) {
-      throw new TypeError(
-        `<${component} ${prop}>: ${JSON.stringify(value)} — use numeric cells; spacing math waits for #26238.`,
-      )
-    }
-  }
-  for (const prop of ["top", "left", "bottom", "right"]) {
-    const value = raw[prop]
-    if (typeof value === "string") positionPercent(`<${component} ${prop}>`, value)
-  }
-}
-
 /** One prop route. Adapters own string grammar, unit scale and capability errors. */
 function applyLength(
   layoutNode: LayoutNode,
@@ -599,8 +556,7 @@ function applyLength(
     const edge = { top: c.EDGE_TOP, left: c.EDGE_LEFT, bottom: c.EDGE_BOTTOM, right: c.EDGE_RIGHT }[
       prop
     ]
-    if (typeof value === "string") layoutNode.setPositionPercent(edge, positionPercent(prop, value))
-    else layoutNode.setPosition(edge, value ?? NaN)
+    layoutNode.setPosition(edge, value ?? NaN)
     return
   }
   if (Object.is(value, oldValue)) return
@@ -629,7 +585,6 @@ export function applyIslandProps(
   props: IslandLayoutProps,
   oldProps?: IslandLayoutProps,
 ): void {
-  validateRawLengths(props, "Island")
   const c = getConstants()
   const wasRemoved = (prop: keyof IslandLayoutProps): boolean =>
     oldProps?.[prop] !== undefined && props[prop] === undefined
@@ -691,7 +646,6 @@ export function applyTextFlexItemProps(
   props: TextProps,
   oldProps?: TextProps,
 ): void {
-  validateRawLengths(props, "Text")
   const c = getConstants()
   const wasRemoved = (prop: keyof TextProps): boolean =>
     oldProps?.[prop] !== undefined && props[prop] === undefined
@@ -760,7 +714,6 @@ function parseFitWidthEntry(
  * This maps Ink/Silvery props to the layout engine API.
  */
 export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?: BoxProps): void {
-  validateRawLengths(props, "Box")
   const c = getConstants()
   // Helper: true when a prop was set in oldProps but not in newProps (prop removed on rerender)
   const wasRemoved = (prop: keyof BoxProps): boolean =>
@@ -1013,7 +966,7 @@ function applySpacing(layoutNode: LayoutNode, type: "padding" | "margin", props:
   // `"auto"` is margin-only, and must reach the engine's dedicated auto path —
   // passing the string through setMargin produces NaN and collapses the row.
   // Padding keeps the numeric setter, because CSS has no auto padding.
-  const set: (edge: number, value: number | "auto") => void =
+  const set: (edge: number, value: number | string) => void =
     type === "padding"
       ? (edge, value): void => {
           // CSS has no auto padding and BoxProps types padding as `number`, so
@@ -1029,7 +982,7 @@ function applySpacing(layoutNode: LayoutNode, type: "padding" | "margin", props:
           else layoutNode.setMargin(edge, value)
         }
 
-  type Spacing = number | "auto" | undefined
+  type Spacing = number | string | undefined
   const all = props[type] as Spacing
   const x = props[`${type}X` as keyof BoxProps] as Spacing
   const yy = props[`${type}Y` as keyof BoxProps] as Spacing
