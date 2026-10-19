@@ -352,3 +352,23 @@ Built on the shoulders of [@commander-js/extra-typings](https://github.com/comma
 - **Commander included** -- no separate install or peer setup for commander.js itself; zod is a required peer for the `z` types
 
 If you're using `@commander-js/extra-typings` today, switching is a one-line import change.
+
+## Known issue: strict type-checking
+
+Type-checking libraries with `skipLibCheck: false` reports one error inside our declarations:
+
+```
+node_modules/@silvery/commander/dist/index.d.mts: error TS2430: Interface 'Command<...>'
+incorrectly extends interface '_CommandBase'
+```
+
+`Command` narrows the return types of `option()` and `argument()` from commander's `this`-returning
+base, which TypeScript rejects once it checks the declaration file itself. Projects that set
+`skipLibCheck: false` -- the compiler's own default -- see it. Projects that set
+`skipLibCheck: true` -- what the `tsc --init` template writes -- do not: the merged interface wins
+member lookup, typed chaining works exactly as documented on this page, and nothing changes at
+runtime.
+
+The cure is a public type redesign -- a typed `Command` that no longer extends commander's -- which
+changes the published type API, so it is planned rather than patched. It is tracked as issue 30291
+(commander declaration typing redesign).
