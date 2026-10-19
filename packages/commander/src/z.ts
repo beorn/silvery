@@ -2,7 +2,9 @@
  * Extended Zod object with CLI types.
  *
  * Spreads all of Zod's exports and adds CLI-specific schemas.
- * Tree-shakeable -- only evaluated if user imports `z`.
+ * zod is a required peer dependency (^4): the main entry loads this module,
+ * so an unbundled consumer without zod fails at import. A bundler may still
+ * drop it when `z` is unused.
  *
  * @example
  * ```ts

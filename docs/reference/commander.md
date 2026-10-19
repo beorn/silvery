@@ -236,7 +236,7 @@ const program = new Command("deploy")
   )
 ```
 
-Schema libraries are optional peer dependencies -- detected at runtime via the Standard Schema `~standard` interface, never imported at the top level.
+Zod is a required peer dependency (`^4.0.0`): the `z` export comes from `@silvery/commander` itself, so the schemas you build and the ones this package builds must be one copy. Valibot and ArkType need nothing -- any Standard Schema implementation works through the `~standard` interface, detected at runtime and never imported.
 
 ## Zod CLI Types
 
@@ -252,7 +252,7 @@ const program = new Command("deploy")
   .option("-e, --env <e>", "Env", ["dev", "staging", "prod"])
 ```
 
-The `z` export is tree-shakeable -- if you don't import it, Zod won't be in your bundle.
+The `z` export is tree-shakeable by a bundler: this module is loaded with the main entry, so zod must be installed, but a bundler can drop it when you never use `z`.
 
 Available `z` CLI types: `z.port`, `z.int`, `z.uint`, `z.float`, `z.csv`, `z.url`, `z.path`, `z.email`, `z.date`, `z.json`, `z.bool`, `z.intRange(min, max)`.
 
@@ -349,6 +349,6 @@ Built on the shoulders of [@commander-js/extra-typings](https://github.com/comma
 - **Built-in validation** via [Standard Schema](https://github.com/standard-schema/standard-schema) -- works with [Zod](https://github.com/colinhacks/zod), [Valibot](https://github.com/fabian-hiller/valibot), [ArkType](https://github.com/arktypeio/arktype)
 - **14 CLI types** -- `port`, `csv`, `int`, `url`, `email` and more, usable standalone via `.parse()`/`.safeParse()`
 - **NO_COLOR support** via [`@silvery/ansi`](https://github.com/beorn/silvery/tree/main/packages/ansi) (optional)
-- **Commander included** -- one install, no peer dep setup
+- **Commander included** -- no separate install or peer setup for commander.js itself; zod is a required peer for the `z` types
 
 If you're using `@commander-js/extra-typings` today, switching is a one-line import change.
