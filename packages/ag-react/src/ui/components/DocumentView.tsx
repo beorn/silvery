@@ -583,12 +583,9 @@ function DocumentBlocks({
               .slice(0, index)
               .some((candidate) => candidate.kind === "heading")
             const firstH1 = block.level === 1 && isFirstHeading
-            const extraSpace = block.level === 2 && afterBody
-            const topMargin = firstH1
-              ? 0
-              : block.level === 1
-                ? 2
-                : (afterList ? 1 : 0) + (extraSpace ? 1 : 0)
+            // H2's own extra row was the doubled margin the operator rejected: it made H1 and H2
+            // look alike. H1 keeps the two rows, every other level keeps one after a list.
+            const topMargin = firstH1 ? 0 : block.level === 1 ? 2 : afterList ? 1 : 0
             const subtaskSummary = block.subtaskSummary
             const isFoldable =
               block.foldable !== undefined ? block.foldable : (enableSectionFolding ?? false)
