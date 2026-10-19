@@ -111,6 +111,20 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
 }
 
 /**
+ * Intrinsic measurement runs before layout, so a string spacing prop has no
+ * resolved value. Refuse it loudly, naming the prop, the input and the bead
+ * that owns the CSS cyclic-percentage rule (#30346), instead of coercing the
+ * string to zero and silently dropping the space.
+ */
+function refuseStringIntrinsicSpacing(prop: string, value: string): never {
+  throw new TypeError(
+    `${prop}: ${JSON.stringify(value)} — fit-content/snug-content intrinsic measurement ` +
+      `cannot resolve spacing math before layout; CSS's cyclic-percentage rule for this case ` +
+      `is #30346. Use numeric cells or size this node explicitly.`,
+  )
+}
+
+/**
  * Measure the intrinsic size of a node's content.
  *
  * For text nodes: measures the text width and line count.
@@ -196,14 +210,10 @@ function measureIntrinsicSize(
     }
   }
 
-  // Add gap between children. A length string has no value before layout;
-  // coercing it here would silently drop the gap from the intrinsic size.
-  if (typeof props.gap === "string") {
-    throw new TypeError(
-      `gap: ${JSON.stringify(props.gap)} — fit-content/snug-content intrinsic measurement ` +
-        `cannot resolve gap math; size this node explicitly or use numeric cells.`,
-    )
-  }
+  // Add gap between children. Intrinsic measurement runs before layout, so a
+  // string spacing prop has no resolved value; coercing it here would silently
+  // drop the space. CSS's cyclic-percentage rule for this case is #30346.
+  if (typeof props.gap === "string") refuseStringIntrinsicSpacing("gap", props.gap)
   const gap = props.gap ?? 0
   if (gap > 0 && childCount > 1) {
     const totalGap = gap * (childCount - 1)

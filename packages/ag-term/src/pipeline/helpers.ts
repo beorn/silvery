@@ -32,7 +32,9 @@ export function getPadding(source: BoxProps | AgNode): {
     if (computed === undefined || Number.isNaN(computed)) {
       throw new TypeError(
         `padding${edgeName[0]!.toUpperCase()}${edgeName.slice(1)}: ${JSON.stringify(value)} — ` +
-          `spacing math needs a laid-out node; pass the AgNode to getPadding() instead of bare props.`,
+          `spacing math needs a laid-out node; pass the AgNode to getPadding() instead of bare props. ` +
+          `Intrinsic measurement (fit-content/snug-content) refuses a string spacing prop until the ` +
+          `CSS cyclic-percentage rule lands in #30346.`,
       )
     }
     return computed

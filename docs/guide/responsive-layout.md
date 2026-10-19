@@ -87,7 +87,7 @@ This is a deliberate CSS subset. Numeric spacing and margin `auto` keep their ex
 `var()` and other units are unsupported. The Yoga backend accepts its existing numbers, percentages and keywords, and reports a prop-named error for these expressions, spacing and offsets included.
 On Yoga, width `fit-content` and `snug-content` use its existing `auto` fallback; use Flexily when content sizing is required.
 Percent dimensions against an indefinite, auto-sized parent can resolve to zero in Flexily where CSS uses auto sizing; this page does not claim browser-identical layout.
-Fit-content and snug-content intrinsic measurement still requires numeric `padding` and `gap`: those paths run before layout, so a length expression there raises a typed error rather than guessing.
+Fit-content and snug-content intrinsic measurement still requires numeric `padding` and `gap`: those paths run before layout, so a length expression there raises a typed error naming the prop, the input and #30346 rather than guessing. #30346 owns CSS's cyclic-percentage rule for that case (percentage parts count as zero in the intrinsic contribution; `ch` and container units resolve normally).
 
 ## Pattern 1: Declarative Box-prop spread
 

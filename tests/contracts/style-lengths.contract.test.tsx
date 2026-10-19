@@ -424,3 +424,39 @@ test("public math width follows a resized CQ through a fixed wrapper", () => {
     vi.unstubAllEnvs()
   }
 })
+
+// AC1 exception (@cto a9ea641f / 3c5284be): intrinsic measurement runs before
+// layout, so a string padding or gap has no resolved value. It must refuse
+// loudly, naming the prop, the input and the bead that owns CSS's
+// cyclic-percentage rule (#30346) — never coerce the string to zero.
+test("string spacing in fit-content measurement refuses, naming prop, input and #30346", () => {
+  const escape = (input: string) => input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  const expectRefusal = (element: React.ReactElement, prop: string, input: string) => {
+    expect(() => createRenderer({ cols: 40, rows: 10 })(element)).toThrow(
+      new RegExp(`${prop}: "${escape(input)}".*#30346`),
+    )
+  }
+
+  expectRefusal(
+    <Box width={20} height="fit-content" flexDirection="column" gap="max(10%, 25%)">
+      <Box height={1}>
+        <Text>a</Text>
+      </Box>
+      <Box height={1}>
+        <Text>b</Text>
+      </Box>
+    </Box>,
+    "gap",
+    "max(10%, 25%)",
+  )
+  expectRefusal(
+    <Box width={20} height="fit-content" paddingX="max(1ch, 25%)">
+      <Box height={1}>
+        <Text>a</Text>
+      </Box>
+    </Box>,
+    // paddingX expands to paddingLeft/paddingRight before measure reads it.
+    "paddingLeft",
+    "max(1ch, 25%)",
+  )
+})
