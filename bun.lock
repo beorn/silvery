@@ -13,8 +13,8 @@
         "@termless/core": ">=0.9.1 <1.0.0",
         "css-select": "^7.0.0",
         "css-what": "^8.0.0",
-        "flexily": "^0.8.3",
-        "loggily": "^0.10.2",
+        "flexily": "^0.8.4",
+        "loggily": "^0.13.0",
         "react-reconciler": "^0.33.0",
         "slice-ansi": "^9.0.1",
         "string-width": "^8.3.0",
@@ -93,7 +93,7 @@
       "dependencies": {
         "@silvery/ansi": "0.26.0",
         "@silvery/signals": "0.26.0",
-        "loggily": "^0.10.0",
+        "loggily": "^0.13.0",
       },
     },
     "packages/ag-react": {
@@ -110,7 +110,7 @@
         "@silvery/signals": "0.26.0",
         "@silvery/syntax": "0.26.0",
         "@silvery/theme": "0.26.0",
-        "loggily": "^0.10.0",
+        "loggily": "^0.13.0",
         "upng-js": "^2.1.0",
       },
       "peerDependencies": {
@@ -135,8 +135,8 @@
         "@termless/core": ">=0.9.1 <1.0.0",
         "@termless/ghostty": ">=0.9.1 <1.0.0",
         "@termless/xtermjs": ">=0.9.1 <1.0.0",
-        "flexily": "0.8.2",
-        "loggily": "^0.10.0",
+        "flexily": "0.8.4",
+        "loggily": "^0.13.0",
         "lru-cache": "11.5.2",
       },
       "peerDependencies": {
@@ -309,8 +309,8 @@
     "slice-ansi@9.0.1": "patches/slice-ansi@9.0.1.patch",
   },
   "overrides": {
-    "flexily": "0.8.3",
-    "loggily": "^0.10.2",
+    "flexily": "0.8.4",
+    "loggily": "^0.13.0",
   },
   "packages": {
     "@11ty/gray-matter": ["@11ty/gray-matter@2.1.0", "", { "dependencies": { "js-yaml": "^4.2.0", "section-matter": "^1.0.0" } }, "sha512-fNdBOb3MgDz/1UCIoeY4wDuGbp+/3s5y6UrsyfMabECbh/CVycj7Er33JXqSxRwxrRKXcGE1Jipuq/1mODInsQ=="],
@@ -1183,7 +1183,7 @@
 
     "fdir": ["fdir@6.5.0", "", { "peerDependencies": { "picomatch": "^3 || ^4" }, "optionalPeers": ["picomatch"] }, "sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg=="],
 
-    "flexily": ["flexily@0.8.3", "", { "peerDependencies": { "debug": "^4.4.3", "loggily": "^0.10.0 || ^0.11.0" }, "optionalPeers": ["debug", "loggily"] }, "sha512-IUu06cgFoax61hKF+LJUvIWz1OmN5QWLu2lm5d6WzOaBRRmnwPEdvMpnzWQHauv7gsI+FvDnb2dZYTU3LyooPA=="],
+    "flexily": ["flexily@0.8.4", "", { "peerDependencies": { "debug": "^4.4.3", "loggily": "^0.13.0" }, "optionalPeers": ["debug", "loggily"] }, "sha512-6Tjp6cNQFyVkuadq08an4Jinexw2bV6nGrhdw/e8nc+W4y71/mvNGSgIyh0I+kApCLBEIKb6HGEKtmD/w1siqg=="],
 
     "focus-trap": ["focus-trap@7.8.0", "", { "dependencies": { "tabbable": "^6.4.0" } }, "sha512-/yNdlIkpWbM0ptxno3ONTuf+2g318kh2ez3KSeZN5dZ8YC6AAmgeWz+GasYYiBJPFaYcSAPeu4GfhUaChzIJXA=="],
 
@@ -1283,7 +1283,7 @@
 
     "lodash-es": ["lodash-es@4.18.1", "", {}, "sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A=="],
 
-    "loggily": ["loggily@0.10.2", "", { "peerDependencies": { "@opentelemetry/api": ">=1.0.0" }, "optionalPeers": ["@opentelemetry/api"] }, "sha512-c4ihogdduRDl/k3EwBTKL6iryWDt+MO3OBeGiHNQErCeiAVcF076Yw6i1/agltL0Ap4PuaQtZzKslTdi9Cxzgg=="],
+    "loggily": ["loggily@0.13.0", "", { "peerDependencies": { "@opentelemetry/api": ">=1.0.0" }, "optionalPeers": ["@opentelemetry/api"] }, "sha512-QN4YuN0ETjuYHY6zz6GhahDhMYN9mxJ1WZRhLvLGaF3aRn+cJya3rvCw3YzTNpGvRNoYGfzIrmqgNHWAsmAToQ=="],
 
     "longest-streak": ["longest-streak@3.1.0", "", {}, "sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g=="],
 

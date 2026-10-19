@@ -154,7 +154,7 @@
     "@silvery/signals": "0.26.0",
     "@silvery/syntax": "0.26.0",
     "@silvery/theme": "0.26.0",
-    "loggily": "^0.10.0",
+    "loggily": "^0.13.0",
     "upng-js": "^2.1.0"
   },
   "peerDependencies": {
