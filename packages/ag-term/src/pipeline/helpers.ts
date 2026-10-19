@@ -9,6 +9,64 @@ import { getActiveLineHeight } from "../unicode"
 /** Edge indices shared by both adapters (flexily EDGE_* and yoga EDGE_*). */
 const EDGE = { left: 0, top: 1, right: 2, bottom: 3 } as const
 
+/** Physical padding edges, as getPadding() keys and engine EDGE_* names. */
+export type PaddingEdge = "top" | "bottom" | "left" | "right"
+
+type PaddingProp =
+  | "padding"
+  | "paddingX"
+  | "paddingY"
+  | "paddingTop"
+  | "paddingBottom"
+  | "paddingLeft"
+  | "paddingRight"
+
+/** Most-specific-first prop chain for each physical edge. */
+const PADDING_EDGE_PROPS: Record<PaddingEdge, readonly PaddingProp[]> = {
+  top: ["paddingTop", "paddingY", "padding"],
+  bottom: ["paddingBottom", "paddingY", "padding"],
+  left: ["paddingLeft", "paddingX", "padding"],
+  right: ["paddingRight", "paddingX", "padding"],
+}
+
+/** The prop a physical padding edge actually reads (the first one set). */
+function paddingPropFor(props: BoxProps, edgeName: PaddingEdge): PaddingProp {
+  const chain = PADDING_EDGE_PROPS[edgeName]
+  for (const prop of chain) if (props[prop] != null) return prop
+  return chain[chain.length - 1]!
+}
+
+/**
+ * Resolve one physical padding edge: the numeric prop, or the engine's own
+ * resolution of a length string. Strings never reach a second parser here.
+ */
+function resolvePaddingEdge(
+  node: AgNode | undefined,
+  props: BoxProps,
+  edgeName: PaddingEdge,
+): number {
+  const prop = paddingPropFor(props, edgeName)
+  const value = props[prop]
+  if (typeof value !== "string") return (value as number | undefined) ?? 0
+  const layoutNode = node?.layoutNode
+  if (!layoutNode) {
+    throw new TypeError(
+      `${prop}: ${JSON.stringify(value)} — a string spacing prop resolves through the layout node, ` +
+        `so getPadding() needs the AgNode, not bare props.`,
+    )
+  }
+  const computed = layoutNode.getComputedPadding(EDGE[edgeName])
+  if (computed !== undefined && !Number.isNaN(computed)) return computed
+  return layoutNode.intrinsicSpacing(prop, value, Number.NaN)
+}
+
+/** One resolved padding edge, plus the prop that supplied it. */
+export interface PaddingEdgeValue {
+  edge: PaddingEdge
+  prop: PaddingProp
+  value: number
+}
+
 /**
  * Get padding values from props, or from the engine's intrinsic resolution when
  * the prop is a length string (#26238 / #30346). Passing the node is required
@@ -23,29 +81,27 @@ export function getPadding(source: BoxProps | AgNode): {
 } {
   const node = "props" in source ? source : undefined
   const props = (node ? node.props : source) as BoxProps
-  const edge = (
-    value: number | string | undefined,
-    edgeName: "top" | "bottom" | "left" | "right",
-  ) => {
-    if (typeof value !== "string") return value ?? 0
-    const prop = `padding${edgeName[0]!.toUpperCase()}${edgeName.slice(1)}`
-    const layoutNode = node?.layoutNode
-    if (!layoutNode) {
-      throw new TypeError(
-        `${prop}: ${JSON.stringify(value)} — a string spacing prop resolves through the layout node, ` +
-          `so getPadding() needs the AgNode, not bare props.`,
-      )
-    }
-    const computed = layoutNode.getComputedPadding(EDGE[edgeName])
-    if (computed !== undefined && !Number.isNaN(computed)) return computed
-    return layoutNode.intrinsicSpacing(prop, value, Number.NaN)
-  }
   return {
-    top: edge(props.paddingTop ?? props.paddingY ?? props.padding, "top"),
-    bottom: edge(props.paddingBottom ?? props.paddingY ?? props.padding, "bottom"),
-    left: edge(props.paddingLeft ?? props.paddingX ?? props.padding, "left"),
-    right: edge(props.paddingRight ?? props.paddingX ?? props.padding, "right"),
+    top: resolvePaddingEdge(node, props, "top"),
+    bottom: resolvePaddingEdge(node, props, "bottom"),
+    left: resolvePaddingEdge(node, props, "left"),
+    right: resolvePaddingEdge(node, props, "right"),
   }
+}
+
+/**
+ * Per-edge padding values with the prop that supplied each one. Same evaluator
+ * as getPadding(); the prop name is what a caller needs to report WHICH input
+ * it consumed (#30346 measure re-settle). Allocates, so measurement paths only.
+ */
+export function getPaddingEntries(source: BoxProps | AgNode): PaddingEdgeValue[] {
+  const node = "props" in source ? source : undefined
+  const props = (node ? node.props : source) as BoxProps
+  return (Object.keys(PADDING_EDGE_PROPS) as PaddingEdge[]).map((edge) => ({
+    edge,
+    prop: paddingPropFor(props, edge),
+    value: resolvePaddingEdge(node, props, edge),
+  }))
 }
 
 /** Painter projection: use this pass's threaded offset for old and new layout. */

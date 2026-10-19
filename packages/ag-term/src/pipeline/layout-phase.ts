@@ -244,12 +244,19 @@ function normalizeScrollOffset(offset: number): number {
  * @param root The root SilveryNode
  * @param width Terminal width in columns
  * @param height Terminal height in rows
+ * @param forceFullPropagate Disable the incremental prune (STRICT fresh baseline)
+ * @param preserveExposedPrevLayout Re-propagation of an already-propagated
+ *   transaction (#30346 settle loop): keep every node's prevLayout witness from
+ *   the last exposed frame instead of overwriting it with this pass's start.
+ *   The flag is still recomputed against the preserved witness, so it keeps
+ *   describing the whole transaction rather than the intermediate pass.
  */
 export function layoutPhase(
   root: AgNode,
   width: number,
   height: number,
   forceFullPropagate = false,
+  preserveExposedPrevLayout = false,
 ): void {
   // Check if dimensions changed from previous layout
   const prevLayout = root.boxRect
@@ -295,7 +302,7 @@ export function layoutPhase(
   // ancestor (e.g. a resized item in a fixed-width row), which the parent-match
   // prune would otherwise drop — leaving boxRect stale and hiding the divergence.
   const incrementalSkip = !dimensionsChanged && !forceFullPropagate
-  propagateLayout(root, 0, 0, incrementalSkip)
+  propagateLayout(root, 0, 0, incrementalSkip, preserveExposedPrevLayout)
 
   // NOTE: Subscribers are NOT notified here anymore.
   // They are notified by the pipeline AFTER scrollrectPhase completes,
@@ -335,17 +342,20 @@ function countNodes(node: AgNode): number {
  * @param parentX Absolute X position of parent
  * @param parentY Absolute Y position of parent
  * @param incrementalSkip When true, skip subtrees where Flexily results match existing boxRect
+ * @param preserveExposedPrevLayout Keep the last exposed frame's prevLayout witness
+ *   (later passes of a measure re-settle transaction; see layoutPhase)
  */
 function propagateLayout(
   node: AgNode,
   parentX: number,
   parentY: number,
   incrementalSkip: boolean,
+  preserveExposedPrevLayout: boolean,
 ): void {
   // Virtual/raw text nodes (no layoutNode) inherit parent's position
   if (!node.layoutNode) {
-    // Save previous layout for change detection
-    node.prevLayout = node.boxRect
+    // Save previous layout for change detection (exposed-frame witness only)
+    if (!preserveExposedPrevLayout) node.prevLayout = node.boxRect
     const rect: Rect = {
       x: parentX,
       y: parentY,
@@ -355,7 +365,7 @@ function propagateLayout(
     node.boxRect = rect
     // Still recurse to children (virtual text nodes can have raw text children)
     for (const child of node.children) {
-      propagateLayout(child, parentX, parentY, incrementalSkip)
+      propagateLayout(child, parentX, parentY, incrementalSkip, preserveExposedPrevLayout)
     }
     return
   }
@@ -401,8 +411,16 @@ function propagateLayout(
 
   // Save previous layout for change detection (must happen AFTER the skip
   // check above — skipped nodes don't need prevLayout updated since
-  // syncPrevLayout already set prevLayout = boxRect after the previous frame)
-  node.prevLayout = node.boxRect
+  // syncPrevLayout already set prevLayout = boxRect after the previous frame).
+  //
+  // prevLayout is the witness of the LAST EXPOSED frame, not of this pass's
+  // start: a measure re-settle transaction runs propagateLayout more than once
+  // before anything is painted (#30346), and overwriting the witness with an
+  // intermediate rectangle would make `layoutChangedThisFrame` compare against
+  // a frame that never reached the buffer. render-phase reads both fields for
+  // its fast path and for excess clearing, so the first pass captures the
+  // exposed rect and later passes preserve it.
+  if (!preserveExposedPrevLayout) node.prevLayout = node.boxRect
   node.boxRect = rect
 
   // CLS instrumentation moved out of layout phase 2026-05-13 (Option C
@@ -416,6 +434,8 @@ function propagateLayout(
   // Unlike !rectEqual(prevLayout, boxRect) which becomes stale when
   // layout phase skips on subsequent frames, this epoch is explicitly set
   // each time propagateLayout runs and expires when the render epoch advances.
+  // Mid-transaction re-propagation compares against the preserved witness, so
+  // the stamp answers "final rect differs from the last EXPOSED rect".
   const layoutDidChange = !!(node.prevLayout && !rectEqual(node.prevLayout, node.boxRect))
   node.layoutChangedThisFrame = layoutDidChange ? getRenderEpoch(node) : INITIAL_EPOCH
 
@@ -451,7 +471,13 @@ function propagateLayout(
   // wrapper (for example, CQ units). Visit that entire branch; unrelated
   // branches can still use the incremental prune.
   for (const child of node.children) {
-    propagateLayout(child, rect.x, rect.y, incrementalSkip && !layoutDidChange)
+    propagateLayout(
+      child,
+      rect.x,
+      rect.y,
+      incrementalSkip && !layoutDidChange,
+      preserveExposedPrevLayout,
+    )
   }
 
   // Cache cascade inputs that render-phase would otherwise compute via tree walks.

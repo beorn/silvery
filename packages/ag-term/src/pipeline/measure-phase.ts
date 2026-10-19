@@ -5,6 +5,7 @@
  */
 
 import type { BoxProps, AgNode, TextProps } from "@silvery/ag/types"
+import { createLogger } from "loggily"
 import { displayWidthAnsi, graphemeWidth, wrapText, getActiveLineHeight } from "../unicode"
 import { collectPlainText as collectTextContent } from "./collect-text"
 import {
@@ -14,9 +15,48 @@ import {
   setCachedAnalysis,
 } from "./prepared-text"
 import { buildTextAnalysis, shrinkwrapWidth } from "./pretext"
-import { getBorderSize, getPadding } from "./helpers"
+import { getBorderSize, getPadding, getPaddingEntries, type PaddingEdge } from "./helpers"
 import type { PipelineContext } from "./types"
 import { INSTRUMENT, logPass, recordPassRing } from "../runtime/pass-cause"
+import { isStrictEnabled } from "../strict-mode"
+
+const log = createLogger("silvery:measure")
+
+/** SILVERY_STRICT slug for the bounded measure re-settle (#30346). */
+export const MEASURE_SETTLE_STRICT_SLUG = "measure-settle"
+export const MEASURE_SETTLE_STRICT_MIN_TIER = 1
+
+/** Two engine resolutions closer than this are the same value. */
+const SPACING_EPSILON = 1e-9
+
+/**
+ * One spacing input an intrinsic measurement consumed, with the value it used.
+ *
+ * Measurement runs BEFORE layout, and a percentage padding resolves through
+ * getPadding() only once the engine holds a containing-block width from a
+ * previous layout. Recording the consumed value is how the orchestra tells
+ * whether the layout that just ran moved the basis underneath the measurement
+ * (#30346) — no string is parsed here, and no second evaluator exists.
+ */
+interface MeasureSpacingBase {
+  node: AgNode
+  /** The React prop the value came from: paddingX, paddingTop, gap, ... */
+  prop: string
+  /** The value this measurement consumed. */
+  value: number
+}
+
+export type MeasureSpacingInput =
+  | (MeasureSpacingBase & { kind: "padding"; edge: PaddingEdge })
+  /** Raw gap length, re-resolved through the engine after layout. */
+  | (MeasureSpacingBase & { kind: "gap"; source: string })
+
+export type MeasureInputRecorder = (input: MeasureSpacingInput) => void
+
+export type MeasureSpacingMismatch = MeasureSpacingInput & {
+  /** What the engine resolves this input to now, after layout. */
+  resolved: number
+}
 
 /**
  * Handle fit-content nodes by measuring their intrinsic content size.
@@ -24,7 +64,11 @@ import { INSTRUMENT, logPass, recordPassRing } from "../runtime/pass-cause"
  * Traverses the tree and for any node with width="fit-content" or
  * height="fit-content", measures the content and sets the Yoga constraint.
  */
-export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
+export function measurePhase(
+  root: AgNode,
+  ctx?: PipelineContext,
+  record?: MeasureInputRecorder,
+): void {
   traverseTree(root, (node) => {
     // Skip nodes without Yoga (raw text nodes)
     if (!node.layoutNode) return
@@ -52,10 +96,10 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
             ? (props.maxWidth as number)
             : undefined
       if (definiteUpperWidth === undefined) {
-        definiteUpperWidth = findAncestorDefiniteWidth(node)
+        definiteUpperWidth = findAncestorDefiniteWidth(node, record)
       }
       if (definiteUpperWidth !== undefined) {
-        const padding = getPadding(node)
+        const padding = measurePadding(node, record)
         availableWidth = definiteUpperWidth - padding.left - padding.right
         if (props.borderStyle) {
           const border = getBorderSize(props)
@@ -65,10 +109,10 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
       }
 
       if (isSnugContent) {
-        const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth)
+        const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth, record)
         // Fit-snug: find the narrowest width that keeps the same line count.
         // Binary search for tightest width on top of Flexily's native fit-content.
-        const shrunkWidth = computeSnugContentWidth(node, intrinsicSize.width, ctx)
+        const shrunkWidth = computeSnugContentWidth(node, intrinsicSize.width, ctx, record)
         // setMaxWidth caps the snug-content box at the binary-searched width.
         // Flexily's UNIT_SNUG_CONTENT handles the shrink-wrap + available clamping.
         const prevWidth = node.boxRect?.width
@@ -90,7 +134,7 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
         }
       }
       if (isHeightFitContent) {
-        const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth)
+        const intrinsicSize = measureIntrinsicSize(node, ctx, availableWidth, record)
         const prevHeight = node.boxRect?.height
         node.layoutNode.setHeight(intrinsicSize.height)
         if (prevHeight !== undefined && prevHeight !== intrinsicSize.height) {
@@ -110,6 +154,122 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
   })
 }
 
+/**
+ * The measure inputs that the layout which just ran invalidated: each recorded
+ * input is re-resolved through the SAME evaluator the measurement used —
+ * getPadding() for padding, the layout node's intrinsicSpacing for gap — and
+ * compared with the value the measurement consumed.
+ *
+ * Padding is the input that can move: once the engine holds a containing-block
+ * width, getPadding() returns its post-layout percentage resolution, while
+ * before a frame's first layout it falls back to the intrinsic one. Gap is
+ * recorded and re-resolved through the same engine call, but its intrinsic
+ * resolution is basis-free — percentage parts are zero by the CSS
+ * cyclic-percentage rule (#30346) — so layout cannot move it and that
+ * comparison stays closed.
+ */
+export function staleMeasureInputs(
+  inputs: readonly MeasureSpacingInput[],
+): MeasureSpacingMismatch[] {
+  if (inputs.length === 0) return []
+  let stale: MeasureSpacingMismatch[] | undefined
+  let paddingByNode: Map<AgNode, Map<PaddingEdge, number>> | undefined
+  for (const input of inputs) {
+    let resolved: number
+    if (input.kind === "padding") {
+      paddingByNode ??= new Map()
+      let edges = paddingByNode.get(input.node)
+      if (!edges) {
+        edges = new Map(getPaddingEntries(input.node).map((entry) => [entry.edge, entry.value]))
+        paddingByNode.set(input.node, edges)
+      }
+      resolved = edges.get(input.edge) ?? Number.NaN
+    } else {
+      resolved = intrinsicSpacingOf(input.node, input.prop, input.source)
+    }
+    if (!sameSpacing(input.value, resolved)) (stale ??= []).push({ ...input, resolved })
+  }
+  return stale ?? []
+}
+
+function sameSpacing(a: number, b: number): boolean {
+  if (Number.isNaN(a) || Number.isNaN(b)) return Number.isNaN(a) && Number.isNaN(b)
+  return Math.abs(a - b) <= SPACING_EPSILON
+}
+
+function measureNodeIdent(node: AgNode): string {
+  const props = node.props as BoxProps & { testID?: string; id?: string; name?: string }
+  const named = props.id ?? props.testID ?? props.name
+  return named === undefined ? node.type : `${node.type}#${String(named)}`
+}
+
+/**
+ * The re-settle bound is exhausted and a measurement input still disagrees with
+ * the layout that will be exposed. Never silent (#30346): record the pass ring,
+ * then throw a TypeError naming the input under SILVERY_STRICT — and log the
+ * same detail without it, keeping the settled-as-far-as-it-got layout.
+ */
+export function reportUnsettledMeasureInputs(
+  mismatches: readonly MeasureSpacingMismatch[],
+  passes: number,
+): void {
+  const [first] = mismatches
+  if (!first) return
+  const ident = measureNodeIdent(first.node)
+  const detail =
+    `${first.prop} on ${ident}: measure used ${first.value}, layout resolved ${first.resolved}` +
+    (mismatches.length > 1 ? ` (+${mismatches.length - 1} more input(s))` : "")
+  const message =
+    `measure did not settle after ${passes} measure/layout passes — ${detail}. ` +
+    `An intrinsic measurement is still reading a stale containing-block basis.`
+  recordPassRing("intrinsic-shrinkwrap", `measure-settle:${first.prop}`, ident)
+  if (isStrictEnabled(MEASURE_SETTLE_STRICT_SLUG, MEASURE_SETTLE_STRICT_MIN_TIER)) {
+    throw new TypeError(`[SILVERY_STRICT] ${message}`)
+  }
+  log.error?.(message)
+}
+
+/**
+ * Resolve one string spacing prop to the cell count intrinsic measurement
+ * consumes (today the gap between children). The engine owns the grammar and
+ * the CSS cyclic-percentage rule (#30346); this layer never parses the string.
+ * The third argument is the container-query size, not a percentage basis —
+ * measurement precedes any frozen CQ size, so NaN is passed and cq parts
+ * resolve to zero.
+ */
+function intrinsicSpacingOf(
+  node: AgNode,
+  prop: string,
+  value: string,
+  record?: MeasureInputRecorder,
+): number {
+  const layoutNode = node.layoutNode
+  if (!layoutNode) {
+    throw new TypeError(
+      `${prop}: ${JSON.stringify(value)} — measure ran before the node had a layout node`,
+    )
+  }
+  const resolved = layoutNode.intrinsicSpacing(prop, value, Number.NaN)
+  record?.({ node, kind: "gap", prop, value: resolved, source: value })
+  return resolved
+}
+
+/**
+ * Resolve a node's padding for intrinsic measurement, recording every edge the
+ * measurement consumed. Without a recorder this is getPadding() exactly.
+ */
+function measurePadding(
+  node: AgNode,
+  record?: MeasureInputRecorder,
+): { top: number; bottom: number; left: number; right: number } {
+  if (!record) return getPadding(node)
+  const padding = { top: 0, bottom: 0, left: 0, right: 0 }
+  for (const entry of getPaddingEntries(node)) {
+    padding[entry.edge] = entry.value
+    record({ node, kind: "padding", prop: entry.prop, edge: entry.edge, value: entry.value })
+  }
+  return padding
+}
 
 /**
  * Measure the intrinsic size of a node's content.
@@ -120,24 +280,11 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
  * @param availableWidth - When set, text nodes wrap at this width for height calculation.
  *   Used when a container has fixed width + fit-content height.
  */
-/**
- * Resolve one string spacing prop for intrinsic measurement. The engine owns
- * the grammar and the CSS cyclic-percentage rule (#30346); the measure phase
- * runs before any layout, so no container-query size is frozen yet and NaN is
- * passed explicitly.
- */
-function intrinsicSpacingOf(node: AgNode, prop: string, value: string): number {
-  const layoutNode = node.layoutNode
-  if (!layoutNode) {
-    throw new TypeError(`${prop}: ${JSON.stringify(value)} — measure ran before the node had a layout node`)
-  }
-  return layoutNode.intrinsicSpacing(prop, value, Number.NaN)
-}
-
 function measureIntrinsicSize(
   node: AgNode,
   ctx?: PipelineContext,
   availableWidth?: number,
+  record?: MeasureInputRecorder,
 ): {
   width: number
   height: number
@@ -199,7 +346,7 @@ function measureIntrinsicSize(
 
   let childCount = 0
   for (const child of node.children) {
-    const childSize = measureIntrinsicSize(child, ctx, availableWidth)
+    const childSize = measureIntrinsicSize(child, ctx, availableWidth, record)
     childCount++
 
     if (isRow) {
@@ -216,7 +363,9 @@ function measureIntrinsicSize(
   // resolves at the adapter's scale. The engine resolves it — this layer never
   // parses the string.
   const gap =
-    typeof props.gap === "string" ? intrinsicSpacingOf(node, "gap", props.gap) : (props.gap ?? 0)
+    typeof props.gap === "string"
+      ? intrinsicSpacingOf(node, "gap", props.gap, record)
+      : (props.gap ?? 0)
   if (gap > 0 && childCount > 1) {
     const totalGap = gap * (childCount - 1)
     if (isRow) {
@@ -227,7 +376,7 @@ function measureIntrinsicSize(
   }
 
   // Add padding
-  const padding = getPadding(node)
+  const padding = measurePadding(node, record)
   width += padding.left + padding.right
   height += padding.top + padding.bottom
 
@@ -264,6 +413,7 @@ function computeSnugContentWidth(
   node: AgNode,
   fitContentWidth: number,
   ctx?: PipelineContext,
+  record?: MeasureInputRecorder,
 ): number {
   const props = node.props as BoxProps
 
@@ -271,7 +421,7 @@ function computeSnugContentWidth(
   // measureIntrinsicSize includes padding+border in its result, but
   // shrinkwrapWidth operates on text content width only.
   let overhead = 0
-  const padding = getPadding(node)
+  const padding = measurePadding(node, record)
   overhead += padding.left + padding.right
   if (props.borderStyle) {
     const border = getBorderSize(props)
@@ -303,13 +453,16 @@ function computeSnugContentWidth(
  * ancestor's inner content width (after subtracting its own padding and border).
  * Returns undefined if no definite-width ancestor is found.
  */
-function findAncestorDefiniteWidth(node: AgNode): number | undefined {
+function findAncestorDefiniteWidth(
+  node: AgNode,
+  record?: MeasureInputRecorder,
+): number | undefined {
   let current = node.parent
   while (current) {
     const p = current.props as BoxProps
     if (typeof p.width === "number") {
       let inner = p.width as number
-      const padding = getPadding(current)
+      const padding = measurePadding(current, record)
       inner -= padding.left + padding.right
       if (p.borderStyle) {
         const border = getBorderSize(p)
@@ -319,7 +472,7 @@ function findAncestorDefiniteWidth(node: AgNode): number | undefined {
     }
     if (typeof p.maxWidth === "number") {
       let inner = p.maxWidth as number
-      const padding = getPadding(current)
+      const padding = measurePadding(current, record)
       inner -= padding.left + padding.right
       if (p.borderStyle) {
         const border = getBorderSize(p)
