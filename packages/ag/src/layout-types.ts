@@ -73,6 +73,15 @@ export interface LayoutNode {
   markDirty(): void
   isDirty(): boolean
 
+  /**
+   * Validate one raw length string with this engine's grammar, without
+   * mutating the node. A valid value returns; a malformed value throws an
+   * error naming the prop and the value. Required: the React prop layer calls
+   * this before any setter (15111 A0.3a 3c), so a custom implementor that
+   * omits it fails to compile rather than throwing on the first raw string.
+   */
+  validateLength(prop: string, value: string): void
+
   // Dimension setters
   setWidth(value: number | string): void
   setWidthPercent(value: number): void

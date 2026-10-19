@@ -9,6 +9,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+`@silvery/ag`'s `LayoutNode` gains a required `validateLength(prop, value)`
+method for custom layout-engine implementors (breaking for implementors; a
+minor bump under 0.x). The React prop layer calls it before any setter, so a
+raw length string is validated with the adapter's own grammar before the node
+is touched. An implementor that omits it now fails to compile instead of
+throwing on the first raw string at runtime.
+
 `silvery`'s `./ui/*` wildcard becomes ten explicit entry points, so every
 published subpath is named in the map instead of matched by a pattern.
 

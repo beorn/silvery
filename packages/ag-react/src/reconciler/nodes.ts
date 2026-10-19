@@ -593,18 +593,6 @@ const rawSpacingProps = [
 const rawOffsetProps = ["top", "left", "bottom", "right"] as const
 
 /**
- * Adapter-internal parse-only seam. Both engines implement `validateLength`
- * on their node adapter. It is deliberately NOT declared on the public
- * `LayoutNode` type: validation is not a layout capability consumers call.
- * The reconciler needs it to run the 15111 A0.3a 3c preflight with the active
- * engine's own grammar instead of a parallel parser. A missing implementation
- * is loud — the call throws — never a skipped check.
- */
-interface RawLengthValidation {
-  validateLength(prop: string, value: string): void
-}
-
-/**
  * Validate every raw length string before specificity resolution or ANY node
  * mutation (15111 A0.3a 3c, reaffirmed by 26238 A0.3b). The engine owns the
  * grammar; this only chooses when it runs. Validating after the first setter
@@ -614,7 +602,6 @@ interface RawLengthValidation {
  * dedicated auto path.
  */
 function validateRawLengths(layoutNode: LayoutNode, props: object, oldProps?: object): void {
-  const validator = layoutNode as LayoutNode & RawLengthValidation
   const raw = props as Record<string, unknown>
   const old = (oldProps ?? {}) as Record<string, unknown>
   for (const prop of rawSpacingProps) {
@@ -624,13 +611,13 @@ function validateRawLengths(layoutNode: LayoutNode, props: object, oldProps?: ob
     // An unchanged value was validated when it was applied; do not reparse it
     // on unrelated rerenders (A0.3a 3b).
     if (Object.is(value, old[prop])) continue
-    validator.validateLength(prop, value)
+    layoutNode.validateLength(prop, value)
   }
   for (const prop of rawOffsetProps) {
     const value = raw[prop]
     if (typeof value !== "string") continue
     if (Object.is(value, old[prop])) continue
-    validator.validateLength(prop, value)
+    layoutNode.validateLength(prop, value)
   }
 }
 
