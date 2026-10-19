@@ -571,11 +571,6 @@ function DocumentBlocks({
           case "heading": {
             const headings = [H1, H2, H3, H4, H5, H6] as const
             const Heading = headings[block.level - 1] ?? H6
-            const afterBody =
-              previous !== undefined &&
-              previous.kind !== "heading" &&
-              previous.kind !== "rule" &&
-              previous.kind !== "media"
             // TWO BLANK ROWS BEFORE EVERY H1 EXCEPT THE FIRST (operator 2026-10-19 13:14, via the
             // item page): the extra row is what tells an H1 apart from the H2/H3 below it. H2 keeps
             // its existing row-after-body, and H3+ stay as they are.
