@@ -10,10 +10,10 @@ import { getActiveLineHeight } from "../unicode"
 const EDGE = { left: 0, top: 1, right: 2, bottom: 3 } as const
 
 /**
- * Get padding values from props, or from the engine's resolved values when the
- * prop is a length string (#26238). Passing the node is required for strings:
- * the engine is the only evaluator, and a parallel parser here would be a
- * second implementation that silently disagrees with layout.
+ * Get padding values from props, or from the engine's intrinsic resolution when
+ * the prop is a length string (#26238 / #30346). Passing the node is required
+ * for strings: the engine is the only evaluator, and a parallel parser here
+ * would be a second implementation that silently disagrees with layout.
  */
 export function getPadding(source: BoxProps | AgNode): {
   top: number
@@ -28,16 +28,17 @@ export function getPadding(source: BoxProps | AgNode): {
     edgeName: "top" | "bottom" | "left" | "right",
   ) => {
     if (typeof value !== "string") return value ?? 0
-    const computed = node?.layoutNode?.getComputedPadding(EDGE[edgeName])
-    if (computed === undefined || Number.isNaN(computed)) {
+    const prop = `padding${edgeName[0]!.toUpperCase()}${edgeName.slice(1)}`
+    const layoutNode = node?.layoutNode
+    if (!layoutNode) {
       throw new TypeError(
-        `padding${edgeName[0]!.toUpperCase()}${edgeName.slice(1)}: ${JSON.stringify(value)} — ` +
-          `spacing math needs a laid-out node; pass the AgNode to getPadding() instead of bare props. ` +
-          `Intrinsic measurement (fit-content/snug-content) refuses a string spacing prop until the ` +
-          `CSS cyclic-percentage rule lands in #30346.`,
+        `${prop}: ${JSON.stringify(value)} — a string spacing prop resolves through the layout node, ` +
+          `so getPadding() needs the AgNode, not bare props.`,
       )
     }
-    return computed
+    const computed = layoutNode.getComputedPadding(EDGE[edgeName])
+    if (computed !== undefined && !Number.isNaN(computed)) return computed
+    return layoutNode.intrinsicSpacing(prop, value, Number.NaN)
   }
   return {
     top: edge(props.paddingTop ?? props.paddingY ?? props.padding, "top"),

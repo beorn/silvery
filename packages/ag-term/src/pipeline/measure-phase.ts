@@ -55,7 +55,7 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
         definiteUpperWidth = findAncestorDefiniteWidth(node)
       }
       if (definiteUpperWidth !== undefined) {
-        const padding = getPadding(props)
+        const padding = getPadding(node)
         availableWidth = definiteUpperWidth - padding.left - padding.right
         if (props.borderStyle) {
           const border = getBorderSize(props)
@@ -110,19 +110,6 @@ export function measurePhase(root: AgNode, ctx?: PipelineContext): void {
   })
 }
 
-/**
- * Intrinsic measurement runs before layout, so a string spacing prop has no
- * resolved value. Refuse it loudly, naming the prop, the input and the bead
- * that owns the CSS cyclic-percentage rule (#30346), instead of coercing the
- * string to zero and silently dropping the space.
- */
-function refuseStringIntrinsicSpacing(prop: string, value: string): never {
-  throw new TypeError(
-    `${prop}: ${JSON.stringify(value)} — fit-content/snug-content intrinsic measurement ` +
-      `cannot resolve spacing math before layout; CSS's cyclic-percentage rule for this case ` +
-      `is #30346. Use numeric cells or size this node explicitly.`,
-  )
-}
 
 /**
  * Measure the intrinsic size of a node's content.
@@ -133,6 +120,20 @@ function refuseStringIntrinsicSpacing(prop: string, value: string): never {
  * @param availableWidth - When set, text nodes wrap at this width for height calculation.
  *   Used when a container has fixed width + fit-content height.
  */
+/**
+ * Resolve one string spacing prop for intrinsic measurement. The engine owns
+ * the grammar and the CSS cyclic-percentage rule (#30346); the measure phase
+ * runs before any layout, so no container-query size is frozen yet and NaN is
+ * passed explicitly.
+ */
+function intrinsicSpacingOf(node: AgNode, prop: string, value: string): number {
+  const layoutNode = node.layoutNode
+  if (!layoutNode) {
+    throw new TypeError(`${prop}: ${JSON.stringify(value)} — measure ran before the node had a layout node`)
+  }
+  return layoutNode.intrinsicSpacing(prop, value, Number.NaN)
+}
+
 function measureIntrinsicSize(
   node: AgNode,
   ctx?: PipelineContext,
@@ -210,11 +211,12 @@ function measureIntrinsicSize(
     }
   }
 
-  // Add gap between children. Intrinsic measurement runs before layout, so a
-  // string spacing prop has no resolved value; coercing it here would silently
-  // drop the space. CSS's cyclic-percentage rule for this case is #30346.
-  if (typeof props.gap === "string") refuseStringIntrinsicSpacing("gap", props.gap)
-  const gap = props.gap ?? 0
+  // Add gap between children. CSS Sizing 3 cyclic-percentage rule (#30346): a
+  // percentage part contributes zero to the intrinsic contribution and ch
+  // resolves at the adapter's scale. The engine resolves it — this layer never
+  // parses the string.
+  const gap =
+    typeof props.gap === "string" ? intrinsicSpacingOf(node, "gap", props.gap) : (props.gap ?? 0)
   if (gap > 0 && childCount > 1) {
     const totalGap = gap * (childCount - 1)
     if (isRow) {
@@ -225,7 +227,7 @@ function measureIntrinsicSize(
   }
 
   // Add padding
-  const padding = getPadding(props)
+  const padding = getPadding(node)
   width += padding.left + padding.right
   height += padding.top + padding.bottom
 
@@ -269,7 +271,7 @@ function computeSnugContentWidth(
   // measureIntrinsicSize includes padding+border in its result, but
   // shrinkwrapWidth operates on text content width only.
   let overhead = 0
-  const padding = getPadding(props)
+  const padding = getPadding(node)
   overhead += padding.left + padding.right
   if (props.borderStyle) {
     const border = getBorderSize(props)
@@ -307,7 +309,7 @@ function findAncestorDefiniteWidth(node: AgNode): number | undefined {
     const p = current.props as BoxProps
     if (typeof p.width === "number") {
       let inner = p.width as number
-      const padding = getPadding(p)
+      const padding = getPadding(current)
       inner -= padding.left + padding.right
       if (p.borderStyle) {
         const border = getBorderSize(p)
@@ -317,7 +319,7 @@ function findAncestorDefiniteWidth(node: AgNode): number | undefined {
     }
     if (typeof p.maxWidth === "number") {
       let inner = p.maxWidth as number
-      const padding = getPadding(p)
+      const padding = getPadding(current)
       inner -= padding.left + padding.right
       if (p.borderStyle) {
         const border = getBorderSize(p)
