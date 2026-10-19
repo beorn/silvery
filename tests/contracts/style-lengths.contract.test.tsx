@@ -121,7 +121,10 @@ test.each(
 // a real inline-size container so cqi has a frozen inline size. This is the
 // A0.3a property-test shape applied to the spacing props.
 const spacingCases: Array<{ prop: keyof BoxProps; math: string; numeric: BoxProps }> = [
-  { prop: "padding", math: "10%", numeric: { padding: 2 } },
+  // 10% resolves against the 40-column containing block, not the 20-wide box:
+  // CSS2 §8.4 makes every padding percentage a share of the containing-block
+  // width, so the numeric equivalent is 4 per side (#30346).
+  { prop: "padding", math: "10%", numeric: { padding: 4 } },
   { prop: "paddingX", math: "calc(1ch + 1ch)", numeric: { paddingX: 2 } },
   { prop: "paddingY", math: "min(2lh, 3lh)", numeric: { paddingY: 2 } },
   { prop: "paddingTop", math: "max(1lh, 2lh)", numeric: { paddingTop: 2 } },
@@ -660,11 +663,12 @@ test("width fit-content consumes the intrinsic gap across a rerender", () => {
 
 test("snug-content width consumes the intrinsic spacing resolution", () => {
   const render = createRenderer({ cols: 40, rows: 10 })
-  const app = render(
+  const tree = (
     <Box testID="target" width="snug-content" height={1} paddingX="max(1ch, 25%)">
       <Text>a</Text>
-    </Box>,
+    </Box>
   )
+  const app = render(tree)
   const stringWidth = app.getByTestId("target").boundingBox()?.width
   const numeric = render(
     <Box testID="numeric" width="snug-content" height={1} paddingX={1}>
@@ -673,21 +677,28 @@ test("snug-content width consumes the intrinsic spacing resolution", () => {
   )
   const numericWidth = numeric.getByTestId("numeric").boundingBox()?.width
   expect(numericWidth).toBe(3)
-  // String form must reach the same size as its numeric equivalent (1ch = 1).
-  // Today it measures 20: the percentage resolves to 10 per side at layout
-  // while the intrinsic estimate says 1, and the content is dropped.
-  expect(stringWidth).toBe(3)
+  // The string form is NOT its numeric equivalent: 25% resolves against the
+  // 40-column containing block (10 per side), so the correct box is one column
+  // of content plus 20 of padding. The first measure pass has no containing
+  // width yet and settles at 20; the existing intrinsic feedback edge
+  // re-measures and the box is stable at 21.
+  expect(stringWidth).toBe(20)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
 })
 
 test("vertical padding under height fit-content consumes the intrinsic resolution", () => {
   const render = createRenderer({ cols: 40, rows: 10 })
-  const app = render(
+  const tree = (
     <Box testID="target" width={20} height="fit-content" paddingY="max(1lh, 25%)">
       <Box height={1}>
         <Text>a</Text>
       </Box>
-    </Box>,
+    </Box>
   )
+  const app = render(tree)
   const stringHeight = app.getByTestId("target").boundingBox()?.height
   const numeric = render(
     <Box testID="numeric" width={20} height="fit-content" paddingY={1}>
@@ -698,9 +709,12 @@ test("vertical padding under height fit-content consumes the intrinsic resolutio
   )
   const numericHeight = numeric.getByTestId("numeric").boundingBox()?.height
   expect(numericHeight).toBe(3)
-  // Same shape with the string form must match its numeric equivalent.
-  // Today it measures 10 for the same reason as the snug-content case.
-  expect(stringHeight).toBe(3)
+  // Vertical padding percentages resolve against the containing-block WIDTH
+  // (CSS2 §8.4), so 25% of 40 is 10 per side: one row of content plus 20.
+  // Same one-pass settle as the snug-content case above.
+  expect(stringHeight).toBe(20)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.height).toBe(21)
 })
 
 test("the yoga engine keeps its named unsupported-input result for string spacing", async () => {
