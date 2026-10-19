@@ -9,7 +9,7 @@
  * On end, preview becomes committed. On cancel, revert to startState.
  */
 
-import { computed, signal, startBatch, endBatch } from "alien-signals"
+import { computed, signal, startBatch, endBatch } from "@silvery/signals"
 import {
   applyCollapse,
   applyDeselect,

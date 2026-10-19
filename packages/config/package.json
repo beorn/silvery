@@ -37,7 +37,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "alien-signals": "~3.2.1",
+    "@silvery/signals": "0.26.0",
     "cosmiconfig": "^9.0.2",
     "yaml": ">=2.0.0"
   },

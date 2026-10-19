@@ -57,7 +57,6 @@
     "format": "esm"
   },
   "inlinedDependencies": {
-    "alien-signals": "3.2.1",
     "react": "19.3.1"
   }
 }

@@ -119,6 +119,7 @@
     "@chenglou/pretext": "^0.0.8",
     "@silvery/color": "0.26.0",
     "@silvery/commander": "0.26.0",
+    "@silvery/signals": "0.26.0",
     "@silvery/syntax": "0.26.0",
     "@termless/core": ">=0.9.1 <1.0.0",
     "css-select": "^7.0.0",
@@ -243,7 +244,6 @@
     "node": ">=24.0.0"
   },
   "inlinedDependencies": {
-    "alien-signals": "3.2.1",
     "ansi-styles": "6.2.3",
     "get-east-asian-width": "1.6.0",
     "is-fullwidth-code-point": "5.1.0",

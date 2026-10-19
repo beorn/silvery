@@ -86,7 +86,7 @@
     "@silvery/ansi": "0.26.0",
     "@silvery/commands": "0.26.0",
     "@silvery/headless": "0.26.0",
-    "alien-signals": "~3.2.1"
+    "@silvery/signals": "0.26.0"
   },
   "tsdown": {
     "clean": true,

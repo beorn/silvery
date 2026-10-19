@@ -8,7 +8,7 @@
  * that imported it from "zustand".
  */
 
-import { signal } from "alien-signals"
+import { signal } from "@silvery/signals"
 
 // =============================================================================
 // Types (matching Zustand's API surface)

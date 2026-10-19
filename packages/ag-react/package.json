@@ -231,7 +231,6 @@
     "format": "esm"
   },
   "inlinedDependencies": {
-    "alien-signals": "3.2.1",
     "react-reconciler": "0.33.0",
     "scheduler": "0.27.0"
   }

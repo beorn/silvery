@@ -1,4 +1,4 @@
-import { computed } from "alien-signals"
+import { computed } from "@silvery/signals"
 import type { ZodSchema, z } from "zod"
 import { formatString, parseString } from "./parse.ts"
 import type { Config, Kind, ReadSignal, Registry, RegistryEntry, Signal } from "./types.ts"
