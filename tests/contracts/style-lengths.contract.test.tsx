@@ -717,6 +717,33 @@ test("vertical padding under height fit-content consumes the intrinsic resolutio
   expect(app.getByTestId("target").boundingBox()?.height).toBe(21)
 })
 
+test("a resize re-resolves the percentage padding against the new containing block", () => {
+  const render = createRenderer({ cols: 40, rows: 10 })
+  const tree = (
+    <Box testID="target" width="snug-content" height={1} paddingX="max(1ch, 25%)">
+      <Text>a</Text>
+    </Box>
+  )
+  const app = render(tree)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+
+  // 25% of 80 is 20 per side: one column of content plus 40 of padding.
+  app.resize(80, 10)
+  // A resize re-enters the same one-pass settle as the first render: the
+  // measure pass still reads the old containing width, so the box is 40 (its
+  // own padding) for one pass and 41 once the engine's basis follows.
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(40)
+  app.rerender(tree)
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(41)
+
+  // And back: the old basis must not be replayed.
+  app.resize(40, 10)
+  // Shrinking needs no extra pass: the stale cap is larger than the new
+  // containing block allows, so the engine's own snug sizing settles it.
+  expect(app.getByTestId("target").boundingBox()?.width).toBe(21)
+})
+
 test("the yoga engine keeps its named unsupported-input result for string spacing", async () => {
   const yoga = await initYogaEngine()
   const previous = createFlexilyZeroEngine()
