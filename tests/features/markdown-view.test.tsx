@@ -28,6 +28,21 @@ import {
 } from "silvery"
 
 const DEFAULT_WIDTH = 80
+// Resolve from the owning package so isolated installs exercise the same parser.
+const parserPath = await vi.hoisted(async () => {
+  const { fileURLToPath } = await import("node:url")
+  return fileURLToPath(
+    import.meta.resolve(
+      "mdast-util-from-markdown",
+      new URL("../../packages/ag-react/package.json", import.meta.url).href,
+    ),
+  )
+})
+vi.mock(parserPath, async (importOriginal) => {
+  const original = await importOriginal<{ fromMarkdown: (...args: unknown[]) => unknown }>()
+  return { ...original, fromMarkdown: vi.fn(original.fromMarkdown) }
+})
+const markdownParser: { fromMarkdown: (...args: unknown[]) => unknown } = await import(parserPath)
 
 // The context-only table condition loses inline selection inside Content.Layout.
 // Existing paragraph/geometry cases never render a Markdown table.
@@ -85,6 +100,89 @@ function renderDocument(blocks: readonly DocumentBlock[], width: number) {
   )
 }
 
+// #30399 requires independent failure-boundary and streaming/literal witnesses;
+// ordinary successful parses and the complete fenced-code fixture miss these.
+describe("MarkdownView — preparation and parser preservation", () => {
+  test("parser failure renders the prepared fallback literally", () => {
+    const parser = vi.mocked(markdownParser.fromMarkdown).mockImplementation(() => {
+      throw new Error("parser failure control")
+    })
+    try {
+      const app = createRenderer({ cols: 80, rows: 8 })(
+        <Box width={80} height={8}>
+          <MarkdownView
+            source="original source"
+            prepareSource={() => ({
+              parseSource: "**Promoted Heading**",
+              fallbackSource: "normalized fallback **literal**",
+            })}
+          />
+        </Box>,
+      )
+      expect(app.text).toContain("normalized fallback **literal**")
+      expect(app.text).not.toContain("original source")
+      expect(app.text).not.toContain("Promoted Heading")
+    } finally {
+      parser.mockRestore()
+    }
+  })
+
+  test("preparation failure propagates before the parser fallback boundary", () => {
+    const parser = vi.mocked(markdownParser.fromMarkdown).mockClear()
+    try {
+      expect(() =>
+        createRenderer({ cols: 80, rows: 8 })(
+          <Box width={80} height={8}>
+            <MarkdownView
+              source="original source"
+              prepareSource={() => {
+                throw new Error("preparation failure control")
+              }}
+            />
+          </Box>,
+        ),
+      ).toThrow("preparation failure control")
+      expect(parser).not.toHaveBeenCalled()
+    } finally {
+      parser.mockRestore()
+    }
+  })
+
+  test("an incrementally completed fence retains each visible source prefix", async () => {
+    const view = (source: string) => (
+      <Box width={80} height={12}>
+        <MarkdownView source={source} />
+      </Box>
+    )
+    const app = createRenderer({ cols: 80, rows: 12, autoRender: true })(
+      view("```typescript\nconst a"),
+    )
+    expect(app.text).toContain("const a")
+    await app.rerender(view("```typescript\nconst a = 1\nconst b"))
+    await vi.waitFor(() => {
+      expect(app.text).toContain("const a = 1")
+      expect(app.text).toContain("const b")
+    })
+    await app.rerender(view("```typescript\nconst a = 1\nconst b = 2\n```"))
+    await vi.waitFor(() => {
+      expect(app.text).toContain("const a = 1")
+      expect(app.text).toContain("const b = 2")
+    })
+    expect(app.text).not.toContain("const a = 1 const b = 2")
+    expect(app.text).not.toContain("```")
+  })
+
+  test("task, property, block-id and visible HTML text stay authored literals", () => {
+    const app = render(
+      "- [ ] keep task\n\nowner:: @dev/fixer\n\nKeep ^block-id\n\n<span>visible HTML</span>",
+    )
+    expect(app.text).toContain("[ ] keep task")
+    expect(app.text).toContain("owner:: @dev/fixer")
+    expect(app.text).toContain("Keep ^block-id")
+    expect(app.text).toContain("<span>visible HTML</span>")
+  })
+})
+
 describe("MarkdownView — paragraph reflow", () => {
   test("joins authored hard-wraps and reflows to the container width", () => {
     const source = "This is a long paragraph that the author\nhard-wrapped across two short lines."
@@ -119,6 +217,14 @@ describe("MarkdownView — paragraph reflow", () => {
 })
 
 describe("MarkdownView — inline emphasis (Typography presets)", () => {
+  // #30399 peer 8: a child-bearing unsupported phrasing node must keep its authored syntax.
+  // Plain text recovery alone loses reference brackets; ordinary inline links do not reach this branch.
+  test("unsupported reference phrasing retains its authored source span", () => {
+    const app = render("[label][target]\n\n[target]: https://example.com")
+    expect(app.text).toContain("[label][target]")
+    expect(app.text).toContain("[target]: https://example.com")
+  })
+
   test("links retain their destination and brighten with an underline on plain hover", async () => {
     const app = render("See [Example](https://example.com) now.")
     const column = app.lines[0]!.indexOf("Example")
@@ -163,6 +269,32 @@ describe("MarkdownView — inline emphasis (Typography presets)", () => {
 })
 
 describe("MarkdownView — block elements", () => {
+  // #30399 peer 6: paragraph-first fixtures miss empty and heading-first list marker rows.
+  test.each(["blocks", "prose"] as const)(
+    "%s lists keep empty and heading-first item markers",
+    (presentation) => {
+      const app = createRenderer({ cols: 80, rows: 24 })(
+        <Box width={80} height={24}>
+          <MarkdownView source={"7.\n8. # Heading"} presentation={presentation} />
+        </Box>,
+      )
+      const lines = app.lines.map((line) => line.trim())
+      const start = presentation === "prose" ? 7 : 1
+      expect(lines).toContain(`${start}.`)
+      expect(lines).toContain(`${start + 1}.`)
+      expect(app.text.match(/Heading/gu)).toHaveLength(1)
+    },
+  )
+
+  // #30399 peer 7: joining a quoted list's child text erases both markers and word boundaries.
+  test("generic quotes preserve list boundaries and recursive inline styles", () => {
+    const app = render("> - **one**\n> - two\n>\n> after")
+    expect(app.text.replace(/\s+/gu, " ")).toContain("- one - two after")
+    const row = app.lines.findIndex((line) => line.includes("one"))
+    const column = app.lines[row]!.indexOf("one")
+    expect(app.cell(column, row).bold).toBe(true)
+  })
+
   test.each([
     ["# Title", 0],
     ["Before\n\n# Title", 3],

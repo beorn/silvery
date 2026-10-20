@@ -100,7 +100,9 @@ export function MarkdownView({
         case "delete":
           return <Fragment key={index}>{children}</Fragment>
         default:
-          return <Fragment key={index}>{plain(node)}</Fragment>
+          return (
+            <Fragment key={index}>{"children" in node ? authored(node) : plain(node)}</Fragment>
+          )
       }
     })
   }
@@ -172,7 +174,7 @@ export function MarkdownView({
           )
           return (
             <Fragment key={index}>
-              {first?.type === "paragraph" ? place(row) : null}
+              {place(row)}
               {item.children.slice(first?.type === "paragraph" ? 1 : 0).map((child, childIndex) => (
                 <Fragment key={childIndex}>{renderBlock(child, undefined, depth + 1)}</Fragment>
               ))}
@@ -218,14 +220,23 @@ export function MarkdownView({
       case "code":
         return <SyntaxHighlighter language={node.lang || "plain"} code={node.value} />
       case "blockquote": {
-        const children: PhrasingContent[] = node.children.flatMap((child, index) => {
-          const body: PhrasingContent[] =
-            child.type === "paragraph" || child.type === "heading"
-              ? child.children
-              : [{ type: "text", value: plain(child) }]
-          return index === 0 ? body : [{ type: "text", value: "\n" }, ...body]
-        })
-        return place(<Blockquote>{inline(children, "quote")}</Blockquote>)
+        const collect = (blocks: readonly RootContent[]): PhrasingContent[] =>
+          blocks.flatMap((child, index) => {
+            let body: PhrasingContent[]
+            if (child.type === "paragraph" || child.type === "heading") body = child.children
+            else if (!renderInline && child.type === "list") {
+              body = child.children.flatMap((item, itemIndex) => [
+                {
+                  type: "text",
+                  value: `${itemIndex > 0 ? " " : ""}${child.ordered ? `${(child.start ?? 1) + itemIndex}.` : "-"} `,
+                },
+                ...collect(item.children),
+              ])
+            } else if (!renderInline && child.type === "blockquote") body = collect(child.children)
+            else body = [{ type: "text", value: renderInline ? plain(child) : authored(child) }]
+            return index === 0 ? body : [{ type: "text", value: "\n" }, ...body]
+          })
+        return place(<Blockquote>{inline(collect(node.children), "quote")}</Blockquote>)
       }
       case "thematicBreak":
         return <HR />
