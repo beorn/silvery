@@ -171,7 +171,7 @@ describe("DocumentView heading marker gutter", () => {
     { metadata: true, firstLevel: 1 },
     { metadata: false, firstLevel: 2 },
   ] as const)(
-    "adds leading space to H1/H2 only after body content ($metadata, $firstLevel)",
+    "keeps two blank rows before later H1 and one before H2 ($metadata, $firstLevel)",
     ({ metadata, firstLevel }) => {
       const blocks: DocumentBlock[] = [
         ...(metadata
@@ -210,12 +210,12 @@ describe("DocumentView heading marker gutter", () => {
       }
       expect(row("Opening heading")).toBe(metadata ? row("Frontmatter") + 2 : 0)
       expect(row("Heading after heading") - row("Opening heading")).toBe(2)
-      expect(row("Second-level section") - row("Opening prose")).toBe(3)
+      expect(row("Second-level section") - row("Opening prose")).toBe(2)
       expect(row("Later first-level heading") - row("Section prose")).toBe(3)
       expect(row("Third-level subsection") - row("Later prose")).toBe(2)
-      expect(row("Section after list") - row("Last list item")).toBe(3)
+      expect(row("Section after list") - row("Last list item")).toBe(2)
       expect(row("Section after rule") - row("─")).toBe(2)
-      expect(row("Title after media") - row("Media content")).toBe(2)
+      expect(row("Title after media") - row("Media content")).toBe(3)
     },
   )
 
