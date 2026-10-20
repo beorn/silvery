@@ -600,7 +600,8 @@ function ProseLane({ children }: { children: React.ReactNode }): React.ReactElem
     <Box flexDirection="row" width="100%" minWidth={0}>
       <Box
         width={leftGutter}
-        flexGrow={1}
+        // Start alignment keeps the left floor; spare width belongs on the right.
+        flexGrow={ctx.align === "start" ? 0 : 1}
         flexBasis={leftGutter}
         flexShrink={0}
         minWidth={leftGutter}
