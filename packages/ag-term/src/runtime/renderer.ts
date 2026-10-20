@@ -33,13 +33,14 @@ import {
   CHILDREN_BIT,
   SUBTREE_BIT,
 } from "@silvery/ag/epoch"
-import { commitLayoutSnapshot } from "@silvery/ag/layout-signals"
+import { commitLayoutSnapshot, findActiveParkRect } from "@silvery/ag/layout-signals"
 import { IncrementalRenderMismatchError } from "../scheduler"
 import { isStrictEnabled } from "../strict-mode"
 import {
   markLayoutTreeDirty,
   FRESH_LAYOUT_STRICT_SLUG,
   FRESH_LAYOUT_STRICT_MIN_TIER,
+  notifyLayoutSubscribers,
 } from "../pipeline"
 import { emitRenderDispatched, isRenderTraceEnabled } from "./render-trace"
 import {
@@ -68,7 +69,8 @@ import { cellEquals, bufferToText } from "../buffer"
 import type { createFiberRoot, createContainer } from "@silvery/ag-react/reconciler"
 import type { TerminalSelectionState } from "@silvery/headless/selection"
 import type { Theme } from "@silvery/ansi"
-import type { AgNode } from "@silvery/ag/types"
+import type { AgNode, Rect } from "@silvery/ag/types"
+import { collectOverlayLayer, type OverlayLayer } from "@silvery/ag/overlay-layer"
 
 type Scrollback = ReturnType<typeof createVirtualScrollback>
 type Container = ReturnType<typeof createContainer>
@@ -84,6 +86,104 @@ function countAgNodes(root: AgNode): number {
   let n = 1
   for (const child of root.children) n += countAgNodes(child)
   return n
+}
+
+/**
+ * Name the node that declares a decoration, for failure messages only.
+ * `props.testID`/`props.id` are the identities hosts and tests use.
+ */
+function strictNodeIdent(node: AgNode): string {
+  const props = node.props as Record<string, unknown> | undefined
+  const named = props?.testID ?? props?.id
+  return typeof named === "string" && named.length > 0 ? `${node.type}#${named}` : node.type
+}
+
+/**
+ * The notify-synced outputs a frame exposes to consumers, sampled from the
+ * signal map. `collectOverlayLayer` covers caret/focus/selection/decorations;
+ * `park` is the one notify-synced output it does not expose.
+ */
+interface NotifyOutputs {
+  readonly overlay: OverlayLayer
+  readonly park: Rect | null
+}
+
+function captureNotifyOutputs(root: AgNode): NotifyOutputs {
+  return { overlay: collectOverlayLayer(root), park: findActiveParkRect(root) }
+}
+
+/**
+ * Diff the notify-synced overlay outputs of the incremental frame against the
+ * fresh pass that resolves them from the same props (#26812). Returns a
+ * human-readable report of the first differing signals, or null when they
+ * agree. Called only from the SILVERY_STRICT comparison path.
+ *
+ * `anchors` is deliberately not compared: `collectOverlayLayer` derives it
+ * straight from `props.anchorRef` + `contentRect`, never from a notify-synced
+ * signal, so it cannot be stale here.
+ */
+function describeNotifySignalMismatch(
+  root: AgNode,
+  incremental: NotifyOutputs,
+  fresh: NotifyOutputs,
+): string | null {
+  const lines: string[] = []
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+  const show = (v: unknown) => JSON.stringify(v)
+  const incrementalLayer = incremental.overlay
+  const freshLayer = fresh.overlay
+
+  if (!same(incrementalLayer.caret, freshLayer.caret)) {
+    lines.push(
+      `  cursorRect: incremental=${show(incrementalLayer.caret)} fresh=${show(freshLayer.caret)}`,
+    )
+  }
+  if (!same(incrementalLayer.focus, freshLayer.focus)) {
+    lines.push(
+      `  focusedNodeId: incremental=${show(incrementalLayer.focus?.id ?? null)} fresh=${show(freshLayer.focus?.id ?? null)}`,
+    )
+  }
+  if (!same(incrementalLayer.selection.rects, freshLayer.selection.rects)) {
+    lines.push(
+      `  selectionFragments: incremental=${show(incrementalLayer.selection.rects)} fresh=${show(freshLayer.selection.rects)}`,
+    )
+  }
+  if (!same(incremental.park, fresh.park)) {
+    lines.push(`  parkRect: incremental=${show(incremental.park)} fresh=${show(fresh.park)}`)
+  }
+  if (!same(incrementalLayer.decorations, freshLayer.decorations)) {
+    const before = new Map(incrementalLayer.decorations.map((d) => [d.id, d]))
+    const after = new Map(freshLayer.decorations.map((d) => [d.id, d]))
+    const changed: string[] = []
+    let owners: Map<string, string> | null = null
+    for (const id of new Set([...before.keys(), ...after.keys()])) {
+      const a = before.get(id)
+      const b = after.get(id)
+      if (same(a, b)) continue
+      if (!owners) owners = new Map()
+      if (!owners.has(id)) {
+        const findOwner = (node: AgNode): string | null => {
+          const decorations = (
+            node.props as { decorations?: readonly { id?: string }[] } | undefined
+          )?.decorations
+          if (decorations?.some((d) => d.id === id)) return strictNodeIdent(node)
+          for (const child of node.children) {
+            const found = findOwner(child)
+            if (found) return found
+          }
+          return null
+        }
+        owners.set(id, findOwner(root) ?? "<unknown node>")
+      }
+      const kind = a?.kind ?? b?.kind
+      changed.push(
+        `  decorationRects[${show(id)}] (kind=${show(kind)}, node=${owners.get(id)}): ` +
+          `incremental=${show(a?.rects ?? null)} fresh=${show(b?.rects ?? null)}`,
+      )
+    }
+    lines.push(...changed)
+  }
+  return lines.length > 0 ? lines.join("\n") : null
 }
 
 // ---------------------------------------------------------------------------
@@ -414,6 +514,13 @@ export function createRenderer(opts: RendererOptions): Renderer {
       // green BY CONSTRUCTION (no heuristic). Mirrors the renderer.ts / scheduler.ts
       // fresh paths; see markLayoutTreeDirty + AgLayoutOptions.forceFullPropagate.
       const freshLayout = isStrictEnabled(FRESH_LAYOUT_STRICT_SLUG, FRESH_LAYOUT_STRICT_MIN_TIER)
+      // #26812: the fresh baseline must resolve every notify-synced output
+      // (cursor, focus, selection, anchor, park, decorations) from the CURRENT
+      // props, exactly as a from-scratch frame would. With the notify pass
+      // skipped, a notify-only change left the same stale signals on both
+      // sides, so the comparison below could never report it. `syncRectSignals`
+      // writes only on inequality, so on a correct incremental frame this pass
+      // is side-effect-equivalent.
       const doFreshRender = () => {
         const freshAg = createAg(rootNode, {
           measurer: opts.pipelineConfig?.measurer,
@@ -428,12 +535,40 @@ export function createRenderer(opts: RendererOptions): Renderer {
             forceFullPropagate: freshLayout,
           },
         )
+        // The layout above may take the layout-on-demand fast path (Flexily
+        // clean, no notify-dirty mark), which never resolves notify-synced
+        // signals. A fresh baseline must not inherit that gate, so resolve them
+        // explicitly — same phase order the full pipeline uses (after layout,
+        // scroll and scrollRect).
+        notifyLayoutSubscribers(rootNode)
         return freshAg.render()
       }
+      // #26812: snapshot the notify-derived overlay state BEFORE the fresh pass.
+      // `createAg(rootNode)` wraps this node tree rather than cloning it, so the
+      // fresh pass rewrites the very signals the incremental frame produced;
+      // this pre-pass read is what that frame actually left for its consumers.
+      const incrementalOutputs = captureNotifyOutputs(rootNode)
       const measurer = opts.pipelineConfig?.measurer
       const { buffer: freshBuffer } = measurer
         ? runWithMeasurer(measurer, doFreshRender)
         : doFreshRender()
+      // #26812: cells alone cannot see a stale notify-synced signal — an
+      // overlay rect, focus id or selection is not painted by the render phase.
+      // Compare the resolved overlay state the incremental frame exposed with
+      // what the fresh pass resolves from the same props.
+      const notifyMismatch = describeNotifySignalMismatch(
+        rootNode,
+        incrementalOutputs,
+        captureNotifyOutputs(rootNode),
+      )
+      if (notifyMismatch) {
+        const msg =
+          `SILVERY_STRICT (createApp): NOTIFY-SIGNAL MISMATCH on render #${_renderCount}\n` +
+          `  incremental notify-synced signals, fresh resolution from the same props:\n` +
+          notifyMismatch
+        const dumpPath = writeDumpFile("strict-failure", msg)
+        throw new IncrementalRenderMismatchError(dumpPath ? `${msg}\n  dump: ${dumpPath}` : msg)
+      }
       for (let y = 0; y < termBuffer.height; y++) {
         for (let x = 0; x < termBuffer.width; x++) {
           const a = termBuffer.getCell(x, y)
