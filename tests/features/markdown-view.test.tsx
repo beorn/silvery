@@ -26,7 +26,6 @@ import {
   type DocumentBlock,
   useScrollController,
 } from "silvery"
-import { parseMarkdownBlocks } from "../../packages/ag-react/src/ui/components/MarkdownView"
 
 const DEFAULT_WIDTH = 80
 
@@ -74,15 +73,13 @@ describe("MarkdownView — paragraph reflow", () => {
     )
   })
 
-  test("parseMarkdownBlocks joins wrapped paragraph lines with a space", () => {
-    const blocks = parseMarkdownBlocks("alpha beta\ngamma delta")
-    expect(blocks).toHaveLength(1)
-    expect(blocks[0]).toMatchObject({ kind: "paragraph", text: "alpha beta gamma delta" })
+  test("joins wrapped paragraph lines with a space through the public renderer", () => {
+    expect(render("alpha beta\ngamma delta").text.trim()).toBe("alpha beta gamma delta")
   })
 
   test("a blank line separates two paragraphs", () => {
-    const blocks = parseMarkdownBlocks("one two\n\nthree four")
-    expect(blocks.map((block) => (block.kind === "paragraph" ? block.text : block.kind))).toEqual([
+    const lines = render("one two\n\nthree four").lines.map((line) => line.trim()).filter(Boolean)
+    expect(lines).toEqual([
       "one two",
       "three four",
     ])
@@ -201,14 +198,13 @@ describe("MarkdownView — block elements", () => {
 
   test("list item text reflows under a hanging indent", () => {
     const source = "- This single bullet item was authored\n  wrapped onto a second physical line."
-    const blocks = parseMarkdownBlocks(source)
-    expect(blocks).toHaveLength(1)
-    expect(blocks[0]).toMatchObject({ kind: "list" })
-    if (blocks[0]?.kind === "list") {
-      expect(blocks[0].list.items[0]?.text).toBe(
-        "This single bullet item was authored wrapped onto a second physical line.",
-      )
-    }
+    const app = render(source, 30)
+    expect(app.text.replace(/\s+/gu, " ").trim()).toContain(
+      "This single bullet item was authored wrapped onto a second physical line.",
+    )
+    const lines = app.lines.filter((line) => line.trim() !== "")
+    expect(lines.length).toBeGreaterThan(1)
+    expect(lines.slice(1).every((line) => line.startsWith("  "))).toBe(true)
   })
 
   test("fenced code preserves line breaks and forwards its language for highlighting", async () => {
