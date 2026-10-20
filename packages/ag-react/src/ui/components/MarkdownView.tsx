@@ -224,7 +224,7 @@ export function MarkdownView({
           blocks.flatMap((child, index) => {
             let body: PhrasingContent[]
             if (child.type === "paragraph" || child.type === "heading") body = child.children
-            else if (!renderInline && child.type === "list") {
+            else if (child.type === "list") {
               body = child.children.flatMap((item, itemIndex) => [
                 {
                   type: "text",
@@ -232,7 +232,7 @@ export function MarkdownView({
                 },
                 ...collect(item.children),
               ])
-            } else if (!renderInline && child.type === "blockquote") body = collect(child.children)
+            } else if (child.type === "blockquote") body = collect(child.children)
             else body = [{ type: "text", value: renderInline ? plain(child) : authored(child) }]
             return index === 0 ? body : [{ type: "text", value: "\n" }, ...body]
           })
