@@ -143,6 +143,139 @@ describe("DocumentView heading marker gutter", () => {
     expect(app.cell(71, row).bg).not.toEqual(background)
   })
 
+  test("fenced typescript code block in Content.Layout renders clean under SILVERY_STRICT=2 at 80 and 32 cols and stays byte-identical across other widths (#30443)", () => {
+    const fixtureBlocks: DocumentBlock[] = [
+      { id: "p", kind: "paragraph", content: "A paragraph before the fenced code." },
+      { id: "c", kind: "code", content: "const a = 1\nconst b = 2", language: "typescript" },
+      { id: "q", kind: "paragraph", content: "A paragraph after the code." },
+    ]
+    const savedStrict = process.env.SILVERY_STRICT
+    process.env.SILVERY_STRICT = "2"
+    try {
+      for (const cols of [80, 32] as const) {
+        const app = createRenderer({ cols, rows: 12 })(
+          <Content.Layout fill={false} prose="100%" align="start">
+            <DocumentView blocks={fixtureBlocks} />
+          </Content.Layout>,
+        )
+        const proseCol = app.lines[0]!.indexOf("A paragraph before")
+        expect(proseCol, `prose column at ${cols} cols`).toBe(2)
+        const codeRow = app.lines.findIndex((line) => line.includes("const a = 1"))
+        expect(codeRow, `code row at ${cols} cols`).toBeGreaterThanOrEqual(0)
+        expect(app.lines[codeRow]!.indexOf("const a = 1"), `code column at ${cols} cols`).toBe(
+          proseCol,
+        )
+        const bg = app.cell(proseCol, codeRow).bg
+        expect(bg).not.toBeNull()
+        // Outdent hangs 2 cells into the left gutter (0..1) and fills up to cols - 2; cols - 1 is the compact right gutter.
+        expect(app.cell(0, codeRow).bg, `left outdent col 0 at ${cols} cols`).toEqual(bg)
+        expect(app.cell(1, codeRow).bg, `left outdent col 1 at ${cols} cols`).toEqual(bg)
+        expect(
+          app.cell(cols - 2, codeRow).bg,
+          `right edge col ${cols - 2} at ${cols} cols`,
+        ).toEqual(bg)
+        expect(
+          app.cell(cols - 1, codeRow).bg,
+          `trailing gutter col ${cols - 1} at ${cols} cols`,
+        ).not.toEqual(bg)
+      }
+
+      const app80 = createRenderer({ cols: 80, rows: 12 })(
+        <Content.Layout fill={false} prose="100%" align="start">
+          <DocumentView blocks={fixtureBlocks} />
+        </Content.Layout>,
+      )
+      expect(app80.lines.slice(0, 8)).toEqual([
+        "  A paragraph before the fenced code.",
+        "",
+        " ".repeat(79),
+        `  const a = 1${" ".repeat(66)}`,
+        `  const b = 2${" ".repeat(66)}`,
+        " ".repeat(79),
+        "",
+        "  A paragraph after the code.",
+      ])
+
+      const app32 = createRenderer({ cols: 32, rows: 12 })(
+        <Content.Layout fill={false} prose="100%" align="start">
+          <DocumentView blocks={fixtureBlocks} />
+        </Content.Layout>,
+      )
+      expect(app32.lines.slice(0, 9)).toEqual([
+        "  A paragraph before the fenced",
+        "  code.",
+        "",
+        " ".repeat(31),
+        `  const a = 1${" ".repeat(18)}`,
+        `  const b = 2${" ".repeat(18)}`,
+        " ".repeat(31),
+        "",
+        "  A paragraph after the code.",
+      ])
+
+      // Outside [80, 32], verify full output is byte-identical to a reference code surface
+      // spanning [proseCol - 2, proseCol + proseWidth - 1] with wrap width (proseWidth - 2),
+      // so any fix that reclaims the 2 columns by narrowing/reflowing the code block fails.
+      const wrappingBlocks: DocumentBlock[] = [
+        { id: "p", kind: "paragraph", content: "A paragraph before the fenced code." },
+        {
+          id: "c",
+          kind: "code",
+          content: "abcdefghijklmnopqrstuvwxyz_".repeat(4),
+          language: "typescript",
+        },
+        { id: "q", kind: "paragraph", content: "A paragraph after the code." },
+      ]
+      for (const cols of [48, 65, 72, 89, 90, 120] as const) {
+        const compact = cols < DEFAULT_BREAKPOINTS.md
+        const proseTarget = compact ? cols : 96
+        const rightGutter = compact ? 1 : 2
+        const proseWidth = Math.max(1, Math.min(proseTarget, cols - 2 - rightGutter))
+        const leftover = Math.max(0, cols - proseWidth - 2 - rightGutter)
+        const proseCol = 2 + Math.ceil(leftover / 2)
+        const lead = " ".repeat(proseCol)
+        const outdentLead = " ".repeat(proseCol - 2)
+        const surfaceWidth = proseWidth + 2
+
+        const fixtureApp = createRenderer({ cols, rows: 12 })(
+          <DocumentView blocks={fixtureBlocks} />,
+        )
+        expect(fixtureApp.lines.slice(0, 8), `full output at ${cols} cols`).toEqual([
+          `${lead}A paragraph before the fenced code.`,
+          "",
+          `${outdentLead}${" ".repeat(surfaceWidth)}`,
+          `${lead}const a = 1${" ".repeat(proseWidth - "const a = 1".length)}`,
+          `${lead}const b = 2${" ".repeat(proseWidth - "const b = 2".length)}`,
+          `${outdentLead}${" ".repeat(surfaceWidth)}`,
+          "",
+          `${lead}A paragraph after the code.`,
+        ])
+
+        const app = createRenderer({ cols, rows: 16 })(<DocumentView blocks={wrappingBlocks} />)
+        const expectedCodeWidth = proseWidth - 2
+        const codeRow = app.lines.findIndex((line) => line.includes("abcdefghij"))
+        expect(codeRow, `wrapping code row at ${cols} cols`).toBeGreaterThanOrEqual(0)
+        const firstCodeLine = app.lines[codeRow]!.trim()
+        expect(firstCodeLine.length, `first wrapped code line length at ${cols} cols`).toBe(
+          expectedCodeWidth,
+        )
+        const bg = app.cell(proseCol, codeRow).bg
+        expect(app.cell(proseCol - 2, codeRow).bg, `outdent left edge at ${cols} cols`).toEqual(bg)
+        expect(
+          app.cell(proseCol + proseWidth - 1, codeRow).bg,
+          `prose right edge at ${cols} cols`,
+        ).toEqual(bg)
+        expect(
+          app.cell(proseCol + proseWidth, codeRow).bg,
+          `outside right edge at ${cols} cols`,
+        ).not.toEqual(bg)
+      }
+    } finally {
+      if (savedStrict === undefined) delete process.env.SILVERY_STRICT
+      else process.env.SILVERY_STRICT = savedStrict
+    }
+  })
+
   test("auto-width tables keep the compact document gutters", () => {
     const app = createRenderer({ cols: 72, rows: 12 })(
       <DocumentView

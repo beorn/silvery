@@ -7,7 +7,19 @@ import { Box } from "../../components/Box"
 import { Text } from "../../components/Text"
 import { usePopoverHandlers } from "../../components/Popover"
 import type { MeasuredContent } from "../../components/Table"
-import { Blockquote, H1, H2, H3, H4, H5, H6, HR, Small, unorderedListMarker } from "./Typography"
+import {
+  Blockquote,
+  CodeBlock,
+  H1,
+  H2,
+  H3,
+  H4,
+  H5,
+  H6,
+  HR,
+  Small,
+  unorderedListMarker,
+} from "./Typography"
 import { SyntaxHighlighter } from "./SyntaxHighlighter"
 import { Prose } from "./Prose"
 import { FoldPrefix, HeadingRow, formatSubtaskSummary } from "./HeadingRow"
@@ -702,7 +714,12 @@ function DocumentBlocks({
                 </Blockquote>
               </BlockFrame>
             )
-          case "code":
+          case "code": {
+            const codeGutterBg = selected
+              ? "$bg-selected"
+              : block.embed
+                ? "mix($fg-link, $bg, 95%)"
+                : "$bg-surface-subtle"
             return (
               <BlockFrame
                 key={block.id}
@@ -713,16 +730,31 @@ function DocumentBlocks({
                 marginBottom={bottomMargin}
                 onLayout={(y) => onBlockLayout?.(block.id, y)}
               >
-                <Box flexDirection="column" flexGrow={1} minWidth={0} marginLeft={-2}>
-                  <SyntaxHighlighter
-                    language={block.language ?? "plain"}
-                    code={block.content}
-                    expanded={!collapsedCode.has(block.id)}
-                    onExpandedChange={(expanded) => onCodeExpandedChange(block.id, expanded)}
-                  />
-                </Box>
+                <Box
+                  width={2}
+                  minWidth={2}
+                  marginLeft={-2}
+                  flexShrink={0}
+                  backgroundColor={codeGutterBg}
+                />
+                <CodeBlock
+                  flexGrow={1}
+                  width="auto"
+                  paddingLeft={0}
+                  label={(block.language || "plain").toLowerCase()}
+                  content={
+                    <SyntaxHighlighter
+                      bare
+                      language={block.language ?? "plain"}
+                      code={block.content}
+                    />
+                  }
+                  expanded={!collapsedCode.has(block.id)}
+                  onExpandedChange={(expanded) => onCodeExpandedChange(block.id, expanded)}
+                />
               </BlockFrame>
             )
+          }
           case "table":
             return (
               <BlockFrame
