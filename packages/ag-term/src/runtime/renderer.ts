@@ -33,7 +33,12 @@ import {
   CHILDREN_BIT,
   SUBTREE_BIT,
 } from "@silvery/ag/epoch"
-import { commitLayoutSnapshot } from "@silvery/ag/layout-signals"
+import {
+  commitLayoutSnapshot,
+  findActiveParkRect,
+  findAnchor,
+  type LayoutOutputRead,
+} from "@silvery/ag/layout-signals"
 import { IncrementalRenderMismatchError } from "../scheduler"
 import { isStrictEnabled } from "../strict-mode"
 import {
@@ -68,7 +73,8 @@ import { cellEquals, bufferToText } from "../buffer"
 import type { createFiberRoot, createContainer } from "@silvery/ag-react/reconciler"
 import type { TerminalSelectionState } from "@silvery/headless/selection"
 import type { Theme } from "@silvery/ansi"
-import type { AgNode } from "@silvery/ag/types"
+import type { AgNode, Rect } from "@silvery/ag/types"
+import { collectOverlayLayer, type OverlayLayer } from "@silvery/ag/overlay-layer"
 
 type Scrollback = ReturnType<typeof createVirtualScrollback>
 type Container = ReturnType<typeof createContainer>
@@ -84,6 +90,153 @@ function countAgNodes(root: AgNode): number {
   let n = 1
   for (const child of root.children) n += countAgNodes(child)
   return n
+}
+
+/**
+ * Name the node that declares a decoration, for failure messages only.
+ * `props.testID`/`props.id` are the identities hosts and tests use.
+ */
+function strictNodeIdent(node: AgNode): string {
+  const props = node.props as Record<string, unknown> | undefined
+  const named = props?.testID ?? props?.id
+  return typeof named === "string" && named.length > 0 ? `${node.type}#${named}` : node.type
+}
+
+/**
+ * The notify-synced outputs a frame exposes to consumers.
+ *
+ * `overlay` covers caret/focus/selection/decorations, `park` is the one
+ * notify-synced output it does not expose, and `anchors` samples the
+ * consumer-visible anchor rect per declared `anchorRef` id through
+ * `findAnchor` — the value an anchored consumer actually reads, which
+ * `collectOverlayLayer`'s own anchor map does not exercise (it recomputes).
+ *
+ * Captured twice per strict frame: once with `read: "signal"` before the
+ * fresh pass (what consumers saw) and once with `read: "fresh"` after it
+ * (what the current props should produce). Neither capture writes the
+ * signal map (#26812).
+ */
+interface NotifyOutputs {
+  readonly overlay: OverlayLayer
+  readonly park: Rect | null
+  readonly anchors: ReadonlyMap<string, Rect | null>
+}
+
+function captureNotifyOutputs(root: AgNode, read: LayoutOutputRead): NotifyOutputs {
+  const anchorIds = new Set<string>()
+  const collectAnchorIds = (node: AgNode): void => {
+    const ref = (node.props as { anchorRef?: string | { id?: string } } | undefined)?.anchorRef
+    if (typeof ref === "string") {
+      if (ref.length > 0) anchorIds.add(ref)
+    } else if (ref && typeof ref.id === "string" && ref.id.length > 0) {
+      anchorIds.add(ref.id)
+    }
+    for (const child of node.children) collectAnchorIds(child)
+  }
+  collectAnchorIds(root)
+
+  const anchors = new Map<string, Rect | null>()
+  for (const id of anchorIds) anchors.set(id, findAnchor(root, id, undefined, read))
+
+  return {
+    overlay: collectOverlayLayer(root, read),
+    park: findActiveParkRect(root, read),
+    anchors,
+  }
+}
+
+/**
+ * Diff the notify-synced overlay outputs of the incremental frame against the
+ * fresh pass that resolves them from the same props (#26812). Returns a
+ * human-readable report of the first differing signals, or null when they
+ * agree. Called only from the SILVERY_STRICT comparison path.
+ *
+ * Every unequal ORDERED output is reported. Decorations are compared by
+ * sequence position (not by looking entries up in an id-keyed map), so a
+ * reorder of identical entries or a change in one of several duplicate ids
+ * still produces a report — the diagnostic lookup never decides whether a
+ * difference exists. Anchors are compared per declared id, including null
+ * transitions (#26812).
+ */
+function describeNotifySignalMismatch(
+  root: AgNode,
+  incremental: NotifyOutputs,
+  fresh: NotifyOutputs,
+): string | null {
+  const lines: string[] = []
+  const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+  const show = (v: unknown) => JSON.stringify(v)
+  const incrementalLayer = incremental.overlay
+  const freshLayer = fresh.overlay
+
+  if (!same(incrementalLayer.caret, freshLayer.caret)) {
+    lines.push(
+      `  cursorRect: incremental=${show(incrementalLayer.caret)} fresh=${show(freshLayer.caret)}`,
+    )
+  }
+  if (!same(incrementalLayer.focus, freshLayer.focus)) {
+    lines.push(
+      `  focusedNodeId: incremental=${show(incrementalLayer.focus?.id ?? null)} fresh=${show(freshLayer.focus?.id ?? null)}`,
+    )
+  }
+  if (!same(incrementalLayer.selection.rects, freshLayer.selection.rects)) {
+    lines.push(
+      `  selectionFragments: incremental=${show(incrementalLayer.selection.rects)} fresh=${show(freshLayer.selection.rects)}`,
+    )
+  }
+  if (!same(incremental.park, fresh.park)) {
+    lines.push(`  parkRect: incremental=${show(incremental.park)} fresh=${show(fresh.park)}`)
+  }
+  if (!same(incrementalLayer.decorations, freshLayer.decorations)) {
+    // Ordered comparison: every position is checked, so a reorder of equal
+    // entries or a change in one of several duplicate ids is still reported.
+    // The id is used only to describe an owner, never to decide equality.
+    const before = incrementalLayer.decorations
+    const after = freshLayer.decorations
+    const changed: string[] = []
+    let ownerCache: Map<string, string> | null = null
+    const ownerOf = (id: string): string => {
+      if (!ownerCache) ownerCache = new Map()
+      const cached = ownerCache.get(id)
+      if (cached !== undefined) return cached
+      const findOwner = (node: AgNode): string | null => {
+        const decorations = (node.props as { decorations?: readonly { id?: string }[] } | undefined)
+          ?.decorations
+        if (decorations?.some((d) => d.id === id)) return strictNodeIdent(node)
+        for (const child of node.children) {
+          const found = findOwner(child)
+          if (found) return found
+        }
+        return null
+      }
+      const owner = findOwner(root) ?? "<unknown node>"
+      ownerCache.set(id, owner)
+      return owner
+    }
+    for (let i = 0; i < Math.max(before.length, after.length); i++) {
+      const a = before[i]
+      const b = after[i]
+      if (same(a, b)) continue
+      const id = a?.id ?? b?.id ?? null
+      const kind = a?.kind ?? b?.kind
+      changed.push(
+        `  decorationRects[#${i}] (id=${show(id)}, kind=${show(kind)}, node=${id === null ? "<unknown node>" : ownerOf(id)}): ` +
+          `incremental=${show(a?.rects ?? null)} fresh=${show(b?.rects ?? null)}`,
+      )
+    }
+    lines.push(...changed)
+  }
+  if (incremental.anchors.size > 0 || fresh.anchors.size > 0) {
+    const ids = new Set([...incremental.anchors.keys(), ...fresh.anchors.keys()])
+    for (const id of ids) {
+      const a = incremental.anchors.get(id) ?? null
+      const b = fresh.anchors.get(id) ?? null
+      if (!same(a, b)) {
+        lines.push(`  anchorRect[${show(id)}]: consumer=${show(a)} fresh=${show(b)}`)
+      }
+    }
+  }
+  return lines.length > 0 ? lines.join("\n") : null
 }
 
 // ---------------------------------------------------------------------------
@@ -414,6 +567,14 @@ export function createRenderer(opts: RendererOptions): Renderer {
       // green BY CONSTRUCTION (no heuristic). Mirrors the renderer.ts / scheduler.ts
       // fresh paths; see markLayoutTreeDirty + AgLayoutOptions.forceFullPropagate.
       const freshLayout = isStrictEnabled(FRESH_LAYOUT_STRICT_SLUG, FRESH_LAYOUT_STRICT_MIN_TIER)
+      // #26812: the fresh baseline must resolve every notify-synced output
+      // (cursor, focus, selection, anchor, park, decorations) from the CURRENT
+      // props, exactly as a from-scratch frame would. It does that through the
+      // layout-output owner's `read: "fresh"` mode, which computes from node
+      // geometry and props without touching the signal map — so the comparison
+      // observes the expected values without publishing them to live
+      // subscribers or relying on a notify pass that could repair the very
+      // staleness it is meant to detect.
       const doFreshRender = () => {
         const freshAg = createAg(rootNode, {
           measurer: opts.pipelineConfig?.measurer,
@@ -430,10 +591,35 @@ export function createRenderer(opts: RendererOptions): Renderer {
         )
         return freshAg.render()
       }
+      // #26812: snapshot what consumers actually saw BEFORE the fresh pass.
+      // `createAg(rootNode)` wraps this node tree rather than cloning it, so the
+      // fresh pass rewrites the underlying geometry; this pre-pass read (signal
+      // mode, including the cached anchor a consumer would read) is what that
+      // frame actually left behind.
+      const incrementalOutputs = captureNotifyOutputs(rootNode, "signal")
       const measurer = opts.pipelineConfig?.measurer
       const { buffer: freshBuffer } = measurer
         ? runWithMeasurer(measurer, doFreshRender)
         : doFreshRender()
+      // #26812: cells alone cannot see a stale notify-synced signal — an
+      // overlay rect, focus id or selection is not painted by the render phase.
+      // Compare the resolved overlay state the incremental frame exposed with
+      // what the fresh pass resolves from the same props.
+      // Expected values come from the same props and the fresh geometry, with
+      // no signal write: `read: "fresh"` never consults the signal map.
+      const notifyMismatch = describeNotifySignalMismatch(
+        rootNode,
+        incrementalOutputs,
+        captureNotifyOutputs(rootNode, "fresh"),
+      )
+      if (notifyMismatch) {
+        const msg =
+          `SILVERY_STRICT (createApp): NOTIFY-SIGNAL MISMATCH on render #${_renderCount}\n` +
+          `  incremental notify-synced signals, fresh resolution from the same props:\n` +
+          notifyMismatch
+        const dumpPath = writeDumpFile("strict-failure", msg)
+        throw new IncrementalRenderMismatchError(dumpPath ? `${msg}\n  dump: ${dumpPath}` : msg)
+      }
       for (let y = 0; y < termBuffer.height; y++) {
         for (let x = 0; x < termBuffer.width; x++) {
           const a = termBuffer.getCell(x, y)

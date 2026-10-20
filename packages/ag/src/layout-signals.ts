@@ -630,6 +630,22 @@ export function computeParkRect(node: AgNode): Rect | null {
 }
 
 /**
+ * Which values a layout-output reader resolves (#26812).
+ *
+ * - `"signal"` (default): today's behaviour — read the live signal map when a
+ *   node has signals allocated, compute otherwise. This is what consumers and
+ *   the production notify path use.
+ * - `"fresh"`: compute from the node's current geometry and props, never
+ *   reading or writing the signal map. The STRICT fresh comparison uses this
+ *   to observe what the current props *should* produce without publishing
+ *   values to live subscribers.
+ *
+ * Deliberately closed to these two modes: this is a read switch on the
+ * existing walks, not an extensible provider seam or a second signal store.
+ */
+export type LayoutOutputRead = "signal" | "fresh"
+
+/**
  * Walk the tree and return the deepest declared hardware-park rect, or null when
  * no node declares `parkOffset`. Post-order deepest-wins (mirrors `findAnchor`),
  * and deliberately **non-focus-gated and non-visibility-gated** — the park
@@ -638,7 +654,7 @@ export function computeParkRect(node: AgNode): Rect | null {
  * (@km/code/v0.2/19702). Signal-or-compute per node so it works before signals
  * are allocated (first frame after mount).
  */
-export function findActiveParkRect(root: AgNode): Rect | null {
+export function findActiveParkRect(root: AgNode, read: LayoutOutputRead = "signal"): Rect | null {
   let result: Rect | null = null
 
   function walk(node: AgNode): void {
@@ -647,7 +663,7 @@ export function findActiveParkRect(root: AgNode): Rect | null {
     }
     const props = node.props as BoxProps | undefined
     if (!props?.parkOffset) return
-    const s = signalMap.get(node)
+    const s = read === "fresh" ? undefined : signalMap.get(node)
     const rect = s ? s.parkRect() : computeParkRect(node)
     if (rect) {
       // Last-write-wins (deepest in post-order).
@@ -681,7 +697,12 @@ export function findActiveParkRect(root: AgNode): Rect | null {
  *
  * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
  */
-export function findAnchor(root: AgNode, id: string, edge?: AnchorEdge): Rect | null {
+export function findAnchor(
+  root: AgNode,
+  id: string,
+  edge?: AnchorEdge,
+  read: LayoutOutputRead = "signal",
+): Rect | null {
   let result: Rect | null = null
 
   function walk(node: AgNode): void {
@@ -690,7 +711,7 @@ export function findAnchor(root: AgNode, id: string, edge?: AnchorEdge): Rect | 
     }
     const nodeId = resolveAnchorId(node)
     if (nodeId !== id) return
-    const s = signalMap.get(node)
+    const s = read === "fresh" ? undefined : signalMap.get(node)
     const rect = s ? s.anchorRect() : computeAnchorRect(node)
     if (rect) {
       // Last-write-wins (deepest in post-order).
@@ -743,7 +764,11 @@ export function findAnchor(root: AgNode, id: string, edge?: AnchorEdge): Rect | 
  *
  * Phase 4c of `km-silvery.view-as-layout-output` (overlay-anchor v1).
  */
-export function computeDecorationRects(node: AgNode, root: AgNode): readonly DecorationRect[] {
+export function computeDecorationRects(
+  node: AgNode,
+  root: AgNode,
+  read: LayoutOutputRead = "signal",
+): readonly DecorationRect[] {
   const props = node.props as BoxProps | undefined
   const decos = props?.decorations
   if (!decos || decos.length === 0) return EMPTY_DECORATION_RECTS
@@ -758,7 +783,7 @@ export function computeDecorationRects(node: AgNode, root: AgNode): readonly Dec
         out.push({ kind: d.kind, id: d.id, rects: [] })
         continue
       }
-      const anchor = findAnchor(root, d.anchorId)
+      const anchor = findAnchor(root, d.anchorId, undefined, read)
       if (!anchor) {
         out.push({ kind: d.kind, id: d.id, rects: [] })
         continue
@@ -824,7 +849,10 @@ function decorationRectsEqual(a: readonly DecorationRect[], b: readonly Decorati
  * Per-node cost: one `props.decorations` check + one signal lookup. Trees
  * with no decorations return `[]` after a single traversal.
  */
-export function findActiveDecorationRects(root: AgNode): readonly DecorationRect[] {
+export function findActiveDecorationRects(
+  root: AgNode,
+  read: LayoutOutputRead = "signal",
+): readonly DecorationRect[] {
   const out: DecorationRect[] = []
 
   function walk(node: AgNode): void {
@@ -833,8 +861,8 @@ export function findActiveDecorationRects(root: AgNode): readonly DecorationRect
     }
     const props = node.props as BoxProps | undefined
     if (props?.decorations && props.decorations.length > 0) {
-      const s = signalMap.get(node)
-      const rects = s ? s.decorationRects() : computeDecorationRects(node, root)
+      const s = read === "fresh" ? undefined : signalMap.get(node)
+      const rects = s ? s.decorationRects() : computeDecorationRects(node, root, read)
       for (const r of rects) out.push(r)
     }
   }
@@ -1403,8 +1431,11 @@ export function commitLayoutSnapshot(root: AgNode): boolean {
  * `props.cursorOffset` check + one signal lookup; trees without any cursor
  * declarer return null after a single traversal.
  */
-export function findActiveCursorRect(root: AgNode): CursorRect | null {
-  return findActiveCursorRectWithProvenance(root)?.rect ?? null
+export function findActiveCursorRect(
+  root: AgNode,
+  read: LayoutOutputRead = "signal",
+): CursorRect | null {
+  return findActiveCursorRectWithProvenance(root, read)?.rect ?? null
 }
 
 /**
@@ -1438,7 +1469,10 @@ export interface ActiveCursorResult {
  * gate). Precedence and clipping match `findActiveCursorRect`'s documented
  * invariants exactly — this IS that walk.
  */
-export function findActiveCursorRectWithProvenance(root: AgNode): ActiveCursorResult | null {
+export function findActiveCursorRectWithProvenance(
+  root: AgNode,
+  read: LayoutOutputRead = "signal",
+): ActiveCursorResult | null {
   // Two parallel tracks — focused cursor owner wins outright (invariant 1.1),
   // including hidden cursor owners such as a disabled-but-focused TextArea.
   // Falling back to deepest-visible covers Ink-compat / useCursor consumers
@@ -1498,7 +1532,7 @@ export function findActiveCursorRectWithProvenance(root: AgNode): ActiveCursorRe
 
     const props = node.props as BoxProps | undefined
     if (props?.cursorOffset) {
-      const s = signalMap.get(node)
+      const s = read === "fresh" ? undefined : signalMap.get(node)
       const rect = s ? s.cursorRect() : computeCursorRect(node)
       const isFocusedCursorOwner = props.focused === true || node.interactiveState?.focused === true
       if (rect) {
@@ -1586,7 +1620,10 @@ export function findActiveCursorRectWithProvenance(root: AgNode): ActiveCursorRe
  * Per-node cost: one `props.focused` check + one signal lookup. Trees with
  * no focused declarer return null after a single traversal.
  */
-export function findActiveFocusedNodeId(root: AgNode): string | null {
+export function findActiveFocusedNodeId(
+  root: AgNode,
+  read: LayoutOutputRead = "signal",
+): string | null {
   let result: string | null = null
 
   function walk(node: AgNode): void {
@@ -1595,7 +1632,7 @@ export function findActiveFocusedNodeId(root: AgNode): string | null {
     }
     const props = node.props as BoxProps | undefined
     if (props?.focused) {
-      const s = signalMap.get(node)
+      const s = read === "fresh" ? undefined : signalMap.get(node)
       const id = s ? s.focusedNodeId() : computeFocusedNodeId(node)
       if (id !== null) {
         // Last-write-wins (deeper post-order entries overwrite shallower).
@@ -1638,7 +1675,10 @@ export function findActiveFocusedNodeId(root: AgNode): string | null {
  * Per-node cost: one `props.selectionIntent` check + one signal lookup.
  * Trees with no selection declarer return `[]` after a single traversal.
  */
-export function findActiveSelectionFragments(root: AgNode): readonly Rect[] {
+export function findActiveSelectionFragments(
+  root: AgNode,
+  read: LayoutOutputRead = "signal",
+): readonly Rect[] {
   const out: Rect[] = []
 
   function walk(node: AgNode): void {
@@ -1647,7 +1687,7 @@ export function findActiveSelectionFragments(root: AgNode): readonly Rect[] {
     }
     const props = node.props as BoxProps | undefined
     if (props?.selectionIntent) {
-      const s = signalMap.get(node)
+      const s = read === "fresh" ? undefined : signalMap.get(node)
       const fragments = s ? s.selectionFragments() : computeSelectionFragments(node)
       if (fragments.length > 0) {
         // Concat — multi-node selections compose for free.
