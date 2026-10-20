@@ -16,6 +16,8 @@ export interface MarkdownViewProps extends Omit<BoxProps, "children"> {
   source: string
   presentation?: "blocks" | "prose"
   prosePlacement?: "none" | "body" | "local"
+  /** Table presentation inside Content.Layout; defaults to content. */
+  tableLayout?: "content" | "inline"
   textIndent?: number
   subdueHeadings?: boolean
   prepareSource?: (source: string) => PreparedMarkdown
@@ -29,6 +31,7 @@ export function MarkdownView({
   source,
   presentation = "blocks",
   prosePlacement = "none",
+  tableLayout = "content",
   textIndent = 0,
   subdueHeadings = false,
   prepareSource,
@@ -154,7 +157,7 @@ export function MarkdownView({
         const [header, ...body] = node.children
         const headers = header?.children.map(plain) ?? []
         const rows = body.map((row) => row.children.map(plain))
-        return hasContentLayout
+        return hasContentLayout && tableLayout !== "inline"
           ? <Content.Table headers={headers} rows={rows} alignments={node.align} />
           : <Box flexDirection="column" gap={1} borderStyle="single" borderColor="$border" paddingX={1}>
               {rows.map((row, index) => <Box key={index} flexDirection="column" minWidth={0}>

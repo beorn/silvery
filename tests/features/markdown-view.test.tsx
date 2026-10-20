@@ -29,6 +29,25 @@ import {
 
 const DEFAULT_WIDTH = 80
 
+// The context-only table condition loses inline selection inside Content.Layout.
+// Existing paragraph/geometry cases never render a Markdown table.
+test.each([
+  [false, undefined, true],
+  [true, undefined, false],
+  [true, "content", false],
+  [true, "inline", true],
+] as const)("table context=%s mode=%s selects header/value fallback=%s", (context, tableLayout, fallback) => {
+  const table = <MarkdownView source={"| Name | Status |\n| --- | --- |\n| Alpha | Ready |"} tableLayout={tableLayout} />
+  const app = createRenderer({ cols: 80, rows: 12 })(
+    <Box width={80} height={12}>
+      {context ? <Content.Layout fill={false} prose="100%" align="start">{table}</Content.Layout> : table}
+    </Box>,
+  )
+  expect(app.text).toContain("Alpha")
+  expect(app.text).toContain("Ready")
+  expect(/Name:\s*Alpha/u.test(app.text), app.text).toBe(fallback)
+})
+
 // Pin the root width so the column → row → <Text wrap="wrap"> chain reflows to a
 // real width instead of collapsing to max-content (silvery CLAUDE.md testing
 // note: createRenderer passes cols as *available* width, not root.style.width).
