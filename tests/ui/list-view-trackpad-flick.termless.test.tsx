@@ -7,7 +7,7 @@
  */
 
 import React, { act, useState } from "react"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import {
   createTermless,
   parseTermlessTrackpadFlickProfileFromDebugLog,
@@ -1019,7 +1019,12 @@ describe("ListView trackpad flick replay through termless", () => {
       const samples: { label: string; oldest: number | null; eventCount: number }[] = [
         { label: "initial", oldest: oldestVisibleLine(term.screen.getText()), eventCount: 0 },
       ]
-      const result = await term.mouse.trackpadFlick(USER_LOG_20260518_SLOW_SPARSE_UP_DRAG_PACKETS, {
+      // Replay captured packet intervals, without host load expiring the gesture filter.
+      // Preserve the running terminal recording's performance-clock epoch.
+      const replayClockBase = performance.now()
+      vi.useFakeTimers({ toFake: ["performance", "setTimeout", "clearTimeout"] })
+      vi.advanceTimersByTime(replayClockBase)
+      const replay = term.mouse.trackpadFlick(USER_LOG_20260518_SLOW_SPARSE_UP_DRAG_PACKETS, {
         afterGroup(group) {
           samples.push({
             label: `packet-${group.atMs}`,
@@ -1028,7 +1033,9 @@ describe("ListView trackpad flick replay through termless", () => {
           })
         },
       })
-      await settle(300)
+      await vi.runAllTimersAsync()
+      const result = await replay
+      await vi.advanceTimersByTimeAsync(300)
       samples.push({
         label: "settled",
         oldest: oldestVisibleLine(term.screen.getText()),
@@ -1049,6 +1056,7 @@ describe("ListView trackpad flick replay through termless", () => {
         samples.map((sample) => `${sample.label}@${sample.eventCount}:${sample.oldest}`).join(", "),
       ).toEqual([])
     } finally {
+      vi.useRealTimers()
       handle.unmount()
     }
   }, 20_000)
