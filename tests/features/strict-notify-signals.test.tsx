@@ -253,8 +253,9 @@ describe("STRICT fresh comparison resolves notify-synced signals (#26812)", () =
 
       // Same entries, reversed order, no notify mark: the id-keyed diagnostic
       // lookup used to erase this difference before deciding the frame matched.
-      ;(target as unknown as { props: Record<string, unknown> }).props = {
-        ...(target.props as Record<string, unknown>),
+      const decorated = target as unknown as { props: Record<string, unknown> }
+      decorated.props = {
+        ...decorated.props,
         decorations: [second, first],
       }
 
@@ -288,8 +289,9 @@ describe("STRICT fresh comparison resolves notify-synced signals (#26812)", () =
 
       // The first occurrence changes while the last one stays put: a Map keyed
       // by id keeps only the last entry and saw nothing to report.
-      ;(target as unknown as { props: Record<string, unknown> }).props = {
-        ...(target.props as Record<string, unknown>),
+      const decorated = target as unknown as { props: Record<string, unknown> }
+      decorated.props = {
+        ...decorated.props,
         decorations: [{ ...dupA, rect: { x: 1, y: 0, width: 2, height: 1 } }, dupB],
       }
 

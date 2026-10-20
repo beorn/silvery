@@ -200,9 +200,8 @@ function describeNotifySignalMismatch(
       const cached = ownerCache.get(id)
       if (cached !== undefined) return cached
       const findOwner = (node: AgNode): string | null => {
-        const decorations = (
-          node.props as { decorations?: readonly { id?: string }[] } | undefined
-        )?.decorations
+        const decorations = (node.props as { decorations?: readonly { id?: string }[] } | undefined)
+          ?.decorations
         if (decorations?.some((d) => d.id === id)) return strictNodeIdent(node)
         for (const child of node.children) {
           const found = findOwner(child)
@@ -233,9 +232,7 @@ function describeNotifySignalMismatch(
       const a = incremental.anchors.get(id) ?? null
       const b = fresh.anchors.get(id) ?? null
       if (!same(a, b)) {
-        lines.push(
-          `  anchorRect[${show(id)}]: consumer=${show(a)} fresh=${show(b)}`,
-        )
+        lines.push(`  anchorRect[${show(id)}]: consumer=${show(a)} fresh=${show(b)}`)
       }
     }
   }
