@@ -289,7 +289,7 @@ export function Blockquote({ children, color }: TypographyProps) {
   const muted = color ?? "$fg-muted"
   return (
     <Box marginLeft={2} minWidth={0}>
-      <Text color={muted} italic wrap="wrap">
+      <Text color={muted} italic wrap="wrap" maxWidth="100%">
         {children}
       </Text>
     </Box>

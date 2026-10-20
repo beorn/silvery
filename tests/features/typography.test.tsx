@@ -1,5 +1,8 @@
 /**
  * Typography Preset Component Tests
+ * @failure typography loses content, overflows its assigned width, or loses its semantic style
+ * @level l2
+ * @consumer public Silvery typography, including Chat user-prompt quotes
  *
  * Tests for all typography components exported from silvery:
  * H1, H2, H3, P, Lead, Muted, Strong, Em, Code, Kbd,
@@ -455,24 +458,33 @@ describe("Block elements", () => {
     expect(app.lines[0]).toMatch(/^  Quoted text/)
   })
 
-  test("Blockquote preserves its two-cell inset on wrapped rows", () => {
-    const narrow = createRenderer({ cols: 32, rows: 10 })
-    const app = narrow(
-      <Box width={32}>
-        <Blockquote>Alpha beta gamma delta epsilon zeta eta theta iota kappa lambda.</Blockquote>
-      </Box>,
-    )
-    const rows = app.lines
-      .map((line, row) => ({ line, row }))
-      .filter(({ line }) => line.trim().length > 0)
+  test.each([
+    [32, "Alpha beta gamma delta epsilon zeta eta theta iota kappa lambda."],
+    [5, "Alpha\nBeta"],
+  ] as const)(
+    "Blockquote retains its inset and complete text when wrapping at %i columns",
+    (cols, source) => {
+      const narrow = createRenderer({ cols, rows: 10 })
+      const app = narrow(
+        <Box width={cols} height={10}>
+          <Blockquote>{source}</Blockquote>
+        </Box>,
+      )
+      const rows = app.lines
+        .map((line, row) => ({ line, row }))
+        .filter(({ line }) => line.trim().length > 0)
 
-    expect(rows.length).toBeGreaterThan(1)
-    for (const { line } of rows) {
-      expect(line.slice(0, 2)).toBe("  ")
-      expect(line[2]).toMatch(/\S/)
-      expect(line).not.toMatch(/[▏│]/)
-    }
-  })
+      expect(rows.length).toBeGreaterThan(1)
+      expect(rows.map(({ line }) => line.replace(/\s/gu, "")).join("")).toBe(
+        source.replace(/\s/gu, ""),
+      )
+      for (const { line } of rows) {
+        expect(line.slice(0, 2)).toBe("  ")
+        expect(line[2]).toMatch(/\S/)
+        expect(line).not.toMatch(/[▏│]/)
+      }
+    },
+  )
 
   test("Blockquote content is italic", () => {
     const app = render(<Blockquote>Quote</Blockquote>)
