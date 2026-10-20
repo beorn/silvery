@@ -40,6 +40,7 @@ import {
   computeAnchorRect,
   type CursorRect,
   type DecorationRect,
+  type LayoutOutputRead,
 } from "./layout-signals"
 
 /**
@@ -90,12 +91,12 @@ export interface OverlayLayer {
  * post-order walk. v1 favors simplicity + zero risk of behavioral drift —
  * five walks of a single tree are cheap relative to the render phase.
  */
-export function collectOverlayLayer(root: AgNode): OverlayLayer {
-  const caret = findActiveCursorRect(root)
-  const focusId = findActiveFocusedNodeId(root)
+export function collectOverlayLayer(root: AgNode, read: LayoutOutputRead = "signal"): OverlayLayer {
+  const caret = findActiveCursorRect(root, read)
+  const focusId = findActiveFocusedNodeId(root, read)
   const focus = focusId !== null ? { id: focusId } : null
-  const selectionFragments = findActiveSelectionFragments(root)
-  const decorations = findActiveDecorationRects(root)
+  const selectionFragments = findActiveSelectionFragments(root, read)
+  const decorations = findActiveDecorationRects(root, read)
 
   // Anchor map — walk the tree and gather every `anchorRef` → contentRect.
   // Same shape as `findAnchor` but collects all ids in one pass. We resolve

@@ -32,6 +32,7 @@ vi.hoisted(() => {
 import React from "react"
 import { createTermless } from "@silvery/test"
 import { collectOverlayLayer } from "@silvery/ag/overlay-layer"
+import { findAnchor, getLayoutSignals } from "@silvery/ag/layout-signals"
 import type { AgNode } from "@silvery/ag/types"
 import { Box, Text } from "../../src/index.js"
 import { createApp, useApp } from "../../packages/ag-term/src/runtime/create-app"
@@ -82,6 +83,68 @@ function App(): React.ReactElement {
 
 const settle = (ms = 40) => new Promise((resolve) => setTimeout(resolve, ms))
 
+type AnchorState = { tick: number; lead: string }
+
+/**
+ * Anchor fixture: the `anchor` Box declares `anchorRef="a1"` and the `popper`
+ * Box consumes it through a popover decoration. `lead` is the only layout
+ * input that moves the anchor; the style-only `tick` lets a frame run with the
+ * live notify step gated off.
+ */
+// Memoised with no props: a tick must not re-commit this subtree, or the
+// reconciler's own prop-commit sync would refresh the anchor signal and hide
+// the stale value this fixture is about.
+const AnchorRow = React.memo(function AnchorRow() {
+  return (
+    <>
+      <Box testID="anchor" anchorRef="a1" width={8} height={1}>
+        <Text>anchor</Text>
+      </Box>
+      <Box
+        testID="popper"
+        width={1}
+        height={1}
+        decorations={[
+          {
+            kind: "popover",
+            id: "p1",
+            anchorId: "a1",
+            placement: "bottom-start",
+            size: { width: 3, height: 1 },
+          },
+        ]}
+      />
+    </>
+  )
+})
+
+function AnchorApp(): React.ReactElement {
+  const lead = useApp<AnchorState, string>((s) => s.lead)
+  const tick = useApp<AnchorState, number>((s) => s.tick)
+  return (
+    <Box flexDirection="column" width={40} height={60}>
+      <Text>{lead}</Text>
+      <AnchorRow />
+      <Text testID="sibling" color={tick % 2 === 0 ? "red" : "blue"}>
+        gray text
+      </Text>
+    </Box>
+  )
+}
+
+async function mountAnchorApp() {
+  const app = createApp(() => () => ({ tick: 0, lead: "line" }) as AnchorState)
+  const term = createTermless({ cols: 40, rows: 60 })
+  const handle = await app.run(<AnchorApp />, {
+    term,
+    cols: 40,
+    rows: 60,
+    writable: { write: (data: string) => term.write(data) },
+  })
+  await settle()
+  return { term, handle }
+}
+
 function findByTestId(node: AgNode, id: string): AgNode | null {
   const props = node.props as Record<string, unknown> | undefined
   if (props && (props.testID === id || props.id === id)) return node
@@ -92,8 +155,8 @@ function findByTestId(node: AgNode, id: string): AgNode | null {
   return null
 }
 
-async function mountApp() {
-  const app = createApp(() => () => ({ tick: 0, decorations: ORIGINAL }))
+async function mountApp(decorations: Highlight[] = ORIGINAL) {
+  const app = createApp(() => () => ({ tick: 0, decorations }))
   const term = createTermless({ cols: 40, rows: 60 })
   const handle = await app.run(<App />, {
     term,
@@ -149,7 +212,8 @@ describe("STRICT fresh comparison resolves notify-synced signals (#26812)", () =
       const diagnostic = stderr.join("")
       expect(diagnostic).toContain("NOTIFY-SIGNAL MISMATCH")
       expect(diagnostic).toContain("silvery-box#decorated")
-      expect(diagnostic).toContain('decorationRects["hl"]')
+      expect(diagnostic).toContain("decorationRects[#0]")
+      expect(diagnostic).toContain('id="hl"')
       expect(diagnostic).toContain('"x":3')
     } finally {
       handle.unmount()
@@ -165,6 +229,125 @@ describe("STRICT fresh comparison resolves notify-synced signals (#26812)", () =
 
       expect(stderr.join("")).not.toContain("NOTIFY-SIGNAL MISMATCH")
       expect(collectOverlayLayer(root).decorations[0]?.rects[0]).toMatchObject({ x: 3 })
+    } finally {
+      handle.unmount()
+    }
+  })
+
+  test("ordered comparison: an order-only decorations change is reported", async () => {
+    const first: Highlight = {
+      kind: "highlight",
+      id: "a",
+      rect: { x: 0, y: 0, width: 2, height: 1 },
+    }
+    const second: Highlight = {
+      kind: "highlight",
+      id: "b",
+      rect: { x: 4, y: 0, width: 2, height: 1 },
+    }
+    const { handle } = await mountApp([first, second])
+    try {
+      const root = handle.root
+      const target = findByTestId(root, "decorated")
+      if (!target) throw new Error("test setup: decorated node not found")
+
+      // Same entries, reversed order, no notify mark: the id-keyed diagnostic
+      // lookup used to erase this difference before deciding the frame matched.
+      ;(target as unknown as { props: Record<string, unknown> }).props = {
+        ...(target.props as Record<string, unknown>),
+        decorations: [second, first],
+      }
+
+      handle.store.setState({ tick: 1 })
+      await settle()
+
+      const diagnostic = stderr.join("")
+      expect(diagnostic).toContain("NOTIFY-SIGNAL MISMATCH")
+      expect(diagnostic).toContain("decorationRects[#0]")
+    } finally {
+      handle.unmount()
+    }
+  })
+
+  test("ordered comparison: a change to the first duplicate id is reported", async () => {
+    const dupA: Highlight = {
+      kind: "highlight",
+      id: "dup",
+      rect: { x: 0, y: 0, width: 2, height: 1 },
+    }
+    const dupB: Highlight = {
+      kind: "highlight",
+      id: "dup",
+      rect: { x: 5, y: 0, width: 2, height: 1 },
+    }
+    const { handle } = await mountApp([dupA, dupB])
+    try {
+      const root = handle.root
+      const target = findByTestId(root, "decorated")
+      if (!target) throw new Error("test setup: decorated node not found")
+
+      // The first occurrence changes while the last one stays put: a Map keyed
+      // by id keeps only the last entry and saw nothing to report.
+      ;(target as unknown as { props: Record<string, unknown> }).props = {
+        ...(target.props as Record<string, unknown>),
+        decorations: [{ ...dupA, rect: { x: 1, y: 0, width: 2, height: 1 } }, dupB],
+      }
+
+      handle.store.setState({ tick: 1 })
+      await settle()
+
+      const diagnostic = stderr.join("")
+      expect(diagnostic).toContain("NOTIFY-SIGNAL MISMATCH")
+      expect(diagnostic).toContain("decorationRects[#0]")
+      expect(diagnostic).toContain('"x":1')
+    } finally {
+      handle.unmount()
+    }
+  })
+
+  test("anchor coverage: the consumer's cached anchor is compared against the fresh value", async () => {
+    const { handle } = await mountAnchorApp()
+    try {
+      const root = handle.root
+      const anchor = findByTestId(root, "anchor")
+      if (!anchor) throw new Error("test setup: anchor node not found")
+      const signals = getLayoutSignals(anchor)
+      const truth = signals.anchorRect()
+      expect(truth).not.toBeNull()
+
+      // The missed-notify state itself: the live signal holds a rect that is no
+      // longer what the node's geometry produces. A style-only tick keeps
+      // Flexily clean, so nothing re-synchronises it; the fresh read must still
+      // resolve the true value and report the disagreement.
+      signals.anchorRect({ x: 0, y: 99, width: 1, height: 1 })
+
+      handle.store.setState({ tick: 1 })
+      await settle()
+
+      const diagnostic = stderr.join("")
+      expect(diagnostic).toContain("NOTIFY-SIGNAL MISMATCH")
+      expect(diagnostic).toContain('anchorRect["a1"]')
+      expect(diagnostic).toContain('"y":99')
+    } finally {
+      handle.unmount()
+    }
+  })
+
+  test("nonpublication: a strict frame writes no live rect signal", async () => {
+    const { handle } = await mountAnchorApp()
+    try {
+      const root = handle.root
+      const anchor = findByTestId(root, "anchor")
+      if (!anchor) throw new Error("test setup: anchor node not found")
+      const signals = getLayoutSignals(anchor)
+
+      // A style-only tick runs no layout, so this identity is stable across the
+      // frame unless the comparison publishes fresh values into the live map.
+      const beforeBoxRect = signals.boxRect()
+      handle.store.setState({ tick: 1 })
+      await settle()
+      expect(signals.boxRect()).toBe(beforeBoxRect)
+      expect(stderr.join("")).not.toContain("NOTIFY-SIGNAL MISMATCH")
     } finally {
       handle.unmount()
     }

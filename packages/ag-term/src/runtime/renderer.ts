@@ -33,14 +33,18 @@ import {
   CHILDREN_BIT,
   SUBTREE_BIT,
 } from "@silvery/ag/epoch"
-import { commitLayoutSnapshot, findActiveParkRect } from "@silvery/ag/layout-signals"
+import {
+  commitLayoutSnapshot,
+  findActiveParkRect,
+  findAnchor,
+  type LayoutOutputRead,
+} from "@silvery/ag/layout-signals"
 import { IncrementalRenderMismatchError } from "../scheduler"
 import { isStrictEnabled } from "../strict-mode"
 import {
   markLayoutTreeDirty,
   FRESH_LAYOUT_STRICT_SLUG,
   FRESH_LAYOUT_STRICT_MIN_TIER,
-  notifyLayoutSubscribers,
 } from "../pipeline"
 import { emitRenderDispatched, isRenderTraceEnabled } from "./render-trace"
 import {
@@ -99,17 +103,46 @@ function strictNodeIdent(node: AgNode): string {
 }
 
 /**
- * The notify-synced outputs a frame exposes to consumers, sampled from the
- * signal map. `collectOverlayLayer` covers caret/focus/selection/decorations;
- * `park` is the one notify-synced output it does not expose.
+ * The notify-synced outputs a frame exposes to consumers.
+ *
+ * `overlay` covers caret/focus/selection/decorations, `park` is the one
+ * notify-synced output it does not expose, and `anchors` samples the
+ * consumer-visible anchor rect per declared `anchorRef` id through
+ * `findAnchor` — the value an anchored consumer actually reads, which
+ * `collectOverlayLayer`'s own anchor map does not exercise (it recomputes).
+ *
+ * Captured twice per strict frame: once with `read: "signal"` before the
+ * fresh pass (what consumers saw) and once with `read: "fresh"` after it
+ * (what the current props should produce). Neither capture writes the
+ * signal map (#26812).
  */
 interface NotifyOutputs {
   readonly overlay: OverlayLayer
   readonly park: Rect | null
+  readonly anchors: ReadonlyMap<string, Rect | null>
 }
 
-function captureNotifyOutputs(root: AgNode): NotifyOutputs {
-  return { overlay: collectOverlayLayer(root), park: findActiveParkRect(root) }
+function captureNotifyOutputs(root: AgNode, read: LayoutOutputRead): NotifyOutputs {
+  const anchorIds = new Set<string>()
+  const collectAnchorIds = (node: AgNode): void => {
+    const ref = (node.props as { anchorRef?: string | { id?: string } } | undefined)?.anchorRef
+    if (typeof ref === "string") {
+      if (ref.length > 0) anchorIds.add(ref)
+    } else if (ref && typeof ref.id === "string" && ref.id.length > 0) {
+      anchorIds.add(ref.id)
+    }
+    for (const child of node.children) collectAnchorIds(child)
+  }
+  collectAnchorIds(root)
+
+  const anchors = new Map<string, Rect | null>()
+  for (const id of anchorIds) anchors.set(id, findAnchor(root, id, undefined, read))
+
+  return {
+    overlay: collectOverlayLayer(root, read),
+    park: findActiveParkRect(root, read),
+    anchors,
+  }
 }
 
 /**
@@ -118,9 +151,12 @@ function captureNotifyOutputs(root: AgNode): NotifyOutputs {
  * human-readable report of the first differing signals, or null when they
  * agree. Called only from the SILVERY_STRICT comparison path.
  *
- * `anchors` is deliberately not compared: `collectOverlayLayer` derives it
- * straight from `props.anchorRef` + `contentRect`, never from a notify-synced
- * signal, so it cannot be stale here.
+ * Every unequal ORDERED output is reported. Decorations are compared by
+ * sequence position (not by looking entries up in an id-keyed map), so a
+ * reorder of identical entries or a change in one of several duplicate ids
+ * still produces a report — the diagnostic lookup never decides whether a
+ * difference exists. Anchors are compared per declared id, including null
+ * transitions (#26812).
  */
 function describeNotifySignalMismatch(
   root: AgNode,
@@ -152,36 +188,56 @@ function describeNotifySignalMismatch(
     lines.push(`  parkRect: incremental=${show(incremental.park)} fresh=${show(fresh.park)}`)
   }
   if (!same(incrementalLayer.decorations, freshLayer.decorations)) {
-    const before = new Map(incrementalLayer.decorations.map((d) => [d.id, d]))
-    const after = new Map(freshLayer.decorations.map((d) => [d.id, d]))
+    // Ordered comparison: every position is checked, so a reorder of equal
+    // entries or a change in one of several duplicate ids is still reported.
+    // The id is used only to describe an owner, never to decide equality.
+    const before = incrementalLayer.decorations
+    const after = freshLayer.decorations
     const changed: string[] = []
-    let owners: Map<string, string> | null = null
-    for (const id of new Set([...before.keys(), ...after.keys()])) {
-      const a = before.get(id)
-      const b = after.get(id)
-      if (same(a, b)) continue
-      if (!owners) owners = new Map()
-      if (!owners.has(id)) {
-        const findOwner = (node: AgNode): string | null => {
-          const decorations = (
-            node.props as { decorations?: readonly { id?: string }[] } | undefined
-          )?.decorations
-          if (decorations?.some((d) => d.id === id)) return strictNodeIdent(node)
-          for (const child of node.children) {
-            const found = findOwner(child)
-            if (found) return found
-          }
-          return null
+    let ownerCache: Map<string, string> | null = null
+    const ownerOf = (id: string): string => {
+      if (!ownerCache) ownerCache = new Map()
+      const cached = ownerCache.get(id)
+      if (cached !== undefined) return cached
+      const findOwner = (node: AgNode): string | null => {
+        const decorations = (
+          node.props as { decorations?: readonly { id?: string }[] } | undefined
+        )?.decorations
+        if (decorations?.some((d) => d.id === id)) return strictNodeIdent(node)
+        for (const child of node.children) {
+          const found = findOwner(child)
+          if (found) return found
         }
-        owners.set(id, findOwner(root) ?? "<unknown node>")
+        return null
       }
+      const owner = findOwner(root) ?? "<unknown node>"
+      ownerCache.set(id, owner)
+      return owner
+    }
+    for (let i = 0; i < Math.max(before.length, after.length); i++) {
+      const a = before[i]
+      const b = after[i]
+      if (same(a, b)) continue
+      const id = a?.id ?? b?.id ?? null
       const kind = a?.kind ?? b?.kind
       changed.push(
-        `  decorationRects[${show(id)}] (kind=${show(kind)}, node=${owners.get(id)}): ` +
+        `  decorationRects[#${i}] (id=${show(id)}, kind=${show(kind)}, node=${id === null ? "<unknown node>" : ownerOf(id)}): ` +
           `incremental=${show(a?.rects ?? null)} fresh=${show(b?.rects ?? null)}`,
       )
     }
     lines.push(...changed)
+  }
+  if (incremental.anchors.size > 0 || fresh.anchors.size > 0) {
+    const ids = new Set([...incremental.anchors.keys(), ...fresh.anchors.keys()])
+    for (const id of ids) {
+      const a = incremental.anchors.get(id) ?? null
+      const b = fresh.anchors.get(id) ?? null
+      if (!same(a, b)) {
+        lines.push(
+          `  anchorRect[${show(id)}]: consumer=${show(a)} fresh=${show(b)}`,
+        )
+      }
+    }
   }
   return lines.length > 0 ? lines.join("\n") : null
 }
@@ -516,11 +572,12 @@ export function createRenderer(opts: RendererOptions): Renderer {
       const freshLayout = isStrictEnabled(FRESH_LAYOUT_STRICT_SLUG, FRESH_LAYOUT_STRICT_MIN_TIER)
       // #26812: the fresh baseline must resolve every notify-synced output
       // (cursor, focus, selection, anchor, park, decorations) from the CURRENT
-      // props, exactly as a from-scratch frame would. With the notify pass
-      // skipped, a notify-only change left the same stale signals on both
-      // sides, so the comparison below could never report it. `syncRectSignals`
-      // writes only on inequality, so on a correct incremental frame this pass
-      // is side-effect-equivalent.
+      // props, exactly as a from-scratch frame would. It does that through the
+      // layout-output owner's `read: "fresh"` mode, which computes from node
+      // geometry and props without touching the signal map — so the comparison
+      // observes the expected values without publishing them to live
+      // subscribers or relying on a notify pass that could repair the very
+      // staleness it is meant to detect.
       const doFreshRender = () => {
         const freshAg = createAg(rootNode, {
           measurer: opts.pipelineConfig?.measurer,
@@ -535,19 +592,14 @@ export function createRenderer(opts: RendererOptions): Renderer {
             forceFullPropagate: freshLayout,
           },
         )
-        // The layout above may take the layout-on-demand fast path (Flexily
-        // clean, no notify-dirty mark), which never resolves notify-synced
-        // signals. A fresh baseline must not inherit that gate, so resolve them
-        // explicitly — same phase order the full pipeline uses (after layout,
-        // scroll and scrollRect).
-        notifyLayoutSubscribers(rootNode)
         return freshAg.render()
       }
-      // #26812: snapshot the notify-derived overlay state BEFORE the fresh pass.
+      // #26812: snapshot what consumers actually saw BEFORE the fresh pass.
       // `createAg(rootNode)` wraps this node tree rather than cloning it, so the
-      // fresh pass rewrites the very signals the incremental frame produced;
-      // this pre-pass read is what that frame actually left for its consumers.
-      const incrementalOutputs = captureNotifyOutputs(rootNode)
+      // fresh pass rewrites the underlying geometry; this pre-pass read (signal
+      // mode, including the cached anchor a consumer would read) is what that
+      // frame actually left behind.
+      const incrementalOutputs = captureNotifyOutputs(rootNode, "signal")
       const measurer = opts.pipelineConfig?.measurer
       const { buffer: freshBuffer } = measurer
         ? runWithMeasurer(measurer, doFreshRender)
@@ -556,10 +608,12 @@ export function createRenderer(opts: RendererOptions): Renderer {
       // overlay rect, focus id or selection is not painted by the render phase.
       // Compare the resolved overlay state the incremental frame exposed with
       // what the fresh pass resolves from the same props.
+      // Expected values come from the same props and the fresh geometry, with
+      // no signal write: `read: "fresh"` never consults the signal map.
       const notifyMismatch = describeNotifySignalMismatch(
         rootNode,
         incrementalOutputs,
-        captureNotifyOutputs(rootNode),
+        captureNotifyOutputs(rootNode, "fresh"),
       )
       if (notifyMismatch) {
         const msg =
