@@ -15,7 +15,11 @@ import type { Root } from "mdast"
 export function parseMarkdown(content: string): Root {
   return fromMarkdown(content, {
     extensions: [combineExtensions([gfmAutolinkLiteral(), gfmStrikethrough(), gfmTable()])],
-    mdastExtensions: [gfmAutolinkLiteralFromMarkdown(), gfmStrikethroughFromMarkdown(), gfmTableFromMarkdown()],
+    mdastExtensions: [
+      gfmAutolinkLiteralFromMarkdown(),
+      gfmStrikethroughFromMarkdown(),
+      gfmTableFromMarkdown(),
+    ],
   })
 }
 
