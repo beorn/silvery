@@ -400,12 +400,18 @@ describe("InputOwner", () => {
     using owner = createInputOwner(stdin, stdout, { enableBracketedPaste: false })
 
     const keys: Array<{ input: string; escape: boolean }> = []
-    owner.onKey((e) => keys.push({ input: e.input, escape: e.key.escape }))
+    const dispatched = new Promise<void>((resolve) => {
+      owner.onKey((e) => {
+        keys.push({ input: e.input, escape: e.key.escape })
+        resolve()
+      })
+    })
 
     send("\x1b")
     expect(keys).toEqual([])
 
-    await new Promise<void>((resolve) => setTimeout(resolve, 40))
+    // The flush yields to the check phase after its timer; a wall-clock sleep can win that race.
+    await dispatched
     expect(keys).toEqual([{ input: "", escape: true }])
   })
 
