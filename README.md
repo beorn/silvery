@@ -95,12 +95,12 @@ Along the way, three principles emerged. Take the best from the web, stay true t
 
 Standalone projects Silvery builds on — each stands on its own:
 
-| Project                                | What                                                                    |
-| -------------------------------------- | ----------------------------------------------------------------------- |
+| Project                                | What                                                                        |
+| -------------------------------------- | --------------------------------------------------------------------------- |
 | [Flexily](https://beorn.codes/flexily) | Pure JS flexbox layout engine (Yoga-compatible, 1.5-5.5× faster, zero WASM) |
-| [Termless](https://termless.dev)       | Headless terminal testing — like Playwright for terminal apps           |
-| [terminfo.dev](https://terminfo.dev)   | Terminal feature compatibility database (161 features, 19 terminals)    |
-| [Loggily](https://loggily.dev)         | Structured logging + tracing + metrics                                  |
+| [Termless](https://termless.dev)       | Headless terminal testing — like Playwright for terminal apps               |
+| [terminfo.dev](https://terminfo.dev)   | Terminal feature compatibility database (161 features, 19 terminals)        |
+| [Loggily](https://loggily.dev)         | Structured logging + tracing + metrics                                      |
 
 ## Coming
 
