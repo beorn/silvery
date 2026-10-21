@@ -210,7 +210,6 @@ These demos exist and work but are not referenced by any documentation page (onl
 | CLI Wizard               | No              | Visually impressive multi-step flow      |
 | Explorer                 | No              | 2000+ rows log viewer                    |
 | Gallery                  | No              | Kitty-dependent; may not screenshot well |
-| Theme                    | No              | 38-palette browser would showcase well   |
 | Virtual 10K              | No              | Impressive scale demo                    |
 | Panes                    | No              | tmux-style split would showcase well     |
 
