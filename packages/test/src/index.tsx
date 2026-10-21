@@ -650,6 +650,98 @@ function inferBackendFromStrictTerminal(): TermlessBackendChoice | undefined {
   return strictTerminalRequestsGhostty(process.env.SILVERY_STRICT_TERMINAL) ? "ghostty" : undefined
 }
 
+type ResponseCapableBackend = Omit<TermEmulatorBackend, "onResponse"> & {
+  onResponse?: (data: Uint8Array) => void
+}
+
+const PIXEL_CELL_W = 8
+const PIXEL_CELL_H = 17
+const CSI_14T_RE = /\x1b\[14t/g
+const CSI_18T_RE = /\x1b\[18t/g
+
+function withTestWindowGeometry(
+  backend: TermEmulatorBackend,
+  initialCols: number,
+  initialRows: number,
+): TermEmulatorBackend {
+  let cols = initialCols
+  let rows = initialRows
+  const encoder = new TextEncoder()
+  const decoder = new TextDecoder()
+  const inner = backend as ResponseCapableBackend
+
+  const wrapped = Object.create(inner) as ResponseCapableBackend
+  Object.defineProperties(wrapped, {
+    onResponse: {
+      get(): ((data: Uint8Array) => void) | undefined {
+        return inner.onResponse
+      },
+      set(fn: ((data: Uint8Array) => void) | undefined) {
+        inner.onResponse = fn
+      },
+    },
+    init: {
+      value(opts: { cols: number; rows: number; scrollbackLimit?: number }) {
+        cols = opts.cols
+        rows = opts.rows
+        inner.init(opts)
+      },
+    },
+    resize: {
+      value(newCols: number, newRows: number) {
+        cols = newCols
+        rows = newRows
+        inner.resize(newCols, newRows)
+      },
+    },
+    feed: {
+      value(data: Uint8Array) {
+        const text = decoder.decode(data)
+        const has14t = text.includes("\x1b[14t")
+        const has18t = text.includes("\x1b[18t")
+        if (!has14t && !has18t) {
+          inner.feed(data)
+          return
+        }
+
+        let engineAnswered18t = false
+        const priorOnResponse = wrapped.onResponse
+        if (priorOnResponse) {
+          wrapped.onResponse = (resp: Uint8Array) => {
+            if (decoder.decode(resp).includes("\x1b[8;")) {
+              engineAnswered18t = true
+            }
+            priorOnResponse(resp)
+          }
+        }
+        try {
+          inner.feed(data)
+        } finally {
+          wrapped.onResponse = priorOnResponse
+        }
+
+        const currentOnResponse = wrapped.onResponse
+        if (currentOnResponse) {
+          CSI_14T_RE.lastIndex = 0
+          while (CSI_14T_RE.exec(text) !== null) {
+            currentOnResponse(
+              encoder.encode(`\x1b[4;${rows * PIXEL_CELL_H};${cols * PIXEL_CELL_W}t`),
+            )
+          }
+          if (!engineAnswered18t) {
+            CSI_18T_RE.lastIndex = 0
+            while (CSI_18T_RE.exec(text) !== null) {
+              currentOnResponse(encoder.encode(`\x1b[8;${rows};${cols}t`))
+            }
+          }
+        }
+      },
+    },
+  })
+
+  return wrapped as TermEmulatorBackend
+}
+
 function withReflowResidue(
   backend: TermEmulatorBackend,
   marker = DEFAULT_REFLOW_RESIDUE_MARKER,
@@ -671,8 +763,17 @@ function withReflowResidue(
     },
   }
 
-  const wrapped = Object.create(backend) as TermEmulatorBackend
+  const inner = backend as ResponseCapableBackend
+  const wrapped = Object.create(inner) as ResponseCapableBackend
   Object.defineProperties(wrapped, {
+    onResponse: {
+      get(): ((data: Uint8Array) => void) | undefined {
+        return inner.onResponse
+      },
+      set(fn: ((data: Uint8Array) => void) | undefined) {
+        inner.onResponse = fn
+      },
+    },
     name: {
       get() {
         return `${backend.name}+reflow-residue`
@@ -825,6 +926,8 @@ export function createTermless(
     )
   }
 
+  backend = withTestWindowGeometry(backend, dims.cols, dims.rows)
+
   let reflowResidue: TermlessReflowResidue | undefined
   if (dims.reflowResidue) {
     const marker = typeof dims.reflowResidue === "object" ? dims.reflowResidue.marker : undefined
@@ -927,14 +1030,6 @@ export function createTermless(
   const sendInput = (data: string) => {
     ;(term as unknown as { sendInput: (s: string) => void }).sendInput(data)
   }
-
-  // Match the xterm-js backend's synthesized 14t metrics. Kept in sync with
-  // vendor/termless/packages/xtermjs/src/backend.ts (CELL_W_PX / CELL_H_PX).
-  // Both backends ghostty / ghostty-native use the same defaults for their
-  // synthesized 14t. If those ever diverge, expose the metrics via
-  // `term.caps` and read them here instead.
-  const PIXEL_CELL_W = 8
-  const PIXEL_CELL_H = 17
 
   const SGR_PIXELS_ENABLE = "\x1b[?1016h"
   let cachedPixelMode: boolean | null = null
