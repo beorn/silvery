@@ -310,7 +310,7 @@
     "@termless/xtermjs": ">=0.9.1 <1.0.0",
     "flexily": "0.8.5",
     "loggily": "0.13.0",
-    "lru-cache": "11.5.2"
+    "lru-cache": "11.5.3"
   },
   "peerDependencies": {
     "playwright": ">=1.40.0"
