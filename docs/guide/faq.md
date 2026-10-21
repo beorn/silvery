@@ -196,7 +196,7 @@ Silvery uses [Flexily](https://beorn.codes/flexily), a Yoga-compatible flexbox l
 1. **Layout runs first** -- Flexily calculates positions and sizes before React renders components
 2. **Components access dimensions** -- `useBoxRectDangerously()` provides width, height, x, y during render
 3. **Flexbox model** -- standard CSS flexbox properties (`flexDirection`, `justifyContent`, `alignItems`, `flexGrow`, `flexShrink`, `gap`, etc.)
-4. **No WASM** -- pure TypeScript, 2.5× faster than Yoga WASM for typical terminal layouts
+4. **No WASM** -- pure TypeScript, 1.5-5.5× faster than Yoga WASM for typical terminal layouts
 
 This enables responsive layouts (columns that adapt to terminal width), native `overflow="scroll"` containers, and automatic text truncation -- all without post-render measurement.
 

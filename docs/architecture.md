@@ -57,7 +57,7 @@ Silvery is a monorepo. Internal packages (private, re-exported via barrel):
 - `@silvery/ag` — Core types: AgNode, BoxProps, keys, focus management, TextFrame
 - `@silvery/ag-react` — React reconciler + hooks + UI components (Box, Text, SelectList, TextInput, VirtualList, etc.)
 - `@silvery/ag-term` — Terminal runtime: Term, render pipeline, ANSI output, buffer diffing
-- `@silvery/theme` — 38 semantic color palettes, ThemeProvider, theme CLI
+- `@silvery/theme` — 84 semantic color palettes, ThemeProvider, theme CLI
 - `@silvery/ink` — Ink/Chalk compatibility layers
 
 Public packages (users install directly):

@@ -23,7 +23,7 @@ What started as fixing two Ink limitations grew into something much broader — 
 
 ## How It Grew
 
-The renderer needed a layout engine. I started with a two-phase layout based on Yoga, but questioned whether the WASM tax was worth paying — the async initialization, the binary blob, the separate memory heap. So I built [Flexily](https://beorn.codes/flexily), a pure-TypeScript flexbox engine that follows the W3C spec. It turned out to be 2.5× faster than Yoga WASM, with zero native dependencies.
+The renderer needed a layout engine. I started with a two-phase layout based on Yoga, but questioned whether the WASM tax was worth paying — the async initialization, the binary blob, the separate memory heap. So I built [Flexily](https://beorn.codes/flexily), a pure-TypeScript flexbox engine that follows the W3C spec. It turned out to be 1.5-5.5× faster than Yoga WASM, with zero native dependencies.
 
 Testing the renderer meant testing against real terminals. I missed Playwright — the confidence you get from running your app in a real browser and asserting on what the user sees. So I built [Termless](https://termless.dev), which runs your terminal app through real parser backends (xterm.js, vt100, Ghostty, Kitty, Alacritty, and more) in-process. Playwright-style testing for the terminal.
 
@@ -75,7 +75,7 @@ All MIT-licensed, all part of the same development effort.
 
 Each stands on its own — Silvery builds on them, but they work independently:
 
-- **[Flexily](https://beorn.codes/flexily)** — Pure-TypeScript flexbox layout engine, Yoga-compatible, W3C spec. 2.5× faster than Yoga WASM, zero native dependencies.
+- **[Flexily](https://beorn.codes/flexily)** — Pure-TypeScript flexbox layout engine, Yoga-compatible, W3C spec. 1.5-5.5× faster than Yoga WASM, zero native dependencies.
 - **[Termless](https://termless.dev)** — Headless terminal testing against 10+ real parser backends. Like Playwright for terminal apps.
 - **[terminfo.dev](https://terminfo.dev)** — Terminal feature compatibility database. 161 features × 19 terminals, empirically probed via Termless.
 - **[Loggily](https://loggily.dev)** — Structured logging + span tracing + metrics in one library. Zero dependencies.

@@ -50,10 +50,10 @@ React 18 + 19 with concurrent mode, Suspense, and flexbox layout. [Drop-in Ink c
   - [Find](https://silvery.dev/guide/find) — `Ctrl+F` with match highlighting and `n`/`N` navigation
   - [Copy-mode](https://silvery.dev/guide/clipboard) — `Esc, v` for vim-style keyboard selection and yanking
   - [Drag-and-drop](https://silvery.dev/guide/event-handling) — mouse drag with hit testing
-- **[Rich component library](https://silvery.dev/guides/components)** — 45+ components: TextInput, SelectList, ListView, Table, TreeView, Tabs, CommandPalette, ModalDialog, Toast, and more. Every component automatically participates in focus, mouse, and keybindings (readline, vim) — no wiring needed. [38 theme palettes](https://silvery.dev/guide/styling) with semantic tokens (`$primary`, `$error`) and auto-detected terminal colors.
+- **[Rich component library](https://silvery.dev/guides/components)** — 45+ components: TextInput, SelectList, ListView, Table, TreeView, Tabs, CommandPalette, ModalDialog, Toast, and more. Every component automatically participates in focus, mouse, and keybindings (readline, vim) — no wiring needed. [84 theme palettes](https://silvery.dev/guide/styling) with semantic tokens (`$primary`, `$error`) and auto-detected terminal colors.
 - **[Playwright-style testing](https://silvery.dev/guide/testing)** — 3,000+ tests. Full access to terminal internals (scrollback buffer, cursor position, cell styles, window dimensions):
   - `createRenderer` — fast unit tests with auto-refreshing CSS locators, cell-level color assertions, frame-by-frame inspection
-  - [Termless](https://termless.dev) — like Playwright for terminals. Full ANSI fidelity with [10 swappable backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty, and more)
+  - [Termless](https://termless.dev) — like Playwright for terminals. Full ANSI fidelity with [12 swappable backends](https://termless.dev/guide/backends) (xterm.js, Ghostty, Alacritty, WezTerm, Kitty, and more)
   - [`SILVERY_STRICT`](https://silvery.dev/guide/debugging) — multi-level verification: buffer (incremental vs fresh), ANSI (internal parser), terminal (cross-backend), and accumulated replay
 - **[Composable architecture](https://silvery.dev/guide/providers)** — every layer is independently swappable. [DI](https://silvery.dev/guide/providers) via `pipe()` providers:
   - [Layout](https://silvery.dev/guide/layout-engine) — Flexily or Yoga
@@ -97,7 +97,7 @@ Standalone projects Silvery builds on — each stands on its own:
 
 | Project                                | What                                                                    |
 | -------------------------------------- | ----------------------------------------------------------------------- |
-| [Flexily](https://beorn.codes/flexily) | Pure JS flexbox layout engine (Yoga-compatible, 2.5× faster, zero WASM) |
+| [Flexily](https://beorn.codes/flexily) | Pure JS flexbox layout engine (Yoga-compatible, 1.5-5.5× faster, zero WASM) |
 | [Termless](https://termless.dev)       | Headless terminal testing — like Playwright for terminal apps           |
 | [terminfo.dev](https://terminfo.dev)   | Terminal feature compatibility database (161 features, 19 terminals)    |
 | [Loggily](https://loggily.dev)         | Structured logging + tracing + metrics                                  |
