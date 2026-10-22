@@ -81,6 +81,7 @@
     },
     "benchmarks": {
       "name": "silvery-benchmarks",
+      "version": "0.26.0",
       "dependencies": {
         "ink": "7.0.0",
         "react": "^19.0.0",

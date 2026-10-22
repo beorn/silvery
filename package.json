@@ -209,6 +209,7 @@
     "clean": true,
     "deps": {
       "alwaysBundle": [
+        "@silvery/syntax/bounded-cache",
         "slice-ansi"
       ]
     },
@@ -257,6 +258,7 @@
     "escape-string-regexp": "5.0.0",
     "get-east-asian-width": "1.6.0",
     "is-fullwidth-code-point": "5.1.0",
+    "lru-cache": "11.5.3",
     "mdast-util-find-and-replace": "3.0.2",
     "mdast-util-from-markdown": "2.1.0",
     "mdast-util-gfm-autolink-literal": "2.0.1",
