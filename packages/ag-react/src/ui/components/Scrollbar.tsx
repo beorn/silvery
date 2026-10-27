@@ -55,6 +55,12 @@ export interface ScrollbarProps {
    * scroll-only).
    */
   visible?: boolean
+  /**
+   * Optional rail behind the thumb — the quiet "track on the border" look a
+   * consumer can ask for. Default (omitted) keeps the track fully transparent,
+   * so every existing caller renders byte-identically.
+   */
+  track?: { color: string; glyph?: string }
 }
 
 const EIGHTHS = "▁▂▃▄▅▆▇█"
@@ -71,6 +77,7 @@ export function Scrollbar({
   scrollOffset,
   onScrollOffsetChange,
   visible = true,
+  track,
 }: ScrollbarProps): JSX.Element | null {
   // Drag state — true between mousedown and the captured mouseup so the cursor
   // can drift outside the 1-column track without losing the grip.
@@ -250,6 +257,15 @@ export function Scrollbar({
 
   const topSpacerRows = Math.max(0, firstRow)
   const bottomSpacerRows = Math.max(0, trackHeight - firstRow - rows.length)
+  const trackGlyph = track?.glyph ?? "│"
+  // Rail cells for the rows the thumb does not cover. Only reached when the
+  // consumer asked for a track; the default path below is untouched.
+  const trackCells = (from: number, count: number, keyPrefix: string): JSX.Element[] =>
+    Array.from({ length: count }, (_, index) => (
+      <Text key={`${keyPrefix}${from + index}`} color={track?.color}>
+        {trackGlyph}
+      </Text>
+    ))
 
   return (
     <Box
@@ -278,7 +294,35 @@ export function Scrollbar({
       onMouseEnter={onTrackMouseEnter}
       onMouseLeave={onTrackMouseLeave}
     >
-      {showThumb ? (
+      {track !== undefined ? (
+        <>
+          {topSpacerRows > 0 ? (
+            <Box flexDirection="column" flexShrink={0}>
+              {trackCells(0, topSpacerRows, "track-top-")}
+            </Box>
+          ) : null}
+          {showThumb ? (
+            <Box
+              width={1}
+              flexDirection="column"
+              flexShrink={0}
+              onMouseEnter={onThumbMouseEnter}
+              onMouseLeave={onThumbMouseLeave}
+            >
+              {rows}
+            </Box>
+          ) : (
+            <Box width={1} flexDirection="column" flexShrink={0}>
+              {trackCells(firstRow, lastRow - firstRow + 1, "track-mid-")}
+            </Box>
+          )}
+          {bottomSpacerRows > 0 ? (
+            <Box flexDirection="column" flexShrink={0}>
+              {trackCells(trackHeight - bottomSpacerRows, bottomSpacerRows, "track-bottom-")}
+            </Box>
+          ) : null}
+        </>
+      ) : showThumb ? (
         <>
           {topSpacerRows > 0 ? <Box height={topSpacerRows} flexShrink={0} /> : null}
           <Box
