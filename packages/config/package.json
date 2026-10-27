@@ -1,6 +1,6 @@
 {
   "name": "@silvery/config",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "Generic config-tree + named-registry primitives with string ↔ object projection",
   "keywords": [
     "config",
@@ -37,7 +37,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/signals": "0.26.0",
+    "@silvery/signals": "0.27.0",
     "cosmiconfig": "^9.0.2",
     "yaml": ">=2.0.0"
   },
@@ -45,7 +45,7 @@
     "zod": "4.6.7"
   },
   "peerDependencies": {
-    "@silvery/commander": "0.26.0",
+    "@silvery/commander": "0.27.0",
     "zod": "^3.24.0 || ^4.0.0"
   },
   "peerDependenciesMeta": {

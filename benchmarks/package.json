@@ -1,6 +1,6 @@
 {
   "name": "silvery-benchmarks",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "private": true,
   "description": "Head-to-head benchmarks: Silvery vs Ink 7.0",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@silvery/commander",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "Colorized Commander.js help output using ANSI escape codes",
   "keywords": [
     "ansi",
@@ -36,7 +36,7 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ansi": "0.26.0",
+    "@silvery/ansi": "0.27.0",
     "commander": ">=15.0.0"
   },
   "devDependencies": {

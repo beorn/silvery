@@ -7,6 +7,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-10-27
+
+### Added
+
+- `TogglePill` accepts `idleActiveColor` to keep an active toggle visible at rest.
+- `Scrollbar` can draw an optional track rail behind its thumb.
+- `silvery/markdown` exposes the shared Markdown parser; local `silvery/ink`
+  and `silvery/chalk` entries provide the compatibility exports.
+
+### Fixed
+
+- Active, idle toggles use the foreground color by default, preserving contrast
+  on both dark and light themes.
+- Release package discovery accepts declared literal workspace directories,
+  including the private benchmarks workspace.
+
 ### Changed
 
 `@silvery/ag`'s `LayoutNode` gains a required `validateLength(prop, value)`
