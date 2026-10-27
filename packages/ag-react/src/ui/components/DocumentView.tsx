@@ -756,9 +756,13 @@ function DocumentBlocks({
                   flexShrink={0}
                   backgroundColor={codeGutterBg}
                 />
-                {block.notice === undefined ? code : (
+                {block.notice === undefined ? (
+                  code
+                ) : (
                   <Box flexDirection="column" flexGrow={1} minWidth={0}>
-                    <Text color="$fg-error" wrap="truncate">{block.notice}</Text>
+                    <Text color="$fg-error" wrap="truncate">
+                      {block.notice}
+                    </Text>
                     {code}
                   </Box>
                 )}
