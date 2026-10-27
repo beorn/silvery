@@ -117,6 +117,8 @@ export interface DocumentCodeBlock extends DocumentBlockBase {
   readonly kind: "code"
   readonly content: string
   readonly language?: string
+  /** One cause line above the code body, visible even when collapsed. */
+  readonly notice?: string
 }
 
 export interface DocumentRuleBlock extends DocumentBlockBase {
@@ -720,6 +722,23 @@ function DocumentBlocks({
               : block.embed
                 ? "mix($fg-link, $bg, 95%)"
                 : "$bg-surface-subtle"
+            const code = (
+              <CodeBlock
+                flexGrow={1}
+                width="auto"
+                paddingLeft={0}
+                label={(block.language || "plain").toLowerCase()}
+                content={
+                  <SyntaxHighlighter
+                    bare
+                    language={block.language ?? "plain"}
+                    code={block.content}
+                  />
+                }
+                expanded={!collapsedCode.has(block.id)}
+                onExpandedChange={(expanded) => onCodeExpandedChange(block.id, expanded)}
+              />
+            )
             return (
               <BlockFrame
                 key={block.id}
@@ -737,21 +756,12 @@ function DocumentBlocks({
                   flexShrink={0}
                   backgroundColor={codeGutterBg}
                 />
-                <CodeBlock
-                  flexGrow={1}
-                  width="auto"
-                  paddingLeft={0}
-                  label={(block.language || "plain").toLowerCase()}
-                  content={
-                    <SyntaxHighlighter
-                      bare
-                      language={block.language ?? "plain"}
-                      code={block.content}
-                    />
-                  }
-                  expanded={!collapsedCode.has(block.id)}
-                  onExpandedChange={(expanded) => onCodeExpandedChange(block.id, expanded)}
-                />
+                {block.notice === undefined ? code : (
+                  <Box flexDirection="column" flexGrow={1} minWidth={0}>
+                    <Text color="$fg-error" wrap="truncate">{block.notice}</Text>
+                    {code}
+                  </Box>
+                )}
               </BlockFrame>
             )
           }

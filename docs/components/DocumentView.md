@@ -38,6 +38,10 @@ The presenter owns:
 Supported block kinds are `heading`, `paragraph`, `list-item`, `quote`,
 `code`, `table`, `rule`, and `extension`.
 
+A code block's optional `notice` displays one truncated error-colour line
+above its source, and stays visible when collapsed. The code block retains
+its lane, gutter and activation; search indexes its source.
+
 ## List identity
 
 Every list item supplies a stable `groupId`. Items in one ordered group advance
