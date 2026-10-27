@@ -71,7 +71,6 @@ const ALLOWED_FILES = new Set<string>([
   "packages/ag-react/src/hooks/useLayout.ts",
   "packages/ag-react/src/hooks/useAgNode.ts",
   "packages/ag-react/src/exports.ts",
-  "packages/ag-react/src/focus.ts",
   "packages/ag-term/src/index.ts",
   "src/runtime.ts",
   "src/index.ts",
