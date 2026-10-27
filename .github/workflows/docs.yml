@@ -39,10 +39,6 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Build examples
-        run: bun run examples/web/build.ts
-        continue-on-error: true
-
       - name: Build docs
         run: bunx --bun vitepress build docs
 
