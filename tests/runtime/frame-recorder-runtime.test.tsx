@@ -7,7 +7,7 @@
  */
 
 import { createTerm } from "@silvery/ag-term"
-import { createVt100Backend } from "../../../termless/packages/vt100/src/backend.ts"
+import { createXtermBackend } from "@termless/xtermjs"
 import React, { useState } from "react"
 import { describe, expect, test } from "vitest"
 import { createTermless, recordFrames } from "@silvery/test"
@@ -47,9 +47,23 @@ describe("recordFrames runtime integration", () => {
   })
 })
 
-// Real VT100 readback owns null; history must preserve it rather than invent false.
-test("recorded VT100 unavailable styles survive serialization and remain distinct from false", () => {
-  using term = createTerm(createVt100Backend(), { cols: 2, rows: 1 })
+// Exercise the recorder contract independently of a producer's published version.
+// Real VT100/VT220 unavailable-style readback is covered in Termless's backend tests.
+test("recorder boundary preserves unavailable styles through serialization and comparison", () => {
+  const backend = createXtermBackend()
+  let reportsStyles = false
+  const nullableBackend = {
+    ...backend,
+    getCell(row: number, col: number) {
+      return {
+        ...backend.getCell(row, col),
+        dim: reportsStyles ? false : null,
+        italic: reportsStyles ? false : null,
+        strikethrough: reportsStyles ? false : null,
+      }
+    },
+  }
+  using term = createTerm(nullableBackend, { cols: 2, rows: 1 })
   const recording = recordFrames(term)
   try {
     term.write("X")
@@ -57,8 +71,18 @@ test("recorded VT100 unavailable styles survive serialization and remain distinc
     const cell = JSON.parse(JSON.stringify(frame.cell(0, 0))) as ReturnType<typeof frame.cell>
     expect(cell).toMatchObject({ dim: null, italic: null, strikethrough: null })
     expect(cell.dim).not.toBe(false)
-    term.write("Y")
+    reportsStyles = true
+    term.write("\rX")
     expect(frame.cell(0, 0)).toEqual(cell)
+    expect(recording.diff(0, 1)).toMatchObject([
+      { col: 0, row: 0, from: { dim: null }, to: { dim: false } },
+      { col: 1, row: 0, from: { dim: null }, to: { dim: false } },
+    ])
+    expect(recording.frames[1]!.cell(0, 0)).toMatchObject({
+      dim: false,
+      italic: false,
+      strikethrough: false,
+    })
   } finally {
     recording.stop()
   }
