@@ -155,12 +155,12 @@ interface TermlessCellView {
   readonly fg: RGB | null
   readonly bg: RGB | null
   readonly bold: boolean
-  readonly dim: boolean
-  readonly italic: boolean
+  readonly dim: boolean | null
+  readonly italic: boolean | null
   readonly underline: UnderlineStyle
   readonly underlineColor: RGB | null
   readonly overline?: boolean
-  readonly strikethrough: boolean
+  readonly strikethrough: boolean | null
   readonly inverse: boolean
   readonly blink: boolean
   readonly hidden: boolean

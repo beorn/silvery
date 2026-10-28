@@ -39,7 +39,7 @@ export interface RGB {
  * A single cell in a TextFrame with resolved styling.
  *
  * Colors are resolved to RGB (or null for default/inherit).
- * Attributes are flattened booleans for easy testing.
+ * Attributes retain producer readback: null means this producer does not report the attribute.
  */
 export interface FrameCell {
   /** The character/grapheme in this cell */
@@ -51,9 +51,9 @@ export interface FrameCell {
   /** Bold attribute */
   readonly bold: boolean
   /** Dim/faint attribute */
-  readonly dim: boolean
+  readonly dim: boolean | null
   /** Italic attribute */
-  readonly italic: boolean
+  readonly italic: boolean | null
   /** Underline style — false if none */
   readonly underline: UnderlineStyle
   /** Underline color (independent of fg), or null to use fg */
@@ -61,7 +61,7 @@ export interface FrameCell {
   /** Overline attribute — SGR 53. Independent of underline. */
   readonly overline: boolean
   /** Strikethrough attribute */
-  readonly strikethrough: boolean
+  readonly strikethrough: boolean | null
   /** Inverse/reverse video attribute */
   readonly inverse: boolean
   /** Blink attribute */

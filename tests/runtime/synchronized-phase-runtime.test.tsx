@@ -60,7 +60,7 @@ describe("useSynchronizedPhase runtime integration", () => {
         await new Promise((resolve) => setTimeout(resolve, 150))
 
         const foregrounds = Array.from({ length: "glimmer".length }, () => new Set<string>())
-        const dimStates = Array.from({ length: "glimmer".length }, () => new Set<boolean>())
+        const dimStates = Array.from({ length: "glimmer".length }, () => new Set<boolean | null>())
         for (const frame of recording.frames) {
           const row = frame.lines.findIndex((line) => line.includes("glimmer"))
           if (row < 0) continue

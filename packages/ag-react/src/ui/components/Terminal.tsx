@@ -52,10 +52,10 @@ export interface TerminalCell {
   fg: TerminalRGB | null
   bg: TerminalRGB | null
   bold: boolean
-  dim: boolean
-  italic: boolean
+  dim: boolean | null
+  italic: boolean | null
   underline: boolean | string
-  strikethrough: boolean
+  strikethrough: boolean | null
   inverse: boolean
   /** Wide-character leading cell (occupies 2 columns). */
   wide?: boolean
@@ -130,15 +130,16 @@ function rgbEq(a: TerminalRGB | null, b: TerminalRGB | null): boolean {
   return a.r === b.r && a.g === b.g && a.b === b.b
 }
 
+// Drawing policy: unreported style attributes are drawn unset; retained readback stays null.
 function styleOf(cell: TerminalCell): CellStyle {
   return {
     fg: cell.fg,
     bg: cell.bg,
     bold: cell.bold,
-    dim: cell.dim,
-    italic: cell.italic,
+    dim: cell.dim === true,
+    italic: cell.italic === true,
     underline: cell.underline !== false,
-    strikethrough: cell.strikethrough,
+    strikethrough: cell.strikethrough === true,
     inverse: cell.inverse,
   }
 }

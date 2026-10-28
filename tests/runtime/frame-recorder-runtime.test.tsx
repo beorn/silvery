@@ -6,6 +6,8 @@
  * @level l2 — real runtime + xterm-backed Termless terminal.
  */
 
+import { createTerm } from "@silvery/ag-term"
+import { createVt100Backend } from "../../../termless/packages/vt100/src/backend.ts"
 import React, { useState } from "react"
 import { describe, expect, test } from "vitest"
 import { createTermless, recordFrames } from "@silvery/test"
@@ -43,4 +45,21 @@ describe("recordFrames runtime integration", () => {
       handle.unmount()
     }
   })
+})
+
+// Real VT100 readback owns null; history must preserve it rather than invent false.
+test("recorded VT100 unavailable styles survive serialization and remain distinct from false", () => {
+  using term = createTerm(createVt100Backend(), { cols: 2, rows: 1 })
+  const recording = recordFrames(term)
+  try {
+    term.write("X")
+    const frame = recording.frames[0]!
+    const cell = JSON.parse(JSON.stringify(frame.cell(0, 0))) as ReturnType<typeof frame.cell>
+    expect(cell).toMatchObject({ dim: null, italic: null, strikethrough: null })
+    expect(cell.dim).not.toBe(false)
+    term.write("Y")
+    expect(frame.cell(0, 0)).toEqual(cell)
+  } finally {
+    recording.stop()
+  }
 })
