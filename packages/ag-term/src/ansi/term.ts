@@ -1178,7 +1178,7 @@ interface IoTermEmulatorExtras {
   /** Absolute buffer row, as the legacy contract read it. @deprecated REMOVING in unterm phase A4c — `term.io.getCell()`. */
   getCell(row: number, col: number): Cell
   /** @deprecated REMOVING in unterm phase A4c — `term.io.modes[mode]`. */
-  getMode(mode: Mode): boolean
+  getMode(mode: Mode): boolean | null
 }
 
 /**
