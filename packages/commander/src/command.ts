@@ -1020,7 +1020,11 @@ export interface Command<
     description: string,
     parseArg: (value: string, previous: T) => T,
     defaultValue?: T,
-  ): Command<Opts & Record<FlagKey<F>, Exclude<InferOptionType<F, typeof parseArg>, undefined>>, Args, ArgsRecord>
+  ): Command<
+    Opts & Record<FlagKey<F>, Exclude<InferOptionType<F, typeof parseArg>, undefined>>,
+    Args,
+    ArgsRecord
+  >
 
   /** Native mandatory boolean/string option; no smart schema or choices handling runs here. */
   requiredOption<F extends string>(

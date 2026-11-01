@@ -5,8 +5,10 @@ import { Command, colorizeHelp, shouldColorize } from "../src/index.ts"
 describe("Command subclass", () => {
   // Required inference must preserve Commander's existing loud missing-input behavior.
   it("refuses a missing required option", () => {
-    const cmd = new Command("test").requiredOption("--source <path>", "Source")
-      .exitOverride().configureOutput({ writeErr: () => {} })
+    const cmd = new Command("test")
+      .requiredOption("--source <path>", "Source")
+      .exitOverride()
+      .configureOutput({ writeErr: () => {} })
     expect(() => cmd.parse([], { from: "user" })).toThrow(/required option.*--source/)
   })
 
