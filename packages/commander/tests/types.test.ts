@@ -77,6 +77,33 @@ describe("string value inference", () => {
   })
 })
 
+// Required-option callers must receive mandatory keys, not the inherited empty Command opts.
+// Existing .option() cases do not exercise native requiredOption inference or its unsupported third arguments.
+describe("native requiredOption inference", () => {
+  it("retains required string, parser, optional value and negation types", () => {
+    new Command("test")
+      .requiredOption("--source <path>", "Source")
+      .requiredOption("--count <n>", "Count", Number)
+      .requiredOption("--format [name]", "Format")
+      .requiredOption("--no-color", "No color")
+      .actionMerged((params) => {
+        expectTypeOf(params.source).toEqualTypeOf<string>()
+        expectTypeOf(params.count).toEqualTypeOf<number>()
+        expectTypeOf(params.format).toEqualTypeOf<string | boolean>()
+        expectTypeOf(params.color).toEqualTypeOf<boolean>()
+      })
+  })
+
+  it("keeps native choices, preset and RegExp fallback inputs without narrowing", () => {
+    const choices = new Command("test").option("--verbose", "Verbose").requiredOption("--mode <name>", "Mode", ["one", "two"])
+    const preset = new Command("test").requiredOption("--port <n>", "Port", port)
+    const regexp = new Command("test").requiredOption("--name <value>", "Name", /^[a-z]+$/)
+    expectTypeOf(choices.opts()).toEqualTypeOf<{ verbose: boolean | undefined }>()
+    expectTypeOf(preset.opts()).toEqualTypeOf<{}>()
+    expectTypeOf(regexp.opts()).toEqualTypeOf<{}>()
+  })
+})
+
 describe("optional value inference", () => {
   it("--output [path] → output: string | boolean | undefined", () => {
     const cmd = new Command("test").option("--output [path]", "Output path")

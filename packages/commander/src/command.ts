@@ -1014,6 +1014,29 @@ export interface Command<
 
   // -- Typed option overloads --
 
+  /** Native mandatory option with a parser; an undefined value is refused by Commander. */
+  requiredOption<F extends string, T>(
+    flags: F,
+    description: string,
+    parseArg: (value: string, previous: T) => T,
+    defaultValue?: T,
+  ): Command<Opts & Record<FlagKey<F>, Exclude<InferOptionType<F, typeof parseArg>, undefined>>, Args, ArgsRecord>
+
+  /** Native mandatory boolean/string option; no smart schema or choices handling runs here. */
+  requiredOption<F extends string>(
+    flags: F,
+    description?: string,
+    defaultValue?: string | boolean,
+  ): Command<Opts & Record<FlagKey<F>, Exclude<InferOptionType<F>, undefined>>, Args, ArgsRecord>
+
+  /** Preserve native fallback inputs, including deprecated RegExp, without promising inference. */
+  requiredOption(
+    flags: string,
+    description?: string,
+    parseArgOrDefault?: unknown,
+    defaultValue?: unknown,
+  ): Command<Opts, Args, ArgsRecord>
+
   /** Add a choices option: `--env <e>`, `["dev", "staging", "prod"]` */
   option<F extends string, const C extends readonly string[]>(
     flags: F,

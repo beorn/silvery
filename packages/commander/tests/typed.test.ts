@@ -3,6 +3,13 @@ import { z } from "zod"
 import { Command, colorizeHelp, shouldColorize } from "../src/index.ts"
 
 describe("Command subclass", () => {
+  // Required inference must preserve Commander's existing loud missing-input behavior.
+  it("refuses a missing required option", () => {
+    const cmd = new Command("test").requiredOption("--source <path>", "Source")
+      .exitOverride().configureOutput({ writeErr: () => {} })
+    expect(() => cmd.parse([], { from: "user" })).toThrow(/required option.*--source/)
+  })
+
   it("constructor help follows color detection — plain when the environment has no color", () => {
     // The test environment is non-TTY, so shouldColorize() is false and the
     // constructor's AUTO colorization must stay plain (NO_COLOR/pipes were
