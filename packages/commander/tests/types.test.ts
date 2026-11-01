@@ -94,15 +94,25 @@ describe("native requiredOption inference", () => {
       })
   })
 
-  it("keeps native choices, preset and RegExp fallback inputs without narrowing", () => {
-    const choices = new Command("test")
+  it("keeps native array defaults and RegExp fallback inputs without narrowing", () => {
+    const arrayDefault = new Command("test")
       .option("--verbose", "Verbose")
       .requiredOption("--mode <name>", "Mode", ["one", "two"])
-    const preset = new Command("test").requiredOption("--port <n>", "Port", port)
     const regexp = new Command("test").requiredOption("--name <value>", "Name", /^[a-z]+$/)
-    expectTypeOf(choices.opts()).toEqualTypeOf<{ verbose: boolean | undefined }>()
-    expectTypeOf<keyof ReturnType<typeof preset.opts>>().toEqualTypeOf<never>()
+    expectTypeOf(arrayDefault.opts()).toEqualTypeOf<{ verbose: boolean | undefined }>()
     expectTypeOf<keyof ReturnType<typeof regexp.opts>>().toEqualTypeOf<never>()
+  })
+
+  // The inherited native API rejects these inputs; an unknown fallback must not accept them as defaults.
+  it("rejects unsupported native parsers and default types", () => {
+    // @ts-expect-error Native requiredOption does not support CLIType presets.
+    new Command("test").requiredOption("--port <n>", "Port", port)
+    // @ts-expect-error Native requiredOption does not support schema objects.
+    new Command("test").requiredOption("--count <n>", "Count", z.coerce.number())
+    // @ts-expect-error A numeric parser requires a numeric default.
+    new Command("test").requiredOption("--count <n>", "Count", Number, "not-a-number")
+    // @ts-expect-error A native RegExp default must be string, boolean or string[].
+    new Command("test").requiredOption("--name <value>", "Name", /^[a-z]+$/, { invalid: true })
   })
 })
 

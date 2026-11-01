@@ -1033,12 +1033,19 @@ export interface Command<
     defaultValue?: string | boolean,
   ): Command<Opts & Record<FlagKey<F>, Exclude<InferOptionType<F>, undefined>>, Args, ArgsRecord>
 
-  /** Preserve native fallback inputs, including deprecated RegExp, without promising inference. */
+  /** Native array defaults retain the existing opts without promising choices inference. */
   requiredOption(
     flags: string,
     description?: string,
-    parseArgOrDefault?: unknown,
-    defaultValue?: unknown,
+    defaultValue?: string | boolean | string[],
+  ): Command<Opts, Args, ArgsRecord>
+
+  /** Preserve Commander's deprecated native RegExp form without promising inference. */
+  requiredOption(
+    flags: string,
+    description: string,
+    regexp: RegExp,
+    defaultValue?: string | boolean | string[],
   ): Command<Opts, Args, ArgsRecord>
 
   /** Add a choices option: `--env <e>`, `["dev", "staging", "prod"]` */
