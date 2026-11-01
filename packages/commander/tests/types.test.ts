@@ -95,12 +95,14 @@ describe("native requiredOption inference", () => {
   })
 
   it("keeps native choices, preset and RegExp fallback inputs without narrowing", () => {
-    const choices = new Command("test").option("--verbose", "Verbose").requiredOption("--mode <name>", "Mode", ["one", "two"])
+    const choices = new Command("test")
+      .option("--verbose", "Verbose")
+      .requiredOption("--mode <name>", "Mode", ["one", "two"])
     const preset = new Command("test").requiredOption("--port <n>", "Port", port)
     const regexp = new Command("test").requiredOption("--name <value>", "Name", /^[a-z]+$/)
     expectTypeOf(choices.opts()).toEqualTypeOf<{ verbose: boolean | undefined }>()
-    expectTypeOf(preset.opts()).toEqualTypeOf<{}>()
-    expectTypeOf(regexp.opts()).toEqualTypeOf<{}>()
+    expectTypeOf<keyof ReturnType<typeof preset.opts>>().toEqualTypeOf<never>()
+    expectTypeOf<keyof ReturnType<typeof regexp.opts>>().toEqualTypeOf<never>()
   })
 })
 
