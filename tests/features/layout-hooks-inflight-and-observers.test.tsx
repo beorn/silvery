@@ -12,6 +12,7 @@
  *
  * Bead: @km/silvery/usebox-rect-deferred-only-breaks-first-paint.
  */
+import "./strict-first.ts"
 import { describe, test, expect } from "vitest"
 import React, { useRef } from "react"
 import { createRenderer } from "@silvery/test"
@@ -31,29 +32,59 @@ import { useBoxSize } from "../../packages/ag-react/src/hooks/useLayout"
 import type { Rect } from "@silvery/ag/types"
 
 describe("useBoxRectInFlight / useOnBoxRectCommitted", () => {
-  test("useBoxRectInFlight reports a non-zero rect on the first observed paint", () => {
-    const r = createRenderer({ cols: 80, rows: 4 })
-
-    let observedWidthsInFlight: number[] = []
+  test("useBoxRectInFlight keeps the complete converged frame's diagnostics and expires its predecessor", () => {
+    const r = createRenderer({ cols: 80, rows: 24 })
+    const observedWidthsInFlight: number[] = []
     function ProbeInFlight() {
       const { width } = useBoxRectInFlight()
       observedWidthsInFlight.push(width)
       return <Text>w-inflight={width}</Text>
     }
-
-    const app = r(
-      <Box width={40} flexDirection="column">
-        <ProbeInFlight />
-      </Box>,
+    const frame = (width: number) => (
+      <Box width={width} flexDirection="column">
+        {Array.from({ length: 24 }, (_, i) => (
+          <Box key={i} id={`measured-row-${i}`} width={width}>
+            <ProbeInFlight />
+          </Box>
+        ))}
+      </Box>
     )
+    const app = r(frame(40))
+    const diagnostics = globalThis as {
+      __silvery_content_all?: Array<{
+        _hasPrevBuffer: number
+        flagLayoutChanged: number
+        flagContentDirty: number
+      }>
+      __silvery_node_trace?: Array<Array<{ id: string }>>
+    }
+    try {
+      // The first visible paint already contains the measured width.
+      expect(app.text).toContain("w-inflight=40")
+      expect(observedWidthsInFlight.some((w) => w === 40)).toBe(true)
+      const previousStats = [...(diagnostics.__silvery_content_all ?? [])]
+      const previousTraces = [...(diagnostics.__silvery_node_trace ?? [])]
+      expect(previousStats.length).toBeGreaterThan(0)
+      expect(previousTraces.flat().some((node) => node.id === "measured-row-0")).toBe(true)
 
-    // The visible frame must show the measured width — the in-flight hook
-    // gives the value during the first paint after layout, with no
-    // one-frame fallback.
-    expect(app.text).toContain("w-inflight=40")
-
-    // The probe must have observed the real measured width at some point.
-    expect(observedWidthsInFlight.some((w) => w === 40)).toBe(true)
+      app.rerender(frame(30))
+      expect(app.text).toContain("w-inflight=30")
+      const stats = diagnostics.__silvery_content_all ?? []
+      const traces = diagnostics.__silvery_node_trace ?? []
+      // Expiry first: old entries must not supply the current-frame witnesses.
+      expect.soft(stats.some((pass) => previousStats.includes(pass))).toBe(false)
+      expect.soft(traces.some((pass) => previousTraces.includes(pass))).toBe(false)
+      const incremental = stats.filter((pass) => pass._hasPrevBuffer === 1)
+      // Preserve the layout pass, its measurement-driven content update and
+      // STRICT's fresh pass; a release on every pipeline pass loses this evidence.
+      expect(incremental.length).toBeGreaterThan(1)
+      expect(incremental.some((pass) => pass.flagLayoutChanged > 0)).toBe(true)
+      expect(incremental.some((pass) => pass.flagContentDirty > 0)).toBe(true)
+      expect(stats.some((pass) => pass._hasPrevBuffer === 0)).toBe(true)
+      expect(traces.flat().some((node) => node.id === "measured-row-0")).toBe(true)
+    } finally {
+      app.unmount()
+    }
   })
 
   test("useBoxRectDangerously (deferred form) starts at 0 and advances at the next commit", () => {

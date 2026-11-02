@@ -48,16 +48,12 @@
  */
 
 import React from "react"
-import "./strict-first.ts"
 import { describe, expect, it, test } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { resetStrictCache } from "@silvery/ag-term/strict-mode"
 import { Box } from "../../packages/ag-react/src/components/Box"
 import { Text } from "../../packages/ag-react/src/components/Text"
-import {
-  useBoxRectDangerously,
-  useBoxRectInFlight,
-} from "../../packages/ag-react/src/hooks/useLayout"
+import { useBoxRectDangerously } from "../../packages/ag-react/src/hooks/useLayout"
 
 /** Same specimen as the table fixture: separators are what the two wrap modes disagree about. */
 const CELL_TEXT = "agent host — all agents, all accounts, all together in your terminal"
@@ -113,7 +109,7 @@ function App({ cols, Cell }: { cols: number; Cell: () => React.ReactElement }) {
   return (
     <Box width={cols} flexDirection="column">
       {Array.from({ length: 24 }, (_, i) => (
-        <Box key={i} id={`measured-row-${i}`} flexDirection="row" width={cols} overflow="hidden">
+        <Box key={i} flexDirection="row" width={cols} overflow="hidden">
           <Box width={3} overflow="hidden">
             <Text wrap="truncate">{`r${i}`}</Text>
           </Box>
@@ -153,47 +149,6 @@ function divergentWidths(Cell: () => React.ReactElement): string[] {
 }
 
 describe("measurement-convergence text invalidation", () => {
-  test("diagnostic histories retain the complete converged frame and expire its predecessor", () => {
-    function MeasuredWidth() {
-      const { width } = useBoxRectInFlight()
-      return <Text>{`measured=${width}`}</Text>
-    }
-    const app = createRenderer({ cols: 40, rows: 24 })(<App cols={40} Cell={MeasuredWidth} />)
-    const diagnostics = globalThis as {
-      __silvery_content_all?: Array<{
-        _hasPrevBuffer: number
-        flagLayoutChanged: number
-        flagContentDirty: number
-      }>
-      __silvery_node_trace?: Array<Array<{ id: string }>>
-    }
-    try {
-      expect(app.text).toContain("measured=37")
-      const previousStats = [...(diagnostics.__silvery_content_all ?? [])]
-      const previousTraces = [...(diagnostics.__silvery_node_trace ?? [])]
-      expect(previousStats.length).toBeGreaterThan(0)
-      expect(previousTraces.flat().some((node) => node.id === "measured-row-0")).toBe(true)
-
-      app.rerender(<App cols={30} Cell={MeasuredWidth} />)
-      expect(app.text).toContain("measured=27")
-      const stats = diagnostics.__silvery_content_all ?? []
-      const traces = diagnostics.__silvery_node_trace ?? []
-      // Check expiry first so old entries cannot supply the convergence witness.
-      expect.soft(stats.some((pass) => previousStats.includes(pass))).toBe(false)
-      expect.soft(traces.some((pass) => previousTraces.includes(pass))).toBe(false)
-      const incremental = stats.filter((pass) => pass._hasPrevBuffer === 1)
-      // A resize/layout pass precedes the content update caused by its measured
-      // width. Keep both, plus STRICT's fresh oracle, rather than only the last pass.
-      expect(incremental.length).toBeGreaterThan(1)
-      expect(incremental.some((pass) => pass.flagLayoutChanged > 0)).toBe(true)
-      expect(incremental.some((pass) => pass.flagContentDirty > 0)).toBe(true)
-      expect(stats.some((pass) => pass._hasPrevBuffer === 0)).toBe(true)
-      expect(traces.flat().some((node) => node.id === "measured-row-0")).toBe(true)
-    } finally {
-      app.unmount()
-    }
-  })
-
   test("control: taking a measurement dependency alone never diverges", () => {
     const diverged = divergentWidths(InertCell)
     expect(diverged, `\n${diverged.join("\n")}`).toEqual([])
