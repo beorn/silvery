@@ -116,7 +116,7 @@ describe("useBoxRectInFlight / useOnBoxRectCommitted", () => {
     const r = createRenderer({ cols: 60, rows: 4 })
 
     let observerRenderCount = 0
-    let observedRects: Rect[] = []
+    const observedRects: Rect[] = []
 
     function Observer() {
       observerRenderCount++
