@@ -41,6 +41,7 @@ import {
 } from "@silvery/ag/layout-signals"
 import { IncrementalRenderMismatchError } from "../scheduler"
 import { isStrictEnabled } from "../strict-mode"
+import { beginRenderPhaseDiagnostics } from "../pipeline/render-phase"
 import {
   markLayoutTreeDirty,
   FRESH_LAYOUT_STRICT_SLUG,
@@ -411,14 +412,9 @@ export function createRenderer(opts: RendererOptions): Renderer {
       }
     }
 
-    // Clear diagnostic arrays before the render so we capture only this render's data.
-    // INSTRUMENTED is hoisted from env vars at module load — when no diagnostic is
-    // active (the hot path), all three global resets and the cell-debug setup
-    // constant-fold out of the frame.
+    beginRenderPhaseDiagnostics()
     if (opts.instrumented) {
       const g = globalThis as Record<string, unknown>
-      g.__silvery_content_all = undefined
-      g.__silvery_node_trace = undefined
       // Cell debug: enable during real incremental render for SILVERY_STRICT diagnosis.
       // Set SILVERY_CELL_DEBUG=x,y to trace which nodes cover a specific cell.
       // The log is captured during the render and included in any mismatch error.

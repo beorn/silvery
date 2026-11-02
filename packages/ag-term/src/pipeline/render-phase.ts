@@ -476,6 +476,13 @@ function _getNodeDepth(node: AgNode): number {
   return depth
 }
 
+/** Begin one logical render, retaining all of its convergence and STRICT passes. */
+export function beginRenderPhaseDiagnostics(): void {
+  const diagnostics = globalThis as Record<string, unknown>
+  diagnostics.__silvery_content_all = undefined
+  diagnostics.__silvery_node_trace = undefined
+}
+
 /**
  * Emit render-phase stats to globalThis + loggily, then reset counters.
  * Called at end of renderPhase when instrumentation is active.

@@ -394,7 +394,6 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
       const render = createRenderer({ cols: COLS, rows: ROWS })
       const app = render(<CostPane cleanGroup={cleanGroup} short={false} />)
       try {
-        ;(globalThis as any).__silvery_content_all = []
         app.rerender(<CostPane cleanGroup={cleanGroup} short />)
         const frames = ((globalThis as any).__silvery_content_all ?? []) as Array<
           Record<string, number>
@@ -462,7 +461,6 @@ describe("regression: text cleanup reveals an earlier sibling's bg (@i/10-yrd/26
       const render = createRenderer({ cols: width, rows: 2 })
       const app = render(<FlatPane prefix={prefix} short={false} width={width} />)
       try {
-        ;(globalThis as any).__silvery_content_all = []
         app.rerender(<FlatPane prefix={prefix} short width={width} />)
         const frames = ((globalThis as any).__silvery_content_all ?? []) as Array<
           Record<string, number>

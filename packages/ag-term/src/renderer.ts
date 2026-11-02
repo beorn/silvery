@@ -48,6 +48,7 @@ import {
   verifyNoResidueLeak,
 } from "./pipeline/strict-residue.js"
 import { outputPhase } from "./pipeline/output-phase.js"
+import { beginRenderPhaseDiagnostics } from "./pipeline/render-phase.js"
 import {
   markLayoutTreeDirty,
   FRESH_LAYOUT_STRICT_SLUG,
@@ -898,6 +899,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   }
 
   function doRender(): string {
+    beginRenderPhaseDiagnostics()
     strictRootContentClean = undefined
     let output: string
     let buffer!: TerminalBuffer

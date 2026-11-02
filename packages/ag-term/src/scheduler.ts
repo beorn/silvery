@@ -18,6 +18,7 @@ import { type BytesOutMonitor, createBytesOutMonitor } from "./bytes-out-monitor
 import { type FlickerMonitor, createFlickerMonitor } from "./flicker-monitor"
 import { type MemMonitor, createMemMonitor } from "./mem-monitor"
 import { isStrictEnabled } from "./strict-mode"
+import { beginRenderPhaseDiagnostics } from "./pipeline/render-phase"
 import { type TerminalBuffer, bufferToText, cellEquals } from "./buffer"
 import { buildMismatchContext, formatMismatchContext } from "./debug-mismatch"
 import {
@@ -683,6 +684,7 @@ export class RenderScheduler {
    * Execute the actual render.
    */
   private doRender(): void {
+    beginRenderPhaseDiagnostics()
     let strictRootContentClean: boolean | undefined
     using render = this.log.span?.("render")
     const startTime = Date.now()

@@ -103,10 +103,6 @@ function maxRestyleCount(): number {
   return max
 }
 
-function resetRestyleLog(): void {
-  ;(globalThis as any).__silvery_content_all = []
-}
-
 describe("feature: per-segment text restyle preserves nested run colors", () => {
   test("first render: icon + label runs carry their own colors", () => {
     const render = createRenderer({ cols: CARD_W, rows: 60 })
@@ -133,8 +129,6 @@ describe("feature: per-segment text restyle preserves nested run colors", () => 
 
       // Each card occupies 3 rows: top border, title, bottom border.
       const titleRow = (id: number) => id * 3 + 1
-
-      resetRestyleLog()
 
       // Sweep selection across all 50 cards. SILVERY_STRICT=1 auto-checks
       // incremental == fresh on every rerender; a whole-rect restyle throws here.
