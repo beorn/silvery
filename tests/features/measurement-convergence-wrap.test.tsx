@@ -160,7 +160,11 @@ describe("measurement-convergence text invalidation", () => {
     }
     const app = createRenderer({ cols: 40, rows: 24 })(<App cols={40} Cell={MeasuredWidth} />)
     const diagnostics = globalThis as {
-      __silvery_content_all?: Array<Record<string, number>>
+      __silvery_content_all?: Array<{
+        _hasPrevBuffer: number
+        flagLayoutChanged: number
+        flagContentDirty: number
+      }>
       __silvery_node_trace?: Array<Array<{ id: string }>>
     }
     try {
