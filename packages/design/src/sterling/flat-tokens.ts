@@ -6,7 +6,7 @@
  * The list is maintained here (not derived from a walk over a sample Theme)
  * so that type exports, runtime iteration, and doc generation all read the
  * same source. Keep this list in sync with {@link FlatToken} in `types.ts`
- * and the `defaultFlattenRule` behaviour in `@silvery/ansi`.
+ * and the `defaultFlattenRule` behaviour in `@silvery/design`.
  */
 
 import type { FlatToken } from "./types.ts"

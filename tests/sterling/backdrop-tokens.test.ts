@@ -11,8 +11,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { sterling } from "@silvery/theme/sterling"
-import { builtinPalettes } from "@silvery/theme/schemes"
+import { sterling } from "@silvery/design"
+import { builtinPalettes } from "@silvery/schemes/schemes"
 
 describe("Sterling backdrop token", () => {
   const names = Object.keys(builtinPalettes)

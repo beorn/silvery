@@ -20,7 +20,7 @@
  * ```
  *
  * Consumed by:
- *   - Sterling (`@silvery/theme/sterling`) via `defineDesignSystem({ flatten: true })`
+ *   - Sterling (`@silvery/design`) via `defineDesignSystem({ flatten: true })`
  *   - Any alternative DesignSystem that wants flat-projection for free
  *
  * @see defaultFlattenRule — the channel-role-state rule Sterling uses

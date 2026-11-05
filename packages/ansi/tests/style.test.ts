@@ -186,7 +186,7 @@ describe("resolveThemeColor", () => {
   })
 
   // Sterling flat tokens resolve via direct lookup — every shipped default
-  // Theme carries them as first-class fields (see `@silvery/theme/schemes`).
+  // Theme carries them as first-class fields (see `@silvery/schemes/schemes`).
   // The previous `LEGACY_ALIASES` translation layer (e.g. `fgmuted` → `muted`,
   // `bgsurface` → `surfacebg`) was deleted in 0.18.1 as redundant. The
   // single-hex `selection` / `selectionbg` / `inverse` / `inversebg` / `link`

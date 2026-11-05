@@ -771,14 +771,16 @@ Users install and import from these packages:
 | `@silvery/signals`   | Reactive signals — thin wrapper around alien-signals                                                                    |
 | `@silvery/commander` | Type-safe Commander.js with colorized help, Standard Schema                                                             |
 | `@silvery/ansi`      | Everything terminal — styling, ANSI primitives, detection, theme derivation                                             |
-| `@silvery/color`     | Color math — OKLCH-native blend, brighten, darken, complement, contrast (hex public API, re-exported by @silvery/theme) |
+| `@silvery/color`     | Color math — OKLCH-native blend, brighten, darken, complement, contrast (hex public API, available directly from @silvery/color) |
 | `@silvery/selection` | Pure selection state machine — node selection, sub-selection, pointer gestures                                          |
+| `@silvery/design` | Sterling theme factories, tokens, contrast helpers and CSS |
+| `@silvery/schemes` | Terminal scheme catalog, detection, builders and import/export |
 
 Subpath imports available from `silvery`:
 
 - `silvery` — components, hooks, render, types (re-exports @silvery/ag-react)
 - `silvery/runtime` — run(), useInput, createRuntime (re-exports @silvery/ag-term/runtime)
-- `silvery/theme` — ThemeProvider, useTheme, palettes, color utilities (re-exports @silvery/theme)
+- `silvery/theme` — Sterling tokens, CSS and palettes (re-exports @silvery/design and @silvery/schemes)
 - `silvery/ui` — component library (re-exports @silvery/ag-react/ui)
 - `silvery/ui/cli` — CLI progress indicators (no React)
 - `silvery/ui/react` — React progress components
@@ -793,14 +795,13 @@ These are workspace packages for development. Users do not import from them dire
 | `@silvery/ag`       | Core types, layout-signals (framework-agnostic reactive layer)                       |
 | `@silvery/ag-react` | React reconciler, hooks (useSignal, useAgNode, useBoxRectDangerously), UI components |
 | `@silvery/ag-term`  | Terminal runtime, ANSI output, pipeline, syncRectSignals bridge                      |
-| `@silvery/theme`    | Theme tokens, 84 color schemes, theme CLI                                            |
 | `@silvery/ink`      | Ink/Chalk compatibility layers                                                       |
 
 ## Structure
 
 | Directory   | What                                                                                      |
 | ----------- | ----------------------------------------------------------------------------------------- |
-| `packages/` | Workspace packages (public helpers plus internal ag, ag-react, ag-term, test, theme, ink) |
+| `packages/` | Workspace packages (public helpers plus internal ag, ag-react, ag-term, test, design, schemes, ink) |
 | `src/`      | Public barrel + subpath re-exports (index.ts, runtime.ts, theme.ts, ui.ts, ui/\*)         |
 | `docs/`     | VitePress documentation site (silvery.dev)                                                |
 | `examples/` | Interactive demos, web showcases, playground                                              |
@@ -878,10 +879,10 @@ Factory functions, `using` cleanup, no classes, no globals. ESM imports only. Ty
 
 | Task                        | Import                                                          | Example                      |
 | --------------------------- | --------------------------------------------------------------- | ---------------------------- |
-| Blend/mix colors            | `import { blend } from "@silvery/theme"`                        | `blend("#000", "#fff", 0.5)` |
-| Brighten/darken             | `import { brighten, darken } from "@silvery/theme"`             | `brighten("#333", 0.2)`      |
-| Check contrast              | `import { checkContrast } from "@silvery/theme"`                | `checkContrast(fg, bg)`      |
-| Hex↔RGB↔HSL                 | `import { hexToRgb, rgbToHex, hexToHsl } from "@silvery/theme"` |                              |
+| Blend/mix colors            | `import { blend } from "@silvery/color"`                        | `blend("#000", "#fff", 0.5)` |
+| Brighten/darken             | `import { brighten, darken } from "@silvery/color"`             | `brighten("#333", 0.2)`      |
+| Check contrast              | `import { checkContrast } from "@silvery/color"`                | `checkContrast(fg, bg)`      |
+| Hex↔RGB↔HSL                 | `import { hexToRgb, rgbToHex, hexToHsl } from "@silvery/color"` |                              |
 | Cell-level color assertions | `app.cell(col, row)` or `term.cell(row, col)`                   | `expect(cell.fg).toBe(...)`  |
 | Frame-by-frame testing      | `handle.frames` (ANSI strings per render)                       | Iterate all render frames    |
 | Cell grid per frame         | termless `TapeFrame[]` via tape executor                        | `frame.cell(r, c)`           |

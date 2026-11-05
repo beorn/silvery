@@ -1,14 +1,13 @@
 {
-  "name": "@silvery/theme",
-  "version": "0.27.0",
-  "private": true,
-  "description": "Theming system with semantic color tokens for silvery (internal — use silvery/theme instead)",
+  "name": "@silvery/schemes",
+  "version": "0.28.0",
+  "description": "Terminal color schemes, detection, builders and import/export tools for Silvery",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
     "type": "git",
     "url": "https://github.com/beorn/silvery.git",
-    "directory": "packages/theme"
+    "directory": "packages/schemes"
   },
   "files": [
     "dist"
@@ -19,7 +18,6 @@
     ".": "./src/index.ts",
     "./detect": "./src/detect.ts",
     "./schemes": "./src/schemes/index.ts",
-    "./sterling": "./src/sterling/index.ts",
     "./theme": "./src/theme.ts"
   },
   "publishConfig": {
@@ -28,7 +26,6 @@
       ".": "./dist/index.mjs",
       "./detect": "./dist/detect.mjs",
       "./schemes": "./dist/schemes/index.mjs",
-      "./sterling": "./dist/sterling/index.mjs",
       "./theme": "./dist/theme.mjs"
     }
   },
@@ -36,8 +33,9 @@
     "build": "tsdown"
   },
   "dependencies": {
-    "@silvery/ansi": "0.27.0",
-    "@silvery/color": "0.27.0"
+    "@silvery/ansi": "0.28.0",
+    "@silvery/color": "0.28.0",
+    "@silvery/design": "0.28.0"
   },
   "tsdown": {
     "clean": true,
@@ -46,7 +44,6 @@
       "src/index.ts",
       "src/detect.ts",
       "src/schemes/index.ts",
-      "src/sterling/index.ts",
       "src/theme.ts"
     ],
     "exports": {
@@ -54,5 +51,8 @@
       "packageJson": false
     },
     "format": "esm"
+  },
+  "engines": {
+    "node": ">=24.0.0"
   }
 }

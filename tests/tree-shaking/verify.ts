@@ -95,10 +95,10 @@ const entries: EntryPoint[] = [
     expectNoReact: true,
     expectNoReconciler: true,
   },
-  // --- @silvery/theme ---
+  // --- @silvery/schemes ---
   {
-    name: "@silvery/theme (no React parts)",
-    specifier: "@silvery/theme/theme",
+    name: "@silvery/schemes (no React parts)",
+    specifier: "@silvery/schemes/theme",
     importExpr: "{ resolveThemeColor, defaultDarkTheme, generateTheme }",
     // theme.ts re-exports ThemeContext.tsx which imports React
     expectNoReact: false,

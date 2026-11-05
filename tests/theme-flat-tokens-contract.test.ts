@@ -5,7 +5,7 @@
  * Background — user's 31/32-empty-bg-tokens rabbit hole (2026-04-22):
  * On a terminal where `detectTheme` couldn't probe the palette (confidence=0),
  * the returned Theme was missing almost every `bg-*` Sterling flat token.
- * Root cause: Sterling derivation lived in `@silvery/theme` while `deriveTheme`
+ * Root cause: Sterling derivation lived in `@silvery/schemes` while `deriveTheme`
  * and detection lived in `@silvery/ansi`. Callers using `@silvery/ansi`
  * directly got a "partial" Theme with no flat tokens — $bg-surface-overlay,
  * $bg-cursor, $bg-accent-hover etc. resolved to undefined → empty cells.
@@ -23,6 +23,7 @@
  */
 
 import { describe, expect, it } from "vitest"
+import { sterling, STERLING_FLAT_TOKENS } from "@silvery/design"
 import {
   ansi16DarkTheme,
   ansi16LightTheme,
@@ -30,8 +31,7 @@ import {
   defaultLightTheme,
   builtinThemes,
   getThemeByName,
-  STERLING_FLAT_TOKENS,
-} from "@silvery/theme"
+} from "@silvery/schemes"
 import {
   defaultDarkScheme,
   defaultLightScheme,
@@ -45,7 +45,7 @@ import {
 import {
   detectScheme as detectSchemeSterling,
   detectTheme as detectThemeSterling,
-} from "@silvery/theme"
+} from "@silvery/schemes"
 
 function assertAllFlatTokensPopulated(themeName: string, theme: Record<string, unknown>): void {
   const missing: string[] = []
@@ -71,6 +71,13 @@ function assertAllFlatTokensPopulated(themeName: string, theme: Record<string, u
 }
 
 describe("contract: Sterling flat tokens populated in shipped themes", () => {
+  it.each(["light", "dark"] as const)("Sterling %s defaults populate every flat token", (mode) => {
+    assertAllFlatTokensPopulated(
+      `sterling.defaults(${mode})`,
+      sterling.defaults(mode) as unknown as Record<string, unknown>,
+    )
+  })
+
   it("ansi16DarkTheme has every flat token as a non-empty string", () => {
     assertAllFlatTokensPopulated(
       "ansi16DarkTheme",
@@ -113,7 +120,7 @@ describe("contract: Sterling flat tokens populated in shipped themes", () => {
 })
 
 describe("contract: Sterling flat tokens populated through every detection path", () => {
-  it("@silvery/theme detectTheme (no TTY → pure fallback) returns a fully-populated theme", async () => {
+  it("@silvery/schemes detectTheme (no TTY → pure fallback) returns a fully-populated theme", async () => {
     // In vitest there's no TTY, so probeColors returns null → detectTheme hits
     // the pure-fallback branch. This is the exact path the user's "31/32 empty"
     // symptom came from — it must produce a Sterling-baked theme.
@@ -124,7 +131,7 @@ describe("contract: Sterling flat tokens populated through every detection path"
     )
   })
 
-  it("@silvery/theme detectScheme (no TTY → confidence=0 fallback) returns a fully-populated theme", async () => {
+  it("@silvery/schemes detectScheme (no TTY → confidence=0 fallback) returns a fully-populated theme", async () => {
     const { theme, source, confidence } = await detectSchemeSterling()
     expect(source).toBe("fallback")
     expect(confidence).toBe(0)
@@ -134,7 +141,7 @@ describe("contract: Sterling flat tokens populated through every detection path"
     )
   })
 
-  it("@silvery/theme detectScheme with explicit override returns a fully-populated theme", async () => {
+  it("@silvery/schemes detectScheme with explicit override returns a fully-populated theme", async () => {
     const { theme, source } = await detectSchemeSterling({ override: defaultDarkScheme })
     expect(source).toBe("override")
     assertAllFlatTokensPopulated(
@@ -145,7 +152,7 @@ describe("contract: Sterling flat tokens populated through every detection path"
 
   it("silvery runtime (wrap-with-themed-provider) produces a Sterling-baked theme", async () => {
     // Post-unification (Design A, 2026-04-24): both `@silvery/ansi` and
-    // `@silvery/theme` detection paths return Sterling-baked themes. The
+    // `@silvery/schemes` detection paths return Sterling-baked themes. The
     // runtime wrapper can import from either; this test just asserts the
     // file exists and compiles (it's covered by the path-agnostic tests above).
     const runtimeSource = await import("node:fs").then((fs) =>
@@ -287,10 +294,10 @@ describe("contract: user's specific 246×122 complaint — explicit bg tokens al
     )
   })
 
-  it("@silvery/theme detectTheme fallback: all user-reported bg tokens resolve", async () => {
+  it("@silvery/schemes detectTheme fallback: all user-reported bg tokens resolve", async () => {
     const theme = await detectThemeSterling()
     assertReportedTokensPopulated(
-      "@silvery/theme detectTheme (fallback)",
+      "@silvery/schemes detectTheme (fallback)",
       theme as unknown as Record<string, unknown>,
     )
   })

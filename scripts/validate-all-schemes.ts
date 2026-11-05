@@ -7,7 +7,7 @@
  * of bundled themes.
  */
 import { loadTheme } from "@silvery/ansi"
-import { builtinPalettes } from "@silvery/theme/schemes"
+import { builtinPalettes } from "@silvery/schemes/schemes"
 
 const wcag = process.argv.includes("--wcag")
 let passed = 0

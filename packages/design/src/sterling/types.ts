@@ -7,7 +7,7 @@
  *     SAME string (D4: no Proxy).
  *   - `DesignSystem` — the contract every design-token system implements.
  *   - `FlatToken` — string-literal union of all ~50 flat hyphen keys.
- *   - `ColorScheme` — re-exported from `@silvery/ansi` (D5: unchanged).
+ *   - `ColorScheme` — the input contract in this package.
  *
  * Sterling is additive relative to the legacy `Theme` in @silvery/ansi —
  * consumers keep working through Phase 2c. Nothing here deletes.
@@ -16,7 +16,7 @@
  * @see `hub/silvery/design/v10-terminal/sterling-preflight.md` — D1-D6
  */
 
-export type { ColorScheme } from "../theme/types.ts"
+export type { ColorScheme } from "../scheme.ts"
 export type { FlattenRule } from "../flatten.ts"
 
 // ── Role / State / Surface primitives ──────────────────────────────────────
@@ -442,7 +442,7 @@ export interface ThemeShape {
 
 // ── DesignSystem contract ──────────────────────────────────────────────────
 
-import type { ColorScheme } from "../theme/types.ts"
+import type { ColorScheme } from "../scheme.ts"
 import type { FlattenRule } from "../flatten.ts"
 
 /** Contrast enforcement mode for derivation. See D3 in sterling-preflight.md. */

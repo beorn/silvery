@@ -9,8 +9,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { sterling, STERLING_FLAT_TOKENS } from "@silvery/theme/sterling"
-import { builtinPalettes } from "@silvery/theme/schemes"
+import { sterling, STERLING_FLAT_TOKENS } from "@silvery/design"
+import { builtinPalettes } from "@silvery/schemes/schemes"
 import { blend, mixSrgb, relativeLuminance } from "@silvery/color"
 
 /** WCAG contrast ratio between two hex colors (1..21). */

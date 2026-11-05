@@ -5,7 +5,7 @@
  * return themes with Sterling flat tokens (`$bg-accent`, `$bg-surface-overlay`,
  * `$border-default`, `$fg-muted`, …) baked in. There is one canonical Theme
  * shape; this module exists only so downstream code importing from
- * `@silvery/theme` (or `silvery`, via barrel re-export) continues to work.
+ * `@silvery/schemes` (or `silvery`, via barrel re-export) continues to work.
  *
  * Historical note (km-silvery.fallback-theme-empty-bg-tokens): this file used
  * to wrap `@silvery/ansi`'s detection functions with `inlineSterlingTokens` to
@@ -18,8 +18,8 @@
  *
  * @example
  * ```ts
- * import { detectTheme } from "@silvery/theme"
- * import { nord, catppuccinLatte } from "@silvery/theme/schemes"
+ * import { detectTheme } from "@silvery/schemes"
+ * import { nord, catppuccinLatte } from "@silvery/schemes/schemes"
  *
  * const theme = await detectTheme({ fallbackDark: nord, fallbackLight: catppuccinLatte })
  * ```

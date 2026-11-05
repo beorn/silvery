@@ -40,7 +40,7 @@
  *
  * Sentinel choice: rgb(254, 0, 254) "þ". Verified against all 84
  * shipped color schemes (`grep -rE '#[0-9A-Fa-f]{6}'` in
- * packages/theme/src/schemes/, 992 unique colors, no hit on `#fe00fe`).
+ * packages/schemes/src/schemes/, 992 unique colors, no hit on `#fe00fe`).
  * `#FF00FF` would NOT be safe — `xtermColors` ships a brightMagenta of
  * `#FF00FF`. The "þ" character (LATIN SMALL LETTER THORN) is similarly
  * unlikely to appear in normal UI text.
@@ -62,7 +62,7 @@ import { isStrictEnabled } from "../strict-mode.js"
 /** Sentinel cell value used to poison the prev buffer.
  *
  * Every theme-shipped color was checked: `#FE00FE` (rgb 254, 0, 254) does
- * not appear in any of the 84 schemes in packages/theme/src/schemes/. The
+ * not appear in any of the 84 schemes in packages/schemes/src/schemes/. The
  * neighbouring `#FF00FF` IS used by xtermColors (brightMagenta), so we
  * deliberately avoid it.
  *

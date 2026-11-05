@@ -350,7 +350,7 @@ export default withMermaid(
             { text: "Recipes", link: "/reference/recipes" },
             { text: "@silvery/commander", link: "/reference/commander" },
             { text: "@silvery/ansi", link: "/reference/ansi" },
-            { text: "@silvery/theme", link: "/reference/theme" },
+            { text: "@silvery/schemes", link: "/reference/theme" },
           ],
         },
         {

@@ -16,7 +16,7 @@ import { resolve, dirname } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const CLI_PATH = resolve(__dirname, "../packages/theme/src/cli.ts")
+const CLI_PATH = resolve(__dirname, "../packages/schemes/src/cli.ts")
 const BUN = process.execPath.includes("bun") ? process.execPath : "bun"
 
 /** Run the theme CLI with given args, returns stdout + exit code. */

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from "vue"
 
-// ── Palette data (extracted from @silvery/theme built-in palettes) ──────
+// ── Palette data (extracted from @silvery/schemes built-in palettes) ──────
 const palettes = [
   {
     name: "catppuccin-mocha",
@@ -1172,7 +1172,7 @@ watch(activeTab, (tab) => {
   }
 })
 
-// ── Color utilities (mirrors @silvery/theme/color.ts) ────────────────
+// ── Color utilities (mirrors @silvery/schemes/color.ts) ────────────────
 function hexToRgb(hex) {
   const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
   if (!match) return null
@@ -1253,7 +1253,7 @@ function complementColor(color) {
   return hslToHex(h + 180, s, l)
 }
 
-// ── Derive theme from palette (mirrors @silvery/theme/derive.ts) ─────
+// ── Derive theme from palette (mirrors @silvery/schemes/derive.ts) ─────
 function deriveTheme(p) {
   const dark = p.dark !== false
   const primaryColor = dark ? p.yellow : p.blue
@@ -1474,11 +1474,11 @@ function getConfigCode() {
   const p = activePalette.value
   if (!p) return ""
   if (activeTab.value === "custom") {
-    return `import { autoGenerateTheme } from "@silvery/theme"
+    return `import { autoGenerateTheme } from "@silvery/schemes"
 
 const theme = autoGenerateTheme("${customHex.value}", "${customMode.value}")`
   }
-  return `import { createTheme } from "@silvery/theme"
+  return `import { createTheme } from "@silvery/schemes"
 
 const theme = createTheme().preset("${p.name}").build()`
 }

@@ -11,7 +11,7 @@
  * returned `null`; the renderer painted the default terminal fg (white on
  * most dark terminals).
  *
- * Fix: re-export from `@silvery/theme` instead, where every Theme is run
+ * Fix: re-export from `@silvery/schemes` instead, where every Theme is run
  * through `inlineSterlingTokens`. This test locks the invariant for every
  * public theme surface that km-tui and other apps consume.
  */
@@ -20,7 +20,7 @@ import { describe, expect, test } from "vitest"
 import React from "react"
 import { Box, Text, ansi16DarkTheme, ansi16LightTheme, detectTheme } from "@silvery/ag-react"
 import { createRenderer } from "@silvery/test"
-import { defaultDarkTheme, defaultLightTheme } from "@silvery/theme"
+import { defaultDarkTheme, defaultLightTheme } from "@silvery/schemes"
 import type { Theme } from "@silvery/ansi"
 
 /** Rec. 709 luma — returns 0..1 or -1 if not a hex color. */
@@ -43,8 +43,8 @@ describe("theme: Sterling flat tokens are present on every shipped Theme", () =>
   const cases: Array<[string, Theme]> = [
     ["ansi16DarkTheme (from @silvery/ag-react)", ansi16DarkTheme],
     ["ansi16LightTheme (from @silvery/ag-react)", ansi16LightTheme],
-    ["defaultDarkTheme (from @silvery/theme)", defaultDarkTheme],
-    ["defaultLightTheme (from @silvery/theme)", defaultLightTheme],
+    ["defaultDarkTheme (from @silvery/schemes)", defaultDarkTheme],
+    ["defaultLightTheme (from @silvery/schemes)", defaultLightTheme],
   ]
 
   for (const [name, theme] of cases) {
@@ -58,7 +58,7 @@ describe("theme: Sterling flat tokens are present on every shipped Theme", () =>
 
   test("detectTheme() returns a Sterling-inlined Theme (fallback path)", async () => {
     // No terminal attached in vitest — detectTheme falls back to the ANSI 16
-    // theme derived from caps.darkBackground. The wrapper in @silvery/theme
+    // theme derived from caps.darkBackground. The wrapper in @silvery/schemes
     // must still run it through inlineSterlingTokens.
     const theme = await detectTheme({ caps: { colorLevel: "ansi16", darkBackground: true } })
     const t = theme as unknown as Record<string, string | undefined>

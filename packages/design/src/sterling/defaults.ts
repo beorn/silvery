@@ -4,7 +4,7 @@
  * Latte for light — the same defaults the existing builtinThemes use).
  */
 
-import type { ColorScheme } from "../theme/types.ts"
+import type { ColorScheme } from "../scheme.ts"
 
 /**
  * A hand-tuned neutral dark scheme — not a copy of any catalog palette, but

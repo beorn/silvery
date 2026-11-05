@@ -168,7 +168,7 @@ Link        fg-link | fg-link-hover
 ### Type Definition
 
 ```typescript
-import type { Theme } from "@silvery/theme"
+import type { Theme } from "@silvery/schemes"
 
 // Type-level: Theme = SterlingTheme = FlatTokens & Roles & { ...metadata } & CategoricalHues
 //
@@ -176,14 +176,14 @@ import type { Theme } from "@silvery/theme"
 // AND flat hyphen-keys reference the same string on the same object.
 ```
 
-See [`Theme`](/reference/sterling#the-shape) in the Sterling primer for the full structural breakdown, or `packages/ansi/src/sterling/types.ts` for the source of truth.
+See [`Theme`](/reference/sterling#the-shape) in the Sterling primer for the full structural breakdown, or `packages/design/src/sterling/types.ts` for the source of truth.
 
 ## Sterling DesignSystem
 
 Sterling is exposed as the canonical `DesignSystem` value. All theme construction goes through it.
 
 ```typescript
-import { sterling } from "@silvery/theme"
+import { sterling } from "@silvery/schemes"
 
 // Five derivation entry points
 sterling.deriveFromScheme(scheme, opts?)              // 22-color scheme → Theme
@@ -320,7 +320,7 @@ resolveToken("red", theme) // pass-through (named CSS color)
 
 ## Built-in Schemes
 
-`@silvery/theme` ships 84 color schemes covering popular terminal and editor color schemes.
+`@silvery/schemes` ships 84 color schemes covering popular terminal and editor color schemes.
 
 ### Scheme Families
 
@@ -395,7 +395,7 @@ const catppuccin = getThemeByName("catppuccin-mocha")
 
 ## Color Utilities
 
-Low-level color manipulation, available from `@silvery/color` (re-exported by `@silvery/theme` and `silvery/theme`).
+Low-level color manipulation, available from `@silvery/color` (re-exported by `@silvery/schemes` and `silvery/theme`).
 
 ### Blending and Manipulation
 

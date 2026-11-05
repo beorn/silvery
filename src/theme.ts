@@ -1,4 +1,3 @@
-// silvery/theme — re-exports from @silvery/theme
-// Theme tokens, palettes, ThemeProvider, useTheme, color utilities
-
-export * from "@silvery/theme"
+// silvery/theme — design tokens and terminal color schemes.
+export * from "@silvery/design"
+export * from "@silvery/schemes"

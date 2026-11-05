@@ -9,6 +9,11 @@ _Silvery's canonical design system_
 
 Sterling is the design-token system that ships with silvery. As of **silvery 0.20.0**, Sterling is **THE Theme** — `export type Theme = SterlingTheme`. There is no other theme shape; every silvery component, every `$token`, every theme you author flows through Sterling.
 
+From 0.28.0, import Sterling, `Theme`, `ColorScheme` and CSS helpers from
+`@silvery/design`. Terminal catalogs and tooling live in `@silvery/schemes`;
+ANSI constructors and terminal detection remain in `@silvery/ansi`.
+`silvery/theme` combines the design and schemes exports for app authors.
+
 Sterling is opinionated where the legacy system was loose:
 
 - **Two access paths to every leaf**: nested roles (`theme.accent.bg`) and flat hyphen-keys (`theme["bg-accent"]`) reference the same string on the same object.
@@ -25,7 +30,7 @@ If you're migrating from silvery 0.19.x, read this then jump to the [migration m
 Every Sterling Theme is a single frozen object. The same hex leaves appear at two paths:
 
 ```ts
-import { sterling } from "@silvery/theme"
+import { sterling } from "@silvery/design"
 
 const theme = sterling.deriveFromScheme(myScheme)
 
@@ -142,7 +147,7 @@ For the full token-picking decision tree, see [Token Taxonomy](/reference/token-
 Sterling is exposed as a `DesignSystem` value. Pick the entry point that matches what you have:
 
 ```ts
-import { sterling } from "@silvery/theme"
+import { sterling } from "@silvery/design"
 
 // 1. From a 22-color terminal scheme — Sterling's primary path
 const theme = sterling.deriveFromScheme(myColorScheme)
@@ -309,6 +314,23 @@ For TypeScript code that read fields off `Theme` directly:
 - **[Token Taxonomy](/reference/token-taxonomy)** — the decision tree: `$brand` vs `$red` vs `$error` vs `$color1` vs `$fg-accent`.
 - **[Theming](/guide/styling)** — `ThemeProvider`, `Box theme={}`, switching schemes at runtime.
 - **[Color Schemes](/reference/color-schemes)** — the 22-slot terminal scheme model that feeds Sterling.
-- **[@silvery/theme reference](/reference/theme)** — full type definitions for ColorScheme, Theme, DesignSystem.
+- **[@silvery/schemes reference](/reference/theme)** — full type definitions for ColorScheme, Theme, DesignSystem.
 - **[Custom Tokens](/reference/custom-tokens)** — `defineTokens()` for app-specific roles on top of Sterling.
 - **[Capability Tiers](/reference/capability-tiers)** — how Sterling tokens degrade across truecolor / 256 / ANSI 16 / mono.
+
+## CSS pages
+
+```ts
+import { themeCss, THEME_CSS_TOKENS } from "@silvery/design"
+
+const styleSheet = themeCss()
+// Or: themeCss({ light: myLightTheme, dark: myDarkTheme })
+```
+
+The sheet registers every flat token and all eight categorical hues as inherited
+CSS colors. Values use `light-dark(light, dark)` when the modes differ; equal
+values stay literal. The page selects its modes with `color-scheme` or a
+`color-scheme` meta. A missing token throws with its name and mode.
+
+Use `THEME_CSS_TOKENS` to enumerate the available custom properties, and
+`themeToCSSVars(theme)` when you need a single theme as a property map.

@@ -34,7 +34,7 @@ import {
   oklchToHex,
   relativeLuminance,
 } from "@silvery/color"
-import type { ColorScheme } from "../theme/types.ts"
+import type { ColorScheme } from "../scheme.ts"
 import type {
   AccentRole,
   BorderRole,

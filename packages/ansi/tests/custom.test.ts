@@ -11,7 +11,7 @@ import {
   defaultDarkScheme,
 } from "@silvery/ansi"
 import { blend } from "@silvery/color"
-import { STERLING_FLAT_TOKENS } from "@silvery/theme/sterling"
+import { STERLING_FLAT_TOKENS } from "@silvery/design"
 
 const theme = deriveTheme(defaultDarkScheme)
 

@@ -3,7 +3,7 @@
  */
 
 import { hexToRgb } from "@silvery/color"
-import { COLOR_SCHEME_FIELDS, type ColorScheme } from "@silvery/ansi"
+import { COLOR_SCHEME_FIELDS, type ColorScheme } from "@silvery/design"
 
 /** Validation result from validateColorScheme(). */
 export interface ValidationResult {

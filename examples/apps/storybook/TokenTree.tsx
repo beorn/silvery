@@ -11,7 +11,7 @@
 
 import React, { useMemo } from "react"
 import { Box, Text, Muted, Divider, Small } from "silvery"
-import type { SterlingTheme } from "@silvery/theme"
+import type { Theme as SterlingTheme } from "@silvery/design"
 import { TokenChip } from "./shared/TokenChip.tsx"
 
 /** A flat list of tokens in display order. Drives keyboard navigation. */
@@ -52,11 +52,13 @@ export function flattenTokens(theme: SterlingTheme): FlatTokenEntry[] {
       out.push({ group: role, path: `${role}.border`, hex: r.border, label: "border" })
     }
     // Only accent emits fg.hover / fg.active after the prune.
-    if (r.hover.fg)
+    if (r.hover.fg) {
       out.push({ group: role, path: `${role}.hover.fg`, hex: r.hover.fg, label: "hover.fg" })
+    }
     out.push({ group: role, path: `${role}.hover.bg`, hex: r.hover.bg, label: "hover.bg" })
-    if (r.active.fg)
+    if (r.active.fg) {
       out.push({ group: role, path: `${role}.active.fg`, hex: r.active.fg, label: "active.fg" })
+    }
     out.push({ group: role, path: `${role}.active.bg`, hex: r.active.bg, label: "active.bg" })
   }
 

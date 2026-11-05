@@ -2,7 +2,7 @@
 
 Pure color math utilities — hex/RGB/HSL conversion, blending, contrast checking. Zero dependencies.
 
-Used by [@silvery/ansi](../ansi/) for terminal styling and theme derivation, and by [@silvery/theme](../theme/) for palette generation.
+Used by [@silvery/ansi](../ansi/) for terminal styling and theme derivation, and by [@silvery/schemes](../theme/) for palette generation.
 
 ## Install
 
@@ -65,7 +65,7 @@ ensureContrast("#777", "#888", 4.5)
 ```
 @silvery/color          ← pure math, zero deps
   └─ @silvery/ansi      ← terminal styling, detection, theme derivation
-       └─ @silvery/theme ← 84 color schemes, ThemeProvider, useTheme
+       └─ @silvery/schemes ← 84 color schemes, ThemeProvider, useTheme
             └─ silvery   ← full framework barrel
 ```
 

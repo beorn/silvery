@@ -16,19 +16,20 @@
  * derives from a ColorScheme reconstructed from the theme's own palette —
  * lossy for ANSI slot colors but sufficient for Sterling's 6-slot surface.
  *
- * Exported from `@silvery/ansi` for advanced users who author Theme objects
+ * Exported from `@silvery/design` for advanced users who author Theme objects
  * by hand and want to ensure the flat tokens are populated; for scheme →
  * Theme construction `deriveTheme`/`loadTheme` handle this automatically.
  */
 
 import { blend } from "@silvery/color"
-import type { ColorScheme, Theme } from "../theme/types.ts"
+import type { ColorScheme } from "../scheme.ts"
+import type { Theme } from "./types.ts"
 import { deriveRoles } from "./derive.ts"
 import type { FlatToken } from "./types.ts"
 
 /**
  * A Theme with Sterling flat tokens layered on. Every shipped Theme in
- * @silvery/theme (builtin schemes + detect* wrappers) is inlined. Kept as a
+ * @silvery/schemes (builtin schemes + detect* wrappers) is inlined. Kept as a
  * local type alias; the public barrel does not re-export this shape because
  * `Theme` already accepts Sterling keys via index signature.
  */

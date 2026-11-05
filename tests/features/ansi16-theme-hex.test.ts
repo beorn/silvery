@@ -7,14 +7,14 @@
  * in the Theme object itself.
  *
  * @see packages/ansi/src/theme/default-schemes.ts
- * @see packages/theme/src/generate.ts
- * @see packages/theme/src/schemes/index.ts
+ * @see packages/schemes/src/generate.ts
+ * @see packages/schemes/src/schemes/index.ts
  */
 
 import { describe, test, expect } from "vitest"
 import { ansi16DarkTheme, ansi16LightTheme, deriveAnsi16Theme } from "@silvery/ansi"
-import { nord, catppuccinMocha } from "@silvery/theme"
-import { generateTheme } from "@silvery/theme"
+import { nord, catppuccinMocha } from "@silvery/schemes"
+import { generateTheme } from "@silvery/schemes"
 import type { Theme } from "@silvery/ansi"
 
 const HEX_RE = /^#[0-9a-f]{6}$/i

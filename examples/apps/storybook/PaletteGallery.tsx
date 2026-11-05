@@ -29,7 +29,7 @@ import {
   useBoxRectDangerously,
   type Key,
 } from "silvery"
-import { sterling, type SterlingTheme } from "@silvery/theme"
+import { sterling, type Theme as SterlingTheme } from "@silvery/design"
 import type { ColorScheme } from "@silvery/ansi"
 import { quantizeSterlingTheme } from "./shared/quantize.ts"
 import type { Tier } from "./TierBar.tsx"

@@ -49,10 +49,10 @@ const ALLOWED_FILES = new Set<string>([
   "packages/ag-term/src/device-attrs.ts",
   "packages/ansi/src/theme/detect.ts",
   // Standalone-CLI perimeter: the theme picker owns the whole terminal for
-  // its one-shot lifetime, and @silvery/theme deliberately has NO ag-term
+  // its one-shot lifetime, and @silvery/schemes deliberately has NO ag-term
   // dependency (layering: theme sits below the runtime). Route through the
   // owner if theme ever gains an ag-term-adjacent dep.
-  "packages/theme/src/cli.ts",
+  "packages/schemes/src/cli.ts",
 ])
 
 /** Directory prefixes (relative, forward-slash) allowed to touch raw mode. */

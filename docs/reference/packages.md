@@ -7,6 +7,8 @@ Most apps only need `silvery` — it re-exports everything you need from the int
 | Package           | npm               | Description                                                     |
 | ----------------- | ----------------- | --------------------------------------------------------------- |
 | `silvery`         | `silvery`         | Components, hooks, renderer — the one package you need          |
+| `@silvery/design` | `@silvery/design` | Sterling theme factories, tokens, contrast helpers and CSS |
+| `@silvery/schemes` | `@silvery/schemes` | 84 terminal schemes, detection, builders and import/export tools |
 | `@silvery/test`   | `@silvery/test`   | Testing utilities (virtual renderer, Playwright-style locators) |
 | `@silvery/ink`    | `@silvery/ink`    | Ink compatibility layer for migration                           |
 | `@silvery/create` | `@silvery/create` | App composition and state management _(coming soon)_            |
@@ -20,7 +22,6 @@ These are implementation details — you'll only need them for advanced use case
 | `@silvery/ag-react`    | `@silvery/ag-react`    | React reconciler, components, and hooks                     |
 | `@silvery/ag-term`     | `@silvery/ag-term`     | Terminal runtime, ANSI output, rendering pipeline           |
 | `@silvery/ag-react/ui` | `@silvery/ag-react/ui` | Component library (45+ components) + CLI progress utilities |
-| `@silvery/theme`       | `@silvery/theme`       | Theme tokens, 84 color schemes, theme CLI                   |
 | `@silvery/ink`         | `@silvery/ink`         | Legacy Ink/Chalk compatibility                              |
 
 ## Import Conventions
@@ -54,7 +55,7 @@ import { run, createApp, useApp } from "silvery/runtime"
 import { createTerm, parseMouseSequence } from "silvery/term"
 
 // Theme system
-import { sterling, type SterlingTheme } from "silvery/theme"
+import { sterling, type Theme } from "silvery/theme"
 
 // UI subpackages
 import { Spinner, ProgressBar } from "silvery/ui/cli"
@@ -137,7 +138,7 @@ const data = await withSpinner(fetchData(), "Loading...")
 
 App composition and state management. _(Coming soon — API is in active development.)_
 
-## `@silvery/theme`
+## `@silvery/schemes`
 
 Theme system with 84 color schemes, auto-generation from a single color, semantic tokens, and contrast checking.
 

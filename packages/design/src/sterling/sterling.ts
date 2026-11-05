@@ -1,14 +1,14 @@
 /**
  * Sterling — silvery's canonical DesignSystem.
  *
- * This is the default system shipped from `@silvery/theme`. It implements
+ * This is the default system shipped from `@silvery/design`. It implements
  * the `DesignSystem` contract from `types.ts` and serves as the reference
  * for alternative systems (`@silvery/design-material`, `-primer`, etc.).
  *
  * The flat-projection (`theme["bg-accent"]` as a sibling of `theme.accent.bg`
  * on the same object) is NOT Sterling-specific — it's a framework feature.
  * Sterling opts in via `flatten: true` in {@link defineDesignSystem}, which
- * auto-applies `bakeFlat` (from `@silvery/ansi`) to every derivation's
+ * auto-applies `bakeFlat` (from `@silvery/design`) to every derivation's
  * output. The default rule is channel-role-state (`fg-accent`, `bg-accent-hover`,
  * `fg-on-error`, `bg-surface-subtle`, `border-focus`, …) — exactly what
  * Sterling's pre-generalization `populateFlat` produced.
@@ -19,7 +19,7 @@
  */
 
 import { blend } from "@silvery/color"
-import type { ColorScheme } from "../theme/types.ts"
+import type { ColorScheme } from "../scheme.ts"
 import type { DeepPartial, DeriveOptions, DesignSystem, Theme, ThemeShape } from "./types.ts"
 import { deriveTheme, mergePartial } from "./derive.ts"
 import { STERLING_FLAT_TOKENS } from "./flat-tokens.ts"

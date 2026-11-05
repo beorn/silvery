@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * @silvery/theme CLI — browse and preview built-in themes.
+ * @silvery/schemes CLI — browse and preview built-in themes.
  *
  * Usage:
  *   bun theme                    # Interactive theme browser
@@ -385,7 +385,7 @@ async function interactiveBrowser(): Promise<void> {
 
     // Header
     process.stdout.write(
-      `  \x1b[1m@silvery/theme\x1b[0m — ${names.length} palettes  (j/k navigate, Enter show, q quit)\n\n`,
+      `  \x1b[1m@silvery/schemes\x1b[0m — ${names.length} palettes  (j/k navigate, Enter show, q quit)\n\n`,
     )
 
     // List

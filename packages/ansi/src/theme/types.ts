@@ -8,58 +8,7 @@
  * Pipeline: Scheme catalog → ColorScheme (22) → deriveTheme() → Theme (33)
  */
 
-export interface ColorScheme {
-  name?: string
-  dark?: boolean
-  primary?: string
-  black: string
-  red: string
-  green: string
-  yellow: string
-  blue: string
-  magenta: string
-  cyan: string
-  white: string
-  brightBlack: string
-  brightRed: string
-  brightGreen: string
-  brightYellow: string
-  brightBlue: string
-  brightMagenta: string
-  brightCyan: string
-  brightWhite: string
-  foreground: string
-  background: string
-  cursorColor: string
-  cursorText: string
-  selectionBackground: string
-  selectionForeground: string
-}
-
-export const COLOR_SCHEME_FIELDS = [
-  "black",
-  "red",
-  "green",
-  "yellow",
-  "blue",
-  "magenta",
-  "cyan",
-  "white",
-  "brightBlack",
-  "brightRed",
-  "brightGreen",
-  "brightYellow",
-  "brightBlue",
-  "brightMagenta",
-  "brightCyan",
-  "brightWhite",
-  "foreground",
-  "background",
-  "cursorColor",
-  "cursorText",
-  "selectionBackground",
-  "selectionForeground",
-] as const
+export type { ColorScheme } from "@silvery/design"
 
 export type AnsiColorName =
   | "black"
@@ -94,7 +43,7 @@ export type AnsiColorName =
  * `deriveTheme` paths during the 0.19.x window for consumers that haven't
  * migrated; they will be removed in 0.20.0.
  */
-export type { Theme } from "../sterling/types.ts"
+export type { Theme } from "@silvery/design"
 
 /**
  * Metadata describing how the active color scheme was determined.

@@ -18,7 +18,7 @@
  */
 
 import { describe, expect, it } from "vitest"
-import { builtinPalettes, createTheme, getThemeByName, quickTheme } from "@silvery/theme"
+import { builtinPalettes, createTheme, getThemeByName, quickTheme } from "@silvery/schemes"
 import { autoGenerateTheme } from "@silvery/ansi"
 import { deriveTheme, type Theme } from "@silvery/ansi"
 import { checkContrast, ensureContrast } from "@silvery/color"

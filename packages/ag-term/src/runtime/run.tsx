@@ -39,7 +39,7 @@ import {
   type PaletteProbeState,
   type TerminalProfile,
 } from "@silvery/ansi"
-import { nord, catppuccinLatte } from "@silvery/theme/schemes"
+import { nord, catppuccinLatte } from "@silvery/schemes/schemes"
 import { ThemeProvider } from "@silvery/ag-react/ThemeProvider"
 import type { TerminalCaps } from "../terminal-caps"
 import { setInputOwnerMouseOptions, type InputOwner } from "./input-owner"

@@ -172,13 +172,6 @@ export {
 } from "./color-maps"
 
 // =============================================================================
-// Flat Projection (generic — any nested-hex DesignSystem Theme)
-// =============================================================================
-
-export { bakeFlat, defaultFlattenRule } from "./flatten"
-export type { FlattenRule } from "./flatten"
-
-// =============================================================================
 // Terminal Control Sequences
 // =============================================================================
 
@@ -321,7 +314,6 @@ export {
 } from "./theme/default-schemes"
 export type { ColorScheme, Theme, Variant, AnsiPrimary, HueName } from "./theme/types"
 export type { AnsiColorName as PaletteColorName } from "./theme/types"
-export { COLOR_SCHEME_FIELDS } from "./theme/types"
 export type { VariantName, KnownVariant } from "./theme/tokens"
 export { KNOWN_VARIANTS } from "./theme/tokens"
 
@@ -389,57 +381,3 @@ export type { BgModeDetector, BgModeDetectorOptions, BgMode } from "./color-sche
 export { fromColors, assignPrimaryToSlot } from "./theme/generators"
 export { autoGenerateTheme } from "./theme/auto-generate"
 export { generateTheme } from "./theme/generate"
-
-// =============================================================================
-// Sterling — silvery's canonical design system
-//
-// Lives here (not in @silvery/theme) so `deriveTheme`, `loadTheme`, and
-// every shipped Theme constant inline Sterling flat tokens
-// (`$bg-accent`, `$bg-surface-overlay`, `$border-default`, `$fg-muted`, …)
-// out of the box. Consumers never see a "partial" Theme that's missing
-// flat tokens — there is one Theme shape, and `@silvery/ansi` produces it.
-// =============================================================================
-
-export {
-  sterling,
-  defineDesignSystem,
-  deriveTheme as sterlingDeriveTheme,
-  deriveRoles as sterlingDeriveRoles,
-  mergePartial as sterlingMergePartial,
-  inlineSterlingTokens,
-  STERLING_FLAT_TOKENS,
-  PUBLIC_TOKENS,
-  FAMILY_ORDER,
-  groupTokensByFamily,
-  defaultScheme as sterlingDefaultScheme,
-  WCAG_AA,
-  autoLift as sterlingAutoLift,
-  checkAA as sterlingCheckAA,
-  ContrastError as SterlingContrastError,
-} from "./sterling/index"
-export type {
-  AccentRole,
-  BorderRole,
-  ContrastMode as SterlingContrastMode,
-  ContrastViolation as SterlingContrastViolation,
-  CursorRole,
-  DeepPartial as SterlingDeepPartial,
-  DerivationStep as SterlingDerivationStep,
-  DerivationTrace as SterlingDerivationTrace,
-  DeriveOptions as SterlingDeriveOptions,
-  DesignSystem,
-  DisabledRole,
-  FlatToken,
-  FlatTokens,
-  InlinedTheme,
-  /** @deprecated Use `StatusRole`. */
-  InteractiveRole,
-  MutedRole,
-  Roles as SterlingRoles,
-  StatePair,
-  StatusRole,
-  SurfaceRole,
-  Theme as SterlingTheme,
-  ThemeShape,
-  TokenManifestEntry,
-} from "./sterling/index"

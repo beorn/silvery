@@ -907,7 +907,7 @@ export interface SelectionPaintOptions {
  * Default selection-highlight color — a desaturated blue-grey that reads as
  * a uniform highlight across the full selection range, including trailing
  * whitespace. Stopgap until the existing `selectionbg` theme token (defined
- * in `packages/theme/src/validate-theme.ts` and derived per-palette in
+ * in `packages/schemes/src/validate-theme.ts` and derived per-palette in
  * `packages/ansi/src/theme/derive.ts`) is plumbed through paintFrame.
  * Tracked in `km-silvery.selection-theme-tokens`.
  *

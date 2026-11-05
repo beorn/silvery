@@ -2,7 +2,7 @@
  * Palette generators — produce a ColorScheme from color inputs.
  *
  * These generators are scheme-independent (no built-in palette lookup).
- * For preset lookup, use fromPreset() in @silvery/theme.
+ * For preset lookup, use fromPreset() in @silvery/schemes.
  */
 
 import { hexToOklch, oklchToHex, brighten, darken, blend, relativeLuminance } from "@silvery/color"

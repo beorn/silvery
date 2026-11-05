@@ -128,7 +128,7 @@ nearestAnsi16([255, 0, 0]) // → nearest 16-color index
 ```
 @silvery/color          ← pure math (hex/RGB/HSL, blending, contrast)
   └─ @silvery/ansi      ← THIS: terminal styling + detection + control
-       └─ @silvery/theme ← palettes, ThemeProvider, useTheme
+       └─ @silvery/schemes ← palettes, ThemeProvider, useTheme
             └─ silvery   ← full framework barrel
 ```
 

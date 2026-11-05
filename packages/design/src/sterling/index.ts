@@ -1,24 +1,20 @@
 /**
  * Sterling — silvery's canonical design system.
  *
- * Sterling lives in `@silvery/ansi` because `deriveTheme`, `loadTheme`, and
- * every shipped Theme constant need to inline its flat tokens
- * (`$bg-accent`, `$bg-surface-overlay`, `$border-default`, …). Keeping it
- * in a separate package left a two-shape gap — themes from `@silvery/ansi`
- * missed flat tokens — which caused the "31/32 empty bg tokens on fallback"
- * regression.
+ * Sterling lives in `@silvery/design`, depending only on color math.
+ * ANSI constructors consume `inlineSterlingTokens` here so every shipped
+ * Theme retains its flat tokens (`$bg-accent`, `$border-default`, …).
  *
  * @example
  * ```ts
- * import { sterling, deriveTheme } from "@silvery/ansi"
- * import { nord } from "@silvery/theme"
+ * import { sterling } from "@silvery/design"
  *
- * const theme = deriveTheme(nord)       // Sterling flat tokens inlined
+ * const theme = sterling.defaults("dark")
  * theme["bg-accent"]                    // "#88C0D0"
  * theme["bg-accent-hover"]              // OKLCH +0.04L on accent.bg
  *
  * // Sterling entry point for custom DesignSystems
- * const custom = sterling.deriveFromScheme(nord)
+ * const custom = sterling.deriveFromScheme(myScheme)
  * ```
  */
 

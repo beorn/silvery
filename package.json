@@ -1,6 +1,6 @@
 {
   "name": "silvery",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "description": "React for modern terminal apps — powerful apps, polished UIs, proudly terminal",
   "keywords": [
     "ansi",
@@ -93,7 +93,7 @@
   "scripts": {
     "build": "tsdown && bun build ./bin/silvery.ts --target=node --outfile ./dist/bin/silvery.js && bun scripts/publish-shebang.ts",
     "prepack": "bun run build",
-    "build:all": "bun run build && tsdown -W -F '@silvery/ag' -F '@silvery/ag-react' -F '@silvery/ag-term' -F '@silvery/ansi' -F '@silvery/color' -F '@silvery/command' -F '@silvery/commander' -F '@silvery/commands' -F '@silvery/config' -F '@silvery/create' -F '@silvery/headless' -F '@silvery/ink' -F '@silvery/scope' -F '@silvery/selection' -F '@silvery/signals' -F '@silvery/syntax' -F '@silvery/theme'",
+    "build:all": "bun run build && tsdown -W -F '@silvery/ag' -F '@silvery/ag-react' -F '@silvery/ag-term' -F '@silvery/ansi' -F '@silvery/color' -F '@silvery/design' -F '@silvery/command' -F '@silvery/commander' -F '@silvery/commands' -F '@silvery/config' -F '@silvery/create' -F '@silvery/headless' -F '@silvery/ink' -F '@silvery/scope' -F '@silvery/selection' -F '@silvery/signals' -F '@silvery/syntax' -F '@silvery/schemes'",
     "test": "NODE_ENV=test BUN_RUNTIME_TRANSPILER_CACHE_PATH=\"${HOME}/.cache/silvercode/bun-transpiler-silvery-test\" bunx --bun vitest run",
     "test:fast": "NODE_ENV=test BUN_RUNTIME_TRANSPILER_CACHE_PATH=\"${HOME}/.cache/silvercode/bun-transpiler-silvery-test\" bunx --bun vitest run --reporter=dot",
     "typecheck": "tsc --noEmit",
@@ -108,7 +108,7 @@
     "docs:preview": "vitepress preview docs",
     "docs:gen": "bun scripts/gen-token-docs.ts && oxfmt docs/reference/tokens.md",
     "docs:check": "bun run docs:gen && git diff --exit-code docs/reference/tokens.md",
-    "theme": "bun packages/theme/src/cli.ts",
+    "theme": "bun packages/schemes/src/cli.ts",
     "demo": "bun examples/bin/cli.ts",
     "example:storybook": "bun examples/apps/storybook/index.tsx",
     "compat": "bun packages/ink/scripts/compat-check.ts",
@@ -119,10 +119,10 @@
   },
   "dependencies": {
     "@chenglou/pretext": "^0.0.8",
-    "@silvery/color": "0.27.0",
-    "@silvery/commander": "0.27.0",
-    "@silvery/signals": "0.27.0",
-    "@silvery/syntax": "0.27.0",
+    "@silvery/color": "0.28.0",
+    "@silvery/commander": "0.28.0",
+    "@silvery/signals": "0.28.0",
+    "@silvery/syntax": "0.28.0",
     "@termless/core": ">=0.9.1 <1.0.0",
     "css-select": "^7.0.0",
     "css-what": "^8.0.0",
@@ -130,15 +130,16 @@
     "loggily": "^0.13.0",
     "react-reconciler": "^0.33.0",
     "slice-ansi": "^9.0.1",
-    "string-width": "^8.3.0"
+    "string-width": "^8.3.0",
+    "@silvery/design": "0.28.0",
+    "@silvery/schemes": "0.28.0"
   },
   "devDependencies": {
     "@braintree/sanitize-url": "^7.1.2",
-    "@silvery/ag": "0.27.0",
-    "@silvery/ag-react": "0.27.0",
-    "@silvery/ag-term": "0.27.0",
-    "@silvery/ansi": "0.27.0",
-    "@silvery/theme": "0.27.0",
+    "@silvery/ag": "0.28.0",
+    "@silvery/ag-react": "0.28.0",
+    "@silvery/ag-term": "0.28.0",
+    "@silvery/ansi": "0.28.0",
     "@termless/ghostty": ">=0.9.1 <1.0.0",
     "@termless/ghostty-native": ">=0.9.1 <1.0.0",
     "@termless/test": ">=0.9.1 <1.0.0",
@@ -310,7 +311,9 @@
       "@silvery/scope",
       "@silvery/selection",
       "@silvery/signals",
-      "@silvery/syntax"
+      "@silvery/syntax",
+      "@silvery/design",
+      "@silvery/schemes"
     ]
   },
   "xtermjsIsReferenceOnly": "REFERENCE-ONLY (xterm.js): this is the differential oracle for the ANSI-fidelity harness — createTermless + the SILVERY_STRICT_TERMINAL cross-check. The production shell guest is vterm (@si/vterm/21016). Removing @termless/xtermjs does not retire xterm; it deletes the proof that vterm is correct. @pm/22783 Track 2."

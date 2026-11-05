@@ -43,7 +43,7 @@
  */
 
 import { describe, expect, it } from "vitest"
-import { builtinPalettes } from "@silvery/theme"
+import { builtinPalettes } from "@silvery/schemes"
 import { deriveTheme } from "@silvery/ansi"
 import { validateThemeInvariants } from "@silvery/ansi"
 

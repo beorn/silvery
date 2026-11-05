@@ -11,13 +11,13 @@
  */
 
 import { describe, it, expect } from "vitest"
+import { STERLING_FLAT_TOKENS } from "@silvery/design"
 import {
-  STERLING_FLAT_TOKENS,
   defaultDarkTheme,
   defaultLightTheme,
   ansi16DarkTheme,
   ansi16LightTheme,
-} from "@silvery/theme"
+} from "@silvery/schemes"
 
 const HEX = /^#[0-9a-fA-F]{6}$/
 

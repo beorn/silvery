@@ -7,6 +7,51 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-11-04
+
+### Added
+
+- `@silvery/design`: Sterling theme factories, the canonical `Theme` and
+  `ColorScheme` types, flat-token metadata, contrast helpers and CSS. Its only
+  runtime dependency is `@silvery/color`.
+- `themeCss(pair?)` emits registered color properties for every flat token and
+  categorical hue, with light/dark values. `THEME_CSS_TOKENS` lists those names.
+  Omitting the pair uses Sterling's defaults; missing values name the token
+  and mode in an error. `themeToCSSVars` moves here unchanged.
+
+### Changed
+
+- `@silvery/theme` becomes the published `@silvery/schemes`: the existing
+  catalog, detection wrappers, builders, generators, validation, aliases,
+  Base16 tooling and CLI keep their behavior. Replace scheme imports with
+  `@silvery/schemes`; replace design imports with `@silvery/design`.
+- `silvery/theme` re-exports design and schemes. ANSI constructors retain
+  their derivation algorithms and populate the same flat tokens.
+
+### Removed
+
+Breaking under 0.x: `@silvery/ansi` no longer exports Sterling runtime names.
+Import these from `@silvery/design` instead:
+
+- Same names: `sterling`, `defineDesignSystem`, `inlineSterlingTokens`,
+  `STERLING_FLAT_TOKENS`, `PUBLIC_TOKENS`, `FAMILY_ORDER`, `groupTokensByFamily`,
+  `WCAG_AA`, `bakeFlat`, `defaultFlattenRule`, `COLOR_SCHEME_FIELDS`.
+- Alias changes: `sterlingDeriveTheme` → `deriveTheme`, `sterlingDeriveRoles`
+  → `deriveRoles`, `sterlingMergePartial` → `mergePartial`,
+  `sterlingDefaultScheme` → `defaultScheme`, `sterlingAutoLift` → `autoLift`,
+  `sterlingCheckAA` → `checkAA`, `SterlingContrastError` → `ContrastError`.
+- Types with unchanged names: `AccentRole`, `BorderRole`, `CursorRole`,
+  `DesignSystem`, `DisabledRole`, `FlatToken`, `FlatTokens`, `InlinedTheme`,
+  `InteractiveRole`, `MutedRole`, `StatePair`, `StatusRole`, `SurfaceRole`,
+  `ThemeShape`, `TokenManifestEntry`, `FlattenRule`.
+- Type aliases lose their `Sterling` prefix: `ContrastMode`,
+  `ContrastViolation`, `DeepPartial`, `DerivationStep`, `DerivationTrace`,
+  `DeriveOptions`, `Roles`, `Theme`.
+
+ANSI keeps type-only re-exports of `Theme` and `ColorScheme`, which its public
+signatures use. ANSI's own `deriveTheme` is unchanged. The old
+`@silvery/theme/sterling` compatibility subpath is removed.
+
 ## [0.27.0] - 2026-10-27
 
 ### Added

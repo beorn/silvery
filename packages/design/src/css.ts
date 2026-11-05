@@ -3,17 +3,53 @@
  *
  * Emits Sterling flat tokens (`--fg-accent`, `--bg-surface-subtle`,
  * `--border-focus`, …) as 1:1 CSS custom properties. The flat-token
- * grammar is the canonical web-facing surface — see
- * `hub/silvery/design/v10-terminal/design-system.md` §"Flat — the
- * user-facing form".
+ * grammar is the canonical web-facing surface.
  *
  * Every shipped Theme has Sterling flat keys baked on at construction
- * (via `inlineSterlingTokens` in `./schemes/index.ts`) so this walk
+ * (by its constructor or `inlineSterlingTokens`) so this walk
  * produces a complete export without needing a separate derivation pass.
  */
 
-import type { Theme } from "@silvery/ansi"
-import { STERLING_FLAT_TOKENS } from "@silvery/ansi"
+import type { Theme } from "./sterling/types.ts"
+import { STERLING_FLAT_TOKENS } from "./sterling/flat-tokens.ts"
+import { sterling } from "./sterling/sterling.ts"
+
+/** Every page color: Sterling's flat tokens and its eight categorical hues. */
+export const THEME_CSS_TOKENS = [
+  ...STERLING_FLAT_TOKENS,
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "teal",
+  "blue",
+  "purple",
+  "pink",
+] as const
+
+/**
+ * A paired light/dark style sheet with registered color custom properties.
+ * Pages select their modes through CSS color-scheme or a color-scheme meta.
+ * With no pair, uses Sterling's light and dark defaults.
+ * @throws When a token is missing, naming the token and its mode.
+ */
+export function themeCss(pair?: { light: Theme; dark: Theme }): string {
+  const { light, dark } = pair ?? {
+    light: sterling.defaults("light"),
+    dark: sterling.defaults("dark"),
+  }
+  const props: string[] = []
+  const vars: string[] = []
+  for (const name of THEME_CSS_TOKENS) {
+    const l = light[name]
+    const d = dark[name]
+    if (typeof l !== "string") throw new Error(`Sterling has no ${name} colour in light mode.`)
+    if (typeof d !== "string") throw new Error(`Sterling has no ${name} colour in dark mode.`)
+    props.push(`@property --${name}{syntax:"<color>";inherits:true;initial-value:${l}}`)
+    vars.push(`--${name}:${l === d ? l : `light-dark(${l},${d})`}`)
+  }
+  return `${props.join("")}:root{${vars.join(";")}}:where(html){color:var(--fg-default)}`
+}
 
 /**
  * Convert a Theme to CSS custom properties.

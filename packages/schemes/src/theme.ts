@@ -1,5 +1,5 @@
 /**
- * @silvery/theme — Color scheme catalog for silvery.
+ * @silvery/schemes — Color scheme catalog for silvery.
  *
  * 84 built-in color schemes (the "inspiration library") for any platform.
  * Theme derivation and color utilities live in `@silvery/ansi` and `@silvery/color`.
@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { catppuccinMocha } from "@silvery/theme"
+ * import { catppuccinMocha } from "@silvery/schemes"
  * import { deriveTheme } from "@silvery/ansi"
  *
  * const theme = deriveTheme(catppuccinMocha)
@@ -22,8 +22,7 @@
  */
 
 // Core types (ColorScheme lives here; Theme lives in @silvery/ansi)
-export type { ColorScheme } from "@silvery/ansi"
-export { COLOR_SCHEME_FIELDS } from "@silvery/ansi"
+export type { ColorScheme } from "@silvery/design"
 
 // ANSI 16 theme generation (produces Theme from primary color, no ColorScheme needed)
 export { generateTheme } from "./generate"
@@ -45,9 +44,6 @@ export type { ThemeValidationResult } from "./validate-theme"
 
 // Token aliasing
 export { resolveAliases, resolveTokenAlias } from "./alias"
-
-// CSS variables export
-export { themeToCSSVars } from "./css"
 
 // Base16 import/export
 export { importBase16 } from "./import/base16"
@@ -90,53 +86,7 @@ export type {
   SlotSource,
 } from "./detect"
 
-// Sterling — silvery's canonical design system.
-// See packages/theme/src/sterling/ and hub/silvery/design/v10-terminal/design-system.md.
-//
-// Sterling flat tokens (`bg-accent`, `fg-on-accent`, `border-focus`, …) are
-// baked into every shipped Theme at construction (see ./schemes/index.ts).
-// Consumers read flat keys directly off the Theme — no explicit augment call
-// is needed or available.
-export { sterling } from "./sterling/index"
-export {
-  deriveTheme as sterlingDeriveTheme,
-  deriveRoles as sterlingDeriveRoles,
-  defaultScheme as sterlingDefaultScheme,
-  defineDesignSystem,
-  STERLING_FLAT_TOKENS,
-  WCAG_AA,
-  autoLift as sterlingAutoLift,
-  checkAA as sterlingCheckAA,
-  ContrastError as SterlingContrastError,
-  // Generic flat-projection helper — re-exported from @silvery/ansi so every
-  // DesignSystem (Sterling included) can bake its own Theme on demand.
-  bakeFlat,
-  defaultFlattenRule,
-} from "./sterling/index"
-export type {
-  AccentRole,
-  BorderRole,
-  ContrastMode as SterlingContrastMode,
-  ContrastViolation as SterlingContrastViolation,
-  CursorRole,
-  DeepPartial as SterlingDeepPartial,
-  DerivationStep as SterlingDerivationStep,
-  DerivationTrace as SterlingDerivationTrace,
-  DeriveOptions as SterlingDeriveOptions,
-  DesignSystem,
-  FlatToken as SterlingFlatToken,
-  FlatTokens as SterlingFlatTokens,
-  FlattenRule,
-  InteractiveRole,
-  MutedRole,
-  Roles as SterlingRoles,
-  StatePair,
-  SurfaceRole,
-  Theme as SterlingTheme,
-  ThemeShape,
-} from "./sterling/index"
-
-// Built-in schemes (84 color schemes — see packages/theme/src/schemes/)
+// Built-in schemes (84 color schemes — see packages/schemes/src/schemes/)
 export {
   builtinPalettes,
   getSchemeByName,

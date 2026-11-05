@@ -8,7 +8,7 @@
  * @example
  * ```tsx
  * import { ReactiveThemeProvider } from '@silvery/ag-react'
- * import { nord, catppuccinLatte } from '@silvery/theme'
+ * import { nord, catppuccinLatte } from '@silvery/schemes'
  *
  * <ReactiveThemeProvider dark={nordTheme} light={latteTheme}>
  *   <App />
@@ -22,7 +22,7 @@ import React from "react"
 import { ThemeProvider } from "./ThemeProvider"
 import { useColorScheme } from "./hooks/useColorScheme"
 import type { Theme } from "@silvery/ansi"
-import { defaultDarkTheme, defaultLightTheme } from "@silvery/theme"
+import { defaultDarkTheme, defaultLightTheme } from "@silvery/schemes"
 
 export interface ReactiveThemeProviderProps {
   /** Theme to use when the terminal is in dark mode. Default: Nord. */

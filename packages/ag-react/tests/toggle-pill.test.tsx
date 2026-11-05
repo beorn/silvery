@@ -13,7 +13,7 @@ import React, { useState } from "react"
 import { describe, expect, test, vi } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { checkContrast } from "@silvery/color"
-import { defaultDarkTheme, defaultLightTheme } from "@silvery/theme"
+import { defaultDarkTheme, defaultLightTheme } from "@silvery/schemes"
 import { TogglePill, TogglePillGroup, togglePillColor } from "../src/ui/components/TogglePill"
 import * as agReact from "../src/index"
 

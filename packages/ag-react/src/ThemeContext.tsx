@@ -17,7 +17,7 @@
 
 import { createContext, useContext } from "react"
 import type { Theme, ActiveScheme } from "@silvery/ansi"
-import { defaultDarkTheme } from "@silvery/theme/schemes"
+import { defaultDarkTheme } from "@silvery/schemes/schemes"
 
 // ============================================================================
 // Context

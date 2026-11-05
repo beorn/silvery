@@ -33,7 +33,7 @@ import { describe, test, expect, beforeEach, afterEach } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text, ModalDialog, ThemeProvider } from "@silvery/ag-react"
 import { deriveTheme } from "@silvery/ansi"
-import { catppuccinMocha } from "@silvery/theme/schemes"
+import { catppuccinMocha } from "@silvery/schemes/schemes"
 
 const darkTheme = deriveTheme(catppuccinMocha, "truecolor")
 

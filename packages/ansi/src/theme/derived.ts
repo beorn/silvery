@@ -5,8 +5,8 @@
  * variants population across:
  *   - derive.ts   (deriveTruecolorTheme + deriveAnsi16Theme)
  *   - default-schemes.ts (ansi16DarkTheme + ansi16LightTheme)
- *   - @silvery/theme/generate.ts   (generateTheme)
- *   - @silvery/theme/schemes/index.ts (ansi16DarkTheme + ansi16LightTheme)
+ *   - @silvery/schemes/generate.ts   (generateTheme)
+ *   - @silvery/schemes/schemes/index.ts (ansi16DarkTheme + ansi16LightTheme)
  *
  * Canonical authority: derive.ts truecolor path. ANSI16 paths are aligned to
  * deriveAnsi16Theme output (which is itself the canonical ANSI16 reference).

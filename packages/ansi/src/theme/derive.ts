@@ -20,7 +20,7 @@ import {
   type InvariantViolation,
 } from "./invariants.ts"
 import { deriveFields } from "./derived.ts"
-import { inlineSterlingTokens } from "../sterling/inline.ts"
+import { inlineSterlingTokens } from "@silvery/design"
 
 export interface ThemeAdjustment {
   token: string

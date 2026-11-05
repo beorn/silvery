@@ -1,0 +1,51 @@
+{
+  "name": "@silvery/design",
+  "version": "0.28.0",
+  "description": "Sterling design tokens, theme derivation and CSS — platform-independent color systems",
+  "keywords": [
+    "design-system",
+    "theme",
+    "color",
+    "css",
+    "sterling"
+  ],
+  "license": "MIT",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/silvery.git",
+    "directory": "packages/design"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown"
+  },
+  "tsdown": {
+    "clean": true,
+    "dts": true,
+    "entry": "src/index.ts",
+    "exports": {
+      "devExports": true,
+      "packageJson": false
+    },
+    "format": "esm"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "@silvery/color": "0.28.0"
+  }
+}
