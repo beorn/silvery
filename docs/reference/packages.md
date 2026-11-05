@@ -4,14 +4,14 @@ Most apps only need `silvery` — it re-exports everything you need from the int
 
 ## Public Packages
 
-| Package           | npm               | Description                                                     |
-| ----------------- | ----------------- | --------------------------------------------------------------- |
-| `silvery`         | `silvery`         | Components, hooks, renderer — the one package you need          |
-| `@silvery/design` | `@silvery/design` | Sterling theme factories, tokens, contrast helpers and CSS |
+| Package            | npm                | Description                                                      |
+| ------------------ | ------------------ | ---------------------------------------------------------------- |
+| `silvery`          | `silvery`          | Components, hooks, renderer — the one package you need           |
+| `@silvery/design`  | `@silvery/design`  | Sterling theme factories, tokens, contrast helpers and CSS       |
 | `@silvery/schemes` | `@silvery/schemes` | 84 terminal schemes, detection, builders and import/export tools |
-| `@silvery/test`   | `@silvery/test`   | Testing utilities (virtual renderer, Playwright-style locators) |
-| `@silvery/ink`    | `@silvery/ink`    | Ink compatibility layer for migration                           |
-| `@silvery/create` | `@silvery/create` | App composition and state management _(coming soon)_            |
+| `@silvery/test`    | `@silvery/test`    | Testing utilities (virtual renderer, Playwright-style locators)  |
+| `@silvery/ink`     | `@silvery/ink`     | Ink compatibility layer for migration                            |
+| `@silvery/create`  | `@silvery/create`  | App composition and state management _(coming soon)_             |
 
 ## `@silvery/design`
 

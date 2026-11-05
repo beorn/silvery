@@ -760,21 +760,21 @@ bun run compat            # Run Ink/Chalk compatibility checks
 
 Users install and import from these packages:
 
-| Package              | What                                                                                                                    |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `silvery`            | Main barrel — components, hooks, render, types, runtime                                                                 |
-| `@silvery/create`    | App composition — createApp, pipe, withApp, TEA store                                                                   |
-| `@silvery/test`      | Testing utilities — virtual renderer, locators                                                                          |
-| `@silvery/headless`  | Pure state machines — SelectList, Readline (no React)                                                                   |
-| `@silvery/commands`  | Command registry, keymaps, invocation                                                                                   |
-| `@silvery/scope`     | Structured concurrency — createScope, withScope                                                                         |
-| `@silvery/signals`   | Reactive signals — thin wrapper around alien-signals                                                                    |
-| `@silvery/commander` | Type-safe Commander.js with colorized help, Standard Schema                                                             |
-| `@silvery/ansi`      | Everything terminal — styling, ANSI primitives, detection, theme derivation                                             |
+| Package              | What                                                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `silvery`            | Main barrel — components, hooks, render, types, runtime                                                                          |
+| `@silvery/create`    | App composition — createApp, pipe, withApp, TEA store                                                                            |
+| `@silvery/test`      | Testing utilities — virtual renderer, locators                                                                                   |
+| `@silvery/headless`  | Pure state machines — SelectList, Readline (no React)                                                                            |
+| `@silvery/commands`  | Command registry, keymaps, invocation                                                                                            |
+| `@silvery/scope`     | Structured concurrency — createScope, withScope                                                                                  |
+| `@silvery/signals`   | Reactive signals — thin wrapper around alien-signals                                                                             |
+| `@silvery/commander` | Type-safe Commander.js with colorized help, Standard Schema                                                                      |
+| `@silvery/ansi`      | Everything terminal — styling, ANSI primitives, detection, theme derivation                                                      |
 | `@silvery/color`     | Color math — OKLCH-native blend, brighten, darken, complement, contrast (hex public API, available directly from @silvery/color) |
-| `@silvery/selection` | Pure selection state machine — node selection, sub-selection, pointer gestures                                          |
-| `@silvery/design` | Sterling theme factories, tokens, contrast helpers and CSS |
-| `@silvery/schemes` | Terminal scheme catalog, detection, builders and import/export |
+| `@silvery/selection` | Pure selection state machine — node selection, sub-selection, pointer gestures                                                   |
+| `@silvery/design`    | Sterling theme factories, tokens, contrast helpers and CSS                                                                       |
+| `@silvery/schemes`   | Terminal scheme catalog, detection, builders and import/export                                                                   |
 
 Subpath imports available from `silvery`:
 
@@ -799,14 +799,14 @@ These are workspace packages for development. Users do not import from them dire
 
 ## Structure
 
-| Directory   | What                                                                                      |
-| ----------- | ----------------------------------------------------------------------------------------- |
+| Directory   | What                                                                                                |
+| ----------- | --------------------------------------------------------------------------------------------------- |
 | `packages/` | Workspace packages (public helpers plus internal ag, ag-react, ag-term, test, design, schemes, ink) |
-| `src/`      | Public barrel + subpath re-exports (index.ts, runtime.ts, theme.ts, ui.ts, ui/\*)         |
-| `docs/`     | VitePress documentation site (silvery.dev)                                                |
-| `examples/` | Interactive demos, web showcases, playground                                              |
-| `tests/`    | Test suites (compat, perf, tree-shaking, features)                                        |
-| `scripts/`  | Build and maintenance scripts                                                             |
+| `src/`      | Public barrel + subpath re-exports (index.ts, runtime.ts, theme.ts, ui.ts, ui/\*)                   |
+| `docs/`     | VitePress documentation site (silvery.dev)                                                          |
+| `examples/` | Interactive demos, web showcases, playground                                                        |
+| `tests/`    | Test suites (compat, perf, tree-shaking, features)                                                  |
+| `scripts/`  | Build and maintenance scripts                                                                       |
 
 ## Key Internals
 

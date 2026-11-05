@@ -333,7 +333,7 @@ Silvery's ecosystem is smaller but more integrated:
 | `silvery`           | Core renderer + 45+ components          |
 | `@silvery/create`   | TEA state machines                      |
 | `@silvery/test`     | Testing (headless + Termless emulator)  |
-| `@silvery/schemes`    | 84 color schemes, semantic tokens       |
+| `@silvery/schemes`  | 84 color schemes, semantic tokens       |
 | `@silvery/commands` | Command system with keybindings         |
 | `@silvery/ansi`     | Terminal primitives, styling, detection |
 

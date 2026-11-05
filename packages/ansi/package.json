@@ -42,8 +42,8 @@
   },
   "dependencies": {
     "@silvery/color": "0.28.0",
-    "string-width": "8.3.0",
-    "@silvery/design": "0.28.0"
+    "@silvery/design": "0.28.0",
+    "string-width": "8.3.0"
   },
   "tsdown": {
     "clean": true,

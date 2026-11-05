@@ -3,11 +3,11 @@
   "version": "0.28.0",
   "description": "Sterling design tokens, theme derivation and CSS — platform-independent color systems",
   "keywords": [
-    "design-system",
-    "theme",
     "color",
     "css",
-    "sterling"
+    "design-system",
+    "sterling",
+    "theme"
   ],
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -32,6 +32,9 @@
   "scripts": {
     "build": "tsdown"
   },
+  "dependencies": {
+    "@silvery/color": "0.28.0"
+  },
   "tsdown": {
     "clean": true,
     "dts": true,
@@ -44,8 +47,5 @@
   },
   "engines": {
     "node": ">=24.0.0"
-  },
-  "dependencies": {
-    "@silvery/color": "0.28.0"
   }
 }
