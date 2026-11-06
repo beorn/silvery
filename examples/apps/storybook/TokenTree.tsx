@@ -11,7 +11,7 @@
 
 import React, { useMemo } from "react"
 import { Box, Text, Muted, Divider, Small } from "silvery"
-import type { Theme as SterlingTheme } from "@silvery/design"
+import type { Theme as SterlingTheme } from "@silvery/color/design"
 import { TokenChip } from "./shared/TokenChip.tsx"
 
 /** A flat list of tokens in display order. Drives keyboard navigation. */

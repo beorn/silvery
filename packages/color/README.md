@@ -2,7 +2,7 @@
 
 Pure color math utilities — hex/RGB/HSL conversion, blending, contrast checking. Zero dependencies.
 
-Used by [@silvery/ansi](../ansi/) for terminal styling and theme derivation, and by [@silvery/schemes](../theme/) for palette generation.
+Used by [@silvery/ansi](../ansi/) for terminal styling, theme derivation and its scheme catalog. The `@silvery/color/design` subpath provides platform-independent Sterling tokens, themes and CSS without ANSI dependencies.
 
 ## Install
 
@@ -60,13 +60,27 @@ ensureContrast("#777", "#888", 4.5)
 - `checkContrast(fg, bg)` — ratio + AA/AAA compliance
 - `ensureContrast(fg, bg, target)` — adjust fg until it meets target ratio
 
+## Sterling design subpath
+
+```ts
+import { sterling, themeCss, THEME_CSS_TOKENS } from "@silvery/color/design"
+
+const theme = sterling.defaults("dark")
+const css = themeCss() // Paired light/dark CSS with registered color properties
+```
+
+`Theme`, `ColorScheme`, `themeToCSSVars` and the Sterling factories/token metadata live at this subpath. Color's root keeps the math utilities above; both entries remain dependency-free.
+
+See the [Sterling reference](https://silvery.dev/reference/sterling) for the design API and CSS contract.
+
 ## Relationship to Other Packages
 
 ```
 @silvery/color          ← pure math, zero deps
+  /design              ← Sterling tokens, themes and CSS; zero deps
   └─ @silvery/ansi      ← terminal styling, detection, theme derivation
-       └─ @silvery/schemes ← 84 color schemes, ThemeProvider, useTheme
-            └─ silvery   ← full framework barrel
+       /schemes        ← 84 palettes, detection, builders and import/export
+       └─ silvery      ← framework barrel; React ThemeProvider and useTheme
 ```
 
 ## License

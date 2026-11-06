@@ -4,8 +4,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { sterling, STERLING_FLAT_TOKENS } from "@silvery/design"
-import { builtinPalettes } from "@silvery/schemes/schemes"
+import { sterling, STERLING_FLAT_TOKENS } from "@silvery/color/design"
+import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
 
 describe("sterling flatten", () => {
   const theme = sterling.deriveFromScheme(builtinPalettes["nord"]!)

@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { sterling } from "@silvery/design"
+import { sterling } from "@silvery/color/design"
 import { checkContrast } from "@silvery/color"
 import type { ColorScheme } from "@silvery/ansi"
 

@@ -4,21 +4,21 @@ Most apps only need `silvery` — it re-exports everything you need from the int
 
 ## Public Packages
 
-| Package            | npm                | Description                                                      |
-| ------------------ | ------------------ | ---------------------------------------------------------------- |
-| `silvery`          | `silvery`          | Components, hooks, renderer — the one package you need           |
-| `@silvery/design`  | `@silvery/design`  | Sterling theme factories, tokens, contrast helpers and CSS       |
-| `@silvery/schemes` | `@silvery/schemes` | 84 terminal schemes, detection, builders and import/export tools |
-| `@silvery/test`    | `@silvery/test`    | Testing utilities (virtual renderer, Playwright-style locators)  |
-| `@silvery/ink`     | `@silvery/ink`     | Ink compatibility layer for migration                            |
-| `@silvery/create`  | `@silvery/create`  | App composition and state management _(coming soon)_             |
+| Package           | npm               | Description                                                                             |
+| ----------------- | ----------------- | --------------------------------------------------------------------------------------- |
+| `silvery`         | `silvery`         | Components, hooks, renderer — the one package you need                                  |
+| `@silvery/color`  | `@silvery/color`  | Color math; `/design` adds Sterling tokens, theme factories and CSS                     |
+| `@silvery/ansi`   | `@silvery/ansi`   | Terminal primitives; `/schemes` adds 84 palettes, detection, builders and import/export |
+| `@silvery/test`   | `@silvery/test`   | Testing utilities (virtual renderer, Playwright-style locators)                         |
+| `@silvery/ink`    | `@silvery/ink`    | Ink compatibility layer for migration                                                   |
+| `@silvery/create` | `@silvery/create` | App composition and state management _(coming soon)_                                    |
 
-## `@silvery/design`
+## `@silvery/color/design`
 
 Sterling design tokens, theme factories, contrast helpers and CSS. Depends only on `@silvery/color` and works without a terminal or DOM.
 
 ```ts
-import { sterling, themeCss, THEME_CSS_TOKENS } from "@silvery/design"
+import { sterling, themeCss, THEME_CSS_TOKENS } from "@silvery/color/design"
 
 const theme = sterling.defaults("dark")
 const css = themeCss()
@@ -26,7 +26,7 @@ const css = themeCss()
 
 `themeCss()` registers every flat token and categorical hue as an inherited CSS color, then selects light and dark values through `light-dark()`. Pass `{ light, dark }` to use a custom theme pair. The page controls its supported modes with `color-scheme`.
 
-See the [Sterling reference](https://silvery.dev/reference/sterling) for theme factories, token names and migration guidance. Terminal scheme catalogs and tooling live in `@silvery/schemes`; terminal detection and constructors live in `@silvery/ansi`.
+See the [Sterling reference](https://silvery.dev/reference/sterling) for theme factories, token names and migration guidance. Terminal scheme catalogs and tooling live in `@silvery/ansi/schemes`; terminal detection and constructors live in `@silvery/ansi`.
 
 ## Internal Packages
 
@@ -153,7 +153,7 @@ const data = await withSpinner(fetchData(), "Loading...")
 
 App composition and state management. _(Coming soon — API is in active development.)_
 
-## `@silvery/schemes`
+## `@silvery/ansi/schemes`
 
 Theme system with 84 color schemes, auto-generation from a single color, semantic tokens, and contrast checking.
 

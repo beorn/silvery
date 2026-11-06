@@ -10,7 +10,7 @@ import { describe, expect, test } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
 import { deriveTheme } from "@silvery/ansi"
-import { catppuccinLatte, catppuccinMocha, oneDark } from "@silvery/schemes"
+import { catppuccinLatte, catppuccinMocha, oneDark } from "@silvery/ansi/schemes"
 import { hexToOklch } from "../../packages/color/src/index.ts"
 
 function getL(hex: string): number {

@@ -1,11 +1,11 @@
 /**
  * @failure Page colors omit tokens, fail to follow color mode, or silently emit missing values.
  * @level l0
- * @consumer @silvery/design themeCss users, including hh-persona pages
+ * @consumer @silvery/color/design themeCss users, including hh-persona pages
  * @testonly none
  */
 import { describe, expect, it } from "vitest"
-import { sterling, STERLING_FLAT_TOKENS, THEME_CSS_TOKENS, themeCss } from "@silvery/design"
+import { sterling, STERLING_FLAT_TOKENS, THEME_CSS_TOKENS, themeCss } from "@silvery/color/design"
 
 describe("Sterling page CSS", () => {
   it("registers every flat token and hue as an inherited color and follows both modes", () => {

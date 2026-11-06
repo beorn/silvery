@@ -14,7 +14,7 @@
  * - `@silvery/ag-react/ui`      — TextInput, TextArea, Table, Picker, Modal, etc.
  * - `@silvery/ag-term`    — runtime, pipeline, terminal protocols
  * - `@silvery/ansi`    — styling, colors, terminal control
- * - `@silvery/schemes`   — ThemeProvider, useTheme, semantic tokens
+ * - `@silvery/ansi/schemes`   — ThemeProvider, useTheme, semantic tokens
  * - `@silvery/create`     — store, core types, tree utilities
  * - `@silvery/test`    — testing utilities, buffer assertions
  *

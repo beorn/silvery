@@ -10,7 +10,7 @@
  * their own value unions on top of this surface).
  *
  * All helpers return Sterling flat tokens (`$fg-error`, `$bg-warning-subtle`,
- * etc.) — the tokens are populated by `@silvery/design` and resolved by the
+ * etc.) — the tokens are populated by `@silvery/color/design` and resolved by the
  * theme at render time.
  */
 

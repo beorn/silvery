@@ -57,7 +57,7 @@ interface ChainState {
  * Supports `$primary`, `$surface-bg` (hyphens stripped), `$color0`–`$color15` (palette).
  * Non-`$` strings pass through unchanged. Returns undefined if no theme or unknown token.
  *
- * Compatible with @silvery/schemes's Theme type (or any object with string properties).
+ * Compatible with @silvery/ansi/schemes's Theme type (or any object with string properties).
  */
 export function resolveThemeColor(
   name: string | undefined,

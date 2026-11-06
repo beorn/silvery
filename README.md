@@ -80,16 +80,16 @@ Along the way, three principles emerged. Take the best from the web, stay true t
 
 ## Packages
 
-| Package                           | Description                                                       |
-| --------------------------------- | ----------------------------------------------------------------- |
-| `silvery`                         | Components, hooks, renderer — the one package you need            |
-| `@silvery/ink` / `@silvery/chalk` | Ink compatibility — 918/931 Ink 7.0 tests, 32/32 Chalk tests      |
-| `@silvery/test`                   | Playwright-style testing — locators, `press()`, buffer assertions |
-| `@silvery/create`                 | Composable app builder — `pipe()` providers _(coming soon)_       |
-| `@silvery/schemes`                | 84 color schemes, semantic tokens, auto-detect                    |
-| `@silvery/commander`              | **Beautiful CLIs for free** — help renders through Silvery itself |
-| `@silvery/headless`               | Pure state machines — portable, no React                          |
-| `@silvery/ansi`                   | Terminal primitives — styling, SGR, detection                     |
+| Package                           | Description                                                         |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `silvery`                         | Components, hooks, renderer — the one package you need              |
+| `@silvery/ink` / `@silvery/chalk` | Ink compatibility — 918/931 Ink 7.0 tests, 32/32 Chalk tests        |
+| `@silvery/test`                   | Playwright-style testing — locators, `press()`, buffer assertions   |
+| `@silvery/create`                 | Composable app builder — `pipe()` providers _(coming soon)_         |
+| `@silvery/color`                  | Color math; `/design` adds Sterling tokens, theme factories and CSS |
+| `@silvery/commander`              | **Beautiful CLIs for free** — help renders through Silvery itself   |
+| `@silvery/headless`               | Pure state machines — portable, no React                            |
+| `@silvery/ansi`                   | Terminal primitives; `/schemes` adds 84 palettes and theme tooling  |
 
 ## Ecosystem
 

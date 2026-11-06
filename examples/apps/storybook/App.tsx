@@ -43,8 +43,8 @@ import {
   useInput,
   type Key,
 } from "silvery"
-import { builtinPalettes } from "@silvery/schemes"
-import { sterling, type Theme as SterlingTheme } from "@silvery/design"
+import { builtinPalettes } from "@silvery/ansi/schemes"
+import { sterling, type Theme as SterlingTheme } from "@silvery/color/design"
 import { deriveTheme as legacyDeriveTheme } from "@silvery/ansi"
 import type { ColorScheme, Theme as LegacyTheme } from "@silvery/ansi"
 

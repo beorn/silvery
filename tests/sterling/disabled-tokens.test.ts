@@ -16,8 +16,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { sterling } from "@silvery/design"
-import { builtinPalettes } from "@silvery/schemes/schemes"
+import { sterling } from "@silvery/color/design"
+import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
 import { checkContrast } from "@silvery/color"
 
 const contrastRatio = (fg: string, bg: string): number => checkContrast(fg, bg)?.ratio ?? 0

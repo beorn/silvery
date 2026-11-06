@@ -9,8 +9,8 @@
  */
 
 import { mixSrgb, relativeLuminance } from "@silvery/color"
-import { builtinPalettes } from "@silvery/schemes/schemes"
-import { sterling } from "@silvery/design"
+import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
+import { sterling } from "@silvery/color/design"
 import { describe, expect, test } from "vitest"
 
 function contrastRatio(a: string, b: string): number {

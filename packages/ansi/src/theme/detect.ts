@@ -67,7 +67,7 @@ export interface ProbeColorsOptions {
  *
  * For the full detection cascade (override → probe → fingerprint → fallback +
  * theme derivation), use `detectScheme` from `@silvery/ansi` or
- * `detectTheme` from `@silvery/schemes`.
+ * `detectTheme` from `@silvery/ansi/schemes`.
  *
  * `probeColors` is the canonical name; `detectTerminalScheme` is the legacy
  * alias kept for backward compatibility.

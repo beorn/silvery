@@ -14,8 +14,8 @@ import {
   PUBLIC_TOKENS,
   FAMILY_ORDER,
   groupTokensByFamily,
-} from "@silvery/design"
-import { builtinPalettes } from "@silvery/schemes/schemes"
+} from "@silvery/color/design"
+import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
 
 describe("Sterling token manifest", () => {
   test("PUBLIC_TOKENS has same length as STERLING_FLAT_TOKENS", () => {

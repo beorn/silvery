@@ -12,8 +12,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { sterling, WCAG_AA } from "@silvery/design"
-import { builtinPalettes } from "@silvery/schemes/schemes"
+import { sterling, WCAG_AA } from "@silvery/color/design"
+import { builtinPalettes } from "@silvery/ansi/schemes/schemes"
 import { checkContrast } from "@silvery/color"
 
 const names = Object.keys(builtinPalettes)

@@ -773,14 +773,14 @@ Users install and import from these packages:
 | `@silvery/ansi`      | Everything terminal — styling, ANSI primitives, detection, theme derivation                                                      |
 | `@silvery/color`     | Color math — OKLCH-native blend, brighten, darken, complement, contrast (hex public API, available directly from @silvery/color) |
 | `@silvery/selection` | Pure selection state machine — node selection, sub-selection, pointer gestures                                                   |
-| `@silvery/design`    | Sterling theme factories, tokens, contrast helpers and CSS                                                                       |
-| `@silvery/schemes`   | Terminal scheme catalog, detection, builders and import/export                                                                   |
+
+Existing-package subpaths: `@silvery/color/design` owns Sterling factories, types, tokens and CSS; `@silvery/ansi/schemes` owns the 84-scheme catalog, detection, builders and import/export. Its nested entries are `/detect`, `/schemes` and `/theme`.
 
 Subpath imports available from `silvery`:
 
 - `silvery` — components, hooks, render, types (re-exports @silvery/ag-react)
 - `silvery/runtime` — run(), useInput, createRuntime (re-exports @silvery/ag-term/runtime)
-- `silvery/theme` — Sterling tokens, CSS and palettes (re-exports @silvery/design and @silvery/schemes)
+- `silvery/theme` — Sterling tokens, CSS and palettes (re-exports @silvery/color/design and @silvery/ansi/schemes)
 - `silvery/ui` — component library (re-exports @silvery/ag-react/ui)
 - `silvery/ui/cli` — CLI progress indicators (no React)
 - `silvery/ui/react` — React progress components
@@ -799,14 +799,14 @@ These are workspace packages for development. Users do not import from them dire
 
 ## Structure
 
-| Directory   | What                                                                                                |
-| ----------- | --------------------------------------------------------------------------------------------------- |
-| `packages/` | Workspace packages (public helpers plus internal ag, ag-react, ag-term, test, design, schemes, ink) |
-| `src/`      | Public barrel + subpath re-exports (index.ts, runtime.ts, theme.ts, ui.ts, ui/\*)                   |
-| `docs/`     | VitePress documentation site (silvery.dev)                                                          |
-| `examples/` | Interactive demos, web showcases, playground                                                        |
-| `tests/`    | Test suites (compat, perf, tree-shaking, features)                                                  |
-| `scripts/`  | Build and maintenance scripts                                                                       |
+| Directory   | What                                                                                            |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| `packages/` | Workspace packages (public helpers plus internal ag, ag-react, ag-term, test, color, ansi, ink) |
+| `src/`      | Public barrel + subpath re-exports (index.ts, runtime.ts, theme.ts, ui.ts, ui/\*)               |
+| `docs/`     | VitePress documentation site (silvery.dev)                                                      |
+| `examples/` | Interactive demos, web showcases, playground                                                    |
+| `tests/`    | Test suites (compat, perf, tree-shaking, features)                                              |
+| `scripts/`  | Build and maintenance scripts                                                                   |
 
 ## Key Internals
 

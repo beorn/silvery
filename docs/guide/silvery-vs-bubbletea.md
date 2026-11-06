@@ -328,14 +328,14 @@ The [Charm ecosystem](https://charm.sh) is cohesive and well-designed:
 
 Silvery's ecosystem is smaller but more integrated:
 
-| Package             | What                                    |
-| ------------------- | --------------------------------------- |
-| `silvery`           | Core renderer + 45+ components          |
-| `@silvery/create`   | TEA state machines                      |
-| `@silvery/test`     | Testing (headless + Termless emulator)  |
-| `@silvery/schemes`  | 84 color schemes, semantic tokens       |
-| `@silvery/commands` | Command system with keybindings         |
-| `@silvery/ansi`     | Terminal primitives, styling, detection |
+| Package                 | What                                    |
+| ----------------------- | --------------------------------------- |
+| `silvery`               | Core renderer + 45+ components          |
+| `@silvery/create`       | TEA state machines                      |
+| `@silvery/test`         | Testing (headless + Termless emulator)  |
+| `@silvery/ansi/schemes` | 84 color schemes, semantic tokens       |
+| `@silvery/commands`     | Command system with keybindings         |
+| `@silvery/ansi`         | Terminal primitives, styling, detection |
 
 Bubble Tea benefits from the broader Go ecosystem -- any Go library works alongside it. Silvery benefits from the React/npm ecosystem -- any React pattern (hooks, context, suspense) works inside it.
 

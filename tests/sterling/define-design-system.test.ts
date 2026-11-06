@@ -12,9 +12,9 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { bakeFlat, defaultFlattenRule, type FlattenRule } from "@silvery/design"
-import { defineDesignSystem } from "@silvery/design"
-import type { DesignSystem, Theme, ThemeShape } from "@silvery/design"
+import { bakeFlat, defaultFlattenRule, type FlattenRule } from "@silvery/color/design"
+import { defineDesignSystem } from "@silvery/color/design"
+import type { DesignSystem, Theme, ThemeShape } from "@silvery/color/design"
 
 // Minimal nested theme shape — the two pieces `bakeFlat` cares about
 // (hex leaves) plus metadata that should NOT be flattened.
