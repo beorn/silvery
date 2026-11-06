@@ -197,35 +197,33 @@ function steadyGrowthKbPerIter(samples: Sample[]): number {
 describe("termless memory leak harness", () => {
   test("steady growth ignores the observed healthy allocator sawtooth", () => {
     const rss = [435.9, 412.7, 367.7, 360.1, 422.3, 444.7, 433.9]
-    const samples = rss.map(
-      (value, index): Sample => ({
-        iter: WARMUP_ITERS + index * 10,
-        rss: value,
-        heap: 100,
-        elapsedMs: index,
-      }),
-    )
+    const samples = rss.map((value, index): Sample => ({
+      iter: WARMUP_ITERS + index * 10,
+      rss: value,
+      heap: 100,
+      elapsedMs: index,
+    }))
 
     expect(steadyGrowthKbPerIter(samples)).toBeLessThanOrEqual(MAX_STEADY_GROWTH_KB_PER_ITER)
   })
 
   test("too few steady samples refuse by name instead of passing", () => {
-    const samples = [WARMUP_ITERS, WARMUP_ITERS + 10].map(
-      (iter): Sample => ({ iter, rss: 300, heap: 85, elapsedMs: 0 }),
-    )
+    const samples = [WARMUP_ITERS, WARMUP_ITERS + 10].map((iter): Sample => ({
+      iter,
+      rss: 300,
+      heap: 85,
+      elapsedMs: 0,
+    }))
     expect(() => steadyGrowthKbPerIter(samples)).toThrow(/steady samples, fewer than/u)
   })
 
   test("steady growth detects monotonic retained memory", () => {
-    const samples = Array.from(
-      { length: 7 },
-      (_, index): Sample => ({
-        iter: WARMUP_ITERS + index * 10,
-        rss: 400 + index * 10,
-        heap: 100 + index * 10,
-        elapsedMs: index,
-      }),
-    )
+    const samples = Array.from({ length: 7 }, (_, index): Sample => ({
+      iter: WARMUP_ITERS + index * 10,
+      rss: 400 + index * 10,
+      heap: 100 + index * 10,
+      elapsedMs: index,
+    }))
 
     expect(steadyGrowthKbPerIter(samples)).toBeGreaterThan(MAX_STEADY_GROWTH_KB_PER_ITER)
   })

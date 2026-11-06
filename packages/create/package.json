@@ -44,7 +44,6 @@
     "./with-render": "./src/with-render.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./core": "./dist/core/index.mjs",
@@ -71,7 +70,8 @@
       "./types": "./dist/types.mjs",
       "./with-app": "./dist/with-app.mjs",
       "./with-render": "./dist/with-render.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

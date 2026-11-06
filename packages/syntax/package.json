@@ -27,11 +27,11 @@
     "./bounded-cache": "./src/bounded-cache.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./bounded-cache": "./dist/bounded-cache.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

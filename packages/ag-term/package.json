@@ -157,7 +157,6 @@
     "./xterm": "./src/xterm/index.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./adapters/canvas-adapter": "./dist/adapters/canvas-adapter.mjs",
@@ -288,7 +287,8 @@
       "./viewport-compositor": "./dist/viewport-compositor.mjs",
       "./virtual-scrollback": "./dist/virtual-scrollback.mjs",
       "./xterm": "./dist/xterm/index.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

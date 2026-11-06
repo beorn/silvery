@@ -26,7 +26,6 @@
     "./selection": "./src/selection.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./copy-mode": "./dist/copy-mode.mjs",
@@ -36,7 +35,8 @@
       "./readline": "./dist/readline.mjs",
       "./select-list": "./dist/select-list.mjs",
       "./selection": "./dist/selection.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

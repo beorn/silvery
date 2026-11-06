@@ -184,7 +184,7 @@ function walk(
     // a complete wide pair, so copyFrom never trims a covered half-glyph.
     // Measure first with scalar offsets: no per-run buffer or range allocations.
     let packedWidth = 0
-    for (let i = 0; i < positions.length; ) {
+    for (let i = 0; i < positions.length;) {
       let end = i + 1
       const first = positions[i] as (typeof positions)[number]
       while (end < positions.length) {
@@ -202,7 +202,7 @@ function walk(
     }
     const source = packedWidth > 0 ? new TerminalBuffer(packedWidth, 1) : undefined
     let sourceOffset = 0
-    for (let i = 0; source && i < positions.length; ) {
+    for (let i = 0; source && i < positions.length;) {
       let end = i + 1
       const first = positions[i] as (typeof positions)[number]
       while (end < positions.length) {

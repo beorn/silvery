@@ -196,11 +196,11 @@ The 13 remaining test failures are **intentional design choices**, not bugs:
 - **Minor rendering edge cases** (~7 tests) — SGR attribute ordering (dim+bold emission order differs), `measureElement` timing in synchronous render, and `renderToString` effect ordering. These produce identical visual output in practice.
 
 ::: details Remaining failures breakdown
-| Category | Failures | Why |
-| ---------------------------------- | -------- | --- |
-| Flexily W3C spec divergence | 4 | flex-wrap (2), aspect ratio (2) — Flexily follows W3C, Yoga doesn't |
-| Build artifact checks | 2 | Ink expects `./build/`; silvery ships TypeScript + `dist/` |
-| Minor rendering edge cases | ~7 | SGR order (2), measure timing (1), render-to-string timing (1), misc |
+| Category                    | Failures | Why                                                                  |
+| --------------------------- | -------- | -------------------------------------------------------------------- |
+| Flexily W3C spec divergence | 4        | flex-wrap (2), aspect ratio (2) — Flexily follows W3C, Yoga doesn't  |
+| Build artifact checks       | 2        | Ink expects `./build/`; silvery ships TypeScript + `dist/`           |
+| Minor rendering edge cases  | ~7       | SGR order (2), measure timing (1), render-to-string timing (1), misc |
 :::
 
 ::: details Recently shipped compat (2026-04-09)
@@ -210,7 +210,7 @@ The 13 remaining test failures are **intentional design choices**, not bugs:
 - Kitty protocol negotiation bytes (+3)
 - Debug-mode cursor API (+3)
 - `wrap="hard"` (+1), CJK overlay (+2), overflow clipping (+3), per-side `borderBackgroundColor` (+5)
-  :::
+:::
 
 All Ink 7.0 hooks have full shims. [Full API mapping →](/reference/compatibility)
 

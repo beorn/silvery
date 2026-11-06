@@ -19,7 +19,6 @@
     "./with-ink-focus": "./src/with-ink-focus.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./chalk": "./dist/chalk.mjs",
@@ -27,7 +26,8 @@
       "./with-ink": "./dist/with-ink.mjs",
       "./with-ink-cursor": "./dist/with-ink-cursor.mjs",
       "./with-ink-focus": "./dist/with-ink-focus.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

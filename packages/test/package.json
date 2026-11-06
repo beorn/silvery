@@ -23,14 +23,14 @@
     "./debug-mismatch": "./src/debug-mismatch.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./auto-locator": "./dist/auto-locator.mjs",
       "./compare-buffers": "./dist/compare-buffers.mjs",
       "./debug": "./dist/debug.mjs",
       "./debug-mismatch": "./dist/debug-mismatch.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

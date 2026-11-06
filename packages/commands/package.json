@@ -22,13 +22,13 @@
     "./with-keybindings": "./src/with-keybindings.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./create-command-registry": "./dist/create-command-registry.mjs",
       "./with-commands": "./dist/with-commands.mjs",
       "./with-keybindings": "./dist/with-keybindings.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

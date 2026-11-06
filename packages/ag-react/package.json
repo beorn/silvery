@@ -78,7 +78,6 @@
     "./with-react": "./src/with-react.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./accessibility": "./dist/accessibility.mjs",
@@ -140,7 +139,8 @@
       "./ui/utils": "./dist/ui/utils/index.mjs",
       "./ui/wrappers": "./dist/ui/wrappers/index.mjs",
       "./with-react": "./dist/with-react.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"
