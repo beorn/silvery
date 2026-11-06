@@ -36,14 +36,14 @@
     "./schemes/theme": "./src/schemes/theme.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./schemes": "./dist/schemes/index.mjs",
       "./schemes/detect": "./dist/schemes/detect.mjs",
       "./schemes/schemes": "./dist/schemes/schemes/index.mjs",
       "./schemes/theme": "./dist/schemes/theme.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"
