@@ -66,14 +66,12 @@ const BLOCKS: DocumentBlock[] = [
       "Intro paragraph with enough words to run well beyond the endpoint columns of the drag.",
   },
   { id: "goals", kind: "heading", level: 2, content: "Goals & Metrics" },
-  ...ITEMS.map(
-    (content, index): DocumentBlock => ({
-      id: `goal-${index + 1}`,
-      kind: "list-item",
-      list: { groupId: "goals", depth: 0, ordered: false },
-      content,
-    }),
-  ),
+  ...ITEMS.map((content, index): DocumentBlock => ({
+    id: `goal-${index + 1}`,
+    kind: "list-item",
+    list: { groupId: "goals", depth: 0, ordered: false },
+    content,
+  })),
   { id: "changed", kind: "heading", level: 2, content: "Changed since the last page" },
   {
     id: "closing",

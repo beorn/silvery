@@ -44,7 +44,6 @@
     "./wrap-measurer": "./src/wrap-measurer.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./apportion": "./dist/apportion.mjs",
@@ -72,7 +71,8 @@
       "./viewport-buffer": "./dist/viewport-buffer.mjs",
       "./viewport-types": "./dist/viewport-types.mjs",
       "./wrap-measurer": "./dist/wrap-measurer.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

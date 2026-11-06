@@ -8,13 +8,10 @@ type FocusRow = {
   lines: readonly string[]
 }
 
-const HISTORY = Array.from(
-  { length: 12 },
-  (_, index): FocusRow => ({
-    id: `history-${index}`,
-    lines: [`history ${String(index).padStart(2, "0")}`],
-  }),
-)
+const HISTORY = Array.from({ length: 12 }, (_, index): FocusRow => ({
+  id: `history-${index}`,
+  lines: [`history ${String(index).padStart(2, "0")}`],
+}))
 
 function focusRows(activeLineCount: number): FocusRow[] {
   return [

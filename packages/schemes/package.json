@@ -20,13 +20,13 @@
     "./theme": "./src/theme.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs",
       "./detect": "./dist/detect.mjs",
       "./schemes": "./dist/schemes/index.mjs",
       "./theme": "./dist/theme.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown"

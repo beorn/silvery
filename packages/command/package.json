@@ -23,10 +23,10 @@
     ".": "./src/index.ts"
   },
   "publishConfig": {
-    "access": "public",
     "exports": {
       ".": "./dist/index.mjs"
-    }
+    },
+    "access": "public"
   },
   "scripts": {
     "build": "tsdown",

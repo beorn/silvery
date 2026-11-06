@@ -85,7 +85,7 @@ export function findUrls(text: string): UrlRange[] {
     // Trim the sentence's punctuation, then any `)` that does not close a `(`
     // inside the URL, until neither applies. Order matters: `https://x/a).`
     // needs both.
-    for (let trimmed = true; end > start && trimmed; ) {
+    for (let trimmed = true; end > start && trimmed;) {
       trimmed = false
       while (end > start && TRAILING_PUNCTUATION.has(text[end - 1] as string)) {
         end--

@@ -180,9 +180,7 @@ function Panel() {
 function Panel() {
   const layout = useResponsiveBoxProps({
     default: {}, // no sidebar by default
-    md: {
-      /* sidebar visible */
-    },
+    md: {/* sidebar visible */},
   })
   // ... render driven by `layout` spread ...
 }

@@ -21,7 +21,6 @@
     ".": "./bin/cli.ts"
   },
   "publishConfig": {
-    "access": "public",
     "bin": {
       "silvery-examples": "./dist/cli.mjs"
     },
@@ -30,7 +29,8 @@
         "types": "./dist/cli.d.mts",
         "import": "./dist/cli.mjs"
       }
-    }
+    },
+    "access": "public"
   },
   "dependencies": {
     "loggily": "^0.6.0",
